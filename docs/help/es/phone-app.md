@@ -8,7 +8,7 @@ order: 3
 ---
 El panel se instala como app en un teléfono o un ordenador. Luego envía una notificación por cada tarea, resultado y recordatorio cuando no estás en el panel, dentro de tu [horario laboral](work-hours.md). Elige qué envía en [Notificaciones](notifications.md).
 
-Una nota discreta arriba en Sugerencias ofrece ambas cosas, de una en una: primero la app y luego las notificaciones. **Ahora no** la oculta 14 días, y un segundo **Ahora no** la quita en ese dispositivo. Los mismos controles siguen en **Ajustes**, **General**, **Este dispositivo**.
+Una nota discreta arriba en Tareas ofrece ambas cosas, de una en una: primero la app y luego las notificaciones. **Ahora no** la oculta 14 días, y un segundo **Ahora no** la quita en ese dispositivo. Los mismos controles siguen en **Ajustes**, **General**, **Este dispositivo**.
 
 ## En un ordenador (Chrome o Edge)
 

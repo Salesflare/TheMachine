@@ -92,7 +92,7 @@ overwritten. The workspace copy is kept in step too: a delayed sync cannot put o
 
 ## From your notes
 
-What you teach on cards (facts and draft rules, under Feedback > What I've learned) can pile up around one kind of task:
+What you teach on cards (facts and draft rules, under Learning > What I've learned) can pile up around one kind of task:
 listing exchanges, support handoffs. When a review sees 5 or more notes about one such scenario (judged by meaning, while it
 condenses the list), it suggests a skill on a normal card: the skill's name and when to use it, the notes it would take in,
 and **Create skill**, plus **Not now**. Before it suggests one it checks the skills you have, by name and what each is for

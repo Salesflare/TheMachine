@@ -58,7 +58,7 @@ ClawHub, Claude, Claude Code, Codex, ChatGPT, Trello, Shortcut.
 | work hours | werkuren | heures de travail | Arbeitszeiten | horario laboral | orario di lavoro | horário de trabalho |
 | digest | overzicht | récap | Zusammenfassung | resumen | riepilogo | resumo |
 | promise | belofte, beloftes, beloofd | promesse, promesses, promis | Versprechen, versprochen | promesa, promesas, prometido, prometiste, prometió, prometieron | promessa, promesse, promesso, promessi | promessa, promessas, prometeu, prometido, prometi, prometeram |
-| learning | inzicht, inzichten | apprentissage, apprentissages | Erkenntnis, Erkenntnisse | aprendizaje, aprendizajes | apprendimento, apprendimenti | aprendizado, aprendizados |
+| learning | inzicht, inzichten, Leren | apprentissage, apprentissages | Erkenntnis, Erkenntnisse, Lernen | aprendizaje, aprendizajes | apprendimento, apprendimenti | aprendizado, aprendizados |
 | error report | foutrapport, foutrapporten | rapport d’erreur, rapports d’erreur | Fehlerbericht, Fehlerberichte | informe de errores, informes de errores | segnalazione di errore, segnalazioni di errore | relatório de erro, relatórios de erro |
 
 ## Exceptions
@@ -72,6 +72,8 @@ English strings the check skips, with why:
 ## Not checked, but use these
 
 The user-facing name is *to-do* (decided 2026-10-26): Dutch keeps "to-do", the others use their own word, the same one every time.
+
+The sidebar pages (renamed 2026-11-01): Suggestions is now *To-dos* (the plural of to-do, as above), Feedback is now *Learning* (the page; in nl and de "Leren" and "Lernen", while one learning stays inzicht and Erkenntnis), and the Events search is *Messages*. Learning: Leren, Apprentissage, Lernen, Aprendizaje, Apprendimento, Aprendizado. Messages: Berichten, Messages, Nachrichten, Mensajes, Messaggi, Mensagens.
 
 | English | nl | fr | de | es | it | pt-BR |
 |---|---|---|---|---| --- | --- |

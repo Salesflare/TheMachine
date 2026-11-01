@@ -10,7 +10,7 @@ Votre Machine lit tout ce qui est nouveau et ne crée une tâche que si quelque 
 
 ## Où sont les tâches
 
-L’onglet **Suggestions** les regroupe :
+La page **Tâches** les regroupe :
 
 - **Prêt pour vous** : préparée et en attente de votre accord.
 - **Attend votre décision** : quelque chose que vous seul pouvez décider.

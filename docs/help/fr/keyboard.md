@@ -8,7 +8,7 @@ order: 5
 ---
 ## La palette
 
-Appuyez sur `⌘K` sur Mac ou `Ctrl K` sur Windows et Linux, ou sur `/`, pour ouvrir **Recherche et commandes**. Tapez une partie d’un nom : une action, une page, une tâche, une personne, une organisation ou un projet. Utilisez les flèches et Entrée, ou Échap pour fermer. Les commandes récentes apparaissent en premier.
+Appuyez sur `⌘K` sur Mac ou `Ctrl K` sur Windows et Linux, ou sur `/`, pour ouvrir **Recherche et commandes**. Tapez une partie d’un nom : une action, une page, une tâche, une personne, une organisation, un projet ou un message. Sous **Messages**, elle montre les meilleurs résultats, et **Voir tous les résultats** ouvre la liste complète. Utilisez les flèches et Entrée, ou Échap pour fermer. Les commandes récentes apparaissent en premier.
 
 Sur un téléphone, appuyez sur l’icône de recherche dans la barre du haut.
 
@@ -16,7 +16,7 @@ Sur un téléphone, appuyez sur l’icône de recherche dans la barre du haut.
 
 Appuyez sur `?` pour **Raccourcis clavier**, la liste complète pour votre ordinateur.
 
-- Aller à une page : `G` puis `S` Suggestions, `C` Agenda, `E` Événements, `P` Personnes, `O` Organisations, `J` Projets, `F` Fleet, `B` Commentaires, `N` Connexions, `,` Paramètres.
+- Aller à une page : `G` puis `T` Tâches, `C` Agenda, `P` Personnes, `O` Organisations, `J` Projets, `F` Fleet, `L` Apprentissage, `N` Connexions, `,` Paramètres. `G` puis `E` ouvre les résultats de la recherche de messages. Les anciens `G` puis `S` et `G` puis `B` marchent toujours.
 - `N` ajoute une nouvelle tâche. `T` lance Parler, ou l’arrête pendant qu’il est en cours. Dans l’Agenda, `T` va à aujourd’hui. `J` et `K` (ou `↓` et `↑`) parcourent une liste, Entrée ouvre.
 - Sur une tâche : `E` la renomme, `S` la met en attente, `D` la marque comme faite, `R` écrit dans son chat.
 
@@ -24,7 +24,7 @@ Les touches ne fonctionnent pas pendant la saisie dans un champ.
 
 ## Se déplacer
 
-- Chaque page met le focus sur son premier élément quand vous y arrivez au clavier. Dans Suggestions, c’est la première tâche, ou la première liste quand toutes sont repliées.
+- Chaque page met le focus sur son premier élément quand vous y arrivez au clavier. Dans Tâches, c’est la première tâche, ou la première liste quand toutes sont repliées.
 - `J` ou `↓` passe à la tâche suivante, `K` ou `↑` à la précédente. L’en-tête d’une liste repliée est aussi une étape : Entrée ou `→` l’ouvre, `←` la replie.
 - Entrée sur une tâche ouvre son chat, prêt pour écrire. Échap quitte la zone de texte, et l’Échap suivant ferme le chat et revient à la tâche. Avec une zone vide, un seul Échap le ferme.
 - Échap ferme aussi une fenêtre, la palette et la liste des raccourcis, et remet le focus là où il était.

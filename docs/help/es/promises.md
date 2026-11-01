@@ -10,7 +10,7 @@ Tu Machine detecta las promesas en tus mensajes, en ambos sentidos, sin nada que
 
 ## Dónde están
 
-En **Promesas**, en la pestaña Sugerencias:
+En **Promesas**, en la página Tareas:
 
 - Lo que dijiste que harías, y para quién: **Tu promesa**.
 - Lo que otros dijeron que harían: **Te lo prometieron**.

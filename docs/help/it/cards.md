@@ -10,7 +10,7 @@ La tua Machine legge tutto ciò che è nuovo e crea un'attività solo quando qua
 
 ## Dove stanno le attività
 
-La scheda **Suggerimenti** le raggruppa:
+La pagina **Attività** le raggruppa:
 
 - **Pronta per te**: preparata e in attesa della tua approvazione.
 - **Serve una tua decisione**: qualcosa che puoi decidere solo tu.

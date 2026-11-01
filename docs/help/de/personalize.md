@@ -14,7 +14,7 @@ Das meiste passiert von selbst. Deine Machine lernt aus dem, was du tust, also g
 - Was du willst: aus den Aufgaben, die du erledigst, verwirfst oder zurückstellst, und warum.
 - Fakten und Gewohnheiten: aus dem, was du im Chat einer Aufgabe sagst, etwa „Freitags telefoniere ich nie“.
 
-Etwa zweimal am Tag macht sie daraus ein paar kleine Änderungen. **Feedback**, **Was ich gelernt habe** zeigt jede davon, mit **Rückgängig**. Siehe [Schreiben](writing.md#it-keeps-learning).
+Etwa zweimal am Tag macht sie daraus ein paar kleine Änderungen. **Lernen**, **Änderungen** zeigt jede davon, mit **Rückgängig**. Siehe [Schreiben](writing.md#it-keeps-learning).
 
 ## Bring es ihr schneller bei
 

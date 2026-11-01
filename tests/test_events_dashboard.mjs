@@ -44,7 +44,7 @@ try{
   // Going back to Events keeps the list; a search with no match says so
   await page.evaluate(()=>showTab('inbox'));await page.evaluate(()=>showTab('events'));assert.equal(asked,1);
   await page.fill('#query','none');await page.press('#query','Enter');
-  await page.waitForFunction(()=>/No matching signals/.test(document.querySelector('#results').textContent));
+  await page.waitForFunction(()=>/No matching messages/.test(document.querySelector('#results').textContent));
   assert.equal(await page.locator('#results .ev-soon').count(),0);
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'fits '+width);
   await context.close();

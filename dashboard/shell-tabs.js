@@ -1,27 +1,43 @@
-// Links to a tab or a sub-tab: #events, #graph, #graph=roles, #connections, #connections=chat (and the tabs' own ids).
-const TAB_LINKS={inbox:'inbox',suggestions:'inbox',calendar:'calendar',events:'events',graph:'people',people:'people',feedback:'feedback',connections:'health',health:'health'};
+// Links to a tab or a sub-tab: #todos, #messages (also #events), #graph, #graph=roles, #learning=changes (also
+// #feedback), #connections, #connections=chat (and the tabs' own ids).
+const TAB_LINKS={inbox:'inbox',todos:'inbox',suggestions:'inbox',calendar:'calendar',events:'events',messages:'events',graph:'people',people:'people',learning:'feedback',feedback:'feedback',connections:'health',health:'health'};
 // A Graph sub-page (People, Organizations, Projects, Who's who) shows at once: its pane is drawn already, or the page
 // says it's loading; the Graph's quiet refresh comes after. The switch never waits for the Machine's answer.
 function showTab(tab,pane){if(tab==='people'&&pane){graphPane=pane;localStorage.setItem('graph-pane',pane);const view=$('#people-view'),was=graphNode;graphNode='';$('#people-query').value='';
   if(view.querySelector(`[data-graph-panel="${CSS.escape(pane)}"]`)&&view.dataset.mode==='list'&&!was){showGraphPane(pane);graphSkip=!$('#people').hidden&&Date.now()-graphAt<60000}  /* the lists on screen are a minute old at most: no reload */
   else if(was&&!graphKept){view.dataset.mode='loading';view.innerHTML='<p class="pager-loading" role="status">Loading…</p>';$('#people').classList.remove('graph-on-node')}}
- if(tab==='health'&&pane){healthPane=pane==='phone'?'other':pane;healthPicked=true}document.querySelector(`nav [data-tab="${tab}"]`)?.click();if(tab==='health')renderHealthTabs()}
+ if(tab==='health'&&pane){healthPane=pane==='phone'?'other':pane;healthPicked=true}if(tab==='feedback'&&LEARN_PANES.some(([id])=>id===pane)){learnPane=pane;try{localStorage.setItem('learn-pane',pane)}catch{}}
+ document.querySelector(`nav [data-tab="${tab}"]`)?.click();if(tab==='health')renderHealthTabs();if(tab==='feedback')learnTabs()}
 function openTabLink(){const st=/^#settings(?:[/=]([a-z]+))?$/.exec(location.hash);if(st){if($('#settings').hidden||st[1]&&st[1]!==settingsNow)showSettings(st[1]);return}const m=/^#([a-z]+)(?:=([a-z]+))?$/.exec(location.hash);if(!m||!TAB_LINKS[m[1]])return;
  const tab=TAB_LINKS[m[1]];if(tab==='people'&&GRAPH_PANES.includes(m[2])){if(!$('#people').hidden&&!graphNode&&graphShown===m[2])return;showTab(tab,m[2]);return}
  history.replaceState(null,'',location.pathname+location.search);showTab(tab,m[2])}
 window.addEventListener('hashchange',()=>{openChatLink();openSnoozeLink();openResultLink();openCardLink();openFleetLink();openSharedLink();openTabLink();openConnectLink()});
 function noteSplit(n){if(!n)return'';const parts=[['style','style'],['fact','missing facts'],['continue','keep going'],['new_ask','new asks'],['unsorted','not sorted']].filter(([k])=>n[k]);
-return parts.length?`<div class="notes-split"><span>Your Change notes</span><div>${parts.map(([k,t])=>`<span class="chip t-${{style:'lavender',fact:'amber',continue:'orange',new_ask:'mint',unsorted:'muted'}[k]}">${n[k]} ${t}</span>`).join('')}</div></div>`:''}
-function trendChart(trend){let rows=trend?.[trendView];if(!rows)return'';const first=rows.findIndex(r=>r.worth_it+r.dismissed+r.open);rows=first<0?rows.slice(-1):rows.slice(first);const daily=trendView==='daily';
-const max=Math.max(1,...rows.map(r=>r.worth_it+r.dismissed));const day=r=>new Date(r.start+'T12:00');
-const name=r=>daily?day(r).toLocaleDateString(DL,{weekday:'short',day:'numeric',month:'short'}):t('Week of {}',day(r).toLocaleDateString(DL,{day:'numeric',month:'short'}));
-const tip=r=>{const n=r.worth_it+r.dismissed;return `${name(r)}: ${n?t('{} of {} worth it',r.worth_it,n):t('nothing decided')}${r.open?', '+t('{} open',r.open):''}${r.do_it?t('. Do it right the first time: {}%',r.first_time_rate):''}`};
-return `<div class="trend"><div class="trend-head"><span>% worth it per ${daily?'day':'week'}</span><div class="scope-filter" role="group" aria-label="Period">${[['daily','Daily'],['weekly','Weekly']].map(([v,t])=>`<button type="button" data-trend="${v}" aria-pressed="${trendView===v}">${t}</button>`).join('')}</div></div>
-<div class="bars">${rows.map(r=>{const n=r.worth_it+r.dismissed;return `<div title="${esc(tip(r))}" aria-label="${esc(tip(r))}"><small>${n?r.hit_rate+(daily?'':'%'):''}</small>${n?`<em style="height:${Math.max(4,Math.round(86*n/max))}%"><i class="no" style="flex:${r.dismissed}"></i><i class="yes" style="flex:${r.worth_it}"></i></em>`:'<em class="none"></em>'}</div>`}).join('')}</div>
-<div class="bar-labels">${rows.map(r=>`<span>${daily?day(r).getDate():day(r).toLocaleDateString(DL,{day:'numeric',month:'short'})}</span>`).join('')}</div>
-<div class="bar-marks">${rows.map(r=>r.changes?.length?`<span title="${esc(r.changes.join('\n'))}" aria-label="${esc(t(['{} rule change: {}','{} rule changes: {}'],r.changes.length,r.changes.join('; ')))}">◆${r.changes.length>1?r.changes.length:''}</span>`:'<span></span>').join('')}</div>
-<div class="trend-legend"><span><b></b>Worth it</span><span><b class="no"></b>Not needed</span><span>Height: to-dos decided</span>${rows.some(r=>r.changes?.length)?'<span><i class="mark">◆</i>Rules changed</span>':''}</div></div>`}
-$('#quality').addEventListener('click',e=>{const b=e.target.closest('[data-trend]');if(!b)return;trendView=b.dataset.trend;localStorage.setItem('trend-view',trendView);render()});
+return parts.length?`<div class="notes-split"><span>What your Change notes asked for</span><div>${parts.map(([k,t])=>`<span class="chip t-${{style:'lavender',fact:'amber',continue:'orange',new_ask:'mint',unsorted:'muted'}[k]}">${n[k]} ${t}</span>`).join('')}</div></div>`:''}
+// How it's going (Learning): the last 30 days in four numbers, each saying what it counts (assistant.py quality():
+// Worth it = acted on (Do it, Send or Done) of those decided, dismissed ones being the rest; First try and Finished count
+// to-dos started with Do it; Sent as is = drafts sent without an edit, a Change or Try again first). Higher is better for
+// all four. Then Worth it week by week (8 weeks, each bar its own %), the Change notes by kind, and Worth it per source.
+const qPct=(a,b)=>b?Math.round(100*a/b):null;
+function qWas(v,prev){if(v==null||prev==null)return'';return `<small class="q-was">${esc(v>prev?t('Up from {}% the 30 days before',prev):v<prev?t('Down from {}% the 30 days before',prev):t('Same as the 30 days before'))}</small>`}
+function qTile(value,name,means,was=''){return `<div class="q-tile"><span class="q-name">${esc(t(name))}</span><b>${value==null?'–':value+'%'}</b><small class="q-means">${esc(means)}</small>${was}</div>`}
+function qualityHTML(q){if(!q||!q.cards)return `<p class="q-empty">${esc(t('Not enough to-dos yet. These numbers start once you decide on a few.'))}</p>`;
+ const decided=q.worth_it+q.dismissed,sent=(q.sent_as_written||0)+(q.sent_edited||0),few=t('Not enough to-dos yet');
+ const tiles=[qTile(q.hit_rate,'Worth it',decided?t(['Of {} to-do you decided: acted on, not dismissed','Of {} to-dos you decided: acted on, not dismissed'],decided):few,qWas(q.hit_rate,q.previous?.hit_rate)),
+  qTile(q.first_time_rate,'First try',q.do_it?t(['Of {} to-do started with Do it: no correction needed','Of {} to-dos started with Do it: no correction needed'],q.do_it):few,qWas(q.first_time_rate,q.previous?.first_time_rate)),
+  qTile(q.finished_rate,'Finished',q.do_it?t(['Of {} to-do started with Do it: finished without a nudge','Of {} to-dos started with Do it: finished without a nudge'],q.do_it):few,qWas(q.finished_rate,q.previous?.finished_rate)),
+  qTile(qPct(q.sent_as_written||0,sent),'Sent as is',sent?t(['Of {} draft sent: no edit or Change first','Of {} drafts sent: no edit or Change first'],sent):t('No drafts sent yet'))];
+ const src=Object.entries(q.by_source||{}).sort((a,b)=>(b[1].worth_it+b[1].dismissed)-(a[1].worth_it+a[1].dismissed));
+ const srcRow=([k,n])=>{const d=n.worth_it+n.dismissed;return `<div${SOURCE_TIPS[k]?` title="${esc(SOURCE_TIPS[k])}"`:''}><span class="grow">${esc(k)}${SOURCE_TIPS[k]?`<small>${esc(SOURCE_TIPS[k])}</small>`:''}</span><span class="q-n">${d?esc(t('{} of {}',n.worth_it,d))+` <b>${qPct(n.worth_it,d)}%</b>`:esc(t('None decided yet'))}</span></div>`};
+ return `<p class="learn-intro">${esc(t('Last 30 days. Higher is better.'))}</p><div class="q-tiles">${tiles.join('')}</div>${trendChart(q.trend)}${noteSplit(q.notes)}`
+  +(src.length?`<h3 class="q-h">${esc(t('Worth it per source'))}</h3><p class="learn-intro">${esc(t('Where to-dos came from, and how many you acted on of those you decided.'))}</p><div class="list quality-sources"><div class="q-head"><span class="grow">${esc(t('Source'))}</span><span>${esc(t('Acted on'))}</span></div>${src.map(srcRow).join('')}</div>`:'')}
+// Worth it week by week: one bar per week, its height and the number above it that week's %, the week under it and how
+// many to-dos were decided. Shown once two weeks have decided to-dos.
+function trendChart(trend){const rows=trend?.weekly||[];if(rows.filter(r=>r.worth_it+r.dismissed).length<2)return '';
+ const wk=r=>new Date(r.start+'T12:00').toLocaleDateString(DL,{day:'numeric',month:'short'}),marks=rows.some(r=>r.changes?.length);
+ const col=r=>{const n=r.worth_it+r.dismissed,label=n?t('Week of {}: {}% worth it, {} decided',wk(r),r.hit_rate,n):t('Week of {}: nothing decided',wk(r));
+  return `<div role="listitem" aria-label="${esc(label)}" title="${esc([label,...r.changes||[]].join('\n'))}"><small class="v">${n?r.hit_rate+'%':'–'}</small><span class="bar"><em${n?` style="height:${Math.max(2,r.hit_rate)}%"`:' class="none"'}></em></span><span class="w">${esc(wk(r))}${r.changes?.length?'<i class="mark" aria-hidden="true">◆</i>':''}</span><span class="n">${n?esc(t('{} decided',n)):''}</span></div>`};
+ return `<figure class="trend"><figcaption><strong>${esc(t('Worth it, week by week'))}</strong><small>${esc(t('Last 8 weeks. Each bar is that week’s Worth it.'))}</small></figcaption><div class="bars" role="list">${rows.map(col).join('')}</div>${marks?`<p class="trend-legend"><i class="mark" aria-hidden="true">◆</i>${esc(t('Rules changed that week'))}</p>`:''}</figure>`}
 let refreshes=0;
 // A redraw keeps the field someone is in: focus and caret back on the same field (by id) when the redraw replaced it
 function focusKept(draw){const a=document.activeElement,id=a&&a!==document.body&&a.id,sel=id&&a.matches?.(TYPED)?[a.selectionStart,a.selectionEnd]:null;draw();
@@ -119,7 +135,7 @@ function doneSearch(q){if(!q||doneFound.q===q||(state?.done_counts?.[scopeFilter
 function sideCards(groups){if(groups)sideGroups=groups;const q=$('#side-find').value.trim().toLowerCase(),box=$('#side-cards');doneSearch(q);
  const parts=sideGroups.map(([items,title,key])=>{const open=!!q||sideOpen(key),cut=q?{list:sideAll(items,key,q),more:false}:sideList(items,key),count=q?cut.list.length:cut.count;if(!count)return'';
   return `<div class="side-group${['done','later','lookdone','waiting'].includes(key)?' quiet':''}"><button type="button" class="side-head" data-side-fold="${key}" aria-expanded="${open}">${CHEVRON}<span>${title}</span><span class="count">${count}</span></button>${open?cut.list.map(x=>sideRow(x,chatId)).join('')+(cut.more?sideMoreRow(key):''):''}</div>`}).join('');
- const html=`<div class="side-label"><span>To-dos</span>${[['all','All'],['work','Work'],['personal','Personal']].map(([v,t])=>`<button type="button" data-scope="${v}" aria-pressed="${scopeFilter===v}">${t}</button>`).join('')}</div>${parts||`<p class="side-empty">${q?'No to-dos match.':'No to-dos yet.'}</p>`}`;
+ const html=`<div class="side-label" role="group" aria-label="To-dos">${[['all','All'],['work','Work'],['personal','Personal']].map(([v,t])=>`<button type="button" data-scope="${v}" aria-pressed="${scopeFilter===v}">${t}</button>`).join('')}</div>${parts||`<p class="side-empty">${q?'No to-dos match.':'No to-dos yet.'}</p>`}`;
  if(html!==sideHTML){sideHTML=html;const back=sideKeep(box);box.innerHTML=html;back();requestAnimationFrame(chatFades)}}
 // The card list scrolls in its own box (the computer's sidebar, the phone's drawer): a new card above keeps the rows in view where they were
 function sideKeep(box){const sc=[box,box.closest('.app-side')].find(x=>x&&x.scrollTop>0);if(!sc)return()=>{};const edge=sc.getBoundingClientRect().top,key=n=>n.getAttribute('href')||n.dataset.sideFold||n.dataset.sideMore||n.dataset.doneFold;

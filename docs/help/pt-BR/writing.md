@@ -23,7 +23,7 @@ Ela só aprende com o que você mesmo escreveu. Um rascunho escrito por ela que 
 
 Umas duas vezes por dia, quando há coisa nova suficiente, ela olha os rascunhos que você mudou, as tarefas que você dispensou ou adiou e o que você corrigiu no chat de uma tarefa. Depois ela faz algumas pequenas mudanças em como você escreve, nas suas regras e nos fatos. Essas checagens curtas esperam quando os limites do seu plano estão acabando.
 
-**Feedback**, **O que aprendi**, **Mudanças recentes** mostra cada mudança e o motivo. **Desfazer** volta atrás. As linhas que você mesmo escreveu ficam como você escreveu.
+**Aprendizado**, **Alterações** mostra cada mudança e o motivo. **Desfazer** volta atrás. As linhas que você mesmo escreveu ficam como você escreveu.
 
 ### Quando uma linha está errada
 
@@ -31,6 +31,6 @@ Corrija onde você vê a linha:
 
 - Em **Configurações**, **Escrita**, mude as palavras na caixa desse canal e clique em **Salvar**. Releituras futuras das suas mensagens não mexem no seu texto.
 - Ou diga isso no chat de qualquer tarefa: "Só uso minúscula no começo das frases, não nos nomes". Esse chat então mostra uma linha **Salvo em Como você escreve** para esse canal, com **Editar** para abrir.
-- **Feedback**, **O que aprendi** também lista todas as linhas, cada uma com **Editar**.
+- **Aprendizado**, **O que aprendi** também lista todas as linhas, cada uma com **Editar**.
 
 Seja exato, porque os rascunhos seguem as linhas como estão escritas. Só "minúsculas" também deixa os nomes em minúscula. "Frases começam com minúscula, nomes mantêm as maiúsculas" não. Os hábitos de um canal ficam nesse canal, então um hábito do chat nunca chega aos seus e-mails.

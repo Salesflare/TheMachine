@@ -10,7 +10,7 @@ La tua Machine nota le promesse nei tuoi messaggi, in entrambe le direzioni, sen
 
 ## Dove si trovano
 
-Sotto **Promesse** nella scheda Suggerimenti:
+Sotto **Promesse** nella pagina Attività:
 
 - Quello che hai detto che avresti fatto, e per chi: **Hai promesso**.
 - Quello che gli altri hanno detto che avrebbero fatto: **Promesso a te**.

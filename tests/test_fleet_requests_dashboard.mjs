@@ -57,7 +57,7 @@ try{
  await page.getByText('Still with Pat · check in?').waitFor();  // this fake keeps it on top; the service puts it under Later
  assert.equal(await page.getByText('is on it').count(),0);  // a claim without a teammate's name says nothing
  assert.deepEqual(calls.at(-1),{action:'fleet_handoff',args:{suggestion_id:'c1',fleet:FL,member_id:'p',title:'Send Sam the pricing',summary:'Sam wants pricing for 40 seats. He is a big account.',contact:'sam@client.example',sources:[]}});
- // Requests wait as cards under Suggestions (tagged Fleet, Work) with Accept, their words shown as text; the Suggestions
+ // Requests wait as cards under To-dos (tagged Fleet, Work) with Accept, their words shown as text; the Suggestions
  // badge counts them and the Fleet tab has no badge.
  const intro=page.locator('#suggestions #fleet-q_'+'1'.repeat(16));await intro.waitFor();
  assert.equal(await page.evaluate(()=>window.pwned),undefined);
@@ -87,7 +87,7 @@ try{
  assert.deepEqual(calls.at(-1),{action:'fleet_split',args:{id:'out:'+'k'.repeat(64),items:{m:'Send pricing',p:'Book the demo'}}});
  // The Fleet tab keeps people, rules and asks; it only points to Suggestions for what waits.
  await navClick(page.locator('nav [data-tab="fleet"]'));await page.locator('.fleet-todo').waitFor();
- assert.match(await page.locator('.fleet-todo').innerText(),/One Fleet item waits for you under Suggestions/);
+ assert.match(await page.locator('.fleet-todo').innerText(),/One Fleet item waits for you under To-dos/);
  assert.equal(await page.locator('#fleet-view .fleet-card').count(),0);
  // After "who knows": ask that teammate for an intro, with a line why.
  const offer=page.locator('.fleet-intro-form');

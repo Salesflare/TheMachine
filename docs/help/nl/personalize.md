@@ -14,7 +14,7 @@ Het meeste gebeurt vanzelf. Je Machine leert van wat je doet, dus er is weinig i
 - Wat je wilt: uit de to-do's die je afrondt, wegklikt of snoozet, en waarom.
 - Feiten en gewoontes: uit wat je zegt in de chat van een to-do, zoals "Ik bel nooit op vrijdag".
 
-Ongeveer twee keer per dag maakt hij hieruit een paar kleine aanpassingen. **Feedback**, **Wat ik geleerd heb** toont ze allemaal, met **Ongedaan maken**. Zie [Schrijven](writing.md#it-keeps-learning).
+Ongeveer twee keer per dag maakt hij hieruit een paar kleine aanpassingen. **Leren**, **Wijzigingen** toont ze allemaal, met **Ongedaan maken**. Zie [Schrijven](writing.md#it-keeps-learning).
 
 ## Leer het hem sneller
 

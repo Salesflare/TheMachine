@@ -23,7 +23,7 @@ It learns only from what you wrote yourself. A draft it wrote that you sent as i
 
 About twice a day, when there's enough new, it looks at drafts you changed, to-dos you dismissed or snoozed, and what you corrected in a to-do's chat. Then it makes a few small changes to how you write, your rules and facts. These short checks wait when your plan's limits run low.
 
-**Feedback**, **What I've learned**, **Recent changes** shows each change and why. **Undo** puts it back. Lines you wrote yourself stay as you wrote them.
+**Learning**, **Changes** shows each change and why. **Undo** puts it back. Lines you wrote yourself stay as you wrote them.
 
 ### When a line is wrong
 
@@ -31,6 +31,6 @@ Fix it where you see it:
 
 - In **Settings**, **Writing**, change the words in that channel's box and **Save**. Later rereads of your messages leave your wording alone.
 - Or say so in any to-do's chat: "I only lowercase the start of sentences, not names". That chat then shows a **Saved to How you write** line for that channel, with **Edit** to open it.
-- **Feedback**, **What I've learned** lists every line too, each with **Edit**.
+- **Learning**, **What I've learned** lists every line too, each with **Edit**.
 
 Be exact, since drafts follow the lines as written. "Lowercase" alone also lowercases names; "sentences start lowercase, names keep their capitals" doesn't. One channel's habits stay on that channel, so a chat habit never reaches your emails.

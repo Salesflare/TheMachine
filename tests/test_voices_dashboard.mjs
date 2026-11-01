@@ -73,7 +73,7 @@ try{
   if(process.env.REVIEW_SHOTS)await page.screenshot({path:process.env.REVIEW_SHOTS+'/'+scheme+'-writing.png',fullPage:true});
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   // What I've learned: grouped (how you write, facts, how to do things), newest first, merges shown with Undo.
-  await page.goto('http://127.0.0.1:'+server.address().port+'/#feedback');
+  await page.goto('http://127.0.0.1:'+server.address().port+'/#learning=learned');
   await navClick(page.locator('[data-tab="feedback"]'));
   const learned=page.locator('#facts');await learned.locator('.learn-head').first().waitFor();
   assert.deepEqual(await learned.locator('.learn-head h3').allTextContents(),['How you write 2','Facts 2','How to do things 1','Moved into skills 1']);

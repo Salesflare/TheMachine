@@ -82,7 +82,7 @@ try{
   await page.locator('#side-find').fill('');
   await page.locator('#side-cards [data-scope="personal"]').click();assert.equal(await page.locator('#side-cards [data-scope="personal"]').getAttribute('aria-pressed'),'true');
   await page.locator('#side-cards [data-scope="all"]').click();
-  // A card in the list opens its chat in the main area, from any tab; Suggestions goes back to the overview
+  // A card in the list opens its chat in the main area, from any tab; To-dos goes back to the overview
   await tab(page,'events');await page.locator('#side-cards a').nth(1).click();await page.locator('#chat-log').waitFor();
   assert.equal(await page.locator('#side-cards a[aria-current="page"]').count(),1);assert.ok(!(await page.locator('.chat-side').isVisible()),'no second list beside the chat');
   assert.ok(!(await page.locator('#page-head').isVisible()));
@@ -100,7 +100,7 @@ try{
  // Storage refused for the sidebar's keys: the page still works and the sidebar still folds (just not remembered)
  // In a Fleet the Fleet tab is a sidebar row like the others, and its page scrolls
  fleetOn=true;{const {context,page}=await open(1440,900);await page.locator('nav [data-tab="fleet"]').waitFor();
-  assert.deepEqual(await page.evaluate(()=>[...document.querySelectorAll('.app-side nav [data-tab]')].filter(b=>!b.hidden&&b.offsetHeight).map(b=>b.dataset.tab)),['inbox','calendar','events','people','fleet','feedback','health']);
+  assert.deepEqual(await page.evaluate(()=>[...document.querySelectorAll('.app-side nav [data-tab]')].filter(b=>!b.hidden&&b.offsetHeight).map(b=>b.dataset.tab)),['inbox','calendar','people','fleet','feedback','health']);  // Messages: from search, not a row
   await tab(page,'fleet');await scrolls(page,'fleet tab at 1440');assert.equal(await page.locator('#page-head').innerText(),'Fleet');await context.close()}
  fleetOn=false;
  // Wide: the column sits in the middle of the space next to the sidebar, with cards and all clear; the sidebar keeps its padding
@@ -115,13 +115,13 @@ try{
  {const {context,page}=await open(1440,900);await page.keyboard.press('Control+b');await page.waitForFunction(()=>document.documentElement.dataset.side==='collapsed');
   assert.equal(await page.locator('#side-toggle').getAttribute('aria-label'),'Expand sidebar');
   const names=await page.evaluate(()=>[...document.querySelectorAll('.app-side nav [data-tab]')].filter(b=>b.offsetParent).map(b=>b.getAttribute('aria-label')));
-  assert.equal(names[0],'Suggestions · 4 ready · 8 to decide');assert.deepEqual(names.slice(1),['Calendar','Events','Graph','Feedback','Connections']);
+  assert.equal(names[0],'To-dos · 4 ready · 8 to decide');assert.deepEqual(names.slice(1),['Calendar','Graph','Learning','Connections']);
   for(const q of ['#open-settings','#side-toggle','#live'])assert.ok(await page.locator(q).getAttribute('aria-label'),q+' has a name');
   // The delay is timed in the page, from the pointer arriving to the tip showing: a busy computer can only make it longer
   await page.evaluate(()=>{window.tipTimes={};document.querySelector('#app-side').addEventListener('pointerover',()=>{tipTimes.over??=performance.now()},true);
    new MutationObserver(()=>{if(!document.querySelector('#side-tip').hidden)tipTimes.shown??=performance.now()}).observe(document.querySelector('#side-tip'),{attributes:true,attributeFilter:['hidden']})});
   const row=page.locator('.app-side nav [data-tab="inbox"]');await row.hover();
-  await page.locator('#side-tip').waitFor({state:'visible'});{const t=await page.evaluate(()=>tipTimes);assert.ok(t.shown-t.over>=250,'not at once on hover: '+JSON.stringify(t))}assert.equal(await page.locator('#side-tip').textContent(),'Suggestions · 4 ready · 8 to decide · G then S');  // with its key
+  await page.locator('#side-tip').waitFor({state:'visible'});{const t=await page.evaluate(()=>tipTimes);assert.ok(t.shown-t.over>=250,'not at once on hover: '+JSON.stringify(t))}assert.equal(await page.locator('#side-tip').textContent(),'To-dos · 4 ready · 8 to decide · G then T');  // with its key
   const pos=await page.evaluate(()=>{const t=document.querySelector('#side-tip').getBoundingClientRect(),s=document.querySelector('#app-side').getBoundingClientRect(),r=document.querySelector('.app-side nav [data-tab="inbox"]').getBoundingClientRect();return {gap:t.left-s.right,mid:Math.abs((t.top+t.bottom)/2-(r.top+r.bottom)/2)}});
   assert.ok(pos.gap>=4&&pos.gap<=16&&pos.mid<2,JSON.stringify(pos));
   await page.screenshot({path:process.env.SHOT_DIR?process.env.SHOT_DIR+'/tip.png':'/dev/null'}).catch(()=>{});
@@ -200,7 +200,7 @@ try{
   await page.locator('#drawer-open').click();await settle(page);
   const m=await page.evaluate(()=>{const s=document.querySelector('#app-side'),c=document.querySelector('#side-cards');return {side:s.scrollHeight-s.clientHeight,cards:c.scrollHeight-c.clientHeight,cardsOverflow:getComputedStyle(c).overflowY}});
   assert.ok(m.side>0,'the drawer is taller than the screen here');assert.ok(m.cards<=1&&m.cardsOverflow==='visible','no scroll area inside the drawer: '+JSON.stringify(m));
-  const nav=await page.locator('.app-side nav [data-tab="events"]').boundingBox();const cdp=await context.newCDPSession(page);
+  const nav=await page.locator('.app-side nav [data-tab="calendar"]').boundingBox();const cdp=await context.newCDPSession(page);
   for(let i=0;i<8&&await page.locator('#app-side').evaluate(s=>s.scrollTop+s.clientHeight<s.scrollHeight-1);i++)
   {const x=Math.round(nav.x+nav.width/2),pt=y=>[{x,y}];await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:pt(620)});
    for(let y=600;y>=120;y-=40)await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:pt(y)});
@@ -266,8 +266,8 @@ try{
   await touch(page,[w*.6,h/2],[20,h/2]);await settle(page);assert.ok(!(await isOpen(page)),'a swipe to the left closes');
   await touch(page,[w/2,h/2],[w-10,h/2]);await settle(page);assert.ok(!(await isOpen(page)),'a swipe away from the edge does not open');
   // A tab picked in it closes it and shows the tab
-  await page.locator('#drawer-open').click();await settle(page);await page.locator('.app-side nav [data-tab="events"]').click();await settle(page);
-  assert.ok(!(await isOpen(page)));assert.ok(await page.locator('#events').isVisible());assert.equal(await page.locator('#page-head').innerText(),'Events');assert.equal(await page.evaluate(()=>history.state?.drawer||null),null);
+  await page.locator('#drawer-open').click();await settle(page);await page.locator('.app-side nav [data-tab="feedback"]').click();await settle(page);
+  assert.ok(!(await isOpen(page)));assert.ok(await page.locator('#feedback').isVisible());assert.equal(await page.locator('#page-head').innerText(),'Learning');assert.equal(await page.evaluate(()=>history.state?.drawer||null),null);
   // A card opens its chat full screen; back from the chat comes back to the page, not to the drawer
   await page.locator('#drawer-open').click();await settle(page);await page.locator('#side-cards a').first().click();await page.locator('#chat-log').waitFor();await settle(page);
   assert.ok(!(await isOpen(page)));assert.ok(!(await page.locator('#topbar').isVisible()),'the top bar steps aside in a chat');assert.ok(await page.locator('.chat-head').isVisible());
@@ -281,7 +281,7 @@ try{
   await page.locator('#drawer-open').click();await settle(page);await page.locator('.side-sub a[data-graph-sub="projects"]').click();await page.locator('[data-graph-panel="projects"]').waitFor();await settle(page);
   assert.ok(!(await isOpen(page)));assert.equal(new URL(page.url()).hash,'#graph=projects');
   await page.locator('#drawer-open').click();await settle(page);assert.equal(await page.locator('.side-sub a[aria-current="page"]').getAttribute('data-graph-sub'),'projects');await page.keyboard.press('Escape');await settle(page);
-  await page.goBack();await settle(page);assert.ok(await page.locator('#inbox').isVisible(),'back from a Graph row goes back to Suggestions');
+  await page.goBack();await settle(page);assert.ok(await page.locator('#inbox').isVisible(),'back from a Graph row goes back to To-dos');
   // Resized to a computer with the drawer open: the sidebar is a column again and nothing stays inert
   if(w===900){await page.locator('#drawer-open').click();await settle(page);await page.setViewportSize({width:1280,height:900});
    // the width change reaches the page a frame or more later

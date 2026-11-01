@@ -23,7 +23,7 @@ Il n’apprend que de ce que vous avez écrit vous-même. Un brouillon qu’il a
 
 Environ deux fois par jour, quand il y a assez de nouveau, il regarde les brouillons que vous avez changés, les tâches que vous avez écartées ou mises en attente, et ce que vous avez corrigé dans le chat d’une tâche. Puis il apporte quelques petits changements à votre façon d’écrire, à vos règles et à vos faits. Ces courtes vérifications attendent quand les limites de votre forfait sont presque atteintes.
 
-**Commentaires**, **Ce que j’ai appris**, **Modifications récentes** montre chaque changement et sa raison. **Annuler** revient en arrière. Les lignes que vous avez écrites vous-même restent telles que vous les avez écrites.
+**Apprentissage**, **Modifications** montre chaque changement et sa raison. **Annuler** revient en arrière. Les lignes que vous avez écrites vous-même restent telles que vous les avez écrites.
 
 ### Quand une ligne est fausse
 
@@ -31,6 +31,6 @@ Corrigez-la là où vous la voyez :
 
 - Dans **Paramètres**, **Rédaction**, changez les mots dans la case de ce canal et **Enregistrer**. Les relectures suivantes de vos messages ne touchent plus à votre formulation.
 - Ou dites-le dans le chat de n’importe quelle tâche : « Je mets en minuscule seulement le début des phrases, pas les noms ». Ce chat affiche alors une ligne **Enregistré dans Votre façon d’écrire** pour ce canal, avec **Modifier** pour l’ouvrir.
-- **Commentaires**, **Ce que j’ai appris** liste aussi chaque ligne, chacune avec **Modifier**.
+- **Apprentissage**, **Ce que j’ai appris** liste aussi chaque ligne, chacune avec **Modifier**.
 
 Soyez précis, car les brouillons suivent les lignes à la lettre. « Minuscules » seul met aussi les noms en minuscules ; « les phrases commencent en minuscule, les noms gardent leur majuscule » non. Les habitudes d’un canal restent sur ce canal, donc une habitude de chat n’atteint jamais vos e-mails.

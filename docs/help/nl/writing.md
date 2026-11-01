@@ -23,7 +23,7 @@ Hij leert alleen van wat je zelf geschreven hebt. Een concept dat hij schreef en
 
 Ongeveer twee keer per dag, als er genoeg nieuws is, kijkt hij naar concepten die je aanpaste, to-do's die je negeerde of snoozede, en wat je corrigeerde in de chat van een to-do. Dan maakt hij een paar kleine wijzigingen aan hoe je schrijft, je regels en feiten. Deze korte controles wachten als de limieten van je abonnement bijna op zijn.
 
-**Feedback**, **Wat ik geleerd heb**, **Recente wijzigingen** toont elke wijziging en waarom. **Ongedaan maken** zet hem terug. Regels die je zelf schreef, blijven zoals je ze schreef.
+**Leren**, **Wijzigingen** toont elke wijziging en waarom. **Ongedaan maken** zet hem terug. Regels die je zelf schreef, blijven zoals je ze schreef.
 
 ### Als een regel niet klopt
 
@@ -31,6 +31,6 @@ Pas hem aan waar je hem ziet:
 
 - Wijzig in **Instellingen**, **Schrijven** de woorden in het vak van dat kanaal en druk op **Opslaan**. Als hij je berichten later opnieuw leest, blijft je formulering zoals ze is.
 - Of zeg het in de chat van een to-do: "Ik schrijf alleen het begin van zinnen met een kleine letter, geen namen". Die chat toont dan een regel **Bewaard bij Hoe je schrijft** voor dat kanaal, met **Bewerken** om hem te openen.
-- **Feedback**, **Wat ik geleerd heb** toont ook elke regel, elk met **Bewerken**.
+- **Leren**, **Wat ik geleerd heb** toont ook elke regel, elk met **Bewerken**.
 
 Wees precies, want concepten volgen de regels zoals ze er staan. Alleen "kleine letters" zet ook namen in kleine letters; "zinnen beginnen met een kleine letter, namen houden hun hoofdletter" niet. De gewoontes van één kanaal blijven op dat kanaal, dus een chatgewoonte komt nooit in je e-mails terecht.

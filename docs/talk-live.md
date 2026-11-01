@@ -168,7 +168,7 @@ In the main conversation Talk reaches what the dashboard shows. Read tools answe
 already read (`App.talk_machine_tool`, `talk_live.MACHINE_TOOLS`), short and with ids:
 
 - `search` (`words`, `kind`: anything, person, organization, project, message, meeting, promise): the Graph's search
-  (a name, address, handle or phone number however it is written), Events (meetings by `calendar.event`, messages by
+  (a name, address, handle or phone number however it is written), message search (meetings by `calendar.event`, messages by
   meaning) or open promises (with someone, when the words name them).
 - `open_record` (`id`): a person, organization or project (who, the moment of the last contact, open to-dos and promises
   both ways, an organization's people's too, recent lines), a meeting (what

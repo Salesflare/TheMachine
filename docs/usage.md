@@ -107,7 +107,7 @@ It is served on `127.0.0.1:<port>` and reached through Tailscale Serve or Caddy;
 
 ### Reading the original message
 
-Any signal, on a to-do or in the Events and Graph tabs, opens in a built-in reader: the full email with its images and attachments (fetched read-only), or the chat, Slack or calendar text. You don't need the original app.
+Any signal, on a to-do or in message search and the Graph, opens in a built-in reader: the full email with its images and attachments (fetched read-only), or the chat, Slack or calendar text. You don't need the original app.
 
 The to-dos on screen read their email ahead, so it opens at once. The service keeps the last 40 emails it read for 10 minutes, in memory.
 
@@ -300,7 +300,7 @@ The service reads the session through the OpenClaw Gateway's `chat.history` with
 
 Add a to-do yourself:
 
-- **New to-do** under Find a to-do on a computer, or press **N**, or open the palette and type "new";
+- **New to-do** under Search on a computer, or press **N**, or open the palette and type "new";
 - **+** in the top bar (it also offers New person, New organization and New project);
 - **New to-do** in the task list on a phone.
 
@@ -328,7 +328,7 @@ Your title shows everywhere the to-do does: the dashboard, Telegram (which edits
 
 Everything on the dashboard can be reached from the keyboard. Keys never fire while you type.
 
-**The palette:** **⌘K** on a Mac or **Ctrl K** on Windows and Linux (or **/**). Type to find an action, a page, a to-do, a person, an organization or a project, then ↑ ↓ and Enter. Recent commands come first. With a board on Projects, the palette also switches Projects between Board and List view. On a phone it is the search icon in the top bar.
+**The palette:** **⌘K** on a Mac or **Ctrl K** on Windows and Linux (or **/**). Type to find an action, a page, a to-do, a person, an organization, a project or a message, then ↑ ↓ and Enter. Its **Messages** group searches everything the Machine read, the same search as the results page, and **See all results** opens that page. Recent commands come first. With a board on Projects, the palette also switches Projects between Board and List view. On a phone it is the search icon in the top bar.
 
 **?** shows every shortcut.
 
@@ -336,12 +336,13 @@ Everything on the dashboard can be reached from the keyboard. Keys never fire wh
 
 | Key | Page | Key | Page |
 |---|---|---|---|
-| **S** | Suggestions | **J** | Projects |
+| **T** | To-dos | **J** | Projects |
 | **C** | Calendar | **W** | Who's who |
-| **E** | Events | **F** | Fleet |
-| **P** | People | **B** | Feedback |
-| **O** | Organizations | **N** | Connections |
-| **,** | Settings | | |
+| **P** | People | **F** | Fleet |
+| **O** | Organizations | **L** | Learning |
+| **N** | Connections | **,** | Settings |
+
+**E** opens the message search results, and the old **S** and **B** still work.
 
 **In a list:** **J** and **K** move (in a chat: the next or previous to-do) and Enter opens.
 

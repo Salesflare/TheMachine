@@ -87,7 +87,7 @@ Alleen de Machines van je teamgenoten. Alles is end-to-end versleuteld, verzegel
 
 ## Lid worden en nieuwe apparaten
 
-Een beheerder laat elke persoon één keer toe tot de Fleet. Daarna is er geen OK meer nodig om met die persoon te delen. De vraag staat onder **Suggesties** voor elke beheerder, en het eerste antwoord telt voor het hele team. Leden krijgen hem nooit.
+Een beheerder laat elke persoon één keer toe tot de Fleet. Daarna is er geen OK meer nodig om met die persoon te delen. De vraag staat onder **To-do's** voor elke beheerder, en het eerste antwoord telt voor het hele team. Leden krijgen hem nooit.
 
 Een nieuwe Machine van iemand die al lid is, krijgt de Graph van het team na 24 uur. Beheerders zien hem in de tussentijd en kunnen op **Niet van hen** tikken om hem buiten te houden.
 

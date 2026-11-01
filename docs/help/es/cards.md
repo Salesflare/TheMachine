@@ -10,7 +10,7 @@ Tu Machine lee todo lo nuevo y solo crea una tarea cuando algo te necesita. Una 
 
 ## Dónde están las tareas
 
-La pestaña **Sugerencias** las agrupa:
+La página **Tareas** las agrupa:
 
 - **Lista para ti**: preparada y esperando tu aprobación.
 - **Necesita tu decisión**: algo que solo tú puedes decidir.

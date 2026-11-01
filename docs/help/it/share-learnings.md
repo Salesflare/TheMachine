@@ -22,7 +22,7 @@ Ogni apprendimento ha da 1 a 3 casi d'uso: una situazione, cosa fai tu e cosa do
 
 ## Niente senza il tuo OK
 
-In Feedback, una breve nota chiede "Condividere 3 apprendimenti con il team di The Machine?" Tocca **Rivedi** per vedere esattamente cosa verrebbe inviato. Modifica o togli qualsiasi apprendimento o caso d'uso (ogni apprendimento tiene almeno un caso d'uso), poi **Invia**. Oppure scegli **Non ora** o **Non chiedere più**.
+In **Apprendimento**, **Team**, una breve nota chiede "Condividere 3 apprendimenti con il team di The Machine?" Tocca **Rivedi** per vedere esattamente cosa verrebbe inviato. Modifica o togli qualsiasi apprendimento o caso d'uso (ogni apprendimento tiene almeno un caso d'uso), poi **Invia**. Oppure scegli **Non ora** o **Non chiedere più**.
 
 È sigillato per il team e arriva da un nome inventato, a meno che tu non spunti **Aggiungi la mia email così il team può rispondere**.
 
@@ -48,4 +48,8 @@ Un voto utile richiede un caso concreto della tua ultima settimana, raccontato i
 
 Il team vede gli apprendimenti in ordine di voti e sceglie cosa entra in The Machine per tutti. Niente cambia da solo.
 
-Per smettere di votare, disattiva **Vota gli apprendimenti di altre Machine** in Impostazioni, Sicurezza.
+**Vota gli apprendimenti di altre Machine** in Impostazioni, Sicurezza ha tre scelte:
+
+- **Attivo**, l’impostazione predefinita: vota da sola.
+- **Chiedi prima**: ogni voto ti aspetta in un unico riquadro in **Apprendimento**, **Team**, con l’apprendimento e il voto come partirebbe. Invialo o saltalo, uno alla volta o tutti insieme. Nessuna attività e nessuna notifica per questo. Un voto che lasci lì non viene inviato dopo 14 giorni.
+- **Disattivato**: nessun voto, e niente di ciò che aspetta parte.

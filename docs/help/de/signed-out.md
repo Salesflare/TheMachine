@@ -10,7 +10,7 @@ Websites wie LinkedIn und X werden im eigenen Browser deiner Machine gelesen. Ma
 
 ## Wieder anmelden
 
-Die Quelle unter **Verbindungen** und der obere Teil deiner Vorschläge zeigen, dass sie abgemeldet ist. Tippe auf **Erneut anmelden** und melde dich in einem kleinen Fenster im Dashboard an.
+Die Quelle unter **Verbindungen** und der obere Teil deiner Aufgaben zeigen, dass sie abgemeldet ist. Tippe auf **Erneut anmelden** und melde dich in einem kleinen Fenster im Dashboard an.
 
 Setz beim Anmelden ein Häkchen bei **Für nächstes Mal speichern**. Wenn die Website deine Machine das nächste Mal abmeldet, meldet sie sich mit einem Tippen wieder an. Das Passwort bleibt verschlüsselt auf deiner Machine. Die KI sieht es nie.
 

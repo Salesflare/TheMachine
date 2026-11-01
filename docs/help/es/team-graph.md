@@ -87,7 +87,7 @@ Solo las Machines de tus compañeros. Todo va cifrado de extremo a extremo, sell
 
 ## Incorporaciones y dispositivos nuevos
 
-Un administrador deja entrar a cada persona en el Fleet una vez. Después, compartir con ella no necesita más OK. La pregunta aparece en **Sugerencias** para cada administrador, y la primera respuesta vale para todo el equipo. Los miembros nunca la reciben.
+Un administrador deja entrar a cada persona en el Fleet una vez. Después, compartir con ella no necesita más OK. La pregunta aparece en **Tareas** para cada administrador, y la primera respuesta vale para todo el equipo. Los miembros nunca la reciben.
 
 Una Machine nueva de alguien que ya está dentro recibe el Graph del equipo a las 24 horas. Mientras tanto, los administradores la ven y pueden tocar **No es suya** para dejarla fuera.
 

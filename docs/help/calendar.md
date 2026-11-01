@@ -51,7 +51,7 @@ The Machine can add them too. Ask on a to-do, like "add this transcript to today
 
 The Machine reads both for the meeting's follow-ups. They are Work or Personal like the meeting, and go to your team only when the meeting does.
 
-A meeting opens with these details wherever you find it: on a timeline, in Events or as a to-do's source. **Original invite** at the bottom shows the invite as it came in.
+A meeting opens with these details wherever you find it: on a timeline, in a message search or as a to-do's source. **Original invite** at the bottom shows the invite as it came in.
 
 ## Add or change an event
 

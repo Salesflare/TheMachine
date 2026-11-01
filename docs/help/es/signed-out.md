@@ -10,7 +10,7 @@ Sitios como LinkedIn y X se leen en el navegador propio de tu Machine. A veces u
 
 ## Vuelve a iniciar sesión
 
-La fuente en **Conexiones**, y la parte superior de tus Sugerencias, indican que la sesión está cerrada. Pulsa **Volver a iniciar sesión** e inicia sesión en una pequeña ventana del panel.
+La fuente en **Conexiones**, y la parte superior de tus Tareas, indican que la sesión está cerrada. Pulsa **Volver a iniciar sesión** e inicia sesión en una pequeña ventana del panel.
 
 Marca **Guardar para la próxima vez** al iniciar sesión. La próxima vez que el sitio cierre la sesión de tu Machine, vuelve a entrar con un toque. La contraseña se guarda cifrada en tu Machine; la IA nunca la ve.
 

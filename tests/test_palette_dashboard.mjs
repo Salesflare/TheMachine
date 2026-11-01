@@ -89,7 +89,7 @@ try{
   await page.locator('#pal-list .pal-group',{hasText:'Organizations'}).waitFor();
   const lateIn=page.waitForResponse(r=>r.url().includes('/api/graph?q=ac')&&!r.url().includes('acme'));late();await (await lateIn).finished();
   await page.evaluate(()=>new Promise(r=>setTimeout(r)));  // the page has had the late answer
-  assert.deepEqual(await groups(page),['Organizations','Projects'],'no People from the stale answer');
+  assert.deepEqual(await groups(page),['Organizations','Projects','Messages'],'no People from the stale answer');  // Messages: the message search, last
   assert.ok(graphQueries.includes('acme'));
   await page.locator('#pal-q').fill('contract');await page.locator('#pal-list .pal-group',{hasText:'To-dos'}).waitFor();
   assert.ok((await labels(page)).includes('Send Sam the signed contract'));

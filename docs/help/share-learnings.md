@@ -22,7 +22,7 @@ Each learning comes with 1 to 3 use cases: a situation, what you do, and what sh
 
 ## Nothing without your OK
 
-On Feedback, a short note asks "Share 3 learnings with The Machine team?" Tap **Review** to see exactly what would be sent. Edit or remove any learning or use case (each learning keeps at least one use case), then **Send**. Or pick **Not now** or **Never ask**.
+Under **Learning**, **Team**, a short note asks "Share 3 learnings with The Machine team?" Tap **Review** to see exactly what would be sent. Edit or remove any learning or use case (each learning keeps at least one use case), then **Send**. Or pick **Not now** or **Never ask**.
 
 It's sealed for the team and comes from a made-up name, unless you tick **Add my email so the team can reply**.
 
@@ -53,6 +53,6 @@ The team sees the learnings ranked by votes and picks what goes into The Machine
 **Vote on learnings from other Machines** in Settings, Security has three choices:
 
 - **On**, the default: it votes by itself.
-- **Ask first**: each vote waits for you in one box on the Feedback page, with the learning and the vote as it would go. Send it or Skip it, one at a time or all at once. No to-do and no notification for it. A vote you leave goes unsent after 14 days.
+- **Ask first**: each vote waits for you in one box under **Learning**, **Team**, with the learning and the vote as it would go. Send it or Skip it, one at a time or all at once. No to-do and no notification for it. A vote you leave goes unsent after 14 days.
 - **Off**: no voting, and nothing waiting goes.
 

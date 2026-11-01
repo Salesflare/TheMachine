@@ -101,7 +101,7 @@ try{
  assert.deepEqual(await head(),before,'the head stays until the person is there');
  await page.locator('.graph-crumbs').waitFor();assert.equal(await page.locator('#page-head .page-title').textContent(),'People');nodeWait=0;
  // Feedback: each fact's text, Edit and Remove share one middle line, one line or several
- await page.evaluate(()=>document.querySelector('nav [data-tab="feedback"]').click());await page.locator('#facts .fact-row').first().waitFor();
+ await page.evaluate(()=>showTab('feedback','learned'));await page.locator('#facts .fact-row').first().waitFor();
  const rows=await page.locator('#facts .fact-row').evaluateAll(rs=>rs.map(r=>{const t=r.querySelector('.grow').getBoundingClientRect(),b=[...r.querySelectorAll('.learn-acts button')].map(x=>x.getBoundingClientRect());const line=parseFloat(getComputedStyle(r.querySelector('.grow')).lineHeight);
   return {lines:Math.round(t.height/line),text:t.top+t.height/2,buttons:b.map(x=>x.top+x.height/2)}}));
  assert.ok(rows.some(r=>r.lines>1)&&rows.some(r=>r.lines===1),'one short fact and one that wraps '+JSON.stringify(rows));

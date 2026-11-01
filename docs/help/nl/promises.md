@@ -10,7 +10,7 @@ Je Machine ziet beloftes in je berichten, in beide richtingen, zonder dat je iet
 
 ## Waar je ze vindt
 
-Onder **Beloftes** op het tabblad Suggesties:
+Onder **Beloftes** op de pagina To-do's:
 
 - Wat je zei dat je zou doen, en voor wie: **Jouw beloftes**.
 - Wat anderen zeiden dat ze zouden doen: **Aan jou beloofd**.

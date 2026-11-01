@@ -10,7 +10,7 @@ Sua Machine lê tudo o que chega e cria uma tarefa só quando algo precisa de vo
 
 ## Onde ficam as tarefas
 
-A aba **Sugestões** agrupa as tarefas:
+A página **Tarefas** agrupa as tarefas:
 
 - **Pronta para você**: preparada e aguardando sua aprovação.
 - **Precisa da sua decisão**: algo que só você pode decidir.

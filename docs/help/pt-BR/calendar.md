@@ -51,7 +51,7 @@ A The Machine também pode adicioná-las. Peça numa tarefa, como "adicione esta
 
 A The Machine lê as duas para os próximos passos da reunião. Elas são Trabalho ou Pessoal como a reunião, e só vão para sua equipe quando a reunião vai.
 
-Uma reunião abre com estes detalhes onde quer que você a encontre: em uma linha do tempo, em Eventos ou como fonte de uma tarefa. **Convite original** embaixo mostra o convite como ele chegou.
+Uma reunião abre com estes detalhes onde quer que você a encontre: em uma linha do tempo, em uma pesquisa de mensagens ou como fonte de uma tarefa. **Convite original** embaixo mostra o convite como ele chegou.
 
 ## Adicionar ou mudar um evento
 

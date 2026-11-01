@@ -36,7 +36,7 @@ try{
   ended=[{id:9,fact_kind:'event',valid_until:`${year}-10-20`,text:'Is off on a team trip this week.',removed_at:t(21)}];
   const context=await browser.newContext({viewport:{width,height}}),page=await context.newPage();
   page.on('pageerror',e=>errors.push(e.message));
-  await page.goto('http://127.0.0.1:'+server.address().port+'/#feedback');
+  await page.goto('http://127.0.0.1:'+server.address().port+'/#learning=learned');
   await navClick(page.locator('[data-tab="feedback"]').first());
   const learned=page.locator('#facts');await learned.locator('.learn-group').first().waitFor();
   assert.deepEqual(await learned.locator('.learn-group').evaluateAll(g=>g.map(x=>x.dataset.group)),['facts','rules','ended']);

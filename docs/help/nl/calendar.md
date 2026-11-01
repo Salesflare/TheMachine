@@ -51,7 +51,7 @@ The Machine kan ze ook toevoegen. Vraag het op een to-do, zoals "zet dit transcr
 
 The Machine leest ze allebei voor de opvolging van de vergadering. Ze zijn Werk of Persoonlijk zoals de vergadering, en gaan alleen naar je team als de vergadering dat doet.
 
-Een afspraak opent met deze details, waar je hem ook vindt: op een tijdlijn, in Gebeurtenissen of als bron van een to-do. **Originele uitnodiging** onderaan toont de uitnodiging zoals ze binnenkwam.
+Een afspraak opent met deze details, waar je hem ook vindt: op een tijdlijn, in een zoekopdracht in berichten of als bron van een to-do. **Originele uitnodiging** onderaan toont de uitnodiging zoals ze binnenkwam.
 
 ## Een afspraak toevoegen of wijzigen
 

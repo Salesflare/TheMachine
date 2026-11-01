@@ -8,7 +8,7 @@ order: 5
 ---
 ## A paleta
 
-Aperte `⌘K` no Mac ou `Ctrl K` no Windows e no Linux, ou `/`, para abrir **Pesquisa e comandos**. Digite parte de um nome: uma ação, uma página, uma tarefa, uma pessoa, uma organização ou um projeto. Use as setas e Enter, ou Esc para fechar. Os comandos recentes aparecem primeiro.
+Aperte `⌘K` no Mac ou `Ctrl K` no Windows e no Linux, ou `/`, para abrir **Pesquisa e comandos**. Digite parte de um nome: uma ação, uma página, uma tarefa, uma pessoa, uma organização, um projeto ou uma mensagem. Em **Mensagens** aparecem os melhores resultados, e **Ver todos os resultados** abre a lista completa. Use as setas e Enter, ou Esc para fechar. Os comandos recentes aparecem primeiro.
 
 No celular, toque no ícone de busca na barra superior.
 
@@ -16,7 +16,7 @@ No celular, toque no ícone de busca na barra superior.
 
 Aperte `?` para ver **Atalhos de teclado**, a lista completa para o seu computador.
 
-- Ir para uma página: `G` e depois `S` Sugestões, `C` Calendário, `E` Eventos, `P` Pessoas, `O` Organizações, `J` Projetos, `F` Fleet, `B` Feedback, `N` Conexões, `,` Configurações.
+- Ir para uma página: `G` e depois `T` Tarefas, `C` Calendário, `P` Pessoas, `O` Organizações, `J` Projetos, `F` Fleet, `L` Aprendizado, `N` Conexões, `,` Configurações. `G` e depois `E` abre os resultados da pesquisa de mensagens. Os antigos `G` e depois `S` e `G` e depois `B` continuam funcionando.
 - `N` adiciona uma nova tarefa. `T` inicia Falar, ou encerra enquanto está ao vivo. No Calendário, `T` vai para hoje. `J` e `K` (ou `↓` e `↑`) andam por uma lista, Enter abre.
 - Em uma tarefa: `E` renomeia, `S` adia, `D` marca como feita, `R` escreve no chat dela.
 
@@ -24,7 +24,7 @@ As teclas não funcionam enquanto você digita em um campo.
 
 ## Navegar
 
-- Cada página põe o foco no primeiro item quando você chega pelo teclado. Em Sugestões é a primeira tarefa, ou a primeira lista quando todas estão recolhidas.
+- Cada página põe o foco no primeiro item quando você chega pelo teclado. Em Tarefas é a primeira tarefa, ou a primeira lista quando todas estão recolhidas.
 - `J` ou `↓` vai para a próxima tarefa, `K` ou `↑` para a anterior. O título de uma lista recolhida também é uma parada: Enter ou `→` abre a lista, `←` recolhe de novo.
 - Enter em uma tarefa abre o chat dela, pronto para digitar. Esc sai da caixa, e o próximo Esc fecha o chat e volta para a tarefa. Com a caixa vazia, um Esc fecha.
 - Esc também fecha uma janela, a paleta e a lista de atalhos, e devolve o foco para onde estava.

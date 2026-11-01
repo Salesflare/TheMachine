@@ -59,11 +59,13 @@ try{
   assert.equal(await card.locator('.connection-status').innerText(),'Stopped');
   page.once('dialog',d=>d.dismiss());await card.locator('[data-sf-sync="restart"]').click();  // Restart asks first
   await page.waitForTimeout(200);assert.equal(calls.at(-1).args.do,'stop');
-  // Feedback: the decisions line up with the sections above
+  // Learning: How it's going and Decisions line up with the tabs above them
   await navClick(page.locator('nav [data-tab="feedback"]'));
-  await page.locator('#decisions article').first().waitFor();
-  const edge=await page.evaluate(()=>{const l=e=>Math.round(e.getBoundingClientRect().left);return {head:l(document.querySelector('#feedback .section-head h2')),card:l(document.querySelector('#decisions article')),quality:l(document.querySelector('#quality').firstElementChild)}});
-  assert.equal(edge.card,edge.head,`${width}: ${JSON.stringify(edge)}`);assert.equal(edge.quality,edge.head,`${width}: ${JSON.stringify(edge)}`);
+  await page.locator('#learn-tab-decisions').click();await page.locator('#decisions article').first().waitFor();
+  const edge=await page.evaluate(()=>{const l=e=>Math.round(e.getBoundingClientRect().left);return {head:l(document.querySelector('#learn-tabs')),card:l(document.querySelector('#decisions article'))}});
+  await page.locator('#learn-tab-going').click();
+  const quality=await page.evaluate(()=>Math.round(document.querySelector('#quality').firstElementChild.getBoundingClientRect().left));
+  assert.equal(edge.card,edge.head,`${width}: ${JSON.stringify(edge)}`);assert.equal(quality,edge.head,`${width}: ${JSON.stringify({...edge,quality})}`);
   // Your connections: a partner's calendar is named for it, the owner's own keeps its address
   const html=await page.evaluate(()=>sharedHTML({id:'fl',name:'Acme'},{connections:[{id:'w',service:'calendar',email:'owner@acme.example',name:'',company:true,required:true,on:true},
    {id:'p',service:'calendar',email:'owner@acme.example',name:'Robin’s calendar',personal:true}]},{sorted:{},unsorted:0,sent:0,unsure:[],rules:[],records:[],by_hand:[],shared:[],threads:[],waiting:[]}));

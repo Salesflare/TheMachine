@@ -10,7 +10,7 @@ Je Machine leest alles wat nieuw is en maakt alleen een to-do als iets jou nodig
 
 ## Waar to-do's staan
 
-Het tabblad **Suggesties** groepeert ze:
+De pagina **To-do's** groepeert ze:
 
 - **Klaar voor jou**: voorbereid en wacht op je goedkeuring.
 - **Wacht op je beslissing**: iets wat alleen jij kunt beslissen.

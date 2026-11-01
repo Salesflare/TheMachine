@@ -10,7 +10,7 @@ Your Machine reads everything new and makes a to-do only when something needs yo
 
 ## Where to-dos sit
 
-The **Suggestions** tab groups them:
+The **To-dos** page groups them:
 
 - **Ready for you**: prepared and waiting for your approval.
 - **Needs your decision**: something only you can decide.

@@ -281,7 +281,7 @@ function renderShare(force){const a=state.team_learnings?.ask,box=$('#share-lear
  if(!shareOpen){box.innerHTML=head;return}
  const item=i=>{const d=shareDraft.items[i.n]||{};
   if(d.removed)return `<li class="share-item removed" data-n="${i.n}"><span>Removed. It won’t be sent.</span><button type="button" class="quiet" data-share-undo>Undo</button></li>`;
-  return `<li class="share-item" data-n="${i.n}"><label><span class="share-lbl">Learning</span><textarea data-share-field="text" rows="2" maxlength="280">${esc(d.text??i.text)}</textarea></label>`
+  return `<li class="share-item" data-n="${i.n}"><label><span class="share-lbl">Learning to share</span><textarea data-share-field="text" rows="2" maxlength="280">${esc(d.text??i.text)}</textarea></label>`
    +(i.example?`<label><span class="share-lbl">Example, made up</span><textarea data-share-field="example" rows="2" maxlength="200">${esc(d.example??i.example)}</textarea></label>`:'')
    +shareCaseHtml(i,d)
    +(i.log?`<label class="share-log"><input type="checkbox" data-share-log${d.log?' checked':''}> Add the error log</label><details class="share-log-text"><summary>See the log</summary><pre>${esc(i.log)}</pre></details>`:'')
@@ -312,15 +312,15 @@ $('#share-learnings').addEventListener('click',async e=>{const a=state.team_lear
  catch(err){errCaught(err);b.disabled=false;toast(err.message,true)}});
 function renderShareOffer(){const t=state.team_learnings;$('#settings-share').hidden=!t?.network;$('#share-offer').setAttribute('aria-checked',String(!!t?.offer));
  $('#share-auto-row').hidden=!t?.offer;$('#share-auto').setAttribute('aria-checked',String(!!t?.auto&&!t?.auto_careful));$('#share-auto').disabled=!!t?.auto_careful;
- {const n=$('#share-auto-note');n._html??=n.innerHTML;if(t?.auto_careful)n.textContent=window.t('A Careful Work Fleet keeps asking each time.');else if(n.innerHTML!==n._html)n.innerHTML=n._html}const vm=t?.vote_mode||(t?.vote===false?'off':'on');for(const r of document.querySelectorAll('#share-vote input'))r.checked=r.value===vm;$('#share-vote-note').textContent=vm==='ask'?'Each vote waits for you on the Feedback page.':'';$('#share-help').setAttribute('aria-checked',String(t?.help_topics!==false));$('#share-errors').setAttribute('aria-checked',String(t?.errors!==false))}
+ {const n=$('#share-auto-note');n._html??=n.innerHTML;if(t?.auto_careful)n.textContent=window.t('A Careful Work Fleet keeps asking each time.');else if(n.innerHTML!==n._html)n.innerHTML=n._html}const vm=t?.vote_mode||(t?.vote===false?'off':'on');for(const r of document.querySelectorAll('#share-vote input'))r.checked=r.value===vm;$('#share-vote-note').textContent=vm==='ask'?'Each vote waits for you under Learning, Team.':'';$('#share-help').setAttribute('aria-checked',String(t?.help_topics!==false));$('#share-errors').setAttribute('aria-checked',String(t?.errors!==false))}
 $('#share-help').onclick=async e=>{const b=e.currentTarget,on=b.getAttribute('aria-checked')!=='true';b.disabled=true;
  try{const r=await sharePost('set_help_topics',{on});state.team_learnings=r.team_learnings;renderShareOffer();secLocal('help_topics',on?'on':'off');notice(on?'Help topics go to the team, never your words.':'Help topics won’t go to the team.')}catch(err){errCaught(err);notice(err.message)}finally{b.disabled=false}};
-// Vote on learnings from other Machines: On (votes by itself), Ask first (each vote waits on the Feedback page) or Off.
+// Vote on learnings from other Machines: On (votes by itself), Ask first (each vote waits under Learning, Team) or Off.
 $('#share-vote').addEventListener('change',async e=>{const mode=e.target.value,all=document.querySelectorAll('#share-vote input');for(const r of all)r.disabled=true;
  try{const r=await sharePost('set_learnings_vote',{mode});state.team_learnings=r.team_learnings;renderShareOffer();renderVotes(true);
   notice(mode==='on'?'I’ll vote on learnings from other Machines.':mode==='ask'?'I’ll ask you before each vote goes.':'I won’t vote on learnings from other Machines.')}
  catch(err){errCaught(err);notice(err.message);renderShareOffer()}finally{for(const r of all)r.disabled=false}});
-// Feedback, under Ask first: the votes waiting for the owner, in one quiet box (never a to-do each, never a notification).
+// Learning, Team, under Ask first: the votes waiting for the owner, in one quiet box (never a to-do each, never a notification).
 // Review shows each tip and the vote as it would go; Send or Skip one, or all at once.
 let votesOpen=false,votesKey='';const VOTE_LABEL={useful:'Useful',not_useful:'Not useful',not_relevant:'Not relevant here'};
 function renderVotes(force){const tl=state.team_learnings,box=$('#share-votes');if(!box)return;const list=tl?.vote_mode==='ask'?tl.votes_waiting||[]:[];

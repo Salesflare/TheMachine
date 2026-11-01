@@ -7,7 +7,7 @@ import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Fleet tab, Family: when everyone is free, to-dos and plans in one compact pane; a member's to-do or plan waits as a
-// Family card under Suggestions with Accept and Decline; the Family's rules sit under Sharing. Never scrolls sideways.
+// Family card under To-dos with Accept and Decline; the Family's rules sit under Sharing. Never scrolls sideways.
 const dashboard=await dashboardPage();
 const FL='fl_'+'a'.repeat(16),FAM='fl_'+'f'.repeat(16),FL2='fl_'+'c'.repeat(16),FR='fr_'+'b'.repeat(16);
 const r=rule=>({rule,details:false});
@@ -43,7 +43,7 @@ try{
   const page=await (await browser.newContext({viewport:{width,height:900},colorScheme:scheme})).newPage();
   const errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('dialog',d=>d.accept());
   await page.goto('http://127.0.0.1:'+server.address().port);
-  // A member's to-do waits under Suggestions, as a Family card
+  // A member's to-do waits under To-dos, as a Family card
   const card=page.locator('#fleet-q_'+'1'.repeat(16));await card.waitFor();
   assert.match(await card.innerText(),/Family/);assert.doesNotMatch(await card.innerText(),/Work/);
   assert.match(await card.innerText(),/Robin asks you to do something/);

@@ -87,7 +87,7 @@ Nur die Machines deiner Teammitglieder. Alles ist Ende-zu-Ende verschlüsselt, v
 
 ## Beitritt und neue Geräte
 
-Ein Admin lässt jede Person einmal in die Fleet. Danach braucht das Teilen mit ihr kein weiteres OK. Die Frage steht für jeden Admin unter **Vorschläge**, und die erste Antwort gilt für das ganze Team. Mitglieder bekommen sie nie.
+Ein Admin lässt jede Person einmal in die Fleet. Danach braucht das Teilen mit ihr kein weiteres OK. Die Frage steht für jeden Admin unter **Aufgaben**, und die erste Antwort gilt für das ganze Team. Mitglieder bekommen sie nie.
 
 Eine neue Machine einer Person, die schon dabei ist, bekommt den Graph des Teams nach 24 Stunden. Admins sehen sie in der Zwischenzeit und können auf **Nicht ihres** tippen, um sie draußen zu halten.
 

@@ -27,8 +27,8 @@ Machine keeps it under People, Shared with you, until its owner adds it (made, o
 have, adding only what is new) or dismisses it. The relay must list `contact` in that group's asks.
 
 What a Fleet needs from you (a teammate's question or request, a meeting's follow-ups to split, a server to confirm)
-shows as a card under **Suggestions**, tagged Fleet and Work, with the same buttons as your other cards; the
-Suggestions badge counts them. A teammate's brief ask is the exception: it comes back every day, so it is never a
+shows as a card under **To-dos**, tagged Fleet and Work, with the same buttons as your other cards; the
+To-dos badge counts them. A teammate's brief ask is the exception: it comes back every day, so it is never a
 card. In a Work Fleet it is answered with what the Team Graph shares (see **Brief facts follow the Team Graph** below). The Fleet tab keeps the people, the rules, the team brief, your own questions with
 their answers, and the log.
 
@@ -65,7 +65,7 @@ default, Always accept, Never), and nothing happens on your side until you accep
 to answer, with no rule.
 
 4. **Warm intros.** When "who knows someone at X?" finds a teammate who does, **Ask <teammate> for an intro** (with a
-   line why, if you like) asks that one teammate. Their Suggestions, phone and Telegram show "An intro to someone at X"
+   line why, if you like) asks that one teammate. Their To-dos, phone and Telegram show "An intro to someone at X"
    with **Accept** and **Decline**. Accepting makes a card on their side with a double-opt-in email to the person they
    know best there, from their own work email: it asks that person first whether they want the introduction. The draft
    is built by plain code from their own graph, signed with their name, and goes out only with their own **Send**, like
@@ -143,7 +143,7 @@ to answer, with no rule.
 6. **Shared follow-ups.** After a meeting that several members of one Work Fleet attended (in the last two days), one
    Machine proposes who does which follow-up: the organizer's, else that of the member who joined the Fleet first, so
    there is only ever one proposal. It starts from that owner's own open cards and promises on the meeting; the owner
-   fills in each teammate's part ("send the pricing", "book the demo") on a card under Suggestions with the meeting's title
+   fills in each teammate's part ("send the pricing", "book the demo") on a card under To-dos with the meeting's title
    and day, and sends it (**Send the split**) or sets it aside (**Not needed**). Each member's
    Machine shows them their part (with the meeting's title from their own calendar) to **Accept**, change
    (**Accept my change**) or **Decline**; accepting makes their card. Cards on that meeting then say who does what,
@@ -187,7 +187,7 @@ is data, not instructions. A request goes to one Fleet's people only and is answ
    that is still open) and it went to two or more of you, to a shared address of the team (sales@, info@ or a group:
    an address at your domain that is no member's and no person you work with), comes from a company a teammate is in
    touch with, or from a customer. Each line says which ("sent to you and Priya", "to sales@", "Priya also talks to
-   them", "a customer"). Mail only you got, from someone only you know, stays in Suggestions. Cold sales, newsletters
+   them", "a customer"). Mail only you got, from someone only you know, stays in To-dos. Cold sales, newsletters
    and notifications never reach the brief. The card shows five lines (**Show
    more** for the rest), each with **Ask** (puts a question for the Fleet in the box below), **Open** (that company's
    mail, when it came to you) and **Not needed** (hides that line from this brief). When nothing needs the team it
@@ -281,14 +281,14 @@ to the Fleet's Machines):
 ## You decide, per Fleet
 
 - **Off by default.** Joining a Fleet only makes your Machine reachable. The first question from a teammate waits for
-  you as a card under Suggestions: **Share once**, **Always share**, **Decline** or **Never share** (under More). Always and
+  you as a card under To-dos: **Share once**, **Always share**, **Decline** or **Never share** (under More). Always and
   Never become your exception for that teammate and that kind of question, whatever its date or details, and settle
   their other questions of that kind still waiting. Brief asks, and in a Standard Work Fleet who knows someone,
   meeting context and who handles shared emails, follow the Team Graph instead (above).
 - **You hear about it.** A waiting question (not a brief ask) sends one phone notification (if you turned them on in the dashboard
   app) and, with Telegram connected, one Telegram message with **Answer once**, **Always** and **Decline**. Questions
   that arrive within a minute share one. They say who asks and what, never anything of yours. A tap on the phone
-  notification opens the question's card under Suggestions and asks you to confirm. With no way to reach you (no
+  notification opens the question's card under To-dos and asks you to confirm. With no way to reach you (no
   phone notifications, Telegram or email on), it waits on the dashboard and is not marked as told, so it notifies once
   you turn one on. A handoff's sender then hears that you won't get a ping: your Machine sends the handoff's "waiting"
   again with a sealed `{stage: waiting, ping: false}` (and `ping: true` once you can be reached). Their card says
@@ -332,7 +332,7 @@ If you own a Fleet, your Machine also tells you what happens in it: someone asks
 joined, a member's server started, someone left or was removed, a member's server is now paid by another Fleet they are in. They show in the Fleet tab, as a phone notification and,
 with Telegram connected, as a Telegram message. Most only have **Open**.
 
-A member asking for a server waits for you, as a card under Suggestions. The message says what it costs, for example "Ann wants a Standard server in
+A member asking for a server waits for you, as a card under To-dos. The message says what it costs, for example "Ann wants a Standard server in
 Acme: €15/month, new total €30/month." with **Confirm · €15/month** and **Decline**; in a Fleet that is free for now it
 says "free, because this Fleet is comped" with **Start it · free**. A tap is your confirmation of exactly what that
 message showed, and it only counts for you as the Fleet's owner, while the request is still open, on those terms. A
@@ -531,7 +531,7 @@ block. No card.
   also has, or one marked as the team's in Settings, Account. Tick one to be findable by it anyway; your choice stays. The Network stores those only blinded. Someone's sign-in
   email only ever finds them, and an address that two accounts list finds neither. It needs a username.
 
-A match becomes a card in Suggestions right away when it is new: the contacts already on the Network when you turn
+A match becomes a card in To-dos right away when it is new: the contacts already on the Network when you turn
 this on, and someone who joins later, the five strongest contacts at a time, for a week. After that, only when there is
 something concrete to do together: an open card that involves them, or a meeting with them in the next two weeks; the
 card says which. Someone at your own work domain is suggested

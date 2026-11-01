@@ -10,7 +10,7 @@ Deine Machine liest alles Neue und erstellt nur dann eine Aufgabe, wenn etwas di
 
 ## Wo Aufgaben stehen
 
-Der Tab **Vorschläge** gruppiert sie:
+Die Seite **Aufgaben** gruppiert sie:
 
 - **Bereit für dich**: vorbereitet und wartet auf deine Freigabe.
 - **Braucht deine Entscheidung**: etwas, das nur du entscheiden kannst.

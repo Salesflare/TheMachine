@@ -14,7 +14,7 @@ L’essentiel se fait tout seul. Votre Machine apprend de ce que vous faites, do
 - Ce que vous voulez : à partir des tâches que vous terminez, écartez ou mettez en attente, et pourquoi.
 - Les faits et habitudes : à partir de ce que vous dites dans le chat d’une tâche, comme « Je ne prends jamais d’appels le vendredi ».
 
-Environ deux fois par jour, elle en tire quelques petits changements. **Commentaires**, **Ce que j’ai appris** les montre un par un, avec **Annuler**. Voir [Rédaction](writing.md#it-keeps-learning).
+Environ deux fois par jour, elle en tire quelques petits changements. **Apprentissage**, **Modifications** les montre un par un, avec **Annuler**. Voir [Rédaction](writing.md#it-keeps-learning).
 
 ## Lui apprendre plus vite
 

@@ -10,7 +10,7 @@ As tarefas vêm das revisões: sua Machine lê o que chegou, em pequenos lotes, 
 
 ## As revisões estão desativadas
 
-O topo de Sugestões diz "As revisões estão desativadas, então ainda não chegam sugestões." Em uma Machine hospedada, clique em **Ativar revisões**. No seu próprio computador, execute `./install.sh --activate`.
+O topo de Tarefas diz "As revisões estão desativadas, então ainda não chegam sugestões." Em uma Machine hospedada, clique em **Ativar revisões**. No seu próprio computador, execute `./install.sh --activate`.
 
 ## O limite do seu modelo
 

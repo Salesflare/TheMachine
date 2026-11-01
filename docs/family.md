@@ -10,7 +10,7 @@ self-hosted. Your Machines coordinate over the Network, under rules each of you 
   Your Machine works out the times everyone is free (between 8:00 and 21:00, at least an hour) and shows them as they
   answer.
 - **To-dos.** Ask one member to do something ("Pick up the groceries", with a due date if you like). It waits on their
-  Machine as a card under Suggestions with **Accept** and **Decline**. Once accepted it is their card, and on its due
+  Machine as a card under To-dos with **Accept** and **Decline**. Once accepted it is their card, and on its due
   day their Machine reminds them once (phone, and Telegram when that is on). You see asked, accepted, declined, and done
   once they finish the card.
 - **Plans.** Propose a plan to the whole Family ("Sunday lunch at grandma's", a time and a place). Each member says

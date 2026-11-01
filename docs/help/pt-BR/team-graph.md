@@ -87,7 +87,7 @@ Só as Machines dos seus colegas. Tudo é criptografado de ponta a ponta, selado
 
 ## Entrada e novos dispositivos
 
-Um admin deixa cada pessoa entrar no Fleet uma vez. Depois disso, compartilhar com ela não precisa de mais nenhum OK. O pedido aparece em **Sugestões** para cada admin, e a primeira resposta vale para a equipe toda. Membros nunca recebem.
+Um admin deixa cada pessoa entrar no Fleet uma vez. Depois disso, compartilhar com ela não precisa de mais nenhum OK. O pedido aparece em **Tarefas** para cada admin, e a primeira resposta vale para a equipe toda. Membros nunca recebem.
 
 Uma nova Machine de alguém que já está no Fleet recebe o Graph da equipe depois de 24 horas. Enquanto isso, os admins veem essa Machine e podem tocar em **Não é dessa pessoa** para deixá-la de fora.
 

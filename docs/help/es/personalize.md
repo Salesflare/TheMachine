@@ -14,7 +14,7 @@ Casi todo pasa solo. Tu Machine aprende de lo que haces, así que hay poco que c
 - Lo que quieres: de las tareas que terminas, descartas o pospones, y por qué.
 - Datos y costumbres: de lo que dices en el chat de una tarea, como "nunca atiendo llamadas los viernes".
 
-Unas dos veces al día hace a partir de esto algunos cambios pequeños. **Comentarios**, **Lo que he aprendido** muestra cada uno, con **Deshacer**. Consulta [Redacción](writing.md#it-keeps-learning).
+Unas dos veces al día hace a partir de esto algunos cambios pequeños. **Aprendizaje**, **Cambios** muestra cada uno, con **Deshacer**. Consulta [Redacción](writing.md#it-keeps-learning).
 
 ## Enséñale más rápido
 
