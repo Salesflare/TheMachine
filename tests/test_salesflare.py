@@ -130,6 +130,48 @@ class SalesflareConnector(unittest.TestCase):
                 a.sync_salesflare(self.store, {}, ACCOUNT, crm)
         self.assertEqual(self.store.checkpoint('work-crm')['window']['pending'], pending)
 
+    def test_dates_as_epoch_milliseconds_or_text_parse(self):
+        expected = a.dt.datetime(2026, 11, 1, 3, 49, 11, tzinfo=a.dt.timezone.utc)
+        for value in (1793504951000, 1793504951000.0, '1793504951000', 1793504951, '2026-11-01T03:49:11.000Z',
+                      '2026-11-01T04:49:11+01:00'):
+            self.assertEqual(a.salesflare_time(value), expected, value)
+        for value in (None, '', 'yesterday', True):
+            with self.assertRaises(a.SourceError):
+                a.salesflare_time(value)
+        with self.assertRaises(a.SourceError):
+            a.salesflare_time('2026-11-01T03:49:11')  # no timezone
+
+    def test_an_email_dated_in_epoch_milliseconds_is_imported(self):
+        crm = FakeCRM()
+        email = crm.feeds[(10, 'email')][0]['email']
+        email['date'] = int(a.dt.datetime.fromisoformat(email['date'].replace('Z', '+00:00')).timestamp() * 1000)
+        self.run_to_completion(crm)
+        rows = {r['source_id']: r for r in self.store.events(['work-crm'])}
+        self.assertEqual(set(rows), {'email:e1', 'meeting:7'})
+        self.assertNotIn('window', self.store.checkpoint('work-crm'))
+
+    def test_one_unreadable_record_is_skipped_and_logged_not_the_round(self):
+        crm = FakeCRM()
+        crm.feeds[(10, 'email')].insert(0, {'id': 'bad', 'time': 'not a date', 'email': {
+            'user_id': 7, 'date': None, 'subject': 'Broken', 'body': [],
+            'addresses': {'from': {'email': 'ann@acme.example'}, 'to': [{'email': 'rep@example.com'}]}}})
+        crm.feeds[(20, 'meeting-live')].append({'id': 9, 'time': None, 'subject': 'Broken', 'notes': 'Has notes', 'participants': []})
+        with self.assertLogs('personal-assistant', 'WARNING') as logs:
+            self.run_to_completion(crm)
+        self.assertEqual({r['source_id'] for r in self.store.events(['work-crm'])}, {'email:e1', 'meeting:7'})
+        state = self.store.checkpoint('work-crm')
+        self.assertNotIn('window', state)  # the round finished and the watermark moved on
+        self.assertIsNotNone(state['watermark'])
+        joined = '\n'.join(logs.output)
+        self.assertIn('item=email:bad error=salesflare_invalid_timestamp', joined)
+        self.assertIn('item=meeting:9 error=salesflare_invalid_timestamp', joined)
+        self.assertNotIn('Broken', joined)  # no subjects or bodies in the log
+
+    def test_an_unreadable_account_date_still_lists_the_account(self):
+        crm = FakeCRM()
+        crm.accounts[10]['last_email_date'] = 'garbage'
+        self.assertIn(10, a.salesflare_recent_accounts(crm, 'last_email_date', NOW - a.dt.timedelta(days=1)))
+
     def test_only_read_routes_and_exact_identity(self):
         client = a.Salesflare({}, ACCOUNT)
         for path in ['/accounts/10/contacts', '/accounts/10/users', '/me/settings']:
