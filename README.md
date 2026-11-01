@@ -70,6 +70,7 @@ The full walkthrough: [Getting started](docs/getting-started.md).
 | Model and provider setup | [Models](docs/models.md) |
 | Work Fleets, Friends and The Machine Network | [Fleet](docs/fleet.md), [Network](docs/network.md), [Team Graph](docs/shared-graph.md) |
 | Family Fleets: free times, to-dos and plans | [Family](docs/family.md) |
+| Finding a meeting time with another Machine | [Scheduling between Machines](docs/scheduling-between-machines.md) |
 | Skills: write, approve and share them | [Skills](docs/skills.md) |
 | Hand a to-do to Claude Code or Codex | [Coding agents](docs/agents.md) |
 | Let other AIs read your to-dos and Graph over MCP | [Connected AIs](docs/ai-connections.md) |
@@ -96,7 +97,7 @@ The Machine is its own app. [OpenClaw](https://docs.openclaw.ai) is its agent ru
 
 ### Work hours
 
-To-dos and reminders reach you only within your work hours (by default Monday to Friday, 08:00 to 23:00). Work to-dos wait for a work day; personal ones keep their timing. Set them in **Settings**, with `assistant hours` or in `config.json`. More in [Usage](docs/usage.md#work-hours).
+To-dos and reminders reach you only within your work hours (by default Monday to Friday, 08:00 to 23:00). Work to-dos wait for a work day; personal ones keep their timing. Set them in **Settings** → **Notifications**, with `assistant hours` or in `config.json`. More in [Usage](docs/usage.md#work-hours).
 
 ### Do it
 

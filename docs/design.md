@@ -67,7 +67,7 @@ Observed on claude.ai, claude.com and anthropic.com (public pages, light and dar
 - **Layout**: every tab, and Settings, uses the same reading column: `--measure` (720px) plus 24px gutters, so `main`
   is 768px. No tab sets its own width, and the page keeps the scrollbar's room (`scrollbar-gutter: stable`), so a
   short tab like Calendar doesn't shift or look narrower than a long one.
-- **Phone header bars** (the top bar, a card's chat): the buttons at either end are 44px boxes whose glyphs sit on the
+- **Phone header bars** (the top bar, a to-do's chat): the buttons at either end are 44px boxes whose glyphs sit on the
   content's gutters (☰ and + on the cards' edges, ‹ and ⋯ on the chat's text and bubbles), every glyph on the title's
   cap-height center line, and a long title ends in an ellipsis before the right button.
 - **Sidebar**: one component for every width. From 1024px it is a column on the left: the tabs as quiet rows with
@@ -76,10 +76,10 @@ Observed on claude.ai, claude.com and anthropic.com (public pages, light and dar
   under a fold that is remembered; a row opens that pane and the address keeps it (`#graph=orgs`). Below 1024px the
   same sidebar is a drawer under a slim top bar with a menu button: a swipe from the left edge or All tasks in a chat
   also opens it, and ✕, the shade, Esc, back or a swipe to the left closes it, as does picking a row. On a phone, the
-  search icon in the top bar (on every page) opens the palette: one field, "Search or type a command", with cards,
+  search icon in the top bar (on every page) opens the palette: one field, "Search or type a command", with to-dos,
   the Graph, commands and a Messages group (the top matches from everything read, plus See all results, which opens the
   Messages results page; that page has no sidebar row) together. Each page has a serif title in the column, except To-dos: there the tagline is
-  a quiet serif line at body size, muted, with the counts under it, so the cards lead; a phone starts at the first
+  a quiet serif line at body size, muted, with the counts under it, so the to-dos lead; a phone starts at the first
   section head, which carries the counts, and keeps only the all-clear line.
 - **Boards** (Graph › Projects): Board is the default, List / Board in the header, remembered per device. Columns are
   the stages, with "Stalled or declined" as a row underneath; chips switch boards. A tile: logo, name, next step, why
@@ -90,7 +90,7 @@ Observed on claude.ai, claude.com and anthropic.com (public pages, light and dar
   not a card. The editor is a dialog, a bottom sheet on a phone, with Save kept in reach at its foot; a removed stage
   says where its projects go, and Delete asks once more.
 - **Long lists**: one loader for every list, a page at a time from the Machine. In the sidebar and the drawer, Done
-  opens on its 10 latest and the other groups on 8; a quiet **Show more** adds 20 (fetching older done cards when
+  opens on its 10 latest and the other groups on 8; a quiet **Show more** adds 20 (fetching older done to-dos when
   needed), folding starts over, and the counts stay whole. In the main pane (Done, People, Organizations, Projects) the
   next 30 load as you near the end, with a subtle loading row and **Show more** as the fallback; going back from an
   item keeps the pages and the scroll. A Graph page has tabs that filter, each with its count (an empty tab is not
@@ -98,12 +98,12 @@ Observed on claude.ai, claude.com and anthropic.com (public pages, light and dar
   right sets the order (Closest, Last contact, Name A–Z; for Projects Last activity, Name A–Z, Stage), kept per page on
   the device. The Graph search waits for a short pause in typing (Enter and Find are at once); emptying it brings the
   list back as it was, at once, and a late answer to an older search never shows. The chevron next to Graph darkens on
-  hover inside the row's own highlight, with no box of its own. The browser tab's title follows the page. The command palette lists done cards in a Done group under the open ones, also those not loaded yet.
+  hover inside the row's own highlight, with no box of its own. The browser tab's title follows the page. The command palette lists done to-dos in a Done group under the open ones, also those not loaded yet.
 - **Calendar**: the next seven days, read-only. An agenda by day (Overdue, Today, Tomorrow, then each weekday), one
   row per item: the time (or Due, All day), a tone dot (a ring for a meeting, amber due, orange overdue, lavender coming
-  back or a check-in, mint a promise), the title and one quiet line. A meeting's card shows as a chip (in the line on a
+  back or a check-in, mint a promise), the title and one quiet line. A meeting's to-do shows as a chip (in the line on a
   phone). On a computer a Week toggle shows seven columns instead; the choice is kept on the device.
-- **Sub-tabs** (Fleet, Graph, Connections): a row of round pills under the tabs, the current one tinted, with a count
+- **Sub-tabs** (Fleet, Graph, Learning, Connections): a row of round pills under the tabs, the current one tinted, with a count
   (orange when something needs you). It scrolls and fades like the tabs on a phone. Each pane is drawn at once and
   shown one at a time; the choice is kept, and links open one (`#graph=roles`). On the Graph the address follows the pane.
 - **Section heads**: the serif heading and its count as a small pill on one line, a one-line explainer below.

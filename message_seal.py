@@ -1,4 +1,5 @@
-"""Message contents sealed at rest in The Machine's database (docs/security.md, "Message contents at rest").
+"""Message contents sealed at rest in The Machine's database (docs/configuration.md#message-protection;
+SECURITY.md, "Encryption at rest").
 
 Every source writes its signals through one table, `events`: a subject or title, a body, and metadata. When
 `message_protection` is on, those are stored sealed, whatever the source (mail, chat, notifications, transcripts,
