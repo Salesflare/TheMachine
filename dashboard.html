@@ -3407,7 +3407,7 @@ const decisionRow=d=>{const a=make('article',{},make('h3',{},d.title||state.sugg
   d.annotation?make('p',{class:'note'},'Earlier message was matched incorrectly. The correction is recorded.'):'',d.feedback?make('blockquote',{},d.feedback):'');
  a.style.setProperty('--c',`var(--${({mint:'mint',muted:'faint',lavender:'lavender',amber:'amber'})[choiceTone[d.choice]||'muted']})`);return a};
 renderQuality();
-if(learnEdit==null)$('#facts').innerHTML=learnedList();$('#learn-changes').innerHTML=learnChanges();renderShare();renderVotes();  // an open editor keeps what was typed until Save or Cancel
+if(learnEdit==null)setHTML($('#facts'),learnedList());setHTML($('#learn-changes'),learnChanges());renderShare();renderVotes();  // an open editor keeps what was typed until Save or Cancel
 $('#decisions').replaceChildren(...clipNodes('decisions',state.decisions.map(decisionRow),()=>[make('p',{class:'muted'},'No decisions yet.')],5));learnTabs();
 const expandedSync=new Set([...document.querySelectorAll('#connectors details[open]')].map(d=>d.id));
 $('#connectors').innerHTML=state.connectors.map(c=>connectorCard(c,expandedSync)).join('');renderDisconnected();
