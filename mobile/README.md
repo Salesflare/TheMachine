@@ -110,7 +110,8 @@ Delete account); no data shared with third parties; no data sold.
 > Native features: system sign-in with passkeys (ASWebAuthenticationSession), push notifications for new to-dos,
 > and a Share extension that adds shared links, text and files as a to-do.
 >
-> Demo account: sign in with the review account below. It opens a Machine with sample mail and to-dos.
+> Demo account: on the sign-in page, tap App review at the bottom and sign in with the review account below. It opens
+> a Machine with sample mail and to-dos.
 > Account deletion: for a normal account, Settings, Account, Open account, Delete account. The review account itself is
 > deleted by us after the review.
 
