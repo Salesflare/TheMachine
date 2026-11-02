@@ -271,6 +271,31 @@ def digest_due(local, digest_at, start, end, work_day, sent_today):
     return start == end or (start <= now_hm < end if start < end else now_hm >= start or now_hm < end)
 
 
+def digest_sent(db, day):
+    """Whether the digest of `day` (local, ISO) went out or is going out."""
+    return bool(db.execute('SELECT 1 FROM notify_digests WHERE day=?', (day,)).fetchone())
+
+
+def digest_claim(db, day, at):
+    """Claims the digest of `day` for this run, in its own write transaction: False when one already has it."""
+    db.execute('BEGIN IMMEDIATE')
+    if digest_sent(db, day):
+        return False
+    db.execute("INSERT INTO notify_digests(day,status,created_at) VALUES(?,'sending',?)", (day, at))
+    return True
+
+
+def digest_done(db, day, status, channels):
+    """The digest of `day` is done: sent (on `channels`), empty or not sent."""
+    channels = json.dumps(channels, ensure_ascii=False, sort_keys=True, separators=(',', ':'))
+    db.execute('UPDATE notify_digests SET status=?,channels=? WHERE day=?', (status, channels, day))
+
+
+def drop_pushes(db):
+    """Outside work hours a held push is dropped: the email for what still waits takes over."""
+    db.execute("DELETE FROM notify_queue WHERE channel='push'")
+
+
 def compose(meetings, due, overnight, root='', show_text=True, clock=lambda iso: iso[11:16]):
     """The digest from its three parts: meetings [{at, title, guests}], due and overnight [{title}].
     Returns None when there is nothing to say, else {push: {title, body, url, tag}, text, subject}.
