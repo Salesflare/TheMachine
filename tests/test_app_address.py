@@ -19,7 +19,11 @@ class AppAddress(unittest.TestCase):
         self.assertEqual(address('Desk.Tail1234.ts.net'), 'https://desk.tail1234.ts.net/')
         self.assertEqual(address('desk.tail1234.ts.net:443', '/assistant'), 'https://desk.tail1234.ts.net/assistant/')
         self.assertEqual(address('desk.tail1234.ts.net', '/a//b.c~d_e-f/'), 'https://desk.tail1234.ts.net/a/b.c~d_e-f/')
-        for host in ('', 'desk.tail1234.ts.net:8443', 'tail1234.ts.net', 'my.example.com', 'user@desk.tail1234.ts.net',
+        # 443 and 8443 (a self-hosted Machine's default port) only
+        self.assertEqual(address('desk.tail1234.ts.net:8443'), 'https://desk.tail1234.ts.net:8443/')
+        self.assertEqual(address('desk.tail1234.ts.net:8443', '/assistant'), 'https://desk.tail1234.ts.net:8443/assistant/')
+        for host in ('', 'desk.tail1234.ts.net:8080', 'desk.tail1234.ts.net:444', 'desk.tail1234.ts.net:8443:8443',
+                     'desk.tail1234.ts.net:', 'tail1234.ts.net', 'my.example.com', 'user@desk.tail1234.ts.net',
                      'desk.tail1234.ts.net.evil.example', '-desk.tail1234.ts.net', 'desk_1.tail1234.ts.net', 'desk.tail1234.ts.net/x'):
             self.assertIsNone(address(host), host)
         for path in ('/a b/', '/a?x=1', '/%2e%2e/', '/a#b'):
@@ -41,13 +45,16 @@ class ToldTheNetwork(unittest.TestCase):
         self.assertEqual(self.relay.sent('/me')[-1]['app_address'], 'https://desk.tail1234.ts.net/assistant/')
         self.assertEqual(set(self.relay.sent('/me')[-1]), {'emails', 'dashboard', 'remove_work', 'app_address'})  # nothing else
         self.assertTrue(self.fleet.summary()['app_address'])  # Settings says it is shared
-        self.fleet.config = dict(self.fleet.config, dashboard_host='desk.tail1234.ts.net:8443')  # its own port: none for the app
+        self.fleet.config = dict(self.fleet.config, dashboard_host='desk.tail1234.ts.net:8443')  # the default port: kept
+        self.fleet.directory(refresh=True)
+        self.assertEqual(self.relay.sent('/me')[-1]['app_address'], 'https://desk.tail1234.ts.net:8443/assistant/')
+        self.fleet.config = dict(self.fleet.config, dashboard_host='desk.tail1234.ts.net:8080')  # any other port: none for the app
         self.fleet.directory(refresh=True)
         self.assertIsNone(self.relay.sent('/me')[-1]['app_address'])
         self.assertFalse(self.fleet.summary()['app_address'])
-        self.assertEqual(len(self.relay.sent('/me')), 2)
+        self.assertEqual(len(self.relay.sent('/me')), 3)
         self.fleet.directory(refresh=True)
-        self.assertEqual(len(self.relay.sent('/me')), 2)  # unchanged: not again
+        self.assertEqual(len(self.relay.sent('/me')), 3)  # unchanged: not again
 
     def test_a_new_pairing_hears_it_again(self):
         self.fleet.directory(refresh=True)

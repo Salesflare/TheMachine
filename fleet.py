@@ -320,21 +320,23 @@ def dashboard_address(config):
 
 TAILNET_LABEL = re.compile(r'[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?')
 APP_PATH = re.compile(r'/(?:[A-Za-z0-9._~-]+/)*')
+APP_OWN_PORT = ':8443'  # the dashboard's default port on a self-hosted Machine; besides it only 443
 
 
 def app_address(config):
     """The dashboard's Tailscale https address (https://<machine>.<tailnet>.ts.net/<path>/), told to the Network so the
     phone app opens this Machine after its owner signs in there. Only that address, never a secret; None when the
-    dashboard has none without a port (another domain, its own port like :8443), or on a hosted Machine."""
+    dashboard has none on 443 or 8443 (another domain, any other port), or on a hosted Machine."""
     if config.get('manage_url'):
         return None
     host = str(config.get('dashboard_host') or '').strip().lower().removesuffix(':443')
+    host, port = host.removesuffix(APP_OWN_PORT), host.endswith(APP_OWN_PORT)  # the default port: the app takes it too
     labels = host.split('.')
     if not host.endswith('.ts.net') or len(labels) < 4 or not all(TAILNET_LABEL.fullmatch(p) for p in labels):
         return None
     path = '/' + '/'.join(p for p in str(config.get('dashboard_path') or '/').strip('/').split('/') if p)
     path = path.rstrip('/') + '/'
-    return f'https://{host}{path}' if APP_PATH.fullmatch(path) else None
+    return f'https://{host}{APP_OWN_PORT if port else ""}{path}' if APP_PATH.fullmatch(path) else None
 
 
 def pair(code, label, emails, timeout=30):
