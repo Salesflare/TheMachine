@@ -224,6 +224,8 @@ class Enrichment(unittest.TestCase):
         self.assertEqual(graph.org_from_name('Robin from Blue Harbor', 'getblueharbor.com'), 'Blue Harbor')
         self.assertEqual(graph.org_from_name('Bo | Northwind Robotics Inc.', 'northwindrobotics.com'), 'Northwind Robotics')
         self.assertEqual(graph.org_from_name('Kim Lee (Initech)', 'initech.com'), 'Initech')
+        self.assertEqual(graph.org_from_name('Saltmarsh Media', 'saltmarshmedia.com'), 'Saltmarsh Media')  # the company sends as itself
+        self.assertEqual(graph.org_from_name('Brightpath Logistics Ltd', 'brightpathlogistics.com'), 'Brightpath Logistics')
         for name, domain in (('Sam via LinkedIn', 'linkedin.com'), ('Bob from Google', 'gmail.com'), ('Dana - Sales', 'acme.com'), ('Robin', 'getblueharbor.com')):
             self.assertIsNone(graph.org_from_name(name, domain), name)
         self.assertEqual([graph.address_shown('email:' + x) for x in ('kim.lv@initech.example', 'jane.doe@x.example', 'john_smith+news@x.example',

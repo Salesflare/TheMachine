@@ -157,6 +157,7 @@ def load(directory, states, port=8870, network_port=8871, fixture_path=HERE / 'f
             load_cards(db, fixture, ids, base)
             load_reviews(db, ids, base, assistant)
             load_boards(db, fixture, ids, base)
+            load_companies(db, fixture, base)
     if not fresh:
         with store.connect() as db:
             load_job(db, fixture, base)
@@ -209,6 +210,7 @@ def fill_machine(config, fixture_path=HERE / 'fixture.json', base=None):
         load_cards(db, fixture, ids, base)
         load_reviews(db, ids, base, assistant)
         load_boards(db, fixture, ids, base)
+        load_companies(db, fixture, base)
     with store.connect() as db:
         load_job(db, fixture, base)
         db.commit()  # graph.build opens its own transaction
@@ -387,6 +389,14 @@ def load_cards(db, fixture, ids, base):
         db.execute('INSERT OR IGNORE INTO promises(direction,who,what,due,check_at,event_id,account_id,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?)',
                    (p['direction'], p['who'], p['what'], due, (base + dt.timedelta(days=p['due_days'] or 1)).isoformat(), ids[p['event']], account,
                     p['status'], stamp(2 * 24 * 60, base), stamp(60, base)))
+
+
+def load_companies(db, fixture, base):
+    """Every made-up company by its own name ("Saltmarsh Media"), as the company look-up would give it on a real
+    Machine; without one the Graph would spell it from its domain ("Saltmarshmedia")."""
+    for c in fixture.get('companies') or ():
+        db.execute("INSERT OR IGNORE INTO org_profiles(domain,status,profile,fetched_at) VALUES(?,'found',?,?)",
+                   (c['domain'], json.dumps({'name': c['name']}), base.isoformat()))
 
 
 def load_boards(db, fixture, ids, base):

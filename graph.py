@@ -418,9 +418,11 @@ DOMAIN_SUFFIXES = ('hq', 'app', 'apps', 'inc', 'io', 'ai', 'team', 'group', 'lab
 
 def org_from_name(name, domain):
     """The organization a sender's display name gives ("Robin from Blue Harbor" at getblueharbor.com is "Blue Harbor"),
-    only when it spells the address's domain (with get-, try-, -hq and the like around it). Else None."""
-    found = ORG_SAID.search(' '.join(str(name or '').split()))
-    said = ORG_LEGAL.sub('', (found.group(1) or found.group(2) or '').strip(' ,.;:')) if found else ''
+    or the whole name when the sender is the company itself ("Saltmarsh Media <hello@saltmarshmedia.com>"), only when
+    it spells the address's domain (with get-, try-, -hq and the like around it). Else None."""
+    whole = ' '.join(str(name or '').split())
+    found = ORG_SAID.search(whole)
+    said = ORG_LEGAL.sub('', ((found.group(1) or found.group(2)) if found else whole).strip(' ,.;:'))
     if not said or len(said) > 60 or '@' in said or DOMAIN_NAME.fullmatch(said):
         return None
     letters = re.sub(r'[^a-z0-9]', '', unicodedata.normalize('NFKD', said).encode('ascii', 'ignore').decode().casefold())
