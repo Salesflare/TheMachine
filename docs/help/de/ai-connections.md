@@ -19,7 +19,7 @@ Ein Entwurf wartet in deiner Machine, bis du ihn liest und selbst auf **Senden**
 
 ## Eine verbinden
 
-Öffne **Einstellungen**, **KIs**. Es gibt zwei Wege. Zuerst kommt **Offizielle App**: **In Claude hinzufügen** und eine Adresse für jede Machine, `https://mcp.themachine.computer/mcp`, mit **Kopieren**. Darunter steht deine **Private Adresse (Ende-zu-Ende)**, `https://<dein Name>.mcp.themachine.computer/mcp`.
+Öffne **Einstellungen**, **KIs**. Es gibt zwei Wege. Zuerst kommt **Offizielle App**: **In ChatGPT hinzufügen**, **In Claude hinzufügen** und eine Adresse für jede Machine, `https://mcp.themachine.computer/mcp`, mit **Kopieren**. Darunter steht deine **Private Adresse (Ende-zu-Ende)**, `https://<dein Name>.mcp.themachine.computer/mcp`.
 
 Bei einer Machine auf deinem eigenen Computer tippst du zuerst auf **Adresse holen**. Eine Seite in deinem Konto öffnet sich: Prüfe, ob sie denselben Code zeigt, bestätige und wähle einen Namen. Deine Machine verbindet sich selbst, ohne Neustart. Beide Wege brauchen das.
 
@@ -29,7 +29,11 @@ Für Claude tippe auf **In Claude hinzufügen** oder öffne [The Machine im Verz
 
 Um in Claude stattdessen eine Adresse zu nutzen, öffne Customize, Connectors, tippe auf + Add und dann auf Add custom connector. Nenne ihn The Machine, füge die Adresse ein, tippe auf Continue und dann auf Add.
 
-Öffne in ChatGPT chatgpt.com/plugins, tippe auf + und dann auf Add custom MCP server. Nenne ihn The Machine, füge die Adresse ein und wähle OAuth. Bestätige die Warnung und tippe auf Create as a plugin. Dein Tarif oder Workspace muss eigene MCP-Server erlauben.
+Für ChatGPT tippe auf **In ChatGPT hinzufügen** oder öffne [The Machine in ChatGPT](https://chatgpt.com/plugins/plugin_asdk_app_6ae74ac637d0819199400cd3750138b4) und tippe auf Install plugin. Bei Business und Enterprise muss ein Admin es eventuell erst erlauben.
+
+Die offizielle App erreicht eine gehostete Machine und eine Machine auf deinem eigenen Computer, sobald sie ihre Adresse hat.
+
+Für deine private Adresse oder eine Machine ohne das Network füge in ChatGPT stattdessen einen eigenen MCP-Server hinzu: Öffne chatgpt.com/plugins, tippe auf + und dann auf Add custom MCP server. Nenne ihn The Machine, füge die Adresse ein und wähle OAuth. Bestätige die Warnung und tippe auf Create as a plugin. Dein Tarif oder Workspace muss eigene MCP-Server erlauben.
 
 Mit der offiziellen App bittet dich die KI, dich mit deinem The Machine-Konto anzumelden. Wähle diese Machine, wenn du mehrere hast, und gib die KI dann auf der eigenen Seite deiner Machine frei. Mit der privaten Adresse kommt die KI direkt zu deiner Machine.
 

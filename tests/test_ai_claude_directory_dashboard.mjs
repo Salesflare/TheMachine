@@ -5,11 +5,12 @@ import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
-// Settings, AIs: once the official app is ready (reach.shared), Add in Claude comes first, a link to The Machine's
-// listing in Claude's connector directory (one click, nothing to paste) in a new tab, above the shared address with
-// Copy. The Claude steps start from it; the custom connector stays as the other way. Not ready yet: no Add in Claude,
-// Get your address instead. SHOTS=<folder> saves screenshots.
+// Settings, AIs: once the official app is ready (reach.shared), Add in ChatGPT and Add in Claude come first, links to
+// The Machine's listings in ChatGPT's plugins and Claude's connector directory (one click, nothing to paste) in a new
+// tab, above the shared address with Copy. The steps start from them; a custom MCP server or connector stays as the other
+// way. Not ready yet: neither button, Get your address instead. SHOTS=<folder> saves screenshots.
 const DIRECTORY='https://claude.ai/directory/the-machine',SHARED='https://mcp.themachine.computer/mcp';
+const CHATGPT='https://chatgpt.com/plugins/plugin_asdk_app_6ae74ac637d0819199400cd3750138b4';
 const dashboard=await dashboardPage();
 let reach={};
 const server=createServer(async(req,res)=>{
@@ -39,15 +40,22 @@ try{
   assert.equal(await add.getAttribute('href'),DIRECTORY);
   assert.equal(await add.getAttribute('target'),'_blank');
   assert.match(await add.getAttribute('rel'),/noopener/);
-  // Add in Claude comes before the shared address, which keeps its Copy
+  // Add in ChatGPT (The Machine's published ChatGPT app) and Add in Claude come before the shared address, which keeps its Copy
+  const chatgpt=page.locator('#ai-official a[data-ai-chatgpt]');
+  assert.equal(await chatgpt.innerText(),'Add in ChatGPT');
+  assert.equal(await chatgpt.getAttribute('href'),CHATGPT);
+  assert.equal(await chatgpt.getAttribute('target'),'_blank');
+  assert.match(await chatgpt.getAttribute('rel'),/noopener/);
   const rows=await page.locator('#ai-official>div').allInnerTexts();
-  assert.equal(rows.length,2);assert.match(rows[0],/Claude/);assert.match(rows[1],/Official app/);assert.ok(rows[1].includes(SHARED));
+  assert.equal(rows.length,3);assert.match(rows[0],/ChatGPT/);assert.match(rows[1],/Claude/);assert.match(rows[2],/Official app/);assert.ok(rows[2].includes(SHARED));
   const how=await page.locator('#settings-ai .ai-how').innerText();
   assert.match(how,/Press Add in Claude, then Connect\./);
   assert.match(how,/Add custom connector/);
+  assert.match(how,/Press Add in ChatGPT, then Install plugin\./);
+  assert.match(how,/Add custom MCP server/);
   assert.ok(!(await page.locator('#settings-ai').innerText()).includes('—'),'no em dashes');
   // Fits: the button inside the screen, no sideways scroll
-  const box=await add.boundingBox();assert.ok(box.x>=0&&box.x+box.width<=width,`${width}: Add in Claude inside the screen`);
+  for(const [button,name] of [[add,'Add in Claude'],[chatgpt,'Add in ChatGPT']]){const box=await button.boundingBox();assert.ok(box.x>=0&&box.x+box.width<=width,`${width}: ${name} inside the screen`)}
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`${width}: no sideways scroll`);
   if(shots){await page.locator('#settings-ai').scrollIntoViewIfNeeded();await page.screenshot({path:`${shots}/ai-claude-${width}-${scheme}.png`,fullPage:false});
    await page.locator('#settings-ai').screenshot({path:`${shots}/ai-claude-${width}-${scheme}-section.png`})}
@@ -55,6 +63,7 @@ try{
   reach={hosted:false,paired:false,address:null,shared:null};
   await page.reload();await page.locator('#ai-official [data-ai-get]').waitFor();
   assert.equal(await page.locator('#ai-official [data-ai-claude]').count(),0);
+  assert.equal(await page.locator('#ai-official [data-ai-chatgpt]').count(),0);
   await context.close();
  }
  assert.deepEqual(errors,[]);
