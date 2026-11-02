@@ -84,9 +84,9 @@ try{
  assert.match(await body(),/\n\nPasted link\nsecond lineAlex$/);
  // Formatting an email can't carry (a heading, underline, a color, an image) is taken out first; Send waits, then sends that
  await rich.evaluate(n=>n.insertAdjacentHTML('beforeend','<h1>Big</h1><div><u>under</u> <span style="color:red">red</span><img src="https://example.com/x.png"></div>'));
- const before=posts.length;
+ const sends=()=>posts.filter(p=>['revise_draft','confirm_action'].includes(p.action)).length,before=sends();  // not a background read
  await page.locator('#send-confirm').click();await page.waitForFunction(()=>/can’t go in an email/.test(document.querySelector('#send-error').textContent));
- assert.equal(posts.length,before,'nothing saved or sent');assert.ok(await page.locator('#send-dialog').evaluate(d=>d.open));
+ assert.equal(sends(),before,'nothing saved or sent');assert.ok(await page.locator('#send-dialog').evaluate(d=>d.open));
  assert.equal(await rich.locator('h1,u,img,[style*="color"]').count(),0,'the page now shows what goes out');
  await page.locator('#send-confirm').click();await page.locator('#send-dialog').waitFor({state:'hidden'});
  assert.match(revised().at(-1).body,/\nBig\nunder red$/);
