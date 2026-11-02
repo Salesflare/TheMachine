@@ -31,5 +31,6 @@ Der Installer findet deine Konten, verbindet sie eins nach dem anderen und zeigt
 - Füge Quellen mit `assistant connect` hinzu, oder im Dashboard über **Verbindungen**, dann **+ Hinzufügen**.
 - Prüfe alles mit `assistant doctor`. Es zeigt für jedes Problem eine Lösung.
 - Updates kommen als signierte Releases.
+- Mit The Machine Network gekoppelt, teilt deine Machine ihre Tailscale-Adresse mit deinem Konto, damit die App auf deinem Handy sie nach der Anmeldung öffnet. Hebst du die Kopplung auf, wird die Adresse gelöscht.
 
 Die vollständige Anleitung steht im Repository: [Erste Schritte](https://github.com/Salesflare/TheMachine/blob/main/docs/getting-started.md).

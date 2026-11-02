@@ -14322,6 +14322,7 @@ class App(*APP_MIXINS):
         self.fleet_attach()
         if not self.fleet:
             return None
+        self.fleet.set_meta('me_sent', None)  # a new pairing hears its addresses again (fleet.directory)
         if getattr(self, 'skills', None):
             self.skills.fleet = self.fleet
             self.fleet.skills = self.skills

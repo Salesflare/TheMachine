@@ -3661,6 +3661,7 @@
  "Shared: you chose Team": "Compartido: elegiste Equipo",
  "Shared: {}": "Compartido: {}",
  "Shares busy times only, never what. Finds free hours between 8:00 and 21:00.": "Solo comparte las horas ocupadas, nunca qué. Busca horas libres entre las 8:00 y las 21:00.",
+ "Shares its Tailscale address with your account, for the phone app.": "Comparte su dirección de Tailscale con tu cuenta, para la app del teléfono.",
  "Shares within the hour: client thread": "Se comparte en menos de una hora: hilo de cliente",
  "Shares within the hour: client thread with {}": "Se comparte en menos de una hora: hilo de cliente con {}",
  "Sharing": "Compartiendo",

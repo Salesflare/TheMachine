@@ -3661,6 +3661,7 @@
  "Shared: you chose Team": "Shared: you chose Team",
  "Shared: {}": "Shared: {}",
  "Shares busy times only, never what. Finds free hours between 8:00 and 21:00.": "Shares busy times only, never what. Finds free hours between 8:00 and 21:00.",
+ "Shares its Tailscale address with your account, for the phone app.": "Shares its Tailscale address with your account, for the phone app.",
  "Shares within the hour: client thread": "Shares within the hour: client thread",
  "Shares within the hour: client thread with {}": "Shares within the hour: client thread with {}",
  "Sharing": "Sharing",
