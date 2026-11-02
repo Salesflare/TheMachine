@@ -27,6 +27,8 @@ import sqlite3
 import time
 from pathlib import Path
 
+import sources
+
 BACKUP_DAYS = 7
 PENDING = 'work-removal-pending.json'
 CORE_CREDENTIALS = {'api-token', 'owner-token', 'gog-password', 'fleet', 'network', 'openai', 'anthropic'}
@@ -265,16 +267,14 @@ def _forget_google(config, removed, run=None):
             continue
         account = {'email': key[0], 'client': key[1] or ''}
         try:
-            import assistant
-            env = {**os.environ, 'GOG_KEYRING_BACKEND': 'file', 'GOG_KEYRING_PASSWORD': assistant.credential(config, 'gog-password')}
+            env = {**os.environ, 'GOG_KEYRING_BACKEND': 'file', 'GOG_KEYRING_PASSWORD': sources.credential(config, 'gog-password')}
             env.pop('DBUS_SESSION_BUS_ADDRESS', None)
             done = run([config.get('gog') or 'gog', 'auth', 'remove', key[0], *(['--client', key[1]] if key[1] else []), '--force', '--no-input'],
                        env=env, capture_output=True, text=True, timeout=60).returncode == 0
         except Exception:  # noqa: BLE001 - no gog, no keyring password: the token file goes below
             done = False
         try:
-            import assistant
-            path = assistant.gog_token_path(config, account)
+            path = sources.gog_token_path(config, account)
             if path.is_file():
                 path.unlink()
                 done = True

@@ -8,6 +8,8 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
+import sources
+
 spec = importlib.util.spec_from_file_location('assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 assistant = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(assistant)
@@ -640,7 +642,7 @@ class CalendarInvariants(unittest.TestCase):
     def test_calendar_scope_and_account_fail_closed(self):
         class Result:
             returncode = 6; stderr = 'HTTP 410: private endpoint or token here'; stdout = ''
-        with patch.object(assistant, 'credential', return_value='secret'), patch.object(assistant.subprocess, 'run', return_value=Result()) as run:
+        with patch.object(sources, 'credential', return_value='secret'), patch.object(assistant.subprocess, 'run', return_value=Result()) as run:
             with self.assertRaises(assistant.SourceError) as error:
                 assistant.Calendar({'gog': 'gog'}, self.account).profile()
             self.assertEqual(str(error.exception), 'calendar:HTTP_410')
@@ -655,7 +657,7 @@ class CalendarInvariants(unittest.TestCase):
         class Result:
             returncode = 4; stdout = ''
             stderr = 'read-only transport: refresh token expired or revoked: oauth2: "invalid_grant" "Token has been expired or revoked."; owner@example.com'
-        with patch.object(assistant, 'credential', return_value='secret'), patch.object(assistant.subprocess, 'run', return_value=Result()):
+        with patch.object(sources, 'credential', return_value='secret'), patch.object(assistant.subprocess, 'run', return_value=Result()):
             with self.assertRaises(assistant.SourceError) as error:
                 assistant.Calendar({'gog': 'gog'}, self.account).profile()
         self.assertEqual(str(error.exception), 'calendar:google_signin_expired_run_gog_auth_add')

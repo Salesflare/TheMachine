@@ -330,8 +330,9 @@ def cases(ids, store):
          lambda s, x: _check(s.recall(x, 'Saltwick contract decision')[0][:1] and 'two-year' in s.recall(x, 'Saltwick contract decision')[0][0],
                              s.recall(x, 'Saltwick contract decision')[0]))
     case('earlier: Talk says when it was said', ('talk',),
-         lambda s, x: _same(s.recall(x, 'Saltwick contract')[1]['found'][0].get('when'),
-                            s.app.talk_when((now() - dt.timedelta(days=14)).isoformat())))
+         lambda s, x: _check(s.recall(x, 'Saltwick contract')[1]['found'][0].get('when') in  # the minute may roll over since seeding
+                             {s.app.talk_when((now() - dt.timedelta(days=14, minutes=m)).isoformat()) for m in (0, 1)},
+                             s.recall(x, 'Saltwick contract')[1]['found'][0].get('when')))
     case('earlier: what did I say about the cabin weekend', recalls,
          lambda s, x: _check(any('December' in t for t in s.recall(x, 'cabin weekend')[0]), s.recall(x, 'cabin weekend')[0]))
     case('earlier: a pasted message comes back marked untrusted', ('talk',),

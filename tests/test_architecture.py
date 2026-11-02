@@ -94,7 +94,7 @@ LOADS_ASSISTANT = {
     'retention.py': 'lazy, for Store: the service\'s own sealed connection',
     'sandbox/load.py': 'the sandbox, an entry point',
     'sandbox/run.py': 'the sandbox, an entry point',
-    'work_removal.py': 'lazy, for Store, credential and gog_token_path',
+    'work_removal.py': 'lazy, for Store',
 }
 LOADERS = {'spec_from_file_location', 'import_module', '__import__', 'load_source', 'run_path'}
 
