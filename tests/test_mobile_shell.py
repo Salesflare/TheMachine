@@ -53,6 +53,9 @@ class MobileShellTest(unittest.TestCase):
         for name in ('MachineShellPlugin.swift in Sources', 'ShareViewController.swift in Sources',
                      'ShareExtension.appex in Embed App Extensions', 'CODE_SIGN_ENTITLEMENTS = App/App.entitlements'):
             self.assertIn(name, project)
+        manifest = (MOBILE / 'android/app/src/main/AndroidManifest.xml').read_text()
+        self.assertIn('android:networkSecurityConfig="@xml/network_security_config"', manifest)
+        self.assertIn('cleartextTrafficPermitted="false"', (MOBILE / 'android/app/src/main/res/xml/network_security_config.xml').read_text())
         self.assertNotIn('armv7', (MOBILE / 'ios/App/App/Info.plist').read_text())
 
 
