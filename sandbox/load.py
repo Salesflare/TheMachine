@@ -407,6 +407,12 @@ def load_boards(db, fixture, ids, base):
             if p.get('by_hand'):
                 node = 'project:' + str(db.execute('SELECT id FROM projects WHERE name=?', (p['name'],)).fetchone()[0])
                 graph.set_stage(db, node, p['by_hand']['stage'], 'owner', stamp(p['by_hand']['days_ago'] * 24 * 60, base))
+            if p.get('success'):  # done when, as a review suggested it, and the live page that proved one (no network here)
+                import project_success
+                pid = db.execute('SELECT id FROM projects WHERE name=?', (p['name'],)).fetchone()[0]
+                project_success.set_condition(db, pid, p['success']['condition'], p['success']['proof'], 'review', base.isoformat())
+                if p['success'].get('event'):
+                    project_success.record_proof(db, pid, ids[p['success']['event']], p['success']['url'], base.isoformat())
             db.execute("INSERT OR IGNORE INTO org_profiles(domain,status,profile,fetched_at) VALUES(?,'found',?,?)",
                        (p['org'], json.dumps({'name': p['org_name'], 'industry': 'Software'}), base.isoformat()))
     # Follow-ups on for the partner board (follow_ups.py), asking first: the header and the cards show the next one
@@ -415,6 +421,8 @@ def load_boards(db, fixture, ids, base):
     row = db.execute("SELECT id FROM boards WHERE name='Partner listings'").fetchone()
     if row:
         follow_ups.save(db, 'board', row[0], {'on': True}, base.isoformat())
+    import project_success  # what a review run sees in their way (follow-ups on here, so no to-do of its own)
+    project_success.monitor(db, base.isoformat())
     # Each board has looked through the history already: its header says what that found
     db.execute("UPDATE board_backfills SET state='done',started_at=?,finished_at=?", ((base - dt.timedelta(hours=1)).isoformat(), base.isoformat()))
 

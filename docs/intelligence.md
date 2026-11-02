@@ -201,6 +201,14 @@ time passed.
 
 - Each move keeps its reason and message (`project_moves`); the tile shows "Moved to In review: … · Fri, Oct 23" and
   opens that message.
+- Done when (`project_success.py`, one workflow first: partner listings). A stages entry can carry `"condition"` (what
+  finishes the project, in plain words) and `"proof"`: `"link"` or `"message"`; the owner's own condition, set under
+  Edit, always stays. A move to the board's last stage needs that proof: its `"url"` must be in the move's message, load
+  over https from a public address and link to one of the owner's domains (opened before the write transaction), or,
+  for `"message"`, the message is from the other side. Without it the project goes one stage before and the result says
+  `not_proven`. The owner's Won or drag still marks it done. With each review, `monitor` keeps a blocker on every open
+  project with a condition (an overdue promise on it, no reply in 10+ days) and adds one plain to-do when it has no open
+  to-do and follow-ups don't already chase it; nothing is drafted or sent.
 - The owner drags a tile, or picks a stage from its ⋯ menu on a phone. That move stands until a newer message moves the
   project again; an older message never undoes a newer move.
 - A tile shows how long the other side hasn't answered since the owner wrote ("No reply in 14 days", from 10 days) and

@@ -6732,7 +6732,7 @@
    "kind": "gmail.message",
    "minutes_ago": 26017,
    "title": "Juniper and Lumen Labs",
-   "body": "Hi Alex,\n\nListing approved and updated.\n\nFreya",
+   "body": "Hi Alex,\n\nListing approved and live at https://juniperledger.example/apps/lumen-labs.\n\nFreya",
    "metadata": {
     "from": "Freya Lund <freya@juniperledger.example>",
     "to": "alex@lumenlabs.example",
@@ -8425,7 +8425,11 @@
        "event": "board:bramblebox:0"
       }
      ],
-     "next": "Find another contact or drop it"
+     "next": "Find another contact or drop it",
+     "success": {
+      "condition": "Listing is live on their marketplace with a link to us",
+      "proof": "link"
+     }
     },
     {
      "name": "Quillfeather",
@@ -8597,7 +8601,11 @@
        "event": "board:pebblepath:2"
       }
      ],
-     "next": "Wait for their edits, then publish"
+     "next": "Wait for their edits, then publish",
+     "success": {
+      "condition": "Their review of our app is published with a link to us",
+      "proof": "link"
+     }
     },
     {
      "name": "Larkfield Labs",
@@ -8696,6 +8704,10 @@
      "by_hand": {
       "stage": "Live",
       "days_ago": 1
+     },
+     "success": {
+      "condition": "Listing is live with a link to us",
+      "proof": "link"
      }
     },
     {
@@ -8718,7 +8730,13 @@
        "event": "board:juniperledger:1"
       }
      ],
-     "next": "Suggest another swap"
+     "next": "Suggest another swap",
+     "success": {
+      "condition": "Listing is live with a link to us",
+      "proof": "link",
+      "event": "board:juniperledger:1",
+      "url": "https://juniperledger.example/apps/lumen-labs"
+     }
     },
     {
      "name": "Nimbus & Nook",

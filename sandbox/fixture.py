@@ -222,7 +222,7 @@ BOARDS = [
           [('Contacted', 'proposed a swap', 0), ('Partly live', 'prices fixed, the FAQ still wrong', 1)], 'Nudge Lotte about the FAQ'),
          ('Moorhen Data', 'moorhendata.example', 'Cyrus Bell', [(40, True, 'Asked for a listing'), (8, False, 'All three fixed, have a look')],
           [('Contacted', 'asked for a listing', 0), ('Partly live', 'Cyrus fixed two of the three', 1)], 'Nothing'),
-         ('Juniper Ledger', 'juniperledger.example', 'Freya Lund', [(60, True, 'Asked for a listing'), (18, False, 'Listing approved and updated')],
+         ('Juniper Ledger', 'juniperledger.example', 'Freya Lund', [(60, True, 'Asked for a listing'), (18, False, 'Listing approved and live at https://juniperledger.example/apps/lumen-labs')],
           [('Contacted', 'asked for a listing', 0), ('Live', 'listing updated and approved', 1)], 'Suggest another swap'),
          ('Nimbus & Nook', 'nimbusandnook.example', 'Eliot Grange', [(22, True, 'Asked for a listing'), (2, False, 'Sorry, we only list paying partners')],
           [('Contacted', 'asked for a listing', 0), ('Stalled or declined', 'they only list paying partners', 1)], 'Nothing unless they come back'),
@@ -252,6 +252,11 @@ BOARDS = [
 
 
 BY_HAND = {'Moorhen Data': ('Live', 1)}  # the owner dragged it there, a day ago
+# Done when (project_success.py): a condition a review suggested, and for one the live page that proved it (message index)
+SUCCESS = {'Juniper Ledger': ('Listing is live with a link to us', 'link', 1, 'https://juniperledger.example/apps/lumen-labs'),
+           'Bramblebox': ('Listing is live on their marketplace with a link to us', 'link', None, None),
+           'Pebblepath': ('Their review of our app is published with a link to us', 'link', None, None),
+           'Moorhen Data': ('Listing is live with a link to us', 'link', None, None)}
 # Projects on no board yet that are one kind of work: a review suggested a board for them ("Start a board for Hiring?")
 SUGGESTED = {'name': 'Hiring', 'visibility': 'only_you', 'about': 'Roles we are hiring for, one project per role',
              'reason': 'Three open roles, each with candidates writing in',
@@ -282,7 +287,10 @@ def board_data():
                 keys.append(k)
             board['projects'].append({'name': name, 'org': domain, 'org_name': name.split(' onboarding')[0].split(' trial')[0].split(' rollout')[0].split(' export')[0].split(' sync')[0],
                                       'events': keys, 'moves': [{'stage': st, 'reason': why, 'event': keys[i]} for st, why, i in moves], 'next': step,
-                                      **({'by_hand': {'stage': BY_HAND[name][0], 'days_ago': BY_HAND[name][1]}} if name in BY_HAND else {})})
+                                      **({'by_hand': {'stage': BY_HAND[name][0], 'days_ago': BY_HAND[name][1]}} if name in BY_HAND else {}),
+                                      **({'success': {'condition': SUCCESS[name][0], 'proof': SUCCESS[name][1],
+                                                      **({'event': keys[SUCCESS[name][2]], 'url': SUCCESS[name][3]} if SUCCESS[name][2] is not None else {})}}
+                                         if name in SUCCESS else {})})
         boards.append(board)
     suggestion = {k: SUGGESTED[k] for k in ('name', 'about', 'reason', 'stages', 'visibility')}
     suggestion['projects'] = []

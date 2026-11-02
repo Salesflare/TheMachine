@@ -187,6 +187,10 @@ Progetti di un tipo organizzati in fasi, come una pipeline di valutazione. **⋯
 
 **Ricontatti…** nel **⋯** di una bacheca ricontatta da sola chi non risponde. Vedi [Ricontatti](follow-ups.md).
 
+**Fatto quando**, in **Modifica** di un progetto, dice con parole semplici cosa lo conclude, con la sua prova: **Una pagina online** (The Machine apre il link del loro messaggio e controlla che punti a te) o **Il loro messaggio**. Le revisioni ne propongono una per le schede dei partner. Una revisione sposta un progetto all’ultima fase solo con quella prova, collegata nella sua pagina; **Vinto** a mano funziona sempre.
+
+La pagina mostra anche cosa lo blocca (nessuna risposta da 10+ giorni, una promessa in ritardo) e aggiunge un’attività quando non ne ha. Niente viene inviato senza di te.
+
 Spuntane alcuni, o **Seleziona tutto**, per gestirli in una volta, e **Annulla** subito dopo se cambi idea. Un progetto che raggruppa più controparti diventa un progetto per controparte quando lo aggiungi.
 
 **Pipeline**, in cima a una bacheca, somma il valore dei progetti aperti per fase, e quanto dovrebbe chiudersi ogni mese in base alle date di chiusura. I progetti vinti, persi e fermi non sono aperti; quello che hai vinto questo mese compare a parte. I valori sono in euro, a meno che la tua Machine non usi un'altra valuta. Con **Proprietario** in Filtra, conta solo i tuoi.

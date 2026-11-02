@@ -258,6 +258,8 @@ def ensure(db):
     crm.ensure(db)
     import own_addresses  # the owner's own addresses, where each came from, and their word on them (2026-10-24)
     own_addresses.ensure(db)
+    import project_success  # a project's success condition, its proof and what stands in its way (2026-11-02)
+    project_success.ensure(db)
 
 
 class Owner:
@@ -3722,6 +3724,11 @@ def boards_brief(db, limit=150):
                           (b['id'], limit)).fetchall()
         out.append({'board': b['name'], 'stages': stage_names(b), 'projects': {r['name']: r['stage'] for r in rows},
                     **({'about': b['about']} if b['about'] else {})})
+        done_when = {r['name']: r['condition'] for r in db.execute(  # each one's success condition (project_success.py)
+            "SELECT p.name,s.condition FROM project_success s JOIN projects p ON p.id=s.project_id WHERE p.board_id=? AND p.closed_at IS NULL "
+            "AND s.condition IS NOT NULL LIMIT ?", (b['id'], limit)) if r['condition'] and r['name'] in out[-1]['projects']}
+        if done_when:
+            out[-1]['done_when'] = done_when
     return out
 
 
@@ -4146,6 +4153,9 @@ def save_project(db, args, now):
         except ValueError:
             raise ValueError('Expected close: a date, like 2026-12-15') from None
         db.execute('UPDATE projects SET close_date=? WHERE id=?', (close, pid))
+    if 'condition' in args:  # done when (project_success.py): the owner's word stays
+        import project_success
+        project_success.set_condition(db, pid, args.get('condition'), args.get('proof'), 'owner', now)
     if 'notes' in args:
         notes = str(args.get('notes') or '').strip()
         if len(notes) > 4000:
@@ -4196,6 +4206,8 @@ def delete_project(db, node_id):
     """Gone for good: the project, its moves, labels and links. Its messages and people stay."""
     row = project_row(db, node_id)
     node = 'project:' + str(row['id'])
+    import project_success
+    project_success.forget(db, row['id'])
     for sql in ('DELETE FROM event_projects WHERE project_id=?', 'DELETE FROM project_moves WHERE project_id=?', 'DELETE FROM project_people WHERE project_id=?',
                 'DELETE FROM board_fits WHERE project_id=?', 'DELETE FROM projects WHERE id=?'):
         db.execute(sql, (row['id'],))
@@ -4222,7 +4234,16 @@ def project_card(db, node_id):
     return {'node_id': 'project:' + str(row['id']), 'name': row['name'], 'board_id': row['board_id'], 'stage': row['stage'], 'org': row['org'],
             'org_node': {**org, 'by': row['org_by']} if org else None,
             'value': row['value'], 'close_date': row['close_date'], 'notes': row['notes'], 'people': people, 'archived': bool(row['closed_at']), 'outcome': row['outcome'],
-            'outcome_reason': row['outcome_reason']}
+            'outcome_reason': row['outcome_reason'], **_done_when(db, row['id'])}
+
+
+def _done_when(db, pid):
+    """{'condition', 'proof'} for the project dialog (project_success.py), or {}."""
+    try:
+        found = db.execute('SELECT condition,proof FROM project_success WHERE project_id=?', (pid,)).fetchone()
+    except sqlite3.OperationalError:
+        return {}
+    return {'condition': found['condition'], 'proof': found['proof']} if found and found['condition'] else {}
 
 
 def fit_brief(db, run_id, now, limit=FIT_BATCH):
@@ -4842,9 +4863,11 @@ def project_moves(db, node_id, limit=8):
         return None
     moves = [dict(r) for r in db.execute('SELECT stage,reason,event_id,source,at FROM project_moves WHERE project_id=? ORDER BY at DESC,id DESC LIMIT ?',
                                          (row['id'], limit))]
+    board = db.execute('SELECT * FROM boards WHERE id=?', (row['board_id'],)).fetchone()
+    import project_success  # done when, its proof, and what stands in its way
+    success = project_success.view(db, row['id'], row['stage'], [s['name'] for s in json.loads(board['stages'])], row['stage_by'], row['outcome'])
     return {'board': row['board'], 'stage': row['stage'], 'next': row['next_step'], 'moves': moves, 'visibility': row['visibility'],
-            'board_visibility': row['board_visibility'] or 'team',
-            'stages': stage_names(db.execute('SELECT * FROM boards WHERE id=?', (row['board_id'],)).fetchone())}
+            'board_visibility': row['board_visibility'] or 'team', 'stages': stage_names(board), **({'success': success} if success else {})}
 
 
 def merge(db, a, b, same, now, source='agent'):

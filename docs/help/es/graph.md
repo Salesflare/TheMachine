@@ -187,6 +187,10 @@ Proyectos de un mismo tipo por etapas, como un pipeline de evaluación. **⋯** 
 
 **Seguimientos…** en el **⋯** de un tablero hace seguimiento por sí sola cuando alguien no responde. Mira [Seguimientos](follow-ups.md).
 
+**Hecho cuando**, en **Editar** de un proyecto, dice con palabras simples qué lo termina, con su prueba: **Una página publicada** (The Machine abre el enlace de su mensaje y comprueba que enlaza contigo) o **Su mensaje**. Las revisiones proponen una para las fichas de socios. Una revisión solo pasa un proyecto a la última etapa con esa prueba, enlazada en su página; **Ganado** a mano sigue funcionando.
+
+La página también muestra qué lo frena (sin respuesta en 10+ días, una promesa atrasada) y añade una tarea cuando no tiene ninguna. No se envía nada sin ti.
+
 Marca unos cuantos, o **Seleccionar todo**, para hacerlos a la vez, y **Deshacer** justo después si cambias de idea. Un proyecto que agrupa varias contrapartes se convierte en un proyecto por contraparte cuando lo añades.
 
 **Pipeline**, arriba en un tablero, suma el valor de sus proyectos abiertos por etapa, y lo que se espera cerrar cada mes según sus fechas de cierre. Los proyectos ganados, perdidos y estancados no están abiertos; lo que ganaste este mes aparece aparte. Los valores están en euros, salvo que tu Machine tenga configurada otra moneda. Con **Propietario** en Filtrar, solo cuenta los tuyos.

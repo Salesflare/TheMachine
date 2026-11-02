@@ -187,6 +187,10 @@ Des projets d’un même type répartis en étapes, comme un pipeline d’évalu
 
 **Relances…** dans le **⋯** d’un tableau relance toute seule quand quelqu’un ne répond pas. Voir [Relances](follow-ups.md).
 
+**Terminé quand**, sous **Modifier** sur un projet, dit en mots simples ce qui le termine, avec sa preuve : **Une page en ligne** (The Machine ouvre le lien de leur message et vérifie qu’il renvoie vers vous) ou **Leur message**. Les revues en proposent une pour les fiches partenaires. Une revue ne passe un projet à la dernière étape qu’avec cette preuve, liée sur sa page ; **Gagné** à la main reste possible.
+
+La page montre aussi ce qui le bloque (pas de réponse depuis 10+ jours, une promesse en retard) et ajoute une tâche quand il n’en a pas. Rien n’est envoyé sans vous.
+
 Cochez-en quelques-uns, ou **Tout sélectionner**, pour les traiter d’un coup, et **Annuler** juste après si vous changez d’avis. Un projet qui regroupe plusieurs interlocuteurs devient un projet par interlocuteur quand vous l’ajoutez.
 
 **Pipeline**, en haut d’un tableau, additionne la valeur de ses projets en cours par étape, et ce qui devrait se conclure chaque mois d’après leurs dates de clôture. Les projets gagnés, perdus et bloqués ne sont pas en cours. Ce que vous avez gagné ce mois-ci s’affiche à part. Les valeurs sont en euros, sauf si votre Machine utilise une autre devise. Avec **Propriétaire** dans Filtrer, il ne compte que les vôtres.

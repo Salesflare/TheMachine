@@ -187,6 +187,10 @@ Projects of one kind in stages, like an evaluation pipeline. **⋯** on a board:
 
 **Follow-ups…** in a board's **⋯** follows up by itself when someone doesn't reply. See [Follow-ups](follow-ups.md).
 
+**Done when**, under **Edit** on a project, says what finishes it in plain words, with its proof: **A live page** (The Machine opens the link from their message and checks it links to you) or **Their message**. Reviews suggest one for partner listings. A review only moves a project to the last stage with that proof, linked on its page; **Won** by hand still works.
+
+The page also shows what holds it up (no reply in 10+ days, an overdue promise) and adds one to-do for it when it has none. Nothing is sent without you.
+
 Tick a few, or **Select all**, to do them at once, and **Undo** right after if you change your mind. A project that bundles several counterparts becomes one project per counterpart when you add it.
 
 **Pipeline**, at the top of a board, adds up the value of its open projects per stage, and what's expected to close per month from their close dates. Won, lost and stalled projects aren't open; what you won this month shows apart. Values are in euros unless your Machine is set to another currency. With **Owner** in Filter, it counts only yours.
