@@ -80,8 +80,8 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   `scripts/split_dashboard.py readers` rewrites a test that still reads the file. The service serves the assembled
   page (`dashboard_page()`), so the browser, the service worker's offline copy, the ETag and the CSP see one page as
   before; `dashboard/` itself is never served.
-- **A big page or script** is split before it nears 450 KiB: Aikido skips files over 512 KiB, so a bigger one
-  ships unscanned (see the size rule below).
+- **A big page or script** is split before it nears 450 KiB: Aikido skips big files (some just over 500 KiB already
+  go unscanned), so a bigger one ships unchecked (see the size rule below).
 
 ## The rules and their checks
 
@@ -98,7 +98,7 @@ test_app_mixins.py` (they run in CI with every suite).
 | Nothing reads `dashboard.html` itself; every part in `dashboard/` is included once and parses on its own; the service serves the assembled page; Python and Node assemble the same page. | `tests/test_dashboard_parts.py` |
 | No action is mapped by two mixins, no member is defined in two of them or in both `App` and a mixin, every handler is a method, every name in `OWNER_ACTIONS` or `DASHBOARD_ACTIONS` reaches a mixin's handler or a branch of `App.action`, no branch of `App.action` names an action a mixin maps (it would never run), and every action the dashboard sends is in `DASHBOARD_ACTIONS` and has a handler. | `tests/test_app_mixins.py` |
 | Every dashboard area in `scripts/i18n_extract.py` resolves. | `tests/test_architecture.py`, `python3 scripts/i18n_extract.py --area <name>` |
-| Shipped `.html`, `.js` and `.mjs` files stay under 450 KiB. Aikido's code scan skips a file over 512 KiB, so a bigger one ships unchecked, and splitting it later turns up its findings all at once. `OVER_LIMIT` lists today's bigger files with a ceiling that may only come down (`dashboard.html`, being split into parts). | `tests/test_architecture.py` |
+| Shipped `.html`, `.js` and `.mjs` files stay under 450 KiB. Aikido's code scan skips big files (some just over 500 KiB already go unscanned), so a bigger one ships unchecked, and splitting it later turns up its findings all at once. `OVER_LIMIT` lists today's bigger files with a ceiling that may only come down (`dashboard.html`, being split into parts). | `tests/test_architecture.py` |
 
 The table checks read the SQL in each module's strings. A statement whose table name is computed
 (`f'DELETE FROM {table}'`) isn't seen, so keep table names literal in new code.

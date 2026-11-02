@@ -250,9 +250,10 @@ def owner(table, creates):
 
 # --- tests -----------------------------------------------------------------------------------------------------------
 
-# Aikido's code scan skips a file over 512 KiB, so a page or script that big ships unchecked. Shipped .html, .js and
-# .mjs files (tests aside) stay under SCAN_LIMIT, with room to spare. OVER_LIMIT lists today's bigger files with a
-# ceiling that may only come down: one that grows fails, and one back under the limit fails until it's removed.
+# Aikido's code scan skips big files (some just over 500 KiB already go unscanned), so a page or script that big
+# ships unchecked. Shipped .html, .js and .mjs files (tests aside) stay under SCAN_LIMIT, with room to spare.
+# OVER_LIMIT lists today's bigger files with a ceiling that may only come down: one that grows fails, and one back
+# under the limit fails until it's removed.
 SCAN_LIMIT = 450 * 1024
 OVER_LIMIT = {'dashboard.html': 540_000}  # being split into dashboard/ parts
 
@@ -348,7 +349,7 @@ class Architecture(unittest.TestCase):
         for name, size in sizes.items():
             with self.subTest(file=name):
                 limit = OVER_LIMIT.get(name, SCAN_LIMIT)
-                self.assertLessEqual(size, limit, f'{name} is {size} bytes, over {limit}: split it (the scanner skips files over 512 KiB)')
+                self.assertLessEqual(size, limit, f'{name} is {size} bytes, over {limit}: split it (the scanner skips big files)')
         for name, ceiling in OVER_LIMIT.items():
             with self.subTest(listed=name):
                 self.assertGreater(sizes.get(name, 0), SCAN_LIMIT, f'{name} is under the limit now: take it out of OVER_LIMIT')
