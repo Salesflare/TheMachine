@@ -12,7 +12,7 @@ order: 5
 1. En la tarea, abre **…**, luego **Pasar…**, y elige **Codex** o **Claude Code**. Solo aparecen las herramientas que has configurado.
 2. Revisa el resumen y lo que recibe, añade una nota si quieres y pulsa **Pasar**. **Ver el trabajo completo** muestra todo el encargo.
 
-Luego la tarea muestra que está trabajando, y el resultado cuando termina, con **Mostrar cambios**. **Pedir cambios** le dice qué cambiar; **Pasar de nuevo** empieza de cero.
+Luego la tarea muestra que está trabajando, y el resultado cuando termina, con **Qué hizo** y **Mostrar cambios**. **Pedir cambios** le dice qué cambiar; **Pasar…** en **…** empieza de cero; **Ocultar** guarda el resultado.
 
 Un trabajo nunca envía nada por ti.
 

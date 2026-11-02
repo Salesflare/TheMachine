@@ -12,7 +12,7 @@ order: 5
 1. On the to-do, open **…**, then **Hand off…**, and pick **Codex** or **Claude Code**. Only the tools you set up show.
 2. Check the summary and what it gets, add a note if you like, and press **Hand off**. **See the full job** shows the whole brief.
 
-The to-do then shows that it's working, and the result when it's done, with **Show changes**. **Ask for changes** sends it what to change; **Hand off again** starts over.
+The to-do then shows that it's working, and the result when it's done, with **What it did** and **Show changes**. **Ask for changes** sends it what to change; **Hand off…** in **…** starts over; **Hide** puts the result away.
 
 A job never sends anything for you.
 

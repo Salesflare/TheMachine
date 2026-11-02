@@ -437,7 +437,7 @@ const agentEditing=new Map(),agentAsking=new Set(),AGENT_ACTIVE=['sent','running
 const agentTools=()=>state?.agent_tools||[];
 const agentWhere=x=>x.place==='device'?t('Runs on {}, with the Codex signed in there.',x.device):agentWhereElse(x);
 const agentWhereElse=x=>x.place==='cloud'?t('Runs in Codex cloud, not on your computer.'):x.place==='remote'?t('Runs in your Claude session on {}.',x.device):t('Runs on this computer with your own {} setup.',x.name);
-const canAgent=s=>!closed(s)&&s.status!=='snoozed'&&agentTools().length>0&&!AGENT_ACTIVE.includes(s.agent_job?.status)&&!agentOpen(s);
+const canAgent=s=>!closed(s)&&s.status!=='snoozed'&&agentTools().length>0&&!AGENT_ACTIVE.includes(s.agent_job?.status);
 const agentOpen=s=>{const j=s.agent_job;return!!j&&!closed(s)&&!j.outcome&&['result','failed'].includes(j.status)};
 const agentCancel=j=>`<div class="actions"><button class="ghost" data-agent-cancel="${esc(j.id)}">Cancel</button></div>`;
 // A Codex thread opens on this computer: from the owner's other devices through the Codex app's remote connection (hostId).
@@ -477,9 +477,10 @@ function agentPick(paths,text){const said=String(text||''),named=paths.filter(f=
  const shown=(named.length?named:paths.filter(f=>!AGENT_NOISE.test(f))).slice(0,AGENT_CHIPS);return {shown,hidden:paths.length-shown.length}}
 const agentMoreFiles=n=>n?`<button type="button" class="agent-file agent-morefiles" data-agent-files>+${n} more</button>`:'';
 const agentAllFiles=(j,paths,label=true)=>`<div class="agent-allfiles">${label?'<p class="muted">All files</p>':''}<div class="agent-files">${paths.map(f=>agentFile(j,{path:f})).join('')}</div></div>`;
-// The result in one line: its first paragraph, cut at a sentence when long. The rest folds behind Details.
+// The result in one line: its first paragraph, cut at a sentence when long. The rest folds behind What it did.
 function agentLine(text){const first=String(text||'').trim().split(/\n\s*\n/)[0]||'';if(first.length<=240)return first;const cut=first.slice(0,240),end=Math.max(cut.lastIndexOf('. '),cut.lastIndexOf('! '),cut.lastIndexOf('? '));return end>80?cut.slice(0,end+1):cut.replace(/\s+\S*$/,'')+'…'}
-const agentTools2=(s,j,retry)=>`<div class="agent-tools">${retry?`<button data-agent-retry="${esc(j.id)}">Try again</button>`:''}<button data-agent-again="${esc(s.id)}">Hand off again</button><button data-agent-aside="${esc(j.id)}">Hide</button></div>`;
+// A result hides with Hide; handing it off again is the … menu's Hand off. A failed job keeps Try again and Hand off again beside it.
+const agentTools2=(s,j,retry)=>`<div class="agent-tools">${retry?`<button data-agent-retry="${esc(j.id)}">Try again</button><button data-agent-again="${esc(s.id)}">Hand off again</button>`:''}<button data-agent-aside="${esc(j.id)}">Hide</button></div>`;
 function agentBlock(s){const j=s.agent_job;if(!j||['set_aside','again'].includes(j.outcome)||(closed(s)&&j.status!=='result'))return'';
  const who=esc(j.name),cloud=j.place==='cloud',since=j.started_at||j.updated_at;
  if(j.status==='sent')return`<div class="agent-job"><p class="note">${t(cloud?'Sent to {} in Codex cloud. Starting soon.':'Sent to {}. Starting soon.',who)}</p>${agentCancel(j)}</div>`;
@@ -488,13 +489,15 @@ function agentBlock(s){const j=s.agent_job;if(!j||['set_aside','again'].includes
  if(j.status==='failed'&&j.error_kind==='busy')return`<div class="agent-job"><p class="note">${esc(j.error)} ${agentLink(j)}</p>${closed(s)?'':agentTools2(s,j,true)}</div>`;
  if(j.status==='failed')return`<div class="agent-job"><p class="note failed">${t('{} stopped: {}',who,`<span class="agent-error">${esc(j.error||t('it did not finish'))}</span>`)} ${agentLink(j)}</p>${closed(s)?'':agentTools2(s,j,true)}</div>`;
  if(j.status==='cancelled')return closed(s)?'':`<div class="agent-job"><p class="note">${t('{}: canceled.',who)}</p></div>`;
- const line=agentLine(j.summary),rest=String(j.summary||'').trim().length>line.length+2;
+ // What it did: the answer after its line (its first paragraph shows once, above), without the headings that only title it
+ const line=agentLine(j.summary),first=String(j.summary||'').trim().split(/\n\s*\n/)[0]||'',all=String(j.summary||'').trim();
+ const restText=(line===first?all.slice(first.length):all).replace(/^\s*(#{1,6}[^\n]*(\n|$)\s*)+/,'').trim(),rest=!!restText;
  const files=(j.files||[]).filter(f=>!(j.draft_updated&&f.path==='draft.md'));
  const lineHtml=agentText(j,line),own=files.filter(f=>!lineHtml.includes(agentFile(j,f))).map(f=>f.path);  // a file already in the line is not repeated
  const pick=agentPick(own,j.summary);
  const chips=pick.shown.length||pick.hidden?`<div class="agent-files">${pick.shown.map(f=>agentFile(j,{path:f})).join('')}${agentMoreFiles(pick.hidden)}</div>`:'';
  const diff=j.has_diff?`<details class="agent-diff" data-agent-diff="${esc(j.id)}"><summary>Show changes</summary><pre></pre></details>`:'';
- const more=rest||diff||pick.hidden?`<details class="agent-more"><summary>Details</summary>${rest?`<div class="agent-text">${agentText(j,j.summary)}</div>`:''}${pick.hidden?agentAllFiles(j,own):''}${diff}</details>`:'';
+ const more=rest||diff||pick.hidden?`<details class="agent-more"><summary>What it did</summary>${rest?`<div class="agent-text">${agentText(j,restText)}</div>`:''}${pick.hidden?agentAllFiles(j,own):''}${diff}</details>`:'';
  return`<div class="agent-job draft agent-result" role="group" aria-label="${esc(t('{} result',j.name))}"><div class="agent-head"><span class="dm">${who}${j.place==='cloud'?' (Codex cloud)':''}${j.turns>1?' · '+t('after your changes'):''}</span>${agentLink(j)}</div><div class="agent-line agent-text">${lineHtml}</div>${j.draft_updated?`<p class="muted agent-progress">Updated the draft below. Send it when it reads right.</p>`:''}${chips}${more}${closed(s)?'':agentTools2(s,j,false)}</div>`}
 // Hand to Codex / Claude Code: a compact sheet (in the chat it takes the message box's place). One plain line of what it
 // will do, small chips for what it gets (never links), an optional note; the whole job only behind "See the full job".

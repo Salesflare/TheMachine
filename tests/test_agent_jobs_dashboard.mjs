@@ -84,7 +84,8 @@ try{
   card.agent_job={...job,status:'running',progress:'Write: summary.md'};await page.evaluate(()=>refresh());await c.locator('.agent-progress').waitFor({timeout:10000})}
  // The result comes back: the card follows it without a full refresh.
  const long='Rewrote the reply in [draft.md](/home/owner/.local/share/agent-jobs/aj_1/work/draft.md) and added [summary.md](/home/owner/.local/share/agent-jobs/aj_1/work/summary.md).\n\n## Details\n- Kept the tone of `/tmp/x/notes.txt`\n- Checked the numbers';
- card.agent_job={...job,status:'result',summary:long,url:'codex://threads/01a16539-9d4a-7d83-9620-9203de5acb75',url_elsewhere:'codex://threads/01a16539-9d4a-7d83-9620-9203de5acb75?hostId=remote-control%3Aenv_0123abcd',app:'Open in Codex',app_name:'Codex',can_follow_up:true,draft_updated:true,
+ // A Codex job links to its Codex thread (a Claude Code one to claude.ai/code): name and link name the same app
+ card.agent_job={...job,tool:'codex',name:'Codex',status:'result',summary:long,url:'codex://threads/01a16539-9d4a-7d83-9620-9203de5acb75',url_elsewhere:'codex://threads/01a16539-9d4a-7d83-9620-9203de5acb75?hostId=remote-control%3Aenv_0123abcd',app:'Open in Codex',app_name:'Codex',can_follow_up:true,draft_updated:true,
   files:[{path:'summary.md',size:20},{path:'draft.md',size:20}],has_diff:true,finished_at:new Date().toISOString()};
  await c.locator('.agent-result').waitFor({timeout:10000});
  const text=await c.locator('.agent-result').innerText();
@@ -101,9 +102,17 @@ try{
  const chips=c.locator('.agent-result .agent-line a.agent-file');
  assert.deepEqual(await chips.allInnerTexts(),['draft.md','summary.md']);
  assert.equal(await chips.nth(1).getAttribute('href'),`api/agent-file?job=${job.id}&path=summary.md`);
- assert.equal(await c.locator('.agent-more').getAttribute('open'),null);  // the details are folded away
+ assert.equal(await c.locator('.agent-result .agent-head .dm').innerText(),'Codex');
+ assert.equal(await c.locator('.agent-more').getAttribute('open'),null);  // what it did is folded away
+ assert.equal(await c.locator('.agent-more>summary').innerText(),'What it did');
+ assert.equal(await c.getByText('Details',{exact:true}).count(),1);  // one Details on the to-do: its own
  await c.locator('.agent-more>summary').click();
- assert.match(await c.locator('.agent-more').innerText(),/Checked the numbers/);
+ {const more=await c.locator('.agent-more').innerText();
+  assert.match(more,/Checked the numbers/);
+  assert.doesNotMatch(more,/Rewrote the reply|^Details$/m,more)}  // the line shows once, above; no heading inside
+ // A result hides with Hide; handing it off again is the … menu's, not a button in the box
+ assert.deepEqual(await c.locator('.agent-result .agent-tools button').allInnerTexts(),['Hide']);
+ assert.deepEqual(await c.locator('.more-menu [data-agent-hand]').evaluateAll(n=>n.map(x=>x.textContent.trim())),['Claude Code','Codex']);
  await c.locator('.agent-diff>summary').click();
  await page.waitForFunction(()=>document.querySelector('.agent-diff pre')?.textContent.includes('+Summary line'));
  // The card's own primary action stays; Change goes to the job and says so, beside it
@@ -112,7 +121,7 @@ try{
  assert.equal(buttons[1],'Ask for changes',buttons.join('|'));
  assert.equal([...buttons,...menu].filter(b=>/changes/i.test(b)).length,1);
  await c.locator('[data-agent-ask]').click();
- assert.match(await c.innerText(),/Goes to the Claude Code job/);
+ assert.match(await c.innerText(),/Goes to the Codex job/);
  await c.locator('#agent-ask-c1').fill('Shorter, please');
  await c.locator('[data-agent-ask-send]').click();
  await page.waitForTimeout(300);
@@ -151,7 +160,7 @@ try{
   assert.equal(look.head,'flex',width);assert.ok(look.appRight,JSON.stringify(look));
   assert.ok(look.sameRow&&look.gap>=12,JSON.stringify(look));  // one row; name and Open in Codex never run together
   assert.ok(look.chips.length===4&&look.chips.every(x=>x.border==='solid'&&x.one&&x.deco==='none'),JSON.stringify(look.chips));
-  assert.ok(look.tools.length===2&&look.tools.every(x=>x.border==='none'&&/rgba\(0, 0, 0, 0\)|transparent/.test(x.bg)&&x.one),JSON.stringify(look.tools));
+  assert.ok(look.tools.length===1&&look.tools.every(x=>x.border==='none'&&/rgba\(0, 0, 0, 0\)|transparent/.test(x.bg)&&x.one),JSON.stringify(look.tools));
   assert.ok(look.wide,width)}
  state.suggestions.pop();
  // The card's header keeps one row too: where "Open in Codex" doesn't fit next to the name it reads "Open".
