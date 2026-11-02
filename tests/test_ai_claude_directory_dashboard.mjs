@@ -79,9 +79,10 @@ try{
   assert.equal(await page.locator('#ai-official [data-ai-claude], #ai-official [data-ai-chatgpt]').count(),0);
   assert.equal(await page.locator('#ai-official .btn-link, #ai-official button.primary').count(),1);
   const waiting=await page.locator('#ai-official>div').allInnerTexts();
-  assert.match(waiting[0],/ChatGPT/);assert.match(waiting[1],/Claude/);
+  // one muted row for both, its one line covering both
+  assert.match(waiting[0],/ChatGPT · Claude\nReady once this Machine has its address\./);
   assert.equal((await page.locator('#ai-official').innerText()).split('Ready once this Machine has its address.').length,2,'one line');
-  assert.match(waiting[2],/Get your address/);
+  assert.match(waiting[1],/Get your address/);
   // Set up: one line, the size of the other row buttons
   const setup=page.locator('#ai-official [data-ai-get]');assert.equal(await setup.innerText(),'Set up');
   const sb=await setup.boundingBox(),lh=await setup.evaluate(b=>parseFloat(getComputedStyle(b).lineHeight)||20);

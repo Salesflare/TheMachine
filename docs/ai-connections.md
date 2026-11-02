@@ -72,7 +72,7 @@ In Settings each such connection is tagged **Official app** (`connections()`, `o
 
 The official app shows when the account can reach this Machine at its private address (`ai_app.ai_reach`, `shared`): a
 hosted Machine with a name, or a paired self-hosted one with a name of its own and its certificate ready. Until then
-ChatGPT and Claude show muted, without a button, with one line (ready once this Machine has its address), above **Get
+ChatGPT and Claude show as one muted row, without a button, with one line (ready once this Machine has its address), above **Get
 your address** with **Set up** ([Pairing](#pairing)) or the address's state, which both ways need.
 
 ## Connections

@@ -27,13 +27,13 @@ function renderAi(){const box=$('#settings-ai');if(!box||!aiView)return;const v=
 // Two ways in (ai_app.ai_reach, docs/ai-connections.md). First the official app's listings, Add in ChatGPT and Add in
 // Claude (ChatGPT's plugins and Claude's connector directory, both on the shared address: the account signs in and routes
 // to a hosted Machine or a paired self-hosted one). They need this Machine on the account with a name and, self-hosted,
-// its certificate (r.shared): until then both show muted with one line, above Get your address (aiAddress) or the
+// its certificate (r.shared): until then one muted row names both, with one line, above Get your address (aiAddress) or the
 // address's state. Folded under Or add it by address (aiAddresses): the shared address and this Machine's private one
 // (end to end), each with Copy, and the steps to add one by hand.
 const AI_CLAUDE_DIRECTORY='https://claude.ai/directory/the-machine';
 const AI_CHATGPT_APP='https://chatgpt.com/plugins/plugin_asdk_app_6ae74ac637d0819199400cd3750138b4';
 function aiApps(ready){
- if(!ready)return '<div class="ai-later"><span class="grow"><strong translate="no">ChatGPT</strong></span></div><div class="ai-later"><span class="grow"><strong translate="no">Claude</strong><small>Ready once this Machine has its address.</small></span></div>';
+ if(!ready)return '<div class="ai-later"><span class="grow"><strong translate="no">ChatGPT · Claude</strong><small>Ready once this Machine has its address.</small></span></div>';
  return `<div><span class="grow"><strong translate="no">ChatGPT</strong><small>Add The Machine from ChatGPT’s plugins in one click.</small></span><a class="btn-link primary" href="${AI_CHATGPT_APP}" target="_blank" rel="noopener" data-ai-chatgpt>Add in ChatGPT</a></div>`
   +`<div><span class="grow"><strong translate="no">Claude</strong><small>Add The Machine from Claude’s directory in one click.</small></span><a class="btn-link primary" href="${AI_CLAUDE_DIRECTORY}" target="_blank" rel="noopener" data-ai-claude>Add in Claude</a></div>`}
 function aiOfficial(r){
