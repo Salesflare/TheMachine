@@ -443,6 +443,9 @@ const elapsed=v=>{const t=Math.max(0,Math.floor((Date.now()-new Date(v))/1000));
 const browserOpen=(id,b,img='')=>{const at=`data-browser-focus="${esc(id)}" data-task="${esc(id)}" data-page="${esc(b.page||'')}"`,cls=img?'peek-thumb':'browser-link',lab=img?' aria-label="Open the browser" title="What the browser shows now"':'';
  return safeURL(b.link)?`<a class="${cls}" href="${esc(b.link)}" target="_blank" rel="noopener" ${at}${lab} data-quiet>${img||'Open the browser'}</a>`:`<button type="button" class="${cls}" ${at}${lab}>${img||'Open the browser'}</button>`};
 const browserLink=(id,b)=>!b?'':(b.sign_in?`<button type="button" class="browser-link" data-signin data-task="${esc(id)}" data-page="${esc(b.page||'')}">Sign in</button> `:'')+browserOpen(id,b);
+const browserNodes=(id,b)=>{if(!b)return [];const at={'data-browser-focus':id,'data-task':id,'data-page':b.page||''};
+ return [...b.sign_in?[make('button',{type:'button',class:'browser-link','data-signin':'','data-task':id,'data-page':b.page||''},'Sign in'),' ']:[],
+  safeURL(b.link)?make('a',{class:'browser-link',href:b.link,target:'_blank',rel:'noopener',...at,'data-quiet':''},'Open the browser'):make('button',{type:'button',class:'browser-link',...at},'Open the browser')]};
 // A run that stopped to ask: its questions as the Needs you line, each clear choice as quick picks that fill the answer box.
 function askLine(s,ask){const qs=s.preparation_questions||[];
  if(!qs.length)return `<p class="note status-line outcome">${esc('Needs you: '+sentence(ask))}</p>`;
@@ -452,6 +455,7 @@ const plainDetails=t=>String(t||'').replace(/(?:~|\/home|\/tmp|\/var|\/Users|mem
 // A run's latest three steps, one line each, in a box that keeps its height from the start: the to-do doesn't grow
 // line by line while it works.
 const stepItems=list=>(list||[]).slice(-1).map(x=>`<li title="${esc(x.title)}">${esc(x.title)}</li>`).join('');
+const stepNodes=list=>(list||[]).slice(-1).map(x=>make('li',{title:String(x.title??'')},String(x.title??'')));
 // Why a queued run waits (s.preparation_hold from the dispatcher: why, until): said on its to-do instead of "I'll start
 // shortly." for minutes. No hold: it starts within seconds. ai: its start waits for the Gateway to come back (a reboot,
 // a restart), shown instead of a live "Preparing…" timer; it carries on by itself (assistant.py PREPARATION_WAITING).

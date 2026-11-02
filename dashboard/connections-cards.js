@@ -243,6 +243,7 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-host
  connectSignin={...(x?signinOf(x,'intro'):{source:p,provider:p,label:SIGNIN_COPY[p]?.label||p,own:false,hosted:true,state:'intro'}),...(b.dataset.email?{email:b.dataset.email}:{}),...(p==='whatsapp'&&b.dataset.account?{account:b.dataset.account}:{})};
  $('#connect-add').dataset.sig='';renderConnectSignin();viewTop($('#connect-add'))});
 const hostedReconnect=(c,label,cls)=>`<button type="button" class="${cls}" data-hosted-reconnect="${esc(c.hosted_signin)}"${c.email?` data-email="${esc(c.email)}"`:''}${c.service==='whatsapp'?` data-account="${esc(c.id)}"`:''}>${esc(label)}</button>`;
+const hostedReconnectNode=(c,label,cls)=>make('button',{type:'button',class:cls,'data-hosted-reconnect':c.hosted_signin??'',...c.email?{'data-email':c.email}:{},...c.service==='whatsapp'?{'data-account':c.id??''}:{}},label);
 // Reconnect on a card or in Needs you: the same steps as + Add, for that account, shown in the + Add pane.
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-reconnect]');if(!b)return;
  // a sign-in through the control plane (Docs from Microsoft on a self-hosted Machine): its Sign in step, in the + Add pane.
