@@ -7,7 +7,11 @@ code: notify.py, assistant.py, dashboard/new-todo.js, dashboard/settings-device.
 order: 3
 keywords: ios, android, app store, play store, share sheet, share, phone, mobile, push
 ---
-The mobile app opens your own dashboard, signed in as on the web. It works with a hosted Machine and with a self-hosted one paired with an account.
+The mobile app opens your own dashboard, signed in as on the web.
+
+## Connect it
+
+On a hosted Machine the app signs in with your account. On a self-hosted one, open **Settings**, **General** on a computer: **Phone app** shows a code. Install the app, then scan it with the phone's camera, or type the address shown under it into the app. The app asks before it connects, and your Machine's own sign-in still applies.
 
 ## Notifications
 
@@ -15,7 +19,7 @@ The app asks to allow notifications when it first opens. A notification only say
 
 They follow the same rules as push on the web: what you picked per kind in [Notifications](notifications.md), your [work hours](work-hours.md), and nothing while you are using a dashboard.
 
-Each phone with the app shows in **Settings**, **Notifications** as a **Phone with the app**. **Remove** stops its notifications. A self-hosted Machine needs to be paired with an account for them.
+Each phone with the app shows in **Settings**, **Notifications** as a **Phone with the app**. **Remove** stops its notifications. A self-hosted Machine needs The Machine Network for them; the app works without them.
 
 ## Share to The Machine
 

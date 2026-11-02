@@ -104,6 +104,7 @@ import meeting_notes
 import meeting_writer
 import meet_link
 import places
+import qr
 from sources import (CALENDAR_SERVICES, MAIL_SERVICES, MICROSOFT_SERVICES, SourceError, credential, gog_read,  # noqa: F401
                      gog_signed_in_since, gog_signin_command, gog_token_path, mail_account, mailbox_name, owner_credential,
                      rate_limited, transient, upstream_busy)  # reading the owner's sources: errors, credentials, Google and Microsoft
@@ -12700,6 +12701,31 @@ def app_wake(store, config, kind, tag, device=None):
     return sent
 
 
+APP_SCHEME = 'computer.themachine.app://connect?u='  # the mobile app's own link: it asks the owner, then opens the address
+
+
+@functools.lru_cache(maxsize=4)
+def phone_qr(link):
+    return tuple(qr.encode(link))
+
+
+def phone_app(config):
+    """Settings, Phone app: how the mobile app finds this Machine. Hosted: it signs in with the account. Self-hosted:
+    a QR code of the app's connect link with this Machine's own https address (its Tailscale name, dashboard_host),
+    and the address to type in. Nothing secret: the dashboard's own sign-in still applies when the app opens it."""
+    if str(config.get('manage_url') or '').startswith('https://'):
+        return {'hosted': True}
+    if not config.get('dashboard_host'):
+        return {'hosted': False}
+    url = 'https://' + config['dashboard_host'] + config.get('dashboard_path', '/')
+    link = APP_SCHEME + urllib.parse.quote(url, safe='')
+    try:
+        rows = list(phone_qr(link))
+    except ValueError:  # an address too long for a code: typed in instead
+        rows = []
+    return {'hosted': False, 'url': url, 'link': link, 'qr': rows}
+
+
 def push_reach(store, config):
     """(web push subscriptions, phones with the app): where a push can go. The web ones need dashboard_host for their
     links; the app's need the control plane."""
@@ -16457,8 +16483,8 @@ class App(*APP_MIXINS):
         label = ' '.join(re.sub(r'[\x00-\x1f\x7f<>]', ' ', str(args.get('label') or '')).split())[:60]
         label = label or ('iPhone' if platform == 'apns' else 'Android')
         target = cloud_target(self.config)
-        if not target:
-            raise ValueError('Phone notifications in the app need this Machine paired with an account.')
+        if not target:  # self-hosted off The Machine Network: the relay doesn't know it. The app works without them.
+            return {'registered': False, 'reason': 'network'}
         answer = notify.app_push(*target, {'action': 'register', 'platform': platform, 'token': token, 'label': label,
                                            'sandbox': args.get('sandbox') is True})
         device = str((answer or {}).get('id') or '')
@@ -16467,7 +16493,7 @@ class App(*APP_MIXINS):
         with self.store.connect() as db:
             notify.app_device_add(db, device, platform, label, now())
         LOG.info('app push registered platform=%s', platform)
-        return {'id': device, 'platform': platform, 'label': label}
+        return {'registered': True, 'id': device, 'platform': platform, 'label': label}
 
     def notify_view(self):
         with self.store.connect() as db:
@@ -16476,6 +16502,7 @@ class App(*APP_MIXINS):
             phones = notify.app_devices(db)  # the mobile app's phones count as devices too, and are listed to remove
         return {'prefs': prefs, 'telegram': telegram_on(self.config), 'email': mail_ready(self.config),
                 'push_devices': devices + len(phones), 'app_devices': phones,
+                'app_push_ready': bool(cloud_target(self.config)), 'phone_app': phone_app(self.config),
                 'push_ready': bool(self.config.get('dashboard_host')), 'digest_at': self.config.get('digest_at', '08:30')}
 
     def digest(self, current=None):

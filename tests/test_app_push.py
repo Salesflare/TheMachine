@@ -59,7 +59,7 @@ class AppPush(unittest.TestCase):
 
     # -- register and unregister
     def test_register_forwards_to_the_cloud_and_keeps_no_token(self):
-        self.assertEqual(self.register(sandbox=True), {'id': 'dev_1', 'platform': 'fcm', 'label': 'Pixel 8'})
+        self.assertEqual(self.register(sandbox=True), {'registered': True, 'id': 'dev_1', 'platform': 'fcm', 'label': 'Pixel 8'})
         sent = self.cloud.seen[0]
         self.assertEqual(sent['url'], 'https://cp.example/api/fleet/app-push')
         self.assertEqual(sent['auth'], 'Bearer tok')
@@ -94,10 +94,11 @@ class AppPush(unittest.TestCase):
         for name in ('app_push_register', 'app_push_unregister'):
             self.assertIn(name, a.DASHBOARD_ACTIONS)
 
-    def test_without_the_cloud_a_clear_error(self):
+    def test_off_the_network_a_plain_answer_not_an_error(self):
         self.config.pop('fleet'); self.config['credentials'] = {}
-        with self.assertRaisesRegex(ValueError, 'paired with an account'):
-            self.register()
+        self.assertEqual(self.register(), {'registered': False, 'reason': 'network'})
+        self.assertEqual(self.cloud.seen, [])
+        self.assertFalse(self.app.notify_view()['app_push_ready'])
         self.cloud = Cloud(register={})  # the control plane answered without an id
         self.config.update(credentials={'fleet': 'fleet'}, fleet={'url': 'https://cp.example/api/fleet'})
         with self.assertRaisesRegex(ValueError, 'Try again'):
@@ -232,6 +233,27 @@ class AppPush(unittest.TestCase):
         self.cloud.answers['wake'] = {'sent': 0, 'removed': 0}
         with self.assertRaisesRegex(ValueError, 'didn’t go through'):
             self.app.action('push_test', {'app_device': 'dev_1'}, owner_dashboard=True)
+
+
+class PhoneApp(unittest.TestCase):
+    """Settings, Phone app: a QR code of the app's connect link for a self-hosted Machine, a line for a hosted one."""
+    def test_self_hosted_gets_the_connect_link_and_its_code(self):
+        view = a.phone_app({'dashboard_host': 'machine.tailnet.ts.net', 'dashboard_path': '/assistant/'})
+        self.assertEqual(view['url'], 'https://machine.tailnet.ts.net/assistant/')
+        self.assertEqual(view['link'], 'computer.themachine.app://connect?u=https%3A%2F%2Fmachine.tailnet.ts.net%2Fassistant%2F')
+        self.assertEqual(view['qr'], a.qr.encode(view['link']))
+        self.assertEqual(set(view), {'hosted', 'url', 'link', 'qr'})  # nothing secret in it
+        self.assertEqual(a.phone_app({'manage_url': 'https://app.example/manage', 'dashboard_host': 'x.example'}), {'hosted': True})
+        self.assertEqual(a.phone_app({}), {'hosted': False})
+
+    def test_the_dashboard_shows_it_and_the_network_line_once(self):
+        source = (Path(a.ROOT) / 'dashboard' / 'settings-device.js').read_text(encoding='utf-8')
+        body = re.search(r'^function phoneAppRender\(\).*?(?=^\S)', source, re.M | re.S)[0]
+        self.assertIn('qrSvg(p.qr)', body)
+        self.assertIn("t('Install the app, then scan this with the phone’s camera.')", body)
+        self.assertIn("t('The app signs in with your account.')", body)
+        self.assertIn("devStore.set('app-push-network',1)", body)  # remembered: said once
+        self.assertIn("t('Notifications in the app need The Machine Network. The app works without them.')", body)
 
 
 class Share(unittest.TestCase):

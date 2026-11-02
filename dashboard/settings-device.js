@@ -114,7 +114,17 @@ function deviceSettings(){const {app}=deviceRows,small=app.querySelector('small'
  $('#push-test').hidden=!on;
  const text=!pushOK?(iosTab?'On iPhone and iPad, add it to your Home Screen first: Share, then Add to Home Screen.':'This browser can’t show notifications.'):blocked?t('Blocked in this browser.')+' '+blockedHint():on?'On for this device. One per to-do, even without Telegram.':'One per to-do, even without Telegram.';
  set(note,esc(text)+DEVICE_HELP);note.classList.toggle('device-blocked',blocked)}
-function deviceRender(){const k=nudgeKind()||'',el=nudgeBox;if(el.dataset.kind!==k){el.dataset.kind=k;el.innerHTML=k?nudgeHTML(k):'';el.hidden=!k}deviceSettings();renderNotify()}
+function deviceRender(){const k=nudgeKind()||'',el=nudgeBox;if(el.dataset.kind!==k){el.dataset.kind=k;el.innerHTML=k?nudgeHTML(k):'';el.hidden=!k}deviceSettings();renderNotify();phoneAppRender()}
+// Settings, General, Phone app: how the mobile app finds this Machine (phone_app in assistant.py). Self-hosted: a QR code
+// of the app's connect link and the address to type in; hosted: it signs in with the account. Not shown in the app itself,
+// which says once when its notifications can't work (off The Machine Network).
+function phoneAppRender(){const p=state?.notify?.phone_app,inApp=document.documentElement.classList.contains('in-app');let row=$('#device-phone');
+ if(inApp&&state?.notify&&!state.notify.app_push_ready&&!devStore.get('app-push-network')){devStore.set('app-push-network',1);toast(t('Notifications in the app need The Machine Network. The app works without them.'))}
+ const html=!p||inApp||!(p.hosted||p.url)?'':p.hosted?`<span class="grow"><strong>Phone app</strong><small>${esc(t('The app signs in with your account.'))}</small></span>`:
+  `<span class="grow"><strong>Phone app</strong><small>${esc(t('Install the app, then scan this with the phone’s camera.'))}</small>${p.qr?.length?qrSvg(p.qr):''}<small>${t('Or enter this address in the app: {}','<code class="phone-url">'+esc(p.url)+'</code>')}</small></span>`;
+ if(!html){row?.remove();return}  // only there when there is something to show
+ if(!row){row=document.createElement('div');row.id='device-phone';deviceRows.app.after(row)}
+ if(row.dataset.html!==html){row.innerHTML=html;row.dataset.html=html}}
 deviceRows.app.onclick=e=>{const b=e.target.closest('[data-device]');if(b)deviceRun(b.dataset.device)};
 $('#push-toggle').onclick=async()=>{const b=$('#push-toggle');if(!pushOK){toast(iosHint);return}b.disabled=true;try{if(pushOn())await pushDisable();else await pushEnable()}finally{b.disabled=false}};
 setTimeout(deviceRender,Math.max(0,sessionStart+6e4-Date.now())+50);
