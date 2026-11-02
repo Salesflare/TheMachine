@@ -22,7 +22,7 @@ Entrambi sono attivi per impostazione predefinita, e disattivati al livello di s
 
 Le persone che conosci e che sono nel Network ti vengono suggerite appena lo attivi, e quando qualcuno si unisce più tardi. Ogni corrispondenza arriva con Collegati, Non ora o **Non suggerire mai**. **Esci dal Network** ti toglie dal Network.
 
-Le persone trovate mostrano **Ha una Machine** nella tua lista Persone. Il controllo usa gli indirizzi dei tuoi messaggi e quelli che hai aggiunto a una persona con **Modifica**: se qualcuno si è registrato con un altro indirizzo, aggiungilo a quella persona.
+Le persone trovate mostrano **Ha una Machine** nella tua lista Persone. Il controllo usa gli indirizzi dei tuoi messaggi e quelli che hai aggiunto a una persona con **Modifica**: se qualcuno si è registrato con un altro indirizzo, aggiungilo a quella persona. Nella pagina di una persona trovata, **Aggiungi come amico** nel menu ⋯ invia la stessa richiesta di Collegati.
 
 ## Pianificare con altre Machine
 

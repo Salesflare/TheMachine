@@ -22,7 +22,7 @@ Both are on by default, and off at the Careful security level. Turn either off a
 
 People you know who are on the Network are suggested right away when you turn it on, and when someone joins later. Your Machine checks every 15 minutes for new contacts and people who just joined, and goes through all your contacts once a day. A match comes with Connect, Not now or **Never suggest**. **Leave the Network** takes you off it.
 
-People it finds say **Has a Machine** in your People list. It checks the addresses in your messages and the ones you added to a person with **Edit**: if someone signed up with another address, add it to them.
+People it finds say **Has a Machine** in your People list. It checks the addresses in your messages and the ones you added to a person with **Edit**: if someone signed up with another address, add it to them. On the page of someone it found, **Add as friend** in the ⋯ menu sends the same request as Connect.
 
 ## Scheduling with other Machines
 

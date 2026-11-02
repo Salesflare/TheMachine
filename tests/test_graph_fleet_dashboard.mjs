@@ -19,7 +19,7 @@ const pat={id:'email:pat@client.example',kind:'person',name:'Pat Client',strengt
 const alex={id:'email:alex@acme.example',kind:'person',name:'Alexandra-Ionela Constantinescu-Vandenberghe',strength:2.8,closeness:'close',last_at:day,signals:7,ids:['alex@acme.example'],role:'software developer',
  fleet:{machine:true,name:null,in:[{kind:'work',label:'Work Fleet',fleet:FL,fleet_name:'Acme',member_id:'fm_alex'},{kind:'friends',label:'Friend',fleet:FR,fleet_name:'Friends',member_id:'fp_alex'}]}};
 const nia={id:'email:nia@studio.example',kind:'person',name:'Nia North',strength:2.1,closeness:'close',last_at:day,signals:5,ids:['nia@studio.example'],role:'board member',
- fleet:{machine:true,in:[],name:null},links:[],open:{you_promised:[],they_promised:[],cards:[],facts:[]},recent:[],around:[]};
+ fleet:{machine:true,in:[],name:null,network:{email:'nia@studio.example',hint:'personal',requested:false,can_add:true}},links:[],open:{you_promised:[],they_promised:[],cards:[],facts:[]},recent:[],around:[]};
 const rules=()=>({relationships:{rule:'ask',details:false}});
 const view={on:true,ask_meetings:false,brief:{every:'off',tell:false},kinds:{relationships:'who knows someone'},kind_rules:{relationships:['ask','always','never']},
  no_details:[],scoped:[],scopes:{},intro_offers:[],waiting:[],asked:[],log:[],notices:[],free:[],briefs:{},
@@ -34,6 +34,7 @@ const server=createServer(async(req,res)=>{const url=new URL(req.url,'http://fix
  if(url.pathname==='/api/graph'){res.end(JSON.stringify(url.searchParams.get('node')===nia.id?nia:url.searchParams.get('node')?kim:{projects:[],people:[kim,alex,nia,pat],quiet:[],new:[],orgs:[]}));return}
  if(url.pathname==='/api/fleet'){res.end(JSON.stringify(view));return}
  if(url.pathname==='/api/action'){let body='';for await(const b of req)body+=b;const call=JSON.parse(body);calls.push(call);
+  if(call.action==='fleet_network')nia.fleet.network={...nia.fleet.network,requested:true,can_add:false};  // what the Machine says once it is sent
   if(call.action==='graph_rename'){kim={...kim,name:call.args.name,fleet:{...fleetMark,named:false}};delete kim.name_from_messages;res.end(JSON.stringify({node_id:kim.id,name:call.args.name}));return}res.end('{}');return}
  res.statusCode=404;res.end('{}')});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
@@ -96,7 +97,23 @@ try{
  await page.waitForFunction(()=>document.querySelector('.graph-detail h3')?.textContent==='Nia North');
  assert.equal(await page.locator('.person-about .fleet-mark').textContent(),'Has a Machine');  // found on the Network: said, with no Fleet buttons
  assert.equal(await page.locator('.person-about [data-fleet-member]').count(),0);
+ const menu=page.locator('.person-page .person-menu');await menu.locator('summary').click();
+ assert.deepEqual((await menu.locator('[data-person-friend]').allTextContents()),['Add as friend','Add as family']);  // Friend or Family, like the Suggestions card
+ if(process.env.GRAPH_FLEET_SHOTS)for(const width of [390,1280])for(const scheme of ['light','dark']){await page.setViewportSize({width,height:844});await page.emulateMedia({colorScheme:scheme});await page.waitForTimeout(500);
+  await page.screenshot({path:`${process.env.GRAPH_FLEET_SHOTS}-friend-menu-${width}-${scheme}.png`})}
+ await page.emulateMedia({colorScheme:'light'});await page.setViewportSize({width:390,height:844});
+ const sent=calls.length;await menu.locator('[data-person-friend="family"]').click();
+ for(let i=0;i<100&&calls.length===sent;i++)await page.waitForTimeout(20);
+ assert.deepEqual(calls[sent],{action:'fleet_network',args:{do:'connect',email:'nia@studio.example',relation:'family'}});
+ await page.waitForFunction(()=>document.querySelector('.person-about .fleet-mark')?.textContent==='Has a Machine · Friend request sent');
+ assert.equal(await page.locator('[data-person-friend]').count(),0);
+ await page.waitForTimeout(800);assert.equal(await page.locator('.person-about .fleet-mark').textContent(),'Has a Machine · Friend request sent');  // still after the refresh
  await fits('network');
+ // opened again later: said, nothing to press
+ await page.evaluate(()=>{location.hash='#people'});await page.locator('#people-view article[data-node="email:nia@studio.example"] button.node').click();
+ await page.waitForFunction(()=>document.querySelector('.person-about .fleet-mark')?.textContent==='Has a Machine · Friend request sent');
+ await page.locator('.person-page .person-menu summary').click();assert.equal(await page.locator('[data-person-friend]').count(),0);
+ await page.locator('.person-page .person-menu summary').click();
  assert.deepEqual(errors,[]);
  console.log('graph fleet dashboard ok');
 }finally{await browser?.close();server.close()}

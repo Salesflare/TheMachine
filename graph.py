@@ -2447,13 +2447,15 @@ def fleet_marks(db, fleets):
     order = {'work': 0, 'family': 1, 'friends': 2}
     for mark in marks.values():
         mark['in'].sort(key=lambda x: (order[x['kind']], x['fleet_name'].casefold()))
-    return network_marks(db, marks)
+    return network_marks(db, marks, fleets)
 
 
-def network_marks(db, marks):
+def network_marks(db, marks, fleets=None):
     """The Fleet marks and the people found on the Network (discovery.py) with "Check which of my contacts have a
     Machine" on: in no Fleet with the owner, yet they have a Machine. Only while the last lookup still found them
-    (gone_at unset); they are no member of anything by it and get no name from it."""
+    (gone_at unset); they are no member of anything by it and get no name from it. Their 'network' says what the person
+    page offers: can_add (a friend request, the way the Suggestions card's Connect sends it) or requested, never for
+    someone in a Fleet, Family or Friends with the owner (fleets: the directory, for its open requests and members)."""
     if not _table(db, 'network_people') or not _table(db, 'fleet_meta'):
         return marks
     row = db.execute("SELECT value FROM fleet_meta WHERE key='network'").fetchone()
@@ -2464,11 +2466,27 @@ def network_marks(db, marks):
     if not on:
         return marks
     gone = 'gone_at' in {r[1] for r in db.execute('PRAGMA table_info(network_people)')}
-    found = [r[0] for r in db.execute('SELECT email FROM network_people' + (' WHERE gone_at IS NULL' if gone else ''))]
+    found = {r['email']: r for r in db.execute('SELECT email,username,status,hint FROM network_people' + (' WHERE gone_at IS NULL' if gone else ''))}
+    together, asked, listed = set(), set(), False  # usernames in a group with the owner; usernames with an open request
+    for f in (fleets or {}).values():
+        if (f or {}).get('kind') not in FLEET_GROUPS:
+            continue
+        together |= {str(m.get('username') or '').lower() for m in f.get('members') or () if isinstance(m, dict) and not m.get('me')}
+        if f['kind'] == 'friends' and isinstance(f.get('requests'), dict):
+            listed = True
+            asked |= {str(r.get('username') or '').lower() for r in f['requests'].get('out') or () if isinstance(r, dict)}
     marks = dict(marks or {})
-    for node_id, _ in people_by_email(db, found):
+    for node_id, email in people_by_email(db, found):
         mark = marks.get(node_id) or {'name': '', 'machine': False, 'in': []}
-        marks[node_id] = {**mark, 'machine': True}
+        p = found[email]
+        name = str(p['username'] or '').lower()
+        requested = name in asked or (not listed and p['status'] == 'requested')
+        free = not mark['in'] and name not in together and p['status'] != 'connected'
+        was = mark.get('network')
+        network = {'email': email, 'hint': p['hint'], 'requested': requested, 'can_add': free and not requested}
+        if was and (was['requested'] or not network['can_add']):
+            network = was  # one row a person: an open request first
+        marks[node_id] = {**mark, 'machine': True, 'network': network}
     return marks
 
 
@@ -2538,6 +2556,8 @@ def with_fleet(db, result, marks):
         if not found:
             return
         item['fleet'] = {'machine': found['machine'], 'in': found['in'], 'name': found['name'] or None}
+        if found.get('network'):
+            item['fleet']['network'] = found['network']
         if item.get('side_by') != 'owner' and found['in'] and all(x['kind'] in ('family', 'friends') for x in found['in']):
             item['side'] = 'personal'  # Family and Friends are personal, whatever address they write from
         row = db.execute('SELECT info FROM graph_nodes WHERE id=?', (item['id'],)).fetchone()

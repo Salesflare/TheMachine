@@ -22,7 +22,7 @@ Les deux sont activés par défaut, et désactivés au niveau de sécurité Prud
 
 Les personnes que vous connaissez et qui sont sur le Network sont suggérées dès que vous l’activez, et quand quelqu’un le rejoint plus tard. Une correspondance propose Se connecter, Pas maintenant ou **Ne jamais suggérer**. **Quitter le Network** vous en retire.
 
-Les personnes trouvées affichent **A une Machine** dans votre liste Personnes. La vérification porte sur les adresses de vos messages et sur celles que vous avez ajoutées à une personne avec **Modifier** : si quelqu’un s’est inscrit avec une autre adresse, ajoutez-la à cette personne.
+Les personnes trouvées affichent **A une Machine** dans votre liste Personnes. La vérification porte sur les adresses de vos messages et sur celles que vous avez ajoutées à une personne avec **Modifier** : si quelqu’un s’est inscrit avec une autre adresse, ajoutez-la à cette personne. Sur la page d’une personne trouvée, **Ajouter comme ami** dans le menu ⋯ envoie la même demande que Se connecter.
 
 ## Planifier avec d’autres Machines
 

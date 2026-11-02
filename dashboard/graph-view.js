@@ -870,7 +870,7 @@ function personAbout(n){const rows=[],f=n.fleet,work=f?.in?.find(x=>x.kind==='wo
  rows.push(kv('To you',n.role?`<b>${esc(cap(n.role))}</b>${n.role_by==='review'?`<span class="sub">A review read it in your messages${n.role_quote?`: ${quoteLine(n.id,n.role_quote,n.role_event_id)}`:''}</span>`:''}`:'<span class="muted">Not known yet</span>',n.role_by==='review'?confirmButton(n.id,n.role):'','kv-role'));
  if(n.side)rows.push(kv('Type',n.side==='work'?'Work contact':'Personal contact'));
  if(f?.in?.length)rows.push(kv('Network',`<span class="fleet-mark">${esc([...new Set(f.in.map(x=>x.kind==='work'&&x.fleet_name?`${x.label} (${x.fleet_name})`:x.label)),f.machine?'Has a Machine':''].filter(Boolean).join(' · '))}</span>`,`<button type="button" class="ghost" data-fleet-member="${esc(f.in[0].member_id)}">See in Fleet</button>${work?`<button type="button" class="ghost" data-fleet-free="${esc(work.fleet)}">Ask your Fleet</button>`:''}`));
- else if(f?.machine)rows.push(kv('Network',`<span class="fleet-mark">${esc(t('Has a Machine'))}</span>`));  // found on the Network, in no Fleet together
+ else if(f?.machine)rows.push(kv('Network',`<span class="fleet-mark">${esc([t('Has a Machine'),f.network?.requested?t('Friend request sent'):''].filter(Boolean).join(' · '))}</span>`));  // found on the Network, in no Fleet together
  if(f?.named)rows.push(kv('Name',`<span class="fleet-named">From your ${work?'Fleet':f.in[0].kind==='family'?'Family':'Friends'}. Your messages say “${esc(n.name_from_messages||'')}”.</span>`,`<button type="button" class="ghost" data-fleet-keep="${esc(n.name)}">Keep</button>`));
  if(graphOwners.length)rows.push(ownerRow(n));
  return `<section class="detail-section person-about"><h4>With you</h4>${rows.join('')}</section>`}
@@ -987,6 +987,16 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-contact-sh
 // On a person's page: Share contact… in ⋯ when someone can get it, and "Shared by" when a share made or joined them.
 function contactMarks(view,n){const list=view.querySelector('.person-page .person-menu .fact-menu-list');if(list&&n.can_share&&!list.querySelector('[data-contact-share]')){const item=document.createElement('button');item.type='button';item.setAttribute('role','menuitem');item.dataset.contactShare=n.id;item.textContent='Share contact…';list.prepend(item)}const m=n.shared_by,pv=view.querySelector('.person-page .person-view');
  if(m&&pv&&!pv.querySelector('.person-shared'))pv.insertAdjacentHTML('afterbegin',`<p class="graph-sub person-shared">${m.kind==='work'?'Shared by':'Suggested by'} ${esc(m.by)}${m.note?`: “${esc(m.note)}”`:''}</p>`)}
+// On a person's page: Add as friend in ⋯ for someone found on the Network, in no Fleet, Family or Friends with the owner and
+// with no open request (graph.network_marks). It sends what the Suggestions card's Connect sends, Friend or Family the same.
+function friendMarks(view,n){const net=n.fleet?.network,list=view.querySelector('.person-page .person-menu .fact-menu-list');if(!net?.can_add||!list||list.querySelector('[data-person-friend]'))return;
+ const item=(rel,label)=>{const b=document.createElement('button');b.type='button';b.setAttribute('role','menuitem');b.dataset.personFriend=rel;b.dataset.netEmail=net.email;b.textContent=label;return b};
+ list.prepend(...(net.hint==='colleague'?[item('colleague',t('Add as friend'))]:[item('friend',t('Add as friend')),item('family',t('Add as family'))]))}
+document.addEventListener('click',async e=>{const b=e.target.closest('[data-person-friend]');if(!b)return;const list=b.closest('.fact-menu-list');b.closest('details')?.removeAttribute('open');
+ list.querySelectorAll('[data-person-friend]').forEach(x=>x.disabled=true);
+ try{await fleetPost('fleet_network',{do:'connect',email:b.dataset.netEmail,relation:b.dataset.personFriend});list.querySelectorAll('[data-person-friend]').forEach(x=>x.remove());
+  const mark=b.ownerDocument.querySelector('.person-page .person-about .fleet-mark');if(mark)mark.textContent=t('Has a Machine')+' · '+t('Friend request sent');
+  toast(t('Friend request sent'));refresh()}catch(err){errCaught(err);list.querySelectorAll('[data-person-friend]').forEach(x=>x.disabled=false);toast(err.message,true)}});
 // Shared with you: at the top of People, until Add or Dismiss.
 const contactsInList=()=>graphContactsIn.length?`<div class="section-head"><h2>Shared with you</h2><span class="count">${graphContactsIn.length}</span><p>Contacts sent to you. Add them to your Graph or dismiss them.</p></div><div class="graph-list contacts-in">${graphContactsIn.map(c=>`<article class="contact-in"><div class="graph-row">${personPic({name:c.card.name})}<strong>${esc(c.card.name)}</strong></div>`
  +`<p class="graph-sub">${c.kind==='work'?`Shared by ${esc(c.from)}`:`${esc(c.from)} suggests you add ${c.card.own?'them':'this contact'}`}${c.card.own?' · their own contact':''} · ${esc(c.where)}</p>`
@@ -1172,7 +1182,7 @@ async function people(node=graphNode,quiet=false){const was=graphNode;graphNode=
   if(version!==graphRequest)return;
   view.dataset.mode='node';graphKept=null;docTitle();$('#people').classList.add('graph-on-node');if(location.hash!==graphHash(n.id)&&!$('#people').hidden)history.replaceState(null,'',graphHash(n.id));
   for(const p of view.querySelectorAll('.ge-preview'))p.classList.toggle('fade',p.scrollHeight>p.clientHeight+1);
-  if(n.kind==='person')contactMarks(view,n);
+  if(n.kind==='person'){contactMarks(view,n);friendMarks(view,n)}
   if(editRole===node){editRole=false;const pf=view.querySelector('#org-form');if(pf?.elements.role){orgOpen(pf,true);pf.elements.role.focus({preventScroll:true});pf.elements.role.select();pf.elements.role.scrollIntoView({block:'center'})}}
   if(!quiet)scrollTo({top:0});return}
  $('#people').classList.remove('graph-on-node');

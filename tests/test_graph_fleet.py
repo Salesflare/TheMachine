@@ -150,7 +150,8 @@ class NetworkMachines(GraphFleet):
     def test_found_on_the_network_has_a_machine_without_a_fleet(self):
         self.found('ana@example.org', 'lee@acme.com', gone=('lee@acme.com',))
         people = self.people({})
-        self.assertEqual(people['email:ana@example.org']['fleet'], {'machine': True, 'in': [], 'name': None})
+        self.assertEqual(people['email:ana@example.org']['fleet'], {'machine': True, 'in': [], 'name': None, 'network': {
+            'email': 'ana@example.org', 'hint': 'personal', 'requested': False, 'can_add': True}})
         self.assertEqual(people['email:ana@example.org']['name'], 'Ana Vos')  # the Network's name never replaces theirs
         self.assertNotIn('fleet', people['email:lee@acme.com'])  # the last lookup no longer found them
         self.assertNotIn('fleet', people['email:kim@acme.com'])
@@ -164,6 +165,20 @@ class NetworkMachines(GraphFleet):
         self.assertTrue(kim['fleet']['machine'])
         self.assertEqual([x['member_id'] for x in kim['fleet']['in']], ['fm_kim'])
         self.assertEqual(kim['name'], 'Kim Lee-Park')
+
+    def test_add_as_friend_only_with_no_group_and_no_open_request(self):
+        self.found('ana@example.org', 'kim@acme.com')
+        friends = {'fr_1': {'kind': 'friends', 'name': 'Friends', 'members': [ME], 'requests': {'in': [], 'out': [{'id': 'r1', 'username': 'kim'}]}}}
+        people = self.people(friends)
+        self.assertTrue(people['email:ana@example.org']['fleet']['network']['can_add'])
+        kim = people['email:kim@acme.com']['fleet']['network']
+        self.assertEqual((kim['requested'], kim['can_add']), (True, False))  # asked already: "Friend request sent"
+        friends['fr_1']['requests']['out'] = []  # withdrawn or declined: can be asked again
+        self.assertTrue(self.people(friends)['email:kim@acme.com']['fleet']['network']['can_add'])
+        family = {**friends, 'fl_2': {'kind': 'family', 'name': 'Home', 'members': [ME, member('fm_ana', 'Ana Vos', ['ana@example.org'])]}}
+        self.assertFalse(self.people(family)['email:ana@example.org']['fleet']['network']['can_add'])  # in a Family Fleet together
+        friends['fr_1']['members'] = [ME, {**member('fp_kim', 'Kim Lee-Park', ['kim@other.example']), 'username': 'kim'}]
+        self.assertFalse(self.people(friends)['email:kim@acme.com']['fleet']['network']['can_add'])  # a friend by another address
 
     def test_an_address_the_owner_added_links_them(self):
         """Someone signed up with an address their messages never used: added to them, it finds them."""

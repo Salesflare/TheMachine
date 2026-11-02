@@ -22,7 +22,7 @@ Los dos están activados por defecto, y desactivados en el nivel de seguridad Pr
 
 La gente que conoces y está en la Network se te sugiere en cuanto la activas, y cuando alguien se une más tarde. Cada coincidencia viene con Conectar, Ahora no o **No sugerir nunca**. **Salir de la Network** te saca de ella.
 
-Las personas que encuentra muestran **Tiene una Machine** en tu lista Personas. Revisa las direcciones de tus mensajes y las que añadiste a alguien con **Editar**: si alguien se registró con otra dirección, añádesela.
+Las personas que encuentra muestran **Tiene una Machine** en tu lista Personas. Revisa las direcciones de tus mensajes y las que añadiste a alguien con **Editar**: si alguien se registró con otra dirección, añádesela. En la página de alguien que encontró, **Añadir como amigo** en el menú ⋯ envía la misma solicitud que Conectar.
 
 ## Agendar con otras Machines
 
