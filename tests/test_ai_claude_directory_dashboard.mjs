@@ -7,8 +7,9 @@ const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modul
 
 // Settings, AIs: once the official app is ready (reach.shared), Add in ChatGPT and Add in Claude come first, links to
 // The Machine's listings in ChatGPT's plugins and Claude's connector directory (one click, nothing to paste) in a new
-// tab, above the shared address with Copy. The steps start from them; a custom MCP server or connector stays as the other
-// way. Not ready yet: neither button, Get your address instead. SHOTS=<folder> saves screenshots.
+// tab, above the shared address with Copy, on a hosted Machine and a paired self-hosted one alike. The steps start from
+// them; a custom MCP server (folded) or connector stays as the other way. Not ready yet: both buttons with what they wait
+// for, above Get your address. SHOTS=<folder> saves screenshots.
 const DIRECTORY='https://claude.ai/directory/the-machine',SHARED='https://mcp.themachine.computer/mcp';
 const CHATGPT='https://chatgpt.com/plugins/plugin_asdk_app_6ae74ac637d0819199400cd3750138b4';
 const dashboard=await dashboardPage();
@@ -52,18 +53,32 @@ try{
   assert.match(how,/Press Add in Claude, then Connect\./);
   assert.match(how,/Add custom connector/);
   assert.match(how,/Press Add in ChatGPT, then Install plugin\./);
-  assert.match(how,/Add custom MCP server/);
+  assert.match(await page.locator('#settings-ai .ai-how').textContent(),/Add custom MCP server/);
   assert.ok(!(await page.locator('#settings-ai').innerText()).includes('—'),'no em dashes');
   // Fits: the button inside the screen, no sideways scroll
   for(const [button,name] of [[add,'Add in Claude'],[chatgpt,'Add in ChatGPT']]){const box=await button.boundingBox();assert.ok(box.x>=0&&box.x+box.width<=width,`${width}: ${name} inside the screen`)}
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`${width}: no sideways scroll`);
   if(shots){await page.locator('#settings-ai').scrollIntoViewIfNeeded();await page.screenshot({path:`${shots}/ai-claude-${width}-${scheme}.png`,fullPage:false});
    await page.locator('#settings-ai').screenshot({path:`${shots}/ai-claude-${width}-${scheme}-section.png`})}
-  // Not ready yet (self-hosted, not paired): no Add in Claude, Get your address instead
+  // The manual ChatGPT route stays, folded
+  const fold=page.locator('#settings-ai .ai-how details.connect-alt');
+  assert.equal(await fold.locator('summary').innerText(),'Or add a custom MCP server');
+  assert.equal(await fold.getAttribute('open'),null);
+  assert.match(await fold.textContent(),/Add custom MCP server/);
+  // A paired self-hosted Machine with its address: the same two buttons, the official app reaches it too
+  reach={hosted:false,paired:true,name:'pat',address:'https://pat.mcp.themachine.computer/mcp',tls:'ready',shared:SHARED};
+  await page.reload();await page.locator('#ai-official [data-ai-chatgpt]').waitFor();
+  assert.equal(await page.locator('#ai-official [data-ai-claude]').count(),1);
+  assert.match(await page.locator('#ai-official>div').nth(2).innerText(),/Official app/);
+  if(shots)await page.locator('#settings-ai').screenshot({path:`${shots}/ai-selfhosted-${width}-${scheme}-section.png`});
+  // Not ready yet (self-hosted, not paired): both buttons still show, with what they wait for, above Get your address
   reach={hosted:false,paired:false,address:null,shared:null};
   await page.reload();await page.locator('#ai-official [data-ai-get]').waitFor();
-  assert.equal(await page.locator('#ai-official [data-ai-claude]').count(),0);
-  assert.equal(await page.locator('#ai-official [data-ai-chatgpt]').count(),0);
+  assert.equal(await page.locator('#ai-official [data-ai-claude]').count(),1);
+  assert.equal(await page.locator('#ai-official [data-ai-chatgpt]').count(),1);
+  const waiting=await page.locator('#ai-official>div').allInnerTexts();
+  assert.match(waiting[0],/Ready once this Machine has its address\./);assert.match(waiting[2],/Get your address/);
+  if(shots)await page.locator('#settings-ai').screenshot({path:`${shots}/ai-unpaired-${width}-${scheme}-section.png`});
   await context.close();
  }
  assert.deepEqual(errors,[]);

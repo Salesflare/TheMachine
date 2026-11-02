@@ -24,15 +24,20 @@ function renderAi(){const box=$('#settings-ai');if(!box||!aiView)return;const v=
  $('#ai-key-area').hidden=!both;if(!both)$('#ai-key-area').value='both';
  const made=$('#ai-made');made.hidden=!aiMade;made.innerHTML=aiMade?`<span class="grow"><strong>Your new key</strong><small>Copy it now. It won’t show again.</small><code class="ai-url" translate="no">${esc(aiMade)}</code></span><button type="button" class="ghost" data-copy-command="${esc(aiMade)}">Copy</button>`:''}
 // Two ways in (ai_app.ai_reach, docs/ai-connections.md): the official app first, Add in ChatGPT and Add in Claude (The
-// Machine's listings in ChatGPT's plugins and Claude's connector directory, which both use the shared address) above one shared address for every Machine
-// (r.shared) with Copy, the account signing in and routing; then this Machine's private address, end to end. Both need
-// this Machine on the account with a name: until then the official app's place shows Get your address (aiAddress).
+// Machine's listings in ChatGPT's plugins and Claude's connector directory, both on the shared address), above that one
+// shared address for every Machine (r.shared) with Copy, the account signing in and routing to a hosted Machine or a
+// paired self-hosted one; then this Machine's private address, end to end. Both need this Machine on the account with a
+// name and, self-hosted, its certificate: until then the two buttons still show, with what they wait for, above Get your
+// address (aiAddress) or the address's state.
 const AI_CLAUDE_DIRECTORY='https://claude.ai/directory/the-machine';
 const AI_CHATGPT_APP='https://chatgpt.com/plugins/plugin_asdk_app_6ae74ac637d0819199400cd3750138b4';
+function aiApps(ready){const wait='<small>Ready once this Machine has its address.</small>';
+ return `<div><span class="grow"><strong translate="no">ChatGPT</strong>${ready?'<small>Add The Machine from ChatGPT’s plugins in one click.</small>':wait}</span><a class="btn-link primary" href="${AI_CHATGPT_APP}" target="_blank" rel="noopener" data-ai-chatgpt>Add in ChatGPT</a></div>`
+  +`<div><span class="grow"><strong translate="no">Claude</strong>${ready?'<small>Add The Machine from Claude’s directory in one click.</small>':wait}</span><a class="btn-link primary" href="${AI_CLAUDE_DIRECTORY}" target="_blank" rel="noopener" data-ai-claude>Add in Claude</a></div>`}
 function aiOfficial(r){
- if(r.shared)return `<div><span class="grow"><strong translate="no">ChatGPT</strong><small>Add The Machine from ChatGPT’s plugins in one click.</small></span><a class="btn-link primary" href="${AI_CHATGPT_APP}" target="_blank" rel="noopener" data-ai-chatgpt>Add in ChatGPT</a></div><div><span class="grow"><strong translate="no">Claude</strong><small>Add The Machine from Claude’s directory in one click.</small></span><a class="btn-link primary" href="${AI_CLAUDE_DIRECTORY}" target="_blank" rel="noopener" data-ai-claude>Add in Claude</a></div><div><span class="grow"><strong>Official app</strong><code class="ai-url" translate="no">${esc(r.shared)}</code></span><button type="button" class="ghost" data-copy-command="${esc(r.shared)}">Copy</button></div>`;
- if(!r.address)return aiAddress(r);
- return `<div><span class="grow"><strong>Official app</strong>${r.other?'<small>Set it up on your hosted Machine.</small>':r.tls==='missing'?'<small class="alert">Install the cryptography package to use this address.</small>':r.tls==='failed'?'<small class="alert">This address isn’t ready yet. The Machine tries again within the hour.</small>':'<small>Getting this address ready. It takes a few minutes.</small>'}</span></div>`}
+ if(r.shared)return aiApps(true)+`<div><span class="grow"><strong>Official app</strong><code class="ai-url" translate="no">${esc(r.shared)}</code></span><button type="button" class="ghost" data-copy-command="${esc(r.shared)}">Copy</button></div>`;
+ if(!r.address)return aiApps(false)+aiAddress(r);
+ return aiApps(!!r.other)+`<div><span class="grow"><strong>Official app</strong>${r.other?'<small>Set it up on your hosted Machine.</small>':r.tls==='missing'?'<small class="alert">Install the cryptography package to use this address.</small>':r.tls==='failed'?'<small class="alert">This address isn’t ready yet. The Machine tries again within the hour.</small>':'<small>Getting this address ready. It takes a few minutes.</small>'}</span></div>`}
 // The private address: https://<name>.mcp.themachine.computer/mcp with Copy; on a self-hosted Machine not paired, or
 // whose account has no name yet, Get your address instead (pairing.py: one page on the account, then the Fleet starts
 // here by itself); Unpair on a paired self-hosted one. The same button pairs from Connections.

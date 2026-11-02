@@ -71,8 +71,9 @@ In Settings each such connection is tagged **Official app** (`connections()`, `o
 ### When it shows
 
 The official app shows when the account can reach this Machine at its private address (`ai_app.ai_reach`, `shared`): a
-hosted Machine with a name, or a paired self-hosted one with a name of its own and its certificate ready. Until then the
-official app's place shows **Get your address** ([Pairing](#pairing)), which both ways need.
+hosted Machine with a name, or a paired self-hosted one with a name of its own and its certificate ready. Until then
+Add in ChatGPT and Add in Claude still show, saying they're ready once this Machine has its address, above **Get your
+address** ([Pairing](#pairing)) or the address's state, which both ways need.
 
 ## Connections
 
