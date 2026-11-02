@@ -905,6 +905,47 @@ def quiet_openclaw(facts, stamp):
     return changed
 
 
+# OpenClaw's Gateway unit lets systemd give up after 10 failed starts in 5 minutes (StartLimitBurst=10). Right after a
+# boot the Gateway can fail its first starts while everything else starts too (a self-hosted Machine, 2026-11-02: ten
+# failures in two minutes, then no AI for half an hour until a manual restart that worked at once). This drop-in keeps
+# systemd retrying, 15 seconds apart. OpenClaw keeps it across its own unit rewrites; its file name is ours. Hosted
+# Machines' agent writes the same bytes, so neither rewrites the other's.
+# macOS needs nothing: OpenClaw's launchd agent has KeepAlive, which never stops retrying.
+GATEWAY_RETRY_DROPIN = 'keep-retrying.conf'
+GATEWAY_RETRY_TEXT = """# Written by The Machine: never give up after a bad boot, keep retrying every 15s.
+[Unit]
+StartLimitIntervalSec=0
+[Service]
+RestartSec=15
+"""
+
+
+def gateway_keep_retrying(paths):
+    """GATEWAY_RETRY_TEXT as a drop-in for each OpenClaw Gateway systemd user unit here. Only next to a unit that is
+    already there: OpenClaw refuses to write its unit the first time when drop-ins for it exist. Returns the drop-ins
+    written now; a rerun with them in place changes nothing."""
+    if service.manager() != 'systemd':
+        return []
+    written = []
+    for unit in onboarding.gateway_units():
+        if 'gateway' not in unit:
+            continue
+        path = paths.home / '.config/systemd/user' / f'{unit}.d' / GATEWAY_RETRY_DROPIN
+        try:
+            if path.exists() and path.read_text() == GATEWAY_RETRY_TEXT:
+                continue
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(GATEWAY_RETRY_TEXT)
+        except OSError as error:
+            say(f'  could not write {path}: {error}')
+            continue
+        written.append(path)
+    if written:
+        run(['systemctl', '--user', 'daemon-reload'], timeout=120)  # read from the next (re)start; nothing restarts now
+        say('OpenClaw Gateway: systemd keeps retrying it after failed starts (' + ', '.join(str(p) for p in written) + ')')
+    return written
+
+
 def memory_rules(workspace, stamp):
     """MEMORY_RULES at the end of the workspace's AGENTS.md, once. Not when the file isn't there yet (OpenClaw writes
     its own first; the next install or update adds them), and not when it already has rules for the session-memory
@@ -1295,6 +1336,7 @@ def main(argv=None):
     if not plugin_ok:
         return 1
     quiet_openclaw(facts, paths.data / 'openclaw-quiet.json')
+    gateway_keep_retrying(paths)
     memory_rules(paths.workspace, paths.data / 'memory-rules.json')
     if fresh:
         start_thinking(facts)
