@@ -12,7 +12,7 @@ order: 5
 1. Öffne bei der Aufgabe **…**, dann **Übergeben…**, und wähle **Codex** oder **Claude Code**. Nur die Tools, die du eingerichtet hast, erscheinen.
 2. Prüfe die Zusammenfassung und was mitgeht, füge auf Wunsch eine Notiz hinzu und tippe auf **Übergeben**. **Ganzen Auftrag ansehen** zeigt das komplette Briefing.
 
-Die Aufgabe zeigt dann, dass daran gearbeitet wird, und das Ergebnis, wenn es fertig ist, mit **Änderungen zeigen**. **Ändern** bittet um Änderungen. **Erneut übergeben** fängt von vorn an.
+Die Aufgabe zeigt dann, dass daran gearbeitet wird, und das Ergebnis, wenn es fertig ist, mit **Änderungen zeigen**. **Änderungen anfragen** sagt ihm, was es ändern soll. **Erneut übergeben** fängt von vorn an.
 
 Ein Auftrag sendet nie etwas für dich.
 
