@@ -213,7 +213,7 @@ class DurableSignals(LearningLoop):
 
     def states(self):
         with self.store.connect() as db:
-            return {r['ref']: (r['state'], r['tries']) for r in db.execute("SELECT * FROM learning_signals WHERE kind='decision'")}
+            return {r['ref']: (r['status'], r['tries']) for r in db.execute("SELECT * FROM learning_signals WHERE kind='decision'")}
 
     def test_overflow_every_signal_is_read_once_oldest_first_across_passes(self):
         ids = self.add(100)
@@ -229,7 +229,7 @@ class DurableSignals(LearningLoop):
         states = self.states()
         self.assertTrue(all(states[i] == ('done', 0) for i in ids))
         with self.store.connect() as db:
-            self.assertEqual(db.execute("SELECT count(*) FROM learning_signals WHERE state='done'").fetchone()[0], 105)
+            self.assertEqual(db.execute("SELECT count(*) FROM learning_signals WHERE status='done'").fetchone()[0], 105)
             self.assertEqual(learning_loop.waiting(db, learning_loop.floor(db)), 0)
         self.assertEqual(sum(len(p['signals']) for p in pages), 105)
         self.assertEqual(len(seen), 105)
@@ -309,7 +309,7 @@ class DurableSignals(LearningLoop):
             pass
         self.assertEqual({state for state, _ in self.states().values()}, {'done', 'skipped'})
         with self.store.connect() as db:  # every one of the owner's edits went through too
-            self.assertEqual(db.execute("SELECT count(*) FROM learning_signals WHERE kind='edit' AND state='done'").fetchone()[0], 2)
+            self.assertEqual(db.execute("SELECT count(*) FROM learning_signals WHERE kind='edit' AND status='done'").fetchone()[0], 2)
 
     def test_an_existing_machine_starts_from_its_last_pass(self):
         before = (self.clock - a.dt.timedelta(hours=20)).isoformat()

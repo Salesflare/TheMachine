@@ -667,7 +667,7 @@ between them: the owner's own draft edits, dismissed and snoozed to-dos, and cor
 - No signal is lost. Each one (`learning_signals`, keyed by its source row) stays pending until a pass that read it has
   its changes applied, in the same transaction; a pass that finished but wasn't applied before a restart is applied
   first. A pass that fails leaves its batch for a retry: whole once more, then its older half each time. A signal is
-  given up (kept as `skipped`) after six failed passes, so it never blocks the rest. Machines from before this start
+  given up (status `skipped`) after six failed passes, so it never blocks the rest. Machines from before this start
   from their last pass.
 - Each change is applied and kept in `learning_changes` with what it replaced and why. **Learning, Changes** lists them
   with **Undo**.

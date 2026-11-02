@@ -26,7 +26,7 @@ import re
 SCHEMA = '''
 CREATE TABLE IF NOT EXISTS learning_changes(id INTEGER PRIMARY KEY,run_id TEXT NOT NULL,at TEXT NOT NULL,kind TEXT NOT NULL,
   target TEXT NOT NULL,before TEXT,after TEXT NOT NULL,why TEXT NOT NULL,status TEXT NOT NULL,undone_at TEXT);
-CREATE TABLE IF NOT EXISTS learning_signals(kind TEXT NOT NULL,ref TEXT NOT NULL,at TEXT NOT NULL,state TEXT NOT NULL,run_id TEXT,
+CREATE TABLE IF NOT EXISTS learning_signals(kind TEXT NOT NULL,ref TEXT NOT NULL,at TEXT NOT NULL,status TEXT NOT NULL,run_id TEXT,
   tries INTEGER NOT NULL DEFAULT 0,updated_at TEXT NOT NULL,PRIMARY KEY(kind,ref));
 CREATE TABLE IF NOT EXISTS learning_state(key TEXT PRIMARY KEY,value TEXT NOT NULL);
 '''
@@ -86,9 +86,9 @@ def floor(db, current=None):
 # owner's own draft edits (never an agent's rewrite), and to-dos they dismissed, snoozed, said were not done, or
 # corrected in chat (not one already annotated or fixed at the source).
 EDITS = ("FROM draft_edits e JOIN suggestions s ON s.id=e.suggestion_id LEFT JOIN learning_signals l ON l.kind='edit' AND l.ref=e.id "
-         "WHERE e.created_at>? AND coalesce(l.state,'pending')='pending' AND e.source!='agent' ")
+         "WHERE e.created_at>? AND coalesce(l.status,'pending')='pending' AND e.source!='agent' ")
 DECIDED = ("FROM decisions d JOIN suggestions s ON s.id=d.suggestion_id LEFT JOIN learning_signals l ON l.kind='decision' AND l.ref=d.id "
-           "WHERE d.created_at>? AND coalesce(l.state,'pending')='pending' AND d.source IN ('telegram','dashboard') "
+           "WHERE d.created_at>? AND coalesce(l.status,'pending')='pending' AND d.source IN ('telegram','dashboard') "
            "AND (d.choice IN ('reject','snooze','not_done') OR (d.choice='other' AND d.feedback!='')) "
            "AND d.id NOT IN (SELECT decision_id FROM decision_annotations) "
            "AND 'fix:'||d.id NOT IN (SELECT run_id FROM learning_changes WHERE kind='source' AND status='applied') ")  # fixed at the source already
@@ -139,8 +139,8 @@ def waiting(db, since):
 
 def claim(db, run_id, keys):
     """The signals a starting pass reads: in flight until it is applied (done) or ends without (pending again)."""
-    db.executemany("INSERT INTO learning_signals(kind,ref,at,state,run_id,tries,updated_at) VALUES(?,?,?,'claimed',?,0,?) "
-                   "ON CONFLICT(kind,ref) DO UPDATE SET state='claimed',run_id=excluded.run_id,updated_at=excluded.updated_at",
+    db.executemany("INSERT INTO learning_signals(kind,ref,at,status,run_id,tries,updated_at) VALUES(?,?,?,'claimed',?,0,?) "
+                   "ON CONFLICT(kind,ref) DO UPDATE SET status='claimed',run_id=excluded.run_id,updated_at=excluded.updated_at",
                    [(kind, ref, at, run_id, now()) for kind, ref, at in keys])
 
 
@@ -148,7 +148,7 @@ def unapplied(db):
     """Passes that finished but whose changes were never applied (the service stopped in between): apply them first."""
     ensure(db)
     return [r[0] for r in db.execute("SELECT DISTINCT l.run_id FROM learning_signals l JOIN profile_runs p ON p.run_id=l.run_id "
-                                     "WHERE l.state='claimed' AND p.status='ok' ORDER BY p.started_at")]
+                                     "WHERE l.status='claimed' AND p.status='ok' ORDER BY p.started_at")]
 
 
 def settle(db):
@@ -157,13 +157,13 @@ def settle(db):
     kept as skipped, so it never blocks the ones after it. Gives the number given up."""
     ensure(db)
     ended = db.execute("SELECT l.kind,l.ref,l.tries,p.error FROM learning_signals l LEFT JOIN profile_runs p ON p.run_id=l.run_id "
-                       "WHERE l.state='claimed' AND coalesce(p.status,'gone') NOT IN ('starting','running','ok')").fetchall()
+                       "WHERE l.status='claimed' AND coalesce(p.status,'gone') NOT IN ('starting','running','ok')").fetchall()
     skipped = 0
     for kind, ref, tries, error in ended:
         tries += error not in UNCOUNTED
         state = 'skipped' if tries >= MAX_TRIES else 'pending'
         skipped += state == 'skipped'
-        db.execute('UPDATE learning_signals SET state=?,tries=?,updated_at=? WHERE kind=? AND ref=?', (state, tries, now(), kind, ref))
+        db.execute('UPDATE learning_signals SET status=?,tries=?,updated_at=? WHERE kind=? AND ref=?', (state, tries, now(), kind, ref))
     return skipped
 
 
@@ -266,7 +266,7 @@ def apply(db, run_id, voice_check):
     if not row:
         return 0
     # its signals are done in the same transaction as its changes: a stop in between leaves both for unapplied()
-    db.execute("UPDATE learning_signals SET state='done',updated_at=? WHERE run_id=? AND state='claimed'", (now(), run_id))
+    db.execute("UPDATE learning_signals SET status='done',updated_at=? WHERE run_id=? AND status='claimed'", (now(), run_id))
     if not row[0] or db.execute('SELECT 1 FROM learning_changes WHERE run_id=?', (run_id,)).fetchone():
         return 0
     done = 0
