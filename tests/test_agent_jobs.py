@@ -393,12 +393,17 @@ class FakeNetwork:
         raise ValueError(what)
 
 
-def handed(home, job_id):
-    """'waiting' shows as a hand-off to the owner's computer starts; it is sealed, sent and its ticket kept right after."""
+def ticket_of(home, job_id):
+    with home.connect() as db:
+        return db.execute('SELECT token_hash FROM agent_jobs WHERE id=?', (job_id,)).fetchone()[0]
+
+
+def handed(home, job_id, before=None):
+    """'waiting' shows as a hand-off to the owner's computer starts; it is sealed, sent and its ticket kept right after.
+    A retry keeps the job's row, so `before` (the last hand-off's ticket) doesn't count."""
     for _ in range(400):
-        with home.connect() as db:
-            if db.execute('SELECT token_hash FROM agent_jobs WHERE id=?', (job_id,)).fetchone()[0]:
-                return
+        if ticket_of(home, job_id) not in (None, before):
+            return
         time.sleep(0.05)
     raise AssertionError('not handed over')
 
@@ -758,9 +763,32 @@ class AgentJobs(unittest.TestCase):
         # Cancel here: the Network hears it
         with patch.object(agent_remote, 'watch', lambda jobs: None):
             second = wait(home, home.retry(job['id'])['id'], done=('waiting', 'failed'))
-        handed(home, second['id'])
+            handed(home, second['id'], before=ticket)  # the retry's own hand-off, not the first one's ticket
         home.cancel(second['id'])
-        self.assertEqual(net.sent[-1][1]['action'], 'cancel')
+        self.assertIn(('hosted', {'action': 'cancel', 'ticket_hash': ticket_of(home, second['id'])}), net.sent)
+
+    def test_a_cancel_while_the_hand_off_goes_out_stops_it_there_too(self):
+        import agent_remote
+        net = FakeNetwork(device=True)
+        hosted = dict(self.config, manage_url='https://app.example.test/setup', agents={})
+        home = agent_jobs.AgentJobs(self.store.connect, hosted, Path(self.tmp.name) / 'hosted-jobs',
+                                    card=lambda sid: {'card': {'title': 'Fix'}, 'drafts': [], 'links': [], 'files': [], 'messages': ''}, network=net.hosted)
+        sending, release = threading.Event(), threading.Event()
+        def slow(body):  # the dispatch is on its way when the owner cancels
+            if body['action'] == 'dispatch':
+                sending.set()
+                release.wait(10)
+            return net.hosted(body)
+        home._network = slow
+        with patch.object(agent_remote, 'watch', lambda jobs: None):
+            job_id = home.start(self.sid, 'codex', 'Fix it')['id']
+            self.assertTrue(sending.wait(10))
+            home.cancel(job_id)  # no ticket yet: nothing to cancel on the Network so far
+            release.set()
+            job = wait(home, job_id, done=('cancelled',))
+            handed(home, job_id)
+        self.assertEqual(job['status'], 'cancelled')
+        self.assertIn(('hosted', {'action': 'cancel', 'ticket_hash': ticket_of(home, job_id)}), net.sent)
 
     def test_a_computer_without_codex_signed_in_takes_no_jobs(self):
         import agent_remote

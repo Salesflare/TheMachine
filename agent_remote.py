@@ -306,7 +306,12 @@ class DeviceCodex:
         except Exception as error:  # noqa: BLE001 - the Network's own message, never a secret
             raise aj.Stopped('failed', f'The Network could not take the job: {error}'[:300]) from None
         with self.jobs.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
             db.execute('UPDATE agent_jobs SET token_hash=? WHERE id=?', (digest, job['id']))
+            status = db.execute('SELECT status FROM agent_jobs WHERE id=?', (job['id'],)).fetchone()[0]
+        if status == 'cancelled':  # canceled while it went out (a cancel reads the ticket only after this): stop it there too
+            self.cancel({'token_hash': digest})
+            raise aj.Stopped('cancelled', 'Canceled')
         if sent.get('device') and not sent.get('online'):
             on_progress(f"Waiting for {str(sent['device'])[:60]} to come online")
         watch(self.jobs)
