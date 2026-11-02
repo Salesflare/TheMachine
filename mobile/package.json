@@ -7,7 +7,7 @@
     "cap": "npx --yes @capacitor/cli@8.5.3",
     "sync": "npm run cap -- sync",
     "android:debug": "npm run cap -- sync android && cd android && ./gradlew assembleDebug",
-    "test": "node --test tests/"
+    "test": "node --test tests/*.test.js"
   },
   "dependencies": {
     "@capacitor/android": "8.5.3",

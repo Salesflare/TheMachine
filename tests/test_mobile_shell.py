@@ -15,7 +15,10 @@ MOBILE = ROOT / 'mobile'
 class MobileShellTest(unittest.TestCase):
     @unittest.skipUnless(shutil.which('node'), 'needs node')
     def test_javascript(self):
-        run = subprocess.run(['node', '--test', 'tests/'], cwd=MOBILE, capture_output=True, text=True, timeout=120)
+        files = sorted(str(f.relative_to(MOBILE)) for f in (MOBILE / 'tests').glob('*.test.js'))
+        self.assertTrue(files)
+        # Explicit files: node 24 (CI) takes a directory argument as a module to run, not a folder of tests
+        run = subprocess.run(['node', '--test', *files], cwd=MOBILE, capture_output=True, text=True, timeout=120)
         self.assertEqual(run.returncode, 0, run.stdout[-3000:] + run.stderr[-2000:])
 
     def test_exact_pins(self):
