@@ -79,7 +79,8 @@ OpenAI's server-side turn detection lets the owner interrupt: the voice stops an
 - `todo_details`: the to-do's title, state, last 25 messages and who its drafts go to (read only, through `talk_tool`).
   Never a draft's text: `read_draft` reads one out.
 - `find_todos`: to-dos by words in their title, by `state`, or both, each with its state in plain words
-  (`talk_live.STATES`: ready, to decide, preparing, waiting on others, snoozed, looks done), what needs the owner first,
+  (`talk_live.STATES`: ready, to decide, preparing, waiting on others, snoozed; then `talk_live.LOOKS_DONE`, one the
+  dashboard shows at the top of Done that isn't closed yet), what needs the owner first,
   at most 20, with `count`. Words that name a state and match no title ("anything preparing?") find that state. Done and
   dismissed ones (`talk_live.CLOSED`) come from the Done / dismissed list when asked for by state or name, or when no
   open one matches.
@@ -124,7 +125,7 @@ a time; a to-do's own Talk live can run beside it.
 **Tools** (`talk_live.MAIN_TOOLS`):
 
 - `list_todos` (the page's own): every open to-do in the order the lists show (Ready, To decide, Preparing, Waiting on
-  others, Later, Look done), at most 30, each with its id, state, title and who it's from, and `counts` per state.
+  others, Later; not one that looks done, which sits in Done), at most 30, each with its id, state, title and who it's from, and `counts` per state.
 - `open_todo`: the page shows that to-do in Talk's view, tells the Machine (`talk_focus`) and returns `todo_details`; a
   closed one too, even one the page hasn't loaded.
 - The to-do tools above, about the to-do in focus (`find_todos` with ids here), plus `ask_to_send_all`.

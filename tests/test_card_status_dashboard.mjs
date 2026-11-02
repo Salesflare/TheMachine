@@ -8,7 +8,7 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // Every card leads with one status line under its title: where it stands and what's left to do. A sign that it's
 // handled replaces the result's own line, a result that found it already done shows once, "Ready to approve" only
 // appears when there is something to approve, and a long body folds to a few lines. Another open card named by its
-// title links to it. (A to-do that looks done shows this inside the Look done group: test_look_done_dashboard.mjs.)
+// title links to it. (A to-do that looks done shows this at the top of Done: test_look_done_dashboard.mjs.)
 const dashboard=await dashboardPage();
 const now=new Date().toISOString(),long='The run checked every source and wrote down what it found in detail. '.repeat(8);
 const hint=reason=>JSON.stringify({reason,event_ids:[9],at:now});
@@ -41,8 +41,8 @@ try{
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
   await page.goto('http://127.0.0.1:'+server.address().port);
-  // d1 and n1 look done: they wait in the folded Look done group, each opening to its full to-do
-  await page.locator('#lookdone-head').click();for(const id of ['d1','n1'])await page.locator(`[data-ld-expand="${id}"]`).click();
+  // d1 and n1 look done: they wait at the top of the folded Done list, each opening to its full to-do
+  await page.locator('#finished-head').click();for(const id of ['d1','n1'])await page.locator(`[data-ld-expand="${id}"]`).click();
   await page.locator('#task-d1').waitFor();
   const notes=id=>page.locator(`#task-${id} .note`).evaluateAll(n=>n.map(x=>x.textContent.trim()));
   const text=id=>page.locator('#task-'+id).innerText();

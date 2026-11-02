@@ -119,6 +119,7 @@ function sideRow(x,cur){
   const n=doneFoldSkipped(x);
   return `<button type="button" class="done-fold" data-done-fold="${esc(x.fuFold)}" aria-expanded="${open}" title="${esc([x.title,n].filter(Boolean).join(' · '))}"><span translate="no">${esc(x.title)}</span>${n?`<small>${esc(n)}</small>`:''}${CHEVRON}</button>`
    +(open?`<div class="done-fold-list">${x.items.map(s=>`<a href="#chat=${esc(s.id)}" title="${esc(s.title)}"${s.id===cur?' aria-current="page"':''}><span translate="no">${esc(frName(s.follow_up))}</span><small>${esc([doneFoldWho(s),doneFoldWhen(s)].filter(Boolean).join(' · '))}</small></a>`).join('')}</div>`:'')}
+ if(looksDone(x))return `<a href="#chat=${esc(x.id)}" class="side-ld" title="${esc(x.title)}"${x.id===cur?' aria-current="page"':''}><span translate="no">${esc(x.title)}</span><small>${esc(t('Looks done'))}</small></a>`;  // at the top of Done, still open
  return `<a href="#chat=${esc(x.id)}" title="${esc(x.title)}" translate="no"${x.id===cur?' aria-current="page"':''}>${esc(x.title)}</a>`}
 // The Done list on the Suggestions page: the same fold, a quiet to-do that opens to the list
 function doneRows(items){return doneFold(items).map(x=>x.fuFold?doneFoldCard(x):suggestionCard(x)).join('')}
@@ -172,18 +173,12 @@ let linkedCardId=null;
 $('#suggestion-stats').addEventListener('click',e=>{const t=e.target.closest('[data-fold-tile]');if(t)toggleSection(t.dataset.foldTile)});
 $('#suggestion-summary').addEventListener('click',e=>{const b=e.target.closest('[data-scope]');if(b)scopeSet(b.dataset.scope)});
 // Promises from your messages, both ways. A still-open one becomes a card when it's due.
-// To-dos that look done: one folded group above Done, a short line each (title and what shows it) with Not done and
-// Done, and Mark all done. A row opens to the full to-do. Nothing closes without you.
+// To-dos that look done: at the top of Done / dismissed, a short line each (title, what shows it, a Looks done tag) with
+// Not done. A row opens to the full to-do, where Mark done closes it. They stay open: nothing closes without you.
 const lookExpanded=new Set();
-function lookDoneList(items,open){if(!items.length)return '';
- const row=s=>{const x=lookExpanded.has(s.id),why=doneWhy(s);
-  return `<div class="ld-row${x?' open':''}" data-ld="${esc(s.id)}"><button type="button" class="ld-main" data-ld-expand="${esc(s.id)}" aria-expanded="${x}">${CHEVRON}<span class="ld-text"><span class="ld-title" translate="no">${esc(s.title)}</span>${why?`<small class="ld-why">${esc(why)}</small>`:''}</span></button><span class="ld-acts"><button type="button" class="ghost" data-ld-not="${esc(s.id)}">${esc(t('Not done'))}</button><button type="button" data-id="${esc(s.id)}" data-choice="complete">${esc(t('Done'))}</button></span>${x?suggestionCard(s,'Look done'):''}</div>`};
- return `<details id="lookdone-list" ${open?'open':''}><summary id="lookdone-head"><span>${esc(t('Look done'))}</span><span class="count">${items.length}</span></summary><div class="ld-bar"><small>${esc(t('Check these and close them. Nothing closes without you.'))}</small><button type="button" class="ghost" data-ld-all>${esc(t('Mark all done'))}</button></div>${items.map(row).join('')}</details>`}
-async function lookAllDone(b){const ids=[...document.querySelectorAll('#lookdone-list [data-ld]')].map(x=>x.dataset.ld);if(!ids.length)return;b.disabled=true;const done=[];
- try{for(const id of ids){await decidePost(id,{choice:'complete',feedback:'',decision_id:crypto.randomUUID()});done.push(id)}}
- catch(err){errCaught(err);toast(err.message,true)}
- finally{await refresh().catch(()=>{});b.disabled=false}
- if(done.length)toast(t(['Marked {} done','Marked {} done'],done.length),false,done.join(','))}
+function lookDoneRows(items){
+ return items.map(s=>{const x=lookExpanded.has(s.id),why=doneWhy(s);
+  return `<div class="ld-row${x?' open':''}" data-ld="${esc(s.id)}"><button type="button" class="ld-main" data-ld-expand="${esc(s.id)}" aria-expanded="${x}">${CHEVRON}<span class="ld-text"><span class="ld-title" translate="no">${esc(s.title)}</span><small class="ld-why"><span class="ld-tag">${esc(t('Looks done'))}</span>${esc(why)}</small></span></button><span class="ld-acts"><button type="button" data-ld-not="${esc(s.id)}">${esc(t('Not done'))}</button></span>${x?suggestionCard(s,'Look done'):''}</div>`}).join('')}
 async function lookNotDone(b){const id=b.dataset.ldNot;b.disabled=true;
  try{await decidePost(id,{choice:'not_done',feedback:'',decision_id:crypto.randomUUID()});lookExpanded.delete(id);await refresh();toast(t('Back on your list. I’ll learn from it.'))}
  catch(err){errCaught(err);toast(err.message,true);await refresh().catch(()=>{})}finally{b.disabled=false}}

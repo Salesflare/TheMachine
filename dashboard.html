@@ -100,8 +100,8 @@ html,body{overflow-anchor:none}
 [data-theme="light"] dialog{box-shadow:0 24px 60px -12px #3d375259}
 [data-theme="light"] dialog::backdrop{background:#3d375240}
 [data-theme="light"] #suggestion-stats .stats{background:#fffffff2}
-[data-theme="light"] #later-list,[data-theme="light"] #promises-list,[data-theme="light"] #lookdone-list,[data-theme="light"] #waiting-list,[data-theme="light"] #finished-list{background:#ffffffbf}
-[data-theme="light"] #later-list>summary .count,[data-theme="light"] #promises-list>summary .count,[data-theme="light"] #lookdone-list>summary .count,[data-theme="light"] #waiting-list>summary .count,[data-theme="light"] #finished-list>summary .count{background:#3d37520f}
+[data-theme="light"] #later-list,[data-theme="light"] #promises-list,[data-theme="light"] #waiting-list,[data-theme="light"] #finished-list{background:#ffffffbf}
+[data-theme="light"] #later-list>summary .count,[data-theme="light"] #promises-list>summary .count>summary .count,[data-theme="light"] #waiting-list>summary .count,[data-theme="light"] #finished-list>summary .count{background:#3d37520f}
 [data-theme="light"] .actions button.ghost,[data-theme="light"] .actions button.quiet{background:#3d375212}
 [data-theme="light"] .toast{background:#3d3752;color:#fff}
 [data-theme="light"] .toast.error{background:#a3401a}
@@ -952,24 +952,22 @@ button.stat[aria-expanded="true"]::after{content:"";position:absolute;left:28%;r
 @keyframes pop{to{scale:1.9;opacity:0}}
 .game-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px}.game-foot p{margin:0;color:var(--muted)}.game-foot button{flex:none;white-space:nowrap}
 @media(prefers-reduced-motion:reduce){#game-field .zz{animation:zz var(--d,3s) linear forwards!important}#game-field .zz.got{animation:none!important;opacity:0}}.all-clear strong{font-size:1.05rem;margin-bottom:2px}
-#later-list,#promises-list,#lookdone-list,#waiting-list,#finished-list{margin:10px 0 0;padding:0;border:1px solid var(--border);border-radius:14px;background:#23272ebf}
-:is(#waiting-list,#later-list,#promises-list,#lookdone-list)+:is(#later-list,#promises-list,#lookdone-list,#finished-list){margin-top:8px}
-#later-list>summary,#promises-list>summary,#lookdone-list>summary,#waiting-list>summary,#finished-list>summary{display:flex;align-items:center;gap:10px;width:100%;padding:14px 16px;font-size:.92rem;font-weight:600;color:var(--text)}
-#later-list>summary .count,#promises-list>summary .count,#lookdone-list>summary .count,#waiting-list>summary .count,#finished-list>summary .count{margin-left:auto;min-width:24px;padding:2px 8px;border-radius:999px;background:#ffffff0f;font:600 .74rem/1.4 var(--mono);color:var(--muted);text-align:center}
-#later-list[open]>summary,#promises-list[open]>summary,#lookdone-list[open]>summary,#waiting-list[open]>summary,#finished-list[open]>summary{margin:0;border-bottom:1px solid var(--border)}
-#later-list>:not(summary),#promises-list>:not(summary),#lookdone-list>:not(summary),#waiting-list>:not(summary),#finished-list>:not(summary){margin-left:12px;margin-right:12px}
-/* Look done: one quiet line per to-do (title, what shows it) with Not done and Done; a row opens to the full to-do */
-.ld-bar{display:flex;align-items:center;gap:8px;padding:8px 0}.ld-bar small{flex:1 1 auto;min-width:0;color:var(--muted);font-size:.82rem}
-/* An opened row shows the whole to-do but one set of buttons: the row's Not done and Done */
-#lookdone-list .ld-row>article>.actions{display:none}
-.ld-row{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;padding:8px 0;border-top:1px solid var(--border)}#lookdone-list>.ld-row:last-child{margin-bottom:4px}
+#later-list,#promises-list,#waiting-list,#finished-list{margin:10px 0 0;padding:0;border:1px solid var(--border);border-radius:14px;background:#23272ebf}
+:is(#waiting-list,#later-list,#promises-list)+:is(#later-list,#promises-list,#finished-list){margin-top:8px}
+#later-list>summary,#promises-list>summary>summary,#waiting-list>summary,#finished-list>summary{display:flex;align-items:center;gap:10px;width:100%;padding:14px 16px;font-size:.92rem;font-weight:600;color:var(--text)}
+#later-list>summary .count,#promises-list>summary .count>summary .count,#waiting-list>summary .count,#finished-list>summary .count{margin-left:auto;min-width:24px;padding:2px 8px;border-radius:999px;background:#ffffff0f;font:600 .74rem/1.4 var(--mono);color:var(--muted);text-align:center}
+#later-list[open]>summary,#promises-list[open]>summary[open]>summary,#waiting-list[open]>summary,#finished-list[open]>summary{margin:0;border-bottom:1px solid var(--border)}
+#later-list>:not(summary),#promises-list>:not(summary)>:not(summary),#waiting-list>:not(summary),#finished-list>:not(summary){margin-left:12px;margin-right:12px}
+/* Looks done, at the top of Done / dismissed: one quiet line per to-do (title, what shows it, a tag) with Not done; a row opens to the full to-do */
+.ld-row{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;padding:8px 0;border-top:1px solid var(--border)}#finished-list>summary+.ld-row{border-top:0}#finished-list>.ld-row:last-child{margin-bottom:4px}
+.ld-tag{display:inline-block;margin-right:6px;padding:0 6px;border:1px solid var(--border);border-radius:999px;color:var(--muted);font-size:.74rem;line-height:1.5;white-space:nowrap}
 .ld-main{flex:1 1 0;min-width:0;display:flex;align-items:flex-start;gap:8px;margin:0;padding:4px 0;border:0;background:none;box-shadow:none;color:var(--text);font:inherit;text-align:left;cursor:pointer}
 .ld-main:hover{background:none}.ld-main>svg{flex:none;width:14px;height:14px;margin-top:4px;fill:none;stroke:var(--muted);stroke-width:2;transform:rotate(-90deg);transition:transform .15s}.ld-row.open .ld-main>svg{transform:none}
 .ld-text{display:block;min-width:0}.ld-title{display:block;font-size:.92rem;font-weight:500;overflow-wrap:anywhere}
 .ld-why{display:block;margin-top:2px;color:var(--muted);font-size:.82rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ld-row.open .ld-why{white-space:normal}
-.ld-acts{display:flex;flex:none;gap:4px}.ld-acts button,.ld-bar button{margin:0;padding:6px 10px;font-size:.85rem}
-.ld-row>article{flex:1 1 100%;margin:6px 0 4px}.ld-row>article>h3,.ld-row.open .ld-why{display:none}.ld-bar small{padding-left:22px}.ld-acts button,.ld-bar button{white-space:nowrap}
-@media(max-width:600px){.ld-main{flex-basis:100%}.ld-why{white-space:normal}.ld-acts{margin-left:22px}.ld-bar small{padding-left:0}}
+.ld-acts{display:flex;flex:none;align-items:center;gap:8px}.ld-acts button{margin:0;padding:6px 10px;font-size:.85rem}
+.ld-row>article{flex:1 1 100%;margin:6px 0 4px}.ld-row>article>h3,.ld-row.open .ld-why{display:none}.ld-acts button{white-space:nowrap}
+@media(max-width:600px){.ld-why{white-space:normal}}
 #later-list>.day-head:first-of-type{margin-top:12px}#later-list>article:last-child,#waiting-list>article:last-child,#finished-list>:last-child{margin-bottom:12px}#waiting-list>article:first-of-type{margin-top:12px}
 #finished-list>article:first-of-type{margin-top:12px}
 .graph-open{padding:4px 16px}#people-view .graph-open .promise:first-child{border-top:0}
@@ -1453,7 +1451,7 @@ button.stat[aria-expanded="true"]::after{left:40%;right:40%;height:2px;border-ra
 /* Section heads: the serif, ink, with a quiet count. */
 .section-head{margin:var(--sp-6) 0 var(--sp-3);gap:var(--sp-2)}
 .section-head h2{font:var(--fw-heading) var(--fs-xl)/var(--lh-tight) var(--serif);letter-spacing:0;color:var(--text)}
-#later-list>summary,#promises-list>summary,#lookdone-list>summary,#waiting-list>summary,#finished-list>summary{font:var(--fw-heading) var(--fs-lg)/var(--lh-tight) var(--serif);letter-spacing:0;color:var(--text)}
+#later-list>summary,#promises-list>summary>summary,#waiting-list>summary,#finished-list>summary{font:var(--fw-heading) var(--fs-lg)/var(--lh-tight) var(--serif);letter-spacing:0;color:var(--text)}
 .section-head .count{font:var(--fw-medium) var(--fs-sm) var(--sans);color:var(--faint)}
 .section-head p{font-size:var(--fs-sm);color:var(--faint)}
 .day-head{font:var(--fw-medium) var(--fs-xs)/1.4 var(--sans);letter-spacing:0;text-transform:none;color:var(--faint)}
@@ -1525,8 +1523,8 @@ summary:hover{color:var(--text)}
 .hours-days button[aria-pressed="true"]{background:var(--c-accent-tint);border-color:color-mix(in srgb,var(--mint) 45%,transparent);color:var(--text);font-weight:var(--fw-strong)}
 
 /* Collapsed lists at the end: a hairline above, the serif head, no box. */
-#later-list,#promises-list,#lookdone-list,#waiting-list,#finished-list,[data-theme="light"] #later-list,[data-theme="light"] #promises-list,[data-theme="light"] #lookdone-list,[data-theme="light"] #waiting-list,[data-theme="light"] #finished-list{background:transparent;box-shadow:none;border:0;border-top:1px solid var(--border);border-radius:0;padding:var(--sp-4) 0 0;margin-top:var(--sp-4)}
-#later-list>summary .count,#promises-list>summary .count,#lookdone-list>summary .count,#waiting-list>summary .count,#finished-list>summary .count,[data-theme="light"] #later-list>summary .count,[data-theme="light"] #promises-list>summary .count,[data-theme="light"] #lookdone-list>summary .count,[data-theme="light"] #waiting-list>summary .count,[data-theme="light"] #finished-list>summary .count{font:var(--fw-medium) var(--fs-sm) var(--sans);background:transparent;color:var(--faint)}
+#later-list,#promises-list,#waiting-list,#finished-list,[data-theme="light"] #later-list,[data-theme="light"] #promises-list,[data-theme="light"] #waiting-list,[data-theme="light"] #finished-list{background:transparent;box-shadow:none;border:0;border-top:1px solid var(--border);border-radius:0;padding:var(--sp-4) 0 0;margin-top:var(--sp-4)}
+#later-list>summary .count,#promises-list>summary .count>summary .count,#waiting-list>summary .count,#finished-list>summary .count,[data-theme="light"] #later-list>summary .count,[data-theme="light"] #promises-list>summary .count>summary .count,[data-theme="light"] #waiting-list>summary .count,[data-theme="light"] #finished-list>summary .count{font:var(--fw-medium) var(--fs-sm) var(--sans);background:transparent;color:var(--faint)}
 
 /* Empty states: the mascot, a short serif line, a muted sentence; no dashed box. */
 .empty{border:1px solid var(--border);border-style:solid;background:transparent;box-shadow:none;border-radius:var(--r-lg);padding:var(--sp-5);gap:var(--sp-4);color:var(--muted)}
@@ -1992,6 +1990,7 @@ body main{padding-top:0}
 .side-head svg{width:12px;height:12px;flex:none;margin-left:-2px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transition:transform var(--dur) var(--ease)}
 .side-head[aria-expanded="false"] svg{transform:rotate(-90deg)}
 .side-cards a{display:block;padding:5px 10px;border-radius:var(--r-sm);color:var(--side-ink);font:400 13px/1.45 var(--sans);text-decoration:none;white-space:nowrap;overflow:hidden}
+.side-cards a.side-ld{display:flex;align-items:baseline;gap:6px}.side-ld span{min-width:0;overflow:hidden;text-overflow:ellipsis}.side-ld small{flex:none;color:var(--side-quiet,var(--c-text-3));font-size:11.5px}
 .side-group.quiet a{color:var(--side-quiet)}
 @media(hover:hover) and (pointer:fine){.side-cards a:hover{background:var(--c-hover);color:var(--text)}}
 .side-cards a[aria-current]{background:color-mix(in srgb,var(--text) 8%,transparent);color:var(--text)}
@@ -3408,7 +3407,7 @@ const listOpenKept={};const listOpen=id=>{const d=document.getElementById(id);if
 // Feedback's rows name where the to-dos came from (assistant.py TODO_SOURCE); the ones that need it say a little more
 const SOURCE_TIPS={'Added by you':'Made with New to-do','The Machine itself':'Problems in The Machine, like an error','Phone notifications':'Texts and alerts on your phone','Other':'The source is gone or unknown'};
 function render(){scopeSync(state.locale);try{talkFromStatus();talkViewPaint()}catch{}applyLocale(state.locale);renderNeedsYou();renderNotify();fixedLoad();
-const finishedOpen=listOpen('finished-list'),laterOpen=listOpen('later-list'),promisesOpen=listOpen('promises-list'),lookOpen=listOpen('lookdone-list'),waitOpen=listOpen('waiting-list');
+const finishedOpen=listOpen('finished-list'),laterOpen=listOpen('later-list'),promisesOpen=listOpen('promises-list'),waitOpen=listOpen('waiting-list');
 const drafts=Object.fromEntries([...document.querySelectorAll('#suggestions textarea,#suggestions .fleet-card input[id]')].filter(t=>t.value).map(t=>[t.id,t.value]));
 const moreOpen=[...document.querySelectorAll('#suggestions article[id] .more-actions[open]')].map(d=>d.closest('article[id]').id);  // a refresh keeps an opened More menu open
 const shown=state.suggestions.filter(s=>scopeFilter==='all'||s.scope===scopeFilter);
@@ -3420,9 +3419,10 @@ const needs=[...fleetCards,...open.filter(s=>placeOf(s)==='needs')],preparing=op
 const leadId=state.greeting?.line?.card,leadIn=leadId&&[['ready',ready],['needs',needs],['preparing',preparing]].find(([,l])=>l.some(s=>s.id===leadId));
 if(leadIn){const l=leadIn[1];l.unshift(...l.splice(l.findIndex(s=>s.id===leadId),1))}
 const fuv=fuSplit(ready,needs,preparing);  // a board's follow-ups are one to-do (fuGroupCard)
-// What Talk sees: every open to-do the lists show, in their order (Ready, To decide, Preparing, Waiting on others, Later, Look done)
+// What Talk sees: every open to-do the lists show, in their order (Ready, To decide, Preparing, Waiting on others, Later).
+// One that looks done sits in Done, so it isn't here (find_todos still finds it)
 talkTodos=[...ready.map(s=>[s,'ready']),...needs.filter(s=>state.suggestions.includes(s)).map(s=>[s,'needs']),...preparing.map(s=>[s,'preparing']),
- ...waitingOn.map(s=>[s,'waiting']),...later.map(s=>[s,'later']),...lookDone.map(s=>[s,'lookdone'])];
+ ...waitingOn.map(s=>[s,'waiting']),...later.map(s=>[s,'later'])];
 {const tips=firstTips(),own=new Set(shown.map(s=>s.id));tipSend=tips.includes('send')&&fuv.ready.find(s=>s&&typeof s==='object'&&own.has(s.id)&&sendTipFits(s))?.id||'';tipChange=!tipSend&&tips.includes('change')?'next':''}
 const fuHidden=ready.length+needs.length+preparing.length-fuv.ready.length-fuv.needs.length-fuv.preparing.length;
 // What the list shows (a board's follow-ups are one to-do, a batch going out one progress line): All clear only when nothing is
@@ -3445,9 +3445,9 @@ const foldsBack=foldsKeep($('#suggestions'));
 if(!chatOpen())$('#suggestions').innerHTML=repeatOfferLine()+scopeNote(!anyShown&&!loading)+(anyShown?'':loading?SKELETON:scopeFilter!=='all'?'':firstLookEmpty(firstLookInfo(state.review_live||{}))||`<div class="empty all-clear"><button class="poke" type="button" aria-label="Poke the robot" title="Poke me"><img class="sleepy" src="brand/${pokeAwake?'wave':'sleepy'}.webp" alt="The Machine resting"></button><div><strong>All clear.</strong><span class="poke-line">${esc(pokeLine||clearLine())}</span></div>${pokes>=PLAY_AFTER?PLAY_BUTTON:''}</div>`)+fuSendingCards()+[[fuv.ready,'Ready for you','ready'],[fuv.needs,'Needs your decision','needs'],[fuv.preparing,'Preparing','preparing']].sort((a,b)=>(b[2]===leadIn?.[0])-(a[2]===leadIn?.[0])).filter(([items])=>items.length).map(([items,title,key])=>`<div class="section-head" id="section-${key}" data-fold="${key}" role="button" tabindex="0" aria-expanded="${!folded.has(key)}"><h2>${title}</h2><span class="count">${items.length}</span></div>${folded.has(key)?'':items.map(s=>typeof s==='string'?s:suggestionCard(s,title)).join('')}`).join('')
 // Snoozed cards are out of the way by choice: folded by default, open state kept across refreshes. Waiting on others too.
 +(waitingOn.length?`<details id="waiting-list" ${waitOpen?'open':''}><summary id="waiting-head"><span>${esc(t('Waiting on others'))}</span><span class="count">${waitingOn.length}</span></summary>${waitingOn.map(s=>suggestionCard(s,'Waiting on others')).join('')}</details>`:'')
-+(later.length?`<details id="later-list" ${laterOpen?'open':''}><summary id="later-head"><span>Coming back later</span><span class="count">${later.length}</span></summary>${laterCards(later)}</details>`:'')+promisesList(promisesOpen)+lookDoneList(lookDone,lookOpen)+`<details id="finished-list" ${finishedOpen?'open':''}><summary id="finished-head"><span>Done / dismissed</span><span class="count">${doneTotal}</span></summary>${(()=>{const l=recent.find(s=>s.id===linkedCardId);return l&&!pagers.get(doneKey())?.items.some(x=>x.id===l.id)?suggestionCard(l):''})()}${pagerSlot(doneKey(),'Nothing finished or dismissed yet.')}</details>`;if(!chatOpen())pagerMount($('#suggestions'));
-sideCounts={ready:fuv.ready.length,needs:fuv.needs.length,preparing:fuv.preparing.length,later:later.length,promises:(state.promises||[]).filter(p=>['open','card'].includes(p.state)).length};sideCards([[fuSide(fuv.ready).filter(x=>typeof x!=='string'),'Ready','ready'],[fuSide(fuv.needs).filter(x=>typeof x!=='string'),'To decide','needs'],[fuSide(fuv.preparing).filter(x=>typeof x!=='string'),'Preparing','preparing'],[waitingOn,'Waiting on others','waiting'],[later,'Later','later'],[lookDone,'Look done','lookdone'],[recent,'Done','done']]);
-{const c=chatOpen();document.body.classList.toggle('chat-open',!!c);if(c)chatMount(c.id,chatView(c,[[fuSide(fuv.ready).filter(x=>typeof x!=='string'),'Ready','ready'],[fuSide(fuv.needs).filter(x=>typeof x!=='string'),'To decide','needs'],[fuSide(fuv.preparing).filter(x=>typeof x!=='string'),'Preparing','preparing'],[waitingOn,'Waiting on others','waiting'],[later,'Later','later'],[lookDone,'Look done','lookdone'],[recent,'Done','done']]))}pageHead();
++(later.length?`<details id="later-list" ${laterOpen?'open':''}><summary id="later-head"><span>Coming back later</span><span class="count">${later.length}</span></summary>${laterCards(later)}</details>`:'')+promisesList(promisesOpen)+`<details id="finished-list" ${finishedOpen?'open':''}><summary id="finished-head"><span>Done / dismissed</span><span class="count">${doneTotal+lookDone.length}</span></summary>${lookDoneRows(lookDone)}${(()=>{const l=recent.find(s=>s.id===linkedCardId);return l&&!pagers.get(doneKey())?.items.some(x=>x.id===l.id)?suggestionCard(l):''})()}${pagerSlot(doneKey(),'Nothing finished or dismissed yet.')}</details>`;if(!chatOpen())pagerMount($('#suggestions'));
+sideCounts={ready:fuv.ready.length,needs:fuv.needs.length,preparing:fuv.preparing.length,later:later.length,promises:(state.promises||[]).filter(p=>['open','card'].includes(p.state)).length};sideCards([[fuSide(fuv.ready).filter(x=>typeof x!=='string'),'Ready','ready'],[fuSide(fuv.needs).filter(x=>typeof x!=='string'),'To decide','needs'],[fuSide(fuv.preparing).filter(x=>typeof x!=='string'),'Preparing','preparing'],[waitingOn,'Waiting on others','waiting'],[later,'Later','later'],[[...lookDone,...recent],'Done','done']]);
+{const c=chatOpen();document.body.classList.toggle('chat-open',!!c);if(c)chatMount(c.id,chatView(c,[[fuSide(fuv.ready).filter(x=>typeof x!=='string'),'Ready','ready'],[fuSide(fuv.needs).filter(x=>typeof x!=='string'),'To decide','needs'],[fuSide(fuv.preparing).filter(x=>typeof x!=='string'),'Preparing','preparing'],[waitingOn,'Waiting on others','waiting'],[later,'Later','later'],[[...lookDone,...recent],'Done','done']]))}pageHead();
 for(const[id,v]of Object.entries(drafts)){const t=document.getElementById(id);if(t&&t.value!==v){t.value=v;t.classList.add('filled')}}
 for(const id of moreOpen){const menu=document.getElementById(id)?.querySelector('.more-actions');if(menu)menu.open=true}foldsBack();
 fleetSync();
@@ -3546,7 +3546,6 @@ $('#suggestions').onclick=async e=>{const b=e.target.closest('button');if(!b||b.
 if(b.dataset.tipDone){tipDone(b.dataset.tipDone);render();return}
 if(b.dataset.ldExpand){const k=b.dataset.ldExpand;lookExpanded.has(k)?lookExpanded.delete(k):lookExpanded.add(k);render();return}
 if(b.dataset.ldNot){lookNotDone(b);return}
-if(b.dataset.ldAll!=null){lookAllDone(b);return}
 if(['change','reject'].includes(b.dataset.choice))tipDone('change');if(b.dataset.smart)tipDone('send');
 if(b.dataset.unmerge){b.disabled=true;try{await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'undo_merge',args:{suggestion_id:id,approval_id:crypto.randomUUID()}})});toast('Undoing the merge…');await refresh()}catch(e){errCaught(e);toast(e.message,true)}finally{b.disabled=false}return}
 if(b.dataset.smart){const a=taskActions(state.suggestions.find(s=>s.id===id)).find(a=>a.revision===b.dataset.smart);if(!a){toast('That result changed. Use its current buttons.',true);return}if(['email','email_demo','linkedin','slack','x','whatsapp','telegram','intercom','doc_reply','merge','finish','calendar','doc_write'].includes(a.kind)){openSend(id,b.dataset.smart);return}b.disabled=true;try{await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'confirm_action',args:{suggestion_id:id,revision:b.dataset.smart,approval_id:crypto.randomUUID()}})});toast('I’ll prepare that next.');await refresh()}catch(e){errCaught(e);toast(e.message,true)}finally{b.disabled=false}return}

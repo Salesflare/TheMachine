@@ -17,10 +17,9 @@ A página **Tarefas** agrupa as tarefas:
 - **Preparando**: sua Machine está trabalhando nela. Uma tarefa em que você acabou de clicar em **Fazer** fica onde estava enquanto é preparada e depois vai para **Pronta para você**.
 - **Volta mais tarde**: adiada.
 - **Promessas**: o que você prometeu e o que outras pessoas prometeram a você. Veja [Promessas](promises.md).
-- **Parecem feitas**: tarefas que já parecem concluídas. Recolhidas, logo acima de **Feito / dispensado**.
-- **Feito / dispensado**: todas as tarefas concluídas, das mais novas para as mais antigas, 30 por vez conforme você rola.
+- **Feito / dispensado**: todas as tarefas concluídas, das mais novas para as mais antigas, 30 por vez conforme você rola. As que já parecem concluídas vêm primeiro, com a etiqueta **Parece feito**.
 
-Em **Parecem feitas** cada tarefa é uma linha: o título e o que mostra que está feita, como "PR #3451 mesclado". **Feito** fecha uma, **Marcar todas como feitas** fecha todas (com **Desfazer**), e **Não feito** a devolve como tarefa normal para a sua Machine aprender. Toque numa linha para ver a tarefa inteira. Elas nunca aparecem como atrasadas e não contam como esperando por você. Nada fecha sem você.
+Uma tarefa com **Parece feito** é uma linha: o título e o que mostra que está feita, como "PR #3451 mesclado". Ela fica aberta até você fechar: toque na linha para ver a tarefa inteira e use **Marcar como feita** ali. **Não feito** a devolve para a sua lista, e a sua Machine aprende com isso. Elas nunca aparecem como atrasadas e não contam como esperando por você.
 
 Uma tarefa cujo último passo ainda está aberto do lado de outra pessoa, como uma revisão, um merge ou uma resposta, mostra **Aguardando:** esse passo e continua aberta. Ela espera em **Aguardando outras pessoas**, recolhida acima de Volta mais tarde, e não conta como pronta para você. Uma nova mensagem sobre ela a traz de volta.
 
