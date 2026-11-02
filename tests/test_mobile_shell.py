@@ -64,6 +64,17 @@ class MobileShellTest(unittest.TestCase):
         self.assertIn('cleartextTrafficPermitted="false"', (MOBILE / 'android/app/src/main/res/xml/network_security_config.xml').read_text())
         self.assertNotIn('armv7', (MOBILE / 'ios/App/App/Info.plist').read_text())
 
+    def test_native_sides_take_only_443_and_8443(self):
+        # The JavaScript side is tested in mobile/tests; the native checks must allow the same two ports, no others.
+        java = (MOBILE / 'android/app/src/main/java/computer/themachine/app/MachineShellPlugin.java').read_text()
+        swift = (MOBILE / 'ios/App/App/MachineShellPlugin.swift').read_text()
+        self.assertIn('static final int OWN_PORT = 8443;', java)
+        self.assertIn('(port != 443 && port != OWN_PORT)) return null;', java)
+        self.assertIn('static let ownPort = 8443', swift)
+        self.assertIn('port == 443 || port == ownPort else { return nil }', swift)
+        for side in (java, swift):
+            self.assertNotIn('8080', side)
+
 
 if __name__ == '__main__':
     unittest.main()

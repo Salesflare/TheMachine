@@ -18,6 +18,8 @@
     return !name.includes('.') && LABEL.test(name);
   }
 
+  const OWN_PORT = '8443';
+
   function tailnetHost(host) {
     const parts = labels(host);
     return !!parts && parts.length >= 4 && host.endsWith('.ts.net');
@@ -31,14 +33,15 @@
     if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(text)) text = 'https://' + text;
     let url;
     try { url = new URL(text); } catch (e) { return {error: 'address'}; }
-    if (url.protocol !== 'https:' || url.username || url.password || url.port) return {error: 'address'};
+    // https on 443 (the URL parser drops it) or 8443, a self-hosted Machine's default port; no other port.
+    if (url.protocol !== 'https:' || url.username || url.password || (url.port && url.port !== OWN_PORT)) return {error: 'address'};
     const host = url.hostname.toLowerCase();
-    if (host === HOSTED || hostedHost(host)) return {url: 'https://' + HOSTED + '/', kind: 'hosted'};
+    if (host === HOSTED || hostedHost(host)) return url.port ? {error: 'address'} : {url: 'https://' + HOSTED + '/', kind: 'hosted'};
     if (!tailnetHost(host)) return {error: host.includes('.') ? 'tailnet' : 'address'};
     let path = url.pathname || '/';
     if (!path.endsWith('/')) path += '/';
     if (!/^\/(?:[A-Za-z0-9._~-]+\/)*$/.test(path)) return {error: 'address'};
-    return {url: 'https://' + host + path, kind: 'own'};
+    return {url: 'https://' + host + (url.port ? ':' + url.port : '') + path, kind: 'own'};
   }
 
   // Whether a saved Machine URL may be opened: the same rules, and already in its normal form.

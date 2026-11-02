@@ -19,10 +19,14 @@ test('a hosted Machine is reached through sign-in, whatever was typed', () => {
 test('a Machine of their own is a Tailscale https address', () => {
   assert.deepEqual(MachineUrl.parse('machine.tail1234.ts.net'), {url: 'https://machine.tail1234.ts.net/', kind: 'own'});
   assert.deepEqual(MachineUrl.parse(' https://Machine.tail1234.ts.net/dash '), {url: 'https://machine.tail1234.ts.net/dash/', kind: 'own'});
+  // 443 and 8443 (a self-hosted Machine's default port) only
+  assert.deepEqual(MachineUrl.parse('machine.tail1234.ts.net:8443'), {url: 'https://machine.tail1234.ts.net:8443/', kind: 'own'});
+  assert.deepEqual(MachineUrl.parse('https://machine.tail1234.ts.net:443/'), {url: 'https://machine.tail1234.ts.net/', kind: 'own'});
   assert.deepEqual(MachineUrl.parse('example.com'), {error: 'tailnet'});
   assert.deepEqual(MachineUrl.parse('localhost'), {error: 'address'});
   assert.deepEqual(MachineUrl.parse(''), {error: 'address'});
-  for (const bad of ['http://machine.tail1234.ts.net', 'https://machine.tail1234.ts.net:8443',
+  for (const bad of ['http://machine.tail1234.ts.net', 'https://machine.tail1234.ts.net:8080', 'https://machine.tail1234.ts.net:444',
+    'https://alex.app.themachine.computer:8443',
     'https://u:p@machine.tail1234.ts.net', 'https://tail1234.ts.net', 'javascript:alert(1)',
     'https://machine.tail1234.ts.net/a%2f..', 'https://evil.com/.ts.net']) {
     assert.ok(MachineUrl.parse(bad).error, bad);
@@ -32,6 +36,8 @@ test('a Machine of their own is a Tailscale https address', () => {
 test('only a normal saved address opens', () => {
   assert.ok(MachineUrl.valid('https://sam.app.themachine.computer/'));
   assert.ok(MachineUrl.valid('https://machine.tail1234.ts.net/'));
+  assert.ok(MachineUrl.valid('https://machine.tail1234.ts.net:8443/'));
+  assert.ok(!MachineUrl.valid('https://machine.tail1234.ts.net:8080/'));
   assert.ok(!MachineUrl.valid('https://sam.app.themachine.computer/x'));
   assert.ok(!MachineUrl.valid('https://app.themachine.computer/'));
   assert.ok(!MachineUrl.valid('https://machine.tail1234.ts.net'));

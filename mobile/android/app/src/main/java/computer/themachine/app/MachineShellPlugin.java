@@ -43,6 +43,7 @@ import org.json.JSONObject;
 public class MachineShellPlugin extends Plugin {
 
     static final String HOSTED = "app.themachine.computer";
+    static final int OWN_PORT = 8443;
     static final String SCHEME = "computer.themachine.app";
     private static final String PREFS = "machine_shell";
     private static final Pattern LABEL = Pattern.compile("[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?");
@@ -85,14 +86,24 @@ public class MachineShellPlugin extends Plugin {
         return true;
     }
 
-    /** A Machine address the app may save: https, no port or user, a hosted Machine's root or a tailnet host. */
+    /** The port a URL goes to: 443 when it names none. */
+    static int portOf(Uri u) {
+        return u.getPort() == -1 ? 443 : u.getPort();
+    }
+
+    /**
+     * A Machine address the app may save: https and no user, a hosted Machine's root on 443, or a tailnet host on 443
+     * or 8443 (a self-hosted Machine's default port). No other port.
+     */
     static String normalMachine(String url) {
         if (url == null) return null;
         Uri u = Uri.parse(url);
         String host = u.getHost() == null ? null : u.getHost().toLowerCase();
-        if (!"https".equals(u.getScheme()) || u.getPort() != -1 || u.getUserInfo() != null || host == null) return null;
-        if (hostedHost(host)) return "https://" + host + "/";
-        if (!tailnetHost(host)) return null;
+        if (!"https".equals(u.getScheme()) || u.getUserInfo() != null || host == null) return null;
+        int port = portOf(u);
+        if (hostedHost(host)) return port == 443 ? "https://" + host + "/" : null;
+        if (!tailnetHost(host) || (port != 443 && port != OWN_PORT)) return null;
+        if (port == OWN_PORT) host += ":" + OWN_PORT;
         String path = u.getPath() == null || u.getPath().isEmpty() ? "/" : u.getPath();
         if (!path.endsWith("/")) path += "/";
         if (!path.matches("/(?:[A-Za-z0-9._~-]+/)*")) return null;
@@ -121,7 +132,8 @@ public class MachineShellPlugin extends Plugin {
         if ("https".equals(scheme) && saved != null) {
             Uri m = Uri.parse(saved);
             // A hosted Machine may move to its owner's new name: any hosted dashboard host, the account checks whose
-            if (host.equals(m.getHost()) || (hostedHost(m.getHost()) && hostedHost(host))) return false;
+            if (host.equals(m.getHost()) && portOf(url) == portOf(m)) return false;
+            if (hostedHost(m.getHost()) && hostedHost(host) && portOf(url) == 443) return false;
             if (host.equals(HOSTED) && hostedHost(m.getHost())) {
                 String path = url.getPath() == null ? "/" : url.getPath();
                 if (path.equals("/open") || path.equals("/login")) { // the dashboard's sign-in ran out: sign in again

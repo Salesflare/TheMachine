@@ -20,7 +20,7 @@ Native code is kept small and stable on purpose: new features belong in the dash
 |---|---|
 | Hosted Machine | Sign in with the account (Google, Microsoft or passkey at themachine.computer). The account knows the Machine. |
 | Self-hosted, on The Machine Network | The same sign-in: the Machine reports its Tailscale dashboard address to its owner's account only, and it is removed when they leave the Network. |
-| Self-hosted, no account | "Self-hosted?" on the start page: scan the code in the dashboard's Settings, Phone app, or type the `.ts.net` address. Tailscale has to be on the phone. |
+| Self-hosted, no account | "Self-hosted?" on the start page: scan the code in the dashboard's Settings, Phone app, or type the `.ts.net` address (https on 443 or 8443, the default port; no other port). Tailscale has to be on the phone. |
 
 The app sign-in is bound to the app that started it: the app sends a challenge (SHA-256 of a random verifier) to
 `app.themachine.computer/open?to=app&c=...`, and only that app can redeem the handoff it gets back (`&v=<verifier>`).

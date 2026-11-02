@@ -58,16 +58,22 @@ public class MachineShellPlugin: CAPPlugin, CAPBridgedPlugin, ASWebAuthenticatio
         return parts.count >= 4 && parts.allSatisfy(label)
     }
 
-    /// A Machine address the app may save: https, no port or user, a hosted Machine's root or a tailnet host.
+    /// A self-hosted Machine's default port; besides it only 443.
+    static let ownPort = 8443
+
+    /// A Machine address the app may save: https and no user, a hosted Machine's root on 443, or a tailnet host on 443
+    /// or 8443. No other port.
     static func normalMachine(_ text: String?) -> String? {
-        guard let text = text, let u = URLComponents(string: text), u.scheme == "https", u.port == nil, u.user == nil,
+        guard let text = text, let u = URLComponents(string: text), u.scheme == "https", u.user == nil,
               let host = u.host?.lowercased() else { return nil }
-        if hostedHost(host) { return "https://\(host)/" }
-        guard tailnetHost(host) else { return nil }
+        let port = u.port ?? 443
+        if hostedHost(host) { return port == 443 ? "https://\(host)/" : nil }
+        guard tailnetHost(host), port == 443 || port == ownPort else { return nil }
+        let authority = port == ownPort ? "\(host):\(ownPort)" : host
         var path = u.path.isEmpty ? "/" : u.path
         if !path.hasSuffix("/") { path += "/" }
         guard path.range(of: "^/(?:[A-Za-z0-9._~-]+/)*$", options: .regularExpression) != nil else { return nil }
-        return "https://\(host)\(path)"
+        return "https://\(authority)\(path)"
     }
 
     private var machine: String? { MachineShellPlugin.normalMachine(store.string(forKey: "machine")) }
@@ -84,7 +90,8 @@ public class MachineShellPlugin: CAPPlugin, CAPBridgedPlugin, ASWebAuthenticatio
         let host = url.host?.lowercased() ?? ""
         if url.scheme == "https", let saved = machine, let m = URL(string: saved) {
             // A hosted Machine may move to its owner's new name: any hosted dashboard host, the account checks whose
-            if host == m.host || (MachineShellPlugin.hostedHost(m.host) && MachineShellPlugin.hostedHost(host)) { return false }
+            if host == m.host, (url.port ?? 443) == (m.port ?? 443) { return false }
+            if MachineShellPlugin.hostedHost(m.host), MachineShellPlugin.hostedHost(host), (url.port ?? 443) == 443 { return false }
             if host == MachineShellPlugin.hosted, MachineShellPlugin.hostedHost(m.host), ["/open", "/login"].contains(url.path) {
                 DispatchQueue.main.async { self.startSignIn(nil) } // the dashboard's sign-in ran out: sign in again
                 return true
