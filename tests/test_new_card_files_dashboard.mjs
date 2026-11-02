@@ -93,6 +93,7 @@ try{
   // × takes one back, and tells the Machine (under the same draft key)
   await page.locator('#nc-tray [data-nc-remove]').nth(4).click();
   assert.equal(await page.locator('#nc-tray .chat-att').count(),4);
+  for(let i=0;i<50&&!actions.some(a=>a.action==='chat_file_remove');i++)await page.waitForTimeout(100);  // the post goes after the click
   const removed=actions.filter(a=>a.action==='chat_file_remove');assert.equal(removed.length,1);assert.equal(removed[0].args.draft,draft);
   // Nothing is saved before it's added; the form fits the screen
   assert.equal(actions.filter(a=>a.action==='card_new').length,0);
