@@ -382,6 +382,33 @@ class Discovery(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.fleet.network_action('connect', 'zed@zed.example')
 
+    def gone(self):
+        with self.store.connect() as db:
+            return {r[0]: r[1] for r in db.execute('SELECT email,gone_at FROM network_people')}
+
+    def test_whether_they_still_have_a_machine_follows_the_last_lookup(self):
+        self.fleet.network_action('find_on')
+        self.assertEqual(self.gone(), {'lou@lou.example': None, 'nia@nia.example': None, 'sam@acme.example': None})
+        lou = self.relay.found.pop('lou@lou.example')  # Lou closed their Machine, or stopped being findable
+        self.fleet.discovery_round(force=True)
+        gone = self.gone()
+        self.assertIsNotNone(gone['lou@lou.example'])
+        self.assertIsNone(gone['nia@nia.example'])
+        self.relay.found['lou@lou.example'] = lou  # back
+        self.fleet.discovery_round(force=True)
+        self.assertIsNone(self.gone()['lou@lou.example'])
+
+    def test_an_address_the_owner_added_is_looked_up_too(self):
+        """Someone signed up with an address their messages never used: the owner adds it to them (Edit)."""
+        with self.store.connect() as db:
+            db.execute("UPDATE graph_nodes SET info=? WHERE id='p-zed'", (json.dumps({'identifiers': ['email:zed@zed.example'],
+                       'emails': [{'value': 'zed@zed.example', 'by': 'messages'}, {'value': 'Nia@Nia.example', 'by': 'owner'}]}),))
+            db.execute("DELETE FROM graph_nodes WHERE id='p-nia'")
+            contacts = {c[0]: c[1] for c in self.fleet.network_contacts(db)}
+        self.assertEqual((contacts['nia@nia.example'], contacts['zed@zed.example']), ('p-zed', 'p-zed'))
+        self.fleet.network_action('find_on')
+        self.assertEqual(self.people()['nia']['status'], 'new')
+
     def test_someone_in_a_fleet_together_is_not_suggested_until_they_leave(self):
         work = self.relay.directory['fleets'][0]
         work['members'].append({'member_id': 'nia1', 'name': 'Nia North', 'role': 'member', 'emails': ['nia@nia.example'], 'username': 'nia'})

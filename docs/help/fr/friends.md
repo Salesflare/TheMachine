@@ -22,6 +22,8 @@ Les deux sont activés par défaut, et désactivés au niveau de sécurité Prud
 
 Les personnes que vous connaissez et qui sont sur le Network sont suggérées dès que vous l’activez, et quand quelqu’un le rejoint plus tard. Une correspondance propose Se connecter, Pas maintenant ou **Ne jamais suggérer**. **Quitter le Network** vous en retire.
 
+Les personnes trouvées affichent **A une Machine** dans votre liste Personnes. La vérification porte sur les adresses de vos messages et sur celles que vous avez ajoutées à une personne avec **Modifier** : si quelqu’un s’est inscrit avec une autre adresse, ajoutez-la à cette personne.
+
 ## Planifier avec d’autres Machines
 
 Quand une personne qui a une Machine écrit « voyons-nous la semaine prochaine », votre Machine demande ses disponibilités à la sienne et trouve un horaire qui vous convient à tous les deux, dans vos heures de travail. Chacun reçoit une seule to-do, comme « Rendez-vous avec Alex Example », avec l’horaire en dessous. Touchez **Réserver**, **Autre horaire** ou **Pas nécessaire**. L’invitation ne part que lorsque vous avez tous les deux touché Réserver.

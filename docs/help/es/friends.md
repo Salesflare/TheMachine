@@ -22,6 +22,8 @@ Los dos están activados por defecto, y desactivados en el nivel de seguridad Pr
 
 La gente que conoces y está en la Network se te sugiere en cuanto la activas, y cuando alguien se une más tarde. Cada coincidencia viene con Conectar, Ahora no o **No sugerir nunca**. **Salir de la Network** te saca de ella.
 
+Las personas que encuentra muestran **Tiene una Machine** en tu lista Personas. Revisa las direcciones de tus mensajes y las que añadiste a alguien con **Editar**: si alguien se registró con otra dirección, añádesela.
+
 ## Agendar con otras Machines
 
 Cuando alguien con una Machine escribe «veámonos la semana que viene», tu Machine pide a la suya sus horas libres y encuentra una que os vaya bien a los dos, dentro de tu horario laboral. Cada uno recibe un solo to-do, como «Reunión con Alex Example», con la hora debajo. Toca **Reservar**, **Otra hora** o **No hace falta**. La invitación solo sale cuando los dos habéis tocado Reservar.

@@ -550,7 +550,7 @@ function fleetNote(s){if(closed(s))return fleetHandoff(s);const h=s.fleet_holder
 const inGraph=p=>p?.graph_node?` <a href="#people" class="fp-graph" data-graph-open="${esc(p.graph_node)}" title="Open ${esc(p.label||p.name||'them')} in your Graph" aria-label="Open ${esc(p.label||p.name||'them')} in your Graph">Profile</a>`:'';  // their page in the owner's own Graph; the Team Graph is the box below
 const fleetGroups=n=>[...new Set((n.fleet?.in||[]).map(x=>({work:'Fleet',family:'Family',friends:'Friend'})[x.kind]||x.label))].join(' · ');
 const fleetLine=n=>[n.fleet?.machine?'Has a Machine':'',...(n.fleet?.in||[]).map(x=>x.kind==='work'&&x.fleet_name?`${x.label} (${x.fleet_name})`:x.label)].filter(Boolean).join(' · ');
-const fleetChip=n=>n.fleet?`<span class="chip fleet-chip" style="--c:var(--mint)" title="${esc(fleetLine(n))}"><span class="ct">${esc(fleetGroups(n))}</span></span>`:'';
+const fleetChip=n=>n.fleet?.in?.length?`<span class="chip fleet-chip" style="--c:var(--mint);flex:none" title="${esc(fleetLine(n))}"><span class="ct">${esc(fleetGroups(n))}</span></span>`:'';
 function fleetAskRow(n){if(!state?.fleet?.on||!['person','org'].includes(n.kind)||n.fleet?.in?.some(x=>x.kind==='work'))return'';const about=n.kind==='org'?(n.domain||n.name):/^email:/.test(n.id)?n.id.slice(6):n.name;
  return `<p class="graph-sub detail-fleet-ask"><button type="button" class="link" data-fleet-ask="${esc(about)}">Ask the Fleet who knows ${esc(n.name||about)}</button></p>`}
 let fleetData=null,fleetShown=Promise.resolve(),fleetViewVersion=0,fleetPane=localStorage.getItem('fleet-pane')||'';

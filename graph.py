@@ -2401,6 +2401,23 @@ FLEET_GROUPS = {'work': 'Work Fleet', 'family': 'Family', 'friends': 'Friend'}
 MEMBER_EMAIL = re.compile(r'[^@\s]+@[^@\s]+\.[^@\s]+')
 
 
+def people_by_email(db, emails):
+    """(node_id, address) for the graph people with one of these lower-case addresses: one the messages show (an
+    identifier) or one the owner added to them in Edit. An address the owner took off still counts: it was theirs."""
+    emails = sorted({str(e).strip().lower() for e in emails if e})
+    out = set()
+    for start in range(0, len(emails), 400):
+        chunk = emails[start:start + 400]
+        marks = ','.join('?' for _ in chunk)
+        out.update((r[0], r[1][6:]) for r in db.execute(
+            f"SELECT n.id,j.value FROM graph_nodes n, json_each(n.info,'$.identifiers') j WHERE n.kind='person' AND j.value IN ({marks})",
+            ['email:' + e for e in chunk]))
+        out.update((r[0], r[1]) for r in db.execute(
+            "SELECT n.id,lower(json_extract(j.value,'$.value')) FROM graph_nodes n, json_each(n.info,'$.emails') j WHERE n.kind='person' "
+            f"AND json_extract(j.value,'$.by')='owner' AND lower(json_extract(j.value,'$.value')) IN ({marks})", chunk))
+    return sorted(out)
+
+
 def fleet_marks(db, fleets):
     """{node_id: {'name', 'machine', 'in': [...]}} for the people in the graph who are members of the owner's Fleets,
     Family or Friends (fleets: the directory by Fleet id, as fleet.Fleet.fleets() gives it). Members only: a pending
@@ -2415,28 +2432,43 @@ def fleet_marks(db, fleets):
                 continue
             for e in {str(e).strip().lower() for e in m.get('emails') or () if MEMBER_EMAIL.fullmatch(str(e).strip())}:
                 by_email[e].append((ref, kind, found, m))
-    if not by_email:
-        return {}
     marks = {}
-    ids = ['email:' + e for e in by_email]
-    for start in range(0, len(ids), 400):
-        chunk = ids[start:start + 400]
-        rows = db.execute("SELECT DISTINCT n.id,j.value FROM graph_nodes n, json_each(n.info,'$.identifiers') j WHERE n.kind='person' AND j.value IN ("
-                          + ','.join('?' for _ in chunk) + ')', chunk).fetchall()
-        for node_id, identifier in rows:
-            mark = marks.setdefault(node_id, {'name': '', 'machine': False, 'in': []})
-            for ref, kind, found, m in by_email[identifier.split(':', 1)[1]]:
-                if any(x['fleet'] == ref and x['member_id'] == m['member_id'] for x in mark['in']):
-                    continue
-                mark['in'].append({'kind': kind, 'label': FLEET_GROUPS[kind], 'fleet': ref, 'fleet_name': str(found.get('name') or '')[:80],
-                                   'member_id': str(m['member_id'])})
-                mark['machine'] = mark['machine'] or bool(m.get('machine'))
-                name = ' '.join(str(m.get('name') or '').split())[:100]
-                if not mark['name'] or (kind == 'work' and plain_name(name)):  # the name shared in a Work Fleet first
-                    mark['name'] = name if plain_name(name) else mark['name']
+    for node_id, email in people_by_email(db, by_email):
+        mark = marks.setdefault(node_id, {'name': '', 'machine': False, 'in': []})
+        for ref, kind, found, m in by_email[email]:
+            if any(x['fleet'] == ref and x['member_id'] == m['member_id'] for x in mark['in']):
+                continue
+            mark['in'].append({'kind': kind, 'label': FLEET_GROUPS[kind], 'fleet': ref, 'fleet_name': str(found.get('name') or '')[:80],
+                               'member_id': str(m['member_id'])})
+            mark['machine'] = mark['machine'] or bool(m.get('machine'))
+            name = ' '.join(str(m.get('name') or '').split())[:100]
+            if not mark['name'] or (kind == 'work' and plain_name(name)):  # the name shared in a Work Fleet first
+                mark['name'] = name if plain_name(name) else mark['name']
     order = {'work': 0, 'family': 1, 'friends': 2}
     for mark in marks.values():
         mark['in'].sort(key=lambda x: (order[x['kind']], x['fleet_name'].casefold()))
+    return network_marks(db, marks)
+
+
+def network_marks(db, marks):
+    """The Fleet marks and the people found on the Network (discovery.py) with "Check which of my contacts have a
+    Machine" on: in no Fleet with the owner, yet they have a Machine. Only while the last lookup still found them
+    (gone_at unset); they are no member of anything by it and get no name from it."""
+    if not _table(db, 'network_people') or not _table(db, 'fleet_meta'):
+        return marks
+    row = db.execute("SELECT value FROM fleet_meta WHERE key='network'").fetchone()
+    try:
+        on = bool(json.loads(row[0]).get('find')) if row else False
+    except (ValueError, TypeError, AttributeError):
+        on = False
+    if not on:
+        return marks
+    gone = 'gone_at' in {r[1] for r in db.execute('PRAGMA table_info(network_people)')}
+    found = [r[0] for r in db.execute('SELECT email FROM network_people' + (' WHERE gone_at IS NULL' if gone else ''))]
+    marks = dict(marks or {})
+    for node_id, _ in people_by_email(db, found):
+        mark = marks.get(node_id) or {'name': '', 'machine': False, 'in': []}
+        marks[node_id] = {**mark, 'machine': True}
     return marks
 
 

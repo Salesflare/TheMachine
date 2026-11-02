@@ -22,6 +22,8 @@ Entrambi sono attivi per impostazione predefinita, e disattivati al livello di s
 
 Le persone che conosci e che sono nel Network ti vengono suggerite appena lo attivi, e quando qualcuno si unisce più tardi. Ogni corrispondenza arriva con Collegati, Non ora o **Non suggerire mai**. **Esci dal Network** ti toglie dal Network.
 
+Le persone trovate mostrano **Ha una Machine** nella tua lista Persone. Il controllo usa gli indirizzi dei tuoi messaggi e quelli che hai aggiunto a una persona con **Modifica**: se qualcuno si è registrato con un altro indirizzo, aggiungilo a quella persona.
+
 ## Pianificare con altre Machine
 
 Quando qualcuno con una Machine scrive «vediamoci la prossima settimana», la tua Machine chiede alla sua gli orari liberi e ne trova uno che vada bene a entrambi, nel tuo orario di lavoro. Ognuno riceve un solo to-do, come «Incontro con Alex Example», con l’orario sotto. Tocca **Prenota**, **Altro orario** o **Non serve**. L’invito parte solo quando avete toccato entrambi Prenota.

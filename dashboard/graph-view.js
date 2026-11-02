@@ -870,6 +870,7 @@ function personAbout(n){const rows=[],f=n.fleet,work=f?.in?.find(x=>x.kind==='wo
  rows.push(kv('To you',n.role?`<b>${esc(cap(n.role))}</b>${n.role_by==='review'?`<span class="sub">A review read it in your messages${n.role_quote?`: ${quoteLine(n.id,n.role_quote,n.role_event_id)}`:''}</span>`:''}`:'<span class="muted">Not known yet</span>',n.role_by==='review'?confirmButton(n.id,n.role):'','kv-role'));
  if(n.side)rows.push(kv('Type',n.side==='work'?'Work contact':'Personal contact'));
  if(f?.in?.length)rows.push(kv('Network',`<span class="fleet-mark">${esc([...new Set(f.in.map(x=>x.kind==='work'&&x.fleet_name?`${x.label} (${x.fleet_name})`:x.label)),f.machine?'Has a Machine':''].filter(Boolean).join(' · '))}</span>`,`<button type="button" class="ghost" data-fleet-member="${esc(f.in[0].member_id)}">See in Fleet</button>${work?`<button type="button" class="ghost" data-fleet-free="${esc(work.fleet)}">Ask your Fleet</button>`:''}`));
+ else if(f?.machine)rows.push(kv('Network',`<span class="fleet-mark">${esc(t('Has a Machine'))}</span>`));  // found on the Network, in no Fleet together
  if(f?.named)rows.push(kv('Name',`<span class="fleet-named">From your ${work?'Fleet':f.in[0].kind==='family'?'Family':'Friends'}. Your messages say “${esc(n.name_from_messages||'')}”.</span>`,`<button type="button" class="ghost" data-fleet-keep="${esc(n.name)}">Keep</button>`));
  if(graphOwners.length)rows.push(ownerRow(n));
  return `<section class="detail-section person-about"><h4>With you</h4>${rows.join('')}</section>`}
