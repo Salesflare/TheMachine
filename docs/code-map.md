@@ -21,7 +21,7 @@ writes it; other modules call the owner's functions.
 | follow-ups | `follow_ups`, `task_invites`, `task_pages` | `follow_up_*`, `task_pages` |
 | recurring to-dos | `recurring`, `recurring_app` | `recurring_series`, `recurring_cards`, `recurring_offers` |
 | do it and preparation | `next_actions`, `preparation_state`, `gap_note` (what isn't known about a to-do's people, no table), `agent_jobs`, `agent_remote`, `agents_app`, `codex_signin` (Codex's device sign-in, no table), `calendar_writes`, `calendar_app`, `doc_writes`, `meeting_writer`, `meeting_notes`, `browser_login`, `browser_viewer` | `preparation_runs`, `preparation_calls`, `agent_*`, `meeting_writes`, `meeting_moves` |
-| reviews and learning | `learning_loop`, `corrections`, `corrections_app`, `learnings`, `team_learnings`, `fleet_learnings`, `embeddings`, `gbrain`, `gbrain_app` | `learning_changes`, `team_learning*`, `fleet_learn*`, `event_vector*`, `gbrain_*` |
+| reviews and learning | `learning_loop`, `missed_work`, `missed_work_app`, `corrections`, `corrections_app`, `learnings`, `team_learnings`, `fleet_learnings`, `embeddings`, `gbrain`, `gbrain_app` | `learning_changes`, `missed_audit*`, `team_learning*`, `fleet_learn*`, `event_vector*`, `gbrain_*` |
 | chat, talk, voice | `chat_model`, `chat_files`, `talk_live`, `voice_input`, `voice_worker`, `help_chat` | `chat_models`, `chat_fast_sessions`, `chat_files`, `talk_lines`, `draft_seen` (talk_live), `voice_prefs` |
 | fleet and network | `fleet`, `fleet_requests`, `fleet_reviews`, `fleet_trust`, `shared_graph`, `shared_graph_app`, `shared_connectors`, `network`, `friends`, `family`, `contact_share`, `discovery`, `meet`, `meet_app`, `security_levels` | `fleet_*`, `network_request_nodes` (fleet); `fleet_reviews` (fleet_reviews); `share_*`, `team_*` (shared_graph); `network_*` (network, discovery); `meet_*` (meet); `contact_*`; `security_prefs` |
 | skills, support | `skills`, `skills_app`, `support`, `support_app`, `bug_queue`, `error_feed`, `help_topics` | `skills`, `skill_hints`, `error_feed*`, `help_topics` |
@@ -54,6 +54,8 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   - `corrections_app.py` (`CorrectionsApp`): fix it where it came from (a chat turn finds where a wrong thing came from
     and fixes it there).
   - `ai_app.py` (`AiApp`): connected AIs: `/mcp`, the OAuth endpoints, the consent page and its tools (`AI_ACTIONS`).
+  - `missed_work_app.py` (`MissedWorkApp`): the weekly missed-work audit's background turn and the owner's label on a
+    miss (`missed_work_label`).
   - `meet_app.py` (`MeetApp`): scheduling between Machines: the review's meeting request, the other side's to-do, Book it
     as a calendar write with the invite, and the setting (`MEET_ACTIONS`).
 - **A question about a person, organization or project** (who they are, their latest messages, what is open with them,

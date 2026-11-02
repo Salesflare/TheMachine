@@ -53,3 +53,4 @@ Learning has a row of tabs. A tab with nothing in it yet is left out.
   - **Sent as is**: of the drafts you sent, how many went without an edit or **Change** first.
   - Each number says how it compares with the 30 days before. The chart starts at your first decided to-do: one bar per day for the first two weeks, then one per week, up to the last 8 weeks.
   - **Worth it per source**: where the to-dos came from, like **Email**, **Added by you** (made with **New to-do**), **Phone notifications** or **The Machine itself** (problems in The Machine, like an error), and how many you acted on.
+  - **Missed to-dos**: once a week The Machine checks a sample of messages that got no to-do, and shows the share that likely needed one, with its range. The ones it found are listed: **Open** shows the message, and **Real miss** or **Not a miss** tells it whether it was right. Your answers stay on your Machine and make the number more accurate. Shows after the first weekly check.

@@ -91,6 +91,7 @@ import team_learnings
 import authorship
 import corrections
 import learning_loop
+import missed_work
 import person_summary
 import fleet_learnings
 import google_api
@@ -122,6 +123,7 @@ from agents_app import AgentsApp
 from ai_app import AiApp
 from calendar_app import CalendarApp
 from corrections_app import CorrectionsApp
+from missed_work_app import MissedWorkApp
 from gbrain_app import GBrainApp
 from meet_app import MeetApp
 from recurring_app import RecurringApp
@@ -903,6 +905,7 @@ LEARNING_ACTIONS = {
     'learnings_share',
     'learnings_votes_decide',
     'learnings_withdraw',
+    'missed_work_label',
     'set_error_reports',
     'set_help_topics',
     'set_learnings_auto',
@@ -8832,6 +8835,7 @@ class Store:
                 review['remaining_count'] = outstanding
                 review['recovered_count'] = sum(not i.get('excluded') for i in items) - outstanding if review['status']!='complete' else None
         result['quality'] = self.quality_report()
+        result['missed_work'] = missed_work.status(self.connect)  # the weekly missed-work audit (missed_work.py)
         return result
 
 
@@ -14193,7 +14197,7 @@ def forget_in_notes(root, needles):
 
 
 # App's domain mixins (<domain>_app.py): each holds a domain's App methods and the actions it handles (its ACTIONS).
-APP_MIXINS = (SupportApp, CalendarApp, SkillsApp, AgentsApp, GBrainApp, SharedGraphApp, RecurringApp, CorrectionsApp, AiApp, MeetApp)
+APP_MIXINS = (SupportApp, CalendarApp, SkillsApp, AgentsApp, GBrainApp, SharedGraphApp, RecurringApp, CorrectionsApp, AiApp, MeetApp, MissedWorkApp)
 
 
 class App(*APP_MIXINS):
@@ -17573,6 +17577,7 @@ class App(*APP_MIXINS):
         if (self.config.get('review_worker') or {}).get('enabled'):  # read how they write from their own messages, now and then
             self.store.voice_study_due()
             self.store.tune_due()  # keep learning from edits, dismissals, snoozes and chat corrections (learning_loop.py)
+            self.missed_work_step({'owned': calendar_owned, 'bulk': bulk_kind, 'model': background_model})  # once a week: how many reviewed signals without a to-do needed one (missed_work.py)
             if self.fleet:  # learnings go to the team over the Network: without it there is nobody to offer them to
                 self.store.learnings_due()
                 self.team_votes_due()  # and other Machines' learnings come to be judged, when voting is on
