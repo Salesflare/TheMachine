@@ -109,6 +109,8 @@ def now():
 
 def ensure(db):
     db.executescript(SCHEMA)
+    if 'gone_at' not in {r[1] for r in db.execute('PRAGMA table_info(network_people)')}:
+        db.execute('ALTER TABLE network_people ADD COLUMN gone_at TEXT')  # the last lookup no longer found them: no Machine shown
 
 
 class Discovery:
@@ -144,12 +146,14 @@ class Discovery:
         return str(username or '').lower() in names or normal(email) in emails
 
     def network_contacts(self, db):
-        """The strongest people in the relationship graph with an address, the owner's own addresses left out."""
+        """The strongest people in the relationship graph with an address, the owner's own addresses left out: the ones
+        the messages show and the ones the owner added to them (Edit), such as the address someone signed up with."""
         from fleet import _emails
         mine = {normal(a.get('email')) for a in self.config.get('accounts', [])} | {normal(e) for e in self.my_emails()}
         out, seen = [], set()
         for row in db.execute("SELECT * FROM graph_nodes WHERE kind='person' AND quiet=0 ORDER BY strength DESC LIMIT 3000"):
-            for email in sorted(_emails(row)):
+            added = {normal(e.get('value')) for e in json.loads(row['info'] or '{}').get('emails') or () if isinstance(e, dict) and e.get('by') == 'owner'}
+            for email in sorted(_emails(row) | {e for e in added if '@' in e}):
                 if email in mine or email in seen:
                     continue
                 seen.add(email)
@@ -416,6 +420,9 @@ class Discovery:
             # before the resolve call: a restart or failed response then safely repeats only a read.
             db.executemany('DELETE FROM network_looked WHERE email=?', [(e,) for e in pending])
             db.executemany('INSERT OR REPLACE INTO network_looked(email,at) VALUES(?,?)', [(e, now()) for e in emails if e not in pending])
+            # Found again or not: whether they still have a Machine (graph.network_marks) follows this lookup
+            db.executemany('UPDATE network_people SET gone_at=NULL WHERE email=?', [(e,) for e in hits])
+            db.executemany('UPDATE network_people SET gone_at=coalesce(gone_at,?) WHERE email=?', [(now(), e) for e in set(emails) - set(hits)])
             for p in people:
                 email = normal(p.get('email'))
                 if email not in by_email or not isinstance(p.get('username'), str):

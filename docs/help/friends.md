@@ -22,6 +22,8 @@ Both are on by default, and off at the Careful security level. Turn either off a
 
 People you know who are on the Network are suggested right away when you turn it on, and when someone joins later. Your Machine checks every 15 minutes for new contacts and people who just joined, and goes through all your contacts once a day. A match comes with Connect, Not now or **Never suggest**. **Leave the Network** takes you off it.
 
+People it finds say **Has a Machine** in your People list. It checks the addresses in your messages and the ones you added to a person with **Edit**: if someone signed up with another address, add it to them. On the page of someone it found, **Add as friend** in the ⋯ menu sends the same request as Connect.
+
 ## Scheduling with other Machines
 
 When someone with a Machine writes "let's meet next week", your Machine asks theirs for free times and finds one that suits you both, within your work hours. Each of you gets one to-do, like "Meet Alex Example", with the time below it. Tap **Book it**, **Other time** or **Not needed**. The invite goes out only once you both tapped Book it.

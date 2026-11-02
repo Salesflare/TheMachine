@@ -482,6 +482,11 @@ have a Machine. It matches on those addresses on your Machine when you open the 
 anything, and nothing new leaves yours. A pending friend request or a blocked person is not marked. When someone
 leaves, or you do, the marker goes and the name falls back to the one in your messages, unless you kept or renamed it.
 
+With **Check which of my contacts have a Machine** on, the people that check found on the Network say **Has a Machine**
+too, in no Fleet with you, for as long as the latest check still finds them. Both match on a person's addresses: the
+ones in your messages and the ones you added to them with **Edit**. If someone signed up with an address your messages
+never used, add it to them and the next check finds them.
+
 ## Leaving a Work Fleet with your Machine
 
 When you leave a Work Fleet, or its owner or admin removes you, and you keep your Machine, your work data for that

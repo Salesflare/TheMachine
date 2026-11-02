@@ -22,6 +22,8 @@ Allebei staan standaard aan, en uit bij het beveiligingsniveau Voorzichtig. Zet 
 
 Mensen die je kent en die op het Network zitten, worden meteen voorgesteld als je het aanzet, en wanneer iemand later aansluit. Een match komt met Verbinden, Niet nu of **Nooit voorstellen**. **Het Network verlaten** haalt je eraf.
 
+Mensen die het vindt, staan in je lijst Personen met **Heeft een Machine**. Het kijkt naar de adressen uit je berichten en de adressen die je met **Bewerken** aan iemand toevoegde: meldde iemand zich aan met een ander adres, voeg het dan aan die persoon toe. Op de pagina van iemand die het vond, stuurt **Toevoegen als vriend** in het menu ⋯ hetzelfde verzoek als Verbinden.
+
 ## Afspreken met andere Machines
 
 Schrijft iemand met een Machine "laten we volgende week afspreken", dan vraagt je Machine de hunne naar vrije tijden en zoekt hij er een die jullie allebei past, binnen je werkuren. Jullie krijgen elk één to-do, zoals "Afspraak met Alex Example", met de tijd eronder. Tik op **Boek het**, **Andere tijd** of **Niet nodig**. De uitnodiging gaat pas weg als jullie allebei op Boek het tikten.

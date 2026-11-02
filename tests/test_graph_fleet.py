@@ -1,4 +1,5 @@
 """Fleet, Family and Friends members in the Graph: a marker and their shared name, from the directory kept here only."""
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -62,7 +63,10 @@ class GraphFleet(unittest.TestCase):
         for e in events:
             self.store.commit_page(e['account_id'], {}, [e])
 
-    def people(self, fleets):
+    def people(self, fleets, find=True):
+        with self.store.connect() as db:  # "Check which of my contacts have a Machine" (discovery.py), kept on this Machine
+            db.execute('CREATE TABLE IF NOT EXISTS fleet_meta(key TEXT PRIMARY KEY,value TEXT NOT NULL)')
+            db.execute("INSERT OR REPLACE INTO fleet_meta(key,value) VALUES('network',?)", (json.dumps({'find': find}),))
         self.app.fleet = FakeFleet(fleets) if fleets is not None else None
         return {p['id']: p for p in self.app.graph_action({'limit': 15}, source='owner')['people']}
 
@@ -126,6 +130,63 @@ class GraphFleet(unittest.TestCase):
         self.assertEqual([(p['id'], p['name']) for p in found], [('email:kim@acme.com', 'Kim Lee-Park')])
         view = self.app.fleet_view()
         self.assertEqual({p['member_id']: p.get('graph_node') for p in view['fleets'][0]['people']}, {'fm_me': None, 'fm_kim': 'email:kim@acme.com'})
+
+
+class NetworkMachines(GraphFleet):
+    """People found on the Network (discovery.py) have a Machine too, in no Fleet with the owner; and an address the
+    owner added to someone (Edit) counts like one the messages show."""
+    def found(self, *emails, gone=()):
+        with self.store.connect() as db:
+            a.fleet.discovery.ensure(db)
+            for e in emails:
+                db.execute("INSERT INTO network_people(email,node_id,username,name,hint,status,found_at,gone_at) VALUES(?,?,?,?,?,?,?,?)",
+                           (e, 'email:' + e, e.split('@')[0], 'Someone', 'personal', 'later', tg.NOW.isoformat(), tg.NOW.isoformat() if e in gone else None))
+
+    def add_address(self, node_id, email):
+        with self.store.connect() as db:
+            graph.person_edit(db, node_id, {'emails': [email]}, tg.NOW.isoformat())
+        self.rebuild()
+
+    def test_found_on_the_network_has_a_machine_without_a_fleet(self):
+        self.found('ana@example.org', 'lee@acme.com', gone=('lee@acme.com',))
+        people = self.people({})
+        self.assertEqual(people['email:ana@example.org']['fleet'], {'machine': True, 'in': [], 'name': None, 'network': {
+            'email': 'ana@example.org', 'hint': 'personal', 'requested': False, 'can_add': True}})
+        self.assertEqual(people['email:ana@example.org']['name'], 'Ana Vos')  # the Network's name never replaces theirs
+        self.assertNotIn('fleet', people['email:lee@acme.com'])  # the last lookup no longer found them
+        self.assertNotIn('fleet', people['email:kim@acme.com'])
+        detail = self.app.graph_action({'node_id': 'email:ana@example.org'}, source='owner')
+        self.assertTrue(detail['fleet']['machine'])
+        self.assertNotIn('fleet', self.people({}, find=False)['email:ana@example.org'])  # the owner turned the check off
+
+    def test_a_fleet_member_found_on_the_network_keeps_their_fleet(self):
+        self.found('kim@acme.com')
+        kim = self.people({'fl_1': work(member('fm_kim', 'Kim Lee-Park', ['kim@acme.com'], machine=False))})['email:kim@acme.com']
+        self.assertTrue(kim['fleet']['machine'])
+        self.assertEqual([x['member_id'] for x in kim['fleet']['in']], ['fm_kim'])
+        self.assertEqual(kim['name'], 'Kim Lee-Park')
+
+    def test_add_as_friend_only_with_no_group_and_no_open_request(self):
+        self.found('ana@example.org', 'kim@acme.com')
+        friends = {'fr_1': {'kind': 'friends', 'name': 'Friends', 'members': [ME], 'requests': {'in': [], 'out': [{'id': 'r1', 'username': 'kim'}]}}}
+        people = self.people(friends)
+        self.assertTrue(people['email:ana@example.org']['fleet']['network']['can_add'])
+        kim = people['email:kim@acme.com']['fleet']['network']
+        self.assertEqual((kim['requested'], kim['can_add']), (True, False))  # asked already: "Friend request sent"
+        friends['fr_1']['requests']['out'] = []  # withdrawn or declined: can be asked again
+        self.assertTrue(self.people(friends)['email:kim@acme.com']['fleet']['network']['can_add'])
+        family = {**friends, 'fl_2': {'kind': 'family', 'name': 'Home', 'members': [ME, member('fm_ana', 'Ana Vos', ['ana@example.org'])]}}
+        self.assertFalse(self.people(family)['email:ana@example.org']['fleet']['network']['can_add'])  # in a Family Fleet together
+        friends['fr_1']['members'] = [ME, {**member('fp_kim', 'Kim Lee-Park', ['kim@other.example']), 'username': 'kim'}]
+        self.assertFalse(self.people(friends)['email:kim@acme.com']['fleet']['network']['can_add'])  # a friend by another address
+
+    def test_an_address_the_owner_added_links_them(self):
+        """Someone signed up with an address their messages never used: added to them, it finds them."""
+        self.add_address('email:ana@example.org', 'Ana@Studio.example')
+        self.found('ana@studio.example')
+        self.assertTrue(self.people({})['email:ana@example.org']['fleet']['machine'])
+        people = self.people({'fl_1': work(member('fm_ana', 'Ana Vos', ['ana@studio.example']))})
+        self.assertEqual([x['member_id'] for x in people['email:ana@example.org']['fleet']['in']], ['fm_ana'])
 
 
 class Names(unittest.TestCase):

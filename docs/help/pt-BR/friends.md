@@ -22,6 +22,8 @@ Os dois vêm ligados por padrão, e desligados no nível de segurança Cuidadoso
 
 Pessoas que você conhece e que estão na Network são sugeridas assim que você a ativa, e quando alguém entra depois. Uma sugestão vem com Conectar, Agora não ou **Nunca sugerir**. **Sair da Network** tira você dela.
 
+As pessoas encontradas mostram **Tem uma Machine** na sua lista Pessoas. A verificação usa os endereços das suas mensagens e os que você adicionou a alguém com **Editar**: se alguém se cadastrou com outro endereço, adicione-o a essa pessoa. Na página de alguém encontrado, **Adicionar como amigo** no menu ⋯ envia o mesmo pedido que Conectar.
+
 ## Agendar com outras Machines
 
 Quando alguém com uma Machine escreve "vamos nos ver semana que vem", sua Machine pede à dela os horários livres e acha um bom para os dois, dentro do seu horário de trabalho. Cada um recebe um só to-do, como "Reunião com Alex Example", com o horário embaixo. Toque em **Marcar**, **Outro horário** ou **Não precisa**. O convite só sai quando os dois tocaram em Marcar.

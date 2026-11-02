@@ -15,6 +15,11 @@ const fleetMark={machine:true,named:true,name:'Kim Lee-Park',in:[{kind:'work',la
 let kim={id:'email:kim@acme.example',kind:'person',name:'Kim Lee-Park',name_from_messages:'kim',strength:3.2,closeness:'close',last_at:day,signals:9,ids:['Slack','kim@acme.example'],
  role:'software developer',role_by:'review',fleet:fleetMark,links:[],open:{you_promised:[],they_promised:[],cards:[],facts:[]},recent:[],around:[]};
 const pat={id:'email:pat@client.example',kind:'person',name:'Pat Client',strength:1.2,closeness:'regular',last_at:day,signals:4,ids:['pat@client.example']};
+// A long name next to two groups: the pill is never cut; on a phone it moves to the start of the line under the name, which keeps its width. Found on the Network, in no Fleet: no pill, still "Has a Machine".
+const alex={id:'email:alex@acme.example',kind:'person',name:'Alexandra-Ionela Constantinescu-Vandenberghe',strength:2.8,closeness:'close',last_at:day,signals:7,ids:['alex@acme.example'],role:'software developer',
+ fleet:{machine:true,name:null,in:[{kind:'work',label:'Work Fleet',fleet:FL,fleet_name:'Acme',member_id:'fm_alex'},{kind:'friends',label:'Friend',fleet:FR,fleet_name:'Friends',member_id:'fp_alex'}]}};
+const nia={id:'email:nia@studio.example',kind:'person',name:'Nia North',strength:2.1,closeness:'close',last_at:day,signals:5,ids:['nia@studio.example'],role:'board member',
+ fleet:{machine:true,in:[],name:null,network:{email:'nia@studio.example',hint:'personal',requested:false,can_add:true}},links:[],open:{you_promised:[],they_promised:[],cards:[],facts:[]},recent:[],around:[]};
 const rules=()=>({relationships:{rule:'ask',details:false}});
 const view={on:true,ask_meetings:false,brief:{every:'off',tell:false},kinds:{relationships:'who knows someone'},kind_rules:{relationships:['ask','always','never']},
  no_details:[],scoped:[],scopes:{},intro_offers:[],waiting:[],asked:[],log:[],notices:[],free:[],briefs:{},
@@ -26,9 +31,10 @@ const calls=[],errors=[];
 const server=createServer(async(req,res)=>{const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(url.pathname==='/api/status'){res.end(JSON.stringify({suggestions:[],promises:[],connectors:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],fleet:{on:true,waiting:0}}));return}
- if(url.pathname==='/api/graph'){res.end(JSON.stringify(url.searchParams.get('node')?kim:{projects:[],people:[kim,pat],quiet:[],new:[],orgs:[]}));return}
+ if(url.pathname==='/api/graph'){res.end(JSON.stringify(url.searchParams.get('node')===nia.id?nia:url.searchParams.get('node')?kim:{projects:[],people:[kim,alex,nia,pat],quiet:[],new:[],orgs:[]}));return}
  if(url.pathname==='/api/fleet'){res.end(JSON.stringify(view));return}
  if(url.pathname==='/api/action'){let body='';for await(const b of req)body+=b;const call=JSON.parse(body);calls.push(call);
+  if(call.action==='fleet_network')nia.fleet.network={...nia.fleet.network,requested:true,can_add:false};  // what the Machine says once it is sent
   if(call.action==='graph_rename'){kim={...kim,name:call.args.name,fleet:{...fleetMark,named:false}};delete kim.name_from_messages;res.end(JSON.stringify({node_id:kim.id,name:call.args.name}));return}res.end('{}');return}
  res.statusCode=404;res.end('{}')});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
@@ -41,14 +47,27 @@ try{
  await page.goto('http://127.0.0.1:'+server.address().port);
  await navClick(page.locator('nav [data-tab="people"]'));
  const row=page.locator('#people-view article[data-node="email:kim@acme.example"]');await row.waitFor();
- assert.equal(await row.locator('.fleet-chip').textContent(),'Fleet · Friend');
- assert.equal(await row.locator('.fleet-chip').getAttribute('title'),'Has a Machine · Work Fleet (Acme) · Friend');
- assert.equal(await row.locator('button.node').evaluate(b=>b.scrollWidth<=b.clientWidth),true);  // the name keeps its room; the chip gives way
- assert.match(await row.locator('.graph-sub').textContent(),/^Has a Machine · Software developer/);
+ assert.equal(await row.locator('.fleet-chip-row').textContent(),'Fleet · Friend');
+ assert.equal(await row.locator('.fleet-chip-row').getAttribute('title'),'Has a Machine · Work Fleet (Acme) · Friend');
+ const shown=async r=>r.evaluate(a=>[...a.querySelectorAll('.fleet-chip')].filter(c=>c.getClientRects().length).map(c=>({where:c.classList.contains('fleet-chip-sub')?'sub':'row',
+  whole:c.querySelector('.ct').scrollWidth<=c.querySelector('.ct').clientWidth&&c.getBoundingClientRect().right<=a.getBoundingClientRect().right,first:c.parentElement.firstElementChild===c})));
+ const long=page.locator('#people-view article[data-node="email:alex@acme.example"]');
+ for(const width of [320,390,1280]){await page.setViewportSize({width,height:844});
+  for(const r of [row,long])assert.deepEqual(await shown(r),[{where:width<=600?'sub':'row',whole:true,first:width<=600}],`one whole pill at ${width}`);
+  assert.ok(await row.locator('button.node').evaluate(b=>b.scrollWidth<=b.clientWidth),`a short name is whole at ${width}`);
+  if(width<=600)assert.match(await row.locator('.graph-sub').textContent(),/^Fleet · FriendHas a Machine · /)}
+ await page.setViewportSize({width:390,height:844});
+ const found=page.locator('#people-view article[data-node="email:nia@studio.example"]');
+ assert.equal(await found.locator('.fleet-chip').count(),0);  // in no Fleet: no empty pill
+ assert.match(await found.locator('.graph-sub').textContent(),/^Has a Machine · Board member/);
+ assert.match(await row.locator('.graph-sub').textContent(),/^Fleet · FriendHas a Machine · Software developer/);
+ const pat=page.locator('#people-view article[data-node="email:pat@client.example"] .graph-sub');  // their addresses in the text's own font, not code
+ assert.equal(await pat.locator('.mono').count(),0);assert.match(await pat.textContent(),/ · pat@client\.example$/);
  assert.equal(await page.locator('#people-view article[data-node="email:pat@client.example"] .fleet-chip').count(),0);
  const fits=async label=>{for(const width of [390,1280]){await page.setViewportSize({width,height:844});
   const s=await page.evaluate(()=>({page:document.documentElement.scrollWidth,viewport:innerWidth}));assert.ok(s.page<=s.viewport,`overflow at ${width} (${label})`);
-  if(process.env.GRAPH_FLEET_SHOTS)await page.screenshot({path:`${process.env.GRAPH_FLEET_SHOTS}-${label}-${width}.png`,fullPage:true})}await page.setViewportSize({width:390,height:844})};
+  if(process.env.GRAPH_FLEET_SHOTS)for(const scheme of ['light','dark']){await page.emulateMedia({colorScheme:scheme});await page.waitForTimeout(500);
+   await page.screenshot({path:`${process.env.GRAPH_FLEET_SHOTS}-${label}-${width}-${scheme}.png`,fullPage:true})}await page.emulateMedia({colorScheme:'light'})}await page.setViewportSize({width:390,height:844})};
  await fits('list');
  await row.locator('button.node').click();
  await page.locator('.fleet-mark').waitFor();
@@ -74,6 +93,27 @@ try{
  assert.equal(await page.locator('.graph-detail h3').textContent(),'Kim Lee-Park');
  await page.locator('[data-fleet-free]').click();
  await page.waitForFunction(()=>document.activeElement?.closest('.fleet-free-form'));
+ await page.evaluate(()=>{location.hash='#people'});await page.locator('#people-view article[data-node="email:nia@studio.example"] button.node').click();
+ await page.waitForFunction(()=>document.querySelector('.graph-detail h3')?.textContent==='Nia North');
+ assert.equal(await page.locator('.person-about .fleet-mark').textContent(),'Has a Machine');  // found on the Network: said, with no Fleet buttons
+ assert.equal(await page.locator('.person-about [data-fleet-member]').count(),0);
+ const menu=page.locator('.person-page .person-menu');await menu.locator('summary').click();
+ assert.deepEqual((await menu.locator('[data-person-friend]').allTextContents()),['Add as friend','Add as family']);  // Friend or Family, like the Suggestions card
+ if(process.env.GRAPH_FLEET_SHOTS)for(const width of [390,1280])for(const scheme of ['light','dark']){await page.setViewportSize({width,height:844});await page.emulateMedia({colorScheme:scheme});await page.waitForTimeout(500);
+  await page.screenshot({path:`${process.env.GRAPH_FLEET_SHOTS}-friend-menu-${width}-${scheme}.png`})}
+ await page.emulateMedia({colorScheme:'light'});await page.setViewportSize({width:390,height:844});
+ const sent=calls.length;await menu.locator('[data-person-friend="family"]').click();
+ for(let i=0;i<100&&calls.length===sent;i++)await page.waitForTimeout(20);
+ assert.deepEqual(calls[sent],{action:'fleet_network',args:{do:'connect',email:'nia@studio.example',relation:'family'}});
+ await page.waitForFunction(()=>document.querySelector('.person-about .fleet-mark')?.textContent==='Has a Machine · Friend request sent');
+ assert.equal(await page.locator('[data-person-friend]').count(),0);
+ await page.waitForTimeout(800);assert.equal(await page.locator('.person-about .fleet-mark').textContent(),'Has a Machine · Friend request sent');  // still after the refresh
+ await fits('network');
+ // opened again later: said, nothing to press
+ await page.evaluate(()=>{location.hash='#people'});await page.locator('#people-view article[data-node="email:nia@studio.example"] button.node').click();
+ await page.waitForFunction(()=>document.querySelector('.person-about .fleet-mark')?.textContent==='Has a Machine · Friend request sent');
+ await page.locator('.person-page .person-menu summary').click();assert.equal(await page.locator('[data-person-friend]').count(),0);
+ await page.locator('.person-page .person-menu summary').click();
  assert.deepEqual(errors,[]);
  console.log('graph fleet dashboard ok');
 }finally{await browser?.close();server.close()}
