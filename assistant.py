@@ -4365,6 +4365,12 @@ class Store:
                 line = {'person': person, 'since': best[0], 'card': best[2]}
         return {'name': first, **({'line': line} if line else {})} if first or line else None
 
+    @staticmethod
+    def greeting_on(db, at):
+        """The hello's first view is now (`at`), whatever was decided before: for the sandbox, whose sample history is
+        older than its owner's first look (the site demo shows the first view)."""
+        db.execute("INSERT OR REPLACE INTO milestones(name,at,detail) VALUES('greeting',?,'on')", (at,))
+
     def tip_done(self, tip):
         """A first-use tip closed (×) or its button used on the dashboard: it never comes back, on any device."""
         if tip not in FIRST_TIPS:
