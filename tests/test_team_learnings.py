@@ -8,6 +8,7 @@ import json
 import re
 from pathlib import Path
 import tempfile
+import threading
 import types
 import unittest
 from unittest.mock import patch
@@ -54,6 +55,7 @@ class TeamLearnings(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
+        self.addCleanup(self.join_background, set(threading.enumerate()))  # runs first: no worker writes into the folder as it goes
         database = Path(self.temp.name) / 'events.sqlite'
         self.store = a.Store(database)
         self.store.accounts = [{'id': 'work', 'service': 'gmail', 'email': 'owner@globex.example', 'display_name': 'Owner Work'}]
@@ -222,6 +224,14 @@ class TeamLearnings(unittest.TestCase):
             self.assertTrue(self.store.learnings_due())
         self.assertEqual(self.network.sent, [])
         self.assertTrue(a.LEARNING_ACTIONS <= a.OWNER_ACTIONS)
+
+    def join_background(self, before):
+        """style_step starts the week's missed-work audit (and other background turns) in threads of their own, which open
+        the database again when they finish. Wait for them: otherwise one can write events.sqlite or its journal while
+        the temporary folder is being removed (Directory not empty)."""
+        for thread in set(threading.enumerate()) - before:
+            thread.join(30)
+            self.assertFalse(thread.is_alive(), f'{thread.name} still running')
 
     def test_no_network_no_offer(self):
         self.app.fleet = None
