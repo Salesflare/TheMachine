@@ -4,10 +4,21 @@ preview or after reviews were on. Also what the dashboard shows while reviews ru
 organization profiles. No Gateway, no Telegram: the runner is a fake and nothing is sent."""
 import datetime as dt, importlib.util, json, sqlite3, tempfile, unittest
 from pathlib import Path
+from contextlib import ExitStack
 from unittest.mock import patch
+
+import models
 
 spec = importlib.util.spec_from_file_location('first_look_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
+
+
+def model_patch(name, value):
+    # a model helper as models.py's own functions and assistant.py's callers (which import its name) both see it
+    stack = ExitStack()
+    for where in (a, models):
+        stack.enter_context(patch.object(where, name, return_value=value))
+    return stack
 
 
 class Runner:
@@ -171,7 +182,7 @@ class MainModelMustRun(unittest.TestCase):
     """A main model set in the config is not enough: its provider needs a sign-in or key (`openclaw models status`,
     no model call), else the first look waits and the dashboard says so. A fallback without one doesn't block."""
     def setUp(self):
-        a._model_ready.clear(); self.addCleanup(a._model_ready.clear)
+        models._model_ready.clear(); self.addCleanup(models._model_ready.clear)
 
     def status(self, missing, fallbacks=()):
         out = json.dumps({'resolvedDefault': 'openai/gpt-6-astra', 'fallbacks': list(fallbacks), 'auth': {'missingProvidersInUse': missing}})
@@ -179,30 +190,30 @@ class MainModelMustRun(unittest.TestCase):
         return calls, lambda args, **kw: calls.append(args) or type('R', (), {'stdout': out, 'returncode': 0})()
 
     def test_an_unsigned_main_model_is_no_model(self):
-        with patch.object(a, 'main_model', return_value='openai/gpt-6-astra'):
+        with model_patch('main_model', 'openai/gpt-6-astra'):
             calls, run = self.status(['openai'])
             self.assertFalse(a.model_ready({'openclaw': '/x/openclaw'}, run))
             self.assertEqual(calls, [['/x/openclaw', 'models', 'status', '--json']])
             self.assertFalse(a.model_ready({}, run))  # cached: no second node process
             self.assertEqual(len(calls), 1)
-            with patch.object(a, 'model_ready', return_value=False):
+            with model_patch('model_ready', False):
                 self.assertFalse(a.has_model())
                 item = a.needs_you({'accounts': [], 'manage_url': 'https://cp.example/setup'})[0]
             self.assertEqual((item['id'], item['url'], item['action']), ('model-signed-out', 'https://cp.example/setup#model', 'Fix it'))
             self.assertIn('openai/gpt-6-astra', item['text'])
 
     def test_a_signed_in_main_model_or_an_unsigned_fallback_is_fine_and_unknown_does_not_block(self):
-        with patch.object(a, 'main_model', return_value='claude-cli/claude-sonnet-5-5'):
+        with model_patch('main_model', 'claude-cli/claude-sonnet-5-5'):
             self.assertTrue(a.model_ready({}, self.status([])[1]))
-            a._model_ready.clear()
+            models._model_ready.clear()
             self.assertTrue(a.model_ready({}, self.status(['openai'], ['openai/gpt-6-astra'])[1]))
-            a._model_ready.clear()
+            models._model_ready.clear()
             self.assertIsNone(a.model_ready({}, lambda *x, **k: (_ for _ in ()).throw(OSError('no openclaw'))))
-            a._model_ready.clear()
-            with patch.object(a, 'model_ready', return_value=None):
+            models._model_ready.clear()
+            with model_patch('model_ready', None):
                 self.assertTrue(a.has_model())
                 self.assertEqual(a.needs_you({'accounts': []}), [])
-        with patch.object(a, 'main_model', return_value=''):
+        with model_patch('main_model', ''):
             self.assertFalse(a.has_model())
 
 
