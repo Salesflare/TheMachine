@@ -123,8 +123,11 @@ try{
   // Hints: tooltips on the sidebar, a quiet key in the card's More menu
   assert.equal(await page.locator('nav [data-tab="calendar"]').getAttribute('title'),'Calendar (G then C)');
   assert.equal(await page.locator('#open-settings').getAttribute('aria-keyshortcuts'),'G Comma');
-  await settled(()=>page.locator(`#task-${id(1)} .more-menu [data-rename]`).evaluate(b=>getComputedStyle(b,'::after').content),'"E"');  // the hints come with each redraw
-  assert.equal(await page.locator(`#task-${id(1)} .more-menu [data-rename]`).textContent(),'Rename','the key is not part of its name');
+  await settled(()=>page.locator(`#task-${id(1)} .more-menu [data-choice="snooze"]`).evaluate(b=>getComputedStyle(b,'::after').content.split(' / ')[0]),'"S"');  // the hints come with each redraw
+  assert.equal(await page.locator(`#task-${id(1)} .more-menu [data-choice="snooze"]`).textContent(),'Snooze','the key is not part of its name');
+  await page.locator(`#task-${id(1)} .more-actions>summary`).click();
+  assert.equal(await page.locator(`#task-${id(1)} .more-menu`).getByRole('button',{name:'Snooze',exact:true}).count(),1,'nor of what a screen reader says');
+  await page.locator(`#task-${id(1)} .more-actions>summary`).click();
   // J/K through the cards (and the heads of their lists); S opens the snooze picker for the picked one, E renames, D marks it done
   const order=await page.evaluate(()=>kbItems().map(a=>a.id));assert.ok(order[0].startsWith('section-'),'a list head is the first stop');
   await page.keyboard.press('j');assert.equal(await page.evaluate(()=>document.activeElement.id),order[0]);

@@ -136,7 +136,7 @@ await page.evaluate(()=>refresh());
 const blocked=page.locator('#task-'+ids[1]);await blocked.getByText('Log in once and tap Try again').waitFor();
 assert.equal(await blocked.locator('details.tech pre').isVisible(),false);await blocked.locator('details.tech > summary').click();
 await blocked.locator('details.tech pre').getByText('404 Not Found').waitFor();
-await blocked.getByRole('button',{name:'Try again',exact:true}).waitFor();suggestions[1].preparation_reason='Apple needs your passkey in the open tab, then tap Continue.';await page.evaluate(()=>refresh());await blocked.getByRole('button',{name:'Continue',exact:true}).waitFor();suggestions[1].preparation_reason='I couldn’t open the the CRM inbox. Log in once and tap Try again.';await page.evaluate(()=>refresh());await blocked.getByText('Log in once and tap Try again').waitFor();
+await blocked.locator('.more-menu [data-choice="retry"]',{hasText:'Try again'}).waitFor({state:'attached'});suggestions[1].preparation_reason='Apple needs your passkey in the open tab, then tap Continue.';await page.evaluate(()=>refresh());await blocked.getByRole('button',{name:'Continue',exact:true}).waitFor();suggestions[1].preparation_reason='I couldn’t open the the CRM inbox. Log in once and tap Try again.';await page.evaluate(()=>refresh());await blocked.getByText('Log in once and tap Try again').waitFor();
 await page.evaluate(()=>refresh());assert.equal(await page.locator('#task-'+ids[1]+' details.tech').getAttribute('open'),'');  // Stays open across refreshes.
 await page.locator('#task-'+ids[0]+' .chip').getByText('Overdue',{exact:true}).waitFor();await page.locator('#task-'+ids[2]+' .chip').getByText('Due tomorrow',{exact:true}).waitFor();
 await page.screenshot({path:'/tmp/261012-blocked-details-due.png',fullPage:true});
@@ -218,7 +218,7 @@ await card.getByText('Why isn’t this needed?').waitFor();await card.getByRole(
 // Ctrl+Enter in any filled field clicks its editor's primary button: here Confirm not needed. Empty fields do nothing.
 await tap(card,'Not needed');const note=card.locator('#dismiss-'+ids[1]);await note.press('Control+Enter');assert.equal(posts.length,before);await note.fill('Handled by Sam');await note.press('Control+Enter');
 await page.waitForFunction(()=>document.querySelector('#toast').textContent.startsWith('Marked not needed'));assert.equal(posts.at(-1).choice,'reject');assert.equal(posts.at(-1).feedback,'Handled by Sam');suggestions[1].status='accepted';await page.evaluate(()=>refresh());}
-await page.locator('#task-'+ids[1]).getByRole('button',{name:'Try again',exact:true}).click();await page.locator('#task-'+ids[1]).getByText('I’ll start shortly.',{exact:true}).waitFor();assert.equal(posts.at(-1).choice,'retry');
+{const b=page.locator('#task-'+ids[1]);if(!await b.getByRole('button',{name:'Try again',exact:true}).isVisible())await b.locator('.more-actions>summary').click();await b.getByRole('button',{name:'Try again',exact:true}).click()}await page.locator('#task-'+ids[1]).getByText('I’ll start shortly.',{exact:true}).waitFor();assert.equal(posts.at(-1).choice,'retry');
 await page.locator('#task-'+ids[2]).getByRole('button',{name:'Read result',exact:true}).click();await page.getByText('Full draft with',{exact:false}).waitFor();assert.equal(await page.locator('#result-content script').count(),0);await page.locator('#result-copy').click();assert.ok((await page.evaluate(()=>window.copied)).includes('Full draft with'));await page.getByRole('button',{name:'Close result'}).click();
 suggestions[2].next_action={kind:'email',revision:'abcdef123456',from:'owner@example.com',to:['recipient@example.com'],cc:['cc@example.com'],bcc:[],subject:'Exact subject',body:'Exact email draft <script>not executable</script>',attachments:[{name:'credit <note>.pdf',sha256:'ab'.repeat(32),size:8754,type:'application/pdf'}]};
 await page.evaluate(()=>refresh());await page.locator('#task-'+ids[2]).getByRole('button',{name:'Review and send',exact:true}).click();
@@ -240,7 +240,8 @@ suggestions[2].next_actions=[{...suggestions[2].next_action,label:'Send reply',s
  {kind:'prepare',revision:'fedcba654321',label:'Investigate further',instructions:'Check the field mapping'},
  {kind:'open',revision:'111111111111',label:'Open the Zap',url:'https://example.com/zap'}];
 await page.evaluate(()=>refresh());const smartCard=page.locator('#task-'+ids[2]);await smartCard.getByRole('button',{name:'Review and send reply',exact:true}).waitFor();
-assert.ok(await smartCard.getByRole('link',{name:'Open the Zap',exact:false}).isVisible());assert.ok(await smartCard.getByText('Send reply: Gmail is connected read-only. Nothing was sent.',{exact:true}).isVisible());
+assert.equal(await smartCard.locator('.more-menu>a.open',{hasText:'Open the Zap'}).count(),1);  // one lead; the link waits under …
+assert.ok(await smartCard.getByText('Send reply: Gmail is connected read-only. Nothing was sent.',{exact:true}).isVisible());
 assert.equal(await smartCard.getByRole('button',{name:'Investigate further',exact:true}).count(),0);
 suggestions[2].next_actions=suggestions[2].next_actions.slice(1);await page.evaluate(()=>refresh());
 await smartCard.getByRole('button',{name:'Investigate further',exact:true}).click();assert.equal(posts.at(-1).revision,'fedcba654321');assert.equal(posts.at(-1).suggestion_id,ids[2]);

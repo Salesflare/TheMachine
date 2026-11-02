@@ -9,7 +9,7 @@ order: 5
 ---
 ## Een to-do overdragen
 
-1. Open **Meer** op de to-do en kies **Overdragen aan Codex** of **Overdragen aan Claude Code**. Dat verschijnt zodra die tool ingesteld is.
+1. Open **…** op de to-do, dan **Overdragen…**, en kies **Codex** of **Claude Code**. Alleen de tools die je ingesteld hebt, verschijnen.
 2. Bekijk de samenvatting en wat hij meekrijgt, voeg eventueel een notitie toe en druk op **Overdragen**. **Bekijk de volledige opdracht** toont de hele briefing.
 
 De to-do toont dan dat er aan gewerkt wordt, en het resultaat als het klaar is, met **Wijzigingen tonen**. **Wijzigen** vraagt om aanpassingen; **Opnieuw overdragen** begint opnieuw.

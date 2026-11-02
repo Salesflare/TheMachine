@@ -28,21 +28,25 @@ Eine Aufgabe, deren letzter Schritt noch bei jemand anderem offen ist, etwa ein 
 
 **Alle**, **Arbeit** und **Privat** über der Liste in der Seitenleiste zeigen alle Aufgaben oder nur eine Art. Deine Machine merkt sich die Wahl, sodass Handy und Computer dieselbe Liste zeigen. Wenn Arbeit oder Privat aktiv ist, steht das oben in der Liste, mit **Alle anzeigen** zum Zurückgehen.
 
-Eine Aufgabe in einem Projekt zeigt den Projektnamen in der Zeile unter ihrem Titel; er öffnet das Projekt. **Projekt ändern** unter **Mehr** ändert es (bei einer erledigten Aufgabe unter **Details**). Siehe [Aufgaben eines Projekts](graph.md#a-projects-to-dos).
+Eine Aufgabe in einem Projekt zeigt den Projektnamen in der Zeile unter ihrem Titel. Tippe darauf, um das Projekt zu ändern oder zu entfernen; **Projekt öffnen** dort öffnet seine Seite. Siehe [Aufgaben eines Projekts](graph.md#a-projects-to-dos).
 
-**Nach Arbeit verschieben** unter **Mehr** verschiebt eine Aufgabe in deinen anderen Bereich, etwa eine private, die von deiner Arbeitsadresse aus rausgehen muss. Was sie lesen und wovon sie senden darf, zieht mit; die Nachrichten, aus denen sie kam, bleiben, wo sie sind. **Rückgängig** in der Meldung danach verschiebt sie zurück. Mit mehr als einer Firma heißt es **Bereich ändern**.
+Ihr Bereich, **Arbeit** oder **Privat**, steht auch in dieser Zeile. Tippe darauf, um die Aufgabe in deinen anderen Bereich zu verschieben, etwa eine private, die von deiner Arbeitsadresse aus rausgehen muss. Was sie lesen und wovon sie senden darf, zieht mit; die Nachrichten, aus denen sie kam, bleiben, wo sie sind. **Rückgängig** in der Meldung danach verschiebt sie zurück.
 
 Braucht eine Aufgabe einen anderen Bereich, um weiterzukommen, fragt sie mit einer Schaltfläche **Nach Arbeit verschieben**. Nichts wird verschoben, bevor du tippst; danach macht sie von selbst weiter.
 
 ## Die Buttons
 
-Eine neue Aufgabe hat **Ausführen**, **Als erledigt markieren**, **Zurückstellen**, **Anders ausführen** und **Nicht nötig**. Nur ein paar sind gleichzeitig zu sehen. Der Rest steht unter **Mehr**, zusammen mit **Umbenennen**.
+Eine Aufgabe zeigt einen Button: den nächsten Schritt, etwa **Ausführen**, **Prüfen und senden** oder **Als erledigt markieren**. Der Rest steht unter **…**. Auf dem Handy öffnet sich das vom unteren Bildschirmrand. Eine neue Aufgabe hat diese:
 
 - **Ausführen**: Deine Machine bereitet sie vor. Siehe [Ausführen](do-it.md).
 - **Als erledigt markieren**: Sie ist erledigt.
 - **Zurückstellen**: Hol sie später zurück. Siehe [Zurückstellen](snooze.md).
-- **Anders ausführen**: Sag in ein paar Worten, was du stattdessen möchtest. Bei einer vorbereiteten Aufgabe heißt das **Änderungen anfragen**: Sag, was im Entwurf anders sein soll, und sie macht ihn neu. **Prüfen und senden** bleibt daneben.
+- **Anders ausführen**: Sag in ein paar Worten, was du stattdessen möchtest. Bei einer vorbereiteten Aufgabe heißt das **Änderungen anfragen**: Sag, was im Entwurf anders sein soll, und sie macht ihn neu. Es steht auch neben **Senden**, wenn du den Entwurf prüfst.
 - **Nicht nötig**: Sie verschwindet. Wähl auf Wunsch einen Grund: **Nicht relevant**, **Falsche Fakten** oder **Schon erledigt**. Deine Machine lernt daraus.
+
+Auch unter **…**: **Übergeben…** übergibt sie an ein Teammitglied, an [Claude Code oder Codex](hand-to-agent.md) (die du eingerichtet hast) oder [bittet jemanden um ein Review](ask-to-review.md). **Wiederholen…** lässt sie [in einem Rhythmus wiederkommen](recurring.md).
+
+Tippe auf den Titel, um sie umzubenennen. Dein Titel bleibt, auch wenn sich die Aufgabe ändert.
 
 Eine geschlossene Aufgabe kommt mit **Wieder öffnen** zurück. Sie kommt auch von selbst zurück, wenn etwas Neues passiert, etwa eine neue Nachricht von der Person. Deine eigene Antwort holt sie nicht zurück.
 

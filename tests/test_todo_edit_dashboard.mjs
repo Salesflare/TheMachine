@@ -46,7 +46,7 @@ try{
   await r1.locator('.more-actions>summary').click();
   const change=r1.locator('[data-choice="change"]');
   assert.equal(await change.innerText(),'Ask for changes');assert.equal(await change.getAttribute('title'),'Tell me what to change in the draft, and I redo it');
-  await page.locator('#task-p1 .more-actions>summary').click();
+  await page.mouse.click(2,2);await page.locator('#task-p1 .more-actions>summary').click();  // one menu at a time (on a phone, a sheet over the page)
   assert.equal(await page.locator('#task-p1 [data-choice="change"]').innerText(),'Do it differently');
   await page.mouse.click(2,2);
   // In the change editor, Review and send stays in reach
@@ -91,15 +91,16 @@ try{
   assert.equal((await who.first().innerText()).trim(),width>600?'Noor Haddad':'Noor');
   assert.equal(await r1.locator('a.chip.who.org').getAttribute('href'),'#graph/'+encodeURIComponent('org:example.com'));
   assert.equal((await r1.locator('a.chip.who.org').innerText()).trim(),'Example Co');
-  // A teammate has it: one state (With Kim · waiting), Take it back and Hand off to someone else in sight
+  // A teammate has it: one state (With Kim · waiting), Check in now leads; Take it back and Hand off to someone else are under …
   const k1=page.locator('#task-k1');
   if(!await k1.isVisible())await page.locator('#later-list>summary').click();await k1.waitFor();
   assert.match(await k1.locator('.note.fleet').innerText(),/With Kim · waiting/);
-  assert.equal(await k1.locator('.actions>[data-handoff-take-back]').innerText(),'Take it back');
-  const re=k1.locator('.actions>[data-fleet-handoff]');assert.equal(await re.innerText(),'Hand off to someone else');
-  await k1.locator('[data-handoff-take-back]').click();await page.waitForFunction(()=>!document.querySelector('[data-handoff-take-back]:disabled'));
+  assert.equal(await k1.locator('.actions>[data-choice="accept"]').innerText(),'Check in now');
+  assert.equal(await k1.locator('.more-menu>[data-handoff-take-back]').textContent(),'Take it back');
+  const re=k1.locator('.more-menu>[data-fleet-handoff]');assert.equal(await re.textContent(),'Hand off to someone else');
+  await k1.locator('.more-actions>summary').click();await k1.locator('[data-handoff-take-back]').click();await page.waitForFunction(()=>!document.querySelector('[data-handoff-take-back]:disabled'));
   assert.deepEqual(posts.filter(p=>p.action==='fleet_handoff_take_back').at(-1),{action:'fleet_handoff_take_back',suggestion_id:'k1'});
-  await re.click();const form=k1.locator('.fleet-handoff-form');await form.waitFor();
+  await k1.locator('.more-actions>summary').click();await re.click();const form=k1.locator('.fleet-handoff-form');await form.waitFor();
   assert.ok(await form.locator('input[value="f1|m2"]').isChecked(),'the form starts on someone who does not have it yet');
   await k1.getByText('Take it back from Kim').waitFor();
   assert.ok(await k1.locator('input[name="replace"]').isChecked());await k1.scrollIntoViewIfNeeded();await shot(page,'reassign',width);

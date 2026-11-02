@@ -28,21 +28,25 @@ Une tâche dont la dernière étape reste ouverte chez quelqu’un d’autre, co
 
 **Tout**, **Travail** et **Perso** au-dessus de la liste dans la barre latérale affichent toutes les tâches ou un seul type. Votre Machine garde ce choix, pour que votre téléphone et votre ordinateur affichent la même liste. Quand Travail ou Perso est actif, le haut de la liste l’indique, avec **Tout afficher** pour revenir.
 
-Une tâche liée à un projet affiche le nom du projet sur la ligne sous son titre ; il ouvre le projet. **Changer de projet** dans **Plus** le change (sur une tâche terminée, dans **Détails**). Voir [les tâches d’un projet](graph.md#a-projects-to-dos).
+Une tâche liée à un projet affiche le nom du projet sur la ligne sous son titre. Appuyez dessus pour changer de projet ou le retirer ; **Ouvrir le projet** y ouvre sa page. Voir [les tâches d’un projet](graph.md#a-projects-to-dos).
 
-**Déplacer vers Travail** dans **Plus** déplace une tâche vers votre autre espace, comme une tâche perso qui doit partir de votre adresse pro. Ce qu’elle peut lire et d’où elle peut envoyer suit le déplacement ; les messages d’où elle vient restent où ils sont. **Annuler** dans le message qui suit la remet en place. Avec plusieurs entreprises, c’est **Changer d’espace**.
+Son espace, **Travail** ou **Perso**, est aussi sur cette ligne. Appuyez dessus pour déplacer la tâche vers votre autre espace, comme une tâche perso qui doit partir de votre adresse pro. Ce qu’elle peut lire et d’où elle peut envoyer suit le déplacement ; les messages d’où elle vient restent où ils sont. **Annuler** dans le message qui suit la remet en place.
 
 Quand une tâche a besoin d’un autre espace pour avancer, elle le demande avec un bouton **Déplacer vers Travail**. Rien ne bouge avant que vous appuyiez ; ensuite, elle continue toute seule.
 
 ## Les boutons
 
-Une nouvelle tâche a **Faire**, **Marquer comme fait**, **Mettre en attente**, **Faire autrement** et **Pas nécessaire**. Seuls quelques-uns s’affichent à la fois ; les autres sont sous **Plus**, avec **Renommer**.
+Une tâche affiche un seul bouton : l’étape suivante, comme **Faire**, **Vérifier et envoyer** ou **Marquer comme fait**. Les autres sont sous **…** : sur un téléphone, ce menu s’ouvre depuis le bas de l’écran. Une nouvelle tâche a ceux-ci :
 
 - **Faire** : votre Machine la prépare. Voir [Faire](do-it.md).
 - **Marquer comme fait** : c’est réglé.
 - **Mettre en attente** : la faire revenir plus tard. Voir [Mettre en attente](snooze.md).
-- **Faire autrement** : dites en quelques mots ce que vous voulez à la place. Sur une tâche préparée, c’est **Demander des modifications** : dites ce qu’il faut changer dans le brouillon et elle le refait. **Vérifier et envoyer** reste à côté.
+- **Faire autrement** : dites en quelques mots ce que vous voulez à la place. Sur une tâche préparée, c’est **Demander des modifications** : dites ce qu’il faut changer dans le brouillon et elle le refait. Il est aussi à côté d’**Envoyer** quand vous vérifiez le brouillon.
 - **Pas nécessaire** : elle disparaît. Choisissez pourquoi, si vous voulez : **Pas pertinent**, **Faits erronés** ou **Déjà traité**. Votre Machine en tire des leçons.
+
+Aussi sous **…** : **Transférer…** la transfère à un coéquipier, à [Claude Code ou Codex](hand-to-agent.md) (ceux que vous avez configurés) ou [demande une relecture à quelqu’un](ask-to-review.md). **Répéter…** la fait [revenir à un rythme régulier](recurring.md).
+
+Appuyez sur le titre pour la renommer. Votre titre reste, même quand la tâche change.
 
 Une tâche fermée peut revenir avec **Rouvrir**. Elle revient aussi d’elle-même quand il se passe quelque chose de nouveau, comme un nouveau message de la personne. Votre propre réponse ne la fait pas revenir.
 

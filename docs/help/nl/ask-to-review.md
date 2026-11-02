@@ -8,7 +8,7 @@ order: 4
 ---
 ## Vraag iemand om een to-do te reviewen
 
-1. Open op de to-do **Meer** en kies **Vraag om review**. Dat kan bij elke stap: voor Doe het, op een klaar concept, of net voor je verstuurt.
+1. Open op de to-do **…**, dan **Overdragen…**, en kies **Vraag om review**. Dat kan bij elke stap: voor Doe het, op een klaar concept, of net voor je verstuurt.
 2. Kies wie. Een werk-to-do gaat alleen naar iemand in je Work Fleet, een persoonlijke alleen naar iemand in je Familie.
 3. Kijk wat er meegaat: het concept (of de tekst van de to-do) en de bronnen. Laat een bron weg met ×. Voeg eventueel een notitie toe en kies **Vragen**.
 

@@ -8,7 +8,7 @@ order: 4
 ---
 ## Pedir a alguien que revise una tarea
 
-1. En la tarea, abre **Más** y elige **Pedir revisión**. Funciona en cualquier paso: antes de Hazlo, con un borrador listo o justo antes de enviar.
+1. En la tarea, abre **…**, luego **Pasar…**, y elige **Pedir revisión**. Funciona en cualquier paso: antes de Hazlo, con un borrador listo o justo antes de enviar.
 2. Elige a quién. Una tarea de trabajo solo va a alguien de tu Work Fleet, una personal solo a alguien de tu Familia.
 3. Revisa qué va: el borrador (o el texto de la tarea) y sus fuentes. Quita una fuente con ×. Añade una nota si quieres y elige **Preguntar**.
 

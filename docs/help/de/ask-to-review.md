@@ -8,7 +8,7 @@ order: 4
 ---
 ## Jemanden um ein Review bitten
 
-1. Öffne bei der Aufgabe **Mehr** und wähle **Um Review bitten**. Das geht bei jedem Schritt: vor Ausführen, bei einem fertigen Entwurf oder kurz vor dem Senden.
+1. Öffne bei der Aufgabe **…**, dann **Übergeben…**, und wähle **Um Review bitten**. Das geht bei jedem Schritt: vor Ausführen, bei einem fertigen Entwurf oder kurz vor dem Senden.
 2. Wähle, wen. Eine Arbeitsaufgabe geht nur an jemanden aus deiner Work Fleet, eine private nur an jemanden aus deiner Familie.
 3. Prüfe, was mitgeht: der Entwurf (oder der Text der Aufgabe) und seine Quellen. Lass eine Quelle mit × weg. Füg bei Bedarf eine Notiz hinzu und wähle **Fragen**.
 

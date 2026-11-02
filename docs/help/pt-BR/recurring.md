@@ -13,7 +13,7 @@ Em **Nova tarefa**, escolha **Repete** e um ritmo: **Diário**, **Dias úteis**,
 
 Ou só diga: "todo mês fazer a folha de pagamento" em Nova tarefa ou em Falar cria uma tarefa que se repete.
 
-Para uma tarefa que você já tem, **Repetir** em **Mais**, ou diga "repeat this every week" no chat dela.
+Para uma tarefa que você já tem, **Repetir…** em **…**, ou diga "repeat this every week" no chat dela.
 
 ## Como ela se repete
 
@@ -27,7 +27,7 @@ Cada uma é preparada como qualquer tarefa, e a preparação vê como foi a ante
 
 ## Mudar ou parar
 
-Em **Mais**: **Mudar repetição** escolhe outro ritmo ou **Parar de repetir**, e **Pular esta** fecha esta e traz a próxima na data dela. "Stop repeating" no chat dela também funciona. Parar mantém a tarefa aberta; só as próximas deixam de vir.
+Toque na linha "Repete" da tarefa: escolha outro ritmo, **Pular esta** (fecha esta e traz a próxima na data dela) ou **Parar de repetir**. "Stop repeating" no chat dela também funciona. Parar mantém a tarefa aberta; só as próximas deixam de vir.
 
 ## Sugestões
 

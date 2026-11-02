@@ -28,21 +28,25 @@ Uma tarefa cujo último passo ainda está aberto do lado de outra pessoa, como u
 
 **Todos**, **Trabalho** e **Pessoal**, acima da lista na barra lateral, mostram todas as tarefas ou só um tipo. A sua Machine guarda a escolha, então o celular e o computador mostram a mesma lista. Enquanto Trabalho ou Pessoal estiver ativo, o topo da lista avisa, com **Mostrar todas** para voltar.
 
-Uma tarefa de um projeto mostra o nome do projeto na linha abaixo do título, que abre o projeto. **Mudar projeto** em **Mais** troca o projeto (numa tarefa concluída, em **Detalhes**). Veja [as tarefas de um projeto](graph.md#a-projects-to-dos).
+Uma tarefa de um projeto mostra o nome do projeto na linha abaixo do título. Toque nele para mudar ou tirar o projeto; **Abrir projeto** ali abre a página dele. Veja [as tarefas de um projeto](graph.md#a-projects-to-dos).
 
-**Mover para Trabalho** em **Mais** passa uma tarefa para a sua outra área, como uma pessoal que precisa sair do seu endereço de trabalho. O que ela pode ler e de onde pode enviar muda junto; as mensagens de onde ela veio ficam onde estão. **Desfazer** no aviso que aparece depois a traz de volta. Com mais de uma empresa, é **Mudar área**.
+A área dela, **Trabalho** ou **Pessoal**, também fica nessa linha. Toque nela para passar a tarefa para a sua outra área, como uma pessoal que precisa sair do seu endereço de trabalho. O que ela pode ler e de onde pode enviar muda junto; as mensagens de onde ela veio ficam onde estão. **Desfazer** no aviso que aparece depois a traz de volta.
 
 Quando uma tarefa precisa de outra área para seguir, ela pede com um botão **Mover para Trabalho**. Nada muda até você tocar; depois ela continua sozinha.
 
 ## Os botões
 
-Uma tarefa nova tem **Fazer**, **Marcar como feita**, **Adiar**, **Fazer de outro jeito** e **Não precisa**. Só alguns aparecem de cada vez. Os outros ficam em **Mais**, junto com **Renomear**.
+Uma tarefa mostra um botão: o próximo passo, como **Fazer**, **Revisar e enviar** ou **Marcar como feita**. Os outros ficam em **…**: no celular, o menu abre na parte de baixo da tela. Uma tarefa nova tem estes:
 
 - **Fazer**: sua Machine prepara a tarefa. Veja [Fazer](do-it.md).
 - **Marcar como feita**: já está resolvida.
 - **Adiar**: faz a tarefa voltar mais tarde. Veja [Adiar](snooze.md).
-- **Fazer de outro jeito**: diga em poucas palavras o que você prefere. Em uma tarefa já preparada, o botão é **Pedir mudanças**: diga o que mudar no rascunho e ela refaz. **Revisar e enviar** continua ao lado.
+- **Fazer de outro jeito**: diga em poucas palavras o que você prefere. Em uma tarefa já preparada, o botão é **Pedir mudanças**: diga o que mudar no rascunho e ela refaz. Ele também fica ao lado de **Enviar** quando você revisa o rascunho.
 - **Não precisa**: a tarefa some. Se quiser, escolha o motivo: **Não é relevante**, **Informações erradas** ou **Já resolvido**. Sua Machine aprende com isso.
+
+Também em **…**: **Passar…** passa a tarefa para um colega, para o [Claude Code ou o Codex](hand-to-agent.md) (os que você configurou) ou [pede para alguém revisar](ask-to-review.md). **Repetir…** faz a tarefa [voltar em um ritmo](recurring.md).
+
+Toque no título para renomear a tarefa. Seu título fica, também quando a tarefa muda.
 
 Uma tarefa fechada pode voltar com **Reabrir**. Ela também volta sozinha quando acontece algo novo, como uma nova mensagem da pessoa. Uma resposta sua não faz a tarefa voltar.
 

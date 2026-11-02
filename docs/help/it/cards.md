@@ -28,21 +28,25 @@ Un’attività il cui ultimo passo è ancora aperto da parte di qualcun altro, c
 
 **Tutti**, **Lavoro** e **Personale** sopra l'elenco nella barra laterale mostrano tutte le attività o solo un tipo. La tua Machine ricorda la scelta, così telefono e computer mostrano lo stesso elenco. Quando è attivo Lavoro o Personale, la parte alta dell'elenco lo indica, con **Mostra tutto** per tornare indietro.
 
-Un'attività su un progetto mostra il nome del progetto nella riga sotto il titolo, che apre il progetto. **Cambia progetto** in **Altro** lo cambia (su un'attività fatta, in **Dettagli**). Vedi [le attività di un progetto](graph.md#a-projects-to-dos).
+Un'attività su un progetto mostra il nome del progetto nella riga sotto il titolo. Toccalo per cambiare progetto o toglierlo; lì **Apri progetto** apre la sua pagina. Vedi [le attività di un progetto](graph.md#a-projects-to-dos).
 
-**Sposta in Lavoro** in **Altro** sposta un'attività nella tua altra area, come una personale che deve partire dal tuo indirizzo di lavoro. Cosa può leggere e da dove può inviare segue lo spostamento; i messaggi da cui è nata restano dove sono. **Annulla** nell'avviso che segue la riporta indietro. Con più di un'azienda è **Cambia area**.
+Anche la sua area, **Lavoro** o **Personale**, è su quella riga. Toccala per spostare l'attività nella tua altra area, come una personale che deve partire dal tuo indirizzo di lavoro. Cosa può leggere e da dove può inviare segue lo spostamento; i messaggi da cui è nata restano dove sono. **Annulla** nell'avviso che segue la riporta indietro.
 
 Quando un'attività ha bisogno di un'altra area per andare avanti, lo chiede con un pulsante **Sposta in Lavoro**. Niente si sposta finché non lo tocchi; poi continua da sola.
 
 ## I pulsanti
 
-Una nuova attività ha **Fallo**, **Segna come fatto**, **Posticipa**, **Fallo diversamente** e **Non serve**. Se ne vedono solo alcuni alla volta; gli altri sono in **Altro**, con **Rinomina**.
+Un'attività mostra un solo pulsante: il passo successivo, come **Fallo**, **Rivedi e invia** o **Segna come fatto**. Gli altri sono in **…**: sul telefono si apre dal fondo dello schermo. Una nuova attività ha questi:
 
 - **Fallo**: la tua Machine la prepara. Vedi [Fallo](do-it.md).
 - **Segna come fatto**: è sistemata.
 - **Posticipa**: falla tornare più tardi. Vedi [Posticipa](snooze.md).
-- **Fallo diversamente**: dille cosa preferiresti, in poche parole. Su un'attività preparata diventa **Chiedi modifiche**: di' cosa cambiare nella bozza e la rifà. **Rivedi e invia** resta accanto.
+- **Fallo diversamente**: dille cosa preferiresti, in poche parole. Su un'attività preparata diventa **Chiedi modifiche**: di' cosa cambiare nella bozza e la rifà. È anche accanto a **Invia** quando rivedi la bozza.
 - **Non serve**: sparisce. Scegli il motivo, se vuoi: **Non pertinente**, **Fatti sbagliati** o **Già gestito**. La tua Machine ne impara.
+
+Sempre in **…**: **Passa…** la passa a un collega, a [Claude Code o Codex](hand-to-agent.md) (quelli che hai configurato) o [chiede a qualcuno di rivederla](ask-to-review.md). **Ripeti…** la fa [tornare con un ritmo](recurring.md).
+
+Tocca il titolo per rinominarla. Il tuo titolo resta, anche quando l'attività cambia.
 
 Un'attività chiusa può tornare con **Riapri**. Torna anche da sola quando succede qualcosa di nuovo, come un nuovo messaggio dall'altra persona. La tua risposta non la fa tornare.
 

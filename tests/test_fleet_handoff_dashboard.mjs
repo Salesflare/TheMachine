@@ -38,7 +38,7 @@ try{
  const primary=c.locator('.actions>button.primary');
  assert.equal(await primary.first().innerText(),'Review handoff to Kim');  // the Fleet handoff leads
  assert.equal(await primary.first().getAttribute('data-fleet-handoff'),'c1');  // it opens the form, it never sends
- assert.match(await c.innerText(),/Review and send to Kim/);  // Slack stays as the alternative
+ assert.match(await c.locator('.more-menu').textContent(),/Review and send to Kim/);  // Slack stays as the alternative, under …
  assert.match(await c.locator('.draft').first().innerText(),/To: Kim[\s\S]*Confirmed P1/);  // the message itself
  assert.equal(await c.locator('[data-fleet-handoff]').count(),1);  // no second, generic Hand off
  await primary.first().click();
@@ -60,7 +60,7 @@ try{
  // A label never wraps: each button is one line high.
  for(const b of await later.locator('.actions>button').all())assert.ok((await b.evaluate(x=>x.scrollWidth<=x.clientWidth+1&&getComputedStyle(x).whiteSpace==='nowrap')),await b.innerText());
  assert.doesNotMatch(await later.innerText(),/Back |Unsnooze|Snoozed/);
- assert.deepEqual(await later.locator('.actions button').evaluateAll(b=>b.map(x=>x.textContent.trim()).filter(Boolean)).then(t=>t.slice(0,5)),['Check in now','Take it back','Hand off to someone else','Change time','Not needed']);  // with Kim: take it back or hand it on, in sight
+ assert.deepEqual(await later.locator('.actions button').evaluateAll(b=>b.map(x=>x.textContent.trim()).filter(Boolean)).then(t=>t.slice(0,6)),['Check in now','Take it back','Change time','Hand off to someone else','Repeat…','Not needed']);  // with Kim: Check in now leads; take it back or hand it on under …
  assert.equal(await later.locator('.actions [data-choice="accept"]').innerText(),'Check in now');
  const chatLine=await page.evaluate(()=>{const s=state.suggestions[0],d=document.createElement('div');d.innerHTML=chatStatus(s);return d.textContent});
  assert.match(chatLine,/^Check in with Kim \S+ \d\d:\d\d if no answer·Check in now$/);

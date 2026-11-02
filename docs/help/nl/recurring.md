@@ -13,7 +13,7 @@ In **Nieuwe to-do** kies je **Herhaalt** en een ritme: **Dagelijks**, **Werkdage
 
 Of zeg het gewoon: "elke maand de loonlijst doen" in Nieuwe to-do of in Praten maakt een to-do die herhaalt.
 
-Voor een to-do die je al hebt: **Herhalen** onder **Meer**, of zeg "repeat this every week" in de chat ervan.
+Voor een to-do die je al hebt: **Herhalen…** onder **…**, of zeg "repeat this every week" in de chat ervan.
 
 ## Hoe het herhaalt
 
@@ -27,7 +27,7 @@ Elke to-do wordt voorbereid zoals elke andere, en de voorbereiding ziet hoe de v
 
 ## Wijzigen of stoppen
 
-Onder **Meer**: **Herhaling wijzigen** kiest een ander ritme of **Stop met herhalen**, en **Deze overslaan** sluit deze en brengt de volgende op haar datum. "Stop repeating" in de chat werkt ook. Stoppen houdt de open to-do; alleen de volgende komen niet meer.
+Tik op de regel "Herhaalt" op de to-do: kies een ander ritme, **Deze overslaan** (die sluit deze en brengt de volgende op haar datum) of **Stop met herhalen**. "Stop repeating" in de chat werkt ook. Stoppen houdt de open to-do; alleen de volgende komen niet meer.
 
 ## Voorstellen
 

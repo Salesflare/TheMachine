@@ -9,7 +9,7 @@ order: 5
 ---
 ## Passa un'attività
 
-1. Sull'attività, apri **Altro** e scegli **Passa a Codex** o **Passa a Claude Code**. Compare quando quello strumento è configurato.
+1. Sull'attività, apri **…**, poi **Passa…**, e scegli **Codex** o **Claude Code**. Compaiono solo gli strumenti che hai configurato.
 2. Controlla il riepilogo e cosa riceve, aggiungi una nota se vuoi e premi **Passa**. **Vedi il lavoro completo** mostra tutte le istruzioni.
 
 L'attività mostra poi che ci sta lavorando, e il risultato quando ha finito, con **Mostra modifiche**. **Cambia** gli chiede delle modifiche; **Passalo di nuovo** ricomincia da capo.

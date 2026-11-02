@@ -8,7 +8,7 @@ order: 4
 ---
 ## Pedir a alguém para revisar uma tarefa
 
-1. Na tarefa, abra **Mais** e escolha **Pedir revisão**. Funciona em qualquer etapa: antes de Fazer, com um rascunho pronto ou logo antes de enviar.
+1. Na tarefa, abra **…**, depois **Passar…**, e escolha **Pedir revisão**. Funciona em qualquer etapa: antes de Fazer, com um rascunho pronto ou logo antes de enviar.
 2. Escolha quem. Uma tarefa de trabalho só vai para alguém da sua Work Fleet, uma pessoal só para alguém da sua Família.
 3. Confira o que vai: o rascunho (ou o texto da tarefa) e as fontes. Deixe uma fonte de fora com ×. Adicione uma nota se quiser e escolha **Perguntar**.
 

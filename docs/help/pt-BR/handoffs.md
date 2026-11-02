@@ -8,7 +8,7 @@ order: 3
 ---
 ## Passar uma tarefa
 
-1. Na tarefa, escolha **Passar para um colega**.
+1. Na tarefa, abra **…**, depois **Passar…**, e escolha **Um colega**.
 2. Escolha para quem, confira o que vai junto (tire qualquer parte com ×) e adicione uma nota. O texto começa com a tarefa e por que ela importa, tirados da tarefa, e de onde ela veio (o link). Nada de uma conta Pessoal ou de outra empresa vai junto.
 3. Envie. A Machine da pessoa mostra o pedido como uma tarefa.
 
@@ -18,7 +18,7 @@ Enquanto você espera, a tarefa fica em **Volta mais tarde**, "Com Pat · aguard
 
 Ela só volta para o topo quando há algo para decidir: Pat respondeu, recusou ou marcou como feita, o repasse falhou, ou chegou um prazo. Uma tarefa que vence hoje faz follow-up algumas horas depois, uma que vence em breve no dia de trabalho anterior, uma urgente sem data na manhã de trabalho seguinte, e qualquer outra em 3 dias de trabalho.
 
-De volta para um follow-up, ela mostra "Ainda com Pat · fazer follow-up?": Pat ainda está com ela, nada voltou. **Fazer follow-up agora** abre o chat; **Pegar de volta** e **Passar para outra pessoa** ficam ao lado, e Marcar como feita, Adiar e Não precisa ficam em Mais.
+De volta para um follow-up, ela mostra "Ainda com Pat · fazer follow-up?": Pat ainda está com ela, nada voltou. **Fazer follow-up agora** abre o chat; **Pegar de volta**, **Passar para outra pessoa**, Marcar como feita, Adiar e Não precisa ficam em **…**.
 
 O chat da tarefa mostra quando ela foi ("Passada para a Machine de Pat · 14:02") e o que voltou: aceita, recusada (com a nota da pessoa) ou feita. Quando volta para um follow-up ainda sem resposta, "Pat ainda não respondeu" aparece abaixo dessa linha, com **Marcar como feita**, **Adiar** e **Não precisa** (sem Fazer: a tarefa está com a pessoa). Para lembrar a pessoa ou pegar a tarefa de volta, diga isso no chat.
 
@@ -26,7 +26,7 @@ Se o repasse não saiu, a tarefa e o chat dela avisam, com **Tentar de novo**.
 
 ## Passar para outra pessoa
 
-Enquanto um colega está com ela, a tarefa diz isso em uma linha ("Com Pat · aguardando"), com **Pegar de volta** e **Passar para outra pessoa**. **Pegar de volta** faz a tarefa voltar a ser sua: a Machine de Pat é avisada, e a resposta de Pat não move mais a tarefa.
+Enquanto um colega está com ela, a tarefa diz isso em uma linha ("Com Pat · aguardando"), com **Pegar de volta** e **Passar para outra pessoa** em **…**. **Pegar de volta** faz a tarefa voltar a ser sua: a Machine de Pat é avisada, e a resposta de Pat não move mais a tarefa.
 
 **Passar para outra pessoa** abre o formulário de repasse, para alguém que ainda não está com ela. Ou diga isso no chat da tarefa ("isso deve ir para a Kim"). O novo repasse espera na tarefa até você ler: "Ainda com Pat até você enviar para Kim", com **Revisar repasse para** Kim. Isso abre o formulário com o texto, já para Kim.
 

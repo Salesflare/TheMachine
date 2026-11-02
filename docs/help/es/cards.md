@@ -28,21 +28,25 @@ Una tarea cuyo último paso sigue abierto en manos de otra persona, como una rev
 
 **Todo**, **Trabajo** y **Personal**, encima de la lista en la barra lateral, muestran todas las tareas o solo un tipo. Tu Machine guarda la elección, así que tu teléfono y tu ordenador muestran la misma lista. Mientras Trabajo o Personal está activo, la parte de arriba de la lista lo indica, con **Mostrar todo** para volver.
 
-Una tarea de un proyecto muestra el nombre del proyecto en la línea bajo su título; abre el proyecto. **Cambiar proyecto** en **Más** lo cambia (en una tarea hecha, en **Detalles**). Consulta [las tareas de un proyecto](graph.md#a-projects-to-dos).
+Una tarea de un proyecto muestra el nombre del proyecto en la línea bajo su título. Tócalo para cambiar el proyecto o quitarlo; **Abrir proyecto** ahí abre su página. Consulta [las tareas de un proyecto](graph.md#a-projects-to-dos).
 
-**Mover a Trabajo** en **Más** pasa una tarea a tu otra área, como una personal que tiene que salir desde tu dirección del trabajo. Lo que puede leer y desde dónde puede enviar cambia con ella; los mensajes de los que vino se quedan donde están. **Deshacer** en el aviso que sigue la devuelve. Con más de una empresa, es **Cambiar área**.
+Su área, **Trabajo** o **Personal**, también está en esa línea. Tócala para pasar la tarea a tu otra área, como una personal que tiene que salir desde tu dirección del trabajo. Lo que puede leer y desde dónde puede enviar cambia con ella; los mensajes de los que vino se quedan donde están. **Deshacer** en el aviso que sigue la devuelve.
 
 Cuando una tarea necesita otra área para seguir, lo pide con un botón **Mover a Trabajo**. Nada se mueve hasta que lo tocas; después sigue sola.
 
 ## Los botones
 
-Una tarea nueva tiene **Hazlo**, **Marcar como hecha**, **Posponer**, **Hazlo de otra forma** y **No hace falta**. Solo se ven unos pocos a la vez; el resto están en **Más**, con **Renombrar**.
+Una tarea muestra un botón: el siguiente paso, como **Hazlo**, **Revisar y enviar** o **Marcar como hecha**. El resto está en **…**: en el teléfono se abre desde abajo de la pantalla. Una tarea nueva tiene estos:
 
 - **Hazlo**: tu Machine la prepara. Consulta [Hazlo](do-it.md).
 - **Marcar como hecha**: ya está resuelta.
 - **Posponer**: haz que vuelva más tarde. Consulta [Posponer](snooze.md).
-- **Hazlo de otra forma**: dile lo que preferirías, en pocas palabras. En una tarea preparada es **Pedir cambios**: di qué cambiar en el borrador y lo rehace. **Revisar y enviar** sigue a su lado.
+- **Hazlo de otra forma**: dile lo que preferirías, en pocas palabras. En una tarea preparada es **Pedir cambios**: di qué cambiar en el borrador y lo rehace. También está junto a **Enviar** cuando revisas el borrador.
 - **No hace falta**: desaparece. Si quieres, elige por qué: **No es relevante**, **Datos incorrectos** o **Ya resuelto**. Tu Machine aprende de ello.
+
+También en **…**: **Pasar…** se la pasa a un compañero, a [Claude Code o Codex](hand-to-agent.md) (los que has configurado) o [pide a alguien que la revise](ask-to-review.md). **Repetir…** hace que [vuelva con un ritmo](recurring.md).
+
+Toca el título para renombrarla. Tu título se queda, también cuando la tarea cambia.
 
 Una tarea cerrada puede volver con **Reabrir**. También vuelve sola cuando pasa algo nuevo, como un mensaje nuevo de esa persona. Tu propia respuesta no la hace volver.
 

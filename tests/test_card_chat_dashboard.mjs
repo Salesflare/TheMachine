@@ -331,8 +331,9 @@ try{
    const bs=[...menu.querySelectorAll('button')].map(x=>x.getBoundingClientRect()),r=menu.getBoundingClientRect(),out={left:r.left,right:r.right,vw:innerWidth,tall:Math.max(...bs.map(x=>x.height)),
     wraps:[...menu.querySelectorAll('button')].some(x=>x.scrollWidth>x.clientWidth+1||x.getClientRects().length>1||x.getBoundingClientRect().height>40)};b.remove();return out});
   if(process.env.SHOT_DIR&&width===390){await more.evaluate(d=>{const b=document.createElement('button');b.textContent='Hand to Claude Code';b.dataset.shot='1';d.querySelector('.more-menu').append(b)});await more.screenshot({path:process.env.SHOT_DIR+'/more-menu-390.png'}).catch(()=>{});await page.screenshot({path:process.env.SHOT_DIR+'/more-menu-390-page.png'});await more.evaluate(d=>d.querySelector('[data-shot]')?.remove())}
-  assert.ok(!m.wraps&&m.tall<=34,`menu items on one line at menu density (${width}: ${m.tall}px)`);
-  assert.ok(m.left>=8&&m.right<=m.vw-8,`menu inside the screen at ${width}: ${m.left}–${m.right} of ${m.vw}`);
+  // On a computer a small menu inside the screen; on a phone a bottom sheet across it, with taller rows to tap
+  assert.ok(!m.wraps||width<600&&m.tall<=52,`menu items on one line (${width}: ${m.tall}px)`);assert.ok(m.tall<=(width<600?52:34),`menu density at ${width}: ${m.tall}px`);
+  assert.ok(width<600?m.left===0&&m.right>=m.vw-16:m.left>=8&&m.right<=m.vw-8,`menu inside the screen at ${width}: ${m.left}–${m.right} of ${m.vw}`);
   await more.locator('summary').click()}
  await page.setViewportSize({width:1280,height:900});
  // On a phone: the page header steps aside, the app's drawer (the card list) opens from ⋯

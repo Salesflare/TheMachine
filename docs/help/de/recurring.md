@@ -13,7 +13,7 @@ Wähle in **Neue Aufgabe** **Wiederholt sich** und einen Rhythmus: **Täglich**,
 
 Oder sag es einfach: „jeden Monat Gehaltsabrechnung machen“ in Neue Aufgabe oder in Sprechen legt eine Aufgabe an, die sich wiederholt.
 
-Für eine vorhandene Aufgabe: **Wiederholen** unter **Mehr**, oder sag „repeat this every week“ in ihrem Chat.
+Für eine vorhandene Aufgabe: **Wiederholen…** unter **…**, oder sag „repeat this every week“ in ihrem Chat.
 
 ## Wie sie sich wiederholt
 
@@ -27,7 +27,7 @@ Jede wird vorbereitet wie jede Aufgabe, und die Vorbereitung sieht, wie die vori
 
 ## Ändern oder beenden
 
-Unter **Mehr**: **Wiederholung ändern** wählt einen anderen Rhythmus oder **Nicht mehr wiederholen**, und **Diese überspringen** schließt diese und bringt die nächste an ihrem Datum. „Stop repeating“ in ihrem Chat geht auch. Beenden behält die offene Aufgabe; nur die nächsten kommen nicht mehr.
+Tippe bei der Aufgabe auf die Zeile „Wiederholt sich“: Wähl einen anderen Rhythmus, **Diese überspringen** (das schließt diese und bringt die nächste an ihrem Datum) oder **Nicht mehr wiederholen**. „Stop repeating“ in ihrem Chat geht auch. Beenden behält die offene Aufgabe; nur die nächsten kommen nicht mehr.
 
 ## Vorschläge
 

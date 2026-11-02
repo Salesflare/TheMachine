@@ -28,21 +28,25 @@ A to-do whose last step is still open on someone else's side, like a review, a m
 
 **All**, **Work** and **Personal** above the list in the sidebar show all to-dos or only one kind. Your Machine keeps the choice, so your phone and computer show the same list. While Work or Personal is on, the top of the list says so, with **Show all** to go back.
 
-A to-do on a project shows the project's name in the line under its title; it opens the project. **Change project** under **More** changes it (on a done to-do, under **Details**). See [a project's to-dos](graph.md#a-projects-to-dos).
+A to-do on a project shows the project's name in the line under its title. Tap it to change the project or take it off; **Open project** there opens its page. See [a project's to-dos](graph.md#a-projects-to-dos).
 
-**Move to Work** under **More** moves a to-do to your other area, like a personal one that has to go out from your work address. What it may read and send from follows the move; the messages it came from stay where they are. **Undo** on the note that follows moves it back. With more than one company, it's **Change area**.
+Its area, **Work** or **Personal**, is on that line too. Tap it to move the to-do to your other area, like a personal one that has to go out from your work address. What it may read and send from follows the move; the messages it came from stay where they are. **Undo** on the note that follows moves it back.
 
 When a to-do needs another area to go on, it asks with a **Move to Work** button. Nothing moves until you tap it; then it carries on by itself.
 
 ## The buttons
 
-A new to-do has **Do it**, **Mark done**, **Snooze**, **Do it differently** and **Not needed**. Only a few show at once; the rest are under **More**, with **Rename**.
+A to-do shows one button: the next step, like **Do it**, **Review and send** or **Mark done**. The rest are under **…**: on a phone it opens from the bottom of the screen. A new to-do has these:
 
 - **Do it**: your Machine prepares it. See [Do it](do-it.md).
 - **Mark done**: it's handled.
 - **Snooze**: bring it back later. See [Snooze](snooze.md).
-- **Do it differently**: tell it what you'd like instead, in a few words. On a prepared to-do it's **Ask for changes**: say what to change in the draft and it redoes it. **Review and send** stays next to it.
+- **Do it differently**: tell it what you'd like instead, in a few words. On a prepared to-do it's **Ask for changes**: say what to change in the draft and it redoes it. It's also next to **Send** when you review the draft.
 - **Not needed**: it goes away. Pick why, optionally: **Not relevant**, **Wrong facts** or **Already handled**. Your Machine learns from it.
+
+Also under **…**: **Hand off…** gives it to a teammate, [Claude Code or Codex](hand-to-agent.md) (the ones you set up), or [asks someone to review](ask-to-review.md). **Repeat…** makes it [come back on a rhythm](recurring.md).
+
+Tap the title to rename it. Your title stays, also when the to-do changes.
 
 A closed to-do can come back with **Reopen**. It also comes back by itself when something new happens, like a new message from them. Your own reply doesn't bring it back.
 

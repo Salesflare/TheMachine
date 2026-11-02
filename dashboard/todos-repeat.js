@@ -1,6 +1,6 @@
 // Recurring to-dos (recurring.py, docs/help/recurring.md): a to-do that comes back on a rhythm. One short line on the
-// to-do ("Repeats monthly on the first Monday", and "missed 1" when dates passed while it stayed open); Repeat and Skip
-// this one in its More menu; Repeats in New to-do; "repeat this every month" or "stop repeating" in its chat; and the
+// to-do ("Repeats monthly on the first Monday", and "missed 1" when dates passed while it stayed open), a tap on it to
+// change, skip or stop; Repeat… in its … menu; Repeats in New to-do; "repeat this every month" or "stop repeating" in its chat; and the
 // one-time "Make this a recurring to-do?" above the list. Nothing is made or sent without the owner's tap.
 const REPEAT_ICON='<svg class="ci" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 3.5l3 3-3 3M20 6.5H8.5A4.5 4.5 0 0 0 4 11v.5M7 20.5l-3-3 3-3M4 17.5h11.5A4.5 4.5 0 0 0 20 13v-.5"/></svg>';
 const REPEAT_NTH={1:'Repeats monthly on the first {}',2:'Repeats monthly on the second {}',3:'Repeats monthly on the third {}',4:'Repeats monthly on the fourth {}','-1':'Repeats monthly on the last {}'};
@@ -25,8 +25,6 @@ const rpSame=(a,b)=>!!a&&!!b&&a.unit===b.unit&&(a.n||1)===(b.n||1)&&(a.nth??null
 // The to-do's one line: a quiet chip that opens Repeat
 const repeatChip=s=>{const r=s.repeats;if(!r||closed(s))return '';const text=repeatText(r.rule,r.anchor)+(r.missed?' · '+t('missed {}',r.missed):'');
  return `<button type="button" class="chip scope repeat${r.missed?' missed':''}" data-repeat="${esc(s.id)}" title="${esc(t('Change how it repeats'))}">${REPEAT_ICON}<span>${esc(text)}</span></button>`};
-// More: Repeat (or Change repeat), and Skip this one while it repeats
-const repeatMore=s=>closed(s)?'':`<button type="button" class="ghost" data-repeat="${esc(s.id)}">${s.repeats?'Change repeat':'Repeat'}</button>${s.repeats?`<button type="button" class="ghost" data-repeat-skip="${esc(s.id)}">Skip this one</button>`:''}`;
 async function repeatPost(action,args){return request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action,args})})}
 // Custom…: a rhythm in words ("every 2 weeks", "every last Friday"), read by the Machine; Enter or the line sets it
 function repeatCustom(box,set){const wrap=box.querySelector('.rp-custom'),input=wrap.querySelector('input'),read=wrap.querySelector('.nc-read');let timer,got=null;
@@ -39,11 +37,12 @@ function repeatCustom(box,set){const wrap=box.querySelector('.rp-custom'),input=
  input.addEventListener('keydown',async e=>{if(e.key!=='Enter'||e.isComposing)return;e.preventDefault();clearTimeout(timer);if(!got)await look();if(got)set(got.rule,got.anchor)});
  read.addEventListener('click',e=>{if(e.target.closest('[data-rp-set]')&&got)set(got.rule,got.anchor)})}
 const rpListHTML=(base,cur)=>`<div class="rp-list" role="group" aria-label="${esc(t('How often'))}">${repeatOptions(base).map(([r,label],i)=>`<button type="button" data-rp="${i}" aria-pressed="${rpSame(r,cur)}">${esc(label)}</button>`).join('')}<button type="button" data-rp="custom">${esc(t('Custom…'))}</button></div><div class="rp-custom" hidden><input type="text" autocomplete="off" aria-label="${esc(t('How often?'))}" placeholder="${esc(t('Every 2 weeks, every last Friday'))}"><p class="nc-read" aria-live="polite"></p></div>`;
-// More > Repeat on a to-do: a small box in the to-do, like Change project
+// Repeat… in a to-do's … menu, or a tap on its repeat chip: a small box in the to-do, like its project's picker. While it
+// repeats, Skip this one and Stop repeating are in the box too.
 function repeatPick(id,anchor){const s=(state.suggestions||[]).find(x=>x.id===id);if(!s||closed(s))return;document.querySelector('.repeat-picker')?.remove();
  const r=s.repeats,base=r?.due||s.due||localDay(new Date());
  const box=document.createElement('div');box.className='project-picker repeat-picker';box.setAttribute('role','dialog');box.setAttribute('aria-label',t('Repeat'));
- box.innerHTML=`<p class="rp-head">${REPEAT_ICON}<span>${esc(r?repeatText(r.rule,r.anchor):t('Repeat this to-do'))}</span></p>${rpListHTML(base,r?.rule)}<div class="actions">${r?`<button type="button" class="ghost" data-rp-act="stop">${esc(t('Stop repeating'))}</button>`:''}<button type="button" class="quiet" data-rp-act="cancel">${esc(t('Cancel'))}</button></div>`;
+ box.innerHTML=`<p class="rp-head">${REPEAT_ICON}<span>${esc(r?repeatText(r.rule,r.anchor):t('Repeat this to-do'))}</span></p>${rpListHTML(base,r?.rule)}<div class="actions">${r?`<button type="button" class="ghost" data-repeat-skip="${esc(s.id)}">${esc(t('Skip this one'))}</button><button type="button" class="ghost" data-rp-act="stop">${esc(t('Stop repeating'))}</button>`:''}<button type="button" class="quiet" data-rp-act="cancel">${esc(t('Cancel'))}</button></div>`;
  anchor.closest('details.more-actions,details.chat-menu')?.removeAttribute('open');(anchor.closest('.card')||anchor.closest('.chat-main')||document.body).appendChild(box);box.querySelector('button[aria-pressed="true"],button')?.focus();
  const set=async(rule,repeat=rule)=>{box.querySelectorAll('button').forEach(b=>b.disabled=true);
   try{const got=await repeatPost('card_repeat',{suggestion_id:id,repeat});const x=(state.suggestions||[]).find(y=>y.id===id);if(x)x.repeats=got.repeats||undefined;box.remove();
@@ -53,7 +52,7 @@ function repeatPick(id,anchor){const s=(state.suggestions||[]).find(x=>x.id===id
  box.onclick=e=>{const b=e.target.closest('[data-rp],[data-rp-act]');if(!b)return;
   if(b.dataset.rpAct==='cancel'){box.remove();return}if(b.dataset.rpAct==='stop'){set(null,'none');return}
   if(b.dataset.rp==='custom'){repeatCustom(box,rule=>set(rule));return}set(repeatOptions(base)[+b.dataset.rp][0])}}
-async function repeatSkip(id,b){if(b)b.disabled=true;b?.closest('details')?.removeAttribute('open');
+async function repeatSkip(id,b){if(b)b.disabled=true;b?.closest('details')?.removeAttribute('open');b?.closest('.repeat-picker')?.remove();
  try{const got=await repeatPost('card_repeat_skip',{suggestion_id:id});toast(got.next?t('Skipped. The next one comes {}.',rpDate(got.next).toLocaleDateString(DL,{weekday:'short',day:'numeric',month:'short'})):t('Skipped.'));await refresh()}
  catch(err){errCaught(err);if(b)b.disabled=false;toast(err.message,true)}}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-repeat]');if(b){e.preventDefault();repeatPick(b.dataset.repeat,b);return}

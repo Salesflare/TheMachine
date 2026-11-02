@@ -131,10 +131,10 @@ try{
   // A failure puts the old title back and says why
   failRename=true;await row(1).dblclick();await renameTo(page,'Something else');await page.locator('#toast.error').waitFor();
   assert.match(await page.locator('#toast').textContent(),/under 200/);assert.equal(await row(1).textContent(),'Contract for Sam');failRename=false;
-  // From the card: More → Rename, and a click on the title (on a computer) edits it instead of opening the chat
+  // From the card: a click on the title edits it instead of opening the chat
   // (a double click opened that chat too, like a click does) back to the cards
   await page.locator('nav [data-tab="inbox"]').click();await page.locator('#suggestions .chat-layout').waitFor({state:'detached'});
-  await page.locator('#task-'+id(2)+' .more-actions summary').click();await page.locator('#task-'+id(2)+' [data-rename]').click();
+  await page.locator('#task-'+id(2)+' h3 .title-link').click();
   await page.locator('.rename-reset').waitFor();// a renamed card offers its suggested title
 await page.locator('.rename-reset').click();
   await until(()=>sent('card_rename').some(a=>a.args.reset),'reset');assert.equal(await page.locator('#task-'+id(2)+' h3').textContent(),'Send Pat the Q4 deck');
@@ -149,7 +149,7 @@ await page.locator('.rename-reset').click();
   await until(()=>sent('card_rename').length===8,'chat menu');assert.equal(await page.locator('.chat-title').textContent(),'Dentist, Tuesday');
   assert.ok(sent('card_rename').every(a=>/^[0-9a-f-]{36}$/.test(a.args.decision_id)));
   await context.close()}
- // Phone: "+" in the top bar, the title tap still opens the card, a long press in the chat's list, the chat title
+ // Phone: "+" in the top bar, a tap on the title renames (Chat › opens the card), a long press in the chat's list, the chat title
  {const {context,page}=await open(390,844);
   assert.ok(await page.locator('#new-card-top').isVisible());assert.ok(!(await page.locator('#side-new').isVisible()));
   const plus=await page.locator('#new-card-top').boundingBox();assert.ok(plus.x+plus.width<=390&&plus.width>=32,'the + fits');
@@ -162,7 +162,9 @@ await page.locator('.rename-reset').click();
   await page.locator('#drawer-open').tap();await page.locator('#side-new').waitFor();await page.waitForTimeout(400);await page.locator('#side-new').tap();
   await page.locator('#new-card').waitFor();assert.notEqual(await page.evaluate(()=>document.documentElement.dataset.drawer),'open','the drawer closes');
   await page.locator('#new-card form button[aria-label="Close"]').tap();await page.locator('#new-card').waitFor({state:'hidden'});
-  await page.waitForTimeout(800);await page.locator('#task-'+id(1)+' h3 .title-link').tap();await page.locator('#chat-log').waitFor();assert.equal(await page.locator('.rename-box').count(),0,'a tap opens the card');
+  await page.waitForTimeout(800);await page.locator('#task-'+id(1)+' h3 .title-link').tap();await page.locator('.rename-box').waitFor();assert.equal(await page.locator('#chat-log').count(),0,'a tap on the title renames');
+  await page.keyboard.press('Escape');await page.locator('.rename-box').waitFor({state:'detached'});
+  await page.locator('#task-'+id(1)+' .card-chat-link').tap();await page.locator('#chat-log').waitFor();
   // All tasks as a person reaches it: open the menu, then tap (an open menu is never redrawn under the tap)
   await page.locator('#chat-menu summary').tap();await page.locator('#chat-menu [data-chat-drawer]').tap();const link=page.locator(`#side-cards a[href="#chat=${id(2)}"]`);await link.waitFor();
   await page.waitForTimeout(500);const box=await link.boundingBox();const cdp=await context.newCDPSession(page);

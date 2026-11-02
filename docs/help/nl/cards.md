@@ -28,21 +28,25 @@ Een to-do waarvan de laatste stap nog openstaat bij iemand anders, zoals een rev
 
 **Alle**, **Werk** en **Privé** boven de lijst in de zijbalk tonen alle to-do's of maar één soort. Je Machine onthoudt de keuze, zodat je telefoon en computer dezelfde lijst tonen. Staat Werk of Privé aan, dan staat dat bovenaan de lijst, met **Alles tonen** om terug te gaan.
 
-Een to-do bij een project toont de naam van het project in de regel onder de titel; die opent het project. **Project wijzigen** onder **Meer** wijzigt het (bij een afgeronde to-do onder **Details**). Zie [de to-do's van een project](graph.md#a-projects-to-dos).
+Een to-do bij een project toont de naam van het project in de regel onder de titel. Tik erop om het project te wijzigen of weg te halen; **Project openen** daar opent de pagina ervan. Zie [de to-do's van een project](graph.md#a-projects-to-dos).
 
-**Naar Werk verplaatsen** onder **Meer** zet een to-do in je andere gebied, zoals een privé-to-do die vanaf je werkadres moet vertrekken. Wat hij mag lezen en waarvandaan hij mag versturen, verhuist mee; de berichten waar hij uit kwam, blijven waar ze zijn. **Ongedaan maken** in de melding die volgt, zet hem terug. Met meer dan één bedrijf is het **Gebied wijzigen**.
+Zijn gebied, **Werk** of **Privé**, staat ook in die regel. Tik erop om de to-do naar je andere gebied te verplaatsen, zoals een privé-to-do die vanaf je werkadres moet vertrekken. Wat hij mag lezen en waarvandaan hij mag versturen, verhuist mee; de berichten waar hij uit kwam, blijven waar ze zijn. **Ongedaan maken** in de melding die volgt, zet hem terug.
 
 Heeft een to-do een ander gebied nodig om verder te kunnen, dan vraagt hij het met een knop **Naar Werk verplaatsen**. Er verhuist niets tot je erop tikt; daarna gaat hij zelf verder.
 
 ## De knoppen
 
-Een nieuwe to-do heeft **Doe het**, **Markeer als gedaan**, **Snoozen**, **Doe het anders** en **Niet nodig**. Er staan er maar een paar tegelijk; de rest staat onder **Meer**, met **Hernoemen**.
+Een to-do toont één knop: de volgende stap, zoals **Doe het**, **Nakijken en versturen** of **Markeer als gedaan**. De rest staat onder **…**: op een telefoon schuift dat open vanaf de onderkant van het scherm. Een nieuwe to-do heeft deze:
 
 - **Doe het**: je Machine bereidt hem voor. Zie [Doe het](do-it.md).
 - **Markeer als gedaan**: hij is geregeld.
 - **Snoozen**: laat hem later terugkomen. Zie [Snoozen](snooze.md).
-- **Doe het anders**: zeg in een paar woorden wat je in de plaats wilt. Op een voorbereide to-do heet het **Wijzigingen vragen**: zeg wat er in het concept moet veranderen en hij doet het opnieuw. **Nakijken en versturen** blijft ernaast staan.
+- **Doe het anders**: zeg in een paar woorden wat je in de plaats wilt. Op een voorbereide to-do heet het **Wijzigingen vragen**: zeg wat er in het concept moet veranderen en hij doet het opnieuw. Het staat ook naast **Versturen** als je het concept nakijkt.
 - **Niet nodig**: hij verdwijnt. Kies eventueel waarom: **Niet relevant**, **Feiten kloppen niet** of **Al geregeld**. Je Machine leert ervan.
+
+Ook onder **…**: **Overdragen…** draagt hem over aan een teamgenoot, aan [Claude Code of Codex](hand-to-agent.md) (die je ingesteld hebt), of [vraagt iemand om een review](ask-to-review.md). **Herhalen…** laat hem [terugkomen in een ritme](recurring.md).
+
+Tik op de titel om hem te hernoemen. Je titel blijft, ook als de to-do verandert.
 
 Een gesloten to-do kan terugkomen met **Heropenen**. Hij komt ook vanzelf terug als er iets nieuws gebeurt, zoals een nieuw bericht van de ander. Je eigen antwoord brengt hem niet terug.
 

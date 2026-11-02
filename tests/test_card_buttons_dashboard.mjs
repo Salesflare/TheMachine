@@ -5,9 +5,9 @@ import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
-// Card buttons: the main action first, then the two most useful others, the rest under More. A draft's button says it
-// opens the preview ("Review and send to …"), Hand off sits with the other buttons, and Not needed is one compact choice
-// that hides the card's buttons until it is confirmed or canceled.
+// Card buttons: one lead (the next step) and a quiet … with the rest, Not needed last. A draft's button says it opens
+// the preview ("Review and send to …"), Hand off is in the …, and Not needed is one compact choice that hides the card's
+// buttons until it is confirmed or canceled.
 const dashboard=await dashboardPage();
 const now=new Date().toISOString(),posts=[];
 const cards=[{id:'p1',title:'Reply to Sam about pricing',body:'Sam asked for pricing.',status:'pending',scope:'work',created_at:now,event_ids:[1],source_line:'Source: email from Sam · Mon 19 Oct'},
@@ -39,27 +39,30 @@ try{
   await page.goto('http://127.0.0.1:'+server.address().port);await page.locator('#task-p1').waitFor();
   const shown=id=>page.locator(`#task-${id} .actions>:is(button,a.open,.more-actions)`).evaluateAll(n=>n.map(x=>x.tagName==='DETAILS'?'More':x.textContent.trim()));
   const menu=id=>page.locator(`#task-${id} .more-menu>button`).evaluateAll(n=>n.map(x=>x.textContent.trim()));
-  // A decision: Do it, Snooze, Not needed; the rest under More, Hand off among them, never above the buttons
-  assert.deepEqual(await shown('p1'),['Do it','Snooze','Not needed','More']);
-  assert.deepEqual(await menu('p1'),['Mark done','Do it differently','Hand off','Repeat','Rename']);
+  // A decision: Do it, and the rest under …, Hand off among them, never above the buttons
+  assert.deepEqual(await shown('p1'),['Do it','More']);
+  assert.deepEqual(await menu('p1'),['Snooze','Mark done','Do it differently','Hand off','Repeat…','Not needed']);
   assert.equal(await page.getByText('Hand off to a teammate').count(),0);
   // A ready draft: the button says it opens the preview first
-  assert.deepEqual(await shown('r1'),['Review and send to Noor','Mark done','Snooze','More']);
-  assert.deepEqual(await menu('r1'),['Ask for changes','Not needed','Hand off','Repeat','Rename']);
-  // A step only the owner can do: Done leads, Plan it is the help around it, Snooze and Not needed stay in sight; never Do it
-  assert.deepEqual(await shown('v1'),['Done','Plan it','Snooze','Not needed','More']);
-  assert.deepEqual(await menu('v1'),['Do it differently','Repeat','Rename']);
+  assert.deepEqual(await shown('r1'),['Review and send to Noor','More']);
+  assert.deepEqual(await menu('r1'),['Ask for changes','Mark done','Snooze','Hand off','Repeat…','Not needed']);
+  // A step only the owner can do: Done leads, Plan it is the help around it; never Do it
+  assert.deepEqual(await shown('v1'),['Done','More']);
+  assert.deepEqual(await menu('v1'),['Plan it','Snooze','Do it differently','Repeat…','Not needed']);
   assert.equal(await page.locator('#task-v1 .actions>button.primary').innerText(),'Done');
   assert.equal(await page.locator('#task-v1 [data-choice="complete"]').getAttribute('data-choice'),'complete');
   assert.ok(!(await shown('v2')).includes('Do it'));
   assert.equal(await page.locator('#task-v2 .actions>button.primary').innerText(),'Done');
-  assert.ok((await shown('v2')).includes('Open in Maps ↗'));
+  assert.ok(await page.locator('#task-v2 .more-menu>a.open').evaluate(a=>a.textContent.trim())==='Open in Maps ↗');
   // A personal card has no Hand off
   assert.ok(!(await menu('h1')).includes('Hand off'));
   // The buttons line up: one row height on a wide screen
   if(width>600){const tops=await page.locator('#task-p1 .actions>*').evaluateAll(n=>n.map(x=>Math.round(x.getBoundingClientRect().top)+':'+Math.round(x.getBoundingClientRect().height)));assert.equal(new Set(tops).size,1,tops.join(' '))}
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
-  // More opens a menu; tapping elsewhere closes it
+  // … opens a menu (a bottom sheet on a phone); tapping elsewhere closes it
+  {await page.locator('#task-r1 .more-actions>summary').click();const m=await page.locator('#task-r1 .more-menu').evaluate(e=>({pos:getComputedStyle(e).position,...e.getBoundingClientRect().toJSON()}));
+   if(width<600)assert.ok(m.pos==='fixed'&&Math.round(m.bottom)===900&&m.left===0,'a bottom sheet on a phone: '+JSON.stringify(m));else assert.equal(m.pos,'absolute');
+   await page.mouse.click(2,2);assert.equal(await page.locator('#task-r1 .more-actions').evaluate(d=>d.open),false)}
   await page.locator('#task-r1 .more-actions>summary').click();await page.locator('#task-r1 .more-menu').getByRole('button',{name:'Ask for changes'}).waitFor();
   await page.mouse.click(2,2);assert.equal(await page.locator('#task-r1 .more-actions').evaluate(d=>d.open),false);
   // The source line sits behind Details; its date never splits over two lines
@@ -78,7 +81,7 @@ try{
    await page.locator('#task-p1').screenshot({path:`/tmp/card-handoff-${width}.png`});
    await form.getByRole('button',{name:'Cancel'}).click();await page.locator('#task-p1 [data-choice="accept"]').waitFor()}
   // Not needed: reason chips, a note, Confirm; the card's buttons hide meanwhile
-  await page.locator('#task-p1').getByRole('button',{name:'Not needed',exact:true}).click();
+  await page.locator('#task-p1 .more-actions>summary').click();await page.locator('#task-p1').getByRole('button',{name:'Not needed',exact:true}).click();
   const card=page.locator('#task-p1');await card.getByText('Why isn’t this needed?').waitFor();
   assert.equal(await card.locator('[data-choice="accept"],.more-actions').count(),0);
   await card.getByRole('button',{name:'Wrong facts'}).click();await card.locator('#dismiss-p1').fill('price is old');

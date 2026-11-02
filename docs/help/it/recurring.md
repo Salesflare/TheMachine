@@ -13,7 +13,7 @@ In **Nuova attività**, scegli **Si ripete** e un ritmo: **Giornaliero**, **Gior
 
 Oppure dillo e basta: "ogni mese fare le buste paga" in Nuova attività o in Parla crea un'attività che si ripete.
 
-Per un'attività che hai già, **Ripeti** in **Altro**, o scrivi "repeat this every week" nella sua chat.
+Per un'attività che hai già, **Ripeti…** in **…**, o scrivi "repeat this every week" nella sua chat.
 
 ## Come si ripete
 
@@ -27,7 +27,7 @@ Ognuna viene preparata come ogni attività, e la preparazione vede com'è andata
 
 ## Cambiarla o fermarla
 
-In **Altro**: **Cambia ripetizione** sceglie un altro ritmo o **Smetti di ripetere**, e **Salta questa** chiude questa e porta la successiva nella sua data. Anche "Stop repeating" nella sua chat funziona. Fermarla tiene l'attività aperta; solo le successive non arrivano più.
+Tocca la riga "Si ripete" sull'attività: scegli un altro ritmo, **Salta questa** (chiude questa e porta la successiva nella sua data) o **Smetti di ripetere**. Anche "Stop repeating" nella sua chat funziona. Fermarla tiene l'attività aperta; solo le successive non arrivano più.
 
 ## Suggerimenti
 

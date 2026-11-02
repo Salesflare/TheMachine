@@ -51,16 +51,17 @@ try{
   assert.equal(await open.evaluate(a=>a.querySelector(':scope>h3+.meta')!==null),true);
   assert.equal(await open.locator('.meta a.chip.who:not(.org)').getAttribute('href'),'#graph/'+encodeURIComponent('p:robin'));
   assert.equal(await open.locator('.meta a.chip.who.org').getAttribute('href'),'#graph/'+encodeURIComponent('o:acme'));
-  assert.equal(await open.locator('.meta a.chip.project-link').getAttribute('href'),'#graph/'+encodeURIComponent('proj:listing'));
+  assert.equal(await open.locator('.meta button.chip.project-link').getAttribute('data-card-project'),'a1a1a1a1a1a1a1a1');  // a tap changes it; Open project in its picker opens the page
   assert.equal(await open.locator('.meta span.chip.scope').innerText(),'Work');
   assert.equal(await open.locator('.meta time').count(),1);
   // No pills: the meta items have no background, and the line is at most two rows even with a long organization on a phone
   assert.equal(await open.locator('.meta a.chip.who.org').evaluate(e=>getComputedStyle(e).backgroundColor),'rgba(0, 0, 0, 0)');
   {const [h,lh]=await open.locator('.card-badges').evaluate(e=>[e.getBoundingClientRect().height,parseFloat(getComputedStyle(e).lineHeight)]);assert.ok(h<=lh*2+4,`meta ${h}px for line ${lh}px`)}
-  // The project's picker is not on the card's front: Change project is in More, and it opens the picker
-  assert.equal(await open.locator('.project-pick').count(),0);
-  await open.locator('.more-actions>summary').click();await open.locator('.more-menu [data-card-project]').click();
-  await page.locator('.project-picker select').waitFor();assert.equal(await open.locator('.more-actions').evaluate(d=>d.open),false);
+  // The project's picker is not on the card's front: a tap on the project's name opens it
+  assert.equal(await open.locator('.project-pick').count(),0);assert.equal(await open.locator('.more-menu [data-card-project]').count(),0);
+  await open.locator('.card-badges [data-card-project]').click();
+  await page.locator('.project-picker select').waitFor();
+  assert.equal(await page.locator('.project-picker .pp-open').getAttribute('href'),'#graph/'+encodeURIComponent('proj:listing'));
   await page.locator('.project-picker [data-pp="cancel"]').click();
   // Open and needing you: the status line, the draft and the first button stay in sight; the source folds behind Details
   assert.match(await open.locator('.status-line').innerText(),/^Needs you: check the reply/);
@@ -82,7 +83,7 @@ try{
    assert.ok(row.every(b=>b&&Math.abs((b.y+b.height/2)-(row[0].y+row[0].height/2))<12),'Details, Chat and Reopen on one row: '+JSON.stringify(row))}
   assert.ok((await done.boundingBox()).height<(await open.boundingBox()).height/2,'a done to-do is much shorter than an open one');
   await done.locator('.card-foot [data-details]').click();
-  for(const part of ['.agent-result','.saved-feedback','.read-original','[data-card-project]'])assert.ok(await done.locator('.card-details '+part).first().isVisible(),part);
+  for(const part of ['.agent-result','.saved-feedback','.read-original'])assert.ok(await done.locator('.card-details '+part).first().isVisible(),part);
   {const [h,lh]=await done.locator('.body').evaluate(e=>[e.getBoundingClientRect().height,parseFloat(getComputedStyle(e).lineHeight)]);if(width<600)assert.ok(h>lh*1.5,'Details shows the whole body')}
   // Details stays open across a refresh
   await page.evaluate(()=>render());assert.ok(await done.locator('.card-details .saved-feedback').isVisible());

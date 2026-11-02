@@ -8,7 +8,7 @@ order: 4
 ---
 ## Ask someone to review a to-do
 
-1. On the to-do, open **More** and pick **Ask to review**. It works at any step: before Do it, on a ready draft, or just before you send.
+1. On the to-do, open **…**, then **Hand off…**, and pick **Ask to review**. It works at any step: before Do it, on a ready draft, or just before you send.
 2. Pick who. A Work to-do goes only to someone in your Work Fleet, a Personal one only to someone in your Family.
 3. Check what goes: the draft (or the to-do's text) and its sources. Leave a source out with ×. Add a note if you like, then pick **Ask**.
 
