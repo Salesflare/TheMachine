@@ -142,6 +142,12 @@ function ncAddFiles(list){const problems=[],draft=nc.draft;$('#nc-error').textCo
     item.id=r.id;if(!nc.files.includes(item)){ncForget([item]);return}Object.assign(item,{name:r.name,type:r.type,state:'ok'})}
    catch(err){errCaught(err);nc.files=nc.files.filter(x=>x!==item);$('#nc-error').textContent=`${name}: ${(I18N.cat&&i18nLookup(err.message))||err.message}`}ncTray()})()}
  if(problems.length)$('#nc-error').textContent=problems.join(' ');ncTray();$('#nc-text')?.focus()}
+// Share to The Machine from a phone's share sheet: the mobile app calls this with what was shared. It opens New to-do
+// with the text and files in it, for the owner to check and add; nothing is added by itself. Before the dashboard has
+// loaded (still signing in), it waits for it, up to ten minutes.
+window.machineShare=function(d,tries=0){if(!(Array.isArray(state?.suggestions)&&csrfLive)){if(tries<1200)setTimeout(()=>machineShare(d,tries+1),500);return true}
+ const text=String(d?.text||'').trim().slice(0,2000),files=[...(d?.files||[])].filter(f=>f instanceof File);if(!text&&!files.length)return true;
+ ncOpen();const x=$('#nc-text');if(text){x.value=((x.value.trim()?x.value.trim()+'\n':'')+text).slice(0,2000);x.dispatchEvent(new Event('input'))}if(files.length)ncAddFiles(files);return true};
 // Entry points: a row under Search on a computer, "+" in the top bar on a phone, C, and the palette (Ctrl/⌘K) then "new".
 {const row=document.createElement('button');row.type='button';row.className='side-new';row.id='side-new';row.dataset.newCard='';row.title='New to-do (N)';row.setAttribute('aria-label','New to-do');
  row.innerHTML=`${NC_PLUS}<span>New to-do</span><kbd>N</kbd>`;$('#side-search').after(row);

@@ -146,11 +146,15 @@ function renderNotify(){const n=state?.notify,box=$('#settings-notify');
  if(grid.dataset.html!==html){grid.innerHTML=html;grid.dataset.html=html}
  const on=pushOn(),can=pushOK&&devicePush.perm!=='denied';
  const device=on?'Push is on here.':!can?'This browser can’t show push here.':n.push_devices?t(['Push is off here, on for {} other device.','Push is off here, on for {} other devices.'],n.push_devices):'Push is off here.';
- const more=`<div><span class="grow"><strong>This device</strong><small>${esc(device)}</small></span>${!on&&can?'<button type="button" data-device="push-on">Turn on</button>':''}</div>`;
+ // Phones with the mobile app (notify.py, app_push): each with Remove, which stops its notifications
+ const phones=(n.app_devices||[]).map(p=>`<div><span class="grow"><strong>${esc(p.label)}</strong><small>Phone with the app</small></span><button type="button" data-app-remove="${esc(p.id)}">Remove</button></div>`).join('');
+ const more=`<div><span class="grow"><strong>This device</strong><small>${esc(device)}</small></span>${!on&&can?'<button type="button" data-device="push-on">Turn on</button>':''}</div>`+phones;
  const m=$('#notify-more');if(m.dataset.html!==more){m.innerHTML=more;m.dataset.html=more}}
 $('#settings-notify').addEventListener('click',async e=>{const sw=e.target.closest('[data-notify-kind]');
  if(sw){const on=sw.getAttribute('aria-checked')!=='true';sw.disabled=true;
   try{state.notify=await notifyPost('notify_set',{kind:sw.dataset.notifyKind,channel:sw.dataset.notifyChannel,on});renderNotify()}catch(err){errCaught(err);toast(err.message,true)}finally{sw.disabled=false}return}
+ const rm=e.target.closest('[data-app-remove]');if(rm){rm.disabled=true;
+  try{await notifyPost('app_push_unregister',{id:rm.dataset.appRemove});state.notify.app_devices=(state.notify.app_devices||[]).filter(p=>p.id!==rm.dataset.appRemove);state.notify.push_devices=Math.max(0,(state.notify.push_devices||1)-1);toast('Removed');renderNotify()}catch(err){errCaught(err);toast(err.message,true)}finally{rm.disabled=false}return}
  const d=e.target.closest('[data-device]');if(d){d.disabled=true;try{await deviceRun(d.dataset.device)}finally{d.disabled=false;renderNotify()}return}
  const pv=e.target.closest('[data-notify-preview]');if(pv){const out=$('#notify-preview');if(!out.hidden){out.hidden=true;renderNotify();return}pv.disabled=true;
   try{const r=await notifyPost('notify_preview');out.textContent=r.empty?'Nothing for a digest right now.':r.text;out.hidden=false;renderNotify()}catch(err){errCaught(err);toast(err.message,true)}finally{pv.disabled=false}}});
