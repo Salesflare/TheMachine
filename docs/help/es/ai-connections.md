@@ -69,7 +69,9 @@ Mientras Mensajes está activado, los cambios en el Graph de una IA con **Leer y
 
 ## En Ajustes
 
-Abre **Ajustes**, **IA** para ver cada IA conectada, con su último uso y cuántas llamadas hizo. Cambia ahí su acceso, su área o la duración. La siguiente llamada ya lo usa. **Desactivar ahora** cierra todas sus sesiones a la vez. **Actividad** muestra cada llamada, también las rechazadas. **Quitar** la elimina.
+Abre **Ajustes**, **IA** para ver cada IA conectada una sola vez, con su acceso, su área, su fecha de fin y su último uso. **Mensajes** se activa y desactiva ahí mismo. Pulsa **Cambiar** para cambiar su acceso, su área o la duración. La siguiente llamada ya lo usa. **Actividad** muestra cada llamada, también las rechazadas. **Desactivar ahora** la pausa: se cierran todas sus sesiones y su historial se queda. **Quitar** la elimina con su historial.
+
+Si vuelves a iniciar sesión en la misma IA, la nueva aprobación reemplaza a la anterior.
 
 Una IA que no puede iniciar sesión sola puede usar una clave. En **Añadir una clave**, ponle nombre, elige el acceso y la duración y pulsa **Crear clave**. Copia la clave enseguida: solo se muestra una vez. La IA la envía como `Authorization: Bearer <key>`.
 

@@ -98,6 +98,20 @@ filtered to it (`/api/activity?kind=ai&actor=<id>`).
 
 Settings, AIs lists the connections with their activity, and **Add a key** for an AI that needs one.
 
+Through the official app there is one connection per app. The account registers anew for each sign-in (one Machine
+client per AI registration), so the owner's Connect for Claude or ChatGPT (`ai_access.app_key`: every return address
+of the registration is the account's callback for that app) folds any earlier connection of the same app into the one
+just approved (`ai_access.fold`): its tokens and codes go, so its sign-ins end; its activity and Graph changes move over,
+Undo included; the connection and its registration go, after what it had is kept in `ai_folded`. The approved one keeps
+exactly the access, area, expiry and Messages the owner picked: a fold never widens or narrows it. Connections from
+before this fold once at start (`fold_duplicates`, from `ensure`): per app the one that still works and was approved
+last stays as it is. Direct and unverified AIs (`other`, the private address) never fold: two of them can be two
+different things with one name.
+
+Each shows as one row: its name, one line (access, area, end date, last use), the Messages switch and **Change**,
+which opens access, area, Extend, Activity, **Turn off now** (a pause: Off, its sign-ins end, its history stays) and
+**Remove** (it, its sign-ins and its history go).
+
 **Work Fleet data.** Only what the owner already sees: their own to-dos (a Fleet request they took is one), and the team
 brief their Fleet tab shows. Teammates' Team Graph records and threads never go to an outside AI, the same rule as
 [GBrain](gbrain.md)'s sync.

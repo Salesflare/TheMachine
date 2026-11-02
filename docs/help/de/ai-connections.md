@@ -69,7 +69,9 @@ Solange Nachrichten an ist, warten die Graph-Änderungen einer KI mit **Lesen un
 
 ## In den Einstellungen
 
-Öffne **Einstellungen**, **KIs**, um jede verbundene KI zu sehen, mit letzter Nutzung und Anzahl der Aufrufe. Ändere dort ihren Zugriff, ihren Bereich oder die Dauer. Der nächste Aufruf nutzt es. **Jetzt ausschalten** beendet alle ihre Anmeldungen auf einmal. **Aktivität** zeigt jeden Aufruf, auch abgelehnte. **Entfernen** nimmt sie weg.
+Öffne **Einstellungen**, **KIs**, um jede verbundene KI einmal zu sehen, mit Zugriff, Bereich, Enddatum und letzter Nutzung. **Nachrichten** schaltest du direkt dort ein und aus. Tippe auf **Ändern**, um ihren Zugriff, ihren Bereich oder die Dauer zu ändern. Der nächste Aufruf nutzt es. **Aktivität** zeigt jeden Aufruf, auch abgelehnte. **Jetzt ausschalten** pausiert sie: Alle Anmeldungen enden, ihr Verlauf bleibt. **Entfernen** nimmt sie samt Verlauf weg.
+
+Meldest du dich bei derselben KI erneut an, ersetzt die neue Freigabe die frühere.
 
 Eine KI, die sich nicht selbst anmelden kann, kann einen Schlüssel nutzen. Gib ihm unter **Schlüssel hinzufügen** einen Namen, wähle Zugriff und Dauer und drücke **Schlüssel erstellen**. Kopiere den Schlüssel sofort: Er wird nur einmal gezeigt. Die KI sendet ihn als `Authorization: Bearer <key>`.
 
