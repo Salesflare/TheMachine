@@ -386,13 +386,16 @@ const plainDetails=t=>String(t||'').replace(/(?:~|\/home|\/tmp|\/var|\/Users|mem
 // line by line while it works.
 const stepItems=list=>(list||[]).slice(-1).map(x=>`<li title="${esc(x.title)}">${esc(x.title)}</li>`).join('');
 // Why a queued run waits (s.preparation_hold from the dispatcher: why, until): said on its to-do instead of "I'll start
-// shortly." for minutes. No hold: it starts within seconds.
+// shortly." for minutes. No hold: it starts within seconds. ai: its start waits for the Gateway to come back (a reboot,
+// a restart), shown instead of a live "Preparing…" timer; it carries on by itself (assistant.py PREPARATION_WAITING).
 function holdNote(h){if(!h)return '';const when=pauseWhen(h.until);
+ if(h.why==='ai')return t('Waiting for the AI to come back. Then I’ll carry on.');
  if(h.why==='limit')return when?t('Waiting for the usage limit to reset. Starts around {}.',when):t('Waiting for the usage limit to reset.');
  if(h.why==='budget')return when?t('Saving usage for now. Starts around {}.',when):t('Saving usage for now. Starts when there’s room.');
  if(h.why==='retry')return when?t('Trying again around {}.',when):'';
  return {after:t('Starts after the current one.'),busy:t('Starts when one of the running to-dos finishes.'),others:t('Starts after the other to-dos.'),paused:t('Follow-ups are paused.')}[h.why]||''}
 function preparationNote(s,ask=''){
+if(s.preparation_status==='starting'&&s.preparation_error==='openclaw_unavailable')return `<p class="note">${esc(holdNote({why:'ai'}))}</p>`;
 if(s.preparation_status==='queued')return `<p class="note">${esc(holdNote(s.preparation_hold)||(s.preparation_retried?'That attempt didn’t finish, so I’m trying once more…':s.preparation_signed_in?'Signed in. I’ll start shortly.':'I’ll start shortly.'))}</p>`;
 // A blocker that asks the owner already leads as the Needs you line: not said twice.
 if(s.preparation_status==='blocked')return `${ask?(s.preparation_browser?`<p class="note">${browserLink(s.id,s.preparation_browser)}</p>`:''):`<p class="note">${format(s.preparation_reason||'I couldn’t finish this. You can try again or change the request.')} ${browserLink(s.id,s.preparation_browser)}</p>`}${s.preparation_details?`<details class="tech" data-tech="${s.id}" ${openTech.has(s.id)?'open':''}><summary>${ask?'Technical details':'Details'}</summary><pre>${linkText(ask?plainDetails(s.preparation_details):s.preparation_details)}</pre></details>`:''}`;

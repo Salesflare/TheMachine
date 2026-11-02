@@ -322,6 +322,63 @@ class Preparation(unittest.TestCase):
         self.app.preparation_step(lambda req:(calls.append(req) or {'status':'admitted'}))
         self.assertEqual(calls[0]['job_id'],first)
 
+    def test_a_start_while_the_gateway_is_down_waits_for_it_and_carries_on_by_itself(self):
+        # 2026-11-02: Ask for changes right after a reboot, Gateway down. The to-do showed a live "Preparing…" timer
+        # with an old step and would have been blocked as "taking too long" after 35 minutes of nothing running.
+        self.accept();first=self.job()['job_id']
+        offline=lambda r:{'status':'unavailable','reason':'offline'}
+        self.app.preparation_step(offline)
+        job=self.job()
+        self.assertEqual((job['status'],job['error'],job['job_id'],job['auto_retries']),('starting','openclaw_unavailable',first,0))
+        self.assertIsNotNone(job['retry_at'])  # tried again in a minute, not every tick
+        calls=[];self.app.preparation_step(lambda r:calls.append(r) or offline(r))
+        self.assertEqual(calls,[])
+        with self.store.connect() as db:
+            view=dict(db.execute('SELECT * FROM suggestions WHERE id=?',(self.sid,)).fetchone());self.store.card_views(db,[view])
+        self.assertEqual((view['preparation_status'],view['preparation_error']),('starting','openclaw_unavailable'))  # the dashboard's waiting note
+        self.assertIn(a.PREPARATION_WAITING,a.card(view))
+        # An hour later, still down: no deadline while nothing started, retry not used up
+        with self.store.connect() as db:db.execute("UPDATE preparations SET started_at='2000-01-01T00:00:00+00:00',retry_at=NULL")
+        self.app.preparation_step(offline)
+        self.assertEqual((self.job()['status'],self.job()['error']),('starting','openclaw_unavailable'))
+        # The Gateway is back: the same run starts without the owner doing anything, with its full time from now
+        with self.store.connect() as db:db.execute('UPDATE preparations SET retry_at=NULL')
+        calls=[];self.app.preparation_step(lambda r:calls.append(r) or {'status':'admitted'})
+        self.assertEqual([(c['action'],c['job_id']) for c in calls],[('start',first)])
+        job=self.job()
+        self.assertEqual((job['status'],job['error'],job['auto_retries']),('running',None,0))
+        self.assertGreater(job['started_at'],'2026-01-01')
+        self.app.preparation_step(lambda r:{'status':'pending'})
+        self.assertEqual(self.job()['status'],'running')  # not past a deadline counted from before the outage
+
+    def test_a_start_that_fails_otherwise_keeps_its_deadline(self):
+        # Unavailable without offline (a timeout, a refused prompt): not proof the Gateway is down, so the deadline holds
+        self.accept()
+        self.app.preparation_step(lambda r:{'status':'unavailable'})
+        with self.store.connect() as db:db.execute("UPDATE preparations SET started_at='2000-01-01T00:00:00+00:00',retry_at=NULL")
+        self.app.preparation_step(lambda r:{'status':'unavailable'})
+        self.assertEqual((self.job()['status'],self.job()['error']),('blocked','completion_unconfirmed'))
+
+    def test_a_start_stuck_before_the_gateway_is_swept_at_the_deadline(self):
+        # The step fails before it asks the Gateway (an error building the prompt): never 'starting' for good
+        self.accept()
+        with patch.object(a.App,'preparation_run_step',side_effect=RuntimeError('boom')):self.app.preparation_step(lambda r:{'status':'admitted'})
+        self.assertEqual(self.job()['status'],'starting')
+        with self.store.connect() as db:db.execute("UPDATE preparations SET started_at='2000-01-01T00:00:00+00:00',error='ai_run_interrupted'")
+        calls=[];self.app.preparation_step(lambda r:calls.append(r) or {'status':'unavailable'})
+        job=self.job()
+        self.assertEqual((job['status'],job['error'],calls),('blocked','completion_unconfirmed',[]))  # swept before any start
+        self.assertIn('try once more',job['reason'])
+        self.app.preparation_step(lambda r:calls.append(r) or {'status':'unavailable'})
+        self.assertEqual([c['action'] for c in calls],['stop'])  # its run is stopped and confirmed ended before the one retry
+        # One waiting for the Gateway is left to wait
+        self.store.decide(self.sid,'other','Shorter','again','telegram')
+        with self.store.connect() as db:db.execute("UPDATE preparation_runs SET finished_at=?",(a.now(),))
+        self.app.preparation_step(lambda r:{'status':'unavailable','reason':'offline'})
+        with self.store.connect() as db:db.execute("UPDATE preparations SET started_at='2000-01-01T00:00:00+00:00'")
+        self.app.preparation_step(lambda r:{'status':'unavailable','reason':'offline'})
+        self.assertEqual((self.job()['status'],self.job()['error']),('starting','openclaw_unavailable'))
+
     def test_new_feedback_cancels_old_result_and_only_current_result_notifies(self):
         self.accept();old=self.job()['job_id'];self.app.preparation_step(lambda req:{'status':'admitted'})
         self.store.decide(self.sid,'other','Use a shorter version','feedback','telegram')
