@@ -3149,43 +3149,7 @@ const putOnce=(el,key,nodes)=>{if(el.dataset.shown!==key){el.replaceChildren(...
 const putIfChanged=(el,nodes)=>{const w=make('div',{},nodes);if(el.innerHTML!==w.innerHTML)el.replaceChildren(...w.childNodes)};
 const date=v=>v?fmtDHM(v,{month:'short',day:'numeric',year:'numeric'}):t('Not yet');
 /*@include dashboard/shell-place.js*/
-// The AI sign-in's own limits (ChatGPT: 5 hours and weekly), as OpenClaw reports them; reset times in this browser's time zone.
-// The model in Settings: which one, the plan's windows with when each starts over, a reached limit, and the
-// usage limit resets (ChatGPT). Readings are cached on the server, never a model call by themselves.
-const untilText=t=>{let s=Math.max(60,t-Date.now()/1000|0),d=s/86400|0,h=s%86400/3600|0,m=s%3600/60|0;return d?`${d}d${h?` ${h}h`:''}`:h?`${h}h${m?` ${m}m`:''}`:`${m}m`};
-const clockAt=t=>{const r=new Date(t*1000),c=fmtHM(r);return t-Date.now()/1000>86400?`${r.toLocaleDateString(DL,{weekday:'short'})} ${c}`:c};
-const windowLabel=l=>['Week','168h','7d'].includes(l)?t('Weekly limit'):['Day','24h'].includes(l)?t('Daily limit'):/^\d+h$/.test(l)?t('{}-hour limit',parseInt(l)):l;
-function resetAction(m){if(!m)return '';if(m.can_reset)return `<button type="button" class="ghost" data-model-reset>Use a reset</button>`;
- const href=safeURL(m.usage_page);  // only a web address, never javascript:
- return href?`<a class="head-link" href="${esc(href)}" target="_blank" rel="noopener">${m.resets?'Open ChatGPT':'See resets in ChatGPT'}</a>`:''}
-// The banner for a usage limit reached (state.model_pause: window '5h', 'week' or 'limit', until, name); gone when it is null.
-// `fallback`: a working fallback model answers meanwhile (assistant.py fallback_covers), so nothing waits: one short line.
-const pauseWhen=until=>{const r=+until>Date.now()/1000?new Date(until*1000):null;return r?(r.toDateString()===new Date().toDateString()?fmtHM(r):r.toLocaleDateString(DL,{weekday:'short'})+' '+fmtHM(r)):''};
-function limitBanner(p){if(!p)return '';if(p.fallback)return `<span>${esc(t('{} limit reached, using your fallback.',p.name||'AI'))}</span>`;const when=pauseWhen(p.until),
- what={'5h':'{} 5-hour limit reached.',week:'{} weekly limit reached.'}[p.window]||'{} usage limit reached.';
- return `<span><strong>${esc(t(what,p.name||'AI'))}</strong>${when?' '+esc(t('Resets {}.',/^\d/.test(when)?t('at {}',when):when)):''} ${esc(t('Nothing is lost: The Machine picks up where it left off.'))}</span>`}
-// Reviews of new signals waiting for the budget (state.review_pause: window '5h' or 'week', until, name), with Review now
-function reviewBanner(p){if(!p)return '';const when=pauseWhen(p.until),name=p.name||'AI',week=p.window==='week';
- const line=when?t(week?'Reviews wait until {} to save your {} week.':'Reviews wait until {} to save your {} 5-hour limit.',when,name):t(week?'Reviews wait to save your {} week.':'Reviews wait to save your {} 5-hour limit.',name);
- return `<span>${esc(line)}</span><button type="button" class="head-link" data-review-now>${esc(t('Review now'))}</button>`}
-// A bug the owner reported, fixed and running here now: the control plane says so once this Machine runs the fix (its
-// cloud/support_fixes.py; hosted through /_machine/fixed with the owner's sign-in, self-hosted through the Network,
-// state.fixed, which the Fleet's hourly look keeps). One quiet line each, until Got it, which closes it on every Machine
-// of theirs. Hosted: looked at every 15 minutes.
-let fixedList=[],fixedAt=0,fixedGone=new Set();
-async function fixedLoad(){if(!state.manage_url){fixedList=(Array.isArray(state.fixed)?state.fixed:[]).filter(f=>f&&f.id&&!fixedGone.has(f.id));renderFixed();return}
- if(Date.now()-fixedAt<9e5)return;fixedAt=Date.now();
- try{const r=await fetch('/_machine/fixed',{credentials:'same-origin',redirect:'manual'});if(!r.ok)return;fixedList=((await r.json()).fixed||[]).filter(f=>!fixedGone.has(f.id))}catch{return}renderFixed()}
-function renderFixed(){const b=$('#fixed-notice');if(!b)return;const html=fixedList.map(f=>`<div class="notice-card fixed-notice"><span>${esc(f.text)}</span><button type="button" class="head-link" data-fixed="${esc(f.id)}">${esc(t('Got it'))}</button></div>`).join('');
- if(b.innerHTML!==html)b.innerHTML=html;b.hidden=!html||!!state?.greeting}  // a new owner's first views stay quiet (Store.greeting)
-document.addEventListener('click',async e=>{const b=e.target.closest('[data-fixed]');if(!b)return;const id=b.dataset.fixed;fixedGone.add(id);fixedList=fixedList.filter(f=>f.id!==id);renderFixed();
- try{if(state.manage_url)await fetch('/_machine/fixed',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',redirect:'manual',body:JSON.stringify({seen:id})});
-  else await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'bug_fixed',args:{seen:id}})})}catch{}});
-function renderLimitBanner(){const b=$('#limit-banner');if(!b)return;const html=limitBanner(state.model_pause)||reviewBanner(state.review_pause);if(b.innerHTML!==html)b.innerHTML=html;b.hidden=!html}
-document.addEventListener('click',async e=>{const b=e.target.closest('[data-review-now]');if(!b)return;b.disabled=true;
- try{await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'review_now',args:{}})});
-  state.review_pause=null;renderLimitBanner();notice(t('A review starts in a moment.'))}catch(err){errCaught(err);b.disabled=false;notice(err.message,true)}});
-function limitNote(m){if(!m?.limit_reached)return '';return `<p class="limit-note"><strong>${esc(t(m.chatgpt?'ChatGPT limit reached':'Model limit reached'))}</strong>${m.limit_resets_at?esc(t(', resets at {}',clockAt(m.limit_resets_at))):''}${resetAction(m)?' · '+resetAction(m):''}</p>`}
+/*@include dashboard/shell-banners.js*/
 /*@include dashboard/settings-models.js*/
 /*@include dashboard/todos-cards.js*/
 /*@include dashboard/todos-repeat.js*/
@@ -3371,44 +3335,7 @@ const needsYouAction=i=>i.url?make('a',{class:'head-link',href:i.url,...i.blank?
 function needsYouPlace(){const box=$('#needs-you');if(!box)return;const tab=[...document.querySelectorAll('main>section')].find(x=>!x.hidden)?.id||'inbox',here=tab==='settings'?'settings:'+settingsNow:tab;let n=0;
  for(const li of box.querySelectorAll('li')){const on=tab==='inbox'||li.dataset.home===tab||li.dataset.home===here;li.hidden=!on;n+=on}box.hidden=!n}
 $('#needs-you').onclick=e=>{const b=e.target.closest('[data-show]');if(!b)return;if(b.dataset.show==='skills'){showSettings('skills');return}document.querySelector(`nav button[data-tab="${b.dataset.show}"]`)?.click()};
-// Reviews while they happen (Connections, above the finished ones; the first look also on Suggestions): what each running
-// review is doing, from its own steps, and the next one. Polled every few seconds while one runs; a finished one moves to
-// the lists below.
-const REVIEW_ACTIVE=['starting','running','recovering'];
-const FIRST_LOOK_WAIT={model:'It starts once your main model can run: sign in for it or add a key.',sources:'It starts once a source has brought in its first messages.',settling:'It starts in a few minutes, once the first import settles.',mail:'It starts when your mail is in.',retry:'The last try did not finish; it tries again shortly.',due:'Starting now.'};
-const firstLookDays=(fl,run)=>{const hours=run?run.window_hours:fl?.quick&&fl.hours;return hours?Math.max(1,Math.round(hours/24)):fl?.days||7};
-function reviewLiveRows(live){const rows=[];const name=id=>{const c=(state.connectors||[]).find(c=>c.id===id);return c?(c.display_name||c.email||id):id};
-for(const r of live.runs||[]){const total=r.planned||r.claimed_count||0,done=Math.min(r.done_count||0,total||Infinity);const steps=r.steps||[],[latest,...earlier]=steps;
-const what=r.preview?t(r.auto?'First look: your last {} days':'Preview: your last {} days',firstLookDays(live.first_look,r)):'Reviewing new messages';
-rows.push(`<div class="review-live" data-run="${esc(r.run_id)}">${chip(r.status==='recovering'?'Waiting for OpenClaw':'Reviewing','amber')}<span class="grow">${esc(what)}${total?` · <b>${done} of ${total}</b> signals`:''}${(r.account_ids||[]).length?` · ${esc([...new Set(r.account_ids.map(name))].join(', '))}`:''}</span>${time(r.started_at)}
-${latest?`<ul class="steps" aria-live="polite"><li>${esc(latest.title)}</li></ul>`:'<p class="muted">Starting…</p>'}${earlier.length?`<details class="earlier-steps"><summary>Earlier steps</summary><ul class="steps">${earlier.map(x=>`<li>${esc(x.title)}</li>`).join('')}</ul></details>`:''}${r.preview?'<small>A preview: to-dos show under To-dos, and nothing is sent or done.</small>':''}</div>`)}
-if(!(live.runs||[]).length&&state.reviews_on===false){const t=turnOn(),fl=live.first_look;
- rows.push(`<div class="review-live queued">${chip('Off','orange')}<span class="grow">${esc(window.t('Reviews are off.'))}${fl?.state==='waiting'?` ${esc(window.t('A first look at your last {} days comes first.',firstLookDays(fl)))} ${esc(window.t(FIRST_LOOK_WAIT[fl.why]||''))}`:''}</span>${t.url?`<a class="head-link" href="${esc(t.url)}">${esc(t.action)}</a>`:`<code>./install.sh --activate</code>`}</div>`);return rows}
-if(!(live.runs||[]).length&&live.queue){const q=live.queue,which=q.first?'first':'next';
- rows.push(`<div class="review-live queued">${chip(q.first?'First':'Next','lavender')}<span class="grow">${q.why==='mail'?(q.first?t('First review starts when your mail is in'):t('Next review starts when your new mail is in')):q.first?t(['{} message waiting for its first review','{} messages waiting for their first review'],q.waiting.toLocaleString(DL)):t(['{} message waiting for the next review','{} messages waiting for the next review'],q.waiting.toLocaleString(DL))}</span><small>${q.why==='mail'?(q.waiting?t(['{} message so far','{} messages so far'],q.waiting.toLocaleString(DL)):'Importing your mail'):q.why==='mail_in'?'Your mail is in. Starting now':`Starts ${esc(ago(q.starts_at))}`}</small></div>`)}
-if(!(live.runs||[]).length&&live.first_look?.state==='waiting')rows.push(`<div class="review-live queued">${chip('First look','lavender')}<span class="grow">A first review of your last ${live.first_look.days} days</span><small>${esc(FIRST_LOOK_WAIT[live.first_look.why]||'')}</small></div>`);
-return rows}
-// The first look (a review of the last days, right after setup): while there are no cards yet it is the empty
-// state itself; once cards come in, a slim progress strip under the counters.
-// Also with reviews off (where the first look happens): waiting for it is not "All clear".
-function firstLookInfo(live){const run=(live.runs||[]).find(r=>r.preview||r.window_hours),fl=live.first_look;
-if(run){const total=run.planned||run.claimed_count||0;return{title:t('Taking a first look at your last {} days',firstLookDays(fl,run)),done:Math.min(run.done_count||0,total),total}}
-if((fl?.state==='waiting'&&fl.why!=='model')||fl?.state==='due')return{title:t('A first look at your last {} days starts soon',firstLookDays(fl)),wait:FIRST_LOOK_WAIT[fl.state==='due'?'due':fl.why]||''};return null}
-// the counts are whole numbers before they reach the markup, whatever the status says
-const firstLookBar=i=>{const done=Math.max(0,+i.done|0),total=Math.max(0,+i.total|0);return total?`<span class="fl-bar" role="progressbar" aria-label="Signals reviewed" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="${done}"><i style="width:${Math.round(100*done/total)}%"></i></span><span class="fl-count mono">${done} of ${total} signals</span>`:''};
-const firstLookInner=i=>`<img class="sticker" src="brand/wave.webp" alt=""><div><strong>${esc(i.title)}</strong>${firstLookBar(i)}<small>${esc(i.wait||'To-dos show up here as they come. Nothing is sent.')}</small></div>`;
-const firstLookEmpty=i=>i?`<div class="empty all-clear first-look-empty">${firstLookInner(i)}</div>`:'';
-function renderFirstLook(live){const i=firstLookInfo(live),el=$('#first-look'),empty=$('#suggestions .all-clear');
-if(empty){el.hidden=true;if(i){empty.classList.add('first-look-empty');empty.innerHTML=firstLookInner(i)}else if(empty.classList.contains('first-look-empty'))refresh();return}
-if(i){el.innerHTML=`<strong>${esc(i.title)}</strong>${firstLookBar(i)}${i.wait?`<small>${esc(i.wait)}</small>`:''}`;el.hidden=false}else el.hidden=true}
-function renderReviewLive(){const live=state.review_live||{};$('#review-live').innerHTML=reviewLiveRows(live).join('');const none=$('#analyses .no-reviews');if(none)none.hidden=!!$('#review-live').innerHTML;renderFirstLook(live)}
-let reviewWasLive=false,cardWaiting=false;
-// While a review runs, or the first look is about to start, look every 5 s; a card a running review just saved shows at once
-const firstLookPending=()=>['due','waiting'].includes(state?.review_live?.first_look?.state)&&state.review_live.first_look.why!=='model';
-setInterval(async()=>{if(document.hidden||!state||!((state.review_live?.runs||[]).length||reviewWasLive||cardWaiting||firstLookPending()))return;try{const live=await request('api/reviews/live');const running=(live.runs||[]).length;
-const before=state.review_live?.cards,fresh=live.cards&&before&&(live.cards.newest!==before.newest||live.cards.count!==before.count);
-if(fresh&&!canRefresh()){reviewWasLive=!!running;cardWaiting=true;state.review_live={...live,cards:before};renderReviewLive();return}  // typing: on the next look, also once the review ended
-if((!running&&reviewWasLive)||fresh){reviewWasLive=!!running;cardWaiting=false;state.review_live=live;refresh();return}cardWaiting=false;reviewWasLive=!!running;state.review_live=live;renderReviewLive()}catch(e){}},5000);
+/*@include dashboard/todos-review-live.js*/
 const SKELETON=$('#suggestions .skeleton')?.outerHTML||'';
 // Where a decision came from, in the page's language ("on the dashboard", not "via dashboard"). Unknown sources: "via <source>".
 const DECISION_VIA={auto_follow_up:'by automated follow-ups',dashboard:'on the dashboard',telegram:'on Telegram',assistant:'automatically',fleet:'from the Fleet','owner-chat':'in the chat',voice:'by voice',signed_in:'after a sign-in',agent:'by an agent',elsewhere:'elsewhere'};
@@ -3458,7 +3385,7 @@ const foldsBack=foldsKeep($('#suggestions'));
 if(!chatOpen())$('#suggestions').innerHTML=repeatOfferLine()+scopeNote(!anyShown&&!loading)+(anyShown?'':loading?SKELETON:scopeFilter!=='all'?'':firstLookEmpty(firstLookInfo(state.review_live||{}))||`<div class="empty all-clear"><button class="poke" type="button" aria-label="Poke the robot" title="Poke me"><img class="sleepy" src="brand/${pokeAwake?'wave':'sleepy'}.webp" alt="The Machine resting"></button><div><strong>All clear.</strong><span class="poke-line">${esc(pokeLine||clearLine())}</span></div>${pokes>=PLAY_AFTER?PLAY_BUTTON:''}</div>`)+fuSendingCards()+[[fuv.ready,'Ready for you','ready'],[fuv.needs,'Needs your decision','needs'],[fuv.preparing,'Preparing','preparing']].sort((a,b)=>(b[2]===leadIn?.[0])-(a[2]===leadIn?.[0])).filter(([items])=>items.length).map(([items,title,key])=>`<div class="section-head" id="section-${key}" data-fold="${key}" role="button" tabindex="0" aria-expanded="${!folded.has(key)}"><h2>${title}</h2><span class="count">${items.length}</span></div>${folded.has(key)?'':items.map(s=>typeof s==='string'?s:suggestionCard(s,title)).join('')}`).join('')
 // Snoozed cards are out of the way by choice: folded by default, open state kept across refreshes. Waiting on others too.
 +(waitingOn.length?`<details id="waiting-list" ${waitOpen?'open':''}><summary id="waiting-head"><span>${esc(t('Waiting on others'))}</span><span class="count">${waitingOn.length}</span></summary>${waitingOn.map(s=>suggestionCard(s,'Waiting on others')).join('')}</details>`:'')
-+(later.length?`<details id="later-list" ${laterOpen?'open':''}><summary id="later-head"><span>Coming back later</span><span class="count">${later.length}</span></summary>${laterCards(later)}</details>`:'')+promisesList(promisesOpen)+`<details id="finished-list" ${finishedOpen?'open':''}><summary id="finished-head"><span>Done / dismissed</span><span class="count">${doneTotal+lookDone.length}</span></summary>${lookDone.map(lookDoneCard).join('')}${(()=>{const l=recent.find(s=>s.id===linkedCardId);return l&&!pagers.get(doneKey())?.items.some(x=>x.id===l.id)?suggestionCard(l):''})()}${pagerSlot(doneKey(),'Nothing finished or dismissed yet.')}</details>`;if(!chatOpen())pagerMount($('#suggestions'));
++(later.length?`<details id="later-list" ${laterOpen?'open':''}><summary id="later-head"><span>Coming back later</span><span class="count">${later.length}</span></summary>${laterCards(later)}</details>`:'')+promisesList(promisesOpen)+`<details id="finished-list" ${finishedOpen?'open':''}><summary id="finished-head"><span>Done / dismissed</span><span class="count">${doneTotal+lookDone.length}</span></summary>${lookDone.map(lookDoneCard).join('')}${(()=>{const l=recent.find(s=>s.id===linkedCardId);return l&&!pagers.get(doneKey())?.items.some(x=>x.id===l.id)?suggestionCard(l):''})()}${pagerSlot(doneKey(),'Nothing finished or dismissed yet.')}</details>`;if(!chatOpen())pagerMount($('#suggestions'));firstLookFill();
 sideCounts={ready:fuv.ready.length,needs:fuv.needs.length,preparing:fuv.preparing.length,later:later.length,promises:(state.promises||[]).filter(p=>['open','card'].includes(p.state)).length};sideCards([[fuSide(fuv.ready).filter(x=>typeof x!=='string'),'Ready','ready'],[fuSide(fuv.needs).filter(x=>typeof x!=='string'),'To decide','needs'],[fuSide(fuv.preparing).filter(x=>typeof x!=='string'),'Preparing','preparing'],[waitingOn,'Waiting on others','waiting'],[later,'Later','later'],[[...lookDone,...recent],'Done','done']]);
 {const c=chatOpen();document.body.classList.toggle('chat-open',!!c);if(c)chatMount(c.id,chatView(c,[[fuSide(fuv.ready).filter(x=>typeof x!=='string'),'Ready','ready'],[fuSide(fuv.needs).filter(x=>typeof x!=='string'),'To decide','needs'],[fuSide(fuv.preparing).filter(x=>typeof x!=='string'),'Preparing','preparing'],[waitingOn,'Waiting on others','waiting'],[later,'Later','later'],[[...lookDone,...recent],'Done','done']]))}pageHead();
 for(const[id,v]of Object.entries(drafts)){const t=document.getElementById(id);if(t&&t.value!==v){t.value=v;t.classList.add('filled')}}
