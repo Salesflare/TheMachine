@@ -98,7 +98,8 @@ try{
  const ok=await shown();failRead='running';
  for(let n=0;n<3;n++){await page.waitForTimeout(1100);const m=await shown();assert.equal(m.note,'','no note mid-answer');assert.equal(m.n,ok.n,'the thread stays');assert.ok(m.live,'the answer keeps its place')}
  failRead='done';await page.reload();await page.locator('#chat-input').waitFor();
- await page.waitForFunction(()=>document.querySelector('#chat-log .chat-note'));
+ // (a "Loading…" note may show first on a slow computer)
+ await page.waitForFunction(()=>/couldn’t load/.test(document.querySelector('#chat-log .chat-note')?.textContent||''));
  assert.equal((await shown()).note,'I couldn’t load my replies just now. Trying again…');
  failRead=null;await page.waitForFunction(()=>!document.querySelector('#chat-log .chat-note')&&document.querySelectorAll('#chat-log>*').length>20,null,{timeout:8000});
  assert.deepEqual(errors,[]);

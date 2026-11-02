@@ -182,8 +182,6 @@ OTHER_WRITERS = {
     'messages': {'telegram_mirror.py'},
     'network_people': {'graph.py'},
     'network_request_nodes': {'network.py'},
-    'notify_digests': {'assistant.py'},
-    'notify_queue': {'assistant.py'},
     'org_edits': {'crm.py', 'crm_import.py'},
     'org_profiles': {'enrichment.py', 'sandbox/load.py'},
     'outbox': {'next_actions.py', 'telegram_mirror.py'},

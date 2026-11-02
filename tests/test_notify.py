@@ -500,5 +500,25 @@ class DurableQueue(Notifications):
             self.assertEqual(db.execute('SELECT title FROM notify_queue').fetchone()[0], 'New')
 
 
+class OwnTables(unittest.TestCase):
+    """notify.py writes its own tables (the digest of each day, the held pushes); assistant.py calls it."""
+    def test_digest_once_a_day_and_held_pushes_dropped(self):
+        import sqlite3
+        db = sqlite3.connect(':memory:', isolation_level=None)
+        notify.ensure(db)
+        self.assertFalse(notify.digest_sent(db, '2026-11-02'))
+        self.assertTrue(notify.digest_claim(db, '2026-11-02', 'at'))
+        db.execute('COMMIT')
+        self.assertTrue(notify.digest_sent(db, '2026-11-02'))
+        self.assertFalse(notify.digest_claim(db, '2026-11-02', 'later'))
+        db.execute('ROLLBACK')
+        notify.digest_done(db, '2026-11-02', 'sent', ['push', 'email'])
+        self.assertEqual(db.execute('SELECT status,channels,created_at FROM notify_digests').fetchall(), [('sent', '["push","email"]', 'at')])
+        notify.hold(db, 'push', 'todo', 'A', 0, clock=lambda: 0)
+        notify.hold(db, 'email', 'todo', 'A', 0, clock=lambda: 0)
+        notify.drop_pushes(db)
+        self.assertEqual(db.execute('SELECT channel FROM notify_queue').fetchall(), [('email',)])
+
+
 if __name__ == '__main__':
     unittest.main()

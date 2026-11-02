@@ -16421,7 +16421,7 @@ class App(*APP_MIXINS):
         with self.store.connect() as db:
             notify.ensure(db)
             if not in_hours(local):
-                db.execute("DELETE FROM notify_queue WHERE channel='push'")
+                notify.drop_pushes(db)
                 return None
             pushes, lines = notify.take_due(db, self.notify_open)
             handoffs = notify.take_handoffs(db)
@@ -16499,14 +16499,12 @@ class App(*APP_MIXINS):
             prefs = notify.prefs(db)['digest']
             if not any(prefs.values()):
                 return None
-            sent = db.execute('SELECT 1 FROM notify_digests WHERE day=?', (day,)).fetchone()
-        if not notify.digest_due(local, self.config.get('digest_at', '08:30'), WORK_HOURS['start'], WORK_HOURS['end'], is_work_day, bool(sent)):
+            sent = notify.digest_sent(db, day)
+        if not notify.digest_due(local, self.config.get('digest_at', '08:30'), WORK_HOURS['start'], WORK_HOURS['end'], is_work_day, sent):
             return None
         with self.store.connect() as db:
-            db.execute('BEGIN IMMEDIATE')
-            if db.execute('SELECT 1 FROM notify_digests WHERE day=?', (day,)).fetchone():
+            if not notify.digest_claim(db, day, now()):
                 return None
-            db.execute("INSERT INTO notify_digests(day,status,created_at) VALUES(?,'sending',?)", (day, now()))
         digest = self.digest(current)
         went = []
         if digest:
@@ -16531,7 +16529,7 @@ class App(*APP_MIXINS):
             if target and (mail or notify.mail)(target[0], target[1], digest['subject'], digest['text']):
                 went.append('email')
         with self.store.connect() as db:
-            db.execute('UPDATE notify_digests SET status=?,channels=? WHERE day=?', ('sent' if went else 'empty' if not digest else 'not_sent', encoded(went), day))
+            notify.digest_done(db, day, 'sent' if went else 'empty' if not digest else 'not_sent', went)
         LOG.info('digest day=%s channels=%s', day, ','.join(went) or '-')
         return went
 
