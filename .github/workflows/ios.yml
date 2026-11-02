@@ -2,17 +2,24 @@ name: iOS app build
 
 # The iOS app (mobile/, see mobile/README.md) only builds on a Mac, and macOS minutes cost 10x Linux ones. So this runs
 # only when someone starts it by hand (Actions, iOS app build, Run workflow): never on a pull request or a push.
-# It builds for the simulator without signing, to check the native code compiles. Signed builds for TestFlight are made
-# from Xcode with the team's own signing.
+# Without "upload" it builds for the simulator without signing, to check the native code compiles. With "upload" it
+# archives a signed build and sends it to TestFlight instead (one run, not two): Xcode's automatic signing through the
+# App Store Connect API key in the repo secrets ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8 and APPLE_TEAM_ID. The build
+# number is the run number, so each upload is new.
 on:
   workflow_dispatch:
+    inputs:
+      upload:
+        description: Archive a signed build and upload it to TestFlight
+        type: boolean
+        default: false
 
 permissions:
   contents: read
 
 jobs:
   ios:
-    runs-on: macos-15
+    runs-on: macos-26  # Xcode 26: App Store Connect takes only builds made with the iOS 26 SDK or later
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -21,6 +28,8 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '24.22.1'
+      - name: Xcode
+        run: xcodebuild -version
       - name: Install and sync
         working-directory: mobile
         run: |
@@ -28,9 +37,43 @@ jobs:
           npm test
           npm run cap -- sync ios
       - name: Build for the simulator
+        if: ${{ !inputs.upload }}
         working-directory: mobile/ios/App
         run: |
           set -o pipefail
           xcodebuild -project App.xcodeproj -scheme App -configuration Debug \
             -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
             CODE_SIGNING_ALLOWED=NO build | tail -n 60
+      - name: Archive and upload to TestFlight
+        if: ${{ inputs.upload && github.repository == 'Salesflare/TheMachine' }}
+        working-directory: mobile/ios/App
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          BUILD_NUMBER: ${{ github.run_number }}
+        run: |
+          set -o pipefail
+          key="$RUNNER_TEMP/asc-key.p8"
+          umask 077
+          printf '%s\n' "$ASC_KEY_P8" > "$key"
+          trap 'rm -f "$key"' EXIT
+          auth=(-allowProvisioningUpdates -authenticationKeyPath "$key" -authenticationKeyID "$ASC_KEY_ID"
+                -authenticationKeyIssuerID "$ASC_ISSUER_ID")
+          xcodebuild -project App.xcodeproj -scheme App -configuration Release -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/App.xcarchive" DEVELOPMENT_TEAM="$TEAM_ID" CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
+            "${auth[@]}" archive | tail -n 60
+          cat > "$RUNNER_TEMP/export.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>teamID</key><string>$TEAM_ID</string>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+          </dict></plist>
+          PLIST
+          xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/App.xcarchive" -exportOptionsPlist "$RUNNER_TEMP/export.plist" \
+            -exportPath "$RUNNER_TEMP/export" "${auth[@]}" | tail -n 40

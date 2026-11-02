@@ -55,7 +55,9 @@ npm run sync      # the Capacitor CLI, pinned, through npx
 **iOS**: Xcode on a Mac: open `ios/App/App.xcodeproj`, team Salesflare, and run. The Share extension
 (`ios/App/ShareExtension`) hands over through the app group `group.computer.themachine.app`.
 The workflow **iOS app build** (Actions, Run workflow) checks the native code compiles on GitHub's Mac runners; it
-never runs on its own, since macOS minutes cost 10x.
+never runs on its own, since macOS minutes cost 10x. With **upload** ticked it archives a signed build and uploads it
+to TestFlight instead, signed through the App Store Connect API key in the repo secrets (`ASC_KEY_ID`,
+`ASC_ISSUER_ID`, `ASC_KEY_P8`, `APPLE_TEAM_ID`); the build number is the run number.
 
 ## Store details
 
