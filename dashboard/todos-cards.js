@@ -1,11 +1,11 @@
 // The files the owner made the to-do with (New to-do): a chip each, opened from the Machine
 const cardFiles=s=>(s.files||[]).length?`<div class="chat-files card-files">${s.files.map(f=>`<a class="agent-file via-file" href="api/chat-file?id=${encodeURIComponent(f.id)}" target="_blank" rel="noopener"${/^image\//.test(f.type)?'':` download="${esc(f.name)}"`}>${esc(f.name)}</a>`).join('')}</div>`:'';
-function cardBody(s,section){const asked=section==='Chat'?'':askedBody(s);if(asked)return asked;let text=s.step_stopped||resultBody(s),lead='';
+function cardBody(s,section){const asked=section==='Chat'?'':askedBody(s);if(asked)return asked;const named=resultLinks(s);let text=s.step_stopped||named.text,lead='';
 if(s.skill_proposal?.related)text=text.split(/\n\s*\n/).filter(p=>!p.trim().startsWith('Related to ')).join('\n\n');const m=text.match(/^\*\*([^*\n]+)\*\*\s*\n([\s\S]+)$/);if(m){lead=m[1];text=m[2].trim()}
-const html=(lead?`<p class="lead-line" translate="no">${esc(lead)}</p>`:'')+cardLinks(text.split(/\n\s*\n/).map(p=>p.trim()).filter(Boolean).map(p=>`<p>${format(p).replace(/\n/g,'<br>')}</p>`).join(''),s);
+const html=named.html((lead?`<p class="lead-line" translate="no">${esc(lead)}</p>`:'')+cardLinks(text.split(/\n\s*\n/).map(p=>p.trim()).filter(Boolean).map(p=>`<p>${format(p).replace(/\n/g,'<br>')}</p>`).join(''),s));
 const proposal=skillProposal(s)+proposedSkillBox(s);
 // Short by default: the status line says where it stands; the rest folds behind Show more.
-const lines=2,per=innerWidth<600?38:72,rows=text.split('\n').reduce((n,l)=>n+(l.trim()?Math.ceil(l.length/per):.6),0);
+const lines=2,per=innerWidth<600?38:72,rows=named.plain(text).split('\n').reduce((n,l)=>n+(l.trim()?Math.ceil(l.length/per):.6),0);
 if(closed(s)||rows<=lines+.5)return `<div class="body" translate="no">${html}</div>${proposal}`;const open=expandedBodies.has(s.id);
 return `<div class="body${open?'':' clamp'}" style="--lines:${lines}" translate="no">${html}</div><button type="button" class="more" data-more="${s.id}" aria-expanded="${open}">${open?'Show less':'Show more'}</button>${proposal}`}
 const snoozedUntil=v=>new Date(v).toLocaleDateString(DL,{weekday:'short',day:'numeric',month:'short'})+' at '+fmtHM(v);
@@ -113,7 +113,15 @@ const resultLink=/\[[^\]]*\]\((?:\/[^\s<>"\)]*\/workspace\/)?memory\/assistant\/
 // Result links become the Read result button; drop the lines they leave empty and the gaps after them (same rule as Telegram).
 // A sentence the link ended ("The draft is at <path>.") points at nothing without it, so it goes too (strip_result_links).
 const danglingPointer=/(^|[.!?]\s+)[^.!?]*\b(?:at|in|to|under|into|on|see|here)\s*[.:]?\s*$/i;
-const resultBody=s=>s.body.split('\n').flatMap(line=>{let kept=line.replace(resultLink,'').replace(/  /g,' ').trimEnd();if(kept!==line.trimEnd())kept=kept.replace(danglingPointer,'$1').trimEnd();return kept!==line.trimEnd()&&(/^[\s·•|,;:()\-–—]*$/.test(kept)||/^\s*[-*•]?\s*[^\s:]+(?: [^\s:]+){0,3}:$/.test(kept))?[]:[kept]}).join('\n').replace(/\n{3,}/g,'\n\n').trim();
+// A named link to a result ("Your [plan](memory/assistant/x.md) is ready") keeps its words: link(words,path) says how
+// they show (the card: a link that opens that file), plain words otherwise. A bare path has no words, so it goes.
+const resultNamed=/\[([^\]\n]*\S[^\]\n]*)\]\((?:\/[^\s<>"\)]*\/workspace\/)?(memory\/assistant\/[^\s\)]+)\)/g;
+const resultBody=(s,link)=>s.body.split('\n').flatMap(line=>{const named=line.replace(resultNamed,(m,words,path)=>link?link(words.trim(),path.replace(/[.,;\]]+$/,'')):words.trim());
+ let kept=named.replace(resultLink,'').replace(/  /g,' ').trimEnd();if(kept!==named.trimEnd())kept=kept.replace(danglingPointer,'$1').trimEnd();return kept!==named.trimEnd()&&(/^[\s·•|,;:()\-–—]*$/.test(kept)||/^\s*[-*•]?\s*[^\s:]+(?: [^\s:]+){0,3}:$/.test(kept))?[]:[kept]}).join('\n').replace(/\n{3,}/g,'\n\n').trim();
+// On the card a named result link opens that file like Read result does; one the task doesn't serve stays plain words.
+const resultLinks=s=>{const found=[];return {text:resultBody(s,(words,path)=>{found.push({words,path});return ''+(found.length-1)+''}),
+ html:h=>h.replace(/(\d+)/g,(m,i)=>{const f=found[i];return (s.result_files||[]).some(r=>r.path===f.path)?`<button type="button" class="link result-link" data-id="${esc(s.id)}" data-result="read" data-file="${esc(f.path)}" data-file-name="${esc(f.words)}">${esc(f.words)}</button>`:esc(f.words)}),
+ plain:t=>t.replace(/(\d+)/g,(m,i)=>found[i].words)}};
 const needsDecision=s=>s.status==='pending'||(!closed(s)&&s.status!=='snoozed'&&s.preparation_status==='blocked');
 // Where an open to-do sits: Ready, Needs your decision or Preparing. One that starts preparing (Do it, Ask for changes)
 // stays where it was until the run is done, so it doesn't jump to another section and back while it works.
