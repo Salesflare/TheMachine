@@ -17279,7 +17279,7 @@ class App(*APP_MIXINS):
                 follow_ups.settle(db,now(),self.follow_up_mine())  # a reply ends the round; the owner's own send counts as this one
                 db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=?',(job['suggestion_id'],))
                 return 'held'
-            if recheck:db.execute('DELETE FROM follow_up_holds WHERE job_id=?',(job['id'],))
+            if recheck:follow_ups.unhold(db,job['id'])
             # Commit admission before the one write. Later cancellation cannot recall
             # an admitted email, and restart/repeated clicks only reconcile it.
             if action['kind'] in ('whatsapp', 'intercom'):
@@ -17717,8 +17717,7 @@ class App(*APP_MIXINS):
                 except (SourceError, OSError, ValueError, KeyError) as error:
                     LOG.info('follow-up thread not read event=%s why=%s', event_id, str(error)[:80])
             with self.store.connect() as db:
-                db.execute('INSERT OR REPLACE INTO follow_up_threads(event_id,sends,at) VALUES(?,?,?)',
-                           (event_id, None if sends is None else json.dumps(sends), now()))
+                follow_ups.remember_thread(db, event_id, sends, now())
 
     def follow_up_thread(self, account, thread_id):
         """An email thread read now from its source, never from a cache: Gmail's thread or Outlook's conversation, who sent
@@ -17867,9 +17866,7 @@ class App(*APP_MIXINS):
         if saved.get('duplicate') or saved.get('preview'):
             return None
         batch = grouped and db.execute("SELECT 1 FROM follow_up_cards WHERE board_id=? AND grouped=1 AND state='open'", (p['board_id'],)).fetchone()
-        db.execute('INSERT OR IGNORE INTO follow_up_cards(suggestion_id,project_id,board_id,grouped,n,of_max,channel,after_event,after_at,state,created_at) '
-                   "VALUES(?,?,?,?,?,?,?,?,?,'open',?)", (saved['id'], p['id'], p['board_id'], int(grouped), item['n'], settings['max'], item['channel'],
-                                                          item['after'], item['after_at'], now()))
+        follow_ups.add_card(db, saved['id'], p, grouped, item, settings['max'], now())
         follow_ups.remember(db, saved['id'], follow_ups.basis(db, p['id']), now())  # what the draft is written against: checked again before it goes
         if batch:
             db.execute("UPDATE deliveries SET status='grouped',updated_at=? WHERE suggestion_id=? AND status='queued'", (now(), saved['id']))
@@ -17997,7 +17994,7 @@ class App(*APP_MIXINS):
                 LOG.info('follow-up kept for the owner why=%s', str(error)[:80])
                 continue
             with self.store.connect() as db:
-                db.execute('UPDATE follow_up_cards SET auto=1 WHERE suggestion_id=?', (sid,))
+                follow_ups.sent_alone(db, sid)
             sent.append((sid, result.get('status')))
         return sent
 
