@@ -4251,7 +4251,6 @@
  "The browser, live": "El navegador, en vivo",
  "The changes are not available.": "Los cambios no están disponibles.",
  "The chart starts after a few more days.": "El gráfico empieza dentro de unos días.",
- "The check is right {}% of the time it flags one, and finds {}% of them.": "Cuando la revisión marca uno, acierta el {} % de las veces, y encuentra el {} % de ellos.",
  "The cloud routes requests for the official app but stores nothing. Your private address is encrypted all the way to this Machine.": "La nube dirige las solicitudes de la app oficial, pero no guarda nada. Tu dirección privada va cifrada hasta esta Machine.",
  "The code refreshes by itself.": "El código se renueva solo.",
  "The complete diff for this proposal is not available": "El diff completo de esta propuesta no está disponible",

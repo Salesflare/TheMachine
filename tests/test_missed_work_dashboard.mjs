@@ -44,13 +44,12 @@ try{
   assert.match(await pane.locator('h3.q-h').last().textContent(),/Missed to-dos/);
   const tile=pane.locator('.mw-tiles .q-tile');
   assert.match(await tile.textContent(),/Likely missed\s*3%/);
-  assert.match(await tile.textContent(),/Of 2894 messages with no to-do/);
+  assert.match(await tile.textContent(),/Of 2,894 messages with no to-do/);
   assert.match(await tile.textContent(),/Between 0% and 13%/);
   assert.equal(await pane.locator('.mw-row').count(),2);
   assert.equal(await pane.locator('.mw-row a').first().getAttribute('href'),'https://mail.example/41');
   assert.equal(await pane.locator('.mw-row').nth(1).locator('a').count(),0);  // no link when the source has none
   assert.equal(await pane.locator('[data-mw-id="42"][data-mw-label="real"]').getAttribute('aria-pressed'),'true');
-  assert.match(await pane.locator('.mw-acc').textContent(),/right 100% of the time/);
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no horizontal scroll at '+width);
   if(scheme==='light'){
    await pane.locator('[data-mw-id="41"][data-mw-label="not"]').click();
