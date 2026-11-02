@@ -660,9 +660,15 @@ Voice and style learn only from what the owner wrote themselves (`authorship.py`
 Reviews fold a note into a fact, rule or voice as it comes. The learning loop (`learning_loop.py`) looks at what piles up
 between them: the owner's own draft edits, dismissed and snoozed to-dos, and corrections in a to-do's chat.
 
-- At most every 12 hours, with at least three new signals, one small background turn (kind `tune`, one page of at most
-  30 signals plus the current voices, rules and facts) proposes at most three changes: a voice block reworded (keeping
-  most of it), or a rule or fact added or replaced. It waits for the usage budget like every background turn.
+- At most every 12 hours, with at least three signals waiting, one small background turn (kind `tune`, one page with
+  the oldest 30 waiting signals plus the current voices, rules and facts) proposes at most three changes: a voice block
+  reworded (keeping most of it), or a rule or fact added or replaced. It waits for the usage budget like every
+  background turn. While more than one batch waits, the next pass can start after an hour.
+- No signal is lost. Each one (`learning_signals`, keyed by its source row) stays pending until a pass that read it has
+  its changes applied, in the same transaction; a pass that finished but wasn't applied before a restart is applied
+  first. A pass that fails leaves its batch for a retry: whole once more, then its older half each time. A signal is
+  given up (kept as `skipped`) after six failed passes, so it never blocks the rest. Machines from before this start
+  from their last pass.
 - Each change is applied and kept in `learning_changes` with what it replaced and why. **Learning, Changes** lists them
   with **Undo**.
 - A voice the owner wrote is never changed by the loop, and an undo is refused when the owner changed that voice or fact

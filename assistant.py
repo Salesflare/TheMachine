@@ -7504,18 +7504,26 @@ class Store:
         return run_id
 
     def tune_due(self, current=None):
-        """About twice a day, with a few new signals (edits, dismissals, snoozes, chat corrections): one small turn
-        brings voices, rules and facts up to date (learning_loop.py). It waits for the usage budget like every
-        background turn."""
+        """About twice a day, with a few signals waiting (edits, dismissals, snoozes, chat corrections): one small turn
+        reads the next batch and brings voices, rules and facts up to date (learning_loop.py). It waits for the usage
+        budget like every background turn. Each signal stays pending until a pass's changes are applied."""
         current = current or dt.datetime.fromisoformat(now())
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
-            if db.execute("SELECT 1 FROM profile_runs WHERE status IN ('starting','running')").fetchone() or not learning_loop.due(db, current):
+            for finished in learning_loop.unapplied(db):  # stopped between a pass's end and applying it
+                LOG.info('learning pass recovered changes=%s', learning_loop.apply(db, finished, self.tune_voice))
+            if db.execute("SELECT 1 FROM profile_runs WHERE status IN ('starting','running')").fetchone():
+                return None
+            skipped = learning_loop.settle(db)  # a failed pass's signals wait for a retry, given up after MAX_TRIES
+            if skipped:
+                LOG.warning('learning pass gave up signals=%s', skipped)
+            if not learning_loop.due(db, current):
                 return None
             evidence = learning_loop.evidence(db, self.voices(db), current)
             run_id, started = uuid.uuid4().hex, now()
             db.execute("INSERT INTO profile_runs(run_id,status,started_at,updated_at,evidence,kind,auto) VALUES(?,'starting',?,?,?,'tune',1)",
                        (run_id, started, started, json.dumps(evidence)))
+            learning_loop.claim(db, run_id, evidence['keys'])
         return run_id
 
     def tune_voice(self, channel, text, current):
