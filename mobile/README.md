@@ -46,7 +46,7 @@ removes them.
 cd mobile
 npm ci
 npm test
-npx cap sync
+npm run sync      # the Capacitor CLI, pinned, through npx
 ```
 
 **Android** (any OS): JDK 21 and the Android SDK (platform 36). `cd android && ./gradlew assembleDebug`. FCM needs

@@ -4,8 +4,9 @@
   "license": "AGPL-3.0-only",
   "description": "The Machine for iOS and Android: a thin native shell that opens the owner's own Machine. See mobile/README.md.",
   "scripts": {
-    "sync": "cap sync",
-    "android:debug": "cap sync android && cd android && ./gradlew assembleDebug",
+    "cap": "npx --yes @capacitor/cli@8.5.3",
+    "sync": "npm run cap -- sync",
+    "android:debug": "npm run cap -- sync android && cd android && ./gradlew assembleDebug",
     "test": "node --test tests/"
   },
   "dependencies": {
@@ -14,8 +15,5 @@
     "@capacitor/core": "8.5.3",
     "@capacitor/ios": "8.5.3",
     "@capacitor/push-notifications": "8.1.3"
-  },
-  "devDependencies": {
-    "@capacitor/cli": "8.5.3"
   }
 }

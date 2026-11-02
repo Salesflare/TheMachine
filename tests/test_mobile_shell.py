@@ -20,9 +20,15 @@ class MobileShellTest(unittest.TestCase):
 
     def test_exact_pins(self):
         pkg = json.loads((MOBILE / 'package.json').read_text())
-        for name, version in {**pkg['dependencies'], **pkg['devDependencies']}.items():
+        for name, version in {**pkg['dependencies'], **pkg.get('devDependencies', {})}.items():
             self.assertRegex(version, r'^\d+\.\d+\.\d+$', name)
         self.assertEqual(pkg['license'], 'AGPL-3.0-only')
+        self.assertRegex(pkg['scripts']['cap'], r'@capacitor/cli@\d+\.\d+\.\d+$')
+        # The lockfile holds only the app's own packages, with licenses that fit AGPL (the CLI runs through npx)
+        lock = json.loads((MOBILE / 'package-lock.json').read_text())['packages']
+        for name, entry in lock.items():
+            if name:
+                self.assertIn(entry.get('license'), {'MIT', 'ISC', 'Apache-2.0', 'BSD-2-Clause', 'BSD-3-Clause', '0BSD'}, name)
 
     def test_webview_only_opens_machines(self):
         config = json.loads((MOBILE / 'capacitor.config.json').read_text())

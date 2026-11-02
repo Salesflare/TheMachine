@@ -26,7 +26,7 @@ jobs:
         run: |
           npm ci --ignore-scripts
           npm test
-          npx cap sync ios
+          npm run cap -- sync ios
       - name: Build for the simulator
         working-directory: mobile/ios/App
         run: |
