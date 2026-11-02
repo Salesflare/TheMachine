@@ -113,8 +113,8 @@ Delete account); no data shared with third parties; no data sold.
 > Demo account: sign in with the review account below. It opens a Machine with sample mail and to-dos.
 > Account deletion: Settings, Account, Open account, Delete account.
 
-The review account is the same approach as the existing app directory reviews: a dedicated account with a demo
-Machine, credentials given only in the store consoles.
+The review account is the existing reviewer account used for the AI app directory reviews, with its reviewdemo
+Machine (sample mail and to-dos); its sign-in is given only in the store consoles.
 
 ### Policy risk
 
