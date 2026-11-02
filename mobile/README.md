@@ -111,7 +111,8 @@ Delete account); no data shared with third parties; no data sold.
 > and a Share extension that adds shared links, text and files as a to-do.
 >
 > Demo account: sign in with the review account below. It opens a Machine with sample mail and to-dos.
-> Account deletion: Settings, Account, Open account, Delete account.
+> Account deletion: for a normal account, Settings, Account, Open account, Delete account. The review account itself is
+> deleted by us after the review.
 
 The review account is the existing reviewer account used for the AI app directory reviews, with its reviewdemo
 Machine (sample mail and to-dos); its sign-in is given only in the store consoles.
