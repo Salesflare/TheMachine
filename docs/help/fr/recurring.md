@@ -13,7 +13,7 @@ Dans **Nouvelle tâche**, choisissez **Répéter** et un rythme : **Quotidienne*
 
 Ou dites-le simplement : « chaque mois faire la paie » dans Nouvelle tâche ou dans Parler crée une tâche qui se répète.
 
-Pour une tâche existante, **Répéter** sous **Plus**, ou dites « repeat this every week » dans sa discussion.
+Pour une tâche existante, **Répéter…** sous **…**, ou dites « repeat this every week » dans sa discussion.
 
 ## Comment elle se répète
 
@@ -27,7 +27,7 @@ Chacune est préparée comme toute tâche, et la préparation voit comment s'est
 
 ## La modifier ou l'arrêter
 
-Sous **Plus** : **Modifier la répétition** choisit un autre rythme ou **Arrêter de répéter**, et **Passer celle-ci** ferme celle-ci et amène la suivante à sa date. « Stop repeating » dans sa discussion fonctionne aussi. Arrêter garde la tâche ouverte ; seules les suivantes ne viennent plus.
+Appuyez sur la ligne « Répéter » de la tâche : choisissez un autre rythme, **Passer celle-ci** (elle ferme celle-ci et amène la suivante à sa date) ou **Arrêter de répéter**. « Stop repeating » dans sa discussion fonctionne aussi. Arrêter garde la tâche ouverte ; seules les suivantes ne viennent plus.
 
 ## Suggestions
 

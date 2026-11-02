@@ -8,7 +8,7 @@ order: 4
 ---
 ## Demander la relecture d’une tâche
 
-1. Sur la tâche, ouvrez **Plus** et choisissez **Demander une relecture**. C’est possible à chaque étape : avant Faire, sur un brouillon prêt, ou juste avant d’envoyer.
+1. Sur la tâche, ouvrez **…**, puis **Transférer…**, et choisissez **Demander une relecture**. C’est possible à chaque étape : avant Faire, sur un brouillon prêt, ou juste avant d’envoyer.
 2. Choisissez qui. Une tâche de travail ne va qu’à quelqu’un de votre Work Fleet, une tâche personnelle qu’à quelqu’un de votre Famille.
 3. Vérifiez ce qui part : le brouillon (ou le texte de la tâche) et ses sources. Écartez une source avec ×. Ajoutez une note si vous voulez, puis choisissez **Demander**.
 

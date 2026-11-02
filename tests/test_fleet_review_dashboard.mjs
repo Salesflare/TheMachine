@@ -47,8 +47,9 @@ try{for(const [w,h] of sizes)for(const colorScheme of schemes){reset();
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:'+server.address().port);
  const c=page.locator('#task-c1');await c.waitFor();
- // 1. More > Ask to review: the picker, with who, what goes and a note
+ // 1. … > Hand off… > Ask to review: the picker, with who, what goes and a note
  await c.locator('details.more-actions>summary').click();
+ if(await c.locator('[data-mm-open]').count()){await c.locator('[data-mm-open]').click();assert.ok(await c.locator('.mm-sub [data-review-ask]').isVisible())}
  const ask=c.locator('[data-review-ask]');assert.equal(await ask.innerText(),'Ask to review');await ask.click();
  const form=c.locator('.review-form');await form.waitFor();
  assert.match(await form.innerText(),/Your draft[\s\S]*Pricing[\s\S]*40 euro/);

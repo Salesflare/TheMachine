@@ -19,7 +19,7 @@ Circa due volte al giorno fa qualche piccola modifica in base a questo. **Appren
 ## Insegnale più in fretta
 
 - Modifica una bozza prima di inviarla. Impara da quello che hai cambiato.
-- Tocca **Fallo diversamente**, o **Chiedi modifiche** su una bozza, e di' cosa vorresti.
+- Di' cosa vorresti nella **Chat** dell'attività, o tocca **Chiedi modifiche** su una bozza.
 - Tocca **Non serve** e scegli il motivo.
 - Diglielo nella chat di un'attività: "più breve, e niente punti esclamativi". Mostra **Salvato in Come scrivi** quando l'ha recepito.
 

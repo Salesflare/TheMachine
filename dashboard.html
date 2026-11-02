@@ -2539,7 +2539,7 @@ kbd.kb,.pal-keys kbd,.keys-sheet kbd,.pal-foot kbd,.side-search kbd{display:inli
 .side-search .kb-open{flex:none;margin:0;padding:0;min-height:0;border:0;background:none;box-shadow:none;cursor:pointer;line-height:1}
 :root[data-side="collapsed"] .side-search .kb-open{display:none}
 .more-menu [data-kb-label]{display:flex;align-items:center;gap:10px}
-.more-menu [data-kb-label]::after{content:attr(data-kb-label);margin-left:auto;min-width:18px;padding:1px 5px;border:1px solid var(--c-line);border-radius:5px;color:var(--c-text-3);font:500 11px/1.4 var(--sans);text-align:center}
+.more-menu [data-kb-label]::after{content:attr(data-kb-label) / "";margin-left:auto;min-width:18px;padding:1px 5px;border:1px solid var(--c-line);border-radius:5px;color:var(--c-text-3);font:500 11px/1.4 var(--sans);text-align:center}
 @media(hover:none){.more-menu [data-kb-label]::after{display:none}}
 #keys-sheet{width:min(640px,calc(100vw - 24px))}
 .keys-sheet{columns:2 240px;column-gap:28px;margin-top:14px}.keys-sheet>div{break-inside:avoid;padding-bottom:14px}  /* no top margin: a column's first heading lines up */
@@ -2670,6 +2670,42 @@ input[type=checkbox],input[type=radio],input[type=range],progress{accent-color:v
 .card.todo.is-closed>.more{font-size:var(--fs-xs)}
 .card.todo.is-closed>.note{margin:4px 0 0;font-size:var(--fs-sm)}
 .card.todo.is-closed,.card.todo.is-closed.card{padding-top:12px;padding-bottom:12px}
+/* A to-do's buttons (todos-cards.js cardActions): one lead and a quiet … for the rest. On a computer the … opens a small
+   menu above it; on a phone a bottom sheet over a dimmed page (a tap on the page closes it), so the to-do's text is never
+   covered by a floating menu. Hand off… swaps the menu for its own sheet in place; Back returns. Not needed sits last. */
+.card .actions:not(.result-actions)>.more-actions{flex:0 0 auto;margin-left:auto}
+.card .more-actions>summary{min-width:44px;padding:7px 10px;background:var(--tile);border-color:transparent}.card .more-actions>summary:hover,.card .more-actions[open]>summary{background:var(--tile-hover)}  /* the … is filled subtle in both themes */
+.card .more-actions>summary::after{content:none}
+.card .more-actions>summary svg{width:20px;height:20px}
+.card .actions .more-menu>a.open{display:block;margin:0;padding:6px 12px;border-radius:8px;color:var(--text);font-size:.92rem;line-height:1.35;font-weight:500;text-decoration:none;white-space:nowrap}.card .actions .more-menu>a.open:hover{background:var(--tile)}
+.card .more-menu .mm-sub{display:flex;flex-direction:column;gap:1px}.card .more-menu .mm-sub[hidden]{display:none}
+.card .more-menu.mm-in>:not(.mm-sub){display:none}
+.card .more-menu .mm-head{display:flex;align-items:center;gap:4px;margin:0 0 2px;padding:0 4px 4px 0;border-bottom:1px solid var(--border);font:600 var(--fs-xs)/1.4 var(--sans);color:var(--muted)}
+.card .more-menu .mm-head>span{flex:1}.card .actions .more-menu .mm-back{flex:none;width:auto;min-width:32px;padding:2px 8px;font-size:1.15rem;line-height:1;color:var(--muted)}
+.card .more-menu>.mm-sep{width:100%;margin:3px 0;border:0;border-top:1px solid var(--border)}.card .more-menu>.mm-sep:first-child{display:none}
+@media(max-width:560px){
+  .card .actions:not(.result-actions)>.more-actions{flex:0 0 48px;min-width:48px}
+  .card .actions:not(.result-actions)>:is(button,a.open):first-child:nth-last-child(2){flex:1 1 auto}
+  .card .more-actions[open]>summary::before{content:'';position:fixed;inset:0;z-index:90;width:auto;height:auto;margin:0;border:0;border-radius:0;transform:none;background:#0009;cursor:default}
+  .card .more-menu{position:fixed;left:0;right:0;bottom:0;top:auto;z-index:91;width:auto;min-width:0;max-width:none;max-height:75vh;overflow-y:auto;box-sizing:border-box;padding:24px 10px calc(14px + env(safe-area-inset-bottom));border-width:1px 0 0;border-radius:20px 20px 0 0;box-shadow:0 -10px 40px #0006}
+  .card .more-menu::before{content:'';position:absolute;top:9px;left:50%;width:36px;height:4px;margin-left:-18px;border-radius:2px;background:var(--border-strong,var(--border))}
+  .card .actions .more-menu :is(button,a.open){min-height:48px;padding:12px 14px;font-size:1rem;box-sizing:border-box}
+  .card .more-menu .mm-head{font-size:var(--fs-sm);padding-bottom:8px;margin-bottom:4px}
+  .card .actions.two-rows:not(.result-actions)>:first-child{flex:1 1 100%}
+  .card .actions.two-rows:not(.result-actions)>:is(button,a.open):not(:first-child){flex:1 1 auto;min-width:max-content;padding:8px 10px}
+  .card .actions.two-rows:not(.result-actions)>.more-actions{flex:0 0 52px;min-width:52px}
+}
+/* Under Details, an open to-do's title, project and area (todos-cards.js cardFields): each a tap to change. */
+.card-fields{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;align-items:center;margin:2px 0 10px;font-size:var(--fs-sm)}
+.card-fields>div{display:contents}.card-fields dt{color:var(--muted)}.card-fields dd{margin:0;min-width:0}
+.card-fields .field{display:inline-flex;max-width:100%;min-height:32px;align-items:center;padding:4px 10px;border:1px solid transparent;border-radius:8px;background:var(--tile);color:var(--text);font:inherit;text-align:left;cursor:pointer;box-shadow:none}
+.card-fields .field>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.card-fields .field:hover{background:var(--tile-hover)}
+.card .actions>[hidden]{display:none!important}
+/* Chat is where the owner tells The Machine what to do instead: a clear pill at the end of the Details row. */
+.card.todo>.card-foot a.card-chat-link{padding:4px 11px 4px 9px;margin:-4px 0 -4px auto;background:var(--tile);color:var(--text);font-weight:600}.card.todo>.card-foot a.card-chat-link:hover{background:var(--tile-hover)}
+.card.todo>.card-foot a.card-chat-link.had::after{left:19px;top:3px}
+.card h3 .title-link{cursor:text}
+.project-picker .pp-open{align-self:flex-start;font-size:var(--fs-xs);color:var(--muted)}
 </style>
 <button type="button" class="update-float" id="update-float" data-update-ready hidden title="Load the new version" aria-label="Update ready, load the new version"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12a7 7 0 1 1-2.05-4.95M19 5v4h-4"/></svg><span>Update ready</span></button><div class="topbar" id="topbar"><button type="button" class="topbar-menu" id="drawer-open" aria-label="Open the menu" aria-controls="app-side" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M9.5 4.5v15"/></svg><span class="dot" id="drawer-dot" hidden></span></button><a class="topbar-title" href="#" id="topbar-title" aria-label="The Machine, to the top"><img src="brand/avatar.png" data-blink="brand/avatar-blink.png" alt="" width="22" height="22"><span>The Machine</span></a><button type="button" class="topbar-menu" id="find-open" aria-label="Search or type a command" title="Search or type a command" aria-haspopup="dialog"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/></svg></button></div><div class="drawer-scrim" id="drawer-scrim"></div>
 <aside class="app-side" id="app-side" aria-label="The Machine"><header><div class="brand"><img class="avatar refresh-tap" role="button" tabindex="0" title="Refresh" src="brand/avatar.png" data-blink="brand/avatar-blink.png" alt="" width="68" height="68"><div><h1>The Machine</h1
@@ -3504,7 +3540,7 @@ if(saved?.already){toast({done:'Already done. See the to-do.',closed:'Nothing is
 // A Change stays on the card (its "You asked" note has See in chat ›); the chat never opens by itself.
 if(['complete','reject'].includes(choice))toast(saved?.status==='completed'?'Marked done':'Marked not needed',false,id);else toast(answer?'Thanks. I’ll carry on.':({accept:'I’ll prepare it.',other:'Changes saved.',retry:'Trying again.',undo:'Reopened.',reopen:'Reopened.'})[choice]||'Saved.');
 }
-document.addEventListener('click',e=>{for(const m of document.querySelectorAll('.more-actions[open]'))if(!m.contains(e.target)||e.target.closest('.more-menu button'))m.open=false});
+document.addEventListener('click',e=>{for(const m of document.querySelectorAll('.more-actions[open]'))if(!m.contains(e.target)||e.target.closest('.more-menu button:not([data-mm-open],[data-mm-back])'))m.open=false});
 $('#suggestions').onclick=async e=>{const b=e.target.closest('button');if(!b||b.dataset.browserFocus)return;const id=b.dataset.id;
 if(b.dataset.tipDone){tipDone(b.dataset.tipDone);render();return}
 if(b.dataset.ldExpand){const k=b.dataset.ldExpand;lookExpanded.has(k)?lookExpanded.delete(k):lookExpanded.add(k);render();return}

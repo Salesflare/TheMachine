@@ -10,7 +10,8 @@ const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modul
 import {forceReplyPayload} from '../openclaw-plugin/change-prompt.ts';
 // The Send preview's header rows as 'From: …' lines.
 // A card's rarer buttons wait under More: open it first when the button isn't in the row.
-const tap=async(card,name)=>{const b=card.getByRole('button',{name,exact:true});if(!await b.isVisible())await card.locator('.more-actions>summary').click();await b.click()};
+const tap=async(card,name)=>{const b=card.getByRole('button',{name,exact:true,includeHidden:true}).first();if(await b.evaluate(x=>x.hidden)){await b.evaluate(x=>x.click());return}  // a choice kept out of sight (the palette, D, the chat click it)
+ if(!await b.isVisible())await card.locator('.more-actions>summary').click();await b.click()};
 const sendHead=page=>page.evaluate(()=>[...document.querySelectorAll('#send-head>div')].map(d=>d.children[0].textContent+': '+d.children[1].textContent).join('\n'));
 const payload=forceReplyPayload('sendMessage',{chat_id:'1000001',text:'Change'},'123','1000001');
 assert.equal(payload.reply_markup.force_reply,true);assert.equal(payload.reply_parameters.message_id,123);
@@ -136,7 +137,7 @@ await page.evaluate(()=>refresh());
 const blocked=page.locator('#task-'+ids[1]);await blocked.getByText('Log in once and tap Try again').waitFor();
 assert.equal(await blocked.locator('details.tech pre').isVisible(),false);await blocked.locator('details.tech > summary').click();
 await blocked.locator('details.tech pre').getByText('404 Not Found').waitFor();
-await blocked.getByRole('button',{name:'Try again',exact:true}).waitFor();suggestions[1].preparation_reason='Apple needs your passkey in the open tab, then tap Continue.';await page.evaluate(()=>refresh());await blocked.getByRole('button',{name:'Continue',exact:true}).waitFor();suggestions[1].preparation_reason='I couldn’t open the the CRM inbox. Log in once and tap Try again.';await page.evaluate(()=>refresh());await blocked.getByText('Log in once and tap Try again').waitFor();
+await blocked.locator('.more-menu [data-choice="retry"]',{hasText:'Try again'}).waitFor({state:'attached'});suggestions[1].preparation_reason='Apple needs your passkey in the open tab, then tap Continue.';await page.evaluate(()=>refresh());await blocked.getByRole('button',{name:'Continue',exact:true}).waitFor();suggestions[1].preparation_reason='I couldn’t open the the CRM inbox. Log in once and tap Try again.';await page.evaluate(()=>refresh());await blocked.getByText('Log in once and tap Try again').waitFor();
 await page.evaluate(()=>refresh());assert.equal(await page.locator('#task-'+ids[1]+' details.tech').getAttribute('open'),'');  // Stays open across refreshes.
 await page.locator('#task-'+ids[0]+' .chip').getByText('Overdue',{exact:true}).waitFor();await page.locator('#task-'+ids[2]+' .chip').getByText('Due tomorrow',{exact:true}).waitFor();
 await page.screenshot({path:'/tmp/261012-blocked-details-due.png',fullPage:true});
@@ -201,14 +202,14 @@ assert.equal(layout.overflow,false,`Overflow at ${width}px: `+JSON.stringify(awa
 await page.setViewportSize({width:390,height:844});
 await page.screenshot({path:'/tmp/261011-assistant-scheduled-card.png',fullPage:true});
 assert.equal(await page.locator('#suggestions textarea').count(),0);
-await tap(page.locator('#task-'+ids[0]),/^(Do it differently|Ask for changes)$/);await page.locator('#feedback-'+ids[0]).fill('Please make this shorter');await page.getByRole('button',{name:'Save changes',exact:true}).click();await page.locator('#feedback-'+ids[0]).waitFor({state:'detached'});assert.equal(posts.filter(p=>'feedback' in p).at(-1).feedback,'Please make this shorter');
+await tap(page.locator('#task-'+ids[0]),/^(Change how|Ask for changes)$/);await page.locator('#feedback-'+ids[0]).fill('Please make this shorter');await page.getByRole('button',{name:'Save changes',exact:true}).click();await page.locator('#feedback-'+ids[0]).waitFor({state:'detached'});assert.equal(posts.filter(p=>'feedback' in p).at(-1).feedback,'Please make this shorter');
 // A Change stays on the card; the chat only opens when asked
 assert.equal(await page.locator('.chat-head').count(),0);await page.locator('#task-'+ids[0]).waitFor();
 // Success notices clear after a few seconds; errors stay.
 await page.evaluate(()=>notice('Saved.'));assert.equal(await page.locator('#notice').textContent(),'Saved.');await page.waitForFunction(()=>$('#notice').textContent==='',null,{timeout:7000});
 await page.evaluate(()=>notice('Broke.',true));await page.waitForTimeout(5000);assert.equal(await page.locator('#notice').textContent(),'Broke.');await page.evaluate(()=>notice(''));
 // Ctrl+Enter in the change box saves like the Save changes button; plain Enter adds a new line.
-{const card=page.locator('#task-'+ids[0]);await tap(card,/^(Do it differently|Ask for changes)$/);const box=card.locator('#feedback-'+ids[0]);
+{const card=page.locator('#task-'+ids[0]);await tap(card,/^(Change how|Ask for changes)$/);const box=card.locator('#feedback-'+ids[0]);
 await box.fill('First line');await box.press('Enter');await box.pressSequentially('Second line');assert.equal(await box.inputValue(),'First line\nSecond line');
 const said=()=>posts.filter(p=>'feedback' in p),before=said().length;await box.press('Control+Enter');await box.waitFor({state:'detached'});assert.equal(said().length,before+1);assert.equal(said().at(-1).feedback,'First line\nSecond line');
 assert.equal(await page.locator('.chat-head').count(),0);await page.locator('#task-'+ids[0]).waitFor();}
@@ -218,7 +219,7 @@ await card.getByText('Why isn’t this needed?').waitFor();await card.getByRole(
 // Ctrl+Enter in any filled field clicks its editor's primary button: here Confirm not needed. Empty fields do nothing.
 await tap(card,'Not needed');const note=card.locator('#dismiss-'+ids[1]);await note.press('Control+Enter');assert.equal(posts.length,before);await note.fill('Handled by Sam');await note.press('Control+Enter');
 await page.waitForFunction(()=>document.querySelector('#toast').textContent.startsWith('Marked not needed'));assert.equal(posts.at(-1).choice,'reject');assert.equal(posts.at(-1).feedback,'Handled by Sam');suggestions[1].status='accepted';await page.evaluate(()=>refresh());}
-await page.locator('#task-'+ids[1]).getByRole('button',{name:'Try again',exact:true}).click();await page.locator('#task-'+ids[1]).getByText('I’ll start shortly.',{exact:true}).waitFor();assert.equal(posts.at(-1).choice,'retry');
+{const b=page.locator('#task-'+ids[1]);if(!await b.getByRole('button',{name:'Try again',exact:true}).isVisible())await b.locator('.more-actions>summary').click();await b.getByRole('button',{name:'Try again',exact:true}).click()}await page.locator('#task-'+ids[1]).getByText('I’ll start shortly.',{exact:true}).waitFor();assert.equal(posts.at(-1).choice,'retry');
 await page.locator('#task-'+ids[2]).getByRole('button',{name:'Read result',exact:true}).click();await page.getByText('Full draft with',{exact:false}).waitFor();assert.equal(await page.locator('#result-content script').count(),0);await page.locator('#result-copy').click();assert.ok((await page.evaluate(()=>window.copied)).includes('Full draft with'));await page.getByRole('button',{name:'Close result'}).click();
 suggestions[2].next_action={kind:'email',revision:'abcdef123456',from:'owner@example.com',to:['recipient@example.com'],cc:['cc@example.com'],bcc:[],subject:'Exact subject',body:'Exact email draft <script>not executable</script>',attachments:[{name:'credit <note>.pdf',sha256:'ab'.repeat(32),size:8754,type:'application/pdf'}]};
 await page.evaluate(()=>refresh());await page.locator('#task-'+ids[2]).getByRole('button',{name:'Review and send',exact:true}).click();
@@ -240,7 +241,8 @@ suggestions[2].next_actions=[{...suggestions[2].next_action,label:'Send reply',s
  {kind:'prepare',revision:'fedcba654321',label:'Investigate further',instructions:'Check the field mapping'},
  {kind:'open',revision:'111111111111',label:'Open the Zap',url:'https://example.com/zap'}];
 await page.evaluate(()=>refresh());const smartCard=page.locator('#task-'+ids[2]);await smartCard.getByRole('button',{name:'Review and send reply',exact:true}).waitFor();
-assert.ok(await smartCard.getByRole('link',{name:'Open the Zap',exact:false}).isVisible());assert.ok(await smartCard.getByText('Send reply: Gmail is connected read-only. Nothing was sent.',{exact:true}).isVisible());
+assert.equal(await smartCard.locator('.more-menu>a.open',{hasText:'Open the Zap'}).count(),1);  // one lead; the link waits under …
+assert.ok(await smartCard.getByText('Send reply: Gmail is connected read-only. Nothing was sent.',{exact:true}).isVisible());
 assert.equal(await smartCard.getByRole('button',{name:'Investigate further',exact:true}).count(),0);
 suggestions[2].next_actions=suggestions[2].next_actions.slice(1);await page.evaluate(()=>refresh());
 await smartCard.getByRole('button',{name:'Investigate further',exact:true}).click();assert.equal(posts.at(-1).revision,'fedcba654321');assert.equal(posts.at(-1).suggestion_id,ids[2]);

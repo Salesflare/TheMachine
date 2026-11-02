@@ -67,7 +67,8 @@ function chatSendLine(d,x){const st=x.st,who=d.to.length&&!d.to.some(v=>v.includ
  if(chatFailed(st))return `<p class="chat-sendstate failed" role="alert">${st.retry_ok?esc(st.error):esc(t('Didn’t go out.'))+(st.error?' '+esc(st.error):'')}</p>`;
  return ''}
 function chatParts(s){const t=document.createElement('template');t.innerHTML=suggestionCard(s,'Chat');const card=t.content.querySelector('article');
- const acts=[...(card?.querySelector(':scope>.actions')?.children||[])].flatMap(n=>n.matches('details.more-actions')?[...n.querySelector('.more-menu').children]:[n])
+ // The card's … menu, flat: Hand off…'s sheet gives its choices by their whole names (Hand to Codex, not Codex)
+ const acts=[...(card?.querySelector(':scope>.actions')?.children||[])].flatMap(n=>n.matches('details.more-actions')?[...n.querySelectorAll('.more-menu>:is(button,a),.mm-sub>:is(button,a):not([data-mm-back])')].filter(x=>x.dataset.mmOpen==null).map(x=>{if(x.dataset.full){x.textContent=x.dataset.full;delete x.dataset.full}return x}):[n]).map(n=>{n.removeAttribute('hidden');return n})  // a choice kept out of sight on the card is in the chat's menu
   .filter(n=>!['change','answer','cancel-change'].includes(n.dataset.choice)&&n.dataset.handoffCheckin==null);  // in the chat already: no Check in now
  // A snoozed card's way back is Unsnooze; a closed one's is Reopen or Undo: a text button on the status line
  const back=s.status==='snoozed'?acts.find(n=>n.dataset.choice==='accept'):closed(s)?acts.find(n=>n.dataset.fuBack)||acts.find(n=>n.dataset.choice==='reopen')||acts.find(n=>n.dataset.choice==='undo'):null;
@@ -77,7 +78,9 @@ function chatParts(s){const t=document.createElement('template');t.innerHTML=sug
  let lead=back||going?null:acts.find(n=>n.classList.contains('primary'))||(withTeammate(s)?acts.find(n=>n.dataset.choice==='complete'):null)||null;
  if(went&&!going&&!back&&!lead?.dataset.smart)lead=acts.find(n=>n.dataset.choice==='complete')||lead;
  if(lead?.dataset.smart&&chatFailed(sends.find(x=>String(x.a.revision)===lead.dataset.smart)?.st))lead.textContent='Try again';
- const rest=acts.filter(n=>n!==lead&&n!==back);
+ // On the card the title, project and area change with a tap on each; here they are in the menu too.
+ const edits=document.createElement('template');edits.innerHTML=closed(s)?'':`<button type="button" class="ghost" data-rename="${esc(s.id)}">${esc(window.t('Rename'))}</button>${s.project_node?`<button type="button" class="ghost" data-card-project="${esc(s.id)}">${esc(window.t('Change project'))}</button>`:''}${moveTargets(s).length?`<button type="button" class="ghost" data-card-area="${esc(s.id)}">${esc(window.t('Change area'))}</button>`:''}`;
+ const rest=[...acts.filter(n=>n!==lead&&n!==back),...edits.content.children];
  const decide=rest.filter(n=>['complete','snooze','reject','accept','retry'].includes(n.dataset.choice)||n.dataset.smart!=null);
  const status=card?.querySelector('.status-line:not(.ask-line):not(.done-line)')?.textContent.trim()||card?.querySelector('.card-badges .chip')?.textContent.trim()||'';
  const body=card?.querySelector('.body');body?.classList.remove('clamp');

@@ -8,7 +8,7 @@ order: 4
 ---
 ## Chiedere a qualcuno di rivedere un’attività
 
-1. Nell’attività apri **Altro** e scegli **Chiedi una revisione**. Funziona in ogni momento: prima di Fallo, su una bozza pronta o appena prima di inviare.
+1. Nell’attività apri **…**, poi **Passa…**, e scegli **Chiedi una revisione**. Funziona in ogni momento: prima di Fallo, su una bozza pronta o appena prima di inviare.
 2. Scegli chi. Un’attività di lavoro va solo a qualcuno della tua Work Fleet, una personale solo a qualcuno della tua Famiglia.
 3. Controlla cosa va: la bozza (o il testo dell’attività) e le sue fonti. Escludi una fonte con ×. Aggiungi una nota se vuoi, poi scegli **Chiedi**.
 

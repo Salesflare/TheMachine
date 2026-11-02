@@ -9,7 +9,7 @@ order: 5
 ---
 ## Transférer une tâche
 
-1. Sur la tâche, ouvrez **Plus** et choisissez **Transférer à Codex** ou **Transférer à Claude Code**. L’option apparaît quand l’outil est configuré.
+1. Sur la tâche, ouvrez **…**, puis **Transférer…**, et choisissez **Codex** ou **Claude Code**. Seuls les outils que vous avez configurés apparaissent.
 2. Vérifiez le résumé et ce qui lui est transmis, ajoutez une note si vous voulez, et appuyez sur **Transférer**. **Voir la mission complète** affiche tout le brief.
 
 La tâche indique ensuite qu’elle est en cours, puis le résultat une fois terminé, avec **Afficher les modifications**. **Modifier** lui demande des changements. **Transférer à nouveau** recommence de zéro.

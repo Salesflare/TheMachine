@@ -19,7 +19,7 @@ Ongeveer twee keer per dag maakt hij hieruit een paar kleine aanpassingen. **Ler
 ## Leer het hem sneller
 
 - Bewerk een concept voor je het verstuurt. Hij leert van wat je veranderde.
-- Tik op **Doe het anders**, of op **Wijzigingen vragen** bij een concept, en zeg wat je wilt.
+- Zeg wat je wilt in de **Chat** van de to-do, of tik op **Wijzigingen vragen** bij een concept.
 - Tik op **Niet nodig** en kies waarom.
 - Zeg het in de chat van een to-do: "korter, en geen uitroeptekens". Hij toont **Opgeslagen bij Hoe je schrijft** als hij het overnam.
 

@@ -19,7 +19,7 @@ Unas dos veces al día hace a partir de esto algunos cambios pequeños. **Aprend
 ## Enséñale más rápido
 
 - Edita un borrador antes de enviarlo. Aprende de lo que cambiaste.
-- Toca **Hazlo de otra forma**, o **Pedir cambios** en un borrador, y di lo que te gustaría.
+- Di lo que te gustaría en el **Chat** de la tarea, o toca **Pedir cambios** en un borrador.
 - Toca **No hace falta** y elige por qué.
 - Díselo en el chat de una tarea: "más corto, y sin signos de exclamación". Muestra **Guardado en Cómo escribes** cuando lo ha aprendido.
 

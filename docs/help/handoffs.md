@@ -8,7 +8,7 @@ order: 3
 ---
 ## Hand off a to-do
 
-1. On the to-do, pick **Hand off to a teammate**.
+1. On the to-do, open **…**, then **Hand off…**, and pick **A teammate**.
 2. Choose who, check what goes along (leave any part out with ×), and add a note. The text starts with the task and why it matters, from the to-do, and where it came from (its link). Nothing from a Personal account or another company's goes along.
 3. Send it. Their Machine shows it to them as a to-do.
 
@@ -22,7 +22,7 @@ If Pat's Machine can't notify them (no phone notifications, Telegram or email tu
 
 It comes back on top only when there is something to decide: Pat answered, declined or marked it done, the handoff failed, or a deadline came. A to-do due today checks in a few hours later, one due soon the work day before, an urgent one without a date the next work morning, and any other in 3 work days.
 
-Back for a check-in, it says "Still with Pat · check in?": Pat still has it, nothing came back. **Check in now** opens the chat; **Take it back** and **Hand off to someone else** sit beside it, and Mark done, Snooze and Not needed are under More.
+Back for a check-in, it says "Still with Pat · check in?": Pat still has it, nothing came back. **Check in now** opens the chat; **Take it back** and **Hand off to someone else** are under **…**, then **Hand off…**.
 
 The to-do's chat shows when it went ("Handed off to Pat's Machine · 14:02") and what came back: accepted, declined (with their note) or done. Back for a check-in with no answer yet, "No answer from Pat yet" sits under that line, with **Mark done**, **Snooze** and **Not needed** (no Do it: they have it). To nudge them or take it back, say so in the chat.
 
@@ -30,7 +30,7 @@ If the handoff didn't go out, the to-do and its chat say so, with **Try again**.
 
 ## Hand it to someone else instead
 
-While a teammate has it, the to-do says so in one line ("With Pat · waiting"), with **Take it back** and **Hand off to someone else**. **Take it back** makes it yours again: Pat's Machine is told, and their answer no longer moves it.
+While a teammate has it, the to-do says so in one line ("With Pat · waiting"), with **Take it back** and **Hand off to someone else** under **…**, then **Hand off…**. **Take it back** makes it yours again: Pat's Machine is told, and their answer no longer moves it.
 
 **Hand off to someone else** opens the handoff form, on someone who doesn't have it yet. Or say so in the to-do's chat ("this should go to Kim"). The new handoff waits on the to-do for you to read: "Still with Pat until you send it to Kim", with **Review handoff to** Kim. That opens the form with the text, on Kim.
 

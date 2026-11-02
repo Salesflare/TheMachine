@@ -7,7 +7,7 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-merg
 
 // Rename: the owner's title is kept over the generated one, on every surface. An input opens over the title in the
 // sidebar (the ⋯ on hover, a double click, a right click, a long press on a phone), the chat's header (a click, or
-// Rename in its menu) and the card (Rename in More; a click on the title on a computer). Enter saves, Esc cancels,
+// Rename in its menu) and the card (a click or tap on its title; E). Enter saves, Esc cancels,
 // empty puts the old title back. Saved at once on screen; the chat gets a quiet "Renamed" line.
 const fine=()=>matchMedia('(hover:hover) and (pointer:fine)').matches;
 const ROWS='#side-cards a[href^="#chat="],.chat-side a[href^="#chat="]';
@@ -66,9 +66,9 @@ document.addEventListener('dblclick',e=>{const a=e.target.closest(ROWS);if(!a)re
  document.addEventListener('touchmove',e=>{if(timer&&start&&Math.hypot(e.touches[0].clientX-start[0],e.touches[0].clientY-start[1])>8){clearTimeout(timer);timer=null}},{passive:true});
  document.addEventListener('touchend',()=>{clearTimeout(timer);timer=null},{passive:true});
  document.addEventListener('click',e=>{if(pressed&&e.target.closest(ROWS)){e.preventDefault();e.stopImmediatePropagation();pressed=false}},true)}
-// Rename in a card's More menu (and so in the chat header's menu); a click on the chat's title; on a computer, a click
-// on a card's title. A tap on a phone still opens the card.
+// Rename in the chat header's menu; a click on the chat's title; a click or tap on a to-do's title (Ctrl or Cmd click
+// still opens its chat in a new tab, and Chat › on its last row opens it here).
 document.addEventListener('click',e=>{const b=e.target.closest('[data-rename]');if(b){e.preventDefault();e.stopPropagation();b.closest('details')?.removeAttribute('open');const id=b.dataset.rename;requestAnimationFrame(()=>renameAt(id,titleEl(id)));return}
  const ct=e.target.closest('.chat-title');if(ct&&chatId){e.preventDefault();renameAt(chatId,ct);return}
- const tl=e.target.closest('.card h3 .title-link');if(tl&&fine()&&!e.ctrlKey&&!e.metaKey&&!e.shiftKey){const id=tl.closest('article')?.id.replace(/^task-/,'');if(cardOf(id)){e.preventDefault();e.stopPropagation();renameAt(id,tl)}}},true);
+ const tl=e.target.closest('.card h3 .title-link');if(tl&&!e.ctrlKey&&!e.metaKey&&!e.shiftKey){const id=tl.closest('article')?.id.replace(/^task-/,'');if(cardOf(id)){e.preventDefault();e.stopPropagation();renameAt(id,tl)}}},true);
 document.addEventListener('mouseover',e=>{const t=e.target.closest('.card h3 .title-link');if(t&&fine()&&!t.classList.contains('chat-title'))t.title='Click to rename'});

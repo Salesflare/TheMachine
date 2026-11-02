@@ -28,27 +28,31 @@ Uma tarefa cujo último passo ainda está aberto do lado de outra pessoa, como u
 
 **Todos**, **Trabalho** e **Pessoal**, acima da lista na barra lateral, mostram todas as tarefas ou só um tipo. A sua Machine guarda a escolha, então o celular e o computador mostram a mesma lista. Enquanto Trabalho ou Pessoal estiver ativo, o topo da lista avisa, com **Mostrar todas** para voltar.
 
-Uma tarefa de um projeto mostra o nome do projeto na linha abaixo do título, que abre o projeto. **Mudar projeto** em **Mais** troca o projeto (numa tarefa concluída, em **Detalhes**). Veja [as tarefas de um projeto](graph.md#a-projects-to-dos).
+Uma tarefa de um projeto mostra o nome do projeto na linha abaixo do título; ele abre o projeto. **Projeto** em **Detalhes** muda ou tira o projeto. Veja [as tarefas de um projeto](graph.md#a-projects-to-dos).
 
-**Mover para Trabalho** em **Mais** passa uma tarefa para a sua outra área, como uma pessoal que precisa sair do seu endereço de trabalho. O que ela pode ler e de onde pode enviar muda junto; as mensagens de onde ela veio ficam onde estão. **Desfazer** no aviso que aparece depois a traz de volta. Com mais de uma empresa, é **Mudar área**.
+**Área** em **Detalhes** passa a tarefa para a sua outra área, como uma pessoal que precisa sair do seu endereço de trabalho. O que ela pode ler e de onde pode enviar muda junto; as mensagens de onde ela veio ficam onde estão. **Desfazer** no aviso que aparece depois a traz de volta.
 
 Quando uma tarefa precisa de outra área para seguir, ela pede com um botão **Mover para Trabalho**. Nada muda até você tocar; depois ela continua sozinha.
 
 ## Os botões
 
-Uma tarefa nova tem **Fazer**, **Marcar como feita**, **Adiar**, **Fazer de outro jeito** e **Não precisa**. Só alguns aparecem de cada vez. Os outros ficam em **Mais**, junto com **Renomear**.
+Uma tarefa mostra o próximo passo, como **Fazer** ou **Revisar e enviar**, com **Adiar** ao lado. Veja [Fazer](do-it.md) e [Adiar](snooze.md). Uma tarefa pronta também tem **Pedir mudanças** (diga o que mudar no rascunho e ela refaz). **Marcar como feita** (já está resolvida) também está lá: à vista sem rascunho, senão no topo de **…**.
 
-- **Fazer**: sua Machine prepara a tarefa. Veja [Fazer](do-it.md).
-- **Marcar como feita**: já está resolvida.
-- **Adiar**: faz a tarefa voltar mais tarde. Veja [Adiar](snooze.md).
-- **Fazer de outro jeito**: diga em poucas palavras o que você prefere. Em uma tarefa já preparada, o botão é **Pedir mudanças**: diga o que mudar no rascunho e ela refaz. **Revisar e enviar** continua ao lado.
+Para fazer de outro jeito, diga isso no **Chat** dela.
+
+Em **…** (no celular, o menu abre na parte de baixo da tela):
+
+- **Passar…**: passe a tarefa para um colega, para o [Claude Code ou o Codex](hand-to-agent.md) (os que você configurou) ou [peça para alguém revisar](ask-to-review.md).
+- **Repetir…**: a tarefa [volta em um ritmo](recurring.md).
 - **Não precisa**: a tarefa some. Se quiser, escolha o motivo: **Não é relevante**, **Informações erradas** ou **Já resolvido**. Sua Machine aprende com isso.
+
+Toque no título, ou em **Nome** em **Detalhes**, para renomear a tarefa. Seu título fica, também quando a tarefa muda.
 
 Uma tarefa fechada pode voltar com **Reabrir**. Ela também volta sozinha quando acontece algo novo, como uma nova mensagem da pessoa. Uma resposta sua não faz a tarefa voltar.
 
 Uma tarefa que só importava até um certo momento, como uma confirmação antes de uma reunião, fecha sozinha quando esse momento passa. Ela vai para as feitas com "Não precisa mais" e quando foi. **Desfazer** traz a tarefa de volta por um dia.
 
-Nas suas primeiras tarefas, uma linha curta abaixo dos botões mostra o essencial: **Fazer de outro jeito** (ou **Pedir mudanças**) e **Não precisa** quando uma tarefa não está bem certa, e no seu primeiro rascunho pronto, que nada sai até você tocar em **Enviar**. Uma dica some de vez assim que você usa o botão dela ou toca no ×, em todos os seus aparelhos.
+Nas suas primeiras tarefas, uma linha curta abaixo dos botões mostra o essencial: **Mudar a abordagem** (ou **Pedir mudanças**) e **Não precisa** quando uma tarefa não está bem certa, e no seu primeiro rascunho pronto, que nada sai até você tocar em **Enviar**. Uma dica some de vez assim que você usa o botão dela ou toca no ×, em todos os seus aparelhos.
 
 No seu primeiro dia, o topo de Tarefas diz oi pelo seu nome e mostra quem espera sua resposta há mais tempo. A Machine rascunha essa resposta primeiro, para que esteja pronta quando você chegar. Nada sai até você enviar. A linha some depois do seu primeiro dia ou da sua primeira tarefa decidida.
 
@@ -58,7 +62,7 @@ Cada tarefa começa pelo título. A linha abaixo diz de quem ela trata, a organi
 
 Um título diz o que precisa ser feito. Ele só muda quando isso muda, como com um novo pedido. Uma tarefa feita mantém o título, com embaixo como ela terminou, como o que foi enviado ou "Feito: Sam assinou na terça".
 
-**Detalhes** mostra a mensagem de onde ela veio (toque para ler a conversa), sua última nota e o resultado de um agente de código. **Chat ›** no fim dessa linha abre o chat. Uma tarefa concluída fica curta: o título, uma linha e o que foi enviado.
+**Detalhes** mostra o nome, o projeto e a área dela (toque em um para mudar), a mensagem de onde ela veio (toque para ler a conversa), sua última nota e o resultado de um agente de código. **Chat ›** no fim dessa linha abre o chat. Uma tarefa concluída fica curta: o título, uma linha e o que foi enviado.
 
 Uma tarefa "Aguardando" (alguém prometeu algo a você) traz um link para a sua última mensagem para a pessoa, aquela que espera resposta: "E-mail para Pat · ter".
 

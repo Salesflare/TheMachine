@@ -13,7 +13,7 @@ En **Nueva tarea**, elige **Se repite** y un ritmo: **Diario**, **Entre semana**
 
 O simplemente dilo: "cada mes hacer las nóminas" en Nueva tarea o en Hablar crea una tarea que se repite.
 
-Para una tarea que ya tienes, **Repetir** en **Más**, o di "repeat this every week" en su chat.
+Para una tarea que ya tienes, **Repetir…** en **…**, o di "repeat this every week" en su chat.
 
 ## Cómo se repite
 
@@ -27,7 +27,7 @@ Cada una se prepara como cualquier tarea, y la preparación ve cómo fue la ante
 
 ## Cambiarla o pararla
 
-En **Más**: **Cambiar repetición** elige otro ritmo o **Dejar de repetir**, y **Saltar esta** cierra esta y trae la siguiente en su fecha. "Stop repeating" en su chat también funciona. Parar mantiene la tarea abierta; solo dejan de llegar las siguientes.
+Toca la línea "Se repite" de la tarea: elige otro ritmo, **Saltar esta** (cierra esta y trae la siguiente en su fecha) o **Dejar de repetir**. "Stop repeating" en su chat también funciona. Parar mantiene la tarea abierta; solo dejan de llegar las siguientes.
 
 ## Sugerencias
 

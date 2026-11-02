@@ -316,9 +316,8 @@ try{
  await page.locator('h2.chat-title',{hasText:'Reply to the venue'}).waitFor();
  await page.evaluate(()=>{location.hash=''});await page.locator('#suggestions .chat-layout').waitFor({state:'detached'});
  // A Change sent from the card stays on the card: the chat never opens by itself
- // Change sits in the card's More menu when the card has no room for it (a click on it hidden waited out 30 s)
- if(!await page.locator('#task-c2c2c2c2c2c2c2c2 [data-choice="change"]').isVisible())await page.locator('#task-c2c2c2c2c2c2c2c2 .more-actions summary').click();
- await page.locator('#task-c2c2c2c2c2c2c2c2 [data-choice="change"]').click();
+ // A decision's Change is out of sight on the card (the chat says it); the palette's Change… clicks it, as here
+ await page.locator('#task-c2c2c2c2c2c2c2c2 [data-choice="change"][hidden]').evaluate(b=>b.click());
  await page.locator('#feedback-c2c2c2c2c2c2c2c2').fill('Use the new address');
  await page.locator('#task-c2c2c2c2c2c2c2c2 [data-choice="other"]').click();
  await page.locator('#feedback-c2c2c2c2c2c2c2c2').waitFor({state:'detached'});
@@ -331,8 +330,9 @@ try{
    const bs=[...menu.querySelectorAll('button')].map(x=>x.getBoundingClientRect()),r=menu.getBoundingClientRect(),out={left:r.left,right:r.right,vw:innerWidth,tall:Math.max(...bs.map(x=>x.height)),
     wraps:[...menu.querySelectorAll('button')].some(x=>x.scrollWidth>x.clientWidth+1||x.getClientRects().length>1||x.getBoundingClientRect().height>40)};b.remove();return out});
   if(process.env.SHOT_DIR&&width===390){await more.evaluate(d=>{const b=document.createElement('button');b.textContent='Hand to Claude Code';b.dataset.shot='1';d.querySelector('.more-menu').append(b)});await more.screenshot({path:process.env.SHOT_DIR+'/more-menu-390.png'}).catch(()=>{});await page.screenshot({path:process.env.SHOT_DIR+'/more-menu-390-page.png'});await more.evaluate(d=>d.querySelector('[data-shot]')?.remove())}
-  assert.ok(!m.wraps&&m.tall<=34,`menu items on one line at menu density (${width}: ${m.tall}px)`);
-  assert.ok(m.left>=8&&m.right<=m.vw-8,`menu inside the screen at ${width}: ${m.left}–${m.right} of ${m.vw}`);
+  // On a computer a small menu inside the screen; on a phone a bottom sheet across it, with taller rows to tap
+  assert.ok(!m.wraps||width<600&&m.tall<=52,`menu items on one line (${width}: ${m.tall}px)`);assert.ok(m.tall<=(width<600?52:34),`menu density at ${width}: ${m.tall}px`);
+  assert.ok(width<600?m.left===0&&m.right>=m.vw-16:m.left>=8&&m.right<=m.vw-8,`menu inside the screen at ${width}: ${m.left}–${m.right} of ${m.vw}`);
   await more.locator('summary').click()}
  await page.setViewportSize({width:1280,height:900});
  // On a phone: the page header steps aside, the app's drawer (the card list) opens from ⋯

@@ -110,14 +110,16 @@ try{
   assert.equal(await w.locator('.more').count(),0);
   assert.equal(await w.locator('.note.fleet a').getAttribute('href'),'#chat='+waiting.id);
   assert.equal(await w.locator('button',{hasText:/^Do it$/}).count(),0);
-  // Still with Pat, not handed back: Check in now leads, Take it back and Hand off to someone else beside it
-  const visible=async c=>(await c.locator('.actions > button').allTextContents()).map(x=>x.trim());
-  assert.deepEqual(await visible(w),['Check in now','Take it back','Hand off to someone else']);
+  // Still with Pat, not handed back: Check in now leads with Snooze, Take it back and Hand off to someone else under …
+  const visible=async c=>(await c.locator('.actions > button:not([hidden])').allTextContents()).map(x=>x.trim());
+  const more=async c=>(await c.locator('.more-menu button:not([data-mm-back])').evaluateAll(n=>n.map(x=>x.dataset.full||x.textContent)))  // Hand off…'s sheet names a teammate's choice A teammate; its whole name is data-full.map(x=>x.trim());
+  assert.deepEqual(await visible(w),['Check in now','Snooze']);
+  {const m=await more(w);assert.ok(m.includes('Take it back')&&m.includes('Hand off to someone else'),m.join('|'))}
   const b=page.locator('#task-'+back.id);
   assert.equal((await b.locator('.note.fleet').textContent()).trim(),'Still with Pat · check in?');
   assert.equal(await b.locator('.status-line').count(),0,'no older Needs you line');
   assert.equal((await b.locator('.body').textContent()).trim(),'Asked Pat: Can you lock down the tag export today?');
-  assert.deepEqual(await visible(b),['Check in now','Take it back','Hand off to someone else']);
+  assert.deepEqual(await visible(b),['Check in now','Snooze']);{const m=await more(b);assert.ok(m.includes('Take it back')&&m.includes('Hand off to someone else'),m.join('|'))}
   if(dir){await b.scrollIntoViewIfNeeded();await b.screenshot({path:`${dir}/handoff-still-with-${width}.png`})}
   await b.locator('[data-handoff-checkin]').click();await page.waitForFunction(id=>location.hash==='#chat='+id,back.id);
   await page.goto('http://127.0.0.1:'+server.address().port+'/');await w.waitFor();

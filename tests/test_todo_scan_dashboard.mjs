@@ -57,11 +57,12 @@ try{
   // No pills: the meta items have no background, and the line is at most two rows even with a long organization on a phone
   assert.equal(await open.locator('.meta a.chip.who.org').evaluate(e=>getComputedStyle(e).backgroundColor),'rgba(0, 0, 0, 0)');
   {const [h,lh]=await open.locator('.card-badges').evaluate(e=>[e.getBoundingClientRect().height,parseFloat(getComputedStyle(e).lineHeight)]);assert.ok(h<=lh*2+4,`meta ${h}px for line ${lh}px`)}
-  // The project's picker is not on the card's front: Change project is in More, and it opens the picker
-  assert.equal(await open.locator('.project-pick').count(),0);
-  await open.locator('.more-actions>summary').click();await open.locator('.more-menu [data-card-project]').click();
-  await page.locator('.project-picker select').waitFor();assert.equal(await open.locator('.more-actions').evaluate(d=>d.open),false);
-  await page.locator('.project-picker [data-pp="cancel"]').click();
+  // The project's picker is not on the card's front: Project under Details opens it
+  assert.equal(await open.locator('.project-pick').count(),0);assert.equal(await open.locator('.more-menu [data-card-project]').count(),0);
+  await open.locator('.details-toggle').click();await open.locator('.card-fields [data-card-project]').click();
+  await page.locator('.project-picker select').waitFor();
+  assert.equal(await page.locator('.project-picker .pp-open').getAttribute('href'),'#graph/'+encodeURIComponent('proj:listing'));
+  await page.locator('.project-picker [data-pp="cancel"]').click();await open.locator('.details-toggle').click();
   // Open and needing you: the status line, the draft and the first button stay in sight; the source folds behind Details
   assert.match(await open.locator('.status-line').innerText(),/^Needs you: check the reply/);
   assert.ok(await open.locator('.draft').isVisible());assert.ok(await open.locator('.actions button.primary').first().isVisible());

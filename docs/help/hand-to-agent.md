@@ -9,7 +9,7 @@ order: 5
 ---
 ## Hand off a to-do
 
-1. On the to-do, open **More** and pick **Hand to Codex** or **Hand to Claude Code**. It shows when that tool is set up.
+1. On the to-do, open **…**, then **Hand off…**, and pick **Codex** or **Claude Code**. Only the tools you set up show.
 2. Check the summary and what it gets, add a note if you like, and press **Hand off**. **See the full job** shows the whole brief.
 
 The to-do then shows that it's working, and the result when it's done, with **Show changes**. **Change** asks it for changes; **Hand off again** starts over.

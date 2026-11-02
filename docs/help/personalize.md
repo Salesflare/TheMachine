@@ -19,7 +19,7 @@ About twice a day it makes a few small changes from this. **Learning**, **Change
 ## Teach it faster
 
 - Edit a draft before you send it. It learns from what you changed.
-- Tap **Do it differently**, or **Ask for changes** on a draft, and say what you'd like.
+- Say what you'd like in the to-do's **Chat**, or tap **Ask for changes** on a draft.
 - Tap **Not needed** and pick why.
 - Tell it in a to-do's chat: "shorter, and no exclamation marks". It shows **Saved to How you write** when it took it.
 

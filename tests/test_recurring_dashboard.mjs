@@ -5,7 +5,7 @@ import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Recurring to-dos on the dashboard (dashboard/todos-repeat.js): one short line on a repeating to-do (with "missed 1"),
-// Repeat and Skip this one under More, the Repeat box (a rhythm, Custom… and Stop repeating), Repeats in New to-do,
+// Repeat… under …, Skip this one in the Repeat box, the Repeat box (a rhythm, Custom… and Stop repeating), Repeats in New to-do,
 // "repeat this every month" in the to-do's chat, and the one-time "Make this a recurring to-do?". Nothing is sent.
 const dashboard=await dashboardPage();
 const now=new Date().toISOString(),posts=[],R1='a1'.repeat(8),P1='b2'.repeat(8);
@@ -44,15 +44,16 @@ try{
   assert.equal((await page.locator('#task-'+R1+' .chip.repeat').innerText()).trim(),'Repeats monthly on the first Monday · missed 1');
   assert.equal(await page.locator('#task-'+P1+' .chip.repeat').count(),0);
   if(width<600){const box=await page.locator('#task-'+R1).boundingBox(),chip=await page.locator('#task-'+R1+' .chip.repeat').boundingBox();assert.ok(chip.x+chip.width<=box.x+box.width+1,'the line fits the to-do at phone width')}
-  // More: Change repeat and Skip this one while it repeats; Repeat on one that doesn't
+  // …: Repeat… on one that doesn't repeat; one that does has its line to tap instead (change, skip, stop)
   const menu=id=>page.locator(`#task-${id} .more-menu>button`).evaluateAll(n=>n.map(x=>x.textContent.trim()));
-  assert.ok((await menu(R1)).includes('Change repeat')&&(await menu(R1)).includes('Skip this one'));
-  assert.ok((await menu(P1)).includes('Repeat')&&!(await menu(P1)).includes('Skip this one'));
-  // The Repeat box: the rhythms from the to-do's date, the current one pressed, Custom… and Stop repeating
+  assert.ok(!(await menu(R1)).some(x=>/repeat|Skip this one/i.test(x)));
+  assert.ok((await menu(P1)).includes('Repeat…')&&!(await menu(P1)).includes('Skip this one'));
+  // The Repeat box: the rhythms from the to-do's date, the current one pressed, Custom…, Skip this one and Stop repeating
   await page.locator('#task-'+R1+' .chip.repeat').click();const box=page.locator('#task-'+R1+' .repeat-picker');await box.waitFor();
   assert.deepEqual(await box.locator('.rp-list button').evaluateAll(n=>n.map(x=>x.textContent)),
    ['Daily','Weekdays','Weekly on Monday','Monthly on day 2','Monthly on the first Monday','Yearly on November 2','Custom…']);
   assert.equal(await box.locator('[aria-pressed="true"]').innerText(),'Monthly on the first Monday');
+  assert.deepEqual(await box.locator('.actions>button').evaluateAll(n=>n.map(x=>x.textContent)),['Skip this one','Stop repeating','Cancel']);
   await box.getByText('Stop repeating').click();await box.waitFor({state:'detached'});
   assert.deepEqual(sent('card_repeat').at(-1),{action:'card_repeat',suggestion_id:R1,repeat:'none'});
   // Repeat on a to-do: Custom… reads the words, Enter sets it
@@ -65,7 +66,8 @@ try{
   await pbox.locator('.rp-custom input').fill('every 2 weeks');await pbox.getByText('Repeats every 2 weeks on Monday').waitFor();await pbox.locator('.rp-custom input').press('Enter');
   await pbox.waitFor({state:'detached'});assert.deepEqual(sent('card_repeat').at(-1).repeat,{unit:'week',n:2});
   // Skip this one
-  await page.locator('#task-'+R1+' .more-actions summary').click();await page.locator('#task-'+R1+' [data-repeat-skip]').click();
+  await page.locator('#task-'+R1+' .chip.repeat').click();await page.locator('#task-'+R1+' .repeat-picker [data-repeat-skip]').click();
+  await page.locator('#task-'+R1+' .repeat-picker').waitFor({state:'detached'});
   await page.getByText('Skipped. The next one comes Mon, Dec 7.').waitFor();assert.equal(sent('card_repeat_skip').at(-1).suggestion_id,R1);
   // The one-time suggestion: No thanks posts the answer and it is gone
   const line=page.locator('.repeat-offer');await line.waitFor();assert.match(await line.innerText(),/Make this a recurring to-do\?\s*Send the board update · Repeats monthly on day 5/);

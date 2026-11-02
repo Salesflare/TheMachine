@@ -9,7 +9,7 @@ order: 5
 ---
 ## Pasa una tarea
 
-1. En la tarea, abre **Más** y elige **Pasar a Codex** o **Pasar a Claude Code**. Aparece cuando esa herramienta está configurada.
+1. En la tarea, abre **…**, luego **Pasar…**, y elige **Codex** o **Claude Code**. Solo aparecen las herramientas que has configurado.
 2. Revisa el resumen y lo que recibe, añade una nota si quieres y pulsa **Pasar**. **Ver el trabajo completo** muestra todo el encargo.
 
 Luego la tarea muestra que está trabajando, y el resultado cuando termina, con **Mostrar cambios**. **Cambiar** le pide cambios; **Pasar de nuevo** empieza de cero.

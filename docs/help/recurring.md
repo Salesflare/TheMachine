@@ -13,7 +13,7 @@ In **New to-do**, pick **Repeats** and a rhythm: **Daily**, **Weekdays**, weekly
 
 Or just say it: "every first Monday of the month do payroll" in New to-do or in Talk makes a to-do that repeats.
 
-For a to-do you already have, **Repeat** under **More**, or say "repeat this every week" in its chat.
+For a to-do you already have, **Repeat…** under **…**, or say "repeat this every week" in its chat.
 
 ## How it repeats
 
@@ -27,7 +27,7 @@ Each one is prepared like any to-do, and the preparation sees how the previous o
 
 ## Change or stop it
 
-Under **More**: **Change repeat** picks another rhythm or **Stop repeating**, and **Skip this one** closes this one and brings the next on its date. "Stop repeating" in its chat works too. Stopping keeps the open to-do; only the next ones don't come.
+Tap the "Repeats" line on the to-do: pick another rhythm, **Skip this one** (it closes this one and brings the next on its date) or **Stop repeating**. "Stop repeating" in its chat works too. Stopping keeps the open to-do; only the next ones don't come.
 
 ## Suggestions
 

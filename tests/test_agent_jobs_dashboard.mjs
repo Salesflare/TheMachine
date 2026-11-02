@@ -36,7 +36,10 @@ try{
  const base='http://127.0.0.1:'+server.address().port+'/';await page.goto(base);
  const c=page.locator('#task-c1');await c.waitFor();
  assert.equal(await c.locator('[data-agent-hand]').count(),2);
+ // Under … then Hand off…: the tools by their names, beside A teammate
  const more=c.locator('.more-actions>summary');if(await more.count())await more.click();
+ const sheet=c.locator('[data-mm-open]');if(await sheet.count())await sheet.click();
+ assert.equal(await c.locator('[data-agent-hand="claude"]').innerText(),'Claude Code');
  await c.locator('[data-agent-hand="claude"]').click();
  // A compact sheet: Hand to with a small switcher, one plain line, chips for what it gets (never a link), an empty note,
  // the whole job only behind See the full job (monospace, thin scrollbar)
@@ -103,11 +106,11 @@ try{
  assert.match(await c.locator('.agent-more').innerText(),/Checked the numbers/);
  await c.locator('.agent-diff>summary').click();
  await page.waitForFunction(()=>document.querySelector('.agent-diff pre')?.textContent.includes('+Summary line'));
- // The card's own primary action stays; Change goes to the job and says so.
- const buttons=await c.locator('.actions>button').allInnerTexts();
- assert.ok(buttons.some(b=>/send to Sam/i.test(b)),buttons.join('|'));
- assert.ok(buttons.includes('Ask Claude Code for changes'),buttons.join('|'));
- assert.equal(buttons.filter(b=>/changes/i.test(b)).length,1);
+ // The card's own primary action stays; Change goes to the job and says so, beside it
+ const buttons=await c.locator('.actions>button:not([hidden])').allInnerTexts(),menu=await c.locator('.more-menu>button').evaluateAll(n=>n.map(x=>x.textContent.trim()));
+ assert.deepEqual(buttons.filter(b=>/send to Sam/i.test(b)).length,1,buttons.join('|'));
+ assert.equal(buttons[1],'Ask Claude Code for changes',buttons.join('|'));
+ assert.equal([...buttons,...menu].filter(b=>/changes/i.test(b)).length,1);
  await c.locator('[data-agent-ask]').click();
  assert.match(await c.innerText(),/Goes to the Claude Code job/);
  await c.locator('#agent-ask-c1').fill('Shorter, please');

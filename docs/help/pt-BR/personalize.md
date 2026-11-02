@@ -19,7 +19,7 @@ Cerca de duas vezes por dia, ela faz algumas pequenas mudanças a partir disso. 
 ## Ensine mais rápido
 
 - Edite um rascunho antes de enviar. Ela aprende com o que você mudou.
-- Toque em **Fazer de outro jeito**, ou em **Pedir mudanças** em um rascunho, e diga o que você gostaria.
+- Diga o que você gostaria no **Chat** da tarefa, ou toque em **Pedir mudanças** em um rascunho.
 - Toque em **Não precisa** e escolha o motivo.
 - Diga no chat de uma tarefa: "mais curto, e sem pontos de exclamação". Ela mostra **Salvo em Como você escreve** quando aprendeu.
 

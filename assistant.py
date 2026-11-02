@@ -1462,7 +1462,7 @@ FIRST_LOOK_NOTE = ('The owner is new and opens their dashboard in a few minutes.
                    'on them for longest. Read it first; if it still needs the owner, suggest its to-do before any other, with '
                    'prepare_ahead:true, so its draft is ready when they arrive. A draft only: nothing is sent until they approve it.')
 FIRST_LOOK_SIGNAL_SECONDS = 12  # about how long a first look takes per signal, for "first cards in about N min"
-# First-use tips on the dashboard (Store.first_tips): 'change' on a new person's first to-do (Do it differently and
+# First-use tips on the dashboard (Store.first_tips): 'change' on a new person's first to-do (Change how and
 # Not needed), 'send' on their first ready draft (nothing goes out until Send). Each goes once its button was used.
 FIRST_TIPS = ('change', 'send')
 TIP_USED = {'change': {'other', 'reject'}, 'send': {'send'}}
