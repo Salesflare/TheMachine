@@ -110,6 +110,7 @@ renderModelPanel();renderChatModel();cmPaint('chat');renderLimitBanner();$('#mod
 return `<div class="usage"><span>${esc(t('{}: {}% used',p.name+' '+label(w.label),+w.used|0))}${esc(when)}</span><progress max="100" value="${+w.used|0}">${+w.used|0}%</progress></div>`}).join('')).join('')}
 const ago=v=>{if(!v)return t('Not yet');const s=(new Date(v)-Date.now())/1000,a=Math.abs(s),f=new Intl.RelativeTimeFormat(DL,{numeric:'auto'});for(const[u,n]of[['day',86400],['hour',3600],['minute',60]])if(a>=n)return f.format(Math.round(s/n),u);return a<45?t('just now'):f.format(Math.round(s/60),'minute')};
 const time=(v,plain)=>`<time class="${plain?'':'mono '}muted" datetime="${esc(v||'')}" title="${esc(date(v))}">${esc(ago(v))}</time>`;
+const timeNode=(v,plain)=>make('time',{class:(plain?'':'mono ')+'muted',datetime:v||'',title:date(v)},ago(v));
 const calendarDate=v=>new Date(v+'T12:00:00').toLocaleDateString(DL,{month:'short',day:'numeric',year:'numeric'});
 // A signal's time as people say it: Today 08:46, Yesterday 17:20, Wed, Oct 21 09:00 (the year only when it isn't this
 // one), no seconds; a meeting as a range, Tomorrow 10:46 to 11:46
