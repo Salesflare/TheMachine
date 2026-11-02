@@ -40,6 +40,8 @@ try{
   i18nLanguages({languages:{'nl"><b>':'Nederlands',en:'English'},language:'en'});const sel=document.getElementById('locale-language');
   return {toastB:b.querySelectorAll('b').length,undo:b.querySelector('[data-undo]')?.dataset.undo,selB:sel?sel.querySelectorAll('b').length:-1,codes:sel?[...sel.options].map(o=>o.value):[]}});
  assert.deepEqual(attrs,{toastB:0,undo:'7"><b>x',selB:0,codes:['nl"><b>','en']});
+ // the list still ends with Done / dismissed after the first look's place (firstLookFill runs after the whole list)
+ await page.locator('#finished-list').waitFor();
  assert.deepEqual(errors,[]);
  console.log('ok first look counts and the usage link');
 }finally{await browser?.close();server.close()}

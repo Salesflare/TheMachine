@@ -10,13 +10,13 @@ function resetAction(m){if(!m)return '';if(m.can_reset)return `<button type="but
 // The banner for a usage limit reached (state.model_pause: window '5h', 'week' or 'limit', until, name); gone when it is null.
 // `fallback`: a working fallback model answers meanwhile (assistant.py fallback_covers), so nothing waits: one short line.
 const pauseWhen=until=>{const r=+until>Date.now()/1000?new Date(until*1000):null;return r?(r.toDateString()===new Date().toDateString()?fmtHM(r):r.toLocaleDateString(DL,{weekday:'short'})+' '+fmtHM(r)):''};
-function limitBanner(p){if(!p)return '';if(p.fallback)return `<span>${esc(t('{} limit reached, using your fallback.',p.name||'AI'))}</span>`;const when=pauseWhen(p.until),
+function limitBanner(p){if(!p)return [];if(p.fallback)return [make('span',{},t('{} limit reached, using your fallback.',p.name||'AI'))];const when=pauseWhen(p.until),
  what={'5h':'{} 5-hour limit reached.',week:'{} weekly limit reached.'}[p.window]||'{} usage limit reached.';
- return `<span><strong>${esc(t(what,p.name||'AI'))}</strong>${when?' '+esc(t('Resets {}.',/^\d/.test(when)?t('at {}',when):when)):''} ${esc(t('Nothing is lost: The Machine picks up where it left off.'))}</span>`}
+ return [make('span',{},make('strong',{},t(what,p.name||'AI')),(when?' '+t('Resets {}.',/^\d/.test(when)?t('at {}',when):when):'')+' '+t('Nothing is lost: The Machine picks up where it left off.'))]}
 // Reviews of new signals waiting for the budget (state.review_pause: window '5h' or 'week', until, name), with Review now
-function reviewBanner(p){if(!p)return '';const when=pauseWhen(p.until),name=p.name||'AI',week=p.window==='week';
+function reviewBanner(p){if(!p)return [];const when=pauseWhen(p.until),name=p.name||'AI',week=p.window==='week';
  const line=when?t(week?'Reviews wait until {} to save your {} week.':'Reviews wait until {} to save your {} 5-hour limit.',when,name):t(week?'Reviews wait to save your {} week.':'Reviews wait to save your {} 5-hour limit.',name);
- return `<span>${esc(line)}</span><button type="button" class="head-link" data-review-now>${esc(t('Review now'))}</button>`}
+ return [make('span',{},line),make('button',{type:'button',class:'head-link','data-review-now':''},t('Review now'))]}
 // A bug the owner reported, fixed and running here now: the control plane says so once this Machine runs the fix (its
 // cloud/support_fixes.py; hosted through /_machine/fixed with the owner's sign-in, self-hosted through the Network,
 // state.fixed, which the Fleet's hourly look keeps). One quiet line each, until Got it, which closes it on every Machine
@@ -25,12 +25,16 @@ let fixedList=[],fixedAt=0,fixedGone=new Set();
 async function fixedLoad(){if(!state.manage_url){fixedList=(Array.isArray(state.fixed)?state.fixed:[]).filter(f=>f&&f.id&&!fixedGone.has(f.id));renderFixed();return}
  if(Date.now()-fixedAt<9e5)return;fixedAt=Date.now();
  try{const r=await fetch('/_machine/fixed',{credentials:'same-origin',redirect:'manual'});if(!r.ok)return;fixedList=((await r.json()).fixed||[]).filter(f=>!fixedGone.has(f.id))}catch{return}renderFixed()}
-function renderFixed(){const b=$('#fixed-notice');if(!b)return;const html=fixedList.map(f=>`<div class="notice-card fixed-notice"><span>${esc(f.text)}</span><button type="button" class="head-link" data-fixed="${esc(f.id)}">${esc(t('Got it'))}</button></div>`).join('');
- if(b.innerHTML!==html)b.innerHTML=html;b.hidden=!html||!!state?.greeting}  // a new owner's first views stay quiet (Store.greeting)
+// Each banner is built again only when what it says changes (a rebuild would drop focus from its button)
+const bannerSet=(b,key,nodes)=>{if(b.dataset.shown!==key){b.replaceChildren(...nodes);b.dataset.shown=key}b.hidden=!nodes.length};
+function renderFixed(){const b=$('#fixed-notice');if(!b)return;bannerSet(b,JSON.stringify(fixedList.map(f=>[f.id,f.text])),
+ fixedList.map(f=>make('div',{class:'notice-card fixed-notice'},make('span',{},f.text),make('button',{type:'button',class:'head-link','data-fixed':f.id},t('Got it')))));
+ if(state?.greeting)b.hidden=true}  // a new owner's first views stay quiet (Store.greeting)
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-fixed]');if(!b)return;const id=b.dataset.fixed;fixedGone.add(id);fixedList=fixedList.filter(f=>f.id!==id);renderFixed();
  try{if(state.manage_url)await fetch('/_machine/fixed',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',redirect:'manual',body:JSON.stringify({seen:id})});
   else await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'bug_fixed',args:{seen:id}})})}catch{}});
-function renderLimitBanner(){const b=$('#limit-banner');if(!b)return;const html=limitBanner(state.model_pause)||reviewBanner(state.review_pause);if(b.innerHTML!==html)b.innerHTML=html;b.hidden=!html}
+function renderLimitBanner(){const b=$('#limit-banner');if(!b)return;const p=state.model_pause?['model',state.model_pause]:['review',state.review_pause],nodes=p[0]==='model'?limitBanner(p[1]):reviewBanner(p[1]);
+ bannerSet(b,JSON.stringify([p,pauseWhen(p[1]?.until),document.documentElement.lang]),nodes)}
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-review-now]');if(!b)return;b.disabled=true;
  try{await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'review_now',args:{}})});
   state.review_pause=null;renderLimitBanner();notice(t('A review starts in a moment.'))}catch(err){errCaught(err);b.disabled=false;notice(err.message,true)}});
