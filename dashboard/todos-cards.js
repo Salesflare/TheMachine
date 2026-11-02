@@ -117,7 +117,7 @@ const danglingPointer=/(^|[.!?]\s+)[^.!?]*\b(?:at|in|to|under|into|on|see|here)\
 // they show (the card: a link that opens that file), plain words otherwise. A bare path has no words, so it goes.
 const resultNamed=/\[([^\]\n]*\S[^\]\n]*)\]\((?:\/[^\s<>"\)]*\/workspace\/)?(memory\/assistant\/[^\s\)]+)\)/g;
 const resultBody=(s,link)=>s.body.split('\n').flatMap(line=>{const named=line.replace(resultNamed,(m,words,path)=>link?link(words.trim(),path.replace(/[.,;\]]+$/,'')):words.trim());
- let kept=named.replace(resultLink,'').replace(/  /g,' ').trimEnd();if(kept!==named.trimEnd())kept=kept.replace(danglingPointer,'$1').trimEnd();return kept!==named.trimEnd()&&(/^[\s·•|,;:()\-–—]*$/.test(kept)||/^\s*[-*•]?\s*[^\s:]+(?: [^\s:]+){0,3}:$/.test(kept))?[]:[kept]}).join('\n').replace(/\n{3,}/g,'\n\n').trim();
+ let kept=named.replace(resultLink,'').replace(/  /g,' ').trimEnd();if(kept!==named.trimEnd())kept=kept.replace(danglingPointer,'$1').replace(/([.!?])\s+[.!?](?=\s|$)/g,'$1').trimEnd();return kept!==named.trimEnd()&&(/^[\s·•|,;:()\-–—]*$/.test(kept)||/^\s*[-*•]?\s*[^\s:]+(?: [^\s:]+){0,3}:$/.test(kept))?[]:[kept]}).join('\n').replace(/\n{3,}/g,'\n\n').trim();
 // On the card a named result link opens that file like Read result does; one the task doesn't serve stays plain words.
 const resultLinks=s=>{const found=[];return {text:resultBody(s,(words,path)=>{found.push({words,path});return ''+(found.length-1)+''}),
  html:h=>h.replace(/(\d+)/g,(m,i)=>{const f=found[i];return (s.result_files||[]).some(r=>r.path===f.path)?`<button type="button" class="link result-link" data-id="${esc(s.id)}" data-result="read" data-file="${esc(f.path)}" data-file-name="${esc(f.words)}">${esc(f.words)}</button>`:esc(f.words)}),
@@ -225,13 +225,14 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-skil
  catch(err){errCaught(err);b.disabled=false;toast(err.message,true)}});
 const copyLead=(s,smart)=>!s.proposed_skill&&s.status==='prepared'&&!smart.some(a=>a.kind!=='open')&&/\bdraft/i.test(s.body||'')&&(s.result_files||[]).some(f=>!/\.pdf$/i.test(f.name));
 const COPY_WHY='This can’t be sent from here. Copy it to send it yourself.';
-function cardActions(s,choices,smartButtons,unmerge,hint,smart){const skill=skillLead(s),copy=copyLead(s,smart)||skill;
+function cardActions(s,choices,smartButtons,unmerge,hint,smart){const skill=skillLead(s),copy=copyLead(s,smart)||skill,asked=moveAsk(s);
+ if(asked)smartButtons=`<button class="primary" data-card-move="${esc(s.id)}" data-area="${esc(s.preparation_move_to)}">${esc(moveText(s.preparation_move_to))}</button>`+smartButtons;
  if(skill)smartButtons=skillButton(s)+smartButtons;
  else if(copy)smartButtons=`<button class="primary" data-id="${s.id}" data-result="copy">Copy draft</button>`+smartButtons;
  const answered=s.status==='prepared'&&(()=>{try{return JSON.parse(s.outcome||'{}').state==='answered'}catch{return false}})();
  const ask=askQuestion(s,smart,hint);
  const mine=ownerStep(s)&&!ask;
- const isPrimary=c=>c==='send'||(c==='checkin'&&withTeammate(s))||(c==='retry'&&!ask)||c==='answer'||(c==='complete'&&mine)||(c==='complete'&&!copy&&!withTeammate(s)&&(hint||(s.status==='prepared'&&!answered&&!ask&&!finalStep(s)&&!smart.some(a=>a.kind!=='open'))))||(c==='accept'&&(s.status==='pending'||answered)&&!hint&&!mine);
+ const isPrimary=c=>c==='send'||(c==='checkin'&&withTeammate(s))||(c==='retry'&&!ask&&!asked)||c==='answer'||(c==='complete'&&mine)||(c==='complete'&&!copy&&!withTeammate(s)&&(hint||(s.status==='prepared'&&!answered&&!ask&&!finalStep(s)&&!smart.some(a=>a.kind!=='open'))))||(c==='accept'&&(s.status==='pending'||answered)&&!hint&&!mine);
  const btn=([c,t])=>c==='accept'&&s.status==='pending'&&s.skill_proposal?.update?`<button class="${isPrimary(c)?'primary':'ghost'}" data-skill-update="${esc(s.id)}">${esc(t)}</button>`:c==='change'&&agentAsk(s)?`<button class="ghost" data-agent-ask="${esc(s.id)}">Ask ${esc(s.agent_job.name)} for changes</button>`:c==='handoff'?`<button class="ghost" data-fleet-handoff="${esc(s.id)}">${esc(t)}</button>`:c==='takeback'?`<button class="ghost" data-handoff-take-back="${esc(s.id)}">${esc(t)}</button>`:c==='checkin'?`<button class="primary" data-handoff-checkin="${esc(s.id)}" title="Open the chat to check in">${esc(t)}</button>`:c.startsWith('agent:')?`<button class="ghost" data-agent-hand="${esc(c.slice(6))}" data-card="${esc(s.id)}">${esc(t)}</button>`:`<button class="${isPrimary(c)?'primary':c==='reject'?'quiet':'ghost'}" data-id="${esc(s.id)}" data-choice="${esc(c)}"${c==='change'?` title="${s.status==='pending'?'Tell me how to do it instead':s.status==='prepared'&&smart.some(a=>DRAFT_KINDS.includes(a.kind))?'Tell me what to change in the draft, and I redo it':'Tell me what to change, and I redo it'}"`:''}>${esc(t)}</button>`;
  const all=[...choices,...(canHandoff(s)&&s.status!=='snoozed'&&!smart.some(a=>a.kind==='handoff')?[['handoff',s.fleet_handoff?.back?'Hand off to someone else':'Hand off']]:canReassign(s)?[['takeback','Take it back'],['handoff','Hand off to someone else']]:[]),...(canAgent(s)?agentTools().map(t=>['agent:'+t.id,window.t('Hand to {}',t.name)]):[]),...(agentAsk(s)&&!choices.some(([c])=>c==='change')?[['change','']]:[])];
  const head=all.filter(([c])=>isPrimary(c)),order=(mine&&s.status==='pending'?['accept','snooze','reject','change','handoff']:ask?['handoff','complete','retry','snooze','reject']:answered?['snooze','change','complete','reject','handoff']:SECONDARY[s.status])||['complete','snooze','change','reject','handoff'];
@@ -245,7 +246,7 @@ function cardActions(s,choices,smartButtons,unmerge,hint,smart){const skill=skil
  // Rename sits in More on every card (and so in the chat's menu): the owner's title wins over the generated one.
  const rename=`<button type="button" class="ghost" data-rename="${esc(s.id)}">Rename</button>`;
  const project=s.project_node?`<button type="button" class="ghost" data-card-project="${esc(s.id)}">Change project</button>`:'';
- const menu=`<details class="more-actions"><summary aria-label="More actions">More</summary><div class="more-menu" role="group" aria-label="More actions">${more.map(btn).join('')}${reviewMore(s)}${project}${repeatMore(s)}${rename}${unmerge}</div></details>`;
+ const menu=`<details class="more-actions"><summary aria-label="More actions">More</summary><div class="more-menu" role="group" aria-label="More actions">${more.map(btn).join('')}${reviewMore(s)}${project}${moveMore(s)}${repeatMore(s)}${rename}${unmerge}</div></details>`;
  return `<div class="actions">${smartButtons}${head.map(btn).join('')}${shown.map(btn).join('')}${menu}</div>${copy&&!skill?`<p class="copy-why">${COPY_WHY}</p>`:''}`}
 // A Needs you line ends with one mark: a question keeps its "?" instead of getting ".".
 const sentence=t=>{t=String(t).trim();return /[.?!…]$/.test(t)?t:t+'.'};
@@ -262,7 +263,7 @@ const askBlocked=s=>s.preparation_status==='blocked'&&!s.preparation_error&&!!St
 // disagree. A stopped run comes first: a card whose run stopped is not Preparing any more, whatever its status says.
 // Closed by itself once its moment passed (expired_at): Not needed, like a dismissed one, so it never reads as done by them
 const lapsed=s=>s.status==='completed'&&!!s.expired_at;
-const cardState=s=>lapsed(s)?'Not needed':s.preparation_status==='blocked'&&!closed(s)&&s.status!=='snoozed'?(s.preparation_error==='stopped'?'Stopped':askBlocked(s)||s.preparation_browser&&!s.preparation_error?'Needs your help':'Stuck'):['accepted','instructions'].includes(s.status)?'Preparing':label(s.status);
+const cardState=s=>lapsed(s)?'Not needed':s.preparation_status==='blocked'&&!closed(s)&&s.status!=='snoozed'?(s.preparation_error==='stopped'?'Stopped':askBlocked(s)||moveAsk(s)||s.preparation_browser&&!s.preparation_error?'Needs your help':'Stuck'):['accepted','instructions'].includes(s.status)?'Preparing':label(s.status);
 const askQuestion=(s,smart,hint)=>{if(closed(s)||s.status==='snoozed'||hint)return '';if(askBlocked(s))return s.preparation_questions?.length?s.preparation_questions.map(q=>q.question).join(' '):String(s.preparation_reason).trim();
  if(s.status!=='prepared'||s.preparation_status==='blocked'||smart.some(a=>a.kind!=='open'))return '';
  try{const o=JSON.parse(s.outcome||'{}'),q=String(o.needs||'').trim();return o.state==='needs_you'&&/\?$/.test(q)?q:''}catch{return ''}};
@@ -288,6 +289,32 @@ async function cardProjectPick(id,anchor){let names=[];try{const r=await request
   try{const r=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'card_project',args:{suggestion_id:id,project:v}})});
    const t=(state.suggestions||[]).find(x=>x.id===id);if(t){t.project_node=r.project;t.project=r.project?.name||null}box.remove();toast(r.project?'On '+r.project.name+'.':'Off its project.');if(typeof render==='function')render()}catch(err){errCaught(err);b.disabled=false;toast(err.message,true)}}}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-card-project]');if(!b)return;e.preventDefault();cardProjectPick(b.dataset.cardProject,b)});
+// A to-do's area (todo_areas.py): More, Move to Work (or Personal, or another company) moves it, with Undo on the toast.
+// Its accounts become that area's, so what it may read and send from follows. With several to pick from, Change area
+// opens a small picker. A run that stopped to ask for a move (preparation_move_to) gets it as the to-do's lead button.
+const areaOrg=id=>String(id).slice(5),manyWork=()=>(state.areas||[]).filter(a=>a.id!=='personal').length>1;
+const areaName=id=>id==='personal'?t('Personal'):manyWork()?t('Work at {}',areaOrg(id)):t('Work');
+const moveText=id=>id==='personal'?t('Move to Personal'):manyWork()?t('Move to Work at {}',areaOrg(id)):t('Move to Work');
+const movedText=id=>id==='personal'?t('Moved to Personal'):manyWork()?t('Moved to Work at {}',areaOrg(id)):t('Moved to Work');
+const moveTargets=s=>!s.area||closed(s)?[]:(state.areas||[]).filter(a=>a.id!==s.area);
+const moveAsk=s=>!closed(s)&&s.preparation_status==='blocked'&&!s.preparation_error&&!!s.preparation_move_to&&moveTargets(s).some(a=>a.id===s.preparation_move_to);
+const moveMore=s=>{const to=moveTargets(s);return !to.length?'':to.length===1?`<button type="button" class="ghost" data-card-move="${esc(s.id)}" data-area="${esc(to[0].id)}">${esc(moveText(to[0].id))}</button>`
+ :`<button type="button" class="ghost" data-card-area="${esc(s.id)}">${esc(t('Change area'))}</button>`};
+async function cardMove(id,area,b,undo){if(b)b.disabled=true;
+ try{const r=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'card_move',args:{suggestion_id:id,decision_id:crypto.randomUUID(),...(undo?{undo}:{area})}})});
+  document.querySelector('.area-picker')?.remove();await refresh();if(typeof chatId!=='undefined'&&chatId===id&&typeof chatPoll==='function')chatPoll();
+  if(undo){toast(t('Undone.'));return}
+  toast(movedText(r.area));  // one that asked for it carries on by itself: Preparing shows on it
+  const tt=$('#toast'),u=document.createElement('button');u.type='button';u.dataset.moveUndo=r.decision_id;u.dataset.id=id;u.textContent=t('Undo');tt.append(' ',u);clearTimeout(toastTimer);toastTimer=setTimeout(()=>tt.classList.remove('show'),15000)}
+ catch(err){errCaught(err);toast(err.message,true)}finally{if(b)b.disabled=false}}
+function cardAreaPick(id,anchor){const s=(state.suggestions||[]).find(x=>x.id===id)||{},to=moveTargets(s);document.querySelector('.area-picker')?.remove();if(!to.length)return;
+ const box=document.createElement('div');box.className='project-picker area-picker';box.setAttribute('role','dialog');box.setAttribute('aria-label',t('Area for this to-do'));
+ box.innerHTML=`<label>${esc(t('Move to'))} <select>${to.map(a=>`<option value="${esc(a.id)}">${esc(areaName(a.id))}</option>`).join('')}</select></label><div class="actions"><button type="button" class="primary" data-ap="move">${esc(t('Move'))}</button><button type="button" class="quiet" data-ap="cancel">${esc(t('Cancel'))}</button></div>`;
+ anchor.closest('details.more-actions,details.chat-menu')?.removeAttribute('open');(anchor.closest('.card')||anchor.closest('.chat-main')||document.body).appendChild(box);box.querySelector('select').focus();
+ box.onclick=e=>{const b=e.target.closest('[data-ap]');if(!b)return;if(b.dataset.ap==='cancel'){box.remove();return}cardMove(id,box.querySelector('select').value,b)}}
+document.addEventListener('click',e=>{const m=e.target.closest('[data-card-move]');if(m){e.preventDefault();m.closest('details.more-actions,details.chat-menu')?.removeAttribute('open');cardMove(m.dataset.cardMove,m.dataset.area,m);return}
+ const p=e.target.closest('[data-card-area]');if(p){e.preventDefault();cardAreaPick(p.dataset.cardArea,p);return}
+ const u=e.target.closest('[data-move-undo]');if(u){e.preventDefault();$('#toast').classList.remove('show');cardMove(u.dataset.id,null,null,u.dataset.moveUndo)}});
 // A project's to-dos on its page: open ones, then the latest done (graph.project_todos).
 const projectTodos=n=>n.kind==='project'&&n.todos?.length?`<div class="section-head"><h2>To-dos</h2><span class="count">${n.todos.filter(c=>!c.done).length||''}</span></div><article class="graph-open project-todos">${n.todos.map(c=>`<div class="promise${c.done?' done':''}"><span class="grow"><a href="#card=${esc(c.id)}" translate="no">${esc(c.title)}</a>${c.done?'<small>done</small>':c.due?`<small>due ${esc(day(c.due))}</small>`:''}</span></div>`).join('')}</article>`:'';
 // First-use tips (Store.first_tips): on a new person's first to-dos, one short line under the buttons of the to-do it is

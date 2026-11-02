@@ -30,6 +30,10 @@ Uma tarefa cujo último passo ainda está aberto do lado de outra pessoa, como u
 
 Uma tarefa de um projeto mostra o nome do projeto na linha abaixo do título, que abre o projeto. **Mudar projeto** em **Mais** troca o projeto (numa tarefa concluída, em **Detalhes**). Veja [as tarefas de um projeto](graph.md#a-projects-to-dos).
 
+**Mover para Trabalho** em **Mais** passa uma tarefa para a sua outra área, como uma pessoal que precisa sair do seu endereço de trabalho. O que ela pode ler e de onde pode enviar muda junto; as mensagens de onde ela veio ficam onde estão. **Desfazer** no aviso que aparece depois a traz de volta. Com mais de uma empresa, é **Mudar área**.
+
+Quando uma tarefa precisa de outra área para seguir, ela pede com um botão **Mover para Trabalho**. Nada muda até você tocar; depois ela continua sozinha.
+
 ## Os botões
 
 Uma tarefa nova tem **Fazer**, **Marcar como feita**, **Adiar**, **Fazer de outro jeito** e **Não precisa**. Só alguns aparecem de cada vez. Os outros ficam em **Mais**, junto com **Renomear**.

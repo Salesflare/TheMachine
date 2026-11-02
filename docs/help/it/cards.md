@@ -30,6 +30,10 @@ Un’attività il cui ultimo passo è ancora aperto da parte di qualcun altro, c
 
 Un'attività su un progetto mostra il nome del progetto nella riga sotto il titolo, che apre il progetto. **Cambia progetto** in **Altro** lo cambia (su un'attività fatta, in **Dettagli**). Vedi [le attività di un progetto](graph.md#a-projects-to-dos).
 
+**Sposta in Lavoro** in **Altro** sposta un'attività nella tua altra area, come una personale che deve partire dal tuo indirizzo di lavoro. Cosa può leggere e da dove può inviare segue lo spostamento; i messaggi da cui è nata restano dove sono. **Annulla** nell'avviso che segue la riporta indietro. Con più di un'azienda è **Cambia area**.
+
+Quando un'attività ha bisogno di un'altra area per andare avanti, lo chiede con un pulsante **Sposta in Lavoro**. Niente si sposta finché non lo tocchi; poi continua da sola.
+
 ## I pulsanti
 
 Una nuova attività ha **Fallo**, **Segna come fatto**, **Posticipa**, **Fallo diversamente** e **Non serve**. Se ne vedono solo alcuni alla volta; gli altri sono in **Altro**, con **Rinomina**.

@@ -30,6 +30,10 @@ Een to-do waarvan de laatste stap nog openstaat bij iemand anders, zoals een rev
 
 Een to-do bij een project toont de naam van het project in de regel onder de titel; die opent het project. **Project wijzigen** onder **Meer** wijzigt het (bij een afgeronde to-do onder **Details**). Zie [de to-do's van een project](graph.md#a-projects-to-dos).
 
+**Naar Werk verplaatsen** onder **Meer** zet een to-do in je andere gebied, zoals een privé-to-do die vanaf je werkadres moet vertrekken. Wat hij mag lezen en waarvandaan hij mag versturen, verhuist mee; de berichten waar hij uit kwam, blijven waar ze zijn. **Ongedaan maken** in de melding die volgt, zet hem terug. Met meer dan één bedrijf is het **Gebied wijzigen**.
+
+Heeft een to-do een ander gebied nodig om verder te kunnen, dan vraagt hij het met een knop **Naar Werk verplaatsen**. Er verhuist niets tot je erop tikt; daarna gaat hij zelf verder.
+
 ## De knoppen
 
 Een nieuwe to-do heeft **Doe het**, **Markeer als gedaan**, **Snoozen**, **Doe het anders** en **Niet nodig**. Er staan er maar een paar tegelijk; de rest staat onder **Meer**, met **Hernoemen**.

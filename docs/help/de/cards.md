@@ -30,6 +30,10 @@ Eine Aufgabe, deren letzter Schritt noch bei jemand anderem offen ist, etwa ein 
 
 Eine Aufgabe in einem Projekt zeigt den Projektnamen in der Zeile unter ihrem Titel; er öffnet das Projekt. **Projekt ändern** unter **Mehr** ändert es (bei einer erledigten Aufgabe unter **Details**). Siehe [Aufgaben eines Projekts](graph.md#a-projects-to-dos).
 
+**Nach Arbeit verschieben** unter **Mehr** verschiebt eine Aufgabe in deinen anderen Bereich, etwa eine private, die von deiner Arbeitsadresse aus rausgehen muss. Was sie lesen und wovon sie senden darf, zieht mit; die Nachrichten, aus denen sie kam, bleiben, wo sie sind. **Rückgängig** in der Meldung danach verschiebt sie zurück. Mit mehr als einer Firma heißt es **Bereich ändern**.
+
+Braucht eine Aufgabe einen anderen Bereich, um weiterzukommen, fragt sie mit einer Schaltfläche **Nach Arbeit verschieben**. Nichts wird verschoben, bevor du tippst; danach macht sie von selbst weiter.
+
 ## Die Buttons
 
 Eine neue Aufgabe hat **Ausführen**, **Als erledigt markieren**, **Zurückstellen**, **Anders ausführen** und **Nicht nötig**. Nur ein paar sind gleichzeitig zu sehen. Der Rest steht unter **Mehr**, zusammen mit **Umbenennen**.

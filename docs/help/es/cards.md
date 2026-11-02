@@ -30,6 +30,10 @@ Una tarea cuyo último paso sigue abierto en manos de otra persona, como una rev
 
 Una tarea de un proyecto muestra el nombre del proyecto en la línea bajo su título; abre el proyecto. **Cambiar proyecto** en **Más** lo cambia (en una tarea hecha, en **Detalles**). Consulta [las tareas de un proyecto](graph.md#a-projects-to-dos).
 
+**Mover a Trabajo** en **Más** pasa una tarea a tu otra área, como una personal que tiene que salir desde tu dirección del trabajo. Lo que puede leer y desde dónde puede enviar cambia con ella; los mensajes de los que vino se quedan donde están. **Deshacer** en el aviso que sigue la devuelve. Con más de una empresa, es **Cambiar área**.
+
+Cuando una tarea necesita otra área para seguir, lo pide con un botón **Mover a Trabajo**. Nada se mueve hasta que lo tocas; después sigue sola.
+
 ## Los botones
 
 Una tarea nueva tiene **Hazlo**, **Marcar como hecha**, **Posponer**, **Hazlo de otra forma** y **No hace falta**. Solo se ven unos pocos a la vez; el resto están en **Más**, con **Renombrar**.
