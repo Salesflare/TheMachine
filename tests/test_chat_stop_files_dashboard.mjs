@@ -26,6 +26,10 @@ const PNG=(()=>{const w=96,h=64,raw=Buffer.alloc((w*3+1)*h);for(let y=0;y<h;y++)
 const items=[{kind:'source',from:'Sam Lee',via:'email',title:'Dates',text:'Can we do Tuesday instead of Monday?',mine:false,at:t0-5000},
  {kind:'you',text:'Draft a reply that says Tuesday works',at:t0}];
 let running=true,stopped=false,sent=null;const actions=[],uploaded={};
+// The page can show a step before its request reaches the stand-in service: wait until `n` of that action are in
+const recorded=async(name,n=1,ms=5000)=>{const end=Date.now()+ms;let got;
+ while((got=actions.filter(a=>a.action===name)).length<n&&Date.now()<end)await new Promise(r=>setTimeout(r,25));
+ assert.equal(got.length,n,name);return got};
 const server=createServer(async(req,res)=>{let body='';for await(const c of req)body+=c;const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(url.pathname==='/api/status'){res.end(JSON.stringify(state()));return}
@@ -62,7 +66,7 @@ try{
   await page.locator('#chat-input').fill('');assert.ok(await page.locator('[data-chat-stop]').isVisible());
   await page.locator('[data-chat-stop]').click();
   await page.locator('#chat-log .chat-stopped').waitFor();
-  assert.deepEqual(actions.find(a=>a.action==='chat_stop').args,{suggestion_id:ID});
+  assert.deepEqual((await recorded('chat_stop'))[0].args,{suggestion_id:ID});
   assert.equal(await page.locator('#chat-log .chat-live').count(),0);
   assert.ok((await page.locator('#chat-log .chat-msg.machine .bubble').allTextContents()).some(t=>t.includes('Here is a reply: Hi Sam, Tuesday…')),'the reply so far stays, cut off');
   // Stopped sits on the reply: right under its text and before the card's choices, not as a line of its own
@@ -103,12 +107,12 @@ try{
   // Remove takes one back (and tells the service)
   await page.locator('#chat-tray [data-att-remove]').nth(3).click();
   assert.equal(await page.locator('#chat-tray .chat-att').count(),3);
-  assert.equal(actions.filter(a=>a.action==='chat_file_remove').length,1);
+  await recorded('chat_file_remove');
   // Send: the files go with the message and show in the thread with it
   await page.locator('#chat-input').fill('Use the date on this photo');
   await page.locator('[data-chat-send]').click();
   await page.locator('#chat-log .chat-msg.you .chat-you-img').first().waitFor();
-  const decide=actions.find(a=>a.action==='decide');
+  const [decide]=await recorded('decide');
   assert.equal(decide.args.feedback,'Use the date on this photo');assert.equal(decide.args.files.length,3);
   assert.equal(await page.locator('#chat-tray').isHidden(),true);
   assert.ok(await page.locator('#chat-log .chat-msg.you .chat-files a.via-file',{hasText:'Quote.pdf'}).isVisible());
