@@ -48,6 +48,9 @@ try{
    assert.equal(await other.locator('a,button').count(),0);
    // The copied text of a result without a file keeps the words too
    assert.equal(await page.evaluate(()=>resultBody(state.suggestions[0])),cards[0].body.replace(`[practice plan](${path})`,'practice plan'));
+   // A link that goes without words leaves no second period behind ("changed. ." read "changed.")
+   assert.equal(await page.evaluate(()=>resultBody({body:'No settings were changed. memory/assistant/f.md.'})),'No settings were changed.');
+   assert.equal(await page.evaluate(()=>resultBody({body:'Wait. . . then go.'})),'Wait. . . then go.');
   }
   await context.close()}
  assert.deepEqual(errors,[]);

@@ -59,6 +59,7 @@ import crm_import
 import i18n
 import locale_prefs
 import notify
+import todo_areas
 import mail_attachments
 import message_seal
 import enrichment
@@ -896,9 +897,10 @@ FAMILY_ACTIONS = {
     'family_todo',
 }
 OWNER_ACTIONS |= FAMILY_ACTIONS
-# Cards the owner makes, renames, or merges when the review asks: theirs alone, from the dashboard.
+# Cards the owner makes, renames, moves to another area, or merges when the review asks: theirs alone, from the dashboard.
 CARD_ACTIONS = {
     'card_merge',
+    'card_move',
     'card_new',
     'card_project',
     'card_rename',
@@ -4059,7 +4061,7 @@ class Store:
             if 'action_id' not in preparation_columns:
                 db.execute('ALTER TABLE preparations ADD COLUMN action_id TEXT')
                 db.execute("UPDATE preparations SET action_id=(SELECT id FROM action_jobs WHERE approval_id=preparations.decision_id AND suggestion_id=preparations.suggestion_id AND status='local_preparation')")
-            for column in ['details', 'started_at', 'questions']:
+            for column in ['details', 'started_at', 'questions', 'move_to']:  # move_to: the area a stuck run asks to be moved to
                 if column not in preparation_columns:
                     db.execute('ALTER TABLE preparations ADD COLUMN ' + column + ' TEXT')
             if 'auto_retries' not in preparation_columns:
@@ -4098,6 +4100,12 @@ class Store:
                 db.execute('ALTER TABLE suggestions ADD COLUMN project TEXT')
             # Who set a to-do's project: 'review' (or NULL, from before 2026-10-27), 'auto' (graph.link_cards: its thread or
             # people are on it) or 'owner' (by hand, also "no project"), which nothing automatic changes again.
+            # A to-do the owner moved to another area (todo_areas.py): that area, so a later signal from the old one doesn't
+            # pull it back; card_moves keeps what each move changed, for its event line and Undo.
+            if 'area' not in {r[1] for r in db.execute('PRAGMA table_info(suggestions)')}:
+                db.execute('ALTER TABLE suggestions ADD COLUMN area TEXT')
+            db.execute('CREATE TABLE IF NOT EXISTS card_moves(decision_id TEXT PRIMARY KEY,suggestion_id TEXT NOT NULL,area TEXT NOT NULL,'
+                       'accounts_before TEXT NOT NULL,area_before TEXT,created_at TEXT NOT NULL,undone_at TEXT)')
             if 'project_by' not in {r[1] for r in db.execute('PRAGMA table_info(suggestions)')}:
                 db.execute('ALTER TABLE suggestions ADD COLUMN project_by TEXT')
                 db.execute("UPDATE suggestions SET project_by='review' WHERE project IS NOT NULL AND project<>''")
@@ -5753,6 +5761,8 @@ class Store:
         ids = [*event_ids, *[i for i in old_ids if i not in event_ids]]  # the newest evidence leads the source line
         evidence = {r['id']: dict(r) for r in db.execute('SELECT id,account_id,kind,occurred_at,metadata FROM events WHERE id IN (' + ','.join('?' * len(ids)) + ')', ids)}
         accounts = sorted(set(json.loads(card['account_ids'] or '[]')) | {r['account_id'] for r in rows})
+        if card['area']:  # moved by the owner (move_card): it stays in that area, whatever account the new signal came in on
+            accounts = json.loads(card['account_ids'] or '[]')
         db.execute('INSERT OR IGNORE INTO suggestion_keys(dedupe_key,suggestion_id,created_at) VALUES(?,?,?)', (dedupe_key[:240], sid, stamp))
         added = [i for i in event_ids if i not in old_ids]
         closed = card['status'] in ('completed', 'rejected')
@@ -5957,6 +5967,64 @@ class Store:
             # A card already in Telegram is edited to the new title.
             db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL', (suggestion_id,))
         return {'id': suggestion_id, 'title': new, 'renamed': kept is not None, **({'title_suggested': kept} if kept is not None else {})}
+
+    def move_card(self, suggestion_id, area=None, decision_id=None, source='dashboard', undo=None):
+        """The owner moves a to-do to another of their areas (todo_areas.py): Personal to Work at their company, or back.
+        Its accounts become that area's, so what it may read and send from, its Work or Personal label, timing, sharing
+        and handoffs all follow; the messages it came from stay where they are. undo: the decision id of the move to take
+        back (its toast's Undo), which puts its accounts back as they were. A to-do whose run stopped to ask for this
+        very move (preparation move_to) carries on by itself, as one does after its sign-in; any other stuck one keeps
+        Try again. Returns {'id', 'area', 'label', 'line', 'decision_id', 'resumed'}."""
+        if not re.fullmatch(r'[A-Za-z0-9_.:-]{1,200}', str(decision_id or '')):
+            raise ValueError('Moves come from the owner’s controls')
+        accounts = getattr(self, 'accounts', None) or []
+        companies = sum(a['id'] != todo_areas.PERSONAL for a in todo_areas.areas(accounts))
+        resume = False
+        with self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            row = db.execute('SELECT s.id,s.status,s.account_ids,s.area,p.status prep,p.error,p.move_to FROM suggestions s '
+                             'LEFT JOIN preparations p ON p.suggestion_id=s.id WHERE s.id=?', (suggestion_id,)).fetchone()
+            if not row:
+                raise ValueError('Unknown to-do')
+            done = db.execute('SELECT area FROM card_moves WHERE decision_id=?', (decision_id,)).fetchone()
+            if done:  # the same tap again
+                return {'id': suggestion_id, 'area': done['area'], 'label': todo_areas.label(done['area'], companies), 'duplicate': True}
+            if row['status'] in ('completed', 'rejected'):
+                raise ValueError('Reopen it first')
+            if undo is not None:
+                last = db.execute('SELECT * FROM card_moves WHERE suggestion_id=? AND undone_at IS NULL ORDER BY created_at DESC,rowid DESC LIMIT 1',
+                                  (suggestion_id,)).fetchone()
+                if not last or last['decision_id'] != undo:
+                    raise ValueError('That move can’t be undone any more')
+                ids, pinned = json.loads(last['accounts_before']), last['area_before']
+                area = todo_areas.current(ids, accounts) or todo_areas.PERSONAL
+                db.execute('UPDATE card_moves SET undone_at=? WHERE decision_id=?', (now(), undo))
+            else:
+                area = todo_areas.check(area, row['account_ids'], accounts)
+                ids, pinned = todo_areas.accounts_in(area, accounts), area
+                if not ids:
+                    raise ValueError('Pick one of your areas')
+                resume = (row['prep'] == 'blocked' and not row['error'] and row['move_to'] == area
+                          and row['status'] in ('accepted', 'instructions'))
+            db.execute('INSERT INTO card_moves(decision_id,suggestion_id,area,accounts_before,area_before,created_at) VALUES(?,?,?,?,?,?)',
+                       (decision_id, suggestion_id, area, row['account_ids'] or '[]', row['area'], now()))
+            if undo is not None:  # an undo is no move of its own to undo later
+                db.execute('UPDATE card_moves SET undone_at=created_at WHERE decision_id=?', (decision_id,))
+            db.execute('UPDATE suggestions SET account_ids=?,area=? WHERE id=?', (encoded(ids), pinned, suggestion_id))
+            db.execute('INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
+                       (decision_id, suggestion_id, 'move_undo' if undo is not None else 'move', '', source, now()))
+            # Its Telegram card shows the other area's text rules (Careful hides card text on a lock screen for Work)
+            db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL', (suggestion_id,))
+        line = todo_areas.moved_line(area, companies)
+        out = {'id': suggestion_id, 'area': area, 'label': todo_areas.label(area, companies), 'decision_id': decision_id,
+               'line': i18n.t(*line) if isinstance(line, tuple) else i18n.t(line), 'resumed': False}
+        if resume:
+            try:
+                self.decide(suggestion_id, 'retry', '', 'moved:' + decision_id, 'moved')  # no Try again line: they tapped the move
+                out['resumed'] = True
+            except ValueError as error:
+                LOG.info('move resume skipped suggestion=%s error=%s', suggestion_id, error)
+        return out
 
     def merge_answer(self, suggestion_id, merge, decision_id, source='dashboard'):
         """The owner's answer to "Looks like the same as X. Merge?" on their card. Merge folds their card into X, which
@@ -7707,7 +7775,7 @@ class Store:
             if payload['kind']!='finish':continue
             payload['finish_result']={'state':'uncertain','body':'Replaced by new work before its result was saved.','at':now(),'was':left['status']}
             db.execute("UPDATE action_jobs SET status='finish_uncertain',payload=?,updated_at=? WHERE id=?",(encoded(payload),now(),left['id']))
-        db.execute("INSERT INTO preparations(suggestion_id,decision_id,job_id,status,created_at,updated_at) VALUES(?,?,?,'queued',?,?) ON CONFLICT(suggestion_id) DO UPDATE SET decision_id=excluded.decision_id,job_id=excluded.job_id,status='queued',created_at=excluded.created_at,updated_at=excluded.updated_at,error=NULL,reason=NULL,details=NULL,questions=NULL,started_at=NULL,retry_at=NULL,attempts=0,auto_retries=0",
+        db.execute("INSERT INTO preparations(suggestion_id,decision_id,job_id,status,created_at,updated_at) VALUES(?,?,?,'queued',?,?) ON CONFLICT(suggestion_id) DO UPDATE SET decision_id=excluded.decision_id,job_id=excluded.job_id,status='queued',created_at=excluded.created_at,updated_at=excluded.updated_at,error=NULL,reason=NULL,details=NULL,questions=NULL,move_to=NULL,started_at=NULL,retry_at=NULL,attempts=0,auto_retries=0",
                    (suggestion_id,decision_id,uuid.uuid4().hex,now(),now()))
         db.execute('UPDATE preparations SET session_job_id=coalesce(?,job_id) WHERE suggestion_id=?',(session_job_id,suggestion_id))
         db.execute('UPDATE preparations SET action_id=? WHERE suggestion_id=?',(action_id,suggestion_id))
@@ -8395,7 +8463,10 @@ class Store:
                 elif new:found.append((job['suggestion_id'],f"A new error ({new['kind']}) showed up right after the merge, so I undid it."))
         return found
 
-    def preparation_blocked(self, suggestion_id, job_id, reason, details=None, note_kind=None, questions=None):
+    def preparation_blocked(self, suggestion_id, job_id, reason, details=None, note_kind=None, questions=None, move_to=None):
+        """A run that can't go on. move_to: it needs the to-do in another of the owner's areas (todo_areas.py), such as Work
+        to send from the company's mailbox. It never moves the to-do: the to-do offers the move for the owner's tap
+        (move_card), and carries on after it."""
         if not reason.strip() or len(reason)>400:
             raise ValueError('Give a short, specific blocker')
         if details is not None and (not isinstance(details,str) or len(details)>2000):
@@ -8405,11 +8476,17 @@ class Store:
             job=db.execute('SELECT * FROM preparations WHERE suggestion_id=?',(suggestion_id,)).fetchone()
             if not job or job['job_id']!=job_id or job['status'] not in ('starting','running'):
                 raise ValueError('Preparation canceled or replaced')
+            if move_to is not None:
+                card=db.execute('SELECT account_ids FROM suggestions WHERE id=?',(suggestion_id,)).fetchone()
+                try:
+                    todo_areas.check(move_to,card['account_ids'] if card else '[]',getattr(self,'accounts',None) or [])
+                except ValueError as error:
+                    raise ValueError(f"move_to: {error}. The owner's areas: "+', '.join(a['id'] for a in todo_areas.areas(getattr(self,'accounts',None) or [])))
             if note_kind:
                 self.tag_note(suggestion_id, note_kind, db)
             # An empty list says the run asks nothing (ask_blocked); NULL is a blocker from before runs named questions.
-            db.execute("UPDATE preparations SET status='blocked',reason=?,details=?,questions=?,updated_at=? WHERE suggestion_id=?",
-                       (reason,(details or '').strip() or None,encoded(questions),now(),suggestion_id))
+            db.execute("UPDATE preparations SET status='blocked',reason=?,details=?,questions=?,move_to=?,updated_at=? WHERE suggestion_id=?",
+                       (reason,(details or '').strip() or None,encoded(questions),move_to,now(),suggestion_id))
             pause_idle_steps(db,suggestion_id)  # nothing runs now: its confirmed step waits for Try again or an answer
             db.execute("UPDATE deliveries SET status='queued',reminder=1,needs_edit=1,error=NULL WHERE suggestion_id=? AND status IN ('queued','sent','uncertain')",(suggestion_id,))
         return {'status':'blocked','reason':reason}
@@ -8512,6 +8589,7 @@ class Store:
         if suggestion.get('status') in ('prepared','accepted','instructions'):self.browser_view(db,suggestion,extra)
         if self.accounts and suggestion.get('account_ids') is not None:
             extra['scope']=suggestion_scope(suggestion['account_ids'], self.accounts)
+            extra['area']=todo_areas.current(suggestion['account_ids'], self.accounts)  # More, Move to: the other areas
         wait=handoff_wait(db,suggestion)
         if wait:extra['handoff_wait']=wait
         still=handoff_wait(db,suggestion,awake=True)
@@ -8677,6 +8755,7 @@ class Store:
                                       preparation_details=job['details'],preparation_started_at=job['started_at'],preparation_retried=job['auto_retries']>0,
                                       preparation_questions=blocker_questions(job.get('questions')),preparation_no_questions=job.get('questions')=='[]',
                                       preparation_cause=job.get('cause'),preparation_signed_in=str(job['decision_id']).startswith('signed-in:'),
+                                      preparation_move_to=job.get('move_to') if job['status']=='blocked' else None,
                                       preparation_hold=getattr(self,'preparation_holds',{}).get(suggestion['id']) if job['status']=='queued' else None)
             suggestion.update(self.suggestion_result(suggestion, db))
 
@@ -8748,6 +8827,7 @@ class Store:
             # How many cards are done or dismissed, per scope: the Done lists' counts; they load the rest a page at a time
             result['done_counts'] = self.done_counts(db)
             result['suggestion_counts'] = {r['status']: r['count'] for r in db.execute('SELECT status,count(*) count FROM suggestions GROUP BY status')}
+            result['areas'] = todo_areas.areas(accounts)  # where a to-do can move (More, Move to)
             try:  # roles waiting in Graph, Who's who: the Graph tab's badge
                 result['graph_waiting'] = graph.waiting(db)
             except sqlite3.Error:
@@ -9981,6 +10061,22 @@ def doc_write_files(db, event_ids):
         if m.get('file_id'):
             found[str(m['file_id'])] = {'account_id': r[0], 'doc_title': m.get('doc_title'), 'provider': m.get('provider')}
     return found
+
+
+def area_prompt(config, account_ids):
+    """The run's line about the to-do's area (todo_areas.py) and asking the owner to move it, when they have another."""
+    accounts = (config or {}).get('accounts') or []
+    found = todo_areas.areas(accounts)
+    here = todo_areas.current(account_ids, accounts)
+    others = [a for a in found if a['id'] != here]
+    if not here or not others:
+        return ''
+    name = next((a['label'] for a in found if a['id'] == here), here)
+    return ('\n\nArea: this to-do is in ' + name + '. What it may read and send from follows its area (a Work to-do sends from that '
+            'company\'s accounts). When it needs another area, such as an email from the company\'s address, do not work around it '
+            'or say it can\'t be moved: record a blocker with assistant_signals preparation_blocked and move_to=<'
+            + ' | '.join(f"{a['id']} ({a['label']})" for a in others) + '>, and a reason that says why in one line. The to-do shows '
+            'the owner a button to move it; you never move it yourself. Once they move it, it carries on by itself.')
 
 
 def doc_write_prompt(config):
@@ -11286,8 +11382,10 @@ def strip_result_links(text):
     named = re.compile(r'\[([^\]\n]*)\]\(' + root + r'[^\s\)]+\)')
     bare = re.compile(root + r'[^\s<>"\)]+')
     def strip(line, words):
-        line = named.sub(lambda m: m[1].strip() if words else '', line)
-        return bare.sub('', line).replace('  ', ' ').rstrip()
+        was = line
+        line = bare.sub('', named.sub(lambda m: m[1].strip() if words else '', line)).replace('  ', ' ').rstrip()
+        # "No settings were changed. [](memory/assistant/x.md)." leaves its period behind the one before: drop it
+        return re.sub(r'([.!?])\s+[.!?](?=\s|$)', r'\1', line) if line != was.rstrip() else line
     # A line left with only separators or a dangling label ("Draft:") carried nothing but the link.
     empty = lambda s: re.fullmatch(r'[\s·•|,;:()\-–—]*', s) or re.fullmatch(r'\s*[-*•]?\s*[^\s:]+(?: [^\s:]+){0,3}:', s)
     lines=[]
@@ -15586,6 +15684,8 @@ class App(*APP_MIXINS):
                     return {'id': str(args.get('suggestion_id') or ''), 'project': graph.set_card_project(db, args.get('suggestion_id'), args.get('project'))}
             if name == 'card_rename':
                 return self.store.rename_card(args.get('suggestion_id'), args.get('title'), args.get('reset') is True, args.get('decision_id'))
+            if name == 'card_move':  # More, Move to Work (todo_areas.py); undo: the move its toast's Undo takes back
+                return self.store.move_card(args.get('suggestion_id'), args.get('area'), args.get('decision_id'), undo=args.get('undo'))
             return self.store.merge_answer(args.get('suggestion_id'), args.get('merge') is True, args.get('decision_id'))
         if name == 'undo_merge':
             if owner_dashboard and re.fullmatch(r'[A-Za-z0-9_.:-]{1,200}',str(args.get('approval_id',''))):source='dashboard'
@@ -16126,7 +16226,8 @@ class App(*APP_MIXINS):
                 raise ValueError('Only the owner can edit what was learned, on the dashboard')
             return self.store.edit_fact(args.get('id'), args.get('text'))
         if name == 'preparation_blocked':
-            return self.store.preparation_blocked(args['suggestion_id'],args['job_id'],args['reason'],args.get('details'),args.get('note_kind'),args.get('questions'))
+            return self.store.preparation_blocked(args['suggestion_id'],args['job_id'],args['reason'],args.get('details'),args.get('note_kind'),args.get('questions'),
+                                                  args.get('move_to'))
         if name == 'refresh_card':
             with self.store.connect() as db:
                 db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=?',(args['suggestion_id'],))
@@ -18220,6 +18321,11 @@ class App(*APP_MIXINS):
             if fast is not None:request['fast']=fast
             if str(job.get('decision_id') or '').startswith('chat-') and request['session_job_id']!=job['job_id'] and not job.get('finish') and not job['ahead'] and not changing:
                 request['message']=chat_prompt(job,self.config)
+                try:  # its area now: the owner may have moved it since the chat began
+                    with self.store.connect() as db:
+                        row=db.execute('SELECT account_ids FROM suggestions WHERE id=?',(job['suggestion_id'],)).fetchone()
+                    request['message']+=area_prompt(self.config,row['account_ids'] if row else '[]')
+                except Exception as error:LOG.error('area line error=%s',type(error).__name__)
             else:
                 self.store.note_rule_files(RULE_FILES)
                 try:style=self.store.style_text(job['suggestion_id'])
@@ -18235,6 +18341,8 @@ class App(*APP_MIXINS):
                     with self.store.connect() as db:
                         row=db.execute('SELECT account_ids FROM suggestions WHERE id=?',(job['suggestion_id'],)).fetchone()
                     lines=source_notes(account_services(self.config,json.loads(row['account_ids'] or '[]') if row else []))
+                    if lines and len(request['message'])+len(lines)<PROMPT_LIMIT-1000:request['message']+=lines
+                    lines=area_prompt(self.config,row['account_ids'] if row else '[]')  # its area, and asking to move it
                     if lines and len(request['message'])+len(lines)<PROMPT_LIMIT-1000:request['message']+=lines
                 except Exception as error:LOG.error('source notes error=%s',type(error).__name__)
                 try:
@@ -18868,6 +18976,17 @@ class App(*APP_MIXINS):
                 attached = sent_files.get(r['id'], [])
                 said = '' if attached and r['feedback'] in CHAT_FILES_ONLY else clamp(r['feedback'], 5000)
                 owner.append({'kind': 'you', 'text': said, 'via': r['source'], 'at': at, **({'files': attached} if attached else {})})
+            elif r['choice'] in ('move', 'move_undo'):  # More, Move to (move_card): "Moved to Work"; its Undo takes the line back
+                last = next((i for i in reversed(owner) if i.get('choice') == 'move'), None) if r['choice'] == 'move_undo' else None
+                if last:
+                    owner.remove(last)
+                    continue
+                moved = db.execute('SELECT area FROM card_moves WHERE decision_id=?', (r['id'],)).fetchone()
+                if moved:
+                    areas = todo_areas.areas(self.config.get('accounts', []))
+                    line = todo_areas.moved_line(moved['area'], sum(a['id'] != todo_areas.PERSONAL for a in areas))
+                    owner.append({'kind': 'event', 'text': (i18n.t(*line) if isinstance(line, tuple) else i18n.t(line)) + via,
+                                  'choice': 'move', 'mine': True, 'at': at})
             elif r['choice'] in CHAT_OWNER_WORDS:  # a send shows as what went out, below
                 why = ': ' + clamp(r['feedback'], 300) if r['choice'] == 'reject' and r['feedback'] else ''
                 taps = [i for i in owner if i.get('choice')]

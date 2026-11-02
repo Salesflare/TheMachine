@@ -30,6 +30,10 @@ Une tâche dont la dernière étape reste ouverte chez quelqu’un d’autre, co
 
 Une tâche liée à un projet affiche le nom du projet sur la ligne sous son titre ; il ouvre le projet. **Changer de projet** dans **Plus** le change (sur une tâche terminée, dans **Détails**). Voir [les tâches d’un projet](graph.md#a-projects-to-dos).
 
+**Déplacer vers Travail** dans **Plus** déplace une tâche vers votre autre espace, comme une tâche perso qui doit partir de votre adresse pro. Ce qu’elle peut lire et d’où elle peut envoyer suit le déplacement ; les messages d’où elle vient restent où ils sont. **Annuler** dans le message qui suit la remet en place. Avec plusieurs entreprises, c’est **Changer d’espace**.
+
+Quand une tâche a besoin d’un autre espace pour avancer, elle le demande avec un bouton **Déplacer vers Travail**. Rien ne bouge avant que vous appuyiez ; ensuite, elle continue toute seule.
+
 ## Les boutons
 
 Une nouvelle tâche a **Faire**, **Marquer comme fait**, **Mettre en attente**, **Faire autrement** et **Pas nécessaire**. Seuls quelques-uns s’affichent à la fois ; les autres sont sous **Plus**, avec **Renommer**.

@@ -34,6 +34,12 @@ class ResultLinks(unittest.TestCase):
         body='Your [practice plan](memory/assistant/261102-practice-plan.md) is ready. It lists three options.\nSee [it]('+str(a.WORKSPACE)+'/memory/assistant/a.md), then pick.'
         self.assertEqual(a.strip_result_links(body),'Your practice plan is ready. It lists three options.\nSee it, then pick.')
 
+    def test_a_removed_link_leaves_no_second_period(self):
+        for link in ('memory/assistant/261102-findings.md','[](memory/assistant/261102-findings.md)'):
+            self.assertEqual(a.strip_result_links('No settings were changed. '+link+'.'),'No settings were changed.')
+        self.assertEqual(a.strip_result_links('No settings were changed. [Findings](memory/assistant/f.md).'),'No settings were changed. Findings.')
+        self.assertEqual(a.strip_result_links('Wait. . . then go.'),'Wait. . . then go.')  # only where a link went
+
 class GroupSender(unittest.TestCase):
     def test_reply_to_is_kept_only_when_present(self):
         message=raw(plain='Hi');message['payload']['headers']+=[

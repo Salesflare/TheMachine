@@ -30,6 +30,10 @@ A to-do whose last step is still open on someone else's side, like a review, a m
 
 A to-do on a project shows the project's name in the line under its title; it opens the project. **Change project** under **More** changes it (on a done to-do, under **Details**). See [a project's to-dos](graph.md#a-projects-to-dos).
 
+**Move to Work** under **More** moves a to-do to your other area, like a personal one that has to go out from your work address. What it may read and send from follows the move; the messages it came from stay where they are. **Undo** on the note that follows moves it back. With more than one company, it's **Change area**.
+
+When a to-do needs another area to go on, it asks with a **Move to Work** button. Nothing moves until you tap it; then it carries on by itself.
+
 ## The buttons
 
 A new to-do has **Do it**, **Mark done**, **Snooze**, **Do it differently** and **Not needed**. Only a few show at once; the rest are under **More**, with **Rename**.
