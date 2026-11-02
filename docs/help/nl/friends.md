@@ -24,6 +24,8 @@ Mensen die je kent en die op het Network zitten, worden meteen voorgesteld als j
 
 Mensen die het vindt, staan in je lijst Personen met **Heeft een Machine**. Het kijkt naar de adressen uit je berichten en de adressen die je met **Bewerken** aan iemand toevoegde: meldde iemand zich aan met een ander adres, voeg het dan aan die persoon toe. Op de pagina van iemand die het vond, stuurt **Toevoegen als vriend** in het menu ⋯ hetzelfde verzoek als Verbinden.
 
+Telefoonnummers tellen ook: de nummers uit je WhatsApp-chats met mensen aan wie je schreef of die je ontmoette, en de nummers die je met **Bewerken** toevoegde. Je eigen nummers maken je vindbaar, elk met een eigen schakelaar onder **Vindbaar voor**. Een nummer vindt iemand alleen als die jou ook opzocht, of als jullie vrienden zijn, dus niemand kan nummers proberen om te zien wie een Machine heeft.
+
 ## Afspreken met andere Machines
 
 Schrijft iemand met een Machine "laten we volgende week afspreken", dan vraagt je Machine de hunne naar vrije tijden en zoekt hij er een die jullie allebei past, binnen je werkuren. Jullie krijgen elk één to-do, zoals "Afspraak met Alex Example", met de tijd eronder. Tik op **Boek het**, **Andere tijd** of **Niet nodig**. De uitnodiging gaat pas weg als jullie allebei op Boek het tikten.

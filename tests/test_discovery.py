@@ -12,6 +12,7 @@ from test_fleet import CONFIG, NOW
 
 discovery = tf.a.fleet.discovery
 fleet = tf.a.fleet
+graph = tf.a.graph
 
 ON_NETWORK = {'nia@nia.example': ('nia', 'Nia North', False), 'lou@lou.example': ('lou', 'Lou', True),
               'sam@acme.example': ('sam', 'Sam', False)}
@@ -41,6 +42,25 @@ class NetworkRelay(tfr.FriendsRelay):
             return {'discoverable': body['on'], 'addresses': ([{'email': 'owner@acme.example', 'source': 'account'}] if body['on'] else []) +
                     [{'email': e, 'source': 'machine'} for e in self.findable if e != 'owner@acme.example']}
         return {'left': True, 'friends_removed': 1}
+
+
+class PhoneRelay(NetworkRelay):
+    """A Network that also takes numbers: findable ones kept as tokens, answered only with a mutual reason."""
+    def __init__(self, mutual=('+12025550142',)):
+        super().__init__()
+        self.numbers = {'+12025550142': ('ria', 'Ria Park'), '+12025550143': ('tom', 'Tom')}  # Tom has a Machine, no mutual reason
+        self.mutual = set(mutual)
+        self.tokens = {discovery.phone_token(discovery.hexed(pow(discovery.to_group(n), self.b, discovery.P))): n for n in self.numbers}
+
+    def call(self, method, path, body=None, timeout=40):
+        if path == '/discover' and body['action'] == 'phone_resolve':
+            self.calls.append((method, path, body))
+            hits = [(t, self.tokens[t]) for t in body['tokens'] if t in self.tokens and self.tokens[t] in self.mutual]
+            return {'people': [{'token': t, 'username': self.numbers[n][0], 'name': self.numbers[n][1], 'friends': False} for t, n in hits]}
+        found = super().call(method, path, body, timeout)
+        if path == '/discover' and body['action'] == 'discoverable' and body['on']:
+            found['phones'] = body.get('phones') or []
+        return found
 
 
 class Discovery(unittest.TestCase):
@@ -521,3 +541,68 @@ class Discovery(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class PhoneDiscovery(unittest.TestCase):
+    """Numbers: the owner's own (normalized in their region) findable, contacts' numbers looked up blinded, a match only
+    with a mutual reason, and a Network without phone lookups leaves everything else working. Made-up numbers only."""
+    config = {**CONFIG, 'country': 'US', 'owner_phones': ['(202) 555-0100']}
+
+    def setUp(self):
+        tf.Fleet.setUp(self)
+        self.relay = PhoneRelay()
+        self.fleet = fleet.Fleet(self.store.connect, self.config, lambda: 'token', relay=self.relay)
+        self.fleet.directory(refresh=True)
+        with self.store.connect() as db:
+            for node, name, info, strength in [
+                    ('p-ria', 'Ria', {'identifiers': ['wa:12025550142'], 'wrote': 3}, 5),
+                    ('p-tom', 'Tom', {'identifiers': ['wa:12025550143'], 'met': 1}, 4),
+                    ('p-kim', 'Kim', {'identifiers': ['email:kim@kim.example'], 'phones': [{'value': '(202) 555-0144', 'by': 'owner'}]}, 3),
+                    ('p-odd', 'Stranger', {'identifiers': ['wa:12025550145'], 'heard': 2}, 6),  # only wrote to the owner
+                    ('p-me', 'Owner', {'identifiers': ['wa:12025550100'], 'wrote': 1}, 9)]:
+                db.execute('INSERT INTO graph_nodes(id,kind,name,strength,signals,info) VALUES(?,?,?,?,?,?)',
+                           (node, 'person', name, strength, 3, json.dumps(info)))
+
+    def people(self):
+        return {p['username']: p for p in self.fleet.network_view()['people']}
+
+    def test_own_numbers_are_normalized_and_each_can_be_turned_off(self):
+        self.assertEqual(self.fleet.own_numbers(), ['+12025550100'])
+        self.fleet.network_action('discoverable_on')
+        self.assertEqual(self.relay.sent('/discover')[-1]['phones'], ['+12025550100'])
+        number = next(a for a in self.fleet.network_view()['addresses'] if a.get('phone'))
+        self.assertEqual((number['email'], number['on'], number['findable']), ('+12025550100', True, True))
+        self.fleet.network_action('address_off', '+12025550100')
+        self.assertEqual(self.relay.sent('/discover')[-1]['phones'], [])
+        self.assertFalse(next(a for a in self.fleet.network_view()['addresses'] if a.get('phone'))['on'])
+
+    def test_contacts_numbers_go_blinded_and_only_a_mutual_match_comes_back(self):
+        with self.store.connect() as db:
+            self.assertEqual([c[0] for c in self.fleet.network_numbers(db)], ['+12025550142', '+12025550143', '+12025550144'])  # not the stranger, not the owner
+        self.fleet.network_action('find_on')
+        match = [b for b in self.relay.sent('/discover') if b['action'] == 'match' and not b['buckets']][-1]
+        resolve = [b for b in self.relay.sent('/discover') if b['action'] == 'phone_resolve'][-1]
+        self.assertEqual((len(match['items']), len(resolve['tokens'])), (3, 3))
+        for digits in ('5550142', '5550143', '5550144'):
+            self.assertNotIn(digits, json.dumps(self.relay.sent('/discover')))
+        self.assertEqual(set(self.people()), {'ria'})  # Tom has a Machine, but no mutual reason: not found
+        self.assertEqual((self.people()['ria']['email'], self.people()['ria']['hint']), ('+12025550142', 'personal'))
+        with self.store.connect() as db:  # People say "Has a Machine"
+            self.assertEqual(graph.network_marks(db, {}), {'p-ria': {'name': '', 'machine': True, 'in': []}})
+        # Tom looks the owner up too: found on the next daily lookup; numbers seen are not sent again before that
+        self.relay.mutual.add('+12025550143')
+        self.fleet.discovery_round()
+        self.assertNotIn('tom', self.people())
+        self.fleet.discovery_round(force=True)
+        self.assertEqual(set(self.people()), {'ria', 'tom'})
+
+    def test_a_network_without_phone_lookups_changes_nothing_else(self):
+        old = NetworkRelay()
+        self.fleet.relay = old
+        self.fleet.network_action('discoverable_on')
+        self.assertFalse(next(a for a in self.fleet.network_view()['addresses'] if a.get('phone'))['findable'])
+        self.fleet.network_action('find_on')
+        self.assertEqual(self.people(), {})
+        self.assertTrue(self.fleet.network_settings().get('numbers_unsupported'))
+        self.assertIsNotNone(self.fleet.network_settings().get('last'))  # the address lookup went through
+

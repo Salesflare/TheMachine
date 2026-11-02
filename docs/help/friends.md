@@ -24,6 +24,8 @@ People you know who are on the Network are suggested right away when you turn it
 
 People it finds say **Has a Machine** in your People list. It checks the addresses in your messages and the ones you added to a person with **Edit**: if someone signed up with another address, add it to them. On the page of someone it found, **Add as friend** in the ⋯ menu sends the same request as Connect.
 
+Phone numbers count too: the numbers in your WhatsApp chats with people you wrote to or met, and the ones you added with **Edit**. Your own numbers make you findable, each with its own switch under **Findable by**. A number finds someone only when they looked you up too, or you are friends, so nobody can try numbers to see who has a Machine.
+
 ## Scheduling with other Machines
 
 When someone with a Machine writes "let's meet next week", your Machine asks theirs for free times and finds one that suits you both, within your work hours. Each of you gets one to-do, like "Meet Alex Example", with the time below it. Tap **Book it**, **Other time** or **Not needed**. The invite goes out only once you both tapped Book it.

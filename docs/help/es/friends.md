@@ -24,6 +24,8 @@ La gente que conoces y está en la Network se te sugiere en cuanto la activas, y
 
 Las personas que encuentra muestran **Tiene una Machine** en tu lista Personas. Revisa las direcciones de tus mensajes y las que añadiste a alguien con **Editar**: si alguien se registró con otra dirección, añádesela. En la página de alguien que encontró, **Añadir como amigo** en el menú ⋯ envía la misma solicitud que Conectar.
 
+Los números de teléfono también cuentan: los de tus chats de WhatsApp con personas a las que escribiste o con las que te reuniste, y los que añadiste con **Editar**. Tus propios números hacen que te encuentren, cada uno con su interruptor en **Localizable por**. Un número solo encuentra a alguien si esa persona también te buscó, o si sois amigos, así que nadie puede probar números para ver quién tiene una Machine.
+
 ## Agendar con otras Machines
 
 Cuando alguien con una Machine escribe «veámonos la semana que viene», tu Machine pide a la suya sus horas libres y encuentra una que os vaya bien a los dos, dentro de tu horario laboral. Cada uno recibe un solo to-do, como «Reunión con Alex Example», con la hora debajo. Toca **Reservar**, **Otra hora** o **No hace falta**. La invitación solo sale cuando los dos habéis tocado Reservar.

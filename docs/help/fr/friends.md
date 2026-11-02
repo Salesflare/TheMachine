@@ -24,6 +24,8 @@ Les personnes que vous connaissez et qui sont sur le Network sont suggérées d�
 
 Les personnes trouvées affichent **A une Machine** dans votre liste Personnes. La vérification porte sur les adresses de vos messages et sur celles que vous avez ajoutées à une personne avec **Modifier** : si quelqu’un s’est inscrit avec une autre adresse, ajoutez-la à cette personne. Sur la page d’une personne trouvée, **Ajouter comme ami** dans le menu ⋯ envoie la même demande que Se connecter.
 
+Les numéros de téléphone comptent aussi : ceux de vos discussions WhatsApp avec des personnes à qui vous avez écrit ou que vous avez rencontrées, et ceux ajoutés avec **Modifier**. Vos propres numéros vous rendent trouvable, chacun avec son interrupteur sous **Trouvable par**. Un numéro ne trouve quelqu’un que si cette personne vous a aussi recherché, ou si vous êtes amis : personne ne peut essayer des numéros pour voir qui a une Machine.
+
 ## Planifier avec d’autres Machines
 
 Quand une personne qui a une Machine écrit « voyons-nous la semaine prochaine », votre Machine demande ses disponibilités à la sienne et trouve un horaire qui vous convient à tous les deux, dans vos heures de travail. Chacun reçoit une seule to-do, comme « Rendez-vous avec Alex Example », avec l’horaire en dessous. Touchez **Réserver**, **Autre horaire** ou **Pas nécessaire**. L’invitation ne part que lorsque vous avez tous les deux touché Réserver.

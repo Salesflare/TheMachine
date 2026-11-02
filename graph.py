@@ -2418,6 +2418,27 @@ def people_by_email(db, emails):
     return sorted(out)
 
 
+def people_by_phone(db, numbers):
+    """(node_id, number) for the graph people with one of these numbers (+15550100): one the messages show (wa:) or
+    one the owner added to them in Edit."""
+    digits = {re.sub(r'\D', '', str(n)): str(n) for n in numbers if n}
+    digits.pop('', None)
+    out = set()
+    wanted = sorted(digits)
+    for start in range(0, len(wanted), 400):
+        chunk = wanted[start:start + 400]
+        out.update((r[0], digits[r[1][3:]]) for r in db.execute(
+            f"SELECT n.id,j.value FROM graph_nodes n, json_each(n.info,'$.identifiers') j WHERE n.kind='person' AND j.value IN ({','.join('?' for _ in chunk)})",
+            ['wa:' + d for d in chunk]))
+    if digits:
+        for node_id, value in db.execute("SELECT n.id,json_extract(j.value,'$.value') FROM graph_nodes n, json_each(n.info,'$.phones') j "
+                                         "WHERE n.kind='person' AND json_type(j.value)='object' AND json_extract(j.value,'$.by')='owner'"):
+            found = digits.get(re.sub(r'\D', '', str(value or '')))
+            if found:
+                out.add((node_id, found))
+    return sorted(out)
+
+
 def fleet_marks(db, fleets):
     """{node_id: {'name', 'machine', 'in': [...]}} for the people in the graph who are members of the owner's Fleets,
     Family or Friends (fleets: the directory by Fleet id, as fleet.Fleet.fleets() gives it). Members only: a pending
@@ -2476,7 +2497,8 @@ def network_marks(db, marks, fleets=None):
             listed = True
             asked |= {str(r.get('username') or '').lower() for r in f['requests'].get('out') or () if isinstance(r, dict)}
     marks = dict(marks or {})
-    for node_id, email in people_by_email(db, found):
+    # A row is an address, or a number (+15550100) found with a mutual reason (discovery.py, phone lookups)
+    for node_id, email in people_by_email(db, [e for e in found if not e.startswith('+')]) + people_by_phone(db, [e for e in found if e.startswith('+')]):
         mark = marks.get(node_id) or {'name': '', 'machine': False, 'in': []}
         p = found[email]
         name = str(p['username'] or '').lower()

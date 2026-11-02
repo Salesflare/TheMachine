@@ -24,6 +24,8 @@ Pessoas que você conhece e que estão na Network são sugeridas assim que você
 
 As pessoas encontradas mostram **Tem uma Machine** na sua lista Pessoas. A verificação usa os endereços das suas mensagens e os que você adicionou a alguém com **Editar**: se alguém se cadastrou com outro endereço, adicione-o a essa pessoa. Na página de alguém encontrado, **Adicionar como amigo** no menu ⋯ envia o mesmo pedido que Conectar.
 
+Números de telefone também contam: os das suas conversas no WhatsApp com pessoas para quem você escreveu ou com quem se encontrou, e os que você adicionou com **Editar**. Seus próprios números fazem você ser encontrado, cada um com sua chave em **Pode ser encontrado por**. Um número só encontra alguém quando essa pessoa também procurou você, ou vocês são amigos, então ninguém pode testar números para ver quem tem uma Machine.
+
 ## Agendar com outras Machines
 
 Quando alguém com uma Machine escreve "vamos nos ver semana que vem", sua Machine pede à dela os horários livres e acha um bom para os dois, dentro do seu horário de trabalho. Cada um recebe um só to-do, como "Reunião com Alex Example", com o horário embaixo. Toque em **Marcar**, **Outro horário** ou **Não precisa**. O convite só sai quando os dois tocaram em Marcar.

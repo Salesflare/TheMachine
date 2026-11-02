@@ -38,6 +38,9 @@ Network identity on import, and your teammates and friends see a key-change noti
   never sees your address book. Being findable covers your account email and your connected mail addresses, except
   shared ones (info@, sales@, a team inbox, an address a teammate also has), which stay off until you turn them on. The
   Network keeps those only blinded and learns which addresses matched people who are findable.
+  Your own phone numbers (entered by you or from a linked account, never one seen in a message) make you findable
+  too, kept as keyed hashes. Numbers are few enough to try them all, so a number lookup gets no list of findable
+  people and finds someone only with a mutual reason: they looked you up too, or you are friends ([discovery.py](../discovery.py)).
 - **Your own addresses.** A self-hosted Machine tells the Network the mail addresses of its work accounts (so teammates'
   Machines know who knows whom), and its dashboard's https address when you set `dashboard_host`, so your Account page
   can link to it.
