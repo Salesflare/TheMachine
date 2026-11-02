@@ -28,31 +28,31 @@ Eine Aufgabe, deren letzter Schritt noch bei jemand anderem offen ist, etwa ein 
 
 **Alle**, **Arbeit** und **Privat** über der Liste in der Seitenleiste zeigen alle Aufgaben oder nur eine Art. Deine Machine merkt sich die Wahl, sodass Handy und Computer dieselbe Liste zeigen. Wenn Arbeit oder Privat aktiv ist, steht das oben in der Liste, mit **Alle anzeigen** zum Zurückgehen.
 
-Eine Aufgabe in einem Projekt zeigt den Projektnamen in der Zeile unter ihrem Titel. Tippe darauf, um das Projekt zu ändern oder zu entfernen; **Projekt öffnen** dort öffnet seine Seite. Siehe [Aufgaben eines Projekts](graph.md#a-projects-to-dos).
+Eine Aufgabe in einem Projekt zeigt den Projektnamen in der Zeile unter ihrem Titel; er öffnet das Projekt. **Projekt** unter **Details** ändert es oder entfernt es. Siehe [Aufgaben eines Projekts](graph.md#a-projects-to-dos).
 
-Ihr Bereich, **Arbeit** oder **Privat**, steht auch in dieser Zeile. Tippe darauf, um die Aufgabe in deinen anderen Bereich zu verschieben, etwa eine private, die von deiner Arbeitsadresse aus rausgehen muss. Was sie lesen und wovon sie senden darf, zieht mit; die Nachrichten, aus denen sie kam, bleiben, wo sie sind. **Rückgängig** in der Meldung danach verschiebt sie zurück.
+**Bereich** unter **Details** verschiebt die Aufgabe in deinen anderen Bereich, etwa eine private, die von deiner Arbeitsadresse aus rausgehen muss. Was sie lesen und wovon sie senden darf, zieht mit; die Nachrichten, aus denen sie kam, bleiben, wo sie sind. **Rückgängig** in der Meldung danach verschiebt sie zurück.
 
 Braucht eine Aufgabe einen anderen Bereich, um weiterzukommen, fragt sie mit einer Schaltfläche **Nach Arbeit verschieben**. Nichts wird verschoben, bevor du tippst; danach macht sie von selbst weiter.
 
 ## Die Buttons
 
-Eine Aufgabe zeigt einen Button: den nächsten Schritt, etwa **Ausführen**, **Prüfen und senden** oder **Als erledigt markieren**. Der Rest steht unter **…**. Auf dem Handy öffnet sich das vom unteren Bildschirmrand. Eine neue Aufgabe hat diese:
+Eine Aufgabe zeigt ihren nächsten Schritt, etwa **Ausführen** oder **Prüfen und senden**, mit **Zurückstellen** daneben. Siehe [Ausführen](do-it.md) und [Zurückstellen](snooze.md). Eine fertige hat auch **Änderungen anfragen** (sag, was im Entwurf anders sein soll, und sie macht ihn neu) und **Als erledigt markieren** (sie ist erledigt).
 
-- **Ausführen**: Deine Machine bereitet sie vor. Siehe [Ausführen](do-it.md).
-- **Als erledigt markieren**: Sie ist erledigt.
-- **Zurückstellen**: Hol sie später zurück. Siehe [Zurückstellen](snooze.md).
-- **Anders ausführen**: Sag in ein paar Worten, was du stattdessen möchtest. Bei einer vorbereiteten Aufgabe heißt das **Änderungen anfragen**: Sag, was im Entwurf anders sein soll, und sie macht ihn neu. Es steht auch neben **Senden**, wenn du den Entwurf prüfst.
+Soll sie anders erledigt werden, sag es in ihrem **Chat**.
+
+Unter **…** (auf dem Handy öffnet sich das vom unteren Bildschirmrand):
+
+- **Übergeben…**: Gib sie an ein Teammitglied, an [Claude Code oder Codex](hand-to-agent.md) (die du eingerichtet hast), oder [bitte jemanden um ein Review](ask-to-review.md).
+- **Wiederholen…**: Sie [kommt in einem Rhythmus wieder](recurring.md).
 - **Nicht nötig**: Sie verschwindet. Wähl auf Wunsch einen Grund: **Nicht relevant**, **Falsche Fakten** oder **Schon erledigt**. Deine Machine lernt daraus.
 
-Auch unter **…**: **Übergeben…** übergibt sie an ein Teammitglied, an [Claude Code oder Codex](hand-to-agent.md) (die du eingerichtet hast) oder [bittet jemanden um ein Review](ask-to-review.md). **Wiederholen…** lässt sie [in einem Rhythmus wiederkommen](recurring.md).
-
-Tippe auf den Titel, um sie umzubenennen. Dein Titel bleibt, auch wenn sich die Aufgabe ändert.
+Tippe auf den Titel oder auf **Name** unter **Details**, um sie umzubenennen. Dein Titel bleibt, auch wenn sich die Aufgabe ändert.
 
 Eine geschlossene Aufgabe kommt mit **Wieder öffnen** zurück. Sie kommt auch von selbst zurück, wenn etwas Neues passiert, etwa eine neue Nachricht von der Person. Deine eigene Antwort holt sie nicht zurück.
 
 Eine Aufgabe, die nur bis zu einem bestimmten Zeitpunkt zählte, etwa eine Bestätigung vor einem Meeting, schließt sich von selbst, sobald dieser Zeitpunkt vorbei ist. Sie wandert zu den erledigten mit „Nicht mehr nötig“ und wann es war. **Rückgängig** holt sie einen Tag lang zurück.
 
-Bei deinen ersten Aufgaben zeigt eine kurze Zeile unter den Buttons das Wichtigste: **Anders ausführen** (oder **Änderungen anfragen**) und **Nicht nötig**, wenn eine Aufgabe nicht ganz passt, und bei deinem ersten fertigen Entwurf, dass nichts rausgeht, bevor du auf **Senden** tippst. Ein Tipp verschwindet für immer, sobald du seinen Button nutzt oder auf × tippst, auf all deinen Geräten.
+Bei deinen ersten Aufgaben zeigt eine kurze Zeile unter den Buttons das Wichtigste: **Anders angehen** (oder **Änderungen anfragen**) und **Nicht nötig**, wenn eine Aufgabe nicht ganz passt, und bei deinem ersten fertigen Entwurf, dass nichts rausgeht, bevor du auf **Senden** tippst. Ein Tipp verschwindet für immer, sobald du seinen Button nutzt oder auf × tippst, auf all deinen Geräten.
 
 Jede Aufgabe beginnt mit ihrem Titel. Die Zeile darunter zeigt, um wen es geht, deren Organisation, das Projekt, Arbeit oder Privat (unter **Alle**) und wann sie kam, dazu ihren Stand, wenn ihre Gruppe ihn nicht schon nennt. Tippe auf einen Namen, um seine Seite im Graph zu öffnen.
 
@@ -60,7 +60,7 @@ Manchmal sagt eine dezente Zeile unter dem Text, was nicht bekannt ist, etwa „
 
 Ein Titel sagt, was zu tun ist. Er ändert sich nur, wenn sich das ändert, etwa bei einer neuen Bitte. Eine erledigte Aufgabe behält ihren Titel, darunter steht, wie sie ausging, etwa was rausging oder "Erledigt: Sam hat am Dienstag unterschrieben".
 
-**Details** zeigt die Nachricht, aus der sie stammt (tippe darauf, um den Verlauf zu lesen), deine letzte Notiz und das Ergebnis eines Coding-Agenten. **Chat ›** am Ende dieser Zeile öffnet den Chat. Eine erledigte Aufgabe bleibt kurz: ihr Titel, eine Zeile und was rausging.
+**Details** zeigt ihren Namen, ihr Projekt und ihren Bereich (tippe auf eins, um es zu ändern), die Nachricht, aus der sie stammt (tippe darauf, um den Verlauf zu lesen), deine letzte Notiz und das Ergebnis eines Coding-Agenten. **Chat ›** am Ende dieser Zeile öffnet den Chat. Eine erledigte Aufgabe bleibt kurz: ihr Titel, eine Zeile und was rausging.
 
 Eine „Wartet auf“-Aufgabe (jemand hat dir etwas versprochen) verlinkt deine eigene letzte Nachricht an die Person, die, auf die du eine Antwort erwartest: „E-Mail an Pat · Di“.
 

@@ -28,31 +28,31 @@ Una tarea cuyo último paso sigue abierto en manos de otra persona, como una rev
 
 **Todo**, **Trabajo** y **Personal**, encima de la lista en la barra lateral, muestran todas las tareas o solo un tipo. Tu Machine guarda la elección, así que tu teléfono y tu ordenador muestran la misma lista. Mientras Trabajo o Personal está activo, la parte de arriba de la lista lo indica, con **Mostrar todo** para volver.
 
-Una tarea de un proyecto muestra el nombre del proyecto en la línea bajo su título. Tócalo para cambiar el proyecto o quitarlo; **Abrir proyecto** ahí abre su página. Consulta [las tareas de un proyecto](graph.md#a-projects-to-dos).
+Una tarea de un proyecto muestra el nombre del proyecto en la línea bajo su título; abre el proyecto. **Proyecto** en **Detalles** lo cambia o lo quita. Consulta [las tareas de un proyecto](graph.md#a-projects-to-dos).
 
-Su área, **Trabajo** o **Personal**, también está en esa línea. Tócala para pasar la tarea a tu otra área, como una personal que tiene que salir desde tu dirección del trabajo. Lo que puede leer y desde dónde puede enviar cambia con ella; los mensajes de los que vino se quedan donde están. **Deshacer** en el aviso que sigue la devuelve.
+**Área** en **Detalles** pasa la tarea a tu otra área, como una personal que tiene que salir desde tu dirección del trabajo. Lo que puede leer y desde dónde puede enviar cambia con ella; los mensajes de los que vino se quedan donde están. **Deshacer** en el aviso que sigue la devuelve.
 
 Cuando una tarea necesita otra área para seguir, lo pide con un botón **Mover a Trabajo**. Nada se mueve hasta que lo tocas; después sigue sola.
 
 ## Los botones
 
-Una tarea muestra un botón: el siguiente paso, como **Hazlo**, **Revisar y enviar** o **Marcar como hecha**. El resto está en **…**: en el teléfono se abre desde abajo de la pantalla. Una tarea nueva tiene estos:
+Una tarea muestra su siguiente paso, como **Hazlo** o **Revisar y enviar**, con **Posponer** al lado. Consulta [Hazlo](do-it.md) y [Posponer](snooze.md). Una tarea lista también tiene **Pedir cambios** (di qué cambiar en el borrador y lo rehace) y **Marcar como hecha** (ya está resuelta).
 
-- **Hazlo**: tu Machine la prepara. Consulta [Hazlo](do-it.md).
-- **Marcar como hecha**: ya está resuelta.
-- **Posponer**: haz que vuelva más tarde. Consulta [Posponer](snooze.md).
-- **Hazlo de otra forma**: dile lo que preferirías, en pocas palabras. En una tarea preparada es **Pedir cambios**: di qué cambiar en el borrador y lo rehace. También está junto a **Enviar** cuando revisas el borrador.
+Para que se haga de otra forma, dilo en su **Chat**.
+
+En **…** (en el teléfono se abre desde abajo de la pantalla):
+
+- **Pasar…**: pásala a un compañero, a [Claude Code o Codex](hand-to-agent.md) (los que has configurado) o [pide a alguien que la revise](ask-to-review.md).
+- **Repetir…**: [vuelve con un ritmo](recurring.md).
 - **No hace falta**: desaparece. Si quieres, elige por qué: **No es relevante**, **Datos incorrectos** o **Ya resuelto**. Tu Machine aprende de ello.
 
-También en **…**: **Pasar…** se la pasa a un compañero, a [Claude Code o Codex](hand-to-agent.md) (los que has configurado) o [pide a alguien que la revise](ask-to-review.md). **Repetir…** hace que [vuelva con un ritmo](recurring.md).
-
-Toca el título para renombrarla. Tu título se queda, también cuando la tarea cambia.
+Toca el título, o **Nombre** en **Detalles**, para renombrarla. Tu título se queda, también cuando la tarea cambia.
 
 Una tarea cerrada puede volver con **Reabrir**. También vuelve sola cuando pasa algo nuevo, como un mensaje nuevo de esa persona. Tu propia respuesta no la hace volver.
 
 Una tarea que solo importaba hasta un momento concreto, como una confirmación antes de una reunión, se cierra sola cuando ese momento pasa. Pasa a las hechas con "Ya no hace falta" y cuándo fue. **Deshacer** la recupera durante un día.
 
-En tus primeras tareas, una línea corta bajo los botones muestra lo esencial: **Hazlo de otra forma** (o **Pedir cambios**) y **No hace falta** cuando una tarea no es del todo así, y en tu primer borrador listo, que no sale nada hasta que pulsas **Enviar**. Un consejo desaparece para siempre en cuanto usas su botón o pulsas ×, en todos tus dispositivos.
+En tus primeras tareas, una línea corta bajo los botones muestra lo esencial: **Cambiar el enfoque** (o **Pedir cambios**) y **No hace falta** cuando una tarea no es del todo así, y en tu primer borrador listo, que no sale nada hasta que pulsas **Enviar**. Un consejo desaparece para siempre en cuanto usas su botón o pulsas ×, en todos tus dispositivos.
 
 Cada tarea empieza por su título. La línea de debajo dice de quién trata, su organización, el proyecto, Trabajo o Personal (en **Todo**) y cuándo llegó, además de cómo va cuando su grupo no lo dice ya. Toca un nombre para abrir su página en el Graph.
 
@@ -60,7 +60,7 @@ A veces una línea discreta bajo el texto dice lo que no se sabe, como «Último
 
 Un título dice qué hay que hacer. Solo cambia cuando eso cambia, como con una nueva petición. Una tarea hecha conserva su título, con debajo cómo terminó, como lo que se envió o "Hecho: Sam lo firmó el martes".
 
-**Detalles** muestra el mensaje del que viene (tócalo para leer el hilo), tu última nota y el resultado de un agente de código. **Chat ›** al final de esa línea abre el chat. Una tarea hecha se queda corta: su título, una línea y lo que se envió.
+**Detalles** muestra su nombre, proyecto y área (toca uno para cambiarlo), el mensaje del que viene (tócalo para leer el hilo), tu última nota y el resultado de un agente de código. **Chat ›** al final de esa línea abre el chat. Una tarea hecha se queda corta: su título, una línea y lo que se envió.
 
 Una tarea "Esperando a" (alguien te prometió algo) enlaza tu último mensaje a esa persona, el que espera respuesta: "Email a Pat · mar".
 

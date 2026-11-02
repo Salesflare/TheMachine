@@ -316,9 +316,8 @@ try{
  await page.locator('h2.chat-title',{hasText:'Reply to the venue'}).waitFor();
  await page.evaluate(()=>{location.hash=''});await page.locator('#suggestions .chat-layout').waitFor({state:'detached'});
  // A Change sent from the card stays on the card: the chat never opens by itself
- // Change sits in the card's More menu when the card has no room for it (a click on it hidden waited out 30 s)
- if(!await page.locator('#task-c2c2c2c2c2c2c2c2 [data-choice="change"]').isVisible())await page.locator('#task-c2c2c2c2c2c2c2c2 .more-actions summary').click();
- await page.locator('#task-c2c2c2c2c2c2c2c2 [data-choice="change"]').click();
+ // A decision's Change is out of sight on the card (the chat says it); the palette's Change… clicks it, as here
+ await page.locator('#task-c2c2c2c2c2c2c2c2 [data-choice="change"][hidden]').evaluate(b=>b.click());
  await page.locator('#feedback-c2c2c2c2c2c2c2c2').fill('Use the new address');
  await page.locator('#task-c2c2c2c2c2c2c2c2 [data-choice="other"]').click();
  await page.locator('#feedback-c2c2c2c2c2c2c2c2').waitFor({state:'detached'});

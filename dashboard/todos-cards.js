@@ -223,11 +223,12 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-skil
  catch(err){errCaught(err);b.disabled=false;toast(err.message,true)}});
 const copyLead=(s,smart)=>!s.proposed_skill&&s.status==='prepared'&&!smart.some(a=>a.kind!=='open')&&/\bdraft/i.test(s.body||'')&&(s.result_files||[]).some(f=>!/\.pdf$/i.test(f.name));
 const COPY_WHY='This can’t be sent from here. Copy it to send it yourself.';
-// The button row: one lead, the action that fits this to-do (its prepared send, Do it, Answer, Mark done, Check in now),
-// and a quiet … with the rest: its other choices, Hand off… (a teammate, a connected coding agent and Ask to review on one
-// small sheet), Repeat… and Not needed last. The title, project and area change in place: a tap on each. On a phone the
-// … opens as a bottom sheet, so it never covers the to-do's text. Every choice stays on the card (in the menu when not
-// in sight), so the keyboard shortcuts and the chat's menu still find it.
+// The button row: the action that fits this to-do (its prepared send, Do it, Answer, Mark done, Check in now), Ask for
+// changes when there is a draft or result to review, Snooze, and Mark done where it is a ready one's next step; then a
+// quiet … with Hand off… (a teammate, a connected coding agent and Ask to review on one small sheet), Repeat… and Not
+// needed last. Telling The Machine to do it another way is the Chat's job. The title, project and area change in place
+// (a tap on the title; the project and area under Details). On a phone the … opens as a bottom sheet. A choice not in
+// sight (Mark done on a decision) stays on the card, hidden, so the keyboard shortcuts and the chat's menu still find it.
 const mmPlain=h=>h.replace(/^<(\w+)([^>]*?) class="([^"]*)"/,(m,tag,pre,c)=>`<${tag}${pre} class="${[...c.split(' ').filter(x=>x&&x!=='primary'),...(tag==='button'&&!/\bghost\b/.test(c)?['ghost']:[])].join(' ')}"`);
 function cardActions(s,choices,smartButtons,unmerge,hint,smart){const skill=skillLead(s),copy=copyLead(s,smart)||skill,asked=moveAsk(s);
  if(asked)smartButtons=`<button class="primary" data-card-move="${esc(s.id)}" data-area="${esc(s.preparation_move_to)}">${esc(moveText(s.preparation_move_to))}</button>`+smartButtons;
@@ -248,14 +249,21 @@ function cardActions(s,choices,smartButtons,unmerge,hint,smart){const skill=skil
  let others=rest;if(!leads.length){const plain=x=>!handing(x)&&x[0]!=='reject',i=[rest.findIndex(x=>plain(x)&&order.includes(x[0])),rest.findIndex(plain)].find(j=>j>=0)??-1;if(i>=0){leads.push(btn(rest[i]));others=rest.filter((_,j)=>j!==i)}}
  // Hand off…: who or what can take it, on one small sheet; a single one is a plain item with its whole name
  const agentName=c=>agentTools().find(t=>'agent:'+t.id===c)?.name;
- const hand=[...others.filter(handing).map(x=>btn([x[0],x[0]==='handoff'?t('A teammate'):agentName(x[0])||x[1]]).replace('<button ',`<button data-full="${esc(x[0]==='handoff'?t(x[1]):x[1])}" `)),...(reviewMore(s)?[reviewMore(s)]:[])];
+ const hand=[...others.filter(x=>x[0]==='takeback').map(btn),...others.filter(handing).map(x=>btn([x[0],x[0]==='handoff'?t('A teammate'):agentName(x[0])||x[1]]).replace('<button ',`<button data-full="${esc(x[0]==='handoff'?t(x[1]):x[1])}" `)),...(reviewMore(s)?[reviewMore(s)]:[])];
  const handFull=h=>h.replace(/ data-full="([^"]*)"([^>]*)>[^<]*</,(m,full,rest)=>`${rest}>${full}<`);
  const sheet=hand.length>1?`<button type="button" class="ghost" data-mm-open="handoff" aria-haspopup="true">${esc(t('Hand off…'))}</button>`:hand.map(handFull).join('');
  const sub=hand.length>1?`<div class="mm-sub" role="group" aria-label="${esc(t('Hand off'))}" hidden><p class="mm-head"><button type="button" class="mm-back" data-mm-back aria-label="${esc(t('Back'))}">‹</button><span>${esc(t('Hand off'))}</span></p>${hand.join('')}</div>`:'';
  const repeat=closed(s)||s.repeats?'':`<button type="button" class="ghost" data-repeat="${esc(s.id)}">${esc(t('Repeat…'))}</button>`;
- const items=[...leads.slice(1).map(mmPlain),...others.filter(x=>!handing(x)&&x[0]!=='reject').map(btn),sheet,repeat,unmerge,...others.filter(x=>x[0]==='reject').map(b=>'<hr class="mm-sep">'+btn(b))].filter(Boolean).join('');
+ // In sight: Ask for changes on a draft or result, Snooze, and Mark done where it was a ready to-do's second button
+ const doneShown=s.status==='prepared'&&!answered&&!ask&&!mine&&!withTeammate(s);
+ const review=s.status==='prepared'||!!agentAsk(s);
+ const shown=x=>x[0]==='snooze'||(x[0]==='change'&&review)||(x[0]==='complete'&&doneShown);
+ const quiet=x=>x[0]==='complete'||x[0]==='change';  // on the card, out of sight: the D key, the palette and the chat use them
+ const plain=others.filter(x=>!handing(x)&&x[0]!=='reject'&&x[0]!=='takeback');
+ const row=plain.filter(shown).map(btn).join(''),hiddenBtns=plain.filter(x=>!shown(x)&&quiet(x)).map(b=>btn(b).replace('<button ','<button hidden ')).join('');
+ const items=[...leads.slice(1).map(mmPlain),...plain.filter(x=>!shown(x)&&!quiet(x)).map(btn),sheet,repeat,unmerge,...others.filter(x=>x[0]==='reject').map(b=>'<hr class="mm-sep">'+btn(b))].filter(Boolean).join('');
  const menu=items?`<details class="more-actions"><summary aria-label="${esc(t('More actions'))}" title="${esc(t('More actions'))}">${DOTS}</summary><div class="more-menu" role="group" aria-label="${esc(t('More actions'))}">${items}${sub}</div></details>`:'';
- return `<div class="actions">${leads[0]||''}${menu}</div>${copy&&!skill?`<p class="copy-why">${COPY_WHY}</p>`:''}`}
+ return `<div class="actions">${leads[0]||''}${row}${menu}${hiddenBtns}</div>${copy&&!skill?`<p class="copy-why">${COPY_WHY}</p>`:''}`}
 // The … menu's Hand off… opens its sheet in place (Back returns); a click outside, Escape or a choice closes the menu.
 document.addEventListener('click',e=>{const o=e.target.closest('.more-menu [data-mm-open],.more-menu [data-mm-back]');if(!o)return;e.preventDefault();const m=o.closest('.more-menu'),sub=m.querySelector('.mm-sub'),go=o.dataset.mmOpen!=null;
  m.classList.toggle('mm-in',go);if(sub)sub.hidden=!go;(go?sub?.querySelector('button:not([data-mm-back])'):m.querySelector('[data-mm-open]'))?.focus()});
@@ -291,8 +299,8 @@ const ownerStep=s=>!!s.owner_step&&!closed(s)&&s.status!=='snoozed';
 const ownerStepChoices=choices=>[['complete','Done'],...choices.filter(([c])=>c!=='complete').map(([c,t])=>c==='accept'?[c,'Plan it']:[c,t])];
 // A to-do's project (graph.set_card_project): a chip to its page, and a small picker to change it or take it off.
 // Set by hand it stays; otherwise the review or the project its thread or people are on chose it.
-// A tap on the chip opens that picker (Open project in it goes to the project's page).
-const projectChip=s=>s.project_node?`<button type="button" class="chip project-link" data-card-project="${esc(s.id)}" title="${esc(t('Change project'))}">${CHIP_ICON.project}<span>${esc(s.project_node.name)}</span></button>`:'';
+// The chip opens the project's page; Project under Details opens the picker.
+const projectChip=s=>s.project_node?`<a class="chip project-link" href="${graphHash(s.project_node.node_id)}" title="Project">${CHIP_ICON.project}<span>${esc(s.project_node.name)}</span></a>`:'';
 async function cardProjectPick(id,anchor){let names=[];try{const r=await request('api/graph?view=projects');names=r.projects||[]}catch{}
  const s=(state.suggestions||[]).find(x=>x.id===id)||{},cur=s.project_node?.node_id||'';document.querySelector('.project-picker')?.remove();
  const box=document.createElement('div');box.className='project-picker';box.setAttribute('role','dialog');box.setAttribute('aria-label','Project for this to-do');
@@ -313,9 +321,8 @@ const areaName=id=>id==='personal'?t('Personal'):manyWork()?t('Work at {}',areaO
 const moveText=id=>id==='personal'?t('Move to Personal'):manyWork()?t('Move to Work at {}',areaOrg(id)):t('Move to Work');
 const movedText=id=>id==='personal'?t('Moved to Personal'):manyWork()?t('Moved to Work at {}',areaOrg(id)):t('Moved to Work');
 const moveTargets=s=>!s.area||closed(s)?[]:(state.areas||[]).filter(a=>a.id!==s.area);
-// Its area as a chip on its line: a tap changes it (the picker). Shown wherever there is another area to move it to,
-// else only under All, as before.
-const areaChip=s=>moveTargets(s).length?`<button type="button" class="chip scope area-chip" data-card-area="${esc(s.id)}" title="${esc(t('Change area'))}">${esc(areaName(s.area))}</button>`:s.scope&&scopeFilter==='all'?`<span class="chip scope">${s.scope==='work'?'Work':'Personal'}</span>`:'';
+// Its area as a chip on its line, under All; Area under Details changes it (the picker).
+const areaChip=s=>s.scope&&scopeFilter==='all'?`<span class="chip scope">${s.scope==='work'?'Work':'Personal'}</span>`:'';
 const moveAsk=s=>!closed(s)&&s.preparation_status==='blocked'&&!s.preparation_error&&!!s.preparation_move_to&&moveTargets(s).some(a=>a.id===s.preparation_move_to);
 async function cardMove(id,area,b,undo){if(b)b.disabled=true;
  try{const r=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'card_move',args:{suggestion_id:id,decision_id:crypto.randomUUID(),...(undo?{undo}:{area})}})});
@@ -338,7 +345,7 @@ document.addEventListener('click',e=>{const m=e.target.closest('[data-card-move]
 const projectTodos=n=>n.kind==='project'&&n.todos?.length?`<div class="section-head"><h2>To-dos</h2><span class="count">${n.todos.filter(c=>!c.done).length||''}</span></div><article class="graph-open project-todos">${n.todos.map(c=>`<div class="promise${c.done?' done':''}"><span class="grow"><a href="#card=${esc(c.id)}" translate="no">${esc(c.title)}</a>${c.done?'<small>done</small>':c.due?`<small>due ${esc(day(c.due))}</small>`:''}</span></div>`).join('')}</article>`:'';
 // First-use tips (Store.first_tips): on a new person's first to-dos, one short line under the buttons of the to-do it is
 // about, one at a time. 'send' on the first ready draft (nothing goes out until Send), else 'change' on the first open
-// to-do (Do it differently or Ask for changes, and Not needed, named as their buttons and working like them). A tip goes
+// to-do (Change how or Ask for changes, and Not needed, named as their buttons and working like them). A tip goes
 // for good, on every device, once its button is used or × closes it. render() picks the to-do (tipSend, tipChange).
 let tipSend='',tipChange='';const tipsGone=new Set();
 const firstTips=()=>(state.first_tips||[]).filter(x=>!tipsGone.has(x));
@@ -363,7 +370,7 @@ const handled=!closed(s)&&s.handled_hint?(()=>{try{return JSON.parse(s.handled_h
 const ask=askQuestion(s,smart,hint);
 // Try again already ran without anything new and stopped asking again: retrying alone won't help, so it isn't offered.
 const retryPointless=s.preparation_cause==='retry'&&askBlocked(s);
-const asked=ask?[['answer','Answer'],...(s.preparation_status==='blocked'&&!retryPointless?[['retry',retryLabel(s.preparation_reason)]]:[]),['complete','Mark done'],['snooze','Snooze'],['reject','Not needed']]:withTeammate(s)?[['checkin','Check in now'],['complete','Mark done'],['snooze','Snooze'],['reject','Not needed']]:s.status==='pending'?[['accept',s.labels?.accept||'Do it'],['complete','Mark done'],['snooze','Snooze'],['change','Do it differently'],['reject',s.labels?.reject||'Not needed']]:s.status==='snoozed'?[['accept',s.handoff_wait?'Check in now':'Unsnooze'],['snooze','Change time'],['reject','Not needed']]:[...(s.preparation_status==='blocked'?[['retry',retryLabel(s.preparation_reason)]]:answered?[['accept','Do it']]:[]),['complete','Mark done'],['snooze','Snooze'],['change','Ask for changes'],['reject','Not needed']];
+const asked=ask?[['answer','Answer'],...(s.preparation_status==='blocked'&&!retryPointless?[['retry',retryLabel(s.preparation_reason)]]:[]),['complete','Mark done'],['snooze','Snooze'],['reject','Not needed']]:withTeammate(s)?[['checkin','Check in now'],['complete','Mark done'],['snooze','Snooze'],['reject','Not needed']]:s.status==='pending'?[['accept',s.labels?.accept||'Do it'],['complete','Mark done'],['snooze','Snooze'],['change','Change how'],['reject',s.labels?.reject||'Not needed']]:s.status==='snoozed'?[['accept',s.handoff_wait?'Check in now':'Unsnooze'],['snooze','Change time'],['reject','Not needed']]:[...(s.preparation_status==='blocked'?[['retry',retryLabel(s.preparation_reason)]]:answered?[['accept','Do it']]:[]),['complete','Mark done'],['snooze','Snooze'],['change','Ask for changes'],['reject','Not needed']];
 const choices=ownerStep(s)&&!ask?ownerStepChoices(asked):asked;
 const notes=smart.map(a=>({action:a,state:a.state||s.action_status})).filter(x=>x.action!==tpSent&&actionNote(x.action.kind==='intercom'?{...x.state,as_name:x.action.as_name}:x.state,x.action.kind));
 const undo=closed(s)&&s.undo_until&&Date.parse(s.undo_until)>Date.now();
@@ -404,12 +411,16 @@ const drafts=s.status==='prepared'&&!tpSent?smart.filter(a=>DRAFT_KINDS.includes
 // What only matters on a second look folds behind one Details: a closed to-do's coding agent result and the files it was
 // made with, your note and the source line. The row under it keeps
 // Details, when it comes back and the result links; a closed to-do's Reopen sits on the same row.
-    const panel=(closed(s)?agentBlock(s)+cardFiles(s):'')+teamLearningsUsed(s)+(s.latest_feedback?`<div class="saved-feedback" data-chat-open="${s.id}" title="Open the chat"><div class="row"><strong>Your note</strong>${time(s.latest_feedback.created_at,true)}<a class="see-chat" href="#chat=${s.id}">See in chat ›</a></div><blockquote>${format(s.latest_feedback.feedback)}</blockquote></div>`:'')+(original?`<div class="card-source">${original}</div>`:'');
+    const panel=(section==='Chat'?'':cardFields(s))+(closed(s)?agentBlock(s)+cardFiles(s):'')+teamLearningsUsed(s)+(s.latest_feedback?`<div class="saved-feedback" data-chat-open="${s.id}" title="Open the chat"><div class="row"><strong>Your note</strong>${time(s.latest_feedback.created_at,true)}<a class="see-chat" href="#chat=${s.id}">See in chat ›</a></div><blockquote>${format(s.latest_feedback.feedback)}</blockquote></div>`:'')+(original?`<div class="card-source">${original}</div>`:'');
     const detailsOpen=expandedDetails.has(s.id),toggle=panel||closed(s)&&section!=='Chat'&&String(s.body||'').length>40;  // a closed one's body is one line until Details opens
     const foot=toggle||s.snoozed_until&&!s.handoff_wait||results||section!=='Chat'?`<div class="card-foot">${toggle?`<button type="button" class="link details-toggle" data-details="${s.id}" aria-expanded="${detailsOpen}" aria-controls="details-${s.id}">Details</button>`:''}${s.snoozed_until&&!s.handoff_wait?`<span class="back-on" title="${esc(date(s.snoozed_until))}">${esc(backLabel(s.snoozed_until))}</span>`:''}${results}${section==='Chat'?'':chatLink(s)}</div>${toggle?`<div class="card-details" id="details-${s.id}"${detailsOpen?'':' hidden'}>${panel}</div>`:''}`:'';
 // A page the task's own run worked on opens in the Machine's browser (its viewer, with that tab in front), never in yours.
 const viewIn=s.browser_view&&!smart.some(a=>a.browser)?[{kind:'open',browser:true,label:s.browser_view.label,site:s.browser_view.site}]:[];
 const smartButtons=s.status==='prepared'?[...smart,...viewIn].map(a=>a.kind==='handoff'?(canHandoff(s)||redirect(s)?`<button class="primary" data-fleet-handoff="${esc(s.id)}">${esc(a.to_name?'Review handoff to '+String(a.to_name).split(' ')[0]:a.label||'Hand off')}</button>`:''):a.kind==='open'&&a.browser?`<a class="open${finalStep(s)?' primary':''}" href="${esc(state.browser_link||'#')}" target="_blank" rel="noopener" data-browser-show="${esc(s.id)}"${a.site?` title="${esc(a.site)}, in your Machine’s browser"`:''}>${esc(a.label)} ↗</a>`:a.kind==='open'?`<a class="open" href="${esc(safeURL(a.url))}" target="_blank" rel="noreferrer">${esc(a.label)} ↗</a>`:!(a.kind==='finish'&&(a.state||s.action_status)?.status==='done')&&!sendBusy(a.state||s.action_status)?`<button class="primary" data-id="${s.id}" data-smart="${a.revision}">${esc(sendLabel(a)||(a.kind==='prepare'?'Prepare next step':'Review and send'))}</button>`:'').join(''):'';
+// Under Details, a to-do's name, project and area (an open one's), each a tap to change (Rename, the project picker, the area
+// picker). The title also renames with a tap on it, or E.
+function cardFields(s){const f=(k,v,attr)=>`<div><dt>${esc(t(k))}</dt><dd><button type="button" class="field" ${attr}="${esc(s.id)}"><span translate="no">${esc(v)}</span></button></dd></div>`;
+ return `<dl class="card-fields">${f('Name',s.title,'data-rename')}${s.project_node?f('Project',s.project_node.name,'data-card-project'):''}${moveTargets(s).length?f('Area',areaName(s.area),'data-card-area'):''}</dl>`}
 // A merged fix stays reversible for a day.
 const unmerge=['prepared','completed'].includes(s.status)&&smart.some(a=>a.kind==='merge'&&Date.parse((a.state||s.action_status)?.undo_until||'')>Date.now())?`<button data-id="${s.id}" data-unmerge="1">Undo merge</button>`:'';
 // Title first, then one quiet line: its state (when the section doesn't say it already), due, who, their organization,

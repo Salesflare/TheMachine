@@ -2663,7 +2663,7 @@ input[type=checkbox],input[type=radio],input[type=range],progress{accent-color:v
    menu above it; on a phone a bottom sheet over a dimmed page (a tap on the page closes it), so the to-do's text is never
    covered by a floating menu. Hand off… swaps the menu for its own sheet in place; Back returns. Not needed sits last. */
 .card .actions:not(.result-actions)>.more-actions{flex:0 0 auto;margin-left:auto}
-.card .more-actions>summary{min-width:44px;padding:7px 10px}
+.card .more-actions>summary{min-width:44px;padding:7px 10px;background:var(--tile);border-color:transparent}.card .more-actions>summary:hover,.card .more-actions[open]>summary{background:var(--tile-hover)}  /* the … is filled subtle in both themes */
 .card .more-actions>summary::after{content:none}
 .card .more-actions>summary svg{width:20px;height:20px}
 .card .actions .more-menu>a.open{display:block;margin:0;padding:6px 12px;border-radius:8px;color:var(--text);font-size:.92rem;line-height:1.35;font-weight:500;text-decoration:none;white-space:nowrap}.card .actions .more-menu>a.open:hover{background:var(--tile)}
@@ -2681,13 +2681,15 @@ input[type=checkbox],input[type=radio],input[type=range],progress{accent-color:v
   .card .actions .more-menu :is(button,a.open){min-height:48px;padding:12px 14px;font-size:1rem;box-sizing:border-box}
   .card .more-menu .mm-head{font-size:var(--fs-sm);padding-bottom:8px;margin-bottom:4px}
 }
-/* The title, project and area change in place: a tap on each (the title renames, the chips open their pickers). */
-.card.todo .card-badges button.chip{cursor:pointer}
-.card.todo .card-badges button.chip:hover{color:var(--text);text-decoration:underline;text-underline-offset:2px}
-.card.todo .card-badges button.chip.project-link{display:inline-flex;align-items:center;max-width:18em}
-.card.todo .card-badges button.chip.project-link svg.ci{width:12px;height:12px;flex:none;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;opacity:.8}
-.card.todo .card-badges button.chip.project-link>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-@media (max-width:600px){.card.todo .card-badges button.chip.project-link{max-width:min(13em,60vw)}}
+/* Under Details, an open to-do's title, project and area (todos-cards.js cardFields): each a tap to change. */
+.card-fields{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;align-items:center;margin:2px 0 10px;font-size:var(--fs-sm)}
+.card-fields>div{display:contents}.card-fields dt{color:var(--muted)}.card-fields dd{margin:0;min-width:0}
+.card-fields .field{display:inline-flex;max-width:100%;min-height:32px;align-items:center;padding:4px 10px;border:1px solid transparent;border-radius:8px;background:var(--tile);color:var(--text);font:inherit;text-align:left;cursor:pointer;box-shadow:none}
+.card-fields .field>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.card-fields .field:hover{background:var(--tile-hover)}
+.card .actions>[hidden]{display:none!important}
+/* Chat is where the owner tells The Machine what to do instead: a clear pill at the end of the Details row. */
+.card.todo>.card-foot a.card-chat-link{padding:4px 11px 4px 9px;margin:-4px 0 -4px auto;background:var(--tile);color:var(--text);font-weight:600}.card.todo>.card-foot a.card-chat-link:hover{background:var(--tile-hover)}
+.card.todo>.card-foot a.card-chat-link.had::after{left:19px;top:3px}
 .card h3 .title-link{cursor:text}
 .project-picker .pp-open{align-self:flex-start;font-size:var(--fs-xs);color:var(--muted)}
 </style>

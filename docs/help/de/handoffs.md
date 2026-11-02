@@ -18,7 +18,7 @@ Während du wartest, steht die Aufgabe unter **Kommt später zurück**, „Bei P
 
 Sie kommt nur dann wieder nach oben, wenn es etwas zu entscheiden gibt: Pat hat geantwortet, abgelehnt oder sie als erledigt markiert, die Übergabe ist fehlgeschlagen oder eine Frist ist erreicht. Bei einer Aufgabe, die heute fällig ist, wird ein paar Stunden später nachgefragt, bei einer bald fälligen am Arbeitstag davor, bei einer dringenden ohne Datum am nächsten Arbeitsmorgen und bei allen anderen nach 3 Arbeitstagen.
 
-Zurück zum Nachhaken steht dort „Noch bei Pat · nachhaken?“: Pat hat sie noch, es kam nichts zurück. **Jetzt nachhaken** öffnet den Chat; **Zurücknehmen**, **An jemand anderen übergeben**, Als erledigt markieren, Zurückstellen und Nicht nötig sind unter **…**.
+Zurück zum Nachhaken steht dort „Noch bei Pat · nachhaken?“: Pat hat sie noch, es kam nichts zurück. **Jetzt nachhaken** öffnet den Chat; **Zurücknehmen** und **An jemand anderen übergeben** sind unter **…**, dann **Übergeben…**.
 
 Der Chat der Aufgabe zeigt, wann sie rausging („An die Machine von Pat übergeben · 14:02“) und was zurückkam: angenommen, abgelehnt (mit Notiz) oder erledigt. Ist sie zum Nachfragen zurück und es gibt noch keine Antwort, steht „Noch keine Antwort von Pat“ unter dieser Zeile, mit **Als erledigt markieren**, **Zurückstellen** und **Nicht nötig** (kein Ausführen: Pat hat sie). Um Pat zu erinnern oder sie zurückzunehmen, sag es im Chat.
 
@@ -26,7 +26,7 @@ Wenn die Übergabe nicht rausging, sagen die Aufgabe und ihr Chat das, mit **Ern
 
 ## Stattdessen an jemand anderen übergeben
 
-Solange ein Teammitglied sie hat, sagt die Aufgabe das in einer Zeile („Bei Pat · wartet“), mit **Zurücknehmen** und **An jemand anderen übergeben** unter **…**. **Zurücknehmen** macht sie wieder zu deiner: Die Machine von Pat erfährt es, und eine Antwort von Pat verschiebt sie nicht mehr.
+Solange ein Teammitglied sie hat, sagt die Aufgabe das in einer Zeile („Bei Pat · wartet“), mit **Zurücknehmen** und **An jemand anderen übergeben** unter **…**, dann **Übergeben…**. **Zurücknehmen** macht sie wieder zu deiner: Die Machine von Pat erfährt es, und eine Antwort von Pat verschiebt sie nicht mehr.
 
 **An jemand anderen übergeben** öffnet das Übergabeformular, für jemanden, der sie noch nicht hat. Oder sag es im Chat der Aufgabe („das sollte an Kim gehen“). Die neue Übergabe wartet bei der Aufgabe, bis du sie gelesen hast: „Noch bei Pat, bis du sie an Kim schickst“, mit **Übergabe prüfen an** Kim. Das öffnet das Formular mit dem Text, für Kim.
 

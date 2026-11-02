@@ -10,7 +10,8 @@ const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modul
 import {forceReplyPayload} from '../openclaw-plugin/change-prompt.ts';
 // The Send preview's header rows as 'From: …' lines.
 // A card's rarer buttons wait under More: open it first when the button isn't in the row.
-const tap=async(card,name)=>{const b=card.getByRole('button',{name,exact:true});if(!await b.isVisible())await card.locator('.more-actions>summary').click();await b.click()};
+const tap=async(card,name)=>{const b=card.getByRole('button',{name,exact:true,includeHidden:true}).first();if(await b.evaluate(x=>x.hidden)){await b.evaluate(x=>x.click());return}  // a choice kept out of sight (the palette, D, the chat click it)
+ if(!await b.isVisible())await card.locator('.more-actions>summary').click();await b.click()};
 const sendHead=page=>page.evaluate(()=>[...document.querySelectorAll('#send-head>div')].map(d=>d.children[0].textContent+': '+d.children[1].textContent).join('\n'));
 const payload=forceReplyPayload('sendMessage',{chat_id:'1000001',text:'Change'},'123','1000001');
 assert.equal(payload.reply_markup.force_reply,true);assert.equal(payload.reply_parameters.message_id,123);
@@ -201,14 +202,14 @@ assert.equal(layout.overflow,false,`Overflow at ${width}px: `+JSON.stringify(awa
 await page.setViewportSize({width:390,height:844});
 await page.screenshot({path:'/tmp/261011-assistant-scheduled-card.png',fullPage:true});
 assert.equal(await page.locator('#suggestions textarea').count(),0);
-await tap(page.locator('#task-'+ids[0]),/^(Do it differently|Ask for changes)$/);await page.locator('#feedback-'+ids[0]).fill('Please make this shorter');await page.getByRole('button',{name:'Save changes',exact:true}).click();await page.locator('#feedback-'+ids[0]).waitFor({state:'detached'});assert.equal(posts.filter(p=>'feedback' in p).at(-1).feedback,'Please make this shorter');
+await tap(page.locator('#task-'+ids[0]),/^(Change how|Ask for changes)$/);await page.locator('#feedback-'+ids[0]).fill('Please make this shorter');await page.getByRole('button',{name:'Save changes',exact:true}).click();await page.locator('#feedback-'+ids[0]).waitFor({state:'detached'});assert.equal(posts.filter(p=>'feedback' in p).at(-1).feedback,'Please make this shorter');
 // A Change stays on the card; the chat only opens when asked
 assert.equal(await page.locator('.chat-head').count(),0);await page.locator('#task-'+ids[0]).waitFor();
 // Success notices clear after a few seconds; errors stay.
 await page.evaluate(()=>notice('Saved.'));assert.equal(await page.locator('#notice').textContent(),'Saved.');await page.waitForFunction(()=>$('#notice').textContent==='',null,{timeout:7000});
 await page.evaluate(()=>notice('Broke.',true));await page.waitForTimeout(5000);assert.equal(await page.locator('#notice').textContent(),'Broke.');await page.evaluate(()=>notice(''));
 // Ctrl+Enter in the change box saves like the Save changes button; plain Enter adds a new line.
-{const card=page.locator('#task-'+ids[0]);await tap(card,/^(Do it differently|Ask for changes)$/);const box=card.locator('#feedback-'+ids[0]);
+{const card=page.locator('#task-'+ids[0]);await tap(card,/^(Change how|Ask for changes)$/);const box=card.locator('#feedback-'+ids[0]);
 await box.fill('First line');await box.press('Enter');await box.pressSequentially('Second line');assert.equal(await box.inputValue(),'First line\nSecond line');
 const said=()=>posts.filter(p=>'feedback' in p),before=said().length;await box.press('Control+Enter');await box.waitFor({state:'detached'});assert.equal(said().length,before+1);assert.equal(said().at(-1).feedback,'First line\nSecond line');
 assert.equal(await page.locator('.chat-head').count(),0);await page.locator('#task-'+ids[0]).waitFor();}

@@ -106,12 +106,12 @@ try{
  assert.match(await c.locator('.agent-more').innerText(),/Checked the numbers/);
  await c.locator('.agent-diff>summary').click();
  await page.waitForFunction(()=>document.querySelector('.agent-diff pre')?.textContent.includes('+Summary line'));
- // The card's own primary action stays; Change goes to the job and says so, first under …
- const buttons=await c.locator('.actions>button').allInnerTexts(),menu=await c.locator('.more-menu>button').evaluateAll(n=>n.map(x=>x.textContent.trim()));
+ // The card's own primary action stays; Change goes to the job and says so, beside it
+ const buttons=await c.locator('.actions>button:not([hidden])').allInnerTexts(),menu=await c.locator('.more-menu>button').evaluateAll(n=>n.map(x=>x.textContent.trim()));
  assert.deepEqual(buttons.filter(b=>/send to Sam/i.test(b)).length,1,buttons.join('|'));
- assert.equal(menu[0],'Ask Claude Code for changes',menu.join('|'));
+ assert.equal(buttons[1],'Ask Claude Code for changes',buttons.join('|'));
  assert.equal([...buttons,...menu].filter(b=>/changes/i.test(b)).length,1);
- await c.locator('.more-actions>summary').click();await c.locator('[data-agent-ask]').click();
+ await c.locator('[data-agent-ask]').click();
  assert.match(await c.innerText(),/Goes to the Claude Code job/);
  await c.locator('#agent-ask-c1').fill('Shorter, please');
  await c.locator('[data-agent-ask-send]').click();

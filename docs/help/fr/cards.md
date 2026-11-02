@@ -28,31 +28,31 @@ Une tâche dont la dernière étape reste ouverte chez quelqu’un d’autre, co
 
 **Tout**, **Travail** et **Perso** au-dessus de la liste dans la barre latérale affichent toutes les tâches ou un seul type. Votre Machine garde ce choix, pour que votre téléphone et votre ordinateur affichent la même liste. Quand Travail ou Perso est actif, le haut de la liste l’indique, avec **Tout afficher** pour revenir.
 
-Une tâche liée à un projet affiche le nom du projet sur la ligne sous son titre. Appuyez dessus pour changer de projet ou le retirer ; **Ouvrir le projet** y ouvre sa page. Voir [les tâches d’un projet](graph.md#a-projects-to-dos).
+Une tâche liée à un projet affiche le nom du projet sur la ligne sous son titre ; il ouvre le projet. **Projet** sous **Détails** le change ou le retire. Voir [les tâches d’un projet](graph.md#a-projects-to-dos).
 
-Son espace, **Travail** ou **Perso**, est aussi sur cette ligne. Appuyez dessus pour déplacer la tâche vers votre autre espace, comme une tâche perso qui doit partir de votre adresse pro. Ce qu’elle peut lire et d’où elle peut envoyer suit le déplacement ; les messages d’où elle vient restent où ils sont. **Annuler** dans le message qui suit la remet en place.
+**Domaine** sous **Détails** déplace la tâche vers votre autre espace, comme une tâche perso qui doit partir de votre adresse pro. Ce qu’elle peut lire et d’où elle peut envoyer suit le déplacement ; les messages d’où elle vient restent où ils sont. **Annuler** dans le message qui suit la remet en place.
 
 Quand une tâche a besoin d’un autre espace pour avancer, elle le demande avec un bouton **Déplacer vers Travail**. Rien ne bouge avant que vous appuyiez ; ensuite, elle continue toute seule.
 
 ## Les boutons
 
-Une tâche affiche un seul bouton : l’étape suivante, comme **Faire**, **Vérifier et envoyer** ou **Marquer comme fait**. Les autres sont sous **…** : sur un téléphone, ce menu s’ouvre depuis le bas de l’écran. Une nouvelle tâche a ceux-ci :
+Une tâche affiche son étape suivante, comme **Faire** ou **Vérifier et envoyer**, avec **Mettre en attente** à côté. Voir [Faire](do-it.md) et [Mettre en attente](snooze.md). Une tâche prête a aussi **Demander des modifications** (dites ce qu’il faut changer dans le brouillon et elle le refait) et **Marquer comme fait** (c’est réglé).
 
-- **Faire** : votre Machine la prépare. Voir [Faire](do-it.md).
-- **Marquer comme fait** : c’est réglé.
-- **Mettre en attente** : la faire revenir plus tard. Voir [Mettre en attente](snooze.md).
-- **Faire autrement** : dites en quelques mots ce que vous voulez à la place. Sur une tâche préparée, c’est **Demander des modifications** : dites ce qu’il faut changer dans le brouillon et elle le refait. Il est aussi à côté d’**Envoyer** quand vous vérifiez le brouillon.
+Pour la faire autrement, dites-le dans son **Chat**.
+
+Sous **…** (sur un téléphone, ce menu s’ouvre depuis le bas de l’écran) :
+
+- **Transférer…** : la confier à un coéquipier, à [Claude Code ou Codex](hand-to-agent.md) (ceux que vous avez configurés) ou [demander une relecture à quelqu’un](ask-to-review.md).
+- **Répéter…** : elle [revient à un rythme régulier](recurring.md).
 - **Pas nécessaire** : elle disparaît. Choisissez pourquoi, si vous voulez : **Pas pertinent**, **Faits erronés** ou **Déjà traité**. Votre Machine en tire des leçons.
 
-Aussi sous **…** : **Transférer…** la transfère à un coéquipier, à [Claude Code ou Codex](hand-to-agent.md) (ceux que vous avez configurés) ou [demande une relecture à quelqu’un](ask-to-review.md). **Répéter…** la fait [revenir à un rythme régulier](recurring.md).
-
-Appuyez sur le titre pour la renommer. Votre titre reste, même quand la tâche change.
+Appuyez sur le titre, ou sur **Nom** sous **Détails**, pour la renommer. Votre titre reste, même quand la tâche change.
 
 Une tâche fermée peut revenir avec **Rouvrir**. Elle revient aussi d’elle-même quand il se passe quelque chose de nouveau, comme un nouveau message de la personne. Votre propre réponse ne la fait pas revenir.
 
 Une tâche qui ne comptait que jusqu’à un moment précis, comme une confirmation avant une réunion, se ferme d’elle-même une fois ce moment passé. Elle passe dans les tâches terminées avec « Plus nécessaire » et la date. **Annuler** la fait revenir pendant un jour.
 
-Sur vos premières tâches, une courte ligne sous les boutons montre l’essentiel : **Faire autrement** (ou **Demander des modifications**) et **Pas nécessaire** quand une tâche ne convient pas tout à fait, et sur votre premier brouillon prêt, que rien ne part avant que vous appuyiez sur **Envoyer**. Une astuce disparaît pour de bon dès que vous utilisez son bouton ou appuyez sur ×, sur tous vos appareils.
+Sur vos premières tâches, une courte ligne sous les boutons montre l’essentiel : **Changer d’approche** (ou **Demander des modifications**) et **Pas nécessaire** quand une tâche ne convient pas tout à fait, et sur votre premier brouillon prêt, que rien ne part avant que vous appuyiez sur **Envoyer**. Une astuce disparaît pour de bon dès que vous utilisez son bouton ou appuyez sur ×, sur tous vos appareils.
 
 Chaque tâche commence par son titre. La ligne en dessous indique la personne concernée, son organisation, le projet, Travail ou Perso (sous **Tout**) et quand elle est arrivée, ainsi que son état quand son groupe ne le dit pas déjà. Appuyez sur un nom pour ouvrir sa page dans le Graph.
 
@@ -60,7 +60,7 @@ Parfois, une ligne discrète sous le texte dit ce qui n'est pas connu, comme « 
 
 Un titre dit ce qu'il faut faire. Il ne change que quand cela change, par exemple pour une nouvelle demande. Une tâche faite garde son titre, avec en dessous comment elle s'est terminée, par exemple ce qui est parti ou "Fait : Sam a signé mardi".
 
-**Détails** montre le message d’origine (appuyez dessus pour lire le fil), votre dernière note et le résultat d’un agent de code. **Chat ›** au bout de cette ligne ouvre le chat. Une tâche terminée reste courte : son titre, une ligne et ce qui est parti.
+**Détails** montre son nom, son projet et son espace (appuyez sur l’un d’eux pour le changer), le message d’origine (appuyez dessus pour lire le fil), votre dernière note et le résultat d’un agent de code. **Chat ›** au bout de cette ligne ouvre le chat. Une tâche terminée reste courte : son titre, une ligne et ce qui est parti.
 
 Une tâche « En attente de » (quelqu’un vous a promis quelque chose) renvoie vers votre dernier message à cette personne, celui auquel vous attendez une réponse : « E-mail à Pat · mar. ».
 

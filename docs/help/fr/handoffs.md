@@ -18,7 +18,7 @@ Pendant que vous attendez, la tâche se trouve sous **Revient plus tard**, « Ch
 
 Elle ne revient en haut que s’il y a quelque chose à décider : Pat a répondu, a refusé ou l’a marquée comme faite, le transfert a échoué, ou une échéance est arrivée. Une tâche due aujourd’hui est relancée quelques heures plus tard, une tâche due bientôt la veille ouvrée, une tâche urgente sans date le matin ouvré suivant, et toute autre après 3 jours ouvrés.
 
-De retour pour une relance, elle indique « Toujours chez Pat · relancer ? » : Pat l’a encore, rien n’est revenu. **Relancer maintenant** ouvre le chat ; **Reprendre**, **Transférer à quelqu’un d’autre**, Marquer comme fait, Mettre en attente et Pas nécessaire sont sous **…**.
+De retour pour une relance, elle indique « Toujours chez Pat · relancer ? » : Pat l’a encore, rien n’est revenu. **Relancer maintenant** ouvre le chat ; **Reprendre** et **Transférer à quelqu’un d’autre** sont sous **…**, puis **Transférer…**.
 
 Le chat de la tâche indique quand elle est partie (« Transférée à la Machine de Pat · 14:02 ») et ce qui est revenu : acceptée, refusée (avec sa note) ou faite. Quand elle revient pour une relance sans réponse, « Pas encore de réponse de Pat » s’affiche sous cette ligne, avec **Marquer comme fait**, **Mettre en attente** et **Pas nécessaire** (pas de Faire : Pat l’a déjà). Pour lui faire signe ou la reprendre, dites-le dans le chat.
 
@@ -26,7 +26,7 @@ Si le transfert n’est pas parti, la tâche et son chat l’indiquent, avec **R
 
 ## La transférer plutôt à quelqu’un d’autre
 
-Tant qu’un collègue l’a, la tâche l’indique en une ligne (« Chez Pat · en attente »), avec **Reprendre** et **Transférer à quelqu’un d’autre** sous **…**. **Reprendre** vous la rend : la Machine de Pat est prévenue, et une réponse de Pat ne la déplace plus.
+Tant qu’un collègue l’a, la tâche l’indique en une ligne (« Chez Pat · en attente »), avec **Reprendre** et **Transférer à quelqu’un d’autre** sous **…**, puis **Transférer…**. **Reprendre** vous la rend : la Machine de Pat est prévenue, et une réponse de Pat ne la déplace plus.
 
 **Transférer à quelqu’un d’autre** ouvre le formulaire de transfert, pour quelqu’un qui ne l’a pas encore. Ou dites-le dans le chat de la tâche (« ça devrait aller à Kim »). Le nouveau transfert attend sur la tâche que vous le lisiez : « Toujours chez Pat jusqu’à l’envoi à Kim », avec **Vérifier le transfert à** Kim. Cela ouvre le formulaire avec le texte, au nom de Kim.
 

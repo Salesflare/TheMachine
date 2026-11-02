@@ -19,7 +19,7 @@ Etwa zweimal am Tag macht sie daraus ein paar kleine Änderungen. **Lernen**, **
 ## Bring es ihr schneller bei
 
 - Bearbeite einen Entwurf, bevor du ihn sendest. Sie lernt aus dem, was du geändert hast.
-- Tippe auf **Anders ausführen** oder bei einem Entwurf auf **Änderungen anfragen** und sag, was du möchtest.
+- Sag im **Chat** der Aufgabe, was du möchtest, oder tippe bei einem Entwurf auf **Änderungen anfragen**.
 - Tippe auf **Nicht nötig** und wähl einen Grund.
 - Sag es ihr im Chat einer Aufgabe: „kürzer, und keine Ausrufezeichen“. Sie zeigt **In Wie du schreibst gespeichert**, wenn sie es übernommen hat.
 

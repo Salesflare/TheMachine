@@ -28,31 +28,31 @@ Un’attività il cui ultimo passo è ancora aperto da parte di qualcun altro, c
 
 **Tutti**, **Lavoro** e **Personale** sopra l'elenco nella barra laterale mostrano tutte le attività o solo un tipo. La tua Machine ricorda la scelta, così telefono e computer mostrano lo stesso elenco. Quando è attivo Lavoro o Personale, la parte alta dell'elenco lo indica, con **Mostra tutto** per tornare indietro.
 
-Un'attività su un progetto mostra il nome del progetto nella riga sotto il titolo. Toccalo per cambiare progetto o toglierlo; lì **Apri progetto** apre la sua pagina. Vedi [le attività di un progetto](graph.md#a-projects-to-dos).
+Un'attività su un progetto mostra il nome del progetto nella riga sotto il titolo; apre il progetto. **Progetto** in **Dettagli** lo cambia o lo toglie. Vedi [le attività di un progetto](graph.md#a-projects-to-dos).
 
-Anche la sua area, **Lavoro** o **Personale**, è su quella riga. Toccala per spostare l'attività nella tua altra area, come una personale che deve partire dal tuo indirizzo di lavoro. Cosa può leggere e da dove può inviare segue lo spostamento; i messaggi da cui è nata restano dove sono. **Annulla** nell'avviso che segue la riporta indietro.
+**Area** in **Dettagli** sposta l'attività nella tua altra area, come una personale che deve partire dal tuo indirizzo di lavoro. Cosa può leggere e da dove può inviare segue lo spostamento; i messaggi da cui è nata restano dove sono. **Annulla** nell'avviso che segue la riporta indietro.
 
 Quando un'attività ha bisogno di un'altra area per andare avanti, lo chiede con un pulsante **Sposta in Lavoro**. Niente si sposta finché non lo tocchi; poi continua da sola.
 
 ## I pulsanti
 
-Un'attività mostra un solo pulsante: il passo successivo, come **Fallo**, **Rivedi e invia** o **Segna come fatto**. Gli altri sono in **…**: sul telefono si apre dal fondo dello schermo. Una nuova attività ha questi:
+Un'attività mostra il passo successivo, come **Fallo** o **Rivedi e invia**, con **Posticipa** accanto. Vedi [Fallo](do-it.md) e [Posticipa](snooze.md). Una pronta ha anche **Chiedi modifiche** (di' cosa cambiare nella bozza e la rifà) e **Segna come fatto** (è sistemata).
 
-- **Fallo**: la tua Machine la prepara. Vedi [Fallo](do-it.md).
-- **Segna come fatto**: è sistemata.
-- **Posticipa**: falla tornare più tardi. Vedi [Posticipa](snooze.md).
-- **Fallo diversamente**: dille cosa preferiresti, in poche parole. Su un'attività preparata diventa **Chiedi modifiche**: di' cosa cambiare nella bozza e la rifà. È anche accanto a **Invia** quando rivedi la bozza.
+Per farla in un altro modo, dillo nella sua **Chat**.
+
+In **…** (sul telefono si apre dal fondo dello schermo):
+
+- **Passa…**: passala a un collega, a [Claude Code o Codex](hand-to-agent.md) (quelli che hai configurato) o [chiedi a qualcuno di rivederla](ask-to-review.md).
+- **Ripeti…**: [torna con un ritmo](recurring.md).
 - **Non serve**: sparisce. Scegli il motivo, se vuoi: **Non pertinente**, **Fatti sbagliati** o **Già gestito**. La tua Machine ne impara.
 
-Sempre in **…**: **Passa…** la passa a un collega, a [Claude Code o Codex](hand-to-agent.md) (quelli che hai configurato) o [chiede a qualcuno di rivederla](ask-to-review.md). **Ripeti…** la fa [tornare con un ritmo](recurring.md).
-
-Tocca il titolo per rinominarla. Il tuo titolo resta, anche quando l'attività cambia.
+Tocca il titolo, o **Nome** in **Dettagli**, per rinominarla. Il tuo titolo resta, anche quando l'attività cambia.
 
 Un'attività chiusa può tornare con **Riapri**. Torna anche da sola quando succede qualcosa di nuovo, come un nuovo messaggio dall'altra persona. La tua risposta non la fa tornare.
 
 Un'attività che contava solo fino a un certo momento, come una conferma prima di una riunione, si chiude da sola quando quel momento è passato. Passa tra quelle fatte con "Non serve più" e quando era. **Annulla** la riporta indietro per un giorno.
 
-Sulle tue prime attività, una riga breve sotto i pulsanti mostra l'essenziale: **Fallo diversamente** (o **Chiedi modifiche**) e **Non serve** quando un'attività non è proprio giusta, e sulla tua prima bozza pronta, che non parte nulla finché non premi **Invia**. Un suggerimento sparisce per sempre appena usi il suo pulsante o premi ×, su tutti i tuoi dispositivi.
+Sulle tue prime attività, una riga breve sotto i pulsanti mostra l'essenziale: **Cambia approccio** (o **Chiedi modifiche**) e **Non serve** quando un'attività non è proprio giusta, e sulla tua prima bozza pronta, che non parte nulla finché non premi **Invia**. Un suggerimento sparisce per sempre appena usi il suo pulsante o premi ×, su tutti i tuoi dispositivi.
 
 Ogni attività inizia con il suo titolo. La riga sotto dice chi riguarda, la sua organizzazione, il progetto, Lavoro o Personale (sotto **Tutti**) e quando è arrivata, più a che punto è quando il suo gruppo non lo dice già. Tocca un nome per aprirne la pagina nel Graph.
 
@@ -60,7 +60,7 @@ A volte una riga discreta sotto il testo dice cosa non si sa, come «Ultimo cont
 
 Un titolo dice cosa c'è da fare. Cambia solo quando cambia quello, come per una nuova richiesta. Un'attività fatta mantiene il suo titolo, con sotto come è finita, come cosa è stato inviato o "Fatto: Sam ha firmato martedì".
 
-**Dettagli** mostra il messaggio da cui viene (toccalo per leggere la conversazione), la tua ultima nota e il risultato di un agente di codice. **Chat ›** alla fine di quella riga apre la chat. Un'attività fatta resta breve: il titolo, una riga e cosa è partito.
+**Dettagli** mostra nome, progetto e area (toccane uno per cambiarlo), il messaggio da cui viene (toccalo per leggere la conversazione), la tua ultima nota e il risultato di un agente di codice. **Chat ›** alla fine di quella riga apre la chat. Un'attività fatta resta breve: il titolo, una riga e cosa è partito.
 
 Un'attività "In attesa di" (qualcuno ti ha promesso qualcosa) ha il link al tuo ultimo messaggio a quella persona, quello a cui aspetti risposta: "Email a Pat · mar".
 

@@ -1454,7 +1454,7 @@ def first_look_retry_at(runs, current):
 
 
 FIRST_LOOK_SIGNAL_SECONDS = 12  # about how long a first look takes per signal, for "first cards in about N min"
-# First-use tips on the dashboard (Store.first_tips): 'change' on a new person's first to-do (Do it differently and
+# First-use tips on the dashboard (Store.first_tips): 'change' on a new person's first to-do (Change how and
 # Not needed), 'send' on their first ready draft (nothing goes out until Send). Each goes once its button was used.
 FIRST_TIPS = ('change', 'send')
 TIP_USED = {'change': {'other', 'reject'}, 'send': {'send'}}

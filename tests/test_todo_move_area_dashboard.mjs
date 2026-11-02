@@ -5,9 +5,9 @@ import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
-// Moving a to-do to another area (todo_areas.py): a tap on its area chip (Personal) opens the picker on Work, Move moves
-// it (the chip says Work), the toast's Undo moves it back. A run that asked for the move (preparation_move_to) gets it as
-// the to-do's lead button, never moved without the tap. With several companies, the chip opens the same picker with the
+// Moving a to-do to another area (todo_areas.py): Area under Details (Personal) opens the picker on Work, Move moves
+// it (Area says Work), the toast's Undo moves it back. A run that asked for the move (preparation_move_to) gets it as
+// the to-do's lead button, never moved without the tap. With several companies, Area opens the same picker with the
 // companies by the name the owner gave them (areas' name), starting on the area the run asked for, else where the
 // to-do's people point (area_hint), else on Choose… with Move off: never just the first one.
 // SHOT_DIR=<folder> also saves the area picker, the to-do right after a move and the picker, at 390 and 1280, light and dark.
@@ -42,8 +42,8 @@ try{
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
   await page.goto('http://127.0.0.1:'+server.address().port);
   const card=page.locator('#task-a1a1a1a1a1a1a1a1');await card.waitFor();
-  // A Personal to-do: its area chip opens the picker on Work, the only other one; the state stays Stuck with Try again
-  const chip=card.locator('.card-badges .area-chip');assert.equal(await chip.textContent(),'Personal');
+  // A Personal to-do: Area under Details opens the picker on Work, the only other one; the state stays Stuck with Try again
+  if(await card.locator('.details-toggle').getAttribute('aria-expanded')!=='true')await card.locator('.details-toggle').click();const chip=card.locator('.card-fields [data-card-area]');assert.equal(await chip.textContent(),'Personal');
   await chip.click();const pick=card.locator('.area-picker');await pick.waitFor();
   assert.deepEqual(await pick.locator('select').evaluate(s=>({value:s.value,text:s.selectedOptions[0]?.textContent})),{value:'work:Acme',text:'Work'});
   if(shots)await card.screenshot({path:`${shots}/area-picker-${width}-${scheme}.png`});
@@ -51,11 +51,11 @@ try{
   await page.locator('#toast.show').waitFor();
   assert.match(await page.locator('#toast').innerText(),/^Moved to Work\s+Undo$/);
   assert.deepEqual({area:posts[0].area,id:posts[0].suggestion_id},{area:'work:Acme',id:'a1a1a1a1a1a1a1a1'});
-  await page.waitForFunction(()=>document.querySelector('#task-a1a1a1a1a1a1a1a1 .area-chip')?.textContent==='Work');
+  await page.waitForFunction(()=>document.querySelector('#task-a1a1a1a1a1a1a1a1 .card-fields [data-card-area]')?.textContent==='Work');
   if(shots){await page.waitForTimeout(700);await page.screenshot({path:`${shots}/after-move-${width}-${scheme}.png`})}  // the to-do with Work on it, and the toast's Undo
   // Undo on the toast moves it back
   await page.locator('#toast [data-move-undo]').click();
-  await page.waitForFunction(()=>document.querySelector('#task-a1a1a1a1a1a1a1a1 .area-chip')?.textContent==='Personal');
+  await page.waitForFunction(()=>document.querySelector('#task-a1a1a1a1a1a1a1a1 .card-fields [data-card-area]')?.textContent==='Personal');
   assert.equal(posts[1].undo,posts[0].decision_id);
   // A run that asked for the move: its lead button, Needs your help; tapping it carries on (Preparing)
   const asked=page.locator('#task-b2b2b2b2b2b2b2b2');
@@ -66,9 +66,9 @@ try{
   await lead.click();
   await page.waitForFunction(()=>/Preparing/.test(document.querySelector('#task-b2b2b2b2b2b2b2b2')?.innerText||''));
   await context.close()}
- // Several companies: the area chip opens a picker with the other areas, by their names
+ // Several companies: Area opens a picker with the other areas, by their names
  const pickerOf=async(page,id)=>{const card=page.locator('#task-'+id);await card.waitFor();
-  await card.locator('.card-badges [data-card-area]').click();const picker=card.locator('.area-picker');await picker.waitFor();return {card,picker}};
+  if(await card.locator('.details-toggle').getAttribute('aria-expanded')!=='true')await card.locator('.details-toggle').click();await card.locator('.card-fields [data-card-area]').click();const picker=card.locator('.area-picker');await picker.waitFor();return {card,picker}};
  const chosen=picker=>picker.locator('select').evaluate(s=>({value:s.value,text:s.selectedOptions[0]?.textContent}));
  for(const scheme of ['light','dark'])for(const width of [390,1280]){
   reset(true);

@@ -4,7 +4,7 @@ import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
-// A to-do's project picker (a tap on its project chip) and the other boxes that open inside a to-do (Not needed, Ask for
+// A to-do's project picker (Project under Details) and the other boxes that open inside a to-do (Not needed, Ask for
 // changes, Snooze) fit inside the to-do at phone width: a long project name never pushes the box off the screen, and
 // the picker's buttons sit in one even row. SHOTS=<folder> saves screenshots of the picker.
 const dashboard=await dashboardPage();
@@ -36,7 +36,7 @@ try{
   await page.goto('http://127.0.0.1:'+server.address().port);await page.locator('#task-p1').waitFor();
   const card=page.locator('#task-p1');
   // The project picker, holding the long name
-  await card.locator('.card-badges button.chip.project-link').click();
+  if(await card.locator('.details-toggle').getAttribute('aria-expanded')!=='true')await card.locator('.details-toggle').click();await card.locator('.card-fields [data-card-project]').click();
   const picker=card.locator('.project-picker');await picker.locator('select').waitFor();
   assert.equal(await picker.locator('select').inputValue(),'project:edx');
   assert.equal(await picker.locator('.pp-open').getAttribute('href'),'#graph/project%3Aedx');
@@ -54,7 +54,7 @@ try{
   assert.deepEqual(await fits(page,'#task-p1 .dismiss-editor'),[],`not needed at ${width}`);
   await card.locator('.dismiss-editor').getByRole('button',{name:'Cancel'}).click();await card.locator('.dismiss-editor').waitFor({state:'detached'});
   // Snooze
-  await card.locator('.more-actions>summary').click();await card.getByRole('button',{name:'Snooze',exact:true}).click();await page.waitForTimeout(200);
+  await card.getByRole('button',{name:'Snooze',exact:true}).click();await page.waitForTimeout(200);
   const snooze=await page.evaluate(()=>{const c=document.querySelector('#task-p1').getBoundingClientRect();return [...document.querySelectorAll('#task-p1 *')].filter(e=>{const r=e.getBoundingClientRect();return r.width&&e.checkVisibility()&&(r.right>c.right+0.5||r.left<c.left-0.5)}).map(e=>e.tagName+'.'+e.className)});
   assert.deepEqual(snooze,[],`snooze at ${width}`);
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));

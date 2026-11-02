@@ -60,7 +60,9 @@ try{
  // A label never wraps: each button is one line high.
  for(const b of await later.locator('.actions>button').all())assert.ok((await b.evaluate(x=>x.scrollWidth<=x.clientWidth+1&&getComputedStyle(x).whiteSpace==='nowrap')),await b.innerText());
  assert.doesNotMatch(await later.innerText(),/Back |Unsnooze|Snoozed/);
- assert.deepEqual(await later.locator('.actions button').evaluateAll(b=>b.map(x=>x.textContent.trim()).filter(Boolean)).then(t=>t.slice(0,6)),['Check in now','Take it back','Change time','Hand off to someone else','Repeat…','Not needed']);  // with Kim: Check in now leads; take it back or hand it on under …
+ assert.deepEqual(await later.locator('.actions>button:not([hidden])').allTextContents().then(t=>t.map(x=>x.trim())),['Check in now','Change time']);  // with Kim: Check in now leads, with Change time
+ assert.deepEqual(await later.locator('.more-menu>button').allTextContents().then(t=>t.map(x=>x.trim())),['Hand off…','Repeat…','Not needed']);  // take it back or hand it on: under …, Hand off…
+ assert.deepEqual(await later.locator('.mm-sub>button:not([data-mm-back])').evaluateAll(n=>n.map(x=>x.dataset.full||x.textContent.trim())),['Take it back','Hand off to someone else']);
  assert.equal(await later.locator('.actions [data-choice="accept"]').innerText(),'Check in now');
  const chatLine=await page.evaluate(()=>{const s=state.suggestions[0],d=document.createElement('div');d.innerHTML=chatStatus(s);return d.textContent});
  assert.match(chatLine,/^Check in with Kim \S+ \d\d:\d\d if no answer·Check in now$/);

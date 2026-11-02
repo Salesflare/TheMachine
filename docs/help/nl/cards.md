@@ -28,31 +28,31 @@ Een to-do waarvan de laatste stap nog openstaat bij iemand anders, zoals een rev
 
 **Alle**, **Werk** en **Privé** boven de lijst in de zijbalk tonen alle to-do's of maar één soort. Je Machine onthoudt de keuze, zodat je telefoon en computer dezelfde lijst tonen. Staat Werk of Privé aan, dan staat dat bovenaan de lijst, met **Alles tonen** om terug te gaan.
 
-Een to-do bij een project toont de naam van het project in de regel onder de titel. Tik erop om het project te wijzigen of weg te halen; **Project openen** daar opent de pagina ervan. Zie [de to-do's van een project](graph.md#a-projects-to-dos).
+Een to-do bij een project toont de naam van het project in de regel onder de titel; die opent het project. **Project** onder **Details** wijzigt het of haalt het weg. Zie [de to-do's van een project](graph.md#a-projects-to-dos).
 
-Zijn gebied, **Werk** of **Privé**, staat ook in die regel. Tik erop om de to-do naar je andere gebied te verplaatsen, zoals een privé-to-do die vanaf je werkadres moet vertrekken. Wat hij mag lezen en waarvandaan hij mag versturen, verhuist mee; de berichten waar hij uit kwam, blijven waar ze zijn. **Ongedaan maken** in de melding die volgt, zet hem terug.
+**Gebied** onder **Details** verplaatst de to-do naar je andere gebied, zoals een privé-to-do die vanaf je werkadres moet vertrekken. Wat hij mag lezen en waarvandaan hij mag versturen, verhuist mee; de berichten waar hij uit kwam, blijven waar ze zijn. **Ongedaan maken** in de melding die volgt, zet hem terug.
 
 Heeft een to-do een ander gebied nodig om verder te kunnen, dan vraagt hij het met een knop **Naar Werk verplaatsen**. Er verhuist niets tot je erop tikt; daarna gaat hij zelf verder.
 
 ## De knoppen
 
-Een to-do toont één knop: de volgende stap, zoals **Doe het**, **Nakijken en versturen** of **Markeer als gedaan**. De rest staat onder **…**: op een telefoon schuift dat open vanaf de onderkant van het scherm. Een nieuwe to-do heeft deze:
+Een to-do toont zijn volgende stap, zoals **Doe het** of **Nakijken en versturen**, met **Snoozen** ernaast. Zie [Doe het](do-it.md) en [Snoozen](snooze.md). Een klaarstaande heeft ook **Wijzigingen vragen** (zeg wat er in het concept moet veranderen en hij doet het opnieuw) en **Markeer als gedaan** (hij is geregeld).
 
-- **Doe het**: je Machine bereidt hem voor. Zie [Doe het](do-it.md).
-- **Markeer als gedaan**: hij is geregeld.
-- **Snoozen**: laat hem later terugkomen. Zie [Snoozen](snooze.md).
-- **Doe het anders**: zeg in een paar woorden wat je in de plaats wilt. Op een voorbereide to-do heet het **Wijzigingen vragen**: zeg wat er in het concept moet veranderen en hij doet het opnieuw. Het staat ook naast **Versturen** als je het concept nakijkt.
+Wil je hem anders laten doen, zeg het dan in zijn **Chat**.
+
+Onder **…** (op een telefoon schuift dat open vanaf de onderkant van het scherm):
+
+- **Overdragen…**: geef hem aan een teamgenoot, aan [Claude Code of Codex](hand-to-agent.md) (die je ingesteld hebt), of [vraag iemand om een review](ask-to-review.md).
+- **Herhalen…**: hij [komt terug in een ritme](recurring.md).
 - **Niet nodig**: hij verdwijnt. Kies eventueel waarom: **Niet relevant**, **Feiten kloppen niet** of **Al geregeld**. Je Machine leert ervan.
 
-Ook onder **…**: **Overdragen…** draagt hem over aan een teamgenoot, aan [Claude Code of Codex](hand-to-agent.md) (die je ingesteld hebt), of [vraagt iemand om een review](ask-to-review.md). **Herhalen…** laat hem [terugkomen in een ritme](recurring.md).
-
-Tik op de titel om hem te hernoemen. Je titel blijft, ook als de to-do verandert.
+Tik op de titel, of op **Naam** onder **Details**, om hem te hernoemen. Je titel blijft, ook als de to-do verandert.
 
 Een gesloten to-do kan terugkomen met **Heropenen**. Hij komt ook vanzelf terug als er iets nieuws gebeurt, zoals een nieuw bericht van de ander. Je eigen antwoord brengt hem niet terug.
 
 Een to-do die maar tot een bepaald moment telde, zoals een bevestiging voor een vergadering, sluit vanzelf zodra dat moment voorbij is. Hij gaat naar **Gedaan / afgewezen** met "Niet meer nodig" en wanneer het was. **Ongedaan maken** brengt hem een dag lang terug.
 
-Bij je eerste to-do's staat onder de knoppen één korte regel met wat je moet weten: **Doe het anders** (of **Wijzigingen vragen**) en **Niet nodig** als een to-do niet helemaal klopt, en bij je eerste klaarstaande concept dat er niets weggaat tot je op **Versturen** drukt. Een tip verdwijnt voorgoed zodra je die knop gebruikt of op × drukt, op al je apparaten.
+Bij je eerste to-do's staat onder de knoppen één korte regel met wat je moet weten: **Anders aanpakken** (of **Wijzigingen vragen**) en **Niet nodig** als een to-do niet helemaal klopt, en bij je eerste klaarstaande concept dat er niets weggaat tot je op **Versturen** drukt. Een tip verdwijnt voorgoed zodra je die knop gebruikt of op × drukt, op al je apparaten.
 
 Elke to-do begint met de titel. De regel eronder zegt over wie hij gaat, hun organisatie, het project, Werk of Privé (onder **Alle**) en wanneer hij binnenkwam, en waar hij staat als de groep dat niet al zegt. Tik op een naam om de pagina in de Graph te openen.
 
@@ -60,7 +60,7 @@ Soms zegt een rustige regel onder de tekst wat niet bekend is, zoals "Laatste co
 
 Een titel zegt wat er moet gebeuren. Hij verandert alleen als dat verandert, zoals bij een nieuwe vraag. Een to-do die gedaan is houdt zijn titel, met eronder hoe hij afliep, zoals wat er verstuurd is of "Gedaan: Sam heeft dinsdag getekend".
 
-**Details** toont het bericht waar hij uit komt (tik erop om de thread te lezen), je laatste notitie en het resultaat van een codeeragent. **Chat ›** aan het eind van die regel opent de chat. Een afgeronde to-do blijft kort: de titel, één regel en wat er verstuurd is.
+**Details** toont zijn naam, project en gebied (tik erop om het te wijzigen), het bericht waar hij uit komt (tik erop om de thread te lezen), je laatste notitie en het resultaat van een codeeragent. **Chat ›** aan het eind van die regel opent de chat. Een afgeronde to-do blijft kort: de titel, één regel en wat er verstuurd is.
 
 Een to-do "Wacht op" (iemand heeft je iets beloofd) linkt naar je eigen laatste bericht aan die persoon, het bericht waarop je een antwoord verwacht: "E-mail aan Pat · di".
 

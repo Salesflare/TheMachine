@@ -120,14 +120,11 @@ try{
   assert.deepEqual(await sheet.locator('h3').allTextContents(),['General','Go to','Calendar','Lists and to-dos']);
   const st=await sheet.textContent();assert.match(st,/Search and commandsCtrlKor\//);assert.match(st,/SettingsGthen,/);assert.match(st,/New to-doN/);assert.match(st,/SnoozeS/);assert.ok(!st.includes('⌘'));
   await page.keyboard.press('Escape');await sheet.waitFor({state:'hidden'});
-  // Hints: tooltips on the sidebar, a quiet key in the card's More menu
+  // Hints: tooltips on the sidebar and the card's buttons (a quiet key after a label in a menu)
   assert.equal(await page.locator('nav [data-tab="calendar"]').getAttribute('title'),'Calendar (G then C)');
   assert.equal(await page.locator('#open-settings').getAttribute('aria-keyshortcuts'),'G Comma');
-  await settled(()=>page.locator(`#task-${id(1)} .more-menu [data-choice="snooze"]`).evaluate(b=>getComputedStyle(b,'::after').content.split(' / ')[0]),'"S"');  // the hints come with each redraw
-  assert.equal(await page.locator(`#task-${id(1)} .more-menu [data-choice="snooze"]`).textContent(),'Snooze','the key is not part of its name');
-  await page.locator(`#task-${id(1)} .more-actions>summary`).click();
-  assert.equal(await page.locator(`#task-${id(1)} .more-menu`).getByRole('button',{name:'Snooze',exact:true}).count(),1,'nor of what a screen reader says');
-  await page.locator(`#task-${id(1)} .more-actions>summary`).click();
+  await settled(()=>page.locator(`#task-${id(1)} .actions>[data-choice="snooze"]`).getAttribute('title'),'Snooze (S)');  // the hints come with each redraw; in sight, a tooltip
+  assert.equal(await page.locator(`#task-${id(1)} .actions>[data-choice="snooze"]`).textContent(),'Snooze','the key is not part of its name');
   // J/K through the cards (and the heads of their lists); S opens the snooze picker for the picked one, E renames, D marks it done
   const order=await page.evaluate(()=>kbItems().map(a=>a.id));assert.ok(order[0].startsWith('section-'),'a list head is the first stop');
   await page.keyboard.press('j');assert.equal(await page.evaluate(()=>document.activeElement.id),order[0]);

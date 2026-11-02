@@ -7,7 +7,7 @@ import {callAfter,settled} from './page-calls.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // First-use tips (firstTip): one quiet line under the buttons of the to-do it is about, one at a time. The ready draft's
-// tip first; the first open to-do's names its real buttons (Do it differently or Ask for changes, Not needed), which
+// tip first; the first open to-do's names its real buttons (Change how or Ask for changes, Not needed), which
 // work like the buttons themselves. Using a button or × closes the tip on the Machine (tip_done); an existing person
 // (first_tips empty) sees none.
 const dashboard=await dashboardPage();
@@ -45,11 +45,11 @@ try{
   // × closes it on the Machine; then the first open to-do in the list gets the other one, with that to-do's own labels
   assert.deepEqual(await callAfter(page,'tip_done',()=>page.locator('#task-r1 .tip-x').click()),{action:'tip_done',args:{tip:'send'}});
   await settled(shown,[['task-r1','change','Not quite right? Ask for changes tells me what to change. Not needed clears it.']]);
-  // A list of decisions only: the first one's tip says Do it differently
+  // A list of decisions only: the first one's tip says Change how
   cards.unshift(cards.pop());const ready=cards.shift();await page.evaluate(()=>refresh());
-  await settled(shown,[['task-p1','change','Not quite right? Do it differently tells me what to change. Not needed clears it.']]);
+  await settled(shown,[['task-p1','change','Not quite right? Change how tells me what to change. Not needed clears it.']]);
   cards.push(ready);
-  // Its button names work like the buttons: Do it differently opens the editor, and the tip is gone for good
+  // Its button names work like the buttons: Change how opens the editor, and the tip is gone for good
   assert.deepEqual(await callAfter(page,'tip_done',()=>page.locator('#task-p1 .first-tip [data-choice="change"]').click()),{action:'tip_done',args:{tip:'change'}});
   await page.locator('#feedback-p1').waitFor();
   await settled(shown,[]);

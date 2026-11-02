@@ -19,7 +19,7 @@ Environ deux fois par jour, elle en tire quelques petits changements. **Apprenti
 ## Lui apprendre plus vite
 
 - Modifiez un brouillon avant de l’envoyer. Elle apprend de ce que vous avez changé.
-- Appuyez sur **Faire autrement**, ou sur **Demander des modifications** sur un brouillon, et dites ce que vous aimeriez.
+- Dites ce que vous aimeriez dans le **Chat** de la tâche, ou appuyez sur **Demander des modifications** sur un brouillon.
 - Appuyez sur **Pas nécessaire** et choisissez pourquoi.
 - Dites-le dans le chat d’une tâche : « plus court, et sans points d’exclamation ». Elle affiche **Ajouté à Votre façon d’écrire** quand elle l’a retenu.
 

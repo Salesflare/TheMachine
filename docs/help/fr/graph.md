@@ -169,7 +169,7 @@ Ou gérez-les à la main, comme des affaires dans un CRM :
 
 ### Les tâches d’un projet
 
-Une tâche peut appartenir à un projet. Votre Machine le choisit quand son fil ou les personnes concernées sont sur un seul projet en cours, et la tâche affiche son nom sous le titre. Appuyez sur ce nom, ou utilisez **Rattacher à un projet** dans le menu de commandes (Ctrl K), pour le changer ou le retirer. Votre choix est conservé.
+Une tâche peut appartenir à un projet. Votre Machine le choisit quand son fil ou les personnes concernées sont sur un seul projet en cours, et la tâche affiche son nom sous le titre. **Projet** sous les **Détails** de la tâche, ou **Rattacher à un projet** dans le menu de commandes (Ctrl K), le change ou le retire. Votre choix est conservé.
 
 La page d’un projet liste ses tâches sous **Tâches**, celles en cours d’abord, et sa carte sur le tableau indique combien sont en cours. Lier une tâche à un projet partagé ne partage rien de plus : votre équipe ne voit toujours que ce qui vient de messages partagés.
 
