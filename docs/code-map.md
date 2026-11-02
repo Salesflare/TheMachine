@@ -82,6 +82,10 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   before; `dashboard/` itself is never served.
 - **A big page or script** is split before it nears 450 KiB: Aikido skips big files (some just over 500 KiB already
   go unscanned), so a bigger one ships unchecked (see the size rule below).
+- **Markup in the dashboard:** build elements with `make()`, or write markup with ``html`...` `` and put it in the page
+  with `setHTML(el, h)`. In ``html`` `` every `${}` is escaped unless it is itself an ``html`` `` result (or `raw()` of
+  a vetted constant), so no `esc()` call can be forgotten; `setHTML` takes nothing else. Older renderers that build
+  strings with `esc()` move to ``html`` `` one at a time.
 
 ## The rules and their checks
 
