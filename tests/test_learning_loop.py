@@ -165,5 +165,178 @@ class LearningLoop(unittest.TestCase):
         self.assertEqual(titles['d2'], 'To-do 2')
 
 
+
+class DurableSignals(LearningLoop):
+    """Signal loss (2026-11-02): a pass read the 30 newest signals since the last pass started, so a busy half day lost
+    the rest for good, and a pass that failed lost its whole batch. Each signal now stays pending until a pass that read
+    it is applied, oldest first in batches; a failed pass leaves its batch for a retry."""
+
+    def setUp(self):
+        super().setUp()
+        self.clock = a.dt.datetime.fromisoformat(a.now())
+
+    def add(self, n, at=None, prefix='x', feedback=''):
+        base = at or self.clock - a.dt.timedelta(days=3)
+        with self.store.connect() as db:
+            for i in range(n):
+                db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,'s1',?,?,'dashboard',?)",
+                           (f'{prefix}{i:03}', 'other' if feedback else 'reject', feedback, (base + a.dt.timedelta(minutes=i)).isoformat()))
+        return [f'{prefix}{i:03}' for i in range(n)]
+
+    def later(self, hours=13):
+        self.clock += a.dt.timedelta(hours=hours)
+        return self.clock
+
+    def step(self, runner):
+        self.app.background_at = 0
+        self.app.profile_step(runner)
+        self.app.profile_step(runner)
+
+    def one_pass(self, changes=(), fail=False, hours=13):
+        """One pass at the next due time: its page, or None when none is due."""
+        run_id = self.store.tune_due(self.later(hours))
+        if not run_id:
+            return None
+        with self.store.connect() as db:  # started on this test's clock, for the cadence
+            db.execute('UPDATE profile_runs SET started_at=? WHERE run_id=?', (self.clock.isoformat(), run_id))
+        session = a.PROFILE_SESSION_PREFIX + run_id
+        page = self.store.profile_evidence(1, session)
+
+        def runner(request):
+            if request['action'] == 'start':
+                if not (fail(page) if callable(fail) else fail):
+                    self.store.save_profile({'changes': list(changes)}, session)
+                return {'status': 'admitted'}
+            return {'status': 'ok'}  # ended without a draft: the pass failed
+        self.step(runner)
+        return page
+
+    def states(self):
+        with self.store.connect() as db:
+            return {r['ref']: (r['status'], r['tries']) for r in db.execute("SELECT * FROM learning_signals WHERE kind='decision'")}
+
+    def test_overflow_every_signal_is_read_once_oldest_first_across_passes(self):
+        ids = self.add(100)
+        pages = []
+        while (page := self.one_pass(hours=2)) is not None:  # a backlog: the next batch within SOON_HOURS, not 12 hours
+            pages.append(page)
+        self.assertEqual([len(p['signals']) for p in pages], [30, 30, 30])
+        pages.append(self.one_pass(hours=10))  # one batch left: about twice a day again
+        self.assertEqual([len(p['signals']) for p in pages], [30, 30, 30, 15])  # 100 + the 5 from setUp
+        self.assertEqual([s['at'] for s in pages[0]['signals']], sorted(s['at'] for s in pages[0]['signals']))
+        self.assertTrue(all(s['to_do'] == 'To-do 1' for s in pages[0]['signals']))  # the oldest come first
+        seen = [s['at'] + s['what'] + s.get('to_do', '') for p in pages for s in p['signals']]
+        states = self.states()
+        self.assertTrue(all(states[i] == ('done', 0) for i in ids))
+        with self.store.connect() as db:
+            self.assertEqual(db.execute("SELECT count(*) FROM learning_signals WHERE status='done'").fetchone()[0], 105)
+            self.assertEqual(learning_loop.waiting(db, learning_loop.floor(db)), 0)
+        self.assertEqual(sum(len(p['signals']) for p in pages), 105)
+        self.assertEqual(len(seen), 105)
+        self.add(3, at=self.clock, prefix='y')
+        self.assertIsNone(self.store.tune_due(self.later(2)))  # no backlog: back to about twice a day
+        self.assertTrue(self.one_pass(hours=12))
+
+    def test_restart_after_the_turn_before_applying_loses_and_duplicates_nothing(self):
+        changes = [{'kind': 'fact', 'text': 'Vendor newsletters never need a to-do.', 'why': 'Dismissed one.'},
+                   {'kind': 'voice', 'channel': 'Email', 'text': EMAIL + '\nPlain words', 'why': 'Edits.'},
+                   {'kind': 'voice', 'channel': 'WhatsApp', 'text': 'Formal, full sentences', 'why': 'x'}]
+        apply_tune = self.store.apply_tune
+
+        def stop(run_id):  # the service stops right after the turn ended, before applying it
+            with self.store.connect() as db:
+                if db.execute('SELECT status FROM profile_runs WHERE run_id=?', (run_id,)).fetchone()[0] == 'ok':
+                    raise RuntimeError('stopped')
+            return apply_tune(run_id)
+        with patch.object(self.store, 'apply_tune', side_effect=stop):
+            with self.assertRaises(RuntimeError):
+                self.one_pass(changes)
+        self.assertEqual(self.store.snapshot([])['learning_changes'], [])
+        self.assertEqual({v for v, _ in self.states().values()}, {'claimed'})
+        real = self.store.tune_voice
+        with patch.object(self.store, 'tune_voice', side_effect=lambda *x: real(*x) if x[0] != 'Email' else 1 / 0):  # and mid-apply
+            with self.assertRaises(ZeroDivisionError):
+                self.store.tune_due(self.later())
+        self.assertEqual(self.store.snapshot([])['learning_changes'], [])  # rolled back whole, the fact too
+        self.assertEqual({v for v, _ in self.states().values()}, {'claimed'})
+        self.assertIsNone(self.store.tune_due(self.later()))  # after the restart: applied once, nothing left to read
+        self.assertIsNone(self.store.tune_due(self.later()))
+        changes = self.store.snapshot([])['learning_changes']
+        self.assertEqual(sorted(c['kind'] for c in changes), ['fact', 'voice'])  # the owner's WhatsApp voice stays theirs
+        self.assertEqual({v for v, _ in self.states().values()}, {'done'})
+        with self.store.connect() as db:
+            self.assertEqual(db.execute("SELECT count(*) FROM facts WHERE text='Vendor newsletters never need a to-do.'").fetchone()[0], 1)
+        self.assertEqual(next(v for v in self.store.voices() if v['channel'] == 'WhatsApp')['text'], 'lowercase, no full stop')
+        self.app.action('learning_undo', {'id': next(c['id'] for c in changes if c['kind'] == 'voice')}, owner_dashboard=True)
+        self.assertEqual(next(v for v in self.store.voices() if v['channel'] == 'Email')['text'], EMAIL)
+
+    def test_a_failed_pass_is_retried_with_the_same_batch(self):
+        first = self.one_pass(fail=True)
+        with self.store.connect() as db:
+            learning_loop.settle(db)
+        self.assertEqual({v for v in self.states().values()}, {('pending', 1)})
+        self.add(3, at=self.clock, prefix='new')  # newer signals wait until the failed batch went through
+        second = self.one_pass([{'kind': 'fact', 'text': 'Vendor newsletters never need a to-do.', 'why': 'Dismissed one.'}])
+        self.assertEqual(second['signals'], first['signals'])
+        states = self.states()
+        self.assertEqual({states[i] for i in ('d1', 'd2', 'd3')}, {('done', 1)})
+        self.assertEqual({states.get(i) for i in ('new000', 'new001', 'new002')}, {None})
+        self.assertEqual([c['kind'] for c in self.store.snapshot([])['learning_changes']], ['fact'])
+        third = self.one_pass()
+        self.assertEqual(len(third['signals']), 3)
+
+    def test_a_turn_that_never_started_spends_no_try(self):
+        run_id = self.store.tune_due(self.later())
+        with self.store.connect() as db:
+            db.execute("UPDATE profile_runs SET status='error',error='openclaw_unavailable' WHERE run_id=?", (run_id,))
+        self.assertTrue(self.store.tune_due(self.later()))
+        self.assertEqual({v for v in self.states().values()}, {('claimed', 0)})
+
+    def test_a_poison_signal_is_given_up_after_max_tries_and_never_blocks_the_rest(self):
+        self.add(1, at=self.clock - a.dt.timedelta(hours=1), prefix='poison', feedback='POISON')
+        failed = 0
+        for _ in range(20):
+            page = self.one_pass(fail=lambda page: 'POISON' in json.dumps(page))
+            if page is None:
+                break
+            failed += 'POISON' in json.dumps(page)
+        self.assertEqual(failed, learning_loop.MAX_TRIES)
+        states = self.states()
+        self.assertEqual(states['poison000'], ('skipped', learning_loop.MAX_TRIES))
+        self.assertEqual([k for k, (state, _) in states.items() if state == 'skipped'], ['poison000'])
+        self.add(3, at=self.clock, prefix='y')
+        while self.one_pass() is not None:
+            pass
+        self.assertEqual({state for state, _ in self.states().values()}, {'done', 'skipped'})
+        with self.store.connect() as db:  # every one of the owner's edits went through too
+            self.assertEqual(db.execute("SELECT count(*) FROM learning_signals WHERE kind='edit' AND status='done'").fetchone()[0], 2)
+
+    def test_an_existing_machine_starts_from_its_last_pass(self):
+        before = (self.clock - a.dt.timedelta(hours=20)).isoformat()
+        self.add(40, at=self.clock - a.dt.timedelta(days=2), prefix='old')  # read (or skipped) by the old loop: history
+        with self.store.connect() as db:
+            db.execute("INSERT INTO profile_runs(run_id,status,started_at,updated_at,kind,auto) VALUES('old','ok',?,?,'tune',1)", (before, before))
+        page = self.one_pass()
+        self.assertEqual(len(page['signals']), 5)
+        self.assertFalse(any(k.startswith('old') for k in self.states()))
+        with self.store.connect() as db:
+            self.assertEqual(learning_loop.floor(db), before)
+
+    def test_an_existing_machine_recovers_what_its_failed_passes_after_the_last_good_one_read(self):
+        good, failed = (self.clock - a.dt.timedelta(hours=30)).isoformat(), (self.clock - a.dt.timedelta(hours=10)).isoformat()
+        self.add(40, at=self.clock - a.dt.timedelta(hours=40), prefix='old')  # before the last good pass: history
+        lost = self.add(4, at=self.clock - a.dt.timedelta(hours=20), prefix='lost')  # read by a pass that then failed
+        with self.store.connect() as db:
+            db.execute("INSERT INTO profile_runs(run_id,status,started_at,updated_at,kind,auto) VALUES('good','ok',?,?,'tune',1)", (good, good))
+            db.execute("INSERT INTO profile_runs(run_id,status,error,started_at,updated_at,kind,auto) VALUES('bad','error','lost',?,?,'tune',1)",
+                       (failed, failed))
+        page = self.one_pass()
+        self.assertEqual(len(page['signals']), 9)  # the 4 the failed pass lost, then the 5 since
+        states = self.states()
+        self.assertTrue(all(states[i] == ('done', 0) for i in lost))
+        self.assertFalse(any(k.startswith('old') for k in states))
+        with self.store.connect() as db:
+            self.assertEqual(learning_loop.floor(db), good)
+
 if __name__ == '__main__':
     unittest.main()
