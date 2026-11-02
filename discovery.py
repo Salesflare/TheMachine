@@ -13,6 +13,14 @@ so once, quietly: a line in the Fleet log and in the Fleet tab's Network block, 
   except shared ones (info@, sales@, a team inbox: shared_addresses), which stay off until the owner turns one on.
   The Network keeps those blinded only, and an address that is someone else's sign-in finds nobody.
 
+Phone numbers too, in E.164 (+15550100, the owner's region for a number without its country code). Findable: only
+the owner's own numbers: their linked WhatsApp account's (kept in plain form on this Machine only, graph.keep_linked_number),
+the ones saved under About you and config owner_phones, never a number seen in a message; each can be turned off like an address. Looked up: the numbers of
+the strongest contacts the owner wrote to or met, or added a number to. Numbers are few enough to try them all, so
+the Network gives no list of findable people for them: the Machine sends them blinded (match, no buckets), unblinds
+H(x)^b and sends its tokens (phone_resolve), and the Network answers only for someone with a mutual reason (they
+looked the owner up too, or they are friends). A Network from before without phone lookups: numbers are skipped.
+
 Someone in a Work or Family Fleet with the owner is connected already: never suggested (nor by the Network, which
 leaves them out of a lookup), until one of them leaves that Fleet. A friendship with them stays as it is.
 
@@ -29,6 +37,7 @@ from __future__ import annotations
 import datetime as dt
 import hashlib
 import json
+import re
 import secrets
 
 # The Network's group (cloud/discovery.py has the same): RFC 3526's 2048-bit MODP prime, its subgroup of squares.
@@ -40,6 +49,10 @@ P = int(
     'E39E772C180E86039B2783A2EC07A28FB5C55DF06F4C52C9DE2BCBF6955817183995497CEA956AE515D2261898FA0510'
     '15728E5A8AACAA68FFFFFFFFFFFFFFFF', 16)
 BYTES = (P.bit_length() + 7) // 8
+Q = (P - 1) // 2
+PHONE = re.compile(r'\+[1-9]\d{6,14}')
+MAX_NUMBERS = 500            # the strongest contacts' numbers checked in one lookup (with MAX_CONTACTS within the Network's daily budget)
+MAX_OWN_NUMBERS = 5          # the owner's own numbers they can be found by (the Network's limit)
 MAX_CONTACTS = 1000          # the strongest contacts checked in one lookup (the Network's limit)
 RESOLVE_BATCH = 50
 LOOKUP_DAYS = 1              # how often the Machine looks all its contacts up again
@@ -103,6 +116,30 @@ def matches(emails, items, a, answer):
     return [e for e, x in zip(emails, raised) if isinstance(x, str) and x in found]
 
 
+def phone_token(element):
+    """A number as the Network keeps it: SHA-256 of H(n)^b (cloud/discovery.py has the same)."""
+    return hashlib.sha256(b'the-machine-network-phone:' + element.encode()).hexdigest()
+
+
+def tokens(raised, a):
+    """The tokens of H(x)^ab the Network returned: raised to 1/a, that is H(x)^b, then hashed. None when incomplete."""
+    inverse = pow(a, -1, Q)
+    try:
+        return [phone_token(hexed(pow(int(str(x), 16), inverse, P))) for x in raised]
+    except ValueError:
+        return None
+
+
+def number(value, code=None):
+    """value in E.164 (+15550100), or None: with its country code (+, 00), else in the owner's region (code)."""
+    import crm_fixes
+    text = str(value or '').strip()
+    if not text:
+        return None
+    found = crm_fixes.phone(text, code)
+    return found if found and PHONE.fullmatch(found) else None
+
+
 def now():
     return dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds')
 
@@ -159,6 +196,67 @@ class Discovery:
                 seen.add(email)
                 out.append((email, row['id'], row['name']))
                 if len(out) >= MAX_CONTACTS:
+                    return out
+        return out
+
+    def _region_code(self):
+        import crm_fixes
+        import locale_prefs
+        region = crm_fixes.region_of(self.config) or (locale_prefs.region(self.config.get('locale')) or '').upper()
+        return crm_fixes.CALLING.get(region)
+
+    def own_number_sources(self):
+        """{number: 'whatsapp' | 'about_you' | 'config'}: where each of the owner's own numbers came from."""
+        out = {}
+        try:
+            with self.connect() as db:
+                if db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='owner_numbers'").fetchone():
+                    code = self._region_code()
+                    for value, source in db.execute('SELECT number,source FROM owner_numbers'):
+                        found = number(value, code)
+                        if found:
+                            out[found] = source
+        except Exception:  # noqa: BLE001 - no graph tables yet
+            pass
+        return out
+
+    def own_numbers(self):
+        """The owner's own numbers in E.164: the ones they entered (config owner_phones, top level or per account; About
+        you) and from an account they linked. Never a number only seen in a message."""
+        raw = [*(self.config.get('owner_phones') or ()), *(p for a in self.config.get('accounts', []) if isinstance(a, dict) for p in a.get('owner_phones') or ())]
+        try:
+            with self.connect() as db:
+                if db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='owner_numbers'").fetchone():
+                    raw += [r[0] for r in db.execute('SELECT number FROM owner_numbers ORDER BY at')]
+        except Exception:  # noqa: BLE001 - no graph tables yet
+            pass
+        code, out = self._region_code(), []
+        for value in raw:
+            found = number(value, code)
+            if found and found not in out:
+                out.append(found)
+        return out[:MAX_OWN_NUMBERS]
+
+    def network_numbers(self, db):
+        """[(number, node_id, name)] for the strongest people in the graph the owner wrote to or met, or added a number to:
+        the numbers the messages show (WhatsApp) and the ones the owner added (Edit). A stranger who only wrote to the
+        owner is not looked up by number. The owner's own numbers left out."""
+        code, mine = self._region_code(), set(self.own_numbers())
+        out, seen = [], set()
+        for row in db.execute("SELECT id,name,info FROM graph_nodes WHERE kind='person' AND quiet=0 ORDER BY strength DESC LIMIT 3000"):
+            try:
+                info = json.loads(row['info'] or '{}')
+            except ValueError:
+                continue
+            added = [number(p.get('value'), code) for p in info.get('phones') or () if isinstance(p, dict) and p.get('by') == 'owner']
+            found = [number('+' + i[3:]) for i in info.get('identifiers') or () if str(i).startswith('wa:') and i[3:].isdigit()] \
+                if info.get('wrote') or info.get('met') else []
+            for n in [*added, *found]:
+                if not n or n in mine or n in seen:
+                    continue
+                seen.add(n)
+                out.append((n, row['id'], row['name']))
+                if len(out) >= MAX_NUMBERS:
                     return out
         return out
 
@@ -243,19 +341,30 @@ class Discovery:
         off, on, shared = set(found.get('address_off') or []), set(found.get('address_on') or []), self.shared_addresses()
         return [e for e in self.own_addresses() if e in on or (e not in off and e not in shared)]
 
+    def _numbers_wanted(self):
+        """The owner's own numbers to be findable by: each one unless they turned it off."""
+        off = set(self.network_settings().get('address_off') or [])
+        return [n for n in self.own_numbers() if n not in off]
+
     def send_findable(self):
-        """Tell the Network which connected addresses the owner can be found by (the ones not turned off)."""
-        wanted = self._findable_wanted()
-        found = self.relay.call('POST', '/discover', {'action': 'discoverable', 'on': True, 'emails': wanted}, timeout=30) or {}
+        """Tell the Network which connected addresses and own numbers the owner can be found by (the ones not turned
+        off). A Network from before that doesn't take numbers says nothing about them: none findable."""
+        wanted, numbers = self._findable_wanted(), self._numbers_wanted()
+        body = {'action': 'discoverable', 'on': True, 'emails': wanted}
+        if numbers or self.network_settings().get('numbers_sent'):
+            body['phones'] = numbers  # none any more: [] takes the last one off
+        found = self.relay.call('POST', '/discover', body, timeout=30) or {}
         addresses = [a for a in found.get('addresses') or [] if isinstance(a, dict) and isinstance(a.get('email'), str)]
         account = next((normal(a['email']) for a in addresses if a.get('source') == 'account'), self.network_settings().get('account_email'))
-        self._set_network(discoverable=bool(found.get('discoverable')), findable=[normal(a['email']) for a in addresses],
-                          findable_sent=wanted, findable_at=now(), account_email=account)
+        phones = [p for p in found.get('phones') or [] if isinstance(p, str) and p in numbers] if isinstance(found.get('phones'), list) else []
+        self._set_network(discoverable=bool(found.get('discoverable')), findable=[normal(a['email']) for a in addresses] + phones,
+                          findable_sent=wanted, numbers_sent=numbers, findable_at=now(), account_email=account)
         return found
 
     def _findable_due(self):
         found = self.network_settings()
-        return bool(found.get('discoverable')) and (found.get('findable_sent') != self._findable_wanted() or not found.get('findable_at') or
+        return bool(found.get('discoverable')) and (found.get('findable_sent') != self._findable_wanted() or
+                                                     found.get('numbers_sent', []) != self._numbers_wanted() or not found.get('findable_at') or
                                                      found['findable_at'] < (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=ADDRESS_DAYS)).isoformat(timespec='seconds'))
 
     # -- the defaults: on at Standard, off at Careful, the owner's own choice kept
@@ -356,6 +465,7 @@ class Discovery:
                 contacts = [c for c in contacts if c[0] not in done or bucket(c[0]) in joined]
             if contacts:
                 looked = self._lookup(contacts, full, found)
+            looked += self._number_lookup(full)
             if full:
                 self._set_network(last=now(), new_at=now())
             self._set_network(joined_buckets=[])
@@ -382,6 +492,57 @@ class Discovery:
                     status = 'new'  # something new came up with them
                 db.execute('UPDATE network_people SET status=?,reasons=? WHERE email=?', (status, json.dumps(reasons), row['email']))
         return looked
+
+    def _number_lookup(self, full):
+        """One lookup of the contacts' numbers (all daily, else the ones not looked up yet): blinded through match with
+        no buckets, then the tokens. Only someone with a mutual reason comes back. Never fails the round: a Network
+        without phone lookups (or one away, or the day's budget spent) leaves the numbers for the next one."""
+        with self.connect() as db:
+            ensure(db)
+            contacts = self.network_numbers(db)
+            done = {r[0] for r in db.execute("SELECT email FROM network_looked WHERE email LIKE '+%'")}
+        if not full:
+            contacts = [c for c in contacts if c[0] not in done]
+        if not contacts:
+            return 0
+        numbers = [c[0] for c in contacts]
+        a, items, _ = blind(numbers)
+        try:
+            answer = self.relay.call('POST', '/discover', {'action': 'match', 'items': items, 'buckets': []}, timeout=120)
+            raised = answer.get('items') if isinstance(answer, dict) else None
+            sent = tokens(raised, a) if isinstance(raised, list) and len(raised) == len(items) else None
+            result = self.relay.call('POST', '/discover', {'action': 'phone_resolve', 'tokens': sent}, timeout=60) if sent else None
+        except Exception:  # noqa: BLE001 - the Network away, the day's budget spent, or a Network from before
+            return 0
+        if not isinstance(result, dict) or not isinstance(result.get('people'), list):
+            self._set_network(numbers_unsupported=now())
+            return 0
+        by_token = dict(zip(sent, contacts))
+        people = [(by_token[p['token']], p) for p in result['people'] if isinstance(p, dict) and p.get('token') in by_token and isinstance(p.get('username'), str)]
+        with self.connect() as db:
+            known = {r[0] for r in db.execute("SELECT email FROM network_people WHERE email LIKE '+%'")}
+            by_name = {r[0] for r in db.execute("SELECT username FROM network_people WHERE email NOT LIKE '+%'")}
+            db.executemany('INSERT OR REPLACE INTO network_looked(email,at) VALUES(?,?)', [(n, now()) for n in numbers])
+            gone = 'gone_at' in {r[1] for r in db.execute('PRAGMA table_info(network_people)')}
+            hits = {c[0] for c, _ in people}
+            if gone:  # found again or not: whether they still have a Machine follows this lookup (graph.network_marks)
+                db.executemany('UPDATE network_people SET gone_at=NULL WHERE email=?', [(n,) for n in hits])
+                db.executemany('UPDATE network_people SET gone_at=coalesce(gone_at,?) WHERE email=?', [(now(), n) for n in set(numbers) - hits])
+            new = 0
+            for (n, node_id, name), p in people:
+                if p['username'][:40] in by_name:
+                    continue  # found by an address already: one suggestion per person
+                new += n not in known
+                db.execute('INSERT INTO network_people(email,node_id,username,name,hint,role,status,found_at) VALUES(?,?,?,?,?,?,?,?) '
+                           "ON CONFLICT(email) DO UPDATE SET username=excluded.username,name=excluded.name,node_id=excluded.node_id,"
+                           "status=CASE WHEN excluded.status='connected' THEN 'connected' ELSE network_people.status END",
+                           (n, node_id, p['username'][:40], str(p.get('name') or name)[:80], 'personal', None,
+                            'connected' if p.get('friends') else 'new', now()))
+            if full or new:
+                self.log(db, 'out', self.friends_ref() or 'friends', None, 'Network', 'discover',
+                         f'Checked {len(numbers)} numbers privately; {len(people) if full else new} {"on the Network" if full else "newly found on the Network"}', 'done')
+        self._set_network(numbers_unsupported=None)
+        return len(numbers)
 
     def _lookup(self, contacts, full, found):
         """One blinded lookup of these contacts; then the matches not found before are looked up by address (and, once
@@ -415,7 +576,7 @@ class Discovery:
         pending = set(todo) - resolved
         with self.connect() as db:
             if full:
-                db.execute('DELETE FROM network_looked')
+                db.execute("DELETE FROM network_looked WHERE email NOT LIKE '+%'")
             # Remove pending hits from an older full lookup too. Store progress with the returned people, never
             # before the resolve call: a restart or failed response then safely repeats only a read.
             db.executemany('DELETE FROM network_looked WHERE email=?', [(e,) for e in pending])
@@ -463,8 +624,8 @@ class Discovery:
                     return {'find': True, 'note': f'Looking up later ({type(error).__name__})'}
             return {'find': do == 'find_on'}
         if do in ('address_on', 'address_off'):
-            if email not in self.own_addresses():
-                raise ValueError('Not one of your connected addresses')
+            if email not in self.own_addresses() and email not in self.own_numbers():
+                raise ValueError('Not one of your connected addresses or numbers')
             found = self.network_settings()  # the owner's word on this address, kept whatever it looks like
             off = set(found.get('address_off') or []) - {email} | ({email} if do == 'address_off' else set())
             on = set(found.get('address_on') or []) - {email} | ({email} if do == 'address_on' else set())
@@ -532,6 +693,10 @@ class Discovery:
         wanted, shared = set(self._findable_wanted()), self.shared_addresses()
         addresses += [{'email': e, 'account': False, 'on': e in wanted, 'findable': e in findable, 'shared': e in shared}
                       for e in self.own_addresses() if e != account]
+        numbers = set(self._numbers_wanted())
+        sources = self.own_number_sources()
+        addresses += [{'email': n, 'account': False, 'on': n in numbers, 'findable': n in findable, 'shared': False, 'phone': True,
+                       'source': sources.get(n, 'config')} for n in self.own_numbers()]
         # Turned on by default (not by the owner) in the last DEFAULT_NOTE_DAYS: the Network block says so, with Turn off
         note = found.get('default_at') if found.get('default_on') and found.get('discoverable') and 'discoverable' not in self.network_chosen() \
             and not self._ago(found.get('default_at'), DEFAULT_NOTE_DAYS * 86400) else None

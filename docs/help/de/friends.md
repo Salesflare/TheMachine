@@ -24,6 +24,8 @@ Bekannte, die im Network sind, werden sofort vorgeschlagen, wenn du das einschal
 
 Gefundene Personen zeigen in deiner Liste Personen **Hat eine Machine**. Geprüft werden die Adressen aus deinen Nachrichten und die, die du einer Person mit **Bearbeiten** hinzugefügt hast: Hat sich jemand mit einer anderen Adresse angemeldet, füge sie der Person hinzu. Auf der Seite einer gefundenen Person sendet **Als Freund hinzufügen** im Menü ⋯ dieselbe Anfrage wie Verbinden.
 
+Telefonnummern zählen auch: die Nummern aus deinen WhatsApp-Chats mit Leuten, denen du geschrieben oder die du getroffen hast, und die, die du mit **Bearbeiten** hinzugefügt hast. Deine verknüpfte WhatsApp-Nummer und die Nummern unter Über dich machen dich auffindbar, jede mit eigenem Schalter unter **Auffindbar für**. Eine Nummer findet jemanden nur, wenn diese Person dich auch gesucht hat oder ihr befreundet seid. So kann niemand Nummern durchprobieren, um zu sehen, wer eine Machine hat.
+
 ## Termine mit anderen Machines
 
 Schreibt jemand mit einer Machine „lass uns nächste Woche treffen“, fragt deine Machine deren Machine nach freien Zeiten und findet eine, die euch beiden passt, in deinen Arbeitszeiten. Ihr bekommt jeweils ein To-do, etwa „Treffen mit Alex Example“, darunter die Zeit. Tippe auf **Buchen**, **Andere Zeit** oder **Nicht nötig**. Die Einladung geht erst raus, wenn ihr beide auf Buchen getippt habt.
