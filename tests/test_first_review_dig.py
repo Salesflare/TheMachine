@@ -85,7 +85,8 @@ class FirstReviewDig(unittest.TestCase):
             names = {i: s for i, s in db.execute('SELECT id,source_id FROM events')}
         order = [names[e['id']] for e in claim['events']]
         self.assertEqual(len(order), a.QUICK_LOOK_SIGNALS)  # the same small batch, not more reading
-        self.assertEqual(order[:3], ['ask0', 'ask1', 'ask2'])  # who waits on the owner first, newest first
+        # who waits on the owner first: the one waiting longest leads (its draft is ready on arrival), then newest first
+        self.assertEqual(order[:3], ['ask2', 'ask0', 'ask1'])
         self.assertNotIn('old', order)  # never past the week
 
     def test_a_quick_review_with_no_to_do_digs_on_at_once_until_the_week_is_looked_through(self):

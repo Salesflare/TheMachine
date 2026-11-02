@@ -2028,6 +2028,10 @@ body main{padding-top:0}
 .page-head.greet .page-title{font:400 var(--fs-lg)/1.35 var(--serif);letter-spacing:0;color:var(--c-text-2);text-wrap:pretty}
 .page-head.greet .page-sub{margin-top:2px;color:var(--c-text-2);overflow-wrap:anywhere;text-wrap:pretty}.page-head.greet>div{min-width:0}
 .page-head.greet .page-avatar{width:32px;height:32px}
+/* A new owner's hello (helloLine): their name as the title, who waits longest on them under it, linked to that to-do */
+.page-head.hello .page-title{font:var(--fw-display) var(--fs-xl)/1.25 var(--serif);color:var(--text)}
+.page-hello{margin:4px 0 0;font-size:var(--fs-md);color:var(--text);text-wrap:pretty}
+.page-hello a{color:inherit;text-decoration:underline;text-decoration-color:var(--c-text-2);text-underline-offset:3px}
 .page-avatar{width:40px;height:40px;flex:none;object-fit:contain}
 .page-sub{margin:4px 0 0;color:var(--side-quiet);font-size:var(--fs-sm)}
 #inbox #suggestion-summary,#inbox #suggestion-stats{display:none}
@@ -2164,6 +2168,9 @@ body main{padding-top:0}
   .page-head.greet .page-sub{margin:0;font-size:var(--fs-md)}
   /* With cards a phone starts at the first section head (they carry the counts); all clear keeps its line */
   .page-head.greet.busy{margin:0}.page-head.greet.busy .page-sub{display:none}
+  /* The hello shows on a phone too, over the to-dos */
+  .page-head.greet.hello{margin:6px 0 18px}
+  .page-head.greet.hello .page-title{position:static;width:auto;height:auto;overflow:visible;clip-path:none;white-space:normal}
   .page-avatar{display:none}  /* the top bar carries the mascot on a phone */
   .chat-layout [data-chat-drawer]{display:flex}
 }
@@ -3460,12 +3467,19 @@ function graphHead(){if(/^promise:/.test(graphDrawn||''))return '<div><p class="
 function docTitle(tab=[...document.querySelectorAll('main>section')].find(x=>!x.hidden)?.id||'inbox'){
  const node=tab==='people'&&graphNode?document.querySelector('#people-view .graph-crumbs [aria-current]')?.textContent:'',card=tab==='inbox'&&chatId?(state?.suggestions||[]).find(s=>s.id===chatId)?.title:'';
  const title='The Machine · '+(card||node||t(tab==='inbox'?'To-dos':tab==='people'?GRAPH_SUBS[graphShown]||'Graph':PAGE_TITLES[tab]||'To-dos'));if(document.title!==title)document.title=title}
+// The hello on a new owner's first views (Store.greeting): their first name, and who has waited longest on them, from
+// their own Machine, linked to that to-do. Just the name while nothing is ready; gone after their first day or to-do.
+function helloLine(g){const d=g?.line&&new Date(g.line.since);if(!d||isNaN(d))return '';const n=new Date(),p=g.line.person,
+ days=Math.round((new Date(n.getFullYear(),n.getMonth(),n.getDate())-new Date(d.getFullYear(),d.getMonth(),d.getDate()))/864e5);
+ return days<=0?t('{} has been waiting on your reply since earlier today.',p):days===1?t('{} has been waiting on your reply since yesterday.',p)
+ :days<7?t('{} has been waiting on your reply since {}.',p,d.toLocaleDateString(DL,{weekday:'long'})):t('{} has been waiting on your reply for over a week.',p)}
 function pageHead(){const h=$('#page-head'),tab=[...document.querySelectorAll('main>section')].find(x=>!x.hidden)?.id||'inbox';helpLink(tab);docTitle(tab);needsYouPlace();
  if(tab==='inbox'&&chatId){h.hidden=true;return}
  // A Graph page (person, org, project, promise) keeps the section's head; its breadcrumb under it leads back to the list
  const c=sideCounts,busy=[[c.ready,'{} ready for you'],[c.needs,'{} to decide'],[c.preparing,'{} preparing']].filter(([k])=>k).map(([k,key])=>t(key,k)),known=!!state.suggestions&&!(shownCached&&!busy.length),sub=!known||!busy.length&&scopeFilter!=='all'?'':(busy.length?busy:[t('All clear'),c.later&&t('{} coming back later',c.later),c.promises&&t(['{} promise kept track of','{} promises kept track of'],c.promises)].filter(Boolean)).join(' · ');
- const html=tab==='inbox'?`<img class="page-avatar" src="brand/avatar.png" data-blink="brand/avatar-blink.png" alt="" width="40" height="40"><div><h2 class="page-title">${esc($('#tagline').textContent)}</h2>${sub?`<p class="page-sub">${esc(sub)}</p>`:''}</div>`:tab==='people'?(()=>{try{return graphHead()}catch{return '<h2 class="page-title">Graph</h2>'}})():tab==='calendar'?calHead():tab==='events'?`<div><h2 class="page-title">${esc(t('Messages'))}</h2><p class="page-sub">${esc(t('Everything I read, found by meaning or by words.'))}</p></div>`:`<h2 class="page-title">${PAGE_TITLES[tab]||''}</h2>`;
- h.classList.toggle('greet',tab==='inbox');h.classList.toggle('busy',tab==='inbox'&&busy.length>0);
+ const g=tab==='inbox'&&state.greeting,hi=g?.name?t('Hi {}',g.name):'',line=g?helloLine(g):'';
+ const html=tab==='inbox'?`<img class="page-avatar" src="brand/avatar.png" data-blink="brand/avatar-blink.png" alt="" width="40" height="40"><div><h2 class="page-title">${esc(hi||$('#tagline').textContent)}</h2>${line?`<p class="page-hello"><a href="#card=${esc(g.line.card)}">${esc(line)}</a></p>`:''}${sub?`<p class="page-sub">${esc(sub)}</p>`:''}</div>`:tab==='people'?(()=>{try{return graphHead()}catch{return '<h2 class="page-title">Graph</h2>'}})():tab==='calendar'?calHead():tab==='events'?`<div><h2 class="page-title">${esc(t('Messages'))}</h2><p class="page-sub">${esc(t('Everything I read, found by meaning or by words.'))}</p></div>`:`<h2 class="page-title">${PAGE_TITLES[tab]||''}</h2>`;
+ h.classList.toggle('greet',tab==='inbox');h.classList.toggle('hello',!!(hi||line));h.classList.toggle('busy',tab==='inbox'&&busy.length>0);
  // A mascot mid-blink is the same head: comparing it as open keeps it (a rebuild would cut its blink short)
  if(h.innerHTML.replace(/<img class="page-avatar[^"]*" src="[^"]*"/,'<img class="page-avatar" src="brand/avatar.png"')!==html)h.innerHTML=html;h.hidden=false}
 {const o=new MutationObserver(()=>graphSubSync());document.querySelectorAll('main>section').forEach(x=>o.observe(x,{attributes:true,attributeFilter:['hidden']}));o.observe($('#tagline'),{childList:true,characterData:true,subtree:true})}
