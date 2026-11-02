@@ -121,6 +121,49 @@ class LearningLoop(unittest.TestCase):
         self.assertEqual(self.store.snapshot([])['learning_changes'], [])
         self.assertEqual(next(v for v in self.store.voices() if v['channel'] == 'Email')['text'], EMAIL)
 
+    def test_the_why_and_what_is_learned_say_you_never_the_owners_name(self):
+        # "Jeroen explicitly corrected the Canadian tax review task" under a change: the prompts ask for "you" and no
+        # filler; an older line that names the owner reads "You corrected …" on Learning, the stored line unchanged.
+        self.assertIn('never their name', learning_loop.prompt('r1'))
+        self.assertIn('"explicitly"', learning_loop.prompt('r1'))
+        self.assertIn(a.OWNER_YOU, a.FACT_KIND_HINT)
+        self.assertIn(a.FACTS_YOU, a.review_prompt('run', ['work'], '', '- You prefer short replies.'))
+        cases = {'Sam explicitly corrected the tax review to-do: “use the portal”.': 'You corrected the tax review to-do: “use the portal”.',
+                 'On October 31, Sam corrected the coffee to-do. Sam’s note said online.': 'On October 31, you corrected the coffee to-do. Your note said online.',
+                 'In the venue chat, Sam repeatedly asked for a doc.': 'In the venue chat, you repeatedly asked for a doc.',
+                 'The owner wrote back twice.': 'You wrote back twice.',
+                 'Sam wants to meet online.': 'Sam wants to meet online.',  # no safe "you" form: left alone
+                 'Samuel asked for it.': 'Samuel asked for it.'}
+        for before, after in cases.items():
+            self.assertEqual(learning_loop.to_you(before, ['Sam']), after)
+        workspace = Path(self.temp.name) / 'workspace'
+        workspace.mkdir()
+        (workspace / 'USER.md').write_text('# USER.md - About Sam\n\n- Name: Sam Rivera\n', encoding='utf-8')
+        self.app.config['openclaw_workspace'] = str(workspace)
+        self.assertEqual(self.app.owner_first_names(), ['Sam'])
+        with self.store.connect() as db:
+            learning_loop.record(db, 'r1', 'fact', '1', None, 'You prefer online meetings.', 'Sam explicitly corrected the coffee to-do.')
+        shown = self.app.learning_changes_shown(self.store.snapshot([])['learning_changes'])[0]
+        self.assertEqual(shown['why'], 'You corrected the coffee to-do.')
+        with self.store.connect() as db:
+            self.assertEqual(db.execute('SELECT why FROM learning_changes').fetchone()[0], 'Sam explicitly corrected the coffee to-do.')
+
+    def test_each_decision_carries_its_to_dos_title_also_past_the_suggestions_list(self):
+        # Learning, Decisions titled rows "48a9a3c08f304bdc": a done to-do older than the 100 newest done ones was not in
+        # the snapshot's suggestions, so the row fell back to the id.
+        with self.store.connect() as db:
+            db.execute("INSERT INTO suggestions(id,dedupe_key,title,body,event_ids,account_ids,status,created_at) "
+                       "VALUES('old1','old1','Ana accepts the venue wording','','[]','[\"work\"]','completed','2026-01-01T09:00:00+00:00')")
+            for i in range(105):
+                db.execute("INSERT INTO suggestions(id,dedupe_key,title,body,event_ids,account_ids,status,created_at) "
+                           "VALUES(?,?,?,'','[]','[\"work\"]','completed',?)", (f'n{i}', f'n{i}', f'Newer {i}', a.now()))
+            db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES('d9','old1','complete','Sent: Send reply','assistant',?)", (a.now(),))
+        snap = self.store.snapshot([])
+        self.assertNotIn('old1', {s['id'] for s in snap['suggestions']})
+        titles = {d['id']: d['title'] for d in snap['decisions']}
+        self.assertEqual(titles['d9'], 'Ana accepts the venue wording')
+        self.assertEqual(titles['d2'], 'To-do 2')
+
 
 if __name__ == '__main__':
     unittest.main()
