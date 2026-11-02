@@ -3359,7 +3359,11 @@ if(state.skills?.waiting)items.push({home:'settings:skills',text:state.skills.wa
 // signed-out or broken connection stay: without them the Machine can't work
 if(state.greeting&&state.reviews_on!==false)items.splice(0,items.length,...items.filter(i=>i.conn));
 const box=$('#needs-you');
-box.innerHTML=items.length?`<strong>Needs you</strong><ul>${items.map(i=>`<li data-home="${esc(i.home||'')}"><span>${esc(i.text)}</span>${i.url?`<a class="head-link" href="${esc(i.url)}"${i.blank?' target="_blank" rel="noopener"':''}>${esc(i.action||'Open')}</a>`:i.hosted?hostedReconnect(i.hosted,i.action||'Reconnect','head-link'):i.reconnect?`<button type="button" class="head-link" data-reconnect="${esc(i.reconnect.connect_name)}" data-account="${esc(i.reconnect.id)}"${i.reconnect.signin?` data-signin="${esc(i.reconnect.signin)}"`:''}>${esc(i.action||'Reconnect')}</button>`:i.tab?`<button type="button" class="head-link" data-show="${esc(i.tab)}">${esc(i.action)}</button>`:i.action?`<code>${esc(i.action.replace(/^Run: /,''))}</code>`:''}</li>`).join('')}</ul>`:'';needsYouPlace()}
+box.replaceChildren(...items.length?[make('strong',{},'Needs you'),make('ul',{},items.map(i=>make('li',{'data-home':i.home||''},make('span',{},i.text),needsYouAction(i))))]:[]);needsYouPlace()}
+// The one link or button on a Needs you line
+const needsYouAction=i=>i.url?make('a',{class:'head-link',href:i.url,...i.blank?{target:'_blank',rel:'noopener'}:{}},i.action||'Open'):i.hosted?hostedReconnectNode(i.hosted,i.action||'Reconnect','head-link')
+ :i.reconnect?make('button',{type:'button',class:'head-link','data-reconnect':i.reconnect.connect_name??'','data-account':i.reconnect.id??'',...i.reconnect.signin?{'data-signin':i.reconnect.signin}:{}},i.action||'Reconnect')
+ :i.tab?make('button',{type:'button',class:'head-link','data-show':i.tab},i.action):i.action?make('code',{},i.action.replace(/^Run: /,'')):'';
 // Each thing that needs you shows on Suggestions, and on the tab it belongs to (a source on Connections, skills on
 // Settings › Skills); never on every tab, and never stacked over another tab's own notice
 function needsYouPlace(){const box=$('#needs-you');if(!box)return;const tab=[...document.querySelectorAll('main>section')].find(x=>!x.hidden)?.id||'inbox',here=tab==='settings'?'settings:'+settingsNow:tab;let n=0;
