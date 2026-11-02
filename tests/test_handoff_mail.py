@@ -164,8 +164,10 @@ class HandoffMail(unittest.TestCase):
         self.app.handoff_mail.round()
         made = self.relay.sent('/task-invite')[0]
         self.assertEqual((made['id'], made['join']), (take_id, {'fleet': self.ref, 'to': task_invites.hashed_email('kim@other.example')}))
-        self.assertNotIn('kim', json.dumps(made).lower())
-        self.assertNotIn('pricing', json.dumps(made).lower())
+        # The id, request id and sealed page are random base64/hex that can spell "kim" by chance: check the rest
+        readable = json.dumps({k: v for k, v in made.items() if k not in ('id', 'request_id', 'sealed')}).lower()
+        for told in ('kim', 'lane', 'other.example', 'pricing', 'sam'):
+            self.assertNotIn(told, readable)
         self.app.handoff_mail.round()
         self.assertEqual(len([b for b in self.relay.sent('/task-invite') if b['action'] == 'create']), 1)  # once
         # The sent email synced: the promise "Kim takes this on", on this to-do
