@@ -3111,7 +3111,8 @@ const untilText=t=>{let s=Math.max(60,t-Date.now()/1000|0),d=s/86400|0,h=s%86400
 const clockAt=t=>{const r=new Date(t*1000),c=fmtHM(r);return t-Date.now()/1000>86400?`${r.toLocaleDateString(DL,{weekday:'short'})} ${c}`:c};
 const windowLabel=l=>['Week','168h','7d'].includes(l)?t('Weekly limit'):['Day','24h'].includes(l)?t('Daily limit'):/^\d+h$/.test(l)?t('{}-hour limit',parseInt(l)):l;
 function resetAction(m){if(!m)return '';if(m.can_reset)return `<button type="button" class="ghost" data-model-reset>Use a reset</button>`;
- return m.usage_page?`<a class="head-link" href="${esc(m.usage_page)}" target="_blank" rel="noopener">${m.resets?'Open ChatGPT':'See resets in ChatGPT'}</a>`:''}
+ const href=safeURL(m.usage_page);  // only a web address, never javascript:
+ return href?`<a class="head-link" href="${esc(href)}" target="_blank" rel="noopener">${m.resets?'Open ChatGPT':'See resets in ChatGPT'}</a>`:''}
 // The banner for a usage limit reached (state.model_pause: window '5h', 'week' or 'limit', until, name); gone when it is null.
 // `fallback`: a working fallback model answers meanwhile (assistant.py fallback_covers), so nothing waits: one short line.
 const pauseWhen=until=>{const r=+until>Date.now()/1000?new Date(until*1000):null;return r?(r.toDateString()===new Date().toDateString()?fmtHM(r):r.toLocaleDateString(DL,{weekday:'short'})+' '+fmtHM(r)):''};
@@ -3332,7 +3333,8 @@ return rows}
 function firstLookInfo(live){const run=(live.runs||[]).find(r=>r.preview||r.window_hours),fl=live.first_look;
 if(run){const total=run.planned||run.claimed_count||0;return{title:t('Taking a first look at your last {} days',firstLookDays(fl,run)),done:Math.min(run.done_count||0,total),total}}
 if((fl?.state==='waiting'&&fl.why!=='model')||fl?.state==='due')return{title:t('A first look at your last {} days starts soon',firstLookDays(fl)),wait:FIRST_LOOK_WAIT[fl.state==='due'?'due':fl.why]||''};return null}
-const firstLookBar=i=>i.total?`<span class="fl-bar" role="progressbar" aria-label="Signals reviewed" aria-valuemin="0" aria-valuemax="${i.total}" aria-valuenow="${i.done}"><i style="width:${Math.round(100*i.done/i.total)}%"></i></span><span class="fl-count mono">${i.done} of ${i.total} signals</span>`:'';
+// the counts are whole numbers before they reach the markup, whatever the status says
+const firstLookBar=i=>{const done=Math.max(0,+i.done|0),total=Math.max(0,+i.total|0);return total?`<span class="fl-bar" role="progressbar" aria-label="Signals reviewed" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="${done}"><i style="width:${Math.round(100*done/total)}%"></i></span><span class="fl-count mono">${done} of ${total} signals</span>`:''};
 const firstLookInner=i=>`<img class="sticker" src="brand/wave.webp" alt=""><div><strong>${esc(i.title)}</strong>${firstLookBar(i)}<small>${esc(i.wait||'To-dos show up here as they come. Nothing is sent.')}</small></div>`;
 const firstLookEmpty=i=>i?`<div class="empty all-clear first-look-empty">${firstLookInner(i)}</div>`:'';
 function renderFirstLook(live){const i=firstLookInfo(live),el=$('#first-look'),empty=$('#suggestions .all-clear');
