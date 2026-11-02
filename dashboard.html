@@ -3147,6 +3147,14 @@ const make=(tag,attrs={},...kids)=>{const e=document.createElement(tag);for(cons
 const putOnce=(el,key,nodes)=>{if(el.dataset.shown!==key){el.replaceChildren(...nodes());el.dataset.shown=key}};
 // Puts nodes in el only when they differ from what it shows, so a poll that brings the same thing changes nothing
 const putIfChanged=(el,nodes)=>{const w=make('div',{},nodes);if(el.innerHTML!==w.innerHTML)el.replaceChildren(...w.childNodes)};
+// Markup that escapes by construction: in html`...` every ${} is escaped (as esc() does) unless it is itself an html``
+// result, or raw() of a vetted constant; an array's items are joined the same way. setHTML is the one innerHTML write
+// for it and takes nothing else, so a forgotten esc() can no longer put someone's text into the page as markup.
+class SafeHTML{constructor(s){this.s=s}toString(){return this.s}}
+const raw=s=>new SafeHTML(String(s));
+const htmlPart=v=>v instanceof SafeHTML?v.s:Array.isArray(v)?v.map(htmlPart).join(''):esc(v);
+const html=(parts,...vals)=>new SafeHTML(parts.reduce((o,p,i)=>o+htmlPart(vals[i-1])+p));
+const setHTML=(el,h)=>{if(!(h instanceof SafeHTML))throw new TypeError('setHTML takes html`` results only');el.innerHTML=h.s};
 const date=v=>v?fmtDHM(v,{month:'short',day:'numeric',year:'numeric'}):t('Not yet');
 /*@include dashboard/shell-place.js*/
 /*@include dashboard/shell-banners.js*/
@@ -3462,13 +3470,13 @@ const PAGE_TITLES={calendar:'Calendar',events:'Messages',people:'Graph',fleet:'F
 // The Graph's title is the pane on screen, with Graph as a quiet crumb and the same count as its row in the sidebar
 // A page's section, as its breadcrumb says: an organization opened from a project is under Organizations
 const graphNodePane=id=>id==='me'?'people':/^org:/.test(id)?'orgs':/^project:/.test(id)?'projects':'people';
-function graphHead(){if(/^promise:/.test(graphDrawn||''))return '<div><p class="page-crumb">Graph</p><h2 class="page-title">Promise</h2></div>';const name=GRAPH_SUBS[graphDrawn?graphNodePane(graphDrawn):graphShown];if(!name)return '<h2 class="page-title">Graph</h2>';const c=graphCounts||{},n={people:c.person,orgs:c.org,projects:c.project,roles:rolesWaiting}[graphShown];
+function graphHead(){if(/^promise:/.test(graphDrawn||''))return html`<div><p class="page-crumb">Graph</p><h2 class="page-title">Promise</h2></div>`;const name=GRAPH_SUBS[graphDrawn?graphNodePane(graphDrawn):graphShown];if(!name)return html`<h2 class="page-title">Graph</h2>`;const c=graphCounts||{},n={people:c.person,orgs:c.org,projects:c.project,roles:rolesWaiting}[graphShown];
  const words={people:['{} person','{} people'],orgs:['{} organization','{} organizations'],projects:['{} open project','{} open projects'],roles:['{} role to confirm','{} roles to confirm']}[graphShown];
- const mode=graphShown==='projects'&&!graphDrawn&&graphBoards.length?`<div class="view-mode" role="group" aria-label="View">${[['list','List'],['board','Board']].map(([v,t])=>`<button type="button" data-proj-view="${v}" aria-pressed="${projView()===v}">${t}</button>`).join('')}</div>`:'';
- const team=!graphDrawn&&['people','orgs','projects'].includes(graphShown)&&teamOn()?`<div class="view-mode" role="group" aria-label="Whose">${[['mine','Mine'],['team','Team']].map(([v,t])=>`<button type="button" data-graph-team="${v}" aria-pressed="${(v==='team')===graphTeam}">${t}</button>`).join('')}</div>`:'';
+ const mode=graphShown==='projects'&&!graphDrawn&&graphBoards.length?html`<div class="view-mode" role="group" aria-label="View">${[['list','List'],['board','Board']].map(([v,t])=>html`<button type="button" data-proj-view="${v}" aria-pressed="${projView()===v}">${t}</button>`)}</div>`:'';
+ const team=!graphDrawn&&['people','orgs','projects'].includes(graphShown)&&teamOn()?html`<div class="view-mode" role="group" aria-label="Whose">${[['mine','Mine'],['team','Team']].map(([v,t])=>html`<button type="button" data-graph-team="${v}" aria-pressed="${(v==='team')===graphTeam}">${t}</button>`)}</div>`:'';
  const made={people:['person','New person'],orgs:['org','New organization'],projects:['project','New project']}[graphShown];  /* a board has its own + New project */
- const add=made&&!graphDrawn&&!(graphShown==='projects'&&projView()==='board')?`<button type="button" class="ghost head-new" data-graph-new="${made[0]}">+ ${esc(t(made[1]))}</button>`:'';
- return `<div><p class="page-crumb">Graph</p><h2 class="page-title">${esc(name)}</h2>${n&&!graphDrawn&&words?`<p class="page-sub">${esc(t(words,n))}</p>`:''}</div>${team||mode||add?`<div class="head-modes">${team}${mode}${add}</div>`:''}`}
+ const add=made&&!graphDrawn&&!(graphShown==='projects'&&projView()==='board')?html`<button type="button" class="ghost head-new" data-graph-new="${made[0]}">+ ${t(made[1])}</button>`:'';
+ return html`<div><p class="page-crumb">Graph</p><h2 class="page-title">${name}</h2>${n&&!graphDrawn&&words?html`<p class="page-sub">${t(words,n)}</p>`:''}</div>${team||mode||add?html`<div class="head-modes">${team}${mode}${add}</div>`:''}`}
 // The browser tab's title follows the page: the card in a chat, the person or pane on the Graph, else the tab's name
 function docTitle(tab=[...document.querySelectorAll('main>section')].find(x=>!x.hidden)?.id||'inbox'){
  const node=tab==='people'&&graphNode?document.querySelector('#people-view .graph-crumbs [aria-current]')?.textContent:'',card=tab==='inbox'&&chatId?(state?.suggestions||[]).find(s=>s.id===chatId)?.title:'';
@@ -3484,10 +3492,10 @@ function pageHead(){const h=$('#page-head'),tab=[...document.querySelectorAll('m
  // A Graph page (person, org, project, promise) keeps the section's head; its breadcrumb under it leads back to the list
  const c=sideCounts,busy=[[c.ready,'{} ready for you'],[c.needs,'{} to decide'],[c.preparing,'{} preparing']].filter(([k])=>k).map(([k,key])=>t(key,k)),known=!!state.suggestions&&!(shownCached&&!busy.length),sub=!known||!busy.length&&scopeFilter!=='all'?'':(busy.length?busy:[t('All clear'),c.later&&t('{} coming back later',c.later),c.promises&&t(['{} promise kept track of','{} promises kept track of'],c.promises)].filter(Boolean)).join(' · ');
  const g=tab==='inbox'&&state.greeting,hi=g?.name?t('Hi {}',g.name):'',line=g?helloLine(g):'';
- const html=tab==='inbox'?`<img class="page-avatar" src="brand/avatar.png" data-blink="brand/avatar-blink.png" alt="" width="40" height="40"><div><h2 class="page-title">${esc(hi||$('#tagline').textContent)}</h2>${line?`<p class="page-hello"><a href="#card=${esc(g.line.card)}">${esc(line)}</a></p>`:''}${sub?`<p class="page-sub">${esc(sub)}</p>`:''}</div>`:tab==='people'?(()=>{try{return graphHead()}catch{return '<h2 class="page-title">Graph</h2>'}})():tab==='calendar'?calHead():tab==='events'?`<div><h2 class="page-title">${esc(t('Messages'))}</h2><p class="page-sub">${esc(t('Everything I read, found by meaning or by words.'))}</p></div>`:`<h2 class="page-title">${PAGE_TITLES[tab]||''}</h2>`;
+ const head=tab==='inbox'?html`<img class="page-avatar" src="brand/avatar.png" data-blink="brand/avatar-blink.png" alt="" width="40" height="40"><div><h2 class="page-title">${hi||$('#tagline').textContent}</h2>${line?html`<p class="page-hello"><a href="#card=${g.line.card}">${line}</a></p>`:''}${sub?html`<p class="page-sub">${sub}</p>`:''}</div>`:tab==='people'?(()=>{try{return graphHead()}catch{return html`<h2 class="page-title">Graph</h2>`}})():tab==='calendar'?calHead():tab==='events'?html`<div><h2 class="page-title">${t('Messages')}</h2><p class="page-sub">${t('Everything I read, found by meaning or by words.')}</p></div>`:html`<h2 class="page-title">${PAGE_TITLES[tab]||''}</h2>`;
  h.classList.toggle('greet',tab==='inbox');h.classList.toggle('hello',!!(hi||line));h.classList.toggle('busy',tab==='inbox'&&busy.length>0);
  // A mascot mid-blink is the same head: comparing it as open keeps it (a rebuild would cut its blink short)
- if(h.innerHTML.replace(/<img class="page-avatar[^"]*" src="[^"]*"/,'<img class="page-avatar" src="brand/avatar.png"')!==html)h.innerHTML=html;h.hidden=false}
+ if(h.innerHTML.replace(/<img class="page-avatar[^"]*" src="[^"]*"/,'<img class="page-avatar" src="brand/avatar.png"')!==head.s)setHTML(h,head);h.hidden=false}
 {const o=new MutationObserver(()=>graphSubSync());document.querySelectorAll('main>section').forEach(x=>o.observe(x,{attributes:true,attributeFilter:['hidden']}));o.observe($('#tagline'),{childList:true,characterData:true,subtree:true})}
 $('#suggestions').oninput=e=>{if(e.target.tagName==='TEXTAREA')e.target.classList.toggle('filled',!!e.target.value)};
 async function saveDecision(id,choice,feedback='',answer=false){
