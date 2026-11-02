@@ -11278,17 +11278,27 @@ DANGLING_POINTER = re.compile(r'(^|[.!?]\s+)[^.!?]*\b(?:at|in|to|under|into|on|s
 
 
 def strip_result_links(text):
-    """Drop local result-file links (the card gets one Read result link instead) and the gaps they leave."""
-    def strip(line):
-        line=re.sub(r'\[[^\]]*\]\((?:'+re.escape(str(WORKSPACE))+r'/)?memory/assistant/[^\s\)]+\)', '', line)
-        return re.sub(r'(?:'+re.escape(str(WORKSPACE))+r'/)?memory/assistant/[^\s<>"\)]+', '', line).replace('  ',' ').rstrip()
+    """Drop local result-file links (the card gets one Read result link instead) and the gaps they leave.
+
+    A named link keeps its words ("Your [plan](memory/assistant/x.md) is ready" reads "Your plan is ready"); a line
+    of nothing but result links (and separators or a short label) goes, since plain text can't open them."""
+    root = '(?:' + re.escape(str(WORKSPACE)) + r'/)?memory/assistant/'
+    named = re.compile(r'\[([^\]\n]*)\]\(' + root + r'[^\s\)]+\)')
+    bare = re.compile(root + r'[^\s<>"\)]+')
+    def strip(line, words):
+        line = named.sub(lambda m: m[1].strip() if words else '', line)
+        return bare.sub('', line).replace('  ', ' ').rstrip()
+    # A line left with only separators or a dangling label ("Draft:") carried nothing but the link.
+    empty = lambda s: re.fullmatch(r'[\s·•|,;:()\-–—]*', s) or re.fullmatch(r'\s*[-*•]?\s*[^\s:]+(?: [^\s:]+){0,3}:', s)
     lines=[]
     for line in text.split('\n'):
-        kept=strip(line)
-        if kept!=line.rstrip():
-            kept=DANGLING_POINTER.sub(r'\1', kept).rstrip()
-        # A line left with only separators or a dangling label ("Draft:") carried nothing but the link.
-        if kept!=line.rstrip() and (re.fullmatch(r'[\s·•|,;:()\-–—]*', kept) or re.fullmatch(r'\s*[-*•]?\s*[^\s:]+(?: [^\s:]+){0,3}:', kept)):
+        linked = named.search(line) or bare.search(line)
+        if linked and empty(strip(line, False)):
+            continue
+        kept = strip(line, True)
+        if bare.search(named.sub('', line)):  # a sentence that pointed at a bare path points at nothing now
+            kept = DANGLING_POINTER.sub(r'\1', kept).rstrip()
+        if linked and empty(kept):
             continue
         lines.append(kept)
     return re.sub(r'\n{3,}', '\n\n', '\n'.join(lines)).strip()

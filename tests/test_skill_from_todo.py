@@ -111,7 +111,7 @@ class SkillFromTodo(unittest.TestCase):
     def test_a_sentence_that_only_pointed_at_a_stripped_path_goes_too(self):
         self.assertEqual(a.strip_result_links('Proposed for approval, replacing the earlier version. The draft is at memory/assistant/x.md.'),
                          'Proposed for approval, replacing the earlier version.')
-        self.assertEqual(a.strip_result_links('Saved [the notes](memory/assistant/x.md) for you.\nNext line.'), 'Saved for you.\nNext line.')
+        self.assertEqual(a.strip_result_links('Saved [the notes](memory/assistant/x.md) for you.\nNext line.'), 'Saved the notes for you.\nNext line.')
 
 
 if __name__ == '__main__':

@@ -30,6 +30,10 @@ class ResultLinks(unittest.TestCase):
         body='Hi\n\n[Plan](memory/assistant/x.md)\n\nNext\nDraft: memory/assistant/y.md\n[A](memory/assistant/a.md) · [B](memory/assistant/b.md)\n\nEnd'
         self.assertEqual(a.strip_result_links(body),'Hi\n\nNext\n\nEnd')
 
+    def test_a_named_link_keeps_its_words(self):
+        body='Your [practice plan](memory/assistant/261102-practice-plan.md) is ready. It lists three options.\nSee [it]('+str(a.WORKSPACE)+'/memory/assistant/a.md), then pick.'
+        self.assertEqual(a.strip_result_links(body),'Your practice plan is ready. It lists three options.\nSee it, then pick.')
+
 class GroupSender(unittest.TestCase):
     def test_reply_to_is_kept_only_when_present(self):
         message=raw(plain='Hi');message['payload']['headers']+=[
