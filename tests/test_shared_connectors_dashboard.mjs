@@ -84,7 +84,7 @@ try{
   assert.ok(calls.some(c=>c.action==='fleet_share_replace'&&c.args.token==='replacement-token-for-tests'));
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
   // A member's Connections: who shares it, nothing to change
-  const card=await page.evaluate(c=>connActions(c),connectors[0]);
+  const card=await page.evaluate(c=>String(connActions(c)),connectors[0]);
   assert.match(card,/Shared by Acme/);assert.doesNotMatch(card,/Disconnect|Reconnect/);
   // Alone in the Fleet: the People box says so
   view.fleets[0].people=view.fleets[0].people.filter(p=>p.me);view.fleets[0].members=[];await page.evaluate(()=>fleetView());

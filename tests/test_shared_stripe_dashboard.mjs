@@ -78,7 +78,7 @@ try{
   await box(page).locator('article',{hasText:'Shared by Sam Doe · Reads only'}).waitFor();
   assert.equal(await box(page).locator('button').count(),0);
   await shot(page,'fleet-stripe-member',size);
-  const card=await page.evaluate(c=>connActions(c),connectors[0]);
+  const card=await page.evaluate(c=>String(connActions(c)),connectors[0]);
   assert.match(card,/Shared by Acme/);assert.doesNotMatch(card,/Disconnect|Reconnect/);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
   assert.deepEqual(errors,[]);

@@ -3148,13 +3148,19 @@ const putOnce=(el,key,nodes)=>{if(el.dataset.shown!==key){el.replaceChildren(...
 // Puts nodes in el only when they differ from what it shows, so a poll that brings the same thing changes nothing
 const putIfChanged=(el,nodes)=>{const w=make('div',{},nodes);if(el.innerHTML!==w.innerHTML)el.replaceChildren(...w.childNodes)};
 // Markup that escapes by construction: in html`...` every ${} is escaped (as esc() does) unless it is itself an html``
-// result, or raw() of a vetted constant; an array's items are joined the same way. setHTML is the one innerHTML write
-// for it and takes nothing else, so a forgotten esc() can no longer put someone's text into the page as markup.
+// result, or raw() of a vetted constant (raw() is for constants in this file only, never for data); an array's items
+// are joined the same way. setHTML is the one innerHTML write for it and takes nothing else, so a forgotten esc() can no
+// longer put someone's text into the page as markup. Escaping doesn't make a link safe: every href and src that comes
+// from data goes through safeHref. htmlT is t() for a sentence whose {} holds markup (a <time>, a button).
 class SafeHTML{constructor(s){this.s=s}toString(){return this.s}}
 const raw=s=>new SafeHTML(String(s));
 const htmlPart=v=>v instanceof SafeHTML?v.s:Array.isArray(v)?v.map(htmlPart).join(''):esc(v);
 const html=(parts,...vals)=>new SafeHTML(parts.reduce((o,p,i)=>o+htmlPart(vals[i-1])+p));
 const setHTML=(el,h)=>{if(!(h instanceof SafeHTML))throw new TypeError('setHTML takes html`` results only');el.innerHTML=h.s};
+const htmlT=(key,...a)=>{const tok=i=>`\u0000${i}\u0000`;let s=esc(t(key,...a.map((v,i)=>v instanceof SafeHTML?tok(i):v)));a.forEach((v,i)=>{if(v instanceof SafeHTML)s=s.split(tok(i)).join(v.s)});return new SafeHTML(s)};
+// A link from data: web, mail and phone links and this page's own (relative or same origin) stay; anything else
+// (javascript:, data:, a broken address) becomes '#'. safeURL in todos-cards.js is stricter: http(s) only, '' otherwise.
+const safeHref=(u,base=location.href)=>{const v=String(u??'').trim();if(!v)return '#';try{const x=new URL(v,base);return ['http:','https:','mailto:','tel:'].includes(x.protocol)?v:'#'}catch{return '#'}};
 const date=v=>v?fmtDHM(v,{month:'short',day:'numeric',year:'numeric'}):t('Not yet');
 /*@include dashboard/shell-place.js*/
 /*@include dashboard/shell-banners.js*/
@@ -3410,7 +3416,7 @@ renderQuality();
 if(learnEdit==null)setHTML($('#facts'),learnedList());setHTML($('#learn-changes'),learnChanges());renderShare();renderVotes();  // an open editor keeps what was typed until Save or Cancel
 $('#decisions').replaceChildren(...clipNodes('decisions',state.decisions.map(decisionRow),()=>[make('p',{class:'muted'},'No decisions yet.')],5));learnTabs();
 const expandedSync=new Set([...document.querySelectorAll('#connectors details[open]')].map(d=>d.id));
-$('#connectors').innerHTML=state.connectors.map(c=>connectorCard(c,expandedSync)).join('');renderDisconnected();
+setHTML($('#connectors'),html`${state.connectors.map(c=>connectorCard(c,expandedSync))}`);renderDisconnected();
 if(state.manage_url){$('#manage').href=state.manage_url;$('#manage').hidden=false;$('#sign-out').hidden=false;$('#report-problem').href=new URL('/support',state.manage_url).href;$('#report-problem').removeAttribute('target');$('#connect-more').replaceChildren(...[make('a',{class:'manage',href:'#connect=google'},'Connect Google'),' \u00a0',make('a',{class:'manage',href:'#connect=microsoft'},'Connect Microsoft'),' \u00a0',
  make('a',{class:'manage',href:'#connections=add'},'Add another source'),' \u00a0or ',make('a',{href:new URL('/connectors',state.manage_url).href},'ask for one you miss'),'.'])}
 // drawn once, so an open disclosure stays open (and the page stays put) through each refresh

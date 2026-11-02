@@ -107,7 +107,7 @@ try{
  locale=view('en');[context,page]=await open('en-US');
  assert.deepEqual(await page.evaluate(()=>[calSpan(new Date(2026,9,26)),rangeText('09:45','10:30'),t(['{} guest','{} guests'],1),t(['{} guest','{} guests'],3)]),['Oct 26 – Nov 1, 2026','09:45 to 10:30','1 guest','3 guests']);
  // A sync count with one sync reads as one, also in English.
- const syncs=()=>[spark({sync_activity:[{status:'success',signals:1,at:'2026-10-26T10:00:00Z'}]}).match(/aria-label="([^"]*)/)[1],spark({sync_activity:[0,1,2,3,4].map(i=>({status:i<2?'error':'success',signals:1,at:'2026-10-26T10:00:00Z'}))}).match(/aria-label="([^"]*)/)[1],t(['{} signal','{} signals'],1)];
+ const syncs=()=>[String(spark({sync_activity:[{status:'success',signals:1,at:'2026-10-26T10:00:00Z'}]})).match(/aria-label="([^"]*)/)[1],String(spark({sync_activity:[0,1,2,3,4].map(i=>({status:i<2?'error':'success',signals:1,at:'2026-10-26T10:00:00Z'}))})).match(/aria-label="([^"]*)/)[1],t(['{} signal','{} signals'],1)];
  assert.deepEqual(await page.evaluate(syncs),['Last sync: 0 failed','Last 5 syncs: 2 failed','1 signal']);
  await context.close();
  locale=view('pt-BR');[context,page]=await open('en-US');await page.waitForFunction(()=>document.documentElement.lang==='pt-BR');
