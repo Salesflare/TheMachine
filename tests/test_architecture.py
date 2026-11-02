@@ -250,6 +250,19 @@ def owner(table, creates):
 
 # --- tests -----------------------------------------------------------------------------------------------------------
 
+# Aikido's code scan skips a file over 512 KiB, so a page or script that big ships unchecked. Shipped .html, .js and
+# .mjs files (tests aside) stay under SCAN_LIMIT, with room to spare. OVER_LIMIT lists today's bigger files with a
+# ceiling that may only come down: one that grows fails, and one back under the limit fails until it's removed.
+SCAN_LIMIT = 450 * 1024
+OVER_LIMIT = {'dashboard.html': 540_000}  # being split into dashboard/ parts
+
+
+def shipped_sizes():
+    skip = {'.git', 'node_modules', 'tests', '__pycache__'}
+    return {str(path.relative_to(ROOT)): path.stat().st_size for path in ROOT.rglob('*')
+            if path.suffix in {'.html', '.js', '.mjs'} and path.is_file() and not skip & set(path.relative_to(ROOT).parts)}
+
+
 class Architecture(unittest.TestCase):
     def test_every_global_name_is_defined_or_imported(self):
         for name in python_files():
@@ -328,6 +341,17 @@ class Architecture(unittest.TestCase):
         found = sorted(m.group(1) or m.group(2) for _, text in sql_strings(list(ast.walk(tree))) for m in WRITE.finditer(text)
                        if text[m.end():m.end() + 1] != '.')
         self.assertEqual(found, ['a', 'b', 'd', 'e'])
+
+    def test_shipped_pages_and_scripts_stay_small_enough_to_scan(self):
+        sizes = shipped_sizes()
+        self.assertIn('dashboard.html', sizes)
+        for name, size in sizes.items():
+            with self.subTest(file=name):
+                limit = OVER_LIMIT.get(name, SCAN_LIMIT)
+                self.assertLessEqual(size, limit, f'{name} is {size} bytes, over {limit}: split it (the scanner skips files over 512 KiB)')
+        for name, ceiling in OVER_LIMIT.items():
+            with self.subTest(listed=name):
+                self.assertGreater(sizes.get(name, 0), SCAN_LIMIT, f'{name} is under the limit now: take it out of OVER_LIMIT')
 
     def test_every_i18n_area_resolves(self):
         sys.path.insert(0, str(ROOT / 'scripts'))
