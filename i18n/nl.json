@@ -3717,6 +3717,7 @@
  "Sign in to X once in the OpenClaw browser first: openclaw browser --browser-profile openclaw open https://x.com/login": "Log eerst één keer in op X in de OpenClaw-browser: openclaw browser --browser-profile openclaw open https://x.com/login",
  "Sign in to the site here for \"{}\".": "Log hier in bij de site voor \"{}\".",
  "Sign in to {}": "Inloggen bij {}",
+ "Sign in to {} again. {}": "Log opnieuw in bij {}. {}",
  "Sign in to {} here for \"{}\".": "Log hier in bij {} voor \"{}\".",
  "Sign in to {} on your Machine": "Log in bij {} op je Machine",
  "Sign in to {} on your Machine. This goes on by itself once you’re in.": "Log in bij {} op je Machine. Daarna gaat het vanzelf verder.",

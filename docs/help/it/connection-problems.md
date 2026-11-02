@@ -19,6 +19,7 @@ Il numero su **Connessioni** conta solo le fonti a cui serve il tuo aiuto.
 
 ## Soluzioni comuni
 
+- "Accedi di nuovo a Google" (o Microsoft): una riga per account. Un solo **Riconnetti** ripristina tutte le sue fonti, come Gmail e Calendar.
 - "deve accedere di nuovo": premi **Riconnetti** e accedi. Su una Machine in hosting, accedi direttamente lì e torni alla dashboard.
 - Microsoft sta ancora configurando l'accesso: riprova da sola.
 - Slack: controlla la tua chiave API di Maton e la connessione Slack in Maton.

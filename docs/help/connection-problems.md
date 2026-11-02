@@ -19,6 +19,7 @@ The number on **Connections** only counts sources that need your help.
 
 ## Common fixes
 
+- "Sign in to Google again" (or Microsoft): one line per account. One **Reconnect** brings back all of its sources, like Gmail and Calendar.
 - "needs you to sign in again": press **Reconnect** and sign in. On a hosted Machine, you sign in right there and come back to the dashboard.
 - Microsoft still setting up access: it tries again by itself.
 - Slack: check your Maton API key and the Slack connection in Maton.
