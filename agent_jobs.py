@@ -1641,8 +1641,6 @@ class AgentJobs:
         if not row or row['status'] not in ACTIVE:
             raise ValueError('Nothing to cancel')
         runner = self.runner(row)
-        if hasattr(runner, 'cancel'):
-            runner.cancel(row)  # a cloud task is stopped where it runs, if it can be
         with self.lock:
             proc = self.procs.get(row['id'])
             if proc:
@@ -1650,6 +1648,12 @@ class AgentJobs:
         if proc:
             stop_proc(proc)
         self.finish(row['id'], 'cancelled', error='Canceled', error_kind='cancelled', only_if=ACTIVE)
+        if hasattr(runner, 'cancel'):
+            # A job handed to the owner's computer is stopped there too. Read after it is marked canceled: a hand-off
+            # still going out has stored its new ticket by then, or sees the cancel itself (agent_remote.py)
+            with self.connect() as db:
+                current = db.execute('SELECT * FROM agent_jobs WHERE id=?', (row['id'],)).fetchone()
+            runner.cancel(current or row)
         return self.get(row['id'])
 
     def set_outcome(self, job_id, outcome):
