@@ -3,12 +3,13 @@
 // takes the owner's Real miss or Not a miss, kept on this Machine), and how often the checker itself is right.
 const MW_CHANNEL={email:'Email',message:'Message',meeting:'Meeting'};
 const mwPct=v=>v==null?null:Math.round(100*v);
+const mwUrl=u=>typeof u==='string'&&/^https:\/\//.test(u)?u:null;  // only https links open, like the server keeps them
 function missedHTML(m){if(!m)return'';const est=m.adjusted||m.raw;if(!est||est.rate==null)return'';
  const day=new Date(m.at).toLocaleDateString(DL,{day:'numeric',month:'short'});
- const row=x=>`<div class="mw-row"><span class="grow"><small>${esc(t(MW_CHANNEL[x.channel]||'Message'))} · ${esc(x.area==='Personal'?t('Personal'):x.area)}</small>${esc(x.reason||'')}</span>`
-  +`<span class="mw-acts">${x.url?`<a href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">${esc(t('Open'))}</a>`:''}`
-  +`<button type="button" data-mw-label="real" data-mw-id="${x.event_id}" aria-pressed="${x.label==='real'}">${esc(t('Real miss'))}</button>`
-  +`<button type="button" data-mw-label="not" data-mw-id="${x.event_id}" aria-pressed="${x.label==='not'}">${esc(t('Not a miss'))}</button></span></div>`;
+ const row=x=>{const url=mwUrl(x.url),id=Number(x.event_id);return`<div class="mw-row"><span class="grow"><small>${esc(t(MW_CHANNEL[x.channel]||'Message'))} · ${esc(x.area==='Personal'?t('Personal'):x.area)}</small>${esc(x.reason||'')}</span>`
+  +`<span class="mw-acts">${url?`<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">${esc(t('Open'))}</a>`:''}`
+  +`<button type="button" data-mw-label="real" data-mw-id="${id}" aria-pressed="${x.label==='real'}">${esc(t('Real miss'))}</button>`
+  +`<button type="button" data-mw-label="not" data-mw-id="${id}" aria-pressed="${x.label==='not'}">${esc(t('Not a miss'))}</button></span></div>`};
  const acc=m.precision!=null&&m.recall!=null?`<p class="learn-intro mw-acc">${esc(t('The check is right {}% of the time it flags one, and finds {}% of them.',mwPct(m.precision),mwPct(m.recall)))}</p>`:'';
  return `<h3 class="q-h">${esc(t('Missed to-dos'))}</h3><p class="learn-intro">${esc(t('Each week I check a sample of messages that got no to-do. Last check {}.',day))}</p>`
   +`<div class="q-tiles mw-tiles">${qTile(mwPct(est.rate),'Likely missed',t(['Of {} message with no to-do','Of {} messages with no to-do'],m.population),`<small class="q-was">${esc(t('Between {}% and {}%',mwPct(est.low),mwPct(est.high)))}</small>`)}</div>`
