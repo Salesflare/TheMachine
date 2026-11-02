@@ -1,0 +1,126 @@
+# The Machine for iOS and Android
+
+A thin native app around the owner's own Machine. The dashboard is always loaded from the Machine itself, so a new
+dashboard release reaches the app at once, with no store update. The app itself only holds:
+
+- **The start page** (`www/`): Sign in, the offline page, and a small "Self-hosted?" link for a Machine of one's own.
+- **Sign-in through the system** (`MachineShellPlugin`): the account's sign-in opens in the system's sign-in sheet
+  (`ASWebAuthenticationSession` on iOS, a Custom Tab on Android), so passkeys, Face ID and saved Google or Microsoft
+  sign-ins work. It comes back on `computer.themachine.app://signed-in` and the app opens the Machine.
+- **Push**: native notifications through APNs and FCM. They are content-free wakeups ("New to-do"); the text is
+  fetched from the Machine when the owner opens it.
+- **Share to The Machine**: text, links and up to 5 files from any app's share sheet open the dashboard's New to-do,
+  filled in, for the owner to check and add.
+
+Native code is kept small and stable on purpose: new features belong in the dashboard.
+
+## How the app finds the Machine
+
+| Owner | How |
+|---|---|
+| Hosted Machine | Sign in with the account (Google, Microsoft or passkey at themachine.computer). The account knows the Machine. |
+| Self-hosted, on The Machine Network | The same sign-in: the Machine reports its Tailscale dashboard address to its owner's account only, and it is removed when they leave the Network. |
+| Self-hosted, no account | "Self-hosted?" on the start page: scan the code in the dashboard's Settings, Phone app, or type the `.ts.net` address. Tailscale has to be on the phone. |
+
+The app sign-in is bound to the app that started it: the app sends a challenge (SHA-256 of a random verifier) to
+`app.themachine.computer/open?to=app&c=...`, and only that app can redeem the handoff it gets back (`&v=<verifier>`).
+The cloud side is in the cloud repo's `docs/mobile-app.md`.
+
+The WebView only opens the saved Machine (and, for a hosted Machine, other `*.app.themachine.computer` names after a
+rename). Every other link opens in the system browser. Only the app's own start page can change the saved Machine.
+
+## Push
+
+1. The app gets a push token (APNs or FCM) and hands it to the Machine (`www/inject.js`, action `app_push_register`).
+2. The Machine registers it with the account's push relay (cloud repo, `/api/fleet/app-push`). A self-hosted Machine
+   only gets push when it is on The Machine Network; otherwise the app works without notifications and says so once.
+3. When something needs the owner, the Machine asks the relay to wake the phone. The push carries a fixed text and a
+   to-do id, never the content.
+
+Tokens are per owner and revocable: signing out of the app, removing the phone in Settings, or leaving the Network
+removes them.
+
+## Building
+
+```
+cd mobile
+npm ci
+npm test
+npx cap sync
+```
+
+**Android** (any OS): JDK 21 and the Android SDK (platform 36). `cd android && ./gradlew assembleDebug`. FCM needs
+`android/app/google-services.json` from the Firebase project (not in git); without it the app works without push.
+
+**iOS**: Xcode on a Mac: open `ios/App/App.xcodeproj`, team Salesflare, and run. The Share extension
+(`ios/App/ShareExtension`) hands over through the app group `group.computer.themachine.app`.
+The workflow **iOS app build** (Actions, Run workflow) checks the native code compiles on GitHub's Mac runners; it
+never runs on its own, since macOS minutes cost 10x.
+
+## Store details
+
+| | iOS | Android |
+|---|---|---|
+| Name | The Machine | The Machine |
+| ID | `computer.themachine.app` (Share: `computer.themachine.app.share`) | `computer.themachine.app` |
+| Category | Productivity | Productivity |
+| Icon | `ios/App/App/Assets.xcassets/AppIcon.appiconset` | `android/app/src/main/res/mipmap-*` |
+
+Subtitle (iOS, 30 characters): *Your assistant for email, work*
+
+Short description (Play, 80 characters): *Your own assistant for email and work, on your phone.*
+
+Description:
+
+> The Machine is your own assistant for email and work. This app opens your Machine on your phone: your to-dos,
+> drafts and chat, with notifications when something needs you.
+>
+> Sign in with your account from themachine.computer. Running your own Machine? Connect it over Tailscale.
+>
+> Share links, text and files from any app to add them as a to-do.
+
+### Sign-in only
+
+Accounts are created and paid for on the web. The app has no sign-up, plans, prices or buying links (App Store
+3.1.3(b), multiplatform services): the start page only says "Use your account from themachine.computer" without a
+link, and the dashboard hides every plan, billing and upgrade element when it runs in the app (its user agent ends in
+`TheMachineApp/<n>`). Deleting the account stays reachable in the app (Settings, Account, Open account), as App Store
+5.1.1(v) asks.
+
+### Privacy labels (App Store) and Data safety (Play)
+
+The app itself collects nothing for the developer: no analytics, no ads, no tracking. What the owner sees is their
+own Machine.
+
+| Data | Collected | Why | Linked to them | Tracking |
+|---|---|---|---|---|
+| Email address, name (account) | Yes | App functionality (sign-in) | Yes | No |
+| Device ID (push token) | Yes | App functionality (notifications) | Yes | No |
+| Emails, messages, files, contacts | Processed by the owner's own Machine; on a hosted Machine stored by The Machine for the owner | App functionality | Yes | No |
+
+Play Data safety: data is encrypted in transit; the owner can ask for deletion (Settings, Account, Open account,
+Delete account); no data shared with third parties; no data sold.
+
+### Review notes (draft)
+
+> The Machine is an assistant that runs on the customer's own Machine (hosted by us or self-hosted). This app is a
+> companion: it signs in with an existing account and opens that account's Machine. Accounts are created and paid for
+> on the web at themachine.computer; the app has no sign-up, prices or purchase links.
+>
+> Native features: system sign-in with passkeys (ASWebAuthenticationSession), push notifications for new to-dos,
+> and a Share extension that adds shared links, text and files as a to-do.
+>
+> Demo account: sign in with the review account below. It opens a Machine with sample mail and to-dos.
+> Account deletion: Settings, Account, Open account, Delete account.
+
+The review account is the same approach as the existing app directory reviews: a dedicated account with a demo
+Machine, credentials given only in the store consoles.
+
+### Policy risk
+
+- Apple 4.2 (minimum functionality) and 2.5.2: a remote-loaded web app can be rejected as "a website in a wrapper";
+  native push, passkey sign-in and the Share extension are what answer that, and 2.5.2 is not at risk since no code
+  is downloaded into the app itself (the dashboard runs in the WebView like a web page).
+- Apple 3.1.1/3.1.3(b): fine as long as nothing in the app steers to buying; the in-app mode hides it all.
+- Google Play: remote web content is allowed (Webview spam policy targets apps that only show third-party sites);
+  the account deletion URL and Data safety form are required.

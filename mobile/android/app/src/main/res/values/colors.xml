@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The dashboard's page color (dashboard.html, bg), so the system bars match the page -->
+    <color name="machine_bg">#F6F4EF</color>
+    <color name="colorPrimary">#4E6B34</color>
+    <color name="colorPrimaryDark">#F6F4EF</color>
+    <color name="colorAccent">#4E6B34</color>
+</resources>
