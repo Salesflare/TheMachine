@@ -682,6 +682,30 @@ between them: the owner's own draft edits, dismissed and snoozed to-dos, and cor
 - A voice the owner wrote is never changed by the loop, and an undo is refused when the owner changed that voice or fact
   since.
 
+<a id="missed-work-audit"></a>
+## Missed work
+
+The quality numbers only see to-dos that were made. The missed-work audit (`missed_work.py`, `missed_work_app.py`)
+looks at the other side: reviewed signals whose review left no to-do, no promise and no update to a to-do in the same
+conversation. It is separate from the review and never changes it.
+
+- Once a week, within the usage budget like every background turn, it samples up to 30 of the last week's reviewed
+  emails, messages and meetings, stratified by channel and area (Personal, or Work at one company). Mail in Spam or
+  Trash, mail the review saw as a title line, and meetings on someone else's calendar are left out.
+- One small model turn with its own prompt judges each: a reply owed, a promise made to or by the owner, a deadline, a
+  request. It never sees what the review decided, and every message's text is marked as untrusted data. Ten made-up
+  signals with a known answer are mixed in blind.
+- It keeps the share of misses with a 95% confidence interval, overall (each stratum weighted by its size) and per
+  stratum, and adjusts it by the evaluator's precision and recall: recall from the made-up signals of the last eight
+  audits, precision from the owner's own labels once there are five (from the made-up ones before that).
+- **Learning, How it's going, Missed to-dos** shows the number, its range and the misses to check, each with **Open**,
+  **Real miss** and **Not a miss**. The labels stay in `missed_audit_items` and are never sent. The reasons it gives are
+  sealed like other text derived from messages.
+- Real misses are input for improving the review's prompt by hand; the audit itself makes no to-do and adds no rule.
+
+`python3 tests/missed_work_eval.py --db <copy> --config <config.json>` runs one audit read-only against a database and
+prints counts, rates and patterns, never a message; `--calibrate` runs the evaluator on all made-up signals.
+
 <a id="fixed-where-it-came-from"></a>
 ## Fixed at the source
 
