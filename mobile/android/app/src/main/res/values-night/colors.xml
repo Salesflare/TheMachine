@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="machine_bg">#131518</color>
+    <color name="colorPrimary">#BCCBA8</color>
+    <color name="colorPrimaryDark">#131518</color>
+    <color name="colorAccent">#BCCBA8</color>
+</resources>

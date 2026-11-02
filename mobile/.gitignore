@@ -1,0 +1,4 @@
+node_modules/
+# Firebase config for the app build: from the Firebase project, never in git (mobile/README.md, Push)
+android/app/google-services.json
+ios/App/App/GoogleService-Info.plist

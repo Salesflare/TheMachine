@@ -1,0 +1,36 @@
+name: iOS app build
+
+# The iOS app (mobile/, see mobile/README.md) only builds on a Mac, and macOS minutes cost 10x Linux ones. So this runs
+# only when someone starts it by hand (Actions, iOS app build, Run workflow): never on a pull request or a push.
+# It builds for the simulator without signing, to check the native code compiles. Signed builds for TestFlight are made
+# from Xcode with the team's own signing.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ios:
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24.22.1'
+      - name: Install and sync
+        working-directory: mobile
+        run: |
+          npm ci --ignore-scripts
+          npm test
+          npm run cap -- sync ios
+      - name: Build for the simulator
+        working-directory: mobile/ios/App
+        run: |
+          set -o pipefail
+          xcodebuild -project App.xcodeproj -scheme App -configuration Debug \
+            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO build | tail -n 60

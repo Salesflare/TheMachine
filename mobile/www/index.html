@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; font-src 'self'; connect-src 'self'; script-src 'self'">
+<meta name="color-scheme" content="dark light">
+<title>The Machine</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<main id="app" aria-live="polite">
+  <section id="welcome" hidden>
+    <img class="avatar" src="img/machine.png" alt="" width="132" height="132">
+    <h1>The Machine</h1>
+    <p class="lede" data-t="tagline"></p>
+    <div class="actions">
+      <button id="signin" class="btn primary" data-t="signin"></button>
+    </div>
+    <p id="signin-error" class="error" role="alert" hidden></p>
+    <button id="own" class="btn small" data-t="own"></button>
+  </section>
+
+  <section id="own-form" hidden>
+    <h1 data-t="ownTitle"></h1>
+    <form id="own-connect" novalidate>
+      <label for="address" data-t="address"></label>
+      <input id="address" type="url" inputmode="url" autocomplete="url" autocapitalize="none" spellcheck="false"
+             placeholder="machine.your-tailnet.ts.net" required>
+      <p class="hint" data-t="ownHint"></p>
+      <p class="hint ts" hidden><span data-t="noTailscale"></span> <a class="get-ts" data-t="getTailscale"></a></p>
+      <p id="own-error" class="error" role="alert" hidden></p>
+      <div class="actions">
+        <button class="btn primary" type="submit" data-t="connect"></button>
+        <button class="btn link" type="button" id="own-back" data-t="back"></button>
+      </div>
+    </form>
+  </section>
+
+  <section id="confirm" hidden>
+    <h1 data-t="confirmTitle"></h1>
+    <p class="host" id="confirm-host" translate="no"></p>
+    <div class="actions">
+      <button id="confirm-yes" class="btn primary" data-t="connect"></button>
+      <button id="confirm-no" class="btn link" data-t="cancel"></button>
+    </div>
+  </section>
+
+  <section id="busy" hidden>
+    <img class="avatar small" src="img/machine.png" alt="" width="88" height="88">
+    <p class="lede" id="busy-text" data-t="signingIn"></p>
+  </section>
+</main>
+<script src="strings.js"></script>
+<script src="machine-url.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

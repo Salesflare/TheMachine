@@ -1,0 +1,30 @@
+/* The connect and offline screens: the dashboard's colors and type (dashboard.html tokens), nothing else. */
+@font-face{font-family:Inter;src:url(fonts/inter-latin.woff2) format('woff2');font-weight:100 900;font-display:swap}
+@font-face{font-family:'Source Serif 4';src:url(fonts/source-serif-4-latin.woff2) format('woff2');font-weight:200 900;font-display:swap}
+:root{--bg:#131518;--ink:#f3f1ea;--muted:#a9a69c;--accent:#bccba8;--accent-ink:#1a1d17;--line:#3a3d42;--field:#1d2024;--error:#ffb4a2;color-scheme:dark}
+@media (prefers-color-scheme:light){:root{--bg:#f6f4ef;--ink:#1d1d1b;--muted:#5d5b55;--accent:#4e6b34;--accent-ink:#fff;--line:#cfcabd;--field:#fff;--error:#9c2b14;color-scheme:light}}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:16px/1.45 Inter,system-ui,sans-serif;-webkit-text-size-adjust:100%}
+main{min-height:100%;display:flex;align-items:center;justify-content:center;
+  padding:max(24px,env(safe-area-inset-top)) max(24px,env(safe-area-inset-right)) max(24px,env(safe-area-inset-bottom)) max(24px,env(safe-area-inset-left))}
+section{width:100%;max-width:380px;display:flex;flex-direction:column;align-items:center;text-align:center}
+section[hidden]{display:none}
+.avatar{width:132px;height:132px;margin-bottom:12px}
+.avatar.small{width:88px;height:88px;animation:breathe 1.6s ease-in-out infinite}
+@keyframes breathe{50%{transform:translateY(-4px)}}
+@media (prefers-reduced-motion:reduce){.avatar.small{animation:none}}
+h1{font:600 30px/1.15 'Source Serif 4',Georgia,serif;margin:0 0 8px;letter-spacing:-.01em}
+.lede{color:var(--muted);margin:0 0 28px;font-size:17px}
+.actions{width:100%;display:flex;flex-direction:column;gap:10px;margin-top:8px}
+.btn{font:600 17px/1 Inter,system-ui,sans-serif;border-radius:12px;min-height:52px;padding:0 20px;border:0;cursor:pointer;width:100%}
+.btn.primary{background:var(--accent);color:var(--accent-ink)}
+.btn.link{background:transparent;color:var(--ink);text-decoration:underline;text-underline-offset:3px;font-weight:500}
+.btn:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+form{width:100%;text-align:left}
+label{display:block;font-weight:600;margin:16px 0 6px}
+input{width:100%;min-height:52px;font:17px Inter,system-ui,sans-serif;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:12px;padding:0 14px}
+.btn.small{background:transparent;color:var(--muted);font-weight:500;font-size:15px;min-height:44px;width:auto;margin-top:20px;text-decoration:underline;text-underline-offset:3px}
+.hint a{color:var(--ink);font-weight:600}
+.hint{color:var(--muted);font-size:14px;margin:8px 0 12px}
+.error{color:var(--error);font-size:15px;margin:8px 0 0}
+.host{font-weight:600;word-break:break-all;margin:0 0 24px}

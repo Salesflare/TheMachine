@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; font-src 'self'; connect-src 'self'; script-src 'self'">
+<meta name="color-scheme" content="dark light">
+<title>The Machine</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body data-page="offline">
+<main id="app" aria-live="polite">
+  <section id="offline">
+    <img class="avatar" src="img/machine.png" alt="" width="132" height="132">
+    <h1 data-t="offTitle"></h1>
+    <p class="lede" data-t="offText"></p>
+    <p class="hint ts" hidden><span data-t="noTailscale"></span> <a class="get-ts" data-t="getTailscale"></a></p>
+    <div class="actions">
+      <button id="retry" class="btn primary" data-t="retry"></button>
+      <button id="other" class="btn link" data-t="other"></button>
+    </div>
+  </section>
+</main>
+<script src="strings.js"></script>
+<script src="machine-url.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
