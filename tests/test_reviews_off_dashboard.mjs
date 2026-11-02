@@ -8,10 +8,10 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // Reviews still off: every tab says so at the top with the way to turn them on (hosted: the setup step; self-hosted:
 // the command), and Reviews of new messages shows one line for it instead of a first-look row next to "No reviews yet".
 const dashboard=await dashboardPage();
-let on=false,manage='https://control.example/setup',cards=[];
+let on=false,manage='https://control.example/setup',cards=[];const gmail=[{id:'work-gmail',service:'gmail',display_name:'Gmail'}];let conns=gmail;
 let look={state:'waiting',why:'sources',days:7};
 const live=()=>({runs:[],queue:null,first_look:look});
-const state=()=>({suggestions:cards,promises:[],connectors:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},
+const state=()=>({suggestions:cards,promises:[],connectors:conns,suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},
  review_runs:[],review_live:live(),reviews_on:on,manage_url:manage});
 const errors=[];
 const server=createServer((req,res)=>{const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
@@ -46,6 +46,17 @@ try{
  page=await open();  // cards from the first look: the notice says where they came from
  assert.match(await page.locator('#needs-you').textContent(),/Reviews are off: the to-dos here come from a one-time first look/);
  await page.close();cards=[];
+ // Hosted and still setting up: the missing setup step instead, since reviews turn on by themselves after it
+ look={state:'waiting',why:'model',days:7};page=await open();
+ assert.match(await page.locator('#needs-you').textContent(),/Pick your AI to get your first to-dos/);
+ assert.equal(await page.locator('#needs-you a',{hasText:'Pick your AI'}).getAttribute('href'),manage+'#model');
+ await page.close();look={state:'waiting',why:'sources',days:7};
+ conns=[];page=await open();  // no mail yet
+ assert.equal(await page.locator('#needs-you a',{hasText:'Connect mail'}).getAttribute('href'),manage+'#google');
+ await page.close();
+ conns=gmail;page=await open();  // mail is there, just quiet: not that
+ assert.equal(await page.locator('#needs-you a',{hasText:'Turn on reviews'}).count(),1);
+ await page.close();
  manage=null;page=await open();  // self-hosted: the command instead of a link
  assert.match(await page.locator('#needs-you').textContent(),/install\.sh --activate/);
  assert.equal(await page.locator('#review-live code').textContent(),'./install.sh --activate');

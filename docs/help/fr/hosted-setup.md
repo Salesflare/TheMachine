@@ -3,7 +3,7 @@ title: Configurer une Machine hébergée
 area: getting-started
 summary: Connectez-vous, lancez vos jours gratuits, connectez vos e-mails et choisissez votre IA. Cela prend quelques minutes.
 code: onboarding.py, dashboard.html
-site: Mail and Calendar, Your AI, Continue with Google, Continue with Microsoft, Turn on, Add more any time, More sources, Open your dashboard, Sources, Ask for a source, Build it
+site: Mail and Calendar, Your AI, Continue with Google, Continue with Microsoft, Turn on, Add more any time, More sources, Open your dashboard, Sources, Ask for a source, Build it, Add a passkey, Use an authenticator app instead, Add to Claude, First to-dos, Back
 order: 1
 ---
 Une Machine hébergée tourne dans le cloud, dans l’UE, rien que pour vous. Nous la maintenons en marche et à jour.

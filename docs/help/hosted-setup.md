@@ -3,7 +3,7 @@ title: Set up a hosted Machine
 area: getting-started
 summary: Sign in, start your free days, connect your mail and pick your AI. It takes a few minutes.
 code: onboarding.py, dashboard.html
-site: Mail and Calendar, Your AI, Continue with Google, Continue with Microsoft, Turn on, Add more any time, More sources, Open your dashboard, Sources, Ask for a source, Build it
+site: Mail and Calendar, Your AI, Continue with Google, Continue with Microsoft, Turn on, Add more any time, More sources, Open your dashboard, Sources, Ask for a source, Build it, Add a passkey, Use an authenticator app instead, Add to Claude, First to-dos, Back
 order: 1
 ---
 A hosted Machine runs in the cloud, in the EU, just for you. We keep it running and updated.
@@ -11,20 +11,22 @@ A hosted Machine runs in the cloud, in the EU, just for you. We keep it running 
 ## Sign up
 
 1. At app.themachine.computer, press **Continue with Google** or **Continue with Microsoft**. This makes your account.
-2. Scan the code with an authenticator app, type the six digits and press **Turn on**. A passkey can come later.
+2. Press **Add a passkey** and use your fingerprint, face or device PIN. Prefer an authenticator app? Open **Use an authenticator app instead**. Save the recovery codes that follow.
 3. Pick your Machine's size and name, then add your payment card. The first {trial_days} days are free and nothing is charged before they end.
 
 ## Your setup page
 
-Your Machine starts, then the setup page walks you through the rest, one step at a time:
+Signing up is one flow of five steps, one per screen: your passkey, your plan, then **Mail and Calendar**, **Your AI** and **First to-dos**. The top says which step you're on. A line says how far your Machine is with starting. You don't wait for it: both steps work while it starts.
 
-1. **Mail and Calendar**: connect Google or Microsoft. You can do this while your Machine starts. After you sign in, the step says it's working until your Machine is installed and has read your mail, about a minute. See [Gmail](gmail.md) and [Microsoft](microsoft.md).
-2. **Your AI**: sign in with ChatGPT or Claude, or use a key from your AI provider. See [ChatGPT](chatgpt.md).
-3. Reviews turn on by themselves. First to-dos come from your newest mail, then from your last 7 days.
+1. **Mail and Calendar**: one press on **Connect Google** or **Connect Microsoft**. It starts at the account you signed in with. Work or personal comes from the address; change it on the account later. See [Gmail](gmail.md) and [Microsoft](microsoft.md).
+2. **Your AI**: sign in with ChatGPT or Claude, or use a key from your AI provider. With Claude, paste the code from Claude's page and it goes on by itself. See [ChatGPT](chatgpt.md).
+3. **First to-dos**: reviews turn on by themselves. First to-dos come from your newest mail, then from your last 7 days.
 
-Under **Add more any time** are the optional ones: **More sources** such as Slack, WhatsApp or GitHub, [Telegram](telegram.md), [Codex](hand-to-agent.md) and your browser's connection. None are needed to start. Your dashboard suggests them when they help, for example GitHub once its mail keeps coming in.
+**Back** and your browser's back button go to the step before. Once mail and your AI work, you land on your dashboard.
 
-As soon as your Machine is ready, **Open your dashboard** shows at the top of the page. Add it to your phone's home screen for notifications: see [Install the app and turn on notifications](phone-app.md).
+Nothing optional is asked during setup. Once it is done, **Add more any time** on the setup page has **More sources** such as Slack, WhatsApp or GitHub, [Telegram](telegram.md), [Codex](hand-to-agent.md) and your browser's connection. After your first to-do, your dashboard suggests one of them when it helps, for example GitHub once its mail keeps coming in.
+
+As soon as your Machine is ready, **Open your dashboard** shows at the top of the page. **Add to Claude** adds The Machine to Claude, so you can ask about your mail and to-dos there. Add it to your phone's home screen for notifications: see [Install the app and turn on notifications](phone-app.md).
 
 ## Ask for a source
 

@@ -21,6 +21,21 @@ class SetupHints(unittest.TestCase):
         codex = patch.dict(os.environ, {'CODEX_HOME': str(Path(self.temp.name) / 'codex')})  # Codex not signed in here
         codex.start()
         self.addCleanup(codex.stop)
+        self.handled_a_first_todo()
+
+    def handled_a_first_todo(self):
+        with self.store.connect() as db:
+            db.execute("INSERT INTO suggestions(id,dedupe_key,title,body,event_ids,account_ids,created_at) VALUES('s0','k0','T','B','[]','[]','2026-10-01')")
+            db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES('d0','s0','complete','','dashboard','2026-10-01')")
+
+    def test_nothing_is_suggested_before_a_first_todo_is_handled(self):
+        with self.store.connect() as db:
+            db.execute('DELETE FROM decisions')
+        self.mail('github.com', 5)
+        self.assertEqual(self.ids(), [])  # setup ends at the first to-dos; what can wait comes after one is handled
+        with self.store.connect() as db:
+            db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES('d1','s0','complete','','dashboard','2026-10-02')")
+        self.assertEqual(self.ids(), ['source-github'])
 
     def mail(self, sender, n, when=None):
         when = when or a.dt.datetime.now(a.dt.timezone.utc).isoformat()
