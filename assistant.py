@@ -2558,7 +2558,10 @@ def whatsapp_event(account, raw):
 
 def sync_whatsapp(store, config, account, source=None):
     source = source or WhatsApp(config, account)
-    source.profile()
+    linked = source.profile()
+    if isinstance(linked, dict) and linked.get('linked_jid'):
+        with store.connect() as db:  # the owner's own number: theirs in the graph, findable on the Network (hashed)
+            graph.keep_linked_number(db, linked['linked_jid'], now())
     stamp = dt.datetime.fromisoformat(now())
     after = (stamp - dt.timedelta(days=config.get('bootstrap_days', 7))).isoformat()
     before = stamp.isoformat()

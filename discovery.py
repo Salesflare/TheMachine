@@ -14,8 +14,8 @@ so once, quietly: a line in the Fleet log and in the Fleet tab's Network block, 
   The Network keeps those blinded only, and an address that is someone else's sign-in finds nobody.
 
 Phone numbers too, in E.164 (+15550100, the owner's region for a number without its country code). Findable: only
-the owner's own numbers, ones they entered or from an account they linked (graph.Owner's: config owner_phones and
-owner_numbers), never a number seen in a message; each can be turned off like an address. Looked up: the numbers of
+the owner's own numbers: their linked WhatsApp account's (kept in plain form on this Machine only, graph.keep_linked_number),
+the ones saved under About you and config owner_phones, never a number seen in a message; each can be turned off like an address. Looked up: the numbers of
 the strongest contacts the owner wrote to or met, or added a number to. Numbers are few enough to try them all, so
 the Network gives no list of findable people for them: the Machine sends them blinded (match, no buckets), unblinds
 H(x)^b and sends its tokens (phone_resolve), and the Network answers only for someone with a mutual reason (they
@@ -204,6 +204,21 @@ class Discovery:
         import locale_prefs
         region = crm_fixes.region_of(self.config) or (locale_prefs.region(self.config.get('locale')) or '').upper()
         return crm_fixes.CALLING.get(region)
+
+    def own_number_sources(self):
+        """{number: 'whatsapp' | 'about_you' | 'config'}: where each of the owner's own numbers came from."""
+        out = {}
+        try:
+            with self.connect() as db:
+                if db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='owner_numbers'").fetchone():
+                    code = self._region_code()
+                    for value, source in db.execute('SELECT number,source FROM owner_numbers'):
+                        found = number(value, code)
+                        if found:
+                            out[found] = source
+        except Exception:  # noqa: BLE001 - no graph tables yet
+            pass
+        return out
 
     def own_numbers(self):
         """The owner's own numbers in E.164: the ones they entered (config owner_phones, top level or per account; About
@@ -679,8 +694,9 @@ class Discovery:
         addresses += [{'email': e, 'account': False, 'on': e in wanted, 'findable': e in findable, 'shared': e in shared}
                       for e in self.own_addresses() if e != account]
         numbers = set(self._numbers_wanted())
-        addresses += [{'email': n, 'account': False, 'on': n in numbers, 'findable': n in findable, 'shared': False, 'phone': True}
-                      for n in self.own_numbers()]
+        sources = self.own_number_sources()
+        addresses += [{'email': n, 'account': False, 'on': n in numbers, 'findable': n in findable, 'shared': False, 'phone': True,
+                       'source': sources.get(n, 'config')} for n in self.own_numbers()]
         # Turned on by default (not by the owner) in the last DEFAULT_NOTE_DAYS: the Network block says so, with Turn off
         note = found.get('default_at') if found.get('default_on') and found.get('discoverable') and 'discoverable' not in self.network_chosen() \
             and not self._ago(found.get('default_at'), DEFAULT_NOTE_DAYS * 86400) else None

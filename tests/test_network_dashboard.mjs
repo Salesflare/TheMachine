@@ -21,7 +21,8 @@ const found={...base,network:{find:true,discoverable:true,asked:true,last:'2026-
  {email:'sam@acme.example',username:'samb',name:'Sam Beam',hint:'colleague',role:null,relation:null,status:'new',found_at:'x',reasons:[{kind:'card',card:'s1',title:'Send the quote'}]},
  {email:'zed@zed.example',username:'zed',name:'Zed Zee',hint:'personal',role:null,relation:null,status:'new',found_at:'x',reasons:[]}],
  addresses:[{email:'sam@work.example',account:true,on:true,findable:true},{email:'sam.doe-with-a-long-address@personal-mail.example',account:false,on:true,findable:true},
-  {email:'sam@other.example',account:false,on:false,findable:false},{email:'info@work.example',account:false,on:false,findable:false,shared:true}]}};
+  {email:'sam@other.example',account:false,on:false,findable:false},{email:'info@work.example',account:false,on:false,findable:false,shared:true},
+  {email:'+12025550101',account:false,on:true,findable:true,phone:true,source:'whatsapp'},{email:'+12025550100',account:false,on:false,findable:false,phone:true,source:'about_you'}]}};
 const calls=[];let shown=ask;
 const firstCall=async()=>{for(let i=0;i<100&&!calls.length;i++)await new Promise(r=>setTimeout(r,50));return calls[0]};  // the call lands, also on a busy runner
 const server=createServer(async(req,res)=>{res.setHeader('Content-Type','application/json');
@@ -63,6 +64,13 @@ try{
   assert.equal(await block.locator('[data-net-addr="info@work.example"]').isChecked(),false);  // shared: off unless turned on
   assert.match(await block.locator('label:has([data-net-addr="info@work.example"])').innerText(),/Shared address/);
   assert.doesNotMatch(await block.locator('label:has([data-net-addr="sam@other.example"])').innerText(),/Shared address/);
+  // The owner's own numbers: each with its switch and where it came from; the main switch says "or number"
+  assert.match(await block.locator('.net-switches').innerText(),/Let people who have my email or number find me/);
+  assert.match(await block.locator('label:has([data-net-addr="+12025550101"])').innerText(),/WhatsApp/);
+  assert.match(await block.locator('label:has([data-net-addr="+12025550100"])').innerText(),/About you/);
+  assert.equal(await block.locator('[data-net-addr="+12025550100"]').isChecked(),false);
+  calls.length=0;await block.locator('[data-net-addr="+12025550101"]').click();
+  assert.deepEqual(await firstCall(),{action:'fleet_network',args:{do:'address_off',email:'+12025550101'}});
   calls.length=0;await block.locator('[data-net-addr="sam.doe-with-a-long-address@personal-mail.example"]').click();
   assert.deepEqual(await firstCall(),{action:'fleet_network',args:{do:'address_off',email:'sam.doe-with-a-long-address@personal-mail.example'}});
   assert.equal(await block.locator('.net-default').count(),0);  // turned on by the owner: no line

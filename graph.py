@@ -3093,6 +3093,23 @@ SELF_TABLES = (('manual_nodes', 'identifier'), ('graph_names', 'node_id'), ('per
                ('graph_merges', 'a'), ('graph_merges', 'b'), ('graph_same', 'a'), ('graph_same', 'b'), ('graph_relations', 'a'), ('graph_relations', 'b'))
 
 
+def linked_number(jid):
+    """The number of a linked WhatsApp account (its JID, 15550100:12@s.whatsapp.net) as +15550100, or None."""
+    found = re.fullmatch(r'([1-9][0-9]{6,14})(?::[0-9]+)?@s\.whatsapp\.net', str(jid or ''))
+    return '+' + found[1] if found else None
+
+
+def keep_linked_number(db, jid, now):
+    """The owner's own WhatsApp number, from the account they linked: kept in plain form on this Machine only
+    (owner_numbers, source whatsapp), so it is theirs in the graph (About you) and they can be found by it on the
+    Network, hashed (discovery.py). Returns the number, or None."""
+    number = linked_number(jid)
+    if number:
+        db.execute('CREATE TABLE IF NOT EXISTS owner_numbers(number TEXT PRIMARY KEY,source TEXT NOT NULL,at TEXT NOT NULL)')
+        db.execute("INSERT INTO owner_numbers(number,source,at) VALUES(?,'whatsapp',?) ON CONFLICT(number) DO UPDATE SET source='whatsapp'", (number, now))
+    return number
+
+
 def fold_self_records(db, owner, now):
     """A person the owner made from one of their own addresses or numbers (New person, an import) goes into About you:
     each row about it is backed up first (self_record_backups, kept on this Machine), the numbers the owner gave it

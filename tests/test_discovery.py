@@ -588,13 +588,36 @@ class PhoneDiscovery(unittest.TestCase):
         self.assertEqual(set(self.people()), {'ria'})  # Tom has a Machine, but no mutual reason: not found
         self.assertEqual((self.people()['ria']['email'], self.people()['ria']['hint']), ('+12025550142', 'personal'))
         with self.store.connect() as db:  # People say "Has a Machine"
-            self.assertEqual(graph.network_marks(db, {}), {'p-ria': {'name': '', 'machine': True, 'in': []}})
+            marks = graph.network_marks(db, {})
+        self.assertEqual(list(marks), ['p-ria'])
+        self.assertEqual((marks['p-ria']['machine'], marks['p-ria']['network']['email'], marks['p-ria']['network']['can_add']), (True, '+12025550142', True))
         # Tom looks the owner up too: found on the next daily lookup; numbers seen are not sent again before that
         self.relay.mutual.add('+12025550143')
         self.fleet.discovery_round()
         self.assertNotIn('tom', self.people())
         self.fleet.discovery_round(force=True)
         self.assertEqual(set(self.people()), {'ria', 'tom'})
+
+    def test_the_linked_whatsapp_number_is_findable_by_default_at_standard_and_off_at_careful(self):
+        class Linked:
+            def profile(self):
+                return {'authenticated': True, 'linked_jid': '12025550101:7@s.whatsapp.net'}
+
+            def read(self, command):
+                return {'messages': []}
+        self.assertIsNone(graph.linked_number('12025550101@lid'))
+        tf.a.sync_whatsapp(self.store, self.config, {'id': 'wa', 'store': '/nonexistent'}, Linked())
+        with self.store.connect() as db:  # kept in plain form here only: the Network gets it hashed
+            self.assertEqual([tuple(r) for r in db.execute('SELECT number,source FROM owner_numbers')], [('+12025550101', 'whatsapp')])
+        self.assertEqual(self.fleet.own_numbers(), ['+12025550100', '+12025550101'])
+        self.fleet.discovery_round()  # Standard: on by default, the numbers with the addresses
+        self.assertEqual(self.relay.sent('/discover')[0]['phones'], ['+12025550100', '+12025550101'])
+        linked = next(a for a in self.fleet.network_view()['addresses'] if a['email'] == '+12025550101')
+        self.assertEqual((linked['on'], linked['findable'], linked['source']), (True, True, 'whatsapp'))
+        # Careful: off, and the Network is told so (numbers with it)
+        Discovery.level(self, 'careful')
+        self.assertEqual(self.relay.sent('/discover')[-1], {'action': 'discoverable', 'on': False})
+        self.assertFalse(any(a['findable'] for a in self.fleet.network_view()['addresses']))
 
     def test_a_network_without_phone_lookups_changes_nothing_else(self):
         old = NetworkRelay()

@@ -24,7 +24,7 @@ La gente que conoces y está en la Network se te sugiere en cuanto la activas, y
 
 Las personas que encuentra muestran **Tiene una Machine** en tu lista Personas. Revisa las direcciones de tus mensajes y las que añadiste a alguien con **Editar**: si alguien se registró con otra dirección, añádesela. En la página de alguien que encontró, **Añadir como amigo** en el menú ⋯ envía la misma solicitud que Conectar.
 
-Los números de teléfono también cuentan: los de tus chats de WhatsApp con personas a las que escribiste o con las que te reuniste, y los que añadiste con **Editar**. Tus propios números hacen que te encuentren, cada uno con su interruptor en **Localizable por**. Un número solo encuentra a alguien si esa persona también te buscó, o si sois amigos, así que nadie puede probar números para ver quién tiene una Machine.
+Los números de teléfono también cuentan: los de tus chats de WhatsApp con personas a las que escribiste o con las que te reuniste, y los que añadiste con **Editar**. Tu número de WhatsApp vinculado y los números de Sobre ti hacen que te encuentren, cada uno con su interruptor en **Localizable por**. Un número solo encuentra a alguien si esa persona también te buscó, o si sois amigos, así que nadie puede probar números para ver quién tiene una Machine.
 
 ## Agendar con otras Machines
 

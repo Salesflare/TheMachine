@@ -24,7 +24,7 @@ Le persone che conosci e che sono nel Network ti vengono suggerite appena lo att
 
 Le persone trovate mostrano **Ha una Machine** nella tua lista Persone. Il controllo usa gli indirizzi dei tuoi messaggi e quelli che hai aggiunto a una persona con **Modifica**: se qualcuno si è registrato con un altro indirizzo, aggiungilo a quella persona. Nella pagina di una persona trovata, **Aggiungi come amico** nel menu ⋯ invia la stessa richiesta di Collegati.
 
-Contano anche i numeri di telefono: quelli delle tue chat WhatsApp con persone a cui hai scritto o che hai incontrato, e quelli che hai aggiunto con **Modifica**. I tuoi numeri ti rendono trovabile, ognuno con il suo interruttore sotto **Trovabile da**. Un numero trova qualcuno solo se anche quella persona ha cercato te, o se siete amici, quindi nessuno può provare numeri per vedere chi ha una Machine.
+Contano anche i numeri di telefono: quelli delle tue chat WhatsApp con persone a cui hai scritto o che hai incontrato, e quelli che hai aggiunto con **Modifica**. Il tuo numero WhatsApp collegato e i numeri in Su di te ti rendono trovabile, ognuno con il suo interruttore sotto **Trovabile da**. Un numero trova qualcuno solo se anche quella persona ha cercato te, o se siete amici, quindi nessuno può provare numeri per vedere chi ha una Machine.
 
 ## Pianificare con altre Machine
 
