@@ -12682,8 +12682,9 @@ def hold_handoff(store, config, row):
 
 
 # Setup hints: what a hosted owner skipped at setup, suggested in the dashboard once it is relevant (one at a time,
-# at the top of Suggestions, with Not now). A source when its mail keeps coming in, Telegram once a snooze would only
-# come back on the dashboard, Codex once GitHub is connected. Each links to that step on the setup page.
+# at the top of Suggestions, with Not now), only after the owner handled a first to-do. A source when its mail keeps
+# coming in, Telegram once a snooze would only come back on the dashboard, Codex once GitHub is connected. Each links
+# to that step on the setup page.
 HINT_SOURCES = (('github', 'GitHub', ('github.com',)), ('slack', 'Slack', ('slack.com',)),
                 ('stripe', 'Stripe', ('stripe.com',)), ('intercom', 'Intercom', ('intercom.io', 'intercom-mail.com', 'intercom.com')),
                 ('zoom', 'Zoom', ('zoom.us',)))
@@ -12699,6 +12700,8 @@ def setup_hints(store, config, now=None):
     since = ((now or dt.datetime.now(dt.timezone.utc)) - dt.timedelta(days=30)).isoformat()
     hints = []
     with store.connect() as db:
+        if not db.execute('SELECT 1 FROM decisions LIMIT 1').fetchone():
+            return []  # nothing before the owner has handled a first to-do: the first look comes first
         for service, label, domains in HINT_SOURCES:
             if service in services:
                 continue

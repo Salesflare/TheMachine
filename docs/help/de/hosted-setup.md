@@ -3,7 +3,7 @@ title: Eine gehostete Machine einrichten
 area: getting-started
 summary: Melde dich an, starte deine kostenlosen Tage, verbinde deine Mail und wähle deine KI. Das dauert ein paar Minuten.
 code: onboarding.py, dashboard.html
-site: Mail and Calendar, Your AI, Continue with Google, Continue with Microsoft, Turn on, Add more any time, More sources, Open your dashboard, Sources, Ask for a source, Build it
+site: Mail and Calendar, Your AI, Continue with Google, Continue with Microsoft, Turn on, Add more any time, More sources, Open your dashboard, Sources, Ask for a source, Build it, Add a passkey, Use an authenticator app instead, Add to Claude, First to-dos, Back
 order: 1
 ---
 Eine gehostete Machine läuft in der Cloud, in der EU, nur für dich. Wir halten sie am Laufen und aktuell.
