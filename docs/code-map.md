@@ -92,7 +92,7 @@ test_app_mixins.py` (they run in CI with every suite).
 | Only the owner writes a table. Today's other writers are listed in `OTHER_WRITERS`. That list may only shrink: a new writer fails with the owner's name, and an entry that no longer writes fails until it's removed. | `tests/test_architecture.py` |
 | Only `assistant.py` writes `events`, the sealed table (and the sandbox's fixture loader, through the sealed connection). Covers subfolders. | `tests/test_message_seal.py` |
 | Nothing reads `dashboard.html` itself; every part in `dashboard/` is included once and parses on its own; the service serves the assembled page; Python and Node assemble the same page. | `tests/test_dashboard_parts.py` |
-| No action is mapped by two mixins, no member is defined in two of them or in both `App` and a mixin, every handler is a method, and every name in `OWNER_ACTIONS` or `DASHBOARD_ACTIONS` reaches a mixin's handler or a branch of `App.action`. | `tests/test_app_mixins.py` |
+| No action is mapped by two mixins, no member is defined in two of them or in both `App` and a mixin, every handler is a method, every name in `OWNER_ACTIONS` or `DASHBOARD_ACTIONS` reaches a mixin's handler or a branch of `App.action`, no branch of `App.action` names an action a mixin maps (it would never run), and every action the dashboard sends is in `DASHBOARD_ACTIONS` and has a handler. | `tests/test_app_mixins.py` |
 | Every dashboard area in `scripts/i18n_extract.py` resolves. | `tests/test_architecture.py`, `python3 scripts/i18n_extract.py --area <name>` |
 
 The table checks read the SQL in each module's strings. A statement whose table name is computed

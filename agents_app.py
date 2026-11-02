@@ -13,7 +13,9 @@ import agent_jobs
 
 
 class AgentsApp:
-    # action name -> the method that handles it, called as method(name, args, owner_dashboard) (App.action)
+    # action name -> the method that handles it, called as method(name, args, owner_dashboard) (App.action).
+    # set_agents (Settings, where agents run) is not one of them: App.action's own branch saves it, also when handing
+    # off is off on this Machine.
     ACTIONS = dict.fromkeys((
         'agent_cancel',
         'agent_draft',
@@ -21,7 +23,6 @@ class AgentsApp:
         'agent_outcome',
         'agent_retry',
         'agent_send',
-        'set_agents',
     ), 'agents_dashboard_action')
 
     def agents_dashboard_action(self, name, args, owner_dashboard):

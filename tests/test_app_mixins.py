@@ -3,8 +3,13 @@
 A mixin holds a domain's App methods and maps the actions it handles to them (its ACTIONS). App.action looks there first
 and otherwise goes through its own branches. Who may call an action stays the reviewed sets in assistant.py."""
 import ast
+import functools
 import importlib.util
+import json
 from pathlib import Path
+import re
+import sys
+import tempfile
 import unittest
 from unittest.mock import patch
 
@@ -12,6 +17,44 @@ ROOT = Path(__file__).resolve().parent.parent
 spec = importlib.util.spec_from_file_location('assistant_app_mixins', ROOT / 'assistant.py')
 a = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(a)
+
+
+sys.path.insert(0, str(ROOT))
+import dashboard_parts  # noqa: E402
+
+
+@functools.cache
+def action_branches():
+    # App.action's own if-branches (not the lookup in ACTION_HANDLERS), as (line, compiled test, names it spells out)
+    found = []
+    tree = ast.parse((ROOT / 'assistant.py').read_text(encoding='utf-8'))
+    app = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == 'App')
+    action = next(n for n in app.body if isinstance(n, ast.FunctionDef) and n.name == 'action')
+    for node in action.body:
+        if isinstance(node, ast.If) and 'ACTION_HANDLERS' not in ast.unparse(node.test):
+            named = {c.value for c in ast.walk(node.test) if isinstance(c, ast.Constant) and isinstance(c.value, str)}
+            found.append((node.lineno, compile(ast.Expression(node.test), 'App.action', 'eval'), named))
+    return tuple(found)
+
+
+def dashboard_actions():
+    # every action name the dashboard posts to api/action: written out ({action:'name'}) or through a helper that
+    # takes the action first (const skillAct=async(action,args)=>..., skillAct('skill_save', ...))
+    page = dashboard_parts.assemble()
+    names = set(re.findall(r"\baction:'([a-z0-9_]+)'", page))
+    for helper in set(re.findall(r'(?:const|function)\s+(\w+)\s*=?\s*(?:async\s*)?\(\s*action\b', page)):
+        names |= set(re.findall(r'\b' + helper + r"\(\s*'([a-z0-9_]+)'", page))
+    return names
+
+
+def resolves(name):
+    class Self:
+        def __getattr__(self, attr):
+            return getattr(a.App, attr)
+    if name in a.App.ACTION_HANDLERS:
+        return True
+    scope = dict(vars(a), name=name, args={}, owner_dashboard=True, accounts=[], selected=[], self=Self())
+    return any(eval(test, scope) for _, test, _ in action_branches())  # noqa: S307 - App.action's own conditions
 
 
 def own(cls):
@@ -51,27 +94,42 @@ class AppMixins(unittest.TestCase):
         # name added to one and not the other fails here
         self.assertEqual(set(a.SupportApp.ACTIONS), a.SUPPORT_ACTIONS)
         self.assertEqual(set(a.SkillsApp.ACTIONS), a.SKILL_ACTIONS | {'skill_propose', 'skill_import_report'})
-        self.assertEqual(set(a.AgentsApp.ACTIONS), a.AGENT_ACTIONS)
+        self.assertEqual(set(a.AgentsApp.ACTIONS), a.AGENT_ACTIONS - {'set_agents'})  # App.action saves the settings
         self.assertEqual(set(a.GBrainApp.ACTIONS), a.GBRAIN_ACTIONS)
         self.assertEqual(set(a.SharedGraphApp.ACTIONS), a.GRAPH_SHARE_ACTIONS)
         self.assertEqual(set(a.MeetApp.ACTIONS), a.MEET_ACTIONS)
 
     def test_every_reviewed_action_resolves(self):
         # each name the reviewed sets let a caller send reaches a mixin's handler or one of App.action's own branches
-        tree = ast.parse((ROOT / 'assistant.py').read_text(encoding='utf-8'))
-        app = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == 'App')
-        action = next(n for n in app.body if isinstance(n, ast.FunctionDef) and n.name == 'action')
-        tests = [compile(ast.Expression(node.test), 'App.action', 'eval') for node in action.body if isinstance(node, ast.If)]
-
-        class Self:
-            def __getattr__(self, name):
-                return getattr(a.App, name)
-        missing = []
-        for name in sorted(a.OWNER_ACTIONS | a.DASHBOARD_ACTIONS):
-            scope = dict(vars(a), name=name, args={}, owner_dashboard=True, accounts=[], selected=[], self=Self())
-            if not any(eval(test, scope) for test in tests):  # noqa: S307 - App.action's own conditions
-                missing.append(name)
+        missing = [name for name in sorted(a.OWNER_ACTIONS | a.DASHBOARD_ACTIONS) if not resolves(name)]
         self.assertEqual(missing, [], 'actions in the reviewed sets that nothing in App.action handles')
+
+    def test_every_action_the_dashboard_sends_has_a_handler(self):
+        sent = dashboard_actions()
+        self.assertIn('set_agents', sent)
+        self.assertGreater(len(sent), 100)  # the scan still finds the helpers' calls
+        self.assertEqual(sorted(sent - a.DASHBOARD_ACTIONS), [], 'actions the dashboard sends that its route refuses')
+        self.assertEqual([name for name in sorted(sent) if not resolves(name)], [], 'actions the dashboard sends that nothing handles')
+
+    def test_no_branch_of_app_action_is_shadowed_by_a_mixin(self):
+        # App.action asks the mixins first: a branch that names an action a mixin also maps never runs (set_agents
+        # went to the hand-off handler this way and failed with Unknown operation)
+        shadowed = [(name, line) for line, _, named in action_branches() for name in sorted(named & set(a.App.ACTION_HANDLERS))]
+        self.assertEqual(shadowed, [], 'actions both a mixin and a branch of App.action handle')
+
+    def test_set_agents_saves_from_the_dashboard(self):
+        # Settings, where agents run: saved by App.set_agents, also when handing off is off on this Machine
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / 'config.json'
+            path.write_text(json.dumps({'accounts': []}))
+            app = bare_app()
+            app.config_path, app.agents = path, None
+            with self.assertRaisesRegex(ValueError, 'Only the owner changes this'):
+                app.action('set_agents', {'codex_env': 'env_123'})
+            saved = app.action('set_agents', {'claude_session': 'https://claude.ai/code/session_01AbCdEfGh1234', 'codex_env': 'env_123'},
+                               owner_dashboard=True)
+            self.assertEqual((saved['claude_session'], saved['codex_env']), ('session_01AbCdEfGh1234', 'env_123'))
+            self.assertEqual(json.loads(path.read_text())['agents']['codex'], {'place': 'cloud', 'env': 'env_123'})
 
     def test_support_actions_from_the_dashboard_only(self):
         with patch.object(a.App, 'support_action', return_value={'ok': True}) as support:
