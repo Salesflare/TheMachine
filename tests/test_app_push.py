@@ -246,12 +246,21 @@ class PhoneApp(unittest.TestCase):
         self.assertEqual(a.phone_app({'manage_url': 'https://app.example/manage', 'dashboard_host': 'x.example'}), {'hosted': True})
         self.assertEqual(a.phone_app({}), {'hosted': False})
 
+    def test_on_the_network_it_signs_in_like_a_hosted_machine(self):
+        config = {'dashboard_host': 'machine.tailnet.ts.net'}
+        with patch.object(a, 'cloud_target', return_value=('https://app.example', 'token')):
+            self.assertEqual(a.phone_app(config), {'hosted': True})  # no code: the account finds it
+        with patch.object(a, 'cloud_target', return_value=None):
+            self.assertIn('qr', a.phone_app(config))
+
     def test_the_dashboard_shows_it_and_the_network_line_once(self):
         source = (Path(a.ROOT) / 'dashboard' / 'settings-device.js').read_text(encoding='utf-8')
         body = re.search(r'^function phoneAppRender\(\).*?(?=^\S)', source, re.M | re.S)[0]
         self.assertIn('qrSvg(p.qr)', body)
         self.assertIn("t('Install the app, then scan this with the phone’s camera.')", body)
         self.assertIn("t('The app signs in with your account.')", body)
+        self.assertIn("t('Not on the Network?')", body)  # the code only folded, for a Machine not on the Network
+        self.assertLess(body.index("<details class=\"connect-alt phone-own\">"), body.index('qrSvg(p.qr)'))
         self.assertIn("devStore.set('app-push-network',1)", body)  # remembered: said once
         self.assertIn("t('Notifications in the app need The Machine Network. The app works without them.')", body)
 

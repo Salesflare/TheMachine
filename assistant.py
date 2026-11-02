@@ -12710,10 +12710,11 @@ def phone_qr(link):
 
 
 def phone_app(config):
-    """Settings, Phone app: how the mobile app finds this Machine. Hosted: it signs in with the account. Self-hosted:
-    a QR code of the app's connect link with this Machine's own https address (its Tailscale name, dashboard_host),
-    and the address to type in. Nothing secret: the dashboard's own sign-in still applies when the app opens it."""
-    if str(config.get('manage_url') or '').startswith('https://'):
+    """Settings, Phone app: how the mobile app finds this Machine. Hosted, or self-hosted on The Machine Network: it
+    signs in with the account, which knows the Machine. Self-hosted and not on the Network: a QR code of the app's
+    connect link with this Machine's own https address (its Tailscale name, dashboard_host), and the address to type in.
+    Nothing secret: the dashboard's own sign-in still applies when the app opens it."""
+    if str(config.get('manage_url') or '').startswith('https://') or cloud_target(config):
         return {'hosted': True}
     if not config.get('dashboard_host'):
         return {'hosted': False}
