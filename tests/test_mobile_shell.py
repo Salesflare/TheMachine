@@ -63,6 +63,10 @@ class MobileShellTest(unittest.TestCase):
         self.assertIn('android:networkSecurityConfig="@xml/network_security_config"', manifest)
         self.assertIn('cleartextTrafficPermitted="false"', (MOBILE / 'android/app/src/main/res/xml/network_security_config.xml').read_text())
         self.assertNotIn('armv7', (MOBILE / 'ios/App/App/Info.plist').read_text())
+        # FCM's status bar icon: a monochrome one in every density, not the launcher icon (a plain circle)
+        self.assertIn('android:resource="@drawable/ic_stat_notify"', manifest)
+        for density in ('mdpi', 'hdpi', 'xhdpi', 'xxhdpi', 'xxxhdpi'):
+            self.assertTrue((MOBILE / f'android/app/src/main/res/drawable-{density}/ic_stat_notify.png').exists(), density)
 
     def test_native_sides_take_only_443_and_8443(self):
         # The JavaScript side is tested in mobile/tests; the native checks must allow the same two ports, no others.
