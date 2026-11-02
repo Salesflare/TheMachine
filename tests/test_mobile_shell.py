@@ -44,7 +44,13 @@ class MobileShellTest(unittest.TestCase):
     def test_ios_build_only_by_hand(self):
         flow = (ROOT / '.github/workflows/ios.yml').read_text()
         on = re.search(r'^on:\n((?:  .*\n|\n)*)', flow, re.M).group(1)
-        self.assertEqual([l.strip() for l in on.splitlines() if l.strip() and not l.strip().startswith('#')], ['workflow_dispatch:'])
+        triggers = [l.strip() for l in on.splitlines() if re.match(r'  \S', l) and not l.strip().startswith('#')]
+        self.assertEqual(triggers, ['workflow_dispatch:'])
+        # Signing secrets only on the upload step, only in this repository, and the key file never outlives the run
+        upload = flow[flow.index('- name: Archive and upload to TestFlight'):]
+        self.assertIn("github.repository == 'Salesflare/TheMachine'", upload)
+        self.assertIn("trap 'rm -f \"$key\"' EXIT", upload)
+        self.assertEqual(flow.count('secrets.'), upload.count('secrets.'))
         for uses in re.findall(r'uses: (\S+)', flow):
             self.assertRegex(uses, r'@[0-9a-f]{40}$')
 
