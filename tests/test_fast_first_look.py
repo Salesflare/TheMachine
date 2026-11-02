@@ -183,7 +183,8 @@ class FastFirstLook(unittest.TestCase):
         quick = self.claim(run['run_id'])
         self.assertEqual(len(quick), 20)
         with self.store.connect() as db:
-            self.assertFalse({e for (e,) in db.execute("SELECT id FROM events WHERE source_id LIKE 'old%'")} & set(quick))  # the newest only
+            # the newest, led by the one who has waited longest (its draft is ready on arrival): one old signal, no more
+            self.assertEqual(len({e for (e,) in db.execute("SELECT id FROM events WHERE source_id LIKE 'old%'")} & set(quick)), 1)
         self.assertEqual(self.step(Runner('ok'), 2), 'ok')
         with self.store.connect() as db:
             report = a.first_cards_report(db, self.app.config['accounts'])
@@ -245,8 +246,9 @@ class FastFirstLook(unittest.TestCase):
             names = {i: s for i, s in db.execute('SELECT id,source_id FROM events')}
         order = [names[e['id']] for e in claim['events']]
         self.assertEqual(len(order), a.QUICK_LOOK_SIGNALS)
-        # People asking the owner, unanswered, newest first; then the owner's own mail; then the rest, automated last
-        self.assertEqual(order[:4], ['ask0', 'ask1', 'ask2', 'reply'])
+        # People asking the owner, unanswered, the longest waiting first, then newest first; then the owner's own mail;
+        # then the rest, automated last
+        self.assertEqual(order[:4], ['ask2', 'ask0', 'ask1', 'reply'])
         self.assertEqual(order[4:6], ['crowd', 'answered'])  # one of many on it, or answered since
         self.assertTrue(all(x.startswith(('news', 'robot')) for x in order[6:]))
 

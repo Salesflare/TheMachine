@@ -1456,12 +1456,18 @@ def first_look_retry_at(runs, current):
     return at.isoformat() if at > current else None
 
 
+# What the quick first look's reviewer is told about the signal that has waited longest on the owner (begin_analysis
+# waiting_longest): its to-do comes first and is prepared ahead, so a draft is ready when the owner opens the dashboard.
+FIRST_LOOK_NOTE = ('The owner is new and opens their dashboard in a few minutes. waiting_longest is the signal someone has waited '
+                   'on them for longest. Read it first; if it still needs the owner, suggest its to-do before any other, with '
+                   'prepare_ahead:true, so its draft is ready when they arrive. A draft only: nothing is sent until they approve it.')
 FIRST_LOOK_SIGNAL_SECONDS = 12  # about how long a first look takes per signal, for "first cards in about N min"
 # First-use tips on the dashboard (Store.first_tips): 'change' on a new person's first to-do (Do it differently and
 # Not needed), 'send' on their first ready draft (nothing goes out until Send). Each goes once its button was used.
 FIRST_TIPS = ('change', 'send')
 TIP_USED = {'change': {'other', 'reject'}, 'send': {'send'}}
 TIP_SOURCES = ('dashboard', 'telegram', 'owner-chat', 'voice')  # the owner's own decisions
+GREETING_HOURS = 24  # the dashboard's hello (Store.greeting) shows this long from a new owner's first view
 FIRST_TIPS_UNTIL = 10  # to-dos decided: past their first to-dos, every tip is gone
 FIRST_ACTIONS = {'accept': 'approve', 'other': 'approve', 'prepare_next': 'approve', 'send': 'send', 'complete': 'done', 'reject': 'dismiss'}
 # Onboarding value past the first approval (a click), for first_cards_report: the first to-do whose preparation finished
@@ -4326,6 +4332,48 @@ class Store:
             used = {r['choice'] for r in db.execute('SELECT DISTINCT choice FROM decisions WHERE source IN (' + ','.join('?' * len(TIP_SOURCES)) + ')', TIP_SOURCES)}
         return [tip for tip in FIRST_TIPS if tip not in done and not used & TIP_USED[tip]]
 
+    def greeting(self, owner_name=''):
+        """The dashboard's hello on a new owner's first views (GREETING_HOURS from their first, until they first decide a
+        to-do): {'name': their first name, 'line': {'person', 'since', 'card'}} with the open to-do someone has waited
+        on them for longest (card_waiting_since; a ready one first), named from their own Machine; just the name when
+        nothing is ready yet. The dashboard leads with that to-do (line.card) and keeps the rest of the page quiet.
+        None once past it, or for someone who had decided to-dos before this existed. For the owner's own dashboard only:
+        nothing of it goes into a report or leaves the Machine."""
+        first = (str(owner_name or '').split() or [''])[0]
+        first = first if re.fullmatch(r"[^\W\d_][\w'’-]*", first) else ''
+        with self.connect() as db:
+            decided = lambda since='': db.execute(
+                'SELECT 1 FROM decisions WHERE source IN (' + ','.join('?' * len(TIP_SOURCES)) + ') AND choice IN ('
+                + ','.join('?' * len(FIRST_ACTIONS)) + ') AND created_at>=? LIMIT 1', (*TIP_SOURCES, *FIRST_ACTIONS, since)).fetchone()
+            row = db.execute("SELECT at,detail FROM milestones WHERE name='greeting'").fetchone()
+            if not row:
+                db.execute("INSERT OR IGNORE INTO milestones(name,at,detail) VALUES('greeting',?,?)", (now(), 'off' if decided() else 'on'))
+                row = db.execute("SELECT at,detail FROM milestones WHERE name='greeting'").fetchone()
+            ends = (dt.datetime.fromisoformat(row['at']) + dt.timedelta(hours=GREETING_HOURS)).isoformat()
+            if row['detail'] != 'on' or decided(row['at']) or now() >= ends:
+                return None
+            # A ready to-do (its draft prepared) before one still to decide or preparing; within each, the longest wait
+            best = None
+            for card in db.execute('SELECT id,status,event_ids FROM suggestions WHERE ' + activity.SHOWN, (now(),)).fetchall():
+                found = self.card_waiting_since(db, card)
+                key = found and (card['status'] != 'prepared', found[0])
+                if found and (not best or key < best[0]):
+                    best = (key, *found, card['id'])
+            best = best and best[1:]
+        line = None
+        if best:
+            m = best[1]['metadata'] if isinstance(best[1]['metadata'], dict) else json.loads(best[1]['metadata'] or '{}')
+            person = sender_first_name(m)
+            if person:
+                line = {'person': person, 'since': best[0], 'card': best[2]}
+        return {'name': first, **({'line': line} if line else {})} if first or line else None
+
+    @staticmethod
+    def greeting_on(db, at):
+        """The hello's first view is now (`at`), whatever was decided before: for the sandbox, whose sample history is
+        older than its owner's first look (the site demo shows the first view)."""
+        db.execute("INSERT OR REPLACE INTO milestones(name,at,detail) VALUES('greeting',?,'on')", (at,))
+
     def tip_done(self, tip):
         """A first-use tip closed (×) or its button used on the dashboard: it never comes back, on any device."""
         if tip not in FIRST_TIPS:
@@ -4894,15 +4942,22 @@ class Store:
             items, pages = self.review_claim(rows)
             db.execute('INSERT INTO analyses(id,started_at,items,status,owner_session,owner_run,resumed_from) VALUES(?,?,?,?,?,?,?)',
                        (analysis_id, now(), encoded(items), 'running', owner_session, owner_run, recovered_from))
-            return self.review_result(analysis_id, pages, resumed_from=recovered_from)
+            # Work ready on arrival: before the first draft prepared ahead, the quick first look's first signal is the
+            # one who has waited longest on the owner (most_promising); its to-do goes first and comes drafted
+            first = {}
+            if quick and not db.execute("SELECT 1 FROM milestones WHERE name='first_ahead_started'").fetchone() and self.waiting_since(db, rows[:1]):
+                first = {'waiting_longest': rows[0]['id'], 'first_look': FIRST_LOOK_NOTE}
+            return self.review_result(analysis_id, pages, resumed_from=recovered_from, **first)
 
     def most_promising(self, db, accounts, since, limit):
         """The quick first look's signals, so its first cards are the useful ones: what most likely needs the owner, read
         from who wrote to whom and what came after (never from the words). First a person writing to the owner directly
         whom the owner hasn't answered in that thread since (a reply may be owed), and direct chat messages; then the
         owner's own mail (what they asked or promised) and their appointments; then mail they were one of many on, or
-        already answered; automated mail last. Newest first within each. The full first look reviews the rest."""
-        own = {str(a.get('email', '')).lower() for a in self.accounts if '@' in str(a.get('email', ''))}
+        already answered; automated mail last. Newest first within each, except the one who has waited longest on the
+        owner (waiting_since), who leads: their to-do is the first one prepared, ready when the owner arrives. The full
+        first look reviews the rest."""
+        own = self.own_addresses()
         marks = ','.join('?' for _ in accounts)
         # The whole window, what already happened first (newest first), then what is coming (soonest first): upcoming
         # appointments or a burst of newsletters must not crowd out the mail that waits on the owner. The cap only
@@ -4910,45 +4965,86 @@ class Store:
         found = [dict(r) for r in db.execute(f'SELECT * FROM events WHERE account_id IN ({marks}) AND analyzed_version<version AND deferrals<? '
                                              'AND occurred_at>=? ORDER BY occurred_at>?,CASE WHEN occurred_at>? THEN occurred_at END,occurred_at DESC,id DESC LIMIT 5000',
                                              (*accounts, SET_ASIDE_AFTER, since, *(now(),) * 2))]
-
-        def rank(row):
-            m = row['metadata'] if isinstance(row['metadata'], dict) else json.loads(row['metadata'] or '{}')
-            if row['kind'] in ('linkedin.message', 'x.dm', 'whatsapp.message', 'telegram.message'):
-                return 3 if m.get('from_me') else 0
-            if row['kind'] == 'slack.message' and m.get('conversation_type') == 'dm':
-                return 3 if m.get('user_id') in self.owner_user_ids else 0
-            if row['kind'] != 'gmail.message':
-                return 1 if row['kind'] == 'calendar.event' else 2
-            labels = set(m.get('labels') or [])
-            if 'SENT' in labels:
-                return 1
-            sender = _address(m.get('from'))
-            to = {x.lower() for x in re.findall(r'[^\s<>"\',;]+@[^\s<>"\',;]+', str(m.get('to') or ''))}
-            if not sender or sender in own or ROBOT_SENDER.match(sender) or labels & AUTOMATED_LABELS:
-                return 3
-            if own and (not own & to or len(to) > 2):
-                return 2
-            return 0
-
-        def answered(row):
-            m = row['metadata'] if isinstance(row['metadata'], dict) else json.loads(row['metadata'] or '{}')
-            return bool(m.get('thread_id') and db.execute(
-                "SELECT 1 FROM events WHERE account_id=? AND kind='gmail.message' AND deleted=0 AND occurred_at>? "
-                "AND json_extract(metadata,'$.thread_id')=? AND instr(metadata,'\"SENT\"')>0 LIMIT 1",
-                (row['account_id'], row['occurred_at'], m['thread_id'])).fetchone())
-
-        ranks = [rank(row) for row in found]
+        ranks = [self.need_rank(row, own) for row in found]
         waiting = 0
         for i, row in enumerate(found):  # the thread check only where it decides, and only until the batch is full
             if ranks[i] == 0 and row['kind'] == 'gmail.message':
-                if answered(row):
+                if self.answered(db, row):
                     ranks[i] = 2
                 else:
                     waiting += 1
                     if waiting >= limit:
                         break
         ranked = sorted(range(len(found)), key=lambda i: (ranks[i], i))  # stable: newest, then soonest, first within a rank
+        # The one waiting longest: from the oldest end, the first that still waits (checked only until one does)
+        current, checked, longest = now(), 0, None
+        for i in reversed(range(len(found))):
+            if ranks[i] != 0 or found[i]['occurred_at'] > current:
+                continue
+            if found[i]['kind'] == 'gmail.message':
+                if checked >= limit:
+                    break
+                checked += 1
+                if self.answered(db, found[i]):
+                    ranks[i] = 2
+                    continue
+            longest = i
+            break
+        if longest is not None:
+            ranked = [longest, *(i for i in ranked if i != longest)]
         return [found[i] for i in ranked[:limit]]
+
+    def own_addresses(self):
+        return {str(a.get('email', '')).lower() for a in self.accounts if '@' in str(a.get('email', ''))}
+
+    def need_rank(self, row, own):
+        """How likely a signal needs the owner (most_promising), from who wrote to whom, never the words: 0 a person
+        writing to them directly (mail not yet checked for a reply in its thread, answered) or a direct chat message,
+        1 their own mail and appointments, 2 mail they were one of many on, 3 automated mail and their own chat messages."""
+        m = row['metadata'] if isinstance(row['metadata'], dict) else json.loads(row['metadata'] or '{}')
+        if row['kind'] in ('linkedin.message', 'x.dm', 'whatsapp.message', 'telegram.message'):
+            return 3 if m.get('from_me') else 0
+        if row['kind'] == 'slack.message' and m.get('conversation_type') == 'dm':
+            return 3 if m.get('user_id') in self.owner_user_ids else 0
+        if row['kind'] != 'gmail.message':
+            return 1 if row['kind'] == 'calendar.event' else 2
+        labels = set(m.get('labels') or [])
+        if 'SENT' in labels:
+            return 1
+        sender = _address(m.get('from'))
+        to = {x.lower() for x in re.findall(r'[^\s<>"\',;]+@[^\s<>"\',;]+', str(m.get('to') or ''))}
+        if not sender or sender in own or ROBOT_SENDER.match(sender) or labels & AUTOMATED_LABELS:
+            return 3
+        if own and (not own & to or len(to) > 2):
+            return 2
+        return 0
+
+    @staticmethod
+    def answered(db, row):
+        """The owner sent mail in this message's thread after it."""
+        m = row['metadata'] if isinstance(row['metadata'], dict) else json.loads(row['metadata'] or '{}')
+        return bool(m.get('thread_id') and db.execute(
+            "SELECT 1 FROM events WHERE account_id=? AND kind='gmail.message' AND deleted=0 AND occurred_at>? "
+            "AND json_extract(metadata,'$.thread_id')=? AND instr(metadata,'\"SENT\"')>0 LIMIT 1",
+            (row['account_id'], row['occurred_at'], m['thread_id'])).fetchone())
+
+    def waiting_since(self, db, rows):
+        """(when, row) of the earliest of these signals someone still waits on the owner for (need_rank 0, a mail not
+        answered in its thread since), or None: who has waited longest. Read from who wrote to whom, never the words."""
+        own, current = self.own_addresses(), now()
+        for row in sorted(rows, key=lambda r: r['occurred_at']):
+            if row['occurred_at'] <= current and self.need_rank(row, own) == 0 and not (row['kind'] == 'gmail.message' and self.answered(db, row)):
+                return row['occurred_at'], row
+        return None
+
+    def card_waiting_since(self, db, card):
+        """waiting_since over a to-do's evidence."""
+        ids = json.loads(card['event_ids'] or '[]')
+        if not ids:
+            return None
+        rows = [dict(r) for r in db.execute('SELECT id,account_id,kind,occurred_at,metadata FROM events WHERE deleted=0 AND id IN ('
+                                            + ','.join('?' * len(ids)) + ')', ids)]
+        return self.waiting_since(db, rows)
 
     @staticmethod
     def owner_wrote_in(db, account_id, metadata):
@@ -11580,6 +11676,19 @@ def source_text(row):
     return source_kind(row['kind']) + (f' from {who}' if who else '') + f' · {when}'
 
 
+def sender_first_name(metadata):
+    """The first name of who sent a message, as the message names them ("Sam Lee <sam@…>" is Sam), or '' when it
+    carries only an address, a number or a chat handle."""
+    m = metadata or {}
+    who = re.sub(r'\s*<[^>]*>?', '', str(m.get('sender_display') or m.get('from') or m.get('chat_name') or '')).strip().strip('"\'').strip()
+    if not who or '@' in who or SLACK_ID.search(who) or SOURCE_RAW.search(who):
+        return ''
+    if ',' in who:  # "Lee, Sam"
+        who = who.split(',', 1)[1].strip() or who
+    first = (who.split() or [''])[0]
+    return first if re.fullmatch(r"[^\W\d_][\w'’-]*", first) else ''
+
+
 # The "who" of a source line that is a raw chat handle rather than a name: a Slack DM ("#DM U02AB3CD4"), a member id,
 # a WhatsApp jid or a bare Telegram number
 SOURCE_DM = re.compile(r'#?DM (.+)')
@@ -15210,6 +15319,10 @@ class App(*APP_MIXINS):
                     self._handled_first = False
             result['handled_first'] = self._handled_first
             result['phone_app_store'] = phone_app_nudge(self.store)
+            try:  # the hello on a new owner's first views, with who has waited longest on them (Store.greeting)
+                result['greeting'] = self.store.greeting(self.config.get('owner_name'))
+            except sqlite3.Error as error:
+                LOG.warning('greeting error=%s', type(error).__name__); result['greeting'] = None
             try:  # the first-use tips on a new person's first to-dos (Store.first_tips)
                 result['first_tips'] = self.store.first_tips()
             except sqlite3.Error as error:
@@ -18156,7 +18269,15 @@ class App(*APP_MIXINS):
             ahead_first=not db.execute("SELECT 1 FROM milestones WHERE name='first_ahead_started'").fetchone()
             # Automated follow-ups go last (follow_ups.py): after every other queued preparation, and only while usage has room for them
             following={r[0] for r in db.execute("SELECT suggestion_id FROM follow_up_cards WHERE state='open'")} if queued else set()
-            queued.sort(key=lambda j:j['suggestion_id'] in following)
+            # The very first draft prepared ahead (ahead_first): the to-do someone has waited on longest goes first
+            # (Store.card_waiting_since), so it is ready when the new owner arrives
+            waited={}
+            if ahead_first and sum(bool(j['early']) for j in queued)>1:
+                for j in queued:
+                    card=db.execute('SELECT event_ids FROM suggestions WHERE id=?',(j['suggestion_id'],)).fetchone() if j['early'] else None
+                    found=card and self.store.card_waiting_since(db,card)
+                    waited[j['suggestion_id']]=found[0] if found else '~'
+            queued.sort(key=lambda j:(j['suggestion_id'] in following,waited.get(j['suggestion_id'],'')))
             late=follow_ups.late_ids(db,now()) if following else set()
             pauses=follow_ups.paused_ids(db,now()) if following else {}  # a paused board or project: no follow-up prepared in the background
             admitted=[]

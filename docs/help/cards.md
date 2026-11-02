@@ -50,6 +50,8 @@ A to-do that only mattered until a set time, like a confirmation before a meetin
 
 On your first to-dos, a short tip under the buttons shows the key moves: **Do it differently** (or **Ask for changes**) and **Not needed** when a to-do isn't quite right, and on your first ready draft that nothing goes out until you press **Send**. A tip goes for good once you use its button or press ×, on all your devices.
 
+On your first day, the top of To-dos says hi by name and who has waited longest on your reply. The Machine drafts that reply first, so it is ready when you arrive. Nothing goes out until you send it. The line goes after your first day or your first decided to-do.
+
 Each to-do starts with its title. The line under it says who it's about, their organization, the project, Work or Personal (under **All**) and when it came in, plus where it stands when its group doesn't say so. Tap a name to open its page in the Graph.
 
 Sometimes a quiet line under the text says what isn't known, like "Last contact 12 days ago by email; nothing since." It shows only when the last word with them is old or unanswered, and names channels they may have answered on that aren't connected, like WhatsApp. Your Machine prepares with the same facts, so it says what it doesn't know instead of guessing.

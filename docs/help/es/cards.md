@@ -50,6 +50,8 @@ Una tarea que solo importaba hasta un momento concreto, como una confirmación a
 
 En tus primeras tareas, una línea corta bajo los botones muestra lo esencial: **Hazlo de otra forma** (o **Pedir cambios**) y **No hace falta** cuando una tarea no es del todo así, y en tu primer borrador listo, que no sale nada hasta que pulsas **Enviar**. Un consejo desaparece para siempre en cuanto usas su botón o pulsas ×, en todos tus dispositivos.
 
+En tu primer día, la parte de arriba de Tareas te saluda por tu nombre y muestra quién lleva más tiempo esperando tu respuesta. The Machine redacta esa respuesta primero, para que esté lista cuando llegues. No sale nada hasta que la envías. La línea desaparece después de tu primer día o de tu primera tarea decidida.
+
 Cada tarea empieza por su título. La línea de debajo dice de quién trata, su organización, el proyecto, Trabajo o Personal (en **Todo**) y cuándo llegó, además de cómo va cuando su grupo no lo dice ya. Toca un nombre para abrir su página en el Graph.
 
 A veces una línea discreta bajo el texto dice lo que no se sabe, como «Último contacto hace 12 días por correo; nada desde entonces.» Solo aparece cuando el último contacto es antiguo o sigue sin respuesta, y nombra los canales no conectados por los que quizá respondieron, como WhatsApp. Tu Machine prepara con los mismos datos, así que dice lo que no sabe en vez de adivinar.
