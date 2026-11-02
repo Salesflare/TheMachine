@@ -322,5 +322,21 @@ class DurableSignals(LearningLoop):
         with self.store.connect() as db:
             self.assertEqual(learning_loop.floor(db), before)
 
+    def test_an_existing_machine_recovers_what_its_failed_passes_after_the_last_good_one_read(self):
+        good, failed = (self.clock - a.dt.timedelta(hours=30)).isoformat(), (self.clock - a.dt.timedelta(hours=10)).isoformat()
+        self.add(40, at=self.clock - a.dt.timedelta(hours=40), prefix='old')  # before the last good pass: history
+        lost = self.add(4, at=self.clock - a.dt.timedelta(hours=20), prefix='lost')  # read by a pass that then failed
+        with self.store.connect() as db:
+            db.execute("INSERT INTO profile_runs(run_id,status,started_at,updated_at,kind,auto) VALUES('good','ok',?,?,'tune',1)", (good, good))
+            db.execute("INSERT INTO profile_runs(run_id,status,error,started_at,updated_at,kind,auto) VALUES('bad','error','lost',?,?,'tune',1)",
+                       (failed, failed))
+        page = self.one_pass()
+        self.assertEqual(len(page['signals']), 9)  # the 4 the failed pass lost, then the 5 since
+        states = self.states()
+        self.assertTrue(all(states[i] == ('done', 0) for i in lost))
+        self.assertFalse(any(k.startswith('old') for k in states))
+        with self.store.connect() as db:
+            self.assertEqual(learning_loop.floor(db), good)
+
 if __name__ == '__main__':
     unittest.main()

@@ -668,7 +668,7 @@ between them: the owner's own draft edits, dismissed and snoozed to-dos, and cor
   its changes applied, in the same transaction; a pass that finished but wasn't applied before a restart is applied
   first. A pass that fails leaves its batch for a retry: whole once more, then its older half each time. A signal is
   given up (status `skipped`) after six failed passes, so it never blocks the rest. Machines from before this start
-  from their last pass.
+  from their last pass that went through.
 - Each change is applied and kept in `learning_changes` with what it replaced and why. **Learning, Changes** lists them
   with **Undo**.
 - A voice the owner wrote is never changed by the loop, and an undo is refused when the owner changed that voice or fact
