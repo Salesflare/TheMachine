@@ -19,7 +19,7 @@ La página **Tareas** las agrupa:
 - **Promesas**: lo que prometiste y lo que otros te prometieron. Consulta [Promesas](promises.md).
 - **Hecho / descartado**: cada tarea terminada, las más recientes primero, de 30 en 30 según te desplazas. Las tareas que ya parecen terminadas van primero, con la etiqueta **Parece hecho**.
 
-Una tarea con **Parece hecho** es una línea: su título y lo que muestra que está hecha, como "PR #3451 fusionado". Sigue abierta hasta que la cierres: toca la línea para ver la tarea entera y usa **Marcar como hecha** ahí. **No está hecho** la devuelve a tu lista, y tu Machine aprende de ello. Nunca aparecen como atrasadas ni cuentan como pendientes de ti.
+Una tarea con **Parece hecho** se ve como una hecha, con lo que muestra que está hecha, como "PR #3451 fusionado". Aún no está cerrada: **Reabrir** la devuelve a tu lista, y tu Machine aprende de ello. Nunca aparecen como atrasadas ni cuentan como pendientes de ti.
 
 Una tarea cuyo último paso sigue abierto en manos de otra persona, como una revisión, una fusión o una respuesta, muestra **Esperando:** ese paso y sigue abierta. Espera en **Esperando a otros**, plegada encima de Vuelve más tarde, y no cuenta como lista para ti. Un mensaje nuevo sobre ella la trae de vuelta.
 

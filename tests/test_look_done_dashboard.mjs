@@ -6,8 +6,8 @@ import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // To-dos that look done already (a run found it done, or a later message suggests it's handled) don't sit as full
-// to-dos between real work, and have no section of their own: they lead Done / dismissed, a short line each (title, what
-// shows it, a quiet Looks done tag) with one button, Not done, that puts it back on the list. Never Overdue, never in the
+// to-dos between real work, and have no section of their own: they lead Done / dismissed, each like a done one there
+// (Looks done for Done, what shows it as its line, Details, Chat, Reopen), and Reopen puts it back on the list. Never Overdue, never in the
 // open counts, never closed by themselves. The sidebar has them at the top of Done too.
 const dashboard=await dashboardPage();
 const now=new Date().toISOString(),late=new Date(Date.now()-3*864e5).toISOString().slice(0,10);
@@ -45,7 +45,7 @@ try{
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
   await page.goto('http://127.0.0.1:'+server.address().port);await page.locator('#task-r1').waitFor();
   // Not between real work, and not counted: Ready has the real one, To decide the real one
-  for(const id of ['d1','d2','h1','h2'])assert.equal(await page.locator('#task-'+id).count(),0,id);
+  for(const id of ['d1','d2','h1','h2'])assert.equal(await page.locator('#task-'+id+':not(#finished-list>.looks-done)').count(),0,id);
   assert.equal(await page.locator('#badge-inbox').textContent(),'2');
   assert.equal(await page.locator('#task-r1 .chip').filter({hasText:'Overdue'}).count(),1);  // real work can still be late
   // A step still open on someone else's side: nothing is ready for them, so its own folded group, not counted
@@ -62,23 +62,22 @@ try{
   assert.equal(await page.locator('#finished-list').evaluate(d=>d.open),false);
   assert.equal(await page.locator('#finished-head .count').textContent(),'5');  // 4 that look done and the done one
   await page.locator('#finished-head').click();
-  const rows=page.locator('#finished-list>.ld-row');assert.equal(await rows.count(),4);
-  assert.deepEqual(await page.locator('#finished-list>:not(summary)').evaluateAll(n=>n.slice(0,5).map(x=>x.dataset.ld||'other')),['d1','d2','h1','h2','other']);
-  const line=id=>page.locator(`[data-ld="${id}"] .ld-why`).evaluate(n=>[...n.childNodes].filter(x=>!x.classList?.contains('ld-tag')).map(x=>x.textContent).join(''));
-  assert.equal(await line('d1'),'PR #3451 merged, deployed Oct 27');
-  assert.equal(await line('d2'),'Alex already sent it on Monday');
-  assert.equal(await line('h1'),'Elif confirmed it herself on Tuesday');
-  // each: the Looks done tag and one button, Not done
-  assert.equal(await page.locator('[data-ld="d1"] .ld-tag').textContent(),'Looks done');
-  assert.deepEqual(await page.locator('[data-ld="d1"] .ld-acts button').evaluateAll(b=>b.map(x=>x.textContent)),['Not done']);
-  assert.equal(await page.locator('[data-ld-all]').count(),0);
+  // Each like a done one there: Looks done where that says Done, what shows it as its line, Details, Chat and Reopen
+  const ld=page.locator('#finished-list>article.looks-done');assert.equal(await ld.count(),4);
+  assert.deepEqual(await page.locator('#finished-list article').evaluateAll(n=>n.slice(0,5).map(x=>x.id)),['task-d1','task-d2','task-h1','task-h2','task-c9']);
+  const card=id=>page.locator('#finished-list #task-'+id);
+  assert.equal(await card('d1').locator('.card-badges .chip').first().textContent(),'Looks done');
+  assert.equal(await card('c9').locator('.card-badges .chip').first().textContent(),'Done');
+  assert.equal(await card('d1').locator('.body').innerText(),'PR #3451 merged, deployed Oct 27');
+  assert.equal(await card('d2').locator('.body').innerText(),'Alex already sent it on Monday');
+  assert.equal(await card('h1').locator('.body').innerText(),'Elif confirmed it herself on Tuesday');
+  assert.equal(await card('h1').evaluate(n=>n.className),await card('c9').evaluate(n=>n.className)+' looks-done');  // the same look
+  for(const id of ['d1','h1']){
+   assert.deepEqual(await card(id).locator('.actions button').evaluateAll(b=>b.map(x=>x.textContent)),['Reopen']);
+   assert.equal(await card(id).locator('.card-chat-link').count(),1);
+   await card(id).locator('[data-details]').click();
+   assert.deepEqual(await card(id).locator('button:visible').evaluateAll(b=>b.map(x=>x.textContent).filter(x=>/Mark done|Snooze|Not needed|More/.test(x))),[])}
   assert.equal(await page.locator('#finished-list').getByText('Overdue').count(),0);
-  // A row opens to the full to-do, which is never late either, and can be marked done there
-  await page.locator('[data-ld-expand="h1"]').click();
-  assert.equal(await page.locator('#task-h1').isVisible(),true);
-  assert.equal(await page.locator('#task-h1 .chip').filter({hasText:'Overdue'}).count(),0);
-  assert.equal(await page.locator('#task-h1 [data-choice="complete"]').first().isVisible(),true);
-  await page.locator('[data-ld-expand="h1"]').click();assert.equal(await page.locator('#task-h1').count(),0);
   // The sidebar: no group of their own, at the top of Done with the tag
   if(width>=1024){const heads=await page.locator('#side-cards .side-head').evaluateAll(b=>b.map(x=>x.dataset.sideFold));
    assert.deepEqual(heads.slice(-2),['waiting','done']);
@@ -88,12 +87,12 @@ try{
    assert.equal(await page.locator('#side-cards a.side-ld small').first().textContent(),'Looks done');
    await page.locator('#side-cards [data-side-fold="done"]').click()}
   // Not done: it is a normal to-do again (and the review learns from the decision)
-  posts.length=0;await page.locator('[data-ld-not="d1"]').click();await page.locator('#task-d1').waitFor();
+  posts.length=0;await card('d1').locator('[data-ld-not]').click();await page.locator('#task-d1:not(.looks-done)').waitFor();
   assert.deepEqual(posts.map(p=>[p.suggestion_id,p.choice]),[['d1','not_done']]);
-  assert.equal(await page.locator('[data-ld="d1"]').count(),0);
+  assert.equal(await card('d1').count(),0);
   assert.equal(await page.locator('#badge-inbox').textContent(),'3');
   // nothing else was closed
-  assert.equal(await page.locator('#finished-list>.ld-row').count(),3);
+  assert.equal(await ld.count(),3);
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   // back as it was for the next width
   const d1=cards.find(c=>c.id==='d1');Object.assign(d1,{status:'prepared',outcome:JSON.stringify({state:'already_done'})});

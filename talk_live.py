@@ -54,7 +54,7 @@ CHANNELS = {'email': 'by email', 'linkedin': 'on LinkedIn', 'slack': 'on Slack',
 # An open to-do's state, in plain words, as the dashboard's lists show it (Ready, To decide, Preparing, Waiting on others,
 # Later), in that order
 STATES = ('ready', 'to decide', 'preparing', 'waiting on others', 'snoozed')
-# One that looks done already: still open (Not done puts it back), but the dashboard shows it at the top of Done / dismissed
+# One that looks done already: still open (Reopen puts it back), but the dashboard shows it at the top of Done / dismissed
 LOOKS_DONE = 'looks done'
 # A closed one's, as the Done / dismissed list shows it: marked done, or dismissed (Not needed)
 CLOSED = ('done', 'dismissed')

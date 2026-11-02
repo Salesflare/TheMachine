@@ -19,7 +19,7 @@ La page **Tâches** les regroupe :
 - **Promesses** : ce que vous avez promis et ce que d’autres vous ont promis. Voir [Promesses](promises.md).
 - **Fait / écarté** : toutes les tâches terminées, les plus récentes d’abord, 30 à la fois quand vous faites défiler. Les tâches qui semblent déjà terminées viennent en premier, avec l’étiquette **Semble fait**.
 
-Une tâche marquée **Semble fait** tient en une ligne : son titre et ce qui montre qu’elle est faite, comme « PR #3451 fusionnée ». Elle reste ouverte jusqu’à ce que vous la fermiez : touchez la ligne pour voir toute la tâche et utilisez **Marquer comme fait**. **Pas fait** la remet dans votre liste, et votre Machine en tient compte. Elles ne sont jamais en retard et ne comptent pas comme en attente de vous.
+Une tâche marquée **Semble fait** s’affiche comme une tâche faite, avec ce qui montre qu’elle est faite, comme « PR #3451 fusionnée ». Elle n’est pas encore fermée : **Rouvrir** la remet dans votre liste, et votre Machine en tient compte. Elles ne sont jamais en retard et ne comptent pas comme en attente de vous.
 
 Une tâche dont la dernière étape reste ouverte chez quelqu’un d’autre, comme une relecture, une fusion ou une réponse, affiche **En attente de :** cette étape et reste ouverte. Elle attend dans **En attente des autres**, repliée au-dessus de Revient plus tard, et ne compte pas comme prête pour vous. Un nouveau message à son sujet la ramène.
 

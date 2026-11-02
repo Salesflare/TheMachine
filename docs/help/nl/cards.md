@@ -19,7 +19,7 @@ De pagina **To-do's** groepeert ze:
 - **Beloftes**: wat jij beloofde en wat anderen jou beloofden. Zie [Beloftes](promises.md).
 - **Gedaan / afgewezen**: elke afgeronde to-do, nieuwste eerst, 30 tegelijk terwijl je scrolt. To-do's die al af lijken staan bovenaan, met het label **Lijkt gedaan**.
 
-Een to-do met **Lijkt gedaan** is één regel: de titel en wat laat zien dat hij gedaan is, zoals "PR #3451 gemerged". Hij blijft open tot je hem sluit: tik op de regel om de hele to-do te zien en kies daar **Markeer als gedaan**. **Niet gedaan** zet hem terug op je lijst, en je Machine leert ervan. Ze staan nooit als te laat en tellen niet mee als wachtend op jou.
+Een to-do met **Lijkt gedaan** ziet eruit als een gedane, met wat laat zien dat hij gedaan is, zoals "PR #3451 gemerged". Hij is nog niet gesloten: **Heropenen** zet hem terug op je lijst, en je Machine leert ervan. Ze staan nooit als te laat en tellen niet mee als wachtend op jou.
 
 Een to-do waarvan de laatste stap nog openstaat bij iemand anders, zoals een review, een merge of een antwoord, zegt **Wacht op:** die stap en blijft open. Hij wacht in **Wacht op anderen**, ingeklapt boven Komt later terug, en telt niet mee als klaar voor jou. Een nieuw bericht erover brengt hem terug.
 

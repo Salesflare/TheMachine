@@ -41,24 +41,26 @@ try{
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
   await page.goto('http://127.0.0.1:'+server.address().port);
-  // d1 and n1 look done: they wait at the top of the folded Done list, each opening to its full to-do
-  await page.locator('#finished-head').click();for(const id of ['d1','n1'])await page.locator(`[data-ld-expand="${id}"]`).click();
-  await page.locator('#task-d1').waitFor();
-  const notes=id=>page.locator(`#task-${id} .note`).evaluateAll(n=>n.map(x=>x.textContent.trim()));
-  const text=id=>page.locator('#task-'+id).innerText();
+  // d1 and n1 look done: the Done list shows them like a done one (test_look_done_dashboard.mjs); the whole to-do, as
+  // its chat has it, still says why and offers Mark done
+  await page.locator('#task-a1').waitFor();await page.evaluate(ids=>{const d=document.createElement('div');d.id='probe';d.innerHTML=ids.map(id=>suggestionCard(state.suggestions.find(s=>s.id===id))).join('');document.body.append(d)},['d1','n1']);
+  await page.locator('#probe #task-d1').waitFor();
+  const at=id=>(['d1','n1'].includes(id)?'#probe ':'')+'#task-'+id;
+  const notes=id=>page.locator(`${at(id)} .note`).evaluateAll(n=>n.map(x=>x.textContent.trim()));
+  const text=id=>page.locator(at(id)).innerText();
   // Already done: one line, no second "Looks handled", no "approve", and Mark done leads
   assert.deepEqual(await notes('d1'),['Looks done already. Mark it done if that’s right.']);
   for(const gone of ['approve','Nothing was sent','Looks handled'])assert.ok(!(await text('d1')).includes(gone),gone);
-  assert.equal(await page.locator('#task-d1 .actions button.primary').first().textContent(),'Mark done');
-  assert.equal(await page.locator('#task-d1 [data-result="copy"]').count(),0);assert.equal(await page.locator('#task-a1 [data-result="copy"]').count(),1);
+  assert.equal(await page.locator('#probe #task-d1 .actions button.primary').first().textContent(),'Mark done');
+  assert.equal(await page.locator('#probe #task-d1 [data-result="copy"]').count(),0);assert.equal(await page.locator('#task-a1 [data-result="copy"]').count(),1);
   // The other card, named by its title, links to it
-  assert.equal(await page.locator('#task-d1 a.card-link').getAttribute('href'),'#card=f1');
+  assert.equal(await page.locator('#probe #task-d1 a.card-link').getAttribute('href'),'#card=f1');
   // The status line sits right under the title and its meta line, above the body
-  assert.equal(await page.locator('#task-d1 h3 + .meta + .status-line').count(),1);
+  assert.equal(await page.locator('#probe #task-d1 h3 + .meta + .status-line').count(),1);
   // Handled wins over the result's needs line; the long body folds
   assert.deepEqual(await notes('n1'),['Looks handled: You replied to Kim and closed the conversation']);
-  assert.equal(await page.locator('#task-n1 .body.clamp').count(),1);
-  assert.equal(await page.locator('#task-n1 button.more').textContent(),'Show more');
+  assert.equal(await page.locator('#probe #task-n1 .body.clamp').count(),1);
+  assert.equal(await page.locator('#probe #task-n1 button.more').textContent(),'Show more');
   // Prepared ahead with a draft: the one line says nothing goes out until you approve
   assert.deepEqual(await notes('a1'),['Ready to approve. Nothing goes out until you do.']);
   // Once the reply went out, the old needs line is gone; the sent line says it
@@ -81,7 +83,7 @@ try{
    assert.equal(await confirm.evaluate(e=>getComputedStyle(e).opacity),'1');
    await page.locator('#task-q1 [data-choice="cancel-dismiss"]').click()}
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
-  await page.locator('#task-d1').screenshot({path:`/tmp/card-status-${width}.png`});
+  await page.locator('#probe #task-d1').screenshot({path:`/tmp/card-status-${width}.png`});
   await context.close();
  }
  assert.deepEqual(errors,[]);

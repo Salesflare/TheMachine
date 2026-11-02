@@ -173,12 +173,15 @@ let linkedCardId=null;
 $('#suggestion-stats').addEventListener('click',e=>{const t=e.target.closest('[data-fold-tile]');if(t)toggleSection(t.dataset.foldTile)});
 $('#suggestion-summary').addEventListener('click',e=>{const b=e.target.closest('[data-scope]');if(b)scopeSet(b.dataset.scope)});
 // Promises from your messages, both ways. A still-open one becomes a card when it's due.
-// To-dos that look done: at the top of Done / dismissed, a short line each (title, what shows it, a Looks done tag) with
-// Not done. A row opens to the full to-do, where Mark done closes it. They stay open: nothing closes without you.
-const lookExpanded=new Set();
-function lookDoneRows(items){
- return items.map(s=>{const x=lookExpanded.has(s.id),why=doneWhy(s);
-  return `<div class="ld-row${x?' open':''}" data-ld="${esc(s.id)}"><button type="button" class="ld-main" data-ld-expand="${esc(s.id)}" aria-expanded="${x}">${CHEVRON}<span class="ld-text"><span class="ld-title" translate="no">${esc(s.title)}</span><small class="ld-why"><span class="ld-tag">${esc(t('Looks done'))}</span>${esc(why)}</small></span></button><span class="ld-acts"><button type="button" data-ld-not="${esc(s.id)}">${esc(t('Not done'))}</button></span>${x?suggestionCard(s,'Look done'):''}</div>`}).join('')}
+// To-dos that look done: at the top of Done / dismissed, each like a done one there: "Looks done" where that says Done,
+// what shows it as its line, Details, Chat and Reopen (not_done: back on the list). They stay open until the owner closes them.
+const lookExpanded=new Set();  // a link to one opens Done (openCardLink)
+function lookDoneCard(s){const tpl=document.createElement('template');
+ tpl.innerHTML=suggestionCard({...s,status:'completed',body:doneWhy(s)||s.body,handled_hint:null,outcome:null,undo_until:null,expired_at:null});
+ const a=tpl.content.querySelector('article');if(!a)return '';a.classList.add('looks-done');a.dataset.status=s.status;
+ const ct=a.querySelector('.card-badges .chip .ct');if(ct)ct.textContent=t('Looks done');
+ for(const b of a.querySelectorAll('.actions [data-choice]')){b.removeAttribute('data-choice');b.dataset.ldNot=s.id}
+ return a.outerHTML}
 async function lookNotDone(b){const id=b.dataset.ldNot;b.disabled=true;
  try{await decidePost(id,{choice:'not_done',feedback:'',decision_id:crypto.randomUUID()});lookExpanded.delete(id);await refresh();toast(t('Back on your list. I’ll learn from it.'))}
  catch(err){errCaught(err);toast(err.message,true);await refresh().catch(()=>{})}finally{b.disabled=false}}

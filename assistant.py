@@ -12960,7 +12960,7 @@ def reminder_line(channels):
 
 # A to-do that looks done already: a later signal suggests it's handled (looks_handled), or its run found it done
 # (outcome already_done). Only a hint: it shows at the top of Done / dismissed but stays open until the owner closes it
-# (Not done puts it back on the list); it never counts as waiting for them (badge, reminders, nudges) and is never
+# (Reopen there puts it back on the list); it never counts as waiting for them (badge, reminders, nudges) and is never
 # late. Same rule as looksDone() in dashboard.html.
 LOOKS_DONE_SQL = "(handled_hint IS NOT NULL OR (status='prepared' AND json_extract(outcome,'$.state')='already_done'))"
 # Waiting on others: its run found a step still open on someone else's side (outcome waiting: a review, merge, deploy,
