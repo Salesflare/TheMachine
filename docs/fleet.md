@@ -533,6 +533,12 @@ Your Machine then shares the addresses of its work accounts with your Fleet, so 
 and nothing else about you. Everything above applies the same way. You can disconnect it from your account at any time;
 its key then stops working.
 
+Your account, and only yours, also gets your dashboard's addresses (`POST /me`): `dashboard` for the Open your dashboard
+link, and `app_address`, its Tailscale address (`https://<machine>.<tailnet>.ts.net[:8443]/<path>/`), so the phone app
+opens this Machine after you sign in there (`fleet.app_address`). Only 443 and 8443, the default port; a dashboard on
+another domain or any other port sends none. Settings, General says when it is shared. Unpair (Settings, AIs) or Disconnect in your account deletes
+them on the Network.
+
 ### Sign-ins for it
 
 Some sources sign in through The Machine's own app: Intercom, Google (Gmail and Calendar), Microsoft (Outlook mail and

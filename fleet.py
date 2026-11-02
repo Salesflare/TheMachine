@@ -318,6 +318,27 @@ def dashboard_address(config):
     return f"https://{host}/{str(config.get('dashboard_path') or '/').strip('/')}".rstrip('/') + '/'
 
 
+TAILNET_LABEL = re.compile(r'[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?')
+APP_PATH = re.compile(r'/(?:[A-Za-z0-9._~-]+/)*')
+APP_OWN_PORT = ':8443'  # the dashboard's default port on a self-hosted Machine; besides it only 443
+
+
+def app_address(config):
+    """The dashboard's Tailscale https address (https://<machine>.<tailnet>.ts.net/<path>/), told to the Network so the
+    phone app opens this Machine after its owner signs in there. Only that address, never a secret; None when the
+    dashboard has none on 443 or 8443 (another domain, any other port), or on a hosted Machine."""
+    if config.get('manage_url'):
+        return None
+    host = str(config.get('dashboard_host') or '').strip().lower().removesuffix(':443')
+    host, port = host.removesuffix(APP_OWN_PORT), host.endswith(APP_OWN_PORT)  # the default port: the app takes it too
+    labels = host.split('.')
+    if not host.endswith('.ts.net') or len(labels) < 4 or not all(TAILNET_LABEL.fullmatch(p) for p in labels):
+        return None
+    path = '/' + '/'.join(p for p in str(config.get('dashboard_path') or '/').strip('/').split('/') if p)
+    path = path.rstrip('/') + '/'
+    return f'https://{host}{APP_OWN_PORT if port else ""}{path}' if APP_PATH.fullmatch(path) else None
+
+
 def pair(code, label, emails, timeout=30):
     """A self-hosted Machine trades the pairing code from its owner's account for its own Network token: {token, label}.
     NETWORK first, its old address RELAY when that cannot be reached."""
@@ -1753,7 +1774,9 @@ class Fleet(fleet_requests.Requests, fleet_reviews.Reviews, friends.Friends, con
             # A self-hosted Machine's addresses, for its teammates' "who knows", and its dashboard's address, for the
             # Open your dashboard button on its owner's Account page
             # remove_work: it removes a Work Fleet's company data when asked, after its owner leaves (removals_round)
-            me = {'emails': account_emails(self.config), 'dashboard': dashboard_address(self.config), 'remove_work': True}
+            # app_address: its Tailscale address, for the phone app's sign-in (None deletes it on the Network)
+            me = {'emails': account_emails(self.config), 'dashboard': dashboard_address(self.config), 'remove_work': True,
+                  'app_address': app_address(self.config)}
             if self.meta('me_sent') != me:
                 try:
                     self.relay.call('POST', '/me', me, timeout=30)
@@ -3598,7 +3621,8 @@ class Fleet(fleet_requests.Requests, fleet_reviews.Reviews, friends.Friends, con
             waiting = db.execute("SELECT COUNT(*) FROM fleet_in WHERE status='waiting' AND kind NOT IN (%s)" % ','.join('?' * len(QUIET)), QUIET).fetchone()[0]
             waiting += db.execute("SELECT COUNT(*) FROM fleet_notices WHERE kind IN ('seat_request','friend_request') AND status='open'").fetchone()[0]
         # Which to-dos Ask to review is offered on: 'work', 'personal', by the Fleets whose Network carries reviews
-        return {'on': True, 'waiting': waiting + self.proposals(), 'reviews': [x for x in ('work', 'personal') if self.review_fleets(x)]}
+        return {'on': True, 'waiting': waiting + self.proposals(), 'reviews': [x for x in ('work', 'personal') if self.review_fleets(x)],
+                'app_address': bool((self.meta('me_sent') or {}).get('app_address'))}  # Settings says it is shared
 
     def annotate(self, db, suggestions):
         """Who else is on a card's email, and what the Fleet said about its meeting."""
