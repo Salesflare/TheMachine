@@ -5,7 +5,7 @@
 const reviewing=new Map(),reviewViews=new Map(),reviewDrafts=new Map();
 // Offered where a Fleet of this to-do's side (Work, or the Family for Personal) carries reviews and has someone in it.
 const canReview=s=>!closed(s)&&s.status!=='snoozed'&&!!state?.fleet?.on&&(state.fleet.reviews||[]).includes(s.scope==='work'?'work':'personal')&&!s.review?.open&&!s.review_in&&!reviewing.has(s.id);
-const reviewMore=s=>canReview(s)?`<button type="button" class="ghost" data-review-ask="${esc(s.id)}">${esc(t('Ask to review'))}</button>`:'';
+const reviewMore=s=>canReview(s)?html`<button type="button" class="ghost" data-review-ask="${s.id}">${t('Ask to review')}</button>`:'';
 const reviewChip=(v,n,d)=>d.dropped?.includes(n)?'':`<span class="agent-get"><i class="via-ico via-${v.kind==='email'?'mail':'chat'}" aria-hidden="true"></i>${esc(v.label)}<button type="button" class="chip-x" data-review-drop="${n}" aria-label="${esc(t('Leave out {}',v.label))}" title="${esc(t('Leave out'))}">×</button></span>`;
 // The picker: who (one person), what goes (the draft or the to-do's text, shown as it is), its sources as chips, a note.
 function reviewEditor(s){const d=reviewing.get(s.id);if(!d||closed(s))return'';const id=esc(s.id);
