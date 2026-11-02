@@ -475,6 +475,65 @@ class Calls(Base):
             found = {(c['name'], c['kind']): c['official'] for c in ai_access.connections(db)}
         self.assertEqual(found, {('ChatGPT', 'oauth'): True, ('Claude', 'oauth'): False, ('Script', 'key'): False})
 
+    def sign_in_at(self, uri, level='draft', area='both', expiry='30d', messages=False):
+        client, verifier, code, _ = self.connect(level, area, expiry, uri=uri)
+        status, tokens = self.token({'grant_type': 'authorization_code', 'code': code, 'redirect_uri': uri,
+                                     'client_id': client['client_id'], 'code_verifier': verifier})
+        self.assertEqual(status, 200, tokens)
+        return client, tokens
+
+    def test_signing_in_again_through_the_official_app_replaces_the_earlier_connection(self):
+        back = ai_access.OFFICIAL_CALLBACK + 'chatgpt'
+        first, old = self.sign_in_at(back, level='draft', area='both', expiry='1y')
+        self.assertFalse(self.tool(old['access_token'], 'list_todos')[0])
+        with self.db() as db:
+            was = db.execute('SELECT id FROM ai_connections').fetchone()[0]
+        self.sign_in_at(ai_access.OFFICIAL_CALLBACK + 'claude')  # another app: kept
+        second, new = self.sign_in_at(back, level='read', area='work', expiry='7d')  # ChatGPT again, narrower
+        with self.db() as db:
+            shown = ai_access.connections(db)
+            kept = db.execute("SELECT * FROM ai_connections WHERE client_id=?", (second['client_id'],)).fetchone()
+            self.assertIsNone(db.execute('SELECT 1 FROM ai_clients WHERE id=?', (first['client_id'],)).fetchone())
+            moved = {r[0] for r in db.execute('SELECT connection_id FROM ai_activity')}
+            saved = json.loads(db.execute('SELECT saved FROM ai_folded WHERE connection_id=?', (was,)).fetchone()[0])
+        self.assertEqual(sorted(c['name'] for c in shown), ['ChatGPT', 'Claude'])
+        self.assertEqual((kept['level'], kept['area']), ('read', 'work'))  # exactly what was approved last, nothing wider
+        self.assertNotIn(was, moved)
+        self.assertEqual(saved['connection']['level'], 'draft')
+        self.assertEqual(self.call(old['access_token'], 'ping')[0], 401)  # the earlier sign-in ended
+        self.assertEqual(self.token({'grant_type': 'refresh_token', 'refresh_token': old['refresh_token'], 'client_id': first['client_id']})[0], 401)
+        self.assertFalse(self.tool(new['access_token'], 'list_todos')[0])
+        with self.db() as db:
+            lines = a.activity_log.page(db, self.app.config, kind='ai', actor=kept['id'])['items']
+        self.assertGreaterEqual([x['what'] for x in lines].count('Connected'), 2)  # its history came along
+
+    def test_direct_and_unverified_ais_are_never_folded(self):
+        for uri in (CLAUDE, CLAUDE, ai_access.OFFICIAL_CALLBACK + 'other', ai_access.OFFICIAL_CALLBACK + 'other'):
+            self.connect(uri=uri)
+        with self.db() as db:
+            self.assertEqual(len(ai_access.connections(db)), 4)
+        _, client = self.register((ai_access.OFFICIAL_CALLBACK + 'claude', 'https://evil.example/cb'))
+        with self.db() as db:
+            self.assertIsNone(ai_access.app_key(db, client['client_id']))
+
+    def test_earlier_duplicates_fold_into_the_one_that_works_and_was_approved_last(self):
+        back = ai_access.OFFICIAL_CALLBACK + 'claude'
+        rows = (('aic_old', 'draft', '2026-10-01T09:00:00+00:00'), ('aic_mid', 'read', '2026-10-02T09:00:00+00:00'),
+                ('aic_new', 'off', '2026-10-03T09:00:00+00:00'))
+        with self.db() as db:  # as an install has them from before one per app: each sign-in its own connection
+            for cid, level, at in rows:
+                client = ai_access.register(db, {'redirect_uris': [back], 'client_name': 'Claude'})['client_id']
+                db.execute("INSERT INTO ai_connections(id,name,kind,client_id,level,area,expires_at,created_at) VALUES(?,'Claude','oauth',?,?,'both',?,?)",
+                           (cid, client, level, '2027-10-01T09:00:00+00:00', at))
+                ai_access.log(db, cid, 'connect', 'ok', 'Read', at=dt.datetime.fromisoformat(at))
+            ai_access.log(db, 'aic_old', 'list_todos', 'ok', '3 to-dos')
+            ai_access.ensure(db)
+            shown = ai_access.connections(db)
+            folded = {r[0] for r in db.execute('SELECT connection_id FROM ai_folded')}
+        # the one that works and was approved last stays, with its own access; the turned-off newer one folds too
+        self.assertEqual([(c['id'], c['level'], c['calls']) for c in shown], [('aic_mid', 'read', 1)])
+        self.assertEqual(folded, {'aic_old', 'aic_new'})
+
     def test_a_key_works_as_a_bearer_and_is_shown_once(self):
         view = self.app.action('ai_key', {'name': 'Script', 'level': 'read', 'area': 'work', 'expiry': '7d'}, owner_dashboard=True)
         key = view['made']['key']

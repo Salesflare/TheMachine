@@ -65,7 +65,9 @@ Finché Messaggi è attivo, le modifiche al Graph di un’IA con **Lettura e mod
 
 ## In Impostazioni
 
-Apri **Impostazioni**, **IA** per vedere ogni IA collegata, con l’ultimo uso e quante chiamate ha fatto. Cambia lì il suo accesso, la sua area o la durata. La chiamata successiva lo usa già. **Disattiva ora** chiude tutti i suoi accessi in una volta. **Movimenti** elenca ogni chiamata, anche quelle rifiutate. **Rimuovi** la toglie.
+Apri **Impostazioni**, **IA** per vedere ogni IA collegata una sola volta, con accesso, area, data di fine e ultimo uso. **Messaggi** si attiva e disattiva direttamente lì. Premi **Cambia** per cambiare il suo accesso, la sua area o la durata. La chiamata successiva lo usa già. **Movimenti** elenca ogni chiamata, anche quelle rifiutate. **Disattiva ora** la mette in pausa: tutti i suoi accessi si chiudono, la sua cronologia resta. **Rimuovi** la toglie insieme alla cronologia.
+
+Se accedi di nuovo alla stessa IA, la nuova approvazione sostituisce quella precedente.
 
 Un’IA che non sa accedere da sola può usare una chiave. In **Aggiungi una chiave**, dalle un nome, scegli accesso e durata e premi **Crea chiave**. Copia subito la chiave: si vede una volta sola. L’IA la invia come `Authorization: Bearer <key>`.
 

@@ -65,7 +65,9 @@ Zolang Berichten aanstaat, wachten de Graph-wijzigingen van een AI met **Lezen e
 
 ## In Instellingen
 
-Open **Instellingen**, **AI's** om elke gekoppelde AI te zien, met wanneer hij het laatst werd gebruikt en hoeveel oproepen hij deed. Pas daar zijn toegang, zijn gebied of de duur aan. De volgende oproep gebruikt het meteen. **Nu uitzetten** beëindigt al zijn logins in één keer. **Activiteit** toont elke oproep, ook geweigerde. **Verwijderen** haalt hem weg.
+Open **Instellingen**, **AI's** om elke gekoppelde AI één keer te zien, met zijn toegang, gebied, einddatum en laatste gebruik. **Berichten** zet je daar meteen aan en uit. Druk op **Wijzigen** om zijn toegang, zijn gebied of de duur aan te passen. De volgende oproep gebruikt het meteen. **Activiteit** toont elke oproep, ook geweigerde. **Nu uitzetten** pauzeert hem: al zijn logins stoppen, zijn geschiedenis blijft. **Verwijderen** haalt hem weg, met zijn geschiedenis.
+
+Log je opnieuw in bij dezelfde AI, dan vervangt de nieuwe goedkeuring de vorige.
 
 Een AI die niet zelf kan inloggen, kan een sleutel gebruiken. Geef hem onder **Sleutel toevoegen** een naam, kies de toegang en de duur en druk op **Sleutel maken**. Kopieer de sleutel meteen: hij wordt maar één keer getoond. De AI stuurt hem als `Authorization: Bearer <key>`.
 

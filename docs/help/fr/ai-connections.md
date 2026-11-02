@@ -65,7 +65,9 @@ Tant que Messages est activé, les modifications du Graph d’une IA en **Lectur
 
 ## Dans Paramètres
 
-Ouvrez **Paramètres**, **IA** pour voir chaque IA connectée, avec sa dernière utilisation et son nombre d’appels. Modifiez-y son accès, son domaine ou sa durée. L’appel suivant en tient compte. **Désactiver maintenant** ferme toutes ses connexions d’un coup. **Activité** liste chaque appel, les refusés aussi. **Retirer** la supprime.
+Ouvrez **Paramètres**, **IA** pour voir chaque IA connectée une seule fois, avec son accès, son domaine, sa date de fin et sa dernière utilisation. **Messages** s’active et se désactive directement là. Appuyez sur **Modifier** pour changer son accès, son domaine ou sa durée. L’appel suivant en tient compte. **Activité** liste chaque appel, les refusés aussi. **Désactiver maintenant** la met en pause : toutes ses connexions se ferment, son historique reste. **Retirer** la supprime avec son historique.
+
+Si vous vous reconnectez à la même IA, la nouvelle autorisation remplace l’ancienne.
 
 Une IA qui ne peut pas se connecter seule peut utiliser une clé. Sous **Ajouter une clé**, nommez-la, choisissez l’accès et la durée, puis appuyez sur **Créer la clé**. Copiez la clé tout de suite : elle ne s’affiche qu’une fois. L’IA l’envoie comme `Authorization: Bearer <key>`.
 

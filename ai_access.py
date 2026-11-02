@@ -81,6 +81,8 @@ CREATE INDEX IF NOT EXISTS ai_activity_connection ON ai_activity(connection_id,a
 CREATE TABLE IF NOT EXISTS ai_writes(id INTEGER PRIMARY KEY,connection_id TEXT NOT NULL,activity_id INTEGER,at TEXT NOT NULL,tool TEXT NOT NULL,
   node_id TEXT NOT NULL,changes TEXT NOT NULL,undone_at TEXT,waiting INTEGER NOT NULL DEFAULT 0);
 CREATE INDEX IF NOT EXISTS ai_writes_activity ON ai_writes(activity_id);
+CREATE TABLE IF NOT EXISTS ai_folded(id INTEGER PRIMARY KEY,at TEXT NOT NULL,connection_id TEXT NOT NULL,into_id TEXT NOT NULL,
+  saved TEXT NOT NULL);
 """
 # Added after the tables first shipped: (table, column, its definition)
 COLUMNS = (('ai_connections', 'messages', 'INTEGER NOT NULL DEFAULT 0'), ('ai_writes', 'waiting', 'INTEGER NOT NULL DEFAULT 0'))
@@ -217,6 +219,7 @@ def ensure(db):
     for table, column, definition in COLUMNS:
         if column not in {r[1] for r in db.execute(f'PRAGMA table_info({table})')}:
             db.execute(f'ALTER TABLE {table} ADD COLUMN {column} {definition}')
+    fold_duplicates(db)
 
 
 def clean_name(value, fallback='AI'):
@@ -390,8 +393,9 @@ def deny(req, issuer):
 
 def approve(db, req, level, area, expiry, issuer, messages=False):
     """The owner's Connect: the connection for this client (one per registration; connecting again updates it) and a
-    code for it, with Messages as the owner left it on the page (off unless ticked). Returns the address the browser
-    goes back to."""
+    code for it, with Messages as the owner left it on the page (off unless ticked). Through the official app, one
+    connection per app: an earlier one of the same app (Claude or ChatGPT) folds into this one (fold). Returns the
+    address the browser goes back to."""
     if req.get('error'):
         return deny(req, issuer)
     if level not in ('read', 'draft') or area not in AREAS or expiry not in EXPIRY_DAYS:
@@ -412,9 +416,70 @@ def approve(db, req, level, area, expiry, issuer, messages=False):
     db.execute('INSERT INTO ai_codes(hash,connection_id,client_id,redirect_uri,challenge,expires_at) VALUES(?,?,?,?,?,?)',
                (digest(code), cid, req['client_id'], req['redirect_uri'], req['challenge'], stamp(at + dt.timedelta(seconds=CODE_SECONDS))))
     db.execute('UPDATE ai_clients SET used_at=? WHERE id=?', (stamp(at), req['client_id']))
+    app = app_key(db, req['client_id'])
+    for other in (_same_app(db, app) if app else ()):
+        if other['id'] != cid:
+            fold(db, other['id'], cid)
     log(db, cid, 'connect', 'ok', ' · '.join(i18n.t(w) for w in (LEVEL_WORDS[level], AREA_WORDS[area], EXPIRY_WORDS[expiry])
                                              + (('Messages: on',) if messages else ())))
     return _back(req, issuer, code=code)
+
+
+# ------------------------------------------------------------------ one connection per app (the official app)
+
+
+def app_key(db, client_id):
+    """The official app a registration belongs to: 'claude' or 'chatgpt' when every return address it registered is
+    the account's callback for that app (the account checked the AI's own return address), else None. A direct or
+    unverified AI is never folded: two of them may be two different things with one name."""
+    row = db.execute('SELECT redirect_uris FROM ai_clients WHERE id=?', (str(client_id or ''),)).fetchone()
+    kinds = {official(u) for u in json.loads(row['redirect_uris'])} if row else set()
+    return kinds.pop() if len(kinds) == 1 and kinds <= {'claude', 'chatgpt'} else None
+
+
+def _same_app(db, app):
+    rows = db.execute("SELECT * FROM ai_connections WHERE kind='oauth' AND client_id IS NOT NULL").fetchall()
+    return [r for r in rows if app_key(db, r['client_id']) == app]
+
+
+def fold(db, connection_id, into_id):
+    """An earlier connection of the same official app goes into the one the owner approved last: its sign-ins end
+    (tokens and codes), its activity and Graph changes move over (Undo keeps working), and the connection and its
+    registration go. What it had is kept in ai_folded first. The kept one's access stays exactly as approved: a fold
+    never widens or narrows it."""
+    row = _connection(db, connection_id)
+    take = lambda sql: [dict(r) for r in db.execute(sql, (row['id'],))]  # noqa: E731
+    client = db.execute('SELECT * FROM ai_clients WHERE id=?', (row['client_id'] or '',)).fetchone()
+    saved = {'connection': dict(row), 'client': dict(client) if client else None,
+             'tokens': take('SELECT * FROM ai_tokens WHERE connection_id=?'), 'codes': take('SELECT * FROM ai_codes WHERE connection_id=?'),
+             'activity': [r['id'] for r in db.execute('SELECT id FROM ai_activity WHERE connection_id=?', (row['id'],))],
+             'writes': [r['id'] for r in db.execute('SELECT id FROM ai_writes WHERE connection_id=?', (row['id'],))]}
+    db.execute('INSERT INTO ai_folded(at,connection_id,into_id,saved) VALUES(?,?,?,?)', (stamp(), row['id'], into_id, json.dumps(saved)))
+    db.execute('UPDATE ai_activity SET connection_id=? WHERE connection_id=?', (into_id, row['id']))
+    db.execute('UPDATE ai_writes SET connection_id=? WHERE connection_id=?', (into_id, row['id']))
+    db.execute('UPDATE ai_connections SET used_at=? WHERE id=? AND (used_at IS NULL OR used_at<?)', (row['used_at'], into_id, row['used_at'] or ''))
+    for sql in ('DELETE FROM ai_tokens WHERE connection_id=?', 'DELETE FROM ai_codes WHERE connection_id=?', 'DELETE FROM ai_connections WHERE id=?'):
+        db.execute(sql, (row['id'],))
+    if row['client_id']:
+        db.execute('DELETE FROM ai_clients WHERE id=?', (row['client_id'],))
+
+
+def fold_duplicates(db):
+    """Connections made before one per app (each sign-in through the official app registered anew): per app, the one
+    that still works (on, not expired) and was approved last stays as it is; the others fold into it."""
+    at, groups = stamp(), {}
+    for r in db.execute("SELECT * FROM ai_connections WHERE kind='oauth' AND client_id IS NOT NULL").fetchall():
+        app = app_key(db, r['client_id'])
+        if app:
+            groups.setdefault(app, []).append(r)
+    for rows in groups.values():
+        if len(rows) < 2:
+            continue
+        approved = lambda r: db.execute("SELECT max(at) FROM ai_activity WHERE connection_id=? AND tool='connect'", (r['id'],)).fetchone()[0] or r['created_at']  # noqa: E731
+        keep = max(rows, key=lambda r: (r['level'] != 'off' and r['expires_at'] > at, approved(r), r['created_at']))
+        for r in rows:
+            if r['id'] != keep['id']:
+                fold(db, r['id'], keep['id'])
 
 
 LEVEL_WORDS = {'off': 'Off', 'read': 'Read', 'draft': 'Read & edit'}  # 'draft' kept as the stored value: nothing migrates

@@ -65,7 +65,9 @@ Enquanto Mensagens estiver ativado, as mudanças no Graph de uma IA com **Ler e 
 
 ## Em Configurações
 
-Abra **Configurações**, **IAs** para ver cada IA conectada, com o último uso e quantas chamadas fez. Mude ali o acesso, a área ou a duração. A próxima chamada já usa isso. **Desativar agora** encerra todos os logins dela de uma vez. **Atividade** lista cada chamada, as recusadas também. **Remover** tira a IA.
+Abra **Configurações**, **IAs** para ver cada IA conectada uma vez só, com acesso, área, data de fim e último uso. **Mensagens** liga e desliga ali mesmo. Toque em **Mudar** para mudar o acesso, a área ou a duração. A próxima chamada já usa isso. **Atividade** lista cada chamada, as recusadas também. **Desativar agora** pausa a IA: todos os logins dela terminam, o histórico fica. **Remover** tira a IA junto com o histórico.
+
+Se você entrar de novo na mesma IA, a nova aprovação substitui a anterior.
 
 Uma IA que não consegue entrar sozinha pode usar uma chave. Em **Adicionar uma chave**, dê um nome, escolha o acesso e a duração e toque em **Criar chave**. Copie a chave na hora: ela aparece só uma vez. A IA envia como `Authorization: Bearer <key>`.
 

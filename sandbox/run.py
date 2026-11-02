@@ -116,27 +116,35 @@ def fake_help(config, prompt, model=None, thinking=None):
 
 
 def seed_ai(app):
-    """Settings, AIs (ai_access.py): Claude connected through the official app for Work with Read & edit, and a key
+    """Settings, AIs (ai_access.py): Claude connected through the official app for Work with Read & edit, ChatGPT for
+    Work with Read (each signed in twice, shown once), and a key
     for a script that only reads, with a few calls each and one refused. Writes only through ai_access."""
     import ai_access
     now = dt.datetime.now(dt.timezone.utc)
     with app.store.connect() as db:
         if ai_access.connections(db):
             return
-        back = ai_access.OFFICIAL_CALLBACK + 'claude'
-        client = ai_access.register(db, {'redirect_uris': [back], 'client_name': 'Claude'})
-        req = {'client_id': client['client_id'], 'redirect_uri': back, 'name': 'Claude', 'challenge': 'x' * 43, 'state': ''}
-        ai_access.approve(db, req, 'draft', 'work', '30d', 'http://127.0.0.1')
-        cid = next(c['id'] for c in ai_access.connections(db) if c['kind'] == 'oauth')
+        def sign_in(kind, name, level, area):  # each sign-in through the official app registers anew
+            back = ai_access.OFFICIAL_CALLBACK + kind
+            client = ai_access.register(db, {'redirect_uris': [back], 'client_name': name})
+            req = {'client_id': client['client_id'], 'redirect_uri': back, 'name': name, 'challenge': 'x' * 43, 'state': ''}
+            ai_access.approve(db, req, level, area, '30d', 'http://127.0.0.1')
+            return db.execute('SELECT id FROM ai_connections WHERE client_id=?', (client['client_id'],)).fetchone()[0]
+        # Signed in twice each: the later sign-in replaces the earlier one, so each shows once (ai_access.fold)
+        sign_in('chatgpt', 'ChatGPT', 'read', 'both')
+        chatgpt = sign_in('chatgpt', 'ChatGPT', 'read', 'work')
+        sign_in('claude', 'Claude', 'draft', 'work')
+        cid = sign_in('claude', 'Claude', 'draft', 'work')
         key = ai_access.new_key(db, 'Morning script', 'read', 'both', '7d')['id']
         lines = [(cid, 25, 'list_todos', 'ok', '6 to-dos'), (cid, 24, 'search_graph', 'ok', '2 found'),
                  (cid, 20, 'get_todo', 'ok', '“Send the renewal quote”'),
                  (cid, 15, 'create_draft', 'ok', 'To buyer@client.example: “Renewal quote”'),
-                 (key, 14, 'list_todos', 'ok', '9 to-dos'), (key, 13, 'create_todo', 'refused', 'Refused: this connection can only read')]
+                 (chatgpt, 30, 'list_promises', 'ok', '4 promises'), (key, 14, 'list_todos', 'ok', '9 to-dos'), (key, 13, 'create_todo', 'refused', 'Refused: this connection can only read')]
         for connection, hours, tool, outcome, detail in lines:
             ai_access.log(db, connection, tool, outcome, detail, at=now - dt.timedelta(hours=hours))
         ai_access.used(db, cid, at=now - dt.timedelta(minutes=12))
         ai_access.used(db, key, at=now - dt.timedelta(hours=13))
+        ai_access.used(db, chatgpt, at=now - dt.timedelta(hours=30))
         claude = dict(db.execute('SELECT * FROM ai_connections WHERE id=?', (cid,)).fetchone())
         people = [r['node_id'] for r in db.execute('SELECT node_id FROM person_summaries ORDER BY node_id')]
     # Its Graph changes, each with Undo in Activity: through the same tools an AI calls, on a Work person it may see
