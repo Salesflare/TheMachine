@@ -950,6 +950,24 @@ def remember(db, suggestion_id, found, now):
     db.execute('INSERT OR IGNORE INTO follow_up_basis(suggestion_id,basis,at) VALUES(?,?,?)', (suggestion_id, json.dumps(found), now))
 
 
+def remember_thread(db, event_id, sends, now):
+    """Who sent what in an email's thread, read once per waiting point (None: it couldn't be read)."""
+    db.execute('INSERT OR REPLACE INTO follow_up_threads(event_id,sends,at) VALUES(?,?,?)',
+               (event_id, None if sends is None else json.dumps(sends), now))
+
+
+def add_card(db, suggestion_id, project, grouped, item, of_max, now):
+    """A follow-up to-do of `project` (its n of `of_max`, on `item`'s channel, after `item`'s waiting point), open."""
+    db.execute('INSERT OR IGNORE INTO follow_up_cards(suggestion_id,project_id,board_id,grouped,n,of_max,channel,after_event,after_at,state,created_at) '
+               "VALUES(?,?,?,?,?,?,?,?,?,'open',?)", (suggestion_id, project['id'], project['board_id'], int(grouped), item['n'], of_max,
+                                                      item['channel'], item['after'], item['after_at'], now))
+
+
+def sent_alone(db, suggestion_id):
+    """The follow-up went by itself (auto-send), not on the owner's Send."""
+    db.execute('UPDATE follow_up_cards SET auto=1 WHERE suggestion_id=?', (suggestion_id,))
+
+
 def basis_of(db, suggestion_id):
     """(card, basis) for a follow-up to-do, or (None, None) when it isn't one. A to-do from before bases were kept
     gets its waiting point's."""
@@ -1031,6 +1049,11 @@ def hold(db, job_id, suggestion_id, why, news, now, line=None):
     db.execute('INSERT OR REPLACE INTO follow_up_holds(job_id,suggestion_id,why,news,at) VALUES(?,?,?,?,?)',
                (job_id, suggestion_id, why, json.dumps(news) if news is not None else None, now))
     return line
+
+
+def unhold(db, job_id):
+    """The thread was checked again before the send and nothing changed: the job is no longer held."""
+    db.execute('DELETE FROM follow_up_holds WHERE job_id=?', (job_id,))
 
 
 def hold_bounced(db, job, next_action, addresses, now):

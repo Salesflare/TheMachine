@@ -1763,5 +1763,27 @@ class FakeOutbox:
         return {'message_id': 'm-' + job['id']} if job['suggestion_id'] in self.in_sent_mail else {}
 
 
+class OwnTables(unittest.TestCase):
+    """follow_ups.py writes its own tables (the follow-up to-dos, the threads read, the holds); assistant.py calls it."""
+    def test_writes(self):
+        import sqlite3
+        db = sqlite3.connect(':memory:')
+        db.row_factory = sqlite3.Row
+        follow_ups.ensure(db)
+        item = {'n': 2, 'channel': 'email', 'after': 7, 'after_at': '2026-11-01T09:00:00+00:00'}
+        follow_ups.add_card(db, 's1', {'id': 3, 'board_id': 4}, True, item, 3, 'now')
+        follow_ups.add_card(db, 's1', {'id': 3, 'board_id': 4}, False, item, 3, 'later')  # once
+        follow_ups.sent_alone(db, 's1')
+        row = dict(db.execute('SELECT suggestion_id,project_id,board_id,grouped,n,of_max,channel,after_event,state,auto,created_at FROM follow_up_cards').fetchone())
+        self.assertEqual(row, {'suggestion_id': 's1', 'project_id': 3, 'board_id': 4, 'grouped': 1, 'n': 2, 'of_max': 3, 'channel': 'email',
+                               'after_event': 7, 'state': 'open', 'auto': 1, 'created_at': 'now'})
+        follow_ups.remember_thread(db, 7, None, 'now')
+        follow_ups.remember_thread(db, 7, [{'mine': True}], 'later')
+        self.assertEqual(tuple(db.execute('SELECT sends,at FROM follow_up_threads').fetchone()), ('[{"mine": true}]', 'later'))
+        db.execute("INSERT INTO follow_up_holds(job_id,suggestion_id,why,at) VALUES('j1','s1','changed','now')")
+        follow_ups.unhold(db, 'j1')
+        self.assertIsNone(db.execute('SELECT 1 FROM follow_up_holds').fetchone())
+
+
 if __name__ == '__main__':
     unittest.main()
