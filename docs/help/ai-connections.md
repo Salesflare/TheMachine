@@ -19,9 +19,9 @@ A draft waits in your Machine until you read it and press Send yourself. A conne
 
 ## Connect one
 
-Open **Settings**, **AIs**. There are two ways in. **Official app** comes first: **Add in ChatGPT**, **Add in Claude**, and one address for every Machine, `https://mcp.themachine.computer/mcp`, with **Copy**. Below it is your **Private address (end-to-end)**, `https://<your name>.mcp.themachine.computer/mcp`.
+Open **Settings**, **AIs**. **Add in ChatGPT** and **Add in Claude** come first. Under **Or add it by address** are the official app's one address for every Machine, `https://mcp.themachine.computer/mcp`, and your **Private address (end-to-end)**, `https://<your name>.mcp.themachine.computer/mcp`, each with **Copy**.
 
-On a Machine on your own computer, press **Get your address** first. A page on your account opens: check that it shows the same code, confirm and pick a name. Your Machine pairs by itself, no restart. Both ways need this.
+On a Machine on your own computer, press **Set up** under **Get your address** first. A page on your account opens: check that it shows the same code, confirm and pick a name. Your Machine pairs by itself, no restart. Both ways need this.
 
 It then gets its own certificate for the address, which takes a few minutes and needs the `cryptography` package for Python.
 

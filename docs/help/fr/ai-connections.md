@@ -19,9 +19,9 @@ Un brouillon attend dans votre Machine jusqu’à ce que vous le lisiez et appuy
 
 ## En connecter une
 
-Ouvrez **Paramètres**, **IA**. Il y a deux façons de se connecter. **App officielle** vient en premier : **Ajouter dans ChatGPT**, **Ajouter dans Claude**, et une adresse pour toutes les Machines, `https://mcp.themachine.computer/mcp`, avec **Copier**. En dessous se trouve votre **Adresse privée (de bout en bout)**, `https://<votre nom>.mcp.themachine.computer/mcp`.
+Ouvrez **Paramètres**, **IA**. **Ajouter dans ChatGPT** et **Ajouter dans Claude** viennent en premier. Sous **Ou ajoutez-la avec une adresse** se trouvent l’adresse de l’app officielle pour toutes les Machines, `https://mcp.themachine.computer/mcp`, et votre **Adresse privée (de bout en bout)**, `https://<votre nom>.mcp.themachine.computer/mcp`, chacune avec **Copier**.
 
-Sur une Machine installée sur votre ordinateur, appuyez d’abord sur **Obtenir votre adresse**. Une page de votre compte s’ouvre : vérifiez qu’elle affiche le même code, confirmez et choisissez un nom. Votre Machine s’associe d’elle-même, sans redémarrage. Les deux façons en ont besoin.
+Sur une Machine installée sur votre ordinateur, appuyez d’abord sur **Configurer** sous **Obtenir votre adresse**. Une page de votre compte s’ouvre : vérifiez qu’elle affiche le même code, confirmez et choisissez un nom. Votre Machine s’associe d’elle-même, sans redémarrage. Les deux façons en ont besoin.
 
 Elle obtient ensuite son propre certificat pour l’adresse. Cela prend quelques minutes et demande le paquet `cryptography` pour Python.
 

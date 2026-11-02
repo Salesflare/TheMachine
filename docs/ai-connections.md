@@ -9,15 +9,15 @@ outside only: The Machine's own agent, Do it and [coding agents](agents.md) are 
 
 ## Two ways in
 
-Settings, **AIs** shows two addresses, each with Copy, and the steps for ChatGPT and Claude once. The official app comes
-first and is the default.
+Settings, **AIs** shows Add in ChatGPT and Add in Claude first, the official app's listings and the default. Folded under
+**Or add it by address** are the two addresses, each with Copy, and the steps to add one by hand in ChatGPT or Claude.
 
 ### Claude: the connector directory
 
 The official app is listed in Claude's connector directory:
 `https://claude.ai/directory/the-machine` (`AI_CLAUDE_DIRECTORY` in `dashboard/settings-ai.js`). That is the
 one-click way for Claude: **Add in Claude** opens the listing, Connect there starts the official app's sign-in below with
-the shared address, nothing to paste. It shows above the shared address once the official app is ready (`shared`).
+the shared address, nothing to paste. It shows once the official app is ready (`shared`).
 The shared address stays for a custom connector and other clients.
 
 ### ChatGPT: the plugin listing
@@ -72,8 +72,8 @@ In Settings each such connection is tagged **Official app** (`connections()`, `o
 
 The official app shows when the account can reach this Machine at its private address (`ai_app.ai_reach`, `shared`): a
 hosted Machine with a name, or a paired self-hosted one with a name of its own and its certificate ready. Until then
-Add in ChatGPT and Add in Claude still show, saying they're ready once this Machine has its address, above **Get your
-address** ([Pairing](#pairing)) or the address's state, which both ways need.
+ChatGPT and Claude show muted, without a button, with one line (ready once this Machine has its address), above **Get
+your address** with **Set up** ([Pairing](#pairing)) or the address's state, which both ways need.
 
 ## Connections
 
