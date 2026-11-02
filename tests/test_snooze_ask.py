@@ -9,6 +9,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 import dashboard_parts
+import timeutil
 
 spec = importlib.util.spec_from_file_location('snooze_ask_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
@@ -26,7 +27,7 @@ class SnoozeFromChange(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         zone = a.local_tz()
         a.set_timezone('Europe/Brussels')
-        self.addCleanup(lambda: setattr(a, 'LOCAL_TZ', zone))
+        self.addCleanup(lambda: setattr(timeutil, 'LOCAL_TZ', zone))
         self.clock = patch.object(a, 'now', return_value=at(2026, 10, 22, 10, 6))  # Thursday, summer time
         self.clock.start()
         self.addCleanup(self.clock.stop)

@@ -5,6 +5,7 @@ from pathlib import Path
 from unittest.mock import patch
 import assistant as a
 import notify
+import timeutil
 
 SUB = {'endpoint': 'https://fcm.googleapis.com/fcm/send/abc', 'keys': {'p256dh': 'B' + 'x' * 86, 'auth': 'y' * 22}}
 UTC = a.dt.timezone.utc
@@ -190,7 +191,7 @@ class Notifications(unittest.TestCase):
         with self.store.connect() as db:
             notify.hold(db, 'push', 'todo', 'T', t0, payload={'title': 'T'})
         night = a.dt.datetime(2026, 10, 12, 23, 30, tzinfo=UTC).timestamp()
-        with patch.object(a, 'WORK_HOURS', dict(a.WORK_HOURS_DEFAULT, end='18:00')):
+        with patch.dict(timeutil.WORK_HOURS, dict(timeutil.WORK_HOURS_DEFAULT, end='18:00')):
             self.assertIsNone(self.step(night))
         with self.store.connect() as db:
             self.assertEqual(db.execute("SELECT count(*) FROM notify_queue WHERE channel='push'").fetchone()[0], 0)

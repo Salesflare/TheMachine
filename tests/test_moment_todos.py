@@ -13,6 +13,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import locale_prefs
+import timeutil
 
 ROOT = Path(__file__).parent.parent
 spec = importlib.util.spec_from_file_location('moment_assistant', ROOT / 'assistant.py')
@@ -78,7 +79,7 @@ class Store(unittest.TestCase):
         self.app = object.__new__(a.App)
         self.app.store = self.store
         self.app.config = {'accounts': [{'id': 'g'}, {'id': 'c'}], 'prepare_ahead': False}
-        tz = patch.object(a, 'LOCAL_TZ', a.ZoneInfo('Europe/Brussels'))
+        tz = patch.object(timeutil, 'LOCAL_TZ', a.ZoneInfo('Europe/Brussels'))
         tz.start()
         self.addCleanup(tz.stop)
 

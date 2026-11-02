@@ -7,6 +7,7 @@ from pathlib import Path
 from unittest.mock import patch
 from zoneinfo import ZoneInfo
 import test_ux as ux
+import timeutil
 a = ux.a
 dt = a.dt
 
@@ -24,7 +25,7 @@ class WeeklyRecap(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
-        for p in (patch.object(a, 'LOCAL_TZ', ZoneInfo('Europe/Brussels')), patch.object(a, 'now', return_value=FRIDAY)):
+        for p in (patch.object(timeutil, 'LOCAL_TZ', ZoneInfo('Europe/Brussels')), patch.object(a, 'now', return_value=FRIDAY)):
             p.start()
             self.addCleanup(p.stop)
         self.path = Path(self.tmp.name) / 'config.json'

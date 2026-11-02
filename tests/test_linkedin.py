@@ -7,6 +7,7 @@ from pathlib import Path
 from unittest.mock import patch
 import next_actions as n
 import test_ux as ux
+import timeutil
 a = ux.a
 li = a.load_connector('linkedin')
 H = a.CONNECTOR_HELPERS
@@ -429,12 +430,12 @@ class ReadWindow(unittest.TestCase):
                  ('2026-10-28T02:00:00+00:00', {**x, 'active_hours': [0, 24]}, None),  # around the clock
                  ('2026-10-28T02:00:00+00:00', {**x, 'service': 'github'}, None)]
         for at, account, want in cases:
-            with self.subTest(at=at, account=account), patch.object(a, 'LOCAL_TZ', a.ZoneInfo('Europe/Amsterdam')):
+            with self.subTest(at=at, account=account), patch.object(timeutil, 'LOCAL_TZ', a.ZoneInfo('Europe/Amsterdam')):
                 self.assertEqual(a.read_window(account, at), want)
 
     def test_the_dashboard_gets_it_with_each_source(self):
         with tempfile.TemporaryDirectory() as tmp, patch.object(a, 'now', return_value='2026-10-28T02:00:00+00:00'), \
-                patch.object(a, 'LOCAL_TZ', a.ZoneInfo('Europe/Amsterdam')):
+                patch.object(timeutil, 'LOCAL_TZ', a.ZoneInfo('Europe/Amsterdam')):
             store = a.Store(Path(tmp) / 'events.sqlite')
             found = {c['id']: c['read_window'] for c in store.snapshot([{**ACCOUNT, 'service': 'linkedin'}, {'id': 'gh', 'service': 'github', 'boundary': 'work'}])['connectors']}
         self.assertEqual(found, {'li': {'hours': [7, 22], 'reads_again_at': '2026-10-28T06:00:00+00:00'}, 'gh': None})
