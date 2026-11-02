@@ -8,13 +8,13 @@ order: 3
 ---
 O painel pode ser instalado como app no celular ou no computador. Depois ele envia uma notificação para cada tarefa, resultado e lembrete quando você não está no painel, dentro do seu [horário de trabalho](work-hours.md). Escolha o que ele envia em [Notificações](notifications.md).
 
-Um aviso discreto no topo de Tarefas oferece as duas coisas, uma de cada vez: primeiro o app, depois as notificações. **Agora não** esconde o aviso por 14 dias, e um segundo **Agora não** para de mostrar naquele dispositivo. Os mesmos controles ficam em **Configurações**, **Geral**, **Este dispositivo**.
+Um aviso discreto no topo de Tarefas oferece as duas coisas, uma de cada vez, assim que você lida com sua primeira tarefa: primeiro as notificações, depois o app. O que já está feito naquele dispositivo nunca aparece. **Agora não** esconde o aviso por 14 dias, e um segundo **Agora não** para de mostrar naquele dispositivo. Os mesmos controles ficam em **Configurações**, **Geral**, **Este dispositivo**.
 
 ## No computador (Chrome ou Edge)
 
 1. Abra seu painel e clique em **Instalar** nesse aviso, ou em **Instalar app** em Configurações.
 2. A The Machine abre em uma janela própria. Fixe na barra de tarefas ou no Dock.
-3. Clique em **Ativar** no próximo aviso e permita as notificações. Uma notificação de teste aparece na hora.
+3. Clique em **Ativar** no aviso e permita as notificações. Uma notificação de teste aparece na hora.
 
 ## No Mac (Safari)
 

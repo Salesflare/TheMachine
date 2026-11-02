@@ -8,13 +8,13 @@ order: 3
 ---
 The dashboard installs as an app on a phone or a computer. It then sends a notification for each to-do, result and reminder when you are away from the dashboard, within your [work hours](work-hours.md). Pick what it sends in [Notifications](notifications.md).
 
-A quiet note at the top of To-dos offers both, one at a time: first the app, then notifications. **Not now** hides it for 14 days, and a second **Not now** stops it on that device. The same controls stay in **Settings**, **General**, **This device**.
+A quiet note at the top of To-dos offers both, one at a time, once you've handled your first to-do: first notifications, then the app. What's already done on that device never shows. **Not now** hides it for 14 days, and a second **Not now** stops it on that device. The same controls stay in **Settings**, **General**, **This device**.
 
 ## On a computer (Chrome or Edge)
 
 1. Open your dashboard and click **Install** on that note, or **Install app** in Settings.
 2. The Machine opens in its own window. Pin it to your taskbar or dock.
-3. Click **Turn on** on the next note and allow notifications. A test notification shows up right away.
+3. Click **Turn on** on the note and allow notifications. A test notification shows up right away.
 
 ## On a Mac (Safari)
 

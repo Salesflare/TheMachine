@@ -13,10 +13,10 @@ const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modul
 // SHOTS=<folder> saves light and dark screenshots at 390 and 1440.
 const dashboard=await dashboardPage();
 const now=new Date().toISOString();
-let setupHints=[];
+let setupHints=[],handledFirst=true,phoneStore=null;
 let connectors=[{id:'mail',service:'gmail',email:'owner@example.org',display_name:'Mail',status:'ok'}];
 const status=()=>({suggestions:[{id:'ab'.repeat(8),title:'Reply to Robin about the garden plan',body:'Robin asked for the dates.',status:'pending',scope:'personal',created_at:now,event_ids:[1]}],
- promises:[],connectors,suggestion_counts:{pending:1},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],setup_hints:setupHints});
+ promises:[],connectors,suggestion_counts:{pending:1},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],setup_hints:setupHints,handled_first:handledFirst,phone_app_store:phoneStore});
 const actions=[];
 const server=createServer(async(req,res)=>{let body='';for await(const c of req)body+=c;const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
@@ -34,7 +34,8 @@ const UA={
  android:'Mozilla/5.0 (Linux; Android 15; Pixel 9) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Mobile Safari/537.36',
  iphone:'Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Mobile/15E148 Safari/604.1',
  ipad:'Mozilla/5.0 (iPad; CPU OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Mobile/15E148 Safari/604.1',
- firefox:'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:144.0) Gecko/20100101 Firefox/144.0'};
+ firefox:'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:144.0) Gecko/20100101 Firefox/144.0',
+ phoneApp:'Mozilla/5.0 (Linux; Android 15; Pixel 9) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Mobile Safari/537.36 TheMachineApp/1'};
 // The browser's side, made up: permission, a push subscription, display mode, related apps, and what was asked.
 function fakeBrowser(o){
  const log=window.__log=[];
@@ -88,9 +89,10 @@ try{
  // Chromium on a computer, not installed: the browser's own prompt from the owner's tap, then Installed, for good.
  for(const scheme of ['dark','light']){actions.length=0;
   const {context,page}=await open({scheme});
-  assert.equal((await nudge(page)).kind,'push','before the browser offers an install, the notifications nudge');
-  await page.evaluate(()=>__installPrompt());
-  let n=await nudge(page);assert.equal(n.kind,'desktop');assert.ok(n.shown);
+  assert.equal((await nudge(page)).kind,'push','notifications first');
+  await page.evaluate(()=>__installPrompt());assert.equal((await nudge(page)).kind,'push','notifications first, also with an install on offer');
+  await page.evaluate(()=>{devicePush.perm='granted';devicePush.sub={toJSON:()=>({endpoint:'https://push.example/device-1'})};deviceRender()});
+  let n=await nudge(page);assert.equal(n.kind,'desktop','then the app on this computer');assert.ok(n.shown);
   assert.match(n.text,/Install The Machine/);assert.match(n.text,/Install it and pin it to your taskbar or dock\./);assert.doesNotMatch(n.text,/—|^You/m);
   assert.deepEqual(await asked(page),[],'nothing is asked before a tap');
   if(scheme==='dark'||shots)await shot(page,`install-desktop-1440-${scheme}`);
@@ -106,11 +108,11 @@ try{
   const s=await settings(page);assert.match(s.app,/Installed/);assert.doesNotMatch(s.app,/Install app/);
   await page.reload();await page.locator('#task-'+'ab'.repeat(8)).waitFor({state:'attached'});await ready(page);
   await page.evaluate(()=>document.querySelector('nav [data-tab="inbox"]').click());
-  assert.equal((await nudge(page)).kind,'push','installed for good: next comes notifications');
+  assert.equal((await nudge(page)).kind,'push','installed for good: only notifications are left (off again after the reload)');
   await context.close()}
 
  // Android: the same prompt, with phone words. At 390 the card sits under the top bar.
- for(const scheme of ['dark','light']){const {context,page}=await open({width:390,height:844,ua:'android',scheme});
+ for(const scheme of ['dark','light']){const {context,page}=await open({width:390,height:844,ua:'android',scheme,perm:'granted',sub:true});
   await page.evaluate(()=>__installPrompt());const n=await nudge(page);
   assert.equal(n.kind,'android');assert.match(n.text,/Add it to your home screen\. It opens like an app\./);
   const fit=await page.evaluate(()=>{const n=document.querySelector('#device-nudge').getBoundingClientRect(),t=document.querySelector('#topbar').getBoundingClientRect();return {under:n.top>=t.bottom,fits:document.documentElement.scrollWidth<=innerWidth&&n.right<=innerWidth}});
@@ -207,19 +209,19 @@ try{
 
  // Not now: 14 days, then a day's rest before the next nudge, and a second Not now stops it on this device.
  {const {context,page}=await open({mode:'standalone'});
-  await page.evaluate(()=>__installPrompt());assert.equal((await nudge(page)).kind,'desktop','install first, one at a time');
+  await page.evaluate(()=>__installPrompt());assert.equal((await nudge(page)).kind,'push','notifications first, one at a time');
   await page.locator('#device-nudge [data-nudge-later]').click();
-  let v=await stored(page,'nudge-install');assert.equal(v.n,1);assert.ok(Math.abs(v.until-Date.now()-14*864e5)<60e3,'14 days');
+  let v=await stored(page,'nudge-push');assert.equal(v.n,1);assert.ok(Math.abs(v.until-Date.now()-14*864e5)<60e3,'14 days');
   assert.equal((await nudge(page)).shown,false,'nothing else the same day');
   await page.evaluate(()=>{localStorage.setItem('nudge-rest','0');deviceRender()});
-  assert.equal((await nudge(page)).kind,'push','then notifications');
-  await page.locator('#device-nudge [data-nudge-later]').click();assert.equal((await stored(page,'nudge-push')).n,1);
-  // 14 days later, install again; a second Not now stops it for good.
+  assert.equal((await nudge(page)).kind,'desktop','then the app');
+  await page.locator('#device-nudge [data-nudge-later]').click();assert.equal((await stored(page,'nudge-install')).n,1);
+  // 14 days later, notifications again; a second Not now stops it for good.
   await page.evaluate(()=>{for(const k of ['nudge-install','nudge-push']){const v=JSON.parse(localStorage.getItem(k));v.until=Date.now()-1;localStorage.setItem(k,JSON.stringify(v))}localStorage.setItem('nudge-rest','0');deviceRender()});
-  assert.equal((await nudge(page)).kind,'desktop');
-  await page.locator('#device-nudge [data-nudge-later]').click();assert.deepEqual(await stored(page,'nudge-install'),{n:2,stop:true});
-  await page.evaluate(()=>{localStorage.setItem('nudge-rest','0');deviceRender()});assert.equal((await nudge(page)).kind,'push');
+  assert.equal((await nudge(page)).kind,'push');
   await page.locator('#device-nudge [data-nudge-later]').click();assert.deepEqual(await stored(page,'nudge-push'),{n:2,stop:true});
+  await page.evaluate(()=>{localStorage.setItem('nudge-rest','0');deviceRender()});assert.equal((await nudge(page)).kind,'desktop');
+  await page.locator('#device-nudge [data-nudge-later]').click();assert.deepEqual(await stored(page,'nudge-install'),{n:2,stop:true});
   await page.evaluate(()=>{localStorage.setItem('nudge-rest','0');deviceRender()});assert.equal((await nudge(page)).shown,false,'stopped on this device');
   await page.reload();await page.locator('#task-'+'ab'.repeat(8)).waitFor({state:'attached'});await ready(page);await page.evaluate(()=>__installPrompt());
   assert.equal((await nudge(page)).shown,false);
@@ -250,6 +252,74 @@ try{
   setupHints=[];await page.evaluate(()=>refresh());assert.equal((await nudge(page)).shown,false,'done at setup: gone');
   await context.close()}
  setupHints=[];
+
+ // Only after the owner handled a first to-do: before it, nothing (the first look is the greeting and the work).
+ {handledFirst=false;const {context,page}=await open();await page.evaluate(()=>__installPrompt());
+  assert.equal((await nudge(page)).shown,false,'no nudge before a first handled to-do');
+  handledFirst=true;await page.evaluate(()=>refresh());assert.equal((await nudge(page)).kind,'push','after it, the first one');
+  await context.close()}
+
+ // The whole order on a computer, one at a time, each Not now moving to the next after the day's rest: notifications,
+ // the app, the phone app (once published), then what setup left out: more sources, Telegram, Codex.
+ const HINTS=[{id:'source-github',title:'Connect GitHub?',text:'GitHub mails you often. Connected, I read it directly.',href:'#connect=github',button:'Connect'},
+  {id:'telegram',title:'Reminders in Telegram?',text:'Snoozed to-dos come back as a Telegram message too.',href:'https://app.example.test/setup#telegram',button:'Set up'},
+  {id:'codex',title:'Hand coding to-dos to Codex?',text:'It works on your ChatGPT plan.',href:'https://app.example.test/setup#codex',button:'Connect'}];
+ const STORE={ios:'https://apps.example.test/ios',android:'https://play.example.test/android',page:'https://example.test/app',phones:0};
+ const walk=async page=>{const seen=[];for(let i=0;i<10;i++){const n=await nudge(page);if(!n.shown)break;
+  assert.equal(await page.locator('.device-nudge:not([hidden])').count(),1,'one at a time');seen.push(n.kind);
+  await page.locator('#device-nudge [data-nudge-later]').click();assert.equal((await nudge(page)).shown,false,'Not now: nothing else that day');
+  await page.evaluate(()=>{localStorage.setItem('nudge-rest','0');deviceRender()})}return seen};
+ for(const flag of [true,false]){setupHints=HINTS;phoneStore=flag?STORE:null;
+  const {context,page}=await open({width:1280,height:800});await page.evaluate(()=>__installPrompt());
+  assert.deepEqual(await walk(page),['push','desktop',...(flag?['phone-desk']:[]),'hint:source-github','hint:telegram','hint:codex'],flag?'the order':'phone app flag off: no phone app');
+  if(flag){const v=await stored(page,'nudge-phone');assert.equal(v.n,1);assert.ok(Math.abs(v.until-Date.now()-14*864e5)<60e3,'the phone app backs off like the rest')}
+  await context.close()}
+
+ // A phone's browser with the phone app published: the phone app in the place of installing the web app.
+ for(const [ua,o,store] of [['android',{},'https://play.example.test/android'],['iphone',{noPush:true},'https://apps.example.test/ios']]){
+  setupHints=HINTS;phoneStore=STORE;const {context,page}=await open({width:390,height:844,ua,...o});
+  await page.evaluate(()=>{__installPrompt();window.__opened=[];window.open=(u,...r)=>{window.__opened.push([u,...r]);return null}});
+  const seen=await walk(page);
+  assert.deepEqual(seen,[...(ua==='android'?['push']:[]),'phone','hint:source-github','hint:telegram','hint:codex'],ua);
+  // Get the app opens this phone's store, and the nudge rests.
+  await page.evaluate(()=>{localStorage.clear();deviceRender()});if(ua==='android')await page.locator('#device-nudge [data-nudge-later]').click();
+  await page.evaluate(()=>{localStorage.setItem('nudge-rest','0');deviceRender()});
+  assert.equal((await nudge(page)).kind,'phone');assert.match((await nudge(page)).text,/Get the phone app Notifications, and sharing from any app\./);
+  await page.locator('#device-nudge [data-phone-open]').click();
+  assert.deepEqual(await page.evaluate(()=>window.__opened),[[store,'_blank','noopener']]);assert.equal((await nudge(page)).shown,false);
+  await context.close()}
+ // Flag off on a phone: installing the web app, as before.
+ {setupHints=[];phoneStore=null;const {context,page}=await open({width:390,height:844,ua:'android',perm:'granted',sub:true});
+  await page.evaluate(()=>__installPrompt());assert.equal((await nudge(page)).kind,'android');await context.close()}
+
+ // Done on this device: never shown. Notifications on, running as the installed app, inside the phone app, a phone that
+ // has the app already (on a computer), a source connected (the Machine drops its hint).
+ phoneStore=STORE;setupHints=[];
+ {const {context,page}=await open({mode:'standalone',perm:'granted',sub:true});
+  assert.equal((await nudge(page)).kind,'phone-desk','installed here, notifications on: the phone is another device');await context.close()}
+ for(const [o,why] of [[{width:390,height:844,ua:'phoneApp',perm:'granted',sub:true},'in the phone app'],
+  [{width:390,height:844,ua:'android',mode:'standalone',perm:'granted',sub:true},'the web app on the phone']]){
+  const {context,page}=await open(o);assert.equal((await nudge(page)).shown,false,why);await context.close()}
+ {phoneStore={...STORE,phones:1};const {context,page}=await open({mode:'standalone',perm:'granted',sub:true});
+  assert.equal((await nudge(page)).shown,false,'a phone has the app');
+  setupHints=HINTS.slice(1);await page.evaluate(()=>refresh());assert.equal((await nudge(page)).kind,'hint:telegram','GitHub connected: its hint is gone');
+  await context.close()}
+
+ // Screenshots of each one, at 390 and 1280, light (and dark for the first).
+ if(shots){setupHints=HINTS;phoneStore=STORE;
+  const each=[['push',{}],['install',{perm:'granted',sub:true,prompt:true,noPhone:true}],['phone',{perm:'granted',sub:true,mode:'standalone',phoneOnly:true}],
+   ['hint-source',{perm:'granted',sub:true,mode:'standalone',skip:['phone']}],['hint-telegram',{perm:'granted',sub:true,mode:'standalone',skip:['phone','hint-source-github']}],
+   ['hint-codex',{perm:'granted',sub:true,mode:'standalone',skip:['phone','hint-source-github','hint-telegram']}]];
+  for(const [name,{prompt,phoneOnly,noPhone,skip=[],...o}] of each)for(const width of [390,1280])for(const scheme of name==='push'?['light','dark']:['light']){
+   phoneStore=noPhone?null:STORE;  // the web app's install on a phone: with the phone app off
+   const mobile=width<600,opts={...o,width,height:mobile?844:800,ua:mobile?'android':'chrome',scheme};
+   if(phoneOnly&&mobile)delete opts.mode;
+   const {context,page}=await open(opts);
+   await page.evaluate(skip=>{for(const k of skip)localStorage.setItem('nudge-'+k,JSON.stringify({n:2,stop:true}));deviceRender()},skip);
+   if(prompt)await page.evaluate(()=>__installPrompt());
+   await shot(page,`order-${name}-${width}-${scheme}`);await context.close()}
+  setupHints=[];phoneStore=null}
+ setupHints=[];phoneStore=null;handledFirst=true;
 
  // The site's demo: in a frame, without a service worker, push or notifications. No nudge and nothing asked.
  {const {context,page}=await open({url:base+'frame'});const frame=page.frames().find(f=>f!==page.mainFrame());
