@@ -176,12 +176,11 @@ $('#suggestion-summary').addEventListener('click',e=>{const b=e.target.closest('
 // To-dos that look done: at the top of Done / dismissed, each like a done one there: "Looks done" where that says Done,
 // what shows it as its line, Details, Chat and Reopen (not_done: back on the list). They stay open until the owner closes them.
 const lookExpanded=new Set();  // a link to one opens Done (openCardLink)
-function lookDoneCard(s){const tpl=document.createElement('template');
- tpl.innerHTML=suggestionCard({...s,status:'completed',body:doneWhy(s)||s.body,handled_hint:null,outcome:null,undo_until:null,expired_at:null});
- const a=tpl.content.querySelector('article');if(!a)return '';a.classList.add('looks-done');a.dataset.status=s.status;
- const ct=a.querySelector('.card-badges .chip .ct');if(ct)ct.textContent=t('Looks done');
- for(const b of a.querySelectorAll('.actions [data-choice]')){b.removeAttribute('data-choice');b.dataset.ldNot=s.id}
- return a.outerHTML}
+function lookDoneCard(s){
+ return suggestionCard({...s,status:'completed',body:doneWhy(s)||s.body,handled_hint:null,outcome:null,undo_until:null,expired_at:null})
+  .replace(' is-closed"',' is-closed looks-done"').replace('data-status="completed"',`data-status="${esc(s.status)}"`)
+  .replace(/<span class="ct">[^<]*<\/span>/,`<span class="ct">${esc(t('Looks done'))}</span>`)
+  .replace(/data-choice="(?:reopen|undo)"/g,`data-ld-not="${esc(s.id)}"`)}
 async function lookNotDone(b){const id=b.dataset.ldNot;b.disabled=true;
  try{await decidePost(id,{choice:'not_done',feedback:'',decision_id:crypto.randomUUID()});lookExpanded.delete(id);await refresh();toast(t('Back on your list. I’ll learn from it.'))}
  catch(err){errCaught(err);toast(err.message,true);await refresh().catch(()=>{})}finally{b.disabled=false}}
