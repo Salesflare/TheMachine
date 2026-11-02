@@ -36,7 +36,7 @@ Quando uma tarefa precisa de outra área para seguir, ela pede com um botão **M
 
 ## Os botões
 
-Uma tarefa mostra o próximo passo, como **Fazer** ou **Revisar e enviar**, com **Adiar** ao lado. Veja [Fazer](do-it.md) e [Adiar](snooze.md). Uma tarefa pronta também tem **Pedir mudanças** (diga o que mudar no rascunho e ela refaz) e **Marcar como feita** (já está resolvida).
+Uma tarefa mostra o próximo passo, como **Fazer** ou **Revisar e enviar**, com **Adiar** ao lado. Veja [Fazer](do-it.md) e [Adiar](snooze.md). Uma tarefa pronta também tem **Pedir mudanças** (diga o que mudar no rascunho e ela refaz). **Marcar como feita** (já está resolvida) também está lá: à vista sem rascunho, senão no topo de **…**.
 
 Para fazer de outro jeito, diga isso no **Chat** dela.
 

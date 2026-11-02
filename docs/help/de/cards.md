@@ -36,7 +36,7 @@ Braucht eine Aufgabe einen anderen Bereich, um weiterzukommen, fragt sie mit ein
 
 ## Die Buttons
 
-Eine Aufgabe zeigt ihren nächsten Schritt, etwa **Ausführen** oder **Prüfen und senden**, mit **Zurückstellen** daneben. Siehe [Ausführen](do-it.md) und [Zurückstellen](snooze.md). Eine fertige hat auch **Änderungen anfragen** (sag, was im Entwurf anders sein soll, und sie macht ihn neu) und **Als erledigt markieren** (sie ist erledigt).
+Eine Aufgabe zeigt ihren nächsten Schritt, etwa **Ausführen** oder **Prüfen und senden**, mit **Zurückstellen** daneben. Siehe [Ausführen](do-it.md) und [Zurückstellen](snooze.md). Eine fertige hat auch **Änderungen anfragen** (sag, was im Entwurf anders sein soll, und sie macht ihn neu). **Als erledigt markieren** (sie ist erledigt) gibt es auch: sichtbar ohne Entwurf, sonst oben unter **…**.
 
 Soll sie anders erledigt werden, sag es in ihrem **Chat**.
 

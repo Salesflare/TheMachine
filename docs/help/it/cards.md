@@ -36,7 +36,7 @@ Quando un'attività ha bisogno di un'altra area per andare avanti, lo chiede con
 
 ## I pulsanti
 
-Un'attività mostra il passo successivo, come **Fallo** o **Rivedi e invia**, con **Posticipa** accanto. Vedi [Fallo](do-it.md) e [Posticipa](snooze.md). Una pronta ha anche **Chiedi modifiche** (di' cosa cambiare nella bozza e la rifà) e **Segna come fatto** (è sistemata).
+Un'attività mostra il passo successivo, come **Fallo** o **Rivedi e invia**, con **Posticipa** accanto. Vedi [Fallo](do-it.md) e [Posticipa](snooze.md). Una pronta ha anche **Chiedi modifiche** (di' cosa cambiare nella bozza e la rifà). C'è anche **Segna come fatto** (è sistemata): in vista senza bozza, altrimenti in cima a **…**.
 
 Per farla in un altro modo, dillo nella sua **Chat**.
 

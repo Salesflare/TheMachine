@@ -2680,6 +2680,9 @@ input[type=checkbox],input[type=radio],input[type=range],progress{accent-color:v
   .card .more-menu::before{content:'';position:absolute;top:9px;left:50%;width:36px;height:4px;margin-left:-18px;border-radius:2px;background:var(--border-strong,var(--border))}
   .card .actions .more-menu :is(button,a.open){min-height:48px;padding:12px 14px;font-size:1rem;box-sizing:border-box}
   .card .more-menu .mm-head{font-size:var(--fs-sm);padding-bottom:8px;margin-bottom:4px}
+  .card .actions.two-rows:not(.result-actions)>:first-child{flex:1 1 100%}
+  .card .actions.two-rows:not(.result-actions)>:is(button,a.open):not(:first-child){flex:1 1 auto;min-width:max-content;padding:8px 10px}
+  .card .actions.two-rows:not(.result-actions)>.more-actions{flex:0 0 52px;min-width:52px}
 }
 /* Under Details, an open to-do's title, project and area (todos-cards.js cardFields): each a tap to change. */
 .card-fields{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;align-items:center;margin:2px 0 10px;font-size:var(--fs-sm)}

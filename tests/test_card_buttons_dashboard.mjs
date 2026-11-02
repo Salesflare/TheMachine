@@ -5,8 +5,8 @@ import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
-// Card buttons: the next step, Snooze, on a ready draft Ask for changes and Mark done, and a quiet … with Hand off…,
-// Repeat… and Not needed last. A draft's button says it opens the preview ("Review and send to …"), and Not needed is
+// Card buttons: the next step, Snooze, on a ready draft Ask for changes (Mark done tops its …), and a quiet … with
+// Hand off…, Repeat… and Not needed last. A draft's button says it opens the preview ("Review and send to …"), and Not needed is
 // one compact choice that hides the card's buttons until it is confirmed or canceled.
 const dashboard=await dashboardPage();
 const now=new Date().toISOString(),posts=[];
@@ -44,8 +44,8 @@ try{
   assert.deepEqual(await menu('p1'),['Hand off','Repeat…','Not needed']);
   assert.equal(await page.getByText('Hand off to a teammate').count(),0);
   // A ready draft: the button says it opens the preview first
-  assert.deepEqual(await shown('r1'),['Review and send to Noor','Ask for changes','Mark done','Snooze','More']);
-  assert.deepEqual(await menu('r1'),['Hand off','Repeat…','Not needed']);
+  assert.deepEqual(await shown('r1'),['Review and send to Noor','Ask for changes','Snooze','More']);
+  assert.deepEqual(await menu('r1'),['Mark done','Hand off','Repeat…','Not needed']);  // with a draft, Mark done tops the …
   // A step only the owner can do: Done leads, Plan it (the help around it) is under …; never Do it
   assert.deepEqual(await shown('v1'),['Done','Snooze','More']);
   assert.deepEqual(await menu('v1'),['Plan it','Repeat…','Not needed']);

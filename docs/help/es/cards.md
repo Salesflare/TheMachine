@@ -36,7 +36,7 @@ Cuando una tarea necesita otra área para seguir, lo pide con un botón **Mover 
 
 ## Los botones
 
-Una tarea muestra su siguiente paso, como **Hazlo** o **Revisar y enviar**, con **Posponer** al lado. Consulta [Hazlo](do-it.md) y [Posponer](snooze.md). Una tarea lista también tiene **Pedir cambios** (di qué cambiar en el borrador y lo rehace) y **Marcar como hecha** (ya está resuelta).
+Una tarea muestra su siguiente paso, como **Hazlo** o **Revisar y enviar**, con **Posponer** al lado. Consulta [Hazlo](do-it.md) y [Posponer](snooze.md). Una tarea lista también tiene **Pedir cambios** (di qué cambiar en el borrador y lo rehace). **Marcar como hecha** (ya está resuelta) también está: a la vista sin borrador, si no, arriba en **…**.
 
 Para que se haga de otra forma, dilo en su **Chat**.
 

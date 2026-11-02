@@ -36,7 +36,7 @@ When a to-do needs another area to go on, it asks with a **Move to Work** button
 
 ## The buttons
 
-A to-do shows its next step, like **Do it** or **Review and send**, with **Snooze** beside it. See [Do it](do-it.md) and [Snooze](snooze.md). A ready one also has **Ask for changes** (say what to change in the draft and it redoes it) and **Mark done** (it's handled).
+A to-do shows its next step, like **Do it** or **Review and send**, with **Snooze** beside it. See [Do it](do-it.md) and [Snooze](snooze.md). A ready one also has **Ask for changes** (say what to change in the draft and it redoes it). **Mark done** (it's handled) is there too: in sight when there is no draft, else at the top of **…**.
 
 To have it done another way, say so in its **Chat**.
 

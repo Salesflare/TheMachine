@@ -36,7 +36,7 @@ Quand une tâche a besoin d’un autre espace pour avancer, elle le demande avec
 
 ## Les boutons
 
-Une tâche affiche son étape suivante, comme **Faire** ou **Vérifier et envoyer**, avec **Mettre en attente** à côté. Voir [Faire](do-it.md) et [Mettre en attente](snooze.md). Une tâche prête a aussi **Demander des modifications** (dites ce qu’il faut changer dans le brouillon et elle le refait) et **Marquer comme fait** (c’est réglé).
+Une tâche affiche son étape suivante, comme **Faire** ou **Vérifier et envoyer**, avec **Mettre en attente** à côté. Voir [Faire](do-it.md) et [Mettre en attente](snooze.md). Une tâche prête a aussi **Demander des modifications** (dites ce qu’il faut changer dans le brouillon et elle le refait). **Marquer comme fait** (c’est réglé) est là aussi : visible sans brouillon, sinon en haut de **…**.
 
 Pour la faire autrement, dites-le dans son **Chat**.
 
