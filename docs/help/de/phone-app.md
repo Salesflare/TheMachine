@@ -8,13 +8,13 @@ order: 3
 ---
 Das Dashboard lässt sich als App auf einem Handy oder Computer installieren. Dann schickt es für jede Aufgabe, jedes Ergebnis und jede Erinnerung eine Benachrichtigung, wenn du nicht am Dashboard bist, innerhalb deiner [Arbeitszeiten](work-hours.md). Was es schickt, wählst du unter [Benachrichtigungen](notifications.md).
 
-Ein dezenter Hinweis oben in Aufgaben bietet beides an, eins nach dem anderen: zuerst die App, dann Benachrichtigungen. **Nicht jetzt** blendet ihn 14 Tage aus, und ein zweites **Nicht jetzt** beendet ihn auf diesem Gerät. Dieselben Schalter bleiben in **Einstellungen**, **Allgemein**, **Dieses Gerät**.
+Ein dezenter Hinweis oben in Aufgaben bietet beides an, eins nach dem anderen, sobald du deine erste Aufgabe erledigt hast: zuerst Benachrichtigungen, dann die App. Was auf dem Gerät schon erledigt ist, erscheint nie. **Nicht jetzt** blendet ihn 14 Tage aus, und ein zweites **Nicht jetzt** beendet ihn auf diesem Gerät. Dieselben Schalter bleiben in **Einstellungen**, **Allgemein**, **Dieses Gerät**.
 
 ## Auf einem Computer (Chrome oder Edge)
 
 1. Öffne dein Dashboard und klick in diesem Hinweis auf **Installieren**, oder in den Einstellungen auf **App installieren**.
 2. The Machine öffnet sich in einem eigenen Fenster. Hefte sie an deine Taskleiste oder dein Dock.
-3. Klick im nächsten Hinweis auf **Einschalten** und erlaube Benachrichtigungen. Eine Testbenachrichtigung erscheint sofort.
+3. Klick im Hinweis auf **Einschalten** und erlaube Benachrichtigungen. Eine Testbenachrichtigung erscheint sofort.
 
 ## Auf einem Mac (Safari)
 

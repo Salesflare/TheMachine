@@ -8,13 +8,13 @@ order: 3
 ---
 El panel se instala como app en un teléfono o un ordenador. Luego envía una notificación por cada tarea, resultado y recordatorio cuando no estás en el panel, dentro de tu [horario laboral](work-hours.md). Elige qué envía en [Notificaciones](notifications.md).
 
-Una nota discreta arriba en Tareas ofrece ambas cosas, de una en una: primero la app y luego las notificaciones. **Ahora no** la oculta 14 días, y un segundo **Ahora no** la quita en ese dispositivo. Los mismos controles siguen en **Ajustes**, **General**, **Este dispositivo**.
+Una nota discreta arriba en Tareas ofrece ambas cosas, de una en una, en cuanto gestionas tu primera tarea: primero las notificaciones y luego la app. Lo que ya está hecho en ese dispositivo nunca aparece. **Ahora no** la oculta 14 días, y un segundo **Ahora no** la quita en ese dispositivo. Los mismos controles siguen en **Ajustes**, **General**, **Este dispositivo**.
 
 ## En un ordenador (Chrome o Edge)
 
 1. Abre tu panel y haz clic en **Instalar** en esa nota, o en **Instalar app** en Ajustes.
 2. The Machine se abre en su propia ventana. Fíjala en la barra de tareas o en el Dock.
-3. Haz clic en **Activar** en la siguiente nota y permite las notificaciones. Aparece al momento una notificación de prueba.
+3. Haz clic en **Activar** en la nota y permite las notificaciones. Aparece al momento una notificación de prueba.
 
 ## En un Mac (Safari)
 

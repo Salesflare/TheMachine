@@ -121,11 +121,11 @@ The installer offers to publish the dashboard on your tailnet (`tailscale serve`
 
 The dashboard installs as a phone app and notifies you of each to-do, result, reminder and the weekly recap. With it, Telegram is optional.
 
-- **Android (Chrome):** open the dashboard and tap **Install** on the note at the top of To-dos (or ⋮ → **Install app**). Open The Machine from your home screen and tap **Turn on** on the next note, then allow notifications.
+- **Android (Chrome):** open the dashboard and tap **Install** on the note at the top of To-dos (or ⋮ → **Install app**). Open The Machine from your home screen and tap **Turn on** on the note, then allow notifications.
 - **iPhone/iPad (iOS 16.4 or newer):** open the dashboard in Safari, tap **Share** → **Add to Home Screen**. Open The Machine from your Home Screen (not a Safari tab: iOS only allows notifications there) and tap **Turn on**.
 - **A computer (Chrome, Edge):** **Install** puts The Machine in its own window, to pin to the taskbar or dock. Safari on a Mac: **File** → **Add to Dock**. Firefox can't install it, but notifications work in the tab.
 
-These notes show up after the first minute, one at a time, and **Not now** waits 14 days (a second one stops it on that device). The same controls stay in **Settings** → **General** → **This device**: install the app, notifications on or off with **Send a test**, and light mode. If notifications are blocked, it says where to allow them again in the browser's site settings.
+These notes show up once you've handled your first to-do, one at a time: notifications, the app, the phone app once it's published, then what setup left out (more sources, Telegram, Codex). Anything already done on that device is skipped. **Not now** waits 14 days (a second one stops it on that device). The same controls stay in **Settings** → **General** → **This device**: install the app, notifications on or off with **Send a test**, and light mode. If notifications are blocked, it says where to allow them again in the browser's site settings.
 
 Turn Telegram off or on later with `assistant telegram off` / `assistant telegram on <your Telegram user ID>`.
 

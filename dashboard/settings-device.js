@@ -1,5 +1,5 @@
-// This device: the app installed and notifications on. A quiet nudge at the top of Suggestions (one at a time, install
-// first) and the controls in Settings, General, This device. Every browser prompt comes from the owner's own tap, and a
+// This device: notifications on and the app installed. A quiet nudge at the top of Suggestions (one at a time, in order:
+// notifications, the app, the phone app, what setup left out) and the controls in Settings, General, This device. Every browser prompt comes from the owner's own tap, and a
 // page in a frame (the site's demo) or without a service worker never shows a nudge.
 const pushOK='serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
 // iPhone/iPad: Web Push exists only in the Home Screen app (iOS 16.4+), never in a Safari tab.
@@ -9,7 +9,7 @@ const keyBytes=k=>Uint8Array.from(atob(k.replace(/-/g,'+').replace(/_/g,'/')+'='
 const pushPost=(action,sub)=>{const j=sub.toJSON();return request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action,args:{endpoint:j.endpoint,keys:j.keys}})})};
 const devStore={get:k=>{try{return localStorage.getItem(k)}catch{return null}},set:(k,v)=>{try{if(v==null)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch{}}};
 const DEV=(()=>{const ua=navigator.userAgent;let framed=true;try{framed=window.top!==window}catch{}
- return {ios:iosTab,android:/Android/.test(ua),mobile:iosTab||/Android|Mobi/.test(ua),framed,chromium:'onbeforeinstallprompt' in window,
+ return {phoneApp:/ TheMachineApp\//.test(ua),ios:iosTab,android:/Android/.test(ua),mobile:iosTab||/Android|Mobi/.test(ua),framed,chromium:'onbeforeinstallprompt' in window,
   macSafari:!iosTab&&/Macintosh/.test(ua)&&/Version\/(1[7-9]|[2-9]\d)\b.*Safari/.test(ua)&&!/Chrome|Chromium|CriOS|Edg|Firefox|FxiOS|OPR/.test(ua)}})();
 const nudgeable=!DEV.framed&&'serviceWorker' in navigator;
 const inApp=()=>['standalone','fullscreen','window-controls-overlay'].some(m=>matchMedia(`(display-mode: ${m})`).matches)||navigator.standalone===true;
@@ -52,27 +52,37 @@ const DEVICE_ACTIONS=window.deviceActions=[
  {id:'push-on',label:'Turn on notifications',available:()=>pushOK&&!pushOn()&&devicePush.perm!=='denied',run:pushEnable},
  {id:'push-test',label:'Send test notification',available:pushOn,run:()=>pushTest()}];
 const deviceRun=id=>DEVICE_ACTIONS.find(a=>a.id===id)?.run();
-// Calm: nothing in the first minute of a session or while setting up; Not now waits 14 days, a second Not now stops it on
-// this device, and after any Not now the next nudge waits a day. After the device ones: what setup left out, once it
-// is relevant (state.setup_hints, hosted only: a source whose mail keeps coming, Telegram, Codex), linked to its step.
+// Calm: nothing before the owner handled a first to-do (state.handled_first), in the first minute of a session or while
+// setting up; Not now waits 14 days, a second Not now stops it on this device, and after any Not now the next nudge waits
+// a day. The order: 1 notifications, 2 the app on this computer, 3 the phone app (state.phone_app_store, only once it is
+// published; on a phone's browser it takes the place of 2), 4 what setup left out, once it is relevant
+// (state.setup_hints, hosted only: more sources, Telegram, Codex), linked to its step. Done on this device: skipped.
 const NUDGE_WAIT=14*864e5,NUDGE_REST=864e5;
 const sessionStart=(()=>{const now=Date.now();try{const s=+sessionStorage.getItem('device-session');if(s&&s<=now)return s;sessionStorage.setItem('device-session',String(now))}catch{}return now})();
 const nudgeState=k=>{try{return JSON.parse(devStore.get('nudge-'+k))||{}}catch{return {}}};
 const nudgeQuiet=k=>{const v=nudgeState(k);return !!v.stop||(v.until||0)>Date.now()};
 function nudgeLater(k){const v=nudgeState(k),n=(v.n||0)+1;devStore.set('nudge-'+k,JSON.stringify(n>=2?{n,stop:true}:{n,until:Date.now()+NUDGE_WAIT}));devStore.set('nudge-rest',String(Date.now()+NUDGE_REST));deviceRender()}
 const settingUp=()=>!state?.suggestions||!(state.connectors||[]).length||!!firstLookInfo(state.review_live||{});
+// The phone app: on a phone's browser, its store; on a computer, the page with both until a phone has it. Never in the
+// app itself, nor on a phone where The Machine runs as an installed web app already.
+function phoneKind(){const p=state?.phone_app_store;if(!p||DEV.phoneApp)return null;
+ if(DEV.mobile)return inApp()||appInstalled()?null:(DEV.ios?p.ios:DEV.android?p.android:null)?'phone':null;return p.page&&!p.phones?'phone-desk':null}
+const phoneLink=k=>{const p=state?.phone_app_store||{},u=k==='phone'?(DEV.ios?p.ios:p.android):p.page;return /^https:\/\//.test(u||'')?u:null};
 function nudgeKind(){if(!nudgeable)return null;if(justInstalled)return 'installed';
- if(Date.now()-sessionStart<6e4||settingUp()||+devStore.get('nudge-rest')>Date.now())return null;
- const k=installKind();if(k&&!nudgeQuiet('install'))return k;
+ if(!state?.handled_first||Date.now()-sessionStart<6e4||settingUp()||+devStore.get('nudge-rest')>Date.now())return null;
  if(pushWanted()&&!nudgeQuiet('push'))return 'push';
+ const ph=phoneKind(),phone=ph&&!nudgeQuiet('phone')?ph:null;
+ if(!(DEV.mobile&&ph)){const k=installKind();if(k&&!nudgeQuiet('install'))return k}
+ if(phone)return phone;
  const h=(state.setup_hints||[]).find(h=>h&&h.id&&!nudgeQuiet('hint-'+h.id));return h?'hint:'+h.id:null}
 const hintOf=k=>String(k).startsWith('hint:')?(state.setup_hints||[]).find(h=>'hint:'+h.id===k):null;
-const nudgeKey=k=>String(k).startsWith('hint:')?'hint-'+k.slice(5):k==='push'?'push':'install';
+const nudgeKey=k=>String(k).startsWith('hint:')?'hint-'+k.slice(5):k==='push'?'push':String(k).startsWith('phone')?'phone':'install';
 const NUDGE_ICON='<img class="nudge-icon" src="brand/app-icon-192.png" alt="" width="36" height="36">';
 const SHARE_ICON='<svg class="ios-share" viewBox="0 0 24 24" role="img" aria-label="Share"><path d="M12 14V3.5M8.2 7.2 12 3.4l3.8 3.8"/><path d="M8.5 10H7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2h-1.5"/></svg>';
 function nudgeHTML(k){const later='<button type="button" class="ghost" data-nudge-later>Not now</button>',text=(t,s)=>`${NUDGE_ICON}<div class="nudge-text"><strong>${t}</strong>${s}</div>`;
  if(k==='installed')return text('Installed','<span>The Machine is in your apps now.</span>');
  const hint=hintOf(k);if(hint)return text(esc(hint.title),`<span>${esc(hint.text)}</span>`)+`<div class="nudge-act"><button type="button" class="primary" data-hint-open>${esc(hint.button||'Open')}</button>${later}</div>`;
+ if(k==='phone'||k==='phone-desk')return text(k==='phone'?'Get the phone app':'Get The Machine on your phone',k==='phone'?'<span>Notifications, and sharing from any app.</span>':'<span>For iPhone and Android, with notifications.</span>')+`<div class="nudge-act"><button type="button" class="primary" data-phone-open>Get the app</button>${later}</div>`;
  if(k==='desktop'||k==='android')return text('Install The Machine',k==='desktop'?'<span>Install it and pin it to your taskbar or dock.</span>':'<span>Add it to your home screen. It opens like an app.</span>')+`<div class="nudge-act"><button type="button" class="primary" data-device="install-app">Install</button>${later}</div>`;
  if(k==='ios')return text('Add The Machine to your Home Screen',`<ol class="nudge-steps"><li>Tap Share ${SHARE_ICON}</li><li>Tap Add to Home Screen</li></ol><span>Notifications on iPhone and iPad work only from there.</span>`)+`<div class="nudge-act">${later}</div>`;
  if(k==='mac')return text('Add The Machine to your Dock','<span>In Safari’s menu bar: File, then Add to Dock.</span>')+`<div class="nudge-act">${later}</div>`;
@@ -81,7 +91,8 @@ const nudgeBox=(()=>{const el=document.createElement('div');el.id='device-nudge'
  $('#inbox').prepend(el);el.onclick=async e=>{const b=e.target.closest('button');if(!b)return;const k=el.dataset.kind;
   if(b.matches('[data-nudge-later]')){nudgeLater(nudgeKey(k));return}
   // a setup hint opens its step on the setup page; it rests a day, and goes for good once that step is done
-  if(b.matches('[data-hint-open]')){const h=hintOf(k);if(h&&/^https:\/\//.test(h.href))window.open(h.href,'_blank','noopener');else if(h&&/^#connect(?:=[a-z_]+|ions=add)$/.test(h.href))location.hash=h.href;devStore.set('nudge-'+nudgeKey(k),JSON.stringify({...nudgeState(nudgeKey(k)),until:Date.now()+NUDGE_REST}));devStore.set('nudge-rest',String(Date.now()+NUDGE_REST));deviceRender();return}
+  // the phone app opens its store (or the page with both) and rests the same way
+  if(b.matches('[data-hint-open],[data-phone-open]')){const h=hintOf(k),u=b.matches('[data-phone-open]')?phoneLink(k):h?.href;if(u&&/^https:\/\//.test(u))window.open(u,'_blank','noopener');else if(h&&/^#connect(?:=[a-z_]+|ions=add)$/.test(u))location.hash=u;devStore.set('nudge-'+nudgeKey(k),JSON.stringify({...nudgeState(nudgeKey(k)),until:Date.now()+NUDGE_REST}));devStore.set('nudge-rest',String(Date.now()+NUDGE_REST));deviceRender();return}
   // A closed prompt counts as Not now, so it doesn't come straight back.
   b.disabled=true;try{const ok=await deviceRun(b.dataset.device);if(!ok&&(k==='push'?devicePush.perm==='default':true))nudgeLater(k==='push'?'push':'install')}finally{b.disabled=false;deviceRender()}};return el})();
 // Settings, General, This device: App, Notifications (with Send a test), Light mode.

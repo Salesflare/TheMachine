@@ -12693,6 +12693,33 @@ HINT_SOURCES = (('github', 'GitHub', ('github.com',)), ('slack', 'Slack', ('slac
                 ('stripe', 'Stripe', ('stripe.com',)), ('intercom', 'Intercom', ('intercom.io', 'intercom-mail.com', 'intercom.com')),
                 ('zoom', 'Zoom', ('zoom.us',)))
 HINT_MAILS = 3  # this many mails in 30 days from a service before it is worth suggesting
+# The owner handled a to-do themselves (done, dismissed, snoozed, approved, an instruction), not one of the assistant's own
+# updates: setup hints and the dashboard's device nudges wait for it (handled_first).
+OWNER_HANDLED_SQL = ("SELECT 1 FROM decisions WHERE source IN ('dashboard','telegram','owner-chat','voice') "
+                     "AND choice IN ('accept','reject','snooze','complete','send','other') LIMIT 1")
+# The mobile app (iOS and Android): off until it is published in the stores. The mobile app's work turns it on and fills in
+# the store links and a page with both. The dashboard then suggests it after notifications (instead of installing the web
+# app on a phone, after it on a computer).
+PHONE_APP_STORE = {'published': False, 'ios': '', 'android': '', 'page': ''}
+
+
+def handled_first(store):
+    with store.connect() as db:
+        return bool(db.execute(OWNER_HANDLED_SQL).fetchone())
+
+
+def phone_app_nudge(store):
+    """The mobile app for the dashboard's nudge, or None while it isn't published: its https links, and how many phones
+    have it (none on a Machine without the app's push yet)."""
+    if not PHONE_APP_STORE.get('published'):
+        return None
+    links = {k: PHONE_APP_STORE.get(k) for k in ('ios', 'android', 'page') if str(PHONE_APP_STORE.get(k) or '').startswith('https://')}
+    try:
+        with store.connect() as db:
+            phones = db.execute('SELECT count(*) FROM notify_app_devices').fetchone()[0]
+    except sqlite3.Error:
+        phones = 0
+    return {**links, 'phones': phones}
 
 
 def setup_hints(store, config, now=None):
@@ -12704,7 +12731,7 @@ def setup_hints(store, config, now=None):
     since = ((now or dt.datetime.now(dt.timezone.utc)) - dt.timedelta(days=30)).isoformat()
     hints = []
     with store.connect() as db:
-        if not db.execute('SELECT 1 FROM decisions LIMIT 1').fetchone():
+        if not db.execute(OWNER_HANDLED_SQL).fetchone():
             return []  # nothing before the owner has handled a first to-do: the first look comes first
         for service, label, domains in HINT_SOURCES:
             if service in services:
@@ -15079,6 +15106,13 @@ class App(*APP_MIXINS):
             result['notify'] = self.notify_view()
             result['agents_settings'] = self.agents_view()
             result['setup_hints'] = self.setup_hints_view()
+            if not getattr(self, '_handled_first', False):  # once true, true for good
+                try:
+                    self._handled_first = handled_first(self.store)
+                except sqlite3.Error:
+                    self._handled_first = False
+            result['handled_first'] = self._handled_first
+            result['phone_app_store'] = phone_app_nudge(self.store)
             try:  # the first-use tips on a new person's first to-dos (Store.first_tips)
                 result['first_tips'] = self.store.first_tips()
             except sqlite3.Error as error:

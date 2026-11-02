@@ -8,13 +8,13 @@ order: 3
 ---
 La dashboard si installa come app su un telefono o un computer. Poi invia una notifica per ogni attività, risultato e promemoria quando non sei sulla dashboard, nel tuo [orario di lavoro](work-hours.md). Scegli cosa invia in [Notifiche](notifications.md).
 
-Una nota discreta in cima ad Attività propone entrambe le cose, una alla volta: prima l’app, poi le notifiche. **Non ora** la nasconde per 14 giorni, e un secondo **Non ora** la toglie su quel dispositivo. Gli stessi comandi restano in **Impostazioni**, **Generale**, **Questo dispositivo**.
+Una nota discreta in cima ad Attività propone entrambe le cose, una alla volta, appena hai gestito la tua prima attività: prima le notifiche, poi l’app. Ciò che è già fatto su quel dispositivo non compare mai. **Non ora** la nasconde per 14 giorni, e un secondo **Non ora** la toglie su quel dispositivo. Gli stessi comandi restano in **Impostazioni**, **Generale**, **Questo dispositivo**.
 
 ## Su un computer (Chrome o Edge)
 
 1. Apri la dashboard e fai clic su **Installa** in quella nota, oppure su **Installa l’app** nelle Impostazioni.
 2. The Machine si apre in una finestra sua. Fissala sulla barra delle applicazioni o nel Dock.
-3. Fai clic su **Attiva** nella nota successiva e consenti le notifiche. Arriva subito una notifica di prova.
+3. Fai clic su **Attiva** nella nota e consenti le notifiche. Arriva subito una notifica di prova.
 
 ## Su un Mac (Safari)
 

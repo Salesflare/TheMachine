@@ -37,6 +37,31 @@ class SetupHints(unittest.TestCase):
             db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES('d1','s0','complete','','dashboard','2026-10-02')")
         self.assertEqual(self.ids(), ['source-github'])
 
+    def test_only_the_owners_own_handling_counts(self):
+        with self.store.connect() as db:
+            db.execute('DELETE FROM decisions')
+            # the assistant's own updates and runs ahead are no first handled to-do
+            db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES('u1','s0','update','','assistant','2026-10-02')")
+            db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES('u2','s0','prepare_ahead','','assistant','2026-10-02')")
+            db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES('u3','s0','reject','','assistant','2026-10-02')")
+        self.mail('github.com', 5)
+        self.assertEqual(self.ids(), [])
+        self.assertFalse(a.handled_first(self.store))
+        with self.store.connect() as db:
+            db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES('d1','s0','complete','','telegram','2026-10-02')")
+        self.assertTrue(a.handled_first(self.store))
+        self.assertEqual(self.ids(), ['source-github'])
+
+    def test_the_phone_app_waits_until_it_is_published(self):
+        self.assertIsNone(a.phone_app_nudge(self.store))  # off by default
+        store = {'published': True, 'ios': 'https://apps.example.test/ios', 'android': 'http://insecure.example.test', 'page': 'https://example.test/app'}
+        with patch.dict(a.PHONE_APP_STORE, store):
+            self.assertEqual(a.phone_app_nudge(self.store), {'ios': 'https://apps.example.test/ios', 'page': 'https://example.test/app', 'phones': 0})
+            with self.store.connect() as db:  # the mobile app's phones (its push), once a Machine has them
+                db.execute('CREATE TABLE IF NOT EXISTS notify_app_devices(id TEXT PRIMARY KEY)')
+                db.execute("INSERT INTO notify_app_devices(id) VALUES('p1')")
+            self.assertEqual(a.phone_app_nudge(self.store)['phones'], 1)
+
     def mail(self, sender, n, when=None):
         when = when or a.dt.datetime.now(a.dt.timezone.utc).isoformat()
         with self.store.connect() as db:
