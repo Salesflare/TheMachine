@@ -12,7 +12,7 @@ order: 5
 1. Sull'attività, apri **…**, poi **Passa…**, e scegli **Codex** o **Claude Code**. Compaiono solo gli strumenti che hai configurato.
 2. Controlla il riepilogo e cosa riceve, aggiungi una nota se vuoi e premi **Passa**. **Vedi il lavoro completo** mostra tutte le istruzioni.
 
-L'attività mostra poi che ci sta lavorando, e il risultato quando ha finito, con **Mostra modifiche**. **Cambia** gli chiede delle modifiche; **Passalo di nuovo** ricomincia da capo.
+L'attività mostra poi che ci sta lavorando, e il risultato quando ha finito, con **Mostra modifiche**. **Chiedi modifiche** gli dice cosa cambiare; **Passalo di nuovo** ricomincia da capo.
 
 Un lavoro non invia mai nulla per te.
 

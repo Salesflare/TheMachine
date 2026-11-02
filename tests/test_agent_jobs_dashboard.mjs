@@ -109,7 +109,7 @@ try{
  // The card's own primary action stays; Change goes to the job and says so, beside it
  const buttons=await c.locator('.actions>button:not([hidden])').allInnerTexts(),menu=await c.locator('.more-menu>button').evaluateAll(n=>n.map(x=>x.textContent.trim()));
  assert.deepEqual(buttons.filter(b=>/send to Sam/i.test(b)).length,1,buttons.join('|'));
- assert.equal(buttons[1],'Ask Claude Code for changes',buttons.join('|'));
+ assert.equal(buttons[1],'Ask for changes',buttons.join('|'));
  assert.equal([...buttons,...menu].filter(b=>/changes/i.test(b)).length,1);
  await c.locator('[data-agent-ask]').click();
  assert.match(await c.innerText(),/Goes to the Claude Code job/);
