@@ -3515,8 +3515,12 @@ FACT_SORTS = ('event', 'commitment', 'preference', 'fact')
 FACT_HALF_LIFE = {'event': 7, 'commitment': 90, 'preference': 90, 'fact': 365}
 EVENT_DAYS = 30
 FACTS_GENERAL_MAX = 80  # facts about no one in the graph (and draft rules); facts about someone don't count
+# What is learned is shown to the owner as written (Learning): one about them says "you", never their name.
+OWNER_YOU = 'text says "you" for the owner, never their name ("You prefer US dollars with contacts outside Europe")'
+FACTS_YOU = '"you" in them is the owner'
 FACT_KIND_HINT = ('kind: preference (how the owner or someone likes things), commitment (something someone will do or keep doing), '
-                  'event (something that happens at a time) or fact (anything else); until=YYYY-MM-DD when it stops holding on a known day')
+                  'event (something that happens at a time) or fact (anything else); until=YYYY-MM-DD when it stops holding on a known day; '
+                  + OWNER_YOU)
 # Text parts that only tell the reader to open the HTML version.
 PLAIN_PLACEHOLDER = re.compile(r'(?i)plain[- ]text version (?:is )?not available|requires an? html|'
                                r'view (?:this|the) (?:email|message) in (?:a|your) (?:web )?browser|use an html[- ]capable')
@@ -8806,6 +8810,12 @@ class Store:
                 annotation=db.execute('SELECT status,reason,superseded_by FROM decision_annotations WHERE decision_id=?',(decision['id'],)).fetchone()
                 if annotation:
                     decision.update(annotation=dict(annotation),feedback='')
+            # Each decision carries its to-do's title: an older done to-do is past the suggestions list below, and
+            # Learning, Decisions showed its id instead.
+            ids = sorted({d['suggestion_id'] for d in result['decisions'] if d.get('suggestion_id')})
+            titles = {r['id']: r['title'] for r in db.execute('SELECT id,title FROM suggestions WHERE id IN (' + ','.join('?' for _ in ids) + ')', ids)} if ids else {}
+            for decision in result['decisions']:
+                decision['title'] = titles.get(decision['suggestion_id']) or ''
             # What was learned, newest first; a condensed one says how many notes it stands for (the owner can undo that).
             merged = {r['merged_into']: r['n'] for r in db.execute('SELECT merged_into,count(*) n FROM facts WHERE merged_into IS NOT NULL GROUP BY 1')}
             result['facts'] = [{**dict(r), 'merged': merged.get('fact:' + str(r['id']), 0)} for r in
@@ -13491,10 +13501,10 @@ For this job:
 - A first message to someone who doesn't know about it yet says what it is about before it asks.
 - Or record a blocker with assistant_signals preparation_blocked args suggestion_id={sid}, job_id={j}, reason=<one plain sentence>, details=<technical specifics>. Block only on what you truly can't know (their first-hand notes, a fact only they have, a call with no sensible default); a minor judgment call with an obvious sensible default you make yourself and name in one line of the result. When only the owner can unblock it, also give questions=[{{question:<one short plain question>, options:[<2-4 short choices, only when it is a clear choice>]}}] (at most 3). Each question must make sense on its own to someone who hasn't seen your work: plain words, what it is about and why it matters, no jargon or internal terms, e.g. {{question:'What did you notice when you tried OnePageCRM? A few lines on what you tried and what stood out are enough.'}}. The card shows them with quick picks and an Answer box. No paths, IDs or tool names in reason or questions.''' + owner_details(config) + (f'''
 
-Facts the owner told you earlier that bear on this card (true unless they say otherwise now):
+Facts the owner told you earlier that bear on this card (true unless they say otherwise now; {FACTS_YOU}):
 {facts}''' if facts else '') + gaps + (f'''
 
-Draft rules from the owner's notes that fit this card (follow them unless their note on this card says otherwise):
+Draft rules from the owner's notes that fit this card (follow them unless their note on this card says otherwise; {FACTS_YOU}):
 {rules}''' if rules else '') + (f'''
 
 {style}''' if style else '') + (f'''
@@ -14144,7 +14154,7 @@ Meeting notes and transcripts (Zoom's, or added to the meeting: meeting.notes, m
 Promises: when a message in this batch commits the owner to doing something for someone, or someone to doing something for the owner, record it with promise (direction, event_id, who, what: the promised action alone, without who confirmed it or how, due when a date was said, owner_step as above). Judge what a message means between these people in its conversation, not its wording: most commitments are never spelled out (agreeing to a request, taking on something the owner asked, accepting a plan), and the same reply can commit one person and be politeness from another, depending on language, habits and the relationship. Read earlier_in_conversation for what was asked. It is not a card; the service checks it when due. When a signal shows an open promise below kept, canceled or moved, update it with promise and its id.
 Messages are disabled in this turn. Do not work on anything else. End with exactly NO_REPLY.''' + sources + (f'''
 
-Facts the owner told you earlier (true unless newer evidence says otherwise):
+Facts the owner told you earlier (true unless newer evidence says otherwise; {FACTS_YOU}):
 {facts}''' if facts else '') + (f'''
 
 Notes the owner wrote when dismissing, closing or snoozing cards, not kept as a fact yet. Judge each by what it means beyond that one card: when it says what they handle themselves, what they don't want from you, or who does what, save it with remember_fact (text: one general sentence, decision_id, about when it is about someone else) so later reviews stop suggesting it; skip a reason that only fits that card.
@@ -15280,6 +15290,7 @@ class App(*APP_MIXINS):
             result['account_url'] = fleet.account_url(self.config)  # the CP Account page, when linked to one (Settings, Account ↗)
             result['browser_link'] = browser_link(self.config)  # the sign-in dialog's way out to the browser itself
             result['needs_you'] = needs_you(self.config)
+            result['learning_changes'] = self.learning_changes_shown(result.get('learning_changes') or [])
             by_id = {a['id']: a for a in self.config['accounts']}
             result['connectors'] = [c for c in result['connectors'] if not docs_unset(c)]
             for connector in result['connectors']:
@@ -20217,6 +20228,22 @@ class App(*APP_MIXINS):
         if run.get('auto') and run.get('kind') == 'profile':  # saves only once the run is ok
             self.first_profile_save(run['run_id'])
         return result
+
+    def owner_first_names(self):
+        """The owner's first name, as the config and USER.md give it ("- Name: …", "# USER.md - About …"): for
+        Learning's older why lines that name them (learning_loop.to_you)."""
+        names = [str(self.config.get('owner_name') or '')]
+        try:
+            text = self.user_md().read_text(encoding='utf-8')[:4000]
+            names += re.findall(r'(?m)^- Name: *(.+)$', text) + re.findall(r'(?m)^# USER\.md - About (.+)$', text)
+        except (OSError, ValueError):
+            pass
+        return sorted({n.split()[0] for n in names if n.split() and re.fullmatch(r"[^\W\d_][\w'’-]*", n.split()[0]) and n.split()[0].lower() not in ('me', 'the', 'you')})
+
+    def learning_changes_shown(self, changes):
+        """Learning, Changes: an older why line that names the owner reads "You corrected …" (the stored one stays)."""
+        names = self.owner_first_names()
+        return [{**c, 'why': learning_loop.to_you(c.get('why'), names)} for c in changes]
 
     def owner_role(self):
         """The Role line of USER.md ('' when there is none): only for Help's guess at how technical the owner is."""

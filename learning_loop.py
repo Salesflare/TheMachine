@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import datetime as dt
 import json
+import re
 
 SCHEMA = '''
 CREATE TABLE IF NOT EXISTS learning_changes(id INTEGER PRIMARY KEY,run_id TEXT NOT NULL,at TEXT NOT NULL,kind TEXT NOT NULL,
@@ -112,7 +113,8 @@ Goal: keep what this Machine knows about the owner up to date with what they did
    - {{"kind": "voice", "channel": "Email", "text": "<that channel's whole block, the current one with this worked in>", "why": "…"}}: when their edits keep changing drafts the same way on a channel. Never for a voice marked written_by_owner.
    - {{"kind": "draft", "text": "…", "why": "…", "replaces": <rule id, optional>}}: a rule for a kind of task, when their edits or corrections keep pointing at it.
    - {{"kind": "fact", "text": "…", "why": "…", "replaces": <fact id, optional>}}: something to keep in mind, like a kind of to-do they keep dismissing ("Newsletters from vendors never need a to-do").
-   - text: one short sentence (a voice: up to 5 short lines), at most {TEXT_MAX} characters. why: what in the signals shows it, at most {WHY_MAX} characters, so the owner can judge it.
+   - text: one short sentence (a voice: up to 5 short lines), at most {TEXT_MAX} characters. A rule or fact about the owner says "you" for them, never their name ("You prefer US dollars with contacts outside Europe").
+   - why: what in the signals shows it, at most {WHY_MAX} characters, so the owner can judge it. Write it to the owner: "you", never their name, and no filler like "explicitly" ("You corrected the tax review to-do: submit it through the portal").
    - Only what shows up more than once, or that one correction says plainly. Judge by what the signals mean, not their words. Keep what still holds; don't repeat a rule or fact that already says it.
 Do not send messages, change files or do anything else. End with exactly NO_REPLY.'''
 
@@ -241,6 +243,22 @@ def undo(db, change_id):
             db.execute("INSERT INTO rule_changes(at,kind,text,ref) VALUES(?,'draft_rule',?,?)", (now(), 'Undid draft rule: ' + row['after'], row['target']))
     db.execute("UPDATE learning_changes SET status='undone',undone_at=? WHERE id=?", (now(), change_id))
     return done
+
+
+PAST = 'wrote|rewrote|said|sent|made|chose|took|gave|kept|told|left|found|brought|put|set|cut|got|went|met|meant|spoke|ran|undid|forgot|held|paid|spent|won'
+OWNER = ('the owner', 'The owner')
+
+
+def to_you(text, names):
+    """A why line from before the prompt said "you" names the owner ("Jeroen explicitly corrected the tax to-do"): shown
+    as "You corrected the tax to-do". Only where the grammar surely holds: the name's possessive, or the name before a
+    past-tense verb (filler like "explicitly" goes). The stored line stays as it was; anything else is left alone."""
+    text = str(text or '')
+    for name in {n for n in (*names, *OWNER) if len(n) > 1}:
+        n = re.escape(name)
+        text = re.sub(rf"\b{n}['’]s\b", 'your', text)
+        text = re.sub(rf"\b{n}\s+(?:(?:explicitly|clearly|specifically|directly)\s+)?(?=(?:repeatedly\s+)?(?:[a-z]+ed|{PAST})\b)", 'you ', text)
+    return re.sub(r"(^|[.!?]\s+)(you|your)\b", lambda m: m[1] + m[2].capitalize(), text)
 
 
 def recent(db, limit=RECENT):
