@@ -58,6 +58,7 @@ FEATURES = {
     'telegram': ('assistant.py', 'telegram_owner'),
     'chatgpt': ('docs/models.md', 'ChatGPT'),
     'phone-app': ('manifest.webmanifest', '"name"'),
+    'mobile-app': ('notify.py', 'def app_push'),
     'weekly-recap': ('assistant.py', 'def weekly_recap'),
     'enrichment': ('enrichment.py', 'def '),
     'network': ('network.py', 'def '),

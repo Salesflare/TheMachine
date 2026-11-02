@@ -1,7 +1,9 @@
 <!doctype html><html lang="en"><meta charset="utf-8"><base href="__BASE__"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
 <title>The Machine · To-dos</title>
 <meta name="theme-color" content="#1b1c1f">
-<script>// Theme: light or dark as picked here or in the hosted app (the "theme" cookie, shared under the app's domain), else the device's own setting.
+<script>// The mobile app (its WebView says TheMachineApp/<n>): nothing that leads to buying is shown in it ([data-buy]).
+if(/ TheMachineApp\/\d/.test(navigator.userAgent))document.documentElement.classList.add('in-app');
+// Theme: light or dark as picked here or in the hosted app (the "theme" cookie, shared under the app's domain), else the device's own setting.
 (()=>{const root=document.documentElement,sys=matchMedia('(prefers-color-scheme: light)');
 const saved=()=>{const c=document.cookie.match(/(?:^|;\s*)theme=(light|dark)(?:;|$)/);if(c)return c[1];const l=localStorage.getItem('theme');return l==='light'||l==='dark'?l:'auto'};
 const pick=()=>{const m=saved(),t=m==='auto'?(sys.matches?'light':'dark'):m;root.dataset.theme=t;root.dataset.themeMode=m;document.querySelector('meta[name=theme-color]')?.setAttribute('content',t==='light'?'#f8f7f3':'#1b1c1f');
@@ -1264,6 +1266,8 @@ strong.nb{white-space:nowrap}
 .acct-list form{margin:0;display:flex;flex:0 0 auto;align-self:center}.acct-list .head-link,.acct-foot .head-link{margin:0;min-height:34px;padding:0 14px;box-sizing:border-box;font:inherit;font-size:.85rem;background:none;cursor:pointer}
 .acct-list>div{gap:10px}.acct-list .grow{min-width:0;overflow-wrap:anywhere}.acct-list strong{font-weight:600}
 .acct-status{display:inline-block;margin-left:8px;padding:1px 8px;border-radius:999px;font-size:.75rem;font-weight:600;vertical-align:1px;background:color-mix(in srgb,var(--mint) 18%,transparent);color:var(--text)}
+.in-app [data-buy]{display:none!important}
+.phone-url{overflow-wrap:anywhere}.phone-own{margin-top:6px}.phone-own>summary{font-size:.85rem}.phone-own>small{display:block;margin-top:6px}
 .acct-status.s-trial,.acct-status.s-pending{background:color-mix(in srgb,var(--amber) 18%,transparent)}.acct-status.s-past_due{background:color-mix(in srgb,var(--orange) 18%,transparent)}.acct-status.s-seat,.acct-status.s-cancelled,.acct-status.s-none{background:color-mix(in srgb,var(--muted) 18%,transparent)}
 .acct-foot{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:14px 0 0}.acct-cancel{flex:1 0 100%;margin-top:6px}.acct-quiet{background:none;border:0;padding:0;font:inherit;font-size:.82rem;color:var(--muted);text-decoration:underline;text-underline-offset:3px;cursor:pointer}.acct-quiet:hover{color:var(--text)}.acct-foot form{margin:0;display:flex}.acct-foot .acct-end{margin-left:auto}
 .fleet-pane-head{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;margin:0 0 14px}.fleet-pane-head h2{margin:0;font-size:1.15rem}

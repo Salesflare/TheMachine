@@ -114,7 +114,18 @@ function deviceSettings(){const {app}=deviceRows,small=app.querySelector('small'
  $('#push-test').hidden=!on;
  const text=!pushOK?(iosTab?'On iPhone and iPad, add it to your Home Screen first: Share, then Add to Home Screen.':'This browser can’t show notifications.'):blocked?t('Blocked in this browser.')+' '+blockedHint():on?'On for this device. One per to-do, even without Telegram.':'One per to-do, even without Telegram.';
  set(note,esc(text)+DEVICE_HELP);note.classList.toggle('device-blocked',blocked)}
-function deviceRender(){const k=nudgeKind()||'',el=nudgeBox;if(el.dataset.kind!==k){el.dataset.kind=k;el.innerHTML=k?nudgeHTML(k):'';el.hidden=!k}deviceSettings();renderNotify()}
+function deviceRender(){const k=nudgeKind()||'',el=nudgeBox;if(el.dataset.kind!==k){el.dataset.kind=k;el.innerHTML=k?nudgeHTML(k):'';el.hidden=!k}deviceSettings();renderNotify();phoneAppRender()}
+// Settings, General, Phone app: how the mobile app finds this Machine (phone_app in assistant.py). Hosted or on The
+// Machine Network: it signs in with the account. Self-hosted and not on the Network: the same line, and folded under
+// "Not on the Network?" a QR code of the app's connect link and the address to type in. Not shown in the app itself,
+// which says once when its notifications can't work (off The Machine Network).
+function phoneAppRender(){const p=state?.notify?.phone_app,inApp=document.documentElement.classList.contains('in-app');let row=$('#device-phone');
+ if(inApp&&state?.notify&&!state.notify.app_push_ready&&!devStore.get('app-push-network')){devStore.set('app-push-network',1);toast(t('Notifications in the app need The Machine Network. The app works without them.'))}
+ const html=!p||inApp||!(p.hosted||p.url)?'':p.hosted?`<span class="grow"><strong>Phone app</strong><small>${esc(t('The app signs in with your account.'))}</small></span>`:
+  `<span class="grow"><strong>Phone app</strong><small>${esc(t('The app signs in with your account on The Machine Network.'))}</small><details class="connect-alt phone-own"><summary>${esc(t('Not on the Network?'))}</summary><small>${esc(t('Install the app, then scan this with the phone’s camera.'))}</small>${p.qr?.length?qrSvg(p.qr):''}<small>${t('Or enter this address in the app: {}','<code class="phone-url">'+esc(p.url)+'</code>')}</small></details></span>`;
+ if(!html){row?.remove();return}  // only there when there is something to show
+ if(!row){row=document.createElement('div');row.id='device-phone';deviceRows.app.after(row)}
+ if(row.dataset.html!==html){row.innerHTML=html;row.dataset.html=html}}
 deviceRows.app.onclick=e=>{const b=e.target.closest('[data-device]');if(b)deviceRun(b.dataset.device)};
 $('#push-toggle').onclick=async()=>{const b=$('#push-toggle');if(!pushOK){toast(iosHint);return}b.disabled=true;try{if(pushOn())await pushDisable();else await pushEnable()}finally{b.disabled=false}};
 setTimeout(deviceRender,Math.max(0,sessionStart+6e4-Date.now())+50);
@@ -146,11 +157,15 @@ function renderNotify(){const n=state?.notify,box=$('#settings-notify');
  if(grid.dataset.html!==html){grid.innerHTML=html;grid.dataset.html=html}
  const on=pushOn(),can=pushOK&&devicePush.perm!=='denied';
  const device=on?'Push is on here.':!can?'This browser can’t show push here.':n.push_devices?t(['Push is off here, on for {} other device.','Push is off here, on for {} other devices.'],n.push_devices):'Push is off here.';
- const more=`<div><span class="grow"><strong>This device</strong><small>${esc(device)}</small></span>${!on&&can?'<button type="button" data-device="push-on">Turn on</button>':''}</div>`;
+ // Phones with the mobile app (notify.py, app_push): each with Remove, which stops its notifications
+ const phones=(n.app_devices||[]).map(p=>`<div><span class="grow"><strong>${esc(p.label)}</strong><small>Phone with the app</small></span><button type="button" data-app-remove="${esc(p.id)}">Remove</button></div>`).join('');
+ const more=`<div><span class="grow"><strong>This device</strong><small>${esc(device)}</small></span>${!on&&can?'<button type="button" data-device="push-on">Turn on</button>':''}</div>`+phones;
  const m=$('#notify-more');if(m.dataset.html!==more){m.innerHTML=more;m.dataset.html=more}}
 $('#settings-notify').addEventListener('click',async e=>{const sw=e.target.closest('[data-notify-kind]');
  if(sw){const on=sw.getAttribute('aria-checked')!=='true';sw.disabled=true;
   try{state.notify=await notifyPost('notify_set',{kind:sw.dataset.notifyKind,channel:sw.dataset.notifyChannel,on});renderNotify()}catch(err){errCaught(err);toast(err.message,true)}finally{sw.disabled=false}return}
+ const rm=e.target.closest('[data-app-remove]');if(rm){rm.disabled=true;
+  try{await notifyPost('app_push_unregister',{id:rm.dataset.appRemove});state.notify.app_devices=(state.notify.app_devices||[]).filter(p=>p.id!==rm.dataset.appRemove);state.notify.push_devices=Math.max(0,(state.notify.push_devices||1)-1);toast('Removed');renderNotify()}catch(err){errCaught(err);toast(err.message,true)}finally{rm.disabled=false}return}
  const d=e.target.closest('[data-device]');if(d){d.disabled=true;try{await deviceRun(d.dataset.device)}finally{d.disabled=false;renderNotify()}return}
  const pv=e.target.closest('[data-notify-preview]');if(pv){const out=$('#notify-preview');if(!out.hidden){out.hidden=true;renderNotify();return}pv.disabled=true;
   try{const r=await notifyPost('notify_preview');out.textContent=r.empty?'Nothing for a digest right now.':r.text;out.hidden=false;renderNotify()}catch(err){errCaught(err);toast(err.message,true)}finally{pv.disabled=false}}});

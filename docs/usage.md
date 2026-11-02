@@ -115,6 +115,7 @@ The to-dos on screen read their email ahead, so it opens at once. The service ke
 
 - The dashboard installs as a phone app and sends a push notification for each to-do, with or without Telegram.
 - A link in a notification or a Telegram message opens that to-do's own page (`#chat=<id>`), in the installed app where the phone allows it.
+- The mobile app for iPhone and Android (a shell around the dashboard) gets its notifications from the control plane, which this Machine asks for a wakeup with a fixed text per kind (`app_push_register`, `app_push_unregister`; `notify.app_push`). No to-do text leaves the Machine for it, and the Machine keeps no push token. It needs a hosted or paired Machine. Sharing to The Machine from the phone opens **New to-do** with what was shared, to check and add ([help](help/mobile-app.md)).
 - At inbox zero you can poke the sleeping robot. Poke it a few times and it offers a 20-second mini game, Catch the Zzz.
 
 ### The Machine's browser

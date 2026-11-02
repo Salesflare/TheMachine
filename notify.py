@@ -4,7 +4,9 @@
 Kinds: a new to-do, a result or question (ready to approve, stuck, a sign-in, a Fleet question), a reminder (a snooze or
 a wait coming back) and the morning digest. Channels: push (the dashboard app on a phone or computer, sent by this
 Machine and encrypted for each device, push-send.mjs), Telegram, and email (through the control plane's mailer, for
-hosted and paired Machines).
+hosted and paired Machines). The mobile app (a shell around the dashboard, which has no Web Push) gets its push as a
+wakeup without any text, sent by the control plane to the owner's phones (app_push); this Machine keeps only which
+phones have it (notify_app_devices), never their tokens.
 
 Smart, like Slack (help center: "Configure your Slack notifications", "Set your Slack status and availability", "Guide
 to email notifications"):
@@ -24,6 +26,7 @@ import datetime as dt
 import http.client
 import json
 import logging
+import re
 import threading
 import time
 import uuid
@@ -54,6 +57,10 @@ QUEUE = ('CREATE TABLE IF NOT EXISTS notify_queue(id INTEGER PRIMARY KEY,channel
          'title TEXT NOT NULL,payload TEXT,show INTEGER NOT NULL DEFAULT 1,created REAL NOT NULL,due REAL NOT NULL)')
 DIGEST_LATE = dt.timedelta(hours=3)  # a digest not sent by then (the Machine was off) waits for the next day
 MAIL_SUBJECT, MAIL_TEXT = 120, 4000
+# Phones with the mobile app: what Settings shows. The control plane holds their push tokens and sends the wakeups.
+APP_DEVICES = 'CREATE TABLE IF NOT EXISTS notify_app_devices(id TEXT PRIMARY KEY,platform TEXT NOT NULL,label TEXT NOT NULL,created_at TEXT NOT NULL)'
+APP_KINDS = ('todo', 'result', 'reminder', 'digest', 'fleet', 'test')  # the control plane's fixed text per kind
+APP_ID = re.compile(r'[A-Za-z0-9_-]{1,64}')
 
 
 def ensure(db):
@@ -66,6 +73,7 @@ def ensure(db):
             db.execute(f'ALTER TABLE notify_queue ADD COLUMN {name} {definition}')
     for row in db.execute('SELECT id FROM notify_queue WHERE delivery IS NULL').fetchall():
         db.execute('UPDATE notify_queue SET delivery=? WHERE id=?', (uuid.uuid4().hex, row[0]))
+    db.execute(APP_DEVICES)
 
 
 def prefs(db):
@@ -348,3 +356,42 @@ def mail(url, token, subject, text, opener=urllib.request.urlopen, delivery=None
     except (urllib.error.URLError, TimeoutError, OSError, ValueError, http.client.HTTPException) as error:
         LOG.warning('notify mail error=%s', type(error).__name__)
     return False
+
+
+# -- the mobile app's push, through the control plane (hosted and paired Machines)
+def app_devices(db):
+    """[{id, platform, label, created_at}] of the owner's phones with the app, oldest first."""
+    ensure(db)
+    return [dict(r) for r in db.execute('SELECT id,platform,label,created_at FROM notify_app_devices ORDER BY created_at,id')]
+
+
+def app_device_add(db, device_id, platform, label, at):
+    ensure(db)
+    db.execute('INSERT INTO notify_app_devices(id,platform,label,created_at) VALUES(?,?,?,?) '
+               'ON CONFLICT(id) DO UPDATE SET platform=excluded.platform,label=excluded.label', (device_id, platform, label, at))
+
+
+def app_device_remove(db, ids):
+    ensure(db)
+    db.executemany('DELETE FROM notify_app_devices WHERE id=?', [(i,) for i in ids])
+
+
+def app_push(url, token, body, opener=None):
+    """One request to the control plane's /app-push (register, unregister, list or wake). Returns its answer (a dict),
+    {'missing': True} when it doesn't know the device (404), or None when it could not be reached or said no. Only the
+    status or the error's type goes to the log, never the token."""
+    if not url or not token:
+        return None
+    request = urllib.request.Request(url.rstrip('/') + '/app-push', method='POST', data=json.dumps(body).encode(),
+                                     headers={'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json'})
+    try:
+        with (opener or urllib.request.urlopen)(request, timeout=15) as response:
+            answer = json.loads(response.read(100_000) or b'{}')
+            return answer if isinstance(answer, dict) else None
+    except urllib.error.HTTPError as error:
+        LOG.warning('app push %s status=%d', body.get('action'), error.code)
+        if error.code == 404:
+            return {'missing': True}
+    except (urllib.error.URLError, TimeoutError, OSError, ValueError, http.client.HTTPException) as error:
+        LOG.warning('app push %s error=%s', body.get('action'), type(error).__name__)
+    return None

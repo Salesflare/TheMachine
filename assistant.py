@@ -104,6 +104,7 @@ import meeting_notes
 import meeting_writer
 import meet_link
 import places
+import qr
 from sources import (CALENDAR_SERVICES, MAIL_SERVICES, MICROSOFT_SERVICES, SourceError, credential, gog_read,  # noqa: F401
                      gog_signed_in_since, gog_signin_command, gog_token_path, mail_account, mailbox_name, owner_credential,
                      rate_limited, transient, upstream_busy)  # reading the owner's sources: errors, credentials, Google and Microsoft
@@ -976,6 +977,8 @@ DASHBOARD_ACTIONS = frozenset({
     *SUPPORT_ACTIONS,
     *TALK_ACTIONS,
     *VOICE_ACTIONS,
+    'app_push_register',
+    'app_push_unregister',
     'board_default',
     'board_delete',
     'board_dismiss',
@@ -12607,11 +12610,10 @@ def plain(text, limit=240):
 def push_notify(store, config, row, sender=None):
     """Phone notification for the installed dashboard app, next to the Telegram one
     . Best effort: never changes the Telegram delivery state."""
-    with store.connect() as db:
-        subscriptions = [dict(r) for r in db.execute('SELECT endpoint,p256dh,auth FROM push_subscriptions')]
-    if not subscriptions or not config.get('dashboard_host'):
+    subscriptions, phones = push_reach(store, config)
+    if not subscriptions and not phones:
         return []
-    root = 'https://' + config['dashboard_host'] + config.get('dashboard_path', '/')
+    root = 'https://' + config['dashboard_host'] + config.get('dashboard_path', '/') if config.get('dashboard_host') else ''
     try:
         ids = json.loads(row.get('account_ids') or '[]')
     except (TypeError, ValueError):
@@ -12639,19 +12641,99 @@ def push_notify(store, config, row, sender=None):
 
 def reminder_channels(store, config, kind='reminder'):
     """Where a reminder (a snooze ending, a result) reaches the owner, as deliver_one sends it: Telegram when it is on,
-    and a notification on every subscribed device (push_notify needs dashboard_host). `push` is the device count.
+    and a notification on every subscribed device and phone with the app (push_reach). `push` is the device count.
     kind 'todo': where a new to-do held for later (deliver_after) goes when its time comes."""
-    push, telegram_pref = 0, True
     with store.connect() as db:
-        if config.get('dashboard_host') and notify.allowed(db, kind, 'push'):  # Settings, Notifications, per kind
-            push = db.execute('SELECT count(*) FROM push_subscriptions').fetchone()[0]
+        push_pref = notify.allowed(db, kind, 'push')  # Settings, Notifications, per kind
         telegram_pref = notify.allowed(db, kind, 'telegram')
+    subscriptions, phones = push_reach(store, config) if push_pref else ([], 0)
+    push = len(subscriptions) + phones
     return {'telegram': telegram_on(config) and telegram_pref, 'push': push}
 
 
 def mail_ready(config):
     """Email can go: a hosted or paired Machine hands it to the control plane's mailer (App.notify_mail_target)."""
     return bool(fleet.settings(config) and (config.get('credentials') or {}).get('fleet'))
+
+
+def cloud_target(config):
+    """(url, token) of the control plane a hosted or paired Machine talks to (its email and the mobile app's push), or
+    None (self-hosted and not paired)."""
+    found = fleet.settings(config)
+    if not found or not (config.get('credentials') or {}).get('fleet'):
+        return None
+    try:
+        return found['url'], credential(config, 'fleet')
+    except Exception:  # noqa: BLE001 - no readable token: nothing goes through the control plane
+        return None
+
+
+def app_wake(store, config, kind, tag, device=None):
+    """The mobile app's push: the control plane wakes the owner's phones with a fixed text for `kind`, never a to-do's
+    own text, and a tap opens the dashboard. `tag` (a to-do's id) lets a newer one replace the older; `device` sends
+    only to that phone (a test). The number sent, or None when there was nothing to send to or it didn't go."""
+    with store.connect() as db:
+        if not notify.app_devices(db):
+            return None
+    target = cloud_target(config)
+    if not target or kind not in notify.APP_KINDS:
+        return None
+    tag = str(tag or '')
+    body = {'action': 'wake', 'kind': kind, 'tag': tag if notify.APP_ID.fullmatch(tag) else kind, **({'id': device} if device else {})}
+    answer = notify.app_push(*target, body)
+    if not answer or answer.get('missing'):
+        return None
+    removed = answer.get('removed')
+    if removed and isinstance(removed, list):  # phones that uninstalled the app: gone here too
+        with store.connect() as db:
+            notify.app_device_remove(db, [str(r) for r in removed])
+    elif removed:  # only a count: what the control plane still has is what Settings shows
+        listed = notify.app_push(*target, {'action': 'list'})
+        if listed and isinstance(listed.get('devices'), list):
+            keep = {str(d.get('id')) for d in listed['devices'] if isinstance(d, dict)}
+            with store.connect() as db:
+                notify.app_device_remove(db, [d['id'] for d in notify.app_devices(db) if d['id'] not in keep])
+    try:
+        sent = max(0, int(answer.get('sent') or 0))
+    except (TypeError, ValueError):
+        sent = 0
+    LOG.info('app push kind=%s sent=%d', kind, sent)
+    return sent
+
+
+APP_SCHEME = 'computer.themachine.app://connect?u='  # the mobile app's own link: it asks the owner, then opens the address
+
+
+@functools.lru_cache(maxsize=4)
+def phone_qr(link):
+    return tuple(qr.encode(link))
+
+
+def phone_app(config):
+    """Settings, Phone app: how the mobile app finds this Machine. Hosted, or self-hosted on The Machine Network: it
+    signs in with the account, which knows the Machine. Self-hosted and not on the Network: a QR code of the app's
+    connect link with this Machine's own https address (its Tailscale name, dashboard_host), and the address to type in.
+    Nothing secret: the dashboard's own sign-in still applies when the app opens it."""
+    if str(config.get('manage_url') or '').startswith('https://') or cloud_target(config):
+        return {'hosted': True}
+    if not config.get('dashboard_host'):
+        return {'hosted': False}
+    url = 'https://' + config['dashboard_host'] + config.get('dashboard_path', '/')
+    link = APP_SCHEME + urllib.parse.quote(url, safe='')
+    try:
+        rows = list(phone_qr(link))
+    except ValueError:  # an address too long for a code: typed in instead
+        rows = []
+    return {'hosted': False, 'url': url, 'link': link, 'qr': rows}
+
+
+def push_reach(store, config):
+    """(web push subscriptions, phones with the app): where a push can go. The web ones need dashboard_host for their
+    links; the app's need the control plane."""
+    with store.connect() as db:
+        subscriptions = [dict(r) for r in db.execute('SELECT endpoint,p256dh,auth FROM push_subscriptions')] if config.get('dashboard_host') else []
+        phones = len(notify.app_devices(db))
+    return subscriptions, phones if phones and cloud_target(config) else 0
 
 
 def hold_mail(store, config, kind, title, ref, work=False):
@@ -12841,50 +12923,65 @@ def waiting_count(db):
                       "AND (deliver_after IS NULL OR deliver_after<=?)", (now(),)).fetchone()[0]
 
 
-def push_send(store, config, subscriptions, payload, label, sender=None, kind=None, held=False):
+def push_send(store, config, subscriptions, payload, label, sender=None, kind=None, held=False, wake=None):
     """kind (notify.KINDS): left out when the owner turned that kind off for push; held while a dashboard is in use or
     for a minute after they left one (notify.push_now), then sent by App.notify_step unless they saw it there. It
-    carries the badge count. Without kind (a test, the digest) it goes at once."""
+    carries the badge count. Without kind (a test, the digest) it goes at once.
+    The phones with the mobile app get a wakeup of their own at the same moment (app_wake): `wake` is its kind (else
+    `kind`; none for a test), its tag the payload's. Not for a silent one (a batch's later to-dos, the digest at the
+    dashboard). Best effort: the web push goes the same with or without it. The results: one per web subscription,
+    plus {'status': 200, 'app': sent} when the control plane took the wakeup."""
+    payload = dict(payload)
+    wake = wake or payload.pop('_wake', None) or kind
     if kind:
         with store.connect() as db:
             if not notify.allowed(db, kind, 'push'):
                 return []
             if not held and not notify.push_now():  # a dashboard in use, or just left: wait, it may be seen there
-                notify.hold(db, 'push', kind, str(payload.get('title') or ''), time.time(), payload=payload)
+                notify.hold(db, 'push', kind, str(payload.get('title') or ''), time.time(), payload={**payload, '_wake': wake} if wake != kind else payload)
                 LOG.info('push %s held', label)
                 return []
             payload = {**payload, 'badge': waiting_count(db)}
-    try:
-        results = (sender or (lambda request: push_node(config, request)))({'action': 'send', 'subscriptions': subscriptions, 'payload': payload})['results']
-    except (subprocess.TimeoutExpired, ValueError, KeyError) as error:
-        LOG.warning('push %s error=%s', label, type(error).__name__)
-        return []
-    with store.connect() as db:
-        for result in results:
-            if result['status'] in (404, 410):  # the phone unsubscribed or the app was removed
-                db.execute('DELETE FROM push_subscriptions WHERE endpoint=?', (result['endpoint'],))
-            else:
-                db.execute('UPDATE push_subscriptions SET last_status=?,last_sent_at=? WHERE endpoint=?', (result['status'], now(), result['endpoint']))
-    LOG.info('push %s statuses=%s', label, ','.join(str(r['status']) for r in results))
+    results = []
+    if subscriptions:
+        try:
+            results = (sender or (lambda request: push_node(config, request)))({'action': 'send', 'subscriptions': subscriptions, 'payload': payload})['results']
+        except (subprocess.TimeoutExpired, ValueError, KeyError) as error:
+            LOG.warning('push %s error=%s', label, type(error).__name__)
+            results = []
+        else:
+            with store.connect() as db:
+                for result in results:
+                    if result['status'] in (404, 410):  # the phone unsubscribed or the app was removed
+                        db.execute('DELETE FROM push_subscriptions WHERE endpoint=?', (result['endpoint'],))
+                    else:
+                        db.execute('UPDATE push_subscriptions SET last_status=?,last_sent_at=? WHERE endpoint=?', (result['status'], now(), result['endpoint']))
+            LOG.info('push %s statuses=%s', label, ','.join(str(r['status']) for r in results))
+    if wake and not payload.get('silent'):
+        try:
+            sent = app_wake(store, config, wake, payload.get('tag'))
+        except Exception as error:  # noqa: BLE001 - the app's wakeup never stops the rest
+            LOG.warning('app push %s error=%s', label, type(error).__name__)
+            sent = None
+        if sent is not None:
+            results = [*results, {'status': 200, 'app': sent}]
     return results
 
 
 def fleet_push(store, config, rows, sender=None):
     """Phone notification for Fleet questions waiting for the owner: who asks and what, nothing of the owner's."""
-    with store.connect() as db:
-        subscriptions = [dict(r) for r in db.execute('SELECT endpoint,p256dh,auth FROM push_subscriptions')]
-    if not subscriptions or not config.get('dashboard_host'):
+    subscriptions, phones = push_reach(store, config)
+    if not subscriptions and not phones:
         return []
-    return push_send(store, config, subscriptions, fleet.push_payload(rows, fleet.dashboard_root(config)), 'fleet=' + rows[0]['id'], sender, kind='result')
+    return push_send(store, config, subscriptions, fleet.push_payload(rows, fleet.dashboard_root(config)), 'fleet=' + rows[0]['id'], sender, kind='result', wake='fleet')
 
 
 def fleet_notice_push(store, config, view, sender=None):
     """Phone notification for a Fleet notice (a seat request, someone joined or left, a server started)."""
-    with store.connect() as db:
-        subscriptions = [dict(r) for r in db.execute('SELECT endpoint,p256dh,auth FROM push_subscriptions')]
-    if not subscriptions or not config.get('dashboard_host'):
+    subscriptions, phones = push_reach(store, config)
+    if not subscriptions and not phones:
         return []
-    return push_send(store, config, subscriptions, fleet.notice_push(view, fleet.dashboard_root(config)), 'fleet=' + view['id'], sender, kind='result')
+    return push_send(store, config, subscriptions, fleet.notice_push(view, fleet.dashboard_root(config)), 'fleet=' + view['id'], sender, kind='result', wake='fleet')
 
 
 def fleet_telegram(config, message, message_id=None, request=None):
@@ -15577,6 +15674,15 @@ class App(*APP_MIXINS):
         if name == 'push_test':  # Settings or the nudge: one test notification to this device's own subscription
             if not owner_dashboard:
                 raise ValueError('Phone notifications are turned on in the dashboard app')
+            if 'app_device' in args:  # the mobile app: a test wakeup to that phone only
+                device = str(args.get('app_device') or '')
+                with self.store.connect() as db:
+                    known = notify.APP_ID.fullmatch(device) and any(d['id'] == device for d in notify.app_devices(db))
+                if not known:
+                    raise ValueError('Notifications are off on this device. Turn them on first.')
+                if not app_wake(self.store, self.config, 'test', 'push-test', device):
+                    raise ValueError('The test didn’t go through. Turn notifications off and on again.')
+                return {'sent': True}
             with self.store.connect() as db:
                 row = db.execute('SELECT endpoint,p256dh,auth FROM push_subscriptions WHERE endpoint=?', (str(args.get('endpoint') or ''),)).fetchone()
             if not row:
@@ -15585,6 +15691,10 @@ class App(*APP_MIXINS):
             if not any(200 <= r.get('status', 0) < 300 for r in results):
                 raise ValueError('The test didn’t go through. Turn notifications off and on again.')
             return {'sent': True}
+        if name in ('app_push_register', 'app_push_unregister'):
+            if not owner_dashboard:
+                raise ValueError('Phone notifications are turned on in the dashboard app')
+            return self.app_push_action(name, args)
         if name in ('push_subscribe', 'push_unsubscribe'):
             if not owner_dashboard:
                 raise ValueError('Phone notifications are turned on in the dashboard app')
@@ -16295,13 +16405,7 @@ class App(*APP_MIXINS):
 
     def notify_mail_target(self):
         """(url, token) for the digest email through the control plane, or None (not hosted or paired)."""
-        found = fleet.settings(self.config)
-        if not found or not (self.config.get('credentials') or {}).get('fleet'):
-            return None
-        try:
-            return found['url'], credential(self.config, 'fleet')
-        except Exception:  # noqa: BLE001 - no readable token: no email
-            return None
+        return cloud_target(self.config)
 
     def notify_open(self, ref):
         """Whether a held notification's to-do or Fleet question still waits for the owner."""
@@ -16330,9 +16434,9 @@ class App(*APP_MIXINS):
                 return None
             pushes, lines = notify.take_due(db, self.notify_open)
             handoffs = notify.take_handoffs(db)
-            subscriptions = [dict(r) for r in db.execute('SELECT endpoint,p256dh,auth FROM push_subscriptions')] if pushes else []
+        subscriptions, phones = push_reach(self.store, self.config) if pushes else ([], 0)
         went = []
-        if pushes and not (subscriptions and self.config.get('dashboard_host')):
+        if pushes and not subscriptions and not phones:
             with self.store.connect() as db:
                 notify.delivered(db, pushes)  # nowhere to push to: dropped, not kept to go off later
             pushes = []
@@ -16360,12 +16464,47 @@ class App(*APP_MIXINS):
             LOG.info('notify held channels=%s', ','.join(went))
         return went
 
+    def app_push_action(self, name, args):
+        """The mobile app's phones (app_push_register, app_push_unregister): the control plane keeps the push token and
+        sends the wakeups (app_wake); this Machine keeps the phone's id, platform and name for Settings, never the token."""
+        if name == 'app_push_unregister':
+            device = str(args.get('id') or '')
+            if not notify.APP_ID.fullmatch(device):
+                raise ValueError('Invalid phone')
+            target = cloud_target(self.config)
+            answer = notify.app_push(*target, {'action': 'unregister', 'id': device}) if target else {'missing': True}
+            if not answer:
+                raise ValueError('Couldn’t remove this phone. Try again.')
+            with self.store.connect() as db:
+                notify.app_device_remove(db, [device])
+            return {'removed': True}
+        platform, token = args.get('platform'), args.get('token')
+        if platform not in ('fcm', 'apns') or not isinstance(token, str) or not re.fullmatch(r'[A-Za-z0-9_:.-]{16,4096}', token):
+            raise ValueError('Invalid phone')
+        label = ' '.join(re.sub(r'[\x00-\x1f\x7f<>]', ' ', str(args.get('label') or '')).split())[:60]
+        label = label or ('iPhone' if platform == 'apns' else 'Android')
+        target = cloud_target(self.config)
+        if not target:  # self-hosted off The Machine Network: the relay doesn't know it. The app works without them.
+            return {'registered': False, 'reason': 'network'}
+        answer = notify.app_push(*target, {'action': 'register', 'platform': platform, 'token': token, 'label': label,
+                                           'sandbox': args.get('sandbox') is True})
+        device = str((answer or {}).get('id') or '')
+        if not notify.APP_ID.fullmatch(device):
+            raise ValueError('Couldn’t turn on notifications for this phone. Try again.')
+        with self.store.connect() as db:
+            notify.app_device_add(db, device, platform, label, now())
+        LOG.info('app push registered platform=%s', platform)
+        return {'registered': True, 'id': device, 'platform': platform, 'label': label}
+
     def notify_view(self):
         with self.store.connect() as db:
             prefs = notify.prefs(db)
             devices = db.execute('SELECT count(*) FROM push_subscriptions').fetchone()[0]
+            phones = notify.app_devices(db)  # the mobile app's phones count as devices too, and are listed to remove
         return {'prefs': prefs, 'telegram': telegram_on(self.config), 'email': mail_ready(self.config),
-                'push_devices': devices, 'push_ready': bool(self.config.get('dashboard_host')), 'digest_at': self.config.get('digest_at', '08:30')}
+                'push_devices': devices + len(phones), 'app_devices': phones,
+                'app_push_ready': bool(cloud_target(self.config)), 'phone_app': phone_app(self.config),
+                'push_ready': bool(self.config.get('dashboard_host')), 'digest_at': self.config.get('digest_at', '08:30')}
 
     def digest(self, current=None):
         """The morning digest as of `current` (notify.compose), or None when there is nothing to say."""
@@ -16414,11 +16553,10 @@ class App(*APP_MIXINS):
         went = []
         if digest:
             if prefs.get('push'):
-                with self.store.connect() as db:
-                    subscriptions = [dict(r) for r in db.execute('SELECT endpoint,p256dh,auth FROM push_subscriptions')]
-                if subscriptions and self.config.get('dashboard_host'):
+                subscriptions, phones = push_reach(self.store, self.config)
+                if subscriptions or phones:
                     payload = {**digest['push'], **({'silent': True} if notify.active() else {})}  # at the dashboard: no buzz
-                    if push_send(self.store, self.config, subscriptions, payload, 'digest', push):
+                    if push_send(self.store, self.config, subscriptions, payload, 'digest', push, wake='digest'):
                         went.append('push')
             if prefs.get('telegram') and telegram_on(self.config):
                 try:
@@ -16442,8 +16580,7 @@ class App(*APP_MIXINS):
         """Whether fleet_notify reaches the owner at all: a phone or computer with notifications, Telegram, or email,
         each on for results. With none, a Fleet question only waits on the dashboard (fleet.notify_round)."""
         with self.store.connect() as db:
-            push = bool(self.config.get('dashboard_host')) and notify.allowed(db, 'result', 'push') and \
-                bool(db.execute('SELECT 1 FROM push_subscriptions LIMIT 1').fetchone())
+            push = notify.allowed(db, 'result', 'push') and any(push_reach(self.store, self.config))
             mail = mail_ready(self.config) and notify.allowed(db, 'result', 'email')
         return push or mail or (telegram_on(self.config) and self.notify_on('result', 'telegram'))
 
@@ -16474,8 +16611,7 @@ class App(*APP_MIXINS):
         """A Fleet question reaches the owner on their phone or in Telegram: an app to push to with push on for
         results, or Telegram on for them."""
         with self.store.connect() as db:
-            push = bool(self.config.get('dashboard_host')) and notify.allowed(db, 'result', 'push') and \
-                bool(db.execute('SELECT 1 FROM push_subscriptions LIMIT 1').fetchone())
+            push = notify.allowed(db, 'result', 'push') and any(push_reach(self.store, self.config))
         return push or (telegram_on(self.config) and self.notify_on('result', 'telegram'))
 
     def fleet_notify_notice(self, view, message):
@@ -16491,11 +16627,10 @@ class App(*APP_MIXINS):
     def fleet_notify_brief(self, text, url):
         """The team brief is ready: a phone notification, and the brief itself in Telegram when Telegram is on (with
         Open only). Returns the Telegram message id."""
-        with self.store.connect() as db:
-            subscriptions = [dict(r) for r in db.execute('SELECT endpoint,p256dh,auth FROM push_subscriptions')]
-        if subscriptions and self.config.get('dashboard_host'):
+        subscriptions, phones = push_reach(self.store, self.config)
+        if subscriptions or phones:
             push_send(self.store, self.config, subscriptions, {'title': i18n.t('What your Fleet saw'), 'body': text.split('\n', 2)[-1][:200],
-                                                               'url': url, 'tag': 'fleet-brief'}, 'fleet-brief', kind='result')
+                                                               'url': url, 'tag': 'fleet-brief'}, 'fleet-brief', kind='result', wake='fleet')
         if not telegram_on(self.config) or not self.notify_on('result', 'telegram'):
             return None
         result = fleet_telegram(self.config, {'text': text, 'buttons': [[{'text': i18n.t('Open the brief'), 'url': url}]] if url else []})
@@ -16750,11 +16885,10 @@ class App(*APP_MIXINS):
         """How the owner's own Fleet request went (an intro, a handoff, a follow-up split): a phone notification, and a
         plain Telegram line with Open when Telegram is on. No buttons to act on: it only tells."""
         root = fleet.dashboard_root(self.config)
-        with self.store.connect() as db:
-            subscriptions = [dict(r) for r in db.execute('SELECT endpoint,p256dh,auth FROM push_subscriptions')]
-        if subscriptions and root:
+        subscriptions, phones = push_reach(self.store, self.config)
+        if subscriptions or phones:
             push_send(self.store, self.config, subscriptions, {'title': i18n.t('Your Fleet'), 'body': text[:200], 'url': root, 'tag': 'fleet-' + anchor},
-                      'fleet=' + anchor, kind='result')
+                      'fleet=' + anchor, kind='result', wake='fleet')
         if telegram_on(self.config) and self.notify_on('result', 'telegram'):
             fleet_telegram(self.config, {'text': text, 'buttons': [[{'text': i18n.t('Open in To-dos'), 'url': root}]] if root else []})
 
@@ -19758,6 +19892,10 @@ class App(*APP_MIXINS):
                                         'payload': {'title': i18n.t('Your week'), 'body': plain(body), 'url': root, 'tag': 'recap-' + week}})
             except (subprocess.TimeoutExpired, ValueError, KeyError) as error:
                 LOG.warning('push recap error=%s', type(error).__name__)
+        try:
+            app_wake(self.store, self.config, 'digest', 'recap-' + week)  # the mobile app: a wakeup without text
+        except Exception as error:  # noqa: BLE001 - best effort, like the web push
+            LOG.warning('app push recap error=%s', type(error).__name__)
         return {'messageId': 'web-recap-' + week}
 
     def recap_step(self, sender=None, current=None):
