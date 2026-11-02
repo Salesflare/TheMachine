@@ -326,6 +326,44 @@ class InstallerTest(unittest.TestCase):
         self.assertNotIn('Connect OpenClaw Gateway', result.stdout)
         self.assertIn('assistant doctor', result.stdout)
 
+    def test_the_gateway_unit_gets_a_drop_in_that_keeps_systemd_retrying_once(self):
+        dropin = self.home / '.config/systemd/user/openclaw-gateway.service.d/keep-retrying.conf'
+        result = self.install('--no-start')
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        text = dropin.read_text()
+        self.assertIn('[Unit]\nStartLimitIntervalSec=0\n', text)  # no start limit: systemd never gives up
+        self.assertIn('[Service]\nRestartSec=15\n', text)
+        self.assertIn('keeps retrying', result.stdout)
+        result = self.install('--no-start')  # an update: same file, nothing said
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(dropin.read_text(), text)
+        self.assertNotIn('keeps retrying', result.stdout)
+
+    def test_the_retry_drop_in_goes_only_next_to_an_existing_gateway_unit_under_systemd(self):
+        calls, said = [], []
+        run = lambda command, **kwargs: calls.append(command) or subprocess.CompletedProcess(command, 0, '', '')
+        paths = installer.Paths(self.home)
+        units = self.home / '.config/systemd/user'
+        with mock.patch.object(installer, 'run', side_effect=run), mock.patch.object(installer, 'say', side_effect=said.append), \
+                mock.patch.object(installer.service, 'manager', return_value='systemd'), \
+                mock.patch.object(installer.onboarding, 'gateway_units', return_value=['openclaw-gateway.service', 'openclaw-node.service']):
+            self.assertEqual(installer.gateway_keep_retrying(paths), [units / 'openclaw-gateway.service.d/keep-retrying.conf'])
+            self.assertFalse((units / 'openclaw-node.service.d').exists())  # the node host is not the Gateway
+            self.assertEqual(calls, [['systemctl', '--user', 'daemon-reload']])
+            calls.clear()
+            self.assertEqual(installer.gateway_keep_retrying(paths), [])  # already there: no write, no reload
+            self.assertEqual(calls, [])
+            (units / 'openclaw-gateway.service.d/keep-retrying.conf').write_text('[Unit]\nStartLimitIntervalSec=60\n')
+            self.assertEqual(len(installer.gateway_keep_retrying(paths)), 1)  # an older or edited one is put back
+            self.assertEqual((units / 'openclaw-gateway.service.d/keep-retrying.conf').read_text(), installer.GATEWAY_RETRY_TEXT)
+        shutil.rmtree(units)
+        for manager, found in (('systemd', []), ('launchd', ['openclaw-gateway.service'])):
+            with self.subTest(manager=manager), mock.patch.object(installer, 'run', side_effect=run), \
+                    mock.patch.object(installer.service, 'manager', return_value=manager), \
+                    mock.patch.object(installer.onboarding, 'gateway_units', return_value=found):
+                self.assertEqual(installer.gateway_keep_retrying(paths), [])  # no unit yet / launchd's KeepAlive retries
+                self.assertFalse(units.exists())
+
     def test_rerun_upgrades_without_clobbering_config_or_secrets(self):
         self.assertEqual(self.install('--no-start').returncode, 0)
         token = (self.data / 'api-token').read_text()
