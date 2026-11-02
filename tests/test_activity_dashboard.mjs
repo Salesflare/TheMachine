@@ -12,7 +12,9 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // At 1440x900, 1440x700 and 390x844 the page stays inside the screen. All mocked. SHOTS=dir saves screenshots.
 const dashboard=await dashboardPage();
 const shots=process.env.SHOTS;if(shots)await mkdir(shots,{recursive:true});
-const day=(d,h)=>new Date(Date.now()-d*86400000).toISOString().slice(0,11)+h+':00+00:00';
+// A fixed clock in UTC, mid-afternoon: Today and Yesterday never depend on when or where the test runs
+const NOW=new Date('2026-06-10T15:00:00Z');
+const day=(d,h)=>new Date(NOW.getTime()-d*86400000).toISOString().slice(0,11)+h+':00+00:00';
 const TODO={id:'a1b2c3d4e5f60718',title:'Reply to Robin about the renewal and the new pricing for next year'};
 const LINES=[
  {id:'messages:j1',kind:'messages',at:day(0,'09:12'),what:'Email to Robin: Renewal pricing',where:'Gmail · sam@acme.example',outcome:'done',status:'Sent',by:'After your OK',todo:TODO},
@@ -41,7 +43,8 @@ try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
  for(const [width,height] of [[1440,900],[1440,700],[390,844]])for(const scheme of ['light','dark']){
   asked.length=0;
-  const phone=width<600,context=await browser.newContext({viewport:{width,height},isMobile:phone,hasTouch:phone,colorScheme:scheme}),page=await context.newPage();
+  const phone=width<600,context=await browser.newContext({viewport:{width,height},isMobile:phone,hasTouch:phone,colorScheme:scheme,timezoneId:'UTC'}),page=await context.newPage();
+  await context.clock.setFixedTime(NOW);
   page.on('pageerror',e=>errors.push(e.message));
   await page.goto('http://127.0.0.1:'+server.address().port+'/#settings/activity');
   const list=page.locator('#act-list');await list.locator('.act-row').first().waitFor();
