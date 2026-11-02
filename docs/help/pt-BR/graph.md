@@ -187,6 +187,10 @@ Projetos de um tipo em etapas, como um pipeline de avaliação. **⋯** em um qu
 
 **Follow-ups…** no **⋯** de um quadro faz follow-up sozinha quando alguém não responde. Veja [Follow-ups](follow-ups.md).
 
+**Concluído quando**, em **Editar** de um projeto, diz em palavras simples o que o conclui, com a prova: **Uma página no ar** (The Machine abre o link da mensagem deles e confere se ele aponta para você) ou **A mensagem deles**. As revisões sugerem uma para listagens de parceiros. Uma revisão só move um projeto para a última etapa com essa prova, com link na página dele; **Ganho** à mão continua valendo.
+
+A página também mostra o que o trava (sem resposta há 10+ dias, uma promessa atrasada) e cria uma tarefa quando ele não tem nenhuma. Nada é enviado sem você.
+
 Marque alguns, ou **Selecionar tudo**, para fazer de uma vez, e **Desfazer** logo depois se mudar de ideia. Um projeto que junta várias contrapartes vira um projeto por contraparte quando você o adiciona.
 
 **Pipeline**, no topo de um quadro, soma o valor dos projetos abertos por etapa e o que deve fechar por mês, pelas datas de fechamento. Projetos ganhos, perdidos e parados não estão abertos. O que você ganhou neste mês aparece à parte. Os valores são em euros, a menos que sua Machine esteja configurada para outra moeda. Com **Proprietário** em Filtrar, conta só os seus.

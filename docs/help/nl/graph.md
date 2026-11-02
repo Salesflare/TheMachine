@@ -187,6 +187,10 @@ Projecten van één soort in fases, zoals een pipeline voor evaluaties. **⋯** 
 
 **Opvolging…** in het **⋯** van een bord volgt vanzelf op als iemand niet antwoordt. Zie [Opvolging](follow-ups.md).
 
+**Klaar als**, onder **Bewerken** op een project, zegt in gewone woorden wat het afrondt, met het bewijs: **Een live pagina** (The Machine opent de link uit hun bericht en kijkt of die naar jou linkt) of **Hun bericht**. Reviews stellen er een voor bij partnervermeldingen. Een review zet een project pas in de laatste fase met dat bewijs, gelinkt op de pagina; **Gewonnen** met de hand kan altijd.
+
+De pagina toont ook wat het tegenhoudt (geen antwoord in 10+ dagen, een te late belofte) en maakt er één to-do voor als er nog geen is. Er wordt niets verstuurd zonder jou.
+
 Vink er een paar aan, of **Alles selecteren**, om ze in één keer te doen, en **Ongedaan maken** meteen erna als je van gedachten verandert. Een project dat meerdere tegenpartijen bundelt, wordt één project per tegenpartij als je het toevoegt.
 
 **Pipeline**, bovenaan een bord, telt de waarde van de open projecten per fase op, en wat er per maand verwacht wordt te sluiten op basis van de sluitdatums. Gewonnen, verloren en vastgelopen projecten zijn niet open; wat je deze maand won, staat apart. Waarden zijn in euro, tenzij je Machine op een andere munt ingesteld is. Met **Eigenaar** in Filteren telt het alleen de jouwe.

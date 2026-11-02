@@ -187,6 +187,10 @@ Projekte einer Art in Phasen, etwa eine Pipeline für Evaluierungen. **⋯** auf
 
 **Nachfassen…** im **⋯** eines Boards fasst von selbst nach, wenn jemand nicht antwortet. Siehe [Nachfassen](follow-ups.md).
 
+**Fertig, wenn** unter **Bearbeiten** bei einem Projekt sagt in einfachen Worten, was es abschließt, mit Beleg: **Eine Live-Seite** (The Machine öffnet den Link aus ihrer Nachricht und prüft, ob er auf dich verlinkt) oder **Ihre Nachricht**. Reviews schlagen eine für Partner-Einträge vor. Ein Review setzt ein Projekt nur mit diesem Beleg in die letzte Phase, verlinkt auf seiner Seite; **Gewonnen** von Hand geht immer.
+
+Die Seite zeigt auch, was es aufhält (seit 10+ Tagen keine Antwort, ein überfälliges Versprechen), und legt eine Aufgabe dafür an, wenn es keine hat. Nichts wird ohne dich gesendet.
+
 Hake ein paar an, oder **Alle auswählen**, um sie auf einmal zu bearbeiten, und **Rückgängig** direkt danach, wenn du es dir anders überlegst. Ein Projekt, das mehrere Gegenüber bündelt, wird beim Hinzufügen zu einem Projekt pro Gegenüber.
 
 **Pipeline**, oben auf einem Board, rechnet den Wert der offenen Projekte pro Phase zusammen, und was pro Monat laut Abschlussdatum abgeschlossen werden soll. Gewonnene, verlorene und festgefahrene Projekte sind nicht offen. Was du diesen Monat gewonnen hast, steht getrennt. Werte sind in Euro, außer deine Machine ist auf eine andere Währung eingestellt. Mit **Inhaber** in Filtern zählt sie nur deine.
