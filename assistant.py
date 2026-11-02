@@ -4332,26 +4332,31 @@ class Store:
     def greeting(self, owner_name=''):
         """The dashboard's hello on a new owner's first views (GREETING_HOURS from their first, until they first decide a
         to-do): {'name': their first name, 'line': {'person', 'since', 'card'}} with the open to-do someone has waited
-        on them for longest (card_waiting_since), named from their own Machine; just the name when nothing is ready yet.
+        on them for longest (card_waiting_since; a ready one first), named from their own Machine; just the name when
+        nothing is ready yet. The dashboard leads with that to-do (line.card) and keeps the rest of the page quiet.
         None once past it, or for someone who had decided to-dos before this existed. For the owner's own dashboard only:
         nothing of it goes into a report or leaves the Machine."""
         first = (str(owner_name or '').split() or [''])[0]
         first = first if re.fullmatch(r"[^\W\d_][\w'’-]*", first) else ''
         with self.connect() as db:
-            decided = db.execute('SELECT 1 FROM decisions WHERE source IN (' + ','.join('?' * len(TIP_SOURCES)) + ') AND choice IN ('
-                                 + ','.join('?' * len(FIRST_ACTIONS)) + ') LIMIT 1', (*TIP_SOURCES, *FIRST_ACTIONS)).fetchone()
+            decided = lambda since='': db.execute(
+                'SELECT 1 FROM decisions WHERE source IN (' + ','.join('?' * len(TIP_SOURCES)) + ') AND choice IN ('
+                + ','.join('?' * len(FIRST_ACTIONS)) + ') AND created_at>=? LIMIT 1', (*TIP_SOURCES, *FIRST_ACTIONS, since)).fetchone()
             row = db.execute("SELECT at,detail FROM milestones WHERE name='greeting'").fetchone()
             if not row:
-                db.execute("INSERT OR IGNORE INTO milestones(name,at,detail) VALUES('greeting',?,?)", (now(), 'off' if decided else 'on'))
+                db.execute("INSERT OR IGNORE INTO milestones(name,at,detail) VALUES('greeting',?,?)", (now(), 'off' if decided() else 'on'))
                 row = db.execute("SELECT at,detail FROM milestones WHERE name='greeting'").fetchone()
             ends = (dt.datetime.fromisoformat(row['at']) + dt.timedelta(hours=GREETING_HOURS)).isoformat()
-            if row['detail'] != 'on' or decided or now() >= ends:
+            if row['detail'] != 'on' or decided(row['at']) or now() >= ends:
                 return None
+            # A ready to-do (its draft prepared) before one still to decide or preparing; within each, the longest wait
             best = None
-            for card in db.execute('SELECT id,event_ids FROM suggestions WHERE ' + activity.SHOWN, (now(),)).fetchall():
+            for card in db.execute('SELECT id,status,event_ids FROM suggestions WHERE ' + activity.SHOWN, (now(),)).fetchall():
                 found = self.card_waiting_since(db, card)
-                if found and (not best or found[0] < best[0]):
-                    best = (*found, card['id'])
+                key = found and (card['status'] != 'prepared', found[0])
+                if found and (not best or key < best[0]):
+                    best = (key, *found, card['id'])
+            best = best and best[1:]
         line = None
         if best:
             m = best[1]['metadata'] if isinstance(best[1]['metadata'], dict) else json.loads(best[1]['metadata'] or '{}')

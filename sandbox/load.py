@@ -165,6 +165,8 @@ def load(directory, states, port=8870, network_port=8871, fixture_path=HERE / 'f
             load_roles(db, base)
             load_fields(db, base)
             load_skills(db, states, fixture, base)
+            # The owner's first view after setup (Store.greeting): the hello by name, leading with who waits longest
+            db.execute("INSERT OR REPLACE INTO milestones(name,at,detail) VALUES('greeting',?,'on')", (base.isoformat(),))
             if 'fleet' in states:
                 load_share(db)
                 load_owners(db, fixture, base)

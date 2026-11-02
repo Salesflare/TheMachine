@@ -101,6 +101,30 @@ class ReadyOnArrival(unittest.TestCase):
         with self.store.connect() as db:
             self.assertEqual(hello['line']['since'], db.execute('SELECT occurred_at FROM events WHERE id=?', (self.ids['ria'],)).fetchone()[0])
 
+    def test_a_ready_to_do_leads_over_an_older_wait_still_to_decide(self):
+        # The hello and the top of the list name the same to-do: the dashboard leads with line.card. A ready draft (Sam,
+        # waiting since this morning) beats Ria's older message whose to-do still waits for a decision.
+        older = self.app.action('suggest', {'dedupe_key': 'ria', 'title': 'Answer Ria', 'body': 'Asked.', 'event_ids': [self.ids['ria']], 'when': 'now'})['id']
+        ready = self.ahead('sam', 'sam')
+        self.assertEqual(self.store.greeting('Alex')['line']['card'], older)  # nothing ready yet: the longest wait
+        with self.store.connect() as db:
+            db.execute("UPDATE suggestions SET status='prepared' WHERE id=?", (ready,))
+        self.assertEqual(self.store.greeting('Alex')['line'], {'person': 'Sam', 'card': ready, 'since': self.since('sam')})
+
+    def since(self, source_id):
+        with self.store.connect() as db:
+            return db.execute('SELECT occurred_at FROM events WHERE id=?', (self.ids[source_id],)).fetchone()[0]
+
+    def test_decisions_from_before_the_hello_began_do_not_end_it(self):
+        # The sample Machine of the site demo: its history is older than the owner's first view (sandbox/load.py)
+        sid = self.ahead('ria', 'ria')
+        self.store.decide(sid, 'reject', '', 'click', 'dashboard')
+        later = (dt.datetime.now(dt.timezone.utc) + dt.timedelta(minutes=5)).isoformat()
+        with self.store.connect() as db:
+            db.execute("INSERT INTO milestones(name,at,detail) VALUES('greeting',?,'on')", (later,))
+        with patch.object(a, 'now', return_value=later):
+            self.assertEqual(self.store.greeting('Alex')['name'], 'Alex')
+
     def test_with_nothing_ready_it_is_a_plain_hello(self):
         self.assertEqual(self.store.greeting('Alex Example'), {'name': 'Alex'})
         # A to-do nobody waits on (a newsletter) gives no line either
