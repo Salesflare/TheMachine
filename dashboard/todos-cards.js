@@ -24,7 +24,7 @@ const sourceText=v=>{let s=String(v||'').replace(/^Source:\s*/i,''),more='';
  s=s.replace(/ \(\+(\d+) more\)$/,(_,n)=>{more=' '+t('(+{} more) (a source)',n);return ''});
  const i=s.lastIndexOf(' · '),head=i<0?s:s.slice(0,i),day=i<0?'':' · '+sourceDay(s.slice(i+3)),m=/^(.+?) from (.+)$/.exec(head),dm=/^Slack DM with (.+)$/.exec(head);
  const up=x=>x?x[0].toUpperCase()+x.slice(1):x,what=dm?t('Slack DM with {} (a source)',dm[1]):m?t('{} from {} (a source)',t(up(m[1])),m[2]):t(up(head));return up(what)+day+more};
-const sourceHtml=v=>{const t=sourceText(v),i=t.lastIndexOf(' · ');return`<span class="src">${i<0?esc(t):`${esc(t.slice(0,i+3))}<span class="src-date">${esc(t.slice(i+3))}</span>`}</span>`};  // the date never splits over two lines
+const sourceHtml=v=>{const t=sourceText(v),i=t.lastIndexOf(' · ');return html`<span class="src">${i<0?t:html`${t.slice(0,i+3)}<span class="src-date">${t.slice(i+3)}</span>`}</span>`};  // the date never splits over two lines
 const syncError=v=>v==='android_feed_unavailable'?'Notification bridge unavailable':v==='android_offline'?'Phone disconnected':v==='android_notifications_unavailable'?'Phone notifications unavailable':v==='android_gateway_unavailable'?'OpenClaw connection unavailable':v?.startsWith('network')?'Connection problem':v==='timeout'?'Connection timed out':['slack:HTTP_429','slack_ratelimited'].includes(v)?'Slack rate limit':readableError(v);
 // Error codes like linkedin_read_failed, in words: the source's name and what went wrong.
 // Telegram chats stopped for a reason only the owner can fix: said on its card, never a silent gap (telegram_store.ERRORS)
@@ -56,7 +56,7 @@ const tone=v=>({pending:'amber',accepted:'lavender',instructions:'lavender',prep
 const retryLabel=r=>/\b(?:sign(?:ed)?[ -]?in|log(?:ged)?[ -]?in|signed out|2fa|two-factor|authenticator|passkey|tap continue)\b/i.test(r||'')&&!/try again/i.test(r||'')?'Continue':'Try again';
 // One calm line at the top of a page, in a quiet card; with a button when there is somewhere to go (data: its data-* attributes).
 const pageNotice=(text,button,data={},cls='')=>`<div class="notice-card${cls?' '+cls:''}" role="status"><span>${esc(text)}</span>${button?`<button type="button" class="head-link"${Object.entries(data).map(([k,v])=>` data-${k}="${esc(v)}"`).join('')}>${esc(button)}</button>`:''}</div>`;
-const chip=(text,t)=>`<span class="chip t-${t}"><span class="ct">${esc(text)}</span></span>`;
+const chip=(text,t)=>html`<span class="chip t-${t}"><span class="ct">${text}</span></span>`;
 const chipNode=(text,tone)=>make('span',{class:`chip t-${tone}`},make('span',{class:'ct'},text));
 // Deadlines in local days: overdue and today stand out; the rest read as a weekday or date.
 function dueChip(s){if(!s.due||closed(s)||looksDone(s))return '';const today=new Date(localDay(new Date())+'T12:00'),due=new Date(s.due+'T12:00'),days=Math.round((due-today)/864e5);
@@ -64,12 +64,12 @@ function dueChip(s){if(!s.due||closed(s)||looksDone(s))return '';const today=new
  const at=s.due_at?new Date(s.due_at):null,timed=at&&!isNaN(at),late=timed?at<new Date():days<0;
  const text=late?'Overdue':timed?'Due '+(days===0?'':at.toLocaleDateString(DL,days<7?{weekday:'short'}:{day:'numeric',month:'short'})+' ')+fmtHM(at)
   :days===0?'Due today':days===1?'Due tomorrow':'Due '+due.toLocaleDateString(DL,days<7?{weekday:'long'}:{day:'numeric',month:'short'});
- return `<span class="chip t-${late||days<=0?'orange':days===1?'amber':'muted'}" title="Due ${esc(due.toLocaleDateString(DL,{weekday:'long',day:'numeric',month:'long'})+(timed?' '+fmtHM(at):''))}">${esc(text)}</span>`}
+ return html`<span class="chip t-${late||days<=0?'orange':days===1?'amber':'muted'}" title="Due ${due.toLocaleDateString(DL,{weekday:'long',day:'numeric',month:'long'})+(timed?' '+fmtHM(at):'')}">${text}</span>`}
 const closed=s=>['completed','rejected'].includes(s.status);
 // A done to-do keeps its title (what needed doing); how it ended goes under it: what went out has its own line
 // (outboxLine), the sign that it was handled is this one.
 const doneLine=s=>{if(s.status!=='completed')return '';let why='';try{why=JSON.parse(s.handled_hint||'{}').reason||''}catch{}
- return why?`<p class="note status-line done-line">${esc(t('Done: {}',why))}</p>`:''};
+ return why?html`<p class="note status-line done-line">${t('Done: {}',why)}</p>`:''};
 // A to-do that outlived its moment closed by itself (Store.expire_passed): when that was reads from the stored time, so
 // "yesterday" is right on the day it is read, never a word saved the day before.
 const expiredLine=s=>{const at=new Date(s.expires_at||'');if(!s.expired_at||isNaN(at))return '';const what=s.expires_what||'',hm=fmtHM(at),
@@ -102,7 +102,7 @@ const gapLine=(s,hint)=>{const g=s.gap;let w={};try{w=JSON.parse(s.awaiting||'{}
  if(!g||closed(s)||s.status==='snoozed'||hint||w.delegated||s.follow_up||withTeammate(s))return '';
  const via=g.channel==='email'?t('email'):g.channel,more=g.unsynced?.length?' '+t('They may have replied on {} (not synced).',gapOr(g.unsynced)):'';
  return `<p class="note gap-line">${esc((g.wrote_last?t('Your last message: {} days ago by {}; no reply since.',g.days,via):t('Last contact {} days ago by {}; nothing since.',g.days,via))+more)}</p>`};
-const handedNote=s=>{let w={};try{w=JSON.parse(s.awaiting||'{}')}catch{}if(!w.delegated)return '';const text=s.status==='snoozed'?t('Sent to {}. Waiting for their reply; it closes when they answer.',w.name):s.status==='completed'&&w.answered?t('{} replied, so I closed this.',w.name):s.status==='prepared'?t('No reply from {} yet.',w.name):'';return text?`<p class="note">${esc(text)}</p>`:''};
+const handedNote=s=>{let w={};try{w=JSON.parse(s.awaiting||'{}')}catch{}if(!w.delegated)return '';const text=s.status==='snoozed'?t('Sent to {}. Waiting for their reply; it closes when they answer.',w.name):s.status==='completed'&&w.answered?t('{} replied, so I closed this.',w.name):s.status==='prepared'?t('No reply from {} yet.',w.name):'';return text?html`<p class="note">${text}</p>`:''};
 // Under way or done, so no Send. An unconfirmed send checked long enough (retry_ok) may be sent again by the owner.
 const sendBusy=a=>['queued','sending','sent','uncertain','local_preparation','paused','undoing','undone'].includes(a?.status)&&!a?.retry_ok;
 const sentAt=a=>a?.sent_at?' at '+fmtHM(a.sent_at,{timeZone:state?.hours?.timezone||undefined}):'';
@@ -197,7 +197,7 @@ const CHIP_ICON={person:'<svg class="ci" viewBox="0 0 24 24" aria-hidden="true">
  project:'<svg class="ci" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5V18a1.5 1.5 0 0 0 1.5 1.5h13A1.5 1.5 0 0 0 20 18V9.5A1.5 1.5 0 0 0 18.5 8H12l-2-2.5H5.5A1.5 1.5 0 0 0 4 7z"/></svg>'};
 const whoChip=s=>{const p=(s.people||[])[0];if(!p?.id||!p.name)return '';let w={};try{w=JSON.parse(s.awaiting||'{}')||{}}catch{}
  const waited=s.handoff_wait?.name||w.name,first=waited&&(s.people||[]).find(x=>x.name===waited)||p;
- const short=String(first.name).split(' ')[0];return `<a class="chip scope who" href="${esc(graphHash(first.id))}" title="Open ${esc(first.name)}" aria-label="Open ${esc(first.name)}">${CHIP_ICON.person}<span class="who-full">${esc(first.name)}</span>${short!==first.name?`<span class="who-short">${esc(short)}</span>`:''}</a>${first.org?.id&&first.org.name&&first.org.name!==first.name?`<a class="chip scope who org" href="${esc(graphHash(first.org.id))}" title="Open ${esc(first.org.name)}" aria-label="Open ${esc(first.org.name)}">${CHIP_ICON.org}<span>${esc(first.org.name)}</span></a>`:''}`};
+ const short=String(first.name).split(' ')[0];return html`<a class="chip scope who" href="${graphHash(first.id)}" title="Open ${first.name}" aria-label="Open ${first.name}">${raw(CHIP_ICON.person)}<span class="who-full">${first.name}</span>${short!==first.name?html`<span class="who-short">${short}</span>`:''}</a>${first.org?.id&&first.org.name&&first.org.name!==first.name?html`<a class="chip scope who org" href="${graphHash(first.org.id)}" title="Open ${first.org.name}" aria-label="Open ${first.org.name}">${raw(CHIP_ICON.org)}<span>${first.org.name}</span></a>`:''}`};
 // A to-do a teammate has now: Take it back makes it yours again; Hand off to someone else gives it to another one
 // (and takes it back from them, see handoffEditor). Both sit in sight, beside the to-do's own buttons.
 const canReassign=s=>!closed(s)&&!s.handled_hint&&!!state?.fleet?.on&&['asked','waiting for them'].includes(s.fleet_handoff?.stage)&&!handingOff.has(s.id)&&!redirect(s);
@@ -206,7 +206,7 @@ const canHandoff=s=>!closed(s)&&!s.handled_hint&&!!state?.fleet?.on&&s.scope==='
 // a conversation behind it already (a run, a note of yours, a coding agent's answer). Typing in Change still changes the card in place.
 const CHAT_ICON='<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M5 5.5h14a1.5 1.5 0 0 1 1.5 1.5v8.5a1.5 1.5 0 0 1-1.5 1.5h-7.5L7 20.5V17H5a1.5 1.5 0 0 1-1.5-1.5V7A1.5 1.5 0 0 1 5 5.5z"/></svg>';
 const chatHad=s=>!!(s.agent_job||s.latest_feedback||s.change_prompt||s.preparation_status&&s.preparation_status!=='queued');
-const chatLink=s=>`<a class="card-chat-link${chatHad(s)?' had':''}" href="#chat=${s.id}" title="${chatHad(s)?'Open the conversation':'Open as a chat'}">${CHAT_ICON}<span>Chat</span><span aria-hidden="true">›</span></a>`;
+const chatLink=s=>html`<a class="card-chat-link${chatHad(s)?' had':''}" href="#chat=${s.id}" title="${chatHad(s)?'Open the conversation':'Open as a chat'}">${raw(CHAT_ICON)}<span>Chat</span><span aria-hidden="true">›</span></a>`;
 // A ready draft the Machine can't send itself (no send path, such as an internal note): Copy draft leads, with why.
 // A skill the to-do's run proposed (proposed_skill): what is in it on the card, and Create skill (or Update skill, its before
 // and after first) leads. It goes through the owner's own Approve (skill_decide); nothing is installed before that tap.
@@ -217,8 +217,8 @@ const skillLead=s=>s.status==='prepared'&&!!s.proposed_skill&&!skillDecided(s);
 const proposedSkillBox=s=>{const p=s.proposed_skill;if(!p||closed(s))return '';if(p.dismissed)return `<p class="note skill-dismissed">${esc(t('Skill dismissed'))}</p>`;if(p.created)return `<p class="note skill-created">${esc(t('Skill created. Your Machine uses it from now on.'))}</p>`;
  if(p.update)return `<details class="skill-notes"><summary>${esc(t('Read the change'))}</summary><div class="skill-ba">${skillBeforeAfter(p.update)}</div></details>`;
  return `<details class="skill-notes"><summary>${esc(t('Read the skill'))}</summary><p><strong translate="no">${esc(p.name)}</strong></p><p class="note" translate="no">${esc(t('When: {}',p.description))}</p><div translate="no">${p.body.replace(/^#{1,6}\s+(.+)$/gm,'**$1**').split(/\n\s*\n/).map(x=>x.trim()).filter(Boolean).map(x=>`<p>${format(x).replace(/\n/g,'<br>')}</p>`).join('')}</div></details>`};
-const skillButton=s=>{const p=s.proposed_skill;return 'update' in p?`<button class="primary" data-skill-update="${esc(p.id)}" data-settings>${esc(t('Update skill'))}</button>`
- :`<button class="primary" data-skill-create="${esc(p.id)}" data-card="${esc(s.id)}">${esc(t('Create skill'))}</button>`};
+const skillButton=s=>{const p=s.proposed_skill;return 'update' in p?html`<button class="primary" data-skill-update="${p.id}" data-settings>${t('Update skill')}</button>`
+ :html`<button class="primary" data-skill-create="${p.id}" data-card="${s.id}">${t('Create skill')}</button>`};
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-skill-create]');if(!b)return;e.preventDefault();b.disabled=true;
  try{await skillAct('skill_decide',{id:b.dataset.skillCreate,choice:'approve'});toast(t('Skill created. Your Machine uses it from now on.'));await refresh()}
  catch(err){errCaught(err);b.disabled=false;toast(err.message,true)}});
@@ -303,7 +303,7 @@ const ownerStepChoices=choices=>[['complete','Done'],...choices.filter(([c])=>c!
 // A to-do's project (graph.set_card_project): a chip to its page, and a small picker to change it or take it off.
 // Set by hand it stays; otherwise the review or the project its thread or people are on chose it.
 // The chip opens the project's page; Project under Details opens the picker.
-const projectChip=s=>s.project_node?`<a class="chip project-link" href="${graphHash(s.project_node.node_id)}" title="Project">${CHIP_ICON.project}<span>${esc(s.project_node.name)}</span></a>`:'';
+const projectChip=s=>s.project_node?html`<a class="chip project-link" href="${graphHash(s.project_node.node_id)}" title="Project">${raw(CHIP_ICON.project)}<span>${s.project_node.name}</span></a>`:'';
 async function cardProjectPick(id,anchor){let names=[];try{const r=await request('api/graph?view=projects');names=r.projects||[]}catch{}
  const s=(state.suggestions||[]).find(x=>x.id===id)||{},cur=s.project_node?.node_id||'';document.querySelector('.project-picker')?.remove();
  const box=document.createElement('div');box.className='project-picker';box.setAttribute('role','dialog');box.setAttribute('aria-label','Project for this to-do');
@@ -325,7 +325,7 @@ const moveText=id=>id==='personal'?t('Move to Personal'):manyWork()?t('Move to W
 const movedText=id=>id==='personal'?t('Moved to Personal'):manyWork()?t('Moved to Work at {}',areaOrg(id)):t('Moved to Work');
 const moveTargets=s=>!s.area||closed(s)?[]:(state.areas||[]).filter(a=>a.id!==s.area);
 // Its area as a chip on its line, under All; Area under Details changes it (the picker).
-const areaChip=s=>s.scope&&scopeFilter==='all'?`<span class="chip scope">${s.scope==='work'?'Work':'Personal'}</span>`:'';
+const areaChip=s=>s.scope&&scopeFilter==='all'?html`<span class="chip scope">${s.scope==='work'?'Work':'Personal'}</span>`:'';
 const moveAsk=s=>!closed(s)&&s.preparation_status==='blocked'&&!s.preparation_error&&!!s.preparation_move_to&&moveTargets(s).some(a=>a.id===s.preparation_move_to);
 async function cardMove(id,area,b,undo){if(b)b.disabled=true;
  try{const r=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'card_move',args:{suggestion_id:id,decision_id:crypto.randomUUID(),...(undo?{undo}:{area})}})});
@@ -357,14 +357,14 @@ const sendTipFits=s=>s.status==='prepared'&&!closed(s)&&!s.handled_hint&&!withTe
 function tipDone(tip){if(!firstTips().includes(tip))return;tipsGone.add(tip);
  request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'tip_done',args:{tip}})})
   .then(r=>{if(Array.isArray(r?.first_tips))state.first_tips=r.first_tips}).catch(()=>{})}
-const tipLine=(tip,text)=>`<p class="first-tip" data-tip="${tip}"><span class="tip-text">${text}</span><button type="button" class="tip-x" data-tip-done="${tip}" aria-label="Hide this tip" title="Hide this tip">×</button></p>`;
+const tipLine=(tip,text)=>html`<p class="first-tip" data-tip="${tip}"><span class="tip-text">${text}</span><button type="button" class="tip-x" data-tip-done="${tip}" aria-label="Hide this tip" title="Hide this tip">×</button></p>`;
 function firstTip(s,section,choices){if(closed(s)||!['Ready for you','Needs your decision'].includes(section))return '';
- if(tipSend)return tipSend===s.id?tipLine('send',esc(t('You can edit it before it goes. It only goes out when you press Send.'))):'';
+ if(tipSend)return tipSend===s.id?tipLine('send',t('You can edit it before it goes. It only goes out when you press Send.')):'';
  const change=choices.find(([c])=>c==='change'),reject=choices.find(([c])=>c==='reject');
  if(tipChange==='next'&&change&&reject&&!agentAsk(s)&&!withTeammate(s))tipChange=s.id;
  if(tipChange!==s.id)return '';
- const act=([c,label])=>`<button type="button" class="tip-act" data-id="${s.id}" data-choice="${c}">${esc(t(label))}</button>`;
- return tipLine('change',t('Not quite right? {} tells me what to change. {} clears it.',act(change),act(reject)))}
+ const act=([c,label])=>html`<button type="button" class="tip-act" data-id="${s.id}" data-choice="${c}">${t(label)}</button>`;
+ return tipLine('change',htmlT('Not quite right? {} tells me what to change. {} clears it.',act(change),act(reject)))}
 function suggestionCard(s,section){
 // A result that only answered, explained or planned leaves the task itself to do: Do it leads again.
 const answered=s.status==='prepared'&&(()=>{try{return JSON.parse(s.outcome||'{}').state==='answered'}catch{return false}})();
@@ -422,8 +422,8 @@ const viewIn=s.browser_view&&!smart.some(a=>a.browser)?[{kind:'open',browser:tru
 const smartButtons=s.status==='prepared'?[...smart,...viewIn].map(a=>a.kind==='handoff'?(canHandoff(s)||redirect(s)?`<button class="primary" data-fleet-handoff="${esc(s.id)}">${esc(a.to_name?'Review handoff to '+String(a.to_name).split(' ')[0]:a.label||'Hand off')}</button>`:''):a.kind==='open'&&a.browser?`<a class="open${finalStep(s)?' primary':''}" href="${esc(state.browser_link||'#')}" target="_blank" rel="noopener" data-browser-show="${esc(s.id)}"${a.site?` title="${esc(a.site)}, in your Machine’s browser"`:''}>${esc(a.label)} ↗</a>`:a.kind==='open'?`<a class="open" href="${esc(safeURL(a.url))}" target="_blank" rel="noreferrer">${esc(a.label)} ↗</a>`:!(a.kind==='finish'&&(a.state||s.action_status)?.status==='done')&&!sendBusy(a.state||s.action_status)?`<button class="primary" data-id="${s.id}" data-smart="${a.revision}">${esc(sendLabel(a)||(a.kind==='prepare'?'Prepare next step':'Review and send'))}</button>`:'').join(''):'';
 // Under Details, a to-do's name, project and area (an open one's), each a tap to change (Rename, the project picker, the area
 // picker). The title also renames with a tap on it, or E.
-function cardFields(s){const f=(k,v,attr)=>`<div><dt>${esc(t(k))}</dt><dd><button type="button" class="field" ${attr}="${esc(s.id)}"><span translate="no">${esc(v)}</span></button></dd></div>`;
- return `<dl class="card-fields">${f('Name',s.title,'data-rename')}${s.project_node?f('Project',s.project_node.name,'data-card-project'):''}${moveTargets(s).length?f('Area',areaName(s.area),'data-card-area'):''}</dl>`}
+function cardFields(s){const f=(k,v,attr)=>html`<div><dt>${t(k)}</dt><dd><button type="button" class="field" ${attr}="${s.id}"><span translate="no">${v}</span></button></dd></div>`;
+ return html`<dl class="card-fields">${f('Name',s.title,'data-rename')}${s.project_node?f('Project',s.project_node.name,'data-card-project'):''}${moveTargets(s).length?f('Area',areaName(s.area),'data-card-area'):''}</dl>`}
 // A merged fix stays reversible for a day.
 const unmerge=['prepared','completed'].includes(s.status)&&smart.some(a=>a.kind==='merge'&&Date.parse((a.state||s.action_status)?.undo_until||'')>Date.now())?`<button data-id="${s.id}" data-unmerge="1">Undo merge</button>`:'';
 // Title first, then one quiet line: its state (when the section doesn't say it already), due, who, their organization,

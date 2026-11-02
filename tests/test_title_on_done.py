@@ -138,9 +138,10 @@ class DoneLine(unittest.TestCase):
     def line(self, card):
         html = dashboard_parts.assemble(ROOT)
         start = html.index('const doneLine=')
+        tag = html[html.index('class SafeHTML'):html.index('\n', html.index('const html='))]  # the html`` tag it writes with
         code = (html[start:html.index('\n', html.index("return why?", start))]
-                + "\nconst t=(s,...x)=>x.reduce((o,v)=>o.replace('{}',v),s),esc=s=>s;"
-                + f'\nconsole.log(JSON.stringify(doneLine({json.dumps(card)})))')
+                + "\nconst t=(s,...x)=>x.reduce((o,v)=>o.replace('{}',v),s),esc=s=>s;\n" + tag
+                + f'\nconsole.log(JSON.stringify(String(doneLine({json.dumps(card)}))))')
         return json.loads(subprocess.run(['node', '-e', code], capture_output=True, text=True, check=True).stdout)
 
     def test_handled(self):

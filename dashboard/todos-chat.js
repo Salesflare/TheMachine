@@ -305,7 +305,7 @@ function chatDropFiles(){chatPending=[]}
 const MIC='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11.5" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3"/></svg>';
 const CHECK='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
 const MIC_MAX=120,MIC_HOLD=600;
-const micBtn=()=>`<button type="button" class="chat-mic" data-mic aria-label="Talk" title="Talk">${MIC}</button>`;
+const micBtn=()=>html`<button type="button" class="chat-mic" data-mic aria-label="Talk" title="Talk">${raw(MIC)}</button>`;
 let mic=null,micPrepped=false,micDemo=false,micUse='';  // the one recording at a time; whether this page asked the Machine; the site's demo (it answers {demo:true}); what a tap does now (voice_view's use)
 const MIC_DEMO='Voice input works on your own Machine. This demo can’t listen.';
 const micOk=()=>!!(window.isSecureContext&&navigator.mediaDevices?.getUserMedia&&window.MediaRecorder&&window.OfflineAudioContext);

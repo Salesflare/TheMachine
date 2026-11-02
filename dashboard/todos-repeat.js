@@ -24,7 +24,7 @@ function repeatOptions(base){const d=rpDate(base),wd=rpWeekday(d),nth=rpNth(d);
 const rpSame=(a,b)=>!!a&&!!b&&a.unit===b.unit&&(a.n||1)===(b.n||1)&&(a.nth??null)===(b.nth??null);
 // The to-do's one line: a quiet chip that opens Repeat
 const repeatChip=s=>{const r=s.repeats;if(!r||closed(s))return '';const text=repeatText(r.rule,r.anchor)+(r.missed?' · '+t('missed {}',r.missed):'');
- return `<button type="button" class="chip scope repeat${r.missed?' missed':''}" data-repeat="${esc(s.id)}" title="${esc(t('Change how it repeats'))}">${REPEAT_ICON}<span>${esc(text)}</span></button>`};
+ return html`<button type="button" class="chip scope repeat${r.missed?' missed':''}" data-repeat="${s.id}" title="${t('Change how it repeats')}">${raw(REPEAT_ICON)}<span>${text}</span></button>`};
 async function repeatPost(action,args){return request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action,args})})}
 // Custom…: a rhythm in words ("every 2 weeks", "every last Friday"), read by the Machine; Enter or the line sets it
 function repeatCustom(box,set){const wrap=box.querySelector('.rp-custom'),input=wrap.querySelector('input'),read=wrap.querySelector('.nc-read');let timer,got=null;
