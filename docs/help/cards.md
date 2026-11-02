@@ -17,10 +17,9 @@ The **To-dos** page groups them:
 - **Preparing**: your Machine is working on it. A to-do you just said **Do it** to stays where it was while it prepares, then moves to **Ready for you**.
 - **Coming back later**: snoozed.
 - **Promises**: what you promised and what others promised you. See [Promises](promises.md).
-- **Look done**: to-dos that seem finished already. Folded, right above **Done / dismissed**.
-- **Done / dismissed**: every finished to-do, newest first, 30 at a time as you scroll.
+- **Done / dismissed**: every finished to-do, newest first, 30 at a time as you scroll. To-dos that seem finished already come first, marked **Looks done**.
 
-Under **Look done** each to-do is one line: its title and what shows it's done, like "PR #3451 merged". **Done** closes one, **Mark all done** closes them all (with **Undo**), and **Not done** puts it back as a normal to-do so your Machine learns from it. Tap a line to see the whole to-do. These never show as late and don't count as waiting for you. Nothing closes without you.
+A to-do marked **Looks done** shows like a done one, with what shows it's done, like "PR #3451 merged". It isn't closed yet: **Reopen** puts it back on your list, and your Machine learns from it. These never show as late and don't count as waiting for you.
 
 A to-do whose last step is still open on someone else's side, like a review, a merge or a reply, says **Waiting on:** that step and stays open. It waits in **Waiting on others**, folded above Coming back later, and doesn't count as ready for you. A new message on it brings it back.
 

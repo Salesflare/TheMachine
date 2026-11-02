@@ -52,8 +52,10 @@ SEND_KINDS = ('email', 'linkedin', 'slack', 'x', 'whatsapp', 'telegram', 'interc
 CHANNELS = {'email': 'by email', 'linkedin': 'on LinkedIn', 'slack': 'on Slack', 'x': 'on X', 'whatsapp': 'on WhatsApp',
             'telegram': 'on Telegram', 'intercom': 'in Intercom', 'doc_reply': 'as a comment in the doc', 'doc_write': 'in the doc'}
 # An open to-do's state, in plain words, as the dashboard's lists show it (Ready, To decide, Preparing, Waiting on others,
-# Later, Look done), in that order
-STATES = ('ready', 'to decide', 'preparing', 'waiting on others', 'snoozed', 'looks done')
+# Later), in that order
+STATES = ('ready', 'to decide', 'preparing', 'waiting on others', 'snoozed')
+# One that looks done already: still open (Reopen puts it back), but the dashboard shows it at the top of Done / dismissed
+LOOKS_DONE = 'looks done'
 # A closed one's, as the Done / dismissed list shows it: marked done, or dismissed (Not needed)
 CLOSED = ('done', 'dismissed')
 # todo_action (the main conversation): a to-do's own buttons on the dashboard, by voice
@@ -66,12 +68,12 @@ TOOLS = [
      'parameters': NONE},
     {'type': 'function', 'name': 'find_todos',
      'description': ("Find the owner's other to-dos by words in their title, by state, or both. Each comes with its "
-                     'state: ready, to decide, preparing (still being worked on, no draft yet), waiting on others, '
-                     'snoozed or looks done; or done or dismissed (closed ones, latest first, only when asked for or when no '
-                     'open one matches).'),
+                     'state: ready, to decide, preparing (still being worked on, no draft yet), waiting on others or '
+                     'snoozed; looks done (in Done, not closed yet); or done or dismissed (closed ones, latest first, only '
+                     'when asked for or when no open one matches).'),
      'parameters': {'type': 'object', 'properties': {
          'words': {'type': 'string', 'description': 'A few words to look for in the title. Leave out to find by state only.'},
-         'state': {'type': 'string', 'enum': list(STATES + CLOSED), 'description': 'Only to-dos in this state.'}},
+         'state': {'type': 'string', 'enum': list(STATES + (LOOKS_DONE,) + CLOSED), 'description': 'Only to-dos in this state.'}},
          'additionalProperties': False}},
     {'type': 'function', 'name': 'ask_chat',
      'description': ('Only for a real question or instruction about this to-do. Hand it to this to-do’s chat: draft or change '
@@ -155,8 +157,8 @@ MAIN_TOOLS = [
     {'type': 'function', 'name': 'list_todos',
      'description': ('All the owner’s open to-dos, in the order the dashboard shows them: ready (a draft is prepared) '
                      'and to decide first (these need the owner), then preparing (still being worked on, no draft yet), '
-                     'waiting on others, snoozed and looks done. Each has an id, its state, its title and who it is '
-                     'from; counts has how many there are in each state.'),
+                     'waiting on others and snoozed. Each has an id, its state, its title and who it is from; counts has '
+                     'how many there are in each state. One that looks done is in Done, not here: find_todos finds it.'),
      'parameters': NONE},
     {'type': 'function', 'name': 'open_todo',
      'description': ('Open one to-do on screen and work on it: its title, messages and whether a draft is ready come back. '

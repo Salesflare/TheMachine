@@ -17,10 +17,9 @@ La pagina **Attività** le raggruppa:
 - **In preparazione**: la tua Machine ci sta lavorando. Un'attività a cui hai appena detto **Fallo** resta dov'era mentre si prepara, poi passa in **Pronta per te**.
 - **Torna più tardi**: posticipate.
 - **Promesse**: quello che hai promesso e quello che altri hanno promesso a te. Vedi [Promesse](promises.md).
-- **Sembrano fatte**: attività che sembrano già concluse. Chiuse, subito sopra **Fatte / ignorate**.
-- **Fatte / ignorate**: tutte le attività concluse, dalla più recente, 30 alla volta mentre scorri.
+- **Fatte / ignorate**: tutte le attività concluse, dalla più recente, 30 alla volta mentre scorri. Quelle che sembrano già concluse vengono prima, con l’etichetta **Sembra fatto**.
 
-In **Sembrano fatte** ogni attività è una riga: il titolo e ciò che mostra che è fatta, come "PR #3451 unita". **Fatto** ne chiude una, **Segna tutte come fatte** le chiude tutte (con **Annulla**), e **Non fatto** la rimette come attività normale, così la tua Machine ne tiene conto. Tocca una riga per vedere l’attività intera. Non risultano mai in ritardo e non contano come in attesa di te. Niente si chiude senza di te.
+Un’attività con **Sembra fatto** appare come una fatta, con ciò che mostra che è fatta, come "PR #3451 unita". Non è ancora chiusa: **Riapri** la rimette nella tua lista, e la tua Machine ne tiene conto. Non risultano mai in ritardo e non contano come in attesa di te.
 
 Un’attività il cui ultimo passo è ancora aperto da parte di qualcun altro, come una revisione, un merge o una risposta, mostra **In attesa di:** quel passo e resta aperta. Aspetta in **In attesa di altri**, chiusa sopra Torna più tardi, e non conta come pronta per te. Un nuovo messaggio su di essa la riporta indietro.
 

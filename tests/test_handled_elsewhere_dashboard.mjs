@@ -29,8 +29,8 @@ try{
  const page=await (await browser.newContext({viewport:{width:390,height:900}})).newPage();
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:'+server.address().port);
- await page.locator('#lookdone-head').click();await page.locator('[data-ld-expand="c1"]').click();  // it looks done: in the Look done group
- const done=page.locator('#task-c1');await done.waitFor();
+ await page.locator('#task-c2').waitFor();await page.evaluate(ids=>{const d=document.createElement('div');d.id='probe';d.innerHTML=ids.map(id=>suggestionCard(state.suggestions.find(s=>s.id===id))).join('');document.body.append(d)},['c1']);  // it looks done (Done shows it like a done one): the whole to-do
+ const done=page.locator('#probe #task-c1');await done.waitFor();
  assert.equal(await done.locator('.note.handled').innerText(),'Done: Kim already handled this');
  assert.equal(await done.locator('[data-fleet-handoff]').count(),0);  // nothing to hand on
  assert.equal(await done.locator('.actions>button.primary').first().innerText(),'Mark done');

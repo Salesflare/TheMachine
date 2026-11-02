@@ -12959,8 +12959,9 @@ def reminder_line(channels):
 
 
 # A to-do that looks done already: a later signal suggests it's handled (looks_handled), or its run found it done
-# (outcome already_done). Only a hint: the owner still closes it, from one quiet group above Done; it never counts as
-# waiting for them (badge, reminders, nudges) and is never late. Same rule as looksDone() in dashboard.html.
+# (outcome already_done). Only a hint: it shows at the top of Done / dismissed but stays open until the owner closes it
+# (Reopen there puts it back on the list); it never counts as waiting for them (badge, reminders, nudges) and is never
+# late. Same rule as looksDone() in dashboard.html.
 LOOKS_DONE_SQL = "(handled_hint IS NOT NULL OR (status='prepared' AND json_extract(outcome,'$.state')='already_done'))"
 # Waiting on others: its run found a step still open on someone else's side (outcome waiting: a review, merge, deploy,
 # a reply). Nothing for the owner until that step moves; a new message on it (update_card) brings it back as open.
@@ -12985,7 +12986,7 @@ def waits_on_others(row):
 
 
 def todo_state(row):
-    """An open to-do's state in plain words (talk_live.STATES), as the dashboard's lists place it: looksDone,
+    """An open to-do's state in plain words (talk_live.STATES, or LOOKS_DONE), as the dashboard's lists place it: looksDone,
     waitsOnOthers and placeOf in dashboard.html. A closed one is 'done' or 'dismissed' (Done / dismissed)."""
     if row['status'] in ('completed', 'rejected'):
         return 'done' if row['status'] == 'completed' else 'dismissed'
@@ -21995,10 +21996,11 @@ class App(*APP_MIXINS):
         if name == 'find_todos':
             words = [w for w in re.findall(r'\w+', str(args.get('words') or '').lower()) if len(w) > 1][:6]
             want = str(args.get('state') or '').strip().lower()
-            want = want if want in talk_live.STATES + talk_live.CLOSED else ''
+            known = talk_live.STATES + (talk_live.LOOKS_DONE,) + talk_live.CLOSED   # the dashboard's order
+            want = want if want in known else ''
             if not words and not want:
                 return {'todos': []}
-            named = next((st for st in talk_live.STATES + talk_live.CLOSED if set(st.split()) <= set(words)), '') if not want else ''
+            named = next((st for st in known if set(st.split()) <= set(words)), '') if not want else ''
             match = lambda rows: rows if not words else [r for r in rows if all(w in (r['title'] or '').lower() for w in words)] or \
                 [r for r in rows if any(w in (r['title'] or '').lower() for w in words)]
             found = []
@@ -22013,9 +22015,9 @@ class App(*APP_MIXINS):
                 if want:
                     rows = [r for r in rows if r['state'] == want]
                 found = match(rows)
-                if not found and named in talk_live.STATES:  # "anything preparing?": no title has the word, so the state it names
+                if not found and named and named not in talk_live.CLOSED:  # "anything preparing?": no title has the word, so the state it names
                     found = [r for r in rows if r['state'] == named]
-                found.sort(key=lambda r: talk_live.STATES.index(r['state']))  # the dashboard's order: what needs the owner first
+                found.sort(key=lambda r: known.index(r['state']))  # the dashboard's order: what needs the owner first
             if not found and (want in talk_live.CLOSED or named in talk_live.CLOSED or (words and not want)):
                 # Done / dismissed, latest closed first (the dashboard's list): asked for, or no open one matches
                 with self.store.connect() as db:

@@ -188,7 +188,10 @@ class Tools(unittest.TestCase):
         for words in ('All the owner’s open to-dos', 'preparing', 'waiting on others', 'snoozed', 'its state'):
             self.assertIn(words, listing)
         find = [x for x in t.MAIN_TOOLS if x['name'] == 'find_todos'][0]['parameters']
-        self.assertEqual(find['properties']['state']['enum'], list(t.STATES) + ['done', 'dismissed'])
+        self.assertEqual(find['properties']['state']['enum'], list(t.STATES) + ['looks done', 'done', 'dismissed'])
+        # One that looks done sits in Done on the dashboard: findable, but not one of the open states list_todos has
+        self.assertNotIn('looks done', t.STATES)
+        self.assertNotIn('snoozed and looks done', listing)
         self.assertNotIn('required', find)   # by state only: "anything preparing?"
 
     def test_new_things_become_a_new_todo_not_the_focused_chat(self):
@@ -454,7 +457,8 @@ class Api(unittest.TestCase):
     def test_finding_todos_by_state_says_each_ones_state(self):
         with self.store.connect() as db:
             for sid, title, status, extra in (('d' * 16, 'Plan the Antwerp trip', 'accepted', ''), ('e' * 16, 'Send the quote to Kim', 'prepared', ''),
-                                              ('f' * 16, 'Review the deck', 'prepared', '{"state":"waiting"}'), ('0' * 16, 'Call the bank', 'snoozed', '')):
+                                              ('f' * 16, 'Review the deck', 'prepared', '{"state":"waiting"}'), ('0' * 16, 'Call the bank', 'snoozed', ''),
+                                              ('1' * 16, 'Pay the venue deposit', 'prepared', '{"state":"already_done"}')):
                 db.execute("INSERT INTO suggestions(id,dedupe_key,title,body,event_ids,account_ids,status,created_at,outcome) VALUES(?,?,?,'','[]','[]',?,?,?)",
                            (sid, title, title, status, '2026-10-28T10:00:00Z', extra or None))
         talk_id = self.act('talk_start', {'main': True})['id']
@@ -466,7 +470,11 @@ class Api(unittest.TestCase):
         self.assertEqual([x['state'] for x in find(state='waiting on others')['todos']], ['waiting on others'])
         self.assertEqual([x['title'] for x in find(state='snoozed')['todos']], ['Call the bank'])
         everything = [x['state'] for x in find(words='the')['todos']]   # what needs the owner first, the dashboard's order
-        self.assertEqual(everything, sorted(everything, key=t.STATES.index))
+        self.assertEqual(everything, sorted(everything, key=(t.STATES + (t.LOOKS_DONE,)).index))
+        self.assertEqual(everything[-1], 'looks done')   # in Done on the dashboard, so after the open ones
+        # Asked for, it still says which ones look done (and Not done works on them: todo_action not_done)
+        self.assertEqual([(x['title'], x['state']) for x in find(state='looks done')['todos']], [('Pay the venue deposit', 'looks done')])
+        self.assertEqual([x['title'] for x in find(words='looks done')['todos']], ['Pay the venue deposit'])
         self.assertEqual(find(state='nonsense'), {'todos': []})
         self.act('talk_focus', {'id': talk_id, 'suggestion_id': 'd' * 16})
         self.assertEqual(self.act('talk_tool', {'id': talk_id, 'name': 'todo_details', 'args': {}})['output']['state'], 'preparing')

@@ -17,10 +17,9 @@ Die Seite **Aufgaben** gruppiert sie:
 - **Wird vorbereitet**: Deine Machine arbeitet daran. Eine Aufgabe, zu der du gerade **Ausführen** gesagt hast, bleibt an ihrem Platz, während sie vorbereitet wird, und wandert dann zu **Bereit für dich**.
 - **Kommt später zurück**: zurückgestellt.
 - **Versprechen**: was du versprochen hast und was andere dir versprochen haben. Siehe [Versprechen](promises.md).
-- **Scheinbar erledigt**: Aufgaben, die schon fertig aussehen. Eingeklappt, direkt über **Erledigt / verworfen**.
-- **Erledigt / verworfen**: jede abgeschlossene Aufgabe, die neueste zuerst, 30 auf einmal beim Scrollen.
+- **Erledigt / verworfen**: jede abgeschlossene Aufgabe, die neueste zuerst, 30 auf einmal beim Scrollen. Aufgaben, die schon fertig aussehen, stehen oben, markiert mit **Scheinbar erledigt**.
 
-Unter **Scheinbar erledigt** ist jede Aufgabe eine Zeile: ihr Titel und was zeigt, dass sie erledigt ist, etwa "PR #3451 gemergt". **Erledigt** schließt eine, **Alle als erledigt markieren** schließt alle (mit **Rückgängig**), und **Nicht erledigt** macht sie wieder zu einer normalen Aufgabe, damit deine Machine daraus lernt. Tipp auf eine Zeile, um die ganze Aufgabe zu sehen. Sie sind nie überfällig und zählen nicht als wartend auf dich. Nichts wird ohne dich geschlossen.
+Eine Aufgabe mit **Scheinbar erledigt** sieht aus wie eine erledigte, mit dem, was zeigt, dass sie erledigt ist, etwa "PR #3451 gemergt". Sie ist noch nicht geschlossen: **Wieder öffnen** setzt sie wieder auf deine Liste, und deine Machine lernt daraus. Sie sind nie überfällig und zählen nicht als wartend auf dich.
 
 Eine Aufgabe, deren letzter Schritt noch bei jemand anderem offen ist, etwa ein Review, ein Merge oder eine Antwort, zeigt **Wartet auf:** diesen Schritt und bleibt offen. Sie wartet in **Wartet auf andere**, eingeklappt über Kommt später zurück, und zählt nicht als bereit für dich. Eine neue Nachricht dazu holt sie zurück.
 

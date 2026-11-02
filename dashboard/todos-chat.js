@@ -620,10 +620,11 @@ document.addEventListener('visibilitychange',()=>{const v=talk;if(!v)return;
 function talkFocus(v,id){if(talk!==v||v.sid===id)return v.focusing;v.sid=id;v.asked=null;v.askedAt=0;v.queue=[];v.relay=null;talkEager(v,false);
  if(v.main){talkLog.push({about:id,title:String(state.suggestions?.find(x=>x.id===id)?.title||'').slice(0,200)});talkViewPaint()}
  return v.focusing=micPost('talk_focus',{id:v.id,suggestion_id:id}).catch(()=>{})}
-// Every open to-do, in the order the dashboard shows them, each with its state in plain words (talk_live.STATES):
+// Every open to-do, in the order the dashboard shows them, each with its state in plain words (talk_live.STATES; one that
+// looks done sits in Done and isn't here):
 // what needs the owner (Ready, To decide) first. At most 30; counts has them all.
 const talkWho=s=>String((s.people||[])[0]?.name||'').slice(0,80);
-const TALK_STATE={ready:'ready',needs:'to decide',preparing:'preparing',waiting:'waiting on others',later:'snoozed',lookdone:'looks done'};
+const TALK_STATE={ready:'ready',needs:'to decide',preparing:'preparing',waiting:'waiting on others',later:'snoozed'};
 const talkNeeds=()=>talkTodos.filter(([,l])=>l==='ready'||l==='needs').map(([s])=>s);
 function talkList(){const counts={};for(const [,l] of talkTodos)counts[TALK_STATE[l]]=(counts[TALK_STATE[l]]||0)+1;
  return {todos:talkTodos.slice(0,30).map(([s,l])=>({id:s.id,state:TALK_STATE[l],title:String(s.title||'').slice(0,200),...(talkWho(s)?{from:talkWho(s)}:{})})),count:talkTodos.length,counts}}
