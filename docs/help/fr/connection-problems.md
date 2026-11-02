@@ -19,6 +19,7 @@ Le nombre sur **Connexions** ne compte que les sources qui attendent votre aide.
 
 ## Solutions courantes
 
+- « Reconnectez-vous à Google » (ou Microsoft) : une ligne par compte. Un seul **Reconnecter** rétablit toutes ses sources, comme Gmail et Agenda.
 - « doit être reconnecté » : appuyez sur **Reconnecter** et connectez-vous. Sur une Machine hébergée, vous vous connectez sur place et revenez au tableau de bord.
 - Microsoft prépare encore l’accès : il réessaie de lui-même.
 - Slack : vérifiez votre clé API Maton et la connexion Slack dans Maton.

@@ -11,7 +11,7 @@ const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modul
 // and the Needs you box stays away while the hello shows. Made-up people.
 const dashboard=await dashboardPage(),en=await readFile(new URL('../i18n/en.json',import.meta.url),'utf8');
 const NOW=Date.UTC(2026,9,31,12,0,0);  // a Saturday
-let greeting,cards=[],skills;
+let greeting,cards=[],skills,connectors=[];
 const now=new Date(NOW).toISOString();
 const LIST=[{id:'aaaaaaaaaaaaaaa1',title:'Reply to Sam about pricing',body:'Asked.',status:'prepared',scope:'work',created_at:now,preparation_status:'done',event_ids:[1]},
  {id:'aaaaaaaaaaaaaaa2',title:'Send Noor the contract',body:'Draft ready.',status:'prepared',scope:'work',created_at:now,preparation_status:'done',event_ids:[2]},
@@ -20,7 +20,7 @@ const server=createServer((req,res)=>{
  const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(url.pathname==='/i18n/en.json'){res.end(en);return}
- if(url.pathname==='/api/status'){res.end(JSON.stringify({fixed:cards.length?[{id:'f1',text:'Fixed: the Projects tab now opens.'}]:[],suggestions:cards,promises:[],connectors:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_runs:[],greeting,skills}));return}
+ if(url.pathname==='/api/status'){res.end(JSON.stringify({fixed:cards.length?[{id:'f1',text:'Fixed: the Projects tab now opens.'}]:[],suggestions:cards,promises:[],connectors,suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_runs:[],greeting,skills}));return}
  res.end('{}');
 });
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
@@ -33,7 +33,7 @@ const head=async(width=1280)=>{
  await page.locator('#page-head .page-title').waitFor();if(cards.length)await page.locator('#suggestions article[id^="task-"]').first().waitFor();
  const out=await page.evaluate(()=>{const h=document.querySelector('#page-head'),a=h.querySelector('.page-hello a');
   const first=document.querySelector('#suggestions article[id^="task-"]');
-  return {first:first?.id.slice(5)||'',firstSection:document.querySelector('#suggestions .section-head h2')?.textContent||'',needsYou:!!document.querySelector('#needs-you li:not([hidden])')&&!document.querySelector('#needs-you').hidden,fixed:!document.querySelector('#fixed-notice').hidden,
+  return {first:first?.id.slice(5)||'',firstSection:document.querySelector('#suggestions .section-head h2')?.textContent||'',needsYou:!!document.querySelector('#needs-you li:not([hidden])')&&!document.querySelector('#needs-you').hidden,needs:[...document.querySelectorAll('#needs-you li:not([hidden]) span')].map(x=>x.textContent),reconnects:document.querySelectorAll('#needs-you li:not([hidden]) :is(a,button)').length,fixed:!document.querySelector('#fixed-notice').hidden,
    title:h.querySelector('.page-title').textContent,line:a?.textContent||'',href:a?.getAttribute('href')||'',titleShown:h.querySelector('.page-title').getBoundingClientRect().width>1}});
  await context.close();return out};
 try{
@@ -49,6 +49,22 @@ try{
  for(const lead of LIST){greeting={name:'Alex',line:{person:'Ria',since:new Date(NOW-30*3600e3).toISOString(),card:lead.id}};h=await head();
   assert.equal(h.first,h.href.slice(6),'the first to-do is the one the hello names');assert.equal(h.first,lead.id);
   assert.equal(h.firstSection,lead.status==='prepared'?'Ready for you':'Needs your decision');assert.equal(h.needsYou,false);assert.equal(h.fixed,false)}
+ // A signed-out connection still shows: on day one it means the Machine can't work. The waiting skill stays away.
+ connectors=[{id:'work',service:'gmail',display_name:'alex@example.com',signed_out:true}];h=await head();
+ assert.deepEqual(h.needs,['Signed out of Email (alex@example.com).']);
+ if(process.env.SHOTS){const c=await browser.newContext({viewport:{width:390,height:844},timezoneId:'UTC',locale:'en-US',colorScheme:'light',deviceScaleFactor:2}),p=await c.newPage();
+  await c.route('**/*',r=>new URL(r.request().url()).hostname==='127.0.0.1'?r.continue():r.abort());await p.clock.setFixedTime(NOW);await p.goto(base+'/');
+  await p.locator('#needs-you li').first().waitFor();await p.waitForTimeout(500);await p.screenshot({path:process.env.SHOTS+'/greeting-signed-out-390-light.png'});await c.close()}
+ // One line per account, not per service: Gmail and Calendar share one Google sign-in, so one Reconnect restores both
+ const expired='google_signin_expired_run_gog_auth_add';
+ connectors=['gmail','calendar'].map(s=>({id:s,service:s,display_name:'alex@example.com',email:'alex@example.com',error:expired}));h=await head();
+ assert.deepEqual(h.needs,['Sign in to Google again. alex@example.com']);assert.equal(h.reconnects,1);
+ connectors.push({id:'other',service:'gmail',display_name:'sam@example.com',email:'sam@example.com',error:expired});
+ assert.deepEqual((await head()).needs,['Sign in to Google again. alex@example.com','Sign in to Google again. sam@example.com']);
+ greeting=null;connectors=connectors.slice(0,2);h=await head();
+ assert.equal(h.needs.filter(x=>x.startsWith('Sign in to')).length,1,'also after the hello');
+ greeting={name:'Alex',line:{person:'Ria',since:new Date(NOW-30*3600e3).toISOString(),card:LIST[0].id}};
+ connectors=[];
  greeting=null;h=await head();assert.equal(h.first,LIST[0].id);assert.equal(h.firstSection,'Ready for you');assert.equal(h.needsYou,true,'Needs you is back once the hello is over');assert.equal(h.fixed,true);
  cards=[];skills=undefined;
  greeting=null;h=await head();assert.notEqual(h.title,'Hi Alex');assert.ok(h.title.length>3);  // over: the tagline

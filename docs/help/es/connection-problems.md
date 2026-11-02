@@ -19,6 +19,7 @@ El número en **Conexiones** solo cuenta las fuentes que necesitan tu ayuda.
 
 ## Soluciones habituales
 
+- "Vuelve a iniciar sesión en Google" (o Microsoft): una línea por cuenta. Un solo **Reconectar** recupera todas sus fuentes, como Gmail y Calendar.
 - "necesita que vuelvas a iniciar sesión": pulsa **Reconectar** e inicia sesión. En una Machine alojada, inicias sesión ahí mismo y vuelves al panel.
 - Microsoft aún configurando el acceso: lo vuelve a intentar sola.
 - Slack: revisa tu clave de API de Maton y la conexión de Slack en Maton.
