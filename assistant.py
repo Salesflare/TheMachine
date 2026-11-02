@@ -1578,6 +1578,39 @@ TIP_USED = {'change': {'other', 'reject'}, 'send': {'send'}}
 TIP_SOURCES = ('dashboard', 'telegram', 'owner-chat', 'voice')  # the owner's own decisions
 FIRST_TIPS_UNTIL = 10  # to-dos decided: past their first to-dos, every tip is gone
 FIRST_ACTIONS = {'accept': 'approve', 'other': 'approve', 'prepare_next': 'approve', 'send': 'send', 'complete': 'done', 'reject': 'dismiss'}
+# Onboarding value past the first approval (a click), for first_cards_report: the first to-do whose preparation finished
+# with a result or draft (first_prepared: 'result' or 'draft'), and the first action the provider confirmed went through
+# (first_verified_action: its kind). A demo send and a fix merged into The Machine itself don't count.
+VERIFIED_KINDS = tuple(k for k in next_actions.APPROVE_KINDS if k not in ('email_demo', 'merge'))
+
+
+def note_first(db, name, kind, at=None):
+    """A first-time milestone (first_prepared, first_verified_action) with its kind: kept once, never content."""
+    db.execute('INSERT OR IGNORE INTO milestones(name,at,detail) VALUES(?,?,?)', (name, at or now(), kind))
+
+
+def first_value(db, marks, since):
+    """{first_prepared_at, first_prepared, first_prepared_backfill, first_verified_action_at, ...} for first_cards_report.
+    From the marks (note_first); on an install that had them before they were marked, estimated from what it kept: when a
+    draft first showed or a preparation last finished, when a confirmed send or final step was last updated. Those are
+    never earlier than the real first, so they are flagged as backfill. Nothing from before tracking_since."""
+    out = {}
+    found = {}
+    for at, kind in db.execute("SELECT min(saved_at),'draft' FROM draft_saves WHERE saved_at>=? UNION ALL "
+                               "SELECT min(updated_at),'result' FROM preparations WHERE status='done' AND updated_at>=?", (since, since)).fetchall():
+        if at and ('first_prepared' not in found or at < found['first_prepared'][0]):
+            found['first_prepared'] = (at, kind)
+    row = db.execute("SELECT updated_at,json_extract(payload,'$.kind') FROM action_jobs WHERE updated_at>=? AND (status='sent' AND message_id IS NOT NULL "
+                     "AND json_extract(payload,'$.kind') IN (" + ','.join('?' for _ in VERIFIED_KINDS) + ") OR status='done' "
+                     "AND json_extract(payload,'$.kind')='finish' AND json_extract(payload,'$.finish_result.state')='completed') "
+                     "ORDER BY updated_at LIMIT 1", (since, *VERIFIED_KINDS)).fetchall()
+    if row:
+        found['first_verified_action'] = tuple(row[0])
+    for name in ('first_prepared', 'first_verified_action'):
+        mark = marks.get(name)
+        at, kind = mark if mark else found.get(name, (None, None))
+        out[name + '_at'], out[name], out[name + '_backfill'] = at, kind, bool(at and not mark)
+    return out
 
 
 def first_cards_report(db, accounts=(), current=None):
@@ -1629,6 +1662,7 @@ def first_cards_report(db, accounts=(), current=None):
     acted = rows("SELECT choice,created_at FROM decisions WHERE source IN ('dashboard','telegram') AND created_at>=? AND choice IN ("
                  + ','.join('?' for _ in approved) + ') ORDER BY created_at LIMIT 1', (since, *approved))
     out['first_approved_at'], out['first_approved'] = (acted[0][1], FIRST_ACTIONS[acted[0][0]]) if acted else (None, None)
+    out.update(first_value(db, marks, since))
     # Where the first look is now, and about when the first cards come
     try:
         state = json.loads((marks.get('first_look_state') or (None, 'null'))[1] or 'null')
@@ -8251,6 +8285,10 @@ class Store:
                            ({'completed':'done','not_performed':'needs_input','uncertain':'finish_uncertain'}[state],encoded(payload),now(),chosen['id']))
             db.execute("UPDATE action_jobs SET status='done',updated_at=? WHERE suggestion_id=? AND status IN ('local_preparation','paused') AND json_extract(payload,'$.kind')='prepare'",(now(),suggestion_id))
             db.execute("UPDATE suggestions SET body=?,status='prepared',next_action=?,outcome=? WHERE id=?", (body[:5000],action_json,encoded(outcome) if outcome else None,suggestion_id))
+            if (outcome or {}).get('state')!='snoozed':  # a result the owner can use (first_cards_report); a draft when there is something to approve
+                note_first(db,'first_prepared','draft' if any(a['kind'] in next_actions.APPROVE_KINDS+next_actions.FINISH_KINDS for a in next_actions.visible_actions(action_json)) else 'result')
+            if chosen and json.loads(chosen['payload'])['kind']=='finish' and state=='completed':
+                note_first(db,'first_verified_action','finish')  # saved only with a verified receipt or changed state (PREPARATION.md)
             if title and current_title(row, title) != row['title']:
                 db.execute('UPDATE suggestions SET title=? WHERE id=?', (title, suggestion_id))  # the new notification and the edited message carry it
             elif title and row['title_source'] == 'user':
@@ -17359,7 +17397,8 @@ class App(*APP_MIXINS):
             except Exception:result={}
             with self.store.connect() as db:
                 if result.get('message_id'):
-                    db.execute("UPDATE action_jobs SET status='sent',message_id=?,error=NULL,updated_at=? WHERE id=? AND status IN ('sending','uncertain')",(result['message_id'],now(),job['id']))
+                    if db.execute("UPDATE action_jobs SET status='sent',message_id=?,error=NULL,updated_at=? WHERE id=? AND status IN ('sending','uncertain')",(result['message_id'],now(),job['id'])).rowcount and action['kind'] in VERIFIED_KINDS:
+                        note_first(db,'first_verified_action',action['kind'])  # the provider confirmed it (first_cards_report)
                     queue_thread_snooze(db,action,job);queue_delegate_wait(db,action,job,result);self.handoff_mail.sent(db,action,job,result)
                     if action['kind']=='doc_write':settle_doc_write(self.store,db,job['suggestion_id'],job['id'],action,result.get('url'))
                     elif action['kind']!='merge':settle_sent(self.store,db,job['suggestion_id'],job['id'],next_actions.label(action),calendar_writes.done(action) if action['kind']=='calendar' else doc_writes.done(action) if action['kind']=='doc_write' else None)
@@ -17442,6 +17481,7 @@ class App(*APP_MIXINS):
                 (status,result.get('message_id'),error,now(),None if status=='failed' else (dt.datetime.fromisoformat(now())+dt.timedelta(minutes=5)).isoformat(),
                  result.get('rfc_message_id') if status=='sent' else None,job['id']))
             if status=='sent':
+                if action['kind'] in VERIFIED_KINDS:note_first(db,'first_verified_action',action['kind'])  # the provider accepted it (first_cards_report)
                 queue_thread_snooze(db,action,job);queue_delegate_wait(db,action,job,result);self.handoff_mail.sent(db,action,job,result)
                 if action['kind']=='doc_write':settle_doc_write(self.store,db,job['suggestion_id'],job['id'],action,result.get('url'))
                 elif action['kind']!='merge':settle_sent(self.store,db,job['suggestion_id'],job['id'],next_actions.label(action),calendar_writes.done(action) if action['kind']=='calendar' else doc_writes.done(action) if action['kind']=='doc_write' else None)
