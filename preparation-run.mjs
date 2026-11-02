@@ -182,5 +182,8 @@ try {
       }
     } catch {}  // keep the same key/custody when the status check is unavailable
   }
-  process.stdout.write(JSON.stringify(ended?{run_id:request.job_id,status:'lost',error:'runtime_lost',error_phase:'runtime'}:{run_id:request.job_id,status:'unavailable'}));
+  // offline: the Gateway itself can't be reached (down after a reboot, mid-restart), the same test as chat-history-run.mjs.
+  // A start that gets this waits for it to come back without a deadline (assistant.py preparation_run_step).
+  const offline=/ECONNREFUSED|closed|socket/i.test(String(error?.message || ''));
+  process.stdout.write(JSON.stringify(ended?{run_id:request.job_id,status:'lost',error:'runtime_lost',error_phase:'runtime'}:{run_id:request.job_id,status:'unavailable',...(offline?{reason:'offline'}:{})}));
 }

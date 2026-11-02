@@ -22,6 +22,9 @@ assert.match(holdNote({why:'budget',until:at}),/^Saving usage for now\. Starts a
 assert.equal(holdNote({why:'budget'}),'Saving usage for now. Starts when there’s room.');
 assert.match(holdNote({why:'retry',until:at}),/^Trying again around /);
 assert.equal(holdNote({why:'retry',until:Math.floor(Date.now()/1000)-60}),'');  // past: back to "I'll start shortly."
+// Its start waits for the Gateway to come back (2026-11-02, after a reboot): said plainly, never a live "Preparing…" timer
+assert.equal(holdNote({why:'ai'}),'Waiting for the AI to come back. Then I’ll carry on.');
+assert.match(html,/if\(s\.preparation_status==='starting'&&s\.preparation_error==='openclaw_unavailable'\)return `<p class="note">\$\{esc\(holdNote\(\{why:'ai'\}\)\)\}<\/p>`;/);
 for(const lang of ['en','nl','fr','de','es','it','pt-BR']){
  const cat=JSON.parse(await readFile(new URL(`../i18n/${lang}.json`,import.meta.url),'utf8'));
  for(const k of new Set(used)){assert.ok(cat[k],`${lang}: ${k}`);assert.equal((cat[k].match(/\{\}/g)||[]).length,(k.match(/\{\}/g)||[]).length,`${lang}: ${k}`);assert.ok(!cat[k].includes('—'),`${lang}: no em dash`)}

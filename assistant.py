@@ -11846,7 +11846,9 @@ def card(row):
             status = t('Done: {}.', hint['reason'].rstrip('.')) if hint.get('fleet') else t('Looks handled: {}. Mark it done if so.', hint['reason'].rstrip('.'))
         except (ValueError, KeyError, TypeError):
             pass
-    if row.get('preparation_status') in ('starting','running'):
+    if row.get('preparation_status')=='starting' and row.get('preparation_error')=='openclaw_unavailable':
+        status=t(PREPARATION_WAITING)  # its start waits for the Gateway to come back (preparation_run_step)
+    elif row.get('preparation_status') in ('starting','running'):
         status=t('Preparing… I’ve been in the browser a while; it may need you there (a sign-in or a check).') if row.get('preparation_browser') else t('Preparing…')
     elif row.get('preparation_status') == 'queued': status=t('Next up. I’ll start shortly.')
     elif row.get('preparation_status') == 'blocked' and row.get('preparation_error') == 'stopped': status=t(CHAT_STOPPED)
@@ -11908,6 +11910,20 @@ ACTION_BUSY = ('queued', 'sending', 'sent', 'uncertain', 'local_preparation', 'p
 # A confirmed step whose preparation stopped (blocked, timed out, canceled by a snooze or close) is 'paused', not here.
 ACTION_WORKING = ('queued', 'sending', 'undoing', 'local_preparation')
 PREPARATION_WORKING = ('starting', 'running')
+# Without a confirmed completion by then, a preparation stops: 25 minutes plus 10 for connection outages.
+PREPARATION_DEADLINE_SECONDS = 2100
+# A to-do whose start waits for the Gateway to come back (dashboard/todos-cards.js holdNote 'ai' says the same)
+PREPARATION_WAITING = 'Waiting for the AI to come back. Then I’ll carry on.'
+
+
+def preparation_overdue(db, job):
+    """A preparation past PREPARATION_DEADLINE_SECONDS without a confirmed completion: blocked, its old run stopped and
+    confirmed ended (stop_stale_runs) before its one automatic retry."""
+    db.execute("UPDATE preparations SET status='blocked',reason=?,details=?,error='completion_unconfirmed',updated_at=? WHERE job_id=?",
+               ('This is taking too long. I’ll stop that run and try once more.' if not job['auto_retries'] else 'This didn’t finish, also on the second try. Tap Try again, or change the request.',
+                'No confirmed completion after 25 minutes plus 10 minutes for connection outages. The old run is stopped and confirmed ended before anything restarts.',now(),job['job_id']))
+    pause_idle_steps(db,job['suggestion_id'])
+    db.execute("UPDATE deliveries SET status='queued',reminder=1,needs_edit=1,error=NULL WHERE suggestion_id=? AND status IN ('queued','sent','uncertain')",(job['suggestion_id'],))
 
 
 def pause_idle_steps(db, suggestion_id=None, stamp=None):
@@ -18049,6 +18065,12 @@ class App(*APP_MIXINS):
         with self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             self.store.settle_ahead(db)
+            # A start that never got an answer (the step failing before it asks the Gateway) stops at the same deadline
+            # as one that did, instead of 'Preparing…' for good. One waiting for the Gateway to come back waits: it is
+            # tried again every minute and its to-do says so (preparation_run_step).
+            cutoff=(dt.datetime.fromisoformat(now())-dt.timedelta(seconds=PREPARATION_DEADLINE_SECONDS)).isoformat()
+            for row in db.execute("SELECT * FROM preparations WHERE status='starting' AND coalesce(error,'')<>'openclaw_unavailable' AND coalesce(started_at,created_at)<?",(cutoff,)).fetchall():
+                preparation_overdue(db,dict(row))
             # A confirmed step no preparation works on any more is paused, also one left from before paused existed.
             pause_idle_steps(db)
             for row in db.execute("SELECT id FROM suggestions WHERE status IN ('accepted','instructions') AND NOT EXISTS(SELECT 1 FROM preparations WHERE suggestion_id=suggestions.id)").fetchall():
@@ -18273,7 +18295,8 @@ class App(*APP_MIXINS):
                 db.execute("UPDATE preparation_runs SET status='running' WHERE job_id=?",(job['job_id'],))
             if not current or current['job_id']!=job['job_id'] or current['status'] not in ('starting','running'):return
             if status=='admitted':
-                db.execute("UPDATE preparations SET status='running',updated_at=?,error=NULL,retry_at=NULL WHERE job_id=?",(now(),job['job_id']))
+                # A start that waited for the Gateway to come back (openclaw_unavailable) gets its full time from now.
+                db.execute("UPDATE preparations SET status='running',started_at=CASE WHEN status='starting' AND error='openclaw_unavailable' THEN ? ELSE started_at END,updated_at=?,error=NULL,retry_at=NULL WHERE job_id=?",(now(),now(),job['job_id']))
                 db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=?',(job['suggestion_id'],))
             elif status=='error' and result.get('error')=='usage_limited':
                 # The sign-in's usage limit: the card waits for the reset (note_usage_limit) and starts again in the same
@@ -18304,12 +18327,15 @@ class App(*APP_MIXINS):
                 db.execute("UPDATE preparations SET status='blocked',reason=?,details=?,error=?,updated_at=? WHERE job_id=?",(reason,details,error,now(),job['job_id']))
                 pause_idle_steps(db,job['suggestion_id'])
                 db.execute("UPDATE deliveries SET status='queued',reminder=1,needs_edit=1,error=NULL WHERE suggestion_id=? AND status IN ('queued','sent','uncertain')",(job['suggestion_id'],))
-            elif (dt.datetime.fromisoformat(now())-dt.datetime.fromisoformat(current['started_at'] or current['created_at'])).total_seconds()>2100:
-                db.execute("UPDATE preparations SET status='blocked',reason=?,details=?,error='completion_unconfirmed',updated_at=? WHERE job_id=?",
-                           ('This is taking too long. I’ll stop that run and try once more.' if not current['auto_retries'] else 'This didn’t finish, also on the second try. Tap Try again, or change the request.',
-                            'No confirmed completion after 25 minutes plus 10 minutes for connection outages. The old run is stopped and confirmed ended before anything restarts.',now(),job['job_id']))
-                pause_idle_steps(db,job['suggestion_id'])
-                db.execute("UPDATE deliveries SET status='queued',reminder=1,needs_edit=1,error=NULL WHERE suggestion_id=? AND status IN ('queued','sent','uncertain')",(job['suggestion_id'],))
+            elif status=='unavailable' and action=='start' and result.get('reason')=='offline':
+                # The Gateway is down (a reboot, a restart): this turn never started, so no deadline runs. It stays
+                # 'starting' under the same admission ID (an earlier start may still have reached the Gateway) and is
+                # tried again every minute; the to-do says it waits for the AI (PREPARATION_WAITING) and carries on by
+                # itself once the Gateway answers, with its full time from then.
+                db.execute("UPDATE preparations SET error='openclaw_unavailable',retry_at=?,updated_at=? WHERE job_id=?",
+                           ((dt.datetime.fromisoformat(now())+dt.timedelta(minutes=1)).isoformat(),now(),job['job_id']))
+            elif (dt.datetime.fromisoformat(now())-dt.datetime.fromisoformat(current['started_at'] or current['created_at'])).total_seconds()>PREPARATION_DEADLINE_SECONDS:
+                preparation_overdue(db,dict(current))
             elif status=='unavailable':
                 # Keep the same admission ID and original deadline through short outages.
                 db.execute('UPDATE preparations SET error=?,retry_at=? WHERE job_id=?',('openclaw_unavailable',(dt.datetime.fromisoformat(now())+dt.timedelta(minutes=1)).isoformat(),job['job_id']))

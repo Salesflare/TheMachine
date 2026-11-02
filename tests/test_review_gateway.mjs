@@ -137,3 +137,13 @@ console.log('Exact-run recovery, wait-only timeout, cancellation proof and admis
   r=await run({kind:'review',job_id:id,action:'start',message:'hi',fast:true},[admitted]);  // never for a review
   assert.deepEqual(r.calls.map(c=>c.method),['agent']);
 }
+// A start that can't reach the Gateway at all (down after a reboot) says so: the service waits for it without a
+// deadline (2026-11-02). A timeout or refusal is not proof it is down and says nothing more.
+for(const down of [new Error('connect ECONNREFUSED 127.0.0.1:18789'),new Error('gateway closed (1006): ')]){
+  r=await run({kind:'preparation',job_id:id,action:'start',message:'Work'},[down]);
+  assert.deepEqual(r.result,{run_id:id,status:'unavailable',reason:'offline'});
+}
+for(const other of [new Error('gateway timeout after 15000ms'),refusal]){
+  r=await run({kind:'preparation',job_id:id,action:'start',message:'Work'},[other,{status:'pending'},new Error('later')]);
+  assert.equal(r.result.status,'unavailable');assert.equal(r.result.reason,undefined);
+}
