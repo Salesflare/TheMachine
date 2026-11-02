@@ -15,6 +15,7 @@ import follow_ups
 import graph
 import ms_graph
 import test_ux as ux
+import timeutil
 a = ux.a
 
 GMAIL = {'id': 'work', 'email': 'owner@example.com', 'service': 'gmail', 'transport': 'gog', 'boundary': 'work:Example'}
@@ -143,7 +144,7 @@ class Recording(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
-        p = patch.object(a, 'LOCAL_TZ', ZoneInfo('Europe/Brussels'))
+        p = patch.object(timeutil, 'LOCAL_TZ', ZoneInfo('Europe/Brussels'))
         p.start()
         self.addCleanup(p.stop)
         self.clock = patch.object(a, 'now', return_value=NOW)

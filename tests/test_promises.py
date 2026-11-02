@@ -9,6 +9,7 @@ from unittest.mock import patch
 from zoneinfo import ZoneInfo
 import cli
 import test_ux as ux
+import timeutil
 a = ux.a
 
 GMAIL = {'id': 'work', 'email': 'owner@example.com', 'service': 'gmail', 'transport': 'gog', 'boundary': 'work:Example'}
@@ -27,7 +28,7 @@ class Promises(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
-        zone = patch.object(a, 'LOCAL_TZ', ZoneInfo('Europe/Brussels'))
+        zone = patch.object(timeutil, 'LOCAL_TZ', ZoneInfo('Europe/Brussels'))
         zone.start()
         self.addCleanup(zone.stop)
         self.clock = patch.object(a, 'now', return_value=MONDAY)

@@ -28,7 +28,7 @@ writes it; other modules call the owner's functions.
 | connected AIs (MCP) | `ai_access`, `ai_app`, `pairing` (one-click pairing, no table), `ai_reach` (the address's certificate and dial-back, no table) | `ai_clients`, `ai_connections`, `ai_codes`, `ai_tokens`, `ai_activity`, `ai_writes` |
 | notify, Telegram | `notify`, `telegram_mirror`, `telegram_store`, `pacing` | `notify_*`, `pacing_*`; `telegram_store` keeps its own database (`chats`, `messages`, `outbox`, ...) |
 | setup and upkeep | `onboarding`, `installer`, `cli`, `service`, `portable`, `moving`, `work_removal`, `retention`, `rollout_health`; pinned downloads checked by hash: `openclaw_pin`, `telegram_release`, `wacli_release` | `retention_runs`, `sync_daily` |
-| shared helpers | `i18n`, `locale_prefs`, `activity`, `activity_log` (Settings, Activity: reads the other tables, writes only its own), `authorship`, `model_budget`, `model_fallback`, `google_api`, `ms_graph`, `slack_api`, `mail_grants`, `mail_attachments` | `activity_seen`; `activity_accounts` (activity_log) |
+| shared helpers | `timeutil` (the owner's time zone and hours, `now()`), `i18n`, `locale_prefs`, `activity`, `activity_log` (Settings, Activity: reads the other tables, writes only its own), `authorship`, `model_budget`, `model_fallback`, `google_api`, `ms_graph`, `slack_api`, `mail_grants`, `mail_attachments` | `activity_seen`; `activity_accounts` (activity_log) |
 | dashboard source | `dashboard_parts` (assembles `dashboard.html` with its parts in `dashboard/`) | none |
 | connectors | `connectors/*.py`, `integrations/*.py` | none: they hand events to the service, never SQL |
 
@@ -106,6 +106,10 @@ The table checks read the SQL in each module's strings. A statement whose table 
 - App methods go to their domain's mixin with `scripts/move_app_methods.py <domain>_app.py <Class> <member> ...`. It
   cuts each member (with the comment lines above it) from `App` and adds it, text unchanged, to the end of the mixin's
   class, and checks that. Then add the imports `tests/test_architecture.py` says the moved code lacks. A method that
-  uses a helper defined in `assistant.py` (`now`, `local_tz`, `has_model`, `gog_read`, ...) stays until that helper
-  has a module of its own: tests patch those helpers on `assistant` (`patch.object(assistant, 'now', ...)`), and a
-  moved method would no longer see the patch.
+  uses a helper defined in `assistant.py` (`has_model`, `gog_read`, ...) stays until that helper has a module of its
+  own: tests patch those helpers on `assistant` (`patch.object(assistant, 'now', ...)`), and a moved method would no
+  longer see the patch.
+- **Shared helpers** go to plain modules of plain functions that take what they need as arguments (`timeutil.py`: the
+  owner's time zone and hours, `now()`), never a mixin. `assistant.py` imports their names, so its own code and the
+  tests that patch them on `assistant` keep working; state such as the zone or the hours lives in the helper module, so
+  a test patches it there (`patch.object(timeutil, 'LOCAL_TZ', ...)`, `patch.dict(timeutil.WORK_HOURS, ...)`).

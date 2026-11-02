@@ -36,7 +36,7 @@ _spec = importlib.util.spec_from_file_location('moving', Path(__file__).resolve(
 moving = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(moving)
 
-TZ = assistant.LOCAL_TZ
+TZ = assistant.local_tz()
 GROUPS = {
     'outstanding': ('pending', 'accepted', 'instructions', 'prepared'),
     'later': ('snoozed',),

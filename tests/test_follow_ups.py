@@ -14,6 +14,7 @@ import follow_ups
 import graph
 import model_budget
 import test_ux as ux
+import timeutil
 a = ux.a
 
 GMAIL = {'id': 'work', 'email': 'owner@example.com', 'service': 'gmail', 'transport': 'gog', 'boundary': 'work:Example'}
@@ -298,7 +299,7 @@ class FollowUps(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
         for target, value in (('LOCAL_TZ', ZoneInfo('Europe/Brussels')),):
-            p = patch.object(a, target, value)
+            p = patch.object(timeutil, target, value)
             p.start()
             self.addCleanup(p.stop)
         self.clock = patch.object(a, 'now', return_value=NOW)
@@ -1667,7 +1668,7 @@ class FollowUps(unittest.TestCase):
 
     def test_the_owners_work_days_decide(self):
         self.turn_on()
-        with patch.object(a, 'WORK_HOURS', {**a.WORK_HOURS, 'days': [7, 1, 2, 3, 4], 'start': '10:00'}):
+        with patch.dict(timeutil.WORK_HOURS, {'days': [7, 1, 2, 3, 4], 'start': '10:00'}):
             self.at('2026-10-23T09:00:00+00:00')  # Friday: a day off for them
             self.assertEqual(self.app().follow_up_step()['drafted'], 0)
             self.at('2026-10-25T08:59:00+00:00')  # Sunday 09:59 in Brussels
