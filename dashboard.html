@@ -3058,7 +3058,7 @@ function i18nRerender(){if(typeof pagers!=='undefined')for(const p of pagers.val
  if(typeof render==='function')render();if(typeof pagerMount==='function')pagerMount();if(typeof calRender==='function'&&!$('#calendar')?.hidden)calRender()}
 // Settings, General, Language: each language in its own name.
 function i18nLanguages(l){const sel=document.getElementById('locale-language');if(!sel)return;const langs=l.languages||{en:'English'},cur=l.language||'en',key=cur+Object.keys(langs).join();
- if(sel.dataset.for!==key){sel.innerHTML=Object.entries(langs).map(([c,n])=>`<option value="${c}"${c===cur?' selected':''}>${esc(n)}</option>`).join('');sel.dataset.for=key}
+ if(sel.dataset.for!==key){sel.innerHTML=Object.entries(langs).map(([c,n])=>`<option value="${esc(c)}"${c===cur?' selected':''}>${esc(n)}</option>`).join('');sel.dataset.for=key}
  document.getElementById('locale-language-note').textContent=''}
 try{const kept=JSON.parse(localStorage.getItem('i18n')||'null');if(kept?.lang&&kept.lang!=='en'&&kept.cat){I18N.en=kept.en||{};i18nUse(kept.lang,kept.cat);if(kept.ver!==I18N.ver){I18N.lang='';i18nLoad(kept.lang)}}}catch{}
 </script>
@@ -3406,7 +3406,7 @@ const expandedSync=new Set([...document.querySelectorAll('#connectors details[op
 $('#connectors').innerHTML=state.connectors.map(c=>connectorCard(c,expandedSync)).join('');renderDisconnected();
 if(state.manage_url){$('#manage').href=state.manage_url;$('#manage').hidden=false;$('#sign-out').hidden=false;$('#report-problem').href=new URL('/support',state.manage_url).href;$('#report-problem').removeAttribute('target');$('#connect-more').innerHTML=`<a class="manage" href="#connect=google">Connect Google</a> &nbsp;<a class="manage" href="#connect=microsoft">Connect Microsoft</a> &nbsp;<a class="manage" href="#connections=add">Add another source</a> &nbsp;or <a href="${esc(new URL('/connectors',state.manage_url).href)}">ask for one you miss</a>.`}
 // drawn once, so an open disclosure stays open (and the page stays put) through each refresh
-else if($('#connect-more .connect-cli')?.dataset.lang!==I18N.lang)$('#connect-more').innerHTML='<details class="connect-cli" data-lang="'+I18N.lang+'"><summary>For developers: set up from the terminal</summary><p>'+t('On this Machine, run {} for Google, {} for Microsoft, or {} for more.','<code>assistant connect gmail</code>','<code>assistant connect outlook</code>','<code>assistant connect</code>')+'</p></details>';
+else if($('#connect-more .connect-cli')?.dataset.lang!==I18N.lang)$('#connect-more').innerHTML='<details class="connect-cli" data-lang="'+esc(I18N.lang)+'"><summary>For developers: set up from the terminal</summary><p>'+t('On this Machine, run {} for Google, {} for Microsoft, or {} for more.','<code>assistant connect gmail</code>','<code>assistant connect outlook</code>','<code>assistant connect</code>')+'</p></details>';
 // Connections' badge: only sources that need the owner (orange); amber ones retry or catch up by themselves
 const issues=state.connectors.filter(c=>connectorTone(c)==='orange').length;$('#badge-health').textContent=issues||'';if('graph_waiting' in state)$('#badge-people').textContent=state.graph_waiting||'';renderHealthTabs();
 const expandedReview=new Set([...document.querySelectorAll('#analyses details[open]')].map(d=>d.id));
@@ -3518,7 +3518,7 @@ b.disabled=true;try{await saveDecision(id,choice,feedback,!!b.dataset.answer)}ca
 /*@include dashboard/events-list.js*/
 /*@include dashboard/todos-snooze.js*/
 /*@include dashboard/family-invite.js*/
-function toast(text,error=false,undoId=null){const t=$('#toast');t.innerHTML=esc(text)+(undoId?` <button data-undo="${undoId}">Undo</button>`:error?' <button type="button" data-bug-report>Report a bug</button>':'');t.classList.toggle('error',error);t.classList.add('show');toastLift(t);clearTimeout(toastLiftTimer);toastLiftTimer=setTimeout(()=>{if(t.classList.contains('show'))toastLift(t)},700);  /* again once what the action changed has drawn */clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),undoId?15000:text.length>90?9000:error?6000:2500)}
+function toast(text,error=false,undoId=null){const t=$('#toast');t.innerHTML=esc(text)+(undoId?` <button data-undo="${esc(undoId)}">Undo</button>`:error?' <button type="button" data-bug-report>Report a bug</button>':'');t.classList.toggle('error',error);t.classList.add('show');toastLift(t);clearTimeout(toastLiftTimer);toastLiftTimer=setTimeout(()=>{if(t.classList.contains('show'))toastLift(t)},700);  /* again once what the action changed has drawn */clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),undoId?15000:text.length>90?9000:error?6000:2500)}
 async function manualRefresh(){if(manualBusy)return;manualBusy=true;newTagline();document.querySelectorAll('.refresh-tap').forEach(e=>e.classList.add('busy'));const ok=await refresh();document.querySelectorAll('.refresh-tap').forEach(e=>e.classList.remove('busy'));manualBusy=false;toast(ok?'Up to date':'Couldn’t refresh. Try again in a moment.',!ok)}
 document.querySelectorAll('.refresh-tap').forEach(e=>{e.addEventListener('click',manualRefresh);e.addEventListener('keydown',k=>{if(k.key==='Enter'||k.key===' '){k.preventDefault();manualRefresh()}})});
 // The mascot blinks now and then: its closed-eyes frame (data-blink) for 150ms every 4 to 9 seconds, sometimes twice.
