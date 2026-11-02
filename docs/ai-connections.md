@@ -9,16 +9,24 @@ outside only: The Machine's own agent, Do it and [coding agents](agents.md) are 
 
 ## Two ways in
 
-Settings, **AIs** shows two addresses, each with Copy, and the steps for ChatGPT and Claude once. The official app comes
-first and is the default.
+Settings, **AIs** shows Add in ChatGPT and Add in Claude first, the official app's listings and the default. Folded under
+**Or add it by address** are the two addresses, each with Copy, and the steps to add one by hand in ChatGPT or Claude.
 
 ### Claude: the connector directory
 
 The official app is listed in Claude's connector directory:
 `https://claude.ai/directory/the-machine` (`AI_CLAUDE_DIRECTORY` in `dashboard/settings-ai.js`). That is the
 one-click way for Claude: **Add in Claude** opens the listing, Connect there starts the official app's sign-in below with
-the shared address, nothing to paste. It shows above the shared address once the official app is ready (`shared`).
-The shared address stays for a custom connector, other clients and ChatGPT, whose app isn't in its directory yet.
+the shared address, nothing to paste. It shows once the official app is ready (`shared`).
+The shared address stays for a custom connector and other clients.
+
+### ChatGPT: the plugin listing
+
+The official app is also published in ChatGPT:
+`https://chatgpt.com/plugins/plugin_asdk_app_6ae74ac637d0819199400cd3750138b4` (`AI_CHATGPT_APP` in
+`dashboard/settings-ai.js`). **Add in ChatGPT** opens it, above Add in Claude, and Install plugin there starts the same
+sign-in with the shared address. Like every official app connection it reaches a hosted Machine or a paired self-hosted
+one. A custom MCP server in ChatGPT stays the way in for the private address, or for a Machine not on the Network.
 
 ### The official app: one shared address
 
@@ -63,8 +71,9 @@ In Settings each such connection is tagged **Official app** (`connections()`, `o
 ### When it shows
 
 The official app shows when the account can reach this Machine at its private address (`ai_app.ai_reach`, `shared`): a
-hosted Machine with a name, or a paired self-hosted one with a name of its own and its certificate ready. Until then the
-official app's place shows **Get your address** ([Pairing](#pairing)), which both ways need.
+hosted Machine with a name, or a paired self-hosted one with a name of its own and its certificate ready. Until then
+ChatGPT and Claude show as one muted row, without a button, with one line (ready once this Machine has its address), above **Get
+your address** with **Set up** ([Pairing](#pairing)) or the address's state, which both ways need.
 
 ## Connections
 

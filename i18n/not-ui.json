@@ -40,6 +40,7 @@
  "Can't change {} here. Details are: {}",
  "Canceled. Nothing was sent. Say so in a few words.",
  "ChatGPT shows them{}.",
+ "ChatGPT · Claude",
  "Checked {} thing{}",
  "Collecting the last 24 hours first: {} of {} active conversations{}",
  "Comma",

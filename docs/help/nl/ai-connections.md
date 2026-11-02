@@ -19,9 +19,9 @@ Een concept wacht in je Machine tot je het leest en zelf op **Versturen** drukt.
 
 ## Er een koppelen
 
-Open **Instellingen**, **AI's**. Je kunt op twee manieren binnen. Eerst **Officiële app**: **Toevoegen in Claude** en één adres voor elke Machine, `https://mcp.themachine.computer/mcp`, met **Kopiëren**. Daaronder staat je **Privéadres (end-to-end)**, `https://<jouw naam>.mcp.themachine.computer/mcp`.
+Open **Instellingen**, **AI's**. Eerst komen **Toevoegen in ChatGPT** en **Toevoegen in Claude**. Onder **Of voeg hem toe met een adres** staan het ene adres van de officiële app voor elke Machine, `https://mcp.themachine.computer/mcp`, en je **Privéadres (end-to-end)**, `https://<jouw naam>.mcp.themachine.computer/mcp`, elk met **Kopiëren**.
 
-Op een Machine op je eigen computer druk je eerst op **Krijg je adres**. Er opent een pagina in je account: controleer of die dezelfde code toont, bevestig en kies een naam. Je Machine koppelt zichzelf, zonder herstart. Beide manieren hebben dit nodig.
+Op een Machine op je eigen computer druk je eerst op **Instellen** onder **Krijg je adres**. Er opent een pagina in je account: controleer of die dezelfde code toont, bevestig en kies een naam. Je Machine koppelt zichzelf, zonder herstart. Beide manieren hebben dit nodig.
 
 Daarna haalt hij een eigen certificaat voor het adres. Dat duurt een paar minuten en vraagt het pakket `cryptography` voor Python.
 
@@ -29,7 +29,11 @@ Voor Claude druk je op **Toevoegen in Claude**, of open je [The Machine in de di
 
 Wil je in Claude liever een adres gebruiken, open dan Customize, Connectors, druk op + Add en dan op Add custom connector. Noem hem The Machine, plak het adres en druk op Continue en dan op Add.
 
-Open in ChatGPT chatgpt.com/plugins, druk op + en dan op Add custom MCP server. Noem hem The Machine, plak het adres en kies OAuth. Bevestig de waarschuwing en druk op Create as a plugin. Je abonnement of werkruimte moet eigen MCP-servers toestaan.
+Voor ChatGPT druk je op **Toevoegen in ChatGPT**, of open je [The Machine in ChatGPT](https://chatgpt.com/plugins/plugin_asdk_app_6ae74ac637d0819199400cd3750138b4), en druk op Install plugin. Bij Business en Enterprise moet een beheerder het misschien eerst toestaan.
+
+De officiële app bereikt een gehoste Machine, en een Machine op je eigen computer zodra hij zijn adres heeft.
+
+Voor je privéadres, of een Machine zonder het Network, voeg je in ChatGPT liever een eigen MCP-server toe: open chatgpt.com/plugins, druk op + en dan op Add custom MCP server. Noem hem The Machine, plak het adres en kies OAuth. Bevestig de waarschuwing en druk op Create as a plugin. Je abonnement of werkruimte moet eigen MCP-servers toestaan.
 
 Met de officiële app vraagt de AI je in te loggen met je The Machine-account. Kies deze Machine als je er meer hebt en keur de AI dan goed op de eigen pagina van je Machine. Met het privéadres komt de AI rechtstreeks naar je Machine.
 
