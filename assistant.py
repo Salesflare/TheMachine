@@ -8590,6 +8590,9 @@ class Store:
         if self.accounts and suggestion.get('account_ids') is not None:
             extra['scope']=suggestion_scope(suggestion['account_ids'], self.accounts)
             extra['area']=todo_areas.current(suggestion['account_ids'], self.accounts)  # More, Move to: the other areas
+            if extra['area'] and suggestion.get('status') in gap_note.OPEN_STATUSES:
+                hint=area_hint(db,suggestion,self.accounts,extra['area'])  # Change area starts on where its people point
+                if hint:extra['area_hint']=hint
         wait=handoff_wait(db,suggestion)
         if wait:extra['handoff_wait']=wait
         still=handoff_wait(db,suggestion,awake=True)
@@ -10061,6 +10064,28 @@ def doc_write_files(db, event_ids):
         if m.get('file_id'):
             found[str(m['file_id'])] = {'account_id': r[0], 'doc_title': m.get('doc_title'), 'provider': m.get('provider')}
     return found
+
+
+def area_hint(db, suggestion, accounts, here):
+    """The area a to-do's people point to (todo_areas.pointed), from the Graph: their side, the accounts they were heard
+    on and their organization's domain. None when there are not several areas to pick from or nothing points anywhere."""
+    if sum(a['id'] != here for a in todo_areas.areas(accounts)) < 2:
+        return None  # one other area: More moves straight to it, no picker
+    try:
+        ids = [int(i) for i in json.loads(suggestion.get('event_ids') or '[]')]
+        if not ids:
+            return None
+        marks = ','.join('?' for _ in ids)
+        rows = db.execute(f"SELECT DISTINCT n.info,o.info org_info FROM graph_events g JOIN graph_nodes n ON n.id=g.node_id LEFT JOIN graph_nodes o "
+                          f"ON o.id=json_extract(n.info,'$.org') WHERE g.direct=1 AND n.kind='person' AND g.event_id IN ({marks})", ids).fetchall()
+        people = []
+        for r in rows:
+            info, org = json.loads(r['info'] or '{}'), json.loads(r['org_info'] or '{}')
+            people.append({'side': info.get('side'), 'accounts': info.get('accounts') or [], 'org_domain': org.get('domain')})
+    except (sqlite3.Error, ValueError, TypeError):
+        return None
+    free = lambda value: (lambda d: '' if d in graph.FREEMAIL else d)(own_addresses.email_domain(value))
+    return todo_areas.pointed(people, accounts, here, free)
 
 
 def area_prompt(config, account_ids):

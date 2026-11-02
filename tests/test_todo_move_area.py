@@ -35,9 +35,9 @@ def email(account='acme-mail'):
 
 class Areas(unittest.TestCase):
     def test_the_owners_areas_and_where_a_to_do_is(self):
-        self.assertEqual(todo_areas.areas(ACCOUNTS), [{'id': 'personal', 'label': 'Personal'}, {'id': 'work:Acme', 'label': 'Work'}])
+        self.assertEqual(todo_areas.areas(ACCOUNTS), [{'id': 'personal', 'label': 'Personal'}, {'id': 'work:Acme', 'label': 'Work', 'name': 'Acme'}])
         self.assertEqual(todo_areas.areas(ACCOUNTS + [{'id': 'b', 'boundary': 'work:Beta'}])[1:],
-                         [{'id': 'work:Acme', 'label': 'Work at Acme'}, {'id': 'work:Beta', 'label': 'Work at Beta'}])
+                         [{'id': 'work:Acme', 'label': 'Work at Acme', 'name': 'Acme'}, {'id': 'work:Beta', 'label': 'Work at Beta', 'name': 'Beta'}])
         self.assertEqual(todo_areas.current('["home-chat"]', ACCOUNTS), 'personal')
         self.assertEqual(todo_areas.current(['home-chat', 'acme-chat'], ACCOUNTS), 'work:Acme')  # any Work account makes it Work
         self.assertIsNone(todo_areas.current(['acme-chat', 'b'], ACCOUNTS + [{'id': 'b', 'boundary': 'work:Beta'}]))  # two companies
@@ -47,6 +47,49 @@ class Areas(unittest.TestCase):
             todo_areas.check('work:Side', ['home-chat'], ACCOUNTS)
         with self.assertRaisesRegex(ValueError, 'in that area already'):
             todo_areas.check('personal', ['home-chat'], ACCOUNTS)
+
+    def test_a_profile_named_after_its_own_source_is_no_company(self):
+        # An owner's own LinkedIn and X profiles, set up as work:linkedin and work:x before the setup asked for a company
+        mine = ACCOUNTS + [{'id': 'me-li', 'service': 'linkedin', 'transport': 'linkedin-inbox', 'boundary': 'work:linkedin'},
+                           {'id': 'me-x', 'service': 'x', 'transport': 'x-inbox', 'boundary': 'work:x'},
+                           {'id': 'beta-x', 'service': 'x', 'transport': 'x-inbox', 'boundary': 'work:Beta Labs'}]
+        self.assertEqual(todo_areas.areas(mine), [{'id': 'personal', 'label': 'Personal'},
+                                                  {'id': 'work:Acme', 'label': 'Work at Acme', 'name': 'Acme'},
+                                                  {'id': 'work:Beta Labs', 'label': 'Work at Beta Labs', 'name': 'Beta Labs'}])
+        self.assertEqual(todo_areas.current(['me-li'], mine), 'work')  # still Work, in no company
+        self.assertEqual(todo_areas.current(['me-x', 'acme-chat'], mine), 'work:Acme')
+        self.assertEqual(todo_areas.check('work:Acme', ['me-li'], mine), 'work:Acme')  # it can move to a company
+        for area in ('work:linkedin', 'work:x', 'work'):
+            with self.assertRaisesRegex(ValueError, 'Pick one of your areas'):
+                todo_areas.check(area, ['home-chat'], mine)
+        # Only a profile: one company, so plain Work
+        self.assertEqual([x['label'] for x in todo_areas.areas(ACCOUNTS + mine[-3:-1])], ['Personal', 'Work'])
+
+    def test_where_its_people_point(self):
+        mine = ACCOUNTS + [{'id': 'beta-mail', 'service': 'gmail', 'email': 'robin@beta.example', 'boundary': 'work:Beta'},
+                           {'id': 'me-li', 'service': 'linkedin', 'boundary': 'work:linkedin'}]
+        domain = lambda value: str(value or '').rpartition('@')[2] if '@' in str(value or '')[1:] else ''
+        point = lambda people, here='personal': todo_areas.pointed(people, mine, here, domain)
+        self.assertEqual(point([{'side': 'work', 'accounts': ['home-chat', 'beta-mail']}]), 'work:Beta')  # heard on Beta's mailbox
+        self.assertEqual(point([{'side': None, 'accounts': ['home-chat'], 'org_domain': 'acme.example'}]), 'work:Acme')  # works at Acme
+        self.assertEqual(point([{'side': 'personal', 'accounts': ['acme-chat']}], 'work:Acme'), 'personal')
+        self.assertIsNone(point([{'side': 'work', 'accounts': ['home-chat']}]))  # Work, but no company to go by
+        self.assertIsNone(point([{'side': 'work', 'accounts': ['me-li']}]))  # a profile is no company
+        self.assertIsNone(point([{'accounts': ['acme-chat']}, {'accounts': ['beta-mail']}]))  # two companies: no guess
+        self.assertIsNone(point([{'accounts': ['acme-chat']}], 'work:Acme'))  # where it is already
+        self.assertIsNone(point([]))
+
+    def test_the_card_carries_the_hint_only_with_a_picker(self):
+        import sqlite3
+        db = sqlite3.connect(':memory:'); db.row_factory = sqlite3.Row
+        db.executescript("CREATE TABLE graph_nodes(id TEXT,kind TEXT,info TEXT);CREATE TABLE graph_events(event_id INTEGER,node_id TEXT,direct INTEGER);"
+                         "INSERT INTO graph_events VALUES(7,'p1',1);")
+        db.execute("INSERT INTO graph_nodes VALUES('p1','person',?),('org:beta.example','org',?)",
+                   (json.dumps({'side': 'work', 'accounts': ['home-chat'], 'org': 'org:beta.example'}), json.dumps({'domain': 'beta.example'})))
+        mine = ACCOUNTS + [{'id': 'beta-mail', 'service': 'gmail', 'email': 'robin@beta.example', 'boundary': 'work:Beta'}]
+        card = {'event_ids': '[7]', 'account_ids': '["home-chat"]'}
+        self.assertEqual(a.area_hint(db, card, mine, 'personal'), 'work:Beta')
+        self.assertIsNone(a.area_hint(db, card, ACCOUNTS, 'personal'))  # one other area: no picker, no hint
 
 
 class MoveCard(unittest.TestCase):

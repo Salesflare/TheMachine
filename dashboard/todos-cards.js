@@ -292,7 +292,10 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-card-proje
 // A to-do's area (todo_areas.py): More, Move to Work (or Personal, or another company) moves it, with Undo on the toast.
 // Its accounts become that area's, so what it may read and send from follows. With several to pick from, Change area
 // opens a small picker. A run that stopped to ask for a move (preparation_move_to) gets it as the to-do's lead button.
-const areaOrg=id=>String(id).slice(5),manyWork=()=>(state.areas||[]).filter(a=>a.id!=='personal').length>1;
+// A company by the name Connections shows (Work · Acme), from api/status areas: only real companies, never a profile's
+// own source (todo_areas.companies). The picker starts on the area the run asked for, else where the to-do's people
+// point (area_hint), else on Choose… with Move off until one is picked: never just the first.
+const areaOrg=id=>(state.areas||[]).find(a=>a.id===id)?.name||String(id).slice(5),manyWork=()=>(state.areas||[]).filter(a=>a.id!=='personal').length>1;
 const areaName=id=>id==='personal'?t('Personal'):manyWork()?t('Work at {}',areaOrg(id)):t('Work');
 const moveText=id=>id==='personal'?t('Move to Personal'):manyWork()?t('Move to Work at {}',areaOrg(id)):t('Move to Work');
 const movedText=id=>id==='personal'?t('Moved to Personal'):manyWork()?t('Moved to Work at {}',areaOrg(id)):t('Moved to Work');
@@ -308,10 +311,12 @@ async function cardMove(id,area,b,undo){if(b)b.disabled=true;
   const tt=$('#toast'),u=document.createElement('button');u.type='button';u.dataset.moveUndo=r.decision_id;u.dataset.id=id;u.textContent=t('Undo');tt.append(' ',u);clearTimeout(toastTimer);toastTimer=setTimeout(()=>tt.classList.remove('show'),15000)}
  catch(err){errCaught(err);toast(err.message,true)}finally{if(b)b.disabled=false}}
 function cardAreaPick(id,anchor){const s=(state.suggestions||[]).find(x=>x.id===id)||{},to=moveTargets(s);document.querySelector('.area-picker')?.remove();if(!to.length)return;
+ const pick=[s.preparation_move_to,s.area_hint].find(x=>x&&to.some(a=>a.id===x))||'';
  const box=document.createElement('div');box.className='project-picker area-picker';box.setAttribute('role','dialog');box.setAttribute('aria-label',t('Area for this to-do'));
- box.innerHTML=`<label>${esc(t('Move to'))} <select>${to.map(a=>`<option value="${esc(a.id)}">${esc(areaName(a.id))}</option>`).join('')}</select></label><div class="actions"><button type="button" class="primary" data-ap="move">${esc(t('Move'))}</button><button type="button" class="quiet" data-ap="cancel">${esc(t('Cancel'))}</button></div>`;
- anchor.closest('details.more-actions,details.chat-menu')?.removeAttribute('open');(anchor.closest('.card')||anchor.closest('.chat-main')||document.body).appendChild(box);box.querySelector('select').focus();
- box.onclick=e=>{const b=e.target.closest('[data-ap]');if(!b)return;if(b.dataset.ap==='cancel'){box.remove();return}cardMove(id,box.querySelector('select').value,b)}}
+ box.innerHTML=`<label>${esc(t('Move to'))} <select>${pick?'':`<option value="" disabled selected>${esc(t('Choose…'))}</option>`}${to.map(a=>`<option value="${esc(a.id)}"${a.id===pick?' selected':''}>${esc(areaName(a.id))}</option>`).join('')}</select></label><div class="actions"><button type="button" class="primary" data-ap="move"${pick?'':' disabled'}>${esc(t('Move'))}</button><button type="button" class="quiet" data-ap="cancel">${esc(t('Cancel'))}</button></div>`;
+ anchor.closest('details.more-actions,details.chat-menu')?.removeAttribute('open');(anchor.closest('.card')||anchor.closest('.chat-main')||document.body).appendChild(box);
+ const sel=box.querySelector('select');sel.focus();sel.onchange=()=>{box.querySelector('[data-ap="move"]').disabled=!sel.value};
+ box.onclick=e=>{const b=e.target.closest('[data-ap]');if(!b)return;if(b.dataset.ap==='cancel'){box.remove();return}if(sel.value)cardMove(id,sel.value,b)}}
 document.addEventListener('click',e=>{const m=e.target.closest('[data-card-move]');if(m){e.preventDefault();m.closest('details.more-actions,details.chat-menu')?.removeAttribute('open');cardMove(m.dataset.cardMove,m.dataset.area,m);return}
  const p=e.target.closest('[data-card-area]');if(p){e.preventDefault();cardAreaPick(p.dataset.cardArea,p);return}
  const u=e.target.closest('[data-move-undo]');if(u){e.preventDefault();$('#toast').classList.remove('show');cardMove(u.dataset.id,null,null,u.dataset.moveUndo)}});

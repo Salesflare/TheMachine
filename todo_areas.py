@@ -6,8 +6,11 @@ counts as Work for timing, sharing and handoffs, all follow them. The owner can 
 messages it came from stay where they are; only the to-do moves. Nothing moves a to-do by itself: its run can ask for a
 move (preparation_blocked move_to), which the to-do shows as a button for the owner's tap.
 
-An area is 'personal' (every account with a personal boundary) or a work boundary ('work:Acme', the accounts with it).
-An account whose own `scope` says the other side (a work boundary labeled personal) is in neither."""
+An area is 'personal' (every account with a personal boundary) or a company: a work boundary ('work:Acme', the accounts
+with it). An account whose own `scope` says the other side (a work boundary labeled personal) is in neither. A work
+boundary named after its own source ('work:linkedin' on a LinkedIn account, 'work:x' on an X account: an owner's own
+profile, from before the setup asked for a company) is Work but no company: such a to-do can move to any company, and
+nothing moves to it."""
 from __future__ import annotations
 
 import json
@@ -29,23 +32,39 @@ def area_of_account(account):
     return PERSONAL if side == 'personal' else str(account['boundary']) if side == 'work' else None
 
 
-def areas(accounts):
-    """The owner's areas, Personal first then each company: [{'id', 'label'}]. A company is named only when there are
-    several ("Work at Acme"); with one it is just Work."""
-    found = []
+def _sources(account):
+    return {str(account.get(k) or '').partition('-')[0].casefold() for k in ('service', 'transport')} - {''}
+
+
+def companies(accounts):
+    """The owner's companies: each work boundary with its accounts, unless it is only named after its own source (the
+    service of every account in it: 'work:linkedin' holding just a LinkedIn profile)."""
+    found = {}
     for a in accounts or ():
         area = area_of_account(a)
-        if area and area not in found:
-            found.append(area)
-    work = sorted((x for x in found if x != PERSONAL), key=str.lower)
-    return [{'id': x, 'label': label(x, len(work))} for x in ([PERSONAL] if PERSONAL in found else []) + work]
+        if area and area != PERSONAL:
+            found.setdefault(area, []).append(a)
+    return [x for x in found if not all(name(x).casefold() in _sources(a) for a in found[x])]
+
+
+def name(area):
+    """A company's name as the owner gave it, the way Connections shows it (Work · Acme)."""
+    return str(area).partition(':')[2].strip()
+
+
+def areas(accounts):
+    """The owner's areas, Personal first then each company: [{'id', 'label', 'name'}]. A company is named only when
+    there are several ("Work at Acme"); with one it is just Work."""
+    personal = any(area_of_account(a) == PERSONAL for a in accounts or ())
+    work = sorted(companies(accounts), key=str.lower)
+    return ([{'id': PERSONAL, 'label': label(PERSONAL)}] if personal else []) + [{'id': x, 'label': label(x, len(work)), 'name': name(x)} for x in work]
 
 
 def label(area, companies=1):
     """Personal, Work, or Work at Acme when the owner has more than one company."""
     if area == PERSONAL:
         return 'Personal'
-    org = str(area).partition(':')[2]
+    org = name(area)
     return f'Work at {org}' if companies > 1 and org else 'Work'
 
 
@@ -53,18 +72,23 @@ def moved_line(area, companies=1):
     """The to-do's event line after a move: a whole sentence per case (i18n)."""
     if area == PERSONAL:
         return 'Moved to Personal'
-    org = str(area).partition(':')[2]
+    org = name(area)
     return ('Moved to Work at {}', org) if companies > 1 and org else 'Moved to Work'
+
+
+WORK = 'work'  # a to-do whose Work accounts are in no company (a 'work:linkedin' profile's): Work, and any company is another area
 
 
 def current(account_ids, accounts):
     """The one area a to-do is in now, from its accounts: a company when its Work accounts are all that company's,
-    Personal when it has no Work account. None when it spans several companies (a merged one) or none is known."""
+    Personal when it has no Work account, Work (no company) when its Work accounts are in none. None when it spans
+    several companies (a merged one) or none is known."""
     ids = json.loads(account_ids or '[]') if isinstance(account_ids, str) else list(account_ids or ())
     mine = {area_of_account(a) for a in accounts or () if a.get('id') in ids} - {None}
     work = {x for x in mine if x != PERSONAL}
     if work:
-        return next(iter(work)) if len(work) == 1 else None
+        firms = work & set(companies(accounts))
+        return (next(iter(firms)) if len(firms) == 1 else None) if firms else WORK
     # suggestion_scope reads a to-do with no Work account as Personal
     return PERSONAL if mine or ids else None
 
@@ -81,3 +105,26 @@ def check(area, account_ids, accounts):
     if area == current(account_ids, accounts):
         raise ValueError('It is in that area already')
     return area
+
+
+def pointed(people, accounts, here=None, domain=lambda value: ''):
+    """The area a to-do's people point to, for the picker to start on: Personal when they are Personal, a company when
+    they are heard on its accounts or work at one of its domains. None when they point nowhere, or to several, or to
+    where it is already. people: [{'side', 'accounts', 'org_domain'}] (graph person nodes); domain(email): its domain."""
+    firms = set(companies(accounts))
+    owned = {}
+    for a in accounts or ():
+        area = area_of_account(a)
+        if area in firms and domain(a.get('email')):
+            owned.setdefault(domain(a.get('email')), set()).add(area)
+    where = {a.get('id'): area_of_account(a) for a in accounts or ()}
+    ids = {x['id'] for x in areas(accounts)}
+    votes = set()
+    for p in people or ():
+        if p.get('side') == 'personal':
+            votes.add(PERSONAL)
+            continue
+        found = ({where.get(i) for i in p.get('accounts') or ()} & firms) | owned.get(str(p.get('org_domain') or '').lower(), set())
+        if len(found) == 1:
+            votes |= found
+    return next(iter(votes)) if len(votes) == 1 and votes <= ids and votes != {here} else None
