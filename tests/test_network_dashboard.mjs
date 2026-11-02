@@ -66,7 +66,9 @@ try{
   assert.doesNotMatch(await block.locator('label:has([data-net-addr="sam@other.example"])').innerText(),/Shared address/);
   // The owner's own numbers: each with its switch and where it came from; the main switch says "or number"
   assert.match(await block.locator('.net-switches').innerText(),/Let people who have my email or number find me/);
-  assert.match(await block.locator('label:has([data-net-addr="+12025550101"])').innerText(),/WhatsApp/);
+  assert.match(await block.locator('label:has([data-net-addr="+12025550101"])').innerText(),/^\s*\+1 202 555 0101\s+WhatsApp$/);  // grouped for reading
+  if(width<600){const [head,first,second]=await block.locator('.net-addrs > *').evaluateAll(x=>x.slice(0,3).map(e=>e.getBoundingClientRect().left));
+   assert.ok(first<second+1&&first>second-1&&head<=first,'Findable by on its own line, the list aligned under it')}
   assert.match(await block.locator('label:has([data-net-addr="+12025550100"])').innerText(),/About you/);
   assert.equal(await block.locator('[data-net-addr="+12025550100"]').isChecked(),false);
   calls.length=0;await block.locator('[data-net-addr="+12025550101"]').click();
