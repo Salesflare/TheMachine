@@ -24,7 +24,7 @@ Collectors read existing source content. The optional Salesflare `join_pipelines
 | `linkedin` (plugin) | LinkedIn signed in to the OpenClaw browser | `active_hours` (`[7, 22]`, local time); config `linkedin_inbox` for the reader path |
 | `x` (plugin) | X signed in to the OpenClaw browser | `handle`, `primary` (the account the browser is normally on), `active_hours` (`[7, 23]`), `long_posts` (X Premium: replies up to 25000 characters); config `x_inbox` for the reader path |
 | `trello` (plugin) | Sign in with Trello (the app The Machine, scope read, no expiry): hosted, or on a self-hosted Machine paired with an account | `board` (URL or ID, one board per account, picked after signing in), `credential` (`{"key", "token"}`; a token alone with `api_key` still works), `bootstrap_days` (7) |
-| `zoom` (plugin) | A Zoom sign-in through a token broker (a paid plan with AI Companion for summaries) | `transport: broker`, `email`, `bootstrap_days` (7); config `zoom_broker`, `zoom_transcripts` (true) |
+| `zoom` (plugin) | A Zoom sign-in through a token broker, or a [Maton](https://maton.ai) Zoom connection (a paid plan with AI Companion for summaries) | `transport` (`broker` or `maton`), `email`, `bootstrap_days` (7); broker: config `zoom_broker`, `zoom_transcripts` (true); Maton: `credential` + `credential_variable` (file with `MATON_ZOOM_KEY=`), optional `connection_id` |
 | `google_meet` (plugin) | None: Connect Google Meet signs in with Meet's own Google app (`meetings.space.readonly`, `documents.readonly`), apart from Gmail (`transport` `broker`) | `email`, `bootstrap_days` (7, at most 30); config `google_meet_broker` |
 | `docs` (plugin) | The owner's own Google (broker) or Microsoft sign-in for that address, plus a separate consent for files | `email`, `transport` (borrowed from the mail account), `provider` (`google` or `microsoft`, else from the mail account), `boundary` |
 | `shortcut` (plugin) | A Shortcut API token | `workspace`, `credential` |
@@ -187,6 +187,7 @@ The AI Companion summary of each meeting you hosted (`zoom.summary`), and its tr
 
 - **Sign-in:** your own (user-level OAuth through a Zoom Marketplace general app), not an account-wide Server-to-Server app, so it reads only your meetings.
 - **Broker:** it works like the Microsoft broker. The broker (`zoom_broker.url`, the `zoom-broker` credential) keeps the app and its secret. This machine keeps the refresh token in `mail_grants.py`, and the one Zoom rotates on every refresh comes back as `refresh_token` and replaces it.
+- **Or through Maton** (`transport: maton`): your own Zoom connection at Maton, with the Maton key in a credential file. The key only ever goes to `api.maton.ai`. Maton opens neither the summaries list nor past-meeting instances, so each past meeting's latest instance is read, and transcripts are not read (their download link is on zoom.us, which never gets the key).
 - **Scopes:** `user:read:user`, `meeting:read:list_summaries`, `meeting:read:summary`, `meeting:read:list_meetings`, `meeting:read:list_past_instances` and `cloud_recording:read:meeting_transcript`.
 - **Each run** lists the summaries made since the last one, with a day of overlap for late or edited ones (the first run reads seven days back). When that list is closed to your sign-in, it lists your past meetings and their instances instead (or each one's latest instance, when the instances list is closed too; one-off meetings from before the window are skipped).
 - Summaries need a paid plan, AI Companion on during the meeting, and no end-to-end encryption.
@@ -366,6 +367,14 @@ When the assistant's browser runs on a desktop you are not sitting at, the dashb
 - Elsewhere it opens on the whole screen.
 
 **Security:** only the dashboard's owner gets that page, and the dashboard only connects its websocket for a page on the dashboard's own address, so another site can't use your tailnet identity to reach the screen. The VNC server needs no password of its own as long as only you can open its socket; never put it on a public or tailnet address without one.
+
+### Your own Chrome, one Allow prompt
+
+When agents or scripts on your desktop work in your own Chrome (your sign-ins, through its DevTools), Chrome asks "Allow remote debugging?" for every new connection. `deploy/cdp-relay.mjs` keeps one approved connection open and shares it at `ws://127.0.0.1:9333`, so the prompt comes once per Chrome start.
+
+- **Setup:** turn on remote debugging in Chrome (`chrome://inspect/#remote-debugging`), then run the relay as a user service: `deploy/cdp-relay.service`. It reads Chrome's `DevToolsActivePort` (`CHROME_DEVTOOLS_FILE` for another profile folder) and reconnects by itself after Chrome restarts. `CDP_RELAY_PORT` changes 9333.
+- **Clients** connect to `ws://127.0.0.1:9333` with Node's `WebSocket`, Playwright's `connectOverCDP` or the like. Once the last one leaves, the relay switches auto-attach off and detaches what is left, so no new tab stays paused.
+- **Security:** anything you run on this computer can drive your Chrome through it, with your sign-ins, as with Chrome's own DevTools port. Web pages can't: a handshake with an `Origin` header (every browser page sends one) or for another host name is refused. It listens on 127.0.0.1 only; never forward it.
 
 ### Signing in from a server
 

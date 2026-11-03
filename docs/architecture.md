@@ -36,6 +36,7 @@ Do it → isolated preparation turn of the same agent → result, draft + Send, 
 | `mail_attachments.py` | Email attachments a preparation saves: encrypted on disk with the message key, a private readable copy for the run, encrypted in place after runs that saved them with `gog` |
 | `browser_login.py` | The sign-in dialog: fills a sign-in page in the assistant's browser with what you type on the dashboard, and keeps saved sign-ins encrypted |
 | `integrations/browser_cdp.py` | Talks to a browser's DevTools address directly, for the LinkedIn and X readers when one is set |
+| `deploy/cdp-relay.mjs` | Optional: one shared DevTools connection to your desktop Chrome, so its Allow prompt comes once per Chrome start ([sources](sources.md#your-own-chrome-one-allow-prompt)) |
 | `AGENTS.md`, `PREPARATION.md` | Instructions the plugin gives the agent for reviews and for Do it runs (templates; see below) |
 | `source-notes/` | How to read each connector, one file per service; a review or Do it run gets only the notes for the sources this Machine has connected |
 | `install.sh`, `installer.py` | Install, upgrade and uninstall |
