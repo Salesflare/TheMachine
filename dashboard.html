@@ -984,6 +984,14 @@ button.stat[aria-expanded="true"]::after{content:"";position:absolute;left:28%;r
 .card h3{font-size:1.12rem;font-weight:700;line-height:1.3}
 .card .body{font-size:1.02rem;line-height:1.55;color:var(--text)}
 .card .source{font-size:.86rem;color:var(--muted)}.card .note{font-size:.92rem;color:var(--muted)}
+/* A send held for a new message: that message under the line, its words clamped to two lines, Read it and the redo below */
+.card .held-by{margin:6px 0 0;padding:8px 10px;border-left:2px solid var(--border-strong);border-radius:4px;background:var(--sunken);font-size:.88rem;min-width:0}
+.card .held-by p{margin:0}.card .held-who{color:var(--muted)}.card .held-who b{color:var(--text);font-weight:600;overflow-wrap:anywhere}
+.card .held-snip{margin-top:2px!important;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.card .held-acts{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin-top:6px}
+.card .held-acts button.ghost{min-height:34px;padding:5px 12px;margin:0;font-size:.86rem;border:1px solid var(--border-strong);background:var(--surface);color:var(--text)}
+.card .held-acts button.link{border:0;background:none;box-shadow:none;padding:0;min-height:0;margin:0;color:var(--muted);font:inherit;text-decoration:underline;text-decoration-color:var(--border-strong);text-underline-offset:3px;cursor:pointer}
+.card .held-acts button.link:hover{color:var(--text)}
 .card .note.handled{color:var(--mint);font-weight:600}
 .card .note.status-line{margin:2px 0 6px;font-weight:600}.card .note.status-line.done-line{color:var(--muted);font-weight:500}.ask-line .ask-q p{margin:4px 0}.ask-line .reason-chips{margin:6px 0 8px}.card a.card-link{color:inherit;text-decoration:underline;text-underline-offset:2px}
 .card .saved-feedback blockquote{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
@@ -3410,6 +3418,9 @@ if(['change','reject'].includes(b.dataset.choice))tipDone('change');if(b.dataset
 if(b.dataset.unmerge){b.disabled=true;try{await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'undo_merge',args:{suggestion_id:id,approval_id:crypto.randomUUID()}})});toast('Undoing the merge…');await refresh()}catch(e){errCaught(e);toast(e.message,true)}finally{b.disabled=false}return}
 if(b.dataset.smart){const a=taskActions(state.suggestions.find(s=>s.id===id)).find(a=>a.revision===b.dataset.smart);if(!a){toast('That result changed. Use its current buttons.',true);return}if(['email','email_demo','linkedin','slack','x','whatsapp','telegram','intercom','doc_reply','merge','finish','calendar','doc_write'].includes(a.kind)){openSend(id,b.dataset.smart);return}b.disabled=true;try{await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'confirm_action',args:{suggestion_id:id,revision:b.dataset.smart,approval_id:crypto.randomUUID()}})});toast('I’ll prepare that next.');await refresh()}catch(e){errCaught(e);toast(e.message,true)}finally{b.disabled=false}return}
 if(b.dataset.original){openEmail(id).catch(e=>toast(e.message,true));return}
+if(b.dataset.heldRead){openEvent(b.dataset.heldRead,'');return}
+// Redo for this message: Ask for changes, with the ask already written (they can add to it before it goes)
+if(b.dataset.heldRedo!=null){changing.add(id);dismissing.delete(id);render();const f=$('#feedback-'+id);if(f&&!f.value.trim()){f.value=b.dataset.heldRedo?t('Redo the draft for the new message from {}.',b.dataset.heldRedo):t('Redo the draft for the new message.');f.classList.add('filled')}f?.focus();return}
 if(b.dataset.result){try{if(b.dataset.result==='copy')await copyResult(id);else await openResult(id,b.dataset.file?{name:b.dataset.fileName||'',path:b.dataset.file}:undefined)}catch(e){errCaught(e);toast(e.message,true)}return}
 // A Fleet item among the to-dos (Share, Not now: data-choice too) is not a to-do: its own handler (fleetOn) answers it
 if(!b.dataset.choice||b.closest('.fleet-card'))return;const choice=b.dataset.choice;

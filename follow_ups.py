@@ -65,6 +65,9 @@ messages count). When anything was added after the basis, by anyone (the owner f
 a teammate's Machine), the draft is held, not sent: "Not sent: new message in the thread" (follow_up_holds). A reply
 ends the round as before; the owner's own send counts as that round, and the next follow-up waits from it (settle, plan).
 When the thread can't be read (offline, signed out), it isn't sent either: "Couldn’t check the thread, try again".
+A to-do drafted again later (a new signal reopened it, Ask for changes, Redo for this message) is checked against the
+thread as it was when that preparation started, and its own earlier sent copy never counts (basis_of, without_own_sends).
+The held to-do shows the message that held it (held_message: who, when, a few words), with Read it and Redo for this message.
 
 Change in the review (App.follow_up_change): the owner says what should change, for all checked drafts or one. Each
 goes through the same path as a message in its to-do's chat (a Change note, the preparation's next turn in its own
@@ -974,11 +977,50 @@ def basis_of(db, suggestion_id):
     card = db.execute('SELECT * FROM follow_up_cards WHERE suggestion_id=?', (suggestion_id,)).fetchone()
     if not card:
         return None, None
-    row = db.execute('SELECT basis FROM follow_up_basis WHERE suggestion_id=?', (suggestion_id,)).fetchone()
+    row = db.execute('SELECT basis,at FROM follow_up_basis WHERE suggestion_id=?', (suggestion_id,)).fetchone()
+    # Drafted again since (a new signal reopened it, Ask for changes, Redo for this message): the new draft was written
+    # against the thread as it was when that preparation started, so what came in before then is no news for it.
+    redone = _redrafted_at(db, suggestion_id, row['at'] if row else card['after_at'])
+    if redone:
+        return card, basis(db, card['project_id'], redone)
     try:
         return card, json.loads(row[0])
     except (TypeError, ValueError):
         return card, basis(db, card['project_id'], card['after_at'])
+
+
+REDRAFT_GAP = dt.timedelta(minutes=1)  # the first draft's preparation is queued with its basis, within moments
+
+
+def _redrafted_at(db, suggestion_id, since):
+    """When the to-do's latest finished preparation started, if that was after its basis was kept: a later draft."""
+    try:
+        prep = db.execute("SELECT created_at FROM preparations WHERE suggestion_id=? AND status='done'", (suggestion_id,)).fetchone()
+    except Exception:  # noqa: BLE001 - no preparations table here: the kept basis
+        return None
+    if not prep or not prep[0] or not since:
+        return None
+    try:
+        return prep[0] if parse(prep[0]) > parse(since) + REDRAFT_GAP else None
+    except (TypeError, ValueError):
+        return None
+
+
+def own_sends(db, suggestion_id):
+    """The message ids this to-do's own earlier sends went out as (an earlier revision sent before it was reopened)."""
+    return {str(r[0]) for r in db.execute("SELECT message_id FROM action_jobs WHERE suggestion_id=? AND status='sent' AND message_id IS NOT NULL",
+                                          (suggestion_id,))}
+
+
+def without_own_sends(db, suggestion_id, news):
+    """News minus this to-do's own sent copies: its own earlier send is never a new message in the thread for it."""
+    sent = own_sends(db, suggestion_id)
+    if not sent or not news:
+        return news
+    ids = [n['id'] for n in news if isinstance(n.get('id'), int)]
+    sources = {r[0]: str(r[1] or '') for r in db.execute(
+        f"SELECT id,source_id FROM events WHERE id IN ({','.join('?' * len(ids))})", ids)} if ids else {}
+    return [n for n in news if str(n.get('id')) not in sent and sources.get(n.get('id')) not in sent]
 
 
 def collected_since(db, project_id, found, mine=mine_default):
@@ -1008,7 +1050,7 @@ def thread_since(thread, channel_basis, own_emails):
         if bounces.system_sender(sender):
             continue  # a delivery report is no message in the thread: a bounce is checked on its own (hold_bounced)
         address = ADDRESS.findall(str(sender or ''))
-        out.append({'id': str(m.get('id')), 'at': at.isoformat() if at else None,
+        out.append({'id': str(m.get('id')), 'at': at.isoformat() if at else None, 'from': str(sender or '')[:200],
                     'mine': 'SENT' in labels or bool(address and address[-1].casefold() in own_emails)})
     return out
 
@@ -1049,6 +1091,48 @@ def hold(db, job_id, suggestion_id, why, news, now, line=None):
     db.execute('INSERT OR REPLACE INTO follow_up_holds(job_id,suggestion_id,why,news,at) VALUES(?,?,?,?,?)',
                (job_id, suggestion_id, why, json.dumps(news) if news is not None else None, now))
     return line
+
+
+SNIPPET = 160  # characters of the new message the held to-do shows
+
+
+def _sender(value):
+    """'Name <address>' as Name, else the address."""
+    text = str(value or '').strip()
+    name = re.sub(r'\s*<[^>]*>\s*$', '', text).strip().strip('"').strip()
+    return name or (ADDRESS.findall(text) or [text])[-1]
+
+
+def held_message(db, job_id):
+    """The new message that held this send ('changed'), for the to-do to show: {'event_id', 'from', 'at', 'snippet'},
+    the newest one someone else wrote (else the newest), or None. event_id is None while it isn't collected yet."""
+    try:
+        row = db.execute("SELECT news FROM follow_up_holds WHERE job_id=? AND why='changed'", (job_id,)).fetchone()
+        news = json.loads(row[0]) if row and row[0] else []
+    except Exception:  # noqa: BLE001 - no holds table, or a damaged row: nothing to show
+        return None
+    news = [n for n in news if isinstance(n, dict)]
+    if not news:
+        return None
+    pool = [n for n in news if not n.get('mine')] or news
+    pick = max(pool, key=lambda n: (str(n.get('at') or ''), isinstance(n.get('id'), int)))
+    key = pick.get('id')
+    event = None
+    if isinstance(key, int):
+        event = db.execute('SELECT id,occurred_at,body,metadata FROM events WHERE id=? AND deleted=0', (key,)).fetchone()
+    elif key:
+        event = db.execute("SELECT id,occurred_at,body,metadata FROM events WHERE deleted=0 AND (source_id=? OR source_id LIKE ?) "
+                           'ORDER BY id DESC LIMIT 1', (str(key), '%:' + str(key))).fetchone()
+    if event is None and isinstance(key, int):
+        return None
+    meta = _meta(event['metadata']) if event is not None else {}
+    who = meta.get('from') or meta.get('sender_display') or meta.get('sender') or pick.get('from') or ''
+    body = event['body'] if event is not None and isinstance(event['body'], str) else ''
+    snippet = ' '.join(body.split())
+    if len(snippet) > SNIPPET:
+        snippet = snippet[:SNIPPET].rsplit(' ', 1)[0] + '…'
+    return {'event_id': event['id'] if event is not None else None, 'from': _sender(who), 'mine': bool(pick.get('mine')),
+            'at': (event['occurred_at'] if event is not None else None) or pick.get('at'), 'snippet': snippet}
 
 
 def unhold(db, job_id):
