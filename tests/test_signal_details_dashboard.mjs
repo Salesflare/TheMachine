@@ -6,7 +6,8 @@ const html=await dashboardPage();
 const block=html.slice(html.indexOf('const KIND_LABEL='),html.indexOf('async function fillMessage('));
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>`&#${c.charCodeAt(0)};`),sender=s=>s,safeURL=()=>true,fileSize=n=>n+' B',t=s=>s;
 const fmt=html.slice(html.indexOf("let DL='en-US'"),html.indexOf('\n',html.indexOf('const fmtDHM=')));  // dates and times (locale_prefs.py)
-const messageHTML=new Function('esc','sender','safeURL','fileSize','t',fmt+'\n'+block+';return messageHTML')(esc,sender,safeURL,fileSize,t);
+const tag=html.slice(html.indexOf('class SafeHTML'),html.indexOf('\n',html.indexOf('const setHTML=')));  // html``, escaping with the esc above
+const built=new Function('esc','sender','safeURL','fileSize','t',fmt+'\n'+tag+'\n'+block+';return messageHTML')(esc,sender,safeURL,fileSize,t),messageHTML=(...a)=>String(built(...a));
 const at='2026-10-20T20:04:00Z';
 const bare=messageHTML({kind:'signal',from:'',occurred_at:at,title:'A signal',body:'Something happened'},'s1',1);
 assert.ok(!bare.includes('<summary>Details</summary>'),'no empty toggle');

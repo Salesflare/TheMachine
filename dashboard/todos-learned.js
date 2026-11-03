@@ -113,14 +113,14 @@ const doneFoldSkipped=g=>g.skipped&&g.skipped<g.items.length?t('{} skipped',g.sk
 // One folded follow-up: the project, who it went to, and when (or that it was skipped)
 function doneFoldWho(s){const a=frDraft(s),to=a?(a.to_name||(a.to||[]).join(', ')):'';return to?t('To {}',to):''}
 const doneFoldWhen=s=>fuDoneState(s)==='sent'?new Date(closedAt(s)).toLocaleTimeString(DL,{hour:'numeric',minute:'2-digit'}):t('Skipped');
-function sideRow(x,cur){
- if(x.fuGroup)return `<a href="#" ${x.writing?'data-fu-card':'data-fu-review'}="${esc(x.fuGroup)}" title="${esc(x.title)}" translate="no">${esc(x.title)}</a>`;
+function sideRow(x,cur){const here=id=>id===cur?html` aria-current="page"`:'';
+ if(x.fuGroup)return x.writing?html`<a href="#" data-fu-card="${x.fuGroup}" title="${x.title}" translate="no">${x.title}</a>`:html`<a href="#" data-fu-review="${x.fuGroup}" title="${x.title}" translate="no">${x.title}</a>`;
  if(x.fuFold){const open=doneOpen.has(x.fuFold);
   const n=doneFoldSkipped(x);
-  return `<button type="button" class="done-fold" data-done-fold="${esc(x.fuFold)}" aria-expanded="${open}" title="${esc([x.title,n].filter(Boolean).join(' · '))}"><span translate="no">${esc(x.title)}</span>${n?`<small>${esc(n)}</small>`:''}${CHEVRON}</button>`
-   +(open?`<div class="done-fold-list">${x.items.map(s=>`<a href="#chat=${esc(s.id)}" title="${esc(s.title)}"${s.id===cur?' aria-current="page"':''}><span translate="no">${esc(frName(s.follow_up))}</span><small>${esc([doneFoldWho(s),doneFoldWhen(s)].filter(Boolean).join(' · '))}</small></a>`).join('')}</div>`:'')}
- if(looksDone(x))return `<a href="#chat=${esc(x.id)}" class="side-ld" title="${esc(x.title)}"${x.id===cur?' aria-current="page"':''}><span translate="no">${esc(x.title)}</span><small>${esc(t('Looks done'))}</small></a>`;  // at the top of Done, still open
- return `<a href="#chat=${esc(x.id)}" title="${esc(x.title)}" translate="no"${x.id===cur?' aria-current="page"':''}>${esc(x.title)}</a>`}
+  return html`<button type="button" class="done-fold" data-done-fold="${x.fuFold}" aria-expanded="${open}" title="${[x.title,n].filter(Boolean).join(' · ')}"><span translate="no">${x.title}</span>${n?html`<small>${n}</small>`:''}${raw(CHEVRON)}</button>${
+   open?html`<div class="done-fold-list">${x.items.map(s=>html`<a href="#chat=${s.id}" title="${s.title}"${here(s.id)}><span translate="no">${frName(s.follow_up)}</span><small>${[doneFoldWho(s),doneFoldWhen(s)].filter(Boolean).join(' · ')}</small></a>`)}</div>`:''}`}
+ if(looksDone(x))return html`<a href="#chat=${x.id}" class="side-ld" title="${x.title}"${here(x.id)}><span translate="no">${x.title}</span><small>${t('Looks done')}</small></a>`;  // at the top of Done, still open
+ return html`<a href="#chat=${x.id}" title="${x.title}" translate="no"${here(x.id)}>${x.title}</a>`}
 // The Done list on the Suggestions page: the same fold, a quiet to-do that opens to the list
 function doneRows(items){return doneFold(items).map(x=>x.fuFold?doneFoldCard(x):suggestionCard(x)).join('')}
 function doneFoldCard(g){const open=donePageOpen.has(g.fuFold);

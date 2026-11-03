@@ -79,14 +79,14 @@ const hintOf=k=>String(k).startsWith('hint:')?(state.setup_hints||[]).find(h=>'h
 const nudgeKey=k=>String(k).startsWith('hint:')?'hint-'+k.slice(5):k==='push'?'push':String(k).startsWith('phone')?'phone':'install';
 const NUDGE_ICON='<img class="nudge-icon" src="brand/app-icon-192.png" alt="" width="36" height="36">';
 const SHARE_ICON='<svg class="ios-share" viewBox="0 0 24 24" role="img" aria-label="Share"><path d="M12 14V3.5M8.2 7.2 12 3.4l3.8 3.8"/><path d="M8.5 10H7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2h-1.5"/></svg>';
-function nudgeHTML(k){const later='<button type="button" class="ghost" data-nudge-later>Not now</button>',text=(t,s)=>`${NUDGE_ICON}<div class="nudge-text"><strong>${t}</strong>${s}</div>`;
- if(k==='installed')return text('Installed','<span>The Machine is in your apps now.</span>');
- const hint=hintOf(k);if(hint)return text(esc(hint.title),`<span>${esc(hint.text)}</span>`)+`<div class="nudge-act"><button type="button" class="primary" data-hint-open>${esc(hint.button||'Open')}</button>${later}</div>`;
- if(k==='phone'||k==='phone-desk')return text(k==='phone'?'Get the phone app':'Get The Machine on your phone',k==='phone'?'<span>Notifications, and sharing from any app.</span>':'<span>For iPhone and Android, with notifications.</span>')+`<div class="nudge-act"><button type="button" class="primary" data-phone-open>Get the app</button>${later}</div>`;
- if(k==='desktop'||k==='android')return text('Install The Machine',k==='desktop'?'<span>Install it and pin it to your taskbar or dock.</span>':'<span>Add it to your home screen. It opens like an app.</span>')+`<div class="nudge-act"><button type="button" class="primary" data-device="install-app">Install</button>${later}</div>`;
- if(k==='ios')return text('Add The Machine to your Home Screen',`<ol class="nudge-steps"><li>Tap Share ${SHARE_ICON}</li><li>Tap Add to Home Screen</li></ol><span>Notifications on iPhone and iPad work only from there.</span>`)+`<div class="nudge-act">${later}</div>`;
- if(k==='mac')return text('Add The Machine to your Dock','<span>In Safari’s menu bar: File, then Add to Dock.</span>')+`<div class="nudge-act">${later}</div>`;
- return text('Turn on notifications','<span>A ping when a to-do needs you, on this device only.</span>')+`<div class="nudge-act"><button type="button" class="primary" data-device="push-on">Turn on</button>${later}</div>`}
+function nudgeHTML(k){const later=html`<button type="button" class="ghost" data-nudge-later>Not now</button>`,text=(t,s)=>html`${raw(NUDGE_ICON)}<div class="nudge-text"><strong>${t}</strong>${s}</div>`;
+ if(k==='installed')return text('Installed',html`<span>The Machine is in your apps now.</span>`);
+ const hint=hintOf(k);if(hint)return html`${text(hint.title,html`<span>${hint.text}</span>`)}<div class="nudge-act"><button type="button" class="primary" data-hint-open>${hint.button||'Open'}</button>${later}</div>`;
+ if(k==='phone'||k==='phone-desk')return html`${text(k==='phone'?'Get the phone app':'Get The Machine on your phone',k==='phone'?html`<span>Notifications, and sharing from any app.</span>`:html`<span>For iPhone and Android, with notifications.</span>`)}<div class="nudge-act"><button type="button" class="primary" data-phone-open>Get the app</button>${later}</div>`;
+ if(k==='desktop'||k==='android')return html`${text('Install The Machine',k==='desktop'?html`<span>Install it and pin it to your taskbar or dock.</span>`:html`<span>Add it to your home screen. It opens like an app.</span>`)}<div class="nudge-act"><button type="button" class="primary" data-device="install-app">Install</button>${later}</div>`;
+ if(k==='ios')return html`${text('Add The Machine to your Home Screen',html`<ol class="nudge-steps"><li>Tap Share ${raw(SHARE_ICON)}</li><li>Tap Add to Home Screen</li></ol><span>Notifications on iPhone and iPad work only from there.</span>`)}<div class="nudge-act">${later}</div>`;
+ if(k==='mac')return html`${text('Add The Machine to your Dock',html`<span>In Safari’s menu bar: File, then Add to Dock.</span>`)}<div class="nudge-act">${later}</div>`;
+ return html`${text('Turn on notifications',html`<span>A ping when a to-do needs you, on this device only.</span>`)}<div class="nudge-act"><button type="button" class="primary" data-device="push-on">Turn on</button>${later}</div>`}
 const nudgeBox=(()=>{const el=document.createElement('div');el.id='device-nudge';el.className='notice-card device-nudge';el.setAttribute('role','region');el.setAttribute('aria-label','This device');el.hidden=true;el.dataset.kind='';
  $('#inbox').prepend(el);el.onclick=async e=>{const b=e.target.closest('button');if(!b)return;const k=el.dataset.kind;
   if(b.matches('[data-nudge-later]')){nudgeLater(nudgeKey(k));return}
@@ -114,7 +114,7 @@ function deviceSettings(){const {app}=deviceRows,small=app.querySelector('small'
  $('#push-test').hidden=!on;
  const text=!pushOK?(iosTab?'On iPhone and iPad, add it to your Home Screen first: Share, then Add to Home Screen.':'This browser can’t show notifications.'):blocked?t('Blocked in this browser.')+' '+blockedHint():on?'On for this device. One per to-do, even without Telegram.':'One per to-do, even without Telegram.';
  set(note,esc(text)+DEVICE_HELP);note.classList.toggle('device-blocked',blocked)}
-function deviceRender(){const k=nudgeKind()||'',el=nudgeBox;if(el.dataset.kind!==k){el.dataset.kind=k;el.innerHTML=k?nudgeHTML(k):'';el.hidden=!k}deviceSettings();renderNotify();phoneAppRender()}
+function deviceRender(){const k=nudgeKind()||'',el=nudgeBox;if(el.dataset.kind!==k){el.dataset.kind=k;setHTML(el,k?nudgeHTML(k):html``);el.hidden=!k}deviceSettings();renderNotify();phoneAppRender()}
 // Settings, General, Phone app: how the mobile app finds this Machine (phone_app in assistant.py). Hosted or on The
 // Machine Network: it signs in with the account. Self-hosted and not on the Network: the same line, and folded under
 // "Not on the Network?" a QR code of the app's connect link and the address to type in. Not shown in the app itself,

@@ -32,7 +32,7 @@ const only=!page.username&&!page.password;if(only)$('#signin-title').textContent
 const h=$('#signin-code-help');h.textContent=only?help:title+(help?'. '+help:'');h.hidden=!h.textContent;
 const a=$('#signin-code-ask');a.textContent=page.ask?`${b} says: “${page.ask}”`:'';a.hidden=!page.ask;
 $('#signin-code-label').textContent=says&&page.code_kind!=='key'?'Code':'One-time code';
-const o=$('#signin-others');o.innerHTML=(page.others||[]).map(l=>`<button type="button" class="ghost" data-signin-other="${esc(l)}">${esc(l)}</button>`).join('');o.hidden=!page.others?.length;
+const o=$('#signin-others');setHTML(o,html`${(page.others||[]).map(l=>html`<button type="button" class="ghost" data-signin-other="${l}">${l}</button>`)}`);o.hidden=!page.others?.length;
 if(!message&&page.error)$('#signin-error').textContent=`${b} says: “${page.error}”`}
 $('#signin-others').onclick=async e=>{const btn=e.target.closest('[data-signin-other]');if(!btn)return;const f=$('#signin-form'),label=btn.dataset.signinOther,run=signinRun;
 for(const x of document.querySelectorAll('#signin-others button,#signin-go'))x.disabled=true;$('#signin-error').textContent='';signinStatus(`Clicking “${label}” on the page…`,true);
@@ -87,7 +87,7 @@ const until=Date.now()+(info&&['eid','passkey','captcha','account'].includes(inf
 for(;;){try{signinPages=(await signinWithin(signinPost('browser_login_pages',task?{suggestion_id:task}:account?{account}:{}),20000)).pages}catch(err){errCaught(err);if(run===signinRun)signinFail(err.message);return}
 if(signinSite)signinPages=signinPages.filter(p=>onSite(p,signinSite));
 if(run!==signinRun||!d.open)return;if(signinPages.length||Date.now()>=until)break;await new Promise(r=>setTimeout(r,2500));if(run!==signinRun||!d.open)return}
-$('#signin-page').innerHTML=signinPages.map((p,i)=>`<option value="${i}">${esc(p.site)}${p.title?' · '+esc(p.title):''}</option>`).join('');$('#signin-pick').hidden=signinPages.length<2;
+setHTML($('#signin-page'),html`${signinPages.map((p,i)=>html`<option value="${i}">${p.site}${p.title?' · '+p.title:''}</option>`)}`);$('#signin-pick').hidden=signinPages.length<2;
 if(signinPages.length){signinShow(signinPages[0]);if(signinSite)$('#signin-title').textContent=`Sign in to ${signinSite.name} on your Machine`;return}
 if(signinAfter){signinBrowser({site:signinSite?.name},run);return}
 if(signinSite){signinFail(`No ${signinSite.name} sign-in page is open on your Machine. Signed in already? Then go back to setup; it connects by itself. Otherwise press Try again.`);return}
@@ -128,16 +128,16 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-signin]');
 const LOCK='<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3.25" y="7" width="9.5" height="6.5" rx="1.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M5.5 7V5.2a2.5 2.5 0 0 1 5 0V7" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>';
 const savedOn=v=>{const d=v&&new Date(v);if(!d||isNaN(d))return '';return d.toLocaleDateString(DL,d.getFullYear()===new Date().getFullYear()?{day:'numeric',month:'short'}:{month:'short',year:'numeric'})};
 function savedLoginRow(l){const site=String(l.site||''),user=String(l.username||''),on=savedOn(l.saved_at);
- return `<div class="saved-login"><span class="login-mark" aria-hidden="true">${esc((site.replace(/^www\./,'')[0]||'?').toUpperCase())}</span><span class="grow"><strong title="${esc(site)}">${esc(site)}</strong>${user?`<span class="login-user" title="${esc(user)}">${esc(user)}</span>`:''}<small class="login-pass">${l.password_saved?LOCK:''}<span>${l.password_saved?'Password saved':'No password saved'}${on?` · ${esc(on)}`:''}</span></small></span><button type="button" class="quiet" data-forget-login="${esc(site)}" aria-label="Forget ${esc(site)}">Forget</button></div>`}
+ return html`<div class="saved-login"><span class="login-mark" aria-hidden="true">${(site.replace(/^www\./,'')[0]||'?').toUpperCase()}</span><span class="grow"><strong title="${site}">${site}</strong>${user?html`<span class="login-user" title="${user}">${user}</span>`:''}<small class="login-pass">${l.password_saved?raw(LOCK):''}<span>${l.password_saved?'Password saved':'No password saved'}${on?` · ${on}`:''}</span></small></span><button type="button" class="quiet" data-forget-login="${site}" aria-label="Forget ${site}">Forget</button></div>`}
 async function savedLogins(){try{const r=await signinPost('browser_logins',{}),logins=Array.isArray(r.logins)?r.logins:[];if(savedLoginCount!==logins.length){savedLoginCount=logins.length;renderHealthTabs()}
  $('#saved-logins').classList.toggle('empty',!logins.length);
- $('#saved-logins').innerHTML=logins.length?logins.map(savedLoginRow).join(''):'<div><strong>No saved sign-ins</strong><span>Tick Save for next time when you sign in to a site.</span></div>'}catch{}}
+ setHTML($('#saved-logins'),logins.length?html`${logins.map(savedLoginRow)}`:html`<div><strong>No saved sign-ins</strong><span>Tick Save for next time when you sign in to a site.</span></div>`)}catch{}}
 $('#saved-logins').onclick=async e=>{const b=e.target.closest('[data-forget-login]');if(!b)return;b.disabled=true;try{await signinPost('browser_login_forget',{site:b.dataset.forgetLogin});toast('Forgotten.');savedLogins()}catch(err){errCaught(err);b.disabled=false;toast(err.message,true)}};
 // A task link from someone's email (task_invites.py), opened into this Machine: its card, then who sent it to connect with.
 {const m=/^#task=([A-Za-z0-9_-]{22}\.[A-Za-z0-9_-]{43})$/.exec(location.hash);if(m){history.replaceState(null,'',location.pathname);
  fleetPost('task_import',{link:m[1]}).then(async r=>{await refresh();const who=r.from||{};
   if(r.can_connect)toast(`Added ${who.name}’s task. Connect with them on the Network?`,false);else toast(`Added ${who.name}’s task to your to-dos.`);
-  if(r.can_connect){const t=$('#toast');t.insertAdjacentHTML('beforeend',` <button data-task-connect="${esc(who.username)}">Connect</button>`)}}).catch(err=>toast(err.message,true))}}
+  if(r.can_connect)$('#toast').append(' ',make('button',{'data-task-connect':who.username},'Connect'))}).catch(err=>toast(err.message,true))}}
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-task-connect]');if(!b)return;b.disabled=true;
  try{await fleetPost('fleet_friend',{do:'add',username:b.dataset.taskConnect});toast('Friend request sent. You’re connected once they accept.')}catch(err){errCaught(err);toast(err.message,true)}});
 {const m=/^#signin-site=(linkedin|x)$/.exec(location.hash);if(m){history.replaceState(null,'',location.pathname);openSignin(null,true,null,null,m[1])}}
