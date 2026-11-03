@@ -21981,8 +21981,10 @@ class App(*APP_MIXINS):
         if name == 'todo_details':
             chat = self.card_chat(suggestion_id)
             with self.store.connect() as db:
-                card = db.execute('SELECT s.title,s.status,p.status preparation_status,s.handled_hint,s.outcome FROM suggestions s '
+                card = db.execute('SELECT s.id,s.title,s.status,p.status preparation_status,s.handled_hint,s.outcome FROM suggestions s '
                                   'LEFT JOIN preparations p ON p.suggestion_id=s.id WHERE s.id=?', (suggestion_id,)).fetchone()
+                # Handed off and back on the list while the teammate still has it ("Still with Lieven · check in?")
+                still = handoff_wait(db, dict(card), awake=True) if card else None
             said, drafts = [], []
             for i in chat.get('items') or []:
                 who = {'source': i.get('from') or 'Message', 'you': 'Owner', 'reply': 'The Machine', 'agent': i.get('name') or 'Agent'}.get(i.get('kind'))
@@ -21992,7 +21994,8 @@ class App(*APP_MIXINS):
             # The draft's text isn't here: read_draft reads it out (and keeps that it was), so it is never told twice
             return {'title': card['title'] if card else '', 'state': todo_state(dict(card)) if card else '', 'messages': said[-25:],
                     'drafts': [{k: d.get(k) for k in ('kind', 'to', 'subject')} for d in drafts[:3]],
-                    **({'draft_note': 'To hear a draft, call read_draft.'} if drafts else {})}
+                    **({'draft_note': 'To hear a draft, call read_draft.'} if drafts else {}),
+                    **({'with': still['name'], 'with_note': 'Handed off to ' + still['name'] + ', who has not answered yet.'} if still else {})}
         if name == 'find_todos':
             words = [w for w in re.findall(r'\w+', str(args.get('words') or '').lower()) if len(w) > 1][:6]
             want = str(args.get('state') or '').strip().lower()

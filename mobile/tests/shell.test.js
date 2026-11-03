@@ -106,6 +106,33 @@ test('no sign-up, plans or prices on the start pages (accounts are made and paid
   assert.ok(!/href="https?:/.test(fs.readFileSync(path.join(www, 'index.html'), 'utf8')), 'no links out of the start page');
 });
 
+test('the start page\'s mascot blinks with the dashboard\'s frames, never with reduced motion', async () => {
+  const brand = path.join(__dirname, '..', '..', 'brand');
+  assert.ok(fs.readFileSync(path.join(www, 'img', 'machine.png')).equals(fs.readFileSync(path.join(brand, 'app-icon-192.png'))));
+  assert.ok(fs.readFileSync(path.join(www, 'img', 'machine-blink.png')).equals(fs.readFileSync(path.join(brand, 'avatar-blink.png'))));
+  for (const page of ['index.html', 'offline.html']) {
+    const html = fs.readFileSync(path.join(www, page), 'utf8');
+    assert.ok(html.includes('<script src="blink.js"></script>'), page);
+    for (const [img] of html.matchAll(/<img class="avatar[^>]*>/g)) assert.match(img, /data-blink="img\/machine-blink\.png"/, page);
+  }
+  const run = async reduced => {
+    const timers = [], srcs = [];
+    const img = {dataset: {blink: 'img/machine-blink.png'}, isConnected: true, attrs: {src: 'img/machine.png'},
+      getAttribute(k) { return this.attrs[k]; }, setAttribute(k, v) { this.attrs[k] = v; srcs.push(v); },
+      getBoundingClientRect: () => ({width: 132}), closest: () => null};
+    const ctx = {window: {matchMedia: true}, matchMedia: () => ({matches: reduced, addEventListener() {}}), Math, Promise, Map,
+      document: {hidden: false, querySelectorAll: () => [img], addEventListener() {}},
+      Image: class { decode() { return Promise.resolve(); } }, setTimeout: (f, ms) => { timers.push([f, ms]); return timers.length; }, clearTimeout() {}};
+    vm.runInNewContext(fs.readFileSync(path.join(www, 'blink.js'), 'utf8'), ctx);
+    await new Promise(r => setTimeout(r, 0));
+    for (let i = 0; i < 4 && timers.length; i++) timers.shift()[0]();
+    return srcs;
+  };
+  const blinked = await run(false);
+  assert.deepEqual(blinked.slice(0, 2), ['img/machine-blink.png', 'img/machine.png']);
+  assert.deepEqual(await run(true), []);
+});
+
 // www/inject.js in a fake Machine page
 function page(href, {sessionOk = true, share = false, files = false} = {}) {
   const calls = [];
@@ -164,6 +191,30 @@ test('inject: registers the push token once a week, with the page\'s own sign-in
   p.calls.length = 0;
   assert.equal((await p.run(payload)).push, undefined);
   assert.equal(p.calls.length, 0);
+});
+
+test('inject: the Machine\'s browser on its own gets a floating close back to the dashboard', async () => {
+  const made = [];
+  const fake = href => { const p = page(href); Object.assign(p.win, {
+    history: {length: 1, back() { p.win.wentBack = true; }},
+    document: {referrer: '', body: {appendChild: el => made.push(el)}, documentElement: {}, getElementById: id => made.find(el => el.id === id) || null,
+      addEventListener() {},
+      createElement: () => { const el = {style: {}, attrs: {}, on: {}, setAttribute(k, v) { this.attrs[k] = v; }, addEventListener(k, f) { this.on[k] = f; }}; return el; }},
+  }); p.win.location.replace = u => { p.win.replaced = u; }; return p; };
+  const base = 'https://sam.app.themachine.computer/';
+  const v = fake(base + 'browser/?autoconnect=1');
+  await v.run({base});
+  assert.equal(made.length, 1);
+  assert.equal(made[0].attrs['aria-label'], 'Close the browser');
+  assert.match(made[0].style.cssText, /width:44px;height:44px/);
+  assert.match(made[0].style.cssText, /safe-area-inset-top/);
+  made[0].on.click();
+  assert.equal(v.win.replaced, base);
+  await v.run({base});
+  assert.equal(made.length, 1, 'once');
+  made.length = 0;
+  await fake(base).run({base});
+  assert.equal(made.length, 0, 'not on the dashboard');
 });
 
 test('inject: a failed sign-in leaves the token for next time', async () => {

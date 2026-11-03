@@ -68,7 +68,18 @@ const settingUp=()=>!state?.suggestions||!(state.connectors||[]).length||!!first
 function phoneKind(){const p=state?.phone_app_store;if(!p||DEV.phoneApp)return null;
  if(DEV.mobile)return inApp()||appInstalled()?null:(DEV.ios?p.ios:DEV.android?p.android:null)?'phone':null;return p.page&&!p.phones?'phone-desk':null}
 const phoneLink=k=>{const p=state?.phone_app_store||{},u=k==='phone'?(DEV.ios?p.ios:p.android):p.page;return /^https:\/\//.test(u||'')?u:null};
-function nudgeKind(){if(!nudgeable)return null;if(justInstalled)return 'installed';
+// The phone app with its notifications off (never asked, said no, or off in the phone's settings): one short line at
+// the top, Turn on (the phone's question, or Open settings once it won't ask) and an X that keeps it away 7 days. On a
+// first sign-in the phone asks once by itself, right after the dashboard loads, with nothing before it.
+const APP_PUSH_REST=7*864e5;
+function appPushOff(){const phone=phoneAppPush(),n=state?.notify;if(!phone||!window.machinePhone||!n?.app_push_ready||!['granted','prompt','blocked'].includes(phonePush))return false;
+ return phonePush!=='granted'||!(n.app_devices||[]).some(p=>p.id===phone.id)}
+let appPushAsking=false;
+async function appPushOn(){appPushAsking=true;try{const r=await window.machinePhone.pushOn();phonePush=r==='on'?'granted':r==='blocked'?'blocked':'prompt';if(r==='on'){toast(t('Push is on here.'));await refresh()}}
+ catch(err){errCaught(err)}finally{appPushAsking=false;deviceRender()}}
+function appPushFirst(){if(appPushAsking||phonePush!=='prompt'||!appPushOff()||devStore.get('app-push-asked'))return;devStore.set('app-push-asked','1');appPushOn()}
+function nudgeKind(){if(!DEV.framed&&appPushOff()&&!appPushAsking&&!(+devStore.get('nudge-app-push')>Date.now()))return 'app-push';
+ if(!nudgeable)return null;if(justInstalled)return 'installed';
  if(!state?.handled_first||Date.now()-sessionStart<6e4||settingUp()||+devStore.get('nudge-rest')>Date.now())return null;
  if(pushWanted()&&!nudgeQuiet('push'))return 'push';
  const ph=phoneKind(),phone=ph&&!nudgeQuiet('phone')?ph:null;
@@ -80,6 +91,7 @@ const nudgeKey=k=>String(k).startsWith('hint:')?'hint-'+k.slice(5):k==='push'?'p
 const NUDGE_ICON='<img class="nudge-icon" src="brand/app-icon-192.png" alt="" width="36" height="36">';
 const SHARE_ICON='<svg class="ios-share" viewBox="0 0 24 24" role="img" aria-label="Share"><path d="M12 14V3.5M8.2 7.2 12 3.4l3.8 3.8"/><path d="M8.5 10H7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2h-1.5"/></svg>';
 function nudgeHTML(k){const later=html`<button type="button" class="ghost" data-nudge-later>Not now</button>`,text=(t,s)=>html`${raw(NUDGE_ICON)}<div class="nudge-text"><strong>${t}</strong>${s}</div>`;
+ if(k==='app-push')return html`<div class="nudge-text"><strong>Get a ping when something needs you.</strong></div><div class="nudge-act">${phonePush==='blocked'?html`<button type="button" class="primary" data-app-settings>Open settings</button>`:html`<button type="button" class="primary" data-app-on>Turn on</button>`}<button type="button" class="nudge-x" data-nudge-x aria-label="Close" title="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17"/></svg></button></div>`;
  if(k==='installed')return text('Installed',html`<span>The Machine is in your apps now.</span>`);
  const hint=hintOf(k);if(hint)return html`${text(hint.title,html`<span>${hint.text}</span>`)}<div class="nudge-act"><button type="button" class="primary" data-hint-open>${hint.button||'Open'}</button>${later}</div>`;
  if(k==='phone'||k==='phone-desk')return html`${text(k==='phone'?'Get the phone app':'Get The Machine on your phone',k==='phone'?html`<span>Notifications, and sharing from any app.</span>`:html`<span>For iPhone and Android, with notifications.</span>`)}<div class="nudge-act"><button type="button" class="primary" data-phone-open>Get the app</button>${later}</div>`;
@@ -90,6 +102,9 @@ function nudgeHTML(k){const later=html`<button type="button" class="ghost" data-
 const nudgeBox=(()=>{const el=document.createElement('div');el.id='device-nudge';el.className='notice-card device-nudge';el.setAttribute('role','region');el.setAttribute('aria-label','This device');el.hidden=true;el.dataset.kind='';
  $('#inbox').prepend(el);el.onclick=async e=>{const b=e.target.closest('button');if(!b)return;const k=el.dataset.kind;
   if(b.matches('[data-nudge-later]')){nudgeLater(nudgeKey(k));return}
+  if(b.matches('[data-nudge-x]')){devStore.set('nudge-app-push',String(Date.now()+APP_PUSH_REST));deviceRender();return}
+  if(b.matches('[data-app-settings]')){window.machinePhone?.settings().catch(()=>{});return}
+  if(b.matches('[data-app-on]')){b.disabled=true;await appPushOn();return}
   // a setup hint opens its step on the setup page; it rests a day, and goes for good once that step is done
   // the phone app opens its store (or the page with both) and rests the same way
   if(b.matches('[data-hint-open],[data-phone-open]')){const h=hintOf(k),u=b.matches('[data-phone-open]')?phoneLink(k):h?.href;if(u&&/^https:\/\//.test(u))window.open(u,'_blank','noopener');else if(h&&/^#connect(?:=[a-z_]+|ions=add)$/.test(u))location.hash=u;devStore.set('nudge-'+nudgeKey(k),JSON.stringify({...nudgeState(nudgeKey(k)),until:Date.now()+NUDGE_REST}));devStore.set('nudge-rest',String(Date.now()+NUDGE_REST));deviceRender();return}
@@ -116,7 +131,7 @@ function deviceSettings(){const {app}=deviceRows,small=app.querySelector('small'
  $('#push-test').hidden=!on;
  const text=!pushOK?(iosTab?'On iPhone and iPad, add it to your Home Screen first: Share, then Add to Home Screen.':'This browser can’t show notifications.'):blocked?t('Blocked in this browser.')+' '+blockedHint():on?'On for this device. One per to-do, even without Telegram.':'One per to-do, even without Telegram.';
  set(note,html`${text}${DEVICE_HELP}`);note.classList.toggle('device-blocked',blocked)}
-function deviceRender(){const k=nudgeKind()||'',el=nudgeBox;if(el.dataset.kind!==k){el.dataset.kind=k;setHTML(el,k?nudgeHTML(k):html``);el.hidden=!k}deviceSettings();renderNotify();phoneAppRender()}
+function deviceRender(){appPushFirst();const k=nudgeKind()||'',el=nudgeBox,h=k==='app-push'?k+phonePush:k;if(el.dataset.h!==h){el.dataset.h=h;el.dataset.kind=k;setHTML(el,k?nudgeHTML(k):html``);el.hidden=!k}deviceSettings();renderNotify();phoneAppRender()}
 // Settings, General, Phone app: how the mobile app finds this Machine (phone_app in assistant.py). Hosted or on The
 // Machine Network: it signs in with the account. Self-hosted and not on the Network: the same line, and folded under
 // "Not on the Network?" a QR code of the app's connect link and the address to type in. Not shown in the app itself,
@@ -126,7 +141,7 @@ function deviceRender(){const k=nudgeKind()||'',el=nudgeBox;if(el.dataset.kind!=
 // In the app: whether the phone will still ask about notifications (machinePhone, mobile/www/inject.js); checked again
 // when the owner comes back (from the phone's settings)
 let phonePush='';
-async function phonePushCheck(){const p=window.machinePhone;if(!p)return;let s='';try{s=await p.state('push')}catch{}if(s!==phonePush){phonePush=s;renderNotify()}}
+async function phonePushCheck(){const p=window.machinePhone;if(!p)return;let s='';try{s=await p.state('push')}catch{}if(s!==phonePush){phonePush=s;deviceRender()}}
 function phoneAppPush(){if(!document.documentElement.classList.contains('in-app'))return null;
  try{const k=JSON.parse(localStorage.getItem('machine-app-push')||'null');return {id:typeof k?.id==='string'?k.id:null}}catch{return {id:null}}}
 function phoneAppRender(){const p=state?.notify?.phone_app,inApp=document.documentElement.classList.contains('in-app');let row=$('#device-phone');
@@ -184,7 +199,7 @@ $('#settings-notify').addEventListener('click',async e=>{const sw=e.target.close
   try{await notifyPost('push_test',{app_device:test.dataset.appTest});toast('Test sent. It shows up in a moment.')}catch(err){errCaught(err);toast(err.message,true)}finally{test.disabled=false}return}
  if(e.target.closest('[data-app-settings]')){window.machinePhone?.settings().catch(()=>{});return}
  const ask=e.target.closest('[data-app-on]');if(ask){ask.disabled=true;
-  try{const r=await window.machinePhone.pushOn();if(r==='on'){phonePush='granted';toast('Push is on here.');await refresh();renderNotify()}else if(r==='blocked'){phonePush='blocked';renderNotify()}}catch(err){errCaught(err);toast(err.message,true)}finally{ask.disabled=false}return}
+  try{const r=await window.machinePhone.pushOn();if(r==='on'){phonePush='granted';toast('Push is on here.');await refresh();deviceRender()}else if(r==='blocked'){phonePush='blocked';deviceRender()}}catch(err){errCaught(err);toast(err.message,true)}finally{ask.disabled=false}return}
  const rm=e.target.closest('[data-app-remove]');if(rm){rm.disabled=true;
   try{await notifyPost('app_push_unregister',{id:rm.dataset.appRemove});state.notify.app_devices=(state.notify.app_devices||[]).filter(p=>p.id!==rm.dataset.appRemove);state.notify.push_devices=Math.max(0,(state.notify.push_devices||1)-1);toast('Removed');renderNotify()}catch(err){errCaught(err);toast(err.message,true)}finally{rm.disabled=false}return}
  const d=e.target.closest('[data-device]');if(d){d.disabled=true;try{await deviceRun(d.dataset.device)}finally{d.disabled=false;renderNotify()}return}

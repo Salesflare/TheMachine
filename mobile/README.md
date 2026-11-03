@@ -14,6 +14,9 @@ dashboard release reaches the app at once, with no store update. The app itself 
 - **The phone's own questions**: the microphone (Talk, dictation) and notifications are asked by the phone itself when
   the owner taps the mic or Turn on. Only once the phone won't ask again does the dashboard show one line with
   Open settings, the app's page in the phone's settings (`machinePhone` in `www/inject.js`).
+  While notifications are off, the home screen has one line with Turn on and an X (7 days); a first sign-in asks once.
+- **The Machine's browser**: the dashboard's Browser pane, closed with its X or Back. Opened on its own (an older
+  dashboard, a link straight to it) it gets a floating X back to the dashboard (`www/inject.js`).
 
 Native code is kept small and stable on purpose: new features belong in the dashboard.
 

@@ -11,7 +11,7 @@
 <body data-page="offline">
 <main id="app" aria-live="polite">
   <section id="offline">
-    <img class="avatar" src="img/machine.png" alt="" width="132" height="132">
+    <img class="avatar" src="img/machine.png" data-blink="img/machine-blink.png" alt="" width="132" height="132">
     <h1 data-t="offTitle"></h1>
     <p class="lede" data-t="offText"></p>
     <p class="hint ts" hidden><span data-t="noTailscale"></span> <a class="get-ts" data-t="getTailscale"></a></p>
@@ -24,5 +24,6 @@
 <script src="strings.js"></script>
 <script src="machine-url.js"></script>
 <script src="app.js"></script>
+<script src="blink.js"></script>
 </body>
 </html>

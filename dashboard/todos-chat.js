@@ -482,7 +482,14 @@ function talkGoView(){if(location.hash==='#talk')talkViewShow();else location.ha
 function talkViewShow(){const sec=$('#talk-view');if(sec.hidden)talkBack=!$('#settings').hidden?'settings':document.querySelector('nav button.active')?.dataset.tab||'inbox';
  for(const x of document.querySelectorAll('main>section'))x.hidden=x!==sec;
  for(const b of document.querySelectorAll('nav button')){b.classList.remove('active');b.setAttribute('aria-current','false')}
- $('#open-settings')?.setAttribute('aria-current','false');talkViewPaint();talkPaint();talkSide();requestAnimationFrame(()=>scrollTo(0,document.documentElement.scrollHeight))}
+ $('#open-settings')?.setAttribute('aria-current','false');talkViewPaint();talkPaint();talkSide();scrollTo(0,0);talkFit();requestAnimationFrame(talkFit)}
+// Talk's view is as tall as the window below the header: the page doesn't scroll, the transcript and the to-do do
+function talkFit(){const sec=$('#talk-view');if(!sec||sec.hidden)return;const log=sec.querySelector('.talk-log'),end=!log||talkAtEnd(log);
+ const vh=visualViewport?.height||innerHeight,m=getComputedStyle(sec.parentElement),below=(parseFloat(m.paddingBottom)||0)+(parseFloat(m.marginBottom)||0);
+ sec.style.setProperty('--talk-h',Math.max(300,Math.floor(vh-(sec.getBoundingClientRect().top+scrollY)-below))+'px');
+ if(log&&end)log.scrollTop=log.scrollHeight}
+const talkAtEnd=el=>el.scrollTop+el.clientHeight>=el.scrollHeight-40;
+addEventListener('resize',()=>requestAnimationFrame(talkFit));visualViewport?.addEventListener('resize',()=>requestAnimationFrame(talkFit));
 function talkLeave(){if(!talkViewOn())return;if(talkBack==='settings')showSettings();else document.querySelector(`nav [data-tab="${talkBack}"]`)?.click()}
 function talkDraftHtml(s){const a=s.status==='prepared'?(s.next_actions||[]).find(a=>a.revision&&(['email','linkedin','slack','x','whatsapp','telegram','intercom','doc_reply'].includes(a.kind)&&a.body||a.kind==='doc_write')):null;if(!a)return '';
  if(a.kind==='doc_write')return `<div class="chat-draft current"><span hidden data-smart="${esc(a.revision)}"></span><div class="chat-draft-head"><span>${esc(docHead(a))}</span></div><div class="chat-clamp dw">${docWriteHtml(a)}</div></div>`;
@@ -493,18 +500,20 @@ function talkSentHtml(v,s){const sent=(s.next_actions||[]).find(a=>a.state?.stat
  if(d.state==='sent'){const time=d.at?fmtHM(d.at):'';return `<p class="talk-about-sent" role="status">${esc(d.to&&time?t('Sent to {} · {}',d.to,time):time?t('Sent at {}',time):d.to?t('Sent to {}',d.to):t('Sent'))}</p>`}
  return `<p class="talk-about-sent failed" role="alert">${esc(t('Didn’t go out.'))}${d.why?' '+esc(d.why):''}</p>`}
 function talkViewPaint(){const sec=$('#talk-view');if(!sec||sec.hidden)return;const v=talk,live=!!v?.main;
- if(!sec.firstElementChild)sec.innerHTML='<div class="talk-head"><h2></h2><span class="talk-again"></span></div><div class="talk-about-slot"></div><div class="chat-log talk-log" aria-live="polite"></div><div class="talk-foot"></div>';
+ if(!sec.firstElementChild)sec.innerHTML='<div class="talk-head"><h2></h2></div><div class="talk-about-slot"></div><div class="chat-log talk-log" aria-live="polite"></div><div class="talk-foot"><div class="talk-again"></div></div>';
  sec.querySelector('h2').textContent=t('Talk');
- const again=live||!talkOk()?'':`<button type="button" class="talk-again-btn" data-talk-main>${esc(t('Start again'))}</button>`,ag=sec.querySelector('.talk-again');if(ag.innerHTML!==again)ag.innerHTML=again;
+ // Ended: where the bar was, "Talk ended." and Start again
+ const again=live?'':`<p class="talk-mark">${esc(t('Talk ended.'))}</p>${talkOk()?`<button type="button" class="talk-again-btn" data-talk-main>${esc(t('Start again'))}</button>`:''}`,ag=sec.querySelector('.talk-again');if(ag.innerHTML!==again)ag.innerHTML=again;ag.hidden=live;
  const s=live&&v.sid?state.suggestions?.find(x=>x.id===v.sid)||(v.done?.[v.sid]?{id:v.sid,title:v.done[v.sid].title}:null):null;
  const about=s?`<div class="talk-about" data-about="${esc(s.id)}"><div class="talk-about-top"><span>${esc(t('Talking about'))}</span><a href="#chat=${esc(s.id)}">${esc(t('Open the chat'))}</a></div><h3 translate="no">${esc(s.title)}</h3>${talkSentHtml(v,s)||talkDraftHtml(s)}</div>`:'';
  // At the end of the transcript, it stays there when the card changes (a draft that became "Sent to…" is much shorter)
- const slot=sec.querySelector('.talk-about-slot');if(slot.dataset.k!==about){const end=scrollY+innerHeight>=document.documentElement.scrollHeight-40;slot.dataset.k=about;slot.innerHTML=about;
-  if(end)requestAnimationFrame(()=>{document.body.style.minHeight='';scrollTo(0,document.documentElement.scrollHeight);if(typeof placeNote==='function')placeNote()})}
- const log=sec.querySelector('.talk-log'),key=talkLog.length+'|'+live;if(log.dataset.k===key)return;log.dataset.k=key;
+ const slot=sec.querySelector('.talk-about-slot'),log=sec.querySelector('.talk-log');
+ // The newest line stays in view as lines come and the card changes, unless the owner scrolled up to read back
+ if(slot.dataset.k!==about){const end=talkAtEnd(log);slot.dataset.k=about;slot.innerHTML=about;slot.scrollTop=0;if(end)log.scrollTop=log.scrollHeight}
+ const key=talkLog.length+'|'+live;if(log.dataset.k===key)return;const end=!log.dataset.k||talkAtEnd(log);log.dataset.k=key;
  log.innerHTML=talkLog.map(x=>x.record?talkRecordHtml(x.record):x.made?`<p class="talk-mark talk-made">${esc(t('Added a to-do: {}',x.title))}</p>`:x.about?`<p class="talk-mark" translate="no">${esc(x.title)}</p>`:`<div class="chat-msg ${x.role==='user'?'you':'machine'}"><div class="bubble" translate="no">${esc(x.text)}</div></div>`).join('')
-  +(!talkLog.length||!live?`<p class="talk-mark">${esc(live?t('Say something to start.'):t('Talk ended.'))}</p>`:'');
- requestAnimationFrame(()=>scrollTo(0,document.documentElement.scrollHeight))}
+  +(!talkLog.length&&live?`<p class="talk-mark">${esc(t('Say something to start.'))}</p>`:'');
+ if(end)log.scrollTop=log.scrollHeight}
 addEventListener('hashchange',e=>{if(location.hash==='#talk'){if(talk?.main||talkLog.length)talkViewShow();else history.replaceState(null,'',location.pathname+location.search)}
  else if(/#talk$/.test(e.oldURL)&&!/^#chat=/.test(location.hash))talkLeave()});
 // "Open the chat" stays in the page, also when the page's base is another path
@@ -640,7 +649,7 @@ const talkWho=s=>String((s.people||[])[0]?.name||'').slice(0,80);
 const TALK_STATE={ready:'ready',needs:'to decide',preparing:'preparing',waiting:'waiting on others',later:'snoozed'};
 const talkNeeds=()=>talkTodos.filter(([,l])=>l==='ready'||l==='needs').map(([s])=>s);
 function talkList(){const counts={};for(const [,l] of talkTodos)counts[TALK_STATE[l]]=(counts[TALK_STATE[l]]||0)+1;
- return {todos:talkTodos.slice(0,30).map(([s,l])=>({id:s.id,state:TALK_STATE[l],title:String(s.title||'').slice(0,200),...(talkWho(s)?{from:talkWho(s)}:{})})),count:talkTodos.length,counts}}
+ return {todos:talkTodos.slice(0,30).map(([s,l])=>({id:s.id,state:TALK_STATE[l],title:String(s.title||'').slice(0,200),...(talkWho(s)?{from:talkWho(s)}:{}),...(s.handoff_still?.name?{with:String(s.handoff_still.name).slice(0,80)}:{})})),count:talkTodos.length,counts}}
 async function talkOpen(v,id){if(!/^[a-f0-9]{16}$/.test(id))return {error:'No to-do with that id. Use list_todos or find_todos.'};  // a closed one too (Done / dismissed)
  const known=state.suggestions?.some(s=>s.id===id);
  if(!known)try{await micPost('talk_focus',{id:v.id,suggestion_id:id})}catch{return {error:'No to-do with that id. Use list_todos or find_todos.'}}
