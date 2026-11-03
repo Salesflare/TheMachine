@@ -6,46 +6,46 @@ const reviewing=new Map(),reviewViews=new Map(),reviewDrafts=new Map();
 // Offered where a Fleet of this to-do's side (Work, or the Family for Personal) carries reviews and has someone in it.
 const canReview=s=>!closed(s)&&s.status!=='snoozed'&&!!state?.fleet?.on&&(state.fleet.reviews||[]).includes(s.scope==='work'?'work':'personal')&&!s.review?.open&&!s.review_in&&!reviewing.has(s.id);
 const reviewMore=s=>canReview(s)?html`<button type="button" class="ghost" data-review-ask="${s.id}">${t('Ask to review')}</button>`:'';
-const reviewChip=(v,n,d)=>d.dropped?.includes(n)?'':`<span class="agent-get"><i class="via-ico via-${v.kind==='email'?'mail':'chat'}" aria-hidden="true"></i><span class="agent-get-label">${esc(v.label)}</span><button type="button" class="chip-x" data-review-drop="${n}" aria-label="${esc(t('Leave out {}',v.label))}" title="${esc(t('Leave out'))}">×</button></span>`;
+const reviewChip=(v,n,d)=>d.dropped?.includes(n)?'':html`<span class="agent-get"><i class="via-ico via-${v.kind==='email'?'mail':'chat'}" aria-hidden="true"></i><span class="agent-get-label">${v.label}</span><button type="button" class="chip-x" data-review-drop="${n}" aria-label="${t('Leave out {}',v.label)}" title="${t('Leave out')}">×</button></span>`;
 // The picker: who (one person), what goes (the draft or the to-do's text, shown as it is), its sources as chips, a note.
-function reviewEditor(s){const d=reviewing.get(s.id);if(!d||closed(s))return'';const id=esc(s.id);
+function reviewEditor(s){const d=reviewing.get(s.id);if(!d||closed(s))return'';const id=s.id;
  const who=d.fleets.flatMap(f=>f.members.map(m=>[f.id+'|'+m.member_id,d.fleets.length>1?`${m.name} (${f.name})`:m.name,m.name]));
- const pick=who.length<=4?`<span class="agent-switch" role="radiogroup" aria-label="${esc(t('Ask to review'))}">${who.map(([v,n])=>`<label><input type="radio" name="to" value="${esc(v)}"${d.to===v?' checked':''}><span>${esc(n)}</span></label>`).join('')}</span>`
-  :`<select name="to" class="review-pick" aria-label="${esc(t('Ask to review'))}">${who.map(([v,n])=>`<option value="${esc(v)}"${d.to===v?' selected':''}>${esc(n)}</option>`).join('')}</select>`;
+ const pick=who.length<=4?html`<span class="agent-switch" role="radiogroup" aria-label="${t('Ask to review')}">${who.map(([v,n])=>html`<label><input type="radio" name="to" value="${v}"${d.to===v?html` checked`:''}><span>${n}</span></label>`)}</span>`
+  :html`<select name="to" class="review-pick" aria-label="${t('Ask to review')}">${who.map(([v,n])=>html`<option value="${v}"${d.to===v?html` selected`:''}>${n}</option>`)}</select>`;
  const name=firstName((who.find(([v])=>v===d.to)||[])[2]||'');
- const chips=(d.sources||[]).map((v,n)=>reviewChip(v,n,d)).join('');
- const what=d.what==='draft'?`<div class="review-what"><p class="review-label">${esc(t('Your draft'))}</p>${d.subject?`<p class="review-subject" translate="no">${esc(d.subject)}</p>`:''}<div class="review-text" translate="no">${esc(d.body)}</div></div>`
-  :`<div class="review-what"><p class="review-label">${esc(t('This to-do'))}</p><div class="review-text" translate="no">${esc(d.body)}</div></div>`;
- return`<form class="review-form agent-sheet" data-card="${id}"><div class="agent-sheet-head"><span class="agent-sheet-title">${esc(t('Ask to review'))}</span>${pick}</div>${what}
- ${chips?`<div class="agent-gets" aria-label="${esc(t('Goes along'))}">${chips}</div>`:''}
- <textarea name="note" class="agent-note" rows="1" maxlength="300" placeholder="${esc(t('Add a note for {}',name||t('them')))}" aria-label="${esc(t('Add a note for {}',name||t('them')))}">${esc(d.note||'')}</textarea>
- <p class="agent-what">${esc(t('Only this to-do goes. {} can suggest changes; nothing is sent until you send it.',name||t('They')))}</p>
- <div class="agent-sheet-foot"><button type="button" class="ghost" data-review-cancel="${id}">${esc(t('Cancel'))}</button><button class="primary">${esc(t('Ask'))}</button></div></form>`}
-const reviewWords=w=>w.map(([k,x])=>k==='='?esc(x):k==='-'?`<del>${esc(x)}</del>`:`<ins>${esc(x)}</ins>`).join('');
+ const chips=orEmpty(html`${(d.sources||[]).map((v,n)=>reviewChip(v,n,d))}`);
+ const what=d.what==='draft'?html`<div class="review-what"><p class="review-label">${t('Your draft')}</p>${d.subject?html`<p class="review-subject" translate="no">${d.subject}</p>`:''}<div class="review-text" translate="no">${d.body}</div></div>`
+  :html`<div class="review-what"><p class="review-label">${t('This to-do')}</p><div class="review-text" translate="no">${d.body}</div></div>`;
+ return html`<form class="review-form agent-sheet" data-card="${id}"><div class="agent-sheet-head"><span class="agent-sheet-title">${t('Ask to review')}</span>${pick}</div>${what}
+ ${chips?html`<div class="agent-gets" aria-label="${t('Goes along')}">${chips}</div>`:''}
+ <textarea name="note" class="agent-note" rows="1" maxlength="300" placeholder="${t('Add a note for {}',name||t('them'))}" aria-label="${t('Add a note for {}',name||t('them'))}">${d.note||''}</textarea>
+ <p class="agent-what">${t('Only this to-do goes. {} can suggest changes; nothing is sent until you send it.',name||t('They'))}</p>
+ <div class="agent-sheet-foot"><button type="button" class="ghost" data-review-cancel="${id}">${t('Cancel')}</button><button class="primary">${t('Ask')}</button></div></form>`}
+const reviewWords=w=>html`${w.map(([k,x])=>k==='='?x:k==='-'?html`<del>${x}</del>`:html`<ins>${x}</ins>`)}`;
 // The owner's tracked changes: who and when, their comment, each change with a box (all ticked), then Accept or Ignore.
 // The owner's tracked changes: who and when (the header folds it away), their comment, each change with a box (all
 // ticked; an unticked one is dimmed). Accept all and Ignore; Accept selected only while some, not all, are ticked.
 function reviewChanges(s,v){const who=firstName(v.name),off=v.off||[],some=off.length>0&&off.length<v.hunks.length;
- const rows=v.hunks.map(h=>{const on=!off.includes(h.id);return`<li class="review-hunk${on?'':' off'}"><label><input type="checkbox" name="pick" value="${esc(h.id)}"${on?' checked':''}><span class="review-diff" translate="no">${h.field==='subject'?`<span class="review-field">${esc(t('Subject'))}</span> `:''}${reviewWords(h.words)}</span></label></li>`}).join('');
- return`<form class="review-changes" data-card="${esc(s.id)}" aria-label="${esc(t('{}’s changes',who))}"><button type="button" class="review-by" data-review-hide="${esc(s.id)}" aria-expanded="true">${esc(t('{}’s changes',who))} · ${time(v.at,true)}</button>
- ${v.changed_since?`<p class="note">${esc(t('The draft changed since. Changes go in where they still fit.'))}</p>`:''}<ul class="review-hunks">${rows}</ul>
- <p class="muted review-after">${esc(t('Accepting changes the draft only. Send it yourself after.'))}</p>
- <div class="actions">${some?`<button class="primary" data-review-apply="some">${esc(t('Accept selected'))}</button><button class="ghost" data-review-apply="all">${esc(t('Accept all'))}</button>`:`<button class="primary" data-review-apply="all">${esc(t('Accept all'))}</button>`}<button class="ghost" data-review-apply="ignore">${esc(t('Ignore'))}</button></div></form>`}
+ const rows=html`${v.hunks.map(h=>{const on=!off.includes(h.id);return html`<li class="review-hunk${on?'':html` off`}"><label><input type="checkbox" name="pick" value="${h.id}"${on?html` checked`:''}><span class="review-diff" translate="no">${h.field==='subject'?html`<span class="review-field">${t('Subject')}</span> `:''}${reviewWords(h.words)}</span></label></li>`})}`;
+ return html`<form class="review-changes" data-card="${s.id}" aria-label="${t('{}’s changes',who)}"><button type="button" class="review-by" data-review-hide="${s.id}" aria-expanded="true">${t('{}’s changes',who)} · ${time(v.at,true)}</button>
+ ${v.changed_since?html`<p class="note">${t('The draft changed since. Changes go in where they still fit.')}</p>`:''}<ul class="review-hunks">${rows}</ul>
+ <p class="muted review-after">${t('Accepting changes the draft only. Send it yourself after.')}</p>
+ <div class="actions">${some?html`<button class="primary" data-review-apply="some">${t('Accept selected')}</button><button class="ghost" data-review-apply="all">${t('Accept all')}</button>`:html`<button class="primary" data-review-apply="all">${t('Accept all')}</button>`}<button class="ghost" data-review-apply="ignore">${t('Ignore')}</button></div></form>`}
 // On the owner's to-do: how the review goes, the reviewer's comment, and Withdraw or See changes.
 function reviewOwner(s){const r=s.review;if(!r)return'';const pending=r.stage==='changes'&&!r.decided&&r.changes>0;
- const comment=r.comment?`<blockquote class="review-comment" translate="no">${esc(r.comment)}</blockquote>`:'';
- const tools=closed(s)?'':r.open?`<button type="button" class="link" data-review-withdraw="${esc(s.id)}">${esc(t('Withdraw'))}</button>`:pending&&!reviewViews.has(s.id)?`<button type="button" class="link" data-review-see="${esc(s.id)}">${esc(t('See changes'))}</button>`:'';
- return`<p class="note fleet review-line${r.open||pending?'':' handled'}" role="status">${esc(r.line)}${tools?' · '+tools:''}</p>${comment}${pending&&reviewViews.has(s.id)&&!closed(s)?reviewChanges(s,reviewViews.get(s.id)):''}`}
+ const comment=r.comment?html`<blockquote class="review-comment" translate="no">${r.comment}</blockquote>`:'';
+ const tools=closed(s)?'':r.open?html`<button type="button" class="link" data-review-withdraw="${s.id}">${t('Withdraw')}</button>`:pending&&!reviewViews.has(s.id)?html`<button type="button" class="link" data-review-see="${s.id}">${t('See changes')}</button>`:'';
+ return html`<p class="note fleet review-line${r.open||pending?'':html` handled`}" role="status">${r.line}${tools?html` · ${tools}`:''}</p>${comment}${pending&&reviewViews.has(s.id)&&!closed(s)?reviewChanges(s,reviewViews.get(s.id)):''}`}
 // On the reviewer's review to-do: what they were sent, editable in place, a comment, and Approve / Send changes / Decline.
 function reviewIn(s){const r=s.review_in;if(!r||!r.open||closed(s))return'';const who=firstName(r.from);  // their note is in the to-do's text
  const d=reviewDrafts.get(s.id)||{},subject=d.subject??r.subject??'',body=d.body??r.body,changed=(r.what==='draft'&&subject!==(r.subject||''))||body!==r.body;
- return`<form class="review-in agent-sheet" data-card="${esc(s.id)}"><div class="agent-sheet-head"><span class="agent-sheet-title">${esc(r.what==='draft'?t('{}’s draft',who):t('{}’s to-do',who))}</span>${changed?`<span class="chip review-edited">${esc(t('Edited'))}</span>`:''}</div>
- ${r.what==='draft'?`<input name="subject" class="review-subject-in" maxlength="300" value="${esc(subject)}" aria-label="${esc(t('Subject'))}" translate="no">`:''}
- <textarea name="body" class="review-body-in" rows="6" maxlength="8000" aria-label="${esc(t('Edit the text'))}" translate="no">${esc(body)}</textarea>
- <textarea name="comment" class="agent-note" rows="1" maxlength="1000" placeholder="${esc(t('Add a comment for {}',who))}" aria-label="${esc(t('Add a comment for {}',who))}">${esc(d.comment||'')}</textarea>
- <p class="agent-what">${esc(t('Edits go back to {} as suggestions. Nothing is sent from here.',who))}</p>
- <div class="agent-sheet-foot"><button type="button" class="quiet" data-review-reply="declined">${esc(t('Decline'))}</button>${changed?`<button class="primary" data-review-reply="changes">${esc(t('Send changes'))}</button>`:`<button type="button" class="ghost" data-review-reply="commented">${esc(t('Send comment'))}</button><button class="primary" data-review-reply="approved">${esc(t('Approve'))}</button>`}</div></form>`}
-const reviewBlock=s=>reviewOwner(s)+reviewIn(s);
+ return html`<form class="review-in agent-sheet" data-card="${s.id}"><div class="agent-sheet-head"><span class="agent-sheet-title">${r.what==='draft'?t('{}’s draft',who):t('{}’s to-do',who)}</span>${changed?html`<span class="chip review-edited">${t('Edited')}</span>`:''}</div>
+ ${r.what==='draft'?html`<input name="subject" class="review-subject-in" maxlength="300" value="${subject}" aria-label="${t('Subject')}" translate="no">`:''}
+ <textarea name="body" class="review-body-in" rows="6" maxlength="8000" aria-label="${t('Edit the text')}" translate="no">${body}</textarea>
+ <textarea name="comment" class="agent-note" rows="1" maxlength="1000" placeholder="${t('Add a comment for {}',who)}" aria-label="${t('Add a comment for {}',who)}">${d.comment||''}</textarea>
+ <p class="agent-what">${t('Edits go back to {} as suggestions. Nothing is sent from here.',who)}</p>
+ <div class="agent-sheet-foot"><button type="button" class="quiet" data-review-reply="declined">${t('Decline')}</button>${changed?html`<button class="primary" data-review-reply="changes">${t('Send changes')}</button>`:html`<button type="button" class="ghost" data-review-reply="commented">${t('Send comment')}</button><button class="primary" data-review-reply="approved">${t('Approve')}</button>`}</div></form>`}
+const reviewBlock=s=>html`${reviewOwner(s)}${reviewIn(s)}`;
 // A review to-do that is still open keeps its own buttons (above); the card's usual ones would do nothing useful there.
 const reviewHolds=s=>!!(s.review_in?.open&&!closed(s));
 $('#suggestions').addEventListener('click',async e=>{

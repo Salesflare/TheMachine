@@ -455,7 +455,7 @@ class DashboardWiring(unittest.TestCase):
     def test_the_card_and_the_telegram_link_open_the_dialog_for_the_task(self):
         html = dashboard_parts.assemble(Path(__file__).parent.parent)
         self.assertIn('#signin-for=', html)
-        self.assertIn('data-task="${esc(id)}"', html)
+        self.assertIn('data-signin data-task="${id}"', html)
         self.assertIn('suggestion_id:signinTask', html)
 
     def test_the_dialog_opens_the_sign_in_itself_and_never_hangs(self):

@@ -32,7 +32,7 @@ const firstLookBar=i=>{const done=Math.max(0,+i.done|0),total=Math.max(0,+i.tota
  make('i',{style:{width:Math.round(100*done/total)+'%'}})),make('span',{class:'fl-count mono'},`${done} of ${total} signals`)]:[]};
 const firstLookInner=i=>[make('img',{class:'sticker',src:'brand/wave.webp',alt:''}),make('div',{},make('strong',{},i.title),firstLookBar(i),make('small',{},i.wait||'To-dos show up here as they come. Nothing is sent.'))];
 // The list's empty state while the first look runs: a place the list fills with firstLookFill once it is on the page
-const firstLookEmpty=i=>i?'<div class="empty all-clear first-look-empty"></div>':'';
+const firstLookEmpty=i=>i?html`<div class="empty all-clear first-look-empty"></div>`:'';
 function firstLookFill(){const box=$('#suggestions .first-look-empty'),i=box&&firstLookInfo(state.review_live||{});if(i)box.replaceChildren(...firstLookInner(i))}
 function renderFirstLook(live){const i=firstLookInfo(live),el=$('#first-look'),empty=$('#suggestions .all-clear');
 if(empty){el.hidden=true;if(i){empty.classList.add('first-look-empty');empty.replaceChildren(...firstLookInner(i))}else if(empty.classList.contains('first-look-empty'))refresh();return}

@@ -7,11 +7,11 @@ import {dashboardPage} from './dashboard-page.mjs';
 // htmlT is t() for a sentence with markup in its {}; safeHref keeps only web, mail, phone and same-page links.
 const page=await dashboardPage();
 const line=start=>{const i=page.indexOf(start);assert.ok(i>=0,start);return page.slice(i,page.indexOf('\n',i))};
-const src=[line('const esc='),line('class SafeHTML'),line('const raw='),line('const htmlPart='),line('const html='),line('const setHTML='),line('const htmlT='),line('const safeHref=')].join('\n');
+const src=[line('const esc='),line('class SafeHTML'),line('const raw='),line('const htmlPart='),line('const html='),line('const setHTML='),line('const orEmpty='),line('const htmlT='),line('const safeHref=')].join('\n');
 // t() stands in for the catalog: a translation with an apostrophe, and {} filled in order
 const t=(key,...a)=>{let i=0;return ({'Last sync {}':'Dernière synchro {}','Hi {}':"Salut {} l'ami"}[key]??key).replace(/\{\}/g,()=>String(a[i++]))};
-const ctx={t,URL,location:{href:'https://machine.example/app/'}};vm.createContext(ctx);vm.runInContext(src+'\nObject.assign(globalThis,{esc,raw,html,setHTML,SafeHTML,htmlT,safeHref});',ctx);
-const {html,raw,setHTML,SafeHTML,htmlT,safeHref}=ctx;
+const ctx={t,URL,location:{href:'https://machine.example/app/'}};vm.createContext(ctx);vm.runInContext(src+'\nObject.assign(globalThis,{esc,raw,html,setHTML,SafeHTML,htmlT,safeHref,orEmpty});',ctx);
+const {html,raw,setHTML,SafeHTML,htmlT,safeHref,orEmpty}=ctx;
 const s=h=>{assert.ok(h instanceof SafeHTML);return String(h)};
 
 // Every interpolation is escaped, in text and in attributes, with the same rules as esc()
@@ -43,6 +43,10 @@ const el={innerHTML:''};
 setHTML(el,html`<b>${'<x>'}</b>`);assert.equal(el.innerHTML,'<b>&lt;x&gt;</b>');
 for(const bad of ['<b>x</b>',null,undefined,{s:'<b>x</b>'},['<b>']])assert.throws(()=>setHTML(el,bad),{name:'TypeError'});
 assert.equal(el.innerHTML,'<b>&lt;x&gt;</b>');
+// '' empties the element; an html`` result with nothing in it is '' again through orEmpty, so a test on it stays false
+let emptied=0;setHTML({replaceChildren:()=>emptied++},'');assert.equal(emptied,1);
+assert.equal(orEmpty(html`${[]}`),'');assert.equal(orEmpty(html`${''}${null}`),'');
+assert.equal(s(orEmpty(html`${['<i>']}`)),'&lt;i&gt;');assert.equal(orEmpty(''),'');
 
 // htmlT: the sentence and its text values are escaped, its html`` values stay markup
 assert.equal(s(htmlT('Last sync {}',html`<time>${'1h'}</time>`)),'Dernière synchro <time>1h</time>');

@@ -40,12 +40,12 @@ function chatMarkdown(text){text=chatEmoji(text);const out=[];let list=null,para
  // Quoted lines ("> …") are a quote, never a raw ">"
  const src=String(text||'').split('\n'),lines=[];for(const l of src){const q=/^\s*>\s?(.*)$/.exec(l);if(q){(quote??=[]).push(q[1]);continue}if(quote){lines.push({quote});quote=null}lines.push(l)}if(quote)lines.push({quote});
  const inline=t=>richText(t,true,{em:true});
- const flush=()=>{if(para.length)out.push(`<p>${para.map(inline).join('<br>')}</p>`);para=[];if(list)out.push(`<${list.tag}>${list.items.map(i=>`<li>${inline(i)}</li>`).join('')}</${list.tag}>`);list=null};
- for(const line of lines){if(line.quote){flush();out.push(`<blockquote class="chat-quote">${chatMarkdown(line.quote.join('\n'))}</blockquote>`);continue}const b=/^\s*[-*•]\s+(.*)$/.exec(line),n=/^\s*\d+[.)]\s+(.*)$/.exec(line),h=/^\s*#{1,6}\s+(.*)$/.exec(line);
+ const flush=()=>{if(para.length)out.push(html`<p>${para.map((x,i)=>html`${i?html`<br>`:''}${inline(x)}`)}</p>`);para=[];if(list){const items=list.items.map(i=>html`<li>${inline(i)}</li>`);out.push(list.tag==='ol'?html`<ol>${items}</ol>`:html`<ul>${items}</ul>`)}list=null};
+ for(const line of lines){if(line.quote){flush();out.push(html`<blockquote class="chat-quote">${chatMarkdown(line.quote.join('\n'))}</blockquote>`);continue}const b=/^\s*[-*•]\s+(.*)$/.exec(line),n=/^\s*\d+[.)]\s+(.*)$/.exec(line),h=/^\s*#{1,6}\s+(.*)$/.exec(line);
   if(!line.trim()){flush();continue}
   if(b||n){const tag=b?'ul':'ol';if(para.length||list&&list.tag!==tag)flush();list??={tag,items:[]};list.items.push((b||n)[1]);continue}
   if(list)flush();para.push(h?`**${h[1].replace(/\*\*/g,'')}**`:line)}
- flush();return out.join('')}
+ flush();return html`${out}`}
 // What changed between two versions of a draft, word by word.
 function chatDiff(a,b){const x=String(a).split(/(\s+)/),y=String(b).split(/(\s+)/);if(x.length*y.length>400000)return null;
  const m=x.length,n=y.length,L=Array.from({length:m+1},()=>new Uint16Array(n+1));
@@ -53,7 +53,7 @@ function chatDiff(a,b){const x=String(a).split(/(\s+)/),y=String(b).split(/(\s+)
  const out=[];let i=0,j=0;const push=(k,t)=>{const l=out.at(-1);l&&l[0]===k?l[1]+=t:out.push([k,t])};
  while(i<m&&j<n){if(x[i]===y[j]){push('=',x[i]);i++;j++}else if(L[i+1][j]>=L[i][j+1])push('-',x[i++]);else push('+',y[j++])}
  while(i<m)push('-',x[i++]);while(j<n)push('+',y[j++]);
- return out.map(([k,t])=>k==='='?esc(t):k==='-'?(t.trim()?`<del>${esc(t)}</del>`:''):`<ins>${esc(t)}</ins>`).join('')}
+ return html`${out.map(([k,t])=>k==='='?t:k==='-'?(t.trim()?html`<del>${t}</del>`:''):html`<ins>${t}</ins>`)}`}
 // The card's own pieces for the chat, taken from the card as the dashboard draws it, so they stay the same.
 // The card's own sends (their state refreshes every 2 s while one goes out): what the chat's draft says under it
 const CHAT_SENDS=['email','linkedin','slack','x','whatsapp','telegram','intercom','doc_reply'];
@@ -62,11 +62,11 @@ const chatGoing=st=>['queued','sending'].includes(st?.status)||st?.status==='unc
 const chatFailed=st=>['failed','blocked'].includes(st?.status)||!!st?.retry_ok;
 const CHAT_BY={email:'Sent to {} by email',email_demo:'Sent to {} by email',slack:'Sent to {} on Slack',linkedin:'Sent to {} on LinkedIn',whatsapp:'Sent to {} on WhatsApp',telegram:'Sent to {} on Telegram',x:'Sent to {} on X',intercom:'Sent to {} in Intercom',doc_reply:'Sent to {} in the doc'};
 function chatSendLine(d,x){const st=x.st,who=d.to.length&&!d.to.some(v=>v.includes('@'))?d.to.join(', '):x.a.to_name?.split(/\s+/)[0]||d.to.join(', ')||t('them');
- if(chatGoing(st))return `<p class="chat-sendstate" role="status">${esc(t(st.status==='uncertain'?'Checking it went out…':'Sending…'))}</p><div class="send-progress" aria-hidden="true"><i></i></div>`;
- if(st.status==='sent')return `<p class="chat-sendstate ok" role="status">${esc(d.kind==='intercom'?t('Sent as {}',x.a.as_name||t('your Intercom admin')):t(CHAT_BY[d.kind]||'Sent to {}',who))}${st.sent_at?' · '+chatHM(Date.parse(st.sent_at)):''}</p>`;
- if(chatFailed(st))return `<p class="chat-sendstate failed" role="alert">${st.retry_ok?esc(st.error):esc(t('Didn’t go out.'))+(st.error?' '+esc(st.error):'')}</p>`;
+ if(chatGoing(st))return html`<p class="chat-sendstate" role="status">${t(st.status==='uncertain'?'Checking it went out…':'Sending…')}</p><div class="send-progress" aria-hidden="true"><i></i></div>`;
+ if(st.status==='sent')return html`<p class="chat-sendstate ok" role="status">${d.kind==='intercom'?t('Sent as {}',x.a.as_name||t('your Intercom admin')):t(CHAT_BY[d.kind]||'Sent to {}',who)}${st.sent_at?' · '+chatHM(Date.parse(st.sent_at)):''}</p>`;
+ if(chatFailed(st))return html`<p class="chat-sendstate failed" role="alert">${st.retry_ok?st.error:t('Didn’t go out.')+(st.error?' '+st.error:'')}</p>`;
  return ''}
-function chatParts(s){const t=document.createElement('template');t.innerHTML=suggestionCard(s,'Chat');const card=t.content.querySelector('article');
+function chatParts(s){const t=document.createElement('template');setHTML(t,suggestionCard(s,'Chat'));const card=t.content.querySelector('article');
  // The card's … menu, flat: Hand off…'s sheet gives its choices by their whole names (Hand to Codex, not Codex)
  const acts=[...(card?.querySelector(':scope>.actions')?.children||[])].flatMap(n=>n.matches('details.more-actions')?[...n.querySelectorAll('.more-menu>:is(button,a),.mm-sub>:is(button,a):not([data-mm-back])')].filter(x=>x.dataset.mmOpen==null).map(x=>{if(x.dataset.full){x.textContent=x.dataset.full;delete x.dataset.full}return x}):[n]).map(n=>{n.removeAttribute('hidden');return n})  // a choice kept out of sight on the card is in the chat's menu
   .filter(n=>!['change','answer','cancel-change'].includes(n.dataset.choice)&&n.dataset.handoffCheckin==null);  // in the chat already: no Check in now
@@ -79,18 +79,16 @@ function chatParts(s){const t=document.createElement('template');t.innerHTML=sug
  if(went&&!going&&!back&&!lead?.dataset.smart)lead=acts.find(n=>n.dataset.choice==='complete')||lead;
  if(lead?.dataset.smart&&chatFailed(sends.find(x=>String(x.a.revision)===lead.dataset.smart)?.st))lead.textContent='Try again';
  // On the card the title, project and area change with a tap on each; here they are in the menu too.
- const edits=document.createElement('template');edits.innerHTML=closed(s)?'':`<button type="button" class="ghost" data-rename="${esc(s.id)}">${esc(window.t('Rename'))}</button>${s.project_node?`<button type="button" class="ghost" data-card-project="${esc(s.id)}">${esc(window.t('Change project'))}</button>`:''}${moveTargets(s).length?`<button type="button" class="ghost" data-card-area="${esc(s.id)}">${esc(window.t('Change area'))}</button>`:''}`;
+ const edits=document.createElement('template');setHTML(edits,closed(s)?'':html`<button type="button" class="ghost" data-rename="${s.id}">${window.t('Rename')}</button>${s.project_node?html`<button type="button" class="ghost" data-card-project="${s.id}">${window.t('Change project')}</button>`:''}${moveTargets(s).length?html`<button type="button" class="ghost" data-card-area="${s.id}">${window.t('Change area')}</button>`:''}`);
  const rest=[...acts.filter(n=>n!==lead&&n!==back),...edits.content.children];
  const decide=rest.filter(n=>['complete','snooze','reject','accept','retry'].includes(n.dataset.choice)||n.dataset.smart!=null);
  const status=card?.querySelector('.status-line:not(.ask-line):not(.done-line)')?.textContent.trim()||card?.querySelector('.card-badges .chip')?.textContent.trim()||'';
  const body=card?.querySelector('.body');body?.classList.remove('clamp');
- const panel=[...(card?.querySelectorAll('.merge-offer,.change-editor:not([class*="answer"]),.fleet-handoff-form')||[])].filter(n=>!n.querySelector('[id^="feedback-"]')).map(n=>n.outerHTML).join('')
-  // A run on the browser: its live picture from the card (peekHTML), a click opens the browser; the link until there is one
-  +(!s.preparation_browser?'':s.preparation_status==='blocked'?`<p class="note">${browserLink(s.id,s.preparation_browser)}</p>`:['running','starting'].includes(s.preparation_status)?`<div class="note peek chat-peek" data-peek="${esc(s.id)}" data-peek-via="${esc(JSON.stringify(s.preparation_browser))}">${peekHTML(s.id,s.preparation_browser)}</div>`:'');
- const html=n=>n?.outerHTML||'';
- return {sends,going,sheet:html(card?.querySelector('.agent-form')),lead:html(lead),send:!!lead?.dataset.smart,copy:lead?.dataset.result==='copy',back:html(back),rest:rest.map(html).join(''),options:[lead,...decide].filter(Boolean).slice(0,3).map(n=>{n.classList.remove('ghost','primary');n.classList.add(n===lead?'primary':'ghost');return n.outerHTML}).join(''),
-  status,intro:body?.innerHTML||'',ask:html(card?.querySelector('.ask-line')),agent:html(card?.querySelector('.agent-job')),
-  links:card?.querySelector('.foot-links')?.innerHTML||'',panel}}
+ const panel=html`${[...(card?.querySelectorAll('.merge-offer,.change-editor:not([class*="answer"]),.fleet-handoff-form')||[])].filter(n=>!n.querySelector('[id^="feedback-"]')).map(n=>nodeHTML(n))}${!s.preparation_browser?'':s.preparation_status==='blocked'?html`<p class="note">${browserLink(s.id,s.preparation_browser)}</p>`:['running','starting'].includes(s.preparation_status)?html`<div class="note peek chat-peek" data-peek="${s.id}" data-peek-via="${JSON.stringify(s.preparation_browser)}">${peekHTML(s.id,s.preparation_browser)}</div>`:''}`;
+ const outer=n=>n?nodeHTML(n):'';
+ return {sends,going,sheet:outer(card?.querySelector('.agent-form')),lead:outer(lead),send:!!lead?.dataset.smart,copy:lead?.dataset.result==='copy',back:outer(back),rest:orEmpty(html`${rest.map(outer)}`),options:orEmpty(html`${[lead,...decide].filter(Boolean).slice(0,3).map(n=>{n.classList.remove('ghost','primary');n.classList.add(n===lead?'primary':'ghost');return nodeHTML(n)})}`),
+  status,intro:orEmpty(nodeHTML(...body?.childNodes||[])),ask:outer(card?.querySelector('.ask-line')),agent:outer(card?.querySelector('.agent-job')),
+  links:orEmpty(nodeHTML(...card?.querySelector('.foot-links')?.childNodes||[])),panel:orEmpty(panel)}}
 // What the card asks of the owner, in one plain line, when its text doesn't already ask: the question its run wrote,
 // else from the title's "X needs your call on Y". An offer the card ends with ("I can check … and draft …") becomes a suggestion instead.
 const CHAT_OFFER=/(?:^|\s)((?:I can|I could|I'll|I will|Happy to)\s[^.!?]*[.!?]?)\s*$/;
@@ -104,7 +102,7 @@ const chatOpenSet=new Set();  // what is unfolded (steps, long messages, drafts,
 // Only from this chat's own thread, since the keys are positions in it.
 function chatFoldsNow(id){const log=$('#chat-log');if(!log||log.closest('.chat-layout')?.dataset.chat!==id)return;
  for(const d of log.querySelectorAll('details[data-fold-key]'))d.open?chatOpenSet.add(d.dataset.foldKey):chatOpenSet.delete(d.dataset.foldKey)}
-const chatFold=(key,cls,summary,body)=>`<details class="${cls}" data-fold-key="${esc(key)}"${chatOpenSet.has(key)?' open':''}><summary>${summary}</summary>${body}</details>`;
+const chatFold=(key,cls,summary,body)=>html`<details class="${cls}" data-fold-key="${key}"${chatOpenSet.has(key)?html` open`:''}><summary>${summary}</summary>${body}</details>`;
 const chatLong=(t,lines=4)=>String(t||'').split('\n').length>lines||String(t||'').length>lines*70;
 const chatViaIcon=(v,note)=>note?'note':/^(email|gmail|outlook|mail)/i.test(v||'')?'mail':/calendar/i.test(v||'')?'cal':'chat';
 const CHAT_VIA={email:'Email',gmail:'Email',slack:'Slack',linkedin:'LinkedIn',whatsapp:'WhatsApp',telegram:'Telegram',x:'X',calendar:'Calendar',intercom:'Intercom',github:'GitHub',android:'Phone'};
@@ -113,25 +111,25 @@ const CHAT_VIA={email:'Email',gmail:'Email',slack:'Slack',linkedin:'LinkedIn',wh
 const CHAT_TAPS={'Do it':'Chose Do it','Plan it':'Chose Plan it','Reopened':'Reopened it','Snoozed':'Snoozed it','Unsnoozed':'Unsnoozed it','Back for a check-in':'Brought it back for a check-in','Check-in moved':'Moved the check-in','Marked done':'Marked it done','Not done yet':'Marked it not done'};
 // A send approved by voice waits a few seconds with Undo; the chat paints again when that ends
 let chatUndoTimer=null;
-const chatUndoVoice=(s,i)=>{clearTimeout(chatUndoTimer);chatUndoTimer=setTimeout(()=>paintChat(),i.undo_until-Date.now()+50);return ` · <button type="button" class="link" data-voice-undo="${esc(i.undo_voice)}" data-sid="${esc(s.id)}">Undo</button>`};
+const chatUndoVoice=(s,i)=>{clearTimeout(chatUndoTimer);chatUndoTimer=setTimeout(()=>paintChat(),i.undo_until-Date.now()+50);return html` · <button type="button" class="link" data-voice-undo="${i.undo_voice}" data-sid="${s.id}">Undo</button>`};
 const chatEventText=i=>String(i.mine&&CHAT_TAPS[i.text]||i.text||'').replace(/^You\s+(\S)/,(m,c)=>c.toUpperCase());
 const chatVia=v=>CHAT_VIA[v]||(v&&v!=='signal'?v[0].toUpperCase()+v.slice(1):'');
 // Whose side an item is on: the owner's messages and taps on the right, the Machine and the people it is about on the left.
 const chatSide=i=>i.kind==='you'||i.kind==='event'&&i.mine||i.kind==='source'&&i.mine?'you':i.kind==='event'||i.kind==='learned'||i.kind==='fixed'?'mid':'them';
 // A wrong thing fixed where it came from (corrections.py): what is right now and where the wrong one came from, in the
 // owner's words, with Undo while it holds; an undone one stays, marked.
-function chatFixed(i){const sep='<span class="learned-sep" aria-hidden="true">·</span>',what=Array.isArray(i.line)?window.t(...i.line):String(i.text||''),
+function chatFixed(i){const sep=html`<span class="learned-sep" aria-hidden="true">·</span>`,what=Array.isArray(i.line)?window.t(...i.line):String(i.text||''),
  line=i.from?window.t('Fixed: {}, from {}',what,i.from):window.t('Fixed: {}',what);
- return `<div class="chat-event chat-learned chat-fixed${i.undone?' gone':''}"><span class="learned-acts"><span>${esc(line)}</span><span class="fixed-act">${sep}${i.undone?`<span>${esc(window.t('Undone'))}</span>`:`<button type="button" class="link" data-fixed-undo="${i.id}" aria-label="${esc(window.t('Undo: {}',line))}">${esc(window.t('Undo'))}</button>`}</span></span></div>`}
+ return html`<div class="chat-event chat-learned chat-fixed${i.undone?html` gone`:''}"><span class="learned-acts"><span>${line}</span><span class="fixed-act">${sep}${i.undone?html`<span>${window.t('Undone')}</span>`:html`<button type="button" class="link" data-fixed-undo="${i.id}" aria-label="${window.t('Undo: {}',line)}">${window.t('Undo')}</button>`}</span></span></div>`}
 // What a note on this card taught (from what was stored, never from what a reply says): a quiet line that opens it on
 // What I've learned, with Edit and Undo while it is there (a channel's voice has its own 'Saved to How you write' line).
-function chatLearned(i){const sep='<span class="learned-sep" aria-hidden="true">·</span>',q=i.text?`<q>${esc(i.text)}</q>`:'';
- if(i.state==='removed')return `<div class="chat-event chat-learned gone"><span class="learned-acts">Removed from what I’ve learned</span>${q}</div>`;
- const id=i.state==='merged'?i.into:i.id,go=`<button type="button" class="link" data-learned-go="${id||''}" data-what="${i.what}">Saved to what I’ve learned</button>`;
- return `<div class="chat-event chat-learned"><span class="learned-acts">${go}${i.state==='saved'?`${sep}<button type="button" class="link" data-learned-edit="${i.id}" aria-label="Edit what was learned">Edit</button>${sep}<button type="button" class="link" data-learned-undo="${i.id}" aria-label="Undo: remove from what I’ve learned">Undo</button>`:''}</span>${q}</div>`}
+function chatLearned(i){const sep=html`<span class="learned-sep" aria-hidden="true">·</span>`,q=i.text?html`<q>${i.text}</q>`:'';
+ if(i.state==='removed')return html`<div class="chat-event chat-learned gone"><span class="learned-acts">Removed from what I’ve learned</span>${q}</div>`;
+ const id=i.state==='merged'?i.into:i.id,go=html`<button type="button" class="link" data-learned-go="${id||''}" data-what="${i.what}">Saved to what I’ve learned</button>`;
+ return html`<div class="chat-event chat-learned"><span class="learned-acts">${go}${i.state==='saved'?html`${sep}<button type="button" class="link" data-learned-edit="${i.id}" aria-label="Edit what was learned">Edit</button>${sep}<button type="button" class="link" data-learned-undo="${i.id}" aria-label="Undo: remove from what I’ve learned">Undo</button>`:''}</span>${q}</div>`}
 // A reply that says it left a page open in the browser (a sign-in tab, a form)
 const CHAT_TAB=/\b(?:tab|browser)\b[^.]*\b(?:open|opened|reopened|ready)\b|\b(?:open|opened|reopened)\b[^.]*\b(?:tab|browser)\b|\bis open for\b/i;
-function chatLog(s=chatOpen()){if(!chat)return '<p class="chat-note">Loading…</p>';if(s)chatFoldsNow(s.id);const p=s?chatParts(s):{},out=[];let day='',side='';
+function chatLog(s=chatOpen()){if(!chat)return html`<p class="chat-note">Loading…</p>`;if(s)chatFoldsNow(s.id);const p=s?chatParts(s):{},out=[];let day='',side='';
  const items=[...(chat.items||[])];
  // The card itself opens the conversation when no run has said anything yet: what it is about and what it needs
  if(s&&!items.some(i=>i.kind==='reply'))items.push({kind:'card',at:Date.parse(s.created_at)||0});
@@ -141,9 +139,9 @@ function chatLog(s=chatOpen()){if(!chat)return '<p class="chat-note">Loading…<
  items.sort((a,b)=>(a.at||0)-(b.at||0));
  // The same tap again and again (five snoozes in a row) is one line with a count, unfolded for the times
  const rows=[];for(const i of items){const l=rows.at(-1);if(i.kind==='event'&&l?.kind==='event'&&l.text===i.text&&!!l.mine===!!i.mine)l.times.push(i.at),l.at=i.at;else rows.push(i.kind==='event'?{...i,times:[i.at]}:i)}
- const stamp=at=>{if(!at)return;const d=chatDayOf(at);if(d!==day){day=d;side='';out.push(`<div class="chat-day">${esc(d)}</div>`)}};
- const tm=at=>at?`<time class="chat-time" datetime="${new Date(at).toISOString()}" title="${esc(new Date(at).toLocaleDateString(DL,{weekday:'short',month:'short',day:'numeric',year:'numeric'})+' '+chatHM(at))}">${chatHM(at)}</time>`:'';
- const push=(i,html)=>{const sd=chatSide(i);out.push(html.replace('class="chat-','class="'+(sd===side?'cont ':'')+'chat-'));side=sd};
+ const stamp=at=>{if(!at)return;const d=chatDayOf(at);if(d!==day){day=d;side='';out.push(html`<div class="chat-day">${d}</div>`)}};
+ const tm=at=>at?html`<time class="chat-time" datetime="${new Date(at).toISOString()}" title="${new Date(at).toLocaleDateString(DL,{weekday:'short',month:'short',day:'numeric',year:'numeric'})+' '+chatHM(at)}">${chatHM(at)}</time>`:'';
+ const push=(i,body)=>{const sd=chatSide(i);out.push(sd!==side?body:htmlEdit(body,c=>{const e=[...c.querySelectorAll('[class]')].find(n=>n.getAttribute('class').startsWith('chat-'));e?.setAttribute('class','cont '+e.getAttribute('class'))}));side=sd};
  const sent=new Set(items.filter(i=>i.kind==='event'&&i.sent).map(i=>i.sent.trim()));
  // Each send or cancel belongs to the latest draft before it (by its text for a send): only that one says Sent or Not sent
  const outcome=new Map();{const open=[];for(const i of items){if(i.kind==='reply')open.push(...(i.drafts||[]));if(i.kind!=='event')continue;
@@ -157,8 +155,8 @@ function chatLog(s=chatOpen()){if(!chat)return '<p class="chat-note">Loading…<
  const lastMachine=rows.findLastIndex(i=>i.kind==='reply'||i.kind==='card'||i.kind==='event'&&i.handoff);
  const tabAt=s&&!closed(s)&&s.browser_open?rows.findLastIndex(i=>i.kind==='reply'&&CHAT_TAB.test(i.text||'')):-1;
  // While a message goes out no other choice shows; they come back once it went or failed
- const options=(n,onDraft)=>open&&!p.going&&n===lastMachine&&p.options&&!(p.send&&onDraft)?`<div class="chat-options">${p.options}</div>`:'';
- const clamp=(k,html,long,more='More')=>long?`<div class="chat-clamp${chatOpenSet.has(k)?' open':''}">${html}</div><button type="button" class="link chat-more" data-unclamp="${k}">${chatOpenSet.has(k)?'Less':more}</button>`:html;
+ const options=(n,onDraft)=>open&&!p.going&&n===lastMachine&&p.options&&!(p.send&&onDraft)?html`<div class="chat-options">${p.options}</div>`:'';
+ const clamp=(k,body,long,more='More')=>long?html`<div class="chat-clamp${chatOpenSet.has(k)?html` open`:''}">${body}</div><button type="button" class="link chat-more" data-unclamp="${k}">${chatOpenSet.has(k)?'Less':more}</button>`:body;
  // What the Machine or an agent made for the owner is a result: a reply with a draft or an outcome headline ("**Verf · prijsbenchmark klaar**"),
  // an agent's answer with files, or the card's own question while it waits on a call. The latest one is the raised card; earlier ones step back.
  const q=s&&!items.some(i=>i.kind==='reply')&&!p.ask?chatQuestion(s):{};
@@ -169,93 +167,93 @@ function chatLog(s=chatOpen()){if(!chat)return '<p class="chat-note">Loading…<
  // A draft is open only while the card offers it to send: once a change is asked for, it is an earlier draft.
 const isOpen=i=>!closed(s)&&(i.kind==='card'||!(i.drafts||[]).length||s.status==='prepared'&&i.drafts.some(d=>!sent.has(d.body.trim())));
  const last=rows.findLastIndex(isResult),current=last>=0&&isOpen(rows[last])?last:-1;
- const result=(n,i,inner,only)=>`<div class="chat-result ${n===current?'current':'earlier'}${only?' only-draft':''}">${inner}${tm(i.at)}</div>`;
+ const result=(n,i,inner,only)=>html`<div class="chat-result ${n===current?'current':'earlier'}${only?html` only-draft`:''}">${inner}${tm(i.at)}</div>`;
  let lastTo='';
  rows.forEach((i,n)=>{stamp(i.at);const k=n+':'+i.kind,res=isResult(i,n),quiet=res&&n!==current;
-  if(i.kind==='source'){const via=chatVia(i.via)+(i.note&&i.via?' note':''),who=[i.mine?'You':i.from,via].filter(Boolean).map(esc).join(' · ')||'Message';
+  if(i.kind==='source'){const via=chatVia(i.via)+(i.note&&i.via?' note':''),who=[i.mine?'You':i.from,via].filter(Boolean).join(' · ')||'Message';
    // Several messages in a row from the same person: their name and time on the first, each later one its own small time line; the link to the thread once, under the last
    const same=j=>j?.kind==='source'&&j.from===i.from&&j.mine===i.mine&&!!j.note===!!i.note&&chatDayOf(j.at)===chatDayOf(i.at),first=!same(rows[n-1]);
    const last=!(rows[n+1]?.kind==='source'&&!rows[n+1].mine&&chatDayOf(rows[n+1].at)===chatDayOf(i.at));
-   const body=clamp(k,i.text?chatMarkdown(i.text):`<p>${esc(i.title)}</p>`,chatLong(i.text,i.note?2:3));
+   const body=clamp(k,i.text?chatMarkdown(i.text):html`<p>${i.title}</p>`,chatLong(i.text,i.note?2:3));
    // A reply's quoted history is history, not a second message: folded under the new text
-   const quoted=i.quoted?chatFold(k+':quoted','chat-quoted',esc(t('Earlier messages')),`<div class="chat-quoted-text" translate="no">${chatMarkdown(i.quoted)}</div>`):'';
-   push(i,`<div class="chat-msg ${i.mine?'you':'them'} chat-source${i.note?' note':''}">${first?`<div class="chat-from"><span><i class="via-ico via-${chatViaIcon(i.via,i.note)}" aria-hidden="true"></i>${who}</span>${tm(i.at)}</div>`:`<div class="chat-from chat-from-next">${tm(i.at)}</div>`}${i.files?chatAttHTML(i.files):''}<div class="bubble"><div class="say" translate="no">${body}</div>${quoted}${last&&hasOriginal(s)&&!i.mine?`<button type="button" class="link read-original" data-id="${esc(s.id)}" data-original="read">Read the thread</button>`:''}</div></div>`)}
+   const quoted=i.quoted?chatFold(k+':quoted','chat-quoted',t('Earlier messages'),html`<div class="chat-quoted-text" translate="no">${chatMarkdown(i.quoted)}</div>`):'';
+   push(i,html`<div class="chat-msg ${i.mine?'you':'them'} chat-source${i.note?html` note`:''}">${first?html`<div class="chat-from"><span><i class="via-ico via-${chatViaIcon(i.via,i.note)}" aria-hidden="true"></i>${who}</span>${tm(i.at)}</div>`:html`<div class="chat-from chat-from-next">${tm(i.at)}</div>`}${i.files?chatAttHTML(i.files):''}<div class="bubble"><div class="say" translate="no">${body}</div>${quoted}${last&&hasOriginal(s)&&!i.mine?html`<button type="button" class="link read-original" data-id="${s.id}" data-original="read">Read the thread</button>`:''}</div></div>`)}
   else if(i.kind==='card'){const hasDraft=s.status==='prepared'&&p.send,intro=q.offer?chatMarkdown(q.body):p.intro;
-   push(i,`<div class="chat-msg machine chat-card"><div class="bubble">${intro||`<p translate="no">${esc(s.title)}</p>`}</div>${res?'':options(n,hasDraft)+(hasDraft?`<div class="chat-card-send">${p.lead}</div>`:'')+tm(i.at)}</div>`);
-   if(res)push(i,result(n,i,`${p.ask?`<div class="chat-ask">${p.ask}</div>`:q.ask?`<p class="chat-q chat-result-title" translate="no">${esc(q.ask)}</p>`:`<p class="chat-result-title" translate="no">${esc(s.title)}</p>`}${options(n,hasDraft)}${hasDraft?`<div class="chat-card-send">${p.lead}</div>`:''}`))}
-  else if(i.kind==='agentlive')push(i,`<div class="chat-msg machine chat-agent">${p.agent}</div>`);
-  else if(i.kind==='agent'){const all=i.files||[],pick=agentPick(all,i.full||i.text),files=pick.shown.map(f=>agentFile({id:i.id},{path:f})).join('')+agentMoreFiles(pick.hidden),
-    allFiles=pick.hidden?`<details class="agent-more chat-allfiles"><summary>All files</summary>${agentAllFiles({id:i.id},all,false)}</details>`:'';
+   push(i,html`<div class="chat-msg machine chat-card"><div class="bubble">${intro||html`<p translate="no">${s.title}</p>`}</div>${res?'':html`${options(n,hasDraft)}${hasDraft?html`<div class="chat-card-send">${p.lead}</div>`:''}${tm(i.at)}`}</div>`);
+   if(res)push(i,result(n,i,html`${p.ask?html`<div class="chat-ask">${p.ask}</div>`:q.ask?html`<p class="chat-q chat-result-title" translate="no">${q.ask}</p>`:html`<p class="chat-result-title" translate="no">${s.title}</p>`}${options(n,hasDraft)}${hasDraft?html`<div class="chat-card-send">${p.lead}</div>`:''}`))}
+  else if(i.kind==='agentlive')push(i,html`<div class="chat-msg machine chat-agent">${p.agent}</div>`);
+  else if(i.kind==='agent'){const all=i.files||[],pick=agentPick(all,i.full||i.text),files=orEmpty(html`${pick.shown.map(f=>agentFile({id:i.id},{path:f}))}${agentMoreFiles(pick.hidden)}`),
+    allFiles=pick.hidden?html`<details class="agent-more chat-allfiles"><summary>All files</summary>${agentAllFiles({id:i.id},all,false)}</details>`:'';
    // A shortened answer (its housekeeping left out) has More too, which shows the whole answer
    const whole=i.full&&chatOpenSet.has(k)?i.full:i.text,text=clamp(k,chatMarkdown(whole),chatLong(i.text)||!!i.full);
    // Plain text like any reply: whose answer it is, small above; its files and "<agent> sent nothing" on one line under it
    // (left out once the owner sent the card's message after it)
-   const nothing=i.nothing_sent&&!rows.slice(n+1).some(j=>j.kind==='event'&&j.sent)?`<small class="chat-noted">${esc(i.name)} sent nothing</small>`:'';
-   push(i,`<div class="chat-msg machine chat-agent-msg"><div class="chat-agent-name">${esc(i.name)}</div><div class="bubble" translate="no">${text}</div>${files||nothing?`<div class="chat-files">${files}${nothing}</div>`:''}${allFiles}${tm(i.at)}</div>`)}
-  else if(i.kind==='steps')push(i,`<div class="chat-work">${chatFold(k,'chat-steps',`Checked ${i.steps.length} thing${i.steps.length===1?'':'s'}`,`<ol>${i.steps.map(t=>`<li>${esc(t)}</li>`).join('')}</ol>`)}</div>`);
-  else if(i.kind==='event'){const c=i.times.length,t=chatEventText(i),line=(c>1?`${esc(t)} ${c} times<span class="chev" aria-hidden="true">›</span>`:esc(t))+(i.voice&&c===1?` · <a class="learn-link" href="#settings/writing" data-voice-edit="${esc(i.voice)}">Edit</a>`:'')+(i.undo_voice&&s&&i.undo_until>Date.now()?chatUndoVoice(s,i):'');
+   const nothing=i.nothing_sent&&!rows.slice(n+1).some(j=>j.kind==='event'&&j.sent)?html`<small class="chat-noted">${i.name} sent nothing</small>`:'';
+   push(i,html`<div class="chat-msg machine chat-agent-msg"><div class="chat-agent-name">${i.name}</div><div class="bubble" translate="no">${text}</div>${files||nothing?html`<div class="chat-files">${files}${nothing}</div>`:''}${allFiles}${tm(i.at)}</div>`)}
+  else if(i.kind==='steps')push(i,html`<div class="chat-work">${chatFold(k,'chat-steps',`Checked ${i.steps.length} thing${i.steps.length===1?'':'s'}`,html`<ol>${i.steps.map(t=>html`<li>${t}</li>`)}</ol>`)}</div>`);
+  else if(i.kind==='event'){const c=i.times.length,t=chatEventText(i),line=html`${c>1?html`${t} ${c} times<span class="chev" aria-hidden="true">›</span>`:t}${i.voice&&c===1?html` · <a class="learn-link" href="#settings/writing" data-voice-edit="${i.voice}">Edit</a>`:''}${i.undo_voice&&s&&i.undo_until>Date.now()?chatUndoVoice(s,i):''}`;
    // A handoff that didn't go out: Try again opens the handoff form again, as it was sent
-   const retry=i.retry_handoff&&s&&!closed(s)&&!s.fleet_handoff?` · <button type="button" class="link" data-fleet-handoff="${esc(s.id)}">Try again</button>`:'';
-   push(i,`<div class="chat-event${i.mine?' mine':''}${i.retry_handoff?' failed':''}">${c>1?chatFold(k+':'+i.times[0],'',line+tm(i.at),`<ol>${i.times.map(t=>`<li>${esc(chatDayOf(t))} ${chatHM(t)}</li>`).join('')}</ol>`):line+(i.handoff?`<span class="chat-when"> · ${chatHM(i.at)}</span>`:tm(i.at))+retry}</div>`);
-   if(i.handoff&&n===lastMachine&&s&&withTeammate(s))push({kind:'event',mine:i.mine},`<div class="chat-event chat-handoff-wait">${esc(window.t('No answer from {} yet',String(s.fleet_handoff.name||window.t('your teammate')).split(' ')[0]))}</div>`);
-   if(i.handoff&&n===lastMachine&&options(n,false))push({kind:'event',mine:false},`<div class="chat-msg machine chat-handoff-options">${options(n,false)}</div>`)}
+   const retry=i.retry_handoff&&s&&!closed(s)&&!s.fleet_handoff?html` · <button type="button" class="link" data-fleet-handoff="${s.id}">Try again</button>`:'';
+   push(i,html`<div class="chat-event${i.mine?html` mine`:''}${i.retry_handoff?html` failed`:''}">${c>1?chatFold(k+':'+i.times[0],'',html`${line}${tm(i.at)}`,html`<ol>${i.times.map(t=>html`<li>${chatDayOf(t)} ${chatHM(t)}</li>`)}</ol>`):html`${line}${i.handoff?html`<span class="chat-when"> · ${chatHM(i.at)}</span>`:tm(i.at)}${retry}`}</div>`);
+   if(i.handoff&&n===lastMachine&&s&&withTeammate(s))push({kind:'event',mine:i.mine},html`<div class="chat-event chat-handoff-wait">${window.t('No answer from {} yet',String(s.fleet_handoff.name||window.t('your teammate')).split(' ')[0])}</div>`);
+   if(i.handoff&&n===lastMachine&&options(n,false))push({kind:'event',mine:false},html`<div class="chat-msg machine chat-handoff-options">${options(n,false)}</div>`)}
   else if(i.kind==='learned')push(i,chatLearned(i));
   else if(i.kind==='fixed')push(i,chatFixed(i));  // no time of its own: it sits under its reply, and beside a wide centered line it would stick out sideways
   else if(i.kind==='you'){const to=i.to||'',show=to&&to!==lastTo;lastTo=to;
    const att=chatAttHTML(i.files);
-   push(i,`<div class="chat-msg you">${show?`<div class="chat-to">to ${esc(to)}</div>`:''}${att}${i.text?`<div class="bubble" translate="no">${chatMarkdown(i.text)}</div>`:''}${tm(i.at)}</div>`)}
+   push(i,html`<div class="chat-msg you">${show?html`<div class="chat-to">to ${to}</div>`:''}${att}${i.text?html`<div class="bubble" translate="no">${chatMarkdown(i.text)}</div>`:''}${tm(i.at)}</div>`)}
   else if(i.kind==='reply'){const ds=i.drafts||[],h=headline(i.text);
-   const tab=n===tabAt?`<a class="agent-file via-browser" href="${esc(state.browser_link||'#')}" target="_blank" rel="noopener" data-browser-show="${esc(s.id)}">View in Machine browser</a>`:'';
+   const tab=n===tabAt?html`<a class="agent-file via-browser" href="${safeHref(state.browser_link||'#')}" target="_blank" rel="noopener" data-browser-show="${s.id}">View in Machine browser</a>`:'';
    // A reply cut off by Stop: a small Stopped right under what it said so far, before the card's choices
-   const noted=(i.stopped?'<small class="chat-noted chat-stopped">Stopped</small>':'')+(i.noted?'<small class="chat-noted">Noted for next time</small>':'');
+   const noted=html`${i.stopped?html`<small class="chat-noted chat-stopped">Stopped</small>`:''}${i.noted?html`<small class="chat-noted">Noted for next time</small>`:''}`;
    // Without a headline the reply is plain text and its drafts are the result; with one, the headline and summary lead the result
-   const fileOf=f=>`<button type="button" class="agent-file via-file" data-id="${esc(s.id)}" data-result="read" data-file="${esc(f.path)}" data-file-name="${esc(f.label)}">${esc(f.label)}<span aria-hidden="true"> ›</span></button>`;
-   const copy=n===copyAt,files=(i.files||[]).filter(f=>!copy||f!==i.files[0]).map(fileOf).join('');
-   const chips=tab||files?`<div class="chat-files">${tab}${files}</div>`:'';
-   if(!res||!h)push(i,`<div class="chat-msg machine">${i.text||!i.stopped?`<div class="bubble" translate="no">${chatMarkdown(i.text)}</div>`:''}${chips}${noted}${ds.length||copy?'':options(n,false)}${res?'':tm(i.at)}</div>`);
+   const fileOf=f=>html`<button type="button" class="agent-file via-file" data-id="${s.id}" data-result="read" data-file="${f.path}" data-file-name="${f.label}">${f.label}<span aria-hidden="true"> ›</span></button>`;
+   const copy=n===copyAt,files=orEmpty(html`${(i.files||[]).filter(f=>!copy||f!==i.files[0]).map(fileOf)}`);
+   const chips=tab||files?html`<div class="chat-files">${tab}${files}</div>`:'';
+   if(!res||!h)push(i,html`<div class="chat-msg machine">${i.text||!i.stopped?html`<div class="bubble" translate="no">${chatMarkdown(i.text)}</div>`:''}${chips}${noted}${ds.length||copy?'':options(n,false)}${res?'':tm(i.at)}</div>`);
    if(!res)return;
    if(copy){const f=(i.files||[])[0]||{label:'Draft',path:(s.result_files||[]).find(f=>!/\.pdf$/i.test(f.name))?.path},key=s.id+'|'+f.path,text=chatFiles.get(key),fk=k+':file';
     const df=draftFile(text),src=rows.findLast(x=>x.kind==='source'&&!x.mine&&x.via),where=src?chatVia(src.via)+(src.note?' note':''):'';
     const title=[df.name||f.label,where].filter(Boolean).join(' · ');
-    const body=text==null?`<div data-preview="${esc(key)}"><p class="chat-note">Loading the draft…</p></div>`:df.body?`<div class="chat-draft-text chat-clamp${chatOpenSet.has(fk)?' open':''}">${chatMarkdown(df.body)}</div>${chatLong(df.body,4)?`<button type="button" class="link chat-more" data-unclamp="${fk}">${chatOpenSet.has(fk)?'Less':'Show all'}</button>`:''}`:'';
-    push(i,result(n,i,`<div class="chat-result-head"><span class="chat-result-title">${esc(title)}</span><button type="button" class="link" data-id="${esc(s.id)}" data-result="read" data-file="${esc(f.path)}" data-file-name="${esc(f.label)}">Open</button></div>${body}<p class="chat-why">${COPY_WHY}</p>${options(n,false)}`));return}
-   const parts=ds.map((d,m)=>{const dk=k+':d'+m,ls=liveOf(d),liveSent=ls?.st.status==='sent',went=outcome.get(d)==='sent'||liveSent,last=d===newest&&!went&&s?.status==='prepared',not=!last&&outcome.get(d)==='not';
+    const body=text==null?html`<div data-preview="${key}"><p class="chat-note">Loading the draft…</p></div>`:df.body?html`<div class="chat-draft-text chat-clamp${chatOpenSet.has(fk)?html` open`:''}">${chatMarkdown(df.body)}</div>${chatLong(df.body,4)?html`<button type="button" class="link chat-more" data-unclamp="${fk}">${chatOpenSet.has(fk)?'Less':'Show all'}</button>`:''}`:'';
+    push(i,result(n,i,html`<div class="chat-result-head"><span class="chat-result-title">${title}</span><button type="button" class="link" data-id="${s.id}" data-result="read" data-file="${f.path}" data-file-name="${f.label}">Open</button></div>${body}<p class="chat-why">${COPY_WHY}</p>${options(n,false)}`));return}
+   const parts=html`${ds.map((d,m)=>{const dk=k+':d'+m,ls=liveOf(d),liveSent=ls?.st.status==='sent',went=outcome.get(d)==='sent'||liveSent,last=d===newest&&!went&&s?.status==='prepared',not=!last&&outcome.get(d)==='not';
     const before=prev&&prev.kind===d.kind&&!sent.has(prev.body.trim())&&prev.body!==d.body?chatDiff(prev.body,d.body):null;prev=d;
     const to=d.to.length?' to '+d.to.join(', '):'',what=d.reply?'Reply':d.kind==='email'||d.kind==='email_demo'?'Email':d.kind==='whatsapp'?'WhatsApp':d.kind==='telegram'?'Telegram':'Message';
-    const links=[chatLong(d.body,quiet?2:4)?`<button type="button" class="link" data-unclamp="${dk}">${chatOpenSet.has(dk)?'Less':'Show all'}</button>`:'',before?`<button type="button" class="link" data-unclamp="${dk}:diff">${chatOpenSet.has(dk+':diff')?'Hide changes':'Show what changed'}</button>`:''].filter(Boolean).join('');
-    return `<div class="chat-draft${went||not?' went':''}${last?' current':''}"><div class="chat-draft-head"><span>${what}${esc(to)}</span>${went?(liveSent?'':'<span class="went-tag">Sent</span>'):not?'<span class="went-tag not">Not sent</span>':last||!quiet?'':'<span>Earlier draft</span>'}</div>${d.subject&&!d.reply?`<div class="chat-draft-subject">${esc(d.subject)}</div>`:''}<div class="chat-clamp${chatOpenSet.has(dk)?' open':''}${d.kind==='email'||d.kind==='email_demo'?' mail-text':''}">${d.kind==='email'||d.kind==='email_demo'?mailHtml(d.body):chatMarkdown(d.body)}</div>
-     ${before&&chatOpenSet.has(dk+':diff')?`<div class="chat-diff">${before}</div>`:''}${ls&&(last||liveSent)?chatSendLine(d,ls):''}${links||last&&p.send?`<div class="chat-draft-foot"><span>${links}</span>${last&&p.send?p.lead:''}</div>`:''}</div>`}).join('');
-   const head=h?`<div class="chat-result-head"><span class="chat-result-title" translate="no">${format(h.title)}</span></div>${h.rest?`<div class="bubble" translate="no">${clamp(k,chatMarkdown(h.rest),quiet&&chatLong(h.rest,2))}</div>`:''}${chips}${noted}`:'';
-   push(i,result(n,i,head+parts+(ds.length?options(n,true):h?options(n,false):''),!h&&ds.length===1))}});
+    const links=orEmpty(html`${[chatLong(d.body,quiet?2:4)?html`<button type="button" class="link" data-unclamp="${dk}">${chatOpenSet.has(dk)?'Less':'Show all'}</button>`:'',before?html`<button type="button" class="link" data-unclamp="${dk}:diff">${chatOpenSet.has(dk+':diff')?'Hide changes':'Show what changed'}</button>`:''].filter(Boolean)}`);
+    return html`<div class="chat-draft${went||not?html` went`:''}${last?html` current`:''}"><div class="chat-draft-head"><span>${what}${to}</span>${went?(liveSent?'':html`<span class="went-tag">Sent</span>`):not?html`<span class="went-tag not">Not sent</span>`:last||!quiet?'':html`<span>Earlier draft</span>`}</div>${d.subject&&!d.reply?html`<div class="chat-draft-subject">${d.subject}</div>`:''}<div class="chat-clamp${chatOpenSet.has(dk)?html` open`:''}${d.kind==='email'||d.kind==='email_demo'?html` mail-text`:''}">${d.kind==='email'||d.kind==='email_demo'?mailHtml(d.body):chatMarkdown(d.body)}</div>
+     ${before&&chatOpenSet.has(dk+':diff')?html`<div class="chat-diff">${before}</div>`:''}${ls&&(last||liveSent)?chatSendLine(d,ls):''}${links||last&&p.send?html`<div class="chat-draft-foot"><span>${links}</span>${last&&p.send?p.lead:''}</div>`:''}</div>`})}`;
+   const head=h?html`<div class="chat-result-head"><span class="chat-result-title" translate="no">${format(h.title)}</span></div>${h.rest?html`<div class="bubble" translate="no">${clamp(k,chatMarkdown(h.rest),quiet&&chatLong(h.rest,2))}</div>`:''}${chips}${noted}`:'';
+   push(i,result(n,i,html`${head}${parts}${ds.length?options(n,true):h?options(n,false):''}`,!h&&ds.length===1))}});
  // A result with files: its links under the last reply
- if(p.links&&!drafts.length&&s?.status==='prepared'&&!p.copy)out.push(`<div class="chat-links">${p.links}</div>`);
+ if(p.links&&!drafts.length&&s?.status==='prepared'&&!p.copy)out.push(html`<div class="chat-links">${p.links}</div>`);
  if(s)out.push(outboxChat(s));
- if(chat.active)out.push(chat.live?.text?`<div class="chat-msg machine chat-live"><div class="bubble" translate="no">${chatMarkdown(chat.live.text)}</div></div>`:'<div class="chat-msg machine chat-live"><div class="bubble typing" role="status" aria-label="Working"><i></i><i></i><i></i></div></div>');
+ if(chat.active)out.push(chat.live?.text?html`<div class="chat-msg machine chat-live"><div class="bubble" translate="no">${chatMarkdown(chat.live.text)}</div></div>`:raw('<div class="chat-msg machine chat-live"><div class="bubble typing" role="status" aria-label="Working"><i></i><i></i><i></i></div></div>'));
  // The run's side of the chat couldn't be read (the Gateway was slow or away) and nothing of it was loaded before:
  // said once the run is over, never as an aside under the typing dots; the next ask (a few seconds) tries again.
- if(chat.unavailable&&!chat.active)out.push('<p class="chat-note">I couldn’t load my replies just now. Trying again…</p>');
- return out.join('')}
+ if(chat.unavailable&&!chat.active)out.push(html`<p class="chat-note">I couldn’t load my replies just now. Trying again…</p>`);
+ return html`${out}`}
 // At most two things to say, from what the card holds; tapping one fills the message box.
 // Quick picks only from next steps the card itself proposes; cards don't carry any yet, so there are none (no templated lines).
 function chatSuggestions(s){return []}
-const chatPicks=s=>chatSuggestions(s).map(t=>`<button type="button" class="chat-say" data-chat-say="${esc(t)}">${esc(t)}</button>`).join('');
+const chatPicks=s=>html`${chatSuggestions(s).map(t=>html`<button type="button" class="chat-say" data-chat-say="${t}">${t}</button>`)}`;
 // Suggestions show while nothing has been said yet, or while you are writing
 const chatPicksShown=()=>!(chat?.items||[]).some(i=>i.kind==='you')||document.activeElement?.id==='chat-input';
-const BACK='<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M15 5l-7 7 7 7"/></svg>';
-const NC_PLUS='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>';
-const SEND='<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 4.5l7 7-1.4 1.4-4.6-4.6V20h-2V8.3l-4.6 4.6L5 11.5z"/></svg>';
-const DOTS='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.8" fill="currentColor"/><circle cx="12" cy="12" r="1.8" fill="currentColor"/><circle cx="19" cy="12" r="1.8" fill="currentColor"/></svg>';
+const BACK=html`<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M15 5l-7 7 7 7"/></svg>`;
+const NC_PLUS=html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>`;
+const SEND=html`<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 4.5l7 7-1.4 1.4-4.6-4.6V20h-2V8.3l-4.6 4.6L5 11.5z"/></svg>`;
+const DOTS=html`<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.8" fill="currentColor"/><circle cx="12" cy="12" r="1.8" fill="currentColor"/><circle cx="19" cy="12" r="1.8" fill="currentColor"/></svg>`;
 const chatUntil=v=>{const d=new Date(v),days=(d-Date.now())/864e5;return (chatDayOf(v)==='Today'?'today':days<6&&days>-1?d.toLocaleDateString(DL,{weekday:'short'}):d.toLocaleDateString(DL,{weekday:'short',day:'numeric',month:'short'}))+' '+chatHM(v)};
 // One small line over the message box: where the card stands, with its one way back (Unsnooze, Reopen) as a text button
 function chatStatus(s,p=chatParts(s)){const text=chat?.active?'Working on it…':s.status==='snoozed'?(s.snoozed_until?(s.handoff_wait?checkinLabel(s):'Snoozed until '+chatUntil(s.snoozed_until)):'Snoozed')
   :closed(s)?(s.status==='completed'?'Done':'Not needed'):s.preparation_status==='blocked'&&s.preparation_error==='stopped'?'':s.preparation_status==='blocked'?p.status||cardState(s):['queued','starting','running'].includes(s.preparation_status)||['accepted','instructions'].includes(s.status)?'Preparing':'';
- return text?`<span>${esc(text)}</span>${p.back&&!chat?.active?`<span aria-hidden="true">·</span>${p.back}`:''}`:''}
+ return text?html`<span>${text}</span>${p.back&&!chat?.active?html`<span aria-hidden="true">·</span>${p.back}`:''}`:''}
 function chatView(s,groups){const p=chatParts(s);
- const side=`<aside class="chat-side" aria-label="Tasks"><div class="scope-filter" role="group" aria-label="Show">${[['all','All'],['work','Work'],['personal','Personal']].map(([v,t])=>`<button type="button" data-scope="${v}" aria-pressed="${scopeFilter===v}">${t}</button>`).join('')}</div>${groups.map(([items,title,key])=>{const cut=sideList(items,key);return cut.count?`<h3>${title}<span>${cut.count}</span></h3>${cut.list.map(x=>sideRow(x,s.id)).join('')}${cut.more?sideMoreRow(key):''}`:''}).join('')}</aside>`;
- return `<div class="chat-layout${chatDrawer?' drawer':''}" data-chat="${esc(s.id)}">${side}<div class="chat-main"><header class="chat-head"><a class="chat-back" href="#card=${esc(s.id)}" data-chat-back aria-label="Back to the to-do" title="Back to the to-do">${BACK}</a><h2 class="chat-title" title="${esc(s.title)}" translate="no">${esc(s.title)}</h2>
+ const side=html`<aside class="chat-side" aria-label="Tasks"><div class="scope-filter" role="group" aria-label="Show">${[['all','All'],['work','Work'],['personal','Personal']].map(([v,t])=>html`<button type="button" data-scope="${v}" aria-pressed="${scopeFilter===v}">${t}</button>`)}</div>${groups.map(([items,title,key])=>{const cut=sideList(items,key);return cut.count?html`<h3>${title}<span>${cut.count}</span></h3>${cut.list.map(x=>sideRow(x,s.id))}${cut.more?sideMoreRow(key):''}`:''})}</aside>`;
+ return html`<div class="chat-layout${chatDrawer?html` drawer`:''}" data-chat="${s.id}">${side}<div class="chat-main"><header class="chat-head"><a class="chat-back" href="#card=${s.id}" data-chat-back aria-label="Back to the to-do" title="Back to the to-do">${BACK}</a><h2 class="chat-title" title="${s.title}" translate="no">${s.title}</h2>
   <details class="chat-menu" id="chat-menu"><summary aria-label="More actions" title="More actions">${DOTS}</summary><div class="chat-menu-list" role="group" aria-label="More actions">${p.rest}<button type="button" class="ghost" data-chat-drawer aria-expanded="${chatDrawer}">All tasks</button></div></details></header>
- <article id="task-${esc(s.id)}" class="chat-panel">${p.panel}</article><div class="chat-log" id="chat-log" aria-live="polite">${chatLog(s)}</div>
- <div class="chat-compose"><div class="offline-bar chat-offline" id="chat-offline" role="status"${netShown()?'':' hidden'}>${netShown()?netHtml():''}</div><div class="chat-sheet" id="chat-sheet">${p.sheet}</div><div class="chat-status" id="chat-status">${chatStatus(s,p)}</div><div class="chat-picks" id="chat-picks"${chatPicksShown()?'':' hidden'}>${chatPicks(s)}</div><p class="chat-drop-hint">Drop to add to your message</p><p class="chat-file-error" id="chat-file-error" role="alert" hidden></p><div class="chat-tray" id="chat-tray"${chatPending.length?'':' hidden'}>${chatTrayHTML()}</div><div class="chat-box"><button type="button" class="chat-attach" data-chat-attach aria-label="Add files" title="Add files">${CLIP}</button><input type="file" id="chat-file" multiple hidden accept="${CHAT_ACCEPT}"><textarea id="chat-input" rows="1" aria-label="Message" placeholder="${esc(window.t('Ask or change something'))}" enterkeyhint="send"></textarea><div class="chat-tools"><span class="grow"></span>${micBtn()}${talkBtn()}<button type="button" class="chat-send chat-stop" data-chat-stop aria-label="Stop" title="Stop"${chat?.active?'':' hidden'}>${STOP}</button><button type="button" class="chat-send" data-chat-send aria-label="Send" title="Send"${chat?.active?' hidden':''} disabled>${SEND}</button></div></div><div class="chat-model" id="chat-model">${cmPill('chat')}</div></div></div></div>`}
+ <article id="task-${s.id}" class="chat-panel">${p.panel}</article><div class="chat-log" id="chat-log" aria-live="polite">${chatLog(s)}</div>
+ <div class="chat-compose"><div class="offline-bar chat-offline" id="chat-offline" role="status"${netShown()?'':html` hidden`}>${netShown()?netHtml():''}</div><div class="chat-sheet" id="chat-sheet">${p.sheet}</div><div class="chat-status" id="chat-status">${chatStatus(s,p)}</div><div class="chat-picks" id="chat-picks"${chatPicksShown()?'':html` hidden`}>${chatPicks(s)}</div><p class="chat-drop-hint">Drop to add to your message</p><p class="chat-file-error" id="chat-file-error" role="alert" hidden></p><div class="chat-tray" id="chat-tray"${chatPending.length?'':html` hidden`}>${chatTrayHTML()}</div><div class="chat-box"><button type="button" class="chat-attach" data-chat-attach aria-label="Add files" title="Add files">${CLIP}</button><input type="file" id="chat-file" multiple hidden accept="${CHAT_ACCEPT}"><textarea id="chat-input" rows="1" aria-label="Message" placeholder="${window.t('Ask or change something')}" enterkeyhint="send"></textarea><div class="chat-tools"><span class="grow"></span>${micBtn()}${talkBtn()}<button type="button" class="chat-send chat-stop" data-chat-stop aria-label="Stop" title="Stop"${chat?.active?'':html` hidden`}>${STOP}</button><button type="button" class="chat-send" data-chat-send aria-label="Send" title="Send"${chat?.active?html` hidden`:''} disabled>${SEND}</button></div></div><div class="chat-model" id="chat-model">${cmPill('chat')}</div></div></div></div>`}
 function chatGrow(t){if(!t)return;t.style.height='34px';t.style.height=Math.min(160,Math.max(34,t.scrollHeight))+'px';chatSendState()}
 // While a reply runs, Stop takes the place of Send until something is typed or added (sending then replaces the run).
 function chatSendState(){const t=$('#chat-input'),b=$('[data-chat-send]'),x=$('[data-chat-stop]');if(!t||!b)return;
@@ -265,19 +263,19 @@ function chatSendState(){const t=$('#chat-input'),b=$('[data-chat-send]'),x=$('[
  b.disabled=!has||!ready;b.hidden=stop||talkHere&&!has;if(x){x.hidden=!stop;if(!stop)x.disabled=false}}
 // Files the owner added (chat_files.py), on their message or on the to-do they made: images as pictures, the rest as chips
 function chatAttHTML(fs){fs=fs||[];if(!fs.length)return '';const imgs=fs.filter(f=>/^image\//.test(f.type)),docs=fs.filter(f=>!/^image\//.test(f.type)),url=f=>'api/chat-file?id='+encodeURIComponent(f.id);
- return `<div class="chat-you-files">${imgs.map(f=>`<a class="chat-you-img" href="${url(f)}" target="_blank" rel="noopener" title="${esc(f.name)}"><img src="${url(f)}" alt="${esc(f.name)}" loading="lazy"></a>`).join('')}${docs.length?`<div class="chat-files">${docs.map(f=>`<a class="agent-file via-file" href="${url(f)}" target="_blank" rel="noopener" download="${esc(f.name)}">${esc(f.name)}</a>`).join('')}</div>`:''}</div>`}
+ return html`<div class="chat-you-files">${imgs.map(f=>html`<a class="chat-you-img" href="${safeHref(url(f))}" target="_blank" rel="noopener" title="${f.name}"><img src="${safeHref(url(f))}" alt="${f.name}" loading="lazy"></a>`)}${docs.length?html`<div class="chat-files">${docs.map(f=>html`<a class="agent-file via-file" href="${safeHref(url(f))}" target="_blank" rel="noopener" download="${f.name}">${f.name}</a>`)}</div>`:''}</div>`}
 // Files added to the next message (chat_files.py): from Add files, a paste or a drop, each uploaded at once and sent
 // with the message. The same limits as the service's: they say so before anything uploads.
 const CHAT_IMAGE=/\.(png|jpe?g|gif|webp)$/i,CHAT_EXT=/\.(png|jpe?g|gif|webp|pdf|txt|md|csv|tsv|json|log|rtf|eml|ics|docx|xlsx|pptx|odt|ods)$/i;
 const CHAT_ACCEPT='image/png,image/jpeg,image/gif,image/webp,.pdf,.txt,.md,.csv,.tsv,.json,.log,.rtf,.eml,.ics,.docx,.xlsx,.pptx,.odt,.ods';
 const CHAT_LIMIT={image:5*1048576,file:10*1048576,count:5};
-const CLIP='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 11.5l-8.1 8.1a5 5 0 0 1-7.1-7.1l8.4-8.4a3.3 3.3 0 0 1 4.7 4.7l-8.4 8.4a1.7 1.7 0 0 1-2.4-2.4l7.8-7.8"/></svg>';
-const STOP='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="2.5" fill="currentColor"/></svg>';
-const FILE_ICO='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2.8h8l4.2 4.2V21.2H6z M14 2.8V7h4.2"/></svg>';
+const CLIP=html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 11.5l-8.1 8.1a5 5 0 0 1-7.1-7.1l8.4-8.4a3.3 3.3 0 0 1 4.7 4.7l-8.4 8.4a1.7 1.7 0 0 1-2.4-2.4l7.8-7.8"/></svg>`;
+const STOP=html`<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="2.5" fill="currentColor"/></svg>`;
+const FILE_ICO=html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2.8h8l4.2 4.2V21.2H6z M14 2.8V7h4.2"/></svg>`;
 let chatPending=[];
 const chatSize=n=>n>=1048576?(n/1048576).toFixed(1)+' MB':Math.max(1,Math.round(n/1024))+' KB';
-const chatTrayHTML=(list=chatPending,attr='att-remove')=>list.map(f=>{const img=f.type.startsWith('image/')&&f.url;return `<div class="chat-att${img?' img':''}${f.state==='up'?' up':''}" title="${esc(f.name)}">${img?`<img src="${f.url}" alt="${esc(f.name)}">`:`<span class="chat-att-ico">${FILE_ICO}</span>`}<span class="chat-att-name">${esc(f.name)}<small>${f.state==='up'?'Uploading…':chatSize(f.size)}</small></span><button type="button" class="chat-att-x" data-${attr}="${f.key}" aria-label="Remove ${esc(f.name)}" title="Remove">×</button></div>`}).join('');
-function chatTray(){const t=$('#chat-tray');if(t){t.innerHTML=chatTrayHTML();t.hidden=!chatPending.length}chatSendState()}
+const chatTrayHTML=(list=chatPending,attr='att-remove')=>html`${list.map(f=>{const img=f.type.startsWith('image/')&&f.url;return html`<div class="chat-att${img?html` img`:''}${f.state==='up'?html` up`:''}" title="${f.name}">${img?html`<img src="${safeHref(f.url)}" alt="${f.name}">`:html`<span class="chat-att-ico">${FILE_ICO}</span>`}<span class="chat-att-name">${f.name}<small>${f.state==='up'?'Uploading…':chatSize(f.size)}</small></span><button type="button" class="chat-att-x" data-${attr}="${f.key}" aria-label="Remove ${f.name}" title="Remove">×</button></div>`})}`;
+function chatTray(){const t=$('#chat-tray');if(t){setHTML(t,chatTrayHTML());t.hidden=!chatPending.length}chatSendState()}
 function chatFileError(msg){const e=$('#chat-file-error');if(!e){if(msg)toast(msg,true);return}e.textContent=msg||'';e.hidden=!msg}
 const chatDataUrl=f=>new Promise((ok,fail)=>{const r=new FileReader();r.onload=()=>ok(String(r.result));r.onerror=()=>fail(Error('That file couldn’t be read'));r.readAsDataURL(f)});
 // A file's name (a pasted screenshot gets one) and why it can't go, before anything uploads (also New to-do's, ncAddFiles)
@@ -302,8 +300,8 @@ function chatDropFiles(){chatPending=[]}
 // owner's OpenAI key when they picked that in Settings). The text lands in the box to read and edit: nothing is sent. The
 // clip stays only in this page's memory until its text is back. Never the browser's own speech recognition: in Chrome
 // that sends the audio to Google, and Firefox has none.
-const MIC='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11.5" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3"/></svg>';
-const CHECK='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+const MIC=html`<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11.5" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3"/></svg>`;
+const CHECK=html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>`;
 const MIC_MAX=120,MIC_HOLD=600;
 const micBtn=()=>html`<button type="button" class="chat-mic" data-mic aria-label="Talk" title="Talk">${raw(MIC)}</button>`;
 let mic=null,micPrepped=false,micDemo=false,micUse='';  // the one recording at a time; whether this page asked the Machine; the site's demo (it answers {demo:true}); what a tap does now (voice_view's use)
@@ -316,7 +314,7 @@ async function micDenied(){const p=window.machinePhone;if(!p)return {msg:micBloc
 // A No for good comes back at once, while the finger that tapped the microphone is still down: that tap's click
 // doesn't open settings
 let settingsShown=0;
-const SETTINGS_BTN=cls=>{settingsShown=Date.now();return `<button type="button" class="${cls}" data-phone-settings>${esc(t('Open settings'))}</button>`};
+const SETTINGS_BTN=cls=>{settingsShown=Date.now();return html`<button type="button" class="${cls}" data-phone-settings>${t('Open settings')}</button>`};
 document.addEventListener('click',e=>{if(!e.target.closest('[data-phone-settings]'))return;e.preventDefault();e.stopPropagation();if(Date.now()-settingsShown<600)return;
  window.machinePhone?.settings().catch(()=>{});micCancel();if(talk?.state==='error')talkEnd()},true);
 const micOk=()=>!!(window.isSecureContext&&navigator.mediaDevices?.getUserMedia&&window.MediaRecorder&&window.OfflineAudioContext);
@@ -342,12 +340,12 @@ function micBrowser(v){const SR=micSR(),sr=new SR(),code=(state.dictation?.langu
  sr.start()}
 function micPaint(v){if(!v.box.isConnected){const box=document.getElementById(v.input)?.closest('.chat-box,.mic-wrap');if(!box){micCancel();return}v.box=box}
  let bar=v.box.querySelector(':scope>.mic-bar');if(!bar){bar=document.createElement('div');bar.className='mic-bar';bar.setAttribute('role','status');v.box.append(bar)}v.box.classList.add('mic-on');
- const x=`<button type="button" class="mic-x" data-mic-cancel aria-label="Cancel" title="Cancel">×</button>`,rec=v.state==='rec'||v.state==='start';
+ const x=html`<button type="button" class="mic-x" data-mic-cancel aria-label="Cancel" title="Cancel">×</button>`,rec=v.state==='rec'||v.state==='start';
  // Drawn once per state, so a button never changes under a finger; the clock, the level and the progress update in place
  const key=v.state+'|'+(v.error||'')+'|'+!!v.wav+'|'+!!v.capped;
- if(bar.dataset.k!==key){bar.dataset.k=key;bar.innerHTML=rec?`${x}<span class="mic-live"><i class="mic-dot" aria-hidden="true"></i><span class="mic-time">0:00</span><span class="mic-wave" aria-hidden="true">${'<i></i>'.repeat(v.levels.length)}</span><span class="mic-hint">${esc(t(v.state==='start'?'Starting the microphone…':v.browser?'Your browser writes this one down.':'Listening…'))}</span></span><button type="button" class="chat-send mic-done" data-mic-stop aria-label="Done" title="Done"${v.state==='start'?' disabled':''}>${CHECK}</button>`
-  :v.state==='error'?`${x}<span class="mic-live mic-err">${esc(v.error)}</span>${v.wav?`<button type="button" class="mic-retry" data-mic-retry>${esc(t('Try again'))}</button>`:v.settings?SETTINGS_BTN('mic-retry'):''}`
-  :`${x}<span class="mic-live"><i class="mic-spin" aria-hidden="true"></i><span class="mic-hint"></span></span><span class="mic-prog" aria-hidden="true"${v.state==='prep'?'':' hidden'}><i></i></span>`}
+ if(bar.dataset.k!==key){bar.dataset.k=key;setHTML(bar,rec?html`${x}<span class="mic-live"><i class="mic-dot" aria-hidden="true"></i><span class="mic-time">0:00</span><span class="mic-wave" aria-hidden="true">${v.levels.map(()=>html`<i></i>`)}</span><span class="mic-hint">${t(v.state==='start'?'Starting the microphone…':v.browser?'Your browser writes this one down.':'Listening…')}</span></span><button type="button" class="chat-send mic-done" data-mic-stop aria-label="Done" title="Done"${v.state==='start'?html` disabled`:''}>${CHECK}</button>`
+  :v.state==='error'?html`${x}<span class="mic-live mic-err">${v.error}</span>${v.wav?html`<button type="button" class="mic-retry" data-mic-retry>${t('Try again')}</button>`:v.settings?SETTINGS_BTN('mic-retry'):''}`
+  :html`${x}<span class="mic-live"><i class="mic-spin" aria-hidden="true"></i><span class="mic-hint"></span></span><span class="mic-prog" aria-hidden="true"${v.state==='prep'?'':html` hidden`}><i></i></span>`)}
  if(rec){const left=MIC_MAX-v.secs,near=v.state==='rec'&&left<=15,live=bar.querySelector('.mic-live');live.classList.toggle('near',near);
   bar.querySelector('.mic-time').textContent=near?t('{} left',micClock(Math.ceil(left))):micClock(v.secs);
   bar.querySelectorAll('.mic-wave i').forEach((el,i)=>{el.style.height=Math.round(3+v.levels[i]*19)+'px'});
@@ -455,10 +453,10 @@ document.addEventListener('close',e=>{if(mic&&e.target.contains?.(mic.box))micCa
 // phone or with the screen off the voice reads it out first) and gets the confirm question; `send_answer` lets the
 // Machine judge the owner's next words itself. A clear yes approves that one draft, held a few seconds with Undo in the
 // chat ("Approved by voice"). What both sides say goes into the chat. At most 10 minutes, with a warning a minute before.
-const WAVE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v4M8 7v10M12 4v16M16 7v10M20 10v4"/></svg>';
+const WAVE=html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v4M8 7v10M12 4v16M16 7v10M20 10v4"/></svg>`;
 let talk=null,talkInfo={at:0,ready:null,busy:false},talkTodos=[];  // the one open conversation; whether this Machine can talk live (asked every 10 minutes); what Talk goes through
 const talkOk=()=>talkInfo.ready===true&&!!(window.RTCPeerConnection&&navigator.mediaDevices?.getUserMedia);
-const talkBtn=()=>`<button type="button" class="chat-mic chat-talk" data-talk aria-label="Talk live" title="Talk live"${talkOk()?'':' hidden'}>${WAVE}</button>`;
+const talkBtn=()=>html`<button type="button" class="chat-mic chat-talk" data-talk aria-label="Talk live" title="Talk live"${talkOk()?'':html` hidden`}>${WAVE}</button>`;
 async function talkLoad(){if(talkInfo.busy||Date.now()-talkInfo.at<600000)return;talkInfo.busy=true;
  let later=false;try{const r=await micPost('talk_status');talkInfo.ready=r.demo?false:r.ready===true;later=!r.demo&&r.ready==null}catch{}finally{talkInfo.busy=false;talkInfo.at=later?0:Date.now()}
  if(later&&!talkInfo.retry)talkInfo.retry=setTimeout(()=>{talkInfo.retry=null;if(chatOpen())talkLoad()},3000);  // the Machine is still asking OpenClaw
@@ -495,27 +493,26 @@ const talkMore=c=>{if(!c)return;if(c._end)c.scrollTop=c.scrollHeight;c.classList
 addEventListener('resize',()=>requestAnimationFrame(talkFit));visualViewport?.addEventListener('resize',()=>requestAnimationFrame(talkFit));
 function talkLeave(){if(!talkViewOn())return;if(talkBack==='settings')showSettings();else document.querySelector(`nav [data-tab="${talkBack}"]`)?.click()}
 function talkDraftHtml(s){const a=s.status==='prepared'?(s.next_actions||[]).find(a=>a.revision&&(['email','linkedin','slack','x','whatsapp','telegram','intercom','doc_reply'].includes(a.kind)&&a.body||a.kind==='doc_write')):null;if(!a)return '';
- if(a.kind==='doc_write')return `<div class="chat-draft current"><span hidden data-smart="${esc(a.revision)}"></span><div class="chat-draft-head"><span>${esc(docHead(a))}</span></div><div class="chat-clamp dw">${docWriteHtml(a)}</div></div>`;
+ if(a.kind==='doc_write')return html`<div class="chat-draft current"><span hidden data-smart="${a.revision}"></span><div class="chat-draft-head"><span>${docHead(a)}</span></div><div class="chat-clamp dw">${docWriteHtml(a)}</div></div>`;
  const to=a.to_name||(Array.isArray(a.to)?a.to.join(', '):a.to||''),mail=a.kind==='email';
- return `<div class="chat-draft current"><span hidden data-smart="${esc(a.revision)}"></span>${to?`<div class="chat-draft-head"><span>${esc(t('To: {}',to))}</span></div>`:''}${a.subject&&!a.reply&&!/^re:/i.test(a.subject)?`<div class="chat-draft-subject">${esc(a.subject)}</div>`:''}<div class="chat-clamp${mail?' mail-text':''}">${mail?mailHtml(a.body):chatMarkdown(a.body)}</div></div>`}
+ return html`<div class="chat-draft current"><span hidden data-smart="${a.revision}"></span>${to?html`<div class="chat-draft-head"><span>${t('To: {}',to)}</span></div>`:''}${a.subject&&!a.reply&&!/^re:/i.test(a.subject)?html`<div class="chat-draft-subject">${a.subject}</div>`:''}<div class="chat-clamp${mail?html` mail-text`:''}">${mail?mailHtml(a.body):chatMarkdown(a.body)}</div></div>`}
 // Once its send went out (or didn't), Talk's card says so instead of showing the draft: "Sent to Sam · 11:42"
 function talkSentHtml(v,s){const sent=(s.next_actions||[]).find(a=>a.state?.status==='sent'),d=v?.done?.[s.id]||(sent?{state:'sent',at:sent.state.sent_at,to:sent.to_name||(Array.isArray(sent.to)?sent.to.join(', '):sent.to||'')}:null);if(!d)return '';
- if(d.state==='sent'){const time=d.at?fmtHM(d.at):'';return `<p class="talk-about-sent" role="status">${esc(d.to&&time?t('Sent to {} · {}',d.to,time):time?t('Sent at {}',time):d.to?t('Sent to {}',d.to):t('Sent'))}</p>`}
- return `<p class="talk-about-sent failed" role="alert">${esc(t('Didn’t go out.'))}${d.why?' '+esc(d.why):''}</p>`}
+ if(d.state==='sent'){const time=d.at?fmtHM(d.at):'';return html`<p class="talk-about-sent" role="status">${d.to&&time?t('Sent to {} · {}',d.to,time):time?t('Sent at {}',time):d.to?t('Sent to {}',d.to):t('Sent')}</p>`}
+ return html`<p class="talk-about-sent failed" role="alert">${t('Didn’t go out.')}${d.why?' '+d.why:''}</p>`}
 function talkViewPaint(){const sec=$('#talk-view');if(!sec||sec.hidden)return;const v=talk,live=!!v?.main;
- if(!sec.firstElementChild)sec.innerHTML='<div class="talk-head"><h2></h2></div><div class="talk-about-slot"></div><div class="chat-log talk-log" aria-live="polite"></div><div class="talk-foot"><div class="talk-again"></div></div>';
+ if(!sec.firstElementChild)setHTML(sec,html`<div class="talk-head"><h2></h2></div><div class="talk-about-slot"></div><div class="chat-log talk-log" aria-live="polite"></div><div class="talk-foot"><div class="talk-again"></div></div>`);
  sec.querySelector('h2').textContent=t('Talk');
  // Ended: where the bar was, "Talk ended." and Start again
- const again=live?'':`<p class="talk-mark">${esc(t('Talk ended.'))}</p>${talkOk()?`<button type="button" class="talk-again-btn" data-talk-main>${esc(t('Start again'))}</button>`:''}`,ag=sec.querySelector('.talk-again');if(ag.innerHTML!==again)ag.innerHTML=again;ag.hidden=live;
+ const again=live?'':html`<p class="talk-mark">${t('Talk ended.')}</p>${talkOk()?html`<button type="button" class="talk-again-btn" data-talk-main>${t('Start again')}</button>`:''}`,ag=sec.querySelector('.talk-again');if(ag.innerHTML!==String(again))setHTML(ag,again);ag.hidden=live;
  const s=live&&v.sid?state.suggestions?.find(x=>x.id===v.sid)||(v.done?.[v.sid]?{id:v.sid,title:v.done[v.sid].title}:null):null;
- const about=s?`<div class="talk-about" data-about="${esc(s.id)}"><div class="talk-about-top"><span>${esc(t('Talking about'))}</span><a href="#chat=${esc(s.id)}">${esc(t('Open the chat'))}</a></div><h3 translate="no">${esc(s.title)}</h3>${talkSentHtml(v,s)||talkDraftHtml(s)}</div>`:'';
+ const about=s?html`<div class="talk-about" data-about="${s.id}"><div class="talk-about-top"><span>${t('Talking about')}</span><a href="#chat=${s.id}">${t('Open the chat')}</a></div><h3 translate="no">${s.title}</h3>${talkSentHtml(v,s)||talkDraftHtml(s)}</div>`:'';
  // At the end of the transcript, it stays there when the card changes (a draft that became "Sent to…" is much shorter)
  const slot=sec.querySelector('.talk-about-slot'),log=sec.querySelector('.talk-log');
  // The newest line stays in view as lines come and the card changes, unless the owner scrolled up to read back
- if(slot.dataset.k!==about){const end=talkAtEnd(log);slot.dataset.k=about;slot.innerHTML=about;const c=slot.querySelector('.chat-clamp');if(c){c.scrollTop=0;c.addEventListener('scroll',()=>{c._end=c.scrollTop>0&&c.scrollHeight-c.scrollTop-c.clientHeight<=2;talkMore(c)},{passive:true});new ResizeObserver(()=>talkMore(c)).observe(c)}requestAnimationFrame(()=>talkMore(c));if(end)log.scrollTop=log.scrollHeight}
+ if(slot.dataset.k!==String(about)){const end=talkAtEnd(log);slot.dataset.k=about;setHTML(slot,about);const c=slot.querySelector('.chat-clamp');if(c){c.scrollTop=0;c.addEventListener('scroll',()=>{c._end=c.scrollTop>0&&c.scrollHeight-c.scrollTop-c.clientHeight<=2;talkMore(c)},{passive:true});new ResizeObserver(()=>talkMore(c)).observe(c)}requestAnimationFrame(()=>talkMore(c));if(end)log.scrollTop=log.scrollHeight}
  const key=talkLog.length+'|'+live;if(log.dataset.k===key)return;const end=!log.dataset.k||talkAtEnd(log);log.dataset.k=key;
- log.innerHTML=talkLog.map(x=>x.record?talkRecordHtml(x.record):x.made?`<p class="talk-mark talk-made">${esc(t('Added a to-do: {}',x.title))}</p>`:x.about?`<p class="talk-mark" translate="no">${esc(x.title)}</p>`:`<div class="chat-msg ${x.role==='user'?'you':'machine'}"><div class="bubble" translate="no">${esc(x.text)}</div></div>`).join('')
-  +(!talkLog.length&&live?`<p class="talk-mark">${esc(t('Say something to start.'))}</p>`:'');
+ setHTML(log,html`${talkLog.map(x=>x.record?talkRecordHtml(x.record):x.made?html`<p class="talk-mark talk-made">${t('Added a to-do: {}',x.title)}</p>`:x.about?html`<p class="talk-mark" translate="no">${x.title}</p>`:html`<div class="chat-msg ${x.role==='user'?'you':'machine'}"><div class="bubble" translate="no">${x.text}</div></div>`)}${!talkLog.length&&live?html`<p class="talk-mark">${t('Say something to start.')}</p>`:''}`);
  if(end)log.scrollTop=log.scrollHeight}
 addEventListener('hashchange',e=>{if(location.hash==='#talk'){if(talk?.main||talkLog.length)talkViewShow();else history.replaceState(null,'',location.pathname+location.search)}
  else if(/#talk$/.test(e.oldURL)&&!/^#chat=/.test(location.hash))talkLeave()});
@@ -554,10 +551,8 @@ function talkPaint(){const v=talk;if(!v)return;const box=v.main&&talkViewOn()?$(
  if(!box&&!host.dataset.ro){host.dataset.ro=1;new ResizeObserver(()=>document.body.style.setProperty('--talk-dock-h',host.offsetHeight+'px')).observe(host)}
  const key=v.state+'|'+v.muted+'|'+(v.error||'');
  if(bar.dataset.k!==key){bar.dataset.k=key;
-  bar.innerHTML=v.state==='error'?`<div class="talk-bar talk-err" role="alert"><span class="grow">${esc(v.error)}</span>${v.settings?SETTINGS_BTN('talk-end'):''}<button type="button" class="talk-end" data-talk-close>${esc(t('Close'))}</button></div>`
-   :`<div class="talk-bar" role="status"><span class="talk-live"><i class="talk-dot${v.state==='live'?'':' wait'}" aria-hidden="true"></i><strong>${esc(t(v.state==='live'?'Live':'Connecting…'))}</strong><span class="talk-time"></span></span><span class="talk-hint"></span>`
-   +`<button type="button" class="talk-mute" data-talk-mute aria-pressed="${v.muted}"${v.state==='live'?'':' disabled'}>${esc(t(v.muted?'Unmute':'Mute'))}</button><button type="button" class="talk-end" data-talk-end>${esc(t('End'))}</button></div>`
-   +(v.per_use?`<small class="talk-cost">${esc(t('OpenAI charges your API key per minute of talk.'))}</small>`:'')}
+  setHTML(bar,v.state==='error'?html`<div class="talk-bar talk-err" role="alert"><span class="grow">${v.error}</span>${v.settings?SETTINGS_BTN('talk-end'):''}<button type="button" class="talk-end" data-talk-close>${t('Close')}</button></div>`
+   :html`<div class="talk-bar" role="status"><span class="talk-live"><i class="talk-dot${v.state==='live'?'':html` wait`}" aria-hidden="true"></i><strong>${t(v.state==='live'?'Live':'Connecting…')}</strong><span class="talk-time"></span></span><span class="talk-hint"></span><button type="button" class="talk-mute" data-talk-mute aria-pressed="${v.muted}"${v.state==='live'?'':html` disabled`}>${t(v.muted?'Unmute':'Mute')}</button><button type="button" class="talk-end" data-talk-end>${t('End')}</button></div>${v.per_use?html`<small class="talk-cost">${t('OpenAI charges your API key per minute of talk.')}</small>`:''}`)}
  if(v.state==='error')return;
  const left=v.limit-v.secs,near=v.state==='live'&&left<=v.limit-v.warn;
  bar.querySelector('.talk-time').textContent=near?t('{} left',micClock(Math.max(0,Math.ceil(left)))):v.state==='live'?micClock(v.secs):'';
@@ -568,9 +563,9 @@ function talkPaint(){const v=talk;if(!v)return;const box=v.main&&talkViewOn()?$(
  if(kind==='going')talkSentWatch(v,x);
  let u=bar.querySelector('.talk-undo');if(!u){u=document.createElement('div');u.className='talk-undo';bar.querySelector('.talk-bar')?.after(u)}
  if(u.dataset.kind!==kind){u.dataset.kind=kind;  // the button stays the same element while the count goes down, so a tap never misses
-  u.innerHTML=kind==='undo'?`<span class="talk-sending" role="status"></span><button type="button" class="talk-undo-btn" data-talk-undo>${esc(t('Undo'))}</button>`
-   :kind==='sent'?`<span class="talk-sending sent" role="status">${esc(talkSendingText(x))}</span>`:kind==='going'?`<span class="talk-sending" role="status">${esc(t('Sending…'))}</span>`
-   :kind==='failed'?`<span class="talk-sending failed" role="alert">${esc(t('Didn’t go out.'))}</span>`:kind==='undone'?`<span class="talk-sending" role="status">${esc(t('Canceled. It won’t be sent.'))}</span>`:''}
+  setHTML(u,kind==='undo'?html`<span class="talk-sending" role="status"></span><button type="button" class="talk-undo-btn" data-talk-undo>${t('Undo')}</button>`
+   :kind==='sent'?html`<span class="talk-sending sent" role="status">${talkSendingText(x)}</span>`:kind==='going'?html`<span class="talk-sending" role="status">${t('Sending…')}</span>`
+   :kind==='failed'?html`<span class="talk-sending failed" role="alert">${t('Didn’t go out.')}</span>`:kind==='undone'?html`<span class="talk-sending" role="status">${t('Canceled. It won’t be sent.')}</span>`:'')}
  if(kind==='undo'){const c=u.querySelector('.talk-sending'),text=talkSendingText(x,wait);if(c.textContent!==text)c.textContent=text}
  u.hidden=!kind;
  bar.querySelector('.talk-live').classList.toggle('near',near)}
@@ -762,9 +757,9 @@ async function talkWatch(v,id,req=''){const at=Date.now();let busy=false;
   if(said.length||busy||Date.now()-at>120000){await refresh().catch(()=>{});talkChatSaid(v,id,said.join(' ').slice(0,3000),req);return}}}
 // A record the voice opened (open_record): a small card in the transcript, opening its own page or the meeting
 const TALK_KIND={person:'Person',organization:'Organization',project:'Project',meeting:'Meeting',message:'Message',promise:'Promise'};
-function talkRecordHtml(c){const title=esc(c.title||''),go=c.node?`<a href="${esc(graphHash(c.node))}">${title}</a>`:c.promise?`<a href="${esc(promiseHref({id:c.promise}))}">${title}</a>`
-  :c.event?`<button type="button" class="talk-record-open" data-talk-event="${esc(String(c.event))}"${c.kind==='meeting'?' data-meeting':''}>${title}</button>`:title;
- return `<div class="talk-record"><span class="talk-record-kind">${esc(t(TALK_KIND[c.kind]||'Message'))}</span><strong translate="no">${go}</strong>${c.line?`<small translate="no">${esc(c.line)}</small>`:''}</div>`}
+function talkRecordHtml(c){const title=(c.title||''),go=c.node?html`<a href="${graphHash(c.node)}">${title}</a>`:c.promise?html`<a href="${promiseHref({id:c.promise})}">${title}</a>`
+  :c.event?html`<button type="button" class="talk-record-open" data-talk-event="${String(c.event)}"${c.kind==='meeting'?html` data-meeting`:''}>${title}</button>`:title;
+ return html`<div class="talk-record"><span class="talk-record-kind">${t(TALK_KIND[c.kind]||'Message')}</span><strong translate="no">${go}</strong>${c.line?html`<small translate="no">${c.line}</small>`:''}</div>`}
 // A to-do that comes to need the owner while Talk is open (Ready or To decide): a short heads-up at the next pause
 // (talkTellNext waits while either side talks), once. One that was preparing says it's ready now (notes.ready).
 function talkNew(v){if(!v.dc||v.state!=='live')return;for(const [s,l] of talkTodos)if(l==='preparing')v.prep.add(s.id);
@@ -999,7 +994,7 @@ function chatScrollStart(){const log=$('#chat-log');if(!log)return;if(chatScroll
  if(cut&&head-cut.getBoundingClientRect().top<=12)scrollBy(0,-(head-cut.getBoundingClientRect().top))}
 // Make el's children match html, replacing only the ones that changed (same position, same item), so expanded parts,
 // hovers and the scroll position stay as they are.
-function chatPatch(el,html){const t=document.createElement('template');t.innerHTML=html;const fresh=[...t.content.childNodes].filter(n=>n.nodeType===1||n.textContent.trim()),old=[...el.childNodes].filter(n=>n.nodeType===1||n.textContent.trim());
+function chatPatch(el,body){const t=document.createElement('template');setHTML(t,body);const fresh=[...t.content.childNodes].filter(n=>n.nodeType===1||n.textContent.trim()),old=[...el.childNodes].filter(n=>n.nodeType===1||n.textContent.trim());
  fresh.forEach((n,i)=>{const o=old[i];if(!o)el.append(n);else if(!o.isEqualNode(n))o.replaceWith(n)});old.slice(fresh.length).forEach(n=>n.remove())}
 // Around an update of the thread: at the end (within 40px) it stays at the end; otherwise the item in view stays where it is.
 function chatKeepPlace(fn){const log=$('#chat-log');if(!log)return fn();const l=chatScroller(),end=chatEndNow(40);
@@ -1032,12 +1027,12 @@ async function chatPreviews(){for(const n of document.querySelectorAll('#chat-lo
  const [id,path]=key.split('|');try{const d=await request('api/result?id='+id+'&file='+encodeURIComponent(path));chatFiles.set(key,d.pdf?'':String(d.text||''))}catch{chatFiles.set(key,'')}paintChat()}}
 // A refresh while the chat is open updates the thread, list and header in place and keeps the message box itself,
 // so a field you are typing in never loses its focus, text or caret.
-function chatMount(id,html){const box=$('#suggestions'),cur=box.querySelector(':scope>.chat-layout');
- if(!cur||cur.dataset.chat!==id||!cur.querySelector('#chat-input')){box.innerHTML=html;requestAnimationFrame(chatFades);return}
- const t=document.createElement('template');t.innerHTML=html;const nu=t.content.querySelector('.chat-layout');cur.className=nu.className;
+function chatMount(id,body){const box=$('#suggestions'),cur=box.querySelector(':scope>.chat-layout');
+ if(!cur||cur.dataset.chat!==id||!cur.querySelector('#chat-input')){setHTML(box,body);requestAnimationFrame(chatFades);return}
+ const t=document.createElement('template');setHTML(t,body);const nu=t.content.querySelector('.chat-layout');cur.className=nu.className;
  const swap=sel=>{const a=cur.querySelector(sel),b=nu.querySelector(sel);if(!a||!b||a.isEqualNode(b))return;a.replaceWith(b)};
- const side=cur.querySelector('.chat-side'),top=side?.scrollTop;if(side)chatPatch(side,nu.querySelector('.chat-side').innerHTML);if(side)side.scrollTop=top;
- swap('.chat-panel');chatKeepPlace(()=>chatPatch(cur.querySelector('#chat-log'),nu.querySelector('#chat-log').innerHTML));
+ const side=cur.querySelector('.chat-side'),top=side?.scrollTop;if(side)chatPatch(side,nodeHTML(...nu.querySelector('.chat-side').childNodes));if(side)side.scrollTop=top;
+ swap('.chat-panel');chatKeepPlace(()=>chatPatch(cur.querySelector('#chat-log'),nodeHTML(...nu.querySelector('#chat-log').childNodes)));
  if(!cur.querySelector('#chat-menu')?.open)swap('.chat-head');swap('#chat-status');swap('#chat-picks');{const typing=document.activeElement?.matches('textarea,input[type=text]')&&cur.querySelector('#chat-sheet')?.contains(document.activeElement);if(!typing||!nu.querySelector('#chat-sheet')?.children.length)swap('#chat-sheet')}chatFades()}
 // On a phone the chat column is exactly the visible part of the window (--vv-h, --vv-top): where the browser doesn't
 // shrink the page for the on-screen keyboard (iOS Safari) that part shrinks and slides instead, and the message box
@@ -1050,8 +1045,8 @@ function chatKeyboard(){const v=window.visualViewport;if(!v)return;const kb=Math
  if(typing&&chatAtEnd)requestAnimationFrame(chatToEnd)}
 window.visualViewport?.addEventListener('resize',chatKeyboard);window.visualViewport?.addEventListener('scroll',chatKeyboard);addEventListener('resize',chatKeyboard);chatKeyboard();
 function paintChat(){const log=$('#chat-log'),s=chatOpen();if(!log||!s)return;chatKeepPlace(()=>chatPatch(log,chatLog(s)));
- const st=$('#chat-status'),sh=chatStatus(s);if(st&&st.innerHTML!==sh)st.innerHTML=sh;const menu=$('#chat-menu');if(menu&&!menu.open)menu.querySelector('.chat-menu-list').innerHTML=chatParts(s).rest+`<button type="button" class="ghost" data-chat-drawer aria-expanded="${chatDrawer}">All tasks</button>`;
- const picks=$('#chat-picks');if(picks){const ph=chatPicks(s);if(picks.innerHTML!==ph)picks.innerHTML=ph;picks.hidden=!chatPicksShown()}
+ const st=$('#chat-status'),sh=chatStatus(s);if(st&&st.innerHTML!==String(sh))setHTML(st,sh);const menu=$('#chat-menu');if(menu&&!menu.open)setHTML(menu.querySelector('.chat-menu-list'),html`${chatParts(s).rest}<button type="button" class="ghost" data-chat-drawer aria-expanded="${chatDrawer}">All tasks</button>`);
+ const picks=$('#chat-picks');if(picks){const ph=chatPicks(s);if(picks.innerHTML!==String(ph))setHTML(picks,ph);picks.hidden=!chatPicksShown()}
  chatSendState();chatFades();chatPreviews();cmPaint('chat')}
 // The chat this device kept for the card: shown at once while the live one loads (that one replaces it in place)
 async function chatKept(id){const hit=await localCache.read('chat:'+id);if(!hit||id!==chatId||chat&&!(chat.unavailable&&!chat.items?.length))return;chat={...hit.value,cursor:null,active:false};paintChat();requestAnimationFrame(chatScrollStart)}
