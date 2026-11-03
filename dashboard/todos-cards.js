@@ -257,7 +257,7 @@ function cardActions(s,choices,smartButtons,unmerge,hint,smart){const skill=skil
  // Hand off…: who or what can take it, on one small sheet; a single one is a plain item with its whole name
  const agentName=c=>agentTools().find(t=>'agent:'+t.id===c)?.name;
  const hand=[...others.filter(x=>x[0]==='takeback').map(btn),...others.filter(handing).map(x=>btn([x[0],x[0]==='handoff'?t('A teammate'):agentName(x[0])||x[1]]).replace('<button ',`<button data-full="${esc(x[0]==='handoff'?t(x[1]):x[1])}" `)),...(reviewMore(s)?[reviewMore(s)]:[])];
- const handFull=h=>h.replace(/ data-full="([^"]*)"([^>]*)>[^<]*</,(m,full,rest)=>`${rest}>${full}<`);
+ const handFull=h=>String(h).replace(/ data-full="([^"]*)"([^>]*)>[^<]*</,(m,full,rest)=>`${rest}>${full}<`);
  const sheet=hand.length>1?`<button type="button" class="ghost" data-mm-open="handoff" aria-haspopup="true">${esc(t('Hand off…'))}</button>`:hand.map(handFull).join('');
  const sub=hand.length>1?`<div class="mm-sub" role="group" aria-label="${esc(t('Hand off'))}" hidden><p class="mm-head"><button type="button" class="mm-back" data-mm-back aria-label="${esc(t('Back'))}">‹</button><span>${esc(t('Hand off'))}</span></p>${hand.join('')}</div>`:'';
  const repeat=closed(s)||s.repeats?'':`<button type="button" class="ghost" data-repeat="${esc(s.id)}">${esc(t('Repeat…'))}</button>`;
