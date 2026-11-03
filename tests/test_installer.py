@@ -613,6 +613,35 @@ class InstallerTest(unittest.TestCase):
         self.assertIn('Unsupported sources', result.stderr)
         self.assertEqual(self.config.read_text(), before)
 
+    def test_a_self_hosted_install_updates_itself_daily_from_signed_releases_only(self):
+        units = self.home / '.config/systemd/user'
+        self.assertEqual(self.install('--no-start').returncode, 0)
+        update = (units / 'the-machine-update.service').read_text()
+        self.assertIn(f'{ROOT}/scripts/release.py update --install', update)
+        self.assertIn('OnCalendar=', (units / 'the-machine-update.timer').read_text())
+        self.assertNotIn('systemctl --user enable --now the-machine-update.timer', self.calls())  # --no-start
+        self.install()
+        self.assertIn('systemctl --user enable --now the-machine-update.timer', self.calls())
+        config = json.loads(self.config.read_text())
+        self.config.write_text(json.dumps({**config, 'auto_update': False}))
+        self.assertEqual(self.install('--no-start').returncode, 0)
+        self.assertIn('systemctl --user disable --now the-machine-update.timer', self.calls())
+        self.assertFalse((units / 'the-machine-update.timer').exists())
+        self.config.write_text(json.dumps(config))
+        self.assertEqual(self.install('--no-start').returncode, 0)
+        self.assertEqual(self.install('--uninstall').returncode, 0)
+        self.assertFalse((units / 'the-machine-update.service').exists())
+        self.assertFalse((units / 'the-machine-update.timer').exists())
+
+    def test_hosted_machines_get_no_update_timer(self):
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(installer, 'HOSTED_AGENT', Path(tmp)), \
+                mock.patch.object(installer.service, 'manager', return_value='systemd'), \
+                mock.patch.object(installer, 'run') as ran, mock.patch.object(installer, 'say'):
+            paths = installer.Paths(Path(tmp) / 'home')
+            self.assertIsNone(installer.install_updates({}, {'systemctl': 'systemctl'}, paths, start=True))
+            ran.assert_not_called()
+            self.assertFalse((paths.unit.parent / installer.UPDATE_TIMER).exists())
+
     def test_uninstall_keeps_data_and_purge_removes_it(self):
         self.assertEqual(self.install('--no-start').returncode, 0)
         result = self.install('--uninstall')
