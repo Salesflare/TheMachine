@@ -11,8 +11,9 @@
 //    iOS, both only there on the Machine's own address), which saves it on the phone. A WebView has no downloads.
 //    A file linked in a new tab (a to-do's files) goes the same way, for the phone to open in an app.
 //  The phone's id from app_push_register is kept with the token, so Settings can tell this phone's notifications.
-// payload: {base, push?: {platform, token, sandbox, label}, share?: {text, files: [{name, type, data(base64)}]},
-//           tag?, listen?}
+//  - phone: window.machinePhone, the phone's own questions (the microphone, notifications) and its settings page.
+// payload: {base, device: {platform, sandbox, label}, push?: {platform, token, sandbox, label},
+//           share?: {text, files: [{name, type, data(base64)}]}, tag?, listen?}
 // Returns a promise of {push: 'registered'|'failed'|undefined, share: 'opened'|'added'|'failed'|undefined}.
 (async function machineInject(payload) {
   'use strict';
@@ -53,14 +54,47 @@
   let last = null;
   try { last = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { last = null; }
   const fresh = last && last.token === (payload.push && payload.push.token) && Date.now() - last.at < WEEK && 'id' in last;
+  const register = async (device, token) => {
+    const done = await action('app_push_register', {platform: device.platform, token,
+      sandbox: !!device.sandbox, label: String(device.label || '').slice(0, 60)});
+    const id = done && done.registered && typeof done.id === 'string' ? done.id : null;
+    try { localStorage.setItem(KEY, JSON.stringify({token, at: Date.now(), id})); } catch (e) { /* next time */ }
+  };
   if (payload.push && payload.push.token && !fresh) {
-    try {
-      const done = await action('app_push_register', {platform: payload.push.platform, token: payload.push.token,
-        sandbox: !!payload.push.sandbox, label: String(payload.push.label || '').slice(0, 60)});
-      out.push = 'registered';
-      const id = done && done.registered && typeof done.id === 'string' ? done.id : null;
-      try { localStorage.setItem(KEY, JSON.stringify({token: payload.push.token, at: Date.now(), id})); } catch (e) { /* next time */ }
-    } catch (e) { out.push = 'failed'; }
+    try { await register(payload.push, payload.push.token); out.push = 'registered'; } catch (e) { out.push = 'failed'; }
+  }
+
+  // phone: the phone's own questions (the microphone, notifications). The phone asks them itself; once it won't ask
+  // again, the dashboard shows Open settings, the app's own page in the phone's settings (window.machinePhone). The
+  // app's MachinePhone (Android) or machinePhone (iOS) is only there on the Machine's own address.
+  const android = window.MachinePhone, ios = window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.machinePhone;
+  if ((android || ios) && !window.machinePhone) {
+    const waiting = new Map();
+    let next = 0;
+    if (android) android.onmessage = e => {
+      let r = null;
+      try { r = JSON.parse(e.data); } catch (err) { return; }
+      const done = r && waiting.get(r.id);
+      if (done) { waiting.delete(r.id); done(r); }
+    };
+    // {state: 'granted'|'prompt'|'blocked'|'on'|'off'|'ok', token?}
+    const ask = what => ios ? ios.postMessage({ask: what}) : new Promise(resolve => {
+      const id = String(++next);
+      waiting.set(id, resolve);
+      android.postMessage(JSON.stringify({id, ask: what}));
+    });
+    window.machinePhone = {
+      state: async kind => (await ask(kind === 'mic' ? 'mic' : 'push')).state,  // 'granted', 'prompt' or 'blocked'
+      settings: () => ask('settings'),
+      // Notifications on for this phone: the phone's question, then its token to the Machine. 'on', 'blocked' or 'off'
+      pushOn: async () => {
+        const r = await ask('pushOn');
+        if (r.state !== 'on' || !r.token || !payload.device) return r.state === 'blocked' ? 'blocked' : 'off';
+        await register(payload.device, r.token);
+        return 'on';
+      },
+    };
+    try { window.dispatchEvent(new Event('machinephone')); } catch (e) { /* a page that doesn't listen */ }  // Settings shows it
   }
 
   const native = window.MachineFiles || (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.machineFiles);

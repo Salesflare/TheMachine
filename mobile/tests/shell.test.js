@@ -225,3 +225,38 @@ test('inject: no file hook without the app\'s own bridge', async () => {
   await p.run({base: 'https://sam.app.themachine.computer/'});
   assert.equal(p.win.__machineFiles, undefined);
 });
+
+// the app's MachinePhone in a fake Machine page: the phone's answers, as Android gives them
+function phone(p, answers) {
+  const asked = [];
+  p.win.MachinePhone = {postMessage: m => {
+    const q = JSON.parse(m);
+    asked.push(q.ask);
+    setTimeout(() => p.win.MachinePhone.onmessage({data: JSON.stringify({id: q.id, ...answers[q.ask]})}), 0);
+  }};
+  return asked;
+}
+
+test('inject: the phone asks about the microphone and notifications; Open settings only once it won\'t ask again', async () => {
+  const base = 'https://sam.app.themachine.computer/', device = {platform: 'fcm', label: 'Pixel'};
+  const p = page(base), asked = phone(p, {mic: {state: 'blocked'}, push: {state: 'blocked'}, pushOn: {state: 'blocked'}, settings: {state: 'ok'}});
+  await p.run({base, device});
+  assert.equal(await p.win.machinePhone.state('mic'), 'blocked');
+  assert.equal(await p.win.machinePhone.state('push'), 'blocked');
+  assert.equal(await p.win.machinePhone.pushOn(), 'blocked');
+  await p.win.machinePhone.settings();
+  assert.deepEqual(asked, ['mic', 'push', 'pushOn', 'settings']);
+  assert.equal(p.calls.length, 0);
+
+  const q = page(base);
+  phone(q, {pushOn: {state: 'on', token: 'f'.repeat(40)}});
+  await q.run({base, device});
+  assert.equal(await q.win.machinePhone.pushOn(), 'on');
+  const post = q.calls.find(c => c.method === 'POST');
+  assert.deepEqual(post.body, {action: 'app_push_register', args: {platform: 'fcm', token: 'f'.repeat(40), sandbox: false, label: 'Pixel'}});
+  assert.equal(JSON.parse(q.store.get('machine-app-push')).id, 'dev_1');
+
+  const old = page(base);
+  await old.run({base, device});
+  assert.equal(old.win.machinePhone, undefined);  // no app bridge on this address: nothing to ask with
+});

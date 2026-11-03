@@ -11,6 +11,9 @@ dashboard release reaches the app at once, with no store update. The app itself 
   fetched from the Machine when the owner opens it.
 - **Share to The Machine**: text, links and up to 5 files from any app's share sheet open the dashboard's New to-do,
   filled in, for the owner to check and add.
+- **The phone's own questions**: the microphone (Talk, dictation) and notifications are asked by the phone itself when
+  the owner taps the mic or Turn on. Only once the phone won't ask again does the dashboard show one line with
+  Open settings, the app's page in the phone's settings (`machinePhone` in `www/inject.js`).
 
 Native code is kept small and stable on purpose: new features belong in the dashboard.
 

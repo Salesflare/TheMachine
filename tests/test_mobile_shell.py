@@ -130,7 +130,14 @@ class MobileShellTest(unittest.TestCase):
         self.assertNotIn('android.permission.CAMERA', manifest)
         self.assertIn('<uses-feature android:name="android.hardware.microphone" android:required="false" />', manifest)
         # The microphone only, only for the Machine; nothing else a page asks for
-        self.assertIn('if (audioOnly && shell.isMachine(request.getOrigin())) super.onPermissionRequest(request);\n            else request.deny();', java)
+        self.assertIn('if (!audioOnly || !shell.isMachine(request.getOrigin())) {\n                request.deny();\n                return;', java)
+        # The phone's questions and its settings page: asked by the Machine's own page only
+        self.assertIn('"MachinePhone", Collections.singleton(origin)', java)
+        self.assertEqual(java.count('if (!mainFrame || !isMachine(source) || message.getData() == null) return;'), 2)
+        self.assertIn('addScriptMessageHandler(PhoneHandler(plugin: self), contentWorld: .page, name: "machinePhone")', swift)
+        self.assertIn('guard message.frameInfo.isMainFrame, let plugin = plugin, plugin.isMachine(message.frameInfo.securityOrigin)', swift)
+        self.assertIn('Settings.ACTION_APPLICATION_DETAILS_SETTINGS', java)
+        self.assertIn('UIApplication.openSettingsURLString', swift)
         self.assertIn('"MachineFiles", Collections.singleton(origin)', java)  # the files bridge exists only on that address
         self.assertIn('if (!mainFrame || !isMachine(source) ||', java)
         self.assertIn('type == .microphone && frame.isMainFrame && plugin?.isMachine(origin) == true ? .grant : .deny', swift)

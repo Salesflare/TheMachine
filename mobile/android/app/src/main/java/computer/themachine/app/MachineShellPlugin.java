@@ -1,6 +1,11 @@
 package computer.themachine.app;
 
+import android.Manifest;
 import android.content.ContentResolver;
+import android.content.pm.PackageManager;
+import android.provider.Settings;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import android.content.ActivityNotFoundException;
 import android.content.ContentValues;
 import android.os.Build;
@@ -10,7 +15,10 @@ import android.webkit.PermissionRequest;
 import android.webkit.URLUtil;
 import android.widget.Toast;
 import androidx.core.content.FileProvider;
+import androidx.core.app.NotificationManagerCompat;
+import androidx.webkit.JavaScriptReplyProxy;
 import androidx.webkit.WebViewCompat;
+import com.google.firebase.messaging.FirebaseMessaging;
 import androidx.webkit.WebViewFeature;
 import com.getcapacitor.Bridge;
 import com.getcapacitor.BridgeWebChromeClient;
@@ -117,7 +125,10 @@ public class MachineShellPlugin extends Plugin {
         return want.equals("https://" + origin.getHost().toLowerCase() + (origin.getPort() == -1 || origin.getPort() == 443 ? "" : ":" + origin.getPort()));
     }
 
-    /** The WebView's microphone: only for the Machine's own page, and only audio; Capacitor's client asks the phone. */
+    /**
+     * The WebView's microphone: only for the Machine's own page, and only audio; Capacitor's client asks the phone.
+     * A No the phone won't ask again for (a second No, or no question shown at all) is kept, for micState.
+     */
     static class MachineChrome extends BridgeWebChromeClient {
         private final MachineShellPlugin shell;
 
@@ -130,8 +141,160 @@ public class MachineShellPlugin extends Plugin {
         public void onPermissionRequest(PermissionRequest request) {
             boolean audioOnly = request.getResources().length > 0;
             for (String r : request.getResources()) audioOnly &= PermissionRequest.RESOURCE_AUDIO_CAPTURE.equals(r);
-            if (audioOnly && shell.isMachine(request.getOrigin())) super.onPermissionRequest(request);
-            else request.deny();
+            if (!audioOnly || !shell.isMachine(request.getOrigin())) {
+                request.deny();
+                return;
+            }
+            long asked = System.currentTimeMillis();
+            super.onPermissionRequest(new PermissionRequest() {
+                @Override
+                public Uri getOrigin() {
+                    return request.getOrigin();
+                }
+
+                @Override
+                public String[] getResources() {
+                    return request.getResources();
+                }
+
+                @Override
+                public void grant(String[] resources) {
+                    shell.prefs().edit().remove("micDenied").remove("micBlocked").apply();
+                    request.grant(resources);
+                }
+
+                @Override
+                public void deny() {
+                    boolean again = ActivityCompat.shouldShowRequestPermissionRationale(shell.getActivity(), Manifest.permission.RECORD_AUDIO);
+                    boolean fast = System.currentTimeMillis() - asked < 400; // no question was shown
+                    boolean before = shell.prefs().getBoolean("micDenied", false);
+                    shell.prefs().edit().putBoolean("micDenied", true).putBoolean("micBlocked", !again && (fast || before)).apply();
+                    request.deny();
+                }
+            });
+        }
+    }
+
+    // -- the phone's own questions, for the Machine's page (www/inject.js, MachinePhone): the microphone's and
+    // notifications' state, notifications on (the phone's own question, then the push token) and the app's settings page
+
+    static final int ASK_PUSH = 7301;
+    private JavaScriptReplyProxy pushReply;
+    private String pushId;
+    private long pushAsked;
+
+    private void phone(JSONObject m, JavaScriptReplyProxy reply) {
+        String id = m.optString("id", "");
+        switch (m.optString("ask", "")) {
+            case "mic":
+                answer(reply, id, micState(), null);
+                break;
+            case "push":
+                answer(reply, id, pushState(), null);
+                break;
+            case "settings":
+                Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", getContext().getPackageName(), null));
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                try {
+                    getContext().startActivity(intent);
+                    answer(reply, id, "ok", null);
+                } catch (ActivityNotFoundException e) {
+                    answer(reply, id, "off", null);
+                }
+                break;
+            case "pushOn":
+                pushOn(reply, id);
+                break;
+            default:
+                break;
+        }
+    }
+
+    private void answer(JavaScriptReplyProxy reply, String id, String state, String token) {
+        bridge.executeOnMainThread(() -> {
+            try {
+                JSONObject out = new JSONObject().put("id", id).put("state", state);
+                if (token != null) out.put("token", token);
+                reply.postMessage(out.toString());
+            } catch (JSONException | RuntimeException e) {
+                // the page is gone
+            }
+        });
+    }
+
+    /** granted, prompt (the phone asks) or blocked (only the phone's settings change it). */
+    private String micState() {
+        if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+            prefs().edit().remove("micDenied").remove("micBlocked").apply(); // allowed in settings: asked afresh if taken back
+            return "granted";
+        }
+        boolean again = ActivityCompat.shouldShowRequestPermissionRationale(getActivity(), Manifest.permission.RECORD_AUDIO);
+        return !again && prefs().getBoolean("micBlocked", false) ? "blocked" : "prompt";
+    }
+
+    private boolean pushReady() {
+        Context c = getContext();
+        return c.getResources().getIdentifier("google_app_id", "string", c.getPackageName()) != 0;
+    }
+
+    private String pushState() {
+        if (!pushReady()) return "off";
+        boolean shown = NotificationManagerCompat.from(getContext()).areNotificationsEnabled();
+        if (Build.VERSION.SDK_INT < 33) return shown ? "granted" : "blocked"; // no question to ask: only settings
+        String perm = Manifest.permission.POST_NOTIFICATIONS;
+        if (ContextCompat.checkSelfPermission(getContext(), perm) == PackageManager.PERMISSION_GRANTED) {
+            prefs().edit().remove("pushDenied").remove("pushBlocked").apply();
+            return shown ? "granted" : "blocked";
+        }
+        if (ActivityCompat.shouldShowRequestPermissionRationale(getActivity(), perm)) return "prompt";
+        // a No for good: from this question, or from the start page's (Capacitor keeps that one)
+        boolean capacitor = "denied".equals(getContext().getSharedPreferences("PluginPermStates", Context.MODE_PRIVATE).getString(perm, null));
+        return prefs().getBoolean("pushBlocked", false) || capacitor ? "blocked" : "prompt";
+    }
+
+    private void pushOn(JavaScriptReplyProxy reply, String id) {
+        String state = pushState();
+        if (state.equals("granted")) pushToken(reply, id);
+        else if (!state.equals("prompt") || Build.VERSION.SDK_INT < 33) answer(reply, id, state, null);
+        else {
+            pushReply = reply;
+            pushId = id;
+            pushAsked = System.currentTimeMillis();
+            ActivityCompat.requestPermissions(getActivity(), new String[] {Manifest.permission.POST_NOTIFICATIONS}, ASK_PUSH);
+        }
+    }
+
+    /** From MainActivity: the phone's answer to pushOn's question. */
+    void pushAnswered(boolean granted) {
+        JavaScriptReplyProxy reply = pushReply;
+        String id = pushId;
+        pushReply = null;
+        if (reply == null) return;
+        if (granted) {
+            prefs().edit().remove("pushBlocked").apply();
+            pushToken(reply, id);
+            return;
+        }
+        boolean again = Build.VERSION.SDK_INT >= 33 && ActivityCompat.shouldShowRequestPermissionRationale(getActivity(), Manifest.permission.POST_NOTIFICATIONS);
+        boolean fast = System.currentTimeMillis() - pushAsked < 400; // no question was shown
+        boolean blocked = !again && (fast || prefs().getBoolean("pushDenied", false));
+        prefs().edit().putBoolean("pushDenied", true).putBoolean("pushBlocked", blocked).apply();
+        answer(reply, id, blocked ? "blocked" : "off", null);
+    }
+
+    private void pushToken(JavaScriptReplyProxy reply, String id) {
+        try {
+            FirebaseMessaging.getInstance().getToken().addOnCompleteListener(task -> {
+                String token = task.isSuccessful() ? task.getResult() : null;
+                if (token == null || !token.matches("[A-Za-z0-9_:-]{20,4096}")) {
+                    answer(reply, id, "off", null);
+                    return;
+                }
+                prefs().edit().putString("pushToken", token).apply();
+                answer(reply, id, "on", token);
+            });
+        } catch (RuntimeException e) { // Firebase not set up
+            answer(reply, id, "off", null);
         }
     }
 
@@ -140,17 +303,28 @@ public class MachineShellPlugin extends Plugin {
     private static final long FILE_BYTES = 25L * 1024 * 1024;
     private String filesOrigin;
 
-    /** The page's MachineFiles object, there for the saved Machine's origin only (from its next page on). */
+    /** The page's MachineFiles and MachinePhone objects, there for the saved Machine's origin only (from its next page on). */
     void ensureFiles() {
         String origin = machineOrigin();
         if (origin == null || origin.equals(filesOrigin) || !WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)) return;
         WebView webView = bridge.getWebView();
-        if (filesOrigin != null) WebViewCompat.removeWebMessageListener(webView, "MachineFiles");
+        if (filesOrigin != null) {
+            WebViewCompat.removeWebMessageListener(webView, "MachineFiles");
+            WebViewCompat.removeWebMessageListener(webView, "MachinePhone");
+        }
         filesOrigin = origin;
         WebViewCompat.addWebMessageListener(webView, "MachineFiles", Collections.singleton(origin), (view, message, source, mainFrame, reply) -> {
             if (!mainFrame || !isMachine(source) || message.getData() == null) return;
             String data = message.getData();
             new Thread(() -> saveFile(data)).start();
+        });
+        WebViewCompat.addWebMessageListener(webView, "MachinePhone", Collections.singleton(origin), (view, message, source, mainFrame, reply) -> {
+            if (!mainFrame || !isMachine(source) || message.getData() == null) return;
+            try {
+                phone(new JSONObject(message.getData()), reply);
+            } catch (JSONException e) {
+                // not a question
+            }
         });
     }
 
@@ -296,7 +470,7 @@ public class MachineShellPlugin extends Plugin {
         return "https://" + host + path;
     }
 
-    private SharedPreferences prefs() {
+    SharedPreferences prefs() {
         return getContext().getSharedPreferences(PREFS, Context.MODE_PRIVATE);
     }
 
@@ -390,7 +564,7 @@ public class MachineShellPlugin extends Plugin {
                 return;
             }
             prefs().edit().putString("machine", url).remove("connect").apply();
-        ensureFiles();
+            ensureFiles();
             call.resolve();
         });
     }
@@ -694,18 +868,20 @@ public class MachineShellPlugin extends Plugin {
         if (hostedHost(Uri.parse(saved).getHost()) && hostedHost(host) && !host.equals(Uri.parse(saved).getHost())) {
             saved = "https://" + host + "/"; // the hosted Machine moved to its owner's name: follow it
             prefs().edit().putString("machine", saved).apply();
-        ensureFiles();
+            ensureFiles();
         }
         if (!url.startsWith(saved) || url.contains("/_machine/")) return;
         try {
             JSONObject payload = new JSONObject();
             payload.put("base", saved);
+            JSONObject device = new JSONObject(); // for a push token, now (push) or later (machinePhone.pushOn)
+            device.put("platform", "fcm");
+            device.put("label", Build.MODEL == null ? "Android" : Build.MODEL);
+            payload.put("device", device);
             String token = prefs().getString("pushToken", null);
             if (token != null) { // inject.js hands it to the Machine once a week at most
-                JSONObject push = new JSONObject();
-                push.put("platform", "fcm");
+                JSONObject push = new JSONObject(device.toString());
                 push.put("token", token);
-                push.put("label", Build.MODEL == null ? "Android" : Build.MODEL);
                 payload.put("push", push);
             }
             if (pendingShare != null) {

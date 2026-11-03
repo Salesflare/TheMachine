@@ -121,6 +121,10 @@ function deviceRender(){const k=nudgeKind()||'',el=nudgeBox;if(el.dataset.kind!=
 // which says once when its notifications can't work (off The Machine Network).
 // The mobile app's push on this phone: {id} once the app handed the Machine its token (www/inject.js), {id:null}
 // before that, null outside the app
+// In the app: whether the phone will still ask about notifications (machinePhone, mobile/www/inject.js); checked again
+// when the owner comes back (from the phone's settings)
+let phonePush='';
+async function phonePushCheck(){const p=window.machinePhone;if(!p)return;let s='';try{s=await p.state('push')}catch{}if(s!==phonePush){phonePush=s;renderNotify()}}
 function phoneAppPush(){if(!document.documentElement.classList.contains('in-app'))return null;
  try{const k=JSON.parse(localStorage.getItem('machine-app-push')||'null');return {id:typeof k?.id==='string'?k.id:null}}catch{return {id:null}}}
 function phoneAppRender(){const p=state?.notify?.phone_app,inApp=document.documentElement.classList.contains('in-app');let row=$('#device-phone');
@@ -133,7 +137,8 @@ function phoneAppRender(){const p=state?.notify?.phone_app,inApp=document.docume
 deviceRows.app.onclick=e=>{const b=e.target.closest('[data-device]');if(b)deviceRun(b.dataset.device)};
 $('#push-toggle').onclick=async()=>{const b=$('#push-toggle');if(!pushOK){toast(iosHint);return}b.disabled=true;try{if(pushOn())await pushDisable();else await pushEnable()}finally{b.disabled=false}};
 setTimeout(deviceRender,Math.max(0,sessionStart+6e4-Date.now())+50);
-document.addEventListener('visibilitychange',()=>{if(!document.hidden)pushCheck()});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden){pushCheck();phonePushCheck()}});
+addEventListener('machinephone',()=>{phonePush='';renderNotify()});  // the app's part came in after this page drew
 pushCheck(true);
 // A notification opens its link in this page: only the part after # changes, so nothing reloads
 if(pushOK)navigator.serviceWorker.addEventListener('message',e=>{if(!e.data?.open)return;const u=new URL(e.data.open,location.href);
@@ -163,17 +168,23 @@ function renderNotify(){const n=state?.notify,box=$('#settings-notify');
  // not the web's, which a WebView doesn't have. It turns on with the phone's notifications for the app.
  const phone=phoneAppPush(),mine=phone&&(n.app_devices||[]).find(p=>p.id===phone.id);
  const on=phone?!!mine:pushOn(),can=!phone&&pushOK&&devicePush.perm!=='denied';
- const device=phone?(mine?'Push is on here.':!n.app_push_ready?'Notifications in the app need The Machine Network. The app works without them.':'To get notifications, allow them for The Machine in the phone’s settings.')
+ // The app: Turn on asks the phone; once it won't ask again, Open settings (the app's page there). An app from before: a line
+ const app=phone&&n.app_push_ready?(!window.machinePhone?(mine?'':'old'):phonePush==='blocked'?'blocked':mine&&phonePush!=='prompt'?'':'off'):'';
+ if(phone&&window.machinePhone&&!phonePush)phonePushCheck();
+ const device=phone?(app==='blocked'?'Notifications are off for The Machine.':app==='off'?'Push is off here.':mine?'Push is on here.':!n.app_push_ready?'Notifications in the app need The Machine Network. The app works without them.':app==='off'?'Push is off here.':'To get notifications, allow them for The Machine in the phone’s settings.')
   :on?'Push is on here.':!can?'This browser can’t show push here.':n.push_devices?t(['Push is off here, on for {} other device.','Push is off here, on for {} other devices.'],n.push_devices):'Push is off here.';
  // Phones with the mobile app (notify.py, app_push): each with Remove, which stops its notifications
  const phones=(n.app_devices||[]).filter(p=>p!==mine).map(p=>`<div><span class="grow"><strong>${esc(p.label)}</strong><small>Phone with the app</small></span><button type="button" data-app-remove="${esc(p.id)}">Remove</button></div>`).join('');
- const more=`<div><span class="grow"><strong>This device</strong><small>${esc(device)}</small></span>${mine?`<button type="button" class="ghost" data-app-test="${esc(mine.id)}">Send a test</button>`:''}${!on&&can?'<button type="button" data-device="push-on">Turn on</button>':''}</div>`+phones;
+ const more=`<div><span class="grow"><strong>This device</strong><small>${esc(device)}</small></span>${mine&&!app?`<button type="button" class="ghost" data-app-test="${esc(mine.id)}">Send a test</button>`:''}${!on&&can?'<button type="button" data-device="push-on">Turn on</button>':''}${app==='blocked'?'<button type="button" data-app-settings>Open settings</button>':app==='off'?'<button type="button" data-app-on>Turn on</button>':''}</div>`+phones;
  const m=$('#notify-more');if(m.dataset.html!==more){m.innerHTML=more;m.dataset.html=more}}
 $('#settings-notify').addEventListener('click',async e=>{const sw=e.target.closest('[data-notify-kind]');
  if(sw){const on=sw.getAttribute('aria-checked')!=='true';sw.disabled=true;
   try{state.notify=await notifyPost('notify_set',{kind:sw.dataset.notifyKind,channel:sw.dataset.notifyChannel,on});renderNotify()}catch(err){errCaught(err);toast(err.message,true)}finally{sw.disabled=false}return}
  const test=e.target.closest('[data-app-test]');if(test){test.disabled=true;
   try{await notifyPost('push_test',{app_device:test.dataset.appTest});toast('Test sent. It shows up in a moment.')}catch(err){errCaught(err);toast(err.message,true)}finally{test.disabled=false}return}
+ if(e.target.closest('[data-app-settings]')){window.machinePhone?.settings().catch(()=>{});return}
+ const ask=e.target.closest('[data-app-on]');if(ask){ask.disabled=true;
+  try{const r=await window.machinePhone.pushOn();if(r==='on'){phonePush='granted';toast('Push is on here.');await refresh();renderNotify()}else if(r==='blocked'){phonePush='blocked';renderNotify()}}catch(err){errCaught(err);toast(err.message,true)}finally{ask.disabled=false}return}
  const rm=e.target.closest('[data-app-remove]');if(rm){rm.disabled=true;
   try{await notifyPost('app_push_unregister',{id:rm.dataset.appRemove});state.notify.app_devices=(state.notify.app_devices||[]).filter(p=>p.id!==rm.dataset.appRemove);state.notify.push_devices=Math.max(0,(state.notify.push_devices||1)-1);toast('Removed');renderNotify()}catch(err){errCaught(err);toast(err.message,true)}finally{rm.disabled=false}return}
  const d=e.target.closest('[data-device]');if(d){d.disabled=true;try{await deviceRun(d.dataset.device)}finally{d.disabled=false;renderNotify()}return}

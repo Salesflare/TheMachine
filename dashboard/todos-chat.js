@@ -308,8 +308,17 @@ const MIC_MAX=120,MIC_HOLD=600;
 const micBtn=()=>html`<button type="button" class="chat-mic" data-mic aria-label="Talk" title="Talk">${raw(MIC)}</button>`;
 let mic=null,micPrepped=false,micDemo=false,micUse='';  // the one recording at a time; whether this page asked the Machine; the site's demo (it answers {demo:true}); what a tap does now (voice_view's use)
 const MIC_DEMO='Voice input works on your own Machine. This demo can’t listen.';
-// In the mobile app the phone asks once; after a No it's the phone's settings for the app, not a browser's
+// In the mobile app the phone asks itself (window.machinePhone, mobile/www/inject.js): a No there just stops, and only
+// when the phone won't ask again is there one line with Open settings. An app from before that: the old line.
 const micBlocked=()=>document.documentElement.classList.contains('in-app')?t('The microphone is blocked. Allow it for The Machine in the phone’s settings.'):t('The microphone is blocked. Allow it for this site in your browser’s settings.');
+async function micDenied(){const p=window.machinePhone;if(!p)return {msg:micBlocked()};let s='';try{s=await p.state('mic')}catch{}
+ return s==='blocked'?{msg:t('The microphone is off for The Machine.'),settings:true}:null}
+// A No for good comes back at once, while the finger that tapped the microphone is still down: that tap's click
+// doesn't open settings
+let settingsShown=0;
+const SETTINGS_BTN=cls=>{settingsShown=Date.now();return `<button type="button" class="${cls}" data-phone-settings>${esc(t('Open settings'))}</button>`};
+document.addEventListener('click',e=>{if(!e.target.closest('[data-phone-settings]'))return;e.preventDefault();e.stopPropagation();if(Date.now()-settingsShown<600)return;
+ window.machinePhone?.settings().catch(()=>{});micCancel();if(talk?.state==='error')talkEnd()},true);
 const micOk=()=>!!(window.isSecureContext&&navigator.mediaDevices?.getUserMedia&&window.MediaRecorder&&window.OfflineAudioContext);
 const micClock=s=>`${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`;
 const micPost=(action,args={},upload=false)=>request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf,...(upload?{'X-Upload':'voice'}:{})},body:JSON.stringify({action,args})});
@@ -337,7 +346,7 @@ function micPaint(v){if(!v.box.isConnected){const box=document.getElementById(v.
  // Drawn once per state, so a button never changes under a finger; the clock, the level and the progress update in place
  const key=v.state+'|'+(v.error||'')+'|'+!!v.wav+'|'+!!v.capped;
  if(bar.dataset.k!==key){bar.dataset.k=key;bar.innerHTML=rec?`${x}<span class="mic-live"><i class="mic-dot" aria-hidden="true"></i><span class="mic-time">0:00</span><span class="mic-wave" aria-hidden="true">${'<i></i>'.repeat(v.levels.length)}</span><span class="mic-hint">${esc(t(v.state==='start'?'Starting the microphone…':v.browser?'Your browser writes this one down.':'Listening…'))}</span></span><button type="button" class="chat-send mic-done" data-mic-stop aria-label="Done" title="Done"${v.state==='start'?' disabled':''}>${CHECK}</button>`
-  :v.state==='error'?`${x}<span class="mic-live mic-err">${esc(v.error)}</span>${v.wav?`<button type="button" class="mic-retry" data-mic-retry>${esc(t('Try again'))}</button>`:''}`
+  :v.state==='error'?`${x}<span class="mic-live mic-err">${esc(v.error)}</span>${v.wav?`<button type="button" class="mic-retry" data-mic-retry>${esc(t('Try again'))}</button>`:v.settings?SETTINGS_BTN('mic-retry'):''}`
   :`${x}<span class="mic-live"><i class="mic-spin" aria-hidden="true"></i><span class="mic-hint"></span></span><span class="mic-prog" aria-hidden="true"${v.state==='prep'?'':' hidden'}><i></i></span>`}
  if(rec){const left=MIC_MAX-v.secs,near=v.state==='rec'&&left<=15,live=bar.querySelector('.mic-live');live.classList.toggle('near',near);
   bar.querySelector('.mic-time').textContent=near?t('{} left',micClock(Math.ceil(left))):micClock(v.secs);
@@ -355,8 +364,9 @@ async function micStart(btn,down){if(mic)return;const box=btn.closest('.chat-box
  if(micDemo){micFail(v,t(MIC_DEMO));return}
  micPaint(v);const prep=micPrep();
  let stream;try{stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,channelCount:1}})}
- catch(e){await prep;if(mic!==v)return;micFail(v,micDemo?t(MIC_DEMO):e?.name==='NotAllowedError'||e?.name==='SecurityError'?micBlocked()
-  :e?.name==='NotFoundError'||e?.name==='OverconstrainedError'?t('No microphone found. Connect one and try again.'):t('The microphone couldn’t start. Try again.'));return}
+ catch(e){await prep;if(mic!==v)return;const no=!micDemo&&(e?.name==='NotAllowedError'||e?.name==='SecurityError');
+  if(no){const d=await micDenied();if(mic!==v)return;if(!d){micCancel();return}v.settings=!!d.settings;micFail(v,d.msg);return}
+  micFail(v,micDemo?t(MIC_DEMO):e?.name==='NotFoundError'||e?.name==='OverconstrainedError'?t('No microphone found. Connect one and try again.'):t('The microphone couldn’t start. Try again.'));return}
  if(mic!==v){stream.getTracks().forEach(x=>x.stop());return}  // canceled while the browser asked
  await prep;if(mic!==v){stream.getTracks().forEach(x=>x.stop());return}
  if(micUse==='browser'&&micSR()){try{micBrowser(v)}catch{v.browser=false}
@@ -532,7 +542,7 @@ function talkPaint(){const v=talk;if(!v)return;const box=v.main&&talkViewOn()?$(
  if(!box&&!host.dataset.ro){host.dataset.ro=1;new ResizeObserver(()=>document.body.style.setProperty('--talk-dock-h',host.offsetHeight+'px')).observe(host)}
  const key=v.state+'|'+v.muted+'|'+(v.error||'');
  if(bar.dataset.k!==key){bar.dataset.k=key;
-  bar.innerHTML=v.state==='error'?`<div class="talk-bar talk-err" role="alert"><span class="grow">${esc(v.error)}</span><button type="button" class="talk-end" data-talk-close>${esc(t('Close'))}</button></div>`
+  bar.innerHTML=v.state==='error'?`<div class="talk-bar talk-err" role="alert"><span class="grow">${esc(v.error)}</span>${v.settings?SETTINGS_BTN('talk-end'):''}<button type="button" class="talk-end" data-talk-close>${esc(t('Close'))}</button></div>`
    :`<div class="talk-bar" role="status"><span class="talk-live"><i class="talk-dot${v.state==='live'?'':' wait'}" aria-hidden="true"></i><strong>${esc(t(v.state==='live'?'Live':'Connecting…'))}</strong><span class="talk-time"></span></span><span class="talk-hint"></span>`
    +`<button type="button" class="talk-mute" data-talk-mute aria-pressed="${v.muted}"${v.state==='live'?'':' disabled'}>${esc(t(v.muted?'Unmute':'Mute'))}</button><button type="button" class="talk-end" data-talk-end>${esc(t('End'))}</button></div>`
    +(v.per_use?`<small class="talk-cost">${esc(t('OpenAI charges your API key per minute of talk.'))}</small>`:'')}
@@ -561,8 +571,9 @@ function talkEnd(){const v=talk;if(!v)return;talk=null;talkToastClear();talkClos
 async function talkStart(main,first=null){const s=main?null:chatOpen();if(talk||!main&&!s||main&&!talkOk())return;talkToastClear();micCancel();
  const v=talk={main:!!main,sid:s?.id||null,state:'start',muted:false,secs:0,limit:600,warn:540,per_use:false,said:new Set(),posting:Promise.resolve(),queue:[],relay:null,heard:{},responding:false,tell:[],pending:new Set(),dropped:new Set(),respFor:{},after:{},known:new Set(talkNeeds().map(x=>x.id)),prep:new Set(),sent:null,last:null,told:new Set(),lastUser:''};talkPaint();talkSide();talkViewPaint();
  try{v.stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,channelCount:1}})}
- catch(e){talkFail(v,e?.name==='NotAllowedError'||e?.name==='SecurityError'?micBlocked()
-  :e?.name==='NotFoundError'||e?.name==='OverconstrainedError'?t('No microphone found. Connect one and try again.'):t('The microphone couldn’t start. Try again.'));return}
+ catch(e){if(e?.name==='NotAllowedError'||e?.name==='SecurityError'){const d=await micDenied();if(talk!==v)return;if(!d){talkEnd();return}
+   v.settings=!!d.settings;talkFail(v,d.msg);return}
+  talkFail(v,e?.name==='NotFoundError'||e?.name==='OverconstrainedError'?t('No microphone found. Connect one and try again.'):t('The microphone couldn’t start. Try again.'));return}
  if(talk!==v){v.stream.getTracks().forEach(x=>x.stop());return}
  try{const r=await micPost('talk_start',{...(main?{main:true}:{suggestion_id:s.id}),languages:[...(navigator.languages||[])].slice(0,8)});if(talk!==v){micPost('talk_end',{id:r.id}).catch(()=>{});return}
   Object.assign(v,{id:r.id,limit:r.limit||600,warn:r.warn||540,per_use:!!r.per_use,tools:r.tools||[],instructions:r.instructions||'',note:r.ask_note||'',notes:r.notes||{},voice:r.voice||'',speed:r.speed||0,turn:r.turn||null,noise:r.noise||null,transcription:r.transcription||null,transcriptionNext:r.transcription_next||null,languages:r.languages||['en']});talkPaint();

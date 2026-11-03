@@ -1,8 +1,10 @@
+import AVFoundation
 import AuthenticationServices
 import Capacitor
 import CryptoKit
 import QuickLook
 import UIKit
+import UserNotifications
 import WebKit
 
 /// The app's whole native part on iOS, the same as android/.../MachineShellPlugin.java (mobile/README.md): where the
@@ -49,6 +51,7 @@ public class MachineShellPlugin: CAPPlugin, CAPBridgedPlugin, ASWebAuthenticatio
             self.mediaGate = MediaGate(inner: webView.uiDelegate, plugin: self)
             webView.uiDelegate = self.mediaGate
             webView.configuration.userContentController.add(FilesHandler(plugin: self), name: "machineFiles")
+            webView.configuration.userContentController.addScriptMessageHandler(PhoneHandler(plugin: self), contentWorld: .page, name: "machinePhone")
         }
     }
 
@@ -233,6 +236,81 @@ public class MachineShellPlugin: CAPPlugin, CAPBridgedPlugin, ASWebAuthenticatio
         call.resolve()
     }
 
+    // MARK: the phone's own questions, for the Machine's page (www/inject.js, machinePhone): the microphone's and
+    // notifications' state, notifications on (the phone's own question, then the push token) and the app's Settings
+
+    private var pushDone: (([String: Any]) -> Void)?
+    private var pushWatch: [NSObjectProtocol] = []
+
+    func phone(_ ask: String, done: @escaping ([String: Any]) -> Void) {
+        switch ask {
+        case "mic":
+            switch AVCaptureDevice.authorizationStatus(for: .audio) {
+            case .authorized: done(["state": "granted"])
+            case .denied, .restricted: done(["state": "blocked"])  // iOS asks once; then only Settings
+            default: done(["state": "prompt"])
+            }
+        case "push":
+            UNUserNotificationCenter.current().getNotificationSettings { s in
+                DispatchQueue.main.async { done(["state": MachineShellPlugin.pushState(s.authorizationStatus)]) }
+            }
+        case "settings":
+            if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) }
+            done(["state": "ok"])
+        case "pushOn":
+            UNUserNotificationCenter.current().getNotificationSettings { s in
+                DispatchQueue.main.async {
+                    switch MachineShellPlugin.pushState(s.authorizationStatus) {
+                    case "granted": self.pushRegister(done)
+                    case "blocked": done(["state": "blocked"])
+                    default:
+                        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, _ in
+                            DispatchQueue.main.async { if granted { self.pushRegister(done) } else { done(["state": "blocked"]) } }
+                        }
+                    }
+                }
+            }
+        default:
+            done(["state": "off"])
+        }
+    }
+
+    private static func pushState(_ s: UNAuthorizationStatus) -> String {
+        switch s {
+        case .authorized, .provisional, .ephemeral: return "granted"
+        case .denied: return "blocked"
+        default: return "prompt"
+        }
+    }
+
+    /// The push token from the AppDelegate (Capacitor's notifications), kept and handed to the page.
+    private func pushRegister(_ done: @escaping ([String: Any]) -> Void) {
+        pushFinish(["state": "off"])  // one at a time
+        pushDone = done
+        let center = NotificationCenter.default
+        pushWatch = [
+            center.addObserver(forName: .capacitorDidRegisterForRemoteNotifications, object: nil, queue: .main) { [weak self] note in
+                guard let data = note.object as? Data else { return }
+                let token = data.map { String(format: "%02x", $0) }.joined()
+                self?.store.set(token, forKey: "pushToken")
+                self?.pushFinish(["state": "on", "token": token])
+            },
+            center.addObserver(forName: .capacitorDidFailToRegisterForRemoteNotifications, object: nil, queue: .main) { [weak self] _ in
+                self?.pushFinish(["state": "off"])
+            },
+        ]
+        UIApplication.shared.registerForRemoteNotifications()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 10) { [weak self] in self?.pushFinish(["state": "off"]) }
+    }
+
+    private func pushFinish(_ answer: [String: Any]) {
+        pushWatch.forEach { NotificationCenter.default.removeObserver($0) }
+        pushWatch = []
+        let done = pushDone
+        pushDone = nil
+        done?(answer)
+    }
+
     @objc func signIn(_ call: CAPPluginCall) {
         DispatchQueue.main.async {
             guard self.onStartPage else { return call.reject("not allowed") }
@@ -346,14 +424,15 @@ public class MachineShellPlugin: CAPPlugin, CAPBridgedPlugin, ASWebAuthenticatio
             store.set(saved, forKey: "machine")
         }
         guard url.absoluteString.hasPrefix(saved), !url.path.hasPrefix("/_machine/") else { return }
-        var payload: [String: Any] = ["base": saved, "listen": true]
+        #if DEBUG
+        let sandbox = true
+        #else
+        let sandbox = false
+        #endif
+        let device: [String: Any] = ["platform": "apns", "sandbox": sandbox, "label": UIDevice.current.model]
+        var payload: [String: Any] = ["base": saved, "listen": true, "device": device]  // device: for a token now or later
         if let token = store.string(forKey: "pushToken") {
-            #if DEBUG
-            let sandbox = true
-            #else
-            let sandbox = false
-            #endif
-            payload["push"] = ["platform": "apns", "token": token, "sandbox": sandbox, "label": UIDevice.current.model]
+            payload["push"] = device.merging(["token": token]) { $1 }
         }
         if let share = pendingShare {
             payload["share"] = share
@@ -406,6 +485,20 @@ private final class FilesHandler: NSObject, WKScriptMessageHandler {
     func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
         guard message.frameInfo.isMainFrame, plugin?.isMachine(message.frameInfo.securityOrigin) == true else { return }
         plugin?.saveFile(message.body)
+    }
+}
+
+/// window.webkit.messageHandlers.machinePhone: the Machine's own page asks; the answer comes back to it.
+private final class PhoneHandler: NSObject, WKScriptMessageHandlerWithReply {
+    weak var plugin: MachineShellPlugin?
+
+    init(plugin: MachineShellPlugin) { self.plugin = plugin }
+
+    func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage,
+                               replyHandler: @escaping (Any?, String?) -> Void) {
+        guard message.frameInfo.isMainFrame, let plugin = plugin, plugin.isMachine(message.frameInfo.securityOrigin),
+              let body = message.body as? [String: Any], let ask = body["ask"] as? String else { return replyHandler(nil, "not allowed") }
+        plugin.phone(ask) { replyHandler($0, nil) }
     }
 }
 

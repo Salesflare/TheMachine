@@ -1,5 +1,6 @@
 package computer.themachine.app;
 
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.webkit.WebView;
 import androidx.activity.OnBackPressedCallback;
@@ -21,5 +22,14 @@ public class MainActivity extends BridgeActivity {
                 else moveTaskToBack(true);
             }
         });
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == MachineShellPlugin.ASK_PUSH) {
+            boolean granted = grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED;
+            ((MachineShellPlugin) bridge.getPlugin("MachineShell").getInstance()).pushAnswered(granted);
+        }
     }
 }

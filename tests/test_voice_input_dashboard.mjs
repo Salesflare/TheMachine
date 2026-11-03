@@ -165,7 +165,16 @@ try{
     assert.match(await page.locator(box+' .mic-err').textContent(),text);
     assert.ok(await page.evaluate(()=>{const b=document.querySelector('.chat-compose .mic-bar'),e=b.querySelector('.mic-err').getBoundingClientRect(),r=b.getBoundingClientRect();return e.top>=r.top&&e.bottom<=r.bottom}),'the whole message shows');if(mode==='denied')await shot('6-blocked');
     await tap(box+' [data-mic-cancel]');await page.waitForSelector(box+':not(.mic-on)')}
-   await page.evaluate(()=>{window.__mic.mode='ok'});
+   // In the phone app the phone asks: a No just closes it; a No for good is one line with Open settings
+   await page.evaluate(()=>{window.__mic.mode='denied';window.__phone={mic:'prompt',opened:0,asked:0};
+    window.machinePhone={state:async()=>{window.__phone.asked++;return window.__phone.mic},settings:async()=>{window.__phone.opened++}}});
+   await tap(mic);await page.waitForFunction(()=>window.__phone.asked===1&&!document.querySelector('.chat-compose .chat-box.mic-on'));
+   await page.evaluate(()=>{window.__phone.mic='blocked'});await tap(mic);await page.waitForSelector(box+' .mic-err');
+   assert.equal(await page.locator(box+' .mic-err').textContent(),'The microphone is off for The Machine.');
+   assert.equal(await page.evaluate(()=>window.__phone.opened),0,'the tap on the microphone doesn\'t open settings');
+   await page.waitForTimeout(700);await shot('6b-blocked-app');await tap(box+' [data-phone-settings]');
+   assert.equal(await page.evaluate(()=>window.__phone.opened),1);await page.waitForSelector(box+':not(.mic-on)');
+   await page.evaluate(()=>{delete window.machinePhone;window.__mic.mode='ok'});
 
    // The 2-minute limit: the last 15 seconds count down, then it stops by itself and writes what it has
    await page.locator('#chat-input').fill('');
