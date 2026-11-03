@@ -137,6 +137,41 @@ class HandoffMail(unittest.TestCase):
         self.assertIn('The draft is ready to send:\nTo: sam@client.example\nSubject: Pricing for 40 seats\n\nHi Sam,\n\nHere is the pricing.', body)
         self.assertIn('It would be great to have it by Tuesday, November 3.', body)
 
+    def intercom_card(self, accounts):
+        """A Work to-do from an Intercom conversation: its source has no mailbox to send from."""
+        self.app.config = {**tr.CONFIG, 'accounts': accounts}
+        chat = {'account_id': 'support', 'source_id': 'conv-1', 'kind': 'intercom.conversation', 'occurred_at': tr.NOW.isoformat(),
+                'title': 'Intercom from a customer', 'body': 'The invite link lets anyone in.', 'deleted': False,
+                'metadata': {'conversation_id': '1', 'contact_email': 'sam@client.example'}}
+        self.store.commit_page('support', {}, [chat])
+        with self.store.connect() as db:
+            event = db.execute("SELECT id FROM events WHERE source_id='conv-1'").fetchone()[0]
+        return self.store.suggest('k-intercom', 'Fix the invite bypass', 'A customer found it.', [event])['id']
+
+    def test_a_to_do_from_intercom_goes_from_the_owners_mailbox_for_its_area(self):
+        support = {'id': 'support', 'service': 'intercom', 'transport': 'api', 'boundary': 'work:Acme Support'}
+        other = {'id': 'other', 'email': 'owner@other-co.example', 'service': 'gmail', 'transport': 'gog', 'boundary': 'work:Other'}
+        home = {**tr.tf.HOME, 'transport': 'gog'}
+        # Its company has no mailbox (the workspace is named apart): a Work mailbox, never the personal one listed first
+        card = self.intercom_card([home, support, tr.WORK])
+        self.assertTrue(self.parts(card)['mailbox'])
+        self.assertEqual((action := self.hand(card, take=False))['account_id'], 'work')
+        self.assertEqual(action['to'], ['Kim@Other.example'])
+        # The same company's mailbox before another company's
+        same = {**support, 'boundary': 'work:Other'}
+        self.assertEqual(handoff_mail.next_actions.sending_account({'accounts': [home, tr.WORK, other, same]}, ['support'])['id'], 'other')
+        # A Personal to-do: the personal mailbox; no Work or Personal one at all: the owner's first mailbox
+        accounts = [tr.WORK, {**home, 'id': 'home2'}, {**support, 'boundary': 'personal:Me'}]
+        self.assertEqual(handoff_mail.next_actions.sending_account({'accounts': accounts}, ['support'])['id'], 'home2')
+        self.assertEqual(handoff_mail.next_actions.sending_account({'accounts': [tr.WORK, support]}, ['nothing'])['id'], 'work')
+
+    def test_without_any_mailbox_the_sheet_says_so_instead_of_failing(self):
+        card = self.intercom_card([{'id': 'support', 'service': 'intercom', 'transport': 'api', 'boundary': 'work:Acme'}])
+        self.assertFalse(self.parts(card)['mailbox'])
+        with self.assertRaisesRegex(ValueError, '^No Gmail or Outlook account to send it from. Connect one in Connections.$'):
+            self.hand(card)
+        self.assertEqual(self.card_row(card)['next_action'], None)
+
     def test_the_take_line_is_on_by_default_and_turns_off_in_settings(self):
         card = self.handed_card()
         self.assertTrue(self.parts(card)['take'])

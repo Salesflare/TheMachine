@@ -44,4 +44,6 @@ Choisissez **Par e-mail** : votre Machine rédige un e-mail que vous envoyez. Pe
 
 Uniquement pour les tâches Travail. Cochez ce qui va dans l’e-mail : quelques lignes sur la tâche, son brouillon prêt, ses liens et fichiers. Seul ce que votre Team Graph partage avec l’équipe est proposé : le contenu Perso et Vous seul reste en dehors. **Préparer l’e-mail** place l’e-mail sur la tâche : lisez-le, puis envoyez-le depuis votre propre boîte comme tout e-mail. Aucun pixel de suivi.
 
+Une tâche venue d’Intercom ou de Slack n’a pas de boîte à elle : son e-mail part de votre boîte Travail.
+
 La tâche indique alors "Transféré à <nom> par e-mail" et le suit comme une promesse jusqu’à ce que la personne réponde que c’est fait, ou que vous la marquiez faite. L’e-mail se termine par "Reprenez ceci dans votre propre Machine" : en s’inscrivant par ce lien, la personne peut rejoindre votre Fleet et la tâche passe sur sa Machine comme un transfert normal. Désactivez cette ligne dans **Paramètres**, sous Fleet.

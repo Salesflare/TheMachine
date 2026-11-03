@@ -611,6 +611,23 @@ class Requests(unittest.TestCase):
             with self.subTest(bad=bad), self.assertRaises(ValueError):
                 a.next_actions.validate({'kind': 'handoff', 'to_email': 'kim@acme.example', 'to_name': 'Kim Doe', 'body': 'Take it', **bad}, CONFIG, ['work'])
 
+    def test_a_handoff_message_is_whole_sentences_the_ask_its_own(self):
+        # What they need to know, then the ask as its own question: the run is told so, and a message that runs on
+        # without its closing mark (written like a quick chat) goes back to the run to fix before it is saved.
+        self.with_kim()
+        lines = self.fleet.lines(self.ready_card([]))
+        self.assertIn('what they need to know ends with a period, and the ask is a sentence of its own that ends with a question mark', lines)
+        def problems(body):
+            action = a.next_actions.validate({'kind': 'handoff', 'to_email': 'kim@acme.example', 'to_name': 'Kim Doe', 'body': body}, CONFIG, ['work'])
+            return [p for p in a.next_actions.check(action) if 'handoff message' in p]
+        run_on = ('security triage confirmed a P1: a signup against a caller-controlled server can claim an invited address without '
+                  'mailbox access or the invite token can you coordinate an urgent fix')
+        self.assertEqual(len(problems(run_on)), 1)
+        for fine in (self.HANDOFF_TEXT, 'Security triage confirmed a P1. Can you coordinate an urgent fix?', 'Please take the Acme renewal.',
+                     'The tracker has it: https://tracker.example/1', 'Kim said “let’s ship it.”', 'Ship it by **Friday**.'):
+            with self.subTest(fine=fine):
+                self.assertEqual(problems(fine), [])
+
     def test_a_handed_off_card_leaves_ready_and_waits_until_their_machine_answers(self):
         self.with_kim()
         self.fleet.close_card = lambda card_id, why, key: self.store.decide_handoff(card_id, 'complete', why, key, key.removeprefix('fleet-handoff-'))
