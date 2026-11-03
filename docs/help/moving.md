@@ -9,7 +9,7 @@ order: 5
 ---
 ## Export
 
-1. On your account page, open Data and press **Export everything**.
+1. In **Settings** › **Account**, press **Export** next to Your data, then **Export everything**.
 2. Optionally set a passphrase to take your keys along. Without one, the export gets a code and those sources need connecting again.
 3. Press **Download**. The file comes straight from your Machine, which deletes it after 24 hours, or at once with **Delete it now**.
 

@@ -59,6 +59,6 @@ En un avión o un tren el panel sigue funcionando. Una barra arriba dice **Sin c
 
 ## Más dispositivos
 
-Inicia sesión en cada dispositivo de la misma forma. En una Machine alojada, una llave de acceso por dispositivo hace más rápido iniciar sesión: añade una en Seguridad, en la página de tu cuenta.
+Inicia sesión en cada dispositivo de la misma forma. En una Machine alojada, una llave de acceso por dispositivo hace más rápido iniciar sesión: en **Ajustes** › **Cuenta**, pulsa **Gestionar** junto a Inicio de sesión.
 
 Para leer las notificaciones de tu teléfono Android como fuente, consulta [Notificaciones de Android](android.md).

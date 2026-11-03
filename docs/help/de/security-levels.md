@@ -26,7 +26,7 @@ Eine Stufe ist ein Ausgangspunkt. Änderst du danach eine Einstellung, zeigt die
 
 ## Die Stufe einer Work Fleet
 
-Der Owner der Fleet oder ein Admin wählt sie auf der Kontoseite, unter Fleet-Einstellungen. Alle in der Fleet sehen sie. Bei Vorsichtig gilt:
+Der Owner der Fleet oder ein Admin wählt sie unter Fleet-Einstellungen: Tippe in **Einstellungen** › **Konto** auf **Fleet**. Alle in der Fleet sehen sie. Bei Vorsichtig gilt:
 
 - Antworten an Teammitglieder warten auf dein OK, ohne Namen, und nur zu Personen aus deinen Arbeitskonten.
 - Vorstellungen und Übergaben warten ebenfalls auf dich.

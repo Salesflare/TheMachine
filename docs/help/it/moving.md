@@ -9,7 +9,7 @@ order: 5
 ---
 ## Esporta
 
-1. Nella pagina del tuo account, apri Dati e premi **Esporta tutto**.
+1. In **Impostazioni** › **Account**, premi **Esporta** accanto a I tuoi dati e poi **Esporta tutto**.
 2. Se vuoi, imposta una passphrase per portare con te le chiavi. Senza, l'esportazione riceve un codice e quelle fonti vanno ricollegate.
 3. Premi **Scarica**. Il file arriva direttamente dalla tua Machine, che lo elimina dopo 24 ore, o subito con **Eliminalo ora**.
 

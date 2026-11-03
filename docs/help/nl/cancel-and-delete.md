@@ -9,7 +9,7 @@ order: 2
 ---
 ## Opzeggen
 
-1. Open Facturatie op je accountpagina en druk op **Abonnement opzeggen**.
+1. Druk in **Instellingen** › **Account** op **Abonnement opzeggen** en dan nog eens op **Abonnement opzeggen**.
 2. Bevestig. Het loopt af aan het einde van de maand die je betaald hebt. Zeg je op tijdens de gratis dagen, dan betaal je niets.
 
 Van gedachten veranderd? **Mijn abonnement houden** draait het terug. In de EU kun je je ook binnen 14 dagen terugtrekken met **Hier het contract herroepen**.
@@ -20,6 +20,6 @@ Ze worden {grace_days} dagen bewaard zodat je ze kunt exporteren, en daarna verw
 
 ## Alles nu verwijderen
 
-Open Gegevens op je accountpagina, typ DELETE of je e-mailadres en druk op **Nu alles wissen**. Dat beëindigt je abonnement, trekt de toegang tot Google en Microsoft in en verwijdert je Machine, de back-ups en al zijn gegevens. Dit kun je niet ongedaan maken.
+Druk in **Instellingen** › **Account** op **Account verwijderen**, typ DELETE of je e-mailadres en druk op **Nu alles wissen**. Dat beëindigt je abonnement, trekt de toegang tot Google en Microsoft in en verwijdert je Machine, de back-ups en al zijn gegevens. Dit kun je niet ongedaan maken.
 
 Zonder gehoste Machine heet de knop **Mijn account verwijderen**. Een Machine op je eigen computer blijft zoals hij is.

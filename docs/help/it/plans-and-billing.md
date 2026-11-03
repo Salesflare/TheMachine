@@ -25,6 +25,6 @@ I prezzi in hosting, per posto di lavoro e per la Fleet di famiglia sono prezzi 
 
 ## Carta e fatture
 
-Nella pagina del tuo account, apri Fatturazione e premi **Gestisci abbonamento**. Si apre Stripe, dove cambi la carta e scarichi le fatture. I dati della tua carta non arrivano mai a noi.
+In **Impostazioni** › **Account**, premi **Fatturazione** e poi **Gestisci abbonamento**. Si apre Stripe, dove cambi la carta e scarichi le fatture. I dati della tua carta non arrivano mai a noi.
 
-Cambia la dimensione della tua Machine quando vuoi dalla pagina del tuo account.
+Cambia la dimensione della tua Machine quando vuoi: in **Impostazioni** › **Account**, premi **Cambia piano**.

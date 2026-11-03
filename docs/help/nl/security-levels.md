@@ -26,7 +26,7 @@ Een niveau is een vertrekpunt. Wijzig je daarna een instelling, dan toont het ni
 
 ## Het niveau van een Werk-Fleet
 
-De eigenaar van de Fleet of een beheerder kiest het op de accountpagina, onder de instellingen van de Fleet. Iedereen in de Fleet ziet het. Staat het op Voorzichtig:
+De eigenaar van de Fleet of een beheerder kiest het onder de instellingen van de Fleet: druk in **Instellingen** › **Account** op **Fleet**. Iedereen in de Fleet ziet het. Staat het op Voorzichtig:
 
 - Antwoorden aan teamgenoten wachten op je OK, zonder namen, en alleen over mensen uit je werkaccounts.
 - Introducties en overdrachten wachten ook op jou.

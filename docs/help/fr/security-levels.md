@@ -26,7 +26,7 @@ Un niveau est un point de départ. Changez un paramètre ensuite, et le niveau a
 
 ## Le niveau d’une Fleet Travail
 
-Le propriétaire ou un admin de la Fleet le choisit sur la page du compte, sous les paramètres de la Fleet. Tous les membres de la Fleet le voient. Quand il est sur Prudent :
+Le propriétaire ou un admin de la Fleet le choisit dans les paramètres de la Fleet : dans **Paramètres** › **Compte**, appuyez sur **Fleet**. Tous les membres de la Fleet le voient. Quand il est sur Prudent :
 
 - Les réponses aux collègues attendent votre accord, sans noms, et seulement sur des personnes de vos comptes de travail.
 - Les présentations et les transferts vous attendent aussi.

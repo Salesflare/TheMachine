@@ -8,7 +8,7 @@ order: 1
 ---
 Open **Settings** with the gear at the top. Its tabs:
 
-- **Account**: **Your addresses**, the ones that count as you, with where each came from. Your plan in short, buttons to your account pages, and **Sign out**. See [Plans and billing](plans-and-billing.md).
+- **Account**: **Your addresses**, the ones that count as you, with where each came from, and **Sign out**. On a hosted Machine also your plan, invoices, Machine, Fleet, address, friends, sign-in and data, each with its button. See [Plans and billing](plans-and-billing.md).
 - **General**: language and region, voice input, this device, your Machine's browser, your Fleet and your account.
 - **Security**: Standard or Careful, and the settings they set. See [Security levels](security-levels.md). **Support access** too, while it's on: see [Get support](get-support.md#support-access).
 - **Activity**: everything The Machine did for you, newest first. See [Activity](activity.md).
@@ -28,7 +28,6 @@ A tab with nothing to show is hidden.
 - **Voice input**: how what you say becomes text, and the voice of Talk live. See [Voice input](voice-input.md) and [Talk live](talk-live.md).
 - **Open the Machine’s browser ↗**: the browser your Machine uses for sites like LinkedIn.
 - **Fleet rules**: see [Sharing rules](sharing-rules.md).
-- **Account**: **Open account** and **Sign out**, on a hosted Machine.
 
 ## On this Machine
 

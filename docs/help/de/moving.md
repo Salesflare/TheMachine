@@ -9,7 +9,7 @@ order: 5
 ---
 ## Exportieren
 
-1. Öffne auf deiner Kontoseite Daten und tippe auf **Alles exportieren**.
+1. Tippe in **Einstellungen** › **Konto** bei Deine Daten auf **Exportieren** und dann auf **Alles exportieren**.
 2. Lege optional eine Passphrase fest, um deine Schlüssel mitzunehmen. Ohne bekommt der Export einen Code, und diese Quellen müssen neu verbunden werden.
 3. Tippe auf **Herunterladen**. Die Datei kommt direkt von deiner Machine, die sie nach 24 Stunden löscht, oder sofort mit **Jetzt löschen**.
 

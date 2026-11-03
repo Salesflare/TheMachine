@@ -274,6 +274,7 @@
  "Added. People there are your colleagues now.": "Added. People there are your colleagues now.",
  "Added. {}.": "Added. {}.",
  "Added: {}": "Added: {}",
+ "Address": "Address",
  "Address for AIs": "Address for AIs",
  "Addresses ©": "Addresses ©",
  "Adjusted: {}.": "Adjusted: {}.",
@@ -950,6 +951,7 @@
  "Declined. They are not told.": "Declined. They are not told.",
  "Declined: {}'s friend request. They are not told.": "Declined: {}'s friend request. They are not told.",
  "Delete": "Delete",
+ "Delete account": "Delete account",
  "Delete board": "Delete board",
  "Delete event": "Delete event",
  "Delete from": "Delete from",
@@ -1156,6 +1158,8 @@
  "Experimental": "Experimental",
  "Expired": "Expired",
  "Expires in {}": "Expires in {}",
+ "Export": "Export",
+ "Export everything to run it on your own computer.": "Export everything to run it on your own computer.",
  "Extend…": "Extend…",
  "Extra high thinking": "Extra high thinking",
  "Fact added": "Fact added",
@@ -1329,6 +1333,7 @@
  "Friend request sent. You’re connected once they accept.": "Friend request sent. You’re connected once they accept.",
  "Friend: {}": "Friend: {}",
  "Friends": "Friends",
+ "Friends add you by your username.": "Friends add you by your username.",
  "Friends now": "Friends now",
  "From": "From",
  "From ChatGPT": "From ChatGPT",
@@ -3264,6 +3269,7 @@
  "Reply posted on X.": "Reply posted on X.",
  "Replying to": "Replying to",
  "Report a bug": "Report a bug",
+ "Report a problem": "Report a problem",
  "Report this bug": "Report this bug",
  "Request failed": "Request failed",
  "Request sent. It waits until they accept.": "Request sent. It waits until they accept.",
@@ -4650,6 +4656,7 @@
  "Turned on in OpenClaw.": "Turned on in OpenClaw.",
  "Turning off keeps your brain and its pages.": "Turning off keeps your brain and its pages.",
  "Two live conversations are already open. End one first.": "Two live conversations are already open. End one first.",
+ "Two-factor on": "Two-factor on",
  "Type": "Type",
  "Type a domain, like acme.com": "Type a domain, like acme.com",
  "Type a question first.": "Type a question first.",
@@ -5041,6 +5048,7 @@
  "With {} · waiting": "With {} · waiting",
  "With {}:": "With {}:",
  "Withdraw": "Withdraw",
+ "Withdraw from contract": "Withdraw from contract",
  "Withdraw this learning? The team no longer sees it.": "Withdraw this learning? The team no longer sees it.",
  "Withdrawal cleanup will be retried": "Withdrawal cleanup will be retried",
  "Withdrawing needs The Machine Network.": "Withdrawing needs The Machine Network.",
@@ -5233,6 +5241,7 @@
  "Your company’s domains": "Your company’s domains",
  "Your connections": "Your connections",
  "Your contacts with a Machine": "Your contacts with a Machine",
+ "Your data": "Your data",
  "Your direct messages, mentions and the threads you are in.": "Your direct messages, mentions and the threads you are in.",
  "Your draft": "Your draft",
  "Your edits stay, also when their details are looked up again. Empty a field to use the looked-up value again.": "Your edits stay, also when their details are looked up again. Empty a field to use the looked-up value again.",
@@ -5240,6 +5249,7 @@
  "Your email is never added automatically": "Your email is never added automatically",
  "Your email is ready on the to-do. Read it, then send it yourself.": "Your email is ready on the to-do. Read it, then send it yourself.",
  "Your email, what comes in and what you send.": "Your email, what comes in and what you send.",
+ "Your export is ready until {}.": "Your export is ready until {}.",
  "Your first to-dos show up here": "Your first to-dos show up here",
  "Your follow-up": "Your follow-up",
  "Your friends": "Your friends",
@@ -5823,6 +5833,10 @@
  },
  "{} for {} did not check out ({})": "{} for {} did not check out ({})",
  "{} found": "{} found",
+ "{} friend requests waiting": {
+  "one": "{} friend request waiting",
+  "other": "{} friend requests waiting"
+ },
  "{} from your history to review": "{} from your history to review",
  "{} from {} (a source)": "{} from {}",
  "{} from {} moved to {}.": "{} from {} moved to {}.",
@@ -5992,9 +6006,17 @@
   "other": "{} pages"
  },
  "{} pages, {} kept as you edited them": "{} pages, {} kept as you edited them",
+ "{} passkeys": {
+  "one": "{} passkey",
+  "other": "{} passkeys"
+ },
  "{} people": {
   "one": "{} person",
   "other": "{} people"
+ },
+ "{} phones signed in": {
+  "one": "{} phone signed in",
+  "other": "{} phones signed in"
  },
  "{} picked a time on the booking link.": "{} picked a time on the booking link.",
  "{} picked this time on your booking link.": "{} picked this time on your booking link.",
@@ -6028,6 +6050,10 @@
   "other": "{} ready for you"
  },
  "{} ready for you · {} to decide": "{} ready for you · {} to decide",
+ "{} recovery codes left": {
+  "one": "{} recovery code left",
+  "other": "{} recovery codes left"
+ },
  "{} references": {
   "one": "{} reference",
   "other": "{} references"

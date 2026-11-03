@@ -33,27 +33,46 @@ const CLOUD='https://app.themachine.computer';
 // billing portal included, which can't be framed). Self-hosted and paired: this Machine asks (api/account) and the
 // buttons link to the account, which asks to sign in. Read when the tab opens, at most once a minute.
 var acct={at:0,data:null,busy:false};  // var: settingsSync may run before this line
-const ACCT_GO={account:'Open account',plan:'Change plan',portal:'Billing',cancel:'Cancel plan',connections:'Manage',fleet:'Fleet'};
+const ACCT_GO={account:'Open account',plan:'Change plan',portal:'Billing',cancel:'Cancel plan',connections:'Manage',fleet:'Fleet',
+ overview:'Details',username:'Change',friends:'Manage',security:'Manage',data:'Export',delete:'Delete account',withdraw:'Withdraw from contract',billing:'Billing'};
 const acctDay=d=>{const x=new Date(d+'T12:00:00');return isNaN(x)?d:humanDay(x)};  // the app's style: Fri 20 Nov, the year only when not this one
 // In the mobile app (.in-app) the plan, billing and Fleet seat pages are hidden ([data-buy]); Open account stays, for
 // deleting the account.
-const ACCT_BUY=new Set(['plan','portal','cancel','fleet']);
-function acctGo(d,key,cls='head-link'){if(!(d.actions||[]).includes(key))return'';const label=esc(ACCT_GO[key])+' ↗',buy=ACCT_BUY.has(key)?' data-buy':'';
- if(d.hop)return`<form method="post" action="/_machine/account-hop" target="_blank"${buy}><input type="hidden" name="to" value="${key}"><button class="${cls}" data-acct-go="${key}">${label}</button></form>`;
- const url=d.links?.[key];return /^https:\/\//.test(url||'')?`<a class="${cls}" href="${esc(url)}" target="_blank" rel="noopener" data-acct-go="${key}"${buy}>${label}</a>`:''}
+const ACCT_BUY=new Set(['plan','portal','cancel','fleet','billing','withdraw']);
+// A hosted Machine has no account dashboard besides this tab (the control plane sends a bare /account back here): each
+// button is a focused step there (one part of the account, Stripe's page, a passkey, a confirmation) in this same tab,
+// with the way back to here. Billing and delete keep their own confirmation and sign-in there. Self-hosted and paired:
+// links to the account, in a new tab.
+function acctGo(d,key,cls='head-link'){if(!(d.actions||[]).includes(key))return'';const buy=ACCT_BUY.has(key)?' data-buy':'';
+ if(d.hop)return`<form method="post" action="/_machine/account-hop"${buy}><input type="hidden" name="to" value="${key}"><button class="${cls}" data-acct-go="${key}">${esc(ACCT_GO[key])}</button></form>`;
+ const url=d.links?.[key];return /^https:\/\//.test(url||'')?`<a class="${cls}" href="${esc(url)}" target="_blank" rel="noopener" data-acct-go="${key}"${buy}>${esc(ACCT_GO[key])} ↗</a>`:''}
 async function loadAccount(force){if(!acct||acct.busy||!state.account_url||(!force&&acct.data&&Date.now()-acct.at<60000))return;acct.busy=true;if(!acct.data)renderAccount();
  try{const d=await request(state.manage_url?'/_machine/account':'api/account');acct.data=d.error?{error:d.error}:{...d,hop:!!(state.manage_url&&d.hop)}}catch(e){errCaught(e);acct.data={error:'Can’t reach your account right now.'}}finally{acct.busy=false;acct.at=Date.now()}renderAccount()}
+const acctRow=(title,small,go='',buy=false)=>`<div${buy?' data-buy':''}><span class="grow">${title}${small?`<small>${small}</small>`:''}</span>${go}</div>`;
+// The parts only a hosted Machine's account has: its address (also the username friends add), friends, sign-in, data
+function acctHosted(d){const rows=[],sec=d.security,fr=d.friends,ex=d.export;
+ if(d.name)rows.push(acctRow(esc(t('Address')),`<span translate="no">${esc(d.name)}</span>`,acctGo(d,'username')));
+ if(fr?.on)rows.push(acctRow(esc(t('Friends')),esc(fr.waiting?t(['{} friend request waiting','{} friend requests waiting'],fr.waiting):t('Friends add you by your username.')),acctGo(d,'friends')));
+ if(sec)rows.push(acctRow(esc(t('Sign-in')),[t('Two-factor on'),t(['{} recovery code left','{} recovery codes left'],sec.recovery),sec.passkeys?t(['{} passkey','{} passkeys'],sec.passkeys):'',sec.phones?t(['{} phone signed in','{} phones signed in'],sec.phones):''].filter(Boolean).map(esc).join(' · '),acctGo(d,'security')));
+ if(ex)rows.push(acctRow(esc(t('Your data')),esc(ex.ready?t('Your export is ready until {}.',acctDay(ex.until)):t('Export everything to run it on your own computer.')),acctGo(d,'data')));
+ return rows}
 function renderAccount(){const d=acct.data,list=$('#acct-list'),foot=$('#acct-foot'),out=state.manage_url?'<form method="post" action="/_machine/logout" class="acct-end"><button class="head-link">Sign out</button></form>':'';
- if(!d||d.error){$('#acct-email').textContent='';list.innerHTML=`<div><span class="grow">${d?esc(d.error):'Loading…'}</span></div>`;foot.innerHTML=(d&&state.account_url?`<a class="head-link" href="${esc(state.account_url)}" target="_blank" rel="noopener">Open account ↗</a>`:'')+out;return}
+ if(!d||d.error){$('#acct-email').textContent='';list.innerHTML=`<div><span class="grow">${d?esc(d.error):'Loading…'}</span></div>`;foot.innerHTML=(d&&state.account_url&&!state.manage_url?`<a class="head-link" href="${esc(state.account_url)}" target="_blank" rel="noopener">Open account ↗</a>`:'')+out;return}
  $('#acct-email').textContent=d.email||'';const rows=[],p=d.plan,n=d.next_invoice,srv=d.server;
- if(p)rows.push(`<div><span class="grow"><strong>${esc(p.name)}</strong><span class="acct-status s-${esc(p.status)}">${esc(p.status_text)}</span>${p.price?`<small data-buy>${esc(p.price)}</small>`:''}</span>${acctGo(d,'plan')}${n?'':acctGo(d,'portal')}</div>`);
+ if(p)rows.push(`<div><span class="grow"><strong>${esc(p.name)}</strong><span class="acct-status s-${esc(p.status)}">${esc(p.status_text)}</span>${p.price?`<small data-buy>${esc(p.price)}</small>`:''}</span>${acctGo(d,'plan')}${n?'':acctGo(d,'portal')||acctGo(d,'billing')}</div>`);
  if(n)rows.push(`<div data-buy><span class="grow">Next invoice<small>${esc(acctDay(n.date))}${n.amount?' · '+esc(n.amount):''}</small></span>${acctGo(d,'portal')}</div>`);
  if(p?.cancel_at)rows.push(`<div><span class="grow">Ends<small>${esc(acctDay(p.cancel_at))}</small></span></div>`);
- if(srv)rows.push(`<div><span class="grow">Machine<small>${esc(srv.size)} · ${esc(srv.region)}</small></span></div>`);
+ if(srv)rows.push(`<div><span class="grow">Machine<small>${esc(srv.size)} · ${esc(srv.region)}</small></span>${d.hop?acctGo(d,'overview'):''}</div>`);
  if(srv){const c=d.connections||[];rows.push(`<div><span class="grow">Connected accounts<small>${c.length?c.map(x=>esc(x.service)+': '+esc(x.email)).join('<br>'):'None yet'}</small></span>${acctGo(d,'connections')}</div>`)}
  const fl=d.fleets||[],role={owner:'Owner',admin:'Admin',member:'Member'};
  rows.push(fl.length?fl.map((f,i)=>`<div><span class="grow">${esc(f.name)}<small>${[role[f.role]||esc(f.role),f.people===1?'1 person':f.people+' people',f.seats!=null?(f.seats===1?'1 seat':f.seats+' seats'):''].filter(Boolean).join(' · ')}</small></span>${i?'':acctGo(d,'fleet')}</div>`).join(''):`<div><span class="grow">Fleet<small>None yet</small></span>${acctGo(d,'fleet')}</div>`);
- list.innerHTML=rows.join('');foot.innerHTML=acctGo(d,'account')+out+(d.actions?.includes('cancel')?`<div class="acct-cancel" data-buy>${acctGo(d,'cancel','acct-quiet')}</div>`:'')}
+ rows.push(...acctHosted(d));  // only a hosted Machine's summary (or the site demo) has these parts
+ list.innerHTML=rows.join('');
+ // Hosted: no account dashboard to open (this is it), only the quiet ways out; self-hosted keeps Open account
+ const quiet=d.hop?['cancel','withdraw','delete'].map(k=>acctGo(d,k,'acct-quiet')).filter(Boolean):d.actions?.includes('cancel')?[acctGo(d,'cancel','acct-quiet')]:[];
+ const report=d.hop?'<button type="button" class="acct-quiet" data-acct-report>Report a problem</button>':'';
+ foot.innerHTML=(d.hop?'':acctGo(d,'account'))+out+(quiet.length||report?`<div class="acct-cancel">${quiet.join('')}${report}</div>`:'')}
+$('#acct-foot').addEventListener('click',e=>{if(e.target.closest('[data-acct-report]'))helpOpen('bug')});
 function renderHours(){const account=$('#settings-account-block'),linked=!!state.account_url;$('#settings-acct').hidden=!linked;account.hidden=linked;$('#manage').hidden=$('#sign-out').hidden=true;$('#settings-fleet').hidden=!state.fleet?.on;familyInviteSwitch();$('#settings-shared-row').hidden=!state.fleet?.on;$('#settings-take-line').setAttribute('aria-checked',String(state.fleet?.take_line!==false));if(linked){if(!acct.data)renderAccount()}else{const cli=`More settings live on this Machine. <a href="${HELP}settings#on-this-machine" target="_blank" rel="noopener">Learn more</a>`,paired=!!state.fleet;$('#settings-more').innerHTML=paired?`<strong>Your Fleet account</strong><small>Paired with your Fleet. Seats, invites and billing are in your account.</small>${state.fleet.app_address?'<small>Shares its Tailscale address with your account, for the phone app.</small>':''}<small>${cli}</small>`:`<strong>The Machine Network</strong><span class="alpha">Beta</span><small data-buy>Connect with friends for free, or with teammates in a Fleet. Sign in, then pair with the code from your account.</small><small>${cli}</small>`;const b=$('#settings-cloud');b.href=CLOUD+(paired?'/account':'/start');b.textContent=paired?'Open your account':'Join the Network';b.toggleAttribute('data-buy',!paired);b.hidden=false}const h=state.hours,form=$('#hours');if(!h){form.hidden=true;return}form.hidden=false;if(hoursDirty)return;
  $('#hours-days').innerHTML=DAYS.map((d,i)=>`<button type="button" data-day="${i+1}" aria-pressed="${h.days.includes(i+1)}" aria-label="${['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'][i]}">${d}</button>`).join('');
  $('#hours-start').value=h.start;$('#hours-end').value=h.end;$('#hours-morning').value=h.morning;$('#hours-digest').value=h.digest_at;

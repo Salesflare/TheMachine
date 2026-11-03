@@ -59,6 +59,6 @@ No avião ou no trem, o painel continua funcionando. Uma barra no topo diz **Off
 
 ## Mais dispositivos
 
-Entre em cada dispositivo do mesmo jeito. Em uma Machine hospedada, uma chave de acesso por dispositivo deixa o login mais rápido: adicione uma em Segurança, na página da sua conta.
+Entre em cada dispositivo do mesmo jeito. Em uma Machine hospedada, uma chave de acesso por dispositivo deixa o login mais rápido: em **Configurações** › **Conta**, clique em **Gerenciar** ao lado de Login.
 
 Para ler as notificações do seu celular Android como fonte, veja [Notificações do Android](android.md).

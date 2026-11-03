@@ -8,7 +8,7 @@ order: 1
 ---
 Abra **Configurações** pela engrenagem no topo. As abas:
 
-- **Conta**: **Seus endereços**, os que contam como você, com a origem de cada um. Seu plano em resumo, botões para as páginas da sua conta e **Sair**. Veja [Planos e cobrança](plans-and-billing.md).
+- **Conta**: **Seus endereços**, os que contam como você, com a origem de cada um, e **Sair**. Em uma Machine hospedada, também seu plano, faturas, Machine, Fleet, endereço, amigos, login e dados, cada um com seu botão. Veja [Planos e cobrança](plans-and-billing.md).
 - **Geral**: idioma e região, entrada por voz, este dispositivo, o navegador da sua Machine, seu Fleet e sua conta.
 - **Segurança**: Padrão ou Cuidadoso, e as configurações que cada um define. Veja [Níveis de segurança](security-levels.md). Também **Acesso de suporte**, enquanto está ativo: veja [Obter suporte](get-support.md#support-access).
 - **Atividade**: tudo o que The Machine fez por você, o mais recente primeiro. Veja [Atividade](activity.md).
@@ -28,7 +28,6 @@ Uma aba sem nada para mostrar fica escondida.
 - **Entrada por voz**: como o que você fala vira texto, e a voz de Falar ao vivo. Veja [Entrada por voz](voice-input.md) e [Falar ao vivo](talk-live.md).
 - **Abrir o navegador da Machine ↗**: o navegador que a sua Machine usa para sites como o LinkedIn.
 - **Regras do Fleet**: veja [Regras de compartilhamento](sharing-rules.md).
-- **Conta**: **Abrir conta** e **Sair**, em uma Machine hospedada.
 
 ## Nesta Machine
 

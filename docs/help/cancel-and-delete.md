@@ -9,7 +9,7 @@ order: 2
 ---
 ## Cancel
 
-1. On your account page, open Billing and press **Cancel subscription**.
+1. In **Settings** › **Account**, press **Cancel plan**, then **Cancel subscription**.
 2. Confirm. It ends with the month you paid for. Cancel in the free days and you pay nothing.
 
 Changed your mind? **Keep my subscription** takes it back. In the EU you can also withdraw within 14 days with **Withdraw from contract here**.
@@ -20,6 +20,6 @@ It's kept for {grace_days} days so you can export it, then deleted, backups incl
 
 ## Delete everything now
 
-On your account page, open Data, type DELETE or your email and press **Wipe everything now**. It ends your subscription, revokes Google and Microsoft access, and deletes your Machine, its backups and all its data. This can't be undone.
+In **Settings** › **Account**, press **Delete account**, type DELETE or your email and press **Wipe everything now**. It ends your subscription, revokes Google and Microsoft access, and deletes your Machine, its backups and all its data. This can't be undone.
 
 Without a hosted Machine, the button is **Delete my account**. A Machine on your own computer stays as it is.

@@ -25,6 +25,6 @@ De prijzen voor gehost, Werk-plaatsen en Familie-Fleets zijn early-adopterprijze
 
 ## Kaart en facturen
 
-Open Facturatie op je accountpagina en druk op **Abonnement beheren**. Dat opent Stripe, waar je je kaart wijzigt en facturen downloadt. Je kaartgegevens komen nooit bij ons.
+Druk in **Instellingen** › **Account** op **Facturatie** en dan op **Abonnement beheren**. Dat opent Stripe, waar je je kaart wijzigt en facturen downloadt. Je kaartgegevens komen nooit bij ons.
 
-Je kunt de grootte van je Machine altijd wijzigen vanaf je accountpagina.
+Je kunt de grootte van je Machine altijd wijzigen: druk in **Instellingen** › **Account** op **Abonnement wijzigen**.

@@ -9,7 +9,7 @@ order: 2
 ---
 ## Kündigen
 
-1. Öffne auf deiner Kontoseite Abrechnung und tippe auf **Abo kündigen**.
+1. Tippe in **Einstellungen** › **Konto** auf **Tarif kündigen** und dann auf **Abo kündigen**.
 2. Bestätige. Das Abo endet mit dem Monat, den du bezahlt hast. Kündigst du in den kostenlosen Tagen, zahlst du nichts.
 
 Doch anders entschieden? **Abo behalten** nimmt die Kündigung zurück. In der EU kannst du auch innerhalb von 14 Tagen mit **Hier vom Vertrag zurücktreten** widerrufen.
@@ -20,6 +20,6 @@ Sie bleiben {grace_days} Tage erhalten, damit du sie exportieren kannst, und wer
 
 ## Jetzt alles löschen
 
-Öffne auf deiner Kontoseite Daten, tippe DELETE oder deine E-Mail-Adresse ein und tippe auf **Jetzt alles löschen**. Das beendet dein Abo, entzieht Google und Microsoft den Zugriff und löscht deine Machine, ihre Backups und alle ihre Daten. Das lässt sich nicht rückgängig machen.
+Tippe in **Einstellungen** › **Konto** auf **Konto löschen**, tippe DELETE oder deine E-Mail-Adresse ein und tippe auf **Jetzt alles löschen**. Das beendet dein Abo, entzieht Google und Microsoft den Zugriff und löscht deine Machine, ihre Backups und alle ihre Daten. Das lässt sich nicht rückgängig machen.
 
 Ohne gehostete Machine heißt der Button **Mein Konto löschen**. Eine Machine auf deinem eigenen Computer bleibt, wie sie ist.

@@ -25,6 +25,6 @@ Les prix hébergé, place Travail et Fleet Famille sont des tarifs early adopter
 
 ## Carte et factures
 
-Sur la page de votre compte, ouvrez Facturation et appuyez sur **Gérer l’abonnement**. Cela ouvre Stripe, où vous changez de carte et téléchargez vos factures. Les données de votre carte ne nous parviennent jamais.
+Dans **Paramètres** › **Compte**, appuyez sur **Facturation**, puis sur **Gérer l’abonnement**. Cela ouvre Stripe, où vous changez de carte et téléchargez vos factures. Les données de votre carte ne nous parviennent jamais.
 
-Changez la taille de votre Machine à tout moment depuis la page de votre compte.
+Changez la taille de votre Machine à tout moment : dans **Paramètres** › **Compte**, appuyez sur **Changer de forfait**.

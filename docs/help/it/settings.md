@@ -8,7 +8,7 @@ order: 1
 ---
 Apri **Impostazioni** con l’ingranaggio in alto. Le sue schede:
 
-- **Account**: **I tuoi indirizzi**, quelli che contano come te, con la loro provenienza. Il tuo piano in breve, i pulsanti per le pagine del tuo account ed **Esci**. Vedi [Piani e fatturazione](plans-and-billing.md).
+- **Account**: **I tuoi indirizzi**, quelli che contano come te, con la loro provenienza, ed **Esci**. Su una Machine in hosting anche piano, fatture, Machine, Fleet, indirizzo, amici, accesso e dati, ognuno con il suo pulsante. Vedi [Piani e fatturazione](plans-and-billing.md).
 - **Generale**: lingua e area geografica, input vocale, questo dispositivo, il browser della tua Machine, la tua Fleet e il tuo account.
 - **Sicurezza**: Standard o Prudente, e le impostazioni che applicano. Vedi [Livelli di sicurezza](security-levels.md). C’è anche **Accesso per l’assistenza**, finché è attivo: vedi [Ricevi assistenza](get-support.md#support-access).
 - **Movimenti**: tutto ciò che The Machine ha fatto per te, dal più recente. Vedi [Movimenti](activity.md).
@@ -28,7 +28,6 @@ Una scheda senza niente da mostrare resta nascosta.
 - **Input vocale**: come ciò che dici diventa testo, e la voce di Parla dal vivo. Vedi [Input vocale](voice-input.md) e [Parla dal vivo](talk-live.md).
 - **Apri il browser della Machine ↗**: il browser che la tua Machine usa per siti come LinkedIn.
 - **Regole Fleet**: vedi [Regole di condivisione](sharing-rules.md).
-- **Account**: **Apri l’account** ed **Esci**, su una Machine in hosting.
 
 ## Su questa Machine
 

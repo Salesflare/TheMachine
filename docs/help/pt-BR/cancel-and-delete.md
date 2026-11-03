@@ -9,7 +9,7 @@ order: 2
 ---
 ## Cancelar
 
-1. Na página da sua conta, abra Cobrança e clique em **Cancelar assinatura**.
+1. Em **Configurações** › **Conta**, clique em **Cancelar plano** e depois em **Cancelar assinatura**.
 2. Confirme. Ela termina no fim do mês que você pagou. Se cancelar nos dias grátis, você não paga nada.
 
 Mudou de ideia? **Manter minha assinatura** desfaz o cancelamento. Na UE, você também pode desistir em até 14 dias com **Desistir do contrato aqui**.
@@ -20,6 +20,6 @@ Eles ficam guardados por {grace_days} dias para você poder exportá-los e depoi
 
 ## Excluir tudo agora
 
-Na página da sua conta, abra Dados, digite DELETE ou seu e-mail e clique em **Apagar tudo agora**. Isso encerra sua assinatura, revoga o acesso ao Google e à Microsoft e exclui sua Machine, os backups dela e todos os dados. Não dá para desfazer.
+Em **Configurações** › **Conta**, clique em **Excluir conta**, digite DELETE ou seu e-mail e clique em **Apagar tudo agora**. Isso encerra sua assinatura, revoga o acesso ao Google e à Microsoft e exclui sua Machine, os backups dela e todos os dados. Não dá para desfazer.
 
 Sem uma Machine hospedada, o botão é **Excluir minha conta**. Uma Machine no seu próprio computador continua como está.

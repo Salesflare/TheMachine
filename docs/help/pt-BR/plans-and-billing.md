@@ -25,6 +25,6 @@ Os preços hospedado, de vaga de Trabalho e de Fleet da Família são preços ea
 
 ## Cartão e faturas
 
-Na página da sua conta, abra Cobrança e clique em **Gerenciar assinatura**. Isso abre o Stripe, onde você troca o cartão e baixa as faturas. Os dados do seu cartão nunca chegam até nós.
+Em **Configurações** › **Conta**, clique em **Cobrança** e depois em **Gerenciar assinatura**. Isso abre o Stripe, onde você troca o cartão e baixa as faturas. Os dados do seu cartão nunca chegam até nós.
 
-Mude o tamanho da sua Machine quando quiser na página da sua conta.
+Mude o tamanho da sua Machine quando quiser: em **Configurações** › **Conta**, clique em **Mudar plano**.

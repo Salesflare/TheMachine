@@ -274,6 +274,7 @@
  "Added. People there are your colleagues now.": "Toegevoegd. Mensen daar zijn nu je collega's.",
  "Added. {}.": "Toegevoegd. {}.",
  "Added: {}": "Toegevoegd: {}",
+ "Address": "Adres",
  "Address for AIs": "Adres voor AI's",
  "Addresses ©": "Adressen ©",
  "Adjusted: {}.": "Aangepast: {}.",
@@ -950,6 +951,7 @@
  "Declined. They are not told.": "Geweigerd. Ze krijgen het niet te horen.",
  "Declined: {}'s friend request. They are not told.": "Afgewezen: vriendschapsverzoek van {}. Die persoon krijgt het niet te horen.",
  "Delete": "Verwijderen",
+ "Delete account": "Account verwijderen",
  "Delete board": "Bord verwijderen",
  "Delete event": "Afspraak verwijderen",
  "Delete from": "Verwijderen uit",
@@ -1156,6 +1158,8 @@
  "Experimental": "Experimenteel",
  "Expired": "Verlopen",
  "Expires in {}": "Verloopt over {}",
+ "Export": "Exporteren",
+ "Export everything to run it on your own computer.": "Exporteer alles om het op je eigen computer te draaien.",
  "Extend…": "Verlengen…",
  "Extra high thinking": "Extra veel denkwerk",
  "Fact added": "Feit toegevoegd",
@@ -1329,6 +1333,7 @@
  "Friend request sent. You’re connected once they accept.": "Vriendschapsverzoek verstuurd. Jullie zijn verbonden zodra ze aanvaarden.",
  "Friend: {}": "Vriend: {}",
  "Friends": "Vrienden",
+ "Friends add you by your username.": "Vrienden voegen je toe met je gebruikersnaam.",
  "Friends now": "Nu vrienden",
  "From": "Van",
  "From ChatGPT": "Van ChatGPT",
@@ -3264,6 +3269,7 @@
  "Reply posted on X.": "Antwoord geplaatst op X.",
  "Replying to": "Antwoord op",
  "Report a bug": "Een bug melden",
+ "Report a problem": "Een probleem melden",
  "Report this bug": "Deze bug melden",
  "Request failed": "Verzoek mislukt",
  "Request sent. It waits until they accept.": "Verzoek verstuurd. Het wacht tot ze aanvaarden.",
@@ -4650,6 +4656,7 @@
  "Turned on in OpenClaw.": "Aangezet in OpenClaw.",
  "Turning off keeps your brain and its pages.": "Uitzetten laat je brain en zijn pagina’s staan.",
  "Two live conversations are already open. End one first.": "Er lopen al twee live gesprekken. Beëindig er eerst een.",
+ "Two-factor on": "Tweestapsverificatie aan",
  "Type": "Type",
  "Type a domain, like acme.com": "Typ een domein, zoals acme.com",
  "Type a question first.": "Typ eerst een vraag.",
@@ -5041,6 +5048,7 @@
  "With {} · waiting": "Bij {} · wacht",
  "With {}:": "Met {}:",
  "Withdraw": "Intrekken",
+ "Withdraw from contract": "Herroepen",
  "Withdraw this learning? The team no longer sees it.": "Dit inzicht intrekken? Het team ziet het dan niet meer.",
  "Withdrawal cleanup will be retried": "Opruimen na intrekken wordt opnieuw geprobeerd",
  "Withdrawing needs The Machine Network.": "Intrekken heeft The Machine Network nodig.",
@@ -5233,6 +5241,7 @@
  "Your company’s domains": "Domeinen van je bedrijf",
  "Your connections": "Je koppelingen",
  "Your contacts with a Machine": "Je contacten met een Machine",
+ "Your data": "Je gegevens",
  "Your direct messages, mentions and the threads you are in.": "Je directe berichten, vermeldingen en de threads waarin je zit.",
  "Your draft": "Je concept",
  "Your edits stay, also when their details are looked up again. Empty a field to use the looked-up value again.": "Je aanpassingen blijven, ook als hun details opnieuw worden opgezocht. Maak een veld leeg om de opgezochte waarde weer te gebruiken.",
@@ -5240,6 +5249,7 @@
  "Your email is never added automatically": "Je e-mail wordt nooit automatisch toegevoegd",
  "Your email is ready on the to-do. Read it, then send it yourself.": "Je e-mail staat klaar bij de to-do. Lees hem en verstuur hem dan zelf.",
  "Your email, what comes in and what you send.": "Je e-mail, wat binnenkomt en wat je verstuurt.",
+ "Your export is ready until {}.": "Je export staat klaar tot {}.",
  "Your first to-dos show up here": "Je eerste to-do's verschijnen hier",
  "Your follow-up": "Jouw opvolging",
  "Your friends": "Je vrienden",
@@ -5823,6 +5833,10 @@
  },
  "{} for {} did not check out ({})": "{} voor {} klopte niet ({})",
  "{} found": "{} gevonden",
+ "{} friend requests waiting": {
+  "one": "{} vriendschapsverzoek wacht",
+  "other": "{} vriendschapsverzoeken wachten"
+ },
  "{} from your history to review": "{} uit je geschiedenis om na te kijken",
  "{} from {} (a source)": "{} van {}",
  "{} from {} moved to {}.": "{} uit {} verplaatst naar {}.",
@@ -5992,9 +6006,17 @@
   "other": "{} pagina’s"
  },
  "{} pages, {} kept as you edited them": "{} pagina’s, {} gelaten zoals je ze bewerkte",
+ "{} passkeys": {
+  "one": "{} passkey",
+  "other": "{} passkeys"
+ },
  "{} people": {
   "one": "{} persoon",
   "other": "{} personen"
+ },
+ "{} phones signed in": {
+  "one": "{} telefoon ingelogd",
+  "other": "{} telefoons ingelogd"
  },
  "{} picked a time on the booking link.": "{} koos een tijd via de boekingslink.",
  "{} picked this time on your booking link.": "{} koos deze tijd via je boekingslink.",
@@ -6028,6 +6050,10 @@
   "other": "{} klaar voor je"
  },
  "{} ready for you · {} to decide": "{} klaar voor je · {} te beslissen",
+ "{} recovery codes left": {
+  "one": "nog {} herstelcode",
+  "other": "nog {} herstelcodes"
+ },
  "{} references": {
   "one": "{} referentie",
   "other": "{} referenties"

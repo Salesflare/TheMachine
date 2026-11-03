@@ -59,6 +59,6 @@ Dans un avion ou un train, le tableau de bord continue de fonctionner. Une barre
 
 ## Plus d’appareils
 
-Connectez-vous sur chaque appareil de la même façon. Sur une Machine hébergée, une clé d’accès par appareil rend la connexion plus rapide : ajoutez-en une sous Sécurité, sur la page de votre compte.
+Connectez-vous sur chaque appareil de la même façon. Sur une Machine hébergée, une clé d’accès par appareil rend la connexion plus rapide : dans **Paramètres** › **Compte**, appuyez sur **Gérer** à côté de Connexion.
 
 Pour lire les notifications de votre téléphone Android comme source, voir [Notifications Android](android.md).

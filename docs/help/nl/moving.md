@@ -9,7 +9,7 @@ order: 5
 ---
 ## Exporteren
 
-1. Open Gegevens op je accountpagina en druk op **Alles exporteren**.
+1. Druk in **Instellingen** › **Account** op **Exporteren** naast Je gegevens en dan op **Alles exporteren**.
 2. Stel eventueel een wachtwoordzin in om je sleutels mee te nemen. Zonder wachtwoordzin krijgt de export een code en moet je die bronnen opnieuw koppelen.
 3. Druk op **Downloaden**. Het bestand komt rechtstreeks van je Machine, die het na 24 uur verwijdert, of meteen met **Nu verwijderen**.
 

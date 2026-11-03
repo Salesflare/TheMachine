@@ -26,7 +26,7 @@ Un nivel es un punto de partida. Si después cambias cualquier ajuste, el nivel 
 
 ## El nivel de un Work Fleet
 
-Lo elige el propietario del Fleet o un administrador en la página de la cuenta, en los ajustes del Fleet. Todos en el Fleet lo ven. Cuando es Prudente:
+Lo elige el propietario del Fleet o un administrador en los ajustes del Fleet: en **Ajustes** › **Cuenta**, pulsa **Fleet**. Todos en el Fleet lo ven. Cuando es Prudente:
 
 - Las respuestas a compañeros esperan tu OK, sin nombres, y solo sobre personas de tus cuentas de trabajo.
 - Las presentaciones y los traspasos también te esperan.

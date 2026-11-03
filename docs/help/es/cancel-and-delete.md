@@ -9,7 +9,7 @@ order: 2
 ---
 ## Cancelar
 
-1. En la página de tu cuenta, abre Facturación y pulsa **Cancelar suscripción**.
+1. En **Ajustes** › **Cuenta**, pulsa **Cancelar plan** y luego **Cancelar suscripción**.
 2. Confirma. Termina con el mes que pagaste. Si cancelas durante los días gratis, no pagas nada.
 
 ¿Has cambiado de idea? **Mantener mi suscripción** la recupera. En la UE también puedes desistir en un plazo de 14 días con **Desistir del contrato aquí**.
@@ -20,6 +20,6 @@ Se guardan {grace_days} días para que puedas exportarlos, y luego se eliminan, 
 
 ## Eliminar todo ahora
 
-En la página de tu cuenta, abre Datos, escribe DELETE o tu correo y pulsa **Borrar todo ahora**. Esto termina tu suscripción, revoca el acceso de Google y Microsoft, y elimina tu Machine, sus copias de seguridad y todos sus datos. No se puede deshacer.
+En **Ajustes** › **Cuenta**, pulsa **Eliminar la cuenta**, escribe DELETE o tu correo y pulsa **Borrar todo ahora**. Esto termina tu suscripción, revoca el acceso de Google y Microsoft, y elimina tu Machine, sus copias de seguridad y todos sus datos. No se puede deshacer.
 
 Sin una Machine alojada, el botón es **Eliminar mi cuenta**. Una Machine en tu propio ordenador se queda como está.

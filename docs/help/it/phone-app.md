@@ -59,6 +59,6 @@ In aereo o in treno la dashboard continua a funzionare. Una barra in alto dice *
 
 ## Altri dispositivi
 
-Accedi allo stesso modo su ogni dispositivo. Su una Machine in hosting, una passkey per dispositivo rende l’accesso più rapido: aggiungine una sotto Sicurezza nella pagina del tuo account.
+Accedi allo stesso modo su ogni dispositivo. Su una Machine in hosting, una passkey per dispositivo rende l’accesso più rapido: in **Impostazioni** › **Account**, premi **Gestisci** accanto ad Accesso.
 
 Per leggere le notifiche del tuo telefono Android come fonte, vedi [Notifiche Android](android.md).
