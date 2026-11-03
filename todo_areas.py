@@ -10,7 +10,8 @@ An area is 'personal' (every account with a personal boundary) or a company: a w
 with it). An account whose own `scope` says the other side (a work boundary labeled personal) is in neither. A work
 boundary named after its own source ('work:linkedin' on a LinkedIn account, 'work:x' on an X account: an owner's own
 profile, from before the setup asked for a company) is Work but no company: such a to-do can move to any company, and
-nothing moves to it."""
+nothing moves to it. Mail in one company's mailbox for another company of the owner's goes to that company from the
+start (owner_companies, the review's suggest company), also one whose accounts are labeled personal."""
 from __future__ import annotations
 
 import json
@@ -128,3 +129,30 @@ def pointed(people, accounts, here=None, domain=lambda value: ''):
         if len(found) == 1:
             votes |= found
     return next(iter(votes)) if len(votes) == 1 and votes <= ids and votes != {here} else None
+
+
+def owner_companies(accounts):
+    """Every company of the owner's, also one whose accounts they labeled Personal (a work boundary with scope:
+    personal, which is in neither area): [{'id', 'name', 'domains', 'personal'}]. A to-do about one of them lands in it
+    (company_accounts): its Work, or Personal when its accounts are labeled personal."""
+    found = {}
+    for a in accounts or ():
+        boundary = str(a.get('boundary') or '')
+        if boundary.partition(':')[0].lower() != 'work' or not name(boundary):
+            continue
+        found.setdefault(boundary, []).append(a)
+    out = []
+    for boundary, held in found.items():
+        if all(name(boundary).casefold() in _sources(a) for a in held):
+            continue  # an own profile named after its source ('work:linkedin'): no company
+        domains = sorted({str(a.get('email') or '').rpartition('@')[2].lower() for a in held if '@' in str(a.get('email') or '')[1:]})
+        out.append({'id': boundary, 'name': name(boundary), 'domains': domains,
+                    'personal': all(a.get('scope') == PERSONAL for a in held)})
+    return sorted(out, key=lambda c: c['name'].lower())
+
+
+def company_accounts(company, accounts):
+    """The accounts a to-do about one of the owner's companies gets: that company's own, checked."""
+    if company not in {c['id'] for c in owner_companies(accounts)}:
+        raise ValueError('company: one of the owner\'s companies: ' + ', '.join(c['id'] for c in owner_companies(accounts)))
+    return [a['id'] for a in accounts if a.get('boundary') == company]
