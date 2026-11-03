@@ -9648,6 +9648,13 @@ def source_url(root=APP_ROOT):
     return f'{SOURCE_REPO}/tree/{ref}' if ref else SOURCE_REPO
 
 
+def fleet_served(config):
+    """The tailnet address `tailscale serve` proxies to this dashboard (onboarding.dashboard_served), or None: which of
+    its Tailscale names answers, for the phone app's address (fleet.app_address)."""
+    import onboarding
+    return onboarding.dashboard_served(config)
+
+
 def running_release(root=APP_ROOT):
     """The release this Machine's code is (or contains, or its last port names), or None: what source_url links and
     what the control plane compares with a fix's release before it tells the owner a bug they reported is fixed."""
@@ -14382,6 +14389,7 @@ class App(*APP_MIXINS):
         if self.fleet:
             self.fleet.notify = self.fleet_notify
             self.fleet.can_ping = self.fleet_can_ping
+            self.fleet.served = fleet_served  # the phone app's address: the tailnet one that answers (fleet.app_address)
             self.fleet.soon = lambda fn: threading.Thread(target=fn, name='graph-after-ok', daemon=True).start()  # Share: the heavy round after the tap
             self.fleet.retell = lambda message_id: threading.Thread(target=self.fleet_retell, args=(message_id,), daemon=True).start()
             self.fleet.notify_notice = self.fleet_notify_notice
