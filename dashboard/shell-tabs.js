@@ -135,7 +135,7 @@ function sideAll(items,key,q=''){let all=q?items.filter(x=>titleHas(x,q)):items;
  return [...all.filter(looksDone),...[...all.filter(x=>!looksDone(x)),...extra.filter(x=>!seen.has(x.id)&&(!q||titleHas(x,q)))].sort((a,b)=>closedAt(b).localeCompare(closedAt(a)))]}
 function sideList(items,key){const each=sideAll(items,key),all=key==='done'?doneFold(each):each,n=sideShown[key]||sideFirst(key),total=key==='done'?Math.max(each.length,(state?.done_counts?.[scopeFilter]??0)+each.filter(looksDone).length):each.length;
  return {list:all.slice(0,n),more:all.length>n||total>each.length&&pagers.get(doneKey())?.next!=null,count:total}}
-const sideMoreRow=key=>`<button type="button" class="side-more" data-side-more="${key}">Show more</button>`;
+const sideMoreRow=key=>html`<button type="button" class="side-more" data-side-more="${key}">Show more</button>`;
 async function sideMore(key){sideShown[key]=(sideShown[key]||sideFirst(key))+SIDE_STEP;
  if(key==='done'){const items=sideGroups.find(g=>g[2]==='done')?.[0]||[],p=donePager();for(let i=0;i<10&&doneFold(sideAll(items,'done')).length<sideShown.done&&p.next!=null&&!p.failed;i++)await pagerMore(doneKey())}
  sideCards();if(chatOpen())render()}
@@ -147,9 +147,9 @@ function doneSearch(q){if(!q||doneFound.q===q||(state?.done_counts?.[scopeFilter
   for(const c of r.cards)doneExtra.set(c.id,c);cardsMerge();doneFound.q=q;doneFound.items=r.cards;sideCards()}catch{}},250)}
 function sideCards(groups){if(groups)sideGroups=groups;const q=$('#side-find').value.trim().toLowerCase(),box=$('#side-cards');doneSearch(q);
  const parts=sideGroups.map(([items,title,key])=>{const open=!!q||sideOpen(key),cut=q?{list:sideAll(items,key,q),more:false}:sideList(items,key),count=q?cut.list.length:cut.count;if(!count)return'';
-  return `<div class="side-group${['done','later','waiting'].includes(key)?' quiet':''}"><button type="button" class="side-head" data-side-fold="${key}" aria-expanded="${open}">${CHEVRON}<span>${title}</span><span class="count">${count}</span></button>${open?cut.list.map(x=>sideRow(x,chatId)).join('')+(cut.more?sideMoreRow(key):''):''}</div>`}).join('');
- const html=`<div class="side-label" role="group" aria-label="To-dos">${[['all','All'],['work','Work'],['personal','Personal']].map(([v,t])=>`<button type="button" data-scope="${v}" aria-pressed="${scopeFilter===v}">${t}</button>`).join('')}</div>${parts||`<p class="side-empty">${q?'No to-dos match.':'No to-dos yet.'}</p>`}`;
- if(html!==sideHTML){sideHTML=html;const back=sideKeep(box);box.innerHTML=html;back();requestAnimationFrame(chatFades)}}
+  return html`<div class="side-group${['done','later','waiting'].includes(key)?' quiet':''}"><button type="button" class="side-head" data-side-fold="${key}" aria-expanded="${open}">${raw(CHEVRON)}<span>${title}</span><span class="count">${count}</span></button>${open?[cut.list.map(x=>sideRow(x,chatId)),cut.more?sideMoreRow(key):'']:''}</div>`}).filter(Boolean);
+ const side=html`<div class="side-label" role="group" aria-label="To-dos">${[['all','All'],['work','Work'],['personal','Personal']].map(([v,t])=>html`<button type="button" data-scope="${v}" aria-pressed="${scopeFilter===v}">${t}</button>`)}</div>${parts.length?parts:html`<p class="side-empty">${q?'No to-dos match.':'No to-dos yet.'}</p>`}`;
+ if(String(side)!==sideHTML){sideHTML=String(side);const back=sideKeep(box);setHTML(box,side);back();requestAnimationFrame(chatFades)}}
 // The card list scrolls in its own box (the computer's sidebar, the phone's drawer): a new card above keeps the rows in view where they were
 function sideKeep(box){const sc=[box,box.closest('.app-side')].find(x=>x&&x.scrollTop>0);if(!sc)return()=>{};const edge=sc.getBoundingClientRect().top,key=n=>n.getAttribute('href')||n.dataset.sideFold||n.dataset.sideMore||n.dataset.doneFold;
  const row=[...box.querySelectorAll('a[href],[data-side-fold],[data-side-more],[data-done-fold]')].find(n=>n.getBoundingClientRect().bottom>edge);if(!row)return()=>{};const k=key(row),top=row.getBoundingClientRect().top;

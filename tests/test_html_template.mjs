@@ -57,4 +57,16 @@ for(const bad of ['javascript:alert(1)','JavaScript:alert(1)',' javascript:alert
  'data:text/html,<b>x</b>','vbscript:x','blob:https://machine.example/x','file:///etc/passwd','http://[bad',null,undefined,'','  '])assert.equal(safeHref(bad),'#',String(bad));
 assert.equal(safeHref(' https://example.com '),'https://example.com','trimmed');
 assert.equal(s(html`<a href="${safeHref('javascript:alert(1)')}">x</a>`),'<a href="#">x</a>');
+// The formatters build their links with html`` too: text is escaped, only web (and, in help, mail) links become links
+const fn=(start,end)=>{const i=page.indexOf(start);assert.ok(i>=0,start);const j=page.indexOf(end,i);assert.ok(j>i,end);return page.slice(i,j+end.length)};
+vm.runInContext(`const HELP='https://site.example/help/';${line('const linkify=')}\n${fn('function helpDoc(a)',"return html`${out}`}")}\nObject.assign(globalThis,{linkify,helpDoc});`,ctx);
+const {linkify,helpDoc}=ctx;
+assert.equal(s(linkify('See https://example.com/a?b=1&c=2, and <b>bold</b> javascript:alert(1) data:text/html,x')),
+ 'See <a href="https://example.com/a?b=1&amp;c=2" target="_blank" rel="noreferrer">https://example.com/a?b=1&amp;c=2</a>, and &lt;b&gt;bold&lt;/b&gt; javascript:alert(1) data:text/html,x');
+assert.equal(s(linkify('"https://example.com/x"')),'&quot;<a href="https://example.com/x" target="_blank" rel="noreferrer">https://example.com/x</a>&quot;','a quote ends the link');
+assert.equal(s(linkify(null)),'');
+const doc=s(helpDoc({title:'T <b>',summary:'**a `c` b** [x](javascript:alert(1)) [d](data:text/html,x) [y](https://e.com/?a=1&b="2") [m](mailto:sam@example.com) [z](cards.md#a-b)',
+ body:'## H <i>\n- **[l](https://x.y)**\n1. one\n```\n<script>\n```\npara & <x>',anchors:['a"b']}));
+assert.equal(doc,'<h3>T &lt;b&gt;</h3><p class="help-sum"><b>a <code>c</code> b</b> x) d <a href="https://e.com/?a=1&amp;b=&quot;2&quot;" target="_blank" rel="noopener">y</a> <a href="mailto:sam@example.com" target="_blank" rel="noopener">m</a> <a href="https://site.example/help/cards#a-b" data-help-slug="cards" data-help-anchor="a-b">z</a></p>'
+ +'<h4 id="help-a-a&quot;b">H &lt;i&gt;</h4><ul><li><b><a href="https://x.y" target="_blank" rel="noopener">l</a></b></li></ul><ol><li>one</li></ol><pre>&lt;script&gt;</pre><p>para &amp; &lt;x&gt;</p>');
 console.log('html template ok');

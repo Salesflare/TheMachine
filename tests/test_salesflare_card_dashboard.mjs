@@ -67,8 +67,8 @@ try{
   const quality=await page.evaluate(()=>Math.round(document.querySelector('#quality').firstElementChild.getBoundingClientRect().left));
   assert.equal(edge.card,edge.head,`${width}: ${JSON.stringify(edge)}`);assert.equal(quality,edge.head,`${width}: ${JSON.stringify({...edge,quality})}`);
   // Your connections: a partner's calendar is named for it, the owner's own keeps its address
-  const html=await page.evaluate(()=>sharedHTML({id:'fl',name:'Acme'},{connections:[{id:'w',service:'calendar',email:'owner@acme.example',name:'',company:true,required:true,on:true},
-   {id:'p',service:'calendar',email:'owner@acme.example',name:'Robin’s calendar',personal:true}]},{sorted:{},unsorted:0,sent:0,unsure:[],rules:[],records:[],by_hand:[],shared:[],threads:[],waiting:[]}));
+  const html=await page.evaluate(()=>String(sharedHTML({id:'fl',name:'Acme'},{connections:[{id:'w',service:'calendar',email:'owner@acme.example',name:'',company:true,required:true,on:true},
+   {id:'p',service:'calendar',email:'owner@acme.example',name:'Robin’s calendar',personal:true}]},{sorted:{},unsorted:0,sent:0,unsure:[],rules:[],records:[],by_hand:[],shared:[],threads:[],waiting:[]})));
   assert.match(html,/Google Calendar · owner@acme\.example<\/span><small class="muted">Required by Acme/);
   assert.match(html,/Google Calendar · Robin’s calendar<\/span><small class="muted">Personal, never shared/);
   await context.close();

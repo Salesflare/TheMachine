@@ -29,25 +29,29 @@ function helpTab(t){for(const b of helpBox.querySelectorAll('[data-help-tab]'))b
 // another article opens here too; any other link opens in a new tab.
 const HELP_PAGE=/^https:\/\/themachine\.computer\/help\/([a-z0-9-]+)\/?(?:#([a-z0-9-]+))?$/;
 function helpDoc(a){const ids=[...(a.anchors||[])];
- const inline=s=>esc(s).replace(/`([^`]+)`/g,'<code>$1</code>').replace(/\*\*(.+?)\*\*/g,'<b>$1</b>')
-  .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g,(m,label,href)=>{const md=/^([a-z0-9-]+)\.md(?:#([a-z0-9-]+))?$/.exec(href);
-   return md?`<a href="${HELP}${md[1]}${md[2]?'#'+md[2]:''}" data-help-slug="${md[1]}" data-help-anchor="${md[2]||''}">${label}</a>`
-    :/^(https:|mailto:)/.test(href.replace(/&amp;/g,'&'))?`<a href="${href}" target="_blank" rel="noopener">${label}</a>`:label});
- const out=[`<h3>${esc(a.title)}</h3>`,a.summary?`<p class="help-sum">${inline(a.summary)}</p>`:''];let list=null,para=[],code=null;
- const flush=()=>{if(para.length)out.push(`<p>${para.map(inline).join(' ')}</p>`);para=[];if(list)out.push(`<${list.tag}>${list.items.map(i=>`<li>${inline(i)}</li>`).join('')}</${list.tag}>`);list=null};
+ // Inline markdown, in the order it always ran (`code`, then **bold**, then links over both): each tag becomes a
+ // placeholder for its html`` piece, and fill() turns the text around them into escaped text.
+ const inline=s=>{const pieces=[],put=h=>`\u0000${pieces.push(h)-1}\u0000`,fill=v=>html`${String(v).split(/\u0000(\d+)\u0000/).map((x,i)=>i%2?pieces[x]:x)}`;
+  const [c1,c2,b1,b2,a2]=[html`<code>`,html`</code>`,html`<b>`,html`</b>`,html`</a>`].map(put);
+  return fill(String(s??'').replace(/\u0000/g,'').replace(/`([^`]+)`/g,(m,c)=>c1+c+c2).replace(/\*\*(.+?)\*\*/g,(m,b)=>b1+b+b2)
+   .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g,(m,label,href)=>{const md=/^([a-z0-9-]+)\.md(?:#([a-z0-9-]+))?$/.exec(href);
+    return md?put(html`<a href="${HELP}${md[1]}${md[2]?'#'+md[2]:''}" data-help-slug="${md[1]}" data-help-anchor="${md[2]||''}">`)+label+a2
+     :/^(https:|mailto:)/.test(href)?put(html`<a href="${fill(href)}" target="_blank" rel="noopener">`)+label+a2:label}))};
+ const out=[html`<h3>${a.title}</h3>`,a.summary?html`<p class="help-sum">${inline(a.summary)}</p>`:''];let list=null,para=[],code=null;
+ const flush=()=>{if(para.length)out.push(html`<p>${para.map((p,i)=>html`${i?' ':''}${inline(p)}`)}</p>`);para=[];if(list){const items=list.items.map(i=>html`<li>${inline(i)}</li>`);out.push(list.tag==='ul'?html`<ul>${items}</ul>`:html`<ol>${items}</ol>`)}list=null};
  for(const line of String(a.body||'').split('\n')){
-  if(code){if(/^```/.test(line)){out.push(`<pre>${esc(code.join('\n'))}</pre>`);code=null}else code.push(line);continue}
+  if(code){if(/^```/.test(line)){out.push(html`<pre>${code.join('\n')}</pre>`);code=null}else code.push(line);continue}
   if(/^```/.test(line)){flush();code=[];continue}
   const h=/^(#{2,3}) (.+)$/.exec(line),b=/^\s*[-*] (.*)$/.exec(line),n=/^\s*\d+\. (.*)$/.exec(line);
-  if(h){flush();out.push(`<h${h[1].length+2} id="help-a-${esc(ids.shift()||'')}">${inline(h[2])}</h${h[1].length+2}>`);continue}
+  if(h){flush();const id='help-a-'+(ids.shift()||''),in_=inline(h[2]);out.push(h[1].length===2?html`<h4 id="${id}">${in_}</h4>`:html`<h5 id="${id}">${in_}</h5>`);continue}
   if(!line.trim()){flush();continue}
   if(b||n){const tag=b?'ul':'ol';if(para.length||list&&list.tag!==tag)flush();list??={tag,items:[]};list.items.push((b||n)[1]);continue}
   if(list&&/^\s+\S/.test(line)){list.items[list.items.length-1]+=' '+line.trim();continue}
   if(list)flush();para.push(line.trim())}
- if(code)out.push(`<pre>${esc(code.join('\n'))}</pre>`);flush();return out.join('')}
+ if(code)out.push(html`<pre>${code.join('\n')}</pre>`);flush();return html`${out}`}
 async function helpArticle(slug,anchor=''){helpTab('read');if(!helpBox.open)helpBox.showModal();const box=$('#help-read');box.innerHTML=`<p class="help-intro">${esc(t('Opening…'))}</p>`;$('#help-read-site').href=HELP+slug+(anchor?'#'+anchor:'');
  try{const a=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'help_article',args:{slug}})});
-  box.innerHTML=helpDoc(a);const to=anchor&&box.querySelector('#help-a-'+CSS.escape(anchor));box.scrollTop=to?to.offsetTop-box.offsetTop:0;box.focus({preventScroll:true})}
+  setHTML(box,helpDoc(a));const to=anchor&&box.querySelector('#help-a-'+CSS.escape(anchor));box.scrollTop=to?to.offsetTop-box.offsetTop:0;box.focus({preventScroll:true})}
  catch(err){errCaught(err);box.innerHTML=`<p class="help-intro">${esc(err.message||t('That help page doesn’t exist.'))}</p>`}}
 // In another language than English, a link to a help page anywhere in the app opens it here, in that language; the
 // site's pages are in English. A click with a modifier key still opens the site.
@@ -155,7 +159,7 @@ async function bugHostedGo(q){q.busy=true;let r;
  try{const later=await bugAction('bug_later',{...q.body,retry_after:r.wait});bugPageDrop(q);bugQueuedLoad();return later}
  catch{q.next_at=Math.floor(Date.now()/1000)+r.wait;bugPageKeep();return {queued:true,at:q.next_at}}}
 function bugQueuedShow(list){list=[...(list||[]),...bugPage.map(q=>({what:q.body.description.slice(0,80),next_at:q.next_at}))];const el=$('#bug-queued');el.hidden=!list.length;
- el.innerHTML=list?.length?`<h3>Waiting to go out</h3><ul class="bug-parts">${list.map(q=>`<li><span translate="no">${esc(q.what)}</span> · ${esc(t('Goes out at {}',fmtHM(q.next_at*1000)))}</li>`).join('')}</ul>`:''}
+ setHTML(el,list?.length?html`<h3>Waiting to go out</h3><ul class="bug-parts">${list.map(q=>html`<li><span translate="no">${q.what}</span> · ${t('Goes out at {}',fmtHM(q.next_at*1000))}</li>`)}</ul>`:html``)}
 async function bugQueuedLoad(){try{bugQueuedShow((await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'bug_queued',args:{}})})).queued)}catch{bugQueuedShow([])}}
 SETTINGS_OF['settings-support']='security';
 {const d=document.createElement('div');d.id='settings-support';d.hidden=true;

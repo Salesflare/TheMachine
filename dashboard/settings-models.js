@@ -38,7 +38,7 @@ const cmTrigger=(kind,which,label,cls,extra='',after='')=>`<button type="button"
 // Only a model the Gateway says has a fast option takes it; for any other the item stays, disabled, with why.
 const cmFastOk=ref=>!!cmEntry(ref)?.fast,cmFastShown=(kind,cur)=>kind==='chat'&&!!state.chat_model?.fast&&cmFastOk(cur?.model);
 const cmFastItem=cur=>{const ok=cmFastOk(cur.model),on=!!state.chat_model?.fast&&ok;
- return `<div class="cm-speed" role="group" aria-label="${esc(t('Speed'))}"><button type="button" role="menuitemcheckbox" aria-checked="${on}" data-cm-fast${ok?'':' aria-disabled="true"'}>${CM_CHECK}<span>${esc(t('Fast'))}</span><small>${esc(t(ok?'Quicker replies, at a higher cost':'Not offered for this model'))}</small></button></div>`};
+ return html`<div class="cm-speed" role="group" aria-label="${t('Speed')}"><button type="button" role="menuitemcheckbox" aria-checked="${on}" data-cm-fast${ok?'':html` aria-disabled="true"`}>${raw(CM_CHECK)}<span>${t('Fast')}</span><small>${t(ok?'Quicker replies, at a higher cost':'Not offered for this model')}</small></button></div>`};
 async function cmFastSave(on){try{state.chat_model=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'chat_fast_set',args:{fast:on}})});cmPaint('chat')}
  catch(err){errCaught(err);toast(err.message,true);cmPaint('chat')}}
 // The pill: "Model  Thinking", each part a quiet button over the menu; a to-do chat's model says Fast when it runs fast
@@ -80,9 +80,9 @@ function cmMenuOpen(b,last){const kind=b.dataset.cmKind,which=b.dataset.cmPick,c
  // In the trigger's dialog (outside a modal dialog nothing takes the focus), as a popover so the dialog never clips it
  const host=b.closest('dialog[open]')||document.body;if(m.parentNode!==host)host.append(m);m.setAttribute('aria-label',which==='model'?'Model':'Thinking');
  // A provider's models sit in a group under its heading, so a heading never reads as the line under the model above it
- const item=c=>`<button type="button" role="menuitemradio" aria-checked="${c.value===sel}" data-cm-value="${esc(c.value)}"${c.name?' translate="no"':''}>${CM_CHECK}<span>${esc(c.label)}</span>${c.hint?`<small>${esc(c.hint)}</small>`:''}</button>`;
+ const item=c=>html`<button type="button" role="menuitemradio" aria-checked="${c.value===sel}" data-cm-value="${c.value}"${c.name?html` translate="no"`:''}>${raw(CM_CHECK)}<span>${c.label}</span>${c.hint?html`<small>${c.hint}</small>`:''}</button>`;
  const groups=[];for(const c of cmChoices(which,cur)){const g=groups.at(-1);if(g&&g.name===c.group)g.items.push(c);else groups.push({name:c.group,items:[c]})}
- m.innerHTML=groups.map((g,i)=>g.name?`<div class="cm-section" role="group" aria-labelledby="cm-g-${i}"><p class="cm-group" id="cm-g-${i}" translate="no">${esc(g.name)}</p>${g.items.map(item).join('')}</div>`:g.items.map(item).join('')).join('')+(kind==='chat'&&which==='model'?cmFastItem(cur):'');
+ setHTML(m,html`${groups.map((g,i)=>g.name?html`<div class="cm-section" role="group" aria-labelledby="cm-g-${i}"><p class="cm-group" id="cm-g-${i}" translate="no">${g.name}</p>${g.items.map(item)}</div>`:g.items.map(item))}${kind==='chat'&&which==='model'?cmFastItem(cur):''}`);
  cmOpen={box,kind,which};b.setAttribute('aria-expanded','true');m.hidden=false;if(m.showPopover&&!m.matches(':popover-open'))m.showPopover();cmPlace(m,b);
  const items=[...m.querySelectorAll('[role=menuitemradio],[role=menuitemcheckbox]')];(last?items.at(-1):items.find(i=>i.getAttribute('aria-checked')==='true')||items[0])?.focus({preventScroll:true})}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-cm-pick]');

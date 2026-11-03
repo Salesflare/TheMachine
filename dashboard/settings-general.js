@@ -186,11 +186,12 @@ const SIG_TOOLS=[['bold','<b>B</b>','Bold'],['italic','<i>I</i>','Italic'],['und
 const sigState=s=>s.source==='owner'?'Custom':s.source&&s.html?'Imported':'None';
 const sigFrom=s=>s.service==='outlook'?'Found in your Outlook sent mail':'Imported from Gmail';
 function sigCard(s){const off=s.saveable?'':' disabled';
- return `<form class="sig-form" data-account="${esc(s.account_id)}" data-service="${esc(s.service)}" novalidate><div class="sig-head"><strong class="ell">${esc(s.email||s.account_id)}</strong><small class="muted">${s.service==='outlook'?'Outlook':'Gmail'} · <span class="sig-state">${sigState(s)}</span></small></div>
- <div class="sig-tools" role="toolbar" aria-label="Formatting">${SIG_TOOLS.map(([k,t,l])=>k==='color'?`<label class="sig-color" title="${l}"><span aria-hidden="true">A</span><input type="color" value="#222222" data-sig-tool="color" aria-label="${l}"${off}></label>`:`<button type="button" data-sig-tool="${k}" title="${l}" aria-label="${l}"${k==='html'?' aria-pressed="false"':''}${off}>${k==='html'?'<span class="sig-code">&lt;/&gt; </span>HTML':t}</button>`).join('')}</div>
- <iframe class="sig-paper" sandbox="allow-same-origin" title="Signature for ${esc(s.email||s.account_id)}"></iframe><textarea class="sig-source" rows="6" maxlength="20000" aria-label="Signature HTML" spellcheck="false" hidden></textarea>
- <p class="sig-note muted">${s.source&&s.source!=='owner'&&s.html?esc(sigFrom(s))+' · ':''}<button type="button" class="link" data-sig-import${off}>${s.source&&s.source!=='owner'?'Re-import':s.service==='outlook'?'Find in sent mail':'Import from Gmail'}</button>${s.source==='owner'?` · <button type="button" class="link" data-sig-mailbox${off}>Use mailbox signature</button>`:''}</p>
+ return html`<form class="sig-form" data-account="${s.account_id}" data-service="${s.service}" novalidate><div class="sig-head"><strong class="ell">${s.email||s.account_id}</strong><small class="muted">${s.service==='outlook'?'Outlook':'Gmail'} · <span class="sig-state">${sigState(s)}</span></small></div>
+ <div class="sig-tools" role="toolbar" aria-label="Formatting">${SIG_TOOLS.map(([k,t,l])=>k==='color'?html`<label class="sig-color" title="${l}"><span aria-hidden="true">A</span><input type="color" value="#222222" data-sig-tool="color" aria-label="${l}"${off}></label>`:html`<button type="button" data-sig-tool="${k}" title="${l}" aria-label="${l}"${k==='html'?html` aria-pressed="false"`:''}${off}>${k==='html'?html`<span class="sig-code">&lt;/&gt; </span>HTML`:raw(t)}</button>`)}</div>
+ <iframe class="sig-paper" sandbox="allow-same-origin" title="Signature for ${s.email||s.account_id}"></iframe><textarea class="sig-source" rows="6" maxlength="20000" aria-label="Signature HTML" spellcheck="false" hidden></textarea>
+ <p class="sig-note muted">${s.source&&s.source!=='owner'&&s.html?sigFrom(s)+' · ':''}<button type="button" class="link" data-sig-import${off}>${s.source&&s.source!=='owner'?'Re-import':s.service==='outlook'?'Find in sent mail':'Import from Gmail'}</button>${s.source==='owner'?html` · <button type="button" class="link" data-sig-mailbox${off}>Use mailbox signature</button>`:''}</p>
  <p role="status"></p><div class="actions sig-save" hidden><button class="primary"${off}>Save</button><button type="button" class="ghost" data-sig-cancel>Cancel</button></div></form>`}
+const sigNode=s=>{const tp=document.createElement('template');setHTML(tp,sigCard(s));return tp.content};  // a fresh form, to replace an edited one
 const sigDark=()=>(document.documentElement.dataset.theme||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'))==='dark';
 function sigLoad(f,html){const fr=f.querySelector('.sig-paper');fr.onload=()=>{const d=fr.contentDocument;if(!d?.body)return;try{d.execCommand('styleWithCSS',false,true)}catch{}
   const fit=()=>{if(!fr.offsetWidth)return;fr.style.height=Math.max(72,Math.min(420,d.body.scrollHeight+26))+'px'};fr._fit=fit;fit();sigSized.observe(fr);for(const i of d.images)i.addEventListener('load',fit);
@@ -351,7 +352,7 @@ $('#share-auto').onclick=async e=>{const b=e.currentTarget,on=b.getAttribute('ar
 $('#share-offer').onclick=async e=>{const b=e.currentTarget,on=b.getAttribute('aria-checked')!=='true';b.disabled=true;
  try{const r=await sharePost('set_learnings_offer',{on});state.team_learnings=r.team_learnings;renderShareOffer();renderShare(true);secLocal('learnings',on?'on':'off');notice(on?'I’ll offer learnings to share now and then.':'I won’t offer learnings to share.')}catch(err){errCaught(err);notice(err.message)}finally{b.disabled=false}};
 function renderSignatures(){const list=state.signatures||[],box=$('#settings-signatures');box.hidden=!list.length;if(!list.length||sigDirty.size)return;
- $('#signatures').innerHTML=list.map(sigCard).join('');
+ setHTML($('#signatures'),html`${list.map(sigCard)}`);
  for(const f of $('#signatures').querySelectorAll('.sig-form'))sigLoad(f,list.find(s=>s.account_id===f.dataset.account)?.html);
  // Nothing kept yet: import the mailbox's own once, so the editor starts from the real signature.
  for(const s of list)if(!s.source&&s.saveable&&!sigImported.has(s.account_id)){sigImported.add(s.account_id);sigImport(s.account_id,true)}}
@@ -362,7 +363,7 @@ async function sigImport(id,auto){const form=()=>$(`#signatures .sig-form[data-a
   if((state.signatures||[]).find(s=>s.account_id===id)?.source==='owner'){  // the owner's own stays until they save the imported one
    const f=form();if(!f)return;if(!r.found){say(none);return}const src=f.querySelector('.sig-source');if(src.hidden)sigLoad(f,r.html);else src.value=r.html;sigChanged(f);say('Imported. Save to use it.');return}
   const s=(r.signatures||[]).find(x=>x.account_id===id),f=form();if(s)state.signatures=(state.signatures||[]).map(x=>x.account_id===id?s:x);  /* only this one: imports run side by side */
-  if(f&&s&&!sigDirty.has(id)){f.outerHTML=sigCard(s);sigLoad(form(),s.html)}
+  if(f&&s&&!sigDirty.has(id)){f.replaceWith(sigNode(s));sigLoad(form(),s.html)}
   if(!r.found&&!auto)say(none)}
  catch(err){errCaught(err);say(err.message)}finally{const b=form()?.querySelector('[data-sig-import]');if(b)b.disabled=!(state.signatures||[]).find(x=>x.account_id===id)?.saveable}}
 function sigTool(f,tool,value){const fr=f.querySelector('.sig-paper'),d=fr.contentDocument,src=f.querySelector('.sig-source');
@@ -378,7 +379,7 @@ function sigTool(f,tool,value){const fr=f.querySelector('.sig-paper'),d=fr.conte
 $('#signatures').addEventListener('mousedown',e=>{if(e.target.closest('button[data-sig-tool]'))e.preventDefault()});  // keeps the selection in the editor
 $('#signatures').addEventListener('click',async e=>{const f=e.target.closest('.sig-form');if(!f)return;const t=e.target.closest('button[data-sig-tool]');if(t){sigTool(f,t.dataset.sigTool);return}
  if(e.target.closest('[data-sig-import]'))return sigImport(f.dataset.account);
- if(e.target.closest('[data-sig-cancel]')){sigDirty.delete(f.dataset.account);const s=(state.signatures||[]).find(x=>x.account_id===f.dataset.account);f.outerHTML=sigCard(s);sigLoad($(`#signatures .sig-form[data-account="${CSS.escape(s.account_id)}"]`),s.html);return}
+ if(e.target.closest('[data-sig-cancel]')){sigDirty.delete(f.dataset.account);const s=(state.signatures||[]).find(x=>x.account_id===f.dataset.account);f.replaceWith(sigNode(s));sigLoad($(`#signatures .sig-form[data-account="${CSS.escape(s.account_id)}"]`),s.html);return}
  const m=e.target.closest('[data-sig-mailbox]');if(m){m.disabled=true;try{state.signatures=await sigPost('set_signature',{account_id:f.dataset.account,use_mailbox:true});sigDirty.delete(f.dataset.account);if(!sigDirty.size)renderSignatures();notice('Using the mailbox signature.')}catch(err){errCaught(err);f.querySelector('[role=status]').textContent=err.message;m.disabled=false}}});
 $('#signatures').addEventListener('input',e=>{const f=e.target.closest('.sig-form');if(!f)return;if(e.target.matches('[data-sig-tool="color"]'))sigTool(f,'color',e.target.value);else if(e.target.matches('.sig-source'))sigChanged(f)});
 $('#signatures').addEventListener('submit',async e=>{e.preventDefault();const f=e.target,out=f.querySelector('[role=status]'),b=f.querySelector('.primary');b.disabled=true;
