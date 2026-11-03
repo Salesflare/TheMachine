@@ -866,7 +866,7 @@ function phoneShown(v){const t=String(v||'').trim();if(!/^\+\d{8,15}$/.test(t))r
 const breakable=t=>esc(t).replace(/@/g,'@<wbr>');
 // An address that bounced (bounces.py): "Bounced Oct 28", muted, beside it; never struck through, so it stays readable.
 const bounceDay=v=>new Date(v).toLocaleDateString(DL,{day:'numeric',month:'short'});
-const bounceNote=at=>at?`<span class="bounce-note">${esc(t('Bounced {}',bounceDay(at)))}</span>`:'';
+const bounceNote=at=>at?html`<span class="bounce-note">${t('Bounced {}',bounceDay(at))}</span>`:'';
 const kv=(k,v,acts='',cls='')=>`<div class="kv${cls?' '+cls:''}"><span class="k">${k}</span><span class="v">${v}</span>${acts?`<span class="acts">${acts}</span>`:''}</div>`;
 const copyBtn=(t,what)=>`<button type="button" class="ghost" data-copy-command="${esc(t)}" aria-label="Copy ${what}">Copy</button>`;
 const liShort=u=>u.replace(/^https?:\/\/(www\.)?/,'').replace(/\/$/,'');

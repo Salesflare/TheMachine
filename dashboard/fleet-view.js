@@ -469,7 +469,7 @@ function agentText(j,text){const chips=[],files=j.files||[];
  let t=String(text||'').replace(/\r/g,'').replace(/\[([^\]\n]+)\]\(([^)\s]+)\)/g,(m,label,target)=>{if(/^https?:/.test(target))return m;const f=fileFor(target);if(f){chips.push(agentFile(j,f));return '\u0002'+(chips.length-1)+'\u0003'}return label})
   .replace(/`([^`\n]+)`/g,'$1').replace(/^#{1,6}\s+/gm,'').replace(/^\s*[*-]\s+/gm,'• ')
   .replace(/(^|[\s(])(?:~|\/(?:home|Users|tmp|var|root|data|mnt|opt|srv))(?:\/[^\s/)]+)*\/([^\s/)]+)/g,'$1$2');
- return t.trim().split(/\n\s*\n/).filter(Boolean).map(p=>`<p>${format(p).replace(/\n/g,'<br>')}</p>`).join('').replace(/\u0002(\d+)\u0003/g,(m,i)=>chips[i])}
+ return t.trim().split(/\n\s*\n/).filter(Boolean).map(p=>`<p>${format(p,true)}</p>`).join('').replace(/\u0002(\d+)\u0003/g,(m,i)=>chips[i])}
 // Which of a job's files to show as chips: the ones its answer names, else what it made for the owner. Housekeeping
 // (.pid, .log, lock and scratch files, dot folders) only shows under Details. At most AGENT_CHIPS, then "+N more".
 const AGENT_CHIPS=3,AGENT_NOISE=/(^|\/)(\.[^/]*|node_modules|__pycache__|tmp|temp|scratch|cache|logs?)(\/|$)|\.(pid|log|lock|tmp|temp|swp|swo|bak|orig|out|err)$|~$/i;

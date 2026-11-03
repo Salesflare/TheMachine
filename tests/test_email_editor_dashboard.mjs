@@ -36,9 +36,10 @@ try{
  const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:'+server.address().port);await page.locator('#task-r1').waitFor();
  // The dashboard draws every recorded case exactly as the send writes it, and reading a drawn case back changes nothing
- {const out=await page.evaluate(cases=>cases.map(c=>{const html=mailHtml(c.body,false),d=document.createElement('div');d.innerHTML=html;const m=mailModel(d),again=mailModelOf(mailBody(m));
-   return {html,same:JSON.stringify(again)===JSON.stringify(m)}}),CASES);
-  CASES.forEach((c,i)=>{assert.equal(out[i].html,c.html,'drawn like the send: '+JSON.stringify(c.body));assert.ok(out[i].same,'reads back the same: '+JSON.stringify(c.body))})}
+ // (compared as the page reads them: html`` writes a quote in text as &quot;, the send leaves it as it is)
+ {const out=await page.evaluate(cases=>cases.map(c=>{const d=document.createElement('div'),want=document.createElement('div');setHTML(d,mailHtml(c.body,false));want.innerHTML=c.html;const m=mailModel(d),again=mailModelOf(mailBody(m));
+   return {drawn:d.innerHTML,want:want.innerHTML,same:JSON.stringify(again)===JSON.stringify(m)}}),CASES);
+  CASES.forEach((c,i)=>{assert.equal(out[i].drawn,out[i].want,'drawn like the send: '+JSON.stringify(c.body));assert.ok(out[i].same,'reads back the same: '+JSON.stringify(c.body))})}
  // The card shows the email as it will look: a real list, bold, a link
  const db=page.locator('#task-r1 .db');
  assert.equal(await db.locator('li').count(),2);assert.equal(await db.locator('li b').innerText(),'Monday');assert.equal(await db.locator('a').getAttribute('href'),'https://example.com/brief');

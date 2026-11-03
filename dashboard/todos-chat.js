@@ -39,7 +39,7 @@ const chatEmoji=t=>String(t).replace(/:([a-z0-9_+-]{1,40}):(?!:)/g,(m,k)=>EMOJI[
 function chatMarkdown(text){text=chatEmoji(text);const out=[];let list=null,para=[],quote=null;
  // Quoted lines ("> …") are a quote, never a raw ">"
  const src=String(text||'').split('\n'),lines=[];for(const l of src){const q=/^\s*>\s?(.*)$/.exec(l);if(q){(quote??=[]).push(q[1]);continue}if(quote){lines.push({quote});quote=null}lines.push(l)}if(quote)lines.push({quote});
- const inline=t=>format(t).replace(/(^|[^*\w])\*([^*\n]+)\*(?!\*)/g,'$1<em>$2</em>');
+ const inline=t=>richText(t,true,{em:true});
  const flush=()=>{if(para.length)out.push(`<p>${para.map(inline).join('<br>')}</p>`);para=[];if(list)out.push(`<${list.tag}>${list.items.map(i=>`<li>${inline(i)}</li>`).join('')}</${list.tag}>`);list=null};
  for(const line of lines){if(line.quote){flush();out.push(`<blockquote class="chat-quote">${chatMarkdown(line.quote.join('\n'))}</blockquote>`);continue}const b=/^\s*[-*•]\s+(.*)$/.exec(line),n=/^\s*\d+[.)]\s+(.*)$/.exec(line),h=/^\s*#{1,6}\s+(.*)$/.exec(line);
   if(!line.trim()){flush();continue}

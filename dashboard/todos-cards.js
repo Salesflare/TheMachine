@@ -2,7 +2,7 @@
 const cardFiles=s=>(s.files||[]).length?`<div class="chat-files card-files">${s.files.map(f=>`<a class="agent-file via-file" href="api/chat-file?id=${encodeURIComponent(f.id)}" target="_blank" rel="noopener"${/^image\//.test(f.type)?'':` download="${esc(f.name)}"`}>${esc(f.name)}</a>`).join('')}</div>`:'';
 function cardBody(s,section){const asked=section==='Chat'?'':askedBody(s);if(asked)return asked;const named=resultLinks(s);let text=s.step_stopped||named.text,lead='';
 if(s.skill_proposal?.related)text=text.split(/\n\s*\n/).filter(p=>!p.trim().startsWith('Related to ')).join('\n\n');const m=text.match(/^\*\*([^*\n]+)\*\*\s*\n([\s\S]+)$/);if(m){lead=m[1];text=m[2].trim()}
-const html=named.html((lead?`<p class="lead-line" translate="no">${esc(lead)}</p>`:'')+cardLinks(text.split(/\n\s*\n/).map(p=>p.trim()).filter(Boolean).map(p=>`<p>${format(p).replace(/\n/g,'<br>')}</p>`).join(''),s));
+const html=named.html((lead?`<p class="lead-line" translate="no">${esc(lead)}</p>`:'')+cardLinks(text.split(/\n\s*\n/).map(p=>p.trim()).filter(Boolean).map(p=>`<p>${format(p,true)}</p>`).join(''),s));
 const proposal=skillProposal(s)+proposedSkillBox(s);
 // Short by default: the status line says where it stands; the rest folds behind Show more.
 const lines=2,per=innerWidth<600?38:72,rows=named.plain(text).split('\n').reduce((n,l)=>n+(l.trim()?Math.ceil(l.length/per):.6),0);
@@ -159,20 +159,26 @@ const MAIL_ESCAPE=/\\([\\*_\[\]()\-.#])/g,MAIL_LINK=/\[([^\[\]\n]{1,200})\]\((ht
 const MAIL_BOLD=/\*\*([^\s*](?:(?:[^*]|\*(?!\*))*[^\s])?)\*\*(?!\*)/g,mailSpan=c=>`(?:[^\\s${c}<]|<b>[^<]*</b>)(?:(?:[^${c}<]|<b>[^<]*</b>)*(?:[^\\s${c}<]|<b>[^<]*</b>))?`;
 const MAIL_ITALIC=[new RegExp(`(^|[^\\p{L}\\p{N}_*])\\*(${mailSpan('*')})\\*(?![\\p{L}\\p{N}_*])`,'gu'),new RegExp(`(^|[^\\p{L}\\p{N}_])_(${mailSpan('_')})_(?![\\p{L}\\p{N}_])`,'gu')];
 const mailEsc=(v,q=true)=>String(v).replace(q?/[&<>"']/g:/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#x27;'}[c]));
-function mailInline(text,nested=false,attrs=''){const kept=[],keep=v=>String.fromCharCode(0xE000+kept.push(v)-1);
- let s=String(text??'').replace(MAIL_KEPT,'').replace(MAIL_ESCAPE,(m,c)=>keep(mailEsc(c)));
- if(!nested)s=s.replace(MAIL_LINK,(m,w,u,bare)=>keep(w?`<a href="${mailEsc(u)}"${attrs}>${mailInline(w,true)}</a>`:`<a href="${mailEsc(bare)}"${attrs}>${mailEsc(bare)}</a>`));
- s=mailEsc(s,false).replace(MAIL_BOLD,'<b>$1</b>');for(const r of MAIL_ITALIC)s=s.replace(r,'$1<i>$2</i>');
- while(MAIL_KEPT.test(s)){MAIL_KEPT.lastIndex=0;s=s.replace(MAIL_KEPT,c=>kept[c.charCodeAt(0)-0xE000])}MAIL_KEPT.lastIndex=0;return s}
+// Escapes, links and & < > wait as kept characters (one each, as their entities did for the marks), the marks become
+// <b> and <i> in the text, and then it is built with html``: the marks and links as markup, everything else as text.
+const MAIL_TAG={'<b>':html`<b>`,'</b>':html`</b>`,'<i>':html`<i>`,'</i>':html`</i>`};
+function mailInline(text,nested=false,attrs=''){const kept=[],keep=v=>String.fromCharCode(0xE000+kept.push(v)-1),back=x=>x.replace(MAIL_KEPT,c=>kept[c.charCodeAt(0)-0xE000]);
+ let s=String(text??'').replace(MAIL_KEPT,'').replace(MAIL_ESCAPE,(m,c)=>keep(c));
+ if(!nested)s=s.replace(MAIL_LINK,(m,w,u,bare)=>keep(w?html`<a href="${safeHref(back(u))}"${attrs}>${mailInline(w,true)}</a>`:html`<a href="${safeHref(back(bare))}"${attrs}>${back(bare)}</a>`));
+ s=s.replace(/[&<>]/g,keep).replace(MAIL_BOLD,'<b>$1</b>');for(const r of MAIL_ITALIC)s=s.replace(r,'$1<i>$2</i>');
+ return html`${s.split(/(<\/?[bi]>|[\uE000-\uF8FF])/).map((x,i)=>i%2?MAIL_TAG[x]||kept[x.charCodeAt(0)-0xE000]:x)}`}
 // Line ends as next_actions.paragraphs reads them: \r\n is one break, a line of only spaces an empty line (a blank line between paragraphs).
 function mailBlocks(body){const out=[];for(const line of String(body??'').split(/\r\n?|\n/).map(l=>l.trim()?l:'')){const b=/^- ([\s\S]*)$/.exec(line),n=/^([0-9]{1,3})\. ([\s\S]*)$/.exec(line),last=out[out.length-1];
   if(b){if(last?.type==='ul')last.items.push(b[1]);else out.push({type:'ul',items:[b[1]]})}
   else if(n){if(last?.type==='ol')last.items.push(n[2]);else out.push({type:'ol',start:+n[1],items:[n[2]]})}
   else if(last?.type==='text')last.items.push(line);else out.push({type:'text',items:[line]})}return out}
 // The HTML part as sent; links=true opens them in a new tab here (the mail itself has plain links)
-const mailHtml=(body,here=true)=>{const at=here?' target="_blank" rel="noreferrer"':'';return mailBlocks(body).map(b=>b.type==='text'?b.items.map(l=>`<div>${mailInline(l,false,at)||'<br>'}</div>`).join('')
- :`<${b.type}${b.type==='ol'&&b.start!==1?` start="${b.start}"`:''} style="margin:0 0 0 1.6em;padding:0">${b.items.map(i=>`<li>${mailInline(i,false,at)}</li>`).join('')}</${b.type}>`).join('')};
-const draftBody=(a,text)=>['email','email_demo'].includes(a.kind)?mailHtml(text):a.kind==='slack'?esc(text).replace(MD_LINK,(m,t,u)=>`<a href="${u}" target="_blank" rel="noreferrer">${t}</a>`):esc(String(text).replace(MD_LINK,'$1 ($2)'));
+const mailHtml=(body,here=true)=>{const at=here?html` target="_blank" rel="noreferrer"`:'';return html`${mailBlocks(body).map(b=>b.type==='text'?b.items.map(l=>{const v=mailInline(l,false,at);return html`<div>${String(v)?v:html`<br>`}</div>`})
+ :html`${b.type==='ol'?html`<ol${b.start!==1?html` start="${b.start}"`:''} style="margin:0 0 0 1.6em;padding:0">`:html`<ul style="margin:0 0 0 1.6em;padding:0">`}${b.items.map(i=>html`<li>${mailInline(i,false,at)}</li>`)}${b.type==='ol'?html`</ol>`:html`</ul>`}`)}`};
+// Slack's links are found in the escaped text, as before; each piece goes back to text for html`` to escape once.
+const unesc=s=>s.replace(/&(amp|lt|gt|quot|#39);/g,(m,k)=>({amp:'&',lt:'<',gt:'>',quot:'"','#39':"'"}[k]));
+const slackBody=text=>{const p=esc(text).split(MD_LINK),out=[];for(let i=0;i<p.length;i+=3){out.push(unesc(p[i]));if(i+2<p.length)out.push(html`<a href="${safeHref(unesc(p[i+2]))}" target="_blank" rel="noreferrer">${unesc(p[i+1])}</a>`)}return html`${out}`};
+const draftBody=(a,text)=>['email','email_demo'].includes(a.kind)?mailHtml(text):a.kind==='slack'?slackBody(text):html`${String(text).replace(MD_LINK,'$1 ($2)')}`;
 // An email that goes instead of a reply in the to-do's Intercom conversation: why (next_actions.INTERCOM_FALLBACK, the same words).
 const INTERCOM_WHY={shared:'Intercom is shared with you to read only, so this goes by email.',off:'Intercom replies are off here, so this goes by email. Sign in with Intercom to reply there.',missing:'Intercom isn’t connected on this Machine, so this goes by email.'};
 // A reply from another mailbox than the one the email came in on (next_actions.REPLY_ELSEWHERE, the same words).
@@ -216,7 +222,7 @@ const skillLead=s=>s.status==='prepared'&&!!s.proposed_skill&&!skillDecided(s);
 // The run's saved "Needs you: approve …" no longer holds then, so the status line leaves it out (the stored text stays).
 const proposedSkillBox=s=>{const p=s.proposed_skill;if(!p||closed(s))return '';if(p.dismissed)return `<p class="note skill-dismissed">${esc(t('Skill dismissed'))}</p>`;if(p.created)return `<p class="note skill-created">${esc(t('Skill created. Your Machine uses it from now on.'))}</p>`;
  if(p.update)return `<details class="skill-notes"><summary>${esc(t('Read the change'))}</summary><div class="skill-ba">${skillBeforeAfter(p.update)}</div></details>`;
- return `<details class="skill-notes"><summary>${esc(t('Read the skill'))}</summary><p><strong translate="no">${esc(p.name)}</strong></p><p class="note" translate="no">${esc(t('When: {}',p.description))}</p><div translate="no">${p.body.replace(/^#{1,6}\s+(.+)$/gm,'**$1**').split(/\n\s*\n/).map(x=>x.trim()).filter(Boolean).map(x=>`<p>${format(x).replace(/\n/g,'<br>')}</p>`).join('')}</div></details>`};
+ return `<details class="skill-notes"><summary>${esc(t('Read the skill'))}</summary><p><strong translate="no">${esc(p.name)}</strong></p><p class="note" translate="no">${esc(t('When: {}',p.description))}</p><div translate="no">${p.body.replace(/^#{1,6}\s+(.+)$/gm,'**$1**').split(/\n\s*\n/).map(x=>x.trim()).filter(Boolean).map(x=>`<p>${format(x,true)}</p>`).join('')}</div></details>`};
 const skillButton=s=>{const p=s.proposed_skill;return 'update' in p?html`<button class="primary" data-skill-update="${p.id}" data-settings>${t('Update skill')}</button>`
  :html`<button class="primary" data-skill-create="${p.id}" data-card="${s.id}">${t('Create skill')}</button>`};
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-skill-create]');if(!b)return;e.preventDefault();b.disabled=true;

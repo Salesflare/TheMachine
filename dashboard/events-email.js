@@ -48,9 +48,9 @@ frame.style.visibility='hidden';const reveal=()=>{const doc=frame.contentDocumen
 frame.addEventListener('load',()=>{reveal();const doc=frame.contentDocument;if(!doc)return;const fit=()=>{frame.style.height=Math.min(Math.max(Math.ceil(doc.body.getBoundingClientRect().height),80),20000)+'px'};fit();new ResizeObserver(fit).observe(doc.body)});
 frame.srcdoc=emailDoc(view.html,view.images||{},id,o.event_id);box.replaceChildren(frame)}
 // Files attached to this card's email draft, as links that open over the Tailscale dashboard.
-const draftFileLinks=(id,files)=>(files||[]).map(a=>`<a class="attachment" href="api/draft-attachment?id=${encodeURIComponent(id)}&sha=${encodeURIComponent(a.sha256)}" target="_blank" rel="noreferrer">📎 ${esc(a.name)}<small>${esc(fileSize(a.size))}</small></a>`).join('');
+const draftFileLinks=(id,files)=>html`${(files||[]).map(a=>html`<a class="attachment" href="${'api/draft-attachment?id='+encodeURIComponent(id)+'&sha='+encodeURIComponent(a.sha256)}" target="_blank" rel="noreferrer">📎 ${a.name}<small>${fileSize(a.size)}</small></a>`)}`;
 const draftFiles=s=>{const seen=new Set();return taskActions(s).filter(a=>['email','email_demo'].includes(a.kind)).flatMap(a=>a.attachments||[]).filter(a=>!seen.has(a.sha256)&&seen.add(a.sha256))};
-const draftFilesBlock=s=>{const files=draftFiles(s);return files.length?`<div class="draft-files"><h3>Attached to your draft</h3><div class="attachments">${draftFileLinks(s.id,files)}</div></div>`:''};
+const draftFilesBlock=s=>{const files=draftFiles(s);return files.length?html`<div class="draft-files"><h3>Attached to your draft</h3><div class="attachments">${draftFileLinks(s.id,files)}</div></div>`:''};
 const emailViewFor=(id,ev)=>{const key=id+':'+ev;if(!emailViews.has(key))emailViews.set(key,request(`api/email?id=${id}&event=${encodeURIComponent(ev)}`).catch(()=>{emailViews.delete(key);return {html:''}}));return emailViews.get(key)};
 // Cards on screen read their email ahead, quietly: two at a time when the browser is idle, each card once, the last
 // PREFETCH_KEEP kept. Opening one is then instant.
@@ -63,11 +63,11 @@ function prefetchNext(){while(prefetching<2&&prefetchQueue.length){const id=pref
 const prefetchSeen=window.IntersectionObserver?new IntersectionObserver(entries=>{for(const e of entries){if(!e.isIntersecting)continue;prefetchSeen.unobserve(e.target);const id=e.target.dataset.id||e.target.querySelector('[data-original="read"][data-id]')?.dataset.id;
  if(id&&!prefetched.has(id)&&!originals.has(id)){prefetched.add(id);prefetchQueue.push(id)}}prefetchNext()},{rootMargin:'100px'}):null;
 let prefetchScan=0;if(prefetchSeen)new MutationObserver(()=>{cancelAnimationFrame(prefetchScan);prefetchScan=requestAnimationFrame(()=>{for(const b of document.querySelectorAll('[data-original="read"][data-id]'))if(!prefetched.has(b.dataset.id))prefetchSeen.observe(b.closest('.card-details')?b.closest('article'):b)})}).observe(document.body,{childList:true,subtree:true});
-async function openEmail(id){const s=state.suggestions.find(s=>s.id===id);const dialog=$('#email-dialog');$('#email-title').textContent=s?.title||'Original';$('#email-content').innerHTML='<p class="muted">Loading…</p>';dialog.showModal();
-let list;try{list=await originalsFor(id)}catch(e){errCaught(e);$('#email-content').innerHTML=`<p class="muted">${esc(e.message)}</p>`;return}
-if(!list.length){$('#email-content').innerHTML=draftFilesBlock(s)+'<p class="muted">The original is no longer available.</p>';return}
+async function openEmail(id){const s=state.suggestions.find(s=>s.id===id);const dialog=$('#email-dialog');$('#email-title').textContent=s?.title||'Original';setHTML($('#email-content'),html`<p class="muted">Loading…</p>`);dialog.showModal();
+let list;try{list=await originalsFor(id)}catch(e){errCaught(e);setHTML($('#email-content'),html`<p class="muted">${e.message}</p>`);return}
+if(!list.length){setHTML($('#email-content'),html`${draftFilesBlock(s)}<p class="muted">The original is no longer available.</p>`);return}
 const [first,...rest]=list;
 if(first.kind==='calendar'&&!rest.length&&!draftFiles(s||{}).length){openMeeting(first.event_id,s?.title);return}  // a to-do from a meeting: the meeting itself
-$('#email-content').innerHTML=draftFilesBlock(s)+`<div class="email" data-msg="0">${messageHTML(first,id,0)}</div>`+(rest.length?`<h3 class="email-earlier">${t(['{} related message','{} related messages'],rest.length)}</h3>`+rest.map((o,i)=>`<details class="email" data-msg="${i+1}"><summary>${esc(sender(o.from)||kindLabel(o.kind))} · ${esc(new Date(o.occurred_at).toLocaleDateString(DL,{day:'numeric',month:'short'}))}</summary>${messageHTML(o,id,i+1)}</details>`).join(''):'');
+setHTML($('#email-content'),html`${draftFilesBlock(s)}<div class="email" data-msg="0">${messageHTML(first,id,0)}</div>${rest.length?html`<h3 class="email-earlier">${t(['{} related message','{} related messages'],rest.length)}</h3>${rest.map((o,i)=>html`<details class="email" data-msg="${i+1}"><summary>${sender(o.from)||kindLabel(o.kind)} · ${new Date(o.occurred_at).toLocaleDateString(DL,{day:'numeric',month:'short'})}</summary>${messageHTML(o,id,i+1)}</details>`)}`:''}`);
 fillMessage($('#email-content [data-msg="0"]'),first,id);
 $('#email-content').querySelectorAll('details.email').forEach(d=>d.addEventListener('toggle',()=>{if(d.open)fillMessage(d,list[+d.dataset.msg],id)}))}

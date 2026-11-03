@@ -123,12 +123,18 @@ const when=e=>{if(e.kind!=='calendar.event')return humanTime(e.occurred_at);if(e
 const TEXT_LINK=/\[([^\[\]\n]{1,200})\]\(((?:https?:\/\/|mailto:)[^\s()<>]{1,2000})\)|\bhttps?:\/\/[^\s<>()\[\]"'`]{1,2000}/gi;
 const linkable=u=>{try{return ['https:','http:','mailto:'].includes(new URL(u).protocol)}catch{return false}};
 const shortURL=u=>{if(u.length<=40)return u;try{return new URL(u).hostname.replace(/^www\./,'')}catch{return u}};
-const richText=(v,bold)=>{const found=[];let h=esc(String(v??'').replace(/[\u0000\u0001]/g,'').replace(TEXT_LINK,(m,t,u)=>{let url=u||m,tail='';
- if(!u){tail=(/[.,;:!?'"]+$/.exec(url)||[''])[0];url=url.slice(0,url.length-tail.length)}if(!linkable(url))return m;
- found.push(`<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">${esc(t??shortURL(url))}</a>`);return '\u0000'+(found.length-1)+'\u0001'+tail}));
- if(bold)h=h.replace(/\*\*([^*]+)\*\*/g,(m,t)=>t.replace(/\u0000\d+\u0001/g,'x').length<=24?`<strong class="nb">${t}</strong>`:`<strong>${t}</strong>`);
- return h.replace(/\u0000(\d+)\u0001/g,(m,i)=>found[i])};
-const format=v=>richText(v,true),linkText=v=>richText(v,false);
+// The markup goes in as pieces marked \u0000N\u0001 in the text, and everything around them is escaped text.
+// em: *words* in italics (the chat); br: line breaks.
+const RT_NB=html`<strong class="nb">`,RT_B=html`<strong>`,RT_B_END=html`</strong>`,RT_EM=html`<em>`,RT_EM_END=html`</em>`,RT_BR=html`<br>`;
+const richText=(v,bold,{br=false,em=false}={})=>{const found=[],mark=h=>'\u0000'+(found.push(h)-1)+'\u0001';
+ let s=String(v??'').replace(/[\u0000\u0001]/g,'').replace(TEXT_LINK,(m,t,u)=>{let url=u||m,tail='';
+  if(!u){tail=(/[.,;:!?'"]+$/.exec(url)||[''])[0];url=url.slice(0,url.length-tail.length)}if(!linkable(url))return m;
+  return mark(html`<a href="${url}" target="_blank" rel="noopener noreferrer">${t??shortURL(url)}</a>`)+tail});
+ if(bold)s=s.replace(/\*\*([^*]+)\*\*/g,(m,t)=>mark(esc(t).replace(/\u0000\d+\u0001/g,'x').length<=24?RT_NB:RT_B)+t+mark(RT_B_END));
+ if(em)s=s.replace(/(^|[^*\w])\*([^*\n]+)\*(?!\*)/g,(m,a,t)=>a+mark(RT_EM)+t+mark(RT_EM_END));
+ if(br)s=s.replace(/\n/g,()=>mark(RT_BR));
+ return html`${s.split(/\u0000(\d+)\u0001/).map((x,i)=>i%2?found[x]:x)}`};
+const format=(v,br)=>richText(v,true,{br}),linkText=v=>richText(v,false);
 // Card bodies: a fully bold first line is a small subtitle under the title, blank lines make paragraphs, long bodies fold behind Show more.
 const expandedBodies=new Set(),expandedDetails=new Set();
 // Rows drawn from a list's kept HTML (the Done pages) open again the Details that were open
@@ -150,7 +156,7 @@ const skillStale=u=>u?.stale?`<p class="note">${esc(u.skill)} changed after this
 const skillRelated=r=>r?`<p class="skill-related">Related to <strong>${esc(r.name)}</strong>: ${esc(r.relation)}</p>`:'';
 function skillProposal(s){const p=s.skill_proposal;if(!p)return '';
  if(p.update)return `${skillStale(p.update)}<details class="skill-notes"><summary>Read the change and ${p.notes.length} notes</summary><div class="skill-ba">${skillBeforeAfter(p.update)}</div>${skillNotesList(p)}</details>`;
- return `${skillRelated(p.related)}<details class="skill-notes"><summary>Read skill instructions and ${p.notes.length} notes</summary><p><strong>${esc(p.name)}</strong></p><div>${format(p.body).replace(/\n/g,'<br>')}</div>${skillNotesList(p)}</details>`}
+ return `${skillRelated(p.related)}<details class="skill-notes"><summary>Read skill instructions and ${p.notes.length} notes</summary><p><strong>${esc(p.name)}</strong></p><div>${format(p.body,true)}</div>${skillNotesList(p)}</details>`}
 // Update <skill>: its before and after first; only Update skill there changes it (reviewed names what was shown).
 let skillUpdating=null;
 function skillUpdateOpen(u,from,send){if(!u){toast('That skill is gone.',true);return}if(u.stale){toast(`${u.skill} changed after this was suggested.`,true);return}

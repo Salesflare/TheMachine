@@ -8,28 +8,28 @@ const docHead=(a,done)=>done?t(DOC_DID[a.op]||DOC_DID.edit,docWhere(a)):a.op==='
 const docDoneText=(a,sent)=>a.op==='create'?sentNote(sent,'Doc created.','Doc created at {}.'):sentNote(sent,'Changes saved in the doc.','Changes saved in the doc at {}.');
 // New text as the doc gets it: "# " to "### " lines are headings, the rest paragraphs (doc_writes.lines).
 const docLines=(text,tag)=>String(text||'').split('\n').filter(l=>l.trim()).map(l=>{const m=/^(#{1,3}) +(.*)$/.exec(l);
- return `<p class="dw-p${m?' dw-h'+m[1].length:''}">${tag?`<${tag}>`:''}${esc(m?m[2]:l)}${tag?`</${tag}>`:''}</p>`}).join('');
+ const x=m?m[2]:l;return html`<p class="dw-p${m?' dw-h'+m[1].length:''}">${tag==='ins'?html`<ins>${x}</ins>`:x}</p>`});
 // One paragraph with its changed piece marked: struck through before, marked after.
 const docMark=(text,piece,tag)=>{const s=String(text||''),i=piece?s.indexOf(piece):-1;
- return i<0?esc(s):esc(s.slice(0,i))+`<${tag}>${esc(piece)}</${tag}>`+esc(s.slice(i+piece.length))};
-const docChange=(c,n,total)=>{const head=total>1?`<div class="dw-n">${esc(t('Change {} of {}',n,total))}</div>`:'';
- if('find' in c)return head+`<div class="dw-k">${esc(t('Before'))}</div><p class="dw-p">${docMark(c.before,c.find,'del')}</p><div class="dw-k">${esc(t('After'))}</div><p class="dw-p">${docMark(c.after,c.replace,'ins')}</p>`;
- if('after' in c)return head+`<div class="dw-k">${esc(t('Add after “{}”',c.before.length>80?c.before.slice(0,79)+'…':c.before))}</div>${docLines(c.insert,'ins')}`;
- return head+`<div class="dw-k">${esc(t('Add at the end'))}</div>${docLines(c.append,'ins')}`};
+ return i<0?s:html`${s.slice(0,i)}${tag==='del'?html`<del>${piece}</del>`:html`<ins>${piece}</ins>`}${s.slice(i+piece.length)}`};
+const docChange=(c,n,total)=>{const head=total>1?html`<div class="dw-n">${t('Change {} of {}',n,total)}</div>`:'';
+ if('find' in c)return html`${head}<div class="dw-k">${t('Before')}</div><p class="dw-p">${docMark(c.before,c.find,'del')}</p><div class="dw-k">${t('After')}</div><p class="dw-p">${docMark(c.after,c.replace,'ins')}</p>`;
+ if('after' in c)return html`${head}<div class="dw-k">${t('Add after “{}”',c.before.length>80?c.before.slice(0,79)+'…':c.before)}</div>${docLines(c.insert,'ins')}`;
+ return html`${head}<div class="dw-k">${t('Add at the end')}</div>${docLines(c.append,'ins')}`};
 // A new doc's text under its title: a first heading that only repeats the title shows once (doc_writes.untitled).
 const docSame=x=>String(x||'').trim().replace(/\s+/g,' ').toLowerCase();
 const docBody=a=>{const ls=String(a.body||'').split('\n').filter(l=>l.trim()),m=ls.length?/^#{1,3} +(.*)$/.exec(ls[0].trim()):null;
  return m&&docSame(m[1])===docSame(a.title)?ls.slice(1).join('\n'):String(a.body||'')};
-const docWriteHtml=a=>a.op==='create'?`<p class="dw-p dw-h1">${esc(a.title)}</p>${docLines(docBody(a))}`:(a.changes||[]).map((c,i,all)=>`<div class="dw-ch">${docChange(c,i+1,all.length)}</div>`).join('');
+const docWriteHtml=a=>a.op==='create'?html`<p class="dw-p dw-h1">${a.title}</p>${docLines(docBody(a))}`:html`${(a.changes||[]).map((c,i,all)=>html`<div class="dw-ch">${docChange(c,i+1,all.length)}</div>`)}`;
 // Plain text of the same, for chat and copy (doc_writes.preview).
 const docWriteText=a=>a.op==='create'?a.title+'\n\n'+docBody(a):(a.changes||[]).map(c=>'find' in c?t('Before')+': '+c.before+'\n'+t('After')+': '+c.after:'after' in c?t('Add after “{}”',c.before)+'\n'+c.insert:t('Add at the end')+'\n'+c.append).join('\n\n');
 function docWriteBox(s,a){const done=(a.state||s.action_status)?.status==='sent',key='draft-'+s.id+'-'+a.revision,open=expandedBodies.has(key);
  const size=a.op==='create'?String(a.body||'').split('\n').length:(a.changes||[]).length*4,fold=size>16;
- return `<div class="draft doc-write${done?' sent':''}${fold&&!open?' clamp':''}" role="group" aria-label="${esc(a.op==='create'?t('New doc'):t('Doc changes'))}"><div class="dm">${esc(docHead(a,done))}${safeURL(a.url)?` · <a href="${esc(safeURL(a.url))}" target="_blank" rel="noreferrer">${esc(t('Open the doc'))}</a>`:''}</div><div class="db dw">${docWriteHtml(a)}</div></div>${fold?`<button type="button" class="more" data-more="${esc(key)}" aria-expanded="${open}">${open?'Show less':'Show more'}</button>`:''}`}
+ return html`<div class="draft doc-write${done?' sent':''}${fold&&!open?' clamp':''}" role="group" aria-label="${a.op==='create'?t('New doc'):t('Doc changes')}"><div class="dm">${docHead(a,done)}${safeURL(a.url)?html` · <a href="${safeHref(safeURL(a.url))}" target="_blank" rel="noreferrer">${t('Open the doc')}</a>`:''}</div><div class="db dw">${docWriteHtml(a)}</div></div>${fold?html`<button type="button" class="more" data-more="${key}" aria-expanded="${open}">${open?'Show less':'Show more'}</button>`:''}`}
 // The review dialog for it: everything that goes in, then Create or Save. The tap here writes it, once.
 function openDocWrite(id,draft){sendTask=id;sendRevision=draft.revision;sendDraft=draft;$('#send-editor').hidden=true;$('#send-edit').hidden=true;
  $('#send-title').textContent=draft.op==='create'?t('Create this doc?'):t('Save these changes?');$('#send-confirm').textContent=draft.op==='create'?t('Create'):t('Save');
  $('#send-preview').classList.remove('code','mail');$('#send-confirm').hidden=false;$('#send-confirm').disabled=false;$('#send-cancel').textContent='Cancel';$('#send-recipients').hidden=true;$('#send-files').hidden=true;$('#send-error').textContent='';
  sendHeader=()=>sendRows(draft.op==='create'?[['Doc',draft.title],['Where',docWhere(draft)+(draft.account_name?' · '+draft.account_name:'')]]:[['Doc',draft.doc_title],['Where',docWhere(draft)],['Changes',String((draft.changes||[]).length)]]);sendHeader();
- $('#send-preview').hidden=false;$('#send-preview').innerHTML=`<div class="dw">${docWriteHtml(draft)}</div>`;
+ $('#send-preview').hidden=false;setHTML($('#send-preview'),html`<div class="dw">${docWriteHtml(draft)}</div>`);
  sendFine(draft.op==='create'?t('Only you can see the new doc until you share it.'):t('Only these changes are made, and only if the doc hasn’t changed since.'));$('#send-dialog').showModal()}
