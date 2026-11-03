@@ -38,6 +38,7 @@ from fleet_requests import card_reason
 from i18n import t
 
 LOG = logging.getLogger('personal-assistant')
+NO_MAILBOX = 'No Gmail or Outlook account to send it from. Connect one in Connections.'
 SCHEMA = 'CREATE TABLE IF NOT EXISTS handoff_mails(card_id TEXT PRIMARY KEY,state TEXT NOT NULL,record TEXT NOT NULL,updated_at TEXT NOT NULL)'
 PREFS = 'CREATE TABLE IF NOT EXISTS handoff_mail_prefs(key TEXT PRIMARY KEY,value TEXT NOT NULL)'
 SITE = 'https://themachine.computer'
@@ -177,7 +178,8 @@ class HandoffMail:
         files = [{'key': f'file:{n}', 'name': f['name'], 'size': f.get('size', 0)} for n, f in enumerate((draft or {}).get('attachments') or [])]
         return {'suggestion_id': card['id'], 'shared': shared, 'lines': lines, 'links': links[:LINKS],
                 'draft': {'key': 'draft', 'to': draft.get('to') or [], 'subject': draft.get('subject') or ''} if draft else None,
-                'files': files, 'take': self.take_line(), 'task': found.get('task') or card['title']}
+                'files': files, 'take': self.take_line(), 'task': found.get('task') or card['title'],
+                'mailbox': bool(next_actions.sending_account(self.app.config, json.loads(card['account_ids'] or '[]')))}
 
     # -- the email
     def body(self, task, me, context, links, draft, take_url):
@@ -224,20 +226,13 @@ class HandoffMail:
         tid = take_id() if take and ref else None
         url = take_link(self.app.config, tid) if tid else SITE if take else None
         subject, body = self.body(task, me, context, links, draft, url)
-        allowed = json.loads(card['account_ids'] or '[]')
-        mail = [a for a in self.app.config.get('accounts', []) if next_actions.mail_account(a)]
-        order = [a for a in mail if a['id'] in allowed] + [a for a in mail if a['id'] not in allowed]
-        action = None
-        for account in order:
-            try:
-                action = next_actions.validate({'kind': 'email', 'label': 'Send', 'account_id': account['id'], 'to': [email],
-                                                'subject': subject, 'body': body}, self.app.config, allowed)
-                break
-            except ValueError as error:
-                if 'Outlook account' not in str(error) and 'company' not in str(error):
-                    raise
-        if not action:
-            raise ValueError('This to-do has no Gmail or Outlook account to send from')
+        # From the owner's own mailbox: the to-do's, else their usual one for its area (a to-do from Intercom or Slack
+        # has none of its own). The owner wrote this email and reads it before it goes, so any of their mailboxes may.
+        account = next_actions.sending_account(self.app.config, json.loads(card['account_ids'] or '[]'))
+        if not account:
+            raise ValueError(NO_MAILBOX)
+        action = next_actions.validate({'kind': 'email', 'label': 'Send', 'account_id': account['id'], 'to': [email],
+                                        'subject': subject, 'body': body}, self.app.config, [account['id']])
         if files:
             action['attachments'] = [dict(f) for f in files]  # the ready draft's own files, as the owner reviewed them there
         self.app.handoff_mail_draft(card['id'], f'An email handing this to {email}. Read it, change it if you like, and send it yourself.',

@@ -44,4 +44,6 @@ Wähle **Per E-Mail**: Deine Machine entwirft eine E-Mail, die du sendest. Währ
 
 Nur für Arbeit-Aufgaben. Hake an, was in die E-Mail kommt: ein paar Zeilen zur Aufgabe, ihr fertiger Entwurf, Links und Dateien. Angeboten wird nur, was dein Team Graph mit dem Team teilt, also bleiben Privat und Nur du draußen. **E-Mail vorbereiten** legt die E-Mail auf die Aufgabe: lies sie und sende sie dann aus deinem eigenen Postfach wie jede E-Mail. Keine Tracking-Pixel.
 
+Eine Aufgabe aus Intercom oder Slack hat kein eigenes Postfach, also geht ihre E-Mail aus deinem Arbeit-Postfach.
+
 Die Aufgabe zeigt dann "Per E-Mail an <Name> übergeben" und verfolgt es als Versprechen, bis die Person antwortet, dass es erledigt ist, oder du es als erledigt markierst. Am Ende steht "Übernimm das in deiner eigenen Machine": Wer sich über diesen Link anmeldet, kann deiner Fleet beitreten, und die Aufgabe geht als normale Übergabe in die eigene Machine. Schalte die Zeile in **Einstellungen** unter Fleet aus.

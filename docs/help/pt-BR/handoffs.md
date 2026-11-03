@@ -44,4 +44,6 @@ Escolha **Por e-mail**: sua Machine escreve um rascunho de e-mail para você env
 
 Só para tarefas de Trabalho. Marque o que vai no e-mail: algumas linhas sobre a tarefa, o rascunho pronto, links e arquivos. Só aparece o que seu Team Graph compartilha com a equipe, então o que é Pessoal e Só você fica de fora. **Preparar e-mail** deixa o e-mail na tarefa: leia e depois envie da sua própria caixa como qualquer e-mail. Sem pixels de rastreamento.
 
+Uma tarefa do Intercom ou do Slack não tem caixa própria, então o e-mail sai da sua caixa de Trabalho.
+
 A tarefa então mostra "Passada para <nome> por e-mail" e acompanha como uma promessa até a pessoa responder que está feito, ou até você marcar como feita. O e-mail termina com "Assuma isso na sua própria Machine": quem se cadastra por esse link pode entrar no seu Fleet e a tarefa vai para a Machine da pessoa como um repasse normal. Desligue essa linha em **Configurações**, em Fleet.

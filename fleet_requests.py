@@ -660,7 +660,9 @@ class Requests:
                 + '; '.join(f'{n} <{e}>' for e, n in list(people.items())[:20]) + '. '
                 "When the task is for one of them (theirs to do, their area), hand it to their Machine: next action "
                 "{kind:'handoff',label:'Hand off to <first name>',to_email:<their email above>,to_name:<their name>,body:<the message "
-                "itself, written to them: what, why, by when, the link>}. The owner reads and edits it before it goes. A Slack message "
+                "itself, written to them: what, why, by when, the link>}. Write that message in whole sentences, also when the "
+                "owner writes chats without punctuation: what they need to know ends with a period, and the ask is a sentence of "
+                "its own that ends with a question mark. Their Machine shows it as a to-do. The owner reads and edits it before it goes. A Slack message "
                 "or email to them (delegate:true) can be a second choice. Your result says you prepared a handoff to them "
                 "through The Machine. Anyone else gets a Slack message or email as usual.")
 

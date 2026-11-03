@@ -41,6 +41,26 @@ def mail_account(account):
         service == 'outlook' and account.get('transport') in ('broker', 'graph'))
 
 
+def sending_account(config, account_ids):
+    """The owner's mailbox a new email from a to-do goes from when the owner writes it themselves (a handoff by email):
+    one of the to-do's own accounts that sends mail, else one in its area (that company's for a Work to-do, any Work
+    one when its company has none, a personal one for a Personal to-do), else their first mailbox. A to-do from
+    Intercom or Slack has no mailbox of its own, so it sends from the owner's usual one. None when they have none."""
+    import todo_areas
+    mail = [a for a in config.get('accounts', []) if mail_account(a)]
+    own = set(account_ids or ())
+    areas = {todo_areas.area_of_account(a) for a in config.get('accounts', []) if a['id'] in own} - {None}
+    work = any(x != todo_areas.PERSONAL for x in areas)
+    side = lambda a: todo_areas.area_of_account(a) or ''
+    for pick in (lambda a: a['id'] in own, lambda a: side(a) in areas,
+                 (lambda a: side(a).startswith('work:')) if work else (lambda a: side(a) == todo_areas.PERSONAL),
+                 lambda a: True):
+        found = next((a for a in mail if pick(a)), None)
+        if found:
+            return found
+    return None
+
+
 def outlook(account):
     return account.get('service') == 'outlook'
 
@@ -801,6 +821,10 @@ ATTACHED = re.compile(r"(?i)\b(?:I(?:'ve| have)? attached|attached (?:is|are|you
 SAVED_FILE = re.compile(r'(?:data/assistant-attachments|memory/assistant)/\S*[^\s/.,;:)]')
 
 
+# A message that ends as a sentence does: its last mark (maybe inside a closing quote, bracket or bold), or a link it ends on.
+ENDS_SENTENCE = re.compile(r'(?:[.!?…]["”’)\]*_]*|https?://\S+)\s*$')
+
+
 def check(value, result='', own_addresses=()):
     """Mistakes a Do it result can't go out with: checked before it's saved, so the
     run fixes them itself instead of the owner tapping Change. Returns plain problems; empty is fine."""
@@ -816,6 +840,9 @@ def check(value, result='', own_addresses=()):
         if action['kind'] == 'finish' and not action.get('attachments') and (
                 ATTACHED.search(text) or SAVED_FILE.search(action['instructions'])):
             problems.append(f"“{action['label']}” uploads or mentions a file but lists none: add attachments:[<paths>] so the owner sees it, or reword it")
+        if action['kind'] == 'handoff' and not ENDS_SENTENCE.search(action['body']):
+            problems.append('The handoff message runs on without its punctuation: write it as whole sentences, what they need to '
+                            'know ending with a period and the ask as its own sentence ending with a question mark')
         if action['kind'] == 'email':
             if ATTACHED.search(action['body']) and not action.get('attachments'):
                 problems.append('The email mentions an attachment but has none: add attachments:[<paths>] or reword it')

@@ -48,4 +48,6 @@ Pick **By email**: your Machine drafts an email for you to send. As you type the
 
 Only for Work to-dos. Tick what goes in the email: a few lines about the to-do, its ready draft, links and files. Only what your Team Graph shares with the team is offered, so Personal and Only you content stays out. **Prepare email** puts the email on the to-do: read it, then send it from your own mailbox like any email. No tracking pixels.
 
+A to-do from Intercom or Slack has no mailbox of its own, so its email goes from your Work mailbox.
+
 The to-do then says "Handed to <name> by email" and tracks it as a promise until they reply that it's done, or you mark it done. The email ends with "Take this on in your own Machine": if they sign up through that link, they can join your Fleet and the to-do moves to their Machine as a normal handoff. Turn that line off in **Settings**, under Fleet.

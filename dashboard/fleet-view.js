@@ -399,18 +399,19 @@ function handoffEditor(s){const d=handingOff.get(s.id);if(!d||closed(s))return''
   :`<select name="to" class="handoff-pick" aria-label="Hand off to">${opts.map(([v,n])=>`<option value="${esc(v)}"${d.to===v?' selected':''}>${esc(n)}</option>`).join('')}</select>`;
  const name=mail?t('them'):esc((d.who.find(([f,m])=>f+'|'+m===d.to)||[])[2]||t('them'));
  const x=(what,attr)=>`<button type="button" class="chip-x" ${attr} aria-label="Leave out ${esc(what)}" title="Leave out">×</button>`;
- const chips=mail?'':[...(d.contact&&d.with_contact!==false?[`<span class="agent-get"><i class="via-ico via-link" aria-hidden="true"></i>${esc(t('Contact: {}',d.contact))}${x(d.contact,'data-handoff-drop="contact"')}</span>`]:[]),
-  ...(d.sources||[]).map((v,n)=>d.dropped?.includes(n)?'':`<span class="agent-get"><i class="via-ico via-${v.kind==='email'?'mail':'chat'}" aria-hidden="true"></i>${esc(v.label)}${x(v.label,`data-handoff-drop="${n}"`)}</span>`)].join('');
+ const chips=mail?'':[...(d.contact&&d.with_contact!==false?[`<span class="agent-get"><i class="via-ico via-link" aria-hidden="true"></i><span class="agent-get-label">${esc(t('Contact: {}',d.contact))}</span>${x(d.contact,'data-handoff-drop="contact"')}</span>`]:[]),
+  ...(d.sources||[]).map((v,n)=>d.dropped?.includes(n)?'':`<span class="agent-get"><i class="via-ico via-${v.kind==='email'?'mail':'chat'}" aria-hidden="true"></i><span class="agent-get-label">${esc(v.label)}</span>${x(v.label,`data-handoff-drop="${n}"`)}</span>`)].join('');
  const had=!mail&&['asked','waiting for them'].includes(s.fleet_handoff?.stage)&&(d.who.find(([f,m])=>f+'|'+m===d.to)||[])[2]!==s.fleet_handoff.name?[firstName(s.fleet_handoff.name),...(s.fleet_handoff.also||[])].join(' and '):'';
  const back=had?`<label class="handoff-back"><input type="checkbox" name="replace"${d.replace===false?'':' checked'}> Take it back from ${esc(had)}</label>`:'';
  return`<form class="fleet-handoff-form agent-sheet" data-card="${id}"><div class="agent-sheet-head"><span class="agent-sheet-title">Hand off to</span>${pick}</div><input type="hidden" name="title" value="${esc(d.title)}">
  ${mail?`<input name="email" type="email" class="handoff-email" maxlength="254" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="handoff-team-${id}" value="${esc(d.email||'')}" placeholder="Their email" aria-label="Their email" required><ul class="cal-sug handoff-sug" id="handoff-team-${id}" role="listbox" aria-label="Teammates" hidden></ul>`:''}
  <textarea name="task" class="agent-note handoff-task" rows="1" maxlength="1000" aria-label="What they are asked to do">${esc(d.task??d.summary)}</textarea>${!mail&&chips?`<div class="agent-gets" aria-label="Goes along">${chips}</div>`:''}
  <textarea name="note" class="agent-note" rows="1" maxlength="600" placeholder="${esc(t('Add a note for {}',name))}" aria-label="${esc(t('Add a note for {}',name))}">${esc(d.note||'')}</textarea>${mail?mailParts(d):''}${back}
- <div class="agent-sheet-foot"><button type="button" class="ghost" data-handoff-cancel="${id}">Cancel</button><button class="primary">${mail?'Prepare email':'Hand off'}</button></div></form>`}
+ <div class="agent-sheet-foot"><button type="button" class="ghost" data-handoff-cancel="${id}">Cancel</button><button class="primary"${mail&&d.parts?.mailbox===false?' disabled':''}>${mail?'Prepare email':'Hand off'}</button></div></form>`}
 // By email: what goes in the email (handoff_mail.parts), each ticked until the owner unticks it. Only what the Team Graph
 // shares with the team is offered; the email then waits on the to-do for the owner to read and send.
 function mailParts(d){const p=d.parts,off=d.off||new Set();if(!p)return`<p class="agent-what">${esc(t('You read it on the to-do before it goes.'))}</p>`;
+ if(p.mailbox===false)return`<p class="agent-what handoff-no-mailbox" role="status">${esc(t('No Gmail or Outlook account to send it from. Connect one in Connections.'))}</p>`;  // nothing to send it from: said here, not as an error
  const row=(k,html)=>`<label class="handoff-part"><input type="checkbox" data-handoff-part="${esc(k)}"${off.has(k)?'':' checked'}><span>${html}</span></label>`;
  const ico=k=>`<i class="via-ico via-${k}" aria-hidden="true"></i>`;
  const rows=[...p.lines.map(x=>row(x.key,esc(x.key==='due'?t('Due {}',tpDay(x.due)):x.text))),...(p.draft?[row('draft',ico('mail')+esc(t('Draft ready to send: {}',p.draft.subject)))]:[]),
@@ -507,7 +508,7 @@ function agentEditor(s){const d=agentEditing.get(s.id);if(!d||closed(s))return''
  const n=esc(agentToolName(t)),id=esc(s.id);
  const pick=agentTools().length>1?`<span class="agent-switch" role="radiogroup" aria-label="Hand to">${agentTools().map(x=>`<label title="${esc(agentWhere(x))}"><input type="radio" name="tool" value="${esc(x.id)}"${x.id===t.id?' checked':''}><span>${esc(agentToolName(x))}</span></label>`).join('')}</span>`
   :`<input type="hidden" name="tool" value="${esc(t.id)}"><span class="agent-one" title="${esc(agentWhere(t))}">${n}</span>`;
- const gets=(d.gets||[]).map(g=>`<span class="agent-get"><i class="via-ico via-${AGENT_GETS[g.kind]||'file'}" aria-hidden="true"></i>${esc(g.label)}</span>`).join('');
+ const gets=(d.gets||[]).map(g=>`<span class="agent-get"><i class="via-ico via-${AGENT_GETS[g.kind]||'file'}" aria-hidden="true"></i><span class="agent-get-label">${esc(g.label)}</span></span>`).join('');
  return`<form class="agent-form agent-sheet" data-card="${id}"><div class="agent-sheet-head"><span class="agent-sheet-title">Hand to</span>${pick}</div>
  ${d.line?`<p class="agent-what">${esc(d.line)}</p>`:''}${gets?`<div class="agent-gets" aria-label="What it gets">${gets}</div>`:''}
  <textarea id="agent-note-${id}" name="note" class="agent-note" rows="1" maxlength="4000" placeholder="${esc(window.t('Add a note for {}',n))}" aria-label="${esc(window.t('Add a note for {}',n))}">${esc(d.note||'')}</textarea>

@@ -44,4 +44,6 @@ Elige **Por correo**: tu Machine redacta un correo para que lo envíes tú. Mien
 
 Solo para tareas de Trabajo. Marca lo que va en el correo: unas líneas sobre la tarea, su borrador listo, enlaces y archivos. Solo se ofrece lo que tu Team Graph comparte con el equipo, así que lo Personal y Solo tú se queda fuera. **Preparar correo** deja el correo en la tarea: léelo y luego envíalo desde tu propio buzón como cualquier correo. Sin píxeles de seguimiento.
 
+Una tarea de Intercom o Slack no tiene buzón propio, así que su correo sale de tu buzón de Trabajo.
+
 La tarea muestra entonces "Pasada a <nombre> por correo" y lo sigue como una promesa hasta que respondan que está hecho, o hasta que la marques como hecha. El correo termina con "Encárgate de esto en tu propia Machine": si se registran con ese enlace, pueden unirse a tu Fleet y la tarea pasa a su Machine como un traspaso normal. Desactiva esa línea en **Ajustes**, en Fleet.
