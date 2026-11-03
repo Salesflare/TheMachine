@@ -12772,6 +12772,20 @@ def mail_ready(config):
     return bool(fleet.settings(config) and (config.get('credentials') or {}).get('fleet'))
 
 
+# A hosted Machine whose owner signed up from this day on: the control plane turns its reviews on by itself once its AI
+# and mail are connected (themachine-cloud worker.auto_activate, AUTO_ACTIVATE_SINCE).
+HOSTED_REVIEWS_AUTO_SINCE = '2026-10-22'
+
+
+def reviews_start_by_themselves(config):
+    """Whether reviews, still off, turn on by themselves (a new hosted Machine), so the dashboard shows how far setup
+    is instead of "Reviews are off" with a button. Not once the owner turned them off (first_look False), nor on a
+    Machine set up before, whose owner turns them on themselves."""
+    settings = config.get('review_worker') or {}
+    return (str(config.get('manage_url') or '').startswith('https://') and not settings.get('enabled')
+            and settings.get('first_look') is not False and str(config.get('started_at') or '')[:10] >= HOSTED_REVIEWS_AUTO_SINCE)
+
+
 def cloud_target(config):
     """(url, token) of the control plane a hosted or paired Machine talks to (its email and the mobile app's push), or
     None (self-hosted and not paired)."""
@@ -15314,6 +15328,7 @@ class App(*APP_MIXINS):
             result['skills'] = self.skills.view() if getattr(self, 'skills', None) else None
             result['review_live'] = self.review_live()
             result['reviews_on'] = bool((self.config.get('review_worker') or {}).get('enabled'))  # off until activated
+            result['reviews_auto'] = reviews_start_by_themselves(self.config)
             result['started_at'] = self.started_at()
             result['hours'] = self.hours()
             result['locale'] = self.locale_view()

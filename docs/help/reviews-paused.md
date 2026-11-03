@@ -8,6 +8,10 @@ order: 3
 ---
 To-dos come from reviews: your Machine reads what came in, in small batches, within about an hour.
 
+## Just signed up
+
+On a new hosted Machine, reviews start by themselves once your AI and mail are connected. While your Machine reads your mail, To-dos says "Reading your mail, first to-dos in a few minutes." If a step is missing, **Needs you** names it, like **Connect mail**, with a link to that step.
+
 ## Reviews are off
 
 The top of To-dos says "Reviews are off, so no to-dos arrive yet." On a hosted Machine, press **Turn on reviews**. On your own computer, run `./install.sh --activate`.

@@ -327,6 +327,34 @@ class MailSync(Base):
         pdf = message['payload']['parts'][1]['body']['data']
         self.assertEqual(base64.urlsafe_b64decode(pdf + '=' * (-len(pdf) % 4)), b'%PDF-1')
 
+    def test_a_header_python_cannot_parse_never_stops_the_first_read(self):
+        """Python 3.12's header parser raises IndexError on headers such as `Message-ID: <>` or a lone quote in From. A
+        mailbox's first read stopped at such a message and failed again every few minutes, so no mail ever came in.
+        The message comes in with that header as its own text. (The parser failure is forced here too: newer Pythons
+        parse these headers.)"""
+        body = (b'Message-ID: <>\r\nFrom: "\r\nTo: alex@acme.test\r\nSubject: =?utf-8?q?Welcome_to_your_mailbox?=\r\n'
+                b'MIME-Version: 1.0\r\nContent-Type: multipart/alternative; boundary=B\r\n\r\n--B\r\n'
+                b'Content-Type: text/plain; charset=utf-8\r\n\r\nHello there\r\n--B--\r\n')
+        self.fake.add('m5', INBOX, '2099-01-01T08:00:00Z', '2099-01-01T08:00:00Z', body)
+        self.fake.add('m6', INBOX, '2099-01-01T09:00:00Z', '2099-01-01T09:00:00Z', mime('Quote', 'Bo <bo@client.test>', 'alex@acme.test', 'Hi', '<m6@client.test>'))
+        parsed = ms_graph._parsed
+
+        def fails(name, raw):
+            if name.lower() in ('message-id', 'from'):
+                raise IndexError('list index out of range')
+            return parsed(name, raw)
+        with mock.patch.object(ms_graph, '_parsed', side_effect=fails):
+            a.sync_gmail(self.store, self.config, self.mail)
+            headers = {h['name']: h['value'] for h in ms_graph.payload(body)['headers']}
+        self.assertEqual((headers['Message-ID'], headers['From'], headers['Subject']), ('<>', '"', 'Welcome to your mailbox'))
+        with self.store.connect() as db:
+            rows = {r['source_id']: r for r in db.execute('SELECT * FROM events')}
+            error = db.execute('SELECT error FROM checkpoints WHERE account_id=?', (self.mail['id'],)).fetchone()
+        self.assertEqual(set(rows), {'m5', 'm6'})
+        self.assertIn('Hello there', rows['m5']['body'])
+        self.assertIn('Welcome to your mailbox', rows['m5']['title'] or rows['m5']['body'])
+        self.assertFalse(error and error[0])
+
 
 class CalendarSync(Base):
     def test_delta_window_then_changes_and_removals(self):

@@ -8,6 +8,10 @@ order: 3
 ---
 To-do's komen uit reviews: je Machine leest wat er binnenkwam, in kleine porties, binnen ongeveer een uur.
 
+## Net aangemeld
+
+Op een nieuwe gehoste Machine starten reviews vanzelf zodra je AI en je mail gekoppeld zijn. Terwijl je Machine je mail leest, staat bij To-do's "Je mail wordt gelezen, eerste to-do's over een paar minuten". Ontbreekt er een stap, dan noemt **Wacht op jou** die, zoals **Mail koppelen**, met een link naar die stap.
+
 ## Reviews staan uit
 
 Bovenaan To-do's staat "Reviews staan uit, dus er komen nog geen to-do's." Druk op een gehoste Machine op **Reviews aanzetten**. Voer op je eigen computer `./install.sh --activate` uit.

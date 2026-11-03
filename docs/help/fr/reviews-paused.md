@@ -8,6 +8,10 @@ order: 3
 ---
 Les tâches viennent des revues : votre Machine lit ce qui est arrivé, par petits lots, en une heure environ.
 
+## Tout juste inscrit
+
+Sur une nouvelle Machine hébergée, les revues démarrent d’elles-mêmes dès que votre IA et vos e-mails sont connectés. Pendant que votre Machine lit vos e-mails, Tâches affiche "Lecture de vos e-mails, premières tâches dans quelques minutes". S’il manque une étape, **Vous attend** la nomme, comme **Connecter vos e-mails**, avec un lien vers cette étape.
+
 ## Les revues sont désactivées
 
 Le haut de Tâches indique « Les revues sont désactivées, donc aucune tâche n’arrive pour l’instant. » Sur une Machine hébergée, appuyez sur **Activer les revues**. Sur votre propre ordinateur, lancez `./install.sh --activate`.

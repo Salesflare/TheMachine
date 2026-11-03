@@ -12,6 +12,7 @@ rows.push(make('div',{class:'review-live','data-run':r.run_id},chipNode(r.status
  latest?make('ul',{class:'steps','aria-live':'polite'},make('li',{},latest.title)):make('p',{class:'muted'},'Starting…'),
  earlier.length?make('details',{class:'earlier-steps'},make('summary',{},'Earlier steps'),make('ul',{class:'steps'},earlier.map(x=>make('li',{},x.title)))):'',
  r.preview?make('small',{},'A preview: to-dos show under To-dos, and nothing is sent or done.'):''))}
+if(!(live.runs||[]).length&&startsByItself()){if(!setupStep())rows.push(make('div',{class:'review-live queued'},chipNode('Starting','lavender'),make('span',{class:'grow'},t(SETUP_LINE))));return rows}
 if(!(live.runs||[]).length&&state.reviews_on===false){const on=turnOn(),fl=live.first_look;
  rows.push(make('div',{class:'review-live queued'},chipNode('Off','orange'),make('span',{class:'grow'},t('Reviews are off.'),fl?.state==='waiting'?` ${t('A first look at your last {} days comes first.',firstLookDays(fl))} ${t(FIRST_LOOK_WAIT[fl.why]||'')}`:''),
   on.url?make('a',{class:'head-link',href:on.url},on.action):make('code',{},'./install.sh --activate')));return rows}
@@ -26,6 +27,7 @@ return rows}
 // Also with reviews off (where the first look happens): waiting for it is not "All clear".
 function firstLookInfo(live){const run=(live.runs||[]).find(r=>r.preview||r.window_hours),fl=live.first_look;
 if(run){const total=run.planned||run.claimed_count||0;return{title:t('Taking a first look at your last {} days',firstLookDays(fl,run)),done:Math.min(run.done_count||0,total),total}}
+if(startsByItself()&&fl?.state!=='due')return setupStep()?{title:t('Your first to-dos show up here'),wait:t('Nothing is sent.')}:{title:t(SETUP_LINE)};  // not "All clear" before the first read ends
 if((fl?.state==='waiting'&&fl.why!=='model')||fl?.state==='due')return{title:t('A first look at your last {} days starts soon',firstLookDays(fl)),wait:FIRST_LOOK_WAIT[fl.state==='due'?'due':fl.why]||''};return null}
 // the counts are whole numbers before they reach the page, whatever the status says
 const firstLookBar=i=>{const done=Math.max(0,+i.done|0),total=Math.max(0,+i.total|0);return total?[make('span',{class:'fl-bar',role:'progressbar','aria-label':'Signals reviewed','aria-valuemin':'0','aria-valuemax':total,'aria-valuenow':done},

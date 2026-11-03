@@ -8,6 +8,10 @@ order: 3
 ---
 Le attività nascono dalle revisioni: la tua Machine legge quello che è arrivato, a piccoli gruppi, entro circa un’ora.
 
+## Appena registrato
+
+Su una nuova Machine ospitata, le revisioni partono da sole appena la tua IA e la tua posta sono collegate. Mentre la tua Machine legge la tua posta, Attività dice "Leggo la tua posta, le prime attività arrivano tra pochi minuti". Se manca un passaggio, **Serve il tuo intervento** lo indica, come **Collega la posta**, con un link a quel passaggio.
+
 ## Le revisioni sono disattivate
 
 In cima ad Attività compare "Le revisioni sono disattivate, quindi per ora non arrivano attività." Su una Machine in hosting, premi **Attiva le revisioni**. Sul tuo computer, esegui `./install.sh --activate`.

@@ -219,3 +219,15 @@ class MainModelMustRun(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class HostedReviewsStartByThemselves(unittest.TestCase):
+    """A new hosted Machine's reviews turn on by themselves (the control plane, once its AI and mail are connected): its
+    dashboard shows how far setup is, never "Reviews are off" with a Turn on button (tests/test_reviews_start_by_themselves_dashboard.mjs)."""
+    def test_a_new_hosted_signup_and_not_the_others(self):
+        hosted = {'manage_url': 'https://control.example/setup', 'started_at': '2026-11-03', 'review_worker': {'enabled': False}}
+        self.assertTrue(a.reviews_start_by_themselves(hosted))
+        self.assertFalse(a.reviews_start_by_themselves({**hosted, 'review_worker': {'enabled': True}}))  # on already
+        self.assertFalse(a.reviews_start_by_themselves({**hosted, 'review_worker': {'enabled': False, 'first_look': False}}))  # turned off by the owner
+        self.assertFalse(a.reviews_start_by_themselves({**hosted, 'started_at': '2026-10-01'}))  # set up before: the owner turns them on
+        self.assertFalse(a.reviews_start_by_themselves({**hosted, 'manage_url': None}))  # self-hosted: ./install.sh --activate
