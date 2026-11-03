@@ -440,8 +440,6 @@ print(json.dumps(out))
 '''
 
 
-@unittest.skipUnless(all(shutil.which(t) for t in ('gnome-keyring-daemon', 'dbus-run-session', 'secret-tool', 'busctl')),
-                     'needs gnome-keyring-daemon, dbus-run-session, secret-tool and busctl')
 class UnencryptedKeyring(unittest.TestCase):
     def test_only_a_file_in_the_keyrings_folder_is_read(self):
         with tempfile.TemporaryDirectory() as tmp, unittest.mock.patch.dict(os.environ, {'XDG_DATA_HOME': str(Path(tmp) / 'data')}):
@@ -457,6 +455,8 @@ class UnencryptedKeyring(unittest.TestCase):
             self.assertIsNone(message_keyring.unencrypted_keyring('/elsewhere/Default_20keyring'))
 
 
+@unittest.skipUnless(all(shutil.which(t) for t in ('gnome-keyring-daemon', 'dbus-run-session', 'secret-tool', 'busctl')),
+                     'needs gnome-keyring-daemon, dbus-run-session, secret-tool and busctl')
 class RealSecretService(unittest.TestCase):
     def test_a_throwaway_gnome_keyring_holds_the_key_and_a_locked_one_is_waited_for_without_a_prompt(self):
         with tempfile.TemporaryDirectory() as temp:
