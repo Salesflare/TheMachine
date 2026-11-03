@@ -62,7 +62,7 @@ class Invariants(unittest.TestCase):
             self.assertEqual(state['error'], 'timeout')
 
     def test_a_calendar_counts_its_events_in_the_next_7_days(self):
-        # Connections: a calendar's card shows events coming up (not cancelled, not past, within a week), not mail counts
+        # Connections: a calendar's card shows events coming up (not canceled, not past, within a week), not mail counts
         account = {'id': 'cal', 'email': 'owner@example.com', 'boundary': 'personal', 'service': 'outlook_calendar'}
         at = lambda source, when, status='confirmed': {**event(account='cal', source=source), 'kind': 'calendar.event',
                                                        'occurred_at': when, 'metadata': {'status': status}}
