@@ -16,9 +16,9 @@ const dashboard=await dashboardPage();
 const hours={days:[0,1,2,3,4],start:'08:00',end:'18:00',morning:'09:00',digest_at:'08:30',timezone:'UTC'};
 const CP='https://account.example';
 const hostedSummary={email:'alex@example.org',hop:true,
- plan:{name:'Standard',price:'€25 a month, excl. VAT',status:'active',status_text:'Active',trial_end:null,cancel_at:null},
- next_invoice:{date:'2026-11-20',amount:'€25, excl. VAT'},
- server:{size:'8 GB memory',region:'Europe, the Netherlands',status:'Running'},
+ plan:{name:'Standard',price:'€10 a month, excl. VAT, early adopter price (was €25)',status:'active',status_text:'Active',trial_end:null,cancel_at:null},
+ next_invoice:{date:'2026-11-20',amount:'€10, excl. VAT'},
+ server:{size:'4 GB memory',region:'Europe, the Netherlands',status:'Running'},
  connections:[{service:'Google',email:'alex@example.org'},{service:'Microsoft',email:'alex@work.example'}],
  fleets:[{name:'Example Co',kind:'work',role:'owner',people:4,seats:3}],
  actions:['account','fleet','plan','portal','cancel','connections','overview','username','security','data','delete','support','friends'],
@@ -63,7 +63,7 @@ try{
   assert.equal(await page.locator('#settings-tabs a').count(),0);  // no link out any more
   assert.equal(await text(page,'#acct-email'),'alex@example.org');
   const list=await text(page,'#acct-list');
-  for(const bit of ['Standard','Active','€25 a month, excl. VAT','Next invoice','Fri, Nov 20','€25, excl. VAT','8 GB memory · Europe, the Netherlands','Google: alex@example.org','Microsoft: alex@work.example','Example Co','Owner · 4 people · 3 seats',
+  for(const bit of ['Standard','Active','€10 a month, excl. VAT, early adopter price (was €25)','Next invoice','Fri, Nov 20','€10, excl. VAT','4 GB memory · Europe, the Netherlands','Google: alex@example.org','Microsoft: alex@work.example','Example Co','Owner · 4 people · 3 seats',
    'alex.themachine.example','1 friend request waiting','Two-factor on · 9 recovery codes left · 2 passkeys · 1 phone signed in','Export everything to run it on your own computer.'])
    assert.ok(list.includes(bit),bit);
   assert.ok(!/—/.test(list));
