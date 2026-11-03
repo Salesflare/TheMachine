@@ -101,6 +101,9 @@ class MobileShellTest(unittest.TestCase):
             self.assertIn('[a-z]{2,63}', side)  # a top level of letters: never an IP address
             self.assertIn('.ts.net', side)
         self.assertIn('c.setInstanceFollowRedirects(false);', java)
+        # Only the start page may ask (a Machine's page could otherwise read other sites through it)
+        self.assertRegex(java, r'public void check\(PluginCall call\) \{\s+bridge\.executeOnMainThread\(\(\) -> \{[^\n]*\n\s+if \(!onStartPage\(\)\)')
+        self.assertRegex(swift, r'@objc func check\(_ call: CAPPluginCall\) \{\s+DispatchQueue\.main\.async \{[^\n]*\n\s+guard self\.onStartPage')
         self.assertIn('"manifest.webmanifest"', java)
         self.assertIn('completionHandler(nil)', swift)
         self.assertIn('"manifest.webmanifest"', swift)

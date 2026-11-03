@@ -238,33 +238,42 @@ public class MachineShellPlugin extends Plugin {
      */
     @PluginMethod
     public void check(PluginCall call) {
-        String url = normalMachine(call.getString("url"));
-        if (url == null || !url.equals(call.getString("url")) || !ownHost(Uri.parse(url).getHost())) {
-            call.reject("not a Machine address");
-            return;
-        }
-        new Thread(() -> {
-            HttpURLConnection c = null;
-            try {
-                c = (HttpURLConnection) new URL(url + "manifest.webmanifest").openConnection();
-                c.setInstanceFollowRedirects(false);
-                c.setUseCaches(false);
-                c.setConnectTimeout(8000);
-                c.setReadTimeout(8000);
-                c.setRequestProperty("Accept", "application/manifest+json, application/json");
-                int status = c.getResponseCode();
-                InputStream in = status >= 400 ? c.getErrorStream() : c.getInputStream();
-                byte[] body = in == null ? new byte[0] : read(in, 64 * 1024);
-                JSObject out = new JSObject();
-                out.put("status", status);
-                out.put("body", body == null ? "" : new String(body, StandardCharsets.UTF_8));
-                call.resolve(out);
-            } catch (IOException | ClassCastException e) {
-                call.reject("unreachable");
-            } finally {
-                if (c != null) c.disconnect();
+        bridge.executeOnMainThread(() -> { // only the start page asks, never a Machine's page or what it links to
+            if (!onStartPage()) {
+                call.reject("not allowed");
+                return;
             }
-        }).start();
+            String url = normalMachine(call.getString("url"));
+            if (url == null || !url.equals(call.getString("url")) || !ownHost(Uri.parse(url).getHost())) {
+                call.reject("not a Machine address");
+                return;
+            }
+            new Thread(() -> fetchManifest(call, url)).start();
+        });
+    }
+
+    /** The owner's own typed address only (check): https on 443 or 8443 to a DNS name, never an IP address. */
+    private static void fetchManifest(PluginCall call, String url) {
+        HttpURLConnection c = null;
+        try {
+            c = (HttpURLConnection) new URL(url + "manifest.webmanifest").openConnection();
+            c.setInstanceFollowRedirects(false);
+            c.setUseCaches(false);
+            c.setConnectTimeout(8000);
+            c.setReadTimeout(8000);
+            c.setRequestProperty("Accept", "application/manifest+json, application/json");
+            int status = c.getResponseCode();
+            InputStream in = status >= 400 ? c.getErrorStream() : c.getInputStream();
+            byte[] body = in == null ? new byte[0] : read(in, 64 * 1024);
+            JSObject out = new JSObject();
+            out.put("status", status);
+            out.put("body", body == null ? "" : new String(body, StandardCharsets.UTF_8));
+            call.resolve(out);
+        } catch (IOException | ClassCastException e) {
+            call.reject("unreachable");
+        } finally {
+            if (c != null) c.disconnect();
+        }
     }
 
     @PluginMethod

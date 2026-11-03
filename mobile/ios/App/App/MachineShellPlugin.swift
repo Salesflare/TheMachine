@@ -147,6 +147,14 @@ public class MachineShellPlugin: CAPPlugin, CAPBridgedPlugin, ASWebAuthenticatio
     /// Before a Machine of their own is saved: its manifest's answer, {status, body}, for www/machine-url.js isMachine.
     /// Rejects when it can't be reached. No redirects followed, no cookies or cache, a short wait and a small body.
     @objc func check(_ call: CAPPluginCall) {
+        DispatchQueue.main.async { // only the start page asks, never a Machine's page or what it links to
+            guard self.onStartPage else { return call.reject("not allowed") }
+            self.fetchManifest(call)
+        }
+    }
+
+    /// The owner's own typed address only (check): https on 443 or 8443 to a DNS name, never an IP address.
+    private func fetchManifest(_ call: CAPPluginCall) {
         let asked = call.getString("url")
         guard let url = MachineShellPlugin.normalMachine(asked), url == asked, MachineShellPlugin.ownHost(URL(string: url)?.host),
               let manifest = URL(string: url + "manifest.webmanifest") else { return call.reject("not a Machine address") }
