@@ -10,10 +10,10 @@ const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modul
 // SHOTS=<folder> saves screenshots at 390.
 const dashboard=await dashboardPage();
 const FL='fl_'+'a'.repeat(16);
-const MEMBERS=['Razvan-Ionut Mitrica','Pat Lee','Kim Lane','Sam Rivera','Alexandra Konstantinopoulou-Vanderbilt'].map((name,n)=>({member_id:'m'+n,name}));
-const TASK='Security triage confirmed a P1: a signup against a caller-controlled server can claim an invited address. Can you coordinate an urgent fix?';
+const MEMBERS=['Maria-Elena Vasquez-Okonkwo','Pat Lee','Kim Lane','Sam Rivera','Alexandra Konstantinopoulou-Vanderbilt'].map((name,n)=>({member_id:'m'+n,name}));
+const TASK='The customer needs every contact with its custom fields in one file for their quarterly review. Can you set up the export by Friday?';
 function world(){
- const card={id:'c1',title:'Confirmed signup bypass can grant access to an invited team',body:'Security triage confirmed a P1.',status:'prepared',event_ids:[1],scope:'work',
+ const card={id:'c1',title:'Customer asks for a custom export',body:'They need it for their quarterly review.',status:'prepared',event_ids:[1],scope:'work',
   created_at:new Date().toISOString(),next_actions:[]};
  const state={suggestions:[card],connectors:[],suggestion_counts:{prepared:1},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],fleet:{on:true,waiting:0,take_line:true}};
  const view={on:true,kinds:{handoff:'handoffs'},ask_meetings:false,fleets:[{id:FL,kind:'work',label:'Work Fleet',name:'Acme',asks:['handoff'],people:[],

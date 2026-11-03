@@ -620,10 +620,10 @@ class Requests(unittest.TestCase):
         def problems(body):
             action = a.next_actions.validate({'kind': 'handoff', 'to_email': 'kim@acme.example', 'to_name': 'Kim Doe', 'body': body}, CONFIG, ['work'])
             return [p for p in a.next_actions.check(action) if 'handoff message' in p]
-        run_on = ('security triage confirmed a P1: a signup against a caller-controlled server can claim an invited address without '
-                  'mailbox access or the invite token can you coordinate an urgent fix')
+        run_on = ('the customer needs every contact with its custom fields in one file for their quarterly review '
+                  'can you set up the export by friday')
         self.assertEqual(len(problems(run_on)), 1)
-        for fine in (self.HANDOFF_TEXT, 'Security triage confirmed a P1. Can you coordinate an urgent fix?', 'Please take the Acme renewal.',
+        for fine in (self.HANDOFF_TEXT, 'The customer needs a custom export. Can you set it up by Friday?', 'Please take the Acme renewal.',
                      'The tracker has it: https://tracker.example/1', 'Kim said “let’s ship it.”', 'Ship it by **Friday**.'):
             with self.subTest(fine=fine):
                 self.assertEqual(problems(fine), [])

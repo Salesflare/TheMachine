@@ -141,12 +141,12 @@ class HandoffMail(unittest.TestCase):
         """A Work to-do from an Intercom conversation: its source has no mailbox to send from."""
         self.app.config = {**tr.CONFIG, 'accounts': accounts}
         chat = {'account_id': 'support', 'source_id': 'conv-1', 'kind': 'intercom.conversation', 'occurred_at': tr.NOW.isoformat(),
-                'title': 'Intercom from a customer', 'body': 'The invite link lets anyone in.', 'deleted': False,
+                'title': 'Intercom from a customer', 'body': 'Can I get all contacts with custom fields?', 'deleted': False,
                 'metadata': {'conversation_id': '1', 'contact_email': 'sam@client.example'}}
         self.store.commit_page('support', {}, [chat])
         with self.store.connect() as db:
             event = db.execute("SELECT id FROM events WHERE source_id='conv-1'").fetchone()[0]
-        return self.store.suggest('k-intercom', 'Fix the invite bypass', 'A customer found it.', [event])['id']
+        return self.store.suggest('k-intercom', 'Set up a custom export', 'A customer asks for it.', [event])['id']
 
     def test_a_to_do_from_intercom_goes_from_the_owners_mailbox_for_its_area(self):
         support = {'id': 'support', 'service': 'intercom', 'transport': 'api', 'boundary': 'work:Acme Support'}
