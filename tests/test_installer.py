@@ -364,6 +364,18 @@ class InstallerTest(unittest.TestCase):
                 self.assertEqual(installer.gateway_keep_retrying(paths), [])  # no unit yet / launchd's KeepAlive retries
                 self.assertFalse(units.exists())
 
+    def test_the_retry_drop_in_never_goes_outside_the_user_units_folder(self):
+        run = lambda command, **kwargs: subprocess.CompletedProcess(command, 0, '', '')
+        paths = installer.Paths(self.home)
+        odd = ['../../evil-gateway.service', 'openclaw-gateway/../x.service', 'openclaw-gateway..service', 'openclaw-gateway.socket']
+        with mock.patch.object(installer, 'run', side_effect=run), mock.patch.object(installer, 'say'), \
+                mock.patch.object(installer.service, 'manager', return_value='systemd'), \
+                mock.patch.object(installer.onboarding, 'gateway_units', return_value=odd + ['openclaw-gateway@main.service']):
+            self.assertEqual(installer.gateway_keep_retrying(paths),
+                             [self.home / '.config/systemd/user/openclaw-gateway@main.service.d/keep-retrying.conf'])
+        self.assertFalse((self.home / 'evil-gateway.service.d').exists())
+        self.assertEqual(sorted(p.name for p in (self.home / '.config/systemd/user').iterdir()), ['openclaw-gateway@main.service.d'])
+
     def test_rerun_upgrades_without_clobbering_config_or_secrets(self):
         self.assertEqual(self.install('--no-start').returncode, 0)
         token = (self.data / 'api-token').read_text()

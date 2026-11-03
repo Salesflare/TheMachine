@@ -316,6 +316,8 @@ def unencrypted_keyring(collection):
         return None
     # D-Bus escapes a name's other characters as _XX (Default_keyring is Default_5fkeyring)
     name = re.sub(r'_([0-9a-f]{2})', lambda m: chr(int(m.group(1), 16)), collection.rsplit('/', 1)[1])
+    if not re.fullmatch(r'[^/\\\x00]+', name) or name.startswith('.'):
+        return None  # one file name in the keyrings folder, never a path out of it
     folder = Path(os.environ.get('XDG_DATA_HOME') or Path.home() / '.local/share') / 'keyrings'
     path = folder / f'{name}.keyring'
     try:
