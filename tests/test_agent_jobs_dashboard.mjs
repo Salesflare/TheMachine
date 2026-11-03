@@ -29,6 +29,10 @@ const server=createServer(async(req,res)=>{res.setHeader('Content-Type','applica
   res.end('{}');return}
  res.statusCode=404;res.end('{}')});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
+// The action a click posted: waited for, and picked by name, since the page also posts on its own (draft_seen)
+const posted=async(action,from,ms=10000)=>{const end=Date.now()+ms;let found;
+ while(!(found=calls.slice(from).find(c=>c.action===action))&&Date.now()<end)await new Promise(r=>setTimeout(r,25));
+ assert.ok(found,action+' was not posted');return found};
 const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage','--host-resolver-rules=MAP machine.test 127.0.0.1']});
 try{
  const page=await (await browser.newContext({viewport:{width:390,height:900}})).newPage();
@@ -62,9 +66,9 @@ try{
  assert.match(await full.evaluate(t=>getComputedStyle(t).fontFamily),/mono/i);
  await full.fill('Summarize the card into summary.md');
  assert.equal(await form.locator('textarea.agent-note').inputValue(),'Keep it to one page');
- await form.locator('button.primary',{hasText:'Hand off'}).click();
- await page.waitForTimeout(300);
- assert.deepEqual(calls.at(-1),{action:'agent_send',args:{suggestion_id:'c1',tool:'claude',brief:'Summarize the card into summary.md',note:'Keep it to one page'}});
+ const before=calls.length;await form.locator('button.primary',{hasText:'Hand off'}).click();
+ assert.deepEqual(await posted('agent_send',before),{action:'agent_send',args:{suggestion_id:'c1',tool:'claude',brief:'Summarize the card into summary.md',note:'Keep it to one page'}});
+ await c.getByText(/Claude Code is working on it/).first().waitFor();
  assert.match(await c.innerText(),/Claude Code is working on it/);
  assert.match(await c.innerText(),/Write: summary\.md/);
  assert.equal(await c.locator('[data-agent-hand]').count(),0);  // one job at a time
@@ -123,9 +127,9 @@ try{
  await c.locator('[data-agent-ask]').click();
  assert.match(await c.innerText(),/Goes to the Codex job/);
  await c.locator('#agent-ask-c1').fill('Shorter, please');
- await c.locator('[data-agent-ask-send]').click();
- await page.waitForTimeout(300);
- assert.deepEqual(calls.at(-1),{action:'agent_follow_up',args:{job_id:job.id,text:'Shorter, please'}});
+ const asked=calls.length;await c.locator('[data-agent-ask-send]').click();
+ assert.deepEqual(await posted('agent_follow_up',asked),{action:'agent_follow_up',args:{job_id:job.id,text:'Shorter, please'}});
+ await c.locator('.actions>button',{hasText:/send to Sam/i}).first().waitFor();  // the card draws again with the reply
  assert.ok((await c.locator('.actions>button').allInnerTexts()).some(b=>/send to Sam/i.test(b)));  // also while it works
  // A work folder full of housekeeping: only what the answer names shows, the rest under Details behind "+N more".
  const junk=['build.log','build.pid','deploy.log','preview.pid','.cache/x.json','notes/a.md','notes/b.md','site/index.html','report.md','summary.md'];
