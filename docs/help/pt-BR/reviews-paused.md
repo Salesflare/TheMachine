@@ -8,6 +8,10 @@ order: 3
 ---
 As tarefas vêm das revisões: sua Machine lê o que chegou, em pequenos lotes, em cerca de uma hora.
 
+## Acabou de se cadastrar
+
+Em uma Machine hospedada nova, as revisões começam sozinhas assim que sua IA e seu e-mail estão conectados. Enquanto sua Machine lê seus e-mails, Tarefas mostra "Lendo seus e-mails, primeiras tarefas em poucos minutos". Se faltar uma etapa, **Precisa de você** mostra qual, como **Conectar e-mail**, com um link para essa etapa.
+
 ## As revisões estão desativadas
 
 O topo de Tarefas diz "As revisões estão desligadas, então nenhuma tarefa chega ainda." Em uma Machine hospedada, clique em **Ativar revisões**. No seu próprio computador, execute `./install.sh --activate`.

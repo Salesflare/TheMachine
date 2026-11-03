@@ -8,6 +8,10 @@ order: 3
 ---
 Las tareas salen de las revisiones: tu Machine lee lo que ha llegado, en lotes pequeños, en más o menos una hora.
 
+## Recién registrado
+
+En una Machine alojada nueva, las revisiones empiezan solas en cuanto tu IA y tu correo están conectados. Mientras tu Machine lee tu correo, Tareas dice "Leyendo tu correo, tus primeras tareas llegan en unos minutos". Si falta un paso, **Te necesita** lo nombra, como **Conectar correo**, con un enlace a ese paso.
+
 ## Las revisiones están desactivadas
 
 La parte superior de Tareas dice "Las revisiones están desactivadas, así que aún no llegan tareas." En una Machine alojada, pulsa **Activar revisiones**. En tu propio ordenador, ejecuta `./install.sh --activate`.

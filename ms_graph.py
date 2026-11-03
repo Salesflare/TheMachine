@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import base64
 import datetime as dt
+import email.header
 import email.parser
 import email.policy
 import http.client
@@ -489,24 +490,61 @@ def _iso(stamp):
     return stamp.astimezone(dt.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
 
 
+def _parsed(name, raw):
+    """A header's value as the default policy reads it (decoded words, unfolded)."""
+    return str(email.policy.default.header_fetch_parse(name, raw))
+
+
+def _header(name, raw):
+    """A header's text, also when Python's header parser fails on it: some Python versions raise IndexError on a header
+    like `Message-ID: <>` or a lone quote in `From:` (seen on an Outlook.com mailbox's first read, which then stopped
+    at that message every time). Such a header comes as its own unfolded text, its encoded words decoded when they can be."""
+    try:
+        return _parsed(name, raw)
+    except Exception:
+        text = re.sub(r'\r?\n[ \t]*', ' ', str(raw)).strip()
+        try:
+            return str(email.header.make_header(email.header.decode_header(text)))
+        except Exception:
+            return text
+
+
+def _quietly(read, default):
+    try:
+        return read()
+    except Exception:
+        return default
+
+
+def _content_type(node):
+    """The part's type, or from its raw header when the parser fails on it (text/plain when that doesn't say one)."""
+    try:
+        return node.get_content_type()
+    except Exception:
+        raw = next((str(v) for k, v in node.raw_items() if k.lower() == 'content-type'), '')
+        kind = raw.split(';')[0].strip().lower()
+        return kind if re.fullmatch(r'[a-z0-9!#$&^_.+-]+/[a-z0-9!#$&^_.+-]+', kind) else 'text/plain'
+
+
 def payload(mime):
     """A MIME message as Gmail's "full" payload: headers, parts, and each part's decoded body (base64url). Text parts
-    are UTF-8, whatever charset they came in."""
+    are UTF-8, whatever charset they came in. A header Python can't parse never costs the message (_header)."""
     def part(node, part_id):
-        out = {'partId': part_id, 'mimeType': node.get_content_type(), 'filename': node.get_filename() or '',
-               'headers': [{'name': k, 'value': str(v)} for k, v in node.items()]}
+        kind = _content_type(node)
+        out = {'partId': part_id, 'mimeType': kind, 'filename': _quietly(node.get_filename, None) or '',
+               'headers': [{'name': k, 'value': _header(k, v)} for k, v in node.raw_items()]}
         if node.is_multipart():
             children = node.get_payload()
             out['body'] = {'size': 0}
             out['parts'] = [part(child, f'{part_id}.{i}' if part_id else str(i)) for i, child in enumerate(children)]
             return out
         try:
-            if node.get_content_maintype() == 'text':
+            if kind.startswith('text/'):
                 data = node.get_content().encode('utf-8')
             else:
                 data = node.get_payload(decode=True) or b''
-        except (LookupError, ValueError, AttributeError):
-            data = node.get_payload(decode=True) or b''
+        except Exception:  # an unknown charset, or a header the parser fails on: the bytes as they came
+            data = _quietly(lambda: node.get_payload(decode=True), None) or str(node.get_payload()).encode('utf-8', 'surrogateescape')
         out['body'] = {'size': len(data), 'data': base64.urlsafe_b64encode(data).decode().rstrip('=')}
         return out
     return part(email.parser.BytesParser(policy=email.policy.default).parsebytes(mime), '')
