@@ -9,23 +9,24 @@ import {GatewayClient} from '@openclaw/gateway-client';
 import {PROTOCOL_VERSION} from '@openclaw/gateway-protocol/version';
 import crypto from 'node:crypto';
 import {readFileSync, writeFileSync, renameSync, mkdirSync, unlinkSync} from 'node:fs';
-import {resolve, isAbsolute} from 'node:path';
+import {resolve, isAbsolute, join} from 'node:path';
 import {homedir} from 'node:os';
 
 const SESSION = /^agent:main:assistant-review-preparation-[a-f0-9]{32}$/;
 const SCOPES = ['operator.read'];
 // Where this helper keeps its device identity (the app's data folder) and where OpenClaw's config is: set by the
-// service in the environment, never taken from the request. Only an absolute, already normal folder is used.
+// service in the environment, never taken from the request. Only absolute, already normal paths are used.
+const normal = path => isAbsolute(path) && resolve(path) === path;
 const STATE_DIR = process.env.ASSISTANT_STATE_DIR || '';
-const STATE_OK = isAbsolute(STATE_DIR) && resolve(STATE_DIR) === STATE_DIR;
-const DEVICE_FILE = `${STATE_DIR}/gateway-device.json`;
-const TOKEN_FILE = `${STATE_DIR}/gateway-device-token.json`;
-const OPENCLAW_CONFIG = process.env.OPENCLAW_CONFIG_PATH || `${homedir()}/.openclaw/openclaw.json`;
+const OPENCLAW_CONFIG = process.env.OPENCLAW_CONFIG_PATH || join(homedir(), '.openclaw', 'openclaw.json');
+const STATE_OK = normal(STATE_DIR) && normal(OPENCLAW_CONFIG);
+const DEVICE_FILE = join(STATE_DIR, 'gateway-device.json');
+const TOKEN_FILE = join(STATE_DIR, 'gateway-device-token.json');
 
 const parsed = text => { try { return JSON.parse(text); } catch { return null; } };
 const readDevice = () => { try { return parsed(readFileSync(DEVICE_FILE, 'utf8')); } catch { return null; } };
 const readToken = () => { try { return parsed(readFileSync(TOKEN_FILE, 'utf8')); } catch { return null; } };
-const readConfig = () => { try { return parsed(readFileSync(OPENCLAW_CONFIG, 'utf8')); } catch { return null; } };
+const readConfig = () => { try { return STATE_OK ? parsed(readFileSync(resolve(OPENCLAW_CONFIG), 'utf8')) : null; } catch { return null; } };
 function writePrivate(path, value) {
   const temp = path + '.tmp';
   writeFileSync(temp, JSON.stringify(value), {mode: 0o600});

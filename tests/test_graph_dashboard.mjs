@@ -61,6 +61,9 @@ try{
  // Edit, in the header: what they are to you, in the owner's words.
  await page.locator('[data-org-edit]').click();
  await page.locator('.person-form [name=role]').fill('CFO at Client Ltd');
+ // What changed is a plain record of the known field names only: no prototype, nothing a field name could reach through
+ assert.deepEqual(await page.evaluate(()=>{const f=document.querySelector('.person-form'),x=document.createElement('input');x.name='__proto__';x.value='polluted';f.append(x);
+  const out=personChanged(f);x.remove();return [Object.getPrototypeOf(out),Object.keys(out),({}).polluted??null]}),[null,['role'],null]);
  await page.locator('[data-org-save]').click();
  for(let i=0;i<100&&!calls.length;i++)await page.waitForTimeout(20);
  assert.deepEqual(calls[0],{action:'graph_person_edit',args:{node_id:'email:ann@client.example',fields:{role:'CFO at Client Ltd'}}});
