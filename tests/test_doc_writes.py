@@ -211,17 +211,19 @@ class Word(unittest.TestCase):
 
 
 class GoogleWrites(GoogleFake):
-    """GoogleFake, plus the Docs API's batchUpdate (with its revision check) and Drive's id and upload calls."""
+    """GoogleFake, plus the Docs API's batchUpdate (with its revision check) and Drive's upload, which picks the new doc's
+    id itself (Drive takes no pre-generated id for a Google Doc: the 403 of 2026-11-03), and finds it by appProperties."""
 
     def __init__(self, test):
         super().__init__(test)
-        self.doc, self.files, self.upload_fails = None, {}, False
+        self.doc, self.files, self.props, self.upload_fails, self.upload_refused = None, {}, {}, False, None
 
     def respond(self, request, data=None, timeout=None):
         url = urllib.parse.urlsplit(request.full_url)
         method = request.get_method()
         if url.netloc in ('docs.googleapis.com', 'www.googleapis.com') and self.doc is not None or url.path.startswith('/upload/') \
-                or 'generateIds' in url.path or url.path.startswith('/drive/v3/files/new'):
+                or 'generateIds' in url.path or url.path.startswith('/drive/v3/files/new') \
+                or url.path == '/drive/v3/files' and 'appProperties' in dict(urllib.parse.parse_qsl(url.query)).get('q', ''):
             self.requests.append((method, url.path, dict(urllib.parse.parse_qsl(url.query))))
             if url.path == '/v1/documents/doc1' and method == 'GET':
                 return Response(json.dumps(self.doc).encode())
@@ -234,14 +236,24 @@ class GoogleWrites(GoogleFake):
                 self.doc = gdoc(paragraphs, 'r' + str(int(self.doc['revisionId'][1:]) + 1), self.doc['title'])
                 return Response(json.dumps({'writeControl': {'requiredRevisionId': self.doc['revisionId']}}).encode())
             if url.path == '/drive/v3/files/generateIds':
-                return Response(json.dumps({'ids': ['new1']}).encode())
+                raise AssertionError('a Google Doc never takes a generated id')
             if url.path == '/upload/drive/v3/files' and method == 'POST':
                 self.test.assertTrue(request.get_header('Content-type').startswith('multipart/related'))
                 meta = json.loads(request.data.split(b'\r\n\r\n', 1)[1].split(b'\r\n', 1)[0])
-                self.files[meta['id']] = request.data
+                if 'id' in meta:  # what Google says to a Google Doc under a pre-generated id
+                    raise urllib.error.HTTPError(request.full_url, 403, 'forbidden', {}, io.BytesIO(
+                        b'{"error":{"code":403,"errors":[{"reason":"forbidden"}],"status":"PERMISSION_DENIED"}}'))
+                if self.upload_refused:
+                    raise urllib.error.HTTPError(request.full_url, 403, 'forbidden', {}, io.BytesIO(self.upload_refused))
+                made = 'new' + str(len(self.files) + 1)
+                self.files[made], self.props[made] = request.data, meta.get('appProperties') or {}
                 if self.upload_fails:
                     raise urllib.error.HTTPError(request.full_url, 502, 'gateway', {}, io.BytesIO(b''))
-                return Response(json.dumps({'id': meta['id'], 'name': meta['name']}).encode())
+                return Response(json.dumps({'id': made, 'name': meta['name']}).encode())
+            if url.path == '/drive/v3/files':
+                q = dict(urllib.parse.parse_qsl(url.query))['q']
+                return Response(json.dumps({'files': [{'id': k, 'name': 'x'} for k, props in self.props.items()
+                                                      if f"value='{props.get(w.WRITE_KEY)}'" in q]}).encode())
             if url.path.startswith('/drive/v3/files/new'):
                 if url.path.rsplit('/', 1)[1] in self.files:
                     return Response(json.dumps({'id': 'new1', 'trashed': False}).encode())
@@ -338,41 +350,63 @@ class Google(unittest.TestCase):
         self.assertEqual(self.job()['status'], 'blocked')  # checked before the write: nothing went out
         self.assertIn('The doc changed since this was drafted', str(a.card(self.row())))
 
-    def test_a_new_doc_with_drive_file_only_and_an_unclear_upload_is_never_sent_twice(self):
+    def create(self, **extra):
+        self.app().action('prepare', {'suggestion_id': self.sid, 'body': 'Doc ready in Google Docs.', 'next_action': {
+            'kind': 'doc_write', 'op': 'create', 'account_id': 'acme-docs', 'title': 'Launch notes', 'body': '# Launch\nWeek 3.', **extra}})
+        return self.row()['next_action']
+
+    def uploads(self):
+        return [r for r in self.fake.requests if r[1] == '/upload/drive/v3/files']
+
+    def test_a_new_doc_is_made_while_prepared_without_an_ok_and_shows_its_link(self):
+        """2026-11-03: "need to give approval to create a doc first while the skill says to make one". A new doc is
+        private, in the owner's own Drive: nothing goes to anyone, so it is made right away and the to-do links to it."""
+        self.fake.granted.add(docs.FILE_SCOPE)
+        self.decide('accept')
+        self.create(last=True)
+        job = self.job()
+        self.assertTrue(job['approval_id'].startswith(w.NEW_DOC))
+        self.assertEqual((job['status'], job['source']), ('queued', 'assistant'))
+        self.app().action_step(self.transport())
+        self.assertEqual(len(self.uploads()), 1)
+        meta = json.loads(self.fake.files['new1'].split(b'\r\n\r\n', 1)[1].split(b'\r\n', 1)[0])
+        self.assertNotIn('id', meta)  # Drive picks the id: a pre-generated one is refused for a Google Doc
+        self.assertNotIn('permissions', meta)  # shared with nobody
+        self.assertEqual((self.job()['status'], self.job()['message_id']), ('sent', 'docwrite:new1'))
+        row = self.row()
+        self.assertEqual(row['status'], 'prepared')  # stays open with the doc's link for the owner to look at
+        self.assertEqual(row['next_actions'][0]['state']['url'], 'https://docs.google.com/document/d/new1/edit')  # Open the doc
+        self.assertRegex(str(a.card(row)), r'✓ Doc created at [\d:]+\. https://docs.google.com/document/d/new1/edit')
+        self.create(last=True)
+        self.app().action_step(self.transport())
+        self.assertEqual(len(self.uploads()), 1)  # the same doc saved again is never made twice
+
+    def test_an_unclear_upload_is_never_sent_twice(self):
         self.fake.granted.add(docs.FILE_SCOPE)
         acct = next(x for x in self.config['accounts'] if x['id'] == 'acme-docs')
         self.assertEqual(docs.writes_on(self.config, acct, a.CONNECTOR_HELPERS), {'create'})
         self.decide('accept')
-        self.app().action('prepare', {'suggestion_id': self.sid, 'body': 'Doc ready.', 'next_action': {
-            'kind': 'doc_write', 'op': 'create', 'account_id': 'acme-docs', 'title': 'Launch notes', 'body': '# Launch\nWeek 3.'}})
-        action = self.row()['next_action']
-        self.confirm(action)
+        self.create()
         self.fake.upload_fails = True  # it was created, but the answer got lost
         self.app().action_step(self.transport())
-        uploads = [r for r in self.fake.requests if r[1] == '/upload/drive/v3/files']
-        self.assertEqual(len(uploads), 1)
+        self.assertEqual(len(self.uploads()), 1)
         self.assertEqual(self.job()['status'], 'uncertain')
         self.assertIn(b'<h1>Launch</h1><p>Week 3.</p>', self.fake.files['new1'])
         with self.store.connect() as db:
             db.execute("UPDATE action_jobs SET retry_at='2000-01-01T00:00:00+00:00'")
         self.app().action_step(self.transport())
-        self.assertEqual(len([r for r in self.fake.requests if r[1] == '/upload/drive/v3/files']), 1)
-        self.assertEqual((self.job()['status'], self.job()['message_id']), ('sent', 'docwrite:new1'))
+        self.assertEqual(len(self.uploads()), 1)
+        self.assertEqual((self.job()['status'], self.job()['message_id']), ('sent', 'docwrite:new1'))  # found by its token
         broker = {r[1] for r in self.fake.requests if r[0] == 'BROKER' and r[1]}
         self.assertNotIn(docs.REPLY_SCOPE, broker)
-
 
     def test_a_doc_with_a_step_after_it_keeps_the_to_do_open_for_that_step(self):
         """2026-10-30: a doc made for a partner closed its to-do, though the reply with its link still had to go out.
         Only last:true closes it; otherwise the to-do carries on with the step after the doc, drafted for the owner."""
         self.fake.granted.add(docs.FILE_SCOPE)
         self.decide('accept')
-        self.app().action('prepare', {'suggestion_id': self.sid, 'body': 'Doc ready in Google Docs.', 'next_action': {
-            'kind': 'doc_write', 'op': 'create', 'account_id': 'acme-docs', 'title': 'Launch notes', 'body': 'Week 3.',
-            'then': 'Reply to Robin with the link'}})
-        action = self.row()['next_action']
+        action = self.create(then='Reply to Robin with the link')
         self.assertEqual(action['then'], 'Reply to Robin with the link')
-        self.confirm(action)
         self.app().action_step(self.transport())
         self.assertEqual(self.job()['status'], 'sent')
         row = self.row()
@@ -386,13 +420,23 @@ class Google(unittest.TestCase):
         self.assertIn('Reply to Robin with the link', step['feedback'])
         self.assertIn('never send it', step['feedback'])
 
-    def test_last_true_closes_the_to_do_once_the_doc_is_made(self):
+    def test_a_refused_new_doc_says_what_and_waits_for_the_owner(self):
+        """The 403 line said only "Google Docs refused it (error 403)". It says what was refused now, and the owner can
+        try it again with Review and create; an owner-approved doc with last:true closes the to-do."""
         self.fake.granted.add(docs.FILE_SCOPE)
         self.decide('accept')
-        self.app().action('prepare', {'suggestion_id': self.sid, 'body': 'Doc ready.', 'next_action': {
-            'kind': 'doc_write', 'op': 'create', 'account_id': 'acme-docs', 'title': 'Launch notes', 'body': 'Week 3.', 'last': True}})
-        self.confirm(self.row()['next_action'])
+        self.fake.upload_refused = (b'{"error":{"code":403,"message":"Google Docs API has not been used","status":"PERMISSION_DENIED",'
+                                    b'"details":[{"reason":"SERVICE_DISABLED"}],"errors":[{"reason":"accessNotConfigured"}]}}')
+        action = self.create(last=True)
         self.app().action_step(self.transport())
+        self.assertEqual(self.job()['status'], 'failed')
+        card = str(a.card(self.row()))
+        self.assertIn('Google Docs is turned off for this Google sign-in', card)
+        self.assertNotIn('Google API has not been used', card)  # Google's message text never reaches the to-do
+        self.fake.upload_refused = None
+        self.confirm(action)
+        self.app().action_step(self.transport())
+        self.assertEqual(self.job()['status'], 'sent')
         self.assertEqual(self.row()['status'], 'completed')
 
     def test_the_to_do_names_the_place_the_doc_goes(self):
@@ -560,14 +604,14 @@ class Area(unittest.TestCase):
 
 class GogDocs(unittest.TestCase):
     """A Google Doc through the owner's own gog sign-in for Gmail: only with the drive scope it already has, reads
-    --readonly, the writes --allow-write, the text written once into the empty doc made under the id generated first."""
+    --readonly, the writes --allow-write, the text written once into the empty doc Drive made (and gave its id)."""
 
     def setUp(self):
         self.account = {'id': 'acme-gmail', 'email': OWNER, 'transport': 'gog', 'client': 'acme', 'boundary': 'work:Acme'}
         self.config = {'gog': '/usr/bin/gog-fake', 'accounts': [self.account]}
         self.helpers = types.SimpleNamespace(SourceError=a.SourceError, credential=lambda config, name: 'pw')
         self.scopes = ['email', docs.REPLY_SCOPE, 'https://www.googleapis.com/auth/gmail.modify']
-        self.calls, self.doc, self.created, self.fail_fill = [], None, {}, False
+        self.calls, self.doc, self.created, self.fail_fill, self.refuse = [], None, {}, False, None
         patch('subprocess.run', side_effect=self.gog).start()
         self.addCleanup(patch.stopall)
 
@@ -581,11 +625,16 @@ class GogDocs(unittest.TestCase):
         self.calls.append((method, flag('--scope'), '--allow-write' in command, '--readonly' in command, flag('--account')))
         out = {}
         if method == 'drive.files.generateIds':
-            out = {'ids': ['g1']}
+            raise AssertionError('a Google Doc never takes a generated id')
         elif method == 'drive.files.create':
-            self.created[body['id']] = body
+            if 'id' in body or self.refuse:  # Drive refuses a Google Doc under a pre-generated id: what gog printed on 2026-11-03
+                said = self.refuse or ('{\n  "error": {\n    "code": 403,\n    "message": "Generated IDs are not supported.",\n'
+                                       '    "errors": [{"reason": "forbidden"}],\n    "status": "PERMISSION_DENIED"\n  }\n}')
+                return types.SimpleNamespace(returncode=6, stdout=json.dumps({'error': {'class': 'permission', 'code': 6, 'message': 'drive.files.create: ' + said}}),
+                                             stderr='drive.files.create: ' + said)
+            self.created['g1'] = body
             self.doc = {'revisionId': 'r1', 'body': {'content': [{'paragraph': {'elements': [{'startIndex': 1, 'endIndex': 2, 'textRun': {'content': '\n'}}]}}]}}
-            out = {'id': body['id']}
+            out = {'id': 'g1'}
         elif method == 'docs.documents.get':
             out = self.doc
         elif method == 'docs.documents.batchUpdate':
@@ -594,6 +643,10 @@ class GogDocs(unittest.TestCase):
             self.fill = body
             text = body['requests'][0]['insertText']['text']
             self.doc = {'revisionId': 'r2', 'body': {'content': [{'paragraph': {'elements': [{'startIndex': 1, 'endIndex': 2 + len(text), 'textRun': {'content': text + '\n'}}]}}]}}
+        elif method == 'drive.files.list':
+            token = json.loads(flag('--params'))['q']
+            out = {'files': [{'id': k, 'name': b['name']} for k, b in self.created.items()
+                             if f"value='{b['appProperties'][w.WRITE_KEY]}'" in token]}
         elif method == 'drive.files.get':
             out = {'id': 'g1', 'trashed': False} if 'g1' in self.created else None
             if out is None:
@@ -611,13 +664,37 @@ class GogDocs(unittest.TestCase):
         transport = w.DocWriteTransport(self.config, docs, self.helpers)
         transport.preflight(action)
         self.assertEqual(transport.send(action, {}), {'message_id': 'docwrite:g1', 'url': 'https://docs.google.com/document/d/g1/edit'})
-        self.assertEqual(self.created['g1'], {'id': 'g1', 'name': 'Plan', 'mimeType': docs.DOC_MIME})
+        self.assertEqual(self.created['g1'], {'name': 'Plan', 'mimeType': docs.DOC_MIME, 'appProperties': {w.WRITE_KEY: action['proof']['token']}})
         self.assertEqual(self.fill['requests'][0]['insertText']['text'], 'Plan\nWeek 3.')
         self.assertEqual(self.fill['writeControl'], {'requiredRevisionId': 'r1'})
         for method, scope, write, readonly, account in self.calls:
             self.assertEqual((scope, account), (docs.REPLY_SCOPE, OWNER))  # only the drive scope it has, never Gmail's
             self.assertEqual((write, readonly), (method in ('drive.files.create', 'docs.documents.batchUpdate'),
                                                  method not in ('drive.files.create', 'docs.documents.batchUpdate')))
+
+    def test_a_refusal_says_what_was_refused_in_plain_words(self):
+        """2026-11-03: "Google Docs refused it (error 403)" said nothing. Google's label from its error body picks the line;
+        its message text never shows."""
+        context = w.context(self.config, docs, self.helpers, {}, {'kind': 'doc_write', 'op': 'create'}, WORK)
+        action = w.validate({'kind': 'doc_write', 'op': 'create', 'account_id': 'acme-gmail', 'title': 'Plan', 'body': 'Week 3.'}, context)
+        transport = w.DocWriteTransport(self.config, docs, self.helpers)
+        for body, said in (('{"error": {"code": 403, "status": "PERMISSION_DENIED", "details": [{"reason": "SERVICE_DISABLED"}]}}',
+                            'Google Docs is turned off for this Google sign-in'),
+                           ('{"error": {"code": 403, "errors": [{"reason": "storageQuotaExceeded"}]}}', 'Your Google Drive is full'),
+                           ('{"error": {"code": 403, "status": "PERMISSION_DENIED", "details": [{"reason": "ACCESS_TOKEN_SCOPE_INSUFFICIENT"}]}}',
+                            'may read docs but not create them'),
+                           ('{"error": {"code": 403, "errors": [{"reason": "userRateLimitExceeded"}]}}', 'too busy'),
+                           ('{"error": {"code": 403, "message": "nope"}}', 'didn’t let this account create the doc (error 403)')):
+            self.refuse = body
+            transport.preflight(action)
+            result = transport.send(action, {})
+            self.assertEqual(result['rejected'], 403)
+            line = w.failed(action, result['rejected'], result.get('reason'))
+            self.assertIn(said, line)
+            self.assertIn('Nothing was changed', line)
+            self.assertNotIn('nope', line)
+        self.assertIn('can view the doc but not edit it', w.failed({'op': 'edit', 'provider': 'google'}, 403, 'insufficientFilePermissions'))
+        self.assertIn('can view the doc but not edit it', w.failed({'op': 'edit', 'provider': 'google'}, 403))
 
     def test_an_unclear_fill_is_finished_once_and_a_sign_in_without_drive_is_no_place(self):
         context = w.context(self.config, docs, self.helpers, {}, {'kind': 'doc_write', 'op': 'create'}, WORK)

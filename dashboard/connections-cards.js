@@ -335,9 +335,9 @@ if(f.step==='deepen')return t(later?'Now the rest of the week: {} of {} active c
 return t('Quiet conversations last: {} of {}',f.done,f.total)}
 // Signing in again and disconnecting: a hosted machine's account page for Google and Microsoft, else here.
 // Docs (connectors/docs.py): its own consent, pressed on the account page (or Add again on a self-hosted Machine)
-// What a Docs connection may write, each only after the owner's OK (doc_writes.py), or Allow edits to ask for it
+// What a Docs connection may write (doc_writes.py): a private new doc by itself, an edit only after the owner's OK; or Allow edits to ask for it
 const docsWrites=c=>{const w=c.docs_writes||[],go=c.docs_write_signin&&!c.shared_by?(state.manage_url?hostedReconnect({...c,hosted_signin:c.docs_write_signin},'Allow edits','browser-link'):html`<button type="button" class="browser-link" data-reconnect="docs" data-account="${c.id}" data-signin-source="${c.docs_write_signin}">Allow edits</button>`):'';
- const line=w.includes('edit')?'Creates and edits docs only after you OK each change.':w.includes('create')?'Creates new docs only after you OK them.':go?'Can’t create or edit docs yet.':'';
+ const line=w.includes('edit')?'Creates private docs. Edits docs only after you OK each change.':w.includes('create')?'Creates private docs only you can see until you share them.':go?'Can’t create or edit docs yet.':'';
  return line?html`<p class="muted conn-what conn-writes">${t(line)}${go?html` ${go}`:''}</p>`:''};
 const docsConnect=c=>c.service!=='docs'||!/docs_not_connected/.test(c.error||'')?'Reconnect':c.docs_provider==='microsoft'?'Connect Microsoft documents':'Connect Google Docs';
 function reconnectButton(c,label='Reconnect'){return c.hosted_signin&&state.manage_url?hostedReconnect(c,label,'browser-link'):c.account_page?html`<a class="head-link" href="${safeHref(c.account_page)}" target="_blank" rel="noopener">${label} ↗</a>`:c.connect_name?html`<button type="button" class="browser-link" data-reconnect="${c.connect_name}" data-account="${c.id}"${c.signin?html` data-signin-source="${c.signin}"`:''}>${label}</button>`:''}

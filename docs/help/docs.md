@@ -1,7 +1,7 @@
 ---
 title: Microsoft Word: Word files in OneDrive and SharePoint
 area: connections
-summary: Comments, mentions, tracked changes and shares on your Word files in OneDrive and SharePoint, plus new docs and edits you approve. Google Docs come later.
+summary: Comments, mentions, tracked changes and shares on Word files in OneDrive and SharePoint, plus private new docs and edits you approve. Google Docs come later.
 covers: connector:docs
 code: connectors/docs.py, doc_writes.py, next_actions.py, onboarding.py
 site: Sign in with Microsoft
@@ -26,14 +26,15 @@ It never accepts a suggestion, resolves a comment, shares a file or changes a do
 
 ## Create and edit docs
 
-Your Machine can write a new Word doc, or change a doc one of your to-dos is about. It never writes on its own:
+Your Machine can write a new doc, or change a doc one of your to-dos is about:
 
-- It prepares the change on the to-do. A new doc shows in full. An edit shows each paragraph before and after.
-- Press **Review and create** or **Review changes**, read it, then **Create** or **Save**.
-- It writes once, and only into the doc as you saw it. If someone changed the doc in the meantime, nothing is written and the to-do says so. Ask for a new draft.
+- A new doc it makes right away, when the to-do or a skill says to make one: a private doc in your own Google Drive or OneDrive, shared with nobody. The to-do shows it with **Open the doc**. Sharing it, or sending its link to someone, waits for your OK.
+- A change to an existing doc it only prepares, each paragraph before and after. Press **Review changes**, read it, then **Save**.
+- It writes a change once, and only into the doc as you saw it. If someone changed the doc in the meantime, nothing is written and the to-do says so. Ask for a new draft.
 - In Talk, it reads the whole change aloud and waits for a clear yes.
+- If Google or Microsoft refuses a new doc, the to-do says what was refused and shows **Review and create** to try again.
 
-It replaces text, adds text and adds paragraphs and headings. It leaves tables, images, tracked changes and fields alone. A new doc lands in your OneDrive and stays private until you share it.
+It replaces text, adds text and adds paragraphs and headings. It leaves tables, images, tracked changes and fields alone. A new doc lands in your Google Drive or OneDrive and stays private until you share it.
 
 A new doc goes to an account in the to-do's own area: a Work to-do's doc to that company's account, the one the conversation is in when it can, never to a personal one. On your own computer, a Google account signed in for Gmail that already has Drive access can take a new Google Doc too. If no account fits, the to-do says **Connect Google Docs or Microsoft Word for Work**.
 

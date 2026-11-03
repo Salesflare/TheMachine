@@ -1,7 +1,7 @@
 ---
 title: Microsoft Word: file Word in OneDrive e SharePoint
 area: connections
-summary: Commenti, menzioni, revisioni e condivisioni sui tuoi file Word in OneDrive e SharePoint, più nuovi documenti e modifiche che approvi. Google Docs arriverà più avanti.
+summary: Commenti, menzioni, revisioni e condivisioni sui tuoi file Word in OneDrive e SharePoint, più nuovi documenti privati, e modifiche che approvi. Google Docs arriverà più avanti.
 covers: connector:docs
 code: connectors/docs.py, doc_writes.py, next_actions.py, onboarding.py
 site: Sign in with Microsoft
@@ -26,14 +26,15 @@ Non accetta suggerimenti, non risolve commenti, non condivide file e non modific
 
 ## Creare e modificare documenti
 
-La tua Machine può scrivere un nuovo documento Word, o modificare un documento di cui parla una delle tue attività. Non scrive mai da sola:
+La tua Machine può scrivere un nuovo documento, o modificare un documento di cui parla una delle tue attività:
 
-- Prepara la modifica nell’attività. Un nuovo documento si vede per intero. Una modifica mostra ogni paragrafo prima e dopo.
-- Tocca **Rivedi e crea** o **Rivedi le modifiche**, leggi, poi **Crea** o **Salva**.
-- Scrive una sola volta, e solo nel documento come l’hai visto. Se qualcuno l’ha cambiato nel frattempo, non viene scritto nulla e l’attività lo dice. Chiedi una nuova bozza.
+- Un nuovo documento lo crea subito, quando l’attività o una skill dice di crearne uno: un documento privato nel tuo Google Drive o OneDrive, non condiviso con nessuno. L’attività lo mostra con **Apri il documento**. Condividerlo, o mandarne il link a qualcuno, aspetta il tuo OK.
+- Una modifica a un documento esistente la prepara soltanto, ogni paragrafo prima e dopo. Tocca **Rivedi le modifiche**, leggi, poi **Salva**.
+- Scrive una modifica una sola volta, e solo nel documento come l’hai visto. Se qualcuno l’ha cambiato nel frattempo, non viene scritto nulla e l’attività lo dice. Chiedi una nuova bozza.
 - In Talk legge ad alta voce tutta la modifica e aspetta un sì chiaro.
+- Se Google o Microsoft rifiuta un nuovo documento, l’attività dice cosa è stato rifiutato e mostra **Rivedi e crea** per riprovare.
 
-Sostituisce testo, aggiunge testo e aggiunge paragrafi e titoli. Lascia stare tabelle, immagini, revisioni e campi. Un nuovo documento finisce nel tuo OneDrive e resta privato finché non lo condividi.
+Sostituisce testo, aggiunge testo e aggiunge paragrafi e titoli. Lascia stare tabelle, immagini, revisioni e campi. Un nuovo documento finisce nel tuo Google Drive o OneDrive e resta privato finché non lo condividi.
 
 Un nuovo documento va in un account dell’area dell’attività: il documento di un’attività di Lavoro nell’account di quell’azienda, quello della conversazione quando si può, mai in uno personale. Sul tuo computer, anche un account Google collegato per Gmail che ha già accesso a Drive può ricevere un nuovo Google Doc. Se nessun account va bene, l’attività dice **Collega Google Docs o Microsoft Word per Lavoro**.
 
