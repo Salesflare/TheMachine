@@ -5,6 +5,9 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+
 import org.junit.Test;
 
 /** Which addresses the app saves as the owner's Machine: the same rules as www/machine-url.js (mobile/tests). */
@@ -36,5 +39,17 @@ public class MachineAddressTest {
             "https://-x.example.com/", "https://my.example.com/a%2f../", "https://my.example.com/a b/", "javascript:alert(1)",
         };
         for (String url : bad) assertNull(url, MachineShellPlugin.normalMachine(url));
+    }
+
+    @Test
+    public void checkGoesOnlyToPublicOrTailnetAddresses() throws UnknownHostException {
+        String[] ok = {"93.184.216.34", "100.64.0.1", "100.127.255.254", "2606:4700::1111", "fd7a:115c:a1e0::1"};
+        for (String a : ok) assertTrue(a, MachineShellPlugin.publicOrTailnet(InetAddress.getByName(a)));
+        String[] bad = {
+            "127.0.0.1", "0.0.0.0", "10.0.0.1", "172.16.0.1", "172.31.255.1", "192.168.1.1", "169.254.169.254",
+            "224.0.0.1", "255.255.255.255", "192.0.0.1", "198.18.0.1", "::", "::1", "fe80::1", "fc00::1", "fd00::1",
+            "fd7a:115c:a1e1::1", "ff02::1", "::ffff:127.0.0.1", "::ffff:192.168.1.1",
+        };
+        for (String a : bad) assertFalse(a, MachineShellPlugin.publicOrTailnet(InetAddress.getByName(a)));
     }
 }

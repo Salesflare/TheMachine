@@ -190,8 +190,10 @@ public class MachineShellPlugin: CAPPlugin, CAPBridgedPlugin, ASWebAuthenticatio
         }
     }
 
-    /// Before a Machine of their own is saved: its manifest's answer, {status, body}, for www/machine-url.js isMachine.
-    /// Rejects when it can't be reached. No redirects followed, no cookies or cache, a short wait and a small body.
+    /// Before a Machine of their own is saved: {machine: true} when its manifest answers as a Machine's (the same rule
+    /// as www/machine-url.js isMachine), else {machine: false}. Never the answer itself. Rejects when it can't be
+    /// reached, or when its name leads to the phone itself or its local network (publicOrTailnet). No redirects
+    /// followed, no cookies or cache, a short wait and a small body.
     @objc func check(_ call: CAPPluginCall) {
         DispatchQueue.main.async { // only the start page asks, never a Machine's page or what it links to
             guard self.onStartPage else { return call.reject("not allowed") }
@@ -199,19 +201,76 @@ public class MachineShellPlugin: CAPPlugin, CAPBridgedPlugin, ASWebAuthenticatio
         }
     }
 
+    /// Where check may go: a public address, or a tailnet one (100.64.0.0/10, fd7a:115c:a1e0::/48). Never the phone
+    /// itself, its local network, link-local or multicast addresses, so a typed or linked name can't reach them.
+    static func publicOrTailnet(_ b: [UInt8]) -> Bool {
+        if b.count == 4 {
+            let (x, y) = (b[0], b[1])
+            if x == 100 && y & 0xc0 == 64 { return true } // tailnet (CGNAT)
+            return !(x == 0 || x == 10 || x == 127 || x >= 224 || (x == 169 && y == 254) || (x == 172 && y & 0xf0 == 16)
+                || (x == 192 && y == 168) || (x == 192 && y == 0 && b[2] == 0) || (x == 198 && (y == 18 || y == 19)))
+        }
+        guard b.count == 16 else { return false }
+        if Array(b[0..<6]) == [0xfd, 0x7a, 0x11, 0x5c, 0xa1, 0xe0] { return true } // tailnet
+        if b[0..<10].allSatisfy({ $0 == 0 }) && b[10] == 0xff && b[11] == 0xff { return publicOrTailnet(Array(b[12...])) } // ::ffff:a.b.c.d
+        if b[0..<15].allSatisfy({ $0 == 0 }) { return false } // :: and ::1
+        return b[0] & 0xfe != 0xfc && !(b[0] == 0xfe && b[1] & 0xc0 == 0x80) && !(b[0] == 0xfe && b[1] & 0xc0 == 0xc0) && b[0] != 0xff
+    }
+
+    /// Every address a name resolves to, as bytes; empty when it doesn't resolve.
+    static func addresses(_ host: String) -> [[UInt8]] {
+        var hints = addrinfo()
+        hints.ai_family = AF_UNSPEC
+        hints.ai_socktype = SOCK_STREAM
+        var list: UnsafeMutablePointer<addrinfo>?
+        guard getaddrinfo(host, nil, &hints, &list) == 0 else { return [] }
+        defer { freeaddrinfo(list) }
+        var out: [[UInt8]] = []
+        var at = list
+        while let ai = at?.pointee {
+            if ai.ai_family == AF_INET, let sa = ai.ai_addr {
+                let a = sa.withMemoryRebound(to: sockaddr_in.self, capacity: 1) { $0.pointee.sin_addr }
+                out.append(withUnsafeBytes(of: a) { Array($0) })
+            } else if ai.ai_family == AF_INET6, let sa = ai.ai_addr {
+                let a = sa.withMemoryRebound(to: sockaddr_in6.self, capacity: 1) { $0.pointee.sin6_addr }
+                out.append(withUnsafeBytes(of: a) { Array($0) })
+            }
+            at = ai.ai_next
+        }
+        return out
+    }
+
+    /// A Machine's manifest, or its refusal to anyone off its tailnet: the same rule as www/machine-url.js isMachine.
+    static func manifestIsMachine(_ status: Int, _ data: Data) -> Bool {
+        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return false }
+        if status == 200 { return json["name"] as? String == "The Machine" && json["start_url"] is String && json["icons"] is [Any] }
+        if status == 403 { return json["error"] as? String == "Use the owner-authenticated Tailscale dashboard" }
+        return false
+    }
+
     /// The owner's own typed address only (check): https on 443 or 8443 to a DNS name, never an IP address.
     private func fetchManifest(_ call: CAPPluginCall) {
         let asked = call.getString("url")
-        guard let url = MachineShellPlugin.normalMachine(asked), url == asked, MachineShellPlugin.ownHost(URL(string: url)?.host),
+        guard let url = MachineShellPlugin.normalMachine(asked), url == asked, let host = URL(string: url)?.host,
+              MachineShellPlugin.ownHost(host),
               let manifest = URL(string: url + "manifest.webmanifest") else { return call.reject("not a Machine address") }
+        DispatchQueue.global(qos: .userInitiated).async {
+            let found = MachineShellPlugin.addresses(host)
+            guard !found.isEmpty else { return call.reject("unreachable") }
+            guard found.allSatisfy(MachineShellPlugin.publicOrTailnet) else { return call.reject("not a Machine address") }
+            self.askManifest(call, manifest)
+        }
+    }
+
+    private func askManifest(_ call: CAPPluginCall, _ manifest: URL) {
         var request = URLRequest(url: manifest, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 8)
         request.setValue("application/manifest+json, application/json", forHTTPHeaderField: "Accept")
         let session = URLSession(configuration: .ephemeral, delegate: NoRedirects(), delegateQueue: nil)
         session.dataTask(with: request) { data, response, error in
             session.finishTasksAndInvalidate()
             guard error == nil, let http = response as? HTTPURLResponse else { return call.reject("unreachable") }
-            let body = (data ?? Data()).count <= 64 * 1024 ? String(data: data ?? Data(), encoding: .utf8) ?? "" : ""
-            call.resolve(["status": http.statusCode, "body": body])
+            let body = data ?? Data()
+            call.resolve(["machine": body.count <= 64 * 1024 && MachineShellPlugin.manifestIsMachine(http.statusCode, body)])
         }.resume()
     }
 

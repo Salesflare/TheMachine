@@ -43,7 +43,7 @@
   async function check(url) {
     try {
       const r = await shell.check({url});
-      return MachineUrl.isMachine(r.status, r.body) ? 'machine' : 'other';
+      return r.machine === true ? 'machine' : 'other';
     } catch (e) { return 'unreachable'; }
   }
 
