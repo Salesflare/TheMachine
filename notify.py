@@ -60,7 +60,7 @@ DIGEST_LATE = dt.timedelta(hours=3)  # a digest not sent by then (the Machine wa
 MAIL_SUBJECT, MAIL_TEXT = 120, 4000
 # Phones with the mobile app: what Settings shows. The control plane holds their push tokens and sends the wakeups.
 APP_DEVICES = 'CREATE TABLE IF NOT EXISTS notify_app_devices(id TEXT PRIMARY KEY,platform TEXT NOT NULL,label TEXT NOT NULL,created_at TEXT NOT NULL)'
-APP_KINDS = ('todo', 'result', 'reminder', 'digest', 'fleet', 'test')  # the control plane's fixed text per kind
+APP_KINDS = ('todo', 'result', 'reminder', 'digest', 'fleet', 'test', 'clear')  # the control plane's fixed text per kind; clear: none
 APP_ID = re.compile(r'[A-Za-z0-9_-]{1,64}')
 # The line a woken app shows ("Ready: Reply about the listing"), by the wakeup's tag: the same words as the web push,
 # short. Kept APP_LINE_DAYS, at most APP_LINES of them.
@@ -405,6 +405,17 @@ def app_line_save(db, tag, line, at=None):
                (tag, clip(line), at))
     db.execute('DELETE FROM notify_app_lines WHERE at<? OR tag NOT IN (SELECT tag FROM notify_app_lines ORDER BY at DESC LIMIT ?)',
                (at - APP_LINE_DAYS * 86400, APP_LINES))
+
+
+def app_lines(db):
+    """The tags phones were woken for, still kept here: what app_clear_step looks at."""
+    ensure(db)
+    return [r[0] for r in db.execute('SELECT tag FROM notify_app_lines')]
+
+
+def app_line_forget(db, tag):
+    ensure(db)
+    db.execute('DELETE FROM notify_app_lines WHERE tag=?', (tag,))
 
 
 def app_line(db, tag):

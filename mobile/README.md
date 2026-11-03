@@ -42,15 +42,27 @@ rename). Every other link opens in the system browser. Only the app's own start 
    only gets push when it is on The Machine Network; otherwise the app works without notifications and says so once.
 3. When something needs the owner, the Machine asks the relay to wake the phone. The push carries a fixed text and a
    to-do id, never the content.
-4. Android (`MachinePushService`, which replaces Capacitor's FCM service and still runs it): the app registers with
-   `fetch`, so the relay sends a data-only push (kind, ready or needs-you, the to-do id, the fixed text and a
-   "{} to-dos need you" line). The app asks the saved Machine for that to-do's line (`GET api/notice?tag=`, with the
-   WebView's cookies; over Tailscale for a Machine of their own) and shows it, at most 60 characters. No answer:
-   the fixed text, or the count of that kind since the app was last opened. The public version (lock screen with
-   sensitive content hidden) is always the fixed text; the Machine's Text in notifications off gives the fixed text
-   too. Words: `PushText` (tests: `PushTextTest`).
-5. iOS keeps the relay's alert as it is. Showing the title there needs a Notification Service Extension, which can't
-   read the WKWebView's sign-in without an App Group: a new target and entitlement, so a store review.
+4. The app registers with `fetch`, and asks the saved Machine about the to-do (`GET api/notice?tag=`): its title
+   ("Ready: <title>", at most 60 characters), next step (at most 120), buttons and their words, or `gone` for a
+   to-do that no longer waits. No answer: the fixed text. The Machine's Text in notifications off gives the fixed
+   text too. The lock screen with previews hidden shows the fixed text only.
+5. Buttons: Prepare (a to-do not started yet), Snooze (until tomorrow), Mark done. Each is the dashboard's own
+   `decide` (`GET api/session` for the CSRF token, then `POST api/action` with the Machine's Origin and the sign-in),
+   after unlocking, without opening the app; then the to-do's line says what happened ("Snoozed it"). Nothing is
+   sent from a notification: a draft or final step opens the app.
+6. One notification per to-do (its id). When a to-do no longer waits (done, snoozed, not needed, here or anywhere),
+   the Machine sends one `clear` wakeup without text (`app_clear_step`) and the app takes it away.
+7. Android (`MachinePushService`, which replaces Capacitor's FCM service and still runs it): a data-only push (kind,
+   ready or needs-you, the to-do id, the fixed text and a "{} to-dos need you" line), the notice with the WebView's
+   cookies (over Tailscale for a Machine of their own), buttons in `NotificationActions` (Android 12+: unlock first).
+   No answer: the fixed text, or the count of that kind since the app was last opened. Words: `PushText` (tests:
+   `PushTextTest`).
+8. iOS: the relay's alert has `mutable-content`, and the Notification Service extension (`NotificationService/`,
+   bundle `computer.themachine.app.notifications`) asks for the notice with the sign-in the app keeps in the app
+   group's keychain (`Shared/MachineNotice.swift`, this device only). Buttons are a notification category with
+   `authenticationRequired`, handled in `MachineActions` (`AppDelegate.swift`) in front of Capacitor's delegate.
+   `clear` is a background push, which iOS may hold back: opening the app also takes away notifications for
+   to-dos that no longer wait.
 
 Tokens are per owner and revocable: signing out of the app, removing the phone in Settings, or leaving the Network
 removes them.

@@ -33,6 +33,11 @@
             </intent-filter>
         </service>
 
+        <!-- A notification's Prepare, Snooze and Mark done buttons: the dashboard's own decision, never a send -->
+        <receiver
+            android:name=".NotificationActions"
+            android:exported="false" />
+
         <activity
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation|density"
             android:name=".MainActivity"

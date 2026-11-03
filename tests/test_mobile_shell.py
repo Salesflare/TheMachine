@@ -66,8 +66,11 @@ class MobileShellTest(unittest.TestCase):
             self.assertIn('computer.themachine.app', side)
         project = (MOBILE / 'ios/App/App.xcodeproj/project.pbxproj').read_text()
         for name in ('MachineShellPlugin.swift in Sources', 'ShareViewController.swift in Sources',
-                     'ShareExtension.appex in Embed App Extensions', 'CODE_SIGN_ENTITLEMENTS = App/App.entitlements'):
+                     'ShareExtension.appex in Embed App Extensions', 'CODE_SIGN_ENTITLEMENTS = App/App.entitlements',
+                     'NotificationService.swift in Sources', 'NotificationService.appex in Embed App Extensions',
+                     'PRODUCT_BUNDLE_IDENTIFIER = computer.themachine.app.notifications;'):
             self.assertIn(name, project)
+        self.assertEqual(project.count('MachineNotice.swift in Sources */ = {isa = PBXBuildFile'), 2)  # the app and the extension
         manifest = (MOBILE / 'android/app/src/main/AndroidManifest.xml').read_text()
         self.assertIn('android:networkSecurityConfig="@xml/network_security_config"', manifest)
         self.assertIn('cleartextTrafficPermitted="false"', (MOBILE / 'android/app/src/main/res/xml/network_security_config.xml').read_text())
@@ -147,3 +150,44 @@ class MobileShellTest(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class IOSNotifications(unittest.TestCase):
+    """The Notification Service extension and the notification buttons (Shared/MachineNotice.swift)."""
+    IOS = MOBILE / 'ios/App'
+
+    def test_the_extension_is_a_notification_service_in_the_app_group(self):
+        info = (self.IOS / 'NotificationService/Info.plist').read_text()
+        self.assertIn('<string>com.apple.usernotifications.service</string>', info)
+        self.assertIn('$(PRODUCT_MODULE_NAME).NotificationService', info)
+        for entitlements in ('App/App.entitlements', 'NotificationService/NotificationService.entitlements'):
+            self.assertIn('<string>group.computer.themachine.app</string>', (self.IOS / entitlements).read_text())
+        # no new entitlement: only the app group, in the extension as in the Share extension
+        self.assertEqual((self.IOS / 'NotificationService/NotificationService.entitlements').read_text(),
+                         (self.IOS / 'ShareExtension/ShareExtension.entitlements').read_text())
+        self.assertIn('<string>remote-notification</string>', (self.IOS / 'App/Info.plist').read_text())  # the clear push
+
+    def test_buttons_unlock_first_and_never_send(self):
+        shared = (self.IOS / 'Shared/MachineNotice.swift').read_text()
+        self.assertIn('["prepare": "accept", "snooze": "snooze", "done": "complete"]', shared)
+        self.assertIn('options: [.authenticationRequired]', shared)
+        self.assertNotIn('.foreground', shared)
+        self.assertNotIn('"send"', shared)
+        self.assertIn('kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly', shared)
+        self.assertIn('completionHandler(nil)', shared)  # never follows a redirect
+        app = (self.IOS / 'App/AppDelegate.swift').read_text()
+        self.assertIn('MachineActions.shared.install()', app)
+        self.assertIn('"clear"', app)
+        plugin = (self.IOS / 'App/MachineShellPlugin.swift').read_text()
+        for call in ('MachineActions.shared.install()', 'MachineNotice.sweep()', 'MachineNotice.forget()', 'keepSignIn(saved)', '"fetch": true'):
+            self.assertIn(call, plugin)
+
+    def test_android_buttons_are_the_same_decisions(self):
+        java = (MOBILE / 'android/app/src/main/java/computer/themachine/app/PushText.java').read_text()
+        for action, choice in (('prepare', 'accept'), ('snooze', 'snooze'), ('done', 'complete')):
+            self.assertIn(f'if ("{action}".equals(action)) return "{choice}";', java)
+        service = (MOBILE / 'android/app/src/main/java/computer/themachine/app/MachinePushService.java').read_text()
+        self.assertIn('.setAuthenticationRequired(true)', service)
+        self.assertIn('"clear".equals(kind)', service)
+        manifest = (MOBILE / 'android/app/src/main/AndroidManifest.xml').read_text()
+        self.assertRegex(manifest, r'android:name="\.NotificationActions"\s+android:exported="false"')

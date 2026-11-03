@@ -16,21 +16,28 @@ import com.capacitorjs.plugins.pushnotifications.MessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 /**
  * Push on Android (mobile/README.md). The push says nothing about the to-do: its kind, a ready or needs-you state, an
  * opaque id and fixed words. For one that leaves showing it to the app (data "fetch"), the app asks the owner's own
- * Machine for that to-do's short line (GET api/notice, with the WebView's own sign-in, or over Tailscale for a Machine
- * of their own) and shows "Ready: Reply about the listing". Without an answer (offline, signed out, Tailscale off) it
- * shows the fixed words, or how many are waiting ("2 to-dos need you"). The lock screen gets only the fixed words when
- * the phone hides sensitive content (the public version). Replaces Capacitor's own service, which it still runs.
+ * Machine about that to-do (GET api/notice, with the WebView's own sign-in, or over Tailscale for a Machine of their
+ * own) and shows its title and next step ("Ready: Pick a time with Sam", "Send to Sam: Tuesday 10:00 works") with
+ * Prepare, Snooze and Mark done buttons (NotificationActions). Without an answer (offline, signed out, Tailscale off)
+ * it shows the fixed words, or how many are waiting ("2 to-dos need you"). The lock screen gets only the fixed words
+ * when the phone hides sensitive content (the public version). A "clear" push takes a to-do's notification away.
+ * Replaces Capacitor's own service, which it still runs.
  */
 public class MachinePushService extends MessagingService {
 
@@ -50,30 +57,94 @@ public class MachinePushService extends MessagingService {
     static void show(Context c, Map<String, String> data) {
         String kind = text(data.get("kind")), state = text(data.get("state")), tag = text(data.get("tag"));
         if (!PushText.TAG.matcher(kind).matches() || !PushText.TAG.matcher(tag).matches()) return;
+        if ("clear".equals(kind)) { // the to-do no longer waits (done, snoozed, sent, here or on another device)
+            clear(c, tag);
+            return;
+        }
         if (!NotificationManagerCompat.from(c).areNotificationsEnabled()) return;
         String many = text(data.get("many"));
         String group = PushText.group(kind, state);
-        int count = many.isEmpty() ? 1 : waiting(c, group, tag);
+        Notice notice = fetchNotice(c, tag);
+        if (notice != null && notice.gone) { // handled in the meantime: nothing to show
+            clear(c, tag);
+            return;
+        }
+        int count = many.isEmpty() || (notice != null && notice.title != null) ? 1 : waiting(c, group, tag);
         String plain = PushText.fallback(data.get("body"), many, count);
         if (plain.isEmpty()) plain = PushText.fallback(data.get("title"), null, 1);
-        String line = PushText.line(fetchLine(c, tag));
-        // With its line: one notification per to-do, opening it. Without: one for the kind, with the count, that a
-        // second one replaces ("2 to-dos need you"), opening the dashboard
-        String shown = line != null ? line : plain;
+        String line = notice == null ? null : notice.title;
+        // With its notice: one notification per to-do, the to-do's title and next step, its buttons, opening it; a
+        // newer one for the same to-do (Preparing, then Ready) replaces it. Without: one for the kind, with the
+        // count, that a second one replaces ("2 to-dos need you"), opening the dashboard
         String id = line != null ? tag : group;
         String opens = line != null || count == 1 ? tag : null;
         channel(c);
-        NotificationCompat.Builder hidden = base(c).setContentTitle(plain);
-        NotificationCompat.Builder full = base(c)
-            .setContentTitle(shown)
-            .setContentIntent(open(c, id, opens))
-            .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
-            .setPublicVersion(hidden.build());
+        NotificationCompat.Builder full = base(c, plain)
+            .setContentTitle(line != null ? line : plain)
+            .setContentIntent(open(c, id, opens));
+        if (line != null && !notice.body.isEmpty()) {
+            full.setContentText(notice.body).setStyle(new NotificationCompat.BigTextStyle().bigText(notice.body));
+        }
+        if (line != null) {
+            for (String action : notice.actions) {
+                String label = notice.labels.get(action);
+                if (PushText.choice(action) == null || label == null || label.isEmpty()) continue;
+                full.addAction(button(c, tag, action, label, line, notice.events.get(action), notice.events.get("failed")));
+            }
+        }
+        post(c, id, full);
+    }
+
+    /** After a button: the to-do's title and what happened ("Snoozed it"), without buttons, quietly. */
+    static void after(Context c, String tag, String title, String line, boolean stays) {
+        if (!PushText.TAG.matcher(tag).matches()) return;
+        channel(c);
+        NotificationCompat.Builder b = base(c, title)
+            .setContentTitle(title)
+            .setContentText(line)
+            .setOnlyAlertOnce(true)
+            .setSilent(true)
+            .setContentIntent(open(c, tag, tag));
+        if (!stays) b.setTimeoutAfter(4000); // done or snoozed: the line shows, then it goes
+        post(c, tag, b);
+    }
+
+    /** A to-do's notification goes: done, snoozed or sent, here or elsewhere. */
+    static void clear(Context c, String tag) {
+        NotificationManagerCompat.from(c).cancel(tag, 0);
+        SharedPreferences prefs = c.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        SharedPreferences.Editor edit = prefs.edit();
+        for (Map.Entry<String, ?> entry : prefs.getAll().entrySet()) {
+            if (!(entry.getValue() instanceof Set)) continue;
+            @SuppressWarnings("unchecked")
+            Set<String> tags = new HashSet<>((Set<String>) entry.getValue());
+            if (tags.remove(tag)) edit.putStringSet(entry.getKey(), tags);
+        }
+        edit.apply();
+    }
+
+    private static void post(Context c, String id, NotificationCompat.Builder b) {
         try {
-            NotificationManagerCompat.from(c).notify(id, 0, full.build());
+            NotificationManagerCompat.from(c).notify(id, 0, b.build());
         } catch (SecurityException e) {
             // notifications were turned off in the meantime
         }
+    }
+
+    /** A button: runs in NotificationActions after unlocking, never opens the app, never sends anything. */
+    private static NotificationCompat.Action button(Context c, String tag, String action, String label, String title, String event, String failed) {
+        Intent intent = new Intent(c, NotificationActions.class)
+            .putExtra("tag", tag)
+            .putExtra("action", action)
+            .putExtra("title", title)
+            .putExtra("event", text(event))
+            .putExtra("failed", text(failed));
+        PendingIntent pending = PendingIntent.getBroadcast(c, (tag + ":" + action).hashCode(), intent,
+            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        return new NotificationCompat.Action.Builder(0, label, pending)
+            .setAuthenticationRequired(true) // Android 12+: the phone unlocks first
+            .setShowsUserInterface(false)
+            .build();
     }
 
     /** Opening the app: what was waiting counts as seen (MainActivity). */
@@ -90,12 +161,18 @@ public class MachinePushService extends MessagingService {
         return tags.size();
     }
 
-    private static NotificationCompat.Builder base(Context c) {
-        return new NotificationCompat.Builder(c, CHANNEL)
-            .setSmallIcon(R.drawable.ic_stat_notify)
-            .setColor(ContextCompat.getColor(c, R.color.colorPrimary))
+    /** A notification whose lock-screen version, when the phone hides sensitive content, says only `plain`. */
+    private static NotificationCompat.Builder base(Context c, String plain) {
+        NotificationCompat.Builder hidden = icon(c, new NotificationCompat.Builder(c, CHANNEL)).setContentTitle(plain);
+        return icon(c, new NotificationCompat.Builder(c, CHANNEL))
             .setAutoCancel(true)
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT);
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
+            .setPublicVersion(hidden.build());
+    }
+
+    private static NotificationCompat.Builder icon(Context c, NotificationCompat.Builder b) {
+        return b.setSmallIcon(R.drawable.ic_stat_notify).setColor(ContextCompat.getColor(c, R.color.colorPrimary));
     }
 
     private static void channel(Context c) {
@@ -112,10 +189,58 @@ public class MachinePushService extends MessagingService {
         return PendingIntent.getActivity(c, id.hashCode(), intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
     }
 
-    /** The to-do's line from the saved Machine, or null. Never follows a redirect (a signed-out hosted Machine sends one). */
-    private static String fetchLine(Context c, String tag) {
-        String machine = MachineShellPlugin.normalMachine(c.getSharedPreferences("machine_shell", Context.MODE_PRIVATE).getString("machine", null));
-        String url = PushText.noticeUrl(machine, tag);
+    /** What the Machine says about a to-do (GET api/notice), or null when it can't be reached or says nothing. */
+    static final class Notice {
+        String title;
+        String body = "";
+        boolean gone;
+        final List<String> actions = new ArrayList<>();
+        final Map<String, String> labels = new HashMap<>();
+        final Map<String, String> events = new HashMap<>();
+    }
+
+    private static Notice fetchNotice(Context c, String tag) {
+        String answer = request(c, PushText.noticeUrl(machine(c), tag), null, null, null);
+        if (answer == null) return null;
+        try {
+            JSONObject json = new JSONObject(answer);
+            Notice notice = new Notice();
+            notice.gone = json.optBoolean("gone", false);
+            notice.title = PushText.line(json.optString("title", json.optString("line", "")));
+            notice.body = PushText.body(json.optString("body", ""));
+            JSONArray actions = json.optJSONArray("actions");
+            for (int i = 0; actions != null && i < actions.length() && i < 4; i++) notice.actions.add(actions.optString(i, ""));
+            copy(json.optJSONObject("labels"), notice.labels, 24);
+            copy(json.optJSONObject("events"), notice.events, PushText.LIMIT * 2);
+            return notice.gone || notice.title != null ? notice : null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /** The to-do's title as the Machine says it now ("Preparing: ..."), or null. */
+    static String title(Context c, String tag) {
+        Notice notice = fetchNotice(c, tag);
+        return notice == null || notice.gone ? null : notice.title;
+    }
+
+    private static void copy(JSONObject from, Map<String, String> to, int limit) {
+        if (from == null) return;
+        for (java.util.Iterator<String> keys = from.keys(); keys.hasNext(); ) {
+            String key = keys.next();
+            to.put(key, PushText.clip(from.optString(key, ""), limit));
+        }
+    }
+
+    static String machine(Context c) {
+        return MachineShellPlugin.normalMachine(c.getSharedPreferences("machine_shell", Context.MODE_PRIVATE).getString("machine", null));
+    }
+
+    /**
+     * One request to the saved Machine with the WebView's own sign-in (or over Tailscale for a Machine of the owner's
+     * own): its answer, or null for anything but a 200. Never follows a redirect (a signed-out hosted Machine sends one).
+     */
+    static String request(Context c, String url, String body, String origin, String csrf) {
         if (url == null) return null;
         HttpURLConnection conn = null;
         try {
@@ -127,11 +252,23 @@ public class MachinePushService extends MessagingService {
             conn.setRequestProperty("Accept", "application/json");
             String cookies = null;
             try {
-                cookies = CookieManager.getInstance().getCookie(url); // the WebView's own sign-in on this Machine
+                cookies = CookieManager.getInstance().getCookie(url);
             } catch (RuntimeException e) {
                 // no WebView on this phone right now: a Machine of their own still answers over Tailscale
             }
             if (cookies != null && !cookies.isEmpty()) conn.setRequestProperty("Cookie", cookies);
+            if (body != null) {
+                conn.setRequestMethod("POST");
+                conn.setDoOutput(true);
+                conn.setRequestProperty("Content-Type", "application/json");
+                conn.setRequestProperty("Origin", origin);
+                conn.setRequestProperty("X-CSRF-Token", csrf);
+                byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
+                conn.setFixedLengthStreamingMode(bytes.length);
+                try (OutputStream out = conn.getOutputStream()) {
+                    out.write(bytes);
+                }
+            }
             if (conn.getResponseCode() != 200) return null;
             try (InputStream in = conn.getInputStream()) {
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -139,7 +276,7 @@ public class MachinePushService extends MessagingService {
                 int n;
                 while ((n = in.read(buf)) > 0 && out.size() <= MAX_BYTES) out.write(buf, 0, n);
                 if (out.size() > MAX_BYTES) return null;
-                return new JSONObject(out.toString(StandardCharsets.UTF_8.name())).optString("line", "");
+                return out.toString(StandardCharsets.UTF_8.name());
             }
         } catch (Exception e) {
             return null;

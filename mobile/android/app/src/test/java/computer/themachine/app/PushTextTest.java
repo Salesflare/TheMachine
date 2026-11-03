@@ -56,4 +56,45 @@ public class PushTextTest {
         assertEquals("machine-result-needs", PushText.group("result", "needs"));
         assertEquals("machine-todo", PushText.group("todo", ""));
     }
+
+    @Test
+    public void theNextStepIsOneLineUnderTheTitle() {
+        assertEquals("Reply to Sam: confirm Tuesday 10:00", PushText.body("Reply to Sam:\nconfirm Tuesday 10:00"));
+        String body = PushText.body("Pay the invoice " + "for the office rent of the last three months ".repeat(5));
+        assertTrue(body, body.length() <= PushText.BODY);
+        assertEquals("", PushText.body(null));
+    }
+
+    @Test
+    public void onlyPrepareSnoozeAndDoneAreButtonsAndNothingSends() {
+        assertEquals("accept", PushText.choice("prepare"));
+        assertEquals("snooze", PushText.choice("snooze"));
+        assertEquals("complete", PushText.choice("done"));
+        assertNull(PushText.choice("send"));
+        assertNull(PushText.choice("accept"));
+        assertNull(PushText.choice("open"));
+        assertNull(PushText.choice(null));
+    }
+
+    @Test
+    public void aButtonSendsTheDashboardsOwnDecision() {
+        String id = "0b7c8d2e-1f3a-4b5c-9d6e-7f8a9b0c1d2e";
+        assertEquals("{\"action\":\"decide\",\"args\":{\"suggestion_id\":\"card_1\",\"choice\":\"complete\",\"feedback\":\"\",\"decision_id\":\"" + id + "\"}}",
+            PushText.decide("card_1", "done", id));
+        assertTrue(PushText.decide("card_1", "snooze", id).contains("\"choice\":\"snooze\",\"feedback\":\"\",\"snooze_option\":\"tomorrow\""));
+        assertTrue(PushText.decide("card_1", "prepare", id).contains("\"choice\":\"accept\""));
+        assertNull(PushText.decide("card_1\",\"choice\":\"accept", "done", id));
+        assertNull(PushText.decide("card_1", "send", id));
+        assertNull(PushText.decide("card_1", "done", "x\""));
+    }
+
+    @Test
+    public void theRequestGoesToTheSavedMachineWithItsOrigin() {
+        assertEquals("https://sam.app.themachine.computer", PushText.origin("https://sam.app.themachine.computer/"));
+        assertEquals("https://desk.tail1234.ts.net:8443", PushText.origin("https://desk.tail1234.ts.net:8443/assistant/"));
+        assertNull(PushText.origin("http://desk/"));
+        assertNull(PushText.origin(null));
+        assertEquals("https://desk.tail1234.ts.net:8443/assistant/api/action", PushText.route("https://desk.tail1234.ts.net:8443/assistant/", "api/action"));
+        assertNull(PushText.route("https://desk.tail1234.ts.net:8443/assistant", "api/action"));
+    }
 }
