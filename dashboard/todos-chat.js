@@ -308,6 +308,8 @@ const MIC_MAX=120,MIC_HOLD=600;
 const micBtn=()=>html`<button type="button" class="chat-mic" data-mic aria-label="Talk" title="Talk">${raw(MIC)}</button>`;
 let mic=null,micPrepped=false,micDemo=false,micUse='';  // the one recording at a time; whether this page asked the Machine; the site's demo (it answers {demo:true}); what a tap does now (voice_view's use)
 const MIC_DEMO='Voice input works on your own Machine. This demo can’t listen.';
+// In the mobile app the phone asks once; after a No it's the phone's settings for the app, not a browser's
+const micBlocked=()=>document.documentElement.classList.contains('in-app')?t('The microphone is blocked. Allow it for The Machine in the phone’s settings.'):t('The microphone is blocked. Allow it for this site in your browser’s settings.');
 const micOk=()=>!!(window.isSecureContext&&navigator.mediaDevices?.getUserMedia&&window.MediaRecorder&&window.OfflineAudioContext);
 const micClock=s=>`${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`;
 const micPost=(action,args={},upload=false)=>request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf,...(upload?{'X-Upload':'voice'}:{})},body:JSON.stringify({action,args})});
@@ -327,7 +329,7 @@ function micBrowser(v){const SR=micSR(),sr=new SR(),code=(state.dictation?.langu
  // Chrome stops after a pause: it goes on until Done, the cross or 2 minutes
  sr.onend=()=>{if(mic!==v)return;if(v.state==='rec'&&!v.srFailed){try{sr.start()}catch{}return}
   if(v.state==='work'){const text=[...v.heard,v.interim].filter(Boolean).join(' ');v.sr=null;
-   if(!text&&v.srFailed){micFail(v,v.srFailed==='blocked'?t('The microphone is blocked. Allow it for this site in your browser’s settings.'):t('Your browser’s speech recognition didn’t answer. Try again.'));return}micDone(v,text)}}
+   if(!text&&v.srFailed){micFail(v,v.srFailed==='blocked'?micBlocked():t('Your browser’s speech recognition didn’t answer. Try again.'));return}micDone(v,text)}}
  sr.start()}
 function micPaint(v){if(!v.box.isConnected){const box=document.getElementById(v.input)?.closest('.chat-box,.mic-wrap');if(!box){micCancel();return}v.box=box}
  let bar=v.box.querySelector(':scope>.mic-bar');if(!bar){bar=document.createElement('div');bar.className='mic-bar';bar.setAttribute('role','status');v.box.append(bar)}v.box.classList.add('mic-on');
@@ -353,7 +355,7 @@ async function micStart(btn,down){if(mic)return;const box=btn.closest('.chat-box
  if(micDemo){micFail(v,t(MIC_DEMO));return}
  micPaint(v);const prep=micPrep();
  let stream;try{stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,channelCount:1}})}
- catch(e){await prep;if(mic!==v)return;micFail(v,micDemo?t(MIC_DEMO):e?.name==='NotAllowedError'||e?.name==='SecurityError'?t('The microphone is blocked. Allow it for this site in your browser’s settings.')
+ catch(e){await prep;if(mic!==v)return;micFail(v,micDemo?t(MIC_DEMO):e?.name==='NotAllowedError'||e?.name==='SecurityError'?micBlocked()
   :e?.name==='NotFoundError'||e?.name==='OverconstrainedError'?t('No microphone found. Connect one and try again.'):t('The microphone couldn’t start. Try again.'));return}
  if(mic!==v){stream.getTracks().forEach(x=>x.stop());return}  // canceled while the browser asked
  await prep;if(mic!==v){stream.getTracks().forEach(x=>x.stop());return}
@@ -559,7 +561,7 @@ function talkEnd(){const v=talk;if(!v)return;talk=null;talkToastClear();talkClos
 async function talkStart(main,first=null){const s=main?null:chatOpen();if(talk||!main&&!s||main&&!talkOk())return;talkToastClear();micCancel();
  const v=talk={main:!!main,sid:s?.id||null,state:'start',muted:false,secs:0,limit:600,warn:540,per_use:false,said:new Set(),posting:Promise.resolve(),queue:[],relay:null,heard:{},responding:false,tell:[],pending:new Set(),dropped:new Set(),respFor:{},after:{},known:new Set(talkNeeds().map(x=>x.id)),prep:new Set(),sent:null,last:null,told:new Set(),lastUser:''};talkPaint();talkSide();talkViewPaint();
  try{v.stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,channelCount:1}})}
- catch(e){talkFail(v,e?.name==='NotAllowedError'||e?.name==='SecurityError'?t('The microphone is blocked. Allow it for this site in your browser’s settings.')
+ catch(e){talkFail(v,e?.name==='NotAllowedError'||e?.name==='SecurityError'?micBlocked()
   :e?.name==='NotFoundError'||e?.name==='OverconstrainedError'?t('No microphone found. Connect one and try again.'):t('The microphone couldn’t start. Try again.'));return}
  if(talk!==v){v.stream.getTracks().forEach(x=>x.stop());return}
  try{const r=await micPost('talk_start',{...(main?{main:true}:{suggestion_id:s.id}),languages:[...(navigator.languages||[])].slice(0,8)});if(talk!==v){micPost('talk_end',{id:r.id}).catch(()=>{});return}

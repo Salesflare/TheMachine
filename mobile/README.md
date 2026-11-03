@@ -63,7 +63,8 @@ to TestFlight instead, signed through the App Store Connect API key in the repo 
 
 | | iOS | Android |
 |---|---|---|
-| Name | The Machine | The Machine |
+| Store name | The Machine Computer | The Machine Computer |
+| Home screen name | The Machine | The Machine |
 | ID | `computer.themachine.app` (Share: `computer.themachine.app.share`) | `computer.themachine.app` |
 | Category | Productivity | Productivity |
 | Icon | `ios/App/App/Assets.xcassets/AppIcon.appiconset` | `android/app/src/main/res/mipmap-*` |
@@ -77,7 +78,7 @@ Description:
 > The Machine is your own assistant for email and work. This app opens your Machine on your phone: your to-dos,
 > drafts and chat, with notifications when something needs you.
 >
-> Sign in with your account from themachine.computer. Running your own Machine? Connect it over Tailscale.
+> Sign in with your account from themachine.computer. Running your own Machine? Connect it with its address.
 >
 > Share links, text and files from any app to add them as a to-do.
 

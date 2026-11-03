@@ -1,6 +1,7 @@
 import AuthenticationServices
 import Capacitor
 import CryptoKit
+import QuickLook
 import UIKit
 import WebKit
 
@@ -32,6 +33,8 @@ public class MachineShellPlugin: CAPPlugin, CAPBridgedPlugin, ASWebAuthenticatio
     private var session: ASWebAuthenticationSession?
     private var loading: NSKeyValueObservation?
     private var pendingShare: [String: Any]?
+    private var mediaGate: MediaGate?
+    private var filePreview: FilePreview?  // the open preview's data source (the controller holds it weakly)
 
     override public func load() {
         NotificationCenter.default.addObserver(self, selector: #selector(openURL(_:)), name: .capacitorOpenURL, object: nil)
@@ -39,6 +42,46 @@ public class MachineShellPlugin: CAPPlugin, CAPBridgedPlugin, ASWebAuthenticatio
         loading = bridge?.webView?.observe(\.isLoading, options: [.new]) { [weak self] webView, change in
             if change.newValue == false { self?.onMachinePage(webView.url) }
         }
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self, let webView = self.bridge?.webView else { return }
+            webView.allowsBackForwardNavigationGestures = true  // swipe from the edge: back in the Machine's pages
+            // The microphone (Talk, dictation) for the Machine's own page only; Capacitor's delegate does the rest
+            self.mediaGate = MediaGate(inner: webView.uiDelegate, plugin: self)
+            webView.uiDelegate = self.mediaGate
+            webView.configuration.userContentController.add(FilesHandler(plugin: self), name: "machineFiles")
+        }
+    }
+
+    /// Whether a page's origin is the saved Machine's (scheme, host and port).
+    func isMachine(_ origin: WKSecurityOrigin) -> Bool {
+        guard let saved = machine, let m = URLComponents(string: saved) else { return false }
+        return origin.protocol == "https" && origin.host.lowercased() == m.host && (origin.port == 0 ? 443 : origin.port) == (m.port ?? 443)
+    }
+
+    /// A file from the Machine's page (www/inject.js, files): the share sheet, where Save to Files keeps it.
+    func saveFile(_ body: Any) {
+        guard let text = body as? String, text.count < 36_000_000, let json = text.data(using: .utf8),
+              let o = try? JSONSerialization.jsonObject(with: json) as? [String: Any], let b64 = o["data"] as? String,
+              let data = Data(base64Encoded: b64) else { return }
+        var name = ((o["name"] as? String) ?? "file").replacingOccurrences(of: "[/\\\\:\\x00-\\x1f]", with: "_", options: .regularExpression)
+            .trimmingCharacters(in: .whitespaces)
+        if name.isEmpty || name.hasPrefix(".") { name = "file" + name }
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("files", isDirectory: true)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let file = dir.appendingPathComponent(String(name.suffix(120)))
+        guard (try? data.write(to: file)) != nil, let vc = bridge?.viewController else { return }
+        // A file the owner opened (a link to it, not a download): shown, with the share button there to keep it
+        if o["open"] as? Bool == true, QLPreviewController.canPreview(file as NSURL) {
+            let preview = QLPreviewController()
+            let source = FilePreview(file)
+            filePreview = source
+            preview.dataSource = source
+            vc.present(preview, animated: true)
+            return
+        }
+        let sheet = UIActivityViewController(activityItems: [file], applicationActivities: nil)
+        sheet.popoverPresentationController?.sourceView = vc.view
+        vc.present(sheet, animated: true)
     }
 
     // MARK: which pages the WebView opens
@@ -330,10 +373,53 @@ class MachineViewController: CAPBridgeViewController {
     }
 }
 
+/// The WebView's own delegate (Capacitor's), except for the microphone: granted to the saved Machine's page only.
+private final class MediaGate: NSObject, WKUIDelegate {
+    weak var inner: WKUIDelegate?
+    weak var plugin: MachineShellPlugin?
+
+    init(inner: WKUIDelegate?, plugin: MachineShellPlugin) {
+        self.inner = inner
+        self.plugin = plugin
+    }
+
+    override func responds(to aSelector: Selector!) -> Bool {
+        super.responds(to: aSelector) || (inner?.responds(to: aSelector) ?? false)
+    }
+
+    override func forwardingTarget(for aSelector: Selector!) -> Any? {
+        inner?.responds(to: aSelector) == true ? inner : nil
+    }
+
+    func webView(_ webView: WKWebView, requestMediaCapturePermissionFor origin: WKSecurityOrigin, initiatedByFrame frame: WKFrameInfo,
+                 type: WKMediaCaptureType, decisionHandler: @escaping (WKPermissionDecision) -> Void) {
+        decisionHandler(type == .microphone && frame.isMainFrame && plugin?.isMachine(origin) == true ? .grant : .deny)
+    }
+}
+
+/// window.webkit.messageHandlers.machineFiles: only what the Machine's own page hands over.
+private final class FilesHandler: NSObject, WKScriptMessageHandler {
+    weak var plugin: MachineShellPlugin?
+
+    init(plugin: MachineShellPlugin) { self.plugin = plugin }
+
+    func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
+        guard message.frameInfo.isMainFrame, plugin?.isMachine(message.frameInfo.securityOrigin) == true else { return }
+        plugin?.saveFile(message.body)
+    }
+}
+
 /// The check's request answers for itself: a redirect is not followed (its 3xx is the answer, so not a Machine).
 private final class NoRedirects: NSObject, URLSessionTaskDelegate {
     func urlSession(_ session: URLSession, task: URLSessionTask, willPerformHTTPRedirection response: HTTPURLResponse,
                     newRequest request: URLRequest, completionHandler: @escaping (URLRequest?) -> Void) {
         completionHandler(nil)
     }
+}
+
+private final class FilePreview: NSObject, QLPreviewControllerDataSource {
+    let file: URL
+    init(_ file: URL) { self.file = file }
+    func numberOfPreviewItems(in controller: QLPreviewController) -> Int { 1 }
+    func previewController(_ controller: QLPreviewController, previewItemAt index: Int) -> QLPreviewItem { file as NSURL }
 }

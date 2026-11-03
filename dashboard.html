@@ -1916,7 +1916,7 @@ a.head-link,a.btn-link{display:inline-flex;align-items:center;justify-content:ce
   .chat-result{padding:14px 16px 12px}
   .chat-compose{position:relative;bottom:auto;padding:14px 0 calc(max(12px,env(safe-area-inset-bottom)) + 8px)}
   body.kb-open .chat-compose{padding-bottom:10px}
-  .chat-side{position:fixed;inset:0 auto 0 0;z-index:30;width:min(300px,85vw);max-height:none;padding:calc(16px + env(safe-area-inset-top)) 16px 16px;background:var(--bg);box-shadow:var(--shadow-pop);transform:translateX(-105%);transition:transform .2s;overscroll-behavior:contain}
+  .chat-side{position:fixed;inset:0 auto 0 0;z-index:30;width:min(300px,85vw);max-height:none;padding:16px;border-top:env(safe-area-inset-top) solid var(--bg);background:var(--bg);box-shadow:var(--shadow-pop);transform:translateX(-105%);transition:transform .2s;overscroll-behavior:contain}
   .chat-layout.drawer .chat-side{transform:none}
   .chat-layout.drawer::before{content:'';position:fixed;inset:0;z-index:29;background:#0006}
 }
@@ -2120,7 +2120,7 @@ body main{padding-top:0}
   /* Search on a phone: the search icon in the top bar opens the palette (cards, the Graph and commands in one field) */
   #side-search{display:none}
   #find-open{margin-left:auto}.topbar #find-open:not([hidden])~.new-card-top{margin-left:0}
-  .app-side{position:fixed;top:0;bottom:0;left:0;z-index:70;display:flex;flex-direction:column;width:min(88vw,380px);max-width:none;height:100dvh;margin:0;padding:calc(4px + env(safe-area-inset-top)) 12px calc(6px + env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));border-right:1px solid var(--c-line);background:var(--bg);box-shadow:var(--shadow-pop);overflow:hidden auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;transform:translateX(-104%);visibility:hidden;transition:transform .26s var(--ease),visibility 0s linear .26s}
+  .app-side{position:fixed;top:0;bottom:0;left:0;z-index:70;display:flex;flex-direction:column;width:min(88vw,380px);max-width:none;height:100dvh;margin:0;padding:4px 12px calc(6px + env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));border-top:env(safe-area-inset-top) solid var(--bg);border-right:1px solid var(--c-line);background:var(--bg);box-shadow:var(--shadow-pop);overflow:hidden auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;transform:translateX(-104%);visibility:hidden;transition:transform .26s var(--ease),visibility 0s linear .26s}
   :root[data-drawer="open"] .app-side{transform:none;visibility:visible;transition:transform .26s var(--ease)}
   .app-side.dragging{transition:none!important}
   .drawer-scrim{display:block;position:fixed;inset:0;z-index:65;background:#0008;opacity:0;pointer-events:none;transition:opacity .26s var(--ease)}
@@ -3601,15 +3601,16 @@ navigator.serviceWorker?.controller?.postMessage({errors:'flush'});  // what the
 // narrower window, like a desktop app tiled half the screen): Browser shows the viewer (state.browser_embed, on the
 // dashboard's own address) there instead of a new tab, which in the installed app would be a second app window. The
 // frame stays loaded while another view is open, so the session keeps running. Back and close return to the view
-// before. Full size covers the whole window with it (Esc or the same button goes back). A phone keeps the tab.
+// before. Full size covers the whole window with it (Esc or the same button goes back). A phone's browser keeps the
+// tab; the mobile app shows the pane, as it has no tabs (a new tab there would replace the dashboard).
 // browserPane() shows it from anywhere (true), or says to use a tab (false: a phone, or no viewer on this address).
 let browserPane=()=>false;
-const bpPhone=()=>!matchMedia('(min-width:1024px)').matches&&(DEV.mobile||matchMedia('(hover:none) and (pointer:coarse)').matches);
+const bpPhone=()=>!matchMedia('(min-width:1024px)').matches&&(DEV.mobile||matchMedia('(hover:none) and (pointer:coarse)').matches)&&!DEV.phoneApp;  // the mobile app has no tabs: the pane, full size
 {let bpBack='inbox',pushed=false,from='',quiet=false;const pane=$('#browser-pane'),row=$('#open-browser'),wide=()=>!bpPhone();
  const full=on=>{const root=document.documentElement;if(on)root.dataset.bpFull='';else delete root.dataset.bpFull;const b=$('#bp-full');b.setAttribute('aria-pressed',String(!!on));b.textContent=on?'Exit full size':'Full size'};
  $('#bp-full').onclick=()=>full(!('bpFull' in document.documentElement.dataset));
  addEventListener('keydown',e=>{if(e.key==='Escape'&&'bpFull' in document.documentElement.dataset&&!pane.hidden&&!document.querySelector('dialog[open]')){e.preventDefault();full(false)}});
- $('#bp-tab').hidden=inApp();  // the installed app would open it as a second app window
+ $('#bp-tab').hidden=inApp()||DEV.phoneApp;  // the installed app would open it as a second app window; the mobile app in place of the dashboard
  const show=()=>{const src=state?.browser_embed;if(!src||!wide())return false;
   if(pane.hidden)bpBack=!$('#settings').hidden?'settings':document.querySelector('nav button.active')?.dataset.tab||'inbox';
   for(const x of document.querySelectorAll('main>section'))x.hidden=x!==pane;

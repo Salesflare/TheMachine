@@ -7,6 +7,10 @@
 //  - share: what was shared to the app (text, links, files) opens the dashboard's New to-do, filled in, for the
 //    owner to check and add (window.machineShare). A dashboard from before that only gets the text, as a new to-do.
 //  - tag: a tapped notification's to-do opens (#chat=<id>); listen: the same for taps while this page is open (iOS).
+//  - files: a download (a link with `download`, an export) goes to the app (MachineFiles on Android, machineFiles on
+//    iOS, both only there on the Machine's own address), which saves it on the phone. A WebView has no downloads.
+//    A file linked in a new tab (a to-do's files) goes the same way, for the phone to open in an app.
+//  The phone's id from app_push_register is kept with the token, so Settings can tell this phone's notifications.
 // payload: {base, push?: {platform, token, sandbox, label}, share?: {text, files: [{name, type, data(base64)}]},
 //           tag?, listen?}
 // Returns a promise of {push: 'registered'|'failed'|undefined, share: 'opened'|'added'|'failed'|undefined}.
@@ -48,14 +52,58 @@
   const KEY = 'machine-app-push', WEEK = 7 * 24 * 3600 * 1000;
   let last = null;
   try { last = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { last = null; }
-  const fresh = last && last.token === (payload.push && payload.push.token) && Date.now() - last.at < WEEK;
+  const fresh = last && last.token === (payload.push && payload.push.token) && Date.now() - last.at < WEEK && 'id' in last;
   if (payload.push && payload.push.token && !fresh) {
     try {
-      await action('app_push_register', {platform: payload.push.platform, token: payload.push.token,
+      const done = await action('app_push_register', {platform: payload.push.platform, token: payload.push.token,
         sandbox: !!payload.push.sandbox, label: String(payload.push.label || '').slice(0, 60)});
       out.push = 'registered';
-      try { localStorage.setItem(KEY, JSON.stringify({token: payload.push.token, at: Date.now()})); } catch (e) { /* next time */ }
+      const id = done && done.registered && typeof done.id === 'string' ? done.id : null;
+      try { localStorage.setItem(KEY, JSON.stringify({token: payload.push.token, at: Date.now(), id})); } catch (e) { /* next time */ }
     } catch (e) { out.push = 'failed'; }
+  }
+
+  const native = window.MachineFiles || (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.machineFiles);
+  if (native && !window.__machineFiles) {
+    const origin = new URL(base).origin, LIMIT = 25 * 1024 * 1024;
+    const ours = href => { try { const u = new URL(href, location.href); return u.origin === origin && /^(?:https|blob):$/.test(u.protocol); } catch (e) { return false; } };
+    const said = () => { try { if (typeof window.toast === 'function') window.toast(typeof window.t === 'function' ? window.t('That file couldn’t be read.') : 'That file couldn’t be read.', true); } catch (e) { /* no toast */ } };
+    // open: a link to the file (the phone shows it in an app); otherwise a download (saved on the phone)
+    const give = async (href, name, open) => {
+      try {
+        const r = await fetch(href, {credentials: 'same-origin'});
+        if (!r.ok) { said(); return; }
+        const sent = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(r.headers.get('Content-Disposition') || '');
+        if (sent && (open || !name)) { try { name = decodeURIComponent(sent[1]); } catch (e) { name = sent[1]; } }
+        const blob = await r.blob();
+        if (blob.size > LIMIT) { said(); return; }
+        const data = await new Promise((resolve, reject) => {
+          const f = new FileReader();
+          f.onload = () => resolve(String(f.result).replace(/^data:[^,]*,/, ''));
+          f.onerror = reject;
+          f.readAsDataURL(blob);
+        });
+        native.postMessage(JSON.stringify({name: String(name || 'file').slice(0, 200), type: blob.type || '', data, open: !!open}));
+      } catch (e) { said(); }
+    };
+    window.__machineFiles = (href, name) => { if (ours(href)) give(href, name); };
+    const take = a => {
+      if (!a || !a.hasAttribute('download') || !ours(a.href)) return false;
+      give(a.href, a.getAttribute('download') || decodeURIComponent(new URL(a.href).pathname.split('/').pop() || '') || 'file');
+      return true;
+    };
+    // A file the dashboard links to in a new tab (a to-do's files, a chat's pictures): a WebView has no tabs, and
+    // in place it would leave the dashboard; the phone opens it in an app instead
+    const fileLink = a => { try { const u = new URL(a.href); return a.target === '_blank' && u.origin === origin && u.pathname.indexOf('/api/') >= 0; } catch (e) { return false; } };
+    const linkName = a => { try { const u = new URL(a.href); return u.searchParams.get('name') || (u.searchParams.get('path') || '').split('/').pop() || (a.title || a.textContent || '').trim(); } catch (e) { return ''; } };
+    document.addEventListener('click', e => {
+      const a = e.target && e.target.closest && e.target.closest('a[href]');
+      if (!a || e.defaultPrevented) return;
+      if (take(a)) e.preventDefault();
+      else if (fileLink(a)) { e.preventDefault(); give(a.href, linkName(a), true); }
+    }, true);
+    const click = HTMLAnchorElement.prototype.click;  // an export clicks a link that isn't on the page
+    HTMLAnchorElement.prototype.click = function () { if (!this.isConnected && take(this)) return; return click.call(this); };
   }
 
   if (payload.share) {
