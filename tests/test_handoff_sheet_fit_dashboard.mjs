@@ -12,6 +12,8 @@ const dashboard=await dashboardPage();
 const FL='fl_'+'a'.repeat(16);
 const MEMBERS=['Maria-Elena Vasquez-Okonkwo','Pat Lee','Kim Lane','Sam Rivera','Alexandra Konstantinopoulou-Vanderbilt'].map((name,n)=>({member_id:'m'+n,name}));
 const TASK='The customer needs every contact with its custom fields in one file for their quarterly review. Can you set up the export by Friday?';
+// A long one too: it scrolls inside its own box, which never runs over what is above it
+const LONG=Array(6).fill('The customer needs every contact with its custom fields in one file for their quarterly review.').join(' ')+' Can you set up the export by Friday?';
 function world(){
  const card={id:'c1',title:'Customer asks for a custom export',body:'They need it for their quarterly review.',status:'prepared',event_ids:[1],scope:'work',
   created_at:new Date().toISOString(),next_actions:[]};
@@ -64,6 +66,14 @@ async function run(scheme,shots,withMail=true){
  assert.equal(await form.locator('.handoff-no-mailbox').count(),withMail?0:1);
  assert.equal(await form.locator('button.primary').isDisabled(),!withMail);
  if(!withMail)assert.equal(await form.locator('.handoff-no-mailbox').innerText(),'No Gmail or Outlook account to send it from. Connect one in Connections.');
+ // The message field has a visible box, and its text stays inside it, under what is above it (the picker, the address)
+ const task=form.locator('textarea.handoff-task');
+ await task.fill(LONG);await task.evaluate(x=>{x.scrollTop=x.scrollHeight});
+ const box=await task.evaluate(x=>{const cs=getComputedStyle(x),r=x.getBoundingClientRect(),prev=x.previousElementSibling.getBoundingClientRect();
+  return {border:parseFloat(cs.borderTopWidth)>0&&cs.borderTopColor!=='rgba(0, 0, 0, 0)'&&cs.borderTopStyle!=='none',padded:parseFloat(cs.paddingLeft)>0,
+   below:r.top>=prev.bottom-0.5,inside:r.bottom<=x.closest('form').getBoundingClientRect().bottom,scrolls:x.scrollHeight>x.clientHeight}});
+ assert.deepEqual(box,{border:true,padded:true,below:true,inside:true,scrolls:true});
+ await shot(withMail?'long-message':'long-message-no-mailbox');
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
  assert.deepEqual(errors,[]);
  await page.context().close();
