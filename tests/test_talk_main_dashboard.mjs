@@ -256,7 +256,7 @@ try{
   // A to-do's own buttons by voice (todo_action): the same decide and card_rename actions, never a send
   const decided=()=>actions.filter(a=>a.action==='decide').at(-1).args;
   assert.equal((await call('t1','todo_action',{action:'unsnooze',id:Z})).ok,true);assert.deepEqual([decided().suggestion_id,decided().choice],[Z,'accept']);
-  assert.equal((await call('t2','todo_action',{action:'snooze',id:B,snooze:'3d'})).until,'2026-10-30T08:00:00Z');
+  assert.match((await call('t2','todo_action',{action:'snooze',id:B,snooze:'3d'})).until,/^Friday, October 30 at 9:00\sAM$/);  // 08:00 UTC, said in the owner's time
   assert.deepEqual([decided().choice,decided().snooze_option],['snooze','3d']);
   await call('t3','todo_action',{action:'mark_done',id:B});assert.deepEqual([decided().suggestion_id,decided().choice],[B,'complete']);
   await call('t4','todo_action',{action:'dismiss',id:B,why:'Already booked'});assert.deepEqual([decided().choice,decided().feedback],['reject','Already booked']);

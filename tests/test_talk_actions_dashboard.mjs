@@ -14,7 +14,7 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // - report_bug sends the same report as Help's Report a bug, with context only when the owner agreed;
 // - a send by voice shows Undo with its countdown in Talk; tapping it (or undo_send) cancels every send of that yes.
 const dashboard=await dashboardPage();
-const now=new Date().toISOString(),A='a1a1a1a1a1a1a1a1',B='b2b2b2b2b2b2b2b2',C='c3c3c3c3c3c3c3c3',E='e5e5e5e5e5e5e5e5',F='f6f6f6f6f6f6f6f6',G='a7a7a7a7a7a7a7a7',H='b8b8b8b8b8b8b8b8';
+const now=new Date().toISOString(),A='a1a1a1a1a1a1a1a1',B='b2b2b2b2b2b2b2b2',C='c3c3c3c3c3c3c3c3',E='e5e5e5e5e5e5e5e5',F='f6f6f6f6f6f6f6f6',G='a7a7a7a7a7a7a7a7',H='b8b8b8b8b8b8b8b8',S='d4d4d4d4d4d4d4d4';
 const DRAFT=(to,rev)=>({kind:'email',label:'Reply',to:[to+'@example.com'],to_name:to,from:'me@example.com',subject:'Re: Thursday',body:`Hi ${to}, Thursday works. See you then.`,revision:rev,account_id:'mail'});
 let cards;
 const reset=()=>{cards=[
@@ -24,8 +24,9 @@ const reset=()=>{cards=[
  {id:C,title:'Compare the three venues',body:'Working on it.',status:'accepted',preparation_status:'running',scope:'personal',created_at:now,event_ids:[3]},
  {id:E,title:'Pay the plumber',body:'Invoice came in.',status:'pending',scope:'personal',created_at:now,event_ids:[5]},
  {id:F,title:'Check the payroll export',body:'Export for October.',status:'pending',scope:'personal',created_at:now,event_ids:[6]},
- {id:G,title:'Find the insurance policy number',body:'For the claim.',status:'pending',scope:'personal',created_at:now,event_ids:[7]}]};
-const state=()=>({talk_ready:true,suggestions:cards,promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},connectors:[],fleet:{on:false,fleets:[]}});
+ {id:G,title:'Find the insurance policy number',body:'For the claim.',status:'pending',scope:'personal',created_at:now,event_ids:[7]},
+ {id:S,title:'Renew the parking permit',body:'Expires Friday.',status:'pending',scope:'personal',created_at:now,event_ids:[10]}]};
+const state=()=>({talk_ready:true,hours:{days:[1,2,3,4,5],start:'08:00',end:'23:00',morning:'09:00',timezone:'Europe/Brussels',digest_at:'08:30'},suggestions:cards,promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},connectors:[],fleet:{on:false,fleets:[]}});
 const actions=[],outbox=[];let focus=null,asked=null;const polls={};
 const server=createServer(async(req,res)=>{let body='';for await(const c of req)body+=c;const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
@@ -47,6 +48,10 @@ const server=createServer(async(req,res)=>{let body='';for await(const c of req)
     else if(a.choice==='complete'){card.was=was;card.status='completed';card.undo_until=new Date(Date.now()+60000).toISOString()}
     else if(a.choice==='reject'){card.was=was;card.status='rejected';card.undo_until=new Date(Date.now()+60000).toISOString()}
     else if(a.choice==='reopen'||a.choice==='undo'){card.status=card.was||'pending';delete card.undo_until}
+    // a snooze: the Machine reads a time without an offset as the owner's (Europe/Brussels), here 9:00 is 8:00 UTC in November
+    else if(a.choice==='snooze'){const at=a.snoozed_until||'';card.status='snoozed';
+     card.snoozed_until=!at?new Date(Date.now()+86400000).toISOString():/([zZ]|[+-]\d\d:\d\d)$/.test(at)?new Date(at).toISOString():new Date(Date.parse(at+'Z')-3600000).toISOString();
+     return {status:'snoozed',snoozed_until:card.snoozed_until}}
     return {ok:true}},
    // G's and E's chats: busy for one look, then done without a word (it stopped on its own)
    card_chat:()=>{const n=polls[a.suggestion_id]=(polls[a.suggestion_id]||0)+1;const busy=n===2;return {session:true,status:busy?'running':'done',active:busy,cursor:'k',items:[]}},
@@ -120,6 +125,18 @@ try{
    assert.deepEqual(decided(E),['complete','reopen']);
    assert.equal(actions.filter(x=>x.action==='talk_focus').at(-1).args.suggestion_id,E,'the corrected to-do is in focus');
    assert.match((await call('undo_last_action')).error,/Nothing/,'once');
+
+   // Snooze takes any time the owner says: "in one hour" is an hour from now, said back in their local time
+   const t0=Date.now(),hour=await call('todo_action',{action:'snooze',id:S,snooze_minutes:60});assert.equal(hour.ok,true);
+   const snoozed=actions.filter(x=>x.action==='decide'&&x.args.suggestion_id===S).at(-1).args;
+   assert.ok(Math.abs(Date.parse(snoozed.snoozed_until)-(t0+3600000))<15000,'an hour from now');
+   assert.equal(hour.time_zone,'Europe/Brussels');assert.doesNotMatch(JSON.stringify(hour),/\+00:00|UTC|Z"/);
+   assert.equal(hour.until,new Date(Date.parse(snoozed.snoozed_until)).toLocaleString('en-US',{timeZone:'Europe/Brussels',weekday:'long',month:'long',day:'numeric',hour:'numeric',minute:'2-digit'}));
+   assert.match(hour.note,/^Snoozed until .+, the owner’s local time\./);
+   // "At 9": the owner's local time goes to the Machine as said (no offset), and comes back as 9:00 there
+   const nine=await call('todo_action',{action:'snooze',id:S,snooze_until:'2026-11-04T09:00'});
+   assert.equal(actions.filter(x=>x.action==='decide'&&x.args.suggestion_id===S).at(-1).args.snoozed_until,'2026-11-04T09:00');
+   assert.match(nine.until,/Wednesday, November 4 at 9:00\sAM/);
 
    // Talk's own commands never reach a chat; "let it continue" on one not started is its Do it
    await call('open_todo',{id:F});

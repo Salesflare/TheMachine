@@ -11,7 +11,7 @@ keywords: talk live, voice, conversation, speak, call, realtime, openai, chatgpt
 
 Tik in de chat van een to-do op de golf naast de microfoon. Sta de microfoon toe als je browser erom vraagt. Als de balk **Live** toont, praat je zoals bij een telefoongesprek. The Machine antwoordt hardop, en je kunt erdoorheen praten om hem te onderbreken.
 
-Hij kent de to-do waarin je zit: de berichten, het concept en de chat. Hij kan ook je andere to-do's opzoeken. Zeg "markeer dit als klaar", "snooze het" of "niet nodig" en hij doet het zelf. Zeg meteen daarna "nee, niet dat" om het terug te draaien.
+Hij kent de to-do waarin je zit: de berichten, het concept en de chat. Hij kan ook je andere to-do's opzoeken. Zeg "markeer dit als klaar", "snooze het" of "niet nodig" en hij doet het zelf. Zeg meteen daarna "nee, niet dat" om het terug te draaien. Snoozen kan voor elke tijd, zoals "over een uur" of "morgen om 9 uur", in de tijdzone uit [Werkuren](work-hours.md).
 
 Er wordt geluisterd in jouw talen: die van de app en die je browser opgeeft. Een geluid, een kuch of een klank in een andere taal krijgt geen antwoord en komt niet in het verslag.
 

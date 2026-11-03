@@ -11,6 +11,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 import dashboard_parts
+import timeutil
 
 ROOT = Path(__file__).parent.parent
 spec = importlib.util.spec_from_file_location('talk_assistant', ROOT / 'assistant.py')
@@ -407,6 +408,49 @@ class Api(unittest.TestCase):
         job = self.jobs()[0]
         self.assertEqual((job['status'], job['approval_id']), ('queued', again['approval_id']))
         self.assertGreater(job['retry_at'], a.now())
+
+    # The owner's time zone (set at signup, Settings): Talk knows it and their local time, never the server's UTC
+
+    def brussels(self):
+        before = a.local_tz()
+        a.set_timezone('Europe/Brussels')
+        self.addCleanup(lambda: setattr(timeutil, 'LOCAL_TZ', before))
+
+    def test_talk_knows_the_owners_time_zone_and_local_time(self):
+        self.brussels()
+        today = dt.datetime.now(a.ZoneInfo('Europe/Brussels')).strftime('%A %d %B %Y')
+        for args in ({'suggestion_id': SID}, {'main': True}):
+            started = self.act('talk_start', args)
+            self.assertEqual(started['time_zone'], 'Europe/Brussels')
+            self.assertIn('in the owner’s time zone, Europe/Brussels.', started['instructions'])
+            self.assertIn('It is now ' + today, started['instructions'])
+            self.assertIn('Never use UTC and never ask which time zone.', started['instructions'])
+            self.act('talk_end', {'id': started['id']})
+        self.assertIn('Europe/Brussels', t.instructions('Reply to Dana', 'en', zone='Europe/Brussels'))
+        # The text chat's next turn says it too, with the time now (a long chat's first prompt gets old)
+        with patch.object(a, 'now', return_value='2026-11-03T19:00:00+00:00'):
+            prompt = a.chat_prompt({'job_id': 'j' * 16, 'suggestion_id': SID}, self.app.config)
+        self.assertIn('Their time zone is Europe/Brussels; it is now Tue 2026-11-03 20:00 there.', prompt)
+        self.assertIn('never ask which time zone', prompt)
+
+    def test_snooze_takes_any_time_the_owner_says(self):
+        for tools in (t.TOOLS, t.MAIN_TOOLS):
+            props = [x for x in tools if x['name'] == 'todo_action'][0]['parameters']['properties']
+            self.assertIn('"in an hour" 60', props['snooze_minutes']['description'])
+            self.assertIn('no offset', props['snooze_until']['description'])
+        self.assertIn('"in an hour" is snooze_minutes', t.main_instructions('en', zone='Europe/Brussels'))
+
+    def test_a_local_time_like_at_9_is_9_in_brussels(self):
+        self.brussels()
+        with patch.object(a, 'now', return_value='2026-11-03T19:00:00+00:00'):
+            # "at 9" tomorrow, as Talk sends it: the owner's local time without an offset (9:00 in Brussels is 8:00 UTC)
+            self.act('decide', {'suggestion_id': SID, 'choice': 'snooze', 'snoozed_until': '2026-11-04T09:00', 'decision_id': 'talk-at-9'})
+            with self.store.connect() as db:
+                self.assertEqual(db.execute('SELECT snoozed_until FROM suggestions WHERE id=?', (SID,)).fetchone()[0], '2026-11-04T08:00:00+00:00')
+            # in summer time it is 7:00 UTC; a date alone is their morning; a time with an offset stays as it is
+            self.assertEqual(a.owner_snooze_until('2027-06-01T09:00'), '2027-06-01T07:00:00+00:00')
+            self.assertEqual(a.owner_snooze_until('2026-11-04'), a.asked_snooze_time('2026-11-04'))
+            self.assertEqual(a.owner_snooze_until('2026-11-04T09:00:00+00:00'), '2026-11-04T09:00:00+00:00')
 
     # Talk (the main conversation): not tied to one to-do; it works on the one on screen (talk_focus)
 

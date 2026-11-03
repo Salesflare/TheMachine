@@ -11,7 +11,7 @@ keywords: talk live, voice, conversation, speak, call, realtime, openai, chatgpt
 
 Tippe im Chat einer Aufgabe auf die Welle neben dem Mikrofon. Erlaube das Mikrofon, wenn dein Browser fragt. Wenn die Leiste **Live** zeigt, sprich wie bei einem Anruf. The Machine antwortet laut, und du kannst dazwischenreden, um sie zu unterbrechen.
 
-Sie kennt die Aufgabe, in der du bist: ihre Nachrichten, ihren Entwurf und ihren Chat. Sie kann auch deine anderen Aufgaben nachschlagen. Sag „als erledigt markieren“, „zurückstellen“ oder „nicht nötig“, und sie macht das selbst. Sag gleich danach „nein, nicht das“, um es zurückzunehmen.
+Sie kennt die Aufgabe, in der du bist: ihre Nachrichten, ihren Entwurf und ihren Chat. Sie kann auch deine anderen Aufgaben nachschlagen. Sag „als erledigt markieren“, „zurückstellen“ oder „nicht nötig“, und sie macht das selbst. Sag gleich danach „nein, nicht das“, um es zurückzunehmen. Zurückstellen geht für jede Zeit, etwa „in einer Stunde“ oder „morgen um 9“, in der Zeitzone aus [Arbeitszeiten](work-hours.md).
 
 Es hört in deinen Sprachen zu: der Sprache der App und denen, die dein Browser nennt. Ein Geräusch, ein Husten oder ein Laut in einer anderen Sprache bekommt keine Antwort und bleibt aus dem Verlauf.
 

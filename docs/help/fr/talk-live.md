@@ -11,7 +11,7 @@ keywords: talk live, voice, conversation, speak, call, realtime, openai, chatgpt
 
 Dans le chat d’une tâche, touchez l’onde à côté du micro. Autorisez le micro si votre navigateur le demande. Quand la barre affiche **En direct**, parlez comme lors d’un appel. The Machine répond à voix haute, et vous pouvez parler par-dessus pour l’interrompre.
 
-Elle connaît la tâche où vous êtes : ses messages, son brouillon et son chat. Elle peut aussi consulter vos autres tâches. Dites « marque-la comme faite », « reporte-la » ou « pas nécessaire » et elle le fait elle-même. Dites « non, pas ça » juste après pour revenir en arrière.
+Elle connaît la tâche où vous êtes : ses messages, son brouillon et son chat. Elle peut aussi consulter vos autres tâches. Dites « marque-la comme faite », « reporte-la » ou « pas nécessaire » et elle le fait elle-même. Dites « non, pas ça » juste après pour revenir en arrière. Le report accepte n’importe quel moment, comme « dans une heure » ou « demain à 9 h », dans le fuseau horaire des [Heures de travail](work-hours.md).
 
 L’écoute se fait dans vos langues : celle de l’app et celles que votre navigateur indique. Un bruit, une toux ou un son dans une autre langue ne reçoit pas de réponse et reste hors de la transcription.
 
