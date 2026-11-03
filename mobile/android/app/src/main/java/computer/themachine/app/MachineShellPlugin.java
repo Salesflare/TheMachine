@@ -45,6 +45,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
+import java.net.Inet4Address;
+import java.net.Inet6Address;
+import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -570,8 +573,10 @@ public class MachineShellPlugin extends Plugin {
     }
 
     /**
-     * Before a Machine of their own is saved: its manifest's answer, {status, body}, for www/machine-url.js isMachine.
-     * Rejects when it can't be reached. No redirects followed, no cookies, a short wait and a small body.
+     * Before a Machine of their own is saved: {machine: true} when its manifest answers as a Machine's (the same rule
+     * as www/machine-url.js isMachine), else {machine: false}. Never the answer itself. Rejects when it can't be
+     * reached, or when its name leads to the phone itself or its local network (publicOrTailnet). No redirects
+     * followed, no cookies, a short wait and a small body.
      */
     @PluginMethod
     public void check(PluginCall call) {
@@ -589,10 +594,51 @@ public class MachineShellPlugin extends Plugin {
         });
     }
 
+    /**
+     * Where check may go: a public address, or a tailnet one (100.64.0.0/10, fd7a:115c:a1e0::/48). Never the phone
+     * itself, its local network, link-local or multicast addresses, so a typed or linked name can't reach them.
+     */
+    static boolean publicOrTailnet(InetAddress a) {
+        if (a.isAnyLocalAddress() || a.isLoopbackAddress() || a.isLinkLocalAddress() || a.isSiteLocalAddress()
+                || a.isMulticastAddress()) return false;
+        byte[] b = a.getAddress();
+        if (a instanceof Inet4Address) {
+            int x = b[0] & 0xff, y = b[1] & 0xff;
+            if (x == 100 && (y & 0xc0) == 64) return true; // tailnet (CGNAT)
+            return x != 0 && x != 127 && !(x == 169 && y == 254) && !(x == 192 && y == 0 && (b[2] & 0xff) == 0)
+                    && !(x == 198 && (y == 18 || y == 19)) && x < 224;
+        }
+        if (a instanceof Inet6Address) {
+            if ((b[0] & 0xff) == 0xfd && (b[1] & 0xff) == 0x7a && (b[2] & 0xff) == 0x11 && (b[3] & 0xff) == 0x5c
+                    && (b[4] & 0xff) == 0xa1 && (b[5] & 0xff) == 0xe0) return true; // tailnet
+            return (b[0] & 0xfe) != 0xfc; // unique local fc00::/7
+        }
+        return false;
+    }
+
+    /** A Machine's manifest, or its refusal to anyone off its tailnet: the same rule as www/machine-url.js isMachine. */
+    static boolean manifestIsMachine(int status, String body) {
+        try {
+            JSONObject data = new JSONObject(body);
+            if (status == 200) return "The Machine".equals(data.opt("name")) && data.opt("start_url") instanceof String
+                    && data.opt("icons") instanceof JSONArray;
+            if (status == 403) return "Use the owner-authenticated Tailscale dashboard".equals(data.opt("error"));
+        } catch (JSONException | RuntimeException e) {
+            return false;
+        }
+        return false;
+    }
+
     /** The owner's own typed address only (check): https on 443 or 8443 to a DNS name, never an IP address. */
     private static void fetchManifest(PluginCall call, String url) {
         HttpURLConnection c = null;
         try {
+            for (InetAddress a : InetAddress.getAllByName(Uri.parse(url).getHost())) {
+                if (!publicOrTailnet(a)) {
+                    call.reject("not a Machine address");
+                    return;
+                }
+            }
             c = (HttpURLConnection) new URL(url + "manifest.webmanifest").openConnection();
             c.setInstanceFollowRedirects(false);
             c.setUseCaches(false);
@@ -603,8 +649,7 @@ public class MachineShellPlugin extends Plugin {
             InputStream in = status >= 400 ? c.getErrorStream() : c.getInputStream();
             byte[] body = in == null ? new byte[0] : read(in, 64 * 1024);
             JSObject out = new JSObject();
-            out.put("status", status);
-            out.put("body", body == null ? "" : new String(body, StandardCharsets.UTF_8));
+            out.put("machine", body != null && manifestIsMachine(status, new String(body, StandardCharsets.UTF_8)));
             call.resolve(out);
         } catch (IOException | ClassCastException e) {
             call.reject("unreachable");
