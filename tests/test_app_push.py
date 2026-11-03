@@ -1,7 +1,8 @@
 """The mobile app's push (notify.app_push, assistant.app_wake) and Share to The Machine (machineShare in new-todo.js).
-The app has no Web Push: the control plane wakes the owner's phones with a fixed text per kind. Every request to it
+The app has no Web Push: the control plane wakes the owner's phones with a fixed text per kind, and the Android app asks
+this Machine for the to-do's short line (GET /api/notice). Every request to it
 here goes to a fake opener; nothing is sent."""
-import io, json, re, subprocess, tempfile, unittest
+import http.client, io, json, re, subprocess, tempfile, threading, unittest
 from pathlib import Path
 from unittest.mock import patch
 import assistant as a
@@ -138,6 +139,104 @@ class AppPush(unittest.TestCase):
         # a later to-do of a batch is silent: no second wakeup
         a.push_notify(self.store, self.config, {'id': 'card_44', 'title': 'T', 'body': 'B', 'status': 'pending', '_silent': True}, self.sender)
         self.assertEqual(len(self.wakes()), 3)
+
+    def test_the_app_line_says_what_is_ready_and_stays_here(self):
+        self.register(fetch=True)
+        self.assertIs(self.cloud.seen[0]['fetch'], True)  # Android's app shows the notification itself
+        title = 'Reply to the landlord about the listing on Main Street, with the photos and the signed lease'
+        cases = [({'status': 'prepared', '_result_notice': True}, 'result', 'ready', 'Ready: '),
+                 ({'status': 'accepted', 'preparation_status': 'blocked', 'preparation_reason': 'Which time?', '_result_notice': True},
+                  'result', 'needs', 'Needs your help: '),
+                 ({'status': 'pending'}, 'todo', None, 'New to-do: '),
+                 ({'status': 'pending', 'reminder': True}, 'reminder', None, 'Reminder: ')]
+        for i, (row, kind, state, lead) in enumerate(cases):
+            with self.subTest(kind=kind, state=state):
+                a.push_notify(self.store, self.config, {'id': f'card_{i}', 'title': title, 'body': 'B', **row}, self.sender)
+                wake = self.wakes()[-1]
+                self.assertEqual((wake['kind'], wake['tag'], wake.get('state')), (kind, f'card_{i}', state))
+                with self.store.connect() as db:
+                    line = notify.app_line(db, f'card_{i}')
+                self.assertTrue(line.startswith(lead + 'Reply to the landlord'), line)
+                self.assertLessEqual(len(line), notify.APP_LINE)
+                self.assertTrue(line.endswith('…'))
+        # The title never goes to the cloud, only the kind, the state and the to-do's id
+        self.assertNotIn('landlord', json.dumps(self.cloud.seen))
+        # A short title stays whole
+        a.push_notify(self.store, self.config, {'id': 'card_9', 'title': 'Pick a time with Sam', 'body': 'B', 'status': 'prepared',
+                                                '_result_notice': True}, self.sender)
+        with self.store.connect() as db:
+            self.assertEqual(notify.app_line(db, 'card_9'), 'Ready: Pick a time with Sam')
+
+    def test_text_in_notifications_off_keeps_the_app_line_plain(self):
+        self.register(fetch=True)
+        with patch.object(a.security_levels, 'notify_text', return_value=False):
+            a.push_notify(self.store, self.config, {'id': 'card_1', 'title': 'Pay the secret invoice', 'body': 'B', 'status': 'prepared',
+                                                    '_result_notice': True}, self.sender)
+            a.push_notify(self.store, self.config, {'id': 'card_2', 'title': 'Pay the secret invoice', 'body': 'B', 'status': 'pending'}, self.sender)
+        with self.store.connect() as db:
+            self.assertEqual((notify.app_line(db, 'card_1'), notify.app_line(db, 'card_2')), ('Ready', 'New to-do'))
+            self.assertNotIn('secret', json.dumps([list(r) for r in db.execute('SELECT * FROM notify_app_lines')]))
+
+    def test_a_held_push_keeps_its_line_for_the_app(self):
+        self.register(fetch=True)
+        notify.mark_active(client='desk', on=True)
+        a.push_notify(self.store, self.config, {'id': 'card_1', 'title': 'Pick a time with Sam', 'body': 'B', 'status': 'prepared',
+                                                '_result_notice': True}, self.sender)
+        self.assertEqual(self.wakes(), [])
+        with self.store.connect() as db:
+            payload = json.loads(db.execute("SELECT payload FROM notify_queue WHERE channel='push'").fetchone()[0])
+        a.push_send(self.store, self.config, [{'endpoint': SUB['endpoint']}], payload, 'held', self.sender, kind='result', held=True)
+        self.assertEqual(self.wakes()[-1].get('state'), 'ready')
+        self.assertNotIn('_line', json.dumps(self.web))  # the web push gets its own payload only
+        with self.store.connect() as db:
+            self.assertEqual(notify.app_line(db, 'card_1'), 'Ready: Pick a time with Sam')
+
+    def test_app_lines_are_short_recent_and_by_id_only(self):
+        with self.store.connect() as db:
+            notify.app_line_save(db, 'old', 'Ready: old', at=notify.wall() - 4 * 86400)
+            notify.app_line_save(db, 'new', 'Ready: ' + 'x' * 100)
+            self.assertEqual(notify.app_line(db, 'old'), '')
+            self.assertEqual(len(notify.app_line(db, 'new')), notify.APP_LINE)
+            self.assertEqual(notify.app_line(db, "new' OR 1=1"), '')
+            for i in range(notify.APP_LINES + 5):
+                notify.app_line_save(db, f't{i}', 'x', at=notify.wall() + i)
+            self.assertEqual(db.execute('SELECT count(*) FROM notify_app_lines').fetchone()[0], notify.APP_LINES)
+        self.assertEqual(notify.clip('Reply to Gianni about the listing'), 'Reply to Gianni about the listing')
+        self.assertEqual(notify.clip('word ' * 20, 22), 'word word word word…')
+        self.assertEqual(notify.clip('x' * 80, 10), 'x' * 9 + '…')
+        self.assertEqual(notify.clip('a\nb\tc'), 'a b c')
+
+    def test_the_app_asks_for_its_line_with_the_owners_sign_in(self):
+        with self.store.connect() as db:
+            notify.app_line_save(db, 'card_1', 'Ready: Pick a time with Sam')
+        app = object.__new__(a.App)
+        app.store, app.token, app.stop = self.store, 'test-token', threading.Event()
+        app.graph_dirty = threading.Event()
+        app.owner_token = 'owner-key'
+        app.config = {'accounts': [], 'tailscale_owner': 'owner@example.com', 'dashboard_host': 'machine.example:8443', 'port': 0, 'http_timeout': 1}
+        servers, real = [], a.http.server.ThreadingHTTPServer
+        def capture(*args, **kwargs):
+            servers.append(real(*args, **kwargs)); return servers[-1]
+        for patcher in (patch.object(a.http.server, 'ThreadingHTTPServer', side_effect=capture), patch.object(a.signal, 'signal'),
+                        patch.object(a.App, 'preparation_worker'), patch.object(a.App, 'delivery_worker')):
+            patcher.start(); self.addCleanup(patcher.stop)
+        thread = threading.Thread(target=app.serve, daemon=True)
+        thread.start()
+        while not servers:
+            pass
+        self.addCleanup(lambda: (app.stop.set(), thread.join(5)))
+        def get(path, login='owner@example.com'):
+            conn = http.client.HTTPConnection('127.0.0.1', servers[0].server_address[1], timeout=10)
+            conn.request('GET', path, headers={'Host': 'machine.example:8443', 'Tailscale-User-Login': login})
+            r = conn.getresponse()
+            body = json.loads(r.read())
+            conn.close()
+            return r.status, body
+        self.assertEqual(get('/api/notice?tag=card_1'), (200, {'line': 'Ready: Pick a time with Sam'}))
+        self.assertEqual(get('/api/notice?tag=card_2'), (200, {'line': ''}))
+        self.assertEqual(get('/api/notice'), (200, {'line': ''}))
+        with patch('sys.stderr'):
+            self.assertEqual(get('/api/notice?tag=card_1', login='someone@example.com')[0], 403)
 
     def test_web_push_and_app_together_and_a_broken_cloud_never_stops_web_push(self):
         self.app.action('push_subscribe', SUB, owner_dashboard=True)

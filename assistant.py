@@ -12807,9 +12807,14 @@ def push_notify(store, config, row, sender=None):
         payload = {'title': i18n.t(lead + ': {}', row['title']) if text else i18n.t(lead),
                    'body': plain(strip_result_links(row['body']) if ready else row.get('preparation_reason') or '') if text else '',
                    'url': signin or root + '#chat=' + row['id']}
+        # The mobile app's own line, short (it asks this Machine for it: notify.app_line), and ready or needs-you
+        payload['_line'] = notify.app_line_text(lead + ': {}', row['title']) if text else i18n.t(lead)
+        payload['_state'] = 'ready' if ready else 'needs'
     else:
         payload = {'title': (i18n.t('Reminder: {}', row['title']) if row.get('reminder') else row['title']) if text else i18n.t('Reminder') if row.get('reminder') else i18n.t('New to-do'),
                    'body': plain(row['body']) if text else '', 'url': root + '#chat=' + row['id']}
+        payload['_line'] = (notify.app_line_text('Reminder: {}' if row.get('reminder') else 'New to-do: {}', row['title']) if text
+                            else i18n.t('Reminder') if row.get('reminder') else i18n.t('New to-do'))
     payload['tag'] = row['id']  # a newer notification for the same card replaces the older one
     if row.get('_silent'):
         payload['silent'] = True  # later cards of a batch still reach the phone, without a second buzz
@@ -12859,10 +12864,12 @@ def cloud_target(config):
         return None
 
 
-def app_wake(store, config, kind, tag, device=None):
+def app_wake(store, config, kind, tag, device=None, state=None, line=None):
     """The mobile app's push: the control plane wakes the owner's phones with a fixed text for `kind`, never a to-do's
     own text, and a tap opens the dashboard. `tag` (a to-do's id) lets a newer one replace the older; `device` sends
-    only to that phone (a test). The number sent, or None when there was nothing to send to or it didn't go."""
+    only to that phone (a test). `state` ('ready' or 'needs', a result only) picks the fixed text. `line` is kept here
+    under the tag for the Android app, which asks for it (GET /api/notice) and shows it instead: it never goes to the
+    cloud. The number sent, or None when there was nothing to send to or it didn't go."""
     with store.connect() as db:
         if not notify.app_devices(db):
             return None
@@ -12870,7 +12877,12 @@ def app_wake(store, config, kind, tag, device=None):
     if not target or kind not in notify.APP_KINDS:
         return None
     tag = str(tag or '')
-    body = {'action': 'wake', 'kind': kind, 'tag': tag if notify.APP_ID.fullmatch(tag) else kind, **({'id': device} if device else {})}
+    tag = tag if notify.APP_ID.fullmatch(tag) else kind
+    if line:
+        with store.connect() as db:
+            notify.app_line_save(db, tag, line)
+    body = {'action': 'wake', 'kind': kind, 'tag': tag, **({'state': state} if kind == 'result' and state in ('ready', 'needs') else {}),
+            **({'id': device} if device else {})}
     answer = notify.app_push(*target, body)
     if not answer or answer.get('missing'):
         return None
@@ -13125,12 +13137,15 @@ def push_send(store, config, subscriptions, payload, label, sender=None, kind=No
     plus {'status': 200, 'app': sent} when the control plane took the wakeup."""
     payload = dict(payload)
     wake = wake or payload.pop('_wake', None) or kind
+    # The mobile app's line and a result's state: for its wakeup only, never in the web push
+    line, state = payload.pop('_line', None), payload.pop('_state', None)
     if kind:
         with store.connect() as db:
             if not notify.allowed(db, kind, 'push'):
                 return []
             if not held and not notify.push_now():  # a dashboard in use, or just left: wait, it may be seen there
-                notify.hold(db, 'push', kind, str(payload.get('title') or ''), time.time(), payload={**payload, '_wake': wake} if wake != kind else payload)
+                kept = {**payload, **({'_wake': wake} if wake != kind else {}), **({'_line': line} if line else {}), **({'_state': state} if state else {})}
+                notify.hold(db, 'push', kind, str(payload.get('title') or ''), time.time(), payload=kept)
                 LOG.info('push %s held', label)
                 return []
             payload = {**payload, 'badge': waiting_count(db)}
@@ -13151,7 +13166,8 @@ def push_send(store, config, subscriptions, payload, label, sender=None, kind=No
             LOG.info('push %s statuses=%s', label, ','.join(str(r['status']) for r in results))
     if wake and not payload.get('silent'):
         try:
-            sent = app_wake(store, config, wake, payload.get('tag'))
+            sent = app_wake(store, config, wake, payload.get('tag'), state=state,
+                            line=line if line is not None else notify.clip(payload.get('title')) if wake == 'fleet' else None)
         except Exception as error:  # noqa: BLE001 - the app's wakeup never stops the rest
             LOG.warning('app push %s error=%s', label, type(error).__name__)
             sent = None
@@ -16694,8 +16710,9 @@ class App(*APP_MIXINS):
         target = cloud_target(self.config)
         if not target:  # self-hosted off The Machine Network: the relay doesn't know it. The app works without them.
             return {'registered': False, 'reason': 'network'}
+        # fetch: the app shows the notification itself, with the line it asks this Machine for (Android)
         answer = notify.app_push(*target, {'action': 'register', 'platform': platform, 'token': token, 'label': label,
-                                           'sandbox': args.get('sandbox') is True})
+                                           'sandbox': args.get('sandbox') is True, 'fetch': platform == 'fcm' and args.get('fetch') is True})
         device = str((answer or {}).get('id') or '')
         if not notify.APP_ID.fullmatch(device):
             raise ValueError('Couldn’t turn on notifications for this phone. Try again.')
@@ -22763,6 +22780,12 @@ class App(*APP_MIXINS):
                     app.store.note_activity('visit')
                     self.output(200, {'csrf': dashboard_csrf(app.token, app.config['tailscale_owner']),
                                       'cache_scope': dashboard_cache_scope(app.token, app.config['tailscale_owner'])})
+                elif path.path == '/api/notice':
+                    # The mobile app, woken by a push without text: the short line it shows for that wakeup's tag
+                    # (notify.app_line), over the owner's own sign-in, so the to-do's title never passes through the push
+                    tag = (urllib.parse.parse_qs(path.query).get('tag') or [''])[0]
+                    with app.store.connect() as db:
+                        self.output(200, {'line': notify.app_line(db, tag)})
                 elif path.path == '/api/status':
                     self.output(200, {**dashboard_status(app.action('status', {'full': True})), 'talk_ready': app.talk_ready(), 'ui_version': dashboard_version(), 'source_url': source_url(), 'fixed': list(getattr(getattr(app, 'fleet', None), 'fixed_now', None) or ()), 'browser_link': browser_link(app.config),
                                       'browser_embed': browser_embed(app.config, self.headers.get('Host', ''))})

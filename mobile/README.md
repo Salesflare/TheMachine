@@ -7,8 +7,8 @@ dashboard release reaches the app at once, with no store update. The app itself 
 - **Sign-in through the system** (`MachineShellPlugin`): the account's sign-in opens in the system's sign-in sheet
   (`ASWebAuthenticationSession` on iOS, a Custom Tab on Android), so passkeys, Face ID and saved Google or Microsoft
   sign-ins work. It comes back on `computer.themachine.app://signed-in` and the app opens the Machine.
-- **Push**: native notifications through APNs and FCM. They are content-free wakeups ("New to-do"); the text is
-  fetched from the Machine when the owner opens it.
+- **Push**: native notifications through APNs and FCM. They are content-free wakeups ("New to-do"); on Android the
+  app asks the Machine for the to-do's short line and shows that, and the rest is fetched when the owner opens it.
 - **Share to The Machine**: text, links and up to 5 files from any app's share sheet open the dashboard's New to-do,
   filled in, for the owner to check and add.
 - **The phone's own questions**: the microphone (Talk, dictation) and notifications are asked by the phone itself when
@@ -42,6 +42,15 @@ rename). Every other link opens in the system browser. Only the app's own start 
    only gets push when it is on The Machine Network; otherwise the app works without notifications and says so once.
 3. When something needs the owner, the Machine asks the relay to wake the phone. The push carries a fixed text and a
    to-do id, never the content.
+4. Android (`MachinePushService`, which replaces Capacitor's FCM service and still runs it): the app registers with
+   `fetch`, so the relay sends a data-only push (kind, ready or needs-you, the to-do id, the fixed text and a
+   "{} to-dos need you" line). The app asks the saved Machine for that to-do's line (`GET api/notice?tag=`, with the
+   WebView's cookies; over Tailscale for a Machine of their own) and shows it, at most 60 characters. No answer:
+   the fixed text, or the count of that kind since the app was last opened. The public version (lock screen with
+   sensitive content hidden) is always the fixed text; the Machine's Text in notifications off gives the fixed text
+   too. Words: `PushText` (tests: `PushTextTest`).
+5. iOS keeps the relay's alert as it is. Showing the title there needs a Notification Service Extension, which can't
+   read the WKWebView's sign-in without an App Group: a new target and entitlement, so a store review.
 
 Tokens are per owner and revocable: signing out of the app, removing the phone in Settings, or leaving the Network
 removes them.
