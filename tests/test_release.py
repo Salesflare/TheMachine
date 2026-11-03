@@ -83,6 +83,51 @@ class Releases(unittest.TestCase):
         release.main(['update', '--tag', 'release-20261021-1200'])
         self.assertEqual(run('git', 'rev-parse', 'HEAD', cwd=self.app), good)
 
+    def own_commit(self, name, text):
+        (self.app / name).write_text(text)
+        run('git', 'add', name, cwd=self.app)
+        run('git', *WHO, 'commit', '-qm', 'own: ' + name, cwd=self.app)
+
+    def test_update_replays_the_machines_own_commits_on_the_release(self):
+        self.own_commit('fix.py', 'a merged self-fix')
+        sha = self.commit('two')
+        self.tag('release-20261021-1200')
+        release.main(['update'])
+        self.assertEqual(run('git', 'rev-parse', 'HEAD^', cwd=self.app), sha)
+        self.assertEqual((self.app / 'fix.py').read_text(), 'a merged self-fix')
+        self.assertEqual((self.app / 'app.py').read_text(), 'two')
+        release.main(['update'])  # nothing new: stays
+        self.assertEqual(run('git', 'rev-parse', 'HEAD^', cwd=self.app), sha)
+
+    def test_own_commits_that_do_not_apply_leave_the_checkout_as_it_was(self):
+        self.own_commit('app.py', 'mine')
+        before = run('git', 'rev-parse', 'HEAD', cwd=self.app)
+        self.commit('two')
+        self.tag('release-20261021-1200')
+        with self.assertRaisesRegex(SystemExit, 'do not apply on it: nothing changed'):
+            release.main(['update'])
+        self.assertEqual(run('git', 'rev-parse', 'HEAD', cwd=self.app), before)
+        self.assertEqual(run('git', 'status', '--porcelain', '--untracked-files=no', cwd=self.app), '')
+
+    def test_install_waits_while_something_runs_and_then_installs(self):
+        sha = self.commit('two')
+        self.tag('release-20261021-1200')
+        installs = []
+        real = subprocess.run
+        def fake(args, **kwargs):
+            if str(args[0]).endswith('install.sh'):
+                installs.append(args[1:])
+                return subprocess.CompletedProcess(args, 0)
+            return real(args, **kwargs)
+        with mock.patch.object(release, 'busy', return_value=True), mock.patch.object(release.subprocess, 'run', fake):
+            release.main(['update', '--install'])
+        self.assertNotEqual(run('git', 'rev-parse', 'HEAD', cwd=self.app), sha)
+        self.assertEqual(installs, [])
+        with mock.patch.object(release, 'busy', return_value=False), mock.patch.object(release.subprocess, 'run', fake):
+            release.main(['update', '--install'])
+        self.assertEqual(run('git', 'rev-parse', 'HEAD', cwd=self.app), sha)
+        self.assertEqual(installs, [['--non-interactive']])
+
     def test_cut_signs_origin_main_with_the_key_and_verifies_it(self):
         sha = self.commit('two')
         release.main(['cut', '--key', str(self.key), '--no-push'])

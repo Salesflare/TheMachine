@@ -8,6 +8,8 @@ that is already installed (deploy/release-signers), so a pushed commit alone nev
   python3 scripts/release.py cut       sign origin/main as a new release and push the tag (needs the private key)
   python3 scripts/release.py verify    check a release tag (default: the newest) against deploy/release-signers
   python3 scripts/release.py update    self-hosted: move this checkout to the newest signed release, then ./install.sh
+                                        (--install: only when nothing runs, and runs ./install.sh itself; the daily
+                                        update timer that install.sh sets up calls this)
 
 The private key is read from $THE_MACHINE_RELEASE_KEY, else ~/.config/the-machine-release/signing-key."""
 from __future__ import annotations
@@ -113,17 +115,48 @@ def cut(args):
           'everyone else after the soak time, or sooner when promoted on /admin.')
 
 
+def move_to(sha, ref='main'):
+    """Onto a verified release the way hosted Machines move: a fast-forward; else, with no commits of its own (all are
+    on the branch or in a release), straight there, uncommitted changes kept; else its own commits (a merged self-fix)
+    replayed on top, and left as they were when that does not apply cleanly. The git run that decided it."""
+    if git('merge-base', '--is-ancestor', 'HEAD', sha, check=False).returncode == 0:
+        return git('merge', '--ff-only', '--quiet', sha, check=False)
+    before = git('rev-parse', '-q', '--verify', f'origin/{ref}@{{1}}', check=False).stdout.strip()  # before a rewrite
+    own = git('rev-list', 'HEAD', '--not', sha, f'refs/remotes/origin/{ref}', '--tags=release-*',
+              *([before] if before else []), check=False).stdout.split()
+    if not own:
+        return git('reset', '--keep', '-q', sha, check=False)
+    result = git('-c', 'user.name=m', '-c', 'user.email=m@localhost', 'rebase', '-q', '--onto', sha, own[-1] + '^',
+                 check=False)
+    if result.returncode:
+        git('rebase', '--abort', check=False)
+    return result
+
+
+def busy():
+    """Work that a restart would cut off, or no way to tell: only `assistant busy` exiting 0 means idle."""
+    return subprocess.run([sys.executable, str(ROOT / 'cli.py'), 'busy'], cwd=ROOT, capture_output=True,
+                          text=True).returncode != 0
+
+
 def update(args):
     git('fetch', '--quiet', '--tags', 'origin')
     tag, sha = verify(args.tag)
     if git('merge-base', '--is-ancestor', sha, 'HEAD', check=False).returncode == 0:
         print(f'Already on {tag} or newer.')
         return
-    result = git('merge', '--ff-only', '--quiet', sha, check=False)
+    if args.install and busy():
+        print(f'{tag} is ready, but something is running: trying again next time.')
+        return
+    result = move_to(sha)
     if result.returncode:
-        raise SystemExit(f'{tag} is verified, but this checkout has its own commits: rebase them onto {tag}. '
-                         + result.stderr.strip()[-300:])
-    print(f'Updated to {tag} ({sha[:7]}), signature verified. Now run ./install.sh')
+        raise SystemExit(f'{tag} is verified, but this checkout\'s own commits do not apply on it: nothing changed. '
+                         + (result.stderr or result.stdout).strip()[-300:])
+    print(f'Updated to {tag} ({sha[:7]}), signature verified.' + ('' if args.install else ' Now run ./install.sh'))
+    if args.install:
+        code = subprocess.run([str(ROOT / 'install.sh'), '--non-interactive'], cwd=ROOT).returncode
+        if code:
+            raise SystemExit(f'./install.sh failed (exit {code}) after the update to {tag}.')
 
 
 def main(argv=None):
@@ -136,6 +169,7 @@ def main(argv=None):
     v.add_argument('tag', nargs='?')
     u = sub.add_parser('update', help='move this checkout to the newest signed release')
     u.add_argument('--tag', help='a specific release instead of the newest')
+    u.add_argument('--install', action='store_true', help='only when nothing runs; then run ./install.sh --non-interactive')
     args = parser.parse_args(argv)
     try:
         if args.command == 'cut':

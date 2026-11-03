@@ -624,9 +624,13 @@ def quote_unit(path):
     return f'"{text}"' if re.search(r'\s', text) else text
 
 
-def unit_text(config, facts, config_path=None):
+def unit_path(facts):
     bins = [str(Path(p).parent) for p in (facts.get('node'), facts.get('openclaw'), facts.get('gog'), facts.get('wacli')) if p]
-    path = ':'.join(dict.fromkeys(bins + ['%h/.local/bin', '/usr/local/bin', '/usr/bin', '/bin']))
+    return ':'.join(dict.fromkeys(bins + ['%h/.local/bin', '/usr/local/bin', '/usr/bin', '/bin']))
+
+
+def unit_text(config, facts, config_path=None):
+    path = unit_path(facts)
     return f"""# Written by install.sh from {ROOT}; rerun ./install.sh to update it.
 [Unit]
 Description=The Machine: signal collector and suggestions inbox
@@ -715,6 +719,73 @@ def install_unit(config, facts, paths, start):
     if linger.returncode == 0 and linger.stdout.strip() == 'no':
         say('  note: it stops when you log out. To keep it (and the Gateway) running: sudo loginctl enable-linger $USER')
     return True
+
+
+UPDATE_UNIT = 'the-machine-update.service'
+UPDATE_TIMER = 'the-machine-update.timer'
+HOSTED_AGENT = Path('/var/lib/machine-agent')  # hosted Machines: their agent installs releases instead
+
+
+def update_texts(config, facts, paths):
+    """The daily signed update of a self-hosted install: the newest signed release, only when nothing runs."""
+    service_text = f"""# Written by install.sh from {ROOT}; rerun ./install.sh to update it.
+[Unit]
+Description=The Machine: install the newest signed release
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory={ROOT}
+ExecStart={quote_unit(facts.get('python') or sys.executable)} {quote_unit(ROOT / 'scripts' / 'release.py')} update --install
+TimeoutStartSec=1h
+Environment="PATH={unit_path(facts)}"
+Environment=PYTHONUNBUFFERED=1
+Environment="ASSISTANT_CONFIG={paths.config}"
+Environment="OPENCLAW_WORKSPACE={paths.workspace}"
+"""
+    timer_text = f"""# Written by install.sh from {ROOT}; rerun ./install.sh to update it.
+[Unit]
+Description=The Machine: daily signed update
+
+[Timer]
+OnCalendar=*-*-* 04:00
+RandomizedDelaySec=2h
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+"""
+    return service_text, timer_text
+
+
+def install_updates(config, facts, paths, start):
+    """Self-hosted Linux installs from git: a daily timer that installs signed releases only (scripts/release.py
+    update --install). Off with "auto_update": false; hosted Machines and other installs get none."""
+    unit_dir = paths.unit.parent
+    wanted = (service.manager() == 'systemd' and facts.get('systemctl') and (ROOT / '.git').exists()
+              and not HOSTED_AGENT.exists() and config.get('auto_update', True) is not False)
+    files = [unit_dir / UPDATE_UNIT, unit_dir / UPDATE_TIMER]
+    if not wanted:
+        if any(f.exists() for f in files):
+            if facts.get('systemctl'):
+                run(['systemctl', '--user', 'disable', '--now', UPDATE_TIMER])
+            for f in files:
+                f.unlink(missing_ok=True)
+            say('Daily update: turned off')
+        return None
+    for f, text in zip(files, update_texts(config, facts, paths)):
+        if not f.exists() or f.read_text() != text:
+            f.parent.mkdir(parents=True, exist_ok=True)
+            f.write_text(text)
+    if not start:
+        say('Daily update: written, not turned on (--no-start)')
+        return None
+    run(['systemctl', '--user', 'daemon-reload'])
+    result = run(['systemctl', '--user', 'enable', '--now', UPDATE_TIMER])
+    say('Daily update: ' + ('signed releases only, every night' if result.returncode == 0
+                            else 'could not turn on: ' + (result.stderr or result.stdout).strip()[:300]))
+    return result.returncode == 0
 
 
 def install_cli(paths):
@@ -1191,6 +1262,12 @@ def uninstall(paths, purge, interactive):
     if paths.unit.exists():
         paths.unit.unlink()
         say(f'Removed {paths.unit}')
+    for name in (UPDATE_TIMER, UPDATE_UNIT):
+        if (paths.unit.parent / name).exists():
+            if service.available():
+                service.disable_now(name, run=run)
+            (paths.unit.parent / name).unlink()
+            say(f'Removed {paths.unit.parent / name}')
     try:  # Telegram chats: each logged-in device is logged out at Telegram, and its store goes
         config = json.loads(paths.config.read_text()) if paths.config.exists() else {}
     except (OSError, ValueError):
@@ -1344,6 +1421,7 @@ def main(argv=None):
         config = activate(paths)
     since = onboarding.now()
     started = install_unit(config, facts, paths, start=not args.no_start)
+    install_updates(config, facts, paths, start=not args.no_start)
     healthy = started and health(config, args.health_timeout)
     if interactive and healthy:
         try:

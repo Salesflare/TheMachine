@@ -26,6 +26,7 @@
 | `fix_dir` | `~/.cache/the-machine/fixes` | Where Do it clones The Machine to fix it ([The Machine fixes itself](usage.md#the-machine-fixes-itself)) |
 | `self_test`, `self_test_seconds`, `self_fix_push` | `scripts/test.py`, `1200`, `true` | The test command Merge now runs in the fix (a list), its time limit, and whether a merged fix is pushed |
 | `self_fix_auto`, `self_fix_auto_push` | `true`, `false` | Small proven fixes to its own errors [merge by themselves](usage.md#the-machine-fixes-itself), with Undo merge for 24 hours; whether those are also pushed upstream |
+| `auto_update` | `true` | Linux installs from git: install each new signed release nightly when nothing runs ([Update and rollback](operations.md#update-and-rollback)). Rerun `./install.sh` after changing it |
 | `openclaw`, `node` | `openclaw` / next to it | CLI paths for the Node helpers |
 | `openclaw_package_dir` | `<node prefix>/lib/node_modules/openclaw` | Installed OpenClaw package (Gateway SDK) |
 | `openclaw_state`, `agent_db` | OpenClaw defaults | OpenClaw state and agent transcript databases (read-only: Telegram receipts, progress steps) |
