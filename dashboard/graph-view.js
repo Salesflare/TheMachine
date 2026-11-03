@@ -832,7 +832,8 @@ function personForm(n){const p=n.profile||{},c=personContacts(n),said=orgSaid(n)
  <p class="graph-sub muted pf-note">Your edits stay, also when their details are looked up again. Empty a field to use the looked-up value again.</p></form>`}
 const pfValues=(f,kind)=>[...f.querySelectorAll(`.pf-list[data-kind="${kind}"] input`)].map(i=>i.value.trim()).filter(Boolean);
 // What the owner changed, as the server takes it: {field: value}. Lists are sent whole, as they are now.
-function personChanged(f){const out={};for(const k of Object.keys(PERSON_LIMITS)){const el=f.elements[k];if(el&&el.value.trim()!==el.defaultValue.trim())out[k]=el.value.trim()}
+function personChanged(f){const out=Object.create(null);  // only the fixed field names below; no prototype to write through
+ for(const k of Object.keys(PERSON_LIMITS)){const el=f.elements[k];if(el&&el.value.trim()!==el.defaultValue.trim())out[k]=el.value.trim()}
  for(const kind of ['phones','emails']){const now=pfValues(f,kind),was=f.querySelector(`.pf-list[data-kind="${kind}"]`).dataset.was.split('\n').filter(Boolean);if(now.join('\n')!==was.join('\n'))out[kind]=now}
  const side=f.querySelector('input[name=side]:checked')?.value||'',seg=f.querySelector('.pf-seg');if(side!==seg.dataset.was)out.side=side;return out}
 const PHONE_RE=/^\+?[\d\s().-]{6,40}$/,EMAIL_RE=/^[^@\s]+@[^@\s]+\.[^@\s]+$/;
