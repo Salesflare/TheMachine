@@ -4,20 +4,20 @@ const modelName=id=>{const parts=String(id||'').split('/').pop().replace(/[-_](\
  for(const w of parts){const p=words[words.length-1];if(words.length>1&&/^\d+(\.\d+)*$/.test(p)&&/^\d{1,2}$/.test(w))words[words.length-1]=p+'.'+w;else words.push(w)}let out='';
  words.forEach((w,i)=>{const word=i===0&&/^[a-z]{1,3}$/i.test(w)?w.toUpperCase():/^\d/.test(w)?w:w[0].toUpperCase()+w.slice(1);out+=i===0?word:(i===1&&/^[A-Z]{1,3}$/.test(out)&&/^\d/.test(w)?'-':' ')+word});return out};
 function renderModelPanel(){const m=state.model_status,box=$('#settings-model');if(!box)return;box.hidden=!m&&!state.chat_model?.models?.length;if(!m)return;const now=Date.now()/1000,bg=state.chat_model?.background||m.model;
- const head=`<div class="list settings-list"><div><span class="grow"><strong title="${esc(bg||'')}">${esc(modelName(bg)||'Model unknown')}</strong><small>${esc([t('Background work'),m.chatgpt?t('Signed in with ChatGPT'):m.claude_plan?t('Uses your Claude plan'):m.provider,m.plan?t('plan: {}',m.plan):''].filter(Boolean).join(' · '))}</small></span><small class="model-checked" title="${esc(m.checked_at?fmtDHM(m.checked_at,{day:'numeric',month:'short'}):'')}">${esc(t('Updated {}',ago(m.checked_at)))}</small></div></div>`;
- const bars=(m.windows||[]).filter(w=>!(w.reset&&w.reset<now)).map(w=>`<div class="usage${w.used>=100?' full':''}"><span>${esc(t('{}: {}% used',windowLabel(w.label),+w.used|0))}${w.reset?' · '+esc(t('resets in {}',untilText(w.reset))):''}</span><progress max="100" value="${+w.used|0}">${+w.used|0}%</progress></div>`).join('')||'<p class="muted">No usage windows reported yet.</p>';
+ const head=html`<div class="list settings-list"><div><span class="grow"><strong title="${bg||''}">${modelName(bg)||'Model unknown'}</strong><small>${[t('Background work'),m.chatgpt?t('Signed in with ChatGPT'):m.claude_plan?t('Uses your Claude plan'):m.provider,m.plan?t('plan: {}',m.plan):''].filter(Boolean).join(' · ')}</small></span><small class="model-checked" title="${m.checked_at?fmtDHM(m.checked_at,{day:'numeric',month:'short'}):''}">${t('Updated {}',ago(m.checked_at))}</small></div></div>`;
+ const bars=orEmpty(html`${(m.windows||[]).filter(w=>!(w.reset&&w.reset<now)).map(w=>html`<div class="usage${w.used>=100?html` full`:''}"><span>${t('{}: {}% used',windowLabel(w.label),+w.used|0)}${w.reset?' · '+t('resets in {}',untilText(w.reset)):''}</span><progress max="100" value="${+w.used|0}">${+w.used|0}%</progress></div>`)}`)||html`<p class="muted">No usage windows reported yet.</p>`;
  const r=m.resets,expiry=r?.credits?.find(c=>c.expires)?.expires;
  // Resets this computer can't count (no Codex CLI signed in to the same account, as on a hosted Machine): no
  // "unknown" count, only the way to ChatGPT's usage page; a team plan's resets are under its workspace there.
- const team=/team|business|enterprise|edu/i.test(m.plan||''),resets=r?`<div class="list settings-list"><div><span class="grow"><strong>${esc(t('Resets available: {}',r.available))}</strong><small>${esc(r.available?t('A reset starts your ChatGPT usage limits over.')+(expiry?' '+t('The first one expires {}.',new Date(expiry*1000).toLocaleDateString(DL,{month:'short',day:'numeric',year:'numeric'})):''):t('Your plan has no usage limit resets right now.'))}</small></span>${resetAction(m)}</div></div>`
-  :m.usage_page?`<div class="list settings-list"><div><span class="grow"><strong>Usage limit resets</strong><small>${esc(t(team?'ChatGPT shows them under your team workspace.':'ChatGPT shows them.'))}</small></span>${resetAction(m)}</div></div>`:'';
- $('#model-panel').innerHTML=head+limitNote(m)+(m.claude_plan?(m.windows||[]).length?bars:'':bars+resets)}
+ const team=/team|business|enterprise|edu/i.test(m.plan||''),resets=r?html`<div class="list settings-list"><div><span class="grow"><strong>${t('Resets available: {}',r.available)}</strong><small>${r.available?t('A reset starts your ChatGPT usage limits over.')+(expiry?' '+t('The first one expires {}.',new Date(expiry*1000).toLocaleDateString(DL,{month:'short',day:'numeric',year:'numeric'})):''):t('Your plan has no usage limit resets right now.')}</small></span>${resetAction(m)}</div></div>`
+  :m.usage_page?html`<div class="list settings-list"><div><span class="grow"><strong>Usage limit resets</strong><small>${t(team?'ChatGPT shows them under your team workspace.':'ChatGPT shows them.')}</small></span>${resetAction(m)}</div></div>`:'';
+ setHTML($('#model-panel'),html`${head}${limitNote(m)}${m.claude_plan?(m.windows||[]).length?bars:'':html`${bars}${resets}`}`)}
 // The model and thinking level chats use (chat_model.py): Settings, Model sets the default; the pill under a to-do
 // chat's or Help's message box sets that chat's own. Only what the sign-in offers, each model with its own levels.
 const THINKING={off:'No thinking',minimal:'Minimal thinking',low:'Low thinking',medium:'Medium thinking',high:'High thinking',xhigh:'Extra high thinking',adaptive:'Adaptive thinking',max:'Max thinking',ultra:'Ultra thinking'};
 // In the menu only, as a second line: Ultra runs helpers alongside, so it says what it costs
 const THINK_HINT={ultra:'Slower, uses more of your plan'};
-const LEVEL_ORDER=Object.keys(THINKING),CHEV='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5"/></svg>';
+const LEVEL_ORDER=Object.keys(THINKING),CHEV=html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5"/></svg>`;
 const cmEntry=ref=>(state.chat_model?.models||[]).find(m=>m.ref===ref);
 // The supported level nearest the one asked for (OpenClaw maps the same way)
 function cmNearest(level,levels){if(!levels?.length)return level||null;if(levels.includes(level))return level;const at=LEVEL_ORDER.includes(level)?LEVEL_ORDER.indexOf(level):2,d=x=>Math.abs(LEVEL_ORDER.indexOf(x)-at);
@@ -33,7 +33,7 @@ function cmChoices(which,cur){if(which==='think')return (cmEntry(cur.model)?.lev
  // Each provider once, its models under it, in the order the Gateway first lists each provider
  const order=[...new Set(ms.map(m=>m.ref.split('/')[0]))],sorted=[...ms].sort((a,b)=>order.indexOf(a.ref.split('/')[0])-order.indexOf(b.ref.split('/')[0]));
  return [...(cur.model&&!cmEntry(cur.model)?[{...one(cur.model),group:''}]:[]),...sorted.map(m=>one(m.ref))]}
-const cmTrigger=(kind,which,label,cls,extra='',after='')=>`<button type="button" class="${cls}" data-cm-pick="${which}" data-cm-kind="${kind}" aria-haspopup="menu" aria-expanded="false"${extra}><span>${esc(label)}</span>${after}${CHEV}</button>`;
+const cmTrigger=(kind,which,label,cls,extra='',after='')=>html`<button type="button" class="${cls}" data-cm-pick="${which}" data-cm-kind="${kind}" aria-haspopup="menu" aria-expanded="false"${extra}><span>${label}</span>${after}${CHEV}</button>`;
 // Fast (chat_model.py): the person's own choice for to-do chats only, off by default, at the end of a chat's model menu.
 // Only a model the Gateway says has a fast option takes it; for any other the item stays, disabled, with why.
 const cmFastOk=ref=>!!cmEntry(ref)?.fast,cmFastShown=(kind,cur)=>kind==='chat'&&!!state.chat_model?.fast&&cmFastOk(cur?.model);
@@ -43,16 +43,14 @@ async function cmFastSave(on){try{state.chat_model=await request('api/action',{m
  catch(err){errCaught(err);toast(err.message,true);cmPaint('chat')}}
 // The pill: "Model  Thinking", each part a quiet button over the menu; a to-do chat's model says Fast when it runs fast
 function cmPill(kind){const cm=state.chat_model,cur=cmCurrent(kind);if(!cm?.known||!cm.models.length||!cur?.model)return '';const levels=cmEntry(cur.model)?.levels||[];
- return cmTrigger(kind,'model',modelName(cur.model),'model-pick',` title="${esc(cur.model)}" translate="no"`,cmFastShown(kind,cur)?`<span class="cm-fast-on" translate="yes">${esc(t('Fast'))}</span>`:'')
-  +(levels.length>1&&cur.thinking?cmTrigger(kind,'think',THINKING[cur.thinking]||cur.thinking,'model-pick'):'')}
+ return html`${cmTrigger(kind,'model',modelName(cur.model),'model-pick',html` title="${cur.model}" translate="no"`,cmFastShown(kind,cur)?html`<span class="cm-fast-on" translate="yes">${t('Fast')}</span>`:'')}${levels.length>1&&cur.thinking?cmTrigger(kind,'think',THINKING[cur.thinking]||cur.thinking,'model-pick'):''}`}
 // Repainted with the state and the chat, never while its menu is open; a focused picker keeps the focus
-function cmSwap(box,h){if(cmOpen?.box===box||box.dataset.html===h)return;const f=document.activeElement?.closest?.('[data-cm-pick]'),had=f&&box.contains(f)?f.dataset.cmPick:null;
- box.dataset.html=h;box.innerHTML=h;if(had)box.querySelector(`[data-cm-pick="${had}"]`)?.focus({preventScroll:true})}
+function cmSwap(box,h){if(cmOpen?.box===box||box.dataset.html===String(h))return;const f=document.activeElement?.closest?.('[data-cm-pick]'),had=f&&box.contains(f)?f.dataset.cmPick:null;
+ box.dataset.html=h;setHTML(box,h);if(had)box.querySelector(`[data-cm-pick="${had}"]`)?.focus({preventScroll:true})}
 function cmPaint(kind){const box=$(kind==='help'?'#help-model':'#chat-model');if(box)cmSwap(box,cmPill(kind))}
 function renderChatModel(){const cm=state.chat_model,box=$('#model-chats');if(!box||cmOpen?.box===box)return;box.hidden=!cm?.known||!cm.models.length;if(box.hidden)return;
  const cur=cm.default||{},levels=cmEntry(cur.model)?.levels||[];
- cmSwap(box,`<div class="section-head"><h3>Chats</h3><p>What to-do chats and Help use. Each chat can pick its own under its message box.</p></div><div class="list settings-list"><div><span class="grow"><strong>Model</strong><small>Only models your sign-in offers.</small></span>${cmTrigger('default','model',modelName(cur.model),'select-like',' translate="no"')}</div>`
-  +(levels.length>1?`<div><span class="grow"><strong>Thinking</strong><small>More thinking is slower and uses more of your plan.</small></span>${cmTrigger('default','think',THINKING[cur.thinking]||cur.thinking||'','select-like')}</div>`:'')+'</div>')}
+ cmSwap(box,html`${html`<div class="section-head"><h3>Chats</h3><p>What to-do chats and Help use. Each chat can pick its own under its message box.</p></div><div class="list settings-list"><div><span class="grow"><strong>Model</strong><small>Only models your sign-in offers.</small></span>${cmTrigger('default','model',modelName(cur.model),'select-like',html` translate="no"`)}</div>`}${levels.length>1?html`<div><span class="grow"><strong>Thinking</strong><small>More thinking is slower and uses more of your plan.</small></span>${cmTrigger('default','think',THINKING[cur.thinking]||cur.thinking||'','select-like')}</div>`:''}</div>`)}
 // Saves a pick: Settings' default, Help's own (for this Help chat only) or the open to-do chat's own
 async function cmSave(kind,which,value){const cur=cmCurrent(kind)||{};
  const next=which==='model'?{model:value,thinking:cmNearest(cur.thinking,cmEntry(value)?.levels)}:{model:cur.model,thinking:value};
@@ -72,7 +70,7 @@ function cmPlace(m,b){m.style.cssText='';const r=b.getBoundingClientRect(),gap=6
  m.style.minWidth=Math.max(200,Math.round(r.width))+'px';m.style.maxHeight=Math.max(120,Math.floor(room))+'px';
  if(up)m.style.bottom=Math.round(innerHeight-r.top+gap)+'px';else m.style.top=Math.round(r.bottom+gap)+'px';
  m.style.left=Math.round(Math.max(8,Math.min(r.left,innerWidth-m.offsetWidth-8)))+'px'}
-const CM_CHECK='<svg class="cm-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+const CM_CHECK=html`<svg class="cm-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>`;
 function cmMenuClose(focus){const m=$('#cm-menu');if(!m||m.hidden)return;if(m.matches?.(':popover-open'))m.hidePopover();m.hidden=true;const o=cmOpen;cmOpen=null;if(!o)return;
  const b=o.box.querySelector(`[data-cm-pick="${o.which}"]`);b?.setAttribute('aria-expanded','false');if(focus)b?.focus({preventScroll:true})}
 function cmMenuOpen(b,last){const kind=b.dataset.cmKind,which=b.dataset.cmPick,cur=cmCurrent(kind)||{},sel=which==='model'?cur.model:cur.thinking,box=b.closest('#chat-model,#help-model,#model-chats');
@@ -106,8 +104,8 @@ document.addEventListener('click',async e=>{
  const d=await modelAction('model_reset',{key:crypto.randomUUID()});b.disabled=false;if(!d)return;
  notice(t(({reset:'Usage reset. Your limits start over now.',nothingToReset:'Nothing to reset right now; no reset was used.',noCredit:'No reset was available.',alreadyRedeemed:'That reset was already used.'})[d.outcome]||'Done.'))});
 function renderModelUsage(){const now=Date.now()/1000,label=l=>['Week','168h','7d'].includes(l)?t('Weekly'):['Day','24h'].includes(l)?t('Daily'):/^\d+h$/.test(l)?t('{}-hour limit',parseInt(l)):l;
-renderModelPanel();renderChatModel();cmPaint('chat');renderLimitBanner();$('#model-usage').innerHTML=limitNote(state.model_status)+(state.model_usage||[]).map(p=>p.windows.filter(w=>!(w.reset<now)).map(w=>{const r=w.reset?new Date(w.reset*1000):null,when=r?t(', resets {}',(w.reset-now>86400?r.toLocaleDateString(DL,{weekday:'short'})+' ':'')+fmtHM(r)):'';
-return `<div class="usage"><span>${esc(t('{}: {}% used',p.name+' '+label(w.label),+w.used|0))}${esc(when)}</span><progress max="100" value="${+w.used|0}">${+w.used|0}%</progress></div>`}).join('')).join('')}
+renderModelPanel();renderChatModel();cmPaint('chat');renderLimitBanner();setHTML($('#model-usage'),html`${limitNote(state.model_status)}${(state.model_usage||[]).map(p=>html`${p.windows.filter(w=>!(w.reset<now)).map(w=>{const r=w.reset?new Date(w.reset*1000):null,when=r?t(', resets {}',(w.reset-now>86400?r.toLocaleDateString(DL,{weekday:'short'})+' ':'')+fmtHM(r)):'';
+return html`<div class="usage"><span>${t('{}: {}% used',p.name+' '+label(w.label),+w.used|0)}${when}</span><progress max="100" value="${+w.used|0}">${+w.used|0}%</progress></div>`})}`)}`)}
 const ago=v=>{if(!v)return t('Not yet');const s=(new Date(v)-Date.now())/1000,a=Math.abs(s),f=new Intl.RelativeTimeFormat(DL,{numeric:'auto'});for(const[u,n]of[['day',86400],['hour',3600],['minute',60]])if(a>=n)return f.format(Math.round(s/n),u);return a<45?t('just now'):f.format(Math.round(s/60),'minute')};
 const time=(v,plain)=>html`<time class="${plain?'':'mono '}muted" datetime="${v||''}" title="${date(v)}">${ago(v)}</time>`;
 const timeNode=(v,plain)=>make('time',{class:(plain?'':'mono ')+'muted',datetime:v||'',title:date(v)},ago(v));
@@ -126,13 +124,14 @@ const shortURL=u=>{if(u.length<=40)return u;try{return new URL(u).hostname.repla
 // The markup goes in as pieces marked \u0000N\u0001 in the text, and everything around them is escaped text.
 // em: *words* in italics (the chat); br: line breaks.
 const RT_NB=html`<strong class="nb">`,RT_B=html`<strong>`,RT_B_END=html`</strong>`,RT_EM=html`<em>`,RT_EM_END=html`</em>`,RT_BR=html`<br>`;
-const richText=(v,bold,{br=false,em=false}={})=>{const found=[],mark=h=>'\u0000'+(found.push(h)-1)+'\u0001';
+const richText=(v,bold,{br=false,em=false,pieces=null}={})=>{const found=[],mark=h=>'\u0000'+(found.push(h)-1)+'\u0001';
  let s=String(v??'').replace(/[\u0000\u0001]/g,'').replace(TEXT_LINK,(m,t,u)=>{let url=u||m,tail='';
   if(!u){tail=(/[.,;:!?'"]+$/.exec(url)||[''])[0];url=url.slice(0,url.length-tail.length)}if(!linkable(url))return m;
-  return mark(html`<a href="${url}" target="_blank" rel="noopener noreferrer">${t??shortURL(url)}</a>`)+tail});
+  return mark(html`<a href="${safeHref(url)}" target="_blank" rel="noopener noreferrer">${t??shortURL(url)}</a>`)+tail});
  if(bold)s=s.replace(/\*\*([^*]+)\*\*/g,(m,t)=>mark(esc(t).replace(/\u0000\d+\u0001/g,'x').length<=24?RT_NB:RT_B)+t+mark(RT_B_END));
  if(em)s=s.replace(/(^|[^*\w])\*([^*\n]+)\*(?!\*)/g,(m,a,t)=>a+mark(RT_EM)+t+mark(RT_EM_END));
  if(br)s=s.replace(/\n/g,()=>mark(RT_BR));
+ if(pieces)s=pieces(s,mark);  // more markup over the marked text: card links, result links (todos-cards.js)
  return html`${s.split(/\u0000(\d+)\u0001/).map((x,i)=>i%2?found[x]:x)}`};
 const format=(v,br)=>richText(v,true,{br}),linkText=v=>richText(v,false);
 // Card bodies: a fully bold first line is a small subtitle under the title, blank lines make paragraphs, long bodies fold behind Show more.
@@ -143,25 +142,25 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-details]')
  b.setAttribute('aria-expanded',open);const p=b.closest('article')?.querySelector(':scope>.card-details');if(p)p.hidden=!open});
 // Another open card named by its exact title links to it.
 // Only in plain text: never inside a tag or an existing link.
-const cardLinks=(html,s)=>(state.suggestions||[]).filter(o=>o.id!==s.id&&!closed(o)&&o.title.length>=12).sort((a,b)=>b.title.length-a.title.length).reduce((h,o)=>{const t=esc(o.title);return h.includes(t)?h.split(/(<a\b[\s\S]*?<\/a>|<[^>]*>)/).map((part,i)=>i%2?part:part.split(t).join(`<a class="card-link" href="#card=${esc(o.id)}">${t}</a>`)).join(''):h},html);
+const cardLinks=(x,s,mark)=>(state.suggestions||[]).filter(o=>o.id!==s.id&&!closed(o)&&o.title.length>=12).sort((a,b)=>b.title.length-a.title.length).reduce((h,o)=>h.includes(o.title)?h.split(/(\u0000\d+\u0001)/).map((part,i)=>i%2?part:part.split(o.title).join(mark(html`<a class="card-link" href="#card=${o.id}">${o.title}</a>`))).join(''):h,x);
 // A confirmed step that didn't go through says so in one line instead of the earlier result (step_stopped in assistant.py).
 // Handed off and with them: the card's body is what was asked; the suggestion to hand it off stays in the chat.
-const askedBody=s=>{const h=s.fleet_handoff;return h?.asked&&!h.back&&['asked','waiting for them','accepted','accepted with a change'].includes(h.stage)&&!redirect(s)?`<div class="body clamp handoff-asked" style="--lines:2" title="${esc(h.asked)}" translate="no"><p>${esc(t('Asked {}:',firstName(h.name)))} ${esc(h.asked)}</p></div>`:''};
+const askedBody=s=>{const h=s.fleet_handoff;return h?.asked&&!h.back&&['asked','waiting for them','accepted','accepted with a change'].includes(h.stage)&&!redirect(s)?html`<div class="body clamp handoff-asked" style="--lines:2" title="${h.asked}" translate="no"><p>${t('Asked {}:',firstName(h.name))} ${h.asked}</p></div>`:''};
 // A skill from notes (skill_clusters in assistant.py) or proposed in Settings (skills.py): a new one, maybe related to one
 // you have, or an Update to one of yours: the whole skill rewritten as one, shown before and after with what changed marked.
-const skillNotesList=p=>`<ul>${p.notes.map(n=>`<li>${esc(n)}</li>`).join('')}</ul>`;
-const skillRuns=(runs,fallback)=>(runs||[['same',fallback]]).map(([k,t])=>k==='added'?`<ins>${esc(t)}</ins>`:k==='removed'?`<del>${esc(t)}</del>`:`<span>${esc(t)}</span>`).join('\n');
-const skillBeforeAfter=u=>`<div><h4>Before</h4><pre class="skill-body">${skillRuns(u.changes?.before,u.before)}</pre></div><div><h4>After</h4><pre class="skill-body">${skillRuns(u.changes?.after,u.after)}</pre></div>`;
-const skillStale=u=>u?.stale?`<p class="note">${esc(u.skill)} changed after this was suggested, so it can’t be applied. The next suggestion starts from the new version.</p>`:'';
-const skillRelated=r=>r?`<p class="skill-related">Related to <strong>${esc(r.name)}</strong>: ${esc(r.relation)}</p>`:'';
+const skillNotesList=p=>html`<ul>${p.notes.map(n=>html`<li>${n}</li>`)}</ul>`;
+const skillRuns=(runs,fallback)=>(runs||[['same',fallback]]).map(([k,t],i)=>html`${i?'\n':''}${k==='added'?html`<ins>${t}</ins>`:k==='removed'?html`<del>${t}</del>`:html`<span>${t}</span>`}`);
+const skillBeforeAfter=u=>html`<div><h4>Before</h4><pre class="skill-body">${skillRuns(u.changes?.before,u.before)}</pre></div><div><h4>After</h4><pre class="skill-body">${skillRuns(u.changes?.after,u.after)}</pre></div>`;
+const skillStale=u=>u?.stale?html`<p class="note">${u.skill} changed after this was suggested, so it can’t be applied. The next suggestion starts from the new version.</p>`:'';
+const skillRelated=r=>r?html`<p class="skill-related">Related to <strong>${r.name}</strong>: ${r.relation}</p>`:'';
 function skillProposal(s){const p=s.skill_proposal;if(!p)return '';
- if(p.update)return `${skillStale(p.update)}<details class="skill-notes"><summary>Read the change and ${p.notes.length} notes</summary><div class="skill-ba">${skillBeforeAfter(p.update)}</div>${skillNotesList(p)}</details>`;
- return `${skillRelated(p.related)}<details class="skill-notes"><summary>Read skill instructions and ${p.notes.length} notes</summary><p><strong>${esc(p.name)}</strong></p><div>${format(p.body,true)}</div>${skillNotesList(p)}</details>`}
+ if(p.update)return html`${skillStale(p.update)}<details class="skill-notes"><summary>Read the change and ${p.notes.length} notes</summary><div class="skill-ba">${skillBeforeAfter(p.update)}</div>${skillNotesList(p)}</details>`;
+ return html`${skillRelated(p.related)}<details class="skill-notes"><summary>Read skill instructions and ${p.notes.length} notes</summary><p><strong>${p.name}</strong></p><div>${format(p.body,true)}</div>${skillNotesList(p)}</details>`}
 // Update <skill>: its before and after first; only Update skill there changes it (reviewed names what was shown).
 let skillUpdating=null;
 function skillUpdateOpen(u,from,send){if(!u){toast('That skill is gone.',true);return}if(u.stale){toast(`${u.skill} changed after this was suggested.`,true);return}
  skillUpdating={review:u.review,skill:u.skill,send};$('#skill-update-title').textContent=t('Update {}?',u.skill);$('#skill-update-from').textContent=from;
- $('#skill-update-ba').innerHTML=skillBeforeAfter(u);$('#skill-update-error').textContent='';$('#skill-update-ok').disabled=false;
+ setHTML($('#skill-update-ba'),skillBeforeAfter(u));$('#skill-update-error').textContent='';$('#skill-update-ok').disabled=false;
  if(!$('#skill-update').open)$('#skill-update').showModal();
  for(const b of $('#skill-update-ba').querySelectorAll('.skill-body')){const c=b.querySelector('ins,del');b.scrollTop=c?Math.max(0,c.offsetTop-b.offsetTop-24):0}}  // each side opens at its first change
 document.addEventListener('click',e=>{const b=e.target.closest('[data-skill-update]');if(!b)return;e.preventDefault();e.stopPropagation();const id=b.dataset.skillUpdate;

@@ -22,7 +22,7 @@ const VOICE_ICON={linkedin:'linkedin',whatsapp:'whatsapp',telegram:'telegram',sl
 // The learning loop's changes (learning_loop.py): what changed, why, and Undo; an undone one stays, marked.
 const LEARN_WHAT={voice:c=>`${c.channel==='All'?'Everywhere':c.channel}: how you write`,source:()=>'Fixed at the source',draft:c=>c.before?'Rule changed':'Rule added',fact:c=>c.before?'Fact changed':'Fact added'};
 function learnChange(c){const what=(LEARN_WHAT[c.kind]||(()=>'Changed'))(c),text=String((Array.isArray(c.line)?t(...c.line):c.text)||'').split('\n').map(l=>l.trim()).filter(Boolean).join(' · ');
- return html`<div class="change-row${c.undone?' undone':''}"><span class="grow"><strong>${what}</strong><span class="change-text">${text}</span>${c.why?html`<small>${c.why}</small>`:''}<small class="change-when">${learnDay(new Date(c.at))}${c.undone?' · Undone':''}</small></span>${c.undone?'':html`<span class="learn-acts"><button type="button" class="quiet" data-learn-undo="${c.id}" aria-label="Undo: ${what}">Undo</button></span>`}</div>`}
+ return html`<div class="change-row${c.undone?html` undone`:''}"><span class="grow"><strong>${what}</strong><span class="change-text">${text}</span>${c.why?html`<small>${c.why}</small>`:''}<small class="change-when">${learnDay(new Date(c.at))}${c.undone?' · Undone':''}</small></span>${c.undone?'':html`<span class="learn-acts"><button type="button" class="quiet" data-learn-undo="${c.id}" aria-label="Undo: ${what}">Undo</button></span>`}</div>`}
 // A fact's sort and end day, quietly under it: "Temporary · Until Nov 14". A plain fact without an end shows nothing.
 const FACT_SORT={event:'Temporary',commitment:'Commitment',preference:'Preference'};
 const factUntil=d=>new Date(d+'T12:00:00').toLocaleDateString(DL,{day:'numeric',month:'short',...(d.slice(0,4)!==String(new Date().getFullYear())?{year:'numeric'}:{})});
@@ -67,19 +67,19 @@ function learnedList(){
 // scrolls near, and a quiet Show more for keyboards, screen readers and when the scroll doesn't tell. A pager keeps what
 // it loaded, so a refresh, a tab switch or going back from a card or a person shows the same rows at the same place.
 const pagers=new Map();
-function pager(key,load,row,rows){let p=pagers.get(key);if(!p){p={key,load,row,rows,items:[],next:'0',total:null,busy:false,failed:false,html:''};pagers.set(key,p)}else{p.load=load;p.row=row;p.rows=rows}return p}
+function pager(key,load,row,rows){let p=pagers.get(key);if(!p){p={key,load,row,rows,items:[],next:'0',total:null,busy:false,failed:false,html:html``};pagers.set(key,p)}else{p.load=load;p.row=row;p.rows=rows}return p}
 function pagerDrop(prefix){for(const k of [...pagers.keys()])if(k===prefix||k.startsWith(prefix+':'))pagers.delete(k)}
-const pagerSlot=(key,empty='',rows='')=>`<div class="pager" data-pager="${esc(key)}" data-empty="${esc(empty)}" data-rows="${esc(rows)}"></div>`;
+const pagerSlot=(key,empty='',rows='')=>html`<div class="pager" data-pager="${key}" data-empty="${empty}" data-rows="${rows}"></div>`;
 const pagerFoot=p=>p.busy?html`<p class="pager-loading" role="status">Loading…</p>`:p.failed?html`<button type="button" class="quiet more-rows" data-pager-more>Couldn’t load. Try again</button>`:p.next!=null?html`<button type="button" class="quiet more-rows" data-pager-more>Show more</button>`:html``;
 function pagerFootPaint(el,p){const empty=!p.items.length&&p.next==null&&!p.busy&&!p.failed;setHTML(el.querySelector('.pager-foot'),empty&&el.dataset.empty?html`<p class="muted pager-empty">${el.dataset.empty}</p>`:pagerFoot(p))}
 function pagerMount(root=document){for(const el of root.querySelectorAll('[data-pager]')){const p=pagers.get(el.dataset.pager);if(!p)continue;
- if(!el.firstChild){if(p.rows)p.html=p.rows(p.items);el.innerHTML=`<div class="pager-rows ${esc(el.dataset.rows||'')}">${p.html}</div><div class="pager-foot"></div>`;pagerSeen.observe(el.querySelector('.pager-foot'));detailsSync(el)}pagerFootPaint(el,p)}}
+ if(!el.firstChild){if(p.rows)p.html=p.rows(p.items);setHTML(el,html`<div class="pager-rows ${el.dataset.rows||''}">${p.html}</div><div class="pager-foot"></div>`);pagerSeen.observe(el.querySelector('.pager-foot'));detailsSync(el)}pagerFootPaint(el,p)}}
 const pagerNear=el=>{const f=el.querySelector('.pager-foot');if(!f||!el.offsetParent)return false;const r=f.getBoundingClientRect(),box=el.closest('.side-cards,.chat-side');return r.top<innerHeight+600&&r.bottom>-600&&!box};
 function pagerMore(key){const p=pagers.get(key);if(!p||p.next==null&&!p.busy)return Promise.resolve();if(p.busy)return p.pending;return p.pending=pagerLoad(key,p)}
 async function pagerLoad(key,p,paint=true){p.busy=true;p.failed=false;const els=()=>paint?[...document.querySelectorAll('[data-pager]')].filter(e=>e.dataset.pager===key):[];
  for(const el of els())pagerFootPaint(el,p);let fresh='';
- try{const r=await p.load(p.next);if(pagers.get(key)!==p)return;const have=new Set(p.items.map(x=>x?.id).filter(Boolean));r.items=r.items.filter(x=>!x?.id||!have.has(x.id));p.items.push(...r.items);if(p.rows){p.html=p.rows(p.items);fresh=r.items.length?null:''}else{fresh=r.items.map(x=>p.row(x)).join('');p.html+=fresh}p.next=r.next??null;p.total=r.total??p.total;p.onload?.(r.items)}catch{p.failed=true}finally{p.busy=false}
- for(const el of els()){const rows=el.querySelector('.pager-rows');if(fresh===null){if(rows)rows.innerHTML=p.html}else rows?.insertAdjacentHTML('beforeend',fresh);pagerFootPaint(el,p)}
+ try{const r=await p.load(p.next);if(pagers.get(key)!==p)return;const have=new Set(p.items.map(x=>x?.id).filter(Boolean));r.items=r.items.filter(x=>!x?.id||!have.has(x.id));p.items.push(...r.items);if(p.rows){p.html=p.rows(p.items);fresh=r.items.length?null:''}else{fresh=orEmpty(html`${r.items.map(x=>p.row(x))}`);p.html=html`${p.html}${fresh}`}p.next=r.next??null;p.total=r.total??p.total;p.onload?.(r.items)}catch{p.failed=true}finally{p.busy=false}
+ for(const el of els()){const rows=el.querySelector('.pager-rows');if(fresh===null){if(rows)setHTML(rows,p.html)}else rows?.append(htmlNodes(fresh));pagerFootPaint(el,p)}
  if(fresh)requestAnimationFrame(()=>{for(const el of els())if(pagerNear(el)){pagerMore(key);break}})}
 const pagerSeen=new IntersectionObserver(es=>{for(const e of es)if(e.isIntersecting){const el=e.target.closest('[data-pager]');if(el&&pagerNear(el))pagerMore(el.dataset.pager)}},{rootMargin:'0px 0px 600px 0px'});
 document.addEventListener('click',e=>{const b=e.target.closest('[data-pager-more]');if(!b)return;e.preventDefault();e.stopPropagation();const el=b.closest('[data-pager]'),p=pagers.get(el?.dataset.pager);if(p?.failed)p.failed=false;if(el)pagerMore(el.dataset.pager)},true);
@@ -122,16 +122,15 @@ function sideRow(x,cur){const here=id=>id===cur?html` aria-current="page"`:'';
  if(looksDone(x))return html`<a href="#chat=${x.id}" class="side-ld" title="${x.title}"${here(x.id)}><span translate="no">${x.title}</span><small>${t('Looks done')}</small></a>`;  // at the top of Done, still open
  return html`<a href="#chat=${x.id}" title="${x.title}" translate="no"${here(x.id)}>${x.title}</a>`}
 // The Done list on the Suggestions page: the same fold, a quiet to-do that opens to the list
-function doneRows(items){return doneFold(items).map(x=>x.fuFold?doneFoldCard(x):suggestionCard(x)).join('')}
+function doneRows(items){return html`${doneFold(items).map(x=>x.fuFold?doneFoldCard(x):suggestionCard(x))}`}
 function doneFoldCard(g){const open=donePageOpen.has(g.fuFold);
- return `<article class="card todo t-faint fu-done" id="${esc(g.id.replace(/[^\w-]/g,'-'))}" data-status="completed"><details data-done-fold-card="${esc(g.fuFold)}"${open?' open':''}><summary><h3 translate="no">${esc(g.title)}</h3>${doneFoldSkipped(g)?`<span class="done-fold-n">${esc(doneFoldSkipped(g))}</span>`:''}<span class="meta-side">${time(g.closed_at,true)}</span></summary>`
-  +`<ul class="fu-done-list">${g.items.map(s=>`<li><a href="#chat=${esc(s.id)}" translate="no">${esc(frName(s.follow_up))}</a><span>${esc(doneFoldWho(s))}</span><span class="muted">${esc(doneFoldWhen(s))}</span></li>`).join('')}</ul></details></article>`}
+ return html`<article class="card todo t-faint fu-done" id="${g.id.replace(/[^\w-]/g,'-')}" data-status="completed"><details data-done-fold-card="${g.fuFold}"${open?html` open`:''}><summary><h3 translate="no">${g.title}</h3>${doneFoldSkipped(g)?html`<span class="done-fold-n">${doneFoldSkipped(g)}</span>`:''}<span class="meta-side">${time(g.closed_at,true)}</span></summary><ul class="fu-done-list">${g.items.map(s=>html`<li><a href="#chat=${s.id}" translate="no">${frName(s.follow_up)}</a><span>${doneFoldWho(s)}</span><span class="muted">${doneFoldWhen(s)}</span></li>`)}</ul></details></article>`}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-done-fold]');if(!b)return;e.preventDefault();const k=b.dataset.doneFold;doneOpen.has(k)?doneOpen.delete(k):doneOpen.add(k);const inSide=!!b.closest('#side-cards');sideCards();if(chatOpen())render();
  (inSide?$('#side-cards'):document).querySelector(`[data-done-fold="${CSS.escape(k)}"]`)?.focus()});
 document.addEventListener('toggle',e=>{const d=e.target;if(!d.matches?.('[data-done-fold-card]'))return;d.open?donePageOpen.add(d.dataset.doneFoldCard):donePageOpen.delete(d.dataset.doneFoldCard)},true);
 function cardsMerge(){if(!state?.suggestions)return;const ids=new Set(state.suggestions.map(s=>s.id));for(const c of doneExtra.values())if(!ids.has(c.id))state.suggestions.push(c)}
 let doneSeen='';  // done counts and ids as last shown: when they change, the Done lists start over from the top
-const listShown={};const clipList=(id,rows,empty,n=3)=>{const k=listShown[id]||n;return rows.length?rows.slice(0,k).join('')+(rows.length>k?`<button type="button" class="quiet more-rows" data-more="${id}" data-shown="${k}">Show ${Math.min(10,rows.length-k)} more</button>`:''):empty};
+const listShown={};const clipList=(id,rows,empty,n=3)=>{const k=listShown[id]||n;return rows.length?html`${rows.slice(0,k)}${rows.length>k?html`<button type="button" class="quiet more-rows" data-more="${id}" data-shown="${k}">Show ${Math.min(10,rows.length-k)} more</button>`:''}`:empty};
 // clipList for html`` rows
 const clipHTML=(id,rows,empty,n=3)=>{const k=listShown[id]||n;return rows.length?html`${rows.slice(0,k)}${rows.length>k?html`<button type="button" class="quiet more-rows" data-more="${id}" data-shown="${k}">Show ${Math.min(10,rows.length-k)} more</button>`:''}`:html`${empty}`};
 // clipList as nodes: the first rows, then Show more; `empty` gives the nodes for no rows
@@ -171,7 +170,7 @@ function scopeSync(l){if(!l||!('todo_scope' in l)||scopeSaving)return;const v=l.
  if(v!==scopeSynced){scopeSynced=v;scopeFilter=v}}
 function scopeSet(v){if(!['all','work','personal'].includes(v))return;linkedCardId=null;scopeFilter=v;scopeSynced=v;scopeSave(v);render()}
 // When a filter is on, the list says so at its top, with the way back to All.
-const scopeNote=empty=>scopeFilter==='all'?'':`<p class="scope-note" role="status"><span>${scopeFilter==='work'?(empty?'No work to-dos':'Work only'):(empty?'No personal to-dos':'Personal only')}</span> · <button type="button" class="link" data-scope="all">Show all</button></p>`;
+const scopeNote=empty=>scopeFilter==='all'?'':html`<p class="scope-note" role="status"><span>${scopeFilter==='work'?(empty?'No work to-dos':'Work only'):(empty?'No personal to-dos':'Personal only')}</span> · <button type="button" class="link" data-scope="all">Show all</button></p>`;
 $('#suggestions').addEventListener('click',e=>{const b=e.target.closest('.scope-note [data-scope]');if(b){e.stopPropagation();scopeSet(b.dataset.scope)}});
 let linkedCardId=null;
 $('#suggestion-stats').addEventListener('click',e=>{const t=e.target.closest('[data-fold-tile]');if(t)toggleSection(t.dataset.foldTile)});
@@ -182,15 +181,15 @@ $('#suggestion-summary').addEventListener('click',e=>{const b=e.target.closest('
 const lookExpanded=new Set();  // a link to one opens Done (openCardLink)
 const LD_CLASS='looks-done';
 function lookDoneCard(s){
- return suggestionCard({...s,status:'completed',body:doneWhy(s)||s.body,handled_hint:null,outcome:null,undo_until:null,expired_at:null})
-  .replace('is-closed"','is-closed'+' '+LD_CLASS+'"').replace('data-status="completed"',`data-status="${esc(s.status)}"`)
-  .replace(/<span class="ct">[^<]*<\/span>/,`<span class="ct">${esc(t('Looks done'))}</span>`)
-  .replace(/data-choice="(?:reopen|undo)"/g,`data-ld-not="${esc(s.id)}"`)}
+ return htmlEdit(suggestionCard({...s,status:'completed',body:doneWhy(s)||s.body,handled_hint:null,outcome:null,undo_until:null,expired_at:null}),c=>{
+  [...c.querySelectorAll('[class]')].find(n=>/(^| )is-closed$/.test(n.getAttribute('class')))?.classList.add(LD_CLASS);c.querySelector('[data-status="completed"]')?.setAttribute('data-status',s.status);
+  const ct=c.querySelector('span[class="ct"]');if(ct&&!ct.children.length)ct.textContent=t('Looks done');
+  for(const b of c.querySelectorAll('[data-choice="reopen"],[data-choice="undo"]')){b.removeAttribute('data-choice');b.setAttribute('data-ld-not',s.id)}})}
 async function lookNotDone(b){const id=b.dataset.ldNot;b.disabled=true;
  try{await decidePost(id,{choice:'not_done',feedback:'',decision_id:crypto.randomUUID()});lookExpanded.delete(id);await refresh();toast(t('Back on your list. I’ll learn from it.'))}
  catch(err){errCaught(err);toast(err.message,true);await refresh().catch(()=>{})}finally{b.disabled=false}}
 function promisesList(open){const items=(state.promises||[]).filter(p=>['open','card'].includes(p.state));if(!items.length)return '';
 const pday=v=>new Date(v).toLocaleDateString(DL,{weekday:'short',day:'numeric',month:'short'});
-const row=p=>`<div class="promise"><span class="grow">${t(p.together?'With {}:':p.direction==='mine'?'To {}:':'From {}:',`<b>${esc(p.who)}</b>`)} <a class="promise-link" href="${promiseHref(p)}">${esc(p.what)}</a><small>${esc(t(p.direction==='mine'?'You said it {}':'Said {}',pday(p.made_at)))}${p.state==='card'?' · '+esc(t('a to-do now')):p.due?'':' · '+esc(new Date(p.check_at)>Date.now()?t('no date, follow-up {}',pday(p.check_at)):t('no date, checked {}',pday(p.check_at)))}</small></span>${dueChip(p)}${p.state==='open'?`<button type="button" class="quiet" data-promise="${p.id}" data-close="kept" aria-label="${esc(t('Done: {}',p.what))}">Done</button><button type="button" class="quiet" data-promise="${p.id}" data-close="dropped" aria-label="${esc(t('Not needed: {}',p.what))}">Drop</button>`:''}</div>`;
-const group=(direction,title)=>{const rows=items.filter(p=>p.direction===direction);return rows.length?`<h3 class="promise-head">${title}<span class="count">${rows.length}</span></h3>`+rows.map(row).join(''):''};
-return `<details id="promises-list" ${open?'open':''}><summary id="promises-head"><span>Promises</span><span class="count">${items.length}</span></summary>${group('mine','You promised')}${group('theirs','Promised to you')}</details>`}
+const row=p=>html`<div class="promise"><span class="grow">${htmlT(p.together?'With {}:':p.direction==='mine'?'To {}:':'From {}:',html`<b>${p.who}</b>`)} <a class="promise-link" href="${promiseHref(p)}">${p.what}</a><small>${t(p.direction==='mine'?'You said it {}':'Said {}',pday(p.made_at))}${p.state==='card'?' · '+t('a to-do now'):p.due?'':' · '+(new Date(p.check_at)>Date.now()?t('no date, follow-up {}',pday(p.check_at)):t('no date, checked {}',pday(p.check_at)))}</small></span>${dueChip(p)}${p.state==='open'?html`<button type="button" class="quiet" data-promise="${p.id}" data-close="kept" aria-label="${t('Done: {}',p.what)}">Done</button><button type="button" class="quiet" data-promise="${p.id}" data-close="dropped" aria-label="${t('Not needed: {}',p.what)}">Drop</button>`:''}</div>`;
+const group=(direction,title)=>{const rows=items.filter(p=>p.direction===direction);return rows.length?html`<h3 class="promise-head">${title}<span class="count">${rows.length}</span></h3>${rows.map(row)}`:''};
+return html`<details id="promises-list" ${open?'open':''}><summary id="promises-head"><span>Promises</span><span class="count">${items.length}</span></summary>${group('mine','You promised')}${group('theirs','Promised to you')}</details>`}

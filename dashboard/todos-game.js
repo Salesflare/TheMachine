@@ -7,8 +7,8 @@ const POKES=['Mmh… five more minutes.','I’m up! Nothing needs you right now.
 'Nobody needs you. In the nicest way.','I’m counting sheep. Electric ones.','Unsubscribe from poking?','Achievement unlocked: poked the robot.'];
 let pokes=0,pokeLine='',pokeAwake=false,pokeTimer;
 // The game is offered on the fourth poke, when the robot suggests it, not before.
-const PLAY_AFTER=POKES.length,PLAY_BUTTON='<button class="play" type="button">▶ Play a mini game <small>Catch the Zzz · 20s</small></button>';
-function poke(){if(pokes<POKES.length)pokeLine=POKES[pokes];else{let next;do next=POKE_MORE[Math.floor(Math.random()*POKE_MORE.length)];while(next===pokeLine);pokeLine=next}pokes++;pokeAwake=true;localStorage.setItem('pokes-total',(+localStorage.getItem('pokes-total')||0)+1);$('#suggestions .poke-hint')?.remove();if(pokes>=PLAY_AFTER&&!$('#suggestions .all-clear .play'))$('#suggestions .all-clear')?.insertAdjacentHTML('beforeend',PLAY_BUTTON);
+const PLAY_AFTER=POKES.length,PLAY_BUTTON=html`<button class="play" type="button">▶ Play a mini game <small>Catch the Zzz · 20s</small></button>`;
+function poke(){if(pokes<POKES.length)pokeLine=POKES[pokes];else{let next;do next=POKE_MORE[Math.floor(Math.random()*POKE_MORE.length)];while(next===pokeLine);pokeLine=next}pokes++;pokeAwake=true;localStorage.setItem('pokes-total',(+localStorage.getItem('pokes-total')||0)+1);$('#suggestions .poke-hint')?.remove();if(pokes>=PLAY_AFTER&&!$('#suggestions .all-clear .play'))$('#suggestions .all-clear')?.append(htmlNodes(PLAY_BUTTON));
 const img=$('#suggestions .all-clear img.sleepy'),line=$('#suggestions .poke-line');if(line)line.textContent=pokeLine;if(img){img.src='brand/wave.webp';img.classList.remove('wobble');void img.offsetWidth;img.classList.add('wobble')}
 clearTimeout(pokeTimer);pokeTimer=setTimeout(()=>{pokeAwake=false;pokeLine='';const i=$('#suggestions .all-clear img.sleepy'),l=$('#suggestions .poke-line');if(i)i.src='brand/sleepy.webp';if(l)l.textContent=clearLine()},6000)}
 // All clear says what was read and what's next, so an empty list reads as quiet, not stuck: a quiet mailbox has little to do

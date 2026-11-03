@@ -7,7 +7,7 @@ const ACT_KINDS=[['messages','Messages'],['docs','Docs'],['calendar','Calendar']
 const act={filter:'',items:[],next:null,kinds:[],busy:false,error:false,at:0,seq:0},actFleet={items:null,at:0,busy:false};
 SETTINGS_OF['settings-activity']='activity';HELP_FOR.activity='activity';
 {const d=document.createElement('div');d.id='settings-activity';
- d.innerHTML=`<div class="section-head"><h2>Activity</h2><p>Everything The Machine did for you, newest first. <a class="learn" href="${HELP}activity" target="_blank" rel="noopener">Learn more</a></p></div><div class="act-bar"><select id="act-filter" aria-label="Show"></select></div><ol class="act-list" id="act-list" aria-live="polite"></ol><button type="button" class="ghost act-more" id="act-more" hidden>Show more</button>`;
+ setHTML(d,html`<div class="section-head"><h2>Activity</h2><p>Everything The Machine did for you, newest first. <a class="learn" href="${HELP}activity" target="_blank" rel="noopener">Learn more</a></p></div><div class="act-bar"><select id="act-filter" aria-label="Show"></select></div><ol class="act-list" id="act-list" aria-live="polite"></ol><button type="button" class="ghost act-more" id="act-more" hidden>Show more</button>`);
  $('#settings-support').after(d)}
 // Support access's looks (hosted: the control plane; self-hosted: through the Fleet), as lines of this list
 const actLooks=()=>(saData?.accesses||[]).map(a=>({id:'access:'+a.at,kind:'access',at:a.at,what:t(a.what),outcome:a.refused?'refused':'done',status:a.refused?t('Refused'):'',where:null,by:null,todo:null}));
@@ -19,11 +19,9 @@ async function actLoad(more){const f=act.filter,seq=++act.seq;act.busy=true;actD
  catch(e){errCaught(e);if(seq===act.seq)act.error=true}
  finally{if(seq===act.seq){act.busy=false;actDraw()}}}
 // One line: what, its outcome, then when · where · who started it; its to-do; a learning's Withdraw and what went
-function actRow(x){const meta=[fmtHM(x.at),x.where,x.by].filter(Boolean).map(esc).join(' · '),sent=x.sent||{};
- const what=[sent.example?`<p>${esc(t('Example: {}',sent.example))}</p>`:'',...(sent.use_cases||[]).map(c=>`<p class="fine">${esc(c)}</p>`),sent.log?`<pre>${esc(sent.log)}</pre>`:''].join('');
- return `<li class="act-row act-${esc(x.outcome||'done')}"><div class="act-top"><span class="act-what">${esc(x.what)}</span>${x.status?`<span class="act-status">${esc(x.status)}</span>`:''}</div><small class="act-meta">${meta}</small>`
-  +(x.detail?`<small class="act-meta">${esc(x.detail)}</small>`:'')+(what?`<details class="act-sent"><summary>${esc(t('What was sent'))}</summary>${what}</details>`:'')
-  +(x.todo||x.withdraw||actUndoable(x)||actDecidable(x)?`<div class="act-acts">${x.todo?`<button type="button" class="link act-todo" data-act-todo="${esc(x.todo.id)}"><span class="ell">${esc(t('To-do: {}',x.todo.title||t('(no title)')))}</span></button>`:''}${x.withdraw?`<button type="button" class="ghost" data-tl-withdraw="${esc(x.withdraw.id)}" data-n="${esc(x.withdraw.n)}">${esc(t('Withdraw'))}</button>`:''}${actUndoable(x)?`<button type="button" class="ghost" data-act-undo="${esc(x.undo.action)}" data-id="${esc(x.undo.id)}">${esc(t('Undo'))}</button>`:''}${actDecidable(x)?`<button type="button" class="primary" data-act-decide="${esc(x.decide.apply)}" data-id="${esc(x.decide.id)}">${esc(t('Apply'))}</button><button type="button" class="ghost" data-act-decide="${esc(x.decide.dismiss)}" data-id="${esc(x.decide.id)}">${esc(t('Dismiss'))}</button>`:''}</div>`:'')+'</li>'}
+function actRow(x){const meta=[fmtHM(x.at),x.where,x.by].filter(Boolean).join(' · '),sent=x.sent||{};
+ const what=orEmpty(html`${[sent.example?html`<p>${t('Example: {}',sent.example)}</p>`:'',...(sent.use_cases||[]).map(c=>html`<p class="fine">${c}</p>`),sent.log?html`<pre>${sent.log}</pre>`:'']}`);
+ return html`<li class="act-row act-${x.outcome||'done'}"><div class="act-top"><span class="act-what">${x.what}</span>${x.status?html`<span class="act-status">${x.status}</span>`:''}</div><small class="act-meta">${meta}</small>${x.detail?html`<small class="act-meta">${x.detail}</small>`:''}${what?html`<details class="act-sent"><summary>${t('What was sent')}</summary>${what}</details>`:''}${x.todo||x.withdraw||actUndoable(x)||actDecidable(x)?html`<div class="act-acts">${x.todo?html`<button type="button" class="link act-todo" data-act-todo="${x.todo.id}"><span class="ell">${t('To-do: {}',x.todo.title||t('(no title)'))}</span></button>`:''}${x.withdraw?html`<button type="button" class="ghost" data-tl-withdraw="${x.withdraw.id}" data-n="${x.withdraw.n}">${t('Withdraw')}</button>`:''}${actUndoable(x)?html`<button type="button" class="ghost" data-act-undo="${x.undo.action}" data-id="${x.undo.id}">${t('Undo')}</button>`:''}${actDecidable(x)?html`<button type="button" class="primary" data-act-decide="${x.decide.apply}" data-id="${x.decide.id}">${t('Apply')}</button><button type="button" class="ghost" data-act-decide="${x.decide.dismiss}" data-id="${x.decide.id}">${t('Dismiss')}</button>`:''}</div>`:''}</li>`}
 // Undo on a line: the action it names takes it back (only the ones listed here, each an owner's dashboard action)
 const ACT_UNDO=new Set(['ai_undo']),actUndoable=x=>!!x.undo&&ACT_UNDO.has(x.undo.action);
 async function actUndo(b){if(!ACT_UNDO.has(b.dataset.actUndo))return;b.disabled=true;
@@ -35,17 +33,17 @@ const ACT_DECIDE=new Set(['ai_apply','ai_dismiss']),actDecidable=x=>!!x.decide&&
 async function actDecide(b){const a=b.dataset.actDecide;if(!ACT_DECIDE.has(a))return;for(const x of b.parentElement.querySelectorAll('button'))x.disabled=true;
  try{await sharePost(a,{id:+b.dataset.id});toast(t(a==='ai_apply'?'Applied.':'Not applied.'));actChanged();if(typeof aiActivityReload==='function')aiActivityReload()}
  catch(err){errCaught(err);for(const x of b.parentElement.querySelectorAll('button'))x.disabled=false;toast(err.message,true)}}
-function actRows(items){let day='',h='';for(const x of items){const d=new Date(x.at);if(isNaN(d))continue;const k=localDay(d);if(k!==day){day=k;h+=`<li class="act-day">${esc(t(humanDay(d)))}</li>`}h+=actRow(x)}return h}
+function actRows(items){let day='',h='';for(const x of items){const d=new Date(x.at);if(isNaN(d))continue;const k=localDay(d);if(k!==day){day=k;h=html`${h}${html`<li class="act-day">${t(humanDay(d))}</li>`}`}h=html`${h}${actRow(x)}`}return h}
 // Lines by time: the page's own, and Support access's looks back to the oldest line loaded (all of them at the end)
 function actMerged(items,next,filter){const looks=['','access','refused'].includes(filter)?actLooks().filter(x=>filter!=='refused'||x.outcome==='refused'):[];
  const oldest=next==null||!items.length?'':items.at(-1).at,keep=looks.filter(x=>!oldest||Date.parse(x.at)>=Date.parse(oldest));
  return [...items,...keep].sort((a,b)=>Date.parse(b.at)-Date.parse(a.at))}
 function actDraw(){const list=$('#act-list');if(!list)return;const sel=$('#act-filter'),looks=actLooks();
  const kinds=new Set([...act.kinds,...(looks.length?['access']:[]),...(act.filter&&act.filter!=='refused'?[act.filter]:[])]);
- const opts=`<option value="">${esc(t('Everything'))}</option>`+ACT_KINDS.filter(([k])=>kinds.has(k)).map(([k,l])=>`<option value="${k}">${esc(t(l))}</option>`).join('')+`<option value="refused">${esc(t('Refused or blocked'))}</option>`;
- if(sel._opts!==opts){sel.innerHTML=opts;sel._opts=opts}sel.value=act.filter;
+ const opts=html`<option value="">${t('Everything')}</option>${ACT_KINDS.filter(([k])=>kinds.has(k)).map(([k,l])=>html`<option value="${k}">${t(l)}</option>`)}<option value="refused">${t('Refused or blocked')}</option>`;
+ if(sel._opts!==String(opts)){setHTML(sel,opts);sel._opts=String(opts)}sel.value=act.filter;
  const items=actMerged(act.items,act.next,act.filter);
- list.innerHTML=items.length?actRows(items):`<li class="act-empty muted">${esc(act.error?t('Can’t load the activity right now.'):act.busy?t('Loading…'):act.filter?t('Nothing like this yet.'):t('Nothing yet. What The Machine does for you shows here.'))}</li>`;
+ setHTML(list,items.length?actRows(items):html`<li class="act-empty muted">${act.error?t('Can’t load the activity right now.'):act.busy?t('Loading…'):act.filter?t('Nothing like this yet.'):t('Nothing yet. What The Machine does for you shows here.')}</li>`);
  $('#act-more').hidden=act.next==null;$('#act-more').disabled=act.busy}
 $('#act-filter').onchange=e=>{act.filter=e.target.value;act.items=[];act.next=null;actLoad()};
 $('#act-more').onclick=()=>actLoad(true);
@@ -63,10 +61,10 @@ $('#settings-activity').addEventListener('click',e=>{const todo=e.target.closest
 // Fleet, Activity: this list for the Fleet and learnings. fleetView compares its HTML, so the box is a fixed shell and
 // its lines are filled in place (actEmbedFill), after each fleetView render and after each read.
 function actEmbed(){if(Date.now()-actFleet.at>30000&&!actFleet.busy)actFleetLoad();
- return `<div class="fleet-box act-embed"><h3>${esc(t('What your Machine asked, answered and shared'))}</h3><p class="sub">${esc(t('Questions to and from teammates, and learnings sent to The Machine team.'))} <button type="button" class="link" data-act-all>${esc(t('All activity'))}</button></p><div class="act-embed-body"></div></div>`}
+ return html`<div class="fleet-box act-embed"><h3>${t('What your Machine asked, answered and shared')}</h3><p class="sub">${t('Questions to and from teammates, and learnings sent to The Machine team.')} <button type="button" class="link" data-act-all>${t('All activity')}</button></p><div class="act-embed-body"></div></div>`}
 function actEmbedFill(){const body=$('#fleet-view .act-embed-body');if(!body)return;const items=actFleet.items;
- const html=items==null?`<p class="muted">${esc(t('Loading…'))}</p>`:items.length?`<ol class="act-list">${actRows(items)}</ol>`:`<p class="muted">${esc(t('Nothing yet.'))}</p>`;
- if(body._html!==html){body.innerHTML=html;body._html=html}}
+ const markup=items==null?html`<p class="muted">${t('Loading…')}</p>`:items.length?html`<ol class="act-list">${actRows(items)}</ol>`:html`<p class="muted">${t('Nothing yet.')}</p>`;
+ if(body._html!==String(markup)){setHTML(body,markup);body._html=String(markup)}}
 async function actFleetLoad(){actFleet.busy=true;try{const r=await request('api/activity?kind=fleet,learnings');actFleet.items=r.items||[];actFleet.at=Date.now()}
  catch(e){errCaught(e);if(actFleet.items==null){actFleet.items=[];actFleet.at=Date.now()}}finally{actFleet.busy=false;actEmbedFill()}}
 $('#fleet-view').addEventListener('click',e=>{if(e.target.closest('[data-act-all]')){act.filter='';act.at=0;showSettings('activity');return}const todo=e.target.closest('.act-embed [data-act-todo]');if(todo){actOpenTodo(todo.dataset.actTodo);return}

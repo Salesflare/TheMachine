@@ -84,7 +84,7 @@ try{
  assert.equal(await s4.locator('.copy-why').count(),0);
  assert.equal(await s4.locator('[data-skill-create],[data-skill-update],details.skill-notes').count(),0);
  // The run's saved "Needs you: approve …" no longer holds once the skill is decided: not shown
- assert.match(await s1.evaluate(()=>suggestionCard({...state.suggestions.find(c=>c.id==='s1')??{},status:'prepared',outcome:'{"state":"needs_you","needs":"approve it"}',proposed_skill:{id:'sk_1',name:'P',description:'d',body:'1. Step one here.'}},'Ready')),/Needs you: approve it/);
+ assert.match(await s1.evaluate(()=>String(suggestionCard({...state.suggestions.find(c=>c.id==='s1')??{},status:'prepared',outcome:'{"state":"needs_you","needs":"approve it"}',proposed_skill:{id:'sk_1',name:'P',description:'d',body:'1. Step one here.'}},'Ready'))),/Needs you: approve it/);
  assert.equal(await s4.locator('.status-line').count(),0);
  assert.doesNotMatch(await s4.textContent(),/Needs you/);
  // Created (in Settings, Skills, or before the to-do closed): says so, Mark done leads, nothing to create or copy
