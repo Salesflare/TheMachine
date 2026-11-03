@@ -39,6 +39,7 @@ public class MachineShellPlugin: CAPPlugin, CAPBridgedPlugin, ASWebAuthenticatio
     private var filePreview: FilePreview?  // the open preview's data source (the controller holds it weakly)
 
     override public func load() {
+        MachineActions.shared.install()  // in front of Capacitor's notification delegate, which it set by now
         NotificationCenter.default.addObserver(self, selector: #selector(openURL(_:)), name: .capacitorOpenURL, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(becameActive), name: UIApplication.didBecomeActiveNotification, object: nil)
         loading = bridge?.webView?.observe(\.isLoading, options: [.new]) { [weak self] webView, change in
@@ -283,6 +284,7 @@ public class MachineShellPlugin: CAPPlugin, CAPBridgedPlugin, ASWebAuthenticatio
         DispatchQueue.main.async {
             guard self.onStartPage else { return call.reject("not allowed") }
             self.store.removeObject(forKey: "machine")
+            MachineNotice.forget()
             call.resolve()
         }
     }
@@ -460,6 +462,7 @@ public class MachineShellPlugin: CAPPlugin, CAPBridgedPlugin, ASWebAuthenticatio
 
     /// What the Share extension left in the app group (ShareExtension/ShareViewController.swift): read once, then gone.
     @objc private func becameActive() {
+        MachineNotice.sweep()
         guard let dir = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: MachineShellPlugin.appGroup)?
             .appendingPathComponent("share", isDirectory: true),
               let data = try? Data(contentsOf: dir.appendingPathComponent("pending.json")),
@@ -488,7 +491,9 @@ public class MachineShellPlugin: CAPPlugin, CAPBridgedPlugin, ASWebAuthenticatio
         #else
         let sandbox = false
         #endif
-        let device: [String: Any] = ["platform": "apns", "sandbox": sandbox, "label": UIDevice.current.model]
+        // fetch: the Notification Service extension shows the to-do's title and next step (Shared/MachineNotice.swift)
+        let device: [String: Any] = ["platform": "apns", "sandbox": sandbox, "label": UIDevice.current.model, "fetch": true]
+        keepSignIn(saved)
         var payload: [String: Any] = ["base": saved, "listen": true, "device": device]  // device: for a token now or later
         if let token = store.string(forKey: "pushToken") {
             payload["push"] = device.merging(["token": token]) { $1 }
@@ -501,6 +506,24 @@ public class MachineShellPlugin: CAPPlugin, CAPBridgedPlugin, ASWebAuthenticatio
               let source = Bundle.main.url(forResource: "public/inject", withExtension: "js").flatMap({ try? String(contentsOf: $0) })
         else { return }
         bridge?.webView?.evaluateJavaScript("(\(source))(\(text)); undefined", completionHandler: nil)
+    }
+}
+
+extension MachineShellPlugin {
+    /// The sign-in on the saved Machine (its cookies), for the Notification Service extension: in the app group's
+    /// keychain, on this device only.
+    func keepSignIn(_ saved: String) {
+        guard let url = URL(string: saved), let host = url.host?.lowercased(),
+              let cookies = bridge?.webView?.configuration.websiteDataStore.httpCookieStore else { return }
+        cookies.getAllCookies { all in
+            let mine = all.filter { c in
+                let domain = c.domain.lowercased()
+                let matches = domain.hasPrefix(".") ? host == String(domain.dropFirst()) || host.hasSuffix(domain) : host == domain
+                return matches && url.path.hasPrefix(c.path) && (c.expiresDate.map { $0 > Date() } ?? true)
+            }
+            let header = HTTPCookie.requestHeaderFields(with: mine)["Cookie"] ?? ""
+            DispatchQueue.global(qos: .utility).async { MachineNotice.save(machine: saved, cookies: header) }
+        }
     }
 }
 

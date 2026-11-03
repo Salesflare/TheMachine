@@ -143,6 +143,9 @@ class AppPush(unittest.TestCase):
     def test_the_app_line_says_what_is_ready_and_stays_here(self):
         self.register(fetch=True)
         self.assertIs(self.cloud.seen[0]['fetch'], True)  # Android's app shows the notification itself
+        self.app.action('app_push_register', {'platform': 'apns', 'token': 'a' * 64, 'fetch': True}, owner_dashboard=True)
+        self.assertIs(self.cloud.seen[-1]['fetch'], True)  # and the iPhone's Notification Service extension
+        self.cloud.seen.clear()
         title = 'Reply to the landlord about the listing on Main Street, with the photos and the signed lease'
         cases = [({'status': 'prepared', '_result_notice': True}, 'result', 'ready', 'Ready: '),
                  ({'status': 'accepted', 'preparation_status': 'blocked', 'preparation_reason': 'Which time?', '_result_notice': True},
@@ -232,11 +235,92 @@ class AppPush(unittest.TestCase):
             body = json.loads(r.read())
             conn.close()
             return r.status, body
-        self.assertEqual(get('/api/notice?tag=card_1'), (200, {'line': 'Ready: Pick a time with Sam'}))
-        self.assertEqual(get('/api/notice?tag=card_2'), (200, {'line': ''}))
-        self.assertEqual(get('/api/notice'), (200, {'line': ''}))
+        # a tag that is no to-do (the morning, a Fleet question): its kept line, no buttons
+        self.assertEqual(get('/api/notice?tag=card_1'), (200, {'line': 'Ready: Pick a time with Sam', 'title': 'Ready: Pick a time with Sam', 'body': '', 'actions': []}))
+        self.assertEqual(get('/api/notice?tag=card_2'), (200, {'line': '', 'title': '', 'body': '', 'actions': []}))
+        self.assertEqual(get('/api/notice'), (200, {'line': '', 'title': '', 'body': '', 'actions': []}))
+        sid = self.card('Pick a time with Sam')
+        status, notice = get('/api/notice?tag=' + sid)
+        self.assertEqual((status, notice['title'], notice['actions']), (200, 'New to-do: Pick a time with Sam', ['prepare', 'snooze', 'done']))
         with patch('sys.stderr'):
             self.assertEqual(get('/api/notice?tag=card_1', login='someone@example.com')[0], 403)
+
+    # -- what the notification says, its buttons, and taking it away
+    def event(self):
+        with self.store.connect() as db:
+            known = db.execute('SELECT id FROM events').fetchone()
+        if not known:
+            self.store.commit_page('work', {}, [{'account_id': 'work', 'source_id': 'm1', 'kind': 'gmail.message', 'occurred_at': '2026-10-20T08:00:00+00:00',
+                                                 'title': 'Invoice', 'body': 'Please pay.', 'deleted': False, 'metadata': {'thread_id': 't1'}}])
+            with self.store.connect() as db:
+                known = db.execute('SELECT id FROM events').fetchone()
+        return known[0]
+
+    def card(self, title='Pay the Monizze invoice', body='The Monizze invoice of 120 EUR is due Friday. It came by email.', **fields):
+        sid = self.store.suggest(title, title, body, [self.event()])['id']
+        with self.store.connect() as db:
+            for key, value in fields.items():
+                db.execute(f'UPDATE suggestions SET {key}=? WHERE id=?', (value, sid))
+        return sid
+
+    def test_the_notice_has_the_title_and_next_step_and_the_buttons_for_where_it_is(self):
+        new = a.app_notice(self.store, self.config, self.card())
+        self.assertEqual((new['title'], new['body'], new['actions']),
+                         ('New to-do: Pay the Monizze invoice', 'The Monizze invoice of 120 EUR is due Friday.', ['prepare', 'snooze', 'done']))
+        self.assertEqual(new['labels'], {'prepare': 'Prepare', 'snooze': 'Snooze', 'done': 'Mark done', 'open': 'Open'})
+        self.assertEqual(new['events'], {'prepare': 'Preparing it', 'snooze': 'Snoozed it', 'done': 'Marked it done',
+                                         'failed': 'Couldn’t reach your Machine. Open the app to try again.'})
+        self.assertEqual(new['line'], new['title'])  # what an older app shows
+        reply = json.dumps({'kind': 'email', 'account_id': 'work', 'to': ['Sam Lee <sam@client.example>'], 'subject': 'Re: Meeting',
+                            'body': 'Hi Sam,\n\nTuesday 10:00 works for me. See you then.', 'revision': 'r1'})
+        ready = a.app_notice(self.store, self.config, self.card('Pick a time with Sam', status='prepared', next_action=reply))
+        self.assertEqual((ready['title'], ready['body'], ready['actions']),
+                         ('Ready: Pick a time with Sam', 'Send to Sam Lee: Tuesday 10:00 works for me.', ['snooze', 'done']))
+        labelled = json.dumps({'kind': 'email', 'label': 'Reply to Sam', 'to': ['sam@client.example'], 'body': 'Confirm Tuesday 10:00.', 'revision': 'r1'})
+        self.assertEqual(a.app_notice(self.store, self.config, self.card('Meeting', status='prepared', next_action=labelled))['body'],
+                         'Reply to Sam: Confirm Tuesday 10:00.')
+        asks = a.app_notice(self.store, self.config, self.card('Book the trip', status='prepared', outcome=json.dumps({'needs': 'Which dates work?'})))
+        self.assertEqual(asks['body'], 'Which dates work?')
+        self.assertEqual(a.app_notice(self.store, self.config, self.card('Draft the plan', status='accepted'))['title'], 'Preparing: Draft the plan')
+        long = a.app_notice(self.store, self.config, self.card('Pay ' + 'the very long invoice ' * 3, 'Pay ' + 'y' * 300 + '.'))
+        self.assertLessEqual((len(long['title']), len(long['body'])), (notify.APP_LINE, a.APP_BODY))
+        for status in a.APP_GONE:
+            self.assertEqual(a.app_notice(self.store, self.config, self.card('Gone ' + status, status=status)), {'gone': True})
+
+    def test_text_in_notifications_off_the_notice_keeps_to_the_fixed_words(self):
+        with self.store.connect() as db:
+            a.security_levels.set_pref(db, 'notify_text', 'off')
+        notice = a.app_notice(self.store, self.config, self.card('Pay the secret invoice', status='prepared'))
+        self.assertEqual((notice['title'], notice['body'], notice['actions']), ('Ready', '', ['snooze', 'done']))
+        self.assertNotIn('secret', json.dumps(notice))
+
+    def test_a_todo_that_no_longer_waits_takes_its_notification_away_once(self):
+        self.register()
+        done, waiting = self.card('Done one'), self.card('Still waiting')
+        for sid in (done, waiting):
+            a.push_notify(self.store, self.config, {'id': sid, 'title': 'T', 'body': 'B', 'status': 'pending'}, self.sender)
+        with self.store.connect() as db:
+            notify.app_line_save(db, 'digest', 'Your morning')
+        self.assertEqual(a.app_clear_step(self.store, self.config), [])
+        with self.store.connect() as db:
+            db.execute("UPDATE suggestions SET status='completed' WHERE id=?", (done,))
+        self.assertEqual(a.app_clear_step(self.store, self.config), [done])
+        self.assertEqual(self.wakes()[-1], {'url': 'https://cp.example/api/fleet/app-push', 'auth': 'Bearer tok', 'action': 'wake', 'kind': 'clear', 'tag': done})
+        self.assertEqual(a.app_clear_step(self.store, self.config), [])  # once
+        with self.store.connect() as db:
+            db.execute("UPDATE suggestions SET status='snoozed' WHERE id=?", (waiting,))
+            self.assertEqual(sorted(notify.app_lines(db)), sorted(['digest', waiting]))
+        self.assertEqual(a.app_clear_step(self.store, self.config), [waiting])
+        self.assertEqual(len([w for w in self.wakes() if w['kind'] == 'clear']), 2)
+
+    def test_a_clear_with_a_broken_cloud_is_quiet(self):
+        self.register()
+        sid = self.card()
+        a.push_notify(self.store, self.config, {'id': sid, 'title': 'T', 'body': 'B', 'status': 'pending'}, self.sender)
+        self.cloud.answers['wake'] = 500
+        with self.store.connect() as db:
+            db.execute("UPDATE suggestions SET status='completed' WHERE id=?", (sid,))
+        self.assertEqual(a.app_clear_step(self.store, self.config), [sid])
 
     def test_web_push_and_app_together_and_a_broken_cloud_never_stops_web_push(self):
         self.app.action('push_subscribe', SUB, owner_dashboard=True)

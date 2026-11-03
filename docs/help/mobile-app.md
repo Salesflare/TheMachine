@@ -17,9 +17,11 @@ On a hosted Machine the app signs in with your account. On a self-hosted one, op
 
 The app asks to allow notifications when it first opens. Tap one to open its to-do. No text of a to-do passes through Apple, Google or The Machine's service: they only carry a fixed line, like "A to-do needs you".
 
-On Android the app then asks your own Machine for the to-do's title and shows it, like "Ready: Reply about the listing". When it can't reach your Machine, it says how many wait, like "2 to-dos need you".
+The app then asks your own Machine for the to-do's title and next step, like "Ready: Reply to Sam" with "Send to Sam: Tuesday 10:00 works". When it can't reach your Machine, the fixed line stays. On Android it says how many wait, like "2 to-dos need you".
 
-With **Text in notifications** off in **Settings**, **Security**, it keeps the fixed line. When your phone hides sensitive notification content on the lock screen, only the fixed line shows there. On iPhone the fixed line stays.
+A notification has **Snooze** (until tomorrow) and **Mark done**, and **Prepare** for a to-do not started yet. They work after you unlock the phone, without opening the app. Sending and final steps always open the app. One notification per to-do: "Preparing" turns into "Ready", and it goes away once the to-do is done or snoozed, here or anywhere. On iPhone that can wait until you next open the app.
+
+With **Text in notifications** off in **Settings**, **Security**, it keeps the fixed line. When your phone hides sensitive notification content on the lock screen, only the fixed line shows there.
 
 They follow the same rules as push on the web: what you picked per kind in [Notifications](notifications.md), your [work hours](work-hours.md), and nothing while you are using a dashboard.
 

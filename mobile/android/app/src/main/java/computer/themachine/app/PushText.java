@@ -10,6 +10,7 @@ import java.util.regex.Pattern;
 final class PushText {
 
     static final int LIMIT = 60;
+    static final int BODY = 120;
     static final Pattern TAG = Pattern.compile("[A-Za-z0-9_-]{1,64}");
 
     private PushText() {}
@@ -35,6 +36,45 @@ final class PushText {
     static String line(String fetched) {
         String text = clip(fetched, LIMIT);
         return text.isEmpty() ? null : text;
+    }
+
+    /** The next step under the title ("Reply to Sam: confirm Tuesday 10:00"), or "" for none. */
+    static String body(String fetched) {
+        return clip(fetched, BODY);
+    }
+
+    /**
+     * The dashboard's own decision for a notification button, or null for one the phone never does from a
+     * notification: Prepare starts a to-do not started yet, Snooze is until tomorrow, Mark done closes it. Sending and
+     * every final step open the app instead.
+     */
+    static String choice(String action) {
+        if ("prepare".equals(action)) return "accept";
+        if ("snooze".equals(action)) return "snooze";
+        if ("done".equals(action)) return "complete";
+        return null;
+    }
+
+    /** The POST api/action body for a button, as the dashboard sends it; null for anything that isn't one. */
+    static String decide(String tag, String action, String decisionId) {
+        String choice = choice(action);
+        if (choice == null || tag == null || !TAG.matcher(tag).matches() || decisionId == null || !decisionId.matches("[A-Za-z0-9-]{8,64}")) return null;
+        return "{\"action\":\"decide\",\"args\":{\"suggestion_id\":\"" + tag + "\",\"choice\":\"" + choice + "\",\"feedback\":\"\","
+            + ("snooze".equals(choice) ? "\"snooze_option\":\"tomorrow\"," : "") + "\"decision_id\":\"" + decisionId + "\"}}";
+    }
+
+    /** The Origin a button's request carries: the saved Machine's own, as its page sends (the Machine checks it). */
+    static String origin(String machine) {
+        if (machine == null || !machine.startsWith("https://")) return null;
+        int slash = machine.indexOf('/', 8);
+        String origin = slash < 0 ? machine : machine.substring(0, slash);
+        return origin.length() > 8 ? origin : null;
+    }
+
+    /** The saved Machine's address for one of its routes (api/session, api/action), or null. */
+    static String route(String machine, String path) {
+        if (machine == null || !machine.startsWith("https://") || !machine.endsWith("/")) return null;
+        return machine + path;
     }
 
     /** Where several of a kind without their line add up: one notification that says how many. */

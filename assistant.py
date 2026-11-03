@@ -13031,6 +13031,125 @@ def app_wake(store, config, kind, tag, device=None, state=None, line=None):
     return sent
 
 
+# The phone app's notification buttons (app_notice): the dashboard's own decide choices, sent by the app with the
+# owner's sign-in. Prepare only for a to-do not started yet; sending and every final step open the app instead.
+APP_BUTTONS = {'prepare': 'accept', 'snooze': 'snooze', 'done': 'complete'}
+APP_BODY = 120
+APP_GONE = ('completed', 'rejected', 'snoozed')  # no longer waiting: its phone notification goes
+
+
+def app_notice(store, config, tag):
+    """What the phone app's notification for a wakeup says (GET /api/notice): {line, title, body, actions, labels,
+    events}, or {gone: True} for a to-do no longer waiting (done, snoozed, not needed), whose notification goes.
+    title is the to-do's state and title ("Ready: Pay the Monizze invoice"), body the next step ("Reply to Sam:
+    confirm Tuesday 10:00"). With Text in notifications off (or a Careful work to-do): only the fixed words.
+    A tag that is no to-do (the morning, a Fleet question): the line kept for it (notify.app_line)."""
+    tag = str(tag or '')
+    with store.connect() as db:
+        line = notify.app_line(db, tag)
+        row = db.execute('SELECT s.*,p.status preparation_status,p.reason preparation_reason,p.error preparation_error '
+                         'FROM suggestions s LEFT JOIN preparations p ON p.suggestion_id=s.id '
+                         'WHERE s.id=?', (tag,)).fetchone() if notify.APP_ID.fullmatch(tag) else None
+        if not row:
+            return {'line': line, 'title': line, 'body': '', 'actions': []}
+        row = dict(row)
+        try:
+            ids = json.loads(row.get('account_ids') or '[]')
+        except (TypeError, ValueError):
+            ids = []
+        work = any(a['id'] in ids and str(a.get('boundary') or '').startswith('work:') for a in config.get('accounts', []))
+        text = security_levels.notify_text(db, work)
+        if row['status'] in APP_GONE:
+            return {'gone': True}
+        blocked = row.get('preparation_status') == 'blocked'
+        browser = (store.suggestion_result(row, db).get('preparation_browser') or {}) if blocked else {}
+    if row['status'] == 'prepared':
+        lead, buttons = 'Ready', ['snooze', 'done']
+    elif blocked:
+        lead = 'Needs you to sign in' if browser.get('signin_url') else 'Stuck' if row.get('preparation_error') else 'Needs your help'
+        buttons = ['snooze', 'done']
+    elif row['status'] in ('accepted', 'instructions', 'local_preparation'):
+        lead, buttons = 'Preparing', ['snooze', 'done']
+    else:
+        lead, buttons = 'New to-do', ['prepare', 'snooze', 'done']
+    t = i18n.t
+    # one key per lead, as push_notify, written out so the catalogs carry each
+    leads = {'Ready': ('Ready: {}', t('Ready')), 'Preparing': ('Preparing: {}', t('Preparing')),
+             'New to-do': ('New to-do: {}', t('New to-do')), 'Stuck': ('Stuck: {}', t('Stuck')),
+             'Needs your help': ('Needs your help: {}', t('Needs your help')),
+             'Needs you to sign in': ('Needs you to sign in: {}', t('Needs you to sign in'))}
+    title = notify.app_line_text(leads[lead][0], row['title']) if text else leads[lead][1]
+    body = notify.clip(app_next_step(row, blocked), APP_BODY) if text else ''
+    return {'line': title, 'title': title, 'body': body, 'actions': buttons,
+            'labels': {'prepare': t('Prepare'), 'snooze': t('Snooze'), 'done': t('Mark done'), 'open': t('Open')},
+            'events': {'prepare': t('Preparing it'), 'snooze': t('Snoozed it'), 'done': t('Marked it done'),
+                       'failed': t('Couldn’t reach your Machine. Open the app to try again.')}}
+
+
+def app_next_step(row, blocked=False):
+    """The next step of a to-do in one line: what it needs from the owner, the draft waiting for their OK ("Reply to
+    Sam: confirm Tuesday 10:00"), or what it is about."""
+    if blocked:
+        return plain(row.get('preparation_reason') or '')
+    try:
+        outcome = json.loads(row.get('outcome') or '{}') or {}
+    except (TypeError, ValueError):
+        outcome = {}
+    if row['status'] == 'prepared':
+        if outcome.get('needs'):
+            return plain(outcome['needs'])
+        if outcome.get('state') == 'waiting' and outcome.get('waiting_on'):
+            return i18n.t('Waiting on: {}', plain(outcome['waiting_on']))
+        try:
+            steps = next_actions.visible_actions(row.get('next_action'))
+        except (TypeError, ValueError, AttributeError):
+            steps = []
+        step = next((a for a in steps if a.get('kind') != 'open'), None)
+        if step:
+            label = plain(next_actions.label(step))
+            to = step.get('to') if isinstance(step.get('to'), list) else []
+            if label == 'Send' and to:  # a reply with no label of its own: who it goes to
+                label = i18n.t('Send to {}', str(to[0]).split('<')[0].strip().strip('"') or str(to[0]))
+            else:
+                label = i18n.t(label) if label in ('Send', 'Continue') else label
+            try:
+                draft = first_sentence(app_draft_lead(next_actions.draft_text(step))) if step.get('kind') in next_actions.APPROVE_KINDS else ''
+            except (TypeError, ValueError, KeyError, AttributeError):
+                draft = ''
+            return f'{label}: {draft}' if draft else label
+        return first_sentence(strip_result_links(row.get('body') or ''))
+    return first_sentence(row.get('body') or '')
+
+
+def app_draft_lead(text):
+    """A draft without its greeting line ("Hi Mila,"), so the notification starts with what it says."""
+    lines = [line.strip() for line in str(text or '').splitlines() if line.strip()]
+    if len(lines) > 1 and len(lines[0]) <= 40 and lines[0].endswith(','):
+        lines = lines[1:]
+    return '\n'.join(lines)
+
+
+def app_clear_step(store, config):
+    """A to-do a phone was woken for that no longer waits (done, snoozed, sent or not needed, here or anywhere): one
+    clear wakeup without text, so the app takes its notification away (app_wake 'clear'). Each tag once; a tag that
+    is no to-do (the morning, a Fleet question) stays until notify.app_line_save's own pruning."""
+    with store.connect() as db:
+        tags = notify.app_lines(db)
+        if not tags:
+            return []
+        known = {r[0]: r[1] for r in db.execute('SELECT id,status FROM suggestions WHERE id IN ('
+                                                + ','.join('?' * len(tags)) + ')', tags)}
+        gone = [tag for tag in tags if known.get(tag) in APP_GONE]
+        for tag in gone:
+            notify.app_line_forget(db, tag)
+    for tag in gone:
+        try:
+            app_wake(store, config, 'clear', tag)
+        except Exception as error:  # noqa: BLE001 - a clear is best effort
+            LOG.warning('app clear error=%s', type(error).__name__)
+    return gone
+
+
 APP_SCHEME = 'computer.themachine.app://connect?u='  # the mobile app's own link: it asks the owner, then opens the address
 
 
@@ -16843,9 +16962,10 @@ class App(*APP_MIXINS):
         target = cloud_target(self.config)
         if not target:  # self-hosted off The Machine Network: the relay doesn't know it. The app works without them.
             return {'registered': False, 'reason': 'network'}
-        # fetch: the app shows the notification itself, with the line it asks this Machine for (Android)
+        # fetch: the app shows the notification itself, with what it asks this Machine for (GET /api/notice): the Android
+        # app, and the iPhone's Notification Service extension
         answer = notify.app_push(*target, {'action': 'register', 'platform': platform, 'token': token, 'label': label,
-                                           'sandbox': args.get('sandbox') is True, 'fetch': platform == 'fcm' and args.get('fetch') is True})
+                                           'sandbox': args.get('sandbox') is True, 'fetch': args.get('fetch') is True})
         device = str((answer or {}).get('id') or '')
         if not notify.APP_ID.fullmatch(device):
             raise ValueError('Couldn’t turn on notifications for this phone. Try again.')
@@ -17605,6 +17725,7 @@ class App(*APP_MIXINS):
                 deliver(self.store, self.config)
                 self.notify_step()
                 self.digest_step()
+                app_clear_step(self.store, self.config)  # notifications on phones for what no longer waits
             except Exception as error:
                 LOG.error('delivery error=%s', type(error).__name__)
 
@@ -22922,11 +23043,10 @@ class App(*APP_MIXINS):
                     self.output(200, {'csrf': dashboard_csrf(app.token, app.config['tailscale_owner']),
                                       'cache_scope': dashboard_cache_scope(app.token, app.config['tailscale_owner'])})
                 elif path.path == '/api/notice':
-                    # The mobile app, woken by a push without text: the short line it shows for that wakeup's tag
-                    # (notify.app_line), over the owner's own sign-in, so the to-do's title never passes through the push
+                    # The mobile app, woken by a push without text: what its notification says and which buttons it
+                    # gets (app_notice), over the owner's own sign-in, so no to-do text passes through the push
                     tag = (urllib.parse.parse_qs(path.query).get('tag') or [''])[0]
-                    with app.store.connect() as db:
-                        self.output(200, {'line': notify.app_line(db, tag)})
+                    self.output(200, app_notice(app.store, app.config, tag))
                 elif path.path == '/api/status':
                     self.output(200, {**dashboard_status(app.action('status', {'full': True})), 'talk_ready': app.talk_ready(), 'ui_version': dashboard_version(), 'source_url': source_url(), 'fixed': list(getattr(getattr(app, 'fleet', None), 'fixed_now', None) or ()), 'browser_link': browser_link(app.config),
                                       'browser_embed': browser_embed(app.config, self.headers.get('Host', ''))})
