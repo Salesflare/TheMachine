@@ -9,14 +9,14 @@ import {GatewayClient} from '@openclaw/gateway-client';
 import {PROTOCOL_VERSION} from '@openclaw/gateway-protocol/version';
 import crypto from 'node:crypto';
 import {readFileSync, writeFileSync, renameSync, mkdirSync, unlinkSync} from 'node:fs';
-import {resolve, isAbsolute, join} from 'node:path';
+import {isAbsolute, join, dirname} from 'node:path';
 import {homedir} from 'node:os';
 
 const SESSION = /^agent:main:assistant-review-preparation-[a-f0-9]{32}$/;
 const SCOPES = ['operator.read'];
 // Where this helper keeps its device identity (the app's data folder) and where OpenClaw's config is: set by the
 // service in the environment, never taken from the request. Only absolute, already normal paths are used.
-const normal = path => isAbsolute(path) && resolve(path) === path;
+const normal = path => isAbsolute(path) && !path.split(/[\\/]/).slice(1).some(part => part === '' || part === '.' || part === '..');
 const STATE_DIR = process.env.ASSISTANT_STATE_DIR || '';
 const OPENCLAW_CONFIG = process.env.OPENCLAW_CONFIG_PATH || join(homedir(), '.openclaw', 'openclaw.json');
 const STATE_OK = normal(STATE_DIR) && normal(OPENCLAW_CONFIG);
@@ -26,8 +26,11 @@ const TOKEN_FILE = join(STATE_DIR, 'gateway-device-token.json');
 const parsed = text => { try { return JSON.parse(text); } catch { return null; } };
 const readDevice = () => { try { return parsed(readFileSync(DEVICE_FILE, 'utf8')); } catch { return null; } };
 const readToken = () => { try { return parsed(readFileSync(TOKEN_FILE, 'utf8')); } catch { return null; } };
-const readConfig = () => { try { return STATE_OK ? parsed(readFileSync(resolve(OPENCLAW_CONFIG), 'utf8')) : null; } catch { return null; } };
+const readConfig = () => { try { return STATE_OK ? parsed(readFileSync(OPENCLAW_CONFIG, 'utf8')) : null; } catch { return null; } };
+// Only this helper's own two files, straight in the state folder, are ever written.
+const OWN_FILES = new Set([DEVICE_FILE, TOKEN_FILE]);
 function writePrivate(path, value) {
+  if (!STATE_OK || !OWN_FILES.has(path) || dirname(path) !== STATE_DIR) throw new Error('not this helper\'s file');
   const temp = path + '.tmp';
   writeFileSync(temp, JSON.stringify(value), {mode: 0o600});
   renameSync(temp, path);
