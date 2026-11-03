@@ -185,5 +185,62 @@ class ZoomTests(unittest.TestCase):
         self.assertEqual(onboarding.missing({'credentials': {}}, ACCOUNT), 'zoom_broker url is not set')
 
 
+class ZoomThroughMaton(unittest.TestCase):
+    """A Maton Zoom connection: GET only, and the Maton key only ever goes to api.maton.ai. Maton does not grant the
+    summaries list or past-meeting instances: the latest instance of each past meeting stands in."""
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.config = {'database': str(Path(tmp.name) / 'events.sqlite'), 'credentials': {'maton-zoom': str(Path(tmp.name) / 'maton.env')}}
+        Path(self.config['credentials']['maton-zoom']).write_text('MATON_ZOOM_KEY=maton-secret\n')
+        self.store = a.Store(Path(self.config['database']))
+        self.account = {**ACCOUNT, 'transport': 'maton', 'credential': 'maton-zoom', 'credential_variable': 'MATON_ZOOM_KEY'}
+        self.helpers = types.SimpleNamespace(SourceError=a.SourceError, now=lambda: NOW, iso=a.CONNECTOR_HELPERS.iso,
+                                             credential=lambda config, name: Path(config['credentials'][name]).read_text())
+        self.calls = []
+        patch('urllib.request.urlopen', side_effect=self.respond).start()
+        self.addCleanup(patch.stopall)
+
+    def respond(self, request, timeout):
+        url = urllib.parse.urlsplit(request.full_url)
+        self.assertEqual((request.get_method(), url.netloc), ('GET', 'api.maton.ai'))
+        self.assertEqual(request.get_header('Authorization'), 'Bearer maton-secret')
+        self.calls.append(url.path)
+        path = url.path.removeprefix('/zoom/v2')
+        if path in ('/meetings/meeting_summaries', '/past_meetings/81234567890/instances'):
+            raise urllib.error.HTTPError(request.full_url, 400, 'scope', {}, None)
+        if path == '/users/me':
+            return Response(json.dumps({'id': 'h1', 'email': 'owner@acme.example'}).encode())
+        if path == '/users/me/meetings':
+            return Response(json.dumps({'meetings': [{'id': 81234567890, 'type': 2, 'start_time': '2026-10-23T08:00:00Z'},
+                                                     {'id': 11111111111, 'type': 2, 'start_time': '2026-09-01T07:00:00Z'}]}).encode())
+        if path == '/past_meetings/81234567890':
+            return Response(json.dumps({'uuid': UUID, 'start_time': '2026-10-23T08:00:00Z'}).encode())
+        encoded = urllib.parse.quote(urllib.parse.quote(UUID, safe=''), safe='')
+        if path == f'/meetings/{encoded}/meeting_summary':
+            return Response(json.dumps(SUMMARY).encode())
+        raise AssertionError('unexpected request ' + request.full_url)
+
+    def test_the_latest_instance_gives_the_summary_and_no_transcript_is_fetched(self):
+        result = zoom.sync(self.store, self.config, self.account, self.helpers)
+        self.assertEqual(result['events'], 1)
+        with self.store.connect() as db:
+            kinds = [r['kind'] for r in db.execute('SELECT kind FROM events')]
+        self.assertEqual(kinds, ['zoom.summary'])
+        self.assertNotIn('/zoom/v2/past_meetings/11111111111/instances', self.calls)  # a one-off from long before: skipped
+        self.assertFalse(any('transcript' in c or 'recordings' in c for c in self.calls))
+
+    def test_a_download_link_never_gets_the_maton_key(self):
+        source = zoom.Source(self.config, self.account, self.helpers)
+        with self.assertRaises(a.SourceError) as caught:
+            source.get('', url='https://us02web.zoom.us/rec/download/t1', raw=True)
+        self.assertEqual(caught.exception.category, 'zoom_unexpected_host')
+        self.assertEqual(self.calls, [])
+
+    def test_check_reads_who_is_signed_in_without_a_broker(self):
+        self.assertIsNone(zoom.check(self.config, self.account, self.helpers))
+        self.assertIn('/zoom/v2/users/me', self.calls)
+
+
 if __name__ == '__main__':
     unittest.main()

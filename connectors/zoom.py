@@ -14,6 +14,13 @@ refresh: the broker passes the new one back and it is kept here.
 
 The broker answers POST {"email", "refresh_token"} with {"access_token", "expires_in", "scopes", "refresh_token"}.
 
+Or through a Maton Zoom connection (as Stripe and Slack can), with the Maton key in a credential file:
+    {"id": "zoom", "service": "zoom", "transport": "maton", "boundary": "work:Acme",
+     "credential": "maton-zoom", "credential_variable": "MATON_ZOOM_KEY", "poll_seconds": 900}
+Maton does not grant the summaries list or past-meeting instances, so past meetings are listed and each one's latest
+instance is read (GET /past_meetings/{id}). Transcripts are not read: their download link is on zoom.us, which never
+gets the Maton key. The Maton key only ever goes to api.maton.ai.
+
 Scopes (granular, user level): user:read:user, meeting:read:list_summaries, meeting:read:summary,
 meeting:read:list_meetings, meeting:read:list_past_instances, cloud_recording:read:meeting_transcript.
 
@@ -44,6 +51,7 @@ SETUP = {
     'hints': {'zoom_signin_expired': 'Zoom asks you to connect again', 'zoom_broker_not_configured': 'Zoom needs a sign-in broker',
               'zoom_http:HTTP_403': 'Zoom refused: AI Companion summaries need a paid plan, and the app needs its read scopes'}}
 API = 'https://api.zoom.us/v2'
+MATON_API = 'https://api.maton.ai/zoom/v2'
 PAGE = 300
 OVERLAP_HOURS = 24  # a summary is made, or edited, a while after its meeting: reread a day back each time
 MAX_MEETINGS = 60  # per run, at most this many summaries are read (the rest next run)
@@ -101,21 +109,43 @@ def broker_token(config, account, helpers, fresh=False):
         return access
 
 
+def maton_key(config, account, helpers):
+    """The Maton key for this account: the credential file, or one VARIABLE=value line of it."""
+    try:
+        secret = helpers.credential(config, account['credential'])
+    except Exception:
+        raise helpers.SourceError('zoom_credential_unavailable') from None
+    variable = account.get('credential_variable')
+    if variable:
+        found = re.findall(r'^' + re.escape(variable) + r'=(.*)$', secret, re.M)
+        if len(found) != 1:
+            raise helpers.SourceError('zoom_credential_unavailable')
+        secret = found[0]
+    return secret.strip()
+
+
 class Source:
     def __init__(self, config, account, helpers):
         self.config, self.account, self.helpers = config, account, helpers
+        self.maton = account.get('transport') == 'maton'
 
     def get(self, path, params=None, raw=False, url=None, limit=10_000_000):
         """One GET to Zoom's API (or a transcript's download link on zoom.us). Never any other method or host."""
-        target = url or API + path + ('?' + urllib.parse.urlencode(params) if params else '')
+        if self.maton and url:
+            raise self.helpers.SourceError('zoom_unexpected_host')  # the Maton key only ever goes to Maton
+        target = url or (MATON_API if self.maton else API) + path + ('?' + urllib.parse.urlencode(params) if params else '')
         host = urllib.parse.urlsplit(target)
-        if host.scheme != 'https' or not (host.hostname == 'zoom.us' or str(host.hostname).endswith('.zoom.us')):
+        if self.maton:
+            if host.scheme != 'https' or host.hostname != 'api.maton.ai':
+                raise self.helpers.SourceError('zoom_unexpected_host')
+        elif host.scheme != 'https' or not (host.hostname == 'zoom.us' or str(host.hostname).endswith('.zoom.us')):
             raise self.helpers.SourceError('zoom_unexpected_host')
         for attempt in (0, 1):
-            token = broker_token(self.config, self.account, self.helpers, fresh=bool(attempt))
-            request = urllib.request.Request(target, method='GET', headers={'Authorization': 'Bearer ' + token,
-                                                                            'Accept': '*/*' if raw else 'application/json',
-                                                                            'User-Agent': 'TheMachine/1'})
+            token = maton_key(self.config, self.account, self.helpers) if self.maton else broker_token(self.config, self.account, self.helpers, fresh=bool(attempt))
+            headers = {'Authorization': 'Bearer ' + token, 'Accept': '*/*' if raw else 'application/json', 'User-Agent': 'TheMachine/1'}
+            if self.maton and self.account.get('connection_id'):
+                headers['Maton-Connection'] = self.account['connection_id']
+            request = urllib.request.Request(target, method='GET', headers=headers)
             try:
                 with urllib.request.urlopen(request, timeout=30) as response:
                     body = response.read(limit + 1)
@@ -125,7 +155,7 @@ class Source:
             except urllib.error.HTTPError as error:
                 retry = error.headers.get('Retry-After', '') if error.headers else ''
                 error.close()
-                if error.code == 401 and not attempt:
+                if error.code == 401 and not attempt and not self.maton:
                     continue  # the access token expired early: one fresh one
                 delay = min(3600, max(1, int(retry))) if retry.isdigit() else (60 if error.code == 429 else None)
                 raise self.helpers.SourceError('zoom_http', error.code, retry_after=delay) from None
@@ -334,7 +364,7 @@ def sync(store, config, account, helpers):
         found_edit = str(found.get('summary_last_modified_time') or edited or found.get('summary_created_time') or '')
         if key in seen and seen[key] == found_edit:
             continue
-        transcript = source.transcript(uuid) if config.get('zoom_transcripts', True) else None
+        transcript = source.transcript(uuid) if config.get('zoom_transcripts', True) and not source.maton else None
         events = events_for(account, found, transcript, helpers)
         seen[key] = found_edit or 'read'
         if len(seen) > SEEN_KEEP:

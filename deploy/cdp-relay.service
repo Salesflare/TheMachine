@@ -1,0 +1,14 @@
+# Example systemd user unit for deploy/cdp-relay.mjs (optional): one shared DevTools connection to your desktop Chrome,
+# so its "Allow remote debugging?" prompt comes once per Chrome start. Change the path if The Machine lives elsewhere.
+# Install: cp deploy/cdp-relay.service ~/.config/systemd/user/ && systemctl --user enable --now cdp-relay.service
+[Unit]
+Description=Shared DevTools connection to desktop Chrome (one Allow prompt per Chrome start)
+
+[Service]
+ExecStart=/usr/bin/env node %h/.openclaw/workspace/tools/personal-assistant/deploy/cdp-relay.mjs
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+
+[Install]
+WantedBy=default.target
