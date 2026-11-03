@@ -110,11 +110,19 @@ try{
   assert.equal(await madeBox.locator('.dw-h1').count(),1);
   if(shots)await page.locator(`#task-${madeId}`).screenshot({path:`${shots}/created-todo-${name}.png`});
   if(shots){await page.evaluate(()=>document.querySelector('#toast')?.classList.remove('show'));await page.waitForTimeout(500)}  // the earlier confirm's toast, out of the shots
-  // Made while prepared: Created in Google Docs with Open the doc, and no Review and create to press
+  // Made while prepared: Open the doc leads (a new tab), then Mark done and Ask for changes, Snooze in the …; no Review and create
   const now=page.locator(`#task-${madeNowId}`);
-  assert.match(await now.locator('.draft.doc-write .dm').textContent(),/^Created in Google Docs · Open the doc$/);
-  assert.equal(await now.locator('.draft.doc-write .dm a').getAttribute('href'),gdocUrl);
+  assert.match(await now.locator('.draft.doc-write .dm').textContent(),/^Created in Google Docs$/);
+  const row=now.locator('.actions').last(),lead=row.locator(':scope > :first-child');
+  assert.equal(await lead.textContent(),'Open the doc');
+  assert.equal(await lead.getAttribute('href'),gdocUrl);
+  assert.equal(await lead.getAttribute('target'),'_blank');
+  assert.match(await lead.getAttribute('class'),/\bprimary\b/);
+  assert.deepEqual(await row.locator(':scope > button:not([hidden])').allTextContents(),['Mark done','Ask for changes']);
+  assert.ok((await row.locator('.more-menu').textContent()).includes('Snooze'));
   assert.equal(await now.locator(`[data-smart="${madeNow.revision}"]`).count(),0);
+  // In Word, with no link to open: Mark done leads
+  assert.equal(await page.locator(`#task-${madeId} .actions .primary`).first().textContent(),'Mark done');
   assert.match(await now.textContent(),/Doc created( at \d\d:\d\d)?\./);
   if(shots)await now.screenshot({path:`${shots}/made-now-todo-${name}.png`});
   // Refused: the plain line, and Review and create to try it again

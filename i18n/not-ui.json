@@ -330,6 +330,7 @@
  "on X",
  "op is create (a new doc) or edit (a doc of this task)",
  "op is edit, use, keep or reset",
+ "open doc-open primary",
  "open project",
  "open projects",
  "other device",

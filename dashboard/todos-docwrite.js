@@ -1,6 +1,6 @@
 // A doc write (doc_writes.py) on its to-do and in the review dialog: a new doc in full, or an edit as each paragraph
 // before and after, with what goes struck through and what comes in marked. A new private doc is made while the to-do
-// is prepared and shows its link (Store.make_new_docs); an edit is written only after the owner confirms it in the
+// is prepared, and Open the doc leads its buttons (Store.make_new_docs, cardActions); an edit is written only after the owner confirms it in the
 // dialog, and only into the doc as it was when this was drafted (the server pins its version).
 const DOC_DO={create:'New doc in {}',edit:'Edit “{}” in {}'},DOC_DID={create:'Created in {}',edit:'Saved in {}'};
 const DOC_LABEL={create:'Review and create',edit:'Review changes'};
@@ -26,7 +26,7 @@ const docWriteHtml=a=>a.op==='create'?html`<p class="dw-p dw-h1">${a.title}</p>$
 const docWriteText=a=>a.op==='create'?a.title+'\n\n'+docBody(a):(a.changes||[]).map(c=>'find' in c?t('Before')+': '+c.before+'\n'+t('After')+': '+c.after:'after' in c?t('Add after “{}”',c.before)+'\n'+c.insert:t('Add at the end')+'\n'+c.append).join('\n\n');
 function docWriteBox(s,a){const st=a.state||s.action_status,done=st?.status==='sent',url=a.url||(done?st?.url:''),key='draft-'+s.id+'-'+a.revision,open=expandedBodies.has(key);
  const size=a.op==='create'?String(a.body||'').split('\n').length:(a.changes||[]).length*4,fold=size>16;
- return html`<div class="draft doc-write${done?' sent':''}${fold&&!open?' clamp':''}" role="group" aria-label="${a.op==='create'?t('New doc'):t('Doc changes')}"><div class="dm">${docHead(a,done)}${safeURL(url)?html` · <a href="${safeHref(safeURL(url))}" target="_blank" rel="noreferrer">${t('Open the doc')}</a>`:''}</div><div class="db dw">${docWriteHtml(a)}</div></div>${fold?html`<button type="button" class="more" data-more="${key}" aria-expanded="${open}">${open?'Show less':'Show more'}</button>`:''}`}
+ return html`<div class="draft doc-write${done?' sent':''}${fold&&!open?' clamp':''}" role="group" aria-label="${a.op==='create'?t('New doc'):t('Doc changes')}"><div class="dm">${docHead(a,done)}${!done&&safeURL(url)?html` · <a href="${safeHref(safeURL(url))}" target="_blank" rel="noreferrer">${t('Open the doc')}</a>`:''}</div><div class="db dw">${docWriteHtml(a)}</div></div>${fold?html`<button type="button" class="more" data-more="${key}" aria-expanded="${open}">${open?'Show less':'Show more'}</button>`:''}`}
 // The review dialog for it: everything that goes in, then Create or Save. The tap here writes it, once.
 function openDocWrite(id,draft){sendTask=id;sendRevision=draft.revision;sendDraft=draft;$('#send-editor').hidden=true;$('#send-edit').hidden=true;
  $('#send-title').textContent=draft.op==='create'?t('Create this doc?'):t('Save these changes?');$('#send-confirm').textContent=draft.op==='create'?t('Create'):t('Save');
