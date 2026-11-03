@@ -1829,12 +1829,16 @@ body:has(#talk-view:not([hidden])) .site-footer{display:none}
 .talk-head{display:flex;align-items:center;gap:12px;width:var(--chat-col);margin:0 auto}.talk-head h2{flex:1;margin:0}.talk-head button{width:auto;margin:0}
 /* The to-do sits above the transcript, in the page's flow: never over it (a sticky card covered the newest lines on a
    phone, and its draft scrolled on its own under To:) */
-.talk-about-slot{flex:none;max-height:46%;padding:14px 0 6px;overflow-y:auto;overscroll-behavior:contain}.talk-about-slot:empty{display:none}
-.talk-about{width:var(--chat-col);box-sizing:border-box;margin:0 auto;padding:12px 16px;border:1px solid var(--c-line);border-radius:14px;background:var(--surface)}
+/* The card above the transcript: its whole rounded border always in sight, at most about half of Talk; a long draft
+   scrolls inside it, fading at the bottom while there is more. The transcript starts under it. */
+.talk-about-slot{flex:none;display:flex;flex-direction:column;max-height:54%;min-height:0;padding:14px 0 10px;box-sizing:border-box}.talk-about-slot:empty{display:none}
+.talk-about{display:flex;flex-direction:column;flex:0 1 auto;min-height:0;width:var(--chat-col);box-sizing:border-box;margin:0 auto;padding:12px 16px;border:1px solid var(--c-line);border-radius:14px;background:var(--surface)}
 .talk-about-top{display:flex;align-items:baseline;justify-content:space-between;gap:12px;font-size:var(--chat-meta,.8rem);color:var(--muted)}.talk-about-top a{flex:none;color:var(--c-accent,var(--mint));font-weight:500}
-.talk-about h3{margin:4px 0 0;font-size:1rem;line-height:1.35}.talk-about .chat-draft{margin-top:10px}.talk-about .chat-clamp{display:block;-webkit-line-clamp:unset;max-height:none;overflow:visible}  /* the whole draft from its first line: no box of its own to scroll, no line clamp */
+.talk-about h3{margin:4px 0 0;font-size:1rem;line-height:1.35}.talk-about .chat-draft{display:flex;flex-direction:column;flex:0 1 auto;min-height:0;margin-top:10px}
+.talk-about .chat-clamp{display:block;flex:0 1 auto;min-height:0;-webkit-line-clamp:unset;max-height:none;overflow-y:auto;overscroll-behavior:contain}  /* the whole draft from its first line, no line clamp; it scrolls when the card is full */
+.talk-about .chat-clamp.fade-more{-webkit-mask-image:linear-gradient(to bottom,#000 calc(100% - 36px),transparent);mask-image:linear-gradient(to bottom,#000 calc(100% - 36px),transparent)}
 .talk-about-sent{margin:8px 0 0;color:var(--c-green,#188038);font-weight:600;overflow-wrap:anywhere}.talk-about-sent.failed{color:var(--orange)}
-.talk-view .chat-log{--chat-meta:.75rem;--chat-quiet:color-mix(in srgb,var(--text) 55%,var(--bg));flex:1 1 0;min-height:0;padding-top:8px;padding-bottom:8px;overflow-y:auto;overscroll-behavior:contain;line-height:1.5;-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 18px);mask-image:linear-gradient(to bottom,transparent 0,#000 18px)}  /* lines scrolled up fade out under the heading */
+.talk-view .chat-log{--chat-meta:.75rem;--chat-quiet:color-mix(in srgb,var(--text) 55%,var(--bg));flex:1 1 0;min-height:0;padding-top:8px;padding-bottom:8px;overflow-y:auto;overscroll-behavior:contain;line-height:1.5;-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 40px);mask-image:linear-gradient(to bottom,transparent 0,#000 40px)}  /* lines scrolled up fade out under the heading */
 .talk-mark{align-self:center;margin-top:26px;font-size:var(--chat-meta);color:var(--chat-quiet);text-align:center}
 /* A record the voice opened (open_record): a small card in Talk's transcript, to its own page or the meeting */
 .talk-record{align-self:stretch;display:flex;flex-direction:column;gap:2px;margin-top:14px;padding:10px 14px;border:1px solid var(--border);border-radius:12px;background:var(--surface);min-width:0}

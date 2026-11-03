@@ -487,8 +487,11 @@ function talkViewShow(){const sec=$('#talk-view');if(sec.hidden)talkBack=!$('#se
 function talkFit(){const sec=$('#talk-view');if(!sec||sec.hidden)return;const log=sec.querySelector('.talk-log'),end=!log||talkAtEnd(log);
  const vh=visualViewport?.height||innerHeight,m=getComputedStyle(sec.parentElement),below=(parseFloat(m.paddingBottom)||0)+(parseFloat(m.marginBottom)||0);
  sec.style.setProperty('--talk-h',Math.max(300,Math.floor(vh-(sec.getBoundingClientRect().top+scrollY)-below))+'px');
- if(log&&end)log.scrollTop=log.scrollHeight}
+ if(log&&end)log.scrollTop=log.scrollHeight;talkMore(sec.querySelector('.talk-about .chat-clamp'))}
 const talkAtEnd=el=>el.scrollTop+el.clientHeight>=el.scrollHeight-40;
+// The card's draft scrolls inside it: a fade at its bottom while there is more below. Read to its end, it stays there
+// when the card gains a row (Send, once the draft was seen). Its text can still lay out later, so the seen tick rechecks it.
+const talkMore=c=>{if(!c)return;if(c._end)c.scrollTop=c.scrollHeight;c.classList.toggle('fade-more',c.scrollHeight-c.scrollTop-c.clientHeight>2)};
 addEventListener('resize',()=>requestAnimationFrame(talkFit));visualViewport?.addEventListener('resize',()=>requestAnimationFrame(talkFit));
 function talkLeave(){if(!talkViewOn())return;if(talkBack==='settings')showSettings();else document.querySelector(`nav [data-tab="${talkBack}"]`)?.click()}
 function talkDraftHtml(s){const a=s.status==='prepared'?(s.next_actions||[]).find(a=>a.revision&&(['email','linkedin','slack','x','whatsapp','telegram','intercom','doc_reply'].includes(a.kind)&&a.body||a.kind==='doc_write')):null;if(!a)return '';
@@ -509,7 +512,7 @@ function talkViewPaint(){const sec=$('#talk-view');if(!sec||sec.hidden)return;co
  // At the end of the transcript, it stays there when the card changes (a draft that became "Sent to…" is much shorter)
  const slot=sec.querySelector('.talk-about-slot'),log=sec.querySelector('.talk-log');
  // The newest line stays in view as lines come and the card changes, unless the owner scrolled up to read back
- if(slot.dataset.k!==about){const end=talkAtEnd(log);slot.dataset.k=about;slot.innerHTML=about;slot.scrollTop=0;if(end)log.scrollTop=log.scrollHeight}
+ if(slot.dataset.k!==about){const end=talkAtEnd(log);slot.dataset.k=about;slot.innerHTML=about;const c=slot.querySelector('.chat-clamp');if(c){c.scrollTop=0;c.addEventListener('scroll',()=>{c._end=c.scrollTop>0&&c.scrollHeight-c.scrollTop-c.clientHeight<=2;talkMore(c)},{passive:true});new ResizeObserver(()=>talkMore(c)).observe(c)}requestAnimationFrame(()=>talkMore(c));if(end)log.scrollTop=log.scrollHeight}
  const key=talkLog.length+'|'+live;if(log.dataset.k===key)return;const end=!log.dataset.k||talkAtEnd(log);log.dataset.k=key;
  log.innerHTML=talkLog.map(x=>x.record?talkRecordHtml(x.record):x.made?`<p class="talk-mark talk-made">${esc(t('Added a to-do: {}',x.title))}</p>`:x.about?`<p class="talk-mark" translate="no">${esc(x.title)}</p>`:`<div class="chat-msg ${x.role==='user'?'you':'machine'}"><div class="bubble" translate="no">${esc(x.text)}</div></div>`).join('')
   +(!talkLog.length&&live?`<p class="talk-mark">${esc(t('Say something to start.'))}</p>`:'');
@@ -960,7 +963,7 @@ function draftSeenBoxes(){const out=[],c=chatOpen();
  if(c)for(const box of document.querySelectorAll('#chat-log .chat-draft.current')){const r=box.querySelector('[data-smart]')?.dataset.smart;if(r)out.push([box,c.id,r,box.querySelector('.chat-clamp')])}
  for(const box of document.querySelectorAll('#talk-view .talk-about .chat-draft.current')){const id=box.closest('[data-about]')?.dataset.about,r=box.querySelector('[data-smart]')?.dataset.smart;if(id&&r)out.push([box,id,r,box.querySelector('.chat-clamp')])}
  return out}
-function draftSeenTick(){if(document.hidden||!state.suggestions)return;const now=Date.now(),H=innerHeight;
+function draftSeenTick(){talkMore(document.querySelector('#talk-view .talk-about .chat-clamp'));if(document.hidden||!state.suggestions)return;const now=Date.now(),H=innerHeight;
  for(const [box,id,rev,text] of draftSeenBoxes()){const s=state.suggestions.find(x=>x.id===id),a=s?.status==='prepared'&&(s.next_actions||[]).find(x=>x.revision===rev);
   if(!a||a.kind==='doc_write'||!Array.isArray(a.to))continue;const body=String(a.body??a.message??''),key=id+'|'+rev+'|'+body;if(draftSeen.done.has(key))continue;
   const r=box.getBoundingClientRect(),el=text||box;if(!r.height||r.bottom<=0||r.top>=H||box.classList.contains('clamp')||box.closest('details:not([open])'))continue;
