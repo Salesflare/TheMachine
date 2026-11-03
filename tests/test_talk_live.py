@@ -443,6 +443,22 @@ class Api(unittest.TestCase):
         self.app._talk.status({}, True, wait=True)
         self.assertIs(self.app.talk_ready(), False)
 
+    def test_a_todo_handed_off_and_still_with_a_teammate_says_so(self):
+        """Back on the list while the teammate hasn't answered: Talk says it's with them, not that there is no draft."""
+        with self.app.store.connect() as db:
+            db.execute("CREATE TABLE IF NOT EXISTS fleet_out(id TEXT PRIMARY KEY,fleet TEXT,member_id TEXT,name TEXT,kind TEXT,question TEXT,"
+                       "context TEXT,status TEXT,answer TEXT,at TEXT,answered_at TEXT)")
+            db.execute('CREATE TABLE IF NOT EXISTS fleet_meta(key TEXT PRIMARY KEY,value TEXT)')
+            db.execute("INSERT INTO fleet_out(id,fleet,member_id,name,kind,question,context,status,answer,at) VALUES "
+                       "('q_1','f','m','Robin Vale','handoff','Book it','handoff:'||?,'asked',NULL,'2026-01-01T00:00:00+00:00')", ('b' * 16,))
+            db.execute("UPDATE suggestions SET status='prepared' WHERE id=?", ('b' * 16,))
+        talk_id = self.act('talk_start', {'main': True})['id']
+        self.act('talk_focus', {'id': talk_id, 'suggestion_id': 'b' * 16})
+        out = self.act('talk_tool', {'id': talk_id, 'name': 'todo_details', 'args': {}})['output']
+        self.assertEqual(out['with'], 'Robin')
+        self.assertIn('has not answered yet', out['with_note'])
+        self.assertIn('was handed off to them and they haven’t answered yet: say it’s with them', Path(t.__file__).read_text(encoding='utf-8'))
+
     def test_talk_reads_only_the_todo_it_opened(self):
         talk_id = self.act('talk_start', {'main': True})['id']
         self.assertIn('error', self.act('talk_tool', {'id': talk_id, 'name': 'todo_details', 'args': {}})['output'])

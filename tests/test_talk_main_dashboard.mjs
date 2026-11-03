@@ -151,6 +151,25 @@ try{
   await until(()=>lines.length>=2);assert.equal(lines.at(-1).sid,A);
   assert.equal(await page.locator(viewBar+' .talk-hint').textContent(),'','a draft on screen, but nothing asked yet');
   await page.waitForTimeout(300);await shot('m2-talk-about-a-todo');
+  // A long talk: the page stays put (the to-do fully in view under the header, the bar at the bottom); the transcript
+  // scrolls on its own, keeps the newest line in view, and leaves the owner where they are once they scroll up
+  for(let i=0;i<14;i++)await said('long'+i,'Line '+i+' of a long talk, long enough to wrap on a phone screen.',i%2?'user':'assistant');
+  await page.waitForFunction(()=>document.querySelector('#talk-view .talk-log').textContent.includes('Line 13 of'));await page.waitForTimeout(200);
+  const lay=await page.evaluate(()=>{const r=q=>document.querySelector(q).getBoundingClientRect(),log=document.querySelector('#talk-view .talk-log'),head=document.querySelector('.topbar');
+   return {page:document.documentElement.scrollHeight-innerHeight,scroll:scrollY,card:r('#talk-view .talk-about').top,head:head&&getComputedStyle(head).display!=='none'?r('.topbar').bottom:0,
+    bar:r('#talk-view .talk-foot').bottom,h:innerHeight,overflows:log.scrollHeight>log.clientHeight,end:log.scrollTop+log.clientHeight>=log.scrollHeight-2}});
+  assert.ok(lay.page<=1&&lay.scroll===0,'the page itself doesn\'t scroll in Talk '+JSON.stringify(lay));
+  assert.ok(lay.card>=lay.head,'the to-do is below the header, not under it '+JSON.stringify(lay));
+  assert.ok(lay.bar<=lay.h+1,'the bar is on screen '+JSON.stringify(lay));
+  assert.ok(lay.overflows&&lay.end,'the transcript scrolls, at its newest line '+JSON.stringify(lay));
+  await page.evaluate(()=>{document.querySelector('#talk-view .talk-log').scrollTop=0});
+  await said('long14','One more line.');await page.waitForFunction(()=>document.querySelector('#talk-view .talk-log').textContent.includes('One more line.'));
+  assert.equal(await page.evaluate(()=>document.querySelector('#talk-view .talk-log').scrollTop),0,'scrolled up to read back: it stays there');
+  await shot('m2c-a-long-talk-scrolled-up');
+  await said('long15','And the last.','assistant');await page.evaluate(()=>{const l=document.querySelector('#talk-view .talk-log');l.scrollTop=l.scrollHeight});
+  await said('long16','Back at the end, it follows.');await page.waitForFunction(()=>document.querySelector('#talk-view .talk-log').textContent.includes('it follows.'));
+  assert.ok(await page.evaluate(()=>{const l=document.querySelector('#talk-view .talk-log');return l.scrollTop+l.clientHeight>=l.scrollHeight-2}),'at the end again: it follows the newest line');
+  await shot('m2d-a-long-talk');
   if(phone){await page.evaluate(()=>drawerOpen());await page.waitForTimeout(400);await shot('m2a-the-lists-talk-sees');await page.evaluate(()=>drawerClose());await page.waitForTimeout(300)}
 
   // Sending by voice, from Talk's view: the same rules, about the draft it shows
@@ -298,7 +317,9 @@ try{
   await page.evaluate(()=>__say({type:'output_audio_buffer.stopped'}));
   await page.waitForFunction(()=>!document.querySelector('#talk-view .talk'));await until(()=>ended()===2);
   assert.equal(await page.locator('#side-talk').getAttribute('aria-pressed'),'false');
-  assert.match(await page.locator('#talk-view .talk-log').textContent(),/that was all\..*Bye for now\..*Talk ended\./s);
+  assert.match(await page.locator('#talk-view .talk-log').textContent(),/that was all\..*Bye for now\./s);
+  assert.equal(await page.locator('#talk-view .talk-foot .talk-again .talk-mark').textContent(),'Talk ended.','at the bottom, where the bar was');
+  assert.equal(await page.locator('#talk-view .talk-head button').count(),0,'the header is just Talk');
   assert.equal(await limitToast(),false,'a goodbye is not the limit');
   const again=page.locator('#talk-view .talk-again-btn');
   assert.ok(await again.evaluate(b=>parseFloat(getComputedStyle(b).borderTopWidth)>0&&getComputedStyle(b).borderRadius!=='0px'),'Start again looks like a button');
@@ -308,7 +329,7 @@ try{
   await tap('#talk-view [data-talk-main]');await live(viewBar);
   await tap(viewBar+' [data-talk-end]');await page.waitForFunction(()=>!document.querySelector('#talk-view .talk'));
   await until(()=>ended()===3);
-  assert.match(await page.locator('#talk-view .talk-log').textContent(),/Talk ended\./);
+  assert.equal(await page.locator('#talk-view .talk-again .talk-mark').textContent(),'Talk ended.');
   assert.equal(await limitToast(),false,'End is not the limit');
 
   // T, like N for New to-do: shown on the row on a computer (not in the phone drawer), starts Talk, and ends it while live

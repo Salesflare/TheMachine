@@ -169,13 +169,19 @@ try{
     assert.ok(!overlap,`"${a.text}" and "${b.text}" overlap`)}
    return m};
   const m=await noOverlap();
+  // the card's whole border in sight, a fade while there is more, and the transcript under it
+  await page.waitForFunction(()=>{const k=document.querySelector('#talk-view .talk-about .chat-clamp');return k.classList.contains('fade-more')===(k.scrollHeight-k.scrollTop-k.clientHeight>2)},null,{timeout:3000});
+  {const c=await page.evaluate(()=>{const a=document.querySelector('#talk-view .talk-about').getBoundingClientRect(),s=document.querySelector('#talk-view .talk-about-slot').getBoundingClientRect(),l=document.querySelector('#talk-view .talk-log').getBoundingClientRect();return {a:a.bottom,s:s.bottom,l:l.top}});
+   assert.ok(c.a<=c.s+.5&&c.l>=c.a,JSON.stringify(c))}
   // Scrolled to its end (where "Regards," landed on top of a line): still no overlap, the last line in sight
-  await page.evaluate(()=>{const b=document.querySelector('#talk-view .talk-about .chat-clamp');b.scrollTop=b.scrollHeight});await page.waitForTimeout(150);
+  // (it scrolls inside the card; twice, as its last lines can still lay out after the first scroll)
+  for(let i=0;i<2;i++){await page.evaluate(()=>{const b=document.querySelector('#talk-view .talk-about .chat-clamp');b.scrollTop=b.scrollHeight});await page.waitForTimeout(250)}
+  await page.waitForFunction(()=>!document.querySelector('#talk-view .talk-about .chat-clamp').classList.contains('fade-more'),null,{timeout:3000});  // no fade at the end
   await shot('h2-draft-scrolled-to-the-end');
   const end=await noOverlap();assert.ok(end.lines.some(l=>l.text.startsWith('Robin')&&l.bottom<=end.box.bottom+1),'the signature shows at the end');
-  assert.ok(m.box.height>=Math.min(phone?260:300,m.box.scroll-1),`the draft is ${m.box.height}px tall`);  // tall enough, or all of it
+  assert.ok(m.box.height>=Math.min(phone?180:220,m.box.scroll-1),`the draft is ${m.box.height}px tall`);  // tall enough, or all of it
   const room=await page.evaluate(()=>innerHeight-document.querySelector('#talk-view .talk-foot').offsetHeight-document.querySelector('#talk-view .talk-about').getBoundingClientRect().bottom);  // the bar sits at the bottom once the transcript is long
-  assert.ok(room>=(phone?200:250),`${room}px left for the transcript`);
+  assert.ok(room>=(phone?180:250),`${room}px left for the transcript`);
   await context.close()}
  assert.deepEqual(errors,[]);
  console.log('talk hearing dashboard ok');

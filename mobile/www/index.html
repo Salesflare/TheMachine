@@ -11,7 +11,7 @@
 <body>
 <main id="app" aria-live="polite">
   <section id="welcome" hidden>
-    <img class="avatar" src="img/machine.png" alt="" width="132" height="132">
+    <img class="avatar" src="img/machine.png" data-blink="img/machine-blink.png" alt="" width="132" height="132">
     <h1>The Machine</h1>
     <p class="lede" data-t="tagline"></p>
     <div class="actions">
@@ -47,12 +47,13 @@
   </section>
 
   <section id="busy" hidden>
-    <img class="avatar small" src="img/machine.png" alt="" width="88" height="88">
+    <img class="avatar small" src="img/machine.png" data-blink="img/machine-blink.png" alt="" width="88" height="88">
     <p class="lede" id="busy-text" data-t="signingIn"></p>
   </section>
 </main>
 <script src="strings.js"></script>
 <script src="machine-url.js"></script>
 <script src="app.js"></script>
+<script src="blink.js"></script>
 </body>
 </html>

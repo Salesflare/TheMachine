@@ -10,6 +10,8 @@ The dashboard installs as an app on a phone or a computer. It then sends a notif
 
 A quiet note at the top of To-dos offers both, one at a time, once you've handled your first to-do: first notifications, then the app. What's already done on that device never shows. **Not now** hides it for 14 days, and a second **Not now** stops it on that device. The same controls stay in **Settings**, **General**, **This device**.
 
+In the phone app, a short line at the top says **Get a ping when something needs you.** while its notifications are off. **Turn on** asks the phone, or opens its settings once it won't ask again. The **×** hides it for 7 days. On your first sign-in the phone asks once by itself.
+
 ## On a computer (Chrome or Edge)
 
 1. Open your dashboard and click **Install** on that note, or **Install app** in Settings.

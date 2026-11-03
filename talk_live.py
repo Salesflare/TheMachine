@@ -608,6 +608,8 @@ def main_instructions(language, now_text, languages=None):
         'to send yet.',
         '- One to-do at a time: open_todo, say in a sentence who it is from and what they want, and whether a reply is '
         'drafted. Offer to read the draft (read_draft); read it only if they want.',
+        '- One that is "with" someone was handed off to them and they haven’t answered yet: say it’s with them, not that '
+        'there is no draft, and ask if they want to check in with them or wait.',
         '- Then follow their lead: change the draft (ask_chat), snooze it, mark it done or not needed (todo_action), send '
         'it, or skip to the next one. When one is handled, move on to the next without being asked.',
         '- If they ask about another to-do, find it (list_todos, or find_todos by words or by state) and open it. Never '

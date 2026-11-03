@@ -48,6 +48,25 @@
     }
   }
 
+  // close: the Machine's browser opened on its own (a dashboard from before its in-app Browser pane, a link straight
+  // to it) fills the whole app with the stream. A floating X over it, top right, goes back to the dashboard.
+  const here = new URL(location.href).pathname.slice(new URL(base).pathname.length - 1);
+  if (/^\/browser(?:\/|$)/.test(here) && typeof document !== 'undefined' && !document.getElementById('machine-close')) {
+    const x = document.createElement('button');
+    x.id = 'machine-close';
+    x.type = 'button';
+    x.setAttribute('aria-label', 'Close the browser');
+    x.textContent = '×';
+    x.style.cssText = 'position:fixed;z-index:2147483647;top:calc(env(safe-area-inset-top) + 8px);right:calc(env(safe-area-inset-right) + 8px);' +
+      'width:44px;height:44px;margin:0;padding:0;border:0;border-radius:50%;background:rgba(20,20,20,.72);color:#fff;' +
+      'font:300 30px/44px system-ui,sans-serif;text-align:center;cursor:pointer;box-shadow:0 1px 6px rgba(0,0,0,.35);-webkit-tap-highlight-color:transparent';
+    x.addEventListener('click', () => {
+      if (history.length > 1 && document.referrer.startsWith(base)) history.back();
+      else location.replace(base);
+    });
+    (document.body || document.documentElement).appendChild(x);
+  }
+
   if (typeof payload.tag === 'string' && /^[A-Za-z0-9_-]{1,64}$/.test(payload.tag)) location.hash = 'chat=' + payload.tag;
 
   const KEY = 'machine-app-push', WEEK = 7 * 24 * 3600 * 1000;
