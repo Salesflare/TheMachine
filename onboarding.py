@@ -2703,6 +2703,18 @@ def user_md_path(workspace=None):
     return Path(workspace or os.environ.get('OPENCLAW_WORKSPACE') or home() / '.openclaw/workspace') / 'USER.md'
 
 
+USER_MD_CONTEXT_LIMIT = 40000  # reviews and Do it runs read this much (USER_MD_LIMIT in openclaw-plugin/review-recovery.ts)
+
+
+def user_md_too_long(workspace=None, limit=USER_MD_CONTEXT_LIMIT):
+    """The length of USER.md when reviews and Do it runs would leave its end out, else 0."""
+    try:
+        size = len(user_md_path(workspace).read_text().strip())
+    except (OSError, UnicodeDecodeError):
+        return 0
+    return size if size > limit else 0
+
+
 def user_md_is_template(path):
     """OpenClaw seeds USER.md with its template; that one still says nothing about the owner."""
     try:

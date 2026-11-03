@@ -21,6 +21,16 @@ for(const title of ['## Preparing accepted suggestions','## Operations','## Publ
 assert.ok(!reviewContext.includes('Read tools/personal-assistant/AGENTS.md'));
 // Context files come from a fixed list by name; a path or any other name reads nothing.
 assert.ok((await contextFile('USER','Owner')).includes('The owner prefers short answers.'));
+{ // The whole USER.md up to its cap (owner rules can be long); past it the dashboard says so (needs_you)
+ const {readFileSync,writeFileSync}=await import('node:fs');const {ownerContext,USER_MD_LIMIT}=await import('../openclaw-plugin/review-recovery.ts');
+ const file=W+'/USER.md',before=readFileSync(file,'utf8');
+ try{
+  assert.equal(USER_MD_LIMIT,40000);
+  writeFileSync(file,'x'.repeat(35000)+' LAST RULE');assert.ok((await ownerContext()).includes('LAST RULE'));
+  writeFileSync(file,'x'.repeat(41000)+' LAST RULE');const cut=await ownerContext();
+  assert.ok(!cut.includes('LAST RULE'));assert.ok(cut.includes('[…shortened]'));
+ }finally{writeFileSync(file,before)}
+}
 for(const name of ['/etc/passwd','../USER.md',W+'/USER.md','USER.md','constructor','toString'])assert.equal(await contextFile(name,'x'),'',name);
 // Review turns may only read.
 assert.equal((await hooks.before_tool_call({toolName:'browser',params:{}},ctx)).block,true);

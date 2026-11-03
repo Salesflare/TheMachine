@@ -14335,6 +14335,12 @@ def needs_you(config):
             items.append({'id': key, 'text': text, 'url': None, 'action': 'Run: ' + (fix if fix.startswith('chmod') else 'assistant doctor')})
     except OSError:
         pass
+    # USER.md past what reviews and Do it runs read: one line, so the owner shortens it instead of losing its end unseen
+    import onboarding
+    size = onboarding.user_md_too_long(config.get('openclaw_workspace') or WORKSPACE)
+    if size:
+        items.append({'id': 'user-md-long', 'text': f'Your USER.md is {size:,} characters. Reviews and Do it read the first '
+                      f'{onboarding.USER_MD_CONTEXT_LIMIT:,}, so the end is left out.', 'url': None, 'action': None})
     # `needs_you_file`: optional JSON list of notes from a hosting layer (a hosted machine), shown as they are.
     path = config.get('needs_you_file')
     if path:

@@ -1182,6 +1182,18 @@ class NeedsYou(unittest.TestCase):
         self.assertEqual(len(items), 3)
         self.assertEqual(assistant.needs_you({'accounts': []}), [])
 
+    def test_a_user_md_past_what_reviews_read_shows_once_instead_of_being_cut_unseen(self):
+        with tempfile.TemporaryDirectory() as folder:
+            user = Path(folder) / 'USER.md'
+            config = {'accounts': [], 'openclaw_workspace': folder}
+            user.write_text('Rule. ' * 6000)  # 36,000 characters: read whole
+            self.assertEqual(assistant.needs_you(config), [])
+            user.write_text('Rule. ' * 7000)
+            items = assistant.needs_you(config)
+        self.assertEqual([i['id'] for i in items], ['user-md-long'])
+        self.assertIn('41,999 characters', items[0]['text'])
+        self.assertIn('first 40,000', items[0]['text'])
+
 class BrowserFailureDiagnostics(unittest.TestCase):
     def test_fixed_codes_never_keep_page_or_account_details(self):
         for text,want in [('X read failed: web client token not found','x_query_unavailable'),
