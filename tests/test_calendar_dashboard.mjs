@@ -43,8 +43,8 @@ const promises=[
  {id:4,direction:'theirs',who:'alex morgan',what:'Send the  Q3 deck',due:day(4),state:'open',made_at:now,check_at:now},  // the same plan, seen from both sides
  {id:5,direction:'mine',who:'Evelien Smit',what:'pick up the pram after swimming',due:day(5),state:'open',made_at:now,check_at:now},  // the same thing as that day's meeting
  {id:3,direction:'theirs',who:'Kim',what:'On a card already',due:day(0),state:'card',made_at:now,check_at:now}];
-let calls=[],calendarAsks=[],calendarDown=false,failFrom=null,empty=false;
-const state=()=>({suggestions:empty?[]:cards,promises:empty?[]:promises,connectors:[{id:'cal',email:'owner@example.com',service:'calendar',status:'ok'}],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]}});
+let calls=[],calendarAsks=[],calendarDown=false,failFrom=null,empty=false,clock12=false;
+const state=()=>({...(clock12?{locale:{date_locale:'en-US',hour12:true}}:{}),suggestions:empty?[]:cards,promises:empty?[]:promises,connectors:[{id:'cal',email:'owner@example.com',service:'calendar',status:'ok'}],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]}});
 const server=createServer(async(req,res)=>{let body='';for await(const c of req)body+=c;const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(brand[url.pathname]){res.setHeader('Content-Type',url.pathname.endsWith('.png')?'image/png':'font/woff2');res.end(await readFile(new URL('../'+brand[url.pathname],import.meta.url)));return}
@@ -173,6 +173,13 @@ try{
    assert.equal(w.text,'Main Street 14 · Falcon Heavy Meeting Room');assert.ok(w.right<=width,'Where fits '+JSON.stringify(w));
    if(process.env.CALENDAR_SHOT)await page.screenshot({path:`${process.env.CALENDAR_SHOT}/calendar-${width}-${scheme}-detail.png`});await page.keyboard.press('Escape')}
   await context.close()}}
+ // A 12-hour clock: the widest time ("12:00 AM") fits its column on a phone and a computer, never clipped
+ clock12=true;
+ for(const width of [1280,390,360]){const {context,page}=await open(width,844,'light');await showCal(page);
+  const clipped=await page.locator('#calendar-view .cal-time').evaluateAll(t=>t.filter(e=>e.scrollWidth>e.clientWidth+0.5).map(e=>e.textContent));
+  assert.ok(await page.locator('#calendar-view .cal-time',{hasText:/AM|PM/}).count(),'12-hour times at '+width);
+  assert.deepEqual(clipped,[],'no clipped times at '+width);await fits(page,'agenda en-US '+width);await context.close()}
+ clock12=false;
  // Meetings that can't load: the cards stay, with one quiet line; a week with nothing: the clear state
  {calendarDown=true;const {context,page}=await open(390,844);await page.evaluate(()=>showTab('calendar'));await page.locator('.cal-note').waitFor();
   assert.equal(await page.locator('.cal-note').textContent(),'Meetings couldn’t load. To-dos and promises are here.');assert.ok(await page.locator('.cal-item',{hasText:'Send the revised quote'}).count());

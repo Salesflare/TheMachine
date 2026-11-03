@@ -2176,7 +2176,7 @@ body main{padding-top:0}
 .cal-day small{font:400 var(--fs-sm)/1 var(--sans);color:var(--c-text-3)}
 .cal-day .count{margin-left:auto;font:var(--fw-medium) var(--fs-xs)/1 var(--sans);color:var(--c-text-3);font-variant-numeric:tabular-nums}
 .cal-block.late .cal-day>span:first-child{color:var(--c-orange)}
-.cal-item{display:grid;grid-template-columns:58px 8px minmax(0,1fr) auto;align-items:center;column-gap:12px;min-height:54px;margin:0 -10px;padding:8px 10px;border-radius:var(--r-sm);color:var(--text);text-decoration:none}
+.cal-item{display:grid;grid-template-columns:minmax(64px,max-content) 8px minmax(0,1fr) auto;align-items:center;column-gap:12px;min-height:54px;margin:0 -10px;padding:8px 10px;border-radius:var(--r-sm);color:var(--text);text-decoration:none}
 .cal-item+.cal-item{box-shadow:0 -1px 0 color-mix(in srgb,var(--c-line) 60%,transparent)}
 a.cal-item:hover{background:var(--c-hover)}a.cal-item:hover+.cal-item,a.cal-item:hover{box-shadow:none}
 .cal-time{color:var(--c-text-2);font:var(--fw-medium) var(--fs-sm)/1.2 var(--sans);font-variant-numeric:tabular-nums;white-space:nowrap}
@@ -2212,7 +2212,7 @@ body:has(#calendar:not([hidden])) #page-head{position:sticky;top:0;z-index:30;ma
 .cal-more{display:flex;justify-content:center;margin:-8px 0 12px}.cal-more button{min-height:34px;color:var(--c-text-2)}
 .cal-more[data-cal-more="up"]{justify-content:flex-start;margin:-10px 0 6px}.cal-more[data-cal-more="up"] button{min-height:28px;margin:0;padding:0;background:none;color:var(--c-text-3);font-size:var(--fs-sm);font-weight:400}
 @media(hover:hover){.cal-more[data-cal-more="up"] button:hover{background:none;color:var(--text);text-decoration:underline}}
-@media(max-width:560px){.cal-item{grid-template-columns:50px 8px minmax(0,1fr) auto;column-gap:10px}.cal-end .chip{display:none}.cal-prep{display:inline;color:var(--c-text-2)}}
+@media(max-width:560px){.cal-item{column-gap:10px}.cal-end .chip{display:none}.cal-prep{display:inline;color:var(--c-text-2)}}
 /* The view switch, Agenda | Week | Month */
 .cal-mode{display:inline-flex;align-self:center;margin-left:auto;padding:3px;gap:2px;border-radius:var(--r-sm);background:var(--c-sunken)}
 .cal-mode button{min-height:30px;margin:0;padding:0 12px;border:0;border-radius:6px;background:none;box-shadow:none;color:var(--c-text-2);font:var(--fw-medium) var(--fs-sm)/1 var(--sans);cursor:pointer}
