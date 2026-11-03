@@ -151,6 +151,7 @@
  "Say which to-do: open it first, or give its id.",
  "Share {}{}",
  "Shortcut",
+ "Snoozed until {until}, the owner’s local time. Say so in a few words.",
  "Snoozed. Say so in a few words.",
  "Stages${pick?",
  "Stages{}",

@@ -11,7 +11,7 @@ keywords: talk live, voice, conversation, speak, call, realtime, openai, chatgpt
 
 In a to-do's chat, tap the wave next to the mic. Allow the microphone if your browser asks. When the bar says **Live**, talk as you would on a call. The Machine answers out loud, and you can talk over it to interrupt.
 
-It knows the to-do you're in: its messages, its draft and its chat. It can also look up your other to-dos. Say "mark this as done", "snooze it" or "not needed" and it does that itself. Say "no, not that" right after to take it back.
+It knows the to-do you're in: its messages, its draft and its chat. It can also look up your other to-dos. Say "mark this as done", "snooze it" or "not needed" and it does that itself. Say "no, not that" right after to take it back. Snooze takes any time, like "in an hour" or "tomorrow at 9", in the time zone from [Work hours](work-hours.md).
 
 It listens in your languages: the app's language and the ones your browser lists. A noise, a cough or a sound in another language gets no answer and stays out of the transcript.
 

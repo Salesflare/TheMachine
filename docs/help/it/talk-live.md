@@ -11,7 +11,7 @@ keywords: talk live, voice, conversation, speak, call, realtime, openai, chatgpt
 
 Nella chat di un’attività, tocca l’onda accanto al microfono. Consenti il microfono se il browser lo chiede. Quando la barra dice **Dal vivo**, parla come in una chiamata. The Machine risponde ad alta voce, e puoi parlarle sopra per interromperla.
 
-Conosce l’attività in cui sei: i suoi messaggi, la sua bozza e la sua chat. Può anche consultare le tue altre attività. Di' "segnala come fatta", "rimandala" o "non serve" e lo fa da sola. Di' "no, non quello" subito dopo per tornare indietro.
+Conosce l’attività in cui sei: i suoi messaggi, la sua bozza e la sua chat. Può anche consultare le tue altre attività. Di' "segnala come fatta", "rimandala" o "non serve" e lo fa da sola. Di' "no, non quello" subito dopo per tornare indietro. Rimanda a qualsiasi ora, come "tra un’ora" o "domani alle 9", nel fuso orario di [Orario di lavoro](work-hours.md).
 
 Ascolta nelle tue lingue: quella dell’app e quelle indicate dal browser. Un rumore, un colpo di tosse o un suono in un’altra lingua non riceve risposta e resta fuori dalla trascrizione.
 

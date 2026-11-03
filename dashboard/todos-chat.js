@@ -671,6 +671,14 @@ const talkGo=(id,choice,extra={},feedback='')=>{const step={choice,feedback,deci
 // was still on with it: no answer, no "the chat stopped" later.
 function talkDid(v,id,act,s){if(act==='reopen'||act==='unsnooze')v.told.delete('quiet:'+id);v.last={id,act,title:String(s?.title||'').slice(0,200),at:Date.now()};if(['mark_done','dismiss','snooze'].includes(act))talkDrop(v,id)}
 function talkDrop(v,id){if(v.relay?.sid===id)v.relay=null;if(v.sid===id)v.queue=[];v.told.add('quiet:'+id)}
+// A snooze by voice, for any time the owner says: minutes from now, or a local time the Machine reads in the owner's
+// time zone (a time without an offset is theirs, never UTC), or a preset. The time said back is local there too.
+function talkSnoozeWhen(args){const m=Math.round(Number(args.snooze_minutes)),until=String(args.snooze_until||'').trim();
+ if(m>0)return {snoozed_until:new Date(Date.now()+Math.min(m,525600)*60000).toISOString()};
+ if(until)return {snoozed_until:until};
+ return {snooze_option:['2h','tomorrow','3d','1w'].includes(args.snooze)?args.snooze:'tomorrow'}}
+const talkZone=()=>state?.hours?.timezone||Intl.DateTimeFormat().resolvedOptions().timeZone;
+function talkLocal(v){const tz=talkZone(),d=new Date(v);try{return d.toLocaleString('en-US',{timeZone:tz,weekday:'long',month:'long',day:'numeric',hour:'numeric',minute:'2-digit'})}catch{return d.toLocaleString('en-US')}}
 async function talkDo(v,args){const id=String(args.id||v.sid||''),act=String(args.action||''),s=state.suggestions?.find(x=>x.id===id);
  if(!/^[a-f0-9]{16}$/.test(id))return {error:'Say which to-do: open it first, or give its id.'};
  const say=(text,extra={})=>{refresh().catch(()=>{});talkDid(v,id,act,s);return {ok:true,...extra,note:text}};
@@ -688,8 +696,8 @@ async function talkDo(v,args){const id=String(args.id||v.sid||''),act=String(arg
   if(!open)return {error:s?'It is closed. Reopen it first.':'No open to-do with that id. Use list_todos or find_todos.'};
   if(act==='mark_done'){await go('complete');return say('Marked done. Say so in a few words.')}
   if(act==='dismiss'){await go('reject',{},String(args.why||'').trim().slice(0,1000));return say('Dismissed. Say so in a few words.')}
-  if(act==='snooze'){const until=String(args.snooze_until||''),when=until&&!isNaN(Date.parse(until))?{snoozed_until:new Date(until).toISOString()}:{snooze_option:['2h','tomorrow','3d','1w'].includes(args.snooze)?args.snooze:'tomorrow'};
-   const r=await go('snooze',when);return say('Snoozed. Say so in a few words.',r?.snoozed_until?{until:r.snoozed_until}:{})}
+  if(act==='snooze'){const r=await go('snooze',talkSnoozeWhen(args));
+   return r?.snoozed_until?say('Snoozed until {until}, the owner’s local time. Say so in a few words.'.replace('{until}',talkLocal(r.snoozed_until)),{until:talkLocal(r.snoozed_until),time_zone:talkZone()}):say('Snoozed. Say so in a few words.')}
   if(act==='unsnooze'){if(s.status!=='snoozed')return {error:'It isn’t snoozed.'};await go('accept');return say('Back on the list. Say so in a few words.')}
   if(act==='try_again'){if(s.preparation_status!=='blocked')return {error:'Nothing is stuck there.'};await go('retry');return say('Trying again. Say so in a few words.')}
   if(act==='not_done'){if(!looksDone(s))return {error:'It doesn’t look done.'};await go('not_done');return say('Back on the list. Say so in a few words.')}

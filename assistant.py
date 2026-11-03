@@ -282,6 +282,20 @@ def asked_snooze_time(value):
     return snooze_time(explicit=due.isoformat())
 
 
+def owner_snooze_until(value):
+    """A snooze time as the dashboard or Talk sent it: with an offset it stays as it is; a local time without one, or
+    a date alone, is the owner's (asked_snooze_time), never UTC."""
+    text = str(value or '').strip()
+    if not text:
+        return None
+    try:
+        if dt.datetime.fromisoformat(text).tzinfo is not None:
+            return text
+    except ValueError:
+        return text  # snooze_time says what is wrong
+    return asked_snooze_time(text)
+
+
 def hours_settings(config, changes):
     """`timezone`, `digest_at` and `work_hours` after `changes` (any of those, or the work_hours keys
     days/start/end/morning at the top level), checked; a ValueError says what is wrong."""
@@ -11128,11 +11142,19 @@ def meeting_notes_prompt(config):
             "--event <id> --field transcript --file <path>.")
 
 
+def owner_time_line():
+    """The owner's time zone and local time now, for a prompt: relative and local times are theirs, never UTC."""
+    zone = getattr(local_tz(), 'key', None) or str(local_tz())
+    local = dt.datetime.fromisoformat(now()).astimezone(local_tz()).strftime('%a %Y-%m-%d %H:%M')
+    return (f"Their time zone is {zone}; it is now {local} there. Read every time they give (in an hour, at 9, tomorrow "
+            f"morning) in that zone and write times back in it; never ask which time zone.")
+
+
 def chat_prompt(job, config=None):
     """The next turn of a card's chat, in the session that already has the card's full context: a short message, so
     a long chat doesn't resend that context with every reply. Only the job's own handles change from turn to turn."""
     j, sid = job['job_id'], job['suggestion_id']
-    return f'''The owner wrote to you in the chat of suggestion {sid}. Their message is the latest Change note (latest_feedback, source dashboard), and it is their authorization as before. {i18n.prompt_rule()} This is a preparation task: answer it, or do what it asks, under the preparation rules and the instructions earlier in this session (if they are no longer in context, read tools/personal-assistant/PREPARATION.md). A question about the thread, the people or the context is answered from the evidence (events, preparation_history, memory), and the card's current draft and next_actions stay as they are unless the message asks to change them. When you change a draft, the body says concretely what changed. Use send_now only when this message approves sending a draft they already saw on the card, unchanged; a draft you write or change now is saved without it, for them to read and Send. Preparation job ID: {j}.
+    return f'''The owner wrote to you in the chat of suggestion {sid}. Their message is the latest Change note (latest_feedback, source dashboard), and it is their authorization as before. {i18n.prompt_rule()} {owner_time_line()} This is a preparation task: answer it, or do what it asks, under the preparation rules and the instructions earlier in this session (if they are no longer in context, read tools/personal-assistant/PREPARATION.md). A question about the thread, the people or the context is answered from the evidence (events, preparation_history, memory), and the card's current draft and next_actions stay as they are unless the message asks to change them. When you change a draft, the body says concretely what changed. Use send_now only when this message approves sending a draft they already saw on the card, unchanged; a draft you write or change now is saved without it, for them to read and Send. Preparation job ID: {j}.
 - Browser lease owner: assistant-{j[:8]} (python3 {browser_lease_script(config)} claim --owner assistant-{j[:8]} --minutes 30 --wait 10).
 - Attachments folder: {WORKSPACE}/data/assistant-attachments/{j}/{calendar_prompt(config)}{doc_write_prompt(config)}{meeting_notes_prompt(config)}
 - Save with assistant_signals prepare args suggestion_id={sid}, job_id={j}, reply=<your answer to their message, short; the chat shows it>, body=<the card's status after this: where the task stands and what is ready, about the task, never a reply to them; leave it out when only answered and the status didn't change>, next_actions=[...] (the current ones again when you only answered), outcome and note_kind as the earlier instructions say (outcome answered when you only answered and no draft is waiting); or record a blocker with assistant_signals preparation_blocked args suggestion_id={sid}, job_id={j}, reason, details, and questions when only the owner can unblock it. When they say they talk to this person on another channel (WhatsApp, Telegram), switch the draft to it as PREPARATION.md says; a limit of The Machine is never a question for them. When they say the person doesn't know about it yet, the message first says what it is about.
@@ -16392,7 +16414,7 @@ class App(*APP_MIXINS):
                 feedback=CHAT_FILES_ONLY[len(files)>1]
             result=self.store.decide(args['suggestion_id'], args['choice'], feedback,
                                      args['decision_id'], source, args.get('snooze_hours', 24),
-                                     args.get('snoozed_until'), args.get('snooze_option'),terminal_job,self.is_work_suggestion(args['suggestion_id']),
+                                     owner_snooze_until(args.get('snoozed_until')), args.get('snooze_option'),terminal_job,self.is_work_suggestion(args['suggestion_id']),
                                      reviewed=str(args.get('reviewed') or '')[:64] or None, files=files)
             if args['choice'] == 'complete' and getattr(self, 'agents', None):
                 self.agents.card_closed(args['suggestion_id'])  # its Claude Code or Codex result did the job
@@ -21748,7 +21770,8 @@ class App(*APP_MIXINS):
             with self.store.connect() as db:
                 voice_prefs = voice_input.prefs(db)
             voice = voice_prefs['talk_voice']
-            now, language = time.strftime('%A %d %B %Y, %H:%M'), locale_prefs.language() or 'en'
+            # The owner's own clock and time zone (setup and Settings), never the server's: a hosted Machine runs in UTC
+            (now, zone), language = talk_live.owner_clock(), locale_prefs.language() or 'en'
             # What the owner speaks: the UI language, Voice input's language, the locale's and the browser's languages
             browser = [str(x)[:20] for x in args.get('languages') or [] if isinstance(x, str)][:8] if isinstance(args.get('languages'), list) else []
             spoken = talk_live.spoken(language, voice_prefs['language'], locale_prefs.view().get('locale'), browser)
@@ -21763,7 +21786,8 @@ class App(*APP_MIXINS):
                     'notes': {'queued': talk_live.QUEUED_NOTE, 'done': talk_live.DONE_NOTE, 'stopped': talk_live.STOPPED_NOTE, 'new': talk_live.NEW_NOTE,
                               'ready': talk_live.READY_NOTE, 'again': talk_live.AGAIN_NOTE,
                               'unheard': talk_live.UNHEARD_NOTE, 'sent': talk_live.SENT_NOTE, 'not_sent': talk_live.NOT_SENT_NOTE},
-                    'instructions': talk_live.main_instructions(language, now, spoken) if main else talk_live.instructions(card['title'], language, now, spoken),
+                    'instructions': talk_live.main_instructions(language, now, spoken, zone) if main else talk_live.instructions(card['title'], language, now, spoken, zone),
+                    'time_zone': zone,
                     'main': main, 'ready': view.get('ready')}
         if name == 'talk_focus':
             sid = str(args.get('suggestion_id') or '')

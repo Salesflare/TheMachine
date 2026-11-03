@@ -11,7 +11,7 @@ keywords: talk live, voice, conversation, speak, call, realtime, openai, chatgpt
 
 No chat de uma tarefa, toque na onda ao lado do microfone. Permita o microfone se o navegador pedir. Quando a barra mostrar **Ao vivo**, fale como numa ligação. A The Machine responde em voz alta, e você pode falar por cima para interrompê-la.
 
-Ela conhece a tarefa em que você está: as mensagens, o rascunho e o chat dela. Também pode consultar suas outras tarefas. Diga "marca como feita", "adia" ou "não precisa" e ela faz isso sozinha. Diga "não, isso não" logo depois para desfazer.
+Ela conhece a tarefa em que você está: as mensagens, o rascunho e o chat dela. Também pode consultar suas outras tarefas. Diga "marca como feita", "adia" ou "não precisa" e ela faz isso sozinha. Diga "não, isso não" logo depois para desfazer. Adiar aceita qualquer horário, como "daqui a uma hora" ou "amanhã às 9", no fuso horário de [Horário de trabalho](work-hours.md).
 
 Ouve nos seus idiomas: o do app e os que o seu navegador indica. Um ruído, uma tosse ou um som em outro idioma não recebe resposta e fica fora da transcrição.
 

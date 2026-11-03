@@ -27,6 +27,7 @@ focus, and what is said about it is kept in that to-do's chat. It ends after MAI
 Realtime session up to 60 minutes). Only the main conversation can recall what the owner said in earlier conversations
 (`recall`, knowledge.recall): those can't be cut to one to-do's area, so a to-do's own Talk doesn't have it.
 """
+import datetime as dt
 import hashlib
 import json
 import re
@@ -36,6 +37,9 @@ import threading
 import time
 import unicodedata
 from pathlib import Path
+from zoneinfo import ZoneInfo
+
+import timeutil
 
 ROOT = Path(__file__).resolve().parent
 LIMIT_SECONDS = 600          # one conversation at most; the dashboard warns a minute before
@@ -60,6 +64,16 @@ LOOKS_DONE = 'looks done'
 CLOSED = ('done', 'dismissed')
 # todo_action (the main conversation): a to-do's own buttons on the dashboard, by voice
 TODO_ACTIONS = ('mark_done', 'dismiss', 'snooze', 'unsnooze', 'reopen', 'rename', 'try_again', 'not_done')
+# How long a snooze lasts: any time the owner says, read in their own time zone (the dashboard's snooze, with
+# snoozed_until resolved by the Machine: a time without an offset is the owner's local time, never UTC).
+SNOOZE_PARAMS = {
+    'snooze_minutes': {'type': 'integer', 'minimum': 1, 'maximum': 525600,
+                       'description': 'For snooze, from now: "in 20 minutes" is 20, "in an hour" 60, "in 3 hours" 180.'},
+    'snooze_until': {'type': 'string', 'description': ('For snooze, at a moment: the owner’s local date and time, like '
+                                                       '2026-11-04T09:00, with no offset. "At 9" is the next 9:00 there.')},
+    'snooze': {'type': 'string', 'enum': ['2h', 'tomorrow', '3d', '1w'],
+               'description': 'For snooze, a preset: "tomorrow" is tomorrow morning, "next week" is 1w.'},
+}
 NONE = {'type': 'object', 'properties': {}, 'additionalProperties': False}
 TOOLS = [
     {'type': 'function', 'name': 'todo_details',
@@ -99,8 +113,7 @@ TOOLS = [
                      'for a single odd word or a sound. It never sends anything.'),
      'parameters': {'type': 'object', 'properties': {
          'action': {'type': 'string', 'enum': ['mark_done', 'dismiss', 'snooze', 'reopen']},
-         'snooze': {'type': 'string', 'enum': ['2h', 'tomorrow', '3d', '1w'], 'description': 'For snooze: how long.'},
-         'snooze_until': {'type': 'string', 'description': 'For snooze, instead: a moment, ISO 8601 with its offset.'},
+         **SNOOZE_PARAMS,
          'why': {'type': 'string', 'description': 'For dismiss: why it isn’t needed, if the owner said.'}},
          'required': ['action'], 'additionalProperties': False}},
     {'type': 'function', 'name': 'undo_last_action',
@@ -226,8 +239,7 @@ MAIN_TOOLS = [
      'parameters': {'type': 'object', 'properties': {
          'action': {'type': 'string', 'enum': list(TODO_ACTIONS)},
          'id': {'type': 'string', 'description': 'The to-do’s id. Leave out for the one in focus.'},
-         'snooze': {'type': 'string', 'enum': ['2h', 'tomorrow', '3d', '1w'], 'description': 'For snooze: how long.'},
-         'snooze_until': {'type': 'string', 'description': 'For snooze, instead: a moment, ISO 8601 with its offset.'},
+         **SNOOZE_PARAMS,
          'title': {'type': 'string', 'description': 'For rename: the new title.'},
          'why': {'type': 'string', 'description': 'For dismiss: why it isn’t needed, if the owner said.'}},
          'required': ['action'], 'additionalProperties': False}},
@@ -474,14 +486,31 @@ def hearing(languages):
             'meant for you: don’t answer them, say nothing and wait.' % said]
 
 
-def instructions(title, language, now_text, languages=None):
+def owner_clock(zone=None, at=None):
+    """The owner's local time and time zone name (setup and Settings' time zone, timeutil), for the instructions."""
+    tz = ZoneInfo(zone) if zone else timeutil.local_tz()
+    local = (at or dt.datetime.now(dt.timezone.utc)).astimezone(tz)
+    return local.strftime('%A %d %B %Y, %H:%M'), getattr(tz, 'key', None) or str(tz)
+
+
+def time_rules(zone):
+    """The owner's time zone: every time they say is local there, and so is every time said back."""
+    return ['- Times are the owner’s local time in %s: what they say ("in an hour", "at 9", "tomorrow morning") and '
+            'what you say back. Never use UTC and never ask which time zone.' % zone,
+            '- Snooze for any time they say: "in 20 minutes" or "in an hour" is snooze_minutes, "at 9" or "Friday at '
+            '2" is snooze_until in their local time, "tomorrow morning" is tomorrow. Say when it comes back.']
+
+
+def instructions(title, language, now_text=None, languages=None, zone=None):
     """The voice's instructions, laid out the way OpenAI's Realtime prompting guide suggests (short labeled sections of
     bullets, a Variety rule, pacing in words): how it sounds first, then the rules, which stay word for word."""
+    clock, own = owner_clock()
+    now_text, zone = now_text or clock, zone or own
     lang = LANGUAGE_NAMES.get(language, 'the owner’s language')
     return '\n'.join([
         '# Role',
         '- You are The Machine, a personal assistant, talking live with your owner about one of their to-dos: "%s".' % title,
-        '- It is now %s.' % now_text,
+        '- It is now %s in the owner’s time zone, %s.' % (now_text, zone),
         '',
         '# Personality and tone',
         '- Warm, relaxed and natural, like a capable friend on the phone. Confident, never fawning or formal.',
@@ -517,6 +546,7 @@ def instructions(title, language, now_text, languages=None):
         '',
         '# Tools and rules',
         '- Call todo_details before you answer anything about this to-do, and find_todos to look up others.',
+        *time_rules(zone),
         '- Nothing you say goes to anyone else.',
         '- When the owner clearly asks to mark this to-do done ("mark this as done", "it’s done"), dismiss it, snooze it '
         'or reopen it, call todo_action and say what it returns in a few words. Never hand that to the chat. A correction '
@@ -558,13 +588,15 @@ def instructions(title, language, now_text, languages=None):
     ])
 
 
-def main_instructions(language, now_text, languages=None):
+def main_instructions(language, now_text=None, languages=None, zone=None):
     """The main conversation: the same voice and rules, going through the to-dos that need the owner one by one."""
+    clock, own = owner_clock()
+    now_text, zone = now_text or clock, zone or own
     lang = LANGUAGE_NAMES.get(language, 'the owner’s language')
     return '\n'.join([
         '# Role',
         '- You are The Machine, a personal assistant, talking live with your owner to go through their to-dos together.',
-        '- It is now %s.' % now_text,
+        '- It is now %s in the owner’s time zone, %s.' % (now_text, zone),
         '',
         '# Personality and tone',
         '- Warm, relaxed and natural, like a capable friend on the phone. Confident, never fawning or formal.',
@@ -635,6 +667,7 @@ def main_instructions(language, now_text, languages=None):
         '# Tools and rules',
         '- Everything below is about the to-do that is open (open_todo). Open the right one first.',
         '- Call todo_details before you answer anything about this to-do.',
+        *time_rules(zone),
         '- todo_action does what a to-do’s buttons do: mark done, dismiss, snooze, unsnooze, reopen, rename; do_it presses '
         'its Do it. Use them when they clearly ask, then say it in a few words. Nothing you do goes to anyone else.',
         '- When the owner wants something else done in this to-do (a reply drafted or changed) or looked '

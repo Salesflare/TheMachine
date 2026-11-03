@@ -11,7 +11,7 @@ keywords: talk live, voice, conversation, speak, call, realtime, openai, chatgpt
 
 En el chat de una tarea, toca la onda junto al micro. Permite el micro si tu navegador lo pide. Cuando la barra diga **En vivo**, habla como en una llamada. The Machine responde en voz alta, y puedes hablar encima para interrumpirla.
 
-Conoce la tarea en la que estás: sus mensajes, su borrador y su chat. También puede consultar tus otras tareas. Di "márcala como hecha", "posponla" o "no hace falta" y lo hace ella misma. Di "no, eso no" justo después para deshacerlo.
+Conoce la tarea en la que estás: sus mensajes, su borrador y su chat. También puede consultar tus otras tareas. Di "márcala como hecha", "posponla" o "no hace falta" y lo hace ella misma. Di "no, eso no" justo después para deshacerlo. Pospone para cualquier momento, como "en una hora" o "mañana a las 9", en la zona horaria de [Horario laboral](work-hours.md).
 
 Escucha en tus idiomas: el de la app y los que indica tu navegador. Un ruido, una tos o un sonido en otro idioma no recibe respuesta y no queda en la transcripción.
 
