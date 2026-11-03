@@ -46,9 +46,10 @@ try{
     if(close==='scrim')await page.click('#drawer-scrim',{position:{x:width-16,y:height/2}});else await page.keyboard.press('Escape');
     await page.waitForFunction(()=>!document.documentElement.dataset.drawer);await still(page);
     assert.deepEqual(await where(page),before,'after the drawer closes ('+close+') everything is where it was '+label)}}
-  // the drawer's top: the safe area plus the room that puts its ✕ on the menu button's spot
+  // the drawer's top: the safe area (a border, so what scrolls in it never goes under the status bar) plus the room
+  // that puts its ✕ on the menu button's spot
   await page.click('#drawer-open');await still(page);
-  const d=await page.evaluate(()=>{const r=q=>document.querySelector(q).getBoundingClientRect();return {pad:parseFloat(getComputedStyle(document.querySelector('#app-side')).paddingTop),x:r('#side-toggle'),menu:r('#drawer-open')}});
+  const d=await page.evaluate(()=>{const r=q=>document.querySelector(q).getBoundingClientRect();return {pad:(s=>parseFloat(s.paddingTop)+parseFloat(s.borderTopWidth))(getComputedStyle(document.querySelector('#app-side'))),x:r('#side-toggle'),menu:r('#drawer-open')}});
   assert.equal(d.pad,safe+4,`the drawer's top is the safe area and no more (${width}, safe ${safe})`);
   assert.ok(Math.abs((d.x.top+d.x.bottom)/2-(d.menu.top+d.menu.bottom)/2)<=1,`the ✕ sits where the menu button was (${width}): `+JSON.stringify(d));
   await context.close()}

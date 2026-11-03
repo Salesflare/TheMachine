@@ -107,23 +107,44 @@ test('no sign-up, plans or prices on the start pages (accounts are made and paid
 });
 
 // www/inject.js in a fake Machine page
-function page(href, {sessionOk = true, share = false} = {}) {
+function page(href, {sessionOk = true, share = false, files = false} = {}) {
   const calls = [];
   const store = new Map();
+  const clicks = [], posted = [], toasts = [];
   const win = {
     location: {href, hash: ''},
     localStorage: {getItem: k => store.get(k) ?? null, setItem: (k, v) => store.set(k, v)},
     fetch: async (url, opts = {}) => {
       calls.push({url, method: opts.method || 'GET', headers: opts.headers || {}, body: opts.body && JSON.parse(opts.body)});
       if (url.endsWith('api/session')) return {ok: sessionOk, status: sessionOk ? 200 : 401, json: async () => ({csrf: 'c1'})};
-      return {ok: true, status: 200, json: async () => ({ok: true})};
+      if (url.includes('/api/action')) return {ok: true, status: 200, json: async () => ({ok: true, registered: true, id: 'dev_1'})};
+      if (url.includes('missing')) return {ok: false, status: 404};
+      const sent = url.includes('chat-file') ? 'attachment; filename="notes.txt"' : '';
+      return {ok: true, status: 200, headers: {get: k => k === 'Content-Disposition' ? sent : null}, blob: async () => ({size: 2, type: 'text/plain', b64: 'aGk='})};
     },
     setTimeout, atob: s => Buffer.from(s, 'base64').toString('binary'), File: class { constructor(parts, name, o) { Object.assign(this, {parts, name, type: o.type}); } },
     Uint8Array, JSON, Date, URL, String, Error, Promise, Array,
   };
   if (share) win.machineShare = d => { win.shared = d; return true; };
+  if (files) Object.assign(win, {
+    MachineFiles: {postMessage: m => posted.push(JSON.parse(m))},
+    document: {addEventListener: (type, f) => { if (type === 'click') clicks.push(f); }},
+    HTMLAnchorElement: class { click() {} },
+    FileReader: class { readAsDataURL(b) { this.result = 'data:text/plain;base64,' + b.b64; this.onload(); } },
+    toast: (text, bad) => toasts.push([text, bad]),
+    decodeURIComponent,
+  });
   const run = vm.runInNewContext('(' + fs.readFileSync(path.join(www, 'inject.js'), 'utf8') + ')', Object.assign(win, {window: win}));
-  return {win, calls, store, run};
+  // a tap on a link, as the page's own click listener sees it
+  const tap = async attrs => {
+    const a = {href: attrs.href, target: attrs.target || '', textContent: attrs.text || '', title: '', isConnected: true,
+      hasAttribute: n => n in attrs, getAttribute: n => (n in attrs ? attrs[n] : null), closest: () => a};
+    const e = {target: a, defaultPrevented: false, preventDefault() { this.defaultPrevented = true; }};
+    clicks.forEach(f => f(e));
+    await new Promise(r => setTimeout(r, 0));
+    return e.defaultPrevented;
+  };
+  return {win, calls, store, run, posted, toasts, tap};
 }
 
 test('inject: does nothing outside the saved Machine', async () => {
@@ -169,4 +190,73 @@ test('inject: a tapped notification opens its to-do, and only a plain id', async
   const q = page('https://sam.app.themachine.computer/');
   await q.run({base: 'https://sam.app.themachine.computer/', tag: 'x"><script>'});
   assert.equal(q.win.location.hash, '');
+});
+
+test('inject: keeps the phone\'s id with the token, for Settings to tell this phone', async () => {
+  const p = page('https://sam.app.themachine.computer/');
+  await p.run({base: 'https://sam.app.themachine.computer/', push: {platform: 'fcm', token: 'z'.repeat(30)}});
+  assert.equal(JSON.parse(p.store.get('machine-app-push')).id, 'dev_1');
+});
+
+test('inject: a download on the Machine goes to the app; a linked file opens there; another site\'s is left alone', async () => {
+  const base = 'https://sam.app.themachine.computer/';
+  const p = page(base, {files: true});
+  await p.run({base});
+  assert.equal(await p.tap({href: base + 'api/chat-file?id=1', download: 'list.csv'}), true);
+  assert.equal(await p.tap({href: base + 'api/chat-file?id=2', target: '_blank', text: 'shown name'}), true);
+  assert.equal(await p.tap({href: 'https://example.com/a.pdf', download: 'a.pdf'}), false);
+  assert.equal(await p.tap({href: base + '#settings', target: '_blank'}), false);
+  await new Promise(r => setTimeout(r, 5));
+  assert.deepEqual(p.posted.map(x => [x.name, x.open, x.data]), [['list.csv', false, 'aGk='], ['notes.txt', true, 'aGk=']]);
+});
+
+test('inject: a file that can\'t be fetched says so', async () => {
+  const base = 'https://sam.app.themachine.computer/';
+  const p = page(base, {files: true});
+  await p.run({base});
+  await p.tap({href: base + 'api/agent-file?path=missing.md', target: '_blank'});
+  await new Promise(r => setTimeout(r, 5));
+  assert.equal(p.posted.length, 0);
+  assert.deepEqual(p.toasts, [['That file couldn’t be read.', true]]);
+});
+
+test('inject: no file hook without the app\'s own bridge', async () => {
+  const p = page('https://sam.app.themachine.computer/');
+  await p.run({base: 'https://sam.app.themachine.computer/'});
+  assert.equal(p.win.__machineFiles, undefined);
+});
+
+// the app's MachinePhone in a fake Machine page: the phone's answers, as Android gives them
+function phone(p, answers) {
+  const asked = [];
+  p.win.MachinePhone = {postMessage: m => {
+    const q = JSON.parse(m);
+    asked.push(q.ask);
+    setTimeout(() => p.win.MachinePhone.onmessage({data: JSON.stringify({id: q.id, ...answers[q.ask]})}), 0);
+  }};
+  return asked;
+}
+
+test('inject: the phone asks about the microphone and notifications; Open settings only once it won\'t ask again', async () => {
+  const base = 'https://sam.app.themachine.computer/', device = {platform: 'fcm', label: 'Pixel'};
+  const p = page(base), asked = phone(p, {mic: {state: 'blocked'}, push: {state: 'blocked'}, pushOn: {state: 'blocked'}, settings: {state: 'ok'}});
+  await p.run({base, device});
+  assert.equal(await p.win.machinePhone.state('mic'), 'blocked');
+  assert.equal(await p.win.machinePhone.state('push'), 'blocked');
+  assert.equal(await p.win.machinePhone.pushOn(), 'blocked');
+  await p.win.machinePhone.settings();
+  assert.deepEqual(asked, ['mic', 'push', 'pushOn', 'settings']);
+  assert.equal(p.calls.length, 0);
+
+  const q = page(base);
+  phone(q, {pushOn: {state: 'on', token: 'f'.repeat(40)}});
+  await q.run({base, device});
+  assert.equal(await q.win.machinePhone.pushOn(), 'on');
+  const post = q.calls.find(c => c.method === 'POST');
+  assert.deepEqual(post.body, {action: 'app_push_register', args: {platform: 'fcm', token: 'f'.repeat(40), sandbox: false, label: 'Pixel'}});
+  assert.equal(JSON.parse(q.store.get('machine-app-push')).id, 'dev_1');
+
+  const old = page(base);
+  await old.run({base, device});
+  assert.equal(old.win.machinePhone, undefined);  // no app bridge on this address: nothing to ask with
 });

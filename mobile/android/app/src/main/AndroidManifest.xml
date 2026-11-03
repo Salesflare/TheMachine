@@ -73,6 +73,11 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Talk and dictation in the Machine's page: asked the first time, granted to the Machine's own address only -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <!-- RECORD_AUDIO would otherwise make a microphone required: phones and tablets without one keep the app -->
+    <uses-feature android:name="android.hardware.microphone" android:required="false" />
 
     <!-- The account's sign-in opens in the phone's browser (a Custom Tab) -->
     <queries>

@@ -1,7 +1,10 @@
+import AVFoundation
 import AuthenticationServices
 import Capacitor
 import CryptoKit
+import QuickLook
 import UIKit
+import UserNotifications
 import WebKit
 
 /// The app's whole native part on iOS, the same as android/.../MachineShellPlugin.java (mobile/README.md): where the
@@ -32,6 +35,8 @@ public class MachineShellPlugin: CAPPlugin, CAPBridgedPlugin, ASWebAuthenticatio
     private var session: ASWebAuthenticationSession?
     private var loading: NSKeyValueObservation?
     private var pendingShare: [String: Any]?
+    private var mediaGate: MediaGate?
+    private var filePreview: FilePreview?  // the open preview's data source (the controller holds it weakly)
 
     override public func load() {
         NotificationCenter.default.addObserver(self, selector: #selector(openURL(_:)), name: .capacitorOpenURL, object: nil)
@@ -39,6 +44,47 @@ public class MachineShellPlugin: CAPPlugin, CAPBridgedPlugin, ASWebAuthenticatio
         loading = bridge?.webView?.observe(\.isLoading, options: [.new]) { [weak self] webView, change in
             if change.newValue == false { self?.onMachinePage(webView.url) }
         }
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self, let webView = self.bridge?.webView else { return }
+            webView.allowsBackForwardNavigationGestures = true  // swipe from the edge: back in the Machine's pages
+            // The microphone (Talk, dictation) for the Machine's own page only; Capacitor's delegate does the rest
+            self.mediaGate = MediaGate(inner: webView.uiDelegate, plugin: self)
+            webView.uiDelegate = self.mediaGate
+            webView.configuration.userContentController.add(FilesHandler(plugin: self), name: "machineFiles")
+            webView.configuration.userContentController.addScriptMessageHandler(PhoneHandler(plugin: self), contentWorld: .page, name: "machinePhone")
+        }
+    }
+
+    /// Whether a page's origin is the saved Machine's (scheme, host and port).
+    func isMachine(_ origin: WKSecurityOrigin) -> Bool {
+        guard let saved = machine, let m = URLComponents(string: saved) else { return false }
+        return origin.protocol == "https" && origin.host.lowercased() == m.host && (origin.port == 0 ? 443 : origin.port) == (m.port ?? 443)
+    }
+
+    /// A file from the Machine's page (www/inject.js, files): the share sheet, where Save to Files keeps it.
+    func saveFile(_ body: Any) {
+        guard let text = body as? String, text.count < 36_000_000, let json = text.data(using: .utf8),
+              let o = try? JSONSerialization.jsonObject(with: json) as? [String: Any], let b64 = o["data"] as? String,
+              let data = Data(base64Encoded: b64) else { return }
+        var name = ((o["name"] as? String) ?? "file").replacingOccurrences(of: "[/\\\\:\\x00-\\x1f]", with: "_", options: .regularExpression)
+            .trimmingCharacters(in: .whitespaces)
+        if name.isEmpty || name.hasPrefix(".") { name = "file" + name }
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("files", isDirectory: true)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let file = dir.appendingPathComponent(String(name.suffix(120)))
+        guard (try? data.write(to: file)) != nil, let vc = bridge?.viewController else { return }
+        // A file the owner opened (a link to it, not a download): shown, with the share button there to keep it
+        if o["open"] as? Bool == true, QLPreviewController.canPreview(file as NSURL) {
+            let preview = QLPreviewController()
+            let source = FilePreview(file)
+            filePreview = source
+            preview.dataSource = source
+            vc.present(preview, animated: true)
+            return
+        }
+        let sheet = UIActivityViewController(activityItems: [file], applicationActivities: nil)
+        sheet.popoverPresentationController?.sourceView = vc.view
+        vc.present(sheet, animated: true)
     }
 
     // MARK: which pages the WebView opens
@@ -190,6 +236,81 @@ public class MachineShellPlugin: CAPPlugin, CAPBridgedPlugin, ASWebAuthenticatio
         call.resolve()
     }
 
+    // MARK: the phone's own questions, for the Machine's page (www/inject.js, machinePhone): the microphone's and
+    // notifications' state, notifications on (the phone's own question, then the push token) and the app's Settings
+
+    private var pushDone: (([String: Any]) -> Void)?
+    private var pushWatch: [NSObjectProtocol] = []
+
+    func phone(_ ask: String, done: @escaping ([String: Any]) -> Void) {
+        switch ask {
+        case "mic":
+            switch AVCaptureDevice.authorizationStatus(for: .audio) {
+            case .authorized: done(["state": "granted"])
+            case .denied, .restricted: done(["state": "blocked"])  // iOS asks once; then only Settings
+            default: done(["state": "prompt"])
+            }
+        case "push":
+            UNUserNotificationCenter.current().getNotificationSettings { s in
+                DispatchQueue.main.async { done(["state": MachineShellPlugin.pushState(s.authorizationStatus)]) }
+            }
+        case "settings":
+            if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) }
+            done(["state": "ok"])
+        case "pushOn":
+            UNUserNotificationCenter.current().getNotificationSettings { s in
+                DispatchQueue.main.async {
+                    switch MachineShellPlugin.pushState(s.authorizationStatus) {
+                    case "granted": self.pushRegister(done)
+                    case "blocked": done(["state": "blocked"])
+                    default:
+                        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, _ in
+                            DispatchQueue.main.async { if granted { self.pushRegister(done) } else { done(["state": "blocked"]) } }
+                        }
+                    }
+                }
+            }
+        default:
+            done(["state": "off"])
+        }
+    }
+
+    private static func pushState(_ s: UNAuthorizationStatus) -> String {
+        switch s {
+        case .authorized, .provisional, .ephemeral: return "granted"
+        case .denied: return "blocked"
+        default: return "prompt"
+        }
+    }
+
+    /// The push token from the AppDelegate (Capacitor's notifications), kept and handed to the page.
+    private func pushRegister(_ done: @escaping ([String: Any]) -> Void) {
+        pushFinish(["state": "off"])  // one at a time
+        pushDone = done
+        let center = NotificationCenter.default
+        pushWatch = [
+            center.addObserver(forName: .capacitorDidRegisterForRemoteNotifications, object: nil, queue: .main) { [weak self] note in
+                guard let data = note.object as? Data else { return }
+                let token = data.map { String(format: "%02x", $0) }.joined()
+                self?.store.set(token, forKey: "pushToken")
+                self?.pushFinish(["state": "on", "token": token])
+            },
+            center.addObserver(forName: .capacitorDidFailToRegisterForRemoteNotifications, object: nil, queue: .main) { [weak self] _ in
+                self?.pushFinish(["state": "off"])
+            },
+        ]
+        UIApplication.shared.registerForRemoteNotifications()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 10) { [weak self] in self?.pushFinish(["state": "off"]) }
+    }
+
+    private func pushFinish(_ answer: [String: Any]) {
+        pushWatch.forEach { NotificationCenter.default.removeObserver($0) }
+        pushWatch = []
+        let done = pushDone
+        pushDone = nil
+        done?(answer)
+    }
+
     @objc func signIn(_ call: CAPPluginCall) {
         DispatchQueue.main.async {
             guard self.onStartPage else { return call.reject("not allowed") }
@@ -303,14 +424,15 @@ public class MachineShellPlugin: CAPPlugin, CAPBridgedPlugin, ASWebAuthenticatio
             store.set(saved, forKey: "machine")
         }
         guard url.absoluteString.hasPrefix(saved), !url.path.hasPrefix("/_machine/") else { return }
-        var payload: [String: Any] = ["base": saved, "listen": true]
+        #if DEBUG
+        let sandbox = true
+        #else
+        let sandbox = false
+        #endif
+        let device: [String: Any] = ["platform": "apns", "sandbox": sandbox, "label": UIDevice.current.model]
+        var payload: [String: Any] = ["base": saved, "listen": true, "device": device]  // device: for a token now or later
         if let token = store.string(forKey: "pushToken") {
-            #if DEBUG
-            let sandbox = true
-            #else
-            let sandbox = false
-            #endif
-            payload["push"] = ["platform": "apns", "token": token, "sandbox": sandbox, "label": UIDevice.current.model]
+            payload["push"] = device.merging(["token": token]) { $1 }
         }
         if let share = pendingShare {
             payload["share"] = share
@@ -330,10 +452,67 @@ class MachineViewController: CAPBridgeViewController {
     }
 }
 
+/// The WebView's own delegate (Capacitor's), except for the microphone: granted to the saved Machine's page only.
+private final class MediaGate: NSObject, WKUIDelegate {
+    weak var inner: WKUIDelegate?
+    weak var plugin: MachineShellPlugin?
+
+    init(inner: WKUIDelegate?, plugin: MachineShellPlugin) {
+        self.inner = inner
+        self.plugin = plugin
+    }
+
+    override func responds(to aSelector: Selector!) -> Bool {
+        super.responds(to: aSelector) || (inner?.responds(to: aSelector) ?? false)
+    }
+
+    override func forwardingTarget(for aSelector: Selector!) -> Any? {
+        inner?.responds(to: aSelector) == true ? inner : nil
+    }
+
+    func webView(_ webView: WKWebView, requestMediaCapturePermissionFor origin: WKSecurityOrigin, initiatedByFrame frame: WKFrameInfo,
+                 type: WKMediaCaptureType, decisionHandler: @escaping (WKPermissionDecision) -> Void) {
+        decisionHandler(type == .microphone && frame.isMainFrame && plugin?.isMachine(origin) == true ? .grant : .deny)
+    }
+}
+
+/// window.webkit.messageHandlers.machineFiles: only what the Machine's own page hands over.
+private final class FilesHandler: NSObject, WKScriptMessageHandler {
+    weak var plugin: MachineShellPlugin?
+
+    init(plugin: MachineShellPlugin) { self.plugin = plugin }
+
+    func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
+        guard message.frameInfo.isMainFrame, plugin?.isMachine(message.frameInfo.securityOrigin) == true else { return }
+        plugin?.saveFile(message.body)
+    }
+}
+
+/// window.webkit.messageHandlers.machinePhone: the Machine's own page asks; the answer comes back to it.
+private final class PhoneHandler: NSObject, WKScriptMessageHandlerWithReply {
+    weak var plugin: MachineShellPlugin?
+
+    init(plugin: MachineShellPlugin) { self.plugin = plugin }
+
+    func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage,
+                               replyHandler: @escaping (Any?, String?) -> Void) {
+        guard message.frameInfo.isMainFrame, let plugin = plugin, plugin.isMachine(message.frameInfo.securityOrigin),
+              let body = message.body as? [String: Any], let ask = body["ask"] as? String else { return replyHandler(nil, "not allowed") }
+        plugin.phone(ask) { replyHandler($0, nil) }
+    }
+}
+
 /// The check's request answers for itself: a redirect is not followed (its 3xx is the answer, so not a Machine).
 private final class NoRedirects: NSObject, URLSessionTaskDelegate {
     func urlSession(_ session: URLSession, task: URLSessionTask, willPerformHTTPRedirection response: HTTPURLResponse,
                     newRequest request: URLRequest, completionHandler: @escaping (URLRequest?) -> Void) {
         completionHandler(nil)
     }
+}
+
+private final class FilePreview: NSObject, QLPreviewControllerDataSource {
+    let file: URL
+    init(_ file: URL) { self.file = file }
+    func numberOfPreviewItems(in controller: QLPreviewController) -> Int { 1 }
+    func previewController(_ controller: QLPreviewController, previewItemAt index: Int) -> QLPreviewItem { file as NSURL }
 }

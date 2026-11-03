@@ -11,6 +11,9 @@ dashboard release reaches the app at once, with no store update. The app itself 
   fetched from the Machine when the owner opens it.
 - **Share to The Machine**: text, links and up to 5 files from any app's share sheet open the dashboard's New to-do,
   filled in, for the owner to check and add.
+- **The phone's own questions**: the microphone (Talk, dictation) and notifications are asked by the phone itself when
+  the owner taps the mic or Turn on. Only once the phone won't ask again does the dashboard show one line with
+  Open settings, the app's page in the phone's settings (`machinePhone` in `www/inject.js`).
 
 Native code is kept small and stable on purpose: new features belong in the dashboard.
 
@@ -63,7 +66,8 @@ to TestFlight instead, signed through the App Store Connect API key in the repo 
 
 | | iOS | Android |
 |---|---|---|
-| Name | The Machine | The Machine |
+| Store name | The Machine Computer | The Machine Computer |
+| Home screen name | The Machine | The Machine |
 | ID | `computer.themachine.app` (Share: `computer.themachine.app.share`) | `computer.themachine.app` |
 | Category | Productivity | Productivity |
 | Icon | `ios/App/App/Assets.xcassets/AppIcon.appiconset` | `android/app/src/main/res/mipmap-*` |
@@ -77,7 +81,7 @@ Description:
 > The Machine is your own assistant for email and work. This app opens your Machine on your phone: your to-dos,
 > drafts and chat, with notifications when something needs you.
 >
-> Sign in with your account from themachine.computer. Running your own Machine? Connect it over Tailscale.
+> Sign in with your account from themachine.computer. Running your own Machine? Connect it with its address.
 >
 > Share links, text and files from any app to add them as a to-do.
 

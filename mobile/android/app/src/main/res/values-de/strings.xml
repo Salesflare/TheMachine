@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="share_label">Zu The Machine hinzufügen</string>
+    <string name="saved_download">In Downloads gespeichert: %1$s</string>
+    <string name="not_saved">Die Datei konnte nicht gespeichert werden.</string>
 </resources>

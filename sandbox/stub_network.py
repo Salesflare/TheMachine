@@ -4,6 +4,7 @@ people; their Machines answer a question a few seconds after it is asked, so ask
 behave as they would. Each of their Machines has its own keys, as on the real Network: what they say to this Machine is
 sealed for it, and what it says to them comes sealed. Nothing leaves this machine."""
 import datetime as dt
+import hashlib
 import json
 import secrets
 import sys
@@ -226,6 +227,18 @@ class Network:
             return {'id': 's_sandbox' + secrets.token_hex(4)}
         if path == '/ai-reach':  # the account's name for the address for AIs (Settings, AIs; ai_app.ai_reach)
             return {'username': self.net['owner']['username'], 'hosted': False} if method == 'GET' else {}
+        if method == 'POST' and path == '/app-push':  # the phone app's push: phones are kept here, a wakeup is only counted
+            phones = self.__dict__.setdefault('phones', {})
+            if body.get('action') == 'register':
+                phone = 'dev_' + hashlib.sha256(str(body.get('token')).encode()).hexdigest()[:12]
+                phones[phone] = body.get('label') or 'Phone'
+                return {'id': phone}
+            if body.get('action') == 'unregister':
+                phones.pop(body.get('id'), None)
+                return {}
+            if body.get('action') == 'list':
+                return {'devices': [{'id': phone} for phone in phones]}
+            return {'sent': len(phones) if not body.get('id') else int(body['id'] in phones)}
         if path == '/support-access':  # Support access: the switch is kept on the Machine; no team looks in the sandbox
             return {'accesses': []}
         return None

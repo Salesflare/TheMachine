@@ -268,7 +268,16 @@ try{
    // The microphone is blocked, or the Machine can't start it: it says so
    await page.evaluate(()=>{window.__mic.mode='denied'});await tap(wave);
    await page.waitForSelector(bar+' .talk-err');assert.match(await page.locator(bar+' .talk-err').textContent(),/microphone is blocked/);
-   await tap(bar+' [data-talk-close]');await page.evaluate(()=>{window.__mic.mode='ok'});
+   await tap(bar+' [data-talk-close]');
+   // In the phone app: a No in the phone's question just ends it; a No for good is one line with Open settings
+   await page.evaluate(()=>{window.__phone={mic:'prompt',asked:0,opened:0};
+    window.machinePhone={state:async()=>{window.__phone.asked++;return window.__phone.mic},settings:async()=>{window.__phone.opened++}}});
+   await tap(wave);await page.waitForFunction(()=>window.__phone.asked===1&&!document.querySelector('.talk-err'));
+   await page.evaluate(()=>{window.__phone.mic='blocked'});await tap(wave);await page.waitForSelector(bar+' .talk-err');
+   assert.equal(await page.locator(bar+' .talk-err .grow').textContent(),'The microphone is off for The Machine.');
+   await page.waitForTimeout(700);await tap(bar+' [data-phone-settings]');assert.equal(await page.evaluate(()=>window.__phone.opened),1);
+   await page.waitForFunction(()=>!document.querySelector('.talk-err'));
+   await page.evaluate(()=>{delete window.machinePhone;window.__mic.mode='ok'});
    startFails=true;await tap(wave);
    await page.waitForSelector(bar+' .talk-err');assert.match(await page.locator(bar+' .talk-err').textContent(),/Check OpenAI in OpenClaw/);
    await shot('t6-error');await tap(bar+' [data-talk-close]');startFails=false;

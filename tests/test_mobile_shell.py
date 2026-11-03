@@ -116,5 +116,34 @@ class MobileShellTest(unittest.TestCase):
         self.assertIn("'Use the owner-authenticated Tailscale dashboard'", (ROOT / 'assistant.py').read_text())
 
 
+    def test_web_features_only_for_the_machine(self):
+        # What a browser gives the dashboard (the microphone, downloads, Back) the app gives it too, only on the Machine's
+        # own address: Capacitor's own web listener list drops one a plugin adds while it loads, so MainActivity attaches
+        java = (MOBILE / 'android/app/src/main/java/computer/themachine/app/MachineShellPlugin.java').read_text()
+        main = (MOBILE / 'android/app/src/main/java/computer/themachine/app/MainActivity.java').read_text()
+        swift = (MOBILE / 'ios/App/App/MachineShellPlugin.swift').read_text()
+        manifest = (MOBILE / 'android/app/src/main/AndroidManifest.xml').read_text()
+        self.assertLess(main.index('super.onCreate'), main.index('.attach();'))
+        self.assertRegex(main, r'if \(webView\.canGoBack\(\)\) webView\.goBack\(\);\s+else moveTaskToBack\(true\);')
+        for perm in ('RECORD_AUDIO', 'MODIFY_AUDIO_SETTINGS'):
+            self.assertIn(f'android.permission.{perm}', manifest)
+        self.assertNotIn('android.permission.CAMERA', manifest)
+        self.assertIn('<uses-feature android:name="android.hardware.microphone" android:required="false" />', manifest)
+        # The microphone only, only for the Machine; nothing else a page asks for
+        self.assertIn('if (!audioOnly || !shell.isMachine(request.getOrigin())) {\n                request.deny();\n                return;', java)
+        # The phone's questions and its settings page: asked by the Machine's own page only
+        self.assertIn('"MachinePhone", Collections.singleton(origin)', java)
+        self.assertEqual(java.count('if (!mainFrame || !isMachine(source) || message.getData() == null) return;'), 2)
+        self.assertIn('addScriptMessageHandler(PhoneHandler(plugin: self), contentWorld: .page, name: "machinePhone")', swift)
+        self.assertIn('guard message.frameInfo.isMainFrame, let plugin = plugin, plugin.isMachine(message.frameInfo.securityOrigin)', swift)
+        self.assertIn('Settings.ACTION_APPLICATION_DETAILS_SETTINGS', java)
+        self.assertIn('UIApplication.openSettingsURLString', swift)
+        self.assertIn('"MachineFiles", Collections.singleton(origin)', java)  # the files bridge exists only on that address
+        self.assertIn('if (!mainFrame || !isMachine(source) ||', java)
+        self.assertIn('type == .microphone && frame.isMainFrame && plugin?.isMachine(origin) == true ? .grant : .deny', swift)
+        self.assertIn('guard message.frameInfo.isMainFrame, plugin?.isMachine(message.frameInfo.securityOrigin) == true', swift)
+        self.assertIn('NSMicrophoneUsageDescription', (MOBILE / 'ios/App/App/Info.plist').read_text())
+        self.assertNotIn('NSCameraUsageDescription', (MOBILE / 'ios/App/App/Info.plist').read_text())
+
 if __name__ == '__main__':
     unittest.main()
