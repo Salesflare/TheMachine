@@ -10,6 +10,8 @@ order: 1
 
 Het tabblad **Koppelingen** groepeert je bronnen in **Mail en agenda**, **Chat** en **Andere bronnen**. Elke bron zegt hoe het ermee gaat: Verbonden, Wacht op eerste sync, Verbindt automatisch opnieuw, of Heeft je hulp nodig. Open **Details** voor **Recente syncs**, waar de sync in gewone woorden staat (zoals "Bij" of "Eerste keer lezen"), en wat je moet doen.
 
+De tellers tonen wat de bron binnenbracht, hoeveel er de laatste 24 uur bij kwam en wat nog niet is nagekeken. Een agenda telt afspraken: alle, die van de volgende 7 dagen en de laatste 24 uur.
+
 Onder de status zegt elke bron in één regel wat ze binnenbrengt en, als ze iets kan doen, dat ze dat pas doet nadat je op **Versturen** drukt of het goedkeurt.
 
 ## Een bron toevoegen

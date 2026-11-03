@@ -10,6 +10,8 @@ order: 1
 
 La pestaña **Conexiones** agrupa tus fuentes en **Correo y calendario**, **Chat** y **Otras fuentes**. Cada una indica cómo va: Conectada, Esperando la primera sincronización, Reconectando automáticamente o Necesita tu ayuda. Abre **Detalles** para ver **Sincronizaciones recientes**, donde su sincronización se explica con palabras sencillas (como "Al día" o "Primera lectura"), y qué hacer.
 
+Sus cifras muestran lo que trajo, lo que llegó en las últimas 24 h y lo que aún no se ha revisado. Un calendario cuenta eventos: todos, los de los próximos 7 días y los de las últimas 24 h.
+
 Debajo de su estado, cada fuente dice en una línea lo que trae y, cuando puede actuar, que solo lo hace después de que pulses **Enviar** o des el visto bueno.
 
 ## Añade una

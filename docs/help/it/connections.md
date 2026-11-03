@@ -10,6 +10,8 @@ order: 1
 
 La scheda **Connessioni** raggruppa le tue fonti in **Email e calendario**, **Chat** e **Altre fonti**. Ognuna dice come sta andando: Connesso, In attesa della prima sincronizzazione, Riconnessione automatica o Serve il tuo aiuto. Apri **Dettagli** per vedere **Sincronizzazioni recenti**, dove la sincronizzazione è spiegata in parole semplici (come "In pari" o "Prima lettura"), e cosa fare.
 
+I suoi numeri mostrano cosa ha portato, cosa è arrivato nelle ultime 24 ore e cosa non è ancora stato esaminato. Un calendario conta eventi: tutti, quelli dei prossimi 7 giorni e delle ultime 24 ore.
+
 Sotto lo stato, ogni fonte dice in una riga cosa porta e, quando può agire, che lo fa solo dopo che premi **Invia** o dai l’OK.
 
 ## Aggiungine una
