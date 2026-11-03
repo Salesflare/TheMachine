@@ -440,6 +440,21 @@ print(json.dumps(out))
 '''
 
 
+class UnencryptedKeyring(unittest.TestCase):
+    def test_only_a_file_in_the_keyrings_folder_is_read(self):
+        with tempfile.TemporaryDirectory() as tmp, unittest.mock.patch.dict(os.environ, {'XDG_DATA_HOME': str(Path(tmp) / 'data')}):
+            folder = Path(tmp) / 'data/keyrings'
+            folder.mkdir(parents=True)
+            (folder / 'Default keyring.keyring').write_bytes(b'[keyring]\ndisplay-name=Default keyring\n')
+            (Path(tmp) / 'data/outside.keyring').write_bytes(b'[keyring]\n')
+            base = '/org/freedesktop/secrets/collection/'
+            self.assertEqual(message_keyring.unencrypted_keyring(base + 'Default_20keyring'), folder / 'Default keyring.keyring')
+            for escaped in ('_2e_2e_2foutside', '_2e_2e', '_2ehidden', 'a_2f_2e_2e_2f_2e_2e_2foutside', 'a_5cb', 'a_00b'):
+                with self.subTest(escaped=escaped):
+                    self.assertIsNone(message_keyring.unencrypted_keyring(base + escaped))
+            self.assertIsNone(message_keyring.unencrypted_keyring('/elsewhere/Default_20keyring'))
+
+
 @unittest.skipUnless(all(shutil.which(t) for t in ('gnome-keyring-daemon', 'dbus-run-session', 'secret-tool', 'busctl')),
                      'needs gnome-keyring-daemon, dbus-run-session, secret-tool and busctl')
 class RealSecretService(unittest.TestCase):

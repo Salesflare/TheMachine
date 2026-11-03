@@ -928,8 +928,8 @@ def gateway_keep_retrying(paths):
         return []
     written = []
     for unit in onboarding.gateway_units():
-        if 'gateway' not in unit:
-            continue
+        if 'gateway' not in unit or not re.fullmatch(r'[A-Za-z0-9:_.@-]+\.service', unit) or '..' in unit:
+            continue  # a unit name is one file name (systemd allows no slashes); anything else is not written to
         path = paths.home / '.config/systemd/user' / f'{unit}.d' / GATEWAY_RETRY_DROPIN
         try:
             if path.exists() and path.read_text() == GATEWAY_RETRY_TEXT:
