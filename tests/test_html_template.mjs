@@ -69,4 +69,23 @@ const doc=s(helpDoc({title:'T <b>',summary:'**a `c` b** [x](javascript:alert(1))
  body:'## H <i>\n- **[l](https://x.y)**\n1. one\n```\n<script>\n```\npara & <x>',anchors:['a"b']}));
 assert.equal(doc,'<h3>T &lt;b&gt;</h3><p class="help-sum"><b>a <code>c</code> b</b> x) d <a href="https://e.com/?a=1&amp;b=&quot;2&quot;" target="_blank" rel="noopener">y</a> <a href="mailto:sam@example.com" target="_blank" rel="noopener">m</a> <a href="https://site.example/help/cards#a-b" data-help-slug="cards" data-help-anchor="a-b">z</a></p>'
  +'<h4 id="help-a-a&quot;b">H &lt;i&gt;</h4><ul><li><b><a href="https://x.y" target="_blank" rel="noopener">l</a></b></li></ul><ol><li>one</li></ol><pre>&lt;script&gt;</pre><p>para &amp; &lt;x&gt;</p>');
+// Card text (format, linkText): web and mail links only, **values** bold, *words* in the chat in italics, the rest text
+const models=page.slice(page.indexOf('const TEXT_LINK'),page.indexOf('\n',page.indexOf('const format=')));
+vm.runInContext(models+'\nObject.assign(globalThis,{richText,format,linkText});',ctx);
+const {richText,format,linkText}=ctx;
+assert.equal(s(format('**<b>x</b>** [a](https://e.com/?a=1&b="2") [j](javascript:alert(1)) [d](data:text/html,x) see https://example.com/p. & "q"')),
+ '<strong class="nb">&lt;b&gt;x&lt;/b&gt;</strong> <a href="https://e.com/?a=1&amp;b=&quot;2&quot;" target="_blank" rel="noopener noreferrer">a</a> [j](javascript:alert(1)) [d](data:text/html,x) see <a href="https://example.com/p" target="_blank" rel="noopener noreferrer">https://example.com/p</a>. &amp; &quot;q&quot;');
+assert.equal(s(format('**a much longer bold value than that**\nnext',true)),'<strong>a much longer bold value than that</strong><br>next');
+assert.equal(s(linkText('**x** [m](mailto:a@b.c)')),'**x** <a href="mailto:a@b.c" target="_blank" rel="noopener noreferrer">m</a>');
+assert.equal(s(richText('*it* a*b*c <i>',true,{em:true})),'<em>it</em> a*b*c &lt;i&gt;');
+assert.equal(s(format(null)),'');
+// An email draft (mailHtml, draftBody): the marks the send writes, https links only, the rest text
+const cards=page.slice(page.indexOf('const MD_LINK'),page.indexOf('\n',page.indexOf('const draftBody=')));
+vm.runInContext(cards+'\nObject.assign(globalThis,{mailHtml,draftBody});',ctx);
+const {mailHtml,draftBody}=ctx;
+assert.equal(s(mailHtml('**<b>** _i_ [x](https://e.com/a"b) [j](javascript:alert(1)) & \'q\'\n\n- one\n3. three',false)),
+ '<div><b>&lt;b&gt;</b> <i>i</i> <a href="https://e.com/a&quot;b">x</a> [j](javascript:alert(1)) &amp; &#39;q&#39;</div><div><br></div><ul style="margin:0 0 0 1.6em;padding:0"><li>one</li></ul><ol start="3" style="margin:0 0 0 1.6em;padding:0"><li>three</li></ol>');
+assert.equal(s(mailHtml('[a](https://e.com)')),'<div><a href="https://e.com" target="_blank" rel="noreferrer">a</a></div>');
+assert.equal(s(draftBody({kind:'slack'},'[a<b>](https://e.com/?x=1&y=2) [j](javascript:x) <i>')),'<a href="https://e.com/?x=1&amp;y=2" target="_blank" rel="noreferrer">a&lt;b&gt;</a> [j](javascript:x) &lt;i&gt;');
+assert.equal(s(draftBody({kind:'whatsapp'},'[a](https://e.com) <i>')),'a (https://e.com) &lt;i&gt;');
 console.log('html template ok');

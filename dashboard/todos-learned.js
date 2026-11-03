@@ -39,8 +39,8 @@ function learnHas(id){const s=state||{};
 const learnShown=()=>{const ids=LEARN_PANES.map(([id])=>id).filter(learnHas);return ids.includes(learnPane)?learnPane:ids[0]};
 // one pane only (a new Machine: How it's going) shows no pill row
 function learnTabs(){const box=$('#learn-tabs');if(!box)return;const cur=learnShown(),n=learnTeamWaiting();
- const html=LEARN_PANES.filter(([id])=>learnHas(id)).map(([id,label])=>`<button type="button" role="tab" id="learn-tab-${id}" aria-controls="learn-pane-${id}" data-learn-tab="${id}" aria-selected="${id===cur}"><span class="ell">${esc(t(label))}</span>${id==='shared'&&n?` <span class="badge">${n}</span>`:''}</button>`).join('');
- if(box.innerHTML!==html)box.innerHTML=html;box.hidden=box.childElementCount<2;for(const p of document.querySelectorAll('#feedback [data-learn-pane]'))p.hidden=p.dataset.learnPane!==cur}
+ const tabs=html`${LEARN_PANES.filter(([id])=>learnHas(id)).map(([id,label])=>html`<button type="button" role="tab" id="learn-tab-${id}" aria-controls="learn-pane-${id}" data-learn-tab="${id}" aria-selected="${id===cur}"><span class="ell">${t(label)}</span>${id==='shared'&&n?html` <span class="badge">${n}</span>`:''}</button>`)}`;
+ if(box.innerHTML!==String(tabs))setHTML(box,tabs);box.hidden=box.childElementCount<2;for(const p of document.querySelectorAll('#feedback [data-learn-pane]'))p.hidden=p.dataset.learnPane!==cur}
 function showLearnPane(id){learnPane=id;try{localStorage.setItem('learn-pane',id)}catch{}learnTabs();tabsShow($('#learn-tabs'))}
 $('#learn-tabs').addEventListener('click',e=>{const b=e.target.closest('[data-learn-tab]');if(b)showLearnPane(b.dataset.learnTab)});
 // Changes: the learning loop's recent changes, newest first, each with Undo; the first few, then Show more
@@ -70,8 +70,8 @@ const pagers=new Map();
 function pager(key,load,row,rows){let p=pagers.get(key);if(!p){p={key,load,row,rows,items:[],next:'0',total:null,busy:false,failed:false,html:''};pagers.set(key,p)}else{p.load=load;p.row=row;p.rows=rows}return p}
 function pagerDrop(prefix){for(const k of [...pagers.keys()])if(k===prefix||k.startsWith(prefix+':'))pagers.delete(k)}
 const pagerSlot=(key,empty='',rows='')=>`<div class="pager" data-pager="${esc(key)}" data-empty="${esc(empty)}" data-rows="${esc(rows)}"></div>`;
-const pagerFoot=p=>p.busy?'<p class="pager-loading" role="status">Loading…</p>':p.failed?'<button type="button" class="quiet more-rows" data-pager-more>Couldn’t load. Try again</button>':p.next!=null?'<button type="button" class="quiet more-rows" data-pager-more>Show more</button>':'';
-function pagerFootPaint(el,p){const empty=!p.items.length&&p.next==null&&!p.busy&&!p.failed;el.querySelector('.pager-foot').innerHTML=empty&&el.dataset.empty?`<p class="muted pager-empty">${esc(el.dataset.empty)}</p>`:pagerFoot(p)}
+const pagerFoot=p=>p.busy?html`<p class="pager-loading" role="status">Loading…</p>`:p.failed?html`<button type="button" class="quiet more-rows" data-pager-more>Couldn’t load. Try again</button>`:p.next!=null?html`<button type="button" class="quiet more-rows" data-pager-more>Show more</button>`:html``;
+function pagerFootPaint(el,p){const empty=!p.items.length&&p.next==null&&!p.busy&&!p.failed;setHTML(el.querySelector('.pager-foot'),empty&&el.dataset.empty?html`<p class="muted pager-empty">${el.dataset.empty}</p>`:pagerFoot(p))}
 function pagerMount(root=document){for(const el of root.querySelectorAll('[data-pager]')){const p=pagers.get(el.dataset.pager);if(!p)continue;
  if(!el.firstChild){if(p.rows)p.html=p.rows(p.items);el.innerHTML=`<div class="pager-rows ${esc(el.dataset.rows||'')}">${p.html}</div><div class="pager-foot"></div>`;pagerSeen.observe(el.querySelector('.pager-foot'));detailsSync(el)}pagerFootPaint(el,p)}}
 const pagerNear=el=>{const f=el.querySelector('.pager-foot');if(!f||!el.offsetParent)return false;const r=f.getBoundingClientRect(),box=el.closest('.side-cards,.chat-side');return r.top<innerHeight+600&&r.bottom>-600&&!box};

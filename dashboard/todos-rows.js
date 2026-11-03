@@ -23,7 +23,7 @@ function renameAt(id,el,prefer){const s=cardOf(id);if(!s||!el)return;renameClose
  const box=document.createElement('div');box.className='rename-box';
  const wide=(el.closest('h3')||el).getBoundingClientRect(),h=Math.max(30,Math.min(44,r.height)),w=Math.max(200,Math.min(wide.width,innerWidth-r.left-12));
  Object.assign(box.style,{left:Math.max(8,r.left-4)+'px',top:Math.max(8,r.top+(r.height-h)/2)+'px',width:w+8+'px'});
- box.innerHTML=`<input type="text" maxlength="200" aria-label="To-do title" style="height:${h}px;font-size:${getComputedStyle(el).fontSize};font-weight:${getComputedStyle(el).fontWeight}">${s.title_suggested?'<button type="button" class="rename-reset">Reset to suggested title</button>':''}`;
+ setHTML(box,html`<input type="text" maxlength="200" aria-label="To-do title" style="height:${h}px;font-size:${getComputedStyle(el).fontSize};font-weight:${getComputedStyle(el).fontWeight}">${s.title_suggested?html`<button type="button" class="rename-reset">Reset to suggested title</button>`:''}`);
  document.body.append(box);const input=box.querySelector('input');input.value=s.title;input.focus();input.select();renaming={id,box,el,h,prefer};
  let done=false;const finish=(save,reset=false)=>{if(done)return;done=true;const v=input.value;renameClose();if(save)renameSave(id,v,reset)};
  input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.isComposing){e.preventDefault();finish(true)}else if(e.key==='Escape'){e.preventDefault();e.stopPropagation();finish(false)}});
@@ -42,14 +42,14 @@ const shownEl=sel=>[...document.querySelectorAll(sel)].find(n=>n.getClientRects(
 function titleEl(id,prefer){const css=CSS.escape(id);return(prefer==='row'?shownEl(`#side-cards a[href="#chat=${css}"],.chat-side a[href="#chat=${css}"]`):null)
  ||(chatId===id?document.querySelector('.chat-title'):null)||document.querySelector(`#task-${css} h3 .title-link,#task-${css} h3`)||document.querySelector(`#side-cards a[href="#chat=${css}"]`)}
 // The ⋯ on a sidebar row (on hover), and its small menu (also on a right click or a long press).
-const rowMore=document.createElement('button');rowMore.type='button';rowMore.className='row-more';rowMore.hidden=true;rowMore.setAttribute('aria-label','More for this to-do');rowMore.title='More';rowMore.innerHTML=DOTS;document.body.append(rowMore);
+const rowMore=document.createElement('button');rowMore.type='button';rowMore.className='row-more';rowMore.hidden=true;rowMore.setAttribute('aria-label','More for this to-do');rowMore.title='More';setHTML(rowMore,raw(DOTS));document.body.append(rowMore);
 let rowHover=null;
 document.addEventListener('mouseover',e=>{if(e.target.closest('.row-more'))return;const a=e.target.closest(ROWS);if(a===rowHover)return;rowHover=a;
  if(!a||!fine()){rowMore.hidden=true;return}const r=a.getBoundingClientRect();Object.assign(rowMore.style,{left:r.right-28+'px',top:r.top+(r.height-24)/2+'px'});rowMore.dataset.id=rowId(a);rowMore.hidden=false});
 document.addEventListener('scroll',()=>{rowMore.hidden=true;rowHover=null;rowMenuClose();renamePlace()},true);addEventListener('resize',()=>renamePlace());
 function rowMenuClose(){document.querySelector('.row-menu')?.remove()}
 function rowMenu(id,x,y){rowMenuClose();const m=document.createElement('div');m.className='row-menu';m.setAttribute('role','menu');
- m.innerHTML=`<button type="button" role="menuitem" data-row-rename="${esc(id)}">Rename</button><button type="button" role="menuitem" data-row-open="${esc(id)}">Open</button>`;document.body.append(m);
+ setHTML(m,html`<button type="button" role="menuitem" data-row-rename="${id}">Rename</button><button type="button" role="menuitem" data-row-open="${id}">Open</button>`);document.body.append(m);
  const r=m.getBoundingClientRect();Object.assign(m.style,{left:Math.max(8,Math.min(x,innerWidth-r.width-8))+'px',top:Math.max(8,Math.min(y,innerHeight-r.height-8))+'px'});m.querySelector('button').focus()}
 rowMore.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();const r=rowMore.getBoundingClientRect();rowMenu(rowMore.dataset.id,r.left,r.bottom+4)});
 document.addEventListener('click',e=>{const rn=e.target.closest('[data-row-rename]'),op=e.target.closest('[data-row-open]');

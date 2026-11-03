@@ -14,8 +14,8 @@ async function copyResult(id){const s=state.suggestions.find(s=>s.id===id);if(!s
 // The message drafts on a ready card, so Read result (also from Telegram) shows what Send would send (2026-10-20).
 const messageDrafts=s=>s?.status!=='prepared'?[]:taskActions(s).filter(a=>['email','linkedin','slack','x','whatsapp','telegram','intercom','doc_reply'].includes(a.kind)&&a.body&&!(sendBusy(a.state||s.action_status)&&!['local_preparation','paused'].includes((a.state||s.action_status)?.status)));
 const draftHead=a=>a.kind==='email'?[['To',a.to_options?.length?t('You choose: {}',a.to_options.join(', ')):movedLine(a)||(a.to||[]).join(', ')],...['cc','bcc'].filter(k=>a[k]?.length).map(k=>[k==='cc'?'Cc':'Bcc',a[k].join(', ')]),['Subject',a.subject||'']]:[['To',a.kind==='x'&&a.reply_to?'@'+a.to_screen_name:a.to_name||'']];
-const messageDraftBlock=s=>messageDrafts(s).map(a=>`<div class="result-draft"><h3>${a.kind==='email'?'Email':a.kind==='x'?(a.reply_to?'X reply':'X message'):a.kind==='linkedin'?'LinkedIn message':a.kind==='slack'?'Slack message':'WhatsApp message'} draft</h3>${draftHead(a).map(([k,v])=>`<p class="muted"><b>${k}:</b> ${esc(v)}</p>`).join('')}<div class="draft-text">${esc(a.body)}</div>${a.signature?'<p class="muted">+ your signature</p>':''}<div class="actions result-actions"><button class="primary" data-send-draft="${esc(a.revision)}">Review and send</button></div></div>`).join('');
-async function openResult(id,file){const s=state.suggestions.find(s=>s.id===id);if(!s)return;file=file||(s.result_files||[]).find(f=>!/\.pdf$/i.test(f.name));resultId=id;$('#result-title').textContent=s.title;resultText=await resultTextFor(s,file);$('#result-content').innerHTML=format(withoutListedFiles(resultText,draftFiles(s))||'Open the PDF below to read it.')+messageDraftBlock(s);$('#result-files').innerHTML=(s.result_files||[]).map(f=>/\.pdf$/i.test(f.name)?`<a href="result-file?id=${id}&file=${encodeURIComponent(f.path)}" target="_blank" rel="noreferrer">Open ${esc(f.name)} ↗</a>`:`<button class="ghost" data-file="${esc(f.path)}">${esc(f.name)}</button><a href="result-file?id=${id}&file=${encodeURIComponent(f.path)}" download="${esc(f.name)}">Download</a>`).join('')+draftFilesBlock(s);if(!$('#result-dialog').open)$('#result-dialog').showModal()}
+const messageDraftBlock=s=>messageDrafts(s).map(a=>html`<div class="result-draft"><h3>${a.kind==='email'?'Email':a.kind==='x'?(a.reply_to?'X reply':'X message'):a.kind==='linkedin'?'LinkedIn message':a.kind==='slack'?'Slack message':'WhatsApp message'} draft</h3>${draftHead(a).map(([k,v])=>html`<p class="muted"><b>${k}:</b> ${v}</p>`)}<div class="draft-text">${a.body}</div>${a.signature?html`<p class="muted">+ your signature</p>`:''}<div class="actions result-actions"><button class="primary" data-send-draft="${a.revision}">Review and send</button></div></div>`);
+async function openResult(id,file){const s=state.suggestions.find(s=>s.id===id);if(!s)return;file=file||(s.result_files||[]).find(f=>!/\.pdf$/i.test(f.name));resultId=id;$('#result-title').textContent=s.title;resultText=await resultTextFor(s,file);setHTML($('#result-content'),html`${format(withoutListedFiles(resultText,draftFiles(s))||'Open the PDF below to read it.')}${messageDraftBlock(s)}`);setHTML($('#result-files'),html`${(s.result_files||[]).map(f=>{const href='result-file?id='+encodeURIComponent(id)+'&file='+encodeURIComponent(f.path);return /\.pdf$/i.test(f.name)?html`<a href="${href}" target="_blank" rel="noreferrer">Open ${f.name} ↗</a>`:html`<button class="ghost" data-file="${f.path}">${f.name}</button><a href="${href}" download="${f.name}">Download</a>`})}${draftFilesBlock(s)}`);if(!$('#result-dialog').open)$('#result-dialog').showModal()}
 $('#result-files').onclick=async e=>{const file=e.target.closest('[data-file]')?.dataset.file;if(file){try{await openResult(resultId,state.suggestions.find(s=>s.id===resultId).result_files.find(f=>f.path===file))}catch(e){errCaught(e);toast(e.message,true)}}};
 $('#result-content').onclick=e=>{const revision=e.target.closest('[data-send-draft]')?.dataset.sendDraft;if(revision){$('#result-dialog').close();openSend(resultId,revision)}};
 $('#result-copy').onclick=()=>copyResult(resultId).catch(e=>toast(e.message,true));
@@ -40,13 +40,13 @@ $('#send-preview').hidden=!draft.notes;sendBody(draft.notes||'');sendFine(draft.
 $('#send-confirm').textContent=draft.kind==='merge'?'Merge now':draft.kind==='finish'?'Confirm':draft.kind==='doc_reply'?'Post now':'Send now';$('#send-preview').classList.toggle('code',draft.kind==='merge');
 // A fix to The Machine itself: what it changes, the files, and the full diff to read before merging.
 if(draft.kind==='merge'){sendTask=id;sendRevision=draft.revision;sendDraft=draft;$('#send-editor').hidden=true;$('#send-preview').hidden=false;$('#send-edit').hidden=true;$('#send-title').textContent='Merge this fix into The Machine?';$('#send-confirm').hidden=false;$('#send-confirm').disabled=false;$('#send-cancel').textContent='Cancel';$('#send-recipients').hidden=true;$('#send-files').hidden=true;$('#send-error').textContent='';
-sendHeader=()=>sendRows([['Fix',draft.summary],['Files',draft.files.length+' file'+(draft.files.length>1?'s':'')+', '+draft.commits+' commit'+(draft.commits>1?'s':'')]]);sendHeader();sendBody(draft.diff);$('#send-preview').insertAdjacentHTML('beforeend',`<p><a class="full-diff" href="api/merge-diff?id=${encodeURIComponent(id)}&revision=${encodeURIComponent(draft.revision)}" target="_blank" rel="noreferrer" download="the-machine-fix.diff">Download complete diff</a></p>`);
+sendHeader=()=>sendRows([['Fix',draft.summary],['Files',draft.files.length+' file'+(draft.files.length>1?'s':'')+', '+draft.commits+' commit'+(draft.commits>1?'s':'')]]);sendHeader();sendBody(draft.diff);$('#send-preview').append(make('p',{},make('a',{class:'full-diff',href:'api/merge-diff?id='+encodeURIComponent(id)+'&revision='+encodeURIComponent(draft.revision),target:'_blank',rel:'noreferrer',download:'the-machine-fix.diff'},'Download complete diff')));
 sendFine((draft.plugin?'The OpenClaw plugin changes too: it takes effect after openclaw plugins reload personal-assistant-bridge. ':'')+'Merge now runs the tests again, then updates the running code and restarts The Machine.');$('#send-dialog').showModal();return}
 // The last step of a prepared task: what goes out; Confirm runs only that step.
 if(draft.kind==='finish'){sendTask=id;sendRevision=draft.revision;sendDraft=draft;$('#send-editor').hidden=true;$('#send-preview').hidden=false;$('#send-edit').hidden=false;$('#send-subject-label').hidden=true;$('#send-title').textContent=draft.label+'?';$('#send-confirm').hidden=false;$('#send-confirm').disabled=false;$('#send-cancel').textContent='Cancel';$('#send-recipients').hidden=true;$('#send-files').hidden=true;$('#send-error').textContent='';
 // It posts a message: the exact text, which Edit changes; Confirm types exactly that (replacing any earlier draft on the page).
 // Files it uploads are listed and open from the card; without any, the dialog says nothing gets attached.
-const files=draft.attachments||[];$('#send-files').hidden=!files.length;$('#send-files').innerHTML=draftFileLinks(id,files);
+const files=draft.attachments||[];$('#send-files').hidden=!files.length;setHTML($('#send-files'),draftFileLinks(id,files));
 sendHeader=()=>sendRows([...(draft.url?[['Page',draft.url]]:[]),...(draft.message&&draft.to_name?[['To',draft.to_name]]:[]),...(draft.message?[['What',draft.preview]]:[]),...(draft.message&&!files.length?[['Files','None']]:[])]);sendHeader();sendBody(draftText(draft));
 sendFine(draft.message?`Confirm types exactly this text on the page (replacing an earlier draft there), ${files.length?`attaches ${files.length>1?'these '+files.length+' files':'this file'}`:'attaches no file'}, submits it, checks that it went through and reports back.`:files.length?`Confirm does only this last step with ${files.length>1?'these files':'this file'}, checks that it went through and reports back.`:'Confirm does only this last step, checks that it went through and reports back.');$('#send-dialog').showModal();return}
 sendTask=id;sendRevision=draft.revision;sendDraft=draft;$('#send-editor').hidden=true;$('#send-preview').hidden=false;$('#send-edit').hidden=draft.kind==='email_demo';$('#send-subject-label').hidden=['linkedin','slack','x','whatsapp','telegram','intercom','doc_reply'].includes(draft.kind);
@@ -59,16 +59,16 @@ const demo=draft.kind==='email_demo';$('#send-title').textContent=demo?'Demo ema
 // No verified recipient: pick from the thread's addresses (the first is preselected); To updates as you tick.
 const options=draft.to_options||[];$('#send-recipients').hidden=!options.length;
 const pre=Math.max(0,options.findIndex(x=>!draft.bounced?.[x.toLowerCase()]));  /* a working address is preselected */
-$('#send-recipients div').innerHTML=options.map((x,i)=>`<label><input type="checkbox" value="${esc(x)}" ${i===pre?'checked':''}>${esc(x)}${bounceNote(draft.bounced?.[x.toLowerCase()])}</label>`).join('');
+setHTML($('#send-recipients div'),html`${options.map((x,i)=>html`<label><input type="checkbox" value="${x}" ${i===pre?html`checked`:''}>${x}${bounceNote(draft.bounced?.[x.toLowerCase()])}</label>`)}`);
 // Like the site's send preview: From/To/Subject rows, then the message in its own box.
 // From: a small picker when this mailbox may also send as an alias of theirs (only ones Gmail confirms; own_addresses.senders).
 const froms=draft.from_options||[];sendFrom=draft.from;
 const header=(subject=true)=>{const to=options.length?sendRecipients():draft.to;sendBounced(to,draft);const rows=[['From',sendFrom],['To',to.length===1&&draft.to_name&&!options.length?draft.to_name+' <'+to[0]+'>':to.join(', ')||'(choose above)']];for(const key of ['cc','bcc'])if(draft[key]?.length)rows.push([key[0].toUpperCase()+key.slice(1),draft[key].join(', ')]);if(subject)rows.push(['Subject',draft.subject]);$('#send-confirm').disabled=!to.length;sendRows(rows);
- if(froms.length>1){$('#send-head dd').innerHTML=`<select id="send-from" aria-label="Send from">${froms.map(a=>`<option value="${esc(a)}"${a===sendFrom?' selected':''}>${esc(a)}</option>`).join('')}</select>`;$('#send-from').onchange=e=>{sendFrom=e.target.value}}};
+ if(froms.length>1){setHTML($('#send-head dd'),html`<select id="send-from" aria-label="Send from">${froms.map(a=>html`<option value="${a}"${a===sendFrom?html` selected`:''}>${a}</option>`)}</select>`);$('#send-from').onchange=e=>{sendFrom=e.target.value}}};
 sendHeader=header;$('#send-recipients').onchange=()=>header($('#send-editor').hidden);
 header();sendBody(draft.body,draft.signature);sendFine([INTERCOM_WHY[draft.intercom_fallback]||'',replyElsewhere(draft),draft.snooze_days?`After sending, the thread leaves your inbox for ${draft.snooze_days} day${draft.snooze_days>1?'s':''} (a weekday morning; a reply brings it back sooner).`:'',waits].filter(Boolean).join(' '));
 const files=draft.attachments||[];$('#send-files').hidden=!files.length;
-$('#send-files').innerHTML=draftFileLinks(id,files);
+setHTML($('#send-files'),draftFileLinks(id,files));
 $('#send-error').textContent=demo?'Demo only. Nothing will be sent.':'';$('#send-confirm').disabled=options.length&&!sendRecipients().length;sendShow();
 }
 // A recipient whose address bounced: the sheet says so above the email; Send stays, the owner decides.
@@ -77,8 +77,8 @@ const sendBounced=(to,draft)=>{const el=$('#send-bounce'),hit=(to||[]).map(a=>dr
 const movedLine=(a,to)=>{const x=(to||a?.to||[]).map(v=>String(v).toLowerCase()).find(v=>a?.moved?.[v]);return x?t('Bounced, now to {}',x):''};
 // A follow-up held because its address bounced (follow_ups.BOUNCED_HELD) reads in the owner's language like the other holds
 const heldLine=e=>{const m=/^Not sent: (\S+@\S+) bounced\.$/.exec(e||'');return m?t('Not sent: {} bounced.',m[1]):t(e)};
-const sendRows=rows=>{$('#send-head').innerHTML=rows.map(([k,v])=>`<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')};
-const sendBody=(body,signature)=>{const mail=['email','email_demo'].includes(sendDraft?.kind);$('#send-preview').classList.toggle('mail',mail);$('#send-preview').innerHTML=draftBody(sendDraft||{},body)+(signature?mail?'<span class="sig">+ your signature</span>':'<span class="sig">\n\n+ your signature</span>':'')};
+const sendRows=rows=>{setHTML($('#send-head'),html`${rows.map(([k,v])=>html`<div><dt>${k}</dt><dd>${v}</dd></div>`)}`)};
+const sendBody=(body,signature)=>{const mail=['email','email_demo'].includes(sendDraft?.kind);$('#send-preview').classList.toggle('mail',mail);setHTML($('#send-preview'),html`${draftBody(sendDraft||{},body)}${signature?mail?html`<span class="sig">+ your signature</span>`:html`<span class="sig">\n\n+ your signature</span>`:''}`)};
 const sendFine=text=>{$('#send-fine').textContent=text;$('#send-fine').hidden=!text};
 let sendFrom=null;
 const sendRecipients=()=>[...document.querySelectorAll('#send-recipients input:checked')].map(x=>x.value);
@@ -132,10 +132,10 @@ function mailBody(blocks){const italic=rs=>rs.map(r=>r.i?mailWrap(mailMarkText(r
   if(bl.type==='ul')return '- '+text;if(bl.type==='ol'){n=bl.start!=null?bl.start:n+1;return n+'. '+text}
   return text.replace(/^- /,'\\- ').replace(/^([0-9]{1,3})\. /,'$1\\. ')}).join('\n')}
 const mailSame=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
-const mailModelOf=body=>{const d=document.createElement('div');d.innerHTML=mailHtml(body,false);return mailModel(d)};
+const mailModelOf=body=>{const d=document.createElement('div');setHTML(d,mailHtml(body,false));return mailModel(d)};
 let mailStart=null;
 // fresh: the draft as it stands (an untouched editor sends exactly it); else only the page changes, to show what goes out
-function mailLoad(body,fresh=true){const r=mailRich();r.innerHTML=mailHtml(body,false);if(fresh)mailStart=mailModel(r);mailTools()}
+function mailLoad(body,fresh=true){const r=mailRich();setHTML(r,mailHtml(body,false));if(fresh)mailStart=mailModel(r);mailTools()}
 // What goes out from the editor: the draft as it was when nothing changed, else the page read back. null: not the same yet.
 function mailOut(original){const now=mailModel(mailRich());if(!now.foreign&&mailStart&&mailSame(now,mailStart))return original;const body=mailBody(now);
  if(!now.foreign&&mailSame(mailModelOf(body),now))return body;
@@ -156,7 +156,7 @@ function mailLinkAdd(){let u=$('#send-rich-url').value.trim();if(u&&!/^[a-z][a-z
  if(!ok){$('#send-rich-url').setCustomValidity(t('Use a web address that starts with https://'));$('#send-rich-url').reportValidity();return}
  u=u.replace(/[\s()<>]/g,c=>'%'+c.charCodeAt(0).toString(16).toUpperCase().padStart(2,'0'));
  $('#send-rich-link').hidden=true;const r=mailRich();r.focus();const s=getSelection();if(mailRange){s.removeAllRanges();s.addRange(mailRange)}mailRange=null;
- if(s.isCollapsed)document.execCommand('insertHTML',false,`<a href="${esc(u)}">${esc(u)}</a>`);else document.execCommand('createLink',false,u);mailTools()}
+ if(s.isCollapsed)document.execCommand('insertHTML',false,String(html`<a href="${safeHref(u)}">${u}</a>`));else document.execCommand('createLink',false,u);mailTools()}
 $('#send-rich-url').addEventListener('input',e=>e.target.setCustomValidity(''));
 $('#send-rich-url').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();mailLinkAdd()}else if(e.key==='Escape'){e.preventDefault();e.stopPropagation();$('#send-rich-link').hidden=true;mailRich().focus()}});
 $('#send-rich-add').onclick=mailLinkAdd;$('#send-rich-cancel').onclick=()=>{$('#send-rich-link').hidden=true;mailRange=null;mailRich().focus()};
@@ -187,7 +187,7 @@ $('#theme-toggle').onclick=()=>{chooseTheme(document.documentElement.dataset.the
 matchMedia('(prefers-color-scheme: light)').addEventListener('change',showTheme);
 $('#send-cancel').onclick=()=>$('#send-dialog').close();
 // A closed send panel keeps nothing: the next one fills it again, and a sent or canceled draft never reads as typing
-$('#send-dialog').addEventListener('close',()=>{if($('#send-dialog').open)return;for(const id of ['send-subject','send-body','send-ask-text'])$('#'+id).value='';$('#send-rich-body').innerHTML='';$('#send-error').textContent=''});
+$('#send-dialog').addEventListener('close',()=>{if($('#send-dialog').open)return;for(const id of ['send-subject','send-body','send-ask-text'])$('#'+id).value='';$('#send-rich-body').replaceChildren();$('#send-error').textContent=''});
 // The subject wraps as it grows (field-sizing, or its height here where that's missing) but stays one line of text:
 // Enter adds no line break and a pasted one becomes a space.
 const subjectFit=()=>{const x=$('#send-subject');if(CSS.supports?.('field-sizing','content')||!x.offsetParent)return;x.style.height='auto';x.style.height=x.scrollHeight+'px'};
