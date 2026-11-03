@@ -17388,9 +17388,10 @@ class App(*APP_MIXINS):
 
     def native_change_prompt(self,row):
         request={'receipt_key':hashlib.sha256(row['request_id'].encode()).hexdigest(),'card_id':row['card_id'],'text':prompt_text(row['title'],kind=row.get('kind') or 'change'),
-                 'receipt_dir':os.path.abspath(self.prompt_receipt_dir()),'target':str(self.config.get('telegram_owner'))}
+                 'target':str(self.config.get('telegram_owner'))}
         try:
-            result=subprocess.run([node_bin(self.config),str(ROOT/'change-prompt-run.mjs')],env=node_env(self.config),input=encoded(request),capture_output=True,text=True,timeout=60)
+            env={**node_env(self.config),'ASSISTANT_PROMPT_RECEIPTS':os.path.abspath(self.prompt_receipt_dir())}  # where receipts go: the service's, never the request's
+            result=subprocess.run([node_bin(self.config),str(ROOT/'change-prompt-run.mjs')],env=env,input=encoded(request),capture_output=True,text=True,timeout=60)
             reply=json.loads(result.stdout)
             if reply.get('definitely_not_sent'):
                 # e.g. OpenClaw helpers removed or renamed by an update: visible, then the plain prompt.
