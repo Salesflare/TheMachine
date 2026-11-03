@@ -14,17 +14,18 @@ await writeFile(join(fake,'dist','plugin-sdk','runtime-config-snapshot.js'),`imp
 const run=(file,input,env={})=>{const r=spawnSync(process.execPath,[join(root,file)],{input:JSON.stringify(input),encoding:'utf8',cwd:work,timeout:30000,
  env:{PATH:process.env.PATH,HOME:work,OPENCLAW_PACKAGE_DIR:fake,...env}});return {code:r.status,out:JSON.parse(r.stdout||'{}')}};
 try{
- // change-prompt-run.mjs: the receipt folder comes in the request; only an absolute, normal one is taken
- const prompt=receipt_dir=>({receipt_key:'a'.repeat(64),card_id:'7',text:'Synthetic',receipt_dir,target:'1000001'});
- for(const bad of ['receipts','./receipts',dir+'/x/../../escape',dir+'/../escape',42,null]){
-  const r=run('change-prompt-run.mjs',prompt(bad));
+ // change-prompt-run.mjs: the receipt folder comes from the service's environment, never the request; only an
+ // absolute, normal one is taken
+ const prompt={receipt_key:'a'.repeat(64),card_id:'7',text:'Synthetic',receipt_dir:join(dir,'from-request'),target:'1000001'};
+ for(const bad of ['receipts','./receipts',dir+'/x/../../escape',dir+'/../escape','']){
+  const r=run('change-prompt-run.mjs',prompt,{ASSISTANT_PROMPT_RECEIPTS:bad});
   assert.equal(r.code,1,String(bad));
   assert.deepEqual(r.out,{error:'prompt_unconfirmed',definitely_not_sent:true},String(bad));
   assert.ok(!existsSync(mark),'refused before OpenClaw is loaded: '+bad);
  }
  assert.deepEqual(await readdir(work),[],'nothing made for a refused folder');
  // a normal absolute folder gets past the checks (and the stand-in stops it there, unsent)
- assert.deepEqual(run('change-prompt-run.mjs',prompt(join(dir,'receipts'))).out,{error:'prompt_unconfirmed',definitely_not_sent:true});
+ assert.deepEqual(run('change-prompt-run.mjs',prompt,{ASSISTANT_PROMPT_RECEIPTS:join(dir,'receipts')}).out,{error:'prompt_unconfirmed',definitely_not_sent:true});
  assert.ok(existsSync(mark),'an absolute, normal folder is taken');
  assert.ok(!existsSync(join(dir,'..','escape')));
  // chat-history-run.mjs: its state folder and OpenClaw's config come from the environment, and the same rule applies
