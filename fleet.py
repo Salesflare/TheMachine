@@ -323,20 +323,26 @@ APP_PATH = re.compile(r'/(?:[A-Za-z0-9._~-]+/)*')
 APP_OWN_PORT = ':8443'  # the dashboard's default port on a self-hosted Machine; besides it only 443
 
 
-def app_address(config):
+def app_address(config, served=None):
     """The dashboard's Tailscale https address (https://<machine>.<tailnet>.ts.net/<path>/), told to the Network so the
     phone app opens this Machine after its owner signs in there. Only that address, never a secret; None when the
     dashboard has none on 443 or 8443 (another domain, any other port), or on a hosted Machine. A dashboard on its own
-    domain with its Tailscale name as an alias (`dashboard_aliases`, served at `dashboard_alias_path`) tells that one."""
+    domain with its Tailscale name as an alias (`dashboard_aliases`, served at `dashboard_alias_path`) tells that one.
+    served: the address `tailscale serve` proxies to this dashboard (onboarding.dashboard_served), when known. It wins
+    when it is on one of those tailnet names: the one that answers, though the config may list the same name on another
+    port first (an alias for the Host header, where nothing listens)."""
     if config.get('manage_url'):
         return None
     aliases = config.get('dashboard_aliases') if isinstance(config.get('dashboard_aliases'), list) else []
-    for host, path in [(config.get('dashboard_host'), config.get('dashboard_path') or '/'),
-                       *((alias, config.get('dashboard_alias_path') or '/assistant/') for alias in aliases)]:
-        found = _tailnet_address(host, path)
-        if found:
-            return found
-    return None
+    found = [address for address in (_tailnet_address(host, path) for host, path in [
+        (config.get('dashboard_host'), config.get('dashboard_path') or '/'),
+        *((alias, config.get('dashboard_alias_path') or '/assistant/') for alias in aliases)]) if address]
+    if found and isinstance(served, str):
+        parts = urllib.parse.urlsplit(served)
+        live = _tailnet_address(parts.netloc, parts.path) if parts.scheme == 'https' and not (parts.query or parts.fragment) else None
+        if live and urllib.parse.urlsplit(live).hostname in {urllib.parse.urlsplit(a).hostname for a in found}:
+            return live
+    return found[0] if found else None
 
 
 def _tailnet_address(host, path):
@@ -1728,6 +1734,9 @@ class Fleet(fleet_requests.Requests, fleet_reviews.Reviews, friends.Friends, con
         # can_ping() -> bool (set by the app): whether notify can reach the owner at all (a phone or computer with
         # notifications, Telegram or email). Unset: assumed so.
         self.can_ping = None
+        # served(config) (set by the app): the tailnet address `tailscale serve` proxies to the dashboard, or None
+        # (onboarding.dashboard_served), so app_address tells the one that answers. Unset: from the config only.
+        self.served = None
         # notify_notice(view) tells the owner about a notice (phone, Telegram) and returns the Telegram message id;
         # retell_notice(message_id, message) brings that message up to date.
         self.notify_notice = self.retell_notice = None
@@ -1787,7 +1796,7 @@ class Fleet(fleet_requests.Requests, fleet_reviews.Reviews, friends.Friends, con
             # remove_work: it removes a Work Fleet's company data when asked, after its owner leaves (removals_round)
             # app_address: its Tailscale address, for the phone app's sign-in (None deletes it on the Network)
             me = {'emails': account_emails(self.config), 'dashboard': dashboard_address(self.config), 'remove_work': True,
-                  'app_address': app_address(self.config)}
+                  'app_address': app_address(self.config, self.served(self.config) if self.served else None)}
             if self.meta('me_sent') != me:
                 try:
                     self.relay.call('POST', '/me', me, timeout=30)

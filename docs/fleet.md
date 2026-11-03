@@ -537,7 +537,7 @@ Your account, and only yours, also gets your dashboard's addresses (`POST /me`):
 link, and `app_address`, its Tailscale address (`https://<machine>.<tailnet>.ts.net[:8443]/<path>/`), so the phone app
 opens this Machine after you sign in there (`fleet.app_address`). Only 443 and 8443, the default port. A dashboard on
 its own domain sends its Tailscale alias (`dashboard_aliases`, at `dashboard_alias_path`); with none, or only other
-ports, it sends none. Settings, General says when it is shared. Unpair (Settings, AIs) or Disconnect in your account deletes
+ports, it sends none. When an alias is listed on more than one port, it sends the one `tailscale serve` really serves. Settings, General says when it is shared. Unpair (Settings, AIs) or Disconnect in your account deletes
 them on the Network.
 
 ### Sign-ins for it
