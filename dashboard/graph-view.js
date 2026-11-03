@@ -1171,7 +1171,7 @@ $('nav').addEventListener('click',e=>{const t=e.target.closest('button');if(t?.d
 let graphSkip=false,graphAt=0,graphScroll=null,graphShown='',graphNode='',graphDrawn='',graphRequest=0,editRole=false,graphPane=localStorage.getItem('graph-pane')||'';
 // Sub-tabs, as in Fleet: a pill row over panes that are all drawn at once and shown one at a time. A badge only
 // counts what needs the owner (a source with a problem, roles to confirm, friend requests), never a total.
-const subTabs=(label,attr,panes,current)=>`<div class="sub-tabs" role="tablist" aria-label="${esc(label)}">${panes.map(p=>`<button type="button" role="tab" ${attr}="${esc(p.id)}" aria-selected="${p.id===current}"><span class="ell">${esc(p.label)}</span>${p.badge?` <span class="badge${p.warn?' warn':''}">${p.badge}</span>`:''}</button>`).join('')}</div>`;
+const subTabs=(label,attr,panes,current)=>html`<div class="sub-tabs" role="tablist" aria-label="${label}">${panes.map(p=>html`<button type="button" role="tab" ${attr}="${p.id}" aria-selected="${p.id===current}"><span class="ell">${p.label}</span>${p.badge?html` <span class="badge${p.warn?' warn':''}">${p.badge}</span>`:''}</button>`)}</div>`;
 function tabsFade(row){const max=row.scrollWidth-row.clientWidth;row.classList.toggle('more-left',row.scrollLeft>2);row.classList.toggle('more-right',row.scrollLeft<max-2)}
 function tabsShow(row){if(!row)return;const t=row.querySelector('[aria-selected="true"]');if(t&&row.scrollWidth>row.clientWidth)row.scrollLeft=Math.max(0,t.offsetLeft-row.offsetLeft-(row.clientWidth-t.offsetWidth)/2);tabsFade(row)}
 const allTabsFade=()=>document.querySelectorAll('.fleet-tabs,.sub-tabs').forEach(tabsFade);
