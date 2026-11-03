@@ -27,7 +27,7 @@ For one project, **Follow-ups…** in its **⋯** on the board or on its page. *
 
 **Ask me before sending** is the default: drafts wait in your to-dos. **Send without asking** is a standing yes for that board or project. Anything unusual still waits for you, and so does anything that fails. With Careful mode on, it always asks. A follow-up never goes out twice.
 
-Right before one goes, the thread is checked again, and if anyone wrote since the draft it isn’t sent: "Not sent: new message in the thread".
+Right before one goes, the thread is checked again, and if anyone wrote since the draft it isn’t sent: "Not sent: new message in the thread". The to-do shows that message, who wrote it and when, with **Read it** and **Redo for this message**, which asks for a new draft that takes it into account.
 
 ## Reviewing them
 

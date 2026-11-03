@@ -27,7 +27,7 @@ Para un solo proyecto, **Seguimientos…** en el **⋯** de su tarjeta o en su p
 
 **Pregúntame antes de enviar** es lo predeterminado: los borradores esperan en tus tareas. **Enviar sin preguntar** es un sí permanente para ese tablero o proyecto. Lo inusual te sigue esperando, igual que lo que falla. Con el modo Prudente activado, siempre pregunta. Un seguimiento nunca sale dos veces.
 
-Justo antes de enviarlo se revisa el hilo otra vez, y si alguien escribió desde el borrador, no sale: «No enviado: hay un mensaje nuevo en el hilo».
+Justo antes de enviarlo se revisa el hilo otra vez, y si alguien escribió desde el borrador, no sale: «No enviado: hay un mensaje nuevo en el hilo». La tarea muestra ese mensaje, quién lo escribió y cuándo, con **Leerla** y **Rehacer para este mensaje**, que pide un borrador nuevo que lo tenga en cuenta.
 
 ## Revisarlos
 

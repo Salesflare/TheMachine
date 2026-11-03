@@ -8460,12 +8460,14 @@ class Store:
                                    **({'status':'cancelled','error':None} if r['status'] in ('blocked','cancelled') and r['error']==follow_ups.STOPPED else {}),
                                    **({'auto':True} if r['approval_id'].startswith('auto-merge:') else {}),
                                    **({'sent_at':r['updated_at']} if r['status']=='sent' else {}),
+                                   # Held for a new message in the thread: which one, so the to-do shows it and offers a redo
+                                   **({'held_by':held} if r['status']=='blocked' and r['error']==follow_ups.HELD and (held:=follow_ups.held_message(db,r['id'])) else {}),
                                    # Checked long enough without a trace: the owner may try again, and the card says so.
                                    **({'retry_ok':True,'error':'Last attempt unconfirmed: I found no sign of it going out. Check the conversation; if it isn’t there, try again.'}
                                       if send_retry_ok(r,json.loads(r['payload']).get('kind')) else {}),
                                    # A merged fix can be undone for a day.
                                    **({'undo_until':(dt.datetime.fromisoformat(r['updated_at'])+UNDO_MERGE).isoformat()} if r['status']=='sent' and str(r['message_id']).startswith('merge:') else {})}
-                    for r in db.execute('SELECT j.revision,j.status,j.error,j.message_id,j.approval_id,j.updated_at,j.payload,t.status snooze_status,t.until snooze_until,t.error snooze_error FROM action_jobs j LEFT JOIN thread_snoozes t ON t.job_id=j.id WHERE j.suggestion_id=?',(suggestion['id'],))}
+                    for r in db.execute('SELECT j.id,j.revision,j.status,j.error,j.message_id,j.approval_id,j.updated_at,j.payload,t.status snooze_status,t.until snooze_until,t.error snooze_error FROM action_jobs j LEFT JOIN thread_snoozes t ON t.job_id=j.id WHERE j.suggestion_id=?',(suggestion['id'],))}
             extra['next_actions']=[{**bounces.mark_draft(db,item),**({'state':states[item['revision']]} if item['revision'] in states else {})} for item in next_actions.visible_actions(action)]
             if action['kind']!='menu' and action['revision'] in states:extra['action_status']=states[action['revision']]
             # The draft Telegram shows in full on the card, so its Send there confirms directly (card_draft).
@@ -17960,6 +17962,9 @@ class App(*APP_MIXINS):
         except Exception as error:  # noqa: BLE001 - offline, signed out, an odd answer: fail closed
             LOG.info('follow-up thread not checked job=%s why=%s', job['id'], type(error).__name__)
             return 'unchecked', None
+        if news:  # this to-do's own earlier send (sent, then reopened and drafted again) is no new message for it
+            with self.store.connect() as db:
+                news = follow_ups.without_own_sends(db, job['suggestion_id'], news)
         return ('changed', news) if news else (None, [])
 
     def follow_up_pause(self, late=False):

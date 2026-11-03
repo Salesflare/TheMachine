@@ -1517,6 +1517,59 @@ class FollowUps(unittest.TestCase):
         self.assertEqual(self.outbox(transport)('2026-10-19T09:00:00+00:00'), 'held')
         self.assertEqual(transport.sent, [])
 
+    def test_a_held_send_shows_the_new_message_on_the_to_do(self):
+        transport = FakeOutbox()
+        acme, _ = self.drafted()
+        self.send(acme)
+        self.store.commit_page('work', {}, [{**msg('in3', '2026-10-19T08:45:00+00:00', who='Sam Rivera <sam@client.example>'),
+                                             'body': 'Thanks! We start   Monday.\n\nCould you send the slides first? ' + 'More words. ' * 30}])
+        with self.store.connect() as db:
+            event_id = db.execute("SELECT id FROM events WHERE source_id='in3'").fetchone()[0]
+            graph.label(db, [event_id], 'Acme pilot', 'review', NOW)
+        self.assertEqual(self.outbox(transport)('2026-10-19T09:00:00+00:00'), 'held')
+        held = self.action_status(acme)['held_by']
+        self.assertEqual((held['event_id'], held['from'], held['at'], held['mine']), (event_id, 'Sam Rivera', '2026-10-19T08:45:00+00:00', False))
+        self.assertTrue(held['snippet'].startswith('Thanks! We start Monday. Could you send the slides first?'))
+        self.assertLessEqual(len(held['snippet']), follow_ups.SNIPPET + 1)
+        self.assertTrue(held['snippet'].endswith('…'))
+
+    def test_a_held_send_shows_a_message_only_the_fresh_read_found(self):
+        transport = FakeOutbox()
+        acme, _ = self.drafted()
+        self.send(acme)
+        self.mailbox.add('t1', 'in3', '2026-10-19T08:58:00+00:00', mine=False, who='Sam Rivera <sam@client.example>')  # not synced yet
+        self.assertEqual(self.outbox(transport)('2026-10-19T09:00:00+00:00'), 'held')
+        self.assertEqual(self.action_status(acme)['held_by'], {'event_id': None, 'from': 'Sam Rivera', 'mine': False,
+                                                               'at': '2026-10-19T08:58:00+00:00', 'snippet': ''})
+        self.collect('in3', '2026-10-19T08:58:00+00:00', mine=False)  # once synced, Read it opens it
+        with self.store.connect() as db:
+            event_id = db.execute("SELECT id FROM events WHERE source_id='in3'").fetchone()[0]
+        self.assertEqual(self.action_status(acme)['held_by']['event_id'], event_id)
+
+    def test_a_to_do_drafted_again_after_its_follow_up_went_isnt_held_by_what_it_answers(self):
+        """Sent, then the reply reopened the to-do and it was drafted again for that reply (a new email to someone else):
+        neither its own sent copy nor the reply it answers is a new message for the new draft."""
+        transport = FakeOutbox()
+        acme, _ = self.drafted()
+        self.send(acme)
+        self.assertEqual(self.outbox(transport)('2026-10-19T09:00:00+00:00'), 'sent')
+        with self.store.connect() as db:
+            sent_as = db.execute("SELECT message_id FROM action_jobs WHERE suggestion_id=? AND status='sent'", (acme,)).fetchone()[0]
+        self.collect(sent_as, '2026-10-19T09:00:00+00:00', mine=True)  # the sync brings in its own sent copy
+        self.collect('in3', '2026-10-19T09:30:00+00:00', mine=False)  # Sam answers: write to Robin instead
+        self.at('2026-10-19T10:00:00+00:00')
+        with self.store.connect() as db:  # the reply reopens the to-do and it's drafted again (a new preparation)
+            self.store.queue_preparation(db, acme, 'update-1')
+        self.prepared(acme, to=['robin@client.example'], body='Hi Robin, Sam pointed me to you.', revision='r2-' + acme[:6])
+        self.assertEqual(self.store.confirm_action(acme, 'r2-' + acme[:6], 'tap2-' + acme, 'dashboard')['status'], 'queued')
+        self.assertEqual(self.outbox(transport)('2026-10-19T10:05:00+00:00'), 'sent')
+        self.assertEqual([sid for sid, _ in transport.sent], [acme, acme])
+        # A message after that new draft still holds it
+        self.collect('in4', '2026-10-19T10:10:00+00:00', mine=False)
+        self.prepared(acme, to=['robin@client.example'], body='Hi Robin, one more thing.', revision='r3-' + acme[:6])
+        self.store.confirm_action(acme, 'r3-' + acme[:6], 'tap3-' + acme, 'dashboard')
+        self.assertEqual(self.outbox(transport)('2026-10-19T10:15:00+00:00'), 'held')
+
     def test_a_failed_read_doesnt_send_and_a_new_send_checks_again(self):
         transport = FakeOutbox()
         acme, _ = self.drafted()
