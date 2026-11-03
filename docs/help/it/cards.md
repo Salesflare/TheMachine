@@ -33,6 +33,8 @@ Un'attività su un progetto mostra il nome del progetto nella riga sotto il tito
 
 Quando un'attività ha bisogno di un'altra area per andare avanti, lo chiede con un pulsante **Sposta in Lavoro**. Niente si sposta finché non lo tocchi; poi continua da sola.
 
+Quando avvii un'attività, può sempre leggere i messaggi da cui è nata, anche nella casella di un'altra azienda. Se le servono altri messaggi da un'altra area, lo chiede con **Usa questa email per questa attività**; un tocco li aggiunge e continua. La posta per un'altra delle tue aziende va subito tra le attività di quell'azienda.
+
 ## I pulsanti
 
 Un'attività mostra il passo successivo, come **Fallo** o **Rivedi e invia**, con **Posticipa** accanto. Vedi [Fallo](do-it.md) e [Posticipa](snooze.md). Una pronta ha anche **Chiedi modifiche** (di' cosa cambiare nella bozza e la rifà). C'è anche **Segna come fatto** (è sistemata): in vista senza bozza, altrimenti in cima a **…**.

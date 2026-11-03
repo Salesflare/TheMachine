@@ -244,9 +244,10 @@ const ID=c=>c,mmClass=(c,tag)=>[...c.split(' ').filter(x=>x&&x!=='primary'),...(
 // changes beside it, Snooze and the rest in the …. A made doc without a link (Word) has Mark done lead.
 const docMade=(s,a)=>a.kind==='doc_write'&&(a.state||s.action_status)?.status==='sent';
 const docMadeLink=(s,a)=>docMade(s,a)&&safeURL(a.url||(a.state||s.action_status)?.url)||'';
-function cardActions(s,choices,smartButtons,unmerge,hint,smart){const skill=skillLead(s),copy=copyLead(s,smart)||skill,asked=moveAsk(s);
+function cardActions(s,choices,smartButtons,unmerge,hint,smart){const skill=skillLead(s),copy=copyLead(s,smart)||skill,asked=moveAsk(s)||useAsk(s);
  const made=smart.some(a=>docMade(s,a)),madeLink=smart.some(a=>docMadeLink(s,a));
- if(asked)smartButtons=[k=>html`<button class="${k('primary','button')}" data-card-move="${s.id}" data-area="${s.preparation_move_to}">${moveText(s.preparation_move_to)}</button>`,...smartButtons];
+ if(moveAsk(s))smartButtons=[k=>html`<button class="${k('primary','button')}" data-card-move="${s.id}" data-area="${s.preparation_move_to}">${moveText(s.preparation_move_to)}</button>`,...smartButtons];
+ else if(useAsk(s))smartButtons=[k=>html`<button class="${k('primary','button')}" data-card-use="${s.id}">${useText(s.preparation_use)}</button>`,...smartButtons];
  if(skill)smartButtons=[k=>skillButton(s,k),...smartButtons];
  else if(copy)smartButtons=[k=>html`<button class="${k('primary','button')}" data-id="${s.id}" data-result="copy">Copy draft</button>`,...smartButtons];
  const answered=s.status==='prepared'&&(()=>{try{return JSON.parse(s.outcome||'{}').state==='answered'}catch{return false}})();
@@ -278,7 +279,7 @@ function cardActions(s,choices,smartButtons,unmerge,hint,smart){const skill=skil
  const row=html`${plain.filter(shown).sort((a,b)=>made?(a[0]==='complete'?-1:b[0]==='complete'?1:0):0).map(x=>btn(x))}`,hiddenBtns=html`${plain.filter(x=>!shown(x)&&quiet(x)).map(b=>btn(b,html` hidden`))}`;
  const items=html`${[...plain.filter(x=>doneTop&&x[0]==='complete').map(x=>btn(x)),...leads.slice(1).map(mmPlain),...plain.filter(x=>!shown(x)&&!quiet(x)&&!(doneTop&&x[0]==='complete')).map(x=>btn(x)),sheet,repeat,unmerge,...others.filter(x=>x[0]==='reject').map(b=>html`<hr class="mm-sep">${btn(b)}`)].filter(Boolean)}`;
  const menu=String(items)?html`<details class="more-actions"><summary aria-label="${t('More actions')}" title="${t('More actions')}">${DOTS}</summary><div class="more-menu" role="group" aria-label="${t('More actions')}">${items}${sub}</div></details>`:'';
- const two=(leads[0]?1:0)+plain.filter(shown).length>2;  // on a phone: the lead on its own row, the rest on one
+ const two=(leads[0]?1:0)+plain.filter(shown).length>2||useAsk(s);  // on a phone: the lead on its own row, the rest on one (a long Use … lead too)
  return html`<div class="actions${two?html` two-rows`:''}">${leads[0]?leads[0](ID):''}${row}${menu}${hiddenBtns}</div>${copy&&!skill?html`<p class="copy-why">${COPY_WHY}</p>`:''}`}
 // The … menu's Hand off… opens its sheet in place (Back returns); a click outside, Escape or a choice closes the menu.
 document.addEventListener('click',e=>{const o=e.target.closest('.more-menu [data-mm-open],.more-menu [data-mm-back]');if(!o)return;e.preventDefault();const m=o.closest('.more-menu'),sub=m.querySelector('.mm-sub'),go=o.dataset.mmOpen!=null;
@@ -300,7 +301,7 @@ const askBlocked=s=>s.preparation_status==='blocked'&&!s.preparation_error&&!!St
 // disagree. A stopped run comes first: a card whose run stopped is not Preparing any more, whatever its status says.
 // Closed by itself once its moment passed (expired_at): Not needed, like a dismissed one, so it never reads as done by them
 const lapsed=s=>s.status==='completed'&&!!s.expired_at;
-const cardState=s=>lapsed(s)?'Not needed':s.preparation_status==='blocked'&&!closed(s)&&s.status!=='snoozed'?(s.preparation_error==='stopped'?'Stopped':askBlocked(s)||moveAsk(s)||s.preparation_browser&&!s.preparation_error?'Needs your help':'Stuck'):['accepted','instructions'].includes(s.status)?'Preparing':label(s.status);
+const cardState=s=>lapsed(s)?'Not needed':s.preparation_status==='blocked'&&!closed(s)&&s.status!=='snoozed'?(s.preparation_error==='stopped'?'Stopped':askBlocked(s)||moveAsk(s)||useAsk(s)||s.preparation_browser&&!s.preparation_error?'Needs your help':'Stuck'):['accepted','instructions'].includes(s.status)?'Preparing':label(s.status);
 const askQuestion=(s,smart,hint)=>{if(closed(s)||s.status==='snoozed'||hint)return '';if(askBlocked(s))return s.preparation_questions?.length?s.preparation_questions.map(q=>q.question).join(' '):String(s.preparation_reason).trim();
  if(s.status!=='prepared'||s.preparation_status==='blocked'||smart.some(a=>a.kind!=='open'))return '';
  try{const o=JSON.parse(s.outcome||'{}'),q=String(o.needs||'').trim();return o.state==='needs_you'&&/\?$/.test(q)?q:''}catch{return ''}};
@@ -340,6 +341,15 @@ const moveTargets=s=>!s.area||closed(s)?[]:(state.areas||[]).filter(a=>a.id!==s.
 // Its area as a chip on its line, under All; Area under Details changes it (the picker).
 const areaChip=s=>s.scope&&scopeFilter==='all'?html`<span class="chip scope">${s.scope==='work'?'Work':'Personal'}</span>`:'';
 const moveAsk=s=>!closed(s)&&s.preparation_status==='blocked'&&!s.preparation_error&&!!s.preparation_move_to&&moveTargets(s).some(a=>a.id===s.preparation_move_to);
+// A run stuck on messages from another area (preparation_blocked use_event_ids): "Use this email for this to-do" leads;
+// the tap makes them its sources (Store.use_sources) and it carries on by itself. Its accounts and area stay.
+const useAsk=s=>!closed(s)&&s.preparation_status==='blocked'&&!s.preparation_error&&!!s.preparation_use?.n&&['accepted','instructions'].includes(s.status);
+const useText=u=>u.mail?(u.n===1?t('Use this email for this to-do'):t('Use these emails for this to-do')):(u.n===1?t('Use this message for this to-do'):t('Use these messages for this to-do'));
+async function cardUse(id,b){if(b)b.disabled=true;
+ try{const r=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'card_use_sources',args:{suggestion_id:id,decision_id:crypto.randomUUID()}})});
+  await refresh();if(typeof chatId!=='undefined'&&chatId===id&&typeof chatPoll==='function')chatPoll();toast(r.line)}
+ catch(err){errCaught(err);toast(err.message,true)}finally{if(b)b.disabled=false}}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-card-use]');if(!b)return;e.preventDefault();b.closest('details.more-actions,details.chat-menu')?.removeAttribute('open');cardUse(b.dataset.cardUse,b)});
 async function cardMove(id,area,b,undo){if(b)b.disabled=true;
  try{const r=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'card_move',args:{suggestion_id:id,decision_id:crypto.randomUUID(),...(undo?{undo}:{area})}})});
   document.querySelector('.area-picker')?.remove();await refresh();if(typeof chatId!=='undefined'&&chatId===id&&typeof chatPoll==='function')chatPoll();

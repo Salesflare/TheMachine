@@ -33,6 +33,8 @@ Una tarea de un proyecto muestra el nombre del proyecto en la línea bajo su tí
 
 Cuando una tarea necesita otra área para seguir, lo pide con un botón **Mover a Trabajo**. Nada se mueve hasta que lo tocas; después sigue sola.
 
+Cuando inicias una tarea, siempre puede leer los mensajes de los que vino, también en el buzón de otra empresa. Si necesita otros mensajes de otra área, lo pide con **Usar este correo para esta tarea**; un toque los añade y sigue. El correo para otra de tus empresas va desde el principio a las tareas de esa empresa.
+
 ## Los botones
 
 Una tarea muestra su siguiente paso, como **Hazlo** o **Revisar y enviar**, con **Posponer** al lado. Consulta [Hazlo](do-it.md) y [Posponer](snooze.md). Una tarea lista también tiene **Pedir cambios** (di qué cambiar en el borrador y lo rehace). **Marcar como hecha** (ya está resuelta) también está: a la vista sin borrador, si no, arriba en **…**.
