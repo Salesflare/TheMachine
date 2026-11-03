@@ -187,7 +187,7 @@ test('inject: registers the push token once a week, with the page\'s own sign-in
   const post = p.calls.find(c => c.method === 'POST');
   assert.equal(post.url, 'https://sam.app.themachine.computer/api/action');
   assert.equal(post.headers['X-CSRF-Token'], 'c1');
-  assert.deepEqual(post.body, {action: 'app_push_register', args: {platform: 'fcm', token: 'x'.repeat(30), sandbox: false, label: 'Pixel'}});
+  assert.deepEqual(post.body, {action: 'app_push_register', args: {platform: 'fcm', token: 'x'.repeat(30), sandbox: false, label: 'Pixel', fetch: false}});
   p.calls.length = 0;
   assert.equal((await p.run(payload)).push, undefined);
   assert.equal(p.calls.length, 0);
@@ -241,6 +241,19 @@ test('inject: a tapped notification opens its to-do, and only a plain id', async
   const q = page('https://sam.app.themachine.computer/');
   await q.run({base: 'https://sam.app.themachine.computer/', tag: 'x"><script>'});
   assert.equal(q.win.location.hash, '');
+});
+
+test('inject: an app that shows the notification itself says so, and registers again at once after the update', async () => {
+  const p = page('https://sam.app.themachine.computer/');
+  const base = 'https://sam.app.themachine.computer/', token = 'x'.repeat(30);
+  assert.equal((await p.run({base, push: {platform: 'fcm', token}})).push, 'registered');
+  p.calls.length = 0;
+  // The same token, now with fetch (the new app): not "fresh", so the Machine hears it within the week
+  assert.equal((await p.run({base, push: {platform: 'fcm', token, fetch: true}})).push, 'registered');
+  assert.equal(p.calls.find(c => c.method === 'POST').body.args.fetch, true);
+  p.calls.length = 0;
+  assert.equal((await p.run({base, push: {platform: 'fcm', token, fetch: true}})).push, undefined);
+  assert.equal(p.calls.length, 0);
 });
 
 test('inject: keeps the phone\'s id with the token, for Settings to tell this phone', async () => {
@@ -304,7 +317,7 @@ test('inject: the phone asks about the microphone and notifications; Open settin
   await q.run({base, device});
   assert.equal(await q.win.machinePhone.pushOn(), 'on');
   const post = q.calls.find(c => c.method === 'POST');
-  assert.deepEqual(post.body, {action: 'app_push_register', args: {platform: 'fcm', token: 'f'.repeat(40), sandbox: false, label: 'Pixel'}});
+  assert.deepEqual(post.body, {action: 'app_push_register', args: {platform: 'fcm', token: 'f'.repeat(40), sandbox: false, label: 'Pixel', fetch: false}});
   assert.equal(JSON.parse(q.store.get('machine-app-push')).id, 'dev_1');
 
   const old = page(base);

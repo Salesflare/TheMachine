@@ -6,7 +6,8 @@ a wait coming back) and the morning digest. Channels: push (the dashboard app on
 Machine and encrypted for each device, push-send.mjs), Telegram, and email (through the control plane's mailer, for
 hosted and paired Machines). The mobile app (a shell around the dashboard, which has no Web Push) gets its push as a
 wakeup without any text, sent by the control plane to the owner's phones (app_push); this Machine keeps only which
-phones have it (notify_app_devices), never their tokens.
+phones have it (notify_app_devices), never their tokens. The Android app then asks this Machine for the to-do's short
+line (app_line, GET /api/notice) over its own sign-in and shows that: the line never passes through FCM or the cloud.
 
 Smart, like Slack (help center: "Configure your Slack notifications", "Set your Slack status and availability", "Guide
 to email notifications"):
@@ -61,6 +62,10 @@ MAIL_SUBJECT, MAIL_TEXT = 120, 4000
 APP_DEVICES = 'CREATE TABLE IF NOT EXISTS notify_app_devices(id TEXT PRIMARY KEY,platform TEXT NOT NULL,label TEXT NOT NULL,created_at TEXT NOT NULL)'
 APP_KINDS = ('todo', 'result', 'reminder', 'digest', 'fleet', 'test')  # the control plane's fixed text per kind
 APP_ID = re.compile(r'[A-Za-z0-9_-]{1,64}')
+# The line a woken app shows ("Ready: Reply about the listing"), by the wakeup's tag: the same words as the web push,
+# short. Kept APP_LINE_DAYS, at most APP_LINES of them.
+APP_LINES_TABLE = 'CREATE TABLE IF NOT EXISTS notify_app_lines(tag TEXT PRIMARY KEY,line TEXT NOT NULL,at REAL NOT NULL)'
+APP_LINE, APP_LINES, APP_LINE_DAYS = 60, 200, 3
 
 
 def ensure(db):
@@ -74,6 +79,7 @@ def ensure(db):
     for row in db.execute('SELECT id FROM notify_queue WHERE delivery IS NULL').fetchall():
         db.execute('UPDATE notify_queue SET delivery=? WHERE id=?', (uuid.uuid4().hex, row[0]))
     db.execute(APP_DEVICES)
+    db.execute(APP_LINES_TABLE)
 
 
 def prefs(db):
@@ -374,6 +380,40 @@ def app_device_add(db, device_id, platform, label, at):
 def app_device_remove(db, ids):
     ensure(db)
     db.executemany('DELETE FROM notify_app_devices WHERE id=?', [(i,) for i in ids])
+
+
+def clip(text, limit=APP_LINE):
+    """One plain line of at most `limit` characters, cut at a word with an ellipsis."""
+    text = ' '.join(re.sub(r'[\x00-\x1f\x7f]', ' ', str(text or '')).split())
+    if len(text) <= limit:
+        return text
+    cut = text[:limit - 1]
+    word = cut.rsplit(' ', 1)[0]
+    return (word if len(word) >= limit // 2 else cut).rstrip(' ,;:.-') + '…'
+
+
+def app_line_text(template, title, limit=APP_LINE):
+    """A lead and the to-do's title ("Ready: {}") in at most `limit` characters: the title is what gets shorter."""
+    room = limit - len(t(template, ''))
+    return clip(t(template, clip(title, max(room, 10))), limit)
+
+
+def app_line_save(db, tag, line, at=None):
+    ensure(db)
+    at = wall() if at is None else at
+    db.execute('INSERT INTO notify_app_lines(tag,line,at) VALUES(?,?,?) ON CONFLICT(tag) DO UPDATE SET line=excluded.line,at=excluded.at',
+               (tag, clip(line), at))
+    db.execute('DELETE FROM notify_app_lines WHERE at<? OR tag NOT IN (SELECT tag FROM notify_app_lines ORDER BY at DESC LIMIT ?)',
+               (at - APP_LINE_DAYS * 86400, APP_LINES))
+
+
+def app_line(db, tag):
+    """The line for a wakeup's tag, or '' (unknown, too old, or a kind that has none)."""
+    ensure(db)
+    if not APP_ID.fullmatch(str(tag or '')):
+        return ''
+    row = db.execute('SELECT line FROM notify_app_lines WHERE tag=? AND at>=?', (tag, wall() - APP_LINE_DAYS * 86400)).fetchone()
+    return row[0] if row else ''
 
 
 def app_push(url, token, body, opener=None):

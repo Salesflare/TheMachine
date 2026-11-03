@@ -2,7 +2,8 @@
 // iOS and Android. It only uses what the dashboard already offers a signed-in owner:
 //  - push: hands the phone's push token to the Machine (action app_push_register), which registers it with the
 //    account's push relay. The Machine then asks the relay for content-free wakeups ("New to-do"); the text a
-//    notification opens is fetched from the Machine, never carried by the push.
+//    notification opens is fetched from the Machine, never carried by the push. With device.fetch (Android) the app
+//    shows the notification itself, with the to-do's line it asks the Machine for (MachinePushService).
 //    Once a week per token is enough (kept in this page's own storage on the Machine's address).
 //  - share: what was shared to the app (text, links, files) opens the dashboard's New to-do, filled in, for the
 //    owner to check and add (window.machineShare). A dashboard from before that only gets the text, as a new to-do.
@@ -12,7 +13,7 @@
 //    A file linked in a new tab (a to-do's files) goes the same way, for the phone to open in an app.
 //  The phone's id from app_push_register is kept with the token, so Settings can tell this phone's notifications.
 //  - phone: window.machinePhone, the phone's own questions (the microphone, notifications) and its settings page.
-// payload: {base, device: {platform, sandbox, label}, push?: {platform, token, sandbox, label},
+// payload: {base, device: {platform, sandbox, label, fetch?}, push?: {platform, token, sandbox, label, fetch?},
 //           share?: {text, files: [{name, type, data(base64)}]}, tag?, listen?}
 // Returns a promise of {push: 'registered'|'failed'|undefined, share: 'opened'|'added'|'failed'|undefined}.
 (async function machineInject(payload) {
@@ -72,12 +73,15 @@
   const KEY = 'machine-app-push', WEEK = 7 * 24 * 3600 * 1000;
   let last = null;
   try { last = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { last = null; }
-  const fresh = last && last.token === (payload.push && payload.push.token) && Date.now() - last.at < WEEK && 'id' in last;
+  // An app that now shows the notification itself (fetch) registers again at once, for the push to leave it to the app
+  const fresh = last && last.token === (payload.push && payload.push.token) && Date.now() - last.at < WEEK && 'id' in last &&
+    !!last.fetch === !!(payload.push && payload.push.fetch);
   const register = async (device, token) => {
+    const fetch = !!device.fetch;
     const done = await action('app_push_register', {platform: device.platform, token,
-      sandbox: !!device.sandbox, label: String(device.label || '').slice(0, 60)});
+      sandbox: !!device.sandbox, label: String(device.label || '').slice(0, 60), fetch});
     const id = done && done.registered && typeof done.id === 'string' ? done.id : null;
-    try { localStorage.setItem(KEY, JSON.stringify({token, at: Date.now(), id})); } catch (e) { /* next time */ }
+    try { localStorage.setItem(KEY, JSON.stringify({token, at: Date.now(), id, fetch})); } catch (e) { /* next time */ }
   };
   if (payload.push && payload.push.token && !fresh) {
     try { await register(payload.push, payload.push.token); out.push = 'registered'; } catch (e) { out.push = 'failed'; }

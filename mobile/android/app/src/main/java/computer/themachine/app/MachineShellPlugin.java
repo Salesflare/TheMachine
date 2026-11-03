@@ -922,6 +922,7 @@ public class MachineShellPlugin extends Plugin {
             JSONObject device = new JSONObject(); // for a push token, now (push) or later (machinePhone.pushOn)
             device.put("platform", "fcm");
             device.put("label", Build.MODEL == null ? "Android" : Build.MODEL);
+            device.put("fetch", true); // the app shows the notification itself, with the line it asks the Machine for
             payload.put("device", device);
             String token = prefs().getString("pushToken", null);
             if (token != null) { // inject.js hands it to the Machine once a week at most

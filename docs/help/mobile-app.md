@@ -15,7 +15,11 @@ On a hosted Machine the app signs in with your account. On a self-hosted one, op
 
 ## Notifications
 
-The app asks to allow notifications when it first opens. A notification only says that something waits, like a new to-do or a result, never what it is about: tap it to open the dashboard and read it there. No text of a to-do leaves your Machine for it: The Machine's service sends a fixed line through Apple or Google, so your to-dos stay off their servers and your lock screen.
+The app asks to allow notifications when it first opens. Tap one to open its to-do. No text of a to-do passes through Apple, Google or The Machine's service: they only carry a fixed line, like "A to-do needs you".
+
+On Android the app then asks your own Machine for the to-do's title and shows it, like "Ready: Reply about the listing". When it can't reach your Machine, it says how many wait, like "2 to-dos need you".
+
+With **Text in notifications** off in **Settings**, **Security**, it keeps the fixed line. When your phone hides sensitive notification content on the lock screen, only the fixed line shows there. On iPhone the fixed line stays.
 
 They follow the same rules as push on the web: what you picked per kind in [Notifications](notifications.md), your [work hours](work-hours.md), and nothing while you are using a dashboard.
 
