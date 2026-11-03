@@ -26,7 +26,7 @@ Um nível é um ponto de partida. Se depois você mudar qualquer configuração,
 
 ## O nível de um Fleet de Trabalho
 
-O proprietário ou um admin do Fleet escolhe o nível na página da conta, nas configurações do Fleet. Todos no Fleet veem o nível. Quando ele é Cuidadoso:
+O proprietário ou um admin do Fleet escolhe o nível nas configurações do Fleet: em **Configurações** › **Conta**, clique em **Fleet**. Todos no Fleet veem o nível. Quando ele é Cuidadoso:
 
 - Respostas a colegas esperam seu OK, sem nomes, e só sobre pessoas das suas contas de trabalho.
 - Apresentações e repasses também esperam por você.

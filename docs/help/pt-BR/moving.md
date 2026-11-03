@@ -9,7 +9,7 @@ order: 5
 ---
 ## Exportar
 
-1. Na página da sua conta, abra Dados e clique em **Exportar tudo**.
+1. Em **Configurações** › **Conta**, clique em **Exportar** ao lado de Seus dados e depois em **Exportar tudo**.
 2. Se quiser, defina uma senha para levar suas chaves junto. Sem ela, a exportação recebe um código e essas fontes precisam ser conectadas de novo.
 3. Clique em **Baixar**. O arquivo vem direto da sua Machine, que o exclui depois de 24 horas, ou na hora com **Excluir agora**.
 

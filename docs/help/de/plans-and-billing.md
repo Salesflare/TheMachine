@@ -25,6 +25,6 @@ Die Preise für gehostet, Arbeitsplätze und Familien-Fleets sind Early-Adopter-
 
 ## Karte und Rechnungen
 
-Öffne auf deiner Kontoseite Abrechnung und tippe auf **Abo verwalten**. Das öffnet Stripe, wo du deine Karte änderst und Rechnungen herunterlädst. Deine Kartendaten erreichen uns nie.
+Tippe in **Einstellungen** › **Konto** auf **Abrechnung** und dann auf **Abo verwalten**. Das öffnet Stripe, wo du deine Karte änderst und Rechnungen herunterlädst. Deine Kartendaten erreichen uns nie.
 
-Die Größe deiner Machine kannst du jederzeit auf deiner Kontoseite ändern.
+Die Größe deiner Machine kannst du jederzeit ändern: Tippe in **Einstellungen** › **Konto** auf **Tarif ändern**.

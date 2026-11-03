@@ -8,19 +8,21 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 
 // Settings, Account: the first tab on a Machine linked to a control plane account. Hosted, the control plane answers on
 // the dashboard's own host (/_machine/account, the owner's sign-in there) and each button is a POST to
-// /_machine/account-hop in a new tab, which opens that page of the account signed in. Self-hosted and paired, this
+// /_machine/account-hop in this same tab, which opens that part of the account signed in, as a focused step that leads
+// back here (a hosted Machine has no account dashboard besides this tab). Self-hosted and paired, this
 // Machine asks (api/account) and the buttons are links. Sign out stays (hosted). Not linked: no Account tab, and General
 // keeps "Join the Network". Made-up data only. Set SHOTS=<dir> for screenshots.
 const dashboard=await dashboardPage();
 const hours={days:[0,1,2,3,4],start:'08:00',end:'18:00',morning:'09:00',digest_at:'08:30',timezone:'UTC'};
 const CP='https://account.example';
 const hostedSummary={email:'alex@example.org',hop:true,
- plan:{name:'Standard',price:'€25 a month, excl. VAT',status:'active',status_text:'Active',trial_end:null,cancel_at:null},
- next_invoice:{date:'2026-11-20',amount:'€25, excl. VAT'},
- server:{size:'8 GB memory',region:'Europe, the Netherlands',status:'Running'},
+ plan:{name:'Standard',price:'€10 a month, excl. VAT, early adopter price (was €25)',status:'active',status_text:'Active',trial_end:null,cancel_at:null},
+ next_invoice:{date:'2026-11-20',amount:'€10, excl. VAT'},
+ server:{size:'4 GB memory',region:'Europe, the Netherlands',status:'Running'},
  connections:[{service:'Google',email:'alex@example.org'},{service:'Microsoft',email:'alex@work.example'}],
  fleets:[{name:'Example Co',kind:'work',role:'owner',people:4,seats:3}],
- actions:['account','fleet','plan','portal','cancel','connections'],
+ actions:['account','fleet','plan','portal','cancel','connections','overview','username','security','data','delete','support','friends'],
+ name:'alex.themachine.example',security:{recovery:9,passkeys:2,phones:1},friends:{on:true,waiting:1},export:{ready:false,until:null},
  links:{account:CP+'/account',fleet:CP+'/account?tab=fleet',plan:CP+'/account?tab=overview#status',portal:CP+'/account?tab=billing',cancel:CP+'/account/cancel',connections:CP+'/setup#sources'}};
 const pairedSummary={on:true,email:'sam@example.org',hop:false,plan:null,next_invoice:null,server:null,connections:[],
  fleets:[{name:'Family',kind:'family',role:'member',people:3}],actions:['account','fleet'],
@@ -61,16 +63,20 @@ try{
   assert.equal(await page.locator('#settings-tabs a').count(),0);  // no link out any more
   assert.equal(await text(page,'#acct-email'),'alex@example.org');
   const list=await text(page,'#acct-list');
-  for(const bit of ['Standard','Active','€25 a month, excl. VAT','Next invoice','Fri, Nov 20','€25, excl. VAT','8 GB memory · Europe, the Netherlands','Google: alex@example.org','Microsoft: alex@work.example','Example Co','Owner · 4 people · 3 seats'])
+  for(const bit of ['Standard','Active','€10 a month, excl. VAT, early adopter price (was €25)','Next invoice','Fri, Nov 20','€10, excl. VAT','4 GB memory · Europe, the Netherlands','Google: alex@example.org','Microsoft: alex@work.example','Example Co','Owner · 4 people · 3 seats',
+   'alex.themachine.example','1 friend request waiting','Two-factor on · 9 recovery codes left · 2 passkeys · 1 phone signed in','Export everything to run it on your own computer.'])
    assert.ok(list.includes(bit),bit);
   assert.ok(!/—/.test(list));
-  // Buttons are POSTs to the hop, each in a new tab; Sign out stays
+  // Every part of the account is here, each change a POST to the hop in this same tab (a focused step that comes back);
+  // no Open account: there is no account dashboard to open. Sign out stays
   const forms=await page.locator('#settings-acct form[action="/_machine/account-hop"]').evaluateAll(fs=>fs.map(f=>[f.method,f.target,f.querySelector('[name=to]').value]));
-  assert.deepEqual(forms.map(f=>f[2]).sort(),['account','cancel','connections','fleet','plan','portal']);
-  assert.ok(forms.every(f=>f[0]==='post'&&f[1]==='_blank'));
+  assert.deepEqual(forms.map(f=>f[2]).sort(),['cancel','connections','data','delete','fleet','friends','overview','plan','portal','security','username']);
+  assert.ok(forms.every(f=>f[0]==='post'&&f[1]===''));
+  assert.equal(await page.locator('#settings-acct [data-acct-go="account"]').count(),0);
   assert.equal(await page.locator('#settings-acct form[action="/_machine/logout"]').count(),1);
-  // Cancel is a quiet text link under the buttons: easy to find, not an equal-weight button
+  // Cancel and Delete are quiet text links under the buttons: easy to find, not equal-weight buttons
   assert.equal(await page.locator('.acct-cancel .acct-quiet[data-acct-go="cancel"]').count(),1);
+  assert.equal(await page.locator('.acct-cancel .acct-quiet[data-acct-go="delete"]').count(),1);
   // No Security tab here: this Machine sends no security levels, and support access shows only while it's on
   assert.deepEqual((await page.locator('#settings-tabs>:not([hidden])').allInnerTexts()),['Account','General','Activity','Notifications','Writing','Skills','AIs','Model']);
   assert.equal(await page.locator('#settings-account-block').isHidden(),true);  // General no longer says "on your account page"
@@ -79,15 +85,18 @@ try{
   assert.equal(fits,true);
   if(process.env.SHOTS)await page.screenshot({path:`${process.env.SHOTS}/account-hosted-${width}-${scheme}.png`,fullPage:true});
   if(width===390&&scheme==='light'){
-   const [tab]=await Promise.all([context.waitForEvent('page'),page.locator('#acct-list [data-acct-go="portal"]').click()]);
-   await tab.waitForLoadState();assert.equal(hops.at(-1)[0],'POST');assert.equal(hops.at(-1)[1],'to=portal');await tab.close();
+   // Report a problem: the dashboard's own bug report, not a page elsewhere
+   await page.locator('#acct-foot [data-acct-report]').click();await page.locator('#bug-what').waitFor();await page.keyboard.press('Escape');
+   await Promise.all([page.waitForURL(base+'/_machine/account-hop'),page.locator('#acct-list [data-acct-go="portal"]').click()]);
+   assert.equal(hops.at(-1)[0],'POST');assert.equal(hops.at(-1)[1],'to=portal');
+   await page.goto(base);await navClick(page.locator('#open-settings'));await page.locator('#acct-list [data-acct-go="plan"]').waitFor();
    // Read once a minute, not on every look
    const before=asked.length;await page.locator('#settings-tabs [data-settings-tab="general"]').click();await page.locator('#settings-tabs [data-settings-tab="account"]').click();
    assert.equal(asked.length,before);
    await page.locator('#settings-acct form[action="/_machine/logout"] button').click();await page.waitForURL(base+'/bye');assert.deepEqual(posts,['POST']);
    // Signed out at the control plane: a short note and the account link, nothing broken
    fail=true;await page.goto(base);await navClick(page.locator('#open-settings'));await page.locator('#acct-list',{hasText:'Can’t reach your account'}).waitFor();
-   assert.equal(await page.locator('#acct-foot a[href="https://account.example/account"]').count(),1);
+   assert.equal(await page.locator('#acct-foot a[href="https://account.example/account"]').count(),0);  // no account dashboard to send them to
    // Self-hosted and paired: this Machine asks, links instead of hops, no Sign out
    mode='paired';fail=false;await page.goto('about:blank');await page.goto(base+'/#settings/account');await page.locator('#acct-list',{hasText:'Family'}).waitFor();
    assert.equal(asked.at(-1),'machine');

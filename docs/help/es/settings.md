@@ -8,7 +8,7 @@ order: 1
 ---
 Abre **Ajustes** con el engranaje de arriba. Sus pestañas:
 
-- **Cuenta**: **Tus direcciones**, las que cuentan como tú, con de dónde salió cada una. Tu plan en resumen, botones a las páginas de tu cuenta y **Cerrar sesión**. Consulta [Planes y facturación](plans-and-billing.md).
+- **Cuenta**: **Tus direcciones**, las que cuentan como tú, con de dónde salió cada una, y **Cerrar sesión**. En una Machine alojada, también tu plan, facturas, Machine, Fleet, dirección, amigos, inicio de sesión y datos, cada uno con su botón. Consulta [Planes y facturación](plans-and-billing.md).
 - **General**: idioma y región, entrada de voz, este dispositivo, el navegador de tu Machine, tu Fleet y tu cuenta.
 - **Seguridad**: Estándar o Prudente, y los ajustes que fijan. Consulta [Niveles de seguridad](security-levels.md). También **Acceso de soporte**, mientras está activo: consulta [Obtener ayuda](get-support.md#support-access).
 - **Actividad**: todo lo que The Machine hizo por ti, lo más reciente primero. Consulta [Actividad](activity.md).
@@ -28,7 +28,6 @@ Una pestaña sin nada que mostrar se oculta.
 - **Entrada de voz**: cómo lo que dices se convierte en texto, y la voz de Hablar en vivo. Consulta [Entrada de voz](voice-input.md) y [Hablar en vivo](talk-live.md).
 - **Abrir el navegador de la Machine ↗**: el navegador que usa tu Machine para sitios como LinkedIn.
 - **Reglas de Fleet**: consulta [Reglas para compartir](sharing-rules.md).
-- **Cuenta**: **Abrir cuenta** y **Cerrar sesión**, en una Machine alojada.
 
 ## En esta Machine
 

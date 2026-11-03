@@ -26,7 +26,7 @@ A level is a starting point. Change any setting after, and the level shows **Cus
 
 ## A Work Fleet's level
 
-The Fleet's owner or an admin picks it on the account page, under Fleet settings. Everyone in the Fleet sees it. When it's Careful:
+The Fleet's owner or an admin picks it under Fleet settings: in **Settings** › **Account**, press **Fleet**. Everyone in the Fleet sees it. When it's Careful:
 
 - Answers to teammates wait for your OK, without names, and only about people from your work accounts.
 - Intros and handoffs wait for you too.

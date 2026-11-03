@@ -61,6 +61,6 @@ On a plane or a train the dashboard keeps working. A bar at the top says **Offli
 
 ## More devices
 
-Sign in on each device the same way. On a hosted Machine, a passkey per device makes signing in quicker: add one under Security on your account page.
+Sign in on each device the same way. On a hosted Machine, a passkey per device makes signing in quicker: in **Settings** › **Account**, press **Manage** next to Sign-in.
 
 To read your Android phone's notifications as a source, see [Android notifications](android.md).

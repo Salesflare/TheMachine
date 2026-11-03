@@ -59,6 +59,6 @@ Im Flugzeug oder im Zug arbeitet das Dashboard weiter. Eine Leiste oben zeigt **
 
 ## Weitere Geräte
 
-Melde dich auf jedem Gerät genauso an. Auf einer gehosteten Machine macht ein Passkey pro Gerät die Anmeldung schneller: Füge auf deiner Kontoseite unter Sicherheit einen hinzu.
+Melde dich auf jedem Gerät genauso an. Auf einer gehosteten Machine macht ein Passkey pro Gerät die Anmeldung schneller: Tippe in **Einstellungen** › **Konto** bei Anmeldung auf **Verwalten**.
 
 Um die Benachrichtigungen deines Android-Handys als Quelle zu lesen, siehe [Android-Benachrichtigungen](android.md).

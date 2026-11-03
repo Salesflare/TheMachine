@@ -8,7 +8,7 @@ order: 1
 ---
 Open **Instellingen** met het tandwiel bovenaan. De tabbladen:
 
-- **Account**: **Je adressen**, de adressen die als jou tellen, met waar elk vandaan komt. Je abonnement in het kort, knoppen naar je accountpagina's, en **Uitloggen**. Zie [Abonnementen en facturatie](plans-and-billing.md).
+- **Account**: **Je adressen**, de adressen die als jou tellen, met waar elk vandaan komt, en **Uitloggen**. Op een gehoste Machine ook je abonnement, facturen, Machine, Fleet, adres, vrienden, inloggen en gegevens, elk met een knop. Zie [Abonnementen en facturatie](plans-and-billing.md).
 - **Algemeen**: taal en regio, spraakinvoer, dit apparaat, de browser van je Machine, je Fleet en je account.
 - **Beveiliging**: Standaard of Voorzichtig, en de instellingen die ze bepalen. Zie [Beveiligingsniveaus](security-levels.md). Ook **Toegang voor support**, zolang het aanstaat: zie [Hulp krijgen](get-support.md#support-access).
 - **Activiteit**: alles wat The Machine voor je deed, nieuwste eerst. Zie [Activiteit](activity.md).
@@ -28,7 +28,6 @@ Een tabblad zonder inhoud wordt verborgen.
 - **Spraakinvoer**: hoe wat je zegt tekst wordt, en de stem van Live praten. Zie [Spraakinvoer](voice-input.md) en [Live praten](talk-live.md).
 - **De browser van je Machine openen ↗**: de browser die je Machine gebruikt voor sites zoals LinkedIn.
 - **Fleet-regels**: zie [Deelregels](sharing-rules.md).
-- **Account**: **Account openen** en **Uitloggen**, op een gehoste Machine.
 
 ## Op deze Machine
 

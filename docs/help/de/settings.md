@@ -8,7 +8,7 @@ order: 1
 ---
 Öffne **Einstellungen** über das Zahnrad oben. Die Tabs:
 
-- **Konto**: **Deine Adressen**, die als du zählen, jeweils mit Herkunft. Dein Tarif in Kürze, Buttons zu deinen Kontoseiten und **Abmelden**. Siehe [Tarife und Abrechnung](plans-and-billing.md).
+- **Konto**: **Deine Adressen**, die als du zählen, jeweils mit Herkunft, und **Abmelden**. Auf einer gehosteten Machine auch dein Tarif, Rechnungen, Machine, Fleet, Adresse, Freunde, Anmeldung und Daten, jeweils mit Button. Siehe [Tarife und Abrechnung](plans-and-billing.md).
 - **Allgemein**: Sprache und Region, Spracheingabe, dieses Gerät, der Browser deiner Machine, deine Fleet und dein Konto.
 - **Sicherheit**: Standard oder Vorsichtig und die Einstellungen, die sie festlegen. Siehe [Sicherheitsstufen](security-levels.md). Auch **Support-Zugriff**, solange er an ist: siehe [Support bekommen](get-support.md#support-access).
 - **Aktivität**: alles, was The Machine für dich getan hat, das Neueste zuerst. Siehe [Aktivität](activity.md).
@@ -28,7 +28,6 @@ Ein Tab ohne Inhalt wird ausgeblendet.
 - **Spracheingabe**: wie aus dem, was du sagst, Text wird, und die Stimme von Live sprechen. Siehe [Spracheingabe](voice-input.md) und [Live sprechen](talk-live.md).
 - **Browser der Machine öffnen ↗**: der Browser, den deine Machine für Websites wie LinkedIn nutzt.
 - **Fleet-Regeln**: siehe [Freigaberegeln](sharing-rules.md).
-- **Konto**: **Konto öffnen** und **Abmelden**, auf einer gehosteten Machine.
 
 ## Auf dieser Machine
 

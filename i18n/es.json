@@ -274,6 +274,7 @@
  "Added. People there are your colleagues now.": "Añadido. Quienes están ahí ahora son tus colegas.",
  "Added. {}.": "Añadida. {}.",
  "Added: {}": "Añadido: {}",
+ "Address": "Dirección",
  "Address for AIs": "Dirección para IA",
  "Addresses ©": "Direcciones ©",
  "Adjusted: {}.": "Ajustado: {}.",
@@ -950,6 +951,7 @@
  "Declined. They are not told.": "Rechazado. No se les avisa.",
  "Declined: {}'s friend request. They are not told.": "Rechazada: la solicitud de amistad de {}. No se le avisa.",
  "Delete": "Eliminar",
+ "Delete account": "Eliminar la cuenta",
  "Delete board": "Eliminar tablero",
  "Delete event": "Eliminar evento",
  "Delete from": "Eliminar de",
@@ -1156,6 +1158,8 @@
  "Experimental": "Experimental",
  "Expired": "Caducada",
  "Expires in {}": "Caduca en {}",
+ "Export": "Exportar",
+ "Export everything to run it on your own computer.": "Exporta todo para usarlo en tu propio ordenador.",
  "Extend…": "Ampliar…",
  "Extra high thinking": "Razonamiento muy alto",
  "Fact added": "Dato añadido",
@@ -1329,6 +1333,7 @@
  "Friend request sent. You’re connected once they accept.": "Solicitud de amistad enviada. Quedan conectados cuando la acepte.",
  "Friend: {}": "Amigo: {}",
  "Friends": "Amigos",
+ "Friends add you by your username.": "Tus amigos te añaden con tu nombre de usuario.",
  "Friends now": "Ya son amigos",
  "From": "De",
  "From ChatGPT": "De ChatGPT",
@@ -3264,6 +3269,7 @@
  "Reply posted on X.": "Respuesta publicada en X.",
  "Replying to": "Respondiendo a",
  "Report a bug": "Informar de un error",
+ "Report a problem": "Informar de un problema",
  "Report this bug": "Informar de este error",
  "Request failed": "La solicitud falló",
  "Request sent. It waits until they accept.": "Solicitud enviada. Espera hasta que acepten.",
@@ -4650,6 +4656,7 @@
  "Turned on in OpenClaw.": "Activada en OpenClaw.",
  "Turning off keeps your brain and its pages.": "Desactivarlo conserva tu brain y sus páginas.",
  "Two live conversations are already open. End one first.": "Ya hay dos conversaciones en vivo abiertas. Termina una primero.",
+ "Two-factor on": "Verificación en dos pasos activada",
  "Type": "Tipo",
  "Type a domain, like acme.com": "Escribe un dominio, como acme.com",
  "Type a question first.": "Escribe primero una pregunta.",
@@ -5041,6 +5048,7 @@
  "With {} · waiting": "Con {} · esperando",
  "With {}:": "Con {}:",
  "Withdraw": "Retirar",
+ "Withdraw from contract": "Desistir del contrato",
  "Withdraw this learning? The team no longer sees it.": "¿Retirar este aprendizaje? El equipo ya no lo verá.",
  "Withdrawal cleanup will be retried": "Se volverá a intentar la limpieza de la retirada",
  "Withdrawing needs The Machine Network.": "Retirar necesita The Machine Network.",
@@ -5233,6 +5241,7 @@
  "Your company’s domains": "Los dominios de tu empresa",
  "Your connections": "Tus conexiones",
  "Your contacts with a Machine": "Tus contactos con una Machine",
+ "Your data": "Tus datos",
  "Your direct messages, mentions and the threads you are in.": "Tus mensajes directos, menciones y los hilos en los que estás.",
  "Your draft": "Tu borrador",
  "Your edits stay, also when their details are looked up again. Empty a field to use the looked-up value again.": "Tus cambios se mantienen, también cuando se vuelven a buscar sus datos. Vacía un campo para volver a usar el valor encontrado.",
@@ -5240,6 +5249,7 @@
  "Your email is never added automatically": "Tu correo nunca se añade automáticamente",
  "Your email is ready on the to-do. Read it, then send it yourself.": "Tu correo está listo en la tarea. Léelo y luego envíalo tú.",
  "Your email, what comes in and what you send.": "Tu correo, lo que llega y lo que envías.",
+ "Your export is ready until {}.": "Tu exportación está lista hasta el {}.",
  "Your first to-dos show up here": "Tus primeras tareas aparecen aquí",
  "Your follow-up": "Tu seguimiento",
  "Your friends": "Tus amigos",
@@ -5823,6 +5833,10 @@
  },
  "{} for {} did not check out ({})": "{} para {} no se pudo comprobar ({})",
  "{} found": "{} encontrados",
+ "{} friend requests waiting": {
+  "one": "{} solicitud de amistad pendiente",
+  "other": "{} solicitudes de amistad pendientes"
+ },
  "{} from your history to review": "{} de tu historial para revisar",
  "{} from {} (a source)": "{} de {}",
  "{} from {} moved to {}.": "{} de {} pasaron a {}.",
@@ -5992,9 +6006,17 @@
   "other": "{} páginas"
  },
  "{} pages, {} kept as you edited them": "{} páginas, {} se quedan como las editaste",
+ "{} passkeys": {
+  "one": "{} llave de acceso",
+  "other": "{} llaves de acceso"
+ },
  "{} people": {
   "one": "{} persona",
   "other": "{} personas"
+ },
+ "{} phones signed in": {
+  "one": "{} teléfono con sesión iniciada",
+  "other": "{} teléfonos con sesión iniciada"
  },
  "{} picked a time on the booking link.": "{} eligió una hora en el enlace de reserva.",
  "{} picked this time on your booking link.": "{} eligió esta hora en tu enlace de reserva.",
@@ -6028,6 +6050,10 @@
   "other": "{} listas para ti"
  },
  "{} ready for you · {} to decide": "{} listas para ti · {} por decidir",
+ "{} recovery codes left": {
+  "one": "queda {} código de recuperación",
+  "other": "quedan {} códigos de recuperación"
+ },
  "{} references": {
   "one": "{} referencia",
   "other": "{} referencias"

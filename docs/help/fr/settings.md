@@ -8,7 +8,7 @@ order: 1
 ---
 Ouvrez **Paramètres** avec la roue dentée en haut. Ses onglets :
 
-- **Compte** : **Vos adresses**, celles qui comptent comme vous, avec leur provenance. Votre forfait en bref, des boutons vers les pages de votre compte, et **Se déconnecter**. Voir [Forfaits et facturation](plans-and-billing.md).
+- **Compte** : **Vos adresses**, celles qui comptent comme vous, avec leur provenance, et **Se déconnecter**. Sur une Machine hébergée, aussi votre forfait, vos factures, votre Machine, votre Fleet, votre adresse, vos amis, votre connexion et vos données, chacun avec son bouton. Voir [Forfaits et facturation](plans-and-billing.md).
 - **Général** : langue et région, saisie vocale, cet appareil, le navigateur de votre Machine, votre Fleet et votre compte.
 - **Sécurité** : Standard ou Prudent, et les paramètres qu’ils règlent. Voir [Niveaux de sécurité](security-levels.md). **Accès du support** aussi, tant qu’il est actif : voir [Obtenir de l’aide](get-support.md#support-access).
 - **Activité** : tout ce que The Machine a fait pour vous, le plus récent d’abord. Voir [Activité](activity.md).
@@ -28,7 +28,6 @@ Un onglet sans rien à afficher est masqué.
 - **Saisie vocale** : comment ce que vous dites devient du texte, et la voix de Parler en direct. Voir [Saisie vocale](voice-input.md) et [Parler en direct](talk-live.md).
 - **Ouvrir le navigateur de la Machine ↗** : le navigateur que votre Machine utilise pour des sites comme LinkedIn.
 - **Règles Fleet** : voir [Règles de partage](sharing-rules.md).
-- **Compte** : **Ouvrir le compte** et **Se déconnecter**, sur une Machine hébergée.
 
 ## Sur cette Machine
 

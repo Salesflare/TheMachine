@@ -25,6 +25,6 @@ Hosted, Work seat and Family Fleet prices are early adopter prices, down from {p
 
 ## Card and invoices
 
-On your account page, open Billing and press **Manage subscription**. It opens Stripe, where you change your card and download invoices. Your card details never reach us.
+In **Settings** › **Account**, press **Billing**, then **Manage subscription**. It opens Stripe, where you change your card and download invoices. Your card details never reach us.
 
-Change your Machine's size any time from your account page.
+Change your Machine's size any time: in **Settings** › **Account**, press **Change plan**.

@@ -59,6 +59,6 @@ In het vliegtuig of de trein blijft het dashboard werken. Een balk bovenaan zegt
 
 ## Meer apparaten
 
-Log op elk apparaat op dezelfde manier in. Op een gehoste Machine maakt een passkey per apparaat het inloggen sneller: voeg er een toe onder Beveiliging op je accountpagina.
+Log op elk apparaat op dezelfde manier in. Op een gehoste Machine maakt een passkey per apparaat het inloggen sneller: druk in **Instellingen** › **Account** op **Beheren** naast Inloggen.
 
 Om de meldingen van je Android-telefoon als bron te lezen, zie [Android-meldingen](android.md).

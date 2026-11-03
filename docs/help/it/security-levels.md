@@ -26,7 +26,7 @@ Un livello è un punto di partenza. Se poi cambi un’impostazione, il livello m
 
 ## Il livello di una Fleet Lavoro
 
-Lo sceglie il proprietario della Fleet o un admin nella pagina dell’account, sotto le impostazioni della Fleet. Tutti nella Fleet lo vedono. Quando è Prudente:
+Lo sceglie il proprietario della Fleet o un admin sotto le impostazioni della Fleet: in **Impostazioni** › **Account**, premi **Fleet**. Tutti nella Fleet lo vedono. Quando è Prudente:
 
 - Le risposte ai colleghi aspettano il tuo OK, senza nomi, e solo su persone dei tuoi account di lavoro.
 - Anche presentazioni e passaggi aspettano te.

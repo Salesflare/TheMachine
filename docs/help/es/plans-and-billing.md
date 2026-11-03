@@ -25,6 +25,6 @@ Los precios alojado, de puesto de trabajo y de Fleet familiar son precios early 
 
 ## Tarjeta y facturas
 
-En la página de tu cuenta, abre Facturación y pulsa **Gestionar suscripción**. Se abre Stripe, donde cambias tu tarjeta y descargas las facturas. Los datos de tu tarjeta nunca nos llegan.
+En **Ajustes** › **Cuenta**, pulsa **Facturación** y luego **Gestionar suscripción**. Se abre Stripe, donde cambias tu tarjeta y descargas las facturas. Los datos de tu tarjeta nunca nos llegan.
 
-Cambia el tamaño de tu Machine cuando quieras desde la página de tu cuenta.
+Cambia el tamaño de tu Machine cuando quieras: en **Ajustes** › **Cuenta**, pulsa **Cambiar plan**.
