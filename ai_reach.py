@@ -185,6 +185,26 @@ def challenge_cert(host, key_authorization):
     return cert, key
 
 
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None  # urllib then raises HTTPError with the 3xx code
+
+
+NO_REDIRECTS = urllib.request.build_opener(_NoRedirect)
+
+
+def origin(url):
+    """(scheme, host, port) of an http(s) URL, else None."""
+    try:
+        link = urllib.parse.urlsplit(str(url or ''))
+        port = link.port or {'https': 443, 'http': 80}.get(link.scheme)
+    except ValueError:
+        return None
+    if link.scheme not in ('https', 'http') or not link.hostname:
+        return None
+    return link.scheme, link.hostname.lower(), port
+
+
 class Acme:
     """One CA account: directory, nonces, signed requests (ES256, JWS with jwk until the account has its kid)."""
 
@@ -193,12 +213,19 @@ class Acme:
         self.dir, self.nonce = None, None
 
     def _open(self, method, url, data=None, headers=None):
+        """Only the CA's own origin (scheme, host and port of its directory): the URLs in its answers (nonce, order,
+        authorization, challenge, finalize, certificate) never send this Machine anywhere else, and a redirect is
+        refused, not followed."""
+        if origin(self.directory_url) is None or origin(url) != origin(self.directory_url):
+            raise AcmeError('a URL outside the CA')
         request = urllib.request.Request(url, data=data, method=method, headers=headers or {})
         try:
-            with urllib.request.urlopen(request, timeout=self.timeout) as response:
+            with NO_REDIRECTS.open(request, timeout=self.timeout) as response:
                 return response.status, response.headers, response.read()
         except urllib.error.HTTPError as error:
             with error:
+                if 300 <= error.code < 400:
+                    raise AcmeError(f'redirect {error.code}') from None
                 return error.code, error.headers, error.read()
 
     def directory(self):

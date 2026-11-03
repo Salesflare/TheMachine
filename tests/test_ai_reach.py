@@ -58,8 +58,9 @@ def serve_then_close(sock, host, challenges, cert_context):
 class FakeCA:
     """An ACME server (RFC 8555) that validates TLS-ALPN-01 by a TLS handshake with the Machine's own serve()."""
 
-    def __init__(self, challenges, bound=False, refuse_orders=False, days=90, limited=None):
+    def __init__(self, challenges, bound=False, refuse_orders=False, days=90, limited=None, elsewhere=None, redirect=None):
         self.challenges, self.bound, self.refuse_orders, self.days, self.limited = challenges, bound, refuse_orders, days, limited
+        self.elsewhere, self.redirect = elsewhere, redirect  # an authorization URL off the CA; a redirect from newOrder
         self.raw = []
         self.key = ec.generate_private_key(ec.SECP256R1())
         name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, 'Fake CA')])
@@ -138,8 +139,11 @@ class FakeCA:
                                'application/problem+json', {'Retry-After': self.limited})
             if self.refuse_orders:
                 return h.reply(400, {'type': 'urn:ietf:params:acme:error:rejectedIdentifier', 'detail': 'no'}, 'application/problem+json')
+            if self.redirect:
+                return h.reply(307, {}, headers={'Location': self.redirect})
             self.host = payload['identifiers'][0]['value']
-            self.order = {'status': 'pending', 'authorizations': [self.url + '/authz/1'], 'finalize': self.url + '/finalize/1'}
+            self.order = {'status': 'pending', 'authorizations': [self.elsewhere or self.url + '/authz/1'],
+                          'finalize': self.url + '/finalize/1'}
             self.authz = 'pending'
             return h.reply(201, self.order, headers={'Location': self.url + '/order/1'})
         if path == '/authz/1':
@@ -238,6 +242,37 @@ class Certificate(Base):
         with self.assertRaisesRegex(ai_reach.AcmeError, 'binding'):
             ai_reach.obtain(self.config, HOST, challenges, ca.url, wait=lambda s: None)
         self.assertEqual(ca.seen, [])
+
+    def test_urls_from_the_ca_never_leave_its_origin(self):
+        hits = []
+
+        class Other(BaseHTTPRequestHandler):
+            def log_message(self, *args):
+                pass
+
+            def do_GET(self):
+                hits.append(self.path)
+                self.send_response(200)
+                self.end_headers()
+            do_POST = do_HEAD = do_GET
+        other = ThreadingHTTPServer(('127.0.0.1', 0), Other)
+        self.addCleanup(other.server_close)
+        self.addCleanup(other.shutdown)
+        threading.Thread(target=other.serve_forever, daemon=True).start()
+        elsewhere = f'http://127.0.0.1:{other.server_port}/latest/meta-data'
+        for kind in ('elsewhere', 'redirect'):
+            ai_reach.drop(self.config)  # a new CA: a new account
+            challenges = {}
+            ca = FakeCA(challenges, **{kind: elsewhere})
+            self.addCleanup(ca.close)
+            with self.assertRaisesRegex(ai_reach.AcmeError, 'outside the CA|redirect'):
+                ai_reach.obtain(self.config, HOST, challenges, ca.url, wait=lambda s: None)
+        self.assertEqual(hits, [])
+        self.assertIsNone(ai_reach.origin('file:///etc/passwd'))
+        self.assertIsNone(ai_reach.origin('http://[::1'))
+        self.assertEqual(ai_reach.origin('https://ACME.example/x'), ('https', 'acme.example', 443))
+        with self.assertRaisesRegex(ai_reach.AcmeError, 'outside the CA'):
+            ai_reach.Acme('file:///etc/passwd', None).directory()
 
     def test_a_rate_limit_says_how_long_to_wait(self):
         challenges = {}
