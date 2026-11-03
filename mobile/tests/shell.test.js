@@ -311,3 +311,9 @@ test('inject: the phone asks about the microphone and notifications; Open settin
   await old.run({base, device});
   assert.equal(old.win.machinePhone, undefined);  // no app bridge on this address: nothing to ask with
 });
+
+test('Android keeps the keyboard\'s own suggestions and autocorrect', () => {
+  // captureInput swaps the WebView's input for a bare one, which turns off the keyboard's suggestions in every field
+  const config = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'capacitor.config.json'), 'utf8'));
+  assert.notEqual(config.android && config.android.captureInput, true);
+});

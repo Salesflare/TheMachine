@@ -12,7 +12,6 @@
   },
   "android": {
     "allowMixedContent": false,
-    "captureInput": true,
     "webContentsDebuggingEnabled": false
   },
   "ios": {
