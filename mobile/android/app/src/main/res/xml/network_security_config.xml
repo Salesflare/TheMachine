@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- https only, trusting the system's certificate authorities, never ones a user added (the Machine's own address is
-     a hosted name or Tailscale's .ts.net, both with public certificates). -->
+     a hosted name, Tailscale's .ts.net or the dashboard's own https domain, all with public certificates). -->
 <network-security-config>
     <base-config cleartextTrafficPermitted="false">
         <trust-anchors>

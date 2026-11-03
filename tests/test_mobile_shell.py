@@ -88,6 +88,30 @@ class MobileShellTest(unittest.TestCase):
         for side in (java, swift):
             self.assertNotIn('8080', side)
 
+    def test_native_sides_take_a_dashboards_own_domain_and_check_it_first(self):
+        # A self-hosted Machine on its own https domain, not only .ts.net: the same rule on both sides as in
+        # www/machine-url.js (ownHost), its JVM test (android/app/src/test), and a manifest check before it is saved
+        # that follows no redirects (www/app.js check, machine-url.js isMachine).
+        java = (MOBILE / 'android/app/src/main/java/computer/themachine/app/MachineShellPlugin.java').read_text()
+        swift = (MOBILE / 'ios/App/App/MachineShellPlugin.swift').read_text()
+        js = (MOBILE / 'www/machine-url.js').read_text()
+        self.assertIn('if (!ownHost(host) || (port != 443 && port != OWN_PORT)) return null;', java)
+        self.assertIn('guard ownHost(host), port == 443 || port == ownPort else { return nil }', swift)
+        for side in (java, swift, js):
+            self.assertIn('[a-z]{2,63}', side)  # a top level of letters: never an IP address
+            self.assertIn('.ts.net', side)
+        self.assertIn('c.setInstanceFollowRedirects(false);', java)
+        self.assertIn('"manifest.webmanifest"', java)
+        self.assertIn('completionHandler(nil)', swift)
+        self.assertIn('"manifest.webmanifest"', swift)
+        self.assertIn('.ephemeral', swift)
+        self.assertIn("'Use the owner-authenticated Tailscale dashboard'", js)
+        test = (MOBILE / 'android/app/src/test/java/computer/themachine/app/MachineAddressTest.java').read_text()
+        self.assertIn('https://my.themachine.computer/', test)
+        # The dashboard's own words that check: the manifest's name and its refusal for someone not its owner
+        self.assertEqual(json.loads((ROOT / 'manifest.webmanifest').read_text())['name'], 'The Machine')
+        self.assertIn("'Use the owner-authenticated Tailscale dashboard'", (ROOT / 'assistant.py').read_text())
+
 
 if __name__ == '__main__':
     unittest.main()

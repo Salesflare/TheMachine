@@ -16,24 +16,45 @@ test('a hosted Machine is reached through sign-in, whatever was typed', () => {
   }
 });
 
-test('a Machine of their own is a Tailscale https address', () => {
+test('a Machine of their own is a Tailscale or its own https address', () => {
   assert.deepEqual(MachineUrl.parse('machine.tail1234.ts.net'), {url: 'https://machine.tail1234.ts.net/', kind: 'own'});
   assert.deepEqual(MachineUrl.parse(' https://Machine.tail1234.ts.net/dash '), {url: 'https://machine.tail1234.ts.net/dash/', kind: 'own'});
   // 443 and 8443 (a self-hosted Machine's default port) only
   assert.deepEqual(MachineUrl.parse('machine.tail1234.ts.net:8443'), {url: 'https://machine.tail1234.ts.net:8443/', kind: 'own'});
   assert.deepEqual(MachineUrl.parse('https://machine.tail1234.ts.net:443/'), {url: 'https://machine.tail1234.ts.net/', kind: 'own'});
-  assert.deepEqual(MachineUrl.parse('example.com'), {error: 'tailnet'});
+  // A dashboard on its own https domain (one the cloud knows, or one the owner set up), on 443 or 8443
+  assert.deepEqual(MachineUrl.parse('my.themachine.computer'), {url: 'https://my.themachine.computer/', kind: 'own'});
+  assert.deepEqual(MachineUrl.parse('example.com'), {url: 'https://example.com/', kind: 'own'});
+  assert.deepEqual(MachineUrl.parse('https://Desk.Example.co.uk:8443/assistant'), {url: 'https://desk.example.co.uk:8443/assistant/', kind: 'own'});
   assert.deepEqual(MachineUrl.parse('localhost'), {error: 'address'});
   assert.deepEqual(MachineUrl.parse(''), {error: 'address'});
   for (const bad of ['http://machine.tail1234.ts.net', 'https://machine.tail1234.ts.net:8080', 'https://machine.tail1234.ts.net:444',
     'https://alex.app.themachine.computer:8443',
     'https://u:p@machine.tail1234.ts.net', 'https://tail1234.ts.net', 'javascript:alert(1)',
-    'https://machine.tail1234.ts.net/a%2f..', 'https://evil.com/.ts.net']) {
+    'https://machine.tail1234.ts.net/a%2f..',
+    // no plain http, user, other port, IP address, bare name or hosted name on its own
+    'http://my.example.com', 'https://u@my.example.com', 'https://my.example.com:8080', 'https://my.example.com:444',
+    'https://192.168.1.10', 'https://10.0.0.1:8443', 'https://[fd7a::1]', 'https://100.64.0.1', 'https://desk', 'https://desk.local1',
+    'https://a.b.sam.app.themachine.computer', 'https://-x.example.com', 'https://x_y.example.com', 'https://my.example.com/a b']) {
     assert.ok(MachineUrl.parse(bad).error, bad);
   }
 });
 
+test('only a Machine\'s own manifest (or its refusal) counts as a Machine', () => {
+  const manifest = JSON.stringify({name: 'The Machine', start_url: '.', icons: []});
+  assert.ok(MachineUrl.isMachine(200, manifest));
+  assert.ok(MachineUrl.isMachine(403, JSON.stringify({error: 'Use the owner-authenticated Tailscale dashboard'})));
+  for (const [status, body] of [[200, '<html>Welcome</html>'], [200, JSON.stringify({name: 'Other app', start_url: '.', icons: []})],
+    [200, JSON.stringify({name: 'The Machine'})], [200, 'null'], [200, ''], [404, manifest], [403, JSON.stringify({error: 'Forbidden'})],
+    [302, manifest], [500, manifest]]) {
+    assert.ok(!MachineUrl.isMachine(status, body), `${status} ${body}`);
+  }
+});
+
 test('only a normal saved address opens', () => {
+  assert.ok(MachineUrl.valid('https://my.themachine.computer/'));
+  assert.ok(MachineUrl.valid('https://my.example.com:8443/assistant/'));
+  assert.ok(!MachineUrl.valid('https://my.example.com'));
   assert.ok(MachineUrl.valid('https://sam.app.themachine.computer/'));
   assert.ok(MachineUrl.valid('https://machine.tail1234.ts.net/'));
   assert.ok(MachineUrl.valid('https://machine.tail1234.ts.net:8443/'));

@@ -20,6 +20,10 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -86,25 +90,45 @@ public class MachineShellPlugin extends Plugin {
         return true;
     }
 
+    /**
+     * A self-hosted Machine's host: a tailnet name, or a public DNS name (two labels or more, a top level of letters, so
+     * never an IP address or a bare name). Never a hosted Machine's: those come through sign-in. Same as www/machine-url.js.
+     */
+    static boolean ownHost(String host) {
+        if (host == null) return false;
+        if (host.endsWith(".ts.net")) return tailnetHost(host);
+        if (host.length() > 253 || host.equals(HOSTED) || host.endsWith("." + HOSTED)) return false;
+        String[] parts = host.split("\\.", -1);
+        if (parts.length < 2 || !parts[parts.length - 1].matches("[a-z]{2,63}")) return false;
+        for (String p : parts) if (!LABEL.matcher(p).matches()) return false;
+        return true;
+    }
+
     /** The port a URL goes to: 443 when it names none. */
     static int portOf(Uri u) {
         return u.getPort() == -1 ? 443 : u.getPort();
     }
 
     /**
-     * A Machine address the app may save: https and no user, a hosted Machine's root on 443, or a tailnet host on 443
-     * or 8443 (a self-hosted Machine's default port). No other port.
+     * A Machine address the app may save: https and no user, a hosted Machine's root on 443, or a self-hosted one
+     * (ownHost) on 443 or 8443 (a self-hosted Machine's default port). No other port. Plain java.net.URI, so the rules
+     * run in a JVM unit test (src/test).
      */
     static String normalMachine(String url) {
         if (url == null) return null;
-        Uri u = Uri.parse(url);
+        URI u;
+        try {
+            u = new URI(url);
+        } catch (URISyntaxException e) {
+            return null;
+        }
         String host = u.getHost() == null ? null : u.getHost().toLowerCase();
-        if (!"https".equals(u.getScheme()) || u.getUserInfo() != null || host == null) return null;
-        int port = portOf(u);
+        if (!"https".equals(u.getScheme()) || u.getRawUserInfo() != null || host == null) return null;
+        int port = u.getPort() == -1 ? 443 : u.getPort();
         if (hostedHost(host)) return port == 443 ? "https://" + host + "/" : null;
-        if (!tailnetHost(host) || (port != 443 && port != OWN_PORT)) return null;
+        if (!ownHost(host) || (port != 443 && port != OWN_PORT)) return null;
         if (port == OWN_PORT) host += ":" + OWN_PORT;
-        String path = u.getPath() == null || u.getPath().isEmpty() ? "/" : u.getPath();
+        String path = u.getRawPath() == null || u.getRawPath().isEmpty() ? "/" : u.getRawPath();
         if (!path.endsWith("/")) path += "/";
         if (!path.matches("/(?:[A-Za-z0-9._~-]+/)*")) return null;
         return "https://" + host + path;
@@ -206,6 +230,41 @@ public class MachineShellPlugin extends Plugin {
             prefs().edit().putString("machine", url).remove("connect").apply();
             call.resolve();
         });
+    }
+
+    /**
+     * Before a Machine of their own is saved: its manifest's answer, {status, body}, for www/machine-url.js isMachine.
+     * Rejects when it can't be reached. No redirects followed, no cookies, a short wait and a small body.
+     */
+    @PluginMethod
+    public void check(PluginCall call) {
+        String url = normalMachine(call.getString("url"));
+        if (url == null || !url.equals(call.getString("url")) || !ownHost(Uri.parse(url).getHost())) {
+            call.reject("not a Machine address");
+            return;
+        }
+        new Thread(() -> {
+            HttpURLConnection c = null;
+            try {
+                c = (HttpURLConnection) new URL(url + "manifest.webmanifest").openConnection();
+                c.setInstanceFollowRedirects(false);
+                c.setUseCaches(false);
+                c.setConnectTimeout(8000);
+                c.setReadTimeout(8000);
+                c.setRequestProperty("Accept", "application/manifest+json, application/json");
+                int status = c.getResponseCode();
+                InputStream in = status >= 400 ? c.getErrorStream() : c.getInputStream();
+                byte[] body = in == null ? new byte[0] : read(in, 64 * 1024);
+                JSObject out = new JSObject();
+                out.put("status", status);
+                out.put("body", body == null ? "" : new String(body, StandardCharsets.UTF_8));
+                call.resolve(out);
+            } catch (IOException | ClassCastException e) {
+                call.reject("unreachable");
+            } finally {
+                if (c != null) c.disconnect();
+            }
+        }).start();
     }
 
     @PluginMethod
@@ -353,15 +412,15 @@ public class MachineShellPlugin extends Plugin {
     }
 
     /**
-     * A self-hosted Machine on The Machine Network: the account knows its Tailscale address (its owner's only) and the
-     * sign-in hands it back. No token: the Machine's own Tailscale sign-in applies, as in its browser.
+     * A self-hosted Machine on The Machine Network: the account knows its address (its Tailscale one, else the
+     * dashboard's own https address it reported; its owner's only) and the sign-in hands it back. No token: the Machine's own Tailscale sign-in applies, as in its browser.
      */
     private void signedInOwn(String m) {
         boolean pending = prefs().getString("verifier", null) != null &&
             System.currentTimeMillis() - prefs().getLong("verifierAt", 0) <= SIGNIN_TTL;
         prefs().edit().remove("verifier").remove("verifierAt").apply();
         String url = normalMachine(m);
-        if (!pending || url == null || !tailnetHost(Uri.parse(url).getHost())) { // only right after a sign-in it started
+        if (!pending || url == null || !ownHost(Uri.parse(url).getHost())) { // only right after a sign-in it started
             prefs().edit().putBoolean("signinStopped", true).apply();
             bridge.getWebView().loadUrl(bridge.getLocalUrl() + "/index.html");
             return;
@@ -418,6 +477,15 @@ public class MachineShellPlugin extends Plugin {
     private static byte[] read(ContentResolver resolver, Uri uri, long limit) {
         try (InputStream in = resolver.openInputStream(uri)) {
             if (in == null) return null;
+            return read(in, limit);
+        } catch (IOException | SecurityException e) {
+            return null;
+        }
+    }
+
+    /** At most limit bytes of a stream, else null (too big). */
+    private static byte[] read(InputStream in, long limit) {
+        try (InputStream stream = in) {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             byte[] buf = new byte[16384];
             int n;

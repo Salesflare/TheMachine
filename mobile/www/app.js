@@ -38,9 +38,28 @@
     } catch (e) { /* the Machine still opens; notifications can be turned on later */ }
   }
 
+  // A Machine of their own, before it is saved: does it answer as one? 'machine', 'other' or 'unreachable'. The
+  // native side fetches its manifest (the start page's own origin can't read another site's answer).
+  async function check(url) {
+    try {
+      const r = await shell.check({url});
+      return MachineUrl.isMachine(r.status, r.body) ? 'machine' : 'other';
+    } catch (e) { return 'unreachable'; }
+  }
+
   async function open(url, first) {
     show('busy');
     $('busy-text').textContent = '';
+    if (MachineUrl.parse(url).kind === 'own') {
+      const found = await check(url);
+      if (found !== 'machine') {
+        $('address').value = new URL(url).host + new URL(url).pathname.replace(/\/$/, '');
+        $('own-error').textContent = found === 'other' ? T.errNotMachine : T.errUnreachable;
+        $('own-error').hidden = false;
+        show('own-form');
+        return;
+      }
+    }
     await pushToken(first);
     await shell.setMachine({url});
     location.replace(url);
@@ -107,7 +126,7 @@
       const parsed = MachineUrl.parse($('address').value);
       if (parsed.kind === 'hosted') { signIn(); return; }
       if (parsed.error) {
-        $('own-error').textContent = parsed.error === 'tailnet' ? T.errTailnet : T.errAddress;
+        $('own-error').textContent = T.errAddress;
         $('own-error').hidden = false;
         $('address').focus();
         return;

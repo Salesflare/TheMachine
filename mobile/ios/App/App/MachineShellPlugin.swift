@@ -18,6 +18,7 @@ public class MachineShellPlugin: CAPPlugin, CAPBridgedPlugin, ASWebAuthenticatio
         CAPPluginMethod(name: "get", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "info", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "setMachine", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "check", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "clearConnect", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "forget", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "pushToken", returnType: CAPPluginReturnPromise),
@@ -58,19 +59,30 @@ public class MachineShellPlugin: CAPPlugin, CAPBridgedPlugin, ASWebAuthenticatio
         return parts.count >= 4 && parts.allSatisfy(label)
     }
 
+    /// A self-hosted Machine's host: a tailnet name, or a public DNS name (two labels or more, a top level of letters,
+    /// so never an IP address or a bare name). Never a hosted Machine's: those come through sign-in. Same as www/machine-url.js.
+    static func ownHost(_ host: String?) -> Bool {
+        guard let host = host else { return false }
+        if host.hasSuffix(".ts.net") { return tailnetHost(host) }
+        guard host.count <= 253, host != hosted, !host.hasSuffix("." + hosted) else { return false }
+        let parts = host.split(separator: ".", omittingEmptySubsequences: false)
+        guard parts.count >= 2, let top = parts.last, top.range(of: "^[a-z]{2,63}$", options: .regularExpression) != nil else { return false }
+        return parts.allSatisfy(label)
+    }
+
     /// A self-hosted Machine's default port; besides it only 443.
     static let ownPort = 8443
 
-    /// A Machine address the app may save: https and no user, a hosted Machine's root on 443, or a tailnet host on 443
-    /// or 8443. No other port.
+    /// A Machine address the app may save: https and no user, a hosted Machine's root on 443, or a self-hosted one
+    /// (ownHost) on 443 or 8443. No other port.
     static func normalMachine(_ text: String?) -> String? {
         guard let text = text, let u = URLComponents(string: text), u.scheme == "https", u.user == nil,
               let host = u.host?.lowercased() else { return nil }
         let port = u.port ?? 443
         if hostedHost(host) { return port == 443 ? "https://\(host)/" : nil }
-        guard tailnetHost(host), port == 443 || port == ownPort else { return nil }
+        guard ownHost(host), port == 443 || port == ownPort else { return nil }
         let authority = port == ownPort ? "\(host):\(ownPort)" : host
-        var path = u.path.isEmpty ? "/" : u.path
+        var path = u.percentEncodedPath.isEmpty ? "/" : u.percentEncodedPath
         if !path.hasSuffix("/") { path += "/" }
         guard path.range(of: "^/(?:[A-Za-z0-9._~-]+/)*$", options: .regularExpression) != nil else { return nil }
         return "https://\(authority)\(path)"
@@ -130,6 +142,23 @@ public class MachineShellPlugin: CAPPlugin, CAPBridgedPlugin, ASWebAuthenticatio
             self.store.removeObject(forKey: "connect")
             call.resolve()
         }
+    }
+
+    /// Before a Machine of their own is saved: its manifest's answer, {status, body}, for www/machine-url.js isMachine.
+    /// Rejects when it can't be reached. No redirects followed, no cookies or cache, a short wait and a small body.
+    @objc func check(_ call: CAPPluginCall) {
+        let asked = call.getString("url")
+        guard let url = MachineShellPlugin.normalMachine(asked), url == asked, MachineShellPlugin.ownHost(URL(string: url)?.host),
+              let manifest = URL(string: url + "manifest.webmanifest") else { return call.reject("not a Machine address") }
+        var request = URLRequest(url: manifest, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 8)
+        request.setValue("application/manifest+json, application/json", forHTTPHeaderField: "Accept")
+        let session = URLSession(configuration: .ephemeral, delegate: NoRedirects(), delegateQueue: nil)
+        session.dataTask(with: request) { data, response, error in
+            session.finishTasksAndInvalidate()
+            guard error == nil, let http = response as? HTTPURLResponse else { return call.reject("unreachable") }
+            let body = (data ?? Data()).count <= 64 * 1024 ? String(data: data ?? Data(), encoding: .utf8) ?? "" : ""
+            call.resolve(["status": http.statusCode, "body": body])
+        }.resume()
     }
 
     @objc func clearConnect(_ call: CAPPluginCall) {
@@ -214,10 +243,10 @@ public class MachineShellPlugin: CAPPlugin, CAPBridgedPlugin, ASWebAuthenticatio
         bridge?.webView?.load(URLRequest(url: target.url!))
     }
 
-    /// A self-hosted Machine on The Machine Network: the account hands back its Tailscale address (no token: the
-    /// Machine's own Tailscale sign-in applies).
+    /// A self-hosted Machine on The Machine Network: the account hands back its address (its Tailscale one, else the
+    /// dashboard's own https address it reported; no token: the Machine's own sign-in applies).
     private func signedInOwn(_ m: String) {
-        guard let url = MachineShellPlugin.normalMachine(m), MachineShellPlugin.tailnetHost(URL(string: url)?.host) else { return stopped() }
+        guard let url = MachineShellPlugin.normalMachine(m), MachineShellPlugin.ownHost(URL(string: url)?.host) else { return stopped() }
         store.set(url, forKey: "machine")
         bridge?.webView?.load(URLRequest(url: URL(string: url)!))
     }
@@ -290,5 +319,13 @@ public class MachineShellPlugin: CAPPlugin, CAPBridgedPlugin, ASWebAuthenticatio
 class MachineViewController: CAPBridgeViewController {
     override open func capacitorDidLoad() {
         bridge?.registerPluginInstance(MachineShellPlugin())
+    }
+}
+
+/// The check's request answers for itself: a redirect is not followed (its 3xx is the answer, so not a Machine).
+private final class NoRedirects: NSObject, URLSessionTaskDelegate {
+    func urlSession(_ session: URLSession, task: URLSessionTask, willPerformHTTPRedirection response: HTTPURLResponse,
+                    newRequest request: URLRequest, completionHandler: @escaping (URLRequest?) -> Void) {
+        completionHandler(nil)
     }
 }
