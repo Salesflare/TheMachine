@@ -8801,6 +8801,11 @@ class Store:
                     channel_health = {'replies_as': (account.get('reply_admin_name') or 'you') if next_actions.intercom_replies_on(account) else ''}
                 if account.get('service') == 'docs':  # Google or Microsoft, and whether an approved reply can be posted
                     channel_health = docs_health(self.config, account, state)
+                if account.get('service') in CALENDAR_SERVICES:  # its card counts events coming up, not mail (Next 7 days)
+                    channel_health = {'upcoming_7d': db.execute(
+                        "SELECT count(*) FROM events WHERE account_id=? AND deleted=0 AND occurred_at>=? AND occurred_at<? "
+                        "AND coalesce(json_extract(metadata,'$.status'),'')!='cancelled'",
+                        (account['id'], now(), (dt.datetime.fromisoformat(now()) + dt.timedelta(days=7)).isoformat())).fetchone()[0]}
                 activity = [dict(r) for r in db.execute('SELECT at,status,signals,error,retry_at FROM sync_activity WHERE account_id=? ORDER BY at DESC,rowid DESC LIMIT 12',(account['id'],))]
                 last_failure = db.execute("SELECT at,error FROM sync_activity WHERE account_id=? AND status='failed' ORDER BY at DESC,rowid DESC LIMIT 1",(account['id'],)).fetchone()
                 failures_24h = db.execute("SELECT count(*) FROM sync_activity WHERE account_id=? AND status='failed' AND at>=?",(account['id'],cutoff)).fetchone()[0]

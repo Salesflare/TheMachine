@@ -61,6 +61,20 @@ class Invariants(unittest.TestCase):
             self.assertEqual(state['last_success'], '2026-10-09T12:00:00+00:00')
             self.assertEqual(state['error'], 'timeout')
 
+    def test_a_calendar_counts_its_events_in_the_next_7_days(self):
+        # Connections: a calendar's card shows events coming up (not canceled, not past, within a week), not mail counts
+        account = {'id': 'cal', 'email': 'owner@example.com', 'boundary': 'personal', 'service': 'outlook_calendar'}
+        at = lambda source, when, status='confirmed': {**event(account='cal', source=source), 'kind': 'calendar.event',
+                                                       'occurred_at': when, 'metadata': {'status': status}}
+        with patch.object(assistant, 'now', return_value='2026-10-09T12:00:00+00:00'):
+            self.store.commit_page('cal', {}, [at('past', '2026-10-09T08:00:00+00:00'), at('soon', '2026-10-10T09:00:00+00:00'),
+                                               at('week', '2026-10-16T11:00:00+00:00'), at('later', '2026-10-17T09:00:00+00:00'),
+                                               at('off', '2026-10-11T09:00:00+00:00', 'cancelled')])
+            state = self.store.snapshot([account])['connectors'][0]
+            self.assertEqual(state['upcoming_7d'], 2)
+            self.assertEqual(state['total'], 5)
+            self.assertNotIn('upcoming_7d', self.store.snapshot([{**account, 'service': 'gmail'}])['connectors'][0])
+
     def test_failed_commit_cannot_change_sync_counts(self):
         self.store.commit_page('work', {}, [event()])
         bad=event(source='bad');del bad['title']
