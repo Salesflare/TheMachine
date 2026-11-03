@@ -131,7 +131,7 @@ Turn Telegram off or on later with `assistant telegram off` / `assistant telegra
 
 ## 4. Tell the agent who you are
 
-The installer offers a starter `USER.md` in your OpenClaw workspace with your name, companies and email (added under OpenClaw's template if that is all it has). Reviews and drafts read it every time.
+The installer offers a starter `USER.md` in your OpenClaw workspace with your name, companies and email (added under OpenClaw's template if that is all it has). Reviews and drafts read it every time, up to 40,000 characters; past that the dashboard says so.
 
 Then it offers to fill in the rest from what you actually write. Your agent reads your own recent messages once (nothing is sent) and drafts:
 

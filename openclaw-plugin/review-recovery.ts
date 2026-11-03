@@ -201,7 +201,10 @@ export async function contextFile(name: string, heading: string, limit = 20000, 
     return `\n\n## ${heading}\n${text.length > limit ? text.slice(0, limit) + '\n[…shortened]' : text}`;
   } catch { return ''; }
 }
-export const ownerContext = () => contextFile('USER', 'About the owner (USER.md)');
+// The whole USER.md, owner rules included, up to this cap; past it the dashboard tells the owner (needs_you,
+// onboarding.USER_MD_CONTEXT_LIMIT), so nothing is left out unseen.
+export const USER_MD_LIMIT = 40000;
+export const ownerContext = () => contextFile('USER', 'About the owner (USER.md)', USER_MD_LIMIT);
 // Standing Do it rules; prepended here because the runner caps the job message at 20000 characters.
 const preparationRules = () => contextFile('PREPARATION', 'Preparation rules (tools/personal-assistant/PREPARATION.md)', 30000);  // the whole file: every rule applies to each Do it
 // A review gets AGENTS.md without the sections for other work: Do it turns get theirs from PREPARATION.md, and operations,
