@@ -1,6 +1,6 @@
 """The phone app's address on the Network (fleet.app_address): a self-hosted Machine tells the Network its dashboard's
 Tailscale https address and nothing else, so the app opens it after its owner signs in. No address without a plain
-tailnet name; a change, or none any more, is told again (None deletes it there); a new pairing hears it again."""
+tailnet name (the dashboard's own, or a Tailscale alias of one on its own domain); a change, or none any more, is told again (None deletes it there); a new pairing hears it again."""
 import importlib.util
 import tempfile
 import unittest
@@ -30,6 +30,17 @@ class AppAddress(unittest.TestCase):
             self.assertIsNone(address('desk.tail1234.ts.net', path), path)
         self.assertIsNone(address('desk.tail1234.ts.net', manage_url='https://app.themachine.computer/setup'))  # hosted
         self.assertIsNone(fleet.app_address({}))
+
+    def test_a_dashboard_on_its_own_domain_tells_its_tailnet_alias(self):
+        config = {'dashboard_host': 'my.example.com', 'dashboard_path': '/', 'dashboard_alias_path': '/assistant/',
+                  'dashboard_aliases': ['10.0.0.5:8787', 'Desk.Tail1234.ts.net:8443', 'other.tail1234.ts.net']}
+        self.assertEqual(fleet.app_address(config), 'https://desk.tail1234.ts.net:8443/assistant/')  # the first tailnet one
+        self.assertEqual(fleet.app_address({**config, 'dashboard_host': 'desk.tail1234.ts.net'}), 'https://desk.tail1234.ts.net/')
+        self.assertEqual(fleet.app_address({**config, 'dashboard_alias_path': None}), 'https://desk.tail1234.ts.net:8443/assistant/')
+        for aliases in ([], ['my.example.org', 'desk.tail1234.ts.net:8080'], 'desk.tail1234.ts.net', None):
+            self.assertIsNone(fleet.app_address({**config, 'dashboard_aliases': aliases}), aliases)
+        self.assertIsNone(fleet.app_address({**config, 'dashboard_alias_path': '/a b/'}))
+        self.assertIsNone(fleet.app_address({**config, 'manage_url': 'https://app.themachine.computer/setup'}))  # hosted
 
 
 class ToldTheNetwork(unittest.TestCase):
