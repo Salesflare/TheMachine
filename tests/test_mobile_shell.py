@@ -128,6 +128,7 @@ class MobileShellTest(unittest.TestCase):
         for perm in ('RECORD_AUDIO', 'MODIFY_AUDIO_SETTINGS'):
             self.assertIn(f'android.permission.{perm}', manifest)
         self.assertNotIn('android.permission.CAMERA', manifest)
+        self.assertIn('<uses-feature android:name="android.hardware.microphone" android:required="false" />', manifest)
         # The microphone only, only for the Machine; nothing else a page asks for
         self.assertIn('if (audioOnly && shell.isMachine(request.getOrigin())) super.onPermissionRequest(request);\n            else request.deny();', java)
         self.assertIn('"MachineFiles", Collections.singleton(origin)', java)  # the files bridge exists only on that address
