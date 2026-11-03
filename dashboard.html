@@ -1076,8 +1076,8 @@ button.stat[aria-expanded="true"]::after{content:"";position:absolute;left:28%;r
 .card .actions:not(.result-actions)>:is(button,a.open):not(.primary){background:var(--tile)}
 .card .actions:not(.result-actions)>:is(button,a.open):not(.primary):hover{background:var(--tile-hover);color:var(--text)}
 .card .actions:not(.result-actions)>button.quiet{color:var(--muted)}.card .actions:not(.result-actions)>button.quiet:hover{color:var(--orange)}
-.card .actions:not(.result-actions)>button.primary{background:var(--mint);color:var(--charcoal);font-weight:650}
-.card .actions:not(.result-actions)>button.primary:hover{background:#cad6b9;color:var(--charcoal)}[data-theme="light"] .card .actions:not(.result-actions)>button.primary:hover{background:#3f582a;color:#fff}
+.card .actions:not(.result-actions)>:is(button,a.doc-open).primary{background:var(--mint);color:var(--charcoal);font-weight:650}
+.card .actions:not(.result-actions)>:is(button,a.doc-open).primary:hover{background:#cad6b9;color:var(--charcoal)}[data-theme="light"] .card .actions:not(.result-actions)>:is(button,a.doc-open).primary:hover{background:#3f582a;color:#fff}
 .card .change-editor{margin:14px 0 0;padding-top:12px;border-top:1px solid var(--border)}
 /* A Change or Answer box opens on purpose: it stays open, so its button doesn't jump away when the box loses focus. */
 .card .change-editor:not(.dismiss-editor) textarea{height:84px}

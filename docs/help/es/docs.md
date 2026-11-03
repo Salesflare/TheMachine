@@ -1,7 +1,7 @@
 ---
 title: Microsoft Word: archivos de Word en OneDrive y SharePoint
 area: connections
-summary: Comentarios, menciones, cambios con seguimiento y archivos compartidos en tus archivos de Word en OneDrive y SharePoint, además de documentos nuevos y cambios que apruebas. Google Docs llegará más adelante.
+summary: Comentarios, menciones, cambios con seguimiento y archivos compartidos en tus archivos de Word en OneDrive y SharePoint, además de documentos nuevos privados, y cambios que apruebas. Google Docs llegará más adelante.
 covers: connector:docs
 code: connectors/docs.py, doc_writes.py, next_actions.py, onboarding.py
 site: Sign in with Microsoft
@@ -26,14 +26,15 @@ Nunca acepta una sugerencia, resuelve un comentario, comparte un archivo ni camb
 
 ## Crear y editar documentos
 
-Tu Machine puede escribir un documento de Word nuevo o cambiar un documento del que trata una de tus tareas. Nunca escribe por su cuenta:
+Tu Machine puede escribir un documento nuevo o cambiar un documento del que trata una de tus tareas:
 
-- Prepara el cambio en la tarea. Un documento nuevo se ve completo. Una edición muestra cada párrafo antes y después.
-- Toca **Revisar y crear** o **Revisar cambios**, léelo y luego **Crear** o **Guardar**.
-- Escribe una sola vez, y solo en el documento tal como lo viste. Si alguien lo cambió entretanto, no se escribe nada y la tarea lo dice. Pide un borrador nuevo.
+- Un documento nuevo lo crea enseguida, cuando la tarea o una habilidad dice que hay que crearlo: un documento privado en tu propio Google Drive o OneDrive, sin compartir con nadie. La tarea lo muestra con **Abrir el documento**. Compartirlo, o enviar su enlace a alguien, espera tu OK.
+- Un cambio en un documento existente solo lo prepara, cada párrafo antes y después. Toca **Revisar cambios**, léelo y luego **Guardar**.
+- Escribe un cambio una sola vez, y solo en el documento tal como lo viste. Si alguien lo cambió entretanto, no se escribe nada y la tarea lo dice. Pide un borrador nuevo.
 - En Talk, lee el cambio completo en voz alta y espera un sí claro.
+- Si Google o Microsoft rechaza un documento nuevo, la tarea dice qué se rechazó y muestra **Revisar y crear** para volver a intentarlo.
 
-Reemplaza texto, añade texto y añade párrafos y títulos. No toca tablas, imágenes, cambios con seguimiento ni campos. Un documento nuevo queda en tu OneDrive y es privado hasta que lo compartas.
+Reemplaza texto, añade texto y añade párrafos y títulos. No toca tablas, imágenes, cambios con seguimiento ni campos. Un documento nuevo queda en tu Google Drive o OneDrive y es privado hasta que lo compartas.
 
 Un documento nuevo va a una cuenta del área de la tarea: el documento de una tarea de Trabajo a la cuenta de esa empresa, la de la conversación cuando se puede, nunca a una personal. En tu propio ordenador, una cuenta de Google conectada para Gmail que ya tiene acceso a Drive también puede recibir un Google Doc nuevo. Si ninguna cuenta encaja, la tarea dice **Conecta Google Docs o Microsoft Word para Trabajo**.
 

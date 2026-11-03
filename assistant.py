@@ -443,7 +443,10 @@ def settle_doc_write(store, db, suggestion_id, job_id, action, url=None):
     """A doc made or changed after the owner's OK. With last:true the doc was the whole to-do: done, like a send.
     Otherwise something is left after it (a reply with its link, sharing it): the to-do stays open and carries on with
     that step (then, or what is left), drafted again for the owner's OK, never sent by itself (2026-10-30)."""
+    made_now = doc_writes.made_by_itself(db.execute('SELECT approval_id FROM action_jobs WHERE id=?', (job_id,)).fetchone())
     if action.get('last') is True:
+        if made_now:  # made while it was prepared (Store.make_new_docs): it stays open with the doc's link for the owner to look at
+            return False
         return settle_sent(store, db, suggestion_id, job_id, next_actions.label(action), doc_writes.done(action))
     row = db.execute('SELECT * FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
     if not row or row['status'] != 'prepared':
@@ -8300,6 +8303,36 @@ class Store:
             db.execute("UPDATE action_jobs SET status='cancelled',updated_at=? WHERE id=?",(now(),job['id']))
         return {'status':'cancelled'}
 
+    def make_new_docs(self, suggestion_id):
+        """A new doc the result asks for is made right away, while it is prepared: a private doc in the owner's own Google
+        Drive or OneDrive that nobody else sees until they share it. Nothing goes to anyone, so it needs no OK, and the
+        to-do shows its link (2026-11-03: "need to give approval to create a doc first while the skill says to make one").
+        Sharing it and any edit to an existing doc still wait for the owner's OK. One per title: a second doc with the
+        same title on this to-do waits for the owner. Returns the revisions queued."""
+        with self.connect() as db:
+            row = db.execute('SELECT status,next_action FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
+            if not row or row['status'] != 'prepared' or not row['next_action']:
+                return []
+            made = set()
+            for job in db.execute("SELECT payload FROM action_jobs WHERE suggestion_id=? AND status NOT IN ('failed','blocked','cancelled')",
+                                  (suggestion_id,)):
+                try:
+                    done = json.loads(job['payload'])
+                except (TypeError, ValueError):
+                    continue
+                if done.get('kind') == doc_writes.KIND and done.get('op') == 'create':
+                    made.add(str(done.get('title') or '').strip().lower())
+            wanted = [a for a in next_actions.visible_actions(row['next_action'])
+                      if a['kind'] == doc_writes.KIND and a.get('op') == 'create' and str(a.get('title') or '').strip().lower() not in made]
+        queued = []
+        for item in wanted:
+            try:
+                self.confirm_action(suggestion_id, item['revision'], doc_writes.NEW_DOC + uuid.uuid4().hex, 'assistant')
+            except ValueError:
+                continue
+            queued.append(item['revision'])
+        return queued
+
     def auto_merge(self, suggestion_id, config):
         """Queue a fix to The Machine's own error for merging without the owner's tap, when it is small
         and safe (next_actions.unsafe_merge) and no other merge happened in the last day. Returns why
@@ -8462,6 +8495,7 @@ class Store:
                                    **({'sent_at':r['updated_at']} if r['status']=='sent' else {}),
                                    # Held for a new message in the thread: which one, so the to-do shows it and offers a redo
                                    **({'held_by':held} if r['status']=='blocked' and r['error']==follow_ups.HELD and (held:=follow_ups.held_message(db,r['id'])) else {}),
+                                   **({'url':doc_writes.link_of(r['message_id'])} if r['status']=='sent' and doc_writes.link_of(r['message_id']) else {}),  # a doc made: its link
                                    # Checked long enough without a trace: the owner may try again, and the card says so.
                                    **({'retry_ok':True,'error':'Last attempt unconfirmed: I found no sign of it going out. Check the conversation; if it isn’t there, try again.'}
                                       if send_retry_ok(r,json.loads(r['payload']).get('kind')) else {}),
@@ -10024,14 +10058,17 @@ def doc_write_prompt(config):
         return ''
     names = '; '.join(f"{k} ({doc_writes.WHERE.get(t['provider'], 'Docs')}, {t['email'] or t['name']}, {doc_writes.area_name(t['boundary'])})"
                       for k, t in sorted(found.items()))
-    return (f"\n- Where a doc can go: {names}. A new doc or an edit to one is a next action the owner approves, never a write of yours: "
-            "{kind:'doc_write',op:'create',account_id,title,body} (body plain text, '# ' to '### ' lines are headings; the title is the doc's name and "
+    return (f"\n- Where a doc can go: {names}. A new doc or an edit to one is a next action, never a write of yours. A new doc is made "
+            "as soon as you save the result: private, in the owner's own Drive or OneDrive, shared with nobody, and the to-do shows its link. "
+            "So when the task or a skill says to make a doc, make it this way; don't ask first. An edit to an existing doc waits for the owner's OK, "
+            "and so does sharing a doc (a step after it). The shapes: {kind:'doc_write',op:'create',account_id,title,body} (body plain text, '# ' to '### ' lines are headings; the title is the doc's name and "
             "the to-do shows it, so the body doesn't start with it again) or "
             "{kind:'doc_write',op:'edit',file_id:<metadata.file_id of this task's doc event>,changes:[{find,replace} | {after,insert} | {append}]}. "
             "A new doc goes only to a place in this to-do's own area (Work at that company, or Personal, as its accounts are), and to the one with "
             "the conversation's own address when that one can; never to another area's account. When none fits, draft no doc: give its text in "
             "the to-do and say needs:'Connect Google Docs or Microsoft Word for Work' (or for Personal). Name the place exactly as listed "
-            "(Google Docs or Word) in the body and needs, never the other. Add last:true only when the doc itself finishes the to-do; otherwise "
+            "(Google Docs or Word) in the body and needs, never the other. With a new doc, save outcome:'needs_you' with needs:'open the doc and check it' "
+            "(the body says the doc is being made, never that someone has it). Add last:true only when the doc itself finishes the to-do; otherwise "
             "then:<the step after it, e.g. reply to Sam with the link>: once the doc is made, the to-do carries on with that step as a new draft. "
             "Check an edit first: assistant doc-draft --job <job id> --event <event id> [--changes <file.json>] prints the doc's paragraphs "
             "and the before and after the owner will see. Only with Allow edits on; otherwise give the text in the to-do.")
@@ -11934,7 +11971,7 @@ def card(row):
         status={'queued':t('Testing the fix. It merges by itself if every check passes.') if auto else t('Testing and merging the fix…') if merging else t('Sending your approved draft…'),'sending':t('Testing and merging the fix…') if merging else t('Sending your approved draft…'),
                 'sent':((t('Merged by itself and restarted. You can undo it for 24 hours; it undoes itself if the error comes back.') if auto else t('Merged. The Machine restarts with the fix.'))
                         +(' '+action_state['error'] if action_state.get('error') else '')) if merging else
-                ('✓ '+(t('LinkedIn message sent') if mid.startswith(('urn:li:','linkedin:')) else t('Slack message sent') if mid.startswith('slack:') else t('Reply posted on X') if mid.startswith('x:') else t('X message sent') if mid.startswith('xdm:') else t('WhatsApp message sent') if mid.startswith('whatsapp:') else t('Telegram message sent') if mid.startswith('telegram:') else t('Sent as {} in Intercom', ' '.join(str(sent.get('as_name') or t('your Intercom admin')).split())) if mid.startswith('intercom:') else t('Reply posted in the doc') if mid.startswith('doc:') else (t('Doc created') if sent.get('op')=='create' else t('Changes saved in the doc')) if mid.startswith('docwrite:') else t('Email sent'))+to_at+'.'+thread_snooze_note(action_state)),'uncertain':action_state.get('error'),'blocked':(action_state.get('error') or '')+(t(' Tap Merge fix to merge it anyway.') if auto else ''),'failed':action_state.get('error'),
+                ('✓ '+(t('LinkedIn message sent') if mid.startswith(('urn:li:','linkedin:')) else t('Slack message sent') if mid.startswith('slack:') else t('Reply posted on X') if mid.startswith('x:') else t('X message sent') if mid.startswith('xdm:') else t('WhatsApp message sent') if mid.startswith('whatsapp:') else t('Telegram message sent') if mid.startswith('telegram:') else t('Sent as {} in Intercom', ' '.join(str(sent.get('as_name') or t('your Intercom admin')).split())) if mid.startswith('intercom:') else t('Reply posted in the doc') if mid.startswith('doc:') else (t('Doc created') if sent.get('op')=='create' else t('Changes saved in the doc')) if mid.startswith('docwrite:') else t('Email sent'))+to_at+'.'+(' '+action_state['url'] if mid.startswith('docwrite:') and action_state.get('url') else '')+thread_snooze_note(action_state)),'uncertain':action_state.get('error'),'blocked':(action_state.get('error') or '')+(t(' Tap Merge fix to merge it anyway.') if auto else ''),'failed':action_state.get('error'),
                 'undoing':t('Undoing the merge…'),'undone':action_state.get('error') or t('Merge undone.')}.get(action_state['status'],status)
     try:
         handed = json.loads(row['awaiting']) if row.get('awaiting') else {}
@@ -15736,6 +15773,9 @@ class App(*APP_MIXINS):
                 ready=[a for a in next_actions.actions(action) if a['kind'] in ('email','linkedin','slack','x') and not a.get('to_options')]
                 if not ready:raise ValueError('send_now needs an email, LinkedIn, Slack or X draft with its recipients filled in')
                 saved['send']=self.store.confirm_action(args['suggestion_id'],ready[0]['revision'],'assistant:'+uuid.uuid4().hex,'assistant')
+            if any(a['kind']=='doc_write' and a.get('op')=='create' for a in next_actions.actions(action)) and not saved.get('replayed'):
+                # A new private doc in the owner's own Drive: made now, no OK needed (make_new_docs). Sharing it waits.
+                saved['doc_created']='being made now in the owner’s own Drive, private to them; the to-do shows its link' if self.store.make_new_docs(args['suggestion_id']) else 'waits for the owner'
             if any(a['kind']=='merge' for a in next_actions.actions(action)) and not saved.get('replayed'):
                 # The service decides, never the agent: a small, tested fix to its own error merges by itself.
                 why=self.store.auto_merge(args['suggestion_id'],self.config)
@@ -17505,7 +17545,7 @@ class App(*APP_MIXINS):
             error={'sent':None,'failed':f"Last attempt failed: {where} refused {what} (error {result.get('rejected')}). Nothing was sent; change it or try again.",
                    'uncertain':f'I couldn’t confirm whether {what} was sent. I won’t resend it.'}[status]
             if action['kind']=='doc_write':
-                error={'sent':None,'failed':doc_writes.failed(action,result.get('rejected')),'uncertain':doc_writes.UNCLEAR}[status]
+                error={'sent':None,'failed':doc_writes.failed(action,result.get('rejected'),result.get('reason')),'uncertain':doc_writes.UNCLEAR}[status]
             if action['kind']=='calendar':
                 error={'sent':None,'failed':f"Last attempt failed: Google Calendar refused it (error {result.get('rejected')}). Nothing was changed; try again or change it.",
                        'uncertain':'I couldn’t confirm the calendar change. I’m checking the calendar; I won’t make it twice.'}[status]

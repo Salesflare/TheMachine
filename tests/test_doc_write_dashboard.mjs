@@ -19,13 +19,21 @@ const create={kind:'doc_write',op:'create',label:'Create doc',revision:'abcdefab
   title:'Launch notes',url:'javascript:alert(1)',body:'# Launch notes\nThe launch moves to week 3.\n## Next steps\nTell the partners on Friday.'};
 const saved={...edit,revision:'555555555555',state:{status:'sent',message_id:'docwrite:d1!i1',sent_at:new Date().toISOString()}};
 const made={...create,revision:'666666666666',provider:'microsoft',state:{status:'sent',message_id:'docwrite:d1!n1',sent_at:new Date().toISOString()}},madeId='7766554433221100';
+// A new Google Doc made while the to-do was prepared, no OK asked (Store.make_new_docs): its link from the write's state
+const gdocUrl='https://docs.google.com/document/d/1AbCdEfGhIjKlMnOpQrStUvWxYz0123456789/edit';
+const madeNow={...create,revision:'777777777777',url:undefined,last:true,state:{status:'sent',message_id:'docwrite:1AbCdEfGhIjKlMnOpQrStUvWxYz0123456789',url:gdocUrl,sent_at:new Date().toISOString()}},madeNowId='1122334455667788';
+// One Google refused: the line says what was refused, and Review and create tries again
+const refusedLine='Google Docs is turned off for this Google sign-in, so it can’t write docs. Nothing was changed.';
+const refused={...create,revision:'888888888888',url:undefined,state:{status:'failed',error:refusedLine}},refusedId='99aa88bb77cc66dd';
 const docs=(extra)=>({id:'docs',display_name:'Work docs',email:'owner@example.com',service:'docs',transport:'broker',boundary:'work',events:3,recent_events:3,
   last_success:new Date().toISOString(),docs_provider:'microsoft',docs_replies:false,docs_writes:[],...extra});
 let connectors=[docs({docs_write_signin:'microsoft_docs_write',connect_name:'docs'})];
 const card=(id,title,a,extra={})=>({id,title,body:'Drafted the change.',status:'prepared',event_ids:[1],next_action:a,next_actions:[a],
   outcome:JSON.stringify({state:'needs_you',needs:'Check the change and save it'}),scope:'work',created_at:new Date().toISOString(),...extra});
 const state=()=>({suggestions:[card(editId,'Move the launch in Q4 pricing',edit),card(newId,'Write up the launch notes',create),
-  card(doneId,'Fix the owner line',saved,{status:'completed',outcome:null}),card(madeId,'Partner copy',made)],
+  card(doneId,'Fix the owner line',saved,{status:'completed',outcome:null}),card(madeId,'Partner copy',made),
+  card(madeNowId,'Listing entry for a partner',madeNow,{body:'Made the listing entry in Google Docs.',outcome:JSON.stringify({state:'needs_you',needs:'Open the doc and check it'})}),
+  card(refusedId,'Partner one-pager',refused,{body:'Wrote the one-pager for Google Docs.'})],
   connectors,suggestion_counts:{prepared:2},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[]});
 const calls=[],errors=[];
 const server=createServer(async(req,res)=>{
@@ -101,6 +109,29 @@ try{
   assert.match(await madeBox.locator('.dm').textContent(),/^Created in Word/);
   assert.equal(await madeBox.locator('.dw-h1').count(),1);
   if(shots)await page.locator(`#task-${madeId}`).screenshot({path:`${shots}/created-todo-${name}.png`});
+  if(shots){await page.evaluate(()=>document.querySelector('#toast')?.classList.remove('show'));await page.waitForTimeout(500)}  // the earlier confirm's toast, out of the shots
+  // Made while prepared: Open the doc leads (a new tab), then Mark done and Ask for changes, Snooze in the …; no Review and create
+  const now=page.locator(`#task-${madeNowId}`);
+  assert.match(await now.locator('.draft.doc-write .dm').textContent(),/^Created in Google Docs$/);
+  const row=now.locator('.actions').last(),lead=row.locator(':scope > :first-child');
+  assert.equal(await lead.textContent(),'Open the doc');
+  assert.equal(await lead.getAttribute('href'),gdocUrl);
+  assert.equal(await lead.getAttribute('target'),'_blank');
+  assert.match(await lead.getAttribute('class'),/\bprimary\b/);
+  assert.deepEqual(await row.locator(':scope > button:not([hidden])').allTextContents(),['Mark done','Ask for changes']);
+  assert.ok((await row.locator('.more-menu').textContent()).includes('Snooze'));
+  assert.equal(await now.locator(`[data-smart="${madeNow.revision}"]`).count(),0);
+  // In Word, with no link to open: Mark done leads
+  assert.equal(await page.locator(`#task-${madeId} .actions .primary`).first().textContent(),'Mark done');
+  assert.match(await now.textContent(),/Doc created( at \d\d:\d\d)?\./);
+  if(shots)await now.screenshot({path:`${shots}/made-now-todo-${name}.png`});
+  // Refused: the plain line, and Review and create to try it again
+  const no=page.locator(`#task-${refusedId}`);
+  assert.ok((await no.textContent()).includes(refusedLine));
+  assert.ok(!/error 403/.test(await no.textContent()));
+  assert.equal(await no.locator(`[data-smart="${refused.revision}"]`).textContent(),'Review and create');
+  assert.equal(await no.locator('.draft.doc-write .dm a').count(),0);
+  if(shots)await no.screenshot({path:`${shots}/refused-todo-${name}.png`});
   // The Docs card: what it may write, and Allow edits until it may
   await page.evaluate(()=>document.querySelector('nav [data-tab="health"]').click());
   await page.evaluate(()=>[...document.querySelectorAll('button')].find(b=>b.offsetParent&&b.textContent.trim()==='Other sources')?.click());
@@ -113,7 +144,7 @@ try{
   if(shots)await conn.screenshot({path:`${shots}/docs-card-${name}.png`});
   connectors=[docs({docs_writes:['create','edit']})];
   await page.evaluate(()=>refresh());await page.waitForTimeout(200);
-  assert.ok((await conn.textContent()).includes('Creates and edits docs only after you OK each change.'));
+  assert.ok((await conn.textContent()).includes('Creates private docs. Edits docs only after you OK each change.'));
   assert.equal(await conn.locator('button',{hasText:'Allow edits'}).count(),0);
   connectors=[docs({docs_write_signin:'microsoft_docs_write',connect_name:'docs'})];
   await context.close();

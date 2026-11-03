@@ -1,7 +1,7 @@
 ---
 title: Microsoft Word: Word-bestanden in OneDrive en SharePoint
 area: connections
-summary: Reacties, vermeldingen, bijgehouden wijzigingen en gedeelde bestanden in je Word-bestanden in OneDrive en SharePoint, plus nieuwe documenten en wijzigingen die je goedkeurt. Google Docs komen later.
+summary: Reacties, vermeldingen, bijgehouden wijzigingen en gedeelde bestanden in je Word-bestanden in OneDrive en SharePoint, plus nieuwe privédocumenten, en wijzigingen die je goedkeurt. Google Docs komen later.
 covers: connector:docs
 code: connectors/docs.py, doc_writes.py, next_actions.py, onboarding.py
 site: Sign in with Microsoft
@@ -26,14 +26,15 @@ Hij aanvaardt nooit een suggestie, sluit nooit een reactie af, deelt nooit een b
 
 ## Documenten maken en bewerken
 
-Je Machine kan een nieuw Word-document schrijven, of een document aanpassen waar een van je to-do's over gaat. Hij schrijft nooit uit zichzelf:
+Je Machine kan een nieuw document schrijven, of een document aanpassen waar een van je to-do's over gaat:
 
-- Hij bereidt de wijziging voor op de to-do. Een nieuw document zie je helemaal. Een bewerking toont elke alinea voor en na.
-- Tik op **Nakijken en maken** of **Wijzigingen nakijken**, lees het en dan **Maken** of **Opslaan**.
-- Hij schrijft één keer, en alleen in het document zoals je het zag. Heeft iemand het intussen aangepast, dan wordt er niets geschreven en zegt de to-do dat. Vraag dan een nieuw concept.
+- Een nieuw document maakt hij meteen, als de to-do of een skill zegt er een te maken: een privédocument in je eigen Google Drive of OneDrive, met niemand gedeeld. De to-do toont het met **Open het document**. Het delen, of de link naar iemand sturen, wacht op je OK.
+- Een wijziging aan een bestaand document bereidt hij alleen voor, elke alinea voor en na. Tik op **Wijzigingen nakijken**, lees het en dan **Opslaan**.
+- Hij schrijft een wijziging één keer, en alleen in het document zoals je het zag. Heeft iemand het intussen aangepast, dan wordt er niets geschreven en zegt de to-do dat. Vraag dan een nieuw concept.
 - In Talk leest hij de hele wijziging voor en wacht op een duidelijk ja.
+- Weigert Google of Microsoft een nieuw document, dan zegt de to-do wat geweigerd werd en toont **Nakijken en maken** om het opnieuw te proberen.
 
-Hij vervangt tekst, voegt tekst toe en voegt alinea's en koppen toe. Tabellen, afbeeldingen, bijgehouden wijzigingen en velden laat hij met rust. Een nieuw document komt in je OneDrive en blijft privé tot je het deelt.
+Hij vervangt tekst, voegt tekst toe en voegt alinea's en koppen toe. Tabellen, afbeeldingen, bijgehouden wijzigingen en velden laat hij met rust. Een nieuw document komt in je Google Drive of OneDrive en blijft privé tot je het deelt.
 
 Een nieuw document gaat naar een account in het eigen gebied van de taak: een document voor een Werk-taak naar het account van dat bedrijf, het account van het gesprek als dat kan, nooit naar een privé-account. Op je eigen computer kan ook een Google-account dat voor Gmail is aangemeld en al toegang tot Drive heeft een nieuw Google-document krijgen. Past geen enkel account, dan zegt de taak **Koppel Google Docs of Microsoft Word voor Werk**.
 

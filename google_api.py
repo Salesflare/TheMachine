@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import http.client
 import json
+import re
 import threading
 import time
 import urllib.error
@@ -79,11 +80,26 @@ _lock = threading.Lock()
 
 
 class BrokerError(Exception):
-    """A content-free failure: `status` is Google's or the broker's HTTP status, None when unreachable."""
+    """A content-free failure: `status` is Google's or the broker's HTTP status, None when unreachable; `reason` Google's
+    label for it (error_reason), never its message text."""
 
-    def __init__(self, category, status=None, retry_after=None):
+    def __init__(self, category, status=None, retry_after=None, reason=None):
         super().__init__(category)
-        self.category, self.status, self.retry_after = category, status, retry_after
+        self.category, self.status, self.retry_after, self.reason = category, status, retry_after, reason
+
+
+ERROR_REASON = re.compile(r'"reason":\s*"([A-Za-z_]{2,64})"')
+ERROR_STATUS = re.compile(r'"status":\s*"([A-Z_]{2,64})"')
+
+
+def error_reason(text):
+    """Google's label for a refusal, from its error body: the most specific one (a details reason such as
+    SERVICE_DISABLED or ACCESS_TOKEN_SCOPE_INSUFFICIENT, then an errors[] reason such as storageQuotaExceeded, then the
+    status such as PERMISSION_DENIED). Only such a label, never the message text; None when there is none."""
+    text = str(text or '')[:65536]
+    reasons = ERROR_REASON.findall(text)
+    return (next((r for r in reasons if r.isupper()), None) or (reasons[0] if reasons else None)
+            or next(iter(ERROR_STATUS.findall(text)), None))
 
 
 def retry_after(error):
@@ -190,10 +206,14 @@ def call(config, credential, account, method, params, scope, body=None, write=Fa
                     return data
                 return json.loads(response.read() or b'{}')
         except urllib.error.HTTPError as error:
+            try:
+                said = error.read(65536).decode('utf-8', 'replace') if error.code in (400, 403, 429) else ''
+            except Exception:  # noqa: BLE001 - only a label is wanted; without one the status still says it
+                said = ''
             error.close()
             if error.code == 401 and not attempt and not write:
                 continue  # the access token expired early: one fresh one, for reads only
-            raise BrokerError(method.split('.')[0], error.code, retry_after(error)) from None
+            raise BrokerError(method.split('.')[0], error.code, retry_after(error), error_reason(said)) from None
         except (urllib.error.URLError, TimeoutError, OSError, http.client.HTTPException):
             raise BrokerError('timeout') from None
         except ValueError:

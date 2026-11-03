@@ -1,7 +1,7 @@
 ---
 title: Microsoft Word: arquivos do Word no OneDrive e no SharePoint
 area: connections
-summary: Comentários, menções, alterações controladas e compartilhamentos nos seus arquivos do Word no OneDrive e no SharePoint, além de novos documentos e edições que você aprova. O Google Docs vem depois.
+summary: Comentários, menções, alterações controladas e compartilhamentos nos seus arquivos do Word no OneDrive e no SharePoint, além de novos documentos privados, e edições que você aprova. O Google Docs vem depois.
 covers: connector:docs
 code: connectors/docs.py, doc_writes.py, next_actions.py, onboarding.py
 site: Sign in with Microsoft
@@ -26,14 +26,15 @@ Ela nunca aceita uma sugestão, resolve um comentário, compartilha um arquivo o
 
 ## Criar e editar documentos
 
-Sua Machine pode escrever um novo documento do Word, ou alterar um documento de que trata uma das suas tarefas. Ela nunca escreve sozinha:
+Sua Machine pode escrever um novo documento, ou alterar um documento de que trata uma das suas tarefas:
 
-- Ela prepara a alteração na tarefa. Um novo documento aparece inteiro. Uma edição mostra cada parágrafo antes e depois.
-- Toque em **Revisar e criar** ou **Revisar alterações**, leia e depois **Criar** ou **Salvar**.
-- Ela escreve uma vez só, e só no documento como você o viu. Se alguém o alterou nesse meio-tempo, nada é escrito e a tarefa avisa. Peça um novo rascunho.
+- Um novo documento ela cria na hora, quando a tarefa ou uma habilidade pede um: um documento privado no seu próprio Google Drive ou OneDrive, sem compartilhar com ninguém. A tarefa o mostra com **Abrir o documento**. Compartilhar, ou enviar o link para alguém, espera o seu OK.
+- Uma alteração em um documento existente ela só prepara, cada parágrafo antes e depois. Toque em **Revisar alterações**, leia e depois **Salvar**.
+- Ela escreve uma alteração uma vez só, e só no documento como você o viu. Se alguém o alterou nesse meio-tempo, nada é escrito e a tarefa avisa. Peça um novo rascunho.
 - No Talk, ela lê a alteração inteira em voz alta e espera um sim claro.
+- Se o Google ou a Microsoft recusar um novo documento, a tarefa diz o que foi recusado e mostra **Revisar e criar** para tentar de novo.
 
-Ela substitui texto, adiciona texto e adiciona parágrafos e títulos. Não mexe em tabelas, imagens, alterações controladas nem campos. Um novo documento fica no seu OneDrive e é privado até você compartilhá-lo.
+Ela substitui texto, adiciona texto e adiciona parágrafos e títulos. Não mexe em tabelas, imagens, alterações controladas nem campos. Um novo documento fica no seu Google Drive ou OneDrive e é privado até você compartilhá-lo.
 
 Um novo documento vai para uma conta da área da tarefa: o documento de uma tarefa de Trabalho para a conta dessa empresa, a da conversa quando dá, nunca para uma pessoal. No seu próprio computador, uma conta do Google conectada para o Gmail que já tem acesso ao Drive também pode receber um novo Google Doc. Se nenhuma conta servir, a tarefa diz **Conecte o Google Docs ou o Microsoft Word para Trabalho**.
 

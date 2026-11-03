@@ -58,6 +58,7 @@ READ_SCOPE = 'https://www.googleapis.com/auth/drive.readonly'
 REPLY_SCOPE = 'https://www.googleapis.com/auth/drive'
 MS_SCOPE = 'Files.Read.All'
 FILE_SCOPE = 'https://www.googleapis.com/auth/drive.file'  # Google: only files this app created (a new doc)
+WRITE_KEY = 'themachine_write'  # a new Google Doc's appProperties key: the write's token, to find it again
 MS_WRITE_SCOPE = 'Files.ReadWrite.All'
 DOCX_MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
 DOC_MIME = 'application/vnd.google-apps.document'
@@ -126,8 +127,10 @@ class Google:
                 raise self.helpers.SourceError('docs_not_connected', error.status) from None
             if error.status == 401:
                 raise self.helpers.SourceError('docs_signin_expired', 401) from None
-            raise self.helpers.SourceError('docs_' + str(error.category), error.status,
-                                           retry_after=getattr(error, 'retry_after', None) or (60 if error.status == 429 else None)) from None
+            failure = self.helpers.SourceError('docs_' + str(error.category), error.status,
+                                               retry_after=getattr(error, 'retry_after', None) or (60 if error.status == 429 else None))
+            failure.reason = getattr(error, 'reason', None)
+            raise failure from None
 
     def me(self):
         about = self.call('drive.about.get', {'fields': 'user(displayName,emailAddress)'})
@@ -685,6 +688,12 @@ class Replier(Google):
                          scope=REPLY_SCOPE, body={'content': body}, write=True)
 
 
+def google_reason(text):
+    """Google's label for a refusal in its error body (google_api.error_reason): SERVICE_DISABLED, storageQuotaExceeded..."""
+    import google_api  # noqa: PLC0415
+    return google_api.error_reason(text)
+
+
 def gog_google(account):
     """The owner's own Google sign-in through gog (a Gmail account, not one a Fleet shares): a place for a new Google Doc
     with the scopes that sign-in already has (drive or drive.file). Nothing asks gog for more."""
@@ -733,8 +742,11 @@ class GogGoogle:
             except subprocess.TimeoutExpired:
                 raise self.helpers.SourceError('docs_timeout') from None
         if result.returncode:
-            found = re.search(r'"code":\s*(\d{3})', result.stdout or '') or re.search(r'\b(4\d\d|5\d\d)\b', result.stderr or '')
-            raise self.helpers.SourceError('docs_google', int(found[1]) if found else None)
+            said = (result.stderr or '') + '\n' + (result.stdout or '').replace('\\"', '"')
+            found = re.search(r'"code":\s*(\d{3})\b', said) or re.search(r'\b(4\d\d|5\d\d)\b', result.stderr or '')
+            error = self.helpers.SourceError('docs_google', int(found[1]) if found else None)
+            error.reason = google_reason(said)  # Google's own label for it (SERVICE_DISABLED, storageQuotaExceeded...), never text
+            raise error
         try:
             return json.loads(result.stdout or '{}')
         except ValueError:
@@ -789,14 +801,18 @@ class Writer:
             granted = set()
         return REPLY_SCOPE if REPLY_SCOPE in granted or FILE_SCOPE not in granted else FILE_SCOPE
 
-    def make(self, file_id, title, body, upload, fill):
-        """A new Google Doc under the id generated before the write. Through the broker one upload of its HTML; with gog
-        (JSON bodies only) an empty doc under that id, then its text in one batchUpdate pinned to that empty doc."""
+    def make(self, token, title, body, upload, fill):
+        """A new Google Doc in the owner's My Drive, tagged with this write's token (appProperties) so an unclear outcome
+        is found again (written), never made twice. Drive takes no pre-generated id for a Google Doc ("pre-generated IDs
+        aren't supported for the creation of Google Workspace files": a 403 on 2026-11-03), so Drive picks the id. Through
+        the broker one upload of its HTML; with gog (JSON bodies only) an empty doc, then its text in one batchUpdate
+        pinned to that empty doc."""
         if not self.gog:
             return self.upload(*upload)
         made = self.source.call('drive.files.create', {'fields': 'id,name,webViewLink'}, scope=self.scope(), write=True,
-                                body={'id': file_id, 'name': title, 'mimeType': DOC_MIME})
-        self.fill(file_id, fill)
+                                body={'name': title, 'mimeType': DOC_MIME, 'appProperties': {WRITE_KEY: token}})
+        if made.get('id'):
+            self.fill(str(made['id']), fill)
         return made
 
     def fill(self, file_id, fill):
@@ -816,12 +832,13 @@ class Writer:
         return self.source.call('docs.documents.batchUpdate', {'documentId': file_id}, scope=REPLY_SCOPE, write=True,
                                 body={'requests': requests, 'writeControl': {'requiredRevisionId': revision}})
 
-    def new_id(self):
-        ids = self.source.call('drive.files.generateIds', {'count': 1, 'space': 'drive', 'type': 'files'}, scope=self.scope())
-        found = (ids.get('ids') or [None])[0] if isinstance(ids, dict) else None
-        if not found:
-            raise self.helpers.SourceError('docs_google')
-        return str(found)
+    def written(self, token):
+        """The doc this write made (its appProperties token), or None: how an unclear create is checked."""
+        found = self.source.call('drive.files.list', {
+            'q': f"appProperties has {{ key='{WRITE_KEY}' and value='{token}' }} and trashed = false",
+            'fields': 'files(id,name)', 'pageSize': 2, 'spaces': 'drive'}, scope=self.scope())
+        files = (found.get('files') or []) if isinstance(found, dict) else []
+        return files[0] if files else None
 
     def upload(self, data, content_type):
         return self.source.call('drive.files.upload', {'uploadType': 'multipart', 'fields': 'id,name,webViewLink'},

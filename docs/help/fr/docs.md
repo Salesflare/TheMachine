@@ -1,7 +1,7 @@
 ---
 title: Microsoft Word : fichiers Word dans OneDrive et SharePoint
 area: connections
-summary: Commentaires, mentions, modifications suivies et partages sur vos fichiers Word dans OneDrive et SharePoint, ainsi que les nouveaux documents et modifications que vous approuvez. Google Docs viendra plus tard.
+summary: Commentaires, mentions, modifications suivies et partages sur vos fichiers Word dans OneDrive et SharePoint, ainsi que les nouveaux documents privés, et les modifications que vous approuvez. Google Docs viendra plus tard.
 covers: connector:docs
 code: connectors/docs.py, doc_writes.py, next_actions.py, onboarding.py
 site: Sign in with Microsoft
@@ -26,14 +26,15 @@ Il n’accepte jamais une suggestion, ne résout jamais un commentaire, ne parta
 
 ## Créer et modifier des documents
 
-Votre Machine peut écrire un nouveau document Word, ou modifier un document dont parle l’une de vos tâches. Elle n’écrit jamais d’elle-même :
+Votre Machine peut écrire un nouveau document, ou modifier un document dont parle l’une de vos tâches :
 
-- Elle prépare la modification dans la tâche. Un nouveau document s’affiche en entier. Une modification montre chaque paragraphe avant et après.
-- Touchez **Relire et créer** ou **Relire les modifications**, lisez, puis **Créer** ou **Enregistrer**.
-- Elle écrit une seule fois, et seulement dans le document tel que vous l’avez vu. Si quelqu’un l’a modifié entre-temps, rien n’est écrit et la tâche le dit. Demandez un nouveau brouillon.
+- Un nouveau document, elle le crée tout de suite, quand la tâche ou une compétence demande d’en créer un : un document privé dans votre propre Google Drive ou OneDrive, partagé avec personne. La tâche l’affiche avec **Ouvrir le document**. Le partager, ou envoyer son lien à quelqu’un, attend votre accord.
+- Une modification d’un document existant, elle la prépare seulement, chaque paragraphe avant et après. Touchez **Relire les modifications**, lisez, puis **Enregistrer**.
+- Elle écrit une modification une seule fois, et seulement dans le document tel que vous l’avez vu. Si quelqu’un l’a modifié entre-temps, rien n’est écrit et la tâche le dit. Demandez un nouveau brouillon.
 - Dans Talk, elle lit toute la modification à voix haute et attend un oui clair.
+- Si Google ou Microsoft refuse un nouveau document, la tâche dit ce qui a été refusé et affiche **Relire et créer** pour réessayer.
 
-Elle remplace du texte, ajoute du texte et ajoute des paragraphes et des titres. Elle ne touche pas aux tableaux, images, modifications suivies et champs. Un nouveau document arrive dans votre OneDrive et reste privé tant que vous ne le partagez pas.
+Elle remplace du texte, ajoute du texte et ajoute des paragraphes et des titres. Elle ne touche pas aux tableaux, images, modifications suivies et champs. Un nouveau document arrive dans votre Google Drive ou OneDrive et reste privé tant que vous ne le partagez pas.
 
 Un nouveau document va dans un compte du domaine de la tâche : le document d’une tâche Travail dans le compte de cette entreprise, celui de la conversation quand c’est possible, jamais dans un compte perso. Sur votre propre ordinateur, un compte Google connecté pour Gmail qui a déjà accès à Drive peut aussi recevoir un nouveau Google Doc. Si aucun compte ne convient, la tâche indique **Connectez Google Docs ou Microsoft Word pour Travail**.
 

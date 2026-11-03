@@ -1,7 +1,7 @@
 ---
 title: Microsoft Word: Word-Dateien in OneDrive und SharePoint
 area: connections
-summary: Kommentare, Erwähnungen, nachverfolgte Änderungen und Freigaben in deinen Word-Dateien in OneDrive und SharePoint, dazu neue Dokumente und Änderungen, die du freigibst. Google Docs kommen später.
+summary: Kommentare, Erwähnungen, nachverfolgte Änderungen und Freigaben in deinen Word-Dateien in OneDrive und SharePoint, dazu neue private Dokumente und Änderungen, die du freigibst. Google Docs kommen später.
 covers: connector:docs
 code: connectors/docs.py, doc_writes.py, next_actions.py, onboarding.py
 site: Sign in with Microsoft
@@ -26,14 +26,15 @@ Es nimmt keine Vorschläge an, löst keine Kommentare auf, teilt keine Dateien u
 
 ## Dokumente erstellen und bearbeiten
 
-Deine Machine kann ein neues Word-Dokument schreiben oder ein Dokument ändern, um das es in einer deiner Aufgaben geht. Sie schreibt nie von selbst:
+Deine Machine kann ein neues Dokument schreiben oder ein Dokument ändern, um das es in einer deiner Aufgaben geht:
 
-- Sie bereitet die Änderung in der Aufgabe vor. Ein neues Dokument siehst du ganz, eine Bearbeitung als jeden Absatz vorher und nachher.
-- Tippe auf **Prüfen und erstellen** oder **Änderungen prüfen**, lies alles und dann **Erstellen** oder **Speichern**.
-- Sie schreibt einmal, und nur in das Dokument, wie du es gesehen hast. Hat jemand es inzwischen geändert, wird nichts geschrieben und die Aufgabe sagt es dir. Bitte dann um einen neuen Entwurf.
+- Ein neues Dokument erstellt sie sofort, wenn die Aufgabe oder ein Skill eines verlangt: ein privates Dokument in deinem eigenen Google Drive oder OneDrive, mit niemandem geteilt. Die Aufgabe zeigt es mit **Dokument öffnen**. Das Teilen, oder den Link an jemanden schicken, wartet auf dein OK.
+- Eine Änderung an einem bestehenden Dokument bereitet sie nur vor, jeden Absatz vorher und nachher. Tippe auf **Änderungen prüfen**, lies alles und dann **Speichern**.
+- Sie schreibt eine Änderung einmal, und nur in das Dokument, wie du es gesehen hast. Hat jemand es inzwischen geändert, wird nichts geschrieben und die Aufgabe sagt es dir. Bitte dann um einen neuen Entwurf.
 - In Talk liest sie die ganze Änderung vor und wartet auf ein klares Ja.
+- Lehnt Google oder Microsoft ein neues Dokument ab, sagt die Aufgabe, was abgelehnt wurde, und zeigt **Prüfen und erstellen**, um es noch einmal zu versuchen.
 
-Sie ersetzt Text, fügt Text hinzu und fügt Absätze und Überschriften ein. Tabellen, Bilder, nachverfolgte Änderungen und Felder lässt sie in Ruhe. Ein neues Dokument landet in deinem OneDrive und bleibt privat, bis du es teilst.
+Sie ersetzt Text, fügt Text hinzu und fügt Absätze und Überschriften ein. Tabellen, Bilder, nachverfolgte Änderungen und Felder lässt sie in Ruhe. Ein neues Dokument landet in deinem Google Drive oder OneDrive und bleibt privat, bis du es teilst.
 
 Ein neues Dokument kommt in ein Konto aus dem Bereich der Aufgabe: das Dokument einer Arbeitsaufgabe in das Konto dieser Firma, wenn möglich das Konto des Gesprächs, nie in ein privates. Auf deinem eigenen Computer kann auch ein Google-Konto, das für Gmail angemeldet ist und schon Zugriff auf Drive hat, ein neues Google-Dokument bekommen. Passt kein Konto, sagt die Aufgabe **Verbinde Google Docs oder Microsoft Word für Arbeit**.
 

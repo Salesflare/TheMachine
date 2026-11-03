@@ -1,11 +1,13 @@
-"""Owner-approved writes to documents: a new doc, or an edit to a doc of the task's own doc events. Google Docs, and Word
+"""Writes to documents: a new doc, or an owner-approved edit to a doc of the task's own doc events. Google Docs, and Word
 on OneDrive and SharePoint. connectors/docs.py (Writer) does the reading and writing; this module decides what is
 written and checks it.
 
-Nothing is written without the owner seeing it. A preparation offers {kind: doc_write} as a next action; the to-do shows
-the whole new doc, or each change as before and after, and the write runs only after the owner's Create or Save and its
-confirm. Never with send_now, so a chat turn never drafts and writes at once; by voice the whole change is read aloud
-first and needs a clear yes (talk_live.py).
+A preparation offers {kind: doc_write} as a next action. A new doc is made right away (Store.make_new_docs): a private
+doc in the owner's own Drive or OneDrive, shared with nobody, so nothing goes to anyone and it needs no OK; the to-do
+shows its link (2026-11-03). Sharing it is a step after it, drafted for the owner's OK. An edit to an existing doc
+shows each change as before and after and runs only after the owner's Save and its confirm. Never with send_now, so a
+chat turn never drafts and edits at once; by voice the whole change is read aloud first and needs a clear yes
+(talk_live.py). If making the new doc fails, it waits as Review and create, like before.
 
 - create {op: create, account_id, title, body}: a new doc from plain text. A line starting with "# ", "## " or "### "
   is a heading, every other line a paragraph. Google: a Google Doc in the owner's My Drive (the drive.file scope, or
@@ -34,10 +36,16 @@ import bisect
 import html
 import io
 import json
+import logging
 import re
+import uuid
 import zipfile
 
+LOG = logging.getLogger('assistant')
+
 KIND = 'doc_write'
+NEW_DOC = 'new-doc:'  # the approval id of a new doc made while its to-do was prepared, without an OK (Store.make_new_docs)
+WRITE_KEY = 'themachine_write'  # a new Google Doc's appProperties key (connectors/docs.py WRITE_KEY): this write's token
 OPS = ('create', 'edit')
 KEYS = {'kind', 'op', 'label', 'account_id', 'title', 'body', 'file_id', 'changes', 'last', 'then'}
 MAX_THEN = 300
@@ -372,13 +380,56 @@ def landed(snapshot, action):
     return True
 
 
-def failed(action, status):
-    """The to-do's line when the doc refused the write: nothing changed."""
+# Google's label for a refusal (google_api.error_reason) -> what was refused, in plain words. Each says nothing changed.
+TURNED_OFF = ('SERVICE_DISABLED', 'accessNotConfigured', 'API_DISABLED')
+NO_SCOPE = ('ACCESS_TOKEN_SCOPE_INSUFFICIENT', 'insufficientPermissions', 'insufficientScopes')
+NO_EDIT = ('insufficientFilePermissions', 'appNotAuthorizedToFile', 'cannotModifyViewersCanCopyContent', 'fileWriterTeamDriveMoveInDisabled')
+FULL = ('storageQuotaExceeded', 'teamDriveFileLimitExceeded', 'numChildrenInNonRootLimitExceeded')
+BUSY = ('userRateLimitExceeded', 'rateLimitExceeded', 'dailyLimitExceeded', 'quotaExceeded', 'RATE_LIMIT_EXCEEDED',
+        'RESOURCE_EXHAUSTED', 'sharingRateLimitExceeded')
+POLICY = ('domainPolicy', 'ORG_POLICY_VIOLATION', 'cannotCreateFile')
+
+
+def failed(action, status, reason=None):
+    """The to-do's line when the doc refused the write: what was refused, in plain words, and that nothing changed.
+    `reason` is Google's label from its error body; the error number stays at the end for support."""
     if status in (409, 412):
         return 'The doc changed since this was drafted. Nothing was changed; ask for a new draft.'
     if status == 423:
         return 'The doc is locked (open with a lock somewhere). Nothing was changed; try again later.'
-    return f'{where(action)} refused it (error {status}). Nothing was changed; try again or ask for a new draft.'
+    create = action.get('op') == 'create'
+    if reason in TURNED_OFF:
+        return 'Google Docs is turned off for this Google sign-in, so it can’t write docs. Nothing was changed.'
+    if reason in NO_SCOPE:
+        return ('This sign-in may read docs but not create them. Nothing was changed.' if create else
+                'This sign-in may read docs but not change them. Nothing was changed.')
+    if reason in FULL:
+        return 'Your Google Drive is full, so the new doc didn’t fit. Nothing was changed; free up space and try again.'
+    if reason in BUSY:
+        return 'Google Docs is too busy for this account right now. Nothing was changed; try again in a few minutes.'
+    if reason in POLICY:
+        return 'Your organization’s Google settings don’t allow this. Nothing was changed.'
+    if reason in NO_EDIT or (not create and status == 403):
+        return 'This account can view the doc but not edit it. Nothing was changed; ask the doc’s owner for edit access.'
+    if create and status == 403:
+        return f'{where(action)} didn’t let this account create the doc (error 403). Nothing was changed; try again or ask for a new draft.'
+    return (f'{where(action)} refused to create the doc (error {status}). Nothing was changed; try again or ask for a new draft.'
+            if create else f'{where(action)} refused the changes (error {status}). Nothing was changed; try again or ask for a new draft.')
+
+
+def made_by_itself(job):
+    """Whether this write is a new doc made while its to-do was prepared (no OK needed), from its job's approval id."""
+    return bool(job) and str(job['approval_id'] or '').startswith(NEW_DOC)
+
+
+def link_of(message_id):
+    """A made Google Doc's link from its write's message id (docwrite:<file id>); None for Word or anything else."""
+    found = re.fullmatch(r'docwrite:([\w-]{1,200})', str(message_id or ''))
+    return google_link(found[1]) if found else None
+
+
+def google_link(file_id):
+    return f'https://docs.google.com/document/d/{file_id}/edit'
 
 
 UNCLEAR = 'I couldn’t confirm the doc change. I’m checking the doc; I won’t make it twice.'
@@ -514,9 +565,11 @@ def google_fill(body):
     return requests
 
 
-def google_upload(file_id, title, body, boundary='tm-doc-write-boundary'):
-    """(bytes, content type) of a multipart upload that creates the doc under the id generated before the write."""
-    meta = json.dumps({'id': file_id, 'name': title, 'mimeType': 'application/vnd.google-apps.document'}, ensure_ascii=False)
+def google_upload(token, title, body, boundary='tm-doc-write-boundary'):
+    """(bytes, content type) of a multipart upload that creates the doc, tagged with this write's token (appProperties)
+    so an unclear outcome finds it again. Drive picks the id: it takes no pre-generated one for a Google Doc."""
+    meta = json.dumps({'name': title, 'mimeType': 'application/vnd.google-apps.document', 'appProperties': {WRITE_KEY: token}},
+                      ensure_ascii=False)
     data = (f'--{boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n{meta}\r\n'
             f'--{boundary}\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n{google_html(title, body)}\r\n--{boundary}--\r\n')
     return data.encode('utf-8'), f'multipart/related; boundary={boundary}'
@@ -794,7 +847,7 @@ class DocWriteTransport:
                 return
             proof = action.setdefault('proof', {})
             if writer.provider == 'google':
-                proof.setdefault('file_id', writer.new_id())
+                proof.setdefault('token', uuid.uuid4().hex)  # set once, before the write: what reconcile looks for
             elif not proof.get('name'):
                 proof['name'] = next((name for name in (word_name(action['title'], n) for n in range(1, 10))
                                       if writer.lookup(name) is None), None)
@@ -815,16 +868,23 @@ class DocWriteTransport:
             if error.status == 409 and action['op'] == 'create':
                 return self.reconcile(action, job)  # this approval's doc is there already: the earlier try went through
             if error.status in (400, 401, 403, 404, 409, 412, 423):
-                return {'rejected': error.status}
+                reason = getattr(error, 'reason', None)
+                LOG.warning('doc write refused op=%s provider=%s status=%s reason=%s', action['op'], action.get('provider'),
+                            error.status, reason or '-')  # labels only: never the doc's text or a token
+                return {'rejected': error.status, **({'reason': reason} if reason else {})}
             return {}  # unknown: never written again; reconcile reads the doc
 
     def create(self, writer, action, job):
         proof = action.get('proof') or {}
         if writer.provider == 'google':
-            made = writer.make(proof['file_id'], action['title'], action['body'],
-                               google_upload(proof['file_id'], action['title'], action['body']), google_fill(action['body']))
-            found = str(made.get('id') or proof['file_id'])
-            return {'message_id': 'docwrite:' + found, 'url': f'https://docs.google.com/document/d/{found}/edit'}
+            if not proof.get('token'):
+                return {}  # never made without its token: reconcile checks the older kind
+            made = writer.make(proof['token'], action['title'], action['body'],
+                               google_upload(proof['token'], action['title'], action['body']), google_fill(action['body']))
+            found = str((made or {}).get('id') or '')
+            if not re.fullmatch(r'[\w-]{1,200}', found):
+                return {}  # unclear: reconcile finds it by its token, never makes it again
+            return {'message_id': 'docwrite:' + found, 'url': google_link(found)}
         made = writer.create(proof['name'], docx_new(action['body']))
         drive = ((made.get('parentReference') or {}).get('driveId') or '')
         return {'message_id': 'docwrite:' + drive + '!' + str(made.get('id') or ''),
@@ -857,13 +917,15 @@ class DocWriteTransport:
             if action['op'] == 'create':
                 proof = action.get('proof') or {}
                 if writer.provider == 'google':
-                    found = writer.find(proof.get('file_id'))
-                    if not found or found.get('trashed'):
+                    # an older write's generated id (proof file_id, before 2026-11-03) is still looked up by that id
+                    found = (writer.written(proof['token']) if proof.get('token') else None) or (
+                        writer.find(proof['file_id']) if proof.get('file_id') else None)
+                    if not found or found.get('trashed') or not found.get('id'):
                         return {}
+                    file_id = str(found['id'])
                     if getattr(writer, 'gog', False):
-                        writer.fill(proof['file_id'], google_fill(action['body']))  # only while it is still empty
-                    return {'message_id': 'docwrite:' + proof['file_id'],
-                            'url': f'https://docs.google.com/document/d/{proof["file_id"]}/edit'}
+                        writer.fill(file_id, google_fill(action['body']))  # only while it is still empty
+                    return {'message_id': 'docwrite:' + file_id, 'url': google_link(file_id)}
                 found = writer.lookup(proof.get('name'))
                 if found and int(found.get('size') or -1) == len(docx_new(action['body'])):
                     return {'message_id': 'docwrite:' + ((found.get('parentReference') or {}).get('driveId') or '') + '!' + str(found.get('id'))}
