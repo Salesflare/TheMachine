@@ -7,14 +7,15 @@ const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modul
 
 // A to-do's text in the chat and on the Done list stays text: the card the chat takes its pieces from (chatParts),
 // the chat's own updates (chatMount, chatPatch), a Done card that looks done (lookDoneCard) and the pages a long list
-// loads (pager) all go through html``, so markup in a title, a body or a loaded row never becomes elements.
+// loads (pager), and the to-do list they sit in, all go through html``, so markup in a title, a body or a loaded row never becomes elements.
 const EVIL='<img src=x onerror="window.pwned=1">"\'&<b>';
 const card={id:'c1',title:'Reply '+EVIL,body:'**'+EVIL+'**\n\nAsk '+EVIL+' about [x](javascript:alert(1))',status:'prepared',created_at:'2026-11-01T09:00:00Z',source:'gmail',actions:[]};
+const later={...card,id:'c2',status:'snoozed',snoozed_until:'2099-01-05T09:00:00Z'};
 const dashboard=await dashboardPage(),en=await readFile(new URL('../i18n/en.json',import.meta.url),'utf8');
 const server=createServer((req,res)=>{const u=new URL(req.url,'http://x');res.setHeader('Content-Type','application/json');
  if(u.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(u.pathname==='/i18n/en.json'){res.end(en);return}
- if(u.pathname==='/api/status'){res.end(JSON.stringify({suggestions:[card],promises:[],connectors:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_runs:[]}));return}
+ if(u.pathname==='/api/status'){res.end(JSON.stringify({suggestions:[card,later],promises:[],connectors:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_runs:[]}));return}
  if(!u.pathname.startsWith('/api/')){res.statusCode=404;res.end();return}
  res.end('{}')});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
@@ -29,6 +30,8 @@ try{
   const bad=n=>n.querySelectorAll('img,script,a[href^="javascript"]').length+n.querySelectorAll('b').length;
   const frag=h=>htmlNodes(h),wrap=h=>{const d=document.createElement('div');d.append(htmlNodes(h));return d};
   const out={};
+  // the to-do list itself: Ready, Coming back later with its day heading, Done, all drawn with html``
+  const list=$('#suggestions');out.list=[bad(list),list.querySelector('#later-list')?.textContent.includes('Reply '+EVIL)??false,list.querySelectorAll('#later-list .day-head').length,!!list.querySelector('#finished-list'),list.textContent.includes('Reply '+EVIL)];
   // chatParts: the chat's pieces of the card
   const s=state.suggestions[0],p=chatParts(s);
   out.parts=Object.entries(p).filter(([,v])=>v instanceof SafeHTML||Array.isArray(v)).map(([k,v])=>[k,bad(wrap(html`${v}`))]);
@@ -55,6 +58,7 @@ try{
   // the DOM helpers: a text node is written escaped, a change made through the DOM stays text
   out.helpers=[String(nodeHTML(document.createTextNode(EVIL),null)),bad(wrap(htmlEdit(html`<p>x</p>`,c=>{c.querySelector('p').textContent=EVIL}))),wrap(html`<i>${EVIL}</i>`).textContent];
   out.pwned=window.pwned||0;host.remove();return out},[EVIL,card]);
+ assert.deepEqual(got.list,[0,true,1,true,true],'the to-do list');
  for(const [k,v] of got.parts)assert.equal(v,0,'chatParts '+k+': no markup from the card');
  assert.ok(got.partsText,'the card body reads as text in the chat');
  assert.deepEqual(got.mount,[0,0,EVIL+'2'],'chatMount');

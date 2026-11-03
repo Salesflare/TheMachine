@@ -1,11 +1,11 @@
 // One short-lived sender using the existing OpenClaw account, cache and transport.
 // SQLite owns admission; a private receipt survives a lost stdout/binding response.
 import {open,rename,mkdir} from 'node:fs/promises';
-import {join,isAbsolute,resolve} from 'node:path';
+import {join,isAbsolute} from 'node:path';
 import {OPENCLAW} from './openclaw-root.mjs';
 let sending=false;
 // The receipt folder is the service's own: an absolute, already normal path (no .. or relative parts), or no send.
-const folderOk=d=>typeof d==='string'&&isAbsolute(d)&&resolve(d)===d;
+const folderOk=d=>typeof d==='string'&&isAbsolute(d)&&!d.split(/[\\/]/).slice(1).some(x=>x===''||x==='.'||x==='..');
 try{
  let input='';for await(const chunk of process.stdin)input+=chunk;
  const request=JSON.parse(input);
@@ -17,7 +17,7 @@ try{
  const cfg=getRuntimeConfig();
  sending=true;  // sendChangePrompt classifies its own failures from here on
  const id=await sendChangePrompt(cfg,request.card_id,request.text,async messageId=>{
-  const folder=resolve(request.receipt_dir);
+  const folder=request.receipt_dir;
   await mkdir(folder,{recursive:true,mode:0o700});
   const dest=join(folder,request.receipt_key+'.json'),temp=dest+'.tmp';
   const file=await open(temp,'w',0o600);
