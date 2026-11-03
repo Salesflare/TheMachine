@@ -326,15 +326,26 @@ APP_OWN_PORT = ':8443'  # the dashboard's default port on a self-hosted Machine;
 def app_address(config):
     """The dashboard's Tailscale https address (https://<machine>.<tailnet>.ts.net/<path>/), told to the Network so the
     phone app opens this Machine after its owner signs in there. Only that address, never a secret; None when the
-    dashboard has none on 443 or 8443 (another domain, any other port), or on a hosted Machine."""
+    dashboard has none on 443 or 8443 (another domain, any other port), or on a hosted Machine. A dashboard on its own
+    domain with its Tailscale name as an alias (`dashboard_aliases`, served at `dashboard_alias_path`) tells that one."""
     if config.get('manage_url'):
         return None
-    host = str(config.get('dashboard_host') or '').strip().lower().removesuffix(':443')
+    aliases = config.get('dashboard_aliases') if isinstance(config.get('dashboard_aliases'), list) else []
+    for host, path in [(config.get('dashboard_host'), config.get('dashboard_path') or '/'),
+                       *((alias, config.get('dashboard_alias_path') or '/assistant/') for alias in aliases)]:
+        found = _tailnet_address(host, path)
+        if found:
+            return found
+    return None
+
+
+def _tailnet_address(host, path):
+    host = str(host or '').strip().lower().removesuffix(':443')
     host, port = host.removesuffix(APP_OWN_PORT), host.endswith(APP_OWN_PORT)  # the default port: the app takes it too
     labels = host.split('.')
     if not host.endswith('.ts.net') or len(labels) < 4 or not all(TAILNET_LABEL.fullmatch(p) for p in labels):
         return None
-    path = '/' + '/'.join(p for p in str(config.get('dashboard_path') or '/').strip('/').split('/') if p)
+    path = '/' + '/'.join(p for p in str(path or '/').strip('/').split('/') if p)
     path = path.rstrip('/') + '/'
     return f'https://{host}{APP_OWN_PORT if port else ""}{path}' if APP_PATH.fullmatch(path) else None
 
