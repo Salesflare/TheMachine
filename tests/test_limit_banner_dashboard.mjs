@@ -18,15 +18,18 @@ const server=createServer((req,res)=>{const url=new URL(req.url,'http://fixture.
  res.setHeader('Content-Type','application/json');res.end(url.pathname==='/api/events'?'[]':'{}')});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const errors=[];let browser;
+// The page's clock is fixed at noon in New York, so "until 11:45 PM today" is still ahead whenever CI runs
+const NOW=Date.parse('2026-11-03T12:00:00-05:00');
 try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
  for(const width of [390,1440]){
   const context=await browser.newContext({viewport:{width,height:844},isMobile:width<600,hasTouch:width<600,locale:'en-US',timezoneId:'America/New_York'}),page=await context.newPage();
+  await context.clock.setFixedTime(NOW);
   page.on('pageerror',e=>errors.push(e.message));
   await page.goto('http://127.0.0.1:'+server.address().port+'/');await page.waitForFunction(()=>typeof renderLimitBanner==='function');await page.evaluate(()=>applyLocale({date_locale:'en-US',hour12:true}));
   const show=(p,q=null)=>page.evaluate(([p,q])=>{state.model_pause=p;state.review_pause=q;renderLimitBanner();const b=document.querySelector('#limit-banner');
    return {shown:!b.hidden&&b.getBoundingClientRect().height>0,text:b.textContent,wide:document.documentElement.scrollWidth>innerWidth}},[p,q]);
-  const soon=(Date.now()/1000|0)+3600;
+  const soon=(NOW/1000|0)+3600;
   const later=await page.evaluate(()=>{const d=new Date();d.setDate(d.getDate()+3);d.setHours(9,0,0,0);return d.getTime()/1000|0});
   const weekday=await page.evaluate(t=>new Date(t*1000).toLocaleDateString('en-US',{weekday:'short'}),later);
   let r=await show({window:'5h',until:soon,name:'ChatGPT'});
@@ -38,7 +41,7 @@ try{
   assert.equal(r.text,'ChatGPT usage limit reached. Nothing is lost: The Machine picks up where it left off.');
   r=await show({window:'limit',until:null,name:null});
   assert.equal(r.text,'AI usage limit reached. Nothing is lost: The Machine picks up where it left off.');
-  r=await show({window:'5h',until:Date.now()/1000-60,name:'ChatGPT'});
+  r=await show({window:'5h',until:NOW/1000-60,name:'ChatGPT'});
   assert.ok(!/Resets/.test(r.text),'a reset in the past is not shown');
   r=await show({window:'limit',until:soon,name:'ChatGPT',fallback:true});  // a working fallback answers meanwhile
   assert.ok(r.shown&&!r.wide,`${width}: the fallback line fits`);
