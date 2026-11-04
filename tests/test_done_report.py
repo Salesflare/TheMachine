@@ -120,11 +120,11 @@ class DoneReport(unittest.TestCase):
             return dict(db.execute(sql, args).fetchone())
 
     def test_the_dashboard_lists_them_under_just_done(self):
-        page = (a.Path(a.__file__).resolve().parent / 'dashboard' / 'todos-cards.js').read_text()
+        import dashboard_parts
+        page = dashboard_parts.assemble()
         self.assertIn("action:'card_report_seen'", page)
         self.assertIn('Just done', page)
-        html = (a.Path(a.__file__).resolve().parent / 'dashboard.html').read_text()
-        self.assertIn('${justDoneList(justDone(finished))}', html)
+        self.assertIn('${justDoneList(justDone(finished))}', page)
 
 
 if __name__ == '__main__':
