@@ -19,7 +19,9 @@ The app asks to allow notifications when it first opens. Tap one to open what it
 
 The app then asks your own Machine for the to-do's title and next step, like "Ready: Reply to Sam" with "Send to Sam: Tuesday 10:00 works". When it can't reach your Machine, the fixed line stays. On Android it says how many wait, like "2 to-dos need you".
 
-A notification has **Snooze** (until tomorrow) and **Mark done**, and **Prepare** for a to-do not started yet. They work after you unlock the phone, without opening the app. Sending and final steps always open the app. One notification per to-do: "Preparing" turns into "Ready", and it goes away once the to-do is done or snoozed, here or anywhere. On iPhone that can wait until you next open the app.
+A notification has **Snooze** (until tomorrow) and **Mark done**, and **Prepare** for a to-do not started yet. They work after you unlock the phone, without opening the app. Sending and final steps always open the app. One notification per to-do: "Preparing" turns into "Ready", and it goes away once the to-do is done or snoozed, here or anywhere.
+
+A last step you confirmed that went through says **Done** with what happened, until you tap **Got it** on the To-dos page. On iPhone that can wait until you next open the app.
 
 With **Text in notifications** off in **Settings**, **Security**, it keeps the fixed line. When your phone hides sensitive notification content on the lock screen, only the fixed line shows there.
 

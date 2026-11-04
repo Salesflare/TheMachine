@@ -15,6 +15,7 @@ Die Seite **Aufgaben** gruppiert sie:
 - **Bereit für dich**: vorbereitet und wartet auf deine Freigabe.
 - **Braucht deine Entscheidung**: etwas, das nur du entscheiden kannst.
 - **Wird vorbereitet**: Deine Machine arbeitet daran. Eine Aufgabe, zu der du gerade **Ausführen** gesagt hast, bleibt an ihrem Platz, während sie vorbereitet wird, und wandert dann zu **Bereit für dich**.
+- **Gerade erledigt**: ein letzter Schritt, den du bestätigt hast, etwa ein Formular absenden oder ein Issue anlegen, ist gelungen, während du weg warst. Er zeigt, was passiert ist, bis du auf **Verstanden** tippst, höchstens einen Tag, und dein Handy erfährt es auch. Danach steht er nur noch unter Erledigt.
 - **Kommt später zurück**: zurückgestellt.
 - **Versprechen**: was du versprochen hast und was andere dir versprochen haben. Siehe [Versprechen](promises.md).
 - **Erledigt / verworfen**: jede abgeschlossene Aufgabe, die neueste zuerst, 30 auf einmal beim Scrollen. Aufgaben, die schon fertig aussehen, stehen oben, markiert mit **Scheinbar erledigt**.

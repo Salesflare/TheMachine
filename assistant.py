@@ -806,6 +806,7 @@ CARD_ACTIONS = {
     'card_rename',
     'card_repeat',
     'card_repeat_skip',
+    'card_report_seen',
     'card_use_sources',
     'recurring_offer',
     'repeat_read',
@@ -3650,6 +3651,10 @@ class Store:
             for column in ['expires_at','expires_what','expired_at']:
                 if column not in columns:
                     db.execute('ALTER TABLE suggestions ADD COLUMN '+column+' TEXT')
+            # A to-do its confirmed final step closed by itself, in a run the owner didn't watch (a submitted form, a filed
+            # issue): when, until the owner saw it. The list shows it under Just done and the phone hears of it (report_done).
+            if 'done_report' not in columns:
+                db.execute('ALTER TABLE suggestions ADD COLUMN done_report TEXT')
             delivery_columns = {r['name'] for r in db.execute('PRAGMA table_info(deliveries)')}
             if 'reminder' not in delivery_columns:
                 db.execute('ALTER TABLE deliveries ADD COLUMN reminder INTEGER NOT NULL DEFAULT 0')
@@ -5835,6 +5840,16 @@ class Store:
             db.execute("UPDATE deliveries SET status='not_sent',updated_at=? WHERE suggestion_id=?", (stamp, sid))
         return {'id': sid, 'status': saved['status'], 'title': title, 'event_id': cursor.lastrowid, **({'files': kept} if kept else {})}
 
+    def report_seen(self, ids):
+        """The owner saw what their confirmed steps did (Just done, Got it): those to-dos stay only in Done."""
+        ids = [str(i) for i in (ids if isinstance(ids, list) else []) if re.fullmatch(r'[A-Za-z0-9_-]{1,64}', str(i))][:100]
+        if not ids:
+            raise ValueError('Which to-dos did you see?')
+        with self.connect() as db:
+            seen = db.execute('UPDATE suggestions SET done_report=NULL WHERE done_report IS NOT NULL AND id IN ('
+                              + ','.join('?' * len(ids)) + ')', ids).rowcount
+        return {'seen': seen}
+
     def rename_card(self, suggestion_id, title=None, reset=False, decision_id=None, source='dashboard'):
         """The owner's own title for a card, kept in `title` (so every surface shows it) while the generated one waits in
         title_suggested; reviews and preparations update that one, never theirs. reset goes back to the suggested title."""
@@ -7851,6 +7866,8 @@ class Store:
         if choice == 'reject' and row['status'] in ('pending','accepted','instructions','prepared','snoozed') and owner_reports_handled(feedback):
             # "Not needed — I already did it" is a finished task, not a bad suggestion.
             choice = 'complete'
+        if choice in ('undo', 'reopen') and row['done_report']:
+            db.execute('UPDATE suggestions SET done_report=NULL WHERE id=?', (suggestion_id,))  # back in the list: nothing to report
         if choice == 'undo':
             if row['status'] not in ('completed','rejected') or not row['undo_until'] or row['undo_until'] <= now():
                 # Older running bridges throw validation errors into the
@@ -8212,7 +8229,10 @@ class Store:
             db.execute("UPDATE deliveries SET status='queued',reminder=1,error=NULL WHERE suggestion_id=? AND status IN ('queued','sent','uncertain')",(suggestion_id,))
             # The confirmed final step went through (a verified receipt): like a sent message, the card is done.
             if chosen and json.loads(chosen['payload'])['kind']=='finish' and state=='completed' and settle_sent(self,db,suggestion_id,chosen['id'],json.loads(chosen['payload']).get('label','')):
-                return {'status':'completed','note':'Result saved; the confirmed step went through, so the card is done.'}
+                # The owner confirmed it and left it to run ("On it. I'll report back."): it never just leaves the list.
+                # Just done shows it with its result until they saw it, and the phone hears of it (App.report_done).
+                db.execute('UPDATE suggestions SET done_report=? WHERE id=?',(now(),suggestion_id))
+                return {'status':'completed','reported':True,'note':'Result saved; the confirmed step went through, so the card is done.'}
         return {'status': 'prepared', 'note': 'Result saved. The service itself executed nothing.'}
 
     def review_body(self, suggestion_id, body):
@@ -12948,6 +12968,45 @@ def push_notify(store, config, row, sender=None):
     return push_send(store, config, subscriptions, payload, 'suggestion=' + row['id'], sender, kind=notify.kind_of(row))
 
 
+REPORT_HOURS = 24  # a to-do its confirmed step closed stays under Just done this long, unless the owner saw it first
+
+
+def reported(row):
+    """A done to-do its confirmed final step closed by itself (Store.prepare: done_report) that the owner hasn't seen yet."""
+    at = (row or {}).get('done_report')
+    if not at or row.get('status') != 'completed':
+        return False
+    try:
+        return dt.datetime.fromisoformat(at) > dt.datetime.now(dt.timezone.utc) - dt.timedelta(hours=REPORT_HOURS)
+    except (TypeError, ValueError):
+        return False
+
+
+def report_done(store, config, suggestion_id, sender=None):
+    """The report the owner was promised when they confirmed a final step ("On it. I'll report back."): a result
+    notification, "Done: <title>" with what happened, on every device and phone, replacing that to-do's earlier one.
+    Held while a dashboard is in use, where Just done shows it (push_send). The phone app asks for its line (app_notice)."""
+    with store.connect() as db:
+        row = db.execute('SELECT * FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
+        row = dict(row) if row else None
+        if not reported(row):
+            return []
+        try:
+            ids = json.loads(row.get('account_ids') or '[]')
+        except (TypeError, ValueError):
+            ids = []
+        work = any(a['id'] in ids and str(a.get('boundary') or '').startswith('work:') for a in config.get('accounts', []))
+        text = security_levels.notify_text(db, work)  # Careful: no card text on a lock screen
+    subscriptions, phones = push_reach(store, config)
+    if not subscriptions and not phones:
+        return []
+    root = 'https://' + config['dashboard_host'] + config.get('dashboard_path', '/') if config.get('dashboard_host') else ''
+    payload = {'title': i18n.t('Done: {}', row['title']) if text else i18n.t('Done'),
+               'body': plain(row['body'] or '') if text else '', 'url': root + '#chat=' + row['id'], 'tag': row['id'],
+               '_line': notify.app_line_text('Done: {}', row['title']) if text else i18n.t('Done'), '_state': 'ready'}
+    return push_send(store, config, subscriptions, payload, 'done=' + row['id'], sender, kind='result')
+
+
 def reminder_channels(store, config, kind='reminder'):
     """Where a reminder (a snooze ending, a result) reaches the owner, as deliver_one sends it: Telegram when it is on,
     and a notification on every subscribed device and phone with the app (push_reach). `push` is the device count.
@@ -13059,6 +13118,10 @@ def app_notice(store, config, tag):
             ids = []
         work = any(a['id'] in ids and str(a.get('boundary') or '').startswith('work:') for a in config.get('accounts', []))
         text = security_levels.notify_text(db, work)
+        if reported(row):  # its confirmed step closed it: what happened, nothing left to tap but Open
+            title = notify.app_line_text('Done: {}', row['title']) if text else i18n.t('Done')
+            return {'line': title, 'title': title, 'body': notify.clip(first_sentence(row.get('body') or ''), APP_BODY) if text else '',
+                    'actions': [], 'labels': {'open': i18n.t('Open')}}
         if row['status'] in APP_GONE:
             return {'gone': True}
         blocked = row.get('preparation_status') == 'blocked'
@@ -13139,7 +13202,9 @@ def app_clear_step(store, config):
             return []
         known = {r[0]: r[1] for r in db.execute('SELECT id,status FROM suggestions WHERE id IN ('
                                                 + ','.join('?' * len(tags)) + ')', tags)}
-        gone = [tag for tag in tags if known.get(tag) in APP_GONE]
+        kept = {r[0] for r in db.execute('SELECT id,status,done_report FROM suggestions WHERE id IN (' + ','.join('?' * len(tags)) + ')', tags)
+                if reported(dict(r))}  # its Done report stays until the owner saw it
+        gone = [tag for tag in tags if known.get(tag) in APP_GONE and tag not in kept]
         for tag in gone:
             notify.app_line_forget(db, tag)
     for tag in gone:
@@ -16027,6 +16092,9 @@ class App(*APP_MIXINS):
                 if not any(a['kind'] in ('email',)+next_actions.TEXT_KINDS for a in next_actions.actions(action)):
                     raise ValueError("follow_up:'stop' still comes with the draft: write the follow-up, the owner decides")
             saved=self.store.prepare(args['suggestion_id'], args['body'],args.get('job_id'),action,outcome,args.get('note_kind'),require_note=True,finish_state=args.get('finish_state'),title=args.get('title'),send_now=args.get('send_now') is True)
+            if saved.get('reported'):  # its confirmed step went through while nobody watched: say so on the phone
+                try:report_done(self.store,self.config,args['suggestion_id'])
+                except Exception as error:LOG.warning('done report error=%s',type(error).__name__)
             if getattr(self,'fleet',None) and not saved.get('replayed') and 'team_learnings' in args:  # the team learnings it followed: shown on the to-do
                 try:self.fleet.learnings_used(args['suggestion_id'],args['team_learnings'])
                 except Exception as error:LOG.error('team learnings used error=%s',type(error).__name__)
@@ -16075,6 +16143,8 @@ class App(*APP_MIXINS):
                 return self.store.rename_card(args.get('suggestion_id'), args.get('title'), args.get('reset') is True, args.get('decision_id'))
             if name == 'card_move':  # More, Move to Work (todo_areas.py); undo: the move its toast's Undo takes back
                 return self.store.move_card(args.get('suggestion_id'), args.get('area'), args.get('decision_id'), undo=args.get('undo'))
+            if name == 'card_report_seen':  # Just done, Got it: the owner saw what their confirmed steps did
+                return self.store.report_seen(args.get('ids'))
             if name == 'card_use_sources':  # "Use this email for this to-do": what its stuck run asked for (use_sources)
                 return self.store.use_sources(args.get('suggestion_id'), args.get('decision_id'))
             return self.store.merge_answer(args.get('suggestion_id'), args.get('merge') is True, args.get('decision_id'))

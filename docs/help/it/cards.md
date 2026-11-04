@@ -15,6 +15,7 @@ La pagina **Attività** le raggruppa:
 - **Pronta per te**: preparata e in attesa della tua approvazione.
 - **Serve una tua decisione**: qualcosa che puoi decidere solo tu.
 - **In preparazione**: la tua Machine ci sta lavorando. Un'attività a cui hai appena detto **Fallo** resta dov'era mentre si prepara, poi passa in **Pronta per te**.
+- **Appena fatto**: un ultimo passo che hai confermato, come inviare un modulo o creare una issue, è andato a buon fine mentre eri via. Mostra cosa è successo finché non tocchi **Ho capito**, al massimo per un giorno, e lo sa anche il tuo telefono. Poi resta solo in Fatto.
 - **Torna più tardi**: posticipate.
 - **Promesse**: quello che hai promesso e quello che altri hanno promesso a te. Vedi [Promesse](promises.md).
 - **Fatte / ignorate**: tutte le attività concluse, dalla più recente, 30 alla volta mentre scorri. Quelle che sembrano già concluse vengono prima, con l’etichetta **Sembra fatto**.

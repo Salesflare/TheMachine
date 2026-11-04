@@ -15,6 +15,7 @@ A página **Tarefas** agrupa as tarefas:
 - **Pronta para você**: preparada e aguardando sua aprovação.
 - **Precisa da sua decisão**: algo que só você pode decidir.
 - **Preparando**: sua Machine está trabalhando nela. Uma tarefa em que você acabou de clicar em **Fazer** fica onde estava enquanto é preparada e depois vai para **Pronta para você**.
+- **Feito agora**: uma última etapa que você confirmou, como enviar um formulário ou abrir uma issue, deu certo enquanto você estava fora. Ela mostra o que aconteceu até você tocar em **Entendi**, por um dia no máximo, e seu celular também fica sabendo. Depois fica só em Feito.
 - **Volta mais tarde**: adiada.
 - **Promessas**: o que você prometeu e o que outras pessoas prometeram a você. Veja [Promessas](promises.md).
 - **Feito / dispensado**: todas as tarefas concluídas, das mais novas para as mais antigas, 30 por vez conforme você rola. As que já parecem concluídas vêm primeiro, com a etiqueta **Parece feito**.
