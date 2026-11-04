@@ -1458,6 +1458,7 @@ PREPARATION_SETTLE_SECONDS = 120
 # A run still pending this long after it started is checked against its Gateway session (a crash or restart ends it
 # without a terminal state for its run id); a younger one may still be queued.
 PREPARATION_PROBE_SECONDS = 120
+REVIEW_PROBE_SECONDS = 120  # the same for a review: old enough to be past the Gateway's queue
 SYSTEM_SERVICES = {'gateway'}  # The Machine's own logs: not a source of the owner's
 
 
@@ -4996,12 +4997,12 @@ class Store:
     def most_promising(self, db, accounts, since, limit):
         """The quick first look's signals, so its first cards are the useful ones: what most likely needs the owner, read
         from who wrote to whom and what came after (never from the words). First a person writing to the owner directly
-        whom the owner hasn't answered in that thread since (a reply may be owed), and direct chat messages; then the
-        owner's own mail (what they asked or promised) and their appointments; then mail they were one of many on, or
-        already answered; automated mail last. Newest first within each, except the one who has waited longest on the
+        whom the owner hasn't answered in that thread since (a reply may be owed), and direct chat messages; then their
+        appointments; then mail they were one of many on, or already answered; the owner's own sent mail and automated
+        mail last (sent mail is the context of the threads it answers, not what needs them). Newest first within each, except the one who has waited longest on the
         owner (waiting_since), who leads: their to-do is the first one prepared, ready when the owner arrives. The full
         first look reviews the rest."""
-        own = self.own_addresses()
+        own = self.review_own_addresses(db)
         marks = ','.join('?' for _ in accounts)
         # The whole window, what already happened first (newest first), then what is coming (soonest first): upcoming
         # appointments or a burst of newsletters must not crowd out the mail that waits on the owner. The cap only
@@ -5041,10 +5042,26 @@ class Store:
     def own_addresses(self):
         return {str(a.get('email', '')).lower() for a in self.accounts if '@' in str(a.get('email', ''))}
 
+    def review_own_addresses(self, db):
+        """The owner's addresses for who wrote to whom (most_promising): the mailboxes', the ones they own
+        (own_addresses.yours) and each mailbox's verified send-as addresses, fetched with the first import, before the
+        rest is detected. Without the aliases, mail to an alias looked like mail they were only copied on (2026-11-04:
+        a first look read the owner's sent mail before the people writing to their alias)."""
+        own = self.own_addresses()
+        try:
+            config = getattr(self, 'config', None) or {}
+            own |= own_addresses.yours(db, config)
+            for entries in own_addresses.fetched(db, config).values():
+                own |= {own_addresses.clean(e.get('address')) for e in entries if e.get('verified') and not e.get('other_server')}
+            own -= own_addresses.excluded(db, config)
+        except Exception as error:  # the mailboxes' own addresses still count
+            LOG.warning('own addresses error=%s', type(error).__name__)
+        return own - {''}
+
     def need_rank(self, row, own):
         """How likely a signal needs the owner (most_promising), from who wrote to whom, never the words: 0 a person
         writing to them directly (mail not yet checked for a reply in its thread, answered) or a direct chat message,
-        1 their own mail and appointments, 2 mail they were one of many on, 3 automated mail and their own chat messages."""
+        1 their appointments, 2 mail they were one of many on, 3 automated mail and their own sent mail and chat messages."""
         m = row['metadata'] if isinstance(row['metadata'], dict) else json.loads(row['metadata'] or '{}')
         if row['kind'] in ('linkedin.message', 'x.dm', 'whatsapp.message', 'telegram.message'):
             return 3 if m.get('from_me') else 0
@@ -5054,7 +5071,7 @@ class Store:
             return 1 if row['kind'] == 'calendar.event' else 2
         labels = set(m.get('labels') or [])
         if 'SENT' in labels:
-            return 1
+            return 3
         sender = _address(m.get('from'))
         to = {x.lower() for x in re.findall(r'[^\s<>"\',;]+@[^\s<>"\',;]+', str(m.get('to') or ''))}
         if not sender or sender in own or ROBOT_SENDER.match(sender) or labels & AUTOMATED_LABELS:
@@ -5075,7 +5092,7 @@ class Store:
     def waiting_since(self, db, rows):
         """(when, row) of the earliest of these signals someone still waits on the owner for (need_rank 0, a mail not
         answered in its thread since), or None: who has waited longest. Read from who wrote to whom, never the words."""
-        own, current = self.own_addresses(), now()
+        own, current = self.review_own_addresses(db), now()
         for row in sorted(rows, key=lambda r: r['occurred_at']):
             if row['occurred_at'] <= current and self.need_rank(row, own) == 0 and not (row['kind'] == 'gmail.message' and self.answered(db, row)):
                 return row['occurred_at'], row
@@ -20207,6 +20224,10 @@ class App(*APP_MIXINS):
         # release custody merely because a network request timed out.
         action = 'stop' if expired or run['status'] == 'recovering' else 'start' if run['status'] == 'starting' else 'status'
         request = {'kind': 'review', 'job_id': run['run_id'], 'action': action}
+        if action == 'status' and (stamp - dt.datetime.fromisoformat(run['started_at'])).total_seconds() >= REVIEW_PROBE_SECONDS:
+            # A Gateway restart ends a run without a terminal state for its id: the runner also checks the run is still
+            # in its session, so a lost one ends now instead of after the timeout (a first look sat still for 35 minutes)
+            request['probe'] = True
         offered_edits = []
         if request['action'] == 'start':
             self.store.note_rule_files(RULE_FILES)
