@@ -218,6 +218,7 @@
  "Add all": "Add all",
  "Add and invite": "Add and invite",
  "Add another": "Add another",
+ "Add another inbox": "Add another inbox",
  "Add another source": "Add another source",
  "Add as family": "Add as family",
  "Add as friend": "Add as friend",
@@ -1405,6 +1406,7 @@
  "Give it a name with letters or digits": "Give it a name with letters or digits",
  "Give it a title and a short summary": "Give it a title and a short summary",
  "Give it a title.": "Give it a title.",
+ "Give me a to-do": "Give me a to-do",
  "Give start and end as a date and time with its offset, like 2026-10-27T16:00:00+01:00": "Give start and end as a date and time with its offset, like 2026-10-27T16:00:00+01:00",
  "Give start and end with a time zone offset, like 2026-10-27T16:00:00+01:00": "Give start and end with a time zone offset, like 2026-10-27T16:00:00+01:00",
  "Give the attachment a plain file name": "Give the attachment a plain file name",
@@ -2170,6 +2172,7 @@
  "New learnings go automatically. They’re listed in Settings, Activity.": "New learnings go automatically. They’re listed in Settings, Activity.",
  "New learnings go without asking. See or withdraw them in Settings, Activity.": "New learnings go without asking. See or withdraw them in Settings, Activity.",
  "New learnings go without asking. See or withdraw them in Settings, Activity. Your email never goes by itself.": "New learnings go without asking. See or withdraw them in Settings, Activity. Your email never goes by itself.",
+ "New mail gets a look as it comes in.": "New mail gets a look as it comes in.",
  "New or changed messages and events, without duplicates. Last 24h counts when they came in here, not when they were sent.": "New or changed messages and events, without duplicates. Last 24h counts when they came in here, not when they were sent.",
  "New organization": "New organization",
  "New people: {}": "New people: {}",
@@ -2438,6 +2441,7 @@
  "Notes written.": "Notes written.",
  "Notes:": "Notes:",
  "Notes: {}": "Notes: {}",
+ "Nothing came in from the past week yet.": "Nothing came in from the past week yet.",
  "Nothing connects until they accept.": "Nothing connects until they accept.",
  "Nothing connects until you accept. Declining tells them nothing.": "Nothing connects until you accept. Declining tells them nothing.",
  "Nothing finished or dismissed yet.": "Nothing finished or dismissed yet.",
@@ -3130,6 +3134,12 @@
  "Read the thread": "Read the thread",
  "Read the to-dos": "Read the to-dos",
  "Read up to {}": "Read up to {}",
+ "Read {} from the past week and found {} to-dos.": {
+  "one": "Read {} from the past week and found {} to-do.",
+  "other": "Read {} from the past week and found {} to-dos."
+ },
+ "Read {} from the past week.": "Read {} from the past week.",
+ "Read {} from the past week: {}.": "Read {} from the past week: {}.",
  "Read {}, all automated.": "Read {}, all automated.",
  "Read-only logs and settings, scrubbed like the report. It ends by itself.": "Read-only logs and settings, scrubbed like the report. It ends by itself.",
  "Read-only. Turn it off any time.": "Read-only. Turn it off any time.",
@@ -4023,6 +4033,7 @@
  "Talk monthly": "Talk monthly",
  "Talk now and then": "Talk now and then",
  "Talk stopped while in the background.": "Talk stopped while in the background.",
+ "Talk to me": "Talk to me",
  "Talk weekly": "Talk weekly",
  "Talked live": "Talked live",
  "Talking about": "Talking about",
@@ -5875,6 +5886,10 @@
   "one": "{} friend request waiting",
   "other": "{} friend requests waiting"
  },
+ "{} from people": {
+  "one": "{} from a person",
+  "other": "{} from people"
+ },
  "{} from your history to review": "{} from your history to review",
  "{} from {} (a source)": "{} from {}",
  "{} from {} moved to {}.": "{} from {} moved to {}.",
@@ -6010,10 +6025,18 @@
   "other": "{} new filters"
  },
  "{} new/changed": "{} new/changed",
+ "{} newsletters": {
+  "one": "{} newsletter",
+  "other": "{} newsletters"
+ },
  "{} no longer works at {}": "{} no longer works at {}",
  "{} notes": {
   "one": "{} note",
   "other": "{} notes"
+ },
+ "{} notifications": {
+  "one": "{} notification",
+  "other": "{} notifications"
  },
  "{} of {}": "{} of {}",
  "{} of {} calendars": "{} of {} calendars",
@@ -6030,6 +6053,10 @@
   "one": "{} organization",
   "other": "{} organizations"
  },
+ "{} other": {
+  "one": "{} other",
+  "other": "{} other"
+ },
  "{} other files": {
   "one": "{} other file",
   "other": "{} other files"
@@ -6037,6 +6064,10 @@
  "{} other files left out": {
   "one": "{} other file left out",
   "other": "{} other files left out"
+ },
+ "{} other signals": {
+  "one": "{} other signal",
+  "other": "{} other signals"
  },
  "{} owns it.": "{} owns it.",
  "{} pages": {

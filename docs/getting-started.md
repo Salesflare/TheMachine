@@ -151,7 +151,7 @@ Skip it and the service starts that same preview by itself (the *first look*) on
 1. a quick pass over the week's mail that most likely needs you, as soon as it starts coming in (people waiting on you first);
 2. then more of the week, a batch at a time, until it has a few to-dos or has looked through the week.
 
-The dashboard shows how far it is, and each to-do as soon as it is ready.
+The dashboard shows how far it is, and each to-do as soon as it is ready. When it is done, it says what it read (in counts, like 8 emails: 5 newsletters and 3 notifications) and suggests a next step, such as connecting your calendar.
 
 If the to-dos look useful, say yes to **turning on reviews and to-do delivery** (Telegram and/or the dashboard app). Read the [security model](../README.md#security-model) first: **Do it** authorizes the offered task. Work prepared ahead may start before a tap, but stops before the final step that commits something. You can also do both later with `./install.sh --preview` and `./install.sh --activate`.
 

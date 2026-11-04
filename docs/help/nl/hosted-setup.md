@@ -20,7 +20,7 @@ Je Machine start, en daarna leidt de setuppagina je door de rest, stap voor stap
 
 1. **Mail en agenda**: koppel Google of Microsoft. Dat kan terwijl je Machine start. Na het inloggen zegt de stap dat hij bezig is tot je Machine geïnstalleerd is en je mail gelezen heeft, ongeveer een minuut. Zie [Gmail](gmail.md) en [Microsoft](microsoft.md).
 2. **Je AI**: log in met ChatGPT of Claude, of gebruik een sleutel van je AI-aanbieder. Zie [ChatGPT](chatgpt.md). Een dashboard dat je intussen opent, zegt **ChatGPT verbinden…** tot het klaar is.
-3. Reviews gaan vanzelf aan. De eerste to-do's komen uit je nieuwste mail, daarna uit je laatste 7 dagen.
+3. Reviews gaan vanzelf aan. De eerste to-do's komen uit je nieuwste mail, daarna uit je laatste 7 dagen. Heeft niets je nodig, dan zie je wat er gelezen is en wat je nog kunt koppelen.
 
 Onder **Voeg later meer toe** staan de optionele: **Meer bronnen** zoals Slack, WhatsApp of GitHub, [Telegram](telegram.md), [Codex](hand-to-agent.md) en de koppeling met je browser. Geen ervan is nodig om te beginnen. Je dashboard stelt ze voor als ze helpen, bijvoorbeeld GitHub zodra er mail van blijft binnenkomen.
 

@@ -36,6 +36,21 @@ const firstLookInner=i=>[make('img',{class:'sticker',src:'brand/wave.webp',alt:'
 // The list's empty state while the first look runs: a place the list fills with firstLookFill once it is on the page
 const firstLookEmpty=i=>i?html`<div class="empty all-clear first-look-empty"></div>`:'';
 function firstLookFill(){const box=$('#suggestions .first-look-empty'),i=box&&firstLookInfo(state.review_live||{});if(i)box.replaceChildren(...firstLookInner(i))}
+// The first look's ending (state.first_look_done): what it read, in counts, so an empty list says what the Machine did,
+// with one or two next steps that fit this setup. With to-dos, one line above them. Counts only, never a message.
+// Meetings are said with the kinds, so the reviewer's groups list only what the messages were.
+const FL_KINDS=[['email',['{} email','{} emails']],['meeting',['{} meeting','{} meetings']],['message',['{} message','{} messages']],['other',['{} other signal','{} other signals']]];
+const FL_READ=[['people',['{} from a person','{} from people']],['newsletters',['{} newsletter','{} newsletters']],['notifications',['{} notification','{} notifications']],['other',['{} other','{} other']]];
+const flList=(counts,words)=>{const parts=words.filter(([k])=>(+counts?.[k]|0)>0).map(([k,w])=>t(w,+counts[k]|0).replace(/^(\d+) /,'$1\u00a0'));try{return new Intl.ListFormat(I18N.lang||'en',{type:'conjunction'}).format(parts)}catch{return parts.join(', ')}};
+const FL_NEXT={calendar:'Connect your calendar',inbox:'Add another inbox',talk:'Talk to me',todo:'Give me a to-do'};
+function flNext(d){const steps=[...(d.next||[]).filter(k=>k==='calendar'||k==='inbox'),typeof talkOk==='function'&&talkOk()?'talk':'todo'];return steps.slice(0,2)}
+function firstLookEnd(){const d=state.first_look_done;if(!d||d.todos>0)return '';const kinds=flList(d.kinds,FL_KINDS),read=flList(d.read,FL_READ);
+ const line=!kinds?t('Nothing came in from the past week yet.'):read?t('Read {} from the past week: {}.',kinds,read):t('Read {} from the past week.',kinds);
+ return html`<div class="empty all-clear first-look-end"><img class="sticker" src="brand/wave.webp" alt=""><div><span class="fl-read">${line}</span>${state.reviews_on?html`<small>${t('New mail gets a look as it comes in.')}</small>`:''}</div><div class="fl-next">${flNext(d).map((k,i)=>html`<button type="button" class="${i?'quiet':''}" data-fl-next="${k}">${t(FL_NEXT[k])}</button>`)}</div></div>`}
+function firstLookNote(shown){const d=state.first_look_done;if(!d||!d.todos||d.acted||!shown||scopeFilter!=='all')return '';const kinds=flList(d.kinds,FL_KINDS);if(!kinds)return '';
+ return html`<p class="first-look-note">${t(['Read {} from the past week and found {} to-do.','Read {} from the past week and found {} to-dos.'],kinds,d.todos)}</p>`}
+$('#suggestions').addEventListener('click',e=>{const b=e.target.closest('[data-fl-next]');if(!b)return;const k=b.dataset.flNext;
+ if(k==='talk'){talkMain();return}if(k==='todo'){ncOpen();return}showTab('health','add');connectAdd(true)});
 function renderFirstLook(live){const i=firstLookInfo(live),el=$('#first-look'),empty=$('#suggestions .all-clear');
 if(empty){el.hidden=true;if(i){empty.classList.add('first-look-empty');empty.replaceChildren(...firstLookInner(i))}else if(empty.classList.contains('first-look-empty'))refresh();return}
 if(i){el.replaceChildren(make('strong',{},i.title),...firstLookBar(i),i.wait?make('small',{},i.wait):'');el.hidden=false}else el.hidden=true}
