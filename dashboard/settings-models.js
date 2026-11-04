@@ -71,7 +71,7 @@ function cmPlace(m,b){m.style.cssText='';const r=b.getBoundingClientRect(),gap=6
  if(up)m.style.bottom=Math.round(innerHeight-r.top+gap)+'px';else m.style.top=Math.round(r.bottom+gap)+'px';
  m.style.left=Math.round(Math.max(8,Math.min(r.left,innerWidth-m.offsetWidth-8)))+'px'}
 const CM_CHECK=html`<svg class="cm-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>`;
-function cmMenuClose(focus){const m=$('#cm-menu');if(!m||m.hidden)return;if(m.matches?.(':popover-open'))m.hidePopover();m.hidden=true;const o=cmOpen;cmOpen=null;if(!o)return;
+function cmMenuClose(focus){const m=$('#cm-menu');if(!m||m.hidden)return;if(m.hidePopover&&m.matches(':popover-open'))m.hidePopover();m.hidden=true;const o=cmOpen;cmOpen=null;if(!o)return;
  const b=o.box.querySelector(`[data-cm-pick="${o.which}"]`);b?.setAttribute('aria-expanded','false');if(focus)b?.focus({preventScroll:true})}
 function cmMenuOpen(b,last){const kind=b.dataset.cmKind,which=b.dataset.cmPick,cur=cmCurrent(kind)||{},sel=which==='model'?cur.model:cur.thinking,box=b.closest('#chat-model,#help-model,#model-chats');
  let m=$('#cm-menu');if(!m){m=document.createElement('div');m.id='cm-menu';m.className='fact-menu-list cm-menu';m.setAttribute('role','menu');m.hidden=true;if(m.showPopover)m.popover='manual'}

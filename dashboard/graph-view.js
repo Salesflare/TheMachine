@@ -90,7 +90,7 @@ $('#people-view').addEventListener('click',e=>{const t=e.target.closest('[data-g
  if(t)graphKeep(pane,'tab',t.dataset.graphList);if(o)graphKeep(pane,'sort',o.dataset.graphSort);graphTabsPaint(pane);if(o)document.querySelector(`[data-graph-panel="${pane}"] .graph-sort summary`)?.focus()});
 document.addEventListener('click',e=>{for(const d of document.querySelectorAll('.graph-sort[open]'))if(!d.contains(e.target))d.open=false});
 document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;const d=document.querySelector('.graph-sort[open],details.fact-menu[open],details.board-menu[open],details.tile-menu[open]');if(d){d.open=false;d.querySelector('summary').focus()}});
-document.addEventListener('toggle',e=>{const d=e.target;if(!(d instanceof HTMLDetailsElement)||!d.open)return;const l=d.querySelector(':scope>:is(.fact-menu-list,.graph-sort-list)');if(!l)return;l.style.left=l.style.right=l.style.top=l.style.bottom='';
+document.addEventListener('toggle',e=>{const d=e.target;if(!(d instanceof HTMLDetailsElement)||!d.open)return;const l=d.querySelector(':scope>.fact-menu-list,:scope>.graph-sort-list');if(!l)return;l.style.left=l.style.right=l.style.top=l.style.bottom='';
  // A menu stays on screen: it moves in from an edge, and opens upward when there's no room under its button but there is above it
  let r=l.getBoundingClientRect();if(r.right>innerWidth-8){l.style.left='auto';l.style.right='0';r=l.getBoundingClientRect()}if(r.left<8){l.style.right='auto';l.style.left=(8-d.getBoundingClientRect().left)+'px'}
  const s=d.querySelector(':scope>summary')?.getBoundingClientRect();if(s&&r.bottom>innerHeight-8&&s.top-r.height-8>8){l.style.top='auto';l.style.bottom='calc(100% + 4px)'}},true);
@@ -1086,7 +1086,7 @@ function tabsFade(row){const max=row.scrollWidth-row.clientWidth;row.classList.t
 function tabsShow(row){if(!row)return;const t=row.querySelector('[aria-selected="true"]');if(t&&row.scrollWidth>row.clientWidth)row.scrollLeft=Math.max(0,t.offsetLeft-row.offsetLeft-(row.clientWidth-t.offsetWidth)/2);tabsFade(row)}
 const allTabsFade=()=>document.querySelectorAll('.fleet-tabs,.sub-tabs').forEach(tabsFade);
 document.addEventListener('scroll',e=>{if(e.target.matches?.('.fleet-tabs,.sub-tabs'))tabsFade(e.target)},{capture:true,passive:true});addEventListener('resize',allTabsFade);
-new MutationObserver(()=>document.querySelectorAll(':is(.fleet-tabs,.sub-tabs):not([data-faded])').forEach(r=>{r.dataset.faded='';tabsShow(r)})).observe(document.querySelector('main'),{childList:true,subtree:true});
+new MutationObserver(()=>document.querySelectorAll('.fleet-tabs:not([data-faded]),.sub-tabs:not([data-faded])').forEach(r=>{r.dataset.faded='';tabsShow(r)})).observe(document.querySelector('main'),{childList:true,subtree:true});
 // Graph: People (closest, gone quiet, new), Who's who (roles to confirm), Projects and Organizations.
 const GRAPH_PANES=['people','roles','projects','orgs'];
 function showGraphPane(id){graphPane=id;localStorage.setItem('graph-pane',id);graphShown=id;graphHashSync();graphSubSync();const view=$('#people-view');if(!view.querySelector(`[data-graph-panel="${CSS.escape(id)}"]`)){if(!graphNode&&!$('#people-query').value.trim())return;$('#people-query').value='';people('');return}
