@@ -30,6 +30,7 @@ Realtime session up to 60 minutes). Only the main conversation can recall what t
 import datetime as dt
 import hashlib
 import json
+import logging
 import re
 import secrets
 import subprocess
@@ -42,6 +43,7 @@ from zoneinfo import ZoneInfo
 import timeutil
 
 ROOT = Path(__file__).resolve().parent
+LOG = logging.getLogger('personal-assistant')
 LIMIT_SECONDS = 600          # one conversation at most; the dashboard warns a minute before
 WARN_SECONDS = 540
 GRACE_SECONDS = 30           # lines and tool calls that arrive just after the end still count
@@ -759,6 +761,15 @@ def read_out(text, said):
     return len(want & got) >= 0.7 * len(want)
 
 
+def log_word(value):
+    """A fixed word from the helper, for the journal: letters and _ only, else '-'."""
+    return value if isinstance(value, str) and re.fullmatch(r'[a-z_]{1,20}', value) else '-'
+
+
+def log_number(value):
+    return value if isinstance(value, int) and not isinstance(value, bool) and 0 <= value < 1000 else 0
+
+
 def subject(found):
     """The to-do a conversation is about now: its own, or in the main conversation the one in focus (None before one is open)."""
     return found.get('focus') if found.get('main') else found['suggestion_id']
@@ -868,6 +879,10 @@ class Talk:
         got = self.helper({'method': 'offer', 'session_key': SESSION_PREFIX + (found['suggestion_id'] or 'main'), 'sdp': sdp, 'secret': found['secret'],
                            'offer_url': found['offer_url'], 'offer_headers': found['offer_headers']}, env)
         if got.get('error') or not str(got.get('sdp') or '').startswith('v=0'):
+            # Why, in the journal (support reports show it): how the session pays (key or signin), the helper's fixed
+            # reason and the HTTP statuses, never the secret, the offer or what OpenAI wrote
+            LOG.warning('talk live offer failed via=%s reason=%s status=%s openai=%s', log_word(found.get('via')),
+                        log_word(got.get('reason') or ('no_answer' if not got.get('error') else got.get('error'))), log_number(got.get('status')), log_number(got.get('openai')))
             self.end(talk_id, env)
             raise ValueError('Talk live couldn’t connect. Try again.')
         return {'sdp': got['sdp']}
