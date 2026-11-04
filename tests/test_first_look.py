@@ -231,3 +231,32 @@ class HostedReviewsStartByThemselves(unittest.TestCase):
         self.assertFalse(a.reviews_start_by_themselves({**hosted, 'review_worker': {'enabled': False, 'first_look': False}}))  # turned off by the owner
         self.assertFalse(a.reviews_start_by_themselves({**hosted, 'started_at': '2026-10-01'}))  # set up before: the owner turns them on
         self.assertFalse(a.reviews_start_by_themselves({**hosted, 'manage_url': None}))  # self-hosted: ./install.sh --activate
+
+
+class AiConnectingTest(unittest.TestCase):
+    """A hosted Machine's AI sign-in going on: the hosting layer's note (no text, so it is no Needs you line) makes the
+    dashboard say "Connecting ChatGPT…" instead of "Pick your AI", for as long as a sign-in can take."""
+    def test_note(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / 'needs-you.json'
+            config = {'needs_you_file': str(path), 'accounts': []}
+            current = dt.datetime(2026, 11, 4, 16, 28, tzinfo=dt.timezone.utc)
+            ago = lambda minutes: (current - dt.timedelta(minutes=minutes)).isoformat()
+            write = lambda *notes: path.write_text(json.dumps(list(notes)))
+            self.assertIsNone(a.ai_connecting(config, current))  # no file
+            write({'id': 'ai-connecting', 'ai_connecting': 'ChatGPT', 'since': ago(1)})
+            self.assertEqual(a.ai_connecting(config, current), {'name': 'ChatGPT', 'since': ago(1)})
+            self.assertEqual(a.needs_you(config), [])  # not a line under Needs you
+            write({'id': 'ai-connecting', 'ai_connecting': 'ChatGPT', 'since': ago(10), 'done': ago(2)})
+            self.assertEqual(a.ai_connecting(config, current)['name'], 'ChatGPT')  # done: the model is still being set
+            write({'id': 'ai-connecting', 'ai_connecting': 'ChatGPT', 'since': ago(10), 'done': ago(6)})
+            self.assertIsNone(a.ai_connecting(config, current))  # done a while ago: "Pick your AI" is real again
+            write({'id': 'ai-connecting', 'ai_connecting': 'Claude', 'since': ago(17)})
+            self.assertIsNone(a.ai_connecting(config, current))  # longer than a sign-in can take
+            for bad in ({'ai_connecting': '<b>x</b>', 'since': ago(1)}, {'ai_connecting': 'Claude', 'since': 'soon'},
+                        {'ai_connecting': 'Claude', 'since': ago(1)[:19]}, {'ai_connecting': 7, 'since': ago(1)}, 'Claude'):
+                write(bad)
+                self.assertIsNone(a.ai_connecting(config, current), bad)
+            path.write_text('{')
+            self.assertIsNone(a.ai_connecting(config, current))
+            self.assertIsNone(a.ai_connecting({}, current))

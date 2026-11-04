@@ -19,7 +19,7 @@ A hosted Machine runs in the cloud, in the EU, just for you. We keep it running 
 Signing up is one flow of five steps, one per screen: your passkey, your plan, then **Mail and Calendar**, **Your AI** and **First to-dos**. The top says which step you're on. A line says how far your Machine is with starting. You don't wait for it: both steps work while it starts.
 
 1. **Mail and Calendar**: one press on **Connect Google** or **Connect Microsoft**. It starts at the account you signed in with. Work or personal comes from the address; change it on the account later. See [Gmail](gmail.md) and [Microsoft](microsoft.md).
-2. **Your AI**: sign in with ChatGPT or Claude, or use a key from your AI provider. With Claude, paste the code from Claude's page and it goes on by itself. See [ChatGPT](chatgpt.md).
+2. **Your AI**: sign in with ChatGPT or Claude, or use a key from your AI provider. With Claude, paste the code from Claude's page and it goes on by itself. See [ChatGPT](chatgpt.md). A dashboard opened meanwhile says **Connecting ChatGPT…** until it is done.
 3. **First to-dos**: reviews turn on by themselves. First to-dos come from your newest mail, then from your last 7 days.
 
 **Back** and your browser's back button go to the step before. Once mail and your AI work, you land on your dashboard.

@@ -14684,6 +14684,42 @@ def needs_you(config):
     return items
 
 
+# A hosting layer's note while the owner signs in to an AI (a hosted Machine's ChatGPT or Claude sign-in): the dashboard
+# says "Connecting ChatGPT…" instead of "Pick your AI" meanwhile. A sign-in gives up after 15 minutes; once it is
+# done, the model takes a minute more to be set and reviews to turn on, so the note holds for a while after it too.
+AI_CONNECTING_MINUTES = 16
+AI_CONNECTED_MINUTES = 5
+AI_CONNECTING_NAME = re.compile(r'[A-Za-z][A-Za-z0-9 .-]{0,29}')
+
+
+def ai_connecting(config, current=None):
+    """The AI the owner is signing in to right now, from the `needs_you_file` note with `ai_connecting` (no text: a
+    release from before shows nothing for it): {'name', 'since'}, or None when no sign-in is going on, it stopped (the
+    hosting layer takes the note away when it fails) or the note is older than a sign-in can take."""
+    path = config.get('needs_you_file')
+    if not path:
+        return None
+    try:
+        notes = json.loads(Path(path).expanduser().read_text())
+    except (OSError, ValueError):
+        return None
+    current = current or dt.datetime.now(dt.timezone.utc)
+    for note in notes if isinstance(notes, list) else []:
+        if not isinstance(note, dict) or not isinstance(note.get('ai_connecting'), str) or not AI_CONNECTING_NAME.fullmatch(note['ai_connecting']):
+            continue
+        try:
+            since = dt.datetime.fromisoformat(str(note.get('since')))
+            done = dt.datetime.fromisoformat(str(note['done'])) if note.get('done') else None
+        except ValueError:
+            continue
+        if since.tzinfo is None or (done and done.tzinfo is None):
+            continue
+        if (done and current - done > dt.timedelta(minutes=AI_CONNECTED_MINUTES)) or current - since > dt.timedelta(minutes=AI_CONNECTING_MINUTES):
+            continue
+        return {'name': note['ai_connecting'], 'since': since.isoformat()}
+    return None
+
+
 def forget_in_notes(root, needles):
     """Takes out the lines of the agent's memory notes (Markdown and text under memory/) that name someone deleted
     permanently: their full name or an address. Returns how many lines went."""
@@ -20419,7 +20455,7 @@ class App(*APP_MIXINS):
             # The newest card: the dashboard shows a card as soon as a running review saves it, not after the review
             newest = db.execute('SELECT count(*),max(created_at) FROM suggestions').fetchone()
             return {'runs': runs, 'queue': self.review_queue(db), 'first_look': self.first_look(db),
-                    'cards': {'count': newest[0], 'newest': newest[1]}}
+                    'cards': {'count': newest[0], 'newest': newest[1]}, 'ai_connecting': ai_connecting(self.config)}
 
     def start_preview(self, auto=False, quick=False):
         """`assistant preview`: one regular review run (same session, prompt and tool) over the last
