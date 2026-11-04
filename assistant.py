@@ -20473,22 +20473,24 @@ class App(*APP_MIXINS):
     def first_dig_live(self, db, current=None):
         """While the first look digs (first_dig, from its quick first review on, also between its batches): how far it got
         over the week, so the dashboard shows one bar that keeps moving until it has its to-dos or has read the week,
-        instead of All clear between batches. {'read': signals its finished batches read, 'total': read plus the week's
+        instead of All clear between batches. {'read': signals its batches saved so far, 'total': read plus the week's
         signals left (at most FIRST_DIG_SIGNALS in all while more are left), 'todos', 'goal': FIRST_DIG_CARDS, 'days',
         'pace': seconds per signal its finished batches took (FIRST_DIG_PACE_SECONDS before one finished)}. None once
         it stopped, or on an install that had no first look. Counts only."""
         dig = self.first_dig(db, current)
         if not dig or 'left' not in dig:
             return None
-        read = seconds = 0
-        for run in db.execute("SELECT run_id,started_at,finished_at FROM review_runs WHERE ((preview=1 AND auto=1) OR window_hours IS NOT NULL OR promising=1) "
-                              "AND status NOT IN ('starting','running','recovering')"):
+        # What a batch saved counts at once, also while its run is still ending: its signals have left `left` by then, so
+        # counting them only after the run ended made the total dip by a batch for a moment (2026-11-04: 82, then 102)
+        read = seconds = paced = 0
+        for run in db.execute("SELECT run_id,started_at,finished_at FROM review_runs WHERE (preview=1 AND auto=1) OR window_hours IS NOT NULL OR promising=1"):
             items = sum(len(json.loads(row[0] or '[]')) for row in db.execute(
                 "SELECT items FROM analyses WHERE owner_run=? AND status='complete'", (run['run_id'],)))
             read += items
             if items and run['finished_at']:
+                paced += items
                 seconds += max(0.0, (dt.datetime.fromisoformat(run['finished_at']) - dt.datetime.fromisoformat(run['started_at'])).total_seconds())
-        pace = min(30, max(1, round(seconds / read))) if read and seconds else FIRST_DIG_PACE_SECONDS
+        pace = min(30, max(1, round(seconds / paced))) if paced and seconds else FIRST_DIG_PACE_SECONDS
         total = read + dig['left']
         if dig['left'] and total > FIRST_DIG_SIGNALS:
             total = max(FIRST_DIG_SIGNALS, read + min(dig['left'], FIRST_LOOK_NEXT_SIGNALS))

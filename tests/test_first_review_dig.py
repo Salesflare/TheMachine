@@ -127,6 +127,21 @@ class FirstReviewDig(unittest.TestCase):
             self.assertIsNone(self.app.first_dig_live(db))
             self.assertEqual(self.app.first_dig(db), {'done': 'cards'})
 
+    def test_a_batch_saved_while_its_run_still_ends_keeps_the_total(self):
+        # 2026-11-04: "20 of 82 signals", then "22 of 102": a saved batch had left the week's unread signals while
+        # its run had not ended yet, so it was in neither count for a moment
+        self.store.commit_page('work', {}, [mail(f'm{n}', hours_ago=n + 1) for n in range(70)])
+        self.step(Runner('admitted'))
+        run = self.runs()[-1]
+        claim = self.store.begin_analysis(['work'], 120, a.REVIEW_SESSION_PREFIX + run['run_id'], run['run_id'])
+        ids = [e['id'] for e in claim['events']]
+        with self.store.connect() as db:
+            db.execute('UPDATE events SET analyzed_version=version WHERE id IN (' + ','.join('?' * len(ids)) + ')', ids)
+            db.execute("UPDATE analyses SET status='complete',finished_at=? WHERE id=?", (a.now(), claim['analysis_id']))
+            self.assertEqual(db.execute('SELECT status FROM review_runs WHERE run_id=?', (run['run_id'],)).fetchone()[0], 'running')
+            live = self.app.first_dig_live(db)
+        self.assertEqual((live['read'], live['total']), (20, 70))
+
     def test_a_big_week_counts_toward_the_first_looks_share_not_the_whole_week(self):
         self.store.commit_page('work', {}, [mail(f'm{n}', hours_ago=n / 4 + 1) for n in range(500)])
         self.step(Runner('admitted'))
