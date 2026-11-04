@@ -55,3 +55,13 @@ try {
 } catch(Exception e) {
     logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
 }
+
+// A store build without it has no push at all (versions 5 and 6 shipped that way), so a release build stops instead.
+// Debug builds and the unit tests still run without it.
+tasks.matching { it.name == 'preReleaseBuild' }.configureEach {
+    doFirst {
+        if (!file('google-services.json').exists()) {
+            throw new GradleException("android/app/google-services.json is missing: a release build without it has no push. See mobile/README.md.")
+        }
+    }
+}
