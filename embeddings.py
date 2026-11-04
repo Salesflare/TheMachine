@@ -116,7 +116,15 @@ def batches(texts, settings):
 
 
 def endpoint(settings):
-    url = settings['url'].rstrip('/')
+    """The configured server's /v1/embeddings: an http(s) address with a host and no user or password in it,
+    so a config value can never make urllib read a local file or another scheme."""
+    url = str(settings.get('url') or '').rstrip('/')
+    try:
+        parts = urllib.parse.urlsplit(url)
+    except ValueError:
+        raise EmbeddingError('bad_url') from None
+    if parts.scheme not in ('http', 'https') or not parts.hostname or parts.username is not None or parts.password is not None:
+        raise EmbeddingError('bad_url')
     return url if url.endswith('/embeddings') else url + '/v1/embeddings'
 
 
