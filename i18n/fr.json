@@ -218,6 +218,7 @@
  "Add all": "Tout ajouter",
  "Add and invite": "Ajouter et inviter",
  "Add another": "En ajouter un autre",
+ "Add another inbox": "Ajouter une autre boîte mail",
  "Add another source": "Ajouter une autre source",
  "Add as family": "Ajouter comme famille",
  "Add as friend": "Ajouter comme ami",
@@ -1405,6 +1406,7 @@
  "Give it a name with letters or digits": "Donnez-lui un nom avec des lettres ou des chiffres",
  "Give it a title and a short summary": "Donnez-lui un titre et un court résumé",
  "Give it a title.": "Donnez-lui un titre.",
+ "Give me a to-do": "Donnez-moi une tâche",
  "Give start and end as a date and time with its offset, like 2026-10-27T16:00:00+01:00": "Donnez le début et la fin sous forme de date et heure avec leur décalage, comme 2026-10-27T16:00:00+01:00",
  "Give start and end with a time zone offset, like 2026-10-27T16:00:00+01:00": "Donnez le début et la fin avec un décalage horaire, comme 2026-10-27T16:00:00+01:00",
  "Give the attachment a plain file name": "Donnez à la pièce jointe un nom de fichier simple",
@@ -2170,6 +2172,7 @@
  "New learnings go automatically. They’re listed in Settings, Activity.": "Les nouveaux apprentissages partent automatiquement. Ils figurent dans Paramètres, Activité.",
  "New learnings go without asking. See or withdraw them in Settings, Activity.": "Les nouveaux apprentissages partent sans demander. Voyez-les ou retirez-les dans Paramètres, Activité.",
  "New learnings go without asking. See or withdraw them in Settings, Activity. Your email never goes by itself.": "Les nouveaux apprentissages partent sans demander. Voyez-les ou retirez-les dans Paramètres, Activité. Votre e-mail ne part jamais tout seul.",
+ "New mail gets a look as it comes in.": "Je regarde chaque nouveau mail dès son arrivée.",
  "New or changed messages and events, without duplicates. Last 24h counts when they came in here, not when they were sent.": "Messages et événements nouveaux ou modifiés, sans doublons. Les dernières 24 h comptent leur arrivée ici, pas leur date d’envoi.",
  "New organization": "Nouvelle organisation",
  "New people: {}": "Nouvelles personnes : {}",
@@ -2438,6 +2441,7 @@
  "Notes written.": "Notes rédigées.",
  "Notes:": "Notes :",
  "Notes: {}": "Notes : {}",
+ "Nothing came in from the past week yet.": "Rien n’est encore arrivé de la semaine passée.",
  "Nothing connects until they accept.": "Rien ne se connecte tant qu’ils n’acceptent pas.",
  "Nothing connects until you accept. Declining tells them nothing.": "Rien ne se connecte tant que vous n’acceptez pas. Refuser ne leur dit rien.",
  "Nothing finished or dismissed yet.": "Rien de terminé ni d’ignoré pour l’instant.",
@@ -3130,6 +3134,12 @@
  "Read the thread": "Lire le fil",
  "Read the to-dos": "A lu les tâches",
  "Read up to {}": "Lu jusqu’au {}",
+ "Read {} from the past week and found {} to-dos.": {
+  "one": "J’ai lu {} de la semaine passée et trouvé {} tâche.",
+  "other": "J’ai lu {} de la semaine passée et trouvé {} tâches."
+ },
+ "Read {} from the past week.": "J’ai lu {} de la semaine passée.",
+ "Read {} from the past week: {}.": "J’ai lu {} de la semaine passée : {}.",
  "Read {}, all automated.": "{} lus, tous automatiques.",
  "Read-only logs and settings, scrubbed like the report. It ends by itself.": "Journaux et paramètres en lecture seule, nettoyés comme le rapport. L’accès se termine tout seul.",
  "Read-only. Turn it off any time.": "Lecture seule. Désactivable à tout moment.",
@@ -4023,6 +4033,7 @@
  "Talk monthly": "Vous parlez chaque mois",
  "Talk now and then": "Vous parlez de temps en temps",
  "Talk stopped while in the background.": "Talk s’est arrêté en arrière-plan.",
+ "Talk to me": "Parlez-moi",
  "Talk weekly": "Vous parlez chaque semaine",
  "Talked live": "Conversation en direct",
  "Talking about": "On parle de",
@@ -5875,6 +5886,10 @@
   "one": "{} demande d’ami en attente",
   "other": "{} demandes d’ami en attente"
  },
+ "{} from people": {
+  "one": "{} d’une personne",
+  "other": "{} de personnes"
+ },
  "{} from your history to review": "{} de votre historique à examiner",
  "{} from {} (a source)": "{} de {}",
  "{} from {} moved to {}.": "{} de {} déplacés vers {}.",
@@ -6010,10 +6025,18 @@
   "other": "{} nouveaux filtres"
  },
  "{} new/changed": "{} nouveaux/modifiés",
+ "{} newsletters": {
+  "one": "{} newsletter",
+  "other": "{} newsletters"
+ },
  "{} no longer works at {}": "{} ne travaille plus chez {}",
  "{} notes": {
   "one": "{} note",
   "other": "{} notes"
+ },
+ "{} notifications": {
+  "one": "{} notification",
+  "other": "{} notifications"
  },
  "{} of {}": "{} sur {}",
  "{} of {} calendars": "{} agendas sur {}",
@@ -6030,6 +6053,10 @@
   "one": "{} organisation",
   "other": "{} organisations"
  },
+ "{} other": {
+  "one": "{} autre",
+  "other": "{} autres"
+ },
  "{} other files": {
   "one": "{} autre fichier",
   "other": "{} autres fichiers"
@@ -6037,6 +6064,10 @@
  "{} other files left out": {
   "one": "{} autre fichier écarté",
   "other": "{} autres fichiers écartés"
+ },
+ "{} other signals": {
+  "one": "{} autre signal",
+  "other": "{} autres signaux"
  },
  "{} owns it.": "{} en est propriétaire.",
  "{} pages": {

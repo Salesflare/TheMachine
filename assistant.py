@@ -1442,6 +1442,10 @@ QUICK_LOOK_HOURS, QUICK_LOOK_SIGNALS, FIRST_LOOK_RETRY_MIN_SECONDS = PREVIEW_DAY
 # about the same work).
 FIRST_DIG_CARDS, FIRST_DIG_USAGE, FIRST_DIG_SIGNALS = 3, 60, 200
 FIRST_DIG_HOURS = 24  # a first review that started longer ago than this digs no more (an install from before it dug)
+# The first look's ending on the dashboard (App.first_look_done): shown this long after it stopped digging. What its
+# reviewer sorted each signal into, by meaning (finish_analysis read), for a summary in counts only.
+FIRST_LOOK_DONE_HOURS = 24
+FIRST_LOOK_READ = ('people', 'meetings', 'newsletters', 'notifications', 'other')
 # The first profile on an install without the interactive installer (hosted): tries, and the wait between them.
 FIRST_PROFILE_TRIES, FIRST_PROFILE_RETRY_SECONDS = 3, 6 * 3600
 PREPARATION_INTERRUPTED_TRIES = 4  # starts of one card's preparation that a Gateway restart may cut off before it counts
@@ -4288,6 +4292,15 @@ class Store:
         if (state or {}).get('mode', 'incremental') not in ('bootstrap', 'resync') and not (state or {}).get('page_token'):
             db.execute('INSERT OR IGNORE INTO milestones(name,at) VALUES(?,?)', ('first_import:' + account, now()))
 
+    def first_look_run(self, run_id):
+        """Whether a review run is part of the first look: a preview it started by itself, the quick first review, or
+        its digging on after (first_dig), before the first look stopped digging."""
+        with self.connect() as db:
+            if db.execute("SELECT 1 FROM milestones WHERE name='first_dig_done'").fetchone():
+                return False
+            row = db.execute('SELECT preview,auto,window_hours,promising FROM review_runs WHERE run_id=?', (run_id,)).fetchone()
+        return bool(row and ((row['preview'] and row['auto']) or row['window_hours'] or row['promising']))
+
     def note_first_look(self, db, look):
         """The first look's last state, for the health report (first_cards_report): kept only when it changed."""
         detail = encoded({k: look.get(k) for k in ('state', 'why', 'quick', 'waiting', 'retry_at') if look.get(k) is not None}) if look else None
@@ -5404,7 +5417,7 @@ class Store:
                   'next_row_offset': row_offset + len(shown) if row_offset + len(shown) < len(views) else None}
         return {'analysis_id': analysis_id, 'page': int(page), 'pages': pages, **result}
 
-    def finish_analysis(self, analysis_id, summary='', owner_session=None, owner_run=None, reviewed_ids=None, projects=None, stages=None, team=None, replies=None):
+    def finish_analysis(self, analysis_id, summary='', owner_session=None, owner_run=None, reviewed_ids=None, projects=None, stages=None, team=None, replies=None, read=None):
         # A move to a board's last stage proven by a live page: opened here, before the write transaction (project_success.py)
         checked = project_success.check_links(self.connect, self.accounts, stages if isinstance(stages, list) else [])
         with self.connect() as db:
@@ -5476,9 +5489,18 @@ class Store:
                                    'to say no: the decision is theirs. A stage, its next step or automated follow-ups never replace it. '
                                    'When one needs no answer (a thanks, a confirmation, a bounce, a decline that ends it), add it to '
                                    'finish_analysis replies [{"event_id", "why"}]. Then finish again.')
+            # The first look's reviewer sorts what it read (FIRST_LOOK_READ), so its ending can say it back in counts. Optional
+            # and never a reason to refuse: an unknown group or an id from outside the batch is left out.
+            sorted_as = {}
+            if isinstance(read, dict):
+                for group, ids in read.items():
+                    if group in FIRST_LOOK_READ and isinstance(ids, list):
+                        sorted_as.update({int(i): group for i in ids if str(i).isdigit()})
             for item in items:
                 if item['id'] in answered:
                     item['no_reply'] = answered[item['id']]  # kept with the review, for checking later why there was no to-do
+                if item['id'] in sorted_as:
+                    item['read'] = sorted_as[item['id']]
                 if item.get('excluded'):
                     continue
                 if item['id'] not in reviewed:
@@ -11398,6 +11420,22 @@ def review_steps(db, run, agent_db=None, limit=8):
     return steps[:limit]
 
 
+MAIL_SERVICES, CALENDAR_SERVICES = ('gmail', 'outlook'), ('calendar', 'outlook_calendar')
+
+
+def signal_family(kind):
+    """What a signal kind is to the owner, for a count in words: email, meeting (calendar events, meeting notes and
+    transcripts), message (chats) or other (notifications, a CRM or payment update)."""
+    kind = str(kind or '')
+    if kind in ('gmail.message', 'outlook.message', 'ms_graph.message'):
+        return 'email'
+    if kind.endswith(('.event', '.meeting', '.transcript')) and kind not in ('stripe.event',):
+        return 'meeting'
+    if kind.endswith('.message'):
+        return 'message'
+    return 'other'
+
+
 KIND_WORDS = {'gmail.message': ('email', 'emails'), 'calendar.event': ('meeting', 'meetings'), 'slack.message': ('Slack message', 'Slack messages'),
               'whatsapp.message': ('WhatsApp message', 'WhatsApp messages'), 'telegram.message': ('Telegram message', 'Telegram messages'), 'linkedin.message': ('LinkedIn message', 'LinkedIn messages'),
               'android.notification': ('phone notification', 'phone notifications'), 'x.message': ('X message', 'X messages')}
@@ -14515,7 +14553,15 @@ def promise_text(p):
     return title, body
 
 
-def review_prompt(run_id, accounts, preferences='', facts='', slipped='', promises='', unnamed='', roles='', notes='', handoffs='', splits='', boards='', sorting='', sources='', fitting='', backfill=''):
+# The first look only: its ending tells the owner what it read (App.first_look_done), so it sorts what it reviewed by meaning
+FIRST_LOOK_READ_RULE = ('This is the owner\'s first look at their past week. In finish_analysis also add read ({"people": [event_ids], "meetings": [...], '
+                        '"newsletters": [...], "notifications": [...], "other": [...]}), every reviewed signal of this batch in one group, judged by '
+                        'what it is, never by words in it: people (a person writing to the owner, or a conversation they are in), meetings, newsletters '
+                        '(newsletters and promotions), notifications (automated mail: receipts, invoices, alerts, account and service updates), other. '
+                        'The owner sees the counts only. Never make a to-do to have something to show.\n')
+
+
+def review_prompt(run_id, accounts, preferences='', facts='', slipped='', promises='', unnamed='', roles='', notes='', handoffs='', splits='', boards='', sorting='', sources='', fitting='', backfill='', first_look=False):
     return f'''This is a signal review started by the personal-assistant service (review run {run_id}). It is not a chat with the owner and not a preparation task.
 {i18n.prompt_rule()}
 ''' + (f'''Boards to sort, before anything else (separate from the batch: these projects need no new message). The owner put these projects on a board and their tiles say "Sorting" until you place them. For each, read its messages with events (its event_ids below, all accounts) and judge where it stands now from what they mean between these people, never their wording. Place it with graph {{"project": its node_id, "board", "stage", "event_id": the message that shows it, "reason": one short clause that reads after "Moved to <stage>:" (like "Demo held on Thu, they asked for pricing"), "next": the owner's next step in a few words}}. When nothing has moved it past the first stage, place it in the first stage the same way, with the message and why. Only when none of its messages shows where it stands, add it to finish_analysis sorted ([{{"project": its node_id, "why": a few words}}]). finish_analysis refuses until each one is placed or in sorted.
@@ -14534,7 +14580,7 @@ Second, the signal review.
 ''' if boards else '') + f'''The assistant instructions (tools/personal-assistant/AGENTS.md) and the owner's profile (USER.md) are included in this turn's context; follow the "Reviewing signals" section. Don't re-read those files.
 With the assistant_signals tool: call status, then ONE begin_analysis with account_ids {json.dumps(accounts)} and limit 120. The reply is paged: read every page with analysis_page before finishing, including next_row_offset continuations on the same page. Where body_clipped matters, read the rest with events (the account, event_ids and body_offset). Events replies contain events and remaining_event_ids; read the remaining IDs with the same accounts. Follow body_next_offset to the end of long bodies.
 Save only genuinely useful, distinct suggestions with suggest; the service delivers them. A card's agent_work in status is what Claude Code or Codex did (or is doing) on it, the latest truth of what was done: when you update a card, start from there and never offer work it reports done as the next step. One card per matter: when a signal is about the same matter as an existing card (open, snoozed, waiting for a reply or done: the same conversation, people and ask, judged by meaning), pass card_id so that card is updated and comes back instead of a new one; reopen:true only when a done card genuinely needs the owner again. Then finish_analysis with reviewed_ids. Defer only what you expect to judge better later.
-Name the ongoing work: finish_analysis projects ({{"Project name": [event_ids from this batch]}}) for signals that clearly belong to a deal, hire, launch, renovation or other piece of work, and project on a suggest that belongs to one. Reuse begin_analysis's projects names when they fit; a new one on a board is named after its counterpart, never with the board's name in front ("Acme", not "Partner listings: Acme"); a signal's probably_project is the graph's guess from meaning and people, so add it to projects when it's right. graph tells who someone is to the owner (role, closeness, rhythm, gone quiet, their projects, what's open between them); when a message shows what someone is to them (their title, "our accountant", an introduction) and graph has no role or a wrong one, set it with graph node_id, role, event_id and quote (a short line copied from that message).
+{FIRST_LOOK_READ_RULE if first_look else ''}Name the ongoing work: finish_analysis projects ({{"Project name": [event_ids from this batch]}}) for signals that clearly belong to a deal, hire, launch, renovation or other piece of work, and project on a suggest that belongs to one. Reuse begin_analysis's projects names when they fit; a new one on a board is named after its counterpart, never with the board's name in front ("Acme", not "Partner listings: Acme"); a signal's probably_project is the graph's guess from meaning and people, so add it to projects when it's right. graph tells who someone is to the owner (role, closeness, rhythm, gone quiet, their projects, what's open between them); when a message shows what someone is to them (their title, "our accountant", an introduction) and graph has no role or a wrong one, set it with graph node_id, role, event_id and quote (a short line copied from that message).
 Boards: projects of one kind (partner listings, hires, onboardings), one project per counterpart, stand in stages on boards the owner saved; begin_analysis boards lists them with each project's stage and the board's about (which projects belong). When a message in this batch moves one (they agreed, sent their edits, went live, declined, the address bounced), add it to finish_analysis stages ({{"project", "board", "stage", "reason", "event_id", "next"}}): judge what the message means between these people in its conversation, never its wording, and never move a project only because time passed. reason is a short clause that reads after "Moved to <stage>:" ("Sam signed the order form"); next is the owner's next step in a few words; org the counterpart's web domain when it isn't clear from the people. A new project that fits a board's about goes on it the same way. Projects the owner put on a board come as "Boards to sort" at the top. Only the owner makes boards; a review suggests them, each once, from the boards to suggest at the top with graph suggest_board {{"name", "stages", "about", "projects", "reason", "visibility"}}: stages that fit how that kind of work goes, in order, ending at the good outcome (partner listings: Contacted, Agreed, In review, Live; hiring: Sourced, Screening, Interviews, Offer, Hired); every board has its own Stalled or declined row, so an ending where it didn't happen (lost, declined, dropped) is never a stage. about one sentence on which projects belong. Judge the kind from what the projects are, not from words in their names. The owner's own move stands until a newer message changes things. A stage and its next step never replace a to-do: when the other side's reply asks the owner something or proposes terms (a price or fee, a counteroffer, a condition), move the project and also suggest a to-do with prepare_ahead:true so the answer comes drafted, on a board or not and whether follow-ups are on or not, also when you expect the owner to say no; terms not agreed yet keep the stage before agreement. finish_analysis refuses while such a reply on a board has no open to-do; one that needs no answer (a thanks, a confirmation, a decline that ends it) goes in finish_analysis replies [{{"event_id", "why"}}]. Done when: on a board of partner listings (a page about the owner's work that goes live), each project has a success condition in plain words; begin_analysis boards shows the ones set (done_when). When one has none, add "condition" (like "Listing is live with a link to us") and "proof": "link" to its stages entry. A move to the board's last stage needs its proof in that entry: "url", the listing's https address exactly as their message gives it (The Machine opens it and checks it links to the owner), or "proof": "message" when the condition is something their message itself shows. Without proof it stays one stage before.
 Team: when begin_analysis lists team (Work messages, shared with the owner's Work Fleet by default), add finish_analysis team ([{{"event_id", "share", "line", "group", "suggest"}}], group and suggest only for unsure ones; begin_analysis share_groups lists the groups already used) for each of those threads, judged by what the conversation is, never by words in it: {SHARE_VERDICTS} line is one short line of what happened, in your own words ("Lee asked for the renewal quote"), never quoted text. The owner's own Team or Only you always wins.
 Who does the step: when the step on a card is one only the owner can do themselves, in person or offline (go somewhere, pick something up, attend, meet, hand something over, sign on paper), add owner_step:true to suggest, and to promise for the owner's own; judge it by what the step is, not its words. The card then offers Done, and help around it on the owner's tap (a calendar slot, directions, a message if plans change), never Do it. Leave it out when you can do the step with your tools (write, send, look up, book or order online, fill in a form).
@@ -15779,6 +15825,10 @@ class App(*APP_MIXINS):
                 result['greeting'] = self.store.greeting(self.config.get('owner_name'))
             except sqlite3.Error as error:
                 LOG.warning('greeting error=%s', type(error).__name__); result['greeting'] = None
+            try:  # what the first look read and what came of it, for its ending on the list (first_look_done)
+                result['first_look_done'] = self.first_look_done()
+            except (sqlite3.Error, ValueError, TypeError) as error:
+                LOG.warning('first look done error=%s', type(error).__name__); result['first_look_done'] = None
             try:  # the first-use tips on a new person's first to-dos (Store.first_tips)
                 result['first_tips'] = self.store.first_tips()
             except sqlite3.Error as error:
@@ -15905,7 +15955,7 @@ class App(*APP_MIXINS):
                     graph.fit_answer(db, args['_review_run'], args.get('fits'))
                     graph.backfill_answer(db, args['_review_run'], args.get('fits'))
             return self.store.finish_analysis(args['analysis_id'], args.get('summary', ''), args.get('_review_session'), args.get('_review_run'), args.get('reviewed_ids'), args.get('projects'),
-                                             args.get('stages'), args.get('team'), args.get('replies'))
+                                             args.get('stages'), args.get('team'), args.get('replies'), args.get('read'))
         if name == 'graph':
             return self.graph_action(args)
         if name == 'enrich':  # the CLI: status, or one domain now
@@ -20159,7 +20209,7 @@ class App(*APP_MIXINS):
                                                self.store.unnamed_text(run['run_id']), self.store.role_text(run['run_id']), self.store.notes_to_learn(),
                                                self.waiting_handoffs_text(), self.split_notes_text(), self.store.boards_text(run['run_id']),
                                                self.store.sort_text(run['run_id']), source_notes(account_services(self.config)) + companies_prompt(self.config),
-                                               self.store.fit_text(run['run_id']), self.backfill_text(run['run_id']))
+                                               self.store.fit_text(run['run_id']), self.backfill_text(run['run_id']), self.store.first_look_run(run['run_id']))
             try:  # drafts the owner rewrote, or answered themselves instead: lasting habits go into that channel's voice
                 lines = self.store.edits_to_learn()
                 if lines:
@@ -20413,6 +20463,42 @@ class App(*APP_MIXINS):
             LOG.info('first review done why=%s cards=%s', why, cards)
             return {'done': why}
         return {'cards': cards, 'left': left}
+
+    def first_look_done(self, current=None):
+        """The first look's ending, for the dashboard: what it read and what came of it, so an empty list says what the
+        Machine did instead of only "Nothing to report". Shown for FIRST_LOOK_DONE_HOURS after it stopped digging
+        (first_dig: found its to-dos, looked through the week, or used its share; not after one that expired). Counts
+        and codes only, never a message's text: {'at', 'days', 'kinds': {email, meeting, message, other}, 'read': the
+        groups its reviewer sorted them into (FIRST_LOOK_READ, finish_analysis read; empty when it gave none), 'todos',
+        'acted' (the owner decided a to-do since), 'next': the setup steps that would help most ('calendar': no calendar
+        connected; 'inbox': one mailbox only)}. None before, after, or on an install that had no first look."""
+        current = current or dt.datetime.fromisoformat(now())
+        with self.store.connect() as db:
+            done = db.execute("SELECT at,detail FROM milestones WHERE name='first_dig_done'").fetchone()
+            if not done or done['detail'] == 'expired' or done['at'] < (current - dt.timedelta(hours=FIRST_LOOK_DONE_HOURS)).isoformat():
+                return None
+            runs = [r[0] for r in db.execute('SELECT run_id FROM review_runs WHERE ((preview=1 AND auto=1) OR window_hours IS NOT NULL OR promising=1) '
+                                             'AND started_at<=?', (done['at'],))]
+            if not runs:
+                return None
+            start = db.execute(f"SELECT min(started_at) FROM review_runs WHERE run_id IN ({','.join('?' * len(runs))})", runs).fetchone()[0]
+            seen = {}
+            for row in db.execute(f"SELECT items FROM analyses WHERE status='complete' AND owner_run IN ({','.join('?' * len(runs))})", runs):
+                for item in json.loads(row['items'] or '[]'):
+                    if not item.get('deferred'):
+                        seen[int(item['id'])] = item.get('read') or seen.get(int(item['id']))
+            kinds, read = collections.Counter(), collections.Counter(g for g in seen.values() if g in FIRST_LOOK_READ)
+            ids = sorted(seen)
+            for n in range(0, len(ids), 500):
+                chunk = ids[n:n + 500]
+                kinds.update(signal_family(r[0]) for r in db.execute(f"SELECT kind FROM events WHERE id IN ({','.join('?' * len(chunk))})", chunk))
+            todos = db.execute('SELECT count(*) FROM suggestions WHERE created_at>=? AND created_at<=?', (start, done['at'])).fetchone()[0]
+            acted = bool(db.execute('SELECT 1 FROM decisions WHERE source IN (' + ','.join('?' * len(TIP_SOURCES)) + ') AND choice IN ('
+                                    + ','.join('?' * len(FIRST_ACTIONS)) + ') AND created_at>=? LIMIT 1', (*TIP_SOURCES, *FIRST_ACTIONS, start)).fetchone())
+        services = [a.get('service') for a in self.config.get('accounts', []) if a.get('service') not in SYSTEM_SERVICES]
+        nxt = [step for step, missing in (('calendar', not any(s in CALENDAR_SERVICES for s in services)),
+                                          ('inbox', sum(s in MAIL_SERVICES for s in services) == 1)) if missing]
+        return {'at': done['at'], 'days': PREVIEW_DAYS, 'kinds': dict(kinds), 'read': dict(read), 'todos': todos, 'acted': acted, 'next': nxt}
 
     def short_window(self):
         """The main model's 5-hour usage window as last read (model_usage): {'used', 'reset'}, or None (an API key, a

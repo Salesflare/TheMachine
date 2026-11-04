@@ -218,6 +218,7 @@
  "Add all": "Alles toevoegen",
  "Add and invite": "Toevoegen en uitnodigen",
  "Add another": "Nog een toevoegen",
+ "Add another inbox": "Nog een inbox toevoegen",
  "Add another source": "Nog een bron toevoegen",
  "Add as family": "Toevoegen als familie",
  "Add as friend": "Toevoegen als vriend",
@@ -1405,6 +1406,7 @@
  "Give it a name with letters or digits": "Geef het een naam met letters of cijfers",
  "Give it a title and a short summary": "Geef het een titel en een korte samenvatting",
  "Give it a title.": "Geef een titel.",
+ "Give me a to-do": "Geef me een to-do",
  "Give start and end as a date and time with its offset, like 2026-10-27T16:00:00+01:00": "Geef begin en einde als datum en tijd met het tijdverschil, zoals 2026-10-27T16:00:00+01:00",
  "Give start and end with a time zone offset, like 2026-10-27T16:00:00+01:00": "Geef begin en einde met een tijdzoneverschil, zoals 2026-10-27T16:00:00+01:00",
  "Give the attachment a plain file name": "Geef de bijlage een gewone bestandsnaam",
@@ -2170,6 +2172,7 @@
  "New learnings go automatically. They’re listed in Settings, Activity.": "Nieuwe inzichten gaan automatisch. Je vindt ze in Instellingen, Activiteit.",
  "New learnings go without asking. See or withdraw them in Settings, Activity.": "Nieuwe inzichten gaan zonder te vragen. Bekijk of trek ze in via Instellingen, Activiteit.",
  "New learnings go without asking. See or withdraw them in Settings, Activity. Your email never goes by itself.": "Nieuwe inzichten gaan zonder te vragen. Bekijk of trek ze in via Instellingen, Activiteit. Je e-mail gaat nooit vanzelf mee.",
+ "New mail gets a look as it comes in.": "Nieuwe mail bekijk ik zodra die binnenkomt.",
  "New or changed messages and events, without duplicates. Last 24h counts when they came in here, not when they were sent.": "Nieuwe of gewijzigde berichten en afspraken, zonder dubbels. Bij de laatste 24 uur telt wanneer ze hier binnenkwamen, niet wanneer ze verstuurd zijn.",
  "New organization": "Nieuwe organisatie",
  "New people: {}": "Nieuwe personen: {}",
@@ -2438,6 +2441,7 @@
  "Notes written.": "Notities geschreven.",
  "Notes:": "Notities:",
  "Notes: {}": "Notities: {}",
+ "Nothing came in from the past week yet.": "Van de afgelopen week is nog niets binnengekomen.",
  "Nothing connects until they accept.": "Er wordt niets gekoppeld tot ze aanvaarden.",
  "Nothing connects until you accept. Declining tells them nothing.": "Er wordt niets gekoppeld tot je aanvaardt. Weigeren laat hen niets weten.",
  "Nothing finished or dismissed yet.": "Nog niets afgerond of genegeerd.",
@@ -3130,6 +3134,12 @@
  "Read the thread": "Lees de thread",
  "Read the to-dos": "Las de to-do's",
  "Read up to {}": "Gelezen tot {}",
+ "Read {} from the past week and found {} to-dos.": {
+  "one": "Ik heb {} van de afgelopen week gelezen en {} to-do gevonden.",
+  "other": "Ik heb {} van de afgelopen week gelezen en {} to-do's gevonden."
+ },
+ "Read {} from the past week.": "Ik heb {} van de afgelopen week gelezen.",
+ "Read {} from the past week: {}.": "Ik heb {} van de afgelopen week gelezen: {}.",
  "Read {}, all automated.": "{} gelezen, allemaal automatisch.",
  "Read-only logs and settings, scrubbed like the report. It ends by itself.": "Alleen lezen: logs en instellingen, opgeschoond zoals het rapport. Het stopt vanzelf.",
  "Read-only. Turn it off any time.": "Alleen lezen. Zet het uit wanneer je wilt.",
@@ -4023,6 +4033,7 @@
  "Talk monthly": "Maandelijks contact",
  "Talk now and then": "Af en toe contact",
  "Talk stopped while in the background.": "Talk is gestopt op de achtergrond.",
+ "Talk to me": "Praat met me",
  "Talk weekly": "Wekelijks contact",
  "Talked live": "Live gepraat",
  "Talking about": "Gaat over",
@@ -5875,6 +5886,10 @@
   "one": "{} vriendschapsverzoek wacht",
   "other": "{} vriendschapsverzoeken wachten"
  },
+ "{} from people": {
+  "one": "{} van een persoon",
+  "other": "{} van mensen"
+ },
  "{} from your history to review": "{} uit je geschiedenis om na te kijken",
  "{} from {} (a source)": "{} van {}",
  "{} from {} moved to {}.": "{} uit {} verplaatst naar {}.",
@@ -6010,10 +6025,18 @@
   "other": "{} nieuwe filters"
  },
  "{} new/changed": "{} nieuw/gewijzigd",
+ "{} newsletters": {
+  "one": "{} nieuwsbrief",
+  "other": "{} nieuwsbrieven"
+ },
  "{} no longer works at {}": "{} werkt niet meer bij {}",
  "{} notes": {
   "one": "{} notitie",
   "other": "{} notities"
+ },
+ "{} notifications": {
+  "one": "{} melding",
+  "other": "{} meldingen"
  },
  "{} of {}": "{} van {}",
  "{} of {} calendars": "{} van {} agenda's",
@@ -6030,6 +6053,10 @@
   "one": "{} organisatie",
   "other": "{} organisaties"
  },
+ "{} other": {
+  "one": "{} overig",
+  "other": "{} overige"
+ },
  "{} other files": {
   "one": "{} ander bestand",
   "other": "{} andere bestanden"
@@ -6037,6 +6064,10 @@
  "{} other files left out": {
   "one": "{} ander bestand weggelaten",
   "other": "{} andere bestanden weggelaten"
+ },
+ "{} other signals": {
+  "one": "{} ander signaal",
+  "other": "{} andere signalen"
  },
  "{} owns it.": "{} is eigenaar.",
  "{} pages": {
