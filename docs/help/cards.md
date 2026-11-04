@@ -38,7 +38,9 @@ When you start a to-do, it can always read the messages it came from, also in an
 
 ## The buttons
 
-A to-do shows its next step, like **Do it** or **Review and send**, with **Snooze** beside it. See [Do it](do-it.md) and [Snooze](snooze.md). A ready one also has **Ask for changes** (say what to change in the draft and it redoes it). **Mark done** (it's handled) is there too: in sight when there is no draft, else at the top of **…**.
+A to-do shows its next step, like **Do it** or **Review and send**, with **Snooze** beside it. See [Do it](do-it.md) and [Snooze](snooze.md).
+
+Not prepared yet, it has **Change how** (say how to do it instead); ready, **Ask for changes** (say what to change in the draft). A full row on a phone moves **Snooze** into **…**. **Mark done** (it's handled) is there too: in sight when there is no draft, else at the top of **…**.
 
 To have it done another way, say so in its **Chat**.
 

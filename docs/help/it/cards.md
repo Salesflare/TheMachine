@@ -38,7 +38,9 @@ Quando avvii un'attività, può sempre leggere i messaggi da cui è nata, anche 
 
 ## I pulsanti
 
-Un'attività mostra il passo successivo, come **Fallo** o **Rivedi e invia**, con **Posticipa** accanto. Vedi [Fallo](do-it.md) e [Posticipa](snooze.md). Una pronta ha anche **Chiedi modifiche** (di' cosa cambiare nella bozza e la rifà). C'è anche **Segna come fatto** (è sistemata): in vista senza bozza, altrimenti in cima a **…**.
+Un'attività mostra il passo successivo, come **Fallo** o **Rivedi e invia**, con **Posticipa** accanto. Vedi [Fallo](do-it.md) e [Posticipa](snooze.md).
+
+Non ancora preparata, ha **Cambia approccio** (di' come farla invece); pronta, **Chiedi modifiche** (di' cosa cambiare nella bozza). Se sul telefono la riga è piena, **Posticipa** passa in **…**. C'è anche **Segna come fatto** (è sistemata): in vista senza bozza, altrimenti in cima a **…**.
 
 Per farla in un altro modo, dillo nella sua **Chat**.
 

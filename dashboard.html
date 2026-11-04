@@ -2703,6 +2703,7 @@ input[type=checkbox],input[type=radio],input[type=range],progress{accent-color:v
 .card .actions:not(.result-actions)>.more-actions{flex:0 0 auto;margin-left:auto}
 .card .more-actions>summary{min-width:44px;padding:7px 10px;background:var(--tile);border-color:transparent}.card .more-actions>summary:hover,.card .more-actions[open]>summary{background:var(--tile-hover)}  /* the … is filled subtle in both themes */
 .card .more-actions>summary::after{content:none}
+.card .actions.folded>[data-row-fold],.card .actions:not(.folded) .more-menu>[data-row-fold-menu]{display:none!important}  /* Snooze moves into the … when the row is full (todos-cards.js actionsSize); important like [hidden] below */
 .card .more-actions>summary svg{width:20px;height:20px}
 .card .actions .more-menu>a.open{display:block;margin:0;padding:6px 12px;border-radius:8px;color:var(--text);font-size:.92rem;line-height:1.35;font-weight:500;text-decoration:none;white-space:nowrap}.card .actions .more-menu>a.open:hover{background:var(--tile)}
 .card .more-menu .mm-sub{display:flex;flex-direction:column;gap:1px}.card .more-menu .mm-sub[hidden]{display:none}
