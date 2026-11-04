@@ -7,7 +7,9 @@ code: notify.py, assistant.py, dashboard/new-todo.js, dashboard/settings-device.
 order: 3
 keywords: ios, android, app store, play store, share sheet, share, phone, mobile, push
 ---
-The mobile app opens your own dashboard, signed in as on the web.
+The mobile app opens your own dashboard, signed in as on the web. Get it on the [App Store](https://apps.apple.com/app/id6829875215) for iPhone and iPad, or on [Google Play](https://play.google.com/store/apps/details?id=computer.themachine.app) for Android.
+
+Once you've handled your first to-do, a quiet note at the top of To-dos suggests it, before notifications. On a phone's browser, **Get the app** opens its store. On a computer it opens this page, until a phone has the app. Inside the app it never shows.
 
 ## Connect it
 

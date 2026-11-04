@@ -7,7 +7,9 @@ code: notify.py, assistant.py, dashboard/new-todo.js, dashboard/settings-device.
 order: 3
 keywords: ios, android, app store, play store, share sheet, share, phone, mobile, push
 ---
-Die mobile App öffnet dein eigenes Dashboard, angemeldet wie im Web.
+Die mobile App öffnet dein eigenes Dashboard, angemeldet wie im Web. Hol sie dir im [App Store](https://apps.apple.com/app/id6829875215) für iPhone und iPad oder bei [Google Play](https://play.google.com/store/apps/details?id=computer.themachine.app) für Android.
+
+Sobald du deine erste Aufgabe erledigt hast, schlägt ein dezenter Hinweis oben in Aufgaben sie vor, noch vor den Benachrichtigungen. Im Browser auf dem Handy öffnet **App holen** ihren Store. Auf einem Computer öffnet es diese Seite, bis ein Handy die App hat. In der App selbst erscheint er nie.
 
 ## Verbinden
 

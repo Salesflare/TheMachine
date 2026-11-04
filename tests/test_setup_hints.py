@@ -52,8 +52,18 @@ class SetupHints(unittest.TestCase):
         self.assertTrue(a.handled_first(self.store))
         self.assertEqual(self.ids(), ['source-github'])
 
+    def test_the_phone_app_is_suggested_with_its_store_links(self):
+        self.assertEqual(a.phone_app_nudge(self.store), {
+            'ios': 'https://apps.apple.com/app/id6829875215',
+            'android': 'https://play.google.com/store/apps/details?id=computer.themachine.app',
+            'page': 'https://themachine.computer/help/mobile-app', 'phones': 0})  # live in both stores
+        page = (Path(a.__file__).resolve().parent / 'docs' / 'help' / 'mobile-app.md').read_text()
+        self.assertIn(a.PHONE_APP_STORE['ios'], page)  # the page has both
+        self.assertIn(a.PHONE_APP_STORE['android'], page)
+
     def test_the_phone_app_waits_until_it_is_published(self):
-        self.assertIsNone(a.phone_app_nudge(self.store))  # off by default
+        with patch.dict(a.PHONE_APP_STORE, {'published': False}):
+            self.assertIsNone(a.phone_app_nudge(self.store))
         store = {'published': True, 'ios': 'https://apps.example.test/ios', 'android': 'http://insecure.example.test', 'page': 'https://example.test/app'}
         with patch.dict(a.PHONE_APP_STORE, store):
             self.assertEqual(a.phone_app_nudge(self.store), {'ios': 'https://apps.example.test/ios', 'page': 'https://example.test/app', 'phones': 0})
