@@ -35,7 +35,7 @@ function toastUnmerge(text,batch){toast(text);if(batch){$('#toast').append(htmlN
    bottom has some, it goes just above them if that is near the bottom, else to the top under the bar. The page
    footer's links don't count; under an open sheet nothing is in reach, so it stays put. */
 let toastLiftTimer;
-function toastLift(t){t.style.bottom='';t.style.top='';if(!matchMedia('(max-width:1023px)').matches||document.querySelector('dialog[open]:modal'))return;
+function toastLift(t){t.style.bottom='';t.style.top='';if(!matchMedia('(max-width:1023px)').matches||modalOpen())return;
  const vh=innerHeight,vw=innerWidth,h=t.offsetHeight,w=t.offsetWidth,x0=(vw-w)/2,x1=x0+w,base=parseFloat(getComputedStyle(t).bottom)||24;
  const hits=Array.from(document.querySelectorAll('button,a[href],input,textarea,select,[role=button],summary')).filter(el=>!t.contains(el)&&el.offsetParent!==null&&!el.closest('.site-footer,#topbar,[hidden]')&&getComputedStyle(el).visibility!=='hidden')
   .map(el=>el.getBoundingClientRect()).filter(r=>r.width&&r.height&&r.right>x0&&r.left<x1&&r.bottom>0&&r.top<vh);

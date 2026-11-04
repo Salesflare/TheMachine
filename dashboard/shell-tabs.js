@@ -184,7 +184,7 @@ function sideTipShow(el){if(document.documentElement.dataset.side!=='collapsed'|
 const SIDE_TIP_ON='.app-side nav [data-tab],.side-sub a,#side-toggle,#side-search,.app-side .head-side>.settings-link,#live';
 $('#app-side').addEventListener('pointerover',e=>{const el=e.target.closest(SIDE_TIP_ON);if(!el||el===sideTipFor||e.pointerType==='touch')return;sideTipHide();sideTipTimer=setTimeout(()=>sideTipShow(el),300)});
 $('#app-side').addEventListener('pointerout',e=>{const el=e.target.closest(SIDE_TIP_ON);if(el&&!el.contains(e.relatedTarget))sideTipHide()});
-$('#app-side').addEventListener('focusin',e=>{const el=e.target.closest(SIDE_TIP_ON);sideTipHide();if(el&&el.matches(':focus-visible'))sideTipShow(el)});
+$('#app-side').addEventListener('focusin',e=>{const el=e.target.closest(SIDE_TIP_ON);sideTipHide();if(el&&focusVisible(el))sideTipShow(el)});
 $('#app-side').addEventListener('focusout',sideTipHide);$('#app-side').addEventListener('click',sideTipHide);addEventListener('scroll',sideTipHide,{passive:true});
 addEventListener('keydown',e=>{if(e.key==='Escape')sideTipHide();if(!(e.ctrlKey||e.metaKey)||e.altKey||e.shiftKey||e.key.toLowerCase()!=='b'||!matchMedia('(min-width:1024px)').matches||e.target.closest?.('textarea,input,select,[contenteditable]'))return;
  e.preventDefault();sideSet(document.documentElement.dataset.side!=='collapsed')});

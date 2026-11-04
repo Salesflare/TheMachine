@@ -1,6 +1,16 @@
 <!doctype html><html lang="en"><meta charset="utf-8"><base href="__BASE__"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
 <title>The Machine · To-dos</title>
 <meta name="theme-color" content="#1b1c1f">
+<script>// Older browsers (an Android System WebView before Chrome 92 lacks .at, findLast and crypto.randomUUID): the few newer
+// built-ins the page uses, filled in only where missing. tests/test_dashboard_compat.py keeps the rest of the page off newer ones.
+(()=>{const def=(o,k,f)=>{if(o&&!(k in o))Object.defineProperty(o,k,{value:f,writable:true,configurable:true})};
+const at=function(i){i=Math.trunc(i)||0;if(i<0)i+=this.length;return i<0||i>=this.length?undefined:this[i]};
+for(const c of [Array,String,Object.getPrototypeOf(Int8Array)])def(c.prototype,'at',at);
+def(Array.prototype,'findLastIndex',function(f,t){for(let i=this.length-1;i>=0;i--)if(f.call(t,this[i],i,this))return i;return-1});
+def(Array.prototype,'findLast',function(f,t){const i=this.findLastIndex(f,t);return i<0?undefined:this[i]});
+for(const c of [Element,DocumentFragment])def(c.prototype,'replaceChildren',function(...k){this.textContent='';this.append(...k)});
+if(window.crypto?.getRandomValues)def(crypto,'randomUUID',()=>{const b=crypto.getRandomValues(new Uint8Array(16));b[6]=b[6]&15|64;b[8]=b[8]&63|128;
+ const h=[...b].map(x=>x.toString(16).padStart(2,'0')).join('');return`${h.slice(0,8)}-${h.slice(8,12)}-${h.slice(12,16)}-${h.slice(16,20)}-${h.slice(20)}`})})();</script>
 <script>// The mobile app (its WebView says TheMachineApp/<n>): nothing that leads to buying is shown in it ([data-buy]).
 if(/ TheMachineApp\/\d/.test(navigator.userAgent))document.documentElement.classList.add('in-app');
 // Theme: light or dark as picked here or in the hosted app (the "theme" cookie, shared under the app's domain), else the device's own setting.
@@ -3134,6 +3144,9 @@ const fmtDHM=(v,d,o)=>new Date(v).toLocaleDateString(DL,{...d,...o})+', '+fmtHM(
 let snoozeId=null,snoozeDay=null,snoozeMonth=null,lastOk=0,refreshFailed=false;
 const localDay=d=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
 const csrf='__CSRF__',UI_VERSION='__UI_VERSION__';let state={};
+// Selectors an older browser rejects with a SyntaxError (:modal, :focus-visible): asked here, with a fallback.
+const modalOpen=()=>{try{return!!document.querySelector('dialog[open]:modal')}catch{return!!document.querySelector('dialog[open]')}};
+const focusVisible=el=>{try{return el.matches(':focus-visible')}catch{return el.matches(':focus')}};
 // Error reports (error_feed.py): an error in this page's own code goes to the service as its type, message and place
 // (function and line); the service normalizes it again and keeps only a signature. Never what the page shows. A repeat
 // within a minute only counts once, at most 20 a page, and nothing when the owner turned reports off in Settings.
