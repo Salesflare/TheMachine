@@ -15,6 +15,7 @@ La page **Tâches** les regroupe :
 - **Prêt pour vous** : préparée et en attente de votre accord.
 - **Attend votre décision** : quelque chose que vous seul pouvez décider.
 - **En préparation** : votre Machine y travaille. Une tâche à laquelle vous venez de dire **Faire** reste à sa place pendant la préparation, puis passe dans **Prêt pour vous**.
+- **Tout juste fait** : une dernière étape que tu as confirmée, comme envoyer un formulaire ou créer un ticket, a réussi pendant ton absence. Elle montre ce qui s'est passé jusqu'à ce que tu touches **Compris**, un jour au plus, et ton téléphone l'apprend aussi. Ensuite, elle n'est plus que dans Fait.
 - **Revient plus tard** : mise en attente.
 - **Promesses** : ce que vous avez promis et ce que d’autres vous ont promis. Voir [Promesses](promises.md).
 - **Fait / écarté** : toutes les tâches terminées, les plus récentes d’abord, 30 à la fois quand vous faites défiler. Les tâches qui semblent déjà terminées viennent en premier, avec l’étiquette **Semble fait**.

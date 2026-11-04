@@ -15,6 +15,7 @@ The **To-dos** page groups them:
 - **Ready for you**: prepared and waiting for your approval.
 - **Needs your decision**: something only you can decide.
 - **Preparing**: your Machine is working on it. A to-do you just said **Do it** to stays where it was while it prepares, then moves to **Ready for you**.
+- **Just done**: a last step you confirmed, like submitting a form or filing an issue, went through while you were away. It shows what happened until you tap **Got it**, for a day at most, and your phone hears of it too. Then it's only in Done.
 - **Coming back later**: snoozed.
 - **Promises**: what you promised and what others promised you. See [Promises](promises.md).
 - **Done / dismissed**: every finished to-do, newest first, 30 at a time as you scroll. To-dos that seem finished already come first, marked **Looks done**.

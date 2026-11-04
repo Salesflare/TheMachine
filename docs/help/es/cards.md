@@ -15,6 +15,7 @@ La página **Tareas** las agrupa:
 - **Lista para ti**: preparada y esperando tu aprobación.
 - **Necesita tu decisión**: algo que solo tú puedes decidir.
 - **Preparando**: tu Machine está trabajando en ella. Una tarea a la que acabas de decir **Hazlo** se queda donde estaba mientras se prepara, y luego pasa a **Lista para ti**.
+- **Recién hecho**: un último paso que confirmaste, como enviar un formulario o crear un issue, salió bien mientras no estabas. Muestra lo que pasó hasta que tocas **Entendido**, un día como mucho, y tu teléfono también se entera. Después solo está en Hecho.
 - **Vuelve más tarde**: pospuesta.
 - **Promesas**: lo que prometiste y lo que otros te prometieron. Consulta [Promesas](promises.md).
 - **Hecho / descartado**: cada tarea terminada, las más recientes primero, de 30 en 30 según te desplazas. Las tareas que ya parecen terminadas van primero, con la etiqueta **Parece hecho**.

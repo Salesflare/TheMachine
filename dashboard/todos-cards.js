@@ -514,3 +514,12 @@ function paintPeek(id){const p=peeks.get(id);for(const slot of document.querySel
 setInterval(async()=>{if(document.hidden)return;for(const [id,p] of peeks){if(!p.on)continue;if(!document.getElementById('task-'+id)){peeks.delete(id);continue}
  try{const r=await request('api/peek?id='+encodeURIComponent(id));p.on=r.on;if(r.image)p.image=r.image;paintPeek(id)}catch{}}},2500);
 document.addEventListener('click',e=>{const b=e.target.closest('[data-peek-open]');if(!b)return;const id=b.dataset.peekOpen,p=peeks.get(id);if(!p?.image)return;const d=$('#peek-dialog');d.dataset.task=id;$('#peek-image').src=p.image;d.showModal()});
+// Just done: to-dos the owner confirmed a final step on ("On it. I'll report back.") that the step closed by itself
+// (assistant.py report_done). They show at the top with what happened until Got it, for at most a day, then only in Done.
+const REPORT_MS=864e5;
+const justDone=list=>list.filter(s=>s.status==='completed'&&s.done_report&&Date.now()-Date.parse(s.done_report)<REPORT_MS);
+const justDoneList=items=>items.length?html`<div class="section-head just-done-head" id="section-just-done"><h2>Just done</h2><span class="count">${items.length}</span><button type="button" class="ghost just-done-seen" data-report-seen="${items.map(s=>s.id).join(',')}">Got it</button></div>${items.map(s=>suggestionCard(s,'Just done'))}`:'';
+document.addEventListener('click',async e=>{const b=e.target.closest?.('[data-report-seen]');if(!b)return;e.preventDefault();b.disabled=true;const ids=b.dataset.reportSeen.split(',').filter(Boolean);
+ try{await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'card_report_seen',args:{ids}})});
+  for(const s of state.suggestions||[])if(ids.includes(s.id))s.done_report=null;render()}
+ catch(x){errCaught(x);toast(x.message,true);b.disabled=false}});
