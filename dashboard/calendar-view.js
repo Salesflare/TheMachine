@@ -277,14 +277,13 @@ function calView(m){const a=new Date(m.start),b0=new Date(m.end),b=isNaN(b0)||b0
  // With: the name (from the invite or the Graph) with its address muted beside it, or the address alone
  const met=(m.with||(m.people||[]).map(p=>p.includes('@')?{name:'',email:p}:{name:p,email:''})).slice(0,6),more=Math.max(m.guests||0,(m.with||m.people||[]).length)-met.length;
  // A guest the Graph knows opens their page; the organizations and projects it's on open theirs
- const withHtml=met.map(w=>{const label=w.name?esc(w.name)+(w.email?` <span class="cal-v-mail">${esc(w.email)}</span>`:''):esc(w.email);
-   return w.node_id?`<span class="cal-v-who cal-v-known"><a class="chip scope who" href="${esc(graphHash(w.node_id))}"${w.email?` title="${esc(w.email)}"`:''}>${CHIP_ICON.person}<span>${esc(w.name||w.email)}</span></a></span>`
-    :`<span class="cal-v-who"${w.email?` title="${esc(w.email)}"`:''}>${label}</span>`}).join('')
-  +(more>0?`<span class="cal-v-who cal-v-mail">${esc(t('and {} more',more))}</span>`:'');
+ const withHtml=html`${met.map(w=>{const label=w.name?html`${w.name}${w.email?html` <span class="cal-v-mail">${w.email}</span>`:''}`:w.email;
+   return w.node_id?html`<span class="cal-v-who cal-v-known"><a class="chip scope who" href="${graphHash(w.node_id)}"${w.email?html` title="${w.email}"`:''}>${raw(CHIP_ICON.person)}<span>${w.name||w.email}</span></a></span>`
+    :html`<span class="cal-v-who"${w.email?html` title="${w.email}"`:''}>${label}</span>`})}${more>0?html`<span class="cal-v-who cal-v-mail">${t('and {} more',more)}</span>`:''}`;
  $('#cal-v-title').textContent=m.title||t('(No title)');
- $('#cal-v-rows').innerHTML=rows.map(([k,v])=>`<div><dt>${esc(t(k))}</dt><dd>${esc(v)}</dd></div>`).join('')+(met.length?`<div><dt>${esc(t('With'))}</dt><dd class="cal-v-with">${withHtml}</dd></div>`:'')
-  +[['Organization','Organizations','org',m.orgs],['Project','Projects','project',m.projects]].filter(r=>r[3]?.length).map(([one,many,icon,list])=>
-   `<div><dt>${esc(t(list.length>1?many:one))}</dt><dd class="cal-v-links">${list.map(n=>`<a class="chip scope who" href="${esc(graphHash(n.node_id))}">${CHIP_ICON[icon]}<span>${esc(n.name)}</span></a>`).join('')}</dd></div>`).join('');
+ setHTML($('#cal-v-rows'),html`${rows.map(([k,v])=>html`<div><dt>${t(k)}</dt><dd>${v}</dd></div>`)}${met.length?html`<div><dt>${t('With')}</dt><dd class="cal-v-with">${withHtml}</dd></div>`:''}${
+  [['Organization','Organizations','org',m.orgs],['Project','Projects','project',m.projects]].filter(r=>r[3]?.length).map(([one,many,icon,list])=>
+   html`<div><dt>${t(list.length>1?many:one)}</dt><dd class="cal-v-links">${list.map(n=>html`<a class="chip scope who" href="${graphHash(n.node_id)}">${raw(CHIP_ICON[icon])}<span>${n.name}</span></a>`)}</dd></div>`)}`);
  const open=$('#cal-v-open');open.hidden=!m.url;if(m.url){open.href=m.url;open.textContent=t(calOpenLabel(m.url))}
  $('#cal-v-orig').onclick=()=>openOriginal(m.id,m.title,true);
  calNotesOpen(m);if(!$('#cal-view').open)$('#cal-view').showModal();calNotesFit()}
@@ -418,7 +417,7 @@ function calGuestAdd(g){const email=String(g.email||'').trim().toLowerCase();if(
  if(!calGuests.some(x=>x.email===email))calGuests.push({email,name:g.name||''});$('#cal-f-invite').value='';calGuestsShow();return true}
 // Suggestions under a field, as you type (a moment after the last key): arrows and Enter pick one, Escape closes them
 function calSuggest(input,list,ask,render,pick,foot=()=>''){let timer=0,seq=0,items=[],at=-1;
- const show=()=>{list.innerHTML=items.map((it,i)=>`<li><button type="button" role="option" tabindex="-1" id="${list.id}-${i}" aria-selected="${i===at}" data-i="${i}">${render(it)}</button></li>`).join('')+foot(items);
+ const show=()=>{setHTML(list,html`${items.map((it,i)=>html`<li><button type="button" role="option" tabindex="-1" id="${list.id}-${i}" aria-selected="${i===at}" data-i="${i}">${render(it)}</button></li>`)}${foot(items)}`);
   list.hidden=!items.length;input.setAttribute('aria-expanded',String(!!items.length));if(at>=0)input.setAttribute('aria-activedescendant',list.id+'-'+at);else input.removeAttribute('aria-activedescendant')};
  const close=()=>{clearTimeout(timer);seq++;items=[];at=-1;show()};
  input.addEventListener('input',()=>{clearTimeout(timer);const q=input.value.trim(),n=++seq;if(q.length<2){items=[];at=-1;show();return}
@@ -434,12 +433,12 @@ function calSuggest(input,list,ask,render,pick,foot=()=>''){let timer=0,seq=0,it
 // (Photon). The Machine looks those up itself with only the typed text; the page never talks to the map service.
 const calWhere=calSuggest($('#cal-f-where'),$('#cal-f-where-sug'),
  async q=>(await request('api/places?q='+encodeURIComponent(q))).places||[],
- p=>`<span>${esc(p.label)}</span>${p.detail?`<small>${esc(p.detail)}</small>`:''}`,p=>{$('#cal-f-where').value=p.value},
- items=>items.some(p=>p.source==='map')?'<li class="cal-sug-osm" role="presentation">Addresses © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener" tabindex="-1">OpenStreetMap</a></li>':'');
+ p=>html`<span>${p.label}</span>${p.detail?html`<small>${p.detail}</small>`:''}`,p=>{$('#cal-f-where').value=p.value},
+ items=>items.some(p=>p.source==='map')?html`<li class="cal-sug-osm" role="presentation">Addresses © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener" tabindex="-1">OpenStreetMap</a></li>`:'');
 const calInvite=calSuggest($('#cal-f-invite'),$('#cal-f-invite-sug'),
  async q=>{const typed=q.toLowerCase(),r=((await request('api/invitees?q='+encodeURIComponent(q))).people||[]).filter(p=>!calGuests.some(g=>g.email===p.email));
   return calEmail(typed)&&!r.some(p=>p.email===typed)&&!calGuests.some(g=>g.email===typed)?[{email:typed,name:''},...r]:r},
- p=>p.name?`<span>${esc(p.name)}</span><small>${esc(p.email)}</small>`:`<span>${esc(p.email)}</span>`,calGuestAdd);
+ p=>p.name?html`<span>${p.name}</span><small>${p.email}</small>`:html`<span>${p.email}</span>`,calGuestAdd);
 $('#cal-f-invite').addEventListener('keydown',e=>{const v=e.target.value.trim();
  if((e.key==='Enter'||e.key===','||e.key===';')&&v){e.preventDefault();if(calGuestAdd({email:v}))calInvite.close();else $('#cal-f-error').textContent='That isn’t an email address.'}
  else if(e.key==='Backspace'&&!e.target.value&&calGuests.length){calGuests.pop();calGuestsShow()}});

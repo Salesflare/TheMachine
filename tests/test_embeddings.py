@@ -199,6 +199,17 @@ class Embeddings(unittest.TestCase):
         self.assertEqual([line.split(':', 2)[2] for line in logs.output], ['embeddings error=unreachable'])  # redacted class only
         self.assertEqual(self.vectors(), {})
 
+    def test_only_an_http_server_address_is_ever_opened(self):
+        opened = []
+        with patch.object(emb.urllib.request, 'urlopen', side_effect=lambda *a, **k: opened.append(a)), patch.object(emb, 'request', REAL_REQUEST):
+            for url in ('file:///etc/hostname', 'ftp://127.0.0.1/x', 'http://owner@127.0.0.1:9', 'http://', '127.0.0.1:9', ''):
+                with self.subTest(url=url), self.assertRaises(emb.EmbeddingError) as error:
+                    emb.embed({**SETTINGS, 'url': url}, ['x'])
+                self.assertEqual(str(error.exception), 'bad_url')
+        self.assertEqual(opened, [])
+        self.assertEqual(emb.endpoint({'url': 'https://api.example.com/v1/embeddings/'}), 'https://api.example.com/v1/embeddings')
+        self.assertEqual(emb.endpoint(SETTINGS), 'http://127.0.0.1:9/v1/embeddings')
+
     def test_a_server_serving_another_model_is_refused(self):
         import io, json
         def urlopen(request, timeout=0):
