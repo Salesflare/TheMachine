@@ -1462,6 +1462,12 @@ REVIEW_PROBE_SECONDS = 120  # the same for a review: old enough to be past the G
 SYSTEM_SERVICES = {'gateway'}  # The Machine's own logs: not a source of the owner's
 
 
+def first_look_batch(left):
+    """How many signals the first look's next batch takes: FIRST_LOOK_NEXT_SIGNALS, or all that is left of the week
+    when that is at most FIRST_LOOK_TAIL_SIGNALS more, so no batch of a few comes after it."""
+    return max(FIRST_LOOK_NEXT_SIGNALS, left) if left <= FIRST_LOOK_NEXT_SIGNALS + FIRST_LOOK_TAIL_SIGNALS else FIRST_LOOK_NEXT_SIGNALS
+
+
 def first_look_spent(runs):
     """Tried enough: FIRST_LOOK_TRIES tries; a run stopped from outside (a Gateway restart) is not a try, up to twice as many runs in all."""
     return sum(r['status'] not in ('aborted', 'lost') for r in runs) >= FIRST_LOOK_TRIES or len(runs) >= 2 * FIRST_LOOK_TRIES
@@ -1644,6 +1650,13 @@ RUN_SIGNAL_BUDGET = 120
 # week (twice the quick look: fewer turns, each with its fixed cost, and fewer pauses between them); the backlog after
 # it goes in the regular reviews, spread out under the usage budget.
 FIRST_LOOK_NEXT_SIGNALS = 2 * QUICK_LOOK_SIGNALS
+# What is left of the week up to this many more goes in that same batch: a batch of a few signals still costs a whole
+# turn and its start (2026-11-04: 106 signals went as 20, 40, 40 and 6; the 6 took 51 s)
+FIRST_LOOK_TAIL_SIGNALS = FIRST_LOOK_NEXT_SIGNALS // 2
+# The review worker looks at its run every REVIEW_TICK_SECONDS, and every FIRST_LOOK_TICK_SECONDS while the first look
+# runs or digs, starting its next batch as soon as one ended: a turn's end was noticed 8 to 39 s late and the next
+# batch started 15 s after that, about a minute idle per batch while the owner watched (2026-11-04)
+REVIEW_TICK_SECONDS, FIRST_LOOK_TICK_SECONDS = 15, 4
 # Background turns beyond the first look (profile, voices, roles, organizations) start at most one per this many
 # seconds, and only once the first card was shown, so the first cards come first and a new install's usage is spread
 # out instead of spent in its first minutes. A draft prepared ahead is on the owner's board as Preparing, so it doesn't
@@ -14581,7 +14594,13 @@ FIRST_LOOK_READ_RULE = ('This is the owner\'s first look at their past week. In 
                         '"newsletters": [...], "notifications": [...], "other": [...]}), every reviewed signal of this batch in one group, judged by '
                         'what it is, never by words in it: people (a person writing to the owner, or a conversation they are in), meetings, newsletters '
                         '(newsletters and promotions), notifications (automated mail: receipts, invoices, alerts, account and service updates), other. '
-                        'The owner sees the counts only. Never make a to-do to have something to show.\n')
+                        'The owner sees the counts only. Never make a to-do to have something to show.\n'
+                        # 2026-11-04: each step of a review turn is a round trip to the model (5 to 15 s); a first batch of
+                        # 20 took 13 of them and its first to-do came after 105 s
+                        'The owner is watching it come in, so keep the steps few: call status and begin_analysis in one step, '
+                        'and look up what several signals need in one step (several events, related or graph calls at once) '
+                        'rather than one lookup per step. Check each signal as carefully as always. Save each to-do with '
+                        'suggest as soon as it is checked, then read on.\n')
 
 
 def review_prompt(run_id, accounts, preferences='', facts='', slipped='', promises='', unnamed='', roles='', notes='', handoffs='', splits='', boards='', sorting='', sources='', fitting='', backfill='', first_look=False):
@@ -20212,7 +20231,7 @@ class App(*APP_MIXINS):
                     if not waiting and not recovery and not sort_due:
                         return None
                     run = {'run_id': uuid.uuid4().hex, 'status': 'starting', 'started_at': now(), 'attempts': 0}
-                    budget = FIRST_LOOK_NEXT_SIGNALS if nxt else RUN_SIGNAL_BUDGET
+                    budget = first_look_batch(dig['left']) if nxt else RUN_SIGNAL_BUDGET
                     db.execute("INSERT INTO review_runs(run_id,status,started_at,updated_at,planned,budget,promising) VALUES(?,?,?,?,?,?,?)",
                                (run['run_id'], 'starting', run['started_at'], run['started_at'], min(dig['left'] if nxt else waiting, budget), budget if nxt else None, int(nxt)))
                     self.review_asked = 0
@@ -20491,27 +20510,46 @@ class App(*APP_MIXINS):
             return {'done': why}
         return {'cards': cards, 'left': left}
 
+    def review_tick(self):
+        """Seconds until the review worker looks again: FIRST_LOOK_TICK_SECONDS while a first look's batch runs or it
+        digs on between batches (the owner watches it), else REVIEW_TICK_SECONDS. Never an error."""
+        try:
+            with self.store.connect() as db:
+                live = db.execute("SELECT 1 FROM review_runs WHERE status IN ('starting','running','recovering') AND "
+                                  "((preview=1 AND auto=1) OR window_hours IS NOT NULL OR promising=1) LIMIT 1").fetchone() or (
+                    db.execute("SELECT 1 FROM milestones WHERE name='first_dig' AND at>?",
+                               ((dt.datetime.fromisoformat(now()) - dt.timedelta(hours=FIRST_DIG_HOURS)).isoformat(),)).fetchone()
+                    and not db.execute("SELECT 1 FROM milestones WHERE name='first_dig_done'").fetchone())
+        except (sqlite3.Error, ValueError):
+            return REVIEW_TICK_SECONDS
+        return FIRST_LOOK_TICK_SECONDS if live else REVIEW_TICK_SECONDS
+
     def first_dig_live(self, db, current=None):
         """While the first look digs (first_dig, from its quick first review on, also between its batches): how far it got
         over the week, so the dashboard shows one bar that keeps moving until it has its to-dos or has read the week,
         instead of All clear between batches. {'read': signals its batches saved so far, 'total': read plus the week's
         signals left (at most FIRST_DIG_SIGNALS in all while more are left), 'todos', 'goal': FIRST_DIG_CARDS, 'days',
-        'pace': seconds per signal its finished batches took (FIRST_DIG_PACE_SECONDS before one finished)}. None once
+        'pace': seconds per signal of the batch that runs now, at the time its last finished batch took (FIRST_DIG_PACE_SECONDS before one finished)}. None once
         it stopped, or on an install that had no first look. Counts only."""
         dig = self.first_dig(db, current)
         if not dig or 'left' not in dig:
             return None
         # What a batch saved counts at once, also while its run is still ending: its signals have left `left` by then, so
         # counting them only after the run ended made the total dip by a batch for a moment (2026-11-04: 82, then 102)
-        read = seconds = paced = 0
-        for run in db.execute("SELECT run_id,started_at,finished_at FROM review_runs WHERE (preview=1 AND auto=1) OR window_hours IS NOT NULL OR promising=1"):
+        # A batch takes about as long whatever its size (its turn's steps, not its signals: 2026-11-04, 20 signals took
+        # 135 s, 40 took 91 s), so the pace is the last batch's time spread over the batch that runs now
+        read, last, size = 0, None, None
+        for run in db.execute("SELECT run_id,status,started_at,finished_at,planned FROM review_runs WHERE (preview=1 AND auto=1) OR window_hours IS NOT NULL OR promising=1 "
+                              "ORDER BY started_at"):
             items = sum(len(json.loads(row[0] or '[]')) for row in db.execute(
                 "SELECT items FROM analyses WHERE owner_run=? AND status='complete'", (run['run_id'],)))
             read += items
             if items and run['finished_at']:
-                paced += items
-                seconds += max(0.0, (dt.datetime.fromisoformat(run['finished_at']) - dt.datetime.fromisoformat(run['started_at'])).total_seconds())
-        pace = min(30, max(1, round(seconds / paced))) if paced and seconds else FIRST_DIG_PACE_SECONDS
+                last = max(0.0, (dt.datetime.fromisoformat(run['finished_at']) - dt.datetime.fromisoformat(run['started_at'])).total_seconds())
+            if run['status'] in ('starting', 'running', 'recovering'):
+                size = run['planned']
+        size = size or min(dig['left'], first_look_batch(dig['left']))
+        pace = min(30, max(1, round(last / size))) if last and size else FIRST_DIG_PACE_SECONDS
         total = read + dig['left']
         if dig['left'] and total > FIRST_DIG_SIGNALS:
             total = max(FIRST_DIG_SIGNALS, read + min(dig['left'], FIRST_LOOK_NEXT_SIGNALS))
@@ -21080,9 +21118,16 @@ class App(*APP_MIXINS):
             pass
 
     def review_worker(self):
-        while not self.stop.wait(15):
-            try:self.review_step()
+        others = 0.0
+        while not self.stop.wait(self.review_tick()):
+            try:
+                # The first look's next batch as soon as one ended, not a tick later (review_tick)
+                if self.review_step() in REVIEW_TERMINAL and self.review_tick() < REVIEW_TICK_SECONDS:
+                    self.review_step()
             except Exception as error:LOG.error('review worker error=%s',type(error).__name__)
+            if time.monotonic() - others < REVIEW_TICK_SECONDS:
+                continue  # the rest keeps its own pace while the first look is checked more often
+            others = time.monotonic()
             try:self.profile_step()
             except Exception as error:LOG.error('profile worker error=%s',type(error).__name__)
             try:self.first_profile_step()

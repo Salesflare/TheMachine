@@ -88,7 +88,7 @@ You don't have to ask for that preview. With reviews still off, once OpenClaw ha
 3. mail you were one of many on;
 4. automated mail last.
 
-**Then it keeps digging**, 20 of the most promising at a time and the next batch at once, until it has 3 to-dos, has looked through the whole week, or has used 60% of the 5-hour usage window (on an API key or a sign-in without usage windows: 200 signals). What one batch reviewed is not reviewed again, so no to-do comes twice. The health report says why it stopped (`dig`: `cards`, `covered`, `usage`, or `expired` a day after it started).
+**Then it keeps digging**, 40 of the most promising at a time (the rest of the week in one batch when it is at most 60), the next batch within seconds of the last one ending (while it digs the service checks its review every 4 seconds instead of 15), until it has 3 to-dos, has looked through the whole week, or has used 60% of the 5-hour usage window (on an API key or a sign-in without usage windows: 300 signals). Its reviewer is asked to keep its steps few (status and the batch in one step, the lookups for several signals at once) and to save each to-do as soon as it is checked. What one batch reviewed is not reviewed again, so no to-do comes twice. The health report says why it stopped (`dig`: `cards`, `covered`, `usage`, or `expired` a day after it started).
 
 **It stays a read-only preview:**
 
