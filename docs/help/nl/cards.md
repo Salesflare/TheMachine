@@ -38,7 +38,9 @@ Start je een to-do, dan mag hij altijd de berichten lezen waar hij uit kwam, ook
 
 ## De knoppen
 
-Een to-do toont zijn volgende stap, zoals **Doe het** of **Nakijken en versturen**, met **Snoozen** ernaast. Zie [Doe het](do-it.md) en [Snoozen](snooze.md). Een klaarstaande heeft ook **Wijzigingen vragen** (zeg wat er in het concept moet veranderen en hij doet het opnieuw). **Markeer als gedaan** (hij is geregeld) is er ook: in beeld zonder concept, anders bovenaan onder **…**.
+Een to-do toont zijn volgende stap, zoals **Doe het** of **Nakijken en versturen**, met **Snoozen** ernaast. Zie [Doe het](do-it.md) en [Snoozen](snooze.md).
+
+Nog niet voorbereid heeft hij **Anders aanpakken** (zeg hoe het anders moet); klaar, **Wijzigingen vragen** (zeg wat er in het concept moet veranderen). Is de rij op een telefoon vol, dan gaat **Snoozen** naar **…**. **Markeer als gedaan** (hij is geregeld) is er ook: in beeld zonder concept, anders bovenaan onder **…**.
 
 Wil je hem anders laten doen, zeg het dan in zijn **Chat**.
 

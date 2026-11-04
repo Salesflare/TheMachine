@@ -38,7 +38,9 @@ Cuando inicias una tarea, siempre puede leer los mensajes de los que vino, tambi
 
 ## Los botones
 
-Una tarea muestra su siguiente paso, como **Hazlo** o **Revisar y enviar**, con **Posponer** al lado. Consulta [Hazlo](do-it.md) y [Posponer](snooze.md). Una tarea lista también tiene **Pedir cambios** (di qué cambiar en el borrador y lo rehace). **Marcar como hecha** (ya está resuelta) también está: a la vista sin borrador, si no, arriba en **…**.
+Una tarea muestra su siguiente paso, como **Hazlo** o **Revisar y enviar**, con **Posponer** al lado. Consulta [Hazlo](do-it.md) y [Posponer](snooze.md).
+
+Sin preparar, tiene **Cambiar el enfoque** (di cómo hacerla en su lugar); lista, **Pedir cambios** (di qué cambiar en el borrador). Si la fila no cabe en el móvil, **Posponer** pasa a **…**. **Marcar como hecha** (ya está resuelta) también está: a la vista sin borrador, si no, arriba en **…**.
 
 Para que se haga de otra forma, dilo en su **Chat**.
 

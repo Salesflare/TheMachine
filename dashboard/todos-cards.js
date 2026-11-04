@@ -235,7 +235,7 @@ const COPY_WHY='This can’t be sent from here. Copy it to send it yourself.';
 // The button row: the action that fits this to-do (its prepared send, Do it, Answer, Mark done, Check in now), Ask for
 // changes when there is a draft or result to review, Snooze, and Mark done on a ready one without a draft (with one,
 // it tops the …); then a quiet … with Hand off… (a teammate, a connected coding agent and Ask to review on one small sheet), Repeat… and Not
-// needed last. Telling The Machine to do it another way is the Chat's job. The title, project and area change in place
+// needed last. A decision has Change how in sight beside its lead (Do it, Prepare). The title, project and area change in place
 // (a tap on the title; the project and area under Details). On a phone the … opens as a bottom sheet. A choice not in
 // sight (Mark done on a decision) stays on the card, hidden, so the keyboard shortcuts and the chat's menu still find it.
 // A lead is k=>html``, k mapping its class (and tag): ID keeps it, mmClass makes it a plain … item (no primary; a button goes ghost).
@@ -269,18 +269,32 @@ function cardActions(s,choices,smartButtons,unmerge,hint,smart){const skill=skil
   const sheet=hand.length>1?html`<button type="button" class="ghost" data-mm-open="handoff" aria-haspopup="true">${t('Hand off…')}</button>`:html`${hand.map(h=>Array.isArray(h)?h[1]:h)}`;
  const sub=hand.length>1?html`<div class="mm-sub" role="group" aria-label="${t('Hand off')}" hidden><p class="mm-head"><button type="button" class="mm-back" data-mm-back aria-label="${t('Back')}">‹</button><span>${t('Hand off')}</span></p>${hand.map(h=>Array.isArray(h)?h[0]:h)}</div>`:'';
  const repeat=closed(s)||s.repeats?'':html`<button type="button" class="ghost" data-repeat="${s.id}">${t('Repeat…')}</button>`;
- // In sight: Ask for changes on a draft or result, Snooze, and Mark done on a ready one without a draft
+ // In sight: Change how on a decision, Ask for changes on a draft or result (each right after the lead), Snooze, and Mark
+ // done on a ready one without a draft
  const draft=smart.some(a=>DRAFT_KINDS.includes(a.kind)),ready=s.status==='prepared'&&!answered&&!ask&&!mine&&!withTeammate(s);
  const doneShown=ready&&(!draft||made),doneTop=ready&&draft&&!made;  // with a draft, Mark done tops the … so the row stays one line
- const review=s.status==='prepared'||!!agentAsk(s);
+ const review=s.status==='prepared'||(s.status==='pending'&&!mine)||!!agentAsk(s);
  const shown=x=>(x[0]==='snooze'&&!made)||(x[0]==='change'&&review)||(x[0]==='complete'&&doneShown);
  const quiet=x=>(x[0]==='complete'&&!doneTop)||x[0]==='change';  // on the card, out of sight: the D key, the palette and the chat use them
  const plain=others.filter(x=>!handing(x)&&x[0]!=='reject'&&x[0]!=='takeback');
- const row=html`${plain.filter(shown).sort((a,b)=>made?(a[0]==='complete'?-1:b[0]==='complete'?1:0):0).map(x=>btn(x))}`,hiddenBtns=html`${plain.filter(x=>!shown(x)&&quiet(x)).map(b=>btn(b,html` hidden`))}`;
  const items=html`${[...plain.filter(x=>doneTop&&x[0]==='complete').map(x=>btn(x)),...leads.slice(1).map(mmPlain),...plain.filter(x=>!shown(x)&&!quiet(x)&&!(doneTop&&x[0]==='complete')).map(x=>btn(x)),sheet,repeat,unmerge,...others.filter(x=>x[0]==='reject').map(b=>html`<hr class="mm-sep">${btn(b)}`)].filter(Boolean)}`;
- const menu=String(items)?html`<details class="more-actions"><summary aria-label="${t('More actions')}" title="${t('More actions')}">${DOTS}</summary><div class="more-menu" role="group" aria-label="${t('More actions')}">${items}${sub}</div></details>`:'';
+ // On a row of its own under the lead, Snooze folds into the … when that row runs out of room (a long label, a narrow card): actionsSize below
  const two=(leads[0]?1:0)+plain.filter(shown).length>2||useAsk(s);  // on a phone: the lead on its own row, the rest on one (a long Use … lead too)
+ const fold=two&&String(items)&&plain.find(x=>x[0]==='snooze'&&shown(x));
+ const row=html`${plain.filter(shown).sort((a,b)=>made?(a[0]==='complete'?-1:b[0]==='complete'?1:0):(b[0]==='change')-(a[0]==='change')).map(x=>btn(x,fold&&x===fold?html` data-row-fold`:''))}`;
+ const hiddenBtns=html`${plain.filter(x=>!shown(x)&&quiet(x)).map(b=>btn(b,html` hidden`))}`;
+ const menu=String(items)?html`<details class="more-actions"><summary aria-label="${t('More actions')}" title="${t('More actions')}">${DOTS}</summary><div class="more-menu" role="group" aria-label="${t('More actions')}">${fold?btn(fold,html` data-row-fold-menu`):''}${items}${sub}</div></details>`:'';
  return html`<div class="actions${two?html` two-rows`:''}">${leads[0]?leads[0](ID):''}${row}${menu}${hiddenBtns}</div>${copy&&!skill?html`<p class="copy-why">${COPY_WHY}</p>`:''}`}
+// A second row that runs out of room (a long label in another language, a narrow card) hands its Snooze to the … (it tops
+// the menu there) instead of wrapping onto a third line; Change how and Ask for changes stay in sight. Measured per row, always
+// with Snooze in it (no paint in between), so a row folds only when it really doesn't fit and never flips back and forth.
+const actionsWrap=a=>{const f=a.querySelector(':scope>[data-row-fold]'),m=a.querySelector(':scope>.more-actions'),p=f?.previousElementSibling;return !!(f&&m&&p)&&m.getBoundingClientRect().top>p.getBoundingClientRect().top+1};
+function actionsSize(a){a.classList.remove('folded');if(actionsWrap(a))a.classList.add('folded')}
+const actionsFit=new ResizeObserver(rows=>{for(const {target:a} of rows)actionsSize(a)});
+// A row drawn anew is fitted before it is painted, and again when its width, its labels (a translation) or the font change
+const actionsAll=()=>{for(const f of document.querySelectorAll('.card .actions>[data-row-fold]')){const a=f.parentElement;if(a.dataset.fit==null){a.dataset.fit='';actionsFit.observe(a)}actionsSize(a)}};
+// (once a frame at most, still before it is painted: a streaming chat changes the page many times a second)
+let actionsQueued=0;new MutationObserver(()=>{if(!actionsQueued)actionsQueued=requestAnimationFrame(()=>{actionsQueued=0;actionsAll()})}).observe(document.body,{childList:true,subtree:true,characterData:true});document.fonts?.ready.then(actionsAll);
 // The … menu's Hand off… opens its sheet in place (Back returns); a click outside, Escape or a choice closes the menu.
 document.addEventListener('click',e=>{const o=e.target.closest('.more-menu [data-mm-open],.more-menu [data-mm-back]');if(!o)return;e.preventDefault();const m=o.closest('.more-menu'),sub=m.querySelector('.mm-sub'),go=o.dataset.mmOpen!=null;
  m.classList.toggle('mm-in',go);if(sub)sub.hidden=!go;(go?sub?.querySelector('button:not([data-mm-back])'):m.querySelector('[data-mm-open]'))?.focus()});
