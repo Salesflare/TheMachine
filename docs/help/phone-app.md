@@ -8,7 +8,9 @@ order: 3
 ---
 The dashboard installs as an app on a phone or a computer. It then sends a notification for each to-do, result and reminder when you are away from the dashboard, within your [work hours](work-hours.md). Pick what it sends in [Notifications](notifications.md).
 
-A quiet note at the top of To-dos offers both, one at a time, once you've handled your first to-do: first notifications, then the app. What's already done on that device never shows. **Not now** hides it for 14 days, and a second **Not now** stops it on that device. The same controls stay in **Settings**, **General**, **This device**.
+A quiet note at the top of To-dos offers them one at a time, once you've handled your first to-do: first the [mobile app](mobile-app.md), then notifications, then the app. On a phone's browser it offers only the mobile app, with its own notifications, until you've said **Not now** to it twice. What's already done on that device never shows.
+
+**Not now** hides it for 14 days, and a second **Not now** stops it on that device. The same controls stay in **Settings**, **General**, **This device**.
 
 In the phone app, a short line at the top says **Get a ping when something needs you.** while its notifications are off. **Turn on** asks the phone, or opens its settings once it won't ask again. The **×** hides it for 7 days. On your first sign-in the phone asks once by itself.
 

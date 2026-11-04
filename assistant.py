@@ -13331,10 +13331,12 @@ HINT_MAILS = 3  # this many mails in 30 days from a service before it is worth s
 # updates: setup hints and the dashboard's device nudges wait for it (handled_first).
 OWNER_HANDLED_SQL = ("SELECT 1 FROM decisions WHERE source IN ('dashboard','telegram','owner-chat','voice') "
                      "AND choice IN ('accept','reject','snooze','complete','send','other') LIMIT 1")
-# The mobile app (iOS and Android): off until it is published in the stores. The mobile app's work turns it on and fills in
-# the store links and a page with both. The dashboard then suggests it after notifications (instead of installing the web
-# app on a phone, after it on a computer).
-PHONE_APP_STORE = {'published': False, 'ios': '', 'android': '', 'page': ''}
+# The mobile app (iOS and Android), live in both stores: their links and a page with both (its help article). The dashboard
+# suggests it after notifications: on a phone's browser its store (instead of installing the web app), on a computer the
+# page (after installing the app there) until a phone has it; never inside the app.
+PHONE_APP_STORE = {'published': True, 'ios': 'https://apps.apple.com/app/id6829875215',
+                   'android': 'https://play.google.com/store/apps/details?id=computer.themachine.app',
+                   'page': 'https://themachine.computer/help/mobile-app'}
 
 
 def handled_first(store):

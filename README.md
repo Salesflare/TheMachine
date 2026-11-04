@@ -91,7 +91,7 @@ Help for people using The Machine (not running it) is at [themachine.computer/he
 - Remembers your decisions, feedback, facts, people, projects and promises.
 - Prepares likely useful work ahead, but never the last step that commits something.
 - Does what you ask with **Do it**, and shows a **Send**, **Submit** or **Merge** button where something goes out.
-- Shows the same to-dos on the dashboard, in its phone app and on Telegram.
+- Shows the same to-dos on the dashboard, in its phone app ([App Store](https://apps.apple.com/app/id6829875215), [Google Play](https://play.google.com/store/apps/details?id=computer.themachine.app)) and on Telegram.
 
 The Machine is its own app. [OpenClaw](https://docs.openclaw.ai) is its agent runtime: OpenClaw's agent reads and thinks with your model, and its Gateway carries Telegram and the Android node. The Machine adds the dashboard, the Graph, to-dos, connections, Fleets and the Network.
 

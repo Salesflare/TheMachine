@@ -54,9 +54,11 @@ const DEVICE_ACTIONS=window.deviceActions=[
 const deviceRun=id=>DEVICE_ACTIONS.find(a=>a.id===id)?.run();
 // Calm: nothing before the owner handled a first to-do (state.handled_first), in the first minute of a session or while
 // setting up; Not now waits 14 days, a second Not now stops it on this device, and after any Not now the next nudge waits
-// a day. The order: 1 notifications, 2 the app on this computer, 3 the phone app (state.phone_app_store, only once it is
-// published; on a phone's browser it takes the place of 2), 4 what setup left out, once it is relevant
-// (state.setup_hints, hosted only: more sources, Telegram, Codex), linked to its step. Done on this device: skipped.
+// a day. The order: 1 the phone app (state.phone_app_store, once published), since its own notifications are the better
+// ones: on a phone's browser its store, and the browser's notifications and the web app wait until the phone app was
+// declined (a second Not now); on a computer the page with both, until a phone has it. 2 notifications, 3 the app on
+// this computer, 4 what setup left out, once it is relevant (state.setup_hints, hosted only: more sources, Telegram,
+// Codex), linked to its step. Done on this device: skipped. Inside the phone app only its own notification line shows.
 const NUDGE_WAIT=14*864e5,NUDGE_REST=864e5;
 const sessionStart=(()=>{const now=Date.now();try{const s=+sessionStorage.getItem('device-session');if(s&&s<=now)return s;sessionStorage.setItem('device-session',String(now))}catch{}return now})();
 const nudgeState=k=>{try{return JSON.parse(devStore.get('nudge-'+k))||{}}catch{return {}}};
@@ -81,10 +83,9 @@ function appPushFirst(){if(appPushAsking||phonePush!=='prompt'||!appPushOff()||d
 function nudgeKind(){if(!DEV.framed&&appPushOff()&&!appPushAsking&&!(+devStore.get('nudge-app-push')>Date.now()))return 'app-push';
  if(!nudgeable)return null;if(justInstalled)return 'installed';
  if(!state?.handled_first||Date.now()-sessionStart<6e4||settingUp()||+devStore.get('nudge-rest')>Date.now())return null;
- if(pushWanted()&&!nudgeQuiet('push'))return 'push';
- const ph=phoneKind(),phone=ph&&!nudgeQuiet('phone')?ph:null;
- if(!(DEV.mobile&&ph)){const k=installKind();if(k&&!nudgeQuiet('install'))return k}
- if(phone)return phone;
+ const ph=phoneKind();if(ph&&!nudgeQuiet('phone'))return ph;
+ const appFirst=DEV.mobile&&ph&&!nudgeState('phone').stop;  // a phone's browser: the phone app until it was declined
+ if(!appFirst){if(pushWanted()&&!nudgeQuiet('push'))return 'push';const k=installKind();if(k&&!nudgeQuiet('install'))return k}
  const h=(state.setup_hints||[]).find(h=>h&&h.id&&!nudgeQuiet('hint-'+h.id));return h?'hint:'+h.id:null}
 const hintOf=k=>String(k).startsWith('hint:')?(state.setup_hints||[]).find(h=>'hint:'+h.id===k):null;
 const nudgeKey=k=>String(k).startsWith('hint:')?'hint-'+k.slice(5):k==='push'?'push':String(k).startsWith('phone')?'phone':'install';

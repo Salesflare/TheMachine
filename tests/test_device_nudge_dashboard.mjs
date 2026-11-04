@@ -259,8 +259,9 @@ try{
   handledFirst=true;await page.evaluate(()=>refresh());assert.equal((await nudge(page)).kind,'push','after it, the first one');
   await context.close()}
 
- // The whole order on a computer, one at a time, each Not now moving to the next after the day's rest: notifications,
- // the app, the phone app (once published), then what setup left out: more sources, Telegram, Codex.
+ // The whole order on a computer, one at a time, each Not now moving to the next after the day's rest: the phone app
+ // (once published, its notifications are the better ones), notifications, the app, then what setup left out: more
+ // sources, Telegram, Codex.
  const HINTS=[{id:'source-github',title:'Connect GitHub?',text:'GitHub mails you often. Connected, I read it directly.',href:'#connect=github',button:'Connect'},
   {id:'telegram',title:'Reminders in Telegram?',text:'Snoozed to-dos come back as a Telegram message too.',href:'https://app.example.test/setup#telegram',button:'Set up'},
   {id:'codex',title:'Hand coding to-dos to Codex?',text:'It works on your ChatGPT plan.',href:'https://app.example.test/setup#codex',button:'Connect'}];
@@ -271,19 +272,22 @@ try{
   await page.evaluate(()=>{localStorage.setItem('nudge-rest','0');deviceRender()})}return seen};
  for(const flag of [true,false]){setupHints=HINTS;phoneStore=flag?STORE:null;
   const {context,page}=await open({width:1280,height:800});await page.evaluate(()=>__installPrompt());
-  assert.deepEqual(await walk(page),['push','desktop',...(flag?['phone-desk']:[]),'hint:source-github','hint:telegram','hint:codex'],flag?'the order':'phone app flag off: no phone app');
+  assert.deepEqual(await walk(page),[...(flag?['phone-desk']:[]),'push','desktop','hint:source-github','hint:telegram','hint:codex'],flag?'the order':'phone app flag off: no phone app');
   if(flag){const v=await stored(page,'nudge-phone');assert.equal(v.n,1);assert.ok(Math.abs(v.until-Date.now()-14*864e5)<60e3,'the phone app backs off like the rest')}
   await context.close()}
 
- // A phone's browser with the phone app published: the phone app in the place of installing the web app.
+ // A phone's browser with the phone app published: the phone app first, and no browser notifications or web app while it
+ // waits after a Not now.
  for(const [ua,o,store] of [['android',{},'https://play.example.test/android'],['iphone',{noPush:true},'https://apps.example.test/ios']]){
   setupHints=HINTS;phoneStore=STORE;const {context,page}=await open({width:390,height:844,ua,...o});
   await page.evaluate(()=>{__installPrompt();window.__opened=[];window.open=(u,...r)=>{window.__opened.push([u,...r]);return null}});
   const seen=await walk(page);
-  assert.deepEqual(seen,[...(ua==='android'?['push']:[]),'phone','hint:source-github','hint:telegram','hint:codex'],ua);
+  assert.deepEqual(seen,['phone','hint:source-github','hint:telegram','hint:codex'],ua);
+  // Declined (a second Not now): then the browser's notifications and the web app, as without it.
+  await page.evaluate(()=>{localStorage.clear();localStorage.setItem('nudge-phone',JSON.stringify({n:2,stop:true}));deviceRender()});
+  assert.equal((await nudge(page)).kind,ua==='android'?'push':'android',ua+': after the app was declined');  // iPhone here: no push, the fixture's install prompt
   // Get the app opens this phone's store, and the nudge rests.
-  await page.evaluate(()=>{localStorage.clear();deviceRender()});if(ua==='android')await page.locator('#device-nudge [data-nudge-later]').click();
-  await page.evaluate(()=>{localStorage.setItem('nudge-rest','0');deviceRender()});
+  await page.evaluate(()=>{localStorage.clear();deviceRender()});
   assert.equal((await nudge(page)).kind,'phone');assert.match((await nudge(page)).text,/Get the phone app Notifications, and sharing from any app\./);
   await page.locator('#device-nudge [data-phone-open]').click();
   assert.deepEqual(await page.evaluate(()=>window.__opened),[[store,'_blank','noopener']]);assert.equal((await nudge(page)).shown,false);
@@ -307,7 +311,7 @@ try{
 
  // Screenshots of each one, at 390 and 1280, light (and dark for the first).
  if(shots){setupHints=HINTS;phoneStore=STORE;
-  const each=[['push',{}],['install',{perm:'granted',sub:true,prompt:true,noPhone:true}],['phone',{perm:'granted',sub:true,mode:'standalone',phoneOnly:true}],
+  const each=[['push',{skip:['phone']}],['install',{perm:'granted',sub:true,prompt:true,noPhone:true}],['phone',{perm:'granted',sub:true,mode:'standalone',phoneOnly:true}],
    ['hint-source',{perm:'granted',sub:true,mode:'standalone',skip:['phone']}],['hint-telegram',{perm:'granted',sub:true,mode:'standalone',skip:['phone','hint-source-github']}],
    ['hint-codex',{perm:'granted',sub:true,mode:'standalone',skip:['phone','hint-source-github','hint-telegram']}]];
   for(const [name,{prompt,phoneOnly,noPhone,skip=[],...o}] of each)for(const width of [390,1280])for(const scheme of name==='push'?['light','dark']:['light']){
