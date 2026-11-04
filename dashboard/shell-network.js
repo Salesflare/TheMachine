@@ -18,7 +18,7 @@ async function request(path,options){let r;
  // A 5xx the Machine answered itself (JSON) is a failed call for the error reports, and a gateway timeout (504) a timeout;
  // an HTML 502 or 503 is the Machine away or restarting, as is an answer that says so
  if(r.status>=500&&!d?.restarting&&(json||r.status===504))errApi(path,options,json?r.status:'timeout')
- if(r.status>=500||r.ok&&!json){const wait=+r.headers.get('retry-after');throw Object.assign(offline(d?.error),{restarting:!!d?.restarting,retryAfter:wait>0?Math.min(wait,60)*1000:0})}
+ if(r.status>=500||r.ok&&!json){const wait=+r.headers.get('retry-after');if(d?.restarting)netSetup=!!d.setting_up||setupUnderway();throw Object.assign(offline(d?.error),{restarting:!!d?.restarting,retryAfter:wait>0?Math.min(wait,60)*1000:0})}
  if(!r.ok)throw Object.assign(Error(d?.error||'Request failed'),{status:r.status});return d}
 let retryIn=0,retryTimer=null;
 // On the device: the last cards, the open card's chat and the Graph's lists, so the app opens with them at once and
@@ -84,7 +84,10 @@ let shownAt=0,shownCached=false;  // when the cards on screen were read, and whe
 // the rest of the device's copy (encrypted, wiped with it), each shown on its to-do with Cancel until it goes.
 const OUTBOX_CHOICES=['snooze','reject','complete','reopen','undo','other'];
 const outbox={items:[],busy:null,timer:null,wait:0};
-let netDown=false,netRestarting=false;
+let netDown=false,netRestarting=false,netSetup=false;
+// A restart during a new owner's setup (the Machine says so, setting_up, or the page sees it: an AI connecting, the
+// first look waiting or running) says "Setting up…", not that the Machine is restarting or offline
+const setupUnderway=()=>{const live=state?.review_live||{};return !!(live.ai_connecting||live.first_look||(live.runs||[]).some(r=>r.auto&&r.preview))};
 const decidePost=(sid,args)=>request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'decide',args:{suggestion_id:sid,...args}})});
 const outboxLoaded=localCache.read('outbox').then(hit=>{const kept=Array.isArray(hit?.value)?hit.value.filter(x=>x&&x.id&&x.sid&&Array.isArray(x.steps)&&x.steps.length):[];
  for(const x of kept)if(!outbox.items.some(y=>y.id===x.id))outbox.items.push({...x,sending:false});if(kept.length){netPaint();outboxFlush()}}).catch(()=>{});
@@ -126,17 +129,19 @@ document.addEventListener('click',e=>{const b=e.target.closest?.('[data-outbox-c
 // The banner over every view: offline (or the Machine restarting), since when the screen is from, and what waits.
 function netSet(down,restarting=false){const was=netDown;netDown=!!down;netRestarting=!!down&&!!restarting;if(down)liveLine();if(!down&&was&&outbox.items.length){outbox.wait=0;outboxFlush()}if(!down&&was)micResume();netPaint()}
 // The sidebar's line (and the phone's) says the same while offline: "Offline · updated 10:42", with the bar's dot
-function liveLine(){if(netRestarting){staleLine(t('Restarting · retrying'));return}const at=shownAt||staleAt;staleLine(at?t('Offline · updated {}',hhmm(at)):t('Offline.'))}
+function liveLine(){if(netRestarting){staleLine(netSetup?t('Setting up…'):t('Restarting · retrying'));return}const at=shownAt||staleAt;staleLine(at?t('Offline · updated {}',hhmm(at)):t('Offline.'))}
 const netShown=()=>netDown||outbox.items.length>0;
 function netText(){const n=outbox.items.length;
- const head=!netDown?'':netRestarting?t('Your Machine is restarting.'):shownAt||staleAt?t('Offline. Showing what was here at {}.',hhmm(shownAt||staleAt)):t('Offline.');
+ const head=!netDown?'':netRestarting?(netSetup?t('Setting up…'):t('Your Machine is restarting.')):shownAt||staleAt?t('Offline. Showing what was here at {}.',hhmm(shownAt||staleAt)):t('Offline.');
  const waits=n?t(['{} change waits to send.','{} changes wait to send.'],n):'';
  return [head,waits].filter(Boolean).join(' ')}
-const netHtml=()=>html`<span class="offline-text">${netText()}</span><button type="button" class="link" data-net-retry>${t('Try now')}</button>`;  // the chat's first draw
-const netNodes=()=>[make('span',{class:'offline-text'},netText()),make('button',{type:'button',class:'link','data-net-retry':''},t('Try now'))];
+// A restart is a wait of seconds (it tries again by itself): no Try now, and a calm working dot, not the warning one
+const netRetry=()=>!netRestarting||!netDown;
+const netHtml=()=>html`<span class="offline-text">${netText()}</span>${netRetry()?html`<button type="button" class="link" data-net-retry>${t('Try now')}</button>`:''}`;  // the chat's first draw
+const netNodes=()=>[make('span',{class:'offline-text'},netText()),...(netRetry()?[make('button',{type:'button',class:'link','data-net-retry':''},t('Try now'))]:[])];
 // The same bar sits in an open chat too (#chat-offline, above the message box): the chat covers the page's own
-function netPaint(){const show=netShown(),html=show?netText()+'|'+t('Try now'):'';$('#stale-note')?.classList.toggle('covered',show);
- for(const bar of [$('#offline-bar'),$('#chat-offline')]){if(!bar)continue;bar.hidden=!show;if(show)putOnce(bar,html,netNodes)}}
+function netPaint(){const show=netShown(),html=show?netText()+'|'+(netRetry()?t('Try now'):''):'';for(const n of [$('#live'),$('#stale-note')])n?.classList.toggle('working',netDown&&netRestarting);$('#stale-note')?.classList.toggle('covered',show);
+ for(const bar of [$('#offline-bar'),$('#chat-offline')]){if(!bar)continue;bar.hidden=!show;bar.classList.toggle('working',show&&netDown&&netRestarting);if(show)putOnce(bar,html,netNodes)}}
 document.addEventListener('click',e=>{if(!e.target.closest?.('#offline-bar [data-net-retry],#chat-offline [data-net-retry]'))return;outbox.wait=0;if(outbox.items.length)outboxFlush();micResume();retryIn=0;refreshWhenReady()});
 addEventListener('offline',()=>netSet(true));
 addEventListener('online',()=>{outbox.wait=0;outboxFlush()});

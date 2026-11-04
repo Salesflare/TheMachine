@@ -165,7 +165,7 @@ h1{font-size:1.75rem;letter-spacing:-.035em;font-weight:750}
 .brand p{margin:3px 0 0;color:var(--muted)}
 .live{display:inline-flex;align-items:center;gap:8px;padding:6px 12px 6px 10px;border:1px solid var(--border);border-radius:999px;background:#2a2d34b3;color:var(--muted);white-space:nowrap}
 .live::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--mint);box-shadow:0 0 0 3px #bccba826;animation:pulse 2.4s ease-in-out infinite}
-.live.stale::before{background:var(--orange);box-shadow:0 0 0 3px #eca45b26;animation:none}
+.live.stale::before{background:var(--orange);box-shadow:0 0 0 3px #eca45b26;animation:none}.live.stale.working::before,.stale-note.working::before{background:var(--lavender);box-shadow:none;animation:backfill-pulse 1.6s ease-in-out infinite}@media (prefers-reduced-motion:reduce){.live.stale.working::before,.stale-note.working::before{animation:none}}
 @keyframes pulse{50%{box-shadow:0 0 0 6px #bccba800}}
 
 /* Tabs */
@@ -2602,7 +2602,7 @@ article.kb-on,article.kb-on:focus{outline:2px solid color-mix(in srgb,var(--c-ac
 .stale-note{margin:var(--sp-2) 0 0;color:var(--c-text-3);font-size:var(--fs-xs);text-align:center}.stale-note::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--orange);margin-right:6px;vertical-align:1px}
 @media(min-width:1024px){.stale-note{display:none}}.stale-note.covered{display:none}
 .offline-bar{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 10px;margin:0 0 var(--sp-3);padding:8px 12px;border-radius:var(--r-md);background:color-mix(in srgb,var(--orange) 12%,transparent);color:var(--text);font-size:var(--fs-sm);line-height:1.4}.chat-offline{margin:0 0 8px}.offline-bar[hidden]{display:none}
-.offline-bar .offline-text::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--orange);margin-right:8px;vertical-align:1px}:is(.offline-bar,.outbox-wait) button.link{min-height:0;height:auto;padding:0 2px;border:0;background:none;box-shadow:none;color:var(--text);font:inherit;font-weight:600;text-decoration:underline;text-decoration-color:var(--border-strong);text-underline-offset:3px;cursor:pointer}.offline-bar button.link{margin-left:auto}
+.offline-bar .offline-text::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--orange);margin-right:8px;vertical-align:1px}.offline-bar.working{background:color-mix(in srgb,var(--lavender) 14%,transparent)}.offline-bar.working .offline-text::before{background:var(--lavender);animation:backfill-pulse 1.6s ease-in-out infinite}@media (prefers-reduced-motion:reduce){.offline-bar.working .offline-text::before{animation:none}}:is(.offline-bar,.outbox-wait) button.link{min-height:0;height:auto;padding:0 2px;border:0;background:none;box-shadow:none;color:var(--text);font:inherit;font-weight:600;text-decoration:underline;text-decoration-color:var(--border-strong);text-underline-offset:3px;cursor:pointer}.offline-bar button.link{margin-left:auto}
 .outbox-wait{color:var(--c-text-3)}.outbox-wait::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--orange);margin-right:8px;vertical-align:1px}.outbox-wait .nowrap{white-space:nowrap}.outbox-wait button.link{margin-left:8px}
 .chat-msg.outbox-msg .bubble{opacity:.7}.chat-msg .outbox-note{display:block;text-align:right}.chat-msg .outbox-note .link{font-size:inherit}
 /* Checkboxes, radios and range sliders in the app green, both themes, never the browser blue */
