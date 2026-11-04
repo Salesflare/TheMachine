@@ -25,9 +25,10 @@ const fleetView={on:true,kinds:{relationships:'who knows someone',brief:'brief f
  asked:[],log:[],notices:[{id:N,fleet:FL2,kind:'seat_confirmed',text:'Your Machine was confirmed in Northwind.',buttons:[]}]};
 const state=()=>({suggestions:cards,promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},
  connectors:[],fleet:{on:true,waiting:1,fleets:fleetView.fleets}});
+let slow=0,statusDone=0;  // a Machine slow to answer the status: the tapped view still opens at once
 const server=createServer(async(req,res)=>{let body='';for await(const c of req)body+=c;const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
- if(url.pathname==='/api/status'){res.end(JSON.stringify(state()));return}
+ if(url.pathname==='/api/status'){if(slow)await new Promise(r=>setTimeout(r,slow));res.end(JSON.stringify(state()));statusDone++;return}
  if(url.pathname==='/api/fleet'){res.end(JSON.stringify(fleetView));return}
  if(url.pathname==='/api/calendar'){res.end(JSON.stringify({calendars:[],meetings:[]}));return}
  if(url.pathname==='/api/action'){const r=JSON.parse(body||'{}');
@@ -74,6 +75,14 @@ try{
   // a tap that starts the app: the page loads with the tag already in its address
   await page.goto(base+'#chat=digest');await landed('#calendar','the morning on a cold start');
   await page.goto(base+'#chat=fleet-brief-'+FL);await landed(`#fleet-brief-${FL}`,'the brief on a cold start');
+  // A slow status (a big Machine): the tapped view opens at once, its own data fills it, the to-dos come later
+  slow=6000;
+  for(const [hash,sel,why] of [['#chat=digest','#calendar','the morning'],[`#chat=fleet-brief-${FL2}`,`#fleet-brief-${FL2}`,'the brief'],['#chat=fleet','#fleet-view .fleet-pane:not([hidden])','the Fleet tab']]){
+   await page.evaluate(()=>localStorage.setItem('fleet-pane','sharing'));
+   await page.goto('about:blank');const t0=Date.now(),before=statusDone;await page.goto(base+hash,{waitUntil:'domcontentloaded'});await landed(sel,why+' before the status');
+   assert.ok(Date.now()-t0<slow-1000,`${label} ${why}: on screen in ${Date.now()-t0} ms, not after the status`);
+   assert.equal(statusDone,before,`${label} ${why}: the status hasn't come yet`)}
+  slow=0;
   await context.close()}
  assert.deepEqual(errors,[]);
 }finally{await browser?.close();server.close()}
