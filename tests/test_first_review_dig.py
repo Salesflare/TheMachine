@@ -127,6 +127,62 @@ class FirstReviewDig(unittest.TestCase):
             self.assertIsNone(self.app.first_dig_live(db))
             self.assertEqual(self.app.first_dig(db), {'done': 'cards'})
 
+    def test_the_rest_of_the_week_up_to_half_a_batch_more_goes_in_one_batch(self):
+        # 2026-11-04: 106 signals went as 20, 40, 40 and 6; the batch of 6 still took a whole turn and its start (51 s)
+        self.store.commit_page('work', {}, [mail(f'm{n}', hours_ago=n / 2 + 1) for n in range(a.QUICK_LOOK_SIGNALS + a.FIRST_LOOK_NEXT_SIGNALS + a.FIRST_LOOK_TAIL_SIGNALS)])
+        self.step(Runner('admitted'))
+        self.review(2)
+        self.step(Runner('admitted'), 2)
+        nxt = self.runs()[1]
+        self.assertEqual((nxt['planned'], nxt['budget']), (60, 60))  # all that is left, not 40 and then 20
+        claim = self.store.begin_analysis(['work'], 120, a.REVIEW_SESSION_PREFIX + nxt['run_id'], nxt['run_id'])
+        self.assertEqual(len(claim['events']), 60)
+        # one more than that: batches of 40 as before
+        self.assertEqual(a.first_look_batch(a.FIRST_LOOK_NEXT_SIGNALS + a.FIRST_LOOK_TAIL_SIGNALS + 1), a.FIRST_LOOK_NEXT_SIGNALS)
+        self.assertEqual(a.first_look_batch(5), a.FIRST_LOOK_NEXT_SIGNALS)
+
+    def test_the_bar_moves_at_the_last_batchs_time_over_the_batch_that_runs(self):
+        # A batch takes about as long whatever its size (its steps, not its signals): 2026-11-04, 20 signals took 135 s and
+        # 40 took 91 s, while the bar went on at the first batch's 9 s a signal and stood far behind
+        self.store.commit_page('work', {}, [mail(f'm{n}', hours_ago=n / 2 + 1) for n in range(150)])
+        self.step(Runner('admitted'))
+        self.review(2)  # the quick batch of 20 took 2 minutes
+        self.step(Runner('admitted'), 2)
+        with self.later(2), self.store.connect() as db:
+            self.assertEqual(self.app.first_dig_live(db)['pace'], 3)  # 120 s over the 40 of the batch that runs
+
+    def test_the_worker_looks_often_while_the_first_look_runs_and_starts_its_next_batch_at_once(self):
+        self.assertEqual(self.app.review_tick(), a.REVIEW_TICK_SECONDS)  # nothing to watch
+        self.store.commit_page('work', {}, [mail(f'm{n}', hours_ago=n / 2 + 1) for n in range(150)])
+        self.step(Runner('admitted'))
+        self.assertEqual(self.app.review_tick(), a.FIRST_LOOK_TICK_SECONDS)  # its quick batch runs
+        self.review(2)
+        self.assertEqual(self.app.review_tick(), a.FIRST_LOOK_TICK_SECONDS)  # between batches, still digging
+        waits, steps, others = [], [], []
+        class Stop:
+            def wait(self, seconds):
+                waits.append(seconds)
+                return len(waits) > 2
+        self.app.stop = Stop()
+        results = iter(['ok', 'admitted', 'running'])
+        self.app.review_step = lambda: steps.append(1) or next(results)
+        for name in ('profile_step', 'first_profile_step', 'orgs_backfill_step', 'share_history_step', 'recap_step'):
+            setattr(self.app, name, lambda name=name: others.append(name))
+        self.app.review_worker()
+        self.assertEqual(waits[:2], [a.FIRST_LOOK_TICK_SECONDS] * 2)
+        self.assertEqual(len(steps), 3)  # a batch ended: the next one started in the same round, then checked a tick later
+        self.assertEqual(others.count('profile_step'), 1)  # the other steps keep their own 15 s
+        with self.store.connect() as db:
+            db.execute("INSERT INTO milestones(name,at,detail) VALUES('first_dig_done',?,'cards')", (a.now(),))
+            db.execute("UPDATE review_runs SET status='ok',finished_at=?", (a.now(),))
+        self.assertEqual(self.app.review_tick(), a.REVIEW_TICK_SECONDS)  # done digging: back to the usual pace
+
+    def test_the_first_looks_reviewer_is_asked_to_keep_its_steps_few(self):
+        prompt = a.review_prompt('r1', ['work'], first_look=True)
+        self.assertIn('call status and begin_analysis in one step', prompt)
+        self.assertIn('Save each to-do with suggest as soon as it is checked', prompt)
+        self.assertNotIn('call status and begin_analysis in one step', a.review_prompt('r1', ['work']))
+
     def test_a_batch_saved_while_its_run_still_ends_keeps_the_total(self):
         # 2026-11-04: "20 of 82 signals", then "22 of 102": a saved batch had left the week's unread signals while
         # its run had not ended yet, so it was in neither count for a moment
