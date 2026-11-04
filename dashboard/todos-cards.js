@@ -278,17 +278,17 @@ function cardActions(s,choices,smartButtons,unmerge,hint,smart){const skill=skil
  const quiet=x=>(x[0]==='complete'&&!doneTop)||x[0]==='change';  // on the card, out of sight: the D key, the palette and the chat use them
  const plain=others.filter(x=>!handing(x)&&x[0]!=='reject'&&x[0]!=='takeback');
  const items=html`${[...plain.filter(x=>doneTop&&x[0]==='complete').map(x=>btn(x)),...leads.slice(1).map(mmPlain),...plain.filter(x=>!shown(x)&&!quiet(x)&&!(doneTop&&x[0]==='complete')).map(x=>btn(x)),sheet,repeat,unmerge,...others.filter(x=>x[0]==='reject').map(b=>html`<hr class="mm-sep">${btn(b)}`)].filter(Boolean)}`;
- // On a row of its own under the lead, Snooze folds into the … when that row runs out of room (a long label, a narrow card): actionsSize below
+ // Snooze folds into the … when its line runs out of room (a long label, a narrow phone), so the … never sits alone on a line: actionsSize below
  const two=(leads[0]?1:0)+plain.filter(shown).length>2||useAsk(s);  // on a phone: the lead on its own row, the rest on one (a long Use … lead too)
- const fold=two&&String(items)&&plain.find(x=>x[0]==='snooze'&&shown(x));
+ const fold=String(items)&&plain.find(x=>x[0]==='snooze'&&shown(x));
  const row=html`${plain.filter(shown).sort((a,b)=>made?(a[0]==='complete'?-1:b[0]==='complete'?1:0):(b[0]==='change')-(a[0]==='change')).map(x=>btn(x,fold&&x===fold?html` data-row-fold`:''))}`;
  const hiddenBtns=html`${plain.filter(x=>!shown(x)&&quiet(x)).map(b=>btn(b,html` hidden`))}`;
  const menu=String(items)?html`<details class="more-actions"><summary aria-label="${t('More actions')}" title="${t('More actions')}">${DOTS}</summary><div class="more-menu" role="group" aria-label="${t('More actions')}">${fold?btn(fold,html` data-row-fold-menu`):''}${items}${sub}</div></details>`:'';
  return html`<div class="actions${two?html` two-rows`:''}">${leads[0]?leads[0](ID):''}${row}${menu}${hiddenBtns}</div>${copy&&!skill?html`<p class="copy-why">${COPY_WHY}</p>`:''}`}
-// A second row that runs out of room (a long label in another language, a narrow card) hands its Snooze to the … (it tops
-// the menu there) instead of wrapping onto a third line; Change how and Ask for changes stay in sight. Measured per row, always
+// A line that runs out of room (a long label in another language, a narrow card) hands its Snooze to the … (it tops the
+// menu there) instead of wrapping onto another line (under a lead, the second line; without one, the only one); Change how and Ask for changes stay in sight. Measured per row, always
 // with Snooze in it (no paint in between), so a row folds only when it really doesn't fit and never flips back and forth.
-const actionsWrap=a=>{const f=a.querySelector(':scope>[data-row-fold]'),m=a.querySelector(':scope>.more-actions'),p=f?.previousElementSibling;return !!(f&&m&&p)&&m.getBoundingClientRect().top>p.getBoundingClientRect().top+1};
+const actionsWrap=a=>{const f=a.querySelector(':scope>[data-row-fold]'),m=a.querySelector(':scope>.more-actions'),p=a.children[a.classList.contains('two-rows')?1:0];return !!(f&&m&&p)&&p!==m&&m.getBoundingClientRect().top>p.getBoundingClientRect().top+1};
 function actionsSize(a){a.classList.remove('folded');if(actionsWrap(a))a.classList.add('folded')}
 const actionsFit=new ResizeObserver(rows=>{for(const {target:a} of rows)actionsSize(a)});
 // A row drawn anew is fitted before it is painted, and again when its width, its labels (a translation) or the font change
