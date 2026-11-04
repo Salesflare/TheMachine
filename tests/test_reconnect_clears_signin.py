@@ -38,7 +38,7 @@ class SignedInAgain(unittest.TestCase):
     def test_a_401_is_a_sign_in_error(self):
         for text in ('gmail:HTTP_401', 'calendar:google_signin_expired_run_gog_auth_add', 'outlook:microsoft_signin_expired'):
             self.assertTrue(re.search(assistant.SIGNIN_ERROR, text), text)
-        for text in ('gmail:HTTP_403', 'gmail:HTTP_4010', 'calendar:timeout', 'gmail:HTTP_503'):
+        for text in ('gmail:HTTP_403', 'gmail:HTTP_4010', 'trello_http:HTTP_401', 'calendar:timeout', 'gmail:HTTP_503'):
             self.assertFalse(re.search(assistant.SIGNIN_ERROR, text), text)
 
     def test_reconnect_clears_its_own_error_and_its_siblings_sign_in_errors_only(self):

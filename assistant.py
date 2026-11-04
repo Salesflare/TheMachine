@@ -186,9 +186,9 @@ def android_app_name(package):
 
 DEFAULT_CONFIG = Path(os.environ.get('ASSISTANT_CONFIG') or Path.home() / '.local/share/personal-assistant/config.json').expanduser()
 LOG = logging.getLogger('personal-assistant')
-# A sync error that a new sign-in ends: Google's or Microsoft's sign-in expired or revoked, or a 401 (gog's "HTTP_401"
-# once Google revoked the grant). The sync watches for that sign-in, and a reconnect clears it at once.
-SIGNIN_ERROR = r'(google|microsoft)_signin_(expired|pending)|microsoft_broker|HTTP_401\b'
+# A sync error that a new sign-in ends: Google's or Microsoft's sign-in expired or revoked, or Gmail's or Calendar's 401 (gog's
+# "HTTP_401" once Google revoked the grant). The sync watches for that sign-in, and a reconnect clears it at once.
+SIGNIN_ERROR = r'(google|microsoft)_signin_(expired|pending)|microsoft_broker|\b(gmail|calendar):HTTP_401\b'
 
 
 def encoded(value):
