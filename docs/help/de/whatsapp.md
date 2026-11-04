@@ -28,7 +28,9 @@ Auf einer gehosteten Machine:
 
 Du richtest es auf deinem Handy ein und hast keinen zweiten Bildschirm zum Scannen? Öffne **Am Handy? Stattdessen mit einem Code verknüpfen**, gib deine Nummer ein und tippe auf **Code anfordern**. WhatsApp fragt dann nach diesem Code.
 
-Auf deinem eigenen Computer führst du `assistant connect whatsapp` aus und scannst den Code, den es im Terminal zeigt. Ohne wacli bietet es an, den festgelegten Build von [Salesflare/wacli](https://github.com/Salesflare/wacli) zu installieren, geprüft anhand seiner Prüfsumme.
+Auf deinem eigenen Computer: Öffne **Verbindungen**, dann **+ Hinzufügen**, wähle WhatsApp, gib deine Handynummer mit Ländervorwahl ein und tippe auf **Verbinden**. Es zeigt einen Code. Öffne auf deinem Handy in WhatsApp Einstellungen, Verknüpfte Geräte, Gerät hinzufügen, dann **Stattdessen mit Telefonnummer verknüpfen**, und gib den Code ein.
+
+Oder führe `assistant connect whatsapp` aus und scanne den Code, den es im Terminal zeigt. Ohne wacli bietet es an, den festgelegten Build von [Salesflare/wacli](https://github.com/Salesflare/wacli) zu installieren, geprüft anhand seiner Prüfsumme.
 
 ## Bilder
 

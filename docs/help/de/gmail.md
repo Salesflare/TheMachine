@@ -17,6 +17,8 @@ Mails aus Werbung, Newslettern, Benachrichtigungen und Foren werden zuerst kurz 
 
 Eine E-Mail aus einer Aufgabe, und nur, nachdem du sie freigegeben hast. **Ausführen** bereitet einen Entwurf vor. **Prüfen und senden** öffnet ihn, bereit zum Bearbeiten, und nichts geht raus, bis du auf **Jetzt senden** tippst. **Mit Google anmelden** bittet Google auch um das Senden. Mit deiner eigenen App auf deinem eigenen Computer ist die Anmeldung nur lesend, bis du das Senden selbst hinzufügst.
 
+**Von** in der Prüfung ist eine kleine Auswahl, wenn Gmail dieses Postfach als einen Alias von dir senden lässt (einen mit **Meine** markierten in den Einstellungen, [Deine Adressen](settings.md#your-addresses)). Eine Antwort auf Mail, die an diesen Alias ging, startet von ihm; neue Mail startet von der Adresse deines Postfachs. Direkt vor dem Senden wird Gmail noch einmal gefragt: Bestätigt es die Adresse nicht, wird nichts gesendet.
+
 Eine Antwort landet im Verlauf der E-Mail, auf die sie antwortet. Geht sie von einem anderen Postfach raus als dem, in dem die E-Mail ankam, sagt die Aufgabe das vor dem Senden: Bei der Gegenseite landet sie trotzdem im selben Verlauf.
 
 ## Verbinden

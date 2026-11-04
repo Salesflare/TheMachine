@@ -16,7 +16,7 @@ Mails unter Sonstige und Newsletter werden zuerst kurz angesehen: Absender, Betr
 
 ## Was es senden und ändern kann
 
-- Eine E-Mail aus einer Aufgabe, erst nachdem du sie in der Vorschau freigegeben hast.
+- Eine E-Mail aus einer Aufgabe, erst nachdem du sie in der Vorschau freigegeben hast. Sie geht immer von der eigenen Adresse des Postfachs raus: Microsoft bestätigt das Senden als Alias nicht.
 - Eine Antwort landet in der Outlook-Unterhaltung der E-Mail, auf die sie antwortet.
 - Wenn du eine Aufgabe zu einer E-Mail zurückstellst, wandern die Nachrichten des Threads in Outlook in einen Ordner Snoozed und kommen zurück, wenn die Aufgabe zurückkommt.
 

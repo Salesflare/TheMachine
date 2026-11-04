@@ -20,7 +20,8 @@ It fails when:
   (HELP_FOR in dashboard.html) points at an article that doesn't exist;
 - an article names app text that no longer exists: every **bold** phrase is button or label text and must appear in
   the app's code; a `/route` in backticks must appear in the code; `assistant <command>` must be a CLI command.
-  Text the hosted control plane shows (its setup and account pages) goes in `site:`, and its own test checks it;
+  Text the hosted control plane shows (its setup and account pages) goes in `site:`, and its own test checks it
+  (also that the article uses each one: the site's daily help sync stops on one it doesn't);
 - the copy breaks the house style: an em dash, a line that starts with "You", a paragraph over 420 characters,
   a summary over 160, a placeholder other than TOKENS (like {price.standard}, which the site fills in), or Markdown
   the site does not render (only ## and ### headings, paragraphs, - and 1. lists,
@@ -28,7 +29,9 @@ It fails when:
 - a translation (docs/help/<language>/<article>.md, shown in the dashboard's Help in that language) no longer matches
   its English article: an article English doesn't have, other front matter than title and summary, another number of
   headings (their anchors are the English ones, by position), a link to an article that doesn't exist, or an em dash.
-  An article not translated yet is fine: Help shows the English one.
+  An article not translated yet is fine (Help shows the English one), except in COMPLETE languages: there every
+  article has a translation, and each section has as many paragraphs and list items as the English one, so a
+  paragraph added to the English article is added there too.
 
     python3 scripts/help_check.py          # prints what is wrong, exit code 1 if anything is
 """
@@ -244,6 +247,7 @@ def check(folder=HELP):
             if m and m[1] not in cli:
                 problems.append(f'{where}: names `assistant {m[1]}`, not a command of cli.py')
         problems += [f'{where}: {p}' for p in check_copy(name, fields, body, found)]
+        problems += [f'{where}: lists "{s}" under site: but does not use it' for s in fields['site'] if s not in body]
     html = dashboard_parts.assemble(ROOT)
     for tab, slug in re.findall(r"(\w+):'([a-z0-9-]+)'", (re.search(r'HELP_FOR=\{(.*?)\}', html) or [None, ''])[1]):
         if slug not in found:
@@ -256,9 +260,21 @@ def check(folder=HELP):
     return problems + check_translations(found, folder)
 
 
+COMPLETE = ('de',)  # languages with every article translated, kept in step with the English
+
+
+def blocks(body):
+    """Per section (the text before the first heading, then each ## or ### one): its paragraphs and list items."""
+    return [sum(len(b.splitlines()) if re.match(r'(- |\d+\. )', b) else 1 for b in re.split(r'\n\s*\n', part.strip()) if b.strip() and not b.startswith('#'))
+            for part in re.split(r'^(?=#{2,3} )', body, flags=re.M)]
+
+
 def check_translations(found, folder=HELP):
     """Each language's articles against their English one."""
     problems = []
+    for lang in COMPLETE:
+        problems += [f'docs/help/{lang}/{slug}.md is missing: translate docs/help/{slug}.md' for slug in sorted(found)
+                     if found[slug][0] is not None and not (folder / lang / f'{slug}.md').is_file()]
     for sub in sorted(p for p in folder.iterdir() if p.is_dir()):
         for path in sorted(sub.glob('*.md')):
             where, en = f'docs/help/{sub.name}/{path.name}', found.get(path.stem)
@@ -274,6 +290,9 @@ def check_translations(found, folder=HELP):
             heads = lambda text: re.findall(r'^#{2,3} ', text, re.M)
             if len(heads(body)) != len(heads(en[1])):
                 problems.append(f'{where}: {len(heads(body))} headings, the English article has {len(heads(en[1]))}')
+            elif sub.name in COMPLETE and blocks(body) != blocks(en[1]):
+                problems += [f'{where}: section {i} has {ours} paragraphs and list items, the English article has {theirs}'
+                             for i, (ours, theirs) in enumerate(zip(blocks(body), blocks(en[1]))) if ours != theirs]
             problems += [f'{where}: links to {slug}.md, which docs/help/ does not have'
                          for slug in re.findall(r'\]\(([a-z0-9-]+)\.md', body) if slug not in found]
             if '—' in body + str(fields.get('title')) + str(fields.get('summary')):

@@ -10,7 +10,9 @@ In einer Work Fleet kann deine Machine deine Kundenarbeit mit den Machines deine
 
 ## Einschalten
 
-Ein Admin schaltet **Graph in dieser Fleet teilen** unter **Was geteilt wird** ein und bestätigt, dass die Firma diese Mails teilen darf und ihre Leute informiert hat. Alle sehen, ob es an ist. Eine Fleet, die schon vorher geteilt hat, bleibt an. Dann sieht jede Person durch, was mitgehen würde, und tippt auf **Jetzt starten**. Vorher geht nichts raus.
+Ein Admin schaltet **Den Graph in dieser Fleet teilen** unter **Was geteilt wird** ein und bestätigt, dass die Firma diese Mails teilen darf und ihre Leute informiert hat. Alle sehen, ob es an ist. Eine Fleet, die schon vorher geteilt hat, bleibt an.
+
+Verlangt die Fleet die Arbeits-E-Mail oder den Arbeitskalender aller, schaltet das es ebenfalls ein. Dann muss niemand etwas starten: Was die Fleet verlangt, geht mit, und jede Person wählt unter **Deine Verbindungen**, was sonst noch mitgeht. Das erste Teilen eines neuen Teammitglieds geht innerhalb einer Stunde raus, damit es vorher noch etwas privat halten kann.
 
 ## Deine Verbindungen
 
@@ -22,13 +24,16 @@ Innerhalb einer eingeschalteten Verbindung wird jeder Thread trotzdem einsortier
 
 ## Von der Fleet verlangt
 
-Ein Admin kann unter **Von der Fleet verlangt** die **Arbeits-E-Mail** und den **Arbeitskalender** aller mit der eigenen Domain der Fleet verlangen, nachdem er bestätigt hat, dass die Firma ihre Leute informiert hat. Arbeitsmails gehören der Firma, wie in jedem CRM. Diese zeigen dann „Verlangt von“ deiner Fleet und lassen sich nicht ausschalten. Threads, die du privat hältst, bleiben privat.
+Ein Admin kann unter **Von der Fleet verlangt** die **Arbeits-E-Mail** und den **Arbeitskalender** aller mit der eigenen Domain der Fleet verlangen, nachdem er bestätigt hat, dass die Firma ihre Leute informiert hat. Arbeitsmails gehören der Firma, wie in jedem CRM. Diese zeigen dann „Verlangt von“ deiner Fleet und lassen sich nicht ausschalten. Threads, die du privat hältst, bleiben privat. Ist das Teilen noch aus, schaltet das Verlangen es ein: kein zweiter Schalter.
 
 ## Was ans Team geht
 
 - Kunden-Threads: E-Mails mit Personen außerhalb deiner Firma über Arbeit, mit ihren Anhängen.
 - Arbeitskontakte, Organisationen und Projekte, mit einem kurzen Verlauf.
 - Auf einem Team-Board auch die Meetings, Zoom-Notizen, Intercom-Unterhaltungen und Chats eines Projekts, weil sie auf dem Board sind. Sensible, etwa Deals, bleiben draußen, ebenso Chats nur unter Kollegen.
+- Deine Zahlen und Daten für das [Team-Briefing](fleet.md#brief-requests) eines Teammitglieds, nur aus diesen.
+- Antworten auf die Frage eines Teammitglieds, wer jemanden kennt, und Kontext zu Meetings, nur aus diesen. Siehe [Fleets](fleet.md#answered-by-itself-in-a-work-fleet).
+- [Erkenntnisse des Teams](fleet.md#team-learnings): wie das Team arbeitet, aus diesen Threads geschrieben, ohne Namen oder Kundendetails.
 
 ## Bleibt beim automatischen Teilen draußen
 
@@ -63,9 +68,7 @@ Gespräche über Kauf, Verkauf oder Investitionen in eine Firma und Board-Themen
 
 ## Vor dem ersten Teilen
 
-Öffne **Fleet**, dann **Was geteilt wird**. Dort stehen die Kunden-Threads, die mitgehen würden, nach Organisation. Tippe bei beliebigen davon auf **Privat halten**, dann auf **Jetzt starten**.
-
-Bis du startest, erinnert dich deine Machine alle paar Tage daran, während deiner Arbeitszeiten. Admins sehen, wer noch nicht gestartet hat.
+Dein erstes Teilen geht innerhalb einer Stunde von selbst raus, ohne dass du etwas bestätigen musst. Deine Machine sagt dir einmal, wann diese Stunde beginnt. Öffne in dieser Stunde **Fleet**, dann **Was geteilt wird**: Dort stehen die Kunden-Threads, die mitgehen würden, nach Organisation. Tippe bei beliebigen davon auf **Privat halten**. **Jetzt teilen** sendet es, ohne zu warten. Admins sehen, wer noch nicht geteilt hat.
 
 ## Was geteilt wird
 
@@ -97,7 +100,7 @@ Die Person bekommt ab diesem Moment nichts Neues mehr. Was sie geteilt hat, blei
 
 ## Für alle ausschalten
 
-Ein Admin kann **Graph in dieser Fleet teilen** unter **Was geteilt wird** ausschalten. Alle sehen, ob es an ist. Ist es aus, geht nichts Neues raus.
+Ein Admin kann **Den Graph in dieser Fleet teilen** unter **Was geteilt wird** ausschalten. Alle sehen, ob es an ist. Ist es aus, geht nichts Neues raus.
 
 **Ausschalten** behält, was schon auf den Machines der Teammitglieder ist. **Ausschalten und geteilte Daten entfernen** lässt jede Machine löschen, was sie bekommen hat. Wird das Teilen wieder eingeschaltet, sieht jede Person zuerst wieder durch.
 

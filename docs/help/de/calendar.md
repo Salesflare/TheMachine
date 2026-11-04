@@ -33,7 +33,7 @@ Im Wochenraster stehen Termine zur selben Zeit nebeneinander, solange jeder lesb
 
 ## Etwas öffnen
 
-Klick auf eine Zeile, um den Chat der Aufgabe, das Versprechen oder das Meeting in seinem eigenen Kalender zu öffnen. Bei einem Meeting sind Personen, die dein Graph kennt, und die Organisationen und Projekte, um die es geht, Links zu ihrer Seite. Ansehen ändert nichts.
+Klick auf eine Zeile, um den Chat der Aufgabe, das Versprechen oder das Meeting zu öffnen. Ein Meeting, das du hier nicht ändern kannst, etwa das einer anderen Person oder eins mit Gästen, zeigt seine Details: wann, wo und wer. Personen, die dein Graph kennt, und die Organisationen und Projekte, um die es im Meeting geht, sind Links zu ihrer Seite. **In Google Kalender öffnen** (oder **In Outlook öffnen**) darunter öffnet es dort. Ansehen ändert nichts.
 
 Ein gebuchter Besprechungsraum steht beim Ort, nie als Person oder in deinem Graph.
 

@@ -18,15 +18,19 @@ Nichts auf GitHub. Jeder Aufruf ist ein reiner Lesezugriff.
 
 Auf einer gehosteten Machine:
 
-1. Öffne deine Einrichtungsseite unter app.themachine.computer/setup und geh zu **Weitere Quellen**.
-2. Öffne GitHub und tippe auf **Mit GitHub anmelden**.
-3. Gib den angezeigten Code bei GitHub ein, auf deinem Handy oder Computer.
+1. Öffne im Dashboard **Verbindungen**, dann **+ Hinzufügen**, und wähle GitHub.
+2. Wähle **Arbeit** oder **Privat** und tippe auf **Mit GitHub anmelden**.
+3. Es zeigt einen Code. Tippe auf **GitHub öffnen ↗**, gib den Code ein und erlaube den Zugriff. Danach geht es von selbst weiter.
+
+Deine Einrichtungsseite unter app.themachine.computer/setup hat dieselbe Anmeldung unter **Weitere Quellen**.
 
 Auf deinem eigenen Computer:
 
-1. Melde dich zuerst bei der GitHub CLI an: `gh auth login`.
-2. Öffne im Dashboard **Verbindungen**, dann **+ Hinzufügen**, und wähle GitHub. Oder führe `assistant connect github` aus.
-3. Bestätige dein GitHub-Login. The Machine prüft bei jeder Synchronisierung, ob es passt.
+1. Öffne im Dashboard **Verbindungen**, dann **+ Hinzufügen**, und wähle GitHub.
+2. Wähle **Arbeit** mit ihrer Firma oder **Privat** und tippe auf **Verbinden**.
+3. Ist deine Machine noch nicht bei GitHub angemeldet, zeigt sie einen Code. Tippe auf **GitHub öffnen ↗**, gib den Code ein und erlaube den Zugriff. Danach geht es von selbst weiter.
+
+Oder führe `assistant connect github` aus und bestätige dein GitHub-Login. The Machine prüft bei jeder Synchronisierung, ob es passt.
 
 ## Entfernen
 

@@ -23,9 +23,11 @@ Auf einer gehosteten Machine:
 
 Auf deinem eigenen Computer:
 
-1. Melde dich einmal im Browser deiner Machine bei X an (Einstellungen, **Browser der Machine öffnen ↗**).
-2. Öffne im Dashboard **Verbindungen**, dann **+ Hinzufügen**, und wähle X. Oder führe `assistant connect x` aus.
-3. Gib deinen Handle ein und den Handle, mit dem der Browser normalerweise angemeldet ist.
+1. Öffne im Dashboard **Verbindungen**, dann **+ Hinzufügen**, und wähle X.
+2. Wähle **Arbeit** mit ihrer Firma oder **Privat**, gib deinen Handle ohne @ ein und tippe auf **Verbinden**.
+3. Tippe auf **Bei X anmelden** und melde dich im Browser deiner Machine an. Sobald du drin bist, verbindet es sich von selbst.
+
+Oder führe `assistant connect x` aus und gib deinen Handle ein und den Handle, mit dem der Browser normalerweise angemeldet ist.
 
 Wenn X deine Machine abmeldet, siehe [Von einer Website abgemeldet](signed-out.md).
 

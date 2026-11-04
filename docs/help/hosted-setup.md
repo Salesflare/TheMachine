@@ -11,7 +11,7 @@ A hosted Machine runs in the cloud, in the EU, just for you. We keep it running 
 ## Sign up
 
 1. At app.themachine.computer, press **Continue with Google** or **Continue with Microsoft**. This makes your account.
-2. Press **Add a passkey** and use your fingerprint, face or device PIN. Prefer an authenticator app? Open **Use an authenticator app instead**. Save the recovery codes that follow.
+2. Press **Add a passkey** and use your fingerprint, face or device PIN. Prefer an authenticator app? Open **Use an authenticator app instead**, scan the code, type the six digits and press **Turn on**. Save the recovery codes that follow.
 3. Pick your Machine's size and name, then add your payment card. The first {trial_days} days are free and nothing is charged before they end.
 
 ## Your setup page

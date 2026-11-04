@@ -20,7 +20,7 @@ Im Bereich Network:
 
 Beide sind standardmäßig an, bei der Sicherheitsstufe Vorsichtig aus. Du kannst sie jederzeit ausschalten; deine Wahl bleibt. Man findet dich über deine Anmelde-E-Mail und deine verbundenen Adressen, außer geteilten wie info@, die aus bleiben, bis du sie einschaltest.
 
-Bekannte, die im Network sind, werden sofort vorgeschlagen, wenn du das einschaltest, und auch, wenn später jemand beitritt. Ein Treffer kommt mit Verbinden, Nicht jetzt oder **Nie vorschlagen**. **Network verlassen** nimmt dich heraus.
+Bekannte, die im Network sind, werden sofort vorgeschlagen, wenn du das einschaltest, und auch, wenn später jemand beitritt. Deine Machine prüft alle 15 Minuten auf neue Kontakte und Personen, die gerade beigetreten sind, und geht einmal am Tag alle deine Kontakte durch. Ein Treffer kommt mit Verbinden, Nicht jetzt oder **Nie vorschlagen**. **Network verlassen** nimmt dich heraus.
 
 Gefundene Personen zeigen in deiner Liste Personen **Hat eine Machine**. Geprüft werden die Adressen aus deinen Nachrichten und die, die du einer Person mit **Bearbeiten** hinzugefügt hast: Hat sich jemand mit einer anderen Adresse angemeldet, füge sie der Person hinzu. Auf der Seite einer gefundenen Person sendet **Als Freund hinzufügen** im Menü ⋯ dieselbe Anfrage wie Verbinden.
 
