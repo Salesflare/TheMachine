@@ -492,7 +492,7 @@ Each of these goes through the same approval path as email: the owner reviews an
 A Do it result can carry a Slack direct message from your own Slack account (the Maton Slack connection, as your user) to one person, named by Slack `user_id` or work email, with their name.
 
 - `SlackTransport` in `next_actions.py` is separate from the read-only Slack source. It can only look the person up (`users.info`, `users.lookupByEmail`), open the DM, post one message and read that DM back.
-- Before sending, it checks that the Slack name matches and that it's an active person, not a bot.
+- Before sending, it checks that it's an active person, not a bot, and that it's the same person: the Slack user ID the to-do targets, the direct message with that ID, and a name that is theirs (their Slack name, display name or handle, a first-name handle too, or a name your people graph knows them by). A different user ID or someone else's name blocks it.
 - An unclear outcome stays uncertain and is checked by finding exactly one message from you with that text in the DM. It's never resent.
 - Sending needs a Maton Slack connection that is allowed to post as you.
 

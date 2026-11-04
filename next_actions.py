@@ -1734,13 +1734,69 @@ def slack_text(body):
     return re.sub(r'\[([^\]\n]+)\]\((https://[^)\s]+)\)', lambda m: '<' + m[2].replace('&amp;', '&') + '|' + m[1] + '>', text)
 
 
-def same_person(name, user):
-    """The name in the draft is the Slack user's name: every word of it appears in their real or display name."""
+def name_words(text):
+    """A name's words, folded: case, accents and dots or underscores of a handle (yuri.viana) don't count."""
+    import unicodedata
+    return re.findall(r'[a-z0-9]+', unicodedata.normalize('NFKD', str(text or '')).encode('ascii', 'ignore').decode().casefold())
+
+
+def names_agree(name, known, short=False):
+    """`name` is `known`: every word of the name is in it ("Sam" is "Sam Peeters"). With `short`, also when `known` is
+    a shorter form of the name that starts the same, such as a first-name handle ("sam" for "Sam Peeters")."""
+    wanted, have = name_words(name), name_words(known)
+    if not wanted or not have:
+        return False
+    return set(wanted) <= set(have) or (short and have[0] == wanted[0] and set(have) <= set(wanted))
+
+
+def slack_names_of(user):
+    """Every name Slack gives a member: their real and display names (also Slack's normalized forms) and handle."""
     profile = user.get('profile') or {}
-    known = ' '.join(str(x or '') for x in (user.get('real_name'), profile.get('real_name'), profile.get('display_name'), user.get('name'))).lower()
-    words = set(re.findall(r'\w+', known))
-    wanted = re.findall(r'\w+', name.lower())
-    return bool(wanted) and all(w in words for w in wanted)
+    return [str(x) for x in (user.get('real_name'), profile.get('real_name'), profile.get('real_name_normalized'),
+                             profile.get('display_name'), profile.get('display_name_normalized'), user.get('name')) if x]
+
+
+def graph_names_of(database, user):
+    """The names the people graph knows this Slack member by: the person who holds their Slack ID (else their Slack
+    email), with the name kept for them and the names on each of their identifiers. None known: []."""
+    if not database or not user.get('id'):
+        return []
+    import sqlite3
+    ids = ['slack:' + user['id']] + ['email:' + e for e in [str((user.get('profile') or {}).get('email') or '').lower()] if e]
+    try:
+        with contextlib.closing(sqlite3.connect('file:' + str(Path(database).expanduser()) + '?mode=ro', uri=True, timeout=5)) as db:
+            marks = ','.join('?' * len(ids))
+            row = db.execute("SELECT n.id,n.name,n.info FROM graph_nodes n, json_each(n.info,'$.identifiers') j WHERE n.kind='person' "
+                             f"AND j.value IN ({marks}) ORDER BY j.value=? DESC LIMIT 1", (*ids, ids[0])).fetchone()
+            if not row:
+                return []
+            try:
+                held = [str(i) for i in json.loads(row[2] or '{}').get('identifiers') or ()]
+            except ValueError:
+                held = []
+            held = list(dict.fromkeys([row[0], *held, *ids]))
+            marks = ','.join('?' * len(held))
+            names = [row[1], *(r[0] for r in db.execute(f'SELECT name FROM graph_names WHERE node_id IN ({marks})', held)),
+                     *(r[0] for r in db.execute(f'SELECT name FROM identity_names WHERE identifier IN ({marks})', held))]
+            return [n for n in names if isinstance(n, str) and n.strip()]
+    except sqlite3.Error:
+        return []
+
+
+def same_person(name, user, graph_names=()):
+    """The name in the draft is this Slack member. The member is fixed by their user ID (the transport checks that);
+    the name only has to be one of theirs: Slack's real or display name or handle, or a name the people graph knows
+    them by (graph_names_of). A first-name handle ("sam") is enough for "Sam Peeters", unless the graph knows that
+    member by another name ("Sam Jones"): that is someone else."""
+    slack = slack_names_of(user)
+    if any(names_agree(name, known) for known in [*slack, *graph_names]):
+        return True
+    return (any(names_agree(name, known, short=True) for known in slack)
+            and all(names_agree(name, known, short=True) for known in graph_names))
+
+
+class WrongConversation(RuntimeError):
+    """Slack opened a conversation with someone other than the member the message is for."""
 
 
 class SlackTransport:
@@ -1797,8 +1853,11 @@ class SlackTransport:
         user = reply['user']
         if user.get('deleted') or user.get('is_bot'):
             raise ValueError(action['to_name'] + '’s Slack account is deactivated or a bot. Nothing was sent.')
-        if not same_person(action['to_name'], user):
-            raise ValueError(f"That Slack user is {user.get('real_name') or user.get('name')}, not {action['to_name']}. Nothing was sent.")
+        found = user.get('real_name') or user.get('name') or user.get('id')
+        if not user.get('id') or (action.get('user_id') and user['id'] != action['user_id']):  # the identity, never just a name
+            raise ValueError(f"That Slack user is {found}, not {action['to_name']}. Nothing was sent.")
+        if not same_person(action['to_name'], user, graph_names_of(self.config.get('database'), user)):
+            raise ValueError(f"That Slack user is {found}, not {action['to_name']}. Nothing was sent.")
         return user['id']
 
     def preflight(self, action):
@@ -1807,16 +1866,23 @@ class SlackTransport:
         self.person(action)
 
     def channel(self, action, user_id):
-        reply = self.call(action, 'conversations.open', {'users': user_id})
+        """The direct message with exactly this member: Slack's answer names who it is with (return_im), and a
+        conversation with anyone else is never used."""
+        reply = self.call(action, 'conversations.open', {'users': user_id, 'return_im': True})
         if not reply.get('ok'):
             raise RuntimeError('Slack direct message unavailable')
-        return reply['channel']['id']
+        channel = reply['channel']
+        if channel.get('user') and channel['user'] != user_id or channel.get('is_im') is False:
+            raise WrongConversation()
+        return channel['id']
 
     def send(self, action, job):
         import urllib.error
         try:
             user_id = self.person(action)
             channel = self.channel(action, user_id)
+        except WrongConversation:
+            return {'rejected': 'wrong_conversation'}  # nothing was posted, and it never goes to that conversation
         except urllib.error.HTTPError as error:
             if 400 <= error.code < 500 and error.code not in (408, 429):
                 return {'rejected': error.code}  # refused for good; nothing was posted

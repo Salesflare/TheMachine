@@ -207,6 +207,63 @@ class SlackSender(unittest.TestCase):
                 sender.preflight(self.action)
         self.assertEqual(set(n.SlackTransport.METHODS), {'users.info', 'users.lookupByEmail', 'conversations.open', 'chat.postMessage', 'conversations.history'})
 
+    def graph_db(self, folder, people):
+        import sqlite3
+        path = Path(folder) / 'events.sqlite'
+        with sqlite3.connect(path) as db:
+            db.executescript('CREATE TABLE graph_nodes(id TEXT PRIMARY KEY,kind TEXT,name TEXT,strength REAL,signals INTEGER,info TEXT);'
+                             'CREATE TABLE graph_names(node_id TEXT PRIMARY KEY,name TEXT,created_at TEXT);'
+                             'CREATE TABLE identity_names(identifier TEXT PRIMARY KEY,name TEXT,email TEXT,checked_at TEXT);')
+            for node, name, ids, handle in people:
+                db.execute("INSERT INTO graph_nodes VALUES(?,'person',?,1,1,?)", (node, name, json.dumps({'identifiers': ids})))
+                db.execute("INSERT INTO identity_names VALUES(?,?,?,'2026-11-01')", (ids[1], handle, node.split(':', 1)[1]))
+        return str(path)
+
+    def test_a_first_name_handle_is_the_person_the_to_do_targets_by_id(self):
+        # Slack knows the colleague only as "rina"; the to-do (and the graph) says "Rina Okafor": same member, same ID
+        handle = {'ok': True, 'user': {'id': 'U0RINA123', 'name': 'rina', 'real_name': 'rina', 'profile': {
+            'display_name': 'rina', 'real_name': 'rina', 'email': 'rina@example.com'}}}
+        action = {'kind': 'slack', 'account_id': 'slack', 'user_id': 'U0RINA123', 'to_name': 'Rina Okafor', 'body': 'Can you take this?'}
+        with tempfile.TemporaryDirectory() as folder:
+            database = self.graph_db(folder, [('email:rina@example.com', 'Rina Okafor', ['email:rina@example.com', 'slack:U0RINA123'], 'rina')])
+            sender = n.SlackTransport({'accounts': [SLACK], 'database': database}, lambda config, name: 'KEY=secret')
+            with patch.object(sender, 'call', return_value=handle):
+                sender.preflight(action)  # no "That Slack user is rina, not Rina Okafor"
+            # the graph knows that member as someone else: a different person, never sent
+            other = self.graph_db(tempfile.mkdtemp(dir=folder), [('email:rina@example.com', 'Rina Mbeki', ['email:rina@example.com', 'slack:U0RINA123'], 'rina')])
+            sender = n.SlackTransport({'accounts': [SLACK], 'database': other}, lambda config, name: 'KEY=secret')
+            with patch.object(sender, 'call', return_value=handle), self.assertRaises(ValueError) as caught:
+                sender.preflight(action)
+            self.assertIn('That Slack user is rina, not Rina Okafor', str(caught.exception))
+        # no graph at all: a first-name handle with the targeted ID is enough, a different first name is not
+        sender = n.SlackTransport({'accounts': [SLACK]}, lambda config, name: 'KEY=secret')
+        with patch.object(sender, 'call', return_value=handle):
+            sender.preflight(action)
+            sender.preflight({**action, 'to_name': 'Rína'})
+            with self.assertRaises(ValueError):
+                sender.preflight({**action, 'to_name': 'Tomas Okafor'})
+        # a dotted handle, a display name, or Slack's normalized real name are theirs too
+        for user in ({'id': 'U0RINA123', 'name': 'rina.okafor'}, {'id': 'U0RINA123', 'name': 'r1', 'profile': {'display_name': 'Rina'}},
+                     {'id': 'U0RINA123', 'name': 'r1', 'profile': {'real_name_normalized': 'Rina Okafor'}}):
+            with patch.object(sender, 'call', return_value={'ok': True, 'user': user}):
+                sender.preflight(action)
+
+    def test_another_user_id_or_conversation_is_never_used(self):
+        action = {'kind': 'slack', 'account_id': 'slack', 'user_id': 'U0RINA123', 'to_name': 'Rina Okafor', 'body': 'Hi'}
+        sender = n.SlackTransport({'accounts': [SLACK]}, lambda config, name: 'KEY=secret')
+        with patch.object(sender, 'call', return_value={'ok': True, 'user': {'id': 'U0OTHER99', 'real_name': 'Rina Okafor'}}):
+            with self.assertRaises(ValueError):
+                sender.preflight(action)  # the same name on another member is not them
+        user = {'ok': True, 'user': {'id': 'U0SAM12', 'real_name': 'Sam Peeters'}}
+        result, calls = self.run_with({'users.lookupByEmail': user, 'chat.postMessage': {'ok': True, 'ts': '1.2'},
+                                       'conversations.open': {'ok': True, 'channel': {'id': 'D0X', 'is_im': True, 'user': 'U0OTHER99'}}})
+        self.assertEqual(result, {'rejected': 'wrong_conversation'})
+        self.assertNotIn('chat.postMessage', [c[0] for c in calls])
+        self.assertIs(calls[1][2]['return_im'], True)
+        result, _ = self.run_with({'users.lookupByEmail': user, 'chat.postMessage': {'ok': True, 'ts': '1.2'},
+                                   'conversations.open': {'ok': True, 'channel': {'id': 'D0SAM1', 'is_im': True, 'user': 'U0SAM12'}}})
+        self.assertEqual(result['message_id'], 'slack:D0SAM1:1.2')
+
     def test_unknown_post_outcome_is_reconciled_not_resent(self):
         result, _ = self.run_with({'users.lookupByEmail': self.USER, 'conversations.open': {'ok': True, 'channel': {'id': 'D0SAM1'}},
                                    'chat.postMessage': TimeoutError})
