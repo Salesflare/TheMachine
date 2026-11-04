@@ -58,6 +58,10 @@ class MobileShellTest(unittest.TestCase):
         self.assertIn("github.repository == 'Salesflare/TheMachine'", upload)
         self.assertIn("trap 'rm -f \"$key\"' EXIT", upload)
         self.assertEqual(flow.count('secrets.'), upload.count('secrets.'))
+        # Nothing uploads unless the archive holds the app and both extensions, each with the app group
+        check = upload[upload.index(' archive |'):upload.index('-exportArchive')]
+        for bundle in ('App.app', 'ShareExtension.appex', 'NotificationService.appex', 'group.computer.themachine.app'):
+            self.assertIn(bundle, check)
         for uses in re.findall(r'uses: (\S+)', flow):
             self.assertRegex(uses, r'@[0-9a-f]{40}$')
 
