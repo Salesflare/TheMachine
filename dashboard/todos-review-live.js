@@ -27,21 +27,28 @@ return rows}
 // Also with reviews off (where the first look happens): waiting for it is not "All clear".
 // A batch saves what it read at its end, so in between its count moves a signal at a time at the pace the earlier
 // batches took (first_dig.pace), one short of its size until it saved; the bar never moves back.
-const flSeen=new Map();let flPeak=0;
+const flSeen=new Map();let flPeak=0,flTotal=0;
+// Once this device saw the first look start, a screen drawn from an older copy (a reload while the Machine restarts as
+// reviews turn on) never goes back to "Connecting ChatGPT…": it says the first look is on, without a count
+const FL_SEEN_KEY='first-look-seen',flSeenAt=()=>{try{return +localStorage.getItem(FL_SEEN_KEY)||0}catch{return 0}};
+const flBack=()=>Date.now()-flSeenAt()<36e5&&!state.first_look_done&&(!!aiConnecting()||shownCached||netDown);
+function flMark(){if(Date.now()-flSeenAt()<6e4)return;try{localStorage.setItem(FL_SEEN_KEY,String(Date.now()))}catch{}}
 function flRunDone(run,pace){const total=run.planned||run.claimed_count||0,real=Math.min(run.done_count||0,total);if(!total)return 0;
  const start=Math.min(flSeen.get(run.run_id)??Infinity,Date.now()-1000*(+run.duration_seconds||0));flSeen.set(run.run_id,start);
  return Math.max(real,Math.min(total-1,Math.floor((Date.now()-start)/1000/Math.max(1,+pace||6))))}
 // While it digs (live.first_dig): one bar over the whole week, also between its batches, until it has its to-dos or read the week
 function firstLookInfo(live){const run=(live.runs||[]).find(r=>r.preview||r.window_hours||r.promising),fl=live.first_look,dig=live.first_dig;
-if(dig&&dig.total){const total=Math.max(0,+dig.total|0),todos=+dig.todos|0,done=Math.min(total,Math.max(flPeak,(+dig.read|0)+(run?flRunDone(run,dig.pace):0)));flPeak=done;
+// read already counts what a running batch saved (its done_count), so only the batch's estimate beyond that is added;
+// the total only grows (new mail), so the count never looks like it went back
+if(dig&&dig.total){const total=flTotal=Math.max(flTotal,0,+dig.total|0),todos=+dig.todos|0,ahead=run?Math.max(0,flRunDone(run,dig.pace)-(run.done_count||0)):0,done=Math.min(total,Math.max(flPeak,(+dig.read|0)+ahead));flPeak=done;flMark();
  return{title:t('Taking a first look at your last {} days',dig.days||7),done,total,wait:!dig.read&&!run?.done_count?'':todos?t(['Found {} to-do. Reading on.','Found {} to-dos. Reading on.'],todos):t('Nothing for you yet. Reading on.')}}
-if(run){const total=run.planned||run.claimed_count||0;return{title:t('Taking a first look at your last {} days',firstLookDays(fl,run)),done:flRunDone(run,6),total}}
-if(startsByItself()&&fl?.state!=='due')return setupStep()?{title:t('Your first to-dos show up here'),wait:t('Nothing is sent.')}:{title:setupLine(),working:!!aiConnecting()};  // not "All clear" before the first read ends
+if(run){const total=run.planned||run.claimed_count||0;flMark();return{title:t('Taking a first look at your last {} days',firstLookDays(fl,run)),done:flRunDone(run,6),total}}
+if(startsByItself()&&fl?.state!=='due')return setupStep()?{title:t('Your first to-dos show up here'),wait:false}:flBack()?{title:t('Taking a first look at your last {} days',firstLookDays(fl))}:{title:setupLine(),working:!!aiConnecting()};  // not "All clear" before the first read ends
 if((fl?.state==='waiting'&&fl.why!=='model')||fl?.state==='due')return{title:t('A first look at your last {} days starts soon',firstLookDays(fl)),wait:FIRST_LOOK_WAIT[fl.state==='due'?'due':fl.why]||''};return null}
 // the counts are whole numbers before they reach the page, whatever the status says
 const firstLookBar=i=>{const done=Math.max(0,+i.done|0),total=Math.max(0,+i.total|0);return total?[make('span',{class:'fl-bar',role:'progressbar','aria-label':'Signals reviewed','aria-valuemin':'0','aria-valuemax':total,'aria-valuenow':done},
  make('i',{style:{width:Math.round(100*done/total)+'%'}})),make('span',{class:'fl-count mono'},t('{} of {} signals',done,total))]:[]};
-const firstLookInner=i=>[make('img',{class:'sticker',src:'brand/wave.webp',alt:''}),make('div',{},make('strong',i.working?{class:'backfill-run'}:{},i.title),firstLookBar(i),make('small',{},i.wait||'To-dos show up here as they come. Nothing is sent.'))];
+const firstLookInner=i=>[make('img',{class:'sticker',src:'brand/wave.webp',alt:''}),make('div',{},make('strong',i.working?{class:'backfill-run'}:{},i.title),firstLookBar(i),i.wait===false?'':make('small',{},i.wait||t('To-dos show up here as they come.')))];
 // The list's empty state while the first look runs: a place the list fills with firstLookFill once it is on the page
 const firstLookEmpty=i=>i?html`<div class="empty all-clear first-look-empty"></div>`:'';
 function firstLookFill(){const box=$('#suggestions .first-look-empty'),i=box&&firstLookInfo(state.review_live||{});if(i)box.replaceChildren(...firstLookInner(i))}
