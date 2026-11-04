@@ -19,8 +19,8 @@ function pushRoute(tag){let m;if(/^[a-f0-9]{16}$/.test(tag))return '#chat='+tag;
  if((m=/^fleet-((?:q|fn)_[a-f0-9]{16})$/.exec(tag)))return '#fleet='+m[1];
  if(tag==='fleet'||tag.startsWith('fleet-'))return '#fleet';
  return '#todos'}  // the week's recap, a test, new to-dos, results and reminders together
-function openPushLink(changed){const m=/^#chat=([A-Za-z0-9_-]{1,64})$/.exec(location.hash);if(!m||/^[a-f0-9]{16}$/.test(m[1]))return;
- history.replaceState(null,'',location.pathname+location.search+pushRoute(m[1]));if(!changed&&location.hash.startsWith('#calendar?'))calRoute()}  // a hash change reaches calRoute itself
+function openPushLink(changed){const m=/^#chat=([A-Za-z0-9_-]{1,64})$/.exec(location.hash);if(!m||/^[a-f0-9]{16}$/.test(m[1]))return false;
+ history.replaceState(null,'',location.pathname+location.search+pushRoute(m[1]));if(!changed&&location.hash.startsWith('#calendar?'))calRoute();return true}  // a hash change reaches calRoute itself
 window.addEventListener('hashchange',()=>{openPushLink(true);openChatLink();openSnoozeLink();openResultLink();openCardLink();openFleetLink();openSharedLink();openTabLink();openConnectLink()});
 function noteSplit(n){if(!n)return'';const parts=[['style','style'],['fact','missing facts'],['continue','keep going'],['new_ask','new asks'],['unsorted','not sorted']].filter(([k])=>n[k]);
 return parts.length?make('div',{class:'notes-split'},make('span',{},'What your Change notes asked for'),make('div',{},parts.map(([k,t])=>make('span',{class:`chip t-${{style:'lavender',fact:'amber',continue:'orange',new_ask:'mint',unsorted:'muted'}[k]}`},`${n[k]} ${t}`)))):''}
