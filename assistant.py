@@ -1664,6 +1664,10 @@ FIRST_LOOK_TAIL_SIGNALS = FIRST_LOOK_NEXT_SIGNALS // 2
 # runs or digs, starting its next batch as soon as one ended: a turn's end was noticed 8 to 39 s late and the next
 # batch started 15 s after that, about a minute idle per batch while the owner watched (2026-11-04)
 REVIEW_TICK_SECONDS, FIRST_LOOK_TICK_SECONDS = 15, 4
+# Settings the app takes from config.json while it runs (App.follow_config), so turning reviews on needs no restart:
+# the hosting agent's reviews on restarted the app 44 s into a first look (2026-11-04). The hosting agent checks this
+# list before it restarts the app for them.
+LIVE_CONFIG = ('delivery_enabled', 'review_worker')
 # Background turns beyond the first look (profile, voices, roles, organizations) start at most one per this many
 # seconds, and only once the first card was shown, so the first cards come first and a new install's usage is spread
 # out instead of spent in its first minutes. A draft prepared ahead is on the owner's board as Preparing, so it doesn't
@@ -14944,6 +14948,10 @@ class App(*APP_MIXINS):
             set_work_hours(None)
         self.config = config
         self.config_path = Path(config_path) if config_path else None  # where Work hours are saved
+        try:  # what the app starts with: changes after it are followed (follow_config)
+            self.config_stamp = self.config_path.stat().st_mtime_ns if self.config_path else None
+        except OSError:
+            self.config_stamp = None
         self.store = Store(config['database'], protect=self.protection_now(config))
         self.store.exclusions = {a['id']: rules for a in config['accounts'] if (rules := (a.get('exclude') or []) + default_exclusions(config, a))}
         self.store.owner_user_ids = {a['user_id'] for a in config['accounts'] if a.get('service') == 'slack' and a.get('user_id')}
@@ -20576,14 +20584,20 @@ class App(*APP_MIXINS):
 
     def review_tick(self):
         """Seconds until the review worker looks again: FIRST_LOOK_TICK_SECONDS while a first look's batch runs or it
-        digs on between batches (the owner watches it), else REVIEW_TICK_SECONDS. Never an error."""
+        digs on between batches (the owner watches it), and on a new install that has not reviewed yet while its first
+        mail comes in (the first look starts within seconds of the AI sign-in, not a tick later), else
+        REVIEW_TICK_SECONDS. Never an error."""
         try:
             with self.store.connect() as db:
+                current = dt.datetime.fromisoformat(now())
                 live = db.execute("SELECT 1 FROM review_runs WHERE status IN ('starting','running','recovering') AND "
                                   "((preview=1 AND auto=1) OR window_hours IS NOT NULL OR promising=1) LIMIT 1").fetchone() or (
                     db.execute("SELECT 1 FROM milestones WHERE name='first_dig' AND at>?",
-                               ((dt.datetime.fromisoformat(now()) - dt.timedelta(hours=FIRST_DIG_HOURS)).isoformat(),)).fetchone()
-                    and not db.execute("SELECT 1 FROM milestones WHERE name='first_dig_done'").fetchone())
+                               ((current - dt.timedelta(hours=FIRST_DIG_HOURS)).isoformat(),)).fetchone()
+                    and not db.execute("SELECT 1 FROM milestones WHERE name='first_dig_done'").fetchone()) or (
+                    (self.config.get('review_worker') or {}).get('first_look') is not False
+                    and not db.execute('SELECT 1 FROM review_runs LIMIT 1').fetchone()
+                    and db.execute('SELECT 1 FROM events WHERE ingested_at>? LIMIT 1', ((current - dt.timedelta(hours=1)).isoformat(),)).fetchone())
         except (sqlite3.Error, ValueError):
             return REVIEW_TICK_SECONDS
         return FIRST_LOOK_TICK_SECONDS if live else REVIEW_TICK_SECONDS
@@ -21181,9 +21195,37 @@ class App(*APP_MIXINS):
         except (OSError, subprocess.TimeoutExpired):
             pass
 
+    def follow_config(self):
+        """Settings in LIVE_CONFIG that changed in config.json since the last look (the hosting agent's reviews on, while
+        the first look runs) apply at once, without a restart. Best effort: an unreadable file changes nothing."""
+        path = getattr(self, 'config_path', None)
+        if not path:
+            return False
+        try:
+            stamp = path.stat().st_mtime_ns
+            if stamp == getattr(self, 'config_stamp', None):
+                return False
+            first = getattr(self, 'config_stamp', None) is None
+            self.config_stamp = stamp
+            if first:
+                return False  # what the app started with
+            saved = json.loads(path.read_text())
+        except (OSError, ValueError):
+            return False
+        changed = False
+        for key in LIVE_CONFIG:
+            if isinstance(saved, dict) and key in saved and saved[key] != self.config.get(key):
+                self.config[key] = saved[key]
+                changed = True
+        if changed:
+            LOG.info('settings applied without a restart: %s', ','.join(LIVE_CONFIG))
+        return changed
+
     def review_worker(self):
         others = 0.0
         while not self.stop.wait(self.review_tick()):
+            try:self.follow_config()
+            except Exception as error:LOG.error('config follow error=%s',type(error).__name__)
             try:
                 # The first look's next batch as soon as one ended, not a tick later (review_tick)
                 if self.review_step() in REVIEW_TERMINAL and self.review_tick() < REVIEW_TICK_SECONDS:
