@@ -487,6 +487,8 @@ class Requests:
             card = db.execute('SELECT * FROM suggestions WHERE id=?', (str(card_id),)).fetchone()
             if not card:
                 raise ValueError('No such to-do')
+            if 'area' in card.keys() and card['area'] == 'personal':  # Personal (todo_areas.py), also on a work mailbox
+                raise ValueError(t('A personal to-do goes only to your Family'))
             ids = json.loads(card['event_ids'] or '[]')
             mails = db.execute("SELECT metadata FROM events WHERE kind='gmail.message' AND id IN (SELECT value FROM json_each(?)) "
                                'ORDER BY occurred_at DESC', (json.dumps(ids),)).fetchall()

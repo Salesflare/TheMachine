@@ -76,7 +76,7 @@ A `Caller` carries the rules. The owner sees everything. A connected AI sees its
 own record or a teammate's, and no message the app holds back. Surfaces only format the answers.
 `tests/knowledge_eval.py` asks every surface the same questions over the sandbox.
 
-**Boundaries.** Every account has an explicit ID and `boundary` (`work:Acme`, `personal:phone`, `owner:system`…). Every read names its accounts explicitly; app names and chat labels never decide which company an item belongs to.
+**Boundaries.** Every account has an explicit ID and `boundary` (`work:Acme`, `personal:phone`, `owner:system`…). Every read names its accounts explicitly; app names and chat labels never decide which company an item belongs to. A to-do's area follows its accounts (`todo_areas.py`), with one exception toward the safe side: a matter of the owner's own life on a work mailbox (the review's `personal`, or only Family, Friends or relations on it) is Personal from the start, with the Personal area's accounts or, without one, pinned Personal on its own mailbox. Either way no Work Fleet sees it.
 
 ### On the device
 

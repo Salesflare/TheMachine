@@ -34,7 +34,7 @@ Een to-do bij een project toont de naam van het project in de regel onder de tit
 
 Heeft een to-do een ander gebied nodig om verder te kunnen, dan vraagt hij het met een knop **Naar Werk verplaatsen**. Er verhuist niets tot je erop tikt; daarna gaat hij zelf verder.
 
-Start je een to-do, dan mag hij altijd de berichten lezen waar hij uit kwam, ook in de mailbox van een ander bedrijf. Heeft hij andere berichten uit een ander gebied nodig, dan vraagt hij het met **Deze mail voor deze to-do gebruiken**; een tik voegt ze toe en hij gaat verder. Mail voor een ander bedrijf van je komt meteen bij de to-do's van dat bedrijf.
+Start je een to-do, dan mag hij altijd de berichten lezen waar hij uit kwam, ook in de mailbox van een ander bedrijf. Heeft hij andere berichten uit een ander gebied nodig, dan vraagt hij het met **Deze mail voor deze to-do gebruiken**; een tik voegt ze toe en hij gaat verder. Mail voor een ander bedrijf van je komt meteen bij de to-do's van dat bedrijf. Een to-do uit je eigen leven, zoals familie die naar je werkadres mailt, is meteen Privé.
 
 ## De knoppen
 

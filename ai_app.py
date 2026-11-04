@@ -394,17 +394,19 @@ class AiApp:
         want = area or (None if allowed == 'both' else allowed)
         return {a['id'] for a in self.config.get('accounts', []) if want is None or graph.account_side(a) == want}, want
 
-    def ai_card_area(self, account_ids):
+    def ai_card_area(self, account_ids, pinned=None):
+        if pinned == 'personal':  # the owner's own life on a work mailbox (todo_areas.py)
+            return 'personal'
         accounts = self.config.get('accounts', [])
         ids = json.loads(account_ids or '[]') if isinstance(account_ids, str) else (account_ids or [])
         return 'work' if any(graph.account_side(a) == 'work' for a in accounts if a['id'] in ids) else 'personal'
 
-    def ai_visible(self, account_ids, ids, want):
-        """A to-do or promise is visible when its area is the one asked for (all, when both)."""
+    def ai_visible(self, account_ids, ids, want, pinned=None):
+        """A to-do or promise is visible when its area is the one asked for (all, when both). pinned: a to-do's area column."""
         mine = json.loads(account_ids or '[]') if isinstance(account_ids, str) else list(account_ids or [])
         if want is None:
             return True
-        return self.ai_card_area(mine) == want and bool(set(mine) & ids)
+        return self.ai_card_area(mine, pinned) == want and bool(set(mine) & ids)
 
     def ai_tool(self, connection, name, args):
         """(result, the activity line) for one call. A ValueError is the call's error, said to the AI and logged. With
@@ -425,13 +427,13 @@ class AiApp:
         limit = clamp_int(args.get('limit'), 25, 50)
         stamp = ai_access.stamp()
         with self.store.connect() as db:
-            rows = db.execute(f"SELECT id,dedupe_key,title,body,status,due,due_at,account_ids,project,created_at,snoozed_until,next_action,deliver_after "
+            rows = db.execute(f"SELECT id,dedupe_key,title,body,status,due,due_at,account_ids,area,project,created_at,snoozed_until,next_action,deliver_after "
                               f"FROM suggestions WHERE status IN ({','.join('?' * len(statuses))}) ORDER BY created_at DESC LIMIT 600", statuses).fetchall()
         out = []
         for r in rows:
             if r['deliver_after'] and r['deliver_after'] > stamp:
                 continue  # prepared ahead, not on the owner's screen yet
-            if not self.ai_visible(r['account_ids'], ids, want):
+            if not self.ai_visible(r['account_ids'], ids, want, r['area']):
                 continue
             out.append(self.ai_todo(r))
             if len(out) >= limit:
@@ -452,7 +454,7 @@ class AiApp:
         if source:
             title, text = mark(title, source), mark(text, source)
         item = {'id': r['id'], 'title': title, 'text': text, 'status': r['status'],
-                'area': self.ai_card_area(r['account_ids']), 'due': r['due'], 'created_at': r['created_at'],
+                'area': self.ai_card_area(r['account_ids'], r['area']), 'due': r['due'], 'created_at': r['created_at'],
                 'has_draft': bool(draft), 'link': self.ai_link(r['id'])}
         if r['project']:
             item['project'] = r['project']
@@ -484,7 +486,7 @@ class AiApp:
         ids, want = self.ai_accounts(connection, None)
         with self.store.connect() as db:
             r = db.execute('SELECT * FROM suggestions WHERE id=?', (str(args.get('id') or ''),)).fetchone()
-            if not r or r['status'] in ('rejected',) or not self.ai_visible(r['account_ids'], ids, want):
+            if not r or r['status'] in ('rejected',) or not self.ai_visible(r['account_ids'], ids, want, r['area']):
                 raise ValueError('No such to-do here')
             events = [int(e) for e in json.loads(r['event_ids'] or '[]') if str(e).isdigit()][:20]
             rows = db.execute(f"SELECT id,kind,occurred_at,title,metadata FROM events WHERE deleted=0 AND id IN ({','.join('?' * len(events)) or 'NULL'})",
@@ -564,14 +566,14 @@ class AiApp:
             if not view or not self.ai_node_ok(view, want):
                 raise ValueError('Not in the Graph here')
             events = 'SELECT event_id FROM graph_events WHERE node_id=?'
-            todos = db.execute(f"SELECT DISTINCT s.id,s.dedupe_key,s.title,s.status,s.due,s.account_ids FROM suggestions s, json_each(s.event_ids) j "
+            todos = db.execute(f"SELECT DISTINCT s.id,s.dedupe_key,s.title,s.status,s.due,s.account_ids,s.area FROM suggestions s, json_each(s.event_ids) j "
                                f"WHERE j.value IN ({events}) AND s.status IN ({','.join('?' * len(OPEN))}) ORDER BY s.created_at DESC LIMIT 20",
                                (node, *OPEN)).fetchall()
             promises = db.execute(f"SELECT id FROM promises WHERE event_id IN ({events}) AND status IN ('open','carded') LIMIT 20", (node,)).fetchall()
         item = self.ai_node(view)
         item['todos'] = [{'id': t['id'], 'title': mark(t['title'], self.ai_todo_source(t)) if self.ai_todo_source(t) else t['title'],
                           'status': t['status'], 'due': t['due']}
-                         for t in todos if self.ai_visible(t['account_ids'], ids, want)]
+                         for t in todos if self.ai_visible(t['account_ids'], ids, want, t['area'])]
         wanted = {p['id'] for p in promises}
         item['promises'] = [{'id': p['id'], 'direction': p['direction'], 'who': p['who'], 'what': mark(p['what'], 'messages'), 'due': p['due']}
                             for p in self.store.promises() if p['id'] in wanted and (want is None or p['account_id'] in ids)]

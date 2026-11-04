@@ -34,7 +34,7 @@ Uma tarefa de um projeto mostra o nome do projeto na linha abaixo do título; el
 
 Quando uma tarefa precisa de outra área para seguir, ela pede com um botão **Mover para Trabalho**. Nada muda até você tocar; depois ela continua sozinha.
 
-Quando você inicia uma tarefa, ela sempre pode ler as mensagens de onde veio, também na caixa de outra empresa. Se precisar de outras mensagens de outra área, ela pede com **Usar este e-mail para esta tarefa**; um toque as adiciona e ela continua. O e-mail para outra das suas empresas vai desde o início para as tarefas dessa empresa.
+Quando você inicia uma tarefa, ela sempre pode ler as mensagens de onde veio, também na caixa de outra empresa. Se precisar de outras mensagens de outra área, ela pede com **Usar este e-mail para esta tarefa**; um toque as adiciona e ela continua. O e-mail para outra das suas empresas vai desde o início para as tarefas dessa empresa. Uma tarefa da sua vida pessoal, como a família escrevendo para o seu endereço de trabalho, é Pessoal desde o início.
 
 ## Os botões
 

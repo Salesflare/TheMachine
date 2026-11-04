@@ -5578,7 +5578,7 @@ class Store:
 
     def suggest(self, dedupe_key, title, body, event_ids, when='now', digest_at='08:30', work=False, urgent=False, due=None, ahead=False, awaiting=None, project=None,
                 card_id=None, separate=False, reopen=False, match=False, _db=None, suggestion_id=None, owner_step=None, expires_at=None, expires_what=None,
-                company=None):
+                company=None, personal=False):
         """A new card, or with match (the review) the existing card about the same matter brought up to date:
         card_id names the card the reviewer judged to be the same matter, separate says it is a different one.
         suggestion_id: the new card's id, when the caller made its evidence first (owner_card). owner_step: the step is
@@ -5586,13 +5586,16 @@ class Store:
         expires_at, expires_what: the moment the card's whole point is tied to, and what it is ("the meeting with Sam");
         once it has passed the card closes by itself (expire_passed).
         company: the review's word that the matter is for another of the owner's companies than the mailbox it came in
-        on (todo_areas.owner_companies): the to-do gets that company's accounts and stays there, as after a move."""
+        on (todo_areas.owner_companies): the to-do gets that company's accounts and stays there, as after a move.
+        personal: the review's word that the matter is the owner's own life (family, friends, home), also on a work
+        mailbox; so is evidence whose people are all from the owner's own life (own_life_evidence). The to-do is
+        Personal from the start (todo_areas.personal_accounts), never a Work Fleet's."""
         if _db is None:
             with self.connect() as db:
                 db.execute('BEGIN IMMEDIATE')
                 return self.suggest(dedupe_key, title, body, event_ids, when, digest_at, work, urgent, due, ahead, awaiting, project,
                                     card_id, separate, reopen, match, _db=db, suggestion_id=suggestion_id, owner_step=owner_step,
-                                    expires_at=expires_at, expires_what=expires_what, company=company)
+                                    expires_at=expires_at, expires_what=expires_what, company=company, personal=personal)
         if not dedupe_key or not title or not body or not event_ids:
             raise ValueError('Evidence, title, body and stable dedupe_key are required')
         if due is not None:
@@ -5604,6 +5607,8 @@ class Store:
             raise ValueError('Keep it simple: title under 90 characters; body under 700 characters, about three short sentences. Keep event IDs and internal details out of the message.')
         placed = todo_areas.company_accounts(company, getattr(self, 'accounts', None) or []) if company is not None else None
         with contextlib.nullcontext(_db) as db:
+            if company is None and (personal is True or own_life_evidence(db, event_ids)):
+                company, placed = todo_areas.PERSONAL, todo_areas.personal_accounts(getattr(self, 'accounts', None) or [])
             existing = db.execute('SELECT * FROM suggestions WHERE dedupe_key=? OR id=(SELECT suggestion_id FROM suggestion_keys WHERE dedupe_key=?)',
                                   (dedupe_key, dedupe_key)).fetchone()
             if existing and (not match or set(event_ids) <= set(json.loads(existing['event_ids'] or '[]'))):
@@ -5653,8 +5658,8 @@ class Store:
                                            'If it is a different matter, call suggest again with separate:true.')
             if target:
                 saved = self.update_card(db, target, dedupe_key, title, body, rows, event_ids, when, digest_at, work, urgent, due, ahead, project, reopen)
-                if placed and not target['area']:  # the review placed it with its company; the owner's own move stands
-                    db.execute('UPDATE suggestions SET account_ids=?,area=? WHERE id=?', (encoded(placed), company, target['id']))
+                if company and not target['area']:  # the review placed it with its company or in Personal; the owner's own move stands
+                    db.execute('UPDATE suggestions SET account_ids=coalesce(?,account_ids),area=? WHERE id=?', (placed and encoded(placed), company, target['id']))
                 if owner_step is not None and not saved.get('attached'):
                     db.execute('UPDATE suggestions SET owner_step=? WHERE id=?', (int(bool(owner_step)), target['id']))
                 if expiry and not saved.get('attached'):
@@ -5687,7 +5692,7 @@ class Store:
                         int(bool(owner_step))))
             if expiry:
                 db.execute('UPDATE suggestions SET expires_at=?,expires_what=? WHERE id=?', (*expiry, suggestion_id))
-            if placed:  # pinned there, as a move is: a later signal on another company's mailbox doesn't pull it back
+            if company:  # pinned there, as a move is: a later signal on another company's mailbox doesn't pull it back
                 db.execute('UPDATE suggestions SET area=? WHERE id=?', (company, suggestion_id))
             db.execute('INSERT INTO deliveries(suggestion_id,status,updated_at) VALUES(?,?,?)',
                        (suggestion_id, 'previewed' if preview else 'queued', now()))
@@ -5971,10 +5976,10 @@ class Store:
                 if not last or last['decision_id'] != undo:
                     raise ValueError('That move can’t be undone any more')
                 ids, pinned = json.loads(last['accounts_before']), last['area_before']
-                area = todo_areas.current(ids, accounts) or todo_areas.PERSONAL
+                area = todo_areas.current(ids, accounts, pinned) or todo_areas.PERSONAL
                 db.execute('UPDATE card_moves SET undone_at=? WHERE decision_id=?', (now(), undo))
             else:
-                area = todo_areas.check(area, row['account_ids'], accounts)
+                area = todo_areas.check(area, row['account_ids'], accounts, row['area'])
                 ids, pinned = todo_areas.accounts_in(area, accounts), area
                 if not ids:
                     raise ValueError('Pick one of your areas')
@@ -7235,8 +7240,8 @@ class Store:
         facts = [f for f in self.facts() if f['kind'] == kind]
         if accounts is not None and any(f.get('side') for f in facts):
             with self.connect() as db:
-                card = db.execute('SELECT account_ids FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
-            area = suggestion_scope(card['account_ids'] if card else '[]', accounts)
+                card = db.execute('SELECT account_ids,area FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
+            area = suggestion_scope(card['account_ids'] if card else '[]', accounts, card['area'] if card else None)
             facts = [f for f in facts if f.get('side') in (None, area)]
         if sum(len(self.fact_line(f)) + 1 for f in facts) + (len(AI_FACTS_HEAD) + 9 if any(ai_fact_by(f) for f in facts) else 0) <= all_under:
             return self.facts_within(facts, limit)
@@ -8661,8 +8666,8 @@ class Store:
             if waiting.get('sign_in'):extra['preparation_browser']['signin_url']=signin_link(self.config,suggestion['id'])
         if suggestion.get('status') in ('prepared','accepted','instructions'):self.browser_view(db,suggestion,extra)
         if self.accounts and suggestion.get('account_ids') is not None:
-            extra['scope']=suggestion_scope(suggestion['account_ids'], self.accounts)
-            extra['area']=todo_areas.current(suggestion['account_ids'], self.accounts)  # More, Move to: the other areas
+            extra['scope']=suggestion_scope(suggestion['account_ids'], self.accounts, suggestion.get('area'))
+            extra['area']=todo_areas.current(suggestion['account_ids'], self.accounts, suggestion.get('area'))  # More, Move to: the other areas
             if extra['area'] and suggestion.get('status') in gap_note.OPEN_STATUSES:
                 hint=area_hint(db,suggestion,self.accounts,extra['area'])  # Change area starts on where its people point
                 if hint:extra['area_hint']=hint
@@ -8838,10 +8843,10 @@ class Store:
 
     def done_rows(self, db, titles=False):
         """Every done or dismissed card, the latest closed first, with its scope: light rows to count, filter and page."""
-        rows = db.execute("SELECT s.id," + ("s.title," if titles else "") + "s.account_ids,coalesce((SELECT max(d.created_at) FROM decisions d WHERE d.suggestion_id=s.id AND d.choice IN ('complete','reject')),s.created_at) closed_at "
+        rows = db.execute("SELECT s.id," + ("s.title," if titles else "") + "s.account_ids,s.area,coalesce((SELECT max(d.created_at) FROM decisions d WHERE d.suggestion_id=s.id AND d.choice IN ('complete','reject')),s.created_at) closed_at "
                           "FROM suggestions s WHERE s.status IN ('completed','rejected') ORDER BY closed_at DESC,s.id").fetchall()
         return [{'id': r['id'], 'title': (r['title'] or '') if titles else '', 'closed_at': r['closed_at'],
-                 'scope': suggestion_scope(r['account_ids'], self.accounts) if getattr(self, 'accounts', None) and r['account_ids'] is not None else None} for r in rows]
+                 'scope': suggestion_scope(r['account_ids'], self.accounts, r['area']) if getattr(self, 'accounts', None) and r['account_ids'] is not None else None} for r in rows]
 
     def done_counts(self, db):
         rows = self.done_rows(db)
@@ -11606,13 +11611,30 @@ def strip_result_links(text):
     return re.sub(r'\n{3,}', '\n\n', '\n'.join(lines)).strip()
 
 
-def suggestion_scope(account_ids, accounts):
+def suggestion_scope(account_ids, accounts, area=None):
     """Work when any source account counts as work, else personal.
 
     An account's optional `scope` ("work" or "personal") sets its label; without one, a work boundary
-    means work. `scope: personal` on a work-boundary account keeps work timing but labels it personal."""
+    means work. `scope: personal` on a work-boundary account keeps work timing but labels it personal.
+    area: the to-do's area column; a to-do pinned Personal (todo_areas.py: its own life, on a work mailbox) is personal."""
+    if area == todo_areas.PERSONAL:
+        return 'personal'
     ids = json.loads(account_ids or '[]') if isinstance(account_ids, str) else (account_ids or [])
     return 'work' if any(a['id'] in ids and a.get('scope', 'work' if a.get('boundary', '').startswith('work:') else 'personal') == 'work' for a in accounts) else 'personal'
+
+
+def own_life_evidence(db, event_ids):
+    """Whether everyone the owner was in touch with on this evidence is from their own life (graph.own_life: Family,
+    Friends, a family or friend relation, or the owner's word): such a matter is Personal, whatever mailbox it came in on."""
+    ids = [int(i) for i in event_ids or () if str(i).lstrip('-').isdigit()]
+    if not ids:
+        return False
+    try:
+        rows = db.execute(f"SELECT DISTINCT n.info FROM graph_events g JOIN graph_nodes n ON n.id=g.node_id WHERE g.direct=1 "
+                          f"AND n.kind='person' AND g.event_id IN ({','.join('?' * len(ids))})", ids).fetchall()
+    except sqlite3.Error:
+        return False
+    return bool(rows) and all(graph.own_life(json.loads(r[0] or '{}')) for r in rows)
 
 
 def thread_keys(rows):
@@ -13774,7 +13796,7 @@ def deliver_one(store, config, edit_cards=True):
         row = dict(rows[0])
         # Enforce at delivery too: the last work day's queued work may catch up on a day off.
         # Owner-selected snoozes/preparations are reminders and keep their timing.
-        work=any(a['id'] in json.loads(row['account_ids']) and a.get('boundary','').startswith('work:') for a in config.get('accounts',[]))
+        work=row.get('area')!='personal' and any(a['id'] in json.loads(row['account_ids']) and a.get('boundary','').startswith('work:') for a in config.get('accounts',[]))
         held=delivery_time('now',work=work,urgent=bool(row.get('urgent')))
         if not row['reminder'] and held:
             db.execute('UPDATE suggestions SET deliver_after=? WHERE id=?',(held,row['id']))
@@ -14631,6 +14653,7 @@ Boards: projects of one kind (partner listings, hires, onboardings), one project
 Team: when begin_analysis lists team (Work messages, shared with the owner's Work Fleet by default), add finish_analysis team ([{{"event_id", "share", "line", "group", "suggest"}}], group and suggest only for unsure ones; begin_analysis share_groups lists the groups already used) for each of those threads, judged by what the conversation is, never by words in it: {SHARE_VERDICTS} line is one short line of what happened, in your own words ("Lee asked for the renewal quote"), never quoted text. The owner's own Team or Only you always wins.
 Who does the step: when the step on a card is one only the owner can do themselves, in person or offline (go somewhere, pick something up, attend, meet, hand something over, sign on paper), add owner_step:true to suggest, and to promise for the owner's own; judge it by what the step is, not its words. The card then offers Done, and help around it on the owner's tap (a calendar slot, directions, a message if plans change), never Do it. Leave it out when you can do the step with your tools (write, send, look up, book or order online, fill in a form).
 Family coordination: when a to-do is the owner arranging family life with one specific person (who picks up the kids, a plan, a schedule, a back-and-forth about the weekend), judged by what the conversation means, and that person is family (a partner, a child, a parent or another relative) as their graph role says or as the owner's own words say, add family_with: their person node_id to suggest. Never infer family from a name, a shared surname, an address or the topic alone, and never for someone the owner works with; when unsure, leave it out. The service decides whether the to-do suggests inviting them to the owner's Family.
+Work or Personal: a to-do about the owner's own life (their family, friends, home, their children's activities, their health), judged by what the matter is and who it is with, gets personal:true on suggest, also when it came in on a work mailbox; family_with counts as personal too. Leave it out for anything about their work, and for a colleague or client who mentions their own life in a work conversation. The to-do is then Personal: never a Work Fleet's.
 Before suggesting, check it isn't already handled: search related signals (same thread, sender or chat) for a later reply from the owner or from a colleague (e.g. a teammate on the owner's own email domain answering the thread), or a confirmation (signed, paid, booked, resolved). If so, don't suggest it. When a signal in this batch shows that an OPEN suggestion (pending, prepared, accepted or snoozed in status) is now done, call looks_handled with suggestion_id, a reason (one short clause in plain words that reads after "Looks handled:", e.g. "Sam e-signed it on Tuesday") and the event_ids that show it; the owner still closes it themselves. After they said Not done on it, only a newer signal counts. For anything tied to a date, check the calendars for that date (days off, travel, existing plans).
 When a note the owner wrote on a suggestion (decisions with source telegram or dashboard) states something that stays true beyond that card, save it once with remember_fact (text, decision_id, {FACT_KIND_HINT}); skip one-off wording requests. A fact is about its subject, never about whoever sent the message it came up in: when it is about a specific person, organization or project, add about=[their graph node_ids]; one about the owner (their own habits, preferences, home or accounts) or about the world gets no about.
 Moments: a meeting both sides agreed on that is in the calendar needs no to-do to confirm it or say "see you then", unless the other person asked for a confirmation or something is still open (time, place, agenda). A to-do whose whole point is a moment (a reminder or confirmation before a meeting) gets expires_at (that moment) and expires_what ("the meeting with Sam"), so it closes by itself once that has passed. Titles and bodies are read on later days: name the weekday or date, never today, tomorrow or yesterday.
@@ -16051,7 +16074,9 @@ class App(*APP_MIXINS):
             company=args.get('company') or None  # mail for another of the owner's companies: the to-do goes there (owner_companies)
             if company is not None:
                 source_accounts=set(todo_areas.company_accounts(company,self.config['accounts']))
-            work=any(a['id'] in source_accounts and a.get('boundary','').startswith('work:') for a in self.config['accounts'])
+            # the owner's own life (family, friends, home), also on a work mailbox: Personal from the start (todo_areas.py)
+            personal=company is None and (args.get('personal') is True or bool(args.get('family_with')))
+            work=not personal and any(a['id'] in source_accounts and a.get('boundary','').startswith('work:') for a in self.config['accounts'])
             # A title or summary that says "today" or "tomorrow" is wrong the day after: saved with the day itself
             (title, body), stale = undated_card(str(args['title'] or ''), str(args['body'] or ''))
             saved = self.store.suggest(args['dedupe_key'], title, body, args['event_ids'], args.get('when') or 'digest',
@@ -16061,7 +16086,7 @@ class App(*APP_MIXINS):
                                        awaiting=args.get('awaiting_event_id'),project=args.get('project'),card_id=args.get('card_id'),
                                        separate=args.get('separate') is True,reopen=args.get('reopen') is True,match=True,
                                        owner_step=(args['owner_step'] is True) if 'owner_step' in args else None,
-                                       expires_at=args.get('expires_at'), expires_what=args.get('expires_what'), company=company)
+                                       expires_at=args.get('expires_at'), expires_what=args.get('expires_what'), company=company, personal=personal)
             if isinstance(saved, dict) and stale:
                 saved['dates'] = (f"Saved {', '.join(sorted({w.lower() for w in stale}))} as the day itself: a to-do is read on later days, so name "
                                   'the weekday or date, never today, tomorrow or yesterday.')
@@ -17447,7 +17472,7 @@ class App(*APP_MIXINS):
             raise ValueError('No such to-do')
         if row['status'] not in fleet.OPEN_CARD or str(row['dedupe_key']).startswith('fleet-review:'):
             raise ValueError(i18n.t('This to-do can’t be reviewed'))
-        scope = suggestion_scope(row['account_ids'], self.config.get('accounts', []))
+        scope = suggestion_scope(row['account_ids'], self.config.get('accounts', []), row['area'])
         found = {'scope': scope, 'title': row['title'], 'what': 'result', 'body': fleet_reviews._text(row['body'], fleet_reviews.BODY, True)}
         try:
             value = json.loads(row['next_action'] or 'null')
