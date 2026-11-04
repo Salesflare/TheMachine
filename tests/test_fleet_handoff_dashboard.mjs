@@ -61,7 +61,7 @@ try{
  for(const b of await later.locator('.actions>button').all())assert.ok((await b.evaluate(x=>x.scrollWidth<=x.clientWidth+1&&getComputedStyle(x).whiteSpace==='nowrap')),await b.innerText());
  assert.doesNotMatch(await later.innerText(),/Back |Unsnooze|Snoozed/);
  assert.deepEqual(await later.locator('.actions>button:not([hidden])').allTextContents().then(t=>t.map(x=>x.trim())),['Check in now','Change time']);  // with Kim: Check in now leads, with Change time
- assert.deepEqual(await later.locator('.more-menu>button').allTextContents().then(t=>t.map(x=>x.trim())),['Hand off…','Repeat…','Not needed']);  // take it back or hand it on: under …, Hand off…
+ assert.deepEqual(await later.locator('.more-menu>button').evaluateAll(n=>n.filter(x=>getComputedStyle(x).display!=='none').map(x=>x.textContent.trim())),['Hand off…','Repeat…','Not needed']);  // take it back or hand it on: under …, Hand off…
  assert.deepEqual(await later.locator('.mm-sub>button:not([data-mm-back])').evaluateAll(n=>n.map(x=>x.dataset.full||x.textContent.trim())),['Take it back','Hand off to someone else']);
  assert.equal(await later.locator('.actions [data-choice="accept"]').innerText(),'Check in now');
  const chatLine=await page.evaluate(()=>{const s=state.suggestions[0],d=document.createElement('div');d.innerHTML=chatStatus(s);return d.textContent});
