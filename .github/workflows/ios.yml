@@ -64,6 +64,14 @@ jobs:
           xcodebuild -project App.xcodeproj -scheme App -configuration Release -destination 'generic/platform=iOS' \
             -archivePath "$RUNNER_TEMP/App.xcarchive" DEVELOPMENT_TEAM="$TEAM_ID" CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
             "${auth[@]}" archive | tail -n 60
+          # The app and both extensions are in the archive, each signed with the shared app group, before anything uploads
+          app="$RUNNER_TEMP/App.xcarchive/Products/Applications/App.app"
+          for b in "$app" "$app/PlugIns/ShareExtension.appex" "$app/PlugIns/NotificationService.appex"; do
+            [ -d "$b" ] || { echo "::error::not in the archive: ${b##*/}"; exit 1; }
+            codesign -d --entitlements - --xml "$b" 2>/dev/null | grep -q '<string>group.computer.themachine.app</string>' \
+              || { echo "::error::${b##*/} is signed without group.computer.themachine.app"; exit 1; }
+            echo "${b##*/}: in the archive, with group.computer.themachine.app"
+          done
           cat > "$RUNNER_TEMP/export.plist" <<PLIST
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
