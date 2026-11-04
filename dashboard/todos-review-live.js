@@ -12,7 +12,7 @@ rows.push(make('div',{class:'review-live','data-run':r.run_id},chipNode(r.status
  latest?make('ul',{class:'steps','aria-live':'polite'},make('li',{},latest.title)):make('p',{class:'muted'},'Starting…'),
  earlier.length?make('details',{class:'earlier-steps'},make('summary',{},'Earlier steps'),make('ul',{class:'steps'},earlier.map(x=>make('li',{},x.title)))):'',
  r.preview?make('small',{},'A preview: to-dos show under To-dos, and nothing is sent or done.'):''))}
-if(!(live.runs||[]).length&&startsByItself()){if(!setupStep())rows.push(make('div',{class:'review-live queued'},chipNode('Starting','lavender'),make('span',{class:'grow'},t(SETUP_LINE))));return rows}
+if(!(live.runs||[]).length&&startsByItself()){if(!setupStep())rows.push(make('div',{class:'review-live queued'},chipNode(aiConnecting()?'Connecting':'Starting','lavender'),make('span',{class:'grow'},setupLine())));return rows}
 if(!(live.runs||[]).length&&state.reviews_on===false){const on=turnOn(),fl=live.first_look;
  rows.push(make('div',{class:'review-live queued'},chipNode('Off','orange'),make('span',{class:'grow'},t('Reviews are off.'),fl?.state==='waiting'?` ${t('A first look at your last {} days comes first.',firstLookDays(fl))} ${t(FIRST_LOOK_WAIT[fl.why]||'')}`:''),
   on.url?make('a',{class:'head-link',href:on.url},on.action):make('code',{},'./install.sh --activate')));return rows}
@@ -27,12 +27,12 @@ return rows}
 // Also with reviews off (where the first look happens): waiting for it is not "All clear".
 function firstLookInfo(live){const run=(live.runs||[]).find(r=>r.preview||r.window_hours),fl=live.first_look;
 if(run){const total=run.planned||run.claimed_count||0;return{title:t('Taking a first look at your last {} days',firstLookDays(fl,run)),done:Math.min(run.done_count||0,total),total}}
-if(startsByItself()&&fl?.state!=='due')return setupStep()?{title:t('Your first to-dos show up here'),wait:t('Nothing is sent.')}:{title:t(SETUP_LINE)};  // not "All clear" before the first read ends
+if(startsByItself()&&fl?.state!=='due')return setupStep()?{title:t('Your first to-dos show up here'),wait:t('Nothing is sent.')}:{title:setupLine(),working:!!aiConnecting()};  // not "All clear" before the first read ends
 if((fl?.state==='waiting'&&fl.why!=='model')||fl?.state==='due')return{title:t('A first look at your last {} days starts soon',firstLookDays(fl)),wait:FIRST_LOOK_WAIT[fl.state==='due'?'due':fl.why]||''};return null}
 // the counts are whole numbers before they reach the page, whatever the status says
 const firstLookBar=i=>{const done=Math.max(0,+i.done|0),total=Math.max(0,+i.total|0);return total?[make('span',{class:'fl-bar',role:'progressbar','aria-label':'Signals reviewed','aria-valuemin':'0','aria-valuemax':total,'aria-valuenow':done},
  make('i',{style:{width:Math.round(100*done/total)+'%'}})),make('span',{class:'fl-count mono'},`${done} of ${total} signals`)]:[]};
-const firstLookInner=i=>[make('img',{class:'sticker',src:'brand/wave.webp',alt:''}),make('div',{},make('strong',{},i.title),firstLookBar(i),make('small',{},i.wait||'To-dos show up here as they come. Nothing is sent.'))];
+const firstLookInner=i=>[make('img',{class:'sticker',src:'brand/wave.webp',alt:''}),make('div',{},make('strong',i.working?{class:'backfill-run'}:{},i.title),firstLookBar(i),make('small',{},i.wait||'To-dos show up here as they come. Nothing is sent.'))];
 // The list's empty state while the first look runs: a place the list fills with firstLookFill once it is on the page
 const firstLookEmpty=i=>i?html`<div class="empty all-clear first-look-empty"></div>`:'';
 function firstLookFill(){const box=$('#suggestions .first-look-empty'),i=box&&firstLookInfo(state.review_live||{});if(i)box.replaceChildren(...firstLookInner(i))}
@@ -42,8 +42,12 @@ if(i){el.replaceChildren(make('strong',{},i.title),...firstLookBar(i),i.wait?mak
 function renderReviewLive(){const live=state.review_live||{},rows=reviewLiveRows(live);$('#review-live').replaceChildren(...rows);const none=$('#analyses .no-reviews');if(none)none.hidden=!!rows.length;renderFirstLook(live)}
 let reviewWasLive=false,cardWaiting=false;
 // While a review runs, or the first look is about to start, look every 5 s; a card a running review just saved shows at once
-const firstLookPending=()=>['due','waiting'].includes(state?.review_live?.first_look?.state)&&state.review_live.first_look.why!=='model';
+// A hosted Machine waiting for its AI is looked at too: the sign-in on its setup page ends any moment, and the page
+// moves on by itself (a full refresh once the model can run, so reviews turning on shows as well)
+const waitingForAI=()=>!!state?.manage_url&&state.reviews_on===false&&state.review_live?.first_look?.why==='model';
+const firstLookPending=()=>['due','waiting'].includes(state?.review_live?.first_look?.state)&&state.review_live.first_look.why!=='model'||waitingForAI();
 setInterval(async()=>{if(document.hidden||!state||!((state.review_live?.runs||[]).length||reviewWasLive||cardWaiting||firstLookPending()))return;try{const live=await request('api/reviews/live');const running=(live.runs||[]).length;
 const before=state.review_live?.cards,fresh=live.cards&&before&&(live.cards.newest!==before.newest||live.cards.count!==before.count);
 if(fresh&&!canRefresh()){reviewWasLive=!!running;cardWaiting=true;state.review_live={...live,cards:before};renderReviewLive();return}  // typing: on the next look, also once the review ended
-if((!running&&reviewWasLive)||fresh){reviewWasLive=!!running;cardWaiting=false;state.review_live=live;refresh();return}cardWaiting=false;reviewWasLive=!!running;state.review_live=live;renderReviewLive()}catch(e){}},5000);
+const aiReady=waitingForAI()&&live.first_look?.why!=='model',aiChanged=(live.ai_connecting?.name||null)!==(state.review_live?.ai_connecting?.name||null);
+if((!running&&reviewWasLive)||fresh||aiReady){reviewWasLive=!!running;cardWaiting=false;state.review_live=live;refresh();return}cardWaiting=false;reviewWasLive=!!running;state.review_live=live;renderReviewLive();if(aiChanged)renderNeedsYou()}catch(e){}},5000);

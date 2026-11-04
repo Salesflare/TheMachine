@@ -9,8 +9,8 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // "All clear" only after the first read. A step that is really missing is a Needs you line with a link to that step.
 const dashboard=await dashboardPage();
 const manage='https://control.example/setup',outlook=[{id:'work-outlook',service:'outlook',display_name:'Outlook'}];
-let on=false,conns=outlook,look={state:'waiting',why:'sources',days:7},runs=[];
-const live=()=>({runs,queue:null,first_look:look});
+let on=false,conns=outlook,look={state:'waiting',why:'sources',days:7},runs=[],ai=null;
+const live=()=>({runs,queue:null,first_look:look,ai_connecting:ai});
 const state=()=>({suggestions:[],promises:[],connectors:conns,suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},
  review_runs:[],review_live:live(),reviews_on:on,reviews_auto:!on,manage_url:manage});
 const errors=[];
@@ -53,6 +53,23 @@ try{
  assert.equal(await page.locator('#needs-you a',{hasText:'Pick your AI'}).getAttribute('href'),manage+'#model');
  assert.ok(!/Reviews are off|Turn on reviews/.test(await everything(page)));
  await page.close();
+ // Signing in to ChatGPT on the setup page meanwhile: "Connecting ChatGPT…", working, never "Pick your AI"
+ const CONNECTING='Connecting ChatGPT…';
+ ai={name:'ChatGPT',since:new Date().toISOString()};page=await open();
+ assert.ok(!(await everything(page)).includes('Pick your AI'));
+ assert.equal(await page.locator('#needs-you').isHidden(),true);
+ assert.ok((await page.locator('#suggestions').textContent()).includes(CONNECTING));
+ assert.ok((await page.locator('#review-live').textContent()).includes(CONNECTING));
+ assert.equal(await page.locator('#suggestions strong.backfill-run').count(),1,'a sign it is working');
+ // The sign-in fails (the note goes away): "Pick your AI" comes back by itself, without a reload
+ ai=null;await page.locator('#needs-you a',{hasText:'Pick your AI'}).waitFor({timeout:12000});
+ assert.ok(!(await page.locator('#suggestions').textContent()).includes(CONNECTING));
+ // Again, and this time it works: the page moves on by itself once the model runs and reviews are on
+ ai={name:'ChatGPT',since:new Date().toISOString()};await page.locator('#suggestions',{hasText:CONNECTING}).waitFor({timeout:12000});
+ assert.equal(await page.locator('#needs-you').isHidden(),true);
+ on=true;look=null;ai=null;await page.locator('#suggestions',{hasText:'All clear'}).waitFor({timeout:12000});
+ assert.ok(!(await everything(page)).includes('Pick your AI'));
+ await page.close();on=false;
  // Reviews on: the normal page again
  on=true;look=null;page=await open();
  assert.ok((await page.locator('#suggestions').textContent()).includes('All clear'));

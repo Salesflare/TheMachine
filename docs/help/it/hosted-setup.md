@@ -19,7 +19,7 @@ Una Machine ospitata gira nel cloud, nell'UE, solo per te. Pensiamo noi a tenerl
 La tua Machine si avvia, poi la pagina di configurazione ti guida nel resto, un passo alla volta:
 
 1. **Email e calendario**: collega Google o Microsoft. Puoi farlo mentre la tua Machine si avvia. Dopo l’accesso, il passaggio dice che sta lavorando finché la tua Machine non è installata e ha letto la tua posta, circa un minuto. Vedi [Gmail](gmail.md) e [Microsoft](microsoft.md).
-2. **La tua IA**: accedi con ChatGPT o Claude, o usa una chiave del tuo fornitore di IA. Vedi [ChatGPT](chatgpt.md).
+2. **La tua IA**: accedi con ChatGPT o Claude, o usa una chiave del tuo fornitore di IA. Vedi [ChatGPT](chatgpt.md). Una dashboard aperta nel frattempo dice **Connessione a ChatGPT…** finché non ha finito.
 3. Le revisioni si attivano da sole. Le prime attività arrivano dalla posta più recente, poi dagli ultimi 7 giorni.
 
 Sotto **Aggiungi altro quando vuoi** ci sono quelle facoltative: **Altre fonti** come Slack, WhatsApp o GitHub, [Telegram](telegram.md), [Codex](hand-to-agent.md) e la connessione del tuo browser. Nessuna serve per iniziare. La dashboard te le suggerisce quando sono utili, per esempio GitHub quando continua ad arrivarti la sua posta.
