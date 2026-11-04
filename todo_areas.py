@@ -11,7 +11,13 @@ with it). An account whose own `scope` says the other side (a work boundary labe
 boundary named after its own source ('work:linkedin' on a LinkedIn account, 'work:x' on an X account: an owner's own
 profile, from before the setup asked for a company) is Work but no company: such a to-do can move to any company, and
 nothing moves to it. Mail in one company's mailbox for another company of the owner's goes to that company from the
-start (owner_companies, the review's suggest company), also one whose accounts are labeled personal."""
+start (owner_companies, the review's suggest company), also one whose accounts are labeled personal.
+
+A matter of the owner's own life (family, friends, home) that came in on a work mailbox is Personal from the start
+(personal_accounts: the review's personal or family_with, or only people from the owner's own life on it). With a
+Personal area it gets that area's accounts, as a move does. Without one (only work accounts connected) it keeps the
+mailbox it came in on and is pinned Personal (the to-do's area column): its label, sharing and handoffs follow the pin,
+so a family matter is never offered to a Work Fleet. A move to Work takes the pin off."""
 from __future__ import annotations
 
 import json
@@ -80,10 +86,13 @@ def moved_line(area, companies=1):
 WORK = 'work'  # a to-do whose Work accounts are in no company (a 'work:linkedin' profile's): Work, and any company is another area
 
 
-def current(account_ids, accounts):
+def current(account_ids, accounts, pinned=None):
     """The one area a to-do is in now, from its accounts: a company when its Work accounts are all that company's,
     Personal when it has no Work account, Work (no company) when its Work accounts are in none. None when it spans
-    several companies (a merged one) or none is known."""
+    several companies (a merged one) or none is known. pinned: the to-do's area column; Personal there is Personal,
+    whatever its accounts (a family matter on a work mailbox, when there is no Personal area)."""
+    if pinned == PERSONAL:
+        return PERSONAL
     ids = json.loads(account_ids or '[]') if isinstance(account_ids, str) else list(account_ids or ())
     mine = {area_of_account(a) for a in accounts or () if a.get('id') in ids} - {None}
     work = {x for x in mine if x != PERSONAL}
@@ -99,11 +108,11 @@ def accounts_in(area, accounts):
     return [a['id'] for a in accounts or () if area_of_account(a) == area]
 
 
-def check(area, account_ids, accounts):
+def check(area, account_ids, accounts, pinned=None):
     """The area to move a to-do to, checked: one of the owner's, with accounts, and not the one it is in."""
     if not isinstance(area, str) or area not in {x['id'] for x in areas(accounts)}:
         raise ValueError('Pick one of your areas')
-    if area == current(account_ids, accounts):
+    if area == current(account_ids, accounts, pinned):
         raise ValueError('It is in that area already')
     return area
 
@@ -156,3 +165,9 @@ def company_accounts(company, accounts):
     if company not in {c['id'] for c in owner_companies(accounts)}:
         raise ValueError('company: one of the owner\'s companies: ' + ', '.join(c['id'] for c in owner_companies(accounts)))
     return [a['id'] for a in accounts if a.get('boundary') == company]
+
+
+def personal_accounts(accounts):
+    """The accounts a to-do of the owner's own life gets (Store.suggest personal): the Personal area's, or None when
+    there is none, and it keeps its own accounts, pinned Personal."""
+    return accounts_in(PERSONAL, accounts) or None

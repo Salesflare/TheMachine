@@ -3679,11 +3679,11 @@ class Fleet(fleet_requests.Requests, fleet_reviews.Reviews, friends.Friends, con
 
     def learning_fleet(self, db, suggestion_id):
         """(the Work Fleet whose team learnings a to-do may use, the to-do) or (None, …): a to-do whose accounts are all
-        that Fleet's work accounts (fleet_accounts). A personal to-do, or one with a personal account, never; nor a Careful
+        that Fleet's work accounts (fleet_accounts). A personal to-do (also one pinned Personal on a work mailbox), or one with a personal account, never; nor a Careful
         Work Fleet, also not with learnings shared before it became Careful."""
-        row = db.execute('SELECT title,body,account_ids FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
+        row = db.execute('SELECT title,body,account_ids,area FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
         ids = set(json.loads(row['account_ids'] or '[]')) if row else set()
-        if not ids:
+        if not ids or row['area'] == 'personal':  # Personal (todo_areas.py), also on a work mailbox
             return None, row
         return next((ref for ref in self.work_fleets() if self.level(ref) != 'careful' and ids <= set(self.fleet_accounts(ref))), None), row
 

@@ -34,7 +34,7 @@ A to-do on a project shows the project's name in the line under its title; it op
 
 When a to-do needs another area to go on, it asks with a **Move to Work** button. Nothing moves until you tap it; then it carries on by itself.
 
-When you start a to-do, it can always read the messages it came from, also in another company's mailbox. When it needs other messages from another area, it asks with **Use this email for this to-do**; a tap adds them and it carries on. Mail for another of your companies goes to that company's to-dos from the start.
+When you start a to-do, it can always read the messages it came from, also in another company's mailbox. When it needs other messages from another area, it asks with **Use this email for this to-do**; a tap adds them and it carries on. Mail for another of your companies goes to that company's to-dos from the start. A to-do about your own life, like family writing to your work address, is Personal from the start.
 
 ## The buttons
 

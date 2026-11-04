@@ -249,22 +249,25 @@ def open_with(store, config, node_id, caller=OWNER, limit=10):
             for key in ('you_promised', 'they_promised'):
                 out[key] = [p for p in out[key] if on.get(p['id']) in allowed]
             cards = [t['id'] for t in out['todos']]
-            areas = {r[0]: r[1] for r in db.execute(f"SELECT id,account_ids FROM suggestions WHERE id IN ({','.join('?' * len(cards)) or 'NULL'})", cards)}
-            out['todos'] = [t for t in out['todos'] if _card_visible(config, areas.get(t['id']), caller)]
+            areas = {r[0]: (r[1], r[2]) for r in db.execute(f"SELECT id,account_ids,area FROM suggestions WHERE id IN ({','.join('?' * len(cards)) or 'NULL'})", cards)}
+            out['todos'] = [t for t in out['todos'] if _card_visible(config, *areas.get(t['id'], (None, None)), caller)]
     return {k: v[:limit] for k, v in out.items()}
 
 
-def card_area(config, account_ids):
-    """A to-do's area: Work when any of its accounts is Work, else Personal."""
+def card_area(config, account_ids, pinned=None):
+    """A to-do's area: Work when any of its accounts is Work, else Personal. pinned: its area column (Personal there is
+    Personal: the owner's own life on a work mailbox, todo_areas.py)."""
+    if pinned == 'personal':
+        return 'personal'
     ids = json.loads(account_ids or '[]') if isinstance(account_ids, str) else (account_ids or [])
     return 'work' if any(graph.account_side(a) == 'work' for a in (config or {}).get('accounts', []) if a['id'] in ids) else 'personal'
 
 
-def _card_visible(config, account_ids, caller):
+def _card_visible(config, account_ids, pinned, caller):
     if caller.area is None:
         return True
     mine = json.loads(account_ids or '[]') if isinstance(account_ids, str) else list(account_ids or [])
-    return card_area(config, mine) == caller.area and bool(set(mine) & set(caller.accounts or ()))
+    return card_area(config, mine, pinned) == caller.area and bool(set(mine) & set(caller.accounts or ()))
 
 
 # ------------------------------------------------------------------ earlier conversations
