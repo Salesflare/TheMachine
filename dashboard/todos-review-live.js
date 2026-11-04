@@ -6,7 +6,7 @@ const FIRST_LOOK_WAIT={model:'It starts once your main model can run: sign in fo
 const firstLookDays=(fl,run)=>{const hours=run?run.window_hours:fl?.quick&&fl.hours;return hours?Math.max(1,Math.round(hours/24)):fl?.days||7};
 function reviewLiveRows(live){const rows=[];const name=id=>{const c=(state.connectors||[]).find(c=>c.id===id);return c?(c.display_name||c.email||id):id};
 for(const r of live.runs||[]){const total=r.planned||r.claimed_count||0,done=Math.min(r.done_count||0,total||Infinity);const steps=r.steps||[],[latest,...earlier]=steps;
-const what=r.preview?t(r.auto?'First look: your last {} days':'Preview: your last {} days',firstLookDays(live.first_look,r)):'Reviewing new messages';
+const what=r.preview||r.promising||r.window_hours?t(r.preview&&!r.auto?'Preview: your last {} days':'First look: your last {} days',firstLookDays(live.first_look,r)):'Reviewing new messages';
 rows.push(make('div',{class:'review-live','data-run':r.run_id},chipNode(r.status==='recovering'?'Waiting for OpenClaw':'Reviewing','amber'),
  make('span',{class:'grow'},what,total?[' · ',make('b',{},`${done} of ${total}`),' signals']:'',(r.account_ids||[]).length?' · '+[...new Set(r.account_ids.map(name))].join(', '):''),timeNode(r.started_at),'\n',
  latest?make('ul',{class:'steps','aria-live':'polite'},make('li',{},latest.title)):make('p',{class:'muted'},'Starting…'),
@@ -25,13 +25,22 @@ return rows}
 // The first look (a review of the last days, right after setup): while there are no cards yet it is the empty
 // state itself; once cards come in, a slim progress strip under the counters.
 // Also with reviews off (where the first look happens): waiting for it is not "All clear".
-function firstLookInfo(live){const run=(live.runs||[]).find(r=>r.preview||r.window_hours),fl=live.first_look;
-if(run){const total=run.planned||run.claimed_count||0;return{title:t('Taking a first look at your last {} days',firstLookDays(fl,run)),done:Math.min(run.done_count||0,total),total}}
+// A batch saves what it read at its end, so in between its count moves a signal at a time at the pace the earlier
+// batches took (first_dig.pace), one short of its size until it saved; the bar never moves back.
+const flSeen=new Map();let flPeak=0;
+function flRunDone(run,pace){const total=run.planned||run.claimed_count||0,real=Math.min(run.done_count||0,total);if(!total)return 0;
+ const start=Math.min(flSeen.get(run.run_id)??Infinity,Date.now()-1000*(+run.duration_seconds||0));flSeen.set(run.run_id,start);
+ return Math.max(real,Math.min(total-1,Math.floor((Date.now()-start)/1000/Math.max(1,+pace||6))))}
+// While it digs (live.first_dig): one bar over the whole week, also between its batches, until it has its to-dos or read the week
+function firstLookInfo(live){const run=(live.runs||[]).find(r=>r.preview||r.window_hours||r.promising),fl=live.first_look,dig=live.first_dig;
+if(dig&&dig.total){const total=Math.max(0,+dig.total|0),todos=+dig.todos|0,done=Math.min(total,Math.max(flPeak,(+dig.read|0)+(run?flRunDone(run,dig.pace):0)));flPeak=done;
+ return{title:t('Taking a first look at your last {} days',dig.days||7),done,total,wait:!dig.read&&!run?.done_count?'':todos?t(['Found {} to-do. Reading on.','Found {} to-dos. Reading on.'],todos):t('Nothing for you yet. Reading on.')}}
+if(run){const total=run.planned||run.claimed_count||0;return{title:t('Taking a first look at your last {} days',firstLookDays(fl,run)),done:flRunDone(run,6),total}}
 if(startsByItself()&&fl?.state!=='due')return setupStep()?{title:t('Your first to-dos show up here'),wait:t('Nothing is sent.')}:{title:setupLine(),working:!!aiConnecting()};  // not "All clear" before the first read ends
 if((fl?.state==='waiting'&&fl.why!=='model')||fl?.state==='due')return{title:t('A first look at your last {} days starts soon',firstLookDays(fl)),wait:FIRST_LOOK_WAIT[fl.state==='due'?'due':fl.why]||''};return null}
 // the counts are whole numbers before they reach the page, whatever the status says
 const firstLookBar=i=>{const done=Math.max(0,+i.done|0),total=Math.max(0,+i.total|0);return total?[make('span',{class:'fl-bar',role:'progressbar','aria-label':'Signals reviewed','aria-valuemin':'0','aria-valuemax':total,'aria-valuenow':done},
- make('i',{style:{width:Math.round(100*done/total)+'%'}})),make('span',{class:'fl-count mono'},`${done} of ${total} signals`)]:[]};
+ make('i',{style:{width:Math.round(100*done/total)+'%'}})),make('span',{class:'fl-count mono'},t('{} of {} signals',done,total))]:[]};
 const firstLookInner=i=>[make('img',{class:'sticker',src:'brand/wave.webp',alt:''}),make('div',{},make('strong',i.working?{class:'backfill-run'}:{},i.title),firstLookBar(i),make('small',{},i.wait||'To-dos show up here as they come. Nothing is sent.'))];
 // The list's empty state while the first look runs: a place the list fills with firstLookFill once it is on the page
 const firstLookEmpty=i=>i?html`<div class="empty all-clear first-look-empty"></div>`:'';
@@ -54,13 +63,18 @@ $('#suggestions').addEventListener('click',e=>{const b=e.target.closest('[data-f
 function renderFirstLook(live){const i=firstLookInfo(live),el=$('#first-look'),empty=$('#suggestions .all-clear');
 if(empty){el.hidden=true;if(i){empty.classList.add('first-look-empty');empty.replaceChildren(...firstLookInner(i))}else if(empty.classList.contains('first-look-empty'))refresh();return}
 if(i){el.replaceChildren(make('strong',{},i.title),...firstLookBar(i),i.wait?make('small',{},i.wait):'');el.hidden=false}else el.hidden=true}
+// The count ticks between polls: only the bar and its number change, a second at a time
+function firstLookTick(){if(document.hidden||!state)return;const i=firstLookInfo(state.review_live||{});if(!i?.total)return;
+ for(const box of document.querySelectorAll('#first-look,#suggestions .first-look-empty')){const bar=box.querySelector('.fl-bar'),count=box.querySelector('.fl-count');if(!bar||!count)continue;
+  const done=Math.max(0,+i.done|0),total=Math.max(1,+i.total|0);bar.setAttribute('aria-valuenow',done);bar.setAttribute('aria-valuemax',total);bar.firstChild.style.width=Math.round(100*done/total)+'%';count.textContent=t('{} of {} signals',done,total)}}
+setInterval(firstLookTick,1000);
 function renderReviewLive(){const live=state.review_live||{},rows=reviewLiveRows(live);$('#review-live').replaceChildren(...rows);const none=$('#analyses .no-reviews');if(none)none.hidden=!!rows.length;renderFirstLook(live)}
 let reviewWasLive=false,cardWaiting=false;
 // While a review runs, or the first look is about to start, look every 5 s; a card a running review just saved shows at once
 // A hosted Machine waiting for its AI is looked at too: the sign-in on its setup page ends any moment, and the page
 // moves on by itself (a full refresh once the model can run, so reviews turning on shows as well)
 const waitingForAI=()=>!!state?.manage_url&&state.reviews_on===false&&state.review_live?.first_look?.why==='model';
-const firstLookPending=()=>['due','waiting'].includes(state?.review_live?.first_look?.state)&&state.review_live.first_look.why!=='model'||waitingForAI();
+const firstLookPending=()=>['due','waiting'].includes(state?.review_live?.first_look?.state)&&state.review_live.first_look.why!=='model'||!!state?.review_live?.first_dig||waitingForAI();
 setInterval(async()=>{if(document.hidden||!state||!((state.review_live?.runs||[]).length||reviewWasLive||cardWaiting||firstLookPending()))return;try{const live=await request('api/reviews/live');const running=(live.runs||[]).length;
 const before=state.review_live?.cards,fresh=live.cards&&before&&(live.cards.newest!==before.newest||live.cards.count!==before.count);
 if(fresh&&!canRefresh()){reviewWasLive=!!running;cardWaiting=true;state.review_live={...live,cards:before};renderReviewLive();return}  // typing: on the next look, also once the review ended

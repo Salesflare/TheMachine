@@ -96,15 +96,42 @@ class FirstReviewDig(unittest.TestCase):
         # The next batch at once: no gap, no waiting for 40 signals or for the oldest to wait an hour
         self.assertEqual(self.step(Runner('admitted'), 2), 'admitted')
         nxt = self.runs()[1]
-        self.assertEqual((nxt['window_hours'], nxt['budget'], nxt['promising'], nxt['planned']), (None, a.FIRST_LOOK_NEXT_SIGNALS, 1, 20))
+        self.assertEqual((nxt['window_hours'], nxt['budget'], nxt['promising'], nxt['planned']), (None, a.FIRST_LOOK_NEXT_SIGNALS, 1, 25))
         self.review(4)
-        self.assertEqual(self.step(Runner('admitted'), 4), 'admitted')
-        self.assertEqual(self.runs()[2]['planned'], 5)
-        self.review(6)
-        self.assertEqual(self.dig(6), {'done': 'covered'})  # (b) the whole week looked through
-        self.assertIsNone(self.step(Runner(), 7))
+        self.assertEqual(self.dig(4), {'done': 'covered'})  # (b) the whole week looked through
+        self.assertIsNone(self.step(Runner(), 5))
         with self.store.connect() as db:
             self.assertEqual(a.first_cards_report(db, self.app.config['accounts'])['dig'], 'covered')
+
+    def test_the_dashboard_sees_one_count_over_the_week_also_between_batches(self):
+        # 2026-11-04: a small Outlook mailbox showed "0 of 20 signals", then the sleepy All clear while the first look
+        # was still digging, a batch at a time: between batches nothing said it was still looking
+        self.store.commit_page('work', {}, [mail(f'm{n}', hours_ago=n + 1) for n in range(70)])
+        with self.store.connect() as db:
+            self.assertIsNone(self.app.first_dig_live(db))  # no first look yet
+        self.step(Runner('admitted'))
+        with self.store.connect() as db:
+            live = self.app.first_dig_live(db)
+        self.assertEqual((live['read'], live['total'], live['todos'], live['goal'], live['pace']),
+                         (0, 70, 0, a.FIRST_DIG_CARDS, a.FIRST_DIG_PACE_SECONDS))
+        self.review(2)
+        with self.later(2), self.store.connect() as db:  # between batches: still digging, the count kept
+            live = self.app.first_dig_live(db)
+        self.assertEqual((live['read'], live['total'], live['todos']), (20, 70, 0))
+        self.assertGreaterEqual(live['pace'], 1)
+        with self.later(2):
+            self.assertEqual(self.app.review_live()['first_dig']['read'], 20)
+        self.step(Runner('admitted'), 2)
+        self.review(4, cards=3)
+        with self.later(4), self.store.connect() as db:  # found its to-dos: it stopped, the dashboard shows the ending
+            self.assertIsNone(self.app.first_dig_live(db))
+            self.assertEqual(self.app.first_dig(db), {'done': 'cards'})
+
+    def test_a_big_week_counts_toward_the_first_looks_share_not_the_whole_week(self):
+        self.store.commit_page('work', {}, [mail(f'm{n}', hours_ago=n / 4 + 1) for n in range(500)])
+        self.step(Runner('admitted'))
+        with self.store.connect() as db:
+            self.assertEqual(self.app.first_dig_live(db)['total'], a.FIRST_DIG_SIGNALS)
 
     def test_it_stops_digging_at_three_to_dos(self):
         self.store.commit_page('work', {}, [mail(f'm{n}', hours_ago=n + 1) for n in range(70)])
@@ -144,7 +171,7 @@ class FirstReviewDig(unittest.TestCase):
         self.store.commit_page('work', {}, [mail(f'm{n}', hours_ago=n / 2 + 1) for n in range(a.FIRST_DIG_SIGNALS + 40)])
         self.step(Runner('admitted'))
         minutes = 2
-        for _ in range(a.FIRST_DIG_SIGNALS // a.QUICK_LOOK_SIGNALS - 1):
+        for _ in range((a.FIRST_DIG_SIGNALS - a.QUICK_LOOK_SIGNALS) // a.FIRST_LOOK_NEXT_SIGNALS):
             self.review(minutes)
             self.assertEqual(self.step(Runner('admitted'), minutes), 'admitted')
             minutes += 2

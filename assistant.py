@@ -1440,7 +1440,10 @@ QUICK_LOOK_HOURS, QUICK_LOOK_SIGNALS, FIRST_LOOK_RETRY_MIN_SECONDS = PREVIEW_DAY
 # saved), until one of these: FIRST_DIG_CARDS to-dos; nothing of the week left to review; or it used FIRST_DIG_USAGE
 # percent of the 5-hour window (a sign-in without usage windows, like an API key: FIRST_DIG_SIGNALS signals reviewed,
 # about the same work).
-FIRST_DIG_CARDS, FIRST_DIG_USAGE, FIRST_DIG_SIGNALS = 3, 60, 200
+FIRST_DIG_CARDS, FIRST_DIG_USAGE, FIRST_DIG_SIGNALS = 3, 60, 300
+# The dashboard's bar while it digs (App.first_dig_live): one count over the whole week, moving a signal at a time at the
+# pace this install's first batches took (this many seconds per signal before one finished)
+FIRST_DIG_PACE_SECONDS = 6
 FIRST_DIG_HOURS = 24  # a first review that started longer ago than this digs no more (an install from before it dug)
 # The first look's ending on the dashboard (App.first_look_done): shown this long after it stopped digging. What its
 # reviewer sorted each signal into, by meaning (finish_analysis read), for a summary in counts only.
@@ -1637,8 +1640,9 @@ VERIFIED_DECISION_SOURCES = ('telegram', 'dashboard')
 # One heartbeat may claim this many signals, in a single begin_analysis call if it likes.
 RUN_SIGNAL_BUDGET = 120
 # While the first review digs (App.first_dig), each next review takes this many of the most promising signals of the
-# week; the backlog after it goes in the regular reviews, spread out under the usage budget.
-FIRST_LOOK_NEXT_SIGNALS = QUICK_LOOK_SIGNALS
+# week (twice the quick look: fewer turns, each with its fixed cost, and fewer pauses between them); the backlog after
+# it goes in the regular reviews, spread out under the usage budget.
+FIRST_LOOK_NEXT_SIGNALS = 2 * QUICK_LOOK_SIGNALS
 # Background turns beyond the first look (profile, voices, roles, organizations) start at most one per this many
 # seconds, and only once the first card was shown, so the first cards come first and a new install's usage is spread
 # out instead of spent in its first minutes. A draft prepared ahead is on the owner's board as Preparing, so it doesn't
@@ -20466,6 +20470,30 @@ class App(*APP_MIXINS):
             return {'done': why}
         return {'cards': cards, 'left': left}
 
+    def first_dig_live(self, db, current=None):
+        """While the first look digs (first_dig, from its quick first review on, also between its batches): how far it got
+        over the week, so the dashboard shows one bar that keeps moving until it has its to-dos or has read the week,
+        instead of All clear between batches. {'read': signals its finished batches read, 'total': read plus the week's
+        signals left (at most FIRST_DIG_SIGNALS in all while more are left), 'todos', 'goal': FIRST_DIG_CARDS, 'days',
+        'pace': seconds per signal its finished batches took (FIRST_DIG_PACE_SECONDS before one finished)}. None once
+        it stopped, or on an install that had no first look. Counts only."""
+        dig = self.first_dig(db, current)
+        if not dig or 'left' not in dig:
+            return None
+        read = seconds = 0
+        for run in db.execute("SELECT run_id,started_at,finished_at FROM review_runs WHERE ((preview=1 AND auto=1) OR window_hours IS NOT NULL OR promising=1) "
+                              "AND status NOT IN ('starting','running','recovering')"):
+            items = sum(len(json.loads(row[0] or '[]')) for row in db.execute(
+                "SELECT items FROM analyses WHERE owner_run=? AND status='complete'", (run['run_id'],)))
+            read += items
+            if items and run['finished_at']:
+                seconds += max(0.0, (dt.datetime.fromisoformat(run['finished_at']) - dt.datetime.fromisoformat(run['started_at'])).total_seconds())
+        pace = min(30, max(1, round(seconds / read))) if read and seconds else FIRST_DIG_PACE_SECONDS
+        total = read + dig['left']
+        if dig['left'] and total > FIRST_DIG_SIGNALS:
+            total = max(FIRST_DIG_SIGNALS, read + min(dig['left'], FIRST_LOOK_NEXT_SIGNALS))
+        return {'read': read, 'total': total, 'todos': dig['cards'], 'goal': FIRST_DIG_CARDS, 'days': PREVIEW_DAYS, 'pace': pace}
+
     def first_look_done(self, current=None):
         """The first look's ending, for the dashboard: what it read and what came of it, so an empty list says what the
         Machine did instead of only "Nothing to report". Shown for FIRST_LOOK_DONE_HOURS after it stopped digging
@@ -20542,7 +20570,7 @@ class App(*APP_MIXINS):
                 run['steps'] = review_steps(db, run, self.config.get('agent_db'))
             # The newest card: the dashboard shows a card as soon as a running review saves it, not after the review
             newest = db.execute('SELECT count(*),max(created_at) FROM suggestions').fetchone()
-            return {'runs': runs, 'queue': self.review_queue(db), 'first_look': self.first_look(db),
+            return {'runs': runs, 'queue': self.review_queue(db), 'first_look': self.first_look(db), 'first_dig': self.first_dig_live(db),
                     'cards': {'count': newest[0], 'newest': newest[1]}, 'ai_connecting': ai_connecting(self.config)}
 
     def start_preview(self, auto=False, quick=False):

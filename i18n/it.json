@@ -1321,6 +1321,10 @@
  "Found for {}": "Trovato per {}",
  "Found in your Outlook sent mail": "Trovata nella posta inviata di Outlook",
  "Found {} at {}": "{} trovato in {}",
+ "Found {} to-dos. Reading on.": {
+  "one": "Ho trovato {} attività. Continuo a leggere.",
+  "other": "Ho trovato {} attività. Continuo a leggere."
+ },
  "Found {}, {} picked for your work.": "Trovate {}, {} scelte per il tuo lavoro.",
  "Founded": "Fondata",
  "Founded is a year, like 2014": "Fondazione è un anno, come 2014",
@@ -2447,6 +2451,7 @@
  "Nothing connects until you accept. Declining tells them nothing.": "Non si collega nulla finché non accetti. Se rifiuti, non gli viene detto nulla.",
  "Nothing finished or dismissed yet.": "Ancora niente di completato o ignorato.",
  "Nothing for a digest right now.": "Niente per un riepilogo al momento.",
+ "Nothing for you yet. Reading on.": "Ancora niente per te. Continuo a leggere.",
  "Nothing found in your work accounts. Write an answer in To-dos, or decline.": "Nulla trovato nei tuoi account di lavoro. Scrivi una risposta in Attività, oppure rifiuta.",
  "Nothing found in your work accounts. You can still answer.": "Niente trovato nei tuoi account di lavoro. Puoi comunque rispondere.",
  "Nothing found on ClawHub.": "Nessun risultato su ClawHub.",

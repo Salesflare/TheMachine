@@ -105,7 +105,7 @@ It is served on `127.0.0.1:<port>` and reached through Tailscale Serve or Caddy;
 
 **Reviews off:** the dashboard says so, with the way to turn them on. When to-dos are already there, it says they came from the one-time first look.
 
-**After the first look:** for a day, the list says what it read, in counts only (its reviewer sorts each signal into people, meetings, newsletters, notifications or other, `finish_analysis` `read`). With nothing for you it offers one or two next steps that fit your setup: connect a calendar, add another inbox, Talk, or a to-do of your own. With to-dos, one line above them says what it read and found. The header never says All clear while the first look still runs.
+**After the first look:** for a day, the list says what it read, in counts only (its reviewer sorts each signal into people, meetings, newsletters, notifications or other, `finish_analysis` `read`). With nothing for you it offers one or two next steps that fit your setup: connect a calendar, add another inbox, Talk, or a to-do of your own. With to-dos, one line above them says what it read and found. The header never says All clear while the first look still runs. While it reads, one bar counts over the whole week (`review_live` `first_dig`: read, total, to-dos found, its pace per signal), moving a signal at a time while a batch reads and staying up between batches ("Nothing for you yet. Reading on.").
 
 ### Reading the original message
 
