@@ -2903,6 +2903,7 @@
  "People appear as messages and meetings come in.": "Personen verschijnen naarmate berichten en afspraken binnenkomen.",
  "People are in it: change their organization first": "Er zitten mensen in: wijzig eerst hun organisatie",
  "People at these are colleagues, never a client. Add another one your company uses, like acme.co next to acme.com.": "Mensen hierop zijn collega's, nooit een klant. Voeg er nog een toe die je bedrijf gebruikt, zoals acme.co naast acme.com.",
+ "People show up as real conversations come in.": "Mensen verschijnen zodra er echte gesprekken binnenkomen.",
  "People you talk with regularly, silent for much longer than usual.": "Mensen met wie je regelmatig praat, die veel langer stil zijn dan gewoonlijk.",
  "Per channel, from your messages and notes.": "Per kanaal, uit je berichten en notities.",
  "Period": "Periode",
@@ -3129,6 +3130,7 @@
  "Read the thread": "Lees de thread",
  "Read the to-dos": "Las de to-do's",
  "Read up to {}": "Gelezen tot {}",
+ "Read {}, all automated.": "{} gelezen, allemaal automatisch.",
  "Read-only logs and settings, scrubbed like the report. It ends by itself.": "Alleen lezen: logs en instellingen, opgeschoond zoals het rapport. Het stopt vanzelf.",
  "Read-only. Turn it off any time.": "Alleen lezen. Zet het uit wanneer je wilt.",
  "Reading docs needs its own OK": "Documenten lezen vraagt een eigen OK",
@@ -5821,6 +5823,10 @@
  "{} edits to the drafting guide": {
   "one": "{} aanpassing aan de gids voor concepten",
   "other": "{} aanpassingen aan de gids voor concepten"
+ },
+ "{} emails": {
+  "one": "{} e-mail",
+  "other": "{} e-mails"
  },
  "{} failed attempts in a row": {
   "one": "{} mislukte poging op rij",

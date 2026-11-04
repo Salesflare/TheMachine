@@ -71,6 +71,18 @@ class Graph(unittest.TestCase):
         self.build()
         self.assertEqual(self.node('email:kim@initech.example')['name'], 'Kim Lee')
 
+    def test_an_empty_people_page_says_what_it_read(self):
+        with self.store.connect() as db:
+            self.assertNotIn('read', graph.overview(db))  # not built yet: nothing to say
+        self.add(mail(2, 'Robot <noreply@service.com>', 'sam@acme.com'), mail(1, 'Alerts <no-reply@cloud.example>', 'sam@acme.com'))
+        self.build()
+        with self.store.connect() as db:
+            self.assertEqual(graph.overview(db)['read'], {'email': 2})  # built, robots only, so nobody mapped
+        self.add(mail(1, 'Ann <ann@client.com>', 'sam@acme.com'), mail(0, 'Sam <sam@acme.com>', 'ann@client.com', ('SENT',)))
+        self.build()
+        with self.store.connect() as db:
+            self.assertNotIn('read', graph.overview(db))  # a real person is on the page, so no read line
+
     def test_owner_bulk_and_aliases_never_become_people(self):
         self.add(mail(1, 'Sam <sam@acme.com>', 'Ann <ann@client.com>', ('SENT',)),
                  mail(1, 'Sam Owner <sam@home.org>', 'ann@client.com', ('SENT',)),  # an alias the owner sends from
