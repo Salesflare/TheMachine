@@ -14,7 +14,7 @@ const kbHas=el=>!!el&&!el.hidden;
 // What the shortcuts act on: the open chat's card, else the card picked with J/K (or holding focus) in the list.
 let kbSel=null;
 // A redraw replaces the card: the pick follows it by id.
-function kbLive(){if(!kbSel||kbSel.isConnected||!kbSel.id)return;const el=document.getElementById(kbSel.id);if(!el){kbSel=null;return}const had=document.activeElement===document.body;kbSel=el;el.classList.add('kb-on');if(!el.hasAttribute('tabindex'))el.tabIndex=-1;if(had)el.focus({preventScroll:true})}
+function kbLive(){if(!kbSel||kbSel.isConnected||!kbSel.id)return;const el=document.getElementById(kbSel.id);if(!el){kbSel=null;return}const had=document.activeElement===document.body;kbSel=el;if(kbKeyed())el.classList.add('kb-on');if(!el.hasAttribute('tabindex'))el.tabIndex=-1;if(had)el.focus({preventScroll:true})}
 function kbCtx(){kbLive();const open=chatId&&!$('#inbox').hidden?cardOf(chatId):null;let card=open;
  if(!card){const el=document.activeElement?.closest?.('#suggestions article.card')||(kbSel?.isConnected?kbSel:null);const id=el?.id?.startsWith('task-')?el.id.slice(5):'';card=id?cardOf(id)||null:null}
  return {card,id:card?.id||'',chat:!!open}}
@@ -202,7 +202,10 @@ function kbLand(n=0,seq=++kbLandSeq,from=null){const a=document.activeElement,se
  if(n&&(seq!==kbLandSeq||sec!==from))return;
  if(!sec||!kbKeyed()||!matchMedia('(pointer:fine)').matches||document.querySelector('dialog[open]')||chatId&&sec.id==='inbox')return;
  if(a&&a!==document.body&&(!a.closest?.('nav,.app-side')||a.matches?.('input,textarea,select,[contenteditable="true"]')))return;  // never out of a field being typed in, the sidebar's search too
- const xs=kbItems(),first=xs.find(x=>x.matches('article'))||xs[0];if(first){kbPick(first,first.getBoundingClientRect().top>innerHeight-80);return}  // the page stays where it is when the item shows
+ const xs=kbItems(),first=xs.find(x=>x.matches('article'))||xs[0];
+ // No to-do yet (only Done / dismissed and the like): no focus and no ring until a key was pressed
+ if(first?.matches('summary')&&kbInput!=='key'&&sec.id==='inbox')return;
+ if(first){kbPick(first,first.getBoundingClientRect().top>innerHeight-80);return}  // the page stays where it is when the item shows
  if(KB_LISTS[sec.id]&&n<10){setTimeout(()=>kbLand(n+1,seq,sec),200);return}  // the list is still loading
  const shown=x=>x.getClientRects().length&&!x.disabled;
  const t=[...sec.querySelectorAll('[role="tab"][aria-selected="true"]')].find(shown)||[...sec.querySelectorAll('button,a[href],summary,[tabindex="0"]')].find(shown);

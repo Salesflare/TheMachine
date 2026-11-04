@@ -24,7 +24,7 @@ const server=createServer((req,res)=>{
  if(url.pathname==='/api/status'){res.end(JSON.stringify(state()));return}
  if(url.pathname==='/api/reviews/live'){res.end(JSON.stringify(live()));return}
  if(url.pathname==='/api/action'){res.end(JSON.stringify({sources:[]}));return}
- if(shots&&/^\/brand\/[\w.-]+\.(webp|png)$/.test(url.pathname)){readFile(new URL('..'+url.pathname,import.meta.url)).then(b=>{res.setHeader('Content-Type','image/'+url.pathname.split('.').pop());res.end(b)},()=>{res.statusCode=404;res.end()});return}
+ if(shots&&/^\/brand\/[\w.-]+\.(webp|png)$/.test(url.pathname)){readFile(new URL('..'+(url.pathname==='/brand/avatar.png'?'/brand/app-icon-192.png':url.pathname),import.meta.url)).then(b=>{res.setHeader('Content-Type','image/'+url.pathname.split('.').pop());res.end(b)},()=>{res.statusCode=404;res.end()});return}
  if(url.pathname.startsWith('/brand/')||url.pathname.startsWith('/assets/')){res.statusCode=404;res.end();return}
  res.end('{}');
 });
@@ -42,6 +42,9 @@ try{
   // The first batch: the count moves while it reads, one short of its batch until it saved, over the whole week
   await page.waitForFunction(()=>/^[1-9]\d* of /.test(document.querySelector('#suggestions .fl-count')?.textContent||''),null,{timeout:8000});
   const [a,total]=await count(page);
+  // Nothing got focus by itself: Done / dismissed has no ring on a page nobody pressed a key on yet
+  const ringless=()=>page.evaluate(()=>!document.querySelector('#suggestions .kb-on')&&document.activeElement?.id!=='finished-head');
+  assert.ok(await ringless(),'no focus on Done / dismissed');
   assert.equal(total,64);assert.ok(a>=1&&a<20,String(a));
   await page.waitForTimeout(1500);
   const [b]=await count(page);assert.ok(b>a,`${b} > ${a}`);
@@ -69,7 +72,13 @@ try{
   await page.locator('#suggestions .first-look-end').waitFor();
   assert.equal(await page.locator('#suggestions img.sleepy').count(),0);
   assert.ok(!/Nothing to report/.test(await page.locator('#suggestions').innerText()));
+  assert.ok(await ringless(),'no focus on Done / dismissed after the ending');
   if(shots)await page.screenshot({path:`${shots}/ending-${width}.png`});
+  // A tap on Done / dismissed, then a redraw: it keeps focus for the keys, but a tap never shows the ring
+  await page.locator('#finished-head').click();await page.locator('#finished-head').click();
+  await page.evaluate(async()=>{await refresh()});
+  await page.waitForTimeout(200);
+  assert.equal(await page.locator('#suggestions .kb-on').count(),0);
   await context.close();
  }
  assert.deepEqual(errors,[]);
