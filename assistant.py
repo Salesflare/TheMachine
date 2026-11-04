@@ -156,6 +156,10 @@ BRAND_ASSETS = {
     '/brand/thinking.webp': ROOT / 'brand/thinking.webp',
     # Inbox-zero game: poked awake, catching a Z, a new best.
     '/brand/wave.webp': ROOT / 'brand/wave.webp',
+    # The waving robot while it works (the first look, setting up): eyes closed, a glance aside, the hand's lines moved.
+    '/brand/wave-blink.webp': ROOT / 'brand/wave-blink.webp',
+    '/brand/wave-look.webp': ROOT / 'brand/wave-look.webp',
+    '/brand/wave-hand.webp': ROOT / 'brand/wave-hand.webp',
     '/brand/laugh.webp': ROOT / 'brand/laugh.webp',
     '/brand/party.webp': ROOT / 'brand/party.webp',
     # Home-screen app icons; maskable ones keep the robot inside Android's crop.
