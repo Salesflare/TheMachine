@@ -11,7 +11,8 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // phone), the chat's title and header menu, and the card (More, and a click on its title on a computer only).
 // Optimistic, Esc cancels, empty keeps the old title, markup stays text, a failure puts the old title back.
 const dashboard=await dashboardPage();
-const now=new Date().toISOString();
+// The page's clock starts on Thursday 2026-10-22 10:30 in Brussels, so relative dates ("3 Nov", "in 10 days") read the same every day
+const NOW=Date.parse('2026-10-22T10:30:00+02:00'),now=new Date(NOW).toISOString();
 const id=n=>(n+'').padStart(2,'0').repeat(8);
 const base0=()=>[
  {id:id(1),title:'Send Sam the signed contract',body:'Sam asked on Monday.',status:'pending',scope:'work',created_at:now,event_ids:[1]},
@@ -41,6 +42,7 @@ const errors=[];let browser;
 const open=async(width,height)=>{const mobile=width<600;reset();
  const context=await browser.newContext({viewport:{width,height},isMobile:mobile,hasTouch:mobile,locale:'en-US',timezoneId:'Europe/Brussels'});
  await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
+ await context.clock.install({time:NOW});
  const page=await context.newPage();page.on('pageerror',e=>errors.push(width+': '+e.message));
  await page.goto(base);await page.locator('#task-'+id(1)).waitFor();return {context,page}};
 const sent=name=>actions.filter(a=>a.action===name);
@@ -83,7 +85,7 @@ try{
   await shot(page,'due-quick');
   await page.locator('[data-nc-quick="tomorrow"]').click();assert.match(await page.locator('#nc-chips').textContent(),/Due \w{3}, \w{3} \d+ 09:00/);
   await page.locator('[data-nc="due"]').click();await page.locator('#nc-cal').click();assert.equal(await page.locator('#nc-pick input[type="date"]').count(),1,'a date picker');
-  {const d=new Date(Date.now()+10*864e5),iso=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  {const d=new Date(NOW+10*864e5),iso=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
    await page.locator('#nc-date').fill(iso);assert.match(await page.locator('#nc-chips').textContent(),new RegExp('Due \\w{3}, \\w{3} '+d.getDate()+'\\b'))}
   await page.locator('[data-nc="due"]').click();await page.locator('#nc-find').fill('friday');await page.locator('#nc-find').press('Enter');
   await page.locator('[data-nc="about"]').click();await page.locator('#nc-find').fill('Pat');await page.locator('[data-nc-hit="0"]').waitFor();await page.locator('[data-nc-hit="0"]').click();
