@@ -20,6 +20,6 @@ Vengono conservati per {grace_days} giorni così puoi esportarli, poi vengono el
 
 ## Elimina tutto subito
 
-In **Impostazioni** › **Account**, premi **Elimina l’account**, scrivi DELETE o la tua email e premi **Cancella tutto ora**. Termina l'abbonamento, revoca l'accesso a Google e Microsoft ed elimina la tua Machine, i suoi backup e tutti i suoi dati. Non si può annullare.
+In **Impostazioni** › **Account**, premi **Elimina l’account**, scrivi DELETE o la tua email e premi **Cancella tutto ora**. Termina l'abbonamento, fa dimenticare alla tua Machine gli accessi Google e Microsoft ed elimina la tua Machine, i suoi backup e tutti i suoi dati. Non si può annullare.
 
 Senza una Machine ospitata, il pulsante è **Elimina il mio account**. Una Machine sul tuo computer resta com'è.

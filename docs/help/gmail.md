@@ -42,8 +42,8 @@ A Google Workspace admin may have to allow the app first, in the Admin console.
 
 ## Remove it
 
-- On a hosted Machine: press **Disconnect** next to the address on your setup page. That removes Gmail and Calendar for that address and revokes the sign-in at Google. In the dashboard, **Disconnect ↗** on Connections takes you there. **Reconnect** there signs in again without leaving the dashboard.
-- On your own computer: **Connections**, open Gmail, **Details**, then **Disconnect**. It stops reading. What it already brought in stays. When nothing else uses that Google sign-in, it is revoked at Google.
+- On a hosted Machine: press **Disconnect** next to the address on your setup page. That removes Gmail and Calendar for that address, and your Machine forgets the sign-in. Your other Machines keep theirs. In the dashboard, **Disconnect ↗** on Connections takes you there. **Reconnect** there signs in again without leaving the dashboard.
+- On your own computer: **Connections**, open Gmail, **Details**, then **Disconnect**. It stops reading. What it already brought in stays. When nothing else on it uses that Google sign-in, it forgets it. Your other Machines keep theirs.
 
 ## Uninstall it on Google
 

@@ -20,6 +20,6 @@ It's kept for {grace_days} days so you can export it, then deleted, backups incl
 
 ## Delete everything now
 
-In **Settings** › **Account**, press **Delete account**, type DELETE or your email and press **Wipe everything now**. It ends your subscription, revokes Google and Microsoft access, and deletes your Machine, its backups and all its data. This can't be undone.
+In **Settings** › **Account**, press **Delete account**, type DELETE or your email and press **Wipe everything now**. It ends your subscription, makes your Machine forget its Google and Microsoft sign-ins, and deletes your Machine, its backups and all its data. This can't be undone.
 
 Without a hosted Machine, the button is **Delete my account**. A Machine on your own computer stays as it is.

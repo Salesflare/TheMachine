@@ -272,13 +272,12 @@ class Dashboard(unittest.TestCase):
         calendar = {**gmail, 'id': 'acme-calendar', 'service': 'calendar'}
         app = self.app([gmail, calendar])
         mail_grants.put(app.config, 'google', 'dee@acme.example', REFRESH)
-        with patch.object(mail_grants, '_revoke_google', return_value=True) as revoke, patch.object(assistant, 'restart_self', return_value=False):
+        with patch('urllib.request.urlopen', side_effect=AssertionError('no call to Google')), patch.object(assistant, 'restart_self', return_value=False):
             app.action('connect_remove', {'account': 'acme-gmail'}, owner_dashboard=True)
             self.assertEqual(mail_grants.get(app.config, 'google', 'dee@acme.example'), REFRESH)  # Calendar still reads with it
             app.config['accounts'] = [calendar]
             app.action('connect_remove', {'account': 'acme-calendar'}, owner_dashboard=True)
-        self.assertIsNone(mail_grants.get(app.config, 'google', 'dee@acme.example'))
-        revoke.assert_called_once()
+        self.assertIsNone(mail_grants.get(app.config, 'google', 'dee@acme.example'))  # forgotten here, never revoked at Google
         self.assertIn(('POST', '/grant-forget', {'provider': 'google', 'email': 'dee@acme.example'}), app.fleet.relay.calls)
 
 

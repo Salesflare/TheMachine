@@ -21098,7 +21098,7 @@ class App(*APP_MIXINS):
         """Once a day at a quiet hour: old sync history and preparation logs go, the space goes back to the disk and
         local copies of the database rotate (retention.py). Checks every ten minutes; never stops the service."""
         while not self.stop.wait(600):
-            try:  # Google sign-outs Google didn't confirm yet: again, every hour (mail_grants.retry)
+            try:  # sign-ins older versions kept only to revoke at Google again: dropped, never revoked (mail_grants.retry)
                 import mail_grants
                 mail_grants.retry(self.config, due_only=True)
             except Exception as error:  # noqa: BLE001 - tried again in ten minutes

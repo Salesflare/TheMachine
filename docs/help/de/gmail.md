@@ -42,8 +42,8 @@ Ein Google-Workspace-Admin muss die App unter Umständen zuerst in der Admin-Kon
 
 ## Entfernen
 
-- Auf einer gehosteten Machine: Tippe auf deiner Einrichtungsseite neben der Adresse auf **Trennen**. Das entfernt Gmail und Kalender für diese Adresse und widerruft die Anmeldung bei Google. Im Dashboard bringt dich **Trennen ↗** unter Verbindungen dorthin. **Neu verbinden** dort meldet dich erneut an, ohne das Dashboard zu verlassen.
-- Auf deinem eigenen Computer: **Verbindungen**, Gmail öffnen, **Details**, dann **Trennen**. Es hört auf zu lesen. Was es schon reingebracht hat, bleibt. Wenn nichts anderes diese Google-Anmeldung nutzt, wird sie bei Google widerrufen.
+- Auf einer gehosteten Machine: Tippe auf deiner Einrichtungsseite neben der Adresse auf **Trennen**. Das entfernt Gmail und Kalender für diese Adresse, und deine Machine vergisst die Anmeldung. Deine anderen Machines behalten ihre. Im Dashboard bringt dich **Trennen ↗** unter Verbindungen dorthin. **Neu verbinden** dort meldet dich erneut an, ohne das Dashboard zu verlassen.
+- Auf deinem eigenen Computer: **Verbindungen**, Gmail öffnen, **Details**, dann **Trennen**. Es hört auf zu lesen. Was es schon reingebracht hat, bleibt. Wenn nichts anderes darauf diese Google-Anmeldung nutzt, vergisst sie sie. Deine anderen Machines behalten ihre.
 
 ## Bei Google deinstallieren
 

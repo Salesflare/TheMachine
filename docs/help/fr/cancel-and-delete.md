@@ -20,6 +20,6 @@ Elles sont conservées {grace_days} jours pour que vous puissiez les exporter, p
 
 ## Tout supprimer maintenant
 
-Dans **Paramètres** › **Compte**, appuyez sur **Supprimer le compte**, tapez DELETE ou votre e-mail et appuyez sur **Tout effacer maintenant**. Cela met fin à votre abonnement, révoque les accès Google et Microsoft, et supprime votre Machine, ses sauvegardes et toutes ses données. C’est irréversible.
+Dans **Paramètres** › **Compte**, appuyez sur **Supprimer le compte**, tapez DELETE ou votre e-mail et appuyez sur **Tout effacer maintenant**. Cela met fin à votre abonnement, fait oublier à votre Machine ses connexions Google et Microsoft, et supprime votre Machine, ses sauvegardes et toutes ses données. C’est irréversible.
 
 Sans Machine hébergée, le bouton s’appelle **Supprimer mon compte**. Une Machine sur votre propre ordinateur reste telle quelle.

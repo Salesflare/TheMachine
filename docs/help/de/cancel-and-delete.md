@@ -20,6 +20,6 @@ Sie bleiben {grace_days} Tage erhalten, damit du sie exportieren kannst, und wer
 
 ## Jetzt alles löschen
 
-Tippe in **Einstellungen** › **Konto** auf **Konto löschen**, tippe DELETE oder deine E-Mail-Adresse ein und tippe auf **Jetzt alles löschen**. Das beendet dein Abo, entzieht Google und Microsoft den Zugriff und löscht deine Machine, ihre Backups und alle ihre Daten. Das lässt sich nicht rückgängig machen.
+Tippe in **Einstellungen** › **Konto** auf **Konto löschen**, tippe DELETE oder deine E-Mail-Adresse ein und tippe auf **Jetzt alles löschen**. Das beendet dein Abo, lässt deine Machine ihre Google- und Microsoft-Anmeldungen vergessen und löscht deine Machine, ihre Backups und alle ihre Daten. Das lässt sich nicht rückgängig machen.
 
 Ohne gehostete Machine heißt der Button **Mein Konto löschen**. Eine Machine auf deinem eigenen Computer bleibt, wie sie ist.
