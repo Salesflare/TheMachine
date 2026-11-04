@@ -246,11 +246,32 @@ class FastFirstLook(unittest.TestCase):
             names = {i: s for i, s in db.execute('SELECT id,source_id FROM events')}
         order = [names[e['id']] for e in claim['events']]
         self.assertEqual(len(order), a.QUICK_LOOK_SIGNALS)
-        # People asking the owner, unanswered, the longest waiting first, then newest first; then the owner's own mail;
-        # then the rest, automated last
-        self.assertEqual(order[:4], ['ask2', 'ask0', 'ask1', 'reply'])
-        self.assertEqual(order[4:6], ['crowd', 'answered'])  # one of many on it, or answered since
-        self.assertTrue(all(x.startswith(('news', 'robot')) for x in order[6:]))
+        # People asking the owner, unanswered, the longest waiting first, then newest first; then the rest, the owner's
+        # own sent mail and automated mail last: sent mail never fills the quick look ahead of what others sent
+        self.assertEqual(order[:3], ['ask2', 'ask0', 'ask1'])
+        self.assertEqual(order[3:5], ['crowd', 'answered'])  # one of many on it, or answered since
+        self.assertTrue(all(x.startswith(('news', 'robot')) for x in order[5:]))
+        self.assertNotIn('reply', order)
+
+    def test_mail_to_the_owners_alias_counts_as_to_them_and_their_sent_mail_comes_after_it(self):
+        # 2026-11-04: mail to a send-as alias ranked as "one of many on it", behind the owner's own sent mail, so the
+        # quick look read their sent mail and calendar and none of the people writing to the alias
+        a.Store.accounts = [{'id': 'work', 'service': 'gmail', 'email': 'me@example.com'}]
+        self.addCleanup(setattr, a.Store, 'accounts', [])
+        with self.store.connect() as db:
+            a.own_addresses.save_fetched(db, 'work', [{'address': 'me@example.com', 'primary': True, 'alias': True, 'verified': True},
+                                                      {'address': 'me@alias.example', 'primary': False, 'alias': True, 'verified': True}], a.now())
+        sent = [self.mail(f'sent{n}', 'Me <me@alias.example>', to=f'p{n}@example.org', labels=['SENT'], hours_ago=1) for n in range(30)]
+        people = [self.mail(f'ask{n}', f'Person {n} <p{n}@example.net>', to='Me <me@alias.example>', hours_ago=5 + n) for n in range(4)]
+        self.store.commit_page('work', {}, sent + people)
+        self.step(Runner('admitted'))
+        run = self.runs()[0]
+        claim = self.store.begin_analysis(['work'], 40, a.REVIEW_SESSION_PREFIX + run['run_id'], run['run_id'])
+        with self.store.connect() as db:
+            names = {i: s for i, s in db.execute('SELECT id,source_id FROM events')}
+        order = [names[e['id']] for e in claim['events']]
+        self.assertEqual(sorted(order[:4]), ['ask0', 'ask1', 'ask2', 'ask3'])
+        self.assertTrue(all(x.startswith('sent') for x in order[4:]))
 
     def test_upcoming_events_and_a_burst_of_newsletters_never_crowd_out_who_waits(self):
         a.Store.accounts = [{'id': 'work', 'service': 'gmail', 'email': 'me@example.com'}]
@@ -281,7 +302,7 @@ class FastFirstLook(unittest.TestCase):
         claim = self.store.begin_analysis(['work'], 40, a.REVIEW_SESSION_PREFIX + run['run_id'], run['run_id'])
         with self.store.connect() as db:
             names = {i: s for i, s in db.execute('SELECT id,source_id FROM events')}
-        self.assertEqual([names[e['id']] for e in claim['events']], ['dm', 'mine', 'channel'])
+        self.assertEqual([names[e['id']] for e in claim['events']], ['dm', 'channel', 'mine'])
 
     def test_of_the_upcoming_appointments_the_soonest_come_first(self):
         a.Store.accounts = [{'id': 'work', 'service': 'gmail', 'email': 'me@example.com'}]

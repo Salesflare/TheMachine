@@ -67,6 +67,19 @@ class ReviewWorker(unittest.TestCase):
         self.assertEqual(runner.requests[-1]['action'],'stop')
         self.assertEqual(self.runs()[0]['status'],'timed_out')
 
+    def test_a_run_lost_in_a_gateway_restart_ends_at_the_next_check_not_after_the_timeout(self):
+        runner=Runner('admitted','pending','lost','admitted')
+        self.step(runner,T)
+        self.step(runner,T+dt.timedelta(minutes=1))
+        self.assertNotIn('probe',runner.requests[1])  # just admitted: may still be queued
+        self.step(runner,T+dt.timedelta(minutes=3))
+        self.assertEqual((runner.requests[2]['action'],runner.requests[2]['probe']),('status',True))
+        run=self.runs()[0]
+        self.assertEqual((run['status'],run['error']),('lost','runtime_lost'))
+        self.step(runner,T+dt.timedelta(minutes=5))  # the next run after the usual back-off, not 35 minutes later
+        self.assertEqual(runner.requests[-1]['action'],'start')
+        self.assertNotEqual(runner.requests[-1]['job_id'],runner.requests[0]['job_id'])
+
     def test_extended_outage_enters_recovery_and_reconciles_same_run_on_return(self):
         runner=Runner('admitted','unavailable','unavailable','lost','admitted')
         self.step(runner,T)
