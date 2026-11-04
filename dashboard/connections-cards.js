@@ -256,7 +256,7 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-reco
  if(connectRun&&connectRun.state==='running'){showHealthPane('add');document.querySelector('nav button[data-tab="health"]')?.click();return}
  b.disabled=true;connectRun=null;if(await connectStart(b.dataset.reconnect,b.dataset.account)){showHealthPane('add');document.querySelector('nav button[data-tab="health"]')?.click();viewTop($('#connect-add'))}b.disabled=false});
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-disconnect]');if(!b||!confirm(`Disconnect ${b.dataset.name}? It stops syncing. What it already brought in stays.`))return;
- b.disabled=true;try{const r=await connectPost('connect_remove',{account:b.dataset.disconnect});toast(r.restarting?'Disconnected. Restarting…':'Disconnected. Restart the service to stop syncing it.');connectList=null;setTimeout(refresh,r.restarting?8000:500)}catch(err){errCaught(err);toast(err.message,true);b.disabled=false}});
+ b.disabled=true;try{const r=await connectPost('connect_remove',{account:b.dataset.disconnect});if(r.restarting)restartSoon();toast(r.restarting?'Disconnected. Restarting…':'Disconnected. Restart the service to stop syncing it.');connectList=null;setTimeout(refresh,r.restarting?8000:500)}catch(err){errCaught(err);toast(err.message,true);b.disabled=false}});
 function renderConnectRun(){const r=connectRun,box=$('#connect-add'),q=r.question;
  const head=html`<div class="connect-run"><h3>${r.state==='done'?'✓ ':''}${r.label||''}</h3><ul class="connect-lines">${(r.lines||[]).map(l=>html`<li>${linkify(l)}</li>`)}</ul>`;
  let body='';
@@ -285,7 +285,7 @@ async function connectFollow(run){const start=Date.now();await new Promise(r=>se
    if(healthPane==='add'&&!$('#health').hidden)cardShow(run.account,true);return}
   if(Date.now()-start>60000&&run.follow!=='slow'){run.follow='slow';renderConnectRun()}await new Promise(r=>setTimeout(r,2500))}}
 function connectPoll(){clearTimeout(connectTimer);if(!connectRun||connectRun.state!=='running')return;connectTimer=setTimeout(async()=>{try{connectRun={...connectRun,...await connectPost('connect_poll',{session:connectRun.session})};renderConnectRun();
- if(connectRun.state==='done'&&connectRun.restarting)connectFollow(connectRun)}catch(e){errCaught(e);connectRun={...connectRun,state:'failed',error:e.message};renderConnectRun()}connectPoll()},connectRun.question?3000:1000)}
+ if(connectRun.state==='done'&&connectRun.restarting){restartSoon();connectFollow(connectRun)}}catch(e){errCaught(e);connectRun={...connectRun,state:'failed',error:e.message};renderConnectRun()}connectPoll()},connectRun.question?3000:1000)}
 // A code the connect shows to sign in with: GitHub's device sign-in, or WhatsApp's pairing code for Linked devices.
 // A QR code the Machine sends as rows of 0 and 1 (Telegram's login), drawn here: no image from anywhere else.
 function qrSvg(rows){const n=rows.length,q=2,size=n+2*q;let d='';rows.forEach((r,y)=>{for(let x=0;x<r.length;x++)if(r[x]==='1')d+=`M${x+q} ${y+q}h1v1h-1z`});
@@ -350,7 +350,7 @@ function scopeRow(c){const b=String(c.boundary||'');if(!b||/^owner:/.test(b)||c.
  return html`<p class="conn-scope"><label>Work or personal<select data-scope="${c.id}" data-was="${cur}">${opts.map(([v,l])=>html`<option value="${v}"${v===cur?html` selected`:''}>${l}</option>`)}</select></label>${c.boundary_by==='guess'?html` <small class="muted">Guessed. Pick one to be sure.</small>`:''}</p>`}
 document.addEventListener('change',async e=>{const s=e.target.closest('select[data-scope]');if(!s)return;let b=s.value;
  if(!b){const name=(prompt('Company name')||'').trim();if(!name){s.value=s.dataset.was;return}b='work:'+name}
- s.disabled=true;try{const r=await connectPost('connect_scope',{account:s.dataset.scope,boundary:b});toast(r.restarting?'Saved. Restarting…':'Saved. Restart the service to use it.');setTimeout(refresh,r.restarting?8000:500)}catch(err){errCaught(err);toast(err.message,true);s.disabled=false;s.value=s.dataset.was}});
+ s.disabled=true;try{const r=await connectPost('connect_scope',{account:s.dataset.scope,boundary:b});if(r.restarting)restartSoon();toast(r.restarting?'Saved. Restarting…':'Saved. Restart the service to use it.');setTimeout(refresh,r.restarting?8000:500)}catch(err){errCaught(err);toast(err.message,true);s.disabled=false;s.value=s.dataset.was}});
 function connActions(c){const name=c.display_name||c.email||c.id;
  if(c.shared_by)return html`<p class="note">${t('Shared by {}. Its admins manage it.',c.shared_by)}</p>`;  // shared_connectors.py: no token, no Disconnect here
  if(c.hosted_signin&&state.manage_url)return html`<div class="actions conn-actions">${hostedReconnect(c,docsConnect(c),'ghost')}${c.account_page?html`<a class="btn-link" href="${safeHref(c.account_page)}" target="_blank" rel="noopener">Disconnect ↗</a>`:html`<button type="button" class="ghost danger" data-disconnect="${c.id}" data-name="${name}">Disconnect</button>`}</div>`;  // Disconnect: the account page when it holds the grant
