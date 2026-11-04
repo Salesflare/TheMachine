@@ -41,6 +41,13 @@ class MobileShellTest(unittest.TestCase):
         self.assertFalse(config['android']['allowMixedContent'])
         self.assertFalse(config['android']['webContentsDebuggingEnabled'])
 
+    def test_release_build_needs_push_config(self):
+        gradle = (MOBILE / 'android/app/build.gradle').read_text()
+        guard = gradle[gradle.index("tasks.matching { it.name == 'preReleaseBuild' }"):]
+        self.assertIn("if (!file('google-services.json').exists())", guard)
+        self.assertIn('throw new GradleException', guard)
+        self.assertIn('android/app/google-services.json', (MOBILE / '.gitignore').read_text())
+
     def test_ios_build_only_by_hand(self):
         flow = (ROOT / '.github/workflows/ios.yml').read_text()
         on = re.search(r'^on:\n((?:  .*\n|\n)*)', flow, re.M).group(1)
