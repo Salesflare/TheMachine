@@ -17107,8 +17107,11 @@ class App(*APP_MIXINS):
         Open only). Returns the Telegram message id."""
         subscriptions, phones = push_reach(self.store, self.config)
         if subscriptions or phones:
+            # the tag names the Fleet: a tapped phone notification opens that brief (the dashboard's pushRoute)
+            which = re.search(r'#fleet-brief=(fl_[0-9a-f]{16})$', url or '')
+            tag = 'fleet-brief-' + which[1] if which else 'fleet-brief'
             push_send(self.store, self.config, subscriptions, {'title': i18n.t('What your Fleet saw'), 'body': text.split('\n', 2)[-1][:200],
-                                                               'url': url, 'tag': 'fleet-brief'}, 'fleet-brief', kind='result', wake='fleet')
+                                                               'url': url, 'tag': tag}, 'fleet-brief', kind='result', wake='fleet')
         if not telegram_on(self.config) or not self.notify_on('result', 'telegram'):
             return None
         result = fleet_telegram(self.config, {'text': text, 'buttons': [[{'text': i18n.t('Open the brief'), 'url': url}]] if url else []})

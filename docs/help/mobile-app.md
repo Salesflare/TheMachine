@@ -15,7 +15,7 @@ On a hosted Machine the app signs in with your account. On a self-hosted one, op
 
 ## Notifications
 
-The app asks to allow notifications when it first opens. Tap one to open its to-do. No text of a to-do passes through Apple, Google or The Machine's service: they only carry a fixed line, like "A to-do needs you".
+The app asks to allow notifications when it first opens. Tap one to open what it is about: a to-do opens its chat, the morning opens today in the **Calendar**, the team brief opens that Fleet's brief, and a Fleet question opens its to-do. No text of a to-do passes through Apple, Google or The Machine's service: they only carry a fixed line, like "A to-do needs you".
 
 The app then asks your own Machine for the to-do's title and next step, like "Ready: Reply to Sam" with "Send to Sam: Tuesday 10:00 works". When it can't reach your Machine, the fixed line stays. On Android it says how many wait, like "2 to-dos need you".
 

@@ -32,7 +32,7 @@ Só notifica o que precisa de você. Andamento e edições não. Várias de uma 
 
 ## O resumo da manhã
 
-Ele chega nos dias de trabalho, no horário do **Resumo da manhã**, e não é enviado quando não há nada a dizer. **Prévia**, na linha dele, mostra o resumo na página sem enviar. Por padrão, ele vai por push e por e-mail.
+Ele chega nos dias de trabalho, no horário do **Resumo da manhã**, e não é enviado quando não há nada a dizer. **Prévia**, na linha dele, mostra o resumo na página sem enviar. Por padrão, ele vai por push e por e-mail. Tocar no push abre o dia de hoje no **Calendário**.
 
 ## Privacidade
 

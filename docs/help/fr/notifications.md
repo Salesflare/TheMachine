@@ -32,7 +32,7 @@ Seul ce qui a besoin de vous envoie une notification. Pas les avancées ni les m
 
 ## Le récap du matin
 
-Il arrive les jours de travail à l’heure du **Récap du matin**, et il est sauté quand il n’y a rien à dire. **Aperçu**, sur sa ligne, l’affiche sur la page sans l’envoyer. Par défaut, c’est un push et un e-mail.
+Il arrive les jours de travail à l’heure du **Récap du matin**, et il est sauté quand il n’y a rien à dire. **Aperçu**, sur sa ligne, l’affiche sur la page sans l’envoyer. Par défaut, c’est un push et un e-mail. Toucher le push ouvre aujourd’hui dans l’**Agenda**.
 
 ## Confidentialité
 

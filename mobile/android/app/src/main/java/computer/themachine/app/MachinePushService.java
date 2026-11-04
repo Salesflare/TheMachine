@@ -75,9 +75,9 @@ public class MachinePushService extends MessagingService {
         String line = notice == null ? null : notice.title;
         // With its notice: one notification per to-do, the to-do's title and next step, its buttons, opening it; a
         // newer one for the same to-do (Preparing, then Ready) replaces it. Without: one for the kind, with the
-        // count, that a second one replaces ("2 to-dos need you"), opening the dashboard
+        // count, that a second one replaces ("2 to-dos need you"), opening the kind's own view (the dashboard's pushRoute)
         String id = line != null ? tag : group;
-        String opens = line != null || count == 1 ? tag : null;
+        String opens = line != null || count == 1 ? tag : kind;
         channel(c);
         NotificationCompat.Builder full = base(c, plain)
             .setContentTitle(line != null ? line : plain)

@@ -56,6 +56,7 @@ HANDOFF_STALE = 24 * 60 * 60  # a handoff email still not taken by then (the mai
 # A held push that still couldn't go after EMAIL_AFTER is dropped: the email for what still waits takes over by then
 QUEUE = ('CREATE TABLE IF NOT EXISTS notify_queue(id INTEGER PRIMARY KEY,channel TEXT NOT NULL,kind TEXT NOT NULL,ref TEXT,'
          'title TEXT NOT NULL,payload TEXT,show INTEGER NOT NULL DEFAULT 1,created REAL NOT NULL,due REAL NOT NULL)')
+DIGEST_VIEW = '#calendar?view=agenda'  # where the morning's notification opens: today's meetings and what's due
 DIGEST_LATE = dt.timedelta(hours=3)  # a digest not sent by then (the Machine was off) waits for the next day
 MAIL_SUBJECT, MAIL_TEXT = 120, 4000
 # Phones with the mobile app: what Settings shows. The control plane holds their push tokens and sends the wakeups.
@@ -340,7 +341,7 @@ def compose(meetings, due, overnight, root='', show_text=True, clock=lambda iso:
     body = summary
     if show_text and meetings:
         body = t('First: {}. {}', clock(meetings[0]['at']) + ' ' + meetings[0]['title'], summary)
-    return {'push': {'title': t('Your morning'), 'body': body[:200], 'url': root or '.', 'tag': 'digest'},
+    return {'push': {'title': t('Your morning'), 'body': body[:200], 'url': (root or './') + DIGEST_VIEW, 'tag': 'digest'},
             'text': '\n'.join(lines).strip(), 'subject': t('Your morning: {}', summary)}
 
 
