@@ -1,6 +1,9 @@
 // A lost connection, a cut-off or garbled answer or a server hiccup (5xx) is "offline": quiet, retried. Only a clear refusal
 // (a 4xx with its reason) is said out loud.
-const offline=e=>Object.assign(Error('Can’t reach your Machine right now. Try again in a moment.'),{offline:true,cause:e});
+const offline=e=>Object.assign(Error('Can’t reach your Machine right now. Try again in a moment.'),{offline:true,cause:e,restarting:restartDue()});
+// A restart this page asked for or was told of (a connect, a disconnect, a scope change answered restarting): while it
+// lasts, the Machine away is the Machine restarting, also where nothing in front of it says so (a self-hosted one)
+let restartUntil=0;const restartSoon=(ms=120000)=>{restartUntil=Date.now()+ms},restartDue=()=>Date.now()<restartUntil;
 // A page opened from the app's on-device copy (sw.js) has no CSRF token of its own: a change waits for api/session,
 // which brings it (sessionCheck).
 let csrfLive=csrf,csrfSet=null;const csrfReady=csrf?Promise.resolve():new Promise(r=>csrfSet=r);
@@ -18,7 +21,7 @@ async function request(path,options){let r;
  // A 5xx the Machine answered itself (JSON) is a failed call for the error reports, and a gateway timeout (504) a timeout;
  // an HTML 502 or 503 is the Machine away or restarting, as is an answer that says so
  if(r.status>=500&&!d?.restarting&&(json||r.status===504))errApi(path,options,json?r.status:'timeout')
- if(r.status>=500||r.ok&&!json){const wait=+r.headers.get('retry-after');if(d?.restarting)netSetup=!!d.setting_up||setupUnderway();throw Object.assign(offline(d?.error),{restarting:!!d?.restarting,retryAfter:wait>0?Math.min(wait,60)*1000:0})}
+ if(r.status>=500||r.ok&&!json){const wait=+r.headers.get('retry-after');if(d?.restarting)netSetup=!!d.setting_up||setupUnderway();throw Object.assign(offline(d?.error),{restarting:!!d?.restarting||restartDue(),retryAfter:wait>0?Math.min(wait,60)*1000:0})}
  if(!r.ok)throw Object.assign(Error(d?.error||'Request failed'),{status:r.status});return d}
 let retryIn=0,retryTimer=null;
 // On the device: the last cards, the open card's chat and the Graph's lists, so the app opens with them at once and

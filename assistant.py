@@ -190,6 +190,9 @@ def android_app_name(package):
 
 DEFAULT_CONFIG = Path(os.environ.get('ASSISTANT_CONFIG') or Path.home() / '.local/share/personal-assistant/config.json').expanduser()
 LOG = logging.getLogger('personal-assistant')
+# A sync error that a new sign-in ends: Google's or Microsoft's sign-in expired or revoked, or Gmail's or Calendar's 401 (gog's
+# "HTTP_401" once Google revoked the grant). The sync watches for that sign-in, and a reconnect clears it at once.
+SIGNIN_ERROR = r'(google|microsoft)_signin_(expired|pending)|microsoft_broker|\b(gmail|calendar):HTTP_401\b'
 
 
 def encoded(value):
@@ -4572,6 +4575,13 @@ class Store:
                 pass
             db.execute('INSERT INTO checkpoints(account_id,state,error,error_at,failures,retry_at) VALUES(?,?,?,?,1,?) ON CONFLICT(account_id) DO UPDATE SET error=excluded.error,error_at=excluded.error_at,failures=failures+1,retry_at=excluded.retry_at',
                        (account, '{}', str(error), now(), retry_at))
+
+    def signed_in_again(self, account_ids):
+        """A reconnect that worked: these accounts' sign-in errors end now, and their sync reads at once (no wait for
+        the retry). Without it the setup page kept "Sign in to Google again" until the next sync round."""
+        with self.connect() as db:
+            for account in account_ids:
+                db.execute('UPDATE checkpoints SET error=NULL,error_at=NULL,failures=0,retry_at=NULL WHERE account_id=? AND error IS NOT NULL', (account,))
 
     def tombstone(self, account, source_id):
         with self.connect() as db:
@@ -14701,6 +14711,26 @@ main{{max-width:900px;margin:auto}}h1{{font-size:24px}}pre{{background:#292c33;p
 
 
 
+def same_signin(accounts, account, store=None):
+    """The account and the others that read with its sign-in (Gmail and Calendar of one Google address, Outlook mail and
+    calendar of one Microsoft address): the reconnected one always, the others only while their error is a sign-in one."""
+    def family(a):
+        service = a.get('service', 'gmail')
+        return 'microsoft' if service in MICROSOFT_SERVICES else 'google' if service in ('gmail', 'calendar') else None
+    email, kind = str(account.get('email') or '').lower(), family(account)
+    ids = [account['id']]
+    if not email or not kind:
+        return ids
+    others = [a['id'] for a in accounts if a.get('id') != account['id'] and family(a) == kind and str(a.get('email') or '').lower() == email
+              and a.get('transport') == account.get('transport') and a.get('client') == account.get('client')]
+    if others and store is not None:
+        with store.connect() as db:
+            errors = {r['account_id']: r['error'] for r in db.execute(
+                'SELECT account_id,error FROM checkpoints WHERE account_id IN (%s)' % ','.join('?' * len(others)), others)}
+        others = [i for i in others if re.search(SIGNIN_ERROR, errors.get(i) or '')]
+    return ids + others
+
+
 def sign_in_help(service, error, manage):
     """For a source read through the shared browser that is signed out: where to sign in again (the hosted page that
     opens this server's browser on that site) or, without one, what to do in plain words."""
@@ -17006,7 +17036,7 @@ class App(*APP_MIXINS):
     def wait_for_retry(self, account, row):
         """Wait until the checkpoint's retry time; True when stopping. An expired Google sign-in
         is retried as soon as the owner signs in again, instead of after the full hour."""
-        expired = bool(re.search(r'(google|microsoft)_signin_(expired|pending)|microsoft_broker', row['error'] or ''))
+        expired = bool(re.search(SIGNIN_ERROR, row['error'] or ''))
         while True:
             seconds = (dt.datetime.fromisoformat(row['retry_at']) - dt.datetime.fromisoformat(now())).total_seconds()
             if seconds <= 0:
@@ -17080,7 +17110,7 @@ class App(*APP_MIXINS):
                     LOG.warning('sync account=%s error=%s', account['id'], error)
                     # Enter the checkpoint wait directly so renewed sign-ins are watched.
                     # Ordinary failures and rate limits retain their normal backoff.
-                    if re.search(r'(google|microsoft)_signin_(expired|pending)|microsoft_broker', str(error)):
+                    if re.search(SIGNIN_ERROR, str(error)):
                         continue
                 except sqlite3.OperationalError as error:
                     if not db_busy(error):
@@ -19369,6 +19399,11 @@ class App(*APP_MIXINS):
         import onboarding
         try:
             account = onboarding.connect(self.config_path, session['source'], session['ui'], account_id=session.get('account_id'), restart=False)
+            if session.get('account_id'):  # signed in again and checked: its sign-in error, and its siblings', ends now
+                try:
+                    self.store.signed_in_again(same_signin(self.config.get('accounts', []), account, self.store))
+                except Exception as error:  # noqa: BLE001 - the next sync clears it too
+                    LOG.warning('sign-in error not cleared account=%s error=%s', account['id'], type(error).__name__)
             session.update(account=account['id'], restarting=restart_self(3), state='done')
         except onboarding.SetupError as error:
             session.update(state='cancelled' if session['ui'].cancelled else 'failed', error=error.message, fix=error.fix)
