@@ -25,6 +25,7 @@ Wie Slack schaut es, ob du das Dashboard benutzt, nicht nur, ob es offen ist:
 - In Benutzung: Das Dashboard ist vor dir, im Fokus, und du hast in den letzten 10 Minuten geklickt, getippt, gescrollt oder es berührt. Nichts vibriert. Telegram kommt ohne Ton an.
 - Weg: Das Dashboard ist im Hintergrund, minimiert, geschlossen oder seit 10 Minuten unbenutzt. Ein Push geht eine Minute, nachdem du es verlassen hast, raus, außer du kommst zurück und siehst es vorher.
 - 15 Minuten später noch ungesehen: eine E-Mail mit allem, was noch auf dich wartet. Höchstens eine pro Stunde. Was du inzwischen erledigt hast, auf Telegram oder anderswo, fehlt darin. Wer das Dashboard nutzt, nachdem etwas hereinkam, hat es gesehen. An einem Tag am Dashboard kommt also womöglich gar keine E-Mail.
+- Ein Teammitglied übergibt dir eine Aufgabe, und deine Machine hat kein Handy und kein Telegram, um dich zu erreichen: eine E-Mail dazu, 15 Minuten später, falls du sie noch nicht gesehen hast. Nur ihr Titel und ein Link. **E-Mail** bei **Ergebnisse und Fragen** schaltet das aus.
 - Außerhalb deiner Arbeitszeiten: nichts. Die morgendliche Zusammenfassung enthält, was reinkam.
 - Eine neue Arbeitsaufgabe, die an einem freien Tag reinkommt, wartet bis zur Zusammenfassungszeit deines nächsten Arbeitstags. Die Aufgabe zeigt, wo und wann sie dich erreicht, etwa Benachrichtigung Mo., 2. Nov. · 08:30, nach der Zeile **Neue Aufgaben**. Sind dort Push und Telegram beide aus, steht nichts da.
 
@@ -38,4 +39,4 @@ Sie kommt an Arbeitstagen zu deiner Uhrzeit für die **Morgendliche Zusammenfass
 
 Push geht von deiner Machine direkt an dein Gerät, verschlüsselt für dieses Gerät. Die Steuerungsebene sieht ihn nie. E-Mails verschickt der Mailserver von The Machine an die Adresse deines Kontos, der Text geht also über ihn und deinen Mailanbieter. Wenn [Vorsichtig](security-levels.md) den Text von Aufgaben in Benachrichtigungen ausblendet, enthalten E-Mails nur Anzahlen. Schalte **E-Mail** für eine Art aus, damit sie gar nicht per E-Mail kommt.
 
-Schalte Push für ein Gerät unter **Dieses Gerät** ein, oder siehe [App installieren](phone-app.md).
+Schalte Push für ein Gerät unter **Dieses Gerät** ein, oder siehe [App installieren](phone-app.md). Die [mobile App](mobile-app.md) bekommt über Apple oder Google eine feste Zeile, ohne Text einer Aufgabe. Dann fragt sie deine Machine nach dem Titel und dem nächsten Schritt.

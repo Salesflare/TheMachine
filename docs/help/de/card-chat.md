@@ -25,7 +25,7 @@ Auf einem Computer sendet Enter oder Strg+Enter (Cmd+Enter auf dem Mac), und Ums
 
 ## Wenn etwas nicht stimmt
 
-Sag es im Chat, etwa „Sie ist nicht die CEO“ oder „Er hat die Firma verlassen“. The Machine korrigiert es dort, wo es herkam: eine Rolle, eine Firma, ein Titel, die Phase eines Projekts, das Projekt der To-do oder eine gelernte Regel. Der Chat zeigt dann, was sich geändert hat, etwa **Korrigiert: Die Rolle von Ana ist Head of Sales, aus ihrer E-Mail-Signatur**, mit **Rückgängig**. Das stellt wieder her, was vorher da war, außer es hat sich seitdem geändert.
+Sag es im Chat, etwa „Diese Person ist nicht CEO“ oder „Diese Person hat die Firma verlassen“. The Machine korrigiert es dort, wo es herkam: eine Rolle, eine Firma, ein Titel, die Phase eines Projekts, das Projekt der Aufgabe oder eine gelernte Regel. Der Chat zeigt dann, was sich geändert hat, etwa „Korrigiert: Die Rolle von Sam ist Head of Sales, aus der E-Mail-Signatur“, mit **Rückgängig**. Das stellt wieder her, was vorher da war, außer es hat sich seitdem geändert.
 
 Auf einer GBrain-Seite ändert sich nur der eigene Abschnitt von The Machine; was du dort geschrieben hast, bleibt deins. Findet sie nicht, woher etwas kam, lernt sie wie bisher aus deiner Notiz.
 

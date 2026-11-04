@@ -16,7 +16,11 @@ Unter dem Status sagt jede Quelle in einer Zeile, was sie hereinholt, und wenn s
 
 ## Eine hinzufügen
 
-Öffne **+ Hinzufügen** und wähle eine Quelle. Sie fragt nach dem, was sie braucht, eine Frage nach der anderen. **Abbrechen** beendet das Hinzufügen. Sobald sie verbunden ist, startet deine Machine neu, um sie zu lesen, und öffnet dann die neue Karte. Die zeigt, wie die erste Synchronisierung läuft. Auf einer gehosteten Machine meldest du dich hier bei Google, Microsoft, Microsoft Word, Zoom, Stripe und Intercom an: Wähle **Arbeit** oder **Privat**, melde dich an, und du kommst zurück zu diesem Formular, das zeigt, wie das Verbinden läuft. GitHub, WhatsApp, Codex, Telegram-Chats und dein Android-Handy zeigen ihren Code direkt in diesem Formular.
+Öffne **+ Hinzufügen** und wähle eine Quelle. Sie zeigt ein kurzes Formular, wie auf deiner Einrichtungsseite: was sie braucht (einen Schlüssel, eine Adresse), und **Arbeit** mit ihrer Firma oder **Privat**. Tippe auf **Verbinden**. Eine Quelle mit Anmeldung, etwa LinkedIn oder X, öffnet ihre Anmeldung auf deiner Machine und macht von selbst weiter, sobald du drin bist. GitHub, WhatsApp und Codex zeigen einen Code zum Eingeben, und Telegram-Chats einen QR-Code zum Scannen.
+
+**Abbrechen** beendet das Hinzufügen. Sobald sie verbunden ist, startet deine Machine neu, um sie zu lesen, und öffnet dann die neue Karte. Die zeigt, wie die erste Synchronisierung läuft.
+
+Auf einer gehosteten Machine meldest du dich hier bei Google, Microsoft, Microsoft Word, Zoom, Stripe und Intercom an: Wähle **Arbeit** oder **Privat**, tippe auf **Anmelden**, und du kommst zurück zu diesem Formular, das zeigt, wie das Verbinden läuft oder warum es nicht geklappt hat. GitHub, WhatsApp, Codex, Telegram-Chats und dein Android-Handy zeigen ihren Code direkt in diesem Formular. Die Kachel von Codex zeigt, ob Codex angemeldet ist.
 
 **Neu verbinden** bei einer Quelle und in **Braucht dich** öffnet dasselbe Formular. Auf deinem eigenen Computer macht `assistant connect` dasselbe im Terminal.
 

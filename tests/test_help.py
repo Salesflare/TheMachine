@@ -81,6 +81,27 @@ class HelpArticles(unittest.TestCase):
                            (GOOD.replace('area: connections', 'area: misc'), 'area')):
             self.assertIn(want, ' '.join(self.problems(text)), text[-40:])
 
+    def test_a_site_text_the_article_does_not_use_fails(self):
+        # the site's daily help sync checks this too, and stops on it
+        self.assertIn('lists "Connect it now" under site: but does not use it',
+                      ' '.join(self.problems(GOOD.replace('code: onboarding.py', 'code: onboarding.py\nsite: Connect it now'))))
+
+    def test_every_german_article_is_there_and_has_every_paragraph(self):
+        self.assertEqual(help_check.COMPLETE, ('de',))
+        de = GOOD.replace('Open **Connections**.', 'Öffne **Verbindungen**.')
+        with tempfile.TemporaryDirectory() as d:
+            folder = Path(d)
+            gmail = lambda: [p for p in help_check.check_translations(help_check.articles(folder), folder) if 'gmail' in p]
+            self.write(d, 'gmail.md', GOOD + '\n## Remove it\n\nOpen it.\n\n- One.\n- Two.\n')
+            self.write(d, 'slack.md', GOOD.replace('connector:gmail', 'connector:slack'))
+            (folder / 'de').mkdir()
+            self.assertEqual(gmail(), ['docs/help/de/gmail.md is missing: translate docs/help/gmail.md'])
+            self.write(folder / 'de', 'gmail.md', de + '\n## Entfernen\n\nÖffne es.\n\n- Eins.\n')  # a list item short
+            self.assertEqual(gmail(), ['docs/help/de/gmail.md: section 1 has 2 paragraphs and list items, the English article has 3'])
+            self.write(folder / 'de', 'gmail.md', de + '\n## Entfernen\n\nÖffne es.\n\n- Eins.\n- Zwei.\n')
+            self.assertEqual(gmail(), [])
+            (folder / 'nl').mkdir()  # other languages may still miss an article: Help shows the English one
+            self.assertEqual(gmail(), [])
 
 if __name__ == '__main__':
     unittest.main()

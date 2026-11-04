@@ -57,3 +57,5 @@ Wähle danach, wer sie heute beantwortet. Ein Team-Postfach wie support@ ist vom
 Die Domains deiner eigenen Adressen zählen als die deiner Firma. Nutzt sie noch eine weitere, etwa acme.co neben acme.com, gib sie unter **Domains deiner Firma** ein und drücke **Hinzufügen**.
 
 Leute dort sind dann deine Kollegen, nie Kunden: Ihre Threads bleiben aus dem Team Graph wie jeder Thread nur unter Kollegen, und es entsteht keine Organisation dafür. **Entfernen** nimmt sie wieder raus. Eine kostenlose E-Mail-Domain wie gmail.com geht nicht.
+
+Ein Gmail-Alias von dir kann auch **Von** eines Entwurfs sein, wenn Gmail bestätigt, dass du als dieser Alias senden kannst. Siehe [Gmail](gmail.md#what-it-can-send).

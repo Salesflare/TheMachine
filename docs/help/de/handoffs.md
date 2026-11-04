@@ -10,11 +10,15 @@ order: 3
 
 1. Öffne bei der Aufgabe **…**, dann **Übergeben…**, und wähle **Ein Teammitglied**.
 2. Wähle, an wen, prüfe, was mitgeht (lass mit × jeden Teil weg), und füge eine Notiz hinzu. Der Text beginnt mit der Aufgabe und warum sie wichtig ist, aus der Aufgabe, und woher sie kommt (ihr Link). Nichts aus einem privaten Konto oder dem einer anderen Firma geht mit.
-3. Schick sie ab. Die Machine des Teammitglieds zeigt sie ihm als Aufgabe.
+3. Schick sie ab. Die Machine des Teammitglieds zeigt sie als Aufgabe.
+
+Ihre Machine meldet sich per Handy oder in Telegram. Ist nichts davon eingerichtet, schickt sie stattdessen einmal eine E-Mail: wer übergeben hat, der Titel und ein Link, sonst nichts. Siehe [Benachrichtigungen](notifications.md).
 
 Ein Intercom-Gespräch geht mit seinem Platz in Intercom mit. Liest ihre Machine denselben Intercom-Workspace, hängt ihre Aufgabe an diesem Gespräch: **Nachricht lesen** öffnet es, der Kunde steht darauf, und ihre Antwort geht in Intercom zurück. Wenn nicht, verlinkt die Aufgabe trotzdem das Gespräch in Intercom.
 
 Während du wartest, steht die Aufgabe unter **Kommt später zurück**, „Bei Pat · wartet“, mit einem Datum zum Nachfragen. **Jetzt nachhaken** fragt, wie es läuft. **Uhrzeit ändern** verschiebt das Nachfragen.
+
+Kann die Machine von Pat sie nicht benachrichtigen (dort sind weder Handy-Benachrichtigungen noch Telegram noch E-Mail eingeschaltet), sagt die Aufgabe „Pat bekommt keinen Hinweis. Sag Pat Bescheid.“, und du hörst es einmal. Sag Pat selbst Bescheid. Die Zeile verschwindet, sobald Pat eine Benachrichtigung einschaltet.
 
 Sie kommt nur dann wieder nach oben, wenn es etwas zu entscheiden gibt: Pat hat geantwortet, abgelehnt oder sie als erledigt markiert, die Übergabe ist fehlgeschlagen oder eine Frist ist erreicht. Bei einer Aufgabe, die heute fällig ist, wird ein paar Stunden später nachgefragt, bei einer bald fälligen am Arbeitstag davor, bei einer dringenden ohne Datum am nächsten Arbeitsmorgen und bei allen anderen nach 3 Arbeitstagen.
 

@@ -10,6 +10,8 @@ Das Dashboard lässt sich als App auf einem Handy oder Computer installieren. Da
 
 Ein dezenter Hinweis oben in Aufgaben bietet beides an, eins nach dem anderen, sobald du deine erste Aufgabe erledigt hast: zuerst Benachrichtigungen, dann die App. Was auf dem Gerät schon erledigt ist, erscheint nie. **Nicht jetzt** blendet ihn 14 Tage aus, und ein zweites **Nicht jetzt** beendet ihn auf diesem Gerät. Dieselben Schalter bleiben in **Einstellungen**, **Allgemein**, **Dieses Gerät**.
 
+In der Handy-App steht oben eine kurze Zeile **Erhalte einen Hinweis, wenn etwas dich braucht.**, solange ihre Benachrichtigungen aus sind. **Einschalten** fragt das Handy oder öffnet seine Einstellungen, wenn es nicht mehr fragt. Das **×** blendet sie 7 Tage aus. Bei deiner ersten Anmeldung fragt das Handy einmal von selbst.
+
 ## Auf einem Computer (Chrome oder Edge)
 
 1. Öffne dein Dashboard und klick in diesem Hinweis auf **Installieren**, oder in den Einstellungen auf **App installieren**.

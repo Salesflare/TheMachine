@@ -11,20 +11,22 @@ Eine gehostete Machine läuft in der Cloud, in der EU, nur für dich. Wir halten
 ## Registrieren
 
 1. Tippe auf app.themachine.computer auf **Weiter mit Google** oder **Weiter mit Microsoft**. Damit wird dein Konto angelegt.
-2. Scanne den Code mit einer Authenticator-App, gib die sechs Ziffern ein und tippe auf **Einschalten**. Ein Passkey kann später kommen.
+2. Tippe auf **Passkey hinzufügen** und nutze deinen Fingerabdruck, dein Gesicht oder die PIN deines Geräts. Lieber eine Authenticator-App? Öffne **Stattdessen eine Authenticator-App verwenden**, scanne den Code, gib die sechs Ziffern ein und tippe auf **Einschalten**. Speichere die Wiederherstellungscodes, die danach kommen.
 3. Wähle Größe und Namen deiner Machine und füge dann deine Zahlungskarte hinzu. Die ersten {trial_days} Tage sind kostenlos, und vor ihrem Ende wird nichts abgebucht.
 
 ## Deine Einrichtungsseite
 
-Deine Machine startet, dann führt dich die Einrichtungsseite Schritt für Schritt durch den Rest:
+Die Registrierung ist ein Ablauf in fünf Schritten, einer pro Bildschirm: dein Passkey, dein Tarif, dann **E-Mail und Kalender**, **Deine KI** und **Erste Aufgaben**. Oben steht, bei welchem Schritt du bist. Eine Zeile zeigt, wie weit deine Machine mit dem Starten ist. Du musst nicht darauf warten: Beide Schritte funktionieren, während sie startet.
 
-1. **Mail und Kalender**: Verbinde Google oder Microsoft. Das geht schon, während deine Machine startet. Nach der Anmeldung zeigt der Schritt, dass sie arbeitet, bis deine Machine installiert ist und deine Mails gelesen hat, etwa eine Minute. Siehe [Gmail](gmail.md) und [Microsoft](microsoft.md).
-2. **Deine KI**: Melde dich mit ChatGPT oder Claude an, oder nutze einen Schlüssel deines KI-Anbieters. Siehe [ChatGPT](chatgpt.md).
-3. Prüfungen schalten sich von selbst ein. Die ersten Aufgaben kommen aus deinen neuesten Mails, dann aus deinen letzten 7 Tagen.
+1. **E-Mail und Kalender**: ein Tippen auf **Google verbinden** oder **Microsoft verbinden**. Es beginnt mit dem Konto, mit dem du dich angemeldet hast. Arbeit oder privat ergibt sich aus der Adresse; das änderst du später beim Konto. Siehe [Gmail](gmail.md) und [Microsoft](microsoft.md).
+2. **Deine KI**: Melde dich mit ChatGPT oder Claude an, oder nutze einen Schlüssel deines KI-Anbieters. Bei Claude fügst du den Code von der Seite von Claude ein, und es geht von selbst weiter. Siehe [ChatGPT](chatgpt.md).
+3. **Erste Aufgaben**: Prüfungen schalten sich von selbst ein. Die ersten Aufgaben kommen aus deinen neuesten Mails, dann aus deinen letzten 7 Tagen.
 
-Unter **Jederzeit mehr hinzufügen** stehen die optionalen: **Weitere Quellen** wie Slack, WhatsApp oder GitHub, [Telegram](telegram.md), [Codex](hand-to-agent.md) und die Verbindung deines Browsers. Keine davon ist zum Start nötig. Dein Dashboard schlägt sie vor, wenn sie helfen, etwa GitHub, sobald dessen Mails regelmäßig reinkommen.
+**Zurück** und die Zurück-Taste deines Browsers gehen zum vorigen Schritt. Sobald Mail und deine KI funktionieren, landest du in deinem Dashboard.
 
-Sobald deine Machine bereit ist, steht **Dashboard öffnen** oben auf der Seite. Füge es für Benachrichtigungen zum Startbildschirm deines Handys hinzu: siehe [App installieren und Benachrichtigungen einschalten](phone-app.md).
+Bei der Einrichtung wird nichts Optionales abgefragt. Danach hat **Jederzeit mehr hinzufügen** auf der Einrichtungsseite **Weitere Quellen** wie Slack, WhatsApp oder GitHub, [Telegram](telegram.md), [Codex](hand-to-agent.md) und die Verbindung deines Browsers. Nach deiner ersten Aufgabe schlägt dein Dashboard eine davon vor, wenn sie hilft, etwa GitHub, sobald dessen Mails regelmäßig reinkommen.
+
+Sobald deine Machine bereit ist, steht **Dein Dashboard öffnen** oben auf der Seite. **Zu Claude hinzufügen** fügt The Machine zu Claude hinzu, damit du dort nach deinen Mails und Aufgaben fragen kannst. Füge es für Benachrichtigungen zum Startbildschirm deines Handys hinzu: siehe [App installieren und Benachrichtigungen einschalten](phone-app.md).
 
 ## Eine Quelle anfragen
 

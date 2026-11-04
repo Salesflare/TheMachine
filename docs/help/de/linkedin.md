@@ -23,8 +23,11 @@ Auf einer gehosteten Machine:
 
 Auf deinem eigenen Computer:
 
-1. Melde dich einmal im Browser deiner Machine bei LinkedIn an (Einstellungen, **Browser der Machine öffnen ↗**).
-2. Öffne im Dashboard **Verbindungen**, dann **+ Hinzufügen**, und wähle LinkedIn. Oder führe `assistant connect linkedin` aus.
+1. Öffne im Dashboard **Verbindungen**, dann **+ Hinzufügen**, und wähle LinkedIn.
+2. Wähle **Arbeit** mit ihrer Firma oder **Privat** und tippe auf **Verbinden**.
+3. Tippe auf **Bei LinkedIn anmelden** und melde dich im Browser deiner Machine an. Sobald du drin bist, verbindet es sich von selbst.
+
+Oder führe `assistant connect linkedin` aus.
 
 Ein zweites LinkedIn-Konto bekommt einen eigenen Browser. Wenn LinkedIn deine Machine abmeldet, siehe [Von einer Website abgemeldet](signed-out.md).
 

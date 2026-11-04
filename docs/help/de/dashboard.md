@@ -17,13 +17,15 @@ order: 4
 
 **Suchen**, oben in der Seitenleiste, findet zuerst Aufgaben, dann Personen, Nachrichten und mehr. **Browser**, **Hilfe** und **Einstellungen** sind unten in der Seitenleiste. Auf dem Handy öffnet die Menütaste in der oberen Leiste die Seitenleiste.
 
-**Browser** zeigt den eigenen Browser deiner Machine. Auf einem Computer öffnet er sich neben der Seitenleiste, in der Größe des verfügbaren Platzes. Das gilt auch für **Im Browser ansehen** bei einer Aufgabe und **Browser öffnen**, wenn eine Website eine Anmeldung braucht. Auf dem Handy öffnet er sich in einem neuen Tab.
+**Browser** zeigt den eigenen Browser deiner Machine. Auf einem Computer öffnet er sich neben der Seitenleiste, ebenso **Im Browser ansehen** bei einer Aufgabe und **Browser öffnen**, wenn eine Website eine Anmeldung braucht. Ein schmales Fenster, etwa die App auf dem halben Bildschirm, zeigt ihn unter der oberen Leiste, nicht in einem zweiten Fenster. Auf dem Handy öffnet er sich in einem neuen Tab.
 
-Das vordere Fenster des Browsers steht in der Mitte, und der Rest des Bildschirms ist dunkel. Ein Button in der Ecke zeigt den ganzen Bildschirm. Auf einem niedrigen Bildschirm scrollt die ganze Seitenleiste als eine Spalte, Aufgaben eingeschlossen, wie das Menü auf dem Handy.
+Das vordere Fenster des Browsers steht in der Mitte, und der Rest des Bildschirms ist dunkel. Ein Button in der Ecke zeigt den ganzen Bildschirm. Ändert sich die Größe des Fensters, passt sich die Ansicht wieder an. **Vergrößern** gibt ihm das ganze Fenster; ein zweiter Druck geht zurück. Die Anmeldung aus einer Aufgabe hat auch **Vergrößern**.
 
-**Stopp** steht oben, solange eine Aufgabe den Browser nutzt, mit dem Namen dieser Aufgabe neben **Browser**. Ein Druck beendet es sofort, ohne Rückfrage: Es wird nichts mehr geklickt, getippt oder gesendet, und der Chat der Aufgabe sagt "Im Browser gestoppt".
+**Stopp** steht oben, solange eine Aufgabe den Browser nutzt, mit dem Namen dieser Aufgabe neben **Browser**. Ein Druck beendet den Lauf sofort, ohne Rückfrage: Es wird nichts mehr geklickt, getippt oder gesendet, und der Chat der Aufgabe sagt „Im Browser gestoppt“.
 
-Nutzen mehrere Aufgaben den Browser, stoppt er die auf dem vorderen Tab. Auf dem Handy hat der Tab des Browsers denselben Button oben. Um weiterzumachen, schreib in den Chat oder drück **Erneut versuchen**.
+Bei mehreren Läufen stoppt er den auf dem vorderen Tab. Auf dem Handy hat der Tab des Browsers dasselbe **Stopp** oben. Um weiterzumachen, schreib in den Chat oder drück **Erneut versuchen**.
+
+Passen die Aufgaben nicht hin, scrollt die ganze Seitenleiste als eine Spalte, Aufgaben eingeschlossen, wie das Menü auf dem Handy. Die installierte App macht es genauso.
 
 ## Neue Versionen
 

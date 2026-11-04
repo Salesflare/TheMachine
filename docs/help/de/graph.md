@@ -19,7 +19,7 @@ Alle, mit denen du in Kontakt bist, die engsten zuerst. Die Seite einer Person b
 
 Adressen und Chats einer Person werden von selbst zusammengeführt, wenn klar ist, dass es eine Person ist, etwa eine Arbeitsadresse mit der privaten Adresse in CC.
 
-Die Tabs **Arbeit** und **Privat** listen nur diese Kontakte. **CSV herunterladen** im Sortiermenü speichert den aktuellen Tab als Tabelle, auch für Organisationen und Projekte.
+Die Tabs **Arbeit** und **Privat** listen Personen nach ihrem Typ, dem auf ihrer Seite. Deine eigene Wahl (**Bearbeiten**) gilt vor allem anderen. Sonst sind deine Familie und Freunde, und wer zu dir als Familie oder Freund gehört (eine Ehefrau, ein Vater), privat, egal von welcher Adresse sie schreiben. Dein Team bekommt nie private Kontakte. **CSV herunterladen** im Sortiermenü speichert den aktuellen Tab als Tabelle, auch für Organisationen und Projekte.
 
 ### Zusammenfassung
 
