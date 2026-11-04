@@ -1321,6 +1321,10 @@
  "Found for {}": "Found for {}",
  "Found in your Outlook sent mail": "Found in your Outlook sent mail",
  "Found {} at {}": "Found {} at {}",
+ "Found {} to-dos. Reading on.": {
+  "one": "Found {} to-do. Reading on.",
+  "other": "Found {} to-dos. Reading on."
+ },
  "Found {}, {} picked for your work.": "Found {}, {} picked for your work.",
  "Founded": "Founded",
  "Founded is a year, like 2014": "Founded is a year, like 2014",
@@ -2447,6 +2451,7 @@
  "Nothing connects until you accept. Declining tells them nothing.": "Nothing connects until you accept. Declining tells them nothing.",
  "Nothing finished or dismissed yet.": "Nothing finished or dismissed yet.",
  "Nothing for a digest right now.": "Nothing for a digest right now.",
+ "Nothing for you yet. Reading on.": "Nothing for you yet. Reading on.",
  "Nothing found in your work accounts. Write an answer in To-dos, or decline.": "Nothing found in your work accounts. Write an answer in To-dos, or decline.",
  "Nothing found in your work accounts. You can still answer.": "Nothing found in your work accounts. You can still answer.",
  "Nothing found on ClawHub.": "Nothing found on ClawHub.",

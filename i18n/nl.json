@@ -1321,6 +1321,10 @@
  "Found for {}": "Gevonden voor {}",
  "Found in your Outlook sent mail": "Gevonden in je verzonden mail in Outlook",
  "Found {} at {}": "{} gevonden in {}",
+ "Found {} to-dos. Reading on.": {
+  "one": "{} to-do gevonden. Ik lees verder.",
+  "other": "{} to-do's gevonden. Ik lees verder."
+ },
  "Found {}, {} picked for your work.": "{} gevonden, {} gekozen voor je werk.",
  "Founded": "Opgericht",
  "Founded is a year, like 2014": "Opgericht is een jaartal, zoals 2014",
@@ -2447,6 +2451,7 @@
  "Nothing connects until you accept. Declining tells them nothing.": "Er wordt niets gekoppeld tot je aanvaardt. Weigeren laat hen niets weten.",
  "Nothing finished or dismissed yet.": "Nog niets afgerond of genegeerd.",
  "Nothing for a digest right now.": "Nu niets voor een overzicht.",
+ "Nothing for you yet. Reading on.": "Nog niets voor je. Ik lees verder.",
  "Nothing found in your work accounts. Write an answer in To-dos, or decline.": "Niets gevonden in je werkaccounts. Schrijf een antwoord in To-do’s, of wijs af.",
  "Nothing found in your work accounts. You can still answer.": "Niets gevonden in je werkaccounts. Je kunt toch antwoorden.",
  "Nothing found on ClawHub.": "Niets gevonden op ClawHub.",
