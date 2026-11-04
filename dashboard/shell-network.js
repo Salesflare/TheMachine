@@ -135,11 +135,13 @@ function netText(){const n=outbox.items.length;
  const head=!netDown?'':netRestarting?(netSetup?t('Setting up…'):t('Your Machine is restarting.')):shownAt||staleAt?t('Offline. Showing what was here at {}.',hhmm(shownAt||staleAt)):t('Offline.');
  const waits=n?t(['{} change waits to send.','{} changes wait to send.'],n):'';
  return [head,waits].filter(Boolean).join(' ')}
-const netHtml=()=>html`<span class="offline-text">${netText()}</span><button type="button" class="link" data-net-retry>${t('Try now')}</button>`;  // the chat's first draw
-const netNodes=()=>[make('span',{class:'offline-text'},netText()),make('button',{type:'button',class:'link','data-net-retry':''},t('Try now'))];
+// A restart is a wait of seconds (it tries again by itself): no Try now, and a calm working dot, not the warning one
+const netRetry=()=>!netRestarting||!netDown;
+const netHtml=()=>html`<span class="offline-text">${netText()}</span>${netRetry()?html`<button type="button" class="link" data-net-retry>${t('Try now')}</button>`:''}`;  // the chat's first draw
+const netNodes=()=>[make('span',{class:'offline-text'},netText()),...(netRetry()?[make('button',{type:'button',class:'link','data-net-retry':''},t('Try now'))]:[])];
 // The same bar sits in an open chat too (#chat-offline, above the message box): the chat covers the page's own
-function netPaint(){const show=netShown(),html=show?netText()+'|'+t('Try now'):'';$('#stale-note')?.classList.toggle('covered',show);
- for(const bar of [$('#offline-bar'),$('#chat-offline')]){if(!bar)continue;bar.hidden=!show;if(show)putOnce(bar,html,netNodes)}}
+function netPaint(){const show=netShown(),html=show?netText()+'|'+(netRetry()?t('Try now'):''):'';for(const n of [$('#live'),$('#stale-note')])n?.classList.toggle('working',netDown&&netRestarting);$('#stale-note')?.classList.toggle('covered',show);
+ for(const bar of [$('#offline-bar'),$('#chat-offline')]){if(!bar)continue;bar.hidden=!show;bar.classList.toggle('working',show&&netDown&&netRestarting);if(show)putOnce(bar,html,netNodes)}}
 document.addEventListener('click',e=>{if(!e.target.closest?.('#offline-bar [data-net-retry],#chat-offline [data-net-retry]'))return;outbox.wait=0;if(outbox.items.length)outboxFlush();micResume();retryIn=0;refreshWhenReady()});
 addEventListener('offline',()=>netSet(true));
 addEventListener('online',()=>{outbox.wait=0;outboxFlush()});

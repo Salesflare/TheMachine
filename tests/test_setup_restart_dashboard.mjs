@@ -46,9 +46,12 @@ try{
 
  // 1. The very first load lands in a setup restart: "Setting up…", not the sad Offline page
  await tab.goto(base);
- await until(tab,()=>/Back in a moment/.test(document.querySelector('#suggestions')?.textContent||''),null,'the empty state says back in a moment');
- assert.equal(await empty(tab),'Back in a moment.');
- assert.match(await bar(tab),/^Setting up…/);
+ await until(tab,()=>/Setting up your Machine/.test(document.querySelector('#suggestions')?.textContent||''),null,'the empty state says back in a moment');
+ assert.equal(await empty(tab),'Setting up your Machine…Back in a moment.');
+ assert.ok(await tab.evaluate(()=>!!document.querySelector('#suggestions .empty img.sticker')&&!!document.querySelector('#suggestions .empty strong.backfill-run')),'the mascot, working');
+ assert.equal(await bar(tab),'Setting up…','no Try now for a wait of seconds');
+ assert.ok(await tab.evaluate(()=>document.querySelector('#offline-bar').classList.contains('working')),'the calm dot, not the warning one');
+ assert.ok(await tab.evaluate(()=>document.querySelector('#live').classList.contains('working')),'the sidebar dot too');
  assert.doesNotMatch(await tab.evaluate(()=>document.querySelector('#suggestions').textContent+document.querySelector('#offline-bar').textContent+document.querySelector('#updated').textContent),/can’t reach|every 30 seconds|Offline/);
  await shoot(tab,'first-load-setting-up');
 
@@ -77,6 +80,8 @@ try{
  // 5. A plain 502 (no JSON: the Machine away) is still Offline
  mode='down';await tab.evaluate(()=>refresh());
  await until(tab,()=>/^Offline/.test(document.querySelector('#offline-bar').innerText),null,'Offline');
+ assert.match(await bar(tab),/Try now$/,'a real Offline keeps Try now');
+ assert.ok(await tab.evaluate(()=>!document.querySelector('#offline-bar').classList.contains('working')));
  assert.deepEqual(errors,[]);
  console.log('setup restart dashboard: ok');
 }finally{await browser?.close();server.close()}
