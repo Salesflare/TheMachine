@@ -385,6 +385,19 @@ class AppPush(unittest.TestCase):
         a.push_send(self.store, self.config, [], {'title': 'x', 'tag': 'a b/c'}, 'x', self.sender, wake='digest')
         self.assertEqual(self.wakes()[-1]['tag'], 'digest')
 
+    def test_the_brief_and_the_morning_name_their_own_view(self):
+        """A tapped notification opens the dashboard at #chat=<tag> (mobile/www/inject.js); the dashboard's pushRoute
+        sends a tag that is no to-do to its view (tests/test_push_links_dashboard.mjs). The brief's tag names its Fleet,
+        and the morning's web push opens the Calendar's agenda, like the app's."""
+        self.register()
+        fl = 'fl_' + 'a' * 16
+        self.app.fleet_notify_brief('Your Fleet this week\n\nGlobex waits', 'https://m.example/#fleet-brief=' + fl)
+        self.assertEqual((self.wakes()[-1]['kind'], self.wakes()[-1]['tag']), ('fleet', 'fleet-brief-' + fl))
+        self.app.fleet_notify_brief('Your Fleet this week', '')  # no address for the dashboard: the tag still opens a brief
+        self.assertEqual(self.wakes()[-1]['tag'], 'fleet-brief')
+        self.assertEqual(notify.compose([], [{'title': 'A'}], [], 'https://m.example/')['push']['url'], 'https://m.example/#calendar?view=agenda')
+        self.assertEqual(notify.compose([], [{'title': 'A'}], [])['push']['url'], './#calendar?view=agenda')
+
     def test_devices_the_cloud_dropped_go_here_too(self):
         self.register()
         self.cloud.answers.update(register={'id': 'dev_2'})
