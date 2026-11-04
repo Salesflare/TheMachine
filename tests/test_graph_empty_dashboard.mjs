@@ -12,12 +12,12 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 const dashboard=await dashboardPage();
 const sticker=await readFile(new URL('../brand/thinking.webp',import.meta.url));
 const ann={id:'email:ann@client.example',kind:'person',name:'Ann Example',strength:2,closeness:'regular',last_at:new Date().toISOString(),signals:3,ids:['ann@client.example']};
-let anyone=true;
+let anyone=true,read=null;
 const server=createServer(async(req,res)=>{const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(url.pathname==='/brand/thinking.webp'){res.setHeader('Content-Type','image/webp');res.end(sticker);return}
  if(url.pathname==='/api/status'){res.end(JSON.stringify({suggestions:[],promises:[],connectors:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[]}));return}
- if(url.pathname==='/api/graph'){const n=anyone?1:0;res.end(JSON.stringify({list_counts:{people:n,quiet:0,new:0,orgs:0,warmup:0,projects:0,projects_done:0},counts:{person:n,org:0,project:0},boards:[],board_suggestions:[]}));return}
+ if(url.pathname==='/api/graph'){const n=anyone?1:0;res.end(JSON.stringify({list_counts:{people:n,quiet:0,new:0,orgs:0,warmup:0,projects:0,projects_done:0},counts:{person:n,org:0,project:0},boards:[],board_suggestions:[],...(read?{read}:{})}));return}
  if(url.pathname==='/api/graph/list'){res.end(JSON.stringify({items:anyone&&url.searchParams.get('list')==='people'?[ann]:[],next:null,total:anyone?1:0}));return}
  res.statusCode=url.pathname.startsWith('/brand/')||url.pathname.startsWith('/assets/')?404:200;res.end('{}')});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
@@ -53,6 +53,12 @@ try{
   assert.equal((await shown(page).innerText()).replace(/\s+/g,' ').trim(),'Nothing mapped yet. People appear as messages and meetings come in.',tag);
   if(!mobile)assert.match(await page.locator('#page-head').innerText(),/\+ New person/,tag);  // a phone's head has no room for + New
   if(shotDir)await page.screenshot({path:`${shotDir}/people-empty-${tag}.png`});
+  // The graph read only automated mail: People says what it read
+  read={email:8};await page.evaluate(()=>{pagerDrop('graph');return people('')});
+  await page.waitForFunction(()=>/Read 8/.test(document.querySelector('#people-view [data-graph-panel="people"] .graph-empty')?.textContent||''));
+  assert.equal((await shown(page).innerText()).replace(/\s+/g,' ').trim(),'Nothing mapped yet. Read 8 emails, all automated. People show up as real conversations come in.',tag);
+  if(shotDir)await page.screenshot({path:`${shotDir}/people-empty-read-${tag}.png`});
+  read=null;
   await navClick(page.locator('.side-sub a[data-graph-sub="projects"]'));
   await page.locator('#people-view [data-graph-panel="projects"]:not([hidden]) .graph-empty').waitFor();
   await context.close()}

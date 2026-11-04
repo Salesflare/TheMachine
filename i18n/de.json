@@ -2903,6 +2903,7 @@
  "People appear as messages and meetings come in.": "Personen erscheinen, wenn Nachrichten und Meetings reinkommen.",
  "People are in it: change their organization first": "Es sind Personen darin: Ändere zuerst ihre Organisation",
  "People at these are colleagues, never a client. Add another one your company uses, like acme.co next to acme.com.": "Leute dort sind Kollegen, nie Kunden. Füge eine weitere hinzu, die deine Firma nutzt, etwa acme.co neben acme.com.",
+ "People show up as real conversations come in.": "Personen erscheinen, sobald echte Gespräche ankommen.",
  "People you talk with regularly, silent for much longer than usual.": "Personen, mit denen du regelmäßig sprichst, die schon viel länger als üblich still sind.",
  "Per channel, from your messages and notes.": "Pro Kanal, aus deinen Nachrichten und Notizen.",
  "Period": "Zeitraum",
@@ -3129,6 +3130,7 @@
  "Read the thread": "Thread lesen",
  "Read the to-dos": "Hat die Aufgaben gelesen",
  "Read up to {}": "Gelesen bis {}",
+ "Read {}, all automated.": "{} gelesen, alle automatisch.",
  "Read-only logs and settings, scrubbed like the report. It ends by itself.": "Nur lesen: Logs und Einstellungen, bereinigt wie der Bericht. Es endet von selbst.",
  "Read-only. Turn it off any time.": "Nur lesend. Jederzeit abschaltbar.",
  "Reading docs needs its own OK": "Dokumente lesen braucht ein eigenes OK",
@@ -5821,6 +5823,10 @@
  "{} edits to the drafting guide": {
   "one": "{} Änderung am Leitfaden für Entwürfe",
   "other": "{} Änderungen am Leitfaden für Entwürfe"
+ },
+ "{} emails": {
+  "one": "{} E-Mail",
+  "other": "{} E-Mails"
  },
  "{} failed attempts in a row": {
   "one": "{} fehlgeschlagener Versuch in Folge",

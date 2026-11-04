@@ -2003,7 +2003,21 @@ def overview(db, limit=12):
             'warmup': hidden_list(db),
             'same_person': same_people(db),
             'counts': counts(db),
-            'list_counts': list_counts(db)}
+            'list_counts': list_counts(db),
+            **({'read': read_counts(db)} if state and not db.execute("SELECT 1 FROM graph_nodes WHERE kind='person' LIMIT 1").fetchone() else {})}
+
+
+def read_counts(db):
+    """While the graph has nobody yet: what it read, by kind (email, meeting, message), so an empty People page says
+    what it looked at instead of only "Nothing mapped yet". Counts only."""
+    found = collections.Counter()
+    for kind, n in db.execute('SELECT kind,count(*) FROM events WHERE deleted=0 GROUP BY kind'):
+        family = 'email' if kind in ('gmail.message', 'outlook.message', 'ms_graph.message', 'salesflare.email') else \
+            'meeting' if kind in ('calendar.event', 'outlook.event', 'ms_graph.event', 'salesflare.meeting') else \
+            'message' if kind.endswith('.message') and kind != 'fleet.message' else None
+        if family:
+            found[family] += n
+    return dict(found)
 
 
 def counts(db):

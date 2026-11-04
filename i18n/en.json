@@ -2903,6 +2903,7 @@
  "People appear as messages and meetings come in.": "People appear as messages and meetings come in.",
  "People are in it: change their organization first": "People are in it: change their organization first",
  "People at these are colleagues, never a client. Add another one your company uses, like acme.co next to acme.com.": "People at these are colleagues, never a client. Add another one your company uses, like acme.co next to acme.com.",
+ "People show up as real conversations come in.": "People show up as real conversations come in.",
  "People you talk with regularly, silent for much longer than usual.": "People you talk with regularly, silent for much longer than usual.",
  "Per channel, from your messages and notes.": "Per channel, from your messages and notes.",
  "Period": "Period",
@@ -3129,6 +3130,7 @@
  "Read the thread": "Read the thread",
  "Read the to-dos": "Read the to-dos",
  "Read up to {}": "Read up to {}",
+ "Read {}, all automated.": "Read {}, all automated.",
  "Read-only logs and settings, scrubbed like the report. It ends by itself.": "Read-only logs and settings, scrubbed like the report. It ends by itself.",
  "Read-only. Turn it off any time.": "Read-only. Turn it off any time.",
  "Reading docs needs its own OK": "Reading docs needs its own OK",
@@ -5821,6 +5823,10 @@
  "{} edits to the drafting guide": {
   "one": "{} edit to the drafting guide",
   "other": "{} edits to the drafting guide"
+ },
+ "{} emails": {
+  "one": "{} email",
+  "other": "{} emails"
  },
  "{} failed attempts in a row": {
   "one": "{} failed attempt in a row",
