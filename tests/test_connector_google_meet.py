@@ -480,13 +480,13 @@ class SignIn(unittest.TestCase):
         self.assertNotIn('Connect Gmail', html)
         self.assertIn("c.last_success?htmlT('Last sync {}',time(c.last_success,true)):t('Not synced yet')", html)  # no "Last sync Not yet"
 
-    def test_disconnect_revokes_meets_own_sign_in_at_google(self):
+    def test_disconnect_forgets_meets_own_sign_in_without_revoking_it_at_google(self):
         config = {'database': str(self.root / 'events.sqlite')}
         mail_grants.put(config, 'google_meet', OWNER, 'fixture-refresh-token-meet')
         mail_grants.put(config, 'google', OWNER, 'fixture-refresh-token-mail')
-        with patch.object(mail_grants, '_revoke_google', return_value=True) as revoke:
-            self.assertEqual(mail_grants.forget(config, 'google_meet', OWNER), 'revoked')
-        revoke.assert_called_once_with('fixture-refresh-token-meet')
+        with patch('urllib.request.urlopen', side_effect=AssertionError('no call to Google')):
+            self.assertEqual(mail_grants.forget(config, 'google_meet', OWNER), 'forgotten')
+        self.assertIsNone(mail_grants.get(config, 'google_meet', OWNER))
         self.assertEqual(mail_grants.get(config, 'google', OWNER), 'fixture-refresh-token-mail')  # Gmail's stays
 
 

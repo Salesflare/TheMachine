@@ -8,7 +8,6 @@ from unittest.mock import patch
 
 import enrichment
 import google_api
-import mail_grants
 import ms_graph
 from connectors import rss
 
@@ -50,8 +49,6 @@ class IncompleteReadTest(unittest.TestCase):
         with patch.object(enrichment.urllib.request, 'urlopen', dropped):
             with self.assertRaisesRegex(enrichment.EnrichmentError, '^unreachable: IncompleteRead$'):
                 enrichment.answer({}, 'https://enrich.example/x', 'key', 5)
-        with patch.object(mail_grants.urllib.request, 'urlopen', side_effect=http.client.BadStatusLine('')):
-            self.assertFalse(mail_grants._revoke_google('token'))
         with patch.object(google_api, 'token', return_value='test'), patch.object(google_api.urllib.request, 'urlopen', dropped), \
                 patch.object(google_api, 'url_for', return_value=('GET', 'https://www.googleapis.com/x')):
             with self.assertRaises(google_api.BrokerError) as caught:

@@ -4,26 +4,23 @@ A hosting control plane keeps the OAuth client and its secret, never the sign-in
 token lives here, in `mail-grants.json` next to the database (mode 600), sealed with the message key (message_seal.py).
 The app sends it along with each request for an access token (google_api.py, ms_graph.py); the control plane asks
 Google or Microsoft with its client secret and answers with the access token (and Microsoft's rotated refresh token,
-saved here), keeping neither. Disconnecting revokes a Google sign-in at Google from here and forgets it; Microsoft has
-no way to revoke one, so it is forgotten (the owner can remove the app at Microsoft too).
+saved here), keeping neither. Disconnecting forgets a sign-in here; it is never revoked at Google or Microsoft from
+here. The control plane's OAuth client is shared: the same person's other Machines (a hosted one next to one on their own
+computer, a test Machine next to their main one) and other apps of that Google project sign in to the same address with
+it, and Google ends the whole grant for every one of them when any one token is revoked. Forgetting the only copy
+ends this Machine's access; the owner can remove the app at Google or Microsoft too.
 
 Each disconnect leaves a receipt (`revocations.json` next to it: provider, address, when, no token), which Connections
-shows: "Removed, confirmed" once Google confirmed the revoke (Microsoft and Zoom: once no copy is left here), else
-"Pending" with why. A revoke Google didn't confirm keeps its token sealed under `revoke:<provider>:<address>`, used for
-nothing but trying again (`retry`: every RETRY_MINUTES from the app, and when the control plane asks), until Google
-answers.
+shows as "Removed, confirmed" once no copy is left here. Older versions kept a sign-in whose revoke Google hadn't
+confirmed under `revoke:<provider>:<address>`; `retry` now drops those without asking Google.
 
 An account connected before this has its sign-in at the control plane until it is moved here; until then the app asks
 without one, as before."""
 from __future__ import annotations
 
 import base64
-import http.client
 import json
 import os
-import urllib.error
-import urllib.parse
-import urllib.request
 from pathlib import Path
 
 import message_seal
@@ -31,11 +28,11 @@ import portable
 
 FILE = 'mail-grants.json'
 RECEIPTS = 'revocations.json'
-PENDING = 'revoke:'  # a sign-in forgotten here whose revoke Google hasn't confirmed yet: kept only to try again
+PENDING = 'revoke:'  # from older versions: a sign-in kept only to revoke at Google again; `retry` drops it
 RECEIPT_DAYS = 30
 RETRY_MINUTES = 60
-PROVIDERS = ('google', 'microsoft', 'zoom', 'stripe', 'slack', 'google_meet')  # Google Meet: its own Google sign-in, revoked at Google too. Zoom, Stripe and Slack (connectors/zoom.py, connectors/stripe.py, slack_api.py): forgotten here; the owner can remove the app there
-GOOGLE_REVOKE = 'https://oauth2.googleapis.com/revoke'
+PROVIDERS = ('google', 'microsoft', 'zoom', 'stripe', 'slack', 'google_meet')  # Google Meet: its own Google sign-in. All forgotten here, none revoked there. Zoom, Stripe and Slack (connectors/zoom.py, connectors/stripe.py, slack_api.py): forgotten here; the owner can remove the app there
+REVOKES_AT_GOOGLE = False  # the control plane's agent reads this: older versions revoked at Google, which ends the grant everywhere
 GOOGLE_REMOVE = 'myaccount.google.com/permissions'
 MICROSOFT_REMOVE = 'myapps.microsoft.com (work) or account.live.com/consent/Manage (personal)'
 
@@ -184,47 +181,21 @@ def held(config):
     return [tuple(name.split(':', 1)) for name in sorted(_read(config)) if not name.startswith(PENDING)]
 
 
-def _revoke_google(token, timeout=20):
-    request = urllib.request.Request(GOOGLE_REVOKE, data=urllib.parse.urlencode({'token': token}).encode(), method='POST',
-                                     headers={'Content-Type': 'application/x-www-form-urlencoded'})
-    try:
-        with urllib.request.urlopen(request, timeout=timeout):
-            return True
-    except urllib.error.HTTPError as error:
-        error.close()
-        return error.code == 400  # already revoked or expired: nothing left to revoke
-    except (urllib.error.URLError, TimeoutError, OSError, http.client.HTTPException):
-        return False
-
-
 def forget(config, provider, email, revoke=True):
-    """Revoke a Google sign-in at Google (Microsoft has no revoke) and forget it here. Returns 'revoked', 'forgotten'
-    (nothing to revoke, or Microsoft), 'not_revoked' (Google did not answer: forgotten for every use, kept sealed only
-    to try again, see `retry`) or None when nothing was kept. With revoke (a disconnect), it leaves a receipt."""
+    """Forget a sign-in here. Nothing is revoked at Google or Microsoft (the module docstring says why). Returns
+    'forgotten', or None when nothing was kept. revoke: a disconnect the owner sees, which leaves a receipt (False for
+    internal cleanup); the name stays for the callers from before."""
     name = _name(provider, email)
-    try:
-        token = get(config, provider, email)
-    except GrantError:
-        token = None
     outcome = None
-    if token:
-        outcome = 'forgotten'
-        if revoke and provider in ('google', 'google_meet'):
-            outcome = 'revoked' if _revoke_google(token) else 'not_revoked'
     with _Locked(config):
         data = _read(config)
-        if name in data:
-            outcome = outcome or 'forgotten'
-            if outcome == 'not_revoked':
-                data[PENDING + name] = base64.b64encode(_sealer(config).seal(json.dumps(
-                    {'for': PENDING + name, 'token': token, 'tries': 1, 'tried_at': _now()}))).decode()
-            data.pop(name)
+        if name in data or PENDING + name in data:
+            outcome = 'forgotten'
+            data.pop(name, None)
+            data.pop(PENDING + name, None)
             _write(config, data)
         if revoke and outcome:
-            _receipt(config, provider, email, 'pending' if outcome == 'not_revoked' else 'removed')
-    if revoke and outcome is None and PENDING + name in _read(config):
-        retry(config, only=name)  # asked again (the control plane): what Google didn't confirm before
-        outcome = 'revoked' if PENDING + name not in _read(config) else 'not_revoked'
+            _receipt(config, provider, email, 'removed')
     return outcome
 
 
@@ -275,39 +246,21 @@ def _receipt(config, provider, email, state):
 
 
 def retry(config, only=None, due_only=False):
-    """Tries again the Google revokes Google didn't confirm (all, or `only` one sign-in; due_only: those last tried
-    RETRY_MINUTES ago or more). Each one Google confirms goes for good. Returns how many still wait."""
+    """Sign-ins older versions kept only to revoke at Google again (all, or `only` one): dropped now without asking
+    Google, each receipt marked removed. Returns how many still wait: always 0."""
     if not config.get('database'):
         return 0
     try:
         pending = [n for n in _read(config) if n.startswith(PENDING) and (only is None or n == PENDING + only)]
     except GrantError:
         return 0
-    left = 0
-    for name in pending:
-        provider, email = name[len(PENDING):].split(':', 1)
-        with _Locked(config):
-            data = _read(config)
-            if name not in data:
-                continue
-            try:
-                kept = json.loads(_sealer(config).open(base64.b64decode(data[name])))
-            except (message_seal.SealError, ValueError, GrantError):
-                left += 1
-                continue
-            if kept.get('for') != name:
-                left += 1
-                continue
-            if due_only and _age_minutes(kept.get('tried_at')) < RETRY_MINUTES:
-                left += 1
-                continue
-            if _revoke_google(kept.get('token') or ''):
-                data.pop(name)
-                _write(config, data)
+    if not pending:
+        return 0
+    with _Locked(config):
+        data = _read(config)
+        for name in pending:
+            if data.pop(name, None) is not None:
+                provider, email = name[len(PENDING):].split(':', 1)
                 _receipt(config, provider, email, 'removed')
-                continue
-            data[name] = base64.b64encode(_sealer(config).seal(json.dumps(
-                {**kept, 'tries': int(kept.get('tries') or 0) + 1, 'tried_at': _now()}))).decode()
-            _write(config, data)
-            left += 1
-    return left
+        _write(config, data)
+    return 0

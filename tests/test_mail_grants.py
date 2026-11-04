@@ -1,11 +1,11 @@
 """Broker sign-ins kept on the Machine (mail_grants.py): sealed with the message key, sent along with each token request,
-rotated ones kept, revoked at Google when forgotten. No network: urlopen is replaced by a fake broker and fake Google."""
+rotated ones kept, forgotten here and never revoked at Google (that would end the grant on every Machine of that
+address). No network: urlopen is replaced by a fake broker; a call to Google's revoke endpoint fails the test."""
 import io
 import json
 import os
 import tempfile
 import unittest
-import urllib.error
 from pathlib import Path
 from unittest import mock
 
@@ -24,15 +24,12 @@ class Response(io.BytesIO):
 
 class Fake:
     def __init__(self, rotate=None):
-        self.calls, self.rotate, self.revoke_status = [], rotate, 200
+        self.calls, self.rotate = [], rotate
 
     def __call__(self, request, timeout=None):
         url = request.full_url
-        if url == mail_grants.GOOGLE_REVOKE:
-            self.calls.append(('revoke', request.data.decode()))
-            if self.revoke_status != 200:
-                raise urllib.error.HTTPError(url, self.revoke_status, 'no', {}, io.BytesIO())
-            return Response(b'{}')
+        if 'revoke' in url:
+            raise AssertionError('a sign-in was revoked at Google: ' + url)
         body = json.loads(request.data)
         self.calls.append((url, body))
         if 'scope' not in body:
@@ -53,7 +50,7 @@ class Grants(unittest.TestCase):
                        'microsoft_broker': {'url': MS_BROKER},
                        'credentials': {'google-broker': str(root / 'broker'), 'microsoft-broker': str(root / 'broker')}}
         self.fake = Fake()
-        for module in (google_api, ms_graph, mail_grants):
+        for module in (google_api, ms_graph):
             patcher = mock.patch.object(module.urllib.request, 'urlopen', self.fake); patcher.start(); self.addCleanup(patcher.stop)
         self.credential = lambda config, name: Path(config['credentials'][name]).read_text().strip()
 
@@ -142,45 +139,37 @@ class Grants(unittest.TestCase):
         self.assertEqual(self.fake.calls[-1][1]['refresh_token'], 'first')
         self.assertEqual(mail_grants.get(self.config, 'microsoft', 'sam@contoso.test'), 'second')
 
-    def test_forgetting_revokes_google_at_google_and_microsoft_only_here(self):
+    def test_forgetting_never_revokes_at_google_so_other_machines_of_the_address_keep_working(self):
+        # A test or second Machine of the same address, deleted or disconnected: Google ends the whole grant of the
+        # shared client when one token is revoked, which broke the person's main Machine. Only this copy goes.
         mail_grants.put(self.config, 'google', 'alex@acme.test', 'g-secret')
         mail_grants.put(self.config, 'microsoft', 'sam@contoso.test', 'm-secret')
-        self.assertEqual(mail_grants.forget(self.config, 'google', 'alex@acme.test'), 'revoked')
-        self.assertEqual(self.fake.calls, [('revoke', 'token=g-secret')])
+        self.assertFalse(mail_grants.REVOKES_AT_GOOGLE)
+        self.assertEqual(mail_grants.forget(self.config, 'google', 'alex@acme.test'), 'forgotten')
         self.assertEqual(mail_grants.forget(self.config, 'microsoft', 'sam@contoso.test'), 'forgotten')
-        self.assertEqual(len(self.fake.calls), 1)
+        self.assertEqual(self.fake.calls, [])
         self.assertEqual(mail_grants.held(self.config), [])
-        self.assertIsNone(mail_grants.forget(self.config, 'google', 'alex@acme.test'))
-
-    def test_google_unreachable_still_forgets_and_says_so(self):
-        mail_grants.put(self.config, 'google', 'alex@acme.test', 'g-secret')
-        self.fake.revoke_status = 503
-        self.assertEqual(mail_grants.forget(self.config, 'google', 'alex@acme.test'), 'not_revoked')
-        self.assertIsNone(mail_grants.get(self.config, 'google', 'alex@acme.test'))
-
-    def test_a_revoke_google_did_not_confirm_stays_pending_and_is_tried_again_until_it_is(self):
-        mail_grants.put(self.config, 'google', 'alex@acme.test', 'g-secret')
-        mail_grants.put(self.config, 'microsoft', 'sam@contoso.test', 'm-secret')
-        self.fake.revoke_status = 503
-        self.assertEqual(mail_grants.forget(self.config, 'google', 'alex@acme.test'), 'not_revoked')
-        mail_grants.forget(self.config, 'microsoft', 'sam@contoso.test')
-        self.assertEqual(mail_grants.held(self.config), [])  # never used again for anything but the revoke
-        self.assertNotIn('g-secret', mail_grants.path(self.config).read_text())
-        self.assertEqual([(r['provider'], r['email'], r['state']) for r in mail_grants.receipts(self.config)],
-                         [('microsoft', 'sam@contoso.test', 'removed'), ('google', 'alex@acme.test', 'pending')])
-        self.assertNotIn('secret', mail_grants._receipts_path(self.config).read_text())
-        self.assertEqual(mail_grants.retry(self.config, due_only=True), 1)  # tried a moment ago: not yet
-        self.assertEqual(len(self.fake.calls), 1)
-        self.assertEqual(mail_grants.retry(self.config), 1)  # Google still away
-        self.fake.revoke_status = 200
-        self.assertEqual(mail_grants.forget(self.config, 'google', 'alex@acme.test'), 'revoked')  # the control plane asks again
-        self.assertEqual(self.fake.calls[-1], ('revoke', 'token=g-secret'))
-        self.assertEqual(mail_grants.retry(self.config), 0)
+        self.assertNotIn('secret', mail_grants.path(self.config).read_text())
         self.assertEqual({r['email']: r['state'] for r in mail_grants.receipts(self.config)},
                          {'alex@acme.test': 'removed', 'sam@contoso.test': 'removed'})
-        self.assertEqual(mail_grants._read(self.config), {})
+        self.assertNotIn('secret', mail_grants._receipts_path(self.config).read_text())
+        self.assertIsNone(mail_grants.forget(self.config, 'google', 'alex@acme.test'))
         mail_grants.put(self.config, 'google', 'alex@acme.test', 'new-secret')  # connected again: no receipt
         self.assertEqual([r['email'] for r in mail_grants.receipts(self.config)], ['sam@contoso.test'])
+
+    def test_a_sign_in_an_older_version_kept_to_revoke_again_is_dropped_without_asking_google(self):
+        import base64
+        name = mail_grants.PENDING + 'google:alex@acme.test'
+        with mail_grants._Locked(self.config):
+            data = mail_grants._read(self.config)
+            data[name] = base64.b64encode(mail_grants._sealer(self.config).seal(json.dumps(
+                {'for': name, 'token': 'g-secret', 'tries': 1, 'tried_at': mail_grants._now()}))).decode()
+            mail_grants._write(self.config, data)
+            mail_grants._receipt(self.config, 'google', 'alex@acme.test', 'pending')
+        self.assertEqual(mail_grants.retry(self.config, due_only=True), 0)
+        self.assertEqual(self.fake.calls, [])
+        self.assertEqual(mail_grants._read(self.config), {})
+        self.assertEqual([r['state'] for r in mail_grants.receipts(self.config)], ['removed'])
 
     def test_internal_cleanup_leaves_no_receipt(self):
         mail_grants.put(self.config, 'google', 'alex@acme.test', 'g-secret')

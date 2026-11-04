@@ -20,6 +20,6 @@ Eles ficam guardados por {grace_days} dias para você poder exportá-los e depoi
 
 ## Excluir tudo agora
 
-Em **Configurações** › **Conta**, clique em **Excluir conta**, digite DELETE ou seu e-mail e clique em **Apagar tudo agora**. Isso encerra sua assinatura, revoga o acesso ao Google e à Microsoft e exclui sua Machine, os backups dela e todos os dados. Não dá para desfazer.
+Em **Configurações** › **Conta**, clique em **Excluir conta**, digite DELETE ou seu e-mail e clique em **Apagar tudo agora**. Isso encerra sua assinatura, faz a sua Machine esquecer os logins do Google e da Microsoft e exclui sua Machine, os backups dela e todos os dados. Não dá para desfazer.
 
 Sem uma Machine hospedada, o botão é **Excluir minha conta**. Uma Machine no seu próprio computador continua como está.
