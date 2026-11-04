@@ -1,7 +1,9 @@
 <!doctype html><html lang="en"><meta charset="utf-8"><base href="__BASE__"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
 <title>The Machine · To-dos</title>
 <meta name="theme-color" content="#1b1c1f">
-<script>// Older browsers (an Android System WebView before Chrome 92 lacks .at, findLast and crypto.randomUUID): the few newer
+<script>// The mobile app (its WebView says TheMachineApp/<n>): nothing that leads to buying is shown in it ([data-buy]).
+if(/ TheMachineApp\/\d/.test(navigator.userAgent))document.documentElement.classList.add('in-app');
+// Older browsers (an Android System WebView before Chrome 92 lacks .at, findLast, crypto.randomUUID): the few newer
 // built-ins the page uses, filled in only where missing. tests/test_dashboard_compat.py keeps the rest of the page off newer ones.
 (()=>{const def=(o,k,f)=>{if(o&&!(k in o))Object.defineProperty(o,k,{value:f,writable:true,configurable:true})};
 const at=function(i){i=Math.trunc(i)||0;if(i<0)i+=this.length;return i<0||i>=this.length?undefined:this[i]};
@@ -9,10 +11,9 @@ for(const c of [Array,String,Object.getPrototypeOf(Int8Array)])def(c.prototype,'
 def(Array.prototype,'findLastIndex',function(f,t){for(let i=this.length-1;i>=0;i--)if(f.call(t,this[i],i,this))return i;return-1});
 def(Array.prototype,'findLast',function(f,t){const i=this.findLastIndex(f,t);return i<0?undefined:this[i]});
 for(const c of [Element,DocumentFragment])def(c.prototype,'replaceChildren',function(...k){this.textContent='';this.append(...k)});
+def(Element.prototype,'checkVisibility',function(){return this.getClientRects().length>0});
 if(window.crypto?.getRandomValues)def(crypto,'randomUUID',()=>{const b=crypto.getRandomValues(new Uint8Array(16));b[6]=b[6]&15|64;b[8]=b[8]&63|128;
- const h=[...b].map(x=>x.toString(16).padStart(2,'0')).join('');return`${h.slice(0,8)}-${h.slice(8,12)}-${h.slice(12,16)}-${h.slice(16,20)}-${h.slice(20)}`})})();</script>
-<script>// The mobile app (its WebView says TheMachineApp/<n>): nothing that leads to buying is shown in it ([data-buy]).
-if(/ TheMachineApp\/\d/.test(navigator.userAgent))document.documentElement.classList.add('in-app');
+ const h=[...b].map(x=>x.toString(16).padStart(2,'0')).join('');return`${h.slice(0,8)}-${h.slice(8,12)}-${h.slice(12,16)}-${h.slice(16,20)}-${h.slice(20)}`})})();
 // Theme: light or dark as picked here or in the hosted app (the "theme" cookie, shared under the app's domain), else the device's own setting.
 (()=>{const root=document.documentElement,sys=matchMedia('(prefers-color-scheme: light)');
 const saved=()=>{const c=document.cookie.match(/(?:^|;\s*)theme=(light|dark)(?:;|$)/);if(c)return c[1];const l=localStorage.getItem('theme');return l==='light'||l==='dark'?l:'auto'};

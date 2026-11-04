@@ -3,7 +3,7 @@
 Such a WebView ran the page (it parses everything the page writes, ??= included) but threw on every newer built-in or
 selector it lacks: `.at` ("w.at is not a function" in initials, closedAt, actMerged) and `:modal` ("not a valid
 selector" in toastLift). The page's first script fills in the few newer built-ins it uses (.at, findLast,
-findLastIndex, replaceChildren, crypto.randomUUID), and selectors from script use only what such a browser knows, with
+findLastIndex, replaceChildren, checkVisibility, crypto.randomUUID), and selectors from script use only what such a browser knows, with
 :modal and :focus-visible asked behind a try (modalOpen, focusVisible). This test keeps it that way."""
 from pathlib import Path
 import json
@@ -17,8 +17,9 @@ import dashboard_parts
 ROOT = Path(__file__).resolve().parent.parent
 PAGE = dashboard_parts.assemble()
 SCRIPTS = re.findall(r'<script\b[^>]*>(.*?)</script>', PAGE, re.S)
-POLYFILL = SCRIPTS[0]
-CODE = '\n'.join(SCRIPTS[1:])
+# the polyfill: in the first script, from its comment to the theme's
+POLYFILL = re.search(r'// Older browsers.*?\n(?=// Theme:)', SCRIPTS[0], re.S).group()
+CODE = '\n'.join(SCRIPTS).replace(POLYFILL, '')
 
 # Built-ins newer than such a browser that the page doesn't fill in: use something older instead (or add it to the
 # polyfill, with its own line in test_polyfill_fills_in).
@@ -32,7 +33,6 @@ NEWER = {
     'Array.fromAsync': r'\bArray\.fromAsync\b',
     'AbortSignal.timeout/any': r'\bAbortSignal\.(?:timeout|any)\b',
     'URL.canParse/URL.parse': r'\bURL\.(?:canParse|parse)\s*\(',
-    'checkVisibility': r'\.checkVisibility\s*\(',
     'isWellFormed/toWellFormed': r'\.(?:isWellFormed|toWellFormed)\s*\(',
     'Set methods': r'\.(?:union|intersection|symmetricDifference|isSubsetOf|isSupersetOf|isDisjointFrom)\s*\(',
 }
@@ -50,8 +50,8 @@ ALLOWED = {
 
 class OlderBrowser(unittest.TestCase):
     def test_polyfill_is_the_first_script(self):
-        self.assertIn('Older browsers', POLYFILL)
-        for name in ("'at'", "'findLast'", "'findLastIndex'", "'replaceChildren'", "'randomUUID'"):
+        self.assertIn(POLYFILL, SCRIPTS[0])
+        for name in ("'at'", "'findLast'", "'findLastIndex'", "'replaceChildren'", "'checkVisibility'", "'randomUUID'"):
             self.assertIn(name, POLYFILL)
 
     def test_no_newer_builtins(self):
@@ -80,19 +80,20 @@ const vm=require('node:vm'),src=process.argv[1];
 const ctx=vm.createContext({});
 vm.runInContext(`delete Array.prototype.at;delete String.prototype.at;delete Object.getPrototypeOf(Int8Array).prototype.at;
 delete Array.prototype.findLast;delete Array.prototype.findLastIndex;
-class Element{constructor(){this.kids=[]}set textContent(v){this.kids=[]}append(...k){this.kids.push(...k)}}
+class Element{constructor(){this.kids=[]}set textContent(v){this.kids=[]}append(...k){this.kids.push(...k)}getClientRects(){return this.kids}}
 class DocumentFragment extends Element{}
 var window=globalThis,crypto={getRandomValues:a=>{for(let i=0;i<a.length;i++)a[i]=(i*37+11)&255;return a}};`,ctx);
 vm.runInContext(src,ctx);
-const out=vm.runInContext(`const e=new Element();e.append('x');e.replaceChildren('a','b');
+const out=vm.runInContext(`const e=new Element();e.append('x');e.replaceChildren('a','b');const none=new Element();
 [[1,2,3].at(-1),[1,2,3].at(0),[1,2,3].at(5),'abc'.at(-1),new Uint8Array([4,5]).at(-1),[].at(-1),
-[1,2,3,4].findLast(x=>x%2),[1,2,3,4].findLastIndex(x=>x>9),e.kids,crypto.randomUUID()]`,ctx);
+[1,2,3,4].findLast(x=>x%2),[1,2,3,4].findLastIndex(x=>x>9),e.kids,crypto.randomUUID(),e.checkVisibility(),none.checkVisibility()]`,ctx);
 process.stdout.write(JSON.stringify(out));
 """
         out = json.loads(subprocess.run([shutil.which('node'), '-e', script, POLYFILL], capture_output=True, text=True,
                                         check=True, timeout=60).stdout)
         self.assertEqual(out[:6], [3, 1, None, 'c', 5, None])
         self.assertEqual(out[6:9], [3, -1, ['a', 'b']])
+        self.assertEqual(out[10:], [True, False])
         self.assertRegex(out[9], r'^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$')
 
     def test_polyfill_leaves_real_ones(self):
