@@ -3,6 +3,8 @@ to-do's chat, the read-only tools, and approving one draft by voice (a confirm q
 import importlib.util
 import datetime as dt
 import json
+import os
+import shutil
 import subprocess
 import tempfile
 import threading
@@ -107,6 +109,55 @@ class Sessions(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'has ended'):
             self.talk.get(talk_id)
         self.assertEqual(self.gateway.calls[-1]['method'], 'end')
+
+    def test_a_refused_offer_says_why_in_the_journal(self):
+        # A ChatGPT sign-in whose account OpenAI turns down for live voice: the owner sees "couldn't connect", and the
+        # journal (which support reports carry) says why, in fixed words and numbers, never the secret or the offer
+        self.gateway.answers['start'] = {**self.gateway.answers['start'], 'offer_url': '/plugins/openai/realtime/calls', 'via': 'signin'}
+        talk_id = self.talk.start(None, {})['id']
+        self.gateway.answers['offer'] = {'error': 'unavailable', 'reason': 'auth', 'status': 502, 'openai': 403}
+        with self.assertLogs('personal-assistant', 'WARNING') as logs, self.assertRaisesRegex(ValueError, 'couldn’t connect'):
+            self.talk.offer(talk_id, OFFER, {})
+        self.assertEqual(logs.output, ['WARNING:personal-assistant:talk live offer failed via=signin reason=auth status=502 openai=403'])
+        talk_id = self.talk.start(None, {})['id']
+        self.gateway.answers['offer'] = {'error': 'unavailable', 'reason': SECRET, 'status': '403; ' + OFFER}
+        with self.assertLogs('personal-assistant', 'WARNING') as logs, self.assertRaises(ValueError):
+            self.talk.offer(talk_id, OFFER, {})
+        self.assertEqual(logs.output, ['WARNING:personal-assistant:talk live offer failed via=signin reason=- status=0 openai=0'])
+
+    @unittest.skipUnless(shutil.which('node'), 'needs node')
+    def test_the_helper_reads_openais_status_from_the_gateway(self):
+        # talk-live-run.mjs against a stand-in for the Gateway's offer broker, which answers 502 with OpenAI's status
+        import http.server
+        answers = {}
+
+        class Broker(http.server.BaseHTTPRequestHandler):
+            def do_POST(self):
+                self.rfile.read(int(self.headers['Content-Length']))
+                status, text = answers['next']
+                self.send_response(status)
+                self.end_headers()
+                self.wfile.write(text.encode())
+
+            def log_message(self, *args):
+                pass
+        server = http.server.HTTPServer(('127.0.0.1', 0), Broker)
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+        self.addCleanup(server.server_close)
+        self.addCleanup(server.shutdown)
+
+        def offer(status, text):
+            answers['next'] = (status, text)
+            request = {'method': 'offer', 'session_key': t.SESSION_PREFIX + 'main', 'sdp': OFFER, 'secret': SECRET,
+                       'offer_url': '/plugins/openai/realtime/calls', 'offer_headers': {}}
+            env = {'PATH': os.environ.get('PATH', ''), 'OPENCLAW_GATEWAY_PORT': str(server.server_port), 'OPENCLAW_CONFIG_PATH': '/nonexistent'}
+            result = subprocess.run([shutil.which('node'), str(ROOT / 'talk-live-run.mjs')], input=json.dumps(request), capture_output=True, text=True, timeout=30, env=env)
+            return json.loads(result.stdout)
+        self.assertEqual(offer(502, 'OpenAI Realtime call creation failed (403): {"error":"not allowed for ' + SECRET + '"}'),
+                         {'error': 'unavailable', 'reason': 'auth', 'status': 502, 'openai': 403})
+        self.assertEqual(offer(502, 'OpenAI Realtime call creation failed (500)'), {'error': 'unavailable', 'reason': 'other', 'status': 502, 'openai': 500})
+        self.assertEqual(offer(401, 'Invalid or expired realtime session token'), {'error': 'unavailable', 'reason': 'session', 'status': 401, 'openai': 0})
+        self.assertEqual(offer(200, ANSWER), {'sdp': ANSWER})
 
     def test_one_per_to_do_and_two_in_all(self):
         first = self.talk.start(SID, {})['id']

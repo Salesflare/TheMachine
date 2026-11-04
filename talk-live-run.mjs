@@ -57,8 +57,19 @@ async function offer(request) {
   const response = await fetch(url, {method: 'POST', body: request.sdp, signal: AbortSignal.timeout(30000),
     headers: {...(request.offer_headers || {}), 'Content-Type': 'application/sdp', Authorization: `Bearer ${request.secret}`}});
   const answer = await response.text();
-  if (!response.ok || !answer.startsWith('v=0') || answer.length > MAX_SDP) return {error: 'unavailable', reason: response.status === 401 || response.status === 403 ? 'auth' : 'other'};
+  if (!response.ok || !answer.startsWith('v=0') || answer.length > MAX_SDP) return refused(request.offer_url === GATEWAY_CALLS, response.status, answer);
   return {sdp: answer};
+}
+
+// Why an offer didn't get an answer, in fixed words and numbers only (the service logs them, so support can tell why):
+// OpenAI's own status, and whether it turned the sign-in down (auth). With a ChatGPT sign-in the Gateway's broker hands
+// the offer on and answers 502 with OpenAI's status in its text ("OpenAI Realtime call creation failed (403)"): only that
+// number is kept. The broker's own 401 is its one-use session gone (expired or unknown), not OpenAI saying no.
+const UPSTREAM = /call creation failed \((\d{3})\)/;
+function refused(viaGateway, status, text) {
+  const openai = viaGateway ? Number(UPSTREAM.exec(String(text || '').slice(0, 2000))?.[1] || 0) : status;
+  const reason = openai === 401 || openai === 403 ? 'auth' : viaGateway && status === 401 ? 'session' : 'other';
+  return {error: 'unavailable', reason, status, openai};
 }
 
 async function end(request) {
