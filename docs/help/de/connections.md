@@ -20,7 +20,7 @@ Unter dem Status sagt jede Quelle in einer Zeile, was sie hereinholt, und wenn s
 
 **Abbrechen** beendet das Hinzufügen. Sobald sie verbunden ist, startet deine Machine neu, um sie zu lesen, und öffnet dann die neue Karte. Die zeigt, wie die erste Synchronisierung läuft.
 
-Auf einer gehosteten Machine meldest du dich hier bei Google, Microsoft, Microsoft Word, Zoom, Stripe und Intercom an: Wähle **Arbeit** oder **Privat**, tippe auf **Anmelden**, und du kommst zurück zu diesem Formular, das zeigt, wie das Verbinden läuft oder warum es nicht geklappt hat. GitHub, WhatsApp, Codex, Telegram-Chats und dein Android-Handy zeigen ihren Code direkt in diesem Formular. Die Kachel von Codex zeigt, ob Codex angemeldet ist.
+Auf einer gehosteten Machine meldest du dich hier bei Google, Microsoft, Microsoft OneDrive, Zoom, Stripe und Intercom an: Wähle **Arbeit** oder **Privat**, tippe auf **Anmelden**, und du kommst zurück zu diesem Formular, das zeigt, wie das Verbinden läuft oder warum es nicht geklappt hat. GitHub, WhatsApp, Codex, Telegram-Chats und dein Android-Handy zeigen ihren Code direkt in diesem Formular. Die Kachel von Codex zeigt, ob Codex angemeldet ist.
 
 **Neu verbinden** bei einer Quelle und in **Braucht dich** öffnet dasselbe Formular. Auf deinem eigenen Computer macht `assistant connect` dasselbe im Terminal.
 
@@ -30,7 +30,7 @@ Jede Quelle zählt als Arbeit (für eine Firma, die du nennst) oder als privat. 
 
 ## Eine entfernen
 
-Öffne die Quelle, **Details**, dann **Trennen**. Sie hört auf zu lesen. Was sie schon reingebracht hat, bleibt. Auf einer gehosteten Machine zeigen Google, Microsoft, Microsoft Word, Zoom und Stripe **Trennen ↗**, das deine Einrichtungsseite öffnet.
+Öffne die Quelle, **Details**, dann **Trennen**. Sie hört auf zu lesen. Was sie schon reingebracht hat, bleibt. Auf einer gehosteten Machine zeigen Google, Microsoft, Microsoft OneDrive, Zoom und Stripe **Trennen ↗**, das deine Einrichtungsseite öffnet.
 
 **Kürzlich getrennt** listet Anmeldungen bei Google, Microsoft und Zoom, die du entfernt hast. **Entfernt, bestätigt** heißt, dass Google die Abmeldung bestätigt hat, oder bei Microsoft und Zoom, dass keine Kopie mehr übrig ist. **Ausstehend** sagt, warum, und deine Machine versucht es weiter.
 

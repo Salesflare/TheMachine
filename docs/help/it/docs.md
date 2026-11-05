@@ -1,5 +1,5 @@
 ---
-title: Microsoft Word: file Word in OneDrive e SharePoint
+title: Microsoft OneDrive: file Word in OneDrive e SharePoint
 area: connections
 summary: Commenti, menzioni, revisioni e condivisioni sui tuoi file Word in OneDrive e SharePoint, più nuovi documenti privati, e modifiche che approvi. Google Docs arriverà più avanti.
 covers: connector:docs
@@ -8,7 +8,7 @@ site: Sign in with Microsoft
 ---
 ## Cosa legge
 
-La connessione **Microsoft Word** legge i file Word in OneDrive e SharePoint. Accedi con Microsoft apposta, con o senza Outlook collegato. Funziona su una Machine ospitata e sul tuo computer collegato al tuo account. Google Docs arriverà più avanti: l’accesso Google di The Machine non può ancora leggere i documenti. Porta dentro:
+La connessione **Microsoft OneDrive** legge i file Word in OneDrive e SharePoint. Accedi con Microsoft apposta, con o senza Outlook collegato. Funziona su una Machine ospitata e sul tuo computer collegato al tuo account. Google Docs arriverà più avanti: l’accesso Google di The Machine non può ancora leggere i documenti. Porta dentro:
 
 - I documenti che qualcuno condivide con te.
 - Commenti e risposte sui documenti di cui sei proprietario, e i commenti che ti menzionano.
@@ -36,31 +36,31 @@ La tua Machine può scrivere un nuovo documento, o modificare un documento di cu
 
 Sostituisce testo, aggiunge testo e aggiunge paragrafi e titoli. Lascia stare tabelle, immagini, revisioni e campi. Un nuovo documento finisce nel tuo Google Drive o OneDrive e resta privato finché non lo condividi.
 
-Un nuovo documento va in un account dell’area dell’attività: il documento di un’attività di Lavoro nell’account di quell’azienda, quello della conversazione quando si può, mai in uno personale. Sul tuo computer, anche un account Google collegato per Gmail che ha già accesso a Drive può ricevere un nuovo Google Doc. Se nessun account va bene, l’attività dice **Collega Google Docs o Microsoft Word per Lavoro**.
+Un nuovo documento va in un account dell’area dell’attività: il documento di un’attività di Lavoro nell’account di quell’azienda, quello della conversazione quando si può, mai in uno personale. Sul tuo computer, anche un account Google collegato per Gmail che ha già accesso a Drive può ricevere un nuovo Google Doc. Se nessun account va bene, l’attività dice **Collega Google Docs o Microsoft OneDrive per Lavoro**.
 
 Quando il documento non è la fine dell’attività, come una risposta con il suo link, l’attività resta aperta e prepara quel passo successivo per il tuo OK.
 
-Collegare Microsoft Word lo consente già: non c’è un passaggio a parte. Una connessione Microsoft Word di prima che legge soltanto mostra **Consenti le modifiche** sulla sua scheda in **Connessioni**. Toccalo una volta e accetta.
+Collegare Microsoft OneDrive lo consente già: non c’è un passaggio a parte. Una connessione Microsoft OneDrive di prima che legge soltanto mostra **Consenti le modifiche** sulla sua scheda in **Connessioni**. Toccalo una volta e accetta.
 
 ## Cosa chiede
 
-Microsoft Word chiede a Microsoft un solo OK, distinto dall’accesso alla posta: leggere e modificare i tuoi file, compresi quelli condivisi con te in OneDrive e SharePoint. Ogni modifica aspetta comunque il tuo OK nella sua attività. Il tuo accesso alla posta e al calendario resta com’è. Senza Outlook, l’accesso copre solo i tuoi file, mai la posta o il calendario.
+Microsoft OneDrive chiede a Microsoft un solo OK, distinto dall’accesso alla posta: leggere e modificare i tuoi file, compresi quelli condivisi con te in OneDrive e SharePoint. Ogni modifica aspetta comunque il tuo OK nella sua attività. Il tuo accesso alla posta e al calendario resta com’è. Senza Outlook, l’accesso copre solo i tuoi file, mai la posta o il calendario.
 
-Se in seguito quell’OK viene revocato, la scheda Microsoft Word dice **In attesa del tuo OK per leggere i documenti**.
+Se in seguito quell’OK viene revocato, la scheda Microsoft OneDrive dice **In attesa del tuo OK per leggere i documenti**.
 
 ## Collegalo
 
 Non serve avere Outlook collegato.
 
-- Machine in hosting: nella dashboard, apri **Connessioni**, **+ Aggiungi**, scegli **Microsoft Word** e premi **Accedi con Microsoft**. Microsoft ti chiede di consentire la lettura e la modifica dei tuoi file, poi torni alla dashboard.
-- Il tuo computer, abbinato al tuo account: apri **Connessioni**, **+ Aggiungi**, scegli **Microsoft Word** e premi **Accedi con Microsoft**.
+- Machine in hosting: nella dashboard, apri **Connessioni**, **+ Aggiungi**, scegli **Microsoft OneDrive** e premi **Accedi con Microsoft**. Microsoft ti chiede di consentire la lettura e la modifica dei tuoi file, poi torni alla dashboard.
+- Il tuo computer, abbinato al tuo account: apri **Connessioni**, **+ Aggiungi**, scegli **Microsoft OneDrive** e premi **Accedi con Microsoft**.
 
 Verifica che l’accesso possa leggere i documenti. Senza quell’OK non viene aggiunto. Se tocchi **Consenti le modifiche** e Microsoft non le consente, lo dice invece di mostrare Connesso.
 
 ## Lavoro o personale
 
-Microsoft Word segue l’etichetta lavoro o personale della sua connessione, come la posta. I documenti di lavoro possono arrivare al Graph del tuo team secondo le tue [regole di condivisione](sharing-rules.md). Quelli personali mai.
+Microsoft OneDrive segue l’etichetta lavoro o personale della sua connessione, come la posta. I documenti di lavoro possono arrivare al Graph del tuo team secondo le tue [regole di condivisione](sharing-rules.md). Quelli personali mai.
 
 ## Rimuovilo
 
-Nella dashboard: **Connessioni**, apri Microsoft Word, **Dettagli**, poi **Disconnetti**. Smette di leggere. Quello che ha già portato dentro resta.
+Nella dashboard: **Connessioni**, apri Microsoft OneDrive, **Dettagli**, poi **Disconnetti**. Smette di leggere. Quello che ha già portato dentro resta.

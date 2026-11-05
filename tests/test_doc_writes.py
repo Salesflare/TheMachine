@@ -571,7 +571,7 @@ class Area(unittest.TestCase):
     def test_none_in_the_area_says_so_plainly(self):
         with self.assertRaises(ValueError) as caught:
             self.create('home-docs', self.context(self.HOTMAIL))
-        self.assertIn('Connect Google Docs or Microsoft Word for Work', str(caught.exception))
+        self.assertIn('Connect Google Docs or Microsoft OneDrive for Work', str(caught.exception))
         # a personal to-do may use it
         self.assertEqual(self.create('home-docs', self.context(self.HOTMAIL, area={'boundaries': ['personal:phone'], 'emails': []}))['provider'],
                          'microsoft')

@@ -1,5 +1,5 @@
 ---
-title: Microsoft Word: Word files in OneDrive and SharePoint
+title: Microsoft OneDrive: Word files in OneDrive and SharePoint
 area: connections
 summary: Comments, mentions, tracked changes and shares on Word files in OneDrive and SharePoint, plus private new docs and edits you approve. Google Docs come later.
 covers: connector:docs
@@ -8,7 +8,7 @@ site: Sign in with Microsoft
 ---
 ## What it reads
 
-The **Microsoft Word** connection reads Word files in OneDrive and SharePoint. You sign in with Microsoft for it, with or without Outlook connected. That works on a hosted Machine and on your own computer paired with your account. Google Docs come later: The Machine's Google sign-in can't read docs yet. It brings in:
+The **Microsoft OneDrive** connection reads Word files in OneDrive and SharePoint. You sign in with Microsoft for it, with or without Outlook connected. That works on a hosted Machine and on your own computer paired with your account. Google Docs come later: The Machine's Google sign-in can't read docs yet. It brings in:
 
 - Docs someone shares with you.
 - Comments and replies on docs you own, and comments that mention you.
@@ -36,31 +36,31 @@ Your Machine can write a new doc, or change a doc one of your to-dos is about:
 
 It replaces text, adds text and adds paragraphs and headings. It leaves tables, images, tracked changes and fields alone. A new doc lands in your Google Drive or OneDrive and stays private until you share it.
 
-A new doc goes to an account in the to-do's own area: a Work to-do's doc to that company's account, the one the conversation is in when it can, never to a personal one. On your own computer, a Google account signed in for Gmail that already has Drive access can take a new Google Doc too. If no account fits, the to-do says **Connect Google Docs or Microsoft Word for Work**.
+A new doc goes to an account in the to-do's own area: a Work to-do's doc to that company's account, the one the conversation is in when it can, never to a personal one. On your own computer, a Google account signed in for Gmail that already has Drive access can take a new Google Doc too. If no account fits, the to-do says **Connect Google Docs or Microsoft OneDrive for Work**.
 
 When the doc isn't the end of the to-do, like a reply with its link, the to-do stays open and drafts that next step for your OK.
 
-Connecting Microsoft Word already allows this: there is no separate step. A Microsoft Word connection from before that only reads shows **Allow edits** on its card in **Connections**. Press it once and accept.
+Connecting Microsoft OneDrive already allows this: there is no separate step. A Microsoft OneDrive connection from before that only reads shows **Allow edits** on its card in **Connections**. Press it once and accept.
 
 ## What it asks for
 
-Microsoft Word asks Microsoft for one OK, apart from your mail sign-in: to read and change your files, including the ones shared with you in OneDrive and SharePoint. Each change still waits for your OK on its to-do. Your mail and calendar access stay as they are. Without Outlook, the sign-in only covers your files, never your mail or calendar.
+Microsoft OneDrive asks Microsoft for one OK, apart from your mail sign-in: to read and change your files, including the ones shared with you in OneDrive and SharePoint. Each change still waits for your OK on its to-do. Your mail and calendar access stay as they are. Without Outlook, the sign-in only covers your files, never your mail or calendar.
 
-If that OK is taken back later, the Microsoft Word card says **Waiting for your OK to read docs**.
+If that OK is taken back later, the Microsoft OneDrive card says **Waiting for your OK to read docs**.
 
 ## Connect it
 
 Outlook doesn't need to be connected for it.
 
-- Hosted Machine: in the dashboard, open **Connections**, **+ Add**, pick **Microsoft Word** and press **Sign in with Microsoft**. Microsoft asks you to allow reading and editing your files, then you come back to the dashboard.
-- Your own computer, paired with your account: open **Connections**, **+ Add**, pick **Microsoft Word** and press **Sign in with Microsoft**.
+- Hosted Machine: in the dashboard, open **Connections**, **+ Add**, pick **Microsoft OneDrive** and press **Sign in with Microsoft**. Microsoft asks you to allow reading and editing your files, then you come back to the dashboard.
+- Your own computer, paired with your account: open **Connections**, **+ Add**, pick **Microsoft OneDrive** and press **Sign in with Microsoft**.
 
 It checks that the sign-in may read docs. Without that OK it isn't added. If you press **Allow edits** and Microsoft doesn't allow edits, it says so instead of Connected.
 
 ## Work or personal
 
-Microsoft Word follows the work or personal label of its connection, like mail. Work docs can reach your team's Graph under your [sharing rules](sharing-rules.md). Personal ones never do.
+Microsoft OneDrive follows the work or personal label of its connection, like mail. Work docs can reach your team's Graph under your [sharing rules](sharing-rules.md). Personal ones never do.
 
 ## Remove it
 
-In the dashboard: **Connections**, open Microsoft Word, **Details**, then **Disconnect**. It stops reading. What it already brought in stays.
+In the dashboard: **Connections**, open Microsoft OneDrive, **Details**, then **Disconnect**. It stops reading. What it already brought in stays.
