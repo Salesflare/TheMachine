@@ -13043,6 +13043,26 @@ def plain(text, limit=240):
     return text if len(text) <= limit else text[:limit - 1].rstrip() + '…'
 
 
+def result_lead(db, row):
+    """How a prepared to-do's notification starts, by what the to-do is: 'Ready' only when The Machine prepared
+    something for the owner to review (a draft, a handoff, a result). A to-do that tracks what someone else promised
+    the owner ("Waiting on Sam: the quote") or waits on someone else says so in its title, and one back from a snooze
+    is a reminder: no "Ready" in front of those. Returns 'Ready', 'Reminder' or None (the title alone)."""
+    try:
+        state = (json.loads(row.get('outcome') or '{}') or {}).get('state')
+    except (TypeError, ValueError, AttributeError):
+        state = None
+    if state == 'snoozed':
+        return 'Reminder'
+    if state in ('waiting', 'already_done'):
+        return None
+    key = str(row.get('dedupe_key') or '')
+    if key.startswith('promise:') and key[8:].isdigit() and db.execute(
+            "SELECT 1 FROM promises WHERE id=? AND direction='theirs'", (int(key[8:]),)).fetchone():
+        return None
+    return 'Ready'
+
+
 def push_notify(store, config, row, sender=None):
     """Phone notification for the installed dashboard app, next to the Telegram one
     . Best effort: never changes the Telegram delivery state."""
@@ -13061,13 +13081,13 @@ def push_notify(store, config, row, sender=None):
         ready = row['status'] == 'prepared'
         signin = not ready and (row.get('preparation_browser') or {}).get('signin_url')
         # A run the service stopped (a timeout, two failures) asks nothing: Stuck, as on the card
-        lead = 'Ready' if ready else 'Needs you to sign in' if signin else 'Stuck' if row.get('preparation_error') else 'Needs your help'
-        # one key per lead, so the dashboard never reads a bare "{}: {}" into other text
-        payload = {'title': i18n.t(lead + ': {}', row['title']) if text else i18n.t(lead),
+        lead = row.get('_lead', 'Ready') if ready else 'Needs you to sign in' if signin else 'Stuck' if row.get('preparation_error') else 'Needs your help'
+        # one key per lead, so the dashboard never reads a bare "{}: {}" into other text; no lead: the title alone
+        payload = {'title': (i18n.t(lead + ': {}', row['title']) if lead else row['title']) if text else i18n.t(lead or 'To-do'),
                    'body': plain(strip_result_links(row['body']) if ready else row.get('preparation_reason') or '') if text else '',
                    'url': signin or root + '#chat=' + row['id']}
         # The mobile app's own line, short (it asks this Machine for it: notify.app_line), and ready or needs-you
-        payload['_line'] = notify.app_line_text(lead + ': {}', row['title']) if text else i18n.t(lead)
+        payload['_line'] = (notify.app_line_text(lead + ': {}', row['title']) if lead else notify.clip(row['title'], notify.APP_LINE)) if text else i18n.t(lead or 'To-do')
         payload['_state'] = 'ready' if ready else 'needs'
     else:
         payload = {'title': (i18n.t('Reminder: {}', row['title']) if row.get('reminder') else row['title']) if text else i18n.t('Reminder') if row.get('reminder') else i18n.t('New to-do'),
@@ -13238,8 +13258,9 @@ def app_notice(store, config, tag):
             return {'gone': True}
         blocked = row.get('preparation_status') == 'blocked'
         browser = (store.suggestion_result(row, db).get('preparation_browser') or {}) if blocked else {}
+        ready_lead = result_lead(db, row)
     if row['status'] == 'prepared':
-        lead, buttons = 'Ready', ['snooze', 'done']
+        lead, buttons = ready_lead, ['snooze', 'done']
     elif blocked:
         lead = 'Needs you to sign in' if browser.get('signin_url') else 'Stuck' if row.get('preparation_error') else 'Needs your help'
         buttons = ['snooze', 'done']
@@ -13252,8 +13273,12 @@ def app_notice(store, config, tag):
     leads = {'Ready': ('Ready: {}', t('Ready')), 'Preparing': ('Preparing: {}', t('Preparing')),
              'New to-do': ('New to-do: {}', t('New to-do')), 'Stuck': ('Stuck: {}', t('Stuck')),
              'Needs your help': ('Needs your help: {}', t('Needs your help')),
-             'Needs you to sign in': ('Needs you to sign in: {}', t('Needs you to sign in'))}
-    title = notify.app_line_text(leads[lead][0], row['title']) if text else leads[lead][1]
+             'Needs you to sign in': ('Needs you to sign in: {}', t('Needs you to sign in')),
+             'Reminder': ('Reminder: {}', t('Reminder'))}
+    if lead:
+        title = notify.app_line_text(leads[lead][0], row['title']) if text else leads[lead][1]
+    else:  # what it is is in its title ("Waiting on Sam: the quote"): nothing in front
+        title = notify.clip(row['title'], notify.APP_LINE) if text else t('To-do')
     body = notify.clip(app_next_step(row, blocked), APP_BODY) if text else ''
     return {'line': title, 'title': title, 'body': body, 'actions': buttons,
             'labels': {'prepare': t('Prepare'), 'snooze': t('Snooze'), 'done': t('Mark done'), 'open': t('Open')},
@@ -13637,8 +13662,8 @@ def telegram(config, row, action, message_id=None):
         ready=row['status']=='prepared'
         root='https://'+config['dashboard_host']+config.get('dashboard_path','/')
         signin=not ready and (row.get('preparation_browser') or {}).get('signin_url')
-        lead='Ready' if ready else 'Needs you to sign in' if signin else 'Needs your help' if ask_blocked(row) or (row.get('preparation_browser') and not row.get('preparation_error')) else 'Stuck'
-        message=i18n.t(lead+': {}', '**'+title+'**')
+        lead=row.get('_lead','Ready') if ready else 'Needs you to sign in' if signin else 'Needs your help' if ask_blocked(row) or (row.get('preparation_browser') and not row.get('preparation_error')) else 'Stuck'
+        message=i18n.t(lead+': {}', '**'+title+'**') if lead else '**'+title+'**'
         message+='\n\n['+(i18n.t('View result') if ready else i18n.t('View task'))+']('+root+'#chat='+row['id']+')'  # the card's own page, as a tap in the list opens
         # A sign-in blocker opens the dashboard's sign-in for this task; once in, the task carries on by itself.
         blocks=[{'type':'buttons','buttons':[{'label':i18n.t('Sign in'),'action':{'type':'url','url':signin}}]}] if signin else []
@@ -13818,6 +13843,7 @@ def deliver_one(store, config, edit_cards=True):
             return
         row.update(store.suggestion_result(row,db))
         row['_result_notice']=bool(row['reminder'] and row['message_id'] and (row['status']=='prepared' or row.get('preparation_status')=='blocked') and config.get('dashboard_host'))
+        row['_lead']=result_lead(db,row)  # "Ready" only when something waits for the owner's review
         if row['_result_notice'] and edit_cards:
             # Keep one full task card. Do not notify Ready before its edit landed.
             # ...unless the card can't be edited (deleted, too old): after three failed
@@ -13889,7 +13915,8 @@ def deliver_one(store, config, edit_cards=True):
         try:
             work = any(a['id'] in json.loads(row.get('account_ids') or '[]') and str(a.get('boundary') or '').startswith('work:') for a in config.get('accounts', []))
             ready = row['_result_notice'] and row['status'] == 'prepared'
-            title = i18n.t('Ready: {}', row['title']) if ready else i18n.t('Reminder: {}', row['title']) if row.get('reminder') and not row['_result_notice'] else row['title']
+            lead = row.get('_lead', 'Ready')
+            title = (i18n.t(lead + ': {}', row['title']) if lead else row['title']) if ready else i18n.t('Reminder: {}', row['title']) if row.get('reminder') and not row['_result_notice'] else row['title']
             hold_mail(store, config, notify.kind_of(row), title, 'suggestion:' + row['id'], work)
         except Exception as failure:LOG.warning('mail hold error=%s', type(failure).__name__)
     if row['_result_notice']:

@@ -287,6 +287,43 @@ class AppPush(unittest.TestCase):
         for status in a.APP_GONE:
             self.assertEqual(a.app_notice(self.store, self.config, self.card('Gone ' + status, status=status)), {'gone': True})
 
+    def test_ready_leads_only_where_something_was_prepared_to_review(self):
+        # "Ready:" in front fits a draft or handoff waiting for the owner's OK, not a to-do about what someone
+        # else promised them ("Waiting on Sam: ..."), nor one back from a snooze: judged by what the to-do is.
+        event = self.event()
+        with self.store.connect() as db:
+            for direction in ('theirs', 'mine'):
+                db.execute("INSERT INTO promises(direction,who,what,check_at,event_id,account_id,status,created_at,updated_at) "
+                           "VALUES(?,'Sam Lee','the quote','2026-10-21T08:00:00+00:00',?,'work','carded','x','x')", (direction, event))
+            theirs, mine = [r[0] for r in db.execute('SELECT id FROM promises ORDER BY id')]
+        handoff = json.dumps({'kind': 'email', 'account_id': 'work', 'to': ['sam@client.example'], 'body': 'Any news on the quote?', 'revision': 'r1'})
+        def promised(pid, title):
+            sid = self.store.suggest('promise:%d' % pid, title, 'Promised on Monday.', [event])['id']
+            with self.store.connect() as db:
+                db.execute("UPDATE suggestions SET status='prepared',next_action=? WHERE id=?", (handoff, sid))
+            return sid
+        waiting = promised(theirs, 'Waiting on Sam Lee: the quote')
+        self.assertEqual(a.app_notice(self.store, self.config, waiting)['title'], 'Waiting on Sam Lee: the quote')
+        self.assertEqual(a.app_notice(self.store, self.config, promised(mine, 'Send Sam the deck'))['title'], 'Ready: Send Sam the deck')
+        back = self.card('Call the plumber', status='prepared', outcome=json.dumps({'state': 'snoozed'}))
+        self.assertEqual(a.app_notice(self.store, self.config, back)['title'], 'Reminder: Call the plumber')
+        # the web push, the phone's line and Telegram say the same
+        self.app.action('push_subscribe', SUB, owner_dashboard=True)
+        self.register(fetch=True)
+        with self.store.connect() as db:
+            row = dict(db.execute('SELECT * FROM suggestions WHERE id=?', (waiting,)).fetchone(), _result_notice=True)
+            row['_lead'] = a.result_lead(db, row)
+        a.push_notify(self.store, self.config, row, self.sender)
+        with self.store.connect() as db:
+            self.assertEqual(notify.app_line(db, waiting), 'Waiting on Sam Lee: the quote')
+        self.assertEqual(self.web[-1]['payload']['title'], 'Waiting on Sam Lee: the quote')
+        with patch.object(a, 'telegram_request', side_effect=lambda config, args: args):
+            sent = a.telegram({**self.config, 'dashboard_host': 'machine.example'}, {**row, 'message_id': 'web-1'}, 'send')
+        self.assertTrue(sent['message'].startswith('**Waiting on Sam Lee: the quote**'), sent['message'])
+        with self.store.connect() as db:
+            a.security_levels.set_pref(db, 'notify_text', 'off')
+        self.assertEqual(a.app_notice(self.store, self.config, waiting)['title'], 'To-do')
+
     def test_text_in_notifications_off_the_notice_keeps_to_the_fixed_words(self):
         with self.store.connect() as db:
             a.security_levels.set_pref(db, 'notify_text', 'off')
