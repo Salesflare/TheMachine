@@ -138,6 +138,21 @@ function sendReview(item:any,draft:any,dashboardBase=''){
  return {text:lines.join('\n'),buttons:[demo?[button(item.id,t('Back'),'back')]:[button(item.id,t('Send now'),'confirm_'+draft.revision),...edit,button(item.id,t('Cancel'),'back')]]};
 }
 
+// Which sessions get assistant_signals: the owner's private Telegram main chat (and the heartbeat), and the isolated
+// reviews and to-do chats the service starts.
+function signalsReach(context: any) {
+  const key = context.sessionKey || '';
+  const owner = ownerChat();
+  const privateMain = key === 'agent:main:main' &&
+    (!context.messageChannel || context.messageChannel === 'telegram') &&
+    (!context.nativeChannelId || (!!owner && String(context.nativeChannelId) === owner));
+  const isolatedReview = /^agent:main:assistant-review[-:]/.test(key) &&
+    (!context.messageChannel || context.messageChannel === 'telegram') &&
+    (!context.requesterSenderId || (!!owner && String(context.requesterSenderId) === owner));
+  return {key, privateMain, isolatedReview};
+}
+const BUG_REPORT_RULE = 'When the owner tells you about a problem with The Machine itself, offer to send it as a bug report: call this with words (what they said, as they said it) and summary (one plain sentence), then say what it returns, with its link as it is: the link opens Report a bug in their dashboard, filled in. Nothing goes until they tap Send there; never say it was sent or filed. A note in the workspace or memory never reaches The Machine team; never say it does.';
+
 async function settings() {
   return JSON.parse(await readFile(configPath(), 'utf8'));
 }
@@ -170,14 +185,7 @@ export default definePluginEntry({
     registerHeartbeatFailureGate(api);
     registerSecretRedaction(api);
     api.registerTool((context: any) => {
-      const key = context.sessionKey || '';
-      const owner = ownerChat();
-      const privateMain = key === 'agent:main:main' &&
-        (!context.messageChannel || context.messageChannel === 'telegram') &&
-        (!context.nativeChannelId || (!!owner && String(context.nativeChannelId) === owner));
-      const isolatedReview = /^agent:main:assistant-review[-:]/.test(key) &&
-        (!context.messageChannel || context.messageChannel === 'telegram') &&
-        (!context.requesterSenderId || (!!owner && String(context.requesterSenderId) === owner));
+      const {key, privateMain, isolatedReview} = signalsReach(context);
       if (context.agentId !== 'main' || context.sandboxed || (!privateMain && !isolatedReview)) return null;
       return {
       name: 'assistant_signals', label: 'Personal assistant signals',
@@ -218,6 +226,25 @@ export default definePluginEntry({
       },
       };
     }, { name: 'assistant_signals' });
+    // The owner's other main chats (agent:main:main on WhatsApp, Slack, Teams, the web chat or any other channel) don't
+    // get assistant_signals, which is for the owner's own Telegram chat and the to-do chats. This one tool only writes a
+    // problem with The Machine up for Report a bug (bug_offer), so the offer works in every main chat. It sends nothing.
+    api.registerTool((context: any) => {
+      const {key, privateMain} = signalsReach(context);
+      if (context.agentId !== 'main' || context.sandboxed || key !== 'agent:main:main' || privateMain) return null;
+      return {
+        name: 'assistant_bug_report', label: 'Report a bug to The Machine team',
+        description: BUG_REPORT_RULE,
+        parameters: { type: 'object', additionalProperties: false, required: ['words'], properties: {
+          words: { type: 'string', description: 'What the owner said about the problem, as they said it' },
+          summary: { type: 'string', description: 'One plain sentence' },
+        } },
+        async execute(_id: string, params: any) {
+          const found = await call('bug_offer', {words: String(params?.words || ''), summary: String(params?.summary || '')});
+          return { content: [{ type: 'text', text: JSON.stringify(found) }] };
+        },
+      };
+    }, { name: 'assistant_bug_report' });
     api.registerInteractiveHandler({
       channel: 'telegram', namespace: 'assistant',
       async handler(ctx: any) {

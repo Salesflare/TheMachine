@@ -14,11 +14,18 @@
   },
   "contracts": {
     "tools": [
-      "assistant_signals"
+      "assistant_signals",
+      "assistant_bug_report"
     ]
   },
   "toolMetadata": {
     "assistant_signals": {
+      "profiles": [
+        "full"
+      ],
+      "sideEffecting": true
+    },
+    "assistant_bug_report": {
       "profiles": [
         "full"
       ],
