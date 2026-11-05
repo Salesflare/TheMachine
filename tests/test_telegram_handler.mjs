@@ -23,12 +23,12 @@ source=source.replace("import { registerSecretRedaction } from './secret-redacti
 source=source.replace("import { registerReviewRecovery, currentReviewRun } from './review-recovery.ts';",'const registerReviewRecovery=()=>{};const currentReviewRun=()=>undefined;');
 source=source.replace("import { definePluginEntry } from 'openclaw/plugin-sdk/plugin-entry';",'const definePluginEntry=v=>v;').replace('export default definePluginEntry','globalThis.fixturePlugin=definePluginEntry');
 const fixturePath=join(fixtureDir,'handler.ts');await writeFile(fixturePath,source);
-const id='aaaaaaaaaaaaaaaa';let handler, beforeDispatch, toolFactory, choices=[], edits=[], replies=[];
+const id='aaaaaaaaaaaaaaaa';let handler, beforeDispatch, toolFactory, toolFactories={}, choices=[], edits=[], replies=[];
 globalThis.fixtureConfig={telegram_owner:'1000001',dashboard_host:'machine.example.ts.net',dashboard_path:'/assistant/'};
 let item={id,status:'snoozed'};
 globalThis.fixtureCall=async(action,args)=>{if(action==='refresh_card')return {queued:true};if(action==='status')return {suggestions:[item],deliveries:[{suggestion_id:id,message_id:'123',previous_message_ids:'["old"]'}]};choices.push(args);if(action==='decide')item.status=args.choice==='complete'?'completed':args.choice==='reject'?'rejected':args.choice==='snooze'?'snoozed':'accepted';return {status:item.status,snoozed_until:'2026-10-10T07:00:00Z'};};
 await import(fixturePath);
-globalThis.fixturePlugin.register({runtime:{config:{current:()=>({})}},registerTool(factory){toolFactory=factory;},registerInteractiveHandler(h){handler=h.handler},on(name,h){if(name==='before_dispatch')beforeDispatch=h},registerCommand(){}});
+globalThis.fixturePlugin.register({runtime:{config:{current:()=>({})}},registerTool(factory,opts){toolFactories[opts.name]=factory;if(opts.name==='assistant_signals')toolFactory=factory;},registerInteractiveHandler(h){handler=h.handler},on(name,h){if(name==='before_dispatch')beforeDispatch=h},registerCommand(){}});
 const ctx=(choice,message='123')=>({auth:{isAuthorizedSender:true},isGroup:false,accountId:'default',senderId:'1000001',callback:{data:`assistant:${id}:${choice}`,chatId:'1000001',messageId:message},callbackId:'unique',respond:{editButtons:async x=>edits.push(x),reply:async x=>replies.push(x),editMessage:async x=>edits.push(x),clearButtons:async()=>{}}});
 await handler(ctx('snooze'));assert.equal(choices.length,0);let buttons=edits.pop().buttons.flat();assert.equal(buttons.length,6);assert.ok(buttons.some(b=>b.url?.startsWith('https://machine.example.ts.net/assistant/#snooze-custom=')));assert.ok(buttons.filter(b=>b.callback_data).every(b=>Buffer.byteLength(b.callback_data)<=64&&decodeCallback(b.callback_data)));
 await handler(ctx('back'));assert.deepEqual(edits.pop().buttons.flat().map(b=>b.text),['Unsnooze','Change time','Not needed']);
@@ -157,6 +157,29 @@ const handled=await beforeDispatch({content:'I fixed it already',timestamp:17916
  const mainTool=toolFactory({agentId:'main',sessionKey:'agent:main:main'});
  globalThis.fixtureCall=async(action,args)=>{assert.equal(args._profile_session,undefined);return {ok:true};};
  await mainTool.execute('test',{action:'profile_evidence',args:{_profile_session:key}});
+}
+// Every main chat can offer a bug report: the owner's Telegram chat through assistant_signals, the others (WhatsApp,
+// Slack, Teams, the web chat, any channel on agent:main:main) through assistant_bug_report, which only writes one up.
+{
+ const bug=toolFactories.assistant_bug_report;assert.ok(bug,'the bug report tool is registered');
+ for(const messageChannel of ['whatsapp','slack','msteams','webchat','discord']){
+  const c={agentId:'main',sessionKey:'agent:main:main',messageChannel};
+  assert.equal(toolFactory(c),null,messageChannel+' main chat has no assistant_signals');
+  assert.equal(bug(c).name,'assistant_bug_report');assert.match(bug(c).description,/problem with The Machine itself/);
+ }
+ assert.equal(bug({agentId:'main',sessionKey:'agent:main:main',messageChannel:'telegram',nativeChannelId:'1000002'}).name,'assistant_bug_report');  // Telegram, not the owner's chat
+ // The owner's Telegram chat, the heartbeat and the to-do chats have assistant_signals bug_offer: no second tool there
+ for(const c of [{agentId:'main',sessionKey:'agent:main:main',messageChannel:'telegram',nativeChannelId:'1000001'},{agentId:'main',sessionKey:'agent:main:main'},
+   {agentId:'main',sessionKey:'agent:main:assistant-review-preparation-'+'a'.repeat(32)}]){assert.ok(toolFactory(c));assert.equal(bug(c),null);}
+ // Not in groups, other agents or sandboxed runs
+ for(const c of [{agentId:'main',sessionKey:'agent:main:whatsapp:group:120363000000000001@g.us',messageChannel:'whatsapp'},{agentId:'work',sessionKey:'agent:main:main',messageChannel:'slack'},
+   {agentId:'main',sessionKey:'agent:main:main',messageChannel:'slack',sandboxed:true}])assert.equal(bug(c),null);
+ const saved=globalThis.fixtureCall,calls=[];
+ globalThis.fixtureCall=async(action,args)=>{calls.push([action,args]);return {linked:true,id:'bo_'+'0'.repeat(16),url:'https://machine.example.ts.net/assistant/#bug-offer=bo_'+'0'.repeat(16),say:'Offer it.'};};
+ const out=await bug({agentId:'main',sessionKey:'agent:main:main',messageChannel:'whatsapp'}).execute('t',{words:'the to-do list shows twice',summary:'To-dos show twice.',extra:'x'});
+ assert.deepEqual(calls,[['bug_offer',{words:'the to-do list shows twice',summary:'To-dos show twice.'}]]);  // only the bug offer, nothing else
+ assert.match(JSON.parse(out.content[0].text).url,/^https:\/\/machine\.example\.ts\.net\/assistant\/#bug-offer=bo_0{16}$/);
+ globalThis.fixtureCall=saved;
 }
 // The Find my skills report: bound to its own skills session (sent as an upload); refused from any other session.
 {

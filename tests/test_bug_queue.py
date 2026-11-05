@@ -250,3 +250,23 @@ class BugOffer(unittest.TestCase):
         plugin = (ROOT / 'openclaw-plugin/index.ts').read_text()
         self.assertIn("'bug_offer'", plugin.split('const TOOL_ACTIONS', 1)[1].split('\n', 1)[0])
         self.assertIn('never reaches The Machine team; never say it does', plugin)
+
+    def test_every_main_chat_has_a_way_to_offer_it(self):
+        """Main chats on other channels than the owner's Telegram chat get assistant_bug_report (declared in the
+        manifest, so OpenClaw loads it), whose description carries the same rule; tests/test_telegram_handler.mjs checks
+        which sessions get it."""
+        manifest = json.loads((ROOT / 'openclaw-plugin/openclaw.plugin.json').read_text())
+        self.assertIn('assistant_bug_report', manifest['contracts']['tools'])
+        self.assertIn('assistant_bug_report', manifest['toolMetadata'])
+        plugin = (ROOT / 'openclaw-plugin/index.ts').read_text()
+        rule = plugin.split('const BUG_REPORT_RULE = ', 1)[1].split('\n', 1)[0]
+        self.assertIn('problem with The Machine itself', rule)
+        self.assertIn('never reaches The Machine team; never say it does', rule)
+        self.assertIn("call('bug_offer'", plugin.split("name: 'assistant_bug_report'", 1)[1].split('}, { name:', 1)[0])
+
+    def test_the_link_opens_the_dashboard_form_from_any_chat(self):
+        """The link is the dashboard's full https address (no relative path a chat app can't open), on its own path."""
+        self.app.config.update(dashboard_host='m1.example.com', dashboard_path='/assistant/')
+        found = self.app.action('bug_offer', {'words': 'the calendar is empty', 'summary': 'Calendar shows nothing.'})
+        self.assertEqual(found['url'], 'https://m1.example.com/assistant/#bug-offer=' + found['id'])
+        self.assertIn(found['url'], found['say'])
