@@ -205,7 +205,8 @@ class SlackSender(unittest.TestCase):
         with patch.object(sender, 'call', return_value={'ok': True, 'user': {'id': 'U1', 'real_name': 'Sam Peeters', 'is_bot': True}}):
             with self.assertRaises(ValueError):
                 sender.preflight(self.action)
-        self.assertEqual(set(n.SlackTransport.METHODS), {'users.info', 'users.lookupByEmail', 'conversations.open', 'chat.postMessage', 'conversations.history'})
+        self.assertEqual(set(n.SlackTransport.METHODS), {'users.info', 'users.lookupByEmail', 'conversations.open', 'chat.postMessage', 'conversations.history',
+                                                         'conversations.replies'})
 
     def graph_db(self, folder, people):
         import sqlite3

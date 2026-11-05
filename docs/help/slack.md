@@ -14,7 +14,7 @@ People show by their name and apps by theirs, never by a Slack ID. Someone whose
 
 ## What it can send
 
-A direct message to one person, as you, and only after you approve it on the to-do. It never posts in a channel.
+A direct message to one person, as you, and only after you approve it on the to-do. A reply to the Slack message a to-do came from goes in that message's thread, in its direct message or channel; the draft says **In thread**. It never starts a new post in a channel.
 
 ## Connect it
 

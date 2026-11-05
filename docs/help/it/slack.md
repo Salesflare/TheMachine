@@ -14,7 +14,7 @@ Le persone compaiono con il loro nome e le app con il proprio, mai con un ID Sla
 
 ## Cosa può inviare
 
-Un messaggio diretto a una persona, a nome tuo, e solo dopo che l’hai approvato nell’attività. Non pubblica mai in un canale.
+Un messaggio diretto a una persona, a nome tuo, e solo dopo che l’hai approvato nell’attività. Una risposta al messaggio Slack da cui è nata un’attività va nel thread di quel messaggio, nel messaggio diretto o nel canale; la bozza dice **Nel thread**. Non avvia mai un nuovo post in un canale.
 
 ## Collegalo
 

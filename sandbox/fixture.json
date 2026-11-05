@@ -7299,10 +7299,17 @@
    "next_action": {
     "kind": "slack",
     "account_id": "work-slack",
-    "to_name": "#support",
+    "user_id": "U2002",
+    "to_name": "Priya Okonedo",
     "body": "Looking into it now. It started with the 08:00 deploy and only hits shared inboxes. I will post here and tell Tidewater once it is fixed, within the hour.",
-    "label": "Reply in #support",
-    "revision": "rev0007"
+    "label": "Send to Priya",
+    "revision": "rev0007",
+    "thread": {
+     "channel_id": "C0SUPPORT",
+     "ts": "1761000460.000100",
+     "dm": false,
+     "channel_name": "support"
+    }
    }
   },
   {
@@ -7349,7 +7356,10 @@
     "chat_id": "morganfamily",
     "body": "I can do Wednesday. I will leave work at 15:30 and pick them up at 4.",
     "label": "Send to Morgan family",
-    "revision": "rev0009"
+    "revision": "rev0009",
+    "quote": {
+     "message_id": "wa-kids-2"
+    }
    }
   },
   {

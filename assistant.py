@@ -2259,6 +2259,52 @@ def telegram_photo_asker(config):
 WHATSAPP_JID = r'(?:[0-9]+(?::[0-9]+)?@(?:s\.whatsapp\.net|lid)|[0-9]+(?:-[0-9]+)?@g\.us)'
 
 
+def reply_spots(config, db, event_ids):
+    """The Slack and WhatsApp messages a to-do came from, newest first, for a reply to go in their thread or quote them
+    (next_actions.slack_thread, whatsapp_quote): the to-do's own messages, and a message a teammate's Machine carried
+    (fleet.message) when this Machine has that same message itself (same moment and text). One carried that it
+    doesn't have stays without a place ('service': None), so the draft says what it answers (next_actions.reply_context)."""
+    accounts = {a['id']: a for a in config.get('accounts', [])}
+    rows = db.execute("SELECT e.id,e.account_id,e.kind,e.body,e.metadata,e.occurred_at FROM events e JOIN json_each(?) ids ON ids.value=e.id "
+                      "WHERE e.kind IN ('slack.message','whatsapp.message','fleet.message') AND e.deleted=0 ORDER BY e.occurred_at DESC",
+                      (event_ids or '[]',)).fetchall()
+    spots = []
+    for row in rows:
+        if row['kind'] == 'fleet.message':
+            own = [r for r in db.execute("SELECT id,account_id,kind,body,metadata,occurred_at FROM events WHERE occurred_at=? AND deleted=0 "
+                                         "AND kind IN ('slack.message','whatsapp.message')", (row['occurred_at'],))
+                   if ' '.join(str(r['body'] or '').split()) == ' '.join(str(row['body'] or '').split()) and str(row['body'] or '').strip()]
+            if len(own) != 1:
+                carried = json.loads(row['metadata'] or '{}')
+                spots.append({'service': None, 'when': row['occurred_at'], 'carried_by': carried.get('carried_by'), 'from': carried.get('from')})
+                continue
+            row = own[0]
+        account, m = accounts.get(row['account_id']) or {}, json.loads(row['metadata'] or '{}')
+        if row['kind'] == 'slack.message' and account.get('service') == 'slack':
+            channel, ts = str(m.get('channel_id') or ''), str(m.get('message_ts') or '')
+            if not re.fullmatch(r'[CDG][A-Z0-9]{6,20}', channel) or not re.fullmatch(r'[0-9]{6,12}\.[0-9]{1,8}', ts):
+                continue
+            thread = str(m.get('thread_ts') or ts)
+            dm = m.get('conversation_type') == 'dm' or channel.startswith('D')
+            later = db.execute("SELECT 1 FROM events WHERE account_id=? AND kind='slack.message' AND deleted=0 AND json_extract(metadata,'$.channel_id')=? "
+                               "AND occurred_at>? LIMIT 1", (row['account_id'], channel, row['occurred_at'])).fetchone() is not None
+            members = sorted({r[0] for r in db.execute("SELECT DISTINCT json_extract(metadata,'$.user_id') FROM events WHERE account_id=? AND kind='slack.message' "
+                                                        "AND json_extract(metadata,'$.channel_id')=?", (row['account_id'], channel))
+                              if r[0] and r[0] != account.get('user_id')}) if dm else []
+            spots.append({'service': 'slack', 'account_id': row['account_id'], 'channel_id': channel, 'ts': ts,
+                          'thread_ts': thread if re.fullmatch(r'[0-9]{6,12}\.[0-9]{1,8}', thread) else ts, 'dm': dm,
+                          'channel_name': str(m.get('channel_name') or ''), 'sender_id': m.get('user_id'),
+                          'sender_name': str(m.get('sender_display') or ''), 'own': bool(account.get('user_id')) and m.get('user_id') == account.get('user_id'),
+                          'members': members, 'later': later, 'when': row['occurred_at']})
+        elif row['kind'] == 'whatsapp.message' and account.get('service') == 'whatsapp' and m.get('chat_id') and m.get('message_id'):
+            later = db.execute("SELECT 1 FROM events WHERE account_id=? AND kind='whatsapp.message' AND deleted=0 AND json_extract(metadata,'$.chat_id')=? "
+                               "AND occurred_at>? LIMIT 1", (row['account_id'], m['chat_id'], row['occurred_at'])).fetchone() is not None
+            sender = m.get('sender_id') if isinstance(m.get('sender_id'), str) and re.fullmatch(WHATSAPP_JID, m['sender_id']) else None
+            spots.append({'service': 'whatsapp', 'account_id': row['account_id'], 'chat_id': m['chat_id'], 'message_id': str(m['message_id']),
+                          'sender_id': sender, 'group': str(m['chat_id']).endswith('@g.us'), 'later': later, 'when': row['occurred_at']})
+    return spots
+
+
 def owner_whatsapp_chats(config, db, raw, task_chats, source=None):
     """The chats a prepare's WhatsApp messages go to that are not from the task's own messages: the person's
     existing chat in the owner's own WhatsApp account, for a card that switches to WhatsApp because that is
@@ -16519,11 +16565,12 @@ class App(*APP_MIXINS):
                 whatsapp_chats.update(owner_whatsapp_chats(self.config,db,args.get('next_actions',args.get('next_action')),whatsapp_chats))
                 telegram_chats.update(owner_telegram_chats(self.config,db,args.get('next_actions',args.get('next_action')),telegram_chats))
                 calendar_events=calendar_write_events(db,calendar_write_ids(args.get('next_actions',args.get('next_action'))),self.owner_emails())
+                spots=reply_spots(self.config,db,row['event_ids'])  # a Slack reply in its message's thread, a WhatsApp one quoting it
                 doc_files=doc_write_files(db,row['event_ids'])
             # A doc write: the owner's Docs connections, and each doc an edit names read now, its version pinned (doc_writes.py)
             doc_context=doc_writes.context(self.config,load_connector('docs'),CONNECTOR_HELPERS,doc_files,args.get('next_actions',args.get('next_action')),
                                            doc_writes.area(self.config,json.loads(row['account_ids'] or '[]')))
-            action=next_actions.validate(args.get('next_actions',args.get('next_action')),self.config,json.loads(row['account_ids']),options,threads,x_threads,whatsapp_chats,intercom_conversations,calendar_events,docs,senders,replied_to(emails),telegram_chats,doc_context)
+            action=next_actions.validate(args.get('next_actions',args.get('next_action')),self.config,json.loads(row['account_ids']),options,threads,x_threads,whatsapp_chats,intercom_conversations,calendar_events,docs,senders,replied_to(emails),telegram_chats,doc_context,spots)
             for item in next_actions.actions(action):
                 if item['kind']=='handoff' and not (getattr(self,'fleet',None) and self.fleet.teammate(item)):
                     raise ValueError('Hand off through The Machine only to a teammate in a Work Fleet (their email as listed); use a Slack message or email for anyone else')
@@ -16533,6 +16580,7 @@ class App(*APP_MIXINS):
                 if not evidence or any(e['kind']!='assistant.test' or json.loads(e['metadata']).get('test') is not True for e in evidence):
                     raise ValueError('Demo previews are only available on explicitly labeled assistant test tasks')
             problems=next_actions.check(action,args['body'],[a.get('email','') for a in self.config['accounts']])
+            problems+=next_actions.reply_context(next_actions.actions(action),spots)
             # The to-do names the place the doc goes, never the other one (Google Docs vs Word)
             problems+=doc_writes.wording(next_actions.actions(action),[args.get('body'),args.get('needs'),args.get('title')])
             if problems and args.get('checked') is not True:

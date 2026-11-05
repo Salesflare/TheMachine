@@ -14,7 +14,7 @@ Una foto, un mensaje de voz o un archivo sin texto aparece como lo que es, por e
 
 ## Qué puede enviar
 
-Un texto en un chat que ya existe, solo después de que lo apruebes en la tarea.
+Un texto en un chat que ya existe, solo después de que lo apruebes en la tarea. Una respuesta al mensaje de WhatsApp del que salió una tarea cita ese mensaje cuando se escribió más después, o en un grupo; el borrador dice **Como respuesta**.
 
 Si una tarea llegó por correo pero con esa persona hablas por WhatsApp, dilo en el chat de la tarea. The Machine encuentra tu chat con ella y pasa el borrador a WhatsApp, para que lo revises y lo envíes. Nunca empieza un chat nuevo.
 

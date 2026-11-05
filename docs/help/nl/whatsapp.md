@@ -14,7 +14,7 @@ Een foto, spraakbericht of bestand zonder bijschrift staat er als wat het is, zo
 
 ## Wat het kan versturen
 
-Een tekst in een chat die al bestaat, pas nadat je het goedkeurt op de to-do.
+Een tekst in een chat die al bestaat, pas nadat je het goedkeurt op de to-do. Een antwoord op het WhatsApp-bericht waar een to-do uit kwam, citeert dat bericht als er daarna nog meer gezegd is, of in een groep; op het concept staat **Als antwoord**.
 
 Kwam een to-do binnen via e-mail maar praat je met die persoon op WhatsApp, zeg dat dan in de chat van de to-do. The Machine vindt je bestaande chat met die persoon en zet het concept om naar WhatsApp, zodat je het kunt nakijken en versturen. Het begint nooit een nieuwe chat.
 

@@ -14,7 +14,7 @@ Ein Foto, eine Sprachnachricht oder eine Datei ohne Beschriftung erscheint als d
 
 ## Was es senden kann
 
-Einen Text in einen Chat, den es schon gibt, erst nachdem du ihn bei der Aufgabe freigegeben hast.
+Einen Text in einen Chat, den es schon gibt, erst nachdem du ihn bei der Aufgabe freigegeben hast. Eine Antwort auf die WhatsApp-Nachricht, aus der eine Aufgabe kam, zitiert diese Nachricht, wenn danach noch mehr geschrieben wurde, oder in einer Gruppe; im Entwurf steht **Als Antwort**.
 
 Kam eine Aufgabe per E-Mail rein, aber du schreibst mit der Person über WhatsApp, sag es im Chat der Aufgabe. The Machine findet euren bestehenden Chat und stellt den Entwurf auf WhatsApp um, damit du ihn prüfst und sendest. Sie startet nie einen neuen Chat.
 

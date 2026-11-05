@@ -14,7 +14,7 @@ Las personas aparecen con su nombre y las apps con el suyo, nunca con un ID de S
 
 ## Qué puede enviar
 
-Un mensaje directo a una persona, en tu nombre, y solo después de que lo apruebes en la tarea. Nunca publica en un canal.
+Un mensaje directo a una persona, en tu nombre, y solo después de que lo apruebes en la tarea. Una respuesta al mensaje de Slack del que salió una tarea va en el hilo de ese mensaje, en el mensaje directo o en el canal; el borrador dice **En el hilo**. Nunca empieza una publicación nueva en un canal.
 
 ## Conéctalo
 

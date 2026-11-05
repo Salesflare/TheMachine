@@ -14,7 +14,7 @@ Uma foto, mensagem de voz ou arquivo sem legenda aparece pelo que é, como "Imag
 
 ## O que ele pode enviar
 
-Um texto em uma conversa que já existe, só depois que você aprova na tarefa.
+Um texto em uma conversa que já existe, só depois que você aprova na tarefa. Uma resposta à mensagem do WhatsApp de onde veio uma tarefa cita essa mensagem quando mais coisas foram ditas depois, ou em um grupo; o rascunho diz **Como resposta**.
 
 Se uma tarefa chegou por e-mail, mas você fala com essa pessoa pelo WhatsApp, diga isso no chat da tarefa. A The Machine encontra a conversa que você já tem com ela e passa o rascunho para o WhatsApp, para você revisar e enviar. Ela nunca começa uma conversa nova.
 
