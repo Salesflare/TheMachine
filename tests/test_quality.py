@@ -47,7 +47,7 @@ class OthersPromises(Base):
 
     def follow_up(self, **extra):
         return self.app.action('suggest', {'dedupe_key': 'contract', 'title': "Contract from Sam hasn't arrived", 'body': 'Sam promised it by Friday.',
-                                           'event_ids': [1], 'awaiting_event_id': 1, 'due': '2099-10-20', **extra})
+                                           'event_ids': [1], 'awaiting_event_id': 1, 'due': '2099-10-20', 'newer_checked': [2], **extra})
 
     def test_follow_up_waits_for_the_deadline_and_needs_their_message(self):
         with patch.object(a, 'now', return_value='2026-10-19T10:00:00+00:00'):
@@ -55,11 +55,11 @@ class OthersPromises(Base):
         self.assertIn('closes itself', made['awaiting'])
         self.assertTrue(made['deliver_after'].startswith('2099-10-21T06:30'))  # the morning after, 08:30 Brussels
         with self.assertRaises(ValueError):  # The owner's own sent email is not someone else's promise
-            self.app.action('suggest', {'dedupe_key': 'x', 'title': 'T', 'body': 'B', 'event_ids': [2], 'awaiting_event_id': 2, 'due': '2026-10-16'})
+            self.app.action('suggest', {'dedupe_key': 'x', 'title': 'T', 'body': 'B', 'event_ids': [2], 'awaiting_event_id': 2, 'due': '2026-10-16', 'newer_checked': [2]})
         with self.assertRaises(ValueError):  # without a deadline it would go out right away
-            self.app.action('suggest', {'dedupe_key': 'y', 'title': 'T', 'body': 'B', 'event_ids': [1], 'awaiting_event_id': 1})
+            self.app.action('suggest', {'dedupe_key': 'y', 'title': 'T', 'body': 'B', 'event_ids': [1], 'awaiting_event_id': 1, 'newer_checked': [2]})
         with self.assertRaises(ValueError):
-            self.app.action('suggest', {'dedupe_key': 'z', 'title': 'T', 'body': 'B', 'event_ids': [1], 'awaiting_event_id': 2, 'due': '2026-10-16'})
+            self.app.action('suggest', {'dedupe_key': 'z', 'title': 'T', 'body': 'B', 'event_ids': [1], 'awaiting_event_id': 2, 'due': '2026-10-16', 'newer_checked': [2]})
 
     def test_closes_itself_when_they_write_first(self):
         sid = self.follow_up()['id']

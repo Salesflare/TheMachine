@@ -17,4 +17,6 @@ Sotto **Promesse** nella pagina Attività:
 
 Ogni promessa aperta ha **Fatto** e **Lascia perdere**. Una promessa aperta diventa un’attività alla scadenza, e compare nel suo giorno nel [Calendario](calendar.md).
 
+Prima, la tua Machine legge cosa è arrivato dopo. Già mantenuta, per esempio con una tua risposta o una riunione che ne ha parlato? Si chiude come mantenuta, senza attività.
+
 Sul tuo computer, anche `assistant promises` le elenca. Il [riepilogo settimanale](weekly-recap.md) conta quelle mantenute e quelle aperte.

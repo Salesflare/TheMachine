@@ -17,4 +17,6 @@ En **Promesas**, en la página Tareas:
 
 Cada una abierta tiene **Hecho** y **Descartar**. Una promesa abierta se convierte en tarea cuando vence, y aparece en su día en el [Calendario](calendar.md).
 
+Antes, tu Machine lee lo que vino después. ¿Ya se cumplió, por ejemplo con una respuesta tuya o una reunión que lo trató? Se cierra como cumplida, sin tarea.
+
 En tu propio ordenador, `assistant promises` también las lista. El [resumen semanal](weekly-recap.md) cuenta las cumplidas y las abiertas.

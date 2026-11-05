@@ -17,4 +17,6 @@ Onder **Beloftes** op de pagina To-do's:
 
 Elke open belofte heeft **Gedaan** en **Laten vallen**. Een open belofte wordt een to-do als ze moet gebeuren, en staat op haar dag in de [Agenda](calendar.md).
 
+Daarvoor leest je Machine wat erna kwam. Al nagekomen, zoals met een antwoord van jou of een meeting erover? Dan sluit ze als nagekomen, zonder to-do.
+
 Op je eigen computer toont `assistant promises` ze ook. Het [weekoverzicht](weekly-recap.md) telt de nagekomen en de open beloftes.

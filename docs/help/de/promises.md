@@ -17,6 +17,8 @@ Unter **Versprechen** auf der Seite Aufgaben:
 
 Jedes offene hat **Erledigt** und **Entfernen**. Ein offenes Versprechen wird zur Aufgabe, wenn es fällig ist, und erscheint an seinem Tag im [Kalender](calendar.md).
 
+Vorher liest deine Machine, was danach kam. Schon gehalten, etwa durch eine Antwort von dir oder ein Meeting dazu? Dann schließt es sich als gehalten, ohne Aufgabe.
+
 Eins ohne Datum zeigt seinen Tag zum **Nachfassen**: drei Tage, nachdem du es gesagt hast, eine Woche, nachdem die andere Person es gesagt hat. Dann noch offen? Dann wird es zur Aufgabe.
 
 Eine Slack-Nachricht nennt ihren Absender nur mit seiner Slack-ID. Deine Machine schlägt den Namen nach, damit Versprechen die Person zeigen, nicht die ID.
