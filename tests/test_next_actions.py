@@ -404,7 +404,7 @@ class ThreadSnoozes(unittest.TestCase):
         self.assertNotIn('snooze_days',n.validate(self.draft(),config,['work']))
         for bad in (dict(snooze_days=2),{**self.reply,'snooze_days':15},{**self.reply,'snooze_days':True},{**self.reply,'snooze_days':'3'}):
             with self.assertRaises(ValueError):n.validate(self.draft(**bad),config,['work'])
-        self.assertIn('leaves your inbox for 5 days',n.email_preview(n.validate(self.draft(**self.reply,snooze_days=5),config,['work'])))
+        self.assertIn('Leaves your inbox for 5 days',n.email_preview(n.validate(self.draft(**self.reply,snooze_days=5),config,['work'])))
 
     def test_return_time_is_nine_on_a_weekday(self):
         with patch.object(a,'now',return_value='2026-10-12T08:00:00+00:00'):  # Monday

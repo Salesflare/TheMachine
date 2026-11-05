@@ -286,10 +286,6 @@
  "Admin": "Beheerder",
  "Admins can share the team’s Graph and connections. Check it’s really them.": "Beheerders kunnen de Graph van het team en koppelingen delen. Check of het echt om hen gaat.",
  "After": "Na",
- "After sending, the thread leaves your inbox for {} days (a weekday morning; a reply brings it back sooner).": {
-  "one": "Na het versturen verdwijnt de thread {} dag uit je inbox (tot een werkdagochtend; een antwoord haalt hem eerder terug).",
-  "other": "Na het versturen verdwijnt de thread {} dagen uit je inbox (tot een werkdagochtend; een antwoord haalt hem eerder terug)."
- },
  "After sending, this to-do waits {} days for a reply; it closes when they answer.": {
   "one": "Na het versturen wacht deze to-do {} dag op een antwoord; hij sluit zodra er antwoord is.",
   "other": "Na het versturen wacht deze to-do {} dagen op een antwoord; hij sluit zodra er antwoord is."
@@ -1884,6 +1880,10 @@
  "Leave out {}": "{} weglaten",
  "Leave the Network": "Het Network verlaten",
  "Leave the Network? Every friendship ends and nobody can find you. Your Fleets stay.": "Het Network verlaten? Elke vriendschap stopt en niemand kan je vinden. Je Fleets blijven.",
+ "Leaves your inbox for {} days after sending, or until a reply.": {
+  "one": "Verdwijnt na het versturen {} dag uit je inbox, of tot er een antwoord komt.",
+  "other": "Verdwijnt na het versturen {} dagen uit je inbox, of tot er een antwoord komt."
+ },
  "Left out {}.": "{} weggelaten.",
  "Left out.": "Weggelaten.",
  "Left out:": "Weggelaten:",

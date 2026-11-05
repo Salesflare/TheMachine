@@ -3489,6 +3489,7 @@ b.disabled=true;try{await saveDecision(id,choice,feedback,!!b.dataset.answer)}ca
 /*@include dashboard/graph-view.js*/
 /*@include dashboard/events-list.js*/
 /*@include dashboard/todos-snooze.js*/
+/*@include dashboard/shell-sheets.js*/
 /*@include dashboard/family-invite.js*/
 function toast(text,error=false,undoId=null){const t=$('#toast');t.replaceChildren(undoId||error?text+' ':text,undoId?make('button',{'data-undo':undoId},'Undo'):error?make('button',{type:'button','data-bug-report':''},'Report a bug'):'');t.classList.toggle('error',error);t.classList.add('show');toastLift(t);clearTimeout(toastLiftTimer);toastLiftTimer=setTimeout(()=>{if(t.classList.contains('show'))toastLift(t)},700);  /* again once what the action changed has drawn */clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),undoId?15000:text.length>90?9000:error?6000:2500)}
 async function manualRefresh(){if(manualBusy)return;manualBusy=true;newTagline();document.querySelectorAll('.refresh-tap').forEach(e=>e.classList.add('busy'));const ok=await refresh();document.querySelectorAll('.refresh-tap').forEach(e=>e.classList.remove('busy'));manualBusy=false;toast(ok?'Up to date':'Couldn’t refresh. Try again in a moment.',!ok)}

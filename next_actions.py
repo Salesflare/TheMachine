@@ -1156,7 +1156,7 @@ def email_preview(action):
 
 def snooze_note(action):
     days = action['snooze_days']
-    return f"After sending, the thread leaves your inbox for {days} day{'s' if days > 1 else ''} (a weekday morning; a reply brings it back sooner)." 
+    return f"Leaves your inbox for {days} day{'s' if days > 1 else ''} after sending, or until a reply."
 
 
 def mail_page(action, signature=''):

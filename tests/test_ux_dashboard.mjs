@@ -225,7 +225,7 @@ suggestions[2].next_action={kind:'email',revision:'abcdef123456',from:'owner@exa
 await page.evaluate(()=>refresh());await page.locator('#task-'+ids[2]).getByRole('button',{name:'Review and send',exact:true}).click();
 await page.locator('#send-dialog').waitFor({state:'visible'});assert.match(await sendHead(page),/From: owner@example.com/);assert.match(await page.locator('#send-preview').textContent(),/Exact email draft/);assert.equal(await page.locator('#send-preview script').count(),0);
 {const link=page.locator('#send-files a.attachment');assert.equal(await link.count(),1);assert.equal(await link.getAttribute('href'),'api/draft-attachment?id='+suggestions[2].id+'&sha='+'ab'.repeat(32));assert.match(await link.textContent(),/credit <note>\.pdf9 KB/);}
-const beforeApproval=posts.length;await page.locator('#send-cancel').click();assert.equal(posts.length,beforeApproval);
+const beforeApproval=posts.length;await page.locator('#send-dialog .snooze-heading button').click();assert.equal(posts.length,beforeApproval);
 // The same draft files open from Read result and Read email too.
 {const href='api/draft-attachment?id='+ids[2]+'&sha='+'ab'.repeat(32);
 await page.evaluate(id=>openResult(id),ids[2]);const r=page.locator('#result-files .draft-files a.attachment');await r.waitFor();assert.equal(await r.getAttribute('href'),href);{const text=await page.locator('#result-content').textContent();assert.match(text,/All checked\./);assert.doesNotMatch(text,/Attachments|credit <note>/)}await page.getByRole('button',{name:'Close result'}).click();
@@ -236,7 +236,7 @@ await page.locator('#task-'+ids[2]).getByRole('button',{name:'Review and send',e
 assert.equal(await page.locator('#send-rich-body').innerText(),suggestions[2].next_action.body);assert.equal(await page.locator('#send-rich-body script').count(),0);assert.doesNotMatch(await sendHead(page),/Subject:/);assert.ok(await page.locator('#send-preview').isHidden());
 await page.locator('#send-rich-body').fill('My own words.');await page.locator('#send-confirm').click();await page.locator('#send-dialog').waitFor({state:'hidden'});
 assert.deepEqual([posts.at(-2).body,posts.at(-2).revision,posts.at(-2).subject],['My own words.','abcdef123456',suggestions[2].next_action.subject]);assert.equal(posts.at(-1).revision,'fedcba654321');
-await page.locator('#task-'+ids[2]).getByRole('button',{name:'Review and send',exact:true}).click();assert.equal(await page.locator('#send-editor').isHidden(),false);await page.locator('#send-cancel').click();}
+await page.locator('#task-'+ids[2]).getByRole('button',{name:'Review and send',exact:true}).click();assert.equal(await page.locator('#send-editor').isHidden(),false);await page.locator('#send-dialog .snooze-heading button').click();}
 suggestions[2].next_actions=[{...suggestions[2].next_action,label:'Send reply',state:{status:'blocked',error:'Gmail is connected read-only. Nothing was sent.'}},
  {kind:'prepare',revision:'fedcba654321',label:'Investigate further',instructions:'Check the field mapping'},
  {kind:'open',revision:'111111111111',label:'Open the Zap',url:'https://example.com/zap'}];

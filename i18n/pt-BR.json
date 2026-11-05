@@ -286,10 +286,6 @@
  "Admin": "Admin",
  "Admins can share the team’s Graph and connections. Check it’s really them.": "Admins podem compartilhar o Graph da equipe e conexões. Confira se é mesmo essa pessoa.",
  "After": "Depois",
- "After sending, the thread leaves your inbox for {} days (a weekday morning; a reply brings it back sooner).": {
-  "one": "Depois do envio, a conversa sai da sua caixa de entrada por {} dia (numa manhã de dia útil; uma resposta a traz de volta antes).",
-  "other": "Depois do envio, a conversa sai da sua caixa de entrada por {} dias (numa manhã de dia útil; uma resposta a traz de volta antes)."
- },
  "After sending, this to-do waits {} days for a reply; it closes when they answer.": {
   "one": "Depois do envio, esta tarefa espera {} dia por uma resposta; fecha quando responderem.",
   "other": "Depois do envio, esta tarefa espera {} dias por uma resposta; fecha quando responderem."
@@ -1884,6 +1880,10 @@
  "Leave out {}": "Deixar {} de fora",
  "Leave the Network": "Sair da Network",
  "Leave the Network? Every friendship ends and nobody can find you. Your Fleets stay.": "Sair da Network? Todas as amizades terminam e ninguém consegue encontrar você. Seus Fleets continuam.",
+ "Leaves your inbox for {} days after sending, or until a reply.": {
+  "one": "Sai da sua caixa de entrada por {} dia após o envio, ou até uma resposta.",
+  "other": "Sai da sua caixa de entrada por {} dias após o envio, ou até uma resposta."
+ },
  "Left out {}.": "{} deixado de fora.",
  "Left out.": "Deixado de fora.",
  "Left out:": "Deixadas de fora:",

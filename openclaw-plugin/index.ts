@@ -131,7 +131,7 @@ function sendReview(item:any,draft:any,dashboardBase=''){
  lines.push(t('Subject: {}',draft.subject),'',draft.body);
  if(draft.signature)lines.push('',t('+ your signature'));
  if(draft.attachments?.length)lines.push('',t('Attachments: {}',fileList(draft.attachments)));
- if(draft.snooze_days)lines.push(t('After sending, the thread leaves your inbox for {} days (a weekday morning; a reply brings it back sooner).',draft.snooze_days));
+ if(draft.snooze_days)lines.push(t('Leaves your inbox for {} days after sending, or until a reply.',draft.snooze_days));
  lines.push(...waits);
  if(options.length)return {text:lines.join('\n'),buttons:[...options.slice(0,4).map((address,i)=>[button(item.id,t('Send to {}',address).slice(0,60),`confirm_${draft.revision}_${i}`)]),
    [...(options.length>1&&dashboardBase?[{text:t('Choose several'),url:`${dashboardBase}#send=${item.id}&revision=${draft.revision}`}]:[]),...edit,button(item.id,t('Cancel'),'back')]]};

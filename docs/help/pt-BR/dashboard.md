@@ -25,6 +25,8 @@ A janela da frente do navegador aparece no meio e o resto da tela fica escuro. U
 
 Se mais de uma tarefa usa o navegador, para a da aba da frente. No celular, a aba do navegador tem o mesmo botão no topo. Para continuar, escreva no chat ou toque em **Tentar de novo**.
 
+No celular, uma janela como **Enviar este e-mail?** ocupa a tela toda: o título e o × ficam no alto, os botões embaixo, e só o que está no meio rola. A caixa da mensagem cresce no espaço livre, e os botões ficam ao alcance enquanto você digita.
+
 ## Novas versões
 
 Quando uma nova versão do painel fica pronta, ele nunca recarrega enquanto você está usando. Abrir ou recarregar o app carrega a versão mais nova. Uma janela aberta carrega a nova versão quando a janela vai para segundo plano, ou depois de alguns minutos sem uso, e nunca enquanto há algo digitado e ainda não salvo ou enviado, ou uma caixa de diálogo aberta. **Atualização pronta**, no topo, carrega na hora. Reiniciar a sua Machine só reconecta.
