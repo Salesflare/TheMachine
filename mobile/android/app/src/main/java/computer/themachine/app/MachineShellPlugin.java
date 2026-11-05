@@ -766,11 +766,20 @@ public class MachineShellPlugin extends Plugin {
             intent.setData(null);
             return;
         }
-        if (Intent.ACTION_SEND.equals(action) || Intent.ACTION_SEND_MULTIPLE.equals(action)) {
-            pendingShare = readShare(intent);
+        boolean opened = Intent.ACTION_VIEW.equals(action) && data != null && "content".equals(data.getScheme()); // Open with
+        if (Intent.ACTION_SEND.equals(action) || Intent.ACTION_SEND_MULTIPLE.equals(action) || opened) {
+            Intent shared = new Intent(intent);
             intent.setAction(null);
-            String url = bridge.getWebView().getUrl();
-            if (url != null && machine() != null && url.startsWith(machine())) onMachinePage(url);
+            intent.setData(null);
+            // Read off the main thread: a file from Drive or mail may still be coming in
+            new Thread(() -> {
+                JSONObject share = readShare(shared);
+                getActivity().runOnUiThread(() -> {
+                    pendingShare = share;
+                    String url = bridge.getWebView().getUrl();
+                    if (url != null && machine() != null && url.startsWith(machine())) onMachinePage(url);
+                });
+            }).start();
             return;
         }
         String tag = intent.getStringExtra("tag"); // a tapped notification (FCM data: kind, tag)
@@ -835,7 +844,9 @@ public class MachineShellPlugin extends Plugin {
             }
             share.put("text", text.length() > 20000 ? text.substring(0, 20000) : text.toString());
             List<Uri> uris = new ArrayList<>();
-            if (Intent.ACTION_SEND_MULTIPLE.equals(intent.getAction())) {
+            if (Intent.ACTION_VIEW.equals(intent.getAction())) {
+                uris.add(intent.getData());
+            } else if (Intent.ACTION_SEND_MULTIPLE.equals(intent.getAction())) {
                 ArrayList<Uri> list = Build.VERSION.SDK_INT >= 33
                     ? intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM, Uri.class)
                     : intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM);
@@ -854,9 +865,11 @@ public class MachineShellPlugin extends Plugin {
                 byte[] bytes = read(resolver, uri, SHARE_BYTES - total);
                 if (bytes == null) continue;
                 total += bytes.length;
+                String type = resolver.getType(uri) != null ? resolver.getType(uri)
+                    : intent.getType() != null && !intent.getType().endsWith("/*") ? intent.getType() : "application/octet-stream";
                 JSONObject file = new JSONObject();
-                file.put("name", displayName(resolver, uri));
-                file.put("type", resolver.getType(uri) == null ? "application/octet-stream" : resolver.getType(uri));
+                file.put("name", ShareName.of(displayName(resolver, uri), type));
+                file.put("type", type);
                 file.put("data", Base64.encodeToString(bytes, Base64.NO_WRAP));
                 files.put(file);
             }

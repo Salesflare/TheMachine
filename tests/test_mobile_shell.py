@@ -21,6 +21,31 @@ class MobileShellTest(unittest.TestCase):
         run = subprocess.run(['node', '--test', *files], cwd=MOBILE, capture_output=True, text=True, timeout=120)
         self.assertEqual(run.returncode, 0, run.stdout[-3000:] + run.stderr[-2000:])
 
+    def test_share_and_open_with_reach_new_to_do(self):
+        # Android: Share (one or more files, text) and Open with on a PDF, an image or a text file, only as content://
+        # links the opening app grants; read off the main thread, with the type's extension when the name has none.
+        import xml.etree.ElementTree as ET
+        ns = '{http://schemas.android.com/apk/res/android}'
+        manifest = ET.parse(MOBILE / 'android/app/src/main/AndroidManifest.xml').getroot()
+        filters = {}
+        for f in manifest.iter('intent-filter'):
+            action = f.find('action').get(ns + 'name').rsplit('.', 1)[-1]
+            filters.setdefault(action, []).append([{k.replace(ns, ''): v for k, v in d.attrib.items()} for d in f.findall('data')])
+        self.assertIn({'mimeType': 'application/pdf'}, filters['SEND'][0])
+        self.assertTrue({'mimeType': 'text/*'} in filters['SEND_MULTIPLE'][0] and {'mimeType': 'application/*'} in filters['SEND_MULTIPLE'][0])
+        opened = next(d for d in filters['VIEW'] if {'scheme': 'content'} in d)
+        self.assertEqual(sorted(x['mimeType'] for x in opened if 'mimeType' in x), ['application/pdf', 'image/*', 'text/plain'])
+        self.assertFalse(any({'scheme': 'file'} in d or {'scheme': 'http'} in d or {'scheme': 'https'} in d for d in filters['VIEW']))
+        java = (MOBILE / 'android/app/src/main/java/computer/themachine/app/MachineShellPlugin.java').read_text()
+        self.assertIn('Intent.ACTION_VIEW.equals(action) && data != null && "content".equals(data.getScheme())', java)
+        self.assertIn('new Thread(() -> {\n                JSONObject share = readShare(shared);', java)
+        self.assertIn('ShareName.of(displayName(resolver, uri), type)', java)
+        # iOS: the share extension keeps the file itself, never the link to it, with its extension once
+        swift = (MOBILE / 'ios/App/ShareExtension/ShareViewController.swift').read_text()
+        self.assertIn('let type = Self.fileType(p)', swift)
+        self.assertIn('$0.conforms(to: .data) && !$0.conforms(to: .url)', swift)
+        self.assertIn('Self.fileName(p.suggestedName ?? "file", ut?.preferredFilenameExtension)', swift)
+
     def test_exact_pins(self):
         pkg = json.loads((MOBILE / 'package.json').read_text())
         for name, version in {**pkg['dependencies'], **pkg.get('devDependencies', {})}.items():
