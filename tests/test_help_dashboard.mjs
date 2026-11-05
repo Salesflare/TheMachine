@@ -10,7 +10,9 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // report (one box, ticked by default) without the owner waiting for it; nothing is lost when it is slow or fails. An
 // error toast opens it.
 const dashboard=await dashboardPage();
-const actions=[];let limit=false,queued=[],cpOk=false,previewFails=false;  // limit: the control plane said 429, so the Machine keeps the report
+const actions=[];let limit=false,queued=[],cpOk=false,previewFails=false;
+// A report the Machine wrote up in chat (bug_offer): what bug_offer_open answers, and every call to it
+let offer=null;const offers=[];  // limit: the control plane said 429, so the Machine keeps the report
 // An answer the test holds back (held()) goes out once it says so (open()): the page's state while it waits is checked, never timed
 const held=()=>{let open;const wait=new Promise(r=>open=r);return {wait,open}},answered={wait:Promise.resolve(),open(){}};
 let helpAnswer=answered,sendAnswer=answered,previewAnswer=answered;
@@ -20,7 +22,7 @@ const server=createServer((req,res)=>{const url=new URL(req.url,'http://fixture.
   res.setHeader('Content-Type','application/json');
   if(url.pathname==='/_machine/bug'){actions.push({action:'cp',args:JSON.parse(body)});if(cpOk){res.end('{"id":"r_1"}');return}res.writeHead(429,{'Retry-After':'900'});res.end('{"error":"You sent a few reports just now.","retry_after":900}');return}
   if(url.pathname==='/api/action'&&/"action":"client_error"/.test(body)){res.end('{"ok":true,"counted":0}');return}  // an error report (test_client_errors_dashboard.mjs), not a change
-  if(url.pathname==='/api/action'){const {action,args}=JSON.parse(body||'{}');if(action==='bug_queued'){res.end(JSON.stringify({queued}));return}actions.push({action,args,upload:req.headers['x-upload']});
+  if(url.pathname==='/api/action'){const {action,args}=JSON.parse(body||'{}');if(action==='bug_queued'){res.end(JSON.stringify({queued}));return}if(action==='bug_offer_open'){offers.push(args);res.end(JSON.stringify({offer:args.id&&offer?.id!==args.id?null:offer}));return}actions.push({action,args,upload:req.headers['x-upload']});
    const later=Math.floor(Date.UTC(2030,0,1,10,55)/1000);
    if(action==='bug_later'||action==='bug_send'&&limit){queued=[{id:'bq_1',what:args.description,next_at:later}];res.end(JSON.stringify({sent:false,queued:true,at:later}));return}
    if(action==='help_ask'&&/comes back/.test(args.question)){res.end(JSON.stringify({answer:'Try a reload.',bug:'I snoozed a to-do until tomorrow.\nI expected it to stay away.\nIt came back within a minute.',sources:[]}));return}
@@ -151,6 +153,31 @@ try{
   await page.click('[data-help-back]');assert.equal(await page.isVisible('#help-ask-pane'),true);assert.equal(await page.isHidden('#help-read-pane'),true);
   await page.evaluate(()=>{I18N.lang='en';helpBox.close();document.getElementById('help-link-test').remove()});
   limit=false;queued=[];await page.evaluate(()=>{state.manage_url=null});
+  // Told in chat: its link opens Report a bug with the owner's words and a summary, the support report ticked; nothing
+  // goes before Send, which sends it as any report and marks it sent, so the link doesn't fill the form again
+  offer={id:'bo_0123456789abcdef',words:'text appears twice in chat',summary:'Chat replies show twice.',sent:false};offers.length=0;actions.length=0;
+  await page.evaluate(()=>{document.querySelector('#toast').classList.remove('show');location.hash='#bug-offer=bo_0123456789abcdef'});
+  await page.waitForFunction(()=>document.querySelector('#help-panel[open]')&&document.querySelector('#bug-what').value);
+  assert.equal(await page.inputValue('#bug-what'),'Chat replies show twice.\n\n“text appears twice in chat”');
+  assert.equal(await page.isChecked('#bug-diag'),true);assert.equal(await page.evaluate(()=>location.hash),'','the link leaves the address');
+  assert.deepEqual(actions.map(a=>a.action).filter(a=>a==='bug_send'),[],'nothing goes before Send');
+  if(process.env.SHOTS)await page.screenshot({path:`${process.env.SHOTS}/offer-link-${width}.png`});
+  await page.click('#bug-send');await page.waitForFunction(()=>document.querySelector('#toast.show'));
+  assert.equal(actions.find(a=>a.action==='bug_send').args.description,'Chat replies show twice.\n\n“text appears twice in chat”');
+  for(let i=0;i<50&&!offers.at(-1)?.sent;i++)await page.waitForTimeout(20);assert.deepEqual(offers.at(-1),{id:'bo_0123456789abcdef',sent:true});
+  offer={...offer,sent:true};await page.evaluate(()=>{document.querySelector('#toast').classList.remove('show');location.hash='#bug-offer=bo_0123456789abcdef'});
+  await page.waitForFunction(()=>document.querySelector('#toast.show')?.textContent==='That report was sent already.');
+  assert.equal(await page.$('#help-panel[open]'),null);
+  // One that is gone: an empty form that says so
+  await page.evaluate(()=>{location.hash='#bug-offer=bo_ffffffffffffffff'});await page.waitForSelector('#help-panel[open]');
+  await page.waitForFunction(()=>document.querySelector('#bug-error').textContent);assert.equal(await page.inputValue('#bug-what'),'');
+  await page.keyboard.press('Escape');
+  // No link (a Machine without a dashboard address): the newest one not sent fills an empty form
+  offer={id:'bo_aaaaaaaaaaaaaaaa',words:'the menu is gone',summary:'',sent:false};
+  await page.evaluate(()=>document.querySelector('#open-help').click());await page.click('[data-help-tab="bug"]');
+  await page.waitForFunction(()=>document.querySelector('#bug-what').value==='“the menu is gone”');
+  if(process.env.SHOTS)await page.screenshot({path:`${process.env.SHOTS}/offer-empty-form-${width}.png`});
+  await page.fill('#bug-what','');await page.keyboard.press('Escape');offer=null;
   await context.close();
  }
  assert.deepEqual(errors,[]);

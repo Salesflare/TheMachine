@@ -178,3 +178,76 @@ class BugQueue(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class BugOffer(unittest.TestCase):
+    """A problem with The Machine told in chat (bug_offer): written up for Report a bug, sent only by the owner's Send there."""
+    def setUp(self):
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        self.app = object.__new__(a.App)
+        self.app.config = {'database': str(Path(temp.name) / 'events.sqlite'), 'accounts': [],
+                           'manage_url': 'https://app.example.com/machines/m1', 'dashboard_host': 'm1.example.com', 'dashboard_path': '/'}
+        self.app.fleet = None
+        self.clock = Clock()
+        patcher = patch.object(bug_queue.time, 'time', self.clock)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def test_offer_gives_a_link_and_sends_nothing(self):
+        self.app.fleet = ControlPlane()
+        found = self.app.action('bug_offer', {'words': 'text appears twice in chat', 'summary': 'Chat replies show twice.'})
+        self.assertTrue(found['linked'])
+        self.assertEqual(found['url'], 'https://m1.example.com/#bug-offer=' + found['id'])
+        self.assertIn('Nothing is sent until they tap Send', found['say'])
+        self.assertEqual(self.app.fleet.sent, [])  # nothing went to the control plane
+        self.assertEqual(bug_queue.load(self.app.config), [])  # and nothing waits to go by itself
+        opened = self.app.action('bug_offer_open', {'id': found['id']}, owner_dashboard=True)['offer']
+        self.assertEqual(opened, {'id': found['id'], 'words': 'text appears twice in chat', 'summary': 'Chat replies show twice.', 'sent': False})
+
+    def test_only_the_owner_dashboard_reads_or_marks_one(self):
+        found = self.app.action('bug_offer', {'words': 'x', 'summary': 'y'})
+        with self.assertRaisesRegex(ValueError, 'from the dashboard'):
+            self.app.action('bug_offer_open', {'id': found['id']})
+        self.assertIn('bug_offer_open', a.OWNER_ACTIONS)
+        self.assertNotIn('bug_offer', a.OWNER_ACTIONS)  # the agent can write one up; only the owner's Send sends it
+
+    def test_sent_once_its_link_no_longer_fills_the_form(self):
+        first = self.app.action('bug_offer', {'words': 'one', 'summary': 'First.'})
+        self.clock.now += 60
+        second = self.app.action('bug_offer', {'words': 'two', 'summary': 'Second.'})
+        self.assertEqual(bug_queue.offered(self.app.config)['id'], second['id'])  # an empty form: the newest not sent
+        self.app.action('bug_offer_open', {'id': second['id'], 'sent': True}, owner_dashboard=True)
+        self.assertTrue(bug_queue.offered(self.app.config, second['id'])['sent'])
+        self.assertEqual(bug_queue.offered(self.app.config)['id'], first['id'])
+        self.clock.now += 86400 + 1
+        self.assertIsNone(bug_queue.offered(self.app.config))  # a day old: no longer fills an empty form
+        self.assertEqual(bug_queue.offered(self.app.config, first['id'])['words'], 'one')  # its link still opens it
+        self.clock.now += bug_queue.OFFER_DAYS * 86400
+        self.assertIsNone(bug_queue.offered(self.app.config, first['id']))
+
+    def test_kept_capped_and_private(self):
+        for i in range(bug_queue.OFFERS + 5):
+            self.app.action('bug_offer', {'words': 'w' * 5000, 'summary': f'number {i}'})
+        items = json.loads(bug_queue.offers_path(self.app.config).read_text())
+        self.assertEqual(len(items), bug_queue.OFFERS)
+        self.assertEqual(len(items[-1]['words']), bug_queue.OFFER_WORDS)
+        self.assertEqual(bug_queue.offers_path(self.app.config).stat().st_mode & 0o777, 0o600)
+        with self.assertRaisesRegex(ValueError, 'own words'):
+            self.app.action('bug_offer', {'words': ' ', 'summary': ''})
+
+    def test_without_an_account_it_says_where_to_write(self):
+        self.app.config.pop('manage_url')
+        found = self.app.action('bug_offer', {'words': 'x', 'summary': 'y'})
+        self.assertFalse(found['linked'])
+        self.assertIn('support@themachine.computer', found['say'])
+        self.assertIn('Nothing was sent', found['say'])
+        self.assertFalse(bug_queue.offers_path(self.app.config).exists())
+        self.app.fleet = ControlPlane()  # a self-hosted Machine paired with the Network sends through it
+        self.assertTrue(self.app.action('bug_offer', {'words': 'x', 'summary': 'y'})['linked'])
+
+    def test_the_agent_is_told_never_to_claim_a_workspace_note_reaches_the_team(self):
+        plugin = (ROOT / 'openclaw-plugin/index.ts').read_text()
+        self.assertIn("'bug_offer'", plugin.split('const TOOL_ACTIONS', 1)[1].split('\n', 1)[0])
+        self.assertIn('never reaches The Machine team; never say it does', plugin)
+        self.assertIn('`bug_offer`', (ROOT / 'AGENTS.md').read_text())

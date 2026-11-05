@@ -14,7 +14,7 @@ LOG = logging.getLogger('personal-assistant')
 
 class SupportApp:
     # action name -> the method that handles it, called as method(name, args, owner_dashboard) (App.action)
-    ACTIONS = dict.fromkeys(('bug_fixed', 'bug_later', 'bug_preview', 'bug_queued', 'bug_send', 'help_article',
+    ACTIONS = dict.fromkeys(('bug_fixed', 'bug_later', 'bug_offer_open', 'bug_preview', 'bug_queued', 'bug_send', 'help_article',
                              'help_ask', 'support_access'), 'support_dashboard_action')
 
     def support_dashboard_action(self, name, args, owner_dashboard):

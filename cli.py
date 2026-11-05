@@ -833,6 +833,15 @@ def cmd_support_bundle(config, args):
           'passwords or addresses. Look through it, then send it to whoever helps you.')
 
 
+def cmd_report_bug(config, args):
+    """A problem with The Machine the owner told an agent about: written up for Report a bug, with the link that opens it
+    filled in. Nothing is sent; the owner checks it there and taps Send."""
+    found = call(config, 'bug_offer', {'words': args.words, 'summary': args.summary or ''})
+    if args.json:
+        return out_json(found)
+    print(found.get('url') or found['say'])
+
+
 def cmd_meeting_notes(config, args):
     """A calendar meeting's Notes and Transcript: list a day's meetings, read one's, or add one from a Markdown file."""
     if args.event is None:
@@ -1046,6 +1055,9 @@ def parser():
     c.add_argument('--keep-in-keyring', action='store_true', help='with to-file: leave a copy in the keyring')
     c = add('support-bundle', 'Save versions, doctor and recent logs in one file to send when asking for help; no keys or tokens', cmd_support_bundle)
     c.add_argument('--out', help='folder to save it in (default: here; on Windows WSL your Windows Desktop)')
+    c = add('report-bug', 'Write up a problem with The Machine the owner told you about, for them to check and send from Report a bug', cmd_report_bug)
+    c.add_argument('words', help='what the owner said, in their words')
+    c.add_argument('--summary', help='one plain sentence')
     c = add('raw', 'Call any non-owner service action with JSON args', cmd_raw)
     c.add_argument('action')
     c.add_argument('args', nargs='?', help='JSON object')

@@ -76,7 +76,7 @@ function helpRender(){const log=$('#help-log'),src=m=>(m.sources||[]).filter(s=>
 // wrote there stays, with the write-up under it.
 let helpDraft='';
 function helpReport(draft){if(!draft)return;const w=$('#bug-what'),cur=w.value.trim();
- helpOpen('bug');w.value=!cur||cur===helpDraft?draft:cur+'\n\n'+draft;helpDraft=draft;$('#bug-diag').checked=true;w.style.height='';w.style.height=Math.min(200,Math.max(104,w.scrollHeight+4))+'px';w.setSelectionRange(0,0);w.scrollTop=0}  // the whole write-up in view
+ bugOfferHeld=true;try{helpOpen('bug')}finally{bugOfferHeld=false}w.value=!cur||cur===helpDraft?draft:cur+'\n\n'+draft;helpDraft=draft;$('#bug-diag').checked=true;w.style.height='';w.style.height=Math.min(200,Math.max(104,w.scrollHeight+4))+'px';w.setSelectionRange(0,0);w.scrollTop=0}  // the whole write-up in view
 const helpGrow=()=>{const q=$('#help-q');q.style.height='34px';q.style.height=Math.min(140,Math.max(34,q.scrollHeight))+'px';$('#help-go').disabled=!q.value.trim()};
 // A question asked while Help still answers shows as sent and waits its turn: one answer at a time, in order, each
 // with the answers before it as its history.
@@ -92,9 +92,24 @@ async function helpNext(){const asked=helpQueue.shift();if(!asked)return;helpBus
 $('#help-q').addEventListener('input',helpGrow);
 $('#help-q').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();$('#help-form').requestSubmit()}});
 function bugReset(about){$('#bug-error').textContent='';if(!$('#bug-what').value.trim())$('#bug-diag').checked=true;  // a new report: the support report is in by default
+ if(!about&&!bugOfferHeld&&!$('#bug-what').value.trim())bugOfferFill();
 
  if(about&&!$('#bug-what').value.trim())$('#bug-what').value=`The dashboard said: “${about}”\n\n`;
  $('#bug-shot-take').hidden=!navigator.mediaDevices?.getDisplayMedia||matchMedia('(pointer:coarse)').matches;bugShotShow();bugQueuedLoad();bugDiagFine();supportAccessLoad(true).then(bugDiagFine)}
+// A report the Machine wrote up in chat (bug_offer, bug_queue.offer): its link (#bug-offer=…) opens Report a bug with it
+// filled in, the support report ticked. Without a link, the newest one not sent yet fills an empty form. It goes only
+// on Send, as any report, and is marked sent then, so its link doesn't fill the form again.
+let bugOfferId=null,bugOfferHeld=false;
+const bugOfferText=o=>[o.summary,o.words&&o.words!==o.summary?`“${o.words}”`:''].filter(Boolean).join('\n\n');
+async function bugOfferGet(args){try{return (await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'bug_offer_open',args})})).offer}catch(err){errCaught(err);return null}}
+async function bugOfferFill(){const o=await bugOfferGet({}),w=$('#bug-what');if(!o||w.value.trim())return;bugOfferPut(o)}
+function bugOfferPut(o){const w=$('#bug-what'),cur=w.value.trim(),text=bugOfferText(o);w.value=cur&&!cur.includes(text)?cur+'\n\n'+text:text;bugOfferId=o.id;$('#bug-diag').checked=true;w.style.height='';w.style.height=Math.min(200,Math.max(104,w.scrollHeight+4))+'px';w.setSelectionRange(0,0);w.scrollTop=0}
+async function bugOfferOpen(id){const o=await bugOfferGet({id});
+ if(o?.sent){toast(t('That report was sent already.'));return}
+ bugOfferHeld=true;try{helpOpen('bug')}finally{bugOfferHeld=false}
+ if(o)bugOfferPut(o);else $('#bug-error').textContent=t('That report isn’t here any more. Say what went wrong here.')}
+const bugOfferRoute=()=>{const m=/^#bug-offer=(bo_[a-f0-9]{16})$/.exec(location.hash);if(!m)return;history.replaceState(null,'',location.pathname+location.search);bugOfferOpen(m[1])};
+addEventListener('hashchange',bugOfferRoute);bugOfferRoute();
 function bugShotShow(){const img=$('#bug-shot-img');img.hidden=!bugShot;if(bugShot)img.src=bugShot;else img.removeAttribute('src');$('#bug-shot-remove').hidden=!bugShot}
 async function bugShrink(src){const img=new Image();img.src=src;await img.decode();const k=Math.min(1,1600/img.naturalWidth),c=document.createElement('canvas');  // a JPEG at most 1600 px wide
  c.width=Math.round(img.naturalWidth*k);c.height=Math.round(img.naturalHeight*k);c.getContext('2d').drawImage(img,0,0,c.width,c.height);return c.toDataURL('image/jpeg',.82)}
@@ -118,6 +133,7 @@ $('#bug-form').onsubmit=async e=>{e.preventDefault();const out=$('#bug-error'),w
  if(!bugHosted()&&!state.fleet){out.innerHTML='This Machine isn’t linked to an account. Email <a href="mailto:support@themachine.computer">support@themachine.computer</a>, with a file from <code>assistant support-bundle</code> if you like.';return}
  const body={description:text,screenshot:bugShot},diag=$('#bug-diag').checked,access=diag&&saCan()&&!saOn(),shot=bugShot;
  helpBox.close();w.value='';w.style.height='';bugShot=null;bugShotShow();
+ if(bugOfferId){bugOfferGet({id:bugOfferId,sent:true});bugOfferId=null}  // kept before anything goes: never lost from here
  try{const r=bugHosted()?await bugHostedKeep(body,diag):await bugAction('bug_send',{...body,diagnostics:diag});  // access only once the report is in hand
   const on=access?await supportAccessSet(true).then(()=>saOn(),()=>{toast('Support access didn’t turn on. Report it again with the box ticked.',true);return null}):false;if(on===null)return;
   toast(r?.queued?t('Saved. It goes out by itself at {}.',fmtHM(r.at*1000)):r?.sending?t('Saved. Sending…'):t('Sent, thanks. You’ll see it here when it’s fixed.'));

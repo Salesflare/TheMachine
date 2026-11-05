@@ -69,6 +69,7 @@
  "Give a subject and the email text",
  "Give at least two characters to search for",
  "Give details, fields or tags to change",
+ "Give the owner’s own words about the problem (words) and a short summary.",
  "Give the to-dos’ ids, at most 5 at once.",
  "Globex",
  "Google Meet",

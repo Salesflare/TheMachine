@@ -473,6 +473,7 @@ The to-do says it merged and has **Undo merge** for 24 hours, which reverts the 
 | `assistant telegram status\|on <id>\|off` | Telegram is optional: turn to-do delivery there off (to-dos then reach you through the dashboard app) or back on. `off --remove-bot` also deletes the bot and its token from OpenClaw |
 | `assistant doctor` | Checks the service, OpenClaw bridge, Telegram approval, every source, reviews, dashboard and `USER.md`; every problem comes with its fix. Exits 1 when something is broken |
 | `assistant service status\|start\|stop\|restart\|logs` | The background service (systemd on Linux, launchd on macOS); `logs -n 200`, `-f` |
+| `assistant report-bug "<their words>" --summary "<one sentence>"` | Writes up a problem with The Machine the owner told an agent about and prints the link that opens **Report a bug** with it filled in. Nothing is sent until the owner taps **Send** |
 | `assistant support-bundle` | Versions, doctor and recent logs in one file to send when asking for help, with keys and tokens taken out ([Operations](operations.md#operations)) |
 | `assistant message-key status\|to-keyring\|to-file` | Where the message key is kept ([Configuration](configuration.md#the-key-in-your-keyring-linux-desktop)) |
 | `assistant enrich [domain]` | Organization and work contact data from your enrichment service: status, or look up one domain now |
