@@ -52,6 +52,50 @@ class DonePages(unittest.TestCase):
         self.assertTrue(any(s['title'] == 'Still open' for s in snap['suggestions']))
 
 
+class DoneByWhenClosed(unittest.TestCase):
+    """Done starts with the one finished last: a to-do made long ago and sent just now is the newest done one, in the
+    status payload too, with when it closed (the card says "Done 5 minutes ago"). A search finds it by who it went to."""
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory(); self.addCleanup(self.tmp.cleanup)
+        self.store = a.Store(Path(self.tmp.name) / 'events.sqlite')
+        self.store.commit_page('work', {}, [event()])
+        self.ids = []
+        for n in range(101):
+            with patch.object(a, 'now', return_value=f'2026-10-01T10:{n // 60:02d}:{n % 60:02d}+00:00'):
+                self.ids.append(self.store.suggest(f'task-{n}', f'Card {n:03d}', 'Body', [1])['id'])
+        for n, sid in enumerate(self.ids[1:] + self.ids[:1]):  # the oldest one closed last, like a send tonight
+            with patch.object(a, 'now', return_value=f'2026-10-02T10:{n // 60:02d}:{n % 60:02d}+00:00'):
+                self.store.decide(sid, 'complete', '', 'done-' + sid, 'dashboard')
+
+    def test_status_sends_the_hundred_closed_last_with_when(self):
+        done = {s['id']: s for s in self.store.snapshot([])['suggestions'] if s['status'] == 'completed'}
+        self.assertEqual(len(done), 100)
+        self.assertIn(self.ids[0], done)  # made first, closed last
+        self.assertNotIn(self.ids[1], done)  # closed first
+        self.assertEqual(done[self.ids[0]]['closed_at'], '2026-10-02T10:01:40+00:00')
+        self.assertEqual(self.store.done_page(0, 1)['cards'][0]['id'], self.ids[0])
+
+    def test_search_finds_a_done_one_by_who_it_went_to(self):
+        action = {'kind': 'email', 'revision': 'r1', 'label': 'Send', 'to': ['lena.moss@uni.example.edu'], 'to_name': 'Lena Moss',
+                  'cc': ['ari@uni.example.edu'], 'subject': 'Agreements', 'body': 'Hi Lena'}
+        with self.store.connect() as db:
+            db.execute('UPDATE suggestions SET next_action=? WHERE id=?', (json.dumps(action), self.ids[5]))
+        for q in ('lena', 'Moss', 'uni.example.edu', 'ari@'):
+            self.assertEqual([c['id'] for c in self.store.done_page(0, 30, q)['cards']], [self.ids[5]], q)
+        self.assertEqual(a.card_recipients(json.dumps({'kind': 'menu', 'actions': [action, {'kind': 'open', 'url': 'https://x.example'}]})),
+                         'Lena Moss lena.moss@uni.example.edu ari@uni.example.edu')
+        self.assertEqual(a.card_recipients(None), '')
+
+    def test_one_that_looks_done_says_since_when(self):
+        with patch.object(a, 'now', return_value='2026-10-03T09:00:00+00:00'):
+            sid = self.store.suggest('task-hint', 'Answer Elif', 'Body', [1])['id']
+        with self.store.connect() as db:
+            db.execute('UPDATE suggestions SET handled_hint=? WHERE id=?', (json.dumps({'reason': 'Elif confirmed it', 'at': '2026-10-03T11:00:00+00:00'}), sid))
+        card = next(s for s in self.store.snapshot([])['suggestions'] if s['id'] == sid)
+        self.assertEqual(card['looks_done_at'], '2026-10-03T11:00:00+00:00')
+        self.assertNotIn('looks_done_at', next(s for s in self.store.snapshot([])['suggestions'] if s['id'] == self.ids[0]))
+
+
 class GraphTabs(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory(); self.addCleanup(self.tmp.cleanup)

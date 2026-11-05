@@ -18,7 +18,9 @@ De pagina **To-do's** groepeert ze:
 - **Net gedaan**: een laatste stap die je bevestigde, zoals een formulier indienen of een issue aanmaken, is gelukt terwijl je weg was. Hij toont wat er gebeurde tot je op **Begrepen** tikt, hoogstens een dag, en je telefoon hoort het ook. Daarna staat hij alleen in Gedaan.
 - **Komt later terug**: gesnoozed.
 - **Beloftes**: wat jij beloofde en wat anderen jou beloofden. Zie [Beloftes](promises.md).
-- **Gedaan / afgewezen**: elke afgeronde to-do, nieuwste eerst, 30 tegelijk terwijl je scrolt. To-do's die al af lijken staan bovenaan, met het label **Lijkt gedaan**.
+- **Gedaan / afgewezen**: elke afgeronde to-do, op het moment dat hij af was, nieuwste eerst, 30 tegelijk terwijl je scrolt. Een to-do die je net verstuurd hebt staat bovenaan, en elke to-do zegt wanneer, zoals "Gedaan 5 minuten geleden". To-do's die al af lijken staan ertussen op het moment dat ze zo begonnen te lijken, met het label **Lijkt gedaan**.
+
+Na het versturen zegt een korte melding waar de to-do nu staat, zoals "Verstuurd. Verplaatst naar Gedaan." of, als hij op een antwoord wacht, "Verstuurd. Verplaatst naar Later tot ma." **Openen** brengt je erheen. Dat de mailthread een paar dagen uit je inbox gaat, gaat alleen over je mailbox. Zoeken vindt een to-do op titel of op wie hij naartoe ging, ook in Later en Gedaan.
 
 In Voor jou klaargezet, Wacht op je beslissing, Wordt voorbereid en Wacht op anderen staat een to-do die te laat is of uiterlijk morgen moet, bovenaan. De rest staat nieuwste eerst, volgens de tijd die elke to-do toont. De zijbalk houdt dezelfde volgorde.
 

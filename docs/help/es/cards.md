@@ -18,7 +18,9 @@ La página **Tareas** las agrupa:
 - **Recién hecho**: un último paso que confirmaste, como enviar un formulario o crear un issue, salió bien mientras no estabas. Muestra lo que pasó hasta que tocas **Entendido**, un día como mucho, y tu teléfono también se entera. Después solo está en Hecho.
 - **Vuelve más tarde**: pospuesta.
 - **Promesas**: lo que prometiste y lo que otros te prometieron. Consulta [Promesas](promises.md).
-- **Hecho / descartado**: cada tarea terminada, las más recientes primero, de 30 en 30 según te desplazas. Las tareas que ya parecen terminadas van primero, con la etiqueta **Parece hecho**.
+- **Hecho / descartado**: cada tarea terminada, por cuándo se terminó, las más recientes primero, de 30 en 30 según te desplazas. Una tarea que acabas de enviar está arriba, y cada una dice cuándo, como «Hecho hace 5 minutos». Las tareas que ya parecen terminadas van entre ellas según cuándo empezaron a parecerlo, con la etiqueta **Parece hecho**.
+
+Después de enviar, una nota breve dice dónde está la tarea, como «Enviado. Movido a Hecho.» o, si espera una respuesta, «Enviado. Movido a Más tarde hasta el lun.» **Abrir** te lleva a ella. Que el hilo salga de tu bandeja de entrada unos días solo afecta a tu correo. La búsqueda encuentra una tarea por su título o por a quién se envió, también en Más tarde y Hecho.
 
 En Lista para ti, Necesita tu decisión, Preparando y Esperando a otros, una tarea vencida o que vence a más tardar mañana va primero. Las demás van de la más reciente a la más antigua, según la hora que muestra cada tarea. La barra lateral sigue el mismo orden.
 

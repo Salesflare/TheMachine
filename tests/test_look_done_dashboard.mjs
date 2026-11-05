@@ -8,21 +8,22 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // To-dos that look done already (a run found it done, or a later message suggests it's handled) don't sit as full
 // to-dos between real work, and have no section of their own: they lead Done / dismissed, each like a done one there
 // (Looks done for Done, what shows it as its line, Details, Chat, Reopen), and Reopen puts it back on the list. Never Overdue, never in the
-// open counts, never closed by themselves. The sidebar has them at the top of Done too.
+// open counts, never closed by themselves. Done reads newest first: each one that looks done by when it started to, among
+// the closed ones by when they closed, each saying when ("Looks done 1 hour ago", "Done 2 hours ago"). The sidebar too.
 const dashboard=await dashboardPage();
-const now=new Date().toISOString(),late=new Date(Date.now()-3*864e5).toISOString().slice(0,10);
-const hint=reason=>JSON.stringify({reason,event_ids:[9],at:now});
+const now=new Date().toISOString(),ago=h=>new Date(Date.now()-h*36e5).toISOString(),late=new Date(Date.now()-3*864e5).toISOString().slice(0,10);
+const hint=(reason,at=now)=>JSON.stringify({reason,event_ids:[9],at});
 const done=(id,title,body,extra={})=>({id,title,body,status:'prepared',scope:'work',created_at:now,event_ids:[1],due:late,outcome:JSON.stringify({state:'already_done'}),...extra});
 const cards=[
  {id:'r1',title:'Reply to Noor about the contract',body:'Drafted a short reply.',status:'prepared',scope:'work',created_at:now,event_ids:[4],due:late,
   next_actions:[{kind:'email',revision:'v1',label:'Send to Noor',to:['noor@example.com'],to_name:'Noor',subject:'Contract',body:'Hi Noor'}]},
- done('d1','Fix the signup form error','PR #3451 merged, deployed Oct 27. Nothing is left to do.'),
- done('d2','Send the signed order form','**Alex** already sent it on [Monday](https://example.com/x). It is in the drive.'),
- {id:'h1',title:'Answer Elif about the invoice address',body:'Elif asks where to send the invoice.',status:'pending',scope:'work',created_at:now,event_ids:[2],due:late,handled_hint:hint('Elif confirmed it herself on Tuesday')},
- {id:'h2',title:'Book the venue',body:'Find a venue for the offsite.',status:'prepared',scope:'work',created_at:now,event_ids:[3],handled_hint:hint('The booking confirmation came in')},
+ done('d1','Fix the signup form error','PR #3451 merged, deployed Oct 27. Nothing is left to do.',{looks_done_at:ago(.01)}),
+ done('d2','Send the signed order form','**Alex** already sent it on [Monday](https://example.com/x). It is in the drive.',{looks_done_at:ago(.02)}),
+ {id:'h1',title:'Answer Elif about the invoice address',body:'Elif asks where to send the invoice.',status:'pending',scope:'work',created_at:now,event_ids:[2],due:late,handled_hint:hint('Elif confirmed it herself on Tuesday',ago(1))},
+ {id:'h2',title:'Book the venue',body:'Find a venue for the offsite.',status:'prepared',scope:'work',created_at:now,event_ids:[3],handled_hint:hint('The booking confirmation came in',ago(3))},
  {id:'p1',title:'Decide on the partnership call',body:'They want a call next week.',status:'pending',scope:'work',created_at:now,event_ids:[5]},
  {id:'w1',title:'Hotfix waiting on review',body:'The hotfix PR is open and waits on review.',status:'prepared',scope:'work',created_at:now,event_ids:[7],outcome:JSON.stringify({state:'waiting',waiting_on:'the hotfix review'})},
- {id:'c9',title:'Send the quote',body:'Sent.',status:'completed',scope:'work',created_at:now,event_ids:[6]}];
+ {id:'c9',title:'Send the quote',body:'Sent.',status:'completed',scope:'work',created_at:ago(50),closed_at:ago(2),event_ids:[6]}];
 const posts=[];
 const state=()=>({suggestions:cards,promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},connectors:[],fleet:{on:false,fleets:[]}});
 const server=createServer(async(req,res)=>{let body='';for await(const c of req)body+=c;const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
@@ -45,7 +46,7 @@ try{
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
   await page.goto('http://127.0.0.1:'+server.address().port);await page.locator('#task-r1').waitFor();
   // Not between real work, and not counted: Ready has the real one, To decide the real one
-  for(const id of ['d1','d2','h1','h2'])assert.equal(await page.locator('#task-'+id+':not(#finished-list>.looks-done)').count(),0,id);
+  for(const id of ['d1','d2','h1','h2'])assert.equal(await page.locator('#task-'+id+':not(#finished-list .looks-done)').count(),0,id);
   assert.equal(await page.locator('#badge-inbox').textContent(),'2');
   assert.equal(await page.locator('#task-r1 .chip').filter({hasText:'Overdue'}).count(),1);  // real work can still be late
   // A step still open on someone else's side: nothing is ready for them, so its own folded group, not counted
@@ -63,11 +64,14 @@ try{
   assert.equal(await page.locator('#finished-head .count').textContent(),'5');  // 4 that look done and the done one
   await page.locator('#finished-head').click();
   // Each like a done one there: Looks done where that says Done, what shows it as its line, Details, Chat and Reopen
-  const ld=page.locator('#finished-list>article.looks-done');assert.equal(await ld.count(),4);
-  assert.deepEqual(await page.locator('#finished-list article').evaluateAll(n=>n.slice(0,5).map(x=>x.id)),['task-d1','task-d2','task-h1','task-h2','task-c9']);
+  const ld=page.locator('#finished-list article.looks-done');assert.equal(await ld.count(),4);
+  // newest first: c9 was made two days ago but closed two hours ago, so it sits between h1 and h2
+  assert.deepEqual(await page.locator('#finished-list article').evaluateAll(n=>n.slice(0,5).map(x=>x.id)),['task-d1','task-d2','task-h1','task-c9','task-h2']);
   const card=id=>page.locator('#finished-list #task-'+id);
-  assert.equal(await card('d1').locator('.card-badges .chip').first().textContent(),'Looks done');
-  assert.equal(await card('c9').locator('.card-badges .chip').first().textContent(),'Done');
+  assert.equal(await card('d1').locator('.card-badges .chip').first().textContent(),'Looks done just now');
+  assert.equal(await card('h1').locator('.card-badges .chip').first().textContent(),'Looks done 1 hour ago');
+  assert.equal(await card('c9').locator('.card-badges .chip').first().textContent(),'Done 2 hours ago');  // when it closed, not when it came in
+  assert.equal(await card('c9').locator('.meta-side time').count(),0);
   assert.equal(await card('d1').locator('.body').innerText(),'PR #3451 merged, deployed Oct 27');
   assert.equal(await card('d2').locator('.body').innerText(),'Alex already sent it on Monday');
   assert.equal(await card('h1').locator('.body').innerText(),'Elif confirmed it herself on Tuesday');
@@ -84,6 +88,7 @@ try{
    assert.equal(await page.locator('#side-cards [data-side-fold="done"] .count').textContent(),'5');
    await page.locator('#side-cards [data-side-fold="done"]').click();
    assert.deepEqual(await page.locator('#side-cards a.side-ld').evaluateAll(a=>a.map(x=>x.getAttribute('href'))),['#chat=d1','#chat=d2','#chat=h1','#chat=h2']);
+   assert.deepEqual(await page.locator('#side-cards [data-side-fold="done"]~a').evaluateAll(a=>a.map(x=>x.getAttribute('href'))),['#chat=d1','#chat=d2','#chat=h1','#chat=c9','#chat=h2']);
    assert.equal(await page.locator('#side-cards a.side-ld small').first().textContent(),'Looks done');
    await page.locator('#side-cards [data-side-fold="done"]').click()}
   // Not done: it is a normal to-do again (and the review learns from the decision)

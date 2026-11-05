@@ -99,6 +99,10 @@ function palScore(q,text){q=q.trim().toLowerCase();const t=String(text||'').toLo
  let total=0;for(const w of q.split(/\s+/)){const i=t.indexOf(w);if(i>=0){total+=i===0||/[\s\-:·/(]/.test(t[i-1])?50:40;continue}
   let j=0,prev=-2,s=0;for(const ch of w){const k=t.indexOf(ch,j);if(k<0)return -1;s+=k===prev+1?3:k===0||/[\s\-:·/(]/.test(t[k-1])?2:.5;prev=k;j=k+1}total+=Math.min(35,s/(w.length*3)*35)}
  return total/q.split(/\s+/).length}
+// A to-do by its title or who its messages went to (Northfield, Dana, dana@…), open, later and done alike; its line says where
+// it is when that's not the main list (Later, Waiting on others, Done 5 minutes ago)
+const palCardScore=(q,s)=>Math.max(palScore(q,s.title),cardWho(s)?palScore(q,cardWho(s))-5:-1);
+const palCardSub=s=>[closed(s)?t(s.status==='completed'&&!lapsed(s)?'Done {}':'Not needed {}',ago(closedAt(s))):s.status==='snoozed'?t('Later'):waitsOnOthers(s)?t('Waiting on others'):looksDone(s)?t('Looks done'):'',s.scope==='work'?t('Work'):s.scope==='personal'?t('Personal'):''].filter(Boolean).join(' · ');
 // Keywords count for whole words only ("mode" finds the theme); letters in order only on the label itself.
 const palMatch=(q,a,label)=>{const l=palScore(q,label),w=q.trim().toLowerCase(),k=a.keywords&&w.split(/\s+/).every(x=>a.keywords.toLowerCase().includes(x))?palScore(q,a.keywords)*.6:-1;return Math.max(l,k)};
 // Recent commands, newest first (this browser only).
@@ -133,18 +137,18 @@ function palRows(){const q=pal.q.trim(),ctx=pal.ctx,recent=palRecent(),groups=[]
  else{const scored=acts.map(x=>({...x,s:palMatch(q,x.a,x.label)+(recent.includes(x.a.id)?8-recent.indexOf(x.a.id):0)})).filter(x=>x.s>8).sort((x,y)=>y.s-x.s||!!y.a.keys-!!x.a.keys);  /* a tie goes to the one with its own key: the everyday action (New to-do before New event) */
   for(const g of ['This to-do','Actions','Go to']){const xs=scored.filter(x=>x.a.group===g).slice(0,8);if(xs.length)groups.push([g,xs])}
   if(groups.length>1){const best=g=>g[1][0].s;groups.sort((x,y)=>best(y)-best(x))}
-  const cards=(state.suggestions||[]).filter(s=>!closed(s)).map(s=>({s,score:palScore(q,s.title)})).filter(x=>x.score>=40)  /* words, not scattered letters */.sort((x,y)=>y.score-x.score).slice(0,5);
-  if(cards.length)groups.push(['To-dos',cards.map(({s})=>({a:{id:'card:'+s.id,run:()=>chatGo(s.id),entity:true},label:s.title,sub:s.scope==='work'?'Work':s.scope==='personal'?'Personal':''}))]);
+  const cards=(state.suggestions||[]).filter(s=>!closed(s)).map(s=>({s,score:palCardScore(q,s)})).filter(x=>x.score>=40)  /* words, not scattered letters */.sort((x,y)=>y.score-x.score).slice(0,5);
+  if(cards.length)groups.push(['To-dos',cards.map(({s})=>({a:{id:'card:'+s.id,run:()=>chatGo(s.id),entity:true},label:s.title,sub:palCardSub(s)}))]);
   // Done cards in their own group under the open ones: the loaded ones and what the Machine found among all of them
-  {const seen=new Set(),done=[...(state.suggestions||[]).filter(closed),...pal.done||[]].filter(s=>!seen.has(s.id)&&seen.add(s.id)).map(s=>({s,score:palScore(q,s.title)})).filter(x=>x.score>=40).sort((x,y)=>y.score-x.score).slice(0,5);
-   if(done.length)groups.push(['Done',done.map(({s})=>({a:{id:'card:'+s.id,run:()=>{doneExtra.set(s.id,s);cardsMerge();chatGo(s.id)},entity:true},label:s.title,sub:s.scope==='work'?'Work':s.scope==='personal'?'Personal':''}))])}
+  {const seen=new Set(),done=[...(state.suggestions||[]).filter(closed),...pal.done||[]].filter(s=>!seen.has(s.id)&&seen.add(s.id)).map(s=>({s,score:palCardScore(q,s)})).filter(x=>x.score>=40).sort((x,y)=>y.score-x.score).slice(0,5);
+   if(done.length)groups.push(['Done',done.map(({s})=>({a:{id:'card:'+s.id,run:()=>{doneExtra.set(s.id,s);cardsMerge();chatGo(s.id)},entity:true},label:s.title,sub:palCardSub(s)}))])}
   for(const [kind,name] of [['person','People'],['org','Organizations'],['project','Projects']]){const xs=(pal.found||[]).filter(n=>n.kind===kind).slice(0,5);
    if(xs.length)groups.push([name,xs.map(n=>({a:{id:'graph:'+n.id,run:()=>{location.hash=graphHash(n.id)},entity:true},label:n.name||n.id,sub:kind==='person'?(n.ids||[])[0]||'':kind==='org'&&n.domain!==n.name?n.domain||'':''}))])}
   // Messages: the top few of everything the Machine read (the results page's own search), then See all results
   if(q.length>=2)groups.push(['Messages',[...(pal.msgs||[]).map(m=>({a:{id:'msg:'+m.id,run:()=>msgOpen(m),entity:true},label:m.title||t('Message'),sub:msgSub(m)})),
    {a:{id:'msg-all',run:()=>msgSearch(q),entity:true},label:t('See all results for “{}”',q),sub:pal.msgs===null?t('Looking…'):''}]])}
  // From the sidebar's Search box: the to-dos first (before typing, the first open ones)
- if(pal.todos){if(!q){const open=(state.suggestions||[]).filter(s=>!closed(s)).slice(0,5);if(open.length)groups.unshift(['To-dos',open.map(s=>({a:{id:'card:'+s.id,run:()=>chatGo(s.id),entity:true},label:s.title,sub:s.scope==='work'?'Work':s.scope==='personal'?'Personal':''}))])}
+ if(pal.todos){if(!q){const open=(state.suggestions||[]).filter(s=>!closed(s)).slice(0,5);if(open.length)groups.unshift(['To-dos',open.map(s=>({a:{id:'card:'+s.id,run:()=>chatGo(s.id),entity:true},label:s.title,sub:palCardSub(s)}))])}
   else groups.sort((x,y)=>['To-dos','Done'].includes(y[0])-['To-dos','Done'].includes(x[0]))}
  return groups}
 function palRender(){const d=$('#palette');if(!d?.open)return;const groups=palRows(),list=d.querySelector('#pal-list');pal.items=[];let html='';
