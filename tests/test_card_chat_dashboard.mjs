@@ -92,6 +92,7 @@ try{
  assert.ok(!(await page.locator('#suggestion-stats').isVisible()));
  assert.equal(await page.locator('.chat-menu-list [data-choice="snooze"]').count(),1);
  assert.equal(await page.locator('.chat-menu-list [data-choice="change"]').count(),0);
+ assert.equal(await page.locator('#chat-menu').evaluate(n=>getComputedStyle(n).visibility),'visible');
  // The task list in the sidebar on a computer, with this task marked; Done starts folded and opens
  assert.equal(await page.locator('.side-cards a[aria-current="page"]').textContent(),'Reply to the venue');
  assert.equal(await page.locator('[data-side-fold="done"]').getAttribute('aria-expanded'),'false');await page.locator('[data-side-fold="done"]').click();
@@ -297,6 +298,9 @@ try{
  await page.locator('.side-cards a',{hasText:'Old finished task'}).click();
  await page.locator('h2.chat-title',{hasText:'Old finished task'}).waitFor();
  assert.match(await page.locator('.chat-status').textContent(),/^Done·Reopen$/);
+ // Nothing else to do on a done task and the sidebar has the list: no ⋯ that opens an empty box
+ assert.equal(await page.locator('#chat-menu').evaluate(n=>getComputedStyle(n).visibility),'hidden','no ⋯ over an empty menu');
+ assert.equal(await page.locator('.chat-menu-list>*').evaluateAll(ns=>ns.filter(n=>n.getClientRects().length).length),0);
  const before=actions.length;
  await page.locator('#chat-input').fill('One more thing');
  await page.locator('[data-chat-send]').click();

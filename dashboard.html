@@ -1665,6 +1665,7 @@ a.head-link,a.btn-link{display:inline-flex;align-items:center;justify-content:ce
 :is(.chat-menu-list,.graph-sort-list){position:absolute;right:0;top:calc(100% + 4px);z-index:7;display:flex;flex-direction:column;min-width:190px;padding:6px;border:1px solid var(--border);border-radius:14px;background:var(--surface);box-shadow:0 12px 30px #0004}
 :is(.chat-menu-list,.graph-sort-list)>*{justify-content:flex-start;width:100%;min-height:38px;margin:0;padding:8px 12px;border:0;border-radius:9px;background:none;box-shadow:none;color:var(--text);font:500 .9rem/1.3 var(--sans);text-align:left}
 :is(.chat-menu-list,.graph-sort-list)>*:hover{background:var(--sunken)}:is(.chat-menu-list,.graph-sort-list)>hr{flex:none;width:auto;min-height:0;height:1px;margin:4px 6px;padding:0;border:0;background:var(--border)}.chat-layout [data-chat-drawer]{display:none}
+/* Nothing behind the ⋯ (a done to-do: Reopen sits on the status line) when All tasks has the sidebar: no ⋯ that opens an empty box */.chat-menu[data-empty]{visibility:hidden}
 /* What you're doing now (a handoff, a merge, a change) sits under the thread, just above the message box: the thread
    keeps its place at the bottom and no gap opens between the two */
 .chat-panel{order:1;margin:0 auto 12px;width:min(100%,var(--chat-col));padding:0;background:none;box-shadow:none;border:0}.chat-panel:empty{display:none}.chat-main>.chat-compose{order:2}
@@ -2201,7 +2202,7 @@ body main{padding-top:0}
   .page-head.greet.hello{margin:6px 0 18px}
   .page-head.greet.hello .page-title{position:static;width:auto;height:auto;overflow:visible;clip-path:none;white-space:normal}
   .page-avatar{display:none}  /* the top bar carries the mascot on a phone */
-  .chat-layout [data-chat-drawer]{display:flex}
+  .chat-layout [data-chat-drawer]{display:flex}.chat-menu[data-empty]{visibility:visible}
 }
 @media(prefers-reduced-motion:reduce){*{transition-duration:0s!important;animation-duration:0s!important}}
 /* Calendar: the next seven days by day, one quiet row per item (time, a tone dot, title and a line under it); on a
