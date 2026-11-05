@@ -27,7 +27,8 @@ class CardChat(unittest.TestCase):
         self.sid = self.store.suggest('task', 'Reply to the venue', 'I can draft this.', [1])['id']
         self.app = object.__new__(a.App)
         self.app.store = self.store
-        self.app.config = {'accounts': [], 'database': str(Path(self.temp.name) / 'events.sqlite')}
+        self.app.config = {'accounts': [], 'database': str(Path(self.temp.name) / 'events.sqlite'),
+                           'openclaw_config': str(Path(self.temp.name) / 'openclaw.json')}
         self.calls = []
 
     def gateway(self, result):
@@ -416,6 +417,31 @@ class CardChat(unittest.TestCase):
         self.assertTrue(down['unavailable'])
         self.assertEqual(down['items'][1]['text'], 'Make it shorter')
         self.assertEqual(logged.output, [f'WARNING:personal-assistant:card chat history unavailable suggestion={self.sid} active=True reason=timeout'])
+
+    def test_claude_code_shows_working_while_it_writes_and_on_stop_drops_its_notes(self):
+        # Claude Code's live text holds every note it wrote before a tool call, and only the run's end tells the answer
+        # apart: its chat shows Working… (OpenAI's final channel streams, test above), and Stop keeps no partial text
+        self.store.decide(self.sid, 'other', 'Make it shorter', 'chat-1', 'dashboard')
+        job = self.job()
+        flight = {'runId': job['job_id'], 'text': 'Check the inbox first.\n\nNeed the card details.\n\nHere is a short'}
+        earlier = {'role': 'assistant', 'provider': 'claude-cli', 'content': [{'type': 'text', 'text': 'On it.'}], 'timestamp': a.chat_ms(a.now()),
+                   '__openclaw': {'runId': 'r0'}}
+        with self.gateway({'messages': [earlier], 'deltaCursor': 'c1', 'inFlightRun': flight}):
+            chat = self.app.card_chat(self.sid)
+        self.assertTrue(chat['active'])
+        self.assertIsNone(chat['live'])
+        self.assertNotIn('Need the card details', json.dumps(chat))
+        # The chat's model on the Claude CLI route says so too, before the session has a turn of its own
+        Path(self.app.config['openclaw_config']).write_text(json.dumps({'agents': {'defaults': {'model': 'claude-cli/claude-opus-5-5'}}}))
+        with self.gateway({'messages': [], 'deltaCursor': 'c2', 'inFlightRun': flight}):
+            self.assertIsNone(self.app.card_chat(self.sid)['live'])
+        with self.gateway({'messages': [], 'inFlightRun': flight}):
+            self.assertEqual(self.app.chat_stop(self.sid), {'stopped': True})
+        with self.gateway({'messages': []}):
+            last = self.app.card_chat(self.sid)['items'][-1]
+        self.assertEqual((last['kind'], last['text'], last['stopped']), ('reply', '', True))
+        Path(self.app.config['openclaw_config']).write_text(json.dumps({'agents': {'defaults': {'model': 'openai/gpt-6.1'}}}))
+        self.assertFalse(self.app.chat_run_notes({}, []))
 
     def test_a_slow_gateway_helper_is_a_timeout_not_a_hang(self):
         # The helper waits up to 15 s for a busy Gateway's greeting; the service gives it more than that before it gives up

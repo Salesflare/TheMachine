@@ -36,7 +36,8 @@ class ChatStopFiles(unittest.TestCase):
         self.app = object.__new__(a.App)
         self.app.store = self.store
         self.app.config = {'accounts': [], 'database': str(self.root / 'events.sqlite'), 'open_attachment_dir': str(self.root / 'open'),
-                           'attachment_root': str(self.root / 'workspace' / 'data' / 'assistant-attachments')}
+                           'attachment_root': str(self.root / 'workspace' / 'data' / 'assistant-attachments'),
+                           'openclaw_config': str(self.root / 'openclaw.json')}  # OpenAI-style: the live text is the answer only
         workspace = patch.object(a, 'WORKSPACE', self.root / 'workspace')
         workspace.start()
         self.addCleanup(workspace.stop)
