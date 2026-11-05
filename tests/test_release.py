@@ -83,6 +83,25 @@ class Releases(unittest.TestCase):
         release.main(['update', '--tag', 'release-20261021-1200'])
         self.assertEqual(run('git', 'rev-parse', 'HEAD', cwd=self.app), good)
 
+    def test_a_first_install_starts_from_the_newest_signed_release_not_main(self):
+        good = self.commit('two')
+        self.tag('release-20261021-1200')
+        self.commit('three, on main only')
+        run('git', 'pull', '-q', '--ff-only', cwd=self.app)  # a fresh clone: main, ahead of the release
+        self.assertEqual(release.first_install(), ('release-20261021-1200', good))
+        self.assertEqual(run('git', 'rev-parse', 'HEAD', cwd=self.app), good)
+        self.assertEqual((self.app / 'app.py').read_text(), 'two')
+        self.assertIsNone(release.first_install())  # the release's own installer: already there
+
+    def test_a_first_install_with_no_signed_release_changes_nothing(self):
+        self.commit('two')
+        self.tag('release-20261021-1200', key=self.other)
+        run('git', 'pull', '-q', '--ff-only', cwd=self.app)
+        before = run('git', 'rev-parse', 'HEAD', cwd=self.app)
+        with self.assertRaisesRegex(release.Refused, 'not signed with the release key'):
+            release.first_install()
+        self.assertEqual(run('git', 'rev-parse', 'HEAD', cwd=self.app), before)
+
     def own_commit(self, name, text):
         (self.app / name).write_text(text)
         run('git', 'add', name, cwd=self.app)

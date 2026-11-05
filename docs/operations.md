@@ -13,7 +13,10 @@
 ./install.sh --skip-plugin        # leave the OpenClaw plugin alone
 ./install.sh --uninstall          # remove service, plugin and CLI link; keep your data
 ./install.sh --uninstall --purge  # also delete ~/.local/share/personal-assistant
+./install.sh --from-main          # first install: this checkout as it is, not the newest signed release
 ```
+
+A first install from git (no config.json yet) moves the checkout to the newest signed release before any of it runs: `scripts/release.py` fetches the release tags, checks the newest one's signature against `deploy/release-signers` and moves there, then the installer starts again from the release. When no release verifies, nothing is installed ("Unsigned install refused"). `--from-main` (or `ASSISTANT_FROM_MAIN=1`) skips this, for development. Hosted Machines skip it: their agent installs the release.
 
 What it does, in order:
 

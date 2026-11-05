@@ -726,6 +726,25 @@ UPDATE_TIMER = 'the-machine-update.timer'
 HOSTED_AGENT = Path('/var/lib/machine-agent')  # hosted Machines: their agent installs releases instead
 
 
+def to_signed_release():
+    """A first install from git moves the checkout to the newest signed release before any of it runs (scripts/
+    release.py first_install): True when it moved (the installer then starts again from the release), None when there
+    is nothing to do, False when no release verifies (nothing installed). --from-main installs the checkout as it is."""
+    if not (ROOT / '.git').exists() or HOSTED_AGENT.exists():
+        return None  # not a clone, or hosted: its agent installs the release
+    sys.path.insert(0, str(ROOT / 'scripts'))
+    import release
+    try:
+        moved = release.first_install()
+    except (release.Refused, SystemExit) as error:
+        say(f'Unsigned install refused: {error}. Nothing was installed. To install this checkout as it is, rerun with '
+            '--from-main.')
+        return False
+    if moved:
+        say(f'Signed release: {moved[0]} ({moved[1][:7]}), signature verified')
+    return bool(moved) or None
+
+
 def update_texts(config, facts, paths):
     """The daily signed update of a self-hosted install: the newest signed release, only when nothing runs."""
     service_text = f"""# Written by install.sh from {ROOT}; rerun ./install.sh to update it.
@@ -1364,6 +1383,7 @@ def main(argv=None):
     parser.add_argument('--preview', action='store_true', help='existing install: one review of the last 7 days, shown only (assistant preview)')
     parser.add_argument('--browser-viewer', action='store_true', help='existing install: a browser of its own on a virtual display, viewed in yours (127.0.0.1 only)')
     parser.add_argument('--dry-run', action='store_true', help='check prerequisites and show what would be written; changes nothing')
+    parser.add_argument('--from-main', action='store_true', help='first install: this checkout as it is, not the newest signed release')
     parser.add_argument('--health-timeout', type=float, default=30)
     args = parser.parse_args(argv)
     interactive = not args.non_interactive and sys.stdin.isatty()
@@ -1390,6 +1410,12 @@ def main(argv=None):
         return browser_viewer_setup(paths)
     if args.uninstall:
         return uninstall(paths, args.purge, interactive)
+    if not paths.config.exists() and not (args.from_main or os.environ.get('ASSISTANT_FROM_MAIN') == '1'):
+        moved = to_signed_release()
+        if moved is False:
+            return 1
+        if moved:  # the release's own installer from here on
+            os.execv(sys.executable, [sys.executable, str(ROOT / 'installer.py'), *(sys.argv[1:] if argv is None else argv)])
     if interactive:
         try:
             offer_openclaw(onboarding.UI())
