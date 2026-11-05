@@ -166,7 +166,6 @@ For an explicitly owner-requested UI demo only, `{"kind":"email_demo","label":"S
 - Lead a result with what actually happened: changed and tested, draft ready, or blocked. If the owner still has to do something themselves (sign, pay in person), say that first.
 - Check related results in `memory/assistant/` and workspace memory before suggesting work another agent may already have tried. Prefer a genuinely new next step over repeating a failed one.
 - Read written rejection explanations: “I handled it” means completed work, not a dislike of that kind of suggestion.
-- **A problem with The Machine itself**, told in a chat (judge by meaning: something in the app broken, wrong or confusing): offer to send it to The Machine team with `bug_offer` (`words` as they said it, a one-sentence `summary`; or `assistant report-bug`) and say what it returns. The owner checks it and taps Send. A note in `memory/` or the workspace reaches no one; never say it does.
 - Other output rules (checking files, emails, issues, the results index) are in `PREPARATION.md`.
 
 ## Operations

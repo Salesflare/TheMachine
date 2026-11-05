@@ -250,4 +250,3 @@ class BugOffer(unittest.TestCase):
         plugin = (ROOT / 'openclaw-plugin/index.ts').read_text()
         self.assertIn("'bug_offer'", plugin.split('const TOOL_ACTIONS', 1)[1].split('\n', 1)[0])
         self.assertIn('never reaches The Machine team; never say it does', plugin)
-        self.assertIn('`bug_offer`', (ROOT / 'AGENTS.md').read_text())
