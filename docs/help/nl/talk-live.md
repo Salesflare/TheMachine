@@ -19,7 +19,7 @@ De balk heeft **Dempen** en **Einde**. Zeg gedag, of dat je klaar bent, en hij s
 
 ## Al je to-do's doorpraten
 
-Tik op **Praten** in de zijbalk (in het menu op een telefoon) om alles wat op je wacht met je stem te overlopen. The Machine zegt hoeveel er wachten en neemt ze een voor een door: eerst **Klaar**, dan **Te beslissen**. Hij ziet ook je andere to-do's, zoals die nog **Wordt voorbereid**, en zegt het als er een klaar is.
+Tik op **Praten** in de zijbalk (in het menu op een telefoon) om alles wat op je wacht met je stem te overlopen. The Machine zegt hoeveel er wachten en neemt ze een voor een door: eerst **Klaargezet**, dan **Te beslissen**. Hij ziet ook je andere to-do's, zoals die nog **Wordt voorbereid**, en zegt het als er een klaar is.
 
 Praten heeft een eigen pagina: één gesprek van begin tot einde, met bovenaan de to-do waarover hij praat, het concept en **Chat openen**. Hij springt niet van chat naar chat.
 

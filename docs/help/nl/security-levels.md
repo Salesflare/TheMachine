@@ -17,7 +17,7 @@ Een niveau is een vertrekpunt. Wijzig je daarna een instelling, dan toont het ni
 
 ## Wat Voorzichtig voor jou verandert
 
-- **Tekst in meldingen** uit: een melding zegt "Nieuwe to-do" of "Klaar", niet wat er in de to-do staat.
+- **Tekst in meldingen** uit: een melding zegt "Nieuwe to-do" of "Klaargezet", niet wat er in de to-do staat.
 - **Aanbieden om logins op te slaan** uit. Opgeslagen ingelogde sites blijven tot je op **Alle opgeslagen logins vergeten** tikt.
 - **Werkcontacten opzoeken**, **Aanbieden om inzichten te delen** en **Delen wat aan Help gevraagd wordt** uit.
 - **Checken welke van mijn contacten een Machine hebben** en **Laat mensen die mijn e-mailadres hebben mij vinden** uit.

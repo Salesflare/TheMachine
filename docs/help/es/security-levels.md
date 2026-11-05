@@ -17,7 +17,7 @@ Un nivel es un punto de partida. Si después cambias cualquier ajuste, el nivel 
 
 ## Qué cambia Prudente para ti
 
-- **Texto en las notificaciones** desactivado: una notificación dice "Nueva tarea" o "Lista", no lo que dice la tarea.
+- **Texto en las notificaciones** desactivado: una notificación dice "Nueva tarea" o "Para revisar", no lo que dice la tarea.
 - **Ofrecer guardar inicios de sesión** desactivado. Los sitios con sesión iniciada que guardaste se quedan hasta que toques **Olvidar todos los inicios de sesión guardados**.
 - **Buscar contactos de trabajo**, **Ofrecer compartir aprendizajes** y **Compartir lo que se pregunta a la ayuda** desactivados.
 - **Comprobar cuáles de mis contactos tienen una Machine** y **Dejar que me encuentren quienes tienen mi correo** desactivados.

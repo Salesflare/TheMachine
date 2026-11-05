@@ -123,7 +123,7 @@ class OwnersLanguageTest(unittest.TestCase):
             with mock.patch.object(assistant, 'telegram_request', side_effect=lambda config, args: args):
                 sent = assistant.telegram(config, row, 'send')
             self.assertTrue(sent['message'].startswith(i18n.t('Ready: {}', '**Quote for Acme**', lang=lang)), sent['message'])
-            self.assertIn({'nl': 'Klaar', 'fr': 'Prêt'}[lang], sent['message'])
+            self.assertIn({'nl': 'Klaargezet', 'fr': 'Prêt'}[lang], sent['message'])
             self.assertIn('[' + i18n.t('View result', lang=lang) + ']', sent['message'])
             self.assertNotIn('View result', sent['message'])
         with mock.patch.object(assistant, 'telegram_request', side_effect=lambda config, args: args):
