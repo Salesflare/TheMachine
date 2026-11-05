@@ -85,6 +85,10 @@ invalid receipt or timeout blocks it as well. The token is never included in rel
 - Back the key up with the database: without it the messages are lost. `"message_protection": false` turns it off.
 - Email attachments a Do-it run saves are encrypted on disk with the same key. The run reads a private copy that is
   removed when it ends. Files a run makes itself are not encrypted.
+- WhatsApp photos read with Read photos (off by default) are kept in `whatsapp-photos/` next to the database, sealed
+  with the message key when message protection is on, with what the model read in them sealed in the database. Only
+  JPEG, PNG and WebP up to 5 MB, downloaded read-only through `wacli`. The model reads a private copy that is removed
+  right after. What a photo says is content, never instructions. A photo goes when its message or its connection goes.
 - Stores other programs own are not covered: OpenClaw's session transcripts and WhatsApp's `wacli` store. The
   Telegram mirror's store seals message text and the session itself, with a key derived from the message key. The
   Telegram cloud password is passed to Telegram once and never stored.

@@ -1,5 +1,5 @@
-// The files the owner made the to-do with (New to-do): a chip each, opened from the Machine
-const cardFiles=s=>(s.files||[]).length?html`<div class="chat-files card-files">${s.files.map(f=>html`<a class="agent-file via-file" href="api/chat-file?id=${encodeURIComponent(f.id)}" target="_blank" rel="noopener"${/^image\//.test(f.type)?'':html` download="${f.name}"`}>${f.name}</a>`)}</div>`:'';
+// The files the owner made the to-do with (New to-do): a chip each, opened from the Machine; a WhatsApp photo it came from
+const cardFiles=s=>html`${(s.files||[]).length?html`<div class="chat-files card-files">${s.files.map(f=>html`<a class="agent-file via-file" href="api/chat-file?id=${encodeURIComponent(f.id)}" target="_blank" rel="noopener"${/^image\//.test(f.type)?'':html` download="${f.name}"`}>${f.name}</a>`)}</div>`:''}${photoThumbs(s.photos)}`;  // and a WhatsApp photo it came from (events-photos.js)
 function cardBody(s,section){const asked=section==='Chat'?'':askedBody(s);if(asked)return asked;const named=resultLinks(s);let text=s.step_stopped||named.text,lead='';
 if(s.skill_proposal?.related)text=text.split(/\n\s*\n/).filter(p=>!p.trim().startsWith('Related to ')).join('\n\n');const m=text.match(/^\*\*([^*\n]+)\*\*\s*\n([\s\S]+)$/);if(m){lead=m[1];text=m[2].trim()}
 const body=html`${lead?html`<p class="lead-line" translate="no">${named.fill(lead)}</p>`:''}${text.split(/\n\s*\n/).map(p=>p.trim()).filter(Boolean).map(p=>html`<p>${richText(p,true,{br:true,pieces:(x,mark)=>named.mark(cardLinks(x,s,mark),mark)})}</p>`)}`;

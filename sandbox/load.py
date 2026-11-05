@@ -185,6 +185,8 @@ def insert_events(db, events, base, analyzed=1):
     for e in events:
         meta = calendar_meta(e['metadata'], base) if e['kind'] == 'calendar.event' else e['metadata']
         body = e['body']
+        if meta.get('photo_fixture'):  # a WhatsApp photo, read (whatsapp_images.py): kept here as the Machine keeps it
+            body, meta = load_photo(db, e, meta, base)
         at = meta['start']['dateTime'] if e['kind'] == 'calendar.event' else stamp(e['minutes_ago'], base)
         db.execute('INSERT INTO events(account_id,source_id,kind,occurred_at,title,body,metadata,deleted,content_hash,version,analyzed_version,ingested_at) '
                    'VALUES(?,?,?,?,?,?,?,0,?,1,?,?)',
@@ -192,6 +194,23 @@ def insert_events(db, events, base, analyzed=1):
                     hashlib.sha256((e['title'] + body).encode()).hexdigest(), analyzed, stamp(max(e['minutes_ago'], 0) - 1, base)))
         ids[e['key']] = db.execute('SELECT last_insert_rowid()').fetchone()[0]
     return ids
+
+
+def load_photo(db, e, meta, base):
+    """A made-up photo the Machine kept and read for one WhatsApp message, with Read photos on for its connection
+    (personal chats too): its file next to the database (sealed when the database is), its row, and the message's text
+    and metadata as whatsapp_images.with_photo makes them. Returns (body, metadata)."""
+    import whatsapp_images
+    meta = dict(meta)
+    photo = meta.pop('photo_fixture')
+    database = next(r[2] for r in db.execute('PRAGMA database_list') if r[1] == 'main')
+    at = stamp(e['minutes_ago'], base)
+    row = whatsapp_images.add_read(db, {'database': database}, e['account_id'], 'sandbox:' + e['key'], meta['chat_id'], meta['message_id'],
+                                   (HERE / photo['file']).read_bytes(), photo['description'], photo['text'], at,
+                                   'wp_' + hashlib.sha256(e['key'].encode()).hexdigest()[:20])
+    whatsapp_images.set_prefs(db, e['account_id'], True, True, at)
+    made = whatsapp_images.with_photo({'body': e['body'], 'metadata': meta}, row)
+    return made['body'], made['metadata']
 
 
 def fill_machine(config, fixture_path=HERE / 'fixture.json', base=None):

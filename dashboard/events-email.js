@@ -86,11 +86,11 @@ const chatTitle=o=>o.dm&&o.chat?t('DM with {}',o.chat):o.chat||'';
 const THREAD_PAUSE=10*6e4;
 function chatThreadHTML(items,{main,names=true,head=true,src}={}){
 const dayOf=at=>{const d=new Date(at);return d.toLocaleDateString(DL,{weekday:'long',day:'numeric',month:'long',...(d.getFullYear()!==new Date().getFullYear()?{year:'numeric'}:{})})};
-const msgs=items.flatMap(o=>o.turns?.length?o.turns.map(x=>({...x,kind:o.kind})):[o]).filter(o=>String(o.body||'').trim()).sort((a,b)=>Date.parse(a.occurred_at)-Date.parse(b.occurred_at));
+const msgs=items.flatMap(o=>o.turns?.length?o.turns.map(x=>({...x,kind:o.kind})):[o]).filter(o=>String(o.body||'').trim()||o.photo).sort((a,b)=>Date.parse(a.occurred_at)-Date.parse(b.occurred_at));
 const days=[];let prev=null;
 for(const o of msgs){const at=Date.parse(o.occurred_at),day=dayOf(at),me=o.from==='You',mark=main!=null&&o.event_id===main&&o!==msgs.at(-1);
  if(days.at(-1)?.day!==day){days.push({day,turns:[]});prev=null}
- const turns=days.at(-1).turns,say=html`${o.note?html`<span class="convo-tag">${t('Note')}</span>`:''}${linkify(chatEmoji(String(o.body||'').replace(/\r\n/g,'\n').trim()))}`;
+ const turns=days.at(-1).turns,say=html`${o.note?html`<span class="convo-tag">${t('Note')}</span>`:''}${linkify(chatEmoji(String(o.body||'').replace(/\r\n/g,'\n').trim()))}${o.photo?photoThumbs([o.photo]):''}`;
  if(!prev||prev.from!==o.from)turns.push({me,says:[],meta:html`<p class="convo-meta">${!me&&names&&sender(o.from)?html`<b>${sender(o.from)}</b> · `:''}<time datetime="${o.occurred_at}">${fmtHM(at)}</time></p>`});
  else if(at-Date.parse(prev.occurred_at)>=THREAD_PAUSE)turns.at(-1).says.push(html`<p class="convo-at"><time datetime="${o.occurred_at}">${fmtHM(at)}</time></p>`);
  turns.at(-1).says.push(html`<div class="convo-say${mark?' convo-main':''}${o.note?' convo-note':''}"${mark?html` aria-label="${t('The message this to-do is about')}"`:''}>${say}</div>`);prev=o}

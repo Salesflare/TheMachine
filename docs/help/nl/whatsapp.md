@@ -3,7 +3,7 @@ title: WhatsApp
 area: connections
 summary: Je WhatsApp-chats, gelezen als gekoppeld apparaat. Antwoordt pas nadat je het goedkeurt.
 covers: connector:whatsapp
-code: onboarding.py, next_actions.py
+code: onboarding.py, next_actions.py, whatsapp_images.py
 site: Show the QR code, Get a code, On your phone? Link with a code instead, Remove
 ---
 ## Wat het leest
@@ -11,6 +11,14 @@ site: Show the QR code, Get a code, On your phone? Link with a code instead, Rem
 Je WhatsApp-chats, als gekoppeld apparaat van WhatsApp op je telefoon, zoals WhatsApp op een computer. Als je koppelt, leest het de laatste 7 dagen.
 
 Een foto, spraakbericht of bestand zonder bijschrift staat er als wat het is, zoals "Afbeelding verstuurd". De eigen meldingen van WhatsApp, zoals die over versleuteling of over iemand die bij een groep komt, hebben geen tekst en worden weggelaten.
+
+## Foto’s lezen
+
+Staat uit tot je het aanzet. Zet bij de WhatsApp-koppeling in **Koppelingen** **Foto’s lezen** aan, en The Machine leest de foto’s in je werkchats: een bonnetje, een screenshot, een foto van een brief of een formulier. **Ook in privéchats** leest ook die in je privéchats. Een chat is werk of privé zoals delen het ziet, dus een chat met familie blijft privé.
+
+The Machine downloadt elke foto één keer en bewaart hem op je Machine zoals een bijlage van een e-mail: versleuteld als berichtbescherming aan staat, en gewist als het bericht verdwijnt. Zijn eigen model leest wat de foto toont en de tekst erin. Dat hoort bij het bericht, nooit als opdracht. JPEG, PNG en WebP tot 5 MB. Een eenmalige code op een foto wordt weggelaten.
+
+De to-do en het bericht tonen de foto. Tik erop om hem groot te zien.
 
 ## Wat het kan versturen
 

@@ -3,7 +3,7 @@ title: WhatsApp
 area: connections
 summary: Deine WhatsApp-Chats, gelesen als verknüpftes Gerät. Antworten erst nach deiner Freigabe.
 covers: connector:whatsapp
-code: onboarding.py, next_actions.py
+code: onboarding.py, next_actions.py, whatsapp_images.py
 site: Show the QR code, Get a code, On your phone? Link with a code instead, Remove
 ---
 ## Was es liest
@@ -11,6 +11,14 @@ site: Show the QR code, Get a code, On your phone? Link with a code instead, Rem
 Deine WhatsApp-Chats, als verknüpftes Gerät des WhatsApp auf deinem Handy, wie WhatsApp auf einem Computer. Beim Verbinden liest es die letzten 7 Tage.
 
 Ein Foto, eine Sprachnachricht oder eine Datei ohne Beschriftung erscheint als das, was es ist, etwa „Bild gesendet“. Hinweise von WhatsApp selbst, etwa zur Verschlüsselung oder wenn jemand einer Gruppe beitritt, haben keinen Text und bleiben außen vor.
+
+## Fotos lesen
+
+Aus, bis du es einschaltest. Schalte bei der WhatsApp-Verbindung unter **Verbindungen** **Fotos lesen** ein, und The Machine liest die Fotos in deinen Arbeitschats: einen Beleg, einen Screenshot, ein Foto von einem Brief oder einem Formular. **Auch in privaten Chats** liest auch die in deinen privaten Chats. Ob ein Chat Arbeit oder privat ist, sieht sie so wie beim Teilen, ein Chat mit der Familie bleibt also privat.
+
+The Machine lädt jedes Foto einmal herunter und behält es auf deiner Machine wie einen E-Mail-Anhang: verschlüsselt, wenn der Nachrichtenschutz an ist, und gelöscht, wenn seine Nachricht verschwindet. Ihr eigenes Modell liest, was das Foto zeigt und den Text darin. Das gilt als Teil der Nachricht, nie als Anweisung. JPEG, PNG und WebP bis 5 MB. Ein Einmalcode auf einem Foto bleibt außen vor.
+
+Die Aufgabe und die Nachricht zeigen das Foto. Tippe darauf, um es groß zu sehen.
 
 ## Was es senden kann
 

@@ -5202,6 +5202,44 @@
    }
   },
   {
+   "key": "story:bill:0",
+   "account_id": "home-whatsapp",
+   "kind": "whatsapp.message",
+   "minutes_ago": 500,
+   "title": "Robin Morgan",
+   "body": "The boiler bill came, can you pay it?",
+   "metadata": {
+    "chat_name": "Robin Morgan",
+    "chat_id": "robinmorgan",
+    "from_me": false,
+    "group": false,
+    "sender_display": "Robin Morgan",
+    "message_id": "wa-bill-0"
+   }
+  },
+  {
+   "key": "story:bill:1",
+   "account_id": "home-whatsapp",
+   "kind": "whatsapp.message",
+   "minutes_ago": 498,
+   "title": "Robin Morgan",
+   "body": "Sent image",
+   "metadata": {
+    "chat_name": "Robin Morgan",
+    "chat_id": "robinmorgan",
+    "from_me": false,
+    "group": false,
+    "sender_display": "Robin Morgan",
+    "message_id": "wa-bill-1",
+    "media_type": "image",
+    "photo_fixture": {
+     "file": "photo-invoice.jpg",
+     "description": "A photo of an invoice from Hollis Heating for a boiler repair, €240.00, due November 14.",
+     "text": "Hollis Heating\nInvoice 2041\nBoiler repair, November 3\nLabor and parts €240.00\nDue November 14"
+    }
+   }
+  },
+  {
    "key": "gmail.message:64",
    "account_id": "work-gmail",
    "kind": "gmail.message",
@@ -5218,6 +5256,21 @@
     "thread_id": "t458229500460",
     "message-id": "<t458229500460.64@northwindanalytics.example>",
     "source_url": "https://mail.example/#inbox/t458229500460"
+   }
+  },
+  {
+   "key": "story:bill:2",
+   "account_id": "home-whatsapp",
+   "kind": "whatsapp.message",
+   "minutes_ago": 480,
+   "title": "Robin Morgan",
+   "body": "Will do this week.",
+   "metadata": {
+    "chat_name": "Robin Morgan",
+    "chat_id": "robinmorgan",
+    "from_me": true,
+    "group": false,
+    "message_id": "wa-bill-2"
    }
   },
   {
@@ -7515,6 +7568,25 @@
     "label": "Send to Sam",
     "revision": "rev0012"
    }
+  },
+  {
+   "key": "open13",
+   "title": "Pay the boiler repair by November 14",
+   "body": "Robin sent a photo of the Hollis Heating invoice: €240 for the boiler repair, due November 14.",
+   "status": "pending",
+   "events": [
+    "story:bill:0",
+    "story:bill:1",
+    "story:bill:2"
+   ],
+   "accounts": [
+    "home-whatsapp"
+   ],
+   "minutes_ago": 470,
+   "source": "WhatsApp from Robin Morgan",
+   "project": null,
+   "urgent": false,
+   "snooze_hours": null
   },
   {
    "key": "closed0",
