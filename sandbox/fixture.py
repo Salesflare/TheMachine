@@ -393,7 +393,7 @@ def build(profile):
                 channel, text = rng.choice(SLACK)
                 add(account, kind, minutes, f"{channel}: {TEAM[i % 3]['name']}", text.format(company=p['company'], owner='Alex', first=p['name'].split()[0]),
                     {'channel_name': channel.lstrip('#'), 'conversation_type': 'im' if channel == 'Direct message' else 'channel', 'user_id': f'U{1000 + i % 3}',
-                     'message_ts': f'17610{i:05d}.000100', 'reply_count': rng.choice((0, 0, 1, 4)), 'source_url': f'https://lumenlabs.slack.example/archives/C1/p{i}'}, key)
+                     'sender_display': TEAM[i % 3]['name'], 'message_ts': f'17610{i:05d}.000100', 'reply_count': rng.choice((0, 0, 1, 4)), 'source_url': f'https://lumenlabs.slack.example/archives/C1/p{i}'}, key)
             elif kind == 'intercom.conversation':  # one conversation per person, so the Graph shows it as one row
                 n = said[kind, p['name']] = said.get((kind, p['name']), -1) + 1
                 minutes = reply_at(kind, p, minutes, n)
@@ -451,7 +451,7 @@ def build(profile):
             first = story['slack_thread'][0][0]
             for n, (m, who, text) in enumerate(story['slack_thread']):
                 key = f"story:{story['key']}:{n}"
-                add('work-slack', 'slack.message', m, f'#support: {who}', text, {'channel_name': 'support', 'channel_id': 'C0SUPPORT', 'conversation_type': 'channel',
+                add('work-slack', 'slack.message', m, f'#support: {who}', text, {'channel_name': 'support', 'channel_id': 'C0SUPPORT', 'conversation_type': 'channel', 'sender_display': who,
                     'user_id': f'U{2000 + n}', 'message_ts': f'1761{m:06d}.000100', 'thread_ts': f'1761{first:06d}.000100', 'reply_count': 2 if n == 0 else 0,
                     'source_url': f'https://lumenlabs.slack.example/archives/C0SUPPORT/p{first}'}, key)
                 out.append(key)

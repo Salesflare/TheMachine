@@ -109,7 +109,7 @@ It is served on `127.0.0.1:<port>` and reached through Tailscale Serve or Caddy;
 
 ### Reading the original message
 
-Any signal, on a to-do or in message search and the Graph, opens in a built-in reader: the full email with its images and attachments (fetched read-only), or the chat, Slack or calendar text. You don't need the original app.
+Any signal, on a to-do or in message search and the Graph, opens in a built-in reader: the full email with its images and attachments (fetched read-only), or the calendar text. A chat (Slack, WhatsApp, Telegram, LinkedIn, X, Intercom) reads as one thread: the conversation named once, its messages oldest first with each sender's run under their name and time once, Slack's `:emoji:` codes as emoji, the to-do's own message marked when more came after it, and one link to open it in the app (`event_views` `chat`/`dm`, an Intercom conversation's `turns`; `chatThreadHTML`). You don't need the original app.
 
 The to-dos on screen read their email ahead, so it opens at once. The service keeps the last 40 emails it read for 10 minutes, in memory.
 

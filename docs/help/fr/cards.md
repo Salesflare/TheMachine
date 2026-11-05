@@ -70,6 +70,8 @@ Un titre dit ce qu'il faut faire. Il ne change que quand cela change, par exempl
 
 Au-dessus du brouillon, une ligne discrète nomme le message d’origine, avec le logo du service (Gmail, Slack, WhatsApp…). Appuyez dessus pour lire le fil. Le brouillon commence par le logo de sa destination : vous voyez si c’est une réponse Slack ou un e-mail avant de lire. Une étape sans brouillon, comme un transfert, montre le logo sur son bouton.
 
+Un chat (Slack, WhatsApp, Telegram, Intercom…) se lit comme une seule conversation, du plus ancien au plus récent, chaque message une fois ; celui dont parle la tâche a un fin trait à côté.
+
 **Détails** montre son nom, son projet et son espace (appuyez sur l’un d’eux pour le changer), votre dernière note et le résultat d’un agent de code. **Chat ›** au bout de cette ligne ouvre le chat. Une tâche terminée reste courte : son titre, une ligne et ce qui est parti ; le message d’origine est dans ses **Détails**.
 
 Une tâche « En attente de » (quelqu’un vous a promis quelque chose) renvoie vers votre dernier message à cette personne, celui auquel vous attendez une réponse : « E-mail à Pat · mar. ».
