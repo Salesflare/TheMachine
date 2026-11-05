@@ -30,7 +30,7 @@ The installer finds your accounts, connects them one by one and shows a preview 
 
 - Add sources with `assistant connect`, or **Connections**, then **+ Add**, in the dashboard.
 - Check everything with `assistant doctor`. It prints a fix for each problem.
-- Updates come as signed releases.
+- The installer takes the newest signed release, and updates come as signed releases too.
 - Paired with The Machine Network, your Machine shares its Tailscale address with your account, so the phone app opens it after you sign in. Unpairing deletes it.
 
 The full guide is in the repository: [Getting started](https://github.com/Salesflare/TheMachine/blob/main/docs/getting-started.md).

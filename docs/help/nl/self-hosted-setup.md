@@ -30,7 +30,7 @@ Het installatieprogramma vindt je accounts, koppelt ze een voor een en toont een
 
 - Voeg bronnen toe met `assistant connect`, of met **Koppelingen**, dan **+ Toevoegen**, in het dashboard.
 - Controleer alles met `assistant doctor`. Het toont een oplossing voor elk probleem.
-- Updates komen als ondertekende releases.
+- Het installatieprogramma neemt de nieuwste ondertekende release, en ook updates komen als ondertekende releases.
 - Gekoppeld aan The Machine Network deelt je Machine zijn Tailscale-adres met je account, zodat de app op je telefoon hem opent nadat je je aanmeldt. Ontkoppelen wist het.
 
 De volledige gids staat in de repository: [Aan de slag](https://github.com/Salesflare/TheMachine/blob/main/docs/getting-started.md).

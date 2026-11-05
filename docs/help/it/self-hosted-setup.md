@@ -30,7 +30,7 @@ Il programma di installazione trova i tuoi account, li collega uno alla volta e 
 
 - Aggiungi fonti con `assistant connect`, oppure con **Connessioni**, poi **+ Aggiungi**, nella dashboard.
 - Controlla tutto con `assistant doctor`. Mostra una soluzione per ogni problema.
-- Gli aggiornamenti arrivano come release firmate.
+- Il programma di installazione prende la release firmata più recente, e anche gli aggiornamenti arrivano come release firmate.
 - Collegata a The Machine Network, la tua Machine condivide il suo indirizzo Tailscale con il tuo account, così l’app sul telefono la apre dopo l’accesso. Scollegandola, l’indirizzo viene eliminato.
 
 La guida completa è nel repository: [Getting started](https://github.com/Salesflare/TheMachine/blob/main/docs/getting-started.md).

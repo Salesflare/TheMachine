@@ -30,7 +30,7 @@ El instalador encuentra tus cuentas, las conecta una a una y muestra una vista p
 
 - Añade fuentes con `assistant connect`, o con **Conexiones** y luego **+ Añadir** en el panel.
 - Revísalo todo con `assistant doctor`. Muestra una solución para cada problema.
-- Las actualizaciones llegan como versiones firmadas.
+- El instalador toma la versión firmada más reciente, y las actualizaciones también llegan como versiones firmadas.
 - Vinculada a The Machine Network, tu Machine comparte su dirección de Tailscale con tu cuenta, para que la app del teléfono la abra después de iniciar sesión. Al desvincularla, se borra.
 
 La guía completa está en el repositorio: [Primeros pasos](https://github.com/Salesflare/TheMachine/blob/main/docs/getting-started.md).

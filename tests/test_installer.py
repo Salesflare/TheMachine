@@ -270,7 +270,8 @@ class InstallerTest(unittest.TestCase):
     def env(self, **extra):
         env = {k: v for k, v in os.environ.items() if not k.startswith(('ASSISTANT_', 'OPENCLAW_'))}
         env.update(HOME=str(self.home), PATH=str(self.bin), ASSISTANT_PLUGIN_RETRY_WAIT='0',  # no real Gateway to wait for
-                   ASSISTANT_SERVICE_MANAGER='systemd')  # the stubs are systemd's, also on macOS
+                   ASSISTANT_SERVICE_MANAGER='systemd',  # the stubs are systemd's, also on macOS
+                   ASSISTANT_FROM_MAIN='1')  # this checkout, not the newest signed release (test_release covers that)
         env.update(ANSWERS)
         env.update(extra)
         return env
@@ -590,6 +591,21 @@ class InstallerTest(unittest.TestCase):
         self.assertTrue(activated['review_worker']['enabled'])
         self.assertEqual(self.install('--no-start').returncode, 0)
         self.assertTrue(json.loads(self.config.read_text())['delivery_enabled'])
+
+    def test_a_first_install_takes_the_signed_release_or_installs_nothing(self):
+        env = {k: v for k, v in self.env().items() if k != 'ASSISTANT_FROM_MAIN'}
+        with mock.patch.dict(os.environ, env, clear=True), mock.patch.object(installer, 'to_signed_release', return_value=False):
+            self.assertEqual(installer.main(['--non-interactive', '--no-start']), 1)
+        self.assertFalse(self.config.exists())  # refused: nothing written
+        with mock.patch.dict(os.environ, env, clear=True), mock.patch.object(installer, 'to_signed_release', return_value=True), \
+                mock.patch.object(installer.os, 'execv', side_effect=SystemExit(0)) as again:
+            with self.assertRaises(SystemExit):
+                installer.main(['--non-interactive', '--no-start'])
+        again.assert_called_once_with(sys.executable, [sys.executable, str(ROOT / 'installer.py'), '--non-interactive', '--no-start'])
+        with mock.patch.dict(os.environ, env, clear=True), mock.patch.object(installer, 'to_signed_release') as signed, \
+                mock.patch.object(installer, 'health', return_value=True):
+            self.assertEqual(installer.main(['--non-interactive', '--no-start', '--from-main']), 0)
+        signed.assert_not_called()
 
     def test_failed_uninstall_never_purges_running_service_data(self):
         self.assertEqual(self.install('--no-start').returncode, 0)

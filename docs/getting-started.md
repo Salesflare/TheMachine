@@ -18,7 +18,7 @@ cd ~/.openclaw/workspace/tools/personal-assistant
 ./install.sh
 ```
 
-Without OpenClaw, the installer first offers to install it. Then it starts OpenClaw's own setup and tells you what to pick there:
+The installer first moves the checkout to the newest signed release and checks its signature, so you never run unreleased code from main. Without OpenClaw, it then offers to install it. Then it starts OpenClaw's own setup and tells you what to pick there:
 
 - your model provider;
 - yes to running the Gateway as a service;

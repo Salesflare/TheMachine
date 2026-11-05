@@ -8,6 +8,7 @@ that is already installed (deploy/release-signers), so a pushed commit alone nev
   python3 scripts/release.py cut       sign origin/main as a new release and push the tag (needs the private key)
   python3 scripts/release.py verify    check a release tag (default: the newest) against deploy/release-signers
   python3 scripts/release.py update    self-hosted: move this checkout to the newest signed release, then ./install.sh
+                                        (a first ./install.sh does this step by itself: first_install)
                                         (--install: only when nothing runs, and runs ./install.sh itself; the daily
                                         update timer that install.sh sets up calls this)
 
@@ -131,6 +132,21 @@ def move_to(sha, ref='main'):
     if result.returncode:
         git('rebase', '--abort', check=False)
     return result
+
+
+def first_install():
+    """A fresh install from a clone (./install.sh with no config yet) starts from the newest signed release, not from
+    whatever main is: (tag, sha) when the checkout moved there, None when it is already on it; Refused or SystemExit
+    when no release verifies or the move does not apply (nothing changed then)."""
+    git('fetch', '--quiet', '--tags', 'origin')
+    tag, sha = verify()
+    if git('rev-parse', 'HEAD').stdout.strip() == sha:
+        return None
+    result = move_to(sha)
+    if result.returncode:
+        raise SystemExit(f'{tag} is verified, but this checkout\'s own commits do not apply on it: nothing changed. '
+                         + (result.stderr or result.stdout).strip()[-300:])
+    return tag, sha
 
 
 def busy():
