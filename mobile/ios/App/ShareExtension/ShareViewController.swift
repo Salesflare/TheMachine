@@ -65,13 +65,13 @@ class ShareViewController: UIViewController {
                 } else if p.hasItemConformingToTypeIdentifier(UTType.plainText.identifier),
                           let t = try? await p.loadItem(forTypeIdentifier: UTType.plainText.identifier) as? String {
                     texts.append(t)
-                } else if files.count < Self.maxFiles, let type = p.registeredTypeIdentifiers.first,
+                } else if files.count < Self.maxFiles, let type = Self.fileType(p),
                           let data = await Self.data(p, type), bytes + data.count <= Self.maxBytes {
                     let name = "f\(files.count)"
                     guard (try? data.write(to: dir.appendingPathComponent(name))) != nil else { continue }
                     bytes += data.count
                     let ut = UTType(type)
-                    files.append(["file": name, "name": p.suggestedName.map { $0 + (ut?.preferredFilenameExtension.map { ".\($0)" } ?? "") } ?? name,
+                    files.append(["file": name, "name": Self.fileName(p.suggestedName ?? "file", ut?.preferredFilenameExtension),
                                   "type": ut?.preferredMIMEType ?? "application/octet-stream"])
                 }
             }
@@ -82,6 +82,23 @@ class ShareViewController: UIViewController {
               let json = try? JSONSerialization.data(withJSONObject: ["text": text, "files": files]),
               (try? json.write(to: dir.appendingPathComponent("pending.json"))) != nil else { return finish(ok: false) }
         finish(ok: true)
+    }
+
+    /// The file's own type (a PDF from Files or Mail is "com.adobe.pdf"), never the link to it ("public.file-url"),
+    /// whose data would be the address instead of the file.
+    static func fileType(_ p: NSItemProvider) -> String? {
+        let ids = p.registeredTypeIdentifiers
+        let isFile: (String) -> Bool = { id in UTType(id).map { $0.conforms(to: .data) && !$0.conforms(to: .url) } ?? false }
+        let notLink: (String) -> Bool = { id in !(UTType(id)?.conforms(to: .url) ?? false) }
+        return ids.first(where: isFile) ?? ids.first(where: notLink)
+    }
+
+    /// Its name with its extension once: the Machine takes a file by its extension ("Invoice 4471" gets ".pdf",
+    /// "Invoice 4471.pdf" stays as it is).
+    static func fileName(_ name: String, _ ext: String?) -> String {
+        guard let ext = ext, !ext.isEmpty, !name.lowercased().hasSuffix("." + ext.lowercased()),
+              !(ext == "jpeg" && name.lowercased().hasSuffix(".jpg")) else { return name }
+        return name + "." + ext
     }
 
     private static func data(_ p: NSItemProvider, _ type: String) async -> Data? {

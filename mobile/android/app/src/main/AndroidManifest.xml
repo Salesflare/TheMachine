@@ -71,8 +71,20 @@
             <intent-filter android:label="@string/share_label">
                 <action android:name="android.intent.action.SEND_MULTIPLE" />
                 <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/*" />
                 <data android:mimeType="image/*" />
                 <data android:mimeType="application/*" />
+            </intent-filter>
+
+            <!-- Open with The Machine (a PDF, an image or a text file in Files, Drive, mail): a New to-do with the file,
+                 the same as Share. Only content:// links, which the opening app grants for this one file. -->
+            <intent-filter android:label="@string/share_label">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="content" />
+                <data android:mimeType="application/pdf" />
+                <data android:mimeType="image/*" />
+                <data android:mimeType="text/plain" />
             </intent-filter>
 
         </activity>

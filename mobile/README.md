@@ -10,7 +10,10 @@ dashboard release reaches the app at once, with no store update. The app itself 
 - **Push**: native notifications through APNs and FCM. They are content-free wakeups ("New to-do"); on Android the
   app asks the Machine for the to-do's short line and shows that, and the rest is fetched when the owner opens it.
 - **Share to The Machine**: text, links and up to 5 files from any app's share sheet open the dashboard's New to-do,
-  filled in, for the owner to check and add.
+  filled in, for the owner to check and add. On Android, Open with The Machine on a PDF, an image or a text file does
+  the same (a `VIEW` of a `content://` file). A name without its extension gets the one of its type (`ShareName`), since
+  the Machine takes files by extension. The file goes from the phone to the owner's Machine only, when New to-do
+  uploads it.
 - **The phone's own questions**: the microphone (Talk, dictation) and notifications are asked by the phone itself when
   the owner taps the mic or Turn on. Only once the phone won't ask again does the dashboard show one line with
   Open settings, the app's page in the phone's settings (`machinePhone` in `www/inject.js`).
