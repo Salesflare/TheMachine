@@ -906,10 +906,16 @@ button.inline-node{display:inline;min-height:0;box-shadow:none;border-radius:0;p
 .convo{display:flex;flex-direction:column;padding:2px 0 var(--sp-2)}
 .convo-day{align-self:center;margin:0;font-size:var(--fs-xs);font-weight:var(--fw-medium);color:var(--faint)}
 .convo-turn{display:flex;flex-direction:column;align-items:flex-start;gap:4px;margin-top:var(--sp-4)}.convo-turn.me{align-items:flex-end}
-.convo-meta{margin:0 4px;font-size:var(--fs-xs);color:var(--faint);font-variant-numeric:tabular-nums}.convo-meta b{font-weight:var(--fw-medium);color:var(--muted)}
+.convo-meta{margin:0 4px;font-size:var(--fs-xs);color:var(--faint);font-variant-numeric:tabular-nums}.convo-meta b{font-weight:var(--fw-medium);color:var(--muted)}#email-content .convo-meta b{font-size:var(--fs-sm);color:var(--text)}
 .convo-say{max-width:min(85%,58ch);line-height:1.5;color:var(--text);white-space:pre-wrap;overflow-wrap:anywhere}
 .convo-turn.me .convo-say{padding:7px 14px;border-radius:18px;background:color-mix(in srgb,var(--text) 9%,transparent)}
 .convo-source{align-self:center;margin-top:var(--sp-5);font-size:var(--fs-sm);color:var(--muted)}
+.convo-chat{display:flex;align-items:center;gap:8px;margin:0 0 var(--sp-2);font-size:var(--fs-sm);font-weight:var(--fw-medium);color:var(--muted)}.convo-chat .via-ico{flex:none}
+.convo+.convo{margin-top:var(--sp-6);padding-top:var(--sp-4);border-top:1px solid var(--border)}
+.convo-day+.convo-turn{margin-top:var(--sp-3)}.convo-turn+.convo-day{margin-top:var(--sp-5)}
+.convo-turn:not(.me)>.convo-meta{margin-left:0}.convo-at{margin:6px 0 0;font-size:var(--fs-xs);color:var(--faint);font-variant-numeric:tabular-nums}
+.convo-main{margin-left:-12px;padding-left:10px;border-left:2px solid var(--mint)}.convo-turn.me .convo-main{margin-left:0;border-left:0;box-shadow:inset 0 0 0 1px var(--mint)}
+.convo-note{color:var(--muted)}.convo-tag{margin-right:6px;font-size:var(--fs-xs);font-weight:var(--fw-medium);text-transform:uppercase;letter-spacing:.05em;color:var(--faint)}
 .graph-bar{flex:none;width:52px;height:6px;border-radius:999px;background:var(--sunken);overflow:hidden}
 .graph-bar i{display:block;height:100%;background:var(--mint)}
 /* The group pill is never cut: beside the name when there is room, at the start of the line under it on a phone, so the name keeps its width */.graph-row .fleet-chip{flex:none}.fleet-chip .ct{white-space:nowrap}.fleet-chip-sub{display:none;margin-right:6px;padding:1px 8px 1px 6px;vertical-align:1px}@media(max-width:600px){.fleet-chip-row{display:none}.fleet-chip-sub{display:inline-flex}}.fleet-mark{color:var(--text)}.graph-sub:is(.fleet-mark,.fleet-named,.detail-sub,.person-facts){white-space:normal}.share-fp{font-size:var(--fs-xs);color:var(--faint);letter-spacing:.02em;margin-top:2px}

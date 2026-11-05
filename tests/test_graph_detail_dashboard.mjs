@@ -113,14 +113,16 @@ try{
  await page.locator('[data-ge-more]').click();
  assert.equal(await page.locator('.graph-events .graph-event:visible').count(),22);assert.equal(await page.locator('[data-ge-more]').count(),0);
  // Tapping the run opens the conversation, in order.
- // A group's transcript: the date once, each turn its sender and time once, yours on the right.
+ // A group's transcript: the date once, each sender's run their name and time once, yours on the right.
  await run.click();
  await page.locator('#email-dialog .convo-say').nth(2).waitFor();
  assert.deepEqual(calls.pop(),{originals:[52,51,50]});
  assert.equal(await page.locator('#email-title').textContent(),'Family 🌴');
  assert.equal(await page.locator('#email-dialog .convo-day').count(),1);
- assert.equal(await page.locator('#email-dialog .convo-turn').count(),3);
+ // Ann's two messages a quarter hour apart are one run under her name; the later one has its own light time
+ assert.equal(await page.locator('#email-dialog .convo-turn').count(),2);
  assert.match(await page.locator('#email-dialog .convo-turn').first().locator('.convo-meta').textContent(),/^Ann Example · \d\d:\d\d$/);
+ assert.match(await page.locator('#email-dialog .convo-turn').first().locator('.convo-at').textContent(),/^\d\d:\d\d$/);
  assert.match(await page.locator('#email-dialog .convo-turn.me .convo-meta').textContent(),/^\d\d:\d\d$/);
  assert.equal(await page.locator('#email-dialog .convo-source').count(),0);
  await page.keyboard.press('Escape');
@@ -133,7 +135,7 @@ try{
  assert.deepEqual(await page.locator('#email-dialog .convo-turn').first().locator('.convo-say').allTextContents(),['message 54','message 55']);
  assert.match(await page.locator('#email-dialog .convo-turn').first().locator('.convo-meta').textContent(),/^\d\d:\d\d$/);
  assert.equal(await page.locator('#email-dialog .convo-source').getAttribute('href'),'https://wa.example/chat');
- assert.equal(await page.locator('#email-dialog .convo-source').textContent(),'Open in WhatsApp');
+ assert.equal(await page.locator('#email-dialog .convo-source').textContent(),'Open in WhatsApp ↗');
  await page.keyboard.press('Escape');
  assert.ok((await page.locator('.graph-event h4').allTextContents()).includes('#standup'));  // a channel by its name, a direct message by who wrote it
  assert.equal(await page.locator('.graph-event[data-event="36"] h4').textContent(),'Ann Example');

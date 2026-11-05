@@ -68,7 +68,7 @@ Parfois, une ligne discrète sous le texte dit ce qui n'est pas connu, comme « 
 
 Un titre dit ce qu'il faut faire. Il ne change que quand cela change, par exemple pour une nouvelle demande. Une tâche faite garde son titre, avec en dessous comment elle s'est terminée, par exemple ce qui est parti ou "Fait : Sam a signé mardi".
 
-Au-dessus du brouillon, une ligne discrète nomme le message d’origine, avec le logo du service (Gmail, Slack, WhatsApp…). Appuyez dessus pour lire le fil. Le brouillon commence par le logo de sa destination : vous voyez si c’est une réponse Slack ou un e-mail avant de lire. Une étape sans brouillon, comme un transfert, montre le logo sur son bouton.
+Au-dessus du brouillon, une ligne discrète nomme le message d’origine, avec le logo du service (Gmail, Slack, WhatsApp…). Appuyez dessus pour lire le fil. Un chat (Slack, WhatsApp, Telegram, Intercom…) se lit comme une seule conversation, du plus ancien au plus récent, chaque message une fois ; celui dont parle la tâche a un fin trait à côté. Le brouillon commence par le logo de sa destination : vous voyez si c’est une réponse Slack ou un e-mail avant de lire. Une étape sans brouillon, comme un transfert, montre le logo sur son bouton.
 
 **Détails** montre son nom, son projet et son espace (appuyez sur l’un d’eux pour le changer), votre dernière note et le résultat d’un agent de code. **Chat ›** au bout de cette ligne ouvre le chat. Une tâche terminée reste courte : son titre, une ligne et ce qui est parti ; le message d’origine est dans ses **Détails**.
 

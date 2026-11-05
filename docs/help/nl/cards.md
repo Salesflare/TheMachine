@@ -68,7 +68,7 @@ Soms zegt een rustige regel onder de tekst wat niet bekend is, zoals "Laatste co
 
 Een titel zegt wat er moet gebeuren. Hij verandert alleen als dat verandert, zoals bij een nieuwe vraag. Een to-do die gedaan is houdt zijn titel, met eronder hoe hij afliep, zoals wat er verstuurd is of "Gedaan: Sam heeft dinsdag getekend".
 
-Boven het concept noemt een rustige regel het bericht waar hij uit komt, met het logo van de dienst (Gmail, Slack, WhatsApp…). Tik erop om de thread te lezen. Het concept begint met het logo van waar het heen gaat, zo zie je vóór het lezen of het een Slack-antwoord of een e-mail is. Een stap zonder concept, zoals een overdracht, toont het logo op zijn knop.
+Boven het concept noemt een rustige regel het bericht waar hij uit komt, met het logo van de dienst (Gmail, Slack, WhatsApp…). Tik erop om de thread te lezen. Een chat (Slack, WhatsApp, Telegram, Intercom…) lees je als één gesprek, oudste eerst, elk bericht één keer; het bericht waar de to-do over gaat heeft een dun lijntje ernaast. Het concept begint met het logo van waar het heen gaat, zo zie je vóór het lezen of het een Slack-antwoord of een e-mail is. Een stap zonder concept, zoals een overdracht, toont het logo op zijn knop.
 
 **Details** toont zijn naam, project en gebied (tik erop om het te wijzigen), je laatste notitie en het resultaat van een codeeragent. **Chat ›** aan het eind van die regel opent de chat. Een afgeronde to-do blijft kort: de titel, één regel en wat er verstuurd is; het bericht waar hij uit komt staat onder zijn **Details**.
 

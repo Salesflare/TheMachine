@@ -75,11 +75,40 @@ function prefetchNext(){while(prefetching<2&&prefetchQueue.length){const id=pref
 const prefetchSeen=window.IntersectionObserver?new IntersectionObserver(entries=>{for(const e of entries){if(!e.isIntersecting)continue;prefetchSeen.unobserve(e.target);const id=e.target.dataset.id||e.target.querySelector('[data-original="read"][data-id]')?.dataset.id;
  if(id&&!prefetched.has(id)&&!originals.has(id)){prefetched.add(id);prefetchQueue.push(id)}}prefetchNext()},{rootMargin:'100px'}):null;
 let prefetchScan=0;if(prefetchSeen)new MutationObserver(()=>{cancelAnimationFrame(prefetchScan);prefetchScan=requestAnimationFrame(()=>{for(const b of document.querySelectorAll('[data-original="read"][data-id]'))if(!prefetched.has(b.dataset.id))prefetchSeen.observe(b.closest('.card-details')?b.closest('article'):b)})}).observe(document.body,{childList:true,subtree:true});
+// Chats (Slack, WhatsApp, Telegram, Intercom and the rest: event_views' chat) read as one thread, oldest first: the
+// conversation named once on top, a day line when the day changes, each sender's run of messages under their name and
+// time once, a light time inside a run only after a pause. The to-do's own message is tinted when more came after it.
+// One link opens the whole thread where it lives. Slack's :emoji: codes read as emoji (chatEmoji).
+const THREAD_APP={Slack:'Slack',WhatsApp:'WhatsApp',Telegram:'Telegram',Intercom:'Intercom',LinkedIn:'LinkedIn','X message':'X'};
+const THREAD_VIA={Slack:'slack',WhatsApp:'whatsapp',Telegram:'telegram',Intercom:'intercom',LinkedIn:'linkedin','X message':'x'};
+const isChat=o=>typeof o?.chat==='string';
+const chatTitle=o=>o.dm&&o.chat?t('DM with {}',o.chat):o.chat||'';
+const THREAD_PAUSE=10*6e4;
+function chatThreadHTML(items,{main,names=true,head=true,src}={}){
+const dayOf=at=>{const d=new Date(at);return d.toLocaleDateString(DL,{weekday:'long',day:'numeric',month:'long',...(d.getFullYear()!==new Date().getFullYear()?{year:'numeric'}:{})})};
+const msgs=items.flatMap(o=>o.turns?.length?o.turns.map(x=>({...x,kind:o.kind})):[o]).filter(o=>String(o.body||'').trim()).sort((a,b)=>Date.parse(a.occurred_at)-Date.parse(b.occurred_at));
+const days=[];let prev=null;
+for(const o of msgs){const at=Date.parse(o.occurred_at),day=dayOf(at),me=o.from==='You',mark=main!=null&&o.event_id===main&&o!==msgs.at(-1);
+ if(days.at(-1)?.day!==day){days.push({day,turns:[]});prev=null}
+ const turns=days.at(-1).turns,say=html`${o.note?html`<span class="convo-tag">${t('Note')}</span>`:''}${linkify(chatEmoji(String(o.body||'').replace(/\r\n/g,'\n').trim()))}`;
+ if(!prev||prev.from!==o.from)turns.push({me,says:[],meta:html`<p class="convo-meta">${!me&&names&&sender(o.from)?html`<b>${sender(o.from)}</b> · `:''}<time datetime="${o.occurred_at}">${fmtHM(at)}</time></p>`});
+ else if(at-Date.parse(prev.occurred_at)>=THREAD_PAUSE)turns.at(-1).says.push(html`<p class="convo-at"><time datetime="${o.occurred_at}">${fmtHM(at)}</time></p>`);
+ turns.at(-1).says.push(html`<div class="convo-say${mark?' convo-main':''}${o.note?' convo-note':''}"${mark?html` aria-label="${t('The message this to-do is about')}"`:''}>${say}</div>`);prev=o}
+const first=items.find(o=>o.event_id===main)||items[0]||{},title=head?chatTitle(first):'',app=THREAD_APP[first.kind]||src;
+const url=[first,...[...items].reverse()].find(o=>o?.url&&safeURL(o.url))?.url;
+return html`<div class="convo">${title?html`<p class="convo-chat">${viaIco(THREAD_VIA[first.kind],true)}<span>${title}</span></p>`:''}${days.map(d=>html`<p class="convo-day">${d.day}</p>${d.turns.map(x=>html`<div class="convo-turn${x.me?' me':''}">${x.meta}${x.says}</div>`)}`)}${url?html`<a class="convo-source" href="${url}" target="_blank" rel="noreferrer">${app?t('Open in {} ↗',app):t('Open original')}</a>`:''}</div>`}
+// A to-do's chat sources by conversation: the to-do's own conversation first, each one thread.
+function chatThreads(list){const by=new Map();for(const o of list.filter(isChat)){const k=o.kind+'\u0000'+o.chat;if(!by.has(k))by.set(k,[]);by.get(k).push(o)}return [...by.values()]}
 async function openEmail(id){const s=state.suggestions.find(s=>s.id===id);const dialog=$('#email-dialog');$('#email-title').textContent=s?.title||'Original';setHTML($('#email-content'),html`<p class="muted">Loading…</p>`);dialog.showModal();
 let list;try{list=await originalsFor(id)}catch(e){errCaught(e);setHTML($('#email-content'),html`<p class="muted">${e.message}</p>`);return}
 if(!list.length){setHTML($('#email-content'),html`${draftFilesBlock(s)}<p class="muted">The original is no longer available.</p>`);return}
 const [first,...rest]=list;
 if(first.kind==='calendar'&&!rest.length&&!draftFiles(s||{}).length){openMeeting(first.event_id,s?.title);return}  // a to-do from a meeting: the meeting itself
-setHTML($('#email-content'),html`${draftFilesBlock(s)}<div class="email" data-msg="0">${messageHTML(first,id,0)}</div>${rest.length?html`<h3 class="email-earlier">${t(['{} related message','{} related messages'],rest.length)}</h3>${rest.map((o,i)=>html`<details class="email" data-msg="${i+1}"><summary>${sender(o.from)||kindLabel(o.kind)} · ${new Date(o.occurred_at).toLocaleDateString(DL,{day:'numeric',month:'short'})}</summary>${messageHTML(o,id,i+1)}</details>`)}`:''}`);
+// A chat to-do: its conversation as one thread (its other conversations after it); anything else still as related messages
+if(isChat(first)){const others=list.filter(o=>!isChat(o));
+ setHTML($('#email-content'),html`${draftFilesBlock(s)}${chatThreads(list).map(c=>chatThreadHTML(c,{main:first.event_id}))}${others.length?html`<h3 class="email-earlier">${t(['{} related message','{} related messages'],others.length)}</h3>${others.map(o=>html`<details class="email" data-msg="${list.indexOf(o)}"><summary>${sender(o.from)||kindLabel(o.kind)} · ${new Date(o.occurred_at).toLocaleDateString(DL,{day:'numeric',month:'short'})}</summary>${messageHTML(o,id,list.indexOf(o))}</details>`)}`:''}`);
+ $('#email-content').querySelectorAll('details.email').forEach(d=>d.addEventListener('toggle',()=>{if(d.open)fillMessage(d,list[+d.dataset.msg],id)}));return}
+const chats=rest.filter(isChat),mails=rest.filter(o=>!isChat(o));
+setHTML($('#email-content'),html`${draftFilesBlock(s)}<div class="email" data-msg="0">${messageHTML(first,id,0)}</div>${mails.length?html`<h3 class="email-earlier">${t(['{} related message','{} related messages'],mails.length)}</h3>${mails.map(o=>html`<details class="email" data-msg="${list.indexOf(o)}"><summary>${sender(o.from)||kindLabel(o.kind)} · ${new Date(o.occurred_at).toLocaleDateString(DL,{day:'numeric',month:'short'})}</summary>${messageHTML(o,id,list.indexOf(o))}</details>`)}`:''}${chatThreads(chats).map(c=>chatThreadHTML(c))}`);
 fillMessage($('#email-content [data-msg="0"]'),first,id);
 $('#email-content').querySelectorAll('details.email').forEach(d=>d.addEventListener('toggle',()=>{if(d.open)fillMessage(d,list[+d.dataset.msg],id)}))}

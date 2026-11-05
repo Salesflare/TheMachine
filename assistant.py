@@ -8736,7 +8736,8 @@ class Store:
                            'body': body[:20000], 'clipped': len(body) > 20000 or bool(m.get('truncated')),
                            **({'details': details[:4000]} if details else {}),
                            'url': url if isinstance(url, str) and urllib.parse.urlsplit(url).scheme == 'https' else None,
-                           'event_id': r['id'], 'gmail': {'account_id': r['account_id'], 'message_id': r['source_id']} if r['kind'] == 'gmail.message' else None})
+                           'event_id': r['id'], 'gmail': {'account_id': r['account_id'], 'message_id': r['source_id']} if r['kind'] == 'gmail.message' else None,
+                           **chat_view(r['kind'], m, body, r['occurred_at'])})
         return result
 
     def suggestion_result(self, suggestion, db):
@@ -10574,6 +10575,49 @@ def read_window(account, at=None):
     if local.hour >= end:
         opens += dt.timedelta(days=1)  # aware arithmetic keeps the wall clock, so it's right across a DST change too
     return {'hours': [start, end], 'reads_again_at': utc(opens)}
+
+
+# Chats read as one thread on the dashboard (events-email.js chatThreadHTML): the conversation named once, then turns.
+CHAT_KINDS = {'slack.message', 'whatsapp.message', 'telegram.message', 'linkedin.message', 'x.dm', 'fleet.message',
+              'intercom.conversation', 'fleet.intercom'}
+INTERCOM_PART = re.compile(r'^(\d{9,11}) · (.*?) · ([a-z_]+): ?(.*)$')
+
+
+def chat_view(kind, m, body, occurred_at):
+    """For a chat message: the conversation's name ("#support", a Slack DM's other person with dm, a WhatsApp chat) and,
+    for an Intercom conversation, its messages as turns (the connector stores them as "<unix time> · <author> ·
+    <part type>: <text>" lines under the opening message). Nothing for other kinds."""
+    if kind not in CHAT_KINDS:
+        return {}
+    out = {'chat': ''}
+    if kind == 'slack.message':
+        name = str(m.get('channel_name') or '')
+        dm = m.get('conversation_type') == 'dm' or name.startswith('DM ')
+        out.update(chat=name[3:].strip() if dm and name.startswith('DM ') else ('#' + name if name else ''), dm=dm)
+    elif kind in ('intercom.conversation', 'fleet.intercom'):
+        who = m.get('contact_name') or m.get('from_name') or ''
+        out['chat'] = who
+        turns, opening = [], []
+        for line in str(body or '').split('\n'):
+            part = INTERCOM_PART.match(line)
+            if part:
+                turns.append({'from': part[2].strip(), 'at': int(part[1]), 'type': part[3], 'body': part[4]})
+            elif turns:
+                turns[-1]['body'] += '\n' + line
+            else:
+                opening.append(line)
+        said = [t for t in turns if t['body'].strip() and t['type'] in ('comment', 'open', 'note', 'quick_reply')]
+        if said:
+            start = m.get('created_at') if type(m.get('created_at')) is int else None
+            first = ('\n'.join(opening).strip(), who or m.get('from') or '')
+            out['turns'] = ([{'from': first[1], 'occurred_at': dt.datetime.fromtimestamp(start, dt.timezone.utc).isoformat() if start else occurred_at,
+                              'body': first[0]}] if first[0] else []) + [
+                {'from': t['from'][:300], 'occurred_at': dt.datetime.fromtimestamp(t['at'], dt.timezone.utc).isoformat(), 'body': t['body'].strip(),
+                 **({'note': True} if t['type'] == 'note' else {})} for t in said]
+    else:
+        out['chat'] = str(m.get('chat_name') or '')
+    out['chat'] = out['chat'][:200]
+    return out
 
 
 def source_kind(kind):
