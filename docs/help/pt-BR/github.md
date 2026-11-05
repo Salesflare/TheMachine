@@ -12,7 +12,7 @@ Suas notificações do GitHub: pedidos de revisão, menções, atribuições, re
 
 ## O que ele pode fazer
 
-Nada no GitHub. Toda chamada que ele faz é de leitura.
+Ler não muda nada no GitHub. Quando uma tarefa termina em um passo no GitHub, como abrir uma issue, esse passo roda com o mesmo login do gh assim que você toca em **Confirmar**, e a tarefa avisa antes. As capturas de tela ainda entram pelo navegador da sua Machine, porque a ferramenta do GitHub não adiciona imagens. Sem o GitHub conectado, a tarefa diz que vai usar o navegador, com **Conectar o GitHub**.
 
 ## Conectar
 

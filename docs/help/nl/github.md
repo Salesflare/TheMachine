@@ -12,7 +12,7 @@ Je GitHub-meldingen: reviewverzoeken, vermeldingen, toewijzingen, antwoorden en 
 
 ## Wat het kan doen
 
-Niets op GitHub. Elke aanroep die het doet, is een leesactie.
+Lezen verandert niets op GitHub. Eindigt een to-do in een stap op GitHub, zoals een issue aanmaken, dan loopt die stap via dezelfde gh-login zodra je op **Bevestigen** tikt, en de to-do zegt dat vooraf. Screenshots gaan wel via de browser van je Machine, want de eigen tool van GitHub kan geen afbeeldingen toevoegen. Is GitHub niet gekoppeld, dan zegt de to-do dat hij de browser gebruikt, met **GitHub koppelen**.
 
 ## Koppelen
 

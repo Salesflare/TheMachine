@@ -1,6 +1,7 @@
 """Explicit, revision-bound next actions. No model or arbitrary command execution."""
 import base64
 import calendar_writes
+import github_route
 import doc_writes
 from contextlib import contextmanager
 import email.policy
@@ -541,7 +542,7 @@ def validate(value, config, allowed_accounts, recipient_options=None, linkedin_t
     elif value.get('kind') == 'finish':
         # Everything up to the final click is done; the owner confirms that click. Its run
         # repeats the step from these instructions, since a tab or session may have expired.
-        if set(value)-{'kind','label','instructions','preview','url','message','to_name','attachments'} or not value.get('label'):
+        if set(value)-{'kind','label','instructions','preview','url','message','to_name','attachments','via','via_login'} or not value.get('label'):
             raise ValueError('A final step needs a label, the exact instructions and a preview of what goes out')
         if value['label'].split()[0] not in FINISH_VERBS:
             raise ValueError('A final step label starts with what it does: ' + ', '.join(FINISH_VERBS[:8]) + '…')
@@ -566,6 +567,8 @@ def validate(value, config, allowed_accounts, recipient_options=None, linkedin_t
         # Machine saved for the card, copied into the store like an email's, so the owner sees and opens
         # exactly those bytes on the card and Confirm uploads exactly them.
         if 'attachments' in value:result['attachments']=store_attachments(value['attachments'],config)
+        # A step on GitHub: the service picks how it runs (gh, a GitHub MCP server, else the browser), the to-do shows it.
+        result=github_route.route(result,config)
     elif value.get('kind') == 'email_demo':
         if set(value)-{'kind','label','subject','body'} or value.get('label','Send')!='Send':
             raise ValueError('The Send demo is preview-only with fixed fictional addresses')

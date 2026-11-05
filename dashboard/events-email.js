@@ -10,11 +10,12 @@ const eventIds=s=>{try{return Array.isArray(s.event_ids)?s.event_ids:JSON.parse(
 // Each service by its own logo (dashboard.html --i-*): where a to-do came from and what its prepared step goes out on.
 // An email or a calendar change by the account's service: Google's own logo; Outlook and the rest the plain envelope.
 const svcOf=id=>(state?.connectors||[]).find(c=>c.id===id)?.service||'';
-const VIA_NAME={gmail:'Gmail',mail:'Email',slack:'Slack',whatsapp:'WhatsApp',telegram:'Telegram',linkedin:'LinkedIn',x:'X',intercom:'Intercom',gdocs:'Google Docs',file:'Doc',gcal:'Google Calendar',cal:'Calendar',handoff:'Hand off',browser:'Browser'};
+const VIA_NAME={gmail:'Gmail',mail:'Email',slack:'Slack',whatsapp:'WhatsApp',telegram:'Telegram',linkedin:'LinkedIn',x:'X',intercom:'Intercom',gdocs:'Google Docs',file:'Doc',gcal:'Google Calendar',cal:'Calendar',handoff:'Hand off',browser:'Browser',github:'GitHub'};
 // On a button that already says what it does, the logo is only a picture (hidden from screen readers).
 const viaIco=(k,quiet)=>k?quiet?html`<i class="via-ico via-${k}" aria-hidden="true"></i>`:html`<i class="via-ico via-${k}" role="img" aria-label="${t(VIA_NAME[k]||k)}" title="${t(VIA_NAME[k]||k)}"></i>`:'';
 const STEP_VIA={slack:'slack',whatsapp:'whatsapp',telegram:'telegram',linkedin:'linkedin',x:'x',intercom:'intercom',handoff:'handoff',finish:'browser'};
-const actionVia=a=>['email','email_demo'].includes(a?.kind)?(svcOf(a.account_id)==='gmail'?'gmail':'mail'):a?.kind==='calendar'?(svcOf(a.account_id)==='calendar'?'gcal':'cal'):['doc_write','doc_reply'].includes(a?.kind)?(a.provider==='microsoft'?'file':'gdocs'):STEP_VIA[a?.kind]||'';
+// A final step on GitHub that runs with gh or a GitHub MCP server (github_route.py) shows GitHub's logo, else the browser.
+const actionVia=a=>a?.kind==='finish'&&['gh','mcp'].includes(a.via)?'github':['email','email_demo'].includes(a?.kind)?(svcOf(a.account_id)==='gmail'?'gmail':'mail'):a?.kind==='calendar'?(svcOf(a.account_id)==='calendar'?'gcal':'cal'):['doc_write','doc_reply'].includes(a?.kind)?(a.provider==='microsoft'?'file':'gdocs'):STEP_VIA[a?.kind]||'';
 const cardViaIcon=s=>{const v=(/^Source:\s*([^·\n]+)/i.exec(s.source_line||'')?.[1]||'').trim(),svc=(Array.isArray(s.account_ids)?s.account_ids:(()=>{try{return JSON.parse(s.account_ids||'[]')}catch{return []}})()).map(svcOf);
  if(isEmail(s)||/^(email|gmail|outlook|mail)\b/i.test(v))return (s.original_urls||[]).some(u=>/^https:\/\/mail\.google\.com\//.test(u))||svc.includes('gmail')&&!svc.includes('outlook')?'gmail':'mail';
  const named=[['slack',/^slack\b/i],['whatsapp',/^whatsapp\b/i],['telegram',/^telegram\b/i],['linkedin',/^linkedin\b/i],['x',/^x( message)?\b/i],['intercom',/^intercom\b/i],['gdocs',/^(doc |suggested edit)/i]].find(([,r])=>r.test(v));

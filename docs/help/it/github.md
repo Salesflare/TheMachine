@@ -12,7 +12,7 @@ Le tue notifiche GitHub: richieste di revisione, menzioni, assegnazioni, rispost
 
 ## Cosa può fare
 
-Niente su GitHub. Ogni chiamata che fa è una lettura.
+Leggere non cambia nulla su GitHub. Quando un’attività finisce con un passo su GitHub, come aprire una issue, quel passo usa lo stesso accesso gh appena tocchi **Conferma**, e l’attività lo dice prima. Gli screenshot passano comunque dal browser della tua Machine, perché lo strumento di GitHub non può aggiungere immagini. Senza GitHub collegato, l’attività dice che userà il browser, con **Collega GitHub**.
 
 ## Collegalo
 

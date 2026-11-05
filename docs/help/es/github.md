@@ -12,7 +12,7 @@ Tus notificaciones de GitHub: solicitudes de revisión, menciones, asignaciones,
 
 ## Qué puede hacer
 
-Nada en GitHub. Cada llamada que hace es de lectura.
+Leer no cambia nada en GitHub. Cuando una tarea termina en un paso en GitHub, como crear un issue, ese paso se hace con el mismo inicio de sesión de gh en cuanto tocas **Confirmar**, y la tarea lo dice antes. Las capturas de pantalla igual se suben con el navegador de tu Machine, porque la herramienta de GitHub no puede añadir imágenes. Sin GitHub conectado, la tarea dice que usará el navegador, con **Conectar GitHub**.
 
 ## Conéctalo
 

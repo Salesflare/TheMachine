@@ -12,7 +12,7 @@ Deine GitHub-Benachrichtigungen: Review-Anfragen, Erwähnungen, Zuweisungen, Ant
 
 ## Was es tun kann
 
-Nichts auf GitHub. Jeder Aufruf ist ein reiner Lesezugriff.
+Lesen ändert nichts auf GitHub. Endet eine Aufgabe mit einem Schritt auf GitHub, etwa einem neuen Issue, läuft dieser Schritt über dieselbe gh-Anmeldung, sobald du auf **Bestätigen** tippst, und die Aufgabe sagt das vorher. Screenshots kommen trotzdem über den Browser deiner Machine hinein, weil GitHubs eigenes Tool keine Bilder hinzufügen kann. Ist GitHub nicht verbunden, sagt die Aufgabe, dass sie den Browser nutzt, mit **GitHub verbinden**.
 
 ## Verbinden
 
