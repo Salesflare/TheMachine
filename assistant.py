@@ -17375,16 +17375,20 @@ class App(*APP_MIXINS):
         message_id = str(result.get('messageId') or '')
         return message_id if re.fullmatch(r'\d+', message_id) else None
 
-    def fleet_notify_brief(self, text, url):
+    def fleet_notify_brief(self, text, url, titles=None):
         """The team brief is ready: a phone notification, and the brief itself in Telegram when Telegram is on (with
-        Open only). Returns the Telegram message id."""
+        Open only). Returns the Telegram message id. titles (its items, as the brief shows them) make the
+        notification's body (notify.brief_line); with Text in notifications off, only how many."""
         subscriptions, phones = push_reach(self.store, self.config)
         if subscriptions or phones:
             # the tag names the Fleet: a tapped phone notification opens that brief (the dashboard's pushRoute)
             which = re.search(r'#fleet-brief=(fl_[0-9a-f]{16})$', url or '')
             tag = 'fleet-brief-' + which[1] if which else 'fleet-brief'
-            push_send(self.store, self.config, subscriptions, {'title': i18n.t('What your Fleet saw'), 'body': text.split('\n', 2)[-1][:200],
-                                                               'url': url, 'tag': tag}, 'fleet-brief', kind='result', wake='fleet')
+            with self.store.connect() as db:
+                show = security_levels.notify_text(db, True)
+            line = notify.brief_line(titles, show) if titles is not None else notify.clip(text.split('\n', 2)[-1], notify.APP_BODY) if show else ''
+            push_send(self.store, self.config, subscriptions, {'title': i18n.t('What your Fleet saw'), 'body': line,
+                                                               'url': url, 'tag': tag, '_body': line}, 'fleet-brief', kind='result', wake='fleet')
         if not telegram_on(self.config) or not self.notify_on('result', 'telegram'):
             return None
         result = fleet_telegram(self.config, {'text': text, 'buttons': [[{'text': i18n.t('Open the brief'), 'url': url}]] if url else []})

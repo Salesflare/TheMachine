@@ -6230,6 +6230,14 @@
   "other": "{} resúmenes del equipo"
  },
  "{} their time": "{} su hora",
+ "{} things for the team": {
+  "one": "{} asunto para el equipo",
+  "other": "{} asuntos para el equipo"
+ },
+ "{} things for the team: {}": {
+  "one": "{} asunto para el equipo: {}",
+  "other": "{} asuntos para el equipo: {}"
+ },
  "{} things wait for you": {
   "one": "{} cosa te espera",
   "other": "{} cosas te esperan"

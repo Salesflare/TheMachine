@@ -6230,6 +6230,14 @@
   "other": "{} team briefs"
  },
  "{} their time": "{} their time",
+ "{} things for the team": {
+  "one": "{} thing for the team",
+  "other": "{} things for the team"
+ },
+ "{} things for the team: {}": {
+  "one": "{} thing for the team: {}",
+  "other": "{} things for the team: {}"
+ },
  "{} things wait for you": {
   "one": "{} thing waits for you",
   "other": "{} things wait for you"

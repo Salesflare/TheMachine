@@ -329,6 +329,18 @@ def morning_line(meetings, waiting, total, show_text=True, clock=lambda iso: iso
     return clip(line, APP_BODY)
 
 
+def brief_line(titles, show_text=True):
+    """The team brief notification's body: how many things it has for the team and the first two, as the brief
+    shows them ("3 things for the team: Acme is waiting for a reply, Globex went quiet, …"). Without show_text only
+    how many. Nothing: the brief's own calm line."""
+    if not titles:
+        return t('Nothing that needs the team.')
+    if not show_text:
+        return t('{} things for the team', len(titles))
+    names = ', '.join(clip(x, 50) for x in titles[:2]) + (', …' if len(titles) > 2 else '')
+    return clip(t('{} things for the team: {}', len(titles), names), APP_BODY)
+
+
 def compose(meetings, due, overnight, root='', show_text=True, clock=lambda iso: iso[11:16], waiting=None, total=None):
     """The digest from its three parts: meetings [{at, title, guests}], due and overnight [{title}].
     Returns None when there is nothing to say, else {push: {title, body, url, tag}, text, subject}.

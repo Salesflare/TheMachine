@@ -6230,6 +6230,14 @@
   "other": "{} teambriefings"
  },
  "{} their time": "{} bij hen",
+ "{} things for the team": {
+  "one": "{} punt voor het team",
+  "other": "{} punten voor het team"
+ },
+ "{} things for the team: {}": {
+  "one": "{} punt voor het team: {}",
+  "other": "{} punten voor het team: {}"
+ },
  "{} things wait for you": {
   "one": "{} ding wacht op je",
   "other": "{} dingen wachten op je"

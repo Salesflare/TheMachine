@@ -6230,6 +6230,14 @@
   "other": "{} briefings d’équipe"
  },
  "{} their time": "{} chez eux",
+ "{} things for the team": {
+  "one": "{} point pour l’équipe",
+  "other": "{} points pour l’équipe"
+ },
+ "{} things for the team: {}": {
+  "one": "{} point pour l’équipe : {}",
+  "other": "{} points pour l’équipe : {}"
+ },
  "{} things wait for you": {
   "one": "{} élément vous attend",
   "other": "{} éléments vous attendent"
