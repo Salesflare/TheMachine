@@ -11314,28 +11314,97 @@ def chat_ms(value):
         return 0
 
 
+def chat_text_phase(part):
+    """'commentary' or 'final_answer' of a text block that says which (an OpenAI Responses run's textSignature), else ''."""
+    signature = part.get('textSignature')
+    if not isinstance(signature, str) or not signature.startswith('{'):
+        return ''
+    try:
+        phase = json.loads(signature).get('phase')
+    except (ValueError, AttributeError):
+        return ''
+    return phase if phase in ('commentary', 'final_answer') else ''
+
+
+def chat_run_keys(messages):
+    """The run each message belongs to. A CLI agent's own turns (Claude Code), which OpenClaw imports into the session
+    without a run ID, belong to the run whose record follows them, up to the prompt that started it."""
+    keys, carry = [], ''
+    for message in reversed(messages):
+        meta = message.get('__openclaw') if isinstance(message.get('__openclaw'), dict) else {}
+        if meta.get('runId'):
+            carry = str(meta['runId'])
+        elif message.get('role') == 'user':
+            carry = ''
+        keys.append(str(meta.get('runId') or (carry if meta.get('importedFrom') else '')))
+    return keys[::-1]
+
+
+def chat_cli_replies(run):
+    """A CLI run's reply: its last turn's text, else OpenClaw's record of the run (all its text joined) without the
+    working notes. Never the notes, and never both, which showed the reply twice."""
+    found = run['finals']
+    if not found:
+        found = []
+        for reply in run['texts']:
+            text = reply['text']
+            for note, _ in run['notes']:
+                note = chat_reply(chat_text(note))[0]
+                if note:
+                    text = text.replace(note, '', 1)
+            text = re.sub(r'\n{3,}', '\n\n', text).strip()
+            if text:
+                found.append({**reply, 'text': text})
+        return found
+    texts = []
+    for raw, at in found:
+        text, noted = chat_reply(chat_text(raw))
+        run['noted'] = run['noted'] or noted
+        if not text:
+            continue
+        if texts and texts[-1]['at'] >= at - 60000:
+            texts[-1]['text'] = (texts[-1]['text'] + '\n\n' + text)[:8000]
+        else:
+            texts.append({'kind': 'reply', 'text': text, 'at': at})
+    return texts
+
+
 def chat_items(messages, owner, results=None):
     """The conversation, strictly by time: the owner's own notes and taps and the card's source messages (`owner`,
     from the service), each run's saved results (`results`, by job ID, from the service: what it said and the drafts
     it left) and, from the run's own session, the steps it took before them. A run's free text shows only when it
     saved no result. User rows in the transcript are the service's prompts and are never shown; tool results,
-    thinking and nested tool rows neither; learning lines only as a "noted" mark on that run's reply."""
+    thinking and nested tool rows neither; learning lines only as a "noted" mark on that run's reply. Progress notes
+    (commentary, a CLI agent's text before a tool call, the Gateway's copies of them) never show; a CLI run's reply
+    shows once (chat_cli_replies)."""
     results = results or {}
     items = [dict(o) for o in owner]
     runs, order = {}, []
     number = lambda v: isinstance(v, (int, float)) and not isinstance(v, bool) and v > 0
-    for message in messages if isinstance(messages, list) else []:
-        if not isinstance(message, dict) or message.get('role') != 'assistant' or not isinstance(message.get('content'), list):
+    messages = [m for m in messages if isinstance(m, dict)] if isinstance(messages, list) else []
+    keys = chat_run_keys(messages)
+    for message, key in zip(messages, keys):
+        if message.get('role') != 'assistant' or not isinstance(message.get('content'), list):
+            continue
+        if isinstance(message.get('openclawStreamFallback'), dict):  # the Gateway's copy of a run's progress notes
             continue
         meta = message.get('__openclaw') if isinstance(message.get('__openclaw'), dict) else {}
         at = next((v for v in (message.get('timestamp'), meta.get('recordTimestampMs')) if number(v)), 0)
-        key = str(meta.get('runId') or '')
         if key not in runs:
-            runs[key] = {'steps': [], 'at': at, 'texts': [], 'noted': False}
+            runs[key] = {'steps': [], 'at': at, 'texts': [], 'noted': False, 'notes': [], 'finals': []}
             order.append(key)
         run = runs[key]
+        imported = bool(meta.get('importedFrom'))
         for part in message['content']:
             if not isinstance(part, dict):
+                continue
+            if imported and part.get('type') == 'text':
+                # A CLI agent's own turn (Claude Code): text before a tool call is a working note, never the reply; its
+                # last turn's text is the reply, which OpenClaw's own record of the run repeats after all the notes.
+                if str(part.get('text') or '').strip():
+                    (run['notes'] if message.get('stopReason') == 'tool_use' else run['finals']).append((str(part['text']), at))
+                continue
+            if part.get('type') == 'text' and chat_text_phase(part) == 'commentary':
                 continue
             if part.get('type') == 'toolCall':
                 arguments = part.get('arguments') if isinstance(part.get('arguments'), dict) else {}
@@ -11354,6 +11423,8 @@ def chat_items(messages, owner, results=None):
                         run['texts'].append({'kind': 'reply', 'text': text, 'at': at})
     for key in order:
         run = runs[key]
+        if run['notes'] or run['finals']:
+            run['texts'] = chat_cli_replies(run)
         saved = [dict(r) for r in results.get(key, [])]
         replies = saved or run['texts']
         if run['steps']:

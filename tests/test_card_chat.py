@@ -70,6 +70,39 @@ class CardChat(unittest.TestCase):
         self.assertEqual(items[1]['text'], 'Found it in the-file.')
         self.assertEqual(items[2]['at'], 4000)
 
+    def test_a_cli_run_shows_its_reply_once_without_its_working_notes(self):
+        # Claude Code as the agent: OpenClaw imports the CLI's own turns (no run ID) and then writes its own record of
+        # the run, all the CLI's text joined. Only the last turn's text is the reply.
+        cli = lambda content, stop, ms: {'role': 'assistant', 'content': content, 'stopReason': stop, 'timestamp': ms,
+                                         'provider': 'claude-cli', '__openclaw': {'importedFrom': 'claude-cli', 'id': f'i{ms}'}}
+        tool = [{'type': 'toolcall', 'name': 'exec', 'arguments': {}}]
+        turn = lambda run, ms: [
+            row('user', [{'type': 'text', 'text': 'The service prompt'}], None, ms),
+            cli(tool, 'tool_use', ms + 1000),
+            cli([{'type': 'text', 'text': 'Look up the thread first.'}], 'tool_use', ms + 2000),
+            cli(tool, 'tool_use', ms + 3000),
+            cli([{'type': 'text', 'text': 'Need the card details.'}], 'tool_use', ms + 4000),
+            cli([{'type': 'text', 'text': f'The answer for {run}.'}], 'end_turn', ms + 5000),
+            row('assistant', [{'type': 'text', 'text': f'Look up the thread first.\n\nNeed the card details.\n\nThe answer for {run}.'}], run, ms + 5500)]
+        items = a.chat_items(turn('r1', 1000) + turn('r2', 100000), [{'kind': 'you', 'text': 'Again', 'at': 100000}])
+        replies = [i['text'] for i in items if i['kind'] == 'reply']
+        self.assertEqual(replies, ['The answer for r1.', 'The answer for r2.'])
+        self.assertNotIn('Need the card details', json.dumps(items))
+        self.assertEqual([i['kind'] for i in items], ['reply', 'you', 'reply'])
+        # Without the CLI's last turn (an older session), the record shows without the notes
+        record_only = [m for m in turn('r1', 1000) if m.get('stopReason') != 'end_turn']
+        self.assertEqual([i['text'] for i in a.chat_items(record_only, []) if i['kind'] == 'reply'], ['The answer for r1.'])
+
+    def test_progress_commentary_never_shows_as_the_reply(self):
+        sig = lambda phase: json.dumps({'v': 1, 'id': 'msg_1', 'phase': phase})
+        msgs = [row('assistant', [{'type': 'text', 'text': 'Checking the inbox first.', 'textSignature': sig('commentary')},
+                                  {'type': 'toolCall', 'name': 'exec', 'arguments': {}}], 'r1', 1000),
+                {**row('assistant', [{'type': 'text', 'text': 'Checking the inbox first.'}], 'r1', 1000),
+                 'openclawStreamFallback': {'source': 'segment', 'itemId': 'msg_1', 'replacementText': 'Checking the inbox first.'}},
+                row('assistant', [{'type': 'text', 'text': 'Drafted the reply.', 'textSignature': sig('final_answer')}], 'r1', 3000)]
+        items = a.chat_items(msgs, [])
+        self.assertEqual([(i['kind'], i.get('text')) for i in items], [('steps', None), ('reply', 'Drafted the reply.')])
+
     def test_steps_come_before_the_reply_and_saved_results_win(self):
         msgs = [row('assistant', [{'type': 'toolCall', 'name': 'exec', 'arguments': {}}], 'r1', 3000),
                 row('assistant', [{'type': 'text', 'text': 'Free text the run also wrote.'}], 'r1', 4000)]
