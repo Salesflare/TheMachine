@@ -114,3 +114,38 @@ def in_hours(local, hours=None):
 def morning_label(hours=None):
     hour, minute = clock((hours or WORK_HOURS)['morning'])
     return f'{hour}:{minute:02d}'
+
+
+def local_day(value, metadata=None, tz=None):
+    """The owner's calendar day (a date) of a stored time: ISO text (UTC in the database) or a datetime, in their time
+    zone (`tz`, default theirs), so 00:30 in Brussels is that day, not the one before in UTC. An all-day calendar event
+    (metadata with all_day and start.date, as connectors store it) is on its own date whatever the zone: its stored
+    start is midnight in the calendar's zone, which is the day before in UTC east of it. A bare date stays that date.
+    None when there is no time."""
+    if isinstance(metadata, dict) and metadata.get('all_day'):
+        day = (metadata.get('start') or {}).get('date') if isinstance(metadata.get('start'), dict) else None
+        if isinstance(day, str) and re.fullmatch(r'\d{4}-\d{2}-\d{2}', day):
+            return dt.date.fromisoformat(day)
+    if isinstance(value, dt.datetime):
+        stamp = value
+    elif isinstance(value, dt.date):
+        return value
+    else:
+        text = str(value or '').strip()
+        if not text:
+            return None
+        if re.fullmatch(r'\d{4}-\d{2}-\d{2}', text):
+            return dt.date.fromisoformat(text)
+        try:
+            stamp = dt.datetime.fromisoformat(text.replace('Z', '+00:00'))
+        except ValueError:
+            return dt.date.fromisoformat(text[:10])
+    if stamp.tzinfo is None:
+        stamp = stamp.replace(tzinfo=dt.timezone.utc)
+    return stamp.astimezone(tz or LOCAL_TZ).date()
+
+
+def local_day_text(value, metadata=None, tz=None):
+    """local_day as ISO text ('2026-12-05'), or '' without a time."""
+    day = local_day(value, metadata, tz)
+    return day.isoformat() if day else ''

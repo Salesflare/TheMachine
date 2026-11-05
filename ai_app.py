@@ -569,7 +569,8 @@ class AiApp:
             todos = db.execute(f"SELECT DISTINCT s.id,s.dedupe_key,s.title,s.status,s.due,s.account_ids,s.area FROM suggestions s, json_each(s.event_ids) j "
                                f"WHERE j.value IN ({events}) AND s.status IN ({','.join('?' * len(OPEN))}) ORDER BY s.created_at DESC LIMIT 20",
                                (node, *OPEN)).fetchall()
-            promises = db.execute(f"SELECT id FROM promises WHERE event_id IN ({events}) AND status IN ('open','carded') LIMIT 20", (node,)).fetchall()
+            # still open: one whose to-do is done or dismissed is kept or dropped by now
+            promises = db.execute(f"SELECT p.id FROM promises p WHERE p.event_id IN ({events}) AND {person_summary.OPEN_PROMISE} LIMIT 20", (node,)).fetchall()
         item = self.ai_node(view)
         item['todos'] = [{'id': t['id'], 'title': mark(t['title'], self.ai_todo_source(t)) if self.ai_todo_source(t) else t['title'],
                           'status': t['status'], 'due': t['due']}

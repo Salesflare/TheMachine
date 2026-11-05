@@ -35,12 +35,15 @@ function calUnion(){const seen=new Set(),all=[];let any=false;for(const w of cal
 const calFailedIn=(a,b)=>calMondays(a,b).some(d=>calWeeks.get(localDay(d))?.failed);
 function calFetch(force){const [a,b]=calRange(),weeks=[...calMondays(a,b)],now=calMonday(new Date());if(!weeks.some(d=>+d===+now))weeks.push(now);return Promise.all(weeks.map(d=>calFetchWeek(d,force)))}
 async function calendarView(force){calRender();await calFetch(force);calRender()}
+// A meeting's [start, end) as Dates. All day: midnight to midnight on its own dates (day, until) here, so it stays on
+// its calendar date in whatever zone the device is in.
+const calTimes=m=>m.all_day&&m.day&&m.until?[new Date(m.day+'T00:00:00'),new Date(m.until+'T00:00:00')]:[new Date(m.start),new Date(m.end)];
 // Everything with a date in [from, to), by local day ('overdue' for due dates already past, when today is in it)
 function calItems(from=calDay(0),to=calDay(1)){const days=[];for(let d=calMid(from);d<to;d=calAdd(d,1))days.push(localDay(d));
  const week=new Set(days),today=localDay(new Date()),withToday=week.has(today),now=Date.now(),out=[],seen=new Set();
  const open=(state.suggestions||[]).filter(s=>!closed(s)),cardFor=id=>open.find(s=>eventIds(s).map(Number).includes(Number(id)));
  // Someone else's event on a calendar shared with the owner shows, marked as theirs, and never carries a card
- for(const m of calMeetings||[]){const s=m.shared?null:cardFor(m.id),a=new Date(m.start),b0=new Date(m.end);if(isNaN(a))continue;const b=isNaN(b0)||b0<=a?new Date(a.getTime()+1):b0;
+ for(const m of calMeetings||[]){const s=m.shared?null:cardFor(m.id),[a,b0]=calTimes(m);if(isNaN(a))continue;const b=isNaN(b0)||b0<=a?new Date(a.getTime()+1):b0;
   // All day, or a day or more (a trip): on every day it covers, as All day with its dates, never as times
   if(m.all_day||b-a>=864e5){const first=localDay(a),last=localDay(new Date(b-1)),span=first!==last?[first,last]:null;
    for(const k of days){const d=calOf(k);if(a<calAdd(d,1)&&b>d)out.push({day:k,kind:'meeting',allDay:true,at:0,m,s,span,promises:[]})}if(s)seen.add(s.id);continue}
@@ -268,7 +271,7 @@ async function calNew(){if(!calCals.length){const a=new Date();try{const r=await
 // An event that can't be changed here (someone else's, with guests, or on a calendar only to read): its details in the
 // app, and its own calendar one link away. Looking changes nothing.
 const calOpenLabel=url=>{let h='';try{h=new URL(url).hostname}catch{}return /(^|\.)google\.com$/.test(h)?'Open in Google Calendar ↗':/(^|\.)(outlook\.(com|office\.com|office365\.com|live\.com)|office\.com|live\.com)$/.test(h)?'Open in Outlook ↗':'Open in its calendar ↗'};
-function calView(m){const a=new Date(m.start),b0=new Date(m.end),b=isNaN(b0)||b0<=a?new Date(a.getTime()+1):b0,long=d=>d.toLocaleDateString(DL,{weekday:'long',day:'numeric',month:'long'});
+function calView(m){const [a,b0]=calTimes(m),b=isNaN(b0)||b0<=a?new Date(a.getTime()+1):b0,long=d=>d.toLocaleDateString(DL,{weekday:'long',day:'numeric',month:'long'});
  const allDay=m.all_day||b-a>=864e5,last=new Date(b-1),when=allDay?(localDay(last)!==localDay(a)?rangeText(long(a),long(last)):long(a))+' · '+t('All day')
   :long(a)+', '+rangeText(humanHM(a),(localDay(b)!==localDay(a)?long(b)+', ':'')+humanHM(b));
  const where=[m.location,...(m.rooms||[])].filter(Boolean).join(' · ');  // a booked meeting room is where, not who

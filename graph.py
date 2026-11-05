@@ -46,6 +46,7 @@ import unicodedata
 from zoneinfo import ZoneInfo
 
 import locale_prefs
+import timeutil
 
 import enrichment
 import person_summary
@@ -1875,9 +1876,12 @@ def person_evidence(db, node_id, owner, limit=8):
         m = json.loads(r['metadata'] or '{}')
         sent = ('SENT' in (m.get('labels') or ()) or bool(m.get('from_me')) or m.get('user_id') in owner.slack
                 or any(a in owner.emails for _, a in addresses(m.get('from'))[:1]))
-        item = {'event_id': r['id'], 'kind': r['kind'], 'at': r['occurred_at'][:10], 'title': str(r['title'] or '')[:120]}
+        # the owner's day: an all-day event on its own date, a message at 00:30 their time on that day (not UTC's)
+        item = {'event_id': r['id'], 'kind': r['kind'], 'at': timeutil.local_day_text(r['occurred_at'], m), 'title': str(r['title'] or '')[:120]}
         if r in meetings:
             item['attendees'] = len(m.get('attendees') or m.get('contacts') or ())
+            if m.get('all_day'):
+                item['all_day'] = True
         else:
             item.update({'from': 'the owner' if sent else str(m.get('from') or m.get('chat_name') or '')[:120], 'text': excerpt(r['body'])})
             if r['kind'] == 'linkedin.message' and m.get('headline') and not m.get('group'):
@@ -1931,7 +1935,7 @@ def for_events(db, event_ids):
 def short_date(value):
     if not value:
         return 'never'
-    return locale_prefs.day_text(dt.date.fromisoformat(str(value)[:10]))
+    return locale_prefs.day_text(timeutil.local_day(value))  # a stored UTC time on the owner's own day
 
 
 def context_lines(db, event_ids, limit_chars=1500, skip_card=None, sides=None):
@@ -3875,7 +3879,7 @@ def sort_brief(db, run_id, limit=SORT_BATCH, per=SORT_MESSAGES):
             continue
         board = db.execute('SELECT * FROM boards WHERE id=?', (p['board_id'],)).fetchone()
         db.execute('UPDATE projects SET sort_run=?,sort_tries=sort_tries+1 WHERE id=?', (run_id, p['id']))
-        said = ', '.join(f"{e['id']} ({e['kind']}, {str(e['occurred_at'])[:10]})" for e in events)
+        said = ', '.join(f"{e['id']} ({e['kind']}, {timeutil.local_day_text(e['occurred_at'])})" for e in events)
         lines.append(f"- {p['name']} ({node}) on {p['board']} ({' > '.join(stage_names(board))}); its latest messages, newest first: {said}")
     return '\n'.join(lines)
 

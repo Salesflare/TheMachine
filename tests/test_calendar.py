@@ -156,8 +156,24 @@ class Calendar(unittest.TestCase):
         self.assertNotIn('Private notes', json.dumps(rows))  # no bodies
         self.assertIsNone(rows[2]['url'])  # only https links
         self.assertTrue(rows[3]['all_day'])
+        self.assertEqual((rows[3]['day'], rows[3]['until']), ('2026-10-26', '2026-10-28'))  # its own dates, for the page
         self.assertEqual(self.store.calendar([], *self.week), [])
         self.assertEqual(self.store.calendar(['other'], *self.week), [])
+
+    def test_an_all_day_event_is_midnight_to_midnight_where_the_owner_is(self):
+        """East of UTC (Brussels) its midnight is the evening before in UTC, west (Los Angeles) the morning of: the row says
+        so, with the dates themselves (day, until), so the Calendar shows it on Oct 26 and 27 in either."""
+        import timeutil
+        zone = timeutil.LOCAL_TZ
+        self.addCleanup(setattr, timeutil, 'LOCAL_TZ', zone)
+        for owner, start, end in (('Europe/Brussels', '2026-10-25T23:00:00+00:00', '2026-10-27T23:00:00+00:00'),
+                                  ('America/Los_Angeles', '2026-10-26T07:00:00+00:00', '2026-10-28T07:00:00+00:00')):
+            with self.subTest(owner=owner):
+                timeutil.set_timezone(owner)
+                row = next(r for r in self.store.calendar(['cal'], *self.week) if r['title'] == 'Team offsite')
+                self.assertEqual((row['start'], row['end'], row['day'], row['until']), (start, end, '2026-10-26', '2026-10-28'))
+                event = meeting('offsite', {'date': '2026-10-26'}, {'date': '2026-10-28'}, 'Team offsite')
+                self.assertEqual((event['occurred_at'], event['metadata']['end_at']), (start, end))  # stored the same way
 
     def shared_week(self):
         at = lambda h: {'dateTime': f'2026-10-27T{h}:00:00+01:00'}

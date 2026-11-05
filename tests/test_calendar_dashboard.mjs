@@ -26,7 +26,9 @@ const meetings=[
  {id:106,account_id:'cal',title:'Dentist',start:iso(at(6,8,30)),end:iso(at(6,8,30)),all_day:false,location:'',guests:0,url:null},  // no end time: ends when it starts
  // On a partner's calendar shared with the owner, and they aren't on it: marked as theirs, Friday evening to Sunday evening
  {id:107,account_id:'partner',title:'Weekend away',start:iso(at(2,19)),end:iso(at(4,19)),all_day:false,location:'',guests:0,people:[],shared:'Robin',url:'https://calendar.google.com/calendar/event?eid=away'},
- {id:108,account_id:'cal',title:'Pram from Evelien (cash)',start:iso(at(5,10)),end:iso(at(5,10,30)),all_day:false,location:'Harbour St 2',guests:0,people:[],url:null}];
+ {id:108,account_id:'cal',title:'Pram from Evelien (cash)',start:iso(at(5,10)),end:iso(at(5,10,30)),all_day:false,location:'Harbour St 2',guests:0,people:[],url:null},
+ // All day on its own date (day, until), even when its start and end are midnight somewhere else (here 15:00 the day before)
+ {id:109,account_id:'cal',title:'Birthday party',start:iso(at(5,15)),end:iso(at(6,15)),all_day:true,day:day(6),until:day(7),location:'',guests:0,people:[],url:null}];
 const card=(id,title,status,extra={})=>({id:id.repeat(16).slice(0,16),title,body:'Made-up card for the Calendar test.',status,scope:'work',created_at:now,event_ids:[],...extra});
 const cards=[
  card('a','Prep notes for the pilot review','prepared',{event_ids:'[102]',due:day(0)}),  // as /api/status sends it: JSON text
@@ -96,6 +98,7 @@ try{
   assert.match(b[3].rows.join('\n'),/09:00 \| Check in with Robin \| If no answer · Venue booking for the offsite/);
   assert.match(b[3].rows.join('\n'),/Due \| Send the signed contract \| Sam Lee promised/);
   assert.match(b[4].rows.join('\n'),/All day \| Team offsite/);assert.match(b[5].rows.join('\n'),/All day \| Team offsite/);assert.ok(!b[6].rows.join().includes('Team offsite'),'an all-day end is exclusive');
+  assert.match(b[7].rows.join('\n'),/All day \| Birthday party/);assert.ok(!b[6].rows.join().includes('Birthday party'),'on its own date only');
   assert.match(b[5].rows.join('\n'),/Due \| Send the Q3 deck \| With Alex Morgan/);assert.equal(b[5].rows.filter(r=>/Q3 deck/i.test(r)).length,1,'one row per promise');
   // Someone else's trip on a shared calendar: on each day it covers, All day with its dates, marked with their name
   for(const k of [3,4,5]){const r=b[k].rows.find(r=>r.includes('Weekend away'));assert.ok(r,'day '+k);assert.match(r,/^All day \| Robin’s Weekend away \| \w{3} \d{1,2} to \w{3} \d{1,2}$/)}

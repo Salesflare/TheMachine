@@ -27,6 +27,7 @@ import urllib.parse
 
 import family_invites
 import locale_prefs
+import timeutil
 from i18n import t
 
 KIND = 'family'
@@ -255,7 +256,7 @@ class Family:
                                     + (', ' + question["place"] if question.get('place') else '') + '.'
                                     + (' ' + t('Their note: “{}”', question["note"]) if question.get('note') else '')
                                     + ' ' + t('Add it to your calendar yourself: {}', link)),
-                              evidence=[], due=question['start'][:10], family=True)
+                              evidence=[], due=timeutil.local_day_text(question['start']) or None, family=True)
 
     def family_reminders(self, today=None):
         """An accepted to-do, on its due day: one reminder on this Machine (phone and Telegram), once."""
