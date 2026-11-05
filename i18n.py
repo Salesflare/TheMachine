@@ -84,4 +84,19 @@ def prompt_rule(lang=None):
     thread, the owner's own text (card titles, summaries, notes, replies to them) in the owner's UI language."""
     return (f'Languages: a draft or message to someone else is in the language of that thread (or what they write to the '
             f'owner in). What the owner reads from you (to-do titles, summaries, bodies, notes, steps, chat replies) is in '
-            f'{written_in(lang)}, unless the owner writes to you in another language. Product names stay as they are.')
+            f'{written_in(lang)}, unless the owner writes to you in another language. Product names stay as they are.'
+            + button_names(lang))
+
+
+# The dashboard's buttons that results and blockers name ("then tap Continue"): by the words the owner's dashboard shows.
+BUTTONS = ('Continue', 'Try again', 'Confirm', 'Do it', 'Send', 'Answer', 'Snooze', 'Mark done')
+
+
+def button_names(lang=None):
+    """' Name buttons ... Continue is "Doorgaan", ...' for a prompt, '' in English (the buttons read as written)."""
+    lang = lang or locale_prefs.language()
+    if lang == 'en':
+        return ''
+    names = [f'{b} is "{t(b, lang=lang)}"' for b in BUTTONS if t(b, lang=lang) != b]
+    return (' Name the dashboard\'s buttons the way it shows them to the owner, never in English: ' + ', '.join(names) + '.') if names else ''
+

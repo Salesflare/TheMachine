@@ -12,7 +12,7 @@ Vos notifications GitHub : demandes de revue, mentions, assignations, réponses 
 
 ## Ce qu’il peut faire
 
-Rien sur GitHub. Chaque appel qu’il fait est une lecture.
+La lecture ne change rien sur GitHub. Quand une tâche se termine par une étape sur GitHub, comme créer une issue, cette étape passe par la même connexion gh dès que vous touchez **Confirmer**, et la tâche le dit avant. Les captures d’écran passent quand même par le navigateur de votre Machine, car l’outil de GitHub ne peut pas ajouter d’images. Sans GitHub connecté, la tâche dit qu’elle utilisera le navigateur, avec **Connecter GitHub**.
 
 ## Le connecter
 

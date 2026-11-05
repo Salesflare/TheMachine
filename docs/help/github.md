@@ -12,7 +12,7 @@ Your GitHub notifications: review requests, mentions, assignments, replies and f
 
 ## What it can do
 
-Nothing on GitHub. Every call it makes is a read.
+Reading never changes anything on GitHub. When a to-do ends in a GitHub step, like filing an issue, that step runs with the same gh sign-in once you tap **Confirm**, and the to-do says so first. Screenshots still go in through your Machine's browser, since GitHub's own tool can't add images. Without GitHub connected, the to-do says it will use the browser, with **Connect GitHub**.
 
 ## Connect it
 
