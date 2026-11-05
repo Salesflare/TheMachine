@@ -219,7 +219,7 @@ def area_name(boundary):
 
 def connect_line(area):
     """What the owner does when no doc connection fits the to-do's area."""
-    return f'Connect Google Docs or Microsoft Word for {"Work" if kind_of(area_of(area)) == "work" else "Personal"}'
+    return f'Connect Google Docs or Microsoft OneDrive for {"Work" if kind_of(area_of(area)) == "work" else "Personal"}'
 
 
 def none_fits(area):

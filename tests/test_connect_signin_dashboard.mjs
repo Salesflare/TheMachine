@@ -26,7 +26,7 @@ const server=createServer(async(req,res)=>{
    {name:'calendar',service:'calendar',label:'Google Calendar',what:'Your meetings.',connected:0,broker:false,signin:'google'},
    {name:'outlook',service:'outlook',label:'Outlook',what:'Your Outlook email.',connected:0,broker:false,signin:'microsoft'},
    {name:'zoom',service:'zoom',label:'Zoom',what:'Your meetings.',connected:0,broker:false,signin:'zoom'},
-   {name:'docs',service:'docs',label:'Microsoft Word',what:'Comments and shares on your docs.',connected:0,broker:true,signin:'microsoft_docs'},
+   {name:'docs',service:'docs',label:'Microsoft OneDrive',what:'Comments and shares on your docs.',connected:0,broker:true,signin:'microsoft_docs'},
    {name:'stripe',service:'stripe',label:'Stripe',what:'Payments and subscriptions.',connected:0,broker:false,signin:'stripe',signin_off:true},
    {name:'github',service:'github',label:'GitHub',connected:0,broker:false}]}));return}
   if(action==='connect_signin'){assert.ok(['intercom','trello','gmail','docs'].includes(args.name));if(refuse){res.end(JSON.stringify({state:'unavailable'}));return}res.end(JSON.stringify({url:base+'/connect/start/'+'A'.repeat(32),state:'started'}));return}
@@ -128,11 +128,11 @@ try{
   assert.match(await page.locator('#connect-add').innerText(),/Reads only\./);
   await page.locator('#connect-add details.connect-other summary').click();
   await shot(page,`add-zoom-own-app-${tag}`);
-  // Microsoft Word on a Microsoft address, Outlook or not: its own consent, signed in with Microsoft through The Machine's app; no own app to fold away
+  // Microsoft OneDrive on a Microsoft address, Outlook or not: its own consent, signed in with Microsoft through The Machine's app; no own app to fold away
   await page.goto('about:blank');await page.goto(base+'/#connections=add');
   await page.locator('#connect-add [data-connect-signin="docs"]').click();
   await page.getByRole('button',{name:'Sign in with Microsoft'}).waitFor();
-  assert.equal(await page.locator('#connect-add h3').innerText(),'Microsoft Word');
+  assert.equal(await page.locator('#connect-add h3').innerText(),'Microsoft OneDrive');
   assert.match(await page.locator('#connect-add').innerText(),/Word, OneDrive and SharePoint\. Outlook isn’t needed\. Edits wait for your OK\./);
   assert.equal(await page.locator('#connect-add details.connect-other').count(),0);
   // Stripe, which the control plane has no app for: no Sign in button, pasting a restricted key open at once

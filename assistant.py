@@ -10328,7 +10328,7 @@ def doc_write_prompt(config):
             "{kind:'doc_write',op:'edit',file_id:<metadata.file_id of this task's doc event>,changes:[{find,replace} | {after,insert} | {append}]}. "
             "A new doc goes only to a place in this to-do's own area (Work at that company, or Personal, as its accounts are), and to the one with "
             "the conversation's own address when that one can; never to another area's account. When none fits, draft no doc: give its text in "
-            "the to-do and say needs:'Connect Google Docs or Microsoft Word for Work' (or for Personal). Name the place exactly as listed "
+            "the to-do and say needs:'Connect Google Docs or Microsoft OneDrive for Work' (or for Personal). Name the place exactly as listed "
             "(Google Docs or Word) in the body and needs, never the other. With a new doc, save outcome:'needs_you' with needs:'open the doc and check it' "
             "(the body says the doc is being made, never that someone has it). Add last:true only when the doc itself finishes the to-do; otherwise "
             "then:<the step after it, e.g. reply to Sam with the link>: once the doc is made, the to-do carries on with that step as a new draft. "

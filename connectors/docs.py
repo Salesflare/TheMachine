@@ -21,7 +21,7 @@ Outlook mail and calendar connectors never use:
 Writes, each only after the owner's OK on exactly that: drive.replies.create through Replier, for an approved doc_reply
 (next_actions.py), and a new doc or a pinned edit through Writer, for an approved doc_write (doc_writes.py). Writing docs
 needs Google's drive scope (the same one as replies; a new doc also works with drive.file), and Microsoft's
-Files.ReadWrite.All, which comes with connecting Microsoft Word (Allow edits only for a connection from before).
+Files.ReadWrite.All, which comes with connecting Microsoft OneDrive (Allow edits only for a connection from before).
 """
 import datetime as dt
 import hashlib
@@ -40,7 +40,7 @@ KINDS = {'docs.comment': 'Doc comment', 'docs.mention': 'Doc mention', 'docs.sug
          'docs.shared': 'Shared doc'}
 SETUP = {
     # Microsoft only for now, so the tile says so; a Google Docs one gets its own name once the broker offers it
-    'label': 'Microsoft Word',
+    'label': 'Microsoft OneDrive',
     'account': {'id': 'docs', 'service': 'docs', 'transport': 'broker', 'boundary': 'work', 'poll_seconds': 900},
     # Word files only for now, hosted and self-hosted alike: Google Docs come through the token broker, which doesn't
     # offer their consent yet (docs/help/docs.md)

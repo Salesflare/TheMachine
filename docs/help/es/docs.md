@@ -1,5 +1,5 @@
 ---
-title: Microsoft Word: archivos de Word en OneDrive y SharePoint
+title: Microsoft OneDrive: archivos de Word en OneDrive y SharePoint
 area: connections
 summary: Comentarios, menciones, cambios con seguimiento y archivos compartidos en tus archivos de Word en OneDrive y SharePoint, además de documentos nuevos privados, y cambios que apruebas. Google Docs llegará más adelante.
 covers: connector:docs
@@ -8,7 +8,7 @@ site: Sign in with Microsoft
 ---
 ## Qué lee
 
-La conexión **Microsoft Word** lee archivos de Word en OneDrive y SharePoint. Inicias sesión con Microsoft para ella, con o sin Outlook conectado. Funciona en una Machine alojada y en tu propio ordenador vinculado a tu cuenta. Google Docs llegará más adelante: el inicio de sesión de Google de The Machine aún no puede leer documentos. Trae:
+La conexión **Microsoft OneDrive** lee archivos de Word en OneDrive y SharePoint. Inicias sesión con Microsoft para ella, con o sin Outlook conectado. Funciona en una Machine alojada y en tu propio ordenador vinculado a tu cuenta. Google Docs llegará más adelante: el inicio de sesión de Google de The Machine aún no puede leer documentos. Trae:
 
 - Documentos que alguien comparte contigo.
 - Comentarios y respuestas en documentos tuyos, y comentarios que te mencionan.
@@ -36,31 +36,31 @@ Tu Machine puede escribir un documento nuevo o cambiar un documento del que trat
 
 Reemplaza texto, añade texto y añade párrafos y títulos. No toca tablas, imágenes, cambios con seguimiento ni campos. Un documento nuevo queda en tu Google Drive o OneDrive y es privado hasta que lo compartas.
 
-Un documento nuevo va a una cuenta del área de la tarea: el documento de una tarea de Trabajo a la cuenta de esa empresa, la de la conversación cuando se puede, nunca a una personal. En tu propio ordenador, una cuenta de Google conectada para Gmail que ya tiene acceso a Drive también puede recibir un Google Doc nuevo. Si ninguna cuenta encaja, la tarea dice **Conecta Google Docs o Microsoft Word para Trabajo**.
+Un documento nuevo va a una cuenta del área de la tarea: el documento de una tarea de Trabajo a la cuenta de esa empresa, la de la conversación cuando se puede, nunca a una personal. En tu propio ordenador, una cuenta de Google conectada para Gmail que ya tiene acceso a Drive también puede recibir un Google Doc nuevo. Si ninguna cuenta encaja, la tarea dice **Conecta Google Docs o Microsoft OneDrive para Trabajo**.
 
 Cuando el documento no es el final de la tarea, como una respuesta con su enlace, la tarea sigue abierta y prepara ese siguiente paso para tu OK.
 
-Conectar Microsoft Word ya lo permite: no hay un paso aparte. Una conexión de Microsoft Word anterior que solo lee muestra **Permitir cambios** en su tarjeta en **Conexiones**. Tócalo una vez y acepta.
+Conectar Microsoft OneDrive ya lo permite: no hay un paso aparte. Una conexión de Microsoft OneDrive anterior que solo lee muestra **Permitir cambios** en su tarjeta en **Conexiones**. Tócalo una vez y acepta.
 
 ## Qué pide
 
-Microsoft Word pide a Microsoft un solo OK, aparte del inicio de sesión de tu correo: leer y cambiar tus archivos, incluidos los que se comparten contigo en OneDrive y SharePoint. Cada cambio sigue esperando tu OK en su tarea. Tu acceso al correo y al calendario se queda como está. Sin Outlook, el inicio de sesión solo cubre tus archivos, nunca tu correo ni tu calendario.
+Microsoft OneDrive pide a Microsoft un solo OK, aparte del inicio de sesión de tu correo: leer y cambiar tus archivos, incluidos los que se comparten contigo en OneDrive y SharePoint. Cada cambio sigue esperando tu OK en su tarea. Tu acceso al correo y al calendario se queda como está. Sin Outlook, el inicio de sesión solo cubre tus archivos, nunca tu correo ni tu calendario.
 
-Si más tarde se retira ese OK, la tarjeta de Microsoft Word dice **Esperando tu OK para leer documentos**.
+Si más tarde se retira ese OK, la tarjeta de Microsoft OneDrive dice **Esperando tu OK para leer documentos**.
 
 ## Conéctalo
 
 No necesitas tener Outlook conectado.
 
-- Machine alojada: en el panel, abre **Conexiones**, **+ Añadir**, elige **Microsoft Word** y pulsa **Iniciar sesión con Microsoft**. Microsoft te pide permitir que lea y edite tus archivos y luego vuelves al panel.
-- Tu propio ordenador, vinculado a tu cuenta: abre **Conexiones**, **+ Añadir**, elige **Microsoft Word** y pulsa **Iniciar sesión con Microsoft**.
+- Machine alojada: en el panel, abre **Conexiones**, **+ Añadir**, elige **Microsoft OneDrive** y pulsa **Iniciar sesión con Microsoft**. Microsoft te pide permitir que lea y edite tus archivos y luego vuelves al panel.
+- Tu propio ordenador, vinculado a tu cuenta: abre **Conexiones**, **+ Añadir**, elige **Microsoft OneDrive** y pulsa **Iniciar sesión con Microsoft**.
 
 Comprueba que el inicio de sesión puede leer documentos. Sin ese OK no se añade. Si tocas **Permitir cambios** y Microsoft no permite cambios, lo dice en lugar de mostrar Conectado.
 
 ## Trabajo o personal
 
-Microsoft Word sigue la etiqueta de trabajo o personal de su conexión, como el correo. Los documentos de trabajo pueden llegar al Graph de tu equipo según tus [reglas para compartir](sharing-rules.md). Los personales nunca.
+Microsoft OneDrive sigue la etiqueta de trabajo o personal de su conexión, como el correo. Los documentos de trabajo pueden llegar al Graph de tu equipo según tus [reglas para compartir](sharing-rules.md). Los personales nunca.
 
 ## Quítalo
 
-En el panel: **Conexiones**, abre Microsoft Word, **Detalles** y luego **Desconectar**. Deja de leer. Lo que ya trajo se queda.
+En el panel: **Conexiones**, abre Microsoft OneDrive, **Detalles** y luego **Desconectar**. Deja de leer. Lo que ya trajo se queda.
