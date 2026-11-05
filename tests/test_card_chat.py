@@ -380,20 +380,21 @@ class CardChat(unittest.TestCase):
         with self.store.connect() as db:  # a send is shown by its action's own label, not as a decision too
             db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES('s1',?,'send','','dashboard',?)", (self.sid, a.now()))
         history = {'messages': [row('assistant', [{'type': 'text', 'text': 'On it.'}], job['job_id'], a.chat_ms(a.now()) + 1000)],
-                   'deltaCursor': 'cur1', 'hasMore': False, 'inFlightRun': {'runId': job['job_id'], 'text': 'Writing to /home/x/y'}}
+                   'deltaCursor': 'cur1', 'hasMore': False, 'inFlightRun': {'runId': job['job_id'], 'text': 'Check the inbox first (needs a tool).'}}
         with self.gateway(history):
             chat = self.app.card_chat(self.sid)
         self.assertEqual(self.calls[0]['session_key'], 'agent:main:assistant-review-preparation-' + job['session_job_id'])
         self.assertEqual((self.calls[0]['limit'], self.calls[0]['cursor']), (a.CHAT_HISTORY_LIMIT, None))
         self.assertTrue(chat['active'])
         self.assertEqual(chat['cursor'].split('|')[0], 'cur1')
-        self.assertEqual(chat['live'], {'text': 'Writing to …'})
+        self.assertIsNone(chat['live'])  # Working…, never the text being written: it can be a note before a tool call
+        self.assertNotIn('Check the inbox', json.dumps(chat))
         self.assertEqual([(i['kind'], i['text']) for i in chat['items']], [('source', 'Actual evidence'), ('you', 'Make it shorter'), ('reply', 'On it.')])
-        # Polling with the cursor: nothing new is just "unchanged", with the live reply
-        with self.gateway({'kind': 'delta', 'messages': [], 'deltaCursor': 'cur2', 'inFlightRun': {'text': 'Writing more'}}):
+        # Polling with the cursor: nothing new is just "unchanged", still Working…
+        with self.gateway({'kind': 'delta', 'messages': [], 'deltaCursor': 'cur2', 'inFlightRun': {'text': 'Need the card details.'}}):
             delta = self.app.card_chat(self.sid, chat['cursor'])
         self.assertEqual(self.calls[-1]['cursor'], 'cur1')
-        self.assertEqual((delta['unchanged'], delta['cursor'].split('|')[0], delta['live']), (True, 'cur2', {'text': 'Writing more'}))
+        self.assertEqual((delta['unchanged'], delta['cursor'].split('|')[0], delta['live']), (True, 'cur2', None))
         self.assertNotIn('items', delta)
         # A send moving on (queued, then sent) is the service's own news: the whole chat comes back, not "unchanged"
         with self.store.connect() as db:

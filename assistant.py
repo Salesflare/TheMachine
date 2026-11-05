@@ -19617,7 +19617,7 @@ class App(*APP_MIXINS):
 
     def card_chat(self, suggestion_id, cursor=None):
         """The chat view of one card (chat_items): read-only. While its run is going the dashboard asks about once a
-        second with the last `cursor`; `unchanged` then means only the live reply (if any) moved."""
+        second with the last `cursor`; `unchanged` then means nothing new (it shows Working… meanwhile)."""
         if not re.fullmatch(r'[a-f0-9]{16}', str(suggestion_id or '')):
             raise ValueError('Unknown suggestion')
         if cursor is not None and (not isinstance(cursor, str) or len(cursor) > 4000):
@@ -19649,7 +19649,9 @@ class App(*APP_MIXINS):
                 LOG.warning('card chat history unavailable suggestion=%s active=%s reason=%s', suggestion_id, active, reason)
             return {**result, 'items': chat_items([], owner, results), 'cursor': None, 'unavailable': True}
         flight = found.get('inFlightRun') if isinstance(found.get('inFlightRun'), dict) else None
-        result['live'] = {'text': chat_text(flight.get('text'), chars=8000)} if flight and active else None
+        # While a run goes, the chat shows Working… and never the text it is writing: until the run ends, that text can
+        # be a working note before a tool call (a Claude Code run, an OpenAI commentary) rather than the reply.
+        result['live'] = None
         result['cursor'] = found['deltaCursor'] + '|' + digest if isinstance(found.get('deltaCursor'), str) else None
         if found.get('kind') == 'delta' and gateway_cursor:
             return {**result, 'unchanged': True}
