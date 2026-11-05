@@ -170,6 +170,45 @@ class NewCard(unittest.TestCase):
         self.assertFalse(self.review(event_ids=[made['event_id']], card_id=other['id'])['merge_offered'])
         self.assertTrue(json.loads(self.row(made['id'])['merge_offer'])['kept'])
 
+    def test_an_owner_card_for_a_matter_that_already_has_a_card_asks_instead_of_making_a_second(self):
+        # A review made a to-do from a mail (a promise to send an announcement); the owner then adds their own to-do for
+        # it in other words. The review links that mail to it but names no card_id: suggest asks rather than fill a twin.
+        self.store.commit_page('w', {}, [mail('m1', title='Club evening on the 9th')])
+        other = self.review(event_ids=[1], dedupe_key='promise:7', title='Send the club evening announcement to the members',
+                            project='Club evening')
+        made = self.new(text='mail the members about Monday evening on Thursday')
+        with self.assertRaisesRegex(ValueError, 'Not saved yet.*' + other['id']):
+            self.review(event_ids=[made['event_id'], 1], card_id=made['id'], dedupe_key='owner:x', project='Club evening')
+        self.assertIsNone(self.row(made['id'])['merge_offer'])
+        # Same matter: the owner is asked, nothing merges by itself
+        offered = self.review(event_ids=[made['event_id'], 1], card_id=other['id'], dedupe_key='owner:x')
+        self.assertTrue(offered['merge_offered'])
+        self.assertEqual(json.loads(self.row(made['id'])['merge_offer'])['card_id'], other['id'])
+        self.assertEqual((self.row(made['id'])['status'], self.row(other['id'])['status']), ('pending', 'pending'))
+
+    def test_an_owner_card_for_a_different_matter_is_filled_in_on_its_own(self):
+        self.store.commit_page('w', {}, [mail('m1'), mail('m2', thread='t2', sender='Ana Diaz <ana@other.example>', title='Lunch')])
+        other = self.review(event_ids=[1], dedupe_key='w:sam')
+        made = self.new(text='Book lunch with Ana')
+        # Nothing shared with the open card: filled in straight away
+        filled = self.review(event_ids=[made['event_id'], 2], card_id=made['id'], dedupe_key='owner:lunch', title='Book lunch with Ana')
+        self.assertEqual(filled['id'], made['id'])
+        # Shared, but the review judged it a different matter: separate fills the owner's card, no second card, no merge
+        again = self.review(event_ids=[made['event_id'], 1], card_id=made['id'], dedupe_key='owner:lunch', separate=True, title='Book lunch with Ana')
+        self.assertEqual(again['id'], made['id'])
+        self.assertIsNone(self.row(made['id'])['merge_offer'])
+        self.assertEqual(self.row(other['id'])['status'], 'pending')
+        with self.store.connect() as db:
+            self.assertEqual(db.execute('SELECT count(*) FROM suggestions').fetchone()[0], 2)
+
+    def test_a_pair_the_owner_kept_apart_is_not_asked_again(self):
+        self.store.commit_page('w', {}, [mail('m1')])
+        other = self.review(event_ids=[1], dedupe_key='w:sam')
+        made = self.new(text='Contract for Sam')
+        self.review(event_ids=[made['event_id'], 1], card_id=other['id'])
+        self.app.action('card_merge', {'suggestion_id': made['id'], 'merge': False, 'decision_id': 'k1'}, owner_dashboard=True)
+        self.assertEqual(self.review(event_ids=[made['event_id'], 1], card_id=made['id'], dedupe_key='owner:c')['id'], made['id'])
+
     def test_merge_folds_the_owner_card_into_the_other_and_carries_their_words(self):
         self.store.commit_page('w', {}, [mail('m1')])
         other = self.review(event_ids=[1], dedupe_key='w:sam')

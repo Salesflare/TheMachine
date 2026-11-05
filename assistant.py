@@ -5643,6 +5643,17 @@ class Store:
             if own is not None and card_id is not None and card_id != own['id']:
                 # The owner's card is theirs to merge: the review only asks.
                 return self.offer_merge(db, own, card_id)
+            if own is not None and not separate and own['status'] in CARD_OPEN:
+                # The owner's new to-do may be one the review already made (a promise, a mail): the review judges by
+                # meaning, as for any signal, and the owner is asked (offer_merge) rather than left with two.
+                alike = owner_card_alike(db, own, rows, event_ids, project)
+                if alike:
+                    raise ValueError(f"Not saved yet. The owner made to-do {own['id']} themselves, and these open cards share its evidence, "
+                                     'thread, people or project: '
+                                     + '; '.join(f"{c['id']} \"{c['title']}\" ({c['status']})" for c in alike)
+                                     + '. If it is the same matter (the same ask, commitment or event, in other words), call suggest again with '
+                                       'card_id set to that card: the owner is asked whether to merge the two. '
+                                       'If it is a different matter, call suggest again with separate:true.')
             watch = None
             if awaiting is not None:
                 promise = next((r for r in rows if r['id'] == awaiting), None)
@@ -11850,6 +11861,33 @@ def newer_activity_lines(found):
 def promise_closed_at(db, card):
     """When a closed to-do was last marked done or not needed."""
     return db.execute("SELECT max(created_at) FROM decisions WHERE suggestion_id=? AND choice IN ('complete','reject')", (card['id'],)).fetchone()[0]
+
+
+def owner_card_alike(db, own, rows, event_ids, project=None, limit=4):
+    """Open cards that may be the same matter as a to-do the owner made: one holding the same evidence or in the same
+    email or Slack thread as the signals the review links to it, or sharing their people or project
+    (same_matter_cards). Only the reviewer can tell by meaning; a pair the owner kept apart is not asked again."""
+    offer = json.loads(own['merge_offer'] or '{}') if 'merge_offer' in own.keys() else {}
+    skip = {own['id'], *([offer.get('card_id')] if offer.get('kept') else [])}
+    signals = [r for r in rows if r['kind'] != 'owner.card']
+    ids, keys = {r['id'] for r in signals}, thread_keys(signals)
+    found = {}
+    if signals:
+        for card in db.execute(f"SELECT id,title,status,event_ids FROM suggestions WHERE status IN ({','.join('?' * len(CARD_OPEN))}) "
+                               'ORDER BY created_at DESC LIMIT 200', CARD_OPEN):
+            if card['id'] in skip:
+                continue
+            held = [i for i in json.loads(card['event_ids'] or '[]') if isinstance(i, int)]
+            same = bool(ids & set(held))
+            if not same and keys and held:
+                evidence = db.execute('SELECT account_id,kind,metadata FROM events WHERE id IN (' + ','.join('?' * len(held)) + ')', held).fetchall()
+                same = bool(thread_keys(evidence) & keys)
+            if same:
+                found[card['id']] = {'id': card['id'], 'title': card['title'], 'status': card['status']}
+    for card in same_matter_cards(db, event_ids, project, limit=limit + len(skip)):
+        if card['id'] not in skip:
+            found.setdefault(card['id'], card)
+    return list(found.values())[:limit]
 
 
 def same_matter_cards(db, event_ids, project=None, limit=4):
