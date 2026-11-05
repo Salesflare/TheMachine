@@ -298,9 +298,8 @@ try{
  await page.locator('.side-cards a',{hasText:'Old finished task'}).click();
  await page.locator('h2.chat-title',{hasText:'Old finished task'}).waitFor();
  assert.match(await page.locator('.chat-status').textContent(),/^Done·Reopen$/);
- // Nothing else to do on a done task and the sidebar has the list: no ⋯ that opens an empty box
- assert.equal(await page.locator('#chat-menu').evaluate(n=>getComputedStyle(n).visibility),'hidden','no ⋯ over an empty menu');
- assert.equal(await page.locator('.chat-menu-list>*').evaluateAll(ns=>ns.filter(n=>n.getClientRects().length).length),0);
+ // Its Reopen is in the ⋯ too, never an empty box (every state: test_chat_menu_states_dashboard.mjs)
+ assert.equal(await page.locator('.chat-menu-list [data-choice="reopen"]').count(),1);
  const before=actions.length;
  await page.locator('#chat-input').fill('One more thing');
  await page.locator('[data-chat-send]').click();
