@@ -78,6 +78,7 @@ READ = {
     'drive.shared': ('GET', '/me/drive/sharedWithMe', 'Files.Read.All'),
     'drives.item': ('GET', '/drives/{drive}/items/{id}', 'Files.Read.All'),
     'drive.root.item': ('GET', '/me/drive/root:/{name}', 'Files.Read.All'),
+    'drive.search': ('GET', "/me/drive/root/search(q='{q}')", 'Files.Read.All'),  # Find a doc, for a to-do (Can do things)
 }
 WRITE = {
     'messages.create': ('POST', '/me/messages', 'Mail.ReadWrite'),        # a draft from MIME (never sent by itself)

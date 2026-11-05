@@ -24,6 +24,8 @@ Hij kan een antwoord op een reactie schrijven. Bij Word-bestanden kan een antwoo
 
 Hij aanvaardt nooit een suggestie, sluit nooit een reactie af, deelt nooit een bestand en wijzigt nooit een document zonder je OK.
 
+Een documentenkoppeling kan alleen dingen doen: zet **Brengt signalen binnen** uit onder **Details**, dan zoekt en leest ze alleen de documenten die je to-do's nodig hebben, en maakt ze nieuwe. Een Google-koppeling zonder toegang tot heel Drive leest documenten via hun link, en de documenten die je Machine maakte.
+
 ## Documenten maken en bewerken
 
 Je Machine kan een nieuw document schrijven, of een document aanpassen waar een van je to-do's over gaat:

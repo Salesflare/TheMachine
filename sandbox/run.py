@@ -70,7 +70,7 @@ class FakeTransport:
 def quiet_workers(app, sent):
     """Turns off everything that would read a real source, call a model or reach the owner, and fakes the sends."""
     import assistant
-    for name in ('collector', 'delivery_worker', 'preparation_worker', 'review_worker', 'graph_worker', 'model_usage_worker',
+    for name in ('collector', 'ability_checker', 'delivery_worker', 'preparation_worker', 'review_worker', 'graph_worker', 'model_usage_worker',
                  'embedding_worker', 'enrichment_worker'):
         setattr(app, name, lambda *a, **k: None)
     transport = FakeTransport(sent)

@@ -65,7 +65,7 @@ try{
   // Handed to someone: in Later until they reply, and the toast says until when
   await send(page,id(2),'dd44ee55ff66');
   await page.waitForFunction(()=>/Later/.test(document.querySelector('#toast.show')?.textContent||''),null,{timeout:15000});
-  const day=new Date(Date.now()+3*864e5).toLocaleDateString('en-US',{weekday:'short'});
+  const day=new Date(Date.now()+3*864e5).toLocaleDateString('en-US',{weekday:'short',timeZone:'Europe/Brussels'});  // the page's time zone, not the runner's
   assert.equal(await toastText(page),`Sent. Moved to Later until ${day}. Open`);
   await page.locator('#toast [data-toast-open]').click();
   await page.waitForFunction(i=>document.querySelector('#later-list')?.open&&document.querySelector('#later-list #task-'+i),id(2));

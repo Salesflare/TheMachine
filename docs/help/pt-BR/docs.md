@@ -24,6 +24,8 @@ Ela pode escrever o rascunho de uma resposta a um comentário. Arquivos do Word 
 
 Ela nunca aceita uma sugestão, resolve um comentário, compartilha um arquivo ou altera um documento sem o seu OK.
 
+Uma conexão de documentos pode só fazer coisas: desligue **Traz sinais** em **Detalhes**, e ela só encontra e lê os documentos de que seus to-dos precisam, e cria novos. Uma do Google sem acesso a todo o Drive lê documentos pelo link, e os que sua Machine criou.
+
 ## Criar e editar documentos
 
 Sua Machine pode escrever um novo documento, ou alterar um documento de que trata uma das suas tarefas:

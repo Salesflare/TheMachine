@@ -24,6 +24,8 @@ Puede redactar una respuesta a un comentario. Los archivos de Word no permiten p
 
 Nunca acepta una sugerencia, resuelve un comentario, comparte un archivo ni cambia un documento sin tu OK.
 
+Una conexión de documentos puede solo hacer cosas: desactiva **Trae señales** en **Detalles**, y solo busca y lee los documentos que tus to-dos necesitan, y crea nuevos. Una de Google sin acceso a todo Drive lee documentos por su enlace, y los que tu Machine creó.
+
 ## Crear y editar documentos
 
 Tu Machine puede escribir un documento nuevo o cambiar un documento del que trata una de tus tareas:

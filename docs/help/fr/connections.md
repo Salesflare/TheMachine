@@ -24,6 +24,12 @@ Ouvrez **+ Ajouter** et choisissez une source. Elle demande ce dont elle a besoi
 
 Chaque source compte comme travail (pour une entreprise que vous nommez) ou comme perso. Changez-le sous **Détails**. **Deviné** ne s’affiche que si votre Machine l’a déduit de l’adresse ; dès que vous choisissez, c’est votre choix. Les tâches de travail attendent vos jours de travail.
 
+## Capacités
+
+Une source peut apporter des signaux (ce qui arrive devient des to-dos), agir pour vos to-dos (lire un document quand l'un d'eux en a besoin, ou envoyer, répondre ou modifier quelque chose après votre OK), ou les deux. Avec les deux, **Détails** a un interrupteur pour chacune : **Apporte des signaux** et **Peut agir**. L'une reste activée. Pour arrêter les deux, déconnectez la source. Les réponses d'un chat répondent à ce qu'il apporte, donc un chat n'a que **Peut agir**.
+
+Avec **Apporte des signaux** désactivé, elle ne se synchronise pas et sa carte n'affiche aucun compteur. Avec **Peut agir** désactivé, votre Machine ne lit jamais rien à la demande, ne rédige rien et ne modifie rien avec elle. Les sources d'avant ont les deux activées.
+
 ## En retirer une
 
 Ouvrez la source, **Détails**, puis **Déconnecter**. Elle arrête de lire. Ce qu’elle a déjà récupéré reste. Sur une Machine hébergée, Google, Microsoft, Microsoft OneDrive, Zoom et Stripe affichent **Déconnecter ↗**, qui ouvre votre page de configuration.

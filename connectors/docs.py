@@ -18,6 +18,12 @@ Outlook mail and calendar connectors never use:
   with them on OneDrive and SharePoint); a connection from before reads with Files.Read.All only, until Allow edits.
   Microsoft Graph has no way to reply to a Word comment, so a reply there is always a draft to post by hand.
 
+Abilities (abilities.py): Brings in signals is the sync above. Can do things is the rest: find a doc and read its text
+when a to-do needs it (find, read_text), and the writes below. Without Brings in signals it is action-only: nothing is
+synced, and refresh only checks what it may do. Google, without drive.readonly (a restricted scope), works with two
+narrow ones instead: documents.readonly reads a Google Doc by its id (a link in a to-do's messages, or one found), and
+drive.file makes a new doc and finds, syncs and reads the docs this app made. Gmail's and gog's scopes never change.
+
 Writes, each only after the owner's OK on exactly that: drive.replies.create through Replier, for an approved doc_reply
 (next_actions.py), and a new doc or a pinned edit through Writer, for an approved doc_write (doc_writes.py). Writing docs
 needs Google's drive scope (the same one as replies; a new doc also works with drive.file), and Microsoft's
@@ -57,6 +63,9 @@ SETUP = {
 READ_SCOPE = 'https://www.googleapis.com/auth/drive.readonly'
 REPLY_SCOPE = 'https://www.googleapis.com/auth/drive'
 MS_SCOPE = 'Files.Read.All'
+DOCS_READ_SCOPE = 'https://www.googleapis.com/auth/documents.readonly'  # a Google Doc's text by its id (not restricted)
+DOC_LINK = re.compile(r'https://docs\.google\.com/document/d/([A-Za-z0-9_-]{20,100})')
+MAX_FOUND = 10
 FILE_SCOPE = 'https://www.googleapis.com/auth/drive.file'  # Google: only files this app created (a new doc)
 WRITE_KEY = 'themachine_write'  # a new Google Doc's appProperties key: the write's token, to find it again
 MS_WRITE_SCOPE = 'Files.ReadWrite.All'
@@ -118,7 +127,23 @@ class Google:
         self.api, self.config, self.account, self.helpers = google_api, config, account, helpers
         self.signin = signin(config, account, helpers)
 
-    def call(self, method, params, scope=READ_SCOPE, raw=False, limit=None, body=None, write=False, content_type=None):
+    def granted(self):
+        """The scopes this sign-in has (asked once; unknown: none)."""
+        if not hasattr(self, '_granted'):
+            try:
+                self._granted = set(self.api.scopes(self.config, self.helpers.credential, self.signin))
+            except Exception:  # noqa: BLE001 - unknown: the call itself says what is missing
+                self._granted = set()
+        return self._granted
+
+    def read_scope(self):
+        """drive.readonly when granted (every doc), else drive.file (the docs this app made), else drive.readonly, whose
+        refusal says Connect Google Docs."""
+        granted = self.granted()
+        return READ_SCOPE if READ_SCOPE in granted or FILE_SCOPE not in granted else FILE_SCOPE
+
+    def call(self, method, params, scope=None, raw=False, limit=None, body=None, write=False, content_type=None):
+        scope = scope or self.read_scope()
         try:
             return self.api.call(self.config, self.helpers.credential, self.signin, method, params, scope, body=body,
                                  write=write, raw=raw, limit=limit, **({'content_type': content_type} if content_type else {}))
@@ -194,12 +219,37 @@ class Google:
         return doc_suggestions(doc)
 
     def text(self, file_id):
+        if self.read_scope() != READ_SCOPE and DOCS_READ_SCOPE in self.granted():
+            return self.doc_text(file_id)  # no drive.readonly: a Google Doc by its id, with documents.readonly
         info = self.call('drive.files.get', {'fileId': file_id, 'fields': 'id,name,mimeType,webViewLink', 'supportsAllDrives': True})
         mime = EXPORT.get(info.get('mimeType'))
         if not mime:
             raise self.helpers.SourceError('docs_text_unsupported')
         data = self.call('drive.files.export', {'fileId': file_id, 'mimeType': mime}, raw=True, limit=MAX_DOWNLOAD)
         return info, data.decode('utf-8', 'replace')
+
+
+    def doc_text(self, file_id):
+        """A Google Doc's title, link and text through the Docs API (documents.readonly): Google Docs only."""
+        try:
+            doc = self.call('docs.documents.get', {'documentId': file_id}, scope=DOCS_READ_SCOPE)
+        except self.helpers.SourceError as error:
+            if error.status in (400, 404):
+                raise self.helpers.SourceError('docs_text_unsupported', error.status) from None
+            raise
+        import doc_writes  # noqa: PLC0415
+        text = '\n'.join(p['text'] for p in doc_writes.google_paragraphs(doc))
+        return {'name': doc.get('title'), 'webViewLink': doc_writes.google_link(file_id)}, text
+
+    def find(self, words):
+        """Docs matching these words: Drive's full-text search with drive.readonly, else among the docs this app made
+        (drive.file), by name."""
+        quoted = words.replace('\\', '\\\\').replace("'", "\\'")
+        wide = self.read_scope() == READ_SCOPE
+        query = f"trashed = false and {'fullText' if wide else 'name'} contains '{quoted}'"
+        found = self.files(query, '' if wide else 'modifiedTime desc', MAX_FOUND, 'id,name,mimeType,webViewLink,modifiedTime')
+        return [{'file_id': f['id'], 'title': f.get('name') or '', 'url': f.get('webViewLink'), 'at': f.get('modifiedTime')}
+                for f in found if f.get('mimeType') in EXPORT]
 
 
 class Microsoft:
@@ -267,6 +317,17 @@ class Microsoft:
         if len(data) > MAX_DOWNLOAD:
             raise self.helpers.SourceError('docs_file_too_large')
         return data
+
+    def find(self, words):
+        """Word, text and Markdown files in the owner's OneDrive that match these words (Graph's drive search)."""
+        page = self.call('drive.search', {'q': words, '$top': 50})
+        out = []
+        for item in page.get('value') or []:
+            drive = str((item.get('parentReference') or {}).get('driveId') or '') if isinstance(item, dict) else ''
+            if drive and item.get('id') and str(item.get('name') or '').lower().endswith(WORD + ('.txt', '.md')):
+                out.append({'file_id': drive + '!' + str(item['id']), 'title': item.get('name') or '', 'url': item.get('webUrl'),
+                            'at': item.get('lastModifiedDateTime')})
+        return out[:MAX_FOUND]
 
     def text(self, file_id):
         drive, _, item_id = str(file_id).partition('!')
@@ -665,6 +726,28 @@ def read_text(config, account, file_id, helpers):
     info, text = source_for(config, account, helpers).text(file_id)
     return {'title': info.get('name'), 'url': info.get('webViewLink') or info.get('webUrl'), 'text': text[:MAX_TEXT],
             'truncated': len(text) > MAX_TEXT}
+
+
+def find(config, account, words, helpers):
+    """Docs of this connection that match the words (at most MAX_FOUND), for a run the owner started: read-only."""
+    words = ' '.join(str(words or '').split())[:200]
+    if not words:
+        raise helpers.SourceError('docs_find_empty')
+    return source_for(config, account, helpers).find(words)
+
+
+def doc_links(text):
+    """The Google Doc ids linked in a text (docs.google.com/document/d/<id>), in order, once each."""
+    return list(dict.fromkeys(DOC_LINK.findall(str(text or ''))))
+
+
+def refresh(store, config, account, helpers):
+    """An action-only connection (Brings in signals off): nothing read, only what it may do now (replies and writes),
+    kept on its checkpoint for its card, without counting as a sync."""
+    state = dict(store.checkpoint(account['id']) or {})
+    state.update(provider=provider(config, account), replies=replies_on(config, account, helpers),
+                 writes=sorted(writes_on(config, account, helpers)), coverage='Action-only: nothing synced.')
+    store.commit_page(account['id'], state, [], record_sync=False)
 
 
 class Replier(Google):

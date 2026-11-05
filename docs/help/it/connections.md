@@ -24,6 +24,12 @@ Apri **+ Aggiungi** e scegli una fonte. Chiede quello che le serve, una domanda 
 
 Ogni fonte conta come lavoro (per un’azienda che indichi tu) o personale. Cambialo sotto **Dettagli**. Dice **Ipotizzato** solo quando l'ha scelto la tua Machine in base all'indirizzo; quando scegli tu, la scelta è tua. Le attività di lavoro aspettano i tuoi giorni lavorativi.
 
+## Capacità
+
+Una fonte può portare segnali (ciò che arriva diventa to-do), fare cose per i tuoi to-do (leggere un documento quando ne serve uno, o inviare, rispondere o cambiare qualcosa dopo il tuo OK), o entrambe. Con entrambe, **Dettagli** ha un interruttore per ciascuna: **Porta segnali** e **Può fare cose**. Una resta attiva. Per fermarle entrambe, disconnettila. Le risposte di una chat rispondono a ciò che porta, quindi una chat ha solo **Può fare cose**.
+
+Con **Porta segnali** spento, non si sincronizza e la sua scheda non mostra numeri. Con **Può fare cose** spento, la tua Machine non legge mai nulla su richiesta, non scrive bozze e non cambia nulla con essa. Le fonti di prima le hanno entrambe attive.
+
 ## Rimuovine una
 
 Apri la fonte, **Dettagli**, poi **Disconnetti**. Smette di leggere. Quello che ha già portato dentro resta. Su una Machine in hosting, Google, Microsoft, Microsoft OneDrive, Zoom e Stripe mostrano **Disconnetti ↗**, che apre la tua pagina di configurazione.

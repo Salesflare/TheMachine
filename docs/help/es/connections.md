@@ -24,6 +24,12 @@ Abre **+ Añadir** y elige una fuente. Te pregunta lo que necesita, una pregunta
 
 Cada fuente cuenta como trabajo (para una empresa que indicas) o como personal. Cámbialo en **Detalles**. Solo dice **Adivinado** cuando tu Machine lo eligió a partir de la dirección; en cuanto eliges tú, la elección es tuya. Las tareas de trabajo esperan a tus días laborables.
 
+## Capacidades
+
+Una fuente puede traer señales (lo que llega se convierte en to-dos), hacer cosas para tus to-dos (leer un documento cuando uno lo necesita, o enviar, responder o cambiar algo tras tu OK), o ambas. Con ambas, **Detalles** tiene un interruptor para cada una: **Trae señales** y **Puede hacer cosas**. Una queda activada. Para detener ambas, desconéctala. Las respuestas de un chat contestan a lo que trae, así que un chat solo tiene **Puede hacer cosas**.
+
+Con **Trae señales** desactivado, no se sincroniza y su tarjeta no muestra cifras. Con **Puede hacer cosas** desactivado, tu Machine nunca lee nada a demanda, ni redacta ni cambia nada con ella. Las fuentes de antes tienen ambas activadas.
+
 ## Quita una
 
 Abre la fuente, **Detalles** y luego **Desconectar**. Deja de leer. Lo que ya trajo se queda. En una Machine alojada, Google, Microsoft, Microsoft OneDrive, Zoom y Stripe muestran **Desconectar ↗**, que abre tu página de configuración.
