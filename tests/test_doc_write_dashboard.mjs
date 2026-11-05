@@ -98,7 +98,7 @@ try{
   assert.equal(await page.locator('#send-title').textContent(),'Create this doc?');
   assert.equal(await page.locator('#send-confirm').textContent(),'Create');
   if(shots)await page.screenshot({path:`${shots}/create-dialog-${name}.png`});
-  await page.locator('#send-cancel').click();
+  await page.locator('#send-dialog .snooze-heading button').click();
   assert.equal(calls.filter(c=>c.action==='confirm_action').length,0);
   // Saved: what happened, without "You"
   const text=await page.locator(`#task-${doneId}`).evaluate(n=>n.textContent);

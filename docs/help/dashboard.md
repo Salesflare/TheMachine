@@ -27,6 +27,8 @@ With more than one run, it stops the one on the tab in front. On a phone the bro
 
 When the to-dos don't fit, the whole sidebar scrolls as one column, to-dos included, like the menu on a phone. The installed app does the same.
 
+On a phone, a dialog like **Send this email?** fills the screen: its title and × stay at the top, its buttons at the bottom, and only what is in between scrolls. The message box grows into the free space, and the buttons stay in reach while you type.
+
 ## New versions
 
 When a new version of the dashboard is ready, it never reloads while you're using it. Opening or reloading the app loads the newest version. An open window loads it once the window is in the background, or after a few minutes without input, and never while something you typed isn't saved or sent, or a dialog is open. **Update ready**, at the top, loads it right away. A restart of your Machine only reconnects.

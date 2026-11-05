@@ -25,6 +25,8 @@ La fenêtre au premier plan du navigateur s’affiche au milieu et le reste de l
 
 Si plusieurs tâches l’utilisent, c’est celle de l’onglet au premier plan qui s’arrête. Sur un téléphone, l’onglet du navigateur a le même bouton en haut. Pour continuer, écrivez dans le chat ou appuyez sur **Réessayer**.
 
+Sur un téléphone, une fenêtre comme **Envoyer cet e-mail ?** occupe tout l’écran : le titre et × restent en haut, les boutons en bas, et seul ce qui est entre les deux défile. La zone du message prend la place libre, et les boutons restent à portée pendant la saisie.
+
 ## Nouvelles versions
 
 Quand une nouvelle version du tableau de bord est prête, il ne se recharge jamais pendant que vous l’utilisez. L’ouverture ou le rechargement de l’app charge la version la plus récente. Une fenêtre ouverte la charge dès que la fenêtre passe en arrière-plan, ou après quelques minutes sans saisie, et jamais tant qu’un texte saisi n’est pas enregistré ou envoyé, ou qu’une boîte de dialogue est ouverte. **Mise à jour prête**, en haut, la charge tout de suite. Un redémarrage de votre Machine ne fait que rétablir la connexion.

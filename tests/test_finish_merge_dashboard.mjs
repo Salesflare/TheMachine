@@ -46,7 +46,7 @@ try{
    assert.ok(sizes.page<=sizes.viewport,kind+' page overflow '+width);assert.ok(sizes.dialog<=sizes.viewport,kind+' dialog overflow '+width);
    widths.push({kind,width,...sizes});
   }
-  await page.locator('#send-cancel').click();
+  await page.locator('#send-dialog .snooze-heading button').click();
  }
  await page.evaluate(([id,revision])=>openSend(id,revision),[sid,revision]);await page.locator('#send-confirm').click();
  for(let i=0;i<100&&!calls.length;i++)await page.waitForTimeout(20);
@@ -66,7 +66,7 @@ try{
   // Confirm, Edit and Cancel read at the same size and weight.
   assert.equal(new Set(await page.$$eval('#send-dialog .send-act button',bs=>bs.map(b=>getComputedStyle(b).fontSize+' '+getComputedStyle(b).fontWeight))).size,1);
   if(process.env.SHOTS)await page.screenshot({path:`${process.env.SHOTS}/finish-reply-${reply}.png`});
-  await page.locator('#send-cancel').click();
+  await page.locator('#send-dialog .snooze-heading button').click();
  }
  reply=null;
  kind='finish';finishStatus='done';await page.evaluate(()=>refresh());assert.equal(await page.locator('#task-'+sid+' [data-smart]').count(),0);

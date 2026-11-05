@@ -286,10 +286,6 @@
  "Admin": "Admin",
  "Admins can share the team’s Graph and connections. Check it’s really them.": "Admins can share the team’s Graph and connections. Check it’s really them.",
  "After": "After",
- "After sending, the thread leaves your inbox for {} days (a weekday morning; a reply brings it back sooner).": {
-  "one": "After sending, the thread leaves your inbox for {} day (a weekday morning; a reply brings it back sooner).",
-  "other": "After sending, the thread leaves your inbox for {} days (a weekday morning; a reply brings it back sooner)."
- },
  "After sending, this to-do waits {} days for a reply; it closes when they answer.": {
   "one": "After sending, this to-do waits {} day for a reply; it closes when they answer.",
   "other": "After sending, this to-do waits {} days for a reply; it closes when they answer."
@@ -1883,6 +1879,10 @@
  "Leave out {}": "Leave out {}",
  "Leave the Network": "Leave the Network",
  "Leave the Network? Every friendship ends and nobody can find you. Your Fleets stay.": "Leave the Network? Every friendship ends and nobody can find you. Your Fleets stay.",
+ "Leaves your inbox for {} days after sending, or until a reply.": {
+  "one": "Leaves your inbox for {} day after sending, or until a reply.",
+  "other": "Leaves your inbox for {} days after sending, or until a reply."
+ },
  "Left out {}.": "Left out {}.",
  "Left out.": "Left out.",
  "Left out:": "Left out:",

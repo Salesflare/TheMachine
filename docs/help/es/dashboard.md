@@ -25,6 +25,8 @@ La ventana delantera del navegador se muestra en el centro y el resto de la pant
 
 Si varias tareas lo usan, se detiene la de la pestaña de delante. En un teléfono, la pestaña del navegador tiene el mismo botón arriba. Para seguir, escribe en el chat o toca **Reintentar**.
 
+En un teléfono, un diálogo como **¿Enviar este correo?** ocupa toda la pantalla: el título y × quedan arriba, los botones abajo, y solo se desplaza lo que hay entre ellos. El cuadro del mensaje crece hasta llenar el espacio libre, y los botones siguen a mano mientras escribes.
+
 ## Versiones nuevas
 
 Cuando hay lista una versión nueva del panel, nunca se recarga mientras lo usas. Al abrir o recargar la app se carga la versión más nueva. Una ventana abierta la carga cuando la ventana pasa a segundo plano, o tras unos minutos sin actividad, y nunca mientras haya algo escrito sin guardar ni enviar, o un diálogo abierto. **Actualización lista**, arriba, la carga al momento. Un reinicio de tu Machine solo vuelve a conectar.

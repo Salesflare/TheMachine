@@ -27,6 +27,8 @@ Bei mehreren Läufen stoppt er den auf dem vorderen Tab. Auf dem Handy hat der T
 
 Passen die Aufgaben nicht hin, scrollt die ganze Seitenleiste als eine Spalte, Aufgaben eingeschlossen, wie das Menü auf dem Handy. Die installierte App macht es genauso.
 
+Auf dem Handy füllt ein Dialog wie **Diese E-Mail senden?** den ganzen Bildschirm: Titel und × bleiben oben, die Knöpfe unten, und nur, was dazwischen steht, scrollt. Das Nachrichtenfeld wächst in den freien Platz, und die Knöpfe bleiben beim Tippen erreichbar.
+
 ## Neue Versionen
 
 Wenn eine neue Version des Dashboards bereit ist, lädt es nie neu, während du es benutzt. Beim Öffnen oder Neuladen lädt die App die neueste Version. Ein offenes Fenster lädt sie, sobald das Fenster im Hintergrund ist oder nach ein paar Minuten ohne Eingabe, und nie, solange etwas Getipptes noch nicht gespeichert oder gesendet ist oder ein Dialog offen ist. **Update bereit** oben lädt sie sofort. Ein Neustart deiner Machine verbindet nur neu.

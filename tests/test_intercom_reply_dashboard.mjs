@@ -82,7 +82,7 @@ try{
   assert.equal(calls.filter(c=>c.action==='confirm_action').length,0);  // nothing before Send
   if(shots)await page.locator('#send-dialog').screenshot({path:`${shots}/fallback-dialog-${width}.png`});
   // "Connect your own Intercom" opens Connections, + Add, at Intercom's sign-in; nothing starts before Continue
-  await page.locator('#send-cancel').click();
+  await page.locator('#send-dialog .snooze-heading button').click();
   await mail.locator('.draft-why a[data-connect-open="intercom"]').click();
   await page.locator('#connect-add .connect-signin').waitFor({state:'visible'});
   assert.match(await page.locator('#connect-add').textContent(),/Replies only after you approve them/);

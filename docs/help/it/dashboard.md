@@ -25,6 +25,8 @@ La finestra in primo piano del browser compare al centro e il resto dello scherm
 
 Se più attività lo usano, si ferma quella sulla scheda in primo piano. Su un telefono la scheda del browser ha lo stesso pulsante in alto. Per continuare, scrivi nella chat o tocca **Riprova**.
 
+Sul telefono, una finestra come **Inviare questa email?** occupa tutto lo schermo: il titolo e × restano in alto, i pulsanti in basso, e scorre solo quello che sta in mezzo. Il riquadro del messaggio cresce nello spazio libero, e i pulsanti restano a portata mentre scrivi.
+
 ## Nuove versioni
 
 Quando è pronta una nuova versione della dashboard, non si ricarica mai mentre la usi. Aprire o ricaricare l’app carica la versione più recente. Una finestra aperta la carica quando la finestra passa in secondo piano, o dopo qualche minuto senza input, e mai mentre c'è qualcosa di scritto non ancora salvato o inviato, o una finestra di dialogo aperta. **Aggiornamento pronto**, in alto, la carica subito. Un riavvio della tua Machine si limita a riconnettersi.
