@@ -143,6 +143,25 @@ class NewCard(unittest.TestCase):
         with self.store.connect() as db:
             self.assertEqual(db.execute('SELECT count(*) FROM suggestions').fetchone()[0], 1)
 
+    def test_a_calendar_event_ahead_is_context_for_an_owner_card_not_news(self):
+        # The meeting's date lies ahead, but the event was on the Machine before the owner made the to-do: the review's
+        # fill links it as context, so the to-do stays as they left it and nothing reaches them as news.
+        event = {'account_id': 'w', 'source_id': 'cal1', 'kind': 'calendar.event', 'occurred_at': '2099-01-15T18:30:00+00:00',
+                 'title': 'Club evening', 'body': '', 'metadata': {'organizer': {'email': 'pat@acme.example'}}, 'deleted': False}
+        self.store.commit_page('w', {}, [event])
+        made = self.new(text='Mail the members about the club evening')
+        self.review(event_ids=[made['event_id'], self.mail_id('cal1')], card_id=made['id'], dedupe_key='owner:club')
+        with self.store.connect() as db:
+            said = [r[0] for r in db.execute("SELECT feedback FROM decisions WHERE suggestion_id=? AND choice='update'", (made['id'],))]
+        self.assertTrue(said and said[0].startswith('Filled in by the review'), said)
+        self.assertEqual(self.delivery(made['id'])['status'], 'not_sent')
+        # A message that reached the Machine after they made it is news, whatever its date says
+        self.store.commit_page('w', {}, [mail('m9', thread='t9', when='2099-01-10T09:00:00+00:00')])
+        self.review(event_ids=[made['event_id'], self.mail_id('m9')], card_id=made['id'], dedupe_key='owner:club', separate=True)
+        with self.store.connect() as db:
+            said = [r[0] for r in db.execute("SELECT feedback FROM decisions WHERE suggestion_id=? AND choice='update' ORDER BY created_at", (made['id'],))]
+        self.assertTrue(said[-1].startswith('Updated with a new signal'), said)
+
     def test_the_review_never_dismisses_an_owner_card(self):
         made = self.new()
         self.review(event_ids=[made['event_id']])
