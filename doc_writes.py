@@ -956,8 +956,8 @@ def targets(config, connector, helpers, check=True):
     out = {}
     gog = getattr(connector, 'gog_google', lambda a: False)
     for a in config.get('accounts', []):
-        if a.get('shared') or not (a.get('service') == 'docs' or gog(a)):
-            continue
+        if a.get('shared') or not (a.get('service') == 'docs' or gog(a)) or a.get('actions') is False:
+            continue  # a Fleet's share only reads; Can do things off (abilities.py) writes nothing
         writes = sorted(connector.writes_on(config, a, helpers)) if check or a.get('service') != 'docs' else None
         if a.get('service') != 'docs' and not writes:
             continue

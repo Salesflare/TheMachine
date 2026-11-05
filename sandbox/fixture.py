@@ -44,6 +44,8 @@ ACCOUNTS = [  # the owner's sources, as in a config; ids say what they are, neve
     {'id': 'work-github', 'service': 'github', 'transport': 'api', 'email': OWNER['email'], 'display_name': 'GitHub', 'boundary': 'work:Lumen Labs', 'poll_seconds': 900},
     {'id': 'work-linkedin', 'service': 'linkedin', 'transport': 'browser', 'email': OWNER['email'], 'display_name': 'LinkedIn', 'boundary': 'work:Lumen Labs', 'poll_seconds': 1800},
     {'id': 'work-x', 'service': 'x', 'transport': 'browser', 'email': OWNER['email'], 'display_name': '@lumenlabs on X', 'boundary': 'work:Lumen Labs', 'poll_seconds': 1800},
+    # action-only (abilities.py): finds, reads and makes docs for to-dos, brings nothing in
+    {'id': 'work-docs', 'service': 'docs', 'transport': 'broker', 'provider': 'google', 'email': OWNER['email'], 'boundary': 'work:Lumen Labs', 'poll_seconds': 900, 'signals': False},
     {'id': 'home-gmail', 'service': 'gmail', 'transport': 'gog', 'email': OWNER['personal_email'], 'client': 'default', 'boundary': 'personal'},
     {'id': 'home-calendar', 'service': 'calendar', 'transport': 'gog', 'email': OWNER['personal_email'], 'client': 'default', 'calendar_id': 'primary', 'boundary': 'personal'},
     {'id': 'home-whatsapp', 'service': 'whatsapp', 'transport': 'wacli', 'email': '', 'display_name': 'WhatsApp', 'boundary': 'personal'},

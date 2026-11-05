@@ -149,6 +149,9 @@ def load(directory, states, port=8870, network_port=8871, fixture_path=HERE / 'f
                            (account['id'], '{}', stamp(26 * 60, base), error, stamp(4, base), 31))
                 for hours in range(0, 26, 2):
                     db.execute('INSERT INTO sync_activity VALUES(?,?,?,?,?,?,?)', (secrets.token_hex(16), account['id'], stamp(hours * 60 + 4, base), 'failed', None, error, None))
+            elif account.get('signals') is False:  # action-only: no sync, only what it may do (connectors/docs.py refresh)
+                db.execute('INSERT INTO checkpoints(account_id,state) VALUES(?,?)',
+                           (account['id'], json.dumps({'provider': account.get('provider'), 'replies': False, 'writes': ['create']})))
             else:
                 db.execute('INSERT INTO checkpoints(account_id,state,last_success,last_sync_signals) VALUES(?,?,?,?)',
                            (account['id'], '{}', stamp(3, base), sum(1 for e in events if e['account_id'] == account['id'])))

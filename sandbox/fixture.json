@@ -90,6 +90,16 @@
    "poll_seconds": 1800
   },
   {
+   "id": "work-docs",
+   "service": "docs",
+   "transport": "broker",
+   "provider": "google",
+   "email": "alex@lumenlabs.example",
+   "boundary": "work:Lumen Labs",
+   "poll_seconds": 900,
+   "signals": false
+  },
+  {
    "id": "home-gmail",
    "service": "gmail",
    "transport": "gog",

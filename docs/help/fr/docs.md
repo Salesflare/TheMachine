@@ -24,6 +24,8 @@ Il peut rédiger une réponse à un commentaire. Les fichiers Word ne permettent
 
 Il n’accepte jamais une suggestion, ne résout jamais un commentaire, ne partage jamais un fichier et ne modifie jamais un document sans votre accord.
 
+Une connexion de documents peut seulement agir : désactivez **Apporte des signaux** sous **Détails**, et elle ne fait que trouver et lire les documents dont vos to-dos ont besoin, et en créer de nouveaux. Une connexion Google sans accès à tout Drive lit les documents par leur lien, et ceux que votre Machine a créés.
+
 ## Créer et modifier des documents
 
 Votre Machine peut écrire un nouveau document, ou modifier un document dont parle l’une de vos tâches :

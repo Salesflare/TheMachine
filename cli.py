@@ -255,7 +255,9 @@ def cmd_attachment(config, args):
 
 
 def cmd_doc(config, args):
-    result = call(config, 'doc_text', {'event_id': args.event, 'job_id': args.job})
+    if (args.event is None) == (args.file is None):
+        raise SystemExit('Give --event or --file')
+    result = call(config, 'doc_text', {'job_id': args.job, **({'event_id': args.event} if args.event is not None else {'file_id': args.file})})
     if args.json:
         return out_json(result)
     print(f"{result.get('title') or 'Untitled document'}" + (f"  {result['url']}" if result.get('url') else ''))
@@ -263,6 +265,18 @@ def cmd_doc(config, args):
     print(result.get('text') or '')
     if result.get('truncated'):
         print('\n[cut: the doc is longer]')
+
+
+def cmd_doc_find(config, args):
+    result = call(config, 'doc_find', {'words': args.words, 'job_id': args.job})
+    if args.json:
+        return out_json(result)
+    for d in result.get('docs') or []:
+        print(f"{d.get('title') or 'Untitled document'}  (file {d['file_id']}, {d['account_id']})" + (f"  {d['url']}" if d.get('url') else ''))
+    if not result.get('docs'):
+        print('No docs found.')
+    for error in result.get('errors') or []:
+        print(error)
 
 
 def cmd_doc_draft(config, args):
@@ -957,7 +971,11 @@ def parser():
     c.add_argument('--job', help='the preparation job id: saves under its attachments folder')
     c.add_argument('--open', help='a readable copy of an encrypted attachment saved earlier (with --job)')
     c = add('doc', "A doc's text (Google Docs or Word), read-only, for a preparation of the task it belongs to", cmd_doc)
-    c.add_argument('--event', type=int, required=True, help="the doc event's id (a comment, mention, suggestion or share)")
+    c.add_argument('--event', type=int, help="the doc event's id (a comment, mention, suggestion or share)")
+    c.add_argument('--file', help="a doc's file id: one linked in the task's messages, or one doc-find gave this run")
+    c.add_argument('--job', required=True, help='the preparation job id')
+    c = add('doc-find', "Find docs (Google Docs or Word) that match some words, read-only, for a preparation", cmd_doc_find)
+    c.add_argument('words', help='the words to look for (a title, a name, a phrase)')
     c.add_argument('--job', required=True, help='the preparation job id')
     c = add('doc-draft', 'Check a new doc or an edit for the owner to approve (never writes): the doc as it is now, or the draft',
             cmd_doc_draft)

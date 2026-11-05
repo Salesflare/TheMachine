@@ -24,6 +24,12 @@ Open **+ Toevoegen** en kies een bron. Hij vraagt wat hij nodig heeft, één vra
 
 Elke bron telt als werk (voor een bedrijf dat je noemt) of als privé. Wijzig het onder **Details**. Er staat alleen **Geraden** als je Machine het uit het adres afleidde; zodra je zelf kiest, blijft het jouw keuze. Werk-to-do's wachten op je werkdagen.
 
+## Vaardigheden
+
+Een bron kan signalen binnenbrengen (wat binnenkomt wordt to-do's), dingen doen voor je to-do's (een document lezen als er een nodig is, of iets versturen, beantwoorden of wijzigen na je OK), of allebei. Met allebei heeft **Details** een schakelaar voor elk: **Brengt signalen binnen** en **Kan dingen doen**. Eén blijft aan. Wil je allebei stoppen, ontkoppel de bron dan. De antwoorden van een chat gaan over wat die binnenbrengt, dus een chat heeft alleen **Kan dingen doen**.
+
+Met **Brengt signalen binnen** uit synchroniseert de bron niet en toont de kaart geen aantallen. Met **Kan dingen doen** uit leest je Machine er nooit iets mee op verzoek, schrijft er geen concept mee en wijzigt er niets mee. Bronnen van vroeger hebben allebei aan.
+
 ## Een bron verwijderen
 
 Open de bron, **Details**, dan **Ontkoppelen**. Hij stopt met lezen. Wat al binnengehaald is, blijft. Op een gehoste Machine tonen Google, Microsoft, Microsoft OneDrive, Zoom en Stripe **Ontkoppelen ↗**, dat je setuppagina opent.

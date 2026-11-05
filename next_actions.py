@@ -1,4 +1,5 @@
 """Explicit, revision-bound next actions. No model or arbitrary command execution."""
+import abilities
 import base64
 import calendar_writes
 import github_route
@@ -891,6 +892,9 @@ def validate(value, config, allowed_accounts, recipient_options=None, linkedin_t
         result = merge_action(value, config)
     else:
         raise ValueError('Only email drafts, LinkedIn, Slack, X, WhatsApp and Telegram messages, Fleet handoffs, local preparation and original-page links are supported; no payments or arbitrary writes')
+    off = abilities.refuse(config, result.get('account_id'))  # its Can do things is off: no draft through it
+    if off:
+        raise ValueError(off)
     result['revision'] = hashlib.sha256(canonical(result).encode()).hexdigest()[:12]
     return result
 

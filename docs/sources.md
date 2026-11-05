@@ -228,6 +228,16 @@ Comments, replies and @mentions on the owner's docs (`docs.comment`, `docs.menti
 **Acting on docs:**
 
 - A to-do's preparation can read one doc's text with `assistant doc --event <id> --job <job>`, only while that job runs and only for the task's own doc events.
+- It can also find docs with `assistant doc-find '<words>' --job <job>` (Docs connections of the to-do's area) and read one by `--file <file id>`: one that search found for this run, or a Google Doc linked in the task's messages.
+- All of this, and the writes below, only while the connection's **Can do things** is on ([abilities](#abilities)).
+
+### Abilities
+
+Every connection brings in signals; one that can send, reply, change events or work with docs can also do things (`abilities.py`). One with both shows two switches on its card, **Brings in signals** and **Can do things**, and one of them stays on. Off is kept on the account as `"signals": false` or `"actions": false`; a connection without those keys has both on, so nothing changes for connections from before.
+
+- **Brings in signals off:** no sync runs (the service restarts to stop it). The card shows no sync counts. A Docs connection still checks its consent hourly (`docs.refresh`), so its card says what it may write.
+- **Can do things off:** no draft through it (`next_actions.validate`), no approval through it (`Store.confirm_action`), no doc reads, finds or writes, and no calendar changes.
+- **Google Docs without drive.readonly:** a Docs connection works with `documents.readonly` (a Google Doc's text by its id) and `drive.file` (new docs, and the docs this app made: finding them and their comments). Neither is a restricted scope. With `drive.readonly` it reads, finds and syncs every doc, as before.
 - A `doc_reply` next action goes through the same review and confirm as email (`next_actions.DocReplyTransport`: posted once, never re-sent on an unknown outcome).
 - A `doc_write` next action creates a doc or edits one of the task's own docs, the same way ([Doc writes](#doc-writes)).
 

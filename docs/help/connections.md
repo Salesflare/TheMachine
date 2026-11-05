@@ -28,6 +28,12 @@ On a hosted Machine, Google, Microsoft, Microsoft OneDrive, Zoom, Stripe and Int
 
 Each source counts as work (for a company you name) or personal. Change it under **Details**. It says **Guessed** only when your Machine picked it from the address; once you pick, it's yours. Work to-dos wait for your work days.
 
+## Abilities
+
+A source can bring in signals (what comes in becomes to-dos), do things for your to-dos (read a doc when one needs it, or send, reply or change something after your OK), or both. With both, **Details** has a switch for each: **Brings in signals** and **Can do things**. One stays on. To stop both, disconnect it. A chat's replies answer what it brings in, so a chat only has **Can do things**.
+
+With **Brings in signals** off, it doesn't sync and its card shows no counts. With **Can do things** off, your Machine never reads on demand, drafts or changes anything with it. Sources from before have both on.
+
 ## Remove one
 
 Open the source, **Details**, then **Disconnect**. It stops reading. What it already brought in stays. On a hosted Machine, Google, Microsoft, Microsoft OneDrive, Zoom and Stripe show **Disconnect ↗**, which opens your setup page.

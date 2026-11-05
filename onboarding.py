@@ -910,6 +910,30 @@ def set_boundary(config_path, account_id, boundary):
     return changed
 
 
+def set_abilities(config_path, account_id, values):
+    """The owner's two switches for one connection (abilities.py): Brings in signals and Can do things. Off is kept as
+    "signals": false or "actions": false; on drops the key, so the account reads as it did before. Returns the account's
+    abilities view."""
+    import abilities  # noqa: PLC0415
+    config = load(config_path)
+    account = next((a for a in config.get('accounts', []) if a.get('id') == account_id), None)
+    if not account:
+        raise SetupError('That account is not connected here')
+    if str(account.get('boundary') or '').startswith('owner:'):
+        raise SetupError('This source belongs to your Machine itself')
+    try:
+        fields = abilities.check(account, values)
+    except ValueError as error:
+        raise SetupError(str(error)) from None
+    for key, value in fields.items():
+        if value is None:
+            account.pop(key, None)
+        else:
+            account[key] = value
+    save(config_path, config)
+    return abilities.view(account)
+
+
 def boundaries(config, service):
     """Boundaries a new account of this service could belong to, ones it does not cover yet first.
     Device and system boundaries (phone, WhatsApp, Gateway) are not offered for other sources."""

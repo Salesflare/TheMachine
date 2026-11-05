@@ -24,6 +24,8 @@ It can draft a reply to a comment. Word files have no way to post a reply from o
 
 It never accepts a suggestion, resolves a comment, shares a file or changes a doc without your OK.
 
+A docs connection can be action-only: turn **Brings in signals** off under **Details**, and it only finds and reads the docs your to-dos need, and makes new ones. A Google one without access to all of Drive reads docs by their link, and the ones your Machine made.
+
 ## Create and edit docs
 
 Your Machine can write a new doc, or change a doc one of your to-dos is about:

@@ -24,6 +24,8 @@ Può preparare una bozza di risposta a un commento. Nei file Word non si può pu
 
 Non accetta suggerimenti, non risolve commenti, non condivide file e non modifica mai un documento senza il tuo OK.
 
+Una connessione documenti può solo fare cose: spegni **Porta segnali** in **Dettagli**, e trova e legge solo i documenti che servono ai tuoi to-do, e ne crea di nuovi. Una di Google senza accesso a tutto Drive legge i documenti dal loro link, e quelli creati dalla tua Machine.
+
 ## Creare e modificare documenti
 
 La tua Machine può scrivere un nuovo documento, o modificare un documento di cui parla una delle tue attività:

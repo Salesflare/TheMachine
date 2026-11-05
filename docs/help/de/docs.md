@@ -24,6 +24,8 @@ Es kann eine Antwort auf einen Kommentar entwerfen. Word-Dateien bieten keinen W
 
 Es nimmt keine Vorschläge an, löst keine Kommentare auf, teilt keine Dateien und ändert kein Dokument ohne dein OK.
 
+Eine Dokument-Verbindung kann nur Dinge tun: Schalte unter **Details** **Bringt Signale** aus, dann findet und liest sie nur die Dokumente, die deine Aufgaben brauchen, und erstellt neue. Eine Google-Verbindung ohne Zugriff auf ganz Drive liest Dokumente über ihren Link und die, die deine Machine erstellt hat.
+
 ## Dokumente erstellen und bearbeiten
 
 Deine Machine kann ein neues Dokument schreiben oder ein Dokument ändern, um das es in einer deiner Aufgaben geht:

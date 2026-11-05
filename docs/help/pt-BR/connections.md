@@ -24,6 +24,12 @@ Abra **+ Adicionar** e escolha uma fonte. Ela pede o que precisa, uma pergunta p
 
 Cada fonte conta como trabalho (para uma empresa que você informa) ou pessoal. Mude isso em **Detalhes**. Ela só diz **Palpite** quando sua Machine escolheu pelo endereço. Depois que você escolhe, a escolha é sua. Tarefas de trabalho esperam pelos seus dias de trabalho.
 
+## Habilidades
+
+Uma fonte pode trazer sinais (o que chega vira to-dos), fazer coisas para seus to-dos (ler um documento quando um precisa, ou enviar, responder ou mudar algo depois do seu OK), ou ambos. Com ambos, **Detalhes** tem uma chave para cada um: **Traz sinais** e **Pode fazer coisas**. Uma fica ligada. Para parar ambas, desconecte a fonte. As respostas de um chat respondem ao que ele traz, então um chat só tem **Pode fazer coisas**.
+
+Com **Traz sinais** desligado, ela não sincroniza e seu cartão não mostra números. Com **Pode fazer coisas** desligado, sua Machine nunca lê nada sob demanda, não redige nem muda nada com ela. Fontes de antes têm ambas ligadas.
+
 ## Remover uma
 
 Abra a fonte, **Detalhes** e depois **Desconectar**. Ela para de ler. O que ela já trouxe continua. Em uma Machine hospedada, Google, Microsoft, Microsoft OneDrive, Zoom e Stripe mostram **Desconectar ↗**, que abre sua página de configuração.
