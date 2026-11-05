@@ -18,7 +18,9 @@ A página **Tarefas** agrupa as tarefas:
 - **Feito agora**: uma última etapa que você confirmou, como enviar um formulário ou abrir uma issue, deu certo enquanto você estava fora. Ela mostra o que aconteceu até você tocar em **Entendi**, por um dia no máximo, e seu celular também fica sabendo. Depois fica só em Feito.
 - **Volta mais tarde**: adiada.
 - **Promessas**: o que você prometeu e o que outras pessoas prometeram a você. Veja [Promessas](promises.md).
-- **Feito / dispensado**: todas as tarefas concluídas, das mais novas para as mais antigas, 30 por vez conforme você rola. As que já parecem concluídas vêm primeiro, com a etiqueta **Parece feito**.
+- **Feito / dispensado**: todas as tarefas concluídas, pelo momento em que foram concluídas, das mais novas para as mais antigas, 30 por vez conforme você rola. Uma tarefa que você acabou de enviar fica no topo, e cada uma diz quando, como "Feito há 5 minutos". As que já parecem concluídas ficam entre elas pelo momento em que começaram a parecer, com a etiqueta **Parece feito**.
+
+Depois de enviar, um aviso curto diz onde a tarefa está, como "Enviado. Movido para Feito." ou, se ela espera uma resposta, "Enviado. Movido para Depois até seg." **Abrir** leva você até ela. A conversa sair da sua caixa de entrada por alguns dias é só sobre o seu e-mail. A busca encontra uma tarefa pelo título ou por quem a recebeu, também em Depois e Feito.
 
 Em Pronta para você, Precisa da sua decisão, Preparando e Aguardando outras pessoas, uma tarefa atrasada ou que vence até amanhã vem primeiro. As demais vêm das mais novas para as mais antigas, pela hora que cada tarefa mostra. A barra lateral segue a mesma ordem.
 

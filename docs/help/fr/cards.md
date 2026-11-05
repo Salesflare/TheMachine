@@ -18,7 +18,9 @@ La page **Tâches** les regroupe :
 - **Tout juste fait** : une dernière étape que tu as confirmée, comme envoyer un formulaire ou créer un ticket, a réussi pendant ton absence. Elle montre ce qui s'est passé jusqu'à ce que tu touches **Compris**, un jour au plus, et ton téléphone l'apprend aussi. Ensuite, elle n'est plus que dans Fait.
 - **Revient plus tard** : mise en attente.
 - **Promesses** : ce que vous avez promis et ce que d’autres vous ont promis. Voir [Promesses](promises.md).
-- **Fait / écarté** : toutes les tâches terminées, les plus récentes d’abord, 30 à la fois quand vous faites défiler. Les tâches qui semblent déjà terminées viennent en premier, avec l’étiquette **Semble fait**.
+- **Fait / écarté** : toutes les tâches terminées, selon le moment où elles l’ont été, les plus récentes d’abord, 30 à la fois quand vous faites défiler. Une tâche que vous venez d’envoyer est en haut, et chacune dit quand, comme « Fait il y a 5 minutes ». Les tâches qui semblent déjà terminées s’y placent selon le moment où elles ont commencé à le sembler, avec l’étiquette **Semble fait**.
+
+Après un envoi, une courte note dit où se trouve la tâche, comme « Envoyé. Déplacé dans Fait. » ou, si elle attend une réponse, « Envoyé. Déplacé dans Plus tard jusqu’à lun. » **Ouvrir** vous y mène. Le fil qui quitte votre boîte de réception quelques jours ne concerne que votre messagerie. La recherche trouve une tâche par son titre ou son destinataire, aussi dans Plus tard et Fait.
 
 Dans Prêt pour vous, Attend votre décision, En préparation et En attente des autres, une tâche en retard ou due d’ici demain vient en premier. Les autres suivent, les plus récentes d’abord, selon l’heure affichée sur chaque tâche. La barre latérale garde le même ordre.
 

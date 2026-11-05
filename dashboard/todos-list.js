@@ -202,6 +202,19 @@ if(body!==draftText(sendDraft)||subject!==sendDraft.subject){const r=await reque
  if(r.body!=null){sendDraft={...sendDraft,revision:r.revision,...(subject===undefined?{}:{subject}),...(sendDraft.kind==='finish'?{[sendDraft.message?'message':'preview']:r.body}:{body:r.body})};
   if(r.body.trim()!==body.trim()){if(mail)mailLoad(r.body);else $('#send-body').value=plainDraft(r.body);$('#send-error').textContent=t('Saved with a small change. Check the message, then send.');b.disabled=false;return}}}}
 await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'confirm_action',args:{suggestion_id:sendTask,revision:sendRevision,approval_id:crypto.randomUUID(),...($('#send-recipients').hidden?{}:{recipients:sendRecipients()}),...(sendDraft.kind==='email'&&sendDraft.from_options?.length>1&&sendFrom?{sender:sendFrom}:{})}})});
+if(SENT_WATCH.includes(sendDraft.kind))sentWatch.set(sendTask,{revision:sendRevision,kind:sendDraft.kind,at:Date.now()});
 $('#send-dialog').close();toast(sendDraft.kind==='merge'?'Testing and merging the fix…':sendDraft.kind==='finish'?'On it. I’ll report back.':sendDraft.kind==='calendar'?'Changing the calendar…':sendDraft.kind==='doc_write'?'Writing the doc…':'Sending your approved draft…');await refresh();
 }catch(e){errCaught(e);$('#send-error').textContent=e.offline?t('Offline. Send again when you’re back online.'):e.message;b.disabled=false}};
+// Once a send went out, one short toast says where the to-do is now, with Open to go to it there: "Sent. Moved to
+// Done.", "Sent. Moved to Later until Mon." (handed to someone: back then unless they reply). Nothing when it failed.
+const SENT_WATCH=['email','linkedin','slack','x','whatsapp','telegram','intercom','doc_reply','finish'],sentWatch=new Map();
+const sentDay=v=>{const d=new Date(v),days=(d-Date.now())/864e5;return days<6?d.toLocaleDateString(DL,{weekday:'short'}):d.toLocaleDateString(DL,{weekday:'short',day:'numeric',month:'short'})};
+function sentWhere(){for(const [id,w] of sentWatch){const s=(state?.suggestions||[]).find(x=>x.id===id),st=s&&(taskActions(s).find(a=>a.revision===w.revision)?.state||s.action_status)?.status;
+ if(!s||Date.now()-w.at>6e5){sentWatch.delete(id);continue}
+ if(s.status==='prepared'&&!['sent','done'].includes(st)){if(['failed','blocked','uncertain','undone'].includes(st))sentWatch.delete(id);continue}  // still going, or it didn't go (the to-do says why)
+ sentWatch.delete(id);const sent=w.kind!=='finish';
+ const text=closed(s)||looksDone(s)?t(sent?'Sent. Moved to Done.':'Finished. Moved to Done.'):s.status==='snoozed'&&s.snoozed_until?t('Sent. Moved to Later until {}.',sentDay(s.snoozed_until)):waitsOnOthers(s)?t('Sent. Moved to Waiting on others.'):sent?t('Sent.'):'';
+ if(text)toastOpen(text,s.status==='prepared'&&!waitsOnOthers(s)?'':id)}}
+function toastOpen(text,id){toast(text);if(!id)return;const b=make('button',{type:'button','data-toast-open':id},t('Open'));$('#toast').append(' ',b);clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('show'),8000)}
+$('#toast').addEventListener('click',e=>{const b=e.target.closest('[data-toast-open]');if(!b)return;$('#toast').classList.remove('show');location.hash='#card='+b.dataset.toastOpen});
 function openSnoozeLink(){const link=/^#snooze(-custom)?=([a-f0-9]{16})$/.exec(location.hash);if(link&&state.suggestions){if(state.suggestions.some(s=>s.id===link[2]&&!closed(s))){if($('#snooze-dialog').open)$('#snooze-dialog').close();openSnooze(link[2],!!link[1])}history.replaceState(null,'',location.pathname)}}

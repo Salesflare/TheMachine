@@ -74,7 +74,7 @@ try{
   assert.equal(await pending.locator('span.chip.scope').innerText(),'Personal');
   // Done: compact. State as a word with a dot, one line of body, the outcome in sight; the agent result, its files, your note
   // and the source behind Details, which shares its row with Chat and Reopen
-  assert.equal((await done.locator('.card-badges .chip').first().innerText()).trim(),'Done');
+  assert.match((await done.locator('.card-badges .chip').first().innerText()).trim(),/^Done \d+ hours? ago$/);  // when it closed
   assert.ok(await done.evaluate(a=>a.classList.contains('is-closed')));
   {const [h,lh]=await done.locator('.body').evaluate(e=>[e.getBoundingClientRect().height,parseFloat(getComputedStyle(e).lineHeight)]);assert.ok(h<=lh+2,`one line: ${h} for ${lh}`)}
   assert.match(await done.locator('.note.sent-ok').innerText(),/^Email sent at \d\d:\d\d\.$/);

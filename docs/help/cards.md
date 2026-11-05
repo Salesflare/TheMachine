@@ -18,7 +18,9 @@ The **To-dos** page groups them:
 - **Just done**: a last step you confirmed, like submitting a form or filing an issue, went through while you were away. It shows what happened until you tap **Got it**, for a day at most, and your phone hears of it too. Then it's only in Done.
 - **Coming back later**: snoozed.
 - **Promises**: what you promised and what others promised you. See [Promises](promises.md).
-- **Done / dismissed**: every finished to-do, newest first, 30 at a time as you scroll. To-dos that seem finished already come first, marked **Looks done**.
+- **Done / dismissed**: every finished to-do, by when it was finished, newest first, 30 at a time as you scroll. A to-do you just sent is at the top, and each one says when, like "Done 5 minutes ago". To-dos that seem finished already sit among them by when they started to, marked **Looks done**.
+
+After you send, a short note says where the to-do went, like "Sent. Moved to Done." or, when it waits for a reply, "Sent. Moved to Later until Mon." **Open** takes you to it. The email thread leaving your inbox for a few days is only about your mailbox. Search finds a to-do by its title or by who it went to, also in Later and Done.
 
 In Ready for you, Needs your decision, Preparing and Waiting on others, a to-do that's overdue or due by tomorrow comes first. The rest are newest first, by the time each to-do shows. The sidebar keeps the same order.
 

@@ -18,7 +18,9 @@ La pagina **Attività** le raggruppa:
 - **Appena fatto**: un ultimo passo che hai confermato, come inviare un modulo o creare una issue, è andato a buon fine mentre eri via. Mostra cosa è successo finché non tocchi **Ho capito**, al massimo per un giorno, e lo sa anche il tuo telefono. Poi resta solo in Fatto.
 - **Torna più tardi**: posticipate.
 - **Promesse**: quello che hai promesso e quello che altri hanno promesso a te. Vedi [Promesse](promises.md).
-- **Fatte / ignorate**: tutte le attività concluse, dalla più recente, 30 alla volta mentre scorri. Quelle che sembrano già concluse vengono prima, con l’etichetta **Sembra fatto**.
+- **Fatte / ignorate**: tutte le attività concluse, in base a quando sono state concluse, dalla più recente, 30 alla volta mentre scorri. Un’attività appena inviata è in cima, e ognuna dice quando, come «Fatto 5 minuti fa». Quelle che sembrano già concluse stanno tra le altre in base a quando hanno cominciato a sembrarlo, con l’etichetta **Sembra fatto**.
+
+Dopo l’invio, una breve nota dice dove si trova l’attività, come «Inviato. Spostato in Fatto.» o, se aspetta una risposta, «Inviato. Spostato in Più tardi fino a lun.» **Apri** ti ci porta. Il thread che esce dalla posta in arrivo per qualche giorno riguarda solo la tua casella. La ricerca trova un’attività per titolo o destinatario, anche in Più tardi e Fatto.
 
 In Pronta per te, Serve una tua decisione, In preparazione e In attesa di altri, un'attività scaduta o in scadenza entro domani viene prima. Le altre seguono dalla più recente, secondo l'ora che mostra ogni attività. La barra laterale ha lo stesso ordine.
 

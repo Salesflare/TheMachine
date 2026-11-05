@@ -8977,6 +8977,8 @@ class Store:
             # Written requests belong on the card too, even after preparation
             # or a later button click, and beyond the recent-feedback limit.
             for suggestion in cards:
+                if looks_done(suggestion):  # where it sits in Done, among the closed ones (dashboard doneAt)
+                    suggestion['looks_done_at'] = looks_done_at(db, suggestion)
                 try:  # who it's about (its chip, also on a done to-do), and their weight to rank open cards by
                     suggestion['people'], weight = graph.card_people(db, json.loads(suggestion['event_ids'] or '[]'))
                     if suggestion['status'] not in ('completed', 'rejected'):
@@ -9022,10 +9024,11 @@ class Store:
             suggestion.update(self.suggestion_result(suggestion, db))
 
     def done_rows(self, db, titles=False):
-        """Every done or dismissed card, the latest closed first, with its scope: light rows to count, filter and page."""
-        rows = db.execute("SELECT s.id," + ("s.title," if titles else "") + "s.account_ids,s.area,coalesce((SELECT max(d.created_at) FROM decisions d WHERE d.suggestion_id=s.id AND d.choice IN ('complete','reject')),s.created_at) closed_at "
+        """Every done or dismissed card, the latest closed first, with its scope: light rows to count, filter and page.
+        titles: also each one's title and who its messages went to (card_recipients), for a search."""
+        rows = db.execute("SELECT s.id," + ("s.title,s.next_action," if titles else "") + "s.account_ids,s.area,coalesce((SELECT max(d.created_at) FROM decisions d WHERE d.suggestion_id=s.id AND d.choice IN ('complete','reject')),s.created_at) closed_at "
                           "FROM suggestions s WHERE s.status IN ('completed','rejected') ORDER BY closed_at DESC,s.id").fetchall()
-        return [{'id': r['id'], 'title': (r['title'] or '') if titles else '', 'closed_at': r['closed_at'],
+        return [{'id': r['id'], 'title': (r['title'] or '') if titles else '', 'who': card_recipients(r['next_action']) if titles else '', 'closed_at': r['closed_at'],
                  'scope': suggestion_scope(r['account_ids'], self.accounts, r['area']) if getattr(self, 'accounts', None) and r['account_ids'] is not None else None} for r in rows]
 
     def done_counts(self, db):
@@ -9034,12 +9037,13 @@ class Store:
 
     def done_page(self, cursor=0, limit=30, query='', scope='', only=''):
         """A page of the Done list, the latest closed first, for the main pane and the sidebar; query matches card titles
-        (every done card, not only the ones loaded), scope is work or personal; only: that one card (a link from Activity)."""
+        and who its messages went to (every done card, not only the ones loaded), scope is work or personal; only: that one
+        card (a link from Activity)."""
         offset, limit = max(0, int(cursor or 0)), max(1, min(int(limit), 50))
         words = [w for w in str(query or '').casefold().split() if w]
         with self.connect() as db:
             rows = [r for r in self.done_rows(db, titles=bool(words)) if (scope not in ('work', 'personal') or r['scope'] == scope)
-                    and all(w in r['title'].casefold() for w in words) and (not only or r['id'] == only)]
+                    and all(w in (r['title'] + ' ' + r['who']).casefold() for w in words) and (not only or r['id'] == only)]
             ids = [r['id'] for r in rows[offset:offset + limit]]
             by_id = {r['id']: dict(r) for r in db.execute('SELECT * FROM suggestions WHERE id IN (' + ','.join('?' for _ in ids) + ')', ids)} if ids else {}
             cards = [by_id[i] for i in ids if i in by_id]
@@ -9090,7 +9094,13 @@ class Store:
                 day = last['at'][:10]
                 result['condensed'] = {'at': last['at'], 'notes': db.execute("SELECT count(*) FROM facts WHERE merged_into IS NOT NULL AND substr(removed_at,1,10)=?", (day,)).fetchone()[0]}
             # Keep outstanding items visible even after a long completed history.
-            result['suggestions'] = [dict(r) for r in db.execute("SELECT * FROM suggestions WHERE status NOT IN ('completed','rejected') OR id IN (SELECT id FROM suggestions WHERE status IN ('completed','rejected') ORDER BY created_at DESC LIMIT 100) ORDER BY created_at DESC")]
+            # The done ones: the 100 closed last (a to-do made weeks ago and sent just now is the newest done), each with
+            # when it was closed, so Done starts with the one just finished.
+            recent = {r['id']: r['closed_at'] for r in self.done_rows(db)[:100]}
+            result['suggestions'] = [dict(r) for r in db.execute("SELECT * FROM suggestions WHERE status NOT IN ('completed','rejected') OR id IN (SELECT value FROM json_each(?)) ORDER BY created_at DESC", (json.dumps(list(recent)),))]
+            for card in result['suggestions']:
+                if card['id'] in recent:
+                    card['closed_at'] = recent[card['id']]
             self.card_views(db, result['suggestions'], jobs=False)
             # How many cards are done or dismissed, per scope: the Done lists' counts; they load the rest a page at a time
             result['done_counts'] = self.done_counts(db)
@@ -13901,6 +13911,34 @@ LOOKS_DONE_SQL = "(handled_hint IS NOT NULL OR (status='prepared' AND json_extra
 # a reply). Nothing for the owner until that step moves; a new message on it (update_card) brings it back as open.
 # Neither kind counts as needing the owner. Same rule as waitsOnOthers() in dashboard.html.
 NOT_FOR_OWNER_SQL = "(" + LOOKS_DONE_SQL + " OR (status='prepared' AND json_extract(outcome,'$.state')='waiting'))"
+
+
+def card_recipients(next_action):
+    """Who a to-do's messages go to, names and addresses in one line, so a search finds it by recipient (done ones too)."""
+    try:
+        found = next_actions.actions(next_action)
+    except (TypeError, ValueError, AttributeError):
+        return ''
+    out = []
+    for a in found:
+        if not isinstance(a, dict):
+            continue
+        out += [str(a.get(k) or '') for k in ('to_name', 'to_email')]
+        for k in ('to', 'cc'):
+            out += [str(x) for x in a[k]] if isinstance(a.get(k), list) else [str(a.get(k) or '')]
+    return ' '.join(x for x in out if x)
+
+
+def looks_done_at(db, row):
+    """When a to-do started to look done: the later sign that it's handled, else when its run found it done already."""
+    try:
+        at = (json.loads(row.get('handled_hint') or 'null') or {}).get('at')
+    except (TypeError, ValueError, AttributeError):
+        at = None
+    if not at:
+        found = db.execute('SELECT updated_at FROM preparations WHERE suggestion_id=?', (row['id'],)).fetchone()
+        at = found[0] if found else None
+    return at or row.get('created_at')
 
 
 def outcome_state(row):

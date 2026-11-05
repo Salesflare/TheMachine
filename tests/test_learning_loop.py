@@ -157,7 +157,7 @@ class LearningLoop(unittest.TestCase):
             for i in range(105):
                 db.execute("INSERT INTO suggestions(id,dedupe_key,title,body,event_ids,account_ids,status,created_at) "
                            "VALUES(?,?,?,'','[]','[\"work\"]','completed',?)", (f'n{i}', f'n{i}', f'Newer {i}', a.now()))
-            db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES('d9','old1','complete','Sent: Send reply','assistant',?)", (a.now(),))
+            db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES('d9','old1','complete','Sent: Send reply','assistant','2026-01-01T10:00:00+00:00')")  # closed long ago too
         snap = self.store.snapshot([])
         self.assertNotIn('old1', {s['id'] for s in snap['suggestions']})
         titles = {d['id']: d['title'] for d in snap['decisions']}

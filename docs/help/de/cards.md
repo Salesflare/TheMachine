@@ -18,7 +18,9 @@ Die Seite **Aufgaben** gruppiert sie:
 - **Gerade erledigt**: ein letzter Schritt, den du bestätigt hast, etwa ein Formular absenden oder ein Issue anlegen, ist gelungen, während du weg warst. Er zeigt, was passiert ist, bis du auf **Verstanden** tippst, höchstens einen Tag, und dein Handy erfährt es auch. Danach steht er nur noch unter Erledigt.
 - **Kommt später zurück**: zurückgestellt.
 - **Versprechen**: was du versprochen hast und was andere dir versprochen haben. Siehe [Versprechen](promises.md).
-- **Erledigt / verworfen**: jede abgeschlossene Aufgabe, die neueste zuerst, 30 auf einmal beim Scrollen. Aufgaben, die schon fertig aussehen, stehen oben, markiert mit **Scheinbar erledigt**.
+- **Erledigt / verworfen**: jede abgeschlossene Aufgabe, nach dem Zeitpunkt, an dem sie erledigt wurde, die neueste zuerst, 30 auf einmal beim Scrollen. Eine gerade gesendete Aufgabe steht oben, und jede sagt, wann, etwa „Erledigt vor 5 Minuten“. Aufgaben, die schon fertig aussehen, stehen dazwischen nach dem Zeitpunkt, ab dem sie so aussahen, markiert mit **Scheinbar erledigt**.
+
+Nach dem Senden sagt ein kurzer Hinweis, wo die Aufgabe jetzt ist, etwa „Gesendet. Verschoben nach Erledigt.“ oder, wenn sie auf eine Antwort wartet, „Gesendet. Verschoben nach Später bis Mo.“ **Öffnen** bringt dich hin. Dass der E-Mail-Verlauf für ein paar Tage aus deinem Posteingang verschwindet, betrifft nur dein Postfach. Die Suche findet eine Aufgabe nach Titel oder Empfänger, auch in Später und Erledigt.
 
 In Bereit für dich, Braucht deine Entscheidung, Wird vorbereitet und Wartet auf andere steht eine Aufgabe, die überfällig ist oder bis morgen fällig ist, oben. Die übrigen kommen neueste zuerst, nach der Zeit, die jede Aufgabe zeigt. Die Seitenleiste hat dieselbe Reihenfolge.
 

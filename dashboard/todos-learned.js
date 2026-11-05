@@ -86,6 +86,9 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-pager-more
 // Done cards beyond the status payload: those loaded join the cards the page knows, so a chat or an action finds them
 const doneExtra=new Map();
 const closedAt=s=>s.closed_at||(state?.decisions||[]).filter(d=>d.suggestion_id===s.id&&['complete','reject'].includes(d.choice)).map(d=>d.created_at).sort().at(-1)||s.created_at;
+// A to-do that looks done sits in Done by when it started to (the Machine's looks_done_at, else the sign's own time)
+const lookAt=s=>{try{const h=JSON.parse(s.handled_hint||'null');if(h?.at)return h.at}catch{}return s.looks_done_at||s.created_at};
+const doneAt=s=>looksDone(s)?lookAt(s):closedAt(s);
 const doneKey=()=>'done:'+scopeFilter;
 // A Machine from before the Done pages has no api/cards/done: then the done cards in the status payload are the list
 const doneLocal=()=>{const items=(state?.suggestions||[]).filter(s=>closed(s)&&(scopeFilter==='all'||s.scope===scopeFilter)).sort((a,b)=>closedAt(b).localeCompare(closedAt(a)));return {items,next:null,total:items.length}};
@@ -122,7 +125,12 @@ function sideRow(x,cur){const here=id=>id===cur?html` aria-current="page"`:'';
  if(looksDone(x))return html`<a href="#chat=${x.id}" class="side-ld" title="${x.title}"${here(x.id)}><span translate="no">${x.title}</span><small>${t('Looks done')}</small></a>`;  // at the top of Done, still open
  return html`<a href="#chat=${x.id}" title="${x.title}" translate="no"${here(x.id)}>${x.title}</a>`}
 // The Done list on the Suggestions page: the same fold, a quiet to-do that opens to the list
-function doneRows(items){return html`${doneFold(items).map(x=>x.fuFold?doneFoldCard(x):suggestionCard(x))}`}
+// Done reads newest first by when each one closed, the ones that look done among them by when they started to (doneAt):
+// one just sent is at the top. A looks-done one older than the loaded part waits until that part is loaded.
+const lookDoneNow=()=>(state?.suggestions||[]).filter(s=>looksDone(s)&&(scopeFilter==='all'||s.scope===scopeFilter));
+function doneRows(items){const p=pagers.get(doneKey()),last=p?.next!=null&&items.length?doneAt(items.at(-1)):'',looks=lookDoneNow().filter(s=>doneAt(s)>=last);
+ const rows=[...looks,...doneFold(items)].sort((a,b)=>doneAt(b).localeCompare(doneAt(a)));
+ return html`${rows.map(x=>x.fuFold?doneFoldCard(x):looksDone(x)?lookDoneCard(x):suggestionCard(x))}`}
 function doneFoldCard(g){const open=donePageOpen.has(g.fuFold);
  return html`<article class="card todo t-faint fu-done" id="${g.id.replace(/[^\w-]/g,'-')}" data-status="completed"><details data-done-fold-card="${g.fuFold}"${open?html` open`:''}><summary><h3 translate="no">${g.title}</h3>${doneFoldSkipped(g)?html`<span class="done-fold-n">${doneFoldSkipped(g)}</span>`:''}<span class="meta-side">${time(g.closed_at,true)}</span></summary><ul class="fu-done-list">${g.items.map(s=>html`<li><a href="#chat=${s.id}" translate="no">${frName(s.follow_up)}</a><span>${doneFoldWho(s)}</span><span class="muted">${doneFoldWhen(s)}</span></li>`)}</ul></details></article>`}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-done-fold]');if(!b)return;e.preventDefault();const k=b.dataset.doneFold;doneOpen.has(k)?doneOpen.delete(k):doneOpen.add(k);const inSide=!!b.closest('#side-cards');sideCards();if(chatOpen())render();
@@ -183,7 +191,7 @@ const LD_CLASS='looks-done';
 function lookDoneCard(s){
  return htmlEdit(suggestionCard({...s,status:'completed',body:doneWhy(s)||s.body,handled_hint:null,outcome:null,undo_until:null,expired_at:null}),c=>{
   [...c.querySelectorAll('[class]')].find(n=>/(^| )is-closed$/.test(n.getAttribute('class')))?.classList.add(LD_CLASS);c.querySelector('[data-status="completed"]')?.setAttribute('data-status',s.status);
-  const ct=c.querySelector('span[class="ct"]');if(ct&&!ct.children.length)ct.textContent=t('Looks done');
+  const ct=c.querySelector('span[class="ct"]');if(ct&&!ct.children.length){ct.textContent=t('Looks done {}',ago(lookAt(s)));ct.parentElement.title=date(lookAt(s))}
   for(const b of c.querySelectorAll('[data-choice="reopen"],[data-choice="undo"]')){b.removeAttribute('data-choice');b.setAttribute('data-ld-not',s.id)}})}
 async function lookNotDone(b){const id=b.dataset.ldNot;b.disabled=true;
  try{await decidePost(id,{choice:'not_done',feedback:'',decision_id:crypto.randomUUID()});lookExpanded.delete(id);await refresh();toast(t('Back on your list. I’ll learn from it.'))}

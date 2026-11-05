@@ -38,7 +38,7 @@ try{
   assert.match((await line('o1')).trim(),/^No longer needed: the demo with Noor was on \w{3}, \w{3} \d{1,2} at 13:30\.$/);
   for(const id of ['y1','t1','o1'])assert.ok(!(await page.locator('#task-'+id).innerText()).includes('Overdue'),id);
   // Closed by itself, not by them: the chip says Not needed, never Done
-  for(const id of ['y1','t1','o1'])assert.equal((await page.locator(`#task-${id} .card-badges .chip`).first().innerText()).trim(),'Not needed',id);
+  for(const id of ['y1','t1','o1'])assert.match((await page.locator(`#task-${id} .card-badges .chip`).first().innerText()).trim(),/^Not needed /,id);
   // Undo while it lasts, Reopen after
   assert.equal(await page.locator('#task-y1 [data-choice="undo"]').count(),1);
   assert.equal(await page.locator('#task-y1 [data-choice="reopen"]').count(),0);
