@@ -8,6 +8,8 @@ document.head.append(Object.assign(document.createElement('style'),{id:'wa-photo
 .wa-photo img{width:100%;height:100%;object-fit:cover;display:block}
 .wa-photo:focus-visible{outline:2px solid var(--mint);outline-offset:2px}
 .convo-say .wa-photos{margin:6px 0 2px}.convo-say .wa-photo{width:180px;height:auto;max-height:240px}.convo-say .wa-photo img{height:auto;max-height:240px}
+.wa-reads{display:grid;gap:6px;margin:8px 0}.wa-read{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:.85rem;color:var(--muted);cursor:pointer}
+.wa-read small{display:block;font-size:var(--fs-xs,.78rem);color:var(--muted);opacity:.85}.wa-read .lookup-switch{min-height:0;box-shadow:inset 0 0 0 1px var(--border)}.wa-read .lookup-switch[aria-checked=true]{background:var(--mint)}
 #wa-photo-view{border:0;padding:0;background:transparent;width:fit-content;max-width:min(94vw,1100px);max-height:92vh;overflow:visible}
 #wa-photo-view::backdrop{background:rgba(0,0,0,.82)}
 #wa-photo-view img{display:block;max-width:min(94vw,1100px);max-height:88vh;object-fit:contain;border-radius:8px;background:#fff}
@@ -25,11 +27,11 @@ function openPhoto(u,alt){let d=$('#wa-photo-view');
  if(!PHOTO_DATA.test(u)&&!/^api\/whatsapp-photo\?id=wp_[0-9a-f]{20}$/.test(u))return;
  setHTML(d,html`<button type="button" class="wa-photo-close" data-photo-close aria-label="${t('Close the photo')}">×</button><img src="${u}" alt="${alt||t('Photo')}">`);d.showModal();d.querySelector('[data-photo-close]').focus()}
 document.addEventListener('click',e=>{const b=e.target.closest?.('button.wa-photo');if(!b)return;e.preventDefault();e.stopPropagation();openPhoto(b.dataset.photo,b.dataset.alt)},true);
-// The WhatsApp connection's switches (whatsapp_images_app.whatsapp_photos_action): Read photos, then Also in personal
-// chats once it is on. A Work connection reads work chats; a personal one has only Also in personal chats to say yes to.
+// The WhatsApp connection's switches, under Details like its other switches (whatsapp_images_app.whatsapp_photos_action):
+// Read photos (work chats), then Also in personal chats once it is on. Plain rows: the label, the switch.
 function photosRow(c){const p=c.photos;if(c.service!=='whatsapp'||!p||c.shared_by)return '';
- const row=(field,on,label,note)=>html`<div class="shared-switch wa-read"><span class="grow"><strong>${t(label)}</strong>${note?html`<small>${t(note)}</small>`:''}</span><button type="button" class="lookup-switch" role="switch" aria-checked="${on?'true':'false'}" aria-label="${t(label)}" data-wa-photos="${c.id}" data-field="${field}"></button></div>`;
- return html`${row('read',p.read,'Read photos',p.read&&p.personal?'Reads receipts, screenshots and documents in all chats.':'Reads receipts, screenshots and documents in work chats.')}${p.read?row('personal',p.personal,'Also in personal chats',''):''}`}
+ const row=(field,on,label,note)=>html`<label class="wa-read"><span>${t(label)}${note?html`<small>${t(note)}</small>`:''}</span><button type="button" class="lookup-switch" role="switch" aria-checked="${on?'true':'false'}" aria-label="${t(label)}" data-wa-photos="${c.id}" data-field="${field}"></button></label>`;
+ return html`<div class="wa-reads">${row('read',p.read,'Read photos','Reads receipts, screenshots and documents in work chats.')}${p.read?row('personal',p.personal,'Also in personal chats',''):''}</div>`}
 document.addEventListener('click',async e=>{const b=e.target.closest?.('[data-wa-photos]');if(!b||b.disabled)return;
  const c=(state.connectors||[]).find(x=>x.id===b.dataset.waPhotos),p={...(c?.photos||{})};p[b.dataset.field]=b.getAttribute('aria-checked')!=='true';if(!p.read)p.personal=false;
  b.disabled=true;try{const r=await connectPost('whatsapp_photos',{account:b.dataset.waPhotos,read:!!p.read,personal:!!p.personal});if(c)c.photos=r.result||r;b.setAttribute('aria-checked',p[b.dataset.field]?'true':'false');toast(t('Saved'));setTimeout(refresh,300)}

@@ -14,7 +14,7 @@ Une photo, un message vocal ou un fichier sans légende apparaît tel quel, par 
 
 ## Lire les photos
 
-Désactivé tant que vous ne l’activez pas. Sur la connexion WhatsApp, dans **Connexions**, activez **Lire les photos** et The Machine lit les photos de vos discussions pro : un reçu, une capture d’écran, la photo d’une lettre ou d’un formulaire. **Aussi dans les discussions perso** lit aussi celles de vos discussions perso. Une discussion est pro ou perso comme le partage la voit : une discussion en famille reste perso.
+Désactivé tant que vous ne l’activez pas. Dans **Connexions**, ouvrez WhatsApp, puis **Détails**, et activez **Lire les photos** et The Machine lit les photos de vos discussions pro : un reçu, une capture d’écran, la photo d’une lettre ou d’un formulaire. **Aussi dans les discussions perso** lit aussi celles de vos discussions perso. Une discussion est pro ou perso comme le partage la voit : une discussion en famille reste perso.
 
 The Machine télécharge chaque photo une fois et la garde sur votre Machine comme une pièce jointe d’e-mail : chiffrée quand la protection des messages est active, et supprimée quand son message disparaît. Son propre modèle lit ce que montre la photo et le texte qu’elle contient. Cela fait partie du message, jamais des instructions. JPEG, PNG et WebP jusqu’à 5 Mo. Un code à usage unique sur une photo est laissé de côté.
 

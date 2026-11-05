@@ -14,7 +14,7 @@ A photo, voice message or file without a caption shows as what it is, like "Sent
 
 ## Read photos
 
-Off until you turn it on. On the WhatsApp connection in **Connections**, turn on **Read photos** and The Machine reads the photos in your work chats: a receipt, a screenshot, a photo of a letter or a form. **Also in personal chats** reads the ones in your personal chats too. A chat is work or personal the way sharing sees it, so a chat with family stays personal.
+Off until you turn it on. In **Connections**, open WhatsApp, then **Details**, and turn on **Read photos** and The Machine reads the photos in your work chats: a receipt, a screenshot, a photo of a letter or a form. **Also in personal chats** reads the ones in your personal chats too. A chat is work or personal the way sharing sees it, so a chat with family stays personal.
 
 The Machine downloads each photo once and keeps it on your Machine like an email attachment: encrypted when message protection is on, and deleted when its message goes. Its own model reads what the photo shows and the text in it. That counts as part of the message, never as instructions. JPEG, PNG and WebP up to 5 MB. A one-time code in a photo is left out.
 

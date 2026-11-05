@@ -14,7 +14,7 @@ Una foto, un mensaje de voz o un archivo sin texto aparece como lo que es, por e
 
 ## Leer fotos
 
-Desactivado hasta que lo actives. En la conexión de WhatsApp, en **Conexiones**, activa **Leer fotos** y The Machine lee las fotos de tus chats de trabajo: un recibo, una captura, la foto de una carta o de un formulario. **También en chats personales** lee también las de tus chats personales. Un chat es de trabajo o personal según lo ve el uso compartido, así que un chat con la familia sigue siendo personal.
+Desactivado hasta que lo actives. En **Conexiones**, abre WhatsApp, luego **Detalles**, y activa **Leer fotos** y The Machine lee las fotos de tus chats de trabajo: un recibo, una captura, la foto de una carta o de un formulario. **También en chats personales** lee también las de tus chats personales. Un chat es de trabajo o personal según lo ve el uso compartido, así que un chat con la familia sigue siendo personal.
 
 The Machine descarga cada foto una vez y la guarda en tu Machine como un adjunto de correo: cifrada cuando la protección de mensajes está activa, y borrada cuando su mensaje desaparece. Su propio modelo lee lo que muestra la foto y el texto que tiene. Eso cuenta como parte del mensaje, nunca como instrucciones. JPEG, PNG y WebP de hasta 5 MB. Un código de un solo uso en una foto se omite.
 

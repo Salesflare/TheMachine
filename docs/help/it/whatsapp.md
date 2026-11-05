@@ -14,7 +14,7 @@ Una foto, un messaggio vocale o un file senza didascalia compare per ciò che è
 
 ## Leggi le foto
 
-Spento finché non lo accendi. Sul collegamento WhatsApp, in **Connessioni**, attiva **Leggi le foto** e The Machine legge le foto nelle tue chat di lavoro: una ricevuta, uno screenshot, la foto di una lettera o di un modulo. **Anche nelle chat personali** legge anche quelle delle tue chat personali. Una chat è di lavoro o personale come la vede la condivisione, quindi una chat con la famiglia resta personale.
+Spento finché non lo accendi. In **Connessioni**, apri WhatsApp, poi **Dettagli**, e attiva **Leggi le foto** e The Machine legge le foto nelle tue chat di lavoro: una ricevuta, uno screenshot, la foto di una lettera o di un modulo. **Anche nelle chat personali** legge anche quelle delle tue chat personali. Una chat è di lavoro o personale come la vede la condivisione, quindi una chat con la famiglia resta personale.
 
 The Machine scarica ogni foto una volta e la tiene sulla tua Machine come un allegato email: cifrata quando la protezione dei messaggi è attiva, ed eliminata quando il suo messaggio sparisce. Il suo modello legge cosa mostra la foto e il testo che contiene. Conta come parte del messaggio, mai come istruzioni. JPEG, PNG e WebP fino a 5 MB. Un codice monouso in una foto viene omesso.
 

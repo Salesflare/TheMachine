@@ -53,13 +53,15 @@ try{
   await page.keyboard.press('Escape');
   // The connection: Read photos off by default; on, then Also in personal chats
   await page.evaluate(()=>{location.hash='#connections'});await page.locator('[data-health-pane="chat"]').first().click().catch(()=>{});
-  const read=page.locator('[data-wa-photos="home-whatsapp"][data-field="read"]');await read.waitFor();
+  const details=page.locator('#sync-details-home-whatsapp');await details.waitFor({state:'attached'});
+  assert.equal(await details.locator('[data-wa-photos]').count(),1);  // under Details, out of the card body
+  await details.locator('summary').click();const read=details.locator('[data-wa-photos="home-whatsapp"][data-field="read"]');await read.waitFor();
   assert.equal(await read.getAttribute('aria-checked'),'false');
   assert.equal(await page.locator('[data-wa-photos][data-field="personal"]').count(),0);
-  assert.match(await page.locator('[data-conn="home-whatsapp"] .wa-read').innerText(),/Read photos\s+Reads receipts, screenshots and documents in work chats\./);
+  assert.match(await page.locator('[data-conn="home-whatsapp"] .wa-read').innerText(),/^Read photos\s+Reads receipts, screenshots and documents in work chats\.$/);
   await read.click();await page.waitForFunction(()=>document.querySelector('[data-wa-photos][data-field="personal"]'));
   assert.deepEqual(posted[0],{account:'home-whatsapp',read:true,personal:false});
-  await page.locator('[data-wa-photos][data-field="personal"]').click();await page.waitForFunction(()=>/all chats/.test(document.querySelector('[data-conn="home-whatsapp"]').innerText));
+  await page.locator('[data-wa-photos][data-field="personal"]').click();await page.waitForFunction(()=>document.querySelector('[data-wa-photos][data-field="personal"]')?.getAttribute('aria-checked')==='true');
   assert.deepEqual(posted[1],{account:'home-whatsapp',read:true,personal:true});
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth),'no sideways scroll');
   await context.close()}
