@@ -65,11 +65,11 @@ try{
    await page.mouse.click(2,2);assert.equal(await page.locator('#task-r1 .more-actions').evaluate(d=>d.open),false)}
   await page.locator('#task-r1 .more-actions>summary').click();await page.locator('#task-r1 .more-menu').getByRole('button',{name:'Not needed'}).waitFor();
   await page.mouse.click(2,2);assert.equal(await page.locator('#task-r1 .more-actions').evaluate(d=>d.open),false);
-  // The source line sits behind Details; its date never splits over two lines
+  // The source line sits on an open to-do, not behind Details; its date never splits over two lines
   {assert.equal(await page.locator('#task-p1 .card-details').isVisible(),false);await page.locator('#task-p1 .card-foot [data-details]').click();
-   const d=page.locator('#task-p1 .card-details .src-date');assert.equal(await d.innerText(),'Mon 19 Oct');
+   assert.equal(await page.locator('#task-p1 .card-details .card-source').count(),0);const d=page.locator('#task-p1>.card-source .src-date');assert.equal(await d.innerText(),'Mon 19 Oct');
    assert.equal(await d.evaluate(e=>getComputedStyle(e).whiteSpace),'nowrap');
-   assert.equal(await page.locator('#task-p1 .card-details .read-original').textContent(),'Email from Sam · Mon 19 Oct ↗')}
+   assert.equal(await page.locator('#task-p1>.card-source .read-original').textContent(),'Email from Sam · Mon 19 Oct ↗')}
   // Hand off: the sheet sits below the source line, the task and the note full width, and the card's buttons hide meanwhile
   {await page.locator('#task-p1 .more-actions>summary').click();await page.locator('#task-p1 [data-fleet-handoff]').click();
    const form=page.locator('#task-p1 .fleet-handoff-form');await form.waitFor();

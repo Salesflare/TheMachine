@@ -66,7 +66,9 @@ Sometimes a quiet line under the text says what isn't known, like "Last contact 
 
 A title says what needs doing. It changes only when that does, like a new ask. A done to-do keeps its title, with how it ended under it, like what went out or "Done: Sam signed it on Tuesday".
 
-**Details** shows its name, project and area (tap one to change it), the message it came from (tap it to read the thread), your last note and a coding agent's result. **Chat ›** at the end of that row opens the chat. A done to-do stays short: its title, one line and what went out.
+Above the draft, one faint line names the message it came from, with that service's logo (Gmail, Slack, WhatsApp…). Tap it to read the thread. The draft starts with the logo of where it goes, so you see it's a Slack reply or an email before reading. A step with no draft, like a handoff, shows the logo on its button.
+
+**Details** shows its name, project and area (tap one to change it), your last note and a coding agent's result. **Chat ›** at the end of that row opens the chat. A done to-do stays short: its title, one line and what went out; the message it came from is under its **Details**.
 
 A "Waiting on" to-do (someone promised you something) links your own last message to them, the one you're waiting on an answer to: "Email to Pat · Tue".
 
