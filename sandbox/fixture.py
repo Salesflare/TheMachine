@@ -480,13 +480,18 @@ def build(profile):
                                    'subject': last if last.startswith('Re: ') else 'Re: ' + last, 'label': 'Send to ' + to['name'].split()[0], 'to_name': to['name'],
                                    'body': body, 'revision': f'rev{i:04d}'}
         elif kind == 'slack':
-            card['next_action'] = {'kind': 'slack', 'account_id': 'work-slack', 'to_name': '#support', 'body': body, 'label': 'Reply in #support', 'revision': f'rev{i:04d}'}
+            # A reply to the last ask, in the thread of #support it came from (next_actions.slack_thread)
+            asked = len(story['slack_thread']) - 1
+            card['next_action'] = {'kind': 'slack', 'account_id': 'work-slack', 'user_id': f'U{2000 + asked}', 'to_name': story['slack_thread'][asked][1],
+                                   'body': body, 'label': 'Send to ' + story['slack_thread'][asked][1].split()[0], 'revision': f'rev{i:04d}',
+                                   'thread': {'channel_id': 'C0SUPPORT', 'ts': f'1761{first:06d}.000100', 'dm': False, 'channel_name': 'support'}}
         elif kind == 'telegram':
             card['next_action'] = {'kind': 'telegram', 'account_id': 'home-telegram', 'to_name': chat, 'chat_id': '7001', 'body': body,
                                    'label': 'Send to ' + chat.split()[0], 'revision': f'rev{i:04d}'}
         elif kind == 'whatsapp':
             card['next_action'] = {'kind': 'whatsapp', 'account_id': 'home-whatsapp', 'to_name': 'Morgan family', 'chat_id': 'morganfamily', 'body': body,
-                                   'label': 'Send to Morgan family', 'revision': f'rev{i:04d}'}
+                                   'label': 'Send to Morgan family', 'revision': f'rev{i:04d}',
+                                   'quote': {'message_id': f"wa-{story['key']}-{len(lines) - 1}"}}  # a group reply quotes the ask (next_actions.whatsapp_quote)
         cards.append(card)
     hanne = person_of['Hanne Ashgrove']
     add('work-calendar', 'calendar.event', -2900, 'Demo with Brightpath Logistics', 'Video call. Hanne and Elif from operations: reminders on shared inboxes.',

@@ -14,7 +14,7 @@ As pessoas aparecem pelo nome e os apps pelo deles, nunca por um ID do Slack. Al
 
 ## O que ele pode enviar
 
-Uma mensagem direta para uma pessoa, em seu nome, e só depois que você aprova na tarefa. Ele nunca publica em um canal.
+Uma mensagem direta para uma pessoa, em seu nome, e só depois que você aprova na tarefa. Uma resposta à mensagem do Slack de onde veio uma tarefa vai na thread dessa mensagem, na mensagem direta ou no canal; o rascunho diz **Na thread**. Ele nunca começa uma publicação nova em um canal.
 
 ## Conecte
 

@@ -14,7 +14,7 @@ Une photo, un message vocal ou un fichier sans légende apparaît tel quel, par 
 
 ## Ce qu’il peut envoyer
 
-Un texte dans une discussion qui existe déjà, seulement après votre accord sur la tâche.
+Un texte dans une discussion qui existe déjà, seulement après votre accord sur la tâche. Une réponse au message WhatsApp d’où vient une tâche cite ce message quand d’autres messages ont suivi, ou dans un groupe ; le brouillon indique **En réponse**.
 
 Si une tâche est arrivée par e-mail mais que vous parlez à cette personne sur WhatsApp, dites-le dans le chat de la tâche. The Machine trouve votre discussion existante avec elle et passe le brouillon sur WhatsApp, pour que vous le vérifiiez et l’envoyiez. Il ne lance jamais de nouvelle discussion.
 

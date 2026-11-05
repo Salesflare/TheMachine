@@ -269,7 +269,7 @@ def preview(value):
         files = '\n\nAttachments: ' + attachment_list(value) if value.get('attachments') else ''
         return value['preview'] + message + files + ('\n\n' + value['url'] if value.get('url') else '')
     if value['kind'] == 'whatsapp':
-        return 'WhatsApp message to ' + value['to_name'] + '\n\n' + value['body']
+        return 'WhatsApp message to ' + value['to_name'] + (', as a reply' if value.get('quote') else '') + '\n\n' + value['body']
     if value['kind'] == 'telegram':
         return 'Telegram message to ' + value['to_name'] + '\n\n' + value['body']
     if value['kind'] == 'intercom':
@@ -279,8 +279,81 @@ def preview(value):
     if value['kind'] == 'handoff':
         return 'Hand off to ' + value['to_name'] + ' through The Machine\n\n' + value['body']
     if value['kind'] == 'slack':
-        return 'Slack message to ' + value['to_name'] + (' (' + value['to_email'] + ')' if value.get('to_email') else '') + '\n\n' + value['body'] + delegate_note(value)
+        thread = value.get('thread') or {}
+        where = ('' if not thread else ', in thread' if thread.get('dm') else ', in thread in #' + thread.get('channel_name', 'channel'))
+        return ('Slack message to ' + value['to_name'] + (' (' + value['to_email'] + ')' if value.get('to_email') else '') + where
+                + '\n\n' + value['body'] + delegate_note(value))
     return email_preview(value) if value['kind'] in ('email','email_demo') else value['instructions']
+
+
+def reply_spot(action, spots):
+    """The message of the to-do's own source this Slack or WhatsApp draft answers, in the conversation it goes to
+    (spots: assistant.reply_spots, newest first), and whether it gets its thread or quote. (None, False): none known."""
+    for spot in spots or ():
+        if spot.get('service') != action['kind'] or spot.get('account_id') != action['account_id']:
+            continue
+        if action['kind'] == 'whatsapp':
+            if spot.get('chat_id') == action['chat_id']:
+                # In a group a quote says which message this answers; in a one-to-one chat only when more came since
+                return spot, bool(spot.get('group') or spot.get('later'))
+            continue
+        name = str(spot.get('channel_name') or '')
+        if spot.get('dm'):
+            # Their direct message: they wrote in it, or it is the DM named after them
+            if not ((action.get('user_id') and action['user_id'] in spot.get('members', ()))
+                    or (name.startswith('DM ') and names_agree(action['to_name'], name[3:]))):
+                continue
+            return spot, bool(spot.get('later') or spot.get('thread_ts', spot['ts']) != spot['ts'])
+        # A channel: only a reply to the person who wrote the message, in its thread there
+        if (action.get('user_id') and action['user_id'] == spot.get('sender_id')) or (
+                not spot.get('own') and names_agree(action['to_name'], str(spot.get('sender_name') or ''))):
+            return spot, True
+    return None, False
+
+
+def slack_thread(action, spots):
+    """A Slack reply to a to-do from a Slack message goes in that message's thread, in its DM or channel: the
+    thread's own ts when the message is already in one, else the message's. Set by the service from the to-do's
+    evidence, never by the draft; None keeps the direct message. In a DM only when the message isn't the last one
+    there (or is in a thread already), so a reply to what was just said stays a plain message."""
+    spot, placed = reply_spot(action, spots)
+    if not placed:
+        return None
+    return {'channel_id': spot['channel_id'], 'ts': str(spot.get('thread_ts') or spot['ts']), 'dm': bool(spot.get('dm')),
+            **({} if spot.get('dm') else {'channel_name': str(spot.get('channel_name') or 'channel')[:80]})}
+
+
+def whatsapp_quote(action, spots):
+    """A WhatsApp reply quotes the message of the to-do it answers (wacli send text --reply-to), in its own chat."""
+    spot, placed = reply_spot(action, spots)
+    if not placed or not spot.get('message_id'):
+        return None
+    return {'message_id': str(spot['message_id']), **({'sender_id': spot['sender_id']} if spot.get('sender_id') else {})}
+
+
+def reply_context(actions_list, spots, now=None):
+    """Problems for a draft check: a Slack or WhatsApp reply to an older message a teammate's Machine carried in, which
+    this Machine doesn't have itself, so it can't go in its thread or quote it. It then says in a few words what it
+    answers, so the reader knows which conversation it belongs to."""
+    now = now or datetime.datetime.now(datetime.timezone.utc)
+    problems = []
+    for action in actions_list:
+        if action['kind'] not in ('slack', 'whatsapp') or action.get('thread') or action.get('quote') or action.get('delegate'):
+            continue
+        for spot in spots or ():
+            try:
+                when = datetime.datetime.fromisoformat(spot['when'])
+            except (KeyError, TypeError, ValueError):
+                continue
+            if (spot.get('service') is not None or now - when < datetime.timedelta(hours=6)
+                    or not any(names_agree(action['to_name'], str(spot.get(k) or '')) for k in ('carried_by', 'from'))):
+                continue
+            where = 'in the thread of' if action['kind'] == 'slack' else 'as a reply to'
+            problems.append(f"this {'Slack' if action['kind'] == 'slack' else 'WhatsApp'} message can't go {where} the message it "
+                            f"answers (from {when.date().isoformat()}), so start it with a few natural words on what it answers, "
+                            "in the chat's language")
+            break
+    return problems
 
 
 def linkedin_preview(action):
@@ -419,13 +492,13 @@ def reply_origin(result, account, config, replied):
 
 def validate(value, config, allowed_accounts, recipient_options=None, linkedin_threads=None, x_threads=None, whatsapp_chats=None,
              intercom_conversations=None, calendar_events=None, doc_comments=None, senders=None, replied=None, telegram_chats=None,
-             doc_write_context=None):
+             doc_write_context=None, reply_spots=None):
     if value is None:
         return None
     if isinstance(value,list):
         if not 1<=len(value)<=3:raise ValueError('Offer one to three useful next actions, not a menu of everything')
         if any(not isinstance(item,dict) for item in value):raise ValueError('Each next action must be one concrete choice')
-        choices=[validate(item,config,allowed_accounts,recipient_options,linkedin_threads,x_threads,whatsapp_chats,intercom_conversations,calendar_events,doc_comments,senders,replied,telegram_chats,doc_write_context) for item in value]
+        choices=[validate(item,config,allowed_accounts,recipient_options,linkedin_threads,x_threads,whatsapp_chats,intercom_conversations,calendar_events,doc_comments,senders,replied,telegram_chats,doc_write_context,reply_spots) for item in value]
         if len({item['revision'] for item in choices})!=len(choices) or len({label(item).lower() for item in choices})!=len(choices):
             raise ValueError('Next actions must be distinct concrete choices')
         return {'kind':'menu','actions':choices}
@@ -683,6 +756,9 @@ def validate(value, config, allowed_accounts, recipient_options=None, linkedin_t
             raise ValueError('Provide the concrete Slack message, at most 8000 characters')
         result['body'] = body.strip()
         delegation(value, result)
+        thread = slack_thread(result, reply_spots)
+        if thread:
+            result['thread'] = thread
     elif value.get('kind') == 'whatsapp':
         # A WhatsApp message in an existing chat, from the owner's linked account; wacli sends it only after the
         # owner's Send now. Text only. The chat is one from this task's own WhatsApp messages, or, when the owner
@@ -707,6 +783,9 @@ def validate(value, config, allowed_accounts, recipient_options=None, linkedin_t
         if not isinstance(body, str) or not body.strip() or len(body) > 4000 or '\x00' in body:
             raise ValueError('Provide the concrete WhatsApp message, at most 4000 characters')
         result['body'] = body.strip()
+        quote = whatsapp_quote(result, reply_spots)
+        if quote:
+            result['quote'] = quote
     elif value.get('kind') == 'telegram':
         # A Telegram message in an existing private chat or small group the owner's own account reads, sent by the
         # Telegram mirror only after the owner's Send on this exact text. Text only. The chat is one from this task's
@@ -1543,8 +1622,12 @@ class WhatsAppTransport:
 
     def send(self, action, job):
         try:
+            quote = action.get('quote') or {}  # a reply to the to-do's own message in this chat quotes it
             result = self.run(action, ['--timeout', '90s', '--lock-wait', '30s', 'send', 'text', '--to', action['chat_id'],
-                                       '--message', action['body']], write=True, timeout=150)
+                                       '--message', action['body'],
+                                       *(['--reply-to', quote['message_id']] if quote else []),
+                                       *(['--reply-to-sender', quote['sender_id']] if quote.get('sender_id') else [])],
+                               write=True, timeout=150)
         except subprocess.TimeoutExpired:
             return {}
         try:
@@ -1803,8 +1886,10 @@ class SlackTransport:
     """Sends one owner-approved Slack direct message as the owner, with their own Slack sign-in (slack_api.py) or
     through the Maton Slack connection they had before.
     Separate from the read-only Slack source: only these methods (look up, open the DM, post, read it
-    back), and only a direct message to one person; never a channel post."""
-    METHODS = {'users.info': 'GET', 'users.lookupByEmail': 'GET', 'conversations.open': 'POST', 'chat.postMessage': 'POST', 'conversations.history': 'GET'}
+    back), and only a direct message to one person, or a reply in the thread of the Slack message the to-do came from
+    (action['thread'], set by the service from that message, never by the draft); never a new channel post."""
+    METHODS = {'users.info': 'GET', 'users.lookupByEmail': 'GET', 'conversations.open': 'POST', 'chat.postMessage': 'POST', 'conversations.history': 'GET',
+               'conversations.replies': 'GET'}
 
     def __init__(self, config, credential):
         self.config, self.credential = config, credential
@@ -1878,9 +1963,10 @@ class SlackTransport:
 
     def send(self, action, job):
         import urllib.error
+        thread = action.get('thread') or {}
         try:
             user_id = self.person(action)
-            channel = self.channel(action, user_id)
+            channel = self.place(action, user_id)
         except WrongConversation:
             return {'rejected': 'wrong_conversation'}  # nothing was posted, and it never goes to that conversation
         except urllib.error.HTTPError as error:
@@ -1892,7 +1978,8 @@ class SlackTransport:
         try:
             # No unfurls, of pages or media: Slack would fetch a link in the text before anyone taps it
             reply = self.call(action, 'chat.postMessage', {'channel': channel, 'text': slack_text(action['body']),
-                                                           'unfurl_links': False, 'unfurl_media': False})
+                                                           'unfurl_links': False, 'unfurl_media': False,
+                                                           **({'thread_ts': thread['ts']} if thread else {})})
         except urllib.error.HTTPError as error:
             if error.code == 429:
                 return {'not_sent': True}  # Slack refused it for now and posted nothing: send it again shortly
@@ -1906,11 +1993,24 @@ class SlackTransport:
             return {'not_sent': True}
         return {'rejected': reply.get('error') or 'unknown'}
 
+    def place(self, action, user_id):
+        """The conversation it goes to: the DM with this member, or, for a reply in a thread, that thread's channel.
+        A thread in their DM is used only when it is the DM Slack opens with them."""
+        thread = action.get('thread') or {}
+        if thread and not thread.get('dm'):
+            return thread['channel_id']
+        channel = self.channel(action, user_id)
+        if thread and channel != thread['channel_id']:
+            raise WrongConversation()
+        return channel
+
     def reconcile(self, action, job):
         user_id = self.person(action)
-        channel = self.channel(action, user_id)
+        channel = self.place(action, user_id)
         since = datetime.datetime.fromisoformat(job['created_at']).timestamp() - 60
-        reply = self.call(action, 'conversations.history', {'channel': channel, 'oldest': f'{since:.6f}', 'limit': 50})
+        thread = action.get('thread') or {}
+        reply = (self.call(action, 'conversations.replies', {'channel': channel, 'ts': thread['ts'], 'oldest': f'{since:.6f}', 'limit': 50}) if thread
+                 else self.call(action, 'conversations.history', {'channel': channel, 'oldest': f'{since:.6f}', 'limit': 50}))
         owner = self.account(action).get('user_id')
         text = slack_text(action['body'])
         found = [m for m in reply.get('messages', []) if m.get('user') == owner and m.get('text') == text]

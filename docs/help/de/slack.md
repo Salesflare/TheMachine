@@ -14,7 +14,7 @@ Personen erscheinen mit ihrem Namen und Apps mit ihrem, nie mit einer Slack-ID. 
 
 ## Was es senden kann
 
-Eine Direktnachricht an eine Person, als du, und nur, nachdem du sie bei der Aufgabe freigegeben hast. Es postet nie in einem Channel.
+Eine Direktnachricht an eine Person, als du, und nur, nachdem du sie bei der Aufgabe freigegeben hast. Eine Antwort auf die Slack-Nachricht, aus der eine Aufgabe kam, geht in den Thread dieser Nachricht, in der Direktnachricht oder im Channel; im Entwurf steht **Im Thread**. Es beginnt nie einen neuen Beitrag in einem Channel.
 
 ## Verbinden
 

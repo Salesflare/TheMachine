@@ -14,7 +14,7 @@ Les personnes apparaissent sous leur nom et les apps sous le leur, jamais sous u
 
 ## Ce qu’elle peut envoyer
 
-Un message direct à une personne, en votre nom, et seulement après votre accord sur la tâche. Elle ne publie jamais dans un canal.
+Un message direct à une personne, en votre nom, et seulement après votre accord sur la tâche. Une réponse au message Slack d’où vient une tâche va dans le fil de ce message, dans le message direct ou le canal ; le brouillon indique **Dans le fil**. Elle ne lance jamais une nouvelle publication dans un canal.
 
 ## La connecter
 

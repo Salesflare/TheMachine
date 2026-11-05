@@ -14,7 +14,7 @@ Mensen staan er met hun naam en apps met die van hen, nooit met een Slack-ID. Ie
 
 ## Wat het kan versturen
 
-Een direct bericht aan één persoon, als jou, en pas nadat je het goedkeurt op de to-do. Het plaatst nooit iets in een kanaal.
+Een direct bericht aan één persoon, als jou, en pas nadat je het goedkeurt op de to-do. Een antwoord op het Slack-bericht waar een to-do uit kwam, gaat in de thread van dat bericht, in het directe bericht of het kanaal; op het concept staat **In thread**. Het begint nooit een nieuw bericht in een kanaal.
 
 ## Koppelen
 
