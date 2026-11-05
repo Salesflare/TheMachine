@@ -628,6 +628,12 @@ def gmail_call(config, credential, account, method, params):
             page = call(config, credential, account, 'messages.list', {
                 '$filter': f'receivedDateTime ge {_iso(since)}', '$orderby': 'receivedDateTime desc',
                 '$select': 'id,conversationId', '$top': int(params.get('maxResults') or 40)})
+        elif query.strip():  # a search a run asked for (App.mailbox_lookup): Graph's own search over the whole mailbox
+            words = ' '.join(w for w in query.replace('"', ' ').split() if not re.match(r'(in|is|label|older_than|newer_than|after|before):', w, re.I))
+            if not words:
+                raise GraphError('unsupported_gmail_query')
+            page = call(config, credential, account, 'messages.list', {
+                '$search': '"' + words[:200] + '"', '$select': 'id,conversationId', '$top': min(int(params.get('maxResults') or 10), 25)})
         else:
             raise GraphError('unsupported_gmail_query')
         out = {'messages': [{'id': m['id'], 'threadId': m.get('conversationId')} for m in page.get('value', [])]}

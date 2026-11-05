@@ -1314,7 +1314,16 @@ OWNER_CARD_RULE = ('The owner added this card themselves, in their own words. Fi
                    'Keep everything they said in the title and body (who, what, by when): their words show only in its chat. '
                    'A draft says a file is attached only when the file goes along in its attachments; otherwise it names what to attach. '
                    'Never dismiss it or fold it into another card: if it is the same as another card, '
-                   'pass that card_id and the owner is asked whether to merge.')
+                   'pass that card_id and the owner is asked whether to merge. '
+                   'When their words point to a message (a mail they sent weeks ago to follow up on, a thread, an offer), '
+                   'find it and put it in event_ids: events with account_ids ["all"], a query (its subject, the person) and '
+                   'semantic:true, their sent mail included; when nothing collected matches, search the mailboxes themselves '
+                   'with events, mailbox:true and a query in Gmail\'s search words (from:, to:, subject:, in:sent). '
+                   'Never say it can\'t be found before both.')
+# Added to OWNER_CARD_RULE when the owner gave the to-do no area (owner_card_area): the review places it by meaning.
+OWNER_AREA_RULE = ('They gave it no area. Place it by what it is about and who it is with: company=<{work}> for their work '
+                   '(a prospect, customer, colleague or deal), personal:true for their own life (family, friends, home). '
+                   'The message it follows up on places it too. Leave both out only when it is truly unclear.')
 
 
 def review_view(row, preview=REVIEW_PREVIEW_CHARS, offset=0, earlier=None, brief=False, owner_in_thread=False, team_inbox=None):
@@ -1345,7 +1354,9 @@ def review_view(row, preview=REVIEW_PREVIEW_CHARS, offset=0, earlier=None, brief
     if earlier:
         view['earlier_in_conversation'] = earlier
     if row['kind'] == 'owner.card':
-        view['owner_card'] = {'card_id': metadata.get('card_id'), 'rule': OWNER_CARD_RULE,
+        work = [str(x) for x in metadata.get('area_open') or () if str(x).startswith('work:')] if isinstance(metadata.get('area_open'), list) else []
+        rule = OWNER_CARD_RULE + (' ' + OWNER_AREA_RULE.format(work=' | '.join(work)) if work else '')
+        view['owner_card'] = {'card_id': metadata.get('card_id'), 'rule': rule,
                               **({'files': [str(f.get('name'))[:120] for f in metadata['files'][:5] if isinstance(f, dict)]} if isinstance(metadata.get('files'), list) else {})}
     if row['kind'] == 'calendar.event' and not calendar_owned(metadata):
         view['not_owners'] = f"On {calendar_owner_name(metadata)}'s calendar, shared with the owner, who isn't on it: context only, no card, prep or promise for them"
@@ -4506,7 +4517,9 @@ class Store:
                                (*values, account, event['source_id']))
                 if event['source_id'] in routine:  # on the Calendar, never a review or a to-do
                     db.execute('UPDATE events SET analyzed_version=version WHERE account_id=? AND source_id=?', (account, event['source_id']))
-            if record_sync:
+            if state is None:
+                pass  # found by a search (keep_found): no cursor moves
+            elif record_sync:
                 self.record_sync_activity(db, account, 'success', signals=len(changed))
                 self.note_first_import(db, account, state)
                 db.execute('INSERT INTO checkpoints(account_id,state,last_success,last_sync_signals) VALUES(?,?,?,?) ON CONFLICT(account_id) DO UPDATE SET state=excluded.state,last_success=excluded.last_success,last_sync_signals=excluded.last_sync_signals,error=NULL,failures=0,retry_at=NULL',
@@ -4518,6 +4531,25 @@ class Store:
             db.executemany('DELETE FROM android_inbox WHERE id=?', [(value,) for value in android_inbox_ids])
             db.executemany('INSERT OR IGNORE INTO android_receipts VALUES(?,?,?)',[(value,account,now()) for value in android_inbox_ids])
             db.execute('DELETE FROM android_receipts WHERE processed_at<?',((dt.datetime.fromisoformat(now())-dt.timedelta(days=30)).isoformat(),))
+
+    def keep_found(self, account, events):
+        """Messages a mailbox search found (App.mailbox_lookup), kept as collected signals so a to-do can hold them: the
+        same exclusions, forgetting and sealing as a sync page (commit_page), but no cursor or sync receipt, and marked
+        reviewed (old mail a run looked up is context, never news for the review). One already collected stays as it
+        is. Returns their event ids, in the order found."""
+        with self.connect() as db:
+            have = {r['source_id']: r['id'] for r in db.execute(
+                'SELECT id,source_id FROM events WHERE account_id=? AND source_id IN (' + ','.join('?' * len(events)) + ')',
+                (account, *[e['source_id'] for e in events]))} if events else {}
+        fresh = [e for e in events if e['source_id'] not in have]
+        if fresh:
+            self.commit_page(account, None, fresh, record_sync=False)
+        with self.connect() as db:
+            rows = {r['source_id']: r['id'] for r in db.execute(
+                'SELECT id,source_id FROM events WHERE account_id=? AND deleted=0 AND source_id IN (' + ','.join('?' * len(events)) + ')',
+                (account, *[e['source_id'] for e in events]))} if events else {}
+            db.executemany('UPDATE events SET analyzed_version=version WHERE id=?', [(rows[e['source_id']],) for e in fresh if e['source_id'] in rows])
+        return [rows[e['source_id']] for e in events if e['source_id'] in rows]
 
     def record_sync_activity(self, db, account, status, signals=None, error=None, retry_at=None):
         # Source-page receipts share their content/checkpoint transaction. Keep
@@ -5850,12 +5882,25 @@ class Store:
     def fill_owner_card(self, db, card, title, body, ids, accounts, evidence, due, ahead, project, event_ids):
         """The review's pass over a card the owner made: a clearer title (unless they renamed it), a body with the next
         step, people, threads and project, and a draft prepared ahead when it helps. Their words (owner_words), their
-        due date and where the card is (snoozed, done) stay as they were; nothing is sent to anyone."""
+        due date and where the card is (snoozed, done) stay as they were; nothing is sent to anyone. One they gave no area
+        (owner_card_area) goes where the messages the review linked to it are, when those are all in one area: that
+        area's accounts, pinned there as after a move. Otherwise it keeps its accounts and the review's word places it."""
         stamp, sid = now(), card['id']
+        pinned = None
+        if not card['area'] and any(e['kind'] == 'owner.card' and json.loads(e['metadata'] or '{}').get('area_open') for e in evidence):
+            mine = getattr(self, 'accounts', None) or []
+            where = {a['id']: todo_areas.area_of_account(a) for a in mine}
+            linked = {where.get(e['account_id']) for e in evidence if e['kind'] != 'owner.card'}
+            known = {x['id'] for x in todo_areas.areas(mine)}
+            if len(linked) == 1 and linked <= known:
+                pinned = next(iter(linked))
+                accounts = todo_areas.accounts_in(pinned, mine)
         # Done or dismissed, it keeps the title it had: Done shows what the to-do was, its status line how it ended.
         retitle = KEEP_OWNER_TITLE + ',' if card['status'] not in ('completed', 'rejected') else ''
         db.execute('UPDATE suggestions SET ' + retitle + 'body=?,event_ids=?,account_ids=?,source_line=?,due=coalesce(due,?) WHERE id=?',
                    ((title[:300], title[:300]) if retitle else ()) + (body[:5000], encoded(ids), encoded(accounts), source_line(evidence), due, sid))
+        if pinned:
+            db.execute('UPDATE suggestions SET area=? WHERE id=?', (pinned, sid))
         db.execute('INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
                    ('update:' + uuid.uuid4().hex, sid, 'update', f"Filled in by the review. Before: {card['title'][:150]}", 'assistant', stamp))
         if project:
@@ -5903,11 +5948,13 @@ class Store:
                        (account_id, source_id, kind, stamp, title, body, json.dumps(meta), hashlib.sha256((title + body).encode()).hexdigest(), stamp))
             return db.execute('SELECT id FROM events WHERE account_id=? AND source_id=?', (account_id, source_id)).fetchone()[0]
 
-    def owner_card(self, text, account_id, work=False, due=None, about=(), attach=(), project=None, files=None, due_at=None):
+    def owner_card(self, text, account_id, work=False, due=None, about=(), attach=(), project=None, files=None, due_at=None, area_open=False):
         """A card the owner makes themselves (New card on the dashboard). It goes through suggest() like every card, with
         their words as its first evidence: a signal of kind owner.card, left for the next review to fill in. Nothing is
         sent: the card is already on their screen (delivery not_sent) and its buttons need their tap as on any card.
-        files: (draft key, file ids) the form uploaded (chat_files.py), kept with the to-do and given to its runs."""
+        files: (draft key, file ids) the form uploaded (chat_files.py), kept with the to-do and given to its runs.
+        area_open: the owner's area ids when they gave none and nothing on it points to one (owner_card_area): the review
+        places it by what it is about (company or personal), or the message it follows up on does (fill_owner_card)."""
         words = '\n'.join(' '.join(line.split()) for line in str(text or '').strip().splitlines()).strip()
         words = re.sub(r'\n{3,}', '\n\n', words)
         if not words:
@@ -5916,7 +5963,8 @@ class Store:
             raise ValueError(f'Keep it under {OWNER_WORDS_MAX} characters')
         title = owner_title(words)
         stamp, sid = now(), uuid.uuid4().hex[:16]
-        meta = {'from_me': True, 'sender_display': 'You', 'card_id': sid, 'origin': 'owner', **({'about': list(about)} if about else {})}
+        meta = {'from_me': True, 'sender_display': 'You', 'card_id': sid, 'origin': 'owner', **({'about': list(about)} if about else {}),
+                **({'area_open': [str(x) for x in area_open][:8]} if area_open else {})}
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             cursor = db.execute('INSERT INTO events(account_id,source_id,kind,occurred_at,title,body,metadata,deleted,content_hash,version,analyzed_version,ingested_at) '
@@ -8589,7 +8637,19 @@ class Store:
             db.execute("UPDATE preparations SET status='blocked',reason=?,details=?,questions=?,move_to=?,use_events=?,updated_at=? WHERE suggestion_id=?",
                        (reason,(details or '').strip() or None,encoded(questions),move_to,use_event_ids,now(),suggestion_id))
             pause_idle_steps(db,suggestion_id)  # nothing runs now: its confirmed step waits for Try again or an answer
-            db.execute("UPDATE deliveries SET status='queued',reminder=1,needs_edit=1,error=NULL WHERE suggestion_id=? AND status IN ('queued','sent','uncertain')",(suggestion_id,))
+            # One the owner added without an area that nothing placed yet moves itself (no tap): the run found where it belongs
+            unplaced=move_to is not None and move_to in owner_area_open(db,suggestion_id)
+            if not unplaced:
+                db.execute("UPDATE deliveries SET status='queued',reminder=1,needs_edit=1,error=NULL WHERE suggestion_id=? AND status IN ('queued','sent','uncertain')",(suggestion_id,))
+        if unplaced:
+            try:
+                moved=self.move_card(suggestion_id,move_to,'placed:'+job_id,'placed')
+                return {'status':'moved','area':moved['area'],'resumed':moved['resumed'],
+                        'note':'The owner gave this to-do no area, so it moved to '+moved['label']+' by itself and carries on in a new run there. Stop here.'}
+            except ValueError as error:  # it can't move now (closed meanwhile): the owner gets the one-tap move as usual
+                LOG.info('placing move skipped suggestion=%s error=%s',suggestion_id,error)
+                with self.connect() as db:
+                    db.execute("UPDATE deliveries SET status='queued',reminder=1,needs_edit=1,error=NULL WHERE suggestion_id=? AND status IN ('queued','sent','uncertain')",(suggestion_id,))
         return {'status':'blocked','reason':reason}
 
     def originals(self, suggestion_id):
@@ -10236,11 +10296,60 @@ def area_hint(db, suggestion, accounts, here):
     return todo_areas.pointed(people, accounts, here, free)
 
 
-def area_prompt(config, account_ids, sources=(), owner_started=False):
+def owner_area_open(db, suggestion_id):
+    """Whether a to-do the owner added without an area is still unplaced (owner_card_area): no review, linked message
+    or move put it anywhere. Returns its area ids then, else []."""
+    row = db.execute('SELECT area,origin,event_ids FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
+    if not row or row['area'] or row['origin'] != 'owner':
+        return []
+    if db.execute('SELECT 1 FROM card_moves WHERE suggestion_id=? LIMIT 1', (suggestion_id,)).fetchone():
+        return []
+    for r in db.execute("SELECT e.metadata FROM events e JOIN json_each(?) j ON j.value=e.id WHERE e.kind='owner.card'", (row['event_ids'] or '[]',)):
+        found = json.loads(r[0] or '{}').get('area_open')
+        if isinstance(found, list) and found:
+            return [str(x) for x in found]
+    return []
+
+
+def owner_card_area(db, accounts, node_ids=()):
+    """Where a to-do the owner adds without an area goes: (account id, open: the area ids to place it in later). Its
+    only area when they have one; else the area its people and organizations point to (todo_areas.pointed: their side, the accounts they were heard on,
+    their organization's domain); else, open, the area of their first connection that has one, until the review places
+    it by meaning. Never the Machine's own source (the Gateway log, in no area) while an area exists. A mail account
+    of the area first, the one its runs search and send from."""
+    found = todo_areas.areas(accounts)
+    if not found:
+        return accounts[0]['id'], []
+    pick = found[0]['id'] if len(found) == 1 else None
+    if pick is None and node_ids:
+        try:
+            marks = ','.join('?' for _ in node_ids)
+            rows = db.execute(f"SELECT n.kind,n.info,o.info org_info FROM graph_nodes n LEFT JOIN graph_nodes o ON o.id=json_extract(n.info,'$.org') "
+                              f"WHERE n.id IN ({marks}) AND n.kind IN ('person','org')", list(node_ids)).fetchall()
+            people = []
+            for r in rows:
+                info, org = json.loads(r['info'] or '{}'), json.loads(r['org_info'] or '{}')
+                people.append({'side': info.get('side'), 'accounts': info.get('accounts') or [],
+                               'org_domain': info.get('domain') if r['kind'] == 'org' else org.get('domain')})
+        except (sqlite3.Error, ValueError, TypeError):
+            people = []
+        free = lambda value: (lambda d: '' if d in graph.FREEMAIL else d)(own_addresses.email_domain(value))
+        pick = todo_areas.pointed(people, accounts, None, free)
+    open_ = [f['id'] for f in found] if pick is None else []
+    if open_:
+        pick = next(x for x in (todo_areas.area_of_account(a) for a in accounts) if x in {f['id'] for f in found})
+    ids = todo_areas.accounts_in(pick, accounts)
+    services = {a['id']: a.get('service', 'gmail') for a in accounts}
+    return next((i for i in ids if services[i] in MAIL_SERVICES), ids[0]), open_
+
+
+def area_prompt(config, account_ids, sources=(), owner_started=False, unplaced=False):
     """The run's line about the to-do's area (todo_areas.py) and asking the owner to move it, when they have another.
     sources: [(event_id, account_id)] of the messages the to-do came from. owner_started: the owner tapped Do it, Try
     again or a move on it, which covers those messages and their threads wherever they live (another company's
-    mailbox, one labeled Personal); searching for or pulling in anything else still follows the area."""
+    mailbox, one labeled Personal); searching for or pulling in anything else still follows the area. unplaced: the owner
+    added it without an area and nothing placed it yet (owner_area_open): it may search every area for what it refers
+    to, and a move it asks for happens by itself (Store.preparation_blocked)."""
     accounts = (config or {}).get('accounts') or []
     found = todo_areas.areas(accounts)
     here = todo_areas.current(account_ids, accounts)
@@ -10258,6 +10367,11 @@ def area_prompt(config, account_ids, sources=(), owner_started=False):
                'or say it can\'t be moved: record a blocker with assistant_signals preparation_blocked and move_to=<'
                + ' | '.join(f"{a['id']} ({a['label']})" for a in others) + '>, and a reason that says why in one line. The to-do shows '
                'the owner a button to move it; you never move it yourself. Once they move it, it carries on by itself.')
+        if unplaced:
+            out += (' The owner added it without picking an area, and it is only in ' + name + ' until it is placed: to find what it refers '
+                    'to (a mail they sent, a thread), search every area\'s mail, the mailboxes themselves too (events with mailbox:true). '
+                    'When that, or what the to-do is about, plainly belongs in another area, record the blocker with move_to as above: '
+                    'an unplaced to-do moves there by itself and carries on, with no tap. Draft and send only from the area it is in.')
     if outside:
         ids = [i for i, _ in sources]
         out += ('\n\nIts own sources: the owner started this run on this to-do, so the messages it came from (event_ids '
@@ -15257,6 +15371,33 @@ class App(*APP_MIXINS):
             locks.clear()  # at worst one message is read twice
         return account, message
 
+    MAILBOX_LOOKUP_MAX = 10  # messages per mailbox one search keeps
+
+    def mailbox_lookup(self, account_ids, query, limit=5):
+        """Search the owner's own mailboxes themselves (Gmail's search, Outlook's), read-only, for mail older than what
+        is collected: a mail they sent weeks ago that a to-do follows up on. What it finds is kept as collected signals
+        (Store.keep_found: reviewed, so it is context, not news) for the run to read and link. Only the mail accounts
+        among account_ids, never one shared from a Fleet. Returns (event ids, {account id: error category})."""
+        query = ' '.join(str(query or '').split())[:200]
+        if not query:
+            raise ValueError('mailbox_search needs a query: Gmail search words, such as from:sam subject:pricing in:sent')
+        limit = max(1, min(int(limit or 5), self.MAILBOX_LOOKUP_MAX))
+        found, failed = [], {}
+        for account in self.config.get('accounts', []):
+            if account['id'] not in account_ids or account.get('service', 'gmail') not in MAIL_SERVICES or account.get('shared'):
+                continue
+            source = Gmail(self.config, account)
+            try:
+                source.profile()  # fail closed on account routing, as a sync does
+                refs = source.get('messages', {'q': query, 'maxResults': limit}).get('messages') or []
+                events = [e for e in (message_event(account, source.get('messages/' + r['id'], {'format': 'full'}), self.config)
+                                      for r in refs[:limit]) if e]
+            except SourceError as error:
+                failed[account['id']] = error.category
+                continue
+            found += self.store.keep_found(account['id'], events)
+        return found, failed
+
     def agent_card(self, suggestion_id):
         """What a Claude Code or Codex brief is made of: the card, its next step as the task, the owner's note, who it is
         about, its chat so far (background), drafts, links, result files and source messages (agent_jobs.brief_for)."""
@@ -16171,6 +16312,16 @@ class App(*APP_MIXINS):
             for view in result['events']:
                 view['similarity'] = score.get(view['id'])
             return {**result, 'semantic': semantic}
+        if name == 'events' and args.get('mailbox') is True:
+            # Older than what is collected: the mailboxes' own search, live and read-only; what it finds is kept to link
+            ids, failed = self.mailbox_lookup(selected, args.get('query'), args.get('limit') or 5)
+            rows = sorted(self.store.events(selected, event_ids=ids), key=lambda r: ids.index(r['id'])) if ids else []
+            result = event_page(rows, int(args.get('body_offset') or 0), int(args.get('row_offset') or 0))
+            if failed:
+                result['mailbox_errors'] = failed
+            if not ids:
+                result['note'] = 'Nothing in those mailboxes matches. Try other words (the person\'s address, part of the subject).'
+            return result
         if name == 'events' and args.get('semantic') and str(args.get('query') or '').strip() and args.get('event_ids') is None and embeddings.settings(self.config):
             # Meaning and keywords fused, best first; the plain keyword search stays the default.
             # The dashboard waits for it: a slow embedding server falls back to keywords in seconds, not minutes.
@@ -17740,8 +17891,16 @@ class App(*APP_MIXINS):
             raise ValueError('No work account is connected')
         if scope == 'personal' and not personal_ids:
             raise ValueError('No personal account is connected')
-        account = (work_ids[0] if scope == 'work' else personal_ids[0] if scope == 'personal'
-                   else found[attach[0]] if attach else accounts[0]['id'])
+        area_open = []
+        if scope == 'work':
+            account = work_ids[0]
+        elif scope == 'personal':
+            account = personal_ids[0]
+        elif attach:
+            account = found[attach[0]]
+        else:  # no area given: where it belongs, from the people and organizations on it (owner_card_area)
+            with self.store.connect() as db:
+                account, area_open = owner_card_area(db, accounts, wanted)
         work = any(a['id'] == account and str(a.get('boundary') or '').startswith('work:') for a in accounts)
         due, due_at = args.get('due') or None, args.get('due_at') or None
         try:  # a day (the owner's own calendar day), and a moment when they gave a time ("15:00", "in 2 hours")
@@ -17758,7 +17917,8 @@ class App(*APP_MIXINS):
         if files and not isinstance(files, list):
             raise ValueError('files is a list of file ids')
         saved = self.store.owner_card(args.get('text'), account, work=work, due=due, about=about, attach=attach, project=project,
-                                      files=('new:' + str(args.get('draft') or ''), files) if files else None, due_at=due_at)
+                                      files=('new:' + str(args.get('draft') or ''), files) if files else None, due_at=due_at,
+                                      area_open=area_open)
         if about and getattr(self, 'graph_dirty', None):
             self.graph_dirty.set()  # the card shows on their Graph page after the next build
         return saved
@@ -19207,7 +19367,8 @@ class App(*APP_MIXINS):
                     with self.store.connect() as db:
                         row=db.execute('SELECT account_ids FROM suggestions WHERE id=?',(job['suggestion_id'],)).fetchone()
                         sources=card_sources(db,job['suggestion_id'])
-                    request['message']+=area_prompt(self.config,row['account_ids'] if row else '[]',sources,owner_started=True)  # their own message in its chat
+                        unplaced=bool(owner_area_open(db,job['suggestion_id']))
+                    request['message']+=area_prompt(self.config,row['account_ids'] if row else '[]',sources,owner_started=True,unplaced=unplaced)  # their own message in its chat
                 except Exception as error:LOG.error('area line error=%s',type(error).__name__)
             else:
                 self.store.note_rule_files(RULE_FILES)
@@ -19225,9 +19386,9 @@ class App(*APP_MIXINS):
                         row=db.execute('SELECT account_ids FROM suggestions WHERE id=?',(job['suggestion_id'],)).fetchone()
                     lines=source_notes(account_services(self.config,json.loads(row['account_ids'] or '[]') if row else []))
                     if lines and len(request['message'])+len(lines)<PROMPT_LIMIT-1000:request['message']+=lines
-                    with self.store.connect() as db:sources=card_sources(db,job['suggestion_id'])
+                    with self.store.connect() as db:sources,unplaced=card_sources(db,job['suggestion_id']),bool(owner_area_open(db,job['suggestion_id']))
                     # its area, and asking to move it; a run the owner started (not prepared ahead) also reads its own sources
-                    lines=area_prompt(self.config,row['account_ids'] if row else '[]',sources,owner_started=not job['ahead'])
+                    lines=area_prompt(self.config,row['account_ids'] if row else '[]',sources,owner_started=not job['ahead'],unplaced=unplaced)
                     if lines and len(request['message'])+len(lines)<PROMPT_LIMIT-1000:request['message']+=lines
                 except Exception as error:LOG.error('source notes error=%s',type(error).__name__)
                 try:
@@ -19863,7 +20024,7 @@ class App(*APP_MIXINS):
         about = max(((i['at'], i['from']) for i in owner if i['kind'] == 'source' and not i['mine'] and i['from']), default=(0, ''))[1]  # the latest who wrote
         waiting = False  # with a teammate: Later means back to check in, not a snooze of the owner's
         sent_files = chat_files.listed(db, [r['id'] for r in db.execute("SELECT id FROM decisions WHERE suggestion_id=? AND choice='other' AND source='dashboard'", (suggestion_id,))])
-        for r in db.execute("SELECT id,choice,feedback,source,created_at FROM decisions WHERE suggestion_id=? AND source IN ('dashboard','telegram','fleet','expiry') "
+        for r in db.execute("SELECT id,choice,feedback,source,created_at FROM decisions WHERE suggestion_id=? AND source IN ('dashboard','telegram','fleet','expiry','placed') "
                             'ORDER BY rowid', (suggestion_id,)):
             at, via = chat_ms(r['created_at']), (' in Telegram' if r['source'] == 'telegram' else '')
             if r['source'] == 'expiry':  # its moment passed (Store.expire_passed); Undo takes this back like a tap
@@ -19904,7 +20065,7 @@ class App(*APP_MIXINS):
                     areas = todo_areas.areas(self.config.get('accounts', []))
                     line = todo_areas.moved_line(moved['area'], sum(a['id'] != todo_areas.PERSONAL for a in areas))
                     owner.append({'kind': 'event', 'text': (i18n.t(*line) if isinstance(line, tuple) else i18n.t(line)) + via,
-                                  'choice': 'move', 'mine': True, 'at': at})
+                                  'choice': 'move', 'mine': r['source'] != 'placed', 'at': at})  # placed: it moved itself
             elif r['choice'] in CHAT_OWNER_WORDS:  # a send shows as what went out, below
                 why = ': ' + clamp(r['feedback'], 300) if r['choice'] == 'reject' and r['feedback'] else ''
                 taps = [i for i in owner if i.get('choice')]

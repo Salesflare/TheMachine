@@ -32,7 +32,7 @@ Un'attività su un progetto mostra il nome del progetto nella riga sotto il tito
 
 **Area** in **Dettagli** sposta l'attività nella tua altra area, come una personale che deve partire dal tuo indirizzo di lavoro. Cosa può leggere e da dove può inviare segue lo spostamento; i messaggi da cui è nata restano dove sono. **Annulla** nell'avviso che segue la riporta indietro.
 
-Quando un'attività ha bisogno di un'altra area per andare avanti, lo chiede con un pulsante **Sposta in Lavoro**. Niente si sposta finché non lo tocchi; poi continua da sola.
+Quando un'attività ha bisogno di un'altra area per andare avanti, lo chiede con un pulsante **Sposta in Lavoro**. Niente si sposta finché non lo tocchi; poi continua da sola. Un'attività aggiunta senza scegliere Lavoro o Personale si sposta da sola appena sa dove va.
 
 Quando avvii un'attività, può sempre leggere i messaggi da cui è nata, anche nella casella di un'altra azienda. Se le servono altri messaggi da un'altra area, lo chiede con **Usa questa email per questa attività**; un tocco li aggiunge e continua. La posta per un'altra delle tue aziende va subito tra le attività di quell'azienda. Un'attività della tua vita privata, come la famiglia che scrive al tuo indirizzo di lavoro, è Personale fin dall'inizio.
 
@@ -72,7 +72,7 @@ Un'attività "In attesa di" (qualcuno ti ha promesso qualcosa) ha il link al tuo
 
 ## Creane una tu
 
-**Nuova attività** (sotto **Cerca** su un computer) aggiunge un'attività per qualsiasi cosa. Crearla non invia niente.
+**Nuova attività** (sotto **Cerca** su un computer) aggiunge un'attività per qualsiasi cosa. Crearla non invia niente. Senza Lavoro o Personale, va dove deve: in base a chi e a cosa riguarda, o all'email a cui dà seguito. The Machine cerca quell'email nella tua casella, anche quelle più vecchie non ancora importate.
 
 - **Scadenza**: scrivi un giorno o un'ora, come "domani", "ven prossimo", "3 nov", "15:00", "2pm", "tra 2 ore" o "domani 9". Capisce anche altre lingue ("over 2 uur", "morgen 9u"). L'icona del calendario ha scelte rapide, come quando posticipi, e **Scegli una data**.
 - **Email**: allega l'email a cui si riferisce. Cerca solo nella tua email, per oggetto o mittente.

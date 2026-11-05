@@ -32,7 +32,7 @@ Une tâche liée à un projet affiche le nom du projet sur la ligne sous son tit
 
 **Domaine** sous **Détails** déplace la tâche vers votre autre espace, comme une tâche perso qui doit partir de votre adresse pro. Ce qu’elle peut lire et d’où elle peut envoyer suit le déplacement ; les messages d’où elle vient restent où ils sont. **Annuler** dans le message qui suit la remet en place.
 
-Quand une tâche a besoin d’un autre espace pour avancer, elle le demande avec un bouton **Déplacer vers Travail**. Rien ne bouge avant que vous appuyiez ; ensuite, elle continue toute seule.
+Quand une tâche a besoin d’un autre espace pour avancer, elle le demande avec un bouton **Déplacer vers Travail**. Rien ne bouge avant que vous appuyiez ; ensuite, elle continue toute seule. Une tâche ajoutée sans choisir Travail ou Perso se déplace toute seule dès qu’elle sait où elle va.
 
 Quand vous lancez une tâche, elle peut toujours lire les messages d’où elle vient, même dans la boîte d’une autre entreprise. Si elle a besoin d’autres messages d’un autre espace, elle le demande avec **Utiliser cet e-mail pour cette tâche** ; un appui les ajoute et elle continue. Le courrier pour une autre de vos entreprises va dès le départ dans les tâches de cette entreprise. Une tâche de votre vie privée, comme votre famille qui écrit à votre adresse pro, est Perso dès le départ.
 
@@ -72,7 +72,7 @@ Une tâche « En attente de » (quelqu’un vous a promis quelque chose) renvoie
 
 ## En créer une vous-même
 
-**Nouvelle tâche** (sous **Rechercher** sur ordinateur) ajoute une tâche pour n’importe quoi. La créer n’envoie rien.
+**Nouvelle tâche** (sous **Rechercher** sur ordinateur) ajoute une tâche pour n’importe quoi. La créer n’envoie rien. Sans Travail ni Perso choisi, elle va là où elle doit aller : selon les personnes et le sujet, ou l’e-mail qu’elle relance. The Machine cherche cet e-mail dans votre boîte, y compris les plus anciens pas encore récupérés.
 
 - **Échéance** : tapez un jour ou une heure, comme « demain », « ven. prochain », « 3 nov. », « 15:00 », « dans 2 heures » ou « demain 14h ». L’anglais marche aussi (« in 2 hours », « tomorrow 9 »). L’icône du calendrier propose des choix rapides, comme pour la mise en attente, et **Choisir une date**.
 - **E-mail** : joignez l’e-mail concerné. La recherche porte uniquement sur vos e-mails, par objet ou par expéditeur.

@@ -32,7 +32,7 @@ Een to-do bij een project toont de naam van het project in de regel onder de tit
 
 **Gebied** onder **Details** verplaatst de to-do naar je andere gebied, zoals een privé-to-do die vanaf je werkadres moet vertrekken. Wat hij mag lezen en waarvandaan hij mag versturen, verhuist mee; de berichten waar hij uit kwam, blijven waar ze zijn. **Ongedaan maken** in de melding die volgt, zet hem terug.
 
-Heeft een to-do een ander gebied nodig om verder te kunnen, dan vraagt hij het met een knop **Naar Werk verplaatsen**. Er verhuist niets tot je erop tikt; daarna gaat hij zelf verder.
+Heeft een to-do een ander gebied nodig om verder te kunnen, dan vraagt hij het met een knop **Naar Werk verplaatsen**. Er verhuist niets tot je erop tikt; daarna gaat hij zelf verder. Een to-do die je zonder Werk of Privé toevoegde, verhuist zelf zodra hij weet waar hij hoort.
 
 Start je een to-do, dan mag hij altijd de berichten lezen waar hij uit kwam, ook in de mailbox van een ander bedrijf. Heeft hij andere berichten uit een ander gebied nodig, dan vraagt hij het met **Deze mail voor deze to-do gebruiken**; een tik voegt ze toe en hij gaat verder. Mail voor een ander bedrijf van je komt meteen bij de to-do's van dat bedrijf. Een to-do uit je eigen leven, zoals familie die naar je werkadres mailt, is meteen Privé.
 
@@ -72,7 +72,7 @@ Een to-do "Wacht op" (iemand heeft je iets beloofd) linkt naar je eigen laatste 
 
 ## Er zelf een maken
 
-**Nieuwe to-do** (onder **Zoeken** op een computer) voegt een to-do toe voor wat dan ook. Aanmaken verstuurt niets.
+**Nieuwe to-do** (onder **Zoeken** op een computer) voegt een to-do toe voor wat dan ook. Aanmaken verstuurt niets. Zonder Werk of Privé komt hij waar hij hoort: volgens wie en waar hij over gaat, of de e-mail waarop hij opvolgt. The Machine zoekt die e-mail in je mailbox, ook oudere mail die nog niet binnengehaald is.
 
 - **Deadline**: typ een dag of een tijd, zoals "morgen", "volgende vr", "3 nov", "15:00", "over 2 uur" of "morgen 9u". Engels werkt ook ("in 2 hours", "tomorrow 9"). Het agenda-icoon heeft snelle keuzes, zoals bij snoozen, en **Kies een datum**.
 - **E-mail**: voeg de e-mail toe waarover het gaat. Hij zoekt alleen in je e-mail, op onderwerp of afzender.
