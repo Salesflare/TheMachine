@@ -4215,6 +4215,8 @@
  "That recording couldn’t be read. Try again.": "Não foi possível ler essa gravação. Tente de novo.",
  "That recording couldn’t be turned into text. Try again.": "Não foi possível transformar essa gravação em texto. Tente de novo.",
  "That report can’t be sent.": "Esse relatório não pode ser enviado.",
+ "That report isn’t here any more. Say what went wrong here.": "Esse relato não está mais aqui. Diga aqui o que deu errado.",
+ "That report was sent already.": "Esse relato já foi enviado.",
  "That request is no longer here, so nothing was done. Open the Fleet tab to see your requests.": "Esse pedido não existe mais, então nada foi feito. Abra a aba Fleet para ver seus pedidos.",
  "That request was answered or has expired": "Esse pedido foi respondido ou expirou",
  "That reset was already used.": "Essa redefinição já foi usada.",

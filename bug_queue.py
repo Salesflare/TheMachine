@@ -112,3 +112,63 @@ def flush(config, send, clock=None):
             return sent
         else:
             LOG.warning('bug report refused for good, dropped error=%s', type(error).__name__)
+
+
+# A report offered in chat (the agent's bug_offer): when the owner tells their Machine about a problem with The Machine
+# itself, it writes the report up here, their words and a short summary, and gives a link that opens Report a bug with
+# it filled in. Nothing goes until the owner taps Send there, as any report. Kept next to the queue (bug-offers.json,
+# only this Machine's user reads it), the newest OFFERS for OFFER_DAYS.
+OFFERS, OFFER_DAYS = 20, 7
+OFFER_WORDS, OFFER_SUMMARY = 3000, 600
+
+
+def offers_path(config):
+    return Path(config['database']).expanduser().parent / 'bug-offers.json'
+
+
+def _offers(config, clock):
+    try:
+        found = json.loads(offers_path(config).read_text())
+    except (OSError, ValueError):
+        return []
+    since = int(clock()) - OFFER_DAYS * 86400
+    return [o for o in found if isinstance(o, dict) and isinstance(o.get('id'), str) and int(o.get('at') or 0) >= since][-OFFERS:] \
+        if isinstance(found, list) else []
+
+
+def _offers_save(config, items):
+    file = offers_path(config)
+    temp = file.with_name(file.name + '.tmp')
+    fd = os.open(temp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, 'w') as out:
+        json.dump(items[-OFFERS:], out)
+    os.replace(temp, file)
+
+
+def offer(config, words, summary, clock=None):
+    """Keeps a report written up in chat for the owner to check and send. Returns it ({'id', 'words', 'summary', 'at'})."""
+    clock = clock or time.time
+    words, summary = str(words or '').strip()[:OFFER_WORDS], ' '.join(str(summary or '').split())[:OFFER_SUMMARY]
+    if not words and not summary:
+        raise ValueError('Give the owner’s own words about the problem (words) and a short summary.')
+    item = {'id': 'bo_' + secrets.token_hex(8), 'words': words, 'summary': summary, 'at': int(clock()), 'sent': False}
+    with _LOCK:
+        _offers_save(config, _offers(config, clock) + [item])
+    LOG.info('bug report offered in chat')
+    return item
+
+
+def offered(config, offer_id=None, sent=False, clock=None):
+    """One offered report by id, or with no id the newest one not sent yet from the last day; None when there is none.
+    With `sent`, it is marked sent (the owner sent it from Report a bug), so its link doesn't fill the form again."""
+    clock = clock or time.time
+    with _LOCK:
+        items = _offers(config, clock)
+        if offer_id:
+            item = next((o for o in items if o['id'] == offer_id), None)
+        else:
+            item = next((o for o in reversed(items) if not o.get('sent') and o['at'] >= int(clock()) - 86400), None)
+        if item and sent and not item.get('sent'):
+            item['sent'] = True
+            _offers_save(config, items)
+    return dict(item) if item else None
