@@ -32,7 +32,7 @@ Una tarea de un proyecto muestra el nombre del proyecto en la línea bajo su tí
 
 **Área** en **Detalles** pasa la tarea a tu otra área, como una personal que tiene que salir desde tu dirección del trabajo. Lo que puede leer y desde dónde puede enviar cambia con ella; los mensajes de los que vino se quedan donde están. **Deshacer** en el aviso que sigue la devuelve.
 
-Cuando una tarea necesita otra área para seguir, lo pide con un botón **Mover a Trabajo**. Nada se mueve hasta que lo tocas; después sigue sola.
+Cuando una tarea necesita otra área para seguir, lo pide con un botón **Mover a Trabajo**. Nada se mueve hasta que lo tocas; después sigue sola. Una tarea que añadiste sin elegir Trabajo o Personal se mueve sola en cuanto sabe dónde va.
 
 Cuando inicias una tarea, siempre puede leer los mensajes de los que vino, también en el buzón de otra empresa. Si necesita otros mensajes de otra área, lo pide con **Usar este correo para esta tarea**; un toque los añade y sigue. El correo para otra de tus empresas va desde el principio a las tareas de esa empresa. Una tarea de tu propia vida, como tu familia escribiendo a tu dirección del trabajo, es Personal desde el principio.
 
@@ -74,7 +74,7 @@ Una tarea "Esperando a" (alguien te prometió algo) enlaza tu último mensaje a 
 
 ## Crea una tú
 
-**Nueva tarea** (debajo de **Buscar** en un ordenador) añade una tarea para lo que sea. Crearla no envía nada.
+**Nueva tarea** (debajo de **Buscar** en un ordenador) añade una tarea para lo que sea. Crearla no envía nada. Sin elegir Trabajo o Personal, va donde corresponde: según de quién y de qué trata, o el correo al que da seguimiento. The Machine busca ese correo en tu buzón, también correos más antiguos que aún no ha traído.
 
 - **Vence**: escribe un día o una hora, como "mañana", "el viernes que viene", "3 nov", "15:00", "2pm", "en 2 horas" o "mañana 9". También entiende otros idiomas ("over 2 uur", "morgen 9u"). El icono del calendario tiene opciones rápidas, como al posponer, y **Elegir fecha**.
 - **Correo**: adjunta el correo del que trata. Solo busca en tu correo, por asunto o remitente.

@@ -32,7 +32,7 @@ A to-do on a project shows the project's name in the line under its title; it op
 
 **Area** under **Details** moves the to-do to your other area, like a personal one that has to go out from your work address. What it may read and send from follows the move; the messages it came from stay where they are. **Undo** on the note that follows moves it back.
 
-When a to-do needs another area to go on, it asks with a **Move to Work** button. Nothing moves until you tap it; then it carries on by itself.
+When a to-do needs another area to go on, it asks with a **Move to Work** button. Nothing moves until you tap it; then it carries on by itself. A to-do you added without picking Work or Personal moves by itself once it finds where it belongs.
 
 When you start a to-do, it can always read the messages it came from, also in another company's mailbox. When it needs other messages from another area, it asks with **Use this email for this to-do**; a tap adds them and it carries on. Mail for another of your companies goes to that company's to-dos from the start. A to-do about your own life, like family writing to your work address, is Personal from the start.
 
@@ -74,7 +74,7 @@ A "Waiting on" to-do (someone promised you something) links your own last messag
 
 ## Make one yourself
 
-**New to-do** (under **Search** on a computer) adds a to-do for anything. Creating it sends nothing.
+**New to-do** (under **Search** on a computer) adds a to-do for anything. Creating it sends nothing. Without Work or Personal picked, it goes where it belongs, by who and what it is about or the email it follows up on. The Machine looks for that email in your mailbox, also older mail it has not brought in yet.
 
 - **Due**: type a day or a time, like "tomorrow", "next Fri", "3 Nov", "15:00", "2pm", "in 2 hours" or "tomorrow 9". It reads your language too ("over 2 uur", "morgen 9u"). The calendar icon has quick picks, like Snooze, and **Choose date**.
 - **Email**: attach the email it's about. It searches your email only, by subject or sender.
