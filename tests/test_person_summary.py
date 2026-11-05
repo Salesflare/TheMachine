@@ -192,6 +192,61 @@ class PersonSummary(unittest.TestCase):
             db.execute('UPDATE person_summaries SET written_at=?,evidence_at=?', ((self.now - dt.timedelta(days=1)).isoformat(), a.now()))
             self.assertEqual([p['id'] for p in person_summary.due(db)], [ANN])
 
+    def all_day_party(self, zone):
+        """A made-up all-day party on Dec 5 next year, stored as the calendar connector does with the owner in `zone`."""
+        import timeutil
+        timeutil.set_timezone(zone)
+        year = self.now.year + 1
+        raw = {'id': f'party-{zone}', 'summary': 'Birthday party', 'start': {'date': f'{year}-12-05'}, 'end': {'date': f'{year}-12-06'},
+               'attendees': [{'email': 'ann@acme.example'}, {'email': 'owner@example.com', 'self': True}], 'status': 'confirmed'}
+        event = a.calendar_event({'id': 'home', 'email': 'owner@example.com'}, raw, 'UTC')
+        with self.store.connect() as db:
+            event_id = db.execute("INSERT INTO events(account_id,source_id,kind,occurred_at,title,body,metadata,content_hash,ingested_at) VALUES(?,?,?,?,?,?,?,'h',?)",
+                                  ('home', raw['id'], 'calendar.event', event['occurred_at'], 'Birthday party', '', json.dumps(event['metadata']), a.now())).lastrowid
+            db.execute('INSERT INTO graph_events(node_id,event_id,at,probable,direct) VALUES(?,?,?,0,1)', (ANN, event_id, event['occurred_at']))
+        return event_id, f'{year}-12-05'
+
+    def test_an_all_day_event_reaches_the_summary_on_its_own_date_east_and_west(self):
+        """Brussels: the party's midnight is Dec 4 23:00 UTC. Los Angeles: Dec 5 08:00 UTC. The turn gets Dec 5 both times."""
+        import timeutil
+        zone = timeutil.LOCAL_TZ
+        self.addCleanup(setattr, timeutil, 'LOCAL_TZ', zone)
+        for owner in ('Europe/Brussels', 'America/Los_Angeles'):
+            with self.subTest(owner=owner):
+                event_id, day = self.all_day_party(owner)
+                with self.store.connect() as db:
+                    person = next(p for p in person_summary.active(db, self.now) if p['id'] == ANN)
+                    page = person_summary.evidence(db, graph.Owner({'accounts': self.accounts}, db), person, graph.person_evidence)
+                party = next(m for m in page['signals'] if m['id'] == f'E{event_id}')
+                self.assertEqual((party['date'], party.get('all_day')), (day, True))
+                self.assertEqual(page['today'], timeutil.local_day_text(a.now()))
+                with self.store.connect() as db:
+                    db.execute('DELETE FROM graph_events WHERE event_id=?', (event_id,))
+        self.assertIn('an all_day meeting is on its date', person_summary.prompt([page]))
+
+    def test_a_kept_promise_leaves_the_summary_and_the_person_is_due_again(self):
+        """A promise on a to-do that is done is kept: the next turn doesn't get it as open, and a line standing only on it
+        no longer shows (the person is due for a rewrite). One still open stays."""
+        self.answer = lambda prompt: json.dumps(self.lines())
+        self.run_pass()
+        with self.store.connect() as db:
+            db.execute("INSERT INTO suggestions(id,dedupe_key,title,body,event_ids,account_ids,status,created_at) VALUES('s2','s2','Send it','','[]','[\"work\"]','accepted',?)", (a.now(),))
+            db.execute("UPDATE promises SET status='carded',suggestion_id='s2' WHERE id=?", (self.promise,))
+            texts = [line['text'] for line in person_summary.view(db, ANN)['lines']]
+            self.assertIn('You promised to send the contract by Friday.', texts)  # its to-do is still out: still open
+            person = next(p for p in person_summary.active(db, self.now) if p['id'] == ANN)
+            owner = graph.Owner({'accounts': self.accounts}, db)
+            self.assertEqual([p['id'] for p in person_summary.evidence(db, owner, person, graph.person_evidence)['open_promises']], [f'P{self.promise}'])
+            db.execute("UPDATE suggestions SET status='completed' WHERE id='s2'")
+            self.assertEqual(person_summary.evidence(db, owner, person, graph.person_evidence)['open_promises'], [])
+            texts = [line['text'] for line in person_summary.view(db, ANN)['lines']]
+            self.assertNotIn('You promised to send the contract by Friday.', texts)
+            self.assertIn('Prefers calls before 10.', texts)
+            self.assertEqual(person_summary.prep_lines(db, ANN, ['work', 'personal']).count('You promised to send the contract by Friday.'), 0)
+            db.execute('UPDATE person_summary_runs SET started_at=?', ((self.now - dt.timedelta(hours=2)).isoformat(),))
+            db.execute('UPDATE person_summaries SET written_at=?,evidence_at=?', ((self.now - dt.timedelta(days=1)).isoformat(), '9999'))
+            self.assertEqual([p['id'] for p in person_summary.due(db)], [ANN])
+
     def test_it_stays_on_this_machine_sealed(self):
         self.answer = lambda prompt: json.dumps(self.lines())
         self.run_pass()

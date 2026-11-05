@@ -1348,6 +1348,8 @@ def review_view(row, preview=REVIEW_PREVIEW_CHARS, offset=0, earlier=None, brief
         view['source_id_clipped'] = True
     if compact:
         view['metadata'] = compact
+    if row['kind'] == 'calendar.event' and all_day_span(metadata):  # its date as the owner's calendar has it, not occurred_at's UTC day
+        view['all_day_on'] = all_day_span(metadata)[0]
     if metadata_clipped:
         view['metadata_clipped'] = True
     if row.get('deleted'):
@@ -3151,7 +3153,10 @@ def calendar_event(account, raw, timezone):
     if url.scheme != 'https' or not (url.hostname == 'calendar.google.com' or
                                     (url.hostname == 'www.google.com' and url.path.startswith('/calendar/'))):
         source_url = ms_graph.web_link(raw.get('webLink'))  # an Outlook event: Outlook on the web
-    metadata = {'start': start, 'end': end, 'end_at': calendar_time(end, timezone),
+    # An all-day event is a date, not a moment: it starts at midnight on that date in the owner's zone, whatever zone
+    # the calendar reports (Outlook's is UTC here), so it stays on its own day on the owner's Calendar and pages.
+    zone = str(local_tz()) if 'date' in start else timezone
+    metadata = {'start': start, 'end': end, 'end_at': calendar_time(end, zone),
                 'all_day': 'date' in start, 'timezone': timezone, 'status': raw.get('status'),
                 'updated': raw.get('updated'), 'location': raw.get('location'),
                 'organizer': raw.get('organizer'), 'attendees': attendees,
@@ -3162,7 +3167,7 @@ def calendar_event(account, raw, timezone):
         metadata.update(calendar_id=account['calendar_id'], credential_account=account['email'],
                         access='shared_read_only')
     return {'account_id': account['id'], 'source_id': raw['id'], 'kind': 'calendar.event',
-            'occurred_at': calendar_time(start, timezone), 'title': raw.get('summary', '(untitled event)')[:1000],
+            'occurred_at': calendar_time(start, zone), 'title': raw.get('summary', '(untitled event)')[:1000],
             'body': body[:40000], 'metadata': metadata, 'deleted': raw.get('status') == 'cancelled'}
 
 
@@ -3244,6 +3249,22 @@ def calendar_guests(metadata, owner=()):
     organizer = metadata.get('organizer') or {}
     other = organizer.get('email') and not organizer.get('self') and str(organizer['email']).lower() not in mine
     return len(people) + (1 if other else 0)
+
+
+def all_day_span(metadata):
+    """An all-day event's (first date, end date exclusive) as ISO dates, or None for a timed one."""
+    if not metadata.get('all_day'):
+        return None
+    start, end = (metadata.get(k) if isinstance(metadata.get(k), dict) else {} for k in ('start', 'end'))
+    try:
+        first = dt.date.fromisoformat(start.get('date'))
+    except (TypeError, ValueError):
+        return None
+    try:
+        until = max(dt.date.fromisoformat(end.get('date')), first + dt.timedelta(days=1))
+    except (TypeError, ValueError):
+        until = first + dt.timedelta(days=1)
+    return first.isoformat(), until.isoformat()
 
 
 def calendar_edit_times(metadata):
@@ -4811,9 +4832,12 @@ class Store:
                     and str(organizer.get('email') or '').lower() not in {w['email'].lower() for w in met if w['email']}):  # on the guest list too: once
                 people.append(str(organizer['displayName'])[:80])
                 met.append({'name': str(organizer['displayName'])[:80], 'email': str(organizer.get('email') or '')[:120]})
+            begins, ends, span = r['occurred_at'], m.get('end_at') or r['occurred_at'], all_day_span(m)
+            if span:  # all day: midnight to midnight on its own dates in the owner's zone (day, until: the dates themselves)
+                begins, ends = (dt.datetime.combine(dt.date.fromisoformat(d), dt.time(), local_tz()).astimezone(dt.timezone.utc).isoformat() for d in span)
             found.append((theirs, shared, calendar_keys(m, r['title'], r['occurred_at'], m.get('end_at')), {
-                'id': r['id'], 'account_id': r['account_id'], 'title': str(r['title'])[:300], 'start': r['occurred_at'],
-                'end': m.get('end_at') or r['occurred_at'], 'all_day': bool(m.get('all_day')),
+                'id': r['id'], 'account_id': r['account_id'], 'title': str(r['title'])[:300], 'start': begins,
+                'end': ends, 'all_day': bool(m.get('all_day')), **({'day': span[0], 'until': span[1]} if span else {}),
                 'location': str(m.get('location') or '')[:200], 'guests': sum(1 for a in attendees if a is not me),
                 **({'rooms': [n[:120] for n in where if n.casefold() not in str(m.get('location') or '').casefold()][:4]} if where else {}),
                 'people': list(dict.fromkeys(people))[:20], 'with': met, 'shared': ((names or {}).get(r['account_id']) or calendar_owner_name(m)) if theirs else None,

@@ -357,6 +357,29 @@ class MailSync(Base):
 
 
 class CalendarSync(Base):
+    def test_an_all_day_event_stays_on_its_date_east_and_west_of_utc(self):
+        """Outlook, asked for UTC, may give an all-day event's midnight in UTC: Dec 4 23:00 for Dec 5 in Brussels, Dec 5 05:00
+        in New York. It is stored on Dec 5 either way, at midnight in the owner's zone, so every page shows Dec 5."""
+        import timeutil
+        zone = timeutil.LOCAL_TZ
+        self.addCleanup(setattr, timeutil, 'LOCAL_TZ', zone)
+        day = lambda start, end, tz: {'id': 'bday', 'subject': 'Birthday party', 'isAllDay': True, 'originalStartTimeZone': tz,
+                                      'start': {'dateTime': start, 'timeZone': 'UTC'}, 'end': {'dateTime': end, 'timeZone': 'UTC'},
+                                      'organizer': {'emailAddress': {'address': 'alex@acme.test'}}, 'lastModifiedDateTime': '2099-01-01T00:00:00Z'}
+        for owner, raw, midnight in (
+                ('Europe/Brussels', day('2099-12-04T23:00:00.0000000', '2099-12-05T23:00:00.0000000', 'Europe/Brussels'), '2099-12-04T23:00:00+00:00'),
+                ('America/New_York', day('2099-12-05T05:00:00.0000000', '2099-12-06T05:00:00.0000000', 'America/New_York'), '2099-12-05T05:00:00+00:00'),
+                ('Europe/Brussels', day('2099-12-05T00:00:00.0000000', '2099-12-06T00:00:00.0000000', 'UTC'), '2099-12-04T23:00:00+00:00'),
+                ('Europe/Brussels', day('2099-12-04T23:00:00.0000000', '2099-12-05T23:00:00.0000000', 'W. Europe Standard Time'), '2099-12-04T23:00:00+00:00')):
+            with self.subTest(owner=owner, zone=raw['originalStartTimeZone']):
+                timeutil.set_timezone(owner)
+                item = ms_graph.calendar_item(raw, 'alex@acme.test')
+                self.assertEqual((item['start'], item['end']), ({'date': '2099-12-05'}, {'date': '2099-12-06'}))
+                event = a.calendar_event({'id': 'cal', 'email': 'alex@acme.test'}, item, 'UTC')
+                self.assertEqual(event['occurred_at'], midnight)  # midnight on Dec 5 where the owner is, not in UTC
+                self.assertEqual(timeutil.local_day(event['occurred_at'], event['metadata']), dt.date(2099, 12, 5))
+                self.assertEqual(a.all_day_span(event['metadata']), ('2099-12-05', '2099-12-06'))
+
     def test_delta_window_then_changes_and_removals(self):
         self.fake.delta = [
             {'value': [{'id': 'e1', 'subject': 'Demo with Bo', 'start': {'dateTime': '2099-01-03T09:00:00.0000000', 'timeZone': 'UTC'},

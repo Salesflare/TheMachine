@@ -23,6 +23,7 @@ import json
 
 import graph
 import learning_loop
+import timeutil
 
 # The rule a to-do's preparation and chat turns get (assistant.preparation_prompt, chat_prompt).
 PROMPT = ('When the owner\'s note says something The Machine has is wrong ("she\'s not the CEO", "he left the company", "we don\'t use that '
@@ -102,7 +103,7 @@ def _english(line, plain=''):
 
 def _event_via(db, event_id):
     found = db.execute('SELECT kind,occurred_at FROM events WHERE id=?', (event_id,)).fetchone() if event_id else None
-    return f"{graph.VIA.get(found['kind'], found['kind'].split('.')[0])} on {str(found['occurred_at'])[:10]}" if found else None
+    return f"{graph.VIA.get(found['kind'], found['kind'].split('.')[0])} on {timeutil.local_day_text(found['occurred_at'])}" if found else None
 
 
 # ------------------------------------------------------------------------------------------------ where it came from

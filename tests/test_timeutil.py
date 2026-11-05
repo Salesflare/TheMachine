@@ -72,5 +72,23 @@ class TimeUtil(unittest.TestCase):
         self.assertEqual(timeutil.morning_label({'morning': '07:30'}), '7:30')
 
 
+    def test_local_day_keeps_an_all_day_event_on_its_date_east_and_west(self):
+        """An all-day event stored at midnight in the owner's zone is the day before in UTC east of it (Brussels) and the
+        same day west of it (Los Angeles): its date is its own either way, and a timed one is on the owner's day."""
+        on = {'all_day': True, 'start': {'date': '2026-12-05'}, 'end': {'date': '2026-12-06'}}
+        for zone, stored in (('Europe/Brussels', '2026-12-04T23:00:00+00:00'), ('America/Los_Angeles', '2026-12-05T08:00:00+00:00')):
+            with self.subTest(zone=zone):
+                timeutil.set_timezone(zone)
+                self.assertEqual(timeutil.local_day(stored, on), dt.date(2026, 12, 5))
+                self.assertEqual(timeutil.local_day_text(stored, on), '2026-12-05')
+                self.assertEqual(timeutil.local_day(stored), dt.date(2026, 12, 5))  # midnight there is that day there
+        timeutil.set_timezone('Europe/Brussels')
+        self.assertEqual(timeutil.local_day('2026-12-04T23:30:00+00:00'), dt.date(2026, 12, 5))  # 00:30 in Brussels
+        timeutil.set_timezone('America/Los_Angeles')
+        self.assertEqual(timeutil.local_day('2026-12-05T03:00:00+00:00'), dt.date(2026, 12, 4))  # 19:00 the evening before
+        self.assertEqual(timeutil.local_day('2026-12-05'), dt.date(2026, 12, 5))  # a bare date stays
+        self.assertIsNone(timeutil.local_day(None))
+        self.assertEqual(timeutil.local_day_text(''), '')
+
 if __name__ == '__main__':
     unittest.main()

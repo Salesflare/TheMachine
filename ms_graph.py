@@ -672,10 +672,32 @@ RESPONSES = {'accepted': 'accepted', 'tentativelyAccepted': 'tentative', 'declin
              'notResponded': 'needsAction', 'organizer': 'accepted'}
 
 
-def _when(value, all_day):
+def _all_day_date(value, zone=None):
+    """An all-day event's date. Outlook keeps it at midnight on that day, but with Prefer outlook.timezone="UTC" it may
+    give that midnight in UTC: 2026-12-04T23:00 for Dec 5 in Brussels, 05:00 the same day in New York. So: midnight is
+    the date itself; otherwise the time is moved back into the event's own zone (zone, an IANA name) when known, and
+    else to the nearest midnight (time zones are within -12 and +14 hours of UTC)."""
+    text = str((value or {}).get('dateTime') or '')
+    try:
+        stamp = _stamp(text, (value or {}).get('timeZone') or 'UTC')
+    except ValueError:
+        return text[:10]
+    if (stamp.hour, stamp.minute) == (0, 0):
+        return stamp.date().isoformat()
+    try:
+        if zone and zone != 'UTC':
+            local = stamp.astimezone(ZoneInfo(zone))
+            if (local.hour, local.minute) == (0, 0):
+                return local.date().isoformat()
+    except (ZoneInfoNotFoundError, ValueError):
+        pass
+    return (stamp + dt.timedelta(hours=12)).date().isoformat()
+
+
+def _when(value, all_day, zone=None):
     value = value or {}
     if all_day:
-        return {'date': str(value.get('dateTime') or '')[:10]}
+        return {'date': _all_day_date(value, zone)}
     return {'dateTime': _stamp(value.get('dateTime'), value.get('timeZone')).isoformat()}
 
 
@@ -692,15 +714,16 @@ def calendar_item(raw, owner):
                           'responseStatus': RESPONSES.get((a.get('status') or {}).get('response'), 'needsAction'),
                           **({'self': True} if str(address.get('address') or '').lower() == owner else {}),
                           **({'resource': True} if a.get('type') == 'resource' else {})})  # a room or equipment Outlook booked
-    item = {'id': raw['id'], 'summary': raw.get('subject') or '(untitled event)', 'start': _when(raw.get('start'), all_day),
-            'end': _when(raw.get('end'), all_day), 'status': 'cancelled' if raw.get('isCancelled') else 'confirmed',
+    zones = (raw.get('originalStartTimeZone'), raw.get('originalEndTimeZone') or raw.get('originalStartTimeZone'))
+    item = {'id': raw['id'], 'summary': raw.get('subject') or '(untitled event)', 'start': _when(raw.get('start'), all_day, zones[0]),
+            'end': _when(raw.get('end'), all_day, zones[1]), 'status': 'cancelled' if raw.get('isCancelled') else 'confirmed',
             'updated': raw.get('lastModifiedDateTime'), 'location': ((raw.get('location') or {}).get('displayName') or None),
             'organizer': {'email': str(organizer.get('address') or '').lower(), 'displayName': organizer.get('name') or ''},
             'attendees': attendees, 'description': raw.get('bodyPreview') or '', 'webLink': web_link(raw.get('webLink'))}
     if raw.get('seriesMasterId'):
         item['recurringEventId'] = raw['seriesMasterId']
         if raw.get('originalStart'):
-            item['originalStartTime'] = {'date': str(raw['originalStart'])[:10]} if all_day else {'dateTime': _stamp(raw['originalStart'], (raw.get('originalStartTimeZone') or 'UTC')).isoformat()}
+            item['originalStartTime'] = {'date': _all_day_date({'dateTime': raw['originalStart']}, zones[0])} if all_day else {'dateTime': _stamp(raw['originalStart'], (raw.get('originalStartTimeZone') or 'UTC')).isoformat()}
     if raw.get('showAs') == 'free':
         item['transparency'] = 'transparent'
     return item
