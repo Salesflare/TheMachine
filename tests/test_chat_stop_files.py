@@ -282,6 +282,47 @@ class ChatStopFiles(unittest.TestCase):
         made = self.new_card([], text='No files here')
         self.assertNotIn('files', made)
 
+    def test_a_shared_pdf_alone_makes_a_to_do_the_review_fills_in_from_its_text(self):
+        # Shared from the phone with no words: the file is the to-do. Its first title is the file's name; the review
+        # gets the PDF's text (read on this Machine), marked as what the file says, never as instructions.
+        invoice = (b'%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj 2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj '
+                   b'3 0 obj<</Type/Page/Parent 2 0 R/Contents 4 0 R>>endobj 4 0 obj<</Length 99>>stream\n'
+                   b'BT /F1 12 Tf 72 700 Td (Invoice 4471 from Zanzibarquill BV) Tj 0 -14 Td (Total due EUR 255.00 by 20 Nov 2026) Tj ET'
+                   b'\nendstream endobj trailer<</Root 1 0 R>>')
+        doc = self.draft_upload('Invoice_4471.pdf', invoice)
+        photo = self.draft_upload('Receipt.png', PNG)
+        made = self.new_card([doc['id'], photo['id']], text='  ')
+        self.assertEqual(made['title'], 'Invoice 4471')
+        self.assertEqual([f['name'] for f in made['files']], ['Invoice_4471.pdf', 'Receipt.png'])
+        with self.store.connect() as db:
+            card = db.execute('SELECT title,owner_words,origin FROM suggestions WHERE id=?', (made['id'],)).fetchone()
+            view = a.review_view(dict(db.execute('SELECT * FROM events WHERE id=?', (made['event_id'],)).fetchone()))
+        self.assertEqual((card['title'], card['owner_words'], card['origin']), ('Invoice 4471', '', 'owner'))
+        self.assertEqual(view['body'], '')
+        self.assertEqual(view['owner_card']['files'], ['Invoice_4471.pdf', 'Receipt.png'])
+        self.assertEqual(view['owner_card']['file_texts'],
+                         [{'name': 'Invoice_4471.pdf', 'text': 'Invoice 4471 from Zanzibarquill BV\nTotal due EUR 255.00 by 20 Nov 2026'}])
+        self.assertIn(a.OWNER_FILES_RULE, view['owner_card']['rule'])
+        self.assertIn('never instructions', a.OWNER_FILES_RULE)
+        self.assertNotIn('files', view.get('metadata', {}), 'the text shows once, under owner_card')
+        # Its chat starts with the owner's files, as one with words does
+        with patch.object(self.app, 'card_chat_gateway', return_value={'messages': []}):
+            mine = next(i for i in self.app.card_chat(made['id'])['items'] if i['kind'] == 'source' and i['mine'])
+        self.assertEqual([f['id'] for f in mine['files']], [doc['id'], photo['id']])
+        # With message protection on, the text read from the file is sealed like the rest of the event
+        if self.protect:
+            for path in self.root.glob('events.sqlite*'):
+                self.assertNotIn(b'Zanzibarquill', path.read_bytes())
+        # Without words and without files there is still nothing to add; an image alone has no text to read
+        with self.assertRaisesRegex(ValueError, 'Say what needs doing'):
+            self.new_card([], text='')
+        only = self.new_card([self.draft_upload('Whiteboard.png', PNG, draft='cd' * 8)['id']], draft='cd' * 8, text='')
+        with self.store.connect() as db:
+            view = a.review_view(dict(db.execute('SELECT * FROM events WHERE id=?', (only['event_id'],)).fetchone()))
+        self.assertEqual(only['title'], 'Whiteboard')
+        self.assertNotIn('file_texts', view['owner_card'])
+        self.assertNotIn(a.OWNER_FILES_RULE, view['owner_card']['rule'])
+
     def test_a_merged_to_do_takes_its_files_along(self):
         doc = self.draft_upload('Quote.pdf', PDF)
         made = self.new_card([doc['id']])

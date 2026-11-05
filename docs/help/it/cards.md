@@ -84,4 +84,4 @@ Un'attività "In attesa di" (qualcuno ti ha promesso qualcosa) ha il link al tuo
 - **Email**: allega l'email a cui si riferisce. Cerca solo nella tua email, per oggetto o mittente.
 - **File**: tocca la graffetta nel riquadro, incolla uno screenshot o trascina i file sul modulo. Su un telefono puoi anche scattare una foto. Fino a 5 file, degli stessi tipi e dimensioni della chat (vedi [Aggiungi file](card-chat.md#add-files)). × ne toglie uno.
 
-I file restano con l'attività: compaiono sull'attività e nella sua chat, e The Machine li legge quando ci lavora.
+I file restano con l'attività: compaiono sull'attività e nella sua chat, e The Machine li legge quando ci lavora. Bastano i file: The Machine legge il testo di un PDF o di un file di testo e compila l’attività da lì.

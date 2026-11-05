@@ -29,6 +29,7 @@ import re
 import secrets
 from pathlib import Path
 
+import file_text
 import mail_attachments
 import message_seal
 
@@ -196,6 +197,28 @@ def adopt(db, draft, suggestion_id, ids):
     for r in rows:
         db.execute('UPDATE chat_files SET suggestion_id=?,decision_id=? WHERE id=?', (suggestion_id, CARD + suggestion_id, r['id']))
     return [{'id': r['id'], 'name': r['name'], 'type': r['mime'], 'size': r['size']} for r in rows]
+
+
+def texts(db, config, draft, ids, each=file_text.TEXT_LIMIT, total=2 * file_text.TEXT_LIMIT):
+    """{file id: text} of a New to-do form's PDFs and text files (file_text.py), for the review that fills the to-do in.
+    At most `each` characters a file and `total` together. Read here, on the Machine, from the files it keeps."""
+    out, left = {}, total
+    if not DRAFT.fullmatch(str(draft or '')) or not isinstance(ids, list):
+        return out
+    for file_id in ids[:MAX_FILES]:
+        row = db.execute('SELECT * FROM chat_files WHERE id=? AND suggestion_id=? AND decision_id IS NULL', (str(file_id), draft)).fetchone() \
+            if ID.fullmatch(str(file_id)) else None
+        if not row or left <= 0 or row['mime'].startswith('image/'):
+            continue
+        try:
+            data = _open(db, (folder(config) / row['id']).read_bytes())
+        except (OSError, ValueError, message_seal.SealError):
+            continue
+        text = file_text.excerpt(data, row['mime'], min(each, left))
+        if text:
+            out[row['id']] = text
+            left -= len(text)
+    return out
 
 
 def move(db, from_id, to_id):

@@ -121,13 +121,14 @@ window.visualViewport?.addEventListener('resize',ncKeyboard);window.visualViewpo
 function ncOpen(o={}){const d=ncDialog();if(d.open)return;Object.assign(nc,{scope:scopeFilter==='work'||scopeFilter==='personal'?scopeFilter:null,due:null,repeat:null,about:o.about||[],attach:[],files:[],
   draft:[...crypto.getRandomValues(new Uint8Array(8))].map(b=>b.toString(16).padStart(2,'0')).join(''),pick:null,busy:false,byPointer:false});
  const t=$('#nc-text');t.value='';t.style.height='';$('#nc-add').disabled=true;$('#nc-error').textContent='';ncTray();ncPick(null);d.showModal();t.focus();ncKeyboard()}
-async function ncCreate(){const text=$('#nc-text').value.trim();if(!text||nc.busy||nc.files.some(f=>f.state==='up'))return;if(nc.pick==='due'){const d=ncDue($('#nc-find')?.value);if(d)nc.due=d}nc.busy=true;$('#nc-add').disabled=true;$('#nc-error').textContent='';
+async function ncCreate(){const text=$('#nc-text').value.trim();if((!text&&!nc.files.length)||nc.busy||nc.files.some(f=>f.state==='up'))return;if(nc.pick==='due'){const d=ncDue($('#nc-find')?.value);if(d)nc.due=d}nc.busy=true;$('#nc-add').disabled=true;$('#nc-error').textContent='';
  try{const made=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'card_new',args:{text,scope:nc.scope,due:nc.due?ncISO(nc.due):null,due_at:nc.due?.timed?ncAt(nc.due):null,about:nc.about.map(a=>a.id),attach:nc.attach.map(a=>a.id),...(nc.repeat?{repeat:nc.repeat}:{}),...(nc.files.length?{draft:nc.draft,files:nc.files.map(f=>f.id)}:{})}})});
   nc.files=[];$('#new-card').close();toast(made.repeats?t('Added. {}.',repeatText(made.repeats.rule,made.repeats.anchor)):'Added');if(chatId)chatGo(made.id);else{showTab('inbox');history.replaceState(null,'',location.pathname+location.search+'#card='+made.id)}await refresh()}
  catch(e){errCaught(e);$('#nc-error').textContent=e.message||'Couldn’t add the to-do'}finally{nc.busy=false;ncReady()}}
 // New to-do's files (chat_files.py, as in the chat): each uploads at once under the form's draft key, and the to-do
-// takes them when it is added. Closed without adding, they are taken back (and would go after a day anyway).
-function ncReady(){const b=$('#nc-add');if(b)b.disabled=nc.busy||!$('#nc-text')?.value.trim()||nc.files.some(f=>f.state==='up')}
+// takes them when it is added. Closed without adding, they are taken back (and would go after a day anyway). Files
+// alone are enough (a PDF shared from the phone): the Machine reads them and fills the to-do in.
+function ncReady(){const b=$('#nc-add');if(b)b.disabled=nc.busy||(!$('#nc-text')?.value.trim()&&!nc.files.length)||nc.files.some(f=>f.state==='up')}
 function ncTray(){const t=$('#nc-tray');if(t){setHTML(t,chatTrayHTML(nc.files,'nc-remove'));t.hidden=!nc.files.length}ncReady()}
 function ncForget(list){for(const f of list)if(f?.id)request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'chat_file_remove',args:{draft:f.draft,id:f.id}})}).catch(()=>{})}
 function ncAddFiles(list){const problems=[],draft=nc.draft;$('#nc-error').textContent='';
@@ -146,6 +147,11 @@ function ncAddFiles(list){const problems=[],draft=nc.draft;$('#nc-error').textCo
 window.machineShare=function(d,tries=0){if(!(Array.isArray(state?.suggestions)&&csrfLive)){if(tries<1200)setTimeout(()=>machineShare(d,tries+1),500);return true}
  const text=String(d?.text||'').trim().slice(0,2000),files=[...(d?.files||[])].filter(f=>f instanceof File);if(!text&&!files.length)return true;
  ncOpen();const x=$('#nc-text');if(text){x.value=((x.value.trim()?x.value.trim()+'\n':'')+text).slice(0,2000);x.dispatchEvent(new Event('input'))}if(files.length)ncAddFiles(files);return true};
+// Share to The Machine from the installed web app (manifest.webmanifest share_target): sw.js keeps what was shared and
+// opens the dashboard at #share=<id>; the page asks the worker for it, once, and opens New to-do with it, as above.
+{const m=/^#share=(s_[a-f0-9]{16})$/.exec(location.hash);if(m){history.replaceState(null,'',location.pathname+location.search);
+ navigator.serviceWorker?.ready.then(r=>new Promise((ok,no)=>{const ch=new MessageChannel();ch.port1.onmessage=e=>ok(e.data);setTimeout(()=>no(Error('timeout')),15000);
+  (navigator.serviceWorker.controller||r.active).postMessage({share:m[1]},[ch.port2])})).then(d=>{if(d)machineShare({text:d.text,files:d.files})}).catch(()=>{})}}
 // Entry points: a row under Search on a computer, "+" in the top bar on a phone, C, and the palette (Ctrl/⌘K) then "new".
 {const row=document.createElement('button');row.type='button';row.className='side-new';row.id='side-new';row.dataset.newCard='';row.title='New to-do (N)';row.setAttribute('aria-label','New to-do');
  setHTML(row,html`${NC_PLUS}<span>New to-do</span><kbd>N</kbd>`);$('#side-search').after(row);

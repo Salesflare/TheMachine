@@ -2,7 +2,7 @@
 // once. The shell holds no data and never its CSRF token; the last cards, chats and Graph lists are kept by the page,
 // encrypted (docs/architecture.md, "On the device"). Brand images and fonts are kept too, all of them up front. Nothing else is cached.
 // A new ASSETS name drops the kept brand files once (2: the moods became stickers, not the app icon).
-const SHELL = 'tm-shell-2', ASSETS = 'tm-assets-2', SHELL_AGE = 7 * 864e5;
+const SHELL = 'tm-shell-2', ASSETS = 'tm-assets-2', SHARE = 'tm-share', SHELL_AGE = 7 * 864e5;
 // The server no longer puts the token in the page (api/session has it); an older page still may, and it is taken out.
 const CSRF = /(\bconst csrf=')(?:[0-9a-f]{64})?(')/;
 const scopeUrl = () => new URL(self.registration.scope);
@@ -52,7 +52,7 @@ self.addEventListener('unhandledrejection', e => swReport(e.reason));
 // The page asks for warm() once this worker is ready: a slow brand file never holds up the install.
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', event => event.waitUntil((async () => {
-  for (const name of await caches.keys()) if (name.startsWith('tm-') && ![SHELL, ASSETS].includes(name)) await caches.delete(name);
+  for (const name of await caches.keys()) if (name.startsWith('tm-') && ![SHELL, ASSETS, SHARE].includes(name)) await caches.delete(name);
   await self.clients.claim();
 })()));
 
@@ -70,6 +70,7 @@ async function keepShell(response) {
 async function signedOut() {
   await caches.delete(SHELL);
   await caches.delete(ASSETS);
+  await caches.delete(SHARE);
   for (const c of await self.clients.matchAll({type: 'window', includeUncontrolled: true})) c.postMessage({cache: 'signed-out'});
 }
 
@@ -107,8 +108,45 @@ async function asset(event, name) {
   return fresh;
 }
 
+// Share to The Machine (manifest.webmanifest share_target): what another app shared, kept on this device until the
+// dashboard asks for it (#share=<id>, new-todo.js), then gone; at most SHARE_AGE, and gone on sign-out. New to-do shows
+// it for the owner to check: nothing reaches the Machine until they add files there. Up to 5 files of 10 MB each, the
+// Machine checks their kinds and sizes again as for any upload.
+const SHARE_AGE = 10 * 6e4, SHARE_FILES = 5, SHARE_BYTES = 10 * 1048576, SHARE_ID = /^s_[a-f0-9]{16}$/;
+async function shareIn(event) {
+  const form = await event.request.formData(), scope = scopeUrl();
+  const parts = ['title', 'text', 'url'].map(k => form.get(k)).map(v => typeof v === 'string' ? v.trim() : '').filter(Boolean);
+  const text = parts.filter((v, i) => parts.indexOf(v) === i && !parts.some(w => w !== v && w.includes(v))).join('\n').slice(0, 2000);
+  const files = form.getAll('files').filter(f => f instanceof File && f.size > 0 && f.size <= SHARE_BYTES).slice(0, SHARE_FILES);
+  const id = 's_' + [...crypto.getRandomValues(new Uint8Array(8))].map(b => b.toString(16).padStart(2, '0')).join('');
+  const cache = await caches.open(SHARE), at = String(Date.now());
+  for (const key of await cache.keys()) if (Date.now() - +((await cache.match(key))?.headers.get('X-At') || 0) > SHARE_AGE) await cache.delete(key);
+  const base = new URL('share/' + id + '/', scope).href;
+  for (const [i, f] of files.entries()) await cache.put(base + i, new Response(f, {headers: {'Content-Type': f.type || 'application/octet-stream', 'X-At': at}}));
+  await cache.put(base + 'meta', new Response(JSON.stringify({text, files: files.map(f => ({name: f.name, type: f.type}))}), {headers: {'Content-Type': 'application/json', 'X-At': at}}));
+  return Response.redirect(scope.href + '#share=' + id, 303);
+}
+async function shareOut(id) {
+  const cache = await caches.open(SHARE), base = new URL('share/' + id + '/', scopeUrl()).href;
+  const meta = await cache.match(base + 'meta');
+  if (!meta || Date.now() - +meta.headers.get('X-At') > SHARE_AGE) return null;
+  const kept = await meta.json(), files = [];
+  for (const [i, f] of (kept.files || []).entries()) {
+    const r = await cache.match(base + i);
+    if (r) files.push(new File([await r.blob()], String(f.name || 'file'), {type: String(f.type || '')}));
+  }
+  for (const key of await cache.keys()) if (key.url.startsWith(base)) await cache.delete(key);
+  return {text: String(kept.text || ''), files};
+}
+
 self.addEventListener('fetch', event => {
   const req = event.request;
+  if (req.method === 'POST') {
+    const url = new URL(req.url), scope = scopeUrl();
+    if (url.origin === scope.origin && url.pathname === scope.pathname + 'share-target' && !url.search)
+      event.respondWith(shareIn(event).catch(e => { swReport(e, 'shareIn'); return Response.redirect(scope.href, 303); }));
+    return;
+  }
   if (req.method !== 'GET') return;
   const url = new URL(req.url), scope = scopeUrl();
   if (url.origin !== scope.origin) return;
@@ -122,6 +160,10 @@ self.addEventListener('message', event => {
   if (event.data?.cache === 'drop') event.waitUntil(Promise.all([caches.delete(SHELL), caches.delete(ASSETS)]));
   if (event.data?.cache === 'warm') event.waitUntil(warm().catch(() => {}));
   if (event.data?.errors === 'flush') event.waitUntil(swFlush().catch(() => {}));
+  // A page of this dashboard asks for what was shared to it (shareIn): handed over once, to that page only
+  const port = event.ports?.[0], id = event.data?.share;
+  if (port && typeof id === 'string' && SHARE_ID.test(id) && event.source?.url?.startsWith(scopeUrl().href))
+    event.waitUntil(shareOut(id).then(d => port.postMessage(d), e => { swReport(e, 'shareOut'); port.postMessage(null); }));
 });
 
 self.addEventListener('push', event => {

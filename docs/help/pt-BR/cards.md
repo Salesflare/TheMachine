@@ -84,4 +84,4 @@ Uma tarefa "Aguardando" (alguém prometeu algo a você) traz um link para a sua 
 - **E-mail**: anexe o e-mail de que ela trata. A busca é só nos seus e-mails, pelo assunto ou pelo remetente.
 - **Arquivos**: toque no clipe na caixa, cole uma captura de tela ou solte arquivos no formulário. No celular, você também pode tirar uma foto. Até 5 arquivos, dos mesmos tipos e tamanhos do chat (veja [Adicionar arquivos](card-chat.md#add-files)). × remove um.
 
-Os arquivos ficam com a tarefa: aparecem nela e no chat dela, e a The Machine lê os arquivos quando trabalha nela.
+Os arquivos ficam com a tarefa: aparecem nela e no chat dela, e a The Machine lê os arquivos quando trabalha nela. Só arquivos bastam: a The Machine lê o texto de um PDF ou arquivo de texto e preenche a tarefa a partir dele.

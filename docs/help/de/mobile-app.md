@@ -3,7 +3,7 @@ title: Die mobile App
 area: getting-started
 summary: The Machine als App auf iPhone und Android: Benachrichtigungen für deine Aufgaben und Teilen an The Machine aus jeder App.
 covers: mobile-app
-code: notify.py, assistant.py, dashboard/new-todo.js, dashboard/settings-device.js
+code: notify.py, assistant.py, file_text.py, dashboard/new-todo.js, dashboard/settings-device.js, sw.js, manifest.webmanifest
 order: 3
 keywords: ios, android, app store, play store, share sheet, share, phone, mobile, push
 ---
@@ -34,5 +34,9 @@ Jedes Handy mit der App steht unter **Einstellungen**, **Benachrichtigungen** al
 ## An The Machine teilen
 
 Tippe in einer beliebigen App auf Teilen und wähle The Machine. Eine **Neue Aufgabe** öffnet sich mit dem Text, dem Link oder den Dateien, die du geteilt hast. Prüf sie, füge auf Wunsch ein Datum hinzu, und füge sie hinzu. Vorher wird nichts hinzugefügt.
+
+Eine Datei allein reicht, etwa eine Rechnung oder ein Brief. Deine Machine liest den Text eines PDFs und füllt die Aufgabe aus: was es ist, der nächste Schritt und sein Datum. Die Datei geht direkt an deine Machine und bleibt dort.
+
+Auch das als App installierte Dashboard auf Android nimmt Geteiltes an: wähle es im Teilen-Menü genauso.
 
 Tarife und Abrechnung zeigt die App nicht. **Konto öffnen** in **Einstellungen** bleibt, um dein Konto zu löschen.
