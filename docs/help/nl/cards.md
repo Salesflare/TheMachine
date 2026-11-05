@@ -84,4 +84,4 @@ Een to-do "Wacht op" (iemand heeft je iets beloofd) linkt naar je eigen laatste 
 - **E-mail**: voeg de e-mail toe waarover het gaat. Hij zoekt alleen in je e-mail, op onderwerp of afzender.
 - **Bestanden**: tik op de paperclip in het vak, plak een screenshot of sleep bestanden naar het formulier. Op een telefoon kun je ook een foto maken. Maximaal 5 bestanden, dezelfde soorten en groottes als in de chat (zie [Bestanden toevoegen](card-chat.md#add-files)). × haalt er een weg.
 
-De bestanden blijven bij de to-do: ze staan erop en in de chat ervan, en The Machine leest ze als hij eraan werkt.
+De bestanden blijven bij de to-do: ze staan erop en in de chat ervan, en The Machine leest ze als hij eraan werkt. Alleen bestanden is genoeg: The Machine leest de tekst van een pdf of tekstbestand en vult de to-do daarmee in.

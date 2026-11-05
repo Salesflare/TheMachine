@@ -23,6 +23,30 @@ class HomeScreenApp(unittest.TestCase):
             purposes.add((icon['sizes'], icon['purpose']))
         self.assertTrue({('192x192', 'any'), ('512x512', 'any'), ('512x512', 'maskable')} <= purposes)
 
+    def test_the_installed_app_is_a_share_target_for_new_to_do(self):
+        # Share to The Machine from an installed dashboard (Android): sw.js takes the post and opens New to-do. Before it
+        # does (or without it) the Machine only sends the browser to the dashboard, signed in or not, and reads nothing.
+        import http.client, chat_files, test_owner_boundary
+        target = json.loads((a.ROOT / 'manifest.webmanifest').read_text())['share_target']
+        self.assertEqual((target['action'], target['method'], target['enctype']), ('share-target', 'POST', 'multipart/form-data'))
+        accept = set(target['params']['files'][0]['accept'])
+        self.assertTrue({'application/pdf', '.pdf', 'image/jpeg', 'text/plain'} <= accept)
+        self.assertEqual({x for x in accept if x.startswith('.')} - set(chat_files.TYPES), set(), 'only kinds New to-do takes')
+        sw = (a.ROOT / 'sw.js').read_text()
+        self.assertIn("url.pathname === scope.pathname + 'share-target'", sw)
+        fixture = test_owner_boundary.OwnerBoundary()
+        fixture.setUp()
+        self.addCleanup(fixture.doCleanups)
+        port = fixture.serve()
+        for headers in ({'Host': 'machine.example:8443', 'Tailscale-User-Login': 'owner@example.com'}, {'Host': 'machine.example:8443'}):
+            conn = http.client.HTTPConnection('127.0.0.1', port, timeout=10)
+            body = b'--x\r\nContent-Disposition: form-data; name="text"\r\n\r\nMade-up note\r\n--x--\r\n'
+            conn.request('POST', '/share-target', body=body, headers={**headers, 'Content-Type': 'multipart/form-data; boundary=x'})
+            response = conn.getresponse()
+            response.read()
+            conn.close()
+            self.assertEqual((response.status, response.getheader('Location')), (303, './'))
+
     def test_each_mood_is_its_own_sticker_not_the_app_icon(self):
         # The robot's moods (empty states, errors, the inbox-zero game) are served over HTTP as real stickers: small
         # transparent WebPs, a different picture for each, none of them the app icon.

@@ -3,7 +3,7 @@ title: The mobile app
 area: getting-started
 summary: The Machine as an app on iPhone and Android: notifications for your to-dos, and sharing to The Machine from any app.
 covers: mobile-app
-code: notify.py, assistant.py, dashboard/new-todo.js, dashboard/settings-device.js
+code: notify.py, assistant.py, file_text.py, dashboard/new-todo.js, dashboard/settings-device.js, sw.js, manifest.webmanifest
 order: 3
 keywords: ios, android, app store, play store, share sheet, share, phone, mobile, push
 ---
@@ -34,5 +34,9 @@ Each phone with the app shows in **Settings**, **Notifications** as a **Phone wi
 ## Share to The Machine
 
 In any app, tap Share and pick The Machine. A **New to-do** opens with the text, link or files you shared in it. Check it, add a date if you like, and add it. Nothing is added until you do.
+
+A file alone is enough, like an invoice or a letter. Your Machine reads a PDF's text and fills in the to-do: what it is, the next step and its date. The file goes straight to your Machine and stays there.
+
+The dashboard installed as an app on Android takes shares too: pick it in the share sheet the same way.
 
 Plans and billing aren't shown in the app. **Open account** in **Settings** stays, to delete your account.

@@ -84,4 +84,4 @@ A "Waiting on" to-do (someone promised you something) links your own last messag
 - **Email**: attach the email it's about. It searches your email only, by subject or sender.
 - **Files**: tap the paperclip in the box, paste a screenshot, or drop files on the form. On a phone you can also take a photo. Up to 5 files, the same kinds and sizes as in the chat (see [Add files](card-chat.md#add-files)). × takes one back.
 
-The files stay with the to-do: they show on it and in its chat, and The Machine reads them when it works on it.
+The files stay with the to-do: they show on it and in its chat, and The Machine reads them when it works on it. Files alone are enough: The Machine reads a PDF or text file's words and fills in the to-do from them.

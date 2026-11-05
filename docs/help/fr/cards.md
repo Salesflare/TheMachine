@@ -84,4 +84,4 @@ Une tâche « En attente de » (quelqu’un vous a promis quelque chose) renvoie
 - **E-mail** : joignez l’e-mail concerné. La recherche porte uniquement sur vos e-mails, par objet ou par expéditeur.
 - **Fichiers** : touchez le trombone dans le champ, collez une capture d’écran ou déposez des fichiers sur le formulaire. Sur un téléphone, vous pouvez aussi prendre une photo. Jusqu’à 5 fichiers, des mêmes types et tailles que dans le chat (voir [Ajouter des fichiers](card-chat.md#add-files)). × en retire un.
 
-Les fichiers restent avec la tâche : ils s’affichent sur la tâche et dans son chat, et The Machine les lit en travaillant dessus.
+Les fichiers restent avec la tâche : ils s’affichent sur la tâche et dans son chat, et The Machine les lit en travaillant dessus. Des fichiers seuls suffisent : The Machine lit le texte d’un PDF ou d’un fichier texte et remplit la tâche à partir de lui.

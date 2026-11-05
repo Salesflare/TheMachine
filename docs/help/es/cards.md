@@ -84,4 +84,4 @@ Una tarea "Esperando a" (alguien te prometió algo) enlaza tu último mensaje a 
 - **Correo**: adjunta el correo del que trata. Solo busca en tu correo, por asunto o remitente.
 - **Archivos**: toca el clip en el cuadro, pega una captura de pantalla o suelta archivos en el formulario. En un teléfono también puedes hacer una foto. Hasta 5 archivos, de los mismos tipos y tamaños que en el chat (consulta [Añade archivos](card-chat.md#add-files)). × quita uno.
 
-Los archivos se quedan con la tarea: se ven en ella y en su chat, y The Machine los lee cuando trabaja en ella.
+Los archivos se quedan con la tarea: se ven en ella y en su chat, y The Machine los lee cuando trabaja en ella. Basta con archivos: The Machine lee el texto de un PDF o de un archivo de texto y completa la tarea con él.
