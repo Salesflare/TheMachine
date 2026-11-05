@@ -305,7 +305,7 @@ class Brief(unittest.TestCase):
 
     def test_asked_once_per_period_within_hours_and_told_once_everyone_answered(self):
         told = []
-        self.fleet.notify_brief = lambda text, url: told.append(text) or '77'
+        self.fleet.notify_brief = lambda text, url, titles=None: told.append(text) or '77'
         hours = Hours(dt.datetime(2026, 10, 19, 7, 30, tzinfo=dt.timezone.utc))  # a Monday, before the morning time
         hours.install(self.fleet)
         self.fleet.set_brief('week', True)

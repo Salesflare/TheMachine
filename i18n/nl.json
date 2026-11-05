@@ -1243,7 +1243,6 @@
  "First review starts when your mail is in": "De eerste review start zodra je mail binnen is",
  "First seen this week.": "Deze week voor het eerst gezien.",
  "First try": "Meteen goed",
- "First: {}. {}": "Eerst: {}. {}",
  "Five more minutes. Robot minutes.": "Nog vijf minuutjes. Robotminuutjes.",
  "Fix": "Fix",
  "Fix a clone of The Machine under {}/<job id>, made with git clone, not the running code": "Verbeter een clone van The Machine onder {}/<job id>, gemaakt met git clone, niet de draaiende code",
@@ -2501,6 +2500,8 @@
  "Nothing to save: map at least one column or fix a cell": "Niets om op te slaan: koppel minstens één kolom of verbeter een cel",
  "Nothing to try again": "Niets om opnieuw te proberen",
  "Nothing to undo.": "Niets om ongedaan te maken.",
+ "Nothing waiting · First meeting {}": "Niets wacht · Eerste afspraak {}",
+ "Nothing waiting. A calm start.": "Niets wacht. Een rustige start.",
  "Nothing was done.": "Er is niets gedaan.",
  "Nothing was merged into that": "Daar is niets in samengevoegd",
  "Nothing was sent: {}": "Er is niets verstuurd: {}",
@@ -6229,6 +6230,14 @@
   "other": "{} teambriefings"
  },
  "{} their time": "{} bij hen",
+ "{} things for the team": {
+  "one": "{} punt voor het team",
+  "other": "{} punten voor het team"
+ },
+ "{} things for the team: {}": {
+  "one": "{} punt voor het team: {}",
+  "other": "{} punten voor het team: {}"
+ },
  "{} things wait for you": {
   "one": "{} ding wacht op je",
   "other": "{} dingen wachten op je"
@@ -6250,6 +6259,22 @@
  "{} to-dos": {
   "one": "{} to-do",
   "other": "{} to-do's"
+ },
+ "{} to-dos waiting": {
+  "one": "{} to-do wacht",
+  "other": "{} to-do's wachten"
+ },
+ "{} to-dos waiting · First meeting {}": {
+  "one": "{} to-do wacht · Eerste afspraak {}",
+  "other": "{} to-do's wachten · Eerste afspraak {}"
+ },
+ "{} to-dos: {}": {
+  "one": "{} to-do: {}",
+  "other": "{} to-do's: {}"
+ },
+ "{} to-dos: {} · First meeting {}": {
+  "one": "{} to-do: {} · Eerste afspraak {}",
+  "other": "{} to-do's: {} · Eerste afspraak {}"
  },
  "{} today": "{} vandaag",
  "{} took this on": "{} heeft dit opgepakt",

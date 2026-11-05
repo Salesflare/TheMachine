@@ -32,7 +32,7 @@ Notifica solo ciò che ha bisogno di te. Avanzamenti e modifiche no. Una raffica
 
 ## Il riepilogo del mattino
 
-Arriva nei giorni lavorativi all'ora del **Riepilogo del mattino**, e salta quando non c'è niente da dire. **Anteprima**, nella sua riga, lo mostra sulla pagina senza inviarlo. Di default è una push e un'email. Toccando la push si apre oggi nel **Calendario**.
+Arriva nei giorni lavorativi all'ora del **Riepilogo del mattino**, e salta quando non c'è niente da dire. **Anteprima**, nella sua riga, lo mostra sulla pagina senza inviarlo. Di default è una push e un'email. La push dice quante attività aspettano, le prime due e l'ora della tua prima riunione. Toccando la push si apre oggi nel **Calendario**.
 
 ## Privacy
 

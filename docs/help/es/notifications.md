@@ -32,7 +32,7 @@ Solo avisa lo que te necesita. El progreso y los cambios no. Una ráfaga vibra u
 
 ## El resumen matutino
 
-Llega los días laborables a tu hora de **Resumen matutino**, y se omite cuando no hay nada que contar. **Vista previa**, en su fila, lo muestra en la página sin enviarlo. Por defecto es un push y un correo. Al tocar el push se abre hoy en el **Calendario**.
+Llega los días laborables a tu hora de **Resumen matutino**, y se omite cuando no hay nada que contar. **Vista previa**, en su fila, lo muestra en la página sin enviarlo. Por defecto es un push y un correo. El push dice cuántas tareas esperan, las dos primeras y la hora de tu primera reunión. Al tocar el push se abre hoy en el **Calendario**.
 
 ## Privacidad
 

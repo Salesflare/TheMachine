@@ -418,13 +418,30 @@ class Notifications(unittest.TestCase):
         overnight = [{'title': f'To-do {n}'} for n in range(5)]
         full = notify.compose(meetings, [{'title': 'Pay the invoice'}], overnight, 'https://m.example/')
         self.assertEqual(full['push']['title'], 'Your morning')
-        self.assertEqual(full['push']['body'], 'First: 09:30 Planning with the agency. 1 meeting · 1 due · 5 new')
+        self.assertEqual(full['push']['body'], '6 to-dos: Pay the invoice, To-do 0, … · First meeting 09:30')
         self.assertIn('• Pay the invoice', full['text'])
         self.assertIn('• +2 more', full['text'])
         self.assertTrue(full['text'].endswith('Open The Machine: https://m.example/'))
         careful = notify.compose(meetings, [], overnight, '', show_text=False)
-        self.assertEqual(careful['push']['body'], '1 meeting · 5 new')
+        self.assertEqual(careful['push']['body'], '5 to-dos waiting · First meeting 09:30')
         self.assertNotIn('agency', careful['text'] + careful['subject'])
+
+    def test_the_morning_push_says_what_waits_and_when_the_first_meeting_is(self):
+        # Its body was empty on the phone ("Your morning" only): it says how many to-dos wait, the first two, and the
+        # first meeting's time, never the meeting's title; Careful keeps the count and the time; nothing waiting: calm.
+        meeting = [{'at': '2026-10-12T10:00:00+00:00', 'title': 'Board call about the merger'}]
+        line = lambda *args, **kw: notify.compose(*args, **kw)['push']['body']
+        waiting = [{'title': 'Reply to Sam about Tuesday'}, {'title': 'Pay the invoice'}]
+        self.assertEqual(line(meeting, [], [{'title': 'x'}], waiting=waiting, total=3), '3 to-dos: Reply to Sam about Tuesday, Pay the invoice, … · First meeting 10:00')
+        self.assertEqual(line([], [], [{'title': 'x'}], waiting=waiting[:1], total=1), '1 to-do: Reply to Sam about Tuesday')
+        self.assertEqual(line(meeting, [], [], waiting=[], total=0), 'Nothing waiting · First meeting 10:00')
+        self.assertEqual(line([], [{'title': 'x'}], [], waiting=[], total=0), 'Nothing waiting. A calm start.')
+        careful = line(meeting, [], [], show_text=False, waiting=waiting, total=2)
+        self.assertEqual(careful, '2 to-dos waiting · First meeting 10:00')
+        long = line(meeting, [], [], waiting=[{'title': 'Reply ' * 30}, {'title': 'Pay ' * 30}], total=9)
+        self.assertLessEqual(len(long), notify.APP_BODY)
+        self.assertNotIn('merger', line(meeting, [], [], waiting=waiting, total=2))
+        self.assertNotIn('—', long)
 
     def test_the_digest_goes_once_on_the_chosen_channels_and_the_preview_sends_nothing(self):
         self.app.action('push_subscribe', SUB, owner_dashboard=True)

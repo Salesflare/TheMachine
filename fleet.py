@@ -1747,7 +1747,8 @@ class Fleet(fleet_requests.Requests, fleet_reviews.Reviews, friends.Friends, con
         self.search = None
         # card_task(card row) -> what whoever takes a card on is asked to do (the app's card_task): a handoff leads with it.
         self.card_task = None
-        # notify_brief(text, url) tells the owner their brief is ready (phone, Telegram) and returns the Telegram id.
+        # notify_brief(text, url, titles) tells the owner their brief is ready (phone, Telegram) and returns the Telegram
+        # id; titles are its items' titles as the brief shows them, for the push's body.
         self.last['briefs'] = 0.0
         self.notify_brief = None
         # remove_work(item) removes a Work Fleet's company data from this Machine and returns the counts (work_removal.py)
@@ -2737,7 +2738,9 @@ class Fleet(fleet_requests.Requests, fleet_reviews.Reviews, friends.Friends, con
             return None
         root = dashboard_root(self.config)
         try:
-            message_id = self.notify_brief(brief_text(view, local.date(), self.brief_hidden(fleet, period)), (root + '#fleet-brief=' + fleet) if root else '')
+            hidden = self.brief_hidden(fleet, period)
+            message_id = self.notify_brief(brief_text(view, local.date(), hidden), (root + '#fleet-brief=' + fleet) if root else '',
+                                           [i['title'] for i in brief_items(view, local.date(), hidden)])
         except Exception as error:
             LOG.warning('fleet brief notify error=%s', type(error).__name__)
             message_id = None

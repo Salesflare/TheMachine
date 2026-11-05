@@ -313,6 +313,27 @@ class AppPush(unittest.TestCase):
         self.assertEqual(a.app_clear_step(self.store, self.config), [waiting])
         self.assertEqual(len([w for w in self.wakes() if w['kind'] == 'clear']), 2)
 
+    def test_the_morning_notice_has_a_body_from_the_digest(self):
+        # The phone showed "Your morning" with an empty body: the digest's line and body are kept for its wakeup and
+        # GET /api/notice returns both. Neither goes to the cloud.
+        self.register()
+        a.push_send(self.store, self.config, [], {'title': 'Your morning', 'body': '2 to-dos: Reply to Sam, Pay the invoice · First meeting 10:00',
+                                                  'url': '.', 'tag': 'digest', '_line': 'Your morning',
+                                                  '_body': '2 to-dos: Reply to Sam, Pay the invoice · First meeting 10:00'}, 'digest', self.sender, wake='digest')
+        self.assertEqual(self.wakes()[-1], {'url': 'https://cp.example/api/fleet/app-push', 'auth': 'Bearer tok', 'action': 'wake', 'kind': 'digest', 'tag': 'digest'})
+        notice = a.app_notice(self.store, self.config, 'digest')
+        self.assertEqual((notice['title'], notice['body']), ('Your morning', '2 to-dos: Reply to Sam, Pay the invoice · First meeting 10:00'))
+        self.assertNotIn('Sam', json.dumps(self.wakes()))
+
+    def test_the_morning_digest_wakes_the_phone_with_its_body(self):
+        self.register()
+        self.card('Reply to Sam about Tuesday')
+        morning = a.dt.datetime(2026, 10, 12, 8, 40, tzinfo=a.dt.timezone.utc)
+        with patch.object(a, 'local_tz', return_value=a.dt.timezone.utc):
+            self.app.digest_step(current=morning, push=self.sender)
+        notice = a.app_notice(self.store, self.config, 'digest')
+        self.assertEqual((notice['title'], notice['body']), ('Your morning', '1 to-do: Reply to Sam about Tuesday'))
+
     def test_a_clear_with_a_broken_cloud_is_quiet(self):
         self.register()
         sid = self.card()
@@ -397,6 +418,23 @@ class AppPush(unittest.TestCase):
         self.assertEqual(self.wakes()[-1]['tag'], 'fleet-brief')
         self.assertEqual(notify.compose([], [{'title': 'A'}], [], 'https://m.example/')['push']['url'], 'https://m.example/#calendar?view=agenda')
         self.assertEqual(notify.compose([], [{'title': 'A'}], [])['push']['url'], './#calendar?view=agenda')
+
+    def test_the_team_brief_notification_has_a_body_from_its_items(self):
+        # "What your Fleet saw" showed no line under it on the phone: its items' titles, as the brief shows them,
+        # make the body; Text in notifications off: only how many. Kept on the Machine for the app, not sent to the cloud.
+        self.register()
+        fl = 'fl_' + 'b' * 16
+        titles = ['Acme is waiting for a reply (3 emails)', 'Globex went quiet', 'Kim and Sam meet Initech on Tuesday']
+        self.app.fleet_notify_brief('Your Fleet today\n• ...', 'https://m.example/#fleet-brief=' + fl, titles)
+        notice = a.app_notice(self.store, self.config, 'fleet-brief-' + fl)
+        self.assertEqual((notice['title'], notice['body']), ('What your Fleet saw', '3 things for the team: Acme is waiting for a reply (3 emails), Globex went quiet, …'))
+        self.assertNotIn('Acme', json.dumps(self.wakes()))
+        self.app.fleet_notify_brief('Your Fleet today', '', [])
+        self.assertEqual(a.app_notice(self.store, self.config, 'fleet-brief')['body'], 'Nothing that needs the team.')
+        with self.store.connect() as db:
+            a.security_levels.set_pref(db, 'notify_text', 'off')
+        self.app.fleet_notify_brief('Your Fleet today', 'https://m.example/#fleet-brief=' + fl, titles)
+        self.assertEqual(a.app_notice(self.store, self.config, 'fleet-brief-' + fl)['body'], '3 things for the team')
 
     def test_devices_the_cloud_dropped_go_here_too(self):
         self.register()
