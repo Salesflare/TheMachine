@@ -310,7 +310,7 @@ Roles show on people in the Graph tab, in preparation context, `graph` results a
   exchanges, it sets `graph` `warmup` (`hidden_domains`). That domain and its people leave the graph and aren't looked
   up. Organizations' **Warm up** tab lists them with Undo.
 
-**Used.** Preparations write to each person as you would to who they are. Open to-dos sort by deadline, then by who
+**Used.** Preparations write to each person as you would to who they are. Open to-dos made at the same moment sort by who
 they're about (closeness, +2 when their organization pays through Stripe). The recap's gone-quiet line falls back to
 the organization's role.
 

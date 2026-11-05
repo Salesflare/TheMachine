@@ -3296,7 +3296,7 @@ const finishedOpen=listOpen('finished-list'),laterOpen=listOpen('later-list'),pr
 const drafts=Object.fromEntries([...document.querySelectorAll('#suggestions textarea,#suggestions .fleet-card input[id]')].filter(t=>t.value).map(t=>[t.id,t.value]));
 const moreOpen=[...document.querySelectorAll('#suggestions article[id] .more-actions[open]')].map(d=>d.closest('article[id]').id);  // a refresh keeps an opened More menu open
 const shown=state.suggestions.filter(s=>scopeFilter==='all'||s.scope===scopeFilter);
-const dueKey=s=>s.due||'9999',outstanding=shown.filter(s=>!closed(s)&&s.status!=='snoozed').sort((a,b)=>dueKey(a)<dueKey(b)?-1:dueKey(a)>dueKey(b)?1:(b.weight||0)-(a.weight||0)),later=shown.filter(s=>s.status==='snoozed'),finished=shown.filter(closed);
+const outstanding=shown.filter(s=>!closed(s)&&s.status!=='snoozed').sort(openOrder),later=shown.filter(s=>s.status==='snoozed'),finished=shown.filter(closed);
 const lookDone=outstanding.filter(looksDone),waitingOn=outstanding.filter(waitsOnOthers),open=outstanding.filter(s=>!looksDone(s)&&!waitsOnOthers(s));
 const fleetCards=scopeFilter==='personal'?[]:fleetCardsOf(fleetData);
 const needs=[...fleetCards,...open.filter(s=>placeOf(s)==='needs')],preparing=open.filter(s=>placeOf(s)==='preparing'),ready=open.filter(s=>placeOf(s)==='ready');
@@ -3312,7 +3312,7 @@ talkTodos=[...ready.map(s=>[s,'ready']),...needs.filter(s=>state.suggestions.inc
 const fuHidden=ready.length+needs.length+preparing.length-fuv.ready.length-fuv.needs.length-fuv.preparing.length;
 // What the list shows (a board's follow-ups are one to-do, a batch going out one progress line): All clear only when nothing is
 const anyShown=fuv.ready.length+fuv.needs.length+fuv.preparing.length+(scopeFilter==='personal'?0:fuShownProgress().length);
-// Open cards: by deadline, then by who they're about (the people closest to you, and paying customers, first).
+// Open cards: due soon first, then newest first (openOrder).
 // Later: in the order they come back, with a heading per day. Done: the last 7 days.
 later.sort((a,b)=>(a.snoozed_until||'').localeCompare(b.snoozed_until||''));
 

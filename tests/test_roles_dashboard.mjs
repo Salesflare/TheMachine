@@ -7,11 +7,11 @@ import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Who's who: a review's roles with the line they came from, ✓ to confirm, Edit to change; relations and organization roles;
-// open cards ranked by who they're about.
+// open cards made together ranked by who they're about.
 const dashboard=await dashboardPage();
-const made=new Date(Date.now()-3600e3).toISOString(),older=new Date(Date.now()-7200e3).toISOString();
+const made=new Date(Date.now()-3600e3).toISOString();
 const suggestions=[{id:'aaaaaaaaaaaaaaaa',title:'Newsletter tweak',body:'Small thing.',status:'pending',event_ids:[1],scope:'work',created_at:made,weight:0.2},
- {id:'bbbbbbbbbbbbbbbb',title:'Answer your cofounder',body:'About the board deck.',status:'pending',event_ids:[2],scope:'work',created_at:older,weight:3.4}];
+ {id:'bbbbbbbbbbbbbbbb',title:'Answer your cofounder',body:'About the board deck.',status:'pending',event_ids:[2],scope:'work',created_at:made,weight:3.4}];
 let whos=[{id:'email:pat@client.example',kind:'person',name:'Pat Doe',role:'CFO at Client Ltd',quote:'As the CFO at Client Ltd I look after the renewal',event_id:41,set_at:'2026-10-18'},
  {id:'org:client.example',kind:'org',name:'Client Ltd',role:'customer',quote:null,event_id:null,set_at:'2026-10-18'}];
 let pat={id:'email:pat@client.example',kind:'person',name:'Pat Doe',strength:2,closeness:'regular',last_at:made,signals:4,ids:['pat@client.example'],links:[],
@@ -45,7 +45,7 @@ try{
  await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
  page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:'+server.address().port);
- // The card about the cofounder comes first, though it is older.
+ // Made by the same review: the card about the cofounder comes first.
  await page.locator('#task-bbbbbbbbbbbbbbbb').waitFor();
  const order=await page.locator('#suggestions article[id^="task-"]').evaluateAll(a=>a.map(x=>x.id));
  assert.deepEqual(order.slice(0,2),['task-bbbbbbbbbbbbbbbb','task-aaaaaaaaaaaaaaaa']);

@@ -20,6 +20,8 @@ The **To-dos** page groups them:
 - **Promises**: what you promised and what others promised you. See [Promises](promises.md).
 - **Done / dismissed**: every finished to-do, newest first, 30 at a time as you scroll. To-dos that seem finished already come first, marked **Looks done**.
 
+In Ready for you, Needs your decision, Preparing and Waiting on others, a to-do that's overdue or due by tomorrow comes first. The rest are newest first, by the time each to-do shows. The sidebar keeps the same order.
+
 A to-do marked **Looks done** shows like a done one, with what shows it's done, like "PR #3451 merged". It isn't closed yet: **Reopen** puts it back on your list, and your Machine learns from it. These never show as late and don't count as waiting for you.
 
 A to-do whose last step is still open on someone else's side, like a review, a merge or a reply, says **Waiting on:** that step and stays open. It waits in **Waiting on others**, folded above Coming back later, and doesn't count as ready for you. A new message on it brings it back.
