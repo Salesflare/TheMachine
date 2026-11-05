@@ -3370,7 +3370,7 @@
  "Review now": "Lancer la revue",
  "Review request withdrawn.": "Demande de relecture retirée.",
  "Review requests, mentions, assignments and failed CI runs.": "Demandes de revue, mentions, assignations et exécutions CI en échec.",
- "Review requests, mentions, assignments and failed CI runs. Reads only.": "Demandes de revue, mentions, attributions et exécutions CI échouées. Lecture seule.",
+ "Review requests, mentions, assignments and failed CI runs. Files issues only when you confirm.": "Demandes de revue, mentions, attributions et exécutions CI échouées. Crée des issues seulement quand vous confirmez.",
  "Review saved": "Revue enregistrée",
  "Review saved.": "Revue enregistrée.",
  "Review update": "Relire la mise à jour",

@@ -139,7 +139,7 @@ const SIGNIN_COPY={intercom:{label:'Intercom',about:'Reads your conversations. R
  trello:{label:'Trello',about:'Reads cards, comments and activity on one board you pick next. Never changes anything in Trello.'},
  google:{label:'Google',about:'Gmail and Google Calendar. Sends only emails you approved.',other:'Use your own app',how:'Your own Google Cloud app, step by step.',go:'Set it up',off:'Sign in with {} isn’t available yet. Use your own app instead.'},
  microsoft:{label:'Microsoft',about:'Outlook mail and calendar. Sends only emails you approved.',other:'Use your own app',how:'Your own Microsoft app registration, step by step.',go:'Set it up',off:'Sign in with {} isn’t available yet. Use your own app instead.'},
- github:{label:'GitHub',about:'Review requests, mentions, assignments and failed CI runs. Reads only.'},
+ github:{label:'GitHub',about:'Review requests, mentions, assignments and failed CI runs. Files issues only when you confirm.'},
  zoom:{label:'Zoom',about:'Your meeting summaries and transcripts. Reads only.',other:'Use your own app',how:'Your own Zoom app, step by step.',go:'Set it up',off:'Sign in with {} isn’t available yet. Use your own app instead.'},
  microsoft_docs:{label:'Microsoft',title:'Microsoft OneDrive',about:'Word, OneDrive and SharePoint. Outlook isn’t needed. Edits wait for your OK.'},
  microsoft_docs_write:{label:'Microsoft',title:'Microsoft OneDrive',about:'Lets The Machine create and edit your Word documents. Each change waits for your OK.'},

@@ -1,7 +1,7 @@
 ---
 title: GitHub
 area: connections
-summary: Richieste di revisione, menzioni, assegnazioni ed esecuzioni CI fallite. Legge soltanto.
+summary: Richieste di revisione, menzioni, assegnazioni ed esecuzioni CI fallite. Apre issue solo quando confermi.
 covers: connector:github
 code: connectors/github.py, onboarding.py
 site: Sign in with GitHub, More sources, Remove

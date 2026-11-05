@@ -3370,7 +3370,7 @@
  "Review now": "Revisar ahora",
  "Review request withdrawn.": "Solicitud de revisión retirada.",
  "Review requests, mentions, assignments and failed CI runs.": "Solicitudes de revisión, menciones, asignaciones y ejecuciones de CI fallidas.",
- "Review requests, mentions, assignments and failed CI runs. Reads only.": "Solicitudes de revisión, menciones, asignaciones y ejecuciones de CI fallidas. Solo lectura.",
+ "Review requests, mentions, assignments and failed CI runs. Files issues only when you confirm.": "Solicitudes de revisión, menciones, asignaciones y ejecuciones de CI fallidas. Crea issues solo cuando confirmas.",
  "Review saved": "Revisión guardada",
  "Review saved.": "Revisión guardada.",
  "Review update": "Revisar actualización",

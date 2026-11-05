@@ -1,7 +1,7 @@
 ---
 title: GitHub
 area: connections
-summary: Pedidos de revisão, menções, atribuições e execuções de CI que falharam. Ele só lê.
+summary: Pedidos de revisão, menções, atribuições e execuções de CI que falharam. Cria issues só quando você confirma.
 covers: connector:github
 code: connectors/github.py, onboarding.py
 site: Sign in with GitHub, More sources, Remove

@@ -1,7 +1,7 @@
 ---
 title: GitHub
 area: connections
-summary: Solicitudes de revisión, menciones, asignaciones y ejecuciones de CI fallidas. Solo lee.
+summary: Solicitudes de revisión, menciones, asignaciones y ejecuciones de CI fallidas. Crea issues solo cuando confirmas.
 covers: connector:github
 code: connectors/github.py, onboarding.py
 site: Sign in with GitHub, More sources, Remove
