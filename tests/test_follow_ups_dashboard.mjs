@@ -37,11 +37,16 @@ const panel=(scope,id)=>scope==='board'?{scope:'board',id:1,name:'Alpha testers'
  :{scope:'project',id:+String(id).replace('project:',''),name:'Ember labs',own:false,stalled:true,careful:true,channels:['email'],board:{id:1,name:'Alpha testers',on:true},
   settings:{on:true,days:3,max_days:7,min:1,max:3,stages:{},channels:null,switch:false,auto:false,stall:null}};
 let calls=[];
+// What the page reports by itself (an error report; a draft on screen 1.5 s, todos-chat.js draftSeen) is not something
+// the owner did: a slow run may send one mid-check, so the calls checked here leave them out.
+const BACKGROUND=['client_error','draft_seen'];
+// A call that follows another one (a skip made final once the review closes) is awaited, never a fixed pause.
+const until=async(f,ms=5000)=>{for(const end=Date.now()+ms;!f()&&Date.now()<end;)await new Promise(r=>setTimeout(r,25))};
 const server=createServer(async(req,res)=>{let body='';for await(const c of req)body+=c;const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(url.pathname==='/api/status'){res.end(JSON.stringify({suggestions,follow_up_progress:progress,hours:{days:[1,2,3,4,5],start:'08:00',end:'18:00',morning:'09:00',digest_at:'08:30',timezone:'UTC',saveable:true},promises:[],connectors:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[]}));return}
  if(url.pathname==='/api/graph'){const n=url.searchParams.get('node');res.end(JSON.stringify(n?detail:{projects:[],people:[],quiet:[],new:[],orgs:[],boards:boardsNow||boards}));return}
- if(req.method==='POST'&&url.pathname==='/api/action'){const c=JSON.parse(body||'{}');calls.push(c);const a=c.args||{};
+ if(req.method==='POST'&&url.pathname==='/api/action'){const c=JSON.parse(body||'{}');if(!BACKGROUND.includes(c.action))calls.push(c);const a=c.args||{};
   if(c.action==='follow_up_settings'||c.action==='follow_up_save'){const v=panel(a.scope,a.id);if(boardsNow&&a.scope==='board')v.settings.on=false;res.end(JSON.stringify(v));return}
   if(c.action==='revise_draft'){const s=suggestions.find(x=>x.id===a.suggestion_id);s.next_action={...s.next_action,body:a.body,revision:a.revision+'e'};res.end(JSON.stringify({revision:a.revision+'e',body:a.body}));return}
   if(c.action==='confirm_action'){suggestions=suggestions.filter(x=>x.id!==a.suggestion_id);res.end(JSON.stringify({status:'queued'}));return}
@@ -112,8 +117,8 @@ try{
   await page.keyboard.press('s');await dlg.locator('.fr-item.skipped').waitFor();
   // Send all checked sends the rest; with only skipped ones left the review closes, and only then is the skip final
   calls=[];await dlg.locator('[data-fr-all]').click();await dlg.waitFor({state:'hidden'});await page.waitForFunction(()=>true);
-  await page.waitForTimeout(100);
-  assert.deepEqual(calls.filter(c=>c.action!=='client_error').map(c=>[c.action,c.args.suggestion_id,c.args.revision||c.args.choice]),[['confirm_action','f300000000000000','r3'],['decide','f200000000000000','reject']]);
+  await until(()=>calls.some(c=>c.action==='decide'));
+  assert.deepEqual(calls.map(c=>[c.action,c.args.suggestion_id,c.args.revision||c.args.choice]),[['confirm_action','f300000000000000','r3'],['decide','f200000000000000','reject']]);
   // The board: "Follow-ups on, next …" in the header, a tile's next follow-up, ready and a round that ended quietly
   reset();await toBoard(page);
   assert.match(await page.locator('.board-sub .fu-state').textContent(),/^Follow-ups on, next \w{3}$/);
