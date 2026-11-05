@@ -17,4 +17,6 @@ Sous **Promesses**, sur la page Tâches :
 
 Chaque promesse ouverte a **Fait** et **Abandonner**. Une promesse ouverte devient une tâche à son échéance, et s’affiche à sa date dans l’[Agenda](calendar.md).
 
+Avant cela, votre Machine lit ce qui a suivi. Déjà tenue, par une réponse de votre part ou une réunion qui l’a traitée ? Elle se ferme comme tenue, sans tâche.
+
 Sur votre propre ordinateur, `assistant promises` les liste aussi. Le [récap hebdomadaire](weekly-recap.md) compte celles tenues et celles ouvertes.

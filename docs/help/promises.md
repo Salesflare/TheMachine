@@ -17,6 +17,8 @@ Under **Promises** on the To-dos page:
 
 Each open one has **Done** and **Drop**. An open promise becomes a to-do when it's due, and shows on its day in the [Calendar](calendar.md).
 
+Before it does, your Machine reads what came after it. Already kept, like a reply you sent or a meeting that covered it? It closes as kept, with no to-do.
+
 One without a date shows its **follow-up** day: three days after you said it, a week after they did. Still open by then? It becomes a to-do.
 
 A Slack message only names its sender by their Slack ID. Your Machine looks up the name, so promises show the person, not the ID.

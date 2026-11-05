@@ -29,7 +29,8 @@ class Matter(unittest.TestCase):
         self.app.config = {'accounts': [{'id': 'g'}], 'prepare_ahead': False}
 
     def suggest(self, **args):
-        return self.app.action('suggest', {'title': 'Task', 'body': 'Body', 'when': 'now', **args})
+        # These tests are about matching to-dos, not the newer-activity check (test_handled_first): mark it read.
+        return self.app.action('suggest', {'title': 'Task', 'body': 'Body', 'when': 'now', 'newer_checked': list(range(1, 100)), **args})
 
     def card(self, sid):
         with self.store.connect() as db:

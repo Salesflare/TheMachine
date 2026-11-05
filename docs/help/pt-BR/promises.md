@@ -17,4 +17,6 @@ Em **Promessas**, na página Tarefas:
 
 Cada promessa em aberto tem **Feito** e **Descartar**. Uma promessa em aberto vira tarefa quando vence e aparece no dia dela no [Calendário](calendar.md).
 
+Antes disso, sua Machine lê o que veio depois. Já cumprida, como com uma resposta sua ou uma reunião que tratou disso? Ela fecha como cumprida, sem tarefa.
+
 No seu próprio computador, `assistant promises` também lista as promessas. O [resumo semanal](weekly-recap.md) conta as cumpridas e as em aberto.

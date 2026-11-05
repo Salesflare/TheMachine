@@ -37,7 +37,7 @@ class Rename(unittest.TestCase):
 
     def review(self, **args):
         return self.app.action('suggest', {'dedupe_key': 'w:t1', 'title': 'Send the signed contract to Sam',
-                                           'body': 'Sam asked on Monday.', 'when': 'now', **args})
+                                           'body': 'Sam asked on Monday.', 'when': 'now', 'newer_checked': [2], **args})
 
     def rename(self, title=None, reset=False, decision_id=None, sid=None):
         return self.app.action('card_rename', {'suggestion_id': sid or self.sid, 'title': title, 'reset': reset,

@@ -50,6 +50,7 @@ class Promises(unittest.TestCase):
         app = object.__new__(a.App)
         app.store = self.store
         app.config = {'accounts': [GMAIL, SLACK], 'digest_at': '08:30', 'review_worker': {'enabled': True}}
+        app.promise_check_model = lambda config, text: '[]'  # the check before a card (test_handled_first): nothing kept
         return app
 
     def record(self, **args):
@@ -275,7 +276,7 @@ class Promises(unittest.TestCase):
     def test_the_review_marks_a_card_step_as_the_owners_and_can_take_it_back(self):
         app = self.app()
         made = app.action('suggest', {'dedupe_key': 'pickup', 'title': 'Pick up the parcel at the post office', 'body': 'It waits until Friday.',
-                                      'event_ids': [self.theirs], 'owner_step': True})
+                                      'event_ids': [self.theirs], 'owner_step': True, 'newer_checked': [self.mine]})
         with self.store.connect() as db:
             self.assertEqual(db.execute('SELECT owner_step FROM suggestions WHERE id=?', (made['id'],)).fetchone()[0], 1)
         app.action('suggest', {'dedupe_key': 'pickup-2', 'title': 'Have the parcel redelivered', 'body': 'Book a new delivery online.',
