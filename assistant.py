@@ -5627,7 +5627,7 @@ class Store:
                                   (dedupe_key, dedupe_key)).fetchone()
             if existing and (not match or set(event_ids) <= set(json.loads(existing['event_ids'] or '[]'))):
                 return {'id': existing['id'], 'status': existing['status'], 'duplicate': True}
-            rows = db.execute('SELECT id,account_id,kind,occurred_at,metadata FROM events WHERE deleted=0 AND id IN (' + ','.join('?' for _ in event_ids) + ')', event_ids).fetchall()
+            rows = db.execute('SELECT id,account_id,kind,occurred_at,ingested_at,metadata FROM events WHERE deleted=0 AND id IN (' + ','.join('?' for _ in event_ids) + ')', event_ids).fetchall()
             if {r['id'] for r in rows} != set(event_ids):
                 raise ValueError('Every evidence event must exist and be live')
             expiry = expiry_moment(expires_at, expires_what, sorted(rows, key=lambda r: event_ids.index(r["id"]))) \
@@ -5761,7 +5761,8 @@ class Store:
         added = [i for i in event_ids if i not in old_ids]
         closed = card['status'] in ('completed', 'rejected')
         own = card['origin'] == 'owner'
-        if own and not any(r['kind'] != 'owner.card' and r['occurred_at'] > card['created_at'] for r in rows):
+        # News is what reached the Machine after they made it: a calendar event's date can lie ahead and still be old context.
+        if own and not any(r['kind'] != 'owner.card' and min(r['occurred_at'], r['ingested_at'] or r['occurred_at']) > card['created_at'] for r in rows):
             # The owner's own signal, or older context the review links to it: it fills in the card they made.
             # Not news, so the card stays where they put it (snoozed, done) and nothing is sent.
             return self.fill_owner_card(db, card, suggested, body, ids, accounts, [evidence[i] for i in ids if i in evidence], due, ahead and not closed, project, event_ids)
