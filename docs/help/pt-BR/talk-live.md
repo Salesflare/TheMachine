@@ -19,7 +19,7 @@ A barra tem **Silenciar** e **Fim**. Diga tchau, ou que já terminou, e ela term
 
 ## Repasse todas as suas tarefas falando
 
-Toque em **Falar** na barra lateral (no menu, no celular) para repassar por voz tudo o que espera por você. A The Machine diz quantas há e passa por elas uma a uma: primeiro **Pronta**, depois **A decidir**. Ela também vê suas outras tarefas, como as que ainda estão **Preparando**, e avisa quando uma fica pronta.
+Toque em **Falar** na barra lateral (no menu, no celular) para repassar por voz tudo o que espera por você. A The Machine diz quantas há e passa por elas uma a uma: primeiro **Para revisar**, depois **A decidir**. Ela também vê suas outras tarefas, como as que ainda estão **Preparando**, e avisa quando uma fica pronta.
 
 Falar tem uma página própria: uma conversa do começo ao fim, com a tarefa de que ela fala no topo, o rascunho e **Abrir o chat**. Ela não leva você de chat em chat.
 

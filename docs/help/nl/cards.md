@@ -12,9 +12,9 @@ Je Machine leest alles wat nieuw is en maakt alleen een to-do als iets jou nodig
 
 De pagina **To-do's** groepeert ze:
 
-- **Klaar voor jou**: voorbereid en wacht op je goedkeuring.
+- **Voor jou klaargezet**: voorbereid en wacht op je goedkeuring.
 - **Wacht op je beslissing**: iets wat alleen jij kunt beslissen.
-- **Wordt voorbereid**: je Machine werkt eraan. Een to-do waarop je net **Doe het** zei, blijft staan waar hij stond terwijl hij voorbereid wordt, en gaat dan naar **Klaar voor jou**.
+- **Wordt voorbereid**: je Machine werkt eraan. Een to-do waarop je net **Doe het** zei, blijft staan waar hij stond terwijl hij voorbereid wordt, en gaat dan naar **Voor jou klaargezet**.
 - **Net gedaan**: een laatste stap die je bevestigde, zoals een formulier indienen of een issue aanmaken, is gelukt terwijl je weg was. Hij toont wat er gebeurde tot je op **Begrepen** tikt, hoogstens een dag, en je telefoon hoort het ook. Daarna staat hij alleen in Gedaan.
 - **Komt later terug**: gesnoozed.
 - **Beloftes**: wat jij beloofde en wat anderen jou beloofden. Zie [Beloftes](promises.md).

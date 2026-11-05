@@ -6,6 +6,10 @@ of the forms listed for that language (any of the forms after the first are infl
 capitalized term (Ready, Settings) is the name of a status or a screen and only counts capitalized; a lowercase one
 counts in any case. File names (.skill, SKILL.md) don't count.
 
+**Ready** (a to-do's status, its section, its notifications) means prepared and waiting for the owner, never done:
+Dutch *Klaargezet* and *Voor jou klaargezet*, never *Klaar* alone; Spanish and Brazilian Portuguese *Para revisar*, never
+*Lista* or *Pronta* alone (they read as finished). *Klaar om ...*, *Lista para ...*, *Pronta para ...* are fine.
+
 Tone: short UI copy, the way a native product says it, never word for word. Dutch uses *je*, French *vous*, German *du*,
 Spanish *tú*, Italian *tu*, Brazilian Portuguese *você*. No em dashes. Placeholders (`{}`, `{0}`, `{1}`) stay; reorder with `{0}`, `{1}` when the sentence needs it.
 
@@ -45,7 +49,7 @@ ClawHub, Claude, Claude Code, Codex, ChatGPT, Trello, Shortcut.
 | snooze | snooze, snoozen, gesnoozed | mettre en attente, en attente, attente | zurückstellen, zurückgestellt, Zurückstellen | posponer, pospuesto, pospuesta, pospón | posticipa, posticipare, posticipata, posticipato, posticipate, posticipati, posticipo, posticipi | adiar, adiada, adiado, adiadas, adiados, adie, adia |
 | hand off | overdragen, overdracht, draag over | transférer, transfert, transférez | übergeben, Übergabe, übergib | pasar, traspaso, pasa | passa, passare, passala, passalo, passaggio | passar, passe, repasse, repassar |
 | handoff | overdracht, overdragen | transfert, transférer | Übergabe, übergeben | traspaso, pasar | passaggio, passare | repasse, passar |
-| Ready | Klaar | Prêt, Prête, Prêts | Bereit | Listo, Lista, Listos | Pronto, Pronta, Pronti, Pronte | Pronto, Pronta, Prontos, Prontas |
+| Ready | Klaargezet, klaar | Prêt, Prête, Prêts | Bereit | Para revisar, Listo, Lista, Listos | Pronto, Pronta, Pronti, Pronte | Para revisar, Pronto, Pronta, Prontos, Prontas |
 | To decide | Te beslissen | À décider | Zu entscheiden | Por decidir | Da decidere | A decidir |
 | Not needed | Niet nodig | Pas nécessaire | Nicht nötig | No hace falta | Non serve | Não precisa |
 | signal | signaal, signalen | signal, signaux | Signal, Signale | señal, señales | segnale, segnali | sinal, sinais |

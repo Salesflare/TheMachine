@@ -17,7 +17,7 @@ Um nível é um ponto de partida. Se depois você mudar qualquer configuração,
 
 ## O que o Cuidadoso muda para você
 
-- **Texto nas notificações** desligado: uma notificação diz "Nova tarefa" ou "Pronta", não o que a tarefa diz.
+- **Texto nas notificações** desligado: uma notificação diz "Nova tarefa" ou "Para revisar", não o que a tarefa diz.
 - **Oferecer para salvar logins** desligado. Os sites com login salvo continuam até você tocar em **Esquecer todos os logins salvos**.
 - **Buscar contatos de trabalho**, **Oferecer compartilhar aprendizados** e **Compartilhar o que se pergunta à ajuda** desligados.
 - **Verificar quais dos meus contatos têm uma Machine** e **Deixar quem tem meu e-mail me encontrar** desligados.
