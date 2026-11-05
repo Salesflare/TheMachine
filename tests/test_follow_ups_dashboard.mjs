@@ -14,8 +14,10 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 const dashboard=await dashboardPage();
 const day=n=>new Date(Date.now()+n*864e5).toISOString();
 const draft=(i,body,extra={})=>({kind:'email',label:'Send',account_id:'work',from:'owner@example.com',to:[`person${i}@client.example`],subject:'Re: Alpha',body,revision:'r'+i,...extra});
+// One moment for all of them: a millisecond apart, the newest-first order would put them in any order.
+const MADE=day(-0.1);
 const card=(i,project,body,extra={})=>({id:('f'+i).padEnd(16,'0'),title:'Follow up with '+project,body:'No reply for 4 days. Follow-up 1 of at most 3.',status:'prepared',early:1,scope:'work',event_ids:[i],
- created_at:day(-0.1),next_action:draft(i,body),follow_up:{project,project_id:'project:'+i,board:'Alpha testers',group:'board:1',n:1,max:3,channel:'email',auto:false,state:'open'},...extra});
+ created_at:MADE,next_action:draft(i,body),follow_up:{project,project_id:'project:'+i,board:'Alpha testers',group:'board:1',n:1,max:3,channel:'email',auto:false,state:'open'},...extra});
 let suggestions,progress=[];
 const reset=()=>{progress=[];suggestions=[card(1,'Acme pilot','Hi Sam, did the alpha build install fine on your side? Happy to do a quick call this week.'),
  card(2,'Bolt trial','Hi Kim, here is the short guide I mentioned. Anything blocking you so far?'),
