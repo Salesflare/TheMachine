@@ -71,17 +71,23 @@ function chatParts(s){const t=document.createElement('template');setHTML(t,sugge
  const acts=[...(card?.querySelector(':scope>.actions')?.children||[])].flatMap(n=>n.matches('details.more-actions')?[...n.querySelectorAll('.more-menu>button,.more-menu>a,.mm-sub>button:not([data-mm-back]),.mm-sub>a:not([data-mm-back])')].filter(x=>x.dataset.mmOpen==null).map(x=>{if(x.dataset.full){x.textContent=x.dataset.full;delete x.dataset.full}return x}):[n]).map(n=>{n.removeAttribute('hidden');return n})  // a choice kept out of sight on the card is in the chat's menu
   .filter(n=>!['change','answer','cancel-change'].includes(n.dataset.choice)&&n.dataset.handoffCheckin==null&&n.dataset.rowFoldMenu==null);  // in the chat already: no Check in now; Snooze once (the …'s copy is for a full row)
  // A snoozed card's way back is Unsnooze; a closed one's is Reopen or Undo: a text button on the status line
- const back=s.status==='snoozed'?acts.find(n=>n.dataset.choice==='accept'):closed(s)?acts.find(n=>n.dataset.fuBack)||acts.find(n=>n.dataset.choice==='reopen')||acts.find(n=>n.dataset.choice==='undo'):null;
- if(back){back.className='link chat-inline';if(!back.dataset.fuBack)back.textContent=s.status==='snoozed'?(s.handoff_wait?'Check in now':'Unsnooze'):'Reopen'}
+ // A to-do that looks done is one in Done, like the list draws it (lookDoneCard): Reopen puts it back on the list (not_done)
+ const ld=looksDone(s),ldBack=ld?(()=>{const b=document.createElement('button');b.type='button';b.className='ghost';b.dataset.ldNot=s.id;return b})():null;
+ const back=ld?ldBack:s.status==='snoozed'?acts.find(n=>n.dataset.choice==='accept'):closed(s)?acts.find(n=>n.dataset.fuBack)||acts.find(n=>n.dataset.choice==='reopen')||acts.find(n=>n.dataset.choice==='undo'):null;
+ if(back&&!back.dataset.fuBack)back.textContent=s.status==='snoozed'?(s.handoff_wait?'Check in now':'Unsnooze'):'Reopen';
+ // The way back is in the ⋯ too, so the menu is never empty on a done to-do
+ const backItem=back?.cloneNode(true);if(back)back.className='link chat-inline';
  const sends=chatSends(s),going=sends.some(x=>chatGoing(x.st)),went=sends.some(x=>x.st.status==='sent');
  // While a message goes out nothing is the next step yet; once it went out, Mark done is; after a failure, Try again
- let lead=back||going?null:acts.find(n=>n.classList.contains('primary'))||(withTeammate(s)?acts.find(n=>n.dataset.choice==='complete'):null)||null;
+ let lead=back&&!ld||going?null:acts.find(n=>n.classList.contains('primary'))||(withTeammate(s)?acts.find(n=>n.dataset.choice==='complete'):null)||null;
  if(went&&!going&&!back&&!lead?.dataset.smart)lead=acts.find(n=>n.dataset.choice==='complete')||lead;
  if(lead?.dataset.smart&&chatFailed(sends.find(x=>String(x.a.revision)===lead.dataset.smart)?.st))lead.textContent='Try again';
  // On the card the title, project and area change with a tap on each; here they are in the menu too.
- const edits=document.createElement('template');setHTML(edits,closed(s)?'':html`<button type="button" class="ghost" data-rename="${s.id}">${window.t('Rename')}</button>${s.project_node?html`<button type="button" class="ghost" data-card-project="${s.id}">${window.t('Change project')}</button>`:''}${moveTargets(s).length?html`<button type="button" class="ghost" data-card-area="${s.id}">${window.t('Change area')}</button>`:''}`);
- const rest=[...acts.filter(n=>n!==lead&&n!==back),...edits.content.children];
+ const edits=document.createElement('template');setHTML(edits,closed(s)||ld?'':html`<button type="button" class="ghost" data-rename="${s.id}">${window.t('Rename')}</button>${s.project_node?html`<button type="button" class="ghost" data-card-project="${s.id}">${window.t('Change project')}</button>`:''}${moveTargets(s).length?html`<button type="button" class="ghost" data-card-area="${s.id}">${window.t('Change area')}</button>`:''}`);
+ // Looks done: Done's menu (Reopen), and Mark done to say it is
+ const rest=ld?[]:[...acts.filter(n=>n!==lead&&n!==back),...edits.content.children];
  const decide=rest.filter(n=>['complete','snooze','reject','accept','retry'].includes(n.dataset.choice)||n.dataset.smart!=null);
+ if(backItem)rest.unshift(backItem);
  const status=card?.querySelector('.status-line:not(.ask-line):not(.done-line)')?.textContent.trim()||card?.querySelector('.card-badges .chip')?.textContent.trim()||'';
  const body=card?.querySelector('.body');body?.classList.remove('clamp');
  const panel=html`${[...(card?.querySelectorAll('.merge-offer,.change-editor:not([class*="answer"]),.fleet-handoff-form')||[])].filter(n=>!n.querySelector('[id^="feedback-"]')).map(n=>nodeHTML(n))}${!s.preparation_browser?'':s.preparation_status==='blocked'?html`<p class="note">${browserLink(s.id,s.preparation_browser)}</p>`:['running','starting'].includes(s.preparation_status)?html`<div class="note peek chat-peek" data-peek="${s.id}" data-peek-via="${JSON.stringify(s.preparation_browser)}">${peekHTML(s.id,s.preparation_browser)}</div>`:''}`;
@@ -246,7 +252,7 @@ const DOTS=html`<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="1
 const chatUntil=v=>{const d=new Date(v),days=(d-Date.now())/864e5;return (chatDayOf(v)==='Today'?'today':days<6&&days>-1?d.toLocaleDateString(DL,{weekday:'short'}):d.toLocaleDateString(DL,{weekday:'short',day:'numeric',month:'short'}))+' '+chatHM(v)};
 // One small line over the message box: where the card stands, with its one way back (Unsnooze, Reopen) as a text button
 function chatStatus(s,p=chatParts(s)){const text=chat?.active?'Working on it…':s.status==='snoozed'?(s.snoozed_until?(s.handoff_wait?checkinLabel(s):'Snoozed until '+chatUntil(s.snoozed_until)):'Snoozed')
-  :closed(s)?(s.status==='completed'?'Done':'Not needed'):s.preparation_status==='blocked'&&s.preparation_error==='stopped'?'':s.preparation_status==='blocked'?p.status||cardState(s):['queued','starting','running'].includes(s.preparation_status)||['accepted','instructions'].includes(s.status)?'Preparing':'';
+  :closed(s)?(s.status==='completed'?'Done':'Not needed'):looksDone(s)?'Looks done':s.preparation_status==='blocked'&&s.preparation_error==='stopped'?'':s.preparation_status==='blocked'?p.status||cardState(s):['queued','starting','running'].includes(s.preparation_status)||['accepted','instructions'].includes(s.status)?'Preparing':'';
  return text?html`<span>${text}</span>${p.back&&!chat?.active?html`<span aria-hidden="true">·</span>${p.back}`:''}`:''}
 function chatView(s,groups){const p=chatParts(s);
  const side=html`<aside class="chat-side" aria-label="Tasks"><div class="scope-filter" role="group" aria-label="Show">${[['all','All'],['work','Work'],['personal','Personal']].map(([v,t])=>html`<button type="button" data-scope="${v}" aria-pressed="${scopeFilter===v}">${t}</button>`)}</div>${groups.map(([items,title,key])=>{const cut=sideList(items,key);return cut.count?html`<h3>${title}<span>${cut.count}</span></h3>${cut.list.map(x=>sideRow(x,s.id))}${cut.more?sideMoreRow(key):''}`:''})}</aside>`;
