@@ -3370,7 +3370,7 @@
  "Review now": "Nu reviewen",
  "Review request withdrawn.": "Reviewverzoek ingetrokken.",
  "Review requests, mentions, assignments and failed CI runs.": "Reviewverzoeken, vermeldingen, toewijzingen en mislukte CI-runs.",
- "Review requests, mentions, assignments and failed CI runs. Reads only.": "Reviewverzoeken, vermeldingen, toewijzingen en mislukte CI-runs. Alleen lezen.",
+ "Review requests, mentions, assignments and failed CI runs. Files issues only when you confirm.": "Reviewverzoeken, vermeldingen, toewijzingen en mislukte CI-runs. Maakt alleen issues aan als je bevestigt.",
  "Review saved": "Review opgeslagen",
  "Review saved.": "Review opgeslagen.",
  "Review update": "Update nakijken",

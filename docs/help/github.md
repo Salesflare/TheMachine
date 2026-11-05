@@ -1,7 +1,7 @@
 ---
 title: GitHub
 area: connections
-summary: Review requests, mentions, assignments and failed CI runs. It only reads.
+summary: Review requests, mentions, assignments and failed CI runs. Files issues only when you confirm.
 covers: connector:github
 code: connectors/github.py, onboarding.py
 site: Sign in with GitHub, More sources, Remove

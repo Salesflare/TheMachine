@@ -1,7 +1,7 @@
 ---
 title: GitHub
 area: connections
-summary: Demandes de revue, mentions, assignations et exécutions CI échouées. Il ne fait que lire.
+summary: Demandes de revue, mentions, assignations et exécutions CI échouées. Crée des issues seulement quand vous confirmez.
 covers: connector:github
 code: connectors/github.py, onboarding.py
 site: Sign in with GitHub, More sources, Remove

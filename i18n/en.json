@@ -3370,7 +3370,7 @@
  "Review now": "Review now",
  "Review request withdrawn.": "Review request withdrawn.",
  "Review requests, mentions, assignments and failed CI runs.": "Review requests, mentions, assignments and failed CI runs.",
- "Review requests, mentions, assignments and failed CI runs. Reads only.": "Review requests, mentions, assignments and failed CI runs. Reads only.",
+ "Review requests, mentions, assignments and failed CI runs. Files issues only when you confirm.": "Review requests, mentions, assignments and failed CI runs. Files issues only when you confirm.",
  "Review saved": "Review saved",
  "Review saved.": "Review saved.",
  "Review update": "Review update",

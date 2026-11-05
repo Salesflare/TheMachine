@@ -1,7 +1,7 @@
 ---
 title: GitHub
 area: connections
-summary: Reviewverzoeken, vermeldingen, toewijzingen en mislukte CI-runs. Het leest alleen.
+summary: Reviewverzoeken, vermeldingen, toewijzingen en mislukte CI-runs. Maakt alleen issues aan als je bevestigt.
 covers: connector:github
 code: connectors/github.py, onboarding.py
 site: Sign in with GitHub, More sources, Remove

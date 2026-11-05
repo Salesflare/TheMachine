@@ -3370,7 +3370,7 @@
  "Review now": "Jetzt durchsehen",
  "Review request withdrawn.": "Review-Anfrage zurückgezogen.",
  "Review requests, mentions, assignments and failed CI runs.": "Review-Anfragen, Erwähnungen, Zuweisungen und fehlgeschlagene CI-Läufe.",
- "Review requests, mentions, assignments and failed CI runs. Reads only.": "Review-Anfragen, Erwähnungen, Zuweisungen und fehlgeschlagene CI-Läufe. Nur lesend.",
+ "Review requests, mentions, assignments and failed CI runs. Files issues only when you confirm.": "Review-Anfragen, Erwähnungen, Zuweisungen und fehlgeschlagene CI-Läufe. Erstellt Issues nur, wenn du bestätigst.",
  "Review saved": "Prüfung gespeichert",
  "Review saved.": "Prüfung gespeichert.",
  "Review update": "Update prüfen",

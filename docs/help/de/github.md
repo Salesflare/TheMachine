@@ -1,7 +1,7 @@
 ---
 title: GitHub
 area: connections
-summary: Review-Anfragen, Erwähnungen, Zuweisungen und fehlgeschlagene CI-Läufe. Es liest nur.
+summary: Review-Anfragen, Erwähnungen, Zuweisungen und fehlgeschlagene CI-Läufe. Erstellt Issues nur, wenn du bestätigst.
 covers: connector:github
 code: connectors/github.py, onboarding.py
 site: Sign in with GitHub, More sources, Remove
