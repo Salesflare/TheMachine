@@ -33,7 +33,7 @@ Nur was dich braucht, benachrichtigt. Fortschritt und Änderungen nicht. Viele a
 
 ## Die morgendliche Zusammenfassung
 
-Sie kommt an Arbeitstagen zu deiner Uhrzeit für die **Morgendliche Zusammenfassung** und fällt aus, wenn es nichts zu sagen gibt. **Vorschau** in ihrer Zeile zeigt sie auf der Seite, ohne sie zu senden. Standardmäßig kommt sie als Push und als E-Mail. Tippst du auf den Push, öffnet sich heute im **Kalender**.
+Sie kommt an Arbeitstagen zu deiner Uhrzeit für die **Morgendliche Zusammenfassung** und fällt aus, wenn es nichts zu sagen gibt. **Vorschau** in ihrer Zeile zeigt sie auf der Seite, ohne sie zu senden. Standardmäßig kommt sie als Push und als E-Mail. Der Push nennt, wie viele Aufgaben warten, die ersten zwei und die Uhrzeit deines ersten Termins. Tippst du auf den Push, öffnet sich heute im **Kalender**.
 
 ## Datenschutz
 

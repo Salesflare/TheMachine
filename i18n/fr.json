@@ -1243,7 +1243,6 @@
  "First review starts when your mail is in": "La première revue démarre quand votre courrier est arrivé",
  "First seen this week.": "Vu pour la première fois cette semaine.",
  "First try": "Du premier coup",
- "First: {}. {}": "D’abord : {}. {}",
  "Five more minutes. Robot minutes.": "Encore cinq minutes. Des minutes de robot.",
  "Fix": "Correctif",
  "Fix a clone of The Machine under {}/<job id>, made with git clone, not the running code": "Corrigez un clone de The Machine sous {}/<job id>, fait avec git clone, pas le code en cours d’exécution",
@@ -2501,6 +2500,8 @@
  "Nothing to save: map at least one column or fix a cell": "Rien à enregistrer : associez au moins une colonne ou corrigez une cellule",
  "Nothing to try again": "Rien à réessayer",
  "Nothing to undo.": "Rien à annuler.",
+ "Nothing waiting · First meeting {}": "Rien en attente · Première réunion {}",
+ "Nothing waiting. A calm start.": "Rien en attente. Un début calme.",
  "Nothing was done.": "Rien n’a été fait.",
  "Nothing was merged into that": "Rien n’a été fusionné dedans",
  "Nothing was sent: {}": "Rien n’a été envoyé : {}",
@@ -6250,6 +6251,22 @@
  "{} to-dos": {
   "one": "{} tâche",
   "other": "{} tâches"
+ },
+ "{} to-dos waiting": {
+  "one": "{} tâche en attente",
+  "other": "{} tâches en attente"
+ },
+ "{} to-dos waiting · First meeting {}": {
+  "one": "{} tâche en attente · Première réunion {}",
+  "other": "{} tâches en attente · Première réunion {}"
+ },
+ "{} to-dos: {}": {
+  "one": "{} tâche : {}",
+  "other": "{} tâches : {}"
+ },
+ "{} to-dos: {} · First meeting {}": {
+  "one": "{} tâche : {} · Première réunion {}",
+  "other": "{} tâches : {} · Première réunion {}"
  },
  "{} today": "{} aujourd’hui",
  "{} took this on": "{} s’en est chargé",

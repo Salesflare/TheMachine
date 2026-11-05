@@ -33,7 +33,7 @@ Only what needs you notifies. Progress and edits don't. A burst buzzes once. The
 
 ## The morning digest
 
-It comes on work days at your **Morning digest** time, and is skipped when there's nothing to say. **Preview**, in its row, shows it on the page without sending it. By default it's a push and an email. Tapping the push opens today in the **Calendar**.
+It comes on work days at your **Morning digest** time, and is skipped when there's nothing to say. **Preview**, in its row, shows it on the page without sending it. By default it's a push and an email. The push says how many to-dos wait, the first two, and your first meeting's time. Tapping it opens today in the **Calendar**.
 
 ## Privacy
 

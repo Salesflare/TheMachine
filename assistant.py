@@ -13162,12 +13162,12 @@ def cloud_target(config):
         return None
 
 
-def app_wake(store, config, kind, tag, device=None, state=None, line=None):
+def app_wake(store, config, kind, tag, device=None, state=None, line=None, detail=None):
     """The mobile app's push: the control plane wakes the owner's phones with a fixed text for `kind`, never a to-do's
     own text, and a tap opens the dashboard. `tag` (a to-do's id) lets a newer one replace the older; `device` sends
     only to that phone (a test). `state` ('ready' or 'needs', a result only) picks the fixed text. `line` is kept here
-    under the tag for the Android app, which asks for it (GET /api/notice) and shows it instead: it never goes to the
-    cloud. The number sent, or None when there was nothing to send to or it didn't go."""
+    under the tag for the Android app, which asks for it (GET /api/notice) and shows it instead, with `detail` as the
+    body under it (the morning's to-dos and first meeting): neither goes to the cloud. The number sent, or None when there was nothing to send to or it didn't go."""
     with store.connect() as db:
         if not notify.app_devices(db):
             return None
@@ -13178,7 +13178,7 @@ def app_wake(store, config, kind, tag, device=None, state=None, line=None):
     tag = tag if notify.APP_ID.fullmatch(tag) else kind
     if line:
         with store.connect() as db:
-            notify.app_line_save(db, tag, line)
+            notify.app_line_save(db, tag, line, body=detail or '')
     body = {'action': 'wake', 'kind': kind, 'tag': tag, **({'state': state} if kind == 'result' and state in ('ready', 'needs') else {}),
             **({'id': device} if device else {})}
     answer = notify.app_push(*target, body)
@@ -13214,15 +13214,15 @@ def app_notice(store, config, tag):
     events}, or {gone: True} for a to-do no longer waiting (done, snoozed, not needed), whose notification goes.
     title is the to-do's state and title ("Ready: Pay the Monizze invoice"), body the next step ("Reply to Sam:
     confirm Tuesday 10:00"). With Text in notifications off (or a Careful work to-do): only the fixed words.
-    A tag that is no to-do (the morning, a Fleet question): the line kept for it (notify.app_line)."""
+    A tag that is no to-do (the morning, a Fleet question): the line and body kept for it (notify.app_line)."""
     tag = str(tag or '')
     with store.connect() as db:
-        line = notify.app_line(db, tag)
+        line, detail = notify.app_line(db, tag), notify.app_line_body(db, tag)
         row = db.execute('SELECT s.*,p.status preparation_status,p.reason preparation_reason,p.error preparation_error '
                          'FROM suggestions s LEFT JOIN preparations p ON p.suggestion_id=s.id '
                          'WHERE s.id=?', (tag,)).fetchone() if notify.APP_ID.fullmatch(tag) else None
         if not row:
-            return {'line': line, 'title': line, 'body': '', 'actions': []}
+            return {'line': line, 'title': line, 'body': detail, 'actions': []}
         row = dict(row)
         try:
             ids = json.loads(row.get('account_ids') or '[]')
@@ -13563,13 +13563,14 @@ def push_send(store, config, subscriptions, payload, label, sender=None, kind=No
     payload = dict(payload)
     wake = wake or payload.pop('_wake', None) or kind
     # The mobile app's line and a result's state: for its wakeup only, never in the web push
-    line, state = payload.pop('_line', None), payload.pop('_state', None)
+    line, state, detail = payload.pop('_line', None), payload.pop('_state', None), payload.pop('_body', None)
     if kind:
         with store.connect() as db:
             if not notify.allowed(db, kind, 'push'):
                 return []
             if not held and not notify.push_now():  # a dashboard in use, or just left: wait, it may be seen there
-                kept = {**payload, **({'_wake': wake} if wake != kind else {}), **({'_line': line} if line else {}), **({'_state': state} if state else {})}
+                kept = {**payload, **({'_wake': wake} if wake != kind else {}), **({'_line': line} if line else {}), **({'_state': state} if state else {}),
+                        **({'_body': detail} if detail else {})}
                 notify.hold(db, 'push', kind, str(payload.get('title') or ''), time.time(), payload=kept)
                 LOG.info('push %s held', label)
                 return []
@@ -13592,7 +13593,7 @@ def push_send(store, config, subscriptions, payload, label, sender=None, kind=No
     if wake and not payload.get('silent'):
         try:
             sent = app_wake(store, config, wake, payload.get('tag'), state=state,
-                            line=line if line is not None else notify.clip(payload.get('title')) if wake == 'fleet' else None)
+                            line=line if line is not None else notify.clip(payload.get('title')) if wake == 'fleet' else None, detail=detail)
         except Exception as error:  # noqa: BLE001 - the app's wakeup never stops the rest
             LOG.warning('app push %s error=%s', label, type(error).__name__)
             sent = None
@@ -17271,10 +17272,16 @@ class App(*APP_MIXINS):
             overnight = [dict(r) for r in db.execute(
                 "SELECT title FROM suggestions WHERE status='pending' AND handled_hint IS NULL AND created_at>=? AND (due IS NULL OR due!=?) "
                 "AND (deliver_after IS NULL OR deliver_after<=?) ORDER BY urgent DESC,created_at DESC LIMIT 20", (utc(since), local.date().isoformat(), utc(current)))]
+            # What waits for the owner (waiting_count, the app's badge), due today and urgent ones first: the push's body
+            waiting = [dict(r) for r in db.execute(
+                "SELECT title FROM suggestions WHERE status IN ('pending','prepared') AND NOT " + NOT_FOR_OWNER_SQL + " "
+                "AND (deliver_after IS NULL OR deliver_after<=?) ORDER BY (due=?) DESC,urgent DESC,created_at DESC LIMIT 2",
+                (utc(current), local.date().isoformat()))]
+            total = waiting_count(db)
             show = security_levels.notify_text(db, False)
         root = 'https://' + self.config['dashboard_host'] + self.config.get('dashboard_path', '/') if self.config.get('dashboard_host') else ''
         when = lambda iso: locale_prefs.clock_text(dt.datetime.fromisoformat(iso).astimezone(local_tz()))
-        return notify.compose(meetings, due, overnight, root, show, when)
+        return notify.compose(meetings, due, overnight, root, show, when, waiting, total)
 
     def digest_step(self, current=None, push=None, telegram_send=None, mail=None):
         """Send the morning digest once on a work day, at its time, on the channels the owner picked."""
@@ -17298,7 +17305,8 @@ class App(*APP_MIXINS):
             if prefs.get('push'):
                 subscriptions, phones = push_reach(self.store, self.config)
                 if subscriptions or phones:
-                    payload = {**digest['push'], **({'silent': True} if notify.active() else {})}  # at the dashboard: no buzz
+                    payload = {**digest['push'], **({'silent': True} if notify.active() else {}),  # at the dashboard: no buzz
+                               '_line': digest['push']['title'], '_body': digest['push']['body']}  # the mobile app asks for these
                     if push_send(self.store, self.config, subscriptions, payload, 'digest', push, wake='digest'):
                         went.append('push')
             if prefs.get('telegram') and telegram_on(self.config):

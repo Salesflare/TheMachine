@@ -65,8 +65,9 @@ APP_KINDS = ('todo', 'result', 'reminder', 'digest', 'fleet', 'test', 'clear')  
 APP_ID = re.compile(r'[A-Za-z0-9_-]{1,64}')
 # The line a woken app shows ("Ready: Reply about the listing"), by the wakeup's tag: the same words as the web push,
 # short. Kept APP_LINE_DAYS, at most APP_LINES of them.
-APP_LINES_TABLE = 'CREATE TABLE IF NOT EXISTS notify_app_lines(tag TEXT PRIMARY KEY,line TEXT NOT NULL,at REAL NOT NULL)'
-APP_LINE, APP_LINES, APP_LINE_DAYS = 60, 200, 3
+# A tag that is no to-do (the morning) can keep a body line under it too ("3 to-dos: ... · First meeting 10:00").
+APP_LINES_TABLE = "CREATE TABLE IF NOT EXISTS notify_app_lines(tag TEXT PRIMARY KEY,line TEXT NOT NULL,at REAL NOT NULL,body TEXT NOT NULL DEFAULT '')"
+APP_LINE, APP_LINES, APP_LINE_DAYS, APP_BODY = 60, 200, 3, 120
 
 
 def ensure(db):
@@ -81,6 +82,8 @@ def ensure(db):
         db.execute('UPDATE notify_queue SET delivery=? WHERE id=?', (uuid.uuid4().hex, row[0]))
     db.execute(APP_DEVICES)
     db.execute(APP_LINES_TABLE)
+    if 'body' not in {r[1] for r in db.execute('PRAGMA table_info(notify_app_lines)')}:
+        db.execute("ALTER TABLE notify_app_lines ADD COLUMN body TEXT NOT NULL DEFAULT ''")
 
 
 def prefs(db):
@@ -311,10 +314,27 @@ def drop_pushes(db):
     db.execute("DELETE FROM notify_queue WHERE channel='push'")
 
 
-def compose(meetings, due, overnight, root='', show_text=True, clock=lambda iso: iso[11:16]):
+def morning_line(meetings, waiting, total, show_text=True, clock=lambda iso: iso[11:16]):
+    """The morning notification's body, two lines at most: how many to-dos wait and the first two of them, and when
+    the first meeting starts ("3 to-dos: Reply to Sam, Pay the invoice, … · First meeting 10:00"). Without show_text
+    only the count and the time. Nothing waiting: a calm line. Meeting titles and people's words never go in it."""
+    first = clock(meetings[0]['at']) if meetings else ''
+    if total and show_text and waiting:
+        names = ', '.join(clip(w['title'], 40) for w in waiting[:2]) + (', …' if total > 2 else '')
+        line = t('{} to-dos: {} · First meeting {}', total, names, first) if first else t('{} to-dos: {}', total, names)
+    elif total:
+        line = t('{} to-dos waiting · First meeting {}', total, first) if first else t('{} to-dos waiting', total)
+    else:
+        line = t('Nothing waiting · First meeting {}', first) if first else t('Nothing waiting. A calm start.')
+    return clip(line, APP_BODY)
+
+
+def compose(meetings, due, overnight, root='', show_text=True, clock=lambda iso: iso[11:16], waiting=None, total=None):
     """The digest from its three parts: meetings [{at, title, guests}], due and overnight [{title}].
     Returns None when there is nothing to say, else {push: {title, body, url, tag}, text, subject}.
-    Without show_text (Careful, or notify_text off) it carries counts only."""
+    Without show_text (Careful, or notify_text off) it carries counts only. waiting [{title}] (the first ones) and
+    total (how many) are the to-dos waiting for the owner, for the push's body (morning_line); left out: due and
+    overnight."""
     if not (meetings or due or overnight):
         return None
     # in the owner's language (i18n.py); English when there is no entry
@@ -338,9 +358,9 @@ def compose(meetings, due, overnight, root='', show_text=True, clock=lambda iso:
         lines += [summary, '']
     if root:
         lines.append(t('Open The Machine: {}', root))
-    body = summary
-    if show_text and meetings:
-        body = t('First: {}. {}', clock(meetings[0]['at']) + ' ' + meetings[0]['title'], summary)
+    if waiting is None:
+        waiting = due + [o for o in overnight if o not in due]
+    body = morning_line(meetings, waiting, len(waiting) if total is None else total, show_text, clock)
     return {'push': {'title': t('Your morning'), 'body': body[:200], 'url': (root or './') + DIGEST_VIEW, 'tag': 'digest'},
             'text': '\n'.join(lines).strip(), 'subject': t('Your morning: {}', summary)}
 
@@ -399,11 +419,12 @@ def app_line_text(template, title, limit=APP_LINE):
     return clip(t(template, clip(title, max(room, 10))), limit)
 
 
-def app_line_save(db, tag, line, at=None):
+def app_line_save(db, tag, line, at=None, body=''):
     ensure(db)
     at = wall() if at is None else at
-    db.execute('INSERT INTO notify_app_lines(tag,line,at) VALUES(?,?,?) ON CONFLICT(tag) DO UPDATE SET line=excluded.line,at=excluded.at',
-               (tag, clip(line), at))
+    db.execute('INSERT INTO notify_app_lines(tag,line,at,body) VALUES(?,?,?,?) '
+               'ON CONFLICT(tag) DO UPDATE SET line=excluded.line,at=excluded.at,body=excluded.body',
+               (tag, clip(line), at, clip(body, APP_BODY)))
     db.execute('DELETE FROM notify_app_lines WHERE at<? OR tag NOT IN (SELECT tag FROM notify_app_lines ORDER BY at DESC LIMIT ?)',
                (at - APP_LINE_DAYS * 86400, APP_LINES))
 
@@ -425,6 +446,15 @@ def app_line(db, tag):
     if not APP_ID.fullmatch(str(tag or '')):
         return ''
     row = db.execute('SELECT line FROM notify_app_lines WHERE tag=? AND at>=?', (tag, wall() - APP_LINE_DAYS * 86400)).fetchone()
+    return row[0] if row else ''
+
+
+def app_line_body(db, tag):
+    """The body line kept with a wakeup's line (the morning's), or ''."""
+    ensure(db)
+    if not APP_ID.fullmatch(str(tag or '')):
+        return ''
+    row = db.execute('SELECT body FROM notify_app_lines WHERE tag=? AND at>=?', (tag, wall() - APP_LINE_DAYS * 86400)).fetchone()
     return row[0] if row else ''
 
 

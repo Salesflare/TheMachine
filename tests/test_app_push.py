@@ -313,6 +313,27 @@ class AppPush(unittest.TestCase):
         self.assertEqual(a.app_clear_step(self.store, self.config), [waiting])
         self.assertEqual(len([w for w in self.wakes() if w['kind'] == 'clear']), 2)
 
+    def test_the_morning_notice_has_a_body_from_the_digest(self):
+        # The phone showed "Your morning" with an empty body: the digest's line and body are kept for its wakeup and
+        # GET /api/notice returns both. Neither goes to the cloud.
+        self.register()
+        a.push_send(self.store, self.config, [], {'title': 'Your morning', 'body': '2 to-dos: Reply to Sam, Pay the invoice · First meeting 10:00',
+                                                  'url': '.', 'tag': 'digest', '_line': 'Your morning',
+                                                  '_body': '2 to-dos: Reply to Sam, Pay the invoice · First meeting 10:00'}, 'digest', self.sender, wake='digest')
+        self.assertEqual(self.wakes()[-1], {'url': 'https://cp.example/api/fleet/app-push', 'auth': 'Bearer tok', 'action': 'wake', 'kind': 'digest', 'tag': 'digest'})
+        notice = a.app_notice(self.store, self.config, 'digest')
+        self.assertEqual((notice['title'], notice['body']), ('Your morning', '2 to-dos: Reply to Sam, Pay the invoice · First meeting 10:00'))
+        self.assertNotIn('Sam', json.dumps(self.wakes()))
+
+    def test_the_morning_digest_wakes_the_phone_with_its_body(self):
+        self.register()
+        self.card('Reply to Sam about Tuesday')
+        morning = a.dt.datetime(2026, 10, 12, 8, 40, tzinfo=a.dt.timezone.utc)
+        with patch.object(a, 'local_tz', return_value=a.dt.timezone.utc):
+            self.app.digest_step(current=morning, push=self.sender)
+        notice = a.app_notice(self.store, self.config, 'digest')
+        self.assertEqual((notice['title'], notice['body']), ('Your morning', '1 to-do: Reply to Sam about Tuesday'))
+
     def test_a_clear_with_a_broken_cloud_is_quiet(self):
         self.register()
         sid = self.card()
