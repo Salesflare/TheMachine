@@ -9543,35 +9543,59 @@ def slack_interval(config, channel):
     return config.get('slack_quiet_hours', 24) * 3600
 
 
+def slack_rest(config, channel):
+    """How long a conversation may rest by how recently anyone wrote in it, a direct message too: the yardstick
+    for how late a read is. (A direct message's 10-minute check is the cheap conversations.info call.)"""
+    return max(60, slack_interval(config, {**channel, 'type': 'channel'}))
+
+
 def slack_next_due(store, config, account, source, state):
-    """Moves state['index'] to the next conversation that is due for a read and returns True, or
-    returns False once the round is done with nothing due. Skipping costs no Slack call, except for
-    a direct message, where conversations.info shows its newest message: only a new one there
-    makes it worth a history read."""
-    moved = False
-    for _ in range(len(state['channels'])):
-        channel = state['channels'][state['index']]
-        due = time.time() >= channel.get('due', 0)
-        if due and channel.get('type') == 'dm' and channel.get('last_scan') and not channel.get('threads_waiting') \
-                and time.time() < channel.get('next_full', 0) and isinstance(source, Slack):
-            latest = (source.get('conversations.info', {'channel': channel['id']}).get('channel') or {}).get('latest') or {}
-            seen = max(float(channel.get('last_activity') or 0), float(channel['last_scan']))
-            if float(latest.get('ts') or 0) <= seen:
-                channel['due'] = time.time() + slack_interval(config, channel)
-                due, moved = False, True
-        if due:
-            if moved:
-                store.commit_page(account['id'], state, [], record_sync=False)
-            return True
-        state['index'], moved = state['index'] + 1, True
-        if state['index'] >= len(state['channels']):
-            state['index'] = 0
-            if time.time() >= state.get('next_discovery', 0):
-                state['phase'] = 'discover'
-            store.commit_page(account['id'], state, [])
-            return False
-    store.commit_page(account['id'], state, [])
-    return False
+    """Moves state['index'] to the conversation that most needs a read and returns True, or returns False when
+    nothing is due. Slack allows about one history read a minute (one every few minutes on a shared workspace),
+    so the order matters: of the conversations that are due, the one latest for its own rest wins (an hour late
+    for a busy channel weighs as much as a day for a quiet one), and a direct message with a new message goes
+    first. A plain walk through the list in order let a daily batch of quiet conversations hold busy channels
+    up for half a day (2026-11-05). Ties keep the list order from the current index. Skipping costs no Slack
+    call, except for a direct message, where conversations.info shows its newest message: only a new one there
+    makes it worth a history read, also for the daily full read when nothing in it is in the window anyway."""
+    now, channels = time.time(), state['channels']
+    if now >= state.get('next_discovery', 0):
+        state.update(phase='discover', index=0)
+        store.commit_page(account['id'], state, [])
+        return False
+    retained = max(float(state.get('after') or 0), now - config.get('bootstrap_days', 7) * 86400)
+    start, best, moved = state['index'] % len(channels), None, False
+    for offset in range(len(channels)):
+        i = (start + offset) % len(channels)
+        channel = channels[i]
+        if now < channel.get('due', 0):
+            continue
+        news = False
+        if channel.get('type') == 'dm' and channel.get('last_scan') and not channel.get('threads_waiting') \
+                and isinstance(source, Slack):
+            fresh = now < channel.get('next_full', 0)
+            if fresh or not channel.get('threads'):
+                latest = (source.get('conversations.info', {'channel': channel['id']}).get('channel') or {}).get('latest') or {}
+                newest = float(latest.get('ts') or 0)
+                seen = max(float(channel.get('last_activity') or 0), float(channel['last_scan']))
+                if newest <= seen and (fresh or newest < retained):
+                    channel['due'] = now + slack_interval(config, channel)
+                    if not fresh:
+                        channel['next_full'] = now + 86400
+                    moved = True
+                    continue
+                news = newest > seen
+        rank = float('inf') if news else (now - channel.get('due', 0)) / slack_rest(config, channel)
+        if best is None or rank > best[0]:
+            best = (rank, i)
+    if best is None:
+        state['index'] = 0
+        store.commit_page(account['id'], state, [])
+        return False
+    if moved or state['index'] != best[1]:
+        state['index'] = best[1]
+        store.commit_page(account['id'], state, [], record_sync=False)
+    return True
 
 
 def slack_page_names(store, channel, messages):

@@ -85,7 +85,7 @@ Conversations you already belong to; it never joins channels or opens DMs. Per-c
 **Slack's read limit.** Slack allows apps outside its Marketplace about one history or thread read a minute per workspace. A Slack sign-in or Maton connection gets no more than that, shared by everything on the same connection: this collector, another computer running The Machine for the same account, and your own scheduled posts that check a channel first. So:
 
 - The collector spends at most one such read every `slack_read_seconds` and leaves the rest.
-- It reads busy conversations within the hour and quiet ones once a day, and reads a direct message only when Slack says it has a new message.
+- It reads busy conversations within the hour and quiet ones once a day, and reads a direct message only when Slack says it has a new message. When several are due at once, the one most overdue for how busy it is goes first, so a day's batch of quiet conversations never holds up a busy channel.
 - Posting isn't held back by this: a send Slack refuses as rate limited waits and goes out a few minutes later.
 
 **The first import** reads where the activity is. A quick look at every conversation (a call outside that limit) shows when a direct message last had a message and when you last read each channel. Conversations active today get their last 24 hours read first, then the rest of the week, and quiet ones come last. A direct message with nothing in the window isn't read at all. Signals start within minutes; the whole first import of a large workspace still takes hours.
