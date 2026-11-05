@@ -66,6 +66,12 @@ function dueChip(s){if(!s.due||closed(s)||looksDone(s))return '';const today=new
   :days===0?'Due today':days===1?'Due tomorrow':'Due '+due.toLocaleDateString(DL,days<7?{weekday:'long'}:{day:'numeric',month:'short'});
  return html`<span class="chip t-${late||days<=0?'orange':days===1?'amber':'muted'}" title="Due ${due.toLocaleDateString(DL,{weekday:'long',day:'numeric',month:'long'})+(timed?' '+fmtHM(at):'')}">${text}</span>`}
 const closed=s=>['completed','rejected'].includes(s.status);
+// The open lists' order (Ready, To decide, Preparing, Waiting on others; the sidebar the same): what is overdue or due
+// by tomorrow first, then the rest; each newest first by when it was added, the time its to-do shows. A tie (one review
+// made them together) goes to the one about the people closest to you (weight), then the id.
+const dueSoon=s=>{if(!s.due)return false;const at=s.due_at?Date.parse(s.due_at):NaN;if(!isNaN(at)&&at<Date.now())return true;const t=new Date();t.setDate(t.getDate()+1);return s.due<=localDay(t)};
+const addedAt=s=>Date.parse(s.created_at)||0;
+const openOrder=(a,b)=>dueSoon(b)-dueSoon(a)||addedAt(b)-addedAt(a)||(b.weight||0)-(a.weight||0)||String(a.id).localeCompare(String(b.id));
 // A done to-do keeps its title (what needed doing); how it ended goes under it: what went out has its own line
 // (outboxLine), the sign that it was handled is this one.
 const doneLine=s=>{if(s.status!=='completed')return '';let why='';try{why=JSON.parse(s.handled_hint||'{}').reason||''}catch{}
