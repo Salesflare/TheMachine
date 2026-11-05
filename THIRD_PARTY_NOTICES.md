@@ -1,6 +1,6 @@
 # Third-party notices
 
-The Machine is open source under AGPL-3.0-only (see [LICENSE](LICENSE)). It does not copy or bundle third-party source code (one font aside, below): it runs on top of software you install yourself, which keeps its own license. This file lists that software and its license, for convenience.
+The Machine is open source under AGPL-3.0-only (see [LICENSE](LICENSE)). It does not copy or bundle third-party source code (fonts and icons aside, below): it runs on top of software you install yourself, which keeps its own license. This file lists that software and its license, for convenience.
 
 ## OpenClaw
 
@@ -66,3 +66,7 @@ The dashboard's headings use Source Serif 4 by Adobe, bundled unmodified as `bra
 ## Inter
 
 The dashboard's interface text uses Inter by The Inter Project Authors, bundled unmodified as `brand/fonts/inter-latin.woff2` (the Latin subset Google Fonts serves). It is licensed under the SIL Open Font License 1.1; the full license is in [brand/fonts/Inter-OFL.txt](brand/fonts/Inter-OFL.txt).
+
+## Simple Icons
+
+The one-color service logos on to-dos (Gmail, Slack, WhatsApp, Telegram, LinkedIn, X, Intercom, Google Docs, Google Calendar) are SVG paths from [Simple Icons](https://simpleicons.org), inlined in `dashboard.html`. Simple Icons is released under CC0 1.0. The logos and names are trademarks of their owners; they only show which service a message came from or goes out on.

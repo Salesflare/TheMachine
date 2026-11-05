@@ -63,11 +63,11 @@ try{
   await page.locator('.project-picker select').waitFor();
   assert.equal(await page.locator('.project-picker .pp-open').getAttribute('href'),'#graph/'+encodeURIComponent('proj:listing'));
   await page.locator('.project-picker [data-pp="cancel"]').click();await open.locator('.details-toggle').click();
-  // Open and needing you: the status line, the draft and the first button stay in sight; the source folds behind Details
+  // Open and needing you: the status line, the source, the draft and the first button stay in sight
   assert.match(await open.locator('.status-line').innerText(),/^Needs you: check the reply/);
   assert.ok(await open.locator('.draft').isVisible());assert.ok(await open.locator('.actions button.primary').first().isVisible());
-  assert.equal(await open.locator('.read-original').isVisible(),false);
-  await open.locator('.card-foot [data-details]').click();assert.ok(await open.locator('.card-details .read-original').isVisible());
+  assert.ok(await open.locator(':scope>.card-source .read-original').isVisible());assert.equal(await open.locator('.card-details .read-original').count(),0);
+  await open.locator('.card-foot [data-details]').click();
   assert.equal(await open.locator('.card-foot [data-details]').getAttribute('aria-expanded'),'true');
   // A long open body shows two lines and Show more
   assert.equal(await pending.locator('.body').evaluate(e=>e.classList.contains('clamp')&&getComputedStyle(e).getPropertyValue('--lines').trim()),'2');
