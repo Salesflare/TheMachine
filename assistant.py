@@ -19617,7 +19617,7 @@ class App(*APP_MIXINS):
 
     def card_chat(self, suggestion_id, cursor=None):
         """The chat view of one card (chat_items): read-only. While its run is going the dashboard asks about once a
-        second with the last `cursor`; `unchanged` then means nothing new (it shows Working… meanwhile)."""
+        second with the last `cursor`; `unchanged` then means only the live reply (if any) moved."""
         if not re.fullmatch(r'[a-f0-9]{16}', str(suggestion_id or '')):
             raise ValueError('Unknown suggestion')
         if cursor is not None and (not isinstance(cursor, str) or len(cursor) > 4000):
@@ -19649,9 +19649,11 @@ class App(*APP_MIXINS):
                 LOG.warning('card chat history unavailable suggestion=%s active=%s reason=%s', suggestion_id, active, reason)
             return {**result, 'items': chat_items([], owner, results), 'cursor': None, 'unavailable': True}
         flight = found.get('inFlightRun') if isinstance(found.get('inFlightRun'), dict) else None
-        # While a run goes, the chat shows Working… and never the text it is writing: until the run ends, that text can
-        # be a working note before a tool call (a Claude Code run, an OpenAI commentary) rather than the reply.
-        result['live'] = None
+        # The reply streams as it is written where the stream holds only the answer (OpenAI's final channel: the Gateway
+        # leaves commentary out). Claude Code's stream also carries its notes before a tool call and doesn't say which
+        # text is the answer until the run ends, so its chat shows Working… instead.
+        result['live'] = ({'text': chat_text(flight.get('text'), chars=8000)}
+                          if flight and active and not self.chat_run_notes(own, found.get('messages')) else None)
         result['cursor'] = found['deltaCursor'] + '|' + digest if isinstance(found.get('deltaCursor'), str) else None
         if found.get('kind') == 'delta' and gateway_cursor:
             return {**result, 'unchanged': True}
@@ -19746,6 +19748,20 @@ class App(*APP_MIXINS):
             LOG.error('chat model error=%s', type(error).__name__)
             return {}
 
+    def chat_run_notes(self, own, messages=None):
+        """Whether this chat's run streams its working notes with its answer: Claude Code (the Claude CLI route: the
+        chat's model, or the session's own turns so far), whose live text holds every note it wrote before a tool call."""
+        for message in reversed(messages if isinstance(messages, list) else []):
+            if isinstance(message, dict) and message.get('role') == 'assistant' and message.get('provider'):
+                if message['provider'] == 'claude-cli':
+                    return True
+                break
+        try:
+            model = chat_model.resolve(self.config, None, own or {})['model'] or ''
+            return model.startswith('claude-cli/') or (model.startswith('anthropic/') and claude_plan_route(self.config))
+        except (OSError, ValueError, TypeError, AttributeError):
+            return True
+
     def chat_stop(self, suggestion_id, via=None):
         """The chat's Stop button: ends the card's running reply now and keeps what it said so far (its live text,
         read from the Gateway first). {'stopped': False} when it had already finished. The Browser view's Stop
@@ -19763,7 +19779,12 @@ class App(*APP_MIXINS):
             found = self.card_chat_gateway({'session_key': 'agent:main:assistant-review-preparation-' + (job['session_job_id'] or job['job_id']),
                                             'cursor': None, 'limit': 1})
             flight = found.get('inFlightRun') if isinstance(found, dict) and isinstance(found.get('inFlightRun'), dict) else None
-            text = chat_reply(chat_text(flight.get('text'), chars=8000))[0] if flight else ''
+            with self.store.connect() as db:
+                own = chat_model.card_choice(db, suggestion_id)
+            # What it said so far stays, unless that can hold its working notes (Claude Code, chat_run_notes): then the
+            # reply only says it stopped
+            notes = self.chat_run_notes(own, found.get('messages') if isinstance(found, dict) else None)
+            text = chat_reply(chat_text(flight.get('text'), chars=8000))[0] if flight and not notes else ''
         stopped = self.store.stop_chat(suggestion_id, job['job_id'], text, via)
         if stopped and via == 'browser':
             self.stop_browser_run(job['job_id'])

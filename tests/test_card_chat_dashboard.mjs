@@ -195,12 +195,10 @@ try{
   return {page:document.documentElement.scrollHeight<=innerHeight+1,log:l.overflowY,logOver:l.overscrollBehaviorY,side:d.overflowY,sideOver:d.overscrollBehaviorY,list:c.overflowY}});
  assert.deepEqual(box,{page:true,log:'auto',logOver:'contain',side:'auto',sideOver:'contain',list:'visible'});
  await shot('desktop');
- // Send (Enter with a keyboard): the Change path, then Working… while the run goes (polled with the cursor), never the
- // text it is writing (it can be a working note before a tool call)
+ // Send (Enter with a keyboard): the Change path, then the reply grows while the run goes (polled with the cursor)
  await page.locator('#chat-input').fill('Shorter please, and say Tuesday');
  await page.locator('#chat-input').press('Enter');
- await page.locator('#chat-log .chat-msg.chat-live .bubble.typing').waitFor({timeout:8000});
- assert.equal(await page.locator('#chat-log .chat-live',{hasText:'Sure, a shorter one'}).count(),0);
+ await page.locator('#chat-log .chat-msg.chat-live .bubble',{hasText:'Tuesday works'}).waitFor({timeout:8000});
  const decide=actions.find(a=>a.action==='decide');
  assert.equal(decide.args.choice,'other');assert.equal(decide.args.feedback,'Shorter please, and say Tuesday');
  assert.match(decide.args.decision_id,/^chat-[0-9a-f-]{36}$/);assert.equal(decide.csrf,'__CSRF__');

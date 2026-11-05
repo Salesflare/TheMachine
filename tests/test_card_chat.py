@@ -27,7 +27,8 @@ class CardChat(unittest.TestCase):
         self.sid = self.store.suggest('task', 'Reply to the venue', 'I can draft this.', [1])['id']
         self.app = object.__new__(a.App)
         self.app.store = self.store
-        self.app.config = {'accounts': [], 'database': str(Path(self.temp.name) / 'events.sqlite')}
+        self.app.config = {'accounts': [], 'database': str(Path(self.temp.name) / 'events.sqlite'),
+                           'openclaw_config': str(Path(self.temp.name) / 'openclaw.json')}
         self.calls = []
 
     def gateway(self, result):
@@ -380,21 +381,20 @@ class CardChat(unittest.TestCase):
         with self.store.connect() as db:  # a send is shown by its action's own label, not as a decision too
             db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES('s1',?,'send','','dashboard',?)", (self.sid, a.now()))
         history = {'messages': [row('assistant', [{'type': 'text', 'text': 'On it.'}], job['job_id'], a.chat_ms(a.now()) + 1000)],
-                   'deltaCursor': 'cur1', 'hasMore': False, 'inFlightRun': {'runId': job['job_id'], 'text': 'Check the inbox first (needs a tool).'}}
+                   'deltaCursor': 'cur1', 'hasMore': False, 'inFlightRun': {'runId': job['job_id'], 'text': 'Writing to /home/x/y'}}
         with self.gateway(history):
             chat = self.app.card_chat(self.sid)
         self.assertEqual(self.calls[0]['session_key'], 'agent:main:assistant-review-preparation-' + job['session_job_id'])
         self.assertEqual((self.calls[0]['limit'], self.calls[0]['cursor']), (a.CHAT_HISTORY_LIMIT, None))
         self.assertTrue(chat['active'])
         self.assertEqual(chat['cursor'].split('|')[0], 'cur1')
-        self.assertIsNone(chat['live'])  # Working…, never the text being written: it can be a note before a tool call
-        self.assertNotIn('Check the inbox', json.dumps(chat))
+        self.assertEqual(chat['live'], {'text': 'Writing to …'})
         self.assertEqual([(i['kind'], i['text']) for i in chat['items']], [('source', 'Actual evidence'), ('you', 'Make it shorter'), ('reply', 'On it.')])
-        # Polling with the cursor: nothing new is just "unchanged", still Working…
-        with self.gateway({'kind': 'delta', 'messages': [], 'deltaCursor': 'cur2', 'inFlightRun': {'text': 'Need the card details.'}}):
+        # Polling with the cursor: nothing new is just "unchanged", with the live reply
+        with self.gateway({'kind': 'delta', 'messages': [], 'deltaCursor': 'cur2', 'inFlightRun': {'text': 'Writing more'}}):
             delta = self.app.card_chat(self.sid, chat['cursor'])
         self.assertEqual(self.calls[-1]['cursor'], 'cur1')
-        self.assertEqual((delta['unchanged'], delta['cursor'].split('|')[0], delta['live']), (True, 'cur2', None))
+        self.assertEqual((delta['unchanged'], delta['cursor'].split('|')[0], delta['live']), (True, 'cur2', {'text': 'Writing more'}))
         self.assertNotIn('items', delta)
         # A send moving on (queued, then sent) is the service's own news: the whole chat comes back, not "unchanged"
         with self.store.connect() as db:
@@ -417,6 +417,31 @@ class CardChat(unittest.TestCase):
         self.assertTrue(down['unavailable'])
         self.assertEqual(down['items'][1]['text'], 'Make it shorter')
         self.assertEqual(logged.output, [f'WARNING:personal-assistant:card chat history unavailable suggestion={self.sid} active=True reason=timeout'])
+
+    def test_claude_code_shows_working_while_it_writes_and_on_stop_drops_its_notes(self):
+        # Claude Code's live text holds every note it wrote before a tool call, and only the run's end tells the answer
+        # apart: its chat shows Working… (OpenAI's final channel streams, test above), and Stop keeps no partial text
+        self.store.decide(self.sid, 'other', 'Make it shorter', 'chat-1', 'dashboard')
+        job = self.job()
+        flight = {'runId': job['job_id'], 'text': 'Check the inbox first.\n\nNeed the card details.\n\nHere is a short'}
+        earlier = {'role': 'assistant', 'provider': 'claude-cli', 'content': [{'type': 'text', 'text': 'On it.'}], 'timestamp': a.chat_ms(a.now()),
+                   '__openclaw': {'runId': 'r0'}}
+        with self.gateway({'messages': [earlier], 'deltaCursor': 'c1', 'inFlightRun': flight}):
+            chat = self.app.card_chat(self.sid)
+        self.assertTrue(chat['active'])
+        self.assertIsNone(chat['live'])
+        self.assertNotIn('Need the card details', json.dumps(chat))
+        # The chat's model on the Claude CLI route says so too, before the session has a turn of its own
+        Path(self.app.config['openclaw_config']).write_text(json.dumps({'agents': {'defaults': {'model': 'claude-cli/claude-opus-5-5'}}}))
+        with self.gateway({'messages': [], 'deltaCursor': 'c2', 'inFlightRun': flight}):
+            self.assertIsNone(self.app.card_chat(self.sid)['live'])
+        with self.gateway({'messages': [], 'inFlightRun': flight}):
+            self.assertEqual(self.app.chat_stop(self.sid), {'stopped': True})
+        with self.gateway({'messages': []}):
+            last = self.app.card_chat(self.sid)['items'][-1]
+        self.assertEqual((last['kind'], last['text'], last['stopped']), ('reply', '', True))
+        Path(self.app.config['openclaw_config']).write_text(json.dumps({'agents': {'defaults': {'model': 'openai/gpt-6.1'}}}))
+        self.assertFalse(self.app.chat_run_notes({}, []))
 
     def test_a_slow_gateway_helper_is_a_timeout_not_a_hang(self):
         # The helper waits up to 15 s for a busy Gateway's greeting; the service gives it more than that before it gives up
