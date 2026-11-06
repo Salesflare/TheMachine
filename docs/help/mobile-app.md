@@ -3,13 +3,13 @@ title: The mobile app
 area: getting-started
 summary: The Machine as an app on iPhone and Android: notifications for your to-dos, and sharing to The Machine from any app.
 covers: mobile-app
-code: notify.py, assistant.py, file_text.py, dashboard/new-todo.js, dashboard/settings-device.js, sw.js, manifest.webmanifest
+code: notify.py, assistant.py, file_text.py, dashboard/new-todo.js, dashboard/settings-device.js, dashboard/setup-card.js, sw.js, manifest.webmanifest
 order: 3
 keywords: ios, android, app store, play store, share sheet, share, phone, mobile, push
 ---
 The mobile app opens your own dashboard, signed in as on the web. Get it on the [App Store](https://apps.apple.com/app/id6829875215) for iPhone and iPad, or on [Google Play](https://play.google.com/store/apps/details?id=computer.themachine.app) for Android.
 
-Once you've handled your first to-do, a quiet note at the top of To-dos suggests it, before notifications. On a phone's browser, **Get the app** opens its store. On a computer it opens this page, until a phone has the app. Inside the app it never shows.
+From your first visit, the small **Get more out of The Machine** to-do at the top of To-dos suggests it first. On a phone's browser, **Get it** opens its store. On a computer it shows a QR code that opens the right store on the phone, with links to both. Inside the app it never shows.
 
 ## Connect it
 

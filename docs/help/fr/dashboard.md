@@ -27,6 +27,12 @@ Si plusieurs tâches l’utilisent, c’est celle de l’onglet au premier plan 
 
 Sur un téléphone, une fenêtre comme **Envoyer cet e-mail ?** occupe tout l’écran : le titre et × restent en haut, les boutons en bas, et seul ce qui est entre les deux défile. La zone du message prend la place libre, et les boutons restent à portée pendant la saisie.
 
+## Tirez-en le meilleur
+
+Dès votre première visite, une fois le premier coup d’œil terminé, une petite tâche en haut des Tâches liste ce qui rend The Machine plus utile : l’app sur le téléphone, les notifications, WhatsApp, l’app sur cet ordinateur, un autre compte et d’autres connexions. Chaque ligne a un bouton qui fait cette étape, et se coche d’elle-même une fois faite.
+
+Les lignes n’apparaissent que là où elles ont du sens : pas d’app de téléphone dans l’app, pas d’installation sur un téléphone. Le × d’une ligne la ferme pour de bon, sur tous les appareils, et le × en haut ferme toute la tâche. **Paramètres**, **Général**, **Cet appareil** garde les mêmes réglages.
+
 ## Nouvelles versions
 
 Quand une nouvelle version du tableau de bord est prête, il ne se recharge jamais pendant que vous l’utilisez. L’ouverture ou le rechargement de l’app charge la version la plus récente. Une fenêtre ouverte la charge dès que la fenêtre passe en arrière-plan, ou après quelques minutes sans saisie, et jamais tant qu’un texte saisi n’est pas enregistré ou envoyé, ou qu’une boîte de dialogue est ouverte. **Mise à jour prête**, en haut, la charge tout de suite. Un redémarrage de votre Machine ne fait que rétablir la connexion.

@@ -27,6 +27,12 @@ Si varias tareas lo usan, se detiene la de la pestaña de delante. En un teléfo
 
 En un teléfono, un diálogo como **¿Enviar este correo?** ocupa toda la pantalla: el título y × quedan arriba, los botones abajo, y solo se desplaza lo que hay entre ellos. El cuadro del mensaje crece hasta llenar el espacio libre, y los botones siguen a mano mientras escribes.
 
+## Sácale más partido
+
+Desde tu primera visita, cuando termina el primer vistazo, una pequeña tarea arriba en Tareas muestra lo que hace más útil a The Machine: la app del móvil, las notificaciones, WhatsApp, la app en este ordenador, otra cuenta y más conexiones. Cada fila tiene un botón que hace ese paso, y se marca sola cuando está hecho.
+
+Las filas solo aparecen donde tienen sentido: nada de app del móvil dentro de la app, nada de instalar en un móvil. La × de una fila la cierra para siempre, en todos los dispositivos, y la × de arriba cierra toda la tarea. **Ajustes**, **General**, **Este dispositivo** tiene los mismos controles.
+
 ## Versiones nuevas
 
 Cuando hay lista una versión nueva del panel, nunca se recarga mientras lo usas. Al abrir o recargar la app se carga la versión más nueva. Una ventana abierta la carga cuando la ventana pasa a segundo plano, o tras unos minutos sin actividad, y nunca mientras haya algo escrito sin guardar ni enviar, o un diálogo abierto. **Actualización lista**, arriba, la carga al momento. Un reinicio de tu Machine solo vuelve a conectar.

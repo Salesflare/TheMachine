@@ -28,45 +28,38 @@ class SetupHints(unittest.TestCase):
             db.execute("INSERT INTO suggestions(id,dedupe_key,title,body,event_ids,account_ids,created_at) VALUES('s0','k0','T','B','[]','[]','2026-10-01')")
             db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES('d0','s0','complete','','dashboard','2026-10-01')")
 
-    def test_nothing_is_suggested_before_a_first_todo_is_handled(self):
+    def test_hints_no_longer_wait_for_a_first_handled_todo(self):
         with self.store.connect() as db:
             db.execute('DELETE FROM decisions')
         self.mail('github.com', 5)
-        self.assertEqual(self.ids(), [])  # setup ends at the first to-dos; what can wait comes after one is handled
-        with self.store.connect() as db:
-            db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES('d1','s0','complete','','dashboard','2026-10-02')")
-        self.assertEqual(self.ids(), ['source-github'])
+        self.assertEqual(self.ids(), ['source-github'])  # the setup to-do shows from the first visit, after the first look
 
-    def test_only_the_owners_own_handling_counts(self):
-        with self.store.connect() as db:
-            db.execute('DELETE FROM decisions')
-            # the assistant's own updates and runs ahead are no first handled to-do
-            db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES('u1','s0','update','','assistant','2026-10-02')")
-            db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES('u2','s0','prepare_ahead','','assistant','2026-10-02')")
-            db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES('u3','s0','reject','','assistant','2026-10-02')")
-        self.mail('github.com', 5)
-        self.assertEqual(self.ids(), [])
-        self.assertFalse(a.handled_first(self.store))
-        with self.store.connect() as db:
-            db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES('d1','s0','complete','','telegram','2026-10-02')")
-        self.assertTrue(a.handled_first(self.store))
-        self.assertEqual(self.ids(), ['source-github'])
-
-    def test_the_phone_app_is_suggested_with_its_store_links(self):
-        self.assertEqual(a.phone_app_nudge(self.store), {
+    def test_the_phone_app_has_its_store_links_and_a_code_for_each(self):
+        nudge = a.phone_app_nudge(self.store)
+        self.assertEqual({k: v for k, v in nudge.items() if not k.startswith('qr')}, {
             'ios': 'https://apps.apple.com/app/id6829875215',
-            'android': 'https://play.google.com/store/apps/details?id=computer.themachine.app',
-            'page': 'https://themachine.computer/help/mobile-app', 'phones': 0})  # live in both stores
+            'android': 'https://play.google.com/store/apps/details?id=computer.themachine.app', 'phones': 0})  # live in both stores
+        self.assertEqual(nudge['qr_ios'], list(a.qr.encode(a.PHONE_APP_STORE['ios'])))  # no redirect yet: one code per store
+        self.assertEqual(nudge['qr_android'], list(a.qr.encode(a.PHONE_APP_STORE['android'])))
+        self.assertNotIn('page', nudge)  # no help article from the setup to-do
         page = (Path(a.__file__).resolve().parent / 'docs' / 'help' / 'mobile-app.md').read_text()
         self.assertIn(a.PHONE_APP_STORE['ios'], page)  # the page has both
         self.assertIn(a.PHONE_APP_STORE['android'], page)
 
+    def test_one_code_once_the_redirect_is_set(self):
+        with patch.dict(a.PHONE_APP_STORE, {'get': 'https://themachine.computer/app'}):
+            nudge = a.phone_app_nudge(self.store)
+        self.assertEqual(nudge['qr'], list(a.qr.encode('https://themachine.computer/app')))
+        self.assertFalse({'qr_ios', 'qr_android', 'get'} & set(nudge))
+        self.assertEqual(nudge['ios'], a.PHONE_APP_STORE['ios'])
+
     def test_the_phone_app_waits_until_it_is_published(self):
         with patch.dict(a.PHONE_APP_STORE, {'published': False}):
             self.assertIsNone(a.phone_app_nudge(self.store))
-        store = {'published': True, 'ios': 'https://apps.example.test/ios', 'android': 'http://insecure.example.test', 'page': 'https://example.test/app'}
+        store = {'published': True, 'ios': 'https://apps.example.test/ios', 'android': 'http://insecure.example.test', 'page': 'https://example.test/app', 'get': ''}
         with patch.dict(a.PHONE_APP_STORE, store):
-            self.assertEqual(a.phone_app_nudge(self.store), {'ios': 'https://apps.example.test/ios', 'page': 'https://example.test/app', 'phones': 0})
+            nudge = a.phone_app_nudge(self.store)
+            self.assertEqual(sorted(nudge), ['ios', 'phones', 'qr_ios'])  # an insecure link: neither the link nor its code
             with self.store.connect() as db:  # the mobile app's phones (its push), once a Machine has them
                 db.execute('CREATE TABLE IF NOT EXISTS notify_app_devices(id TEXT PRIMARY KEY)')
                 db.execute("INSERT INTO notify_app_devices(id) VALUES('p1')")

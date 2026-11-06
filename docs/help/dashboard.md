@@ -29,6 +29,12 @@ When the to-dos don't fit, the whole sidebar scrolls as one column, to-dos inclu
 
 On a phone, a dialog like **Send this email?** fills the screen: its title and × stay at the top, its buttons at the bottom, and only what is in between scrolls. The message box grows into the free space, and the buttons stay in reach while you type.
 
+## Get more out of it
+
+From your first visit, once the first look is done, a small to-do at the top of To-dos lists what makes The Machine more useful: the phone app, notifications, WhatsApp, the app on this computer, another account and more connections. Each row has one button that does that step, and it ticks itself off once done.
+
+Rows show only where they fit: no phone app inside the app, no installing on a phone. The × on a row closes it for good, on every device, and the × at the top closes the whole to-do. **Settings**, **General**, **This device** keeps the same controls.
+
 ## New versions
 
 When a new version of the dashboard is ready, it never reloads while you're using it. Opening or reloading the app loads the newest version. An open window loads it once the window is in the background, or after a few minutes without input, and never while something you typed isn't saved or sent, or a dialog is open. **Update ready**, at the top, loads it right away. A restart of your Machine only reconnects.

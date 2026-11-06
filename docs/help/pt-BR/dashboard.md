@@ -27,6 +27,12 @@ Se mais de uma tarefa usa o navegador, para a da aba da frente. No celular, a ab
 
 No celular, uma janela como **Enviar este e-mail?** ocupa a tela toda: o título e o × ficam no alto, os botões embaixo, e só o que está no meio rola. A caixa da mensagem cresce no espaço livre, e os botões ficam ao alcance enquanto você digita.
 
+## Aproveite mais
+
+Desde a sua primeira visita, assim que a primeira olhada termina, uma pequena tarefa no topo de Tarefas lista o que deixa a The Machine mais útil: o app no celular, as notificações, o WhatsApp, o app neste computador, outra conta e mais conexões. Cada linha tem um botão que faz essa etapa, e se marca sozinha quando está feita.
+
+As linhas só aparecem onde fazem sentido: nada de app do celular dentro do app, nada de instalar no celular. O × de uma linha a fecha de vez, em todos os aparelhos, e o × no topo fecha a tarefa inteira. **Configurações**, **Geral**, **Este aparelho** tem os mesmos controles.
+
 ## Novas versões
 
 Quando uma nova versão do painel fica pronta, ele nunca recarrega enquanto você está usando. Abrir ou recarregar o app carrega a versão mais nova. Uma janela aberta carrega a nova versão quando a janela vai para segundo plano, ou depois de alguns minutos sem uso, e nunca enquanto há algo digitado e ainda não salvo ou enviado, ou uma caixa de diálogo aberta. **Atualização pronta**, no topo, carrega na hora. Reiniciar a sua Machine só reconecta.
