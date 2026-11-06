@@ -1,5 +1,5 @@
 ---
-title: Machine log
+title: Machine health
 area: connections
 summary: Your Machine's own log, so it spots its own trouble. It only reads.
 covers: connector:gateway
@@ -8,7 +8,7 @@ site: More sources, Remove
 ---
 ## What it reads
 
-The log of your OpenClaw Gateway: failed runs, refused handoffs, Telegram messages that didn't go out, and The Machine's own errors. A to-do tells you when something needs fixing.
+Your Machine's own log: failed runs, refused handoffs, Telegram messages that didn't go out, and The Machine's own errors. A to-do tells you when something needs fixing.
 
 ## Fixes an update set aside
 
@@ -20,7 +20,7 @@ Nothing. It only reads the log on your own Machine.
 
 ## Connect it
 
-- On a hosted Machine it is on your setup page, under **More sources**, as OpenClaw Gateway log. One per Machine.
+- On a hosted Machine it is on your setup page, under **More sources**, as Machine health. One per Machine.
 - On your own computer: run `assistant connect gateway`.
 
 ## Remove it

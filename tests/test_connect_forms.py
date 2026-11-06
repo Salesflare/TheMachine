@@ -210,7 +210,7 @@ class CodeTest(unittest.TestCase):
 
     def test_whatsapp_shows_its_pairing_code_for_the_number_given(self):
         with tempfile.TemporaryDirectory() as folder:
-            wacli = self.script(folder, 'wacli', f'echo "$@" > {folder}/args\n'
+            wacli = self.script(folder, 'wacli', f'echo "$@" > {folder}/args\necho "$WACLI_DEVICE_LABEL" > {folder}/label\n'
                                 'echo \'{"event":"pair_code","data":{"code":"K7P2-9QX4"}}\'; sleep 0.5\n'
                                 'echo \'{"event":"connected","data":{}}\'\n')
             ui = onboarding.WebUI(wait=5)
@@ -218,8 +218,29 @@ class CodeTest(unittest.TestCase):
             with patch.object(onboarding, 'whatsapp_linked', return_value='3247@s.whatsapp.net'):
                 linked, seen = self.watch(ui, lambda: onboarding.whatsapp_pair(wacli, Path(folder) / 'store', ui))
             args = (Path(folder) / 'args').read_text().split()
+            label = (Path(folder) / 'label').read_text().strip()
         self.assertEqual((linked, seen), ('3247@s.whatsapp.net', [{'kind': 'pair', 'code': 'K7P2-9QX4'}]))
         self.assertEqual(args[args.index('--phone') + 1], '32470123456')
+        self.assertEqual(label, 'The Machine')  # the name the phone shows under Linked devices, not "wacli - Linux (host)"
+
+    def test_whatsapp_on_the_dashboard_never_says_wacli(self):
+        """Owners know it as WhatsApp on The Machine: the dashboard's install question, its lines, the error when it isn't
+        there and the hints for a WhatsApp that stopped reading name no wacli (a terminal still does)."""
+        with tempfile.TemporaryDirectory() as folder, \
+                patch.object(onboarding, 'tool', return_value=None), \
+                patch.object(onboarding.wacli_release, 'platform_key', return_value='linux_amd64'), \
+                patch.object(onboarding.wacli_release, 'install', side_effect=OSError('wacli download failed')):
+            ui = onboarding.WebUI(wait=5)
+            asked = []
+            ui._ask = lambda kind, prompt, default='', options=None: asked.append(prompt) or True
+            with self.assertRaises(onboarding.SetupError) as stopped:
+                onboarding.step_whatsapp({'database': str(Path(folder) / 'events.sqlite')}, {'id': 'wa'}, ui)
+        shown = [*asked, *ui.view()['lines'], str(stopped.exception), stopped.exception.fix or '',
+                 *(text for error, text in onboarding.HINTS if error.startswith('whatsapp'))]
+        self.assertEqual(asked, ['Install WhatsApp on this Machine?'])
+        self.assertTrue(all('wacli' not in text.lower() for text in shown), shown)
+        catalog = json.loads((Path(onboarding.__file__).parent / 'i18n' / 'en.json').read_text())
+        self.assertEqual([key for key in catalog if 'wacli' in key.lower()], [])  # nothing the dashboard translates says it
 
     def test_whatsapp_number_must_have_its_country_code(self):
         ui = onboarding.WebUI(wait=5)

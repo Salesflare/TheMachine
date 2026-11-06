@@ -1,5 +1,5 @@
 ---
-title: Registro de la Machine
+title: Salud de tu Machine
 area: connections
 summary: El propio registro de tu Machine, para que detecte sus propios problemas. Solo lee.
 covers: connector:gateway
@@ -8,7 +8,7 @@ site: More sources, Remove
 ---
 ## Qué lee
 
-El registro de tu OpenClaw Gateway: ejecuciones fallidas, traspasos rechazados, mensajes de Telegram que no salieron y los propios errores de The Machine. Una tarea te avisa cuando hay algo que arreglar.
+El propio registro de tu Machine: ejecuciones fallidas, traspasos rechazados, mensajes de Telegram que no salieron y los propios errores de The Machine. Una tarea te avisa cuando hay algo que arreglar.
 
 ## Correcciones que una actualización dejó a un lado
 
@@ -20,7 +20,7 @@ Nada. Solo lee el registro en tu propia Machine.
 
 ## Conéctalo
 
-- En una Machine alojada está en tu página de configuración, en **Más fuentes**, como registro de OpenClaw Gateway. Uno por Machine.
+- En una Machine alojada está en tu página de configuración, en **Más fuentes**, como Salud de tu Machine. Uno por Machine.
 - En tu propio ordenador: ejecuta `assistant connect gateway`.
 
 ## Quítalo

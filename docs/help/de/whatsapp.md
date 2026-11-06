@@ -40,6 +40,8 @@ Auf deinem eigenen Computer: Öffne **Verbindungen**, dann **+ Hinzufügen**, w�
 
 Oder führe `assistant connect whatsapp` aus und scanne den Code, den es im Terminal zeigt. Ohne wacli bietet es an, den festgelegten Build von [Salesflare/wacli](https://github.com/Salesflare/wacli) zu installieren, geprüft anhand seiner Prüfsumme.
 
+Unter Verknüpfte Geräte steht sie als The Machine. Eine früher verknüpfte Machine behält dort ihren alten Namen, bis du sie neu verknüpfst.
+
 ## Bilder
 
 The Machine fragt WhatsApp nach den Profilbildern von Personen in deinem Graph, die keins haben, höchstens 50 am Tag, über die Synchronisierung, die WhatsApp aktuell hält. An die Personen wird nichts gesendet. Wer sein Bild vor dir verbirgt, bleibt ohne.

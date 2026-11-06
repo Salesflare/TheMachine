@@ -38,6 +38,8 @@ Stel je alles in op je telefoon, zonder tweede scherm om van te scannen? Open **
 
 Voer op je eigen computer `assistant connect whatsapp` uit en scan de code die in de terminal verschijnt. Zonder wacli biedt het aan om de vastgezette build van [Salesflare/wacli](https://github.com/Salesflare/wacli) te installeren, gecontroleerd met de checksum.
 
+Onder Gekoppelde apparaten staat hij als The Machine. Een Machine die eerder gekoppeld is, houdt daar zijn oude naam tot je hem opnieuw koppelt.
+
 ## Foto's
 
 The Machine vraagt WhatsApp om de profielfoto's van mensen in je Graph die er geen hebben, maximaal 50 per dag, via de sync die WhatsApp up-to-date houdt. Er wordt niets naar hen verstuurd. Wie de eigen foto voor je verbergt, blijft zonder foto.

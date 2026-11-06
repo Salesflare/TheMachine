@@ -324,7 +324,7 @@ class InstallerTest(unittest.TestCase):
         self.assertIn('Next steps', result.stdout)
         self.assertIn('Connect Gmail: assistant connect gmail', result.stdout)
         self.assertIn('Connect Google Calendar: assistant connect calendar', result.stdout)
-        self.assertNotIn('Connect OpenClaw Gateway', result.stdout)
+        self.assertNotIn('Connect Machine health', result.stdout)
         self.assertIn('assistant doctor', result.stdout)
 
     def test_the_gateway_unit_gets_a_drop_in_that_keeps_systemd_retrying_once(self):

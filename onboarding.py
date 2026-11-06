@@ -45,7 +45,7 @@ SERVICES = {'gmail': 'gmail', 'calendar': 'calendar', 'outlook': 'outlook', 'out
             'outlook-calendar': 'outlook_calendar', 'slack': 'slack', 'crm': 'salesflare', 'salesflare': 'salesflare',
             'android': 'android', 'whatsapp': 'whatsapp', 'telegram': 'telegram', 'telegram-chats': 'telegram', 'gateway': 'gateway'}
 LABELS = {'gmail': 'Gmail', 'calendar': 'Google Calendar', 'outlook': 'Outlook', 'outlook_calendar': 'Outlook Calendar', 'slack': 'Slack', 'salesflare': 'Salesflare CRM',
-          'android': 'Android notifications', 'whatsapp': 'WhatsApp', 'telegram': 'Telegram chats', 'gateway': 'OpenClaw Gateway log'}
+          'android': 'Android notifications', 'whatsapp': 'WhatsApp', 'telegram': 'Telegram chats', 'gateway': 'Machine health'}
 # What each built-in source brings in, in one short line (a connector's own is SETUP['what']). The dashboard's Add tab
 # and a hosted control plane's setup page show it under the name.
 WHAT = {'gmail': 'Your email, what comes in and what you send.', 'calendar': 'Your meetings, so you go in prepared and follow up.',
@@ -108,8 +108,8 @@ HINTS = (
     ('slack', 'Slack through Maton failed; check the key and connection in Maton'),
     ('missing_salesflare_credential', 'the Salesflare credential file needs a SALESFLARE_API_KEY=… line'),
     ('salesflare:HTTP_401', 'Salesflare rejected the API key'),
-    ('whatsapp_source_unavailable', 'wacli could not read its store; is it linked (wacli auth status)?'),
-    ('whatsapp', 'wacli answered unexpectedly; try wacli doctor'),
+    ('whatsapp_source_unavailable', 'WhatsApp could not be read; is this Machine still linked in WhatsApp, Linked devices?'),
+    ('whatsapp', 'WhatsApp did not answer as expected; it retries by itself'),
     ('telegram_app_blocked', 'Telegram stopped accepting this Machine’s app ID; add your own from my.telegram.org and connect Telegram again'),
     ('telegram_logged_out', 'Telegram logged this Machine out; connect Telegram again'),
     ('telegram_source_unavailable', 'the Telegram mirror has not written its store yet; is its service running?'),
@@ -1447,7 +1447,8 @@ def step_salesflare(config, account, ui):
 def step_whatsapp(config, account, ui):
     wacli = tool(config, 'wacli') or install_wacli(config, ui)
     if not wacli:
-        raise SetupError('wacli is not installed', 'install wacli (https://wacli.sh), then run: assistant connect whatsapp')
+        raise SetupError('WhatsApp is not installed on this Machine',
+                         '' if getattr(ui, 'web', False) else 'install wacli (https://wacli.sh), then run: assistant connect whatsapp')
     config['wacli'] = config.get('wacli') if config.get('wacli') not in (None, 'wacli') else wacli
     account['store'] = ui.ask('wacli store directory', account.get('store') or str(home() / '.local/share/wacli'))
     linked = whatsapp_linked(wacli, account['store'])
@@ -1456,7 +1457,7 @@ def step_whatsapp(config, account, ui):
     if not linked and ui.yes('WhatsApp is not linked yet. Link it now? (scan the QR code in WhatsApp > Linked devices)', True):
         Path(account['store']).mkdir(parents=True, exist_ok=True)
         try:
-            subprocess.run([wacli, '--store', account['store'], 'auth'], timeout=900)
+            subprocess.run([wacli, '--store', account['store'], 'auth'], timeout=900, env={**os.environ, **WHATSAPP_DEVICE})
         except (OSError, subprocess.TimeoutExpired):
             pass
         linked = whatsapp_linked(wacli, account['store'])
@@ -1468,6 +1469,9 @@ def step_whatsapp(config, account, ui):
 
 
 PHONE = re.compile(r'[1-9][0-9]{7,14}')
+# The name the phone shows under WhatsApp, Linked devices (wacli's WACLI_DEVICE_LABEL; without it, "wacli - Linux
+# (host)"). WhatsApp keeps the name a device linked with: a device linked before shows the new one after linking again.
+WHATSAPP_DEVICE = {'WACLI_DEVICE_LABEL': 'The Machine'}
 
 
 def whatsapp_pair(wacli, store, ui):
@@ -1493,7 +1497,7 @@ def whatsapp_pair(wacli, store, ui):
         elif event.get('event') == 'error':
             failed.append(str(data.get('message') or '')[-200:])
     follow([wacli, '--store', str(store), '--events', 'auth', '--qr-format', 'text', '--idle-exit', '20s', '--history-days', '30',
-            'auth', '--phone', phone], ui, seen)
+            'auth', '--phone', phone], ui, seen, env=WHATSAPP_DEVICE)
     ui.show_code(None)
     if getattr(ui, 'cancelled', False):
         raise SetupError('Stopped')
@@ -1507,17 +1511,17 @@ def install_wacli(config, ui):
     """The pinned wacli build (github.com/Salesflare/wacli: wacli plus profile pictures through the sync), checked
     against its pinned checksum, into the data directory. None when declined or it can't be installed here."""
     data = wacli_release.pin()
-    if not wacli_release.platform_key() or not ui.yes(
+    if not wacli_release.platform_key() or not ui.yes('Install WhatsApp on this Machine?' if getattr(ui, 'web', False) else
             f'wacli is not installed. Install wacli {wacli_release.version(data)} (github.com/{data["repository"]}, checked against its pinned checksum)?', True):
         return None
     base = data_dir(config) if config.get('database') else home() / '.local/share/personal-assistant'
     try:
         path = wacli_release.install(base / 'bin')
     except (OSError, RuntimeError, KeyError) as error:
-        ui.say(f'  WhatsApp: could not install wacli ({str(error)[:200]})')
+        ui.say('  WhatsApp: could not install it here' if getattr(ui, 'web', False) else f'  WhatsApp: could not install wacli ({str(error)[:200]})')
         return None
     config['wacli'] = str(path)
-    ui.say(f'  WhatsApp: installed wacli {wacli_release.version(data)}')
+    ui.say('  WhatsApp: installed' if getattr(ui, 'web', False) else f'  WhatsApp: installed wacli {wacli_release.version(data)}')
     return str(path)
 
 
@@ -1540,12 +1544,12 @@ def whatsapp_sync(wacli, account, ui):
     name = f"the-machine-wacli-{re.sub(r'[^A-Za-z0-9_-]', '-', account['id'])}.service"
     unit = service.definition_path(name, home())
     if not unit.exists() and store_busy(account['store']):
-        ui.say('  WhatsApp: another wacli already keeps this store synced')
+        ui.say('  WhatsApp: already kept in sync on this Machine')
         return
     if not service.available():
         ui.say(f'  WhatsApp: keep it synced yourself: {wacli} --store {account["store"]} sync --follow')
         return
-    if not unit.exists() and not ui.yes('Keep WhatsApp synced in the background (wacli sync as a user service)?', True):
+    if not unit.exists() and not ui.yes('Keep WhatsApp synced in the background?', True):
         return
     parts = (wacli, '--store', account['store'], 'sync', '--follow', '--presence-mode', 'quiet',
              '--max-messages', '0', '--max-db-size', '2GB', '--max-reconnect', '10m')
@@ -1931,12 +1935,12 @@ GH_CODE = re.compile(r'one-time code: ([A-Z0-9]{4}-[A-Z0-9]{4})')
 CODE_WAIT = 900  # seconds a sign-in code shown on the dashboard (GitHub, WhatsApp) waits to be used
 
 
-def follow(command, ui, seen, wait=CODE_WAIT):
+def follow(command, ui, seen, wait=CODE_WAIT, env=None):
     """Run a sign-in that shows a code (gh auth login, wacli auth) and hand each line to `seen` until it ends, the
     dashboard's Cancel, or `wait` seconds. Returns the exit code, or None when it was stopped."""
     try:
         process = subprocess.Popen(command, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
-                                   env={**os.environ, 'BROWSER': 'true'})  # nothing opens on the server: the code shows on the dashboard
+                                   env={**os.environ, 'BROWSER': 'true', **(env or {})})  # nothing opens on the server: the code shows on the dashboard
     except OSError:
         return None
     reader = threading.Thread(target=lambda: [seen(line) for line in process.stdout], daemon=True)

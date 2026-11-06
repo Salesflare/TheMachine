@@ -38,6 +38,8 @@ En una Machine alojada:
 
 En tu propio ordenador, ejecuta `assistant connect whatsapp` y escanea el código que muestra en el terminal. Sin wacli, ofrece instalar la versión fijada de [Salesflare/wacli](https://github.com/Salesflare/wacli), comprobada con su checksum.
 
+En Dispositivos vinculados aparece como The Machine. Una Machine vinculada antes conserva allí su nombre anterior hasta que la vuelvas a vincular.
+
 ## Fotos
 
 The Machine pide a WhatsApp las fotos de perfil de las personas de tu Graph que no tienen, como mucho 50 al día, a través de la sincronización que mantiene WhatsApp al día. No se les envía nada. Alguien que te oculta su foto se queda sin ella.

@@ -61,7 +61,7 @@ renderQuality();
 if(learnEdit==null)setHTML($('#facts'),learnedList());setHTML($('#learn-changes'),learnChanges());renderShare();renderVotes();  // an open editor keeps what was typed until Save or Cancel
 $('#decisions').replaceChildren(...clipNodes('decisions',state.decisions.map(decisionRow),()=>[make('p',{class:'muted'},'No decisions yet.')],5));learnTabs();
 const expandedSync=new Set([...document.querySelectorAll('#connectors details[open]')].map(d=>d.id));
-setHTML($('#connectors'),html`${state.connectors.map(c=>connectorCard(c,expandedSync))}`);renderDisconnected();
+setHTML($('#connectors'),html`${[...state.connectors].sort((a,b)=>(a.service==='gateway')-(b.service==='gateway')).map(c=>connectorCard(c,expandedSync))}`);renderDisconnected();
 if(state.manage_url){$('#manage').href=state.manage_url;$('#manage').hidden=false;$('#sign-out').hidden=false;$('#report-problem').href=new URL('/support',state.manage_url).href;$('#report-problem').removeAttribute('target');$('#connect-more').replaceChildren(make('div',{class:'connect-pills'},make('a',{class:'manage',href:'#connect=google'},'Connect Google'),make('a',{class:'manage',href:'#connect=microsoft'},'Connect Microsoft'),
  make('a',{class:'manage',href:'#connections=add'},'Add another source')),make('a',{class:'connect-ask',href:new URL('/connectors',state.manage_url).href},'Missing a source? Ask for it.'))}
 // drawn once, so an open disclosure stays open (and the page stays put) through each refresh
