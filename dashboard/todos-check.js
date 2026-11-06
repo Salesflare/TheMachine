@@ -7,15 +7,18 @@ const checkClock=v=>{const d=v?new Date(v):null;return d&&!isNaN(d)?fmtHM(d):''}
 const checkResult=c=>c?.found?t(['Checked. {} new to-do.','Checked. {} new to-dos.'],c.found):t('Checked. Nothing new.');
 // The head says what the owner cares about: when messages were last reviewed into to-dos, when the next review is due
 // (soon, once the batch is nearly full) and how many wait. Sources are read every few minutes in between.
-function checkLine(c){if(c.phase||c.reviewing)return t(c.phase==='reading'?'Reading sources…':'Reviewing messages…');
+function checkLine(c){if(c.phase||c.reviewing||c.reading)return t(c.phase==='reading'||!c.phase&&!c.reviewing?'Reading sources…':'Reviewing messages…');
  if(Date.now()<checkSaid)return checkResult(c);
  const last=checkClock(c.reviewed),next=c.waiting&&!c.soon&&c.next_review&&new Date(c.next_review)>Date.now()?checkClock(c.next_review):'',soon=c.waiting&&!next;
  const line=last?(next?t('Reviewed {} · next by {}',last,next):soon?t('Reviewed {} · next soon',last):t('Reviewed {}',last))
   :next?t('Next review by {}',next):soon?t('Next review soon'):'';
  return c.waiting?[line,t('{} waiting',c.waiting).replace(/ /g,'\u00a0')].filter(Boolean).join(' · '):line}
-// One signal while it runs: the line says what it does; the button only greys out with a small spinner.
-function checkHead(){const c=state?.check;if(!c||shownCached)return '';const busy=!!c.phase;
- return html`<div class="check-now"><small class="check-line" role="status">${checkLine(c)}</small><button type="button" class="check-btn${busy?' busy':''}" data-check-now${busy?html` disabled aria-busy="true"`:''}>${busy?html`<span class="spin" aria-hidden="true"></span>`:''}${t('Check now')}</button></div>`}
+// One signal while it runs: the line says what it does; the button only greys out with a small spinner. Busy too while
+// a review or a first import runs that the button didn't start (the first look, the usual rhythm): a press adds nothing
+// then. During the first look its panel says what it does, so the line stays empty.
+function checkHead(){const c=state?.check;if(!c||shownCached)return '';const busy=!!(c.phase||c.reviewing||c.reading),first=!c.phase&&firstLookInfo(state.review_live||{}),line=first?'':checkLine(c);
+ // bare: no line, so on a narrow screen the button stays on the hello's row instead of a row of its own
+ return html`<div class="check-now${line?'':' bare'}"><small class="check-line" role="status">${line}</small><button type="button" class="check-btn${busy?' busy':''}" data-check-now${busy?html` disabled aria-busy="true"`:''}>${busy?html`<span class="spin" aria-hidden="true"></span>`:''}${t('Check now')}</button></div>`}
 // The head and the all-clear line ("Peeked at everything…", hidden while a check runs) follow the check at once.
 function checkDraw(){pageHead();const l=$('#suggestions .all-clear .poke-line');if(l&&!pokeLine)l.textContent=clearLine()}
 // The result stays in the head's line for a few seconds, where the press was: a toast would cover a to-do on a phone.

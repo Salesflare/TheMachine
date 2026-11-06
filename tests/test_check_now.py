@@ -86,6 +86,22 @@ class CheckNow(unittest.TestCase):
         self.assertTrue(self.app.check_view()['soon'])  # 32 of 40: the batch is nearly full
         self.assertEqual(self.app.check_view()['phase'], None)
 
+    def test_a_review_the_button_did_not_start_shows_busy_and_a_press_adds_nothing(self):
+        # A new owner's first look (or the usual rhythm) reviews: the head's Check now is busy, and pressing starts no check
+        self.store.commit_page('work', {}, [event(1)])
+        with self.store.connect() as db:
+            db.execute("INSERT INTO review_runs(run_id,status,started_at,updated_at,window_hours) VALUES('first','running',?,?,168)", (a.now(), a.now()))
+        view = self.app.check_view()
+        self.assertEqual((view['phase'], view['reviewing']), (None, True))
+        with patch.object(threading, 'Thread') as thread:
+            pressed = self.app.action('check_now', {})
+        self.assertFalse(pressed['started'])
+        thread.assert_not_called()
+        self.assertIsNone(self.app.check.phase())
+        self.assertEqual(getattr(self.app, 'review_asked', 0), 0)
+        page = dashboard_parts.assemble(ROOT)
+        self.assertIn('const busy=!!(c.phase||c.reviewing||c.reading)', page)  # the button greys out with its spinner
+
     def test_a_resting_collector_reads_at_once_and_then_a_review_starts(self):
         reads = []
         def sync(store, config, account):

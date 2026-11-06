@@ -47,6 +47,9 @@ class CheckNowApp:
     def check_start(self):
         """Check now, from the dashboard, the phone app or chat (`assistant check`): a new check, or the one running or
         just ended (check_now.Check.start), so repeated presses never stack."""
+        view = self.check_view() or {}
+        if not self.check.phase() and (view.get('reviewing') or view.get('reading')):
+            return {'started': False, 'check': view}  # a review or a first import runs already: it brings what a check would
         started = self.check.start(time.time())
         if started:
             threading.Thread(target=check_now.run, args=(self.check, self), name='check-now', daemon=True).start()
