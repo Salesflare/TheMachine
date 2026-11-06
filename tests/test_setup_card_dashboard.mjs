@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFile,mkdir} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {execFileSync} from 'node:child_process';
+import {isDeepStrictEqual} from 'node:util';
 import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
@@ -95,6 +96,10 @@ const reset=()=>{setupHints=[];phoneStore=STORE;setup={...FRESH};manage='https:/
 const fits=async(page,why)=>assert.ok(await page.evaluate(()=>{const c=document.querySelector('#setup-card').getBoundingClientRect();return document.documentElement.scrollWidth<=innerWidth&&c.left>=0&&c.right<=innerWidth}),why+': fits the screen');
 const opened=page=>page.evaluate(()=>{window.__opened=[];window.open=(u,...r)=>{window.__opened.push([u,...r]);return null}});
 const copy=/—|^You/m;
+// What the page sent the Machine. A × or Show again changes the card at once and posts after it, so the card can be
+// drawn before the post arrives here: wait a moment for it (a busy computer is slower) instead of reading too early.
+const sent=async(got,want,why)=>{for(const end=Date.now()+5000;Date.now()<end&&!isDeepStrictEqual(got(),want);)await new Promise(r=>setTimeout(r,25));assert.deepEqual(got(),want,why)};
+const dismissed=()=>actions.filter(a=>a.action==='setup_dismiss');
 try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
  // The command palette's actions, in one place.
@@ -150,13 +155,13 @@ try{
  {reset();const {context,page}=await open();await page.evaluate(()=>__installPrompt());
   await page.locator('[data-setup-dismiss="whatsapp"]').click();
   await page.waitForFunction(()=>!document.querySelector('[data-step="whatsapp"]'));
-  assert.deepEqual(actions.filter(a=>a.action==='setup_dismiss'),[{action:'setup_dismiss',args:{step:'whatsapp'}}]);
+  await sent(dismissed,[{action:'setup_dismiss',args:{step:'whatsapp'}}]);
   assert.deepEqual(await steps(page),['phone','push','install','account','connect']);
   const other=await open({width:390,height:844,ua:'android',scheme:'light'});
   assert.ok(!(await steps(other.page)).includes('whatsapp'),'closed on the desktop: closed on the phone too');await other.context.close();
   // The card's ×: all of it, for good, everywhere
   await page.locator('[data-setup-close]').click();await page.waitForFunction(()=>document.querySelector('#setup-card').hidden);
-  assert.deepEqual(actions.filter(a=>a.action==='setup_dismiss').at(-1),{action:'setup_dismiss',args:{step:'card'}});
+  await sent(()=>dismissed().at(-1),{action:'setup_dismiss',args:{step:'card'}});
   await page.reload();await page.locator('#task-'+'ab'.repeat(8)).waitFor({state:'attached'});await ready(page);
   assert.equal((await card(page)).shown,false,'closed for good');
   assert.match((await settings(page)).app,/^App /,'Settings still has the controls');
@@ -222,13 +227,13 @@ try{
   await page.locator('[data-setup-dismiss="phone"]').click();await page.waitForFunction(()=>!document.querySelector('[data-step="phone"]'));
   assert.equal(await toastText(),'Hidden. Undo');
   await page.locator('#toast [data-setup-undo="phone"]').click();await page.locator('[data-step="phone"]').waitFor();
-  assert.deepEqual(restores(),['phone']);assert.equal(await page.locator('.setup-more').count(),0,'nothing hidden: no link');
+  await sent(restores,['phone']);assert.equal(await page.locator('.setup-more').count(),0,'nothing hidden: no link');
   await page.locator('[data-setup-dismiss="phone"]').click();await page.waitForFunction(()=>!document.querySelector('[data-step="phone"]'));
   await page.evaluate(()=>document.querySelector('#toast').classList.remove('show'));
   assert.equal(await page.locator('.setup-more').innerText(),'Show 1 hidden');
   await fits(page,width+' hidden');await shot(page,`restore-link-${width}-${scheme}`,'#setup-card');
   await page.locator('.setup-more').click();await page.locator('[data-step="phone"]').waitFor();
-  assert.deepEqual(restores(),['phone','all']);assert.equal(await page.locator('.setup-more').count(),0);
+  await sent(restores,['phone','all']);assert.equal(await page.locator('.setup-more').count(),0);
   // The whole card: Undo too, and Settings has it once it is gone
   await page.locator('[data-setup-close]').click();await page.waitForFunction(()=>document.querySelector('#setup-card').hidden);
   assert.equal(await toastText(),'Hidden. Settings can show it again. Undo');
@@ -240,7 +245,7 @@ try{
    phone:'Phone app iPhone and Android. Get the app',get:'https://themachine.computer/app'},'the phone app is always reachable from Settings');
   await shot(page,`restore-settings-${width}-${scheme}`,'#settings-setup');
   await page.locator('#settings-setup [data-setup-restore="all"]').click();await page.waitForFunction(()=>document.querySelector('#settings-setup').hidden);
-  assert.deepEqual(restores(),['phone','all','all']);
+  await sent(restores,['phone','all','all']);
   await page.evaluate(()=>document.querySelector('nav [data-tab="inbox"]').click());await page.locator('#setup-card:not([hidden])').waitFor();
   assert.ok((await steps(page)).includes('phone'),'back on To-dos');
   await context.close()}
@@ -253,7 +258,7 @@ try{
   await page.locator('[data-setup-go="hint-source-github"]').click();
   assert.deepEqual(await page.evaluate(()=>window.__opened),[['https://app.example.test/setup#source-github','_blank','noopener']]);
   await page.locator('[data-setup-dismiss="hint-source-github"]').click();await page.waitForFunction(()=>!document.querySelector('[data-step="hint-source-github"]'));
-  assert.deepEqual(actions.filter(a=>a.action==='setup_dismiss').at(-1),{action:'setup_dismiss',args:{step:'hint-source-github'}});
+  await sent(()=>dismissed().at(-1),{action:'setup_dismiss',args:{step:'hint-source-github'}});
   await context.close()}
 
  // From the first visit, but never while setting up: no source yet, or the first look still running.

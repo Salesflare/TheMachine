@@ -10,6 +10,9 @@ const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modul
 // headers fitted after drawing. What is on screen keeps its place (within 2px) and nothing shifts (CLS ~0), with the
 // browser's own scroll anchoring and without it (Safari on an iPhone has none).
 // Screens: Cards, a card chat, People, Organizations, Projects (board and list), Calendar, Connections, Fleet, Settings.
+// The page has its own typefaces, as the Machine serves them: with a computer's own fallback font the rows wrap
+// differently, and where halfway down lands (and so what is above the screen) differed from computer to computer.
+// Each new person, organization, source and listing comes first, above the ones before it, so new data is always above.
 process.env.TZ='Europe/Brussels';
 const dashboard=await dashboardPage();
 const iso=d=>new Date(d).toISOString(),ago=m=>iso(Date.now()-m*60000),hex=(p,n)=>p+n.toString(16).padStart(15,'0');
@@ -20,19 +23,19 @@ const job={id:'aj_0000000000000001',name:'Codex',tool:'codex',status:'result',ap
 const card=(n,extra={})=>({id:hex('a',n),title:'Card number '+n,body:'Card '+n+'. '+long,status:n%3?'prepared':'pending',scope:'work',created_at:ago(n*30),event_ids:[n+1],...extra});
 const cards=()=>[...Array.from({length:tick},(_,i)=>card(900+i,{title:'Fresh card '+i,due:'2000-01-0'+(i+1)})),
  ...Array.from({length:16},(_,n)=>card(n,n===4?{agent_job:job,status:'prepared'}:{}))];
-const connectors=()=>[...Array.from({length:tick},(_,i)=>({id:'gmail:new'+i,service:'gmail',display_name:'New inbox '+i,email:'new'+i+'@example.com',state:'ok',last_success:ago(1),total:10,signals_24h:1})),
+const connectors=()=>[...Array.from({length:tick},(_,i)=>({id:'gmail:new'+i,service:'gmail',display_name:'New inbox '+i,email:'new'+i+'@example.com',state:'ok',last_success:ago(1),total:10,signals_24h:1})).reverse(),
  ...Array.from({length:24},(_,n)=>({id:'gmail:a'+n,service:'gmail',display_name:'Inbox '+n,email:'inbox'+n+'@example.com',state:'ok',last_success:ago(n+2),total:100+n,signals_24h:n})),
  {id:'calendar:a',service:'calendar',display_name:'Calendar',email:'cal@example.com',state:'ok',last_success:ago(3),total:5}];
 const status=()=>({suggestions:cards(),promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},
  agents_settings:{claude_session:'session_01Example',device:'Desk',codex_env:'env_1',codex_branch:'',connector:'https://machine.example/mcp',saveable:true,on_network:true},chat_model:{models:[{ref:'openai/example-model',name:'Example',levels:['low','medium','high'],default:'medium'},{ref:'openai/example-mini',name:'Example mini',levels:['low','medium'],default:'low'}],known:true,main:{model:'openai/example-model',thinking:'medium'},default:{model:'openai/example-model',thinking:'medium'},saved:{}},model_status:{model:'openai/example-model',provider:'openai',chatgpt:true,plan:'pro',resets:{available:1},can_reset:true,windows:[{label:'5h',used:40,reset:Date.now()/1000+7200},{label:'Week',used:20,reset:Date.now()/1000+3*86400}],checked_at:new Date().toISOString()},connectors:connectors(),fleet:{on:true,waiting:0},needs_you:tick?[{text:'Something needs you '+tick}]:[]});
 const history={session:true,status:'ok',active:false,cursor:'k1',items:Array.from({length:40},(_,n)=>({kind:n%2?'reply':'note',text:'Message '+n+'. '+long.slice(0,90),at:Date.now()-100000+n*1000}))};
 const person=(n,name)=>({id:'email:p'+n+'@example.com',kind:'person',name,strength:3-n/100,last_at:ago(n*7%95+1),signals:4,ids:[]});
-const people=()=>[...Array.from({length:tick},(_,i)=>person(900+i,'Newcomer '+i)).map(p=>({...p,strength:9})),...Array.from({length:95},(_,n)=>person(n,'Person '+String(n).padStart(3,'0')))];
-const orgs=()=>[...Array.from({length:tick},(_,i)=>({id:'org:new'+i,kind:'org',name:'New org '+i,strength:9,last_at:ago(1),signals:3,ids:[]})),
+const people=()=>[...Array.from({length:tick},(_,i)=>person(900+i,'Newcomer '+i)).map(p=>({...p,strength:9})).reverse(),...Array.from({length:95},(_,n)=>person(n,'Person '+String(n).padStart(3,'0')))];
+const orgs=()=>[...Array.from({length:tick},(_,i)=>({id:'org:new'+i,kind:'org',name:'New org '+i,strength:9,last_at:ago(1),signals:3,ids:[]})).reverse(),
  ...Array.from({length:45},(_,n)=>({id:'org:o'+n,kind:'org',name:'Org '+String(n).padStart(3,'0'),strength:2-n/100,last_at:ago(n+1),signals:3,ids:[]}))];
 const projects=()=>Array.from({length:40},(_,n)=>({id:'project:'+n,kind:'project',name:'Project '+String(n).padStart(3,'0'),strength:2-n/100,last_at:ago(n+1),signals:5,state:'active',ids:[]}));
 const stages=[{name:'Contacted'},{name:'Agreed'},{name:'Live'},{name:'Stalled',side:true}];
-const boards=()=>[{name:'Partner listings',stages,stuck:0,projects:[...Array.from({length:tick},(_,i)=>({id:'project:new'+i,name:'New listing '+i,stage:'Contacted',reason:'they asked',by:'review',at:ago(1),next:'Reply',days:0,org:{name:'New listing '+i,logo:null}})),
+const boards=()=>[{name:'Partner listings',stages,stuck:0,projects:[...Array.from({length:tick},(_,i)=>({id:'project:new'+i,name:'New listing '+i,stage:'Contacted',reason:'they asked',by:'review',at:ago(1),next:'Reply',days:0,org:{name:'New listing '+i,logo:null}})).reverse(),
  ...Array.from({length:30},(_,n)=>({id:'project:b'+n,name:'Listing '+n,stage:'Contacted',reason:'they asked for a listing',by:'review',at:ago(n+2),next:'Wait for their reply',days:n,org:{name:'Listing '+n,logo:null}}))]}];
 const lists=()=>({people:people(),quiet:[],new:[],orgs:orgs(),warmup:[],projects:projects(),projects_done:[]});
 const graph=()=>{const l=lists();return {counts:{person:l.people.length,org:l.orgs.length,project:40},list_counts:Object.fromEntries(Object.entries(l).map(([k,v])=>[k,v.length])),whos_who:[],waiting:0,projects:l.projects,boards:boards()}};
@@ -42,9 +45,11 @@ const FL='fl_'+'a'.repeat(16),rules={relationships:{rule:'ask',details:false},me
 const fleet=()=>({on:true,kinds:{relationships:'who knows someone',meeting:'meeting context'},kind_rules:{relationships:['ask','always','never'],meeting:['ask','always','never']},no_details:[],scoped:[],scopes:{},
  fleets:[{id:FL,kind:'work',label:'Work Fleet',name:'Example',asks:['relationships'],people:Array.from({length:30+tick},(_,n)=>({member_id:'m'+n,name:'Teammate '+String(n).padStart(2,'0'),role:n?'member':'owner',me:!n,answers_with:'Hosted',email:'t'+n+'@example.com'})),
   members:Array.from({length:30+tick},(_,n)=>({member_id:'m'+n,name:'Teammate '+String(n).padStart(2,'0'),rules})),rules,exceptions:{}}],waiting:[],asked:[],free:[],briefs:{},log:[],notices:[]});
+const brand={'/brand/serif.woff2':'brand/fonts/source-serif-4-latin.woff2','/brand/sans.woff2':'brand/fonts/inter-latin.woff2'};
 const server=createServer(async(req,res)=>{let body='';for await(const c of req)body+=c;const url=new URL(req.url,'http://fixture.invalid'),q=url.searchParams;res.setHeader('Content-Type','application/json');
  const send=v=>setTimeout(()=>res.end(JSON.stringify(v)),40);
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
+ if(brand[url.pathname]){res.setHeader('Content-Type','font/woff2');res.end(await readFile(new URL('../'+brand[url.pathname],import.meta.url)));return}
  if(url.pathname==='/api/status')return send(status());
  if(url.pathname==='/api/graph')return send(graph());
  if(url.pathname==='/api/graph/list'){const all=lists()[q.get('list')]||[],cursor=Number(q.get('cursor')||0);return send({items:all.slice(cursor,cursor+30),next:cursor+30<all.length?String(cursor+30):null,total:all.length})}
