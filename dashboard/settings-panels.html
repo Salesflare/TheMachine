@@ -133,6 +133,15 @@
 ><button type="button" id="family-invite-switch" class="lookup-switch" role="switch" aria-checked="true" aria-label="Suggest inviting family"></button></div
 ><div><span class="grow"><strong>Take this on in your own Machine</strong><small>A line at the bottom of handoff emails, so they can join your Fleet. <a class="learn" href="https://themachine.computer/help/handoffs#someone-outside-the-network" target="_blank" rel="noopener">Learn more</a></small></span
 ><button type="button" id="settings-take-line" class="lookup-switch" role="switch" aria-checked="true" aria-label="Take this on in your own Machine"></button></div></div></div
+><div id="settings-export"><div class="section-head"><h2>Export</h2><p>Take what your Machine learned with you.</p></div><div class="list settings-list export-list"><div><span class="grow"><strong>Knowledge for another AI</strong><small>People, facts, rules, how-tos and open to-dos, in plain files any AI can read. <a class="learn" href="https://themachine.computer/help/knowledge-export" target="_blank" rel="noopener">Learn more</a></small></span
+><button type="button" class="ghost" id="export-knowledge" aria-expanded="false">Export</button></div
+><div class="export-opt" hidden><span class="grow"><strong>Message text</strong><small>Off: only where each thing came from, and when.</small></span
+><button type="button" id="export-messages" class="lookup-switch" role="switch" aria-checked="false" aria-label="Message text"></button></div
+><div class="export-opt" hidden><span class="grow"><strong>Private and Careful</strong><small>Only-you projects, private threads and Careful Fleets.</small></span
+><button type="button" id="export-private" class="lookup-switch" role="switch" aria-checked="false" aria-label="Private and Careful"></button></div
+><div class="export-opt" hidden><span class="grow"><strong>Passphrase</strong><small>Optional. Encrypts the file, at least 10 characters.</small></span
+><input type="password" id="export-pass" autocomplete="new-password" aria-label="Passphrase"></div
+><div class="export-opt" hidden><span class="grow" id="export-note" aria-live="polite"></span><button type="button" id="export-download">Download</button></div></div></div
 ><div id="settings-account-block"><div class="section-head"><h2>Account</h2></div
 ><div class="list settings-list" id="settings-account"><div
 ><span class="grow" id="settings-more"></span

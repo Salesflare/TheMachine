@@ -74,6 +74,7 @@ FEATURES = {
     'saved-signins': ('dashboard.html', 'Saved sign-ins'),
     'self-hosted': ('install.sh', '#!'),
     'moving': ('moving.py', 'def '),
+    'knowledge-export': ('machine/export/knowledge.py', 'def collect'),
     'support-bundle': ('cli.py', "'support-bundle'"),
     'keyboard': ('dashboard.html', 'Search and commands'),
     'share-learnings': ('team_learnings.py', 'def '),

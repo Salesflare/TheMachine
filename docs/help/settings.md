@@ -9,7 +9,7 @@ order: 1
 Open **Settings** with the gear at the top. Its tabs:
 
 - **Account**: **Your addresses**, the ones that count as you, with where each came from, and **Sign out**. On a hosted Machine also your plan, invoices, Machine, Fleet, address, friends, sign-in and data, each with its button. See [Plans and billing](plans-and-billing.md). **Sign out** is at the top, **Cancel plan** and **Delete account** at the very bottom.
-- **General**: language and region, voice input, this device, your Machine's browser, your Fleet and your account.
+- **General**: language and region, voice input, this device, your Machine's browser, your Fleet, export and your account.
 - **Security**: Standard or Careful, and the settings they set. See [Security levels](security-levels.md). **Support access** too, while it's on: see [Get support](get-support.md#support-access).
 - **Activity**: everything The Machine did for you, newest first. See [Activity](activity.md).
 - **Notifications**: what reaches you where, and your work hours. See [Notifications](notifications.md) and [Work hours](work-hours.md).
@@ -28,6 +28,7 @@ A tab with nothing to show is hidden.
 - **Voice input**: how what you say becomes text, and the voice of Talk live. See [Voice input](voice-input.md) and [Talk live](talk-live.md).
 - **Open the Machine’s browser ↗**: the browser your Machine uses for sites like LinkedIn.
 - **Fleet rules**: see [Sharing rules](sharing-rules.md).
+- **Export**: **Knowledge for another AI**, what your Machine learned in files any AI can read. See [Knowledge for another AI](knowledge-export.md).
 
 ## On this Machine
 

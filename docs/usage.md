@@ -481,6 +481,7 @@ The to-do says it merged and has **Undo merge** for 24 hours, which reverts the 
 | `assistant message-key status\|to-keyring\|to-file` | Where the message key is kept ([Configuration](configuration.md#the-key-in-your-keyring-linux-desktop)) |
 | `assistant enrich [domain]` | Organization and work contact data from your enrichment service: status, or look up one domain now |
 | `assistant export` | Everything The Machine knows and how it is set up, in one encrypted archive, with an export code it shows once (`--keys` adds your keys, with a passphrase you pick instead; `--estimate` only says how big; `--out` picks the folder). See [Moving to another computer](operations.md#moving-to-another-computer) |
+| `assistant export-knowledge` | What The Machine learned, as Markdown, JSONL and CSV files for another AI, in a zip (`--out` picks the folder; `--folder` writes a folder instead; `--messages` adds message text; `--private` adds private and Careful content; `--encrypt` asks for a passphrase). See [Knowledge for another AI](knowledge-export.md) |
 | `assistant import <file>` | Put an export back on a fresh install (asks its export code or passphrase) and list what to connect again; `--force` replaces a setup that already has sources, keeping a copy |
 | `assistant fleet-pair <code>` | Pair this Machine with your account for a [Fleet](fleet.md), with a code from that account; `--label` names it there |
 | `assistant skills` | Skills your agent follows: yours, proposed and shared ones (edit them in Settings, Skills) |

@@ -144,6 +144,7 @@ MACHINE_LAYERS = {
     'sources': 1,
     'store': 2,
     'delivery': 3,
+    'export': 3,       # export and import: what an install keeps (inventory), the hold after an import
     'web': 3,
     'app': 4,
     'main': 4,
