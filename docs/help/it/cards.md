@@ -84,7 +84,7 @@ Un'attività "In attesa di" (qualcuno ti ha promesso qualcosa) ha il link al tuo
 
 ## Creane una tu
 
-**Nuova attività** (sotto **Cerca** su un computer) aggiunge un'attività per qualsiasi cosa. Crearla non invia niente. Senza Lavoro o Personale, va dove deve: in base a chi e a cosa riguarda, o all'email a cui dà seguito. The Machine cerca quell'email nella tua casella, anche quelle più vecchie non ancora importate.
+**Nuova attività** (sotto **Cerca** su un computer) aggiunge un'attività per qualsiasi cosa. Crearla non invia niente. Senza Lavoro o Personale, va dove deve: in base a chi e a cosa riguarda, a un'azienda o casella che nomina, o all'email a cui dà seguito. Se niente lo indica, parte dove sono la maggior parte delle tue attività. The Machine cerca quell'email nella tua casella, anche quelle più vecchie non ancora importate.
 
 - **Scadenza**: scrivi un giorno o un'ora, come "domani", "ven prossimo", "3 nov", "15:00", "2pm", "tra 2 ore" o "domani 9". Capisce anche altre lingue ("over 2 uur", "morgen 9u"). L'icona del calendario ha scelte rapide, come quando posticipi, e **Scegli una data**.
 - **Email**: allega l'email a cui si riferisce. Cerca solo nella tua email, per oggetto o mittente.
