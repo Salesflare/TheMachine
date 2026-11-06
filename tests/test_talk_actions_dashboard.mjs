@@ -5,7 +5,7 @@ import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
-// Talk's own actions (dashboard/todos-chat.js), with OpenAI and the Machine as stand-ins:
+// Talk's own actions (dashboard/todos-chat-talk.js), with OpenAI and the Machine as stand-ins:
 // - "do it" is the to-do's Do it (accept, browser work included), never Mark done; one already running is left to run;
 // - a correction right after an action takes it back on the to-do that action touched, which opens again;
 // - "next one", "stop" never go to a to-do's chat; "let it continue" on one not started is its Do it;

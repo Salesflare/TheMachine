@@ -39,7 +39,7 @@ const panel=(scope,id)=>scope==='board'?{scope:'board',id:1,name:'Alpha testers'
  :{scope:'project',id:+String(id).replace('project:',''),name:'Ember labs',own:false,stalled:true,careful:true,channels:['email'],board:{id:1,name:'Alpha testers',on:true},
   settings:{on:true,days:3,max_days:7,min:1,max:3,stages:{},channels:null,switch:false,auto:false,stall:null}};
 let calls=[];
-// What the page reports by itself (an error report; a draft on screen 1.5 s, todos-chat.js draftSeen) is not something
+// What the page reports by itself (an error report; a draft on screen 1.5 s, todos-chat-talk.js draftSeen) is not something
 // the owner did: a slow run may send one mid-check, so the calls checked here leave them out.
 const BACKGROUND=['client_error','draft_seen'];
 // A call that follows another one (a skip made final once the review closes) is awaited, never a fixed pause.

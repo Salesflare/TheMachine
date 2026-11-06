@@ -37,25 +37,19 @@ import dashboard_parts  # noqa: E402  (the dashboard's source, assembled from it
 
 CATALOG = ROOT / 'i18n'
 
-# area: (ids of static elements, ranges of top-level functions that build it: (first, last) by name, each range taking
-# every top-level statement from the first function to the end of the last)
+# area: the ids of its static elements. Its script is every part named after it (dashboard/<area>-*.js, as
+# docs/code-map.md names them), so moving code between parts of one area, or within one, never breaks a report.
 AREAS = {
-    'shell': (['topbar', 'app-side', 'browser-pane', 'limit-banner', 'needs-you', 'page-head', 'copyright', 'help-link'],
-              [('renderLimitBanner', 'limitNote'), ('renderNeedsYou', 'needsYouPlace'), ('render', 'render'),
-               ('showTab', 'drawerClose'), ('palScore', 'kbHints')]),
-    'todos': (['inbox', 'snooze-dialog', 'send-dialog', 'result-dialog'],
-              [('cardBody', 'paintPeek'), ('learnedShow', 'promisesList'), ('withoutListedFiles', 'openSnoozeLink'),
-               ('chatMarkdown', 'chatGo'), ('renderMonth', 'toast')]),
-    'settings': (['settings'],
-                 [('renderModelPanel', 'skillUpdateOpen'), ('settingsSync', 'sigTool'), ('skillMeta', 'skillShow'),
-                  ('installKind', 'renderNotify')]),
-    'graph': (['people', 'project-dialog', 'record-dialog', 'crm-dialog', 'board-dialog'],
-              [('graphCountsSet', 'graphHashSync'), ('helpLink', 'saveDecision'), ('graphStash', 'openConversation')]),
-    'calendar': (['calendar', 'cal-dialog', 'cal-view'], [('calFetchWeek', 'calSave')]),
-    'connections': (['health', 'signin-dialog'], [('connectorHealth', 'connectorCard'), ('signinMode', 'browserShow')]),
-    'help': ([], [('helpMarkup', 'supportAccessRender')]),
-    'events': (['events', 'email-dialog'], [('search', 'openEvent')]),
-    'new': ([], [('ncDue', 'newMenu')]),
+    'shell': ['topbar', 'app-side', 'browser-pane', 'limit-banner', 'needs-you', 'page-head', 'copyright', 'help-link'],
+    'todos': ['inbox', 'snooze-dialog', 'send-dialog', 'result-dialog'],
+    'settings': ['settings'],
+    'graph': ['people', 'project-dialog', 'record-dialog', 'crm-dialog', 'board-dialog'],
+    'calendar': ['calendar', 'cal-dialog', 'cal-view'],
+    'connections': ['health', 'signin-dialog'],
+    'help': [],
+    'events': ['events', 'email-dialog'],
+    'new': [],
+    'fleet': ['fleet'],
 }
 MOVED = ['shell', 'todos', 'settings', 'graph', 'calendar', 'connections', 'help', 'events', 'new']
 
@@ -112,23 +106,9 @@ def markup(source):
     return source[start:end]
 
 
-def functions(source, ranges):
-    """The source of each range of top-level functions: from the first one's line to the next top-level statement
-    after the last one."""
-    lines, out = source.split('\n'), []
-    starts = [i for i, line in enumerate(lines) if re.match(r'(?:async )?function |const |let |\$\(|document\.|window\.|// ', line)]
-    where = {}
-    for i, line in enumerate(lines):
-        # a function, or a const holding an arrow function (const openEvent=(ev,title)=>...)
-        found = re.match(r'(?:async )?function ([A-Za-z0-9_]+)|const ([A-Za-z0-9_]+)=(?:async )?(?:\([^)]*\)|[A-Za-z0-9_]+)=>', line)
-        if found:
-            where.setdefault(found.group(1) or found.group(2), i)
-    for first, last in ranges:
-        if first not in where or last not in where:
-            raise KeyError(f'dashboard.html has no function {first if first not in where else last} (i18n_extract AREAS)')
-        end = next((j for j in starts if j > where[last]), len(lines))
-        out.append('\n'.join(lines[where[first]:end]))
-    return out
+def area_parts(area, root=ROOT):
+    """The script parts of a dashboard area: dashboard/<area>-*.js, in name order."""
+    return sorted((Path(root) / dashboard_parts.FOLDER).glob(f'{area}-*.js'))
 
 
 _LITERAL = re.compile(r"'((?:[^'\\\n]|\\.)*)'|\"((?:[^\"\\\n]|\\.)*)\"|`((?:[^`\\]|\\.)*)`")
@@ -310,14 +290,14 @@ def element(html_text, element_id):
 
 def area_strings(area, source=None):
     source = source if source is not None else dashboard_parts.assemble(ROOT)
-    ids, names = AREAS[area]
+    ids = AREAS[area]
     static, out = markup(source), []
     for element_id in ids:
         parser = _Static([element_id])
         parser.feed(element(static, element_id))
         out.extend(parser.found)
-    for code in functions(source, names):
-        out.extend(script_strings(code))
+    for part in area_parts(area):
+        out.extend(script_strings(part.read_text(encoding='utf-8')))
     seen, unique = set(), []
     for text in out:
         if text not in seen:
