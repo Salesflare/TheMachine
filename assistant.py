@@ -16379,7 +16379,8 @@ class App(*APP_MIXINS):
         message_id = str(args.get('message_id') or '')
         if args.get('event_id') is not None:
             with self.store.connect() as db:
-                row = db.execute("SELECT account_id,source_id FROM events WHERE id=? AND kind='gmail.message'", (int(args['event_id']),)).fetchone()
+                row = db.execute("SELECT account_id,source_id FROM events WHERE id=? AND kind IN ('gmail.message','ms_graph.message','outlook.message')",
+                                 (int(args['event_id']),)).fetchone()
             if not row:
                 raise ValueError('No collected email with that event_id')
             account = next((a for a in self.config['accounts'] if a['id'] == row['account_id']), None)
