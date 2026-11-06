@@ -1,7 +1,7 @@
 ---
 title: Connect other AIs
 area: connections
-summary: Let Claude, ChatGPT, Cursor, Codex or GBrain read your to-dos and Graph over MCP, and with Read & edit make changes you can undo.
+summary: Let Claude, ChatGPT, Cursor, Codex or GBrain read your to-dos and Graph, and with Read & edit make changes you can undo.
 covers: ai-connections, settings:apps
 code: ai_access.py, ai_app.py, pairing.py, ai_reach.py
 keywords: MCP, Claude, ChatGPT, Cursor, Codex, GBrain, connector, AI, OAuth
@@ -9,13 +9,13 @@ order: 95
 ---
 ## What another AI can do
 
-Other AIs can connect to your Machine over MCP: Claude, ChatGPT, Cursor, Codex, GBrain and others. They can read your to-dos, promises, team briefs and the people and companies in your Graph.
+Claude, ChatGPT, Cursor, Codex, GBrain and other AIs can connect to your Machine. They can read your to-dos, promises, team briefs and the people and companies in your Graph.
 
-With **Read & edit** they can also add a to-do, or a to-do with an email draft, and change your Graph: save a fact about a person or company, fix their details, fields and tags, or add a line to a person's summary.
+With **Read & edit** they can also add a to-do or an email draft, and update your Graph: save a fact, fix details, fields and tags, or add a line to a person's summary.
 
-Each change shows in **Activity** with **Undo**. They never merge, delete or share records. What they save shows **AI:** and their name, in their area. You can edit or remove it, and The Machine may revise a summary line later. Your Machine treats it as their claim, never as your instruction.
+Each change shows in **Activity** with **Undo**. They never merge, delete or share records. What they save is marked **AI:** with their name, and your Machine treats it as their claim, never as your instruction.
 
-A draft waits in your Machine until you read it and press Send yourself. A connected AI never sends anything and never acts for you. Your Machine's own Do it and agents are not part of this.
+A draft waits until you read it and press Send yourself. A connected AI never sends anything and never acts for you.
 
 ## Connect one
 
@@ -23,7 +23,7 @@ Open **Settings**, **Apps**. **Add in ChatGPT** and **Add in Claude** come first
 
 On a Machine on your own computer, press **Set up** under **Get your address** first. A page on your account opens: check that it shows the same code, confirm and pick a name. Your Machine pairs by itself, no restart. Both ways need this.
 
-It then gets its own certificate for the address, which takes a few minutes and needs the `cryptography` package for Python.
+Your Machine then sets up its secure address by itself. That takes a few minutes.
 
 For Claude, press **Add in Claude** or open [The Machine in Claude's directory](https://claude.ai/directory/the-machine), then press Connect. On Team and Enterprise, an owner adds it in Organization settings.
 
@@ -37,15 +37,15 @@ For your private address, or a Machine not on the Network, add a custom MCP serv
 
 With the official app, the AI asks you to sign in with your The Machine account. Pick this Machine if you have more than one, then approve it on your Machine's own page. With the private address, the AI comes straight to your Machine.
 
-AIs on a device in your tailnet, like Claude Code or Cursor, can also use your dashboard's address followed by `/mcp`. **Unpair** takes a Machine on your own computer off your account again.
+AIs on a device in your private network (Tailscale), like Claude Code or Cursor, can also use your dashboard's address followed by `/mcp`. **Unpair** takes a Machine on your own computer off your account again.
 
-Your Machine shows which AI it is. An AI it can't recognize shows the address it came from: connect only if you just started this yourself.
+Your Machine shows which AI is asking. If it can't tell, it shows where the request came from: connect only if you just started this yourself.
 
 Pick what it can do, **Read** or **Read & edit**. With both Work and Personal accounts, pick what it can see. Then pick for how long: **1 day**, **7 days**, **30 days** or **1 year**. Press **Connect**, or **Cancel** to send it back with nothing.
 
 ## Official app or private address
 
-The official app is the easy way: one address for everyone, and your account finds your Machine. The cloud routes its requests on the way but stores nothing.
+The official app is the easy way: one address for everyone, and your account finds your Machine. Our cloud passes requests on and stores nothing.
 
 With your private address, everything is encrypted all the way to your Machine. The cloud only passes it on and can't read it.
 
@@ -77,4 +77,4 @@ An AI that can't sign in by itself can use a key. Under **Add a key**, name it, 
 
 ## Keep it safe
 
-Every call is logged, refused ones too. A connection that expired or is off is refused until you change it. Signing in uses OAuth with PKCE. Your Machine keeps only a fingerprint of each token, so a copy of its data opens nothing.
+Every call is logged, refused ones too. A connection that expired or is off is refused until you change it. Your Machine keeps only a fingerprint of each sign-in, so a copy of its data opens nothing.

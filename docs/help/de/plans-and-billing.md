@@ -21,8 +21,6 @@ Deinen KI-Tarif rechnet dein Anbieter ab, etwa OpenAI. Wir schlagen nichts drauf
 
 Alle Preise gelten pro Monat, zzgl. MwSt. Siehe [Preise](/pricing).
 
-Die Preise für gehostet, Arbeitsplätze und Familien-Fleets sind Early-Adopter-Preise, statt {price.standard_list}, {price.seat_list} und {price.family_pair_list}. Early Adopter behalten sie, solange ihr Abo aktiv bleibt.
-
 ## Karte und Rechnungen
 
 Tippe in **Einstellungen** › **Konto** auf **Abrechnung** und dann auf **Abo verwalten**. Das öffnet Stripe, wo du deine Karte änderst und Rechnungen herunterlädst. Deine Kartendaten erreichen uns nie.
