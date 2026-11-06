@@ -148,6 +148,13 @@ input[type=checkbox],input[type=radio],input[type=range],progress{accent-color:v
 .card.todo>.card-details:empty{display:none}
 .card.todo.is-closed>.more{font-size:var(--fs-xs)}
 .card.todo.is-closed>.note{margin:4px 0 0;font-size:var(--fs-sm)}
+/* One rhythm on an open to-do: under the title, each block (the badges, status line, summary, Show more, Based on, source
+   line, Preparing line, job, draft and send boxes, Details row, buttons) sits one --card-gap below the one above it. A flex
+   column's gap never collapses or adds up, and a block that isn't there leaves no gap. The title keeps its badges close. */
+.card.todo:not(.is-closed){--card-gap:var(--sp-3);display:flex;flex-direction:column;gap:var(--card-gap)}
+.card.todo:not(.is-closed)>*{margin-block:0}.card.todo:not(.is-closed)>h3{margin-bottom:calc(var(--sp-1) - var(--card-gap))}
+.card.todo:not(.is-closed)>:is(button,a){align-self:flex-start}.card.todo:not(.is-closed)>.card-details:not([hidden]){margin-top:0}
+.card.todo:not(.is-closed)>.send-progress{margin-top:calc(var(--sp-1) - var(--card-gap))}  /* a send's bar belongs to its line above */
 .card.todo.is-closed,.card.todo.is-closed.card{padding-top:12px;padding-bottom:12px}
 /* A to-do's buttons (todos-cards.js cardActions): one lead and a quiet … for the rest. On a computer the … opens a small
    menu above it; on a phone a bottom sheet over a dimmed page (a tap on the page closes it), so the to-do's text is never
