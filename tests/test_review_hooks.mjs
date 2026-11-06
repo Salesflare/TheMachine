@@ -12,8 +12,13 @@ const ctx={...main,sessionKey:'agent:main:assistant-review-signals-'+'a'.repeat(
 assert.equal(await hooks.before_prompt_build({},main),undefined);
 assert.equal(await hooks.before_prompt_build({}, {...ctx,chatId:'shared-chat'}),undefined);
 assert.equal(calls.length,0);
-assert.ok((await hooks.before_prompt_build({},ctx)).prependContext.includes('analysis_page'));
-const reviewContext=(await hooks.before_prompt_build({},ctx)).prependContext;
+const built=await hooks.before_prompt_build({},ctx);
+// What every review gets alike goes at the start of the system prompt, where the prompt cache reuses it from one review
+// to the next; the turn's message holds only this run's own words (none here: no unfinished review to resume).
+assert.equal(built.prependContext,undefined);
+assert.ok(built.prependSystemContext.includes('analysis_page'));
+const reviewContext=built.prependSystemContext;
+assert.equal((await hooks.before_prompt_build({},{...ctx,sessionKey:'agent:main:assistant-review-signals-'+'d'.repeat(32),runId:'other-run'})).prependSystemContext,reviewContext);
 assert.ok(reviewContext.includes('## About the owner (USER.md)'));assert.ok(reviewContext.includes('## Assistant instructions'));
 // Only the parts of AGENTS.md a review uses: it is resent on every step of the turn.
 assert.ok(reviewContext.includes('## Reviewing signals'));assert.ok(reviewContext.includes('## Lessons that generalize'));
@@ -60,13 +65,17 @@ assert.equal(await hooks.before_prompt_build({},skillsCtx),undefined);
 assert.notEqual((await hooks.before_tool_call({toolName:'browser',params:{action:'open'}},skillsCtx))?.block,true);
 assert.notEqual((await hooks.before_tool_call({toolName:'assistant_signals',params:{action:'skills_found',args:{}}},skillsCtx))?.block,true);
 for(const toolName of ['exec','write','message'])assert.equal((await hooks.before_tool_call({toolName,params:{command:'ls'}},skillsCtx)).block,true);
-assert.ok((await hooks.before_prompt_build({},ctx)).prependContext.includes('exactly NO_REPLY'));
+assert.ok((await hooks.before_prompt_build({},ctx)).prependSystemContext.includes('exactly NO_REPLY'));
 // Codex refuses a tool call whose parameters a hook rewrote, so the hook never returns params;
 // the tool binds ownership from the run the prompt hook recorded for this session.
 assert.equal(await hooks.before_tool_call({toolName:'assistant_signals',params:{action:'begin_analysis',args:{account_ids:['work'],_review_run:'spoof'}}},ctx),undefined);
 assert.equal(currentReviewRun(ctx.sessionKey),'trusted-run');
 review={id:'review-id',owner_run:'trusted-run',last_error:'ai_connection_reset'};
-assert.ok((await hooks.before_prompt_build({},ctx)).prependContext.includes('review-id'));
+{ // An unfinished review to resume is this run's own: it stays in the message, the system context is unchanged
+ const resumed=await hooks.before_prompt_build({},ctx);
+ assert.ok(resumed.prependContext.includes('review-id'));assert.ok(!resumed.prependSystemContext.includes('review-id'));
+ assert.equal(resumed.prependSystemContext,reviewContext);
+}
 await hooks.model_call_ended({outcome:'error',failureKind:'connection_reset'},ctx);
 assert.equal(calls.at(-1).args.reason,'ai_connection_reset');
 let guard=await hooks.before_agent_finalize({},ctx);

@@ -253,8 +253,12 @@ export function registerReviewRecovery(api: any, call: (action: string, args?: a
     if (!eligible(ctx)) return {prependContext: quietInstruction};
     const state = await call('review_context', {owner_session: ctx.sessionKey, owner_run: ctx.runId});
     const hint = state.review ? ` Unfinished review ${state.review.id}; ${state.review.last_error || 'completion not committed'}. Resume it before claiming another batch.` : '';
-    const context = reviewSession(ctx.sessionKey) ? gbrainHint() + (await ownerContext()) + (await assistantInstructions()) : '';
-    return {prependContext: instruction + hint + context};
+    if (!reviewSession(ctx.sessionKey)) return {prependContext: instruction + hint};
+    // The same for every review (nothing from this run in it), so it goes at the very start of the system prompt, where
+    // the model's prompt cache can reuse it from one review to the next. In the turn's message it sat after OpenClaw's
+    // per-run lines (the session key, the date) and was never reused. Only this run's own words stay in the message.
+    const context = instruction + gbrainHint() + (await ownerContext()) + (await assistantInstructions());
+    return {prependSystemContext: context, ...(hint ? {prependContext: hint.trim()} : {})};
   }, {timeoutMs: 5000});
 
   // Gate review tools and note which run touched a review. Ownership itself is bound in the
