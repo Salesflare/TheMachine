@@ -82,7 +82,7 @@ Un título dice qué hay que hacer. Solo cambia cuando eso cambia, como con una 
 
 Sobre el borrador, una línea discreta nombra el mensaje del que viene, con el logo del servicio (Gmail, Slack, WhatsApp…). Tócala para leer el hilo. El borrador empieza con el logo de adónde va, así ves si es una respuesta en Slack o un correo antes de leer. Un paso sin borrador, como un traspaso, muestra el logo en su botón.
 
-Cuando el borrador sigue lo que otra persona dijo en otro mensaje, como la sugerencia de un compañero en Slack, una línea bajo la tarea lo indica, como "Según Sam en #ops". Tócala para abrir ese mensaje.
+Cuando el borrador sigue lo que otra persona dijo en otro mensaje, como la sugerencia de un compañero en Slack, una línea bajo la tarea lo indica, como "Según Sam en #ops". Tócala para leer ese mensaje aquí, con Abrir en Slack o Gmail dentro. Si ese mensaje es el origen de la propia tarea, la línea de origen ya lo muestra y no hay una segunda línea.
 
 Un chat (Slack, WhatsApp, Telegram, Intercom…) se lee como una sola conversación, del más antiguo al más nuevo, cada mensaje una vez; el mensaje del que trata la tarea tiene una línea fina al lado.
 
