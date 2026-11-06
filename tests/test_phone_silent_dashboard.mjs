@@ -44,8 +44,10 @@ try{
   assert.equal((await card('Pixel').locator('.connection-status').textContent()).trim(),'Phone disconnected');
   assert.equal(await card('Pixel').locator('.state-dot.t-orange').count(),1);
   const alert=(await card('Pixel').locator('.alert').textContent()).trim();
-  assert.match(alert,/^Phone disconnected\. Nothing new since .+\. Open the OpenClaw app on the phone\.$/);
+  assert.match(alert,/^Nothing new since .+\. Open the OpenClaw app on the phone\.$/);
   assert.doesNotMatch(await card('Pixel').locator('.note').first().textContent(),/Last phone check/);  // said once, in the alert
+  for(const name of ['Pixel','News'])assert.doesNotMatch(await card(name).textContent(),/Last sync|Not synced yet/,name);  // silent: no "just now" next to the warning
+  assert.match(await card('GitHub').textContent(),/Last sync/);
   if(process.env.SHOTS){await card('Pixel').scrollIntoViewIfNeeded();await page.screenshot({path:`${process.env.SHOTS}/phone-silent-${width}x${height}-${scheme}.png`})}
   await context.close();
  }
