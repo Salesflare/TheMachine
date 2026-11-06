@@ -14384,11 +14384,11 @@ HINT_SOURCES = (('github', 'GitHub', ('github.com',)), ('slack', 'Slack', ('slac
 HINT_MAILS = 3  # this many mails in 30 days from a service before it is worth suggesting
 # The mobile app (iOS and Android), live in both stores: their links, and a page with both (its help article, for the
 # docs). The setup to-do's phone row opens this phone's store; on a computer it shows a QR code and both store links.
-# The code is `get` (one address that sends iPhone to the App Store and Android to Google Play) once that is set, else
-# one code per store. Never inside the app.
+# The code is `get`: one address that sends an iPhone to the App Store, an Android phone to Google Play and a computer
+# to the help article (one code per store if it is ever unset). Never inside the app.
 PHONE_APP_STORE = {'published': True, 'ios': 'https://apps.apple.com/app/id6829875215',
                    'android': 'https://play.google.com/store/apps/details?id=computer.themachine.app',
-                   'page': 'https://themachine.computer/help/mobile-app', 'get': ''}
+                   'page': 'https://themachine.computer/help/mobile-app', 'get': 'https://themachine.computer/app'}
 
 
 def phone_app_nudge(store):

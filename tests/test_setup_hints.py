@@ -34,24 +34,25 @@ class SetupHints(unittest.TestCase):
         self.mail('github.com', 5)
         self.assertEqual(self.ids(), ['source-github'])  # the setup to-do shows from the first visit, after the first look
 
-    def test_the_phone_app_has_its_store_links_and_a_code_for_each(self):
+    def test_the_phone_app_has_its_store_links_and_one_code(self):
         nudge = a.phone_app_nudge(self.store)
         self.assertEqual({k: v for k, v in nudge.items() if not k.startswith('qr')}, {
             'ios': 'https://apps.apple.com/app/id6829875215',
             'android': 'https://play.google.com/store/apps/details?id=computer.themachine.app', 'phones': 0})  # live in both stores
-        self.assertEqual(nudge['qr_ios'], list(a.qr.encode(a.PHONE_APP_STORE['ios'])))  # no redirect yet: one code per store
-        self.assertEqual(nudge['qr_android'], list(a.qr.encode(a.PHONE_APP_STORE['android'])))
+        self.assertEqual(a.PHONE_APP_STORE['get'], 'https://themachine.computer/app')  # the site sends each phone to its store
+        self.assertEqual(nudge['qr'], list(a.qr.encode('https://themachine.computer/app')))
+        self.assertFalse({'qr_ios', 'qr_android', 'get'} & set(nudge))
         self.assertNotIn('page', nudge)  # no help article from the setup to-do
         page = (Path(a.__file__).resolve().parent / 'docs' / 'help' / 'mobile-app.md').read_text()
         self.assertIn(a.PHONE_APP_STORE['ios'], page)  # the page has both
         self.assertIn(a.PHONE_APP_STORE['android'], page)
 
-    def test_one_code_once_the_redirect_is_set(self):
-        with patch.dict(a.PHONE_APP_STORE, {'get': 'https://themachine.computer/app'}):
+    def test_a_code_per_store_without_the_redirect(self):
+        with patch.dict(a.PHONE_APP_STORE, {'get': ''}):
             nudge = a.phone_app_nudge(self.store)
-        self.assertEqual(nudge['qr'], list(a.qr.encode('https://themachine.computer/app')))
-        self.assertFalse({'qr_ios', 'qr_android', 'get'} & set(nudge))
-        self.assertEqual(nudge['ios'], a.PHONE_APP_STORE['ios'])
+        self.assertEqual(nudge['qr_ios'], list(a.qr.encode(a.PHONE_APP_STORE['ios'])))
+        self.assertEqual(nudge['qr_android'], list(a.qr.encode(a.PHONE_APP_STORE['android'])))
+        self.assertNotIn('qr', nudge)
 
     def test_the_phone_app_waits_until_it_is_published(self):
         with patch.dict(a.PHONE_APP_STORE, {'published': False}):
