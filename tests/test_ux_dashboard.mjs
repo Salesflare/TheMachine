@@ -135,10 +135,10 @@ suggestions[0].due=day(-1);suggestions[2].due=day(1);
 Object.assign(suggestions[2],{next_action:{kind:'email',label:'Send',revision:'abcdef123456',from:'owner@example.com',to:[],to_options:['will@vendor.example','ann@example.com'],cc:[],bcc:[],subject:'Pick',body:'Draft body'}});
 await page.evaluate(()=>refresh());
 const blocked=page.locator('#task-'+ids[1]);await blocked.getByText('Log in once and tap Try again').waitFor();
-assert.equal(await blocked.locator('details.tech pre').isVisible(),false);await blocked.locator('details.tech > summary').click();
-await blocked.locator('details.tech pre').getByText('404 Not Found').waitFor();
+assert.equal(await blocked.locator('.tech-log pre').isVisible(),false);assert.equal(await blocked.locator('details.tech').count(),0);await blocked.locator('.details-toggle').click();  // under its one Details
+await blocked.locator('.card-details .tech-log pre').getByText('404 Not Found').waitFor();
 await blocked.locator('.more-menu [data-choice="retry"]',{hasText:'Try again'}).waitFor({state:'attached'});suggestions[1].preparation_reason='Apple needs your passkey in the open tab, then tap Continue.';await page.evaluate(()=>refresh());await blocked.getByRole('button',{name:'Continue',exact:true}).waitFor();suggestions[1].preparation_reason='I couldn’t open the the CRM inbox. Log in once and tap Try again.';await page.evaluate(()=>refresh());await blocked.getByText('Log in once and tap Try again').waitFor();
-await page.evaluate(()=>refresh());assert.equal(await page.locator('#task-'+ids[1]+' details.tech').getAttribute('open'),'');  // Stays open across refreshes.
+await page.evaluate(()=>refresh());assert.equal(await page.locator('#task-'+ids[1]+' .card-details .tech-log pre').isVisible(),true);  // Stays open across refreshes.
 await page.locator('#task-'+ids[0]+' .chip').getByText('Overdue',{exact:true}).waitFor();await page.locator('#task-'+ids[2]+' .chip').getByText('Due tomorrow',{exact:true}).waitFor();
 await page.screenshot({path:'/tmp/261012-blocked-details-due.png',fullPage:true});
 Object.assign(suggestions[1],{preparation_status:'running',preparation_started_at:new Date(Date.now()-75000).toISOString(),preparation_retried:true});await page.evaluate(()=>refresh());

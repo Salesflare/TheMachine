@@ -5757,7 +5757,7 @@
  "what someone who left shared is passed on only by a confirmed admin": "wat iemand die vertrok deelde, wordt alleen door een bevestigde beheerder doorgegeven",
  "when is \"now\", \"digest\" or a date/time like 2026-10-12 or 2026-10-12T09:00": "when is \"now\", \"digest\" (het overzicht) of een datum/tijd zoals 2026-10-12 of 2026-10-12T09:00",
  "who handles shared emails": "wie gedeelde e-mails afhandelt",
- "who is the other person (2-80 characters); what is the promised action alone, starting with a verb, as it follows \"they’d\": \"send the signed contract\" (3-140 characters)": "who is de andere persoon (2-80 tekens); what is alleen de beloofde actie, beginnend met een werkwoord, zoals die volgt op \"they’d\": \"send the signed contract\" (3-140 tekens)",
+ "who is the other person (2-80 characters); what is the promised action alone, starting with a verb, as it follows \"they’d\": \"send the signed contract\" (3-80 characters: say it shorter, never cut it off)": "who is de andere persoon (2-80 tekens); what is alleen de beloofde actie, beginnend met een werkwoord, zoals die volgt op \"they’d\": \"send the signed contract\" (3-140 tekens)",
  "who knows someone": "wie iemand kent",
  "with names": "met namen",
  "with the same people": "met dezelfde mensen",

@@ -82,9 +82,12 @@ try{
   assert.deepEqual(await page.locator('#task-o1 .ask-q p').allTextContents(),['What did you notice when you tried the tool?','Which score fills the gap?']);
   assert.deepEqual(await page.locator('#task-o1 .pick').allTextContents(),['3.9','4.0']);
   assert.deepEqual(await primary('o1'),['Answer']);assert.equal(await page.locator('#task-o1 [data-choice="retry"]').count(),0);
-  assert.equal(await page.locator('#task-o1 details.tech summary').textContent(),'Technical details');
-  assert.equal(await page.locator('#task-o1 details.tech').getAttribute('open'),null);
-  {const tech=await page.locator('#task-o1 details.tech pre').textContent();for(const gone of ['/home/','1CLX9Q28','9c3aed05'])assert.ok(!tech.includes(gone),gone)}
+  // Its technical details sit under the to-do's one Details (no second toggle), collapsed and plain
+  assert.equal(await page.locator('#task-o1 details.tech').count(),0);
+  assert.equal(await page.locator('#task-o1 .details-toggle').count(),1);
+  assert.equal(await page.locator('#task-o1 .card-details .tech-head').textContent(),'Technical details');
+  assert.equal(await page.locator('#task-o1 .card-details').isHidden(),true);
+  {const tech=await page.locator('#task-o1 .card-details .tech-log pre').textContent();for(const gone of ['/home/','1CLX9Q28','9c3aed05'])assert.ok(!tech.includes(gone),gone)}
   assert.equal(await page.locator('#task-o1').innerText().then(t=>t.includes('needs your notes and one choice')),false);
   assert.deepEqual(await primary('r1'),['Answer']);assert.equal(await page.locator('#task-r1 [data-choice="retry"]').count(),0);
   assert.match(await line('r1'),/^Needs you: Your draft is preserved/);
@@ -111,7 +114,7 @@ try{
   const send=page.locator('#task-q1 [data-choice="other"]');
   assert.equal(await send.textContent(),'Send answer');
   // Empty: asks for the answer, sends nothing
-  await send.click();assert.match(await page.locator("#toast").textContent(),/Type your answer first/);assert.equal(posts.length,0);
+  await send.click();assert.match(await page.locator("#toast").textContent(),/Type your answer first/);assert.equal(posts.filter(p=>p.action==='decide').length,0);  // a draft seen on screen (draft_seen) is no answer
   // Ctrl+Enter sends it the Change way
   await page.locator('#feedback-q1').fill('Use 31 Dec 2099 and say so in the notes.');await page.locator('#feedback-q1').press('Control+Enter');
   await page.waitForFunction(()=>/carry on/.test(document.querySelector('#toast')?.textContent||''));

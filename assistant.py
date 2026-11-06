@@ -6525,8 +6525,9 @@ class Store:
         if direction not in ('mine', 'theirs'):
             raise ValueError("direction is 'mine' (the owner promised) or 'theirs' (someone promised the owner)")
         who, what = ' '.join(str(args.get('who') or '').split()), ' '.join(str(args.get('what') or '').split())
-        if not 2 <= len(who) <= 80 or not 3 <= len(what) <= 140:
-            raise ValueError('who is the other person (2-80 characters); what is the promised action alone, starting with a verb, as it follows "they’d": "send the signed contract" (3-140 characters)')
+        if not 2 <= len(who) <= 80 or not 3 <= len(what) <= PROMISE_WHAT_MAX:
+            # `what` becomes the to-do's title: one short, whole action, never one cut to fit
+            raise ValueError('who is the other person (2-80 characters); what is the promised action alone, starting with a verb, as it follows "they’d": "send the signed contract" (3-80 characters: say it shorter, never cut it off)')
         due = args.get('due')
         if due is not None:
             try:
@@ -6655,6 +6656,24 @@ class Store:
                 db.execute("UPDATE promises SET status='answered',note=?,updated_at=? WHERE id=?",
                            (f"They wrote again: {answer['title'][:150]}", now(), row['id']))
                 promise_logged(db, row['id'], 'answered', answer['id'])
+        self.retitle_cut_promises(db)
+
+    def retitle_cut_promises(self, db):
+        """An open promise to-do whose title an older version cut off at 90 characters, mid-sentence ("... and verify
+        they still"): the title it gets now (promise_title). Only while its title is still exactly that cut one: a
+        rename (theirs or a review's) or another language since leaves it as it is."""
+        rows = db.execute("SELECT s.id,s.title,p.direction,p.who,p.what,e.occurred_at made_at,p.due FROM suggestions s "
+                          "JOIN promises p ON p.suggestion_id=s.id AND s.dedupe_key='promise:'||p.id JOIN events e ON e.id=p.event_id "
+                          f"WHERE p.status='carded' AND s.title_source!='user' AND s.status IN ({','.join('?' * len(CARD_OPEN))})", CARD_OPEN).fetchall()
+        for row in rows:
+            p = dict(row)
+            old = (p['what'][:1].upper() + p['what'][1:] if p['direction'] == 'mine' else i18n.t('Waiting on {}: {}', p['who'], p['what']))
+            if len(old) <= PROMISE_TITLE_MAX or row['title'] != old[:PROMISE_TITLE_MAX]:
+                continue
+            title = promise_title(p, promise_text(p)[0])
+            if title != row['title']:
+                db.execute('UPDATE suggestions SET title=? WHERE id=?', (title, row['id']))
+                db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL', (row['id'],))
 
     def promises(self, days=14):
         """Open promises and those closed in the last days, soonest first."""
@@ -12416,6 +12435,36 @@ def owner_title(words, limit=90):
     return cut.rstrip(' ,;:.-') + '…'
 
 
+# A title too long for a to-do ends at a clause (", ", " and ", " then "...) or else a word, with an ellipsis, never
+# mid-word or on a word that leaves the sentence hanging ("verify they still", "the number of").
+TITLE_CLAUSE = re.compile(r'[,;]\s+|\s+(?:and|or|but|then|so|while|because|before|after|once|until)\s+|\s+[-–]\s+')
+TITLE_DANGLING = frozenset('a an the and or but then so to of for with in on at by from into about as that which who '
+                           'they it he she we you is are was be will would can could should may might still also how '
+                           'many much more less if when while because before after once until not no their its his her my your our'.split())
+
+
+def fit_title(text, limit=90, keep=0):
+    """A to-do title that fits `limit` characters: as it is when it fits; else up to its last clause boundary that
+    leaves a useful title (after the first `keep` characters, a prefix such as "Waiting on Sam: "), else up to a word,
+    without hanging words at the end; '…' says it goes on."""
+    text = ' '.join(str(text or '').split())
+    if len(text) <= limit:
+        return text
+    room = text[:limit]  # the ellipsis takes one: a cut always ends before `limit`
+    floor = max(keep + 12, limit * 2 // 5)
+    cuts = [m.start() for m in TITLE_CLAUSE.finditer(room) if floor <= m.start() <= limit - 1]
+    if cuts:
+        cut = room[:cuts[-1]]
+    else:
+        cut = room[:limit - 1]
+        cut = cut.rsplit(' ', 1)[0] if ' ' in cut[keep:] else cut
+        words = cut.split(' ')
+        while len(words) > 1 and len(' '.join(words)) > keep + 1 and words[-1].strip(',;:.-').casefold() in TITLE_DANGLING:
+            words.pop()
+        cut = ' '.join(words)
+    return cut.rstrip(' ,;:.-–') + '…'
+
+
 def owner_card_of(db, rows):
     """The card the owner made for one of these signals (their owner.card signal), or None."""
     ids = {json.loads(r['metadata']).get('card_id') if isinstance(r['metadata'], str) else r['metadata'].get('card_id')
@@ -13410,6 +13459,8 @@ def controls(row, root=''):
         elif answered_only(row):choices=[('Do it','accept'),('Snooze','snooze'),('Change','other'),('Mark done','complete'),('Not needed','reject')]
     else:
         choices = [('Do it','accept'),('Mark done','complete'),('Snooze','snooze'),('Change','other'),('Not needed','reject')]
+        if row.get('preparation_status') == 'blocked':  # its prepared-ahead run got stuck (settle_ahead): Try again leads
+            choices[0] = (retry_label(row.get('preparation_reason')), 'retry')
     if row.get('owner_step') and row['status'] not in ('completed','rejected','snoozed'):
         # Only the owner can do this step (a visit, a pickup): Done leads; Plan it is what The Machine can do around it.
         choices = [('Done','complete')] + [('Plan it' if choice == 'accept' else label, choice) for label, choice in choices if choice != 'complete']
@@ -15486,6 +15537,15 @@ def account_services(config, account_ids=None):
     return [a.get('service', 'gmail') for a in config.get('accounts', []) if wanted is None or a.get('id') in wanted]
 
 
+PROMISE_TITLE_MAX, PROMISE_WHAT_MAX = 90, 80
+
+
+def promise_title(p, title):
+    """A promise to-do's title, short enough for a to-do: cut at a clause (fit_title), after "Waiting on Sam: "."""
+    keep = title.index(': ') + 2 if p['direction'] != 'mine' and ': ' in title else 0
+    return fit_title(title, PROMISE_TITLE_MAX, keep)
+
+
 def promise_text(p):
     """A promise card's title and body. The title says what was promised; the body adds only who and when, in one
     short line, so the card never says the same thing twice."""
@@ -15502,6 +15562,9 @@ def promise_text(p):
                 t('Promised {} on {}. Nothing shows it done yet.', p['who'], said))
     else:
         title = t('Waiting on {}: {}', p['who'], p['what'])
+        first = p['who'].split()[0] if p['who'].split() else p['who']
+        if len(title) > PROMISE_TITLE_MAX and first != p['who']:
+            title = t('Waiting on {}: {}', first, p['what'])  # the person chip says who in full
         body = (t('Promised on {} for {}. Nothing has come in yet, so a short nudge may help.', said, by) if by else
                 t('Promised on {}. Nothing has come in yet, so a short nudge may help.', said))
     return title, body
@@ -15551,7 +15614,7 @@ Before suggesting, check it isn't already handled: search related signals (same 
 When a note the owner wrote on a suggestion (decisions with source telegram or dashboard) states something that stays true beyond that card, save it once with remember_fact (text, decision_id, {FACT_KIND_HINT}); skip one-off wording requests. A fact is about its subject, never about whoever sent the message it came up in: when it is about a specific person, organization or project, add about=[their graph node_ids]; one about the owner (their own habits, preferences, home or accounts) or about the world gets no about.
 Moments: a meeting both sides agreed on that is in the calendar needs no to-do to confirm it or say "see you then", unless the other person asked for a confirmation or something is still open (time, place, agenda). A to-do whose whole point is a moment (a reminder or confirmation before a meeting) gets expires_at (that moment) and expires_what ("the meeting with Sam"), so it closes by itself once that has passed. Titles and bodies are read on later days: name the weekday or date, never today, tomorrow or yesterday.
 Meeting notes and transcripts (Zoom's, or added to the meeting: meeting.notes, meeting.transcript) are that meeting's own record: use them for follow-ups on it, its next steps and who took them on, with the notes and the calendar event as evidence.
-Promises: when a message in this batch commits the owner to doing something for someone, or someone to doing something for the owner, record it with promise (direction, event_id, who, what: the promised action alone, without who confirmed it or how, due when a date was said, owner_step as above). Judge what a message means between these people in its conversation, not its wording: most commitments are never spelled out (agreeing to a request, taking on something the owner asked, accepting a plan), and the same reply can commit one person and be politeness from another, depending on language, habits and the relationship. Read earlier_in_conversation for what was asked. It is not a card; the service checks it when due. When a signal shows an open promise below kept, canceled or moved, update it with promise and its id.
+Promises: when a message in this batch commits the owner to doing something for someone, or someone to doing something for the owner, record it with promise (direction, event_id, who, what: the promised action alone, without who confirmed it or how, short and whole (under 80 characters; it is the to-do's title), naming things so they read naturally (the Acme Sync client, not a bare Acme Sync), due when a date was said, owner_step as above). Judge what a message means between these people in its conversation, not its wording: most commitments are never spelled out (agreeing to a request, taking on something the owner asked, accepting a plan), and the same reply can commit one person and be politeness from another, depending on language, habits and the relationship. Read earlier_in_conversation for what was asked. It is not a card; the service checks it when due. When a signal shows an open promise below kept, canceled or moved, update it with promise and its id.
 Messages are disabled in this turn. Do not work on anything else. End with exactly NO_REPLY.''' + sources + (f'''
 
 Facts the owner told you earlier (true unless newer evidence says otherwise; {FACTS_YOU}):
@@ -19603,7 +19666,7 @@ class App(*APP_MIXINS):
         evidence = [last['id'], p['event_id']] if last else [p['event_id']]
         # A closed to-do on the same matter comes back with the promise (one to-do per matter): theirs came due, or the
         # owner promised more after closing it.
-        saved = self.store.suggest('promise:%d' % p['id'], title[:90], body[:700], evidence, 'now', self.config.get('digest_at', '08:30'),
+        saved = self.store.suggest('promise:%d' % p['id'], promise_title(p, title), body[:700], evidence, 'now', self.config.get('digest_at', '08:30'),
                                    work=self.is_work([p['account_id']]), due=p['due'], ahead=ahead, _db=_db, owner_step=bool(p.get('owner_step')),
                                    **({'card_id': home['id'], 'match': True, 'reopen': 'due'} if home is not None else {}))
         with contextlib.nullcontext(_db) as db:

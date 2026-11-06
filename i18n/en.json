@@ -5757,7 +5757,7 @@
  "what someone who left shared is passed on only by a confirmed admin": "what someone who left shared is passed on only by a confirmed admin",
  "when is \"now\", \"digest\" or a date/time like 2026-10-12 or 2026-10-12T09:00": "when is \"now\", \"digest\" or a date/time like 2026-10-12 or 2026-10-12T09:00",
  "who handles shared emails": "who handles shared emails",
- "who is the other person (2-80 characters); what is the promised action alone, starting with a verb, as it follows \"they’d\": \"send the signed contract\" (3-140 characters)": "who is the other person (2-80 characters); what is the promised action alone, starting with a verb, as it follows \"they’d\": \"send the signed contract\" (3-140 characters)",
+ "who is the other person (2-80 characters); what is the promised action alone, starting with a verb, as it follows \"they’d\": \"send the signed contract\" (3-80 characters: say it shorter, never cut it off)": "who is the other person (2-80 characters); what is the promised action alone, starting with a verb, as it follows \"they’d\": \"send the signed contract\" (3-80 characters: say it shorter, never cut it off)",
  "who knows someone": "who knows someone",
  "with names": "with names",
  "with the same people": "with the same people",
