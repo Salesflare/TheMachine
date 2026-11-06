@@ -21,6 +21,8 @@ import symtable
 import sys
 import unittest
 
+import dashboard_parts
+
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 SKIP_DIRS = {'node_modules', '.git', '.venv', '__pycache__'}
 
@@ -329,11 +331,28 @@ def owner(table, creates):
 # --- tests -----------------------------------------------------------------------------------------------------------
 
 # Aikido's code scan skips big files (some just over 500 KiB already go unscanned), so a page or script that big
-# ships unchecked. Shipped .html, .js and .mjs files (tests aside) stay under SCAN_LIMIT, with room to spare.
-# OVER_LIMIT lists today's bigger files with a ceiling that may only come down: one that grows fails, and one back
-# under the limit fails until it's removed.
+# ships unchecked. Shipped .html, .css, .js and .mjs files (tests aside) stay under SCAN_LIMIT, with room to spare. The
+# dashboard's source has smaller budgets by kind (BUDGETS): dashboard.html holds the order of its parts, and each part in
+# dashboard/ one area's script, styles or markup (docs/code-map.md). OVER_BUDGET lists today's bigger files with a
+# ceiling that may only come down: one that grows fails, and one back under its budget fails until it's removed.
 SCAN_LIMIT = 450 * 1024
-OVER_LIMIT = {'dashboard.html': 530_000}  # being split into dashboard/ parts
+BUDGETS = {'dashboard.html': 24 * 1024, 'dashboard/*.js': 160 * 1024, 'dashboard/*.css': 64 * 1024,
+           'dashboard/*.html': 32 * 1024}
+OVER_BUDGET = {
+    'dashboard.html': 530_000,  # its stylesheet and markup are being moved into parts
+    'dashboard/graph-view.js': 280_000,  # being split into graph-<what>.js parts
+}
+# The page as served (dashboard.html with its parts): what a phone downloads. Not a scan rule, a watch: a ceiling that
+# may only come down; raise it on purpose, in a pull request that says why.
+PAGE_CEILING = 2_000_000
+
+
+def budget(name):
+    """The size a shipped file stays under: its kind's budget in the dashboard's source, SCAN_LIMIT elsewhere."""
+    if name in BUDGETS:
+        return BUDGETS[name]
+    folder, _, file = name.rpartition('/')
+    return BUDGETS.get(f'{folder}/*.{file.rpartition(".")[2]}', SCAN_LIMIT) if folder == 'dashboard' else SCAN_LIMIT
 
 
 # Python files: the same scan limit, and a line budget that keeps a module small enough to read and review. A new
@@ -394,7 +413,7 @@ def py_budget_problems(sizes, over=None, budget=None, slack=PY_RATCHET_SLACK):
 def shipped_sizes():
     skip = {'.git', 'node_modules', 'tests', '__pycache__'}
     return {str(path.relative_to(ROOT)): path.stat().st_size for path in ROOT.rglob('*')
-            if path.suffix in {'.html', '.js', '.mjs'} and path.is_file() and not skip & set(path.relative_to(ROOT).parts)}
+            if path.suffix in {'.html', '.css', '.js', '.mjs'} and path.is_file() and not skip & set(path.relative_to(ROOT).parts)}
 
 
 class Architecture(unittest.TestCase):
@@ -481,11 +500,24 @@ class Architecture(unittest.TestCase):
         self.assertIn('dashboard.html', sizes)
         for name, size in sizes.items():
             with self.subTest(file=name):
-                limit = OVER_LIMIT.get(name, SCAN_LIMIT)
-                self.assertLessEqual(size, limit, f'{name} is {size} bytes, over {limit}: split it (the scanner skips big files)')
-        for name, ceiling in OVER_LIMIT.items():
+                limit = OVER_BUDGET.get(name, budget(name))
+                part = ' into another <area>-<what> part next to it (docs/code-map.md)' if name.startswith('dashboard') else ''
+                self.assertLessEqual(size, limit, f'{name} is {size} bytes, over {limit}: split it{part} (the scanner skips '
+                                                  'big files, and small parts merge and review better)')
+        for name, ceiling in OVER_BUDGET.items():
             with self.subTest(listed=name):
-                self.assertGreater(sizes.get(name, 0), SCAN_LIMIT, f'{name} is under the limit now: take it out of OVER_LIMIT')
+                self.assertGreater(sizes.get(name, 0), budget(name), f'{name} is under its budget now: take it out of OVER_BUDGET')
+                self.assertGreater(ceiling, budget(name))
+        self.assertEqual(budget('dashboard/todos-x.css'), 64 * 1024)
+        self.assertEqual(budget('dashboard/todos-x.html'), 32 * 1024)
+        self.assertEqual(budget('dashboard/todos-x.js'), 160 * 1024)
+        self.assertEqual(budget('sw.js'), SCAN_LIMIT)
+
+    def test_the_served_dashboard_stays_under_its_ceiling(self):
+        size = len(dashboard_parts.assemble(ROOT).encode('utf-8'))
+        self.assertLessEqual(size, PAGE_CEILING, f'The dashboard page as served is {size} bytes, over PAGE_CEILING '
+                                                 f'({PAGE_CEILING}): every phone downloads it. Make it smaller, or raise '
+                                                 'the ceiling on purpose in a pull request that says why.')
 
     def test_python_files_stay_within_the_budget(self):
         sizes = python_sizes()

@@ -1,7 +1,8 @@
 """The dashboard's source and the one way to read it (dashboard_parts.py, tests/dashboard-page.mjs, docs/code-map.md).
 
-The page is served as one document. Its source may be split into parts (dashboard/<name>.js, each standing for the
-lines a /*@include dashboard/<name>.js*/ line in dashboard.html takes), so everything reads it assembled: the service,
+The page is served as one document. Its source may be split into parts (dashboard/<name>.js, .css and .html, each
+standing for the lines a /*@include dashboard/<name>.js*/, /*@include dashboard/<name>.css*/ or
+<!--@include dashboard/<name>.html--> line in dashboard.html takes), so everything reads it assembled: the service,
 the scripts and the tests, in Python through dashboard_parts and in Node through tests/dashboard-page.mjs."""
 from pathlib import Path
 import re
@@ -24,6 +25,27 @@ DIRECT = re.compile(r"""/\s*['"]dashboard\.html['"]|['"](?:\.\./|\./)?dashboard\
 
 def node():
     return shutil.which('node')
+
+
+def split_tool():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location('split_dashboard', ROOT / 'scripts' / 'split_dashboard.py')
+    tool = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(tool)
+    return tool
+
+
+def places(source):
+    """(line number, part name, where the line is: 'script', 'style' or 'markup') for each include line of a source."""
+    out, where = [], 'markup'
+    tag = re.compile(r'<script\b[^>]*>|</script>|<style\b[^>]*>|</style>')
+    for n, line in enumerate(source.split('\n'), 1):
+        if name := dashboard_parts.included(line):
+            out.append((n, name, where))
+            continue
+        for m in tag.finditer(line):
+            where = 'markup' if m[0].startswith('</') else 'script' if m[0].startswith('<script') else 'style'
+    return out
 
 
 def node_page(page=None):
@@ -86,7 +108,69 @@ class DashboardParts(unittest.TestCase):
                 dashboard_parts.assemble(tmp)
         with self.assertRaises(ValueError):
             dashboard_parts.marker('../x.js')
+        with self.assertRaises(ValueError):
+            dashboard_parts.marker('x.txt')
         self.assertEqual(dashboard_parts.marker('graph-1.js'), '/*@include dashboard/graph-1.js*/')
+        self.assertEqual(dashboard_parts.marker('base-1.css'), '/*@include dashboard/base-1.css*/')
+        self.assertEqual(dashboard_parts.marker('shell-1.html'), '<!--@include dashboard/shell-1.html-->')
+
+    def test_css_and_html_parts_fill_in_their_lines_too(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            (tmp / 'dashboard').mkdir()
+            (tmp / 'dashboard' / 'base-a.css').write_text('a{color:red}\n', encoding='utf-8')
+            (tmp / 'dashboard' / 'shell-a.html').write_text('<p id="a">A</p>\n', encoding='utf-8')
+            (tmp / 'dashboard' / 'shell-a.js').write_text('let a=1;\n', encoding='utf-8')
+            source = ('<style>\n/*@include dashboard/base-a.css*/\n</style>\n<!--@include dashboard/shell-a.html-->\n'
+                      '<!--@include dashboard/shell-a.css-->\n/*@include dashboard/shell-a.html*/\n<script>\n'
+                      '/*@include dashboard/shell-a.js*/\n</script>')
+            (tmp / 'dashboard.html').write_text(source, encoding='utf-8')
+            want = ('<style>\na{color:red}\n</style>\n<p id="a">A</p>\n<!--@include dashboard/shell-a.css-->\n'
+                    '/*@include dashboard/shell-a.html*/\n<script>\nlet a=1;\n</script>')  # a kind takes its own marker only
+            self.assertEqual(dashboard_parts.assemble(tmp), want)
+            self.assertEqual(dashboard_parts.includes(source), ['base-a.css', 'shell-a.html', 'shell-a.js'])
+            self.assertEqual(dashboard_parts.files(tmp)[1:], [tmp / 'dashboard' / n for n in ('base-a.css', 'shell-a.html',
+                                                                                              'shell-a.js')])
+            self.assertEqual(dashboard_parts.expand(source, tmp / 'dashboard', ('css',)),
+                             source.replace('/*@include dashboard/base-a.css*/', 'a{color:red}'))
+            if node():
+                self.assertEqual(node_page(tmp / 'dashboard.html'), want)
+            self.assertEqual(places(source), [(2, 'base-a.css', 'style'), (4, 'shell-a.html', 'markup'),
+                                              (8, 'shell-a.js', 'script')])
+
+    def test_each_include_line_is_in_its_place(self):
+        # A script's part in a script, a stylesheet's in the <style>, markup outside both: so a part can only ever be
+        # the kind of text that was there.
+        want = {'js': 'script', 'css': 'style', 'html': 'markup'}
+        wrong = [f'dashboard.html:{n}: {name} is in the {where}' for n, name, where in
+                 places((ROOT / dashboard_parts.PAGE).read_text(encoding='utf-8')) if want[name.rsplit('.', 1)[1]] != where]
+        self.assertEqual(wrong, [], 'a .js part goes in a script, a .css part in the stylesheet, an .html part in the markup')
+
+    def test_each_css_part_is_whole_rules(self):
+        # A stylesheet part starts and ends between rules: its braces match, and it ends outside every comment and
+        # string. Its runs follow each other in the page's order, so the cascade is the one of the whole sheet.
+        tool, bad = split_tool(), []
+        for path in sorted((ROOT / 'dashboard').glob('*.css')):
+            try:
+                tool.css_top_level_lines(path.read_text(encoding='utf-8'))
+            except ValueError as e:
+                bad.append(f'{path.name}: {e}')
+        self.assertEqual(bad, [], 'a stylesheet part is not whole rules')
+        for text in ('a{', 'a}', '/* a', 'a{content:"}"', '@media x{a{b:c}'):
+            with self.subTest(text=text), self.assertRaises(ValueError):
+                tool.css_top_level_lines(text)
+        self.assertEqual(tool.css_top_level_lines('/* {\n */a{\nb:"}"}\n@media x{a{b:c}\n}\nd{}'), [0, 3, 5])
+
+    def test_each_html_part_is_whole_elements(self):
+        tool = split_tool()
+        bad = [f'{path.name}: {"; ".join(problems[:3])}' for path in sorted((ROOT / 'dashboard').glob('*.html'))
+               if (problems := tool.html_problems(path.read_text(encoding='utf-8')))]
+        self.assertEqual(bad, [], 'a markup part is not whole elements')
+        self.assertEqual(tool.html_problems('<div id="a"><img src="x"><svg><path d="M0"/></svg></div\n'), [])
+        self.assertEqual(tool.html_problems('><p id="b">B</p\n'), [])
+        self.assertTrue(tool.html_problems('<div><p>x</div></p>\n'))
+        self.assertTrue(tool.html_problems('<div>\n'))
+        self.assertTrue(tool.html_problems('</div>\n'))
 
     def test_each_part_is_whole_statements(self):
         # A part is whole top-level statements: it parses as a script on its own, and so does the main script that
@@ -113,10 +197,7 @@ class DashboardParts(unittest.TestCase):
     def test_the_split_tool_loses_nothing(self):
         # scripts/split_dashboard.py split cuts the assembled page into parts and nothing else: cutting it again and
         # putting it back gives the same bytes (the PR that split it showed the page was byte for byte the one before).
-        import importlib.util
-        spec = importlib.util.spec_from_file_location('split_dashboard', ROOT / 'scripts' / 'split_dashboard.py')
-        tool = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(tool)
+        tool = split_tool()
         page = dashboard_parts.assemble(ROOT)
         try:
             html, parts = tool.cut(page)
@@ -129,6 +210,25 @@ class DashboardParts(unittest.TestCase):
             (Path(tmp) / 'dashboard.html').write_text(html, encoding='utf-8')
             self.assertEqual(dashboard_parts.assemble(tmp), page)
         self.assertGreater(len(parts), 1)
+
+    def test_the_css_and_html_cuts_lose_nothing(self):
+        # split-css and split-html cut only their own kind: cutting what dashboard.html holds now (its other parts as
+        # include lines) and putting it back gives the same page.
+        tool, page = split_tool(), dashboard_parts.assemble(ROOT)
+        source = (ROOT / dashboard_parts.PAGE).read_text(encoding='utf-8')
+        for kind, cut in (('css', tool.cut_css), ('html', tool.cut_html)):
+            with self.subTest(kind=kind), tempfile.TemporaryDirectory() as tmp:
+                try:
+                    html, parts = cut(dashboard_parts.expand(source, ROOT / 'dashboard', (kind,)))
+                except KeyError as gone:
+                    self.skipTest(f'the split tool\'s anchors have moved on ({gone}); it is only for rebasing the split')
+                shutil.copytree(ROOT / 'dashboard', Path(tmp) / 'dashboard')
+                for old in (Path(tmp) / 'dashboard').glob(f'*.{kind}'):
+                    old.unlink()
+                for name, text in parts.items():
+                    (Path(tmp) / 'dashboard' / name).write_text(text, encoding='utf-8')
+                (Path(tmp) / 'dashboard.html').write_text(html, encoding='utf-8')
+                self.assertEqual(dashboard_parts.assemble(tmp), page)
 
     def test_node_and_python_assemble_the_same_page(self):
         if not node():

@@ -60,7 +60,8 @@ What every pull request needs:
   fails on a name a module uses but never imports, a new module that loads `assistant.py`, and a write to a table
   from outside its owner.
 - Keep changes where they belong, so parallel pull requests merge cleanly:
-  - a new dashboard function goes next to the functions of its area, not at the end of the script;
+  - a new dashboard function goes next to the functions of its area, not at the end of the script, and new styles
+    and markup go in their area's part too (`dashboard/<area>-<what>.css` and `.html`, [Code map](docs/code-map.md));
   - the dashboard's static markup has one element with an id per line (break inside the tag before it,
     `</div` newline `><div id=…>`, so the page stays the same);
   - the action lists in `assistant.py` (`*_ACTIONS`) have one name per line, sorted (`tests/test_owner_boundary.py`

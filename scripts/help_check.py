@@ -196,8 +196,8 @@ def heading_id(text):
 
 def app_files():
     """The app's own code, where people read links: the dashboard, task pages, setup and CLI copy."""
-    return sorted(p for p in [*ROOT.glob('*.py'), *ROOT.glob('machine/**/*.py'), *ROOT.glob('*.mjs'), *ROOT.glob('*.html'), *ROOT.glob('dashboard/*.js'),
-                              *ROOT.glob('connectors/*.py')]
+    return sorted(p for p in [*ROOT.glob('*.py'), *ROOT.glob('machine/**/*.py'), *ROOT.glob('*.mjs'), *ROOT.glob('*.html'),
+                              *ROOT.glob('dashboard/*.js'), *ROOT.glob('dashboard/*.html'), *ROOT.glob('connectors/*.py')]
                   if not p.name.startswith('test') and p.parent.name != 'scripts')
 
 
