@@ -94,7 +94,7 @@ class Allowlist(unittest.TestCase):
 
     def test_any_other_write_is_refused_before_the_token_is_read(self):
         credential = Mock(return_value=REPLY)
-        helpers = types.SimpleNamespace(SourceError=a.SourceError, iso=a.CONNECTOR_HELPERS.iso, credential=credential)
+        helpers = types.SimpleNamespace(SourceError=a.SourceError, Skips=a.CONNECTOR_HELPERS.Skips, iso=a.CONNECTOR_HELPERS.iso, credential=credential)
         replier = intercom.Replier({}, ACCOUNT, helpers)
         with patch('urllib.request.OpenerDirector.open', side_effect=AssertionError('no request')):
             for method, path, payload in [('POST', '/conversations/7/reply', self.payload(admin_id='43')),
@@ -177,7 +177,7 @@ class Send(unittest.TestCase):
         patch('urllib.request.OpenerDirector.open', side_effect=self.fake.respond).start()
         self.addCleanup(patch.stopall)
         tokens = {'intercom': READ, 'intercom-reply': REPLY, 'shared-intercom-f1': READ}
-        self.helpers = types.SimpleNamespace(SourceError=a.SourceError, iso=a.CONNECTOR_HELPERS.iso, credential=lambda config, name: tokens[name])
+        self.helpers = types.SimpleNamespace(SourceError=a.SourceError, Skips=a.CONNECTOR_HELPERS.Skips, iso=a.CONNECTOR_HELPERS.iso, credential=lambda config, name: tokens[name])
         self.accounts = [dict(ACCOUNT), dict(SHARED)]
         events = [intercom.event(ACCOUNT, conversation(), self.helpers), intercom.event(SHARED, {**conversation(), 'id': '8'}, self.helpers)]
         for event in events:

@@ -98,7 +98,7 @@ class ConnectorPlugins(unittest.TestCase):
         self.assertEqual(self.stored(), [])
         self.assertIsNone(self.store.checkpoint('work-feed'))
         for raw, label in ((b'<html/>', 'rss_invalid_feed'), (b'<rss', 'rss_invalid_xml'),
-                           (RSS.replace(b'Wed, 14 Oct 2026 09:00:00 +0200', b'not a date'), 'rss_invalid_timestamp')):
+                           (RSS.replace(b'Wed, 14 Oct 2026 09:00:00 +0200', b'not a date').replace(b'Mon, 12 Oct 2026 09:00:00 GMT', b'nor this'), 'rss_invalid_timestamp')):
             with self.subTest(label), patch('urllib.request.urlopen', return_value=Response(raw)):
                 with self.assertRaises(a.SourceError) as caught:
                     connector.check({}, FEED, a.CONNECTOR_HELPERS)

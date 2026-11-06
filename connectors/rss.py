@@ -108,7 +108,7 @@ def sync(store, config, account, helpers):
         raise helpers.SourceError('rss_missing_url')
     state = store.checkpoint(account['id']) or {}
     raw, headers = fetch(account['url'], state, helpers.SourceError)
-    events = []
+    events, skipped = [], helpers.Skips('rss_invalid_item')
     if raw is not None:
         if len(raw) > 5_000_000:
             raise helpers.SourceError('rss_feed_too_large')
@@ -117,12 +117,14 @@ def sync(store, config, account, helpers):
         except ET.ParseError:
             raise helpers.SourceError('rss_invalid_xml') from None
         nodes = root.findall('./channel/item') or root.findall(ATOM + 'entry')
-        events = list({e['source_id']: e for e in (item_event(account, n, helpers) for n in nodes[:200])}.values())
+        # An item it can't take (no date, say) is counted, never failing the feed (helpers.Skips)
+        events = list({e['source_id']: e for e, _ in skipped.every(nodes[:200], lambda n: item_event(account, n, helpers))}.values())
+        skipped.check().note(state)
     state.update(etag=headers.get('ETag') or state.get('etag'),
                  last_modified=headers.get('Last-Modified') or state.get('last_modified'))
     # Unchanged items are skipped by content hash, so rereading the feed is idempotent.
     store.commit_page(account['id'], state, events)
-    return {'mode': 'incremental', 'events': len(events)}
+    return {'mode': 'incremental', 'events': len(events), 'skipped': sum(skipped.values())}
 
 
 def check(config, account, helpers):
@@ -138,5 +140,7 @@ def check(config, account, helpers):
         raise helpers.SourceError('rss_invalid_xml') from None
     if root.tag not in ('rss', ATOM + 'feed'):
         raise helpers.SourceError('rss_invalid_feed')
-    for node in (root.findall('./channel/item') or root.findall(ATOM + 'entry'))[:200]:
-        item_event(account, node, helpers)
+    skipped = helpers.Skips('rss_invalid_item')  # as sync: a few odd items are fine, a feed of nothing but odd ones is not
+    skipped.every((root.findall('./channel/item') or root.findall(ATOM + 'entry'))[:200], lambda n: item_event(account, n, helpers))
+    if skipped and not skipped.taken:
+        raise helpers.SourceError(skipped.most_common(1)[0][0])

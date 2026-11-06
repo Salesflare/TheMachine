@@ -388,7 +388,7 @@ def sync(store, config, account, helpers, source=None):
     rows, pages = page.get('conversations'), page.get('pages')
     if not isinstance(rows, list) or not isinstance(pages, dict):
         raise SourceError('intercom_invalid_page')
-    events = []
+    events, skipped = [], helpers.Skips('intercom_invalid_conversation')  # one it can't take is counted, never failing the page
     for row in rows:
         cid = str((row or {}).get('id', '')) if isinstance(row, dict) else ''
         if not re.fullmatch(r'[0-9]{1,20}', cid):
@@ -396,7 +396,10 @@ def sync(store, config, account, helpers, source=None):
         detail = source.request('GET', '/conversations/' + cid)
         if str(detail.get('id')) != cid:
             raise SourceError('intercom_conversation_identity_mismatch')
-        events.append(event(account, detail, helpers))
+        found = skipped.take(event, account, detail, helpers)
+        if found is not skipped.SKIPPED:
+            events.append(found)
+    skipped.check()
     next_page = pages.get('next') if isinstance(pages.get('next'), dict) else {}
     cursor = next_page.get('starting_after')
 
@@ -424,5 +427,6 @@ def sync(store, config, account, helpers, source=None):
     state['reported_conversations'] = page.get('total_count')
     state.update(coverage_complete=not cursor, coverage='Older Intercom conversations are still being collected.' if cursor
                  else f"Intercom conversations updated in the last {int(config.get('bootstrap_days', 7))} days, caught up.")
+    skipped.note(state)
     store.commit_page(account['id'], state, events)
-    return {'mode': state['mode'], 'events': len(events), 'more': bool(cursor)}
+    return {'mode': state['mode'], 'events': len(events), 'more': bool(cursor), 'skipped': sum(skipped.values())}

@@ -34,7 +34,7 @@ class ZoomTests(unittest.TestCase):
         self.config = {'database': str(Path(tmp.name) / 'events.sqlite'), 'zoom_broker': {'url': 'https://cp.example/api/zoom/token'}}
         mail_grants.put(self.config, 'zoom', 'owner@acme.example', 'refresh-1')
         zoom._tokens.clear()
-        self.helpers = types.SimpleNamespace(SourceError=a.SourceError, now=lambda: NOW, iso=a.CONNECTOR_HELPERS.iso,
+        self.helpers = types.SimpleNamespace(SourceError=a.SourceError, Skips=a.CONNECTOR_HELPERS.Skips, now=lambda: NOW, iso=a.CONNECTOR_HELPERS.iso,
                                              credential=lambda config, name: 'app-token' if name == 'zoom-broker' else 1 / 0)
         self.listed = {'summaries': [{'meeting_uuid': UUID, 'summary_last_modified_time': '2026-10-23T08:50:00Z'}], 'next_page_token': ''}
         self.summary, self.transcript, self.list_status, self.instances_status = dict(SUMMARY), True, 200, 200
@@ -89,6 +89,13 @@ class ZoomTests(unittest.TestCase):
     def rows(self):
         with self.store.connect() as db:
             return [dict(r) for r in db.execute('SELECT kind,source_id,title,body,metadata,occurred_at,version FROM events ORDER BY kind')]
+
+    def test_a_summary_it_cannot_take_is_skipped_and_counted(self):
+        self.summary = {k: v for k, v in SUMMARY.items() if k not in ('meeting_start_time', 'summary_start_time')}  # no start
+        result = self.sync()
+        self.assertEqual((result['events'], result['skipped']), (0, 1))
+        self.assertEqual(self.store.checkpoint(ACCOUNT['id'])['skipped_rows'], {'zoom_invalid_summary': 1})
+        self.assertEqual(self.sync()['read'], 0)  # passed: not read again on every poll
 
     def test_a_summary_and_its_transcript_are_stored_once_and_the_rotated_sign_in_kept(self):
         self.assertEqual(self.sync()['events'], 2)
@@ -195,7 +202,7 @@ class ZoomThroughMaton(unittest.TestCase):
         Path(self.config['credentials']['maton-zoom']).write_text('MATON_ZOOM_KEY=maton-secret\n')
         self.store = a.Store(Path(self.config['database']))
         self.account = {**ACCOUNT, 'transport': 'maton', 'credential': 'maton-zoom', 'credential_variable': 'MATON_ZOOM_KEY'}
-        self.helpers = types.SimpleNamespace(SourceError=a.SourceError, now=lambda: NOW, iso=a.CONNECTOR_HELPERS.iso,
+        self.helpers = types.SimpleNamespace(SourceError=a.SourceError, Skips=a.CONNECTOR_HELPERS.Skips, now=lambda: NOW, iso=a.CONNECTOR_HELPERS.iso,
                                              credential=lambda config, name: Path(config['credentials'][name]).read_text())
         self.calls = []
         patch('urllib.request.urlopen', side_effect=self.respond).start()

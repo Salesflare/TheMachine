@@ -46,6 +46,7 @@ The service calls `sync` every `poll_seconds` (default 300) in the account's own
 | Helper | Use |
 |---|---|
 | `helpers.SourceError(category, status=None, retry_after=None)` | Raise on any failure. `category` is a short label like `rss_http`; it's shown on the dashboard, so never put message content or secrets in it. `retry_after` (seconds) delays the next try. |
+| `helpers.Skips(malformed=None)` | Counts the rows a page can't take instead of failing the whole page: `skipped.every(rows, convert)` gives `[(event, row)]` for the rows `convert` took and counts each one it refused with `SourceError` (or, given `malformed`, with a missing field or wrong type) by its label. `skipped.check()` still fails when every row of a page of 10 or more was refused, and `skipped.note(state)` keeps the counts in the checkpoint (`skipped_rows`). Return `'skipped': sum(skipped.values())` so the sync log shows them. A failed read (a network error, an HTTP status) still raises. |
 | `helpers.iso(timestamp)` | A Unix timestamp as the UTC ISO string `occurred_at` expects. |
 | `helpers.now()` | The current time as that string. |
 | `helpers.local_tz()` | The owner's time zone (config `timezone`), for things like active hours. |
