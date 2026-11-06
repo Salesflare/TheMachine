@@ -41,7 +41,7 @@ Cuando hay lista una versión nueva del panel, nunca se recarga mientras lo usas
 
 ## Mensajes
 
-Abre la búsqueda con `⌘K` en un Mac o `Ctrl K` en Windows y Linux, o con el icono de búsqueda de la barra superior en un teléfono. Escribe dos letras o más: **Mensajes** muestra lo que mejor encaja de todo lo que ha leído tu Machine, por significado o por palabras.
+Abre la búsqueda con `⌘K` en un Mac o `Ctrl K` en Windows y Linux, o con el icono de búsqueda de la barra superior en un teléfono. Escribe dos letras o más: **Mensajes** muestra lo que mejor encaja de todo lo que ha leído tu Machine, por significado o por palabras. El [historial](history.md) más antiguo aparece por palabras.
 
 **Ver todos los resultados** abre la lista completa, de todas las cuentas o de una. Cada resultado se abre en un lector, con un enlace al lugar de donde llegó. Una búsqueda vacía muestra los mensajes más recientes.
 

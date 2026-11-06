@@ -9,7 +9,7 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // nothing came in, and empty days there would read as "nothing planned". The agenda stops there: one muted line at its
 // top says where the calendar starts ("a week before you joined" when it came with the start), and no Show earlier days.
 // Week and Month say it over a period that holds days before it. A clear week after the start, or no calendar read yet
-// (starts: null), says nothing. Nothing is wider than the screen at 390 and 1440, and viewing sends nothing.
+// (starts: null), says nothing. Once its history is in, the line says where the history starts. Nothing is wider than the screen at 390 and 1440, and viewing sends nothing.
 // The clock is fixed on Tuesday 27 October 2026; the calendar starts on Friday 23 October.
 // CALENDAR_SHOT=<dir> also writes screenshots.
 process.env.TZ='Europe/Brussels';
@@ -72,6 +72,13 @@ try{
  // Connected later than the start: the line says only where it starts
  {starts={day:START,joined:false};const {context,page}=await open(1440,900);await toCal(page);await toStart(page);
   assert.deepEqual(await line(page),['Your calendar starts Fri, Oct 23.']);await context.close()}
+ // Its history is in (docs/help/history.md): the line says where that starts, a year back, with the year
+ {starts={day:'2025-10-27',joined:false,history:true};const {context,page}=await open(1440,900);await toCal(page);
+  await page.evaluate(()=>{location.hash='#calendar?view=month&date=2025-10-01'});await page.locator('.cal-mg').waitFor();
+  await page.waitForFunction(()=>document.querySelector('.cal-range')?.textContent.includes('2025'));
+  assert.deepEqual(await line(page),['Your calendar history starts October 27, 2025.']);  // US order in US English
+  await page.evaluate(()=>{DL='en-GB';calRender()});assert.deepEqual(await line(page),['Your calendar history starts 27 October 2025.'],'the owner\'s date format');
+  await context.close()}
  // No calendar read yet: no line, and earlier days load as before
  {starts=null;const {context,page}=await open(1440,900);await toCal(page);await page.locator('[data-cal-more="up"] button').click();
   await page.waitForFunction(()=>document.querySelector('#calendar-view [data-day]').dataset.day<'2026-10-27');

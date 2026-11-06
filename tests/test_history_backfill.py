@@ -335,6 +335,13 @@ class CalendarHistory(Base):
         meetings = self.store.calendar(['cal'], '2026-03-01T00:00:00+00:00', '2026-03-08T00:00:00+00:00')
         self.assertEqual([m['title'] for m in meetings], ['Board meeting'])  # readable on the Calendar
 
+    def test_no_start_line_while_older_meetings_still_come_in(self):
+        with self.store.connect() as db:
+            db.execute("INSERT INTO sync_activity VALUES('s1','cal','2026-10-30T09:00:00+00:00','success',3,NULL,NULL)")
+            history.save(db, 'cal', {'target': '2025-11-06T09:00:00+00:00'}, a.now(), 3, '2026-06-01T10:00:00+00:00')
+        with mock.patch.object(a.App, 'started_at', return_value='2026-10-30T09:00:00+00:00'):
+            self.assertIsNone(self.app.calendar_starts())  # its meetings land before the first-read start: no edge there yet
+
 
 if __name__ == '__main__':
     unittest.main()

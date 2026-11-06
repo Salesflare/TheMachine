@@ -41,7 +41,7 @@ Quand une nouvelle version du tableau de bord est prête, il ne se recharge jama
 
 ## Messages
 
-Ouvrez la recherche avec `⌘K` sur Mac ou `Ctrl K` sur Windows et Linux, ou avec l’icône de recherche dans la barre du haut sur un téléphone. Tapez au moins deux lettres : **Messages** montre les meilleurs résultats parmi tout ce que votre Machine a lu, par sens ou par mots.
+Ouvrez la recherche avec `⌘K` sur Mac ou `Ctrl K` sur Windows et Linux, ou avec l’icône de recherche dans la barre du haut sur un téléphone. Tapez au moins deux lettres : **Messages** montre les meilleurs résultats parmi tout ce que votre Machine a lu, par sens ou par mots. L’[historique](history.md) plus ancien apparaît par mots.
 
 **Voir tous les résultats** ouvre la liste complète, pour tous les comptes ou un seul. Chaque résultat s’ouvre dans un lecteur, avec un lien vers son origine. Une recherche vide montre les messages les plus récents.
 

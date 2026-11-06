@@ -23,7 +23,7 @@ Un plan hecho en común es una sola promesa, marcada "Con" y su nombre. Una prom
 
 ## Agenda, semana o mes
 
-- **Agenda** lista cada día. Desplázate hacia abajo para ver días posteriores, o hacia arriba (o **Mostrar días anteriores**) para los anteriores. Llega hasta una semana antes de que conectaras tu calendario, y una línea arriba dice desde qué día.
+- **Agenda** lista cada día. Desplázate hacia abajo para ver días posteriores, o hacia arriba (o **Mostrar días anteriores**) para los anteriores. Llega hasta una semana antes de que conectaras tu calendario, y una línea arriba dice desde qué día. Cuando llega su [historial](history.md), llega a un año atrás.
 - **Semana** muestra una cuadrícula, de lunes a domingo. En un móvil muestra tres días.
 - **Mes** muestra el mes entero. Un ordenador muestra hasta tres elementos por día; un móvil muestra puntos, y al tocar un día se lista.
 

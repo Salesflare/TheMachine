@@ -5,8 +5,9 @@
 // the promise's page, or the meeting in its own calendar. Meetings load one calendar week (Monday to Monday) per ask
 // and are kept for a minute. Today, ‹ › and the view switch stay on top; t, ← → (or k j), a and w do the same. The
 // address holds the view and its week (#calendar?view=week&date=2026-10-26), so back and forward work.
-const CAL_BACK=26,CAL_AHEAD=52;  // how many weeks the agenda runs back and ahead of this one
-// calStarts: the first day there are meetings for ({day, joined}, api/calendar): a calendar's first read went a week back
+const CAL_BACK=56,CAL_AHEAD=52;  // how many weeks the agenda runs back (a year of history: docs/help/history.md) and ahead of this one
+// calStarts: the first day there are meetings for ({day, joined, history}, api/calendar): a calendar's first read went a week back,
+// its history (history: true) about a year
 let calStarts=null,calCals=[],calWeeks=new Map(),calMeetings=null,calReturn=false,calRouting=false,calBusy=null,calMoreFailed={},calUp=false,calLastY=0;
 let calMode=['week','month'].includes(sideStore.get('cal-mode'))?sideStore.get('cal-mode'):'agenda';
 const calMid=d=>{const x=new Date(d);x.setHours(0,0,0,0);return x};
@@ -88,7 +89,7 @@ function calRow(it){const x=calParts(it),tag=x.href||x.edit||x.view?'a':'div',at
  return `<${tag} class="cal-item k-${x.tone}${it.past?' past':''}"${attrs}><span class="cal-time">${esc(x.time)}</span><span class="cal-dot" aria-hidden="true"></span><span class="cal-main"><span class="cal-title">${x.owner?`<span class="cal-owner">${esc(x.owner)}</span> `:''}<span translate="no">${esc(x.title)}</span></span>${x.sub||x.prep?`<span class="cal-sub">${x.prep?`<span class="cal-prep">${esc(x.prep)}${x.sub?' · ':''}</span>`:''}${esc(x.sub)}</span>`:''}${(x.said||[]).map(t=>`<span class="cal-sub cal-said">${esc(t)}</span>`).join('')}</span><span class="cal-end">${x.badge||''}${x.href||x.edit||x.view?'<span class="cal-go" aria-hidden="true">›</span>':''}</span></${tag}>`}
 function calChip(it){const x=calParts(it),tag=x.href||x.edit||x.view?'a':'div',attrs=x.href?` href="${esc(x.href)}"`:x.edit?` role="button" tabindex="0" data-cal-edit="${esc(x.edit)}"`:x.view?` role="button" tabindex="0" data-cal-view="${esc(x.view)}"`:'';
  return `<${tag} class="cal-chip k-${x.tone}${it.past?' past':''}"${attrs} title="${esc([x.owner,x.title].filter(Boolean).join(' ')+(x.sub?' · '+x.sub:'')+(x.said||[]).map(t=>' · '+t).join(''))}"><span class="t">${esc(x.owner||x.time)}</span><span class="n" translate="no">${esc(x.title)}</span></${tag}>`}
-const calDate=k=>calOf(k).toLocaleDateString(DL,{weekday:'short',day:'numeric',month:'short'});  // Sat, Oct 24
+const calDate=(k,o={weekday:'short',day:'numeric',month:'short'})=>calOf(k).toLocaleDateString(DL,o);  // Sat, Oct 24 (in the owner's date format, DL)
 const calMon=d=>d.toLocaleDateString(DL,{month:'short'}).replace(/\.$/,'');
 // A run of days as "Oct 26 – Nov 1, 2026" (the year once, or on both sides when it changes)
 function calSpan(a,n=7){const b=calAdd(a,n-1),y=', '+b.getFullYear();
@@ -113,7 +114,8 @@ const calMoreRow=(dir,manual)=>{const end=dir==='up'?calFrom<=calAdd(calMonday(n
 // The edge of what came in: before calStarts.day no calendar was read, so its empty days say nothing. One muted line
 // says where it starts, at the top of the agenda once it gets there, and over a week or month that holds days before it.
 const calBefore=d=>!!calStarts&&localDay(d)<=calStarts.day;
-const calStartLine=()=>{const d=calDate(calStarts.day);return `<p class="cal-note cal-start">${esc(calStarts.joined?t('Your calendar starts {}, a week before you joined.',d):t('Your calendar starts {}.',d))}</p>`};
+const calStartLine=()=>{const d=calDate(calStarts.day),y=calDate(calStarts.day,{day:'numeric',month:'long',year:'numeric'});  // November 6, 2025; 6 November 2025 day first
+ return `<p class="cal-note cal-start">${esc(calStarts.history?t('Your calendar history starts {}.',y):calStarts.joined?t('Your calendar starts {}, a week before you joined.',d):t('Your calendar starts {}.',d))}</p>`};
 // The sticky header's bottom edge: rows under it are out of sight
 const calEdge=()=>{const h=$('#page-head');return h&&!h.hidden?Math.max(0,h.getBoundingClientRect().bottom):0};
 function calAnchor(box){const edge=calEdge();for(const el of box.querySelectorAll('.cal-block[data-day]')){const r=el.getBoundingClientRect();if(r.bottom>edge)return {day:el.dataset.day,top:r.top}}return null}

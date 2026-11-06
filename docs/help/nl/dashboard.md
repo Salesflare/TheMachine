@@ -41,7 +41,7 @@ Als er een nieuwe versie van het dashboard klaar is, herlaadt het nooit terwijl 
 
 ## Berichten
 
-Open zoeken met `⌘K` op een Mac of `Ctrl K` op Windows en Linux, of met het zoekicoon in de bovenbalk op een telefoon. Typ twee letters of meer: **Berichten** toont de beste resultaten uit alles wat je Machine gelezen heeft, op betekenis of op woorden.
+Open zoeken met `⌘K` op een Mac of `Ctrl K` op Windows en Linux, of met het zoekicoon in de bovenbalk op een telefoon. Typ twee letters of meer: **Berichten** toont de beste resultaten uit alles wat je Machine gelezen heeft, op betekenis of op woorden. Oudere [geschiedenis](history.md) verschijnt op woorden.
 
 **Alle resultaten** opent de volledige lijst, voor alle accounts of voor één. Elk resultaat opent in een lezer, met een link naar waar het vandaan kwam. Een lege zoekopdracht toont de nieuwste berichten.
 

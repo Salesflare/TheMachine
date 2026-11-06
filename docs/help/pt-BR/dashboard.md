@@ -41,7 +41,7 @@ Quando uma nova versão do painel fica pronta, ele nunca recarrega enquanto voc�
 
 ## Mensagens
 
-Abra a pesquisa com `⌘K` no Mac ou `Ctrl K` no Windows e no Linux, ou com o ícone de busca na barra superior no celular. Digite duas letras ou mais: **Mensagens** mostra os melhores resultados de tudo o que a sua Machine leu, por significado ou por palavras.
+Abra a pesquisa com `⌘K` no Mac ou `Ctrl K` no Windows e no Linux, ou com o ícone de busca na barra superior no celular. Digite duas letras ou mais: **Mensagens** mostra os melhores resultados de tudo o que a sua Machine leu, por significado ou por palavras. O [histórico](history.md) mais antigo aparece por palavras.
 
 **Ver todos os resultados** abre a lista completa, de todas as contas ou de uma só. Cada resultado abre em um leitor, com um link para o lugar de onde veio. Uma pesquisa vazia mostra as mensagens mais novas.
 

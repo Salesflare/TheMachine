@@ -23,7 +23,7 @@ Een plan dat jullie samen maakten, is één belofte, gemarkeerd met "Met" en de 
 
 ## Agenda, week of maand
 
-- **Agenda** toont elke dag als lijst. Scrol omlaag voor latere dagen, omhoog (of **Eerdere dagen tonen**) voor eerdere. Ze gaat terug tot een week voordat je je agenda koppelde, en een regel bovenaan zegt vanaf welke dag.
+- **Agenda** toont elke dag als lijst. Scrol omlaag voor latere dagen, omhoog (of **Eerdere dagen tonen**) voor eerdere. Ze gaat terug tot een week voordat je je agenda koppelde, en een regel bovenaan zegt vanaf welke dag. Zodra de [geschiedenis](history.md) binnen is, gaat ze ongeveer een jaar terug.
 - **Week** toont een raster, maandag tot zondag. Op een telefoon toont het drie dagen.
 - **Maand** toont de hele maand. Een computer toont tot drie items per dag; een telefoon toont stippen, en een tik toont die dag als lijst.
 

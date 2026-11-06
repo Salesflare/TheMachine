@@ -63,14 +63,14 @@ class CalendarApp:
                  f'SELECT MIN(day) FROM sync_daily WHERE syncs>failed AND account_id IN ({marks})']
         found = []
         with self.store.connect() as db:
-            older = history.calendar_start(db, ids)
+            older, coming = history.calendar_start(db, ids), history.calendar_coming(db, ids)
             for read in reads:
                 try:
                     found.append(db.execute(read, ids).fetchone()[0])
                 except sqlite3.OperationalError:  # no daily counts yet
                     pass
         first = min((w for w in map(_when, filter(None, found)) if w), default=None)
-        if not first:
+        if not first or coming:  # no edge while older meetings still come in: they land before it
             return None
         started = _when(self.started_at() or '')
         day = (first - dt.timedelta(days=CALENDAR_BACK_DAYS)).astimezone(local_tz()).date().isoformat()
