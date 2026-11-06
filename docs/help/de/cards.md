@@ -42,6 +42,14 @@ Braucht eine Aufgabe einen anderen Bereich, um weiterzukommen, fragt sie mit ein
 
 Startest du eine Aufgabe, darf sie die Nachrichten, aus denen sie kam, immer lesen, auch im Postfach einer anderen Firma. Braucht sie andere Nachrichten aus einem anderen Bereich, fragt sie mit **Diese E-Mail für diese Aufgabe verwenden**; ein Tippen fügt sie hinzu und sie macht weiter. Mail für eine andere deiner Firmen landet gleich bei den Aufgaben dieser Firma. Eine Aufgabe aus deinem eigenen Leben, etwa Familie, die an deine Arbeitsadresse schreibt, ist von Anfang an Privat.
 
+## Jetzt prüfen
+
+Deine Machine liest jede Quelle alle paar Minuten, Tag und Nacht, und prüft das Neue auf Aufgaben, sobald 40 Nachrichten warten oder die älteste Nachricht eine Stunde gewartet hat.
+
+**Jetzt prüfen** oben bei Aufgaben liest sofort jede Quelle und sieht sich an, was neu ist, auch wenn gerade nichts ansteht. Daneben steht, wann sie zuletzt geprüft hat, wann die nächste Prüfung fällig ist und wie viele Nachrichten warten. Ein zweiter Druck während der Prüfung zeigt dieselbe Prüfung. Die Handy-App hat es auch. Im Chat bittest du sie einfach, jetzt zu prüfen.
+
+LinkedIn, X und Salesflare behalten ihr eigenes Tempo.
+
 ## Die Buttons
 
 Eine Aufgabe zeigt ihren nächsten Schritt, etwa **Ausführen** oder **Prüfen und senden**, mit **Zurückstellen** daneben. Siehe [Ausführen](do-it.md) und [Zurückstellen](snooze.md).

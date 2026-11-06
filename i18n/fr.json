@@ -689,6 +689,7 @@
  "Check in with {}": "Relancer {}",
  "Check in with {} {} {} if no answer": "Relancer {} {} à {} sans réponse",
  "Check my contacts": "Vérifier mes contacts",
+ "Check now": "Vérifier maintenant",
  "Check that the page in the new tab shows {}.": "Vérifiez que la page du nouvel onglet affiche {}.",
  "Check the text messages on your phone.": "Regardez les SMS sur votre téléphone.",
  "Check which of my contacts have a Machine": "Vérifier lesquels de mes contacts ont une Machine",
@@ -699,6 +700,11 @@
  "Checked {} things": {
   "one": "{} point vérifié",
   "other": "{} points vérifiés"
+ },
+ "Checked. Nothing new.": "Vérifié. Rien de nouveau.",
+ "Checked. {} new to-dos.": {
+  "one": "Vérifié. {} nouvelle tâche.",
+  "other": "Vérifié. {} nouvelles tâches."
  },
  "Checking delivery": "Vérification de la livraison",
  "Checking for GBrain…": "Recherche de GBrain…",
@@ -2241,6 +2247,8 @@
  "Next one shortly.": "La prochaine sous peu.",
  "Next one when new messages come in.": "La prochaine quand de nouveaux messages arriveront.",
  "Next one when your new mail is in.": "La prochaine quand votre nouveau courrier sera arrivé.",
+ "Next review by {}": "Prochaine vérification vers {}",
+ "Next review soon": "Prochaine vérification bientôt",
  "Next review starts when your new mail is in": "La prochaine revue démarre quand votre nouveau courrier est arrivé",
  "Next try": "Prochain essai",
  "Next try {}.": "Prochain essai {}.",
@@ -3203,6 +3211,7 @@
  "Reading docs needs its own OK": "Lire les documents demande un accord à part",
  "Reading everything, so you can pretend you did.": "Je lis tout, pour que vous puissiez faire semblant.",
  "Reading it…": "Lecture…",
+ "Reading sources…": "Lecture des sources…",
  "Reading the last days again to fill a gap.": "Relit les derniers jours pour combler un trou.",
  "Reading your mail, first to-dos in a few minutes": "Lecture de vos e-mails, premières tâches dans quelques minutes",
  "Reads accounts, contacts, emails and meetings. Changes nothing.": "Lit les comptes, contacts, e-mails et réunions. Ne modifie rien.",
@@ -3423,7 +3432,11 @@
  "Review: {}": "Relecture : {}",
  "Reviewed": "Examiné",
  "Reviewed IDs must belong to this batch": "Les ID examinés doivent appartenir à ce lot",
+ "Reviewed {}": "Vérifié à {}",
+ "Reviewed {} · next by {}": "Vérifié à {} · prochaine vers {}",
+ "Reviewed {} · next soon": "Vérifié à {} · prochaine bientôt",
  "Reviewing": "Examen en cours",
+ "Reviewing messages…": "Examen des messages…",
  "Reviewing new messages": "Examen des nouveaux messages",
  "Reviewing now (started {}).": "Examen en cours (commencé {}).",
  "Reviews": "Revues",

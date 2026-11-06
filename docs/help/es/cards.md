@@ -42,6 +42,14 @@ Cuando una tarea necesita otra área para seguir, lo pide con un botón **Mover 
 
 Cuando inicias una tarea, siempre puede leer los mensajes de los que vino, también en el buzón de otra empresa. Si necesita otros mensajes de otra área, lo pide con **Usar este correo para esta tarea**; un toque los añade y sigue. El correo para otra de tus empresas va desde el principio a las tareas de esa empresa. Una tarea de tu propia vida, como tu familia escribiendo a tu dirección del trabajo, es Personal desde el principio.
 
+## Revisar ahora
+
+Tu Machine lee cada fuente cada pocos minutos, de día y de noche, y revisa lo que llegó en busca de tareas en cuanto hay 40 mensajes esperando o el mensaje más antiguo lleva una hora esperando.
+
+**Revisar ahora**, arriba en Tareas, lee al momento cada fuente y revisa lo que llegó, también cuando todo está en calma. Al lado, una línea dice cuándo revisó por última vez, cuándo toca la próxima revisión y cuántos mensajes esperan. Pulsarlo otra vez mientras revisa muestra la misma revisión. La app del móvil también lo tiene. En el chat, pídele que revise ahora.
+
+LinkedIn, X y Salesflare siguen su propio ritmo.
+
 ## Los botones
 
 Una tarea muestra su siguiente paso, como **Hazlo** o **Revisar y enviar**, con **Posponer** al lado. Consulta [Hazlo](do-it.md) y [Posponer](snooze.md).

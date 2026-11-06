@@ -42,6 +42,14 @@ Quando uma tarefa precisa de outra área para seguir, ela pede com um botão **M
 
 Quando você inicia uma tarefa, ela sempre pode ler as mensagens de onde veio, também na caixa de outra empresa. Se precisar de outras mensagens de outra área, ela pede com **Usar este e-mail para esta tarefa**; um toque as adiciona e ela continua. O e-mail para outra das suas empresas vai desde o início para as tarefas dessa empresa. Uma tarefa da sua vida pessoal, como a família escrevendo para o seu endereço de trabalho, é Pessoal desde o início.
 
+## Verificar agora
+
+Sua Machine lê cada fonte a cada poucos minutos, de dia e de noite, e verifica o que chegou em busca de tarefas assim que 40 mensagens esperam ou a mensagem mais antiga espera há uma hora.
+
+**Verificar agora**, no topo de Tarefas, lê na hora cada fonte e olha o que chegou, também quando está tudo tranquilo. Ao lado, uma linha diz quando ela verificou pela última vez, quando é a próxima verificação e quantas mensagens esperam. Tocar de novo enquanto ela verifica mostra a mesma verificação. O app do celular também tem. No chat, peça para ela verificar agora.
+
+LinkedIn, X e Salesflare mantêm o próprio ritmo.
+
 ## Os botões
 
 Uma tarefa mostra o próximo passo, como **Fazer** ou **Revisar e enviar**, com **Adiar** ao lado. Veja [Fazer](do-it.md) e [Adiar](snooze.md).

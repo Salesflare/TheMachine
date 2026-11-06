@@ -49,6 +49,7 @@ from timeutil import (DAY_NAMES, WORK_HOURS, WORK_HOURS_DEFAULT, clock, in_hours
                       next_work_day, now, set_timezone, set_work_hours, work_hours)  # the owner's time zone and hours, the clock
 import abilities
 import bug_queue
+import check_now
 import embeddings
 import gbrain
 import gap_note
@@ -140,6 +141,7 @@ from shared_graph_app import SharedGraphApp
 from skills_app import SkillsApp
 from whatsapp_images_app import WhatsAppImagesApp
 from support_app import SupportApp
+from machine.app.check_now import CheckNowApp
 
 ROOT = Path(__file__).resolve().parent
 # How reviews and Do it work; edits show as markers on the hit-rate chart.
@@ -1037,6 +1039,7 @@ DASHBOARD_ACTIONS = frozenset({
     'browser_show',
     'calendar_write',
     'card_chat',
+    'check_now',
     'client_error',
     'confirm_action',
     'connector_sync',
@@ -15954,7 +15957,7 @@ def forget_in_notes(root, needles):
 
 # App's domain mixins (<domain>_app.py): each holds a domain's App methods and the actions it handles (its ACTIONS).
 APP_MIXINS = (SupportApp, CalendarApp, SkillsApp, AgentsApp, GBrainApp, SharedGraphApp, RecurringApp, CorrectionsApp, AiApp, MeetApp, MissedWorkApp,
-              WhatsAppImagesApp)
+              WhatsAppImagesApp, CheckNowApp)
 
 
 class App(*APP_MIXINS):
@@ -16025,6 +16028,8 @@ class App(*APP_MIXINS):
         self.owner_token = owner_credential(config)
         self.stop = threading.Event()
         self.graph_dirty = threading.Event()
+        # Check now (check_now.py): the one check, and each collector's early wake and its last finished read
+        self.check, self.collector_wakes, self.collector_reads, self.collector_resting = check_now.Check(), {}, {}, set()
         self.model_usage = None
         self.chat_catalog = chat_model.Catalog()  # the models a chat can pick, from the Gateway (chat_model.py)
         # The Fleet (fleet.py): only when the control plane put this Machine in one.
@@ -16118,6 +16123,8 @@ class App(*APP_MIXINS):
 
     def stop_all(self):
         self.stop.set()
+        for wake in list(getattr(self, 'collector_wakes', {}).values()):
+            wake.set()  # a collector resting till its next read stops now too
         if self.__dict__.get('fleet_stop') is not None:
             self.fleet_stop.set()
 
@@ -17100,6 +17107,7 @@ class App(*APP_MIXINS):
             except Exception as error:  # noqa: BLE001 - the dashboard shows without it
                 LOG.error('model pause error=%s', type(error).__name__); result['model_pause'] = None
             result['review_pause'] = self.review_pause()
+            result['check'] = self.check_view()
             result['skills'] = self.skills.view() if getattr(self, 'skills', None) else None
             result['review_live'] = self.review_live()
             result['reviews_on'] = bool((self.config.get('review_worker') or {}).get('enabled'))  # off until activated
@@ -18382,7 +18390,8 @@ class App(*APP_MIXINS):
                 # account's thread silently while /health stays green.
                 LOG.error('collector account=%s internal_error=%s', account['id'], type(error).__name__)
                 delay = 60
-            self.stop.wait(delay)
+            self.__dict__.setdefault('collector_reads', {})[account['id']] = time.time()  # a read ended (Check now waits for it)
+            self.collector_rest(account['id'], delay)
 
     # -- notifications (notify.py): Settings, Notifications and the morning digest
     def notify_on(self, kind, channel):

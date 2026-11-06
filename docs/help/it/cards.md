@@ -42,6 +42,14 @@ Quando un'attività ha bisogno di un'altra area per andare avanti, lo chiede con
 
 Quando avvii un'attività, può sempre leggere i messaggi da cui è nata, anche nella casella di un'altra azienda. Se le servono altri messaggi da un'altra area, lo chiede con **Usa questa email per questa attività**; un tocco li aggiunge e continua. La posta per un'altra delle tue aziende va subito tra le attività di quell'azienda. Un'attività della tua vita privata, come la famiglia che scrive al tuo indirizzo di lavoro, è Personale fin dall'inizio.
 
+## Controlla ora
+
+La tua Machine legge ogni fonte ogni pochi minuti, giorno e notte, e controlla cosa è arrivato in cerca di attività appena 40 messaggi sono in attesa o il messaggio più vecchio aspetta da un’ora.
+
+**Controlla ora**, in cima ad Attività, legge subito ogni fonte e guarda cosa è arrivato, anche quando è tutto tranquillo. Accanto, una riga dice quando ha controllato l’ultima volta, quando è previsto il prossimo controllo e quanti messaggi aspettano. Premerlo di nuovo mentre controlla mostra lo stesso controllo. Anche l’app per il telefono lo ha. In chat, chiedile di controllare ora.
+
+LinkedIn, X e Salesflare mantengono il loro ritmo.
+
 ## I pulsanti
 
 Un'attività mostra il passo successivo, come **Fallo** o **Rivedi e invia**, con **Posticipa** accanto. Vedi [Fallo](do-it.md) e [Posticipa](snooze.md).

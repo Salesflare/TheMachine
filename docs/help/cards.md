@@ -42,6 +42,14 @@ When a to-do needs another area to go on, it asks with a **Move to Work** button
 
 When you start a to-do, it can always read the messages it came from, also in another company's mailbox. When it needs other messages from another area, it asks with **Use this email for this to-do**; a tap adds them and it carries on. Mail for another of your companies goes to that company's to-dos from the start. A to-do about your own life, like family writing to your work address, is Personal from the start.
 
+## Check now
+
+Your Machine reads each source every few minutes, day and night, and reviews what came in for to-dos once 40 messages wait or the oldest message has waited an hour.
+
+**Check now**, at the top of To-dos, reads every source right away and looks at what came in, also when all is clear. Next to it, a short line says when it last reviewed, when the next review is due and how many messages wait. Pressing it again while it checks shows the same check. The phone app has it too. In chat, ask it to check now.
+
+LinkedIn, X and Salesflare keep their own pace.
+
 ## The buttons
 
 A to-do shows its next step, like **Do it** or **Review and send**, with **Snooze** beside it. See [Do it](do-it.md) and [Snooze](snooze.md).

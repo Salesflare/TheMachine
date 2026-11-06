@@ -42,6 +42,14 @@ Quand une tâche a besoin d’un autre espace pour avancer, elle le demande avec
 
 Quand vous lancez une tâche, elle peut toujours lire les messages d’où elle vient, même dans la boîte d’une autre entreprise. Si elle a besoin d’autres messages d’un autre espace, elle le demande avec **Utiliser cet e-mail pour cette tâche** ; un appui les ajoute et elle continue. Le courrier pour une autre de vos entreprises va dès le départ dans les tâches de cette entreprise. Une tâche de votre vie privée, comme votre famille qui écrit à votre adresse pro, est Perso dès le départ.
 
+## Vérifier maintenant
+
+Votre Machine lit chaque source toutes les quelques minutes, jour et nuit, et vérifie ce qui est arrivé pour en tirer des tâches dès que 40 messages attendent ou que le plus ancien attend depuis une heure.
+
+**Vérifier maintenant**, en haut des Tâches, lit tout de suite chaque source et examine ce qui est arrivé, même quand tout est calme. À côté, une ligne dit quand elle a vérifié pour la dernière fois, quand aura lieu la prochaine vérification et combien de messages attendent. Appuyer encore pendant la vérification montre la même vérification. L’app mobile l’a aussi. Dans le chat, demandez-lui de vérifier maintenant.
+
+LinkedIn, X et Salesflare gardent leur propre rythme.
+
 ## Les boutons
 
 Une tâche affiche son étape suivante, comme **Faire** ou **Vérifier et envoyer**, avec **Mettre en attente** à côté. Voir [Faire](do-it.md) et [Mettre en attente](snooze.md).
