@@ -8,7 +8,7 @@ site: Show the QR code, Get a code, On your phone? Link with a code instead, Rem
 ---
 ## O que ele lê
 
-Suas conversas do WhatsApp, como um dispositivo conectado ao WhatsApp do seu celular, igual ao WhatsApp no computador. Quando você conecta, ele lê os últimos 7 dias.
+Suas conversas do WhatsApp, como um dispositivo conectado ao WhatsApp do seu celular, igual ao WhatsApp no computador. Quando você conecta, o WhatsApp também envia suas conversas antigas, muitas vezes de anos. Sua Machine guarda tudo, e só as mensagens dos últimos 7 dias viram tarefas.
 
 Uma foto, mensagem de voz ou arquivo sem legenda aparece pelo que é, como "Imagem enviada". Os avisos do próprio WhatsApp, como o aviso de criptografia ou alguém entrando em um grupo, não têm texto e ficam de fora.
 
@@ -33,6 +33,8 @@ Em uma Machine hospedada:
 1. No painel, abra **Conexões**, depois **+ Adicionar**, e escolha WhatsApp.
 2. Toque em **Mostrar o QR code**.
 3. No seu celular, no WhatsApp, abra Configurações, Dispositivos conectados, Conectar um dispositivo, e escaneie o QR code.
+4. O WhatsApp aparece como conectado em menos de um minuto. Seu histórico de conversas continua chegando depois, e o cartão conta as mensagens enquanto chegam.
+   Se a conexão demorar demais, ela avisa depois de alguns minutos. Toque em **Tentar de novo** para continuar de onde parou.
 
 Configurando pelo celular, sem uma segunda tela para escanear? Abra **No celular? Conecte com um código**, digite seu número e toque em **Receber um código**. O WhatsApp então pede esse código.
 

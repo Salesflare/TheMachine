@@ -242,6 +242,18 @@ class CodeTest(unittest.TestCase):
         catalog = json.loads((Path(onboarding.__file__).parent / 'i18n' / 'en.json').read_text())
         self.assertEqual([key for key in catalog if 'wacli' in key.lower()], [])  # nothing the dashboard translates says it
 
+    def test_whatsapp_pairing_ends_soon_after_connected_while_history_keeps_coming(self):
+        # wacli auth keeps receiving history after it links; the sync takes that over, so the link screen never waits on it
+        with tempfile.TemporaryDirectory() as folder:
+            wacli = self.script(folder, 'wacli', 'echo \'{"event":"connected","data":{}}\'; sleep 30\n')
+            ui = onboarding.WebUI(wait=5)
+            ui.prefill({'Your WhatsApp phone number': '+32 470 12 34 56'})
+            began = time.monotonic()
+            with patch.object(onboarding, 'WHATSAPP_HANDOFF', 1), patch.object(onboarding, 'whatsapp_linked', return_value='3247@s.whatsapp.net'):
+                linked = onboarding.whatsapp_pair(wacli, Path(folder) / 'store', ui)
+        self.assertEqual(linked, '3247@s.whatsapp.net')
+        self.assertLess(time.monotonic() - began, 15)
+
     def test_whatsapp_number_must_have_its_country_code(self):
         ui = onboarding.WebUI(wait=5)
         ui.prefill({'Your WhatsApp phone number': '0470'})

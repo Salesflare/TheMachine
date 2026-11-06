@@ -8,7 +8,7 @@ site: Show the QR code, Get a code, On your phone? Link with a code instead, Rem
 ---
 ## What it reads
 
-Your WhatsApp chats, as a linked device of your phone's WhatsApp, like WhatsApp on a computer. When you connect it reads the last 7 days.
+Your WhatsApp chats, as a linked device of your phone's WhatsApp, like WhatsApp on a computer. When you connect it, WhatsApp also sends your older chats, often years of them. Your Machine keeps all of it, and only messages from the last 7 days turn into to-dos.
 
 A photo, voice message or file without a caption shows as what it is, like "Sent image". WhatsApp's own notices, such as the encryption notice or someone joining a group, have no text and are left out.
 
@@ -33,6 +33,8 @@ On a hosted Machine:
 1. In the dashboard, open **Connections**, then **+ Add**, and pick WhatsApp.
 2. Press **Show the QR code**.
 3. On your phone, in WhatsApp, open Settings, Linked devices, Link a device, and scan the QR code.
+4. WhatsApp shows as connected within a minute. Your chat history keeps coming in after that, and its card counts the messages while it does.
+   If connecting takes too long, it says so after a few minutes. Press **Try again** to pick up where it stopped.
 
 Setting up on your phone, with no second screen to scan from? Open **On your phone? Link with a code instead**, enter your number and press **Get a code**. WhatsApp then asks for that code.
 

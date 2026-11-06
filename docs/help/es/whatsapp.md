@@ -8,7 +8,7 @@ site: Show the QR code, Get a code, On your phone? Link with a code instead, Rem
 ---
 ## Qué lee
 
-Tus chats de WhatsApp, como dispositivo vinculado al WhatsApp de tu teléfono, igual que WhatsApp en un ordenador. Al conectar lee los últimos 7 días.
+Tus chats de WhatsApp, como dispositivo vinculado al WhatsApp de tu teléfono, igual que WhatsApp en un ordenador. Al conectar, WhatsApp también envía tus chats antiguos, a menudo de años. Tu Machine lo guarda todo, y solo los mensajes de los últimos 7 días se convierten en tareas.
 
 Una foto, un mensaje de voz o un archivo sin texto aparece como lo que es, por ejemplo "Imagen enviada". Los avisos propios de WhatsApp, como el aviso de cifrado o que alguien se une a un grupo, no tienen texto y se dejan fuera.
 
@@ -33,6 +33,8 @@ En una Machine alojada:
 1. En el panel, abre **Conexiones**, luego **+ Añadir**, y elige WhatsApp.
 2. Pulsa **Mostrar el código QR**.
 3. En tu teléfono, en WhatsApp, abre Ajustes, Dispositivos vinculados, Vincular un dispositivo, y escanea el código QR.
+4. WhatsApp aparece como conectado en menos de un minuto. Tu historial de chats sigue llegando después, y su tarjeta cuenta los mensajes mientras llegan.
+   Si la conexión tarda demasiado, lo dice después de unos minutos. Pulsa **Reintentar** para seguir donde se quedó.
 
 ¿Lo configuras en el teléfono, sin una segunda pantalla desde la que escanear? Abre **¿En tu teléfono? Vincula con un código**, introduce tu número y pulsa **Obtener un código**. WhatsApp te pide entonces ese código.
 

@@ -8,7 +8,7 @@ site: Show the QR code, Get a code, On your phone? Link with a code instead, Rem
 ---
 ## Ce qu’il lit
 
-Vos discussions WhatsApp, comme un appareil associé au WhatsApp de votre téléphone, comme WhatsApp sur un ordinateur. À la connexion, il lit les 7 derniers jours.
+Vos discussions WhatsApp, comme un appareil associé au WhatsApp de votre téléphone, comme WhatsApp sur un ordinateur. À la connexion, WhatsApp envoie aussi vos anciennes discussions, souvent sur des années. Votre Machine garde tout, et seuls les messages des 7 derniers jours deviennent des tâches.
 
 Une photo, un message vocal ou un fichier sans légende apparaît tel quel, par exemple « Image envoyée ». Les notifications de WhatsApp lui-même, comme l’avis de chiffrement ou l’arrivée de quelqu’un dans un groupe, n’ont pas de texte et sont exclues.
 
@@ -33,6 +33,8 @@ Sur une Machine hébergée :
 1. Dans le tableau de bord, ouvrez **Connexions**, puis **+ Ajouter**, et choisissez WhatsApp.
 2. Appuyez sur **Afficher le code QR**.
 3. Sur votre téléphone, dans WhatsApp, ouvrez Paramètres, Appareils connectés, Connecter un appareil, et scannez le code QR.
+4. WhatsApp apparaît comme connecté en moins d’une minute. Votre historique de discussions continue d’arriver ensuite, et sa carte compte les messages pendant ce temps.
+   Si la connexion prend trop de temps, elle le dit après quelques minutes. Appuyez sur **Réessayer** pour reprendre là où elle s’est arrêtée.
 
 Vous configurez sur votre téléphone, sans second écran pour scanner ? Ouvrez **Sur votre téléphone ? Associez avec un code**, saisissez votre numéro et appuyez sur **Obtenir un code**. WhatsApp vous demande ensuite ce code.
 
