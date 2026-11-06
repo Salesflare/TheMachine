@@ -10,6 +10,10 @@ site: More sources, Remove
 
 Le journal de votre OpenClaw Gateway : exécutions échouées, transferts refusés, messages Telegram qui ne sont pas partis, et erreurs de The Machine elle-même. Une tâche vous prévient quand quelque chose doit être réparé.
 
+## Correctifs mis de côté par une mise à jour
+
+Quand The Machine se met à jour et qu’un de ses propres correctifs ne convient plus à la nouvelle version, la mise à jour met ce correctif de côté et continue, pour que votre Machine ne reste jamais sur une ancienne version. Une tâche, **Refaire un correctif mis de côté par la mise à jour**, nomme le correctif. Demandez à le refaire sur la nouvelle version, ou fermez la tâche.
+
 ## Ce qu’il peut faire
 
 Rien. Il ne fait que lire le journal sur votre propre Machine.

@@ -1,12 +1,14 @@
 """Signed releases (scripts/release.py): only a release tag signed with the pinned key is installed."""
 import importlib.util
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
 from unittest import mock
 
 HERE = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(HERE))
 spec = importlib.util.spec_from_file_location('release', HERE / 'scripts' / 'release.py')
 release = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(release)
@@ -118,15 +120,56 @@ class Releases(unittest.TestCase):
         release.main(['update'])  # nothing new: stays
         self.assertEqual(run('git', 'rev-parse', 'HEAD^', cwd=self.app), sha)
 
-    def test_own_commits_that_do_not_apply_leave_the_checkout_as_it_was(self):
+    def parked(self):
+        out = run('git', 'for-each-ref', '--format=%(refname) %(objectname)', release.PARKED, cwd=self.app)
+        return [line.split() for line in out.splitlines()]
+
+    def test_own_commits_that_do_not_apply_are_set_aside_and_the_update_goes_on(self):
         self.own_commit('app.py', 'mine')
-        before = run('git', 'rev-parse', 'HEAD', cwd=self.app)
-        self.commit('two')
+        own = run('git', 'rev-parse', 'HEAD', cwd=self.app)
+        sha = self.commit('two')
         self.tag('release-20261021-1200')
-        with self.assertRaisesRegex(SystemExit, 'do not apply on it: nothing changed'):
+        with mock.patch('builtins.print') as said:
             release.main(['update'])
-        self.assertEqual(run('git', 'rev-parse', 'HEAD', cwd=self.app), before)
+        self.assertEqual(run('git', 'rev-parse', 'HEAD', cwd=self.app), sha)  # never stuck on the old version
+        self.assertEqual((self.app / 'app.py').read_text(), 'two')
         self.assertEqual(run('git', 'status', '--porcelain', '--untracked-files=no', cwd=self.app), '')
+        self.assertEqual(self.parked(), [[release.PARKED + own, own]])  # kept, to come back as a to-do
+        self.assertIn('set aside', said.call_args[0][0])
+        release.main(['update'])  # nothing new: stays, nothing more set aside
+        self.assertEqual(run('git', 'rev-parse', 'HEAD', cwd=self.app), sha)
+        self.assertEqual(len(self.parked()), 1)
+
+    def test_uncommitted_changes_in_the_way_are_set_aside(self):
+        (self.app / 'app.py').write_text('edited here')
+        sha = self.commit('two')
+        self.tag('release-20261021-1200')
+        release.main(['update'])
+        self.assertEqual(run('git', 'rev-parse', 'HEAD', cwd=self.app), sha)
+        self.assertEqual((self.app / 'app.py').read_text(), 'two')
+        [(name, kept)] = self.parked()
+        self.assertEqual(run('git', 'show', f'{kept}:app.py', cwd=self.app), 'edited here')
+
+    def test_changes_out_of_the_way_stay_and_own_commits_still_replay(self):
+        self.own_commit('fix.py', 'a merged self-fix')
+        (self.app / 'app.py').write_text('edited here')  # in the way of the release
+        sha = self.commit('two')
+        self.tag('release-20261021-1200')
+        release.main(['update'])
+        self.assertEqual(run('git', 'rev-parse', 'HEAD^', cwd=self.app), sha)  # the fix applies, so it stays
+        self.assertEqual((self.app / 'fix.py').read_text(), 'a merged self-fix')
+        self.assertEqual(len(self.parked()), 1)  # only the changes went aside
+        # changes nothing touches are kept in place, as before
+        (self.app / 'fix.py').write_text('still editing')
+        self.commit('three')
+        self.tag('release-20261021-1300')
+        release.main(['update'])
+        self.assertEqual((self.app / 'fix.py').read_text(), 'still editing')
+        self.assertEqual(len(self.parked()), 1)
+
+    def test_the_service_reads_the_same_folder(self):
+        import parked_fixes
+        self.assertEqual(parked_fixes.PARKED, release.PARKED)
 
     def test_install_waits_while_something_runs_and_then_installs(self):
         sha = self.commit('two')

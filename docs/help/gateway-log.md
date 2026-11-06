@@ -10,6 +10,10 @@ site: More sources, Remove
 
 The log of your OpenClaw Gateway: failed runs, refused handoffs, Telegram messages that didn't go out, and The Machine's own errors. A to-do tells you when something needs fixing.
 
+## Fixes an update set aside
+
+When The Machine updates and one of its own fixes no longer fits the new version, the update sets that fix aside and goes on, so your Machine never stays on an old version. A to-do, **Redo a fix the update set aside**, names the fix. Ask to redo it on the new version, or close the to-do.
+
 ## What it can do
 
 Nothing. It only reads the log on your own Machine.

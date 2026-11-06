@@ -10,6 +10,10 @@ site: More sources, Remove
 
 O log do seu OpenClaw Gateway: execuções que falharam, repasses recusados, mensagens do Telegram que não saíram e os próprios erros da The Machine. Uma tarefa avisa quando algo precisa de conserto.
 
+## Correções que uma atualização deixou de lado
+
+Quando a The Machine se atualiza e uma das suas próprias correções não serve mais na nova versão, a atualização deixa essa correção de lado e segue, para que sua Machine nunca fique numa versão antiga. Uma tarefa, **Refazer uma correção que a atualização deixou de lado**, nomeia a correção. Peça para refazê-la na nova versão, ou feche a tarefa.
+
 ## O que ele pode fazer
 
 Nada. Ele só lê o log na sua própria Machine.

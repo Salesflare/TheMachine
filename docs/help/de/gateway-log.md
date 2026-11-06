@@ -10,6 +10,10 @@ site: More sources, Remove
 
 Das Log deines OpenClaw Gateway: fehlgeschlagene Durchläufe, abgelehnte Übergaben, Telegram-Nachrichten, die nicht rausgingen, und Fehler von The Machine selbst. Eine Aufgabe sagt dir, wenn etwas repariert werden muss.
 
+## Korrekturen, die eine Aktualisierung beiseitegelegt hat
+
+Wenn The Machine sich aktualisiert und eine ihrer eigenen Korrekturen nicht mehr zur neuen Version passt, legt die Aktualisierung diese Korrektur beiseite und macht weiter, damit deine Machine nie auf einer alten Version bleibt. Eine Aufgabe, **Eine beiseitegelegte Korrektur neu machen**, nennt die Korrektur. Bitte darum, sie auf der neuen Version neu zu machen, oder schließ die Aufgabe.
+
 ## Was es tun kann
 
 Nichts. Es liest nur das Log auf deiner eigenen Machine.
