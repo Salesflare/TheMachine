@@ -3,7 +3,7 @@
 The mic in the dashboard's message boxes (a to-do's chat, New to-do, Help, and changing a draft) writes what the owner
 says into the box. It never sends anything: the owner reads it, edits it and sends it. The help article is
 [docs/help/voice-input.md](help/voice-input.md); the code is `voice_input.py`, `voice_worker.py` and the `mic*`
-functions in `dashboard/todos-chat.js`. Spoken conversations are a different feature: [Talk live](talk-live.md).
+functions in `dashboard/todos-chat-voice.js`. Spoken conversations are a different feature: [Talk live](talk-live.md).
 
 ## How a clip travels
 
