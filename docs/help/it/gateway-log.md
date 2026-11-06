@@ -1,5 +1,5 @@
 ---
-title: Log della Machine
+title: Salute della tua Machine
 area: connections
 summary: Il log della tua Machine, così nota i propri problemi. Legge soltanto.
 covers: connector:gateway
@@ -8,7 +8,7 @@ site: More sources, Remove
 ---
 ## Cosa legge
 
-Il log del tuo OpenClaw Gateway: esecuzioni non riuscite, passaggi rifiutati, messaggi Telegram non partiti e gli errori di The Machine stessa. Un’attività ti avvisa quando c’è qualcosa da sistemare.
+Il log della tua Machine: esecuzioni non riuscite, passaggi rifiutati, messaggi Telegram non partiti e gli errori di The Machine stessa. Un’attività ti avvisa quando c’è qualcosa da sistemare.
 
 ## Correzioni messe da parte da un aggiornamento
 
@@ -20,7 +20,7 @@ Niente. Legge solo il log sulla tua Machine.
 
 ## Collegalo
 
-- Su una Machine in hosting si trova nella tua pagina di configurazione, sotto **Altre fonti**, come OpenClaw Gateway log. Uno per Machine.
+- Su una Machine in hosting si trova nella tua pagina di configurazione, sotto **Altre fonti**, come Salute della tua Machine. Uno per Machine.
 - Sul tuo computer: esegui `assistant connect gateway`.
 
 ## Rimuovilo

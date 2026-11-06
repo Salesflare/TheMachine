@@ -38,6 +38,8 @@ Vous configurez sur votre téléphone, sans second écran pour scanner ? Ouvrez 
 
 Sur votre propre ordinateur, lancez `assistant connect whatsapp` et scannez le code affiché dans le terminal. Sans wacli, il propose d’installer la version épinglée de [Salesflare/wacli](https://github.com/Salesflare/wacli), vérifiée avec sa somme de contrôle.
 
+Dans Appareils connectés, elle apparaît sous le nom The Machine. Une Machine connectée avant garde son ancien nom jusqu’à ce que vous la connectiez à nouveau.
+
 ## Photos
 
 The Machine demande à WhatsApp les photos de profil des personnes de votre graph qui n’en ont pas, 50 par jour au maximum, via la synchro qui tient WhatsApp à jour. Rien ne leur est envoyé. Une personne qui vous cache sa photo reste sans photo.

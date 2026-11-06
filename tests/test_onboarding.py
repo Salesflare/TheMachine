@@ -731,7 +731,7 @@ elif args[:2] == ["api", "call"]:
         self.config(dict(EXAMPLE['openclaw-gateway'], unit='openclaw-gateway.service'), openclaw=str(self.bin / 'missing'))
         text = '\n'.join(f'{m} {t} | {f}' for m, t, f in onboarding.doctor(self.path))
         self.assertIn('✗ telegram_account default is not a Telegram account in OpenClaw (there: family, work) | set "telegram_account": "work"', text)
-        self.assertIn('✗ openclaw-gateway (OpenClaw Gateway log): no systemd unit openclaw-gateway.service here', text)
+        self.assertIn('✗ openclaw-gateway (Machine health): no systemd unit openclaw-gateway.service here', text)
         self.stub('systemctl', 'print("openclaw-gateway.service enabled enabled" if "list-unit-files" in args else "inactive")')
         self.config(dict(EXAMPLE['openclaw-gateway'], unit='openclaw-gateway.service'), telegram_account='family', openclaw=str(self.bin / 'missing'))
         text = '\n'.join(f'{m} {t} | {f}' for m, t, f in onboarding.doctor(self.path))
@@ -921,7 +921,7 @@ class WhatsAppSyncTest(unittest.TestCase):
             ui = FakeUI(answers=[str(store)])
             onboarding.step_whatsapp({'wacli': wacli}, account, ui)
         self.assertFalse(unit.exists())
-        self.assertIn('another wacli already keeps this store synced', ui.text())
+        self.assertIn('already kept in sync on this Machine', ui.text())
 
     def test_the_sync_asks_for_pictures_only_when_wacli_offers_them(self):
         store = self.home / 'wa'

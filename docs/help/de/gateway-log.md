@@ -1,5 +1,5 @@
 ---
-title: Machine-Log
+title: Zustand deiner Machine
 area: connections
 summary: Das eigene Log deiner Machine, damit sie eigene Probleme erkennt. Es liest nur.
 covers: connector:gateway
@@ -8,7 +8,7 @@ site: More sources, Remove
 ---
 ## Was es liest
 
-Das Log deines OpenClaw Gateway: fehlgeschlagene Durchläufe, abgelehnte Übergaben, Telegram-Nachrichten, die nicht rausgingen, und Fehler von The Machine selbst. Eine Aufgabe sagt dir, wenn etwas repariert werden muss.
+Das eigene Log deiner Machine: fehlgeschlagene Durchläufe, abgelehnte Übergaben, Telegram-Nachrichten, die nicht rausgingen, und Fehler von The Machine selbst. Eine Aufgabe sagt dir, wenn etwas repariert werden muss.
 
 ## Korrekturen, die eine Aktualisierung beiseitegelegt hat
 
@@ -20,7 +20,7 @@ Nichts. Es liest nur das Log auf deiner eigenen Machine.
 
 ## Verbinden
 
-- Auf einer gehosteten Machine steht es auf deiner Einrichtungsseite unter **Weitere Quellen**, als OpenClaw Gateway log. Eins pro Machine.
+- Auf einer gehosteten Machine steht es auf deiner Einrichtungsseite unter **Weitere Quellen**, als Zustand deiner Machine. Eins pro Machine.
 - Auf deinem eigenen Computer: Führe `assistant connect gateway` aus.
 
 ## Entfernen

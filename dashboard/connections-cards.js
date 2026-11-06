@@ -346,7 +346,7 @@ const docsConnect=c=>c.service!=='docs'||!/docs_not_connected/.test(c.error||'')
 function reconnectButton(c,label='Reconnect'){return c.hosted_signin&&state.manage_url?hostedReconnect(c,label,'browser-link'):c.account_page?html`<a class="head-link" href="${safeHref(c.account_page)}" target="_blank" rel="noopener">${label} ↗</a>`:c.connect_name?html`<button type="button" class="browser-link" data-reconnect="${c.connect_name}" data-account="${c.id}"${c.signin?html` data-signin-source="${c.signin}"`:''}>${label}</button>`:''}
 // Work (with its company) or Personal: the owner marks each sign-in. Leaving a Work Fleet removes that company's work
 // accounts from this Machine (work_removal.py); personal ones stay.
-const scopeLabel=b=>{b=String(b||'');return /^work:./.test(b)?t('Work')+' · '+b.slice(5):b==='personal:me'||b==='personal'?'Personal':/^personal:./.test(b)?t('Personal')+' · '+b.slice(9):b};
+const scopeLabel=b=>{b=String(b||'');return /^owner:/.test(b)?'': /^work:./.test(b)?t('Work')+' · '+b.slice(5):b==='personal:me'||b==='personal'?'Personal':/^personal:./.test(b)?t('Personal')+' · '+b.slice(9):b};
 function scopeRow(c){const b=String(c.boundary||'');if(!b||/^owner:/.test(b)||c.service==='gateway')return '';
  const all=[...new Set([...(state.connectors||[]).map(x=>String(x.boundary||'')),b])],cur=b==='personal'?'personal:me':b;
  const opts=[...all.filter(x=>/^work:./.test(x)),...new Set(['personal:me',...all.filter(x=>/^personal:./.test(x))])].map(v=>[v,scopeLabel(v)]).concat([['','Work, another company…']]);
@@ -413,9 +413,12 @@ document.addEventListener('click',async e=>{const b=e.target.closest('button[dat
 const connFigures=(c,unit)=>CALENDAR_SERVICES.includes(c.service)?[[c.total,'events'],[c.upcoming_7d,'next 7 days'],[c.signals_24h,'last 24h']]
  :[[c.total,unit],[c.signals_24h,'last 24h'],[c.pending,'not reviewed']];
 const CALENDAR_SERVICES=['calendar','outlook_calendar'];
+// Under the name: the kind of source and Work or personal. The Machine's own health (owner:system) has neither to say.
+function connSubtitle(c){const kind=c.service==='docs'&&c.docs_provider==='google'?'Google Docs':service(c.service),parts=[kind===(c.display_name||c.email)?'':kind,scopeLabel(c.boundary)].filter(Boolean);
+ return parts.length?html`<small>${parts.join(' · ')}</small>`:''}
 function connectorCard(c,open){
 const unit={calendar:'events',outlook_calendar:'events',intercom:'conversations',android:'notifications',gateway:'alerts',github:'notifications',stripe:'events',rss:'items',docs:'items',google_meet:'meetings',trello:'card changes'}[c.service]||'messages',tone=connectorTone(c),phone=c.service==='android'?JSON.parse(c.state||'{}'):{},synced=c.signals!==false;
-return html`<article data-group="${healthGroup(c.service)}" data-conn="${c.id}"><div class="conn-head">${icon(c.service)}<div><h3>${c.display_name||c.email}</h3><small>${c.service==='docs'&&c.docs_provider==='google'?'Google Docs':service(c.service)} · ${scopeLabel(c.boundary)}</small></div><span class="state-dot t-${tone}" title="${connectorHealth(c).text}"></span></div>
+return html`<article data-group="${healthGroup(c.service)}" data-conn="${c.id}"><div class="conn-head">${icon(c.service)}<div><h3>${c.display_name||c.email}</h3>${connSubtitle(c)}</div><span class="state-dot t-${tone}" title="${connectorHealth(c).text}"></span></div>
 <p class="connection-status">${connectorHealth(c).text}</p>
 ${connWhat(c)}
 ${synced?html`<div class="figures">${connFigures(c,unit).map(([n,label])=>html`<div><b>${(n||0).toLocaleString(DL)}</b><span>${t(label)}</span></div>`)}</div>

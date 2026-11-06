@@ -10658,7 +10658,7 @@ def remember_profiles(store, source, offers):
     return changed
 
 
-UNNAMED = {'trello': 'Trello board'}  # a connection without a name of its own yet: what its card says, not the account id
+UNNAMED = {'trello': 'Trello board', 'gateway': 'Machine health'}  # a connection without a name of its own yet: what its card says, not the account id
 CONNECTOR_HELPERS = types.SimpleNamespace(
     SourceError=SourceError, browser_read_failure=browser_read_failure, recover_browser=lambda profile, own_cdp=False, config=None: recover_browser(profile, own_cdp, config), now=lambda: now(), remember_profiles=lambda store, source, offers: remember_profiles(store, source, offers), credential=lambda config, name: credential(config, name), local_tz=lambda: local_tz(),
     iso=lambda stamp: dt.datetime.fromtimestamp(stamp, dt.timezone.utc).isoformat())
@@ -15334,7 +15334,7 @@ def weekly_recap_message(store, config, current=None):
     in_week = lambda day: tomorrow.isoformat() <= str(day)[:10] < (tomorrow + dt.timedelta(days=7)).isoformat()
     root = 'https://' + config['dashboard_host'] + config.get('dashboard_path', '/') if config.get('dashboard_host') else ''
     link = lambda text, card: f'[{recap_escape(text)}]({root}#chat={card})' if root and card else recap_escape(text)
-    names = {x['id']: x.get('display_name') or x.get('email') or x['id'] for x in config.get('accounts', [])}
+    names = {x['id']: x.get('display_name') or x.get('email') or UNNAMED.get(x.get('service')) or x['id'] for x in config.get('accounts', [])}
     with store.connect() as db:
         batches = [json.loads(r[0]) for r in db.execute("SELECT items FROM analyses WHERE status='complete' AND finished_at>=?", (since,))]
         reviewed = sum(sum(1 for i in items if not i.get('deferred') and not i.get('excluded')) for items in batches)

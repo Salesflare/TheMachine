@@ -125,7 +125,7 @@ class Reliability(unittest.TestCase):
         accounts = [{'id': 'openclaw-gateway', 'service': 'gateway', 'boundary': 'owner:system'},
                     {'id': 'feed', 'service': 'rss', 'boundary': 'work:Acme', 'display_name': 'Feed'}]
         names = {c['id']: c['display_name'] for c in self.store.snapshot(accounts)['connectors']}
-        self.assertEqual(names, {'openclaw-gateway': 'openclaw-gateway', 'feed': 'Feed'})
+        self.assertEqual(names, {'openclaw-gateway': 'Machine health', 'feed': 'Feed'})
 
     # Rolling replay windows
 
