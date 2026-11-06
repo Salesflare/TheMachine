@@ -105,6 +105,26 @@ class PromiseTitles(unittest.TestCase):
             self.store.settle_promises(db)
         self.assertEqual(self.titles()[f'promise:{mine}'], 'Check both apps with Sam')
 
+    def test_a_slack_promise_waits_on_the_person_by_name(self):
+        """A Slack-sourced promise keeps who as the member's label ("Slack teammate U0..."): the title names the
+        person, never "Slack" (its first word) or the id, also when an older title is repaired."""
+        member = 'U0FIXTURE7'
+        pid = self.stored('theirs', LONG_THEIRS, who=f'Slack teammate {member}')
+        unknown = self.stored('theirs', LONG_THEIRS, who='Slack teammate U0NONAME42')
+        with self.store.connect() as db:
+            db.execute('INSERT INTO identity_names(identifier,name,email,checked_at) VALUES(?,?,?,?)', (f'slack:{member}', 'Robin Vale', None, MONDAY))
+        self.app().promise_step()
+        whole = 'Waiting on Robin: log the release blocker…'
+        self.assertEqual(self.titles()[f'promise:{pid}'], whole)
+        # One whose name isn't known yet keeps the id (named when shown), never "Slack" as a first name
+        self.assertEqual(self.titles()[f'promise:{unknown}'], 'Waiting on Slack teammate U0NONAME42: log the release blocker…')
+        # Cut at 90 by an older version (with the id), and made whole by release 1231 as "Waiting on Slack: ..."
+        for old in [(f'Waiting on Slack teammate {member}: ' + LONG_THEIRS)[:90], 'Waiting on Slack: log the release blocker…']:
+            with self.store.connect() as db:
+                db.execute('UPDATE suggestions SET title=? WHERE dedupe_key=?', (old, f'promise:{pid}'))
+                self.store.settle_promises(db)
+            self.assertEqual(self.titles()[f'promise:{pid}'], whole, old)
+
 
 class StuckAheadLeadsWithTryAgain(unittest.TestCase):
     def test_telegram_buttons(self):
