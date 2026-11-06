@@ -271,10 +271,10 @@ await page.locator('#health-tabs [data-health-pane="reviews"]').click();  // Con
 await page.locator('#review-run-history > summary').click();
 const runs=page.locator('#review-runs');
 assert.match(await runs.textContent(),/40 signal versions saved/);
-assert.match(await runs.textContent(),/3 signal versions still waiting/);
+assert.match(await runs.textContent(),/3 messages still to review\. Nothing is lost\./);
 assert.match(await runs.textContent(),/original explanation was not retained/);
 assert.match(await runs.textContent(),/AI stopped responding/);
-assert.match(await runs.textContent(),/The Machine was briefly unreachable/);
+assert.match(await runs.textContent(),/Briefly interrupted/);
 assert.match(await runs.textContent(),/Duration 2m 1s/);
 await page.evaluate(()=>refresh());assert.equal(await page.locator('#review-run-history').getAttribute('open'),'');
 for(const width of [320,390]){await page.setViewportSize({width,height:700});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));}
