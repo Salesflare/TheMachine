@@ -115,7 +115,7 @@ const basedOnLine=s=>{const b=s.based_on;if(!b||typeof b!=='object')return '';
  const what=b.who&&b.where?t('Based on {} in {}',b.who,b.where):b.who?t('Based on {}',b.who):b.where?t('Based on a message in {}',b.where):t('Based on a message');
  const day=b.at?new Date(b.at).toLocaleDateString(DL,{weekday:'short',day:'numeric',month:'short'}):'';
  const label=html`${what}${day?html` · <span class="src-date">${day}</span>`:''}<span aria-hidden="true"> ↗</span>`;
- return html`<p class="note based-on">${b.url?html`<a href="${safeURL(b.url)}" target="_blank" rel="noreferrer">${label}</a>`:html`<button type="button" class="link" data-id="${s.id}" data-original="read">${label}</button>`}</p>`};
+ return html`<p class="note gap-line based-on">${b.url?html`<a href="${safeURL(b.url)}" target="_blank" rel="noreferrer">${label}</a>`:html`<button type="button" class="link" data-id="${s.id}" data-original="read">${label}</button>`}</p>`};
 const gapLine=(s,hint)=>{const g=s.gap;let w={};try{w=JSON.parse(s.awaiting||'{}')||{}}catch{}
  if(!g||closed(s)||s.status==='snoozed'||hint||w.delegated||s.follow_up||withTeammate(s))return '';
  const via=g.channel==='email'?t('email'):g.channel,more=g.unsynced?.length?' '+t('They may have replied on {} (not synced).',gapOr(g.unsynced)):'';

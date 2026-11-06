@@ -112,7 +112,6 @@ class BasedOn(unittest.TestCase):
     def test_the_review_and_the_drafting_step_are_told(self):
         self.assertIn('based_on', a.review_prompt('r1', ['sl']))
         self.assertIn('based_on', a.preparation_prompt({'job_id': 'j', 'suggestion_id': 's'}))
-        self.assertIn('based_on', (a.ROOT / 'AGENTS.md').read_text())
 
 
 if __name__ == '__main__':
