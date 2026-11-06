@@ -19,7 +19,7 @@ Wat je zei komt in het vak, waar je cursor stond. Er wordt niets verstuurd: lees
 
 In **Instellingen**, **Algemeen**, onder **Spraakinvoer**, zegt één korte regel welke er gebruikt wordt.
 
-- **Automatisch** (standaard): als OpenAI is ingesteld in OpenClaw, zet OpenAI je opname om naar tekst. Dat is een API-sleutel, of een ChatGPT-login als je abonnement audio toelaat. Zonder OpenAI wordt ze op je Machine zelf omgezet naar tekst en verlaat ze hem nooit.
+- **Automatisch** (standaard): als OpenAI is ingesteld op je Machine, zet OpenAI je opname om naar tekst. Dat is een API-sleutel, of een ChatGPT-login als je abonnement audio toelaat. Zonder OpenAI wordt ze op je Machine zelf omgezet naar tekst en verlaat ze hem nooit.
 - **Op deze Machine**: altijd op je Machine, ook als OpenAI is ingesteld.
 - **Met OpenAI**: altijd OpenAI.
 

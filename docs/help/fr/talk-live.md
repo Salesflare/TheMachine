@@ -60,16 +60,16 @@ Ce que vous dites tous les deux est écrit dans le chat de la tâche, sous une l
 
 ## Ce qu’il vous faut
 
-Parler en direct utilise la voix en temps réel d’OpenAI, donc OpenAI doit être configuré dans OpenClaw :
+Parler en direct utilise la voix en temps réel d’OpenAI, donc votre Machine a besoin d’OpenAI :
 
 - Une connexion ChatGPT : incluse dans votre forfait, si votre forfait y donne accès.
-- Une clé API OpenAI : OpenAI facture votre clé à la minute de conversation, et la barre l’indique. Quand les deux sont configurés, OpenClaw utilise la clé.
+- Une clé API OpenAI : OpenAI facture votre clé à la minute de conversation, et la barre l’indique. Quand les deux sont configurés, votre Machine utilise la clé.
 
 **Paramètres**, **Général**, **Saisie vocale** indique si Parler en direct est prêt. Sans OpenAI, l’onde n’apparaît pas. Votre audio va directement de votre navigateur à OpenAI. Votre clé n’atteint jamais le navigateur.
 
 ## Quand ça ne marche pas
 
 - **Le micro est bloqué** : autorisez le micro pour ce site dans les paramètres de votre navigateur.
-- **Parler en direct n’a pas pu démarrer** : vérifiez OpenAI dans OpenClaw, puis réessayez.
+- **Parler en direct n’a pas pu démarrer** : vérifiez la connexion ChatGPT ou la clé OpenAI, puis réessayez.
 - **Parler en direct a perdu la connexion** : relancez-le. Ce qui a été dit jusque-là reste dans le chat.
 - Si elle dit qu’elle ne comprend pas vos mots, ce que vous avez dit n’est pas passé deux fois de suite. Vérifiez votre micro, ou écrivez dans le chat. Elle le dit une fois, puis attend de vous entendre.

@@ -19,7 +19,7 @@ O que você disse aparece na caixa, onde estava o seu cursor. Nada é enviado: l
 
 Em **Configurações**, **Geral**, em **Entrada por voz**, uma linha curta diz qual está em uso.
 
-- **Automático** (o padrão): quando a OpenAI está configurada no OpenClaw, sua gravação é transcrita pela OpenAI. Isso é uma chave de API, ou um login do ChatGPT quando seu plano permite áudio. Sem a OpenAI, ela é transcrita na sua própria Machine e nunca sai dela.
+- **Automático** (o padrão): quando a OpenAI está configurada na sua Machine, sua gravação é transcrita pela OpenAI. Isso é uma chave de API, ou um login do ChatGPT quando seu plano permite áudio. Sem a OpenAI, ela é transcrita na sua própria Machine e nunca sai dela.
 - **Nesta Machine**: sempre na sua Machine, mesmo com a OpenAI configurada.
 - **Com a OpenAI**: sempre a OpenAI.
 

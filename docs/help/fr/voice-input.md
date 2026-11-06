@@ -19,7 +19,7 @@ Ce que vous avez dit arrive dans la zone, là où était votre curseur. Rien n�
 
 Dans **Paramètres**, **Général**, sous **Saisie vocale**, une courte ligne indique lequel est utilisé.
 
-- **Automatique** (par défaut) : quand OpenAI est configuré dans OpenClaw, votre enregistrement est transcrit par OpenAI. C’est une clé API, ou une connexion ChatGPT si votre forfait permet l’audio. Sans OpenAI, il est transcrit sur votre Machine elle-même et ne la quitte jamais.
+- **Automatique** (par défaut) : quand OpenAI est configuré sur votre Machine, votre enregistrement est transcrit par OpenAI. C’est une clé API, ou une connexion ChatGPT si votre forfait permet l’audio. Sans OpenAI, il est transcrit sur votre Machine elle-même et ne la quitte jamais.
 - **Sur cette Machine** : toujours sur votre Machine, même quand OpenAI est configuré.
 - **Avec OpenAI** : toujours OpenAI.
 

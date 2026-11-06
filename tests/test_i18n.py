@@ -103,6 +103,34 @@ class CatalogTest(unittest.TestCase):
         self.assertEqual(problems, [], '\n'.join(problems[:40]))
         self.assertIn('## The Machine is "she"', (ROOT / 'i18n' / 'glossary.md').read_text(encoding='utf-8'))
 
+    def test_owners_read_the_machine_not_openclaw(self):
+        # Owners don't know what OpenClaw is: a status or error line says The Machine. OpenClaw stays only where it is
+        # explained or is what the owner deals with: the Connections note that says what it is, the OpenClaw app on an
+        # Android phone, and terminal-only text (setup errors, commands to type).
+        allowed = {
+            # Connections, Reviews: the one place that says what OpenClaw is
+            'Reviews read your new messages in small batches, so a busy or failed run can delay them. Sources keep collecting while OpenClaw, the engine The Machine runs on, is offline, except Android, which needs it and your phone.',
+            # Android: the owner installs and opens the OpenClaw app on their phone
+            'In the OpenClaw app on your phone, add a Gateway and scan this code, or copy it and paste it there:',
+            'Install OpenClaw from Google Play on your Android phone.',
+            'Open the OpenClaw app on the phone.',
+            'The notifications on your Android phone, through the OpenClaw app.',
+            'Uses OpenClaw’s notification feed, plus a catch-up check of your phone.',
+            '{} is connected. Now allow notification access for OpenClaw on the phone.',
+            '{} is not connected. Open the OpenClaw app on it.',
+            '{} is paired but not connected. Open the OpenClaw app on it.',
+            'No Android phone is paired with OpenClaw',
+            # Terminal: `assistant` setup errors and commands to type
+            'No OpenClaw Gateway systemd unit found',
+            'OpenClaw could not remove the Telegram bot: {}',
+            'Sign in to LinkedIn once in the OpenClaw browser first: openclaw browser --browser-profile openclaw open https://www.linkedin.com/login',
+            'Sign in to X once in the OpenClaw browser first: openclaw browser --browser-profile openclaw open https://x.com/login',
+            'The OpenClaw plugin changes too: it takes effect after openclaw plugins reload personal-assistant-bridge.',
+        }
+        found = {key for key in load('en.json') if 'OpenClaw' in key}
+        self.assertEqual(sorted(found - allowed), [], 'say The Machine (or reword) instead of OpenClaw, or allow it here with why')
+        self.assertEqual(sorted(allowed - found), [], 'no longer in en.json: take it off the list')
+
     def test_the_moved_areas_have_no_english_outside_the_catalog(self):
         # A new string in a moved area: add it with `python3 scripts/i18n_extract.py --add`, translate it in every
         # language, or list it in i18n/not-ui.json when nobody reads it as is.

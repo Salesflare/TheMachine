@@ -19,7 +19,7 @@ Lo que dijiste aparece en el cuadro, donde estaba tu cursor. No se envía nada: 
 
 En **Ajustes**, **General**, bajo **Entrada de voz**, una línea corta dice cuál se usa.
 
-- **Automático** (por defecto): cuando OpenAI está configurado en OpenClaw, OpenAI pasa tu grabación a texto. Eso es una clave de API, o un inicio de sesión de ChatGPT si tu plan permite audio. Sin OpenAI, se pasa a texto en tu propia Machine y nunca sale de ella.
+- **Automático** (por defecto): cuando OpenAI está configurado en tu Machine, OpenAI pasa tu grabación a texto. Eso es una clave de API, o un inicio de sesión de ChatGPT si tu plan permite audio. Sin OpenAI, se pasa a texto en tu propia Machine y nunca sale de ella.
 - **En esta Machine**: siempre en tu Machine, aunque OpenAI esté configurado.
 - **Con OpenAI**: siempre OpenAI.
 

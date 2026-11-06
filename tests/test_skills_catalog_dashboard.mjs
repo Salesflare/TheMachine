@@ -19,9 +19,9 @@ const skills=()=>({skills:[{id:'sk_1',name:'Weekly report',description:'When the
 let installed=[
  {name:'weekly-report',description:'Mine',group:'yours',state:'ready',on:true,needs:'',toggle:false,source:'Workspace',emoji:''},
  {name:'client-meeting-prep',description:'Client meeting preparation and debriefs for sales calls',group:'workspace',state:'ready',on:true,needs:'',toggle:true,source:'Workspace',emoji:''},
- {name:'trello',description:'Manage Trello boards, lists and cards',group:'bundled',state:'off',on:false,needs:'Needs TRELLO_API_KEY',toggle:true,source:'Bundled with OpenClaw',emoji:'📋'},
- {name:'apple-notes',description:'Apple Notes via the memo command',group:'bundled',state:'setup',on:true,needs:'macOS only',toggle:false,source:'Bundled with OpenClaw',emoji:''},
- {name:'gateway-checks-with-a-really-long-name-that-goes-on-and-on-for-testing',description:'Learned checks',group:'other',state:'ready',on:true,needs:'',toggle:true,source:'Learned by OpenClaw',emoji:''}];
+ {name:'trello',description:'Manage Trello boards, lists and cards',group:'bundled',state:'off',on:false,needs:'Needs TRELLO_API_KEY',toggle:true,source:'Bundled with The Machine',emoji:'📋'},
+ {name:'apple-notes',description:'Apple Notes via the memo command',group:'bundled',state:'setup',on:true,needs:'macOS only',toggle:false,source:'Bundled with The Machine',emoji:''},
+ {name:'gateway-checks-with-a-really-long-name-that-goes-on-and-on-for-testing',description:'Learned checks',group:'other',state:'ready',on:true,needs:'',toggle:true,source:'Learned by The Machine',emoji:''}];
 const first=installed;
 const view=()=>({installed,checked_at:new Date().toISOString(),error:''});
 const card={id:'s1',title:'Prepare Thursday’s client meeting',body:'Acme meets you Thursday. I can prepare a briefing.',status:'pending',event_ids:[1],scope:'work',created_at:new Date().toISOString()};
@@ -32,7 +32,7 @@ const server=createServer((req,res)=>{
  if(url.pathname==='/api/status'){res.end(JSON.stringify({suggestions:[card],promises:[],suggestion_counts:{pending:1},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],connectors:[],skills:skills()}));return}
  if(url.pathname==='/api/action'){let body='';req.on('data',c=>body+=c);req.on('end',()=>{const {action,args}=JSON.parse(body);calls.push({action,args});
    if(action==='skill_installed'){res.end(JSON.stringify(view()));return}
-   if(action==='skill_installed_get'){res.end(JSON.stringify({name:args.name,description:'Manage Trello boards',source:'Bundled with OpenClaw',state:'off',needs:'Needs TRELLO_API_KEY',body:'# Trello\nUse the API.',install_steps:[],homepage:''}));return}
+   if(action==='skill_installed_get'){res.end(JSON.stringify({name:args.name,description:'Manage Trello boards',source:'Bundled with The Machine',state:'off',needs:'Needs TRELLO_API_KEY',body:'# Trello\nUse the API.',install_steps:[],homepage:''}));return}
    if(action==='skill_installed_toggle'){installed=installed.map(i=>i.name===args.name?{...i,on:args.on,state:args.on?'setup':'off'}:i);res.end(JSON.stringify(view()));return}
    if(action==='skill_hub_search'){res.end(JSON.stringify({results:[{ref:'@kim/meeting-prep',owner:'kim',slug:'meeting-prep',name:'Meeting Prep',summary:'Prepares briefings',downloads:1200,official:false,suspicious:false,installable:true,installed:false,url:'https://clawhub.ai/kim/skills/meeting-prep'},
      {ref:'@ann/client-meeting-prep',owner:'ann',slug:'client-meeting-prep',name:'Client meeting prep',summary:'x',downloads:3,installed:true,url:'https://clawhub.ai/ann/skills/client-meeting-prep'}]}));return}
@@ -77,7 +77,7 @@ try{
   await navClick(page.locator('#open-settings'));await page.locator('#settings-tabs [data-settings-tab="skills"]').click();
   await page.locator('#skills-installed details').first().waitFor();
   assert.equal(await page.locator('#skills-yours-head').isHidden(),false);
-  assert.deepEqual(await page.locator('#skills-installed details summary').allTextContents(),['Workspace 1 of 1 ready','Bundled with OpenClaw 0 of 2 ready','Other 1 of 1 ready']);
+  assert.deepEqual(await page.locator('#skills-installed details summary').allTextContents(),['Workspace 1 of 1 ready','Bundled with The Machine 0 of 2 ready','Other 1 of 1 ready']);
   assert.equal(await page.locator('#skills-installed [data-installed="weekly-report"]').count(),0);  // yours are listed above
   await page.locator('details[data-group="bundled"] summary').click();
   assert.match(await page.locator('[data-installed="trello"] .skill-meta').textContent(),/Off · Needs TRELLO_API_KEY/);

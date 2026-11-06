@@ -836,7 +836,7 @@ class Talk:
                 raise ValueError('Two live conversations are already open. End one first.')
         made = self.helper({'method': 'start', 'session_key': SESSION_PREFIX + (suggestion_id or 'main'), 'voice': voice}, env)
         if made.get('error') or not made.get('secret'):
-            raise ValueError('Talk live couldn’t start. Check OpenAI in OpenClaw, then try again.'
+            raise ValueError('Talk live couldn’t start. Check the ChatGPT sign-in or OpenAI key, then try again.'
                              if made.get('reason') == 'auth' else 'Talk live couldn’t start. Try again.')
         talk_id = secrets.token_hex(8)
         with self.lock:

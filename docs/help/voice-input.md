@@ -19,7 +19,7 @@ What you said lands in the box, where your cursor was. Nothing is sent: read it,
 
 In **Settings**, **General**, under **Voice input**, one short line says which one is in use.
 
-- **Automatic** (the default): when OpenAI is set up in OpenClaw, your recording is turned into text by OpenAI. That's an API key, or a ChatGPT sign-in where your plan allows audio. Without OpenAI, it's turned into text on your Machine itself and never leaves it.
+- **Automatic** (the default): when OpenAI is set up on your Machine, your recording is turned into text by OpenAI. That's an API key, or a ChatGPT sign-in where your plan allows audio. Without OpenAI, it's turned into text on your Machine itself and never leaves it.
 - **On this Machine**: always on your Machine, even when OpenAI is set up.
 - **With OpenAI**: always OpenAI.
 

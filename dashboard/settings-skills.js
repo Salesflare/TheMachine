@@ -23,15 +23,15 @@ let installedView=null,installedLoading=false,lookShown=null;
 const skillCall=(action,args)=>request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action,args})});
 async function loadInstalled(refresh=false){if(installedLoading)return;installedLoading=true;
  try{installedView=await skillCall('skill_installed',{refresh})}catch(err){errCaught(err);installedView={installed:[],error:err.message}}finally{installedLoading=false}renderInstalled()}
-const SKILL_GROUPS=[['workspace','Workspace'],['bundled','Bundled with OpenClaw'],['other','Other']];
+const SKILL_GROUPS=[['workspace','Workspace'],['bundled','Bundled with The Machine'],['other','Other']];
 function installedRow(i){const meta=[i.state==='ready'?'<span class="skill-ready">Ready</span>':i.state==='off'?'Off':i.state==='blocked'?'Not allowed for this agent':'Needs setup'];
  if(i.needs&&i.state!=='ready'&&i.needs!=='Not allowed for this agent')meta.push(esc(i.needs));if(i.group==='other')meta.push(esc(i.source));
  return `<div class="${i.state==='ready'?'':'skill-off'}" data-installed="${esc(i.name)}"><span class="grow"><strong title="${esc(i.name)}">${i.emoji?esc(i.emoji)+' ':''}${esc(i.name)}</strong><small>${esc(i.description)}</small><small class="skill-meta">${meta.join(' · ')}</small></span><span class="skill-buttons"><button type="button" class="ghost" data-installed-read="${esc(i.name)}">Read</button>${i.toggle?`<button type="button" class="ghost" data-installed-toggle="${esc(i.name)}" data-on="${i.on?0:1}">${i.on?'Turn off':'Turn on'}</button>`:''}</span></div>`}
 function renderInstalled(){const box=$('#skills-installed'),v=installedView;if(!box)return;if(!v||!state.skills?.openclaw){box.innerHTML='';return}
  const items=(v.installed||[]).filter(i=>i.group!=='yours'),open=new Set([...box.querySelectorAll('details[open]')].map(d=>d.dataset.group));if(!box.innerHTML)open.add('workspace');
- box.innerHTML=(v.error?`<p class="fine">Couldn’t read OpenClaw’s skills just now: ${esc(v.error)}</p>`:'')+SKILL_GROUPS.map(([g,label])=>{const list=items.filter(i=>i.group===g);if(!list.length)return '';
+ box.innerHTML=(v.error?`<p class="fine">Couldn’t read the skill list just now: ${esc(v.error)}</p>`:'')+SKILL_GROUPS.map(([g,label])=>{const list=items.filter(i=>i.group===g);if(!list.length)return '';
   return `<details class="skills-group" data-group="${g}"${open.has(g)?' open':''}><summary>${label} <small>${list.filter(i=>i.state==='ready').length} of ${list.length} ready</small></summary><div class="list settings-list skills-list">${list.map(installedRow).join('')}</div></details>`}).join('')
-  +`<p class="fine">As OpenClaw has them${v.checked_at?', '+esc(ago(v.checked_at)):''}. Only read here. <button type="button" class="link" id="skills-refresh">Check again</button></p>`;
+  +`<p class="fine">As The Machine has them${v.checked_at?', '+esc(ago(v.checked_at)):''}. Only read here. <button type="button" class="link" id="skills-refresh">Check again</button></p>`;
  filterSkills()}
 // One search over names and descriptions, yours and OpenClaw's.
 function filterSkills(){const q=($('#skills-filter')?.value||'').trim().toLowerCase();
@@ -48,12 +48,12 @@ function lookOpen(title,from,notes,body,actions){$('#skill-look-title').textCont
  if(!$('#skill-look').open)$('#skill-look').showModal();$('#skill-look-body').scrollTop=0}
 async function lookInstalled(name,why=''){const d=await skillCall('skill_installed_get',{name});if(!installedView)await loadInstalled();const i=(installedView?.installed||[]).find(x=>x.name===name)||{};lookShown={kind:'installed',name};
  lookOpen(d.name,`${d.source}. ${d.state==='ready'?'Ready.':d.state==='off'?'Off.':'Not ready yet.'} Only read here: its files stay as they are.`,
-  [why&&[t('Why: {}',why)],d.needs&&d.state!=='ready'&&[d.needs,true],...(d.install_steps||[]).map(x=>[t('OpenClaw can set it up: {}',x)])],d.body,
+  [why&&[t('Why: {}',why)],d.needs&&d.state!=='ready'&&[d.needs,true],...(d.install_steps||[]).map(x=>[t('The Machine can set it up: {}',x)])],d.body,
   html`${i.toggle?html`<button type="button" class="${i.on?'ghost':'primary'}" data-look-toggle="${name}" data-on="${i.on?0:1}">${i.on?'Turn off':'Turn on'}</button>`:''}<button type="button" class="ghost" data-look-close>Close</button>`)}
 async function lookHub(ref,why=''){$('#hub-status').textContent='';const d=await skillCall('skill_hub_get',{ref});lookShown={kind:'clawhub',...d};
  lookOpen(d.name,`Third-party, from ClawHub: by @${d.owner}, version ${d.version}. Not written or checked by The Machine.`,
   [why&&[t('Why: {}',why)],d.flagged&&['ClawHub flagged this skill.',true],d.code?.length&&[`It comes with ${d.code.length} script or code file${d.code.length>1?'s':''} (${d.code.slice(0,3).join(', ')}${d.code.length>3?', …':''}) your agent could run.`,true],
-   d.install_steps&&['It has install steps: OpenClaw may install tools for it.',true],d.asks_keys&&['It asks for keys or settings.',true],
+   d.install_steps&&['It has install steps: The Machine may install tools for it.',true],d.asks_keys&&['It asks for keys or settings.',true],
    d.scan&&[`ClawHub’s scan: ${d.scan}${d.scan_warnings?', with warnings':''}.${d.scan_summary?' '+d.scan_summary:''}`,d.scan!=='clean'||d.scan_warnings],
    ['Once installed, your Machine can use it in any task, like your other skills.']],d.body,
   html`<button type="button" class="primary" data-hub-install="${d.ref}">Install</button><a class="btn-link ghost" href="${safeURL(d.url)}" target="_blank" rel="noopener">On ClawHub ↗</a><button type="button" class="ghost" data-look-close>Close</button>`)}
@@ -74,11 +74,11 @@ document.addEventListener('click',async e=>{const t=e.target.closest('[data-hint
   if(t.dataset.hubRead)return await lookHub(t.dataset.hubRead);
   const toggle=t.dataset.installedToggle||t.dataset.lookToggle;
   if(toggle){t.disabled=true;installedView=await skillCall('skill_installed_toggle',{name:toggle,on:t.dataset.on==='1'});renderInstalled();if($('#skill-look').open)$('#skill-look').close();
-   notice(t.dataset.on==='1'?'Turned on in OpenClaw.':'Turned off in OpenClaw.');refresh();return}
+   notice(t.dataset.on==='1'?'Skill turned on.':'Skill turned off.');refresh();return}
   if(t.dataset.hubInstall){const d=lookShown;if(!d||d.ref!==t.dataset.hubInstall)return;t.disabled=true;t.textContent='Installing…';
    const v=await skillCall('skill_hub_install',{ref:d.ref,version:d.version,sha:d.sha});installedView=v;renderInstalled();$('#skill-look').close();
    for(const row of document.querySelectorAll(`#hub-results [data-hub="${CSS.escape(d.ref)}"] .skill-buttons`))row.innerHTML='<span class="fine">Installed</span>';
-   notice(v.differs?'Installed, but what OpenClaw installed differs from what you read. Check it under Workspace.':'Installed. Your Machine can use it from its next task.');refresh();return}
+   notice(v.differs?'Installed, but what got installed differs from what you read. Check it under Workspace.':'Installed. Your Machine can use it from its next task.');refresh();return}
  }catch(error){errCaught(error);t.disabled=false;if(t.dataset.hubInstall)t.textContent='Install';err(error.message)}});
 function skillEditor(skill){skillEditing=skill?.id||null;$('#skill-share').hidden=true;$('#skill-editor-title').textContent=skill?.id?'Edit skill':'New skill';
  $('#skill-name').value=skill?.name||'';$('#skill-description').value=skill?.description||'';$('#skill-body').value=skill?.body||'';$('#skill-error').textContent='';$('#skill-delete').hidden=!skill?.id;
@@ -206,12 +206,12 @@ $('#import-folder').addEventListener('change',async e=>{const picked=[...e.targe
  await importUpload({name:root,files:await Promise.all(files.slice(0,300).map(async f=>({path:f.webkitRelativePath||f.name,data:toBase64(await f.arrayBuffer())})))})});
 async function importRead(key){const d=await importCall('skill_import_read',{token:importView.token,key});importShown=d;
  const notes=[[`From ${d.from_label}: ${d.source}`],d.blocked&&[d.blocked,true],(d.done||d.duplicate)&&[d.done||d.duplicate,!(d.done||d.existing)],
-  d.script_count&&[d.depends?`It needs its ${plural(d.script_count,'script')} (${d.scripts.join(', ')}${d.script_count>d.scripts.length?', …':''}). Imported, it is instructions only and says so; installed in OpenClaw, its scripts come with it and your agent could run them.`:`Its ${plural(d.script_count,'script')} stay out; the instructions don’t need them.`,d.depends],
+  d.script_count&&[d.depends?`It needs its ${plural(d.script_count,'script')} (${d.scripts.join(', ')}${d.script_count>d.scripts.length?', …':''}). Imported, it is instructions only and says so; installed, its scripts come with it and your agent could run them.`:`Its ${plural(d.script_count,'script')} stay out; the instructions don’t need them.`,d.depends],
   d.references?.length&&[t('Included: {}',d.references.join(', '))],(d.left_out||[]).length&&[t('Left out: {}',d.left_out.join(', '))],
   ...(d.flags||[]).map(f=>[f,true]),d.licence&&[t('License: {}',d.licence)]];
  const no=d.blocked||d.duplicate;
  lookOpen(d.name,'What would come in, as your own skill. Read it first: it was written elsewhere.',notes,d.body,
-  html`${no?(!d.done&&d.existing?.replaceable&&!d.existing.same?html`<button type="button" class="primary" data-import-one="${d.key}" data-replace="1">Replace yours</button>`:''):html`<button type="button" class="primary" data-import-one="${d.key}">Import</button>`}${d.installable?html`<button type="button" class="ghost" data-import-install="${d.key}">Install in OpenClaw with its scripts</button>`:''}${d.url?html`<a class="btn-link ghost" href="${safeURL(d.url)}" target="_blank" rel="noopener">Source ↗</a>`:''}<button type="button" class="ghost" data-look-close>Close</button>`)}
+  html`${no?(!d.done&&d.existing?.replaceable&&!d.existing.same?html`<button type="button" class="primary" data-import-one="${d.key}" data-replace="1">Replace yours</button>`:''):html`<button type="button" class="primary" data-import-one="${d.key}">Import</button>`}${d.installable?html`<button type="button" class="ghost" data-import-install="${d.key}">Install with its scripts</button>`:''}${d.url?html`<a class="btn-link ghost" href="${safeURL(d.url)}" target="_blank" rel="noopener">Source ↗</a>`:''}<button type="button" class="ghost" data-look-close>Close</button>`)}
 async function importRun(keys,replace=false){const v=await importCall('skill_import_run',{token:importView.token,keys,...(replace?{replace:true}:{})});for(const k of keys)importPicked.delete(k);importView=v.list;state.skills=v;skillsKey='';renderSkills();renderImport();
  const done=v.results.filter(r=>r.status==='imported'||r.status==='replaced'),skipped=v.results.filter(r=>!done.includes(r)),swapped=done.filter(r=>r.status==='replaced').length;
  const text=(done.length?`${swapped===done.length?'Replaced':'Imported'} ${plural(done.length,'skill')}. Your Machine uses ${done.length===1?'it':'them'} from now on.`:'Nothing imported.')+(skipped.length?` Skipped: ${skipped.map(r=>`${r.name||r.key} (${r.reason})`).join(', ')}.`:'');
@@ -240,5 +240,5 @@ $('#skill-import').addEventListener('click',async e=>{const t=e.target.closest('
 document.addEventListener('click',async e=>{const t=e.target.closest('[data-import-one],[data-import-install]');if(!t||!importShown)return;
  try{t.disabled=true;if(t.dataset.importOne){await importRun([t.dataset.importOne],t.dataset.replace==='1');$('#skill-look').close();return}
   const v=await importCall('skill_import_install',{token:importView.token,key:importShown.key,sha:importShown.sha});importView=v.list;renderImport();installedView=v;renderInstalled();$('#skill-look').close();
-  notice('Installed in OpenClaw with its scripts. It shows under Workspace.');refresh()}
+  notice('Installed with its scripts. It shows under Workspace.');refresh()}
  catch(err){errCaught(err);t.disabled=false;$('#skill-look-error').textContent=err.message}});

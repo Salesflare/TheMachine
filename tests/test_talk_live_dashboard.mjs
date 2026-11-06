@@ -46,7 +46,7 @@ const server=createServer(async(req,res)=>{let body='';for await(const c of req)
    card_chat:()=>({session:true,status:running?'running':'done',active:running,cursor:'k',items:[{kind:'reply',text:'Lotte asked when the order can be picked up. Want me to answer her?',at:Date.now()-60000},...lines,...asked,...sends].sort((x,y)=>x.at-y.at)}),
   }[r.action];
   if(r.action==='talk_offer'&&hold)await hold;
-  if(r.action==='talk_start'&&startFails){res.statusCode=400;res.end(JSON.stringify({error:'Talk live couldn’t start. Check OpenAI in OpenClaw, then try again.'}));return}
+  if(r.action==='talk_start'&&startFails){res.statusCode=400;res.end(JSON.stringify({error:'Talk live couldn’t start. Check the ChatGPT sign-in or OpenAI key, then try again.'}));return}
   res.end(JSON.stringify(answer?answer():{}));return}
  if(/^\/brand\/[\w.-]+\.(png|webp|woff2|svg)$/.test(url.pathname)){try{const f=await readFile(new URL('..'+(url.pathname==='/brand/avatar.png'?'/brand/app-icon-192.png':url.pathname),import.meta.url));res.setHeader('Content-Type',{png:'image/png',webp:'image/webp',woff2:'font/woff2',svg:'image/svg+xml'}[url.pathname.split('.').pop()]);res.end(f)}catch{res.statusCode=404;res.end()}return}
  res.statusCode=200;res.end('{}')});
@@ -279,7 +279,7 @@ try{
    await page.waitForFunction(()=>!document.querySelector('.talk-err'));
    await page.evaluate(()=>{delete window.machinePhone;window.__mic.mode='ok'});
    startFails=true;await tap(wave);
-   await page.waitForSelector(bar+' .talk-err');assert.match(await page.locator(bar+' .talk-err').textContent(),/Check OpenAI in OpenClaw/);
+   await page.waitForSelector(bar+' .talk-err');assert.match(await page.locator(bar+' .talk-err').textContent(),/Check the ChatGPT sign-in or OpenAI key/);
    await shot('t6-error');await tap(bar+' [data-talk-close]');startFails=false;
 
    // Leaving the chat ends it

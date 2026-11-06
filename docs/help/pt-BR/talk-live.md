@@ -60,16 +60,16 @@ O que vocês dois dizem é escrito no chat da tarefa, sob uma linha **Conversa a
 
 ## Do que você precisa
 
-Falar ao vivo usa a voz em tempo real da OpenAI, então a OpenAI precisa estar configurada no OpenClaw:
+Falar ao vivo usa a voz em tempo real da OpenAI, então sua Machine precisa da OpenAI:
 
 - Um login do ChatGPT: incluído no seu plano, quando o seu plano tem acesso.
-- Uma chave de API da OpenAI: a OpenAI cobra da sua chave por minuto de conversa, e a barra avisa. Quando os dois estão configurados, o OpenClaw usa a chave.
+- Uma chave de API da OpenAI: a OpenAI cobra da sua chave por minuto de conversa, e a barra avisa. Quando os dois estão configurados, sua Machine usa a chave.
 
 **Configurações**, **Geral**, **Entrada por voz** mostra se Falar ao vivo está pronto. Sem a OpenAI, a onda não aparece. Seu áudio vai do navegador direto para a OpenAI. Sua chave nunca chega ao navegador.
 
 ## Quando não funciona
 
 - **O microfone está bloqueado**: permita o microfone para este site nas configurações do seu navegador.
-- **Falar ao vivo não conseguiu começar**: confira a OpenAI no OpenClaw e tente de novo.
+- **Falar ao vivo não conseguiu começar**: confira o login do ChatGPT ou a chave da OpenAI e tente de novo.
 - **Falar ao vivo perdeu a conexão**: comece de novo. O que foi dito até agora fica no chat.
 - Se ela diz que não entende o que você fala, o que você disse não chegou duas vezes seguidas. Confira o microfone ou escreva no chat. Ela diz isso uma vez e depois espera até ouvir você.

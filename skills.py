@@ -444,19 +444,19 @@ class Skills:
     # -- everything OpenClaw has (read-only, see Catalog)
     def installed(self, refresh=False):
         if not self.catalog:
-            return {'installed': [], 'checked_at': None, 'error': 'OpenClaw isn\'t set up here'}
+            return {'installed': [], 'checked_at': None, 'error': 'Skills aren\'t available on this Machine'}
         return self.catalog.view(self.mine(), refresh)
 
     def installed_get(self, name):
         if not self.catalog:
-            raise ValueError('OpenClaw isn\'t set up here')
+            raise ValueError('Skills aren\'t available on this Machine')
         if str(name) in self.mine():
             raise ValueError('Open it from your own skills')
         return self.catalog.read(str(name))
 
     def installed_toggle(self, name, on):
         if not self.catalog:
-            raise ValueError('OpenClaw isn\'t set up here')
+            raise ValueError('Skills aren\'t available on this Machine')
         if str(name) in self.mine():
             raise ValueError('Turn your own skills on or off above')
         self.catalog.toggle(str(name), bool(on))
@@ -466,17 +466,17 @@ class Skills:
 
     def hub_search(self, query):
         if not self.catalog:
-            raise ValueError('OpenClaw isn\'t set up here')
+            raise ValueError('Skills aren\'t available on this Machine')
         return {'results': self.catalog.search(query)}
 
     def hub_get(self, ref):
         if not self.catalog:
-            raise ValueError('OpenClaw isn\'t set up here')
+            raise ValueError('Skills aren\'t available on this Machine')
         return self.catalog.hub(ref)
 
     def hub_install(self, ref, version, sha):
         if not self.catalog:
-            raise ValueError('OpenClaw isn\'t set up here')
+            raise ValueError('Skills aren\'t available on this Machine')
         shown = self.catalog.install(str(ref), str(version), str(sha))
         self.hints.close(shown['ref'])
         LOG.info('skills installed from clawhub ref=%s version=%s', shown['ref'], shown['version'])
@@ -878,8 +878,8 @@ def json_in(text, key=None):
 
 TEXT_FILES = ('.md', '.txt', '.json', '.yaml', '.yml', '.csv', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp')
 OS_NAMES = {'darwin': 'macOS', 'linux': 'Linux', 'win32': 'Windows'}
-SOURCES = {'openclaw-workspace': 'Workspace', 'openclaw-bundled': 'Bundled with OpenClaw', 'openclaw-workshop': 'Learned by OpenClaw',
-           'openclaw-custodian': 'OpenClaw upkeep', 'openclaw-managed': 'Shared on this computer', 'openclaw-extra': 'From a plugin'}
+SOURCES = {'openclaw-workspace': 'Workspace', 'openclaw-bundled': 'Bundled with The Machine', 'openclaw-workshop': 'Learned by The Machine',
+           'openclaw-custodian': 'Upkeep', 'openclaw-managed': 'Shared on this computer', 'openclaw-extra': 'From a plugin'}
 
 
 def needs_text(missing, key=''):
@@ -950,7 +950,7 @@ class Catalog:
             done = self.run([self.binary, *args], capture_output=True, text=True, errors='replace', timeout=timeout,
                             stdin=subprocess.DEVNULL, env=env)
         except (OSError, subprocess.TimeoutExpired) as error:
-            raise ValueError('OpenClaw did not answer in time' if isinstance(error, subprocess.TimeoutExpired) else 'OpenClaw did not answer') from None
+            raise ValueError('No answer in time. Try again.' if isinstance(error, subprocess.TimeoutExpired) else 'No answer. Try again.') from None
         return done
 
     @staticmethod
@@ -963,7 +963,7 @@ class Catalog:
                 return one_line(said, 300)
         lines = [ANSI.sub('', line).strip() for line in f'{done.stderr or ""}\n{done.stdout or ""}'.splitlines()]
         lines = [line for line in lines if line and not line.startswith(('OpenClaw ', '🦞'))]
-        return one_line(lines[-1] if lines else 'OpenClaw said no', 300)
+        return one_line(lines[-1] if lines else 'Refused without a reason', 300)
 
     def _json(self, args, timeout=60, key=None):
         done = self._cli([*args, '--json'], timeout)
@@ -975,7 +975,7 @@ class Catalog:
                 first = next((ANSI.sub('', line).strip() for line in (done.stdout or '').splitlines() if line.strip()), '')
                 LOG.warning('openclaw %s unreadable stdout=%d lines=%d stderr=%d first=%r', ' '.join(args[:2]), len(done.stdout or ''),
                             len((done.stdout or '').splitlines()), len(done.stderr or ''), first[:120])
-            raise ValueError(self._reason(done) if done.returncode else 'OpenClaw gave an answer The Machine could not read')
+            raise ValueError(self._reason(done) if done.returncode else 'The answer could not be read. Try again.')
         return data
 
     def load(self):
@@ -993,7 +993,7 @@ class Catalog:
                     raise error from None
             found = data.get('skills') if isinstance(data, dict) else None
             if not isinstance(found, list):
-                raise ValueError('OpenClaw gave an answer The Machine could not read')
+                raise ValueError('The answer could not be read. Try again.')
             with self.lock:
                 self.raw = [r for r in found if isinstance(r, dict) and isinstance(r.get('name'), str)][:500]
                 self.at, self.error = self.clock(), ''
@@ -1035,7 +1035,7 @@ class Catalog:
     def read(self, name):
         """One installed skill's SKILL.md, to read. Only read; nothing is written."""
         if not self.find(name):
-            raise ValueError('OpenClaw doesn\'t have that skill')
+            raise ValueError('No skill by that name')
         info = self._json(['skills', 'info', name])
         path = Path(str(info.get('filePath') or '')) if isinstance(info, dict) else Path()
         body = ''
@@ -1050,7 +1050,7 @@ class Catalog:
     def toggle(self, name, on):
         """OpenClaw's own on/off for a skill (skills.entries.<key>.enabled): applied without a Gateway restart."""
         if not self.find(name):
-            raise ValueError('OpenClaw doesn\'t have that skill')
+            raise ValueError('No skill by that name')
         info = self._json(['skills', 'info', name])
         key = str(info.get('skillKey') or name) if isinstance(info, dict) else name
         if not KEY.fullmatch(key):
@@ -1276,7 +1276,7 @@ LICENCE_FILES = ('LICENSE', 'LICENCE', 'COPYING')
 CLOSED = re.compile(r'proprietary|all rights reserved|may not (?:be )?(?:copied|shared|redistributed)|not (?:be )?redistribut', re.I)
 TOOLS = {'Bash': 'exec', 'Read': 'read', 'Write': 'write', 'Edit': 'edit', 'MultiEdit': 'edit', 'WebFetch': 'web_fetch', 'WebSearch': 'web_search'}
 FLAGS = ((re.compile(r'`(?:TodoWrite|Task|Agent|AskUserQuestion|NotebookEdit|Skill|Glob|Grep|ExitPlanMode)`'),
-          'Names Claude Code tools OpenClaw has no tool of that name for'),
+          'Names Claude Code tools The Machine has no tool of that name for'),
          (re.compile(r'\bmcp__\w+'), 'Calls connector (MCP) tools by name; they may not exist here'),
          (re.compile(r'/mnt/(?:user-data|skills|data)\b'), 'Uses folders of the claude.ai or ChatGPT sandbox (/mnt/…), which aren\'t here'),
          (re.compile(r'\$\{?CLAUDE_[A-Z_]+|~/\.claude\b|\$\{?CODEX_HOME|~/\.codex\b'), 'Refers to Claude Code or Codex folders'),
@@ -1298,7 +1298,7 @@ def rewrite(text):
     names = '|'.join(TOOLS)
     text = re.sub(r'`(' + names + r')`', tick, text)
     text = re.sub(r'(\b[Tt]he )(' + names + r') tool\b', named, text)
-    flags = ['Renamed tools to OpenClaw\'s: ' + ', '.join(f'{k} → {TOOLS[k]}' for k in sorted(changed))] if changed else []
+    flags = ['Renamed tools to their names here: ' + ', '.join(f'{k} → {TOOLS[k]}' for k in sorted(changed))] if changed else []
     return text, flags + [note for pattern, note in FLAGS if pattern.search(text)]
 
 
@@ -1563,7 +1563,7 @@ class Importer:
         group = ('builtin' if done['closed'] or kind == 'builtin' else 'vendor' if kind == 'plugin' or link and not Path(link).is_relative_to(self.home)
                  else 'project' if kind == 'project' else 'yours')
         duplicate = ('Already in your skills' if key in keys or name.lower() in names or digest(name, description, body) in shas
-                     else 'OpenClaw already has a skill with this name' if slug_of(name) in others or name.lower() in others else '')
+                     else 'The Machine already has a skill with this name' if slug_of(name) in others or name.lower() in others else '')
         public = {'key': key, 'name': name, 'description': description, 'from': frm, 'from_label': IMPORT_FROM.get(frm, frm),
                   'source': source, 'url': url if url.startswith('https://') else '', 'group': group, 'files': done['files'],
                   'scripts': done['scripts'][:5], 'script_count': len(done['scripts']), 'depends': done['depends'],
@@ -1787,7 +1787,7 @@ class Importer:
         if public['blocked']:
             raise ValueError(public['blocked'])
         if not catalog:
-            raise ValueError('OpenClaw isn\'t set up here')
+            raise ValueError('Skills aren\'t available on this Machine')
         if found['sha'] != str(sha):
             raise ValueError('Read it first')
         slug = slug_of(public['name'])
@@ -1815,7 +1815,7 @@ class Importer:
             if temporary:
                 shutil.rmtree(temporary, ignore_errors=True)
         catalog.load()
-        public.update(duplicate='Installed in OpenClaw', done='Installed in OpenClaw')
+        public.update(duplicate='Installed with its scripts', done='Installed with its scripts')
         LOG.info('skill installed in openclaw from=%s scripts=%d', public['from'], public['script_count'])
         return {'installed_skill': slug}
 

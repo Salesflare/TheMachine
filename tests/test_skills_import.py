@@ -90,7 +90,7 @@ class Import(unittest.TestCase):
         self.assertEqual((pdf['source'], pdf['url']), ('claude.ai, built in (pdf)', 'https://claude.ai/customize/skills'))
         report = items['weekly-report']
         self.assertEqual((report['from'], report['script_count'], report['depends']), ('chatgpt', 1, True))
-        self.assertEqual(items['deploy']['duplicate'], 'OpenClaw already has a skill with this name')
+        self.assertEqual(items['deploy']['duplicate'], 'The Machine already has a skill with this name')
         self.assertEqual(items['customer-answers']['references'], ['FAQ.md'])
         self.assertIn('notes/draft.txt', items['customer-answers']['left_out'])
         self.assertIn('Header settings left out: allowed-tools', items['customer-answers']['flags'])
@@ -104,7 +104,7 @@ class Import(unittest.TestCase):
         shown = self.keeper.import_read(view['token'], items['customer-answers']['key'])
         self.assertIn('Use the `exec` tool to search, then the read tool.', shown['body'])
         self.assertIn('## Reference: FAQ.md\n\n# FAQ\nPrices are on the website.', shown['body'])
-        self.assertIn("Renamed tools to OpenClaw's: Bash → exec, Read → read", shown['flags'])
+        self.assertIn("Renamed tools to their names here: Bash → exec, Read → read", shown['flags'])
         self.assertFalse(shown['installable'])
         self.assertTrue(self.keeper.import_read(view['token'], items['weekly-report']['key'])['installable'])
         self.assertFalse(self.keeper.import_read(view['token'], items['pdf']['key'])['installable'])
