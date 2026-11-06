@@ -9,7 +9,7 @@ order: 1
 Ouvrez **Paramètres** avec la roue dentée en haut. Ses onglets :
 
 - **Compte** : **Vos adresses**, celles qui comptent comme vous, avec leur provenance, et **Se déconnecter**. Sur une Machine hébergée, aussi votre forfait, vos factures, votre Machine, votre Fleet, votre adresse, vos amis, votre connexion et vos données, chacun avec son bouton. Voir [Forfaits et facturation](plans-and-billing.md). **Se déconnecter** est en haut, **Résilier le forfait** et **Supprimer le compte** tout en bas.
-- **Général** : langue et région, saisie vocale, cet appareil, le navigateur de votre Machine, votre Fleet, l’export et votre compte.
+- **Général** : langue et région, saisie vocale, cet appareil, le navigateur de votre Machine, votre Fleet, l’export et l’import, et votre compte.
 - **Sécurité** : Standard ou Prudent, et les paramètres qu’ils règlent. Voir [Niveaux de sécurité](security-levels.md). **Accès du support** aussi, tant qu’il est actif : voir [Obtenir de l’aide](get-support.md#support-access).
 - **Activité** : tout ce que The Machine a fait pour vous, le plus récent d’abord. Voir [Activité](activity.md).
 - **Notifications** : ce qui vous parvient et où, et vos heures de travail. Voir [Notifications](notifications.md) et [Heures de travail](work-hours.md).
@@ -28,7 +28,9 @@ Un onglet sans rien à afficher est masqué.
 - **Saisie vocale** : comment ce que vous dites devient du texte, et la voix de Parler en direct. Voir [Saisie vocale](voice-input.md) et [Parler en direct](talk-live.md).
 - **Ouvrir le navigateur de la Machine ↗** : le navigateur que votre Machine utilise pour des sites comme LinkedIn.
 - **Règles Fleet** : voir [Règles de partage](sharing-rules.md).
-- **Exporter** : **Connaissances pour une autre IA**, ce que votre Machine a appris, dans des fichiers que toute IA sait lire. Voir [Connaissances pour une autre IA](knowledge-export.md).
+- **Exporter** :
+  - **Tout** : tout ce que votre Machine sait dans un seul fichier chiffré, pour changer d’ordinateur ou pour garder, et **Importer** pour en faire entrer un. Voir [Passer sur un autre ordinateur](moving.md).
+  - **Connaissances pour une autre IA** : ce que votre Machine a appris, dans des fichiers que toute IA sait lire. Voir [Connaissances pour une autre IA](knowledge-export.md).
 
 ## Sur cette Machine
 

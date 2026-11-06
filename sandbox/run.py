@@ -261,6 +261,29 @@ def seed_summaries(app):
         print(f'sandbox: {written} person summaries', flush=True)
 
 
+def seed_export(app):
+    """Settings, Export: openssl can't start here (guard.py), so the export writes a made-up file with a manifest of the
+    sandbox's own counts. Import works as on a Machine up to the passphrase, which no made-up file opens."""
+    import moving
+    from machine.export import inventory
+
+    def made_up(config_path, out_dir, passphrase=None, keys=False, source='local', **_):
+        tables = {}
+        with app.store.connect() as db:
+            for table, _virtual in inventory.tables(db):
+                rows = db.execute('SELECT COUNT(*) FROM ' + inventory.quoted(table)).fetchone()[0]
+                tables[f'events.sqlite/{table}'] = {'part': inventory.part_of(table), 'rows': rows}
+        out = Path(out_dir)
+        out.mkdir(mode=0o700, parents=True, exist_ok=True)
+        path = out / 'the-machine-export-sandbox.tar.gz.enc'
+        path.write_bytes(os.urandom(256 * 1024))
+        manifest = {'created_at': dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds'), 'includes_keys': bool(keys),
+                    'parts': moving.parts({'config/config.json': {'bytes': 2048}}, tables),
+                    'not_exported': moving.not_exported(app.config, bool(keys), [])}
+        return path, ({**manifest, 'code': moving.new_code()} if passphrase is None else manifest)
+    seams.replace_everywhere(moving, 'export', made_up)
+
+
 def proxy(public_port, app_port, config):
     """Signs each request in as the owner on the dashboard's own host (what Tailscale Serve does for real)."""
     host, owner = config['dashboard_host'], config['tailscale_owner']
@@ -418,6 +441,7 @@ def main():
     app.summary_model = fake_summary
     seed_transcript(app)
     seed_summaries(app)
+    seed_export(app)
     seed_ai(app)
     fixture = json.loads((HERE / 'fixture.json').read_text())
     net = None

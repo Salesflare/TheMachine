@@ -9,7 +9,7 @@ order: 1
 Open **Instellingen** met het tandwiel bovenaan. De tabbladen:
 
 - **Account**: **Je adressen**, de adressen die als jou tellen, met waar elk vandaan komt, en **Uitloggen**. Op een gehoste Machine ook je abonnement, facturen, Machine, Fleet, adres, vrienden, inloggen en gegevens, elk met een knop. Zie [Abonnementen en facturatie](plans-and-billing.md). **Uitloggen** staat bovenaan, **Abonnement opzeggen** en **Account verwijderen** helemaal onderaan.
-- **Algemeen**: taal en regio, spraakinvoer, dit apparaat, de browser van je Machine, je Fleet, exporteren en je account.
+- **Algemeen**: taal en regio, spraakinvoer, dit apparaat, de browser van je Machine, je Fleet, exporteren en importeren, en je account.
 - **Beveiliging**: Standaard of Voorzichtig, en de instellingen die ze bepalen. Zie [Beveiligingsniveaus](security-levels.md). Ook **Toegang voor support**, zolang het aanstaat: zie [Hulp krijgen](get-support.md#support-access).
 - **Activiteit**: alles wat The Machine voor je deed, nieuwste eerst. Zie [Activiteit](activity.md).
 - **Meldingen**: wat je waar bereikt, en je werkuren. Zie [Meldingen](notifications.md) en [Werkuren](work-hours.md).
@@ -28,7 +28,9 @@ Een tabblad zonder inhoud wordt verborgen.
 - **Spraakinvoer**: hoe wat je zegt tekst wordt, en de stem van Live praten. Zie [Spraakinvoer](voice-input.md) en [Live praten](talk-live.md).
 - **De browser van je Machine openen ↗**: de browser die je Machine gebruikt voor sites zoals LinkedIn.
 - **Fleet-regels**: zie [Deelregels](sharing-rules.md).
-- **Exporteren**: **Kennis voor een andere AI**, wat je Machine geleerd heeft, in bestanden die elke AI kan lezen. Zie [Kennis voor een andere AI](knowledge-export.md).
+- **Exporteren**:
+  - **Alles**: alles wat je Machine weet in één versleuteld bestand, om te verhuizen of te bewaren, en **Importeren** om er een binnen te halen. Zie [Verhuizen naar een andere computer](moving.md).
+  - **Kennis voor een andere AI**: wat je Machine geleerd heeft, in bestanden die elke AI kan lezen. Zie [Kennis voor een andere AI](knowledge-export.md).
 
 ## Op deze Machine
 

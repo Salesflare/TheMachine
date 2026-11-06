@@ -9,7 +9,7 @@ order: 1
 Abre **Ajustes** con el engranaje de arriba. Sus pestañas:
 
 - **Cuenta**: **Tus direcciones**, las que cuentan como tú, con de dónde salió cada una, y **Cerrar sesión**. En una Machine alojada, también tu plan, facturas, Machine, Fleet, dirección, amigos, inicio de sesión y datos, cada uno con su botón. Consulta [Planes y facturación](plans-and-billing.md). **Cerrar sesión** está arriba, **Cancelar plan** y **Eliminar la cuenta** al final del todo.
-- **General**: idioma y región, entrada de voz, este dispositivo, el navegador de tu Machine, tu Fleet, la exportación y tu cuenta.
+- **General**: idioma y región, entrada de voz, este dispositivo, el navegador de tu Machine, tu Fleet, exportar e importar, y tu cuenta.
 - **Seguridad**: Estándar o Prudente, y los ajustes que fijan. Consulta [Niveles de seguridad](security-levels.md). También **Acceso de soporte**, mientras está activo: consulta [Obtener ayuda](get-support.md#support-access).
 - **Actividad**: todo lo que The Machine hizo por ti, lo más reciente primero. Consulta [Actividad](activity.md).
 - **Notificaciones**: qué te llega y por dónde, y tu horario laboral. Consulta [Notificaciones](notifications.md) y [Horario laboral](work-hours.md).
@@ -28,7 +28,9 @@ Una pestaña sin nada que mostrar se oculta.
 - **Entrada de voz**: cómo lo que dices se convierte en texto, y la voz de Hablar en vivo. Consulta [Entrada de voz](voice-input.md) y [Hablar en vivo](talk-live.md).
 - **Abrir el navegador de la Machine ↗**: el navegador que usa tu Machine para sitios como LinkedIn.
 - **Reglas de Fleet**: consulta [Reglas para compartir](sharing-rules.md).
-- **Exportar**: **Conocimiento para otra IA**, lo que tu Machine ha aprendido, en archivos que cualquier IA puede leer. Consulta [Conocimiento para otra IA](knowledge-export.md).
+- **Exportar**:
+  - **Todo**: todo lo que sabe tu Machine en un solo archivo cifrado, para mudarte o guardarlo, e **Importar** para traer uno. Consulta [Pásate a otro ordenador](moving.md).
+  - **Conocimiento para otra IA**: lo que tu Machine ha aprendido, en archivos que cualquier IA puede leer. Consulta [Conocimiento para otra IA](knowledge-export.md).
 
 ## En esta Machine
 
