@@ -12,7 +12,7 @@ In **Impostazioni**, **Notifiche**, scegli per ogni tipo dove ti arriva:
 - **Nuove attività**: una risposta che qualcuno aspetta, una richiesta, qualsiasi cosa urgente.
 - **Risultati e domande**: una bozza pronta da approvare o inviare, un compito bloccato o che richiede un accesso, una domanda della Fleet.
 - **Promemoria**: attività posticipate e attese che tornano.
-- **Riepilogo del mattino**: le riunioni di oggi, cosa scade e cosa è arrivato durante la notte.
+- **Riepilogo del mattino**: le riunioni di oggi, cosa scade, cosa è arrivato durante la notte e le prime attività in attesa, nell'ordine della tua lista di attività.
 
 Ognuno ha un interruttore per **Push** (l'app sul telefono o sul computer), per **Telegram** quando è configurato e per **Email** su una Machine in hosting o su una Machine nel The Machine Network. Sono tutti attivi, tranne il riepilogo su Telegram.
 
@@ -32,7 +32,7 @@ Notifica solo ciò che ha bisogno di te. Avanzamenti e modifiche no. Una raffica
 
 ## Il riepilogo del mattino
 
-Arriva nei giorni lavorativi all'ora del **Riepilogo del mattino**, e salta quando non c'è niente da dire. **Anteprima**, nella sua riga, lo mostra sulla pagina senza inviarlo. Di default è una push e un'email. La push dice quante attività aspettano, le prime due e l'ora della tua prima riunione. Toccando la push si apre oggi nel **Calendario**.
+Arriva nei giorni lavorativi all'ora del **Riepilogo del mattino**, e salta solo quando non c'è niente da dire: nessuna riunione, niente in scadenza o di nuovo e nessuna attività in attesa. **Anteprima**, nella sua riga, lo mostra sulla pagina senza inviarlo. Di default è una push e un'email. La push dice quante attività aspettano, le prime due e l'ora della tua prima riunione. Toccando la push si apre oggi nel **Calendario**.
 
 ## Privacy
 

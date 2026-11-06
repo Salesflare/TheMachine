@@ -12,7 +12,7 @@ Dans **Paramètres**, **Notifications**, choisissez pour chaque type où il vous
 - **Nouvelles tâches** : une réponse que quelqu’un attend, une demande, tout ce qui est urgent.
 - **Résultats et questions** : un brouillon prêt à approuver ou à envoyer, une tâche bloquée ou qui demande une connexion, une question de la Fleet.
 - **Rappels** : les mises en attente et les attentes qui reviennent.
-- **Récap du matin** : les réunions du jour, ce qui arrive à échéance et ce qui est arrivé pendant la nuit.
+- **Récap du matin** : les réunions du jour, ce qui arrive à échéance, ce qui est arrivé pendant la nuit et les premières tâches en attente, dans l’ordre de votre liste de tâches.
 
 Chacun a un interrupteur pour **Push** (l’app sur votre téléphone ou votre ordinateur), **Telegram** quand il est configuré, et **E-mail** sur une Machine hébergée ou sur une Machine du The Machine Network. Tous sont activés, sauf le récap sur Telegram.
 
@@ -32,7 +32,7 @@ Seul ce qui a besoin de vous envoie une notification. Pas les avancées ni les m
 
 ## Le récap du matin
 
-Il arrive les jours de travail à l’heure du **Récap du matin**, et il est sauté quand il n’y a rien à dire. **Aperçu**, sur sa ligne, l’affiche sur la page sans l’envoyer. Par défaut, c’est un push et un e-mail. Le push indique combien de tâches attendent, les deux premières et l’heure de votre première réunion. Toucher le push ouvre aujourd’hui dans l’**Agenda**.
+Il arrive les jours de travail à l’heure du **Récap du matin**, et il n’est sauté que quand il n’y a rien à dire : pas de réunion, rien d’échu ni de nouveau, et aucune tâche en attente. **Aperçu**, sur sa ligne, l’affiche sur la page sans l’envoyer. Par défaut, c’est un push et un e-mail. Le push indique combien de tâches attendent, les deux premières et l’heure de votre première réunion. Toucher le push ouvre aujourd’hui dans l’**Agenda**.
 
 ## Confidentialité
 

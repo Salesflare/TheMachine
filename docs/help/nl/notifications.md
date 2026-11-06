@@ -12,7 +12,7 @@ Kies in **Instellingen**, **Meldingen** per soort waar die je bereikt:
 - **Nieuwe to-do's**: een antwoord waarop iemand wacht, een verzoek, alles wat dringend is.
 - **Resultaten en vragen**: een concept dat klaar is om goed te keuren of te versturen, een taak die vastzit of een login nodig heeft, een vraag uit je Fleet.
 - **Herinneringen**: snoozes en wachttijden die terugkomen.
-- **Ochtendoverzicht**: de afspraken van vandaag, wat moet gebeuren en wat er 's nachts binnenkwam.
+- **Ochtendoverzicht**: de afspraken van vandaag, wat moet gebeuren, wat er 's nachts binnenkwam en de eerste wachtende to-do's, in de volgorde van je to-dolijst.
 
 Elk heeft een schakelaar voor **Push** (de app op je telefoon of computer), **Telegram** als dat ingesteld is, en **E-mail** op een gehoste Machine of een Machine op The Machine Network. Alles staat aan, behalve het overzicht op Telegram.
 
@@ -32,7 +32,7 @@ Alleen wat jou nodig heeft, geeft een melding. Voortgang en wijzigingen niet. Ee
 
 ## Het ochtendoverzicht
 
-Het komt op werkdagen op je tijdstip bij **Ochtendoverzicht**, en wordt overgeslagen als er niets te melden is. **Voorbeeld**, in de rij ervan, toont het op de pagina zonder het te versturen. Standaard is het een push en een e-mail. De push zegt hoeveel to-do's wachten, de eerste twee en het uur van je eerste afspraak. Tik je op de push, dan opent vandaag in de **Agenda**.
+Het komt op werkdagen op je tijdstip bij **Ochtendoverzicht**, en wordt alleen overgeslagen als er niets te melden is: geen afspraken, niets te doen of nieuw en geen wachtende to-do's. **Voorbeeld**, in de rij ervan, toont het op de pagina zonder het te versturen. Standaard is het een push en een e-mail. De push zegt hoeveel to-do's wachten, de eerste twee en het uur van je eerste afspraak. Tik je op de push, dan opent vandaag in de **Agenda**.
 
 ## Privacy
 

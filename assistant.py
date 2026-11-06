@@ -18167,16 +18167,17 @@ class App(*APP_MIXINS):
             overnight = [dict(r) for r in db.execute(
                 "SELECT title FROM suggestions WHERE status='pending' AND handled_hint IS NULL AND created_at>=? AND (due IS NULL OR due!=?) "
                 "AND (deliver_after IS NULL OR deliver_after<=?) ORDER BY urgent DESC,created_at DESC LIMIT 20", (utc(since), local.date().isoformat(), utc(current)))]
-            # What waits for the owner (waiting_count, the app's badge), due today and urgent ones first: the push's body
-            waiting = [dict(r) for r in db.execute(
-                "SELECT title FROM suggestions WHERE status IN ('pending','prepared') AND NOT " + NOT_FOR_OWNER_SQL + " "
-                "AND (deliver_after IS NULL OR deliver_after<=?) ORDER BY (due=?) DESC,urgent DESC,created_at DESC LIMIT 2",
-                (utc(current), local.date().isoformat()))]
+            # What waits for the owner (waiting_count, the app's badge), in the dashboard's order (notify.open_order): the
+            # first two for the push's body, the first three for the digest's "Waiting for you", so a pile still gets one
+            top = notify.open_order([dict(r) for r in db.execute(
+                "SELECT id,title,due,due_at,created_at FROM suggestions WHERE status IN ('pending','prepared') AND NOT " + NOT_FOR_OWNER_SQL + " "
+                "AND (deliver_after IS NULL OR deliver_after<=?) LIMIT 2000", (utc(current),))], local)[:3]
+            waiting = top[:2]
             total = waiting_count(db)
             show = security_levels.notify_text(db, False)
         root = 'https://' + self.config['dashboard_host'] + self.config.get('dashboard_path', '/') if self.config.get('dashboard_host') else ''
         when = lambda iso: locale_prefs.clock_text(dt.datetime.fromisoformat(iso).astimezone(local_tz()))
-        return notify.compose(meetings, due, overnight, root, show, when, waiting, total)
+        return notify.compose(meetings, due, overnight, root, show, when, waiting, total, top)
 
     def digest_step(self, current=None, push=None, telegram_send=None, mail=None):
         """Send the morning digest once on a work day, at its time, on the channels the owner picked."""

@@ -12,7 +12,7 @@ Wähle in **Einstellungen**, **Benachrichtigungen** für jede Art, wo sie dich e
 - **Neue Aufgaben**: eine Antwort, auf die jemand wartet, eine Anfrage, alles Dringende.
 - **Ergebnisse und Fragen**: ein Entwurf, der bereit zum Freigeben oder Senden ist, eine Aufgabe, die festhängt oder eine Anmeldung braucht, eine Frage aus der Fleet.
 - **Erinnerungen**: Zurückgestelltes und Wartendes, das zurückkommt.
-- **Morgendliche Zusammenfassung**: die Meetings von heute, was fällig ist und was über Nacht reinkam.
+- **Morgendliche Zusammenfassung**: die Meetings von heute, was fällig ist, was über Nacht reinkam und die ersten wartenden Aufgaben, in der Reihenfolge deiner Aufgabenliste.
 
 Jede hat einen Schalter für **Push** (die App auf deinem Handy oder Computer), **Telegram**, wenn es eingerichtet ist, und **E-Mail** auf einer gehosteten Machine oder einer im The Machine Network. Alle sind an, außer der Zusammenfassung auf Telegram.
 
@@ -33,7 +33,7 @@ Nur was dich braucht, benachrichtigt. Fortschritt und Änderungen nicht. Viele a
 
 ## Die morgendliche Zusammenfassung
 
-Sie kommt an Arbeitstagen zu deiner Uhrzeit für die **Morgendliche Zusammenfassung** und fällt aus, wenn es nichts zu sagen gibt. **Vorschau** in ihrer Zeile zeigt sie auf der Seite, ohne sie zu senden. Standardmäßig kommt sie als Push und als E-Mail. Der Push nennt, wie viele Aufgaben warten, die ersten zwei und die Uhrzeit deines ersten Termins. Tippst du auf den Push, öffnet sich heute im **Kalender**.
+Sie kommt an Arbeitstagen zu deiner Uhrzeit für die **Morgendliche Zusammenfassung** und fällt nur aus, wenn es nichts zu sagen gibt: keine Meetings, nichts fällig oder neu und keine wartenden Aufgaben. **Vorschau** in ihrer Zeile zeigt sie auf der Seite, ohne sie zu senden. Standardmäßig kommt sie als Push und als E-Mail. Der Push nennt, wie viele Aufgaben warten, die ersten zwei und die Uhrzeit deines ersten Termins. Tippst du auf den Push, öffnet sich heute im **Kalender**.
 
 ## Datenschutz
 

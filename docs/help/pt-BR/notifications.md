@@ -12,7 +12,7 @@ Em **Configurações**, **Notificações**, escolha por tipo onde cada coisa che
 - **Novas tarefas**: uma resposta que alguém está esperando, um pedido, qualquer coisa urgente.
 - **Resultados e perguntas**: um rascunho pronto para aprovar ou enviar, uma tarefa travada ou que precisa de login, uma pergunta do Fleet.
 - **Lembretes**: itens adiados e esperas que voltam.
-- **Resumo da manhã**: as reuniões de hoje, o que vence e o que chegou durante a noite.
+- **Resumo da manhã**: as reuniões de hoje, o que vence, o que chegou durante a noite e as primeiras tarefas esperando, na ordem da sua lista de tarefas.
 
 Cada um tem um botão para **Push** (o app no seu celular ou computador), **Telegram** quando estiver configurado e **E-mail** em uma Machine hospedada ou em uma Machine na The Machine Network. Todos ficam ativados, menos o resumo no Telegram.
 
@@ -32,7 +32,7 @@ Só notifica o que precisa de você. Andamento e edições não. Várias de uma 
 
 ## O resumo da manhã
 
-Ele chega nos dias de trabalho, no horário do **Resumo da manhã**, e não é enviado quando não há nada a dizer. **Prévia**, na linha dele, mostra o resumo na página sem enviar. Por padrão, ele vai por push e por e-mail. O push diz quantas tarefas esperam, as duas primeiras e o horário da sua primeira reunião. Tocar no push abre o dia de hoje no **Calendário**.
+Ele chega nos dias de trabalho, no horário do **Resumo da manhã**, e só não é enviado quando não há nada a dizer: nenhuma reunião, nada vencendo ou novo e nenhuma tarefa esperando. **Prévia**, na linha dele, mostra o resumo na página sem enviar. Por padrão, ele vai por push e por e-mail. O push diz quantas tarefas esperam, as duas primeiras e o horário da sua primeira reunião. Tocar no push abre o dia de hoje no **Calendário**.
 
 ## Privacidade
 
