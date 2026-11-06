@@ -6725,9 +6725,15 @@ class Store:
         for row in rows:
             p = dict(row)
             old = (p['what'][:1].upper() + p['what'][1:] if p['direction'] == 'mine' else i18n.t('Waiting on {}: {}', p['who'], p['what']))
-            if len(old) <= PROMISE_TITLE_MAX or row['title'] != old[:PROMISE_TITLE_MAX]:
+            cut = len(old) > PROMISE_TITLE_MAX and row['title'] == old[:PROMISE_TITLE_MAX]
+            # 2026-11-06: release 1231 made those whole with a Slack member's label as their name, its first word as
+            # the first name ("Waiting on Slack: ..." for "Slack teammate U02AB3CD4"): those get the person's name
+            label = p['who'].split()[0] if p['direction'] != 'mine' and graph.slack_ids_in(p['who']) and p['who'].split() else ''
+            wrong = label and row['title'] == promise_title({**p, 'who': label}, promise_text({**p, 'who': label})[0])
+            if not (cut or wrong):
                 continue
-            title = promise_title(p, promise_text(p)[0])
+            named = promise_who_named(db, p)
+            title = promise_title(named, promise_text(named)[0])
             if title != row['title']:
                 db.execute('UPDATE suggestions SET title=? WHERE id=?', (title, row['id']))
                 db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL', (row['id'],))
@@ -15656,6 +15662,14 @@ def promise_title(p, title):
     return fit_title(title, PROMISE_TITLE_MAX, keep)
 
 
+def promise_who_named(db, p):
+    """The promise with who by the person's name ("Slack teammate U02AB3CD4" as "Sam Lee"), for its to-do's title and
+    body. One whose name isn't known yet keeps the id, which is named when shown."""
+    ids = graph.slack_ids_in(p['who'])
+    names = slack_name_table(db, ids) if ids else {}
+    return {**p, 'who': slack_ids_named(db, p['who'], names)} if ids and ids <= names.keys() else p
+
+
 def promise_text(p):
     """A promise card's title and body. The title says what was promised; the body adds only who and when, in one
     short line, so the card never says the same thing twice."""
@@ -15673,7 +15687,8 @@ def promise_text(p):
     else:
         title = t('Waiting on {}: {}', p['who'], p['what'])
         first = p['who'].split()[0] if p['who'].split() else p['who']
-        if len(title) > PROMISE_TITLE_MAX and first != p['who']:
+        # A Slack member not named yet ("Slack teammate U02AB3CD4"): its first word is no first name
+        if len(title) > PROMISE_TITLE_MAX and first != p['who'] and not graph.slack_ids_in(p['who']):
             title = t('Waiting on {}: {}', first, p['what'])  # the person chip says who in full
         body = (t('Promised on {} for {}. Nothing has come in yet, so a short nudge may help.', said, by) if by else
                 t('Promised on {}. Nothing has come in yet, so a short nudge may help.', said))
@@ -19769,7 +19784,7 @@ class App(*APP_MIXINS):
                 if not current:
                     return None  # closed or rescheduled since the worker selected it
                 return self.promise_card(dict(current), _db=db)
-        title, body = promise_text(p)
+        title, body = promise_text(promise_who_named(_db, p))
         home = promise_home(_db, p)
         if home is not None and home['status'] in CARD_OPEN:
             # Its matter already has an open to-do: the promise joins it, no second card.
