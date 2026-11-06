@@ -7,6 +7,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import assistant
+from seams import patch_everywhere  # noqa: E402
 
 
 class ServiceBusy(unittest.TestCase):
@@ -45,7 +46,7 @@ class ServiceBusy(unittest.TestCase):
     def test_a_single_503_is_retried_shortly_and_records_no_error(self):
         account = {'id': 'salesflare-google-meet', 'service': 'google_meet'}
         app, sync = self.app([assistant.SourceError('google_meet_http', 503), {'mode': 'incremental', 'events': 0}])
-        with patch.object(app, 'resume_wait', return_value=0), patch.object(assistant, 'sync_source', side_effect=sync):
+        with patch.object(app, 'resume_wait', return_value=0), patch_everywhere(assistant, 'sync_source', side_effect=sync):
             result = app.sync_retrying(account)
         self.assertEqual(result['mode'], 'incremental')
         self.assertEqual(self.calls, [account['id']] * 2)
@@ -55,21 +56,21 @@ class ServiceBusy(unittest.TestCase):
     def test_a_short_retry_after_is_honored(self):
         account = {'id': 'work-trello', 'service': 'trello'}
         app, sync = self.app([assistant.SourceError('trello_http', 429, retry_after=30), {'mode': 'incremental', 'events': 0}])
-        with patch.object(assistant, 'sync_source', side_effect=sync):
+        with patch_everywhere(assistant, 'sync_source', side_effect=sync):
             app.sync_retrying(account)
         self.assertEqual(self.waits, [30])
 
     def test_a_long_retry_after_waits_in_the_checkpoint_instead(self):
         account = {'id': 'work-trello', 'service': 'trello'}
         app, sync = self.app([assistant.SourceError('trello_http', 429, retry_after=900)])
-        with patch.object(assistant, 'sync_source', side_effect=sync), self.assertRaises(assistant.SourceError):
+        with patch_everywhere(assistant, 'sync_source', side_effect=sync), self.assertRaises(assistant.SourceError):
             app.sync_retrying(account)
         self.assertEqual((self.calls, self.waits), ([account['id']], []))
 
     def test_a_second_503_waits_for_the_next_round_unreported(self):
         account = {'id': 'salesflare-google-meet', 'service': 'google_meet', 'poll_seconds': 300}
         app, sync = self.app([assistant.SourceError('google_meet_http', 503), assistant.SourceError('google_meet_http', 503)])
-        with patch.object(app, 'resume_wait', return_value=0), patch.object(assistant, 'sync_source', side_effect=sync):
+        with patch.object(app, 'resume_wait', return_value=0), patch_everywhere(assistant, 'sync_source', side_effect=sync):
             app.collector(account)
         self.assertEqual(self.waits[:2], [assistant.QUICK_RETRY_SECONDS, 300])
         self.assertEqual(self.feed(app), 0)
@@ -81,7 +82,7 @@ class ServiceBusy(unittest.TestCase):
         for status in (401, 403):
             account = {'id': 'work-trello', 'service': 'trello'}
             app, sync = self.app([assistant.SourceError('trello_http', status)])
-            with patch.object(app, 'resume_wait', return_value=0), patch.object(assistant, 'sync_source', side_effect=sync):
+            with patch.object(app, 'resume_wait', return_value=0), patch_everywhere(assistant, 'sync_source', side_effect=sync):
                 app.collector(account)
             self.assertEqual(self.calls, [account['id']])  # no quick retry: it waits for the next round
             self.assertNotIn(assistant.QUICK_RETRY_SECONDS, self.waits)

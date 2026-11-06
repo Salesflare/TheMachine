@@ -5,6 +5,7 @@ import importlib.util
 import tempfile
 import unittest
 from pathlib import Path
+from seams import patch_everywhere  # noqa: E402
 
 spec = importlib.util.spec_from_file_location('gap_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
@@ -28,8 +29,9 @@ class GapNote(unittest.TestCase):
         self.store.owner_user_ids = set()
         self.store.accounts = CONFIG['accounts']
         self.app = object.__new__(a.App); self.app.store = self.store; self.app.config = CONFIG
-        self.now = a.now
-        a.now = lambda: NOW.isoformat(); self.addCleanup(setattr, a, 'now', self.now)
+        clock = patch_everywhere(a, 'now', lambda: NOW.isoformat())
+        clock.start()
+        self.addCleanup(clock.stop)
 
     def add(self, *events):
         for e in events:

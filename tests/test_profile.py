@@ -3,6 +3,7 @@ draft waits for the owner; USER.md only changes after their yes. No Gateway, no 
 import concurrent.futures, contextlib, datetime as dt, importlib.util, io, json, tempfile, threading, unittest
 from pathlib import Path
 from unittest.mock import patch
+from seams import patch_everywhere  # noqa: E402
 
 def load(name, file):
     spec = importlib.util.spec_from_file_location(name, Path(__file__).parent.parent.joinpath(file))
@@ -151,7 +152,7 @@ class Profile(unittest.TestCase):
                                                    body=f'Initial separate message {i}', from_me=True) for i in range(30)])
         run = self.store.profile_start()
         session = a.PROFILE_SESSION_PREFIX + run['run_id']
-        small = patch.object(a, 'EVIDENCE_PAGE_CHARS', 3000); small.start(); self.addCleanup(small.stop)  # pages by size
+        small = patch_everywhere(a, 'EVIDENCE_PAGE_CHARS', 3000); small.start(); self.addCleanup(small.stop)  # pages by size
         first = self.store.profile_evidence(1, session)
         before = self.store.profile_evidence(2, session)
         self.store.commit_page('work', {}, [signal(f'arrival{i}', i / 1000, kind='whatsapp.message',

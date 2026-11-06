@@ -8,6 +8,7 @@ from contextlib import ExitStack
 from unittest.mock import patch
 
 import models
+from seams import patch_everywhere  # noqa: E402
 
 spec = importlib.util.spec_from_file_location('first_look_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
@@ -39,10 +40,10 @@ class FirstLook(unittest.TestCase):
         self.app = object.__new__(a.App); self.app.store = self.store
         self.app.config = {'accounts': [{'id': 'gateway', 'service': 'gateway'}, {'id': 'work', 'service': 'gmail'}],
                            'review_worker': {'enabled': False}, 'delivery_enabled': False}
-        model = patch.object(a, 'has_model', return_value=True); model.start(); self.addCleanup(model.stop)
+        model = patch_everywhere(a, 'has_model', return_value=True); model.start(); self.addCleanup(model.stop)
 
     def later(self, minutes):
-        return patch.object(a, 'now', return_value=(dt.datetime.now(dt.timezone.utc) + dt.timedelta(minutes=minutes)).isoformat(timespec='seconds'))
+        return patch_everywhere(a, 'now', return_value=(dt.datetime.now(dt.timezone.utc) + dt.timedelta(minutes=minutes)).isoformat(timespec='seconds'))
 
     def state(self, minutes=0):
         with self.later(minutes), self.store.connect() as db:
@@ -54,7 +55,7 @@ class FirstLook(unittest.TestCase):
     def test_it_waits_for_a_model_a_source_and_the_first_import_then_starts_one_bounded_preview(self):
         self.store.commit_page('gateway', {}, [signal('log', 'gateway', kind='gateway.log')])
         self.assertEqual(self.state(10)['why'], 'sources')  # The Machine's own log is not a source
-        with patch.object(a, 'has_model', return_value=False):
+        with patch_everywhere(a, 'has_model', return_value=False):
             self.assertEqual(self.state(10)['why'], 'model')
         self.store.commit_page('work', {}, [signal(f'm{n}', days_ago=3) for n in range(30)] + [signal('old', days_ago=20)])
         # The quick look takes the week's most promising at once, whatever their age within the week
@@ -76,7 +77,7 @@ class FirstLook(unittest.TestCase):
     def test_a_review_prompt_over_the_runner_limit_ends_the_run_visibly_instead_of_retrying_as_unavailable(self):
         self.store.commit_page('work', {}, [signal(f'm{n}', days_ago=3) for n in range(30)])
         runner = Runner('admitted')
-        with self.later(4), patch.object(a, 'PROMPT_LIMIT', 100), self.assertLogs(a.LOG, 'ERROR'):
+        with self.later(4), patch_everywhere(a, 'PROMPT_LIMIT', 100), self.assertLogs(a.LOG, 'ERROR'):
             self.assertEqual(self.app.review_step(runner), 'error')
         self.assertEqual(runner.requests, [])  # never sent: the runner would refuse it every time
         run, = self.runs()

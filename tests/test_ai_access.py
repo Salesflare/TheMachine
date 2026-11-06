@@ -18,6 +18,7 @@ from unittest.mock import patch
 
 import ai_access
 import ai_app
+from seams import patch_everywhere  # noqa: E402
 
 spec = importlib.util.spec_from_file_location('ai_access_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
@@ -414,7 +415,7 @@ class Calls(Base):
 
     def test_a_work_todo_added_on_a_weekend_is_on_the_list_at_once(self):
         _, tokens = self.signed_in('draft')
-        with patch.object(a, 'is_work_day', return_value=False):
+        with patch_everywhere(a, 'is_work_day', return_value=False):
             error, made = self.tool(tokens['access_token'], 'create_todo', text='Call Sam on Friday', area='work')
         self.assertFalse(error, made)
         with self.db() as db:
@@ -425,7 +426,7 @@ class Calls(Base):
 
     def test_a_draft_waits_for_the_owner_and_nothing_is_sent(self):
         _, tokens = self.signed_in('draft', area='personal')
-        with patch.object(a.next_actions, 'execute', side_effect=AssertionError('nothing sends')) if hasattr(a.next_actions, 'execute') else patch.object(a, 'now', a.now):
+        with patch.object(a.next_actions, 'execute', side_effect=AssertionError('nothing sends')) if hasattr(a.next_actions, 'execute') else patch_everywhere(a, 'now', a.now):
             error, made = self.tool(tokens['access_token'], 'create_draft', to=['sam@client.example'], subject='Contract', body='Hi Sam,\n\nHere it is.')
         self.assertFalse(error, made)
         self.assertFalse(made['sent'])

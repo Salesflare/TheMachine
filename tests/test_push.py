@@ -3,6 +3,7 @@ from pathlib import Path
 import assistant as a
 from unittest.mock import patch
 import dashboard_parts
+from seams import patch_everywhere  # noqa: E402
 
 SUB = {'endpoint': 'https://fcm.googleapis.com/fcm/send/abc', 'keys': {'p256dh': 'B' + 'x' * 86, 'auth': 'y' * 22}}
 
@@ -67,7 +68,7 @@ class PhoneNotifications(unittest.TestCase):
                           lambda r: {'results': [{'endpoint': SUB['endpoint'], 'status': status}]})
             before = self.subscriptions()[0]
             updated = {**SUB, 'keys': {'p256dh': 'C' + 'z' * 86, 'auth': 'q' * 22}}
-            with patch.object(a, 'now', return_value='2026-10-15T09:00:00+00:00'):
+            with patch_everywhere(a, 'now', return_value='2026-10-15T09:00:00+00:00'):
                 self.app.action('push_subscribe', updated, owner_dashboard=True)
             after = self.subscriptions()[0]
             self.assertEqual(after['p256dh'], updated['keys']['p256dh'])
@@ -101,8 +102,8 @@ class PhoneNotifications(unittest.TestCase):
                 row = db.execute('SELECT status,message_id,needs_edit FROM deliveries WHERE suggestion_id=?', (sid,)).fetchone()
             self.assertEqual(tuple(row), ('sent', '101', 1))
             raise SimulatedTermination()
-        with patch.object(a.dt, 'datetime', Daytime), patch.object(a, 'telegram', side_effect=telegram) as send, \
-                patch.object(a, 'push_notify', side_effect=push) as notify:
+        with patch.object(a.dt, 'datetime', Daytime), patch_everywhere(a, 'telegram', side_effect=telegram) as send, \
+                patch_everywhere(a, 'push_notify', side_effect=push) as notify:
             with self.assertRaises(SimulatedTermination):
                 a.deliver_one(self.store, self.config, edit_cards=False)
             # Reopening SQLite and running delivery again must not repeat a known send.
@@ -124,8 +125,8 @@ class PhoneNotifications(unittest.TestCase):
                 row = db.execute('SELECT status,message_id,notification_message_id,reminder FROM deliveries WHERE suggestion_id=?', (sid,)).fetchone()
             self.assertEqual(tuple(row), ('sent', '40', '43', 0))
             raise SimulatedTermination()
-        with patch.object(a.dt, 'datetime', Daytime), patch.object(a, 'telegram', return_value={'messageId': '43'}) as send, \
-                patch.object(a, 'push_notify', side_effect=push) as notify:
+        with patch.object(a.dt, 'datetime', Daytime), patch_everywhere(a, 'telegram', return_value={'messageId': '43'}) as send, \
+                patch_everywhere(a, 'push_notify', side_effect=push) as notify:
             with self.assertRaises(SimulatedTermination):
                 a.deliver_one(self.store, self.config, edit_cards=False)
             self.assertIsNone(a.deliver_one(a.Store(self.store.path), self.config, edit_cards=False))
@@ -150,8 +151,8 @@ class PhoneNotifications(unittest.TestCase):
         class Daytime(a.dt.datetime):
             @classmethod
             def now(cls, tz=None): return cls(2026, 10, 12, 10, 0, tzinfo=tz or a.dt.timezone.utc)
-        with patch.object(a.dt, 'datetime', Daytime), patch.object(a, 'telegram', return_value={'messageId': '101'}), \
-                patch.object(a, 'push_notify', side_effect=RuntimeError('phone push broke')) as push:
+        with patch.object(a.dt, 'datetime', Daytime), patch_everywhere(a, 'telegram', return_value={'messageId': '101'}), \
+                patch_everywhere(a, 'push_notify', side_effect=RuntimeError('phone push broke')) as push:
             self.assertTrue(a.deliver_one(self.store, {}, edit_cards=False))  # a push failure never fails the delivery
             self.assertTrue(a.deliver_one(self.store, {}, edit_cards=False))  # second card of the batch arrives silently
         # Both reach the phone, as both reach Telegram; only the first buzzes.
@@ -191,7 +192,7 @@ class PhoneNotifications(unittest.TestCase):
         config = dict(self.config, telegram_owner='')
         self.assertFalse(a.telegram_on(config))
         with patch.object(a.dt, 'datetime', Daytime), patch.object(a.subprocess, 'run', side_effect=AssertionError('no Telegram helper')), \
-                patch.object(a, 'push_notify') as push:
+                patch_everywhere(a, 'push_notify') as push:
             self.assertTrue(a.deliver_one(self.store, config, edit_cards=False))
             a.telegram(config, {'id': card, 'title': 'First', 'body': 'Edited', 'status': 'accepted'}, 'edit', 'web-1')  # edits are local too
         self.assertEqual([c.args[2]['id'] for c in push.call_args_list], [card])
@@ -204,9 +205,9 @@ class PhoneNotifications(unittest.TestCase):
         self.app.config = dict(self.config, telegram_owner='', weekly_recap={'enabled': True})
         sent = []
         friday = a.dt.datetime(2026, 10, 16, 17, 0, tzinfo=a.dt.timezone.utc)
-        with patch.object(a, 'push_node', side_effect=lambda config, request: sent.append(request) or {'results': []}), \
-                patch.object(a, 'telegram_request', side_effect=AssertionError('no Telegram')), \
-                patch.object(a, 'local_tz', return_value=a.dt.timezone.utc):
+        with patch_everywhere(a, 'push_node', side_effect=lambda config, request: sent.append(request) or {'results': []}), \
+                patch_everywhere(a, 'telegram_request', side_effect=AssertionError('no Telegram')), \
+                patch_everywhere(a, 'local_tz', return_value=a.dt.timezone.utc):
             self.assertEqual(self.app.recap_step(current=friday), 'sent')
         self.assertEqual((sent[0]['payload']['title'], sent[0]['payload']['url']), ('Your week', 'https://the-machine.example/assistant/'))
         with self.store.connect() as db:
@@ -228,13 +229,13 @@ class PhoneNotifications(unittest.TestCase):
             self.app.action('push_test', {'endpoint': 'https://push.example/unknown'}, owner_dashboard=True)
         sent = []
         ok = lambda config, request: sent.append(request) or {'results': [{'endpoint': s['endpoint'], 'status': 201} for s in request['subscriptions']]}
-        with patch.object(a, 'push_node', ok):
+        with patch_everywhere(a, 'push_node', ok):
             self.assertEqual(self.app.action('push_test', {'endpoint': SUB['endpoint']}, owner_dashboard=True), {'sent': True})
         self.assertEqual([s['endpoint'] for s in sent[0]['subscriptions']], [SUB['endpoint']])
         self.assertEqual(sent[0]['payload']['tag'], 'push-test')
         self.assertEqual(sent[0]['payload']['title'], 'Notifications are on')
         gone = lambda config, request: {'results': [{'endpoint': SUB['endpoint'], 'status': 410}]}
-        with patch.object(a, 'push_node', gone), self.assertRaises(ValueError):
+        with patch_everywhere(a, 'push_node', gone), self.assertRaises(ValueError):
             self.app.action('push_test', {'endpoint': SUB['endpoint']}, owner_dashboard=True)
         self.assertEqual([s['endpoint'] for s in self.subscriptions()], [other['endpoint']])  # a gone subscription is removed
 

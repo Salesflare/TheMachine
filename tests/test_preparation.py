@@ -3,6 +3,7 @@ from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
+from seams import patch_everywhere  # noqa: E402
 
 spec=importlib.util.spec_from_file_location('preparation_assistant',Path(__file__).parent.parent.joinpath('assistant.py'))
 a=importlib.util.module_from_spec(spec);spec.loader.exec_module(a)
@@ -26,7 +27,7 @@ class Preparation(unittest.TestCase):
         class Noon(a.dt.datetime):
             @classmethod
             def now(cls,tz=None):return a.dt.datetime(2026,10,14,12,tzinfo=a.local_tz()).astimezone(tz or a.dt.timezone.utc)
-        with patch.object(a.dt,'datetime',Noon),patch.object(a,'telegram',side_effect=lambda *x,**k:(sent.append(x),{'messageId':'7'})[1]):
+        with patch.object(a.dt,'datetime',Noon),patch_everywhere(a,'telegram',side_effect=lambda *x,**k:(sent.append(x),{'messageId':'7'})[1]):
             a.deliver_one(self.store,self.app.config,edit_cards=False)
 
     def q(self,sql,*args):
@@ -68,7 +69,7 @@ class Preparation(unittest.TestCase):
     def test_a_run_a_gateway_restart_cuts_off_is_started_again_without_using_up_the_retry(self):
         sid=self.ahead()['id']
         session=self.q('SELECT session_job_id FROM preparations WHERE suggestion_id=?',sid)['session_job_id']
-        later=lambda:patch.object(a,'now',return_value=(a.dt.datetime.now(a.dt.timezone.utc)+a.dt.timedelta(minutes=2+len(seen))).isoformat())
+        later=lambda:patch_everywhere(a,'now',return_value=(a.dt.datetime.now(a.dt.timezone.utc)+a.dt.timedelta(minutes=2+len(seen))).isoformat())
         seen=[]
         for n in range(a.PREPARATION_INTERRUPTED_TRIES-1):
             with later():self.app.preparation_step(lambda r:seen.append(r) or {'status':'admitted' if r['action']=='start' else 'pending'})
@@ -268,7 +269,7 @@ class Preparation(unittest.TestCase):
         seen=[]
         later=(a.dt.datetime.now(a.dt.timezone.utc)+a.dt.timedelta(seconds=a.PREPARATION_SETTLE_SECONDS+5)).isoformat()
         for _ in range(3):  # settle_ahead sends it out; the finished run is asked how it ended, never stopped
-            with patch.object(a,'now',return_value=later):
+            with patch_everywhere(a,'now',return_value=later):
                 self.app.preparation_step(lambda r:seen.append(r) or {'status':'ok' if r['action']=='status' else 'aborted'})
         self.assertNotIn('stop',[r['action'] for r in seen if r.get('job_id')==job])
         self.assertEqual(self.q('SELECT status FROM preparation_runs WHERE job_id=?',job)['status'],'ok')
@@ -747,7 +748,7 @@ class Preparation(unittest.TestCase):
         class Daytime(a.dt.datetime):  # outside quiet hours, whatever time the suite runs
             @classmethod
             def now(cls,tz=None):return cls(2026,10,12,10,0,tzinfo=tz or a.dt.timezone.utc)
-        with patch.object(a.dt,'datetime',Daytime),patch.object(a,'telegram',return_value={'messageId':'101'}) as send:
+        with patch.object(a.dt,'datetime',Daytime),patch_everywhere(a,'telegram',return_value={'messageId':'101'}) as send:
             self.assertTrue(a.deliver_one(self.store,{},edit_cards=False))
             self.store.prepare(self.sid,'The real prepared result',job)
             self.assertFalse(a.deliver_one(self.store,{},edit_cards=False))
@@ -763,7 +764,7 @@ class Preparation(unittest.TestCase):
         self.assertEqual(self.store.snapshot([])['deliveries'][0]['reminder'],1)
         self.assertEqual(self.store.snapshot([])['suggestions'][0]['preparation_details'],'gog gmail get: 404')
         self.store.decide(self.sid,'complete','','owner-done','telegram')
-        with patch.object(a,'telegram') as send:
+        with patch_everywhere(a,'telegram') as send:
             self.assertFalse(a.deliver_one(self.store,{},edit_cards=False));send.assert_not_called()
 
     def test_pre_digest_terminal_failure_notifies_without_falsely_preparing(self):

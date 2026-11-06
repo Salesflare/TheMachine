@@ -6,6 +6,7 @@ import sqlite3
 import tempfile
 import unittest
 from unittest.mock import patch
+from seams import patch_everywhere  # noqa: E402
 
 spec = importlib.util.spec_from_file_location('assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 assistant = importlib.util.module_from_spec(spec)
@@ -70,7 +71,7 @@ class GmailExclusions(unittest.TestCase):
                 if route == 'history':
                     return {'historyId': '30', 'history': [{'messagesAdded': [{'message': {'id': 'warmup'}}]}]}
                 return raw(plain='zq7wx')
-        with patch.object(assistant, 'Gmail', FakeGmail):
+        with patch_everywhere(assistant, 'Gmail', FakeGmail):
             first = assistant.sync_gmail(self.store, {}, WORK)
             self.assertEqual(first['filtered'], 1)
             self.assertEqual(self.store.checkpoint(WORK['id'])['history_id'], '20')

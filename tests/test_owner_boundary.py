@@ -11,6 +11,7 @@ import threading
 import unittest
 from unittest.mock import patch
 import dashboard_parts
+from seams import patch_everywhere  # noqa: E402
 
 spec = importlib.util.spec_from_file_location('owner_boundary_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
@@ -112,7 +113,7 @@ class OwnerBoundary(unittest.TestCase):
         reports=Path(self.temp.name)/'memory/assistant';reports.mkdir(parents=True)
         (reports/'261011-result.md').write_text('Exact private draft')
         with self.store.connect() as db:db.execute('UPDATE suggestions SET body=?',('memory/assistant/261011-result.md',))
-        with patch.object(a,'WORKSPACE',Path(self.temp.name)):
+        with patch_everywhere(a,'WORKSPACE',Path(self.temp.name)):
             port=self.serve()
             def get(path,headers):
                 conn=http.client.HTTPConnection('127.0.0.1',port)
@@ -167,7 +168,7 @@ class OwnerBoundary(unittest.TestCase):
             conn=http.client.HTTPConnection('127.0.0.1',port)
             conn.request('GET','/',headers=headers);r=conn.getresponse();r.read();conn.close();return r.status
         whois=lambda ip:{'100.1.1.1':'owner@example.com','100.2.2.2':'other@example.com'}.get(ip,'')
-        with patch.object(a,'tailnet_login',side_effect=whois):
+        with patch_everywhere(a,'tailnet_login',side_effect=whois):
             self.assertEqual(get({'Host':'machine.example:8443','X-Tailnet-Client':'100.1.1.1'}),200)
             self.assertEqual(get({'Host':'machine.example:8443','X-Tailnet-Client':'100.2.2.2'}),403)
             # A forwarded peer's own claim of the owner login doesn't count.
@@ -323,7 +324,7 @@ class OwnerBoundary(unittest.TestCase):
         plain_r, plain = get('/', {})
         self.assertIsNone(plain_r.getheader('Content-Encoding')); self.assertEqual(plain_r.getheader('Vary'), 'Accept-Encoding')
         self.assertEqual(int(plain_r.getheader('Content-Length')), len(plain))
-        with patch.object(a, '_brotli', None), patch.object(a, '_zstd', None):
+        with patch_everywhere(a, '_brotli', None), patch_everywhere(a, '_zstd', None):
             r, body = get('/', {'Accept-Encoding': 'gzip, deflate, br'})
             self.assertEqual((r.status, r.getheader('Content-Encoding'), r.getheader('Vary')), (200, 'gzip', 'Accept-Encoding'))
             self.assertEqual(gzip.decompress(body), plain); self.assertLess(len(body), len(plain) / 3)
@@ -349,7 +350,7 @@ class OwnerBoundary(unittest.TestCase):
             self.assertTrue(r.getheader('ETag').endswith('-zstd"'))
 
     def test_content_codings(self):
-        with patch.object(a, '_brotli', object()), patch.object(a, '_zstd', object()):
+        with patch_everywhere(a, '_brotli', object()), patch_everywhere(a, '_zstd', object()):
             self.assertEqual(a.content_codings('gzip, deflate, br, zstd'), ['br', 'zstd', 'gzip'])
             self.assertEqual(a.content_codings('gzip;q=0.5, br;q=0'), ['gzip'])
             self.assertEqual(a.content_codings('*;q=0.1, zstd;q=0'), ['br', 'gzip'])

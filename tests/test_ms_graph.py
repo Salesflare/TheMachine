@@ -20,6 +20,7 @@ import types
 import next_actions as n
 import onboarding
 import test_ux as ux
+from seams import patch_everywhere  # noqa: E402
 
 a = ux.a
 BROKER = 'https://cloud.example/api/microsoft/token'
@@ -390,7 +391,7 @@ class CalendarSync(Base):
                         'webLink': 'https://outlook.office365.com/owa/?itemid=e1', 'lastModifiedDateTime': '2099-01-01T00:00:00Z'}],
              '@odata.deltaLink': G + '/me/calendarView/delta?$deltatoken=one'},
             {'value': [{'id': 'e1', '@removed': {'reason': 'deleted'}}], '@odata.deltaLink': G + '/me/calendarView/delta?$deltatoken=two'}]
-        with mock.patch.object(a, 'now', return_value='2099-01-01T00:00:00+00:00'):
+        with patch_everywhere(a, 'now', return_value='2099-01-01T00:00:00+00:00'):
             a.sync_calendar(self.store, self.config, self.cal)
             with self.store.connect() as db:
                 row = db.execute("SELECT * FROM events WHERE source_id='e1'").fetchone()

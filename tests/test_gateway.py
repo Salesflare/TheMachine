@@ -2,6 +2,7 @@ import importlib.util
 from pathlib import Path
 import datetime as dt,tempfile,unittest
 from unittest.mock import patch
+from seams import patch_everywhere  # noqa: E402
 spec=importlib.util.spec_from_file_location('assistant_gw',Path(__file__).parent.parent.joinpath('assistant.py'));a=importlib.util.module_from_spec(spec);spec.loader.exec_module(a)
 account={'id':'openclaw-gateway','service':'gateway'}
 T=dt.datetime(2026,10,10,15,14,tzinfo=dt.timezone.utc)
@@ -44,7 +45,7 @@ class GatewayTests(unittest.TestCase):
 
  def test_burst_groups_and_grows_across_polls_then_resumes_from_cursor(self):
   j=FakeJournal();j.entries=[(T,RUN),(T+dt.timedelta(minutes=1),'[ws] noise'),(T+dt.timedelta(minutes=2),RUN),(T+dt.timedelta(minutes=3),HANDOFF)]
-  with patch.object(a,'now',return_value=(T+dt.timedelta(minutes=5)).isoformat()):
+  with patch_everywhere(a,'now',return_value=(T+dt.timedelta(minutes=5)).isoformat()):
    self.assertEqual(a.sync_gateway(self.store,{},account,j)['events'],2)
    rows=self.rows();self.assertEqual(len(rows),2)
    run=[r for r in rows if r['source_id'].startswith('agent_run_failed')][0]
@@ -58,18 +59,18 @@ class GatewayTests(unittest.TestCase):
 
  def test_closed_windows_are_pruned_and_new_window_is_separate(self):
   j=FakeJournal();j.entries=[(T,SEND)]
-  with patch.object(a,'now',return_value=T.isoformat()):a.sync_gateway(self.store,{},account,j)
+  with patch_everywhere(a,'now',return_value=T.isoformat()):a.sync_gateway(self.store,{},account,j)
   later=T+dt.timedelta(hours=2);j.entries.append((later,SEND))
-  with patch.object(a,'now',return_value=later.isoformat()):a.sync_gateway(self.store,{},account,j)
+  with patch_everywhere(a,'now',return_value=later.isoformat()):a.sync_gateway(self.store,{},account,j)
   self.assertEqual(len(self.rows()),2)
   self.assertEqual(len(self.store.checkpoint('openclaw-gateway')['open_buckets']),1)
 
  def test_invalid_cursor_falls_back_to_last_seen_time(self):
   j=FakeJournal();j.entries=[(T,SEND)]
-  with patch.object(a,'now',return_value=T.isoformat()):a.sync_gateway(self.store,{},account,j)
+  with patch_everywhere(a,'now',return_value=T.isoformat()):a.sync_gateway(self.store,{},account,j)
   state=self.store.checkpoint('openclaw-gateway');state['cursor']='bad'
   with self.store.connect() as db:db.execute('UPDATE checkpoints SET state=? WHERE account_id=?',(a.encoded(state),'openclaw-gateway'))
-  with patch.object(a,'now',return_value=T.isoformat()):a.sync_gateway(self.store,{},account,j)
+  with patch_everywhere(a,'now',return_value=T.isoformat()):a.sync_gateway(self.store,{},account,j)
   self.assertEqual(j.calls[-1],(None,f'@{int(T.timestamp())}'))
 
  def test_first_read_uses_bootstrap_window(self):

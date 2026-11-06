@@ -5,6 +5,7 @@ back within minutes. The report holds timestamps, counts and codes only. No Gate
 import datetime as dt, importlib.util, json, tempfile, unittest
 from pathlib import Path
 from unittest.mock import patch
+from seams import patch_everywhere  # noqa: E402
 
 spec = importlib.util.spec_from_file_location('fast_first_look_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
@@ -28,10 +29,10 @@ class FastFirstLook(unittest.TestCase):
         self.app = object.__new__(a.App); self.app.store = self.store
         self.app.config = {'accounts': [{'id': 'gateway', 'service': 'gateway'}, {'id': 'work', 'service': 'gmail'}],
                            'review_worker': {'enabled': False}, 'delivery_enabled': False}
-        model = patch.object(a, 'has_model', return_value=True); model.start(); self.addCleanup(model.stop)
+        model = patch_everywhere(a, 'has_model', return_value=True); model.start(); self.addCleanup(model.stop)
 
     def later(self, minutes):
-        return patch.object(a, 'now', return_value=(dt.datetime.now(dt.timezone.utc) + dt.timedelta(minutes=minutes)).isoformat(timespec='seconds'))
+        return patch_everywhere(a, 'now', return_value=(dt.datetime.now(dt.timezone.utc) + dt.timedelta(minutes=minutes)).isoformat(timespec='seconds'))
 
     def state(self, minutes=0):
         with self.later(minutes), self.store.connect() as db:

@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 import learning_loop
 import test_ux as ux
+from seams import patch_everywhere  # noqa: E402
 a = ux.a
 
 
@@ -37,8 +38,8 @@ class LookDone(unittest.TestCase):
             def now(cls, tz=None):
                 return a.dt.datetime(2026, 10, 14, 12, tzinfo=a.ZoneInfo('Europe/Brussels')).astimezone(tz or a.dt.timezone.utc)
         config = {'accounts': [{'id': 'work', 'email': 'owner@example.com', 'boundary': 'work:Example'}], 'telegram_owner': '42'}
-        with patch.object(a.dt, 'datetime', Noon), patch.object(a, 'telegram', side_effect=lambda *x, **k: (sent.append(x), {'messageId': '7'})[1]), \
-                patch.object(a, 'push_notify', side_effect=lambda *x, **k: sent.append(x)):
+        with patch.object(a.dt, 'datetime', Noon), patch_everywhere(a, 'telegram', side_effect=lambda *x, **k: (sent.append(x), {'messageId': '7'})[1]), \
+                patch_everywhere(a, 'push_notify', side_effect=lambda *x, **k: sent.append(x)):
             a.deliver_one(self.store, config, edit_cards=False)
             self.assertEqual(sent, [])
             with self.store.connect() as db:  # the same reminder for a to-do that needs them still goes

@@ -9,6 +9,7 @@ import sqlite3
 import tempfile
 import unittest
 from unittest.mock import patch
+from seams import patch_everywhere  # noqa: E402
 
 spec = importlib.util.spec_from_file_location('chat_stop_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
@@ -38,7 +39,7 @@ class ChatStopFiles(unittest.TestCase):
         self.app.config = {'accounts': [], 'database': str(self.root / 'events.sqlite'), 'open_attachment_dir': str(self.root / 'open'),
                            'attachment_root': str(self.root / 'workspace' / 'data' / 'assistant-attachments'),
                            'openclaw_config': str(self.root / 'openclaw.json')}  # OpenAI-style: the live text is the answer only
-        workspace = patch.object(a, 'WORKSPACE', self.root / 'workspace')
+        workspace = patch_everywhere(a, 'WORKSPACE', self.root / 'workspace')
         workspace.start()
         self.addCleanup(workspace.stop)
 

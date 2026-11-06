@@ -5,6 +5,7 @@ import unittest
 from unittest.mock import patch
 import next_actions as n
 import test_ux as ux
+from seams import patch_everywhere  # noqa: E402
 a=ux.a
 
 
@@ -407,10 +408,10 @@ class ThreadSnoozes(unittest.TestCase):
         self.assertIn('Leaves your inbox for 5 days',n.email_preview(n.validate(self.draft(**self.reply,snooze_days=5),config,['work'])))
 
     def test_return_time_is_nine_on_a_weekday(self):
-        with patch.object(a,'now',return_value='2026-10-12T08:00:00+00:00'):  # Monday
+        with patch_everywhere(a,'now',return_value='2026-10-12T08:00:00+00:00'):  # Monday
             self.assertEqual(a.thread_return_time(3),'2026-10-15T07:00:00+00:00')  # Thursday 09:00 local
             self.assertEqual(a.thread_return_time(5),'2026-10-19T07:00:00+00:00')  # Saturday -> Monday
-        with patch.object(a,'now',return_value='2026-10-23T08:00:00+00:00'):  # Friday, across the DST change
+        with patch_everywhere(a,'now',return_value='2026-10-23T08:00:00+00:00'):  # Friday, across the DST change
             self.assertEqual(a.thread_return_time(2),'2026-10-26T08:00:00+00:00')
 
     def test_sent_reply_is_archived_then_returned_and_shown_on_the_card(self):
@@ -515,7 +516,7 @@ class CardDraft(unittest.TestCase):
     CONFIG={'dashboard_host':'machine.example','dashboard_path':'/','telegram_owner':'owner'}
 
     def send(self):
-        with patch.object(a,'telegram_request',side_effect=lambda config,args:args):
+        with patch_everywhere(a,'telegram_request',side_effect=lambda config,args:args):
             return a.telegram(self.CONFIG,self.row(),'send')
 
     def buttons(self,payload):
@@ -549,14 +550,14 @@ class CardDraft(unittest.TestCase):
     def test_long_feedback_shares_the_draft_budget(self):
         self.ready(body='*_' * 1150)
         row = {**self.row(), 'requested_feedback': '*_' * 250}
-        with patch.object(a, 'telegram_request', side_effect=lambda config, args: args):
+        with patch_everywhere(a, 'telegram_request', side_effect=lambda config, args: args):
             payload = a.telegram(self.CONFIG, row, 'send')
         self.assertLess(len(payload['message'].encode('utf-16-le')) // 2, 4096)
 
     def test_a_recipient_still_to_choose_keeps_the_review(self):
         revision=self.ready()['revision'];row=self.row()
         row['next_actions']=[{**row['next_actions'][0],'to':[],'to_options':['a@example.com','b@example.com']}]  # set by the service
-        with patch.object(a,'telegram_request',side_effect=lambda config,args:args):
+        with patch_everywhere(a,'telegram_request',side_effect=lambda config,args:args):
             payload=a.telegram(self.CONFIG,row,'send')
         self.assertNotIn('**Draft**',payload['message'])
         self.assertEqual(self.buttons(payload)[0],('Send',f'assistant:{self.sid}:send_{revision}'))

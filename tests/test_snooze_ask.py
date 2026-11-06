@@ -10,6 +10,7 @@ import unittest
 from unittest.mock import patch
 import dashboard_parts
 import timeutil
+from seams import patch_everywhere  # noqa: E402
 
 spec = importlib.util.spec_from_file_location('snooze_ask_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
@@ -28,7 +29,7 @@ class SnoozeFromChange(unittest.TestCase):
         zone = a.local_tz()
         a.set_timezone('Europe/Brussels')
         self.addCleanup(lambda: setattr(timeutil, 'LOCAL_TZ', zone))
-        self.clock = patch.object(a, 'now', return_value=at(2026, 10, 22, 10, 6))  # Thursday, summer time
+        self.clock = patch_everywhere(a, 'now', return_value=at(2026, 10, 22, 10, 6))  # Thursday, summer time
         self.clock.start()
         self.addCleanup(self.clock.stop)
         self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
@@ -71,7 +72,7 @@ class SnoozeFromChange(unittest.TestCase):
                                             'outcome': 'snoozed', 'snooze_until': '2026-10-27T09:00', 'note_kind': 'new_ask'})
         self.assertTrue(again['replayed'])
         # It comes back on Tuesday as it was, ready, saying it is back as asked.
-        with patch.object(a, 'now', return_value=at(2026, 10, 27, 9, 1)):
+        with patch_everywhere(a, 'now', return_value=at(2026, 10, 27, 9, 1)):
             self.assertEqual(self.store.wake_snoozed(), 1)
         row = self.row()
         self.assertEqual(row['status'], 'prepared')

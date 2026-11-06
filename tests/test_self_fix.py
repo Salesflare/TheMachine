@@ -11,6 +11,7 @@ from unittest.mock import patch
 import next_actions as n
 import test_ux as ux
 from test_gateway import FakeJournal
+from seams import patch_everywhere  # noqa: E402
 a = ux.a
 
 
@@ -181,7 +182,7 @@ class Faults(unittest.TestCase):
 class FaultCardsSettle(unittest.TestCase):
     """A card about an error that an update fixed closes by itself."""
     def setUp(self):
-        clock = patch.object(a, 'now', return_value='2026-10-22T12:00:00+00:00')  # the fixture's error is two days old
+        clock = patch_everywhere(a, 'now', return_value='2026-10-22T12:00:00+00:00')  # the fixture's error is two days old
         clock.start(); self.addCleanup(clock.stop)
         ux.UX.setUp(self)
         with self.store.connect() as db:

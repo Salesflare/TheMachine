@@ -3,6 +3,7 @@ off, its cards shown but never sent or prepared, also not after activation. No G
 import contextlib, datetime as dt, importlib.util, io, json, os, tempfile, unittest
 from pathlib import Path
 from unittest.mock import patch
+from seams import patch_everywhere  # noqa: E402
 
 def load(name, file):
     spec = importlib.util.spec_from_file_location(name, Path(__file__).parent.parent.joinpath(file))
@@ -105,7 +106,7 @@ class Preview(unittest.TestCase):
         # --activate: a later regular card goes out; the preview card is not pushed as a backlog.
         self.app.config.update(delivery_enabled=True, review_worker={'enabled': True})
         later = self.store.suggest('later', 'Reply to Sam', 'Sam answered.', [1])
-        with patch.object(a.dt, 'datetime', Daytime), patch.object(a, 'telegram', return_value={'messageId': '901'}) as send:
+        with patch.object(a.dt, 'datetime', Daytime), patch_everywhere(a, 'telegram', return_value={'messageId': '901'}) as send:
             a.deliver(self.store, self.app.config)
         self.assertEqual([c.args[1]['id'] for c in send.call_args_list], [later['id']])
         self.assertEqual((self.delivery(saved['id'])['status'], self.delivery(later['id'])['status']), ('previewed', 'sent'))

@@ -5,6 +5,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 from pathlib import Path
+from seams import patch_everywhere  # noqa: E402
 
 spec = importlib.util.spec_from_file_location('graph_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
@@ -39,8 +40,9 @@ class Graph(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
         self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
         self.app = object.__new__(a.App); self.app.store = self.store; self.app.config = CONFIG
-        self.now = a.now
-        a.now = lambda: NOW.isoformat(); self.addCleanup(setattr, a, 'now', self.now)
+        clock = patch_everywhere(a, 'now', lambda: NOW.isoformat())
+        clock.start()
+        self.addCleanup(clock.stop)
 
     def add(self, *events):
         for e in events:
@@ -532,9 +534,8 @@ class Graph(unittest.TestCase):
         self.assertIn('node_id org:client.com', self.store.role_text('org-run2b', limit=10))
         self.assertNotIn('org:client.com', self.store.role_text('org-run2c', limit=10))
         # One of its people getting a role after the ask makes the organization worth reading again.
-        a.now = lambda: (NOW + dt.timedelta(minutes=5)).isoformat()
-        self.app.action('graph_role', {'node_id': 'email:ann@client.com', 'role': 'office manager'}, owner_dashboard=True)
-        a.now = lambda: NOW.isoformat()
+        with patch_everywhere(a, 'now', lambda: (NOW + dt.timedelta(minutes=5)).isoformat()):
+            self.app.action('graph_role', {'node_id': 'email:ann@client.com', 'role': 'office manager'}, owner_dashboard=True)
         self.assertIn('node_id org:client.com', self.store.role_text('org-run3', limit=10))
         self.app.action('graph_role', {'node_id': 'email:ann@client.com', 'role': ''}, owner_dashboard=True)
         # Organizations get a role, and their people carry it as context.

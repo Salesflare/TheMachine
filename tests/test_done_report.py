@@ -5,6 +5,7 @@ from unittest.mock import patch
 
 import test_action_recovery as r
 import test_preparation as p
+from seams import patch_everywhere  # noqa: E402
 
 a = p.a
 STEP = {'kind': 'finish', 'label': 'Submit issue', 'url': 'https://tracker.invalid/new',
@@ -28,8 +29,8 @@ class DoneReport(unittest.TestCase):
 
     def finish(self, state, body=RESULT, pushes=None):
         sent = [] if pushes is None else pushes
-        with patch.object(a, 'push_reach', return_value=([{'endpoint': 'https://push.invalid/1'}], 0)), \
-             patch.object(a, 'push_send', side_effect=lambda store, config, subs, payload, label, sender=None, **k: sent.append((payload, k)) or [{'status': 201}]):
+        with patch_everywhere(a, 'push_reach', return_value=([{'endpoint': 'https://push.invalid/1'}], 0)), \
+             patch_everywhere(a, 'push_send', side_effect=lambda store, config, subs, payload, label, sender=None, **k: sent.append((payload, k)) or [{'status': 201}]):
             self.app.action('prepare', {'suggestion_id': self.sid, 'job_id': self.job()['job_id'], 'body': body,
                                         'next_actions': [{'kind': 'open', 'label': 'Open issue', 'url': 'https://tracker.invalid/acme/app/42'}] if state == 'completed' else [STEP],
                                         'outcome': 'done' if state == 'completed' else 'needs_you', 'needs': 'Sign in',
@@ -58,14 +59,14 @@ class DoneReport(unittest.TestCase):
         self.assertIn('#42', notice['body'])
         with self.store.connect() as db:
             a.notify.app_line_save(db, self.sid, 'Ready: Prepare a useful draft')
-        with patch.object(a, 'app_wake') as wake:
+        with patch_everywhere(a, 'app_wake') as wake:
             self.assertEqual(a.app_clear_step(self.store, self.app.config), [])
         wake.assert_not_called()
         # Got it: only in Done from then on, and the phone's notification goes
         self.assertEqual(self.app.action('card_report_seen', {'ids': [self.sid]}, owner_dashboard=True), {'seen': 1})
         self.assertIsNone(self.card()['done_report'])
         self.assertEqual(a.app_notice(self.store, self.app.config, self.sid), {'gone': True})
-        with patch.object(a, 'app_wake') as wake:
+        with patch_everywhere(a, 'app_wake') as wake:
             self.assertEqual(a.app_clear_step(self.store, self.app.config), [self.sid])
 
     def test_got_it_is_the_owners_own(self):

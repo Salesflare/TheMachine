@@ -14,6 +14,7 @@ from pathlib import Path
 from unittest.mock import patch
 import dashboard_parts
 import timeutil
+from seams import patch_everywhere  # noqa: E402
 
 ROOT = Path(__file__).parent.parent
 spec = importlib.util.spec_from_file_location('talk_assistant', ROOT / 'assistant.py')
@@ -479,7 +480,7 @@ class Api(unittest.TestCase):
             self.act('talk_end', {'id': started['id']})
         self.assertIn('Europe/Brussels', t.instructions('Reply to Dana', 'en', zone='Europe/Brussels'))
         # The text chat's next turn says it too, with the time now (a long chat's first prompt gets old)
-        with patch.object(a, 'now', return_value='2026-11-03T19:00:00+00:00'):
+        with patch_everywhere(a, 'now', return_value='2026-11-03T19:00:00+00:00'):
             prompt = a.chat_prompt({'job_id': 'j' * 16, 'suggestion_id': SID}, self.app.config)
         self.assertIn('Their time zone is Europe/Brussels; it is now Tue 2026-11-03 20:00 there.', prompt)
         self.assertIn('never ask which time zone', prompt)
@@ -493,7 +494,7 @@ class Api(unittest.TestCase):
 
     def test_a_local_time_like_at_9_is_9_in_brussels(self):
         self.brussels()
-        with patch.object(a, 'now', return_value='2026-11-03T19:00:00+00:00'):
+        with patch_everywhere(a, 'now', return_value='2026-11-03T19:00:00+00:00'):
             # "at 9" tomorrow, as Talk sends it: the owner's local time without an offset (9:00 in Brussels is 8:00 UTC)
             self.act('decide', {'suggestion_id': SID, 'choice': 'snooze', 'snoozed_until': '2026-11-04T09:00', 'decision_id': 'talk-at-9'})
             with self.store.connect() as db:
@@ -883,7 +884,7 @@ class Api(unittest.TestCase):
         self.assertIn('hasn’t confirmed it yet', tool()['say'])
         with self.store.connect() as db:
             db.execute("UPDATE action_jobs SET status='sent',updated_at='2026-10-31T11:42:00+00:00'")
-        with patch.object(a, 'local_tz', return_value=dt.timezone(dt.timedelta(hours=1))):
+        with patch_everywhere(a, 'local_tz', return_value=dt.timezone(dt.timedelta(hours=1))):
             sent = tool(approval_id=approval)
         self.assertEqual((sent['state'], sent['time'], sent['to']), ('sent', '12:42', 'Dana'))
         self.assertEqual(sent['say'], 'Sent to Dana at 12:42. Say exactly that.')

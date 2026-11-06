@@ -5,6 +5,7 @@ import tempfile
 import unittest
 import uuid
 from unittest.mock import patch
+from seams import patch_everywhere  # noqa: E402
 
 spec = importlib.util.spec_from_file_location('assistant_silent', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
@@ -23,7 +24,7 @@ class ConnectedButSilent(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
         self.store = a.Store(Path(self.tmp.name) / 'events.sqlite')
-        patcher = patch.object(a, 'now', side_effect=lambda: iso(NOW))
+        patcher = patch_everywhere(a, 'now', side_effect=lambda: iso(NOW))
         patcher.start()
         self.addCleanup(patcher.stop)
 

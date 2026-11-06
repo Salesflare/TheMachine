@@ -8,6 +8,7 @@ from pathlib import Path
 from unittest.mock import patch
 import next_actions as n
 import test_ux as ux
+from seams import patch_everywhere  # noqa: E402
 a = ux.a
 
 GMAIL = {'id': 'work', 'email': 'owner@example.com', 'service': 'gmail', 'transport': 'gog', 'boundary': 'work:Example'}
@@ -89,7 +90,7 @@ class Delegate(unittest.TestCase):
         self.ready(self.slack_action())
         self.confirm()
         sent = []
-        with patch.object(a, 'now', return_value='2026-10-16T09:00:00+00:00'):
+        with patch_everywhere(a, 'now', return_value='2026-10-16T09:00:00+00:00'):
             self.app().action_step(self.transport(lambda action, job: (sent.append(action), {'message_id': 'slack:D0SAM1:1.2', 'channel_id': 'D0SAM1', 'user_id': 'U0SAM12'})[1]))
         self.assertEqual(len(sent), 1)
         row = self.suggestion()
@@ -119,7 +120,7 @@ class Delegate(unittest.TestCase):
     def test_no_reply_brings_the_card_back(self):
         self.ready(self.slack_action(wait_days=1))
         self.confirm()
-        with patch.object(a, 'now', return_value='2026-10-14T09:00:00+00:00'):
+        with patch_everywhere(a, 'now', return_value='2026-10-14T09:00:00+00:00'):
             self.app().action_step(self.transport(lambda *_: {'message_id': 'slack:D0SAM1:1.2', 'channel_id': 'D0SAM1', 'user_id': 'U0SAM12'}))
         self.assertEqual(self.suggestion()['snoozed_until'], '2026-10-15T07:00:00+00:00')
         self.store.wake_snoozed()
@@ -135,7 +136,7 @@ class Delegate(unittest.TestCase):
             n.validate({**{k: v for k, v in action.items() if k not in ('revision', 'from', 'signature')}, 'to': ['a@x.example', 'b@x.example']},
                        self.app().config, ['work'])
         self.confirm()
-        with patch.object(a, 'now', return_value='2026-10-16T09:00:00+00:00'):
+        with patch_everywhere(a, 'now', return_value='2026-10-16T09:00:00+00:00'):
             self.app().action_step(self.transport(lambda *_: {'message_id': 'gm-1'}))
         with self.store.connect() as db:
             job_rfc = db.execute('SELECT rfc_message_id FROM action_jobs').fetchone()[0]

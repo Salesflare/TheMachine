@@ -16,6 +16,7 @@ import next_actions as n
 import test_ux as ux
 sys.path.insert(0, str(Path(__file__).parent.parent / 'integrations'))
 import x_inbox
+from seams import patch_everywhere  # noqa: E402
 
 spec = importlib.util.spec_from_file_location('assistant_x', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
@@ -81,7 +82,7 @@ class XSource(unittest.TestCase):
 
     def test_sync_keeps_the_cursor_dedupes_and_sleeps_at_night(self):
         src = Source(page([mention(), mention()], [dm()]), page([mention()], [], {'mention_since_id': '1978000000000000001', 'dm_cursor': 'C2'}))
-        with patch.object(a, 'now', return_value=NOW):
+        with patch_everywhere(a, 'now', return_value=NOW):
             self.assertEqual(x.sync(self.store, {}, ACCOUNT, H, src)['events'], 2)
             x.sync(self.store, {}, ACCOUNT, H, src)
         self.assertEqual(src.calls[0][1], {})
@@ -89,7 +90,7 @@ class XSource(unittest.TestCase):
         self.assertEqual(self.store.checkpoint('x-sf')['page']['dm_cursor'], 'C2')
         with self.store.connect() as db:
             self.assertEqual(db.execute('SELECT count(*) FROM events').fetchone()[0], 2)
-        with patch.object(a, 'now', return_value='2026-10-16T22:30:00+00:00'):  # 00:30 local time
+        with patch_everywhere(a, 'now', return_value='2026-10-16T22:30:00+00:00'):  # 00:30 local time
             x.sync(self.store, {}, ACCOUNT, H, src)
         self.assertEqual(len(src.calls), 2)
 
@@ -119,7 +120,7 @@ class XSource(unittest.TestCase):
                 source.page(5, {})
 
     def test_review_context_source_line_and_promises(self):
-        with patch.object(a, 'now', return_value=NOW):
+        with patch_everywhere(a, 'now', return_value=NOW):
             self.store.commit_page('x-sf', {}, x.events(ACCOUNT, page([], [dm(id='1', at=1792130000000, text='Hello?'), dm()]), H))
         with self.store.connect() as db:
             rows = [dict(r) for r in db.execute("SELECT * FROM events ORDER BY occurred_at")]
@@ -232,7 +233,7 @@ class XSend(unittest.TestCase):
         self.assertEqual(self.job()['status'], 'sent')
         self.assertIn('✓ Reply posted on X to Ada at ', str(a.card(self.row())))
         # Ada's answer to that reply comes back to the card.
-        with patch.object(a, 'now', return_value='2099-01-01T00:00:00+00:00'):
+        with patch_everywhere(a, 'now', return_value='2099-01-01T00:00:00+00:00'):
             self.store.commit_page('x-sf', {}, x.events(ACCOUNT, page([mention(id='1980000000000000001', at=4070908800000, text='Thanks!',
                                    reply_to={'id': '1979000000000000005', 'screen_name': 'acme', 'to_account': True, 'text': 'Yes'})]), H))
         with self.store.connect() as db:

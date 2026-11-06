@@ -11,6 +11,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import test_ux as ux
+from seams import patch_everywhere  # noqa: E402
 
 a = ux.a
 BXL = a.ZoneInfo('Europe/Amsterdam')
@@ -33,7 +34,7 @@ class Hours(unittest.TestCase):
         self.assertEqual(a.work_hours({}), a.WORK_HOURS_DEFAULT)
         local = lambda h, mi=0: dt.datetime(2026, 10, 14, h, mi, tzinfo=BXL)
         self.assertEqual([a.in_hours(local(h, m)) for h, m in [(7, 59), (8, 0), (22, 59), (23, 0), (2, 0)]], [False, True, True, False, False])
-        with patch.object(a, 'now', return_value=at(2026, 10, 9, 15)):  # Friday
+        with patch_everywhere(a, 'now', return_value=at(2026, 10, 9, 15)):  # Friday
             self.assertEqual(a.snooze_time('tomorrow', work=True), at(2026, 10, 12, 9))
             self.assertEqual(a.snooze_time('tomorrow'), at(2026, 10, 10, 9))
             self.assertEqual(a.thread_return_time(1), at(2026, 10, 12, 9))
@@ -54,7 +55,7 @@ class Hours(unittest.TestCase):
     def test_custom_week_and_hours_move_everything(self):
         a.set_timezone('America/New_York')
         a.set_work_hours({'days': 'sun-thu', 'start': '09:00', 'end': '17:30', 'morning': '08:15'})
-        with patch.object(a, 'now', return_value=at(2026, 10, 15, 15, zone=NYC)):  # Thursday
+        with patch_everywhere(a, 'now', return_value=at(2026, 10, 15, 15, zone=NYC)):  # Thursday
             self.assertEqual(a.snooze_time('tomorrow', work=True), at(2026, 10, 18, 8, 15, NYC))  # Friday and Saturday off
             self.assertEqual(a.snooze_time('tomorrow'), at(2026, 10, 16, 8, 15, NYC))
             self.assertEqual(a.thread_return_time(1), at(2026, 10, 18, 8, 15, NYC))
@@ -129,8 +130,8 @@ class Saving(unittest.TestCase):
             class Clock(a.dt.datetime):
                 @classmethod
                 def now(cls, tz=None): return cls(2026, 10, 14, hour, 0, tzinfo=BXL).astimezone(tz or a.dt.timezone.utc)
-            with patch.object(a.dt, 'datetime', Clock), patch.object(a, 'now', return_value=at(2026, 10, 14, hour)), \
-                    patch.object(a, 'telegram', return_value={'messageId': '7'}) as send:
+            with patch.object(a.dt, 'datetime', Clock), patch_everywhere(a, 'now', return_value=at(2026, 10, 14, hour)), \
+                    patch_everywhere(a, 'telegram', return_value={'messageId': '7'}) as send:
                 a.deliver_one(self.store, {'telegram_owner': '1000001', 'accounts': []}, edit_cards=False)
             return [call.args[2] for call in send.call_args_list]
         self.assertEqual(deliver(18), [])  # 08:00-23:00 would have sent it
@@ -144,7 +145,7 @@ class Saving(unittest.TestCase):
             app.action('set_work_hours', {'days': [1]}, owner_dashboard=True)
 
     def test_a_broken_setting_falls_back_to_the_defaults(self):
-        with patch.object(a, 'Store'), patch.object(a, 'credential'), patch.object(a, 'owner_credential'), patch.object(a.fleet, 'settings', return_value=None):
+        with patch_everywhere(a, 'Store'), patch_everywhere(a, 'credential'), patch_everywhere(a, 'owner_credential'), patch.object(a.fleet, 'settings', return_value=None):
             a.App({'database': 'x', 'accounts': [], 'work_hours': {'days': []}})
         self.assertEqual(a.WORK_HOURS, a.WORK_HOURS_DEFAULT)
 

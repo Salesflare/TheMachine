@@ -147,7 +147,7 @@ class Recording(unittest.TestCase):
         p = patch.object(timeutil, 'LOCAL_TZ', ZoneInfo('Europe/Brussels'))
         p.start()
         self.addCleanup(p.stop)
-        self.clock = patch.object(a, 'now', return_value=NOW)
+        self.clock = patch_everywhere(a, 'now', return_value=NOW)
         self.clock.start()
         self.addCleanup(lambda: self.clock.stop())
         unread = patch.object(a.Gmail, 'get', side_effect=a.SourceError('offline'))
@@ -157,7 +157,7 @@ class Recording(unittest.TestCase):
 
     def at(self, stamp):
         self.clock.stop()
-        self.clock = patch.object(a, 'now', return_value=stamp)
+        self.clock = patch_everywhere(a, 'now', return_value=stamp)
         self.clock.start()
 
     def app(self, **config):
@@ -412,6 +412,7 @@ class AnotherAddress(FollowUpsAfterABounce):
 
 # The follow-ups harness (a board, two projects, a fake outbox and mailbox), without running its own tests again here
 import test_follow_ups as tfu
+from seams import patch_everywhere  # noqa: E402
 _Harness = type('_Harness', (tfu.FollowUps,), {k: None for k in dir(tfu.FollowUps) if k.startswith('test_')})
 
 

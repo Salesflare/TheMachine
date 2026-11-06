@@ -9,6 +9,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import test_ux as ux
+from seams import patch_everywhere  # noqa: E402
 a = ux.a
 
 GMAIL = {'id': 'work', 'email': 'owner@example.com', 'service': 'gmail', 'transport': 'gog', 'boundary': 'work:Example'}
@@ -26,7 +27,7 @@ class HandledFirst(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
-        self.clock = patch.object(a, 'now', return_value=MONDAY)
+        self.clock = patch_everywhere(a, 'now', return_value=MONDAY)
         self.clock.start()
         self.addCleanup(lambda: self.clock.stop())
         self.store = a.Store(Path(self.tmp.name) / 'events.sqlite')
@@ -36,7 +37,7 @@ class HandledFirst(unittest.TestCase):
 
     def at(self, stamp):
         self.clock.stop()
-        self.clock = patch.object(a, 'now', return_value=stamp)
+        self.clock = patch_everywhere(a, 'now', return_value=stamp)
         self.clock.start()
 
     def commit(self, *events):
@@ -160,7 +161,7 @@ class HandledFirst(unittest.TestCase):
         ran = []
         app.promise_check_run = lambda pages: ran.append([p['id'] for p, _ in pages])
         self.at('2026-10-22T07:00:00+00:00')
-        with patch.object(a, 'openclaw_model', return_value='openai/gpt-test'), patch.object(a.threading, 'Thread') as thread:
+        with patch_everywhere(a, 'openclaw_model', return_value='openai/gpt-test'), patch.object(a.threading, 'Thread') as thread:
             thread.return_value.is_alive.return_value = False
             self.assertEqual(app.promise_checks(self.due()), {pid})
             thread.assert_called_once()
@@ -169,7 +170,7 @@ class HandledFirst(unittest.TestCase):
             app._promise_check_thread = None
             self.assertEqual(app.promise_checks(self.due()), set())
         # no model known (a fresh install): the to-do comes as before
-        with patch.object(a, 'openclaw_model', return_value=None):
+        with patch_everywhere(a, 'openclaw_model', return_value=None):
             self.assertEqual(app.promise_checks(self.due()), set())
 
     def due(self):

@@ -10,6 +10,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
+from seams import patch_everywhere  # noqa: E402
 
 spec = importlib.util.spec_from_file_location('ready_on_arrival_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
@@ -39,7 +40,7 @@ class ReadyOnArrival(unittest.TestCase):
         a.Store.accounts = [{'id': 'work', 'service': 'gmail', 'email': 'me@example.com'}]
         self.addCleanup(setattr, a.Store, 'accounts', [])
         for name, value in (('has_model', True), ('openclaw_model', 'claude-cli/claude-opus-5-5')):
-            p = patch.object(a, name, return_value=value); p.start(); self.addCleanup(p.stop)
+            p = patch_everywhere(a, name, return_value=value); p.start(); self.addCleanup(p.stop)
         self.app.model_usage = None
         self.store.commit_page('work', {}, [
             *[mail(f'news{n}', 'Shop <news@shop.example>', 1, labels=['CATEGORY_PROMOTIONS']) for n in range(10)],
@@ -122,7 +123,7 @@ class ReadyOnArrival(unittest.TestCase):
         later = (dt.datetime.now(dt.timezone.utc) + dt.timedelta(minutes=5)).isoformat()
         with self.store.connect() as db:
             db.execute("INSERT INTO milestones(name,at,detail) VALUES('greeting',?,'on')", (later,))
-        with patch.object(a, 'now', return_value=later):
+        with patch_everywhere(a, 'now', return_value=later):
             self.assertEqual(self.store.greeting('Alex')['name'], 'Alex')
 
     def test_with_nothing_ready_it_is_a_plain_hello(self):
@@ -134,7 +135,7 @@ class ReadyOnArrival(unittest.TestCase):
     def test_only_on_the_first_views(self):
         self.assertEqual(self.store.greeting('Alex'), {'name': 'Alex'})
         later = (dt.datetime.now(dt.timezone.utc) + dt.timedelta(hours=a.GREETING_HOURS + 1)).isoformat()
-        with patch.object(a, 'now', return_value=later):
+        with patch_everywhere(a, 'now', return_value=later):
             self.assertIsNone(self.store.greeting('Alex'))  # a day on, it is gone
         sid = self.ahead('ria', 'ria')
         self.store.decide(sid, 'reject', '', 'click', 'dashboard')

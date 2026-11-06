@@ -9,6 +9,7 @@ from pathlib import Path
 import re
 import tempfile
 import unittest
+from seams import patch_everywhere  # noqa: E402
 
 spec = importlib.util.spec_from_file_location('source_names_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
@@ -36,8 +37,9 @@ class SourceNames(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
         self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
-        self.now = a.now
-        a.now = lambda: NOW.isoformat(); self.addCleanup(setattr, a, 'now', self.now)
+        clock = patch_everywhere(a, 'now', lambda: NOW.isoformat())
+        clock.start()
+        self.addCleanup(clock.stop)
         for e in (SLACK_DM, WHATSAPP, TELEGRAM, MAIL):
             self.store.commit_page(e['account_id'], {}, [e])
         with self.store.connect() as db:

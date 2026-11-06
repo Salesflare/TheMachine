@@ -9,6 +9,7 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from seams import patch_everywhere  # noqa: E402
 
 spec = importlib.util.spec_from_file_location('project_success_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
@@ -32,8 +33,9 @@ class ProjectSuccess(unittest.TestCase):
         self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
         self.store.accounts = [{'id': 'work', 'service': 'gmail', 'email': 'robin@quillfeather.example'}]
         self.addCleanup(setattr, a.Store, 'accounts', [])
-        self.saved_now = a.now
-        a.now = lambda: NOW.isoformat(); self.addCleanup(setattr, a, 'now', self.saved_now)
+        clock = patch_everywhere(a, 'now', lambda: NOW.isoformat())
+        clock.start()
+        self.addCleanup(clock.stop)
         self.pages = {}
         self.saved_fetch = ps.fetch_page
         ps.fetch_page = lambda url: self.pages.get(url)

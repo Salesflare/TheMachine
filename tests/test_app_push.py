@@ -8,6 +8,7 @@ from unittest.mock import patch
 import assistant as a
 import dashboard_parts
 import notify
+from seams import patch_everywhere  # noqa: E402
 
 SUB = {'endpoint': 'https://fcm.googleapis.com/fcm/send/abc', 'keys': {'p256dh': 'B' + 'x' * 86, 'auth': 'y' * 22}}
 TOKEN = 'fcm-token:' + 'A' * 140
@@ -46,7 +47,7 @@ class AppPush(unittest.TestCase):
         self.config = self.app.config = {'accounts': [], 'dashboard_host': 'the-machine.example', 'dashboard_path': '/assistant/',
                                          'credentials': {'fleet': 'fleet'}, 'fleet': {'url': 'https://cp.example/api/fleet'}}
         self.cloud = Cloud()
-        for patcher in (patch.object(a, 'credential', return_value='tok'),
+        for patcher in (patch_everywhere(a, 'credential', return_value='tok'),
                         patch.object(notify.urllib.request, 'urlopen', side_effect=lambda r, timeout: self.cloud(r, timeout))):
             patcher.start(); self.addCleanup(patcher.stop)
         self.web = []
@@ -317,7 +318,7 @@ class AppPush(unittest.TestCase):
         with self.store.connect() as db:
             self.assertEqual(notify.app_line(db, waiting), 'Waiting on Sam Lee: the quote')
         self.assertEqual(self.web[-1]['payload']['title'], 'Waiting on Sam Lee: the quote')
-        with patch.object(a, 'telegram_request', side_effect=lambda config, args: args):
+        with patch_everywhere(a, 'telegram_request', side_effect=lambda config, args: args):
             sent = a.telegram({**self.config, 'dashboard_host': 'machine.example'}, {**row, 'message_id': 'web-1'}, 'send')
         self.assertTrue(sent['message'].startswith('**Waiting on Sam Lee: the quote**'), sent['message'])
         with self.store.connect() as db:
@@ -366,7 +367,7 @@ class AppPush(unittest.TestCase):
         self.register()
         self.card('Reply to Sam about Tuesday')
         morning = a.dt.datetime(2026, 10, 12, 8, 40, tzinfo=a.dt.timezone.utc)
-        with patch.object(a, 'local_tz', return_value=a.dt.timezone.utc):
+        with patch_everywhere(a, 'local_tz', return_value=a.dt.timezone.utc):
             self.app.digest_step(current=morning, push=self.sender)
         notice = a.app_notice(self.store, self.config, 'digest')
         self.assertEqual((notice['title'], notice['body']), ('Your morning', '1 to-do: Reply to Sam about Tuesday'))
@@ -411,7 +412,7 @@ class AppPush(unittest.TestCase):
             a.push_notify(self.store, self.config, {'id': 'c1', 'title': 'T', 'body': 'B', 'status': 'pending'}, self.sender)
         self.assertEqual(self.wakes(), [])
         later = t0 + 5 + notify.AWAY_GRACE
-        with patch.object(notify.time, 'time', return_value=later), patch.object(a, 'local_tz', return_value=UTC):
+        with patch.object(notify.time, 'time', return_value=later), patch_everywhere(a, 'local_tz', return_value=UTC):
             went = self.app.notify_step(current=a.dt.datetime.fromtimestamp(later, UTC), push=self.sender, mail=lambda *x: True)
         self.assertEqual(went, ['push'])
         self.assertEqual([(w['kind'], w['tag']) for w in self.wakes()], [('todo', 'c1')])
@@ -519,9 +520,9 @@ class PhoneApp(unittest.TestCase):
 
     def test_on_the_network_it_signs_in_like_a_hosted_machine(self):
         config = {'dashboard_host': 'machine.tailnet.ts.net'}
-        with patch.object(a, 'cloud_target', return_value=('https://app.example', 'token')):
+        with patch_everywhere(a, 'cloud_target', return_value=('https://app.example', 'token')):
             self.assertEqual(a.phone_app(config), {'hosted': True})  # no code: the account finds it
-        with patch.object(a, 'cloud_target', return_value=None):
+        with patch_everywhere(a, 'cloud_target', return_value=None):
             self.assertIn('qr', a.phone_app(config))
 
     def test_the_dashboard_shows_it_and_the_network_line_once(self):

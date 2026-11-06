@@ -3,6 +3,7 @@ from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
+from seams import patch_everywhere  # noqa: E402
 
 spec = importlib.util.spec_from_file_location('salesflare_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
@@ -185,7 +186,7 @@ class SalesflareConnector(unittest.TestCase):
 
     def test_unbounded_account_listing_fails_visibly(self):
         crm = FakeCRM()
-        with patch.object(a, 'salesflare_time', return_value=NOW):
+        with patch_everywhere(a, 'salesflare_time', return_value=NOW):
             with self.assertRaises(a.SourceError):
                 a.salesflare_recent_accounts(crm, 'last_email_date', NOW, page=1, max_pages=2)
 

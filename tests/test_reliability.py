@@ -5,6 +5,7 @@ import tempfile
 import time
 import unittest
 from unittest.mock import patch
+from seams import patch_everywhere  # noqa: E402
 
 spec = importlib.util.spec_from_file_location('assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
@@ -47,7 +48,7 @@ class Reliability(unittest.TestCase):
         def sync(store, config, acct):
             store.commit_page(acct['id'], {'etag': 'x'}, [])
             return {'mode': 'incremental', 'events': 0}
-        with patch.object(a, 'sync_source', side_effect=sync):
+        with patch_everywhere(a, 'sync_source', side_effect=sync):
             app.collector(account)
         with self.store.connect() as db:
             row = db.execute('SELECT failures, error FROM checkpoints WHERE account_id=?', ('feed',)).fetchone()
@@ -135,7 +136,7 @@ class Reliability(unittest.TestCase):
             def __init__(self, *_): pass
             def profile(self): return {'historyId': '9'}
             def get(self, *_): raise a.SourceError('gmail', 404)
-        with patch.object(a, 'Gmail', Gmail):
+        with patch_everywhere(a, 'Gmail', Gmail):
             a.sync_gmail(self.store, {}, {'id': 'work'})
         state = self.store.checkpoint('work')
         self.assertEqual(state['mode'], 'resync')
@@ -181,7 +182,7 @@ class Reliability(unittest.TestCase):
         sid = self.store.suggest('one', 'One', 'Prepare', [1])['id']
         with self.store.connect() as db:
             db.execute("UPDATE deliveries SET status='sent',message_id='123',needs_edit=1 WHERE suggestion_id=?", (sid,))
-        with patch.object(a, 'telegram', side_effect=ValueError('OpenClaw delivery unconfirmed')) as send:
+        with patch_everywhere(a, 'telegram', side_effect=ValueError('OpenClaw delivery unconfirmed')) as send:
             a.deliver(self.store, {'telegram_owner': 'owner'})
             a.deliver(self.store, {'telegram_owner': 'owner'})
         self.assertEqual(send.call_count, 1)
@@ -196,7 +197,7 @@ class Reliability(unittest.TestCase):
             self.store.decide(sid, 'reject', '', 'owner-click', 'dashboard')
             return {'messageId': '777'}
         with patch.object(a.dt, 'datetime', Daytime), \
-                patch.object(a, 'telegram', side_effect=owner_rejects_while_sending):
+                patch_everywhere(a, 'telegram', side_effect=owner_rejects_while_sending):
             a.deliver_one(self.store, {'telegram_owner': 'owner'}, edit_cards=False)
         row = self.delivery(sid)
         self.assertEqual((row['status'], row['message_id'], row['needs_edit']), ('sent', '777', 1))

@@ -4,19 +4,20 @@ import unittest
 import threading
 from unittest.mock import patch
 import test_ux as ux
+from seams import patch_everywhere  # noqa: E402
 a=ux.a
 BXL=a.ZoneInfo('Europe/Amsterdam')
 def at(y,m,d,h,mi=0):return dt.datetime(y,m,d,h,mi,tzinfo=BXL).astimezone(dt.timezone.utc).isoformat()
 
 class WorkSnooze(unittest.TestCase):
     def test_work_skips_the_weekend_personal_does_not(self):
-        with patch.object(a,'now',return_value=at(2026,10,9,15)):  # Friday
+        with patch_everywhere(a,'now',return_value=at(2026,10,9,15)):  # Friday
             self.assertEqual(a.snooze_time('tomorrow',work=True),at(2026,10,12,9))
             self.assertEqual(a.snooze_time('tomorrow'),at(2026,10,10,9))
             self.assertEqual(a.snooze_time('2h',work=True),at(2026,10,9,17))
             self.assertEqual(a.snooze_choices(True),[['2h','2 hours'],['tomorrow','Monday · 9:00'],['1w','1 week · 9:00']])
             self.assertEqual(a.snooze_choices(False)[1],['tomorrow','Tomorrow · 9:00'])
-        with patch.object(a,'now',return_value=at(2026,10,10,15)):  # Saturday: a week lands on Saturday
+        with patch_everywhere(a,'now',return_value=at(2026,10,10,15)):  # Saturday: a week lands on Saturday
             self.assertEqual(a.snooze_choices(True)[-1],['1w','Mon, Oct 19 · 9:00'])
 
 class WorkSnoozeDecisions(unittest.TestCase):
@@ -24,7 +25,7 @@ class WorkSnoozeDecisions(unittest.TestCase):
     def test_status_labels_and_decide_use_the_source_boundary(self):
         app=object.__new__(a.App);app.store=self.store
         app.config={'accounts':[{'id':'work','email':'owner@example.com','boundary':'work:Acme'}],'telegram_owner':'1000001'}
-        with patch.object(a,'now',return_value=at(2026,10,9,15)):
+        with patch_everywhere(a,'now',return_value=at(2026,10,9,15)):
             self.assertEqual(app.action('status',{'full':True})['suggestions'][0]['snooze_choices'][1][1],'Monday · 9:00')
             app.action('decide',{'suggestion_id':self.sid,'choice':'snooze','snooze_option':'tomorrow','decision_id':'telegram:cb','feedback':''})
         self.assertEqual(self.store.snapshot([])['suggestions'][0]['snoozed_until'],at(2026,10,12,9))
@@ -180,8 +181,8 @@ class SilentBatch(unittest.TestCase):
             @classmethod
             def now(cls,tz=None):return dt.datetime(2026,10,12,9,0,tzinfo=BXL).astimezone(tz or dt.timezone.utc)
         sent=[]
-        with patch.object(a.dt,'datetime',Day),patch.object(a,'now',return_value=at(2026,10,12,9)),\
-             patch.object(a,'telegram_request',side_effect=lambda c,args:(sent.append(args),{'messageId':str(40+len(sent))})[1]):
+        with patch.object(a.dt,'datetime',Day),patch_everywhere(a,'now',return_value=at(2026,10,12,9)),\
+             patch_everywhere(a,'telegram_request',side_effect=lambda c,args:(sent.append(args),{'messageId':str(40+len(sent))})[1]):
             a.deliver(self.store,{'telegram_owner':'1000001'})
         self.assertEqual([args.get('silent') for args in sent],[None,True])
 

@@ -43,9 +43,9 @@ class Invariants(unittest.TestCase):
 
     def test_sync_counts_changes_not_duplicates_and_failed_fetches(self):
         account = {'id': 'work', 'email': 'owner@example.com', 'boundary': 'work:Example'}
-        with patch.object(assistant, 'now', return_value='2026-10-07T12:00:00+00:00'):
+        with patch_everywhere(assistant, 'now', return_value='2026-10-07T12:00:00+00:00'):
             self.store.commit_page('work', {}, [event(source='old'), event(source='updated')])
-        with patch.object(assistant, 'now', return_value='2026-10-09T12:00:00+00:00'):
+        with patch_everywhere(assistant, 'now', return_value='2026-10-09T12:00:00+00:00'):
             self.store.commit_page('work', {}, [event(source='updated', body='Changed'), event(source='new'), event(source='new')])
             state = self.store.snapshot([account])['connectors'][0]
             self.assertEqual(state['last_sync_signals'], 2)
@@ -66,7 +66,7 @@ class Invariants(unittest.TestCase):
         account = {'id': 'cal', 'email': 'owner@example.com', 'boundary': 'personal', 'service': 'outlook_calendar'}
         at = lambda source, when, status='confirmed': {**event(account='cal', source=source), 'kind': 'calendar.event',
                                                        'occurred_at': when, 'metadata': {'status': status}}
-        with patch.object(assistant, 'now', return_value='2026-10-09T12:00:00+00:00'):
+        with patch_everywhere(assistant, 'now', return_value='2026-10-09T12:00:00+00:00'):
             self.store.commit_page('cal', {}, [at('past', '2026-10-09T08:00:00+00:00'), at('soon', '2026-10-10T09:00:00+00:00'),
                                                at('week', '2026-10-16T11:00:00+00:00'), at('later', '2026-10-17T09:00:00+00:00'),
                                                at('off', '2026-10-11T09:00:00+00:00', 'cancelled')])
@@ -84,7 +84,7 @@ class Invariants(unittest.TestCase):
 
     def test_provider_retry_deadline_survives_restart_and_clears_on_success(self):
         self.store.commit_page('work', {'cursor': 'saved'}, [event()])
-        with patch.object(assistant, 'now', return_value='2026-10-09T12:00:00+00:00'):
+        with patch_everywhere(assistant, 'now', return_value='2026-10-09T12:00:00+00:00'):
             self.store.failed('work', assistant.SourceError('slack', 429, 120))
         reopened = assistant.Store(Path(self.temp.name) / 'events.sqlite')
         with reopened.connect() as db:
@@ -102,11 +102,11 @@ class Invariants(unittest.TestCase):
 
     def test_sync_history_keeps_failure_after_recovery_and_commit_is_atomic(self):
         account={'id':'work','email':'owner@example.com','boundary':'work:Example'}
-        with patch.object(assistant,'now',return_value='2026-10-09T12:00:00+00:00'):
+        with patch_everywhere(assistant,'now',return_value='2026-10-09T12:00:00+00:00'):
             self.store.commit_page('work',{'cursor':'one'},[event()])
-        with patch.object(assistant,'now',return_value='2026-10-09T12:01:00+00:00'):
+        with patch_everywhere(assistant,'now',return_value='2026-10-09T12:01:00+00:00'):
             self.store.failed('work',assistant.SourceError('network',retry_after=300))
-        with patch.object(assistant,'now',return_value='2026-10-09T12:06:00+00:00'):
+        with patch_everywhere(assistant,'now',return_value='2026-10-09T12:06:00+00:00'):
             self.store.commit_page('work',{'cursor':'two'},[])
             view=self.store.snapshot([account])['connectors'][0]
             self.assertIsNone(view['error'])
@@ -119,7 +119,7 @@ class Invariants(unittest.TestCase):
             self.store.commit_page('work',{'cursor':'internal'},[],record_sync=False)
             self.assertEqual(len(self.store.snapshot([account])['connectors'][0]['sync_activity']),3)
         reopened=assistant.Store(Path(self.temp.name)/'events.sqlite')
-        with patch.object(assistant,'now',return_value='2026-10-11T12:06:00+00:00'):
+        with patch_everywhere(assistant,'now',return_value='2026-10-11T12:06:00+00:00'):
             self.assertEqual(reopened.snapshot([account])['connectors'][0]['failures_24h'],0)
             self.assertEqual(reopened.snapshot([account])['connectors'][0]['last_failure']['error'],'network')
 
@@ -178,7 +178,7 @@ class Invariants(unittest.TestCase):
             def get(self, resource, params):
                 if resource=='history':return {'historyId':'9','history':[{'messagesAdded':[{'message':{'id':'new'}}]}]}
                 raise assistant.SourceError('network')
-        with patch.object(assistant, 'Gmail', Fake):
+        with patch_everywhere(assistant, 'Gmail', Fake):
             with self.assertRaises(assistant.SourceError): assistant.sync_gmail(self.store, {}, {'id':'work'})
         self.assertEqual(self.store.checkpoint('work')['history_id'], '1')
 
@@ -188,7 +188,7 @@ class Invariants(unittest.TestCase):
             def __init__(self,*_):pass
             def profile(self):return {'historyId':'99'}
             def get(self,*_):raise assistant.SourceError('gmail',404)
-        with patch.object(assistant,'Gmail',Fake):
+        with patch_everywhere(assistant,'Gmail',Fake):
             self.assertEqual(assistant.sync_gmail(self.store, {}, {'id':'work'})['mode'],'resync')
         self.assertEqual(self.store.checkpoint('work')['base_history'],'99')
         self.assertEqual(len(self.store.events(['work'])),1)
@@ -214,13 +214,13 @@ class Invariants(unittest.TestCase):
         class Daytime(assistant.dt.datetime):
             @classmethod
             def now(cls,tz=None):return cls(2026,10,10,10,0,tzinfo=tz or assistant.dt.timezone.utc)
-        with patch.object(assistant.dt,'datetime',Daytime),patch.object(assistant,'telegram',side_effect=assistant.DeliveryNotSent('gateway_preflight_failed')) as send:
+        with patch.object(assistant.dt,'datetime',Daytime),patch_everywhere(assistant,'telegram',side_effect=assistant.DeliveryNotSent('gateway_preflight_failed')) as send:
             assistant.deliver(self.store,{'telegram_owner':'owner'});self.assertEqual(send.call_count,1)
         with self.store.connect() as db:
             row=db.execute('SELECT * FROM deliveries WHERE suggestion_id=?',(suggestion['id'],)).fetchone()
             self.assertEqual(row['status'],'queued');self.assertIsNone(row['last_notified_at'])
         with self.store.connect() as db:db.execute("UPDATE deliveries SET updated_at='2020-01-01' WHERE suggestion_id=?",(suggestion['id'],))
-        with patch.object(assistant.dt,'datetime',Daytime),patch.object(assistant,'telegram',return_value={'messageId':'888'}):
+        with patch.object(assistant.dt,'datetime',Daytime),patch_everywhere(assistant,'telegram',return_value={'messageId':'888'}):
             assistant.deliver(self.store,{'telegram_owner':'owner'})
         self.assertEqual(self.store.snapshot([])['deliveries'][0]['status'],'sent')
 
@@ -230,7 +230,7 @@ class Invariants(unittest.TestCase):
         class Daytime(assistant.dt.datetime):
             @classmethod
             def now(cls,tz=None):return cls(2026,10,10,10,0,tzinfo=tz or assistant.dt.timezone.utc)
-        with patch.object(assistant.dt,'datetime',Daytime),patch.object(assistant,'telegram',side_effect=[{'messageId':str(900+i)} for i in range(3)]) as send:
+        with patch.object(assistant.dt,'datetime',Daytime),patch_everywhere(assistant,'telegram',side_effect=[{'messageId':str(900+i)} for i in range(3)]) as send:
             assistant.deliver(self.store,{'telegram_owner':'owner'});self.assertEqual(send.call_count,3)
         self.assertEqual({r['status'] for r in self.store.snapshot([])['deliveries']},{'sent'})
 
@@ -426,7 +426,7 @@ class Invariants(unittest.TestCase):
         def read(config,account,api,version,method,params,scope):
             reads.append((method,scope))
             return {'payload':payload} if method.endswith('messages.get') else {'data':'cGRm'}
-        with patch.object(assistant,'gog_read',side_effect=read):
+        with patch_everywhere(assistant,'gog_read',side_effect=read):
             [item]=app.originals(sid);self.assertEqual([a['part'] for a in item['attachments']],['1','3'])
             self.assertNotIn('gmail',item)
             self.assertEqual(app.attachment(sid,item['event_id'],'1'),(b'pdf','application/pdf','deck.pdf'))
@@ -476,15 +476,15 @@ class Invariants(unittest.TestCase):
         self.store.commit_page('work',{},[event()])
         sid=self.store.suggest('snooze','One','A draft',[1])['id']
         self.store.decide(sid,'accept','','accept','telegram');self.store.prepare(sid,'Prepared')
-        with patch.object(assistant,'now',return_value='2026-10-24T20:00:00+00:00'):
+        with patch_everywhere(assistant,'now',return_value='2026-10-24T20:00:00+00:00'):
             self.assertEqual(assistant.snooze_time('tomorrow'),'2026-10-25T08:00:00+00:00')
             self.assertEqual(assistant.snooze_time('2h'),'2026-10-24T22:00:00+00:00')
             self.assertEqual(assistant.snooze_time('3d'),'2026-10-27T08:00:00+00:00')
             self.assertEqual(assistant.snooze_time('1w'),'2026-10-31T08:00:00+00:00')
-        with patch.object(assistant,'now',return_value='2026-03-27T22:00:00+00:00'):
+        with patch_everywhere(assistant,'now',return_value='2026-03-27T22:00:00+00:00'):
             self.assertEqual(assistant.snooze_time('3d'),'2026-03-30T07:00:00+00:00')
             self.assertEqual(assistant.snooze_time('1w'),'2026-04-03T07:00:00+00:00')
-        with patch.object(assistant,'now',return_value='2026-10-24T20:00:00+00:00'):
+        with patch_everywhere(assistant,'now',return_value='2026-10-24T20:00:00+00:00'):
             self.store.decide(sid,'snooze','','snooze','dashboard',snoozed_until='2026-10-25T09:30:00+01:00')
             self.assertEqual(self.store.snapshot([])['suggestions'][0]['snoozed_until'],'2026-10-25T08:30:00+00:00')
             with self.assertRaises(ValueError):assistant.snooze_time(explicit='2026-10-24T09:00:00+00:00')
@@ -498,16 +498,16 @@ class Invariants(unittest.TestCase):
         self.store.decide(sid,'accept','','accept','telegram')
         with self.store.connect() as db:
             db.execute("UPDATE deliveries SET status='sent',message_id='123',last_notified_at='2026-10-07' WHERE suggestion_id=?",(sid,))
-        with patch.object(assistant,'now',return_value='2026-10-09T10:00:00+00:00'):
+        with patch_everywhere(assistant,'now',return_value='2026-10-09T10:00:00+00:00'):
             self.store.decide(sid,'snooze','','snooze','dashboard',snooze_option='2h')
-        with patch.object(assistant,'now',return_value='2026-10-09T12:01:00+00:00'):
+        with patch_everywhere(assistant,'now',return_value='2026-10-09T12:01:00+00:00'):
             self.assertEqual(self.store.wake_snoozed(),1)
             self.assertEqual(self.store.wake_snoozed(),0)
         with self.store.connect() as db:
             row=db.execute('SELECT reminder,status FROM deliveries WHERE suggestion_id=?',(sid,)).fetchone()
             self.assertEqual((row['reminder'],row['status']),(1,'queued'))
         self.store.decide(sid,'complete','','done','dashboard')
-        with patch.object(assistant,'telegram',return_value={'messageId':'123'}) as send:
+        with patch_everywhere(assistant,'telegram',return_value={'messageId':'123'}) as send:
             assistant.deliver(self.store,{'telegram_owner':'owner'})
         self.assertTrue(all(call.args[2]=='edit' for call in send.call_args_list))
 
@@ -520,7 +520,7 @@ class Invariants(unittest.TestCase):
         class Daytime(assistant.dt.datetime):
             @classmethod
             def now(cls,tz=None):return cls(2026,10,9,12,tzinfo=assistant.dt.timezone.utc)
-        with patch.object(assistant.dt,'datetime',Daytime),patch.object(assistant,'telegram',return_value={'messageId':'456'}) as send:
+        with patch.object(assistant.dt,'datetime',Daytime),patch_everywhere(assistant,'telegram',return_value={'messageId':'456'}) as send:
             assistant.deliver(self.store,{'telegram_owner':'owner'})
             assistant.deliver(self.store,{'telegram_owner':'owner'})
         self.assertEqual([call.args[2] for call in send.call_args_list],['edit','send'])
@@ -538,7 +538,7 @@ class Invariants(unittest.TestCase):
         class Night(assistant.dt.datetime):
             @classmethod
             def now(cls,tz=None):return cls(2026,10,9,23,tzinfo=assistant.dt.timezone.utc)
-        with patch.object(assistant.dt,'datetime',Night),patch.object(assistant,'telegram',return_value={'messageId':'123'}) as send:
+        with patch.object(assistant.dt,'datetime',Night),patch_everywhere(assistant,'telegram',return_value={'messageId':'123'}) as send:
             assistant.deliver(self.store,{'telegram_owner':'owner'})
         self.assertEqual([call.args[2] for call in send.call_args_list],['edit'])
         state=self.store.snapshot([])
@@ -553,7 +553,7 @@ class CalendarInvariants(unittest.TestCase):
         self.store = assistant.Store(Path(self.temp.name) / 'events.sqlite')
         self.account = {'id': 'work-calendar', 'email': 'owner@example.com',
                         'client': 'existing', 'transport': 'gog', 'service': 'calendar'}
-        self.clock = patch.object(assistant, 'now', return_value='2026-10-09T12:00:00+00:00')
+        self.clock = patch_everywhere(assistant, 'now', return_value='2026-10-09T12:00:00+00:00')
         self.clock.start(); self.addCleanup(self.clock.stop)
 
     def source(self, pages):
@@ -566,7 +566,7 @@ class CalendarInvariants(unittest.TestCase):
                 item = pages.pop(0)
                 if isinstance(item, Exception): raise item
                 return item
-        return patch.object(assistant, 'Calendar', Fake), calls
+        return patch_everywhere(assistant, 'Calendar', Fake), calls
 
     def test_calendar_pages_commit_and_replay_without_duplicates(self):
         fake, calls = self.source([
@@ -664,7 +664,7 @@ class CalendarInvariants(unittest.TestCase):
             self.assertIn('--readonly', command); self.assertIn('--no-input', command)
             self.assertIn('https://www.googleapis.com/auth/calendar.readonly', command)
             self.assertEqual(command[command.index('--account') + 1], self.account['email'])
-        with patch.object(assistant, 'gog_read', return_value={'id': 'another@example.com'}):
+        with patch_everywhere(assistant, 'gog_read', return_value={'id': 'another@example.com'}):
             with self.assertRaises(assistant.SourceError): assistant.Calendar({}, self.account).profile()
 
     def test_expired_google_signin_says_so_and_backs_off(self):
@@ -725,7 +725,7 @@ class CalendarInvariants(unittest.TestCase):
             app.stop.set()
             return {'mode': 'incremental', 'events': 0}
         app.stop.wait = wait
-        with patch.object(app, 'resume_wait', return_value=0), patch.object(assistant, 'sync_source', side_effect=sync):
+        with patch.object(app, 'resume_wait', return_value=0), patch_everywhere(assistant, 'sync_source', side_effect=sync):
             app.collector(self.account)
         self.assertEqual(calls, [self.account['id'], self.account['id']])
         self.assertEqual(waits[:2], [15, 15])
@@ -741,7 +741,7 @@ class CalendarInvariants(unittest.TestCase):
         def wait(seconds):
             waits.append(seconds); app.stop.set(); return True
         app.stop.wait = wait
-        with patch.object(app, 'resume_wait', return_value=0), patch.object(assistant, 'sync_source',
+        with patch.object(app, 'resume_wait', return_value=0), patch_everywhere(assistant, 'sync_source',
                 side_effect=assistant.SourceError('calendar', 429, retry_after=3600)) as sync:
             app.collector(self.account)
         self.assertEqual(sync.call_count, 1)
@@ -749,14 +749,14 @@ class CalendarInvariants(unittest.TestCase):
 
     def test_shared_calendar_is_exact_and_credentials_stay_separate(self):
         account = {**self.account, 'calendar_id': 'shared@example.com', 'boundary': 'personal:shared'}
-        with patch.object(assistant, 'gog_read', return_value={'id': 'shared@example.com'}) as read:
+        with patch_everywhere(assistant, 'gog_read', return_value={'id': 'shared@example.com'}) as read:
             source = assistant.Calendar({}, account)
             source.profile()
             self.assertEqual(read.call_args.args[1]['email'], 'owner@example.com')
             self.assertEqual(read.call_args.args[5]['calendarId'], 'shared@example.com')
             with self.assertRaises(assistant.SourceError): source.get('events.insert', {})
             with self.assertRaises(assistant.SourceError): source.get('events.list', {'calendarId': 'other@example.com'})
-        with patch.object(assistant, 'gog_read', return_value={'id': 'other@example.com'}):
+        with patch_everywhere(assistant, 'gog_read', return_value={'id': 'other@example.com'}):
             with self.assertRaises(assistant.SourceError): assistant.Calendar({}, account).profile()
         e = assistant.calendar_event(account, appointment(), 'Europe/Amsterdam')
         self.assertEqual(e['metadata']['calendar_id'], 'shared@example.com')
@@ -800,7 +800,7 @@ class CalendarInvariants(unittest.TestCase):
             assistant.sync_calendar(self.store, {}, self.account)
             assistant.sync_calendar(self.store, {}, self.account)
             self.clock.stop()
-            with patch.object(assistant, 'now', return_value='2026-10-11T12:00:00+00:00'):
+            with patch_everywhere(assistant, 'now', return_value='2026-10-11T12:00:00+00:00'):
                 assistant.sync_calendar(self.store, {}, self.account)
                 self.assertEqual(calls[-1]['pageToken'], 'page2')
                 assistant.sync_calendar(self.store, {}, self.account)
@@ -1008,7 +1008,7 @@ class SlackInvariants(unittest.TestCase):
     def test_slack_network_diagnostic_keeps_only_class_and_read_method(self):
         account={**self.account,'credential':'slack','credential_variable':'KEY'}
         client=assistant.Slack({},account)
-        with patch.object(client,'pace'),patch.object(assistant,'credential',return_value='KEY=secret'):
+        with patch.object(client,'pace'),patch_everywhere(assistant,'credential',return_value='KEY=secret'):
             for error,name in [(TimeoutError('private endpoint and secret'),'TimeoutError'),
                                (assistant.urllib.error.URLError(ConnectionResetError('private endpoint')),'ConnectionResetError')]:
                 with patch.object(assistant.urllib.request,'urlopen',side_effect=error):
@@ -1020,14 +1020,14 @@ class SlackInvariants(unittest.TestCase):
         account={**self.account,'credential':'slack','credential_variable':'KEY'}
         client=assistant.Slack({},account)
         error=assistant.urllib.error.HTTPError('https://private.invalid',429,'private text',{'Retry-After':'120'},None)
-        with patch.object(client,'pace'),patch.object(assistant,'credential',return_value='KEY=fake'),patch.object(assistant.urllib.request,'urlopen',side_effect=error):
+        with patch.object(client,'pace'),patch_everywhere(assistant,'credential',return_value='KEY=fake'),patch.object(assistant.urllib.request,'urlopen',side_effect=error):
             with self.assertRaises(assistant.SourceError) as raised:client.get('conversations.replies')
         self.assertEqual(str(raised.exception),'slack:conversations.replies:HTTP_429')
         self.assertTrue(125 <= raised.exception.retry_after <= 180)  # Slack's wait plus a spread so computers sharing the connection don't retry together
         self.assertEqual((client.round, client.slots), (360, 6))  # the round doubled: room for more Machines
         for _ in range(8):
             before = client.slot
-            with patch.object(client,'pace'),patch.object(assistant,'credential',return_value='KEY=fake'),patch.object(assistant.urllib.request,'urlopen',side_effect=error):
+            with patch.object(client,'pace'),patch_everywhere(assistant,'credential',return_value='KEY=fake'),patch.object(assistant.urllib.request,'urlopen',side_effect=error):
                 with self.assertRaises(assistant.SourceError):client.get('conversations.history')
             self.assertNotEqual(client.slot, before)  # another Machine reads in this minute: this one takes another
             self.assertLess(client.slot, client.slots)
@@ -1076,6 +1076,7 @@ class ModelUsage(unittest.TestCase):
 
 import os
 import time
+from seams import patch_everywhere  # noqa: E402
 
 FAKE_CODEX = r"""#!/usr/bin/env python3
 import json, os, sys

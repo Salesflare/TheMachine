@@ -15,6 +15,7 @@ import graph
 import model_budget
 import test_ux as ux
 import timeutil
+from seams import patch_everywhere  # noqa: E402
 a = ux.a
 
 GMAIL = {'id': 'work', 'email': 'owner@example.com', 'service': 'gmail', 'transport': 'gog', 'boundary': 'work:Example'}
@@ -302,7 +303,7 @@ class FollowUps(unittest.TestCase):
             p = patch.object(timeutil, target, value)
             p.start()
             self.addCleanup(p.stop)
-        self.clock = patch.object(a, 'now', return_value=NOW)
+        self.clock = patch_everywhere(a, 'now', return_value=NOW)
         self.clock.start()
         self.addCleanup(lambda: self.clock.stop())
         unread = patch.object(a.Gmail, 'get', side_effect=a.SourceError('offline'))  # no live reads: the quoted history
@@ -332,7 +333,7 @@ class FollowUps(unittest.TestCase):
 
     def at(self, stamp):
         self.clock.stop()
-        self.clock = patch.object(a, 'now', return_value=stamp)
+        self.clock = patch_everywhere(a, 'now', return_value=stamp)
         self.clock.start()
 
     def app(self, **config):
@@ -511,7 +512,7 @@ class FollowUps(unittest.TestCase):
         self.turn_on()
         app = self.app()
         app.model_usage = [{'provider': 'anthropic', 'windows': [{'label': '5h', 'used': 55, 'reset': 9e12}]}]
-        with patch.object(a, 'openclaw_model', return_value='anthropic/claude'):
+        with patch_everywhere(a, 'openclaw_model', return_value='anthropic/claude'):
             with patch.object(follow_ups, 'schedule', wraps=follow_ups.schedule) as sched:
                 # Not late yet: waits while the 5-hour window is past FOLLOW_UP_PAUSE
                 self.at('2026-10-17T10:00:00+00:00')

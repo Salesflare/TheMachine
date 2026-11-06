@@ -10,6 +10,7 @@ import threading
 import unittest
 from pathlib import Path
 from unittest.mock import patch
+from seams import patch_everywhere  # noqa: E402
 
 ROOT = Path(__file__).parent.parent
 spec = importlib.util.spec_from_file_location('assistant', ROOT / 'assistant.py')
@@ -69,7 +70,7 @@ class SignedInAgain(unittest.TestCase):
         session = {'source': 'gmail', 'account_id': GMAIL['id'], 'ui': onboarding.WebUI()}
         cleared = []
         with patch.object(onboarding, 'connect', return_value=GMAIL), \
-                patch.object(assistant, 'restart_self', side_effect=lambda _: cleared.append(self.error('work-calendar')) or True):
+                patch_everywhere(assistant, 'restart_self', side_effect=lambda _: cleared.append(self.error('work-calendar')) or True):
             app.connect_run(session)
         self.assertEqual(session['state'], 'done')
         self.assertTrue(session['restarting'])
@@ -82,7 +83,7 @@ class SignedInAgain(unittest.TestCase):
         app.config, app.store, app.config_path = {'accounts': self.accounts}, self.store, Path(self.temp.name) / 'config.json'
         import onboarding
         session = {'source': 'gmail', 'account_id': None, 'ui': onboarding.WebUI()}
-        with patch.object(onboarding, 'connect', return_value=GMAIL), patch.object(assistant, 'restart_self', return_value=True):
+        with patch.object(onboarding, 'connect', return_value=GMAIL), patch_everywhere(assistant, 'restart_self', return_value=True):
             app.connect_run(session)
         self.assertEqual(self.error('work-calendar')[0], 'calendar:HTTP_401')
 
@@ -90,7 +91,7 @@ class SignedInAgain(unittest.TestCase):
         keyring = Path(self.temp.name) / 'keyring'; keyring.mkdir()
         app = object.__new__(assistant.App)
         app.config, app.store, app.stop = {'gog_keyring_dir': str(keyring)}, self.store, threading.Event()
-        with patch.object(assistant, 'now', return_value='2026-11-04T21:20:36+00:00'):
+        with patch_everywhere(assistant, 'now', return_value='2026-11-04T21:20:36+00:00'):
             self.store.failed(GMAIL['id'], assistant.SourceError('gmail:HTTP_401', retry_after=300))
         with self.store.connect() as db:
             row = db.execute('SELECT retry_at,error,error_at FROM checkpoints WHERE account_id=?', (GMAIL['id'],)).fetchone()
@@ -103,7 +104,7 @@ class SignedInAgain(unittest.TestCase):
             token.write_text('new')  # signed in again meanwhile
             return False
         app.stop.wait = wait
-        with patch.object(assistant, 'now', return_value='2026-11-04T21:21:00+00:00'):
+        with patch_everywhere(assistant, 'now', return_value='2026-11-04T21:21:00+00:00'):
             self.assertFalse(app.wait_for_retry(GMAIL, row))
         self.assertEqual(waits, [15])  # watched, not slept for the whole retry
 

@@ -8,6 +8,7 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from seams import patch_everywhere  # noqa: E402
 
 spec = importlib.util.spec_from_file_location('board_replies_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
@@ -28,8 +29,9 @@ class BoardReplies(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
         self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
-        self.saved_now = a.now
-        a.now = lambda: NOW.isoformat(); self.addCleanup(setattr, a, 'now', self.saved_now)
+        clock = patch_everywhere(a, 'now', lambda: NOW.isoformat())
+        clock.start()
+        self.addCleanup(clock.stop)
         with self.store.connect() as db:
             graph.save_board(db, {'name': 'Listings', 'stages': STAGES, 'about': 'Partners we list with'}, NOW.isoformat())
 

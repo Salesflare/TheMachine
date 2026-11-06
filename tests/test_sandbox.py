@@ -71,6 +71,42 @@ class StatesTest(unittest.TestCase):
                 self.assertTrue(config['fleet']['url'].startswith('http://127.0.0.1:') if config.get('fleet') else True)
 
 
+class SendStubTest(unittest.TestCase):
+    """The sandbox's phone and Telegram stubs hold wherever a send is bound: on assistant, in the module its code came
+    from, and in a module the code moves to later (machine/). A send that went around a stub fails here."""
+
+    def test_no_send_goes_around_a_stub(self):
+        code = r'''
+import json, pathlib, sys, tempfile, types
+sys.path.insert(0, "sandbox")
+import run
+import assistant
+names = sorted(run.send_stubs(None))
+originals = {name: getattr(assistant, name) for name in names}
+# code that moved to machine/ and imported the sends there, as a move does
+moved = types.ModuleType("machine.delivery.moved")
+moved.__file__ = str(pathlib.Path.cwd() / "machine" / "delivery" / "moved.py")
+vars(moved).update(originals)
+exec("def deliver(config):\n    telegram(config, {'id': 'c1'}, 'new')\n    push_send(None, config, [], {'title': 'x'}, 'x')\n", vars(moved))
+sys.modules[moved.__name__] = moved
+folder = pathlib.Path(tempfile.mkdtemp())
+sent = run.Sent(folder / "sent.jsonl")
+app = types.SimpleNamespace(action_step=lambda transport=None: None)
+run.quiet_workers(app, sent)
+moved.deliver({})
+left = sorted(f"{module.__name__}.{name}" for module in list(sys.modules.values()) if module is not None
+              for name in names if vars(module).get(name) is originals[name])
+lines = [json.loads(line) for line in (folder / "sent.jsonl").read_text().splitlines()]
+print(json.dumps({"left": left, "sent": [line["channel"] for line in lines], "names": names}))
+'''
+        out = subprocess.run([sys.executable, '-c', code], cwd=ROOT, capture_output=True, text=True, timeout=120)
+        self.assertEqual(out.returncode, 0, out.stderr[-2000:])
+        found = json.loads(out.stdout.strip().splitlines()[-1])
+        self.assertEqual(found['left'], [], 'a send is still bound to the real function: the sandbox would send')
+        self.assertEqual(found['sent'], ['telegram', 'push'])
+        self.assertEqual(found['names'], ['fleet_notice_push', 'fleet_push', 'fleet_telegram', 'push_send', 'telegram'])
+
+
 class DemoMachineTest(unittest.TestCase):
     """sandbox/load.py --machine: the made-up day in a real Machine's database, sealed, with no accounts added."""
 

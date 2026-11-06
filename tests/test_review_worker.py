@@ -4,6 +4,7 @@ from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
+from seams import patch_everywhere  # noqa: E402
 
 spec=importlib.util.spec_from_file_location('review_worker_assistant',Path(__file__).parent.parent.joinpath('assistant.py'))
 a=importlib.util.module_from_spec(spec);spec.loader.exec_module(a)
@@ -23,7 +24,7 @@ class ReviewWorker(unittest.TestCase):
         self.store.commit_page('work',{},[{'account_id':'work','source_id':'one','kind':'gmail.message','occurred_at':a.now(),'title':'Hi','body':'Text','metadata':{},'deleted':False}])
 
     def step(self,runner,at):
-        with patch.object(a,'now',return_value=at.isoformat()):return self.app.review_step(runner)
+        with patch_everywhere(a,'now',return_value=at.isoformat()):return self.app.review_step(runner)
 
     def runs(self):
         with self.store.connect() as db:return [dict(r) for r in db.execute('SELECT * FROM review_runs ORDER BY started_at')]
@@ -102,7 +103,7 @@ class ReviewWorker(unittest.TestCase):
         runner=Runner('admitted','error','admitted')
         self.step(runner,T)
         old=self.runs()[0]['run_id'];old_session=a.REVIEW_SESSION_PREFIX+old
-        with patch.object(a,'now',return_value=T.isoformat()):
+        with patch_everywhere(a,'now',return_value=T.isoformat()):
             claim=self.store.begin_analysis(['work','home'],120,old_session,old)
         self.step(runner,T+dt.timedelta(minutes=2))
         self.assertIsNone(self.step(runner,T+dt.timedelta(minutes=2,seconds=30)))
@@ -151,7 +152,7 @@ class ReviewWorker(unittest.TestCase):
 
     def test_disabled_by_default(self):
         self.app.config.pop('review_worker')
-        with patch.object(a,'has_model',return_value=False):  # no first look either (test_first_look)
+        with patch_everywhere(a,'has_model',return_value=False):  # no first look either (test_first_look)
             self.assertIsNone(self.step(Runner(),T))
 
     def test_terminal_failure_retains_category_phase_and_saved_claim(self):
@@ -233,7 +234,7 @@ class ReviewWorker(unittest.TestCase):
     def test_a_board_waiting_to_be_sorted_starts_a_review_within_minutes_without_a_full_batch(self):
         import graph
         self.app.config['review_worker'].update(min_signals=40, gap_seconds=600, max_wait_minutes=60)
-        with patch.object(a,'now',return_value=T.isoformat()):
+        with patch_everywhere(a,'now',return_value=T.isoformat()):
             self.store.commit_page('work',{},[{'account_id':'work','source_id':'two','kind':'gmail.message','occurred_at':T.isoformat(),'title':'Hi','body':'Text','metadata':{},'deleted':False}])
         self.assertIsNone(self.step(Runner(),T))  # one young signal: it waits for a batch
         with self.store.connect() as db:

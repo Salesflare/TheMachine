@@ -16,6 +16,7 @@ import fleet
 import network_crypto as nc
 import service
 from test_device_connect import context, fleet_with
+from seams import patch_everywhere  # noqa: E402
 
 
 def sealed(f, cid, body):
@@ -130,7 +131,7 @@ class Busy(unittest.TestCase):
         waits = []
         app.stop.wait = lambda seconds: waits.append(seconds) or app.stop.set() or True
         with patch.object(app, 'resume_wait', return_value=0), \
-                patch.object(assistant, 'sync_source', side_effect=sqlite3.OperationalError('database is locked')):
+                patch_everywhere(assistant, 'sync_source', side_effect=sqlite3.OperationalError('database is locked')):
             app.collector(account)
         self.assertEqual(waits, [assistant.DB_BUSY_RETRY])
         with store.connect() as db:

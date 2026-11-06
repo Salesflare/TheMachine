@@ -16,6 +16,7 @@ import mail_grants
 import onboarding
 from test_connectors import a
 from test_connector_docs import ACCOUNT, GMAIL, OWNER, GoogleFake, helpers_for
+from seams import patch_everywhere  # noqa: E402
 
 SLACK = {'id': 'acme-slack', 'service': 'slack', 'transport': 'maton', 'boundary': 'work:Acme'}
 RSS = {'id': 'news', 'service': 'rss', 'url': 'https://news.example/feed'}
@@ -82,7 +83,7 @@ class Saved(unittest.TestCase):
     def test_only_from_the_dashboard_and_it_restarts(self):
         with self.assertRaises(ValueError):
             self.app.action('connect_abilities', {'account': 'acme-gmail', 'signals': True, 'actions': False})
-        with patch.object(assistant, 'restart_self', return_value=True):
+        with patch_everywhere(assistant, 'restart_self', return_value=True):
             view = self.app.action('connect_abilities', {'account': 'acme-gmail', 'signals': True, 'actions': False},
                                    owner_dashboard=True)
         self.assertEqual((view['actions'], view['restarting']), (False, True))
@@ -107,7 +108,7 @@ class Off(unittest.TestCase):
         app, checked = object.__new__(assistant.App), []
         app.stop, app.store, app.config = assistant.threading.Event(), None, {'accounts': [ACCOUNT]}
         plugin = types.SimpleNamespace(refresh=lambda store, config, account, helpers: checked.append(account['id']) or app.stop.set())
-        with patch.object(assistant, 'load_connector', lambda name: plugin):
+        with patch_everywhere(assistant, 'load_connector', lambda name: plugin):
             app.ability_checker(ACCOUNT)
         self.assertEqual(checked, ['acme-docs'])
 
@@ -136,7 +137,7 @@ class DocsActionOnly(unittest.TestCase):
             provider=lambda config, account: 'google',
             find=lambda config, account, words, helpers: [{'file_id': 'found-doc-1', 'title': 'Q4 plan', 'url': None, 'at': None}],
             read_text=lambda config, account, file_id, helpers: self.reads.append(file_id) or {'title': 'Q4 plan', 'text': 'Week 2.'})
-        patch.object(assistant, 'load_connector', lambda name: plugin if name == 'docs' else None).start()
+        patch_everywhere(assistant, 'load_connector', lambda name: plugin if name == 'docs' else None).start()
         patch.object(assistant.App, 'doc_run', lambda app, args: ('job-1', {'event_ids': '[]'}, {'linked-doc-1': 1}, doc_writes.area(app.config, ['acme-docs']))).start()
         self.addCleanup(patch.stopall)
 

@@ -4,6 +4,7 @@ runs and failure back-off stay as they are. No Gateway, no mail provider: the ru
 import datetime as dt, importlib.util, tempfile, unittest
 from pathlib import Path
 from unittest.mock import patch
+from seams import patch_everywhere  # noqa: E402
 
 spec = importlib.util.spec_from_file_location('first_review_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
@@ -50,10 +51,10 @@ class FirstReview(unittest.TestCase):
                            'review_worker': {'enabled': True, 'min_signals': 40, 'max_wait_minutes': 60, 'gap_seconds': 600},
                            'delivery_enabled': False}
         for name, value in (('Gmail', Mailbox), ('message_event', lambda account, raw, config: signal(raw['id'], account['id']))):
-            patcher = patch.object(a, name, value); patcher.start(); self.addCleanup(patcher.stop)
+            patcher = patch_everywhere(a, name, value); patcher.start(); self.addCleanup(patcher.stop)
 
     def later(self, minutes):
-        return patch.object(a, 'now', return_value=(dt.datetime.now(dt.timezone.utc) + dt.timedelta(minutes=minutes)).isoformat())
+        return patch_everywhere(a, 'now', return_value=(dt.datetime.now(dt.timezone.utc) + dt.timedelta(minutes=minutes)).isoformat())
 
     def sync(self, account='work'):
         return a.sync_gmail(self.store, self.app.config, next(x for x in self.app.config['accounts'] if x['id'] == account))
@@ -153,7 +154,7 @@ class FirstReview(unittest.TestCase):
     def test_with_reviews_off_the_first_look_starts_without_the_settling_wait(self):
         self.app.config['review_worker'] = {'enabled': False}
         self.store.commit_page('work', {'mode': 'bootstrap', 'base_history': '1', 'after': 1}, [], record_sync=False)
-        with patch.object(a, 'has_model', return_value=True):
+        with patch_everywhere(a, 'has_model', return_value=True):
             with self.store.connect() as db:
                 self.assertEqual(self.app.first_look(db)['why'], 'mail')
             Mailbox.pages = [['m1', 'm2']]

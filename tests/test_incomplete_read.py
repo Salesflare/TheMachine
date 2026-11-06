@@ -10,6 +10,7 @@ import enrichment
 import google_api
 import ms_graph
 from connectors import rss
+from seams import patch_everywhere  # noqa: E402
 
 spec = importlib.util.spec_from_file_location('incomplete_read_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
@@ -38,7 +39,7 @@ def dropped(*args, **kwargs):
 class IncompleteReadTest(unittest.TestCase):
     def test_salesflare_send_gives_a_network_source_error(self):
         account = {'id': 'work-crm', 'service': 'salesflare', 'api_base': 'https://crm.example'}
-        with patch.object(a, 'credential', return_value='SALESFLARE_STAGING_API_KEY=test'), \
+        with patch_everywhere(a, 'credential', return_value='SALESFLARE_STAGING_API_KEY=test'), \
                 patch.object(a.urllib.request, 'urlopen', dropped):
             with self.assertRaises(a.SourceError) as caught:
                 a.Salesflare({}, account).send('/accounts', {'limit': 1})

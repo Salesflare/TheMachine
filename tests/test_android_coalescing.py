@@ -4,6 +4,7 @@ from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
+from seams import patch_everywhere  # noqa: E402
 
 spec = importlib.util.spec_from_file_location('assistant_coalescing', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
@@ -26,7 +27,7 @@ class AndroidCoalescing(unittest.TestCase):
             db.execute('INSERT INTO android_inbox VALUES(?,?,?)',(eid,json.dumps(envelope),received or stamp))
 
     def sync(self, stamp='2026-10-09T22:02:00+00:00'):
-        with patch.object(a,'now',return_value=stamp):
+        with patch_everywhere(a,'now',return_value=stamp):
             with self.store.connect() as db:
                 db.execute('INSERT OR REPLACE INTO android_feed_health VALUES(1,?,NULL,NULL)',(stamp,))
             return a.sync_android_feed(self.store,{},ACCOUNT)
@@ -108,7 +109,7 @@ class AndroidCoalescing(unittest.TestCase):
 
     def test_offline_bridge_still_commits_captured_inbox_and_receipts(self):
         self.queue('captured',0)
-        with patch.object(a,'now',return_value='2026-10-09T22:02:00+00:00'):
+        with patch_everywhere(a,'now',return_value='2026-10-09T22:02:00+00:00'):
             with self.assertRaises(a.SourceError):a.sync_android_feed(self.store,{},ACCOUNT)
         self.assertEqual(len(self.store.events([ACCOUNT['id']])),1)
         with self.store.connect() as db:
@@ -130,7 +131,7 @@ class AndroidCoalescing(unittest.TestCase):
                 'metadata':{'transport':'existing_openclaw_feed','notification_key_hash':'key','package_name':'com.openai.chatgpt','change':change}})
         self.store.commit_page(ACCOUNT['id'],{'cursor':'retained'},originals)
         other={**originals[0],'account_id':'other'};self.store.commit_page('other',{},[other])
-        with patch.object(a,'now',return_value='2026-10-09T22:00:04+00:00'):
+        with patch_everywhere(a,'now',return_value='2026-10-09T22:00:04+00:00'):
             result=self.store.coalesce_android_history(ACCOUNT)
         self.assertEqual(result,{'observations_before':4,'signals_after':2,'removed':2})
         self.assertEqual(self.store.checkpoint(ACCOUNT['id']),{'cursor':'retained'})

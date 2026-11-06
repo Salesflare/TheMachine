@@ -3,6 +3,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 from test_assistant import assistant as a, event
+from seams import patch_everywhere  # noqa: E402
 
 class UX(unittest.TestCase):
     def setUp(self):
@@ -124,7 +125,7 @@ class UX(unittest.TestCase):
         with self.store.connect() as db:
             delivery=dict(db.execute('SELECT * FROM deliveries').fetchone());job=dict(db.execute('SELECT * FROM preparations').fetchone())
         self.assertEqual((delivery['status'],delivery['message_id'],delivery['needs_edit']),('sent','40',1))
-        with patch.object(a,'telegram_request',side_effect=lambda config,args:args):
+        with patch_everywhere(a,'telegram_request',side_effect=lambda config,args:args):
             row={**self.row(),'preparation_status':'queued','requested_feedback':'Make it *funny* [please]','reminder':1}
             payload=a.telegram({'telegram_owner':'1000001'},row,'edit','40')
         self.assertEqual((payload['action'],payload['messageId']),('edit','40'))
@@ -157,7 +158,7 @@ class UX(unittest.TestCase):
         class Daytime(a.dt.datetime):
             @classmethod
             def now(cls,tz=None):return cls(2026,10,11,14,0,tzinfo=tz or a.dt.timezone.utc)
-        with patch.object(a.dt,'datetime',Daytime),patch.object(a,'telegram',side_effect=finish_during_edit) as send:
+        with patch.object(a.dt,'datetime',Daytime),patch_everywhere(a,'telegram',side_effect=finish_during_edit) as send:
             a.deliver_one(self.store,{'telegram_owner':'1000001'},edit_cards=True)
         with self.store.connect() as db:
             row=dict(db.execute('SELECT * FROM deliveries').fetchone())
@@ -170,7 +171,7 @@ class UX(unittest.TestCase):
         class Daytime(a.dt.datetime):
             @classmethod
             def now(cls,tz=None):return cls(2026,10,11,14,0,tzinfo=tz or a.dt.timezone.utc)
-        with patch.object(a.dt,'datetime',Daytime),patch.object(a,'telegram',return_value={'messageId':'40'}) as send:
+        with patch.object(a.dt,'datetime',Daytime),patch_everywhere(a,'telegram',return_value={'messageId':'40'}) as send:
             a.deliver(self.store,{'telegram_owner':'1000001'})
             a.deliver(self.store,{'telegram_owner':'1000001'})
             self.assertEqual(send.call_count,1);self.assertEqual(send.call_args.args[2:4],('edit','40'))
@@ -188,7 +189,7 @@ class UX(unittest.TestCase):
         class Daytime(a.dt.datetime):
             @classmethod
             def now(cls,tz=None):return cls(2026,10,11,14,0,tzinfo=tz or a.dt.timezone.utc)
-        with patch.object(a.dt,'datetime',Daytime),patch.object(a,'telegram_request',side_effect=transport):
+        with patch.object(a.dt,'datetime',Daytime),patch_everywhere(a,'telegram_request',side_effect=transport):
             a.deliver(self.store,config);a.deliver(self.store,config)
         self.assertEqual([p['action'] for p in payloads],['edit','send'])
         self.assertIn('Unique complete result content',payloads[0]['message'])
@@ -204,7 +205,7 @@ class UX(unittest.TestCase):
         with self.store.connect() as db:db.execute("UPDATE deliveries SET status='sent',message_id='40',needs_edit=0")
         self.store.prepare(self.sid,'Actual result')
         config={'telegram_owner':'1000001','dashboard_host':'machine.example'}
-        with patch.object(a,'telegram',side_effect=ValueError('Disconnected')) as send:
+        with patch_everywhere(a,'telegram',side_effect=ValueError('Disconnected')) as send:
             a.deliver_one(self.store,config)
         self.assertEqual(send.call_count,1);self.assertEqual(send.call_args.args[2],'edit')
         with self.store.connect() as db:self.assertEqual(db.execute('SELECT status FROM deliveries').fetchone()[0],'queued')
@@ -213,10 +214,10 @@ class UX(unittest.TestCase):
         args={'suggestion_id':self.sid,'request_id':'cb1','card_message_id':'40'}
         app.config['prompt_receipts']=str(self.root/'receipts')
         app.action('request_feedback',{**args,'managed_prompt':True})
-        with patch.object(a,'now',return_value=(a.dt.datetime.fromisoformat(a.now())+a.dt.timedelta(seconds=11)).isoformat()):
+        with patch_everywhere(a,'now',return_value=(a.dt.datetime.fromisoformat(a.now())+a.dt.timedelta(seconds=11)).isoformat()):
             app.feedback_prompt_step(sender=lambda row:{'definitely_not_sent':True})
         sent=[]
-        with patch.object(a,'now',return_value=(a.dt.datetime.fromisoformat(a.now())+a.dt.timedelta(seconds=25)).isoformat()),patch.object(a,'telegram_request',side_effect=lambda config,payload:(sent.append(payload),{'messageId':'41'})[1]):
+        with patch_everywhere(a,'now',return_value=(a.dt.datetime.fromisoformat(a.now())+a.dt.timedelta(seconds=25)).isoformat()),patch_everywhere(a,'telegram_request',side_effect=lambda config,payload:(sent.append(payload),{'messageId':'41'})[1]):
             app.feedback_prompt_step()
             app.action('request_feedback',{**args,'managed_prompt':True})  # a retried callback
             app.feedback_prompt_step()
@@ -232,7 +233,7 @@ class UX(unittest.TestCase):
             @classmethod
             def now(cls,tz=None):return cls(2026,10,11,14,0,tzinfo=tz or a.dt.timezone.utc)
         config={'telegram_owner':'1000001','dashboard_host':'machine.example'}
-        with patch.object(a.dt,'datetime',Daytime),patch.object(a,'telegram_request',return_value={'messageId':'44'}) as send:
+        with patch.object(a.dt,'datetime',Daytime),patch_everywhere(a,'telegram_request',return_value={'messageId':'44'}) as send:
             a.deliver_one(self.store,config)
         self.assertTrue(send.call_args.args[1]['message'].startswith('Ready: '))
         with self.store.connect() as db:self.assertEqual(db.execute('SELECT notification_message_id FROM deliveries').fetchone()[0],'44')
@@ -255,7 +256,7 @@ class UX(unittest.TestCase):
         reports=self.root/'memory/assistant';reports.mkdir(parents=True)
         report=reports/'261011-draft.md';report.write_text('Real draft');(self.root/'secret.txt').write_text('Private')
         with self.store.connect() as db:db.execute('UPDATE suggestions SET body=?',('memory/assistant/261011-draft.md',))
-        with patch.object(a,'WORKSPACE',self.root):
+        with patch_everywhere(a,'WORKSPACE',self.root):
             self.assertEqual(self.store.result_document(self.sid,'memory/assistant/261011-draft.md'),report.resolve())
             with self.assertRaises(ValueError):self.store.result_document(self.sid,'secret.txt')
             with self.assertRaises(ValueError):self.store.result_document(self.sid,'memory/assistant/../../secret.txt')
@@ -263,7 +264,7 @@ class UX(unittest.TestCase):
             with self.assertRaises(ValueError):self.store.result_document(self.sid,'memory/assistant/261011-draft.md')
     def test_telegram_has_mobile_result_link_not_path(self):
         row=self.row();row.update(status='prepared',body='Draft. [Full result](memory/assistant/261011-draft.md)')
-        with patch.object(a,'telegram_request',side_effect=lambda config,args:args):
+        with patch_everywhere(a,'telegram_request',side_effect=lambda config,args:args):
             payload=a.telegram({'dashboard_host':'machine.example','dashboard_path':'/assistant/','telegram_owner':'owner'},row,'send')
         self.assertNotIn('memory/assistant/',payload['message']);self.assertIn('https://machine.example/assistant/#chat=',payload['message'])
     def test_telegram_links_open_the_cards_own_page_not_the_old_result_modal(self):
@@ -271,7 +272,7 @@ class UX(unittest.TestCase):
         own page (#chat=<id>), as a tap on the card in the list does."""
         config={'dashboard_host':'machine.example','dashboard_path':'/assistant/','telegram_owner':'owner'}
         row=self.row();row.update(status='prepared',body='Draft.',message_id=5)
-        with patch.object(a,'telegram_request',side_effect=lambda config,args:args):
+        with patch_everywhere(a,'telegram_request',side_effect=lambda config,args:args):
             texts=[a.telegram(config,row,'send')['message'],a.telegram(config,{**row,'_result_notice':True},'send')['message'],
                    a.telegram(config,{**row,'status':'instructions','preparation_status':'blocked','_result_notice':True},'send')['message']]
         for text in texts:

@@ -13,6 +13,7 @@ import test_ux as ux
 import activity
 import still_needed
 import timeutil
+from seams import patch_everywhere  # noqa: E402
 
 a = ux.a
 NOW = '2026-11-06T09:00:00+00:00'
@@ -27,7 +28,7 @@ class StillNeeded(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
-        for p in (patch.object(timeutil, 'LOCAL_TZ', TZ), patch.object(a, 'now', return_value=NOW)):
+        for p in (patch.object(timeutil, 'LOCAL_TZ', TZ), patch_everywhere(a, 'now', return_value=NOW)):
             p.start()
             self.addCleanup(p.stop)
         self.config = {'accounts': [{'id': 'work', 'service': 'gmail', 'email': 'owner@example.com', 'boundary': 'work:Example'}],
@@ -54,7 +55,7 @@ class StillNeeded(unittest.TestCase):
         return sid
 
     def step(self, at=NOW):
-        with patch.object(a, 'now', return_value=at):
+        with patch_everywhere(a, 'now', return_value=at):
             return self.app.still_needed_step(at)
 
     def shown(self, sid, at=NOW):

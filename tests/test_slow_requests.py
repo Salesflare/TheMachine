@@ -8,6 +8,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import assistant as a
+from seams import patch_everywhere  # noqa: E402
 
 
 class SlowRequests(unittest.TestCase):
@@ -57,7 +58,7 @@ class SlowRequests(unittest.TestCase):
 
     def test_a_slow_request_logs_its_path_action_and_database_time_only(self):
         port = self.serve()
-        with patch.object(a, 'SLOW_REQUEST_SECONDS', 0.1), patch.object(a.App, 'action', side_effect=self.slow_action), \
+        with patch_everywhere(a, 'SLOW_REQUEST_SECONDS', 0.1), patch.object(a.App, 'action', side_effect=self.slow_action), \
                 self.assertLogs(a.LOG, 'WARNING') as logged:
             self.assertEqual(self.post(port, 'notify_active', {'client': 'secretclient', 'note': 'call sam@client.example'}), 200)
             line = self.slow_line(logged, 'slow request')
@@ -71,7 +72,7 @@ class SlowRequests(unittest.TestCase):
 
     def test_a_query_stays_out_of_the_log(self):
         port = self.serve()
-        with patch.object(a, 'SLOW_REQUEST_SECONDS', 0.1), patch.object(a.App, 'graph_find', side_effect=self.slow_action), \
+        with patch_everywhere(a, 'SLOW_REQUEST_SECONDS', 0.1), patch.object(a.App, 'graph_find', side_effect=self.slow_action), \
                 self.assertLogs(a.LOG, 'WARNING') as logged:
             conn = http.client.HTTPConnection('127.0.0.1', port, timeout=10)
             conn.request('GET', '/api/graph?q=sam@client.example', headers={'Host': 'machine.example:8443', 'Tailscale-User-Login': 'owner@example.com'})

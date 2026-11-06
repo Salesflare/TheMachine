@@ -15,6 +15,7 @@ a = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(a)
 import meeting_notes  # noqa: E402
 import shared_graph  # noqa: E402
+from seams import patch_everywhere  # noqa: E402
 
 TURNS = '\n'.join(f'[{m // 60}:{m % 60:02d}:00] Speaker {m % 2 + 1}: we went through item {m}.' for m in range(0, 124, 3))
 
@@ -43,7 +44,7 @@ class MeetingNotes(unittest.TestCase):
         self.app.store, self.app.config = self.store, {'accounts': [WORK, HOME, {'id': 'mail', 'service': 'gmail', 'email': 'owner@example.com'}]}
         with self.store.connect() as db:
             self.ids = {r['source_id']: r['id'] for r in db.execute("SELECT id,source_id FROM events WHERE kind='calendar.event'")}
-        self.tz = patch.object(a, 'local_tz', return_value=a.ZoneInfo('Europe/Brussels'))
+        self.tz = patch_everywhere(a, 'local_tz', return_value=a.ZoneInfo('Europe/Brussels'))
         self.tz.start()
         self.addCleanup(self.tz.stop)
 

@@ -11,6 +11,7 @@ from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
+from seams import patch_everywhere  # noqa: E402
 
 spec = importlib.util.spec_from_file_location('voices_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
@@ -137,7 +138,7 @@ class Voices(unittest.TestCase):
         self.assertEqual({v['channel']: (v['text'], v['source']) for v in self.store.voices()},
                          {'All': ('Natural dates.', 'owner'), 'Email': (email_block, 'study')})
         self.assertIsNone(self.store.voice_study_due())  # read again only after a while
-        with patch.object(a, 'now', return_value=(a.dt.datetime.fromisoformat(a.now()) + a.dt.timedelta(days=31)).isoformat()):
+        with patch_everywhere(a, 'now', return_value=(a.dt.datetime.fromisoformat(a.now()) + a.dt.timedelta(days=31)).isoformat()):
             self.assertIn('run_id', self.store.voice_study_due())
 
     def test_voice_study_excludes_misattributed_style_notes(self):
@@ -211,14 +212,14 @@ class Voices(unittest.TestCase):
                        (self.sid, '2026-10-03T09:00:00+00:00', '2026-10-03T09:00:00+00:00'))
         self.store.commit_page('work', {}, [mail('out3', '2026-10-03T11:00:00+00:00', 'Hey Sam,\n\nhere you go\n\nRegards,\n\nOwner\n\n[Quoted earlier messages]\nold', **SENT),
                                             mail('out4', '2026-10-03T12:00:00+00:00', 'Other thread entirely', thread='t9', **{k: v for k, v in SENT.items()})])
-        with patch.object(a, 'now', return_value='2026-10-03T13:00:00+00:00'):
+        with patch_everywhere(a, 'now', return_value='2026-10-03T13:00:00+00:00'):
             self.assertEqual(self.store.learn_sent_elsewhere(), 1)
             self.assertEqual(self.store.learn_sent_elsewhere(), 0)
         with self.store.connect() as db:
             row = dict(db.execute("SELECT * FROM draft_edits WHERE source='elsewhere'").fetchone())
         self.assertEqual((row['kind'], row['old_revision']), ('email', 'r1'))
         self.assertEqual(row['after_body'], 'Hey Sam,\n\nhere you go\n\nRegards,\n\nOwner')
-        with patch.object(a, 'now', return_value='2026-10-03T13:00:00+00:00'):
+        with patch_everywhere(a, 'now', return_value='2026-10-03T13:00:00+00:00'):
             self.assertIn('They wrote this themselves instead: Hey Sam', self.store.style_text(self.sid))
             # A review gets it once to fold a lasting habit into the channel's voice.
             lines = self.store.edits_to_learn('run1')
@@ -233,17 +234,17 @@ class Voices(unittest.TestCase):
         with self.store.connect() as db:
             db.execute("UPDATE suggestions SET status='prepared',next_action=? WHERE id=?", (json.dumps(draft), self.chat_sid))
             db.execute("UPDATE preparations SET status='done',updated_at=? WHERE suggestion_id=?", ('2026-10-01T09:00:00+00:00', self.chat_sid))
-        with patch.object(a, 'now', return_value='2026-10-01T12:00:00+00:00'):
+        with patch_everywhere(a, 'now', return_value='2026-10-01T12:00:00+00:00'):
             self.assertEqual(self.store.learn_sent_elsewhere(), 0)  # their earlier message came before the draft
         self.store.commit_page('phone', {}, [chat('w4', '2026-10-01T10:00:00+00:00', 'ja ik kom', mine=True)])
         with self.store.connect() as db:
             db.execute("INSERT INTO action_jobs(id,suggestion_id,revision,payload,status,created_at,updated_at,approval_id,source,rfc_message_id) "
                        "VALUES('j',?,'r1','{}','sent',?,?,'x','dashboard','')", (self.chat_sid, a.now(), a.now()))
-        with patch.object(a, 'now', return_value='2026-10-01T12:00:00+00:00'):
+        with patch_everywhere(a, 'now', return_value='2026-10-01T12:00:00+00:00'):
             self.assertEqual(self.store.learn_sent_elsewhere(), 0)  # sent from the card: that message is the draft itself
         with self.store.connect() as db:
             db.execute("UPDATE action_jobs SET status='cancelled'")
-        with patch.object(a, 'now', return_value='2026-10-01T12:00:00+00:00'):
+        with patch_everywhere(a, 'now', return_value='2026-10-01T12:00:00+00:00'):
             self.assertEqual(self.store.learn_sent_elsewhere(), 1)  # not sent from the card: their own reply teaches
 
 class Learned(unittest.TestCase):
@@ -336,7 +337,7 @@ class Learned(unittest.TestCase):
         self.assertEqual(self.store.condense_text(), '')  # offered: not again until the list changes and a day passed
         self.fact('Another fact.')
         self.assertEqual(self.store.condense_text(), '')
-        with patch.object(a, 'now', return_value='2099-01-01T00:00:00+00:00'):
+        with patch_everywhere(a, 'now', return_value='2099-01-01T00:00:00+00:00'):
             self.fact('A much later fact.')
             self.assertTrue(self.store.condense_text())
         # A style note nothing was learned from is offered once.
@@ -367,7 +368,7 @@ class ReviewRegressions(unittest.TestCase):
             db.execute("UPDATE suggestions SET status='prepared',next_action=? WHERE id=?", (json.dumps(draft), self.sid))
             db.execute("INSERT INTO preparations(suggestion_id,decision_id,job_id,status,created_at,updated_at) VALUES(?,'d','j','done',?,?)",
                        (self.sid, '2026-10-03T09:00:00+00:00', '2026-10-03T09:00:00+00:00'))
-        with patch.object(a, 'now', return_value='2026-10-03T13:00:00+00:00'):
+        with patch_everywhere(a, 'now', return_value='2026-10-03T13:00:00+00:00'):
             self.assertEqual(self.store.learn_sent_elsewhere(), 0)
         with self.store.connect() as db:
             private_id=db.execute("SELECT id FROM events WHERE source_id='private-out' AND account_id='personal'").fetchone()[0]

@@ -7,6 +7,7 @@ import tempfile
 import unittest
 from unittest import mock
 from pathlib import Path
+from seams import patch_everywhere  # noqa: E402
 
 spec = importlib.util.spec_from_file_location('fleet_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
@@ -270,7 +271,7 @@ class Fleet(unittest.TestCase):
         everything = json.dumps([pushed, sent])
         for private in ('Sam', '40k', 'Kim', 'owner@acme.example', 'closeness', '"knows"', 'last_contact'):
             self.assertNotIn(private, everything)
-        with patch.object(a, 'telegram_request', lambda c, args: sent.append(args) or {'messageId': '79'}):
+        with patch_everywhere(a, 'telegram_request', lambda c, args: sent.append(args) or {'messageId': '79'}):
             app = object.__new__(a.App)
             app.store, app.config, app.fleet = self.store, {**config, 'telegram_owner': ''}, self.fleet
             self.assertIsNone(app.fleet_notify(rows[:1]))  # Telegram off: the phone only

@@ -14,6 +14,7 @@ from unittest.mock import patch
 
 import locale_prefs
 import timeutil
+from seams import patch_everywhere  # noqa: E402
 
 ROOT = Path(__file__).parent.parent
 spec = importlib.util.spec_from_file_location('moment_assistant', ROOT / 'assistant.py')
@@ -24,7 +25,7 @@ WED = dt.datetime(2026, 10, 28, 9, 0)  # Wed Oct 28, the day the to-do was writt
 
 
 def at(text):
-    return patch.object(a, 'now', lambda: text)
+    return patch_everywhere(a, 'now', lambda: text)
 
 
 class RelativeDayWords(unittest.TestCase):
