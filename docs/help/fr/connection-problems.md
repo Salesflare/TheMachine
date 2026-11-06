@@ -3,7 +3,7 @@ title: Une connexion a besoin d’aide
 area: troubleshooting
 summary: Une source indique Attend votre aide, ou ne récupère plus rien. Ce qu’il faut essayer.
 covers: 
-code: onboarding.py, dashboard.html
+code: onboarding.py, dashboard.html, assistant.py
 order: 1
 ---
 ## Vérifier son état
@@ -14,6 +14,9 @@ Ouvrez **Connexions**. Chaque source indique son état :
 - **En attente de la première synchro** : tout juste connectée. Laissez-lui quelques minutes.
 - **Lit à nouveau à** 07:00 : X et LinkedIn ne lisent qu’en journée. Rien à faire.
 - **Attend votre aide** : ouvrez **Détails**. Elle dit ce qui n’a pas marché et quoi faire.
+- **Téléphone déconnecté** : le téléphone n’atteint pas OpenClaw. Ouvrez l’app OpenClaw dessus.
+
+Une source qui échoue sans cesse et n’apporte rien de nouveau pendant des heures, plus longtemps que son calme habituel, n’apparaît pas comme connectée. Cela disparaît tout seul dès que du nouveau arrive.
 
 Le nombre sur **Connexions** ne compte que les sources qui attendent votre aide.
 

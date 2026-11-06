@@ -3,7 +3,7 @@ title: Eine Verbindung braucht Hilfe
 area: troubleshooting
 summary: Eine Quelle zeigt Braucht deine Hilfe oder bringt nichts mehr rein. Was du versuchen kannst.
 covers: 
-code: onboarding.py, dashboard.html
+code: onboarding.py, dashboard.html, assistant.py
 order: 1
 ---
 ## Status prüfen
@@ -14,6 +14,9 @@ order: 1
 - **Wartet auf die erste Synchronisierung**: gerade verbunden. Gib ihr ein paar Minuten.
 - **Liest wieder um** 07:00: X und LinkedIn lesen nur tagsüber. Nichts zu tun.
 - **Braucht deine Hilfe**: Öffne **Details**. Dort steht, was schiefging und was zu tun ist.
+- **Handy getrennt**: Das Handy erreicht OpenClaw nicht. Öffne die OpenClaw-App darauf.
+
+Eine Quelle, die immer wieder fehlschlägt und stundenlang nichts Neues bringt, länger als ihre übliche ruhige Zeit, gilt nicht als verbunden. Das verschwindet von selbst, sobald wieder Neues ankommt.
 
 Die Zahl bei **Verbindungen** zählt nur Quellen, die deine Hilfe brauchen.
 
