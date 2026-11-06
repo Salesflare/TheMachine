@@ -203,7 +203,7 @@ class Backups(unittest.TestCase):
             'day40-sibling': sqlite_file(d / 'events.sqlite.bak-old', self.at(40)),
         }
         for end in ('-wal', '-shm'):
-            Path(str(files['day10-sibling']) + end).write_bytes(b'x')
+            Path(str(files['day40-sibling']) + end).write_bytes(b'x')
         self.untouched = [
             d / 'deployment-backup' / 'port-x' / 'config.json',  # not a database copy
             d / 'backups-manual' / 'notes.sqlite',  # named like one, isn't one
@@ -223,16 +223,17 @@ class Backups(unittest.TestCase):
                 os.utime(path, (self.at(90).timestamp(),) * 2)
         return files
 
-    def test_all_of_the_last_week_then_one_per_day_and_database_up_to_30_days(self):
+    def test_all_of_the_last_week_then_one_per_day_and_database_up_to_30_days(self):  # and the newest 3 made before a change
         files = self.make()
         result = retention.rotate_backups(self.dir, NOW, live=[self.live], local_tz=ZONE)
         gone = {k for k, p in files.items() if not p.exists()}
-        self.assertEqual(gone, {'day10-old', 'day10-sibling', 'day40', 'day40-sibling'})
+        # copies made before a change: the newest 3 of each database (day10-old and day20 are the 4th and 5th)
+        self.assertEqual(gone, {'day10-old', 'day20', 'day40', 'day40-sibling'})
         self.assertEqual(result['removed'], 4)
         self.assertEqual(result['kept'], 6)
         self.assertGreater(result['freed_bytes'], 0)
-        self.assertFalse(Path(str(files['day10-sibling']) + '-wal').exists())  # its companions go with it
-        self.assertFalse(Path(str(files['day10-sibling']) + '-shm').exists())
+        self.assertFalse(Path(str(files['day40-sibling']) + '-wal').exists())  # its companions go with it
+        self.assertFalse(Path(str(files['day40-sibling']) + '-shm').exists())
         for path in self.untouched + [self.live]:
             self.assertTrue(path.exists(), path)
         self.assertTrue((self.dir / 'deployment-backup' / 'port-x').is_dir())  # still holds the config copy
@@ -259,6 +260,51 @@ class Backups(unittest.TestCase):
         self.assertIn('events.sqlite.bak-old', printed['removed_files'])
         self.assertTrue(self.live.exists())
         self.assertFalse(files['day40'].exists())
+
+    def test_copies_made_before_a_change_keep_the_newest_3_of_each_kind(self):
+        manual = self.dir / 'backups-manual'
+        events = [sqlite_file(manual / f'events-before-release-{n}.sqlite', self.at(n / 10)) for n in range(5)]
+        olds = [sqlite_file(manual / f'events.sqlite.pre-fix-2026{n}', self.at(40 + n)) for n in range(2)]
+        dbs = [sqlite_file(manual / f'assistant-before-release-{n}.sqlite', self.at(n / 10), events=False) for n in range(4)]
+        configs = []
+        for n in range(5):
+            path = manual / f'config-before-release-{n}.json'
+            path.write_text('{}')
+            os.utime(path, (self.at(n / 10 + 0.05).timestamp(),) * 2)
+            configs.append(path)
+        snapshot = manual / 'before-port-x'  # a folder made before a change: its config.json and database count
+        sqlite_file(snapshot / 'events.sqlite', self.at(50))
+        (snapshot / 'config.json').write_text('{}')
+        os.utime(snapshot / 'config.json', (self.at(50).timestamp(),) * 2)
+        Path(str(events[4]) + '-wal').write_bytes(b'x')
+        notes = [manual / 'machine-view-before-release-1.js', manual / 'install-patch-before-release-1.diff', manual / 'config.json.bak',
+                 manual / 'prepared' / 'config.json', manual / 'old' / 'config.json']  # not copies made before a change of a kind
+        for path in notes:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text('{}')
+            os.utime(path, (self.at(90).timestamp(),) * 2)
+        result = retention.rotate_backups(self.dir, NOW, live=[self.live], local_tz=ZONE)
+        self.assertEqual([p.exists() for p in events], [True, True, True, False, False])
+        self.assertFalse(Path(str(events[4]) + '-wal').exists())
+        self.assertEqual([p.exists() for p in olds + [snapshot / 'events.sqlite']], [False, False, False])
+        self.assertEqual([p.exists() for p in dbs], [True, True, True, False])
+        self.assertEqual([p.exists() for p in configs], [True, True, True, False, False])
+        self.assertFalse(snapshot.exists())  # emptied, so it goes
+        for path in notes:
+            self.assertTrue(path.exists(), path)
+        self.assertEqual(result['removed'], 2 + 2 + 1 + 1 + 2 + 1)
+        # a port script's own folder of copies, outside the data folder (backup-<when>-pre<release>/)
+        switch = self.dir / 'switch'
+        for n in range(5):
+            sqlite_file(switch / f'backup-2026110{n}-pre{n}' / 'events.sqlite', self.at(5 - n))
+            (switch / f'backup-2026110{n}-pre{n}' / 'config.json').write_text('{}')
+            (switch / f'backup-2026110{n}-pre{n}' / 'USER.md').write_text('notes')
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            self.assertEqual(retention.main(['rotate-backups', '--data-dir', str(switch)]), 0)
+        self.assertEqual(json.loads(out.getvalue())['removed'], 4)
+        self.assertEqual(sorted(p.parent.name for p in switch.glob('*/events.sqlite')), ['backup-20261102-pre2', 'backup-20261103-pre3', 'backup-20261104-pre4'])
+        self.assertEqual(len(list(switch.glob('*/USER.md'))), 5)
 
     def test_the_live_database_is_never_a_copy_even_in_a_backup_folder(self):
         live = sqlite_file(self.dir / 'backups' / 'events.sqlite', self.at(50))

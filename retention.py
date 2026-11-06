@@ -12,7 +12,8 @@ run), the service:
 - gives the freed space back: the first time with one VACUUM, which also switches the database to incremental
   vacuuming, then each night `PRAGMA incremental_vacuum` in small steps. The VACUUM only runs when no review,
   preparation or profile run is going on, and deletes go in small batches, so the service keeps working meanwhile;
-- rotates local copies of the database (see rotate_backups).
+- rotates local copies of the database and of config.json (see rotate_backups);
+- clears the work folders of Claude Code and Codex jobs nothing needs any more (machine/upkeep/agent_workspaces.py).
 
 `python3 retention.py rotate-backups --data-dir <folder> [--dry-run]` runs the rotation on its own, for scripts that
 make a copy before they change something. `python3 retention.py run --config <config.json> [--dry-run]` runs it all."""
@@ -38,6 +39,7 @@ PREPARATION_DAYS = 90
 PROFILE_EVIDENCE_DAYS = 90
 BACKUP_ALL_DAYS = 7          # every local copy from the last 7 days stays
 BACKUP_DAYS = 30             # then the newest copy of each database per day, up to 30 days; older ones go
+KEEP_BEFORE = 3              # copies made before a change (an update, a port, a fix): the newest 3 of each kind
 QUIET_HOURS = (3, 6)         # local time, from 03:00 until 06:00
 OVERDUE_HOURS = 72           # a Machine that sleeps at night runs it at the first chance after this long
 BATCH = 2000                 # rows per short write transaction
@@ -54,6 +56,10 @@ COPY_NAME = re.compile(r'\.(?:bak|backup)(?:[-._]|$)|\.before-|\.pre-[^.]*\d{8}'
 OWN_COPIES = re.compile(r'\.before-protection')
 # Folders of copies next to the database: backups/, backups-manual/, repair-backups/, deployment-backup/, …
 BACKUP_FOLDER = re.compile(r'backup', re.I)
+# A copy made before a change: `before`/`pre` as a word of its name or of a folder it is in (events-before-release-…,
+# events.sqlite.pre-fix-…, before-port-…/events.sqlite, backup-…-pre1909/config.json); not `prepared`, `preview`.
+BEFORE_CHANGE = re.compile(r'(?:^|[-._/ ])(?:before|pre)(?=[-._ ]|\d)', re.I)
+CONFIG_COPY = re.compile(r'config\b.*\.json$', re.I)  # config.json, config-before-….json
 # Folders with rules of their own: work removal deletes its copies after 7 days; agents-md-backups holds no database.
 OTHER_RULES = ('work-removal-backups', 'agents-md-backups')
 
@@ -210,19 +216,25 @@ def _which_database(path):
     return match[0].lower() if match else path.name
 
 
-def backup_copies(data_dir, live=()):
+def before_change(path, data_dir):
+    """Whether a copy was made before a change, by its name or the folders it is in (BEFORE_CHANGE)."""
+    return bool(BEFORE_CHANGE.search(Path(path).relative_to(data_dir).as_posix()))
+
+
+def backup_copies(data_dir, live=(), configs=False):
     """Every local copy of a database the rotation looks after: SQLite files named as a copy next to the database,
-    and SQLite files anywhere in a backup folder next to it. Live databases and their companions never count."""
+    and SQLite files anywhere in a backup folder next to it. Live databases and their companions never count.
+    `configs`: also config.json copies made before a change in a backup folder (they go by KEEP_BEFORE only)."""
     data_dir = Path(data_dir).expanduser()
     keep = {Path(p).expanduser().resolve() for p in live}
     found = []
     if not data_dir.is_dir():
         return found
 
-    def take(path):
+    def take(path, folder=False):
         if path.is_symlink() or not path.is_file() or path.name.endswith(COMPANIONS) or path.resolve() in keep:
             return
-        if _is_sqlite(path):
+        if _is_sqlite(path) or (configs and folder and CONFIG_COPY.match(path.name) and before_change(path, data_dir)):
             found.append(path)
 
     for item in sorted(data_dir.iterdir()):
@@ -235,32 +247,45 @@ def backup_copies(data_dir, live=()):
                 dirs[:] = sorted(d for d in dirs if not d.startswith('.') and d not in OTHER_RULES
                                  and not os.path.islink(os.path.join(folder, d)))
                 for name in sorted(files):
-                    take(Path(folder) / name)
+                    take(Path(folder) / name, folder=True)
     return found
 
 
+def _kind(path):
+    """Which kind of copy for KEEP_BEFORE: 'config', or the database it is a copy of."""
+    return 'config' if CONFIG_COPY.match(path.name) and not _is_sqlite(path) else _which_database(path)
+
+
 def rotate_backups(data_dir, now=None, live=(), dry_run=False, local_tz=None):
-    """Every copy from the last 7 days stays; from 7 to 30 days old, the newest copy of each database per day (in
-    local time); anything older than 30 days goes. A copy's age is its file's modification time. Its -wal, -shm and
-    -journal files go with it. Only SQLite files are removed: notes and settings copied beside them stay."""
+    """Copies made before a change (BEFORE_CHANGE): the newest KEEP_BEFORE of each kind (each database, config.json)
+    stay, whatever their age, and the others go. Other copies: every one from the last 7 days stays; from 7 to 30
+    days old, the newest copy of each database per day (in local time); anything older than 30 days goes. A copy's age
+    is its file's modification time. Its -wal, -shm and -journal files go with it. Only SQLite files and config.json
+    copies made before a change are removed: notes and other files copied beside them stay."""
     now = now or utc_now()
     zone = local_tz or dt.datetime.now().astimezone().tzinfo
     data_dir = Path(data_dir).expanduser()
     copies = []
-    for path in backup_copies(data_dir, live):
+    for path in backup_copies(data_dir, live, configs=True):
         try:
             stamp = dt.datetime.fromtimestamp(path.stat().st_mtime, dt.timezone.utc)
         except OSError:
             continue
         copies.append((stamp, path))
     copies.sort(reverse=True)  # newest first
-    newest_of_day, gone, kept, freed = set(), [], 0, 0
+    newest_of_day, before, gone, kept, freed = set(), {}, [], 0, 0
     for stamp, path in copies:
         age = now - stamp
-        if age <= dt.timedelta(days=BACKUP_ALL_DAYS):
+        if before_change(path, data_dir):
+            kind = _kind(path)
+            before[kind] = before.get(kind, 0) + 1
+            if before[kind] <= KEEP_BEFORE:
+                kept += 1
+                continue
+        elif age <= dt.timedelta(days=BACKUP_ALL_DAYS):
             kept += 1
             continue
-        if age <= dt.timedelta(days=BACKUP_DAYS):
+        elif age <= dt.timedelta(days=BACKUP_DAYS):
             key = (_which_database(path), stamp.astimezone(zone).date())
             if key not in newest_of_day:
                 newest_of_day.add(key)
@@ -337,6 +362,12 @@ def run(connect, database, now=None, live=(), rotate=True, busy=None, local_tz=N
     if rotate:
         rotated = rotate_backups(Path(database).expanduser().parent, now, live=[database, *live], local_tz=local_tz)
         report['backups'] = {k: v for k, v in rotated.items() if k != 'removed_files'}
+    from machine.upkeep import agent_workspaces
+    try:
+        cleared = agent_workspaces.prune(connect, Path(database).expanduser().parent / 'agent-jobs', now)
+        report['agent_workspaces'] = {'cleared': len(cleared['cleared']), 'freed_bytes': cleared['freed_bytes']}
+    except (OSError, sqlite3.Error) as error:  # tried again tomorrow
+        report['agent_workspaces'] = {'failed': type(error).__name__}
     with connect() as db:
         db.execute('INSERT OR REPLACE INTO retention_runs VALUES(?,?)', (_iso(now), json.dumps(report)))
         db.execute('DELETE FROM retention_runs WHERE at<?', (_iso(now - dt.timedelta(days=BACKUP_DAYS)),))
