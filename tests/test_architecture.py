@@ -143,8 +143,8 @@ MACHINE_LAYERS = {
     'prompts': 1,
     'sources': 1,
     'store': 2,
-    'export': 2,       # Knowledge for another AI (reads through Store, never imports it)
     'delivery': 3,
+    'export': 3,       # export and import: what an install keeps (inventory), the hold after an import
     'web': 3,
     'app': 4,
     'main': 4,
