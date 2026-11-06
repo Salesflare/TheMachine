@@ -130,7 +130,7 @@ class Moving(tm.Moving):
         return nc.public_keys(keys)
 
     def moved(self, passphrase):
-        archive, manifest = self.export(passphrase=passphrase)
+        archive, manifest = self.export(passphrase=passphrase, keys=bool(passphrase))  # keys only on request
         shutil.rmtree(self.tmp / 'elsewhere', ignore_errors=True)  # another computer: the folder outside isn't there
         config_path, space, claw = self.target()
         with patch.dict('os.environ', {moving.PASSPHRASE_ENV: passphrase} if passphrase else {}):

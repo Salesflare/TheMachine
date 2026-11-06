@@ -166,18 +166,17 @@ The same run rotates copies of the database next to it: `events.sqlite.bak-*` an
 
 ### Moving to another computer
 
-`assistant export` writes one encrypted archive with:
+`assistant export` writes one encrypted archive with everything The Machine knows and has done ([docs/moving.md](moving.md) lists it part by part):
 
-- the databases (signals, suggestions, people and organizations with your own edits, promises), copied with SQLite's backup API so the service can keep running;
-- `config.json` and connectors you built yourself;
-- your OpenClaw workspace files (`AGENTS.md`, `USER.md`, memory) and who may talk to your Telegram bot.
-
-OpenClaw's own chat history and model sign-in stay behind.
+- the databases: messages from every source, to-dos with their history and events, drafts and sends with their undo history, decisions, promises, the Graph (people, organizations, projects), memories, learned preferences, skills and agent jobs, copied with SQLite's backup API so the service can keep running;
+- the data folder's files: attachments, photos, agent job folders, `config.json` and connectors you built yourself;
+- your OpenClaw workspace (`AGENTS.md`, `USER.md`, memory notes), OpenClaw's conversations, scheduled jobs and the photos in chats, the agent jobs' Claude Code and Codex transcripts, and who may talk to your Telegram bot;
+- `manifest.json`: every part with its counts and checksums, and what could not come along and why.
 
 **Encryption:** the archive is always a `.tar.gz.enc`, encrypted as a whole (AES-256, stretched with PBKDF2 through `openssl`).
 
 - Without `--keys` it gets an export code, shown once (like `ABCD-EFGH-JKMN-PQRS-TUVW`). Save it: the import asks for it.
-- Keys and tokens only come along with `--keys`, encrypted with a passphrase you pick.
+- Keys and tokens only come along with `--keys`, encrypted with a passphrase you pick. Never by default: without them, OpenClaw's sign-in tables are emptied in the copy too.
 - No unencrypted archive is written. It is packed straight into `openssl`, and the database copies it needs on the way sit in a private folder next to it and are overwritten before they are removed.
 
 **On the other computer**, install The Machine first, then `assistant import the-machine-export-<date>.tar.gz.enc`. It asks the export code or passphrase; older `.zip` and `.tar.gz` exports import too.
@@ -185,6 +184,10 @@ OpenClaw's own chat history and model sign-in stay behind.
 - What it unpacks sits in a private folder next to the data folder and is overwritten once placed.
 - It refuses to overwrite a setup that already has sources unless you pass `--force`, which keeps a copy of the current data folder first.
 - A file you already have there (say `USER.md`) is kept, with the imported one next to it as `.from-export`.
+- It checks every file against the manifest's checksums before it replaces anything.
+- Nothing goes out by itself: sends that were waiting are held (their to-dos show Send again), agent jobs that ran stop with their work kept, and automated follow-ups are paused until you resume them.
+- Nothing old comes back as new: a source read again after the move (a new Google sign-in, WhatsApp linked again) keeps what happened before the export as history, never as a to-do.
+- With OpenClaw running, its conversations wait next to its databases; stop the OpenClaw Gateway and run `assistant import --finish`.
 - It ends with what to connect again: your model, Google (a hosted server's Google access does not move along), and without `--keys` every source's key and the Telegram bot token.
 - Your Machine's Network keys (`network-keys.json`, its identity on [The Machine Network](network.md)) move only with `--keys`. Without them the import makes a new identity, and teammates and friends see a key-change notice once.
 

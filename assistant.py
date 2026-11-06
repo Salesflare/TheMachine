@@ -4569,8 +4569,9 @@ class Store:
                     events = [e for e in events if e['source_id'] not in set(dropped)]
                     excluded_source_ids = [*excluded_source_ids, *dropped]
             self.exclude_sources(db, account, excluded_source_ids)
-            changed = set()
+            changed, line = set(), history_store.moved_line(db)  # after an import: what happened before it is never new
             for event in events:
+                settled = history_store.from_before(event.get('occurred_at'), line)
                 if event['account_id'] != account:
                     raise ValueError('Event account does not match the checkpoint boundary')
                 if os.environ.get('MESSAGE_SEAL_AUDIT') and (leaks := message_seal.plain_leaks(event, state)):
@@ -4604,8 +4605,8 @@ class Store:
                                'analyzed_version=CASE WHEN history=1 THEN version+1 ELSE analyzed_version END WHERE id=?', (*values, old['id']))
                 else:
                     db.execute('INSERT INTO events(kind,occurred_at,title,body,metadata,deleted,content_hash,ingested_at,account_id,source_id,history,analyzed_version) '
-                               'VALUES(?,?,?,?,?,?,?,?,?,?,?,?)', (*values, account, event['source_id'], int(history), int(history)))
-                if event['source_id'] in routine:  # on the Calendar, never a review or a to-do
+                               'VALUES(?,?,?,?,?,?,?,?,?,?,?,?)', (*values, account, event['source_id'], int(history or settled), int(history or settled)))
+                if event['source_id'] in routine or (old and settled):  # on the Calendar, or edited after a move: never a review or a to-do
                     db.execute('UPDATE events SET analyzed_version=version WHERE account_id=? AND source_id=?', (account, event['source_id']))
             if state is None:
                 pass  # found by a search (keep_found): no cursor moves

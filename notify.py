@@ -314,6 +314,11 @@ def drop_pushes(db):
     db.execute("DELETE FROM notify_queue WHERE channel='push'")
 
 
+def drop_all(db):
+    """After an import (machine/export/hold.py): what waited was for the old Machine. Returns how many."""
+    return db.execute('DELETE FROM notify_queue').rowcount
+
+
 def morning_line(meetings, waiting, total, show_text=True, clock=lambda iso: iso[11:16]):
     """The morning notification's body, two lines at most: how many to-dos wait and the first two of them, and when
     the first meeting starts ("3 to-dos: Reply to Sam, Pay the invoice, … · First meeting 10:00"). Without show_text

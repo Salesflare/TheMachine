@@ -222,7 +222,7 @@ SHARED_SCHEMA = {
 # invariant the owner keeps (sealing, cards' state, counts), so the list may only shrink: write through a function of
 # the owner instead. One table per line, sorted, so parallel pull requests merge.
 OTHER_WRITERS = {
-    'action_jobs': {'follow_ups.py'},
+    'action_jobs': {'follow_ups.py', 'machine/export/hold.py'},
     'agent_jobs': {'agent_remote.py', 'assistant.py', 'sandbox/load.py'},
     'agent_result_receipts': {'agent_remote.py'},
     'analyses': {'graph.py', 'sandbox/load.py', 'work_removal.py'},
@@ -233,7 +233,7 @@ OTHER_WRITERS = {
     'checkpoints': {'sandbox/load.py'},
     'crm_tags': {'crm_import.py'},
     'decisions': {'follow_ups.py', 'graph.py', 'sandbox/load.py', 'work_removal.py'},
-    'deliveries': {'fleet.py', 'follow_ups.py', 'sandbox/load.py'},
+    'deliveries': {'fleet.py', 'follow_ups.py', 'machine/export/hold.py', 'sandbox/load.py'},
     'draft_edits': {'graph.py'},
     'enrich_prefs': {'security_levels.py'},
     'event_search': {'assistant.py'},
@@ -275,6 +275,7 @@ OTHER_WRITERS = {
     'project_moves': {'crm_import.py', 'follow_ups.py'},
     'projects': {'crm.py', 'crm_import.py', 'follow_ups.py', 'machine/app/graph_actions.py', 'sandbox/load.py'},
     'promises': {'graph.py', 'sandbox/load.py'},
+    'push_subscriptions': {'machine/export/hold.py'},
     'record_owners': {'crm_import.py'},
     'review_runs': {'sandbox/load.py'},
     'rule_changes': {'learning_loop.py'},

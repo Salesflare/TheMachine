@@ -24,7 +24,43 @@ def ensure(db):
         db.execute('ALTER TABLE events ADD COLUMN history INTEGER NOT NULL DEFAULT 0')
     db.execute('CREATE TABLE IF NOT EXISTS history_backfill(account_id TEXT PRIMARY KEY,state TEXT NOT NULL,'
                'kept INTEGER NOT NULL DEFAULT 0,oldest TEXT,done_at TEXT,depth_days INTEGER,updated_at TEXT NOT NULL)')
+    ensure_moved(db)
     indexes(db)
+
+
+def ensure_moved(db):
+    """moved_in: one row per import (machine/export/hold.py), with the export's moment (`since`)."""
+    db.execute('CREATE TABLE IF NOT EXISTS moved_in(at TEXT NOT NULL,since TEXT NOT NULL,source TEXT)')
+
+
+def record_move(db, at, since, source=None):
+    """An import (machine/export/hold.py) at `at` of an export made at `since`: the history line from then on."""
+    ensure_moved(db)
+    db.execute('INSERT INTO moved_in(at,since,source) VALUES(?,?,?)', (at, since, source))
+
+
+def moved_line(db):
+    """The moment of the latest export this Machine was imported from, as a datetime, else None. What happened
+    before it and comes in only now (a source read again after the move) is history, never a signal."""
+    try:
+        row = db.execute('SELECT max(since) FROM moved_in').fetchone()
+    except Exception:  # a database from before moved_in
+        return None
+    return _moment(row[0]) if row and row[0] else None
+
+
+def _moment(text):
+    try:
+        found = dt.datetime.fromisoformat(str(text).replace('Z', '+00:00'))
+    except ValueError:
+        return None
+    return found if found.tzinfo else found.replace(tzinfo=dt.timezone.utc)
+
+
+def from_before(occurred_at, line):
+    """Whether a row happened before the move's line (moved_line); never for a row without a readable time."""
+    found = line and _moment(occurred_at)
+    return bool(found and found < line)
 
 
 def indexes(db):

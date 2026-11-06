@@ -86,6 +86,13 @@ def now():
     return dt.datetime.now(dt.timezone.utc).isoformat()
 
 
+def stop_for_move(db, reason, at):
+    """After an import (machine/export/hold.py): a local job that ran or waited on the old computer ends, its folder
+    kept, so Try again carries on. Returns how many."""
+    return db.execute("UPDATE agent_jobs SET status='failed',error=?,error_kind='moved',progress=NULL,updated_at=?,finished_at=? "
+                      f"WHERE status IN ({','.join('?' * len(ACTIVE))}) AND place='local'", (reason, at, at, *ACTIVE)).rowcount
+
+
 def settings(config):
     value = config.get('agents')
     return value if isinstance(value, dict) else ({} if value is None else None)

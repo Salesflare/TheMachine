@@ -64,6 +64,9 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
     as a calendar write with the invite, and the setting (`MEET_ACTIONS`).
   - `whatsapp_images_app.py` (`WhatsAppImagesApp`): Read photos on a WhatsApp connection and the worker that downloads
     and reads each photo.
+  - `machine/export/` (with `moving.py`): `inventory.py`, the one list of what an install keeps by part, and `walk()`,
+    one iterator over it; `home.py`, OpenClaw's conversations and what else an export takes from outside the data
+    folder; `hold.py`, what an import holds so nothing goes out by itself ([moving.md](moving.md)).
   - `machine/app/history.py` (`HistoryApp`): the history backfill's worker, when it may run and one step per source;
     `machine/store/history.py` owns `history_backfill` and the line between history and signal (`events.history`).
   - `machine/app/knowledge_export.py` (`KnowledgeExportApp`): Knowledge for another AI (Settings, General, Export) and its

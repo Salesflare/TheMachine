@@ -572,6 +572,12 @@ def revoke(db, form, basic=None):
         db.execute('DELETE FROM ai_tokens WHERE hash=?', (row['hash'],))
 
 
+def forget_all(db):
+    """After an import without keys (machine/export/hold.py): codes and tokens were for the old address. Returns how many."""
+    return sum(db.execute(f'DELETE FROM {table}').rowcount for table in ('ai_codes', 'ai_tokens')
+               if db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?", (table,)).fetchone())
+
+
 def bearer(db, header):
     """(connection, why not) for an Authorization header. why: None (usable), 'missing', 'unknown', 'off', 'expired'.
     A connection comes back also when it is off or expired, so the refusal is logged with it."""
