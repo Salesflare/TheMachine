@@ -1,22 +1,35 @@
 ---
-title: Verhuizen naar je eigen computer
+title: Verhuizen naar een andere computer
 area: getting-started
-summary: Exporteer alles van een gehoste Machine in één versleuteld bestand en importeer het op je eigen computer.
+summary: Exporteer alles wat je Machine weet in één versleuteld bestand en importeer het op een andere Machine, gehost of je eigen.
 covers: moving
-code: moving.py, cli.py
+code: moving.py, cli.py, machine/app/export.py
 site: Export everything, Delete it now, Download
 order: 5
 ---
+Alles wat je AI leert, is van jou: berichten, gesprekken, to-do's met hun geschiedenis, concepten, de Graph, herinneringen, skills en agenttaken. Je kunt het allemaal meenemen, ook als je stopt met The Machine.
+
 ## Exporteren
 
-1. Druk in **Instellingen** › **Account** op **Exporteren** naast Je gegevens en dan op **Alles exporteren**.
-2. Stel eventueel een wachtwoordzin in om je sleutels mee te nemen. Zonder wachtwoordzin krijgt de export een code en moet je die bronnen opnieuw koppelen.
-3. Druk op **Downloaden**. Het bestand komt rechtstreeks van je Machine, die het na 24 uur verwijdert, of meteen met **Nu verwijderen**.
+Op je eigen computer:
 
-Het bestand is altijd versleuteld. Google vraagt aan de andere kant altijd om opnieuw in te loggen. Je login bij je model en je chatgeschiedenis blijven achter.
+1. Druk in **Instellingen** › **Algemeen** › **Exporteren** op **Exporteren** naast Alles.
+2. Kies eventueel een wachtwoordzin. Zonder krijg je een exportcode: schrijf hem op, de import heeft hem nodig.
+3. Zet eventueel **Sleutels en tokens meenemen** aan (vraagt een wachtwoordzin), dan hoef je je bronnen niet opnieuw te koppelen.
+4. Druk op **Export starten** en dan op **Downloaden**. Het bestand wordt na 24 uur verwijderd, of meteen met **Verwijderen**.
+
+Op een gehoste Machine opent **Exporteren** naast Alles je accountpagina. Druk op **Alles exporteren** en dan op **Downloaden**. Je Machine verwijdert het bestand na 24 uur, of meteen met **Nu verwijderen**.
+
+Het bestand is altijd versleuteld. Na een export toont Instellingen wat erin zit, met aantallen, en wat er niet in zit en waarom. Aanmeldingen bij Google en Microsoft via de gehoste dienst vragen aan de andere kant altijd een nieuwe aanmelding.
 
 ## Importeren
 
-[Installeer The Machine](self-hosted-setup.md) op je eigen computer en voer dan `assistant import` uit met het bestand.
+1. Druk in **Instellingen** › **Algemeen** › **Exporteren** op **Bestand kiezen** naast Importeren en kies de export.
+2. Typ de wachtwoordzin of exportcode en druk op **Openen**. The Machine controleert eerst het hele bestand.
+3. Gehost: druk op **Nu importeren**. The Machine herstart er binnen een paar minuten mee. Op je eigen computer: druk op **Vervangen door deze export** en dan op **Vervangen**. The Machine herstart ermee binnen een minuut of twee, en Instellingen toont **Geïmporteerd**.
 
-Zeg daarna je gehoste abonnement op als je het niet meer nodig hebt: zie [Opzeggen of verwijderen](cancel-and-delete.md).
+De import vervangt wat die Machine nu heeft en bewaart daar eerst een kopie van. Niets wat klaarstond, gaat vanzelf de deur uit: verzendingen in de wachtrij wachten tot je ze opnieuw verstuurt.
+
+Gevorderd: op een computer waar The Machine zonder servicebeheer draait, toont Instellingen de commando's. Je kunt ze ook zelf uitvoeren: `assistant service stop`, `assistant import --staged --force`, `assistant service start`.
+
+Op een nieuwe computer [installeer je eerst The Machine](self-hosted-setup.md). Zeg daarna je gehoste abonnement op als je het niet meer nodig hebt: zie [Opzeggen of verwijderen](cancel-and-delete.md).

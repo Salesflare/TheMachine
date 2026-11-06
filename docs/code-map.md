@@ -67,6 +67,9 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   - `machine/export/` (with `moving.py`): `inventory.py`, the one list of what an install keeps by part, and `walk()`,
     one iterator over it; `home.py`, OpenClaw's conversations and what else an export takes from outside the data
     folder; `hold.py`, what an import holds so nothing goes out by itself ([moving.md](moving.md)).
+  - `machine/app/export.py` (`ExportApp`): Settings, Export: an export in the background, its download, an upload
+    to import and its Import now (`EXPORT_ACTIONS`; `machine/export/staged.py` marks a staged import confirmed). Another
+    way out is one entry of `EXPORT_OPTIONS` in `dashboard/settings-export.js`.
   - `machine/app/history.py` (`HistoryApp`): the history backfill's worker, when it may run and one step per source;
     `machine/store/history.py` owns `history_backfill` and the line between history and signal (`events.history`).
   - `machine/upkeep/agent_workspaces.py`: the nightly cleanup of Claude Code and Codex job folders nothing needs any

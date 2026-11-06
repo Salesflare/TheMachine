@@ -143,6 +143,8 @@ from whatsapp_images_app import WhatsAppImagesApp
 from support_app import SupportApp
 from machine.sources.rows import SKIPPED, Skips
 from machine.app.check_now import CheckNowApp
+from machine.app.export import ExportApp
+from machine.export import staged as staged_import
 from machine.app.history import HistoryApp
 from machine.store import history as history_store
 from machine.app.setup_card import (
@@ -1045,6 +1047,16 @@ MEET_ACTIONS = {
     'meet_setting',
 }
 OWNER_ACTIONS |= MEET_ACTIONS
+# Settings, Export: export everything and import an export (machine/app/export.py). The owner's own, from the dashboard only.
+EXPORT_ACTIONS = {
+    'export_delete',
+    'export_start',
+    'export_status',
+    'import_confirm',
+    'import_discard',
+    'import_stage',
+}
+OWNER_ACTIONS |= EXPORT_ACTIONS
 # What the dashboard (and any client that isn't the Gateway) may call through /api/action; everything else is 403.
 # test_dashboard_actions checks that every action dashboard.html posts is here.
 DASHBOARD_ACTIONS = frozenset({
@@ -1055,6 +1067,7 @@ DASHBOARD_ACTIONS = frozenset({
     *CONNECT_ACTIONS,
     *CONTACT_ACTIONS,
     *CRM_ACTIONS,
+    *EXPORT_ACTIONS,
     *FAMILY_ACTIONS,
     *FLEET_REQUEST_ACTIONS,
     *FRIEND_ACTIONS,
@@ -15564,6 +15577,7 @@ APP_MIXINS = (SupportApp, CalendarApp, SkillsApp, AgentsApp, GBrainApp, SharedGr
 # App's mixins in machine/app/: methods moved out of App as is (docs/code-map.md)
 APP_MIXINS += (FollowUpsApp, GraphActionsApp, KnowledgeExportApp, MeetingWritesApp, ModelPacingApp, PromiseChecksApp, SignaturesApp, SummariesApp,
                VoiceApp)
+APP_MIXINS += (ExportApp,)
 
 
 class App(*APP_MIXINS):
@@ -23820,6 +23834,8 @@ class App(*APP_MIXINS):
                     self.end_headers()
                     try:self.wfile.write(data)
                     except (BrokenPipeError, ConnectionResetError):self.close_connection = True
+                elif path.path == '/api/export-download':  # Settings, Export: the finished export (machine/app/export.py)
+                    app.export_download(self, path.query)
                 elif path.path == '/api/chat-file':  # a file the owner added to a chat message (chat_files.py)
                     try:
                         with app.store.connect() as db:
@@ -23982,6 +23998,8 @@ class App(*APP_MIXINS):
                 if not internal and not dashboard:
                     self.output(403, {'error': 'Unauthorized'})
                     return
+                if route == '/api/import-upload':  # Settings, Export: an export to import, streamed to disk (machine/app/export.py)
+                    return app.import_upload(self, bool(dashboard))
                 request = None
                 try:
                     size = int(self.headers.get('Content-Length', '0'))
@@ -24117,6 +24135,8 @@ def main():
             print(response.read().decode())
         return
     if args.command == 'serve':
+        if staged_import.apply_confirmed(args.config, config):  # Settings, Export: Replace with this export, before serving
+            config = json.loads(args.config.read_text())
         lock = Path(config['database']).parent / 'service.lock'
         service.trim_log()
         with lock.open('w') as handle:

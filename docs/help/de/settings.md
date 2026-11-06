@@ -9,7 +9,7 @@ order: 1
 Öffne **Einstellungen** über das Zahnrad oben. Die Tabs:
 
 - **Konto**: **Deine Adressen**, die als du zählen, jeweils mit Herkunft, und **Abmelden**. Auf einer gehosteten Machine auch dein Tarif, Rechnungen, Machine, Fleet, Adresse, Freunde, Anmeldung und Daten, jeweils mit Button. Siehe [Tarife und Abrechnung](plans-and-billing.md). **Abmelden** steht oben, **Tarif kündigen** und **Konto löschen** ganz unten.
-- **Allgemein**: Sprache und Region, Spracheingabe, dieses Gerät, der Browser deiner Machine, deine Fleet, Export und dein Konto.
+- **Allgemein**: Sprache und Region, Spracheingabe, dieses Gerät, der Browser deiner Machine, deine Fleet, Export und Import und dein Konto.
 - **Sicherheit**: Standard oder Vorsichtig und die Einstellungen, die sie festlegen. Siehe [Sicherheitsstufen](security-levels.md). Auch **Support-Zugriff**, solange er an ist: siehe [Support bekommen](get-support.md#support-access).
 - **Aktivität**: alles, was The Machine für dich getan hat, das Neueste zuerst. Siehe [Aktivität](activity.md).
 - **Benachrichtigungen**: was dich wo erreicht, und deine Arbeitszeiten. Siehe [Benachrichtigungen](notifications.md) und [Arbeitszeiten](work-hours.md).
@@ -28,7 +28,9 @@ Ein Tab ohne Inhalt wird ausgeblendet.
 - **Spracheingabe**: wie aus dem, was du sagst, Text wird, und die Stimme von Live sprechen. Siehe [Spracheingabe](voice-input.md) und [Live sprechen](talk-live.md).
 - **Browser der Machine öffnen ↗**: der Browser, den deine Machine für Websites wie LinkedIn nutzt.
 - **Fleet-Regeln**: siehe [Freigaberegeln](sharing-rules.md).
-- **Exportieren**: **Wissen für eine andere KI**, was deine Machine gelernt hat, in Dateien, die jede KI lesen kann. Siehe [Wissen für eine andere KI](knowledge-export.md).
+- **Exportieren**:
+  - **Alles**: alles, was deine Machine weiß, in einer verschlüsselten Datei, zum Umziehen oder Aufbewahren, und **Importieren**, um einen hereinzuholen. Siehe [Auf einen anderen Computer umziehen](moving.md).
+  - **Wissen für eine andere KI**: was deine Machine gelernt hat, in Dateien, die jede KI lesen kann. Siehe [Wissen für eine andere KI](knowledge-export.md).
 
 ## Auf dieser Machine
 
