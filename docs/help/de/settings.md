@@ -8,7 +8,7 @@ order: 1
 ---
 Öffne **Einstellungen** über das Zahnrad oben. Die Tabs:
 
-- **Konto**: **Deine Adressen**, die als du zählen, jeweils mit Herkunft, und **Abmelden**. Auf einer gehosteten Machine auch dein Tarif, Rechnungen, Machine, Fleet, Adresse, Freunde, Anmeldung und Daten, jeweils mit Button. Siehe [Tarife und Abrechnung](plans-and-billing.md).
+- **Konto**: **Deine Adressen**, die als du zählen, jeweils mit Herkunft, und **Abmelden**. Auf einer gehosteten Machine auch dein Tarif, Rechnungen, Machine, Fleet, Adresse, Freunde, Anmeldung und Daten, jeweils mit Button. Siehe [Tarife und Abrechnung](plans-and-billing.md). **Abmelden** steht oben, **Tarif kündigen** und **Konto löschen** ganz unten.
 - **Allgemein**: Sprache und Region, Spracheingabe, dieses Gerät, der Browser deiner Machine, deine Fleet und dein Konto.
 - **Sicherheit**: Standard oder Vorsichtig und die Einstellungen, die sie festlegen. Siehe [Sicherheitsstufen](security-levels.md). Auch **Support-Zugriff**, solange er an ist: siehe [Support bekommen](get-support.md#support-access).
 - **Aktivität**: alles, was The Machine für dich getan hat, das Neueste zuerst. Siehe [Aktivität](activity.md).

@@ -15,12 +15,12 @@ const dashboard=await dashboardPage();
 const nl=await readFile(new URL('../i18n/nl.json',import.meta.url),'utf8'),en=await readFile(new URL('../i18n/en.json',import.meta.url),'utf8');
 const hours={days:[0,1,2,3,4],start:'08:00',end:'18:00',morning:'09:00',digest_at:'08:30',timezone:'UTC',saveable:true};
 const languages={en:'English',nl:'Nederlands'};
-const yours=[{address:'sam@acme.example',sources:['Connected account','Slack profile'],removable:false},
- {address:'sam.lee@acme-labs.example',sources:['Gmail alias','Your calendar'],removable:true},
+const yours=[{address:'sam@acme.example',sources:['Connected','Slack'],removable:false},
+ {address:'sam.lee@acme-labs.example',sources:['Gmail alias','Calendar'],removable:true},
  {address:'samuel.lee.longer.address@subsidiary.acme-international.example',sources:['Gmail alias'],removable:true}];
 let addresses,posted=[],lang='en';
 const reset=()=>{addresses={yours:[...yours],maybe:[{address:'partnerships@acme.example',sources:['Gmail alias'],why:'Looks like a team address'},
- {address:'support@acme.example',sources:['Gmail send-as','Mail you sent'],why:'Looks like a team address'}],team:[],not_mine:[],
+ {address:'support@acme.example',sources:['Gmail alias','Sent'],why:'Looks like a team address'}],team:[],not_mine:[],
  domains:[{domain:'acme.example',added:false}]};posted=[]};
 // The service's own moves (own_addresses.view): a choice takes the address out of every list and into its own
 function choose({address,choice}){const all=[...addresses.yours,...addresses.maybe,...addresses.team,...addresses.not_mine],a=all.find(x=>x.address===address);
@@ -47,6 +47,8 @@ const shot=async(page,name)=>{if(!process.env.SHOTS)return;
  await page.evaluate(()=>{const m=document.querySelector('#addr-maybe:not([hidden])')||document.querySelector('#addr-team:not([hidden])')||document.querySelector('#settings-addresses');m.scrollIntoView({block:'start'});scrollBy(0,-90)});
  await page.screenshot({path:`${process.env.SHOTS}/${name}.png`})};
 const fits=page=>page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth&&[...document.querySelectorAll('#settings-addresses button')].filter(b=>b.offsetParent).every(b=>{const r=b.getBoundingClientRect();return r.right<=innerWidth&&r.left>=0}));
+// A row as read: the address, its line (the choice or why), where it was found as tags, and its buttons
+const desc=loc=>loc.evaluate(r=>[r.querySelector('strong').textContent,r.querySelector('.grow>small')?.textContent||'',[...r.querySelectorAll('.addr-tag')].map(x=>x.textContent).join(', '),[...r.querySelectorAll('.addr-acts button')].map(b=>b.textContent).join(', ')]);
 const pick=(page,list,address,choice)=>page.locator(`${list} [data-addr="${address}"][data-addr-choice="${choice}"]`);
 try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
@@ -59,12 +61,16 @@ try{
   await navClick(page.locator('#open-settings'));await page.locator('#settings-tabs [data-settings-tab="account"]:not([hidden])').waitFor();
   assert.equal(await page.locator('#settings-tabs [aria-selected="true"]').innerText(),'Account');
   assert.equal(await page.locator('#settings-addresses').isVisible(),true);
-  const rows=await page.locator('#addr-list>div').allInnerTexts();
-  assert.equal(rows.length,3);assert.match(rows[0],/sam@acme\.example\s+Connected account · Slack profile/);assert.match(rows[1],/Gmail alias · Your calendar\s+Remove/);
+  assert.equal(await page.locator('#addr-list>div').count(),3);
+  assert.deepEqual(await desc(page.locator('#addr-list>div').nth(0)),['sam@acme.example','','Connected, Slack','']);
+  assert.deepEqual(await desc(page.locator('#addr-list>div').nth(1)),['sam.lee@acme-labs.example','','Gmail alias, Calendar','Remove']);
+  // Remove, Change and Add look like the account's buttons (bordered), not bare text
+  assert.equal(await page.locator('#settings-addresses .addr-acts button:not(.head-link),#addr-domain-list button:not(.head-link)').count(),0);
   assert.equal(await page.locator('#addr-list>div').first().locator('button').count(),0);  // a connected account stays
   // Three choices per maybe, each with what it changes, and none picked for the owner
   const first=page.locator('#addr-maybe-list>div').first();
-  assert.match(await first.innerText(),/^partnerships@acme\.example\nLooks like a team address · Gmail alias\nMine: only I answer it\nIts mail can become your to-dos\.\nThe team’s: others answer it too\nA shared inbox, like support@\. No to-dos from it\. Its mail still fills in the Graph\.\nNot mine\nIt won’t count as yours\.$/);
+  assert.deepEqual((await desc(first)).slice(0,3),['partnerships@acme.example','Looks like a team address','Gmail alias']);
+  assert.match(await first.locator('.addr-pick').innerText(),/^Mine: only I answer it\nIts mail can become your to-dos\.\nThe team’s: others answer it too\nA shared inbox, like support@\. No to-dos from it\. Its mail still fills in the Graph\.\nNot mine\nIt won’t count as yours\.$/);
   assert.equal(await first.getByRole('radiogroup',{name:'Whose is partnerships@acme.example?'}).count(),1);
   assert.deepEqual(await page.locator('#addr-maybe-list [role="radio"]').evaluateAll(b=>b.map(x=>x.getAttribute('aria-checked'))),Array(6).fill('false'));
   assert.equal(await page.locator('#addr-team').isHidden(),true);
@@ -74,12 +80,12 @@ try{
   await pick(page,'#addr-maybe-list','partnerships@acme.example','confirm').click();
   await page.locator('#addr-list>div',{hasText:'partnerships@acme.example'}).waitFor();
   assert.deepEqual(posted.at(-1),['own_address',{address:'partnerships@acme.example',choice:'confirm'}]);
-  assert.match(await page.locator('#addr-list>div',{hasText:'partnerships@acme.example'}).innerText(),/^partnerships@acme\.example\nMine · Gmail alias\nChange$/);
+  assert.deepEqual(await desc(page.locator('#addr-list>div',{hasText:'partnerships@acme.example'})),['partnerships@acme.example','Mine','Gmail alias','Change']);
   await pick(page,'#addr-maybe-list','support@acme.example','team').click();
   await page.locator('#addr-team-list>div',{hasText:'support@acme.example'}).waitFor();
   assert.equal(await page.locator('#addr-maybe').isHidden(),true);
   assert.equal(await page.locator('#notice').innerText(),'Marked as the team’s. No to-dos from it.');
-  assert.match(await page.locator('#addr-team-list>div').innerText(),/^support@acme\.example\nThe team’s · No to-dos from it · Gmail send-as · Mail you sent\nChange$/);
+  assert.deepEqual(await desc(page.locator('#addr-team-list>div')),['support@acme.example','The team’s · No to-dos from it','Gmail alias, Sent','Change']);
   assert.equal(await fits(page),true);
   await shot(page,`after-chosen-${width}x${height}`);
   // Change on the row: the three choices again, the current one checked; picking the same one just closes it
@@ -117,7 +123,8 @@ try{
   await navClick(page.locator('#open-settings'));await page.locator('#addr-maybe-list>div').first().waitFor();
   await page.waitForFunction(()=>/Van mij/.test(document.querySelector('#addr-maybe-list').innerText));
   const text=await page.locator('#addr-maybe-list>div').first().innerText();
-  assert.match(text,/Lijkt een teamadres · Gmail-alias\nVan mij: alleen ik beantwoord het\nDe mail ervan kan je to-do's worden\.\nVan het team: anderen beantwoorden het ook\nEen gedeelde inbox, zoals support@\. Geen to-do's ervan\. De mail vult de Graph nog steeds aan\.\nNiet van mij\nHet telt niet als van jou\./);
+  assert.deepEqual((await desc(page.locator('#addr-maybe-list>div').first())).slice(1,3),['Lijkt een teamadres','Gmail-alias']);
+  assert.match(text,/Van mij: alleen ik beantwoord het\nDe mail ervan kan je to-do's worden\.\nVan het team: anderen beantwoorden het ook\nEen gedeelde inbox, zoals support@\. Geen to-do's ervan\. De mail vult de Graph nog steeds aan\.\nNiet van mij\nHet telt niet als van jou\./);
   assert.equal(await fits(page),true);
   await shot(page,`after-nl-${width}x${height}`);
   await context.close();

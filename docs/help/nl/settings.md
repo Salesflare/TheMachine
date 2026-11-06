@@ -8,7 +8,7 @@ order: 1
 ---
 Open **Instellingen** met het tandwiel bovenaan. De tabbladen:
 
-- **Account**: **Je adressen**, de adressen die als jou tellen, met waar elk vandaan komt, en **Uitloggen**. Op een gehoste Machine ook je abonnement, facturen, Machine, Fleet, adres, vrienden, inloggen en gegevens, elk met een knop. Zie [Abonnementen en facturatie](plans-and-billing.md).
+- **Account**: **Je adressen**, de adressen die als jou tellen, met waar elk vandaan komt, en **Uitloggen**. Op een gehoste Machine ook je abonnement, facturen, Machine, Fleet, adres, vrienden, inloggen en gegevens, elk met een knop. Zie [Abonnementen en facturatie](plans-and-billing.md). **Uitloggen** staat bovenaan, **Abonnement opzeggen** en **Account verwijderen** helemaal onderaan.
 - **Algemeen**: taal en regio, spraakinvoer, dit apparaat, de browser van je Machine, je Fleet en je account.
 - **Beveiliging**: Standaard of Voorzichtig, en de instellingen die ze bepalen. Zie [Beveiligingsniveaus](security-levels.md). Ook **Toegang voor support**, zolang het aanstaat: zie [Hulp krijgen](get-support.md#support-access).
 - **Activiteit**: alles wat The Machine voor je deed, nieuwste eerst. Zie [Activiteit](activity.md).

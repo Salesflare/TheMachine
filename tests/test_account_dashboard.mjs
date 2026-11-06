@@ -69,24 +69,27 @@ try{
   assert.ok(!/—/.test(list));
   // Every part of the account is here, each change a POST to the hop in this same tab (a focused step that comes back);
   // no Open account: there is no account dashboard to open. Sign out stays
-  const forms=await page.locator('#settings-acct form[action="/_machine/account-hop"]').evaluateAll(fs=>fs.map(f=>[f.method,f.target,f.querySelector('[name=to]').value]));
+  const forms=await page.locator(':is(#settings-acct,#settings-acct-end) form[action="/_machine/account-hop"]').evaluateAll(fs=>fs.map(f=>[f.method,f.target,f.querySelector('[name=to]').value]));
   assert.deepEqual(forms.map(f=>f[2]).sort(),['cancel','connections','data','delete','fleet','friends','overview','plan','portal','security','username']);
   assert.ok(forms.every(f=>f[0]==='post'&&f[1]===''));
   assert.equal(await page.locator('#settings-acct [data-acct-go="account"]').count(),0);
   assert.equal(await page.locator('#settings-acct form[action="/_machine/logout"]').count(),1);
-  // Cancel and Delete are quiet text links under the buttons: easy to find, not equal-weight buttons
-  assert.equal(await page.locator('.acct-cancel .acct-quiet[data-acct-go="cancel"]').count(),1);
-  assert.equal(await page.locator('.acct-cancel .acct-quiet[data-acct-go="delete"]').count(),1);
+  // Sign out at the account's head; Cancel and Delete are quiet text links at the very end of the tab, after Your
+  // addresses: easy to find, not equal-weight buttons. Reporting a problem is Help's, not here
+  assert.equal(await page.locator('#acct-out form[action="/_machine/logout"]').count(),1);
+  assert.equal(await page.locator('#acct-danger .acct-quiet[data-acct-go="cancel"]').count(),1);
+  assert.equal(await page.locator('#acct-danger .acct-quiet[data-acct-go="delete"]').count(),1);
+  assert.equal(await page.locator('#settings-acct-end').isVisible(),true);
+  assert.equal(await page.evaluate(()=>[...document.querySelectorAll('#settings>:not([hidden])')].filter(x=>x.dataset.stab==='account').at(-1).id),'settings-acct-end');
+  assert.equal(await page.locator('#settings [data-acct-report]').count(),0);
   // No Security tab here: this Machine sends no security levels, and support access shows only while it's on
   assert.deepEqual((await page.locator('#settings-tabs>:not([hidden])').allInnerTexts()),['Account','General','Activity','Notifications','Writing','Skills','AIs','Model']);
   assert.equal(await page.locator('#settings-account-block').isHidden(),true);  // General no longer says "on your account page"
   const fits=await page.evaluate(()=>{const r=document.querySelector('#acct-list').getBoundingClientRect();
-   return document.documentElement.scrollWidth<=innerWidth&&[...document.querySelectorAll('#settings-acct button,#settings-acct a')].every(b=>{const x=b.getBoundingClientRect();return x.right<=innerWidth&&x.left>=0})});
+   return document.documentElement.scrollWidth<=innerWidth&&[...document.querySelectorAll(':is(#settings-acct,#settings-acct-end) :is(button,a)')].every(b=>{const x=b.getBoundingClientRect();return x.right<=innerWidth&&x.left>=0})});
   assert.equal(fits,true);
   if(process.env.SHOTS)await page.screenshot({path:`${process.env.SHOTS}/account-hosted-${width}-${scheme}.png`,fullPage:true});
   if(width===390&&scheme==='light'){
-   // Report a problem: the dashboard's own bug report, not a page elsewhere
-   await page.locator('#acct-foot [data-acct-report]').click();await page.locator('#bug-what').waitFor();await page.keyboard.press('Escape');
    await Promise.all([page.waitForURL(base+'/_machine/account-hop'),page.locator('#acct-list [data-acct-go="portal"]').click()]);
    assert.equal(hops.at(-1)[0],'POST');assert.equal(hops.at(-1)[1],'to=portal');
    await page.goto(base);await navClick(page.locator('#open-settings'));await page.locator('#acct-list [data-acct-go="plan"]').waitFor();
@@ -100,7 +103,7 @@ try{
    // Self-hosted and paired: this Machine asks, links instead of hops, no Sign out
    mode='paired';fail=false;await page.goto('about:blank');await page.goto(base+'/#settings/account');await page.locator('#acct-list',{hasText:'Family'}).waitFor();
    assert.equal(asked.at(-1),'machine');
-   assert.equal(await page.locator('#settings-acct form[action="/_machine/account-hop"]').count(),0);
+   assert.equal(await page.locator(':is(#settings-acct,#settings-acct-end) form[action="/_machine/account-hop"]').count(),0);
    assert.deepEqual(await page.locator('#settings-acct a[data-acct-go]').evaluateAll(as=>as.map(a=>[a.getAttribute('href'),a.target])),
     [['https://app.themachine.computer/account?tab=fleet','_blank'],['https://app.themachine.computer/account','_blank']]);
    assert.equal(await page.locator('#settings-acct form[action="/_machine/logout"]').count(),0);

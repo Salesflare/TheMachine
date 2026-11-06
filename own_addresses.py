@@ -41,9 +41,10 @@ ROLE = re.compile(r'^(?:info|support|hello|hi|team|sales|billing|admin|office|co
                   r'community|media|pr|noreply|no-reply|mail|post|shop|store|webmaster|postmaster)(?:[._+-][a-z0-9]+)?@')
 MAIL_SERVICES = ('gmail', 'outlook')
 CALENDAR_SERVICES = ('calendar', 'outlook_calendar')
-LABELS = {'config': 'Settings file', 'account': 'Connected account', 'alias': 'Alias', 'calendar': 'Your calendar',
-          'slack': 'Slack profile', 'intercom': 'Intercom profile', 'received': 'Mail to you', 'named': 'Has your name',
-          'sent': 'Mail you sent', 'confirmed': 'You confirmed it'}
+# Where an address was found, as the short tags Settings shows on its row (one or two words each)
+LABELS = {'config': 'Settings file', 'account': 'Connected', 'alias': 'Alias', 'calendar': 'Calendar',
+          'slack': 'Slack', 'intercom': 'Intercom', 'received': 'Inbox', 'named': 'Your name',
+          'sent': 'Sent', 'confirmed': 'You confirmed it'}
 CHOICES = ('confirm', 'team', 'remove')  # Mine, The team's, Not mine
 STRONG = {'config', 'account', 'alias', 'calendar', 'slack', 'intercom', 'received'}
 FETCH_EVERY_DAYS = 1
@@ -432,7 +433,8 @@ def view(db, config):
     outlook = any(s == 'outlook' for s in mailbox.values())
     gmail = any(s == 'gmail' for s in mailbox.values())
     alias = 'Outlook alias' if outlook and not gmail else 'Gmail alias' if gmail and not outlook else LABELS['alias']
-    label = lambda s: alias if s == 'alias' else {'sendas': 'Gmail send-as'}.get(s, LABELS.get(s, s))
+    # a Gmail send-as address not set as an alias reads the same to the owner: Gmail alias (its row says why it's a maybe)
+    label = lambda s: alias if s == 'alias' else {'sendas': 'Gmail alias'}.get(s, LABELS.get(s, s))
     mine, maybe, teams, others = [], [], [], []
     for r in db.execute('SELECT address,sources,state,reason FROM own_addresses ORDER BY address'):
         address, sources, state, reason = r[0], json.loads(r[1]), r[2], r[3]
@@ -449,7 +451,7 @@ def view(db, config):
                          **({'choice': 'confirm'} if state == 'maybe' else {})})
         elif state == 'maybe':
             maybe.append({'address': address, 'sources': [label(s) for s in sources if s != said], 'why': reason})
-    order = lambda x: (not any(s in ('Connected account', 'Settings file') for s in x['sources']), x['address'])
+    order = lambda x: (not any(s in (LABELS['account'], LABELS['config']) for s in x['sources']), x['address'])
     added = domains(db)
     found = [{'domain': d, 'added': False} for d in sorted(detected_domains(db, config) - added)]
     return {'yours': sorted(mine, key=order), 'maybe': maybe, 'team': teams, 'not_mine': others,

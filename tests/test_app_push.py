@@ -572,8 +572,10 @@ class InApp(unittest.TestCase):
                 self.assertEqual('data-buy' in one, key in ('plan', 'portal', 'cancel', 'fleet'), (key, one))
         self.assertIn('<div data-buy><span class="grow">Next invoice', source)
         self.assertIn('<small data-buy>${esc(p.price)}</small>', source)
-        # The quiet footer also holds Delete account and Report a problem, which the app keeps: each buying link is marked
-        self.assertIn('<div class="acct-cancel">', source)
+        # The quiet end of the tab also holds Delete account, which the app keeps: each buying link is marked, and the
+        # line goes when nothing in it is left to show
+        self.assertIn("end.innerHTML=quiet.join('')", source)
+        self.assertIn('.in-app .acct-danger:not(:has(>:not([data-buy]))){display:none}', dashboard_parts.assemble(Path(a.ROOT)))
         self.assertIn("const ACCT_BUY=new Set(['plan','portal','cancel','fleet','billing','withdraw']);", source)
         self.assertIn("b.toggleAttribute('data-buy',!paired)", source)  # Join the Network (a sign-up) when not paired
 

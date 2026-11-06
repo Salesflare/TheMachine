@@ -1333,6 +1333,7 @@
  "Found": "Gefunden",
  "Found for {}": "Gefunden für {}",
  "Found in your Outlook sent mail": "In deinen gesendeten Outlook-Mails gefunden",
+ "Found in your mail. Whose is each one?": "In deinen Mails gefunden. Wem gehört welche?",
  "Found {} at {}": "{} gefunden in {}",
  "Found {} to-dos. Reading on.": {
   "one": "{} Aufgabe gefunden. Ich lese weiter.",
@@ -1670,6 +1671,7 @@
  "In your projects": "In deinen Projekten",
  "In your work accounts: {}": "In deinen Arbeitskonten: {}",
  "In: {}": "Dabei: {}",
+ "Inbox": "Posteingang",
  "Inbox zero. I peaked.": "Inbox Zero. Mein Höhepunkt.",
  "Include Work people and companies": "Arbeit-Personen und -Firmen einbeziehen",
  "Include a support report": "Supportbericht mitschicken",
@@ -5372,6 +5374,7 @@
  "Your model is checking the columns…": "Dein Modell prüft die Spalten…",
  "Your morning": "Dein Morgen",
  "Your morning: {}": "Dein Morgen: {}",
+ "Your name": "Dein Name",
  "Your new key": "Dein neuer Schlüssel",
  "Your note": "Deine Notiz",
  "Your note sends when you’re back online.": "Deine Notiz geht raus, sobald du wieder online bist.",

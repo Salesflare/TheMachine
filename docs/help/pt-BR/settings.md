@@ -8,7 +8,7 @@ order: 1
 ---
 Abra **Configurações** pela engrenagem no topo. As abas:
 
-- **Conta**: **Seus endereços**, os que contam como você, com a origem de cada um, e **Sair**. Em uma Machine hospedada, também seu plano, faturas, Machine, Fleet, endereço, amigos, login e dados, cada um com seu botão. Veja [Planos e cobrança](plans-and-billing.md).
+- **Conta**: **Seus endereços**, os que contam como você, com a origem de cada um, e **Sair**. Em uma Machine hospedada, também seu plano, faturas, Machine, Fleet, endereço, amigos, login e dados, cada um com seu botão. Veja [Planos e cobrança](plans-and-billing.md). **Sair** fica no topo, **Cancelar plano** e **Excluir conta** bem no final.
 - **Geral**: idioma e região, entrada por voz, este dispositivo, o navegador da sua Machine, seu Fleet e sua conta.
 - **Segurança**: Padrão ou Cuidadoso, e as configurações que cada um define. Veja [Níveis de segurança](security-levels.md). Também **Acesso de suporte**, enquanto está ativo: veja [Obter suporte](get-support.md#support-access).
 - **Atividade**: tudo o que The Machine fez por você, o mais recente primeiro. Veja [Atividade](activity.md).
