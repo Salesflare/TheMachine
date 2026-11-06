@@ -64,6 +64,8 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
     as a calendar write with the invite, and the setting (`MEET_ACTIONS`).
   - `whatsapp_images_app.py` (`WhatsAppImagesApp`): Read photos on a WhatsApp connection and the worker that downloads
     and reads each photo.
+  - `machine/app/history.py` (`HistoryApp`): the history backfill's worker, when it may run and one step per source;
+    `machine/store/history.py` owns `history_backfill` and the line between history and signal (`events.history`).
 - **A question about a person, organization or project** (who they are, their latest messages, what is open with them,
   when the owner last talked to them), from any surface: through `knowledge.py` with the caller's `Caller`
   (`knowledge.owner()`, or `knowledge.connection(config, area)` for a connected AI), never a query of its own. Add a

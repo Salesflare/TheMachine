@@ -142,6 +142,8 @@ from skills_app import SkillsApp
 from whatsapp_images_app import WhatsAppImagesApp
 from support_app import SupportApp
 from machine.app.check_now import CheckNowApp
+from machine.app.history import HistoryApp
+from machine.store import history as history_store
 from machine.app.setup_card import (
     PHONE_APP_STORE,
     SetupCardApp,
@@ -1421,8 +1423,9 @@ def review_view(row, preview=REVIEW_PREVIEW_CHARS, offset=0, earlier=None, brief
         view['all_day_on'] = all_day_span(metadata)[0]
     if metadata_clipped:
         view['metadata_clipped'] = True
-    if row.get('deleted'):
-        view['deleted'] = True
+    for flag in ('deleted', 'history'):  # history: older than the signals, to search and read, never to act on
+        if row.get(flag):
+            view[flag] = True
     if row.get('deferrals'):
         view['deferred_before'] = row['deferrals']
     if earlier:
@@ -4110,6 +4113,7 @@ class Store:
             # Backlog counts/selection filter on a column comparison that the plain
             # events_pending index cannot serve; this keeps them off a full scan.
             db.execute('CREATE INDEX IF NOT EXISTS events_pending_account ON events(account_id,ingested_at,id) WHERE analyzed_version<version')
+            history_store.ensure(db)  # after the monotonic-ID rebuild, as its indexes are
             db.execute('CREATE INDEX IF NOT EXISTS analyses_owner ON analyses(owner_run,owner_session)')
             for schema in embeddings.SCHEMAS:  # after the monotonic-ID migration, which rebuilds events
                 db.execute(schema)
@@ -4746,8 +4750,8 @@ class Store:
             db.execute('INSERT OR IGNORE INTO milestones(name,at) VALUES(?,?)', ('tip:' + tip, now()))
         return {'first_tips': self.first_tips()}
 
-    def commit_page(self, account, state, events, record_sync=True, excluded_source_ids=(), android_inbox_ids=()):
-        # The page AND its next cursor commit together. A killed fetch replays the page.
+    def commit_page(self, account, state, events, record_sync=True, excluded_source_ids=(), android_inbox_ids=(), history=False):
+        # The page AND its next cursor commit together. A killed fetch replays the page. history: new rows only (machine/store/history.py).
         rules = self.exclusions.get(account)
         routine = set()
         if rules:
@@ -4781,7 +4785,9 @@ class Store:
                 digest = hashlib.sha256(encoded(digest_event).encode()).hexdigest()
                 old = db.execute('SELECT id,content_hash' + (',title' if slack else '') + ' FROM events WHERE account_id=? AND source_id=?',
                                  (account, event['source_id'])).fetchone()
-                if old and old['content_hash'] == digest:
+                if old and (history or old['content_hash'] == digest):
+                    if history:
+                        continue
                     if slack:
                         if old['title'] != event['title']:
                             db.execute('UPDATE events SET title=? WHERE id=?', ((self.sealer.seal if self.protected else str)(event['title']), old['id']))
@@ -4794,11 +4800,11 @@ class Store:
                 values = (event['kind'], event['occurred_at'], seal(event['title']), seal(event['body']),
                           metadata, int(event['deleted']), digest, now())
                 if old:
-                    db.execute('UPDATE events SET kind=?,occurred_at=?,title=?,body=?,metadata=?,deleted=?,content_hash=?,ingested_at=?,version=version+1,deferrals=0 WHERE id=?',
-                               (*values, old['id']))
+                    db.execute('UPDATE events SET kind=?,occurred_at=?,title=?,body=?,metadata=?,deleted=?,content_hash=?,ingested_at=?,version=version+1,deferrals=0,'
+                               'analyzed_version=CASE WHEN history=1 THEN version+1 ELSE analyzed_version END WHERE id=?', (*values, old['id']))
                 else:
-                    db.execute('INSERT INTO events(kind,occurred_at,title,body,metadata,deleted,content_hash,ingested_at,account_id,source_id) VALUES(?,?,?,?,?,?,?,?,?,?)',
-                               (*values, account, event['source_id']))
+                    db.execute('INSERT INTO events(kind,occurred_at,title,body,metadata,deleted,content_hash,ingested_at,account_id,source_id,history,analyzed_version) '
+                               'VALUES(?,?,?,?,?,?,?,?,?,?,?,?)', (*values, account, event['source_id'], int(history), int(history)))
                 if event['source_id'] in routine:  # on the Calendar, never a review or a to-do
                     db.execute('UPDATE events SET analyzed_version=version WHERE account_id=? AND source_id=?', (account, event['source_id']))
             if state is None:
@@ -4815,6 +4821,7 @@ class Store:
             db.executemany('DELETE FROM android_inbox WHERE id=?', [(value,) for value in android_inbox_ids])
             db.executemany('INSERT OR IGNORE INTO android_receipts VALUES(?,?,?)',[(value,account,now()) for value in android_inbox_ids])
             db.execute('DELETE FROM android_receipts WHERE processed_at<?',((dt.datetime.fromisoformat(now())-dt.timedelta(days=30)).isoformat(),))
+        return len(changed)
 
     def keep_found(self, account, events):
         """Messages a mailbox search found (App.mailbox_lookup), kept as collected signals so a to-do can hold them: the
@@ -5510,7 +5517,7 @@ class Store:
     def owner_wrote_in(db, account_id, metadata):
         """The owner sent mail in this message's thread. Only asked for replies: a newsletter starts its own thread."""
         return bool(metadata.get('in-reply-to') and metadata.get('thread_id') and db.execute(
-            "SELECT 1 FROM events WHERE account_id=? AND kind='gmail.message' AND deleted=0 "
+            "SELECT 1 FROM events WHERE account_id=? AND kind='gmail.message' AND deleted=0 AND history=0 "
             "AND json_extract(metadata,'$.thread_id')=? AND instr(metadata,'\"SENT\"')>0 LIMIT 1",
             (account_id, metadata['thread_id'])).fetchone())
 
@@ -6861,7 +6868,7 @@ class Store:
             later = ("SELECT 1 FROM events r WHERE r.account_id=e.account_id AND r.kind='gmail.message' AND r.deleted=0 AND r.occurred_at>e.occurred_at "
                      "AND json_extract(r.metadata,'$.thread_id')=json_extract(e.metadata,'$.thread_id')")
             rows = db.execute("SELECT e.id,e.account_id,e.occurred_at,e.title,e.body,e.metadata, instr(e.metadata,'\"SENT\"')>0 mine FROM events e "
-                              "WHERE e.kind='gmail.message' AND e.deleted=0 AND e.occurred_at>? AND e.occurred_at<? "
+                              "WHERE e.kind='gmail.message' AND e.deleted=0 AND e.history=0 AND e.occurred_at>? AND e.occurred_at<? "
                               f"AND ((instr(e.metadata,'\"SENT\"')>0 AND e.occurred_at<? AND NOT EXISTS ({later})) "
                               f"OR (instr(e.metadata,'\"SENT\"')=0 AND e.occurred_at>? AND NOT EXISTS ({later} AND instr(r.metadata,'\"SENT\"')>0))) "
                               "ORDER BY e.occurred_at", (ago(21), ago(2), ago(4), ago(14))).fetchall()
@@ -6969,7 +6976,7 @@ class Store:
         since = (dt.datetime.fromisoformat(now()) - dt.timedelta(days=days)).isoformat()
         written, counts = set(), collections.Counter()
         with self.connect() as db:
-            for (metadata,) in db.execute("SELECT metadata FROM events WHERE kind='gmail.message' AND deleted=0 AND occurred_at>=?", (since,)):
+            for (metadata,) in db.execute("SELECT metadata FROM events WHERE kind='gmail.message' AND deleted=0 AND history=0 AND occurred_at>=?", (since,)):
                 m = json.loads(metadata)
                 if 'SENT' in m.get('labels', []):
                     written |= {a.lower() for _, a in email.utils.getaddresses([str(m.get(f) or '') for f in ('to', 'cc')]) if a}
@@ -9527,7 +9534,7 @@ class Store:
             for account in accounts:
                 row = db.execute('SELECT * FROM checkpoints WHERE account_id=?', (account['id'],)).fetchone()
                 cutoff = (dt.datetime.fromisoformat(now()) - dt.timedelta(hours=24)).isoformat()
-                counts = db.execute('SELECT count(*) total,sum(analyzed_version<version) pending,sum(ingested_at>=?) signals_24h FROM events WHERE account_id=?',
+                counts = db.execute('SELECT count(*) total,sum(analyzed_version<version) pending,sum(ingested_at>=?) signals_24h FROM events WHERE account_id=? AND history=0',
                                     (cutoff, account['id'])).fetchone()
                 state = json.loads(row['state']) if row else {}
                 channel_health = {}
@@ -9565,7 +9572,7 @@ class Store:
                                              'read_window': read_window(account),
                                              'display_name': account.get('display_name') or account.get('email') or UNNAMED.get(account.get('service')) or account['id'],
                                              **(dict(row) if row else {}), **dict(counts), **channel_health,
-                                             **(silent_failure(db, account, row) or {})})
+                                             **(silent_failure(db, account, row) or {}), 'backfill': history_store.progress(db, [account['id']]).get(account['id'])})
             # Newest first: the dashboard shows the top few and says when each happened.
             result['deliveries'] = [dict(r) for r in db.execute('SELECT * FROM deliveries ORDER BY updated_at DESC,rowid DESC')]
             self.card_views(db, result['suggestions'], jobs=True)
@@ -9577,7 +9584,7 @@ class Store:
             # Follow-ups going out spaced, per board: "Sending 3 of 8…", then "Sent 8" (follow_ups.progress)
             result['follow_up_progress'] = follow_ups.progress(db, now())
             result['recurring_offer'] = recurring.offer_view(db)  # "Make this a recurring to-do?", once (recurring.py)
-            counts = db.execute('SELECT count(*) total,sum(analyzed_version<version) pending,sum(analyzed_version=0) first_review,coalesce(sum(analyzed_version<version AND deferrals>=?),0) set_aside FROM events', (SET_ASIDE_AFTER,)).fetchone()
+            counts = db.execute('SELECT count(*) total,sum(analyzed_version<version) pending,sum(analyzed_version=0) first_review,coalesce(sum(analyzed_version<version AND deferrals>=?),0) set_aside FROM events WHERE history=0', (SET_ASIDE_AFTER,)).fetchone()
             result['review_health'] = {**dict(counts), 'last_completed': db.execute("SELECT max(finished_at) FROM analyses WHERE status='complete'").fetchone()[0]}
             result['review_runs'] = []
             for row in db.execute('SELECT * FROM review_runs ORDER BY started_at DESC LIMIT 20'):
@@ -14473,7 +14480,7 @@ def setup_hints(store, config, now=None):
             if service in services:
                 continue
             like = ' OR '.join("lower(json_extract(metadata,'$.from')) LIKE ?" for _ in domains)
-            found = db.execute(f"SELECT count(*) FROM (SELECT 1 FROM events WHERE kind IN ('gmail.message','ms_graph.message') "
+            found = db.execute(f"SELECT count(*) FROM (SELECT 1 FROM events WHERE kind IN ('gmail.message','ms_graph.message') AND history=0 "
                                f"AND occurred_at>=? AND ({like}) LIMIT {HINT_MAILS})",
                                (since, *[f'%@%{d}%' for d in domains])).fetchone()[0]
             if found >= HINT_MAILS:
@@ -15135,7 +15142,7 @@ def recap_noise(db, since):
     for (ids,) in db.execute('SELECT event_ids FROM suggestions'):
         used |= set(json.loads(ids))
     noise, circle = {}, collections.defaultdict(lambda: {'mine': 0, 'people': set()})
-    for i, account, kind, m in db.execute('SELECT id,account_id,kind,metadata FROM events WHERE ingested_at>=?', (since,)):
+    for i, account, kind, m in db.execute('SELECT id,account_id,kind,metadata FROM events WHERE ingested_at>=? AND history=0', (since,)):
         m = json.loads(m)
         if (kind == 'whatsapp.message' and str(m.get('chat_id', '')).endswith('@g.us')) or (kind == 'telegram.message' and m.get('chat_kind') == 'group'):
             chat = circle[(account, m['chat_id'])]  # who takes part, from every message in it (cards or not)
@@ -15982,13 +15989,14 @@ def forget_in_notes(root, needles):
 
 # App's domain mixins (<domain>_app.py): each holds a domain's App methods and the actions it handles (its ACTIONS).
 APP_MIXINS = (SupportApp, CalendarApp, SkillsApp, AgentsApp, GBrainApp, SharedGraphApp, RecurringApp, CorrectionsApp, AiApp, MeetApp, MissedWorkApp,
-              WhatsAppImagesApp, CheckNowApp, SetupCardApp)
+              WhatsAppImagesApp, CheckNowApp, SetupCardApp, HistoryApp)
 
 
 class App(*APP_MIXINS):
     # action name -> method, from the mixins' ACTIONS; App.action calls it as method(name, args, owner_dashboard). Who
     # may call an action is still the reviewed sets above (OWNER_ACTIONS, DASHBOARD_ACTIONS, SUPPORT_ACTIONS, ...).
     ACTION_HANDLERS = {name: method for mixin in APP_MIXINS for name, method in mixin.ACTIONS.items()}
+    HISTORY_SOURCES = {'mail': (Gmail, message_event), 'calendar': (Calendar, calendar_event, calendar_title_excluded), 'whatsapp': (WhatsApp, whatsapp_event)}
 
     @functools.cached_property
     def task_pages(self):
@@ -22061,7 +22069,7 @@ class App(*APP_MIXINS):
                     and not db.execute("SELECT 1 FROM milestones WHERE name='first_dig_done'").fetchone()) or (
                     (self.config.get('review_worker') or {}).get('first_look') is not False
                     and not db.execute('SELECT 1 FROM review_runs LIMIT 1').fetchone()
-                    and db.execute('SELECT 1 FROM events WHERE ingested_at>? LIMIT 1', ((current - dt.timedelta(hours=1)).isoformat(),)).fetchone())
+                    and db.execute('SELECT 1 FROM events WHERE ingested_at>? AND history=0 LIMIT 1', ((current - dt.timedelta(hours=1)).isoformat(),)).fetchone())
         except (sqlite3.Error, ValueError):
             return REVIEW_TICK_SECONDS
         return FIRST_LOOK_TICK_SECONDS if live else REVIEW_TICK_SECONDS
@@ -22811,7 +22819,7 @@ class App(*APP_MIXINS):
                 + tuple(db.execute("SELECT count(*),max(fetched_at) FROM person_profiles WHERE status!='error'").fetchone()) \
                 + tuple(db.execute('SELECT count(*),max(saved_at) FROM person_photos').fetchone())
             empty = not db.execute("SELECT 1 FROM graph_nodes WHERE kind='org' LIMIT 1").fetchone()
-            signals = tuple(db.execute('SELECT count(*),max(ingested_at) FROM events').fetchone()) if empty else None
+            signals = tuple(db.execute('SELECT count(*),max(ingested_at) FROM events WHERE history=0').fetchone()) if empty else None
         return profiles, signals, circles
 
     def graph_worker(self):
@@ -25539,6 +25547,7 @@ class App(*APP_MIXINS):
         if getattr(self, 'fleet', None):
             threading.Thread(target=self.bug_queue_worker, name='bug-queue', daemon=True).start()
         threading.Thread(target=self.retention_worker, daemon=True).start()
+        threading.Thread(target=self.history_worker, name='history', daemon=True).start()  # older messages, as history (machine/app/history.py)
         self.meeting_write_resume()  # Generate notes that were going when the service stopped
         self.gbrain_start()  # GBrain (gbrain.py): only when the owner turned it on
         if getattr(self, 'skills', None) and self.skills.catalog:  # what OpenClaw has, for Settings > Skills and skill hints

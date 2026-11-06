@@ -773,7 +773,7 @@ def _who(metadata, scope):
 def _events(db, accounts, since):
     if not accounts:
         return []
-    return db.execute("SELECT id,account_id,kind,occurred_at,title,body,metadata FROM events WHERE deleted=0 AND occurred_at>=? "
+    return db.execute("SELECT id,account_id,kind,occurred_at,title,body,metadata FROM events WHERE deleted=0 AND history=0 AND occurred_at>=? "
                       "AND account_id IN (SELECT value FROM json_each(?)) ORDER BY occurred_at", (since, json.dumps(list(accounts)))).fetchall()
 
 
@@ -1049,9 +1049,10 @@ def unjudged(db, scope, limit, skip=(), first=None, again=()):
     if not scope.accounts:
         return found
     on_boards = scope.item_events
-    rows = [dict(e) for e in db.execute('SELECT id,account_id,kind,occurred_at,title,body,metadata FROM events WHERE deleted=0 '
+    # Signals only: history (machine/store/history.py) never goes to the team
+    rows = [dict(e) for e in db.execute('SELECT id,account_id,kind,occurred_at,title,body,metadata,history FROM events WHERE deleted=0 '
                                         'AND account_id IN (SELECT value FROM json_each(?)) ORDER BY occurred_at DESC', (json.dumps(sorted(scope.accounts)),))
-            if e['kind'] in MAIL_KINDS or e['id'] in on_boards]  # mail, and a board project's meetings and chats
+            if not e['history'] and (e['kind'] in MAIL_KINDS or e['id'] in on_boards)]  # mail, and a board project's meetings and chats
     for e in rows:
         e['metadata'] = json.loads(e['metadata'] or '{}')
         e['thread'] = thread_of(e['kind'], e['metadata'], e['id'])

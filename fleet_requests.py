@@ -1144,7 +1144,7 @@ class Requests:
         if not accounts:
             return 0
         with self.connect() as db:
-            events = db.execute(f"SELECT id,source_id,title,occurred_at,metadata FROM events WHERE kind='calendar.event' AND deleted=0 "
+            events = db.execute(f"SELECT id,source_id,title,occurred_at,metadata FROM events WHERE kind='calendar.event' AND deleted=0 AND history=0 "
                                 f"AND account_id IN ({','.join('?' * len(accounts))}) AND occurred_at>=? AND occurred_at<=?",
                                 (*accounts, (today - dt.timedelta(days=FOLLOWUP_DAYS + 1)).isoformat(), today.isoformat())).fetchall()
             known = {r['id'] for r in db.execute('SELECT id FROM fleet_splits')}

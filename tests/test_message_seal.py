@@ -541,7 +541,7 @@ class NothingOutsideTheSealedFields(unittest.TestCase):
             'decisions.feedback': "the owner's feedback", 'decision_annotations.reason': 'a status reason',
             'profile_runs.draft': 'profile notes (USER.md)', 'skills.body': 'a skill', 'skills.description': 'a skill',
             'skills.note': 'a skill', 'skill_hints.summary': 'a skill hint', 'tool_approval_proposals.title': 'a proposal',
-            'tool_approval_proposals.detail': 'a proposal', 'checkpoints.state': 'a sync cursor (MESSAGE_SEAL_AUDIT checks)',
+            'tool_approval_proposals.detail': 'a proposal', 'checkpoints.state': 'a sync cursor (MESSAGE_SEAL_AUDIT checks)', 'history_backfill.state': 'a history cursor: times and a page token (machine/store/history.py)',
             'analyses.items': 'ids and versions', 'task_pages.state': "a task page's stage (offered, shared, done)", 'meet_links.state': "a booking link's stage (open, picked, booked, closed)", 'handoff_mails.state': "a handoff by email's stage (drafted, waiting, done)", 'preparations.details': 'why a preparation stopped',
             'preparations.reason': 'a reason code', 'activity_blocks.reason': 'why a check stopped a send (the outbox job error line)', 'preparations.questions': 'what a stopped run asks the owner',
             'android_inbox.payload': "its text sealed by the Gateway's plugin (message_seal.INBOX); deleted once read",

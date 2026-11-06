@@ -628,8 +628,10 @@ def gmail_call(config, credential, account, method, params):
             page = call(config, credential, account, 'messages.list', {'$link': params['pageToken']})
         elif query.startswith('after:'):
             since = dt.datetime.fromtimestamp(int(query[6:].split()[0]), dt.timezone.utc)
+            until = re.search(r'\bbefore:(\d+)\b', query)  # the history backfill's window (machine/app/history.py)
+            until = f' and receivedDateTime lt {_iso(dt.datetime.fromtimestamp(int(until[1]), dt.timezone.utc))}' if until else ''
             page = call(config, credential, account, 'messages.list', {
-                '$filter': f'receivedDateTime ge {_iso(since)}', '$orderby': 'receivedDateTime desc',
+                '$filter': f'receivedDateTime ge {_iso(since)}{until}', '$orderby': 'receivedDateTime desc',
                 '$select': 'id,conversationId', '$top': int(params.get('maxResults') or 40)})
         elif query.strip():  # a search a run asked for (App.mailbox_lookup): Graph's own search over the whole mailbox
             words = ' '.join(w for w in query.replace('"', ' ').split() if not re.match(r'(in|is|label|older_than|newer_than|after|before):', w, re.I))

@@ -184,11 +184,12 @@ def unpack(blob):
 
 
 def pending(db, settings, limit, newest=True):
-    """Live events without a vector for their current version, model and size."""
+    """Live signals without a vector for their current version, model and size. Never history (machine/store/history.py):
+    keyword search finds it, and a Machine with a year of it spends no embedding time on it."""
     return [dict(r) for r in db.execute(
         'SELECT e.id,e.version,e.title,e.body FROM events e LEFT JOIN event_vectors v ON v.event_id=e.id '
         'LEFT JOIN event_vector_skips s ON s.event_id=e.id AND s.version=e.version AND s.model=? AND s.at>? '
-        'WHERE e.deleted=0 AND (v.event_id IS NULL OR v.version<>e.version OR v.model<>? OR v.dims<>?) AND s.event_id IS NULL '
+        'WHERE e.deleted=0 AND e.history=0 AND (v.event_id IS NULL OR v.version<>e.version OR v.model<>? OR v.dims<>?) AND s.event_id IS NULL '
         'ORDER BY e.id ' + ('DESC' if newest else 'ASC') + ' LIMIT ?',
         (settings.get('model', ''), time.time() - SKIP_SECONDS, settings.get('model', ''), int(settings.get('dims', 256)), limit))]
 

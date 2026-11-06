@@ -277,7 +277,7 @@ def scan(db, own=(), limit=PER_PASS):
     out = []
     if state is None:
         top = db.execute('SELECT coalesce(max(id),0) FROM events').fetchone()[0]
-        rows = db.execute("SELECT * FROM events WHERE kind='gmail.message' AND deleted=0 AND id<=? AND ("
+        rows = db.execute("SELECT * FROM events WHERE kind='gmail.message' AND deleted=0 AND history=0 AND id<=? AND ("
                           "lower(json_extract(metadata,'$.from')) LIKE '%mailer-daemon@%' OR lower(json_extract(metadata,'$.from')) LIKE '%mail-daemon@%' "
                           "OR lower(json_extract(metadata,'$.from')) LIKE '%postmaster@%' OR lower(json_extract(metadata,'$.from')) LIKE '%microsoftexchange%') "
                           'ORDER BY occurred_at,id', (top,)).fetchall()
@@ -285,7 +285,7 @@ def scan(db, own=(), limit=PER_PASS):
             out += _one(db, row, own)
         db.execute("INSERT INTO email_bounce_scan(id,last_event,backfilled_at) VALUES(1,?,strftime('%Y-%m-%dT%H:%M:%SZ','now'))", (top,))
         return out
-    rows = db.execute("SELECT * FROM events WHERE id>? AND kind='gmail.message' AND deleted=0 ORDER BY id LIMIT ?", (state['last_event'], limit)).fetchall()
+    rows = db.execute("SELECT * FROM events WHERE id>? AND kind='gmail.message' AND deleted=0 AND history=0 ORDER BY id LIMIT ?", (state['last_event'], limit)).fetchall()
     for row in rows:
         out += _one(db, row, own)
     if rows:
