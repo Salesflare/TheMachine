@@ -348,7 +348,7 @@ class OpenClawSkills(unittest.TestCase):
         self.keeper.catalog.run = lambda argv, **kw: skills.subprocess.CompletedProcess(argv, 0, 'Gateway busy, try later\n', '')
         with self.assertLogs(skills.LOG, 'WARNING') as logs:
             view = self.keeper.installed(refresh=True)
-        self.assertEqual(view['error'], 'OpenClaw gave an answer The Machine could not read')
+        self.assertEqual(view['error'], 'The answer could not be read. Try again.')
         self.assertIn("first='Gateway busy, try later'", logs.output[0])
 
     def test_when_skills_list_fails_the_gateways_own_report_is_used_and_a_failure_says_why(self):
@@ -375,7 +375,7 @@ class OpenClawSkills(unittest.TestCase):
         self.assertIn(['config', 'set', 'skills.entries.trello.enabled', 'true', '--strict-json'], self.oc.calls)
         with self.assertRaisesRegex(ValueError, 'your own'):
             self.keeper.installed_toggle('weekly-report', False)
-        with self.assertRaisesRegex(ValueError, "doesn't have"):
+        with self.assertRaisesRegex(ValueError, 'No skill by that name'):
             self.keeper.installed_toggle('../../etc', False)
         self.assertEqual(sorted(str(p) for p in self.workspace.rglob('*')), self.before)
 

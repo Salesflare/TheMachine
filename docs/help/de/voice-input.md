@@ -19,7 +19,7 @@ Was du gesagt hast, landet im Feld, dort, wo dein Cursor war. Nichts wird gesend
 
 In **Einstellungen**, **Allgemein**, unter **Spracheingabe** sagt eine kurze Zeile, was gerade genutzt wird.
 
-- **Automatisch** (Standard): Wenn OpenAI in OpenClaw eingerichtet ist, wandelt OpenAI deine Aufnahme in Text um. Das ist ein API-Schlüssel oder eine ChatGPT-Anmeldung, wenn dein Tarif Audio erlaubt. Ohne OpenAI wird sie auf deiner Machine selbst in Text umgewandelt und verlässt sie nie.
+- **Automatisch** (Standard): Wenn OpenAI auf deiner Machine eingerichtet ist, wandelt OpenAI deine Aufnahme in Text um. Das ist ein API-Schlüssel oder eine ChatGPT-Anmeldung, wenn dein Tarif Audio erlaubt. Ohne OpenAI wird sie auf deiner Machine selbst in Text umgewandelt und verlässt sie nie.
 - **Auf dieser Machine**: immer auf deiner Machine, auch wenn OpenAI eingerichtet ist.
 - **Mit OpenAI**: immer OpenAI.
 

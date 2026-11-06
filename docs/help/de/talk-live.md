@@ -60,16 +60,16 @@ Was ihr beide sagt, wird in den Chat der Aufgabe geschrieben, unter einer Zeile 
 
 ## Was du brauchst
 
-Live sprechen nutzt die Echtzeitstimme von OpenAI, deshalb muss OpenAI in OpenClaw eingerichtet sein:
+Live sprechen nutzt die Echtzeitstimme von OpenAI, deshalb braucht deine Machine OpenAI:
 
 - Eine ChatGPT-Anmeldung: in deinem Tarif enthalten, wenn dein Tarif Zugang hat.
-- Ein OpenAI-API-Schlüssel: OpenAI berechnet deinem Schlüssel jede Gesprächsminute, und die Leiste sagt das. Wenn beides eingerichtet ist, nutzt OpenClaw den Schlüssel.
+- Ein OpenAI-API-Schlüssel: OpenAI berechnet deinem Schlüssel jede Gesprächsminute, und die Leiste sagt das. Wenn beides eingerichtet ist, nutzt deine Machine den Schlüssel.
 
 **Einstellungen**, **Allgemein**, **Spracheingabe** zeigt, ob Live sprechen bereit ist. Ohne OpenAI erscheint die Welle nicht. Dein Audio geht von deinem Browser direkt an OpenAI. Dein Schlüssel erreicht den Browser nie.
 
 ## Wenn es nicht klappt
 
 - **Das Mikrofon ist blockiert**: Erlaube das Mikrofon für diese Seite in den Einstellungen deines Browsers.
-- **Live sprechen konnte nicht starten**: Prüfe OpenAI in OpenClaw und versuch es noch mal.
+- **Live sprechen konnte nicht starten**: Prüfe die ChatGPT-Anmeldung oder den OpenAI-Schlüssel und versuch es noch mal.
 - **Live sprechen hat die Verbindung verloren**: Starte es neu. Was bisher gesagt wurde, bleibt im Chat.
 - Wenn sie sagt, dass sie dich nicht versteht, kam das Gesagte zweimal hintereinander nicht an. Prüfe dein Mikrofon oder schreib im Chat. Sie sagt das einmal und wartet dann, bis sie dich hört.

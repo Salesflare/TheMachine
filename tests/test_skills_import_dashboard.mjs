@@ -21,7 +21,7 @@ const item=(over)=>({key:'claude:x',name:'x',description:'When to use it',from:'
 const items=[
  item({key:'claude:~/.claude/skills/meeting-prep',name:'meeting-prep',description:'Before a meeting: brief the owner on who they meet and what is open.',recommended:true,why:'Your cards are mostly meeting preparations'}),
  item({key:'claude:'+LONG,name:'answer-customer-questions-from-the-knowledge-base',description:'When a customer asks how something works.',source:LONG,group:'project',references:['FAQ.md']}),
- item({key:'claude:~/.claude/skills/omarchy',name:'omarchy',description:'Desktop settings on Omarchy.',group:'vendor',link:'/usr/share/omarchy/skills/omarchy',flags:['Renamed tools to OpenClaw\'s: Bash → exec']}),
+ item({key:'claude:~/.claude/skills/omarchy',name:'omarchy',description:'Desktop settings on Omarchy.',group:'vendor',link:'/usr/share/omarchy/skills/omarchy',flags:['Renamed tools to their names here: Bash → exec']}),
  item({key:'chatgpt:~/.codex/skills/report',name:'weekly-report',description:'Weekly KPI report.',from:'chatgpt',from_label:'ChatGPT',source:'~/.codex/skills/report',scripts:['scripts/build.py'],script_count:1,depends:true,left_out:['1 script (scripts/build.py)']}),
  item({key:'claude:pdf',name:'pdf',description:'PDF files.',group:'builtin',source:'claude.ai, built in (pdf)',licence:'Proprietary. LICENSE.txt has complete terms',blocked:'Can\'t import: its license doesn\'t allow it',script_count:8,scripts:['scripts/a.py']}),
 ];
@@ -127,7 +127,7 @@ try{
   assert.ok(await page.locator('#skill-look').evaluate(d=>d.getBoundingClientRect().right<=innerWidth));
   if(shots)await page.locator('#skill-look').screenshot({path:`${shots}/skills-import-read-${width}-${theme}.png`});
   await page.locator('[data-import-install]').click();
-  await page.locator('#notice',{hasText:'Installed in OpenClaw with its scripts'}).waitFor();
+  await page.locator('#notice',{hasText:'Installed with its scripts'}).waitFor();
   assert.deepEqual(calls.find(c=>c.action==='skill_import_install').args,{token:'tok1',key:'chatgpt:~/.codex/skills/report',sha:'abc'});
   // Sign in to ChatGPT: the sign-in page opens on the Machine, the dialog asks for the code ChatGPT sent, and once
   // in, the list looks in that account by itself.

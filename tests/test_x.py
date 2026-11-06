@@ -279,9 +279,9 @@ class XSend(unittest.TestCase):
     def test_signed_out_blocks_cleanly(self):
         self.ready()
         self.confirm()
-        def out(_): raise ValueError('X is signed out in the OpenClaw browser. Nothing was sent.')
+        def out(_): raise ValueError('X is signed out in your Machine’s browser. Nothing was sent.')
         self.assertEqual(self.app().action_step(self.transport(preflight=out, send=lambda *_: self.fail('sent'))), 'blocked')
-        self.assertEqual(self.job()['error'], 'X is signed out in the OpenClaw browser. Nothing was sent.')
+        self.assertEqual(self.job()['error'], 'X is signed out in your Machine’s browser. Nothing was sent.')
 
 
 class XTransportTest(unittest.TestCase):
@@ -321,8 +321,8 @@ class XTransportTest(unittest.TestCase):
         other = subprocess.CompletedProcess([], 0, json.dumps({'reply_to': {'id': '5'}}), '')
         with patch.object(n.subprocess, 'run', return_value=other), self.assertRaisesRegex(ValueError, 'Nothing was sent'):
             t.preflight(self.reply)
-        for stderr, message in (('x-inbox: X is signed out in the OpenClaw browser', 'X is signed out in the OpenClaw browser. Nothing was sent.'),
-                                ('x-inbox: @acme is not signed in in the OpenClaw browser', 'X is signed out in the OpenClaw browser. Nothing was sent.'),
+        for stderr, message in (('x-inbox: X is signed out in the OpenClaw browser', 'X is signed out in your Machine’s browser. Nothing was sent.'),
+                                ('x-inbox: @acme is not signed in in the OpenClaw browser', 'X is signed out in your Machine’s browser. Nothing was sent.'),
                                 ("x-inbox: this is an encrypted X Chat conversation; sending there isn't supported yet", 'I can’t send in this encrypted X chat yet. Nothing was sent.'),
                                 ('x-inbox: the post to reply to is no longer available on X', 'That X post is no longer available. Nothing was sent.'),
                                 ('x-inbox: boom', 'I couldn’t reach X. Nothing was sent; tap Send again.')):

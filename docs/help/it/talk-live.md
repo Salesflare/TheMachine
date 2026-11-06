@@ -60,16 +60,16 @@ Quello che dite tutti e due viene scritto nella chat dell’attività, sotto una
 
 ## Cosa ti serve
 
-Parla dal vivo usa la voce in tempo reale di OpenAI, quindi OpenAI deve essere configurato in OpenClaw:
+Parla dal vivo usa la voce in tempo reale di OpenAI, quindi la tua Machine ha bisogno di OpenAI:
 
 - Un accesso ChatGPT: incluso nel tuo piano, se il tuo piano ha accesso.
-- Una chiave API OpenAI: OpenAI addebita alla tua chiave ogni minuto di conversazione, e la barra lo dice. Se sono configurati tutti e due, OpenClaw usa la chiave.
+- Una chiave API OpenAI: OpenAI addebita alla tua chiave ogni minuto di conversazione, e la barra lo dice. Se sono configurati tutti e due, la tua Machine usa la chiave.
 
 **Impostazioni**, **Generale**, **Input vocale** mostra se Parla dal vivo è pronto. Senza OpenAI, l’onda non compare. Il tuo audio va dal browser direttamente a OpenAI. La tua chiave non arriva mai al browser.
 
 ## Se non funziona
 
 - **Il microfono è bloccato**: consenti il microfono per questo sito nelle impostazioni del browser.
-- **Parla dal vivo non è partito**: controlla OpenAI in OpenClaw, poi riprova.
+- **Parla dal vivo non è partito**: controlla l’accesso ChatGPT o la chiave OpenAI, poi riprova.
 - **Parla dal vivo ha perso la connessione**: riavvialo. Quello che è stato detto finora resta nella chat.
 - Se dice che non capisce le tue parole, quello che hai detto non è arrivato due volte di fila. Controlla il microfono, o scrivi nella chat. Lo dice una volta, poi aspetta di sentirti.

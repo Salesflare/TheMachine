@@ -182,7 +182,7 @@ class Reliability(unittest.TestCase):
         sid = self.store.suggest('one', 'One', 'Prepare', [1])['id']
         with self.store.connect() as db:
             db.execute("UPDATE deliveries SET status='sent',message_id='123',needs_edit=1 WHERE suggestion_id=?", (sid,))
-        with patch_everywhere(a, 'telegram', side_effect=ValueError('OpenClaw delivery unconfirmed')) as send:
+        with patch_everywhere(a, 'telegram', side_effect=ValueError('Delivery not confirmed')) as send:
             a.deliver(self.store, {'telegram_owner': 'owner'})
             a.deliver(self.store, {'telegram_owner': 'owner'})
         self.assertEqual(send.call_count, 1)

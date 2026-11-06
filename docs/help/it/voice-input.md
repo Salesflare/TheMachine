@@ -19,7 +19,7 @@ Quello che hai detto finisce nella casella, dove c’era il cursore. Non viene i
 
 In **Impostazioni**, **Generale**, sotto **Input vocale**, una riga breve dice quale è in uso.
 
-- **Automatico** (predefinito): quando OpenAI è configurato in OpenClaw, la registrazione viene trascritta da OpenAI. Cioè una chiave API, o un accesso ChatGPT se il tuo piano consente l’audio. Senza OpenAI, viene trascritta sulla tua Machine stessa e non la lascia mai.
+- **Automatico** (predefinito): quando OpenAI è configurato sulla tua Machine, la registrazione viene trascritta da OpenAI. Cioè una chiave API, o un accesso ChatGPT se il tuo piano consente l’audio. Senza OpenAI, viene trascritta sulla tua Machine stessa e non la lascia mai.
 - **Su questa Machine**: sempre sulla tua Machine, anche quando OpenAI è configurato.
 - **Con OpenAI**: sempre OpenAI.
 

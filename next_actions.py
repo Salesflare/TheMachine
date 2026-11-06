@@ -1471,7 +1471,7 @@ class LinkedInTransport:
         result = self.run(action, ['send', *self.target(action), '--text', action['body'], '--json'])
         if result.returncode:
             err = result.stderr.lower()
-            raise ValueError('LinkedIn is signed out in the OpenClaw browser. Nothing was sent.' if 'signed out' in err
+            raise ValueError('LinkedIn is signed out in your Machine’s browser. Nothing was sent.' if 'signed out' in err
                              else 'I couldn’t find that LinkedIn recipient. Nothing was sent.' if 'no recipient' in err
                              else 'I couldn’t reach LinkedIn. Nothing was sent; tap Send again.')
         try:
@@ -1542,7 +1542,7 @@ class XTransport:
         result = self.run(action, [*self.args(action), '--json'])
         if result.returncode:
             err = result.stderr.lower()
-            raise ValueError('X is signed out in the OpenClaw browser. Nothing was sent.' if 'signed out' in err or 'not signed in' in err
+            raise ValueError('X is signed out in your Machine’s browser. Nothing was sent.' if 'signed out' in err or 'not signed in' in err
                              else 'That X post is no longer available. Nothing was sent.' if 'no longer available' in err
                              else 'I can’t send in this encrypted X chat yet. Nothing was sent.' if 'encrypted' in err
                              else 'That X conversation isn’t in the DM inbox any more. Nothing was sent.' if 'not in the x dm inbox' in err

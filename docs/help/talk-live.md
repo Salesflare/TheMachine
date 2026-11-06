@@ -60,16 +60,16 @@ What you both say is written into the to-do's chat, under a **Talked live** line
 
 ## What you need
 
-Talk live uses OpenAI's realtime voice, so OpenAI has to be set up in OpenClaw:
+Talk live uses OpenAI's realtime voice, so your Machine needs OpenAI:
 
 - A ChatGPT sign-in: included in your plan, where your plan has access.
-- An OpenAI API key: OpenAI charges your key per minute of talk, and the bar says so. When both are set up, OpenClaw uses the key.
+- An OpenAI API key: OpenAI charges your key per minute of talk, and the bar says so. When both are set up, your Machine uses the key.
 
 **Settings**, **General**, **Voice input** shows whether Talk live is ready. Without OpenAI, the wave doesn't show. Your audio goes from your browser straight to OpenAI. Your key never reaches the browser.
 
 ## When it doesn't work
 
 - **The microphone is blocked**: allow the microphone for this site in your browser's settings.
-- **Talk live couldn’t start**: check OpenAI in OpenClaw, then try again.
+- **Talk live couldn’t start**: check the ChatGPT sign-in or OpenAI key, then try again.
 - **Talk live lost its connection**: start it again. What was said so far stays in the chat.
 - If it says it can’t make out your words, what you said didn’t come through twice in a row. Check your microphone, or type in the chat. It says this once, then waits until it hears you.

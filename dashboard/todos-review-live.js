@@ -7,7 +7,7 @@ const firstLookDays=(fl,run)=>{const hours=run?run.window_hours:fl?.quick&&fl.ho
 function reviewLiveRows(live){const rows=[];const name=id=>{const c=(state.connectors||[]).find(c=>c.id===id);return c?(c.display_name||c.email||id):id};
 for(const r of live.runs||[]){const total=r.planned||r.claimed_count||0,done=Math.min(r.done_count||0,total||Infinity);const steps=r.steps||[],[latest,...earlier]=steps;
 const what=r.preview||r.promising||r.window_hours?t(r.preview&&!r.auto?'Preview: your last {} days':'First look: your last {} days',firstLookDays(live.first_look,r)):'Reviewing new messages';
-rows.push(make('div',{class:'review-live','data-run':r.run_id},chipNode(r.status==='recovering'?'Waiting for OpenClaw':'Reviewing','amber'),
+rows.push(make('div',{class:'review-live','data-run':r.run_id},chipNode(r.status==='recovering'?'Waiting for The Machine':'Reviewing','amber'),
  make('span',{class:'grow'},what,total?[' · ',make('b',{},`${done} of ${total}`),' signals']:'',(r.account_ids||[]).length?' · '+[...new Set(r.account_ids.map(name))].join(', '):''),timeNode(r.started_at),'\n',
  latest?make('ul',{class:'steps','aria-live':'polite'},make('li',{},latest.title)):make('p',{class:'muted'},'Starting…'),
  earlier.length?make('details',{class:'earlier-steps'},make('summary',{},'Earlier steps'),make('ul',{class:'steps'},earlier.map(x=>make('li',{},x.title)))):'',

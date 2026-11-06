@@ -10980,7 +10980,7 @@ def awaiting_match(watch, event, owner_slack_ids=()):
 SOURCE_KIND = {'gmail.message': 'email', 'calendar.event': 'calendar', 'slack.message': 'Slack',
                'salesflare.email': 'CRM email', 'salesflare.meeting': 'CRM meeting',
                'android.notification': 'phone', 'whatsapp.message': 'WhatsApp', 'telegram.message': 'Telegram',
-               'gateway.alert': 'OpenClaw'}
+               'gateway.alert': 'The Machine'}
 SOURCE_KIND['fleet.request'] = 'Fleet'
 SOURCE_KIND['fleet.email'] = 'email'  # a copy a teammate's handoff carried (fleet_requests.handoff_sources)
 SOURCE_KIND['owner.card'] = 'note'  # a card the owner made themselves (New card): their own words
@@ -14288,7 +14288,7 @@ def telegram_request(config,args):
                 raise DeliveryNotSent(failure['error'])
         except json.JSONDecodeError:
             pass
-        raise ValueError('OpenClaw delivery unconfirmed')
+        raise ValueError('Delivery not confirmed')
     return json.loads(result.stdout)
 
 
@@ -16335,7 +16335,7 @@ class App(*APP_MIXINS):
             try:
                 linked = brain.link()
             except gbrain.BrainError:
-                raise ValueError('OpenClaw did not add GBrain. Try again.') from None
+                raise ValueError('The Machine could not add GBrain. Try again.') from None
             self.gbrain_save({'on': True, 'consent_at': now(), 'work': args.get('work') is True, 'linked': linked, 'bin': binary})
             self.gbrain_start()
         elif name == 'gbrain_work':

@@ -77,7 +77,7 @@ class Prefs(unittest.TestCase):
             for args in ({'engine': 'google'}, {'model': 'large'}, {'language': 'xx'}, {'talk_voice': 'cove'}):
                 with self.assertRaises(ValueError):
                     v.set_prefs(db, args, True)
-            with self.assertRaisesRegex(ValueError, 'OpenAI set up in OpenClaw'):
+            with self.assertRaisesRegex(ValueError, 'needs an API key, or a ChatGPT sign-in'):
                 v.set_prefs(db, {'engine': 'openai'}, False)
             self.assertEqual(v.set_prefs(db, {'engine': 'openai'}, True)['engine'], 'openai')
             db.execute("UPDATE voice_prefs SET value='gone' WHERE key='engine'")
@@ -492,7 +492,7 @@ class Api(unittest.TestCase):
         self.assertEqual((view['in_use'], view['use']), ('local', 'browser'))   # not ready: the browser's own until then
         view = self.app.action('voice_prefs', {'language': 'it'}, owner_dashboard=True)
         self.assertEqual(view['language'], 'it')
-        with self.assertRaisesRegex(ValueError, 'OpenAI set up in OpenClaw'):
+        with self.assertRaisesRegex(ValueError, 'needs an API key, or a ChatGPT sign-in'):
             self.app.action('voice_prefs', {'engine': 'openai'}, owner_dashboard=True)
         view = self.app.action('voice_prefs', {'engine': 'local'}, owner_dashboard=True)
         self.assertEqual((view['in_use'], view['use']), ('local', 'wait'))      # On this Machine never goes elsewhere

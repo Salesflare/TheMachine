@@ -60,16 +60,16 @@ Wat jullie allebei zeggen, wordt in de chat van de to-do geschreven, onder een r
 
 ## Wat je nodig hebt
 
-Live praten gebruikt de realtime stem van OpenAI, dus OpenAI moet ingesteld zijn in OpenClaw:
+Live praten gebruikt de realtime stem van OpenAI, dus je Machine heeft OpenAI nodig:
 
 - Een ChatGPT-login: inbegrepen in je abonnement, als je abonnement er toegang toe heeft.
-- Een OpenAI API-sleutel: OpenAI rekent je sleutel per gespreksminuut aan, en de balk zegt dat. Als beide zijn ingesteld, gebruikt OpenClaw de sleutel.
+- Een OpenAI API-sleutel: OpenAI rekent je sleutel per gespreksminuut aan, en de balk zegt dat. Als beide zijn ingesteld, gebruikt je Machine de sleutel.
 
 **Instellingen**, **Algemeen**, **Spraakinvoer** toont of Live praten klaar is. Zonder OpenAI verschijnt de golf niet. Je audio gaat van je browser rechtstreeks naar OpenAI. Je sleutel komt nooit in de browser.
 
 ## Als het niet werkt
 
 - **De microfoon is geblokkeerd**: sta de microfoon toe voor deze site in de instellingen van je browser.
-- **Live praten kon niet starten**: controleer OpenAI in OpenClaw en probeer opnieuw.
+- **Live praten kon niet starten**: controleer de ChatGPT-login of OpenAI-sleutel en probeer opnieuw.
 - **Live praten verloor de verbinding**: start opnieuw. Wat tot nu toe gezegd is, blijft in de chat.
 - Zegt hij dat hij je niet verstaat, dan kwam wat je zei twee keer na elkaar niet door. Controleer je microfoon, of typ in de chat. Hij zegt dit één keer en wacht dan tot hij je hoort.

@@ -62,7 +62,7 @@ SERVICES = {'gmail': 'Gmail', 'calendar': 'Google Calendar', 'outlook': 'Outlook
             'slack': 'Slack', 'salesflare': 'Salesflare', 'android': 'Android', 'whatsapp': 'WhatsApp', 'telegram': 'Telegram',
             'linkedin': 'LinkedIn', 'x': 'X', 'intercom': 'Intercom', 'zoom': 'Zoom', 'stripe': 'Stripe', 'github': 'GitHub',
             'trello': 'Trello', 'shortcut': 'Shortcut', 'docs': 'Docs', 'google_meet': 'Google Meet', 'rss': 'RSS',
-            'gateway': 'OpenClaw'}
+            'gateway': 'Machine health'}
 MESSAGE_KINDS = {'email': 'Email', 'email_demo': 'Email', 'linkedin': 'LinkedIn', 'slack': 'Slack', 'x': 'X',
                  'whatsapp': 'WhatsApp', 'telegram': 'Telegram', 'intercom': 'Intercom', 'doc_reply': 'Docs'}
 # action_jobs.status -> outcome; anything else (queued, sending, local_preparation, undoing) is still on its way

@@ -185,7 +185,7 @@ class Sessions(unittest.TestCase):
 
     def test_gateway_errors_say_what_to_do(self):
         self.gateway.answers['start'] = {'error': 'unavailable', 'reason': 'auth'}
-        with self.assertRaisesRegex(ValueError, 'Check OpenAI in OpenClaw'):
+        with self.assertRaisesRegex(ValueError, 'Check the ChatGPT sign-in or OpenAI key'):
             self.talk.start(SID, {})
         self.gateway.answers['start'] = {'error': 'unavailable', 'reason': 'timeout'}
         with self.assertRaisesRegex(ValueError, 'couldn’t start. Try again'):

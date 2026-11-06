@@ -124,7 +124,7 @@ def set_prefs(db, args, openai_ok):
         if args['engine'] not in ENGINES:
             raise ValueError('Pick Automatic, this Machine or OpenAI')
         if args['engine'] == 'openai' and not openai_ok:
-            raise ValueError('Voice through OpenAI needs OpenAI set up in OpenClaw')
+            raise ValueError('Voice through OpenAI needs an API key, or a ChatGPT sign-in that allows audio')
         changes['engine'] = args['engine']
     if 'model' in args:
         if args['model'] not in MODELS:
