@@ -18,6 +18,8 @@ Cuando pasas una tarea **Por correo**, pulsa **Añadir una página de tarea** (o
 
 La tarea y lo que elegiste mostrar, con tres respuestas: Me pongo con ello, Hecho o No puedo hacerlo. Su respuesta vuelve a tu tarea.
 
+Pulsa **Página de la tarea** en la tarea para abrirla en tu navegador tal como la ve la otra persona.
+
 La página está sellada con una clave que solo está en el enlace. Nuestros servidores solo saben en qué paso está.
 
 ## Deja de compartir

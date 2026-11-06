@@ -56,6 +56,19 @@ def lead(to, answers, state):
     return f'Handed to {who} by email.'
 
 
+def page_link(record):
+    """The page as they open it, for the owner to look at: its link with the key. A page shared before the link was kept
+    here is on the hosted Network, whose pages are served by fleet.CONTROL."""
+    invite_id, key = str(record.get('invite_id') or ''), str(record.get('key') or '')
+    if not invite_id or not key:
+        return ''
+    url = str(record.get('url') or '')
+    if not url.startswith('https://'):
+        import fleet
+        url = fleet.CONTROL + '/t/' + invite_id
+    return url + '#k=' + key
+
+
 class TaskPages:
     def __init__(self, app):
         self.app = app
@@ -143,7 +156,7 @@ class TaskPages:
         except ValueError:
             self.relay().call('POST', '/task-invite', {'action': 'revoke', 'id': made['id']})
             raise
-        self.save(card_id, 'shared', {'task': task, 'to': (action.get('to') or [''])[0], 'leave_out': leave_out, 'invite_id': made['id'], 'key': pending['key'],
+        self.save(card_id, 'shared', {'task': task, 'to': (action.get('to') or [''])[0], 'leave_out': leave_out, 'invite_id': made['id'], 'key': pending['key'], 'url': made['url'],
                                       'version': 1, 'seen': 0, 'until': str(made.get('expires_at') or '')[:10],
                                       'updates': updates, 'status': 'waiting', 'answers': []})
         return self.view(card_id)
@@ -273,7 +286,10 @@ class TaskPages:
             return {'state': 'offered', 'repeats': repeats, 'days': DEFAULT_DAYS, 'choices': list(DAYS),
                     'preview': {k: task[k] for k in ('title', 'summary', 'due') if task.get(k)} | {'from': task_invites.first_name(task.get('from_name')) or 'You'}}
         answers = [{'answer': a['answer'], 'note': a.get('note', ''), 'at': a.get('at', '')} for a in (record.get('answers') or [])][-5:]
-        return {'state': state, 'until': record.get('until', ''), 'answers': answers, 'lead': lead(record.get('to'), answers, state)}
+        shown = {'state': state, 'until': record.get('until', ''), 'answers': answers, 'lead': lead(record.get('to'), answers, state)}
+        if state in LIVE and (link := page_link(record)):
+            shown['link'] = link
+        return shown
 
     def annotate(self, db, suggestions):
         db.execute(SCHEMA)

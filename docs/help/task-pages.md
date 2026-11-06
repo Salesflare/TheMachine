@@ -18,6 +18,8 @@ When you hand off a to-do **By email**, press **Add a task page** (or **No thank
 
 The task and what you chose to show, with three answers: I'm on it, Done, or Can't do this. Their answer comes back on your to-do.
 
+Press **Task page** on the to-do to open it as they see it, in your browser.
+
 The page is sealed with a key that is only in the link. Our servers only learn which step it's at.
 
 ## Stop sharing

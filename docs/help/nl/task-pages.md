@@ -18,6 +18,8 @@ Als je een to-do **Per e-mail** overdraagt, druk je op **Taakpagina toevoegen** 
 
 De taak en wat je wilde tonen, met drie antwoorden: Ik ben ermee bezig, Gedaan, of Dit lukt me niet. Het antwoord komt terug op je to-do.
 
+Tik op **Taakpagina** bij de to-do om hem in je browser te openen zoals de ander hem ziet.
+
 De pagina is verzegeld met een sleutel die alleen in de link zit. Onze servers weten alleen bij welke stap hij is.
 
 ## Stoppen met delen

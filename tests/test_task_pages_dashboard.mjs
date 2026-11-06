@@ -21,7 +21,7 @@ const server=createServer(async(req,res)=>{res.setHeader('Content-Type','applica
  if(req.url==='/api/status'){res.end(JSON.stringify(state));return}
  if(req.url==='/api/action'){let body='';for await(const b of req)body+=b;const call=JSON.parse(body);calls.push(call);
   if(call.action==='task_page_share'){email.body=BODY.replace('\n\nBest,','\n\nStatus and replies: https://app.example.test/t/x#k=y\n\nBest,');email.revision='e00000000002';
-   card.task_page={state:'shared',until:'2026-10-30',answers:[]}}
+   card.task_page={state:'shared',until:'2026-10-30',answers:[],link:'https://app.example.test/t/x#k=y'}}
   if(call.action==='task_page_stop')card.task_page={state:'stopped',until:'',answers:card.task_page.answers};
   res.end(JSON.stringify({state:'ok'}));return}
  res.statusCode=404;res.end('{}')});
@@ -50,8 +50,14 @@ try{
  await c.locator('[data-tp-share]').click();
  await c.locator('.tp-shared').waitFor();
  assert.deepEqual(calls.at(-1),{action:'task_page_share',args:{suggestion_id:'c1',leave_out:['due'],days:7}});
- assert.match(await c.locator('.tp-shared').innerText(),/^Task page until Fri, Oct 30\s*·\s*Stop sharing$/);  // one quiet row, no Mark done of its own
+ assert.match(await c.locator('.tp-shared').innerText(),/^Task page ↗ until Fri, Oct 30\s*·\s*Stop sharing$/);  // one quiet row, no Mark done of its own
  assert.equal(await c.locator('[data-tp-done]').count(),0);
+ // Task page opens the page as they see it, key and all, outside the dashboard (a new tab, the phone's browser)
+ const open=c.locator('.tp-shared a.tp-open');
+ assert.deepEqual(await open.evaluate(a=>[a.textContent,a.getAttribute('href'),a.target,a.rel]),['Task page ↗','https://app.example.test/t/x#k=y','_blank','noreferrer']);
+ await page.context().route('https://app.example.test/**',r=>r.fulfill({contentType:'text/html',body:'<title>task page</title>'}));
+ const [tab]=await Promise.all([page.context().waitForEvent('page'),open.click()]);
+ await tab.waitForLoadState();assert.equal(tab.url(),'https://app.example.test/t/x#k=y');await tab.close();
  assert.match(await c.locator('.draft').first().innerText(),/Status and replies: https:\/\/app\.example\.test\/t\//);
  // An answer from the page: quoted, as text, never markup
  card.task_page.answers=[{answer:'on',note:'<img src=x onerror="window.pwned=1">Signing tomorrow.',at:'2026-10-24'}];
@@ -73,7 +79,7 @@ try{
  assert.equal(await c.locator('.tp-reply').count(),0);  // the latest answer leads the card, not repeated below
  await sent.locator('summary').click();
  assert.match(await sent.innerText(),/Could you take this on\?/);
- assert.match(await c.locator('.tp-shared').innerText(),/^Task page until Fri, Oct 30\s*·\s*Stop sharing$/);
+ assert.match(await c.locator('.tp-shared').innerText(),/^Task page ↗ until Fri, Oct 30\s*·\s*Stop sharing$/);
  // Back in Ready after Can't do this: same calm card, with its Ready buttons
  card.task_page.answers.push({answer:'cant',note:'Out until Monday.',at:'2026-10-25'});card.task_page.lead='alex@other.example can’t do this: “Out until Monday.”';
  Object.assign(card,{status:'prepared'});state.suggestion_counts={prepared:1};
@@ -82,6 +88,10 @@ try{
  assert.equal(await c.locator('.draft:visible').count(),0);
  assert.equal(await c.locator('.tp-reply').count(),1);  // the earlier answer stays below
  assert.equal(await c.locator('[data-tp-done]').count(),0);
+ // A page with no link to show (or not a web address): plain words, never a dead link
+ card.task_page.link='javascript:alert(1)';await page.evaluate(()=>refresh());
+ assert.equal(await c.locator('.tp-shared a').count(),0);
+ assert.match(await c.locator('.tp-shared').innerText(),/^Task page until Fri, Oct 30\s*·\s*Stop sharing$/);
  await c.locator('[data-tp-stop]').click();
  await page.waitForTimeout(300);
  assert.deepEqual(calls.at(-1),{action:'task_page_stop',args:{suggestion_id:'c1'}});
