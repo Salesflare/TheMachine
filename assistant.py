@@ -1510,6 +1510,10 @@ def metadata_page(row, offset):
         length = int(length * 0.7)
 
 REVIEW_SESSION_PREFIX = 'agent:main:assistant-review-signals-'
+# How a review's turn ends: one fixed line, never shown or sent (the Gateway turn has delivery off). With NO_REPLY,
+# OpenClaw asked the model twice more for a visible answer, and the first of those, a text-only pass, missed the cache
+# (about 86k uncached tokens a review, 2026-11-06). The plugin says the same (openclaw-plugin/review-recovery.ts).
+REVIEW_DONE = 'Done.'
 REVIEW_TERMINAL = ('ok', 'error', 'aborted', 'lost', 'timed_out')
 # The longest turn message the runner (preparation-run.mjs) starts; it refuses longer ones before the Gateway sees them.
 PROMPT_LIMIT = 60000
@@ -15731,7 +15735,7 @@ When a note the owner wrote on a suggestion (decisions with source telegram or d
 Moments: a meeting both sides agreed on that is in the calendar needs no to-do to confirm it or say "see you then", unless the other person asked for a confirmation or something is still open (time, place, agenda). A to-do whose whole point is a moment (a reminder or confirmation before a meeting) gets expires_at (that moment) and expires_what ("the meeting with Sam"), so it closes by itself once that has passed. Titles and bodies are read on later days: name the weekday or date, never today, tomorrow or yesterday.
 Meeting notes and transcripts (Zoom's, or added to the meeting: meeting.notes, meeting.transcript) are that meeting's own record: use them for follow-ups on it, its next steps and who took them on, with the notes and the calendar event as evidence.
 Promises: when a message in this batch commits the owner to doing something for someone, or someone to doing something for the owner, record it with promise (direction, event_id, who, what: the promised action alone, without who confirmed it or how, short and whole (under 80 characters; it is the to-do's title), naming things so they read naturally (the Acme Sync client, not a bare Acme Sync), due when a date was said, owner_step as above). Judge what a message means between these people in its conversation, not its wording: most commitments are never spelled out (agreeing to a request, taking on something the owner asked, accepting a plan), and the same reply can commit one person and be politeness from another, depending on language, habits and the relationship. Read earlier_in_conversation for what was asked. It is not a card; the service checks it when due. When a signal shows an open promise below kept, canceled or moved, update it with promise and its id.
-Messages are disabled in this turn. Do not work on anything else. End with exactly NO_REPLY.'''
+Messages are disabled in this turn: nothing you write is sent to anyone. Do not work on anything else. End with exactly the line {REVIEW_DONE}'''
     slow = (f'\n\nAccounts: begin_analysis account_ids {json.dumps(accounts)}\n' + i18n.prompt_rule() + sources + (f'''
 
 Facts the owner told you earlier (true unless newer evidence says otherwise; {FACTS_YOU}):
@@ -21849,8 +21853,9 @@ class App(*APP_MIXINS):
                 db.execute("UPDATE review_runs SET status='running',updated_at=?,error=NULL,error_phase=NULL,retry_at=NULL,unavailable_since=NULL WHERE run_id=?", (now(), run['run_id']))
             elif result in REVIEW_TERMINAL:
                 getattr(self, 'model_usage_wake', threading.Event()).set()  # read the limits again after a run
-                # A review ends with exactly NO_REPLY. On a CLI runtime (Claude Code) OpenClaw fails that silent ending
-                # as an empty response, after the work: a run whose batch finish_analysis saved is a finished review.
+                # A review that still ends with NO_REPLY (older instructions, or a model that says it anyway): on a CLI
+                # runtime (Claude Code) OpenClaw fails that silent ending as an empty response, after the work: a run
+                # whose batch finish_analysis saved is a finished review.
                 if result == 'error' and receipt.get('silent_end') and db.execute(
                         "SELECT 1 FROM analyses WHERE owner_run=? AND owner_session=? AND status='complete' LIMIT 1",
                         (run['run_id'], REVIEW_SESSION_PREFIX + run['run_id'])).fetchone():

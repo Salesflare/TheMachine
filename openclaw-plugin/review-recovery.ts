@@ -41,6 +41,8 @@ const APP_DIR = resolve(String(assistantConfig().app_dir || `${WORKSPACE}/tools/
 // does not). A per-turn toolsAllow would also trim the prompt, but Codex rejects it, and a
 // review can run on either runtime, so the guard is applied at call time instead.
 export const REVIEW_TOOLS = new Set(['assistant_signals', 'memory_search', 'memory_get', 'read', 'file_fetch', 'dir_list', 'dir_fetch', 'ls']);
+// The fixed last line of an isolated review's turn, the same as REVIEW_DONE in assistant.py.
+export const REVIEW_DONE = 'Done.';
 const reviewSession = (key: string) => /^agent:main:assistant-review-signals-/.test(key || '');
 // Code Mode calls plugin tools through a namespace, and the hook sees e.g. "openclawassistant_signals"
 // or "openclaw__assistant_signals". Compare on the plain tool name.
@@ -232,7 +234,15 @@ export function registerReviewRecovery(api: any, call: (action: string, args?: a
     !/^agent:main:assistant-review-(?:preparation|profile|skills)-/.test(ctx.sessionKey || '') &&
     /^agent:main:assistant-review[-:]/.test(ctx.sessionKey || '');
   const quietInstruction = 'Keep background processing silent. Save review counts, recovery, skipped/deferred signals, backlog and completion notes only through finish_analysis for the dashboard. A saved suggestion is delivered by the independent service, not by this reply. When there is no separate genuinely useful alert requiring the owner, end with exactly NO_REPLY, even after saving a new suggestion or completing a review. Do not announce starting, resuming, working, finishing or no new suggestions. Genuine actionable alerts and authorized preparation results/reminders remain enabled.';
-  const instruction = 'This turn reviews the personal-assistant signals inbox. Resume an unfinished review through assistant_signals begin_analysis with the same explicit accounts, then finish_analysis after a real conclusion. Do not switch to unrelated old main-chat tasks after a provider retry. Follow the assistant instructions below; they are the parts of tools/personal-assistant/AGENTS.md for reviews, so do not read that file again. Claim once with begin_analysis limit 120 and read every page with analysis_page; finish within about fifteen minutes. The service balances accounts, oldest backlog and newer signals. For body_clipped=true read the rest with events, event_ids and body_offset. Defer only what you expect to judge better later; pass the rest as finish_analysis reviewed_ids. Publish only genuinely useful distinct suggestions; no quota or duplicate direct Telegram send. Quiet hours limit delivery, not private review. Do not claim a complete review when only a preview was assessed. ' + quietInstruction;
+  // An isolated review session's turn has delivery off, so nothing it writes reaches anyone. It ends with one fixed line
+  // (REVIEW_DONE in assistant.py): after a NO_REPLY ending OpenClaw asks the model twice more for a visible answer, and
+  // the first of those, a text-only pass, misses the prompt cache (about 86k uncached tokens a review, 2026-11-06).
+  const sessionQuietInstruction = quietInstruction
+    .replace('A saved suggestion is delivered by the independent service, not by this reply.', 'A saved suggestion is delivered by the independent service; this reply is never sent to anyone.')
+    .replace('When there is no separate genuinely useful alert requiring the owner, end with exactly NO_REPLY, even after saving a new suggestion or completing a review.', `End with exactly the line ${REVIEW_DONE}, even after saving a new suggestion or completing a review.`)
+    .replace(' Genuine actionable alerts and authorized preparation results/reminders remain enabled.', '');
+  const reviewInstruction = (quiet: string) => 'This turn reviews the personal-assistant signals inbox. Resume an unfinished review through assistant_signals begin_analysis with the same explicit accounts, then finish_analysis after a real conclusion. Do not switch to unrelated old main-chat tasks after a provider retry. Follow the assistant instructions below; they are the parts of tools/personal-assistant/AGENTS.md for reviews, so do not read that file again. Claim once with begin_analysis limit 120 and read every page with analysis_page; finish within about fifteen minutes. The service balances accounts, oldest backlog and newer signals. For body_clipped=true read the rest with events, event_ids and body_offset. Defer only what you expect to judge better later; pass the rest as finish_analysis reviewed_ids. Publish only genuinely useful distinct suggestions; no quota or duplicate direct Telegram send. Quiet hours limit delivery, not private review. Do not claim a complete review when only a preview was assessed. ' + quiet;
+  const instruction = reviewInstruction(quietInstruction);
   api.on('before_prompt_build', async (_event: any, ctx: any) => {
     if (preparationSession(ctx.sessionKey) && privateReviewContext(ctx)) {
       if (ctx.runId) sessionRuns.set(ctx.sessionKey,ctx.runId);
@@ -257,7 +267,7 @@ export function registerReviewRecovery(api: any, call: (action: string, args?: a
     // The same for every review (nothing from this run in it), so it goes at the very start of the system prompt, where
     // the model's prompt cache can reuse it from one review to the next. In the turn's message it sat after OpenClaw's
     // per-run lines (the session key, the date) and was never reused. Only this run's own words stay in the message.
-    const context = instruction + gbrainHint() + (await ownerContext()) + (await assistantInstructions());
+    const context = reviewInstruction(sessionQuietInstruction) + gbrainHint() + (await ownerContext()) + (await assistantInstructions());
     return {prependSystemContext: context, ...(hint ? {prependContext: hint.trim()} : {})};
   }, {timeoutMs: 5000});
 
@@ -324,7 +334,7 @@ export function registerReviewRecovery(api: any, call: (action: string, args?: a
     const state = await call('review_context', {owner_session:ctx.sessionKey, owner_run:ctx.runId});
     if (!state.review || state.review.owner_run !== ctx.runId) return;
     return {action:'revise', reason:'The signal review is still unfinished.', retry:{
-      instruction:'Resume the claimed signal review with begin_analysis. Commit a real conclusion with finish_analysis before ending. If some signals cannot be assessed, pass only the genuinely reviewed IDs in reviewed_ids; leave the rest pending. Do not invent a review or switch tasks. ' + quietInstruction,
+      instruction:'Resume the claimed signal review with begin_analysis. Commit a real conclusion with finish_analysis before ending. If some signals cannot be assessed, pass only the genuinely reviewed IDs in reviewed_ids; leave the rest pending. Do not invent a review or switch tasks. ' + (reviewSession(ctx.sessionKey) ? sessionQuietInstruction : quietInstruction),
       idempotencyKey:'assistant-review-finish', maxAttempts:2}};
   }, {timeoutMs: 5000});
 

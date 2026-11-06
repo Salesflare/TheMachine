@@ -45,7 +45,7 @@ class ReviewCachePrefix(unittest.TestCase):
         self.assertGreaterEqual(len(shared) // 4, MIN_SHARED_TOKENS)
         # The first byte that differs is this run's own part, after the instructions and the slow parts
         self.assertNotIn(first_run, shared)
-        self.assertIn('End with exactly NO_REPLY.', shared)
+        self.assertIn('End with exactly the line Done.', shared)
         self.assertIn('Accounts: begin_analysis account_ids ["work"]', shared)
         self.assertGreaterEqual(len(shared), first.index('This turn: review run ') + len('This turn: review run '))
 
