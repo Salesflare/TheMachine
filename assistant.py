@@ -1218,6 +1218,40 @@ TEAM_INBOX_RULE = ('Mail to {}, an address the owner marked as the team\'s: othe
                    'no card, draft or promise for the owner from it')
 
 
+# Who an Intercom conversation is assigned to, for the review (Store.intercom_assignments): a teammate's is context only.
+INTERCOM_ASSIGNED = {'owner': 'Assigned to the owner in Intercom', 'nobody': 'Not assigned to anyone in Intercom yet',
+                     'team': 'In a team inbox in Intercom, no one assigned yet',
+                     'unknown': 'Assigned to someone in Intercom; whether that is the owner isn\'t known yet'}
+INTERCOM_TAKEN_RULE = ('Assigned in Intercom to {}, not the owner: theirs to answer. Context and the Graph only: '
+                       'no card, draft or promise for the owner from it')
+
+
+def intercom_taken(metadata, ids, emails):
+    """The teammate an Intercom conversation is assigned to when that isn't the owner: their name, or '' when Intercom didn't
+    name them. None when it is the owner's, nobody's, only a team inbox's, or when who the owner is in Intercom isn't known
+    (a shared Intercom where they never wrote): then it stays as it was, a to-do for them. ids: the owner's admin ids in that
+    workspace; emails: their addresses."""
+    admin = str(metadata.get('admin_assignee_id') or '')
+    if not re.fullmatch(r'[1-9][0-9]{0,19}', admin) or admin in ids:
+        return None
+    email = str(metadata.get('assignee_email') or '').lower()
+    if (email and email in emails) or (not email and not ids):
+        return None
+    return ' '.join(str(metadata.get('assignee_name') or '').split())[:100]
+
+
+def intercom_assignment(metadata, ids, emails):
+    """'owner', 'nobody', 'team' (a team inbox, no admin), 'unknown' (an admin, and who the owner is there isn't known) or
+    ('teammate', name) for an Intercom conversation."""
+    taken = intercom_taken(metadata, ids, emails)
+    if taken is not None:
+        return ('teammate', taken)
+    admin = str(metadata.get('admin_assignee_id') or '')
+    if admin:
+        return 'owner' if admin in ids or str(metadata.get('assignee_email') or '').lower() in emails else 'unknown'
+    return 'team' if metadata.get('team_assignee_id') else 'nobody'
+
+
 def signal_weight(row):
     """How much of a review's signal budget a signal takes: BRIEF_WEIGHT for bulk mail (a title line), else 1."""
     metadata = row['metadata'] if isinstance(row['metadata'], dict) else json.loads(row['metadata'] or '{}')
@@ -1250,7 +1284,7 @@ REVIEW_METADATA_SKIP = {
     'in-reply-to', 'date', 'mailbox_user_id', 'source_account', 'bucket_minutes', 'unit', 'lines_shown',
     'parts_returned', 'message_id', 'chat_id', 'sender_id', 'channel_id', 'message_ts', 'thread_ts', 'user_id',
     'bot_id', 'conversation_id', 'created_at', 'updated_at', 'post_time_ms', 'source_url', 'thread_id',
-    'admin_assignee_id', 'team_assignee_id', 'list_id'}
+    'admin_assignee_id', 'team_assignee_id', 'assignee_name', 'assignee_email', 'admin_emails', 'list_id'}
 
 
 def clamp(value, chars=300, items=10):
@@ -1339,9 +1373,10 @@ OWNER_AREA_RULE = ('They gave it no area. Place it by what it is about and who i
                    'The message it follows up on places it too. Leave both out only when it is truly unclear.')
 
 
-def review_view(row, preview=REVIEW_PREVIEW_CHARS, offset=0, earlier=None, brief=False, owner_in_thread=False, team_inbox=None):
+def review_view(row, preview=REVIEW_PREVIEW_CHARS, offset=0, earlier=None, brief=False, owner_in_thread=False, team_inbox=None, assigned=None):
     """What a reviewer needs from a signal, without sync bookkeeping. brief: bulk mail as a title line (bulk_kind).
-    team_inbox: the team address it only went to (team_only)."""
+    team_inbox: the team address it only went to (team_only). assigned: who an Intercom conversation is assigned to
+    (intercom_assignment)."""
     metadata = row['metadata'] if isinstance(row['metadata'], dict) else json.loads(row['metadata'])
     if brief and not row.get('deleted') and bulk_kind(row['kind'], metadata, row['title'], owner_in_thread):
         return title_view(row, metadata)
@@ -1380,6 +1415,10 @@ def review_view(row, preview=REVIEW_PREVIEW_CHARS, offset=0, earlier=None, brief
         view['not_owners'] = f"On {calendar_owner_name(metadata)}'s calendar, shared with the owner, who isn't on it: context only, no card, prep or promise for them"
     if team_inbox:
         view['team_inbox'] = TEAM_INBOX_RULE.format(team_inbox)
+    if isinstance(assigned, tuple):
+        view['assigned'] = INTERCOM_TAKEN_RULE.format(assigned[1] or 'a teammate')
+    elif assigned:
+        view['assigned'] = INTERCOM_ASSIGNED[assigned]
     return view
 
 
@@ -5323,6 +5362,37 @@ class Store:
         with self.connect() as db:
             return self.team_inbox(db, rows)
 
+    def intercom_owner(self, db, account_id):
+        """The owner's own admin ids in an Intercom account's workspace, and their addresses: the admin who signed in (not the
+        teammate whose token a Fleet shared), the one replies go out as, and any admin who wrote in one of its conversations
+        from one of the owner's addresses."""
+        account = next((a for a in self.accounts if a.get('id') == account_id), None) or {}
+        shared = account.get('shared')
+        received = bool(shared) and not (isinstance(shared, dict) and shared.get('origin'))
+        emails = own_addresses.yours(db, self.config) | {str(a.get('email') or '').lower() for a in self.accounts
+                                                         if '@' in str(a.get('email') or '') and not a.get('shared')}
+        ids = {str(account.get('reply_admin_id') or '')} | ({str(account.get('admin_id') or '')} if not received else set())
+        for (found,) in db.execute("SELECT json_extract(metadata,'$.admin_emails') FROM events WHERE kind='intercom.conversation' AND account_id=? "
+                                   "AND json_extract(metadata,'$.admin_emails') IS NOT NULL ORDER BY occurred_at DESC LIMIT 500", (account_id,)):
+            try:
+                ids |= {k for k, v in json.loads(found).items() if str(v).lower() in emails}
+            except (ValueError, AttributeError):
+                continue
+        return {i for i in ids if i}, emails
+
+    def intercom_assignments(self, db, rows, owners=None):
+        """{event id: intercom_assignment} for the Intercom conversations among rows. owners: intercom_owner by account,
+        kept across calls."""
+        found, owners = {}, {} if owners is None else owners
+        for r in rows:
+            if r['kind'] != 'intercom.conversation':
+                continue
+            if r['account_id'] not in owners:
+                owners[r['account_id']] = self.intercom_owner(db, r['account_id'])
+            metadata = r['metadata'] if isinstance(r['metadata'], dict) else json.loads(r['metadata'] or '{}')
+            found[r['id']] = intercom_assignment(metadata, *owners[r['account_id']])
+        return found
+
     def conversation_context(self, rows, limit=4, hours=48):
         """Up to four earlier messages from the same chat for each Slack/WhatsApp signal, so a
         short reply ("let me check") is reviewed with what it answers."""
@@ -5569,7 +5639,10 @@ class Store:
         hints = self.project_hints([r['id'] for r in rows])
         self.bounce_hints(hints, [r['id'] for r in rows])
         owned, teams = self.owner_threads(rows), self.team_inboxes(rows)
-        pages = review_pages([{**review_view(r, earlier=context.get(r['id']), brief=True, owner_in_thread=r['id'] in owned, team_inbox=teams.get(r['id'])),
+        with self.connect() as db:
+            assigned = self.intercom_assignments(db, rows)
+        pages = review_pages([{**review_view(r, earlier=context.get(r['id']), brief=True, owner_in_thread=r['id'] in owned, team_inbox=teams.get(r['id']),
+                                             assigned=assigned.get(r['id'])),
                                **({'answers_your_card': replies[r['id']]} if r['id'] in replies else {}),
                                **hints.get(r['id'], {})} for r in rows])
         page_of = {view['id']: n for n, page in enumerate(pages) for view in page}
@@ -5601,7 +5674,9 @@ class Store:
         hints = self.project_hints([i for i in ids if i in rows])
         self.bounce_hints(hints, [i for i in ids if i in rows])
         owned, teams = self.owner_threads([rows[i] for i in ids if i in rows]), self.team_inboxes([rows[i] for i in ids if i in rows])
-        views = [{**review_view(rows[i], earlier=context.get(i), brief=True, owner_in_thread=i in owned, team_inbox=teams.get(i)),
+        with self.connect() as db:
+            assigned = self.intercom_assignments(db, [rows[i] for i in ids if i in rows])
+        views = [{**review_view(rows[i], earlier=context.get(i), brief=True, owner_in_thread=i in owned, team_inbox=teams.get(i), assigned=assigned.get(i)),
                   **({'answers_your_card': replies[i]} if i in replies else {}), **hints.get(i, {})}
                  for i in ids if i in rows]
         row_offset = int(row_offset)
@@ -5784,6 +5859,10 @@ class Store:
             if teams and len(teams) == len(rows):
                 raise ValueError(f"That mail only went to {sorted(set(teams.values()))[0]}, which the owner marked as the team's: "
                                  'others pick it up, so no card for it')
+            taken = [a for a in self.intercom_assignments(db, rows).values() if isinstance(a, tuple)]
+            if taken and len(taken) == len(rows):
+                raise ValueError(f"That Intercom conversation is assigned to {taken[0][1] or 'a teammate'}, not the owner: "
+                                 'theirs to answer, so no card for it')
             own = owner_card_of(db, rows) if match else None
             if own is not None and card_id is not None and card_id != own['id']:
                 # The owner's card is theirs to merge: the review only asks.
@@ -8275,6 +8354,47 @@ class Store:
                             (dt.datetime.fromisoformat(stamp) + dt.timedelta(hours=undo_hours)).isoformat(),
                             encoded({**{k: row[k] for k in ('snoozed_until', 'resume_status')}, 'preparation': dict(prior_job) if prior_job else None}),
                             stamp, sid))
+                db.execute("UPDATE preparations SET status='cancelled',updated_at=? WHERE suggestion_id=? AND status!='done'", (stamp, sid))
+                pause_idle_steps(db, sid)
+                db.execute("UPDATE action_jobs SET status='cancelled',updated_at=? WHERE suggestion_id=? AND status IN ('queued','blocked')", (stamp, sid))
+                db.execute("UPDATE deliveries SET status='cancelled',reminder=0 WHERE suggestion_id=? AND status='queued'", (sid,))
+                db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL', (sid,))
+                closed.append(sid)
+        return closed
+
+    def close_taken_intercom(self, undo_hours=24):
+        """Open to-dos made only from Intercom conversations that a teammate has since been assigned close by themselves: Done,
+        "{name} took it in Intercom", with Undo for a day. Once per teammate: after an Undo it stays. Not while a send of
+        theirs is under way. Returns the closed ids."""
+        stamp, closed, owners = now(), [], {}
+        with self.connect() as db:
+            if not db.execute("SELECT 1 FROM events WHERE kind='intercom.conversation' LIMIT 1").fetchone():
+                return closed  # no Intercom here: no write lock taken
+            db.execute('BEGIN IMMEDIATE')
+            rows = db.execute("SELECT s.* FROM suggestions s WHERE s.status IN ('pending','accepted','instructions','prepared','snoozed') "
+                              "AND EXISTS(SELECT 1 FROM json_each(s.event_ids) j JOIN events e ON e.id=j.value WHERE e.kind='intercom.conversation')").fetchall()
+            for row in rows:
+                sid, ids = row['id'], json.loads(row['event_ids'] or '[]')
+                events = db.execute('SELECT id,account_id,kind,metadata FROM events WHERE id IN (' + ','.join('?' * len(ids)) + ')', ids).fetchall() if ids else []
+                if not events or any(e['kind'] != 'intercom.conversation' for e in events):
+                    continue  # other evidence too (a mail, the owner's own words): theirs to judge
+                taken = [a for a in self.intercom_assignments(db, events, owners).values() if isinstance(a, tuple)]
+                if len(taken) != len(events):
+                    continue
+                decision_id = 'intercom-taken:' + hashlib.sha256(f"{sid}:{sorted(set(t[1] for t in taken))}:{sorted(json.loads(e['metadata']).get('admin_assignee_id') or '' for e in events)}".encode()).hexdigest()[:32]
+                if db.execute('SELECT 1 FROM decisions WHERE id=?', (decision_id,)).fetchone():
+                    continue  # closed for this teammate before and the owner took it back
+                if db.execute("SELECT 1 FROM action_jobs WHERE suggestion_id=? AND status IN ('sending','uncertain')", (sid,)).fetchone():
+                    continue  # a send on its way settles first
+                prior_job = db.execute('SELECT job_id,status FROM preparations WHERE suggestion_id=?', (sid,)).fetchone()
+                resume = row['resume_status'] if row['status'] == 'snoozed' else row['status']
+                db.execute('INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
+                           (decision_id, sid, 'complete', taken[0][1], 'intercom', stamp))
+                db.execute("UPDATE suggestions SET status='completed',completed_from=?,closed_from=?,closed_decision_id=?,undo_until=?,closed_state=?,"
+                           'snoozed_until=NULL,resume_status=NULL,feedback_until=NULL WHERE id=?',
+                           (resume if resume in ('pending', 'accepted', 'prepared', 'instructions') else 'pending', row['status'], decision_id,
+                            (dt.datetime.fromisoformat(stamp) + dt.timedelta(hours=undo_hours)).isoformat(),
+                            encoded({**{k: row[k] for k in ('snoozed_until', 'resume_status')}, 'preparation': dict(prior_job) if prior_job else None}), sid))
                 db.execute("UPDATE preparations SET status='cancelled',updated_at=? WHERE suggestion_id=? AND status!='done'", (stamp, sid))
                 pause_idle_steps(db, sid)
                 db.execute("UPDATE action_jobs SET status='cancelled',updated_at=? WHERE suggestion_id=? AND status IN ('queued','blocked')", (stamp, sid))
@@ -20592,11 +20712,15 @@ class App(*APP_MIXINS):
         about = max(((i['at'], i['from']) for i in owner if i['kind'] == 'source' and not i['mine'] and i['from']), default=(0, ''))[1]  # the latest who wrote
         waiting = False  # with a teammate: Later means back to check in, not a snooze of the owner's
         sent_files = chat_files.listed(db, [r['id'] for r in db.execute("SELECT id FROM decisions WHERE suggestion_id=? AND choice='other' AND source='dashboard'", (suggestion_id,))])
-        for r in db.execute("SELECT id,choice,feedback,source,created_at FROM decisions WHERE suggestion_id=? AND source IN ('dashboard','telegram','fleet','expiry','placed') "
+        for r in db.execute("SELECT id,choice,feedback,source,created_at FROM decisions WHERE suggestion_id=? AND source IN ('dashboard','telegram','fleet','expiry','placed','intercom') "
                             'ORDER BY rowid', (suggestion_id,)):
             at, via = chat_ms(r['created_at']), (' in Telegram' if r['source'] == 'telegram' else '')
             if r['source'] == 'expiry':  # its moment passed (Store.expire_passed); Undo takes this back like a tap
                 owner.append({'kind': 'event', 'text': 'Closed by itself: no longer needed', 'choice': 'complete', 'at': at})
+                continue
+            if r['source'] == 'intercom':  # a teammate was assigned the conversation (Store.close_taken_intercom)
+                owner.append({'kind': 'event', 'text': i18n.t('Closed by itself: {} took it in Intercom', r['feedback']) if r['feedback']
+                              else i18n.t('Closed by itself: a teammate took it in Intercom'), 'choice': 'complete', 'at': at})
                 continue
             if r['source'] == 'fleet' or r['choice'] != 'snooze':
                 was, waiting = waiting, r['source'] == 'fleet' and r['id'].startswith('fleet-handoff-wait-')
@@ -20906,11 +21030,15 @@ class App(*APP_MIXINS):
             except Exception as error:LOG.error('expiry error=%s',type(error).__name__)
 
     def expire_step(self, every=30):
-        """To-dos whose moment passed close by themselves (Store.expire_passed), about every half minute."""
+        """To-dos whose moment passed close by themselves (Store.expire_passed), about every half minute; Intercom to-dos a
+        teammate took (Store.close_taken_intercom), about every five minutes."""
         if time.monotonic() - self.__dict__.get('expired_swept', -every) < every:
             return
         self.expired_swept = time.monotonic()
         self.store.expire_passed()
+        if time.monotonic() - self.__dict__.get('intercom_swept', -300) >= 300:  # a teammate took it: within five minutes
+            self.intercom_swept = time.monotonic()
+            self.store.close_taken_intercom()
 
     def seal_attachments(self, every=60):
         """Email attachments that ended runs took are sealed in place and the runs' readable copies removed

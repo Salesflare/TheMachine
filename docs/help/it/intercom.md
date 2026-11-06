@@ -18,6 +18,8 @@ Legge le conversazioni. Con il tuo **Accedi con Intercom**, può anche risponder
 
 Un’attività da una conversazione Intercom mostra da dove viene: **Leggi il messaggio** apre la conversazione, con un link a essa in Intercom, e il cliente compare sull’attività. La sua risposta è una risposta Intercom in quella conversazione, a meno che tu non chieda un’email.
 
+Diventano attività solo le conversazioni assegnate a te, o ancora a nessuno, anche quelle in una inbox del team senza nessuno assegnato. Quando qualcuno del team prende una conversazione in Intercom, la sua attività aperta si chiude da sola, con **Annulla**. Su un Intercom condiviso con te, le tue conversazioni sono quelle assegnate all’admin con cui scrivi.
+
 Quando Intercom non può rispondere dalla tua Machine (condiviso con te solo in lettura, risposte non attive o non collegato), la bozza parte via email. L’attività dice perché, e la sua revisione chiede **Inviare via email invece?** Per rispondere tu in Intercom, tocca **Collega il tuo Intercom** sull’attività e accedi. Non parte nulla prima che tu lo invii.
 
 ## Collegalo
