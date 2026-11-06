@@ -43,7 +43,7 @@ If a page says **Couldn’t load this page.**, tap **Try again**. If it keeps sa
 
 **Filter**, next to the tabs on People, Organizations and Projects, narrows the list by owner, tag, board, stage, organization, value, expected close date and **No reply in 10+ days**. People and organizations match through their open projects. On Projects, the List and the Board share one Filter.
 
-The filters you picked show above the list, with **Clear**. The order menu also sorts by **Value** and **Close date**. Your Machine does the filtering, so long lists stay fast. On a phone the filters open as a sheet.
+The filters you picked show above the list, with **Clear**. The order menu also sorts by **Value** and **Close date**. On a phone the filters open as a sheet.
 
 ## Team
 
@@ -51,7 +51,7 @@ The filters you picked show above the list, with **Clear**. The order menu also 
 
 ## Owner
 
-In a Work Fleet, each person, organization and project has an owner: **Owner** under With you on its page. It's you, unless you pick someone from your Work Fleet. **Owner** in Filter shows only yours, on the list and the board. A board card shows its owner's name. Each change shows in its timeline. A record shared with your team carries its owner with it, under the same sharing rules as the rest.
+In a Work Fleet, each person, organization and project has an owner: **Owner** under With you on its page. It's you, unless you pick someone from your Work Fleet. **Owner** in Filter shows only yours, on the list and the board. A project on a board shows its owner's name. Each change shows in its timeline. A record shared with your team carries its owner with it, under the same sharing rules as the rest.
 
 ## Fields and tags
 
@@ -91,7 +91,7 @@ Your own addresses and numbers, aliases too, are always you, never someone in yo
 
 About you lists your addresses with where each came from; change them in **Settings**, under Account. A person made from your own address before goes into About you by itself, with a backup kept on your Machine.
 
-To send your own card to a teammate or friend, pick **Share my contact**. See [Share a contact](share-contact.md).
+To send your own contact to a teammate or friend, pick **Share my contact**. See [Share a contact](share-contact.md).
 
 ## Picture
 
@@ -160,10 +160,10 @@ Named by your Machine from what your messages are about. Messages that look like
 Or run them by hand, like deals in a CRM:
 
 - **New project**: at the top of a board, **+ Add** under a stage, **New project** at the top of the list, **+** in the top bar on a phone, or from a person's or organization's page. Give it a name, a board and stage, an organization (search your Graph, or **Add** a new one), a value, an expected close date, people and notes. Projects already in your Graph with a name like it show first.
-- **Edit** on a project's page, or **Edit** in a card's **⋯** on the board (or press E on a card). It changes all of the above.
+- **Edit** on a project's page, or **Edit** in its **⋯** on the board (or press E). It changes all of the above.
 - **Won** or **Lost**, with why. Won moves it to the board's last stage, Lost to Stalled or declined. **Reopen** undoes it.
 - **Archive** takes it off the board and lists; a new message about it brings it back. **Delete** removes it for good; its messages and people stay.
-- Move a card by dragging it, or with **⋯**, **Move to** on a phone. Your move stands until a newer message moves it.
+- Move a project by dragging it, or with **⋯**, **Move to** on a phone. Your move stands until a newer message moves it.
 - **Stages**, at the top of a board, shows only the stages you pick, per board. **Clear** shows them all again.
 - "4 with no reply in 10+ days" under a stage: tap it to show only those, on the board and the list. Tap again to show all.
 
@@ -171,11 +171,11 @@ Or run them by hand, like deals in a CRM:
 
 A to-do can belong to one project. Your Machine picks it when its thread or the people it's about are on a single open project, and the to-do shows its name under the title. **Project** under the to-do's **Details**, or **Put on a project** in the command menu (Ctrl K), changes it or takes it off. Your choice stays.
 
-A project's page lists its to-dos under **To-dos**, open ones first, and its card on the board says how many are open. Linking a to-do to a shared project shares nothing more: your team still sees only what came from shared messages.
+A project's page lists its to-dos under **To-dos**, open ones first, and the board says how many are open. Linking a to-do to a shared project shares nothing more: your team still sees only what came from shared messages.
 
 ### A project's organization
 
-Each project can be linked to one organization. Its page, its row and its card on the board show it, and it links there.
+Each project can be linked to one organization. Its page, the list and the board show it, with a link.
 
 When nobody picked one, your Machine sets it from the people on the project and its messages, leaving out your colleagues. It only does that when one organization is clearly the other side: personal email like Gmail never counts, and a project with several companies stays without one. The project form then says "From its people".
 
@@ -199,7 +199,7 @@ A new board, or a suggested board you save, looks through your whole history onc
 
 ### A teammate's board
 
-In **Team**, boards your teammates share show next to yours, the ones with most of your projects first. Each card says what happened last, with its date, like on its owner's board: the newest line shared with the team, else its last move. Its owner's name shows only when a stage has cards of more than one teammate; when one person owns the whole board, the header says so.
+In **Team**, boards your teammates share show next to yours, the ones with most of your projects first. Each project says what happened last, with its date, like on its owner's board: the newest line shared with the team, else its last move. Its owner's name shows only when a stage has projects of more than one teammate; when one person owns the whole board, the header says so.
 
 **Mine**, **Needs me** and **All** pick what a shared board shows, and the Team list of projects with it. Mine is what you're on: a thread of it, a project you own or have yourself, or a to-do of yours about it. Needs me is what waits on you: an open to-do about it, or a thread where the newest message was written to you.
 

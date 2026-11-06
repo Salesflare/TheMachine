@@ -12,13 +12,13 @@ Stories in your Shortcut workspace that change state, with their owners and dead
 
 ## What it can do
 
-Nothing in Shortcut. It only reads, even though Shortcut tokens can do more.
+Nothing. It only reads, even though a Shortcut token allows more.
 
 ## Connect it
 
 1. In Shortcut, open Settings, Account, API Tokens, and create a token.
 2. On a hosted Machine: open your setup page at app.themachine.computer/setup, go to **More sources** and open Shortcut. On your own computer: **Connections**, **+ Add**, Shortcut, or `assistant connect shortcut`.
-3. Give your workspace's address or slug and paste the token, then press **Connect**.
+3. Enter your workspace's name, as in its web address, paste the token and press **Connect**.
 
 ## Remove it
 

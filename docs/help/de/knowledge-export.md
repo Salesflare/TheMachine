@@ -1,7 +1,7 @@
 ---
 title: Wissen für eine andere KI
 area: settings
-summary: Nimm mit, was deine Machine gelernt hat, zu jeder anderen KI, als einfache Markdown-, JSONL- und CSV-Dateien.
+summary: Nimm mit, was deine Machine gelernt hat, zu jeder anderen KI, als einfache Dateien, die jede KI lesen kann.
 covers: knowledge-export
 code: machine/export/knowledge.py, machine/app/knowledge_export.py, cli.py
 order: 6
@@ -16,7 +16,7 @@ Alles, was deine Machine lernt, gehört dir. Nimm es zu einer anderen KI mit ode
 4. Setze optional eine **Passphrase** mit mindestens 10 Zeichen, um die Datei zu verschlüsseln.
 5. Drücke auf **Herunterladen**. Die Datei entsteht auf deiner Machine und lässt sich einmal herunterladen.
 
-Auf einer gehosteten Machine geht es genauso, in den Einstellungen deiner Machine. Auf deinem eigenen Computer macht `assistant export-knowledge` dieselbe Datei.
+Es funktioniert genauso auf einer gehosteten Machine und auf deinem eigenen Computer.
 
 ## Was drin ist
 
@@ -27,7 +27,7 @@ Auf einer gehosteten Machine geht es genauso, in den Einstellungen deiner Machin
 - Kontext: Team-Briefings, Zusammenfassungszeilen, Versprechen und offene Aufgaben.
 - Quellen: woher alles kam, mit ID und Datum.
 
-Datensätze sind JSONL, Kontakte und Aufgaben auch CSV. Eine README.md ganz oben erklärt den Aufbau und sagt einer KI, wie sie es nutzt. Gib der KI den Ordner oder die ZIP-Datei als Wissensdatei oder Projekt.
+Kontakte und Aufgaben gibt es auch als Tabellen (CSV). Eine README ganz oben sagt der KI, wie sie alles liest. Lade die ZIP-Datei bei der KI als Wissensdatei oder Projekt hoch.
 
 ## Was draußen bleibt
 

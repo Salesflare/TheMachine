@@ -20,7 +20,7 @@ Bevor sie eine Nachfrage entwirft oder etwas übergibt, prüft sie den Verlauf a
 - Eine E-Mail öffnet sich so, wie sie aussehen wird, mit Fettdruck, Listen und Links. Eine Slack- oder Chat-Nachricht ist reiner Text: Ein Link erscheint als seine Wörter mit der Adresse in Klammern und geht wieder als Link raus.
 - **Änderungen anfragen** im selben Fenster: Sag, was anders sein soll, und deine Machine macht den Entwurf neu.
 - Eine Antwort antwortet auf die neueste E-Mail des Verlaufs, und die Quelle der Aufgabe öffnet diese E-Mail.
-- Ein Schritt, der etwas verbindlich macht, etwa absenden, bezahlen oder buchen, hält an und wartet auf deine Bestätigung.
+- Ein Schritt, der etwas verbindlich macht, etwa absenden, bezahlen oder buchen, wartet auf deine Bestätigung, oder darauf, dass du im Chat darum bittest. Bestätigst du einen Schritt, warten die anderen weiter: Die Aufgabe schließt sich erst, wenn jeder Schritt erledigt ist.
 - Im Chat einer Aufgabe wird ein Entwurf nie in derselben Nachricht gesendet, die ihn geschrieben hat.
 - Bis du freigibst, steht in der Aufgabe **Bereit zur Freigabe** oder **Braucht dich**, nie fertig. Dass ein Entwurf rausging, steht dort erst, wenn er raus ist.
 

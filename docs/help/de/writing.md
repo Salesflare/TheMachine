@@ -9,7 +9,7 @@ keywords: tone, style, voice, write like me, sound like me, my style, wording, f
 ---
 ## Signaturen
 
-In **Einstellungen**, **Schreiben** hat jedes Mailkonto eine Signatur, die unter die E-Mails kommt, die du sendest. **Aus Gmail importieren** übernimmt die aus Gmail. Für Outlook findet **In gesendeter Mail suchen** sie in deinen gesendeten Mails. Bearbeite sie, dann **Speichern**.
+In **Einstellungen**, **Schreiben** hat jedes Mailkonto eine Signatur, die unter die E-Mails kommt, die du sendest. **Aus Gmail importieren** übernimmt die aus Gmail. Für Outlook findet **In gesendeter Mail suchen** sie in deinen gesendeten Mails. Ändere sie nach Wunsch und tippe dann auf **Speichern**, das erscheint, sobald du etwas änderst.
 
 ## Wie du schreibst
 

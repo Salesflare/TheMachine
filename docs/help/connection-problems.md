@@ -14,20 +14,20 @@ Open **Connections**. Each source says how it's doing:
 - **Waiting for first sync**: just connected. Give it a few minutes.
 - **Reads again at** 07:00: X and LinkedIn only read during the day. Nothing to do.
 - **Needs your help**: open **Details**. It says what went wrong and what to do.
-- **Phone disconnected**: the phone isn't reaching OpenClaw. Open the OpenClaw app on it.
+- **Phone disconnected**: your Android phone isn't reaching your Machine. Open the OpenClaw app on it.
 
-A source that keeps failing and brings in nothing new for hours, longer than its usual quiet stretch, doesn't show as connected. It clears by itself once new items come in.
+A source that brings in nothing for longer than usual stops showing as connected. It clears by itself once new items come in.
 
 The number on **Connections** only counts sources that need your help.
 
 ## Common fixes
 
-- "Sign in to Google again" (or Microsoft): one line per account. One **Reconnect** brings back all of its sources, like Gmail and Calendar.
-- "needs you to sign in again": press **Reconnect** and sign in. On a hosted Machine, you sign in right there and come back to the dashboard.
+- "Sign in to Google again" (or Microsoft): one **Reconnect** brings back all of that account's sources, like Gmail and Calendar.
+- "needs you to sign in again": press **Reconnect** and sign in.
 - Microsoft still setting up access: it tries again by itself.
-- Slack: check your Maton API key and the Slack connection in Maton.
-- Android: open the OpenClaw app on the phone, and allow it notification access.
+- Slack: press **Reconnect**. Connected with a Maton key? Check the key and the Slack connection in Maton.
+- Android: open the OpenClaw app on the phone and allow it notification access.
 
-On your own computer, `assistant doctor` checks every source and prints the fix for each problem.
+On your own computer, `assistant doctor` checks every source and says how to fix each problem.
 
 Still stuck? See [Get support](get-support.md).

@@ -8,7 +8,7 @@ site: Show a setup code, Approve, Remove
 ---
 ## What it reads
 
-The notifications that come in on your Android phone, through the OpenClaw app. One-time codes are left out, and so are WhatsApp, Telegram, Signal and Discord notifications.
+The notifications on your Android phone, through the OpenClaw app. One-time codes stay out, and so do WhatsApp, Telegram, Signal and Discord notifications.
 
 ## What it can do
 
@@ -18,12 +18,12 @@ Nothing on your phone. It only reads notifications.
 
 On a hosted Machine:
 
-1. Install the OpenClaw app on your phone.
+1. Install OpenClaw from Google Play on your phone.
 2. In the dashboard, open **Connections**, then **+ Add**, pick Android phone and press **Show a setup code**.
-3. Scan it in the OpenClaw app, then press **Approve** for the pairing.
-4. In the OpenClaw app, turn on Forward Notification Events, and allow notification access when Android asks.
+3. In the OpenClaw app, add a Gateway and scan the code. Back in the dashboard, press **Approve**.
+4. Allow notification access when the app asks.
 
-On your own computer, pair the phone with your OpenClaw Gateway, then run `assistant connect android`.
+On your own computer, pair the phone in the OpenClaw app, then run `assistant connect android`.
 
 ## Remove it
 

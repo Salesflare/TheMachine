@@ -8,7 +8,7 @@ site: Connect, More sources, Remove
 ---
 ## What it reads
 
-Your mentions, replies and direct messages on X. It reads them in your Machine's own browser, signed in as you. It doesn't use X's developer API, marks nothing as seen, and can't read encrypted X Chat.
+Your mentions, replies and direct messages on X, in your Machine's own browser, signed in as you. It marks nothing as seen and can't read encrypted X Chat.
 
 ## What it can send
 
@@ -27,7 +27,7 @@ On your own computer:
 2. Pick **Work** with its company, or **Personal**, type your handle without the @, and press **Connect**.
 3. Press **Sign in to X** and sign in in your Machine's browser. It connects by itself once you're in.
 
-Or run `assistant connect x`, and type your handle and the handle the browser is normally signed in to.
+Or run `assistant connect x` in a terminal.
 
 If X signs your Machine out, see [Signed out of a site](signed-out.md).
 

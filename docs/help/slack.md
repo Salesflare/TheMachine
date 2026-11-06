@@ -18,7 +18,7 @@ A direct message to one person, as you, and only after you approve it on the to-
 
 ## Connect it
 
-Slack is read through Maton, which holds the Slack sign-in.
+The Machine reads Slack through Maton, a service that holds your Slack sign-in.
 
 1. Sign in at maton.ai, connect Slack there, and copy your Maton API key from Home.
 2. On a hosted Machine: open your setup page at app.themachine.computer/setup, go to **More sources**, open Slack, paste the key and press **Connect**.

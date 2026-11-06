@@ -41,5 +41,3 @@ Bitte in einer Aufgabe um einen Skill, und deine Machine schreibt ihn dort. Öff
 ## Einen teilen
 
 Teile einen Skill mit einem Freund oder Teammitglied. Die Person liest ihn und entscheidet, ob sie ihn installiert. Spätere Änderungen gehen nur raus, wenn du erneut teilst.
-
-Mehr im [Skills-Leitfaden](https://github.com/Salesflare/TheMachine/blob/main/docs/skills.md).

@@ -6,14 +6,14 @@ covers: self-hosted
 code: install.sh, install.ps1, docs/getting-started.md
 order: 2
 ---
-The Machine is open source (AGPL). On your own computer it is free, and your data stays there.
+Run The Machine on your own computer for free. It's open source (AGPL), and your data stays with you. Setup takes a terminal.
 
 ## What it needs
 
-- OpenClaw 2026.10.7 or newer. The installer offers to install it.
+- OpenClaw 2026.10.7 or newer, the open-source agent The Machine runs on. The installer offers to install it.
 - Python 3.12 or newer, and Node.js 24 (24.22.1 or newer) or 26.12.1 or newer, not 25.
 - Tailscale, to reach your dashboard from your phone.
-- Your own user account, not root.
+- A normal user account, not root.
 
 ## Install it
 
@@ -24,13 +24,13 @@ On Linux or macOS (macOS is in beta):
 
 On Windows (beta), it runs inside WSL2. In PowerShell, run `irm https://raw.githubusercontent.com/Salesflare/TheMachine/main/install.ps1 | iex`. It sets up WSL2 with Ubuntu and everything the app needs, then runs `./install.sh`.
 
-The installer finds your accounts, connects them one by one and shows a preview of last week before anything turns on.
+The installer finds your accounts, connects them one by one, and shows a preview of last week before anything turns on.
 
 ## After installing
 
 - Add sources with `assistant connect`, or **Connections**, then **+ Add**, in the dashboard.
 - Check everything with `assistant doctor`. It prints a fix for each problem.
-- The installer takes the newest signed release, and updates come as signed releases too.
-- Paired with The Machine Network, your Machine shares its Tailscale address with your account, so the phone app opens it after you sign in. Unpairing deletes it.
+- It installs the newest signed release, and updates come as signed releases too.
+- Pair it with your account, and the phone app opens it after you sign in. Unpairing removes that link.
 
 The full guide is in the repository: [Getting started](https://github.com/Salesflare/TheMachine/blob/main/docs/getting-started.md).

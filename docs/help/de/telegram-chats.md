@@ -36,7 +36,7 @@ Oder führe `assistant connect telegram` in einem Terminal aus und scanne den Co
 
 ## Wenn es aufhört
 
-- **Von Telegram abgemeldet**: Telegram hat die Anmeldung dieses Geräts beendet, oder du hast es auf deinem Handy abgemeldet. Tippe auf seiner Karte auf **Neu verbinden**.
+- **Von Telegram abgemeldet**: Telegram hat die Anmeldung dieses Geräts beendet, oder du hast es auf deinem Handy abgemeldet. Tippe in **Verbindungen** auf **Neu verbinden**.
 - **Telegram akzeptiert die App-ID nicht mehr**: Telegram akzeptiert die App-ID, die diese Machine nutzt, nicht mehr. Nichts wird gelesen oder gesendet, bis du auf **Neu verbinden** tippst und eine eigene App-ID hinzufügst.
 
 The Machine nutzt dafür die API von Telegram. Telegram kann Anmeldungen von Apps wie ihr einschränken oder beenden.

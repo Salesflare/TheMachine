@@ -8,36 +8,36 @@ order: 2
 ---
 ## What Do it does
 
-**Do it** asks your Machine to prepare the to-do: draft the reply, look things up, fill in a form. It works with your own accounts and its own browser, as you would.
+**Do it** asks your Machine to prepare the to-do: draft the reply, look things up, fill in a form. It uses your own accounts and its own browser, as you would.
 
-While it works in its browser, the to-do and its chat show that page live. Click the picture to open the browser.
+While it works in its browser, the to-do shows that page live. Click the picture to open it.
 
-Before it drafts a follow-up or hands something off, it checks the conversation for newer replies, also from a teammate. If it's already handled, the to-do says so instead. When it made or changed a document or page, the to-do links straight to it.
+Before a follow-up or handoff, it checks for newer replies, also from a teammate. If it's already handled, the to-do says so. When it changed a document or page, the to-do links to it.
 
 ## Nothing goes out before your yes
 
 - A reply comes back as a draft. **Review and send** opens it ready to edit; it only goes out when you press **Send now**.
-- An email opens as it will look, with its bold, lists and links. A Slack or chat message is plain text: a link reads as its words with the address in brackets, and goes out as a link again.
+- An email shows as it will look, with its bold, lists and links. A Slack or chat message is plain text.
 - **Ask for changes** in the same window: say what to change and your Machine redoes the draft.
 - A reply answers the newest email of its thread, and the to-do's source opens that email.
-- A step that commits something, like submit, pay or book, stops and waits for your confirm.
+- A step that commits something, like submit, pay or book, waits for your confirm, or for you to ask for it in the chat. Confirming one step leaves the others waiting: the to-do closes only when every step is done.
 - In a to-do's chat, a draft is never sent in the same message that wrote it.
-- Until you approve it, the to-do says **Ready to approve** or **Needs you**, never finished. It says a draft went out only once it did.
+- Until you approve, the to-do says **Ready to approve** or **Needs you**. It says a draft went out only once it did.
 
-What it can send depends on the source: an email, a Slack direct message, a WhatsApp, Telegram, LinkedIn or X message. Each connection's article says what it can send.
+It can send an email, a Slack direct message, or a WhatsApp, Telegram, LinkedIn or X message, depending on the source. Each connection's article says what it can send.
 
 ## Editing an email
 
 - Use the buttons above the text, or `Ctrl B` for bold, `Ctrl I` for italic and `Ctrl K` for a link (`⌘` on a Mac). There are buttons for a bulleted and a numbered list too.
 - A link needs an address that starts with https://. Pasted text comes in plain, without its colors or pictures.
-- Formatting an email can't carry is taken out before anything is sent, and the message shows how it will go. Press **Send now** again to send it.
+- Formatting an email can't carry is taken out first, and the message shows how it will go. Press **Send now** again to send it.
 - The email goes out exactly as shown, with a plain-text copy for mail apps that don't show formatting.
 
 ## When it can't
 
 - "This can't be sent from here." means you copy the draft with **Copy draft** and send it yourself.
-- **Needs your help** means it asks you something: **Answer** it. **Stuck** means it stopped without a question, or ran too long and was stopped; the to-do says why.
+- **Needs your help** means it has a question: **Answer** it. **Stuck** means it stopped without one; the to-do says why.
 - **Try again** runs it once more. **Change** asks for something else. On a stuck to-do, **Try again** leads, and **Details** shows what it tried.
-- A to-do in Preparing starts within seconds. When it has to wait, it says why and roughly when: "Starts after the current one", a usage limit that resets, or usage saved for later.
-- A site wants you to sign in: press **Sign in**, or **Open the browser** and sign in there. Once you're in, it carries on by itself and the to-do says "Signed in. I'll start shortly." Closing the browser checks right away. If it doesn't carry on, press **Continue**.
-- A code sent to your phone, or a permission it lacks, stops it. The to-do says in one line what it needs, like the code in its browser or access to a file, then **Continue** or **Try again**.
+- A to-do in Preparing starts within seconds. When it has to wait, it says why and roughly when, like "Starts after the current one".
+- A site wants you to sign in: press **Sign in**, or **Open the browser** and sign in there. It then carries on by itself. If it doesn't, press **Continue**.
+- A code sent to your phone, or a missing permission, stops it. The to-do says what it needs, then **Continue** or **Try again**.

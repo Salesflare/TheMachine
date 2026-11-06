@@ -10,7 +10,7 @@ order: 1
 ## Deine Machine
 
 - Auf deinem eigenen Computer: kostenlos. Alles, was The Machine kann, mit deinem eigenen Modell.
-- Gehostet: {price.standard} im Monat für eine Standard-Machine oder {price.big} für eine größere, zzgl. MwSt. Die ersten {trial_days} Tage sind kostenlos, einmal pro Person. Zum Start brauchst du deine Zahlungskarte, und vor dem Ende der kostenlosen Tage wird nichts abgebucht.
+- Gehostet: {price.standard} im Monat für eine Standard-Machine oder {price.big} für eine größere, zzgl. MwSt. Die ersten {trial_days} Tage sind kostenlos, einmal pro Person, und vorher wird nichts abgebucht. Hat deine Testphase ohne Karte begonnen, füge vorher auf deiner Kontoseite eine hinzu.
 
 Deinen KI-Tarif rechnet dein Anbieter ab, etwa OpenAI. Wir schlagen nichts drauf.
 

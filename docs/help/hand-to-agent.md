@@ -12,15 +12,15 @@ order: 5
 1. On the to-do, open **…**, then **Hand off…**, and pick **Codex** or **Claude Code**. Only the tools you set up show.
 2. Check the summary and what it gets, add a note if you like, and press **Hand off**. **See the full job** shows the whole brief.
 
-The to-do then shows that it's working, and the result when it's done, with **What it did** and **Show changes**. **Ask for changes** sends it what to change; **Hand off…** in **…** starts over; **Hide** puts the result away.
+The to-do shows it's working, then the result, with **What it did** and **Show changes**. **Ask for changes** sends it what to change. **Hand off…** in **…** starts over. **Hide** puts the result away.
 
 A job never sends anything for you.
 
 ## In the Codex app
 
-- **Open in Codex** opens the job's thread in the Codex app. While Codex works on it here, the app can't open it yet. It opens once it's done.
-- **Change** on a thread that's open in the Codex app goes on in that same conversation there, and the to-do follows it.
-- A job only stops when Codex does nothing for 30 minutes, or after 6 hours in all. A restart of The Machine doesn't stop it.
+- **Open in Codex** opens the job's thread in the Codex app, once the job is done.
+- **Change** goes on in that same Codex conversation, and the to-do follows it.
+- A job stops after 30 minutes without progress, or 6 hours in all. A restart doesn't stop it.
 
 ## Set it up
 
@@ -37,9 +37,9 @@ Claude sends its result back through The Machine connector. Add it once in claud
 On a hosted Machine, pick it on your setup page, under **Add more any time**, **Codex**:
 
 - **On your Machine** (the default): press **Connect Codex** and enter the code it shows at OpenAI. It uses the same ChatGPT plan as your model, and jobs run on your Machine. No terminal needed.
-- **Other ways**, **On my computer**: the job runs on your own computer, with the Codex signed in there. Nothing of Codex is on your hosted Machine, and the job is encrypted for that computer only: the Network passes it on but can't read it. Install The Machine on that computer, pair it on your Account page, and run `codex login` there. Keep The Machine running on it. The job shows as a thread in the Codex app on that computer, and the result comes back on the to-do. When the computer is off, jobs wait until it's back.
+- **Other ways**, **On my computer**: the job runs on your own computer, with the Codex signed in there. It travels encrypted, for that computer only. Install The Machine there, pair it on your Account page, run `codex login` and keep The Machine running. The result comes back on the to-do. When the computer is off, jobs wait.
 - **Other ways**, **Codex cloud**: the job runs in OpenAI's cloud. Press **Connect Codex**. It uses the same ChatGPT plan as your model, and OpenAI asks for one more code, for Codex. Then enter the Codex cloud environment in Settings.
 
 Or sign in from your dashboard: **Connections**, **+ Add**, **Codex**, **Get a code**. A self-hosted Machine runs that same sign-in itself.
 
-On a hosted Machine, Codex and Claude Code shows once GitHub or Codex is connected. It also shows on setups that run jobs elsewhere. More in the [agents guide](https://github.com/Salesflare/TheMachine/blob/main/docs/agents.md).
+On a hosted Machine, **Codex and Claude Code** shows in Settings once GitHub or Codex is connected. For developers: the [agents guide](https://github.com/Salesflare/TheMachine/blob/main/docs/agents.md).

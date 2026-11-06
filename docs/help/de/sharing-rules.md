@@ -14,7 +14,7 @@ keywords: share, sharing, colleagues, teammates, team, what others see, answer f
 - Erst mich fragen: Du siehst jede Frage und entscheidest.
 - Immer: Deine Machine antwortet von selbst.
 - Nie: Sie lehnt ab.
-- Namen: nur Namen, keine Details.
+- **Namen**: ob die Antwort sagen darf, wer, etwa den Namen eines Gasts, oder Namen weglässt.
 
 Sie teilt nie E-Mail-Inhalte oder worum es in deinen Meetings geht. „Für jemanden anders? Füge eine Ausnahme hinzu“ legt eine Regel für eine einzelne Person fest.
 

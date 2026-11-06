@@ -1,7 +1,7 @@
 ---
-title: Microsoft OneDrive: Word-Dateien in OneDrive und SharePoint
+title: Microsoft OneDrive
 area: connections
-summary: Kommentare, Erwähnungen, nachverfolgte Änderungen und Freigaben in deinen Word-Dateien in OneDrive und SharePoint, dazu neue private Dokumente und Änderungen, die du freigibst. Google Docs kommen später.
+summary: Kommentare, Erwähnungen, nachverfolgte Änderungen und Freigaben in deinen Word-Dateien in OneDrive und SharePoint, Neue Dokumente und Änderungen warten auf dein OK.
 covers: connector:docs
 code: connectors/docs.py, doc_writes.py, next_actions.py, onboarding.py
 site: Sign in with Microsoft
