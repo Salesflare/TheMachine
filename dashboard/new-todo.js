@@ -180,3 +180,6 @@ addEventListener('resize',()=>newMenu(false));
 const ncTyping=t=>t?.closest?.('input,textarea,select,[contenteditable=""],[contenteditable="true"],dialog[open]');
 // C, Ctrl/⌘K and the other keys: the action registry and the palette at the end of this script.
 const ncAsked=()=>{const q=$('#side-find').value.trim().toLowerCase();return q.length>=2&&(q==='+'||('new to-do'.startsWith(q)||'new card'.startsWith(q)))};
+$('#side-find').addEventListener('input',()=>$('#side-new').classList.toggle('hit',ncAsked()));
+$('#side-find').addEventListener('keydown',e=>{if(e.key==='Enter'&&ncAsked()){e.preventDefault();e.stopImmediatePropagation();e.target.value='';sideCards();$('#side-new').classList.remove('hit');ncOpen()}},true);
+

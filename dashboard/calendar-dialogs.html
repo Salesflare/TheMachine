@@ -1,0 +1,38 @@
+><dialog id="cal-dialog" aria-labelledby="cal-dlg-title"
+><form id="cal-form" novalidate><div class="snooze-heading"
+><h2 id="cal-dlg-title">New event</h2><button type="button" data-cal-close aria-label="Close">×</button></div><label>Calendar<select id="cal-f-cal"></select></label><label>Title<input id="cal-f-title" maxlength="200" autocomplete="off"></label><label class="cal-f-check"
+><input type="checkbox" id="cal-f-allday"> All day</label><div class="cal-f-row"><label>Date<input type="date" id="cal-f-date"></label><label class="cal-f-time">Start<input type="time" id="cal-f-start" step="300"></label><label class="cal-f-time">End<input type="time" id="cal-f-end" step="300"></label><label class="cal-f-until" hidden
+><span id="cal-end-label">Last day</span
+><input type="date" id="cal-f-until"></label></div><label>Where<input id="cal-f-where" maxlength="300" autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="cal-f-where-sug" aria-expanded="false" enterkeyhint="done"></label
+><ul class="cal-sug" id="cal-f-where-sug" role="listbox" aria-label="Places" hidden></ul
+><div id="cal-f-invite-wrap"><label>Invite<input id="cal-f-invite" inputmode="email" autocapitalize="off" spellcheck="false" maxlength="254" autocomplete="off" placeholder="Name or email" role="combobox" aria-autocomplete="list" aria-controls="cal-f-invite-sug" aria-expanded="false" enterkeyhint="done"></label
+><ul class="cal-sug" id="cal-f-invite-sug" role="listbox" aria-label="People" hidden></ul
+><div class="cal-chips" id="cal-f-guests" aria-label="Invited" role="list"></div></div
+><label id="cal-f-notes-label">Notes<textarea id="cal-f-notes" maxlength="2000" rows="3"></textarea></label
+><p class="fine" id="cal-f-fine"></p
+><p id="cal-f-error" role="status"></p><div class="actions send-act"
+><button type="submit" class="primary" id="cal-f-save">Add</button
+><button type="button" id="cal-f-delete" hidden>Delete</button><button type="button" data-cal-close>Cancel</button></div
+><button type="button" id="cal-f-notes" class="cal-f-open cal-f-notes" hidden>Notes</button><a id="cal-f-open" class="cal-f-open" target="_blank" rel="noopener" hidden>Open in its calendar ↗</a></form></dialog
+><dialog id="cal-view" aria-labelledby="cal-v-title"><div class="snooze-heading"
+><h2 id="cal-v-title">Event</h2><button type="button" data-cal-close aria-label="Close">×</button></div
+><dl id="cal-v-rows" class="cal-v-rows"></dl
+><section id="cal-v-notes" class="cal-v-notes" aria-labelledby="cal-v-notes-h"><div class="cal-v-nh"><h3 id="cal-v-notes-h">Notes</h3><span id="cal-v-notes-by" class="cal-v-mail"></span></div
+><div id="cal-v-notes-in" class="cal-v-in"><div id="cal-v-notes-body" class="cal-v-nb" hidden></div><button type="button" id="cal-v-notes-more" class="cal-v-more" hidden>Show all</button
+><p id="cal-v-notes-none" class="cal-v-mail" hidden>No notes yet.</p
+><p id="cal-v-notes-writing" class="cal-v-mail cal-v-writing" role="status" hidden></p
+><div id="cal-v-notes-form" hidden><textarea id="cal-v-notes-text" rows="9" aria-label="Notes"></textarea><p id="cal-v-notes-error" class="cal-v-error" role="status"></p></div
+><div class="cal-v-nact"><button type="button" id="cal-v-notes-add">Add notes</button><button type="button" id="cal-v-notes-gen">Generate notes</button><button type="button" id="cal-v-notes-edit">Edit</button><button type="button" id="cal-v-notes-remove">Remove</button
+><button type="button" id="cal-v-notes-save" class="primary">Save</button><label id="cal-v-notes-file" class="cal-v-file">Upload file<input type="file" accept=".md,.markdown,.txt,.vtt,text/markdown,text/plain,text/vtt"></label><button type="button" id="cal-v-notes-cancel">Cancel</button></div
+><div id="cal-v-notes-zoom" class="cal-v-src" hidden><div class="cal-v-nh"><span class="cal-v-from">From Zoom</span><a id="cal-v-notes-zoom-open" class="cal-v-mail" target="_blank" rel="noopener" hidden>Open in Zoom ↗</a></div><div id="cal-v-notes-zoom-body" class="cal-v-nb"></div><button type="button" id="cal-v-notes-zoom-more" class="cal-v-more" hidden>Show all</button></div><div id="cal-v-notes-meet" class="cal-v-src" hidden><div class="cal-v-nh"><span class="cal-v-from">From Google Meet</span><a id="cal-v-notes-meet-open" class="cal-v-mail" target="_blank" rel="noopener" hidden>Open in Google Docs ↗</a></div><div id="cal-v-notes-meet-body" class="cal-v-nb"></div><button type="button" id="cal-v-notes-meet-more" class="cal-v-more" hidden>Show all</button></div></div></section
+><section id="cal-v-tr" class="cal-v-notes" aria-labelledby="cal-v-tr-h"><div class="cal-v-nh"><h3><button type="button" id="cal-v-tr-toggle" class="cal-v-toggle" aria-expanded="false" aria-controls="cal-v-tr-in"><span id="cal-v-tr-h">Transcript</span><span id="cal-v-tr-show" class="cal-v-show">Show</span></button></h3><span id="cal-v-tr-by" class="cal-v-mail"></span></div
+><div id="cal-v-tr-in" class="cal-v-in"><div id="cal-v-tr-body" class="cal-v-nb" hidden></div><button type="button" id="cal-v-tr-more" class="cal-v-more" hidden>Show all</button
+><p id="cal-v-tr-none" class="cal-v-mail" hidden>No transcript yet.</p
+><div id="cal-v-tr-form" hidden><textarea id="cal-v-tr-text" rows="9" aria-label="Transcript"></textarea><p id="cal-v-tr-error" class="cal-v-error" role="status"></p></div
+><div class="cal-v-nact"><button type="button" id="cal-v-tr-add">Add transcript</button><button type="button" id="cal-v-tr-edit">Edit</button><button type="button" id="cal-v-tr-remove">Remove</button
+><button type="button" id="cal-v-tr-save" class="primary">Save</button><label id="cal-v-tr-file" class="cal-v-file">Upload file<input type="file" accept=".md,.markdown,.txt,.vtt,text/markdown,text/plain,text/vtt"></label><button type="button" id="cal-v-tr-cancel">Cancel</button></div
+><div id="cal-v-tr-zoom" class="cal-v-src" hidden><div class="cal-v-nh"><span class="cal-v-from">From Zoom</span><a id="cal-v-tr-zoom-open" class="cal-v-mail" target="_blank" rel="noopener" hidden>Open in Zoom ↗</a></div><div id="cal-v-tr-zoom-body" class="cal-v-nb"></div><button type="button" id="cal-v-tr-zoom-more" class="cal-v-more" hidden>Show all</button></div><div id="cal-v-tr-meet" class="cal-v-src" hidden><div class="cal-v-nh"><span class="cal-v-from">From Google Meet</span><a id="cal-v-tr-meet-open" class="cal-v-mail" target="_blank" rel="noopener" hidden>Open in Google Docs ↗</a></div><div id="cal-v-tr-meet-body" class="cal-v-nb"></div><button type="button" id="cal-v-tr-meet-more" class="cal-v-more" hidden>Show all</button></div></div></section
+><div class="actions send-act"><button type="button" data-cal-close>Close</button></div
+><div class="cal-v-foot"><button type="button" id="cal-v-orig" class="cal-f-open cal-f-notes">Original invite</button><a id="cal-v-open" class="cal-f-open" target="_blank" rel="noopener" hidden>Open in its calendar ↗</a></div></dialog
+><p id="notice" role="status"></p
+><p class="stale-note" id="stale-note" role="status" hidden></p
