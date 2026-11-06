@@ -131,7 +131,7 @@ import dashboard_parts
 import ai_access
 from agents_app import AgentsApp
 from ai_app import AiApp
-from calendar_app import CalendarApp
+from calendar_app import CALENDAR_BACK_DAYS, CalendarApp
 from corrections_app import CorrectionsApp
 from missed_work_app import MissedWorkApp
 from gbrain_app import GBrainApp
@@ -9647,7 +9647,7 @@ def sync_calendar(store, config, account):
     if not state or (state.get('mode') == 'incremental' and not state.get('page_token') and
                      current >= dt.datetime.fromisoformat(state['refresh_at'])):
         # Refresh the rolling window daily so unchanged recurring occurrences enter it.
-        state = {'mode': 'bootstrap', 'time_min': (current - dt.timedelta(days=7)).isoformat(),
+        state = {'mode': 'bootstrap', 'time_min': (current - dt.timedelta(days=CALENDAR_BACK_DAYS)).isoformat(),
                  'time_max': (current + dt.timedelta(days=30)).isoformat(), 'seen': [],
                  'refresh_at': (current + dt.timedelta(days=1)).isoformat()}
         store.commit_page(account['id'], state, [], record_sync=False)
@@ -25032,7 +25032,7 @@ class App(*APP_MIXINS):
                                                                          args.get('from', [''])[0], args.get('to', [''])[0], owner,
                                                                          {c['id'] for c in writable},
                                                                          {a['id']: n for a in app.config['accounts'] if (n := calendar_account_owner(a))}),
-                                          'calendars': writable})
+                                          'calendars': writable, 'starts': app.calendar_starts()})  # where its meetings begin: the line at the edge
                     except (ValueError, sqlite3.OperationalError):
                         self.output(400, {'error': 'Ask for a window of at most 15 days'})
                 elif path.path == '/api/meeting':  # one meeting as the Calendar shows it, opened from anywhere in the dashboard

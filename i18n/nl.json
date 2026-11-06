@@ -5378,6 +5378,8 @@
  "Your browser’s speech recognition didn’t answer. Try again.": "De spraakherkenning van je browser reageerde niet. Probeer opnieuw.",
  "Your calendar": "Je agenda",
  "Your calendar called. I took notes.": "Je agenda belde. Ik heb notities genomen.",
+ "Your calendar starts {}, a week before you joined.": "Je agenda begint op {}, een week voordat je begon.",
+ "Your calendar starts {}.": "Je agenda begint op {}.",
  "Your company’s domains": "Domeinen van je bedrijf",
  "Your connections": "Je koppelingen",
  "Your contacts with a Machine": "Je contacten met een Machine",

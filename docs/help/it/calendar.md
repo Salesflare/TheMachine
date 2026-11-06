@@ -23,7 +23,7 @@ Un piano fatto insieme è una sola promessa, segnata "Con" e il nome dell’altr
 
 ## Agenda, settimana o mese
 
-- **Agenda** elenca ogni giorno. Scorri in basso per i giorni successivi, in alto (o **Mostra giorni precedenti**) per quelli precedenti.
+- **Agenda** elenca ogni giorno. Scorri in basso per i giorni successivi, in alto (o **Mostra giorni precedenti**) per quelli precedenti. Arriva fino a una settimana prima che collegassi il calendario, e una riga in alto dice da quale giorno.
 - **Settimana** mostra una griglia, da lunedì a domenica. Su un telefono mostra tre giorni.
 - **Mese** mostra il mese intero. Un computer mostra fino a tre elementi al giorno; un telefono mostra dei punti, e un tocco elenca quel giorno.
 

@@ -23,7 +23,7 @@ Um plano feito em conjunto é uma promessa só, marcada com "Com" e o nome da pe
 
 ## Agenda, semana ou mês
 
-- **Agenda** lista cada dia. Role para baixo para ver os dias seguintes, ou para cima (ou **Mostrar dias anteriores**) para os anteriores.
+- **Agenda** lista cada dia. Role para baixo para ver os dias seguintes, ou para cima (ou **Mostrar dias anteriores**) para os anteriores. Ela vai até uma semana antes de você conectar sua agenda, e uma linha no topo diz a partir de que dia.
 - **Semana** mostra uma grade, de segunda a domingo. No celular ela mostra três dias.
 - **Mês** mostra o mês inteiro. No computador aparecem até três itens por dia; no celular aparecem pontos, e um toque lista aquele dia.
 

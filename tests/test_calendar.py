@@ -5,6 +5,7 @@ import http.client
 import importlib.util
 import json
 from pathlib import Path
+import sys
 import tempfile
 import threading
 import unittest
@@ -278,6 +279,7 @@ class Calendar(unittest.TestCase):
         self.assertEqual([m['title'] for m in body['meetings']], ['Late call', 'Pilot review', 'Odd link', 'Team offsite'])
         self.assertEqual(get('/api/calendar?from=2026-10-23T00:00:00Z&to=2027-01-01T00:00:00Z')[0], 400)
         self.assertEqual(get('/api/calendar')[0], 400)
+        self.assertEqual(set(body['starts']), {'day', 'joined'})  # its first read, just now: where the meetings begin
         # One meeting, opened from anywhere: the Calendar's row; none for a signal that is no meeting
         pilot = next(m for m in body['meetings'] if m['title'] == 'Pilot review')
         self.assertEqual(get(f"/api/meeting?event={pilot['id']}"), (200, {'meeting': pilot}))
@@ -285,6 +287,49 @@ class Calendar(unittest.TestCase):
         self.assertEqual(get('/api/meeting?event=x')[0], 400)
         after = self.store.snapshot([ACCOUNT])
         self.assertEqual((before['suggestions'], before['decisions']), (after['suggestions'], after['decisions']))
+
+
+class Starts(unittest.TestCase):
+    """Where the Calendar's meetings begin: a calendar's first read goes a week back from when it was connected, and
+    nothing before that day came in. The Calendar says so at that edge, only once a calendar was read."""
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.app = object.__new__(a.App)
+        self.app.store = a.Store(Path(self.temp.name) / 'events.sqlite')
+        mail = {'id': 'mail', 'email': 'owner@example.com', 'service': 'gmail'}
+        self.app.config = {'accounts': [mail, ACCOUNT, SHARED], 'started_at': '2026-11-06T08:00:00+00:00'}
+        clock = sys.modules['timeutil']
+        self.addCleanup(setattr, clock, 'LOCAL_TZ', clock.LOCAL_TZ)
+        clock.set_timezone('Europe/Brussels')
+
+    def synced(self, account, at, status='success'):
+        with self.app.store.connect() as db:
+            db.execute('INSERT INTO sync_activity VALUES(?,?,?,?,?,?,?)', (account + at + status, account, at, status, 1, None, None))
+
+    def test_none_before_a_calendar_was_read_or_without_one(self):
+        self.synced('mail', '2026-11-06T08:05:00+00:00')
+        self.assertIsNone(self.app.calendar_starts())
+        self.synced('cal', '2026-11-06T08:05:00+00:00', 'failed')
+        self.assertIsNone(self.app.calendar_starts())
+        self.app.config['accounts'] = self.app.config['accounts'][:1]
+        self.assertIsNone(self.app.calendar_starts())
+
+    def test_a_week_before_the_first_read_of_the_earliest_calendar(self):
+        self.synced('mail', '2026-10-01T08:05:00+00:00')  # mail read earlier says nothing about the calendar
+        self.synced('cal', '2026-11-06T08:10:00+00:00', 'failed')
+        self.synced('cal', '2026-11-06T09:00:00+00:00')
+        self.synced('cal', '2026-11-06T09:15:00+00:00')
+        self.synced('partner-cal', '2026-11-08T09:00:00+00:00')  # one shared later starts later
+        self.assertEqual(self.app.calendar_starts(), {'day': '2026-10-30', 'joined': True})
+
+    def test_counts_kept_after_thirty_days_and_a_calendar_added_later(self):
+        with self.app.store.connect() as db:
+            a.retention.initialize(db)
+            db.executemany('INSERT INTO sync_daily(account_id,day,syncs,failed) VALUES(?,?,?,?)',
+                           [('cal', '2026-12-01', 4, 4), ('cal', '2026-12-02', 4, 1)])  # a day with only failures doesn't count
+        self.synced('cal', '2027-01-05T09:00:00+00:00')
+        self.assertEqual(self.app.calendar_starts(), {'day': '2026-11-25', 'joined': False})  # connected weeks after the start
 
 
 if __name__ == '__main__':

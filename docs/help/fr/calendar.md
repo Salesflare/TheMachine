@@ -23,7 +23,7 @@ Un projet prévu ensemble est une seule promesse, marquée « Avec » et le nom 
 
 ## Agenda, semaine ou mois
 
-- **Agenda** liste chaque jour. Faites défiler vers le bas pour les jours suivants, vers le haut (ou **Afficher les jours précédents**) pour les précédents.
+- **Agenda** liste chaque jour. Faites défiler vers le bas pour les jours suivants, vers le haut (ou **Afficher les jours précédents**) pour les précédents. Elle remonte jusqu’à une semaine avant la connexion de votre agenda, et une ligne en haut indique à partir de quel jour.
 - **Semaine** affiche une grille, du lundi au dimanche. Sur un téléphone, elle affiche trois jours.
 - **Mois** affiche le mois entier. Un ordinateur affiche jusqu’à trois éléments par jour ; un téléphone affiche des points, et un appui liste ce jour.
 
