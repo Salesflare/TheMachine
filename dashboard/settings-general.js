@@ -218,9 +218,20 @@ function sigCard(s){const off=s.saveable?'':' disabled';
 const sigNode=s=>{const tp=document.createElement('template');setHTML(tp,sigCard(s));return tp.content};  // a fresh form, to replace an edited one
 const sigDark=()=>(document.documentElement.dataset.theme||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'))==='dark';
 function sigLoad(f,html){const fr=f.querySelector('.sig-paper');fr.onload=()=>{const d=fr.contentDocument;if(!d?.body)return;try{d.execCommand('styleWithCSS',false,true)}catch{}
-  const fit=()=>{if(!fr.offsetWidth)return;fr.style.height=Math.max(72,Math.min(420,d.body.scrollHeight+26))+'px'};fr._fit=fit;fit();sigSized.observe(fr);for(const i of d.images)i.addEventListener('load',fit);
+  const fit=()=>{if(!fr.offsetWidth)return;fr.style.height=Math.max(72,Math.min(420,d.body.scrollHeight+26))+'px';if(f._reveal>Date.now())f.querySelector('.sig-save').scrollIntoView({block:'nearest'})};fr._fit=fit;fit();sigSized.observe(fr);
+  d.addEventListener('load',e=>{if(e.target.localName==='img')fit()},true);  // images load late, pasted ones too
+  if(f.querySelector('[data-sig-tool]').disabled){d.body.contentEditable='false';return}
+  // Every change shows Save: typing, paste, cut, drop, undo, autocomplete, the formatting tools. Watched on the page
+  // itself, so a change that brings no input event (an insert from a paste, in some browsers) counts too.
+  new MutationObserver(()=>{sigChanged(f);fit()}).observe(d.body,{childList:true,subtree:true,characterData:true,attributes:true});
   d.addEventListener('input',()=>{sigChanged(f);fit()});
-  d.addEventListener('paste',e=>{const h=e.clipboardData?.getData('text/html');if(!h||d.body.contentEditable==='false')return;e.preventDefault();d.execCommand('insertHTML',false,sigPasteClean(h));sigChanged(f);fit()});if(!f.querySelector('[data-sig-tool]').disabled)return;d.body.contentEditable='false'};
+  // A paste or a drop from Outlook or Word keeps only the signature's own formatting (sigPasteClean). A drag inside the
+  // editor moves what it drags, as the browser does it.
+  let inside=false;d.addEventListener('dragstart',()=>{inside=true});d.addEventListener('dragend',()=>{inside=false});
+  const put=(e,data)=>{const h=data?.getData('text/html');if(!h)return false;e.preventDefault();d.execCommand('insertHTML',false,sigPasteClean(h));sigChanged(f);fit();return true};
+  d.addEventListener('paste',e=>put(e,e.clipboardData));
+  d.addEventListener('drop',e=>{if(inside)return;const at=d.caretRangeFromPoint?.(e.clientX,e.clientY)||(p=>{if(!p)return null;const r=d.createRange();r.setStart(p.offsetNode,p.offset);return r})(d.caretPositionFromPoint?.(e.clientX,e.clientY));
+   if(!e.dataTransfer?.getData('text/html'))return;if(at){const sel=d.getSelection();sel.removeAllRanges();sel.addRange(at)}d.body.focus();put(e,e.dataTransfer)})};
  fr.srcdoc=sigDoc(html,sigDark())}
 const SIG_MAX=60000;  // what the service takes before it cleans; it keeps 20,000 characters once cleaned
 const sigHtml=f=>{const src=f.querySelector('.sig-source');return src.hidden?f.querySelector('.sig-paper').contentDocument?.body?.innerHTML.trim()||'':src.value.trim()};
@@ -238,9 +249,13 @@ function sigPasteClean(h){const doc=new DOMParser().parseFromString(h,'text/html
    if(name==='href'&&!/^(https?:|mailto:|tel:)/i.test(v))continue;if(name==='src'&&!/^(https:|cid:|data:image\/(png|gif|jpe?g|webp);base64,)/i.test(v))continue;
    if(name==='style'){const keep=v.split(';').map(x=>x.trim()).filter(x=>x&&!/^mso-|expression|url\s*\(|@import|behaviou?r|javascript:|-moz-binding/i.test(x)).join(';');if(keep)el.setAttribute('style',keep);continue}
    el.setAttribute(name,v)}
+  // Word's paragraphs have no margin (its style block, which goes, says so): kept that way, or the lines spread out
+  if(/^Mso/.test(n.getAttribute('class')||'')&&!/margin/i.test(el.getAttribute('style')||''))el.setAttribute('style',['margin:0',el.getAttribute('style')].filter(Boolean).join(';'));
   walk(n,el);to.append(el)}};
  walk(doc.body,out);return out.innerHTML.replace(/^(\s|<br>)+|(\s|<br>)+$/g,'')}
-function sigChanged(f){sigDirty.add(f.dataset.account);f.querySelector('.sig-save').hidden=false;f.querySelector('[role=status]').textContent=''}
+// A long paste can push Save below the window: it comes into view, also as the editor grows with the images loading.
+function sigChanged(f){sigDirty.add(f.dataset.account);f.querySelector('[role=status]').textContent='';const s=f.querySelector('.sig-save');if(!s.hidden)return;
+ s.hidden=false;f._reveal=Date.now()+3000;s.scrollIntoView({block:'nearest'})}
 // Settings, Account, Your addresses (own_addresses.py): the owner's own addresses, where each came from, with Remove; and
 // the ones that may be shared (a team address, sent from only), each with three choices and what each one changes:
 // Mine, The team's (no to-dos from it) and Not mine. Nothing is picked for them. A chosen one keeps Change on its row.
