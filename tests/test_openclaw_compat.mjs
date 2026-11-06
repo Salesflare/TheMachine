@@ -13,6 +13,16 @@ assert.equal(typeof (await gatewayRuntime()).callGatewayFromCli,'function');
 assert.equal(typeof (await import(OPENCLAW+'/dist/plugin-sdk/runtime-config-snapshot.js')).getRuntimeConfig,'function');
 for(const file of ['runtime-config-snapshot','system-event-runtime','plugin-entry'])
   assert.ok(Object.keys(await import(OPENCLAW+'/dist/plugin-sdk/'+file+'.js')).length);
+// The phone feed (android-feed.ts) removes the notifications it saved from the main session's queue by id, and only those.
+{
+  const events=await import(OPENCLAW+'/dist/plugin-sdk/system-event-runtime.js'), key='agent:main:feed-compat-test';
+  for(const [text,contextKey] of [['Notification posted one','notification:one'],['Another plugin','other:two']])
+    assert.ok(events.enqueueSystemEvent(text,{sessionKey:key,contextKey}));
+  const [first]=events.peekSystemEventEntries(key,'main');
+  assert.equal(events.consumeSelectedSystemEventEntries(key,[{id:first.id}]).length,1);
+  assert.deepEqual(events.peekSystemEventEntries(key,'main').map(e=>e.contextKey),['other:two']);
+  events.drainSystemEventEntries(key);
+}
 // Exercise real capability admission too, always in a separate disposable OpenClaw home.
 const env=Object.fromEntries(Object.entries(process.env).filter(([k])=>!k.startsWith('OPENCLAW_')));
 Object.assign(env,{HOME:FIXTURE,OPENCLAW_STATE_DIR:FIXTURE+'/state',OPENCLAW_CONFIG_PATH:FIXTURE+'/openclaw.json'});

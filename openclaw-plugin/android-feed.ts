@@ -1,5 +1,5 @@
-// Reuse the Gateway's existing phone feed. No calls to the phone, no queue drain.
-import { peekSystemEventEntries } from 'openclaw/plugin-sdk/system-event-runtime';
+// Reuse the Gateway's existing phone feed. No calls to the phone, and never a drain of the whole queue.
+import * as systemEvents from 'openclaw/plugin-sdk/system-event-runtime';
 import { DatabaseSync } from 'node:sqlite';
 import { createHash, createHmac, randomBytes } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
@@ -40,6 +40,30 @@ export function notificationEnvelope(entry: any, nodeId: string) {
     text, security_code_omitted: sensitive };
 }
 
+// The main session's event queue holds at most 20 events, and the Gateway drops a phone notification that arrives while
+// it is full. Only a main-session turn empties it, and with OpenClaw's heartbeat off (QUIET_OPENCLAW in installer.py)
+// that is only when the owner writes in the main chat: a few hours of notifications filled it and every later one was
+// lost. So once more than ROOM events wait, the oldest phone notifications this feed has saved leave the queue, one by
+// one, until ROOM are left. The rest stay for the main chat (or a heartbeat the owner turned on) to see, and other
+// events (other plugins', exec results) are never touched. No model turn, no phone call.
+export const ROOM = 10;
+const MAIN = 'agent:main:main';
+
+export function savedToRelease(queue: any[], saved: Set<string>, room = ROOM) {
+  const over = queue.length - room;
+  if (over <= 0) return [];
+  return queue.filter(e => e?.id && saved.has(e.id) && e.contextKey?.startsWith('notification:'))
+    .sort((a, b) => a.ts - b.ts).slice(0, over);
+}
+
+function releaseSaved(saved: Set<string>) {
+  // Older Gateways without targeted removal keep the earlier behavior: peek only.
+  const consume = (systemEvents as any).consumeSelectedSystemEventEntries;
+  if (typeof consume !== 'function') return;
+  const release = savedToRelease(systemEvents.peekSystemEventEntries(MAIN, 'main'), saved);
+  if (release.length) consume(MAIN, release.map(e => ({id: e.id})));
+}
+
 export function registerAndroidFeed(api: any) {
   let timer: ReturnType<typeof setInterval> | undefined;
   let stopped = true, busy = false;
@@ -62,8 +86,8 @@ export function registerAndroidFeed(api: any) {
       if (stopped || captureGeneration !== generation) return;
       const account = config.accounts.find((a: any) => a.transport === 'openclaw-feed' && a.node_id);
       if (!account) return;
-      const entries = peekSystemEventEntries('agent:main:main', 'main').map((e: any) => notificationEnvelope(e, account.node_id)).filter(e => e && !saved.has(e.id));
-      if (!entries.length && Date.now() - lastHealth < 30000) return;
+      const entries = systemEvents.peekSystemEventEntries(MAIN, 'main').map((e: any) => notificationEnvelope(e, account.node_id)).filter(e => e && !saved.has(e.id));
+      if (!entries.length && Date.now() - lastHealth < 30000) { releaseSaved(saved); return; }
       const db = new DatabaseSync(config.database, {timeout: 2000});
       try {
         db.exec('PRAGMA busy_timeout=2000; BEGIN IMMEDIATE');
@@ -80,6 +104,8 @@ export function registerAndroidFeed(api: any) {
         lastHealth=Date.now();
       } catch (error) { try {db.exec('ROLLBACK')} catch {} throw error; }
       finally { db.close(); }
+      // Only after the commit: a notification leaves the queue once it is safely in the database.
+      releaseSaved(saved);
       report?.clearFailure();
     } catch {
       // Private notification data and raw errors are never logged.
@@ -99,11 +125,11 @@ export function registerAndroidFeed(api: any) {
   });
   // Capture on the existing heartbeat path before its pending events are consumed.
   api.on('heartbeat_prompt_contribution', async (event: any) => {
-    if (event.agentId === 'main' && event.sessionKey === 'agent:main:main') await capture();
+    if (event.agentId === 'main' && event.sessionKey === MAIN) await capture();
   });
   // Only peek the authenticated runtime queue. Never interpret user-supplied
   // prompt text as a phone notification when it has already been drained.
   api.on('before_prompt_build', async (_event: any, ctx: any) => {
-    if (ctx.agentId === 'main' && ctx.sessionKey === 'agent:main:main') await capture();
+    if (ctx.agentId === 'main' && ctx.sessionKey === MAIN) await capture();
   });
 }
