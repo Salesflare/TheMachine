@@ -260,7 +260,7 @@ reviewRuns=[{run_id:'r1',status:'error',review_saved:true,checked_count:40,pendi
 {run_id:'r3',status:'ok',review_saved:true,checked_count:12,pending_count:0,claimed_count:12,duration_seconds:61,attempts:1,last_error:'connection_error',last_error_phase:'connection',error_at:new Date().toISOString(),started_at:new Date().toISOString()}];
 reviewHealth={worker:reviewRuns[0],pending:3,total:55};
 await page.evaluate(()=>refresh());
-assert.match(await page.locator('#review-summary').textContent(),/^3 waiting · 52 reviewed · last:? .*\. Next one shortly\.$/);
+assert.match(await page.locator('#review-summary').textContent(),/^3 waiting · 52 checked · last:? .*\. Next one shortly\.$/);
 // The AI sign-in's limits show as bars; a window that has already reset says nothing about now.
 modelUsage=[{provider:'openai',name:'OpenAI',windows:[{label:'5h',used:42,reset:Date.now()/1000+3600|0},{label:'168h',used:18,reset:Date.now()/1000+4*86400|0},{label:'5h',used:99,reset:Date.now()/1000-60|0}]}];
 await page.evaluate(()=>refresh());
@@ -271,7 +271,7 @@ await page.locator('#health-tabs [data-health-pane="reviews"]').click();  // Con
 await page.locator('#review-run-history > summary').click();
 const runs=page.locator('#review-runs');
 assert.match(await runs.textContent(),/40 signal versions saved/);
-assert.match(await runs.textContent(),/3 messages still to review\. Nothing is lost\./);
+assert.match(await runs.textContent(),/3 messages still to check\. Nothing is lost\./);
 assert.match(await runs.textContent(),/original explanation was not retained/);
 assert.match(await runs.textContent(),/AI stopped responding/);
 assert.match(await runs.textContent(),/Briefly interrupted/);

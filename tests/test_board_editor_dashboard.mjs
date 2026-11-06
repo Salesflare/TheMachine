@@ -74,7 +74,7 @@ try{
   const save=calls.at(-1);assert.equal(save.action,'board_save');
   assert.deepEqual(save.args,{suggestion_id:7,name:'Hiring',stages:[{name:'Talks'},{name:'Sourced'},{name:'Hired'}],side:false,about:'Roles we hire for',visibility:'only_you',projects:['project:10','project:12','project:20']});
   // Saved: the new board shows, its projects waiting to be sorted from their messages
-  await page.locator('.board-title',{hasText:'Hiring'}).waitFor();assert.match(await page.locator('#toast').textContent(),/Saved Hiring\. A review sorts its projects in a few minutes\./);
+  await page.locator('.board-title',{hasText:'Hiring'}).waitFor();assert.match(await page.locator('#toast').textContent(),/Saved Hiring\. A check sorts its projects in a few minutes\./);
   assert.equal(await page.locator('.board-suggest').count(),1);assert.match(await page.locator('.board-sub').textContent(),/^Only you · 3 projects/);assert.match(await page.locator('.lane[data-lane="Talks"] .tile-why').first().textContent(),/Sorting from its messages/);
   assert.equal(await page.locator('.lane[data-lane="Stalled or declined"]').count(),0);
   // Edit a board from its ⋯ menu: removing a stage with projects says where they go

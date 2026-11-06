@@ -34,7 +34,7 @@ try{
  assert.equal(await rows.count(),1);
  const text=await rows.textContent();
  assert.ok(text.includes('Checks are off.')&&text.includes('first look at your last 7 days')&&text.includes('It starts once a source'),text);
- assert.ok(!(await page.locator('#analyses').textContent()).includes('No reviews yet'));
+ assert.ok(!(await page.locator('#analyses').textContent()).includes('No checks yet'));
  // Suggestions: while the first look is pending it says so, not "All clear"
  const empty=await page.locator('#suggestions').textContent();
  assert.ok(empty.includes('A first look at your last 7 days starts soon')&&!empty.includes('All clear'),empty);
@@ -61,11 +61,11 @@ try{
  assert.match(await page.locator('#needs-you').textContent(),/install\.sh --activate/);
  assert.equal(await page.locator('#review-live code').textContent(),'./install.sh --activate');
  await page.close();
- on=true;page=await open();  // on: no notice; only the first look row, no "No reviews yet" beside it
+ on=true;page=await open();  // on: no notice; only the first look row, no "No checks yet" beside it
  assert.equal(await page.locator('#needs-you').isHidden(),true);
  assert.equal(await page.locator('#review-live .review-live').count(),1);
  assert.ok((await page.locator('#review-live').textContent()).includes('A first check of your last 7 days'));
- assert.ok(!(await page.locator('#analyses').textContent()).includes('No reviews yet'));
+ assert.ok(!(await page.locator('#analyses').textContent()).includes('No checks yet'));
  assert.deepEqual(errors,[]);
 }finally{await browser?.close();server.close()}
 console.log('reviews off dashboard ok');

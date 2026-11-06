@@ -5,7 +5,7 @@ import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // A fresh hosted signup (reviews_auto): reviews turn on by themselves once the AI and mail are connected, so the
-// dashboard never says "Reviews are off" or offers "Turn on checks". While it connects and reads, one progress line;
+// dashboard never says "Checks are off" or offers "Turn on checks". While it connects and reads, one progress line;
 // "All clear" only after the first read. A step that is really missing is a Needs you line with a link to that step.
 const dashboard=await dashboardPage();
 const manage='https://control.example/setup',outlook=[{id:'work-outlook',service:'outlook',display_name:'Outlook'}];
@@ -33,7 +33,7 @@ try{
  for(const why of ['sources','mail','settling']){
   look={state:'waiting',why,days:7};const page=await open();
   const text=await everything(page);
-  assert.ok(!/Reviews are off|Turn on checks|All clear/.test(text),why+': '+text);
+  assert.ok(!/Checks are off|Turn on checks|All clear/.test(text),why+': '+text);
   assert.ok((await page.locator('#suggestions').textContent()).includes(LINE),why);
   assert.equal((await page.locator('#suggestions').textContent()).split(LINE).length,2,why+': said once');
   assert.equal(await page.locator('#needs-you').isHidden(),true,why);
@@ -41,17 +41,17 @@ try{
   await page.close();
  }
  look=null;let page=await open();  // between the first read and reviews turning on: still not "All clear"
- assert.ok(!/Reviews are off|Turn on checks|All clear/.test(await everything(page)));
+ assert.ok(!/Checks are off|Turn on checks|All clear/.test(await everything(page)));
  await page.close();
  // Really missing: the exact step, with a link straight to it, and nothing about reviews
  conns=[];look={state:'waiting',why:'sources',days:7};page=await open();
  assert.equal(await page.locator('#needs-you a',{hasText:'Connect mail'}).getAttribute('href'),manage+'#google');
  assert.ok((await page.locator('#suggestions').textContent()).includes('Your first to-dos show up here'));
- assert.ok(!/Reviews are off|Turn on checks/.test(await everything(page)));
+ assert.ok(!/Checks are off|Turn on checks/.test(await everything(page)));
  await page.close();conns=outlook;
  look={state:'waiting',why:'model',days:7};page=await open();
  assert.equal(await page.locator('#needs-you a',{hasText:'Pick your AI'}).getAttribute('href'),manage+'#model');
- assert.ok(!/Reviews are off|Turn on checks/.test(await everything(page)));
+ assert.ok(!/Checks are off|Turn on checks/.test(await everything(page)));
  await page.close();
  // Signing in to ChatGPT on the setup page meanwhile: "Connecting ChatGPT…", working, never "Pick your AI"
  const CONNECTING='Connecting ChatGPT…';
