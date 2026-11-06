@@ -3270,6 +3270,7 @@ const accountOf=c=>c.error==='docs_not_connected'?'':/google_signin_expired/.tes
 function renderNeedsYou(){const items=[...(state.needs_you||[])],manage=state.manage_url;
 if(state.reviews_on===false&&(!startsByItself()||setupStep()))items.unshift({home:'health',text:setupStep()?.text||((state.suggestions||[]).length?'Reviews are off: the to-dos here come from a one-time first look, and no new ones arrive yet.':'Reviews are off, so no to-dos arrive yet.'),...turnOn()});
 for(const c of state.connectors||[])if(c.signed_out)items.push({home:'health',conn:1,text:t('Signed out of {} ({}).',service(c.service),c.display_name||c.id),url:c.sign_in_url||null,action:c.sign_in_url?'Sign in again':'Show',tab:c.sign_in_url?null:'health',blank:true});
+else if(c.error==='android_offline')items.push({home:'health',conn:1,text:t('{} is not connected. Open the OpenClaw app on it.',c.display_name||c.id),action:'Show',tab:'health'});
 else if(c.error&&connectorHealth(c).tone==='orange'){
  // One line per account, not per service: a Google or Microsoft sign-in covers all of its services (Gmail and Calendar
  // share one sign-in), so one Reconnect restores them all

@@ -9339,7 +9339,8 @@ class Store:
                                              'poll_seconds':account.get('poll_seconds',300),
                                              'read_window': read_window(account),
                                              'display_name': account.get('display_name') or account.get('email') or UNNAMED.get(account.get('service')) or account['id'],
-                                             **(dict(row) if row else {}), **dict(counts), **channel_health})
+                                             **(dict(row) if row else {}), **dict(counts), **channel_health,
+                                             **(silent_failure(db, account, row) or {})})
             # Newest first: the dashboard shows the top few and says when each happened.
             result['deliveries'] = [dict(r) for r in db.execute('SELECT * FROM deliveries ORDER BY updated_at DESC,rowid DESC')]
             self.card_views(db, result['suggestions'], jobs=True)
@@ -10800,6 +10801,44 @@ def load_connector(service):
         spec.loader.exec_module(module)
         _connectors[service] = module
     return _connectors[service]
+
+
+# Connected but silent: a source whose polls succeed while its real read keeps failing and nothing new arrives (the
+# OpenClaw notification feed answers while the phone itself is offline) must not stay green. Quiet means longer than both
+# a few hours and its longest quiet stretch in the week before (a phone with 80 to 130 notifications a day goes quiet
+# 3 to 4 hours at night), so a source that's quiet by nature (nights, weekends) never trips it, and only a source with
+# at least a few items a day counts. A source with read hours, an action-only one or one that already shows an error is
+# left alone. It clears by itself once something new comes in or the reads stop failing.
+SILENT_HOURS = 4
+SILENT_MIN_FAILURES = 3
+SILENT_MIN_WEEKLY = 21
+
+
+def silent_failure(db, account, checkpoint, at=None):
+    """The error a connected but silent source shows (its latest failed read) and since when it's quiet, or None."""
+    if not checkpoint or checkpoint['error'] or account.get('signals') is False or read_window(account, at):
+        return None
+    stamp = dt.datetime.fromisoformat(at or now())
+    cutoff = (stamp - dt.timedelta(hours=SILENT_HOURS)).isoformat()
+    failures = db.execute("SELECT at,error FROM sync_activity WHERE account_id=? AND status='failed' AND at>=? AND at<=? "
+                          "ORDER BY at DESC,rowid DESC", (account['id'], cutoff, stamp.isoformat())).fetchall()
+    # Keeps failing: several failed reads in the window, the latest within the last hour.
+    if (len(failures) < SILENT_MIN_FAILURES or not failures[0]['error']
+            or failures[0]['at'] < (stamp - dt.timedelta(hours=1)).isoformat()):
+        return None
+    last = db.execute('SELECT max(occurred_at) FROM events WHERE account_id=? AND occurred_at<=?',
+                      (account['id'], stamp.isoformat())).fetchone()[0]
+    if not last or last >= cutoff:
+        return None
+    # Its usual rhythm, from the week before it went quiet, so a long outage keeps showing.
+    week = (dt.datetime.fromisoformat(last) - dt.timedelta(days=7)).isoformat()
+    usual = db.execute('SELECT count(*) n,max(gap) gap FROM (SELECT julianday(occurred_at)-julianday(lag(occurred_at) '
+                       'OVER (ORDER BY occurred_at)) gap FROM events WHERE account_id=? AND occurred_at>=? AND occurred_at<=?)',
+                       (account['id'], week, last)).fetchone()
+    quiet = (stamp - dt.datetime.fromisoformat(last)).total_seconds() / 86400
+    if usual['n'] < SILENT_MIN_WEEKLY or quiet <= (usual['gap'] or 0):
+        return None
+    return {'error': failures[0]['error'], 'silent_since': last}
 
 
 def read_window(account, at=None):

@@ -3,7 +3,7 @@ title: Uma conexão precisa de ajuda
 area: troubleshooting
 summary: Uma fonte mostra Precisa da sua ajuda, ou para de trazer coisas. O que tentar.
 covers: 
-code: onboarding.py, dashboard.html
+code: onboarding.py, dashboard.html, assistant.py
 order: 1
 ---
 ## Veja o status
@@ -14,6 +14,9 @@ Abra **Conexões**. Cada fonte mostra como está:
 - **Aguardando a primeira sincronização**: acabou de conectar. Espere alguns minutos.
 - **Lê de novo às** 07:00: X e LinkedIn só leem durante o dia. Não precisa fazer nada.
 - **Precisa da sua ajuda**: abra **Detalhes**. Ali diz o que deu errado e o que fazer.
+- **Celular desconectado**: o celular não chega ao OpenClaw. Abra o app OpenClaw nele.
+
+Uma fonte que continua falhando e não traz nada novo por horas, mais do que seu período calmo de sempre, não aparece como conectada. Isso se resolve sozinho assim que algo novo chega.
 
 O número em **Conexões** só conta as fontes que precisam da sua ajuda.
 

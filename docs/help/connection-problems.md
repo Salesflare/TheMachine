@@ -3,7 +3,7 @@ title: A connection needs help
 area: troubleshooting
 summary: A source says Needs your help, or stops bringing anything in. What to try.
 covers: 
-code: onboarding.py, dashboard.html
+code: onboarding.py, dashboard.html, assistant.py
 order: 1
 ---
 ## Check its status
@@ -14,6 +14,9 @@ Open **Connections**. Each source says how it's doing:
 - **Waiting for first sync**: just connected. Give it a few minutes.
 - **Reads again at** 07:00: X and LinkedIn only read during the day. Nothing to do.
 - **Needs your help**: open **Details**. It says what went wrong and what to do.
+- **Phone disconnected**: the phone isn't reaching OpenClaw. Open the OpenClaw app on it.
+
+A source that keeps failing and brings in nothing new for hours, longer than its usual quiet stretch, doesn't show as connected. It clears by itself once new items come in.
 
 The number on **Connections** only counts sources that need your help.
 

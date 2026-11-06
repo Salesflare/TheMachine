@@ -3,7 +3,7 @@ title: Una connessione ha bisogno di aiuto
 area: troubleshooting
 summary: Una fonte dice Serve il tuo aiuto, o non porta più nulla. Cosa provare.
 covers: 
-code: onboarding.py, dashboard.html
+code: onboarding.py, dashboard.html, assistant.py
 order: 1
 ---
 ## Controlla lo stato
@@ -14,6 +14,9 @@ Apri **Connessioni**. Ogni fonte dice come sta andando:
 - **In attesa della prima sincronizzazione**: appena collegata. Aspetta qualche minuto.
 - **Legge di nuovo alle** 07:00: X e LinkedIn leggono solo di giorno. Non serve fare nulla.
 - **Serve il tuo aiuto**: apri **Dettagli**. Spiega cosa è andato storto e cosa fare.
+- **Telefono disconnesso**: il telefono non raggiunge OpenClaw. Apri l’app OpenClaw sul telefono.
+
+Una fonte che continua a fallire e non porta nulla di nuovo per ore, più a lungo della sua solita pausa, non risulta collegata. Si risolve da sola appena arriva qualcosa di nuovo.
 
 Il numero su **Connessioni** conta solo le fonti a cui serve il tuo aiuto.
 
