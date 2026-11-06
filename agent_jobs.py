@@ -68,6 +68,10 @@ FILES_MAX = 50
 TRANSCRIPT_MAX = 20 * 1024 * 1024
 DRAFT_FILE = 'draft.md'
 RUN_MAX = 6 * 3600  # the longest one turn may run in all, however busy it keeps
+HEARTBEAT_FILE = 'heartbeat'  # touched in the job folder while a turn's worker runs (worker_gone)
+HEARTBEAT = 60  # seconds between touches
+STALE = 10 * 60  # no heartbeat, transcript line or update this long: nothing works on the job any more
+LOST = 'Its result could not be read back. Its work is still in its folder: try again to carry on.'
 QUEUED_FILE = 'queued.json'  # a follow-up the Codex app runs (it has the thread open): what this job follows there
 URL = re.compile(r'https?://[^\s<>()"\'`\]]+')
 SCHEMA = '''CREATE TABLE IF NOT EXISTS agent_jobs(id TEXT PRIMARY KEY,suggestion_id TEXT NOT NULL,tool TEXT NOT NULL,place TEXT NOT NULL,
@@ -803,6 +807,68 @@ def read_server(folder):
             or not isinstance(found.get('port'), int) or not re.fullmatch(r'[A-Za-z0-9_-]{32,128}', str(found.get('token') or '')):
         return None
     return found
+
+
+def worker_gone(folder, row, at=None):
+    """Whether nothing works on this local job any more although its status says it runs: no heartbeat, transcript
+    line or status update for STALE, and no detached app server unit of its own. Read from the folder and the row only,
+    so `assistant busy` can tell while the service is down. Jobs elsewhere (remote, device, cloud) and jobs waiting for
+    a slot are never gone here: a restart doesn't cut those off."""
+    if row.get('place') != 'local' or row.get('status') not in ('running', 'waiting'):
+        return False
+    folder, at = Path(folder), time.time() if at is None else at
+    marks = []
+    try:
+        marks.append(dt.datetime.fromisoformat(str(row.get('updated_at'))).timestamp())
+    except (TypeError, ValueError):
+        pass
+    for found in [folder / HEARTBEAT_FILE, *folder.glob('turn-*.jsonl')]:
+        try:
+            marks.append(found.stat().st_mtime)
+        except OSError:
+            pass
+    if marks and at - max(marks) < STALE:
+        return False
+    live = read_server(folder)
+    return not (live and unit_active(live['unit']))
+
+
+def working(db, rows):
+    """The agent jobs of `rows` (active_work's, from this database) with a worker behind them: worker_gone leaves the
+    others out. Their folders are next to the database (an in-memory one has none, so all rows stay)."""
+    try:
+        base = next((Path(r[2]).parent / 'agent-jobs' for r in db.execute('PRAGMA database_list') if r[1] == 'main' and r[2]), None)
+        found = {r[0]: {'place': r[1], 'updated_at': r[2]} for r in db.execute('SELECT id,place,updated_at FROM agent_jobs WHERE id IN (%s)'
+                                                                              % ','.join('?' * len(rows)), [r['id'] for r in rows])} if rows else {}
+    except sqlite3.Error:
+        return rows
+    return [r for r in rows if not (base and re.fullmatch(r'aj_[0-9a-f]{16}', str(r['id'])) and r['id'] in found
+                                    and worker_gone(base / r['id'], {**r, **found[r['id']]}))]
+
+
+class Heartbeat:
+    """Touches the job folder's heartbeat file while a turn's worker thread runs (worker_gone reads it)."""
+    def __init__(self, folder):
+        self.path, self.done = Path(folder) / HEARTBEAT_FILE, threading.Event()
+
+    def beat(self):
+        try:
+            self.path.touch()
+        except OSError:
+            pass
+
+    def run(self):
+        while not self.done.wait(HEARTBEAT):
+            self.beat()
+
+    def __enter__(self):
+        self.beat()
+        threading.Thread(target=self.run, daemon=True, name='agent-heartbeat').start()
+        return self
+
+    def __exit__(self, *exc):
+        self.done.set()
+        self.path.unlink(missing_ok=True)
 
 
 def start_detached(server, job, work, folder, err, timeout=RUN_MAX):
@@ -1760,8 +1826,22 @@ class AgentJobs:
         import agent_remote  # phase 2: the owner's paired computer (Claude) or Codex cloud
         return agent_remote.runner(row, command, own, self)
 
+    def worker(self, job_id, run, *args):
+        """A job's worker thread: it beats while it runs (worker_gone), and when it dies on an error, also one after the
+        turn ended (reading its changes back, say), the job fails with its work kept in its folder, so the owner can
+        try again, rather than staying 'running' with nothing behind it."""
+        try:
+            with Heartbeat(self.folder(job_id)):
+                run(*args)
+        except Exception as error:  # noqa: BLE001 - a job never takes the service down
+            LOG.error('agent job worker error=%s', type(error).__name__)
+            try:
+                self.finish(job_id, 'failed', error=LOST, error_kind='internal', only_if=ACTIVE)
+            except Exception as failed:  # noqa: BLE001
+                LOG.error('agent job worker finish error=%s', type(failed).__name__)
+
     def launch(self, job_id, prompt, resume, fresh=None):
-        threading.Thread(target=self.turn, args=(job_id, prompt, resume, fresh), daemon=True, name='agent-job').start()
+        threading.Thread(target=self.worker, args=(job_id, self.turn, job_id, prompt, resume, fresh), daemon=True, name='agent-job').start()
 
     def turn(self, job_id, prompt, resume, fresh=None):
         """One turn. `fresh`: the brief to start over with when the session it resumes is gone (Try again)."""
@@ -1950,12 +2030,12 @@ class AgentJobs:
                 except (Stopped, OSError, subprocess.SubprocessError):
                     found = None
                 if found and found.get('id'):
-                    threading.Thread(target=self.rewatch, args=(runner, dict(row), found['id']), daemon=True, name='agent-job').start()
+                    threading.Thread(target=self.worker, args=(row['id'], self.rewatch, runner, dict(row), found['id']), daemon=True, name='agent-job').start()
                     continue
             live = read_server(self.folder(row['id'])) if row['tool'] == 'codex' else None
             if live and row['session_id'] and unit_active(live['unit']):
                 # Its Codex app server ran on in a unit of its own: follow the turn there again.
-                threading.Thread(target=self.rejoin, args=(dict(row), live), daemon=True, name='agent-job').start()
+                threading.Thread(target=self.worker, args=(row['id'], self.rejoin, dict(row), live), daemon=True, name='agent-job').start()
                 continue
             if live:
                 stop_unit(live['unit'])
