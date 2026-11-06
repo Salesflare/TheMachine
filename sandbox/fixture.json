@@ -461,6 +461,22 @@
  ],
  "events": [
   {
+   "key": "story:paint:0",
+   "account_id": "home-whatsapp",
+   "kind": "whatsapp.message",
+   "minutes_ago": 23080,
+   "title": "Robin Morgan",
+   "body": "Can you pick a color for the hallway? The painter needs it.",
+   "metadata": {
+    "chat_name": "Robin Morgan",
+    "chat_id": "robinmorgan",
+    "from_me": false,
+    "group": false,
+    "sender_display": "Robin Morgan",
+    "message_id": "wa-paint-0"
+   }
+  },
+  {
    "key": "story:demo:0",
    "account_id": "work-gmail",
    "kind": "gmail.message",
@@ -507,6 +523,23 @@
     "customer_name": "Cobalt & Finch",
     "type": "invoice",
     "source_url": "https://dashboard.stripe.example/invoices/inv-4821"
+   }
+  },
+  {
+   "key": "story:cabin:0",
+   "account_id": "home-telegram",
+   "kind": "telegram.message",
+   "minutes_ago": 12990,
+   "title": "Sam Whitlock",
+   "body": "Which weekend in December works for the cabin?",
+   "metadata": {
+    "chat_name": "Sam Whitlock",
+    "chat_id": "7001",
+    "chat_kind": "dm",
+    "from_me": false,
+    "sender_name": "Sam Whitlock",
+    "sender_id": "7001",
+    "message_id": "tg-cabin-0"
    }
   },
   {
@@ -7583,6 +7616,49 @@
     "home-whatsapp"
    ],
    "minutes_ago": 470,
+   "source": "WhatsApp from Robin Morgan",
+   "project": null,
+   "urgent": false,
+   "snooze_hours": null
+  },
+  {
+   "key": "open14",
+   "title": "Tell Sam which weekend works for the cabin",
+   "body": "Sam asked which weekend in December suits you for the cabin trip.",
+   "status": "prepared",
+   "events": [
+    "story:cabin:0"
+   ],
+   "accounts": [
+    "home-telegram"
+   ],
+   "minutes_ago": 12960,
+   "source": "Telegram from Sam Whitlock",
+   "project": null,
+   "urgent": false,
+   "snooze_hours": null,
+   "next_action": {
+    "kind": "telegram",
+    "account_id": "home-telegram",
+    "to_name": "Sam Whitlock",
+    "chat_id": "7001",
+    "body": "The weekend of the 12th works for me. Shall I book it?",
+    "label": "Send to Sam",
+    "revision": "rev0014"
+   }
+  },
+  {
+   "key": "open15",
+   "title": "Pick a paint color for the hallway",
+   "body": "Robin asks for a color for the hallway before the painter comes.",
+   "status": "pending",
+   "events": [
+    "story:paint:0"
+   ],
+   "accounts": [
+    "home-whatsapp"
+   ],
+   "minutes_ago": 23040,
    "source": "WhatsApp from Robin Morgan",
    "project": null,
    "urgent": false,

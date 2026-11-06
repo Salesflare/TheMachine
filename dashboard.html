@@ -2526,6 +2526,7 @@ body:has(#browser-pane:not([hidden])) :is(#page-head,#needs-you,#notice,#limit-b
 .merge-offer>span{flex:1 1 220px;min-width:0}
 .merge-offer button{min-height:30px;margin:0;padding:4px 12px}
 .chat-panel .merge-offer{margin:12px 0}
+.still-needed small{color:var(--muted);font-size:.8rem}.merge-offer>.still-acts{display:flex;gap:8px;flex:0 0 auto}
 /* A run's live browser in the chat (peekHTML): one fixed size, so a new picture never moves the thread */
 .chat-panel .chat-peek{margin:4px 0 0}.chat-panel .chat-peek .peek-thumb{width:min(100%,320px);cursor:pointer}.chat-panel .chat-peek .peek-thumb img{aspect-ratio:16/10;max-height:none;object-fit:cover;object-position:top}
 /* Rename: an input over the title, wherever the title is the card's own heading. */
@@ -3305,7 +3306,8 @@ const drafts=Object.fromEntries([...document.querySelectorAll('#suggestions text
 const moreOpen=[...document.querySelectorAll('#suggestions article[id] .more-actions[open]')].map(d=>d.closest('article[id]').id);  // a refresh keeps an opened More menu open
 const shown=state.suggestions.filter(s=>scopeFilter==='all'||s.scope===scopeFilter);
 const outstanding=shown.filter(s=>!closed(s)&&s.status!=='snoozed').sort(openOrder),later=shown.filter(s=>s.status==='snoozed'),finished=shown.filter(closed);
-const lookDone=outstanding.filter(looksDone),waitingOn=outstanding.filter(waitsOnOthers),open=outstanding.filter(s=>!looksDone(s)&&!waitsOnOthers(s));
+const lookDone=outstanding.filter(looksDone),waitingOn=outstanding.filter(waitsOnOthers),open=outstanding.filter(s=>!looksDone(s)&&!waitsOnOthers(s)&&!setAside(s));
+later.push(...outstanding.filter(setAside));  // Still needed? without an answer: folded into Coming back later, under its own heading
 const fleetCards=scopeFilter==='personal'?[]:fleetCardsOf(fleetData);
 const needs=[...fleetCards,...open.filter(s=>placeOf(s)==='needs')],preparing=open.filter(s=>placeOf(s)==='preparing'),ready=open.filter(s=>placeOf(s)==='ready');
 // A new owner's first view leads with the to-do their hello names (Store.greeting): first in its list, its list first
@@ -3321,13 +3323,11 @@ const fuHidden=ready.length+needs.length+preparing.length-fuv.ready.length-fuv.n
 // What the list shows (a board's follow-ups are one to-do, a batch going out one progress line): All clear only when nothing is
 const anyShown=fuv.ready.length+fuv.needs.length+fuv.preparing.length+(scopeFilter==='personal'?0:fuShownProgress().length);
 // Open cards: due soon first, then newest first (openOrder).
-// Later: in the order they come back, with a heading per day. Done: the last 7 days.
-later.sort((a,b)=>(a.snoozed_until||'').localeCompare(b.snoozed_until||''));
+// Later: in the order they come back, with a heading per day, then the ones Still needed? set aside. Done: the last 7 days.
+later.sort((a,b)=>(setAside(a)-setAside(b))||(a.snoozed_until||'').localeCompare(b.snoozed_until||''));
 
 const recent=finished.sort((a,b)=>closedAt(b).localeCompare(closedAt(a))),doneTotal=state.done_counts?.[scopeFilter]??recent.length;
 {const seen=doneTotal+':'+recent.slice(0,30).map(s=>s.id).join(',');if(seen!==doneSeen){doneSeen=seen;pagerDrop('done')}}donePager();
-const backDay=s=>{const d=new Date(s.snoozed_until),t=new Date();t.setDate(t.getDate()+1);return localDay(d)===localDay(new Date())?'Today':localDay(d)===localDay(t)?'Tomorrow':d.toLocaleDateString(DL,{weekday:'long',day:'numeric',month:'short'})};
-const laterCards=items=>html`${items.map((s,i)=>html`${i===0||backDay(s)!==backDay(items[i-1])?html`<h3 class="day-head">${backDay(s)}</h3>`:''}${suggestionCard(s,'Later')}`)}`;
 $('#suggestion-summary').replaceChildren(make('div',{class:'summary-row'},make('div',{class:'scope-filter',role:'group','aria-label':'Show'},[['all','All'],['work','Work'],['personal','Personal']].map(([v,label])=>make('button',{type:'button','data-scope':v,'aria-pressed':scopeFilter===v},label)))));
 $('#suggestion-stats').replaceChildren(make('div',{class:'stats'},[[fuv.ready,'Ready','mint','ready'],[fuv.needs,'To decide','amber','needs'],[fuv.preparing,'Preparing','lavender','preparing'],[later,'Later','lavender','later']].map(([items,title,tone,key])=>make('button',{type:'button',class:`stat t-${tone}${items.length?'':' zero'}`,'data-fold-tile':key,'aria-expanded':!!items.length&&(key==='later'?laterOpen:!folded.has(key)),
  'aria-label':items.length?t('{} {}, tap to show or hide',items.length,t(title)):items.length+' '+t(title),...(items.length?{}:{disabled:''})},make('b',{},items.length),make('span',{},title)))));

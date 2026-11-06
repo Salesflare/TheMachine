@@ -16,7 +16,7 @@ A página **Tarefas** agrupa as tarefas:
 - **Precisa da sua decisão**: algo que só você pode decidir.
 - **Preparando**: sua Machine está trabalhando nela. Uma tarefa em que você acabou de clicar em **Fazer** fica onde estava enquanto é preparada e depois vai para **Pronta para você**.
 - **Feito agora**: uma última etapa que você confirmou, como enviar um formulário ou abrir uma issue, deu certo enquanto você estava fora. Ela mostra o que aconteceu até você tocar em **Entendi**, por um dia no máximo, e seu celular também fica sabendo. Depois fica só em Feito.
-- **Volta mais tarde**: adiada.
+- **Volta mais tarde**: adiada, e as tarefas sem resposta a **Ainda precisa?** (abaixo).
 - **Promessas**: o que você prometeu e o que outras pessoas prometeram a você. Veja [Promessas](promises.md).
 - **Feito / dispensado**: todas as tarefas concluídas, pelo momento em que foram concluídas, das mais novas para as mais antigas, 30 por vez conforme você rola. Uma tarefa que você acabou de enviar fica no topo, e cada uma diz quando, como "Feito há 5 minutos". As que já parecem concluídas ficam entre elas pelo momento em que começaram a parecer, com a etiqueta **Parece feito**.
 
@@ -27,6 +27,8 @@ Em Pronta para você, Precisa da sua decisão, Preparando e Aguardando outras pe
 Uma tarefa com **Parece feito** aparece como uma feita, com o que mostra que está feita, como "PR #3451 mesclado". Ela ainda não foi fechada: **Reabrir** a devolve para a sua lista, e a sua Machine aprende com isso. Elas nunca aparecem como atrasadas e não contam como esperando por você.
 
 Uma tarefa cujo último passo ainda está aberto do lado de outra pessoa, como uma revisão, um merge ou uma resposta, mostra **Aguardando:** esse passo e continua aberta. Ela espera em **Aguardando outras pessoas**, recolhida acima de Volta mais tarde, e não conta como pronta para você. Uma nova mensagem sobre ela a traz de volta.
+
+Uma tarefa que ninguém tocou em uma semana pergunta uma vez: **Ainda precisa?** **Descartar** fecha a tarefa como **Não precisa**, com **Desfazer**. **Manter** mantém a tarefa, e ela não pergunta de novo. Abrir, uma mensagem no chat, uma edição, adiar ou uma mensagem nova sobre ela contam como um toque. Sem resposta por mais uma semana, ela vai para Volta mais tarde, sob Ainda precisa?, em vez de sumir. Um toque traz de volta.
 
 **Tudo em dia.** significa que nada precisa de você agora. A linha abaixo diz quando sua Machine olhou pela última vez.
 

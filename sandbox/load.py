@@ -411,6 +411,10 @@ def load_cards(db, fixture, ids, base):
         db.execute('INSERT OR IGNORE INTO promises(direction,who,what,due,check_at,event_id,account_id,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?)',
                    (p['direction'], p['who'], p['what'], due, (base + dt.timedelta(days=p['due_days'] or 1)).isoformat(), ids[p['event']], account,
                     p['status'], stamp(2 * 24 * 60, base), stamp(60, base)))
+    # Still needed? as a quiet week leaves it (still_needed.py): asked a week ago without an answer (folded), and asked today
+    import assistant
+    for days in (8, 0):
+        assistant.Store.still_needed_ask(db, (base - dt.timedelta(days=days)).isoformat())
 
 
 def load_companies(db, fixture, base):

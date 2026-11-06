@@ -16,7 +16,7 @@ La pagina **Attività** le raggruppa:
 - **Serve una tua decisione**: qualcosa che puoi decidere solo tu.
 - **In preparazione**: la tua Machine ci sta lavorando. Un'attività a cui hai appena detto **Fallo** resta dov'era mentre si prepara, poi passa in **Pronta per te**.
 - **Appena fatto**: un ultimo passo che hai confermato, come inviare un modulo o creare una issue, è andato a buon fine mentre eri via. Mostra cosa è successo finché non tocchi **Ho capito**, al massimo per un giorno, e lo sa anche il tuo telefono. Poi resta solo in Fatto.
-- **Torna più tardi**: posticipate.
+- **Torna più tardi**: posticipate, e le attività senza risposta a **Serve ancora?** (sotto).
 - **Promesse**: quello che hai promesso e quello che altri hanno promesso a te. Vedi [Promesse](promises.md).
 - **Fatte / ignorate**: tutte le attività concluse, in base a quando sono state concluse, dalla più recente, 30 alla volta mentre scorri. Un’attività appena inviata è in cima, e ognuna dice quando, come «Fatto 5 minuti fa». Quelle che sembrano già concluse stanno tra le altre in base a quando hanno cominciato a sembrarlo, con l’etichetta **Sembra fatto**.
 
@@ -27,6 +27,8 @@ In Pronta per te, Serve una tua decisione, In preparazione e In attesa di altri,
 Un’attività con **Sembra fatto** appare come una fatta, con ciò che mostra che è fatta, come "PR #3451 unita". Non è ancora chiusa: **Riapri** la rimette nella tua lista, e la tua Machine ne tiene conto. Non risultano mai in ritardo e non contano come in attesa di te.
 
 Un’attività il cui ultimo passo è ancora aperto da parte di qualcun altro, come una revisione, un merge o una risposta, mostra **In attesa di:** quel passo e resta aperta. Aspetta in **In attesa di altri**, chiusa sopra Torna più tardi, e non conta come pronta per te. Un nuovo messaggio su di essa la riporta indietro.
+
+Un’attività che nessuno tocca da una settimana chiede una volta: **Serve ancora?** **Lascia perdere** la chiude come **Non serve**, con **Annulla**. **Tieni** la tiene, e non lo chiede più. Aprirla, un messaggio in chat, una modifica, posticiparla o un nuovo messaggio su di lei contano come un tocco. Senza risposta per un’altra settimana, finisce in Torna più tardi, sotto Serve ancora?, invece di sparire. Un tocco la riporta indietro.
 
 **Tutto a posto.** significa che ora niente ha bisogno di te. La riga sotto dice quando la tua Machine ha controllato l’ultima volta.
 

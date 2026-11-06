@@ -16,7 +16,7 @@ La página **Tareas** las agrupa:
 - **Necesita tu decisión**: algo que solo tú puedes decidir.
 - **Preparando**: tu Machine está trabajando en ella. Una tarea a la que acabas de decir **Hazlo** se queda donde estaba mientras se prepara, y luego pasa a **Lista para ti**.
 - **Recién hecho**: un último paso que confirmaste, como enviar un formulario o crear un issue, salió bien mientras no estabas. Muestra lo que pasó hasta que tocas **Entendido**, un día como mucho, y tu teléfono también se entera. Después solo está en Hecho.
-- **Vuelve más tarde**: pospuesta.
+- **Vuelve más tarde**: pospuesta, y las tareas sin respuesta a **¿Aún hace falta?** (abajo).
 - **Promesas**: lo que prometiste y lo que otros te prometieron. Consulta [Promesas](promises.md).
 - **Hecho / descartado**: cada tarea terminada, por cuándo se terminó, las más recientes primero, de 30 en 30 según te desplazas. Una tarea que acabas de enviar está arriba, y cada una dice cuándo, como «Hecho hace 5 minutos». Las tareas que ya parecen terminadas van entre ellas según cuándo empezaron a parecerlo, con la etiqueta **Parece hecho**.
 
@@ -27,6 +27,8 @@ En Lista para ti, Necesita tu decisión, Preparando y Esperando a otros, una tar
 Una tarea con **Parece hecho** se ve como una hecha, con lo que muestra que está hecha, como "PR #3451 fusionado". Aún no está cerrada: **Reabrir** la devuelve a tu lista, y tu Machine aprende de ello. Nunca aparecen como atrasadas ni cuentan como pendientes de ti.
 
 Una tarea cuyo último paso sigue abierto en manos de otra persona, como una revisión, una fusión o una respuesta, muestra **Esperando:** ese paso y sigue abierta. Espera en **Esperando a otros**, plegada encima de Vuelve más tarde, y no cuenta como lista para ti. Un mensaje nuevo sobre ella la trae de vuelta.
+
+Una tarea que nadie tocó en una semana pregunta una vez: **¿Aún hace falta?** **Descartar** la cierra como **No hace falta**, con **Deshacer**. **Mantener** la mantiene, y no vuelve a preguntar. Abrirla, un mensaje en el chat, un cambio, posponerla o un mensaje nuevo sobre ella cuentan como tocarla. Si no hay respuesta en otra semana, se guarda en Vuelve más tarde, bajo ¿Aún hace falta?, en lugar de desaparecer. Tocarla la trae de vuelta.
 
 **Todo al día.** significa que ahora nada te necesita. La línea de abajo dice cuándo tu Machine revisó por última vez.
 

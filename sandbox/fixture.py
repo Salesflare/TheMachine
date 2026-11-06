@@ -175,6 +175,15 @@ STORIES = [
                                (480, True, 'Will do this week.')]),
      'photo': (1, {'file': 'photo-invoice.jpg', 'description': 'A photo of an invoice from Hollis Heating for a boiler repair, €240.00, due November 14.',
                    'text': 'Hollis Heating\nInvoice 2041\nBoiler repair, November 3\nLabor and parts €240.00\nDue November 14'})},
+    # Still needed? (still_needed.py): a to-do nobody touched for 9 days asks, and one asked a week ago without an answer
+    # sits folded in Coming back later
+    {'key': 'cabin', 'telegram': True, 'family': True, 'status': 'prepared', 'minutes': 9 * 24 * 60,
+     'title': 'Tell Sam which weekend works for the cabin', 'body': 'Sam asked which weekend in December suits you for the cabin trip.',
+     'chat': ('Sam Whitlock', [(9 * 24 * 60 + 30, False, 'Which weekend in December works for the cabin?')]),
+     'draft': ('telegram', 'The weekend of the 12th works for me. Shall I book it?')},
+    {'key': 'paint', 'family': True, 'status': 'pending', 'minutes': 16 * 24 * 60,
+     'title': 'Pick a paint color for the hallway', 'body': 'Robin asks for a color for the hallway before the painter comes.',
+     'chat': ('Robin Morgan', [(16 * 24 * 60 + 40, False, 'Can you pick a color for the hallway? The painter needs it.')])},
 ]
 
 # Closed cards, one per earlier email: what the card said, by the email's topic (EMAIL_TOPICS order)
