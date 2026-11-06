@@ -739,6 +739,7 @@ SERIES_FIELDS = ('subject', 'location', 'organizer', 'attendees', 'bodyPreview',
                  'sensitivity', 'lastModifiedDateTime', 'originalStartTimeZone', 'originalEndTimeZone')
 _series = {}  # (account, calendar) -> {series master id: its SERIES_FIELDS}, seen on earlier pages or read once
 SERIES_KEPT = 2000
+CALENDAR_READ = 2  # raise to read every Outlook calendar's window again after a change in how it is read (sync_calendar)
 
 
 def _remember_series(known, master):

@@ -458,7 +458,7 @@ class CalendarSync(Base):
             a.sync_calendar(self.store, self.config, self.cal)
         delta = [c[1] for c in self.fake.calls if '/calendarView/delta' in c[1]]
         self.assertIn('startDateTime=', delta[0])  # the whole window again, not the old delta
-        self.assertEqual(self.store.checkpoint(self.cal['id'])['outlook_read'], a.OUTLOOK_CALENDAR_READ)
+        self.assertEqual(self.store.checkpoint(self.cal['id'])['outlook_read'], ms_graph.CALENDAR_READ)
 
 class Sending(Base):
     def action(self, **extra):
