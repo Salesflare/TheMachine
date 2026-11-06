@@ -8,7 +8,7 @@ site: Connect, More sources, Remove
 ---
 ## What it reads
 
-Your LinkedIn messages. It reads them in a tab of your Machine's own browser, signed in as you, now and then during waking hours. It uses no API key and marks nothing as read.
+Your LinkedIn messages. It reads them in your Machine's own browser, signed in as you, now and then during waking hours. It marks nothing as read.
 
 ## What it can send
 
@@ -24,7 +24,7 @@ On a hosted Machine:
 On your own computer:
 
 1. In the dashboard, open **Connections**, then **+ Add**, and pick LinkedIn.
-2. Pick **Work** with its company, or **Personal** and press **Connect**.
+2. Pick **Work** (with its company) or **Personal**, then press **Connect**.
 3. Press **Sign in to LinkedIn** and sign in in your Machine's browser. It connects by itself once you're in.
 
 Or run `assistant connect linkedin`.
@@ -35,7 +35,7 @@ A second LinkedIn account gets a browser of its own. If LinkedIn signs your Mach
 
 LinkedIn often emails a code the first time your Machine signs in. Type it in the sign-in dialog under **Code** and press **Sign in**. The page stays put while you type.
 
-If LinkedIn goes back to the start, or nothing happens for two minutes, it stopped this sign-in. Wait a minute and press **Try again**. If LinkedIn shows a robot check, finish it in your Machine's browser.
+If LinkedIn goes back to the start, or nothing happens for two minutes, wait a minute and press **Try again**. If LinkedIn shows a robot check, finish it in your Machine's browser.
 
 ## Remove it
 

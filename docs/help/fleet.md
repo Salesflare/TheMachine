@@ -7,7 +7,7 @@ code: fleet.py, network.py, dashboard.html
 site: Company sign-in, Ask to join, Approve, Removed lately, Activity, Download CSV
 order: 1
 ---
-The Machine Network connects Machines. What they tell each other is encrypted end to end, and each Machine answers only by your rules.
+A Fleet lets your Machine work with the Machines of your team, family or friends, over The Machine Network. What they tell each other is encrypted end to end, and your Machine answers only by your rules.
 
 ## Kinds of Fleet
 
@@ -25,31 +25,31 @@ Ask "who knows someone at Acme?" from the Fleet tab, or **Ask the Fleet** on an 
 
 ## Answered by itself in a Work Fleet
 
-In a Standard Work Fleet, your Machine answers a teammate's **who knows someone**, **meeting context** ("who's this guest?") and **who handles shared emails** by itself. It uses only what the [Team Graph](team-graph.md) already shares with your team. Private, personal and sensitive threads never count, and names come only of people the Team Graph already shares. Each answer shows in the Fleet tab, under **Activity**.
+In a Standard Work Fleet, your Machine answers three kinds of teammate questions by itself: **who knows someone**, **meeting context** ("who's this guest?") and **who handles shared emails**. It uses only what the [Team Graph](team-graph.md) already shares with your team, never private, personal or sensitive threads. Each answer shows in the Fleet tab, under **Activity**.
 
-To stop one, set it to **Never** under **Sharing**. A rule saved as **Ask me first** now works as **Always**. While your Fleet's Team Graph sharing is off, who knows someone and meeting context keep asking you first.
+To stop one, set it to **Never** under **Sharing**. A rule saved as **Ask me first** works as **Always**. While Team Graph sharing is off, who knows someone and meeting context ask you first.
 
 Careful Work Fleets, Friends and Family still ask you first. Warm intros, handoffs, shared follow-ups and free questions keep their own rules.
 
 ## Team learnings
 
-Once a day at most, your Machine reads a few client threads the Team Graph already shares with your team, and writes down how the team works. For example: "Refund requests are answered from the support inbox with the refund template." They show in your Work Fleet's pane under **Team learnings**, for everyone in the Fleet, and each one is logged under **Activity**. Nobody is asked first.
+Your Machine writes down how your team works, from client threads the Team Graph already shares, at most once a day. For example: "Refund requests are answered from the support inbox with the refund template." They show in your Work Fleet's pane under **Team learnings**, for everyone in the Fleet, and each is logged under **Activity**. Nobody is asked first.
 
 - Only threads someone on your team wrote in. Never private, personal or sensitive ones.
 - Only what holds across several customers: a process, a tool, a writing style, or who handles what. Never something about one customer, never feedback on your own product, and never names, addresses, numbers or quotes.
-- Each one has a label: what kind it is, that it came from team conversations, and that it's for this Fleet. Ones it isn't sure about are dropped.
+- Ones it isn't sure about are dropped.
 
-When one person learns, everyone does. When your Machine drafts or prepares a Work to-do for this company, it uses the team learnings that fit, below your own facts, rules and skills. Never in personal to-dos. A to-do that used one says so, for example "Used a team learning: refunds go out from the support inbox." Tap **Remove** there to take it out for the whole Fleet.
+Your Machine uses the learnings that fit when it prepares a Work to-do for this company. Your own facts, rules and skills come first, and personal to-dos never use them. A to-do that used one says so, like "Used a team learning: refunds go out from the support inbox." Tap **Remove** there to take it out for the whole Fleet.
 
-Anyone in the Fleet can **Remove** a learning. It's gone for everyone and isn't made again. To stop, turn off **Offer to share learnings** in Settings, Security. Careful Work Fleets get none.
+Anyone in the Fleet can **Remove** a learning: it's gone for everyone and isn't made again. To stop them, turn off **Offer to share learnings** in Settings, Security. Careful Work Fleets get none.
 
 ## Brief requests
 
-A teammate with the team brief on asks your Machine for counts and dates each morning. In a Work Fleet your Machine answers by itself, with only what the [Team Graph](team-graph.md) already shares with your team. Private and personal threads never count, and nothing goes while your Fleet's Team Graph sharing is off. Each answer shows in the Fleet tab, under **Activity**. It never becomes a to-do or a notification.
+A teammate with the team brief on asks your Machine for counts and dates each morning. In a Work Fleet your Machine answers by itself, with only what the [Team Graph](team-graph.md) already shares, and nothing while Team Graph sharing is off. Each answer shows in the Fleet tab, under **Activity**, never as a to-do or notification.
 
 To stop, turn off **Share my brief facts with the team** in the Fleet tab, under **Sharing**. Their brief then lists you as not answered.
 
-In a Careful Fleet, asks wait for you in the Fleet tab under **Brief requests**: **Share once**, **Always share**, **Decline** or **Never**. Only the latest ask per teammate waits, and unanswered ones expire. Nothing is shared until you choose.
+In a Careful Fleet, requests wait for you in the Fleet tab under **Brief requests**: **Share once**, **Always share**, **Decline** or **Never**. Nothing is shared until you choose, and unanswered ones expire.
 
 ## Team Graph
 
@@ -57,7 +57,7 @@ In a Work Fleet, client work is shared with your team, after you look it over. S
 
 ## Shared connections
 
-An owner or admin can connect Stripe or Intercom once and share it with the team, from the Fleet tab's **Shared connections** box. Teammates' Machines read it, read only, and see who shared it. Only admins change or stop it. See [Stripe](stripe.md) and [Intercom](intercom.md).
+An owner or admin can connect Stripe or Intercom once and share it with the team, from **Shared connections** in the Fleet tab. Teammates can read it, not change it, and see who shared it. Only admins change or stop it. See [Stripe](stripe.md) and [Intercom](intercom.md).
 
 ## What your Machine answers
 
@@ -65,9 +65,9 @@ Set it per Fleet, on the Sharing pane. See [Sharing rules](sharing-rules.md). **
 
 ## Company sign-in
 
-For a hosted Work Fleet. An owner or admin signed in with a company Google Workspace or Microsoft 365 account can turn on **Company sign-in** on the Account page. It uses that account's domain.
+Let teammates join with their company account. In a hosted Work Fleet, an owner or admin signed in with Google Workspace or Microsoft 365 can turn on **Company sign-in** on the Account page.
 
-Teammates who sign in with an account on that domain then see **Ask to join**. An owner or admin must **Approve** each request. Personal Gmail and Outlook.com accounts never count.
+Teammates who sign in with that company domain see **Ask to join**, and an owner or admin must **Approve** each one. Personal Gmail and Outlook.com accounts never count.
 
 Removing someone from the Fleet signs them out everywhere.
 
@@ -77,7 +77,7 @@ To join a Fleet, start one, or pair a Machine on your own computer, see [Plans a
 
 The Fleet part of your account page shows two more things:
 
-- **Removed lately**: each person removed, or who left. It says **Removed, confirmed** once their Machine removed the work data, Google confirmed the sign-out and any shared access they had was renewed. Until then it says **Pending** and why.
-- **Activity**: who did what and when. Invites, joins, removals, roles, hosted Machines and billing, shared connections and approvals. It also lists every time our team opened a member's Machine or its logs. Never message content. **Download CSV** exports it. Kept 12 months.
+- **Removed lately**: each person removed, or who left. **Removed, confirmed** means their Machine deleted the work data and they're signed out everywhere. Until then it says **Pending** and why.
+- **Activity**: who did what and when: invites, joins, removals, roles, hosted Machines, billing, shared connections and approvals. Also every time our support team opened a member's Machine or its logs. Never message content. **Download CSV** exports it. Kept 12 months.
 
 After **Stop sharing**, a shared connection shows **Removed, confirmed** once every Machine lost access to it.

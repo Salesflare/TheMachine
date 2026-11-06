@@ -8,9 +8,9 @@ site: Add my bot, Add more any time, Disconnect Telegram
 ---
 ## What it does
 
-This Telegram is a way to get your to-dos. To have The Machine read your own Telegram chats, see [Telegram chats](telegram-chats.md). Your own bot sends each to-do within your [work hours](work-hours.md), with the same buttons as the dashboard: **Do it**, **Snooze**, **Change**, **Mark done**, **Not needed**, and **Send** for a prepared message.
+Get your to-dos in Telegram, from a bot of your own, within your [work hours](work-hours.md). Each comes with the dashboard's buttons: **Do it**, **Snooze**, **Change**, **Mark done**, **Not needed**, and **Send** for a prepared message. To have The Machine read your Telegram chats instead, see [Telegram chats](telegram-chats.md).
 
-Telegram is optional. The dashboard as a phone app sends the same to-dos as notifications.
+It's optional: the phone app sends the same to-dos as notifications.
 
 ## What it can send
 
@@ -23,7 +23,7 @@ On a hosted Machine:
 1. In Telegram, message @BotFather and send /newbot. Copy the token it gives you.
 2. On your setup page, under **Add more any time**, open Telegram, paste the token and press **Add my bot**.
 
-It's not part of setup: add it whenever you like. Your dashboard suggests it once a snoozed to-do would only come back there.
+Add it whenever you like.
 
 On your own computer, the installer asks for it, or run `assistant telegram on` with your Telegram user ID.
 

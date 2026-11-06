@@ -17,7 +17,7 @@ Nothing in Trello. It only reads.
 ## Connect it
 
 1. In the dashboard: **Connections**, **+ Add**, Trello. Or on a hosted Machine's setup page at app.themachine.computer/setup: **More sources**, Trello. On your own computer, pair it with your account first.
-2. Press **Sign in with Trello** and allow read access in Trello. The Machine is made by Salesflare.
+2. Press **Sign in with Trello** and allow read access. Trello shows the app as made by Salesflare.
 3. Pick the board to follow and press **Connect**. For another board, add Trello again.
 
 ## Remove it

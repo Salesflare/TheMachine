@@ -12,7 +12,7 @@ Events on your Stripe account that may need you: failed payments, disputes, canc
 
 ## What it can do
 
-Nothing in Stripe. It never writes, refunds or retries a payment. The Machine's Stripe app asks Stripe for read permissions only, and Stripe shows them before you install it.
+Nothing in Stripe. It never refunds, retries or changes anything. It asks for read access only, and Stripe shows that before you install it.
 
 ## Connect it
 
@@ -37,9 +37,9 @@ In a Work Fleet, an owner or admin connects Stripe once and shares it with the t
 1. Connect Stripe on your own Machine (above). The Fleet tab's **Shared connections** box also has **Connect Stripe**.
 2. On the Fleet tab, open **Share Stripe**. Everyone is ticked; untick who shouldn't get it. Press **Share**.
 
-Teammates' Machines read it too, read only. Under Connections it says who shared it, and only the Fleet's admins can change or stop it. Your Machine renews their access every hour, so while it is off for longer, their Stripe pauses until it is back. Nobody ever gets your sign-in itself. Details: [Fleets](fleet.md).
+Teammates' Machines can then read it too. Connections shows who shared it, and only the Fleet's admins can change or stop it. Your Machine renews their access every hour, so while it is off, their Stripe pauses. Nobody gets your sign-in itself. Details: [Fleets](fleet.md).
 
-A Stripe connection that goes through another service with one key for many connections can't be shared: that key opens more than Stripe. Connect Stripe on its own for the team instead.
+Stripe connected through a service whose one key opens other apps too can't be shared. Connect Stripe directly for the team instead.
 
 ## Remove it
 

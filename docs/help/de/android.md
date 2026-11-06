@@ -18,12 +18,12 @@ Nichts auf deinem Handy. Sie liest nur Benachrichtigungen.
 
 Auf einer gehosteten Machine:
 
-1. Installiere die OpenClaw-App auf deinem Handy.
+1. Installiere OpenClaw aus Google Play auf deinem Handy.
 2. Öffne im Dashboard **Verbindungen**, dann **+ Hinzufügen**, wähle Android-Handy und tippe auf **Einrichtungscode zeigen**.
-3. Scanne ihn in der OpenClaw-App und tippe dann auf **Freigeben**, um die Kopplung zu bestätigen.
-4. Schalte in der OpenClaw-App Forward Notification Events ein und erlaube den Zugriff auf Benachrichtigungen, wenn Android danach fragt.
+3. Füge in der OpenClaw-App ein Gateway hinzu und scanne den Code. Tippe dann im Dashboard auf **Freigeben**.
+4. Erlaube den Zugriff auf Benachrichtigungen, wenn die App danach fragt.
 
-Auf deinem eigenen Computer koppelst du das Handy mit deinem OpenClaw Gateway und führst dann `assistant connect android` aus.
+Auf deinem eigenen Computer koppelst du das Handy in der OpenClaw-App und führst dann `assistant connect android` aus.
 
 ## Entfernen
 

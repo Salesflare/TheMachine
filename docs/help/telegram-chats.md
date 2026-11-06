@@ -36,14 +36,14 @@ Or run `assistant connect telegram` in a terminal and scan the code it shows the
 
 ## When it stops
 
-- **Logged out of Telegram**: Telegram ended this device's login, or you logged it out on your phone. Press **Reconnect** on its card.
+- **Logged out of Telegram**: Telegram ended this device's login, or you logged it out on your phone. Press **Reconnect** in **Connections**.
 - **Telegram stopped accepting the app ID**: Telegram no longer accepts the app ID this Machine uses. Nothing is read or sent until you press **Reconnect** and add an app ID of your own.
 
-The Machine uses Telegram's API for this. Telegram may limit or end logins from apps like it.
+Telegram may limit or end logins from apps like The Machine.
 
 ## Pictures
 
-The Machine asks Telegram for the profile pictures of people in your graph who have none, at most 50 a day, through the same login that reads your chats, and only for people in chats it reads. Nothing is sent to them. Someone who hides their picture from you stays without one.
+The Machine asks Telegram for the profile pictures of people in your Graph who have none, at most 50 a day, through the same login that reads your chats, and only for people in chats it reads. Nothing is sent to them. Someone who hides their picture from you stays without one.
 
 ## Remove it
 

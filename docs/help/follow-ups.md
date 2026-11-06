@@ -16,18 +16,18 @@ For one project, **Follow-ups…** in its **⋯** on the board or on its page. *
 
 ## Settings
 
-- Wait 3 to 7 days without a reply. After the shortest wait a follow-up is drafted. The longest wait is the latest it goes out, even when your usage is tight.
+- Wait 3 to 7 days without a reply, by default. A follow-up is drafted after the shortest wait and goes out by the longest, even when your usage is tight.
 - **Only on work days**: nothing is drafted or sent on your days off (from **Settings** > **Notifications** > **Work hours**). What comes due then waits for your next work morning. On for Work, off for Personal.
-- Follow up at least 1 and at most 3 times. It always sends the minimum. Between the two, it still drafts each one. When it thinks you'd better stop, the draft says why ("The Machine would stop here: 9 unanswered emails since August") and isn't ticked: send it, skip it, or pick **Stop follow-ups here**. Ask for one anyway in a follow-up's chat and it writes one. Never more than the maximum.
+- Follow up 1 to 3 times, by default. It always sends the minimum and drafts the rest. When it thinks you'd better stop, the draft says why ("The Machine would stop here: 9 unanswered emails since August") and isn't ticked: send it, skip it, or pick **Stop follow-ups here**. Never more than the maximum.
 - **Stages**: **All open stages**, so not the board's last stage or Stalled or declined. **Customize** turns stages on or off and gives a stage its own wait.
 - **Channels**: the connected ones that can send. A follow-up goes out on the same channel as the last message. **Switch channel if there’s no reply** tries the next allowed one.
 - **Move to Stalled or declined after the last one**: on when the board has that row.
 
 ## Asking or sending by itself
 
-**Ask me before sending** is the default: drafts wait in your to-dos. **Send without asking** is a standing yes for that board or project. Anything unusual still waits for you, and so does anything that fails. With Careful mode on, it always asks. A follow-up never goes out twice.
+**Ask me before sending** is the default: drafts wait in your to-dos. **Send without asking** is a standing yes for that board or project. Anything unusual or failed still waits for you, and the Careful level always asks. A follow-up never goes out twice.
 
-Right before one goes, the thread is checked again, and if anyone wrote since the draft it isn’t sent: "Not sent: new message in the thread". The to-do shows that message, who wrote it and when, with **Read it** and **Redo for this message**, which asks for a new draft that takes it into account.
+Right before one goes, the thread is checked again. If anyone wrote since the draft, it isn't sent: "Not sent: new message in the thread". The to-do shows that message, who wrote it and when, with **Read it** and **Redo for this message**, which asks for a new draft that takes it into account.
 
 ## Reviewing them
 
@@ -61,4 +61,4 @@ With no other address, follow-ups move to LinkedIn or WhatsApp when that's allow
 
 The board header says "Follow-ups on, next Thu". A project on the board shows its next follow-up, or that one is ready. The project's page lists what went out, including what was sent automatically.
 
-Follow-ups wait while your Machine is busy with your to-dos or close to its usage limit, and catch up later. On a shared board, only the project owner's own Machine follows up.
+Follow-ups wait while your Machine is busy or near its usage limit, and catch up later. On a shared board, only the project owner's Machine follows up.

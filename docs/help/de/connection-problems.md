@@ -14,7 +14,7 @@ order: 1
 - **Wartet auf die erste Synchronisierung**: gerade verbunden. Gib ihr ein paar Minuten.
 - **Liest wieder um** 07:00: X und LinkedIn lesen nur tagsüber. Nichts zu tun.
 - **Braucht deine Hilfe**: Öffne **Details**. Dort steht, was schiefging und was zu tun ist.
-- **Handy getrennt**: Das Handy erreicht OpenClaw nicht. Öffne die OpenClaw-App darauf.
+- **Handy getrennt**: Das Handy erreicht deine Machine nicht. Öffne die OpenClaw-App darauf.
 
 Eine Quelle, die immer wieder fehlschlägt und stundenlang nichts Neues bringt, länger als ihre übliche ruhige Zeit, gilt nicht als verbunden. Das verschwindet von selbst, sobald wieder Neues ankommt.
 
@@ -25,7 +25,7 @@ Die Zahl bei **Verbindungen** zählt nur Quellen, die deine Hilfe brauchen.
 - „Melde dich wieder bei Google an“ (oder Microsoft): eine Zeile pro Konto. Ein **Neu verbinden** holt alle seine Quellen zurück, etwa Gmail und Kalender.
 - „needs you to sign in again“: Tippe auf **Neu verbinden** und melde dich an. Auf einer gehosteten Machine meldest du dich direkt dort an und kommst zurück zum Dashboard.
 - Microsoft richtet den Zugriff noch ein: Es versucht es von selbst erneut.
-- Slack: Prüfe deinen Maton-API-Schlüssel und die Slack-Verbindung in Maton.
+- Slack: Tippe auf **Neu verbinden**. Mit einem Maton-Schlüssel verbunden? Prüfe den Schlüssel und die Slack-Verbindung in Maton.
 - Android: Öffne die OpenClaw-App auf dem Handy und erlaube ihr den Zugriff auf Benachrichtigungen.
 
 Auf deinem eigenen Computer prüft `assistant doctor` jede Quelle und zeigt für jedes Problem die Lösung.

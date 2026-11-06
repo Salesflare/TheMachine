@@ -28,6 +28,6 @@ Um das zu beenden, schalte **Teilen, was die Hilfe gefragt wird** in **Einstellu
 
 Hilfe beantwortet Fragen. Sie sieht deine Daten nicht und ändert nichts: Sie sagt dir stattdessen, wo du tippen musst.
 
-Wenn das, was du beschreibst, eher nach einem Fehler klingt als nach einer Wie-geht-das-Frage, endet die Antwort mit **Diesen Fehler melden**. Das öffnet **Fehler melden** mit einer kurzen Beschreibung dessen, was du gemacht hast, was du erwartet hast und was passiert ist, und der Supportbericht ist angehakt. Ändere dort, was du willst. Nichts geht raus, bis du auf **Prüfen** und dann auf **Senden** tippst.
+Wenn das, was du beschreibst, eher nach einem Fehler klingt als nach einer Wie-geht-das-Frage, endet die Antwort mit **Diesen Fehler melden**. Das öffnet **Fehler melden** mit einer kurzen Beschreibung dessen, was du gemacht hast, was du erwartet hast und was passiert ist, und der Supportbericht ist angehakt. Ändere dort, was du willst. Nichts geht raus, bis du auf **Senden** tippst.
 
 **Fehler melden** ist auch ein eigener Tab im selben Bereich. Siehe [Support bekommen](get-support.md#report-a-bug).

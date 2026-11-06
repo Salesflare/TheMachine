@@ -9,22 +9,22 @@ order: 3
 ## Hand off a to-do
 
 1. On the to-do, open **…**, then **Hand off…**, and pick **A teammate**.
-2. Choose who, check what goes along (leave any part out with ×), and add a note. The text starts with the task and why it matters, from the to-do, and where it came from (its link). Nothing from a Personal account or another company's goes along.
+2. Choose who, check what goes along (× leaves a part out), and add a note. Nothing from a Personal account or another company goes along.
 3. Send it. Their Machine shows it to them as a to-do.
 
-Their Machine pings them on their phone or in Telegram. With neither set up, it emails them once instead: who handed it, its title and a link, nothing else. See [Notifications](notifications.md).
+Their Machine pings them on their phone or in Telegram. With neither set up, it emails them once with who handed it, its title and a link. See [Notifications](notifications.md).
 
-An Intercom conversation goes along with its place in Intercom. If their Machine reads the same Intercom workspace, their to-do is on that conversation: **Read message** opens it, the customer shows on it, and their reply goes back in Intercom. If not, the to-do still links the conversation in Intercom.
+An Intercom conversation goes along too. If their Machine reads the same Intercom workspace, **Read message** opens it and their reply goes back in Intercom. If not, their to-do links to it.
 
 While you wait, the to-do sits under **Coming back later**, "With Pat · waiting", with a check-in date. **Check in now** asks how it's going; **Change time** moves the check-in.
 
-If Pat's Machine can't notify them (no phone notifications, Telegram or email turned on there), the to-do says "Pat won't get a ping. Let them know." and you hear it once. Tell Pat yourself. The line goes once they turn on a notification.
+If Pat's Machine can't notify them, the to-do says "Pat won't get a ping. Let them know." Tell Pat yourself. The line goes once they turn on notifications.
 
-It comes back on top only when there is something to decide: Pat answered, declined or marked it done, the handoff failed, or a deadline came. A to-do due today checks in a few hours later, one due soon the work day before, an urgent one without a date the next work morning, and any other in 3 work days.
+It comes back on top only when there is something to decide: Pat answered, declined or finished it, the handoff failed, or a deadline came. The check-in follows the due date: a few hours for today, the work day before for soon, the next morning for urgent, otherwise 3 work days.
 
 Back for a check-in, it says "Still with Pat · check in?": Pat still has it, nothing came back. **Check in now** opens the chat; **Take it back** and **Hand off to someone else** are under **…**, then **Hand off…**.
 
-The to-do's chat shows when it went ("Handed off to Pat's Machine · 14:02") and what came back: accepted, declined (with their note) or done. Back for a check-in with no answer yet, "No answer from Pat yet" sits under that line, with **Mark done**, **Snooze** and **Not needed** (no Do it: they have it). To nudge them or take it back, say so in the chat.
+The to-do's chat shows when it went ("Handed off to Pat's Machine · 14:02") and what came back: accepted, declined (with their note) or done. With no answer yet, it offers **Mark done**, **Snooze** and **Not needed**. To nudge them or take it back, say so in the chat.
 
 If the handoff didn't go out, the to-do and its chat say so, with **Try again**.
 
@@ -32,11 +32,11 @@ If the handoff didn't go out, the to-do and its chat say so, with **Try again**.
 
 While a teammate has it, the to-do says so in one line ("With Pat · waiting"), with **Take it back** and **Hand off to someone else** under **…**, then **Hand off…**. **Take it back** makes it yours again: Pat's Machine is told, and their answer no longer moves it.
 
-**Hand off to someone else** opens the handoff form, on someone who doesn't have it yet. Or say so in the to-do's chat ("this should go to Kim"). The new handoff waits on the to-do for you to read: "Still with Pat until you send it to Kim", with **Review handoff to** Kim. That opens the form with the text, on Kim.
+**Hand off to someone else** opens the handoff form. Or say so in the to-do's chat ("this should go to Kim"): the to-do then says "Still with Pat until you send it to Kim", with **Review handoff to** Kim.
 
 A to-do goes to each teammate once: while Pat has it, handing it to Pat again says "Pat already has this to-do".
 
-**Take it back from** Pat is on by default; turn it off to let both have it. Nothing goes out until you pick **Hand off**. Then the chat says "Taken back from Pat" and "Handed off to Kim's Machine". Pat's Machine is told too, and the to-do it made for them goes.
+**Take it back from** Pat is on by default; turn it off to let both have it. Nothing goes out until you pick **Hand off**. Pat's Machine is told, and their copy of the to-do goes.
 
 ## When they decline
 
@@ -44,10 +44,10 @@ They can say why: not theirs, already done, or no time this week. Then pick **Do
 
 ## Someone outside the Network
 
-Pick **By email**: your Machine drafts an email for you to send. As you type their address, it suggests teammates first: people in your Fleet, then people at your company's domain, then what you typed with that domain. Add a task page so they can answer in one tap: see [Task pages](task-pages.md).
+Pick **By email**: your Machine drafts an email for you to send. As you type, it suggests your Fleet first, then people at your company. Add a task page so they can answer in one tap: see [Task pages](task-pages.md).
 
-Only for Work to-dos. Tick what goes in the email: a few lines about the to-do, its ready draft, links and files. Only what your Team Graph shares with the team is offered, so Personal and Only you content stays out. **Prepare email** puts the email on the to-do: read it, then send it from your own mailbox like any email. No tracking pixels.
+Only for Work to-dos. Tick what goes in: a few lines about the to-do, its draft, links and files. Personal and Only you content stays out. **Prepare email** puts the email on the to-do: read it, then send it from your own mailbox. No tracking.
 
 A to-do from Intercom or Slack has no mailbox of its own, so its email goes from your Work mailbox.
 
-The to-do then says "Handed to <name> by email" and tracks it as a promise until they reply that it's done, or you mark it done. The email ends with "Take this on in your own Machine": if they sign up through that link, they can join your Fleet and the to-do moves to their Machine as a normal handoff. Turn that line off in **Settings**, under Fleet.
+The to-do then tracks it as a promise until they reply that it's done, or you mark it done. The email ends with "Take this on in your own Machine": if they sign up through it, they can join your Fleet and the to-do moves to their Machine. Turn that line off in **Settings**, under Fleet.

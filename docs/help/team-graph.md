@@ -6,93 +6,93 @@ covers: team-graph
 code: shared_graph.py, fleet_trust.py, dashboard.html
 order: 2
 ---
-In a Work Fleet, your Machine can share your client work with your teammates' Machines, like a shared CRM. It's **Experimental**: new and still changing, so it starts off.
+In a Work Fleet, your Machine can share client work with your teammates' Machines, like a shared CRM. It's **Experimental** and starts off.
 
 ## Turn it on
 
-An admin turns on **Share the Graph in this Fleet** on **What's shared**, and confirms the company may share this mail and has told its people. Everyone sees whether it's on. A Fleet that already shared before stays on.
+An admin turns on **Share the Graph in this Fleet** on **What's shared**, and confirms the company may share this mail and has told its people. Everyone sees whether it's on.
 
-Requiring everyone's Work email or calendar turns it on too. Then nobody has to start anything: what the Fleet requires goes, and each person picks what else goes under **Your connections**. A new teammate's first share goes within the hour, so they can keep anything private first.
+Requiring everyone's Work email or calendar also turns it on. Each person then picks what else goes under **Your connections**. A new teammate's first share waits an hour, so they can keep things private first.
 
 ## Your connections
 
-**Your connections** on **What's shared** lists each one with a switch. Work ones at your Fleet's own domain start on. One at another company's domain starts off, even when it's a Work account: it says "Other company, not shared". You can turn it on. Personal ones never go. Turning one off takes back what it shared.
+**Your connections** on **What's shared** lists each connection with a switch. Work ones at your Fleet's domain start on. Ones at another company's domain start off and say "Other company, not shared". Personal ones never go. Turning one off takes back what it shared.
 
-Someone else's calendar that you read through your own sign-in shows under its own name, as a personal connection.
+Someone else's calendar that you read through your own sign-in shows under its own name, as personal.
 
-Inside a connection that's on, each thread is still sorted. Your company's own Slack counts as colleagues only, also direct messages: only a Slack Connect conversation with another company can be a client thread. Personal and colleague-only threads stay out. Sensitive and automated mail stays out of automatic sharing; your explicit sharing choices can override those classifications.
+Within a connection that's on, each thread is still sorted. Your company's own Slack counts as colleagues only; only a Slack Connect chat with another company can be client work. Personal, colleague-only, sensitive and automated threads stay out, unless you share one yourself.
 
 ## Required by the Fleet
 
-An admin can require everyone's **Work email** and **Work calendar** at the Fleet's own domain, under **Required by the Fleet**, after confirming the company has told its people. Work mail belongs to the company, like in any CRM. Those then show "Required by" your Fleet and can't be turned off. Threads you keep private stay private. When sharing is still off, requiring something turns it on: no second switch.
+An admin can require everyone's **Work email** and **Work calendar** at the Fleet's domain, under **Required by the Fleet**, after confirming the company has told its people. Work mail belongs to the company, as in any CRM. Required connections show "Required by" your Fleet and can't be turned off. Threads you keep private stay private.
 
 ## What goes to the team
 
-- Client threads: email with people outside your company about work, with their attachments.
+- Client threads: work email with people outside your company, with attachments.
 - Work people, organizations and projects, with a short timeline.
-- On a Team board, a project's meetings, Zoom notes, Intercom conversations and chats too, by being on the board. Sensitive ones, such as deals, stay out, and so do chats only among colleagues.
-- Your counts and dates for a teammate's [team brief](fleet.md#brief-requests), from these only.
-- Answers to a teammate's who knows someone and meeting context, from these only. See [Fleets](fleet.md#answered-by-itself-in-a-work-fleet).
-- [Team learnings](fleet.md#team-learnings): how the team works, written from these threads, with no names or customer details.
+- On a Team board, a project's meetings, Zoom notes, Intercom conversations and chats. Sensitive ones, like deals, and colleague-only chats stay out.
+- Counts and dates for a teammate's [team brief](fleet.md#brief-requests).
+- Answers when a teammate asks who knows someone or wants meeting context. See [Fleets](fleet.md#answered-by-itself-in-a-work-fleet).
+- [Team learnings](fleet.md#team-learnings): how the team works, with no names or customer details.
 
 ## Kept out of automatic sharing
 
-- Sensitive threads: buying or selling a company, investments, valuations, deal talks, HR, hiring and recruiters, legal, health, money, security. Not even that they exist.
-- Automated mail: receipts, invoices, alerts, newsletters, and your company's own bills with its suppliers.
-- Internal threads (only colleagues on them), personal mail and anything from a personal account. Personal never goes, not even when you tap Team.
+- Sensitive threads: buying or selling a company, investments, deal talks, HR and hiring, legal, health, money, security. Not even that they exist.
+- Automated mail: receipts, invoices, alerts, newsletters and supplier bills.
+- Colleague-only threads, personal mail and anything from a personal account. Personal never goes, not even when you tap Team.
 - Anything you marked **Keep private**, and boards and projects set to Only you.
 
-Each thread is judged on its own, by what it is about. Classification can be wrong; review what would go and use Keep private to correct it. Your explicit Team choice or a share with named teammates can override a sensitive classification; check the recipients before sharing.
+Each thread is judged on what it's about, and that can be wrong. Check what would go and use Keep private to correct it. Sharing a thread yourself, with the team or named people, overrides a sensitive label, so check who gets it.
 
 ## Share a board with chosen people
 
-On a board's **⋯** menu, tap **Share board…** and pick teammates. Only they get its projects with their full timelines: email threads, meetings and their Zoom notes, Intercom conversations, chats, to-dos and moves. Sensitive ones go too, such as deals.
+On a board's **⋯** menu, tap **Share board…** and pick teammates. Only they get its projects with full timelines: email, meetings and Zoom notes, Intercom conversations, chats, to-dos and moves. Sensitive ones, like deals, go too.
 
-Personal and colleague-only threads stay out, and so do people in your Family or Friends and automated mail when only its board is shared. Connections you have not selected stay out too.
+Personal and colleague-only threads stay out, and so do your Family and Friends, automated mail and connections you didn't select.
 
-- A project added to the board later goes too. One moved off the board is taken back.
-- Take someone off, or pick nobody, and it is taken back from their Machine.
-- One thread can go to chosen people too: tap its label, then **Share with…**. This explicit choice can include sensitive or automated work mail. Personal and colleague-only threads cannot be shared.
+- A project added to the board later goes too. One moved off is taken back.
+- Take someone off, or pick nobody, and it's taken back from their Machine.
+- To share one thread with chosen people, tap its label, then **Share with…**. This can include sensitive or automated work mail, never personal or colleague-only threads.
 
 ## Not sure? It waits
 
-When your Machine isn't sure, it doesn't share. Those threads wait under **Share these?**, grouped by what they are (like "Partner and listing exchanges"), each group with a suggested choice:
+When your Machine isn't sure, it doesn't share. Those threads wait under **Share these?**, grouped by kind (like "Partner and listing exchanges"), each with a suggestion:
 
-- **Share with team** goes to everyone in the Fleet.
-- **Share with…** goes only to the teammates you pick, for example a board member for investor talks. The rest of the team doesn't get it.
-- **Keep private** keeps it with you.
+- **Share with team**: everyone in the Fleet.
+- **Share with…**: only the teammates you pick, like a board member for investor talks.
+- **Keep private**: it stays with you.
 
-One tap decides a whole group. Open a group to see its threads and untick any you want to decide separately.
+One tap decides a whole group. Open a group to untick threads you want to decide one by one.
 
-Talks about buying, selling or investing in a company, and board matters, count as sensitive, so they don't wait here. Listings, integrations and other everyday work with a partner company are client work.
+Talks about buying, selling or investing in a company, and board matters, are sensitive, so they don't wait here. Everyday work with a partner company is client work.
 
 ## Before the first share
 
-Your first share goes by itself within the hour, with nothing to confirm. Your Machine tells you once when that hour starts. In that hour, open **Fleet**, then **What's shared**: it lists the client threads that would go, by organization. Tap **Keep private** on any of them. **Share now** sends it without waiting. Admins see who hasn't shared yet.
+Your first share goes by itself an hour after your Machine tells you. In that hour, open **Fleet**, then **What's shared** to see the client threads that would go, by organization. Tap **Keep private** on any of them, or **Share now** to send at once. Admins see who hasn't shared yet.
 
 ## What's shared
 
-**Fleet** › **What's shared** shows everything in one place: counts per kind, every shared thread with why it went, the ones waiting under **Share these?**, and what you keep private. Tap a thread's subject to read it. **Settings** has a shortcut, and so does the label on each thread.
+**Fleet** › **What's shared** shows it all: counts per kind, each shared thread and why it went, the ones under **Share these?**, and what you keep private. Tap a subject to read it. **Settings** and each thread's label link here too.
 
 A new client thread waits an hour before it goes, so there's time to change your mind.
 
 ## Unshare
 
-Tap the **Team** label on a thread, then **Unshare**. Your Machine tells every teammate's Machine, and each deletes the thread, its attachments and its lines in the timeline. A Machine that was off does it when it's back. Someone may have read it already.
+Tap the **Team** label on a thread, then **Unshare**. Every teammate's Machine deletes the thread, its attachments and its timeline lines, or does so once it's back online. Someone may have read it already.
 
-**Keep private** on a person, organization or project unshares all of it the same way.
+**Keep private** on a person, organization or project unshares all of it.
 
-Keep two threads with the same company private and your Machine asks once: always keep that company's threads private?
+Keep two threads with the same company private and your Machine asks once whether to always keep that company private.
 
 ## Who sees it
 
-Only your teammates' Machines. Everything is encrypted end to end, sealed for each teammate's Machine. The Machine Network only passes it on and can't read it.
+Only your teammates' Machines. It's encrypted end to end. The Machine Network passes it on but can't read it.
 
 ## Joining and new devices
 
-An admin lets each person into the Fleet once. After that, sharing with them needs no more OKs. The ask shows under **To-dos** for each admin, and the first answer counts for the whole team. Members never get it.
+An admin lets each person in once. The ask shows under **To-dos** for every admin, and the first answer counts. After that, sharing needs no more OKs.
 
-A new Machine of someone already in gets the team's Graph after 24 hours. Admins see it in the meantime and can tap **Not theirs** to keep it out.
+A new Machine of someone already in gets the team's Graph after 24 hours. Meanwhile admins can tap **Not theirs** to keep it out.
 
 ## When someone leaves
 
@@ -100,9 +100,9 @@ They get nothing new from that moment. What they shared stays with the team. An 
 
 ## Turn it off for everyone
 
-An admin can turn **Share the Graph in this Fleet** off on **What's shared**. Everyone sees whether it's on. When it's off, nothing new goes.
+An admin turns off **Share the Graph in this Fleet** on **What's shared**. Nothing new goes.
 
-**Turn off** keeps what went on teammates' Machines. **Turn off and remove shared data** makes every Machine delete what it got. When sharing is back on, each person looks it over again first.
+**Turn off** keeps what teammates already have. **Turn off and remove shared data** makes every Machine delete it. When sharing comes back on, each person looks it over again first.
 
 ## Stop sharing your own work
 

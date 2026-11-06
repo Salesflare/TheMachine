@@ -14,11 +14,11 @@ Summaries need a paid Zoom plan, AI Companion turned on during the meeting, and 
 
 ## What it does with them
 
-Each summary is matched to the meeting in your calendar. The summary shows in that meeting's **Notes** and the transcript in its **Transcript**, marked **From Zoom**, next to anything you added there; it never replaces it. Checks then use it for that meeting's follow-ups, and a Fleet follow-up split comes filled in with who does what. You check and edit it first; nothing is sent until you send it.
+Each summary is matched to the meeting in your calendar. It shows in that meeting's **Notes** and the transcript in its **Transcript**, marked **From Zoom**, next to anything you added. Your Machine uses it for that meeting's follow-ups, including who on your team does what. Nothing is sent until you send it.
 
 ## What it can do
 
-It only reads. It never creates, changes or deletes anything in Zoom, and it only sees your own meetings. Your Zoom sign-in is kept on your own Machine.
+It only reads, and only your own meetings. It never creates, changes or deletes anything in Zoom. Your Zoom sign-in stays on your Machine.
 
 ## Connect it
 
@@ -26,7 +26,7 @@ On a hosted Machine:
 
 1. Open your setup page at app.themachine.computer/setup and go to **More sources**.
 2. Open Zoom, pick work or personal, and press **Connect Zoom**.
-3. Sign in to Zoom and allow The Machine. It is made by Salesflare.
+3. Sign in to Zoom and allow The Machine (made by Salesflare).
 
 Or in the dashboard: **Connections**, **+ Add**, pick Zoom and press **Sign in with Zoom**. When you're done, you're back in the dashboard.
 

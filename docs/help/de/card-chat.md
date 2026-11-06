@@ -19,7 +19,7 @@ Jede E-Mail zeigt nur, was neu darin ist. Die früheren Nachrichten, die sie zit
 - Zum Verlauf, zu den Personen oder zum Hintergrund: „Was haben sie letztes Mal gefragt?“
 - Um den Entwurf zu ändern: „Mach ihn kürzer“ oder „Erwähne das neue Datum“.
 
-Eine Frage bekommt eine Antwort und lässt den Entwurf, wie er ist. Freigaben bleiben bei den Buttons der Aufgabe: Der Chat sendet einen Entwurf nie in derselben Antwort, in der er ihn geschrieben hat. Worum du im Chat bittest und was niemanden erreicht, etwa ein Aufräumen in einem Dokument, erledigt sie sofort, ohne dass du es bestätigen musst. Alles, was darüber hinausgeht, wartet weiter auf dein OK.
+Eine Frage bekommt eine Antwort und lässt den Entwurf, wie er ist. Freigaben bleiben bei den Buttons der Aufgabe: Der Chat sendet einen Entwurf nie in derselben Antwort, in der er ihn geschrieben hat. Worum du im Chat bittest und was niemanden erreicht, etwa ein Aufräumen in einem Dokument, erledigt sie sofort, ohne dass du es bestätigen musst. Alles, was darüber hinausgeht, wartet weiter auf dein OK. Eine Aufgabe mit mehr als einem Schritt bleibt offen, bis jeder Schritt erledigt ist.
 
 Auf einem Computer sendet Enter oder Strg+Enter (Cmd+Enter auf dem Mac), und Umschalt+Enter beginnt eine neue Zeile. Auf dem Handy nimm den Senden-Button.
 

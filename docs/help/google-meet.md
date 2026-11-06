@@ -12,7 +12,7 @@ Transcripts and Gemini notes of Google Meet meetings you organized, once Meet ha
 
 Meet only makes them when transcripts or Gemini notes were turned on during the meeting.
 
-Each one is matched to the meeting in your calendar at the same time. Gemini's notes show in that meeting's Notes and the transcript in its Transcript, marked **From Google Meet**, next to anything you added there; they never replace it.
+Each one lands on its meeting in your Calendar: Gemini's notes under Notes, the transcript under Transcript, marked **From Google Meet**. What you added yourself stays.
 
 ## What it can do
 
@@ -20,7 +20,7 @@ Nothing in Meet, Docs or Drive. It only reads, and it never turns on transcripts
 
 ## What it asks for
 
-Its own OK, apart from your mail sign-in. Google asks to let The Machine:
+Its own OK, separate from your mail. Google asks to let The Machine:
 
 - See your Google Meet meetings, their transcripts and Gemini notes.
 - See your Google Docs, to read the Gemini notes doc.
@@ -31,12 +31,12 @@ It never asks for your Drive. Your Gmail and Calendar access stay as they are.
 
 It doesn't need Gmail connected. To connect it:
 
-- Hosted Machine: in the dashboard, open **Connections**, **+ Add**, pick **Google Meet** and press **Sign in with Google**. Google asks for the OK above, then you come back to the dashboard.
+- Hosted Machine: in the dashboard, open **Connections**, **+ Add**, pick **Google Meet** and press **Sign in with Google**. Give the OK above, and you're back in the dashboard.
 - Your own computer, paired with your account: the same steps. The sign-in opens in a new tab.
 
-It checks that the sign-in may read Meet. Without that OK it isn't added. The sign-in keeps working: there is nothing to paste or renew.
+Without the Meet OK it isn't added. There is nothing to paste or renew.
 
-If the OK is taken back later, the Google Meet card asks you to sign in again.
+If the OK is taken back later, Google Meet in **Connections** asks you to sign in again.
 
 ## Remove it
 

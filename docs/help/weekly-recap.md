@@ -23,4 +23,4 @@ Once a week, on Friday after 16:00 in your time zone by default. It comes on [Te
 
 ## Turn it on
 
-It's off by default, and the dashboard has no switch for it yet, so a hosted Machine can't turn it on today. On your own computer, set `weekly_recap` in your Machine's config.json: `enabled` true, and optionally `weekday` (1 to 7, Friday is 5) and `at` ("16:00"). See the [configuration guide](https://github.com/Salesflare/TheMachine/blob/main/docs/configuration.md).
+It's off by default. The dashboard has no switch for it yet, so a hosted Machine can't turn it on today. On your own computer, set `weekly_recap` in your Machine's settings file, config.json: `enabled` true, and optionally `weekday` (1 to 7, Friday is 5) and `at` ("16:00"). See the [configuration guide](https://github.com/Salesflare/TheMachine/blob/main/docs/configuration.md).

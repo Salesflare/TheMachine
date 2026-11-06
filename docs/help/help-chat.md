@@ -6,17 +6,17 @@ covers: help-chat
 code: help_chat.py, dashboard.html
 order: 6
 ---
-Tap **Help** at the top, beside **Settings**, and ask in your own words, like "How do I snooze a to-do?". Press Enter to ask, or Shift+Enter for a new line. Help answers in your app’s language, or in the language you write in when that’s another one. In a language other than English, links to help pages open right here, in that language.
+Tap **Help** at the top, next to **Settings**, and ask in your own words, like "How do I snooze a to-do?". Enter asks, Shift+Enter adds a line. Help answers in your app's language, or in the language you write in. Links to help pages open right in the panel, in that language.
 
 ## Where answers come from
 
-Help reads the help pages that match your question, and the app's own source code for what they leave open. Each answer links to the pages it used, so you can read more.
+Help reads the help pages that match your question, and the app's code for anything they don't cover. Each answer links to the pages it used.
 
 It runs on your Machine's own model as a short, separate chat. Under the message box you can pick another model or thinking level for this Help chat (see [Model](model.md)). Only your question and the matching pages go in: none of your messages, people or settings.
 
-It answers at your level: plain words for most people, more detail when your setup or your questions are technical. It guesses that from how your Machine is set up, your role and how you ask. Only the guess goes in.
+It answers at your level: plain words for most people, more detail when your questions are technical. It guesses your level from your setup, your role and how you ask. Only the guess goes in.
 
-It points to what The Machine already does and what you can set first. A skill only when nothing built in covers it. See [Make it yours](personalize.md).
+It points to what The Machine already does first, and suggests a skill only when nothing built in covers it. See [Make it yours](personalize.md).
 
 ## What the team sees
 
@@ -28,6 +28,6 @@ To stop it, turn off **Share what Help is asked** in **Settings**, **Security**,
 
 Help answers questions. It can't see your data, and it changes nothing: it tells you where to tap instead.
 
-When what you describe sounds like something broken rather than a how-to question, the answer ends with **Report this bug**. It opens **Report a bug** with a short write-up of what you did, what you expected and what happened, and the support report ticked. Change anything you like there. Nothing goes until you press **Review**, then **Send**.
+When what you describe sounds like something broken rather than a how-to question, the answer ends with **Report this bug**. It opens **Report a bug** with a short write-up of what you did, what you expected and what happened, and the support report ticked. Change anything you like there. Nothing goes until you press **Send**.
 
 **Report a bug** is also its own tab in the same panel. See [Get support](get-support.md#report-a-bug).

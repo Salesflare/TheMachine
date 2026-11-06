@@ -17,13 +17,13 @@ For a to-do you already have, **Repeat…** under **…**, or say "repeat this e
 
 ## How it repeats
 
-The to-do shows one short line, like "Repeats weekly on Monday". There is only ever one open: the next one comes on its date, in your time zone, once this one is done or not needed.
+The to-do shows a short line, like "Repeats weekly on Monday". Only one is open at a time: the next comes on its date once this one is done or not needed.
 
 A missed one isn't stacked. It stays open and shows how many dates it missed, and when you finish it the next one comes on the next date from today.
 
 Snoozing moves only this one. The rhythm stays the same.
 
-Each one is prepared like any to-do, and the preparation sees how the previous one went and what was said in its chat.
+Each one is prepared like any to-do, knowing how the last one went.
 
 ## Change or stop it
 

@@ -41,7 +41,7 @@ A meeting room booked on a meeting shows under where, never as a person or in yo
 
 A meeting's details have two parts. **Notes** is the summary: decisions and action items. **Transcript** is what was said, word for word. It starts folded, with how long it runs; **Show** opens it.
 
-If they can't load (say, while your Machine restarts), the meeting tries again by itself for about half a minute, and again when you come back to the window. After that it says so, with **Try again**.
+If they don't load, it tries again by itself for about half a minute. After that, tap **Try again**.
 
 Each has its own **Add notes** or **Add transcript**, **Upload file** for a Markdown or text file, **Edit** and **Remove** (tap twice). What goes in one stays there. On a meeting you can change, **Notes** under its form opens them.
 
@@ -49,7 +49,7 @@ With [Zoom](zoom.md) or [Google Meet](google-meet.md) connected, its notes show 
 
 A meeting with a transcript and no notes has **Generate notes**. The Machine writes them from the transcript: a short summary, decisions, and action items with who does them, in the meeting's language.
 
-The Machine shows **Writing notes…** and keeps going when you close the meeting; a long one takes a few minutes. It uses your own model and waits if you reach your usage limit. The notes say **Written by The Machine**, never replace notes you added, and follow-ups come from them like from Zoom's.
+It shows **Writing notes…** and keeps going when you close the meeting. A long one takes a few minutes, using your own model. The notes say **Written by The Machine** and never replace notes you added.
 
 The Machine can add them too. Ask on a to-do, like "add this transcript to today's board meeting". A transcript goes in Transcript, a summary in Notes. A meeting with them says **Notes** or **Transcript** in the Calendar.
 
@@ -61,7 +61,7 @@ A meeting opens with these details wherever you find it: on a timeline, in a mes
 
 When a calendar can be changed from here, **New event** adds one (on a phone it's under **+** in the top bar): pick the calendar, a title and the time. Click an event without guests on that calendar to change it, or **Delete** it (tap twice).
 
-**Where** suggests places as you type: ones you used before and your organizations first, then addresses from [OpenStreetMap](https://www.openstreetmap.org) through Photon, a free map search. Your Machine asks it, with only the words you typed. Pick one or keep your own text.
+**Where** suggests places as you type: ones you used before and your organizations first, then addresses from [OpenStreetMap](https://www.openstreetmap.org), a free map. Only the words you type are sent to look them up. Pick one or keep your own text.
 
 **Invite** adds people from your Graph, or any email address. It's there on your own calendar only. Who gets an invite is listed above the button, and the button says how many: **Add and invite 2**. Google sends the invitations when you tap it, not before. Without guests nobody is invited or gets an update.
 

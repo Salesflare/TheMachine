@@ -11,15 +11,15 @@ keywords: voice, dictate, dictation, speak, talk, microphone, mic, speech, trans
 
 Tap the mic in a message box: a to-do's chat, **New to-do**, **Help**, or the box to change a draft. Talk, then tap the check mark. Or hold the mic while you talk and let go when you're done.
 
-While it listens, the box shows a timer. Tap the cross to stop without keeping anything. A recording can be up to 2 minutes; at 2 minutes it stops by itself and writes down what you said. What it heard so far shows in the bar as you talk, so the text is there soon after you stop.
+While it listens, the box shows a timer and what it heard so far. Tap the cross to stop without keeping anything. A recording stops by itself at 2 minutes.
 
-What you said lands in the box, where your cursor was. Nothing is sent: read it, change what you like, and send it yourself.
+The text lands in the box, where your cursor was. Nothing is sent: read it, change what you like, and send it yourself.
 
 ## Where your voice goes
 
-In **Settings**, **General**, under **Voice input**, one short line says which one is in use.
+Pick it in **Settings**, **General**, under **Voice input**. A short line there says which one is in use.
 
-- **Automatic** (the default): when OpenAI is set up on your Machine, your recording is turned into text by OpenAI. That's an API key, or a ChatGPT sign-in where your plan allows audio. Without OpenAI, it's turned into text on your Machine itself and never leaves it.
+- **Automatic** (the default): OpenAI turns it into text when your Machine uses OpenAI (an OpenAI key, or a ChatGPT plan that allows audio). Otherwise your Machine does it itself and the recording never leaves it.
 - **On this Machine**: always on your Machine, even when OpenAI is set up.
 - **With OpenAI**: always OpenAI.
 
@@ -27,14 +27,14 @@ A recording is deleted as soon as the text is back.
 
 ## Getting ready
 
-To turn speech into text itself, your Machine needs a speech model, 150 to 500 MB. It downloads it in the background, at a low priority, once it's set up, its first check is done and it has been quiet for a while. Settings says **Getting ready (in the background)** meanwhile. It never does this when OpenAI is in use.
+To turn speech into text itself, your Machine first downloads a speech model (150 to 500 MB) in the background, when it's quiet. Settings says **Getting ready (in the background)** meanwhile. It skips this when OpenAI is in use.
 
-Until it's ready, **Automatic** uses your browser's own speech recognition where your browser has one, and says so under the box. Some browsers send that to their maker. With **On this Machine** picked, your recording waits, and the box shows "Getting voice ready…" with the time left.
+Until then, **Automatic** uses your browser's own speech recognition if it has one, and says so under the box. Some browsers send that to their maker. With **On this Machine** picked, your recording waits, and the box shows "Getting voice ready…" with the time left.
 
 ## Settings
 
 - **Turned into text**: **Automatic**, **On this Machine** or **With OpenAI**.
-- **Accuracy** (on your Machine only): **More accurate** works best for most languages. **Faster** is quicker but gets more words wrong. On a Standard Machine, which has less memory, **Faster** is the default.
+- **Accuracy** (on your Machine only): **More accurate** works best for most languages. **Faster** is quicker but makes more mistakes, and is the default on a Standard Machine.
 - **Language**: **Detect** works for every app language. Picking yours is a little faster.
 
 To talk with The Machine instead, out loud, see [Talk live](talk-live.md).
@@ -44,4 +44,4 @@ To talk with The Machine instead, out loud, see [Talk live](talk-live.md).
 - **The microphone is blocked**: allow the microphone for this site in your browser's settings. In the phone app, it's under the app's permissions.
 - **No microphone found**: connect one and try again.
 - **Can’t reach your Machine**: your recording is kept and written down when your Machine is back. To try sooner, tap **Try now**.
-- **I didn’t catch anything**: talk a little closer to the mic, or longer.
+- **I didn’t catch anything**: talk closer to the mic, or a little longer.

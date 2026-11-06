@@ -12,7 +12,7 @@ Eine gehostete Machine läuft in der Cloud, in der EU, nur für dich. Wir halten
 
 1. Tippe auf app.themachine.computer auf **Weiter mit Google** oder **Weiter mit Microsoft**. Damit wird dein Konto angelegt.
 2. Tippe auf **Passkey hinzufügen** und nutze deinen Fingerabdruck, dein Gesicht oder die PIN deines Geräts. Lieber eine Authenticator-App? Öffne **Stattdessen eine Authenticator-App verwenden**, scanne den Code, gib die sechs Ziffern ein und tippe auf **Einschalten**. Speichere die Wiederherstellungscodes, die danach kommen.
-3. Wähle Größe und Namen deiner Machine und füge dann deine Zahlungskarte hinzu. Die ersten {trial_days} Tage sind kostenlos, und vor ihrem Ende wird nichts abgebucht.
+3. Wähle Größe und Adresse deiner Machine. Die ersten {trial_days} Tage sind kostenlos, und vor ihrem Ende wird nichts abgebucht. Fragt die Einrichtung nicht nach einer Zahlungskarte, füge vorher eine auf deiner Kontoseite hinzu.
 
 ## Deine Einrichtungsseite
 

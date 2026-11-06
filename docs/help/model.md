@@ -6,36 +6,36 @@ covers: settings:model, chat-model
 code: dashboard.html, docs/models.md, chat_model.py
 order: 5
 ---
-In **Settings**, **Model** shows the model background work uses (marked **Background work**) and how you're signed in, like with ChatGPT.
+**Settings**, **Model** shows which AI model does your **Background work** and how you're signed in, like with ChatGPT.
 
 ## Model and thinking for chats
 
-Under **Chats**, pick the model and the thinking level your to-do chats and Help use. The list has only the models your sign-in offers, like ChatGPT's when you signed in with ChatGPT, and each model only the levels it has.
+Under **Chats**, pick the model and thinking level for your to-do chats and Help. You only see the models and levels your sign-in offers.
 
-More thinking answers harder questions better, but is slower and uses more of your plan. **Ultra thinking** brings in helpers for the hardest questions: the slowest, and it uses the most. A change applies from the next message. A new Machine starts at **Low thinking** when its model has it: good results for much less of your plan.
+More thinking answers hard questions better, but is slower and uses more of your plan. **Ultra thinking** brings in helpers for the hardest questions, and uses the most. A new Machine starts at **Low thinking**: good results for much less of your plan. A change applies from the next message.
 
-One chat can use something else: under its message box, tap the model or the thinking level. That choice is for that chat only. Pick the same as in Settings again to follow Settings.
+To change it for one chat only, tap the model or thinking level under its message box. Pick the Settings choice again to follow Settings.
 
 Checks, your profile and drafts prepared ahead keep their own model.
 
 ## Limits
 
-If your plan has usage limits, it shows how much of each is used and when it resets, for example the 5-hour and the weekly limit of a ChatGPT or Claude plan. Reading this never uses your plan.
+If your plan has usage limits, like a ChatGPT or Claude plan's 5-hour and weekly limits, it shows how much is used and when each resets. Looking never uses your plan.
 
 ## Room for your own chats
 
-Background work (checks, your profile, drafts prepared ahead) leaves room for your own chats. It pauses at about 65% of the 5-hour limit. Checks of what came in go on until about 90% of the weekly limit; the rest paces it at about a seventh a day. A sign-in without usage limits, like an API key, is never paused.
+Background work leaves room for your own chats. It pauses at about 65% of the 5-hour limit. Checks of new messages go on until about 90% of the weekly limit; other work takes about a seventh of the week a day. A sign-in without limits, like an API key, never pauses.
 
 Background work never runs on GPT-6 Astra. It uses GPT-6.1 Sol instead.
 
 ## When a limit is reached
 
-The top of the dashboard says which limit was reached and when it resets. Work waits, then picks up where it left off. Nothing is lost. Some ChatGPT plans come with resets: **Use a reset** starts the limits over, after a confirm. Otherwise **See resets in ChatGPT** opens ChatGPT's own page.
+The top of the dashboard says which limit was reached and when it resets. Work waits, then picks up where it left off. Nothing is lost. If your ChatGPT plan has resets, **Use a reset** starts the limits over. Otherwise **See resets in ChatGPT** opens ChatGPT's page.
 
 ## With a fallback
 
-If your Machine has a fallback model on another plan or provider, like an API key, it takes over when a limit is reached. While that fallback works, nothing pauses or waits for your limits, and the top of the dashboard says "ChatGPT limit reached, using your fallback." If the fallback stops working, the pauses come back.
+If your Machine has a fallback model on another plan or provider, it takes over when a limit is reached, and nothing waits. The top of the dashboard says "ChatGPT limit reached, using your fallback." If the fallback stops working, the pauses come back.
 
 ## Change the main model
 
-The main model is what the rest of The Machine uses. On a hosted Machine, pick another one on your setup page, under Your AI. On your own computer, change it in OpenClaw. See [ChatGPT](chatgpt.md) and the [models guide](https://github.com/Salesflare/TheMachine/blob/main/docs/models.md).
+The main model is what the rest of The Machine uses. On a hosted Machine, change it on your setup page, under Your AI. On your own computer, see [ChatGPT](chatgpt.md) and the [models guide](https://github.com/Salesflare/TheMachine/blob/main/docs/models.md).

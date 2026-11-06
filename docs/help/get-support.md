@@ -19,16 +19,16 @@ Open **Help**, then **Report a bug**. An error message has a **Report a bug** bu
 
 1. Say what went wrong.
 2. Add a screenshot if it helps: **Take a screenshot** of the dashboard, or **Attach an image**.
-3. Keep **Include a support report** on, unless you'd rather not. It adds versions, checks and recent errors, without messages, keys or addresses, and lets our team read your Machine's logs and settings for 24 hours. See [Support access](get-support.md#support-access). Unticked, only what you wrote and your screenshot go.
-4. Tap **Send**. The form closes at once. Your Machine adds the support report on its own; a slow check never holds your report up.
+3. Leave **Include a support report** on if you can. It adds versions, checks and recent errors, without messages, keys or addresses, and lets our team read your Machine's logs and settings for 24 hours. See [Support access](get-support.md#support-access). Unticked, only what you wrote and your screenshot go.
+4. Tap **Send**. The form closes at once, and the support report follows by itself.
 
 We take it from there. A self-hosted Machine can send one when it's on the Network; otherwise write to us.
 
-Telling your Machine in chat that something in it is wrong works too. It offers to send a report and gives you a link that opens **Report a bug** with your words and a short summary filled in. Nothing goes until you tap **Send**. Without an account to send to, it tells you where to write.
+Or just tell your Machine in chat that something is wrong. It opens **Report a bug** for you, with your words and a short summary filled in. Nothing goes until you tap **Send**.
 
 Once we fix a bug you reported and your Machine runs the fix, we tell you once: a short line on your dashboard (**Got it** closes it) and a short email. A self-hosted Machine hears of it when it's on the Network.
 
-If a report can't go out right away (you're offline, or you sent many in a short time), it isn't lost. Your Machine keeps it, says when it goes out, and sends it by itself. Reports still waiting show under **Waiting to go out**.
+Offline, or sent many in a row? Your report isn't lost. Your Machine keeps it and sends it later by itself. Until then it shows under **Waiting to go out**.
 
 ## Support access
 

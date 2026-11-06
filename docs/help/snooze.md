@@ -8,15 +8,15 @@ order: 3
 ---
 ## Snooze a to-do
 
-Press **Snooze** on a to-do. **Remind me later** offers a few times, like in 2 hours, tomorrow, in 3 days or in a week, or **Choose date** for another day and **Time**, then **Save time**.
+Press **Snooze** on a to-do. **Remind me later** offers a few times, like in 2 hours, tomorrow or in a week. For another moment, pick **Choose date** and **Time**, then **Save time**.
 
 Snoozes of a day or more land at your "Snoozes land at" time, and work to-dos wait for a work day. Set both in [Work hours](work-hours.md).
 
-A **Change** like "remind me about this next Tuesday" snoozes it too.
+Or ask in **Change**, like "remind me about this next Tuesday".
 
 ## When it comes back
 
-It comes back on Telegram when that is on, and as a notification on each device where notifications are on, as **Reminders** in [Notifications](notifications.md) allow. After a snooze, the message says which. With neither, it's back on the dashboard, and **Turn on notifications** is right there. On iPhone and iPad, add The Machine to your Home Screen first.
+It comes back as a notification on each device where notifications are on, and on Telegram if you use it, as **Reminders** in [Notifications](notifications.md) allow. The snooze message says where. With neither, it's back on the dashboard, with **Turn on notifications** right there. On iPhone and iPad, get the [phone app](mobile-app.md) for notifications.
 
 ## While it's snoozed
 

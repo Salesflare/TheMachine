@@ -6,13 +6,13 @@ covers: phone-app
 code: manifest.webmanifest, sw.js, dashboard.html
 order: 3
 ---
-The dashboard installs as an app on a phone or a computer. It then sends a notification for each to-do, result and reminder when you are away from the dashboard, within your [work hours](work-hours.md). Pick what it sends in [Notifications](notifications.md).
+Install The Machine as an app on your phone or computer to get a notification for each to-do, result and reminder, within your [work hours](work-hours.md). Pick what it sends in [Notifications](notifications.md).
 
-A quiet note at the top of To-dos offers them one at a time, once you've handled your first to-do: first the [mobile app](mobile-app.md), then notifications, then the app. On a phone's browser it offers only the mobile app, with its own notifications, until you've said **Not now** to it twice. What's already done on that device never shows.
+After your first to-do, a quiet note at the top of To-dos offers these one at a time: the [mobile app](mobile-app.md), then notifications, then the desktop app. Only what that device doesn't have yet shows.
 
 **Not now** hides it for 14 days, and a second **Not now** stops it on that device. The same controls stay in **Settings**, **General**, **This device**.
 
-In the phone app, a short line at the top says **Get a ping when something needs you.** while its notifications are off. **Turn on** asks the phone, or opens its settings once it won't ask again. The **×** hides it for 7 days. On your first sign-in the phone asks once by itself.
+In the phone app, **Get a ping when something needs you.** shows while notifications are off. **Turn on** asks the phone, or opens its settings. **×** hides it for 7 days.
 
 ## On a computer (Chrome or Edge)
 
@@ -46,20 +46,20 @@ Notifications only work from the Home Screen app, not in a Safari tab.
 
 In **Settings**, **General**, **This device**, the bell next to **Notifications** turns them on or off for that device only, and **Send a test** sends one to it.
 
-If notifications are blocked, the row says where to allow them again: on a computer, click the icon left of the address and allow Notifications. On an iPhone, open the Settings app, Notifications, The Machine.
+Blocked? On a computer, click the icon left of the address and allow Notifications. On an iPhone, open the Settings app, Notifications, The Machine.
 
 ## Opening fast
 
-The app opens with your last to-dos right away, then updates them. Without a connection it shows what it had, marked **Offline** with the time it was last updated. That copy stays on the device for at most 7 days, encrypted, and goes when you sign out.
+The app opens with your last to-dos right away, then updates them. That copy stays on the device, encrypted, for at most 7 days, and goes when you sign out.
 
 ## Offline and spotty wifi
 
 On a plane or a train the dashboard keeps working. A bar at the top says **Offline** and when what you see was last updated. Your to-dos, their chats, the Calendar and the Graph lists open from the device.
 
-- **Snooze**, **Not needed**, **Mark done**, **Reopen** and notes or chat messages to The Machine wait on the device. The to-do says it saves when you're back online, with **Cancel** until then. Once your Machine answers again they go by themselves, in order, each once.
-- Messages to other people never wait. **Send** says you're offline: send again when you're back.
+- **Snooze**, **Not needed**, **Mark done**, **Reopen** and chat messages to The Machine wait on the device, with **Cancel**. They go through by themselves once you're back online.
+- Messages to other people never wait: send again when you're back.
 - What you type in a chat stays on the device until you send it, also through a reload.
-- The app tries again by itself, a little later each time. **Try now** tries at once.
+- The app keeps trying by itself. **Try now** tries at once.
 
 ## More devices
 
