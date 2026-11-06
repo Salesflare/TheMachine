@@ -9638,18 +9638,24 @@ def sync_gmail(store, config, account):
     return {'mode': next_state['mode'], 'events': len(events), 'filtered': len(excluded)}
 
 
+OUTLOOK_CALENDAR_READ = 2  # raise to read every Outlook calendar's window again after a change in how it is read
+
+
 def sync_calendar(store, config, account):
     source = Calendar(config, account)
     profile = source.profile()  # Only this explicitly configured calendar.
     timezone = profile.get('timeZone', str(local_tz()))
     state = store.checkpoint(account['id']) or {}
     current = dt.datetime.fromisoformat(now())
+    # An Outlook calendar read before its occurrences took their series' titles (ms_graph.series_masters): read again
+    outlook_read = {'outlook_read': OUTLOOK_CALENDAR_READ} if account.get('service') == 'outlook_calendar' else {}
     if not state or (state.get('mode') == 'incremental' and not state.get('page_token') and
-                     current >= dt.datetime.fromisoformat(state['refresh_at'])):
+                     current >= dt.datetime.fromisoformat(state['refresh_at'])) or (
+            outlook_read and state.get('outlook_read') != OUTLOOK_CALENDAR_READ and not state.get('page_token')):
         # Refresh the rolling window daily so unchanged recurring occurrences enter it.
         state = {'mode': 'bootstrap', 'time_min': (current - dt.timedelta(days=7)).isoformat(),
                  'time_max': (current + dt.timedelta(days=30)).isoformat(), 'seen': [],
-                 'refresh_at': (current + dt.timedelta(days=1)).isoformat()}
+                 'refresh_at': (current + dt.timedelta(days=1)).isoformat(), **outlook_read}
         store.commit_page(account['id'], state, [], record_sync=False)
     params = {'singleEvents': True, 'showDeleted': True, 'maxResults': 100}
     if state['mode'] == 'incremental':

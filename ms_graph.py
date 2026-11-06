@@ -72,6 +72,8 @@ READ = {
     'calendar.delta': ('GET', '/me/calendarView/delta', 'Calendars.Read'),
     'calendars.view': ('GET', '/me/calendars/{id}/calendarView', 'Calendars.Read'),
     'calendars.delta': ('GET', '/me/calendars/{id}/calendarView/delta', 'Calendars.Read'),
+    'events.get': ('GET', '/me/events/{id}', 'Calendars.Read'),  # a recurring series' master (series_masters)
+    'calendars.events.get': ('GET', '/me/calendars/{id}/events/{event}', 'Calendars.Read'),
     # Word, OneDrive and SharePoint documents (connectors/docs.py), with Files.Read.All from its own Connect consent
     'drive.get': ('GET', '/me/drive', 'Files.Read.All'),
     'drive.delta': ('GET', '/me/drive/root/delta', 'Files.Read.All'),
@@ -730,6 +732,59 @@ def calendar_item(raw, owner):
     return item
 
 
+# What an occurrence of a recurring series takes from its series master when it has none of its own: Graph's calendar
+# view delta gives an occurrence only its id, type, times and seriesMasterId, and the series master with the rest.
+# An exception (one occurrence the organizer changed) carries all of its own and keeps them.
+SERIES_FIELDS = ('subject', 'location', 'organizer', 'attendees', 'bodyPreview', 'webLink', 'isAllDay', 'showAs',
+                 'sensitivity', 'lastModifiedDateTime', 'originalStartTimeZone', 'originalEndTimeZone')
+_series = {}  # (account, calendar) -> {series master id: its SERIES_FIELDS}, seen on earlier pages or read once
+SERIES_KEPT = 2000
+
+
+def _remember_series(known, master):
+    known.pop(master['id'], None)
+    known[master['id']] = {k: master[k] for k in SERIES_FIELDS if master.get(k) is not None}
+    while len(known) > SERIES_KEPT:
+        known.pop(next(iter(known)))
+
+
+def series_masters(config, credential, account, calendar_id, values):
+    """The page's occurrences filled from their series masters (from this page, an earlier one, or read once by id),
+    without the masters themselves: Google's singleEvents gives only the occurrences, and a master at the series'
+    first start would show up as an event of its own."""
+    known = _series.setdefault((account['email'].lower(), calendar_id), {})
+    for raw in values:
+        if raw.get('type') == 'seriesMaster' and '@removed' not in raw:
+            _remember_series(known, raw)
+        elif '@removed' in raw:
+            known.pop(raw.get('id'), None)
+    out = []
+    for raw in values:
+        if raw.get('type') == 'seriesMaster':
+            continue
+        master_id = raw.get('seriesMasterId')
+        if master_id and '@removed' not in raw and raw.get('type') != 'exception' and not raw.get('subject'):
+            if master_id not in known:
+                try:
+                    found = _read_master(config, credential, account, calendar_id, master_id)
+                except GraphError as error:
+                    if error.status not in (403, 404):
+                        raise
+                    found = None
+                if found:
+                    _remember_series(known, {**found, 'id': master_id})
+            raw = {**{k: v for k, v in known.get(master_id, {}).items() if raw.get(k) is None}, **{k: v for k, v in raw.items() if v is not None}}
+        out.append(raw)
+    return out
+
+
+def _read_master(config, credential, account, calendar_id, master_id):
+    method, where = (('events.get', {'id': master_id}) if calendar_id == 'primary' else
+                     ('calendars.events.get', {'id': calendar_id, 'event': master_id}))
+    return call(config, credential, account, method, {**where, '$select': ','.join(SERIES_FIELDS)},
+                headers={'Prefer': ['outlook.timezone="UTC"']})
+
+
 def calendar_call(config, credential, account, method, params):
     """Google Calendar's calendars.get and events.list (singleEvents, sync tokens) answered from Graph's calendar
     view and its delta: the next and delta links are the page and sync tokens."""
@@ -762,7 +817,8 @@ def calendar_call(config, credential, account, method, params):
         if not link and calendar_id != 'primary' and error.status in (400, 404, 501):
             return _calendar_view(config, credential, account, owner, calendar_id, params)  # no delta for this one
         raise
-    out = {'items': [calendar_item(e, owner) for e in page.get('value', [])]}
+    values = series_masters(config, credential, account, calendar_id, page.get('value', []))
+    out = {'items': [calendar_item(e, owner) for e in values]}
     if page.get('@odata.nextLink'):
         out['nextPageToken'] = page['@odata.nextLink']
     if page.get('@odata.deltaLink'):
@@ -775,7 +831,8 @@ def _calendar_view(config, credential, account, owner, calendar_id, params):
     query = {'id': calendar_id, '$link': params['pageToken']} if params.get('pageToken') else {
         'id': calendar_id, 'startDateTime': params['timeMin'], 'endDateTime': params['timeMax'], '$top': 100}
     page = call(config, credential, account, 'calendars.view', query, headers={'Prefer': ['outlook.timezone="UTC"']})
-    out = {'items': [calendar_item(e, owner) for e in page.get('value', [])]}
+    values = series_masters(config, credential, account, calendar_id, page.get('value', []))
+    out = {'items': [calendar_item(e, owner) for e in values]}
     if page.get('@odata.nextLink'):
         out['nextPageToken'] = page['@odata.nextLink']
     else:
