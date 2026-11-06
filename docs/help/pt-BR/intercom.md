@@ -18,6 +18,8 @@ Ele lê conversas. Com o seu próprio **Entrar com o Intercom**, ele também pod
 
 Uma tarefa de uma conversa do Intercom mostra de onde veio: **Ler mensagem** abre a conversa, com um link para ela no Intercom, e o cliente aparece na tarefa. A resposta é uma resposta do Intercom nessa conversa, a menos que você peça um e-mail.
 
+Só as conversas atribuídas a você, ou ainda a ninguém, viram tarefas, inclusive as de uma caixa de equipe sem ninguém atribuído. Quando alguém da equipe assume uma conversa no Intercom, a tarefa aberta fecha sozinha, com **Desfazer**. Em um Intercom compartilhado com você, suas conversas são as atribuídas ao admin com que você escreve.
+
 Quando o Intercom não consegue responder pela sua Machine (compartilhado com você só para leitura, respostas não ativadas ou não conectado), o rascunho vai por e-mail. A tarefa diz por quê, e a revisão pergunta **Enviar por e-mail em vez disso?** Para responder você mesmo no Intercom, toque em **Conecte seu próprio Intercom** na tarefa e entre. Nada sai antes de você enviar.
 
 ## Conectar

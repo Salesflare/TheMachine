@@ -23,7 +23,9 @@ Coverage: conversations updated in the last `bootstrap_days` (7), read in frozen
 commits with the conversations. Polls overlap six hours, the whole window is reread daily, and an expired
 cursor replays its window. Intercom returns at most 500 parts per conversation. The opening message keeps up
 to 20,000 characters and the latest history fills the rest of a 40,000-character body; anything cut is
-flagged. Attachments aren't collected.
+flagged. Attachments aren't collected. Each conversation keeps who it is assigned to (an admin, a team, or nobody):
+a to-do comes only from one assigned to the owner or to nobody, and closes when a teammate takes it (assistant.py
+intercom_taken).
 """
 import datetime as dt
 import html.parser
@@ -215,6 +217,12 @@ def plain(value):
     return '\n'.join(' '.join(line.split()) for line in ''.join(parser.parts).splitlines() if line.strip())
 
 
+def assigned(value):
+    """An assignee id as Intercom gives it, or None for nobody (null, 0, anything else)."""
+    value = str(value if value is not None else '')
+    return value if re.fullmatch(r'[1-9][0-9]{0,19}', value) else None
+
+
 def event(account, raw, helpers):
     SourceError = helpers.SourceError
     if not re.fullmatch(r'[0-9]{1,20}', str(raw.get('id', ''))) or type(raw.get('updated_at')) is not int:
@@ -245,8 +253,19 @@ def event(account, raw, helpers):
     # The customer: who opened it, or, when Intercom's Operator bot or a teammate did, the first customer who wrote in it.
     people = [source.get('author') or {}] + [p.get('author') for p in sorted(parts, key=lambda p: (p.get('created_at') or 0, str(p.get('id', ''))))]
     customer = next((a for a in people if isinstance(a, dict) and a.get('type') in ('user', 'lead', 'contact') and '@' in str(a.get('email') or '')), {})
+    # Who it is assigned to: an admin, or a team inbox with no one in it yet (team_assignee_id alone), or nobody. The admins
+    # who wrote in it, by id, name who that is, and let a Machine whose Intercom a teammate shared find its owner's admin.
+    admins = {}
+    for part in parts:
+        author = part.get('author') if isinstance(part.get('author'), dict) else {}
+        aid = str(author.get('id') or '')
+        if author.get('type') == 'admin' and re.fullmatch(r'[0-9]{1,20}', aid) and aid not in admins and len(admins) < 20:
+            admins[aid] = {'email': str(author.get('email') or '').lower()[:200], 'name': ' '.join(str(author.get('name') or '').split())[:100]}
+    assignee = assigned(raw.get('admin_assignee_id'))
     metadata = {'conversation_id': cid, 'state': raw.get('state'), 'open': raw.get('open'), 'priority': raw.get('priority'),
-                'admin_assignee_id': raw.get('admin_assignee_id'), 'team_assignee_id': raw.get('team_assignee_id'),
+                'admin_assignee_id': assignee, 'team_assignee_id': assigned(raw.get('team_assignee_id')),
+                'assignee_name': (admins.get(assignee) or {}).get('name') or None, 'assignee_email': (admins.get(assignee) or {}).get('email') or None,
+                'admin_emails': {k: v['email'] for k, v in admins.items() if '@' in v['email']},
                 'created_at': raw.get('created_at'), 'updated_at': raw['updated_at'],
                 'from': str((source.get('author') or {}).get('email') or ''),
                 'from_name': ' '.join(str((source.get('author') or {}).get('name') or '').split())[:100],

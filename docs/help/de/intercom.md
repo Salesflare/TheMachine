@@ -18,6 +18,8 @@ Es liest Gespräche. Mit deinem eigenen **Mit Intercom anmelden** kann es auch i
 
 Eine Aufgabe aus einem Intercom-Gespräch zeigt, woher sie kommt: **Nachricht lesen** öffnet das Gespräch, mit einem Link dorthin in Intercom, und der Kunde steht auf der Aufgabe. Ihre Antwort ist eine Intercom-Antwort in diesem Gespräch, außer du bittest um eine E-Mail.
 
+Nur Gespräche, die dir oder noch niemandem zugewiesen sind, werden zu Aufgaben, auch solche in einem Team-Posteingang ohne Zuweisung. Übernimmt jemand aus dem Team ein Gespräch in Intercom, schließt sich die offene Aufgabe von selbst, mit **Rückgängig**. Bei einem mit dir geteilten Intercom sind deine Gespräche die, die dem Admin zugewiesen sind, als der du schreibst.
+
 Kann Intercom nicht von deiner Machine aus antworten (nur zum Lesen mit dir geteilt, Antworten nicht eingeschaltet oder nicht verbunden), geht der Entwurf per E-Mail. Die Aufgabe sagt warum, und ihre Prüfung fragt **Stattdessen per E-Mail senden?** Um selbst in Intercom zu antworten, tippe auf der Aufgabe auf **Eigenes Intercom verbinden** und melde dich an. Nichts geht raus, bevor du es sendest.
 
 ## Verbinden

@@ -18,6 +18,8 @@ Lee conversaciones. Con tu propio **Iniciar sesión con Intercom**, también pue
 
 Una tarea de una conversación de Intercom muestra de dónde viene: **Leer mensaje** abre la conversación, con un enlace a ella en Intercom, y el cliente aparece en la tarea. Su respuesta es una respuesta de Intercom en esa conversación, salvo que pidas un correo.
 
+Solo las conversaciones asignadas a ti, o todavía a nadie, se vuelven tareas, también las de una bandeja de equipo sin nadie asignado. Cuando alguien del equipo toma una conversación en Intercom, su tarea abierta se cierra sola, con **Deshacer**. En un Intercom compartido contigo, tus conversaciones son las asignadas al admin con el que escribes.
+
 Cuando Intercom no puede responder desde tu Machine (compartido contigo solo para leer, respuestas sin activar o sin conectar), el borrador va por correo. La tarea dice por qué y su revisión pregunta **¿Enviar por correo en su lugar?** Para responder tú en Intercom, toca **Conecta tu propio Intercom** en la tarea e inicia sesión. No sale nada antes de que lo envíes.
 
 ## Conéctalo

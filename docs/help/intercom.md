@@ -18,6 +18,8 @@ It reads conversations. With your own **Sign in with Intercom**, it can also rep
 
 A to-do from an Intercom conversation shows where it came from: **Read message** opens the conversation, with a link to it in Intercom, and the customer shows on the to-do. Its reply is an Intercom reply in that conversation, unless you ask for an email.
 
+Only conversations assigned to you, or to no one yet, become to-dos, including ones in a team inbox with no one assigned. When a teammate takes a conversation in Intercom, its open to-do closes by itself, with **Undo**. On an Intercom shared with you, your conversations are the ones assigned to the admin you write as.
+
 When Intercom can't reply from your Machine (shared with you to read only, replies not turned on, or not connected), the draft goes by email instead. The to-do says why, and its review asks **Send by email instead?** To reply in Intercom yourself, tap **Connect your own Intercom** on the to-do and sign in. Nothing goes out before you send it.
 
 ## Connect it

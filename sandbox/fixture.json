@@ -42,7 +42,9 @@
    "email": "alex@lumenlabs.example",
    "display_name": "Intercom",
    "boundary": "work:Lumen Labs",
-   "poll_seconds": 600
+   "poll_seconds": 600,
+   "workspace_id": "lumen1",
+   "admin_id": "7001"
   },
   {
    "id": "work-crm",
@@ -1731,7 +1733,13 @@
     "state": "open",
     "priority": false,
     "conversation_id": "9029",
-    "source_url": "https://inbox.example/conversation/9029"
+    "source_url": "https://inbox.example/conversation/9029",
+    "admin_assignee_id": "7001",
+    "assignee_name": "Alex Morgan",
+    "assignee_email": "alex@lumenlabs.example",
+    "admin_emails": {
+     "7001": "alex@lumenlabs.example"
+    }
    }
   },
   {
@@ -2363,7 +2371,13 @@
     "state": "open",
     "priority": false,
     "conversation_id": "9016",
-    "source_url": "https://inbox.example/conversation/9016"
+    "source_url": "https://inbox.example/conversation/9016",
+    "admin_assignee_id": "7002",
+    "assignee_name": "Priya Okonedo",
+    "assignee_email": "priya@lumenlabs.example",
+    "admin_emails": {
+     "7002": "priya@lumenlabs.example"
+    }
    }
   },
   {
@@ -2797,7 +2811,13 @@
     "state": "open",
     "priority": false,
     "conversation_id": "9036",
-    "source_url": "https://inbox.example/conversation/9036"
+    "source_url": "https://inbox.example/conversation/9036",
+    "admin_assignee_id": "7002",
+    "assignee_name": "Priya Okonedo",
+    "assignee_email": "priya@lumenlabs.example",
+    "admin_emails": {
+     "7002": "priya@lumenlabs.example"
+    }
    }
   },
   {
@@ -3309,7 +3329,13 @@
     "state": "open",
     "priority": true,
     "conversation_id": "9028",
-    "source_url": "https://inbox.example/conversation/9028"
+    "source_url": "https://inbox.example/conversation/9028",
+    "admin_assignee_id": "7002",
+    "assignee_name": "Priya Okonedo",
+    "assignee_email": "priya@lumenlabs.example",
+    "admin_emails": {
+     "7002": "priya@lumenlabs.example"
+    }
    }
   },
   {
@@ -4325,7 +4351,13 @@
     "state": "open",
     "priority": true,
     "conversation_id": "9032",
-    "source_url": "https://inbox.example/conversation/9032"
+    "source_url": "https://inbox.example/conversation/9032",
+    "admin_assignee_id": "7002",
+    "assignee_name": "Priya Okonedo",
+    "assignee_email": "priya@lumenlabs.example",
+    "admin_emails": {
+     "7002": "priya@lumenlabs.example"
+    }
    }
   },
   {

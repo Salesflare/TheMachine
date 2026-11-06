@@ -38,7 +38,8 @@ ACCOUNTS = [  # the owner's sources, as in a config; ids say what they are, neve
     {'id': 'work-gmail', 'service': 'gmail', 'transport': 'gog', 'email': OWNER['email'], 'client': 'default', 'boundary': 'work:Lumen Labs'},
     {'id': 'work-calendar', 'service': 'calendar', 'transport': 'gog', 'email': OWNER['email'], 'client': 'default', 'calendar_id': 'primary', 'boundary': 'work:Lumen Labs'},
     {'id': 'work-slack', 'service': 'slack', 'transport': 'maton', 'email': OWNER['email'], 'display_name': 'Lumen Labs Slack', 'boundary': 'work:Lumen Labs'},
-    {'id': 'work-intercom', 'service': 'intercom', 'transport': 'api', 'email': OWNER['email'], 'display_name': 'Intercom', 'boundary': 'work:Lumen Labs', 'poll_seconds': 600},
+    {'id': 'work-intercom', 'service': 'intercom', 'transport': 'api', 'email': OWNER['email'], 'display_name': 'Intercom', 'boundary': 'work:Lumen Labs', 'poll_seconds': 600,
+     'workspace_id': 'lumen1', 'admin_id': '7001'},
     {'id': 'work-crm', 'service': 'salesflare', 'transport': 'api', 'email': OWNER['email'], 'display_name': 'CRM', 'boundary': 'work:Lumen Labs', 'poll_seconds': 900},
     {'id': 'work-stripe', 'service': 'stripe', 'transport': 'api', 'email': OWNER['email'], 'display_name': 'Stripe', 'boundary': 'work:Lumen Labs', 'poll_seconds': 900},
     {'id': 'work-github', 'service': 'github', 'transport': 'api', 'email': OWNER['email'], 'display_name': 'GitHub', 'boundary': 'work:Lumen Labs', 'poll_seconds': 900},
@@ -417,9 +418,13 @@ def build(profile):
                 n = said[kind, p['name']] = said.get((kind, p['name']), -1) + 1
                 minutes = reply_at(kind, p, minutes, n)
                 conversation = 9000 + people.index(p)
+                # Who it is assigned to, as the shared inbox has it: mostly nobody or Alex, some a teammate (no to-do for Alex)
+                assignee = {0: TEAM[0], 1: OWNER}.get(conversation % 4)
                 add(account, kind, minutes, f"{p['name']} ({p['company']})", INTERCOM[people.index(p) % len(INTERCOM)] if n == 0 else FOLLOW_UPS[(n - 1) % len(FOLLOW_UPS)],
                     {'from': p['email'], 'state': rng.choice(('open', 'open', 'closed')), 'priority': rng.random() < 0.2,
-                     'conversation_id': str(conversation), 'source_url': f'https://inbox.example/conversation/{conversation}'}, key)
+                     'conversation_id': str(conversation), 'source_url': f'https://inbox.example/conversation/{conversation}',
+                     **({'admin_assignee_id': '7001' if assignee is OWNER else '7002', 'assignee_name': assignee['name'], 'assignee_email': assignee['email'],
+                         'admin_emails': {'7001' if assignee is OWNER else '7002': assignee['email']}} if assignee else {})}, key)
             elif kind == 'whatsapp.message':
                 chat, text = rng.choice(WHATSAPP)
                 add(account, kind, minutes, chat, text, {'chat_name': chat, 'chat_id': slug(chat), 'from_me': rng.random() < 0.3, 'group': chat in ('Morgan family', 'Football parents'),
