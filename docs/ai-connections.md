@@ -9,7 +9,7 @@ outside only: The Machine's own agent, Do it and [coding agents](agents.md) are 
 
 ## Two ways in
 
-Settings, **AIs** shows Add in ChatGPT and Add in Claude first, the official app's listings and the default. Folded under
+Settings, **Apps** shows The Machine's phone apps first, then Add in ChatGPT and Add in Claude, the official app's listings and the default. Folded under
 **Or add it by address** are the two addresses, each with Copy, and the steps to add one by hand in ChatGPT or Claude.
 
 ### Claude: the connector directory
@@ -96,7 +96,7 @@ The Activity lines are kind `ai` in Settings, **Activity** (`activity_log.regist
 actor the connection), so they show with everything else The Machine did. A connection's own activity is that list
 filtered to it (`/api/activity?kind=ai&actor=<id>`).
 
-Settings, AIs lists the connections with their activity, and **Add a key** for an AI that needs one.
+Settings, Apps lists the connections with their activity, and **Add a key** for an AI that needs one.
 
 Through the official app there is one connection per app. The account registers anew for each sign-in (one Machine
 client per AI registration), so the owner's Connect for Claude or ChatGPT (`ai_access.app_key`: every return address
@@ -160,7 +160,7 @@ instructions, so an email can't steer the AI into using its other tools.
 ## Messages
 
 A connection's own switch, off until the owner turns it on: on the consent page (a box, never ticked to start with) or
-in Settings, AIs (`ai_change` with `messages`). Without it `search_messages` and `read_thread` are refused and logged
+in Settings, Apps (`ai_change` with `messages`). Without it `search_messages` and `read_thread` are refused and logged
 ("Refused: Messages is off for this connection").
 
 **What it reads.** Only messages (mail, Slack, WhatsApp, Telegram, LinkedIn, Intercom, X DMs: `ai_app.CHANNEL_KINDS`),
@@ -281,7 +281,7 @@ only, no email address). A paired self-hosted one does it in `ai_reach.py`:
 - **The certificate**: ACME (RFC 8555) with TLS-ALPN-01 (RFC 8737), from Let's Encrypt only, on an account with no
   contact. A failed try or a rate limit waits 10 minutes, doubling up to a day, or the CA's `Retry-After` when longer.
   Key and certificate stay next to the database (0600) and never leave the Machine; renewed with 30 days left; gone on
-  Unpair. It needs the `cryptography` package: without it Settings, AIs says "Install the cryptography package to use
+  Unpair. It needs the `cryptography` package: without it Settings, Apps says "Install the cryptography package to use
   this address" and nothing starts.
 - **Request bodies**: `Content-Length` or `Transfer-Encoding: chunked` (extensions ignored, trailers dropped), up to 64 KB
   (413 past it, before reading more). Both headers at once is 400.
@@ -305,7 +305,7 @@ A self-hosted Machine that isn't paired yet shows **Get your address** (`pairing
    fleet-pair` does, which keeps working), and starts the Fleet at once (`App.fleet_live`), no restart.
    `GET /api/fleet/ai-reach` then gives the name for the address.
 
-The same button pairs from Connections, where a sign-in needs a paired Machine. **Unpair** in Settings, AIs removes the
+The same button pairs from Connections, where a sign-in needs a paired Machine. **Unpair** in Settings, Apps removes the
 credential and its file, stops the Fleet and the dial-back, and drops the certificate. The account keeps the device
 until it is disconnected there.
 

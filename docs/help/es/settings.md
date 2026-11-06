@@ -15,7 +15,7 @@ Abre **Ajustes** con el engranaje de arriba. Sus pestañas:
 - **Notificaciones**: qué te llega y por dónde, y tu horario laboral. Consulta [Notificaciones](notifications.md) y [Horario laboral](work-hours.md).
 - **Redacción**: firmas y cómo escribes. Consulta [Redacción](writing.md).
 - **Habilidades**: guías que sigue tu Machine. Consulta [Habilidades](skills.md).
-- **IA**: Claude, ChatGPT y otras IA que conectaste, y lo que puede hacer cada una. Consulta [Conectar otras IA](ai-connections.md).
+- **Apps**: las apps de The Machine para el móvil y después Claude, ChatGPT y otras IA que conectaste, y lo que puede hacer cada una. Consulta [La app móvil](mobile-app.md) y [Conectar otras IA](ai-connections.md).
 - **Modelo**: qué responde por ti, y sus límites. Consulta [Modelo](model.md). También **Codex y Claude Code**: consulta [Pasar a Claude Code o Codex](hand-to-agent.md).
 
 Una pestaña sin nada que mostrar se oculta.

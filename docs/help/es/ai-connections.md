@@ -2,7 +2,7 @@
 title: Conectar otras IA
 area: connections
 summary: Deja que Claude, ChatGPT, Cursor, Codex o GBrain lean tus tareas y tu Graph por MCP, cada una con su acceso y su caducidad.
-covers: ai-connections, settings:ai
+covers: ai-connections, settings:apps
 code: ai_access.py, ai_app.py, pairing.py, ai_reach.py
 keywords: MCP, Claude, ChatGPT, Cursor, Codex, GBrain, connector, AI, OAuth
 order: 95
@@ -19,7 +19,7 @@ Un borrador espera en tu Machine hasta que lo leas y pulses **Enviar** tú. Una 
 
 ## Conectar una
 
-Abre **Ajustes**, **IA**. Primero están **Añadir en ChatGPT** y **Añadir en Claude**. En **O añádela con una dirección** están la dirección de la app oficial para todas las Machines, `https://mcp.themachine.computer/mcp`, y tu **Dirección privada (de extremo a extremo)**, `https://<tu nombre>.mcp.themachine.computer/mcp`, cada una con **Copiar**.
+Abre **Ajustes**, **Apps**. Primero están **Añadir en ChatGPT** y **Añadir en Claude**. En **O añádela con una dirección** están la dirección de la app oficial para todas las Machines, `https://mcp.themachine.computer/mcp`, y tu **Dirección privada (de extremo a extremo)**, `https://<tu nombre>.mcp.themachine.computer/mcp`, cada una con **Copiar**.
 
 En una Machine en tu propio ordenador, pulsa primero **Configurar** en **Obtener tu dirección**. Se abre una página de tu cuenta: comprueba que muestra el mismo código, confirma y elige un nombre. Tu Machine se vincula sola, sin reiniciar. Las dos formas lo necesitan.
 
@@ -49,7 +49,7 @@ La app oficial es la forma fácil: una dirección para todos, y tu cuenta encuen
 
 Con tu dirección privada, todo va cifrado hasta tu Machine. La nube solo lo pasa y no puede leerlo.
 
-En cualquier caso, decide tu Machine. Solo entra una IA que aprobaste en su página, con el acceso que elegiste. En **Ajustes**, **IA**, una IA que llegó por la app oficial muestra **App oficial**.
+En cualquier caso, decide tu Machine. Solo entra una IA que aprobaste en su página, con el acceso que elegiste. En **Ajustes**, **Apps**, una IA que llegó por la app oficial muestra **App oficial**.
 
 ## Qué ve
 
@@ -59,7 +59,7 @@ Los datos de Team Graph de tus compañeros nunca van a una IA de fuera.
 
 ## Mensajes
 
-**Mensajes** deja que una IA busque y lea tu correo, Slack, WhatsApp y otros chats. Está desactivado hasta que lo actives, en la página donde la conectas o después en **Ajustes**, **IA**. Solo lee: nunca envía, borra ni marca nada.
+**Mensajes** deja que una IA busque y lea tu correo, Slack, WhatsApp y otros chats. Está desactivado hasta que lo actives, en la página donde la conectas o después en **Ajustes**, **Apps**. Solo lee: nunca envía, borra ni marca nada.
 
 Solo lee mensajes de su área. Algunos nunca salen: códigos de un solo uso y enlaces de inicio de sesión, mensajes de un tablero o proyecto **Solo tú**, conversaciones que The Machine consideró sensibles (negocios, RR. HH., temas legales, salud, dinero), conversaciones que mantuviste privadas y mensajes borrados.
 
@@ -69,7 +69,7 @@ Mientras Mensajes está activado, los cambios en el Graph de una IA con **Leer y
 
 ## En Ajustes
 
-Abre **Ajustes**, **IA** para ver cada IA conectada una sola vez, con su acceso, su área, su fecha de fin y su último uso. **Mensajes** se activa y desactiva ahí mismo. Pulsa **Cambiar** para cambiar su acceso, su área o la duración. La siguiente llamada ya lo usa. **Actividad** muestra cada llamada, también las rechazadas. **Desactivar ahora** la pausa: se cierran todas sus sesiones y su historial se queda. **Quitar** la elimina con su historial.
+Abre **Ajustes**, **Apps** para ver cada IA conectada una sola vez, con su acceso, su área, su fecha de fin y su último uso. **Mensajes** se activa y desactiva ahí mismo. Pulsa **Cambiar** para cambiar su acceso, su área o la duración. La siguiente llamada ya lo usa. **Actividad** muestra cada llamada, también las rechazadas. **Desactivar ahora** la pausa: se cierran todas sus sesiones y su historial se queda. **Quitar** la elimina con su historial.
 
 Si vuelves a iniciar sesión en la misma IA, la nueva aprobación reemplaza a la anterior.
 

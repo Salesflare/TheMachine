@@ -2,7 +2,7 @@
 title: Connect other AIs
 area: connections
 summary: Let Claude, ChatGPT, Cursor, Codex or GBrain read your to-dos and Graph over MCP, and with Read & edit make changes you can undo.
-covers: ai-connections, settings:ai
+covers: ai-connections, settings:apps
 code: ai_access.py, ai_app.py, pairing.py, ai_reach.py
 keywords: MCP, Claude, ChatGPT, Cursor, Codex, GBrain, connector, AI, OAuth
 order: 95
@@ -19,7 +19,7 @@ A draft waits in your Machine until you read it and press Send yourself. A conne
 
 ## Connect one
 
-Open **Settings**, **AIs**. **Add in ChatGPT** and **Add in Claude** come first. Under **Or add it by address** are the official app's one address for every Machine, `https://mcp.themachine.computer/mcp`, and your **Private address (end-to-end)**, `https://<your name>.mcp.themachine.computer/mcp`, each with **Copy**.
+Open **Settings**, **Apps**. **Add in ChatGPT** and **Add in Claude** come first. Under **Or add it by address** are the official app's one address for every Machine, `https://mcp.themachine.computer/mcp`, and your **Private address (end-to-end)**, `https://<your name>.mcp.themachine.computer/mcp`, each with **Copy**.
 
 On a Machine on your own computer, press **Set up** under **Get your address** first. A page on your account opens: check that it shows the same code, confirm and pick a name. Your Machine pairs by itself, no restart. Both ways need this.
 
@@ -49,7 +49,7 @@ The official app is the easy way: one address for everyone, and your account fin
 
 With your private address, everything is encrypted all the way to your Machine. The cloud only passes it on and can't read it.
 
-Either way your Machine decides. Only an AI you approved on its page gets in, with the access you picked. In **Settings**, **AIs**, an AI that came through the official app shows **Official app**.
+Either way your Machine decides. Only an AI you approved on its page gets in, with the access you picked. In **Settings**, **Apps**, an AI that came through the official app shows **Official app**.
 
 ## What it sees
 
@@ -59,7 +59,7 @@ Teammates' Team Graph records never go to an outside AI.
 
 ## Messages
 
-**Messages** lets an AI search and read your email, Slack, WhatsApp and other chats. It is off until you turn it on, on the page where you connect it or later in **Settings**, **AIs**. It only reads: it never sends, deletes or marks anything.
+**Messages** lets an AI search and read your email, Slack, WhatsApp and other chats. It is off until you turn it on, on the page where you connect it or later in **Settings**, **Apps**. It only reads: it never sends, deletes or marks anything.
 
 It reads only messages in its area. Some never go out: one-time codes and sign-in links, messages of an **Only you** board or project, threads The Machine judged sensitive (deals, HR, legal, health, money), threads you kept private, and deleted messages.
 
@@ -69,7 +69,7 @@ While Messages is on, a **Read & edit** AI's Graph changes wait for your OK. Pre
 
 ## In Settings
 
-Open **Settings**, **AIs** to see each AI that connected, once, with its access, area, end date and last use. **Messages** turns on and off right there. Press **Change** to change its access, its area or how long it lasts. The next call uses it. **Activity** lists every call, refused ones too. **Turn off now** pauses it: every sign-in ends, its history stays. **Remove** takes it away with its history.
+Open **Settings**, **Apps** to see each AI that connected, once, with its access, area, end date and last use. **Messages** turns on and off right there. Press **Change** to change its access, its area or how long it lasts. The next call uses it. **Activity** lists every call, refused ones too. **Turn off now** pauses it: every sign-in ends, its history stays. **Remove** takes it away with its history.
 
 When you sign in to the same AI again, the new approval replaces the earlier one.
 

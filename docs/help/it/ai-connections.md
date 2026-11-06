@@ -2,7 +2,7 @@
 title: Collegare altre IA
 area: connections
 summary: Fai leggere a Claude, ChatGPT, Cursor, Codex o GBrain le tue attività e il tuo Graph via MCP, ognuna con accesso e scadenza propri.
-covers: ai-connections, settings:ai
+covers: ai-connections, settings:apps
 code: ai_access.py, ai_app.py, pairing.py, ai_reach.py
 keywords: MCP, Claude, ChatGPT, Cursor, Codex, GBrain, connector, AI, OAuth
 order: 95
@@ -19,7 +19,7 @@ Una bozza aspetta nella tua Machine finché non la leggi e premi tu **Invia**. U
 
 ## Collegarne una
 
-Apri **Impostazioni**, **IA**. Prima ci sono **Aggiungi in ChatGPT** e **Aggiungi in Claude**. Sotto **Oppure aggiungila con un indirizzo** ci sono l’indirizzo dell’app ufficiale per ogni Machine, `https://mcp.themachine.computer/mcp`, e il tuo **Indirizzo privato (end-to-end)**, `https://<il tuo nome>.mcp.themachine.computer/mcp`, ognuno con **Copia**.
+Apri **Impostazioni**, **App**. Prima ci sono **Aggiungi in ChatGPT** e **Aggiungi in Claude**. Sotto **Oppure aggiungila con un indirizzo** ci sono l’indirizzo dell’app ufficiale per ogni Machine, `https://mcp.themachine.computer/mcp`, e il tuo **Indirizzo privato (end-to-end)**, `https://<il tuo nome>.mcp.themachine.computer/mcp`, ognuno con **Copia**.
 
 Su una Machine sul tuo computer, premi prima **Configura** sotto **Ottieni il tuo indirizzo**. Si apre una pagina del tuo account: controlla che mostri lo stesso codice, conferma e scegli un nome. La tua Machine si abbina da sola, senza riavvio. Entrambi i modi ne hanno bisogno.
 
@@ -49,7 +49,7 @@ L’app ufficiale è la via facile: un indirizzo per tutti, e il tuo account tro
 
 Con il tuo indirizzo privato, tutto è cifrato fino alla tua Machine. Il cloud lo passa soltanto e non può leggerlo.
 
-In ogni caso decide la tua Machine. Entra solo un’IA che hai approvato sulla sua pagina, con l’accesso che hai scelto. In **Impostazioni**, **IA**, un’IA arrivata tramite l’app ufficiale mostra **App ufficiale**.
+In ogni caso decide la tua Machine. Entra solo un’IA che hai approvato sulla sua pagina, con l’accesso che hai scelto. In **Impostazioni**, **App**, un’IA arrivata tramite l’app ufficiale mostra **App ufficiale**.
 
 ## Cosa vede
 
@@ -59,7 +59,7 @@ I dati Team Graph dei tuoi colleghi non vanno mai a un’IA esterna.
 
 ## Messaggi
 
-**Messaggi** permette a un’IA di cercare e leggere la tua email, Slack, WhatsApp e altre chat. È disattivato finché non lo attivi, nella pagina dove la colleghi o dopo in **Impostazioni**, **IA**. Legge soltanto: non invia, non elimina e non segna mai nulla.
+**Messaggi** permette a un’IA di cercare e leggere la tua email, Slack, WhatsApp e altre chat. È disattivato finché non lo attivi, nella pagina dove la colleghi o dopo in **Impostazioni**, **App**. Legge soltanto: non invia, non elimina e non segna mai nulla.
 
 Legge solo i messaggi della sua area. Alcuni non escono mai: codici monouso e link di accesso, messaggi di una bacheca o di un progetto **Solo tu**, conversazioni che The Machine ha giudicato delicate (trattative, HR, legale, salute, soldi), conversazioni che hai tenuto private e messaggi eliminati.
 
@@ -69,7 +69,7 @@ Finché Messaggi è attivo, le modifiche al Graph di un’IA con **Lettura e mod
 
 ## In Impostazioni
 
-Apri **Impostazioni**, **IA** per vedere ogni IA collegata una sola volta, con accesso, area, data di fine e ultimo uso. **Messaggi** si attiva e disattiva direttamente lì. Premi **Cambia** per cambiare il suo accesso, la sua area o la durata. La chiamata successiva lo usa già. **Movimenti** elenca ogni chiamata, anche quelle rifiutate. **Disattiva ora** la mette in pausa: tutti i suoi accessi si chiudono, la sua cronologia resta. **Rimuovi** la toglie insieme alla cronologia.
+Apri **Impostazioni**, **App** per vedere ogni IA collegata una sola volta, con accesso, area, data di fine e ultimo uso. **Messaggi** si attiva e disattiva direttamente lì. Premi **Cambia** per cambiare il suo accesso, la sua area o la durata. La chiamata successiva lo usa già. **Movimenti** elenca ogni chiamata, anche quelle rifiutate. **Disattiva ora** la mette in pausa: tutti i suoi accessi si chiudono, la sua cronologia resta. **Rimuovi** la toglie insieme alla cronologia.
 
 Se accedi di nuovo alla stessa IA, la nuova approvazione sostituisce quella precedente.
 

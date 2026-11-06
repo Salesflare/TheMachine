@@ -36,8 +36,8 @@ const AI_CLAUDE_DIRECTORY='https://claude.ai/directory/the-machine';
 const AI_CHATGPT_APP='https://chatgpt.com/plugins/plugin_asdk_app_6ae74ac637d0819199400cd3750138b4';
 function aiApps(ready){
  if(!ready)return '<div class="ai-later"><span class="grow"><strong translate="no">ChatGPT · Claude</strong><small>Ready once this Machine has its address.</small></span></div>';
- return `<div><span class="grow"><strong translate="no">ChatGPT</strong><small>Add The Machine from ChatGPT’s plugins in one click.</small></span><a class="btn-link primary" href="${AI_CHATGPT_APP}" target="_blank" rel="noopener" data-ai-chatgpt>Add in ChatGPT</a></div>`
-  +`<div><span class="grow"><strong translate="no">Claude</strong><small>Add The Machine from Claude’s directory in one click.</small></span><a class="btn-link primary" href="${AI_CLAUDE_DIRECTORY}" target="_blank" rel="noopener" data-ai-claude>Add in Claude</a></div>`}
+ return `<div><span class="grow"><strong translate="no">ChatGPT</strong><small>One click from ChatGPT’s plugins.</small></span><a class="btn-link primary" href="${AI_CHATGPT_APP}" target="_blank" rel="noopener" data-ai-chatgpt>Add in ChatGPT</a></div>`
+  +`<div><span class="grow"><strong translate="no">Claude</strong><small>One click from Claude’s directory.</small></span><a class="btn-link primary" href="${AI_CLAUDE_DIRECTORY}" target="_blank" rel="noopener" data-ai-claude>Add in Claude</a></div>`}
 function aiOfficial(r){
  if(r.shared)return aiApps(true);
  if(!r.address)return aiApps(false)+aiAddress(r);

@@ -83,7 +83,7 @@ try{
   assert.equal(await page.evaluate(()=>[...document.querySelectorAll('#settings>:not([hidden])')].filter(x=>x.dataset.stab==='account').at(-1).id),'settings-acct-end');
   assert.equal(await page.locator('#settings [data-acct-report]').count(),0);
   // No Security tab here: this Machine sends no security levels, and support access shows only while it's on
-  assert.deepEqual((await page.locator('#settings-tabs>:not([hidden])').allInnerTexts()),['Account','General','Activity','Notifications','Writing','Skills','AIs','Model']);
+  assert.deepEqual((await page.locator('#settings-tabs>:not([hidden])').allInnerTexts()),['Account','General','Activity','Notifications','Writing','Skills','Apps','Model']);
   assert.equal(await page.locator('#settings-account-block').isHidden(),true);  // General no longer says "on your account page"
   const fits=await page.evaluate(()=>{const r=document.querySelector('#acct-list').getBoundingClientRect();
    return document.documentElement.scrollWidth<=innerWidth&&[...document.querySelectorAll(':is(#settings-acct,#settings-acct-end) :is(button,a)')].every(b=>{const x=b.getBoundingClientRect();return x.right<=innerWidth&&x.left>=0})});
