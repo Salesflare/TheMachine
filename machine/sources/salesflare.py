@@ -1,0 +1,341 @@
+"""Salesflare as a source: its CRM client (Salesflare, read-only routes and joining the owner's own user to an account),
+its emails and meetings as events, the feed and pipeline reads, and its sync (sync_salesflare). Moved out of
+assistant.py as is."""
+import datetime as dt
+import http.client
+import json
+import re
+import urllib.error
+import urllib.parse
+import urllib.request
+
+import enrichment
+from machine.config import LOG
+from machine.sources.exclusions import email_subject_excluded
+from machine.text import QUOTED_HISTORY_KEPT, encoded, plain_html, trim_quoted_history
+from sources import SourceError, credential
+from timeutil import now
+
+
+class Salesflare:
+    """Salesflare CRM reads (GET on the exact routes below). The only write is adding the
+    owner's own user to an account, and only when the account config allows it."""
+    ROUTES = (r'/me', r'/accounts', r'/accounts/[0-9]+', r'/accounts/[0-9]+/feed', r'/opportunities')
+
+    def __init__(self, config, account):
+        self.config, self.account = config, account
+
+    def get(self, path, params=None):
+        if not any(re.fullmatch(route, path) for route in self.ROUTES):
+            raise SourceError('unsupported_salesflare_method')
+        return self.send(path, params)
+
+    def join_account(self, crm_id):
+        """Owner-authorized (Oct 10): add the owner's own user to one CRM account. Never
+        another user, never PUT (which would replace the account's whole user list)."""
+        if not self.account.get('join_pipelines'):
+            raise SourceError('salesflare_join_disabled')
+        return self.send(f'/accounts/{int(crm_id)}/users', None, [{'id': self.account['user_id']}])
+
+    def send(self, path, params, payload=None):
+        values = {}
+        for line in credential(self.config, self.account.get('credential', 'salesflare')).splitlines():
+            if '=' in line and not line.lstrip().startswith('#'):
+                key, value = line.split('=', 1)
+                values[key.strip()] = value.strip().strip('"').strip("'")
+        token = values.get(self.account.get('credential_variable', 'SALESFLARE_STAGING_API_KEY'))
+        if not token:
+            raise SourceError('missing_salesflare_credential')
+        url = self.account['api_base'] + path + ('?' + urllib.parse.urlencode(params, doseq=True) if params else '')
+        request = urllib.request.Request(url, data=encoded(payload).encode() if payload is not None else None,
+                                         method='POST' if payload is not None else 'GET',
+                                         headers={'Authorization': 'Bearer ' + token, 'Accept': 'application/json',
+                                                  'Content-Type': 'application/json'})
+        try:
+            # Account list queries ordered by activity are slow on a large team.
+            with urllib.request.urlopen(request, timeout=self.account.get('timeout_seconds', 180)) as response:
+                raw = response.read()
+            return json.loads(raw) if raw.strip() else None  # a write may answer with an empty body
+        except urllib.error.HTTPError as error:
+            retry = error.headers.get('Retry-After', '')
+            raise SourceError('salesflare', error.code,
+                              min(max(int(retry), 1), 86400) if retry.isdigit() else None) from None
+        except (urllib.error.URLError, TimeoutError, OSError, http.client.HTTPException) as error:
+            raise SourceError('network:' + type(error).__name__ + ':salesflare_read') from None
+        except ValueError:
+            raise SourceError('salesflare_invalid_json') from None
+
+    def profile(self):
+        me = self.get('/me')
+        if (not isinstance(me, dict) or str(me.get('email', '')).lower() != self.account['email'].lower()
+                or me.get('id') != self.account['user_id'] or (me.get('team') or {}).get('id') != self.account['team_id']):
+            raise SourceError('account_identity_mismatch')
+        return me
+
+
+def salesflare_time(value):
+    """A Salesflare date as UTC. Mostly ISO 8601 with Z, but some email dates come as epoch milliseconds
+    (a number, sometimes as text); epoch seconds are accepted too."""
+    if isinstance(value, str) and re.fullmatch(r'\s*\d{9,14}(\.\d+)?\s*', value):
+        value = float(value)
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        try:
+            return dt.datetime.fromtimestamp(value / 1000 if abs(value) >= 1e11 else value, dt.timezone.utc)
+        except (OverflowError, OSError, ValueError):
+            raise SourceError('salesflare_invalid_timestamp') from None
+    try:
+        stamp = dt.datetime.fromisoformat(str(value).strip().replace('Z', '+00:00'))
+    except ValueError:
+        raise SourceError('salesflare_invalid_timestamp') from None
+    if stamp.tzinfo is None:
+        raise SourceError('salesflare_missing_timezone')
+    return stamp.astimezone(dt.timezone.utc)
+
+
+def salesflare_time_or_none(value):
+    try:
+        return salesflare_time(value)
+    except SourceError:
+        return None
+
+
+def salesflare_context(account, crm):
+    """Essential account info plus its contacts, keyed for matching."""
+    if not isinstance(crm, dict) or not isinstance(crm.get('id'), int):
+        raise SourceError('salesflare_invalid_account')
+    info = {'id': crm['id'], 'name': crm.get('name') or '', 'domain': crm.get('domain') or ''}
+    contacts = {}
+    for person in crm.get('customers') or []:
+        if isinstance(person, dict) and isinstance(person.get('id'), int):
+            contacts[person['id']] = {'id': person['id'], 'name': person.get('name') or '',
+                                      'email': (person.get('email') or '').lower(), 'role': person.get('role') or None}
+    return info, contacts
+
+
+def salesflare_link(account, crm_id):
+    return f"{account['app_base']}/#/accounts/{crm_id}/info/view"
+
+
+def salesflare_email_event(account, info, contacts, item, config=None):
+    email = item.get('email') or {}
+    if email_subject_excluded(config or {}, email.get('subject')):
+        return None
+    addresses = email.get('addresses') or {}
+    people = []
+    for field in ('from', 'to', 'cc', 'bcc'):
+        value = addresses.get(field) or []
+        for entry in (value if isinstance(value, list) else [value]):
+            if isinstance(entry, dict) and entry.get('email'):
+                people.append((field, entry.get('name') or '', str(entry['email']).lower()))
+    owner = {e.lower() for e in account.get('owner_emails', [account['email']])}
+    # Email that involves the owner already arrives through Gmail; keep only the rest.
+    if email.get('user_id') == account['user_id'] or any(address in owner for _, _, address in people):
+        return None
+    text, quoted = trim_quoted_history(plain_html('\n'.join(str(part.get('content') or '') for part in email.get('body') or [] if isinstance(part, dict))), email.get('subject') or '')
+    header = '\n'.join(f"{field.title()}: {name} <{address}>" if name else f"{field.title()}: {address}" for field, name, address in people)
+    involved = [c for c in contacts.values() if c['email'] and c['email'] in {a for _, _, a in people}]
+    return {'account_id': account['id'], 'source_id': 'email:' + str(item['id']), 'kind': 'salesflare.email',
+            'occurred_at': (salesflare_time_or_none(email.get('date')) or salesflare_time(item.get('time'))).isoformat(),
+            'title': (email.get('subject') or '(no subject)')[:1000],
+            'body': (header + '\n\n' + text)[:40000],
+            'metadata': {'crm_account': info, 'contacts': involved, 'mailbox_user_id': email.get('user_id'),
+                         'thread_id': email.get('service_thread_id'), 'from': people[0][2] if people else '',
+                         'truncated': len(header) + len(text) + 2 > 40000, 'quoted_history_chars': quoted,
+                         'quoted_history_shortened': quoted > QUOTED_HISTORY_KEPT, 'source_url': salesflare_link(account, info['id'])},
+            'deleted': False}
+
+
+def salesflare_meeting_event(account, info, contacts, item):
+    notes = plain_html(item.get('notes'))
+    if not notes:
+        return None  # only meetings with written notes are signals
+    involved = []
+    for person in item.get('participants') or []:
+        if not isinstance(person, dict) or person.get('type') == 'user':
+            continue
+        known = contacts.get(person.get('id'))
+        involved.append(known or {'id': person.get('id'), 'name': person.get('name') or '',
+                                  'email': (person.get('email') or '').lower(), 'role': None})
+    attendees = ', '.join(p.get('name') or p.get('email') or '' for p in item.get('participants') or [] if isinstance(p, dict))
+    description = plain_html(item.get('description'))
+    body = f"Attendees: {attendees}\n\nNotes:\n{notes}" + (f"\n\nDescription:\n{description}" if description else '')
+    return {'account_id': account['id'], 'source_id': 'meeting:' + str(item['id']), 'kind': 'salesflare.meeting',
+            'occurred_at': salesflare_time(item.get('time')).isoformat(),
+            'title': (item.get('subject') or 'Meeting')[:1000], 'body': body[:40000],
+            'metadata': {'crm_account': info, 'contacts': involved, 'meeting_type': item.get('type'),
+                         'host': (item.get('person') or {}).get('email'), 'truncated': len(body) > 40000,
+                         'source_url': salesflare_link(account, info['id'])},
+            'deleted': False}
+
+
+def salesflare_recent_accounts(source, field, since, page=50, max_pages=40):
+    """CRM account IDs whose last email/meeting date is on or after `since`."""
+    found = []
+    for number in range(max_pages):
+        rows = source.get('/accounts', {'order_by': field + ' desc', 'limit': page, 'offset': number * page, 'details': 'false'})
+        if not isinstance(rows, list):
+            raise SourceError('salesflare_invalid_page')
+        for row in rows:
+            stamp = row.get(field)
+            parsed = salesflare_time_or_none(stamp) if stamp else None
+            if not stamp or (parsed and parsed < since):
+                return found
+            # An unreadable date still lists the account: reading it once too often beats missing it.
+            found.append(row['id'])
+        if len(rows) < page:
+            return found
+    raise SourceError('salesflare_window_limit')  # never claim a complete scan
+
+
+def salesflare_feed(source, crm_id, kind, since, until, page=100, max_pages=10):
+    items, before = [], until
+    for _ in range(max_pages):
+        rows = source.get(f'/accounts/{crm_id}/feed', {'types': kind, 'after': since.isoformat(), 'before': before.isoformat(), 'limit': page})
+        if not isinstance(rows, list):
+            raise SourceError('salesflare_invalid_feed')
+        items.extend(rows)
+        if len(rows) < page:
+            return items
+        stamps = [stamp for stamp in (salesflare_time_or_none(r.get('time')) for r in rows) if stamp]
+        if not stamps:
+            raise SourceError('salesflare_invalid_timestamp')
+        oldest = min(stamps)
+        if oldest >= before:
+            raise SourceError('salesflare_feed_not_advancing')
+        before = oldest
+    raise SourceError('salesflare_feed_limit')
+
+
+def salesflare_in_pipelines(source, crm_id, pipelines):
+    for pipeline in pipelines:
+        for closed in (None, 'true'):  # open and won/lost opportunities
+            params = {'account': crm_id, 'pipeline': pipeline, 'limit': 1, 'details': 'false'}
+            if closed:
+                params['closed'] = closed
+            rows = source.get('/opportunities', params)
+            if not isinstance(rows, list):
+                raise SourceError('salesflare_invalid_opportunities')
+            if rows:
+                return pipeline
+    return None
+
+
+SALESFLARE_APP = 'https://app.salesflare.com'
+
+
+SALESFLARE_STUCK = dt.timedelta(hours=2)  # a round of accounts still going after this long: the card offers Restart
+
+
+def salesflare_progress(account, state):
+    """The Salesflare card's sync details: the round of accounts being read (how far, since when), what it set aside,
+    whether the owner stopped it (connector_sync), and where its API keys are."""
+    window = state.get('window') or {}
+    total, left = window.get('accounts', len(window.get('pending') or [])), len(window.get('pending') or [])
+    started = window.get('until')
+    try:
+        stuck = bool(started) and dt.datetime.fromisoformat(now()) - dt.datetime.fromisoformat(started) > SALESFLARE_STUCK
+    except (TypeError, ValueError):
+        stuck = False
+    return {'stopped': state.get('stopped') or None, 'synced_until': state.get('watermark'),
+            'round': {'since': window.get('since'), 'started': started, 'accounts': total, 'done': max(0, total - left), 'stuck': stuck,
+                      'failing': len(window.get('failures') or {})} if window else None,
+            'slow_accounts': len(state.get('skipped_accounts') or []), 'no_access': len(state.get('inaccessible_accounts') or []),
+            'keys_url': (account.get('app_base') or SALESFLARE_APP) + '/#/settings/apikeys'}
+
+
+def sync_salesflare(store, config, account, source=None):
+    state = store.checkpoint(account['id']) or {}
+    if state.get('stopped'):  # the owner pressed Stop on its card: nothing is read until Start or Restart
+        return {'mode': state.get('mode') or 'incremental', 'events': 0, 'stopped': True}
+    source = source or Salesflare(config, account)
+    source.profile()
+    stamp = dt.datetime.now(dt.timezone.utc)
+    if not state.get('window'):
+        days = config.get('bootstrap_days', 7)
+        retained = stamp - dt.timedelta(days=days)
+        full = not state.get('watermark') or stamp.timestamp() >= state.get('next_full', 0)
+        since = retained if full else max(retained, dt.datetime.fromisoformat(state['watermark']) - dt.timedelta(hours=6))
+        # Notes are often written days after a meeting, without changing its date, so
+        # meetings are always reread over a full week; emails follow the incremental window.
+        meeting_since = stamp - dt.timedelta(days=account.get('meeting_window_days', 7))
+        email_ids = salesflare_recent_accounts(source, 'last_email_date', since)
+        # Freeze the window and its account list, then work through it in committed batches.
+        pending = list(dict.fromkeys(email_ids + salesflare_recent_accounts(source, 'last_meeting_date', meeting_since)))
+        state.update(mode='bootstrap' if not state.get('watermark') else 'incremental',
+                     window={'since': since.isoformat(), 'meeting_since': meeting_since.isoformat(), 'until': stamp.isoformat(),
+                             'full': full, 'pending': pending, 'email_ids': sorted(set(email_ids)), 'accounts': len(pending)})
+        store.commit_page(account['id'], state, [], record_sync=False)
+    window = state['window']
+    since, until = dt.datetime.fromisoformat(window['since']), dt.datetime.fromisoformat(window['until'])
+    meeting_since = dt.datetime.fromisoformat(window.get('meeting_since', window['since']))
+    email_ids = set(window['email_ids']) if 'email_ids' in window else None  # older frozen windows: read both
+    events, skipped, excluded, titles = [], 0, set(), []  # titles: each contact's job title in the CRM, a record about them
+    batch = window['pending'][:account.get('accounts_per_batch', 5)]
+    for crm_id in batch:
+        try:
+            crm = source.get(f'/accounts/{crm_id}')
+            crm = crm[0] if isinstance(crm, list) and crm else crm
+            info, contacts = salesflare_context(account, crm)
+            titles += [(['email:' + c['email']], {'title': c['role']}, enrichment.RECORD) for c in contacts.values() if c['email'] and c['role']]
+            if crm.get('part_of') is False and account.get('join_pipelines'):
+                pipeline = salesflare_in_pipelines(source, crm_id, account['join_pipelines'])
+                if pipeline:
+                    source.join_account(crm_id)
+                    joined = state.setdefault('joined_accounts', [])
+                    joined.append({'id': crm_id, 'pipeline': pipeline, 'at': now()})
+                    state['joined_accounts'] = joined[-500:]
+                    LOG.info('salesflare joined account=%s pipeline=%s', crm_id, pipeline)
+            emails = salesflare_feed(source, crm_id, 'email', since, until) if email_ids is None or crm_id in email_ids else []
+            meetings = [(k, item) for k in ('meeting-live', 'meeting-phone') for item in salesflare_feed(source, crm_id, k, meeting_since, until)]
+        except SourceError as error:
+            if error.category.startswith('network:'):
+                # One slow account must not block the window forever: retry it on later
+                # polls, and after three failures set it aside (visible) and move on.
+                failures = window.setdefault('failures', {})
+                failures[str(crm_id)] = failures.get(str(crm_id), 0) + 1
+                if failures[str(crm_id)] < 3:
+                    # Keep the accounts already read in this batch; resume at this one.
+                    window['pending'] = window['pending'][batch.index(crm_id):]
+                    store.commit_page(account['id'], state, events, record_sync=False, excluded_source_ids=excluded)
+                    raise
+                state['skipped_accounts'] = sorted(set(state.get('skipped_accounts', [])) | {crm_id})[-500:]
+                continue
+            if error.status not in (403, 404):
+                raise
+            # No access to this account's timeline (or it was deleted). Visible, never
+            # "fixed" by adding the owner to the account: ingestion stays read-only.
+            state['inaccessible_accounts'] = sorted(set(state.get('inaccessible_accounts', [])) | {crm_id})[-500:]
+            continue
+        for item in emails:
+            try:
+                event = salesflare_email_event(account, info, contacts, item, config)
+            except SourceError as error:
+                # One unreadable record is skipped and logged; it never holds up the round.
+                LOG.warning('salesflare skipped record account=%s crm_account=%s item=email:%s error=%s',
+                            account['id'], crm_id, item.get('id'), error.category)
+                continue
+            events.append(event) if event else None
+            skipped += event is None
+            if event is None and email_subject_excluded(config, (item.get('email') or {}).get('subject')):
+                excluded.add('email:' + str(item['id']))
+        for _, item in meetings:
+            try:
+                event = salesflare_meeting_event(account, info, contacts, item)
+            except SourceError as error:
+                LOG.warning('salesflare skipped record account=%s crm_account=%s item=meeting:%s error=%s',
+                            account['id'], crm_id, item.get('id'), error.category)
+                continue
+            events.append(event) if event else None
+    window['pending'] = window['pending'][len(batch):]
+    if not window['pending']:
+        state.update(mode='incremental', watermark=window['until'])
+        if window['full']:
+            state['next_full'] = stamp.timestamp() + 86400
+        state.pop('window')
+    store.commit_page(account['id'], state, events, excluded_source_ids=excluded)
+    involved = {'email:' + str(c.get('email')).lower() for e in events for c in e['metadata'].get('contacts') or ()}
+    titles = [t for t in titles if t[0][0] in involved]  # only people in what was kept, as for their messages
+    if titles:
+        with store.connect() as db:
+            enrichment.offer_facts(db, titles, 'salesflare', now())
+    return {'mode': state['mode'], 'events': len(events), 'filtered': skipped, 'more': bool(state.get('window'))}
