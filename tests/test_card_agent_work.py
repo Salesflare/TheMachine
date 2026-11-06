@@ -70,6 +70,16 @@ class CardAgentWork(unittest.TestCase):
         self.assertIn('the owner tapped Do it', message)
         self.assertIn(DONE, message)
 
+    def test_the_chat_turn_knows_where_its_files_are_and_may_run_them(self):
+        # "push it live" in the to-do's chat: the turn is told the job's folder and that the ask is the owner's approval.
+        self.job(id='aj_2ec3c49846bb402e')
+        work = Path(self.temp.name) / 'agent-jobs' / 'aj_2ec3c49846bb402e' / 'work'
+        work.mkdir(parents=True)
+        message = self.chat_turn()
+        self.assertIn(f'its folder: {work}', message)
+        self.assertIn('run, publish or deploy what it prepared, that is their approval', message)
+        self.assertIn('open the job in Codex and run it there', message)
+
     def test_a_running_job_shows_its_progress(self):
         self.job(status='running', progress='Editing the German page')
         message = self.chat_turn()
