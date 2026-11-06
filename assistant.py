@@ -2552,17 +2552,27 @@ def sync_whatsapp(store, config, account, source=None):
         middle = start + (end - start) / 2
         return read_window(start, middle) + read_window(middle, end)
     rows = read_window(dt.datetime.fromisoformat(after), stamp)
-    pairs = [(whatsapp_event(account, raw), raw) for raw in rows]
+    # A row this importer can't take (a WhatsApp Channel post from an ...@newsletter chat, a status update, an imported
+    # row, an odd timestamp) is skipped and counted by reason, never failing the whole account. Only a window where
+    # every one of many rows is odd still fails: that is a changed wacli, not a few unsupported messages.
+    pairs, skipped = [], collections.Counter()
+    for raw in rows:
+        try:
+            pairs.append((whatsapp_event(account, raw if isinstance(raw, dict) else {}), raw))
+        except SourceError as exc:
+            skipped[exc.category] += 1
+    if skipped and not pairs and len(rows) >= 10:
+        raise SourceError(skipped.most_common(1)[0][0])
     events = list({e['source_id']: e for e, _ in pairs}.values())
     with store.connect() as db:  # photos the owner has read (whatsapp_images.py): noted, and joined to their message once read
         events = whatsapp_images.note(db, account, events, {e['source_id']: raw for e, raw in pairs}, now())
     state = store.checkpoint(account['id']) or {}
     state.update(mode='incremental', after=after, before=before, retained_days=config.get('bootstrap_days', 7),
-                 available_messages=len(rows), source_latest_message=max((e['occurred_at'] for e in events), default=None),
+                 available_messages=len(rows), skipped_messages=dict(sorted(skipped.items())), source_latest_message=max((e['occurred_at'] for e in events), default=None),
                  upstream_live_sync='Not established by a successful local read',
                  coverage='Seven-day reread of existing synced store. No network sync, backfill or media download by this collector.')
     store.commit_page(account['id'], state, events)
-    return {'mode':'incremental','events':len(events)}
+    return {'mode':'incremental','events':len(events),'filtered':sum(skipped.values())}
 
 
 class Telegram:
