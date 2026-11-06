@@ -5757,7 +5757,7 @@
  "what someone who left shared is passed on only by a confirmed admin": "ciò che ha condiviso chi se n’è andato lo inoltra solo un admin confermato",
  "when is \"now\", \"digest\" or a date/time like 2026-10-12 or 2026-10-12T09:00": "when è \"now\", \"digest\" (il riepilogo) o una data/ora come 2026-10-12 o 2026-10-12T09:00",
  "who handles shared emails": "chi gestisce le email condivise",
- "who is the other person (2-80 characters); what is the promised action alone, starting with a verb, as it follows \"they’d\": \"send the signed contract\" (3-140 characters)": "who è l’altra persona (2-80 caratteri); what è solo l’azione promessa, iniziando con un verbo, come segue \"they’d\": \"send the signed contract\" (3-140 caratteri)",
+ "who is the other person (2-80 characters); what is the promised action alone, starting with a verb, as it follows \"they’d\": \"send the signed contract\" (3-80 characters: say it shorter, never cut it off)": "who è l’altra persona (2-80 caratteri); what è solo l’azione promessa, iniziando con un verbo, come segue \"they’d\": \"send the signed contract\" (3-140 caratteri)",
  "who knows someone": "chi conosce qualcuno",
  "with names": "con i nomi",
  "with the same people": "con le stesse persone",

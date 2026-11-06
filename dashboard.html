@@ -352,6 +352,7 @@ blockquote{margin:10px 0 0;padding:6px 12px;border-left:2px solid var(--lavender
 (a phone, the browser links): the line wraps and the step goes below, never wider than the to-do */.prep-main{flex:1;min-width:0;display:flex;flex-wrap:wrap;align-items:center;column-gap:6px;line-height:1.45}.prep-main>.note{flex:0 1 auto;min-width:0;max-width:100%;margin:0}.prep .prep-main>.steps{flex:1 1 0;min-width:3em;margin:0}
 @media(max-width:560px){.prep{flex-direction:column;gap:0}.prep .steps,.prep-main{align-self:stretch}.peek{width:100%}.peek-thumb{width:100%}.peek-thumb img{max-height:200px}}
 details.tech{margin:6px 0 0;font-size:.82rem}details.tech>summary{cursor:pointer;color:var(--muted)}
+/* A stuck run's technical details under the to-do's Details */.tech-log{font-size:.82rem}.tech-log .tech-head{margin:0 0 4px;color:var(--muted);font-size:var(--fs-xs);font-weight:600}.tech-log pre{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
 .conn-more{margin-top:auto;padding-top:6px}
 .conn-more details p{margin:4px 0;font-size:.85rem}
 .conn-scope select{margin-left:6px;font:inherit}
@@ -2696,7 +2697,7 @@ input[type=checkbox],input[type=radio],input[type=range],progress{accent-color:v
 .card.todo .card-badges time,.card.todo .card-badges .meta-side:has(.added-by)>time{display:inline;margin:0;font:inherit;color:var(--faint)}
 .card.todo .card-badges .added-by{margin:0;font-size:inherit;color:var(--faint)}
 .card.todo>.card-foot .card-chat-link{flex:none;margin-left:auto;font-size:inherit}
-@media (max-width:600px){.card.todo .card-badges a.chip.who{max-width:9em}.card.todo .card-badges a.chip.who.org,.card.todo .card-badges a.chip.project-link{max-width:min(13em,60vw)}}
+@media (max-width:600px){.card.todo .card-badges a.chip.who{max-width:9em}.card.todo .card-badges a.chip.who.org{max-width:min(13em,60vw)}.card.todo .card-badges a.chip.project-link{max-width:100%}}
 .card.todo>.card-foot{display:flex;flex-wrap:wrap;align-items:center;gap:4px 16px;margin-top:10px;font-size:var(--fs-xs);color:var(--faint)}
 .card.todo>.card-foot .foot-links{margin-left:0;gap:16px}
 .card.todo .card-foot .details-toggle{display:inline-flex;align-items:center;gap:6px;margin:0;padding:0;min-height:0;border:0;background:none;color:var(--muted);font:inherit;font-weight:600;cursor:pointer}

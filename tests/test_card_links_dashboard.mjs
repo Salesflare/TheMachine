@@ -45,8 +45,8 @@ try{
  assert.deepEqual(await anchors('#task-l1 .saved-feedback blockquote'),[['https://example.org/x','https://example.org/x','_blank',ext]]);
  // A blocker and its details
  assert.deepEqual(await anchors('#task-b1 p.note'),[['booking page','https://example.com/book','_blank',ext]]);
- await page.locator('#task-b1 details.tech summary').click();
- assert.deepEqual(await anchors('#task-b1 details.tech pre'),[['https://example.com/book','https://example.com/book','_blank',ext]]);
+ await page.locator('#task-b1 .details-toggle').click();
+ assert.deepEqual(await anchors('#task-b1 .card-details .tech-log pre'),[['https://example.com/book','https://example.com/book','_blank',ext]]);
  // Unsafe links stay inert text, no HTML gets in, and a quote never breaks out of href
  const odd=page.locator('#task-x1 .body');
  assert.equal(await odd.locator('img,script').count(),0);

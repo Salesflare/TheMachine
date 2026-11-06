@@ -37,5 +37,5 @@ Wat hij kan versturen, hangt af van de bron: een e-mail, een direct bericht in S
 
 - "Dit kan niet van hieruit verstuurd worden." betekent dat je het concept kopieert met **Concept kopiëren** en het zelf verstuurt.
 - **Heeft je hulp nodig** betekent dat hij je iets vraagt: **Antwoorden**. **Vastgelopen** betekent dat hij stopte zonder vraag, of te lang liep en gestopt werd; de to-do zegt waarom.
-- **Opnieuw proberen** voert het nog een keer uit. **Wijzigen** vraagt om iets anders.
+- **Opnieuw proberen** voert het nog een keer uit. **Wijzigen** vraagt om iets anders. Bij een vastgelopen to-do staat **Opnieuw proberen** voorop, en **Details** toont wat hij probeerde.
 - Een code die naar je telefoon gaat, of een toestemming die hij mist, houdt hem tegen. De to-do zegt in één regel wat hij nodig heeft, zoals de code in zijn browser of toegang tot een bestand, en dan **Doorgaan** of **Opnieuw proberen**.
