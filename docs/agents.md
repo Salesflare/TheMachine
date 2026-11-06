@@ -23,6 +23,10 @@ Nothing goes without your **Hand off**.
   to-do's messages in `card/messages.md`, full text included, so it needs no mailbox of its own. A job that runs away
   from this computer (a Claude Code session at claude.ai/code, Codex on your paired computer, or Codex cloud) doesn't get that folder, so the messages are in the brief
   itself, newest first, shortened to fit with a note where something is cut.
+- **When it is over.** A job's folder stays while the job runs, while its to-do is open (Try again and Ask for changes
+  carry on there) and for 7 days after it ended or its to-do closed, for the 3 newest such jobs. Then the nightly
+  cleanup removes what is in it, apart from the files its answers list (what the to-do links to keeps opening) and its
+  brief. Its transcripts stay, so its answers still show. Picked up again later, it carries on in the same folder.
 - **Progress and result.** The to-do shows its progress, then a short result with up to three of the files it made: the
   ones its answer names, never logs or `.pid` files. The rest stay folded under Details. The chat shows the same block.
 - **Ask for changes** sends a follow-up to the same job. **Cancel** stops it.

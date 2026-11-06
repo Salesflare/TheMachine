@@ -159,9 +159,12 @@ Then it gives the free space back to the disk: once with a `VACUUM` (when no rev
 
 The same run rotates copies of the database next to it: `events.sqlite.bak-*` and similar (`.backup`, `.before-`, dated `.pre-`), and SQLite files in any folder next to it with `backup` in its name (`backups/`, `backups-manual/`, `repair-backups/`, …).
 
-- Every copy from the last 7 days stays. From 7 to 30 days old, the newest copy of each database per day. Older ones go, with their `-wal` and `-shm`.
-- Only database copies are removed, never notes or settings beside them. `work-removal-backups/` keeps its own 7-day rule, and message protection's own copy is left alone.
-- A script that makes a copy before it changes something can rotate right after: `python3 retention.py rotate-backups --data-dir ~/.local/share/personal-assistant` (`--dry-run --list` shows what would go).
+- A copy made before a change (`before` or `pre` in its name or its folder's: `events-before-release-…`, `events.sqlite.pre-fix-…`, `before-port-…/`): the newest 3 of each database and of `config.json` stay, whatever their age. The others go.
+- Every other copy from the last 7 days stays. From 7 to 30 days old, the newest copy of each database per day. Older ones go, with their `-wal` and `-shm`.
+- Only database copies and `config.json` copies made before a change are removed, never notes or other files beside them. `work-removal-backups/` keeps its own 7-day rule, and message protection's own copy is left alone.
+- A script that makes a copy before it changes something can rotate right after: `python3 retention.py rotate-backups --data-dir ~/.local/share/personal-assistant` (`--dry-run --list` shows what would go). For a folder of its own, pass that folder: its subfolders with `backup` in their name rotate the same way.
+
+The same run clears the work folders of Claude Code and Codex jobs nothing needs any more ([agents.md](agents.md#the-job)).
 - `python3 retention.py run` runs the whole nightly pass now.
 
 ### Moving to another computer

@@ -143,6 +143,7 @@ MACHINE_LAYERS = {
     'prompts': 1,
     'sources': 1,
     'store': 2,
+    'upkeep': 2,       # housekeeping of the data folder: agent job folders (retention.py runs it)
     'delivery': 3,
     'export': 3,       # export and import: what an install keeps (inventory), the hold after an import
     'web': 3,
