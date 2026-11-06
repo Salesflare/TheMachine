@@ -4600,8 +4600,10 @@ class Store:
     def greeting(self, owner_name=''):
         """The dashboard's hello on a new owner's first views (GREETING_HOURS from their first, until they first decide a
         to-do): {'name': their first name, 'line': {'person', 'since', 'card'}} with the open to-do someone has waited
-        on them for longest (card_waiting_since; a ready one first), named from their own Machine; just the name when
-        nothing is ready yet. The dashboard leads with that to-do (line.card) and keeps the rest of the page quiet.
+        on them for longest (greeting_wait; a ready one first), named from their own Machine; just the name when
+        nothing is ready yet. The line names who wrote the to-do's own message (its first evidence, as its source line),
+        never another message it carries, so it always names what it links to; a to-do whose sender has no proper name
+        (greeting_name) gives no line. The dashboard leads with that to-do (line.card) and keeps the rest of the page quiet.
         None once past it, or for someone who had decided to-dos before this existed. For the owner's own dashboard only:
         nothing of it goes into a report or leaves the Machine."""
         first = (str(owner_name or '').split() or [''])[0]
@@ -4620,18 +4622,50 @@ class Store:
             # A ready to-do (its draft prepared) before one still to decide or preparing; within each, the longest wait
             best = None
             for card in db.execute('SELECT id,status,event_ids FROM suggestions WHERE ' + activity.SHOWN, (now(),)).fetchall():
-                found = self.card_waiting_since(db, card)
+                found = self.greeting_wait(db, card)
+                person = found and self.greeting_name(db, found[1])
                 key = found and (card['status'] != 'prepared', found[0])
-                if found and (not best or key < best[0]):
-                    best = (key, *found, card['id'])
-            best = best and best[1:]
-        line = None
-        if best:
-            m = best[1]['metadata'] if isinstance(best[1]['metadata'], dict) else json.loads(best[1]['metadata'] or '{}')
-            person = sender_first_name(m)
-            if person:
-                line = {'person': person, 'since': best[0], 'card': best[2]}
+                if person and (not best or key < best[0]):
+                    best = (key, {'person': person, 'since': found[0], 'card': card['id']})
+        line = best and best[1]
         return {'name': first, **({'line': line} if line else {})} if first or line else None
+
+    def greeting_wait(self, db, card):
+        """(since, row) for the hello: the earliest unanswered message someone waits on the owner for in the to-do's own
+        conversation (its first evidence, and the rest of that thread among its evidence), or None. Another message the
+        to-do also carries (its "+1 more", from someone else) never names it."""
+        ids = json.loads(card['event_ids'] or '[]')
+        rows = {r['id']: dict(r) for r in db.execute('SELECT id,account_id,kind,occurred_at,metadata FROM events WHERE deleted=0 AND id IN ('
+                                                     + ','.join('?' * len(ids)) + ')', ids)} if ids else {}
+        rows = [rows[i] for i in ids if i in rows and rows[i]['kind'] != 'owner.card']
+        if not rows:
+            return None
+        meta = lambda r: r['metadata'] if isinstance(r['metadata'], dict) else json.loads(r['metadata'] or '{}')
+        lead, thread = rows[0], meta(rows[0]).get('thread_id')
+        same = [r for r in rows if r is lead or (thread and r['kind'] == lead['kind'] and r['account_id'] == lead['account_id']
+                                                 and meta(r).get('thread_id') == thread)]
+        return self.waiting_since(db, same)
+
+    @staticmethod
+    def greeting_name(db, row):
+        """Who to name in the hello for this message: the sender's first name as the message gives it, else the name the
+        Graph knows them by, else their organization ("Acme Town Hall"). '' when only a mailbox name ("billing",
+        "frontdesk") or an address is known: no line then, never a name made up from an address."""
+        m = row['metadata'] if isinstance(row['metadata'], dict) else json.loads(row['metadata'] or '{}')
+        person = sender_first_name(m)
+        if person:
+            return person
+        address = _address(m.get('from'))
+        for r in db.execute("SELECT n.name,o.name org FROM graph_events g JOIN graph_nodes n ON n.id=g.node_id LEFT JOIN graph_nodes o "
+                            "ON o.id=json_extract(n.info,'$.org') AND o.kind='org' WHERE g.direct=1 AND n.kind='person' AND g.event_id=? "
+                            "ORDER BY n.strength DESC", (row['id'],)):
+            name = sender_first_name({'from': graph.person_name(r['name'] or '') + (f' <{address}>' if address else '')})
+            if name:
+                return name
+            org = ' '.join(str(r['org'] or '').split())
+            if org and '@' not in org and re.search(r'[^\W\d_]{2}', org):
+                return org
+        return ''
 
     @staticmethod
     def still_needed_ask(db, stamp, skip=lambda row: False, tz=dt.timezone.utc):
@@ -12831,8 +12865,13 @@ def sender_first_name(metadata):
     """The first name of who sent a message, as the message names them ("Sam Lee <sam@…>" is Sam), or '' when it
     carries only an address, a number or a chat handle."""
     m = metadata or {}
-    who = re.sub(r'\s*<[^>]*>?', '', str(m.get('sender_display') or m.get('from') or m.get('chat_name') or '')).strip().strip('"\'').strip()
+    raw = str(m.get('sender_display') or m.get('from') or m.get('chat_name') or '')
+    who = re.sub(r'\s*<[^>]*>?', '', raw).strip().strip('"\'').strip()
     if not who or '@' in who or SLACK_ID.search(who) or SOURCE_RAW.search(who):
+        return ''
+    # A mail tool that shows the mailbox as the name ("frontdesk <frontdesk@…>", "billing <billing@…>"): not a name
+    local = (_address(raw) or _address(m.get('from'))).split('@')[0]
+    if local and not who[:1].isupper() and re.sub(r'[._+-]', '', who.casefold()) == re.sub(r'[._+-]', '', local.split('+')[0]):
         return ''
     if ',' in who:  # "Lee, Sam"
         who = who.split(',', 1)[1].strip() or who

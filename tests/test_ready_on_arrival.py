@@ -164,6 +164,46 @@ class ReadyOnArrival(unittest.TestCase):
         self.assertEqual(a.sender_first_name({'from': '"Lee, Sam" <sam@example.org>'}), 'Sam')
         self.assertEqual(a.sender_first_name({'from': 'U02AB3CD4'}), '')
 
+    def test_the_line_names_the_to_dos_own_message_not_another_it_carries(self):
+        # A to-do about a mailbox's thread (first evidence) that also carries an older message from someone else in
+        # another thread: the hello names the to-do's own sender, never the other one, and links to that to-do
+        self.store.commit_page('work', {}, [mail('hall', 'Pat Hall <pat@town.example>', 24 * 1),
+                                            mail('other', 'Kai Other <kai@other.example>', 24 * 3)])
+        with self.store.connect() as db:
+            ids = dict(db.execute("SELECT source_id,id FROM events WHERE source_id IN ('hall','other')").fetchall())
+        card = self.app.action('suggest', {'dedupe_key': 'hall', 'title': 'Book the hall', 'body': 'Draft ready.',
+                                           'event_ids': [ids['hall'], ids['other']], 'when': 'now'})['id']
+        line = self.store.greeting('Alex')['line']
+        self.assertEqual((line['person'], line['card']), ('Pat', card))
+        with self.store.connect() as db:
+            self.assertEqual(line['since'], db.execute('SELECT occurred_at FROM events WHERE id=?', (ids['hall'],)).fetchone()[0])
+
+    def test_a_mailbox_name_is_not_a_name(self):
+        # "frontdesk <frontdesk@…>": the mail tool shows the mailbox as the name. No line from it, nor a made-up name.
+        self.assertEqual(a.sender_first_name({'from': 'frontdesk <frontdesk@mail.example>'}), '')
+        self.assertEqual(a.sender_first_name({'from': '"info.desk" <info-desk@mail.example>'}), '')
+        self.assertEqual(a.sender_first_name({'from': 'Jan <jan@mail.example>'}), 'Jan')  # a real first name stays
+        self.assertEqual(a.sender_first_name({'from': 'jan peeters <jan.peeters@mail.example>'}), 'jan')
+        self.store.commit_page('work', {}, [mail('box', 'frontdesk <frontdesk@mail.example>', 24 * 6)])
+        with self.store.connect() as db:
+            box = db.execute("SELECT id FROM events WHERE source_id='box'").fetchone()[0]
+        self.app.action('suggest', {'dedupe_key': 'box', 'title': 'Reply', 'body': 'Asked.', 'event_ids': [box], 'when': 'now'})
+        self.assertEqual(self.store.greeting('Alex'), {'name': 'Alex'})
+        # Someone else waiting on a to-do of their own is named instead, linked to theirs
+        kim = self.ahead('kim', 'kim')
+        self.assertEqual({k: v for k, v in self.store.greeting('Alex')['line'].items() if k != 'since'}, {'person': 'Kim', 'card': kim})
+
+    def test_a_mailbox_is_named_by_its_organization_from_the_graph(self):
+        self.store.commit_page('work', {}, [mail('rent', 'rentals <rentals@town.example>', 24 * 2)])
+        with self.store.connect() as db:
+            rent = db.execute("SELECT id FROM events WHERE source_id='rent'").fetchone()[0]
+            db.execute("INSERT INTO graph_nodes(id,kind,name,info,strength,signals) VALUES('org:town.example','org','Town Hall','{}',1,1)")
+            db.execute("INSERT INTO graph_nodes(id,kind,name,info,strength,signals) VALUES('email:rentals@town.example','person','rentals',?,1,1)",
+                       (json.dumps({'org': 'org:town.example'}),))
+            db.execute("INSERT INTO graph_events(node_id,event_id,at,direct) VALUES('email:rentals@town.example',?,?,1)", (rent, a.now()))
+        card = self.app.action('suggest', {'dedupe_key': 'rent', 'title': 'Book the hall', 'body': 'Asked.', 'event_ids': [rent], 'when': 'now'})['id']
+        self.assertEqual({k: v for k, v in self.store.greeting('Alex')['line'].items() if k != 'since'}, {'person': 'Town Hall', 'card': card})
+
 
 if __name__ == '__main__':
     unittest.main()
