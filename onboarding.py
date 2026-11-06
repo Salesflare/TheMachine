@@ -1134,7 +1134,7 @@ def headless():
 def step_google(config, account, ui):
     gog = tool(config, 'gog')
     if not gog:
-        raise SetupError('gog is not installed', 'install gog (gogcli), then run: assistant connect ' + account.get('service', 'gmail'))
+        raise SetupError('Google sign-in is not installed on this computer', 'install gog (gogcli), then run: assistant connect ' + account.get('service', 'gmail'))
     config['gog'] = config.get('gog') if config.get('gog') not in (None, 'gog') else gog
     known = gog_accounts(gog)
     own = account.get('email') if account.get('email') not in (None, '', PLACEHOLDERS['email']) else ''
@@ -1152,7 +1152,7 @@ def step_google(config, account, ui):
     clients = gog_clients(gog)
     client = next((c for e, c in known if e.lower() == email.lower() and c in clients), None)
     if not clients:
-        ui.say('gog needs a Google OAuth client first. In the Google Cloud console: create a project, enable the Gmail\n'
+        ui.say('Google sign-in needs an OAuth client first. In the Google Cloud console: create a project, enable the Gmail\n'
                'and Google Calendar APIs, create an OAuth client of type "Desktop app" and download its JSON.\n'
                '(`gog auth setup` walks you through the same steps.)')
         path = ui.ask('Path to the downloaded client JSON')
@@ -1161,11 +1161,11 @@ def step_google(config, account, ui):
         client = account.get('client') or 'default'
         result = run([gog, 'auth', 'credentials', 'set', str(Path(path).expanduser()), '--client', client], timeout=30)
         if result.returncode:
-            raise SetupError('gog could not store the OAuth client', 'gog auth credentials set <file> --client ' + client)
+            raise SetupError('Google sign-in could not store the OAuth client', 'gog auth credentials set <file> --client ' + client)
     elif not client:
         client = account.get('client') if account.get('client') in clients else clients[0]
         if len(clients) > 1:
-            client = ui.choose('gog OAuth client', [(c, c) for c in clients])
+            client = ui.choose('Google OAuth client', [(c, c) for c in clients])
     account['client'] = client
     password = Path(config.setdefault('credentials', {}).setdefault('gog-password', str(data_dir(config) / 'gog-password'))).expanduser()
     if not password.exists():
@@ -1253,13 +1253,13 @@ def sign_in_web(config, account, gog, ui, args):
         ui.say('Checking what this Google sign-in may do now, to ask for the same again...')
         same = gog_same_scopes(config, gog, email, account['client'])
         if same is None:
-            raise SetupError(f'{email} is signed in to gog already, with access this page cannot ask for again',
+            raise SetupError(f'{email} is signed in to Google already, with access this page cannot ask for again',
                              f'run this in a terminal on this computer: assistant connect {service}')
         args = [gog, 'auth', 'add', email, '--client', account['client'], *same, '--force-consent']
     first = run(args + ['--remote', '--step', '1'], env=gog_env(config), timeout=60)
     url = next(iter(re.findall(r'https://accounts\.google\.com/\S+', first.stdout + '\n' + first.stderr)), None)
     if first.returncode or not url:
-        raise SetupError('gog could not start the Google sign-in', f'run this in a terminal on this computer: assistant connect {service}')
+        raise SetupError('The Google sign-in could not start', f'run this in a terminal on this computer: assistant connect {service}')
     ui.say('Open this address, sign in as ' + email + (' and allow access again.' if again else ' and allow read-only access.') + ' Google then sends you to an address '
            'that may not load: copy that whole address from the address bar.')
     ui.say(url)

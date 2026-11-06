@@ -10,6 +10,11 @@ The Machine or a coding agent may do.
 id. The list shows Undo for actions it knows (today only `ai_undo`, an AI's Graph change) and reloads after. The
 source does the undo and its checks; Activity only shows the button.
 
+**Names.** `where` names the service the owner knows (Gmail, WhatsApp, Google Calendar), never the tool underneath
+(gog, wacli, msgraph-cli): `account_label` names it through `machine/names.py`, and the list passes every line's
+`where` through `names.place` too, so a source that adds lines with `register()` can't show one. A message line names
+its channel already ("Email to …"), so its `where` is only the address or name it went from.
+
 ## Where each line comes from
 
 | kind | what | source (owner) |

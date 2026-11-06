@@ -121,6 +121,37 @@ class Activity(unittest.TestCase):
         self.assertEqual([(x['what'], x['status']) for x in lines], [('Connection removed', 'Removed'), ('Connection added', 'Added')])
         self.assertIn('sam@acme.example', lines[0]['where'])
 
+    def test_lines_name_the_service_never_the_tool_underneath(self):
+        """Settings, Activity read "21:17 · Gog · sam@… · Follow-up, sent by itself": an account with no service of
+        its own, only transport gog, showed its tool's name. A message line names its channel already, so it shows
+        only the address; other lines and connections name the service the owner knows, also ones kept before."""
+        self.config = {'accounts': [{'id': 'mail', 'transport': 'gog', 'email': 'sam@acme.example'},
+                                    {'id': 'cal', 'service': 'calendar', 'transport': 'gog', 'email': 'sam@acme.example'},
+                                    {'id': 'phone', 'service': None, 'transport': 'wacli-local', 'name': 'Phone'}]}
+        self.job(1, {'kind': 'email', 'to': ['Robin <robin@globex.example>'], 'subject': 'Pricing', 'account_id': 'mail'}, 'sent', '2026-10-30T09:00:00+00:00')
+        self.job(2, {'kind': 'whatsapp', 'to': 'Robin', 'account_id': 'phone'}, 'sent', '2026-10-30T10:00:00+00:00')
+        self.job(3, {'kind': 'calendar', 'label': 'Lunch moved', 'account_id': 'cal'}, 'sent', '2026-10-30T11:00:00+00:00')
+        with self.store.connect() as db:
+            activity_log.note_accounts(db, [GMAIL], '2026-10-30T08:00:00+00:00')
+            db.execute("INSERT INTO activity_accounts(account_id,service,label,added_at) VALUES('old','','Gog · old@acme.example','2026-10-30T12:00:00+00:00')")
+            activity_log.note_accounts(db, [GMAIL, self.config['accounts'][0]], '2026-10-30T13:00:00+00:00')
+        where = {x['id']: x['where'] for x in self.page()['items']}
+        self.assertEqual(where['messages:job1'], 'sam@acme.example')
+        self.assertEqual(where['messages:job2'], 'Phone')
+        self.assertEqual(where['calendar:job3'], 'Google Calendar · sam@acme.example')
+        self.assertEqual(where['connections:added:old'], 'Gmail · old@acme.example')
+        self.assertEqual(where['connections:added:mail'], 'Gmail · sam@acme.example')
+
+    def test_a_plugged_in_source_cannot_show_a_tool_name_either(self):
+        def lines(db, limit):
+            yield {'id': 'ai:1', 'kind': 'ai', 'at': '2026-10-30T09:00:00+00:00', 'what': 'list_todos', 'where': 'gog · sam@acme.example',
+                   'outcome': 'done', 'status': 'Done', 'by': None, 'todo': None, 'detail': None}
+            yield {'id': 'ai:2', 'kind': 'ai', 'at': '2026-10-30T10:00:00+00:00', 'what': 'list_todos', 'where': 'openclaw',
+                   'outcome': 'done', 'status': 'Done', 'by': None, 'todo': None, 'detail': None}
+        activity_log.register('ai', lines)
+        self.addCleanup(activity_log._sources.pop, 'ai', None)
+        self.assertEqual({x['id']: x['where'] for x in self.page(kind='ai')['items']}, {'ai:1': 'Gmail · sam@acme.example', 'ai:2': None})
+
     def test_another_module_plugs_in_as_one_more_kind_with_its_own_actor(self):
         def calls(db, limit):
             yield {'id': 'ai:1', 'kind': 'ai', 'at': '2026-10-30T09:00:00+00:00', 'what': 'list_todos', 'where': 'Claude',

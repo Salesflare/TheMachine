@@ -141,6 +141,7 @@ from shared_graph_app import SharedGraphApp
 from skills_app import SkillsApp
 from whatsapp_images_app import WhatsAppImagesApp
 from support_app import SupportApp
+from machine import names as display_names
 from machine.sources.rows import SKIPPED, Skips
 from machine.app.check_now import CheckNowApp
 from machine.app.export import ExportApp
@@ -18203,7 +18204,7 @@ class App(*APP_MIXINS):
         # Work handed to a coding agent (Hand to Claude Code / Codex): when it went, each change asked of it, and what came back
         jobs = db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='agent_jobs'").fetchone()  # only once agents are set up
         for r in db.execute('SELECT * FROM agent_jobs WHERE suggestion_id=? ORDER BY created_at', (suggestion_id,)) if jobs else []:
-            name, r = CHAT_AGENTS.get(r['tool'], str(r['tool']).capitalize()), dict(r)
+            name, r = display_names.agent_name(r['tool']), dict(r)
             def listed(key):
                 try:
                     found = json.loads(r.get(key) or '[]')

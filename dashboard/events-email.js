@@ -15,7 +15,7 @@ const eventIds=s=>{try{return Array.isArray(s.event_ids)?s.event_ids:JSON.parse(
 const svcOf=id=>(state?.connectors||[]).find(c=>c.id===id)?.service||'';
 const VIA_NAME={gmail:'Gmail',mail:'Email',slack:'Slack',whatsapp:'WhatsApp',telegram:'Telegram',linkedin:'LinkedIn',x:'X',intercom:'Intercom',gdocs:'Google Docs',file:'Doc',gcal:'Google Calendar',cal:'Calendar',handoff:'Hand off',browser:'Browser',github:'GitHub'};
 // On a button that already says what it does, the logo is only a picture (hidden from screen readers).
-const viaIco=(k,quiet)=>k?quiet?html`<i class="via-ico via-${k}" aria-hidden="true"></i>`:html`<i class="via-ico via-${k}" role="img" aria-label="${t(VIA_NAME[k]||k)}" title="${t(VIA_NAME[k]||k)}"></i>`:'';
+const viaIco=(k,quiet)=>k?quiet?html`<i class="via-ico via-${k}" aria-hidden="true"></i>`:html`<i class="via-ico via-${k}" role="img" aria-label="${t(VIA_NAME[k]||service(k)||'The source')}" title="${t(VIA_NAME[k]||service(k)||'The source')}"></i>`:'';
 const STEP_VIA={slack:'slack',whatsapp:'whatsapp',telegram:'telegram',linkedin:'linkedin',x:'x',intercom:'intercom',handoff:'handoff',finish:'browser'};
 // A final step on GitHub that runs with gh or a GitHub MCP server (github_route.py) shows GitHub's logo, else the browser.
 const actionVia=a=>a?.kind==='finish'&&['gh','mcp'].includes(a.via)?'github':['email','email_demo'].includes(a?.kind)?(svcOf(a.account_id)==='gmail'?'gmail':'mail'):a?.kind==='calendar'?(svcOf(a.account_id)==='calendar'?'gcal':'cal'):['doc_write','doc_reply'].includes(a?.kind)?(a.provider==='microsoft'?'file':'gdocs'):STEP_VIA[a?.kind]||'';

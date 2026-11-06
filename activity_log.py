@@ -47,6 +47,7 @@ import logging
 import re
 
 import i18n
+from machine import names
 
 LOG = logging.getLogger('personal-assistant')
 KINDS = ('messages', 'docs', 'calendar', 'web', 'fixes', 'agents', 'fleet', 'learnings', 'skills', 'graph', 'connections',
@@ -58,17 +59,11 @@ SCHEMA = ('CREATE TABLE IF NOT EXISTS activity_accounts(account_id TEXT PRIMARY 
           'added_at TEXT,removed_at TEXT,seen INTEGER NOT NULL DEFAULT 1)')
 BLOCKS = ('CREATE TABLE IF NOT EXISTS activity_blocks(job_id TEXT NOT NULL,at TEXT NOT NULL,reason TEXT,'
           'PRIMARY KEY(job_id,at))')
-SERVICES = {'gmail': 'Gmail', 'calendar': 'Google Calendar', 'outlook': 'Outlook', 'outlook_calendar': 'Outlook Calendar',
-            'slack': 'Slack', 'salesflare': 'Salesflare', 'android': 'Android', 'whatsapp': 'WhatsApp', 'telegram': 'Telegram',
-            'linkedin': 'LinkedIn', 'x': 'X', 'intercom': 'Intercom', 'zoom': 'Zoom', 'stripe': 'Stripe', 'github': 'GitHub',
-            'trello': 'Trello', 'shortcut': 'Shortcut', 'docs': 'Docs', 'google_meet': 'Google Meet', 'rss': 'RSS',
-            'gateway': 'Machine health'}
 MESSAGE_KINDS = {'email': 'Email', 'email_demo': 'Email', 'linkedin': 'LinkedIn', 'slack': 'Slack', 'x': 'X',
                  'whatsapp': 'WhatsApp', 'telegram': 'Telegram', 'intercom': 'Intercom', 'doc_reply': 'Docs'}
 # action_jobs.status -> outcome; anything else (queued, sending, local_preparation, undoing) is still on its way
 JOB_OUTCOME = {'sent': 'done', 'done': 'done', 'blocked': 'refused', 'failed': 'failed', 'uncertain': 'failed', 'finish_uncertain': 'failed',
                'cancelled': 'undone', 'undone': 'undone'}
-AGENTS = {'claude': 'Claude Code', 'claude_code': 'Claude Code', 'codex': 'Codex'}
 
 _sources = {}
 
@@ -103,12 +98,24 @@ def _clip(text, n=160):
     return text if len(text) <= n else text[:n - 1].rstrip() + '…'
 
 
+def account_who(account):
+    """The address or name an account goes by, or ''."""
+    return str(account.get('email') or account.get('label') or account.get('name') or account.get('slack_host') or '')
+
+
 def account_label(account):
-    """'Gmail · sam@acme.com': the service and the address or name it goes by."""
-    service = str(account.get('service') or account.get('transport') or '')
-    name = SERVICES.get(service) or service.replace('_', ' ').capitalize() or i18n.t('Connection')
-    who = account.get('email') or account.get('label') or account.get('name') or account.get('slack_host') or ''
+    """'Gmail · sam@acme.com': the service and the address or name it goes by. The service is what the owner calls it
+    (machine/names.py), never the tool underneath (an account with only transport 'gog' is Gmail)."""
+    name = names.service_name(names.account_service(account)) or i18n.t('Connection')
+    who = account_who(account)
     return f'{name} · {who}' if who else name
+
+
+def _stored_label(service, label):
+    """A connection line's label as kept in activity_accounts, named again on read: one kept before names.py could
+    say 'Gog · sam@acme.com' (an account with no service, only its transport)."""
+    who = label.split(' · ', 1)[1] if ' · ' in (label or '') else ''
+    return account_label({'service': service, 'email': who})
 
 
 def note_accounts(db, accounts, at):
@@ -125,7 +132,7 @@ def note_accounts(db, accounts, at):
         now_ids.add(aid)
         if aid not in known:
             db.execute('INSERT INTO activity_accounts(account_id,service,label,added_at) VALUES(?,?,?,?)',
-                       (aid, str(account.get('service') or ''), account_label(account), None if first else at))
+                       (aid, names.account_service(account), account_label(account), None if first else at))
         elif known[aid][1]:  # back after it was removed
             db.execute('UPDATE activity_accounts SET added_at=?,removed_at=NULL,label=? WHERE account_id=?', (at, account_label(account), aid))
         else:
@@ -212,7 +219,9 @@ def _jobs(db, config, limit, tables, kinds):
         else:
             what = label or {'calendar': i18n.t('Calendar change'), 'web': i18n.t('Step on the web'), 'fixes': i18n.t('Fix merged')}[kind]
         account = accounts.get(p.get('account_id'))
-        where = account_label(account) if account else ({'calendar': i18n.t('Calendar'), 'fixes': 'The Machine'}.get(kind)
+        # A message's line names its channel already ("Email to …", "Slack message to …"): its account is only the
+        # address or name it went from; other lines name the service too
+        where = (account_who(account) or account_label(account) if kind == 'messages' else account_label(account)) if account else ({'calendar': i18n.t('Calendar'), 'fixes': 'The Machine'}.get(kind)
                                                        or (_clip(p.get('from'), 80) or None))
         if kind == 'docs' and not account and p.get('provider'):
             where = {'google': 'Google Docs', 'microsoft': 'Word'}.get(p['provider'])
@@ -236,7 +245,7 @@ def _agents(db, limit, tables):
         return
     for r in db.execute('SELECT j.id,j.suggestion_id,j.tool,j.status,j.created_at,s.title FROM agent_jobs j '
                         'LEFT JOIN suggestions s ON s.id=j.suggestion_id ORDER BY j.created_at DESC LIMIT ?', (limit,)):
-        name = AGENTS.get(r['tool'], str(r['tool'] or '').capitalize())
+        name = names.agent_name(r['tool'])
         outcome = {'failed': 'failed', 'cancelled': 'undone'}.get(r['status'], 'done' if r['status'] in ('done', 'finished', 'ok') else 'pending')
         status = {'failed': i18n.t('Stopped'), 'undone': i18n.t('Canceled'), 'done': i18n.t('Done'), 'pending': i18n.t('Working')}[outcome]
         todo = {'id': r['suggestion_id'], 'title': _clip(r['title'], 120)} if r['title'] is not None else None
@@ -307,12 +316,12 @@ def _graph(db, limit, tables):
 def _connections(db, limit, tables):
     if 'activity_accounts' not in tables:
         return
-    for r in db.execute('SELECT account_id,label,added_at,removed_at FROM activity_accounts WHERE added_at IS NOT NULL OR removed_at IS NOT NULL '
+    for r in db.execute('SELECT account_id,service,label,added_at,removed_at FROM activity_accounts WHERE added_at IS NOT NULL OR removed_at IS NOT NULL '
                         "ORDER BY max(coalesce(added_at,''),coalesce(removed_at,'')) DESC LIMIT ?", (limit,)):
         if r['removed_at']:
-            yield _line('connections', 'removed:' + r['account_id'], r['removed_at'], i18n.t('Connection removed'), 'done', i18n.t('Removed'), r['label'])
+            yield _line('connections', 'removed:' + r['account_id'], r['removed_at'], i18n.t('Connection removed'), 'done', i18n.t('Removed'), _stored_label(r['service'], r['label']))
         if r['added_at']:
-            yield _line('connections', 'added:' + r['account_id'], r['added_at'], i18n.t('Connection added'), 'done', i18n.t('Added'), r['label'])
+            yield _line('connections', 'added:' + r['account_id'], r['added_at'], i18n.t('Connection added'), 'done', i18n.t('Added'), _stored_label(r['service'], r['label']))
 
 
 def _stamp(value):
@@ -375,6 +384,6 @@ def page(db, config=None, kind='', offset=0, limit=PAGE, outcome='', actor=''):
         found = {r[0] for r in db.execute("SELECT DISTINCT json_extract(payload,'$.kind') FROM action_jobs")}
         kinds.update(k for k, js in OUTBOX.items() if found & set(js))
     lines.sort(key=lambda x: _stamp(x.get('at')), reverse=True)
-    items = lines[offset:offset + limit]
+    items = [{**x, 'where': names.place(x['where'])} if x.get('where') else x for x in lines[offset:offset + limit]]
     more = len(lines) > offset + limit and offset + limit < MAX_OFFSET
     return {'items': items, 'next': offset + limit if more else None, 'kinds': [k for k in KINDS if k in kinds]}

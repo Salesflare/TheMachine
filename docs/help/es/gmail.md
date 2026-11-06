@@ -34,7 +34,7 @@ En tu propio ordenador, una vez [vinculado con tu cuenta](friends.md#a-machine-o
 1. En el panel, abre **Conexiones**, luego **+ Añadir**, y elige Gmail.
 2. Pulsa **Iniciar sesión con Google** e inicia sesión en la pestaña que se abre. Gmail y Google Calendar se conectan juntos.
 
-Sin vincular, o con tu propio cliente OAuth de Google: abre ahí **Usar tu propia app**, o ejecuta `assistant connect gmail`. Usa gog. Abre la dirección que muestra e inicia sesión.
+Sin vincular, o con tu propio cliente OAuth de Google: abre ahí **Usar tu propia app**, o ejecuta `assistant connect gmail`. Abre la dirección que muestra e inicia sesión.
 
 Puede que un administrador de Google Workspace tenga que permitir antes la app, en la Consola de administración.
 

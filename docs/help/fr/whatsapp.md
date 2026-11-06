@@ -38,7 +38,7 @@ Sur une Machine hébergée :
 
 Vous configurez sur votre téléphone, sans second écran pour scanner ? Ouvrez **Sur votre téléphone ? Associez avec un code**, saisissez votre numéro et appuyez sur **Obtenir un code**. WhatsApp vous demande ensuite ce code.
 
-Sur votre propre ordinateur, lancez `assistant connect whatsapp` et scannez le code affiché dans le terminal. Sans wacli, il propose d’installer la version épinglée de [Salesflare/wacli](https://github.com/Salesflare/wacli), vérifiée avec sa somme de contrôle.
+Sur votre propre ordinateur, lancez `assistant connect whatsapp` et scannez le code affiché dans le terminal. La première fois, il propose d’installer le connecteur WhatsApp, une version épinglée vérifiée avec sa somme de contrôle ([source](https://github.com/Salesflare/wacli)).
 
 Dans Appareils connectés, elle apparaît sous le nom The Machine. Une Machine connectée avant garde son ancien nom jusqu’à ce que vous la connectiez à nouveau.
 

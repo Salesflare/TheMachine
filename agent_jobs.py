@@ -54,6 +54,7 @@ import time
 import urllib.parse
 
 import error_feed
+from machine import names
 
 LOG = logging.getLogger('personal-assistant')
 TOOLS = {'claude': 'Claude Code', 'codex': 'Codex'}
@@ -1417,7 +1418,7 @@ def card_work(rows, folder=None, when=None, chars=700):
     lines = []
     for row in rows:
         job = dict(row)
-        name = TOOLS.get(job.get('tool'), str(job.get('tool') or 'The agent').capitalize())
+        name = names.agent_name(job.get('tool'))
         status = job.get('status')
         if status == 'result':
             head = f"{name} finished {when(job.get('finished_at') or job.get('updated_at'))}"
