@@ -80,6 +80,28 @@ class Reliability(unittest.TestCase):
         self.store.commit_page('li', {'mode': 'incremental', 'page_token': 'next'}, [])
         self.assertEqual(app.resume_wait(linkedin), 0)  # catching up: go now
 
+    def test_a_restart_spreads_salesflare_rounds_so_a_team_does_not_hit_its_slow_account_list_at_once(self):
+        # A release restarts a team's Machines together; each one starting Salesflare's activity-ordered account list
+        # at the same second answered 504. Its poll is short (300 s), yet after a finished round it waits out the gap
+        # plus a random spread; never read, or mid-round (the list already read), it goes now.
+        app = object.__new__(a.App)
+        app.config, app.store = {}, self.store
+        crm = {'id': 'crm', 'service': 'salesflare', 'poll_seconds': 300}
+        self.assertEqual(app.resume_wait(crm), 0)  # never read: go now
+        self.store.commit_page('crm', {'mode': 'incremental', 'watermark': '2026-11-05T12:11:23+00:00'}, [])
+        with patch.object(a.secrets, 'randbelow', return_value=0):
+            self.assertGreater(app.resume_wait(crm), 290)  # just finished a round: the normal gap
+        with patch.object(a.secrets, 'randbelow', side_effect=lambda n: n - 1) as spread:
+            self.assertGreater(app.resume_wait(crm), 290 + a.SALESFLARE_RESTART_SPREAD - 5)
+        spread.assert_called_once_with(a.SALESFLARE_RESTART_SPREAD + 1)
+        with self.store.connect() as db:
+            db.execute("UPDATE checkpoints SET last_success=?", ((a.dt.datetime.now(a.dt.timezone.utc) - a.dt.timedelta(hours=2)).isoformat(),))
+        with patch.object(a.secrets, 'randbelow', return_value=37):
+            self.assertEqual(app.resume_wait(crm), 37)  # overdue: only the spread
+        self.store.commit_page('crm', {'mode': 'incremental', 'window': {'pending': [1, 2], 'accounts': 9}}, [])
+        self.assertEqual(app.resume_wait(crm), 0)  # mid-round: its account list is read, the batches go now
+        self.assertEqual(app.resume_wait({'id': 'crm', 'service': 'gmail', 'poll_seconds': 300}), 0)  # other fast sources go now
+
     def test_restart_resumes_catchup_without_ignoring_x_budget_or_retry_deadline(self):
         app = object.__new__(a.App)
         app.config, app.store = {}, self.store

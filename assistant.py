@@ -583,6 +583,7 @@ def recover_browser(profile, own_cdp=False, config=None):
 TRANSIENT_REPORT_AFTER = 20
 QUICK_RETRY_SECONDS = 15
 QUICK_RETRY_MAX = 60  # a Retry-After longer than this waits in the checkpoint instead
+SALESFLARE_RESTART_SPREAD = 180  # seconds: team Machines restarted together start their Salesflare rounds apart
 
 
 # Owner decisions/feedback. Only the bridge's verified Telegram handlers and the
@@ -17768,18 +17769,24 @@ class App(*APP_MIXINS):
 
     def resume_wait(self, account):
         """Seconds until a slow source (polled every 10 minutes or less often: LinkedIn, X, CRM) is due
-        again after a restart. A restart alone must not cost an extra read; catch-up and new accounts go now."""
+        again after a restart. A restart alone must not cost an extra read; catch-up and new accounts go now.
+        Salesflare too, whatever its poll: a round starts with its account lists ordered by activity, which run close
+        to Salesflare's 2-minute gateway limit on a large team. A release restarts a team's Machines together, and
+        each one starting that list at the same second answered 504 (HTTP gateway timeout), so after a finished
+        round it waits out its gap plus a random spread. One mid-round goes now: its list is already read."""
         delay = account.get('poll_seconds', self.config.get('poll_seconds', 300))
-        if delay < 600:
+        crm = account.get('service') == 'salesflare'
+        if delay < 600 and not crm:
             return 0
         state = self.store.checkpoint(account['id']) or {}
         with self.store.connect() as db:
             row = db.execute('SELECT last_success FROM checkpoints WHERE account_id=?', (account['id'],)).fetchone()
         unfinished = state.get('page_token') or state.get('catchup') or state.get('coverage_complete') is False
-        if not row or not row['last_success'] or not state or state.get('mode') != 'incremental' or (unfinished and account.get('service') != 'x'):
+        if not row or not row['last_success'] or not state or state.get('mode') != 'incremental' or (unfinished and account.get('service') != 'x') \
+                or (crm and state.get('window')):
             return 0
         since = (dt.datetime.fromisoformat(now()) - dt.datetime.fromisoformat(row['last_success'])).total_seconds()
-        return max(0, min(delay, delay - since))
+        return max(0, min(delay, delay - since)) + (secrets.randbelow(SALESFLARE_RESTART_SPREAD + 1) if crm else 0)
 
     def wait_for_retry(self, account, row):
         """Wait until the checkpoint's retry time; True when stopping. An expired Google sign-in
