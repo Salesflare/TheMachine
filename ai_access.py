@@ -604,7 +604,7 @@ def bearer(db, header):
 
 
 def connections(db):
-    """Settings, AIs: each connection. official: its AI connected through the official app (its client registered
+    """Settings, Apps: each connection. official: its AI connected through the official app (its client registered
     the account's callback, OFFICIAL_CALLBACK)."""
     rows = db.execute('SELECT c.*,k.redirect_uris FROM ai_connections c LEFT JOIN ai_clients k ON k.id=c.client_id '
                       'ORDER BY c.created_at DESC').fetchall()

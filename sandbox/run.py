@@ -130,7 +130,7 @@ def fake_help(config, prompt, model=None, thinking=None):
 
 
 def seed_ai(app):
-    """Settings, AIs (ai_access.py): Claude connected through the official app for Work with Read & edit, ChatGPT for
+    """Settings, Apps (ai_access.py): Claude connected through the official app for Work with Read & edit, ChatGPT for
     Work with Read (each signed in twice, shown once), and a key
     for a script that only reads, with a few calls each and one refused. Writes only through ai_access."""
     import ai_access

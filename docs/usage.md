@@ -136,7 +136,7 @@ The to-dos on screen read their email ahead, so it opens at once. The service ke
 - **Security** and **Activity:** see [Activity](activity.md) for the list of everything The Machine did.
 - **Notifications:** where each kind of message reaches you, and your [work hours](#work-hours).
 - **Writing:** email signatures and **How you write**: a few lines per channel that drafts follow, read from your own messages and kept up to date by your notes and edits. Edit or remove any.
-- **Skills**, **AIs** (other AIs connected over MCP: [help](help/ai-connections.md)) and **Model**.
+- **Skills**, **Apps** (the phone apps, and other AIs connected over MCP: [help](help/ai-connections.md)) and **Model**.
 
 Links open a tab: `#settings`, `#settings/skills` or `#settings=skills` (also `account`, `general`, `security`, `activity`, `notify`, `writing`, `ai`, `model`; `hours` opens Notifications).
 

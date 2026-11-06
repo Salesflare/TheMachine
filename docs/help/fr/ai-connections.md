@@ -2,7 +2,7 @@
 title: Connecter d’autres IA
 area: connections
 summary: Laissez Claude, ChatGPT, Cursor, Codex ou GBrain lire vos tâches et votre Graph via MCP, chacun avec son accès et sa durée.
-covers: ai-connections, settings:ai
+covers: ai-connections, settings:apps
 code: ai_access.py, ai_app.py, pairing.py, ai_reach.py
 keywords: MCP, Claude, ChatGPT, Cursor, Codex, GBrain, connector, AI, OAuth
 order: 95
@@ -19,7 +19,7 @@ Un brouillon attend dans votre Machine jusqu’à ce que vous le lisiez et appuy
 
 ## En connecter une
 
-Ouvrez **Paramètres**, **IA**. **Ajouter dans ChatGPT** et **Ajouter dans Claude** viennent en premier. Sous **Ou ajoutez-la avec une adresse** se trouvent l’adresse de l’app officielle pour toutes les Machines, `https://mcp.themachine.computer/mcp`, et votre **Adresse privée (de bout en bout)**, `https://<votre nom>.mcp.themachine.computer/mcp`, chacune avec **Copier**.
+Ouvrez **Paramètres**, **Applis**. **Ajouter dans ChatGPT** et **Ajouter dans Claude** viennent en premier. Sous **Ou ajoutez-la avec une adresse** se trouvent l’adresse de l’app officielle pour toutes les Machines, `https://mcp.themachine.computer/mcp`, et votre **Adresse privée (de bout en bout)**, `https://<votre nom>.mcp.themachine.computer/mcp`, chacune avec **Copier**.
 
 Sur une Machine installée sur votre ordinateur, appuyez d’abord sur **Configurer** sous **Obtenir votre adresse**. Une page de votre compte s’ouvre : vérifiez qu’elle affiche le même code, confirmez et choisissez un nom. Votre Machine s’associe d’elle-même, sans redémarrage. Les deux façons en ont besoin.
 
@@ -49,7 +49,7 @@ L’app officielle est la voie la plus simple : une adresse pour tout le monde, 
 
 Avec votre adresse privée, tout est chiffré jusqu’à votre Machine. Le cloud ne fait que le transmettre et ne peut pas le lire.
 
-Dans tous les cas, c’est votre Machine qui décide. Seule une IA que vous avez approuvée sur sa page entre, avec l’accès que vous avez choisi. Dans **Paramètres**, **IA**, une IA venue par l’app officielle affiche **App officielle**.
+Dans tous les cas, c’est votre Machine qui décide. Seule une IA que vous avez approuvée sur sa page entre, avec l’accès que vous avez choisi. Dans **Paramètres**, **Applis**, une IA venue par l’app officielle affiche **App officielle**.
 
 ## Ce qu’elle voit
 
@@ -59,7 +59,7 @@ Les données Team Graph de vos coéquipiers ne vont jamais à une IA extérieure
 
 ## Messages
 
-**Messages** permet à une IA de chercher et lire vos e-mails, Slack, WhatsApp et autres chats. C’est désactivé tant que vous ne l’activez pas, sur la page où vous la connectez ou plus tard dans **Paramètres**, **IA**. Elle lit seulement : elle n’envoie, ne supprime et ne marque jamais rien.
+**Messages** permet à une IA de chercher et lire vos e-mails, Slack, WhatsApp et autres chats. C’est désactivé tant que vous ne l’activez pas, sur la page où vous la connectez ou plus tard dans **Paramètres**, **Applis**. Elle lit seulement : elle n’envoie, ne supprime et ne marque jamais rien.
 
 Elle ne lit que les messages de son domaine. Certains ne sortent jamais : codes à usage unique et liens de connexion, messages d’un tableau ou projet **Vous seul**, conversations que The Machine a jugées sensibles (affaires, RH, juridique, santé, argent), conversations que vous avez gardées privées, et messages supprimés.
 
@@ -69,7 +69,7 @@ Tant que Messages est activé, les modifications du Graph d’une IA en **Lectur
 
 ## Dans Paramètres
 
-Ouvrez **Paramètres**, **IA** pour voir chaque IA connectée une seule fois, avec son accès, son domaine, sa date de fin et sa dernière utilisation. **Messages** s’active et se désactive directement là. Appuyez sur **Modifier** pour changer son accès, son domaine ou sa durée. L’appel suivant en tient compte. **Activité** liste chaque appel, les refusés aussi. **Désactiver maintenant** la met en pause : toutes ses connexions se ferment, son historique reste. **Retirer** la supprime avec son historique.
+Ouvrez **Paramètres**, **Applis** pour voir chaque IA connectée une seule fois, avec son accès, son domaine, sa date de fin et sa dernière utilisation. **Messages** s’active et se désactive directement là. Appuyez sur **Modifier** pour changer son accès, son domaine ou sa durée. L’appel suivant en tient compte. **Activité** liste chaque appel, les refusés aussi. **Désactiver maintenant** la met en pause : toutes ses connexions se ferment, son historique reste. **Retirer** la supprime avec son historique.
 
 Si vous vous reconnectez à la même IA, la nouvelle autorisation remplace l’ancienne.
 

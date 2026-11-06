@@ -15,7 +15,7 @@ Abra **Configurações** pela engrenagem no topo. As abas:
 - **Notificações**: o que chega até você e onde, e o seu horário de trabalho. Veja [Notificações](notifications.md) e [Horário de trabalho](work-hours.md).
 - **Escrita**: assinaturas e como você escreve. Veja [Escrita](writing.md).
 - **Habilidades**: instruções que a sua Machine segue. Veja [Habilidades](skills.md).
-- **IAs**: Claude, ChatGPT e outras IAs que você conectou, e o que cada uma pode fazer. Veja [Conectar outras IAs](ai-connections.md).
+- **Apps**: os apps da The Machine para celular e depois Claude, ChatGPT e outras IAs que você conectou, e o que cada uma pode fazer. Veja [O app para celular](mobile-app.md) e [Conectar outras IAs](ai-connections.md).
 - **Modelo**: o que responde por você, e os limites dele. Veja [Modelo](model.md). Também **Codex e Claude Code**: veja [Passar para o Claude Code ou o Codex](hand-to-agent.md).
 
 Uma aba sem nada para mostrar fica escondida.

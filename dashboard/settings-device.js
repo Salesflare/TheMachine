@@ -93,7 +93,7 @@ function deviceSettings(){const {app}=deviceRows,small=app.querySelector('small'
  $('#push-test').hidden=!on;
  const text=!pushOK?(iosTab?'On iPhone and iPad, add it to your Home Screen first: Share, then Add to Home Screen.':'This browser can’t show notifications.'):blocked?t('Blocked in this browser.')+' '+blockedHint():on?'On for this device. One per to-do, even without Telegram.':'One per to-do, even without Telegram.';
  set(note,html`${text}${DEVICE_HELP}`);note.classList.toggle('device-blocked',blocked)}
-function deviceRender(){appPushFirst();const k=nudgeKind()||'',el=nudgeBox,h=k&&k+phonePush;if(el.dataset.h!==h){el.dataset.h=h;el.dataset.kind=k;setHTML(el,k?nudgeHTML():html``);el.hidden=!k}deviceSettings();renderNotify();phoneAppRender();setupRender()}
+function deviceRender(){appPushFirst();const k=nudgeKind()||'',el=nudgeBox,h=k&&k+phonePush;if(el.dataset.h!==h){el.dataset.h=h;el.dataset.kind=k;setHTML(el,k?nudgeHTML():html``);el.hidden=!k}deviceSettings();renderNotify();phoneAppRender();setupRender();appsRender()}
 // Settings, General, Phone app: how the mobile app finds this Machine (phone_app in assistant.py). Hosted or on The
 // Machine Network: it signs in with the account. Self-hosted and not on the Network: the same line, and folded under
 // "Not on the Network?" a QR code of the app's connect link and the address to type in. Not shown in the app itself,

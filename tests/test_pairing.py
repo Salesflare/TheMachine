@@ -1,4 +1,4 @@
-"""One-click pairing (pairing.py) and the address for AIs in Settings, AIs (ai_app.ai_reach): the signed request and
+"""One-click pairing (pairing.py) and the address for AIs in Settings, Apps (ai_app.ai_reach): the signed request and
 pickup, the sealed token opened only for this request, the token file 0600 and the config like `cli.py fleet-pair`,
 the Fleet starting live without a restart, and Unpair."""
 import importlib.util

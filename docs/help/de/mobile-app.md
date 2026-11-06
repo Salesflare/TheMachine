@@ -3,7 +3,7 @@ title: Die mobile App
 area: getting-started
 summary: The Machine als App auf iPhone und Android: Benachrichtigungen für deine Aufgaben und Teilen an The Machine aus jeder App.
 covers: mobile-app
-code: notify.py, assistant.py, file_text.py, dashboard/new-todo.js, dashboard/settings-device.js, dashboard/setup-card.js, sw.js, manifest.webmanifest
+code: notify.py, assistant.py, file_text.py, dashboard/new-todo.js, dashboard/settings-device.js, dashboard/setup-card.js, dashboard/settings-apps.js, sw.js, manifest.webmanifest
 order: 3
 keywords: ios, android, app store, play store, share sheet, share, phone, mobile, push
 ---
@@ -11,7 +11,7 @@ Die mobile App öffnet dein eigenes Dashboard, angemeldet wie im Web. Hol sie di
 
 Ab deinem ersten Besuch schlägt die kleine Aufgabe **Hol mehr aus The Machine heraus** oben in Aufgaben sie als Erstes vor. Im Browser auf dem Handy öffnet **Holen** ihren Store. Auf einem Computer zeigt sie einen QR-Code, der auf dem Handy den richtigen Store öffnet, mit Links zu beiden. In der App selbst erscheint sie nie.
 
-Auf jedem Handy öffnet [themachine.computer/app](https://themachine.computer/app) den richtigen Store, und **Einstellungen**, **Allgemein**, **Handy-App** hat immer den Link dazu.
+Auf jedem Handy öffnet [themachine.computer/app](https://themachine.computer/app) den richtigen Store, und **Einstellungen**, **Allgemein**, **Handy-App** hat immer den Link dazu. **Einstellungen**, **Apps** zeigt oben beide Stores, auf dem Handy nur seinen Store.
 
 ## Verbinden
 

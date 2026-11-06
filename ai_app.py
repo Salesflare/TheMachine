@@ -95,14 +95,14 @@ class AiApp:
             return self.ai_view(db)
 
     def ai_view(self, db):
-        """Settings, AIs. The address for AIs is reach['address'] (<name>.mcp.<domain>), not the dashboard's host."""
+        """Settings, Apps. The address for AIs is reach['address'] (<name>.mcp.<domain>), not the dashboard's host."""
         return {'connections': ai_access.connections(db), 'areas': self.ai_areas(),
                 'hosted': bool(self.config.get('manage_url')), 'reach': self.ai_reach()}
 
     # ------------------------------------------------------------------ the address for AIs, and pairing for it
 
     def ai_reach(self, fresh=False):
-        """Settings, AIs, top: this Machine's address for cloud AIs (https://<name>.mcp.themachine.computer/mcp), or what
+        """Settings, Apps, top: this Machine's address for cloud AIs (https://<name>.mcp.themachine.computer/mcp), or what
         is missing for one. Hosted: the dashboard host's name. Self-hosted: paired with the account, and the account's
         name (GET /api/fleet/ai-reach), kept REACH_FRESH. {'address', 'shared', 'paired', 'hosted', 'name', 'pairing', 'away'}
         shared: the official app's address (SHARED_ADDRESS), when the account can reach this Machine at its own address:
@@ -219,7 +219,7 @@ class AiApp:
         return {'state': state, 'reach': reach}
 
     def ai_unpair(self, args):
-        """Unpair (Settings, AIs): this Machine's token goes, the Fleet stops. The account keeps the device until it is
+        """Unpair (Settings, Apps): this Machine's token goes, the Fleet stops. The account keeps the device until it is
         disconnected there."""
         if self.config.get('manage_url'):
             raise ValueError(i18n.t('A hosted Machine stays on your account'))

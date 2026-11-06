@@ -5,7 +5,7 @@ import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
-// Settings, AIs: once the official app is ready (reach.shared), Add in ChatGPT and Add in Claude come first, links to
+// Settings, Apps: once the official app is ready (reach.shared), Add in ChatGPT and Add in Claude come first, links to
 // The Machine's listings in ChatGPT's plugins and Claude's connector directory (one click, nothing to paste) in a new
 // tab, on a hosted Machine and a paired self-hosted one alike. Folded under Or add it by address: both addresses with Copy
 // and the custom MCP server and connector steps. Not ready yet: both muted without a button, one line, Get your address.

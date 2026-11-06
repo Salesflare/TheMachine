@@ -16,7 +16,7 @@ passes the bytes on, so TLS ends here, with this Machine's own certificate.
    RETRY_MAX, or the CA's Retry-After when that is longer. Key and certificate stay next to the database (0600) and
    never leave the Machine; renewed with RENEW_DAYS left; gone on Unpair (drop).
 
-Needs the `cryptography` package; without it Settings, AIs says so and nothing here starts."""
+Needs the `cryptography` package; without it Settings, Apps says so and nothing here starts."""
 from __future__ import annotations
 
 import base64
@@ -47,7 +47,7 @@ try:
     from cryptography.hazmat.primitives.asymmetric.utils import decode_dss_signature
     from cryptography.x509.oid import NameOID
     AVAILABLE = True
-except ImportError:  # Settings, AIs: "Install the cryptography package to use this address"
+except ImportError:  # Settings, Apps: "Install the cryptography package to use this address"
     AVAILABLE = False
 
 LOG = logging.getLogger('personal-assistant')

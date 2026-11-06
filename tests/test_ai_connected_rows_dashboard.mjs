@@ -4,7 +4,7 @@ import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
-// Settings, AIs, Connected AIs: one row per AI (the server folds an official app's sign-ins into one: ai_access.fold),
+// Settings, Apps, Connected AIs: one row per AI (the server folds an official app's sign-ins into one: ai_access.fold),
 // with its name, its tag and one line (access, area, end date, last use), the Messages switch and Change on the row.
 // Change opens access, area, Extend, Activity, Turn off now and Remove; nothing of that shows before. Fits a phone.
 const dashboard=await dashboardPage();

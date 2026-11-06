@@ -6,7 +6,7 @@ import {navClick} from './nav-click.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
-// Settings in tabs: Account, General, Notifications (with Work hours), Writing, Skills, AIs (connected AIs), Model, each part of Settings in one. A Machine linked
+// Settings in tabs: Account, General, Notifications (with Work hours), Writing, Skills, Apps (the phone apps and connected AIs), Model, each part of Settings in one. A Machine linked
 // to a control plane account (hosted, or self-hosted and paired) gets Account first (test_account_dashboard.mjs); one
 // with no account has none. A tab with nothing to show is
 // left out. Links open a tab (#settings/skills, #settings=model), the URL follows the tab, and the last tab is kept.
@@ -44,7 +44,7 @@ try{
   await navClick(page.locator('#open-settings'));await page.locator('#settings-tabs [data-settings-tab="account"]:not([hidden])').waitFor();
   // hosted: Security holds Support access while it's on; it shows once opening Settings has asked for its state, so wait for it
   await page.locator('#settings-tabs [data-settings-tab="security"]:not([hidden])').waitFor();
-  assert.deepEqual(await tabs(page),['Account','General','Security','Activity','Notifications','Writing','Skills','AIs','Model']);
+  assert.deepEqual(await tabs(page),['Account','General','Security','Activity','Notifications','Writing','Skills','Apps','Model']);
   // Account first, a tab like the others; General has this device, and no account card (it's in Account now).
   assert.equal(await selected(page),'Account');assert.equal(await page.evaluate(()=>location.hash),'#settings/account');
   assert.equal(await visible(page,'#settings-acct'),true);assert.equal(await visible(page,'#theme-toggle'),false);
@@ -71,11 +71,13 @@ try{
   await navClick(page.locator('#open-settings'));assert.equal(await selected(page),'Model');
   await page.goto(base+'/#settings/skills');await page.locator('#settings-skills:visible').waitFor();assert.equal(await selected(page),'Skills');
   await page.goto(base+'/#settings=hours');await page.locator('#hours:visible').waitFor();assert.equal(await selected(page),'Notifications');  // an old Work hours link
+  await page.goto(base+'/#settings/ai');await page.locator('#settings-ai:visible').waitFor();assert.equal(await selected(page),'Apps');  // an old AIs link
+  assert.equal(await page.evaluate(()=>location.hash),'#settings/apps');assert.equal(await help(page),HELP+'ai-connections');
   await page.evaluate(()=>{location.hash='#settings/writing'});await page.locator('#signatures:visible').waitFor();
   assert.equal(await page.locator('#settings').isVisible(),true);
   // On your own computer: no Account tab, and a tab with nothing in it (no model reported) is left out.
   hosted=false;model=false;await page.goto('about:blank');await page.goto(base+'/#settings/model');await page.locator('#updated',{hasText:/\d/}).waitFor({state:'attached'});await page.locator('#settings:not([hidden])').waitFor();
-  assert.deepEqual(await tabs(page),['General','Activity','Notifications','Writing','Skills','AIs']);
+  assert.deepEqual(await tabs(page),['General','Activity','Notifications','Writing','Skills','Apps']);
   assert.equal(await selected(page),'General');assert.equal(await visible(page,'#settings-cloud'),true);
   // Self-hosted but paired with the Network: the Account tab too.
   paired=true;await page.goto('about:blank');await page.goto(base+'/#settings');await page.locator('#settings-tabs [data-settings-tab="account"]:not([hidden])').waitFor();

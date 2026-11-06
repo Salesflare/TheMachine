@@ -2,7 +2,7 @@
 title: Conectar outras IAs
 area: connections
 summary: Deixe Claude, ChatGPT, Cursor, Codex ou GBrain lerem suas tarefas e seu Graph por MCP, cada uma com seu acesso e prazo.
-covers: ai-connections, settings:ai
+covers: ai-connections, settings:apps
 code: ai_access.py, ai_app.py, pairing.py, ai_reach.py
 keywords: MCP, Claude, ChatGPT, Cursor, Codex, GBrain, connector, AI, OAuth
 order: 95
@@ -19,7 +19,7 @@ Um rascunho espera na sua Machine até você ler e tocar em **Enviar**. Uma IA c
 
 ## Conectar uma
 
-Abra **Configurações**, **IAs**. Primeiro vêm **Adicionar no ChatGPT** e **Adicionar no Claude**. Em **Ou adicione por endereço** ficam o endereço do app oficial para todas as Machines, `https://mcp.themachine.computer/mcp`, e seu **Endereço privado (ponta a ponta)**, `https://<seu nome>.mcp.themachine.computer/mcp`, cada um com **Copiar**.
+Abra **Configurações**, **Apps**. Primeiro vêm **Adicionar no ChatGPT** e **Adicionar no Claude**. Em **Ou adicione por endereço** ficam o endereço do app oficial para todas as Machines, `https://mcp.themachine.computer/mcp`, e seu **Endereço privado (ponta a ponta)**, `https://<seu nome>.mcp.themachine.computer/mcp`, cada um com **Copiar**.
 
 Numa Machine no seu próprio computador, toque antes em **Configurar** em **Obter seu endereço**. Abre uma página da sua conta: confira se ela mostra o mesmo código, confirme e escolha um nome. Sua Machine se pareia sozinha, sem reiniciar. Os dois jeitos precisam disso.
 
@@ -49,7 +49,7 @@ O app oficial é o jeito fácil: um endereço para todos, e sua conta encontra s
 
 Com seu endereço privado, tudo é criptografado até sua Machine. A nuvem só repassa e não consegue ler.
 
-De qualquer jeito, quem decide é sua Machine. Só entra uma IA que você aprovou na página dela, com o acesso que você escolheu. Em **Configurações**, **IAs**, uma IA que veio pelo app oficial mostra **App oficial**.
+De qualquer jeito, quem decide é sua Machine. Só entra uma IA que você aprovou na página dela, com o acesso que você escolheu. Em **Configurações**, **Apps**, uma IA que veio pelo app oficial mostra **App oficial**.
 
 ## O que ela vê
 
@@ -59,7 +59,7 @@ Os dados do Team Graph dos seus colegas nunca vão para uma IA de fora.
 
 ## Mensagens
 
-**Mensagens** deixa uma IA buscar e ler seu e-mail, Slack, WhatsApp e outros chats. Fica desativado até você ativar, na página onde você a conecta ou depois em **Configurações**, **IAs**. Ela só lê: nunca envia, apaga ou marca nada.
+**Mensagens** deixa uma IA buscar e ler seu e-mail, Slack, WhatsApp e outros chats. Fica desativado até você ativar, na página onde você a conecta ou depois em **Configurações**, **Apps**. Ela só lê: nunca envia, apaga ou marca nada.
 
 Ela só lê mensagens da sua área. Algumas nunca saem: códigos de uso único e links de login, mensagens de um quadro ou projeto **Só você**, conversas que The Machine considerou sensíveis (negócios, RH, jurídico, saúde, dinheiro), conversas que você manteve privadas e mensagens apagadas.
 
@@ -69,7 +69,7 @@ Enquanto Mensagens estiver ativado, as mudanças no Graph de uma IA com **Ler e 
 
 ## Em Configurações
 
-Abra **Configurações**, **IAs** para ver cada IA conectada uma vez só, com acesso, área, data de fim e último uso. **Mensagens** liga e desliga ali mesmo. Toque em **Mudar** para mudar o acesso, a área ou a duração. A próxima chamada já usa isso. **Atividade** lista cada chamada, as recusadas também. **Desativar agora** pausa a IA: todos os logins dela terminam, o histórico fica. **Remover** tira a IA junto com o histórico.
+Abra **Configurações**, **Apps** para ver cada IA conectada uma vez só, com acesso, área, data de fim e último uso. **Mensagens** liga e desliga ali mesmo. Toque em **Mudar** para mudar o acesso, a área ou a duração. A próxima chamada já usa isso. **Atividade** lista cada chamada, as recusadas também. **Desativar agora** pausa a IA: todos os logins dela terminam, o histórico fica. **Remover** tira a IA junto com o histórico.
 
 Se você entrar de novo na mesma IA, a nova aprovação substitui a anterior.
 

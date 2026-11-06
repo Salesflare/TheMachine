@@ -2,7 +2,7 @@
 title: Andere KIs verbinden
 area: connections
 summary: Lass Claude, ChatGPT, Cursor, Codex oder GBrain deine Aufgaben und deinen Graph über MCP lesen, jede mit eigenem Zugriff und Ablauf.
-covers: ai-connections, settings:ai
+covers: ai-connections, settings:apps
 code: ai_access.py, ai_app.py, pairing.py, ai_reach.py
 keywords: MCP, Claude, ChatGPT, Cursor, Codex, GBrain, connector, AI, OAuth
 order: 95
@@ -19,7 +19,7 @@ Ein Entwurf wartet in deiner Machine, bis du ihn liest und selbst auf **Senden**
 
 ## Eine verbinden
 
-Öffne **Einstellungen**, **KIs**. Zuerst kommen **In ChatGPT hinzufügen** und **In Claude hinzufügen**. Unter **Oder per Adresse hinzufügen** stehen die eine Adresse der offiziellen App für jede Machine, `https://mcp.themachine.computer/mcp`, und deine **Private Adresse (Ende-zu-Ende)**, `https://<dein Name>.mcp.themachine.computer/mcp`, jeweils mit **Kopieren**.
+Öffne **Einstellungen**, **Apps**. Zuerst kommen **In ChatGPT hinzufügen** und **In Claude hinzufügen**. Unter **Oder per Adresse hinzufügen** stehen die eine Adresse der offiziellen App für jede Machine, `https://mcp.themachine.computer/mcp`, und deine **Private Adresse (Ende-zu-Ende)**, `https://<dein Name>.mcp.themachine.computer/mcp`, jeweils mit **Kopieren**.
 
 Bei einer Machine auf deinem eigenen Computer tippst du zuerst unter **Adresse holen** auf **Einrichten**. Eine Seite in deinem Konto öffnet sich: Prüfe, ob sie denselben Code zeigt, bestätige und wähle einen Namen. Deine Machine verbindet sich selbst, ohne Neustart. Beide Wege brauchen das.
 
@@ -49,7 +49,7 @@ Die offizielle App ist der einfache Weg: eine Adresse für alle, und dein Konto 
 
 Mit deiner privaten Adresse ist alles bis zu deiner Machine verschlüsselt. Die Cloud reicht es nur weiter und kann es nicht lesen.
 
-So oder so entscheidet deine Machine. Nur eine KI, die du auf ihrer Seite freigegeben hast, kommt hinein, mit dem Zugriff, den du gewählt hast. In **Einstellungen**, **KIs** zeigt eine KI, die über die offizielle App kam, **Offizielle App**.
+So oder so entscheidet deine Machine. Nur eine KI, die du auf ihrer Seite freigegeben hast, kommt hinein, mit dem Zugriff, den du gewählt hast. In **Einstellungen**, **Apps** zeigt eine KI, die über die offizielle App kam, **Offizielle App**.
 
 ## Was sie sieht
 
@@ -59,7 +59,7 @@ Team-Graph-Daten deiner Teammitglieder gehen nie an eine KI von außen.
 
 ## Nachrichten
 
-Mit **Nachrichten** kann eine KI deine E-Mails, Slack, WhatsApp und andere Chats durchsuchen und lesen. Es ist aus, bis du es einschaltest, auf der Seite, auf der du sie verbindest, oder später in **Einstellungen**, **KIs**. Sie liest nur: Sie sendet, löscht oder markiert nie etwas.
+Mit **Nachrichten** kann eine KI deine E-Mails, Slack, WhatsApp und andere Chats durchsuchen und lesen. Es ist aus, bis du es einschaltest, auf der Seite, auf der du sie verbindest, oder später in **Einstellungen**, **Apps**. Sie liest nur: Sie sendet, löscht oder markiert nie etwas.
 
 Sie liest nur Nachrichten in ihrem Bereich. Manche gehen nie hinaus: Einmalcodes und Anmeldelinks, Nachrichten eines Boards oder Projekts **Nur du**, Verläufe, die The Machine als heikel eingestuft hat (Deals, Personal, Recht, Gesundheit, Geld), Verläufe, die du privat gehalten hast, und gelöschte Nachrichten.
 
@@ -69,7 +69,7 @@ Solange Nachrichten an ist, warten die Graph-Änderungen einer KI mit **Lesen un
 
 ## In den Einstellungen
 
-Öffne **Einstellungen**, **KIs**, um jede verbundene KI einmal zu sehen, mit Zugriff, Bereich, Enddatum und letzter Nutzung. **Nachrichten** schaltest du direkt dort ein und aus. Tippe auf **Ändern**, um ihren Zugriff, ihren Bereich oder die Dauer zu ändern. Der nächste Aufruf nutzt es. **Aktivität** zeigt jeden Aufruf, auch abgelehnte. **Jetzt ausschalten** pausiert sie: Alle Anmeldungen enden, ihr Verlauf bleibt. **Entfernen** nimmt sie samt Verlauf weg.
+Öffne **Einstellungen**, **Apps**, um jede verbundene KI einmal zu sehen, mit Zugriff, Bereich, Enddatum und letzter Nutzung. **Nachrichten** schaltest du direkt dort ein und aus. Tippe auf **Ändern**, um ihren Zugriff, ihren Bereich oder die Dauer zu ändern. Der nächste Aufruf nutzt es. **Aktivität** zeigt jeden Aufruf, auch abgelehnte. **Jetzt ausschalten** pausiert sie: Alle Anmeldungen enden, ihr Verlauf bleibt. **Entfernen** nimmt sie samt Verlauf weg.
 
 Meldest du dich bei derselben KI erneut an, ersetzt die neue Freigabe die frühere.
 

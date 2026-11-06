@@ -2,7 +2,7 @@
 title: Andere AI's koppelen
 area: connections
 summary: Laat Claude, ChatGPT, Cursor, Codex of GBrain je to-do's en Graph lezen via MCP, elk met eigen toegang en vervaldatum.
-covers: ai-connections, settings:ai
+covers: ai-connections, settings:apps
 code: ai_access.py, ai_app.py, pairing.py, ai_reach.py
 keywords: MCP, Claude, ChatGPT, Cursor, Codex, GBrain, connector, AI, OAuth
 order: 95
@@ -19,7 +19,7 @@ Een concept wacht in je Machine tot je het leest en zelf op **Versturen** drukt.
 
 ## Er een koppelen
 
-Open **Instellingen**, **AI's**. Eerst komen **Toevoegen in ChatGPT** en **Toevoegen in Claude**. Onder **Of voeg hem toe met een adres** staan het ene adres van de officiële app voor elke Machine, `https://mcp.themachine.computer/mcp`, en je **Privéadres (end-to-end)**, `https://<jouw naam>.mcp.themachine.computer/mcp`, elk met **Kopiëren**.
+Open **Instellingen**, **Apps**. Eerst komen **Toevoegen in ChatGPT** en **Toevoegen in Claude**. Onder **Of voeg hem toe met een adres** staan het ene adres van de officiële app voor elke Machine, `https://mcp.themachine.computer/mcp`, en je **Privéadres (end-to-end)**, `https://<jouw naam>.mcp.themachine.computer/mcp`, elk met **Kopiëren**.
 
 Op een Machine op je eigen computer druk je eerst op **Instellen** onder **Krijg je adres**. Er opent een pagina in je account: controleer of die dezelfde code toont, bevestig en kies een naam. Je Machine koppelt zichzelf, zonder herstart. Beide manieren hebben dit nodig.
 
@@ -49,7 +49,7 @@ De officiële app is de makkelijke weg: één adres voor iedereen, en je account
 
 Met je privéadres is alles versleuteld tot op je Machine. De cloud geeft het alleen door en kan het niet lezen.
 
-Hoe dan ook beslist je Machine. Alleen een AI die je op zijn pagina hebt goedgekeurd komt binnen, met de toegang die je koos. In **Instellingen**, **AI's** toont een AI die via de officiële app kwam **Officiële app**.
+Hoe dan ook beslist je Machine. Alleen een AI die je op zijn pagina hebt goedgekeurd komt binnen, met de toegang die je koos. In **Instellingen**, **Apps** toont een AI die via de officiële app kwam **Officiële app**.
 
 ## Wat hij ziet
 
@@ -59,7 +59,7 @@ Team Graph-gegevens van teamgenoten gaan nooit naar een AI van buiten.
 
 ## Berichten
 
-Met **Berichten** kan een AI je e-mail, Slack, WhatsApp en andere chats doorzoeken en lezen. Het staat uit tot je het aanzet, op de pagina waar je de AI koppelt of later in **Instellingen**, **AI's**. Het leest alleen: het verstuurt, verwijdert of markeert nooit iets.
+Met **Berichten** kan een AI je e-mail, Slack, WhatsApp en andere chats doorzoeken en lezen. Het staat uit tot je het aanzet, op de pagina waar je de AI koppelt of later in **Instellingen**, **Apps**. Het leest alleen: het verstuurt, verwijdert of markeert nooit iets.
 
 Het leest alleen berichten in zijn gebied. Sommige gaan nooit mee: eenmalige codes en inloglinks, berichten van een **Alleen jij**-bord of -project, gesprekken die The Machine gevoelig vond (deals, HR, juridisch, gezondheid, geld), gesprekken die je privé hield, en verwijderde berichten.
 
@@ -69,7 +69,7 @@ Zolang Berichten aanstaat, wachten de Graph-wijzigingen van een AI met **Lezen e
 
 ## In Instellingen
 
-Open **Instellingen**, **AI's** om elke gekoppelde AI één keer te zien, met zijn toegang, gebied, einddatum en laatste gebruik. **Berichten** zet je daar meteen aan en uit. Druk op **Wijzigen** om zijn toegang, zijn gebied of de duur aan te passen. De volgende oproep gebruikt het meteen. **Activiteit** toont elke oproep, ook geweigerde. **Nu uitzetten** pauzeert hem: al zijn logins stoppen, zijn geschiedenis blijft. **Verwijderen** haalt hem weg, met zijn geschiedenis.
+Open **Instellingen**, **Apps** om elke gekoppelde AI één keer te zien, met zijn toegang, gebied, einddatum en laatste gebruik. **Berichten** zet je daar meteen aan en uit. Druk op **Wijzigen** om zijn toegang, zijn gebied of de duur aan te passen. De volgende oproep gebruikt het meteen. **Activiteit** toont elke oproep, ook geweigerde. **Nu uitzetten** pauzeert hem: al zijn logins stoppen, zijn geschiedenis blijft. **Verwijderen** haalt hem weg, met zijn geschiedenis.
 
 Log je opnieuw in bij dezelfde AI, dan vervangt de nieuwe goedkeuring de vorige.
 
