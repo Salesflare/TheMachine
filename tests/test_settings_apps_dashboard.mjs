@@ -56,7 +56,7 @@ try{
    assert.equal(await page.locator('#settings-apps').isVisible(),false);assert.equal(await page.locator('#settings-tabs [aria-selected="true"]').innerText(),'Apps');
    // an old AIs link, and a tab kept from before the rename, open Apps
    store={published:true,ios:IOS,android:PLAY,phones:0};
-   await page.evaluate(()=>localStorage.setItem('settings-tab','ai'));await page.goto(base+'/#settings');await page.locator('#apps-list [data-app-store]').first().waitFor();
+   await page.evaluate(()=>localStorage.setItem('settings-tab','ai'));await page.goto('about:blank');await page.goto(base+'/#settings');await page.locator('#apps-list [data-app-store]').first().waitFor();
    assert.equal(await page.locator('#settings-tabs [aria-selected="true"]').innerText(),'Apps');
    await page.goto('about:blank');await page.goto(base+'/#settings/ai');await page.locator('#apps-list [data-app-store]').first().waitFor();
    assert.equal(await page.evaluate(()=>location.hash),'#settings/apps')}
