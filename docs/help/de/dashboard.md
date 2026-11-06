@@ -29,6 +29,12 @@ Passen die Aufgaben nicht hin, scrollt die ganze Seitenleiste als eine Spalte, A
 
 Auf dem Handy füllt ein Dialog wie **Diese E-Mail senden?** den ganzen Bildschirm: Titel und × bleiben oben, die Knöpfe unten, und nur, was dazwischen steht, scrollt. Das Nachrichtenfeld wächst in den freien Platz, und die Knöpfe bleiben beim Tippen erreichbar.
 
+## Hol mehr heraus
+
+Ab deinem ersten Besuch, sobald der erste Blick fertig ist, zeigt eine kleine Aufgabe oben in Aufgaben, was The Machine nützlicher macht: die App fürs Handy, Benachrichtigungen, WhatsApp, die App auf diesem Computer, ein weiteres Konto und weitere Verbindungen. Jede Zeile hat einen Knopf, der diesen Schritt erledigt, und hakt sich selbst ab, sobald er erledigt ist.
+
+Zeilen erscheinen nur, wo sie passen: keine Handy-App in der App selbst, kein Installieren auf dem Handy. Das × einer Zeile schließt sie für immer, auf jedem Gerät, und das × oben schließt die ganze Aufgabe. **Einstellungen**, **Allgemein**, **Dieses Gerät** hat dieselben Schalter.
+
 ## Neue Versionen
 
 Wenn eine neue Version des Dashboards bereit ist, lädt es nie neu, während du es benutzt. Beim Öffnen oder Neuladen lädt die App die neueste Version. Ein offenes Fenster lädt sie, sobald das Fenster im Hintergrund ist oder nach ein paar Minuten ohne Eingabe, und nie, solange etwas Getipptes noch nicht gespeichert oder gesendet ist oder ein Dialog offen ist. **Update bereit** oben lädt sie sofort. Ein Neustart deiner Machine verbindet nur neu.

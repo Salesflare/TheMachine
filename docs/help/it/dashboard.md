@@ -27,6 +27,12 @@ Se più attività lo usano, si ferma quella sulla scheda in primo piano. Su un t
 
 Sul telefono, una finestra come **Inviare questa email?** occupa tutto lo schermo: il titolo e × restano in alto, i pulsanti in basso, e scorre solo quello che sta in mezzo. Il riquadro del messaggio cresce nello spazio libero, e i pulsanti restano a portata mentre scrivi.
 
+## Ottieni di più
+
+Dalla prima visita, appena finita la prima occhiata, una piccola attività in cima alle Attività elenca ciò che rende The Machine più utile: l’app per il telefono, le notifiche, WhatsApp, l’app su questo computer, un altro account e altre connessioni. Ogni riga ha un pulsante che fa quel passaggio, e si spunta da sola una volta fatto.
+
+Le righe compaiono solo dove servono: niente app per il telefono dentro l’app, niente installazione su un telefono. La × di una riga la chiude per sempre, su ogni dispositivo, e la × in alto chiude l’intera attività. **Impostazioni**, **Generali**, **Questo dispositivo** ha gli stessi controlli.
+
 ## Nuove versioni
 
 Quando è pronta una nuova versione della dashboard, non si ricarica mai mentre la usi. Aprire o ricaricare l’app carica la versione più recente. Una finestra aperta la carica quando la finestra passa in secondo piano, o dopo qualche minuto senza input, e mai mentre c'è qualcosa di scritto non ancora salvato o inviato, o una finestra di dialogo aperta. **Aggiornamento pronto**, in alto, la carica subito. Un riavvio della tua Machine si limita a riconnettersi.

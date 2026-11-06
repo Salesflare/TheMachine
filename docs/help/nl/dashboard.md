@@ -27,6 +27,12 @@ Gebruiken meerdere to-do's de browser, dan stopt hij die op het tabblad vooraan.
 
 Op een telefoon vult een dialoogvenster zoals **Deze e-mail versturen?** het hele scherm: de titel en × blijven bovenaan, de knoppen onderaan, en alleen wat ertussen staat scrolt. Het berichtvak groeit mee met de vrije ruimte, en de knoppen blijven binnen bereik terwijl je typt.
 
+## Haal er meer uit
+
+Vanaf je eerste bezoek, zodra de eerste blik klaar is, staat bovenaan To-dos een kleine to-do met wat The Machine nuttiger maakt: de app voor je telefoon, meldingen, WhatsApp, de app op deze computer, nog een account en meer koppelingen. Elke rij heeft één knop die die stap doet, en vinkt zichzelf af zodra het klaar is.
+
+Rijen staan er alleen waar ze passen: geen telefoon-app in de app zelf, geen installeren op een telefoon. Het × op een rij sluit hem voorgoed, op elk apparaat, en het × bovenaan sluit de hele to-do. **Instellingen**, **Algemeen**, **Dit apparaat** heeft dezelfde knoppen.
+
 ## Nieuwe versies
 
 Als er een nieuwe versie van het dashboard klaar is, herlaadt het nooit terwijl je het gebruikt. Bij openen of herladen laadt de app de nieuwste versie. Een open venster laadt die zodra het venster op de achtergrond staat, of na een paar minuten zonder invoer, en nooit terwijl er iets getypt is dat nog niet bewaard of verstuurd is, of een dialoogvenster open staat. **Update klaar**, bovenaan, laadt het meteen. Een herstart van je Machine maakt alleen opnieuw verbinding.

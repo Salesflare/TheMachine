@@ -1,0 +1,28 @@
+/* The setup to-do at the top of To-dos (setup-card.js): one small card, a title with how many steps are done, tight rows of an icon, a short label, one button and an ×. */
+.setup-card{margin:0 0 var(--sp-4);padding:10px 14px 4px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow);font-size:var(--fs-sm);line-height:1.35}
+.setup-card[hidden],body.chat-open .setup-card{display:none}
+.setup-head{display:flex;align-items:center;gap:10px;min-height:32px}
+.setup-head strong{flex:1;min-width:0;color:var(--text);font-size:var(--fs-md);font-weight:var(--fw-strong)}
+.setup-count{flex:none;color:var(--muted);font-size:var(--fs-xs);font-variant-numeric:tabular-nums}
+.setup-card .setup-x{display:grid;place-items:center;flex:none;width:28px;height:28px;min-height:0;margin:0 -6px 0 -2px;padding:0;border:0;border-radius:50%;background:none;box-shadow:none;color:var(--faint);cursor:pointer;position:relative}
+.setup-card .setup-x::after{content:'';position:absolute;inset:-6px}
+.setup-card .setup-x:hover{background:var(--c-hover);color:var(--text)}
+.setup-x svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
+.setup-rows{margin:0;padding:0;list-style:none}
+.setup-row{display:flex;flex-wrap:wrap;align-items:center;gap:0 10px;padding:7px 0;border-top:1px solid var(--border)}
+.setup-ic{flex:none;width:20px;height:20px;fill:none;stroke:var(--muted);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.setup-label{display:flex;align-items:center;flex:1;min-width:0;min-height:30px;color:var(--text)}
+.setup-row.done .setup-ic{stroke:var(--mint)}
+.setup-row.done .setup-label{color:var(--muted)}
+.setup-card .setup-go{flex:none;min-height:30px;margin:0;padding:0 12px;font-size:var(--fs-xs);white-space:nowrap}
+.setup-qr{display:grid;gap:8px;flex:1 1 100%;padding:8px 0 6px 30px;color:var(--muted)}
+.setup-qr small{font-size:var(--fs-xs)}
+.setup-codes{display:flex;flex-wrap:wrap;align-items:center;gap:12px 16px}
+.setup-code{display:grid;justify-items:center;gap:8px}
+.setup-badges{display:grid;gap:8px}
+.setup-qr .connect-qr{width:104px;margin:0;padding:6px;border:1px solid var(--border);border-radius:8px}
+.store-badge{display:inline-flex;align-items:center;gap:7px;min-height:34px;padding:0 12px;border:1px solid #ffffff33;border-radius:8px;background:#000;color:#fff;font-size:var(--fs-xs);font-weight:var(--fw-strong);text-decoration:none;white-space:nowrap}
+.store-badge:hover{background:#1f1f1f;color:#fff}
+.store-badge svg{width:15px;height:15px;fill:currentColor}
+@media(max-width:1023px){.setup-card{margin-top:var(--sp-6)}}
+@media(max-width:560px){.setup-card{padding:8px 12px 2px}.setup-qr{padding-left:0}}

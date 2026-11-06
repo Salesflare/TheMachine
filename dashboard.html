@@ -47,6 +47,7 @@ try{if(localStorage.getItem('side')==='collapsed')root.dataset.side='collapsed'}
 /*@include dashboard/shell-sidebar.css*/
 /*@include dashboard/calendar-view.css*/
 /*@include dashboard/connections-newtodo.css*/
+/*@include dashboard/setup-card.css*/
 /*@include dashboard/shell-palette-help.css*/
 </style>
 <button type="button" class="update-float" id="update-float" data-update-ready hidden title="Load the new version" aria-label="Update ready, load the new version"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12a7 7 0 1 1-2.05-4.95M19 5v4h-4"/></svg><span>Update ready</span></button><div class="topbar" id="topbar"><button type="button" class="topbar-menu" id="drawer-open" aria-label="Open the menu" aria-controls="app-side" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M9.5 4.5v15"/></svg><span class="dot" id="drawer-dot" hidden></span></button><a class="topbar-title" href="#" id="topbar-title" aria-label="The Machine, to the top"><img src="brand/avatar.png" data-blink="brand/avatar-blink.png" alt="" width="22" height="22"><span>The Machine</span></a><button type="button" class="topbar-menu" id="find-open" aria-label="Search or type a command" title="Search or type a command" aria-haspopup="dialog"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/></svg></button></div><div class="drawer-scrim" id="drawer-scrim"></div>
@@ -585,6 +586,7 @@ $('#needs-you').onclick=e=>{const b=e.target.closest('[data-show]');if(!b)return
 /*@include dashboard/todos-review-live.js*/
 /*@include dashboard/shell-render.js*/
 /*@include dashboard/todos-list.js*/
+/*@include dashboard/setup-card.js*/
 /*@include dashboard/settings-device.js*/
 /*@include dashboard/todos-chat.js*/
 /*@include dashboard/shell-tabs.js*/

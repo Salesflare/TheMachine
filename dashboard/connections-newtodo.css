@@ -165,10 +165,8 @@ body:has(#browser-pane:not([hidden])) :is(#page-head,#needs-you,#notice,#limit-b
 /* A usage limit reached (state.model_pause), or reviews waiting for the budget (state.review_pause): the same quiet notice card, with an amber dot, at the top of every view. */
 #fixed-notice{display:grid;gap:var(--sp-2);margin-bottom:var(--sp-4)}#fixed-notice .notice-card{margin:0}.fixed-notice::before{content:"";flex:none;width:6px;height:6px;border-radius:50%;background:var(--mint)}
 .limit-banner{flex-wrap:nowrap;align-items:flex-start}.limit-banner::before{content:"";flex:none;width:6px;height:6px;margin-top:.55em;border-radius:50%;background:var(--amber)}
-.nudge-icon{flex:none;width:36px;height:36px;border-radius:9px}
 .nudge-text{flex:1 1 240px;min-width:0}.nudge-text>span{display:block}
 .nudge-text strong{display:block;margin-bottom:1px;color:var(--cream);font-size:var(--fs-md);font-weight:var(--fw-strong)}
-.nudge-steps{margin:2px 0 3px;padding-left:18px}.nudge-steps li{padding-left:2px}
 .ios-share{width:17px;height:17px;margin-left:2px;vertical-align:-3px;fill:none;stroke:var(--c-accent);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .nudge-act{display:flex;align-items:center;gap:4px;flex:none;margin-left:auto}
 .nudge-act button{min-height:0;margin:0;padding:6px 14px}
