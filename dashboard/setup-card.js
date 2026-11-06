@@ -2,7 +2,8 @@
 // the phone app, notifications, WhatsApp, the app on this computer, another mail account, more connections, then what
 // setup left out once it is relevant (state.setup_hints). At most SETUP_MAX rows; each has one button that does the step
 // itself, ticks off once done, and closes for good with its × (setup_dismiss, kept on the Machine so every device
-// agrees); the card's own × closes all of it. A row shows only where it applies: no phone app inside it, no
+// agrees, with Undo in the toast); the card's own × closes all of it. Closed rows come back with "Show 1 hidden" at the
+// card's foot, and everything (the card too) with Settings, General, Setup to-do (setup_restore). A row shows only where it applies: no phone app inside it, no
 // notifications where this browser can't have them, no installing on a phone or in Firefox, WhatsApp and another
 // account only on a hosted Machine (their sign-in runs there). From the first visit, once the first look is done; never
 // in a frame, except the site's demo (setup_card.demo: fixed rows, buttons that do nothing).
@@ -24,10 +25,10 @@ const STORE_PLAY='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22.018 1
 let setupQR=false;  // the phone row's QR code, open on a computer
 // The phone's own store on a phone's browser; null where there is none (a phone that is neither iPhone nor Android)
 const setupStore=()=>{const p=state?.phone_app_store||{},u=DEV.ios?p.ios:DEV.android?p.android:'';return /^https:\/\//.test(u||'')?u:null};
-// [{id, done, hint?}] in order, the rows that apply here and aren't closed
-function setupRows(){const s=state?.setup_card;if(!s)return [];
- if(s.demo)return (s.rows||[]).filter(r=>SETUP_ICON[r?.id]).slice(0,SETUP_MAX).map(r=>({id:r.id,done:!!r.done}));
- const closed=new Set(s.dismissed||[]),hosted=!!state.manage_url,p=state.phone_app_store,rows=[];
+// [{id, done, hint?}] in order, the rows that apply here and aren't closed (all: closed ones too, before the cut to SETUP_MAX)
+function setupRows(all=false){const s=state?.setup_card;if(!s)return [];const closed=new Set(all?[]:s.dismissed||[]);
+ if(s.demo){const rows=(s.rows||[]).filter(r=>SETUP_ICON[r?.id]&&!closed.has(r.id)).map(r=>({id:r.id,done:!!r.done}));return all?rows:rows.slice(0,SETUP_MAX)}
+ const hosted=!!state.manage_url,p=state.phone_app_store,rows=[];
  const add=(id,applies,done,hint)=>{if(applies&&!closed.has(id))rows.push({id,done:!!done,...(hint?{hint}:{})})};
  add('phone',!!p&&!DEV.phoneApp&&(DEV.mobile?!!setupStore():!!(p.ios||p.android)),s.phones>0);
  add('push',!DEV.phoneApp&&(pushOn()||pushOK&&devicePush.checked&&devicePush.perm!=='denied'&&devStore.get('push-off')!=='1'),pushOn());
@@ -36,9 +37,11 @@ function setupRows(){const s=state?.setup_card;if(!s)return [];
  add('account',hosted,s.mail_accounts>=2);
  add('connect',true,s.more);
  for(const h of state.setup_hints||[])if(h?.id&&/^[a-z0-9-]{1,40}$/.test(h.id))add('hint-'+h.id,true,false,h);
- return rows.slice(0,SETUP_MAX)}
-const setupLabel=r=>r.hint?r.hint.title:r.id==='account'?(state.setup_card?.add==='microsoft'?'Add another Microsoft account':'Add another Google account'):
- {phone:'Get the phone app',push:'Turn on notifications',whatsapp:'Connect WhatsApp',install:'Install on this computer',connect:'Add more connections'}[r.id];
+ return all?rows:rows.slice(0,SETUP_MAX)}
+// The closed rows that would still apply here and aren't done: what Show hidden brings back
+function setupHidden(){const closed=new Set(state?.setup_card?.dismissed||[]);return setupRows(true).filter(r=>closed.has(r.id)&&!r.done).length}
+const setupLabel=r=>r.hint?r.hint.title:
+ {phone:'Get the phone app',push:'Turn on notifications',whatsapp:'Connect WhatsApp',install:'Install on this computer',account:'Add another email account',connect:'Add more connections'}[r.id];
 const setupButton=r=>r.hint?r.hint.button||'Open':{phone:'Get it',push:'Turn on',whatsapp:'Connect',install:'Install',account:'Add',connect:'Browse'}[r.id];
 // On a computer: a QR code that opens the right store on the phone (one, or one per store before the redirect is live)
 function setupQRHTML(){const p=state?.phone_app_store||{},rows=v=>Array.isArray(v)?v.filter(r=>/^[01]+$/.test(r)):[];
@@ -49,24 +52,42 @@ function setupQRHTML(){const p=state?.phone_app_store||{},rows=v=>Array.isArray(
   each.length?html`<div class="setup-codes">${each.map(([q,b])=>html`<div class="setup-code">${qrSvg(rows(q))}${b}</div>`)}</div>`:'';
  // no code at all (a Machine from before): the two store links alone
  return html`<div class="setup-qr">${codes||html`<div class="setup-codes">${ios}${android}</div>`}${codes?html`<small>Scan with your phone’s camera.</small>`:''}</div>`}
-function setupHTML(rows){const done=rows.filter(r=>r.done).length,desk=!DEV.mobile;
+function setupHTML(rows){const done=rows.filter(r=>r.done).length,desk=!DEV.mobile,hidden=setupHidden();
  return html`<div class="setup-head"><strong>Get more out of The Machine</strong><span class="setup-count">${t('{} of {} done',done,rows.length)}</span><button type="button" class="setup-x" data-setup-close aria-label="Close" title="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17"/></svg></button></div><ul class="setup-rows">${
   rows.map(r=>html`<li class="setup-row${r.done?' done':''}" data-step="${r.id}">${setupSvg(r.done?'done':r.hint?'hint':r.id)}<span class="setup-label">${setupLabel(r)}</span>${r.done?'':html`<button type="button" class="setup-go" data-setup-go="${r.id}"${r.id==='phone'&&desk?html` aria-expanded="${setupQR}"`:''}>${setupButton(r)}</button><button type="button" class="setup-x" data-setup-dismiss="${r.id}" aria-label="Dismiss" title="Dismiss"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17"/></svg></button>`}${
-   r.id==='phone'&&desk&&setupQR&&!r.done?setupQRHTML():''}</li>`)}</ul>`}
+   r.id==='phone'&&desk&&setupQR&&!r.done?setupQRHTML():''}</li>`)}</ul>${hidden?html`<button type="button" class="setup-more" data-setup-restore="all">${t(['Show {} hidden','Show {} hidden'],hidden)}</button>`:''}`}
 function setupBox(){let el=$('#setup-card');if(el)return el;
  el=document.createElement('div');el.id='setup-card';el.className='setup-card';el.setAttribute('role','region');el.setAttribute('aria-label','Get more out of The Machine');el.hidden=true;
  const nudge=$('#device-nudge');if(nudge)nudge.after(el);else $('#inbox').prepend(el);
  el.addEventListener('click',setupClick);return el}
-function setupRender(){const s=state?.setup_card,el=setupBox();
- const rows=!s||s.closed||settingUp()||(DEV.framed&&!s.demo)?[]:setupRows();
+function setupRender(){const s=state?.setup_card,el=setupBox(),off=!s||settingUp()||(DEV.framed&&!s.demo);
+ const rows=off||s.closed?[]:setupRows();
  const show=rows.some(r=>!r.done),h=show?String(setupHTML(rows)):'';
- if(el.dataset.html!==h){setHTML(el,show?raw(h):html``);el.dataset.html=h}el.hidden=!show}
-async function setupDismiss(step){const s=state.setup_card;if(step==='card')s.closed=true;else s.dismissed=[...new Set([...(s.dismissed||[]),step])];setupRender();
+ if(el.dataset.html!==h){setHTML(el,show?raw(h):html``);el.dataset.html=h}el.hidden=!show;
+ setupSettings(!off&&(s.closed||!show)&&(s.closed||setupHidden()>0))}
+// Settings, General, Setup to-do: while the to-do is closed, or shows nothing but has closed rows, one row brings it all back
+function setupSettings(on){let sec=$('#settings-setup');
+ if(!on){if(sec)sec.hidden=true;return}
+ if(!sec){const at=$('#settings-browser');if(!at)return;sec=document.createElement('div');sec.id='settings-setup';
+  setHTML(sec,html`<div class="section-head"><h2>Setup to-do</h2></div><div class="list settings-list"><div><span class="grow"><strong>Get more out of The Machine</strong><small>Bring back the steps you closed, at the top of To-dos.</small></span><button type="button" data-setup-restore="all">Show again</button></div></div>`);
+  at.before(sec);sec.addEventListener('click',setupClick)}
+ sec.hidden=false}
+const setupPost=(action,step)=>request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action,args:{step}})});
+// After a ×: Undo in the toast for a while (the same as other dismissals), and where to find it again once the card is closed
+function setupUndoToast(step){toast(step==='card'?'Hidden. Settings can show it again.':'Hidden.');
+ $('#toast').append(htmlNodes(html` <button type="button" data-setup-undo="${step}">Undo</button>`));clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('show'),10000)}
+async function setupDismiss(step){const s=state.setup_card;if(step==='card')s.closed=true;else s.dismissed=[...new Set([...(s.dismissed||[]),step])];setupRender();setupUndoToast(step);
  if(s.demo)return;
- try{const r=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'setup_dismiss',args:{step}})});
-  if(r?.setup_card)state.setup_card=r.setup_card}catch(e){errCaught(e);toast(e.message,true)}setupRender()}
+ try{const r=await setupPost('setup_dismiss',step);if(r?.setup_card)state.setup_card=r.setup_card}catch(e){errCaught(e);toast(e.message,true)}setupRender()}
+// Undo (one row, or the card), Show hidden and Settings' Show again (all): back on the card, on every device
+async function setupRestore(step){const s=state?.setup_card;if(!s)return;
+ if(step==='all'){s.closed=false;s.dismissed=[]}else if(step==='card')s.closed=false;else s.dismissed=(s.dismissed||[]).filter(x=>x!==step);setupRender();
+ if(s.demo)return;
+ try{const r=await setupPost('setup_restore',step);if(r?.setup_card)state.setup_card=r.setup_card}catch(e){errCaught(e);toast(e.message,true)}setupRender()}
+$('#toast').addEventListener('click',e=>{const b=e.target.closest('[data-setup-undo]');if(!b)return;e.stopPropagation();$('#toast').classList.remove('show');setupRestore(b.dataset.setupUndo)},true);
 async function setupClick(e){const b=e.target.closest('button');if(!b)return;const s=state?.setup_card;if(!s)return;
  if(b.matches('[data-setup-close]'))return setupDismiss('card');
+ if(b.matches('[data-setup-restore]')){if(b.closest('#settings-setup'))toast('Back at the top of To-dos.');return setupRestore(b.dataset.setupRestore)}
  if(b.matches('[data-setup-dismiss]'))return setupDismiss(b.dataset.setupDismiss);
  const step=b.dataset.setupGo;if(!step)return;
  if(step==='phone'&&!DEV.mobile){setupQR=!setupQR;setupRender();return}  // the QR code opens right in the row
@@ -75,7 +96,7 @@ async function setupClick(e){const b=e.target.closest('button');if(!b)return;con
  if(hint){const u=String(hint.href||'');if(/^https:\/\//.test(u))window.open(u,'_blank','noopener');else if(/^#connect(?:=[a-z_]+|ions=add)$/.test(u))location.hash=u;return}
  if(step==='phone'){const u=setupStore();if(u)window.open(u,'_blank','noopener');return}
  if(step==='whatsapp'){location.hash='#connect=whatsapp';return}
- if(step==='account'){location.hash='#connect='+(s.add==='microsoft'?'microsoft':'google');return}
+ if(step==='account'){location.hash='#connections=add';return}  // the picker, with Google and Microsoft
  if(step==='connect'){location.hash='#connections=add';return}
  b.disabled=true;
  try{if(step==='push')await pushEnable();else if(step==='install'){if(installEvt)await appInstall();else toast(DEV.macSafari?'In Safari’s menu bar: File, then Add to Dock.':'Find Install in the browser’s menu.')}}

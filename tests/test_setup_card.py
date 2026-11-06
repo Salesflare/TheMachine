@@ -67,6 +67,32 @@ class SetupCard(unittest.TestCase):
             app.action('setup_dismiss', {'step': 'phone'})
         self.assertEqual(app.action('setup_dismiss', {'step': 'phone'}, owner_dashboard=True)['setup_card']['dismissed'], ['phone'])
 
+    def test_a_closed_row_or_the_whole_to_do_comes_back(self):
+        # Undo after a × (one row, or the card), and Show hidden / Settings' Show again (all of it)
+        for step in ('phone', 'whatsapp', 'hint-source-github', 'card'):
+            a.setup_dismiss(self.store, self.config, step)
+        card = a.setup_restore(self.store, self.config, 'phone')['setup_card']
+        self.assertEqual((card['dismissed'], card['closed']), (['hint-source-github', 'whatsapp'], True))
+        card = a.setup_restore(self.store, self.config, 'card')['setup_card']
+        self.assertEqual((card['dismissed'], card['closed']), (['hint-source-github', 'whatsapp'], False))
+        a.setup_restore(self.store, self.config, 'phone')  # not closed: fine
+        a.setup_dismiss(self.store, self.config, 'card')
+        card = a.setup_restore(self.store, self.config, 'all')['setup_card']
+        self.assertEqual((card['dismissed'], card['closed']), ([], False))
+        for bad in ('', 'tour', 'setup:%', '%', None):
+            with self.assertRaises(ValueError, msg=bad):
+                a.setup_restore(self.store, self.config, bad)
+
+    def test_only_the_owner_brings_a_step_back_on_the_dashboard(self):
+        app = object.__new__(a.App)
+        app.store, app.config = self.store, self.config
+        self.assertIn('setup_restore', a.DASHBOARD_ACTIONS)
+        self.assertIn('setup_restore', a.OWNER_ACTIONS)
+        a.setup_dismiss(self.store, self.config, 'phone')
+        with self.assertRaises(ValueError):
+            app.action('setup_restore', {'step': 'phone'})
+        self.assertEqual(app.action('setup_restore', {'step': 'phone'}, owner_dashboard=True)['setup_card']['dismissed'], [])
+
 
 if __name__ == '__main__':
     unittest.main()

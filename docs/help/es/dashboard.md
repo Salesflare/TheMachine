@@ -31,7 +31,9 @@ En un teléfono, un diálogo como **¿Enviar este correo?** ocupa toda la pantal
 
 Desde tu primera visita, cuando termina el primer vistazo, una pequeña tarea arriba en Tareas muestra lo que hace más útil a The Machine: la app del móvil, las notificaciones, WhatsApp, la app en este ordenador, otra cuenta y más conexiones. Cada fila tiene un botón que hace ese paso, y se marca sola cuando está hecho.
 
-Las filas solo aparecen donde tienen sentido: nada de app del móvil dentro de la app, nada de instalar en un móvil. La × de una fila la cierra para siempre, en todos los dispositivos, y la × de arriba cierra toda la tarea. **Ajustes**, **General**, **Este dispositivo** tiene los mismos controles.
+Las filas solo aparecen donde tienen sentido: nada de app del móvil dentro de la app, nada de instalar en un móvil. La × de una fila la cierra en todos los dispositivos, y la × de arriba cierra toda la tarea.
+
+**Deshacer** en el mensaje que sale después la recupera, igual que **Mostrar 1 paso oculto** al final de la tarea. Si cerraste toda la tarea, **Ajustes**, **General**, **Tarea de configuración** la recupera. **Ajustes**, **General**, **Este dispositivo** tiene los mismos controles, y ahí la app del móvil siempre tiene su enlace de descarga.
 
 ## Versiones nuevas
 

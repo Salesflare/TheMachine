@@ -31,7 +31,9 @@ Op een telefoon vult een dialoogvenster zoals **Deze e-mail versturen?** het hel
 
 Vanaf je eerste bezoek, zodra de eerste blik klaar is, staat bovenaan To-dos een kleine to-do met wat The Machine nuttiger maakt: de app voor je telefoon, meldingen, WhatsApp, de app op deze computer, nog een account en meer koppelingen. Elke rij heeft één knop die die stap doet, en vinkt zichzelf af zodra het klaar is.
 
-Rijen staan er alleen waar ze passen: geen telefoon-app in de app zelf, geen installeren op een telefoon. Het × op een rij sluit hem voorgoed, op elk apparaat, en het × bovenaan sluit de hele to-do. **Instellingen**, **Algemeen**, **Dit apparaat** heeft dezelfde knoppen.
+Rijen staan er alleen waar ze passen: geen telefoon-app in de app zelf, geen installeren op een telefoon. Het × op een rij sluit hem op elk apparaat, en het × bovenaan sluit de hele to-do.
+
+**Ongedaan maken** in het bericht erna haalt hem terug, net als **1 verborgen stap tonen** onderaan de to-do. Is de hele to-do gesloten, dan haalt **Instellingen**, **Algemeen**, **To-do om te starten** hem terug. **Instellingen**, **Algemeen**, **Dit apparaat** heeft dezelfde knoppen, en **Telefoonapp** daar heeft altijd **App downloaden**.
 
 ## Nieuwe versies
 

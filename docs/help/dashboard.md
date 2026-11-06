@@ -33,7 +33,9 @@ On a phone, a dialog like **Send this email?** fills the screen: its title and �
 
 From your first visit, once the first look is done, a small to-do at the top of To-dos lists what makes The Machine more useful: the phone app, notifications, WhatsApp, the app on this computer, another account and more connections. Each row has one button that does that step, and it ticks itself off once done.
 
-Rows show only where they fit: no phone app inside the app, no installing on a phone. The × on a row closes it for good, on every device, and the × at the top closes the whole to-do. **Settings**, **General**, **This device** keeps the same controls.
+Rows show only where they fit: no phone app inside the app, no installing on a phone. The × on a row closes it on every device, and the × at the top closes the whole to-do.
+
+**Undo** in the message after it brings it back, and so does **Show 1 hidden** at the bottom of the to-do. Once the whole to-do is closed, **Settings**, **General**, **Setup to-do** brings it back. **Settings**, **General**, **This device** keeps the same controls, and **Phone app** there always has **Get the app**.
 
 ## New versions
 

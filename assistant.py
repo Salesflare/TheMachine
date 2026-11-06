@@ -739,6 +739,7 @@ OWNER_ACTIONS = {
     'set_voice',
     'set_work_hours',
     'setup_dismiss',
+    'setup_restore',
     'tip_done',
     'undo_merge',
     'unmerge_fact',
@@ -1113,6 +1114,7 @@ DASHBOARD_ACTIONS = frozenset({
     'set_voice',
     'set_work_hours',
     'setup_dismiss',
+    'setup_restore',
     'tip_done',
     'undo_merge',
     'unmerge_fact',
@@ -14464,6 +14466,20 @@ def setup_dismiss(store, config, step):
     return {'setup_card': setup_card(store, config)}
 
 
+def setup_restore(store, config, step):
+    """A closed row of the setup to-do back (Undo after its ×), the whole to-do back (card), or everything closed back
+    (all: Show hidden, or Settings, General, Setup to-do). Returns the setup to-do as it is now."""
+    step = str(step or '')
+    if step != 'all' and not SETUP_STEP_RE.fullmatch(step):
+        raise ValueError('Unknown setup step')
+    with store.connect() as db:
+        if step == 'all':
+            db.execute("DELETE FROM milestones WHERE name LIKE 'setup:%'")
+        else:
+            db.execute('DELETE FROM milestones WHERE name=?', ('setup:' + step,))
+    return {'setup_card': setup_card(store, config)}
+
+
 def setup_hints(store, config, now=None):
     """[{id, title, text, href, button}] for a hosted Machine (manage_url), most relevant first; [] elsewhere."""
     manage = str(config.get('manage_url') or '')
@@ -18121,6 +18137,10 @@ class App(*APP_MIXINS):
             if not owner_dashboard:
                 raise ValueError('Only the owner closes a setup step, on the dashboard')
             return setup_dismiss(self.store, self.config, args.get('step'))
+        if name == 'setup_restore':
+            if not owner_dashboard:
+                raise ValueError('Only the owner brings back a setup step, on the dashboard')
+            return setup_restore(self.store, self.config, args.get('step'))
         if name == 'tip_done':
             if not owner_dashboard:
                 raise ValueError('Only the owner closes a tip, on the dashboard')

@@ -31,7 +31,9 @@ Sur un téléphone, une fenêtre comme **Envoyer cet e-mail ?** occupe tout l’
 
 Dès votre première visite, une fois le premier coup d’œil terminé, une petite tâche en haut des Tâches liste ce qui rend The Machine plus utile : l’app sur le téléphone, les notifications, WhatsApp, l’app sur cet ordinateur, un autre compte et d’autres connexions. Chaque ligne a un bouton qui fait cette étape, et se coche d’elle-même une fois faite.
 
-Les lignes n’apparaissent que là où elles ont du sens : pas d’app de téléphone dans l’app, pas d’installation sur un téléphone. Le × d’une ligne la ferme pour de bon, sur tous les appareils, et le × en haut ferme toute la tâche. **Paramètres**, **Général**, **Cet appareil** garde les mêmes réglages.
+Les lignes n’apparaissent que là où elles ont du sens : pas d’app de téléphone dans l’app, pas d’installation sur un téléphone. Le × d’une ligne la ferme sur tous les appareils, et le × en haut ferme toute la tâche.
+
+**Annuler** dans le message qui suit la fait revenir, tout comme **Afficher 1 étape masquée** en bas de la tâche. Une fois toute la tâche fermée, **Paramètres**, **Général**, **Tâche de démarrage** la fait revenir. **Paramètres**, **Général**, **Cet appareil** garde les mêmes réglages, et **App mobile** y propose toujours de télécharger l’app.
 
 ## Nouvelles versions
 
