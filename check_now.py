@@ -36,11 +36,13 @@ def fast(config, account):
 
 def reviews(db, queue, min_signals):
     """The status the owner cares about: when messages were last reviewed into to-dos and when the next review is due.
-    `queue` is the service's review_queue (how many wait and when the next review starts: at min_signals waiting, or
+    reviewing and reading: a review runs, or a mailbox's first import comes in, whoever started it (the first look, the
+    usual rhythm or a check), so Check now shows busy then too. `queue` is the service's review_queue (how many wait and when the next review starts: at min_signals waiting, or
     once the oldest waited max_wait_minutes); soon: the batch is (nearly) full, so it starts within minutes."""
     row = db.execute("SELECT max(finished_at) FROM review_runs WHERE status='ok'").fetchone()
     waiting = (queue or {}).get('waiting') or 0
     return {'reviewed': row[0] if row else None, 'reviewing': reviewing(db), 'waiting': waiting,
+            'reading': (queue or {}).get('why') == 'mail',  # a mailbox's first import still coming in
             'next_review': (queue or {}).get('starts_at') if waiting else None,
             'soon': bool(waiting) and waiting >= min_signals * 3 / 4}
 
