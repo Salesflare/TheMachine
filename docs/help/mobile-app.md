@@ -9,7 +9,7 @@ keywords: ios, android, app store, play store, share sheet, share, phone, mobile
 ---
 The mobile app opens your own dashboard, signed in as on the web. Get it on the [App Store](https://apps.apple.com/app/id6829875215) for iPhone and iPad, or on [Google Play](https://play.google.com/store/apps/details?id=computer.themachine.app) for Android.
 
-From your first visit, the small **Get more out of The Machine** to-do at the top of To-dos suggests it first. On a phone's browser, **Get it** opens its store. On a computer it shows a QR code that opens the right store on the phone, with links to both. Inside the app it never shows.
+The **Get more out of The Machine** to-do at the top of To-dos suggests it. In a phone's browser, **Get it** opens the store. On a computer it shows a QR code to scan with your phone, and links to both stores.
 
 On any phone, [themachine.computer/app](https://themachine.computer/app) opens the right store, and **Settings**, **General**, **Phone app** always has **Get the app**. **Settings**, **Apps** has both stores at the top, or just your phone's store on a phone.
 
@@ -25,9 +25,9 @@ The app then asks your own Machine for the to-do's title and next step, like "Re
 
 A notification has **Snooze** (until tomorrow) and **Mark done**, and **Prepare** for a to-do not started yet. They work after you unlock the phone, without opening the app. Sending and final steps always open the app. One notification per to-do: "Preparing" turns into "Ready", and it goes away once the to-do is done or snoozed, here or anywhere.
 
-A last step you confirmed that went through says **Done** with what happened, until you tap **Got it** on the To-dos page. On iPhone that can wait until you next open the app.
+When a step you confirmed goes through, its notification says **Done** and what happened, until you tap **Got it** on To-dos. On iPhone that can wait until you next open the app.
 
-With **Text in notifications** off in **Settings**, **Security**, it keeps the fixed line. When your phone hides sensitive notification content on the lock screen, only the fixed line shows there. A notification is never just a title: when there is nothing it may show, it says "Tap to open." under it.
+With **Text in notifications** off in **Settings**, **Security**, it keeps the fixed line. So does a lock screen that hides notification content. When there's nothing it may show, it says "Tap to open."
 
 They follow the same rules as push on the web: what you picked per kind in [Notifications](notifications.md), your [work hours](work-hours.md), and nothing while you are using a dashboard.
 
