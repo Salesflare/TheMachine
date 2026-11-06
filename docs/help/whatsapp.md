@@ -40,7 +40,7 @@ Setting up on your phone, with no second screen to scan from? Open **On your pho
 
 On your own computer: open **Connections**, then **+ Add**, pick WhatsApp, enter your phone number with its country code and press **Connect**. It shows a code. On your phone, in WhatsApp, open Settings, Linked devices, Link a device, then **Link with phone number instead**, and enter the code.
 
-Or run `assistant connect whatsapp` and scan the code it shows in the terminal. Without wacli, it offers to install the pinned build from [Salesflare/wacli](https://github.com/Salesflare/wacli), checked against its checksum.
+Or run `assistant connect whatsapp` and scan the code it shows in the terminal. The first time, it offers to install the WhatsApp connector, a pinned build checked against its checksum ([source](https://github.com/Salesflare/wacli)).
 
 Under Linked devices, it shows as The Machine. A Machine linked before keeps its old name there until you link it again.
 

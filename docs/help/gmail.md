@@ -36,7 +36,7 @@ On your own computer, once it's [paired with your account](friends.md#a-machine-
 1. In the dashboard, open **Connections**, then **+ Add**, and pick Gmail.
 2. Press **Sign in with Google** and sign in in the tab that opens. Gmail and Google Calendar connect together.
 
-Not paired, or with your own Google OAuth client: open **Use your own app** there, or run `assistant connect gmail`. It uses gog. Open the address it shows and sign in.
+Not paired, or with your own Google OAuth client: open **Use your own app** there, or run `assistant connect gmail`. Open the address it shows and sign in.
 
 A Google Workspace admin may have to allow the app first, in the Admin console.
 

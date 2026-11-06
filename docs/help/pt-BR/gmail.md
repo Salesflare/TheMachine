@@ -34,7 +34,7 @@ No seu próprio computador, depois de [pareado com a sua conta](friends.md#a-mac
 1. No painel, abra **Conexões**, depois **+ Adicionar**, e escolha Gmail.
 2. Toque em **Entrar com o Google** e entre na aba que abrir. O Gmail e o Google Calendar se conectam juntos.
 
-Sem pareamento, ou com o seu próprio cliente OAuth do Google: abra **Usar seu próprio app** ali, ou rode `assistant connect gmail`. Ele usa o gog. Abra o endereço que ele mostra e entre.
+Sem pareamento, ou com o seu próprio cliente OAuth do Google: abra **Usar seu próprio app** ali, ou rode `assistant connect gmail`. Abra o endereço que ele mostra e entre.
 
 Um administrador do Google Workspace pode precisar liberar o app antes, no Admin console.
 

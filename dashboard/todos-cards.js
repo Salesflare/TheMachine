@@ -33,7 +33,7 @@ function readableError(v){if(!v)return 'Sync error';const m=/^([a-z]+)[_:](.+)$/
 // The service busy (google_meet_http:HTTP_503, docs_drive:HTTP_429): the service by its full name, which can have a _ in it
 const busy=/:HTTP_(5\d\d|429)$/.exec(v);if(busy){const k=Object.keys(SERVICE_NAMES).filter(s=>v.startsWith(s)).sort((a,b)=>b.length-a.length)[0],who=k?SERVICE_NAMES[k]:t('The source');
  return busy[1]==='429'?t('{} asked to slow down',who):t('{} had a problem on its side',who)}
-if(/signed_out$/.test(what))return 'Signed out of '+name;
+if(/signed_out$/.test(what))return name?'Signed out of '+name:'Signed out';
 if(TELEGRAM_STOP[v])return TELEGRAM_STOP[v];
 if(v==='docs_not_connected')return 'Reading docs needs its own OK';
 if(v==='docs_no_signin')return 'Sign in with Microsoft for this address';
@@ -49,7 +49,10 @@ if(/read_failed$/.test(what))return name?t('Couldnâ€™t read {}',name):t('Couldnâ
 if(/^HTTP_5/.test(what))return t('{} had a problem on its side',name||t('The source'));
 const words=v.replace(/[_:]+/g,' ').trim();return words[0].toUpperCase()+words.slice(1)}
 const SERVICE_NAMES={gmail:'Email',calendar:'Calendar',outlook:'Outlook',outlook_calendar:'Outlook Calendar',slack:'Slack',salesflare:'Salesflare CRM',whatsapp:'WhatsApp',telegram:'Telegram chats',linkedin:'LinkedIn',android:'Android notifications',gateway:'Machine health',github:'GitHub',intercom:'Intercom',zoom:'Zoom',google_meet:'Google Meet',trello:'Trello',stripe:'Stripe',rss:'Feed',docs:'Microsoft OneDrive',shortcut:'Shortcut',x:'X'};
-const service=v=>SERVICE_NAMES[v]||v;
+// The tools underneath (gog, wacli, msgraph-cli, the OpenClaw feed) are never a name on screen: one of their keys from
+// data reads as nothing, and the line says the source instead (the same list as machine/names.py INTERNAL)
+const INTERNAL_NAME=/^(?:gog(?:cli)?|wacli|himalaya|msgraph(?:[-_]cli)?|openclaw|codex[-_]cli|gh|journald|maton|broker|api|rest|existing_\w+|[a-z]+[-_](?:feed|local|inbox|rest|store|mirror))(?:[-_][\w-]*)?$/i;
+const service=v=>SERVICE_NAMES[v]||(INTERNAL_NAME.test(String(v||'').trim())?'':v);
 const label=v=>({pending:'Needs your decision',accepted:'Accepted',prepared:'Ready for you',rejected:'Not needed',snoozed:'Later',instructions:'Changes requested',completed:'Done'}[v]||v);
 const tone=v=>({pending:'amber',accepted:'lavender',instructions:'lavender',prepared:'mint',snoozed:'lavender',completed:'mint',rejected:'muted'}[v]||'muted');
 // A blocker waiting on the owner (a sign-in in the kept tab) resumes with Continue; same rule as the service.

@@ -40,7 +40,7 @@ Du richtest es auf deinem Handy ein und hast keinen zweiten Bildschirm zum Scann
 
 Auf deinem eigenen Computer: Öffne **Verbindungen**, dann **+ Hinzufügen**, wähle WhatsApp, gib deine Handynummer mit Ländervorwahl ein und tippe auf **Verbinden**. Es zeigt einen Code. Öffne auf deinem Handy in WhatsApp Einstellungen, Verknüpfte Geräte, Gerät hinzufügen, dann **Stattdessen mit Telefonnummer verknüpfen**, und gib den Code ein.
 
-Oder führe `assistant connect whatsapp` aus und scanne den Code, den es im Terminal zeigt. Ohne wacli bietet es an, den festgelegten Build von [Salesflare/wacli](https://github.com/Salesflare/wacli) zu installieren, geprüft anhand seiner Prüfsumme.
+Oder führe `assistant connect whatsapp` aus und scanne den Code, den es im Terminal zeigt. Beim ersten Mal bietet es an, die WhatsApp-Verbindung zu installieren, einen festgelegten Build, geprüft anhand seiner Prüfsumme ([Quelle](https://github.com/Salesflare/wacli)).
 
 Unter Verknüpfte Geräte steht sie als The Machine. Eine früher verknüpfte Machine behält dort ihren alten Namen, bis du sie neu verknüpfst.
 

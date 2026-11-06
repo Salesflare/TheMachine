@@ -38,7 +38,7 @@ Su una Machine ospitata:
 
 Stai configurando dal telefono, senza un secondo schermo da cui scansionare? Apri **Sei sul telefono? Collegati con un codice**, inserisci il tuo numero e premi **Ottieni un codice**. WhatsApp poi ti chiede quel codice.
 
-Sul tuo computer, esegui `assistant connect whatsapp` e scansiona il codice che mostra nel terminale. Senza wacli, si offre di installare la build fissata da [Salesflare/wacli](https://github.com/Salesflare/wacli), verificata con il suo checksum.
+Sul tuo computer, esegui `assistant connect whatsapp` e scansiona il codice che mostra nel terminale. La prima volta, si offre di installare il connettore di WhatsApp, una build fissata verificata con il suo checksum ([sorgente](https://github.com/Salesflare/wacli)).
 
 In Dispositivi collegati appare come The Machine. Una Machine collegata prima mantiene lì il suo vecchio nome finché non la colleghi di nuovo.
 
