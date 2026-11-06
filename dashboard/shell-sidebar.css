@@ -226,6 +226,8 @@ body main{padding-top:0}
   .page-head.greet .page-sub{margin:0;font-size:var(--fs-md)}
   /* With cards a phone starts at the first section head (they carry the counts); all clear keeps its line */
   .page-head.greet.busy{margin:0}.page-head.greet.busy .page-sub{display:none}
+  /* ...but the Check now row is a block of its own: what comes under it (the offline bar) keeps the header's usual gap */
+  .page-head.greet.busy:has(.check-now){margin-bottom:var(--sp-4)}
   /* The hello shows on a phone too, over the to-dos */
   .page-head.greet.hello{margin:6px 0 18px}
   .page-head.greet.hello .page-title{position:static;width:auto;height:auto;overflow:visible;clip-path:none;white-space:normal}
