@@ -16739,8 +16739,10 @@ class App(*APP_MIXINS):
             except ValueError:
                 pass  # read again at the next send
             return self.signature_view()
+        # Judged once cleaned: a signature pasted from Outlook or Word carries markup that cleaning drops; cut short, it
+        # would be stored broken.
         value = str(args.get('html') or '')
-        if len(value) > signatures.MAX_HTML:
+        if len(value) > signatures.MAX_PASTED or len(signatures.clean(value, signatures.MAX_PASTED, None)) > signatures.MAX_HTML:
             raise ValueError('That signature is too long')
         signatures.save(self.config, account['id'], value, 'owner')
         return self.signature_view()

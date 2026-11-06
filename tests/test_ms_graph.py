@@ -617,6 +617,15 @@ class Signatures(Base):
         self.assertEqual(signatures.get(self.config, 'acme-gmail'), {**signatures.get(self.config, 'acme-gmail'), 'html': '<i>Mine</i>', 'source': 'owner'})
         app.signature_action('detect_signature', {'account_id': 'acme-gmail'})
         self.assertEqual(signatures.get(self.config, 'acme-gmail')['html'], '<i>Mine</i>')
+        # One pasted from Outlook: longer than what is kept, all of it Word markup that cleaning drops; saved whole.
+        word = ('<!--[if gte mso 9]><xml><o:OfficeDocumentSettings><o:AllowPNG/></o:OfficeDocumentSettings></xml><![endif]-->'
+                '<p class="MsoNormal x_MsoNormal" lang="EN-US"><span class="x_MsoHyperlink"><o:p>&nbsp;</o:p></span></p>') * 150 + '<b>Alex Smith</b>'
+        self.assertGreater(len(word), signatures.MAX_HTML)
+        app.signature_action('set_signature', {'account_id': 'acme-outlook', 'html': word})
+        self.assertTrue(signatures.get(self.config, 'acme-outlook')['html'].endswith('<b>Alex Smith</b>'))
+        with self.assertRaisesRegex(ValueError, 'too long'):  # too long once cleaned: refused, never stored cut short
+            app.signature_action('set_signature', {'account_id': 'acme-outlook', 'html': '<b>x</b>' * 3000})
+        app.signature_action('set_signature', {'account_id': 'acme-outlook', 'use_mailbox': True})
         view = app.signature_action('set_signature', {'account_id': 'acme-gmail', 'use_mailbox': True})
         self.assertEqual(next(v for v in view if v['account_id'] == 'acme-gmail')['source'], 'imported')
         self.assertEqual(signatures.get(self.config, 'acme-gmail')['html'], '<b>Alex</b><img>')
