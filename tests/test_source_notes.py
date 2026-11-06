@@ -82,5 +82,30 @@ class PromptsCarryTheirNotes(unittest.TestCase):
         self.assertNotIn('**Intercom**',message)  # connected, but not this card's source
 
 
+class OlderMailInEveryChat(unittest.TestCase):
+    """A mail older than what is collected (one the owner sent weeks ago) is looked up in the mailbox itself, read-only
+    (App.mailbox_lookup), from the main chat and from an Outlook to-do's chat too, not only a Gmail to-do's run."""
+    def test_outlook_to_dos_learn_the_mailbox_search(self):
+        text=a.source_notes(['outlook'])
+        self.assertIn('mailbox:true',text);self.assertIn('read-only',text)
+        self.assertIn('mailbox:true',a.source_notes(['gmail']))
+
+    def test_the_main_chat_is_told_to_search_the_mailbox_before_saying_a_mail_is_not_there(self):
+        plugin=(a.ROOT/'openclaw-plugin/index.ts').read_text()
+        self.assertIn("'events'",plugin.split('const TOOL_ACTIONS',1)[1].split('\n',1)[0])
+        tool=plugin.split("name: 'assistant_signals'",1)[1].split('parameters:',1)[0]
+        self.assertIn('events with mailbox:true',tool);self.assertIn('read-only',tool)
+        self.assertIn('never say a mail isn’t there before both searches',tool)
+
+    def test_a_chat_search_of_every_account_reaches_the_mailboxes(self):
+        app=object.__new__(a.App)
+        app.config={'accounts':[{'id':'work'},{'id':'home','service':'outlook'}]}
+        calls=[]
+        app.mailbox_lookup=lambda ids,query,limit=5:calls.append((list(ids),query,limit)) or ([],{})
+        found=app.action('events',{'account_ids':['all'],'mailbox':True,'query':'to:sam in:sent'})
+        self.assertEqual(calls,[(['work','home'],'to:sam in:sent',5)])
+        self.assertEqual(found['events'],[]);self.assertIn('Nothing in those mailboxes',found['note'])
+
+
 if __name__=='__main__':
     unittest.main()
