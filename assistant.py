@@ -12204,7 +12204,10 @@ def unseen_draft(db, suggestion_id, revision, job_id=None):
 
 AGENT_WORK_NOTE = ('Work handed to Claude Code or Codex on this card, oldest first. It is part of the card\'s state, like a sent '
                    'message or the owner\'s taps: what it reports done is done, even where earlier turns of this session said it was still to do. '
-                   'Build on it: never offer or describe work it already did as the next step; when it is still running, say so.')
+                   'Build on it: never offer or describe work it already did as the next step; when it is still running, say so. '
+                   'When the owner asks you to apply, run, publish or deploy what it prepared, that is their approval: read its notes and '
+                   'scripts in its folder and run them yourself, then check the result. If a step is refused, say what was refused and their '
+                   'next step (for example: open the job in Codex and run it there).')
 
 
 def writable_calendars(config):

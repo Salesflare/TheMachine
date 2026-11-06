@@ -1,5 +1,5 @@
 import {readFile} from 'node:fs/promises';
-import {readFileSync} from 'node:fs';
+import {readFileSync, realpathSync} from 'node:fs';
 import {dirname, resolve} from 'node:path';
 import {createHash} from 'node:crypto';
 import {homedir} from 'node:os';
@@ -91,7 +91,37 @@ const SHELL_TOOLS = new Set(['exec', 'bash', 'shell', 'shell_command', 'exec_com
 
 const absolute = (path: string) => resolve(WORKSPACE, String(path).replace(/^~(?=\/|$)/, HOME));
 const under = (dirs: string[]) => (path: string) => dirs.some(dir => absolute(path) === dir || absolute(path).startsWith(dir + '/'));
-const secretPath = under(SECRET_PATHS), protectedPath = under(PROTECTED_PATHS);
+// A Claude Code or Codex job's own folder (agent_jobs.py: <database folder>/agent-jobs/aj_<16 hex>/work) sits inside the
+// data folder, but holds the job's work (its brief, the card's files, what it prepared), not credentials. When the owner
+// asks a preparation to look at or run a job's result, it reads and runs those files there like in any other folder.
+// The path's real location must stay in that folder too, so a link in it to a credential folder is still refused.
+const DATABASE = resolve(String(assistantConfig().database || `${HOME}/.local/share/personal-assistant/events.sqlite`).replace(/^~(?=\/|$)/, HOME));
+const AGENT_JOBS = resolve(dirname(DATABASE), 'agent-jobs');
+const escaped = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const JOB_WORK = new RegExp(`^${escaped(AGENT_JOBS)}/aj_[0-9a-f]{16}/work(?:/|$)`);
+const JOB_WORK_IN_TEXT = new RegExp(`${escaped(AGENT_JOBS)}/aj_[0-9a-f]{16}/work(?:/[^\\s'"\`;&|<>()]*)?`, 'g');
+function realLocation(path: string) {
+  let at = path, rest = '';
+  for (;;) {
+    try { return resolve(realpathSync(at), rest); } catch {}
+    const up = dirname(at);
+    if (up === at) return path;
+    rest = rest ? `${at.slice(up.length + 1)}/${rest}` : at.slice(up.length + 1);
+    at = up;
+  }
+}
+export function jobWorkPath(path: string) {
+  const full = absolute(path);
+  if (!JOB_WORK.test(full)) return false;
+  const job = full.match(JOB_WORK)![0].replace(/\/$/, '');
+  const real = realLocation(full), realJob = realLocation(job);
+  return real === realJob || real.startsWith(realJob + '/');
+}
+const inJobFolder = (path: string) => absolute(path).startsWith(AGENT_JOBS + '/');
+const secretPath = (path: string) => under(SECRET_PATHS)(path) && !jobWorkPath(path), protectedPath = under(PROTECTED_PATHS);
+// What a refusal says, so the turn can tell the owner what was blocked: a job's files are readable in its work folder.
+const credentialBlock = (verb: string, paths: string[]) => ({block: `Preparations do not ${verb} credentials.` + (paths.some(path => secretPath(path) && inJobFolder(path))
+  ? ' A Claude Code or Codex job\'s files are readable and runnable in its work folder (agent-jobs/<job>/work), not elsewhere in its job folder.' : '')});
 const pathParams = (params: any) => ['path', 'file_path', 'filePath', 'file', 'dir', 'directory', 'target']
   .map(key => params?.[key]).filter(value => typeof value === 'string');
 function patchPaths(params: any) {
@@ -102,6 +132,7 @@ function patchPaths(params: any) {
 // Listing names there (find, ls, du) is fine.
 const coversSecret = (word: string, cwd: string) => {
   const path = resolve(cwd, word.replace(/^~(?=\/|$)/, HOME));
+  if (jobWorkPath(path)) return false;
   return SECRET_PATHS.some(dir => path === dir || path.startsWith(dir + '/') || dir.startsWith(path === '/' ? '/' : path + '/'));
 };
 const CONTENT_READERS = /(?:^|[\s|;&(])(?:rg|grep|egrep|ag|ack|cat|tar|zip|cp|rsync|scp)\s/;
@@ -162,16 +193,18 @@ function journalValue(value:any) {
 export function preparationToolPolicy(event: any, ctx: any): undefined | {block: string} {
   const name = plainToolName(event.toolName), params = event.params || {};
   if (codeModeRunner(event, ctx)) return undefined;
-  if (pathParams(params).some(secretPath)) return {block: 'Preparations do not read credentials.'};
+  if (pathParams(params).some(secretPath)) return credentialBlock('read', pathParams(params));
   if (WRITE_TOOLS.has(name)) {
     const paths = [...pathParams(params), ...patchPaths(params)];
-    if (paths.some(secretPath)) return {block: 'Preparations do not touch credentials.'};
+    if (paths.some(secretPath)) return credentialBlock('touch', paths);
     if (paths.some(protectedPath)) return {block: 'Preparations do not edit the running assistant or Gateway. For The Machine, fix a git clone under its fix folder and offer a merge (PREPARATION.md); otherwise describe the fix in the result.'};
     return undefined;
   }
   if (!SHELL_TOOLS.has(name)) return undefined;
   const text = commandText(params), cwd = absolute(params.cwd || params.workdir || WORKSPACE);
-  if (OWNER_SERVICE.test(text) || SECRET_PATHS.some(dir => text.includes(dir)) || /\bgog\s+auth\b/.test(text))
+  // A job's work folder named in the command is not a credential folder (jobWorkPath); every other mention still is.
+  const outsideJobs = text.replace(JOB_WORK_IN_TEXT, path => jobWorkPath(path) ? '' : path);
+  if (OWNER_SERVICE.test(text) || SECRET_PATHS.some(dir => outsideJobs.includes(dir)) || /\bgog\s+auth\b/.test(text))
     return {block: 'Preparations do not use credentials or owner approvals.'};
   for (const stage of commandStages(text)) {
     if (protectedOutput(stage,cwd)) return {block: 'Preparations do not edit the running assistant or Gateway. For The Machine, fix a git clone under its fix folder and offer a merge (PREPARATION.md); otherwise describe the fix in the result.'};

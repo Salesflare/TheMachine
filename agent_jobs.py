@@ -1434,12 +1434,15 @@ def card_work(rows, folder=None, when=None, chars=700):
             asks = []
         if asks:
             parts.append(f'last asked of it: "{gist(asks[-1]["text"], 300)}"')
-        answers = turn_answers(job, folder(job.get('id')) if folder else None)
+        home = folder(job.get('id')) if folder else None
+        answers = turn_answers(job, home)
         if answers:
             latest = answers[-1]
             parts.append(f'its {"latest " if len(answers) > 1 or status != "result" else ""}answer: "{gist(latest["summary"], chars)}"')
             if latest.get('files'):
                 parts.append('files: ' + ', '.join(str(f) for f in latest['files'][:5]))
+        if home is not None and status in ('result', 'failed') and (Path(home) / 'work').is_dir():
+            parts.append(f'its folder: {Path(home) / "work"}')  # where a chat turn reads and runs what it prepared
         parts.append({'done': 'the owner took its result as what they needed', 'set_aside': 'the owner set its result aside',
                       'again': 'the card was handed off again after it'}.get(job.get('outcome'), ''))
         lines.append('- ' + '; '.join(p for p in parts if p))
