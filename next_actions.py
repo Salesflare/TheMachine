@@ -2598,3 +2598,29 @@ class OutlookSnooze:
             newest = max(snoozed, key=lambda m: m.get('receivedDateTime') or '')
             self.call(account, 'messages.update', {'id': newest['id']}, {'isRead': False}, write=True)
         return 'returned'
+
+
+STEP_TARGETS = ('thread_id', 'conversation_id', 'chat_id', 'channel', 'channel_id', 'event_id', 'doc_id', 'file_id', 'url')
+
+
+def step_target(action):
+    """(kind, what it is for): the thread, chat, event or doc it acts on, or its recipients; None when it names none.
+    Two steps for the same thing are one step redone (a new draft in that thread); a final step or doc edit also counts
+    its label, so two Confirms on one doc are two steps."""
+    target = next((str(action[k]) for k in STEP_TARGETS if action.get(k)), None)
+    if target is None and action.get('to'):
+        target = ','.join(sorted(str(t).lower() for t in action['to']))
+    if target is not None and action.get('kind') in FINISH_KINDS + ('doc_write',):
+        target += ' ' + str(action.get('label') or '').lower()
+    return action.get('kind'), target
+
+
+def kept_steps(before, action, taken):
+    """(action, kept): the steps of `before` still waiting for the owner (not in `taken`, the revisions already approved or
+    done) that a run carrying out one step left out of its result `action`, added back unchanged: finishing one step never
+    drops an unsent draft or another Confirm. A step of the result for the same thing (step_target) replaces it."""
+    new = actions(action)
+    targets, kinds, mine = {step_target(a) for a in new}, {a['kind'] for a in new}, {a.get('revision') for a in new}
+    kept = [a for a in actions(before) if a['kind'] in WAITING_KINDS and a.get('revision') not in taken | mine
+            and step_target(a) not in targets and not (step_target(a)[1] is None and a['kind'] in kinds)]
+    return ({'kind': 'menu', 'actions': new + kept}, kept) if kept else (action, [])
