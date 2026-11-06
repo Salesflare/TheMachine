@@ -74,6 +74,8 @@ Un titolo dice cosa c'è da fare. Cambia solo quando cambia quello, come per una
 
 Sopra la bozza, una riga discreta indica il messaggio da cui viene, con il logo del servizio (Gmail, Slack, WhatsApp…). Toccala per leggere la conversazione. La bozza inizia con il logo di dove va, così vedi se è una risposta su Slack o un'email prima di leggere. Un passo senza bozza, come un passaggio, mostra il logo sul suo pulsante.
 
+Quando la bozza segue l'indicazione di qualcun altro in un altro messaggio, come il suggerimento di un collega su Slack, una riga sotto l'attività lo dice, come "Secondo Sam in #ops". Toccala per aprire quel messaggio.
+
 Una chat (Slack, WhatsApp, Telegram, Intercom…) si legge come un'unica conversazione, dal più vecchio, ogni messaggio una volta; il messaggio di cui parla l'attività ha una linea sottile accanto.
 
 **Dettagli** mostra nome, progetto e area (toccane uno per cambiarlo), la tua ultima nota e il risultato di un agente di codice. **Chat ›** alla fine di quella riga apre la chat. Un'attività fatta resta breve: il titolo, una riga e cosa è partito; il messaggio da cui viene è nei suoi **Dettagli**.

@@ -99,6 +99,8 @@ STORIES = [
      'thread': [(2900, False, 'Pricing for our sales team', 'Hi Alex,\n\nWe are comparing three tools for our sales team. Could you send pricing for annual billing?\n\nThanks,\nMila'),
                 (1500, True, 'Re: Pricing for our sales team', 'Hi Mila,\n\nHappy to. How many seats are you thinking of, to start and in a year?\n\nAlex'),
                 (45, False, 'Re: Pricing for our sales team', 'Hi Alex,\n\n25 seats to start, probably 40 by next autumn. Is onboarding included at that size? We want to decide before the end of the month.\n\nMila')],
+     # The price in the draft follows a teammate's word in another channel: the to-do says "Based on Priya in #sales" (based_on)
+     'team_input': (90, 'Priya Okonedo', 'sales', 'For Northwind: €29 a seat on annual is fine, and onboarding is included from 10 seats.'),
      'draft': ('email', 'Hi Mila,\n\nFor 25 seats on annual billing it is €29 a seat a month, so €8,700 for the year. Moving to 40 seats later keeps the same price per seat.\n\nOnboarding is included from 10 seats: two live sessions for your team and a call with your admin.\n\nWould Thursday or Friday suit for a short call to walk through it?\n\nBest,\nAlex')},
     {'key': 'demo', 'person': ('Hanne Ashgrove', 'Brightpath Logistics'), 'status': 'pending', 'minutes': 70,
      'title': 'Prepare for the Brightpath Logistics demo',
@@ -496,9 +498,17 @@ def build(profile):
                         **({'media_type': 'image', 'photo_fixture': photo} if photo else {})}, key)
                 out.append(key)
             account, source, to = ('home-telegram', 'Telegram from ' + chat, None) if story.get('telegram') else ('home-whatsapp', 'WhatsApp from Robin Morgan', None)
+        based_on = None
+        if story.get('team_input'):
+            m, who, channel, text = story['team_input']
+            based_on = f"story:{story['key']}:input"
+            add('work-slack', 'slack.message', m, f'#{channel}: {who}', text, {'channel_name': channel, 'channel_id': 'C0' + channel.upper(), 'conversation_type': 'channel',
+                'sender_display': who, 'user_id': 'U2100', 'message_ts': f'1761{m:06d}.000200',
+                'source_url': f'https://lumenlabs.slack.example/archives/C0{channel.upper()}/p1761{m:06d}000200'}, based_on)
+            out.append(based_on)
         card = {'key': 'open' + str(i), 'title': story['title'], 'body': story['body'], 'status': story['status'], 'events': out, 'accounts': [account],
                 'minutes_ago': story['minutes'], 'source': source, 'project': story.get('project'), 'urgent': bool(story.get('urgent')),
-                'snooze_hours': story.get('snooze_hours')}
+                'snooze_hours': story.get('snooze_hours'), **({'based_on': based_on} if based_on else {})}
         kind, body = story.get('draft') or (None, None)
         if kind == 'email':
             last = story['thread'][-1][2]
