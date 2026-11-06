@@ -33,6 +33,9 @@ const cards=[
  // The same stop without named questions, as runs wrote them before: Answer still leads, no second Try again
  {id:'r1',title:'Finish the other listing',body:'x',status:'instructions',scope:'work',created_at:now,event_ids:[8],preparation_status:'blocked',preparation_cause:'retry',preparation_error:null,
   preparation_reason:'Your draft is preserved; finishing the listing still needs your testing notes and a choice of score.'},
+ // A prepared-ahead run that stopped to ask arrives as a new to-do (settle_ahead): it asks the same way, Answer and Try again
+ {id:'p1',title:'Send the invoice for the October order',body:'I can draft the invoice email.',status:'pending',scope:'work',created_at:now,event_ids:[9],preparation_status:'blocked',
+  preparation_reason:'I need to know where the invoice goes.',preparation_questions:[{question:'Send it to billing@example.com or to Sam directly?'}]},
  {id:'g1',title:'Download the statements',body:'x',status:'instructions',scope:'work',created_at:now,event_ids:[6],preparation_status:'blocked',
   preparation_reason:'The bank needs your code: complete sign-in in the tab, then tap Continue.'}];
 const posts=[];
@@ -85,6 +88,12 @@ try{
   assert.equal(await page.locator('#task-o1').innerText().then(t=>t.includes('needs your notes and one choice')),false);
   assert.deepEqual(await primary('r1'),['Answer']);assert.equal(await page.locator('#task-r1 [data-choice="retry"]').count(),0);
   assert.match(await line('r1'),/^Needs you: Your draft is preserved/);
+  // The prepared-ahead one that stopped to ask: Needs your help, its question, Answer leads and Try again is there
+  assert.match(await page.locator('#task-p1').innerText(),/Needs your help/);
+  assert.deepEqual(await page.locator('#task-p1 .ask-q p').allTextContents(),['Send it to billing@example.com or to Sam directly?']);
+  assert.deepEqual(await primary('p1'),['Answer']);assert.equal(await page.locator('#task-p1 [data-choice="retry"]').count(),1);
+  assert.equal(await page.locator('#task-p1 [data-choice="accept"]').count(),0);
+  if(process.env.SHOTS_DIR)await page.locator('#task-p1').screenshot({path:`${process.env.SHOTS_DIR}/prepared-ahead-blocker-${width}.png`});
   // A pick fills the answer box; another pick for the same question replaces it; the box takes the rest
   await page.locator('#task-o1 .pick[data-pick="4.0"]').click();
   assert.equal(await page.locator('#feedback-o1').inputValue(),'Which score fills the gap? 4.0');

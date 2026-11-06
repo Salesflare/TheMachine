@@ -248,11 +248,78 @@ class Preparation(unittest.TestCase):
         with self.store.connect() as db:db.execute("UPDATE preparations SET status='blocked' WHERE suggestion_id=?",(sid,))
         self.app.preparation_step(lambda r:{'status':'admitted'})
         row=self.q('SELECT s.status,s.early,p.status prep FROM suggestions s JOIN preparations p ON p.suggestion_id=s.id WHERE s.id=?',sid)
-        self.assertEqual(row,{'status':'pending','early':0,'prep':'cancelled'})
+        self.assertEqual(row,{'status':'pending','early':0,'prep':'blocked'})  # its blocker stays for the owner to see
         self.app.config={'accounts':[],'prepare_ahead_per_day':1}
         self.assertEqual(self.app.action('suggest',{'dedupe_key':'x2','title':'T','body':'B','event_ids':[1],'prepare_ahead':True})['status'],'pending')
         self.app.config={'accounts':[],'prepare_ahead':False}
         self.assertEqual(self.app.action('suggest',{'dedupe_key':'x3','title':'T','body':'B','event_ids':[1],'prepare_ahead':True})['status'],'pending')
+
+    def ahead_blocked(self):
+        """A prepared-ahead run stops on a question (preparation_blocked); its run then ends by itself."""
+        sid=self.ahead()['id'];calls=[]
+        self.app.preparation_step(lambda r:calls.append(r) or {'status':'admitted'})
+        job=self.q('SELECT job_id FROM preparations WHERE suggestion_id=?',sid)['job_id']
+        self.app.action('preparation_blocked',{'suggestion_id':sid,'job_id':job,'reason':'Which address should the invoice go to?',
+                                               'questions':[{'question':'Send it to billing@example.com or to Sam directly?'}]})
+        return sid,job
+
+    def test_a_prepared_ahead_blocker_shows_its_question_and_answer_and_its_run_is_never_lost(self):
+        sid,job=self.ahead_blocked()
+        seen=[]
+        later=(a.dt.datetime.now(a.dt.timezone.utc)+a.dt.timedelta(seconds=a.PREPARATION_SETTLE_SECONDS+5)).isoformat()
+        for _ in range(3):  # settle_ahead sends it out; the finished run is asked how it ended, never stopped
+            with patch.object(a,'now',return_value=later):
+                self.app.preparation_step(lambda r:seen.append(r) or {'status':'ok' if r['action']=='status' else 'aborted'})
+        self.assertNotIn('stop',[r['action'] for r in seen if r.get('job_id')==job])
+        self.assertEqual(self.q('SELECT status FROM preparation_runs WHERE job_id=?',job)['status'],'ok')
+        with self.store.connect() as db:
+            self.assertEqual(db.execute("SELECT count(*) FROM preparation_runs WHERE status='lost'").fetchone()[0],0)
+            view=dict(db.execute('SELECT * FROM suggestions WHERE id=?',(sid,)).fetchone());self.store.card_views(db,[view])
+        self.assertEqual((view['status'],view['early'],view['preparation_status']),('pending',0,'blocked'))
+        self.assertEqual([q['question'] for q in view['preparation_questions']],['Send it to billing@example.com or to Sam directly?'])
+        self.assertTrue(a.ask_blocked(view))  # the to-do asks: Needs your help, with Answer and Try again
+        # Try again accepts it first (a run works only on an accepted to-do) and carries on
+        self.assertEqual(self.store.decide(sid,'retry','','again','dashboard')['status'],'accepted')
+        row=self.q('SELECT s.status,p.status prep FROM suggestions s JOIN preparations p ON p.suggestion_id=s.id WHERE s.id=?',sid)
+        self.assertEqual(row,{'status':'accepted','prep':'queued'})
+
+    def test_a_run_whose_blocker_was_saved_then_canceled_is_asked_how_it_ended_not_stopped(self):
+        sid,job=self.ahead_blocked()
+        with self.store.connect() as db:  # as settle_ahead left it before
+            db.execute("UPDATE suggestions SET status='pending',early=0 WHERE id=?",(sid,))
+            db.execute("UPDATE preparations SET status='cancelled' WHERE suggestion_id=?",(sid,))
+        seen=[];self.app.stop_stale_runs(lambda r:seen.append(r['action']) or {'status':'ok'})
+        self.assertEqual(seen,['status'])
+        self.assertEqual(self.q('SELECT status FROM preparation_runs WHERE job_id=?',job)['status'],'ok')
+
+    def test_answering_a_prepared_ahead_blocker_accepts_it_with_the_answer(self):
+        sid,job=self.ahead_blocked()
+        with self.store.connect() as db:db.execute("UPDATE preparation_runs SET status='ok',finished_at=?",(a.now(),))
+        self.app.preparation_step(lambda r:{'status':'admitted'})
+        self.store.decide(sid,'other','Send it to billing.','answer-1','dashboard')
+        row=self.q('SELECT s.status,p.status prep FROM suggestions s JOIN preparations p ON p.suggestion_id=s.id WHERE s.id=?',sid)
+        self.assertEqual(row,{'status':'instructions','prep':'queued'})
+
+    def test_once_a_canceled_ahead_blocker_is_blocked_again_after_a_backup(self):
+        sid,job=self.ahead_blocked()
+        with self.store.connect() as db:  # as settle_ahead left it before
+            db.execute("UPDATE suggestions SET status='pending',early=0 WHERE id=?",(sid,))
+            db.execute("UPDATE preparations SET status='cancelled' WHERE suggestion_id=?",(sid,))
+            db.execute("INSERT INTO preparations(suggestion_id,decision_id,job_id,status,reason,created_at,updated_at) VALUES(?,'d','j2','cancelled','Owner closed it',?,?)",(self.sid,a.now(),a.now()))
+            db.execute("UPDATE suggestions SET status='rejected' WHERE id=?",(self.sid,))
+            db.execute('DELETE FROM store_fixes')  # a database from before the fix
+        a.Store(Path(self.temp.name)/'events.sqlite')  # the next start fixes it
+        self.assertEqual(self.q('SELECT status FROM preparations WHERE suggestion_id=?',sid)['status'],'blocked')
+        self.assertEqual(self.q('SELECT status FROM preparations WHERE suggestion_id=?',self.sid)['status'],'cancelled')  # a closed to-do stays
+        copies=list(Path(self.temp.name).glob('events.sqlite.before-ahead-blockers-*Z'))
+        self.assertEqual(len(copies),1);self.assertEqual(copies[0].stat().st_mode&0o777,0o600)
+        import sqlite3
+        with sqlite3.connect(copies[0]) as copy:  # the copy is from before the fix
+            self.assertEqual(copy.execute('SELECT status FROM preparations WHERE suggestion_id=?',(sid,)).fetchone()[0],'cancelled')
+        with self.store.connect() as db:db.execute("UPDATE preparations SET status='cancelled' WHERE suggestion_id=?",(sid,))
+        self.assertEqual(self.store.restore_ahead_blockers(),0)  # once only
+        self.assertEqual(len(list(Path(self.temp.name).glob('events.sqlite.before-ahead-blockers-*Z'))),1)
+        self.assertIn(copies[0],__import__('retention').backup_copies(self.temp.name,[Path(self.temp.name)/'events.sqlite']))  # rotated like other copies
 
     def test_finished_run_browser_lease_is_released_others_untouched(self):
         lease=Path(self.temp.name)/'workspace/data/browser-lease/lease.json';lease.parent.mkdir(parents=True)
