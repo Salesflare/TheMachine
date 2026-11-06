@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
+import {readFile} from 'node:fs/promises';
 import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
@@ -7,6 +8,8 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // A stuck to-do whose prepared-ahead run timed out: Try again leads (not Do it), and its technical details sit under the
 // to-do's one Details, never a second Details toggle. A long project name is whole on a phone, or in its tooltip.
 const dashboard=await dashboardPage();
+// the page's own fonts: the chip's width depends on them, and a runner's fallback font is wider or narrower than Inter
+const brand={'/brand/serif.woff2':'brand/fonts/source-serif-4-latin.woff2','/brand/sans.woff2':'brand/fonts/inter-latin.woff2'};
 const ago=h=>new Date(Date.now()-h*3600e3).toISOString();
 const project={node_id:'proj:billing',name:'Northwind billing correction for the October invoices'};
 const cards=[
@@ -22,12 +25,13 @@ const server=createServer(async(req,res)=>{let body='';for await(const c of req)
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(url.pathname==='/api/status'){res.end(JSON.stringify(state()));return}
  if(url.pathname==='/api/action'&&req.method==='POST'){posts.push(JSON.parse(body||'{}'));res.end('{"status":"accepted","retrying":true}');return}
+ if(brand[url.pathname]){res.setHeader('Content-Type','font/woff2');res.end(await readFile(new URL('../'+brand[url.pathname],import.meta.url)));return}
  res.statusCode=url.pathname.startsWith('/brand/')?404:200;res.end('{}')});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const errors=[];let browser;
 try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
- for(const [width,height] of [[1440,900],[1440,700],[390,844]]){
+ for(const [width,height] of [[1440,900],[1440,700],[390,844],[360,800]]){
   posts.length=0;
   const context=await browser.newContext({viewport:{width,height},colorScheme:'dark'});
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
@@ -53,9 +57,13 @@ try{
   // The project chip: its whole name in its tooltip, and whole on the line on a phone (on a desktop it keeps its cap)
   const chip=page.locator('#task-p1p1p1p1p1p1p1p1 a.chip.project-link');
   assert.equal(await chip.getAttribute('title'),project.name);
-  // measured once it is laid out: right after the list renders the chip can still be 0 wide, which passes by accident
-  await page.waitForFunction(()=>document.querySelector('#task-p1p1p1p1p1p1p1p1 a.chip.project-link span')?.clientWidth>0);
-  if(width<=600)assert.ok(await chip.evaluate(a=>{const s=a.querySelector('span');return s.scrollWidth<=s.clientWidth+1}),'the project name is whole');
+  // measured with the page's fonts loaded, in one step: a re-render between finding the chip and measuring it leaves a
+  // detached chip 0 wide, which passed by accident. On a phone a name longer than the line wraps instead of being cut.
+  await page.evaluate(()=>document.fonts.ready);
+  const fit=await page.evaluate(()=>{const s=document.querySelector('#task-p1p1p1p1p1p1p1p1 a.chip.project-link span');
+   return {font:document.fonts.check('12px Inter'),width:s.clientWidth,whole:s.scrollWidth<=s.clientWidth+1&&s.scrollHeight<=s.clientHeight+1}});
+  assert.ok(fit.font&&fit.width>0,JSON.stringify(fit));
+  if(width<=600)assert.ok(fit.whole,'the project name is whole');
   if(process.env.SHOTS_DIR)await page.locator('#task-p1p1p1p1p1p1p1p1').screenshot({path:`${process.env.SHOTS_DIR}/project-chip-${width}x${height}.png`});
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   await context.close();
