@@ -322,7 +322,7 @@ def cases(ids, store):
     opens = ('chat', 'talk', 'mcp', 'page', 'layer')
     case('open: promises both ways with a person', opens, lambda s, x: _same(s.open(x, 'Wren Fairhaven')[0], wren))
     case('open: an organization has its people\'s promises', opens, lambda s, x: _check(wren <= s.open(x, 'Harborline Health')[0], s.open(x, 'Harborline Health')[0]))
-    case('last: the latest contact, never a meeting ahead', ('chat', 'mcp', 'page', 'layer'), lambda s, x: _same(str(s.last(x, JUNO['name']))[:10], juno_last[:10]))
+    case('last: the latest contact, never a meeting ahead', ('chat', 'mcp', 'page', 'layer'), lambda s, x: _same(str(s.last(x, JUNO['name']))[:10], _day(s, x, juno_last)))
     case('last: Talk says the latest contact, never a meeting ahead', ('talk',),
          lambda s, x: _same(s.last(x, JUNO['name']), s.app.talk_when(juno_last)))
     recalls = ('talk', 'layer')
@@ -351,6 +351,15 @@ def _at(store, event_id):
 
 def _same(got, want):
     return got == want, got
+
+
+def _day(s, surface, moment):
+    """The day a surface shows for a moment: the layer answers the moment itself (UTC); the graph's record (chat, MCP,
+    the page) keeps the owner's day, so a mail at 23:13 UTC is the next day in Amsterdam (graph.py, owner_tz)."""
+    if surface == 'layer':
+        return moment[:10]
+    import graph
+    return dt.datetime.fromisoformat(moment).astimezone(graph.owner_tz(s.app.config)).date().isoformat()
 
 
 def _check(ok, detail):
