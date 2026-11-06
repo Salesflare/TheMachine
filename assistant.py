@@ -421,6 +421,41 @@ from machine.faults import (
     source_url,
     watch_faults,
 )
+from machine.sources.exclusions import (
+    ANDROID_STATUS_NOTICES,
+    DEFAULT_EXCLUDED_EMAIL_SUBJECTS,
+    ROUTINE_CALENDAR,
+    calendar_title_excluded,
+    default_exclusions,
+    email_subject_excluded,
+    excluded_by_rules,
+    routine_recurring_instance,
+    routine_rules,
+)
+from machine.sources.salesflare import (
+    SALESFLARE_APP,
+    SALESFLARE_STUCK,
+    Salesflare,
+    salesflare_context,
+    salesflare_email_event,
+    salesflare_feed,
+    salesflare_in_pipelines,
+    salesflare_link,
+    salesflare_meeting_event,
+    salesflare_progress,
+    salesflare_recent_accounts,
+    salesflare_time,
+    salesflare_time_or_none,
+    sync_salesflare,
+)
+from machine.sources.telegram import (
+    TELEGRAM_CHAT,
+    Telegram,
+    owner_telegram_chats,
+    sync_telegram,
+    telegram_event,
+    telegram_photo_asker,
+)
 
 ANDROID_APP_NAMES = {
     'android': 'Android System', 'com.google.android.gm': 'Gmail',
@@ -1906,328 +1941,6 @@ class Calendar:
         return profile
 
 
-class Salesflare:
-    """Salesflare CRM reads (GET on the exact routes below). The only write is adding the
-    owner's own user to an account, and only when the account config allows it."""
-    ROUTES = (r'/me', r'/accounts', r'/accounts/[0-9]+', r'/accounts/[0-9]+/feed', r'/opportunities')
-
-    def __init__(self, config, account):
-        self.config, self.account = config, account
-
-    def get(self, path, params=None):
-        if not any(re.fullmatch(route, path) for route in self.ROUTES):
-            raise SourceError('unsupported_salesflare_method')
-        return self.send(path, params)
-
-    def join_account(self, crm_id):
-        """Owner-authorized (Oct 10): add the owner's own user to one CRM account. Never
-        another user, never PUT (which would replace the account's whole user list)."""
-        if not self.account.get('join_pipelines'):
-            raise SourceError('salesflare_join_disabled')
-        return self.send(f'/accounts/{int(crm_id)}/users', None, [{'id': self.account['user_id']}])
-
-    def send(self, path, params, payload=None):
-        values = {}
-        for line in credential(self.config, self.account.get('credential', 'salesflare')).splitlines():
-            if '=' in line and not line.lstrip().startswith('#'):
-                key, value = line.split('=', 1)
-                values[key.strip()] = value.strip().strip('"').strip("'")
-        token = values.get(self.account.get('credential_variable', 'SALESFLARE_STAGING_API_KEY'))
-        if not token:
-            raise SourceError('missing_salesflare_credential')
-        url = self.account['api_base'] + path + ('?' + urllib.parse.urlencode(params, doseq=True) if params else '')
-        request = urllib.request.Request(url, data=encoded(payload).encode() if payload is not None else None,
-                                         method='POST' if payload is not None else 'GET',
-                                         headers={'Authorization': 'Bearer ' + token, 'Accept': 'application/json',
-                                                  'Content-Type': 'application/json'})
-        try:
-            # Account list queries ordered by activity are slow on a large team.
-            with urllib.request.urlopen(request, timeout=self.account.get('timeout_seconds', 180)) as response:
-                raw = response.read()
-            return json.loads(raw) if raw.strip() else None  # a write may answer with an empty body
-        except urllib.error.HTTPError as error:
-            retry = error.headers.get('Retry-After', '')
-            raise SourceError('salesflare', error.code,
-                              min(max(int(retry), 1), 86400) if retry.isdigit() else None) from None
-        except (urllib.error.URLError, TimeoutError, OSError, http.client.HTTPException) as error:
-            raise SourceError('network:' + type(error).__name__ + ':salesflare_read') from None
-        except ValueError:
-            raise SourceError('salesflare_invalid_json') from None
-
-    def profile(self):
-        me = self.get('/me')
-        if (not isinstance(me, dict) or str(me.get('email', '')).lower() != self.account['email'].lower()
-                or me.get('id') != self.account['user_id'] or (me.get('team') or {}).get('id') != self.account['team_id']):
-            raise SourceError('account_identity_mismatch')
-        return me
-
-
-def salesflare_time(value):
-    """A Salesflare date as UTC. Mostly ISO 8601 with Z, but some email dates come as epoch milliseconds
-    (a number, sometimes as text); epoch seconds are accepted too."""
-    if isinstance(value, str) and re.fullmatch(r'\s*\d{9,14}(\.\d+)?\s*', value):
-        value = float(value)
-    if isinstance(value, (int, float)) and not isinstance(value, bool):
-        try:
-            return dt.datetime.fromtimestamp(value / 1000 if abs(value) >= 1e11 else value, dt.timezone.utc)
-        except (OverflowError, OSError, ValueError):
-            raise SourceError('salesflare_invalid_timestamp') from None
-    try:
-        stamp = dt.datetime.fromisoformat(str(value).strip().replace('Z', '+00:00'))
-    except ValueError:
-        raise SourceError('salesflare_invalid_timestamp') from None
-    if stamp.tzinfo is None:
-        raise SourceError('salesflare_missing_timezone')
-    return stamp.astimezone(dt.timezone.utc)
-
-
-def salesflare_time_or_none(value):
-    try:
-        return salesflare_time(value)
-    except SourceError:
-        return None
-
-
-def salesflare_context(account, crm):
-    """Essential account info plus its contacts, keyed for matching."""
-    if not isinstance(crm, dict) or not isinstance(crm.get('id'), int):
-        raise SourceError('salesflare_invalid_account')
-    info = {'id': crm['id'], 'name': crm.get('name') or '', 'domain': crm.get('domain') or ''}
-    contacts = {}
-    for person in crm.get('customers') or []:
-        if isinstance(person, dict) and isinstance(person.get('id'), int):
-            contacts[person['id']] = {'id': person['id'], 'name': person.get('name') or '',
-                                      'email': (person.get('email') or '').lower(), 'role': person.get('role') or None}
-    return info, contacts
-
-
-def salesflare_link(account, crm_id):
-    return f"{account['app_base']}/#/accounts/{crm_id}/info/view"
-
-
-def salesflare_email_event(account, info, contacts, item, config=None):
-    email = item.get('email') or {}
-    if email_subject_excluded(config or {}, email.get('subject')):
-        return None
-    addresses = email.get('addresses') or {}
-    people = []
-    for field in ('from', 'to', 'cc', 'bcc'):
-        value = addresses.get(field) or []
-        for entry in (value if isinstance(value, list) else [value]):
-            if isinstance(entry, dict) and entry.get('email'):
-                people.append((field, entry.get('name') or '', str(entry['email']).lower()))
-    owner = {e.lower() for e in account.get('owner_emails', [account['email']])}
-    # Email that involves the owner already arrives through Gmail; keep only the rest.
-    if email.get('user_id') == account['user_id'] or any(address in owner for _, _, address in people):
-        return None
-    text, quoted = trim_quoted_history(plain_html('\n'.join(str(part.get('content') or '') for part in email.get('body') or [] if isinstance(part, dict))), email.get('subject') or '')
-    header = '\n'.join(f"{field.title()}: {name} <{address}>" if name else f"{field.title()}: {address}" for field, name, address in people)
-    involved = [c for c in contacts.values() if c['email'] and c['email'] in {a for _, _, a in people}]
-    return {'account_id': account['id'], 'source_id': 'email:' + str(item['id']), 'kind': 'salesflare.email',
-            'occurred_at': (salesflare_time_or_none(email.get('date')) or salesflare_time(item.get('time'))).isoformat(),
-            'title': (email.get('subject') or '(no subject)')[:1000],
-            'body': (header + '\n\n' + text)[:40000],
-            'metadata': {'crm_account': info, 'contacts': involved, 'mailbox_user_id': email.get('user_id'),
-                         'thread_id': email.get('service_thread_id'), 'from': people[0][2] if people else '',
-                         'truncated': len(header) + len(text) + 2 > 40000, 'quoted_history_chars': quoted,
-                         'quoted_history_shortened': quoted > QUOTED_HISTORY_KEPT, 'source_url': salesflare_link(account, info['id'])},
-            'deleted': False}
-
-
-def salesflare_meeting_event(account, info, contacts, item):
-    notes = plain_html(item.get('notes'))
-    if not notes:
-        return None  # only meetings with written notes are signals
-    involved = []
-    for person in item.get('participants') or []:
-        if not isinstance(person, dict) or person.get('type') == 'user':
-            continue
-        known = contacts.get(person.get('id'))
-        involved.append(known or {'id': person.get('id'), 'name': person.get('name') or '',
-                                  'email': (person.get('email') or '').lower(), 'role': None})
-    attendees = ', '.join(p.get('name') or p.get('email') or '' for p in item.get('participants') or [] if isinstance(p, dict))
-    description = plain_html(item.get('description'))
-    body = f"Attendees: {attendees}\n\nNotes:\n{notes}" + (f"\n\nDescription:\n{description}" if description else '')
-    return {'account_id': account['id'], 'source_id': 'meeting:' + str(item['id']), 'kind': 'salesflare.meeting',
-            'occurred_at': salesflare_time(item.get('time')).isoformat(),
-            'title': (item.get('subject') or 'Meeting')[:1000], 'body': body[:40000],
-            'metadata': {'crm_account': info, 'contacts': involved, 'meeting_type': item.get('type'),
-                         'host': (item.get('person') or {}).get('email'), 'truncated': len(body) > 40000,
-                         'source_url': salesflare_link(account, info['id'])},
-            'deleted': False}
-
-
-def salesflare_recent_accounts(source, field, since, page=50, max_pages=40):
-    """CRM account IDs whose last email/meeting date is on or after `since`."""
-    found = []
-    for number in range(max_pages):
-        rows = source.get('/accounts', {'order_by': field + ' desc', 'limit': page, 'offset': number * page, 'details': 'false'})
-        if not isinstance(rows, list):
-            raise SourceError('salesflare_invalid_page')
-        for row in rows:
-            stamp = row.get(field)
-            parsed = salesflare_time_or_none(stamp) if stamp else None
-            if not stamp or (parsed and parsed < since):
-                return found
-            # An unreadable date still lists the account: reading it once too often beats missing it.
-            found.append(row['id'])
-        if len(rows) < page:
-            return found
-    raise SourceError('salesflare_window_limit')  # never claim a complete scan
-
-
-def salesflare_feed(source, crm_id, kind, since, until, page=100, max_pages=10):
-    items, before = [], until
-    for _ in range(max_pages):
-        rows = source.get(f'/accounts/{crm_id}/feed', {'types': kind, 'after': since.isoformat(), 'before': before.isoformat(), 'limit': page})
-        if not isinstance(rows, list):
-            raise SourceError('salesflare_invalid_feed')
-        items.extend(rows)
-        if len(rows) < page:
-            return items
-        stamps = [stamp for stamp in (salesflare_time_or_none(r.get('time')) for r in rows) if stamp]
-        if not stamps:
-            raise SourceError('salesflare_invalid_timestamp')
-        oldest = min(stamps)
-        if oldest >= before:
-            raise SourceError('salesflare_feed_not_advancing')
-        before = oldest
-    raise SourceError('salesflare_feed_limit')
-
-
-def salesflare_in_pipelines(source, crm_id, pipelines):
-    for pipeline in pipelines:
-        for closed in (None, 'true'):  # open and won/lost opportunities
-            params = {'account': crm_id, 'pipeline': pipeline, 'limit': 1, 'details': 'false'}
-            if closed:
-                params['closed'] = closed
-            rows = source.get('/opportunities', params)
-            if not isinstance(rows, list):
-                raise SourceError('salesflare_invalid_opportunities')
-            if rows:
-                return pipeline
-    return None
-
-
-SALESFLARE_APP = 'https://app.salesflare.com'
-SALESFLARE_STUCK = dt.timedelta(hours=2)  # a round of accounts still going after this long: the card offers Restart
-
-
-def salesflare_progress(account, state):
-    """The Salesflare card's sync details: the round of accounts being read (how far, since when), what it set aside,
-    whether the owner stopped it (connector_sync), and where its API keys are."""
-    window = state.get('window') or {}
-    total, left = window.get('accounts', len(window.get('pending') or [])), len(window.get('pending') or [])
-    started = window.get('until')
-    try:
-        stuck = bool(started) and dt.datetime.fromisoformat(now()) - dt.datetime.fromisoformat(started) > SALESFLARE_STUCK
-    except (TypeError, ValueError):
-        stuck = False
-    return {'stopped': state.get('stopped') or None, 'synced_until': state.get('watermark'),
-            'round': {'since': window.get('since'), 'started': started, 'accounts': total, 'done': max(0, total - left), 'stuck': stuck,
-                      'failing': len(window.get('failures') or {})} if window else None,
-            'slow_accounts': len(state.get('skipped_accounts') or []), 'no_access': len(state.get('inaccessible_accounts') or []),
-            'keys_url': (account.get('app_base') or SALESFLARE_APP) + '/#/settings/apikeys'}
-
-
-def sync_salesflare(store, config, account, source=None):
-    state = store.checkpoint(account['id']) or {}
-    if state.get('stopped'):  # the owner pressed Stop on its card: nothing is read until Start or Restart
-        return {'mode': state.get('mode') or 'incremental', 'events': 0, 'stopped': True}
-    source = source or Salesflare(config, account)
-    source.profile()
-    stamp = dt.datetime.now(dt.timezone.utc)
-    if not state.get('window'):
-        days = config.get('bootstrap_days', 7)
-        retained = stamp - dt.timedelta(days=days)
-        full = not state.get('watermark') or stamp.timestamp() >= state.get('next_full', 0)
-        since = retained if full else max(retained, dt.datetime.fromisoformat(state['watermark']) - dt.timedelta(hours=6))
-        # Notes are often written days after a meeting, without changing its date, so
-        # meetings are always reread over a full week; emails follow the incremental window.
-        meeting_since = stamp - dt.timedelta(days=account.get('meeting_window_days', 7))
-        email_ids = salesflare_recent_accounts(source, 'last_email_date', since)
-        # Freeze the window and its account list, then work through it in committed batches.
-        pending = list(dict.fromkeys(email_ids + salesflare_recent_accounts(source, 'last_meeting_date', meeting_since)))
-        state.update(mode='bootstrap' if not state.get('watermark') else 'incremental',
-                     window={'since': since.isoformat(), 'meeting_since': meeting_since.isoformat(), 'until': stamp.isoformat(),
-                             'full': full, 'pending': pending, 'email_ids': sorted(set(email_ids)), 'accounts': len(pending)})
-        store.commit_page(account['id'], state, [], record_sync=False)
-    window = state['window']
-    since, until = dt.datetime.fromisoformat(window['since']), dt.datetime.fromisoformat(window['until'])
-    meeting_since = dt.datetime.fromisoformat(window.get('meeting_since', window['since']))
-    email_ids = set(window['email_ids']) if 'email_ids' in window else None  # older frozen windows: read both
-    events, skipped, excluded, titles = [], 0, set(), []  # titles: each contact's job title in the CRM, a record about them
-    batch = window['pending'][:account.get('accounts_per_batch', 5)]
-    for crm_id in batch:
-        try:
-            crm = source.get(f'/accounts/{crm_id}')
-            crm = crm[0] if isinstance(crm, list) and crm else crm
-            info, contacts = salesflare_context(account, crm)
-            titles += [(['email:' + c['email']], {'title': c['role']}, enrichment.RECORD) for c in contacts.values() if c['email'] and c['role']]
-            if crm.get('part_of') is False and account.get('join_pipelines'):
-                pipeline = salesflare_in_pipelines(source, crm_id, account['join_pipelines'])
-                if pipeline:
-                    source.join_account(crm_id)
-                    joined = state.setdefault('joined_accounts', [])
-                    joined.append({'id': crm_id, 'pipeline': pipeline, 'at': now()})
-                    state['joined_accounts'] = joined[-500:]
-                    LOG.info('salesflare joined account=%s pipeline=%s', crm_id, pipeline)
-            emails = salesflare_feed(source, crm_id, 'email', since, until) if email_ids is None or crm_id in email_ids else []
-            meetings = [(k, item) for k in ('meeting-live', 'meeting-phone') for item in salesflare_feed(source, crm_id, k, meeting_since, until)]
-        except SourceError as error:
-            if error.category.startswith('network:'):
-                # One slow account must not block the window forever: retry it on later
-                # polls, and after three failures set it aside (visible) and move on.
-                failures = window.setdefault('failures', {})
-                failures[str(crm_id)] = failures.get(str(crm_id), 0) + 1
-                if failures[str(crm_id)] < 3:
-                    # Keep the accounts already read in this batch; resume at this one.
-                    window['pending'] = window['pending'][batch.index(crm_id):]
-                    store.commit_page(account['id'], state, events, record_sync=False, excluded_source_ids=excluded)
-                    raise
-                state['skipped_accounts'] = sorted(set(state.get('skipped_accounts', [])) | {crm_id})[-500:]
-                continue
-            if error.status not in (403, 404):
-                raise
-            # No access to this account's timeline (or it was deleted). Visible, never
-            # "fixed" by adding the owner to the account: ingestion stays read-only.
-            state['inaccessible_accounts'] = sorted(set(state.get('inaccessible_accounts', [])) | {crm_id})[-500:]
-            continue
-        for item in emails:
-            try:
-                event = salesflare_email_event(account, info, contacts, item, config)
-            except SourceError as error:
-                # One unreadable record is skipped and logged; it never holds up the round.
-                LOG.warning('salesflare skipped record account=%s crm_account=%s item=email:%s error=%s',
-                            account['id'], crm_id, item.get('id'), error.category)
-                continue
-            events.append(event) if event else None
-            skipped += event is None
-            if event is None and email_subject_excluded(config, (item.get('email') or {}).get('subject')):
-                excluded.add('email:' + str(item['id']))
-        for _, item in meetings:
-            try:
-                event = salesflare_meeting_event(account, info, contacts, item)
-            except SourceError as error:
-                LOG.warning('salesflare skipped record account=%s crm_account=%s item=meeting:%s error=%s',
-                            account['id'], crm_id, item.get('id'), error.category)
-                continue
-            events.append(event) if event else None
-    window['pending'] = window['pending'][len(batch):]
-    if not window['pending']:
-        state.update(mode='incremental', watermark=window['until'])
-        if window['full']:
-            state['next_full'] = stamp.timestamp() + 86400
-        state.pop('window')
-    store.commit_page(account['id'], state, events, excluded_source_ids=excluded)
-    involved = {'email:' + str(c.get('email')).lower() for e in events for c in e['metadata'].get('contacts') or ()}
-    titles = [t for t in titles if t[0][0] in involved]  # only people in what was kept, as for their messages
-    if titles:
-        with store.connect() as db:
-            enrichment.offer_facts(db, titles, 'salesflare', now())
-    return {'mode': state['mode'], 'events': len(events), 'filtered': skipped, 'more': bool(state.get('window'))}
-
-
 class WhatsApp:
     def __init__(self, config, account):
         self.config, self.account = config, account
@@ -2306,18 +2019,6 @@ def whatsapp_photo_asker(config):
     def ask(account_id, jid):
         try:
             return WhatsApp(config, accounts[account_id]).picture(jid)
-        except (SourceError, KeyError):
-            return None
-    return list(accounts), ask
-
-
-def telegram_photo_asker(config):
-    """ask(account id, user id) for enrichment.telegram_photos_step: the owner's own Telegram accounts only (never one
-    shared from a Fleet); None when the mirror can't answer."""
-    accounts = {a['id']: a for a in config.get('accounts', []) if a.get('service') == 'telegram' and a.get('store') and not a.get('shared')}
-    def ask(account_id, user_id):
-        try:
-            return Telegram(config, accounts[account_id]).picture(user_id)
         except (SourceError, KeyError):
             return None
     return list(accounts), ask
@@ -2520,184 +2221,6 @@ def sync_whatsapp(store, config, account, source=None):
     return {'mode':'incremental','events':len(events),'filtered':sum(skipped.values())}
 
 
-class Telegram:
-    """The owner's own Telegram chats, read from the store the Telegram mirror keeps (telegram_store.py), read-only.
-    The mirror alone holds the Telegram session; nothing here talks to Telegram."""
-
-    def __init__(self, config, account):
-        self.config, self.account = config, account
-
-    def open(self):
-        import telegram_store
-        store = self.account.get('store')
-        if not store or not (Path(store).expanduser() / telegram_store.DB_NAME).exists():
-            raise SourceError('telegram_source_unavailable')
-        try:
-            db = telegram_store.connect(Path(store).expanduser(), readonly=True)
-            seal = telegram_store.sealer(Path(store).expanduser(), self.config.get('database'), create=False)
-        except (sqlite3.Error, OSError, ValueError):
-            raise SourceError('telegram_source_unavailable') from None
-        if seal is None:
-            db.close()
-            raise SourceError('telegram_source_unavailable')
-        return telegram_store, db, seal
-
-    def profile(self):
-        """The mirror's state, when it is logged in to this account and nothing stopped it. A stop says why: logged out
-        (log in again), Telegram refused this Machine's app ID (telegram_app_blocked: said plainly on Connections, never a
-        silent gap), or a flood wait it is sitting out."""
-        ts, db, _ = self.open()
-        with contextlib.closing(db):
-            state = ts.get_state(db)
-        error = state.get('error')
-        if error == 'app_blocked':
-            raise SourceError('telegram_app_blocked')
-        if error in ('signed_out', 'logged_out', 'session_unreadable'):
-            raise SourceError('telegram_logged_out')
-        if state.get('identity') != self.account.get('identity_sha256'):
-            raise SourceError('account_identity_mismatch')
-        return state
-
-    def chats(self, query=None, limit=10):
-        """The chats the mirror reads ({id, kind, name}), optionally those whose name holds `query`."""
-        ts, db, seal = self.open()
-        with contextlib.closing(db):
-            rows = db.execute("SELECT id, kind, name FROM chats WHERE skipped='' ORDER BY updated_at DESC").fetchall()
-        found = [{'id': r['id'], 'kind': r['kind'], 'name': seal.open(r['name']) or 'Telegram chat'} for r in rows]
-        if query:
-            words = query.casefold().split()
-            found = [c for c in found if all(w in c['name'].casefold() for w in words)]
-        return found[:limit]
-
-    def messages(self, after):
-        ts, db, seal = self.open()
-        with contextlib.closing(db):
-            rows = db.execute("SELECT m.*, c.name chat_name, c.kind chat_kind FROM messages m JOIN chats c ON c.id=m.chat_id "
-                              "WHERE m.occurred_at>=? AND c.skipped='' ORDER BY m.occurred_at LIMIT 20000", (after,)).fetchall()
-        return [{**dict(r), 'text': seal.open(r['text']) if r['text'] is not None else None,
-                 'sender_name': seal.open(r['sender_name']), 'chat_name': seal.open(r['chat_name'])} for r in rows]
-
-    def picture(self, user_id):
-        """A person's small profile photo, asked through the mirror, which holds the session (telegram_store.ask_photo):
-        {'id', 'data': (bytes, type)}, {} when they have none the owner can see, {'id'} when it didn't download, or
-        {'pending': True} while the mirror hasn't answered. SourceError when the mirror can't answer."""
-        if not re.fullmatch(r'[0-9]{1,20}', str(user_id)):
-            raise SourceError('telegram_invalid_person')
-        self.profile()
-        import telegram_store
-        store = Path(self.account['store']).expanduser()
-        try:
-            seal = telegram_store.sealer(store, self.config.get('database'), create=False)
-            if seal is None:
-                raise SourceError('telegram_source_unavailable')
-            with contextlib.closing(telegram_store.connect(store)) as db:
-                answer = telegram_store.ask_photo(db, seal, str(user_id))
-        except (sqlite3.Error, OSError, ValueError, message_seal.SealError):
-            raise SourceError('telegram_source_unavailable') from None
-        data = answer.pop('data', None)
-        kind = enrichment.image_type(data) if data else None
-        if kind and len(data) <= enrichment.PHOTO_BYTES:
-            answer['data'] = (data, kind)
-        return answer
-
-
-TELEGRAM_CHAT = re.compile(r'-?[0-9]{1,20}')
-
-
-def telegram_event(account, raw):
-    """One message from the Telegram store as an event (kind telegram.message), like a WhatsApp one."""
-    chat, mid = str(raw.get('chat_id') or ''), raw.get('msg_id')
-    if not TELEGRAM_CHAT.fullmatch(chat) or not isinstance(mid, int) or not isinstance(raw.get('occurred_at'), str):
-        raise SourceError('telegram_invalid_message')
-    try:
-        stamp = dt.datetime.fromisoformat(raw['occurred_at'])
-    except ValueError:
-        raise SourceError('telegram_invalid_timestamp') from None
-    if stamp.tzinfo is None:
-        raise SourceError('telegram_missing_timezone')
-    from_me = bool(raw.get('from_me'))
-    body = raw.get('text') or ''
-    if not body.strip() and raw.get('media_type'):
-        body = 'Sent a ' + str(raw['media_type'])
-    sensitive = bool(re.search(r'(?i)verification code|security code|login code|one.time (?:code|password)|\bOTP\b|verificatiecode', body))
-    if sensitive:
-        body = '[One-time security code omitted]'
-    group = raw.get('chat_kind') == 'group'
-    chat_name = raw.get('chat_name') or ('Telegram group' if group else 'Telegram chat')
-    sender = 'You' if from_me else (raw.get('sender_name') or ('Unknown sender' if group else chat_name))
-    deleted = bool(raw.get('deleted')) or not body.strip()
-    metadata = {'chat_name': chat_name, 'chat_id': chat, 'chat_kind': 'group' if group else 'dm', 'message_id': mid,
-                'from_me': from_me, 'sender_id': None if from_me else (str(raw.get('sender_id') or '') or None),
-                'sender_identity': 'authenticated_account_owner' if from_me else 'source_label_unverified',
-                'from': sender, 'sender_display': sender,
-                'sender_display_source': 'authenticated_account_owner' if from_me else 'source_label_unverified',
-                'edited': bool(raw.get('edited')), 'revoked': bool(raw.get('deleted')), 'no_content': not body.strip(),
-                'media_type': raw.get('media_type') or '', 'media_collected': False, 'reply_to': raw.get('reply_to'),
-                'security_code_omitted': sensitive, 'truncated': len(body) > 40000,
-                'transport': 'telegram_mirror_store',
-                'coverage': 'Private chats and small groups the mirror reads; channels, bots, muted and archived chats are skipped.'}
-    identity = hashlib.sha256(encoded([chat, mid, from_me]).encode()).hexdigest()
-    return {'account_id': account['id'], 'source_id': identity, 'kind': 'telegram.message',
-            'occurred_at': stamp.astimezone(dt.timezone.utc).isoformat(),
-            'title': chat_name[:1000], 'body': body[:40000], 'metadata': metadata, 'deleted': deleted}
-
-
-def sync_telegram(store, config, account, source=None):
-    source = source or Telegram(config, account)
-    state_ = source.profile()
-    stamp = dt.datetime.fromisoformat(now())
-    after = (stamp - dt.timedelta(days=config.get('bootstrap_days', 7))).isoformat()
-    rows = source.messages(after)
-    skipped = Skips('telegram_invalid_message')  # a row it can't take is counted, never failing the poll
-    events = list({e['source_id']: e for e, _ in skipped.every(rows, telegram_event, account)}.values())
-    checkpoint = store.checkpoint(account['id']) or {}
-    skipped.check().note(checkpoint)
-    checkpoint.update(mode='incremental', after=after, before=stamp.isoformat(), retained_days=config.get('bootstrap_days', 7),
-                      available_messages=len(rows), source_latest_message=max((e['occurred_at'] for e in events), default=None),
-                      mirror_last_ok=state_.get('last_ok'), flood_until=state_.get('flood_until'),
-                      coverage='Seven-day reread of the Telegram mirror store. Nothing here talks to Telegram.')
-    store.commit_page(account['id'], checkpoint, events)
-    return {'mode': 'incremental', 'events': len(events), 'skipped': sum(skipped.values())}
-
-
-def owner_telegram_chats(config, db, raw, task_chats, source=None):
-    """As owner_whatsapp_chats, for Telegram: the person's existing chat in the owner's own Telegram account, for a
-    card that switches to Telegram. A chat_id must be one the mirror reads; a to_name must match one chat (a private
-    chat first). Never a new chat. Returns {chat_id: {account_id, name, switched}} and fills in the chat_id it found."""
-    found = {}
-    for item in raw if isinstance(raw, list) else [raw]:
-        if not isinstance(item, dict) or item.get('kind') != 'telegram' or str(item.get('chat_id') or '') in task_chats:
-            continue
-        account = next((a for a in config['accounts'] if a['id'] == item.get('account_id') and a.get('service') == 'telegram' and not a.get('shared')), None)
-        if not account:
-            continue
-        excluded = {c for r in account.get('exclude') or [] if set(r) == {'chats'} for c in r['chats']}
-        reader = source(config, account) if source else Telegram(config, account)
-        try:
-            chats = reader.chats(limit=100000) if item.get('chat_id') else reader.chats(str(item.get('to_name') or '').strip() or None)
-        except SourceError:
-            raise ValueError('Telegram can’t be read right now, so I can’t find the chat. Put the message in the body and say '
-                             'in one line that they can send it on Telegram themselves.') from None
-        chats = [c for c in chats if c['id'] not in excluded]
-        if item.get('chat_id'):
-            chat = next((c for c in chats if c['id'] == str(item['chat_id'])), None)
-            if not chat:
-                continue
-        elif isinstance(item.get('to_name'), str) and 2 <= len(item['to_name'].strip()) <= 100:
-            people = [c for c in chats if c['kind'] == 'dm'] or chats
-            if len(people) != 1:
-                raise ValueError(('More than one Telegram chat matches: ' + '; '.join(f"{c['name']} (chat_id {c['id']})" for c in people[:5])
-                                  + '. Give the right chat_id.') if people else
-                                 'No Telegram chat with ' + item['to_name'].strip() + ' in this account. Never start a new one: put the message '
-                                 'in the body and say in one line that they can send it on Telegram themselves.')
-            chat = people[0]
-            item['chat_id'] = chat['id']
-        else:
-            continue
-        found[chat['id']] = {'account_id': account['id'], 'name': chat['name'], 'switched': True}
-    return found
-
-
 class Android:
     def __init__(self, config, account):
         self.config, self.account = config, account
@@ -2883,102 +2406,6 @@ def calendar_time(value, timezone):
     if stamp.tzinfo is None:
         stamp = stamp.replace(tzinfo=ZoneInfo(value.get('timeZone', timezone)))
     return stamp.astimezone(dt.timezone.utc).isoformat()
-
-
-def routine_recurring_instance(metadata):
-    """A recurring meeting's occurrence that still starts at its original time and isn't canceled."""
-    if not metadata.get('recurring_event_id') or metadata.get('status') == 'cancelled':
-        return False
-    start, original = metadata.get('start') or {}, metadata.get('original_start') or {}
-    if not isinstance(start, dict) or not isinstance(original, dict):
-        return False
-    if start.get('date') or original.get('date'):
-        return start.get('date') == original.get('date')
-    try:
-        return dt.datetime.fromisoformat(start['dateTime'].replace('Z', '+00:00')) == \
-            dt.datetime.fromisoformat(original['dateTime'].replace('Z', '+00:00'))
-    except (KeyError, ValueError, AttributeError):
-        return False
-
-
-def excluded_by_rules(rules, event):
-    """Owner-chosen noise that is never stored (account config `exclude`; a routine_recurring rule only skips the review, see
-    routine_rules). A rule matches when
-    all its conditions hold: `channels` (Slack channel names), `bots_only`, `packages`
-    (Android package names), `chats` (WhatsApp or Telegram chat IDs), `senders` (email address substrings)
-    or `routine_recurring` (calendar instances of a recurring event that weren't moved or canceled),
-    usually combined with `titles` (exact event titles, case-insensitive), or `text`
-    (case-insensitive regular expressions searched in the title and body)."""
-    metadata = event.get('metadata') or {}
-    for rule in rules or []:
-        if 'channels' in rule and metadata.get('channel_name') not in rule['channels']:
-            continue
-        if rule.get('bots_only') and not (metadata.get('bot_id') or metadata.get('subtype') == 'bot_message'):
-            continue
-        if 'packages' in rule and metadata.get('package_name') not in rule['packages']:
-            continue
-        if 'chats' in rule and metadata.get('chat_id') not in rule['chats']:
-            continue
-        if rule.get('routine_recurring') and not routine_recurring_instance(metadata):
-            continue
-        if 'titles' in rule and str(event.get('title', '')).strip().casefold() not in {t.casefold() for t in rule['titles']}:
-            continue
-        if 'text' in rule and not any(re.search(p, f"{event.get('title', '')} {event.get('body', '')}", re.I) for p in rule['text']):
-            continue
-        if 'senders' in rule and not any(s.lower() in str(metadata.get('from', '')).lower() for s in rule['senders']):
-            continue
-        return True
-    return False
-
-
-# Noise every owner has, on top of their own `exclude` rules. An account's `"default_exclude": false` turns these off.
-# Android's own status notices (not storage or security warnings, which still come through).
-ANDROID_STATUS_NOTICES = {'packages': ['android'], 'text': [r'is displaying over other apps', r'charging this device via usb',
-                                                           r'usb debugging connected', r'wireless debugging connected', r'serial console enabled']}
-# Recurring placeholders that weren't moved or canceled: the calendar says nothing new, so no review. They stay on the Calendar.
-ROUTINE_CALENDAR = {'routine_recurring': True, 'titles': ['Lunch', 'Block', 'Blocked', 'Busy', 'Focus', 'Focus time', 'Deep work', 'Home',
-                                                          'Office', 'Commute', 'Gym', 'Stand up', 'Standup', 'Daily standup', 'Happy birthday!']}
-
-
-def routine_rules(rules):
-    """(dropping, keeping): a `routine_recurring` rule only keeps a meeting out of the review. The meeting is still on the
-    owner's day, so it is stored (already reviewed) for the Calendar and Talk. Every other rule means never stored."""
-    rules = rules or []
-    return [r for r in rules if not r.get('routine_recurring')], [r for r in rules if r.get('routine_recurring')]
-
-
-def default_exclusions(config, account):
-    if account.get('default_exclude') is False:
-        return []
-    if account.get('service') == 'android':
-        # One connected work account does not cover every mailbox/workspace in
-        # the phone app. Unknown account previews stay; explicit owner exclusions
-        # can still suppress a whole package when that is genuinely wanted.
-        return [ANDROID_STATUS_NOTICES]
-    if account.get('service') in CALENDAR_SERVICES:
-        return [ROUTINE_CALENDAR]
-    return []
-
-
-# Calendar invite acceptances are noise in every email source. Subject-only, case-insensitive; config `excluded_email_subjects` overrides.
-DEFAULT_EXCLUDED_EMAIL_SUBJECTS = [
-    r"^\s*(accepted|geaccepteerd|aanvaard|accepté|acceptée|angenommen|akzeptiert|aceptado|aceptada|aceito|aceita"
-    r"|accettato|accettata|zaakceptowano|godkänt|accepteret|godtatt|hyväksytty)\s*:",
-]
-
-
-def email_subject_excluded(config, subject):
-    normalized = html.unescape(str(subject or '')).replace('’', "'").replace('‘', "'")
-    return any(re.search(pattern, normalized, re.I)
-               for pattern in config.get('excluded_email_subjects', DEFAULT_EXCLUDED_EMAIL_SUBJECTS))
-
-
-def calendar_title_excluded(account, title):
-    # Narrow owner-requested title matching; do not suppress birthday-related
-    # meetings merely because their descriptions mention someone's birthday.
-    normalized = html.unescape(str(title or '')).replace('’', "'").casefold()
-    return any(str(term).replace('’', "'").casefold() in normalized
-               for term in account.get('excluded_title_terms', []) if term)
 
 
 def calendar_event(account, raw, timezone):
