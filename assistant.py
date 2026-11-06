@@ -195,6 +195,10 @@ def android_app_name(package):
 
 DEFAULT_CONFIG = Path(os.environ.get('ASSISTANT_CONFIG') or Path.home() / '.local/share/personal-assistant/config.json').expanduser()
 LOG = logging.getLogger('personal-assistant')
+# A dashboard or API request that takes longer than this is logged with its path, its total time and the time it spent
+# getting a database connection (opening it, waiting on the lock) and holding one: never a query, a body or an answer.
+SLOW_REQUEST_SECONDS = 5.0
+_REQUEST_TIMING = threading.local()  # this thread's request, while one is answered (Store.connect adds to it)
 # A sync error that a new sign-in ends: Google's or Microsoft's sign-in expired or revoked, or Gmail's or Calendar's 401 (gog's
 # "HTTP_401" once Google revoked the grant). The sync watches for that sign-in, and a reconnect clears it at once.
 SIGNIN_ERROR = r'(google|microsoft)_signin_(expired|pending)|microsoft_broker|\b(gmail|calendar):HTTP_401\b'
@@ -4331,6 +4335,26 @@ class Store:
 
     @contextlib.contextmanager
     def connect(self):
+        timing = getattr(_REQUEST_TIMING, 'value', None)  # a request being answered on this thread: its database time
+        if timing is None:
+            with self._connect() as db:
+                yield db
+            return
+        started = time.monotonic()
+        held = None
+        try:
+            with self._connect(timing, started) as db:
+                held = time.monotonic()
+                yield db
+        finally:
+            done = time.monotonic()
+            timing['db_connections'] += 1
+            timing['db_held'] += done - (held or done)
+            if held is None:
+                timing['db_wait'] += done - started
+
+    @contextlib.contextmanager
+    def _connect(self, timing=None, started=0.0):
         db = sqlite3.connect(self.path, timeout=20, factory=message_seal.Connection)
         db.row_factory = sqlite3.Row
         db.protected = self.protected
@@ -4347,6 +4371,8 @@ class Store:
                     db.execute('PRAGMA wal_checkpoint(TRUNCATE)')
                 self._sealed_schema = db.execute('PRAGMA schema_version').fetchone()[0]
         db.execute('PRAGMA foreign_keys=ON')
+        if timing is not None:  # opened and set up: waiting on a lock to read the schema counts here
+            timing['db_wait'] += time.monotonic() - started
         try:
             with db:
                 yield db
@@ -24386,10 +24412,35 @@ class App(*APP_MIXINS):
                 self.answered = True
                 super().send_response(*args, **kwargs)
 
+            def parse_request(self):
+                # the request line is in: the clock starts here, not while a kept-alive connection waits for the next one
+                self.started, self.action_name = time.monotonic(), ''
+                _REQUEST_TIMING.value = {'db_wait': 0.0, 'db_held': 0.0, 'db_connections': 0}
+                return super().parse_request()
+
             def handle_one_request(self):
                 """An unexpected error answers a plain 500 with its reason instead of dropping the connection: a proxy in
                 front (Caddy) reads a dropped answer as the service restarting and says so. The traceback goes to the log."""
-                self.answered = False
+                self.answered, self.started = False, None
+                try:
+                    self.answer_one_request()
+                finally:
+                    self.log_slow()
+
+            def log_slow(self):
+                """A request over SLOW_REQUEST_SECONDS: its path (no query), the action, the total and the database time."""
+                timing, _REQUEST_TIMING.value = getattr(_REQUEST_TIMING, 'value', None), None
+                if self.started is None or timing is None:
+                    return
+                total = time.monotonic() - self.started
+                if total < SLOW_REQUEST_SECONDS:
+                    return
+                path = urllib.parse.urlsplit(getattr(self, 'path', '') or '').path[:80]
+                LOG.warning('slow request method=%s path=%s action=%s total=%.1fs db_wait=%.1fs db_held=%.1fs db_connections=%d',
+                            self.command, path, self.action_name or '-', total, timing['db_wait'], timing['db_held'],
+                            timing['db_connections'])
+
+            def answer_one_request(self):
                 try:
                     super().handle_one_request()
                 except Exception as error:
@@ -25061,6 +25112,8 @@ class App(*APP_MIXINS):
                     if ((upload and request.get('action') not in UPLOAD_ACTIONS) or (chat_file and request.get('action') != 'chat_upload')
                             or (voice and request.get('action') != 'voice_transcribe')):
                         raise ValueError('Invalid request size')
+                    if isinstance(request, dict) and re.fullmatch(r'[a-z0-9_]{1,60}', str(request.get('action'))):
+                        self.action_name = request['action']  # the slow-request log names the action, never its arguments
                     if self.path != '/api/action' or (not internal and request['action'] not in DASHBOARD_ACTIONS):
                         self.output(403, {'error': 'Operation is not available here'})
                         return

@@ -139,6 +139,7 @@ Right after, a second turn reads the first and latest messages with up to 15 of 
 ## Operations
 
 - **Service:** `assistant service status`, `restart`, `stop`, `start` and `logs` (`-n 200`, `-f`), on Linux (systemd: `systemctl --user status personal-assistant.service`, `journalctl --user -u personal-assistant.service`) and macOS (launchd: `computer.themachine.assistant`, log in `~/Library/Logs/TheMachine`). On Linux, enable lingering (`loginctl enable-linger $USER`) to start at boot.
+- **Slow requests:** a dashboard or API request that takes over 5 seconds leaves a `slow request` line in the service log: its path (no query), the action name, the total time and the time spent getting a database connection (`db_wait`) and holding one (`db_held`). Never message content, arguments or answers.
 - **Asking for help:** `assistant support-bundle` saves versions, `assistant doctor`, the service status and logs and the Gateway's warnings in one file, with keys, tokens, passwords and addresses taken out. Inside WSL it lands on your Windows Desktop.
 - **Plugin:** after editing `openclaw-plugin/`, run `openclaw plugins reload personal-assistant-bridge --wait`; no Gateway restart needed.
 - **One collector only:** don't run `assistant.py sync-once` while the service runs. Stop the service before manual syncs or migrations and resume from the existing checkpoints. Never reset a checkpoint to get past throttling.
