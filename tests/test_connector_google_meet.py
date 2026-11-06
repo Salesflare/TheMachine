@@ -67,7 +67,8 @@ class Fake:
         self.entries = {('artifact-1', ''): {'transcriptEntries': [entry(1, 'p1', 'Discuss the example release.'),
                                                                    entry(2, 'p1', 'Then the checklist.'),
                                                                    entry(3, 'p2', 'Ready.')]}}
-        self.documents = {'smartNotes-doc-1': document('Summary: Example release.\nNext step: Review the checklist. ✓')}
+        self.documents = {'smartNotes-doc-1': {**document('Summary: Example release.\nNext step: Review the checklist. ✓'),
+                                               'title': 'Example release sync -  Notes by Gemini'}}
         self.people = copy.deepcopy(PEOPLE)
         self.overrides = {}
 
@@ -144,6 +145,11 @@ class GoogleMeetTests(unittest.TestCase):
         notes, transcript = self.rows()
         self.assertEqual((notes['kind'], transcript['kind']), ('google_meet.notes', 'google_meet.transcript'))
         self.assertEqual(notes['body'], 'Summary: Example release.\nNext step: Review the checklist. ✓')
+        # the notes go by the meeting's name (their doc's title), with who was in the call
+        self.assertEqual(notes['title'], 'Example release sync - Notes by Gemini')
+        self.assertEqual(json.loads(notes['metadata'])['participants'], ['Guest Sam', 'Robin Reviewer'])
+        self.assertEqual(transcript['title'], 'Meeting transcript · 2026-10-27')
+        self.assertNotIn('participants', json.loads(transcript['metadata']))  # its lines name the speakers already
         # one line per turn, by the name Meet shows, consecutive entries of one speaker together
         self.assertEqual(transcript['body'], 'Robin Reviewer: Discuss the example release. Then the checklist.\nGuest Sam: Ready.')
         for row in (notes, transcript):
@@ -374,6 +380,25 @@ class GoogleMeetTests(unittest.TestCase):
         self.assertEqual(meet.doc_text(doc['body']['content']), 'Attendees: Robin Reviewer\nAction\nOwner\nQ4 plan\n')
         self.assertEqual(meet.doc_text(None), '')
         self.assertEqual(meet.doc_text([{'paragraph': {'elements': [None, {'textRun': {'content': 5}}]}}]), '')
+
+    def test_notes_whose_next_steps_name_no_one_say_the_owner_was_alone_and_are_found_by_name(self):
+        """A meeting the owner held alone: Gemini's next steps name no one, so who was in the call says whose they are."""
+        self.fake.people = {'participants': [PEOPLE['participants'][0]]}
+        self.fake.documents['smartNotes-doc-1'] = {**document('Next steps\nSend final menu prices to design team: by Friday.'),
+                                                   'title': 'Example Bakery - Notes by Gemini'}
+        self.sync()
+        notes = next(row for row in self.rows() if row['kind'] == 'google_meet.notes')
+        self.assertEqual(json.loads(notes['metadata'])['participants'], ['Robin Reviewer'])
+        self.assertEqual([r['id'] for r in self.store.events([ACCOUNT['id']], 'Example Bakery')], [notes['id']])
+        view = a.review_view(notes)
+        self.assertEqual((view['title'], view['metadata']['participants']), ('Example Bakery - Notes by Gemini', ['Robin Reviewer']))
+        prompt = a.review_prompt('run', [ACCOUNT['id']])
+        self.assertIn('google_meet.notes', prompt)
+        self.assertIn('when a next step names no one and the owner was the only one there, it is the owner\'s', prompt)
+        # a doc without a title keeps the dated name
+        self.fake.documents['smartNotes-doc-1'] = document('Summary: edited.')
+        self.sync()
+        self.assertEqual(next(row for row in self.rows() if row['kind'] == 'google_meet.notes')['title'], 'Meeting notes · 2026-10-27')
 
     def test_explicitly_labeled_sensitive_values_are_omitted(self):
         self.fake.documents['smartNotes-doc-1'] = document('password: example-placeholder\notp=000000\nOrdinary notes remain.')

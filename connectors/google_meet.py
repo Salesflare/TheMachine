@@ -159,11 +159,12 @@ class Source:
         return '\n'.join(f'{speaker}: {" ".join(said)}' for speaker, said in lines)
 
     def document(self, document):
-        """The Gemini notes doc's text (Docs API, documents.readonly): its first tab, paragraphs and tables in order."""
+        """The Gemini notes doc's title and text (Docs API, documents.readonly): its first tab, paragraphs and tables in order."""
         doc = self.get('docs.documents.get', {'documentId': document}, DOCS_SCOPE)
         if not isinstance(doc, dict):
             raise self.helpers.SourceError('google_meet_invalid_response')
-        return doc_text((doc.get('body') or {}).get('content') if isinstance(doc.get('body'), dict) else None)
+        title = ' '.join(doc['title'].split())[:200] if isinstance(doc.get('title'), str) else ''
+        return title, doc_text((doc.get('body') or {}).get('content') if isinstance(doc.get('body'), dict) else None)
 
 
 def doc_text(content, depth=0):
@@ -208,7 +209,11 @@ def artifact_event(source, account, conference, item, collection):
     if notes and not isinstance(document, str) or document is not None and not (isinstance(document, str) and re.fullmatch(ID, document)):
         raise helpers.SourceError('google_meet_invalid_document')  # a transcript's doc is only linked: its entries are read
     occurred = timestamp(item.get('startTime') or conference['startTime'], helpers).isoformat()
-    body = (source.document(document) if notes else source.transcript(conference['name'], name)).strip()
+    # The notes doc's title names the meeting (Gemini's notes often name no one on a next step), and who was in the call
+    # tells the review whose those steps are: the owner alone in it, or with others
+    meeting, body = source.document(document) if notes else ('', source.transcript(conference['name'], name))
+    body = body.strip()
+    people = sorted(set(source.names(conference['name']).values()))[:50] if notes else []
     # Do not collect explicitly labeled passwords or one-time codes in Docs.
     body = re.sub(r'(?i)\b(password|passcode|one[- ]time code|verification code|otp)\s*[:=]\s*\S+',
                   r'\1: [omitted]', body)
@@ -217,11 +222,11 @@ def artifact_event(source, account, conference, item, collection):
     span = {'start_at': conference['startTime'], **({'end_at': conference['endTime']} if conference.get('endTime') else {})}
     return {'account_id': account['id'], 'source_id': hashlib.sha256(name.encode()).hexdigest(),
             'kind': 'google_meet.notes' if notes else 'google_meet.transcript',
-            'occurred_at': occurred, 'title': ('Meeting notes' if notes else 'Meeting transcript') + ' · ' + occurred[:10],
+            'occurred_at': occurred, 'title': meeting or ('Meeting notes' if notes else 'Meeting transcript') + ' · ' + occurred[:10],
             'body': body[:cap], 'deleted': False,
             'metadata': {**({'source_url': 'https://docs.google.com/document/d/' + document + '/edit'} if document else {}),
                          'thread_id': hashlib.sha256(conference['name'].encode()).hexdigest(),
-                         'conference': conference['name'], 'artifact': name,
+                         'conference': conference['name'], 'artifact': name, **({'participants': people} if people else {}),
                          'truncated': len(body) > cap, 'body_chars': len(body), **span}}
 
 
