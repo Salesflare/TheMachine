@@ -358,6 +358,7 @@
  "An intro to someone at {}": "Una presentación a alguien en {}",
  "An old sign-in was used again, so all its sign-ins were ended": "Se volvió a usar un inicio de sesión antiguo, así que se cerraron todas sus sesiones",
  "An organization name is up to 100 characters": "Un nombre de organización tiene hasta 100 caracteres",
+ "An update kept your own files.": "Una actualización conservó tus propios archivos.",
  "An update to a skill you have, from": "Una actualización de una habilidad que tienes, de",
  "Analysis expired; begin a fresh review": "El análisis caducó; empieza una revisión nueva",
  "And {} more.": "Y {} más.",
@@ -4464,6 +4465,7 @@
  "The model can only be changed in config.json here": "El modelo solo se puede cambiar aquí en config.json",
  "The model list isn’t loaded yet. Try again in a minute.": "La lista de modelos aún no se ha cargado. Inténtalo de nuevo en un minuto.",
  "The new test also passes without the fix, so it doesn’t prove the fix. Not merged by itself.": "La prueba nueva también pasa sin la corrección, así que no la demuestra. No se fusionó por sí sola.",
+ "The new version has files with the same names, so the update renamed yours:\n{}\nClose this once you’ve checked them.": "La nueva versión tiene archivos con los mismos nombres, así que la actualización renombró los tuyos:\n{}\nCierra esto cuando los hayas revisado.",
  "The note is too long": "La nota es demasiado larga",
  "The notifications on your Android phone, through the OpenClaw app.": "Las notificaciones de tu teléfono Android, a través de la app de OpenClaw.",
  "The ones you are most in touch with first.": "Primero, con quienes más contacto tienes.",
@@ -5458,6 +5460,10 @@
  "Your turn": "Te toca",
  "Your turn: sign in": "Te toca: inicia sesión",
  "Your update": "Tu actualización",
+ "Your update kept {} of your own files": {
+  "one": "Tu actualización conservó {} de tus archivos",
+  "other": "Tu actualización conservó {} de tus archivos"
+ },
  "Your username: {}. Friends add you by it.": "Tu nombre de usuario: {}. Tus amigos te añaden con él.",
  "Your week": "Tu semana",
  "Your week with The Machine": "Tu semana con The Machine",

@@ -21,7 +21,7 @@ const cardViaIcon=s=>{const v=(/^Source:\s*([^·\n]+)/i.exec(s.source_line||'')?
  const named=[['slack',/^slack\b/i],['whatsapp',/^whatsapp\b/i],['telegram',/^telegram\b/i],['linkedin',/^linkedin\b/i],['x',/^x( message)?\b/i],['intercom',/^intercom\b/i],['gdocs',/^(doc |suggested edit)/i]].find(([,r])=>r.test(v));
  return named?named[0]:/note/i.test(v)?'note':/calendar/i.test(v)?(svc.includes('calendar')?'gcal':'cal'):'chat'};
 // A card the owner added has their own words as its only signal until the review links an email: nothing to open yet.
-const hasOriginal=s=>Boolean(s.source_line||(s.origin!=='owner'&&eventIds(s).length)||(s.original_urls||[]).length);
+const hasOriginal=s=>Boolean(s.source_line||(!['owner','machine'].includes(s.origin)&&eventIds(s).length)||(s.original_urls||[]).length);  // machine: an update's note, no thread
 const isEmail=s=>/^Source: email/.test(s.source_line||'')||(s.original_urls||[]).some(u=>/^https:\/\/(mail\.google\.com|outlook\.(office|office365|live)\.com)\//.test(u));
 const originalsFor=id=>{if(!originals.has(id))originals.set(id,request('api/originals?id='+id).then(r=>r.originals).catch(e=>{originals.delete(id);throw e}));return originals.get(id)};
 // Dark mode for HTML emails, like Gmail's: light backgrounds turn dark and dark text turns light,

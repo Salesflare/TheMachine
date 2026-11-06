@@ -358,6 +358,7 @@
  "An intro to someone at {}": "Une intro auprès de quelqu’un chez {}",
  "An old sign-in was used again, so all its sign-ins were ended": "Une ancienne connexion a été réutilisée, toutes ses connexions ont donc été fermées",
  "An organization name is up to 100 characters": "Un nom d’organisation fait 100 caractères au plus",
+ "An update kept your own files.": "Une mise à jour a gardé vos propres fichiers.",
  "An update to a skill you have, from": "Une mise à jour d’une compétence que vous avez, de",
  "Analysis expired; begin a fresh review": "Analyse expirée ; commencez une nouvelle revue",
  "And {} more.": "Et {} de plus.",
@@ -4464,6 +4465,7 @@
  "The model can only be changed in config.json here": "Le modèle ne peut être changé ici que dans config.json",
  "The model list isn’t loaded yet. Try again in a minute.": "La liste des modèles n’est pas encore chargée. Réessayez dans une minute.",
  "The new test also passes without the fix, so it doesn’t prove the fix. Not merged by itself.": "Le nouveau test passe aussi sans le correctif, donc il ne prouve pas le correctif. Pas fusionné tout seul.",
+ "The new version has files with the same names, so the update renamed yours:\n{}\nClose this once you’ve checked them.": "La nouvelle version contient des fichiers aux mêmes noms, la mise à jour a donc renommé les vôtres :\n{}\nFermez ceci une fois que vous les avez vérifiés.",
  "The note is too long": "La note est trop longue",
  "The notifications on your Android phone, through the OpenClaw app.": "Les notifications de votre téléphone Android, via l’app OpenClaw.",
  "The ones you are most in touch with first.": "D’abord ceux avec qui vous êtes le plus en contact.",
@@ -5458,6 +5460,10 @@
  "Your turn": "À vous",
  "Your turn: sign in": "À vous : connectez-vous",
  "Your update": "Votre mise à jour",
+ "Your update kept {} of your own files": {
+  "one": "Votre mise à jour a gardé {} de vos fichiers",
+  "other": "Votre mise à jour a gardé {} de vos fichiers"
+ },
  "Your username: {}. Friends add you by it.": "Votre nom d’utilisateur : {}. Vos amis vous ajoutent avec.",
  "Your week": "Votre semaine",
  "Your week with The Machine": "Votre semaine avec The Machine",

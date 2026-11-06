@@ -14,6 +14,10 @@ Het eigen logboek van je Machine: mislukte runs, geweigerde overdrachten, Telegr
 
 Als The Machine bijwerkt en een van zijn eigen fixes niet meer past op de nieuwe versie, zet de update die fix opzij en gaat verder, zodat je Machine nooit op een oude versie blijft. Een to-do, **Doe een fix opnieuw die de update opzij zette**, noemt de fix. Vraag om hem opnieuw te doen op de nieuwe versie, of sluit de to-do.
 
+## Je eigen bestanden die een update bewaarde
+
+Als een nieuwe versie een bestand meebrengt met dezelfde naam als een bestand dat je zelf toevoegde, geeft de update het jouwe een nieuwe naam in plaats van het te overschrijven en gaat verder. Een to-do zegt hoeveel hij er bewaarde en noemt elke oude en nieuwe naam. Sluit hem als je ze hebt bekeken.
+
 ## Wat het kan doen
 
 Niets. Het leest alleen het logboek op je eigen Machine.

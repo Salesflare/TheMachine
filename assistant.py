@@ -4892,7 +4892,8 @@ class Store:
                                      hashlib.sha256(item['sha'].encode()).hexdigest(), stamp))
                 if not cursor.rowcount:
                     continue
-                self.suggest('parked:' + item['sha'], title[:90], body[:699], [cursor.lastrowid], when='now', owner_step=True, _db=db)
+                card = self.suggest('parked:' + item['sha'], title[:90], body[:699], [cursor.lastrowid], when='now', owner_step=True, _db=db)
+                db.execute("UPDATE suggestions SET origin='machine' WHERE id=?", (card['id'],))  # no thread to read, nothing to plan
                 made += 1
         return made
 
@@ -12859,7 +12860,7 @@ def same_matter_cards(db, event_ids, project=None, limit=4):
 
 def source_line(rows):
     """One readable line about where a suggestion comes from, for the card."""
-    rows = [r for r in rows if r['kind'] != 'owner.card']  # the owner's own words: the card says "Added by you" instead
+    rows = [r for r in rows if r['kind'] not in ('owner.card', 'machine.parked_fix')]  # the owner's own words ("Added by you"), an update's note
     if not rows:
         return None
     first = rows[0]  # The reviewer's main evidence (callers keep its order).
@@ -13627,7 +13628,8 @@ def controls(row, root=''):
             choices[0] = (retry_label(row.get('preparation_reason')), 'retry')
     if row.get('owner_step') and row['status'] not in ('completed','rejected','snoozed'):
         # Only the owner can do this step (a visit, a pickup): Done leads; Plan it is what The Machine can do around it.
-        choices = [('Done','complete')] + [('Plan it' if choice == 'accept' else label, choice) for label, choice in choices if choice != 'complete']
+        choices = [('Done','complete')] + [('Plan it' if choice == 'accept' else label, choice) for label, choice in choices if choice != 'complete'
+                                           and (row.get('origin') != 'machine' or choice == 'snooze')]  # an update's note: Done, Snooze
     actions=next_actions.visible_actions({'kind':'menu','actions':row['next_actions']}) if row.get('next_actions') is not None else next_actions.visible_actions(row.get('next_action'))
     if ask_question(row,actions):choices=[('Answer','other'),*([(retry_label(row.get('preparation_reason')),'retry')] if row.get('preparation_status')=='blocked' and not retry_pointless(row) else []),('Mark done','complete'),('Snooze','snooze'),('Not needed','reject')]
     choices = [(t(label), choice) for label, choice in choices]

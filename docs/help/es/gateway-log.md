@@ -14,6 +14,10 @@ El propio registro de tu Machine: ejecuciones fallidas, traspasos rechazados, me
 
 Cuando The Machine se actualiza y una de sus propias correcciones ya no encaja con la nueva versión, la actualización deja esa corrección a un lado y sigue, para que tu Machine nunca se quede en una versión antigua. Una tarea, **Rehacer una corrección que la actualización dejó a un lado**, nombra la corrección. Pide que la rehaga en la nueva versión, o cierra la tarea.
 
+## Tus propios archivos que una actualización conservó
+
+Cuando una nueva versión trae un archivo con el mismo nombre que uno que añadiste tú, la actualización renombra el tuyo en vez de sobrescribirlo y sigue. Una tarea dice cuántos conservó e indica cada nombre antiguo y nuevo. Ciérrala cuando los hayas revisado.
+
 ## Qué puede hacer
 
 Nada. Solo lee el registro en tu propia Machine.

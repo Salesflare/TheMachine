@@ -14,6 +14,10 @@ Il log della tua Machine: esecuzioni non riuscite, passaggi rifiutati, messaggi 
 
 Quando The Machine si aggiorna e una delle sue correzioni non va più bene per la nuova versione, l’aggiornamento mette da parte quella correzione e va avanti, così la tua Machine non resta mai su una versione vecchia. Un’attività, **Rifai una correzione messa da parte dall’aggiornamento**, nomina la correzione. Chiedi di rifarla sulla nuova versione, oppure chiudi l’attività.
 
+## I tuoi file conservati da un aggiornamento
+
+Quando una nuova versione porta un file con lo stesso nome di uno che hai aggiunto tu, l’aggiornamento rinomina il tuo invece di sovrascriverlo e va avanti. Un’attività dice quanti ne ha conservati e indica ogni nome vecchio e nuovo. Chiudila quando li hai controllati.
+
 ## Cosa può fare
 
 Niente. Legge solo il log sulla tua Machine.
