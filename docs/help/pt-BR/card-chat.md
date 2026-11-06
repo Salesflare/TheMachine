@@ -19,7 +19,7 @@ Cada e-mail mostra só o que há de novo nele. As mensagens anteriores que ele c
 - Sobre a conversa, as pessoas ou o contexto: "O que eles pediram da última vez?"
 - Para mudar o rascunho: "Deixe mais curto" ou "Mencione a nova data".
 
-Uma pergunta recebe uma resposta e deixa o rascunho como está. As aprovações ficam nos botões da tarefa: o chat nunca envia um rascunho na mesma resposta que o escreveu.
+Uma pergunta recebe uma resposta e deixa o rascunho como está. As aprovações ficam nos botões da tarefa: o chat nunca envia um rascunho na mesma resposta que o escreveu. O que você pede no chat e não chega a ninguém, como arrumar um documento, ela faz na hora, sem pedir que você confirme. Tudo o que for além do que você pediu continua esperando o seu OK.
 
 No computador, Enter ou Ctrl+Enter (Cmd+Enter no Mac) envia, e Shift+Enter começa uma nova linha. No celular, use o botão de enviar.
 

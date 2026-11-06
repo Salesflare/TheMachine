@@ -5,8 +5,8 @@ written and checks it.
 A preparation offers {kind: doc_write} as a next action. A new doc is made right away (Store.make_new_docs): a private
 doc in the owner's own Drive or OneDrive, shared with nobody, so nothing goes to anyone and it needs no OK; the to-do
 shows its link (2026-11-03). Sharing it is a step after it, drafted for the owner's OK. An edit to an existing doc
-shows each change as before and after and runs only after the owner's Save and its confirm. Never with send_now, so a
-chat turn never drafts and edits at once; by voice the whole change is read aloud first and needs a clear yes
+shows each change as before and after and runs only after the owner's Save and its confirm, or at once when the owner's
+own chat message asked for that change (do_now, 2026-11-06). Never with send_now; by voice the whole change is read aloud first and needs a clear yes
 (talk_live.py). If making the new doc fails, it waits as Review and create, like before.
 
 - create {op: create, account_id, title, body}: a new doc from plain text. A line starting with "# ", "## " or "### "

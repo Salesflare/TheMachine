@@ -19,7 +19,7 @@ Elke e-mail toont alleen wat er nieuw in staat. De eerdere berichten die erin ge
 - Over de thread, de personen of de achtergrond: "Wat vroegen ze de vorige keer?"
 - Om het concept aan te passen: "Maak het korter" of "Noem de nieuwe datum".
 
-Een vraag krijgt een antwoord en laat het concept zoals het is. Goedkeuren blijft bij de knoppen van de to-do: de chat verstuurt een concept nooit in hetzelfde antwoord dat het schreef.
+Een vraag krijgt een antwoord en laat het concept zoals het is. Goedkeuren blijft bij de knoppen van de to-do: de chat verstuurt een concept nooit in hetzelfde antwoord dat het schreef. Wat je in de chat vraagt en niemand bereikt, zoals een document opschonen, doet hij meteen, zonder dat je het moet bevestigen. Alles wat verder gaat dan je vroeg, wacht nog op je OK.
 
 Op een computer verstuurt Enter of Ctrl+Enter (Cmd+Enter op een Mac) je bericht, en Shift+Enter begint een nieuwe regel. Gebruik op een telefoon de verstuurknop.
 

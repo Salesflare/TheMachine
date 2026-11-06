@@ -19,7 +19,7 @@ Ogni email mostra solo ciò che contiene di nuovo. I messaggi precedenti che cit
 - Sulla conversazione, sulle persone o sul contesto: "Cosa hanno chiesto l'ultima volta?"
 - Per cambiare la bozza: "Rendila più breve" o "Cita la nuova data".
 
-Una domanda riceve una risposta e lascia la bozza com'è. Le approvazioni restano sui pulsanti dell'attività: la chat non invia mai una bozza nella stessa risposta che l'ha scritta.
+Una domanda riceve una risposta e lascia la bozza com'è. Le approvazioni restano sui pulsanti dell'attività: la chat non invia mai una bozza nella stessa risposta che l'ha scritta. Quello che chiedi nella chat e che non raggiunge nessuno, come sistemare un documento, lo fa subito, senza chiederti di confermare. Tutto ciò che va oltre quello che hai chiesto aspetta ancora il tuo OK.
 
 Su un computer, Invio o Ctrl+Invio (Cmd+Invio su Mac) invia e Maiusc+Invio va a capo. Su un telefono, usa il pulsante di invio.
 

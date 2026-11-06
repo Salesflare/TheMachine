@@ -31,7 +31,7 @@ A docs connection can be action-only: turn **Brings in signals** off under **Det
 Your Machine can write a new doc, or change a doc one of your to-dos is about:
 
 - A new doc it makes right away, when the to-do or a skill says to make one: a private doc in your own Google Drive or OneDrive, shared with nobody. The to-do shows it with **Open the doc**. Sharing it, or sending its link to someone, waits for your OK.
-- A change to an existing doc it only prepares, each paragraph before and after. Press **Review changes**, read it, then **Save**.
+- A change to an existing doc it only prepares, each paragraph before and after. Press **Review changes**, read it, then **Save**. A change you ask for in the to-do chat it makes right away.
 - It writes a change once, and only into the doc as you saw it. If someone changed the doc in the meantime, nothing is written and the to-do says so. Ask for a new draft.
 - In Talk, it reads the whole change aloud and waits for a clear yes.
 - If Google or Microsoft refuses a new doc, the to-do says what was refused and shows **Review and create** to try again.

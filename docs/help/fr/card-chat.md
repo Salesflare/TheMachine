@@ -19,7 +19,7 @@ Chaque e-mail ne montre que ce qui est nouveau. Les messages précédents qu’i
 - Sur le fil, les personnes ou le contexte : « Qu’ont-ils demandé la dernière fois ? »
 - Pour changer le brouillon : « Fais plus court » ou « Mentionne la nouvelle date ».
 
-Une question reçoit une réponse et laisse le brouillon tel quel. Les approbations restent sur les boutons de la tâche : le chat n’envoie jamais un brouillon dans la réponse qui l’a rédigé.
+Une question reçoit une réponse et laisse le brouillon tel quel. Les approbations restent sur les boutons de la tâche : le chat n’envoie jamais un brouillon dans la réponse qui l’a rédigé. Ce que vous demandez dans le chat et qui n’atteint personne, comme un nettoyage dans un document, elle le fait tout de suite, sans vous demander de confirmer. Tout ce qui va plus loin que votre demande attend toujours votre OK.
 
 Sur ordinateur, Entrée ou Ctrl+Entrée (Cmd+Entrée sur Mac) envoie, et Maj+Entrée passe à la ligne. Sur un téléphone, utilisez le bouton d’envoi.
 

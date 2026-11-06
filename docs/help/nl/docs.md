@@ -31,7 +31,7 @@ Een documentenkoppeling kan alleen dingen doen: zet **Brengt signalen binnen** u
 Je Machine kan een nieuw document schrijven, of een document aanpassen waar een van je to-do's over gaat:
 
 - Een nieuw document maakt hij meteen, als de to-do of een skill zegt er een te maken: een privédocument in je eigen Google Drive of OneDrive, met niemand gedeeld. De to-do toont het met **Open het document**. Het delen, of de link naar iemand sturen, wacht op je OK.
-- Een wijziging aan een bestaand document bereidt hij alleen voor, elke alinea voor en na. Tik op **Wijzigingen nakijken**, lees het en dan **Opslaan**.
+- Een wijziging aan een bestaand document bereidt hij alleen voor, elke alinea voor en na. Tik op **Wijzigingen nakijken**, lees het en dan **Opslaan**. Een wijziging waar je in de chat van de to-do om vraagt, maakt hij meteen.
 - Hij schrijft een wijziging één keer, en alleen in het document zoals je het zag. Heeft iemand het intussen aangepast, dan wordt er niets geschreven en zegt de to-do dat. Vraag dan een nieuw concept.
 - In Talk leest hij de hele wijziging voor en wacht op een duidelijk ja.
 - Weigert Google of Microsoft een nieuw document, dan zegt de to-do wat geweigerd werd en toont **Nakijken en maken** om het opnieuw te proberen.

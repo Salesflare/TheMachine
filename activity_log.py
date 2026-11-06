@@ -66,7 +66,7 @@ SERVICES = {'gmail': 'Gmail', 'calendar': 'Google Calendar', 'outlook': 'Outlook
 MESSAGE_KINDS = {'email': 'Email', 'email_demo': 'Email', 'linkedin': 'LinkedIn', 'slack': 'Slack', 'x': 'X',
                  'whatsapp': 'WhatsApp', 'telegram': 'Telegram', 'intercom': 'Intercom', 'doc_reply': 'Docs'}
 # action_jobs.status -> outcome; anything else (queued, sending, local_preparation, undoing) is still on its way
-JOB_OUTCOME = {'sent': 'done', 'blocked': 'refused', 'failed': 'failed', 'uncertain': 'failed', 'finish_uncertain': 'failed',
+JOB_OUTCOME = {'sent': 'done', 'done': 'done', 'blocked': 'refused', 'failed': 'failed', 'uncertain': 'failed', 'finish_uncertain': 'failed',
                'cancelled': 'undone', 'undone': 'undone'}
 AGENTS = {'claude': 'Claude Code', 'claude_code': 'Claude Code', 'codex': 'Codex'}
 

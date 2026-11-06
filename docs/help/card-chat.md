@@ -19,7 +19,7 @@ Each email shows only what is new in it. The earlier messages it quotes are fold
 - About the thread, the people or the background: "What did they ask last time?"
 - To change the draft: "Make it shorter" or "Mention the new date".
 
-A question gets an answer and leaves the draft as it is. Approvals stay on the to-do's buttons: chat never sends a draft in the same reply that wrote it.
+A question gets an answer and leaves the draft as it is. Approvals stay on the to-do's buttons: chat never sends a draft in the same reply that wrote it. What you ask for in the chat that reaches nobody, like a cleanup in a doc, it does right away, without asking you to confirm. Anything more than you asked still waits for your OK.
 
 On a computer, Enter or Ctrl+Enter (Cmd+Enter on a Mac) sends and Shift+Enter starts a new line. On a phone, use the send button.
 
