@@ -57,7 +57,7 @@ class GraphFixes(unittest.TestCase):
         # Said in words, not by its place: it is this run's own, so it comes after the instructions every review shares
         # (their cached prefix, tests/test_review_cache_prefix.py)
         self.assertIn('Also in this turn, before the signal review: boards to suggest',p)
-        self.assertGreater(p.index('Hire: designer'),p.index('End with exactly NO_REPLY.'))
+        self.assertGreater(p.index('Hire: designer'),p.index('End with exactly the line Done.'))
         self.assertIn('not about this batch',p)
         self.assertNotIn('Two tasks',a.review_prompt('r1',['acct']))
     def test_a_suggested_boards_lost_or_declined_ending_is_its_stalled_row_not_a_stage(self):

@@ -81,6 +81,28 @@ class ReviewWorker(unittest.TestCase):
         self.assertEqual(runner.requests[-1]['action'],'start')
         self.assertNotEqual(runner.requests[-1]['job_id'],runner.requests[0]['job_id'])
 
+    def test_a_review_interrupted_mid_batch_by_a_restart_is_resumed_by_the_next_run_never_lost(self):
+        # Its turn ends with a fixed line, not NO_REPLY (OpenClaw asked twice more after that); the recovery is the
+        # service's own: the lost run's claim moves to the next run, which resumes the same batch
+        runner=Runner('admitted','pending','lost','admitted')
+        self.step(runner,T)
+        self.assertIn('End with exactly the line Done.',runner.requests[0]['message'])
+        self.assertNotIn('NO_REPLY',runner.requests[0]['message'])
+        old=self.runs()[0]['run_id'];old_session=a.REVIEW_SESSION_PREFIX+old
+        with patch_everywhere(a,'now',return_value=(T+dt.timedelta(seconds=30)).isoformat()):
+            claim=self.store.begin_analysis(['work','home'],120,old_session,old)
+        self.step(runner,T+dt.timedelta(minutes=1))
+        self.step(runner,T+dt.timedelta(minutes=3))  # the probe: the Gateway restarted and the run is gone
+        self.assertEqual(self.runs()[0]['status'],'lost')
+        self.assertEqual(self.store.events(['work'],pending=True)[0]['analyzed_version'],0)  # nothing marked reviewed
+        self.step(runner,T+dt.timedelta(minutes=5))
+        new=self.runs()[-1]['run_id'];self.assertNotEqual(new,old)
+        self.assertEqual(runner.requests[-1]['action'],'start')
+        resumed=self.store.begin_analysis(['work','home'],120,a.REVIEW_SESSION_PREFIX+new,new)
+        self.assertTrue(resumed['resumed']);self.assertEqual(resumed['analysis_id'],claim['analysis_id'])
+        self.store.finish_analysis(claim['analysis_id'],'Reviewed',a.REVIEW_SESSION_PREFIX+new,new)
+        self.assertEqual(self.store.events(['work'],pending=True),[])
+
     def test_extended_outage_enters_recovery_and_reconciles_same_run_on_return(self):
         runner=Runner('admitted','unavailable','unavailable','lost','admitted')
         self.step(runner,T)

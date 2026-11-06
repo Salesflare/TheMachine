@@ -65,7 +65,11 @@ assert.equal(await hooks.before_prompt_build({},skillsCtx),undefined);
 assert.notEqual((await hooks.before_tool_call({toolName:'browser',params:{action:'open'}},skillsCtx))?.block,true);
 assert.notEqual((await hooks.before_tool_call({toolName:'assistant_signals',params:{action:'skills_found',args:{}}},skillsCtx))?.block,true);
 for(const toolName of ['exec','write','message'])assert.equal((await hooks.before_tool_call({toolName,params:{command:'ls'}},skillsCtx)).block,true);
-assert.ok((await hooks.before_prompt_build({},ctx)).prependSystemContext.includes('exactly NO_REPLY'));
+// An isolated review ends with one fixed line (its turn has delivery off): after NO_REPLY, OpenClaw asked twice more
+{ const system=(await hooks.before_prompt_build({},ctx)).prependSystemContext;
+  assert.ok(system.includes('End with exactly the line Done.'));assert.ok(!system.includes('end with exactly NO_REPLY'));
+  assert.ok(system.includes('this reply is never sent to anyone'));assert.ok(!system.includes('alerts and authorized'));
+  assert.ok(system.includes('Do not announce starting')); }
 // Codex refuses a tool call whose parameters a hook rewrote, so the hook never returns params;
 // the tool binds ownership from the run the prompt hook recorded for this session.
 assert.equal(await hooks.before_tool_call({toolName:'assistant_signals',params:{action:'begin_analysis',args:{account_ids:['work'],_review_run:'spoof'}}},ctx),undefined);
@@ -80,7 +84,7 @@ await hooks.model_call_ended({outcome:'error',failureKind:'connection_reset'},ct
 assert.equal(calls.at(-1).args.reason,'ai_connection_reset');
 let guard=await hooks.before_agent_finalize({},ctx);
 assert.equal(guard.action,'revise');assert.equal(guard.retry.maxAttempts,2);
-assert.ok(guard.retry.instruction.includes('exactly NO_REPLY'));
+assert.ok(guard.retry.instruction.includes('End with exactly the line Done.'));assert.ok(!guard.retry.instruction.includes('NO_REPLY'));
 await hooks.agent_end({success:true},ctx);
 assert.equal(calls.at(-1).args.terminal,true);assert.equal(calls.at(-1).args.reason,'review_not_finished');
 review=null;assert.equal(await hooks.before_agent_finalize({},ctx),undefined);
