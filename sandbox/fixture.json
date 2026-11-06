@@ -5997,6 +5997,23 @@
    }
   },
   {
+   "key": "story:pricing:input",
+   "account_id": "work-slack",
+   "kind": "slack.message",
+   "minutes_ago": 90,
+   "title": "#sales: Priya Okonedo",
+   "body": "For Northwind: €29 a seat on annual is fine, and onboarding is included from 10 seats.",
+   "metadata": {
+    "channel_name": "sales",
+    "channel_id": "C0SALES",
+    "conversation_type": "channel",
+    "sender_display": "Priya Okonedo",
+    "user_id": "U2100",
+    "message_ts": "1761000090.000200",
+    "source_url": "https://lumenlabs.slack.example/archives/C0SALES/p1761000090000200"
+   }
+  },
+  {
    "key": "salesflare.email:9",
    "account_id": "work-crm",
    "kind": "salesflare.email",
@@ -7275,7 +7292,8 @@
    "events": [
     "story:pricing:0",
     "story:pricing:1",
-    "story:pricing:2"
+    "story:pricing:2",
+    "story:pricing:input"
    ],
    "accounts": [
     "work-gmail"
@@ -7285,6 +7303,7 @@
    "project": "Northwind rollout",
    "urgent": true,
    "snooze_hours": null,
+   "based_on": "story:pricing:input",
    "next_action": {
     "kind": "email",
     "account_id": "work-gmail",

@@ -74,6 +74,8 @@ Ein Titel sagt, was zu tun ist. Er ändert sich nur, wenn sich das ändert, etwa
 
 Über dem Entwurf nennt eine dezente Zeile die Nachricht, aus der sie stammt, mit dem Logo des Dienstes (Gmail, Slack, WhatsApp…). Tippe darauf, um den Verlauf zu lesen. Der Entwurf beginnt mit dem Logo, wohin er geht, so siehst du vor dem Lesen, ob es eine Slack-Antwort oder eine E-Mail ist. Ein Schritt ohne Entwurf, etwa eine Übergabe, zeigt das Logo auf seinem Button.
 
+Folgt der Entwurf dem Hinweis von jemand anderem in einer anderen Nachricht, etwa dem Vorschlag einer Kollegin in Slack, sagt eine Zeile unter der Aufgabe das, etwa „Laut Sam in #ops“. Tippe darauf, um diese Nachricht zu öffnen.
+
 Ein Chat (Slack, WhatsApp, Telegram, Intercom…) liest sich als ein Gespräch, älteste zuerst, jede Nachricht einmal; die Nachricht, um die es in der Aufgabe geht, hat eine dünne Linie daneben.
 
 **Details** zeigt ihren Namen, ihr Projekt und ihren Bereich (tippe auf eins, um es zu ändern), deine letzte Notiz und das Ergebnis eines Coding-Agenten. **Chat ›** am Ende dieser Zeile öffnet den Chat. Eine erledigte Aufgabe bleibt kurz: ihr Titel, eine Zeile und was rausging; die Nachricht, aus der sie stammt, steht unter ihren **Details**.

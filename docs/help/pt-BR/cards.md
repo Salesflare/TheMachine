@@ -74,6 +74,8 @@ Um título diz o que precisa ser feito. Ele só muda quando isso muda, como com 
 
 Acima do rascunho, uma linha discreta mostra a mensagem de onde ela veio, com o logo do serviço (Gmail, Slack, WhatsApp…). Toque nela para ler a conversa. O rascunho começa com o logo de para onde vai, então você vê se é uma resposta no Slack ou um e-mail antes de ler. Um passo sem rascunho, como um repasse, mostra o logo no botão.
 
+Quando o rascunho segue o que outra pessoa disse em outra mensagem, como a sugestão de um colega no Slack, uma linha abaixo da tarefa diz isso, como "Com base em Sam no #ops". Toque nela para abrir essa mensagem.
+
 Um chat (Slack, WhatsApp, Telegram, Intercom…) aparece como uma única conversa, da mais antiga para a mais nova, cada mensagem uma vez; a mensagem de que trata a tarefa tem uma linha fina ao lado.
 
 **Detalhes** mostra o nome, o projeto e a área dela (toque em um para mudar), sua última nota e o resultado de um agente de código. **Chat ›** no fim dessa linha abre o chat. Uma tarefa concluída fica curta: o título, uma linha e o que foi enviado; a mensagem de onde ela veio fica nos **Detalhes**.
