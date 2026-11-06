@@ -84,7 +84,7 @@ Eine „Wartet auf“-Aufgabe (jemand hat dir etwas versprochen) verlinkt deine 
 
 ## Selbst eine erstellen
 
-**Neue Aufgabe** (auf einem Computer unter **Suchen**) legt eine Aufgabe für alles an. Beim Erstellen wird nichts gesendet. Ohne Arbeit oder Privat landet sie dort, wo sie hingehört: nach den Personen und dem Thema oder der E-Mail, auf die sie sich bezieht. The Machine sucht diese E-Mail in deinem Postfach, auch ältere, die sie noch nicht geholt hat.
+**Neue Aufgabe** (auf einem Computer unter **Suchen**) legt eine Aufgabe für alles an. Beim Erstellen wird nichts gesendet. Ohne Arbeit oder Privat landet sie dort, wo sie hingehört: nach den Personen und dem Thema, einer Firma oder einem Postfach, das sie nennt, oder der E-Mail, auf die sie sich bezieht. Wenn nichts darauf hinweist, landet sie dort, wo die meisten deiner Aufgaben sind. The Machine sucht diese E-Mail in deinem Postfach, auch ältere, die sie noch nicht geholt hat.
 
 - **Fällig**: Gib einen Tag oder eine Uhrzeit ein, etwa „morgen“, „nächsten Fr“, „3. Nov“, „15:00“, „in 2 Stunden“ oder „morgen um 9 Uhr“. Englisch geht auch („in 2 hours“, „tomorrow 9“). Das Kalendersymbol hat Schnellauswahlen wie beim Zurückstellen und **Datum wählen**.
 - **E-Mail**: Häng die E-Mail an, um die es geht. Gesucht wird nur in deinen E-Mails, nach Betreff oder Absender.

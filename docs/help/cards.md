@@ -84,7 +84,7 @@ A "Waiting on" to-do (someone promised you something) links your own last messag
 
 ## Make one yourself
 
-**New to-do** (under **Search** on a computer) adds a to-do for anything. Creating it sends nothing. Without Work or Personal picked, it goes where it belongs, by who and what it is about or the email it follows up on. The Machine looks for that email in your mailbox, also older mail it has not brought in yet.
+**New to-do** (under **Search** on a computer) adds a to-do for anything. Creating it sends nothing. Without Work or Personal picked, it goes where it belongs, by who and what it is about, a company or mailbox it names, or the email it follows up on. When nothing tells, it starts where most of your to-dos are. The Machine looks for that email in your mailbox, also older mail it has not brought in yet.
 
 - **Due**: type a day or a time, like "tomorrow", "next Fri", "3 Nov", "15:00", "2pm", "in 2 hours" or "tomorrow 9". It reads your language too ("over 2 uur", "morgen 9u"). The calendar icon has quick picks, like Snooze, and **Choose date**.
 - **Email**: attach the email it's about. It searches your email only, by subject or sender.

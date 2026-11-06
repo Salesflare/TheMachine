@@ -84,7 +84,7 @@ Una tarea "Esperando a" (alguien te prometió algo) enlaza tu último mensaje a 
 
 ## Crea una tú
 
-**Nueva tarea** (debajo de **Buscar** en un ordenador) añade una tarea para lo que sea. Crearla no envía nada. Sin elegir Trabajo o Personal, va donde corresponde: según de quién y de qué trata, o el correo al que da seguimiento. The Machine busca ese correo en tu buzón, también correos más antiguos que aún no ha traído.
+**Nueva tarea** (debajo de **Buscar** en un ordenador) añade una tarea para lo que sea. Crearla no envía nada. Sin elegir Trabajo o Personal, va donde corresponde: según de quién y de qué trata, una empresa o buzón que nombra, o el correo al que da seguimiento. Si nada lo indica, empieza donde están la mayoría de tus tareas. The Machine busca ese correo en tu buzón, también correos más antiguos que aún no ha traído.
 
 - **Vence**: escribe un día o una hora, como "mañana", "el viernes que viene", "3 nov", "15:00", "2pm", "en 2 horas" o "mañana 9". También entiende otros idiomas ("over 2 uur", "morgen 9u"). El icono del calendario tiene opciones rápidas, como al posponer, y **Elegir fecha**.
 - **Correo**: adjunta el correo del que trata. Solo busca en tu correo, por asunto o remitente.

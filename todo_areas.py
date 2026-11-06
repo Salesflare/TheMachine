@@ -21,6 +21,7 @@ so a family matter is never offered to a Work Fleet. A move to Work takes the pi
 from __future__ import annotations
 
 import json
+import re
 
 PERSONAL = 'personal'
 
@@ -171,3 +172,48 @@ def personal_accounts(accounts):
     """The accounts a to-do of the owner's own life gets (Store.suggest personal): the Personal area's, or None when
     there is none, and it keeps its own accounts, pinned Personal."""
     return accounts_in(PERSONAL, accounts) or None
+
+
+ADDRESS = re.compile(r'[A-Za-z0-9._%+-]+@([A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+)')
+
+
+def addresses(text):
+    """The email addresses a to-do's words mention, lowercased, at most ten."""
+    return list(dict.fromkeys(m.group(0).lower().rstrip('.') for m in ADDRESS.finditer(str(text or ''))))[:10]
+
+
+def mentioned(text, accounts, domain=lambda value: ''):
+    """The area a new to-do's words point to: a company they name ("the Acme inbox") or an address of one of its
+    mailboxes or domains, Personal for an address of a Personal mailbox. None when they point nowhere or to several.
+    domain(email): its domain, '' for a free mail one (a gmail.com address points to no company)."""
+    words = str(text or '')
+    ids = {x['id'] for x in areas(accounts)}
+    votes = set()
+    for company in companies(accounts):
+        org = name(company)
+        if len(org) >= 3 and re.search(r'(?<![\w@.])' + re.escape(org) + r'(?![\w])', words, re.IGNORECASE):
+            votes.add(company)
+    found = addresses(words)
+    for a in accounts or ():
+        area, own = area_of_account(a), str(a.get('email') or '').lower()
+        if area not in ids or '@' not in own:
+            continue
+        firm = domain(own)
+        if own in found or (area != PERSONAL and firm and any(domain(x) == firm for x in found)):
+            votes.add(area)
+    return next(iter(votes)) if len(votes) == 1 else None
+
+
+def most_used(rows, accounts):
+    """The area most of the owner's recent to-dos are in, for a new one nothing places: rows are (account_ids, area
+    column). None on a tie or when none is in one of their areas."""
+    ids = {x['id'] for x in areas(accounts)}
+    counts = {}
+    for account_ids, pinned in rows:
+        x = current(account_ids, accounts, pinned)
+        if x in ids:
+            counts[x] = counts.get(x, 0) + 1
+    ranked = sorted(counts.items(), key=lambda kv: -kv[1])
+    if not ranked or (len(ranked) > 1 and ranked[0][1] == ranked[1][1]):
+        return None
+    return ranked[0][0]

@@ -10751,33 +10751,45 @@ def owner_area_open(db, suggestion_id):
     return []
 
 
-def owner_card_area(db, accounts, node_ids=()):
+def owner_card_area(db, accounts, node_ids=(), text=''):
     """Where a to-do the owner adds without an area goes: (account id, open: the area ids to place it in later). Its
-    only area when they have one; else the area its people and organizations point to (todo_areas.pointed: their side, the accounts they were heard on,
-    their organization's domain); else, open, the area of their first connection that has one, until the review places
-    it by meaning. Never the Machine's own source (the Gateway log, in no area) while an area exists. A mail account
-    of the area first, the one its runs search and send from."""
+    only area when they have one; else the area its people and organizations point to (todo_areas.pointed: their side,
+    the accounts they were heard on, their organization's domain), the people its words name by address among them;
+    else the area its words point to (todo_areas.mentioned: a company or one of its mailboxes). Else, open, the area most
+    of their recent to-dos are in (todo_areas.most_used, or their first connection's), until the review places it by
+    meaning. Never the Machine's own source (the Gateway log, in no area) while an area exists. A mail account of the
+    area first, the one its runs search and send from."""
     found = todo_areas.areas(accounts)
     if not found:
         return accounts[0]['id'], []
     pick = found[0]['id'] if len(found) == 1 else None
-    if pick is None and node_ids:
+    free = lambda value: (lambda d: '' if d in graph.FREEMAIL else d)(own_addresses.email_domain(value))
+    if pick is None:
+        mails = todo_areas.addresses(text)
         try:
-            marks = ','.join('?' for _ in node_ids)
-            rows = db.execute(f"SELECT n.kind,n.info,o.info org_info FROM graph_nodes n LEFT JOIN graph_nodes o ON o.id=json_extract(n.info,'$.org') "
-                              f"WHERE n.id IN ({marks}) AND n.kind IN ('person','org')", list(node_ids)).fetchall()
-            people = []
+            people, rows = [], []
+            select = "SELECT n.kind,n.info,o.info org_info FROM graph_nodes n LEFT JOIN graph_nodes o ON o.id=json_extract(n.info,'$.org') "
+            if node_ids:
+                rows += db.execute(select + f"WHERE n.id IN ({','.join('?' for _ in node_ids)}) AND n.kind IN ('person','org')", list(node_ids)).fetchall()
+            if mails:
+                rows += db.execute(select + f"WHERE n.kind='person' AND EXISTS (SELECT 1 FROM json_each(n.info,'$.emails') e WHERE lower(e.value) IN "
+                                   f"({','.join('?' for _ in mails)}))", mails).fetchall()
             for r in rows:
                 info, org = json.loads(r['info'] or '{}'), json.loads(r['org_info'] or '{}')
                 people.append({'side': info.get('side'), 'accounts': info.get('accounts') or [],
                                'org_domain': info.get('domain') if r['kind'] == 'org' else org.get('domain')})
         except (sqlite3.Error, ValueError, TypeError):
             people = []
-        free = lambda value: (lambda d: '' if d in graph.FREEMAIL else d)(own_addresses.email_domain(value))
-        pick = todo_areas.pointed(people, accounts, None, free)
+        pick = (todo_areas.pointed(people, accounts, None, free) if people else None) or todo_areas.mentioned(text, accounts, free)
     open_ = [f['id'] for f in found] if pick is None else []
     if open_:
-        pick = next(x for x in (todo_areas.area_of_account(a) for a in accounts) if x in {f['id'] for f in found})
+        try:
+            since = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=90)).isoformat()
+            recent = db.execute('SELECT account_ids,area FROM suggestions WHERE created_at>=? ORDER BY created_at DESC LIMIT 500', (since,)).fetchall()
+        except sqlite3.Error:
+            recent = []
+        pick = todo_areas.most_used([(r['account_ids'], r['area']) for r in recent], accounts) or next(
+            x for x in (todo_areas.area_of_account(a) for a in accounts) if x in {f['id'] for f in found})
     ids = todo_areas.accounts_in(pick, accounts)
     services = {a['id']: a.get('service', 'gmail') for a in accounts}
     return next((i for i in ids if services[i] in MAIL_SERVICES), ids[0]), open_
@@ -18747,9 +18759,9 @@ class App(*APP_MIXINS):
             account = personal_ids[0]
         elif attach:
             account = found[attach[0]]
-        else:  # no area given: where it belongs, from the people and organizations on it (owner_card_area)
+        else:  # no area given: where it belongs, from its people, organizations and words (owner_card_area)
             with self.store.connect() as db:
-                account, area_open = owner_card_area(db, accounts, wanted)
+                account, area_open = owner_card_area(db, accounts, wanted, args.get('text') or '')
         work = any(a['id'] == account and str(a.get('boundary') or '').startswith('work:') for a in accounts)
         due, due_at = args.get('due') or None, args.get('due_at') or None
         try:  # a day (the owner's own calendar day), and a moment when they gave a time ("15:00", "in 2 hours")

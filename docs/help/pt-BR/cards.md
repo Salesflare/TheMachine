@@ -84,7 +84,7 @@ Uma tarefa "Aguardando" (alguém prometeu algo a você) traz um link para a sua 
 
 ## Crie uma você mesmo
 
-**Nova tarefa** (abaixo de **Pesquisar** no computador) adiciona uma tarefa para qualquer coisa. Criar a tarefa não envia nada. Sem Trabalho ou Pessoal, ela vai para onde pertence: por quem e do que trata, ou pelo e-mail que ela acompanha. The Machine procura esse e-mail na sua caixa, também e-mails mais antigos que ainda não trouxe.
+**Nova tarefa** (abaixo de **Pesquisar** no computador) adiciona uma tarefa para qualquer coisa. Criar a tarefa não envia nada. Sem Trabalho ou Pessoal, ela vai para onde pertence: por quem e do que trata, por uma empresa ou caixa que cita, ou pelo e-mail que ela acompanha. Se nada indicar, ela começa onde está a maioria das suas tarefas. The Machine procura esse e-mail na sua caixa, também e-mails mais antigos que ainda não trouxe.
 
 - **Vence**: digite um dia ou um horário, como "amanhã", "próxima sex", "3 nov", "15:00", "2pm", "em 2 horas" ou "amanhã 9". Ela entende outros idiomas também ("over 2 uur", "morgen 9u"). O ícone do calendário tem opções rápidas, como ao adiar, e **Escolher data**.
 - **E-mail**: anexe o e-mail de que ela trata. A busca é só nos seus e-mails, pelo assunto ou pelo remetente.

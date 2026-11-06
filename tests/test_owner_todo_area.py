@@ -136,6 +136,33 @@ class BothAreas(Base):
         with self.store.connect() as db:
             self.assertEqual(a.owner_area_open(db, made['id']), [])
 
+    def test_its_words_place_it_a_company_or_a_mailbox_they_name(self):
+        for text, area in (('Search the Acme inbox for the pilot mail', 'work:Acme'),
+                           ('Find what robin@acme.example sent Sam', 'work:Acme'),
+                           ('Ask jo@acme.example about the pilot', 'work:Acme'),  # a colleague at the company's domain
+                           ('Reply from robin@home.example to the landlord', 'personal')):
+            made = self.new(text=text)
+            self.assertEqual(self.card(made['id'])['area'], area, text)
+            self.assertNotIn('area_open', json.loads(self.owner_event(made)['metadata']))
+        # a free mail address, a company named inside a word or an address, or two areas at once: no guess
+        for text in ('Write sam@gmail.com back', 'Check the Acmeville order', 'Mail robin@acme.example and robin@home.example'):
+            made = self.new(text=text)
+            self.assertIn('area_open', json.loads(self.owner_event(made)['metadata']), text)
+
+    def test_a_person_it_names_by_address_places_it(self):
+        self.graph(('person:kai', 'person', 'Kai Rivera', {'side': 'personal', 'emails': ['kai@mail.example'], 'accounts': ['home-mail']}))
+        made = self.new(text='Send Kai@mail.example the photos')
+        self.assertEqual(self.card(made['id'])['area'], 'personal')
+
+    def test_unclear_it_starts_in_their_most_used_area_still_open(self):
+        for _ in range(3):
+            self.new(scope='personal')
+        self.new(scope='work')
+        made = self.new()
+        self.assertEqual(json.loads(self.card(made['id'])['account_ids']), ['home-mail'])  # most of theirs are Personal
+        self.assertEqual(json.loads(self.owner_event(made)['metadata'])['area_open'], ['personal', 'work:Acme'])  # the review still places it
+        self.assertIsNone(a.todo_areas.most_used([('["home-mail"]', None), ('["acme-mail"]', None)], self.accounts))  # a tie: no pick
+
     def blocked(self, sid, move_to):
         self.store.decide(sid, 'accept', '', 'click-' + sid, 'dashboard')
         self.app.preparation_step(lambda req: {'status': 'admitted'})
