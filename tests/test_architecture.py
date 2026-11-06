@@ -339,7 +339,6 @@ SCAN_LIMIT = 450 * 1024
 BUDGETS = {'dashboard.html': 24 * 1024, 'dashboard/*.js': 160 * 1024, 'dashboard/*.css': 64 * 1024,
            'dashboard/*.html': 32 * 1024}
 OVER_BUDGET = {
-    'dashboard.html': 122_000,  # its markup and scripts are being moved into parts
     'dashboard/graph-view.js': 280_000,  # being split into graph-<what>.js parts
 }
 # The page as served (dashboard.html with its parts): what a phone downloads. Not a scan rule, a watch: a ceiling that

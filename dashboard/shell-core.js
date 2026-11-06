@@ -1,0 +1,71 @@
+// Dates and times follow Settings, General (locale_prefs.py): DL is the date locale (Sat, Oct 24 or Sat 24 Oct), H12 the
+// clock (2:05 PM or 14:05). A Machine without a region keeps US dates and 24-hour times.
+let DL='en-US',H12=false;
+const applyLocale=l=>{if(!l)return;DL=l.date_locale||'en-US';H12=!!l.hour12;if(typeof i18nApply==='function')i18nApply(l)};
+const fmtHM=(v,o)=>new Date(v).toLocaleTimeString(H12?'en-US':'en-GB',{...(H12?{hour:'numeric',minute:'2-digit',hour12:true}:{hour:'2-digit',minute:'2-digit',hourCycle:'h23'}),...o});
+const fmtDHM=(v,d,o)=>new Date(v).toLocaleDateString(DL,{...d,...o})+', '+fmtHM(v,o);  // Sat, Oct 24, 14:05
+let snoozeId=null,snoozeDay=null,snoozeMonth=null,lastOk=0,refreshFailed=false;
+const localDay=d=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
+const csrf='__CSRF__',UI_VERSION='__UI_VERSION__';let state={};
+// Selectors an older browser rejects with a SyntaxError (:modal, :focus-visible): asked here, with a fallback.
+const modalOpen=()=>{try{return!!document.querySelector('dialog[open]:modal')}catch{return!!document.querySelector('dialog[open]')}};
+const focusVisible=el=>{try{return el.matches(':focus-visible')}catch{return el.matches(':focus')}};
+// Error reports (error_feed.py): an error in this page's own code goes to the service as its type, message and place
+// (function and line); the service normalizes it again and keeps only a signature. Never what the page shows. A repeat
+// within a minute only counts once, at most 20 a page, and nothing when the owner turned reports off in Settings.
+// Three ways in: what reaches window.onerror or goes unhandled; a bug in this page's code that a try caught and showed
+// as a toast or notice (errCaught: most of the page runs inside one, so without it a render bug was never reported);
+// and from the service worker (sw.js), its own errors and a failed shell update. And a failed API call as a signature
+// of its own (errApi): the endpoint (and the action's name), a 5xx the Machine answered or a timeout, never the query
+// or what was sent. Not reported: the Machine being away, restarting or signed out, and a 4xx (a refusal, not a bug).
+const errSeen=new Map();let errQueue=[],errTimer=0,errCount=0;
+function errPlace(stack){for(const l of String(stack||'').split('\n')){const m=l.match(/^\s*(?:at\s+(?:(.*?)\s+\()?|(.*?)@)(\S+?):(\d+):\d+\)?\s*$/);
+ if(!m||!m[3].startsWith(location.origin))continue;return{file:/\/sw\.js(?:[?#]|$)/.test(m[3])?'sw.js':'dashboard.html',function:String(m[1]||m[2]||'<anonymous>').split(/[\s.]/).pop().slice(0,60)||'<anonymous>',line:+m[4]}}return null}
+function errPush(item,key){if(errCount>=20||state.team_learnings?.errors===false)return;const now=Date.now();
+ if(now-(errSeen.get(key)||0)<60000)return;errSeen.set(key,now);errCount++;errQueue.push(item);
+ clearTimeout(errTimer);errTimer=setTimeout(()=>{const errors=errQueue.splice(0,10);if(errors.length)request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'client_error',args:{errors}})}).catch(()=>{})},2000)}
+function errReport(e,kind){try{if(!(e instanceof Error)||e.offline||e.sessionGone||e.status||e.name==='AbortError')return;const at=errPlace(e.stack);if(!at)return;
+ const item={kind:String(kind||e.name||'Error').slice(0,60),message:String(e.message||'').slice(0,500),...at};errPush(item,item.kind+'|'+item.function+'|'+item.line+'|'+item.message)}catch{}}
+// A caught error is a bug only as one of these (a selector the page built wrong is a DOMException named SyntaxError);
+// a thrown Error is the page's own message to the owner, and a fetch that failed is the network.
+const ERR_BUGS=/^(?:Type|Reference|Range|Syntax|URI|Eval|Internal)Error$/;
+function errCaught(e){try{if(e instanceof Error&&ERR_BUGS.test(e.name)&&!/^(Failed to fetch|NetworkError|Load failed)/.test(e.message))errReport(e)}catch{}}
+function errApi(path,options,status){try{const p=String(path||'').split(/[?#]/)[0].replace(/^\.?\//,'');if(!p.startsWith('api/'))return;let action='';
+ if(p==='api/action')try{action=String(JSON.parse(options?.body||'{}').action||'').slice(0,60)}catch{}
+ if(action==='client_error')return;errPush({api:p.slice(4,124),action,status},'api|'+p+'|'+action+'|'+status)}catch{}}
+function errSw(x){try{if(x&&typeof x==='object')errPush({kind:String(x.kind||'Error').slice(0,60),message:String(x.message||'').slice(0,500),file:'sw.js',function:String(x.function||'<anonymous>').slice(0,60),line:+x.line||0},
+ 'sw|'+x.kind+'|'+x.function+'|'+x.message)}catch{}}
+addEventListener('error',e=>errReport(e.error));
+addEventListener('unhandledrejection',e=>errReport(e.reason,e.reason instanceof Error?e.reason.name:''));
+navigator.serviceWorker?.addEventListener('message',e=>errSw(e.data?.swError));
+const $=s=>document.querySelector(s);
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+// An element built from parts, never parsed from markup: text children become text nodes, attributes are set one by
+// one (`class`, or `style` as an object). Empty, null and false children are left out; an array's items are children.
+const make=(tag,attrs={},...kids)=>{const e=document.createElement(tag);for(const [k,v] of Object.entries(attrs))k==='class'?e.className=v:k==='style'?Object.assign(e.style,v):e.setAttribute(k,v);
+ for(const k of kids.flat())if(k!==''&&k!=null&&k!==false)e.appendChild(k instanceof Node?k:document.createTextNode(String(k)));return e};
+// Puts nodes in el only when `key` (what they say) changed since the last time, so a redraw keeps focus and open state
+const putOnce=(el,key,nodes)=>{if(el.dataset.shown!==key){el.replaceChildren(...nodes());el.dataset.shown=key}};
+// Puts nodes in el only when they differ from what it shows, so a poll that brings the same thing changes nothing
+const putIfChanged=(el,nodes)=>{const w=make('div',{},nodes);if(el.innerHTML!==w.innerHTML)el.replaceChildren(...w.childNodes)};
+// Markup that escapes by construction: in html`...` every ${} is escaped (as esc() does) unless it is itself an html``
+// result, or raw() of a vetted constant (raw() is for constants in this file only, never for data); an array's items
+// are joined the same way. setHTML is the one innerHTML write for it and takes nothing else, so a forgotten esc() can no
+// longer put someone's text into the page as markup. Escaping doesn't make a link safe: every href and src that comes
+// from data goes through safeHref. htmlT is t() for a sentence whose {} holds markup (a <time>, a button).
+class SafeHTML{constructor(s){this.s=s}toString(){return this.s}}
+const raw=s=>new SafeHTML(String(s));
+const htmlPart=v=>v instanceof SafeHTML?v.s:Array.isArray(v)?v.map(htmlPart).join(''):esc(v);
+const html=(parts,...vals)=>new SafeHTML(parts.reduce((o,p,i)=>o+htmlPart(vals[i-1])+p));
+const setHTML=(el,h)=>{if(h==='')return el.replaceChildren();if(!(h instanceof SafeHTML))throw new TypeError('setHTML takes html`` results only');el.innerHTML=h.s};  // '' empties it
+const htmlNodes=h=>{const t=document.createElement('template');setHTML(t,h);return t.content};  // for append, before, replaceWith
+// A change to built markup goes through the DOM: the parsed copy, changed with DOM calls, written back by the browser.
+const htmlEdit=(h,f)=>{const t=document.createElement('template');setHTML(t,h);f(t.content);return new SafeHTML(t.innerHTML)};
+// Nodes already on the page or parsed from html``, written out again by the browser (an element whole, a text node escaped)
+const nodeHTML=(...ns)=>new SafeHTML(ns.map(n=>!n?'':n.nodeType===1?n.outerHTML:n.nodeType===3?esc(n.data):'').join(''));
+const orEmpty=h=>String(h)?h:'';  // '' stays falsy
+const htmlT=(key,...a)=>{const tok=i=>`\u0000${i}\u0000`;let s=esc(t(key,...a.map((v,i)=>v instanceof SafeHTML?tok(i):v)));a.forEach((v,i)=>{if(v instanceof SafeHTML)s=s.split(tok(i)).join(v.s)});return new SafeHTML(s)};
+// A link from data: web, mail and phone links and this page's own (relative or same origin) stay; anything else
+// (javascript:, data:, a broken address) becomes '#'. safeURL in todos-cards.js is stricter: http(s) only, '' otherwise.
+const safeHref=(u,base=location.href)=>{const v=String(u??'').trim();if(!v)return '#';try{const x=new URL(v,base);return ['http:','https:','mailto:','tel:'].includes(x.protocol)?v:'#'}catch{return '#'}};
+const date=v=>v?fmtDHM(v,{month:'short',day:'numeric',year:'numeric'}):t('Not yet');

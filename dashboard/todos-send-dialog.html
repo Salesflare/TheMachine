@@ -1,0 +1,29 @@
+<dialog id="send-dialog" aria-labelledby="send-title"><form method="dialog"><div class="snooze-heading"
+><h2 id="send-title">Send this email?</h2><button aria-label="Cancel send">×</button></div></form
+><fieldset id="send-recipients" hidden><legend>Who should get this?</legend><div></div></fieldset
+><p id="send-bounce" class="send-bounce" role="note" hidden></p
+><div class="send-top"><dl id="send-head" class="send-head"></dl
+><label id="send-subject-label"><span>Subject</span><textarea id="send-subject" maxlength="250" rows="1"></textarea></label></div
+><div id="send-preview" class="send-body"></div
+><div id="send-editor" hidden
+><label
+ id="send-body-label">Message<textarea id="send-body"></textarea></label><div
+ id="send-rich" class="mail-edit" hidden><span
+ id="send-rich-label" class="mail-label">Message</span><div class="mail-tools" role="toolbar" aria-label="Formatting"><button type="button" data-mail-tool="b" aria-pressed="false" title="Bold (Ctrl B)" aria-label="Bold"><b>B</b></button><button type="button" data-mail-tool="i" aria-pressed="false" title="Italic (Ctrl I)" aria-label="Italic"><i>I</i></button><button type="button" data-mail-tool="ul" aria-pressed="false" title="Bulleted list" aria-label="Bulleted list"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="7" r="1.3"/><circle cx="5" cy="12" r="1.3"/><circle cx="5" cy="17" r="1.3"/><path d="M9.5 7H20M9.5 12H20M9.5 17H20"/></svg></button><button type="button" data-mail-tool="ol" aria-pressed="false" title="Numbered list" aria-label="Numbered list"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 7h10M10 12h10M10 17h10"/><path class="fill" d="M4.2 5.2h1.3v3.6M4 8.8h2.6M3.9 11.1c.4-.5 1.9-.6 1.9.4 0 .8-1.9 1.4-1.9 2.4h2M4 15.6h1.8l-1 1.2c.9 0 1.2.4 1.2.8 0 .9-1.5 1.1-2.1.5"/></svg></button><button type="button" data-mail-tool="link" aria-pressed="false" title="Link (Ctrl K)" aria-label="Link"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.2 13.8a3.6 3.6 0 0 0 5.1 0l3.2-3.2a3.6 3.6 0 0 0-5.1-5.1l-1.1 1.1M13.8 10.2a3.6 3.6 0 0 0-5.1 0l-3.2 3.2a3.6 3.6 0 0 0 5.1 5.1l1.1-1.1"/></svg></button></div><div
+ id="send-rich-link" class="mail-link" hidden><input
+ id="send-rich-url" type="url" inputmode="url" placeholder="https://" aria-label="Link address" autocomplete="off"><button
+ id="send-rich-add" type="button" class="primary">Add link</button><button
+ id="send-rich-cancel" type="button" class="ghost">Cancel</button></div><div
+ id="send-rich-body" class="mail-paper" contenteditable="true" role="textbox" aria-multiline="true" aria-labelledby="send-rich-label" spellcheck="true" translate="no"></div></div></div
+><div id="send-files" class="attachments" hidden></div
+><p id="send-fine" class="fine" hidden></p
+><p id="send-error" role="status"></p
+><div id="send-ask" class="send-ask" hidden><label for="send-ask-text">What should I change?</label
+><textarea id="send-ask-text" rows="2" maxlength="5000" placeholder="Tell me what to change (Ctrl+Enter saves)"></textarea><div class="actions send-act"
+><button id="send-ask-save" class="primary">Save changes</button
+><button id="send-ask-back">Back</button></div></div
+><div class="actions send-act" id="send-act"
+><button id="send-confirm" class="primary">Send now</button
+><button id="send-edit" class="ghost">Edit</button
+><button id="send-ask-open" class="ghost" title="Tell me what to change in the draft, and I redo it" hidden>Ask for changes</button
+><button id="send-cancel">Cancel</button></div></dialog

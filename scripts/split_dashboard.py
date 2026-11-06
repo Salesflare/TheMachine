@@ -98,34 +98,63 @@ def readers():
 
 # (part, first, end): the part dashboard/<part>.js holds the main script's statements from `first` up to `end`. An
 # anchor is the name of a top-level declaration, or the start of a top-level line (a listener: "$('nav').add..."), the
-# first after the previous anchor; end None is the end of the script. Parts are in the page's order; what lies between
-# them stays in dashboard.html: the core (locale and error reports, network and outbox, render and refresh, toast,
-# boot). Areas as in scripts/i18n_extract.py AREAS, plus fleet and the email view.
+# first after the previous anchor; end None is the end of the script. Parts are in the page's order and cover the whole
+# main script but a few lines; the page's core is in the shell-* parts (locale and error reports, network and outbox,
+# render and refresh, toast, the start).
 PARTS = [
-    ('settings-models', 'modelName', 'cardFiles'),
-    ('todos-cards', 'cardFiles', 'DAYS'),
+    ('shell-core', 'DL', 'place'),
+    ('shell-place', 'place', 'untilText'),
+    ('shell-banners', 'untilText', 'modelName'),
+    ('settings-models', 'modelName', 'for(const [k,v] of Object.entries({'),
+    ('todos-logos', 'for(const [k,v] of Object.entries({', 'cardFiles'),
+    ('todos-cards', 'cardFiles', 'REPEAT_ICON'),
+    ('todos-repeat', 'REPEAT_ICON', 'DOC_DO'),
+    ('todos-docwrite', 'DOC_DO', 'DAYS'),
     ('settings-general', 'DAYS', 'offline'),
-    ('settings-skills', 'skillsKey', 'connectorHealth'),
+    ('shell-network', 'offline', 'chatDrafts'),
+    ('todos-chat-drafts', 'chatDrafts', 'skillsKey'),
+    ('settings-skills', 'skillsKey', 'aiView'),
+    ('settings-ai', 'aiView', 'connectorHealth'),
     ('connections-cards', 'connectorHealth', 'originals'),
-    ('events-email', 'originals', 'POKES'),
-    ('todos-game', 'POKES', 'folded'),
-    ('todos-learned', 'folded', 'turnOn'),
-    ('todos-list', 'resultId', 'pushOK'),
+    ('events-email', 'originals', 'document.head.append(Object.assign(docum'),
+    ('events-photos', 'document.head.append(Object.assign(docum', 'POKES'),
+    ('todos-game', 'POKES', 'checkFollowing'),
+    ('todos-check', 'checkFollowing', 'folded'),
+    ('todos-learned', 'folded', 'startsByItself'),
+    ('shell-needs-you', 'startsByItself', 'REVIEW_ACTIVE'),
+    ('todos-review-live', 'REVIEW_ACTIVE', 'SKELETON'),
+    ('shell-render', 'SKELETON', 'resultId'),
+    ('todos-list', 'resultId', 'SETUP_MAX'),
+    ('setup-card', 'SETUP_MAX', 'pushOK'),
     ('settings-device', 'pushOK', 'notifyPresence'),
     ('todos-chat', 'notifyPresence', 'TAB_LINKS'),
-    ('shell-tabs', 'TAB_LINKS', 'GRAPH_SUBS'),
+    ('shell-tabs', 'TAB_LINKS', 'MW_CHANNEL'),
+    ('learning-missed', 'MW_CHANNEL', 'GRAPH_SUBS'),
     ('graph-nav', 'GRAPH_SUBS', 'CAL_BACK'),
-    ('calendar-view', 'CAL_BACK', "$('nav').addEventListener("),
-    ('fleet-view', 'fleetPost', 'pageApprove'),
-    ('todos-task-pages', 'pageApprove', "$('#people-view').addEventListener("),
-    ('graph-view', "$('#people-view').addEventListener(", 'search'),
+    ('calendar-view', 'CAL_BACK', "$('nav').addEventListener('click',e=>{co"),
+    ('shell-page-head', "$('nav').addEventListener('click',e=>{co", 'fleetPost'),
+    ('fleet-view', 'fleetPost', 'reviewing'),
+    ('todos-review', 'reviewing', 'pageApprove'),
+    ('todos-task-pages', 'pageApprove', 'meetOpen'),
+    ('todos-meet', 'meetOpen', "$('#people-view').addEventListener('clic"),
+    ('graph-view', "$('#people-view').addEventListener('clic", 'search'),
     ('events-list', 'search', 'renderMonth'),
-    ('todos-snooze', 'renderMonth', 'toast'),
+    ('todos-snooze', 'renderMonth', 'document.head.append(Object.assign(docum'),
+    ('shell-sheets', 'document.head.append(Object.assign(docum', 'familyInviteNote'),
+    ('family-invite', 'familyInviteNote', 'toast'),
+    ('shell-toast', 'toast', 'signinWaiting'),
     ('connections-signin', 'signinWaiting', 'showNote'),
-    ('new-todo', 'nc', "$('#side-find').addEventListener("),
+    ('shell-start', 'showNote', 'nc'),
+    ('new-todo', 'nc', 'mergeOther'),
     ('todos-rows', 'mergeOther', 'KB_MAC'),
     ('shell-keys', 'KB_MAC', 'helpMarkup'),
-    ('help-panel', 'helpMarkup', None),
+    ('help-panel', 'helpMarkup', 'ACT_KINDS'),
+    ('settings-activity', 'ACT_KINDS', None),
+]
+# (part, opening line): the whole body of the script that opens with that line (its tags stay in dashboard.html, so
+# the page keeps its own <script> elements and the demo's CSP hashes them as before).
+SCRIPTS = [
+    ('shell-i18n', '<script id="i18n">'),
 ]
 DECLARATION = re.compile(r'(?:async )?function\*? ?([\w$]+)|(?:const|let|var|class) ([\w$]+)')
 BEFORE_REGEX = {'return', 'typeof', 'instanceof', 'in', 'of', 'new', 'delete', 'void', 'throw', 'case', 'do', 'else',
@@ -260,12 +289,11 @@ def cut(page):
         b = find(stop, a)
         spans.append((name, a, b))
         after = b - 1
-    out, parts, at = [], {}, 0
-    for name, a, b in spans:
-        out += lines[at:a] + [dashboard_parts.marker(f'{name}.js')]
-        parts[f'{name}.js'] = '\n'.join(lines[a:b]) + '\n'
-        at = b
-    return '\n'.join(out + lines[at:]), parts
+    for name, opening in SCRIPTS:
+        a = lines.index(opening) + 1
+        b = next(i for i in range(a, len(lines)) if lines[i].startswith('</script>'))
+        spans.append((name, a, b))
+    return join_cut(lines, sorted(spans, key=lambda span: span[1]), 'js')
 
 
 def node_check(page, parts):
@@ -331,6 +359,7 @@ CSS_PARTS = [
     ('shell-sidebar', '/* App sidebar: one component'),
     ('calendar-view', '/* Calendar: the next seven days'),
     ('connections-newtodo', '/* Saved sign-ins (Connections, Sign-ins)'),
+    ('setup-card', '/* The setup to-do at the top of To-dos'),
     ('shell-palette-help', '/* Command palette (Ctrl/'),
 ]
 
@@ -428,7 +457,16 @@ def split_css():
 # id is `first` up to the one that starts with `stop`'s (None: the end of the markup, before the i18n script). A line
 # starts with an element when the element's tag opens it, or right after the ">" that closes the tag before it
 # (scripts/merge_friendly.py breaks long markup lines inside a tag, before each element with an id).
-HTML_PARTS = []
+HTML_PARTS = [
+    ('shell-sidebar', 'side-search', 'side-cards'),
+    ('todos-send-dialog', 'send-dialog', 'cal-dialog'),
+    ('calendar-dialogs', 'cal-dialog', 'offline-bar'),
+    ('shell-main', 'inbox', 'settings'),
+    ('settings-panels', 'settings', 'health'),
+    ('connections-panels', 'health', 'talk-view'),
+    ('shell-dialogs', 'snooze-dialog', 'signin-dialog'),
+    ('connections-dialogs', 'signin-dialog', None),
+]
 VOID = {'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'source', 'track', 'wbr'}
 
 

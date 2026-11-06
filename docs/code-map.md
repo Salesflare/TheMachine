@@ -24,7 +24,7 @@ writes it; other modules call the owner's functions.
 | follow-ups | `follow_ups`, `task_invites`, `task_pages` | `follow_up_*`, `task_pages` |
 | recurring to-dos | `recurring`, `recurring_app` | `recurring_series`, `recurring_cards`, `recurring_offers` |
 | do it and preparation | `next_actions`, `preparation_state`, `gap_note` (what isn't known about a to-do's people, no table), `agent_jobs`, `agent_remote`, `agents_app`, `codex_signin` (Codex's device sign-in, no table), `calendar_writes`, `calendar_app`, `doc_writes`, `meeting_writer`, `meeting_notes`, `browser_login`, `browser_viewer` | `preparation_runs`, `preparation_calls`, `agent_*`, `meeting_writes`, `meeting_moves` |
-| reviews and learning | `check_now` and `machine.app.check_now` (Check now: every source reads now and a review starts; the App mixin, no table), `learning_loop`, `missed_work`, `missed_work_app`, `corrections`, `corrections_app`, `learnings`, `team_learnings`, `fleet_learnings`, `embeddings`, `gbrain`, `gbrain_app` | `learning_changes`, `missed_audit*`, `team_learning*`, `fleet_learn*`, `event_vector*`, `gbrain_*` |
+| reviews and learning | `learning_loop`, `missed_work`, `missed_work_app`, `corrections`, `corrections_app`, `learnings`, `team_learnings`, `fleet_learnings`, `embeddings`, `gbrain`, `gbrain_app` | `learning_changes`, `missed_audit*`, `team_learning*`, `fleet_learn*`, `event_vector*`, `gbrain_*` |
 | chat, talk, voice | `chat_model`, `chat_files`, `file_text`, `talk_live`, `voice_input`, `voice_worker`, `help_chat` | `chat_models`, `chat_fast_sessions`, `chat_files`, `talk_lines`, `draft_seen` (talk_live), `voice_prefs` |
 | WhatsApp photos | `whatsapp_images` (Read photos: which chats, keeping a photo, what it says joined to its message), `whatsapp_images_app` | `whatsapp_photos`, `whatsapp_photo_prefs` |
 | fleet and network | `fleet`, `fleet_requests`, `fleet_reviews`, `fleet_trust`, `shared_graph`, `shared_graph_app`, `shared_connectors`, `network`, `friends`, `family`, `contact_share`, `discovery`, `meet`, `meet_app`, `security_levels` | `fleet_*`, `network_request_nodes` (fleet); `fleet_reviews` (fleet_reviews); `share_*`, `team_*` (shared_graph); `network_*` (network, discovery); `meet_*` (meet); `contact_*`; `security_prefs` |
@@ -76,9 +76,11 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
 - **Code moved out of `assistant.py`:** in its area of `machine/`, in that area's layer (below). Nothing in `machine/`
   imports `assistant` or a module of a higher layer.
 - **Dashboard code:** in its area's part in `dashboard/` (`<area>-<what>.js`: shell, todos, settings, graph, calendar,
-  connections, help, events, new, fleet), next to the functions it works with, never at the end of the script. What
-  stays in `dashboard.html` is the page's core: the markup, the i18n script, and in the main script the
-  locale and error reports, network and outbox, `render()` and `refresh()`, `toast()` and the start. A new top-level
+  connections, help, events, new, fleet), next to the functions it works with, never at the end of the script. The
+  page's core is in the `shell-*` parts too: locale and error reports (`shell-core.js`), network and outbox, `render()`
+  and `refresh()`, `toast()` and the start (`shell-start.js`), the i18n script's body (`shell-i18n.js`).
+  `dashboard.html` itself holds the head (with its small theme script, which runs before paint), the page's
+  elements that wrap the parts, and the include lines in order: what the page is made of, at a glance. A new top-level
   statement goes in a part only whole (each part parses on its own). Parts run in the page's order, as they were in
   the one file, so a part may use what an earlier one declares. New UI strings go in every catalog in `i18n/`.
 - **Dashboard styles and markup:** the same way, in parts: a stylesheet part `dashboard/<area>-<what>.css` fills a
@@ -86,7 +88,9 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   line `<!--@include dashboard/<name>.html-->` in the markup (`base` is the area of the shared design layer). A
   stylesheet part is whole rules and the parts follow each other in the page's order, so the cascade is the one of the
   whole sheet: a rule that overrides another comes after it, in the same part or a later one. A markup part is whole
-  elements. `tests/test_dashboard_parts.py` checks both, and that each include line is in its place. The stylesheet
+  elements. `tests/test_dashboard_parts.py` checks both, and that each include line is in its place. The markup is in
+  parts by area (`shell-sidebar.html`, `shell-main.html`, `settings-panels.html`, the dialogs); a new element goes in
+  its area's part. The stylesheet
   is in parts already, in the page's order (`base-tokens.css` with the shared design tokens first); some runs still mix
   areas, as the sheet grew: a new rule goes in its area's part, after any rule it overrides.
 - **Reading the dashboard's source** (a test, a script): through `dashboard_parts.assemble()` in Python or
