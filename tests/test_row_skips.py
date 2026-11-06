@@ -8,6 +8,7 @@ import unittest
 from unittest.mock import patch
 
 from machine.sources.rows import SKIPPED, Skips
+from seams import patch_everywhere
 import ms_graph
 from test_connectors import FEED, RSS, Response, a
 
@@ -66,7 +67,7 @@ def telegram_row(mid, **changes):
 class TelegramTests(Base):
     def sync(self, rows):
         source = types.SimpleNamespace(profile=lambda: {}, messages=lambda after: rows)
-        with patch.object(a, 'now', return_value='2026-10-10T12:00:00+00:00'):
+        with patch_everywhere(a, 'now', return_value='2026-10-10T12:00:00+00:00'):
             return a.sync_telegram(self.store, {}, TELEGRAM, source)
 
     def test_odd_rows_are_skipped_and_counted(self):
@@ -120,7 +121,7 @@ class GmailTests(Base):
             def profile(self): return {'historyId': '9'}
             def get(self, resource, params=None):
                 return {'messages': [{'id': m} for m in messages]} if resource == 'messages' else messages[resource.split('/')[1]]
-        with patch.object(a, 'Gmail', Fake):
+        with patch_everywhere(a, 'Gmail', Fake):
             result = a.sync_gmail(self.store, {}, MAIL)
         self.assertEqual((result['events'], result['skipped']), (1, 2))
         self.assertEqual([r['source_id'] for r in self.kept(MAIL['id'])], ['m1'])
@@ -147,7 +148,7 @@ class CalendarTests(Base):
             def __init__(self, *_): pass
             def profile(self): return {'id': 'owner@example.com', 'timeZone': 'Europe/Brussels'}
             def get(self, method, params): return {'items': items, 'nextSyncToken': 'done'}
-        with patch.object(a, 'Calendar', Fake), patch.object(a, 'now', return_value='2026-10-09T12:00:00+00:00'):
+        with patch_everywhere(a, 'Calendar', Fake), patch_everywhere(a, 'now', return_value='2026-10-09T12:00:00+00:00'):
             result = a.sync_calendar(self.store, {}, CALENDAR)
         self.assertEqual(result['skipped'], 2)
         self.assertEqual(sorted(r['source_id'] for r in self.kept(CALENDAR['id']) if not r['deleted']), ['good', 'kept-before'])
