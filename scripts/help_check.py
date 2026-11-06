@@ -93,7 +93,7 @@ FEATURES = {
 PENDING = {
 }
 # Where app text may live: the dashboard and the code that writes what it shows.
-TEXT_FILES = ('dashboard.html', '*.py', '*.mjs', 'connectors/*.py', 'integrations/*.py', 'openclaw-plugin/*.ts', 'install.sh')
+TEXT_FILES = ('dashboard.html', '*.py', 'machine/**/*.py', '*.mjs', 'connectors/*.py', 'integrations/*.py', 'openclaw-plugin/*.ts', 'install.sh')
 # Pages of the public site an article may link to (the control plane's own test checks they exist).
 SITE_PAGES = ('/', '/how-it-works', '/demo', '/network', '/pricing', '/open-source', '/security', '/privacy', '/terms',
               '/dpa', '/licenses', '/support', '/help', '/compare')
@@ -196,7 +196,7 @@ def heading_id(text):
 
 def app_files():
     """The app's own code, where people read links: the dashboard, task pages, setup and CLI copy."""
-    return sorted(p for p in [*ROOT.glob('*.py'), *ROOT.glob('*.mjs'), *ROOT.glob('*.html'), *ROOT.glob('dashboard/*.js'),
+    return sorted(p for p in [*ROOT.glob('*.py'), *ROOT.glob('machine/**/*.py'), *ROOT.glob('*.mjs'), *ROOT.glob('*.html'), *ROOT.glob('dashboard/*.js'),
                               *ROOT.glob('connectors/*.py')]
                   if not p.name.startswith('test') and p.parent.name != 'scripts')
 

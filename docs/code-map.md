@@ -9,7 +9,10 @@ the code. Domains move out of them one at a time, each in its own pull request, 
 
 ## Modules and the tables they own
 
-Every module is flat at the repository root (tools and guards read root `*.py`; don't add packages). A table belongs to
+Every module is flat at the repository root, apart from one package: `machine/`, where the code moving out of
+`assistant.py` goes (`machine/store/`, `machine/sources/`, `machine/web/`, ...). Don't add other packages, and don't
+name a root folder after a standard library module (`http/` would hide `http.server`). `assistant.py` stays the entry
+file (`python3 assistant.py serve`) and keeps the names it hands out for the code and tests that use them. A table belongs to
 the module that creates it, in that module's `ensure(db)` (or, for `assistant.py`, in `Store.__init__`). Only the owner
 writes it; other modules call the owner's functions.
 
@@ -70,6 +73,8 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
 - **A new table:** in its domain module's `ensure(db)`, called from `Store.__init__`, with the functions that write it in
   that same module.
 - **A new domain:** a new flat module at the root that the others import. It never imports `assistant`.
+- **Code moved out of `assistant.py`:** in its area of `machine/`, in that area's layer (below). Nothing in `machine/`
+  imports `assistant` or a module of a higher layer.
 - **Dashboard code:** in its area's part in `dashboard/` (`<area>-<what>.js`: shell, todos, settings, graph, calendar,
   connections, help, events, new, fleet), next to the functions it works with, never at the end of the script. What
   stays in `dashboard.html` is the page's core: the stylesheet, the markup, the i18n script, and in the main script the
@@ -104,6 +109,8 @@ test_app_mixins.py` (they run in CI with every suite).
 | Only `assistant.py` writes `events`, the sealed table (and the sandbox's fixture loader, through the sealed connection). Covers subfolders. | `tests/test_message_seal.py` |
 | Nothing reads `dashboard.html` itself; every part in `dashboard/` is included once and parses on its own; the service serves the assembled page; Python and Node assemble the same page. | `tests/test_dashboard_parts.py` |
 | No action is mapped by two mixins, no member is defined in two of them or in both `App` and a mixin, every handler is a method, every name in `OWNER_ACTIONS` or `DASHBOARD_ACTIONS` reaches a mixin's handler or a branch of `App.action`, no branch of `App.action` names an action a mixin maps (it would never run), and every action the dashboard sends is in `DASHBOARD_ACTIONS` and has a handler. | `tests/test_app_mixins.py` |
+| Code in `machine/` imports only from its own layer or the ones below it, and any root module, never with `import *`; `machine/__init__.py` imports nothing. The layers, lowest first: `actions`, `config`, `text`, `timing`; `browser`, `cards`, `chat`, `faults`, `model_usage`, `prompts`, `sources`; `store`; `delivery`, `web`; `app`, `main`. A new area gets its layer in `MACHINE_LAYERS`. | `tests/test_architecture.py` |
+| Python files (tests aside) stay under 2,500 lines and 450 KiB. A bigger module is hard to review, and Aikido's scan skips it. `PY_OVER_BUDGET` lists today's bigger files with ceilings that only come down: a file that grows past its ceiling fails, one that shrinks well under it fails until the ceiling is lowered, and one back within the budget fails until its entry is removed. | `tests/test_architecture.py` |
 | Every dashboard area in `scripts/i18n_extract.py` resolves. | `tests/test_architecture.py`, `python3 scripts/i18n_extract.py --area <name>` |
 | Shipped `.html`, `.js` and `.mjs` files stay under 450 KiB. Aikido's code scan skips big files (some just over 500 KiB already go unscanned), so a bigger one ships unchecked, and splitting it later turns up its findings all at once. `OVER_LIMIT` lists today's bigger files with a ceiling that may only come down (`dashboard.html`, being split into parts). | `tests/test_architecture.py` |
 
@@ -115,10 +122,16 @@ The table checks read the SQL in each module's strings. A statement whose table 
 - Move code as is, one domain per pull request, with no other change in it.
 - Keep names that other code or tests use from `assistant` available there until those callers move.
 - When the move takes a table's writes along, update `OTHER_WRITERS` in the same pull request.
-- App methods go to their domain's mixin with `scripts/move_app_methods.py <domain>_app.py <Class> <member> ...`. It
-  cuts each member (with the comment lines above it) from `App` and adds it, text unchanged, to the end of the mixin's
-  class, and checks that. Then add the imports `tests/test_architecture.py` says the moved code lacks. A method that
-  uses a helper defined in `assistant.py` stays until that helper has a module of its own.
+- Move with `scripts/move_code.py`, so a rebase is a rerun of the script on the newer `assistant.py`, not a merge by
+  hand. `move_code.py --export assistant.py machine/text.py message_body QUOTED_MARK` moves top-level functions,
+  classes and constants, text unchanged, to the end of the target, and imports them back in `assistant.py` (one name
+  per line, sorted). `move_code.py assistant.py <domain>_app.py:<Class> App.<member> ...` moves App methods and class
+  attributes to the end of a mixin's class. Each item goes with the comment lines above it; the script checks the text
+  is the same. Then add the imports `tests/test_architecture.py` says the moved code lacks. Code that uses a helper
+  defined in `assistant.py` stays until that helper has a module of its own.
+- Lower `assistant.py`'s ceiling in `PY_OVER_BUDGET` to its new size in the same pull request.
+- A test that patches a name on `assistant` reaches only the code still in `assistant.py`. When the code it means moves,
+  patch the name where that code looks it up.
 - **Prefer plain modules to mixins.** A mixin still reaches into `App` (`self.store`, `self.config`, other mixins), so
   it moves code without separating it. New domain code goes to a flat module of plain functions that take `db`,
   `config` and the values they need as arguments (`notify.py`, `follow_ups.py`); `App` keeps a thin method that

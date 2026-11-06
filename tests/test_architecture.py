@@ -6,6 +6,9 @@ split up. Static checks of the source only; nothing is imported or run.
 - no module loads assistant.py except the entry points that do so today (tests may);
 - each table is created by one module, its owner, and written only by its owner, apart from the writers listed in
   OTHER_WRITERS as they are today;
+- modules in machine/ import only from their own layer or the ones below it (MACHINE_LAYERS), never `*`;
+- Python files stay under PY_LINE_BUDGET lines and PY_BYTE_BUDGET bytes, apart from today's bigger ones in
+  PY_OVER_BUDGET, whose ceilings only come down;
 - i18n_extract's dashboard AREAS all resolve.
 
 `python3 tests/test_architecture.py --owners` prints each module with the tables it owns."""
@@ -117,6 +120,81 @@ def loads_module(found, wanted):
         if any(wanted(name) for name in names):
             lines.append(node.lineno)
     return lines
+
+
+# --- machine/ layers -------------------------------------------------------------------------------------------------
+
+# The package assistant.py's code moves into (docs/code-map.md). Each top-level module or folder of machine/ has a layer;
+# a module imports only from its own layer or the ones below it (and any root module), so the code can't grow a cycle
+# and Store and App's helpers stay importable without them. A new area gets its layer here in the pull request that adds
+# it. Lazy imports inside a function count too.
+MACHINE_LAYERS = {
+    'actions': 0,      # the *_ACTIONS sets, the security boundary
+    'config': 0,
+    'text': 0,         # message parsing
+    'timing': 0,       # request timing, shared by web and store
+    'browser': 1,
+    'cards': 1,
+    'chat': 1,
+    'faults': 1,
+    'model_usage': 1,
+    'prompts': 1,
+    'sources': 1,
+    'store': 2,
+    'delivery': 3,
+    'web': 3,
+    'app': 4,
+    'main': 4,
+}
+
+
+def machine_area(module):
+    """'store' for machine.store.cards, None for a module outside machine/ (or machine itself)."""
+    parts = module.split('.')
+    return parts[1] if len(parts) > 1 and parts[0] == 'machine' else None
+
+
+def machine_layer_problems(rel, source):
+    """[(line, problem)] of a machine/ module's imports that break the layer rule, or of `import *`."""
+    parts = rel.removesuffix('.py').split('/')
+    package = parts[:-1]  # what a relative import starts from (an __init__'s own package)
+    if parts[-1] == '__init__':
+        parts = parts[:-1]
+    own = machine_area('.'.join(parts))
+    problems = []
+    if own is None:  # machine/__init__.py stays empty, so importing one area never loads another
+        return [(n.lineno, 'machine/__init__.py imports nothing') for n in ast.walk(ast.parse(source, rel))
+                if isinstance(n, (ast.Import, ast.ImportFrom))]
+    if own not in MACHINE_LAYERS:
+        return [(1, f'machine/{own} has no layer: add it to MACHINE_LAYERS in tests/test_architecture.py')]
+    for node in ast.walk(ast.parse(source, rel)):
+        wanted = []
+        if isinstance(node, ast.Import):
+            wanted = [alias.name for alias in node.names]
+        elif isinstance(node, ast.ImportFrom):
+            if any(alias.name == '*' for alias in node.names):
+                problems.append((node.lineno, 'no `import *` in machine/: name what it uses'))
+            if node.level:
+                if node.level > len(package):
+                    problems.append((node.lineno, 'a relative import above machine/'))
+                    continue
+                base = package[:len(package) - node.level + 1]
+                module = '.'.join(base + ([node.module] if node.module else []))
+            else:
+                module = node.module or ''
+            # `from machine import store` and `from . import store` name the area in the imported names
+            wanted = [f'{module}.{alias.name}' for alias in node.names] if machine_area(module) is None else [module]
+        for name in wanted:
+            area = machine_area(name)
+            if area is None or area == own:
+                continue
+            if area not in MACHINE_LAYERS:
+                problems.append((node.lineno, f'imports machine.{area}, which has no layer in MACHINE_LAYERS'))
+            elif MACHINE_LAYERS[area] > MACHINE_LAYERS[own]:
+                problems.append((node.lineno, f'machine.{own} (layer {MACHINE_LAYERS[own]}) imports machine.{area} '
+                                              f'(layer {MACHINE_LAYERS[area]}): move what it needs down a layer, or '
+                                              'pass it in'))
+    return sorted(problems)
 
 
 # --- tables ----------------------------------------------------------------------------------------------------------
@@ -258,6 +336,61 @@ SCAN_LIMIT = 450 * 1024
 OVER_LIMIT = {'dashboard.html': 530_000}  # being split into dashboard/ parts
 
 
+# Python files: the same scan limit, and a line budget that keeps a module small enough to read and review. A new
+# module that would go over is split first. PY_OVER_BUDGET lists today's bigger files with (lines, bytes) ceilings
+# that may only come down: a file that grows past its ceiling fails; one that shrinks more than PY_RATCHET_SLACK under
+# it fails until the ceiling is lowered to its new size (round up a little); one back under the budget fails until its
+# entry is removed. Each pull request that moves code out of assistant.py lowers its ceiling. Tests aside.
+PY_LINE_BUDGET = 2_500
+PY_BYTE_BUDGET = 450 * 1024
+PY_RATCHET_SLACK = (500, 50_000)
+PY_OVER_BUDGET = {
+    'assistant.py': (25_700, 1_850_000),
+    'fleet.py': (3_800, PY_BYTE_BUDGET),
+    'graph.py': (5_400, PY_BYTE_BUDGET),
+    'next_actions.py': (2_650, PY_BYTE_BUDGET),
+    'onboarding.py': (3_100, PY_BYTE_BUDGET),
+    'shared_graph.py': (3_200, PY_BYTE_BUDGET),
+}
+
+
+def python_sizes():
+    """{file: (lines, bytes)} of every Python file outside tests/."""
+    out = {}
+    for name in python_files(tests=False):
+        data = (ROOT / name).read_bytes()
+        out[name] = (data.count(b'\n'), len(data))
+    return out
+
+
+def py_budget_problems(sizes, over=None, budget=None, slack=PY_RATCHET_SLACK):
+    """[problem] for files over the budget or their ceiling, and PY_OVER_BUDGET entries to lower or remove."""
+    over = PY_OVER_BUDGET if over is None else over
+    budget = (PY_LINE_BUDGET, PY_BYTE_BUDGET) if budget is None else budget
+    problems = []
+    for name, size in sorted(sizes.items()):
+        limit = over.get(name, budget)
+        for what, have, most in zip(('lines', 'bytes'), size, limit):
+            if have > most:
+                hint = ('split it (docs/code-map.md); the ceiling in PY_OVER_BUDGET only comes down' if name in over
+                        else 'split it into modules (docs/code-map.md)')
+                problems.append(f'{name} has {have} {what}, over {most}: {hint}')
+    for name, limit in sorted(over.items()):
+        size = sizes.get(name)
+        if size is None:
+            problems.append(f'{name} is gone: take it out of PY_OVER_BUDGET')
+            continue
+        if all(have <= most for have, most in zip(size, budget)):
+            problems.append(f'{name} is within the budget now ({size[0]} lines, {size[1]} bytes): take it out of '
+                            'PY_OVER_BUDGET')
+            continue
+        for what, have, most, room, base in zip(('lines', 'bytes'), size, limit, slack, budget):
+            if most > base and have < most - room:
+                problems.append(f'{name} is down to {have} {what}: lower its ceiling in PY_OVER_BUDGET from {most} to '
+                                f'about {have}')
+    return problems
+
+
 def shipped_sizes():
     skip = {'.git', 'node_modules', 'tests', '__pycache__'}
     return {str(path.relative_to(ROOT)): path.stat().st_size for path in ROOT.rglob('*')
@@ -353,6 +486,57 @@ class Architecture(unittest.TestCase):
         for name, ceiling in OVER_LIMIT.items():
             with self.subTest(listed=name):
                 self.assertGreater(sizes.get(name, 0), SCAN_LIMIT, f'{name} is under the limit now: take it out of OVER_LIMIT')
+
+    def test_python_files_stay_within_the_budget(self):
+        sizes = python_sizes()
+        self.assertIn('assistant.py', sizes)
+        self.assertEqual(py_budget_problems(sizes), [])
+
+    def test_the_budget_is_a_ratchet(self):
+        over, budget, slack = {'big.py': (3000, 100)}, (2500, 100), (200, 20)
+        check = functools.partial(py_budget_problems, over=over, budget=budget, slack=slack)
+        self.assertEqual(check({'big.py': (2950, 50), 'small.py': (2500, 100)}), [])
+        self.assertIn('over 3000', check({'big.py': (3001, 50)})[0])          # it grew
+        self.assertIn('over 2500', check({'big.py': (2950, 50), 'new.py': (2501, 10)})[0])  # a new one too big
+        self.assertIn('over 100', check({'big.py': (2950, 50), 'new.py': (10, 101)})[0])
+        self.assertIn('lower its ceiling', check({'big.py': (2700, 50)})[0])  # it shrank: the ceiling follows
+        self.assertIn('take it out', check({'big.py': (2400, 50)})[0])        # back within the budget
+        self.assertIn('is gone', check({})[0])
+
+    def test_machine_modules_import_down_the_layers(self):
+        for name in python_files(tests=False):
+            if name.startswith('machine/'):
+                with self.subTest(module=name):
+                    self.assertEqual(machine_layer_problems(name, (ROOT / name).read_text(encoding='utf-8')), [])
+
+    def test_the_layer_check_finds_upward_imports(self):
+        found = machine_layer_problems('machine/sources/slack.py', (
+            'import os\nimport graph\nfrom machine import config\nfrom machine.text import x\nfrom . import gmail\n'
+            'from .gmail import y\nfrom ..store import Store\nimport machine.web.handler\nfrom machine import app, text\n'
+            'def f():\n    from machine.delivery import push\n    from machine.nowhere import z\nfrom machine.chat import *\n'))
+        self.assertEqual([line for line, _ in found], [7, 8, 9, 11, 12, 13], found)
+        self.assertIn('layer 1) imports machine.store (layer 2)', found[0][1])
+        self.assertEqual(machine_layer_problems('machine/store/__init__.py', 'from . import cards\nfrom .. import config\n'), [])
+        self.assertIn('no layer', machine_layer_problems('machine/newthing.py', 'x = 1\n')[0][1])
+        self.assertTrue(machine_layer_problems('machine/__init__.py', 'from . import store\n'))
+        self.assertEqual(machine_layer_problems('machine/__init__.py', ''), [])
+
+    def test_the_tools_that_read_the_code_see_machine(self):
+        """The help chat, help_check and the string extractor read the app's code in machine/ too."""
+        import tempfile
+        sys.path[:0] = [str(ROOT), str(ROOT / 'scripts')]
+        import help_chat
+        import help_check
+        import i18n_extract
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = pathlib.Path(tmp) / 'machine' / 'sources'
+            folder.mkdir(parents=True)
+            (folder / 'mail.py').write_text('"""Reads the mail."""\n\ndef sync():\n    raise ValueError(\'The mailbox is not there\')\n')
+            self.assertIn('machine/sources/mail.py', [s['path'] for s in help_chat.code_snippets(tmp)])
+            self.assertIn('The mailbox is not there', i18n_extract.server_strings(pathlib.Path(tmp)).get('machine/sources/mail.py', []))
+        self.assertIn('machine/**/*.py', help_check.TEXT_FILES)
+        import inspect
+        self.assertIn("glob('machine/**/*.py')", inspect.getsource(help_check.app_files))
 
     def test_every_i18n_area_resolves(self):
         sys.path.insert(0, str(ROOT / 'scripts'))

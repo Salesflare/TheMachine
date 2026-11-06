@@ -2091,6 +2091,9 @@ def is_test(path):
 
 SCHEMA_CHANGE = re.compile(r'(?im)^\+.*\b(?:CREATE|ALTER|DROP)\s+(?:TABLE|INDEX|VIEW|TRIGGER)\b|^\+.*\bexecutescript\(')
 
+# Folders of the service's own Python code besides the root (machine/ holds what moves out of assistant.py)
+SERVICE_FOLDERS = ('integrations/', 'machine/')
+
 
 def unsafe_merge(action, config):
     """Why this fix waits for the owner's Merge, or None when The Machine may merge it by itself:
@@ -2100,7 +2103,7 @@ def unsafe_merge(action, config):
         return 'merging by itself is off'
     files = action.get('files') or []
     code = [f for f in files if not is_test(f)]
-    if action.get('plugin') or any(not f.endswith('.py') or '/' in f and not f.startswith('integrations/') for f in code):
+    if action.get('plugin') or any(not f.endswith('.py') or '/' in f and not f.startswith(SERVICE_FOLDERS) for f in code):
         return 'it changes more than the service’s own Python code'
     if not any(is_test(f) and f.endswith('.py') for f in files):
         return 'it adds no test'
