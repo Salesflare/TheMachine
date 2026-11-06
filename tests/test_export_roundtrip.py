@@ -7,6 +7,7 @@ photos, send logs and agent transcripts. Nothing is read from or written to this
 import datetime as dt
 import json
 import os
+import re
 from pathlib import Path
 import sqlite3
 import subprocess
@@ -239,7 +240,7 @@ class RoundTrip(unittest.TestCase):
     def test_agent_transcripts_follow_the_job_folder(self):
         found = list((self.new_home / '.claude/projects').glob('*/0f0f0f0f-1111-2222-3333-444455556666.jsonl'))
         self.assertEqual(1, len(found))
-        moved = '-' + str(self.new_config.parent / 'agent-jobs/7/work').strip('/').replace('/', '-').replace('.', '-')
+        moved = re.sub(r'[^A-Za-z0-9]', '-', str(self.new_config.parent / 'agent-jobs/7/work'))  # as Claude Code names it
         self.assertEqual(moved, found[0].parent.name)
 
     def test_openclaw_conversations_come_with_the_new_sign_ins(self):
