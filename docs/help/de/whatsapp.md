@@ -8,7 +8,7 @@ site: Show the QR code, Get a code, On your phone? Link with a code instead, Rem
 ---
 ## Was es liest
 
-Deine WhatsApp-Chats, als verknüpftes Gerät des WhatsApp auf deinem Handy, wie WhatsApp auf einem Computer. Beim Verbinden liest es die letzten 7 Tage.
+Deine WhatsApp-Chats, als verknüpftes Gerät des WhatsApp auf deinem Handy, wie WhatsApp auf einem Computer. Beim Verbinden schickt WhatsApp auch deine älteren Chats, oft über Jahre. Deine Machine behält alles, und nur Nachrichten der letzten 7 Tage werden zu Aufgaben.
 
 Ein Foto, eine Sprachnachricht oder eine Datei ohne Beschriftung erscheint als das, was es ist, etwa „Bild gesendet“. Hinweise von WhatsApp selbst, etwa zur Verschlüsselung oder wenn jemand einer Gruppe beitritt, haben keinen Text und bleiben außen vor.
 
@@ -33,6 +33,8 @@ Auf einer gehosteten Machine:
 1. Öffne im Dashboard **Verbindungen**, dann **+ Hinzufügen**, und wähle WhatsApp.
 2. Tippe auf **QR-Code zeigen**.
 3. Öffne auf deinem Handy in WhatsApp Einstellungen, Verknüpfte Geräte, Gerät hinzufügen, und scanne den QR-Code.
+4. Innerhalb einer Minute ist WhatsApp verbunden. Dein Chatverlauf kommt danach weiter an, und die Karte zählt die Nachrichten, solange das läuft.
+   Dauert das Verbinden zu lange, sagt sie es nach ein paar Minuten. Tippe auf **Erneut versuchen**, um dort weiterzumachen, wo es stehen blieb.
 
 Du richtest es auf deinem Handy ein und hast keinen zweiten Bildschirm zum Scannen? Öffne **Am Handy? Stattdessen mit einem Code verknüpfen**, gib deine Nummer ein und tippe auf **Code anfordern**. WhatsApp fragt dann nach diesem Code.
 

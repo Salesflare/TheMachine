@@ -9524,7 +9524,7 @@ class Store:
                     feed = db.execute('SELECT last_checked,last_recorded,error FROM android_feed_health WHERE id=1').fetchone()
                     channel_health = {'transport':account.get('transport'), 'feed_health':dict(feed) if feed else None}
                 if account.get('service') == 'whatsapp' and not account.get('shared'):  # Read photos (whatsapp_images.py)
-                    channel_health = {'photos': whatsapp_images.view(db, account)}
+                    channel_health = {'photos': whatsapp_images.view(db, account), 'history': whatsapp_history(account)}
                 if account.get('service') == 'slack':
                     channels = state.get('channels', [])
                     channel_health = {'conversations': len(channels),
@@ -11069,6 +11069,33 @@ def silent_failure(db, account, checkpoint, at=None):
     if usual['n'] < SILENT_MIN_WEEKLY or quiet <= (usual['gap'] or 0):
         return None
     return {'error': failures[0]['error'], 'silent_since': last}
+
+
+WHATSAPP_HISTORY_HOURS = 2  # a new link's first sync: WhatsApp sends the history for minutes after it shows connected
+WHATSAPP_HISTORY_GREW = 120  # the card says so while the store still grows, never in steady state
+_whatsapp_history = {}
+
+
+def whatsapp_history(account, clock=time.time):
+    """How many messages a just-linked WhatsApp has brought in so far, while its first sync still runs; else None.
+    Counts only, read only from the wacli store (wacli sync --follow is its one writer). Shown on the card as
+    "Bringing in your recent chats" once the link screen says connected (2026-11-06: history arrives after that)."""
+    try:
+        linked = dt.datetime.fromisoformat(str(account.get('connected_at') or ''))
+    except ValueError:
+        return None
+    now = clock()
+    if not account.get('store') or now - linked.timestamp() > WHATSAPP_HISTORY_HOURS * 3600:
+        return None
+    try:
+        with contextlib.closing(sqlite3.connect(f'file:{Path(account["store"]).expanduser() / "wacli.db"}?mode=ro', uri=True, timeout=2)) as db:
+            count = db.execute('SELECT count(*) FROM messages').fetchone()[0]
+    except sqlite3.Error:
+        return None
+    seen = _whatsapp_history.get(account['store'])
+    if not seen or count != seen[0]:
+        _whatsapp_history[account['store']] = seen = (count, now)
+    return count if count and now - seen[1] <= WHATSAPP_HISTORY_GREW else None
 
 
 def read_window(account, at=None):

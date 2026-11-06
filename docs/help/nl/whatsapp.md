@@ -8,7 +8,7 @@ site: Show the QR code, Get a code, On your phone? Link with a code instead, Rem
 ---
 ## Wat het leest
 
-Je WhatsApp-chats, als gekoppeld apparaat van WhatsApp op je telefoon, zoals WhatsApp op een computer. Als je koppelt, leest het de laatste 7 dagen.
+Je WhatsApp-chats, als gekoppeld apparaat van WhatsApp op je telefoon, zoals WhatsApp op een computer. Als je koppelt, stuurt WhatsApp ook je oudere chats, vaak jaren terug. Je Machine bewaart alles, en alleen berichten van de laatste 7 dagen worden to-do's.
 
 Een foto, spraakbericht of bestand zonder bijschrift staat er als wat het is, zoals "Afbeelding verstuurd". De eigen meldingen van WhatsApp, zoals die over versleuteling of over iemand die bij een groep komt, hebben geen tekst en worden weggelaten.
 
@@ -33,6 +33,8 @@ Op een gehoste Machine:
 1. Open in het dashboard **Koppelingen**, dan **+ Toevoegen**, en kies WhatsApp.
 2. Druk op **Toon de QR-code**.
 3. Open op je telefoon in WhatsApp Instellingen, Gekoppelde apparaten, Apparaat koppelen, en scan de QR-code.
+4. Binnen een minuut staat WhatsApp als gekoppeld. Je chatgeschiedenis blijft daarna binnenkomen, en de kaart telt de berichten zolang dat duurt.
+   Duurt het koppelen te lang, dan zegt hij dat na een paar minuten. Druk op **Opnieuw proberen** om verder te gaan waar het stopte.
 
 Stel je alles in op je telefoon, zonder tweede scherm om van te scannen? Open **Op je telefoon? Koppel dan met een code**, vul je nummer in en druk op **Vraag een code**. WhatsApp vraagt dan om die code.
 

@@ -8,7 +8,7 @@ site: Show the QR code, Get a code, On your phone? Link with a code instead, Rem
 ---
 ## Cosa legge
 
-Le tue chat WhatsApp, come dispositivo collegato al WhatsApp del tuo telefono, come WhatsApp su un computer. Quando lo colleghi legge gli ultimi 7 giorni.
+Le tue chat WhatsApp, come dispositivo collegato al WhatsApp del tuo telefono, come WhatsApp su un computer. Quando lo colleghi, WhatsApp invia anche le chat più vecchie, spesso di anni. La tua Machine conserva tutto, e solo i messaggi degli ultimi 7 giorni diventano attività.
 
 Una foto, un messaggio vocale o un file senza didascalia compare per ciò che è, come "Immagine inviata". Gli avvisi di WhatsApp, come quello sulla crittografia o qualcuno che entra in un gruppo, non hanno testo e vengono esclusi.
 
@@ -33,6 +33,8 @@ Su una Machine ospitata:
 1. Nella dashboard, apri **Connessioni**, poi **+ Aggiungi**, e scegli WhatsApp.
 2. Premi **Mostra il codice QR**.
 3. Sul telefono, in WhatsApp, apri Impostazioni, Dispositivi collegati, Collega un dispositivo, e scansiona il codice QR.
+4. WhatsApp risulta collegato entro un minuto. La tua cronologia chat continua ad arrivare dopo, e la sua scheda conta i messaggi mentre arrivano.
+   Se il collegamento richiede troppo, lo dice dopo qualche minuto. Premi **Riprova** per riprendere da dove si è fermato.
 
 Stai configurando dal telefono, senza un secondo schermo da cui scansionare? Apri **Sei sul telefono? Collegati con un codice**, inserisci il tuo numero e premi **Ottieni un codice**. WhatsApp poi ti chiede quel codice.
 

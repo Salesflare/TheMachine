@@ -8,6 +8,25 @@ def message():return {'ChatJID':'12345@g.us','MsgID':'FULL-NATIVE-ID','Timestamp
 class WhatsAppTests(unittest.TestCase):
  def setUp(self):self.tmp=tempfile.TemporaryDirectory();self.store=a.Store(Path(self.tmp.name)/'a.sqlite')
  def tearDown(self):self.tmp.cleanup()
+ def test_card_counts_the_first_history_while_it_grows_then_stops(self):
+  # After linking, WhatsApp keeps sending history; the card counts it while the store grows, never in steady state
+  import sqlite3,datetime as dt
+  folder=Path(self.tmp.name)/'wacli';folder.mkdir();db=sqlite3.connect(folder/'wacli.db');db.execute('CREATE TABLE messages(id)')
+  db.executemany('INSERT INTO messages VALUES (?)',[(i,) for i in range(300)]);db.commit()
+  t=[1_800_000_000.0];clock=lambda:t[0]
+  linked={'store':str(folder),'connected_at':dt.datetime.fromtimestamp(t[0]-60,dt.timezone.utc).isoformat()}
+  self.assertEqual(a.whatsapp_history(linked,clock),300)
+  t[0]+=60;db.execute('INSERT INTO messages VALUES (1)');db.commit()
+  self.assertEqual(a.whatsapp_history(linked,clock),301)
+  t[0]+=a.WHATSAPP_HISTORY_GREW+1
+  self.assertIsNone(a.whatsapp_history(linked,clock),'stopped growing: the first sync is done')
+  t[0]+=10;db.execute('INSERT INTO messages VALUES (2)');db.commit()
+  self.assertEqual(a.whatsapp_history(linked,clock),302)
+  t[0]+=a.WHATSAPP_HISTORY_HOURS*3600
+  self.assertIsNone(a.whatsapp_history(linked,clock),'hours after linking a new message is not history')
+  self.assertIsNone(a.whatsapp_history({'store':str(folder)},clock),'linked before this: nothing to count')
+  self.assertIsNone(a.whatsapp_history({'store':self.tmp.name+'/none','connected_at':linked['connected_at']},lambda:t[0]-a.WHATSAPP_HISTORY_HOURS*3600),'no store yet')
+  db.close()
  def test_account_mismatch_and_mutation_blocked(self):
   source=a.WhatsApp({},account)
   with patch.object(source,'read',return_value={'authenticated':True,'linked_jid':'wrong'}),self.assertRaises(a.SourceError):source.profile()

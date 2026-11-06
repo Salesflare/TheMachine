@@ -44,6 +44,7 @@
  "Checked {} thing{}",
  "Collecting the last 24 hours first: {} of {} active conversations{}",
  "Comma",
+ "ConnectStalled",
  "Control+",
  "Couldn’t add the to-do.",
  "Creating docs is not allowed for this Docs connection yet (Allow edits on its connection). Give the text in the to-do instead",

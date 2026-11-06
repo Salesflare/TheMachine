@@ -178,6 +178,9 @@ function hostedSigninBody(s,copy,back){const scope=NO_SCOPE_SIGNIN.includes(s.pr
  if(s.state==='qr')return html`<p class="connect-q">On your phone, open WhatsApp, then Settings, Linked devices, Link a device, and scan this code:</p>${qrImg(s)}<p class="muted">WhatsApp changes the code every few seconds. This follows it.</p>`;
  if(s.state==='pair'&&s.code)return connectCodeHTML({kind:'pair',code:s.code});
  if(s.state==='phone')return phoneBody(s,back);
+ if(s.state==='connecting'&&s.provider==='whatsapp')return html`<p class="signin-status" role="status"><i class="spin" aria-hidden="true"></i><span>${whatsappLinked(s)}</span></p>`;  // the sign-in dialog's spinner
+ if(s.state==='stalled')return html`<p class="alert">${s.provider==='whatsapp'&&s.phase&&s.phase!=='code'?'Connecting WhatsApp is taking too long. Try again to pick up where it stopped.':'This is taking longer than it should. Try again.'}</p><div class="actions"><button type="button" class="primary" data-signin-go>Try again</button>${back}</div>`;
+ if(s.state==='done'&&s.provider==='whatsapp'){const c=connectCard({account:s.made});return html`<p class="note sent-ok"><span>Connected.</span> <span>${c?'Its card shows your chat history coming in.':'Restarting to start reading it…'}</span></p><div class="actions">${c?html`<button type="button" class="primary" data-connect-card="${c.id}">Open its card</button>`:''}${back}</div>`}
  if(s.state==='connecting'||s.state==='code')return html`<p class="muted">Signed in. Connecting it now.</p>`;
  if(s.state==='done')return html`<p class="note sent-ok"><span>Connected.</span> <span>Restarting to start reading it…</span></p><div class="actions">${back}</div>`;
  if(s.state==='failed'||s.state==='stopped')return html`<p class="alert">${s.state==='stopped'?'That sign-in didn’t finish.':s.error||'Not connected.'}</p><div class="actions"><button type="button" class="primary" data-signin-go>Try again</button>${back}</div>${msAdmin(s)}`;
@@ -193,10 +196,31 @@ function hostedSigninGo(s,way){const form=document.createElement('form'),box=$('
  if(s.provider==='whatsapp'&&way==='code'){add('way','code');add('phone',box.querySelector('input[name="signin-phone"]')?.value||'')}
  if(s.provider==='whatsapp'&&s.account)add('account_id',s.account);  // Link again: the one that is not linked any more
  document.body.append(form);form.submit()}
+// WhatsApp, linked (the control plane's phase, from the agent's cmd_whatsapp): the Machine connects it right away, after
+// other setup work when some runs; the history comes in afterwards and its card counts it. Never a bare "connecting"
+// for minutes (2026-11-06: a new owner saw "Signed in. Connecting it now." for almost 6 minutes).
+function whatsappLinked(s){
+ return s.phase==='queued'?t('Linked. Your Machine finishes another setup step first, then connects WhatsApp.'):t('Linked. Connecting WhatsApp to your Machine.')}
 const HOSTED_GOING=['checking','starting','code','qr','pair','phone','connecting'];
+// A sign-in that stops moving ends in a message with Try again, never an endless line: no answer from the control plane
+// for HOSTED_SILENT_MS, or nothing new (state, step, code) for HOSTED_STILL_MS while connecting; a linked WhatsApp
+// connects in about a minute, so HOSTED_LINKED_MS, unless it waits on other setup work. The control plane ends a stalled
+// one itself too (cloud worker.expire_whatsapp) and tells ops; this is reported to the error feed as well.
+const HOSTED_SILENT_MS=3*60000,HOSTED_STILL_MS=15*60000,HOSTED_LINKED_MS=5*60000;
+function hostedStalled(s,now){const going=s.state==='connecting'||s.state==='starting'||s.state==='checking',still=now-(s.moved||s.began||now);
+ if(now-(s.answered||s.began||now)>HOSTED_SILENT_MS)return true;
+ if(s.provider==='whatsapp'&&s.state==='connecting')return s.phase!=='queued'&&still>HOSTED_LINKED_MS;
+ return going&&still>HOSTED_STILL_MS}
 function hostedPoll(){clearTimeout(signinTimer);const s=connectSignin;if(!s?.hosted||!HOSTED_GOING.includes(s.state)||!s.command)return;
- signinTimer=setTimeout(async()=>{try{const r=await request('/_machine/connect-state?s='+encodeURIComponent(s.provider)+'&c='+encodeURIComponent(s.command));if(connectSignin!==s)return;
-  connectSignin={...s,state:r.state,error:r.error,code:r.code,url:r.url,until:r.until,pending:r.pending,phone:r.phone};$('#connect-add').dataset.sig='';renderConnectSignin();if(r.state==='done')setTimeout(()=>{connectList=null;refresh()},8000)}catch{}hostedPoll()},s.state==='checking'?0:2500)}
+ if(!s.began)s.began=Date.now();
+ signinTimer=setTimeout(async()=>{let r=null;try{r=await request('/_machine/connect-state?s='+encodeURIComponent(s.provider)+'&c='+encodeURIComponent(s.command))}catch{}
+  if(connectSignin!==s)return;const now=Date.now();
+  if(r){const mark=JSON.stringify([r.state,r.phase,r.code,r.until,r.pending,r.phone]);
+   connectSignin={...s,state:r.state,error:r.error,code:r.code,url:r.url,until:r.until,pending:r.pending,phone:r.phone,phase:r.phase,made:r.account,
+    answered:now,mark,moved:mark===s.mark?s.moved||s.began:now}}
+  if(HOSTED_GOING.includes(connectSignin.state)&&hostedStalled(connectSignin,now)){const at=connectSignin;connectSignin={...at,state:'stalled'};
+   try{throw Object.assign(new Error(`${at.provider}: ${at.phase||at.state}`),{name:'ConnectStalled'})}catch(e){errReport(e,'ConnectStalled')}}
+  $('#connect-add').dataset.sig='';renderConnectSignin();if(connectSignin.state==='done')setTimeout(()=>{connectList=null;refresh().then(()=>{$('#connect-add').dataset.sig='';if(connectSignin?.state==='done')renderConnectSignin()},()=>{})},8000);hostedPoll()},s.state==='checking'?0:2500)}
 // Back from the provider (cloud: open_dashboard to=connect): + Add, that sign-in's form, following how it goes
 // c_: the command its callback queued; f_: why the provider's answer was refused, which the account keeps for this form
 const ON_DASHBOARD=['github','whatsapp','android','codex'];
@@ -221,7 +245,7 @@ function renderConnectSignin(){const s=connectSignin,box=$('#connect-add'),paire
  const off=!s.hosted&&s.off&&paired&&s.state==='intro';  // the other way is the way: open, its button first, Back after it
  const paste=s.hosted||s.state==='done'||s.state==='connecting'||!s.own||!copy.other?'':html`<details class="connect-other"${off?html` open`:''}><summary>${copy.other||''}</summary><p>${copy.how||''}</p><div class="actions"><button type="button"${off?html` class="primary"`:''} data-connect="${s.source}">${copy.go||''}</button>${off?back:''}</div></details>`;
  const panel=html`<div class="connect-run connect-signin"><h3>${copy.title||s.label}</h3>${body}${paste}${off&&!paste?html`<div class="actions">${back}</div>`:''}</div>`;
- const sig=JSON.stringify(['signin',s.state,s.source,s.name,s.error,s.replies,paired,s.hosted,s.code,s.until,s.pending,s.phone,s.off,s.provider==='codex'&&connectList?.codex?.status]);if(box.dataset.sig===sig)return;box.dataset.sig=sig;connectDraw(box,'signin',panel)}
+ const sig=JSON.stringify(['signin',s.state,s.source,s.name,s.error,s.replies,paired,s.hosted,s.code,s.until,s.pending,s.phone,s.off,s.phase,!!connectCard({account:s.made}),s.provider==='codex'&&connectList?.codex?.status]);if(box.dataset.sig===sig)return;box.dataset.sig=sig;connectDraw(box,'signin',panel)}
 function signinPoll(){clearTimeout(signinTimer);if(!connectSignin||!['started','connecting'].includes(connectSignin.state))return;
  signinTimer=setTimeout(async()=>{try{const r=await connectPost('connect_signin_state',{name:connectSignin.start||connectSignin.source});if(!connectSignin)return;
   if(r.state!=='none')connectSignin={...connectSignin,...r};renderConnectSignin();if(r.state==='done')setTimeout(()=>{connectList=null;refresh()},8000)}catch{}signinPoll()},2500)}
@@ -427,6 +451,7 @@ ${c.service==='salesflare'?salesflareBox(c):''}${c.signed_out?html`<p class="ale
 
 ${c.service==='slack'?html`<p class="note">${slackProgress(c)}${c.conversation_errors?` · ${t('{} unavailable',c.conversation_errors)}`:''}${c.deferred_threads?` · ${t(['{} thread read waiting for retry','{} thread reads waiting for retry'],c.deferred_threads)}`:''}</p><p class="note">Slack’s limits mean a full round of conversations can take hours.</p>`:''}
 ${c.service==='android'?html`<p class="note">${phone.transport==='direct_fallback'?'Using direct checks while the notification bridge is unavailable.':'Uses OpenClaw’s notification feed, plus a catch-up check of your phone.'} Checks run at most every 10 minutes, so notifications cleared in between may be missed.${phone.reconciliation_error&&phone.reconciliation_error!==c.error?html`<br><span class="error">Last phone check: ${syncError(phone.reconciliation_error)}</span>`:''}</p>`:''}
+${c.service==='whatsapp'&&c.history?html`<p class="note">${t('Bringing in your chat history: {} messages so far.',Number(c.history).toLocaleString(DL))}</p>`:''}
 ${c.service==='telegram'?telegramNote(c):''}
 <div class="conn-more">${synced?html`<details id="sync-recent-${c.id}" ${open.has('sync-recent-'+c.id)?html`open`:''}><summary>Recent syncs</summary>${(c.sync_activity||[]).map(a=>html`<p><span class="mono muted">${date(a.at)}</span> · ${a.status==='success'?html`<span>${a.signals==null?t('Synced'):t('Synced, {} new or changed',a.signals)}</span>`:html`<span class="error">${syncError(a.error)}</span>${a.retry_at?html` · <span>${t('Retry {}',date(a.retry_at))}</span>`:''}`}</p>`)}${(c.sync_activity||[]).length?'':html`<p>No recent syncs recorded yet.</p>`}</details>`:''}<details id="sync-details-${c.id}" ${open.has('sync-details-'+c.id)?html`open`:''}><summary>Details</summary>${!synced?'':c.failures_24h?html`<p>${t(['{} failed sync in the last 24 hours. Old failures don’t affect a connection that recovered.','{} failed syncs in the last 24 hours. Old failures don’t affect a connection that recovered.'],c.failures_24h)}</p>`:html`<p>No failed syncs in the last 24 hours.</p>`}${synced&&c.last_failure?html`<p>${t('Last failure: {}, {}',syncError(c.last_failure.error),date(c.last_failure.at))}</p>`:''}${synced&&c.error&&c.failures?html`<p>${t(['{} failed attempt in a row','{} failed attempts in a row'],c.failures)}</p>`:''}${synced?syncPlain(c).map(l=>html`<p class="conn-plain">${l}</p>`):''}${c.service==='intercom'&&c.replies_as&&c.replies_as!=='you'?html`<p class="conn-plain conn-replies-as">${t('Replies as {}, only after you press Send.',c.replies_as)}</p>`:''}${connAbilities(c)}${photosRow(c)}${scopeRow(c)}${connActions(c)}</details></div></article>`;
 }

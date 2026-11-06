@@ -1464,6 +1464,7 @@ def step_whatsapp(config, account, ui):
     if not linked:
         raise SetupError('WhatsApp is not linked', f'wacli --store {account["store"]} auth, then: assistant connect whatsapp')
     account['identity_sha256'] = hashlib.sha256(linked.encode()).hexdigest()
+    account['connected_at'] = dt.datetime.now(dt.timezone.utc).strftime('%Y-%m-%dT%H:%M:%S+00:00')  # its card's first sync (assistant.whatsapp_history)
     ui.say('  WhatsApp: linked')
     whatsapp_sync(wacli, account, ui)
 
@@ -1472,6 +1473,7 @@ PHONE = re.compile(r'[1-9][0-9]{7,14}')
 # The name the phone shows under WhatsApp, Linked devices (wacli's WACLI_DEVICE_LABEL; without it, "wacli - Linux
 # (host)"). WhatsApp keeps the name a device linked with: a device linked before shows the new one after linking again.
 WHATSAPP_DEVICE = {'WACLI_DEVICE_LABEL': 'The Machine'}
+WHATSAPP_HANDOFF = 10  # seconds wacli auth keeps the store after WhatsApp says connected, to save the session
 
 
 def whatsapp_pair(wacli, store, ui):
@@ -1481,7 +1483,7 @@ def whatsapp_pair(wacli, store, ui):
     if not PHONE.fullmatch(phone):
         raise SetupError('That is not a phone number with its country code', 'add WhatsApp again and type it like +32 470 12 34 56')
     Path(store).mkdir(parents=True, exist_ok=True)
-    failed = []
+    failed, ends = [], []
 
     def seen(line):
         try:
@@ -1494,10 +1496,13 @@ def whatsapp_pair(wacli, store, ui):
         elif event.get('event') == 'connected':
             ui.show_code(None)
             ui.say('  WhatsApp: linked, reading your chats')
+            # Connected now: the history WhatsApp keeps sending goes on in the sync (whatsapp_sync), not here. auth's
+            # --idle-exit never fires while it arrives, so it ends shortly after linking (2026-11-06: minutes of waiting).
+            ends[:] = [time.monotonic() + WHATSAPP_HANDOFF]
         elif event.get('event') == 'error':
             failed.append(str(data.get('message') or '')[-200:])
     follow([wacli, '--store', str(store), '--events', 'auth', '--qr-format', 'text', '--idle-exit', '20s', '--history-days', '30',
-            'auth', '--phone', phone], ui, seen, env=WHATSAPP_DEVICE)
+            'auth', '--phone', phone], ui, seen, env=WHATSAPP_DEVICE, ends=ends)
     ui.show_code(None)
     if getattr(ui, 'cancelled', False):
         raise SetupError('Stopped')
@@ -1935,9 +1940,10 @@ GH_CODE = re.compile(r'one-time code: ([A-Z0-9]{4}-[A-Z0-9]{4})')
 CODE_WAIT = 900  # seconds a sign-in code shown on the dashboard (GitHub, WhatsApp) waits to be used
 
 
-def follow(command, ui, seen, wait=CODE_WAIT, env=None):
+def follow(command, ui, seen, wait=CODE_WAIT, env=None, ends=None):
     """Run a sign-in that shows a code (gh auth login, wacli auth) and hand each line to `seen` until it ends, the
-    dashboard's Cancel, or `wait` seconds. Returns the exit code, or None when it was stopped."""
+    dashboard's Cancel, or `wait` seconds. Returns the exit code, or None when it was stopped. `ends`: a list `seen` may
+    put a monotonic time in, when the sign-in is done but the tool keeps going (wacli auth while history arrives)."""
     try:
         process = subprocess.Popen(command, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
                                    env={**os.environ, 'BROWSER': 'true', **(env or {})})  # nothing opens on the server: the code shows on the dashboard
@@ -1947,6 +1953,13 @@ def follow(command, ui, seen, wait=CODE_WAIT, env=None):
     reader.start()
     until = time.monotonic() + wait
     while process.poll() is None:
+        if ends and time.monotonic() > ends[0]:
+            process.terminate()
+            process.wait(10)
+            reader.join(5)
+            if not reader.is_alive():  # a child still holding the pipe: the daemon reader ends with it
+                process.stdout.close()
+            return 0
         if getattr(ui, 'cancelled', False) or time.monotonic() > until:
             process.terminate()
             process.wait(10)
