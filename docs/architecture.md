@@ -114,7 +114,7 @@ The copy protects against someone reading the browser's files (a lost laptop's d
 ### How a review runs
 
 The service starts reviews itself (`review_worker.enabled`). When at least `min_signals` wait (40 by default), or the
-oldest has waited `max_wait_minutes` (60), it starts one isolated turn of your main agent,
+oldest has waited `max_wait_minutes` (15), it starts one isolated turn of your main agent,
 `agent:main:assistant-review-signals-<run>`, with message delivery off.
 
 - **A new mailbox first.** A newly connected mailbox (Gmail or Outlook, on a new install or added later) doesn't wait:

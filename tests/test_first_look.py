@@ -164,13 +164,13 @@ class FirstLook(unittest.TestCase):
         self.assertEqual(status['review_runs'][0]['done_count'], 4)
 
     def test_queue_says_how_many_wait_and_when_the_next_review_starts(self):
-        self.app.config['review_worker'] = {'enabled': True, 'min_signals': 40, 'max_wait_minutes': 60, 'gap_seconds': 600}
+        self.app.config['review_worker'] = {'enabled': True, 'min_signals': 40, 'max_wait_minutes': 15, 'gap_seconds': 600}
         self.store.commit_page('work', {}, [signal('m1'), signal('m2')])
         with self.store.connect() as db:
             queue = self.app.review_queue(db)
         self.assertEqual((queue['waiting'], queue['why']), (2, 'batch'))
         start = dt.datetime.fromisoformat(queue['starts_at']) - dt.datetime.now(dt.timezone.utc)
-        self.assertTrue(dt.timedelta(minutes=58) < start <= dt.timedelta(minutes=61))
+        self.assertTrue(dt.timedelta(minutes=13) < start <= dt.timedelta(minutes=16))
 
     def test_the_graph_rebuilds_soon_after_new_organisation_profiles(self):
         before = self.app.graph_freshness()

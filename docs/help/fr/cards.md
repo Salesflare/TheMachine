@@ -44,7 +44,7 @@ Quand vous lancez une tâche, elle peut toujours lire les messages d’où elle 
 
 ## Vérifier maintenant
 
-Votre Machine lit chaque source toutes les quelques minutes, jour et nuit, et vérifie ce qui est arrivé pour en tirer des tâches dès que 40 messages attendent ou que le plus ancien attend depuis une heure.
+Votre Machine lit chaque source toutes les quelques minutes, jour et nuit, et vérifie ce qui est arrivé pour en tirer des tâches dès que 40 messages attendent ou que le plus ancien attend depuis 15 minutes.
 
 **Vérifier maintenant**, en haut des Tâches, lit tout de suite chaque source et examine ce qui est arrivé, même quand tout est calme. À côté, une ligne dit quand elle a vérifié pour la dernière fois, quand aura lieu la prochaine vérification et combien de messages attendent. Appuyer encore pendant la vérification montre la même vérification. L’app mobile l’a aussi. Dans le chat, demandez-lui de vérifier maintenant.
 

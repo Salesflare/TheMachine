@@ -6,7 +6,7 @@ covers:
 code: dashboard.html, assistant.py
 order: 3
 ---
-To-dos come from reviews: your Machine reads what came in, in small batches, within about an hour.
+To-dos come from reviews: your Machine reads what came in, in small batches, within about 15 minutes.
 
 ## Just signed up
 

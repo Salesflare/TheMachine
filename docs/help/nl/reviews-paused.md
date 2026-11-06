@@ -6,7 +6,7 @@ covers:
 code: dashboard.html, assistant.py
 order: 3
 ---
-To-do's komen uit reviews: je Machine leest wat er binnenkwam, in kleine porties, binnen ongeveer een uur.
+To-do's komen uit reviews: je Machine leest wat er binnenkwam, in kleine porties, binnen ongeveer 15 minuten.
 
 ## Net aangemeld
 

@@ -152,16 +152,26 @@ class ReviewWorker(unittest.TestCase):
         self.assertTrue(self.store.begin_analysis(['work'],120,'manual','new')['busy'])
 
     def test_waits_for_a_batch_or_the_oldest_signal_to_age(self):
-        self.app.config['review_worker'].update(min_signals=40,max_wait_minutes=60)
+        self.app.config['review_worker'].update(min_signals=40,max_wait_minutes=15)
         with self.store.connect() as db:db.execute('UPDATE events SET ingested_at=?',(T.isoformat(),))
-        self.assertIsNone(self.step(Runner(),T+dt.timedelta(minutes=30)))  # 1 signal, 30 minutes old
+        self.assertIsNone(self.step(Runner(),T+dt.timedelta(minutes=10)))  # 1 signal, 10 minutes old
         self.store.commit_page('work',{},[{'account_id':'work','source_id':str(i),'kind':'gmail.message','occurred_at':a.now(),'title':'Hi','body':'Text','metadata':{},'deleted':False} for i in range(40)])
-        self.assertEqual(self.step(Runner('admitted'),T+dt.timedelta(minutes=31)),'admitted')  # 41 waiting
+        self.assertEqual(self.step(Runner('admitted'),T+dt.timedelta(minutes=11)),'admitted')  # 41 waiting
 
-    def test_starts_for_a_single_signal_after_an_hour(self):
+    def test_starts_for_a_single_signal_after_15_minutes(self):
+        with self.store.connect() as db:db.execute('UPDATE events SET ingested_at=?',(T.isoformat(),))
+        self.app.config['review_worker'].update(min_signals=40)
+        self.assertIsNone(self.step(Runner(),T+dt.timedelta(minutes=14)))
+        self.assertEqual(self.step(Runner('admitted'),T+dt.timedelta(minutes=16)),'admitted')
+
+    def test_the_old_shipped_60_minutes_in_a_config_means_the_new_default_another_value_is_kept(self):
+        # Every install copied "max_wait_minutes": 60 from config.example.json: that was the default, not a choice
+        self.assertEqual(a.review_max_wait({'max_wait_minutes':60}),15)
+        self.assertEqual(a.review_max_wait({}),15);self.assertEqual(a.review_max_wait(None),15)
+        self.assertEqual(a.review_max_wait({'max_wait_minutes':45}),45)
         self.app.config['review_worker'].update(min_signals=40,max_wait_minutes=60)
         with self.store.connect() as db:db.execute('UPDATE events SET ingested_at=?',(T.isoformat(),))
-        self.assertEqual(self.step(Runner('admitted'),T+dt.timedelta(minutes=61)),'admitted')
+        self.assertEqual(self.step(Runner('admitted'),T+dt.timedelta(minutes=16)),'admitted')
 
     def test_failed_runs_back_off_instead_of_retrying_every_minute(self):
         with self.store.connect() as db:

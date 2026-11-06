@@ -44,7 +44,7 @@ Start je een to-do, dan mag hij altijd de berichten lezen waar hij uit kwam, ook
 
 ## Nu checken
 
-Je Machine leest elke bron om de paar minuten, dag en nacht, en kijkt wat er binnenkwam na op to-do’s zodra er 40 berichten wachten of het oudste bericht een uur wacht.
+Je Machine leest elke bron om de paar minuten, dag en nacht, en kijkt wat er binnenkwam na op to-do’s zodra er 40 berichten wachten of het oudste bericht 15 minuten wacht.
 
 **Nu checken**, bovenaan To-do's, leest meteen elke bron en bekijkt wat er binnenkwam, ook als alles rustig is. Ernaast staat wanneer hij het laatst nakeek, wanneer de volgende controle is en hoeveel berichten wachten. Druk je nog eens terwijl hij checkt, dan zie je dezelfde check. De telefoonapp heeft het ook. In de chat vraag je hem gewoon om nu te checken.
 

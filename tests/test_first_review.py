@@ -48,7 +48,7 @@ class FirstReview(unittest.TestCase):
         self.app.quick_first_review = lambda db: 0  # the regular reviews only; test_fast_first_look has the quick first one
         self.app.config = {'accounts': [{'id': 'work', 'service': 'outlook', 'transport': 'broker'},
                                         {'id': 'cal', 'service': 'outlook_calendar', 'transport': 'broker'}],
-                           'review_worker': {'enabled': True, 'min_signals': 40, 'max_wait_minutes': 60, 'gap_seconds': 600},
+                           'review_worker': {'enabled': True, 'min_signals': 40, 'max_wait_minutes': 15, 'gap_seconds': 600},
                            'delivery_enabled': False}
         for name, value in (('Gmail', Mailbox), ('message_event', lambda account, raw, config: signal(raw['id'], account['id']))):
             patcher = patch_everywhere(a, name, value); patcher.start(); self.addCleanup(patcher.stop)
@@ -96,13 +96,13 @@ class FirstReview(unittest.TestCase):
         self.finish()
         self.sync()  # the next sync keeps the mark; reviewed now, so new mail waits for the usual batch again
         self.store.commit_page('work', self.store.checkpoint('work'), [signal('new1'), signal('new2')])
-        self.assertIsNone(self.step(Runner(), 15))
-        self.assertEqual(self.queue(15)['why'], 'batch')
+        self.assertIsNone(self.step(Runner(), 10))
+        self.assertEqual(self.queue(10)['why'], 'batch')
 
     def test_a_small_mailbox_does_not_wait_for_the_batch_slot(self):
         Mailbox.pages = [['m1', 'm2']]
         self.sync()
-        self.assertEqual(self.step(Runner('admitted')), 'admitted')  # 2 signals, right away instead of in an hour
+        self.assertEqual(self.step(Runner('admitted')), 'admitted')  # 2 signals, right away instead of in 15 minutes
         self.assertEqual(len(self.runs()), 1)
 
     def test_an_empty_mailbox_starts_nothing(self):

@@ -6,7 +6,7 @@ covers:
 code: dashboard.html, assistant.py
 order: 3
 ---
-Aufgaben entstehen aus Prüfungen: Deine Machine liest, was reingekommen ist, in kleinen Paketen, innerhalb von etwa einer Stunde.
+Aufgaben entstehen aus Prüfungen: Deine Machine liest, was reingekommen ist, in kleinen Paketen, innerhalb von etwa 15 Minuten.
 
 ## Gerade angemeldet
 

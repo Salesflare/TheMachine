@@ -1551,6 +1551,16 @@ PREPARATION_SETTLE_SECONDS = 120
 # without a terminal state for its run id); a younger one may still be queued.
 PREPARATION_PROBE_SECONDS = 120
 REVIEW_PROBE_SECONDS = 120  # the same for a review: old enough to be past the Gateway's queue
+# The longest a new message waits for a review when fewer than min_signals (40) wait: 15 minutes since 2026-11-06,
+# 60 before. Shorter batches cost a little more per message; the 10-minute gap between runs stays (gap_seconds).
+REVIEW_MAX_WAIT_MINUTES = 15
+
+
+def review_max_wait(settings):
+    """review_worker max_wait_minutes, in minutes. 60 was the shipped default every install copied into its config.json
+    (config.example.json), not an owner's choice, so it now means the new default too; any other value is kept."""
+    value = (settings or {}).get('max_wait_minutes')
+    return REVIEW_MAX_WAIT_MINUTES if value in (None, 60) else value
 SYSTEM_SERVICES = {'gateway'}  # The Machine's own logs: not a source of the owner's
 
 
@@ -21749,7 +21759,7 @@ class App(*APP_MIXINS):
                     # enough signals, or the oldest one has waited long enough.
                     waiting, oldest = db.execute('SELECT count(*),min(ingested_at) FROM events WHERE analyzed_version<version AND deferrals<?',
                                                  (SET_ASIDE_AFTER,)).fetchone()
-                    young = waiting and oldest > (stamp - dt.timedelta(minutes=settings.get('max_wait_minutes', 60))).isoformat()
+                    young = waiting and oldest > (stamp - dt.timedelta(minutes=review_max_wait(settings))).isoformat()
                     # A new mailbox: its first review starts as soon as its first import is in, as one review, not one
                     # halfway through the import and another after it (never past the usual longest wait).
                     mail = self.mail_backfill(db) if not recovery else {'filling': [], 'fresh': []}
@@ -21962,7 +21972,7 @@ class App(*APP_MIXINS):
                 return {**quick, 'state': 'waiting', 'why': 'retry', 'retry_at': retry} if retry else {**quick, 'state': 'due'}
             if first_page:
                 return {**out, 'state': 'waiting', 'why': 'mail'}
-        if mail['filling'] and (not waiting or newest > (current - dt.timedelta(minutes=settings.get('max_wait_minutes', 60))).isoformat()) \
+        if mail['filling'] and (not waiting or newest > (current - dt.timedelta(minutes=review_max_wait(settings))).isoformat()) \
                 and not (digging and waiting):
             return {**out, 'state': 'waiting', 'why': 'mail'}
         if not waiting:
@@ -21986,7 +21996,7 @@ class App(*APP_MIXINS):
         current = current or dt.datetime.fromisoformat(now())
         mail = self.mail_backfill(db)
         first = not db.execute("SELECT 1 FROM review_runs WHERE status='ok'").fetchone()
-        hold = dt.datetime.fromisoformat(oldest) + dt.timedelta(minutes=settings.get('max_wait_minutes', 60)) if waiting else None
+        hold = dt.datetime.fromisoformat(oldest) + dt.timedelta(minutes=review_max_wait(settings)) if waiting else None
         if mail['filling'] and (not hold or hold > current):
             # The first import of a mailbox is still coming in: the review starts when it is in (at the latest at hold)
             return {'waiting': waiting, 'planned': min(waiting, RUN_SIGNAL_BUDGET), 'starts_at': hold and hold.isoformat(),

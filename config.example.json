@@ -53,7 +53,7 @@
   "review_worker": {
     "enabled": false,
     "min_signals": 40,
-    "max_wait_minutes": 60,
+    "max_wait_minutes": 15,
     "gap_seconds": 600,
     "timeout_seconds": 1500,
     "outage_grace_seconds": 600,

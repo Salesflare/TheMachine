@@ -81,7 +81,7 @@ class CheckNow(unittest.TestCase):
         view = self.app.check_view()
         self.assertEqual((view['waiting'], view['soon']), (12, False))
         due = a.dt.datetime.fromisoformat(view['next_review']) - a.dt.datetime.now(a.dt.timezone.utc)
-        self.assertAlmostEqual(due.total_seconds(), 3600, delta=60)  # once the oldest waited an hour
+        self.assertAlmostEqual(due.total_seconds(), 900, delta=60)  # once the oldest waited 15 minutes
         self.store.commit_page('work', {}, [event(n, 'b') for n in range(20)])
         self.assertTrue(self.app.check_view()['soon'])  # 32 of 40: the batch is nearly full
         self.assertEqual(self.app.check_view()['phase'], None)
