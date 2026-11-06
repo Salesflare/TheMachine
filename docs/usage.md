@@ -46,7 +46,7 @@ Telegram uses OpenClaw's existing bot and message route, never a second poller.
 - Buttons edit the existing to-do instead of sending new messages. A finished Do it sends one short Ready notice.
 - A step only you can do, in person or offline (go to a shop, pick something up, attend), has no Do it. **Done** leads, with **Plan it** for what the Machine can do around it: a calendar event at a sensible time, a link to the place with directions and opening hours, a message to the other side if plans change. Each still waits for your tap. Then **Snooze** and **Not needed**. The review judges which steps those are.
 - A promise to-do says what was promised in its title, and only who and when in its one line.
-- Each row holds up to three buttons that fit a phone's width, in order, so a Send shares its row with Mark done (`controls()` in `assistant.py` and `packRows` in the plugin follow the same rule).
+- Each row holds up to three buttons that fit a phone's width, in order, so a Send shares its row with Mark done (`controls()` in `machine/cards.py` and `packRows` in the plugin follow the same rule).
 
 **Change**
 
