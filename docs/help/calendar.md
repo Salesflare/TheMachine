@@ -23,7 +23,7 @@ A plan made together is one promise, marked "With" and their name. A promise abo
 
 ## Agenda, week or month
 
-- **Agenda** lists each day. Scroll down for later days, or up (or **Show earlier days**) for earlier ones. It goes back to a week before you connected your calendar, and a line at the top says from which day.
+- **Agenda** lists each day. Scroll down for later days, or up (or **Show earlier days**) for earlier ones. It goes back to a week before you connected your calendar, and a line at the top says from which day. Once its [history](history.md) is in, it goes back about a year.
 - **Week** shows a grid, Monday to Sunday. On a phone it shows three days.
 - **Month** shows the whole month. A computer shows up to three items a day; a phone shows dots, and a tap lists that day.
 

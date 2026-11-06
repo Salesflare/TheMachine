@@ -83,6 +83,14 @@ def calendar_start(db, account_ids):
     return max(t for t in targets if t)[:10] if all(targets) else None
 
 
+def calendar_coming(db, account_ids):
+    """True while one of these calendars' backfill started and hasn't reached its depth."""
+    if not account_ids:
+        return False
+    return bool(db.execute('SELECT 1 FROM history_backfill WHERE done_at IS NULL AND account_id IN (' + ','.join('?' * len(account_ids)) + ')',
+                           list(account_ids)).fetchone())
+
+
 def before(text, days):
     """An ISO time `days` before another one."""
     return (dt.datetime.fromisoformat(text) - dt.timedelta(days=days)).isoformat()

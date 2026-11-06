@@ -43,7 +43,7 @@ When a new version of the dashboard is ready, it never reloads while you're usin
 
 ## Messages
 
-Open search with `⌘K` on a Mac or `Ctrl K` on Windows and Linux, or the search icon in the top bar on a phone. Type two letters or more: **Messages** shows the best matches from everything your Machine read, by meaning or by words.
+Open search with `⌘K` on a Mac or `Ctrl K` on Windows and Linux, or the search icon in the top bar on a phone. Type two letters or more: **Messages** shows the best matches from everything your Machine read, by meaning or by words. Older [history](history.md) shows up by words.
 
 **See all results** opens the full list, for all accounts or one. Each result opens in a reader, with a link to where it came from. An empty search shows the newest messages.
 

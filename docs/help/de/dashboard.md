@@ -43,7 +43,7 @@ Wenn eine neue Version des Dashboards bereit ist, lädt es nie neu, während du 
 
 ## Nachrichten
 
-Öffne die Suche mit `⌘K` auf einem Mac oder `Ctrl K` unter Windows und Linux, oder auf dem Handy mit dem Suchsymbol oben. Tippe zwei Buchstaben oder mehr: **Nachrichten** zeigt die besten Treffer aus allem, was deine Machine gelesen hat, nach Bedeutung oder nach Wörtern.
+Öffne die Suche mit `⌘K` auf einem Mac oder `Ctrl K` unter Windows und Linux, oder auf dem Handy mit dem Suchsymbol oben. Tippe zwei Buchstaben oder mehr: **Nachrichten** zeigt die besten Treffer aus allem, was deine Machine gelesen hat, nach Bedeutung oder nach Wörtern. Älterer [Verlauf](history.md) erscheint nach Wörtern.
 
 **Alle Ergebnisse** öffnet die ganze Liste, für alle Konten oder ein einzelnes. Jedes Ergebnis öffnet sich in einer Leseansicht, mit einem Link dorthin, wo es herkommt. Eine leere Suche zeigt die neuesten Nachrichten.
 

@@ -54,6 +54,7 @@ AREAS = {'getting-started': 'Getting started', 'cards': 'To-dos and chat', 'cale
 # Add one when you add such a feature; when its code is gone, the check asks you to update or delete its article.
 FEATURES = {
     'do-it': ('dashboard.html', 'Do it'),
+    'history': ('machine/app/history.py', 'def history_step'),
     'snooze': ('dashboard.html', 'Remind me later'),
     'card-chat': ('dashboard.html', 'id="chat'),
     'hand-to-agent': ('dashboard.html', 'Hand to Codex'),

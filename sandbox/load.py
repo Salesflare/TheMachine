@@ -161,6 +161,7 @@ def load(directory, states, port=8870, network_port=8871, fixture_path=HERE / 'f
             load_reviews(db, ids, base, assistant)
             load_boards(db, fixture, ids, base)
             load_companies(db, fixture, base)
+            load_history(db, base)
     if not fresh:
         with store.connect() as db:
             load_job(db, fixture, base)
@@ -243,6 +244,16 @@ def fill_machine(config, fixture_path=HERE / 'fixture.json', base=None):
         load_skills(db, {'busy'}, fixture, base)
         counts = [db.execute(f'SELECT count(*) FROM {t}').fetchone()[0] for t in ('events', 'suggestions', 'promises')]
     return dict(zip(('signals', 'todos', 'promises'), counts))
+
+
+def load_history(db, base):
+    """How far back each connection's history reaches (machine/store/history.py): mail and calendars a year, done, and
+    WhatsApp still coming in, so its card says so far. Only the cards' and the Calendar's lines; no older rows."""
+    from machine.store import history
+    year, upper = stamp(365 * 24 * 60, base), stamp(8 * 24 * 60, base)
+    for account, kept, oldest, done in (('work-gmail', 4180, year, True), ('home-gmail', 1260, year, True), ('work-calendar', 610, year, True),
+                                        ('home-calendar', 140, year, True), ('home-whatsapp', 2930, stamp(190 * 24 * 60, base), False)):
+        history.save(db, account, {'target': year, 'upper': upper, 'cursor': oldest}, stamp(30, base), kept, oldest, done, history.DEFAULT_DAYS)
 
 
 def load_recurring(store, config, base):
