@@ -284,8 +284,8 @@ off), with the sign-ins the connections already have: no new scopes (`machine/ap
   review, first look, to-do, promise, Graph link or "new" count comes from it. Search, threads, a message and the
   Calendar show it; search results mark it `history`. No model reads it, and local embeddings skip it.
 - **When it runs:** after the first look ended (or a day after the first read on a Machine from before the first
-  look), never while a review or a first import runs, with at least 2 GB (and 10%) free on the disk and 500 MB of
-  memory available, at the lowest CPU and disk priority. A connection's own sync read holds back only that connection,
+  look), never while a review or a first import runs, with room on the disk (at least 2 GB free, and 10% of the
+  disk up to 5 GB, and twice the size of the database) and 500 MB of memory available, at the lowest CPU and disk priority. A connection's own sync read holds back only that connection,
   so steps slot in between syncs on a Machine with many sources. One small step every 20 seconds: a week of the
   local WhatsApp store, 20 messages of a mailbox, or 100 meetings. The log says `history waits reason=...` once per
   change of reason, and `history goes` when it steps again.

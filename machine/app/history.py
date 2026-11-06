@@ -11,6 +11,7 @@ import datetime as dt
 import json
 import logging
 import os
+from pathlib import Path
 import platform
 import shutil
 import sqlite3
@@ -31,8 +32,13 @@ MAIL_PAGE = 20  # messages per mail step: one list call and at most this many re
 CALENDAR_PAGE = 100
 WHATSAPP_DAYS = 7  # one local read of the WhatsApp store per step covers this many days
 WHATSAPP_LIMIT = 1000  # wacli's most rows per read: a fuller window is split
-FREE_DISK_BYTES = 2 * 1024 ** 3  # pauses with less free space than this, or than FREE_DISK_SHARE of the disk
+# Room on the data disk (free_disk): never under FREE_DISK_BYTES; a tenth of the disk on a small one, but never more
+# than FREE_DISK_ENOUGH (a tenth of a big disk is far more than history ever writes); and DATABASE_HEADROOM times the
+# database, so the database can still double while SQLite rewrites it (a VACUUM or a table rebuild needs a full copy).
+FREE_DISK_BYTES = 2 * 1024 ** 3
 FREE_DISK_SHARE = 0.10
+FREE_DISK_ENOUGH = 5 * 1024 ** 3
+DATABASE_HEADROOM = 2
 FREE_MEMORY_BYTES = 500 * 1024 ** 2  # pauses with less memory available (a hosted Machine has 3.8 GB)
 ERROR_WAIT_DAYS = 1 / 24  # a connection whose step failed waits an hour, the others go on
 FIRST_LOOK_GRACE = dt.timedelta(days=1)  # a Machine from before the first look: history waits this long after its first read
@@ -44,12 +50,18 @@ def kind(account):
     return 'mail' if service in MAIL else 'calendar' if service in CALENDAR else 'whatsapp' if service in WHATSAPP else None
 
 
-def free_disk(path):
+def free_disk(database):
+    """Room on the disk that holds the database file (see FREE_DISK_BYTES). Can't tell: no reason to wait."""
+    database = Path(database)
     try:
-        usage = shutil.disk_usage(path)
+        usage = shutil.disk_usage(database.parent)
     except OSError:
         return True
-    return usage.free >= max(FREE_DISK_BYTES, usage.total * FREE_DISK_SHARE)
+    size = 0
+    for part in (database, database.with_name(database.name + '-wal')):
+        with contextlib.suppress(OSError):
+            size += part.stat().st_size
+    return usage.free >= max(FREE_DISK_BYTES, min(usage.total * FREE_DISK_SHARE, FREE_DISK_ENOUGH), DATABASE_HEADROOM * size)
 
 
 def free_memory(path='/proc/meminfo'):
@@ -120,7 +132,7 @@ class HistoryApp:
                     state = json.loads(state)
                     if state.get('mode') in ('bootstrap', 'resync') or state.get('page_token'):
                         return 'first_import'
-        if not free_disk(self.store.path.parent):
+        if not free_disk(self.store.path):
             return 'disk'
         if not free_memory():
             return 'memory'

@@ -21,6 +21,8 @@ import graph  # noqa: E402
 import ms_graph  # noqa: E402
 from machine.app import history as app_history  # noqa: E402
 from machine.store import history  # noqa: E402
+
+FREE_DISK = app_history.free_disk  # the real one: the tests below patch it out
 FREE_MEMORY = app_history.free_memory
 
 NOW = '2026-11-06T09:00:00+00:00'
@@ -203,6 +205,25 @@ class WhenItRuns(Base):
             self.assertEqual(self.app.history_wait(), 'memory')
         self.app.config['history_days'] = 0
         self.assertEqual(self.app.history_wait(), 'off')
+
+    def test_disk_room_is_absolute_on_a_big_disk_and_relative_on_a_small_one(self):
+        gb, db = 1024 ** 3, self.store.path
+        def room(total, free, path=db):
+            usage = app_history.shutil._ntuple_diskusage(total * gb, (total - free) * gb, free * gb)
+            with mock.patch.object(app_history.shutil, 'disk_usage', return_value=usage):
+                return FREE_DISK(path)
+        self.assertTrue(room(469, 43))  # 91% used, but 43 GB is plenty: a tenth of a big disk is capped at 5 GB
+        self.assertFalse(room(469, 4.5))
+        self.assertFalse(room(32, 3))  # a small disk still keeps a tenth free
+        self.assertTrue(room(32, 3.5))
+        self.assertFalse(room(16, 1.9))  # never under 2 GB
+        big = Path(self.tmp.name) / 'big.sqlite'
+        with open(big, 'wb') as f:
+            f.truncate(3 * gb)  # sparse: takes no real space
+        self.assertTrue(room(469, 43, big))
+        self.assertFalse(room(469, 5.5, big))  # twice the database must fit
+        with mock.patch.object(app_history.shutil, 'disk_usage', side_effect=OSError):
+            self.assertTrue(FREE_DISK(db))  # can't tell: no reason to wait
 
     def test_depth_is_a_setting_with_a_safe_default(self):
         self.assertEqual(history.depth({}), 365)
