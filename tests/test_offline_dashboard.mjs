@@ -11,11 +11,11 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // again (also through 5xx hiccups), a typed chat message survives a reload, and Send to other people never waits:
 // it says it is offline. docs/architecture.md, "On the device".
 const raw=await dashboardPage(),sw=await readFile(new URL('../sw.js',import.meta.url),'utf8');
-// The brand files as assistant.py serves them (BRAND_ASSETS), so offline must look the same as online
-const py=await readFile(new URL('../assistant.py',import.meta.url),'utf8');
+// The brand files as the app serves them (BRAND_ASSETS in machine/config.py), so offline must look the same as online
+const py=await readFile(new URL('../machine/config.py',import.meta.url),'utf8');
 const BRAND=Object.fromEntries([...py.slice(py.indexOf('BRAND_ASSETS = {'),py.indexOf('}',py.indexOf('BRAND_ASSETS = {'))).matchAll(/'\/brand\/([\w.-]+)': ROOT \/ '([\w./-]+)'/g)].map(m=>[m[1],m[2]]));
 const swBrand=JSON.parse(/const BRAND = (\[[^\]]*\])/.exec(sw)[1].replace(/'/g,'"'));
-assert.deepEqual([...swBrand].sort(),Object.keys(BRAND).sort(),'sw.js keeps every brand file assistant.py serves');
+assert.deepEqual([...swBrand].sort(),Object.keys(BRAND).sort(),'sw.js keeps every brand file the app serves');
 const CSRF='c'.repeat(64),SCOPE='a1'.repeat(16),now=new Date(),iso=now.toISOString();
 const A='1'.repeat(16),B='2'.repeat(16),C='3'.repeat(16);
 const card=(id,title)=>({id,title,body:'Robin asked for the numbers.',status:'pending',scope:'work',created_at:iso,event_ids:[1]});
