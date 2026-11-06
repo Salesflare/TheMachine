@@ -9644,8 +9644,7 @@ def sync_calendar(store, config, account):
     timezone = profile.get('timeZone', str(local_tz()))
     state = store.checkpoint(account['id']) or {}
     current = dt.datetime.fromisoformat(now())
-    # An Outlook calendar read before its occurrences took their series' titles (ms_graph.series_masters): read again
-    outlook_read = {'outlook_read': ms_graph.CALENDAR_READ} if account.get('service') == 'outlook_calendar' else {}
+    outlook_read = {'outlook_read': ms_graph.CALENDAR_READ} if account.get('service') == 'outlook_calendar' else {}  # older read: again
     if not state or (state.get('mode') == 'incremental' and not state.get('page_token') and
                      current >= dt.datetime.fromisoformat(state['refresh_at'])) or (
             outlook_read and state.get('outlook_read') != ms_graph.CALENDAR_READ and not state.get('page_token')):
