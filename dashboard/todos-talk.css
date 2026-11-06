@@ -1,0 +1,127 @@
+/* Talk's own view: one column like a chat, the to-do it is about on top (with its draft), the transcript, the bar at the bottom */
+/* Talk fills the window under the header, and the page itself doesn't scroll: the to-do at the top (a long draft
+   scrolls in its own box), the transcript scrolls on its own and the bar stays at the bottom (--talk-h: talkFit) */
+.talk-view{--chat-col:min(100%,680px);display:flex;flex-direction:column;height:var(--talk-h,calc(100dvh - 170px));min-height:300px}.talk-view[hidden]{display:none}
+body:has(#talk-view:not([hidden])) .site-footer{display:none}
+.talk-head{display:flex;align-items:center;gap:12px;width:var(--chat-col);margin:0 auto}.talk-head h2{flex:1;margin:0}.talk-head button{width:auto;margin:0}
+/* The to-do sits above the transcript, in the page's flow: never over it (a sticky card covered the newest lines on a
+   phone, and its draft scrolled on its own under To:) */
+/* The card above the transcript: its whole rounded border always in sight, at most about half of Talk; a long draft
+   scrolls inside it, fading at the bottom while there is more. The transcript starts under it. */
+.talk-about-slot{flex:none;display:flex;flex-direction:column;max-height:54%;min-height:0;padding:14px 0 10px;box-sizing:border-box}.talk-about-slot:empty{display:none}
+.talk-about{display:flex;flex-direction:column;flex:0 1 auto;min-height:0;width:var(--chat-col);box-sizing:border-box;margin:0 auto;padding:12px 16px;border:1px solid var(--c-line);border-radius:14px;background:var(--surface)}
+.talk-about-top{display:flex;align-items:baseline;justify-content:space-between;gap:12px;font-size:var(--chat-meta,.8rem);color:var(--muted)}.talk-about-top a{flex:none;color:var(--c-accent,var(--mint));font-weight:500}
+.talk-about h3{margin:4px 0 0;font-size:1rem;line-height:1.35}.talk-about .chat-draft{display:flex;flex-direction:column;flex:0 1 auto;min-height:0;margin-top:10px}
+.talk-about .chat-clamp{display:block;flex:0 1 auto;min-height:0;-webkit-line-clamp:unset;max-height:none;overflow-y:auto;overscroll-behavior:contain}  /* the whole draft from its first line, no line clamp; it scrolls when the card is full */
+.talk-about .chat-clamp.fade-more{-webkit-mask-image:linear-gradient(to bottom,#000 calc(100% - 36px),transparent);mask-image:linear-gradient(to bottom,#000 calc(100% - 36px),transparent)}
+.talk-about-sent{margin:8px 0 0;color:var(--c-green,#188038);font-weight:600;overflow-wrap:anywhere}.talk-about-sent.failed{color:var(--orange)}
+.talk-view .chat-log{--chat-meta:.75rem;--chat-quiet:color-mix(in srgb,var(--text) 55%,var(--bg));flex:1 1 0;min-height:0;padding-top:8px;padding-bottom:8px;overflow-y:auto;overscroll-behavior:contain;line-height:1.5;-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 40px);mask-image:linear-gradient(to bottom,transparent 0,#000 40px)}  /* lines scrolled up fade out under the heading */
+.talk-mark{align-self:center;margin-top:26px;font-size:var(--chat-meta);color:var(--chat-quiet);text-align:center}
+/* A record the voice opened (open_record): a small card in Talk's transcript, to its own page or the meeting */
+.talk-record{align-self:stretch;display:flex;flex-direction:column;gap:2px;margin-top:14px;padding:10px 14px;border:1px solid var(--border);border-radius:12px;background:var(--surface);min-width:0}
+.talk-record-kind{font-size:var(--chat-meta);color:var(--chat-quiet)}
+.talk-record strong{font-weight:600;overflow-wrap:anywhere}.talk-record strong a{color:inherit}
+.talk-record-open{all:unset;cursor:pointer;text-decoration:underline;text-underline-offset:3px}.talk-record-open:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.talk-record small{color:var(--muted);overflow-wrap:anywhere}
+.talk-again{display:flex;align-items:center;justify-content:center;gap:14px;min-height:52px}.talk-again[hidden]{display:none}.talk-again .talk-mark{margin:0}
+.talk-foot{flex:none;z-index:5;width:var(--chat-col);margin:0 auto;padding:8px 0 calc(12px + env(safe-area-inset-bottom,0px));background:var(--bg)}.talk-foot .talk{margin:0}
+/* Talk (the main conversation) outside a to-do's chat: the same bar, floating at the bottom of the page */
+#talk-dock{position:fixed;z-index:60;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));width:min(560px,calc(100vw - 32px));margin:0;transform:translateX(-50%)}
+#talk-dock .talk-bar{box-shadow:0 6px 24px rgba(0,0,0,.14)}
+/* While the bar floats, the page ends with room for it (bar + its gap + air), so the last to-do and the footer scroll clear */body:has(#talk-dock)::after{content:'';display:block;flex:none;height:calc(var(--talk-dock-h,64px) + 32px + env(safe-area-inset-bottom,0px))}
+@media(min-width:1024px){#talk-dock{left:calc(50% + var(--side-w,0px)/2)}}
+.side-talk[hidden]{display:none!important}
+@media (max-width:520px){.talk-hint{display:none}}
+.mic-x{display:grid;place-items:center;flex:none;width:34px;height:34px;min-height:0;margin:0;padding:0;border:0;border-radius:50%;background:none;box-shadow:none;color:var(--chat-quiet);font:400 24px/1 var(--sans);cursor:pointer}
+.mic-x:hover{color:var(--text);background:color-mix(in srgb,var(--text) 7%,transparent)}
+.mic-live{flex:1;min-width:0;display:flex;align-items:center;gap:10px;color:var(--text);font:500 .95rem/1.3 var(--sans)}
+.mic-dot{flex:none;width:10px;height:10px;border-radius:50%;background:var(--c-red,#d93025);animation:mic-pulse 1.4s ease-in-out infinite}
+.mic-time{flex:none;min-width:2.4em;font-variant-numeric:tabular-nums}.mic-live.near .mic-time{color:var(--orange);font-weight:600}
+.mic-wave{flex:none;display:flex;align-items:center;gap:2px;height:24px}.mic-wave i{display:block;width:3px;height:3px;border-radius:2px;background:var(--c-accent);opacity:.75}
+.mic-hint{min-width:0;overflow:hidden;color:var(--muted);font-weight:400;text-overflow:ellipsis;white-space:nowrap}
+.mic-spin{flex:none;width:16px;height:16px;margin-left:4px;border:2px solid color-mix(in srgb,var(--text) 18%,transparent);border-top-color:var(--c-accent);border-radius:50%;animation:spin .8s linear infinite}.mic-bar[data-k^="wait|"] .mic-spin{display:none}
+.mic-err{display:block;color:var(--orange);font-size:.86rem;font-weight:600;line-height:1.25;white-space:normal}
+.mic-retry{flex:none;width:auto;min-height:30px;margin:0;padding:4px 12px;border:1px solid var(--c-line-strong);border-radius:999px;background:none;box-shadow:none;color:var(--text);font:500 .84rem/1.2 var(--sans);white-space:nowrap;cursor:pointer}
+.mic-prog{position:absolute;left:48px;right:18px;bottom:7px;height:3px;border-radius:2px;background:color-mix(in srgb,var(--text) 10%,transparent);overflow:hidden}.mic-prog[hidden]{display:none}
+.mic-prog i{display:block;width:0;height:100%;border-radius:2px;background:var(--c-accent);transition:width .4s}.mic-prog.busy i{width:35%!important;animation:mic-busy 1.3s ease-in-out infinite}
+@keyframes mic-pulse{50%{opacity:.3}}
+@keyframes mic-busy{from{transform:translateX(-100%)}to{transform:translateX(290%)}}
+.mic-hint.mic-heard{color:var(--text);text-overflow:clip}
+@media(max-width:420px){.mic-wave~.mic-hint{display:none}.mic-wave~.mic-hint.mic-heard{display:block}.mic-live:has(.mic-heard) .mic-wave{display:none}}
+@media(prefers-reduced-motion:reduce){.talk-dot,.mic-dot,.mic-prog.busy i{animation:none}}
+.chat-tray{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 8px}.chat-tray[hidden]{display:none}
+.chat-att{position:relative;display:flex;align-items:center;gap:8px;max-width:240px;height:52px;padding:0 30px 0 6px;border:1px solid var(--c-line-strong);border-radius:14px;background:var(--surface);font-size:.82rem;line-height:1.3}
+.chat-att.img{width:52px;padding:0;overflow:hidden}.chat-att.img img{width:100%;height:100%;object-fit:cover;display:block}.chat-att.img .chat-att-name{display:none}
+.chat-att.up{opacity:.6}.chat-att.up::after{content:'';position:absolute;inset:auto 6px 5px 6px;height:3px;border-radius:2px;background:linear-gradient(90deg,var(--c-accent) 40%,transparent 40%);background-size:200% 100%;animation:chat-up 1s linear infinite}
+@keyframes chat-up{to{background-position:-200% 0}}
+.chat-att-ico{display:grid;place-items:center;flex:none;width:38px;height:38px;border-radius:10px;background:color-mix(in srgb,var(--text) 7%,transparent);color:var(--chat-quiet)}.chat-att-ico svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linejoin:round}
+.chat-att-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.chat-att-name small{display:block;color:var(--chat-quiet);font-size:.74rem}
+.chat-att-x{position:absolute;top:4px;right:4px;display:grid;place-items:center;width:20px;height:20px;min-height:0;margin:0;padding:0;border:0;border-radius:50%;background:color-mix(in srgb,var(--text) 70%,transparent);color:var(--bg);font-size:14px;line-height:1;box-shadow:none;cursor:pointer}
+.chat-att:not(.img) .chat-att-x{top:50%;right:6px;transform:translateY(-50%);background:none;color:var(--chat-quiet);font-size:18px}.chat-att:not(.img) .chat-att-x:hover{color:var(--text)}
+.chat-file-error{margin:0 0 8px;font-size:var(--chat-meta);color:var(--orange);font-weight:600}.chat-file-error[hidden]{display:none}
+.chat-layout.chat-drop .chat-box{border-color:var(--c-accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--c-accent) 25%,transparent)}
+.chat-drop-hint{display:none}.chat-layout.chat-drop .chat-drop-hint{display:block;margin:0 0 8px;font-size:var(--chat-meta);color:var(--c-accent);font-weight:600;text-align:center}
+.chat-you-files{display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:6px;margin:0 0 6px}.chat-you-files .chat-files{margin:0;justify-content:flex-end}
+.chat-you-img{display:block;max-width:min(240px,100%);border-radius:14px;overflow:hidden;border:1px solid var(--c-line)}.chat-you-img img{display:block;max-width:100%;max-height:240px;object-fit:cover}
+/* On a computer the list and the thread each scroll on their own inside the window; the page itself stays put */
+@media(min-width:861px){
+  html:has(body.chat-open #inbox:not([hidden])),body.chat-open:has(#inbox:not([hidden])){height:100dvh;overflow:hidden}
+  body.chat-open:has(#inbox:not([hidden])) main{display:flex;flex-direction:column;height:100dvh;min-height:0;padding-bottom:0}
+  body.chat-open:has(#inbox:not([hidden])) main>*{flex:none}
+  body.chat-open:has(#inbox:not([hidden])) #inbox,body.chat-open:has(#inbox:not([hidden])) #suggestions{display:flex;flex-direction:column;flex:1 1 0;min-height:0}
+  .chat-layout{flex:1 1 0;min-height:0;grid-template-rows:minmax(0,1fr);align-items:stretch}
+  .chat-side{position:static;max-height:none;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding-bottom:16px}
+  .chat-main{min-height:0}
+  .chat-head{position:relative;flex:none}
+  .chat-log{flex:1 1 0;min-height:0;overflow-y:auto;overscroll-behavior:contain}
+  .chat-compose{position:relative;flex:none}
+}
+@media(max-width:860px){
+  .chat-layout{grid-template-columns:minmax(0,1fr)}
+  body.chat-open:has(#inbox:not([hidden])) .site-footer{display:none}
+  body.chat-open:has(#inbox:not([hidden])) main{padding:0 20px}
+  /* The chat is one column the height of what you see, like the ChatGPT and Claude apps: the thread scrolls in its own
+     box and the message box is the column's last row, so it never moves while you scroll. The page itself doesn't
+     scroll (the address bar stays as it is), and the column follows the visible part of the window (chatKeyboard):
+     on an iPhone the keyboard shrinks and slides that part instead of the window. */
+  html:has(body.chat-open #inbox:not([hidden])),body.chat-open:has(#inbox:not([hidden])){height:100%;overflow:hidden;overscroll-behavior:none}
+  body.chat-open:has(#inbox:not([hidden])) .chat-main{position:fixed;left:0;right:0;top:var(--vv-top,0px);height:var(--vv-h,100dvh);min-height:0;box-sizing:border-box;padding:0 max(20px,env(safe-area-inset-right)) 0 max(20px,env(safe-area-inset-left))}
+  .chat-head,.chat-panel,.chat-compose{flex:none}
+  .chat-log{flex:1 1 0;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+  /* Phone: ‹ and ⋯ are 44px boxes at the screen edges, their glyphs on the chat's 20px gutters (the chevron's stroke over the
+     text, the dots' edge over the bubbles); all three share the title's center line, and the title ends in an ellipsis */
+  .chat-head{align-items:center;gap:0;margin:0 -20px;padding:calc(4px + env(safe-area-inset-top)) env(safe-area-inset-right) 6px env(safe-area-inset-left)}
+  .chat-back,.chat-menu>summary{width:44px;height:44px;border-radius:var(--r-sm)}
+  .chat-back{justify-items:start;padding-left:13.6px}  /* the chevron's left stroke at 20px */
+  .chat-menu>summary{justify-items:end;padding-right:17.3px}  /* the right dot's edge at 20px from the right */
+  .chat-title{margin:0 4px 0 0;text-overflow:ellipsis}.chat-title.fade{-webkit-mask-image:none;mask-image:none}
+  .chat-log{padding:24px 0 12px}
+  .chat-layout [data-chat-drawer]{display:flex}
+  .chat-msg.you{max-width:86%}
+  .chat-result{padding:14px 16px 12px}
+  .chat-compose{position:relative;bottom:auto;padding:14px 0 calc(max(12px,env(safe-area-inset-bottom)) + 8px)}
+  body.kb-open .chat-compose{padding-bottom:10px}
+  .chat-side{position:fixed;inset:0 auto 0 0;z-index:30;width:min(300px,85vw);max-height:none;padding:16px;border-top:env(safe-area-inset-top) solid var(--bg);background:var(--bg);box-shadow:var(--shadow-pop);transform:translateX(-105%);transition:transform .2s;overscroll-behavior:contain}
+  .chat-layout.drawer .chat-side{transform:none}
+  .chat-layout.drawer::before{content:'';position:fixed;inset:0;z-index:29;background:#0006}
+}
+/* An iPhone draws the page under the status bar (viewport-fit=cover): the top padding takes the inset once */
+main{padding-top:calc(28px + env(safe-area-inset-top));padding-left:max(24px,env(safe-area-inset-left));padding-right:max(24px,env(safe-area-inset-right))}
+@media(max-width:560px){main{padding-top:calc(18px + env(safe-area-inset-top));padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right))}}
+@media(max-width:860px){body.chat-open:has(#inbox:not([hidden])) main{padding:0 max(20px,env(safe-area-inset-right)) 0 max(20px,env(safe-area-inset-left))}}
+/* The Events search: one calm field, the words first, the account as a quiet select inside it */
+#events .search{display:flex;align-items:center;gap:0;min-height:46px;margin:0 0 24px;padding:0 5px 0 16px;border:1px solid var(--c-line-strong);border-radius:var(--r-pill);background:var(--surface);box-shadow:none}
+#events .search:focus-within{border-color:color-mix(in srgb,var(--c-accent) 55%,var(--c-line-strong))}
+#events .search::before{content:'';order:0;flex:none;width:16px;height:16px;margin-right:10px;background:var(--c-text-3);-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='6.5'/%3E%3Cpath d='M16 16l4 4'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='6.5'/%3E%3Cpath d='M16 16l4 4'/%3E%3C/svg%3E") center/contain no-repeat}
+#events .search input,#events .search input:focus{order:1;flex:1 1 auto;min-width:0;height:44px;min-height:0;margin:0;padding:0;border:0;border-radius:0;background:none;box-shadow:none;outline:none;font-size:var(--fs-md)}
+#events .search select{order:2;flex:0 1 auto;width:auto;max-width:40%;height:28px;min-height:0;margin:0 0 0 8px;padding:0 26px 0 12px;border:0;border-left:1px solid var(--c-line);border-radius:0;background-color:transparent;box-shadow:none;color:var(--muted);font-size:var(--fs-sm);text-overflow:ellipsis}
+#events .search button{order:3;flex:none;min-height:34px;margin:0 0 0 4px;padding:0 14px;border:0;border-radius:var(--r-pill);background:none;box-shadow:none;color:var(--c-accent);font:var(--fw-medium) var(--fs-sm)/1 var(--sans)}
+#events .search button:hover{background:var(--c-hover)}
+@media(max-width:560px){#events .search{padding-right:4px}#events .search button{display:none}#events .search select{max-width:46%}}
+/* Settings: one column; every field a label above a full-width input, the session and environment on their own row, the short ones side by side */
+#settings .settings-list{max-width:none}
+.agents-list input{flex:0 1 260px;min-width:0;box-sizing:border-box}.agents-list label.grow{cursor:default}.agents-list small{display:block}
+@media(max-width:520px){.agents-list>div{flex-wrap:wrap}.agents-list label.grow{flex-basis:100%}.agents-list input{flex:1 1 100%}}
+#agents-connector-note{margin-top:8px}#agents-connector{overflow-wrap:anywhere}
+/* The folded sidebar's tooltip: a small pill to the right of the row, the theme's text color as its ground */
+#side-tip{position:fixed;z-index:1000;transform:translateY(-50%);padding:5px 9px;border-radius:7px;background:var(--text);color:var(--bg);font:500 var(--fs-xs)/1.25 var(--sans);white-space:nowrap;pointer-events:none;box-shadow:0 6px 18px -6px #0006}#side-tip[hidden]{display:none}

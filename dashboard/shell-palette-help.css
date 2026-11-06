@@ -1,0 +1,188 @@
+/* Command palette (Ctrl/⌘K, /) and the shortcut sheet (?): one calm field over the page, results in groups. */
+#palette,#palette[open]{width:min(620px,calc(100vw - 24px));max-height:min(560px,calc(100dvh - 48px));margin:12vh auto auto;padding:0;overflow:hidden;display:flex;flex-direction:column}
+#palette:not([open]){display:none}
+.pal-field{display:flex;align-items:center;gap:10px;flex:none;padding:0 16px;border-bottom:1px solid var(--c-line)}
+.pal-field svg{flex:none;width:18px;height:18px;fill:none;stroke:var(--c-text-3);stroke-width:1.6;stroke-linecap:round}
+.pal-field input,.pal-field input:focus{flex:1;min-width:0;height:52px;min-height:0;margin:0;padding:0;border:0;border-radius:0;background:none;box-shadow:none;outline:none;color:var(--c-text);font:400 var(--fs-md)/1 var(--sans)}
+.pal-field input::placeholder{color:var(--c-text-3);opacity:1}
+.pal-list{flex:1 1 auto;min-height:0;overflow-y:auto;padding:6px;overscroll-behavior:contain}
+.pal-group{padding:10px 10px 4px;color:var(--c-text-3);font:var(--fw-medium) var(--fs-xs)/1.2 var(--sans)}
+.pal-item{display:flex;align-items:center;gap:10px;min-height:38px;padding:6px 10px;border-radius:var(--r-sm);color:var(--c-text-2);font:400 var(--fs-sm)/1.3 var(--sans);cursor:pointer}
+.pal-item[aria-selected="true"]{background:var(--c-hover);color:var(--c-text);box-shadow:inset 0 0 0 1px var(--c-line)}
+.pal-item .pal-label{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pal-item small{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--c-text-3);font-size:var(--fs-xs)}
+.pal-keys{display:flex;gap:4px;flex:none;margin-left:auto}
+.pal-empty{padding:18px 10px;color:var(--c-text-3);font:400 var(--fs-sm)/1.4 var(--sans)}
+.pal-foot{display:flex;gap:14px;flex:none;padding:8px 16px;border-top:1px solid var(--c-line);color:var(--c-text-3);font:400 var(--fs-xs)/1.4 var(--sans)}
+kbd.kb,.pal-keys kbd,.keys-sheet kbd,.pal-foot kbd,.side-search kbd{display:inline-block;min-width:18px;padding:1px 5px;border:1px solid var(--c-line);border-radius:5px;background:none;color:var(--c-text-3);font:500 11px/1.4 var(--sans);text-align:center}
+.side-search .kb-open{flex:none;margin:0;padding:0;min-height:0;border:0;background:none;box-shadow:none;cursor:pointer;line-height:1}
+:root[data-side="collapsed"] .side-search .kb-open{display:none}
+.more-menu [data-kb-label]{display:flex;align-items:center;gap:10px}
+.more-menu [data-kb-label]::after{content:attr(data-kb-label) / "";margin-left:auto;min-width:18px;padding:1px 5px;border:1px solid var(--c-line);border-radius:5px;color:var(--c-text-3);font:500 11px/1.4 var(--sans);text-align:center}
+@media(hover:none){.more-menu [data-kb-label]::after{display:none}}
+#keys-sheet{width:min(640px,calc(100vw - 24px))}
+.keys-sheet{columns:2 240px;column-gap:28px;margin-top:14px}.keys-sheet>div{break-inside:avoid;padding-bottom:14px}  /* no top margin: a column's first heading lines up */
+.keys-sheet h3{margin:0 0 6px;color:var(--c-text-3);font:var(--fw-medium) var(--fs-xs)/1.2 var(--sans)}
+.keys-sheet div>p{display:flex;align-items:center;gap:10px;margin:0;padding:5px 0;color:var(--c-text-2);font:400 var(--fs-sm)/1.3 var(--sans)}
+.keys-sheet div>p>span:first-child{flex:1;min-width:0}.keys-sheet .keys{display:flex;align-items:center;gap:4px}.keys-sheet .then{color:var(--c-text-3);font-size:var(--fs-xs)}
+article.kb-on,article.kb-on:focus{outline:2px solid color-mix(in srgb,var(--c-accent) 70%,transparent);outline-offset:3px}
+/* The keys' other stops: a list's head and a promise row get the same ring as a picked to-do */
+:is(.section-head,summary,.promise).kb-on{outline:2px solid color-mix(in srgb,var(--c-accent) 70%,transparent);outline-offset:2px;border-radius:var(--r-sm,8px);box-shadow:none}
+@media(max-width:1023px){
+  .side-search .kb-open{display:none}
+}
+@media(max-width:560px){
+  /* Under the top bar, which stays in sight, and no taller than what the keyboard leaves (--vv-top and --vv-h follow
+     the visual viewport, so it holds also where the keyboard doesn't resize the page) */
+  #palette,#palette[open]{width:100%;max-width:100%;max-height:calc(var(--vv-h,100dvh) - 52px - env(safe-area-inset-top) - 12px);margin:calc(var(--vv-top,0px) + 52px + env(safe-area-inset-top)) auto auto;border-radius:0 0 var(--r-xl,20px) var(--r-xl,20px)}
+  #palette::backdrop{background:linear-gradient(transparent calc(var(--vv-top,0px) + 52px + env(safe-area-inset-top)),color-mix(in srgb,var(--c-bg) 55%,transparent) 0);-webkit-backdrop-filter:none;backdrop-filter:none}
+  .pal-field input,.pal-field input:focus{font-size:16px}  /* no zoom on focus on an iPhone */
+  .pal-item{min-height:44px}.pal-keys,.pal-foot{display:none}
+}
+/* Loading: until the first real data, a calm outline of the cards that were there last time (the count only; no
+   content), never "All clear" (docs/architecture.md, "On the device") */
+.skeleton{margin-top:var(--sp-5)}.skeleton .sk-head{width:9rem;height:14px;border-radius:var(--r-pill);background:var(--c-sunken);margin:0 0 var(--sp-4)}
+.sk-card{border:1px solid var(--border);border-radius:var(--r-lg);background:var(--surface);padding:var(--sp-5);margin-bottom:var(--sp-3)}
+.sk-card i{display:block;height:11px;border-radius:var(--r-pill);background:var(--c-sunken);margin-top:12px}.sk-card i:first-child{width:5rem;margin-top:0}
+.sk-card i:nth-child(2){width:72%;height:15px}.sk-card i:nth-child(3){width:92%}.sk-card i:nth-child(4){width:58%}
+.skeleton .sk-card,.skeleton .sk-head{animation:sk-breathe 1.8s ease-in-out infinite}@keyframes sk-breathe{50%{opacity:.55}}
+@media(prefers-reduced-motion:reduce){.skeleton .sk-card,.skeleton .sk-head{animation:none}}
+.stale-note{margin:var(--sp-2) 0 0;color:var(--c-text-3);font-size:var(--fs-xs);text-align:center}.stale-note::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--orange);margin-right:6px;vertical-align:1px}
+@media(min-width:1024px){.stale-note{display:none}}.stale-note.covered{display:none}
+.offline-bar{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 10px;margin:0 0 var(--sp-3);padding:8px 12px;border-radius:var(--r-md);background:color-mix(in srgb,var(--orange) 12%,transparent);color:var(--text);font-size:var(--fs-sm);line-height:1.4}.chat-offline{margin:0 0 8px}.offline-bar[hidden]{display:none}
+.offline-bar .offline-text::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--orange);margin-right:8px;vertical-align:1px}.offline-bar.working{background:color-mix(in srgb,var(--lavender) 14%,transparent)}.offline-bar.working .offline-text::before{background:var(--lavender);animation:backfill-pulse 1.6s ease-in-out infinite}@media (prefers-reduced-motion:reduce){.offline-bar.working .offline-text::before{animation:none}}:is(.offline-bar,.outbox-wait) button.link{min-height:0;height:auto;padding:0 2px;border:0;background:none;box-shadow:none;color:var(--text);font:inherit;font-weight:600;text-decoration:underline;text-decoration-color:var(--border-strong);text-underline-offset:3px;cursor:pointer}.offline-bar button.link{margin-left:auto}
+.outbox-wait{color:var(--c-text-3)}.outbox-wait::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--orange);margin-right:8px;vertical-align:1px}.outbox-wait .nowrap{white-space:nowrap}.outbox-wait button.link{margin-left:8px}
+.chat-msg.outbox-msg .bubble{opacity:.7}.chat-msg .outbox-note{display:block;text-align:right}.chat-msg .outbox-note .link{font-size:inherit}
+/* Checkboxes, radios and range sliders in the app green, both themes, never the browser blue */
+input[type=checkbox],input[type=radio],input[type=range],progress{accent-color:var(--c-accent)}
+/* Help (help_chat.py): ask how The Machine works, and Report a bug, which shows everything before it goes */
+#help-panel{display:none;flex-direction:column;gap:14px}#help-panel[open]{display:flex}#help-panel .snooze-heading{margin:0}
+#help-panel .sub-tabs{margin:0}#help-panel .sub-tabs button{flex:none}
+#help-ask-pane:not([hidden]){display:flex;flex-direction:column;gap:12px;min-height:0}
+/* a steady height: the global textarea:focus grows it, which moved the panel under a click */
+#help-panel #bug-what,#help-panel #bug-what:focus,#help-panel #bug-what.filled{height:104px;min-height:0;margin:0;resize:none}
+/* The thread and the composer are the card chat's (.chat-msg, .bubble, .typing, .chat-box, .chat-send) */
+.help-log{--chat-meta:.75rem;--chat-quiet:color-mix(in srgb,var(--text) 55%,var(--bg));display:flex;flex-direction:column;gap:18px;min-height:0;max-height:min(52dvh,460px);overflow:auto;padding:2px 2px 4px;line-height:1.5}
+.help-log:empty{display:none}.help-log .chat-msg.you .bubble{white-space:pre-wrap;background:color-mix(in srgb,var(--text) 9%,var(--surface-2,var(--surface)))}  /* the card chat's pill, on the sheet's own color */
+.help-log .chat-msg.err .bubble{color:var(--muted)}.help-log .chat-files{margin-top:10px}
+.help-intro{color:var(--muted);margin:0}.help-intro.help-topics{font-size:.8rem;margin-top:6px}
+/* A help article read here, in the app's language (help_chat.article): the site's page, plainly */
+#help-read-pane:not([hidden]){display:flex;flex-direction:column;gap:10px;min-height:0}
+.help-read-head{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:.85rem}.help-read-head a{color:var(--muted)}
+.help-read{max-height:min(60dvh,520px);overflow:auto;line-height:1.55;padding:0 4px 6px;overflow-wrap:anywhere}.help-read:focus{outline:none}
+.help-read h3{margin:0 0 4px;font-size:1.15rem}.help-read h4{margin:16px 0 4px;font-size:1rem}.help-read h5{margin:12px 0 4px;font-size:.92rem}
+.help-read p,.help-read ul,.help-read ol{margin:0 0 10px}.help-read ul,.help-read ol{padding-left:22px}.help-read .help-sum{color:var(--muted)}
+.help-read pre{white-space:pre-wrap;background:var(--surface-2,var(--surface));padding:8px 10px;border-radius:8px;font-size:.85rem}
+#help-panel .chat-box textarea{height:34px;max-height:140px}
+.help-foot{display:flex;justify-content:space-between;gap:12px;margin:-2px 2px 0;color:var(--muted);font-size:.8rem;white-space:nowrap}.help-foot span{overflow:hidden;text-overflow:ellipsis}.help-foot a{color:inherit}
+#help-panel .fine{margin:0;font-size:.8rem;color:var(--muted)}#bug-form{display:flex;flex-direction:column;gap:12px}#bug-form label{display:flex;flex-direction:column;gap:6px}#bug-form textarea{margin:0}
+.bug-shot{display:flex;flex-wrap:wrap;align-items:center;gap:8px}.bug-shot img{display:block;max-width:100%;max-height:220px;border:1px solid var(--border);border-radius:10px}.bug-shot img{order:-1;flex:0 0 100%;height:160px;object-fit:contain;object-position:left;border:0;border-radius:0}
+#bug-form label.bug-check{flex-direction:row;align-items:center;gap:8px}#bug-form label.bug-check+.fine{margin-top:-8px;padding-left:26px}#bug-form label.bug-check input{width:auto;margin:0}
+#toast .toast-fine{display:block;font-size:.8rem;font-weight:400;color:inherit;opacity:.85;margin-top:2px}
+.bug-sent{display:flex;flex-direction:column;gap:10px;max-height:min(56dvh,520px);overflow:auto}#bug-queued{margin-top:14px;gap:6px;font-size:.9rem}#bug-queued[hidden]{display:none}.bug-sent h3{margin:0;font-size:.8rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}.bug-sent p{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+.bug-sent img{max-height:140px;width:auto;align-self:flex-start}.bug-parts{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:2px}.bug-all summary{cursor:pointer;font-size:.85rem;color:var(--muted);margin:2px 0 6px}
+.bug-sent pre,#support-access pre{margin:0;max-height:260px;overflow:auto;padding:10px;border:1px solid var(--border);border-radius:10px;background:var(--sunken);font-size:.75rem;white-space:pre-wrap;overflow-wrap:anywhere}
+#help-panel .actions{display:flex;flex-wrap:wrap;gap:8px;margin:0}#bug-error:empty{display:none}#bug-error{margin:0;color:var(--red,#e07070)}
+.sa-log{margin:8px 0 0;font-size:.85rem}
+/* Settings, Activity: a day's heading, then one line per thing done (what and how it went, then when · where · who) */
+.act-bar{margin:0 0 10px}.act-bar select{max-width:100%}
+.act-list{list-style:none;margin:0;padding:0;max-width:640px}
+.act-day{margin:16px 0 4px;font-size:.8rem;font-weight:var(--fw-strong,600);color:var(--muted)}.act-day:first-child{margin-top:0}
+.act-row{padding:9px 0;border-bottom:1px solid var(--border);min-width:0}
+.act-top{display:flex;align-items:baseline;gap:10px;justify-content:space-between;min-width:0}
+.act-what{min-width:0;overflow-wrap:anywhere}
+.act-status{flex:none;max-width:50%;overflow:hidden;text-overflow:ellipsis;font-size:.78rem;color:var(--muted);white-space:nowrap}
+.act-refused .act-status,.act-failed .act-status{color:var(--red,#d05050);font-weight:600}
+.act-undone .act-what{color:var(--muted)}
+.act-meta{display:block;margin-top:2px;color:var(--faint);font-size:.8rem;overflow-wrap:anywhere}
+.act-acts{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin-top:4px;min-width:0}
+.act-acts .act-todo{min-height:0;margin:0;padding:2px 0;max-width:100%;border:0;background:none;box-shadow:none;color:var(--text);font:inherit;font-size:.85rem;text-align:left;text-decoration:underline;text-decoration-color:var(--border-strong);text-underline-offset:3px;cursor:pointer}
+.act-acts .act-todo .ell{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.act-acts .ghost{padding:2px 10px;font-size:.85rem;min-height:0}
+.act-sent{margin-top:4px;font-size:.85rem}.act-sent p{margin:4px 0 0}.act-sent pre{margin:4px 0 0;max-height:200px;overflow:auto;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--sunken);font-size:.75rem;white-space:pre-wrap}
+.act-more{margin-top:10px;padding-left:0;padding-right:0}.act-empty{padding:8px 0}
+.act-embed .act-list{max-width:none}
+.sa-log button.link,.act-embed [data-act-all]{display:inline;min-height:0;margin:0;padding:0;border:0;background:none;box-shadow:none;color:var(--text);font:inherit;text-decoration:underline;text-decoration-color:var(--border-strong);text-underline-offset:3px;cursor:pointer}
+@media(max-width:560px){.help-log{max-height:calc(100dvh - var(--nc-kb,0px) - 300px)}}
+/* A to-do reads in two seconds: its title first, then one quiet line (a state dot and word, due, who, their organization,
+   the project, Work or Personal, when, Chat), a short body, the outcome, the draft and buttons when it needs you. The rest
+   (a closed one's coding agent result, files, your note, the source) folds behind Details. Closed ones are compact. */
+.card.todo>h3{margin:0 0 4px}
+.card.todo>.meta{display:flex;flex-wrap:nowrap;align-items:flex-start;gap:4px 12px;margin:0 0 8px}
+.card.todo .card-badges{display:flex;flex-wrap:wrap;align-items:center;gap:2px 12px;flex:1 1 auto;min-width:0;font:var(--fw-medium) var(--fs-xs)/1.5 var(--sans);color:var(--faint)}
+.card.todo .card-badges .chip,.card.todo .card-badges .chip.scope{min-height:0;max-width:100%;padding:0;gap:5px;border:0;background:none;font:inherit;color:var(--faint);letter-spacing:0}
+.card.todo .card-badges .chip[class*=" t-"]{color:var(--muted);font-weight:600}
+.card.todo .card-badges .chip.t-amber,.card.todo .card-badges .chip.t-orange{color:var(--c)}
+.card.todo .card-badges .chip::before{width:7px;height:7px}.card.todo .card-badges .chip:not([class*=" t-"])::before{display:none}
+.card.todo .card-badges a.chip{text-decoration:none}.card.todo .card-badges a.chip:hover{color:var(--text);text-decoration:underline;text-underline-offset:2px}
+.card.todo .card-badges a.chip svg.ci{width:12px;height:12px;flex:none;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;opacity:.8}
+.card.todo .card-badges a.chip>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card.todo .card-badges a.chip.who{max-width:14em}.card.todo .card-badges a.chip.who.org{max-width:16em}.card.todo .card-badges a.chip.project-link{display:inline-flex;align-items:center;max-width:18em}
+.card.todo .card-badges .meta-side{display:contents}.card.todo .card-badges .meta-side>*{white-space:nowrap}
+.card.todo .card-badges time,.card.todo .card-badges .meta-side:has(.added-by)>time{display:inline;margin:0;font:inherit;color:var(--faint)}
+.card.todo .card-badges .added-by{margin:0;font-size:inherit;color:var(--faint)}
+.card.todo>.card-foot .card-chat-link{flex:none;margin-left:auto;font-size:inherit}
+@media (max-width:600px){.card.todo .card-badges a.chip.who{max-width:9em}.card.todo .card-badges a.chip.who.org{max-width:min(13em,60vw)}.card.todo .card-badges a.chip.project-link{max-width:100%}}
+.card.todo>.card-foot{display:flex;flex-wrap:wrap;align-items:center;gap:4px 16px;margin-top:10px;font-size:var(--fs-xs);color:var(--faint)}
+.card.todo>.card-foot .foot-links{margin-left:0;gap:16px}
+.card.todo .card-foot .details-toggle{display:inline-flex;align-items:center;gap:6px;margin:0;padding:0;min-height:0;border:0;background:none;color:var(--muted);font:inherit;font-weight:600;cursor:pointer}
+.card.todo .card-foot .details-toggle::after{content:'';width:5px;height:5px;border:solid currentColor;border-width:0 1.5px 1.5px 0;transform:translateY(-2px) rotate(45deg);transition:transform .15s}
+.card.todo .card-foot .details-toggle[aria-expanded="true"]::after{transform:translateY(1px) rotate(-135deg)}
+.card.todo .card-foot .details-toggle:hover{color:var(--text)}
+.card.todo>.card-details:not([hidden]){display:flex;flex-direction:column;align-items:flex-start;gap:10px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+.card.todo>.card-details>*{margin:0;max-width:100%;align-self:stretch}.card.todo>.card-details>button.link{align-self:flex-start;margin:0;padding:0;min-height:0;border:0;background:none;color:var(--muted);font-size:var(--fs-xs);font-weight:600}
+.card.todo>.card-details .agent-result{margin-top:0}.card.todo>.card-details>.card-source{margin:0}.card.todo .card-source{font-size:var(--fs-xs);color:var(--faint)}.card.todo .card-source .source{margin:0;color:var(--faint);font-size:inherit}
+/* Closed: compact and quiet. Its Reopen shares the Details row; Details opens under both. */
+.card.todo.is-closed{display:flex;flex-wrap:wrap;align-items:center;column-gap:12px}
+.card.todo.is-closed>*{flex:1 1 100%;min-width:0}
+.card.todo.is-closed>.card-foot{flex:1 1 auto;margin-top:6px}
+.card.todo.is-closed>.actions{flex:0 0 auto;width:auto;margin:6px 0 0 auto;display:flex;gap:6px}
+.card.todo.is-closed>.actions:empty{display:none}
+.card.todo.is-closed>.card-details{order:1}
+.card.todo.is-closed>.actions>button{min-width:0;min-height:30px;padding:3px 12px;font-size:var(--fs-xs)}
+.card.todo.is-closed>h3{font-size:var(--fs-md);font-weight:600;line-height:1.35}
+.card.todo.is-closed>.meta{margin-bottom:4px}
+.card.todo.is-closed>.body{font-size:var(--fs-sm);color:var(--faint);display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:1;overflow:hidden}
+.card.todo.is-closed>.body p{display:inline}.card.todo.is-closed>.body p+p::before{content:' '}
+.card.todo.is-closed:has(>.card-details:not([hidden]))>.body{display:block;-webkit-line-clamp:none}.card.todo.is-closed:has(>.card-details:not([hidden]))>.body p{display:block}.card.todo.is-closed:has(>.card-details:not([hidden]))>.body p+p::before{content:none}
+.card.todo>.card-details:empty{display:none}
+.card.todo.is-closed>.more{font-size:var(--fs-xs)}
+.card.todo.is-closed>.note{margin:4px 0 0;font-size:var(--fs-sm)}
+.card.todo.is-closed,.card.todo.is-closed.card{padding-top:12px;padding-bottom:12px}
+/* A to-do's buttons (todos-cards.js cardActions): one lead and a quiet … for the rest. On a computer the … opens a small
+   menu above it; on a phone a bottom sheet over a dimmed page (a tap on the page closes it), so the to-do's text is never
+   covered by a floating menu. Hand off… swaps the menu for its own sheet in place; Back returns. Not needed sits last. */
+.card .actions:not(.result-actions)>.more-actions{flex:0 0 auto;margin-left:auto}
+.card .more-actions>summary{min-width:44px;padding:7px 10px;background:var(--tile);border-color:transparent}.card .more-actions>summary:hover,.card .more-actions[open]>summary{background:var(--tile-hover)}  /* the … is filled subtle in both themes */
+.card .more-actions>summary::after{content:none}
+.card .actions.folded>[data-row-fold],.card .actions:not(.folded) .more-menu>[data-row-fold-menu]{display:none!important}  /* Snooze moves into the … when the row is full (todos-cards.js actionsSize); important like [hidden] below */
+.card .more-actions>summary svg{width:20px;height:20px}
+.card .actions .more-menu>a.open{display:block;margin:0;padding:6px 12px;border-radius:8px;color:var(--text);font-size:.92rem;line-height:1.35;font-weight:500;text-decoration:none;white-space:nowrap}.card .actions .more-menu>a.open:hover{background:var(--tile)}
+.card .more-menu .mm-sub{display:flex;flex-direction:column;gap:1px}.card .more-menu .mm-sub[hidden]{display:none}
+.card .more-menu.mm-in>:not(.mm-sub){display:none}
+.card .more-menu .mm-head{display:flex;align-items:center;gap:4px;margin:0 0 2px;padding:0 4px 4px 0;border-bottom:1px solid var(--border);font:600 var(--fs-xs)/1.4 var(--sans);color:var(--muted)}
+.card .more-menu .mm-head>span{flex:1}.card .actions .more-menu .mm-back{flex:none;width:auto;min-width:32px;padding:2px 8px;font-size:1.15rem;line-height:1;color:var(--muted)}
+.card .more-menu>.mm-sep{width:100%;margin:3px 0;border:0;border-top:1px solid var(--border)}.card .more-menu>.mm-sep:first-child{display:none}
+@media(max-width:560px){
+  .card .actions:not(.result-actions)>.more-actions{flex:0 0 48px;min-width:48px}
+  .card .actions:not(.result-actions)>:is(button,a.open):first-child:nth-last-child(2){flex:1 1 auto}
+  .card .more-actions[open]>summary::before{content:'';position:fixed;inset:0;z-index:90;width:auto;height:auto;margin:0;border:0;border-radius:0;transform:none;background:#0009;cursor:default}
+  .card .more-menu{position:fixed;left:0;right:0;bottom:0;top:auto;z-index:91;width:auto;min-width:0;max-width:none;max-height:75vh;overflow-y:auto;box-sizing:border-box;padding:24px 10px calc(14px + env(safe-area-inset-bottom));border-width:1px 0 0;border-radius:20px 20px 0 0;box-shadow:0 -10px 40px #0006}
+  .card .more-menu::before{content:'';position:absolute;top:9px;left:50%;width:36px;height:4px;margin-left:-18px;border-radius:2px;background:var(--border-strong,var(--border))}
+  .card .actions .more-menu :is(button,a.open){min-height:48px;padding:12px 14px;font-size:1rem;box-sizing:border-box}
+  .card .more-menu .mm-head{font-size:var(--fs-sm);padding-bottom:8px;margin-bottom:4px}
+  .card .actions.two-rows:not(.result-actions)>:first-child{flex:1 1 100%}
+  .card .actions.two-rows:not(.result-actions)>:is(button,a.open):not(:first-child){flex:1 1 auto;min-width:max-content;padding:8px 10px}
+  .card .actions.two-rows:not(.result-actions)>.more-actions{flex:0 0 52px;min-width:52px}
+}
+/* Under Details, an open to-do's title, project and area (todos-cards.js cardFields): each a tap to change. */
+.card-fields{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;align-items:center;margin:2px 0 10px;font-size:var(--fs-sm)}
+.card-fields>div{display:contents}.card-fields dt{color:var(--muted)}.card-fields dd{margin:0;min-width:0}
+.card-fields .field{display:inline-flex;max-width:100%;min-height:32px;align-items:center;padding:4px 10px;border:1px solid transparent;border-radius:8px;background:var(--tile);color:var(--text);font:inherit;text-align:left;cursor:pointer;box-shadow:none}
+.card-fields .field>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.card-fields .field:hover{background:var(--tile-hover)}
+.card .actions>[hidden]{display:none!important}
+/* Chat is where the owner tells The Machine what to do instead: a clear pill at the end of the Details row. */
+.card.todo>.card-foot a.card-chat-link{padding:4px 11px 4px 9px;margin:-4px 0 -4px auto;background:var(--tile);color:var(--text);font-weight:600}.card.todo>.card-foot a.card-chat-link:hover{background:var(--tile-hover)}
+.card.todo>.card-foot a.card-chat-link.had::after{left:19px;top:3px}
+.card h3 .title-link{cursor:text}
+.project-picker .pp-open{align-self:flex-start;font-size:var(--fs-xs);color:var(--muted)}

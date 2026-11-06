@@ -1,0 +1,189 @@
+/* Saved sign-ins (Connections, Sign-ins): one calm row per site, a letter tile, the username, a faint "Password saved"
+   line and a quiet Forget; the explainer sits under the heading. */
+.logins-head{flex-direction:column;align-items:flex-start;gap:3px}.logins-head p{margin:0}.logins-head p span{display:block}
+.saved-logins>.saved-login{flex-wrap:nowrap;gap:14px;padding:14px 12px 14px 16px}
+.login-mark{flex:none;width:36px;height:36px;border-radius:var(--r-md);display:grid;place-items:center;background:var(--sunken);color:var(--muted);font:var(--fw-strong) var(--fs-md)/1 var(--sans)}
+.saved-login .grow{min-width:0;display:flex;flex-direction:column;gap:1px}
+.saved-login strong,.login-user{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.saved-login strong{font-size:var(--fs-md);font-weight:var(--fw-strong);color:var(--text)}
+.login-user{font-size:var(--fs-sm);color:var(--muted)}
+.login-pass{display:flex;align-items:center;gap:5px;margin-top:3px;font-size:var(--fs-xs);color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.login-pass svg{width:12px;height:12px;flex:none}.login-pass span{overflow:hidden;text-overflow:ellipsis}
+.saved-login>button{flex:none;font-size:var(--fs-sm);color:var(--faint)}
+.saved-logins.empty{display:block;padding:var(--sp-5)}
+.saved-logins.empty>div{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:0;border:0}
+.saved-logins.empty span{font-size:var(--fs-sm)}
+.tp-suggest{margin-top:var(--sp-3);display:flex;gap:var(--sp-2) var(--sp-3);align-items:center;justify-content:space-between;flex-wrap:wrap;padding:8px 8px 8px 12px;border-radius:var(--r-md);border:1px dashed var(--c-line-strong);font-size:var(--fs-sm)}
+.tp-suggest p{margin:0;color:var(--c-text-2);flex:1 1 240px}
+.tp-suggest .btns{display:flex;gap:2px;margin-left:auto}
+.card .tp-suggest button{min-height:32px;padding:4px 10px;font-size:var(--fs-sm)}
+.tp-approve{margin-top:var(--sp-3)}
+.tp-lede{margin:0 0 var(--sp-2);font-size:var(--fs-sm);color:var(--c-text-2)}
+.tp-mini{border:1px solid var(--c-line);border-radius:var(--r-md);padding:var(--sp-3) var(--sp-4);background:var(--c-bg);font-size:var(--fs-sm)}
+.tp-mini p{margin:0}
+.tp-from{color:var(--c-text-3);font-size:var(--fs-xs)}
+.tp-title{font-family:var(--serif);font-size:var(--fs-lg);font-weight:460;margin:2px 0 var(--sp-1)!important;overflow-wrap:anywhere}
+.tp-part{display:flex;gap:var(--sp-3);align-items:flex-start;justify-content:space-between;padding:4px 0}
+.tp-part>p{flex:1;min-width:0;color:var(--c-text-2);overflow-wrap:anywhere;white-space:pre-line}
+.card .tp-part button{flex:none;min-height:0;padding:0 2px;border:0;background:none;box-shadow:none;color:var(--c-text-3);font-size:var(--fs-xs);font-weight:500;text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--c-line-strong)}
+.card .tp-part button:hover{color:var(--c-text);background:none}
+.tp-part.off>p{opacity:.35;text-decoration:line-through}
+.tp-part small{flex:none;color:var(--c-text-3);font-size:var(--fs-xs)}
+.tp-never{display:flex;gap:8px;margin:var(--sp-3) 0 var(--sp-2);font-size:var(--fs-sm);color:var(--c-text-2)}
+.tp-never svg{flex:none;margin-top:3px}
+.tp-expiry{margin:0;font-size:var(--fs-sm);color:var(--c-text-2)}
+.tp-days{display:inline-flex;gap:2px;margin:0 2px}
+.card .tp-days button{min-height:0;padding:1px 7px;border:0;background:none;box-shadow:none;color:var(--c-text-2);border-radius:var(--r-pill);font-size:var(--fs-sm)}
+.card .tp-days button[aria-checked="true"]{background:var(--c-accent-tint);color:var(--c-accent);font-weight:600}
+.tp-shared{margin-top:var(--sp-3);display:flex;gap:0;align-items:center;white-space:nowrap;font-size:var(--fs-sm);color:var(--c-text-2);padding:8px 12px;border:1px solid var(--c-line);border-radius:var(--r-md)}
+.tp-what{overflow:hidden;text-overflow:ellipsis}
+.tp-dot{margin:0 8px;color:var(--c-text-3)}
+.card .tp-shared .tp-stop{min-height:0;padding:0;border:0;background:none;box-shadow:none;color:var(--c-text-2);font-size:var(--fs-sm);text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--c-line-strong)}
+.card .tp-shared .tp-stop:hover{color:var(--c-text);background:none}
+.tp-lead{margin:2px 0 0;color:var(--c-text);overflow-wrap:anywhere}
+.tp-sent{margin-top:var(--sp-3);font-size:var(--fs-sm);color:var(--c-text-2)}
+.tp-sent>summary{list-style:none;cursor:pointer;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tp-sent>summary::-webkit-details-marker{display:none}
+.tp-sent>summary::before{content:none}
+.card .tp-sent>summary{font-size:var(--fs-sm);font-weight:400;color:var(--c-text-2);border-radius:0;max-width:100%}
+.tp-sent[open]>summary{margin-bottom:var(--sp-2)}
+.tp-sent>summary:hover{color:var(--c-text)}
+.tp-chev{display:inline-block;margin-left:4px;transition:transform .15s}
+.tp-sent[open] .tp-chev{transform:rotate(90deg)}
+.tp-shared b{color:var(--c-accent);font-weight:600}
+.tp-shared .tp-open{color:var(--c-accent);font-weight:600;text-decoration:none}
+.tp-shared .tp-open:hover{text-decoration:underline;text-underline-offset:3px}
+.tp-nw{white-space:nowrap}
+.tp-reply{margin-top:var(--sp-2);padding:8px 12px;border-left:3px solid var(--c-accent);background:var(--c-sunken);border-radius:0 var(--r-sm) var(--r-sm) 0;font-size:var(--fs-sm)}
+.tp-reply q{display:block;color:var(--c-text-2);margin-top:2px;overflow-wrap:anywhere}
+.tp-reply small{display:block;color:var(--c-text-3);font-size:var(--fs-xs);margin-top:2px}
+/* The Machine's browser in the main area on a computer: a slim header over the viewer, the sidebar beside it (from
+   1024px) or the top bar above it (a narrower window). The script never shows it on a phone. Full size: the whole window. */
+.browser-pane{display:none}
+html:has(#browser-pane:not([hidden])){scrollbar-gutter:auto;overflow:hidden}
+body:has(#browser-pane:not([hidden])) main{max-width:none;height:100dvh;padding:0;display:flex;flex-direction:column}
+body:has(#browser-pane:not([hidden])) :is(#page-head,#needs-you,#notice,#limit-banner,#fixed-notice),body:has(#browser-pane:not([hidden])) .site-footer{display:none}  /* banners wait for the other views */
+.browser-pane:not([hidden]){display:flex;flex-direction:column;flex:1 1 0;min-height:0}
+@media(max-width:1023px){body:has(#browser-pane:not([hidden])) main{height:calc(100dvh - 52px - env(safe-area-inset-top))}}
+:root[data-bp-full] .browser-pane:not([hidden]){position:fixed;inset:0;z-index:80;background:var(--bg)}
+@media all{
+  /* The same header as a card's chat on a computer: height, title, hairline, the round button on the right */
+  .bp-head{flex:none;display:flex;align-items:center;gap:6px;box-sizing:border-box;padding:10px 16px;border-bottom:1px solid var(--c-line);background:color-mix(in srgb,var(--bg) 92%,transparent)}
+  .bp-head h2{flex:1;min-width:0;margin:calc((32px - 1.35em)/2 - .09em) 0 0;align-self:flex-start;font:600 1rem/1.35 var(--sans);color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .bp-head a{flex:none;margin-right:6px;color:var(--c-text-2);font:400 var(--fs-sm)/1 var(--sans);text-decoration:none}.bp-head a:hover{color:var(--text)}
+  .bp-head button{display:grid;place-items:center;flex:none;width:32px;height:32px;min-height:0;margin:0;padding:0;border:0;border-radius:50%;background:none;box-shadow:none;color:var(--text);cursor:pointer}
+  .bp-head button:hover{background:var(--c-hover)}.bp-head button svg{width:20px;height:20px}
+  .bp-head .bp-full{display:block;width:auto;height:auto;margin-right:6px;padding:0;border-radius:0;color:var(--c-text-2);font:400 var(--fs-sm)/1 var(--sans)}.bp-head .bp-full:hover{background:none;color:var(--text)}
+  .browser-pane iframe{flex:1 1 0;min-height:0;width:100%;border:0;background:#000}
+  /* Stop: only while a to-do's run is on the browser (its title beside Browser), the same dark look as the chat's Stop */
+  .bp-head .bp-job{margin-left:10px;color:var(--c-text-2);font-weight:400}
+  .bp-head .bp-stop{display:inline-flex;align-items:center;gap:7px;width:auto;margin-right:10px;padding:0 15px 0 12px;border-radius:999px;background:var(--text);color:var(--bg);font:600 var(--fs-sm)/1 var(--sans)}
+  .bp-head .bp-stop:hover{background:var(--text);opacity:.85}.bp-head .bp-stop svg{width:12px;height:12px}.bp-head .bp-stop:disabled{opacity:.5;cursor:default}
+  .bp-head .bp-stop[hidden],.bp-head .bp-job[hidden]{display:none}
+  /* A finger's close: 44px to tap, the round look kept; Full size keeps clear of a phone's notch */
+  #bp-close{position:relative}#bp-close::after{content:'';position:absolute;inset:-6px;border-radius:50%}
+  :root[data-bp-full] .bp-head{padding-top:calc(10px + env(safe-area-inset-top));padding-right:calc(16px + env(safe-area-inset-right))}
+}
+/* New to-do: a row under Search on a computer, a "+" in the top bar on a phone, a composer like the chat's. */
+.side-new{display:none}
+.new-card-link svg,.side-new svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
+@media(min-width:1024px){
+  .app-side .head-side>.new-card-link{display:none}
+  .side-new{order:1;flex:none;display:flex;align-items:center;gap:10px;width:100%;min-height:34px;margin:0 0 6px;padding:0 10px;border:0;border-radius:var(--r-sm);background:none;box-shadow:none;color:var(--side-ink);font:var(--fw-medium) var(--fs-sm)/1.2 var(--sans);text-align:left;cursor:pointer;white-space:nowrap}
+  .side-new.hit{background:var(--c-hover);color:var(--text)}@media(hover:hover) and (pointer:fine){.side-new:hover{background:var(--c-hover);color:var(--text)}}
+  .side-new kbd{margin-left:auto;padding:1px 6px;border:1px solid var(--c-line);border-radius:5px;background:none;color:var(--side-quiet);font:500 11px/1.4 var(--sans)}
+  :root[data-side="collapsed"] .side-new{justify-content:center;padding:0}
+  :root[data-side="collapsed"] .side-new span,:root[data-side="collapsed"] .side-new kbd{display:none}
+}
+@media(max-width:1023px){
+  .nc-drawer .side-new{order:1;flex:none;display:flex;align-items:center;gap:12px;width:100%;min-height:44px;margin:0 0 6px;padding:0 10px;border:0;border-radius:var(--r-sm);background:none;box-shadow:none;color:var(--side-ink);font:var(--fw-medium) var(--fs-md)/1.2 var(--sans);text-align:left;cursor:pointer}
+  .nc-drawer .side-new svg{width:20px;height:20px}.nc-drawer .side-new kbd{display:none}
+  .new-card-top{margin-left:auto}
+}
+:is(#new-card,#help-panel){width:min(600px,calc(100vw - 24px));padding:18px 18px 14px}
+#new-card .snooze-heading{margin-bottom:12px}
+:is(#new-card,#help-panel) .chat-box{border-radius:22px}
+/* New to-do's box: the text on top across the full width, the paperclip and the add button on one row under it,
+   both the same size and lined up with the text's edges, so the box reads the same empty, typed or grown. */
+#new-card .chat-box{display:grid;grid-template-columns:auto 1fr auto;grid-template-areas:"text text text" "attach . send";align-items:center;row-gap:4px;column-gap:8px;padding:12px 10px 8px 14px}
+#new-card .chat-box textarea{grid-area:text;height:auto;min-height:44px;padding:0 4px 0 2px}
+#new-card .chat-box .chat-attach{grid-area:attach;align-self:center;margin:0 0 0 -6px}
+#new-card .chat-box .chat-tools{grid-area:send;justify-self:end}
+/* On a phone the composer is a bottom sheet that stays above the keyboard, like the card chat's box. */
+@media(max-width:560px){
+  :is(#new-card,#help-panel){position:fixed;inset:auto 0 var(--nc-kb,0px) 0;width:100%;max-width:100%;margin:0;max-height:calc(100dvh - var(--nc-kb,0px) - 24px);border-radius:var(--r-xl,20px) var(--r-xl,20px) 0 0;padding:14px max(16px,env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
+  :is(#new-card,#help-panel)[open]{animation:nc-up .18s ease-out}
+  #new-card .nc-keys{display:none}
+}
+@keyframes nc-up{from{transform:translateY(24px);opacity:.6}to{transform:none;opacity:1}}
+.nc-chips{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 0}
+.nc-chips button{display:inline-flex;align-items:center;gap:6px;min-height:30px;margin:0;padding:4px 12px;border:1px solid var(--c-line-strong,var(--border));border-radius:999px;background:none;box-shadow:none;color:var(--muted);font:500 .85rem/1.2 var(--sans);cursor:pointer}
+.nc-chips button:hover{color:var(--text)}
+.nc-chips button[aria-pressed="true"],.nc-chips button.set{border-color:var(--mint);background:color-mix(in srgb,var(--mint) 16%,transparent);color:var(--text)}
+.nc-chips .x{margin-right:-4px;color:var(--muted);font-size:1rem;line-height:1}
+.nc-pick{margin:10px 0 0}
+.nc-pick input{margin:0}.nc-due-row{display:flex;gap:8px;align-items:stretch}.nc-due-row #nc-find{flex:1 1 auto;min-width:0}.nc-cal{position:relative;flex:0 0 auto;display:grid;place-items:center;width:44px;border:1px solid var(--border);border-radius:12px;color:var(--muted);cursor:pointer}.nc-cal:hover{color:var(--text)}.nc-cal svg{width:20px;height:20px}.nc-cal{background:none;min-height:44px;padding:0}.nc-cal[aria-expanded="true"]{color:var(--text);border-color:var(--text)}.nc-quick{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.nc-quick button,.nc-date-pick{font:inherit;font-size:.88rem;min-height:36px;padding:6px 12px;border:1px solid var(--border);border-radius:999px;background:none;color:var(--text);cursor:pointer}.nc-date-pick{position:relative;display:inline-flex;align-items:center}.nc-date-pick input{position:absolute;inset:0;width:100%;height:100%;margin:0;padding:0;border:0;opacity:0;cursor:pointer}.nc-ico{width:14px;height:14px}.nc-read .link{font:inherit;color:var(--text);font-weight:600;padding:0;min-height:0;border:0;background:none;box-shadow:none;text-decoration:underline;text-underline-offset:2px;cursor:pointer}
+.nc-pick .nc-read{margin:6px 2px 0;color:var(--muted);font-size:.85rem}
+.nc-hits{display:flex;flex-direction:column;gap:1px;margin:6px 0 0;padding:0;list-style:none}
+.nc-hits button{display:block;width:100%;min-height:0;margin:0;padding:7px 10px;border:0;border-radius:8px;background:none;box-shadow:none;color:var(--text);font:400 .9rem/1.35 var(--sans);text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nc-hits button:hover,.nc-hits button:focus-visible{background:var(--c-hover)}
+.nc-hits small{margin-left:8px;color:var(--muted)}
+.nc-foot{display:flex;justify-content:space-between;gap:12px;margin:12px 2px 0;color:var(--muted);font-size:.8rem}
+.nc-error{margin:10px 2px 0;color:var(--c-orange,var(--orange));font-size:.88rem}
+.nc-error:empty{display:none}
+/* New to-do's files: the chat composer's tray and paperclip; a drop on the form outlines its box */
+#new-card .nc-tray{margin:0 0 8px}#new-card .nc-tray[hidden]{display:none}
+.nc-drop-hint{display:none}#new-card.nc-drop .nc-drop-hint{display:block;margin:0 0 8px;font-size:.82rem;color:var(--c-accent,var(--mint));font-weight:600;text-align:center}
+#new-card.nc-drop .chat-box{border-color:var(--c-accent,var(--mint));box-shadow:0 0 0 3px color-mix(in srgb,var(--c-accent,var(--mint)) 22%,transparent)}
+.card .card-files{margin:8px 0 0}
+/* An owner's card: quiet "Added by you"; their own words open its chat. */
+.card .added-by{color:var(--muted);font-size:.8rem;margin-right:8px}
+@media(max-width:560px){.card .meta-side:has(.added-by)>time{display:none}}
+.merge-offer{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:4px 0 10px;padding:10px 12px;border:1px solid var(--c-line,var(--border));border-radius:12px}
+.merge-offer>span{flex:1 1 220px;min-width:0}
+.merge-offer button{min-height:30px;margin:0;padding:4px 12px}
+.chat-panel .merge-offer{margin:12px 0}
+.still-needed small{color:var(--muted);font-size:.8rem}.merge-offer>.still-acts{display:flex;gap:8px;flex:0 0 auto}
+/* A run's live browser in the chat (peekHTML): one fixed size, so a new picture never moves the thread */
+.chat-panel .chat-peek{margin:4px 0 0}.chat-panel .chat-peek .peek-thumb{width:min(100%,320px);cursor:pointer}.chat-panel .chat-peek .peek-thumb img{aspect-ratio:16/10;max-height:none;object-fit:cover;object-position:top}
+/* Rename: an input over the title, wherever the title is the card's own heading. */
+.rename-box{position:fixed;z-index:71;display:flex;flex-direction:column;gap:4px}
+.rename-box input{width:100%;min-height:0;height:100%;margin:0;padding:2px 8px;border:1px solid var(--c-accent,var(--mint));border-radius:8px;background:var(--surface);color:var(--text);font:inherit;box-shadow:0 0 0 3px color-mix(in srgb,var(--c-accent,var(--mint)) 22%,transparent);outline:none}
+.rename-box .rename-reset{align-self:flex-start;min-height:0;margin:0;padding:4px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);box-shadow:0 6px 16px #0003;color:var(--muted);font:500 .8rem/1.3 var(--sans);cursor:pointer}
+.rename-box .rename-reset:hover{color:var(--text)}
+.row-more{position:fixed;z-index:30;display:grid;place-items:center;width:24px;height:24px;min-height:0;margin:0;padding:0;border:0;border-radius:6px;background:var(--c-hover);box-shadow:none;color:var(--side-ink,var(--muted));cursor:pointer}
+.row-more:hover{color:var(--text)}
+.row-more svg{width:16px;height:16px}
+.row-menu{position:fixed;z-index:72;display:flex;flex-direction:column;min-width:150px;padding:5px;border:1px solid var(--border);border-radius:12px;background:var(--surface);box-shadow:0 12px 30px #0005}
+.row-menu button{min-height:0;margin:0;padding:7px 12px;border:0;border-radius:8px;background:none;box-shadow:none;color:var(--text);font:500 .9rem/1.3 var(--sans);text-align:left}
+.row-menu button:hover{background:var(--c-hover)}
+@media(hover:hover) and (pointer:fine){.card h3 .title-link{cursor:text}}
+.chat-title{cursor:text}
+/* This device: the shared quiet notice card (.notice-card) at the top of Suggestions, to install the app or turn on notifications. */
+.device-nudge{gap:10px 14px;color:var(--muted)}
+.device-nudge[hidden],body.chat-open .device-nudge{display:none}
+/* A usage limit reached (state.model_pause), or reviews waiting for the budget (state.review_pause): the same quiet notice card, with an amber dot, at the top of every view. */
+#fixed-notice{display:grid;gap:var(--sp-2);margin-bottom:var(--sp-4)}#fixed-notice .notice-card{margin:0}.fixed-notice::before{content:"";flex:none;width:6px;height:6px;border-radius:50%;background:var(--mint)}
+.limit-banner{flex-wrap:nowrap;align-items:flex-start}.limit-banner::before{content:"";flex:none;width:6px;height:6px;margin-top:.55em;border-radius:50%;background:var(--amber)}
+.nudge-icon{flex:none;width:36px;height:36px;border-radius:9px}
+.nudge-text{flex:1 1 240px;min-width:0}.nudge-text>span{display:block}
+.nudge-text strong{display:block;margin-bottom:1px;color:var(--cream);font-size:var(--fs-md);font-weight:var(--fw-strong)}
+.nudge-steps{margin:2px 0 3px;padding-left:18px}.nudge-steps li{padding-left:2px}
+.ios-share{width:17px;height:17px;margin-left:2px;vertical-align:-3px;fill:none;stroke:var(--c-accent);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.nudge-act{display:flex;align-items:center;gap:4px;flex:none;margin-left:auto}
+.nudge-act button{min-height:0;margin:0;padding:6px 14px}
+/* The phone app's notifications off: one line, Turn on and a round X (44px to tap) beside it, also on a phone */
+.device-nudge[data-kind=app-push]{flex-wrap:nowrap;align-items:center}
+.device-nudge[data-kind=app-push] .nudge-text{flex:1 1 auto}.device-nudge[data-kind=app-push] .nudge-text strong{margin:0;font-size:var(--fs-sm)}
+.device-nudge[data-kind=app-push] .nudge-act{width:auto;margin-right:-8px}
+.nudge-act .nudge-x{display:grid;place-items:center;width:36px;height:36px;padding:0;border:0;border-radius:50%;background:none;box-shadow:none;color:var(--muted);cursor:pointer;position:relative}
+.nudge-act .nudge-x::after{content:'';position:absolute;inset:-4px}.nudge-act .nudge-x:hover{background:var(--c-hover);color:var(--text)}
+.nudge-x svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
+/* Under the phone top bar: the same room above it as the first section heading gets (its margin collapses there). */
+@media(max-width:1023px){.device-nudge{margin-top:var(--sp-6)}}
+@media(max-width:560px){.device-nudge{align-items:flex-start;padding:12px}.nudge-text{flex-basis:calc(100% - 50px)}.nudge-act{width:100%;justify-content:flex-end}.device-nudge[data-kind=app-push]{align-items:center}.device-nudge[data-kind=app-push] .nudge-text{flex-basis:auto}.device-nudge[data-kind=app-push] .nudge-act{width:auto}}
+.device-act{display:flex;align-items:center;gap:6px;flex:none}.device-act button,#device-push #push-test{min-height:0;margin:0;padding:6px 12px}
+#device-push #push-test{flex:none}
+.device-done{color:var(--c-accent);font-size:var(--fs-sm);font-weight:var(--fw-medium)}
+.settings-list small.device-blocked{color:var(--c-text-2)}
+.settings-list small .ios-share{width:15px;height:15px}
