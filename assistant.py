@@ -1093,6 +1093,7 @@ DASHBOARD_ACTIONS = frozenset({
     'push_subscribe',
     'push_test',
     'push_unsubscribe',
+    'recap_decide',
     'review_now',
     'revise_draft',
     'security_level',
