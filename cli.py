@@ -721,7 +721,7 @@ def cmd_export(config, args):
             if out['left_out']:
                 print('Left out (a computer rebuilds these): ' + moving.left_out_text(out['left_out']))
             return
-        path, manifest = moving.export(args.config, args.out, passphrase=_passphrase(True) if args.keys else None)
+        path, manifest = moving.export(args.config, args.out, passphrase=_passphrase(True) if args.keys else None, keys=args.keys)
     except moving.MoveError as error:
         raise CliError(str(error)) from None
     if args.json:
@@ -736,13 +736,31 @@ def cmd_export(config, args):
               'key-change notice once. Export with --keys to keep it.')
     if manifest['left_out']:
         print('Left out (a computer rebuilds these): ' + moving.left_out_text(manifest['left_out']))
+    for part in manifest.get('parts', {}).values():
+        print(f'  {part["label"]}: ' + ', '.join(x for x in (f'{part["rows"]:,} records' if part['rows'] else '',
+                                                             f'{part["files"]:,} files' if part['files'] else '') if x))
+    if manifest.get('not_exported'):
+        print('Not in it: ' + '; '.join(f'{x["what"]} ({x["why"]})' for x in manifest['not_exported']))
     print('Put it back on another computer with:  assistant import ' + path.name)
 
 
 def cmd_import(config, args):
+    if args.finish:
+        result = moving.finish()
+        if args.json:
+            return out_json(result)
+        print(f'Restored {len(result["restored"])} OpenClaw databases.')
+        for note in result['notes']:
+            print('  note: ' + note)
+        return
+    if not args.archive and not args.staged:
+        raise CliError('give the export file: assistant import the-machine-export-<date>.tar.gz.enc')
     try:
-        result = moving.import_(args.archive, args.config, passphrase=_passphrase(False) if args.archive.endswith('.enc') else None,
-                                force=args.force)
+        if args.staged:  # uploaded in Settings, Export: opened and checked there already
+            result = moving.apply_staged(args.config, force=args.force)
+        else:
+            result = moving.import_(args.archive, args.config, passphrase=_passphrase(False) if args.archive.endswith('.enc') else None,
+                                    force=args.force)
     except moving.MoveError as error:
         raise CliError(str(error)) from None
     if args.json:
@@ -750,6 +768,12 @@ def cmd_import(config, args):
     print(f'Restored {len(result["restored"])} files.')
     for note in result['notes']:
         print('  note: ' + note)
+    held = result.get('held') or {}
+    if held.get('sends') or held.get('sends_unsure') or held.get('telegram'):
+        print(f'Held {held.get("sends", 0) + held.get("sends_unsure", 0) + held.get("telegram", 0)} sends that were waiting: '
+              'nothing goes out until you send it again.')
+    if held.get('follow_up_boards'):
+        print(f'Paused follow-ups on {held["follow_up_boards"]} boards: resume them on the board when you are ready.')
     print('\nConnect again:')
     for line in result['reconnect']:
         print('  - ' + line)
@@ -1058,7 +1082,9 @@ def parser():
     c.add_argument('--out', default='.', help='folder to write the archive to (default: here)')
     c.add_argument('--estimate', action='store_true', help='only say how big it would be')
     c = add('import', 'Put an export back on this computer (a fresh install)', cmd_import)
-    c.add_argument('archive', help='the .tar.gz.enc file (older .zip and .tar.gz exports too)')
+    c.add_argument('archive', nargs='?', help='the .tar.gz.enc file (older .zip and .tar.gz exports too)')
+    c.add_argument('--finish', action='store_true', help="put OpenClaw's conversations in place after stopping the OpenClaw Gateway")
+    c.add_argument('--staged', action='store_true', help='the export uploaded in Settings, Export (stop the service first)')
     c.add_argument('--force', action='store_true', help='replace a setup that already has sources (a copy of it is kept)')
     c = add('fleet-pair', 'Pair this Machine with your account for a Fleet, with a code from that account', cmd_fleet_pair)
     c.add_argument('code', help='the pairing code, like ABCD-EFGH')

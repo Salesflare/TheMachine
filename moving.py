@@ -1,15 +1,24 @@
 """Moving The Machine: everything it knows and how it is set up, in one archive, and back again on another computer.
 
-An export holds the databases (signals, suggestions, people and organizations with your own edits, promises),
-config.json, connectors you built yourself, your OpenClaw workspace files (AGENTS.md, USER.md, memory and the like)
-and who may talk to your Telegram bot. It is always encrypted as a whole (AES-256, stretched with PBKDF2, through
-openssl, so only `assistant import` or openssl opens it), with a passphrase you pick or, without one, an export code
-made for it and shown once (CODE). Keys and tokens come along only with a passphrase you pick (or `keys=True`);
-without them the import lists what to connect again. The archive is packed straight into openssl, so no unencrypted
-archive is written; the database copies it needs on the way sit in a private folder (700) next to the archive and
-are overwritten before they are removed, as is what an import unpacks.
+An export holds everything The Machine knows and has done (machine/export/inventory.py lists it by part): the
+databases (messages from every source, to-dos with their history, drafts and sends, decisions, promises, the Graph,
+memories, learned preferences, skills, agent jobs), the data folder's files (attachments, photos, job folders),
+config.json, connectors you built yourself, your OpenClaw workspace (AGENTS.md, USER.md, memory notes), OpenClaw's
+conversations and their photos (machine/export/home.py), the agent jobs' own transcripts and who may talk to your
+Telegram bot. Its manifest.json lists every part with counts and checksums, and what could not come along and why.
+
+It is always encrypted as a whole (AES-256, stretched with PBKDF2, through openssl, so only `assistant import` or
+openssl opens it), with a passphrase you pick or, without one, an export code made for it and shown once (CODE).
+Keys and tokens come along only when asked (`keys=True`), and then only with a passphrase you pick; without them the
+import lists what to connect again. The archive is packed straight into openssl, so no unencrypted archive is
+written; the database copies it needs on the way sit in a private folder (700) next to the archive and are
+overwritten before they are removed, as is what an import unpacks.
+
+An import puts it all back on a fresh install and holds what was waiting (machine/export/hold.py): nothing is sent
+by itself, and nothing old comes back as a new to-do.
 """
 import datetime as dt
+import hashlib
 import io
 import secrets
 import json
@@ -27,8 +36,11 @@ from pathlib import Path
 
 import message_seal
 import portable
+from machine.export import hold as moved
+from machine.export import home as elsewhere
+from machine.export import inventory
 
-FORMAT = 1
+FORMAT = 2  # 2: parts with counts and checksums, what was not exported, OpenClaw's conversations
 APP = Path(__file__).resolve().parent
 PASSPHRASE_ENV = 'THE_MACHINE_EXPORT_PASSPHRASE'
 MIN_PASSPHRASE = 10
@@ -41,7 +53,8 @@ WORKSPACE_SKIP = {'tools'}
 SKIP_SUFFIXES = ('.bak', '.lock', '.tmp', '-wal', '-shm', '-journal')
 # Files in the data folder that are keys even when config.json does not point at them
 SECRET_NAMES = {'network-keys.json', 'learnings-keys.json', 'owner-token', 'api-token', 'vapid.json', 'gog-password', 'browser-logins.sealed', 'browser-logins.enc',
-                'browser-logins.key'}
+                'browser-logins.key', 'session.sealed', 'fleet-token'}
+SECRET_SUFFIXES = ('.key', '.pem', '.sealed', '.p12')  # a Telegram session, a store's own key, a private key
 # Folders that only hold keys (a copied gog keyring, OpenClaw's credentials), and copies of OpenClaw's own settings
 SECRET_DIRS = {'keyring', 'credentials', '.ssh', '.gnupg'}
 SECRET_FILE = re.compile(r'^openclaw.*\.json$')
@@ -67,6 +80,12 @@ class MoveError(Exception):
 
 def _workspace(path=None):
     return Path(path or os.environ.get('OPENCLAW_WORKSPACE') or Path.home() / '.openclaw/workspace').expanduser()
+
+
+def home_root(openclaw_home=None, home=None):
+    """The home folder an export reads (and an import writes) the send logs and agent transcripts in: given, else the
+    folder OpenClaw's sits in (the home folder, or a test's own folder)."""
+    return Path(home).expanduser() if home else _openclaw_home(openclaw_home).parent
 
 
 def _openclaw_home(path=None):
@@ -112,7 +131,7 @@ def _files(root, skip_top=(), left_out=None):
 
 def _secretish(path, relative):
     """A key by where it sits, its name, or what it says, even when config.json does not point at it."""
-    if path.name in SECRET_NAMES or path.suffix == '.env' or SECRET_FILE.match(path.name):
+    if path.name in SECRET_NAMES or path.suffix in ('.env', *SECRET_SUFFIXES) or SECRET_FILE.match(path.name):
         return True
     if SECRET_DIRS & set(relative.parts[:-1]):
         return True
@@ -126,9 +145,10 @@ def _secretish(path, relative):
         return False
 
 
-def plan(config_path, workspace=None, openclaw_home=None, left_out=None):
-    """What an export holds: [(kind, source path, name in the archive)]. kind is db, file or secret.
-    left_out, when given, collects the bytes of what was skipped as rebuildable (see _files)."""
+def plan(config_path, workspace=None, openclaw_home=None, left_out=None, home=None):
+    """What an export holds: [(kind, source path, name in the archive)]. kind is db, file, secret or openclaw-db (an
+    OpenClaw database, its sign-in tables emptied without keys). left_out, when given, collects the bytes of what was
+    skipped as rebuildable (see _files)."""
     config_path = Path(config_path).expanduser()
     config = json.loads(config_path.read_text())
     data = config_path.parent
@@ -163,11 +183,13 @@ def plan(config_path, workspace=None, openclaw_home=None, left_out=None):
             items.append(('secret' if secret else 'file', path,
                           f'{"secrets/" if secret else ""}workspace/{relative}'))
     items += [('file', path, f'connectors/{path.relative_to(APP)}') for path in own_connectors()]
-    home = _openclaw_home(openclaw_home)
+    home, home_dir = _openclaw_home(openclaw_home), home_root(openclaw_home, home)
     if (home / 'openclaw.json').is_file():
         items.append(('secret', home / 'openclaw.json', 'secrets/openclaw/openclaw.json'))
     if (home / 'credentials').is_dir():
         items += [('secret', path, f'secrets/openclaw/credentials/{relative}') for path, relative in _files(home / 'credentials')]
+    main = Path(config.get('database') or data / 'events.sqlite').expanduser()
+    items += elsewhere.items(home, home_dir, main, config, left_out)
     # A configured credential can be reached through more than one root. Prefer the workspace's
     # restorable location, but never downgrade a known secret to an ordinary file.
     unique = {}
@@ -228,10 +250,79 @@ def reconnect(config, secrets):
     return out
 
 
-def estimate(config_path, secrets=False, workspace=None, openclaw_home=None):
+def estimate(config_path, secrets=False, workspace=None, openclaw_home=None, home=None):
     left_out = {}
-    items = [i for i in plan(config_path, workspace, openclaw_home, left_out) if secrets or i[0] != 'secret']
+    items = [i for i in plan(config_path, workspace, openclaw_home, left_out, home) if secrets or i[0] != 'secret']
     return {'files': len(items), 'bytes': sum(path.stat().st_size for _, path, _ in items), 'left_out': left_out}
+
+
+class _Hashing:
+    """A file read into the archive, hashed on the way: one pass over it."""
+
+    def __init__(self, handle):
+        self.handle, self.sha = handle, hashlib.sha256()
+
+    def read(self, size=-1):
+        data = self.handle.read(size)
+        self.sha.update(data)
+        return data
+
+
+def _add_file(archive, path, entry):
+    """Add one file and return its sha256."""
+    info = archive.gettarinfo(str(path), entry)
+    with open(path, 'rb') as handle:
+        reader = _Hashing(handle)
+        archive.addfile(info, reader)
+    return reader.sha.hexdigest()
+
+
+def _tables(path, name):
+    """{'<db>/<table>': {'part', 'rows', 'sha256'}} of an (opened) database copy."""
+    out = {}
+    with closing(sqlite3.connect(f'file:{path}?mode=ro', uri=True)) as db:
+        for table, virtual in inventory.tables(db):
+            if virtual:
+                continue
+            rows, sha = inventory.digest(db, table)
+            out[f'{name}/{table}'] = {'part': inventory.part_of(table), 'rows': rows, 'sha256': sha}
+    return out
+
+
+def parts(files, tables):
+    """The manifest's parts: {part: {'label', 'files', 'bytes', 'tables', 'rows'}}."""
+    out = {key: {'label': label, 'files': 0, 'bytes': 0, 'tables': 0, 'rows': 0} for key, label in inventory.PARTS.items()}
+    out['other'] = {'label': 'Other', 'files': 0, 'bytes': 0, 'tables': 0, 'rows': 0}
+    for entry, found in files.items():
+        part = 'settings' if entry.startswith('secrets/') else inventory.file_part(entry)
+        out[part]['files'] += 1
+        out[part]['bytes'] += found['bytes']
+    for found in tables.values():
+        out[found['part']]['tables'] += 1
+        out[found['part']]['rows'] += found['rows']
+    return {k: v for k, v in out.items() if v['files'] or v['tables']}
+
+
+def not_exported(config, keys, emptied):
+    """What this export could not take, and why: inventory.NOT_EXPORTED as true for this install."""
+    services = {a.get('service') for a in config.get('accounts') or []}
+    brokered = any(a.get('transport') == 'broker' for a in config.get('accounts') or [])
+    out = []
+    for item in inventory.NOT_EXPORTED:
+        what = item['what']
+        if what.startswith('Sign-ins to Google') and not brokered:
+            continue
+        if what.startswith("WhatsApp") and 'whatsapp' not in services:
+            continue
+        if keys and (what.startswith('Telegram, Slack') or what.startswith('The Machine Network')):
+            continue
+        out.append(dict(item))
+    if emptied:
+        out.append({'what': "OpenClaw's own sign-ins", 'why': 'kept out without keys: ' + ', '.join(sorted(set(emptied))),
+                    'after': "The new install's own sign-ins are kept"})
+    out += [{'what': f'~/{path}', 'why': why, 'after': ''} for path, why in inventory.NOT_EXPORTED_HOME
+            if not (keys and path == '.openclaw/credentials')]
+    return out
 
 
 def _add_bytes(archive, name, data):
@@ -254,28 +345,31 @@ def _code_form(text):
     return '-'.join(raw[i:i + 4] for i in range(0, 20, 4))
 
 
-def export(config_path, out_dir, passphrase=None, workspace=None, openclaw_home=None, source='local', now=None, keys=None):
+def export(config_path, out_dir, passphrase=None, workspace=None, openclaw_home=None, source='local', now=None, keys=False,
+           home=None):
     """Write the encrypted archive (name ends in .tar.gz.enc) into out_dir and return (path, manifest). Without a
     passphrase an export code is made and returned as manifest['code'] (never written into the archive): show it,
-    the import needs it. Keys and tokens come along when `keys` is true, by default only with a passphrase."""
+    the import needs it. Keys and tokens come along only when `keys` is true, and then only with a passphrase."""
     if passphrase is not None and len(passphrase) < MIN_PASSPHRASE:
         raise MoveError(f'Pick a passphrase of at least {MIN_PASSPHRASE} characters')
+    if keys and passphrase is None:
+        raise MoveError('Keys and tokens come along only with a passphrase you pick')
     config_path = Path(config_path).expanduser()
     config = json.loads(config_path.read_text())
-    secrets_too = passphrase is not None if keys is None else bool(keys)
+    secrets_too = bool(keys)
     code = None if passphrase is not None else new_code()
     left_out = {}
-    items = [i for i in plan(config_path, workspace, openclaw_home, left_out) if secrets_too or i[0] != 'secret']
+    items = [i for i in plan(config_path, workspace, openclaw_home, left_out, home) if secrets_too or i[0] != 'secret']
     now = now or dt.datetime.now(dt.timezone.utc)
     manifest = {'format': FORMAT, 'created_at': now.isoformat(timespec='seconds'), 'source': source,
                 'data_dir': str(config_path.parent), 'workspace_dir': str(_workspace(workspace)), 'includes_keys': secrets_too,
-                'files': sorted(name for _, _, name in items), 'telegram': telegram(openclaw_home),
-                'reconnect': reconnect(config, secrets_too), 'left_out': left_out,
+                'telegram': telegram(openclaw_home), 'reconnect': reconnect(config, secrets_too), 'left_out': left_out,
                 'network_identity': ('kept' if secrets_too else 'new') if network_identity(config) else None}
     out_dir = Path(out_dir)
     out_dir.mkdir(mode=0o700, parents=True, exist_ok=True)
     name = f'the-machine-export-{now:%Y-%m-%d}.tar.gz.enc'
     work = Path(portable.private_dir(out_dir, '.the-machine-export-'))
+    files, tables, emptied = {}, {}, []
     try:
         sealed = work / name
         env = {**os.environ, PASSPHRASE_ENV: passphrase or code}
@@ -286,23 +380,32 @@ def export(config_path, out_dir, passphrase=None, workspace=None, openclaw_home=
             raise MoveError('openssl is needed for an export; install it and try again') from None
         try:
             with tarfile.open(fileobj=proc.stdin, mode='w|gz') as archive:
-                _add_bytes(archive, 'manifest.json', json.dumps(manifest, indent=2).encode())
                 _add_bytes(archive, 'README.txt', readme(manifest).encode())
                 for kind, path, entry in items:
-                    if kind != 'db' and message_seal.is_sealed_file(path):  # an email attachment kept sealed (mail_attachments.py)
-                        _add_bytes(archive, entry, _open_file(path, config))
+                    if kind not in ('db', 'openclaw-db') and message_seal.is_sealed_file(path):  # an email attachment kept sealed (mail_attachments.py)
+                        data = _open_file(path, config)
+                        _add_bytes(archive, entry, data)
+                        files[entry] = {'bytes': len(data), 'sha256': hashlib.sha256(data).hexdigest()}
                         continue
-                    if kind != 'db':
-                        archive.add(path, entry)
+                    if kind not in ('db', 'openclaw-db'):
+                        size = path.stat().st_size
+                        files[entry] = {'bytes': size, 'sha256': _add_file(archive, path, entry)}
                         continue
                     copy = work / 'copy.sqlite'
-                    with closing(sqlite3.connect(path, timeout=30)) as source_db, closing(sqlite3.connect(copy)) as target:
-                        source_db.backup(target)  # a consistent copy while the service keeps writing
                     try:
-                        _open_messages(copy, path)
-                        archive.add(copy, entry)
+                        if kind == 'openclaw-db':
+                            emptied += elsewhere.copy_db(path, copy, secrets_too)
+                        else:
+                            with closing(sqlite3.connect(path, timeout=30)) as source_db, closing(sqlite3.connect(copy)) as target:
+                                source_db.backup(target)  # a consistent copy while the service keeps writing
+                            _open_messages(copy, path)
+                            tables.update(_tables(copy, str(Path(entry).relative_to('data'))))
+                        files[entry] = {'bytes': copy.stat().st_size, 'sha256': _add_file(archive, copy, entry)}
                     finally:
                         portable.shred(copy)
+                manifest.update(files=files, tables=tables, parts=parts(files, tables),
+                                not_exported=not_exported(config, secrets_too, emptied))
+                _add_bytes(archive, 'manifest.json', json.dumps(manifest, indent=2).encode())  # last: it has the checksums
             proc.stdin.close()
             if proc.wait(timeout=600):
                 raise MoveError('Could not encrypt the export')
@@ -490,15 +593,162 @@ def offline_target(config_path):
             portable.unlock(lock)
 
 
-def import_(archive_path, config_path, passphrase=None, workspace=None, openclaw_home=None, force=False, now=None):
+def import_(archive_path, config_path, passphrase=None, workspace=None, openclaw_home=None, force=False, now=None, home=None,
+            keep_hosted=False):
     with offline_target(config_path):
-        return _import(archive_path, config_path, passphrase, workspace, openclaw_home, force, now)
+        return _import(archive_path, config_path, passphrase, workspace, openclaw_home, force, now, home, keep_hosted)
 
 
-def _import(archive_path, config_path, passphrase=None, workspace=None, openclaw_home=None, force=False, now=None):
-    """Put an export back on this computer. Returns {'restored': [...], 'reconnect': [...], 'notes': [...]}."""
-    archive_path, config_path = Path(archive_path).expanduser(), Path(config_path).expanduser()
+def finish(openclaw_home=None, now=None):
+    """`assistant import --finish`: OpenClaw's conversations an import left waiting because OpenClaw ran."""
     now = now or dt.datetime.now(dt.timezone.utc)
+    notes = []
+    return {'restored': elsewhere.finish(_openclaw_home(openclaw_home), notes, f'{now:%Y%m%d-%H%M%S}'), 'notes': notes}
+
+
+STAGED_HOURS = 24  # an export uploaded to be imported waits this long for the import, then it is shredded
+
+
+def _staged_dir(config_path):
+    data = Path(config_path).expanduser().parent
+    return data.parent / f'.{data.name}.import-staged'
+
+
+def stage(archive_path, config_path, passphrase=None, now=None):
+    """Open and check an export now (a wrong passphrase or a damaged file says so at once) and keep it unpacked in a
+    private folder until apply_staged() puts it in place with the service stopped (a hosted Machine's server does
+    that: the dashboard can't stop itself). Returns its summary: {'created_at', 'source', 'parts', 'not_exported',
+    'includes_keys', 'staged_at'}. A newer upload replaces an older one."""
+    discard_staged(config_path)
+    folder = _staged_dir(config_path)
+    os.makedirs(folder.parent, mode=0o700, exist_ok=True)
+    folder.mkdir(mode=0o700)
+    try:
+        _, manifest, _ = _unpack(Path(archive_path).expanduser(), folder, passphrase)
+        summary = {'created_at': manifest.get('created_at'), 'source': manifest.get('source'), 'parts': manifest.get('parts') or {},
+                   'not_exported': manifest.get('not_exported') or [], 'includes_keys': bool(manifest.get('includes_keys')),
+                   'staged_at': (now or dt.datetime.now(dt.timezone.utc)).isoformat(timespec='seconds')}
+        (folder / 'staged.json').write_text(json.dumps(summary))
+        for name in os.listdir(folder):  # only the unpacked export and its summary stay
+            if name not in ('export', 'staged.json'):
+                portable.shred_tree(folder / name)
+        return summary
+    except BaseException:
+        portable.shred_tree(folder)
+        raise
+
+
+def staged(config_path, now=None):
+    """The summary of an export waiting to be imported (stage), or None. One older than STAGED_HOURS is shredded."""
+    folder = _staged_dir(config_path)
+    try:
+        summary = json.loads((folder / 'staged.json').read_text())
+    except (OSError, ValueError):
+        return None
+    at = dt.datetime.fromisoformat(summary.get('staged_at') or '1970-01-01T00:00:00+00:00')
+    if (now or dt.datetime.now(dt.timezone.utc)) - at > dt.timedelta(hours=STAGED_HOURS):
+        discard_staged(config_path)
+        return None
+    return summary
+
+
+def discard_staged(config_path):
+    portable.shred_tree(_staged_dir(config_path))
+
+
+def apply_staged(config_path, workspace=None, openclaw_home=None, force=False, now=None, home=None, keep_hosted=False):
+    """Put the staged export in place, with the service stopped. The staged folder is shredded afterwards."""
+    folder = _staged_dir(config_path)
+    if not staged(config_path, now):
+        raise MoveError('There is no export waiting to be imported; upload it again')
+    with offline_target(config_path):
+        return _import(None, config_path, None, workspace, openclaw_home, force, now, home, keep_hosted, staged=folder)
+
+
+def _unpack_staged(folder):
+    unpacked = Path(folder) / 'export'
+    manifest = json.loads((unpacked / 'manifest.json').read_text())
+    _check(unpacked, manifest)
+    return unpacked, manifest, json.loads((unpacked / 'config/config.json').read_text())
+
+
+def _check(unpacked, manifest):
+    """Every file the manifest lists is there with its checksum (format 2 on), before anything is replaced."""
+    for entry, found in (manifest.get('files') or {}).items() if isinstance(manifest.get('files'), dict) else []:
+        path = unpacked / entry
+        if _outside(entry) or not path.is_file() or inventory.file_digest(path) != (found or {}).get('sha256'):
+            raise MoveError('The export is damaged (a file does not match its checksum); nothing was imported.')
+
+
+def _hold(config, manifest, data, now):
+    """What waited to go out stays waiting for the owner (machine/export/hold.py). {what: count}."""
+    held = {}
+    main = Path(config.get('database') or data / 'events.sqlite').expanduser()
+    since = manifest.get('created_at') or now.isoformat(timespec='seconds')
+    if main.is_file():
+        with closing(sqlite3.connect(main, timeout=30)) as db, db:
+            held.update(moved.hold(db, now.isoformat(timespec='seconds'), since, bool(manifest.get('includes_keys')),
+                                   manifest.get('source')))
+    for path in data.rglob('telegram.sqlite'):
+        with closing(sqlite3.connect(path, timeout=30)) as db, db:
+            count = moved.hold_telegram(db, now.isoformat(timespec='seconds'))
+        if count:
+            held['telegram'] = held.get('telegram', 0) + count
+    return held
+
+
+def _unpack(archive_path, temp, passphrase):
+    """Open, unpack and check an export into the private folder `temp`: (unpacked folder, manifest, its config).
+    Nothing of this install is touched."""
+    archive_path = Path(archive_path)
+    plain = archive_path
+    if archive_path.name.endswith('.enc'):
+        if not passphrase:
+            raise MoveError('This export is encrypted; give its export code or passphrase')
+        plain = _decrypt(archive_path, temp, passphrase)
+    unpacked = temp / 'export'
+    try:
+        with (zipfile.ZipFile(plain) if zipfile.is_zipfile(plain) else tarfile.open(plain, 'r:gz')) as archive:
+            _safe_extract(archive, unpacked)
+    except (tarfile.TarError, zipfile.BadZipFile, OSError):
+        raise MoveError('This is not an export of The Machine, or it is damaged') from None
+    try:
+        manifest = json.loads((unpacked / 'manifest.json').read_text())
+    except (OSError, ValueError):
+        raise MoveError('This archive has no manifest; it is not an export of The Machine') from None
+    if not isinstance(manifest, dict) or not isinstance(manifest.get('format', 0), int):
+        raise MoveError('The export manifest is invalid; nothing was imported')
+    if manifest.get('format', 0) > FORMAT:
+        raise MoveError('This export is newer than this install; update The Machine first')
+    _check(unpacked, manifest)
+    try:
+        original_config = json.loads((unpacked / 'config/config.json').read_text())
+        if not isinstance(manifest, dict) or not isinstance(original_config, dict):
+            raise ValueError('not an object')
+        if not isinstance(original_config.get('accounts', []), list) or not isinstance(original_config.get('credentials', {}), dict):
+            raise ValueError('invalid configuration')
+    except (OSError, ValueError, TypeError):
+        raise MoveError('The exported configuration is invalid; nothing was imported') from None
+    # Validate every database before replacing any live file.
+    for root in (unpacked / 'data', unpacked / 'secrets/data'):
+        for path in root.rglob('*') if root.is_dir() else []:
+            if path.suffix in ('.sqlite', '.db') and path.is_file():
+                try:
+                    with closing(sqlite3.connect(f'file:{path}?mode=ro', uri=True)) as check:
+                        valid = check.execute('PRAGMA integrity_check').fetchone()[0] == 'ok'
+                except sqlite3.Error:
+                    valid = False
+                if not valid:
+                    raise MoveError('An exported database failed its integrity check; nothing was imported.')
+    return unpacked, manifest, original_config
+
+
+def _import(archive_path, config_path, passphrase=None, workspace=None, openclaw_home=None, force=False, now=None, home=None,
+            keep_hosted=False, staged=None):
+    """Put an export back on this computer. Returns {'restored', 'reconnect', 'notes', 'telegram', 'held', 'parts',
+    'not_exported'}. keep_hosted: a hosted Machine takes an export of a computer, keeping its own hosted settings."""
+    config_path = Path(config_path).expanduser()
+    now, home_dir = now or dt.datetime.now(dt.timezone.utc), home
     if config_path.exists() and not force:
         try:
             existing = json.loads(config_path.read_text())
@@ -508,46 +758,18 @@ def _import(archive_path, config_path, passphrase=None, workspace=None, openclaw
             raise MoveError(f'{config_path} already has connected sources; import into a fresh install, '
                             'or pass --force to replace it (the current data folder is kept as a copy first)')
     data = config_path.parent
-    temp = Path(portable.private_dir(data.parent, f'.{data.name}.import-'))  # what it unpacks: private, overwritten after
+    temp = staged or Path(portable.private_dir(data.parent, f'.{data.name}.import-'))  # what it unpacks: private, overwritten after
     try:
-        plain = archive_path
-        if archive_path.name.endswith('.enc'):
-            if not passphrase:
-                raise MoveError('This export is encrypted; give its export code or passphrase')
-            plain = _decrypt(archive_path, temp, passphrase)
-        unpacked = temp / 'export'
-        try:
-            with (zipfile.ZipFile(plain) if zipfile.is_zipfile(plain) else tarfile.open(plain, 'r:gz')) as archive:
-                _safe_extract(archive, unpacked)
-        except (tarfile.TarError, zipfile.BadZipFile, OSError):
-            raise MoveError('This is not an export of The Machine, or it is damaged') from None
-        try:
-            manifest = json.loads((unpacked / 'manifest.json').read_text())
-        except (OSError, ValueError):
-            raise MoveError('This archive has no manifest; it is not an export of The Machine') from None
-        if not isinstance(manifest, dict) or not isinstance(manifest.get('format', 0), int):
-            raise MoveError('The export manifest is invalid; nothing was imported')
-        if manifest.get('format', 0) > FORMAT:
-            raise MoveError('This export is newer than this install; update The Machine first')
-        try:
-            original_config = json.loads((unpacked / 'config/config.json').read_text())
-            if not isinstance(manifest, dict) or not isinstance(original_config, dict):
-                raise ValueError('not an object')
-            if not isinstance(original_config.get('accounts', []), list) or not isinstance(original_config.get('credentials', {}), dict):
-                raise ValueError('invalid configuration')
-        except (OSError, ValueError, TypeError):
-            raise MoveError('The exported configuration is invalid; nothing was imported') from None
-        # Validate every database before replacing any live file.
-        for root in (unpacked / 'data', unpacked / 'secrets/data'):
-            for path in root.rglob('*') if root.is_dir() else []:
-                if path.suffix in ('.sqlite', '.db') and path.is_file():
-                    try:
-                        with closing(sqlite3.connect(f'file:{path}?mode=ro', uri=True)) as check:
-                            valid = check.execute('PRAGMA integrity_check').fetchone()[0] == 'ok'
-                    except sqlite3.Error:
-                        valid = False
-                    if not valid:
-                        raise MoveError('An exported database failed its integrity check; nothing was imported.')
+        if staged:
+            unpacked, manifest, original_config = _unpack_staged(staged)
+        else:
+            unpacked, manifest, original_config = _unpack(archive_path, temp, passphrase)
+        hosted_here = {}
+        if keep_hosted and config_path.exists():
+            try:
+                hosted_here = json.loads(config_path.read_text())
+            except ValueError:
+                hosted_here = {}
         if force and data.exists() and any(data.iterdir()):
             keep = data.with_name(f'{data.name}.before-import-{now:%Y%m%d-%H%M%S}')
             shutil.copytree(data, keep)
@@ -565,8 +787,12 @@ def _import(archive_path, config_path, passphrase=None, workspace=None, openclaw
         config = _rebase(config, manifest.get('workspace_dir'), str(_workspace(workspace)))
         for key in HOSTED_KEYS:
             config.pop(key, None)
+            if key in hosted_here:
+                config[key] = hosted_here[key]
         for name in HOSTED_ONLY:
             (config.get('credentials') or {}).pop(name, None)
+            if name in (hosted_here.get('credentials') or {}):
+                config.setdefault('credentials', {})[name] = hosted_here['credentials'][name]
         if (config.get('enrichment') or {}).get('by') == 'hosting':
             config['enrichment'] = {'enabled': False}  # hosting did the look-ups; set up your own service to turn it on
             notes.append('organization look-ups were done by the hosting; the profiles found so far are kept')
@@ -624,7 +850,23 @@ def _import(archive_path, config_path, passphrase=None, workspace=None, openclaw
                 target = home / path.relative_to(unpacked / 'secrets/openclaw')
                 _place(path, target, notes)
                 restored.append(str(target))
+        stamp = f'{now:%Y%m%d-%H%M%S}'
+        for folder in ('openclaw', 'home', 'agents-home'):
+            for path in sorted((unpacked / folder).rglob('*')) if (unpacked / folder).is_dir() else []:
+                if not path.is_file():
+                    continue
+                entry = str(path.relative_to(unpacked))
+                target = elsewhere.target_for(entry, home, home_root(openclaw_home, home_dir), data, config)
+                if target is None:
+                    continue
+                if folder == 'openclaw' and path.suffix == '.sqlite':
+                    restored.append(str(elsewhere.restore_db(path, target, notes, stamp)))
+                else:
+                    _place(path, target, notes)
+                    restored.append(str(target))
+        held = _hold(config, manifest, data, now)
         return {'restored': restored, 'reconnect': manifest.get('reconnect') or [], 'notes': notes,
-                'telegram': manifest.get('telegram')}
+                'telegram': manifest.get('telegram'), 'held': held, 'parts': manifest.get('parts') or {},
+                'not_exported': manifest.get('not_exported') or []}
     finally:
         portable.shred_tree(temp)

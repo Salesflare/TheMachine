@@ -57,9 +57,9 @@ class Moving(unittest.TestCase):
         (self.claw / 'credentials/relay.secret').write_text('relay-example')
         self.out = self.tmp / 'out'
 
-    def export(self, passphrase=None):
+    def export(self, passphrase=None, keys=False):
         path, manifest = moving.export(self.config, self.out, passphrase=passphrase, workspace=self.space,
-                                       openclaw_home=self.claw, source='hosted')
+                                       openclaw_home=self.claw, source='hosted', keys=keys)
         self.code = passphrase or manifest.get('code')
         return path, manifest
 
@@ -232,8 +232,13 @@ class Moving(unittest.TestCase):
             self.export('short')
 
     @unittest.skipUnless(HAS_OPENSSL, 'openssl not installed')
+    def test_a_passphrase_alone_leaves_the_keys_out(self):
+        _, manifest = self.export('a long example passphrase')
+        self.assertFalse(manifest['includes_keys'])
+        self.assertFalse([n for n in manifest['files'] if n.startswith('secrets/')])
+
     def test_with_a_passphrase_keys_move_encrypted(self):
-        path, manifest = self.export('a long example passphrase')
+        path, manifest = self.export('a long example passphrase', keys=True)
         self.assertTrue(path.name.endswith('.tar.gz.enc'))
         self.assertEqual([p.name for p in self.out.iterdir()], [path.name])  # no plain archive or work folder left
         self.assertTrue(manifest['includes_keys'])

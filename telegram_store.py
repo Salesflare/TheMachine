@@ -206,6 +206,11 @@ def answer_photo(db, seal, user_id, status, photo_id=None, data=None):
     return status
 
 
+def hold_outbox(db, reason, at):
+    """After an import (machine/export/hold.py): what waited to go out stops with `reason`, never sent by itself."""
+    return db.execute("UPDATE outbox SET status='held',error=?,done_at=? WHERE status='queued'", (reason, at)).rowcount
+
+
 def read_app(path):
     """(api_id, api_hash) from an app credential file of KEY=value lines, or None."""
     try:
