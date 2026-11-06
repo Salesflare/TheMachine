@@ -513,7 +513,7 @@ def server_strings(root=ROOT):
     """{module: [strings]}: raised messages, SERVER_TEXT's strings and t() keys of the Python modules."""
     import ast
     out = {}
-    for path in sorted([*root.glob('*.py'), *root.glob('connectors/*.py')]):
+    for path in sorted([*root.glob('*.py'), *root.glob('machine/**/*.py'), *root.glob('connectors/*.py')]):
         rel = path.relative_to(root).as_posix()
         if rel in NOT_DASHBOARD or path.name.startswith('test'):
             continue

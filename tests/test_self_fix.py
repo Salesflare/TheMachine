@@ -462,7 +462,8 @@ class AutoMerge(unittest.TestCase):
     def test_anything_less_than_safe_waits_for_the_owner(self):
         action = {'kind': 'merge', 'files': ['graph.py', 'test_graph.py'], 'lines': 2, 'commits': 2, 'plugin': False, 'diff': '+x'}
         self.assertIsNone(n.unsafe_merge(action, {}))
-        for change, reason in [({'files': ['graph.py']}, 'no test'), ({'plugin': True}, 'more than'), ({'files': ['AGENTS.md', 'test_graph.py']}, 'more than'),
+        self.assertIsNone(n.unsafe_merge({**action, 'files': ['machine/text.py', 'test_graph.py']}, {}))  # the service's package
+        for change, reason in [({'files': ['graph.py']}, 'no test'), ({'plugin': True}, 'more than'), ({'files': ['AGENTS.md', 'test_graph.py']}, 'more than'), ({'files': ['scripts/x.py', 'test_graph.py']}, 'more than'),
                                ({'lines': 51}, 'bigger'), ({'files': ['a.py', 'b.py', 'c.py', 'd.py', 'test_a.py']}, 'bigger'),
                                ({'diff': '+        db.execute("ALTER TABLE events ADD x")'}, 'database')]:
             self.assertIn(reason, n.unsafe_merge({**action, **change}, {}))

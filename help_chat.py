@@ -38,7 +38,7 @@ BUG = re.compile(r'^[ \t]*\**BUG:?\**[ \t]*$', re.M)  # the model's own line bef
 BUG_CHARS = 1500
 TOPIC_LINE = re.compile(r'^[ \t]*\**TOPIC:?\**[ \t]*(.*)$', re.M | re.I)  # the model's last line: what the question is about
 TIMEOUT = 120
-CODE_FILES = ('*.py', 'connectors/*.py')  # the app's own modules; never config, data or tests
+CODE_FILES = ('*.py', 'machine/**/*.py', 'connectors/*.py')  # the app's own modules; never config, data or tests
 STOP = set('a an and are as at be by can do does for from has have how i if in is it its me my of on or so that the this '
            'to was what when where which who why will with you your'.split()
            # the same small words in the other languages of the app, so "hoe" or "comment" finds nothing on its own
