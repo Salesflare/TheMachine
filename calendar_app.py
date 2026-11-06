@@ -14,8 +14,10 @@ import sqlite3
 from machine.store import history
 
 from timeutil import local_tz
+from machine.sources.calendar import (
+    CALENDAR_BACK_DAYS,
+)
 
-CALENDAR_BACK_DAYS = 7
 CALENDARS = ('calendar', 'outlook_calendar')  # assistant.CALENDAR_SERVICES
 
 
