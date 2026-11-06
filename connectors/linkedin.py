@@ -113,8 +113,13 @@ def event(account, raw, helpers):
             'occurred_at': helpers.iso(at / 1000), 'title': name[:1000], 'body': body[:40000], 'metadata': metadata, 'deleted': False}
 
 
-def events(account, data, helpers):
-    return list({e['source_id']: e for e in (event(account, raw, helpers) for raw in data['messages'])}.values())
+def events(account, data, helpers, skipped=None):
+    """A page's messages as events. One it can't take is counted in `skipped` (helpers.Skips), never failing the page;
+    only a page of nothing but odd ones fails."""
+    skipped = helpers.Skips('linkedin_invalid_message') if skipped is None else skipped
+    found = skipped.every(data['messages'], lambda raw: event(account, raw, helpers))
+    skipped.check()
+    return list({e['source_id']: e for e, _ in found}.values())
 
 
 PHOTO = re.compile(r'https://media\.licdn\.com/dms/image/[^\s"\'<>\\]{10,600}')
@@ -146,7 +151,8 @@ def sync(store, config, account, helpers, source=None):
     first = int((current - dt.timedelta(days=int(config.get('bootstrap_days', 7)))).timestamp() * 1000)
     since = state.get('scan_since_ms') or (max(0, state['completed_ms'] - 3600000) if state.get('completed_ms') else min(state.get('since_ms') or first, first))
     page = source.page(since, state.get('page') or {})
-    found = events(account, page, helpers)
+    skipped = helpers.Skips('linkedin_invalid_message')
+    found = events(account, page, helpers, skipped)
     latest = max([state.get('latest_ms', 0)] + [int(dt.datetime.fromisoformat(e['occurred_at']).timestamp() * 1000) for e in found])
     scan_until = state.get('scan_until_ms') or int(current.timestamp() * 1000)
     more = page.get('more') is True
@@ -154,7 +160,8 @@ def sync(store, config, account, helpers, source=None):
                  scan_since_ms=since if more else None, scan_until_ms=scan_until if more else None,
                  completed_ms=state.get('completed_ms', 0) if more else scan_until, coverage_complete=not more,
                  coverage='Paged inbox catch-up in progress.' if more else 'Inbox conversations and message pages caught up; spam excluded.')
+    skipped.note(state)
     store.commit_page(account['id'], state, found)
     if getattr(helpers, 'remember_profiles', None):
         helpers.remember_profiles(store, 'linkedin', profiles(page))
-    return {'mode': 'incremental', 'events': len(found), 'more': more}
+    return {'mode': 'incremental', 'events': len(found), 'more': more, 'skipped': sum(skipped.values())}

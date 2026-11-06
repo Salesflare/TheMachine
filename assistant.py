@@ -141,6 +141,7 @@ from shared_graph_app import SharedGraphApp
 from skills_app import SkillsApp
 from whatsapp_images_app import WhatsAppImagesApp
 from support_app import SupportApp
+from machine.sources.rows import SKIPPED, Skips
 from machine.app.check_now import CheckNowApp
 from machine.app.setup_card import (
     PHONE_APP_STORE,
@@ -2553,16 +2554,10 @@ def sync_whatsapp(store, config, account, source=None):
         return read_window(start, middle) + read_window(middle, end)
     rows = read_window(dt.datetime.fromisoformat(after), stamp)
     # A row this importer can't take (a WhatsApp Channel post from an ...@newsletter chat, a status update, an imported
-    # row, an odd timestamp) is skipped and counted by reason, never failing the whole account. Only a window where
-    # every one of many rows is odd still fails: that is a changed wacli, not a few unsupported messages.
-    pairs, skipped = [], collections.Counter()
-    for raw in rows:
-        try:
-            pairs.append((whatsapp_event(account, raw if isinstance(raw, dict) else {}), raw))
-        except SourceError as exc:
-            skipped[exc.category] += 1
-    if skipped and not pairs and len(rows) >= 10:
-        raise SourceError(skipped.most_common(1)[0][0])
+    # row, an odd timestamp) is skipped and counted by reason, never failing the whole account (machine/sources/rows.py).
+    skipped = Skips()
+    pairs = skipped.every(rows, lambda raw: whatsapp_event(account, raw if isinstance(raw, dict) else {}))
+    skipped.check()
     events = list({e['source_id']: e for e, _ in pairs}.values())
     with store.connect() as db:  # photos the owner has read (whatsapp_images.py): noted, and joined to their message once read
         events = whatsapp_images.note(db, account, events, {e['source_id']: raw for e, raw in pairs}, now())
@@ -2703,14 +2698,16 @@ def sync_telegram(store, config, account, source=None):
     stamp = dt.datetime.fromisoformat(now())
     after = (stamp - dt.timedelta(days=config.get('bootstrap_days', 7))).isoformat()
     rows = source.messages(after)
-    events = list({e['source_id']: e for e in (telegram_event(account, raw) for raw in rows)}.values())
+    skipped = Skips('telegram_invalid_message')  # a row it can't take is counted, never failing the poll
+    events = list({e['source_id']: e for e, _ in skipped.every(rows, telegram_event, account)}.values())
     checkpoint = store.checkpoint(account['id']) or {}
+    skipped.check().note(checkpoint)
     checkpoint.update(mode='incremental', after=after, before=stamp.isoformat(), retained_days=config.get('bootstrap_days', 7),
                       available_messages=len(rows), source_latest_message=max((e['occurred_at'] for e in events), default=None),
                       mirror_last_ok=state_.get('last_ok'), flood_until=state_.get('flood_until'),
                       coverage='Seven-day reread of the Telegram mirror store. Nothing here talks to Telegram.')
     store.commit_page(account['id'], checkpoint, events)
-    return {'mode': 'incremental', 'events': len(events)}
+    return {'mode': 'incremental', 'events': len(events), 'skipped': sum(skipped.values())}
 
 
 def owner_telegram_chats(config, db, raw, task_chats, source=None):
@@ -2875,7 +2872,10 @@ def sync_android(store, config, account, source=None, reconcile=False):
             raise SourceError('android_notifications_unavailable', retry_after=600)
         if not isinstance(rows, list) or snapshot.get('count') != len(rows):
             raise SourceError('android_invalid_snapshot')
-        events = [android_event(account, raw) for raw in rows if raw.get('packageName') != 'ai.openclaw.app']
+        skipped = Skips('android_invalid_notification')  # a notification it can't take is counted, never failing the read
+        events = [e for e, _ in skipped.every([r for r in rows if not isinstance(r, dict) or r.get('packageName') != 'ai.openclaw.app'],
+                                             android_event, account)]
+        skipped.check()
         if reconcile:
             with store.connect() as db:
                 for i, event in enumerate(events):
@@ -2920,8 +2920,9 @@ def sync_android(store, config, account, source=None, reconcile=False):
     state.update(mode='incremental', observed_from=state.get('observed_from', stamp),
                  snapshot_count=len(rows), last_observed=stamp,
                  coverage='Snapshots only. Notifications cleared between reads or during disconnection can be missed.')
+    skipped.note(state)
     store.commit_page(account['id'], state, events)
-    return {'mode': 'incremental', 'events': len(events)}
+    return {'mode': 'incremental', 'events': len(events), 'skipped': sum(skipped.values())}
 
 
 class Slack:
@@ -9601,7 +9602,7 @@ def sync_gmail(store, config, account):
     source = Gmail(config, account)
     profile = source.profile()  # Fail closed on account routing before every batch.
     state = store.checkpoint(account['id']) or {}
-    excluded = set()
+    excluded, skipped = set(), Skips('invalid_message')  # a message it can't take is counted, never holding up the page
     if not state:
         state = {'mode': 'bootstrap', 'base_history': str(profile['historyId']),
                  'after': int(time.time()) - config.get('bootstrap_days', 7) * 86400}
@@ -9619,7 +9620,8 @@ def sync_gmail(store, config, account):
             raise
         events = []
         for ref in page.get('messages', []):
-            event = message_event(account, source.get('messages/' + ref['id'], {'format': 'full'}), config)
+            event = skipped.take(message_event, account, source.get('messages/' + ref['id'], {'format': 'full'}), config)
+            if event is SKIPPED: continue
             if event is None:
                 excluded.add(ref['id'])
             else:
@@ -9652,12 +9654,13 @@ def sync_gmail(store, config, account):
         events = []
         for source_id, kind in changes.items():
             try:
-                event = store.tombstone(account['id'], source_id) if kind == 'messagesDeleted' else message_event(
-                    account, source.get('messages/' + source_id, {'format': 'full'}), config)
+                event = store.tombstone(account['id'], source_id) if kind == 'messagesDeleted' else skipped.take(
+                    message_event, account, source.get('messages/' + source_id, {'format': 'full'}), config)
             except SourceError as error:
                 if error.status != 404:
                     raise
                 event = store.tombstone(account['id'], source_id)
+            if event is SKIPPED: continue
             if event:
                 events.append(event)
             elif kind != 'messagesDeleted':
@@ -9666,8 +9669,9 @@ def sync_gmail(store, config, account):
             **state, 'history_id': str(page.get('historyId', profile['historyId']))}
         if not page.get('nextPageToken'):
             next_state.pop('page_token', None)
+    skipped.check().note(next_state)
     store.commit_page(account['id'], next_state, events, excluded_source_ids=excluded)
-    return {'mode': next_state['mode'], 'events': len(events), 'filtered': len(excluded)}
+    return {'mode': next_state['mode'], 'events': len(events), 'filtered': len(excluded), 'skipped': sum(skipped.values())}
 
 
 def sync_calendar(store, config, account):
@@ -9707,25 +9711,28 @@ def sync_calendar(store, config, account):
             store.commit_page(account['id'], state, [], record_sync=False)
         raise
     events, seen, excluded = [], set(state.get('seen', [])), []
-    for raw in page.get('items', []):
-        seen.add(raw['id'])
+    skipped = Skips('calendar_invalid_event')  # an event it can't take is counted, never failing the page
+    def one(raw):
+        seen.add(raw['id'])  # seen even when it can't be read, so a complete window never removes it as absent
+        if raw.get('unreadable'):  # an Outlook event ms_graph.calendar_item couldn't put in Google's shape
+            raise SourceError(str(raw['unreadable']))
         if calendar_title_excluded(account, raw.get('summary')):
             excluded.append(raw['id'])
-            continue
+            return None
         if raw.get('status') == 'cancelled':
             e = store.tombstone(account['id'], raw['id'])
             if e:
                 e['metadata']['status'] = 'cancelled'
-        else:
-            e = calendar_event(account, raw, timezone)
-            # Incremental requests cannot use time bounds. Ignore new distant events,
-            # but retain updates to already collected occurrences, even when moved out.
-            existing = store.tombstone(account['id'], raw['id'])
-            if not existing and not (e['occurred_at'] < state['time_max'] and
-                                     e['metadata']['end_at'] > state['time_min']):
-                e = None
-        if e:
-            events.append(e)
+            return e
+        e = calendar_event(account, raw, timezone)
+        # Incremental requests cannot use time bounds. Ignore new distant events,
+        # but retain updates to already collected occurrences, even when moved out.
+        existing = store.tombstone(account['id'], raw['id'])
+        if not existing and not (e['occurred_at'] < state['time_max'] and
+                                 e['metadata']['end_at'] > state['time_min']):
+            return None
+        return e
+    events = [e for e, _ in skipped.every(page.get('items', []), one) if e]
     next_state = dict(state)
     if page.get('nextPageToken'):
         next_state['page_token'] = page['nextPageToken']
@@ -9750,8 +9757,9 @@ def sync_calendar(store, config, account):
         next_state.update(mode='incremental', sync_token=page['nextSyncToken'])
         next_state.pop('page_token', None)
         next_state.pop('seen', None)
+    skipped.check().note(next_state)
     store.commit_page(account['id'], next_state, events, excluded_source_ids=excluded)
-    return {'mode': next_state['mode'], 'events': len(events), 'filtered': len(excluded)}
+    return {'mode': next_state['mode'], 'events': len(events), 'filtered': len(excluded), 'skipped': sum(skipped.values())}
 
 
 def sync_slack(store, config, account, source=None):
@@ -9921,21 +9929,20 @@ def sync_slack(store, config, account, source=None):
                 state['index'] = (state['index'] + 1) % len(state['channels'])
             store.commit_page(account['id'], state, [], record_sync=False)
         raise
-    events = []
     names = slack_page_names(store, channel, page.get('messages', []))
-    for raw in page.get('messages', []):
+    skipped = Skips('slack_invalid_message')  # a message it can't take is counted, never failing the channel's page
+    def one(raw):
         if raw.get('subtype') == 'message_deleted':
-            e = store.tombstone(account['id'], channel['id'] + ':' + raw['deleted_ts'])
-        else:
-            e = slack_event(account, channel, raw, names)
-            ts = e['metadata']['message_ts']
-            channel['last_activity'] = max(float(channel.get('last_activity') or 0), float(ts))
-            if e['metadata']['reply_count'] and ts not in scan['threads']:
-                scan['threads'].append(ts)
-                if 'known_threads' in scan and ts not in scan['known_threads']:
-                    scan['known_threads'].append(ts)
-        if e:
-            events.append(e)
+            return store.tombstone(account['id'], channel['id'] + ':' + raw['deleted_ts'])
+        e = slack_event(account, channel, raw, names)
+        ts = e['metadata']['message_ts']
+        channel['last_activity'] = max(float(channel.get('last_activity') or 0), float(ts))
+        if e['metadata']['reply_count'] and ts not in scan['threads']:
+            scan['threads'].append(ts)
+            if 'known_threads' in scan and ts not in scan['known_threads']:
+                scan['known_threads'].append(ts)
+        return e
+    events = [e for e, _ in skipped.every(page.get('messages', []), one) if e]
     cursor = page.get('response_metadata', {}).get('next_cursor')
     if cursor:
         scan['cursor'] = cursor
@@ -10001,11 +10008,12 @@ def sync_slack(store, config, account, source=None):
     if not state.get('titles_named'):  # once: titles stored before members were named in them
         name_slack_titles(store, account['id'])
         state['titles_named'] = True
+    skipped.check().note(state)
     store.commit_page(account['id'], state, events)
     if isinstance(source, Slack):
         remember_slack_names(store, source, events, state.get('channels') or ())
     more = state['mode'] != 'incremental' or state['index'] != 0 or bool(state.get('scan'))
-    return {'mode': state['mode'], 'events': len(events), 'more': more}
+    return {'mode': state['mode'], 'events': len(events), 'more': more, 'skipped': sum(skipped.values())}
 
 
 def slack_error(error):
@@ -10694,7 +10702,7 @@ def remember_profiles(store, source, offers):
 
 UNNAMED = {'trello': 'Trello board', 'gateway': 'Machine health'}  # a connection without a name of its own yet: what its card says, not the account id
 CONNECTOR_HELPERS = types.SimpleNamespace(
-    SourceError=SourceError, browser_read_failure=browser_read_failure, recover_browser=lambda profile, own_cdp=False, config=None: recover_browser(profile, own_cdp, config), now=lambda: now(), remember_profiles=lambda store, source, offers: remember_profiles(store, source, offers), credential=lambda config, name: credential(config, name), local_tz=lambda: local_tz(),
+    SourceError=SourceError, Skips=Skips, browser_read_failure=browser_read_failure, recover_browser=lambda profile, own_cdp=False, config=None: recover_browser(profile, own_cdp, config), now=lambda: now(), remember_profiles=lambda store, source, offers: remember_profiles(store, source, offers), credential=lambda config, name: credential(config, name), local_tz=lambda: local_tz(),
     iso=lambda stamp: dt.datetime.fromtimestamp(stamp, dt.timezone.utc).isoformat())
 _connectors = {}
 
@@ -18375,7 +18383,7 @@ class App(*APP_MIXINS):
                 delay = account.get('poll_seconds', self.config.get('poll_seconds', 300))
                 try:
                     result = self.sync_retrying(account, source)
-                    LOG.info('sync account=%s mode=%s read=%d filtered=%d', account['id'], result['mode'], result['events'], result.get('filtered', 0))
+                    LOG.info('sync account=%s mode=%s read=%d filtered=%d skipped=%d', account['id'], result['mode'], result['events'], result.get('filtered', 0), result.get('skipped', 0))
                     state = self.store.checkpoint(account['id'])
                     if not result.get('stopped') and (result.get('more') or state.get('mode', result['mode']) != 'incremental' or state.get('page_token')):  # a plugin's checkpoint may not keep a mode
                         delay = account.get('poll_seconds', 3600) if account.get('service') == 'x' else 30 if account.get('service') == 'linkedin' else 0 if source else 5

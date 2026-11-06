@@ -93,12 +93,15 @@ def person(p):
     return (str(p.get('name') or '') + ' (@' + str(p.get('screen_name') or '?') + ')').strip()
 
 
-def events(account, data, helpers):
+def events(account, data, helpers, skipped=None):
+    """A page's mentions and DMs as events. One it can't take is counted in `skipped` (helpers.Skips), never failing
+    the page; only a page of nothing but odd ones fails."""
     SourceError = helpers.SourceError
     handle = (data.get('account') or {}).get('screen_name') or account['handle']
     at = lambda ms: helpers.iso(ms / 1000)
-    out = []
-    for t in data['mentions']:
+    skipped = helpers.Skips('x_invalid_item') if skipped is None else skipped
+
+    def mention(t):
         if not re.fullmatch(r'\d{1,25}', str(t.get('id') or '')) or type(t.get('at')) is not int:
             raise SourceError('x_invalid_mention')
         author, reply = t.get('author') or {}, t.get('reply_to') or None
@@ -108,27 +111,31 @@ def events(account, data, helpers):
             body += '\n\n[Quoting: “' + str(t['quoted']) + '”]'
         if reply and reply.get('text'):
             body += '\n\n[In reply to @' + str(reply.get('screen_name') or '?') + ': “' + str(reply['text']) + '”]'
-        out.append({'account_id': account['id'], 'source_id': hashlib.sha256(('x:' + t['id']).encode()).hexdigest(), 'kind': 'x.mention',
-                    'occurred_at': at(t['at']), 'title': (who + (' replied to @' if reply and reply.get('to_account') else ' mentioned @') + handle)[:1000],
-                    'body': body[:40000], 'deleted': False,
-                    'metadata': {'from': who, 'sender_display': who, 'screen_name': author.get('screen_name'), 'author_id': author.get('id'),
-                                 'followers': author.get('followers'), 'verified': author.get('verified') is True, 'account_handle': handle,
-                                 'reply': bool(reply), 'reply_to_account': bool(reply and reply.get('to_account')),
-                                 'in_reply_to_id': reply and reply.get('id'), 'in_reply_to': reply and reply.get('screen_name'),
-                                 'conversation_id': t.get('conversation_id'), 'tweet_id': t['id'], 'lang': t.get('lang'),
-                                 'source_url': 'https://x.com/' + urllib.parse.quote(str(author.get('screen_name') or 'i')) + '/status/' + t['id']}})
-    for m in data['dms']:
+        return {'account_id': account['id'], 'source_id': hashlib.sha256(('x:' + t['id']).encode()).hexdigest(), 'kind': 'x.mention',
+                'occurred_at': at(t['at']), 'title': (who + (' replied to @' if reply and reply.get('to_account') else ' mentioned @') + handle)[:1000],
+                'body': body[:40000], 'deleted': False,
+                'metadata': {'from': who, 'sender_display': who, 'screen_name': author.get('screen_name'), 'author_id': author.get('id'),
+                             'followers': author.get('followers'), 'verified': author.get('verified') is True, 'account_handle': handle,
+                             'reply': bool(reply), 'reply_to_account': bool(reply and reply.get('to_account')),
+                             'in_reply_to_id': reply and reply.get('id'), 'in_reply_to': reply and reply.get('screen_name'),
+                             'conversation_id': t.get('conversation_id'), 'tweet_id': t['id'], 'lang': t.get('lang'),
+                             'source_url': 'https://x.com/' + urllib.parse.quote(str(author.get('screen_name') or 'i')) + '/status/' + t['id']}}
+
+    def message(m):
         if not re.fullmatch(r'\d{1,25}', str(m.get('id') or '')) or type(m.get('at')) is not int or type(m.get('from_me')) is not bool:
             raise SourceError('x_invalid_message')
         sender = m.get('from') or {}
         who = 'You' if m['from_me'] else person(sender)
         name = str(m.get('with') or 'X conversation')
-        out.append({'account_id': account['id'], 'source_id': hashlib.sha256(('x-dm:' + m['id']).encode()).hexdigest(), 'kind': 'x.dm',
-                    'occurred_at': at(m['at']), 'title': name[:1000], 'body': str(m.get('text') or '')[:40000], 'deleted': False,
-                    'metadata': {'chat_name': name, 'conversation_id': m.get('conversation_id'), 'message_id': m['id'], 'from_me': m['from_me'],
-                                 'from': who, 'sender_display': who, 'sender_id': sender.get('id'), 'screen_name': sender.get('screen_name'),
-                                 'group': m.get('group') is True, 'request': m.get('request') is True, 'account_handle': handle,
-                                 'source_url': 'https://x.com/messages/' + urllib.parse.quote(str(m.get('conversation_id') or ''))}})
+        return {'account_id': account['id'], 'source_id': hashlib.sha256(('x-dm:' + m['id']).encode()).hexdigest(), 'kind': 'x.dm',
+                'occurred_at': at(m['at']), 'title': name[:1000], 'body': str(m.get('text') or '')[:40000], 'deleted': False,
+                'metadata': {'chat_name': name, 'conversation_id': m.get('conversation_id'), 'message_id': m['id'], 'from_me': m['from_me'],
+                             'from': who, 'sender_display': who, 'sender_id': sender.get('id'), 'screen_name': sender.get('screen_name'),
+                             'group': m.get('group') is True, 'request': m.get('request') is True, 'account_handle': handle,
+                             'source_url': 'https://x.com/messages/' + urllib.parse.quote(str(m.get('conversation_id') or ''))}}
+
+    out = [e for e, _ in skipped.every(data['mentions'], mention) + skipped.every(data['dms'], message)]
+    skipped.check()
     return list({e['source_id']: e for e in out}.values())
 
 
@@ -160,7 +167,9 @@ def sync(store, config, account, helpers, source=None):
     state = store.checkpoint(account['id']) or {}
     since = state.get('since_ms') or int((current - dt.timedelta(days=int(config.get('bootstrap_days', 7)))).timestamp() * 1000)
     data = source.page(since, state.get('page') or {})
-    found = events(account, data, helpers)
+    skipped = helpers.Skips('x_invalid_item')
+    found = events(account, data, helpers, skipped)
+    skipped.note(state)
     more = bool(data['state'].get('mention_catchup'))
     state.update(mode='incremental', since_ms=since, page=data['state'], read_items=len(found), coverage_complete=not more,
                  coverage=('Older mentions are still being collected for @' if more else 'Mentions, replies and DM inbox caught up for @') + account['handle'] + '.')
@@ -171,4 +180,4 @@ def sync(store, config, account, helpers, source=None):
                for p in str(e['metadata'].get('conversation_id') or '').split('-') if p.isdigit()}
     if getattr(helpers, 'remember_profiles', None):
         helpers.remember_profiles(store, 'x', profiles(data, people))
-    return {'mode': 'incremental', 'events': len(found), 'more': more}
+    return {'mode': 'incremental', 'events': len(found), 'more': more, 'skipped': sum(skipped.values())}

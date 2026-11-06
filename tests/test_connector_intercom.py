@@ -30,7 +30,7 @@ class IntercomTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
         self.credential = Mock(return_value=TOKEN + '\n')
-        self.helpers = types.SimpleNamespace(SourceError=a.SourceError, iso=a.CONNECTOR_HELPERS.iso, credential=self.credential)
+        self.helpers = types.SimpleNamespace(SourceError=a.SourceError, Skips=a.CONNECTOR_HELPERS.Skips, iso=a.CONNECTOR_HELPERS.iso, credential=self.credential)
         self.me = copy.deepcopy(ME)
         self.hosts = {'api.intercom.io'}  # where the token is known
         self.pages = [{'type': 'conversation.list', 'conversations': [{'id': '1'}], 'total_count': 1,
@@ -218,6 +218,15 @@ class IntercomTests(unittest.TestCase):
                 after = self.store.checkpoint(ACCOUNT['id'])
                 self.assertNotIn('window', after)
                 self.assertNotIn('watermark', after)
+
+    def test_a_conversation_it_cannot_take_is_skipped_and_counted(self):
+        self.pages = [{'type': 'conversation.list', 'conversations': [{'id': '1'}, {'id': '2'}], 'total_count': 2,
+                       'pages': {'type': 'pages', 'page': 1, 'total_pages': 1}}]
+        self.details['2'] = {**conversation('2'), 'conversation_parts': None}  # synthetic: no parts
+        result = self.sync()
+        self.assertEqual((result['events'], result['skipped']), (1, 1))
+        self.assertEqual(len(self.rows()), 1)
+        self.assertEqual(self.store.checkpoint(ACCOUNT['id'])['skipped_rows'], {'intercom_missing_parts': 1})
 
     def test_malformed_answers_never_commit(self):
         for page, label in (({'conversations': {}, 'pages': {}}, 'intercom_invalid_page'),

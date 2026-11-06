@@ -353,6 +353,7 @@ def sync(store, config, account, helpers):
         listed, listed_by = source.past(start, now), 'past_meetings'
     seen = dict(state.get('seen') or {})
     count = read = 0
+    skipped = helpers.Skips('zoom_invalid_summary')
     for uuid, edited in listed[:MAX_MEETINGS]:
         key = source_id('summary', uuid)
         if key in seen and (not edited or seen[key] == edited):
@@ -365,12 +366,14 @@ def sync(store, config, account, helpers):
         if key in seen and seen[key] == found_edit:
             continue
         transcript = source.transcript(uuid) if config.get('zoom_transcripts', True) and not source.maton else None
-        events = events_for(account, found, transcript, helpers)
+        events = skipped.take(events_for, account, found, transcript, helpers)  # one it can't take is counted and passed
+        events = [] if events is skipped.SKIPPED else events
         seen[key] = found_edit or 'read'
         if len(seen) > SEEN_KEEP:
             seen = dict(list(seen.items())[-SEEN_KEEP:])
         store.commit_page(account['id'], {**state, 'seen': seen}, events)
         count += len(events)
+    skipped.check().note(state)
     more = len(listed) > MAX_MEETINGS
     # The checkpoint's mode says caught up or not (any other mode reads again in seconds), so how it lists stays apart
     state.update(seen=seen, mode='incremental', listed_by=listed_by, coverage_complete=not more,
@@ -378,7 +381,7 @@ def sync(store, config, account, helpers):
     if not more:
         state['since'] = now.isoformat()
     store.commit_page(account['id'], state, [])
-    return {'mode': 'incremental', 'events': count, 'read': read, 'more': more}
+    return {'mode': 'incremental', 'events': count, 'read': read, 'more': more, 'skipped': sum(skipped.values())}
 
 
 def check(config, account, helpers):

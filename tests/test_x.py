@@ -76,9 +76,13 @@ class XSource(unittest.TestCase):
         self.assertEqual(x.events(ACCOUNT, page(dms=[dm(from_me=True)]), H)[0]['metadata']['from'], 'You')
         plain = x.events(ACCOUNT, page([mention(reply_to=None)]), H)[0]
         self.assertEqual(plain['title'], 'Ada (@ada) mentioned @acme')
-        for bad in (page([mention(id='x')]), page([mention(at='soon')]), page(dms=[dm(from_me=None)])):
-            with self.assertRaises(a.SourceError):
-                x.events(ACCOUNT, bad, H)
+        for bad, reason in ((page([mention(id='x')]), 'x_invalid_mention'), (page([mention(at='soon')]), 'x_invalid_mention'),
+                            (page(dms=[dm(from_me=None)]), 'x_invalid_message')):
+            skipped = H.Skips('x_invalid_item')  # one odd row is skipped and counted, never failing the page
+            self.assertEqual(x.events(ACCOUNT, bad, H, skipped), [])
+            self.assertEqual(dict(skipped), {reason: 1})
+        with self.assertRaises(a.SourceError):  # a page of nothing but odd rows still fails
+            x.events(ACCOUNT, page([mention(id='x')] * 10), H)
 
     def test_sync_keeps_the_cursor_dedupes_and_sleeps_at_night(self):
         src = Source(page([mention(), mention()], [dm()]), page([mention()], [], {'mention_since_id': '1978000000000000001', 'dm_cursor': 'C2'}))

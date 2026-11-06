@@ -573,7 +573,8 @@ def gmail_message(config, credential, account, message_id, form='full'):
     webLink (Outlook on the web) for the card's Open link."""
     meta = call(config, credential, account, 'messages.get', {'id': message_id, '$select': MESSAGE_FIELDS})
     out = {'id': meta['id'], 'threadId': meta.get('conversationId'), 'labelIds': labels(meta, folders(config, credential, account)),
-           'internalDate': str(int(_stamp(meta.get('receivedDateTime')).timestamp() * 1000)), 'snippet': meta.get('bodyPreview') or '',
+           'internalDate': str(int(_stamp(meta.get('receivedDateTime') or meta.get('lastModifiedDateTime')).timestamp() * 1000)),
+           'snippet': meta.get('bodyPreview') or '',
            'webLink': web_link(meta.get('webLink'))}
     if form != 'minimal':
         out['payload'] = payload(call(config, credential, account, 'messages.mime', {'id': message_id}, raw=True))
@@ -732,6 +733,18 @@ def calendar_item(raw, owner):
     return item
 
 
+def calendar_items(values, owner):
+    """Each Graph event as calendar_item has it. One it can't read (a time missing or unreadable) comes as
+    {'id', 'unreadable'}, which sync_calendar counts and skips, instead of failing the page and every one after it."""
+    out = []
+    for raw in values:
+        try:
+            out.append(calendar_item(raw, owner))
+        except (KeyError, TypeError, ValueError, AttributeError):
+            out.append({'id': str(raw.get('id') or '') if isinstance(raw, dict) else '', 'unreadable': 'outlook_invalid_event'})
+    return out
+
+
 # What an occurrence of a recurring series takes from its series master when it has none of its own: Graph's calendar
 # view delta gives an occurrence only its id, type, times and seriesMasterId, and the series master with the rest.
 # An exception (one occurrence the organizer changed) carries all of its own and keeps them.
@@ -819,7 +832,7 @@ def calendar_call(config, credential, account, method, params):
             return _calendar_view(config, credential, account, owner, calendar_id, params)  # no delta for this one
         raise
     values = series_masters(config, credential, account, calendar_id, page.get('value', []))
-    out = {'items': [calendar_item(e, owner) for e in values]}
+    out = {'items': calendar_items(values, owner)}
     if page.get('@odata.nextLink'):
         out['nextPageToken'] = page['@odata.nextLink']
     if page.get('@odata.deltaLink'):
@@ -833,7 +846,7 @@ def _calendar_view(config, credential, account, owner, calendar_id, params):
         'id': calendar_id, 'startDateTime': params['timeMin'], 'endDateTime': params['timeMax'], '$top': 100}
     page = call(config, credential, account, 'calendars.view', query, headers={'Prefer': ['outlook.timezone="UTC"']})
     values = series_masters(config, credential, account, calendar_id, page.get('value', []))
-    out = {'items': [calendar_item(e, owner) for e in values]}
+    out = {'items': calendar_items(values, owner)}
     if page.get('@odata.nextLink'):
         out['nextPageToken'] = page['@odata.nextLink']
     else:
