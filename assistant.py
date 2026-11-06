@@ -13300,6 +13300,7 @@ def active_work(db):
         except sqlite3.OperationalError:  # a table this install doesn't have yet
             rows = []
         found[name] = [dict(zip(('id', 'suggestion_id', 'status'), tuple(r))) for r in rows]
+    found['agent_jobs'] = agent_jobs.working(db, found['agent_jobs'])  # nor jobs whose worker is gone
     return found
 
 

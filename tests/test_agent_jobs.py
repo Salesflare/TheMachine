@@ -1,6 +1,7 @@
 """Hand to Claude Code / Hand to Codex (agent_jobs.py): with stand-in `claude` and `codex` commands that do what the
 real ones do (a background session with `claude agents --json`, the Codex app server's JSON-RPC, and the plain
 stream-json / exec --json runs they fall back to). No real CLI, no network."""
+import datetime as dt
 import json
 import os
 from pathlib import Path
@@ -692,6 +693,48 @@ class AgentJobs(unittest.TestCase):
         self.assertEqual(jobs.get(job['id'])['summary'], 'Corrected')
         self.assertEqual(self.revised, [(self.sid, 'First draft'), (self.sid, 'Corrected draft')])
         self.assertEqual(agent_remote.fetch(jobs), 0)
+
+    def test_a_worker_that_dies_after_its_turn_fails_the_job_and_keeps_its_work(self):
+        # Reading the changes back raised after the turn ended: the job stayed 'running' with no thread behind it.
+        jobs = self.jobs()
+        broken = UnicodeDecodeError('utf-8', b'\xa1', 0, 1, 'invalid start byte')
+        with patch.object(agent_jobs.AgentJobs, 'changes', side_effect=broken):
+            job = wait(jobs, jobs.start(self.sid, 'claude', 'Summarize the card into summary.md')['id'])
+        self.assertEqual(job['status'], 'failed', job)
+        self.assertEqual(job['error'], agent_jobs.LOST)
+        work = jobs.work(job['id'])
+        self.assertTrue((work / 'summary.md').is_file())  # the work stays, for Try again
+        self.assertFalse((jobs.folder(job['id']) / agent_jobs.HEARTBEAT_FILE).exists())
+        self.assertEqual(wait(jobs, jobs.retry(job['id'])['id'])['status'], 'result')
+
+    def test_busy_leaves_out_a_running_job_whose_worker_is_gone(self):
+        jobs = self.jobs()
+        with patch.object(jobs, 'launch', lambda *a, **k: None):
+            job = jobs.start(self.sid, 'claude', 'Summarize')
+        folder = jobs.folder(job['id'])
+        old = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(seconds=agent_jobs.STALE + 60)).isoformat()
+        with jobs.connect() as db:
+            db.execute("UPDATE agent_jobs SET status='running',updated_at=? WHERE id=?", (old, job['id']))
+
+        def busy():
+            with self.store.connect() as db:
+                return [r['id'] for r in a.active_work(db)['agent_jobs']]
+        stale = time.time() - agent_jobs.STALE - 60
+        for found in folder.glob('turn-*.jsonl'):
+            os.utime(found, (stale, stale))
+        self.assertEqual(busy(), [])  # no heartbeat, transcript line or update for STALE: nothing runs it
+        with agent_jobs.Heartbeat(folder):
+            self.assertEqual(busy(), [job['id']])  # its worker beats
+        self.assertEqual(busy(), [])
+        (folder / agent_jobs.SERVER_FILE).write_text(json.dumps({'unit': 'the-machine-job-x.service', 'port': 1, 'token': 'a' * 32}))
+        with patch.object(agent_jobs, 'unit_active', lambda unit: True):
+            self.assertEqual(busy(), [job['id']])  # its detached Codex app server runs on
+        with jobs.connect() as db:
+            db.execute("UPDATE agent_jobs SET updated_at=? WHERE id=?", (agent_jobs.now(), job['id']))
+        self.assertEqual(busy(), [job['id']])  # updated just now
+        with jobs.connect() as db:
+            db.execute("UPDATE agent_jobs SET status='waiting',place='device',updated_at=? WHERE id=?", (old, job['id']))
+        self.assertEqual(busy(), [job['id']])  # it runs elsewhere: a restart here doesn't cut it off
 
     def test_a_previous_turn_cannot_complete_or_fail_the_retry(self):
         jobs = self.jobs()
