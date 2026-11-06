@@ -23,7 +23,7 @@ Ein gemeinsam gemachter Plan ist ein Versprechen, markiert mit „Mit“ und dem
 
 ## Agenda, Woche oder Monat
 
-- **Agenda** listet jeden Tag auf. Scroll nach unten für spätere Tage, nach oben (oder **Frühere Tage anzeigen**) für frühere.
+- **Agenda** listet jeden Tag auf. Scroll nach unten für spätere Tage, nach oben (oder **Frühere Tage anzeigen**) für frühere. Sie reicht bis eine Woche vor dem Verbinden deines Kalenders zurück; eine Zeile oben sagt, ab welchem Tag.
 - **Woche** zeigt ein Raster, Montag bis Sonntag. Auf dem Handy zeigt sie drei Tage.
 - **Monat** zeigt den ganzen Monat. Ein Computer zeigt bis zu drei Einträge pro Tag; ein Handy zeigt Punkte, und ein Tippen listet diesen Tag auf.
 

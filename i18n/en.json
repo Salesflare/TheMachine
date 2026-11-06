@@ -5378,6 +5378,8 @@
  "Your browser’s speech recognition didn’t answer. Try again.": "Your browser’s speech recognition didn’t answer. Try again.",
  "Your calendar": "Your calendar",
  "Your calendar called. I took notes.": "Your calendar called. I took notes.",
+ "Your calendar starts {}, a week before you joined.": "Your calendar starts {}, a week before you joined.",
+ "Your calendar starts {}.": "Your calendar starts {}.",
  "Your company’s domains": "Your company’s domains",
  "Your connections": "Your connections",
  "Your contacts with a Machine": "Your contacts with a Machine",

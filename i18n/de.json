@@ -5378,6 +5378,8 @@
  "Your browser’s speech recognition didn’t answer. Try again.": "Die Spracherkennung deines Browsers hat nicht geantwortet. Versuch es noch mal.",
  "Your calendar": "Dein Kalender",
  "Your calendar called. I took notes.": "Dein Kalender hat angerufen. Ich hab mitgeschrieben.",
+ "Your calendar starts {}, a week before you joined.": "Dein Kalender beginnt am {}, eine Woche bevor du dazugekommen bist.",
+ "Your calendar starts {}.": "Dein Kalender beginnt am {}.",
  "Your company’s domains": "Domains deiner Firma",
  "Your connections": "Deine Verbindungen",
  "Your contacts with a Machine": "Deine Kontakte mit einer Machine",

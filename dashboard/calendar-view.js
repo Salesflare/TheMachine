@@ -6,7 +6,8 @@
 // and are kept for a minute. Today, ‹ › and the view switch stay on top; t, ← → (or k j), a and w do the same. The
 // address holds the view and its week (#calendar?view=week&date=2026-10-26), so back and forward work.
 const CAL_BACK=26,CAL_AHEAD=52;  // how many weeks the agenda runs back and ahead of this one
-let calCals=[],calWeeks=new Map(),calMeetings=null,calReturn=false,calRouting=false,calBusy=null,calMoreFailed={},calUp=false,calLastY=0;
+// calStarts: the first day there are meetings for ({day, joined}, api/calendar): a calendar's first read went a week back
+let calStarts=null,calCals=[],calWeeks=new Map(),calMeetings=null,calReturn=false,calRouting=false,calBusy=null,calMoreFailed={},calUp=false,calLastY=0;
 let calMode=['week','month'].includes(sideStore.get('cal-mode'))?sideStore.get('cal-mode'):'agenda';
 const calMid=d=>{const x=new Date(d);x.setHours(0,0,0,0);return x};
 const calAdd=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);x.setHours(0,0,0,0);return x};  // by calendar days, also over a clock change
@@ -24,9 +25,9 @@ function calFetchWeek(mon,force){const k=localDay(mon),w=calWeeks.get(k);if(w?.l
  if(w&&!w.failed&&!force&&Date.now()-w.at<60000)return Promise.resolve();
  const q='from='+encodeURIComponent(mon.toISOString())+'&to='+encodeURIComponent(calAdd(mon,7).toISOString());
  // Each week read is kept on the device too (encrypted, like the cards), so the Calendar opens offline with what it had
- const loading=request('api/calendar?'+q).then(r=>{if(Array.isArray(r?.calendars))calCals=r.calendars;calWeeks.set(k,{meetings:Array.isArray(r?.meetings)?r.meetings:[],failed:false,at:Date.now()});localCache.put('cal:'+k,r)})
+ const loading=request('api/calendar?'+q).then(r=>{if(Array.isArray(r?.calendars))calCals=r.calendars;if(r&&'starts' in r)calStarts=r.starts?.day?r.starts:null;calWeeks.set(k,{meetings:Array.isArray(r?.meetings)?r.meetings:[],failed:false,at:Date.now()});localCache.put('cal:'+k,r)})
   .catch(async e=>{if(e?.offline){const mine=w?.meetings&&!w.failed,hit=mine?null:await localCache.read('cal:'+k);
-   if(mine||hit){if(hit){if(Array.isArray(hit.value?.calendars)&&!calCals?.length)calCals=hit.value.calendars;staleMark(hit.at)}
+   if(mine||hit){if(hit){if(Array.isArray(hit.value?.calendars)&&!calCals?.length)calCals=hit.value.calendars;if(hit.value?.starts?.day&&!calStarts)calStarts=hit.value.starts;staleMark(hit.at)}
     calWeeks.set(k,{meetings:mine?w.meetings:Array.isArray(hit.value?.meetings)?hit.value.meetings:[],failed:false,at:0});return}}
    calWeeks.set(k,{meetings:w?.meetings||[],failed:true,at:Date.now()})}).finally(calUnion);
  calWeeks.set(k,{meetings:w?.meetings||null,failed:!!w?.failed,at:w?.at||0,loading});return loading}
@@ -107,8 +108,12 @@ function calPush(replace){const h=calHash();if(location.hash===h)return;history[
 const calName=k=>{const t=localDay(new Date());return k===t?'Today':k===localDay(calDay(1))?'Tomorrow':k===localDay(calDay(-1))?'Yesterday':calOf(k).toLocaleDateString(DL,{weekday:'long'})};
 // A manual one (under "A clear week") loads only on a tap: loading by itself there found nothing again and again, and
 // the button flashed between Loading and Later days
-const calMoreRow=(dir,manual)=>{const end=dir==='up'?calFrom<=calAdd(calMonday(new Date()),-7*CAL_BACK):calTo>=calAdd(calMonday(new Date()),7*CAL_AHEAD);if(end)return '';
+const calMoreRow=(dir,manual)=>{const end=dir==='up'?calFrom<=calAdd(calMonday(new Date()),-7*CAL_BACK)||calBefore(calFrom):calTo>=calAdd(calMonday(new Date()),7*CAL_AHEAD);if(end)return '';
  return `<div class="cal-more" data-cal-more="${dir}"${manual?' data-cal-manual':''}><button type="button" class="quiet">${calMoreFailed[dir]?'Couldn’t load. Try again':dir==='up'?'Show earlier days':'Later days'}</button></div>`};
+// The edge of what came in: before calStarts.day no calendar was read, so its empty days say nothing. One muted line
+// says where it starts, at the top of the agenda once it gets there, and over a week or month that holds days before it.
+const calBefore=d=>!!calStarts&&localDay(d)<=calStarts.day;
+const calStartLine=()=>{const d=calDate(calStarts.day);return `<p class="cal-note cal-start">${esc(calStarts.joined?t('Your calendar starts {}, a week before you joined.',d):t('Your calendar starts {}.',d))}</p>`};
 // The sticky header's bottom edge: rows under it are out of sight
 const calEdge=()=>{const h=$('#page-head');return h&&!h.hidden?Math.max(0,h.getBoundingClientRect().bottom):0};
 function calAnchor(box){const edge=calEdge();for(const el of box.querySelectorAll('.cal-block[data-day]')){const r=el.getBoundingClientRect();if(r.bottom>edge)return {day:el.dataset.day,top:r.top}}return null}
@@ -162,13 +167,14 @@ function calRender(){const box=$('#calendar-view');if(!box||!state)return;const 
  // No calendar yet: a button that connects one (Connections, + Add, at Google or Outlook Calendar, by the mail connected)
  const connect=cls=>`<button type="button" class="${cls}" data-connect-open="${(state.connectors||[]).some(c=>c.service==='outlook')?'outlook_calendar':'calendar'}">${esc(t('Connect your calendar'))}</button>`;
  const note=failed?'<p class="cal-note">Meetings couldn’t load. To-dos and promises are here.</p>':!cals?`<p class="cal-note cal-connect"><span>No calendar connected, so no meetings yet.</span>${connect('ghost')}</p>`:'';
- const lateBlock=late.length?`<section class="cal-block late" aria-label="Overdue"><h3 class="cal-day"><span>Overdue</span><span class="count">${late.length}</span></h3>${late.map(calRow).join('')}</section>`:'';
+ const edge=calBefore(from)&&!failed&&cals,lateBlock=late.length?`<section class="cal-block late" aria-label="Overdue"><h3 class="cal-day"><span>Overdue</span><span class="count">${late.length}</span></h3>${late.map(calRow).join('')}</section>`:'';
  let html='';
- if(calMode==='month')html=lateBlock+calMonthGrid(days,byDay,today);
- else if(!list)html=lateBlock+calTimeGrid(days,byDay,today);
+ if(calMode==='month')html=(edge?calStartLine():'')+lateBlock+calMonthGrid(days,byDay,today);
+ else if(!list)html=(edge?calStartLine():'')+lateBlock+calTimeGrid(days,byDay,today);
  else if(!items.length&&!cals&&!failed)html=`<div class="all-clear cal-clear"><img src="brand/avatar.png" alt="" width="64" height="64"><div><strong>No calendar yet</strong><span>Connect one to see your meetings here, with due to-dos and promises.</span></div>${connect('primary')}</div>`;
- else if(!items.length&&calMeetings&&!failed)html=`<div class="all-clear cal-clear"><img src="brand/avatar.png" alt="" width="64" height="64"><div><strong>A clear week</strong><span>Meetings, due to-dos and promises show here.</span></div></div>`+calMoreRow('down',true);
- else html=calMoreRow('up')+days.map((k,i)=>(i&&calOf(k).getDay()===1?`<p class="cal-wk">${esc(calSpan(calOf(k)))}</p>`:'')+calDayBlock(k,byDay(k),lateBlock,today)).join('')+calMoreRow('down');
+ else if(!items.length&&calMeetings&&!failed&&!edge)html=`<div class="all-clear cal-clear"><img src="brand/avatar.png" alt="" width="64" height="64"><div><strong>A clear week</strong><span>Meetings, due to-dos and promises show here.</span></div></div>`+calMoreRow('down',true);
+ else{const shown=edge?days.filter(k=>k>=calStarts.day||byDay(k).length):days;  // the days before it only for a to-do or promise dated then
+  html=(edge?calStartLine():calMoreRow('up'))+shown.map((k,i)=>(i&&calOf(k).getDay()===1?`<p class="cal-wk">${esc(calSpan(calOf(k)))}</p>`:'')+calDayBlock(k,byDay(k),lateBlock,today)).join('')+calMoreRow('down')}
  if(!(list&&!items.length&&!cals))html+=note;if(!calMeetings&&!items.length&&cals)html='<p class="cal-note">Loading…</p>';
  // Earlier days coming in above, or a week's meetings arriving, never move what is on screen; the time grid keeps its hour
  const keep=list&&!$('#calendar').hidden?calAnchor(box):null,pane=box.querySelector('.cal-tg-scroll'),hash=calHash(),y=pane&&calGridShown===hash?pane.scrollTop:null;
