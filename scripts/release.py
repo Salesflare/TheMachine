@@ -136,14 +136,83 @@ def undo_cut_off():
         git('cherry-pick', '--abort', check=False)
 
 
+# Where an update notes each file the owner added that it moved aside (keep_local_files): one tab-separated line per
+# file (when, release commit, path, where it is now), in the checkout's git folder.
+KEPT = 'machine-kept-local'
+
+
+def keep_local_files(sha):
+    """Files the owner added here (untracked, ignored ones too) at a path where the release brings a file of its own:
+    git refuses to move over one (the Machine would stay on an old version) and overwrites an ignored one without a
+    word. Each is moved aside next to itself as <name>.local-<date> and noted in KEPT, before anything moves.
+    [(path, backup)], or OSError when one can't be moved (the ones already moved are put back)."""
+    tracked = set(git('ls-files', '-z').stdout.split('\0'))
+    taken = set(git('ls-tree', '-r', '-z', '--name-only', sha).stdout.split('\0')) - {''}
+    incoming, in_way = sorted(taken - tracked), set()
+    for path in incoming:
+        parts = path.split('/')
+        for depth in range(1, len(parts) + 1):
+            here = '/'.join(parts[:depth])
+            if here in tracked or not os.path.lexists(ROOT / here):
+                continue
+            last, is_dir = depth == len(parts), (ROOT / here).is_dir() and not (ROOT / here).is_symlink()
+            if (not last and not is_dir) or (last and not (is_dir and git('ls-files', '-z', '--', here).stdout)):
+                in_way.add(here)  # a file where the release has a folder, or anything where it has a file
+                break
+    in_way = sorted(p for p in in_way if not any(p.startswith(q + '/') for q in in_way))
+    day, kept = dt.date.today().strftime('%Y%m%d'), []
+    log = ROOT / git('rev-parse', '--git-path', KEPT).stdout.strip()
+    try:
+        for path in in_way:
+            backup, n = f'{path}.local-{day}', 1
+            while os.path.lexists(ROOT / backup) or backup in taken:
+                n += 1
+                backup = f'{path}.local-{day}-{n}'
+            os.rename(ROOT / path, ROOT / backup)
+            kept.append((path, backup))
+            with open(log, 'a', encoding='utf-8') as out:
+                out.write(f'{dt.datetime.now().isoformat(timespec="seconds")}\t{sha}\t{path}\t{backup}\n')
+    except OSError:
+        put_back(kept)
+        raise
+    return kept
+
+
+def put_back(kept):
+    """Back where they were, when the checkout didn't move after all."""
+    for path, backup in reversed(kept):
+        try:
+            if not os.path.lexists(ROOT / path):
+                os.rename(ROOT / backup, ROOT / path)
+        except OSError:
+            pass  # it stays at its backup name, noted in KEPT
+
+
 def move_to(sha, ref='main'):
+    """Onto a verified release (moved_to below), with files the owner added in its way kept aside first
+    (keep_local_files): its result, with .kept: [(path, backup)]. When the checkout doesn't move, they are put back."""
+    undo_cut_off()
+    try:
+        kept = keep_local_files(sha)
+    except OSError as error:
+        result = subprocess.CompletedProcess([], 1, '', f'a file added here is in the way and could not be moved aside: {error}')
+        result.parked, result.kept = [], []
+        return result
+    result = moved_to(sha, ref)
+    if result.returncode:
+        put_back(kept)
+        kept = []
+    result.kept = kept
+    return result
+
+
+def moved_to(sha, ref='main'):
     """Onto a verified release the way hosted Machines move: a fast-forward; else, with no commits of its own (all are
     on the branch or in a release), straight there; else its own commits (merged self-fixes) replayed on top, one at a
     time. Uncommitted changes are kept. Each own commit that doesn't apply, and changes that don't fit back on top, are
     set aside under PARKED and the checkout moves to the release anyway: a Machine never stays behind on an old version.
     The git run that decided it, with .parked: what was set aside (own commits oldest first, then the changes)."""
     run = lambda *args: git(*args, check=False)
-    undo_cut_off()
     if run('merge-base', '--is-ancestor', 'HEAD', sha).returncode == 0:
         result, own = run('merge', '--ff-only', '--quiet', sha), []
     else:
@@ -187,10 +256,14 @@ def moved(tag, result):
     if result.returncode:
         raise SystemExit(f'{tag} is verified, but the checkout could not move to it: nothing changed. '
                          + (result.stderr or result.stdout).strip()[-300:])
-    if not result.parked:
-        return ''
-    return (f' {len(result.parked)} of this Machine\'s own changes did not apply on it, so they were set aside '
-            f'({PARKED}); each comes back to the owner as a to-do.')
+    note = ''
+    if getattr(result, 'kept', None):
+        note += (f' {len(result.kept)} file(s) added on this Machine were where the release has files of its own, so '
+                 'they were kept under a new name: ' + ', '.join(f'{p} is now {b}' for p, b in result.kept) + '.')
+    if result.parked:
+        note += (f' {len(result.parked)} of this Machine\'s own changes did not apply on it, so they were set aside '
+                 f'({PARKED}); each comes back to the owner as a to-do.')
+    return note
 
 
 def first_install():

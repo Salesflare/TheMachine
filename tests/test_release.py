@@ -220,6 +220,66 @@ class Releases(unittest.TestCase):
         [changes] = kept.values()
         self.assertEqual(run('git', 'show', f'{changes}:app.py', cwd=self.app), 'edited here')
 
+    def release_adds(self, files):
+        for name, text in files.items():
+            (self.origin / name).parent.mkdir(parents=True, exist_ok=True)
+            (self.origin / name).write_text(text)
+        run('git', 'add', '-f', '.', cwd=self.origin)
+        run('git', *WHO, 'commit', '-qm', 'adds ' + ', '.join(files), cwd=self.origin)
+        self.tag('release-20261021-1200')
+        return run('git', 'rev-parse', 'HEAD', cwd=self.origin)
+
+    def backup(self, name):
+        return f'{name}.local-{release.dt.date.today():%Y%m%d}'
+
+    def test_a_file_added_here_where_the_release_adds_one_is_kept_aside_and_the_update_goes_on(self):
+        for ignored in (False, True):  # git refused to move over one; an ignored one it overwrote without a word
+            with self.subTest(ignored=ignored):
+                if ignored:
+                    self.setUp()  # a fresh Machine
+                    (self.app / '.git' / 'info' / 'exclude').write_text('notes.md\n')
+                (self.app / 'notes.md').write_text('the owner\'s own notes')
+                sha = self.release_adds({'notes.md': 'from the release'})
+                with mock.patch('builtins.print') as said:
+                    release.main(['update'])
+                self.assertEqual(run('git', 'rev-parse', 'HEAD', cwd=self.app), sha)  # never stuck on the old version
+                self.assertEqual((self.app / 'notes.md').read_text(), 'from the release')
+                self.assertEqual((self.app / self.backup('notes.md')).read_text(), 'the owner\'s own notes')
+                self.assertIn(f'notes.md is now {self.backup("notes.md")}', said.call_args[0][0])  # told once
+                [line] = (self.app / '.git' / release.KEPT).read_text().splitlines()
+                self.assertEqual(line.split('\t')[1:], [sha, 'notes.md', self.backup('notes.md')])
+                with mock.patch('builtins.print') as said:
+                    release.main(['update'])  # nothing new: nothing more moved, nothing said about it
+                self.assertNotIn('is now', said.call_args[0][0])
+                self.assertEqual(len((self.app / '.git' / release.KEPT).read_text().splitlines()), 1)
+
+    def test_a_file_where_the_release_adds_a_folder_and_a_second_backup_on_the_same_day(self):
+        (self.app / 'notes').write_text('a file of the owner\'s')
+        (self.app / self.backup('notes')).write_text('an earlier backup')
+        (self.app / 'tools').mkdir()
+        (self.app / 'tools' / 'mine.sh').write_text('stays')  # a folder of the owner's beside the release's files
+        self.own_commit('fix.py', 'a merged self-fix')
+        (self.app / 'app.py').write_text('edited here')  # a changed tracked file that fits: kept in place
+        sha = self.release_adds({'notes/one.md': 'release', 'tools/run.sh': 'release'})
+        release.main(['update'])
+        self.assertEqual(run('git', 'rev-parse', 'HEAD^', cwd=self.app), sha)
+        self.assertEqual((self.app / 'notes' / 'one.md').read_text(), 'release')
+        self.assertEqual((self.app / self.backup('notes')).read_text(), 'an earlier backup')
+        self.assertEqual((self.app / (self.backup('notes') + '-2')).read_text(), 'a file of the owner\'s')
+        self.assertEqual((self.app / 'tools' / 'mine.sh').read_text(), 'stays')
+        self.assertEqual((self.app / 'app.py').read_text(), 'edited here')
+        self.assertEqual((self.app / 'fix.py').read_text(), 'a merged self-fix')
+        self.assertEqual(self.parked(), [])
+
+    def test_a_file_kept_aside_goes_back_when_the_checkout_does_not_move(self):
+        (self.app / 'notes.md').write_text('the owner\'s own notes')
+        self.release_adds({'notes.md': 'from the release'})
+        stuck = subprocess.CompletedProcess([], 1, '', 'could not move')
+        with mock.patch.object(release, 'moved_to', return_value=stuck), self.assertRaisesRegex(SystemExit, 'nothing changed'):
+            release.main(['update'])
+        self.assertEqual((self.app / 'notes.md').read_text(), 'the owner\'s own notes')
+        self.assertFalse((self.app / self.backup('notes.md')).exists())
+
     def test_the_service_reads_the_same_folder(self):
         import parked_fixes
         self.assertEqual(parked_fixes.PARKED, release.PARKED)
