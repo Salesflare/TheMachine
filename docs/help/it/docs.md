@@ -31,7 +31,7 @@ Una connessione documenti può solo fare cose: spegni **Porta segnali** in **Det
 La tua Machine può scrivere un nuovo documento, o modificare un documento di cui parla una delle tue attività:
 
 - Un nuovo documento lo crea subito, quando l’attività o una skill dice di crearne uno: un documento privato nel tuo Google Drive o OneDrive, non condiviso con nessuno. L’attività lo mostra con **Apri il documento**. Condividerlo, o mandarne il link a qualcuno, aspetta il tuo OK.
-- Una modifica a un documento esistente la prepara soltanto, ogni paragrafo prima e dopo. Tocca **Rivedi le modifiche**, leggi, poi **Salva**.
+- Una modifica a un documento esistente la prepara soltanto, ogni paragrafo prima e dopo. Tocca **Rivedi le modifiche**, leggi, poi **Salva**. Una modifica che chiedi nella chat dell’attività la fa subito.
 - Scrive una modifica una sola volta, e solo nel documento come l’hai visto. Se qualcuno l’ha cambiato nel frattempo, non viene scritto nulla e l’attività lo dice. Chiedi una nuova bozza.
 - In Talk legge ad alta voce tutta la modifica e aspetta un sì chiaro.
 - Se Google o Microsoft rifiuta un nuovo documento, l’attività dice cosa è stato rifiutato e mostra **Rivedi e crea** per riprovare.

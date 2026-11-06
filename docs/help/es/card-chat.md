@@ -19,7 +19,7 @@ Cada correo muestra solo lo nuevo. Los mensajes anteriores que cita quedan plega
 - Sobre el hilo, las personas o el contexto: "¿Qué pidieron la última vez?"
 - Para cambiar el borrador: "Hazlo más corto" o "Menciona la nueva fecha".
 
-Una pregunta recibe una respuesta y deja el borrador como está. Las aprobaciones siguen en los botones de la tarea: el chat nunca envía un borrador en la misma respuesta que lo escribió.
+Una pregunta recibe una respuesta y deja el borrador como está. Las aprobaciones siguen en los botones de la tarea: el chat nunca envía un borrador en la misma respuesta que lo escribió. Lo que pides en el chat y no llega a nadie, como ordenar un documento, lo hace enseguida, sin pedirte que lo confirmes. Todo lo que vaya más allá de lo que pediste sigue esperando tu OK.
 
 En un ordenador, Enter o Ctrl+Enter (Cmd+Enter en un Mac) envía, y Mayús+Enter empieza una línea nueva. En un teléfono, usa el botón de enviar.
 

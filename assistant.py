@@ -10573,7 +10573,8 @@ def doc_write_prompt(config):
     return (f"\n- Where a doc can go: {names}. A new doc or an edit to one is a next action, never a write of yours. A new doc is made "
             "as soon as you save the result: private, in the owner's own Drive or OneDrive, shared with nobody, and the to-do shows its link. "
             "So when the task or a skill says to make a doc, make it this way; don't ask first. An edit to an existing doc waits for the owner's OK, "
-            "and so does sharing a doc (a step after it). The shapes: {kind:'doc_write',op:'create',account_id,title,body} (body plain text, '# ' to '### ' lines are headings; the title is the doc's name and "
+            "unless their message in this turn asks for that change: then save it with do_now:true and it is made now. Sharing a doc "
+            "always waits for their OK (a step after it). The shapes: {kind:'doc_write',op:'create',account_id,title,body} (body plain text, '# ' to '### ' lines are headings; the title is the doc's name and "
             "the to-do shows it, so the body doesn't start with it again) or "
             "{kind:'doc_write',op:'edit',file_id:<metadata.file_id of this task's doc event>,changes:[{find,replace} | {after,insert} | {append}]}. "
             "A new doc goes only to a place in this to-do's own area (Work at that company, or Personal, as its accounts are), and to the one with "
@@ -11841,6 +11842,41 @@ def unseen_draft(db, suggestion_id, revision, job_id=None):
     return None
 
 
+# A final step that goes to someone (a message, an invite, sharing) is a send: the owner sees and approves it on the
+# card. Every other step of these kinds can run on the owner's own word (do_now).
+SENDING_FINISH = ('Send', 'Reply', 'Post', 'Invite', 'Share')
+
+
+def doable_now(action):
+    """Whether a next action can run on the owner's own word in the chat (do_now), without a Confirm: an edit to an
+    existing doc, or a final step that reaches nobody (no message, no files, not a send, an invite or sharing)."""
+    if action.get('kind') == doc_writes.KIND:
+        return action.get('op') == 'edit'
+    return (action.get('kind') == 'finish' and not any(action.get(k) for k in ('message', 'to_name', 'attachments'))
+            and (str(action.get('label') or '').split() or [''])[0] not in SENDING_FINISH)
+
+
+def owner_turn(db, suggestion_id, job_id):
+    """The owner's own message (card chat or Change note) that started this preparation: its decision row
+    (feedback, created_at), or None for a run nobody asked for in words (prepared ahead, a bare Do it, a review)."""
+    job = db.execute('SELECT decision_id FROM preparations WHERE suggestion_id=? AND job_id=?', (suggestion_id, job_id)).fetchone() if job_id else None
+    turn = db.execute("SELECT feedback,created_at FROM decisions WHERE id=? AND suggestion_id=? AND source IN ('dashboard','telegram') AND choice='other'",
+                      (job['decision_id'], suggestion_id)).fetchone() if job else None
+    return turn if turn and str(turn['feedback'] or '').strip() else None
+
+
+def ask_do_now(turn, steps):
+    """The question a chat turn answers before its step waits for a Confirm: the owner's message and the step side by
+    side. Whether the message asked for exactly this step is the model's judgment, never a word list."""
+    said = ' '.join(str(turn['feedback']).split())[:600]
+    listed = '; '.join(next_actions.label(a) + ': ' + ' '.join(next_actions.preview(a).split())[:400] for a in steps)
+    return ('Decide first: does the owner’s message ask for exactly this step? Their message: <<<' + said + '>>>. The step you saved '
+            'for their Confirm: ' + listed + '. If their message asks for it (a fix, change or cleanup they asked for, even in passing '
+            'or as a complaint that it is not done yet), their message is the OK: save again with do_now:true and it runs now, without '
+            'a Confirm; the body says it is being done. If the step goes further than they asked (more changes, other people, sharing '
+            'or permissions, publishing) or they only asked a question, save again with do_now:false and it waits for their Confirm.')
+
+
 AGENT_WORK_NOTE = ('Work handed to Claude Code or Codex on this card, oldest first. It is part of the card\'s state, like a sent '
                    'message or the owner\'s taps: what it reports done is done, even where earlier turns of this session said it was still to do. '
                    'Build on it: never offer or describe work it already did as the next step; when it is still running, say so. '
@@ -11892,7 +11928,7 @@ def chat_prompt(job, config=None):
     """The next turn of a card's chat, in the session that already has the card's full context: a short message, so
     a long chat doesn't resend that context with every reply. Only the job's own handles change from turn to turn."""
     j, sid = job['job_id'], job['suggestion_id']
-    return f'''The owner wrote to you in the chat of suggestion {sid}. Their message is the latest Change note (latest_feedback, source dashboard), and it is their authorization as before. {i18n.prompt_rule()} {owner_time_line()} This is a preparation task: answer it, or do what it asks, under the preparation rules and the instructions earlier in this session (if they are no longer in context, read tools/personal-assistant/PREPARATION.md). A question about the thread, the people or the context is answered from the evidence (events, preparation_history, memory), and the card's current draft and next_actions stay as they are unless the message asks to change them. When you change a draft, the body says concretely what changed. Use send_now only when this message approves sending a draft they already saw on the card, unchanged; a draft you write or change now is saved without it, for them to read and Send. Preparation job ID: {j}.
+    return f'''The owner wrote to you in the chat of suggestion {sid}. Their message is the latest Change note (latest_feedback, source dashboard), and it is their authorization as before. {i18n.prompt_rule()} {owner_time_line()} This is a preparation task: answer it, or do what it asks, under the preparation rules and the instructions earlier in this session (if they are no longer in context, read tools/personal-assistant/PREPARATION.md). A question about the thread, the people or the context is answered from the evidence (events, preparation_history, memory), and the card's current draft and next_actions stay as they are unless the message asks to change them. When you change a draft, the body says concretely what changed. Use send_now only when this message approves sending a draft they already saw on the card, unchanged; a draft you write or change now is saved without it, for them to read and Send. When this message asks for a step that reaches nobody (an edit to a doc, a cleanup, a change in an app), their message is the OK: save that step with do_now:true and it runs now, never as a Confirm for something they asked; only what goes further than they asked (other people, sharing or permissions, publishing) waits for their Confirm. Preparation job ID: {j}.
 - Browser lease owner: assistant-{j[:8]} (python3 {browser_lease_script(config)} claim --owner assistant-{j[:8]} --minutes 30 --wait 10).
 - Attachments folder: {WORKSPACE}/data/assistant-attachments/{j}/{calendar_prompt(config)}{doc_write_prompt(config)}{github_route.prompt(config or {})}{meeting_notes_prompt(config)}
 - Save with assistant_signals prepare args suggestion_id={sid}, job_id={j}, reply=<your answer to their message, short; the chat shows it>, body=<the card's status after this: where the task stands and what is ready, about the task, never a reply to them; leave it out when only answered and the status didn't change>, next_actions=[...] (the current ones again when you only answered), outcome and note_kind as the earlier instructions say (outcome answered when you only answered and no draft is waiting); or record a blocker with assistant_signals preparation_blocked args suggestion_id={sid}, job_id={j}, reason, details, and questions when only the owner can unblock it. When they say they talk to this person on another channel (WhatsApp, Telegram), switch the draft to it as PREPARATION.md says; a limit of The Machine is never a question for them. When they say the person doesn't know about it yet, the message first says what it is about.
@@ -14594,7 +14630,7 @@ Follow the preparation rules above (tools/personal-assistant/PREPARATION.md; rea
 For this job:
 - Browser lease owner: assistant-{j[:8]} (python3 {browser_lease_script(config)} claim --owner assistant-{j[:8]} --minutes 30 --wait 10).
 - Attachments folder: {WORKSPACE}/data/assistant-attachments/{j}/{calendar_prompt(config)}{doc_write_prompt(config)}{github_route.prompt(config or {})}{meeting_notes_prompt(config)}
-- Save the result with assistant_signals prepare args suggestion_id={sid}, job_id={j}, body=<short result>, next_actions=[...], outcome, based_on=<the event id of someone else's message the draft or decision follows, such as a teammate's suggestion in Slack or another thread, never the to-do's own source; the to-do links to it> when there is one, and send_now:true only when the owner's latest message approves sending a draft they already saw on the card, unchanged (the service refuses any other). A draft you write or change in this turn is saved without send_now and shown to them: they read it and tap Send (outcome:'needs_you', needs:'check the draft and send it'), also when their note only says what to do ("email Sam now").
+- Save the result with assistant_signals prepare args suggestion_id={sid}, job_id={j}, body=<short result>, next_actions=[...], outcome, based_on=<the event id of someone else's message the draft or decision follows, such as a teammate's suggestion in Slack or another thread, never the to-do's own source; the to-do links to it> when there is one, and send_now:true only when the owner's latest message approves sending a draft they already saw on the card, unchanged (the service refuses any other). A draft you write or change in this turn is saved without send_now and shown to them: they read it and tap Send (outcome:'needs_you', needs:'check the draft and send it'), also when their note only says what to do ("email Sam now"). A step that reaches nobody (a doc edit, a final step with no message, invite or sharing) that the owner's latest message asks for gets do_now:true: it runs now on their word, no Confirm; anything beyond what they asked still waits.
 - outcome:'done' only when the task itself is complete and nothing is left for the owner but to check it; outcome:'answered' when you only answered their question, explained or planned, and the task itself is still to do (the card then offers Do it again); outcome:'already_done' with no next_actions when it turns out to be done already or no longer needed, and nothing is left for anyone; outcome:'waiting' with waiting_on:<the step and who> while a step is still open on someone else's side (a review, merge, deploy, a reply); outcome:'your_step' with step:'submit' (or pay, book, sign, confirm, order, apply) when everything is ready but that final click is left for them, e.g. a form you filled in and didn't submit (the card says so and links to the page in this Machine's browser by itself; no link of your own needed); outcome:'needs_you' with needs:<the one thing they have to do, in a few words> otherwise (approve the send, sign in, choose); when that is a question for them, write needs as the question itself, ending in "?" (the card then leads with Answer). The card shows that status line itself, so the body doesn't repeat it. Finish what you can first: don't stop to ask about steps the rules already let you do.
 - Keep prepared, sent and done apart, in the body and the title too: never call something done, sent, applied or fixed while a draft, a review or a step only they can do is still open; say what is ready and what is left. The service refuses outcome:'done' while a next action still waits for them.
 - Before a follow-up, nudge or handoff, check the conversation for newer activity by anyone else: their reply, a teammate's send or answer, or a teammate's Machine that handled it (the Work Fleet lines). Read the newer messages listed below first when there are any. When it's handled, save outcome:'already_done' saying who did it and when, instead of drafting.
@@ -16852,7 +16888,20 @@ class App(*APP_MIXINS):
                 else:raise ValueError("Say whether the job is finished: outcome:'done' (the task itself is complete; nothing left for the owner but to check it), outcome:'answered' (you only answered a question, explained or planned; the task itself is still to do), outcome:'already_done' (it turned out to be done already or no longer needed, nothing left for anyone), outcome:'waiting' with waiting_on (a step still open on someone else's side), outcome:'your_step' with step:<submit, pay, book, sign, confirm, order or apply> (all ready, the owner makes that final click), or outcome:'needs_you' with needs:<what they have to do, e.g. approve the send, sign in, pick an option>")
             if outcome and outcome['state']=='needs_you':
                 with self.store.connect() as db:outcome=nudge_wait(db,args['suggestion_id'],args.get('job_id'),outcome,next_actions.actions(action))
-            if outcome and outcome['state']=='done' and args.get('send_now') is not True and self.store.waiting_steps(args['suggestion_id'],action,args.get('finish_state')):
+            if 'do_now' in args and not isinstance(args['do_now'],bool):raise ValueError('do_now is true or false')
+            # A step the owner asked for in this message runs on their word (do_now): their instruction is the OK. A new
+            # step for their Confirm first gets the question, with their message and the step side by side (ask_do_now).
+            with self.store.connect() as db:
+                turn=owner_turn(db,args['suggestion_id'],args.get('job_id'))
+                before={a.get('revision') for a in next_actions.actions(db.execute('SELECT next_action FROM suggestions WHERE id=?',(args['suggestion_id'],)).fetchone()[0] or 'null')}
+                early=db.execute('SELECT early FROM suggestions WHERE id=?',(args['suggestion_id'],)).fetchone()[0]
+            doable=[a for a in next_actions.actions(action) if doable_now(a)]
+            if args.get('do_now') is True:
+                if not doable:raise ValueError('do_now is for a doc edit or a final step that reaches nobody; a message, invite or sharing waits for the owner')
+                if early or not turn:raise ValueError('do_now needs the owner’s own message in this turn asking for this step; save without it, for their Confirm')
+            elif 'do_now' not in args and turn and not early and [a for a in doable if a.get('revision') not in before]:
+                raise ValueError(ask_do_now(turn,[a for a in doable if a.get('revision') not in before]))
+            if outcome and outcome['state']=='done' and args.get('send_now') is not True and args.get('do_now') is not True and self.store.waiting_steps(args['suggestion_id'],action,args.get('finish_state')):
                 # Prepared is not done: a draft, review or final click still waits for the owner.
                 raise ValueError("Not done yet: a step in next_actions still waits for the owner (a draft to send, a change to approve, a final click). "
                                  "Save outcome:'needs_you' with needs:<what they do, e.g. check the draft and send it>, or outcome:'your_step' for a final click, "
@@ -16911,6 +16960,10 @@ class App(*APP_MIXINS):
                 ready=[a for a in next_actions.actions(action) if a['kind'] in ('email','linkedin','slack','x') and not a.get('to_options')]
                 if not ready:raise ValueError('send_now needs an email, LinkedIn, Slack or X draft with its recipients filled in')
                 saved['send']=self.store.confirm_action(args['suggestion_id'],ready[0]['revision'],'assistant:'+uuid.uuid4().hex,'assistant')
+            if args.get('do_now') is True and not saved.get('replayed'):
+                # The owner asked for this step in their message: it runs now as their Confirm would (2026-11-06: "why am I
+                # confirming something I asked"). Sends still wait for their Send on a draft they saw.
+                saved['done_now']=self.store.confirm_action(args['suggestion_id'],doable[0]['revision'],'asked:'+uuid.uuid4().hex,'assistant')
             if any(a['kind']=='doc_write' and a.get('op')=='create' for a in next_actions.actions(action)) and not saved.get('replayed'):
                 # A new private doc in the owner's own Drive: made now, no OK needed (make_new_docs). Sharing it waits.
                 saved['doc_created']='being made now in the owner’s own Drive, private to them; the to-do shows its link' if self.store.make_new_docs(args['suggestion_id']) else 'waits for the owner'

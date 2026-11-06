@@ -31,7 +31,7 @@ Une connexion de documents peut seulement agir : désactivez **Apporte des signa
 Votre Machine peut écrire un nouveau document, ou modifier un document dont parle l’une de vos tâches :
 
 - Un nouveau document, elle le crée tout de suite, quand la tâche ou une compétence demande d’en créer un : un document privé dans votre propre Google Drive ou OneDrive, partagé avec personne. La tâche l’affiche avec **Ouvrir le document**. Le partager, ou envoyer son lien à quelqu’un, attend votre accord.
-- Une modification d’un document existant, elle la prépare seulement, chaque paragraphe avant et après. Touchez **Relire les modifications**, lisez, puis **Enregistrer**.
+- Une modification d’un document existant, elle la prépare seulement, chaque paragraphe avant et après. Touchez **Relire les modifications**, lisez, puis **Enregistrer**. Une modification que vous demandez dans le chat de la tâche, elle la fait tout de suite.
 - Elle écrit une modification une seule fois, et seulement dans le document tel que vous l’avez vu. Si quelqu’un l’a modifié entre-temps, rien n’est écrit et la tâche le dit. Demandez un nouveau brouillon.
 - Dans Talk, elle lit toute la modification à voix haute et attend un oui clair.
 - Si Google ou Microsoft refuse un nouveau document, la tâche dit ce qui a été refusé et affiche **Relire et créer** pour réessayer.

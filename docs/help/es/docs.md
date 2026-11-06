@@ -31,7 +31,7 @@ Una conexión de documentos puede solo hacer cosas: desactiva **Trae señales** 
 Tu Machine puede escribir un documento nuevo o cambiar un documento del que trata una de tus tareas:
 
 - Un documento nuevo lo crea enseguida, cuando la tarea o una habilidad dice que hay que crearlo: un documento privado en tu propio Google Drive o OneDrive, sin compartir con nadie. La tarea lo muestra con **Abrir el documento**. Compartirlo, o enviar su enlace a alguien, espera tu OK.
-- Un cambio en un documento existente solo lo prepara, cada párrafo antes y después. Toca **Revisar cambios**, léelo y luego **Guardar**.
+- Un cambio en un documento existente solo lo prepara, cada párrafo antes y después. Toca **Revisar cambios**, léelo y luego **Guardar**. Un cambio que pides en el chat de la tarea lo hace enseguida.
 - Escribe un cambio una sola vez, y solo en el documento tal como lo viste. Si alguien lo cambió entretanto, no se escribe nada y la tarea lo dice. Pide un borrador nuevo.
 - En Talk, lee el cambio completo en voz alta y espera un sí claro.
 - Si Google o Microsoft rechaza un documento nuevo, la tarea dice qué se rechazó y muestra **Revisar y crear** para volver a intentarlo.

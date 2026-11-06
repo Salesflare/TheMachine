@@ -31,7 +31,7 @@ Eine Dokument-Verbindung kann nur Dinge tun: Schalte unter **Details** **Bringt 
 Deine Machine kann ein neues Dokument schreiben oder ein Dokument ändern, um das es in einer deiner Aufgaben geht:
 
 - Ein neues Dokument erstellt sie sofort, wenn die Aufgabe oder ein Skill eines verlangt: ein privates Dokument in deinem eigenen Google Drive oder OneDrive, mit niemandem geteilt. Die Aufgabe zeigt es mit **Dokument öffnen**. Das Teilen, oder den Link an jemanden schicken, wartet auf dein OK.
-- Eine Änderung an einem bestehenden Dokument bereitet sie nur vor, jeden Absatz vorher und nachher. Tippe auf **Änderungen prüfen**, lies alles und dann **Speichern**.
+- Eine Änderung an einem bestehenden Dokument bereitet sie nur vor, jeden Absatz vorher und nachher. Tippe auf **Änderungen prüfen**, lies alles und dann **Speichern**. Eine Änderung, um die du im Chat der Aufgabe bittest, macht sie sofort.
 - Sie schreibt eine Änderung einmal, und nur in das Dokument, wie du es gesehen hast. Hat jemand es inzwischen geändert, wird nichts geschrieben und die Aufgabe sagt es dir. Bitte dann um einen neuen Entwurf.
 - In Talk liest sie die ganze Änderung vor und wartet auf ein klares Ja.
 - Lehnt Google oder Microsoft ein neues Dokument ab, sagt die Aufgabe, was abgelehnt wurde, und zeigt **Prüfen und erstellen**, um es noch einmal zu versuchen.
