@@ -22,7 +22,8 @@ const card=(id,title)=>({id,title,body:'Robin asked for the numbers.',status:'pe
 const cards=[card(A,'Reply to Robin about the plan'),card(B,'Book the venue'),card(C,'Send the slides')];
 const shots=process.env.SHOTS||'';
 const page=()=>raw.replace('__CSRF__','').replaceAll('__UI_VERSION__','v1').replace('__BASE__','/').replace('__CACHE_SCOPE__',SCOPE);
-const status=()=>({suggestions:cards,promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},
+let withCheck=false;  // step 11: the To-dos head's Check now row (todos-check.js)
+const status=()=>({...(withCheck?{check:{reviewed:new Date(Date.now()-9e5).toISOString(),next_review:new Date(Date.now()+42e4).toISOString(),waiting:13}}:{}),suggestions:cards,promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},
  connectors:[{service:'calendar',account_id:'cal',status:'ok'}],fleet:{on:false},ui_version:'v1'});
 const meetingAt=new Date(now);meetingAt.setHours(15,0,0,0);
 let mode='ok',flaky=0;const decided=new Map(),order=[],posts=[];
@@ -170,6 +171,18 @@ try{
   if(!(w<1024))assert.match(await p.locator('#updated').innerText(),/^Offline · updated \d\d:\d\d$/);
   if(shots)await p.screenshot({path:`${shots}/offline-${w}-${scheme}.png`});
   await p.evaluate(()=>{for(const x of [...outbox.items])outboxCancel(x.id)});await ctx.close()}
+
+ // 11. Gone offline under the Check now row (the page drew online first): the banner keeps the header's gap under
+ // the row, also on a phone, where the head otherwise has no bottom margin (shell-sidebar.css, .page-head.greet.busy)
+ withCheck=true;mode='ok';
+ for(const [w,h,scheme] of [[390,844,'dark'],[1440,900,'light']]){const ctx=await browser.newContext({viewport:{width:w,height:h},isMobile:w<600,hasTouch:w<600,colorScheme:scheme});
+  await ctx.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
+  const p=await ctx.newPage();p.on('pageerror',e=>errors.push(e.message));mode='ok';await p.goto(base);await p.locator('#page-head .check-now .check-line').filter({hasText:/Reviewed/}).waitFor();
+  mode='down';await p.evaluate(()=>refresh().catch(()=>{}));await until(p,()=>!document.querySelector('#offline-bar').hidden,null,'banner under the Check now row');
+  const g=await p.evaluate(()=>{const b=document.querySelector('#offline-bar').getBoundingClientRect().top;return Math.min(...['#page-head','#page-head .check-btn','#page-head .check-line'].map(s=>b-document.querySelector(s).getBoundingClientRect().bottom))});
+  assert.ok(g>=12,`${w}: the offline banner keeps a gap under the Check now row (${g}px)`);
+  if(shots)await p.screenshot({path:`${shots}/offline-check-${w}-${scheme}.png`});await ctx.close()}
+ withCheck=false;mode='ok';
 
  assert.deepEqual(errors,[]);
  console.log('offline dashboard ok');
