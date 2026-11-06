@@ -4,6 +4,8 @@ again after a rebase instead of merging by hand: it does the same thing to whate
 
     python3 scripts/split_dashboard.py readers       # tests read the page through dashboard_parts / dashboard-page.mjs
     python3 scripts/split_dashboard.py split         # dashboard.html's main script into dashboard/<area>-<what>.js
+    python3 scripts/split_dashboard.py split-css     # its stylesheet into dashboard/<area>-<what>.css (CSS_PARTS)
+    python3 scripts/split_dashboard.py split-html    # its markup into dashboard/<area>-<what>.html (HTML_PARTS)
     python3 scripts/split_dashboard.py verify [REF]  # the assembled page is byte for byte the one at REF (git)
 
 `readers` rewrites every test that reads dashboard.html itself to read the assembled page instead; the forms it knows
@@ -15,8 +17,13 @@ statement that starts the next part (or the given end), and its lines are replac
 found by a small scanner of the script (strings, templates, comments, regular expressions, brackets): a part starts and
 ends only at a top-level declaration (function, const, let, class) or at a top-level line given by its start. Nothing
 is reordered and no byte changes: `verify` proves the assembled page is the one before, and each part and what stays
-in dashboard.html parse as scripts on their own (node --check). A part whose anchors are gone fails loudly."""
+in dashboard.html parse as scripts on their own (node --check). A part whose anchors are gone fails loudly.
+
+`split-css` and `split-html` do the same for the stylesheet (contiguous runs cut at section comments, so the cascade is
+the one before; each part is whole rules) and the markup (cut at elements with an id; each part is whole elements).
+Each command expands and cuts only its own kind of part and leaves the others' include lines as they are."""
 from pathlib import Path
+from html import parser as html_parser
 import re
 import shutil
 import subprocess
@@ -280,11 +287,20 @@ def node_check(page, parts):
 
 def split():
     page = dashboard_parts.assemble(ROOT)
-    html, parts = cut(page)
+    source = dashboard_parts.expand((ROOT / dashboard_parts.PAGE).read_text(encoding='utf-8'), ROOT / dashboard_parts.FOLDER,
+                                    ('js',))  # the stylesheet's and the markup's parts stay as they are
+    html, parts = cut(source)
     node_check(html, parts)
+    write_parts(html, parts, 'js', page)
+    return 0
+
+
+def write_parts(html, parts, kind, page):
+    """Write dashboard.html and the parts of one kind (removing that kind's parts it no longer has); the assembled page
+    must stay `page`, byte for byte."""
     folder = ROOT / dashboard_parts.FOLDER
     folder.mkdir(exist_ok=True)
-    for old in folder.glob('*.js'):
+    for old in folder.glob(f'*.{kind}'):
         if old.name not in parts:
             old.unlink()
     for name, text in parts.items():
@@ -293,8 +309,184 @@ def split():
     if dashboard_parts.assemble(ROOT) != page:
         raise SystemExit('the assembled page changed: nothing should')
     kept = html.count('\n') + 1
-    print(f'{len(parts)} parts in {dashboard_parts.FOLDER}/ ({sum(t.count(chr(10)) for t in parts.values())} lines); '
+    print(f'{len(parts)} .{kind} parts in {dashboard_parts.FOLDER}/ ({sum(t.count(chr(10)) for t in parts.values())} lines); '
           f'dashboard.html keeps {kept} lines')
+
+
+# --- split-css -------------------------------------------------------------------------------------------------------
+
+# (part, anchor): dashboard/<part>.css holds the stylesheet's lines from the first top-level line after the previous
+# part that starts with `anchor` (a section's comment) up to the next part's, the last one up to </style>. The runs are
+# contiguous and in the page's order, so no rule moves and the cascade is the one before.
+CSS_PARTS = []
+
+
+def css_top_level_lines(text):
+    """The numbers (from 0) of the lines of a stylesheet that start outside every block, comment and string. Raises
+    ValueError when a brace doesn't match or the text ends inside something."""
+    out, depth, i, n, line, line_start = [], 0, 0, len(text), 0, True
+    while i < n:
+        if line_start:
+            if depth == 0:
+                out.append(line)
+            line_start = False
+        c = text[i]
+        if c == '\n':
+            line, line_start, i = line + 1, True, i + 1
+        elif text.startswith('/*', i):
+            j = text.find('*/', i + 2)
+            if j < 0:
+                raise ValueError(f'the stylesheet ends inside a comment (line {line + 1})')
+            line += text.count('\n', i, j)
+            i = j + 2
+        elif c in '\'"':
+            j = i + 1
+            while j < n and text[j] != c:
+                if text[j] == '\n':
+                    raise ValueError(f'a line break in a string, stylesheet line {line + 1}')
+                j += 2 if text[j] == '\\' else 1
+            if j >= n:
+                raise ValueError(f'the stylesheet ends inside a string (line {line + 1})')
+            i = j + 1
+        elif c == '{':
+            depth, i = depth + 1, i + 1
+        elif c == '}':
+            if depth == 0:
+                raise ValueError(f'an unbalanced }}, stylesheet line {line + 1}')
+            depth, i = depth - 1, i + 1
+        else:
+            i += 1
+    if depth:
+        raise ValueError(f'the stylesheet ends inside {depth} open block(s)')
+    return out
+
+
+def stylesheet(lines):
+    """(first, end): the lines inside the page's one <style>."""
+    first = [i for i, line in enumerate(lines) if line == '<style>']
+    if len(first) != 1:
+        raise SystemExit('dashboard.html has one <style> line')
+    end = next(i for i in range(first[0], len(lines)) if lines[i].startswith('</style>'))
+    return first[0] + 1, end
+
+
+def cut_css(source):
+    """(dashboard.html, {part file: text}) for a source whose stylesheet is whole."""
+    lines = source.split('\n')
+    first, end = stylesheet(lines)
+    starts = [first + k for k in css_top_level_lines('\n'.join(lines[first:end]))]
+    spans, after = [], first - 1
+    for name, anchor in CSS_PARTS:
+        at = next((s for s in starts if s > after and lines[s].startswith(anchor)), None)
+        if at is None:
+            raise KeyError(f'dashboard.html: no top-level stylesheet line {anchor!r} after line {after + 1} '
+                           '(scripts/split_dashboard.py CSS_PARTS)')
+        spans.append([name, at, end])
+        if len(spans) > 1:
+            spans[-2][2] = at
+        after = at
+    return join_cut(lines, spans, 'css')
+
+
+def join_cut(lines, spans, kind):
+    out, parts, at = [], {}, 0
+    for name, a, b in spans:
+        out += lines[at:a] + [dashboard_parts.marker(f'{name}.{kind}')]
+        parts[f'{name}.{kind}'] = '\n'.join(lines[a:b]) + '\n'
+        at = b
+    return '\n'.join(out + lines[at:]), parts
+
+
+def split_css():
+    page = dashboard_parts.assemble(ROOT)
+    source = dashboard_parts.expand((ROOT / dashboard_parts.PAGE).read_text(encoding='utf-8'), ROOT / dashboard_parts.FOLDER,
+                                    ('css',))
+    html, parts = cut_css(source)
+    for name, text in parts.items():
+        css_top_level_lines(text)
+    write_parts(html, parts, 'css', page)
+    return 0
+
+
+# --- split-html ------------------------------------------------------------------------------------------------------
+
+# (part, first, stop): dashboard/<part>.html holds the markup's lines from the one that starts with the element whose
+# id is `first` up to the one that starts with `stop`'s (None: the end of the markup, before the i18n script). A line
+# starts with an element when the element's tag opens it, or right after the ">" that closes the tag before it
+# (scripts/merge_friendly.py breaks long markup lines inside a tag, before each element with an id).
+HTML_PARTS = []
+VOID = {'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'source', 'track', 'wbr'}
+
+
+class _Balance(html_parser.HTMLParser):
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.stack, self.problems = [], []
+
+    def handle_starttag(self, tag, attrs):
+        if tag not in VOID:
+            self.stack.append((tag, self.getpos()[0]))
+
+    def handle_endtag(self, tag):
+        if not self.stack or self.stack[-1][0] != tag:
+            self.problems.append(f'</{tag}> on line {self.getpos()[0]} closes '
+                                 + (f'<{self.stack[-1][0]}> (line {self.stack[-1][1]})' if self.stack else 'nothing it opened'))
+        else:
+            self.stack.pop()
+
+
+def html_problems(text):
+    """What keeps a markup part from being whole elements ([] when it is). A part may start with the ">" that closes
+    the tag before it and end inside its last tag (before that tag's ">"), as scripts/merge_friendly.py lays lines out."""
+    text = text[1:] if text.startswith('>') else text
+    if text.rfind('<') > text.rfind('>'):
+        text += '>'
+    check = _Balance()
+    check.feed(text)
+    check.close()
+    return check.problems + [f'<{tag}> (line {line}) is never closed' for tag, line in check.stack]
+
+
+def markup_lines(lines):
+    """(first, end): the markup's lines, after the stylesheet (or the head) up to the i18n script."""
+    end = next(i for i, line in enumerate(lines) if line.startswith('<script id="i18n">'))
+    first = max((i for i in range(end) if lines[i].startswith('</style>') or lines[i] == '<body>'), default=-1) + 1
+    return first, end
+
+
+def cut_html(source):
+    """(dashboard.html, {part file: text}) for a source whose markup is whole."""
+    lines = source.split('\n')
+    first, end = markup_lines(lines)
+
+    def find(anchor, after):
+        if anchor is None:
+            return end
+        shape = re.compile(rf'>?<[a-z][a-z0-9-]*\s[^<>]*\bid="{re.escape(anchor)}"')
+        at = next((i for i in range(after + 1, end) if shape.match(lines[i])), None)
+        if at is None:
+            raise KeyError(f'dashboard.html: no markup line starting with #{anchor} after line {after + 1} '
+                           '(scripts/split_dashboard.py HTML_PARTS)')
+        return at
+
+    spans, after = [], first - 1
+    for name, start, stop in HTML_PARTS:
+        a = find(start, after)
+        b = find(stop, a)
+        spans.append((name, a, b))
+        after = b - 1
+    return join_cut(lines, spans, 'html')
+
+
+def split_html():
+    page = dashboard_parts.assemble(ROOT)
+    source = dashboard_parts.expand((ROOT / dashboard_parts.PAGE).read_text(encoding='utf-8'), ROOT / dashboard_parts.FOLDER,
+                                    ('html',))
+    html, parts = cut_html(source)
+    for name, text in parts.items():
+        if problems := html_problems(text):
+            raise SystemExit(f'{name} is not whole elements: {"; ".join(problems[:5])}')
+    write_parts(html, parts, 'html', page)
     return 0
 
 
@@ -322,7 +514,7 @@ def verify(ref='HEAD'):
     return 0
 
 
-COMMANDS = {'readers': readers, 'split': split, 'verify': verify}
+COMMANDS = {'readers': readers, 'split': split, 'split-css': split_css, 'split-html': split_html, 'verify': verify}
 
 if __name__ == '__main__':
     if len(sys.argv) < 2 or sys.argv[1] not in COMMANDS:

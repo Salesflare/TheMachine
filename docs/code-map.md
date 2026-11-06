@@ -81,13 +81,21 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   locale and error reports, network and outbox, `render()` and `refresh()`, `toast()` and the start. A new top-level
   statement goes in a part only whole (each part parses on its own). Parts run in the page's order, as they were in
   the one file, so a part may use what an earlier one declares. New UI strings go in every catalog in `i18n/`.
+- **Dashboard styles and markup:** the same way, in parts: a stylesheet part `dashboard/<area>-<what>.css` fills a
+  line `/*@include dashboard/<name>.css*/` inside the page's `<style>`, a markup part `dashboard/<area>-<what>.html` a
+  line `<!--@include dashboard/<name>.html-->` in the markup (`base` is the area of the shared design layer). A
+  stylesheet part is whole rules and the parts follow each other in the page's order, so the cascade is the one of the
+  whole sheet: a rule that overrides another comes after it, in the same part or a later one. A markup part is whole
+  elements. `tests/test_dashboard_parts.py` checks both, and that each include line is in its place.
 - **Reading the dashboard's source** (a test, a script): through `dashboard_parts.assemble()` in Python or
   `dashboardPage()` from `tests/dashboard-page.mjs` in Node, never `dashboard.html` itself. The page is served as one
-  document, but its source can be split into parts (`dashboard/<name>.js`, each filling the line
-  `/*@include dashboard/<name>.js*/` in `dashboard.html`), and only the assembled page has them all.
+  document, but its source can be split into parts (`dashboard/<name>.js`, `.css` and `.html`, each filling its include
+  line in `dashboard.html`), and only the assembled page has them all.
   `scripts/split_dashboard.py readers` rewrites a test that still reads the file. The service serves the assembled
   page (`dashboard_page()`), so the browser, the service worker's offline copy, the ETag and the CSP see one page as
-  before; `dashboard/` itself is never served.
+  before; `dashboard/` itself is never served. `scripts/split_dashboard.py split`, `split-css` and `split-html` cut
+  the script, the stylesheet and the markup into parts at named anchors, so a rebase re-runs them instead of merging
+  moved lines by hand; `verify origin/main` proves the assembled page is byte for byte main's.
 - **A big page or script** is split before it nears 450 KiB: Aikido skips big files (some just over 500 KiB already
   go unscanned), so a bigger one ships unchecked (see the size rule below).
 - **Markup in the dashboard:** build elements with `make()`, or write markup with ``html`...` `` and put it in the page
@@ -107,12 +115,12 @@ test_app_mixins.py` (they run in CI with every suite).
 | Each table is created by one module, its owner (today's few shared ones are in `SHARED_SCHEMA`). | `tests/test_architecture.py` |
 | Only the owner writes a table. Today's other writers are listed in `OTHER_WRITERS`. That list may only shrink: a new writer fails with the owner's name, and an entry that no longer writes fails until it's removed. | `tests/test_architecture.py` |
 | Only `assistant.py` writes `events`, the sealed table (and the sandbox's fixture loader, through the sealed connection). Covers subfolders. | `tests/test_message_seal.py` |
-| Nothing reads `dashboard.html` itself; every part in `dashboard/` is included once and parses on its own; the service serves the assembled page; Python and Node assemble the same page. | `tests/test_dashboard_parts.py` |
+| Nothing reads `dashboard.html` itself; every part in `dashboard/` is included once, its include line is in its place (a script, the stylesheet, the markup), and it is whole (statements that parse on their own, whole rules, whole elements); the service serves the assembled page; Python and Node assemble the same page. | `tests/test_dashboard_parts.py` |
 | No action is mapped by two mixins, no member is defined in two of them or in both `App` and a mixin, every handler is a method, every name in `OWNER_ACTIONS` or `DASHBOARD_ACTIONS` reaches a mixin's handler or a branch of `App.action`, no branch of `App.action` names an action a mixin maps (it would never run), and every action the dashboard sends is in `DASHBOARD_ACTIONS` and has a handler. | `tests/test_app_mixins.py` |
 | Code in `machine/` imports only from its own layer or the ones below it, and any root module, never with `import *`; `machine/__init__.py` imports nothing. The layers, lowest first: `actions`, `config`, `text`, `timing`; `browser`, `cards`, `chat`, `faults`, `model_usage`, `prompts`, `sources`; `store`; `delivery`, `web`; `app`, `main`. A new area gets its layer in `MACHINE_LAYERS`. | `tests/test_architecture.py` |
 | Python files (tests aside) stay under 2,500 lines and 450 KiB. A bigger module is hard to review, and Aikido's scan skips it. `PY_OVER_BUDGET` lists today's bigger files with ceilings that only come down: a file that grows past its ceiling fails, one that shrinks well under it fails until the ceiling is lowered, and one back within the budget fails until its entry is removed. | `tests/test_architecture.py` |
 | Every dashboard area in `scripts/i18n_extract.py` resolves. | `tests/test_architecture.py`, `python3 scripts/i18n_extract.py --area <name>` |
-| Shipped `.html`, `.js` and `.mjs` files stay under 450 KiB. Aikido's code scan skips big files (some just over 500 KiB already go unscanned), so a bigger one ships unchecked, and splitting it later turns up its findings all at once. `OVER_LIMIT` lists today's bigger files with a ceiling that may only come down (`dashboard.html`, being split into parts). | `tests/test_architecture.py` |
+| Shipped `.html`, `.css`, `.js` and `.mjs` files stay under 450 KiB. Aikido's code scan skips big files (some just over 500 KiB already go unscanned), so a bigger one ships unchecked, and splitting it later turns up its findings all at once. The dashboard's source has smaller budgets: `dashboard.html` 24 KB, each part in `dashboard/` 160 KB (`.js`), 64 KB (`.css`) or 32 KB (`.html`); a part over its budget is split into another `<area>-<what>` part next to it. `OVER_BUDGET` lists today's bigger files with a ceiling that may only come down. The page as served stays under `PAGE_CEILING` (2,000,000 bytes), raised only on purpose. | `tests/test_architecture.py` |
 
 The table checks read the SQL in each module's strings. A statement whose table name is computed
 (`f'DELETE FROM {table}'`) isn't seen, so keep table names literal in new code.

@@ -1,11 +1,12 @@
 """Lay out the two files every pull request adds to so parallel pull requests merge cleanly (CONTRIBUTING.md).
 
-    python3 scripts/merge_friendly.py      # rewrite assistant.py's action lists and dashboard.html's long markup lines
+    python3 scripts/merge_friendly.py      # rewrite assistant.py's action lists and the dashboard's long markup lines
 
 assistant.py: each module-level *_ACTIONS set or tuple gets one name per line, spreads (*X) first, then the names, each
 sorted, with trailing commas. Comments inside a list move above it. tests/test_owner_boundary.py checks the order.
-dashboard.html: a static markup line longer than LONG breaks before each element with an id, inside the previous tag
-(`</div` newline `><div id=...>`), so the parsed page is exactly the same. Running it again changes nothing."""
+dashboard.html and its markup parts (dashboard/*.html): a static markup line longer than LONG breaks before each element
+with an id, inside the previous tag (`</div` newline `><div id=...>`), so the parsed page is exactly the same. Running it
+again changes nothing."""
 from __future__ import annotations
 
 import ast
@@ -51,18 +52,30 @@ def actions(src):
     return ''.join(lines)
 
 
-def markup(src):
-    lines = src.split('\n')
-    start = next(i for i, line in enumerate(lines) if line.startswith('</style>'))
-    end = next(i for i, line in enumerate(lines) if line.startswith('<script id="i18n">'))
-    for i in range(start + 1, end):
+def long_lines(lines, start, end):
+    for i in range(start, end):
         if len(lines[i]) > LONG:
             lines[i] = re.sub(r'>(?=<[a-z][a-z0-9-]*\s[^<>]*\bid=")', '\n>', lines[i])
     return '\n'.join(lines)
 
 
+def markup(src):
+    lines = src.split('\n')
+    start = next(i for i, line in enumerate(lines) if line.startswith('</style>'))
+    end = next(i for i, line in enumerate(lines) if line.startswith('<script id="i18n">'))
+    return long_lines(lines, start + 1, end)
+
+
+def markup_part(src):
+    """A markup part (dashboard/<name>.html) is all markup."""
+    lines = src.split('\n')
+    return long_lines(lines, 0, len(lines))
+
+
 def main():
-    for name, fix in (('assistant.py', actions), ('dashboard.html', markup)):
+    jobs = [('assistant.py', actions), ('dashboard.html', markup)]
+    jobs += [(str(path.relative_to(ROOT)), markup_part) for path in sorted((ROOT / 'dashboard').glob('*.html'))]
+    for name, fix in jobs:
         path = ROOT / name
         before = path.read_text(encoding='utf-8')
         after = fix(before)
