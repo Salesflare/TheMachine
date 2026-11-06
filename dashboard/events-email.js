@@ -2,7 +2,10 @@
 // no scripts, forms or navigation of the dashboard; links open in a new tab.
 const originals=new Map(),emailViews=new Map();
 const fileSize=b=>!b?'':b<1024?b+' B':b<1048576?Math.round(b/1024)+' KB':(b/1048576).toFixed(1)+' MB';
-const sender=v=>String(v||'').replace(/\s*<[^>]+>/,'').replace(/^"|"$/g,'').trim()||String(v||'');
+// A mailing list's rewrite as people say it: Google Groups' "'Sam Lee' via Sales" is "Sam Lee via Sales", and a group named
+// after its address ("info@acme.com readers") is that address (assistant.group_sender).
+const groupSender=v=>{const m=/^'(.+)' via (.+)$/.exec(v);if(!m)return v;const at=/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+/.exec(m[2].trim());return `${m[1].trim()} via ${at?at[0]:m[2].trim()}`};
+const sender=v=>groupSender(String(v||'').replace(/\s*<[^>]+>/,'').replace(/^"|"$/g,'').trim())||String(v||'');
 const linkify=t=>html`${String(t??'').split(/(https?:\/\/[^\s<>"']+[^\s<>"'.,;:!?)\]])/g).map((x,i)=>i%2?html`<a href="${x}" target="_blank" rel="noreferrer">${x}</a>`:x)}`;
 const apiURL=path=>new URL(path,document.baseURI).href;
 // Any card built from collected messages can show them, including older cards without a source line.

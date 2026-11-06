@@ -69,7 +69,7 @@ try{
   {assert.equal(await page.locator('#task-p1 .card-details').isVisible(),false);await page.locator('#task-p1 .card-foot [data-details]').click();
    assert.equal(await page.locator('#task-p1 .card-details .card-source').count(),0);const d=page.locator('#task-p1>.card-source .src-date');assert.equal(await d.innerText(),'Mon 19 Oct');
    assert.equal(await d.evaluate(e=>getComputedStyle(e).whiteSpace),'nowrap');
-   assert.equal(await page.locator('#task-p1>.card-source .read-original').textContent(),'Email from Sam · Mon 19 Oct ↗')}
+   assert.equal(await page.locator('#task-p1>.card-source .read-original').textContent(),'Email from Sam · Mon 19 Oct')}
   // Hand off: the sheet sits below the source line, the task and the note full width, and the card's buttons hide meanwhile
   {await page.locator('#task-p1 .more-actions>summary').click();await page.locator('#task-p1 [data-fleet-handoff]').click();
    const form=page.locator('#task-p1 .fleet-handoff-form');await form.waitFor();

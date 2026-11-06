@@ -109,6 +109,24 @@ class BasedOn(unittest.TestCase):
             db.execute('UPDATE events SET deleted=1 WHERE id=?', (self.reply,))
         self.assertIsNone(self.shown(sid)['based_on'])
 
+    def test_the_main_source_is_never_shown_twice(self):
+        # The review named the to-do's own source: its source line already names that message, so no Based on line
+        sid = self.suggest(event_ids=[self.reply], based_on=self.reply)['id']
+        self.assertTrue(self.card(sid)['source_line'].startswith('Source: Slack from'))
+        self.assertIsNone(self.shown(sid)['based_on'])
+        # Another message in the evidence ("+1 more") still gets its line
+        other = self.suggest(dedupe_key='other', event_ids=[self.parent, self.reply], based_on=self.reply)['id']
+        self.assertEqual(self.shown(other)['based_on']['who'], 'Robin')
+
+    def test_a_google_group_sender_reads_as_people_say_it(self):
+        row = {'kind': 'gmail.message', 'occurred_at': '2026-11-06T09:00:00+00:00',
+               'metadata': {'from': '"\'Zapier Alerts\' via info@acme.example readers" <info@acme.example>'}}
+        self.assertEqual(a.source_text(row).split(' · ')[0], 'email from Zapier Alerts via info@acme.example')
+        self.assertEqual(a.source_line_shown("Source: email from 'Zapier Alerts' via info@acme.example readers · Fri 6 Nov (+1 more)"),
+                         'Source: email from Zapier Alerts via info@acme.example · Fri 6 Nov (+1 more)')  # stored before
+        self.assertEqual(a.group_sender("'Sam Lee' via Sales"), 'Sam Lee via Sales')
+        self.assertEqual(a.sender_first_name(row['metadata']), 'Zapier')
+
     def test_the_review_and_the_drafting_step_are_told(self):
         self.assertIn('based_on', a.review_prompt('r1', ['sl']))
         self.assertIn('based_on', a.preparation_prompt({'job_id': 'j', 'suggestion_id': 's'}))

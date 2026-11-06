@@ -5,8 +5,8 @@ import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
-// The source link under a card on a phone: when it wraps to two lines the mail icon and the arrow both sit on the
-// first line, the arrow is never underlined, and a tap leaves no hover background or underline behind.
+// The source link under a card on a phone: when it wraps to two lines the mail icon sits on the first line, it has no ↗
+// (it opens the message inside the app; ↗ is for links out), and a tap leaves no hover background or underline behind.
 const dashboard=await dashboardPage();
 const now=new Date().toISOString();
 const cards=[{id:'w1',title:'Reply about the venue',body:'They asked about Friday.',status:'pending',scope:'work',created_at:now,event_ids:[1,2],source_line:'WhatsApp from Alex Example · Thu 22 Oct (+12 more)'},
@@ -27,13 +27,13 @@ try{
  await page.goto('http://127.0.0.1:'+server.address().port);await page.locator('#task-z1').waitFor();
  await page.locator('#task-w1>.card-source .read-original').tap();
  const look=id=>page.locator(`#task-${id}>.card-source .read-original`).evaluate(e=>{
-  const r=e.getBoundingClientRect(),a=e.querySelector('span[aria-hidden]').getBoundingClientRect(),cs=getComputedStyle(e),icon=getComputedStyle(e,'::before');
+  const r=e.getBoundingClientRect(),cs=getComputedStyle(e),icon=getComputedStyle(e,'::before');
   return {lines:Math.round(r.height/parseFloat(cs.lineHeight||'0')||r.height/20),bg:cs.backgroundColor,underline:cs.textDecorationLine,
-   iconTop:parseFloat(icon.marginTop),arrowTop:Math.round(a.top-r.top),arrowFirstLine:a.bottom-r.top<=r.height/2+1}});
+   iconTop:parseFloat(icon.marginTop),arrow:e.textContent.includes('↗')}});
  const wrapped=await look('w1'),single=await look('z1');
  assert.ok(wrapped.lines>=2,JSON.stringify(wrapped));
- assert.ok(wrapped.arrowFirstLine,'arrow on the first line: '+JSON.stringify(wrapped));
+ for(const s of [wrapped,single])assert.equal(s.arrow,false,'opens here, so no ↗: '+JSON.stringify(s));
  assert.ok(wrapped.iconTop>0&&wrapped.iconTop<8,'icon centered on the first line: '+JSON.stringify(wrapped));
  for(const s of [wrapped,single]){assert.equal(s.underline,'none');assert.equal(s.bg,'rgba(0, 0, 0, 0)')}
- console.log('Source link: icon and arrow on the first line, no underline or tap background.');
+ console.log('Source link: icon on the first line, no ↗, no underline or tap background.');
 }finally{await browser?.close();server.close()}

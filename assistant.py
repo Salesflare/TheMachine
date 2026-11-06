@@ -12525,8 +12525,19 @@ def source_text(row):
         m = {**m, 'sender_display': m.get('sender_display') or m.get('contact_name') or m.get('from_name')}
     who = (m.get('sender_display') or m.get('from') or m.get('chat_name') or m.get('app_name')
            or (('#' + m['channel_name']) if m.get('channel_name') else '') or (m.get('crm_account') or {}).get('name') or '')
-    who = re.sub(r'\s*<[^>]+>', '', str(who)).strip().strip('"') or None
+    who = group_sender(re.sub(r'\s*<[^>]+>', '', str(who)).strip().strip('"')) or None
     return source_kind(row['kind']) + (f' from {who}' if who else '') + f' · {when}'
+
+
+def group_sender(who):
+    """A sender as a mailing list rewrites it, the way people say it: Google Groups' "'Sam Lee' via Sales" is "Sam Lee via
+    Sales", and a group named after its address ("info@acme.com readers") is that address."""
+    m = re.fullmatch(r"'(.+)' via (.+)", str(who or '').strip())
+    if not m:
+        return who
+    group = m[2].strip()
+    address = re.match(r'[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+', group)
+    return f'{m[1].strip()} via {address[0] if address else group}'
 
 
 def sender_first_name(metadata):
@@ -12534,7 +12545,8 @@ def sender_first_name(metadata):
     carries only an address, a number or a chat handle."""
     m = metadata or {}
     raw = str(m.get('sender_display') or m.get('from') or m.get('chat_name') or '')
-    who = re.sub(r'\s*<[^>]*>?', '', raw).strip().strip('"\'').strip()
+    who = re.sub(r'\s*<[^>]*>?', '', raw).strip().strip('"').strip()
+    who = re.sub(r'\s+via\s.*$', '', str(group_sender(who))).strip().strip("'").strip()  # "'Sam Lee' via Sales": Sam
     if not who or '@' in who or SLACK_ID.search(who) or SOURCE_RAW.search(who):
         return ''
     # A mail tool that shows the mailbox as the name ("frontdesk <frontdesk@…>", "billing <billing@…>"): not a name
@@ -12574,7 +12586,7 @@ def source_line_shown(line, names=None):
         person = named(dm[1]).strip()
         head = kind if SLACK_ID.search(person) or CHAT_HANDLE.fullmatch(person) or not person else f'{kind} DM with {chat_plain_name(person)}'
     else:
-        who = named(who).strip()
+        who = group_sender(named(who).strip())
         channel = re.fullmatch(r'#[\w.-]+', who) and not SLACK_ID.search(who)  # "#general": a channel by its name stays
         raw = not channel and (SLACK_ID.search(who) or CHAT_HANDLE.fullmatch(who) or SOURCE_RAW.fullmatch(who))
         head = kind if raw or not who else f'{kind} {how} {who if channel else chat_plain_name(who)}'
@@ -12617,9 +12629,10 @@ def based_on_views(db, cards):
     ids = {c['based_on'] for c in cards if isinstance(c.get('based_on'), int)}
     rows = {r['id']: r for r in slack_named(db, [dict(r) for r in db.execute(
         'SELECT id,account_id,kind,occurred_at,title,metadata FROM events WHERE deleted=0 AND id IN (' + ','.join('?' * len(ids)) + ')', sorted(ids))])} if ids else {}
+    leads = source_leads(db, [c for c in cards if c.get('based_on') in rows])
     for card in cards:
         row = rows.get(card.get('based_on'))
-        if not row:
+        if not row or leads.get(card['id']) == row['id']:  # the source line already names it: one line per message, never two
             card['based_on'] = None
             continue
         m = row['metadata'] if isinstance(row['metadata'], dict) else json.loads(row['metadata'] or '{}')
@@ -12628,6 +12641,15 @@ def based_on_views(db, cards):
         card['based_on'] = {'event_id': row['id'], 'who': sender_first_name(m) or None, 'kind': source_kind(row['kind']),
                             'where': '#' + channel.lstrip('#') if channel and not SOURCE_DM.fullmatch(channel) and not SLACK_ID.search(channel) else None,
                             'at': row['occurred_at'], 'url': url if isinstance(url, str) and urllib.parse.urlsplit(url).scheme == 'https' else None}
+
+
+def source_leads(db, cards):
+    """{card id: the event its source line names} (source_line: the first of its evidence that isn't the owner's own
+    to-do or an update's note), so a based_on that is that same message isn't shown a second time."""
+    held = {c['id']: [i for i in json.loads(c.get('event_ids') or '[]') if isinstance(i, int)] for c in cards}
+    ids = sorted({i for v in held.values() for i in v})
+    kinds = {r['id']: r['kind'] for r in db.execute('SELECT id,kind FROM events WHERE id IN (' + ','.join('?' * len(ids)) + ')', ids)} if ids else {}
+    return {cid: next((i for i in v if i in kinds and kinds[i] not in ('owner.card', 'machine.parked_fix')), None) for cid, v in held.items()}
 
 
 def delivery_time(when, digest_at='08:30', current=None, work=False, urgent=False):
@@ -14602,7 +14624,7 @@ Follow the preparation rules above (tools/personal-assistant/PREPARATION.md; rea
 For this job:
 - Browser lease owner: assistant-{j[:8]} (python3 {browser_lease_script(config)} claim --owner assistant-{j[:8]} --minutes 30 --wait 10).
 - Attachments folder: {WORKSPACE}/data/assistant-attachments/{j}/{calendar_prompt(config)}{doc_write_prompt(config)}{github_route.prompt(config or {})}{meeting_notes_prompt(config)}
-- Save the result with assistant_signals prepare args suggestion_id={sid}, job_id={j}, body=<short result>, next_actions=[...], outcome, based_on=<the event id of someone else's message the draft or decision follows, such as a teammate's suggestion in Slack or another thread; the to-do links to it> when there is one, and send_now:true only when the owner's latest message approves sending a draft they already saw on the card, unchanged (the service refuses any other). A draft you write or change in this turn is saved without send_now and shown to them: they read it and tap Send (outcome:'needs_you', needs:'check the draft and send it'), also when their note only says what to do ("email Sam now").
+- Save the result with assistant_signals prepare args suggestion_id={sid}, job_id={j}, body=<short result>, next_actions=[...], outcome, based_on=<the event id of someone else's message the draft or decision follows, such as a teammate's suggestion in Slack or another thread, never the to-do's own source; the to-do links to it> when there is one, and send_now:true only when the owner's latest message approves sending a draft they already saw on the card, unchanged (the service refuses any other). A draft you write or change in this turn is saved without send_now and shown to them: they read it and tap Send (outcome:'needs_you', needs:'check the draft and send it'), also when their note only says what to do ("email Sam now").
 - outcome:'done' only when the task itself is complete and nothing is left for the owner but to check it; outcome:'answered' when you only answered their question, explained or planned, and the task itself is still to do (the card then offers Do it again); outcome:'already_done' with no next_actions when it turns out to be done already or no longer needed, and nothing is left for anyone; outcome:'waiting' with waiting_on:<the step and who> while a step is still open on someone else's side (a review, merge, deploy, a reply); outcome:'your_step' with step:'submit' (or pay, book, sign, confirm, order, apply) when everything is ready but that final click is left for them, e.g. a form you filled in and didn't submit (the card says so and links to the page in this Machine's browser by itself; no link of your own needed); outcome:'needs_you' with needs:<the one thing they have to do, in a few words> otherwise (approve the send, sign in, choose); when that is a question for them, write needs as the question itself, ending in "?" (the card then leads with Answer). The card shows that status line itself, so the body doesn't repeat it. Finish what you can first: don't stop to ask about steps the rules already let you do.
 - Keep prepared, sent and done apart, in the body and the title too: never call something done, sent, applied or fixed while a draft, a review or a step only they can do is still open; say what is ready and what is left. The service refuses outcome:'done' while a next action still waits for them.
 - Before a follow-up, nudge or handoff, check the conversation for newer activity by anyone else: their reply, a teammate's send or answer, or a teammate's Machine that handled it (the Work Fleet lines). Read the newer messages listed below first when there are any. When it's handled, save outcome:'already_done' saying who did it and when, instead of drafting.
@@ -15289,7 +15311,7 @@ Team: when begin_analysis lists team (Work messages, shared with the owner's Wor
 Who does the step: when the step on a card is one only the owner can do themselves, in person or offline (go somewhere, pick something up, attend, meet, hand something over, sign on paper), add owner_step:true to suggest, and to promise for the owner's own; judge it by what the step is, not its words. The card then offers Done, and help around it on the owner's tap (a calendar slot, directions, a message if plans change), never Do it. Leave it out when you can do the step with your tools (write, send, look up, book or order online, fill in a form).
 Family coordination: when a to-do is the owner arranging family life with one specific person (who picks up the kids, a plan, a schedule, a back-and-forth about the weekend), judged by what the conversation means, and that person is family (a partner, a child, a parent or another relative) as their graph role says or as the owner's own words say, add family_with: their person node_id to suggest. Never infer family from a name, a shared surname, an address or the topic alone, and never for someone the owner works with; when unsure, leave it out. The service decides whether the to-do suggests inviting them to the owner's Family.
 Work or Personal: a to-do about the owner's own life (their family, friends, home, their children's activities, their health), judged by what the matter is and who it is with, gets personal:true on suggest, also when it came in on a work mailbox; family_with counts as personal too. Leave it out for anything about their work, and for a colleague or client who mentions their own life in a work conversation. The to-do is then Personal: never a Work Fleet's.
-Based on: when a to-do's draft or decision follows someone else's input in another message (a teammate's suggestion in Slack, another thread, a project note), add based_on (that message's event_id) to suggest. The to-do shows it with a link, so the owner sees what it follows.
+Based on: when a to-do's draft or decision follows someone else's input in another message (a teammate's suggestion in Slack, another thread, a project note), add based_on (that message's event_id) to suggest. The to-do shows it with a link, so the owner sees what it follows. Never the to-do's main source (its first event_id): the to-do already shows that one.
 Before suggesting, check it isn't already handled: search related signals (same thread, sender or chat, and the same person on other channels) for a later reply from the owner or from a colleague (e.g. a teammate on the owner's own email domain answering the thread), a meeting with them since, or a confirmation (signed, paid, booked, resolved). If so, don't suggest it. A new suggest lists what came after its evidence when there is any; read those, then make no to-do or suggest again with newer_checked. When a signal in this batch shows that an OPEN suggestion (pending, prepared, accepted or snoozed in status) is now done, call looks_handled with suggestion_id, a reason (one short clause in plain words that reads after "Looks handled:", e.g. "Sam e-signed it on Tuesday") and the event_ids that show it; the owner still closes it themselves. After they said Not done on it, only a newer signal counts. For anything tied to a date, check the calendars for that date (days off, travel, existing plans).
 When a note the owner wrote on a suggestion (decisions with source telegram or dashboard) states something that stays true beyond that card, save it once with remember_fact (text, decision_id, {FACT_KIND_HINT}); skip one-off wording requests. A fact is about its subject, never about whoever sent the message it came up in: when it is about a specific person, organization or project, add about=[their graph node_ids]; one about the owner (their own habits, preferences, home or accounts) or about the world gets no about.
 Moments: a meeting both sides agreed on that is in the calendar needs no to-do to confirm it or say "see you then", unless the other person asked for a confirmation or something is still open (time, place, agenda). A to-do whose whole point is a moment (a reminder or confirmation before a meeting) gets expires_at (that moment) and expires_what ("the meeting with Sam"), so it closes by itself once that has passed. Titles and bodies are read on later days: name the weekday or date, never today, tomorrow or yesterday.
