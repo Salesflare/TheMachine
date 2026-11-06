@@ -108,11 +108,16 @@ class ParkedFixes(unittest.TestCase):
         a.sync_gateway(self.store, self.config, GATEWAY, NoJournal())  # the next sync: no second one
         [todo] = self.todos()
         self.assertEqual(todo['title'], 'Your update kept 2 of your own files')
-        self.assertIn('notes.md → notes.md.local-20261106, tools/run.sh → tools/run.sh.local-20261106', todo['body'])
+        self.assertIn(':\nnotes.md → notes.md.local-20261106\ntools/run.sh → tools/run.sh.local-20261106\n', todo['body'])  # one a line
         with self.store.connect() as db:
             [event] = db.execute("SELECT kind, body FROM events WHERE source_id=?", ('parked:kept-' + release,)).fetchall()
         self.assertEqual(event['kind'], 'machine.parked_fix')
         self.assertNotIn('notes.md', event['body'])  # the names once, in the to-do
+        with self.store.connect() as db:
+            row = dict(db.execute("SELECT * FROM suggestions WHERE dedupe_key=?", ('parked:kept-' + release,)).fetchone())
+        self.assertEqual((row['origin'], row['source_line']), ('machine', None))  # no thread to read
+        taps = [b['action']['value'].rsplit(':', 1)[1] for k in a.controls(row)['blocks'] for b in k['buttons']]
+        self.assertEqual(taps, ['complete', 'snooze'])  # nothing to plan
         with log.open('a') as out:  # a later update that renamed one more: a to-do of its own
             out.write(f'2026-11-07T04:00:00\t{"b" * 40}\tUSER.md\tUSER.md.local-20261107\n')
         a.sync_gateway(self.store, self.config, GATEWAY, NoJournal())

@@ -68,9 +68,9 @@ def card(item):
     """(title, body, signal) of the to-do for one parked change: what to do, and what was kept (its signal), once each."""
     if item.get('kept'):
         return (i18n.t('Your update kept {} of your own files', len(item['kept'])),
-                i18n.t('The new version has files with the same names, so the update renamed yours: {}. Close this once '
-                       'you’ve checked them.', ', '.join(f'{path} → {name}' for path, name in item['kept'])),
-                i18n.t('Files added on this Machine that an update renamed instead of overwriting them.'))
+                i18n.t('The new version has files with the same names, so the update renamed yours:\n{}\nClose this once '
+                       'you’ve checked them.', '\n'.join(f'{path} → {name}' for path, name in item['kept'])),
+                i18n.t('An update kept your own files.'))
     short = item['sha'][:12]
     if item['changes']:
         return (i18n.t('Bring back changes the update set aside'),

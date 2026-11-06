@@ -352,7 +352,8 @@ function reviewSend(label){const whole=label.replace(/^Send\b/,'Review and send'
 // A step only the owner can do (a visit, a pickup; the review's owner_step): Done leads, and Plan it is what The Machine
 // can do around it (a calendar slot, directions, a message if plans change). Never Do it. Same rule as controls() in assistant.py.
 const ownerStep=s=>!!s.owner_step&&!closed(s)&&s.status!=='snoozed';
-const ownerStepChoices=choices=>[['complete','Done'],...choices.filter(([c])=>c!=='complete').map(([c,t])=>c==='accept'?[c,'Plan it']:[c,t])];
+// One The Machine made about itself (origin machine: what an update set aside or kept) has nothing to plan: Done and Snooze.
+const ownerStepChoices=(choices,s)=>[['complete','Done'],...choices.filter(([c])=>c!=='complete'&&(s?.origin!=='machine'||c==='snooze')).map(([c,t])=>c==='accept'?[c,'Plan it']:[c,t])];
 // A to-do's project (graph.set_card_project): a chip to its page, and a small picker to change it or take it off.
 // Set by hand it stays; otherwise the review or the project its thread or people are on chose it.
 // The chip opens the project's page; Project under Details opens the picker.
@@ -439,7 +440,7 @@ const ask=askQuestion(s,smart,hint);
 // Try again already ran without anything new and stopped asking again: retrying alone won't help, so it isn't offered.
 const retryPointless=s.preparation_cause==='retry'&&askBlocked(s);
 const asked=ask?[['answer','Answer'],...(s.preparation_status==='blocked'&&!retryPointless?[['retry',retryLabel(s.preparation_reason)]]:[]),['complete','Mark done'],['snooze','Snooze'],['reject','Not needed']]:withTeammate(s)?[['checkin','Check in now'],['complete','Mark done'],['snooze','Snooze'],['reject','Not needed']]:s.status==='pending'?[...(s.preparation_status==='blocked'?[['retry',retryLabel(s.preparation_reason)]]:[['accept',s.labels?.accept||'Do it']]),['complete','Mark done'],['snooze','Snooze'],['change','Change how'],['reject',s.labels?.reject||'Not needed']]:s.status==='snoozed'?[['accept',s.handoff_wait?'Check in now':'Unsnooze'],['snooze','Change time'],['reject','Not needed']]:[...(s.preparation_status==='blocked'?[['retry',retryLabel(s.preparation_reason)]]:answered?[['accept','Do it']]:[]),['complete','Mark done'],['snooze','Snooze'],['change','Ask for changes'],['reject','Not needed']];
-const choices=ownerStep(s)&&!ask?ownerStepChoices(asked):asked;
+const choices=ownerStep(s)&&!ask?ownerStepChoices(asked,s):asked;
 const notes=smart.map(a=>({action:a,state:a.state||s.action_status})).filter(x=>x.action!==tpSent&&actionNote(x.action.kind==='intercom'?{...x.state,as_name:x.action.as_name}:x.state,x.action.kind));
 const undo=closed(s)&&s.undo_until&&Date.parse(s.undo_until)>Date.now();
 const status=cardState(s);
