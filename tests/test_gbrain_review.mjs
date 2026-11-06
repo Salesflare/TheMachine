@@ -13,7 +13,7 @@ const review = {agentId: 'main', sessionKey: 'agent:main:assistant-review-signal
   senderId: '1000001', chatId: '1000001'};
 const profile = {...review, sessionKey: 'agent:main:assistant-review-profile-' + 'b'.repeat(32), runId: 'run-2'};
 const blocked = async (toolName, ctx = review) => (await hooks.before_tool_call({toolName, params: {}}, ctx))?.block === true;
-const prompt = async () => (await hooks.before_prompt_build({}, review)).prependContext;
+const prompt = async () => (await hooks.before_prompt_build({}, review)).prependSystemContext;
 const BEFORE = new Set(['assistant_signals', 'memory_search', 'memory_get', 'read', 'file_fetch', 'dir_list', 'dir_fetch', 'ls']);
 
 // Off (no `gbrain` key, turned off, or on without consent): nothing changes

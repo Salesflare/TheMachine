@@ -51,10 +51,13 @@ class GraphFixes(unittest.TestCase):
         self.assertEqual(self.store.boards_text('r4'),first)  # a day later
         with self.store.connect() as db:db.execute("UPDATE projects SET closed_at=? WHERE name='Hire: backend'",(tg.at(0),));db.execute("DELETE FROM board_offers")
         self.assertEqual(self.store.boards_text('r5'),'')  # fewer than three on no board
-    def test_the_board_check_comes_first_as_its_own_task_not_about_the_batch(self):
+    def test_the_board_check_is_done_first_as_its_own_task_not_about_the_batch(self):
         a=tg.a if hasattr(tg,'a') else __import__('assistant')
         p=a.review_prompt('r1',['acct'],boards='- Hire: designer (project:1)')
-        self.assertLess(p.index('Hire: designer'),p.index('begin_analysis with account_ids'))
+        # Said in words, not by its place: it is this run's own, so it comes after the instructions every review shares
+        # (their cached prefix, tests/test_review_cache_prefix.py)
+        self.assertIn('Also in this turn, before the signal review: boards to suggest',p)
+        self.assertGreater(p.index('Hire: designer'),p.index('End with exactly NO_REPLY.'))
         self.assertIn('not about this batch',p)
         self.assertNotIn('Two tasks',a.review_prompt('r1',['acct']))
     def test_a_suggested_boards_lost_or_declined_ending_is_its_stalled_row_not_a_stage(self):
