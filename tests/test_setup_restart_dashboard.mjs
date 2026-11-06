@@ -10,7 +10,7 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // (or "Your Machine is restarting." later on), never the sad "I can't reach the assistant", and is back 2 seconds
 // later, not after a back-off of 5 to 30 seconds. A plain 502 (no JSON) is still Offline.
 const raw=await dashboardPage(),sw=await readFile(new URL('../sw.js',import.meta.url),'utf8');
-const py=await readFile(new URL('../assistant.py',import.meta.url),'utf8');
+const py=await readFile(new URL('../machine/config.py',import.meta.url),'utf8');
 const BRAND=Object.fromEntries([...py.slice(py.indexOf('BRAND_ASSETS = {'),py.indexOf('}',py.indexOf('BRAND_ASSETS = {'))).matchAll(/'\/brand\/([\w.-]+)': ROOT \/ '([\w./-]+)'/g)].map(m=>[m[1],m[2]]));
 const SCOPE='b2'.repeat(16),iso=new Date().toISOString(),shots=process.env.SHOTS||'';
 const page=()=>raw.replace('__CSRF__','').replaceAll('__UI_VERSION__','v1').replace('__BASE__','/').replace('__CACHE_SCOPE__',SCOPE);
