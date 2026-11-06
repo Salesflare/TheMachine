@@ -375,7 +375,7 @@ const areaChip=s=>s.scope&&scopeFilter==='all'?html`<span class="chip scope">${s
 const moveAsk=s=>!closed(s)&&s.preparation_status==='blocked'&&!s.preparation_error&&!!s.preparation_move_to&&moveTargets(s).some(a=>a.id===s.preparation_move_to);
 // A run stuck on messages from another area (preparation_blocked use_event_ids): "Use this email for this to-do" leads;
 // the tap makes them its sources (Store.use_sources) and it carries on by itself. Its accounts and area stay.
-const useAsk=s=>!closed(s)&&s.preparation_status==='blocked'&&!s.preparation_error&&!!s.preparation_use?.n&&['accepted','instructions'].includes(s.status);
+const useAsk=s=>!closed(s)&&s.preparation_status==='blocked'&&!s.preparation_error&&!!s.preparation_use?.n&&['pending','accepted','instructions'].includes(s.status);
 const useText=u=>u.mail?(u.n===1?t('Use this email for this to-do'):t('Use these emails for this to-do')):(u.n===1?t('Use this message for this to-do'):t('Use these messages for this to-do'));
 async function cardUse(id,b){if(b)b.disabled=true;
  try{const r=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'card_use_sources',args:{suggestion_id:id,decision_id:crypto.randomUUID()}})});

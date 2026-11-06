@@ -4097,6 +4097,9 @@ class Store:
             moved = self.move_meeting_transcripts(db)
             if moved:
                 LOG.info('Moved %d meeting transcript(s) out of Notes into Transcript: %s', len(moved), moved)
+        restored = self.restore_ahead_blockers()
+        if restored:
+            LOG.info('Showed the blocker again on %d prepared-ahead to-do(s)', restored)
         self.clean_protection_leftovers()
         try:
             self.message_protection(True if protect is None and os.environ.get('MESSAGE_PROTECTION_TEST') else protect)
@@ -4860,6 +4863,34 @@ class Store:
             if row.get('kind') == 'android.notification':
                 row['metadata']['app_name'] = android_app_name(row['metadata'].get('package_name', 'Unknown app'))
         return rows
+
+    AHEAD_BLOCKERS = ("FROM preparations p JOIN suggestions s ON s.id=p.suggestion_id WHERE p.status='cancelled' "
+                      "AND trim(coalesce(p.reason,''))<>'' AND (s.status='pending' OR s.status='snoozed' AND s.resume_status='pending')")
+
+    def restore_ahead_blockers(self):
+        """Once: settle_ahead used to cancel the blocker of a prepared-ahead run it sent out as a new to-do, so the owner
+        never saw its reason, questions, Answer or Try again. Those preparations (canceled, reason kept, on a waiting or
+        snoozed new to-do) are blocked again. A copy of the database comes first, next to it (retention rotates it).
+        Returns how many."""
+        name = 'ahead-blockers'
+        with self.connect() as db:
+            db.execute('CREATE TABLE IF NOT EXISTS store_fixes(name TEXT PRIMARY KEY,at TEXT NOT NULL)')
+            if db.execute('SELECT 1 FROM store_fixes WHERE name=?', (name,)).fetchone():
+                return 0
+            found = db.execute('SELECT count(*) ' + self.AHEAD_BLOCKERS).fetchone()[0]
+        if found:
+            copy = self.path.with_name(f'{self.path.name}.before-{name}-{dt.datetime.now(dt.timezone.utc):%Y%m%dT%H%M%SZ}')
+            fd = os.open(copy, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+            os.close(fd)
+            with contextlib.closing(sqlite3.connect(self.path, timeout=60)) as source, contextlib.closing(sqlite3.connect(copy)) as target:
+                source.backup(target)  # a consistent copy while the service keeps writing
+        with self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            if db.execute('SELECT 1 FROM store_fixes WHERE name=?', (name,)).fetchone():
+                return 0
+            changed = db.execute("UPDATE preparations SET status='blocked' WHERE suggestion_id IN (SELECT p.suggestion_id " + self.AHEAD_BLOCKERS + ')').rowcount
+            db.execute('INSERT INTO store_fixes(name,at) VALUES(?,?)', (name, now()))
+        return changed
 
     def move_meeting_transcripts(self, db):
         """Make what meeting_notes.transcript_moves says, in the caller's transaction, first keeping each row's old kind
@@ -6305,7 +6336,7 @@ class Store:
                 if not ids:
                     raise ValueError('Pick one of your areas')
                 resume = (row['prep'] == 'blocked' and not row['error'] and row['move_to'] == area
-                          and row['status'] in ('accepted', 'instructions'))
+                          and row['status'] in ('pending', 'accepted', 'instructions'))  # pending: a prepared-ahead run's blocker
             db.execute('INSERT INTO card_moves(decision_id,suggestion_id,area,accounts_before,area_before,created_at) VALUES(?,?,?,?,?,?)',
                        (decision_id, suggestion_id, area, row['account_ids'] or '[]', row['area'], now()))
             if undo is not None:  # an undo is no move of its own to undo later
@@ -6342,7 +6373,7 @@ class Store:
             if not row:
                 raise ValueError('Unknown to-do')
             asked = json.loads(row['use_events'] or '[]') if row['prep'] == 'blocked' and not row['error'] else []
-            if not asked or row['status'] not in ('accepted', 'instructions'):
+            if not asked or row['status'] not in ('pending', 'accepted', 'instructions'):  # pending: a prepared-ahead run's blocker
                 raise ValueError('Nothing is waiting for that on this to-do')
             live = [r['id'] for r in db.execute('SELECT id FROM events WHERE deleted=0 AND id IN (' + ','.join('?' * len(asked)) + ')', asked)]
             if not live:
@@ -6415,10 +6446,11 @@ class Store:
                               'AND suggestion_id NOT IN (SELECT suggestion_id FROM follow_up_cards)', (since,)).fetchone()[0] < per_day
 
     def settle_ahead(self, db):
-        """A prepared-ahead card whose run got stuck goes to the owner as a normal suggestion instead."""
+        """A prepared-ahead card whose run got stuck goes to the owner as a new to-do instead. Its blocker stays
+        (preparation blocked): the to-do shows "Needs your help" with the reason and questions, and Answer or Try
+        again accepts it first and carries on (_decide)."""
         for row in db.execute("SELECT s.id FROM suggestions s JOIN preparations p ON p.suggestion_id=s.id WHERE s.early=1 AND s.status='accepted' AND p.status='blocked'").fetchall():
             db.execute("UPDATE suggestions SET status='pending',early=0 WHERE id=?", (row['id'],))
-            db.execute("UPDATE preparations SET status='cancelled',updated_at=? WHERE suggestion_id=?", (now(), row['id']))
             # It goes out as the card itself, not as a reminder: also when an earlier notification exists (a card reopened by a new signal).
             db.execute("UPDATE deliveries SET reminder=0 WHERE suggestion_id=?", (row['id'],))
 
@@ -8295,7 +8327,8 @@ class Store:
             return self._not_done(db, row, feedback, decision_id, source)
         if choice == 'retry':
             job=db.execute('SELECT status,error,job_id FROM preparations WHERE suggestion_id=?',(suggestion_id,)).fetchone()
-            if row['status'] not in ('accepted','instructions') or not job or job['status']!='blocked':
+            ahead=row['status']=='pending' and job and job['status']=='blocked'  # a prepared-ahead run stuck on a blocker (settle_ahead)
+            if row['status'] not in ('accepted','instructions') and not ahead or not job or job['status']!='blocked':
                 if row['status'] in ('accepted','instructions','prepared') and job and job['status'] in ('queued','starting','running','done'):
                     # Already carrying on (its sign-in was seen, another device or a second tap was first) or done:
                     # this tap from a card drawn before that asks for what is already happening, so nothing to do.
@@ -8304,9 +8337,11 @@ class Store:
                 # Telegram ingress queue). The card redraws as it is now.
                 return {'status':row['status'],'duplicate':True,'skipped':True,'reason':'stale_retry','already':'closed'}
             db.execute('INSERT INTO decisions VALUES(?,?,?,?,?,?)',(decision_id,suggestion_id,choice,feedback[:5000],source,now()))
+            if ahead:  # Try again accepts it first: a run works only on an accepted to-do (preparation_state.tool_intent)
+                db.execute("UPDATE suggestions SET status='accepted',undo_until=NULL WHERE id=?",(suggestion_id,))
             self.queue_preparation(db,suggestion_id,decision_id,resume_action=True)
             db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL',(suggestion_id,))
-            return {'status':row['status'],'retrying':True}
+            return {'status':'accepted' if ahead else row['status'],'retrying':True}
         if row['status'] == 'completed':
             if choice == 'complete':
                 return {'status': 'completed', 'duplicate': True}
@@ -20235,14 +20270,17 @@ class App(*APP_MIXINS):
 
     def _stop_stale_runs(self, runner, limit):
         with self.store.connect() as db:
-            stale=db.execute("""SELECT r.*,p.status prep_status,p.error prep_error,p.updated_at prep_updated
+            stale=db.execute("""SELECT r.*,p.status prep_status,p.error prep_error,p.reason prep_reason,p.updated_at prep_updated
                 FROM preparation_runs r LEFT JOIN preparations p ON p.job_id=r.job_id
                 WHERE r.finished_at IS NULL AND (p.job_id IS NULL OR p.status NOT IN ('starting','running'))
                 AND (r.retry_at IS NULL OR r.retry_at<=?) ORDER BY r.started_at LIMIT ?""",(now(),limit)).fetchall()
         for run in stale:
             # Its own result or blocker is saved (not replaced, canceled or timed out): the run normally ends by itself
             # seconds later. Read how it ended; stop it only when it is still going after PREPARATION_SETTLE_SECONDS.
-            if run['prep_status'] in ('done','blocked') and run['prep_error'] not in ('completion_unconfirmed','stopped'):  # stopped: the chat's Stop, at once
+            # Also one whose preparation was canceled after its blocker was saved (reason kept: settle_ahead before it kept
+            # the blocker): that run finished by itself too, so it is never stopped and recorded as lost.
+            saved=run['prep_status'] in ('done','blocked') or run['prep_status']=='cancelled' and bool((run['prep_reason'] or '').strip())
+            if saved and run['prep_error'] not in ('completion_unconfirmed','stopped'):  # stopped: the chat's Stop, at once
                 outcome=runner({'action':'status','job_id':run['job_id'],'session_job_id':run['session_job_id']})
                 if outcome.get('status') in preparation_state.TERMINAL:
                     with self.store.connect() as db:
@@ -20259,9 +20297,11 @@ class App(*APP_MIXINS):
                     db.execute('UPDATE preparation_runs SET retry_at=? WHERE job_id=?',((dt.datetime.fromisoformat(now())+dt.timedelta(minutes=1)).isoformat(),run['job_id']))
                     continue
                 db.execute('UPDATE preparation_runs SET status=?,finished_at=? WHERE job_id=?',(outcome['status'],now(),run['job_id']))
-                # A run that timed out without confirmation gets its one automatic retry once it has really ended.
+                # A run that timed out without confirmation gets its one automatic retry once it has really ended. Not on a
+                # to-do waiting for the owner (a prepared-ahead one settle_ahead sent out): their Try again starts it.
                 retried=db.execute("""UPDATE preparations SET job_id=?,status='queued',reason=NULL,details=NULL,retry_at=NULL,updated_at=?,
-                    auto_retries=auto_retries+1,started_at=NULL WHERE job_id=? AND status='blocked' AND error='completion_unconfirmed' AND auto_retries=0""",
+                    auto_retries=auto_retries+1,started_at=NULL WHERE job_id=? AND status='blocked' AND error='completion_unconfirmed' AND auto_retries=0
+                    AND suggestion_id IN (SELECT id FROM suggestions WHERE status IN ('accepted','instructions'))""",
                     (uuid.uuid4().hex,now(),run['job_id'])).rowcount
                 if retried:
                     db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=?',(run['suggestion_id'],))
