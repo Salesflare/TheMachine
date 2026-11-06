@@ -106,11 +106,16 @@ let phonePush='';
 async function phonePushCheck(){const p=window.machinePhone;if(!p)return;let s='';try{s=await p.state('push')}catch{}if(s!==phonePush){phonePush=s;deviceRender()}}
 function phoneAppPush(){if(!document.documentElement.classList.contains('in-app'))return null;
  try{const k=JSON.parse(localStorage.getItem('machine-app-push')||'null');return {id:typeof k?.id==='string'?k.id:null}}catch{return {id:null}}}
+// Outside the app it is always there, with Get the app: themachine.computer/app opens the phone's store (or, on a
+// computer, the help article with both), also once the setup to-do's row is closed.
+const PHONE_APP_GET='https://themachine.computer/app';
 function phoneAppRender(){const p=state?.notify?.phone_app,inApp=document.documentElement.classList.contains('in-app');let row=$('#device-phone');
  if(inApp&&state?.notify&&!state.notify.app_push_ready&&!devStore.get('app-push-network')){devStore.set('app-push-network',1);toast(t('Notifications in the app need The Machine Network. The app works without them.'))}
- const h=!p||inApp||!(p.hosted||p.url)?'':p.hosted?html`<span class="grow"><strong>Phone app</strong><small>${t('The app signs in with your account.')}</small></span>`:
-  html`<span class="grow"><strong>Phone app</strong><small>${t('The app signs in with your account on The Machine Network.')}</small><details class="connect-alt phone-own"><summary>${t('Not on the Network?')}</summary><small>${t('Install the app, then scan this with the phone’s camera.')}</small>${p.qr?.length?qrSvg(p.qr):''}<small>${htmlT('Or enter this address in the app: {}',html`<code class="phone-url">${p.url}</code>`)}</small></details></span>`;
- if(!h){row?.remove();return}  // only there when there is something to show
+ const get=html`<a class="btn-link phone-get" href="${PHONE_APP_GET}" target="_blank" rel="noopener">Get the app</a>`;
+ const h=inApp?'':p?.hosted?html`<span class="grow"><strong>Phone app</strong><small>${t('The app signs in with your account.')}</small></span>${get}`:
+  p?.url?html`<span class="grow"><strong>Phone app</strong><small>${t('The app signs in with your account on The Machine Network.')}</small><details class="connect-alt phone-own"><summary>${t('Not on the Network?')}</summary><small>${t('Install the app, then scan this with the phone’s camera.')}</small>${p.qr?.length?qrSvg(p.qr):''}<small>${htmlT('Or enter this address in the app: {}',html`<code class="phone-url">${p.url}</code>`)}</small></details></span>${get}`:
+  html`<span class="grow"><strong>Phone app</strong><small>iPhone and Android.</small></span>${get}`;
+ if(!h){row?.remove();return}  // not inside the app itself
  if(!row){row=document.createElement('div');row.id='device-phone';deviceRows.app.after(row)}
  putHTML(row,h)}
 deviceRows.app.onclick=e=>{const b=e.target.closest('[data-device]');if(b)deviceRun(b.dataset.device)};

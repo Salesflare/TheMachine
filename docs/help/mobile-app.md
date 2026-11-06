@@ -11,6 +11,8 @@ The mobile app opens your own dashboard, signed in as on the web. Get it on the 
 
 From your first visit, the small **Get more out of The Machine** to-do at the top of To-dos suggests it first. On a phone's browser, **Get it** opens its store. On a computer it shows a QR code that opens the right store on the phone, with links to both. Inside the app it never shows.
 
+On any phone, [themachine.computer/app](https://themachine.computer/app) opens the right store, and **Settings**, **General**, **Phone app** always has **Get the app**.
+
 ## Connect it
 
 On a hosted Machine the app signs in with your account. On a self-hosted one, open **Settings**, **General** on a computer: **Phone app** shows a code. Install the app, then scan it with the phone's camera, or type the address shown under it into the app. The app asks before it connects, and your Machine's own sign-in still applies.

@@ -31,7 +31,9 @@ No celular, uma janela como **Enviar este e-mail?** ocupa a tela toda: o título
 
 Desde a sua primeira visita, assim que a primeira olhada termina, uma pequena tarefa no topo de Tarefas lista o que deixa a The Machine mais útil: o app no celular, as notificações, o WhatsApp, o app neste computador, outra conta e mais conexões. Cada linha tem um botão que faz essa etapa, e se marca sozinha quando está feita.
 
-As linhas só aparecem onde fazem sentido: nada de app do celular dentro do app, nada de instalar no celular. O × de uma linha a fecha de vez, em todos os aparelhos, e o × no topo fecha a tarefa inteira. **Configurações**, **Geral**, **Este aparelho** tem os mesmos controles.
+As linhas só aparecem onde fazem sentido: nada de app do celular dentro do app, nada de instalar no celular. O × de uma linha a fecha em todos os aparelhos, e o × no topo fecha a tarefa inteira.
+
+**Desfazer** na mensagem que aparece depois a traz de volta, assim como **Mostrar 1 etapa oculta** no fim da tarefa. Se você fechou a tarefa inteira, **Configurações**, **Geral**, **Tarefa de configuração** a traz de volta. **Configurações**, **Geral**, **Este aparelho** tem os mesmos controles, e lá o app do celular sempre tem o link para baixar.
 
 ## Novas versões
 

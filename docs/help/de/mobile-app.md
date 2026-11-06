@@ -11,6 +11,8 @@ Die mobile App öffnet dein eigenes Dashboard, angemeldet wie im Web. Hol sie di
 
 Ab deinem ersten Besuch schlägt die kleine Aufgabe **Hol mehr aus The Machine heraus** oben in Aufgaben sie als Erstes vor. Im Browser auf dem Handy öffnet **Holen** ihren Store. Auf einem Computer zeigt sie einen QR-Code, der auf dem Handy den richtigen Store öffnet, mit Links zu beiden. In der App selbst erscheint sie nie.
 
+Auf jedem Handy öffnet [themachine.computer/app](https://themachine.computer/app) den richtigen Store, und **Einstellungen**, **Allgemein**, **Handy-App** hat immer den Link dazu.
+
 ## Verbinden
 
 Auf einer gehosteten Machine meldet sich die App mit deinem Konto an. Auf einer selbst gehosteten öffnest du auf einem Computer **Einstellungen**, **Allgemein**: **Handy-App** zeigt einen Code. Installiere die App und scanne ihn dann mit der Kamera des Handys, oder tippe die Adresse darunter in die App ein. Die App fragt, bevor sie sich verbindet, und die eigene Anmeldung deiner Machine gilt weiterhin.

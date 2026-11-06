@@ -31,7 +31,9 @@ Sul telefono, una finestra come **Inviare questa email?** occupa tutto lo scherm
 
 Dalla prima visita, appena finita la prima occhiata, una piccola attività in cima alle Attività elenca ciò che rende The Machine più utile: l’app per il telefono, le notifiche, WhatsApp, l’app su questo computer, un altro account e altre connessioni. Ogni riga ha un pulsante che fa quel passaggio, e si spunta da sola una volta fatto.
 
-Le righe compaiono solo dove servono: niente app per il telefono dentro l’app, niente installazione su un telefono. La × di una riga la chiude per sempre, su ogni dispositivo, e la × in alto chiude l’intera attività. **Impostazioni**, **Generali**, **Questo dispositivo** ha gli stessi controlli.
+Le righe compaiono solo dove servono: niente app per il telefono dentro l’app, niente installazione su un telefono. La × di una riga la chiude su ogni dispositivo, e la × in alto chiude l’intera attività.
+
+**Annulla** nel messaggio che segue la riporta, come **Mostra 1 passaggio nascosto** in fondo all’attività. Se hai chiuso l’intera attività, **Impostazioni**, **Generali**, **Attività di configurazione** la riporta. **Impostazioni**, **Generali**, **Questo dispositivo** ha gli stessi controlli, e lì l’app per il telefono ha sempre il suo link per scaricarla.
 
 ## Nuove versioni
 

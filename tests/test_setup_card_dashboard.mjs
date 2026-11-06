@@ -33,7 +33,8 @@ const server=createServer(async(req,res)=>{let body='';for await(const c of req)
   // the Machine keeps a closed row (assistant.setup_dismiss): every device gets it with its next state
   // + Add's list, with the two sources the setup to-do opens there
   if(r.action==='connect_sources'){res.end(JSON.stringify({saveable:true,manage_url:manage||null,paired:!manage,sources:[{name:'whatsapp',label:'WhatsApp',service:'whatsapp',hosted_signin:'whatsapp',what:'Your chats.'},
-   {name:'google',label:'Google',service:'gmail',hosted_signin:'google',what:'Mail and calendar.'}]}));return}
+   {name:'google',label:'Google',service:'gmail',hosted_signin:'google',what:'Mail and calendar.'},{name:'microsoft',label:'Microsoft',service:'outlook',hosted_signin:'microsoft',what:'Mail and calendar.'}]}));return}
+  if(r.action==='setup_restore'){const step=r.args.step;setup=step==='all'?{...setup,closed:false,dismissed:[]}:step==='card'?{...setup,closed:false}:{...setup,dismissed:setup.dismissed.filter(x=>x!==step)};res.end(JSON.stringify({setup_card:setup}));return}
   if(r.action==='setup_dismiss'){const step=r.args.step;setup=step==='card'?{...setup,closed:true}:{...setup,dismissed:[...new Set([...setup.dismissed,step])].sort()};res.end(JSON.stringify({setup_card:setup}));return}
   res.end(JSON.stringify(r.action==='push_test'?{sent:true}:{subscribed:r.action==='push_subscribe'}));return}
  if(/^\/brand\/[\w.-]+\.(png|webp|woff2)$/.test(url.pathname)){try{const f=await readFile(new URL('..'+(url.pathname==='/brand/avatar.png'?'/brand/app-icon-192.png':url.pathname),import.meta.url));res.setHeader('Content-Type',url.pathname.endsWith('.png')?'image/png':url.pathname.endsWith('.webp')?'image/webp':'font/woff2');res.end(f)}catch{res.statusCode=404;res.end()}return}
@@ -110,7 +111,7 @@ try{
   const c=await card(page);assert.ok(c.shown);
   assert.equal(c.head,'Get more out of The Machine 0 of 5 done');
   assert.deepEqual(c.rows,[['phone','Get the phone app','Get it'],['push','Turn on notifications','Turn on'],['whatsapp','Connect WhatsApp','Connect'],
-   ['install','Install on this computer','Install'],['account','Add another Google account','Add']],'at most 5, in order: more connections waits');
+   ['install','Install on this computer','Install'],['account','Add another email account','Add']],'at most 5, in order: more connections waits');
   assert.doesNotMatch(c.head+c.rows.flat().join(' '),copy);
   assert.deepEqual(await asked(page),[],'nothing is asked before a tap');
   const box=await page.evaluate(()=>{const n=document.querySelector('#setup-card').getBoundingClientRect(),c=document.querySelector('.card').getBoundingClientRect(),h=document.querySelector('#page-head').getBoundingClientRect();
@@ -126,13 +127,16 @@ try{
   await page.waitForFunction(()=>document.querySelector('#toast').textContent.includes('A test is on its way'));
   assert.deepEqual(await asked(page),['requestPermission','subscribe']);assert.deepEqual(actionNames(),['push_subscribe','push_test']);
   let c=await card(page);assert.deepEqual(c.rows[0],['push','Turn on notifications','done']);assert.equal(c.head,'Get more out of The Machine 2 of 5 done');
-  // WhatsApp, another account and more connections open their own form under Connections
-  for(const [step,hash] of [['whatsapp','#connect=whatsapp'],['account','#connect=google'],['connect','#connections=add']]){
+  // WhatsApp opens its own sign-in under Connections; another email account and more connections the + Add picker,
+  // where Google and Microsoft both are
+  for(const [step,hash] of [['whatsapp','#connect=whatsapp'],['account','#connections=add'],['connect','#connections=add']]){
    const seen=page.evaluate(()=>new Promise(r=>addEventListener('hashchange',()=>r(location.hash||history.state||''),{once:true})));
    await page.locator(`[data-setup-go="${step}"]`).click();
    const got=await seen;assert.ok([hash,''].includes(got),step+' '+got);
    assert.equal(await page.evaluate(()=>document.querySelector('#health').hidden),false,step+': Connections opens');
-   if(step!=='connect')await page.waitForFunction(p=>connectSignin?.provider===p,step==='whatsapp'?'whatsapp':'google');  // its own sign-in, right there
+   if(step==='whatsapp'){await page.waitForFunction(()=>connectSignin?.provider==='whatsapp');await page.locator('#connect-add [data-connect-back]').click()}  // its own sign-in, right there
+   else{await page.waitForFunction(()=>healthPane==='add'&&document.querySelectorAll('#connect-add [data-connect-signin]').length>0);
+    if(step==='account')assert.deepEqual(await page.evaluate(()=>[...document.querySelectorAll('#connect-add [data-connect-signin]')].map(b=>b.dataset.connectSignin).filter(n=>['google','microsoft'].includes(n))),['google','microsoft'],'both mail providers')}
    await page.evaluate(()=>{document.querySelector('nav [data-tab="inbox"]').click()})}
   await context.close()}
  // Installing: the browser's own prompt from the tap, then the row is ticked.
@@ -207,7 +211,39 @@ try{
   assert.deepEqual(await steps(page),['phone','push','install','connect']);await context.close()}
  // Microsoft mail: another Microsoft account
  {reset();setup={...FRESH,add:'microsoft'};const {context,page}=await open({mode:'standalone'});
-  assert.deepEqual((await card(page)).rows.find(r=>r[0]==='account'),['account','Add another Microsoft account','Add']);await context.close()}
+  assert.deepEqual((await card(page)).rows.find(r=>r[0]==='account'),['account','Add another email account','Add'],'the same row, whichever provider they have');await context.close()}
+
+ // Closed by mistake: Undo in the toast, Show 1 hidden at the card's foot, and Settings, General, Setup to-do once the
+ // whole card is closed. Each brings it back on the Machine (setup_restore), so every device has it again.
+ for(const [width,height,scheme,ua] of [[1440,900,'light','chrome'],[1440,900,'dark','chrome'],[390,844,'light','android'],[390,844,'dark','android']]){reset();
+  const {context,page}=await open({width,height,scheme,ua,perm:'granted',sub:true});
+  const toastText=()=>page.evaluate(()=>{const t=document.querySelector('#toast');return t.classList.contains('show')?t.textContent.trim():''});
+  const restores=()=>actions.filter(a=>a.action==='setup_restore').map(a=>a.args.step);
+  await page.locator('[data-setup-dismiss="phone"]').click();await page.waitForFunction(()=>!document.querySelector('[data-step="phone"]'));
+  assert.equal(await toastText(),'Hidden. Undo');
+  await page.locator('#toast [data-setup-undo="phone"]').click();await page.locator('[data-step="phone"]').waitFor();
+  assert.deepEqual(restores(),['phone']);assert.equal(await page.locator('.setup-more').count(),0,'nothing hidden: no link');
+  await page.locator('[data-setup-dismiss="phone"]').click();await page.waitForFunction(()=>!document.querySelector('[data-step="phone"]'));
+  await page.evaluate(()=>document.querySelector('#toast').classList.remove('show'));
+  assert.equal(await page.locator('.setup-more').innerText(),'Show 1 hidden');
+  await fits(page,width+' hidden');await shot(page,`restore-link-${width}-${scheme}`,'#setup-card');
+  await page.locator('.setup-more').click();await page.locator('[data-step="phone"]').waitFor();
+  assert.deepEqual(restores(),['phone','all']);assert.equal(await page.locator('.setup-more').count(),0);
+  // The whole card: Undo too, and Settings has it once it is gone
+  await page.locator('[data-setup-close]').click();await page.waitForFunction(()=>document.querySelector('#setup-card').hidden);
+  assert.equal(await toastText(),'Hidden. Settings can show it again. Undo');
+  await shot(page,`restore-toast-${width}-${scheme}`);
+  await page.evaluate(()=>document.querySelector('#toast').classList.remove('show'));
+  await page.evaluate(()=>showSettings('general'));await page.locator('#settings-setup:not([hidden])').waitFor();
+  const set=await page.evaluate(()=>{const r=document.querySelector('#settings-setup');return {text:r.innerText.replace(/\s+/g,' ').trim(),phone:document.querySelector('#device-phone')?.innerText.replace(/\s+/g,' ').trim(),get:document.querySelector('#device-phone a.phone-get')?.href}});
+  assert.deepEqual(set,{text:'Setup to-do Get more out of The Machine Bring back the steps you closed, at the top of To-dos. Show again',
+   phone:'Phone app iPhone and Android. Get the app',get:'https://themachine.computer/app'},'the phone app is always reachable from Settings');
+  await shot(page,`restore-settings-${width}-${scheme}`,'#settings-setup');
+  await page.locator('#settings-setup [data-setup-restore="all"]').click();await page.waitForFunction(()=>document.querySelector('#settings-setup').hidden);
+  assert.deepEqual(restores(),['phone','all','all']);
+  await page.evaluate(()=>document.querySelector('nav [data-tab="inbox"]').click());await page.locator('#setup-card:not([hidden])').waitFor();
+  assert.ok((await steps(page)).includes('phone'),'back on To-dos');
+  await context.close()}
 
  // What setup left out (state.setup_hints) fills in after the steps, linked to its setup step.
  {reset();setup={...FRESH,phones:1,whatsapp:true,dismissed:['account','install']};manage='https://app.example.test/setup';
@@ -240,6 +276,9 @@ try{
   await frame.evaluate(()=>refresh());await frame.locator('#setup-card:not([hidden])').waitFor();
   assert.equal(await frame.evaluate(()=>document.querySelector('.setup-head').innerText.replace(/\s+/g,' ').trim()),'Get more out of The Machine 2 of 5 done');
   actions.length=0;await frame.locator('[data-setup-go="push"]').click();await frame.locator('[data-setup-dismiss="whatsapp"]').click();
+  // the ×, its Undo and Show hidden work in the demo too, on the page alone
+  await frame.waitForFunction(()=>!document.querySelector('[data-step="whatsapp"]'));await frame.locator('.setup-more').click();await frame.locator('[data-step="whatsapp"]').waitFor();
+  await frame.locator('[data-setup-dismiss="whatsapp"]').click();await frame.locator('#toast [data-setup-undo="whatsapp"]').click();await frame.locator('[data-step="whatsapp"]').waitFor();
   assert.deepEqual(actionNames(),[]);assert.deepEqual(await frame.evaluate(()=>window.__log),[],'nothing asked');
   await context.close()}
 
