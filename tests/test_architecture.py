@@ -255,7 +255,7 @@ OTHER_WRITERS = {
     'identity_names': {'assistant.py'},
     'manual_nodes': {'crm_import.py'},
     'meeting_moves': {'assistant.py'},
-    'meeting_writes': {'assistant.py'},
+    'meeting_writes': {'machine/app/meeting_writes.py'},
     'messages': {'telegram_mirror.py'},
     'network_people': {'graph.py'},
     'network_request_nodes': {'network.py'},
@@ -272,7 +272,7 @@ OTHER_WRITERS = {
     'preparations': {'follow_ups.py', 'preparation_state.py'},
     'profile_runs': {'fleet_learnings.py', 'learning_loop.py', 'retention.py', 'team_learnings.py'},
     'project_moves': {'crm_import.py', 'follow_ups.py'},
-    'projects': {'assistant.py', 'crm.py', 'crm_import.py', 'follow_ups.py', 'sandbox/load.py'},
+    'projects': {'crm.py', 'crm_import.py', 'follow_ups.py', 'machine/app/graph_actions.py', 'sandbox/load.py'},
     'promises': {'graph.py', 'sandbox/load.py'},
     'record_owners': {'crm_import.py'},
     'review_runs': {'sandbox/load.py'},
@@ -361,7 +361,7 @@ PY_LINE_BUDGET = 2_500
 PY_BYTE_BUDGET = 450 * 1024
 PY_RATCHET_SLACK = (500, 50_000)
 PY_OVER_BUDGET = {
-    'assistant.py': (25_700, 1_850_000),
+    'assistant.py': (24_650, 1_780_000),
     'fleet.py': (3_800, PY_BYTE_BUDGET),
     'graph.py': (5_400, PY_BYTE_BUDGET),
     'next_actions.py': (2_650, PY_BYTE_BUDGET),
