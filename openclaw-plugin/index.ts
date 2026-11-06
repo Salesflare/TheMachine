@@ -33,7 +33,7 @@ async function showResult(ctx:any,message:any,reason?:string){
 async function notReached(ctx:any){
   await ctx.respond.reply({text:t('Your Machine did not answer just now, so nothing was done. Tap the button again in a minute.')}).catch(()=>{});
 }
-const TOOL_ACTIONS = ['status', 'events', 'begin_analysis', 'analysis_page', 'finish_analysis', 'suggest', 'prepare', 'preparation_blocked', 'preparation_history', 'remember_fact', 'looks_handled', 'handoff_on_it', 'split_from_notes', 'meeting_notes', 'promise', 'related', 'graph', 'profile_evidence', 'save_profile', 'skills_found', 'correction_sources', 'fix_source', 'bug_offer'];
+const TOOL_ACTIONS = ['status', 'events', 'begin_analysis', 'analysis_page', 'finish_analysis', 'suggest', 'prepare', 'preparation_blocked', 'preparation_history', 'remember_fact', 'looks_handled', 'handoff_on_it', 'split_from_notes', 'meeting_notes', 'promise', 'related', 'graph', 'profile_evidence', 'save_profile', 'skills_found', 'correction_sources', 'fix_source', 'bug_offer', 'mail_attachment'];
 // dismiss_handled stays for older cards; the service records that reason as done.
 const DISMISS_REASONS: Record<string,string> = {dismiss_irrelevant:'Not relevant', dismiss_handled:'Already handled', dismiss_wrong:'Wrong facts'};
 
@@ -206,6 +206,14 @@ export default definePluginEntry({
           const run=currentReviewRun(key);
           if (!/^agent:main:assistant-review-preparation-/.test(key) || !run) throw new Error('History belongs to the current preparation');
           // call_ref/offset select earlier details only within this host-bound run's task.
+          args.job_id=run;
+        }
+        if (params.action==='mail_attachment') {
+          // A to-do's own run reads its emails' attachments through the mail connection (read-only, mail_attachments.py).
+          // The run and its attachments folder are host-owned: never a model-supplied job or folder.
+          const run=currentReviewRun(key);
+          if (!/^agent:main:assistant-review-preparation-/.test(key) || !run) throw new Error('Attachments are read for a to-do’s own run');
+          delete args._folder;
           args.job_id=run;
         }
         if (['save_profile', 'profile_evidence'].includes(params.action) && /^agent:main:assistant-review-profile-/.test(key)) args._profile_session = key;

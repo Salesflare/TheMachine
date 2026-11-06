@@ -20,7 +20,7 @@ source=source.replace("import { sendChangePrompt } from './change-prompt.ts';",'
 source=source.replace("import { registerAndroidFeed } from './android-feed.ts';",'const registerAndroidFeed=()=>{};');
 source=source.replace("import { registerHeartbeatFailureGate } from './heartbeat-failure-gate.ts';",'const registerHeartbeatFailureGate=()=>{};');
 source=source.replace("import { registerSecretRedaction } from './secret-redaction.ts';",'const registerSecretRedaction=()=>{};');
-source=source.replace("import { registerReviewRecovery, currentReviewRun } from './review-recovery.ts';",'const registerReviewRecovery=()=>{};const currentReviewRun=()=>undefined;');
+source=source.replace("import { registerReviewRecovery, currentReviewRun } from './review-recovery.ts';",'const registerReviewRecovery=()=>{};const currentReviewRun=key=>globalThis.fixtureRuns?.[key];');
 source=source.replace("import { definePluginEntry } from 'openclaw/plugin-sdk/plugin-entry';",'const definePluginEntry=v=>v;').replace('export default definePluginEntry','globalThis.fixturePlugin=definePluginEntry');
 const fixturePath=join(fixtureDir,'handler.ts');await writeFile(fixturePath,source);
 const id='aaaaaaaaaaaaaaaa';let handler, beforeDispatch, toolFactory, toolFactories={}, choices=[], edits=[], replies=[];
@@ -157,6 +157,18 @@ const handled=await beforeDispatch({content:'I fixed it already',timestamp:17916
  const mainTool=toolFactory({agentId:'main',sessionKey:'agent:main:main'});
  globalThis.fixtureCall=async(action,args)=>{assert.equal(args._profile_session,undefined);return {ok:true};};
  await mainTool.execute('test',{action:'profile_evidence',args:{_profile_session:key}});
+}
+// A to-do's run reads its emails' attachments through the mail connection (mail_attachment), bound to its own run:
+// the job and folder come from the host, never the model, and other chats can't reach it.
+{
+ const saved=globalThis.fixtureCall,calls=[];const run='b'.repeat(32),key='agent:main:assistant-review-preparation-'+run;
+ globalThis.fixtureRuns={[key]:run};globalThis.fixtureCall=async(action,args)=>{calls.push([action,args]);return {saved:'/run/a.pdf'};};
+ const tool=toolFactory({agentId:'main',sessionKey:key});
+ await tool.execute('t',{action:'mail_attachment',args:{event_id:54,save:'a.pdf',job_id:'spoof',_folder:'/etc'}});
+ assert.deepEqual(calls,[['mail_attachment',{event_id:54,save:'a.pdf',job_id:run}]]);
+ for(const c of [{agentId:'main',sessionKey:'agent:main:main',messageChannel:'telegram',nativeChannelId:'1000001'},{agentId:'main',sessionKey:'agent:main:assistant-review-preparation-'+'c'.repeat(32)}])
+  await assert.rejects(toolFactory(c).execute('t',{action:'mail_attachment',args:{event_id:54}}),/to-do’s own run/);
+ assert.equal(calls.length,1);globalThis.fixtureCall=saved;delete globalThis.fixtureRuns;
 }
 // Every main chat can offer a bug report: the owner's Telegram chat through assistant_signals, the others (WhatsApp,
 // Slack, Teams, the web chat, any channel on agent:main:main) through assistant_bug_report, which only writes one up.
