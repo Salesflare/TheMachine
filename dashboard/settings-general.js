@@ -167,9 +167,11 @@ $('#agents-settings').addEventListener('submit',async e=>{e.preventDefault();con
 // Drafts on a channel follow its line. Edit, remove or add one here; an empty line removes it.
 const VOICE_KNOWN=['All','Email','Slack','WhatsApp','Telegram','LinkedIn','X DM'];
 const voiceFrom=v=>v.source==='owner'?'Yours':v.source==='profile'||v.source==='study'?'From your messages':'Learned';
+// Someone is in a field of this box: a refresh (the first look's progress among them) leaves the box be.
+const editingIn=box=>{const a=document.activeElement;return !!a&&box.contains(a)&&a.matches('input:not([type=color]),textarea,select,iframe')};
 let voiceDirty=false;
 const voiceForm=v=>`<form class="sig-form voice-form" data-channel="${esc(v.channel)}" novalidate><div class="sig-head"><strong>${esc(v.channel==='All'?'Everywhere':v.channel)}</strong><small class="muted">${voiceFrom(v)} · ${time(v.updated_at,true)}</small></div><textarea rows="${Math.min(6,Math.max(3,(v.text.match(/\n/g)||[]).length+2))}" maxlength="450" aria-label="How you write: ${esc(v.channel)}">${esc(v.text)}</textarea><p role="status"></p><div class="actions"><button class="primary" hidden>Save</button><button type="button" class="quiet" data-voice-remove>Remove</button></div></form>`;
-function renderVoices(){if(voiceDirty)return;const list=state.voices||[],free=VOICE_KNOWN.filter(c=>!list.some(v=>v.channel===c));
+function renderVoices(){if(voiceDirty||editingIn($('#voices')))return;const list=state.voices||[],free=VOICE_KNOWN.filter(c=>!list.some(v=>v.channel===c));
  $('#voices').innerHTML=(list.length?list.map(voiceForm).join(''):'<p class="muted">Nothing yet. I learn it from your notes, edits and messages.</p>')+
  `<form class="sig-form voice-form" data-new novalidate><div class="sig-head"><input list="voice-channels" maxlength="30" placeholder="Channel" aria-label="Channel"><datalist id="voice-channels">${free.map(c=>`<option value="${esc(c)}">`).join('')}</datalist></div><textarea rows="3" maxlength="450" placeholder="How you write there, a few short lines" aria-label="How you write there"></textarea><p role="status"></p><div class="actions"><button class="ghost">Add</button></div></form>`}
 async function voiceSave(f,text){const out=f.querySelector('[role=status]'),channel=f.dataset.new!==undefined?f.querySelector('input').value.trim():f.dataset.channel;
@@ -200,7 +202,9 @@ addEventListener('hashchange',()=>requestAnimationFrame(voiceEditShow));
 // scripts run there; it loads images only), on white paper like an email; the server cleans what it stores and sends.
 // With nothing kept yet, the mailbox's own is imported once: Gmail's signature, or the one Outlook's sent mail ends with.
 const sigDoc=(h,dark)=>`<!doctype html><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src https: data:; style-src 'unsafe-inline'"><style>html{background:${dark?'#ECE9E1':'#fff'}}body{font:14px/1.45 Arial,Helvetica,sans-serif;color:#222;margin:12px 14px;min-height:48px;outline:none;overflow-wrap:anywhere}body:empty::before{content:"No signature";color:#999}img{max-width:100%;height:auto}a{color:#1a5fb4}</style><body contenteditable="true" spellcheck="false">${h||''}</body>`;
-const sigDirty=new Set(),sigImported=new Set();
+const sigDirty=new Set(),sigImported=new Set();let sigKey=null;
+// Someone is in an editor (its frame, or the HTML view): a refresh, the first look's progress among them, leaves it be.
+const sigEditing=f=>editingIn(f||$('#signatures'));
 const sigSized=new ResizeObserver(rows=>{for(const r of rows)r.target._fit?.()});  // drawn while Settings was hidden: sized once shown
 const SIG_TOOLS=[['bold','<b>B</b>','Bold'],['italic','<i>I</i>','Italic'],['underline','<u>U</u>','Underline'],['link','Link','Link'],['image','Image','Image by address'],['color','','Text color'],['clear','Clear','Clear formatting'],['html','&lt;/&gt; HTML','Edit the HTML']];
 const sigState=s=>s.source==='owner'?'Custom':s.source&&s.html?'Imported':'None';
@@ -208,16 +212,34 @@ const sigFrom=s=>s.service==='outlook'?'Found in your Outlook sent mail':'Import
 function sigCard(s){const off=s.saveable?'':' disabled';
  return html`<form class="sig-form" data-account="${s.account_id}" data-service="${s.service}" novalidate><div class="sig-head"><strong class="ell">${s.email||s.account_id}</strong><small class="muted">${s.service==='outlook'?'Outlook':'Gmail'} · <span class="sig-state">${sigState(s)}</span></small></div>
  <div class="sig-tools" role="toolbar" aria-label="Formatting">${SIG_TOOLS.map(([k,t,l])=>k==='color'?html`<label class="sig-color" title="${l}"><span aria-hidden="true">A</span><input type="color" value="#222222" data-sig-tool="color" aria-label="${l}"${off}></label>`:html`<button type="button" data-sig-tool="${k}" title="${l}" aria-label="${l}"${k==='html'?html` aria-pressed="false"`:''}${off}>${k==='html'?html`<span class="sig-code">&lt;/&gt; </span>HTML`:raw(t)}</button>`)}</div>
- <iframe class="sig-paper" sandbox="allow-same-origin" title="Signature for ${s.email||s.account_id}"></iframe><textarea class="sig-source" rows="6" maxlength="20000" aria-label="Signature HTML" spellcheck="false" hidden></textarea>
+ <iframe class="sig-paper" sandbox="allow-same-origin" title="Signature for ${s.email||s.account_id}"></iframe><textarea class="sig-source" rows="6" maxlength="60000" aria-label="Signature HTML" spellcheck="false" hidden></textarea>
  <p class="sig-note muted">${s.source&&s.source!=='owner'&&s.html?sigFrom(s)+' · ':''}<button type="button" class="link" data-sig-import${off}>${s.source&&s.source!=='owner'?'Re-import':s.service==='outlook'?'Find in sent mail':'Import from Gmail'}</button>${s.source==='owner'?html` · <button type="button" class="link" data-sig-mailbox${off}>Use mailbox signature</button>`:''}</p>
  <p role="status"></p><div class="actions sig-save" hidden><button class="primary"${off}>Save</button><button type="button" class="ghost" data-sig-cancel>Cancel</button></div></form>`}
 const sigNode=s=>{const tp=document.createElement('template');setHTML(tp,sigCard(s));return tp.content};  // a fresh form, to replace an edited one
 const sigDark=()=>(document.documentElement.dataset.theme||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'))==='dark';
 function sigLoad(f,html){const fr=f.querySelector('.sig-paper');fr.onload=()=>{const d=fr.contentDocument;if(!d?.body)return;try{d.execCommand('styleWithCSS',false,true)}catch{}
   const fit=()=>{if(!fr.offsetWidth)return;fr.style.height=Math.max(72,Math.min(420,d.body.scrollHeight+26))+'px'};fr._fit=fit;fit();sigSized.observe(fr);for(const i of d.images)i.addEventListener('load',fit);
-  d.addEventListener('input',()=>{sigChanged(f);fit()});if(!f.querySelector('[data-sig-tool]').disabled)return;d.body.contentEditable='false'};
+  d.addEventListener('input',()=>{sigChanged(f);fit()});
+  d.addEventListener('paste',e=>{const h=e.clipboardData?.getData('text/html');if(!h||d.body.contentEditable==='false')return;e.preventDefault();d.execCommand('insertHTML',false,sigPasteClean(h));sigChanged(f);fit()});if(!f.querySelector('[data-sig-tool]').disabled)return;d.body.contentEditable='false'};
  fr.srcdoc=sigDoc(html,sigDark())}
+const SIG_MAX=60000;  // what the service takes before it cleans; it keeps 20,000 characters once cleaned
 const sigHtml=f=>{const src=f.querySelector('.sig-source');return src.hidden?f.querySelector('.sig-paper').contentDocument?.body?.innerHTML.trim()||'':src.value.trim()};
+// A paste keeps what a signature is made of: text, links, images and simple formatting. Outlook and Word put class names,
+// mso- styles, comments and a style block on the clipboard; those go (the service cleans again before it stores).
+const SIG_TAGS=new Set('a,b,strong,i,em,u,br,p,div,span,font,small,big,sub,sup,hr,img,table,thead,tbody,tr,td,th,ul,ol,li,blockquote,center,h1,h2,h3,h4'.split(','));
+const SIG_DROP=new Set('script,style,iframe,object,embed,form,input,button,textarea,select,svg,math,template,noscript,head,title,meta,link,base,xml'.split(','));
+const SIG_ATTRS=new Set('href,src,alt,title,width,height,style,color,face,size,align,valign,border,cellpadding,cellspacing,colspan,rowspan,bgcolor,dir'.split(','));
+function sigPasteClean(h){const doc=new DOMParser().parseFromString(h,'text/html'),out=doc.createElement('div');
+ const walk=(from,to)=>{for(const n of [...from.childNodes]){
+  if(n.nodeType===3){to.append(n.data);continue}if(n.nodeType!==1)continue;const tag=n.localName;if(SIG_DROP.has(tag)||tag.endsWith(':xml'))continue;
+  if(!SIG_TAGS.has(tag)){walk(n,to);continue}  // o:p, w:..., section and the rest: their text stays
+  const el=doc.createElement(tag);
+  for(const {name,value} of [...n.attributes]){const v=value.trim();if(!SIG_ATTRS.has(name))continue;
+   if(name==='href'&&!/^(https?:|mailto:|tel:)/i.test(v))continue;if(name==='src'&&!/^(https:|cid:|data:image\/(png|gif|jpe?g|webp);base64,)/i.test(v))continue;
+   if(name==='style'){const keep=v.split(';').map(x=>x.trim()).filter(x=>x&&!/^mso-|expression|url\s*\(|@import|behaviou?r|javascript:|-moz-binding/i.test(x)).join(';');if(keep)el.setAttribute('style',keep);continue}
+   el.setAttribute(name,v)}
+  walk(n,el);to.append(el)}};
+ walk(doc.body,out);return out.innerHTML.replace(/^(\s|<br>)+|(\s|<br>)+$/g,'')}
 function sigChanged(f){sigDirty.add(f.dataset.account);f.querySelector('.sig-save').hidden=false;f.querySelector('[role=status]').textContent=''}
 // Settings, Account, Your addresses (own_addresses.py): the owner's own addresses, where each came from, with Remove; and
 // the ones that may be shared (a team address, sent from only), each with three choices and what each one changes:
@@ -373,7 +395,9 @@ $('#share-auto').onclick=async e=>{const b=e.currentTarget,on=b.getAttribute('ar
  try{const r=await sharePost('set_learnings_auto',{on});state.team_learnings=r.team_learnings;renderShareOffer();renderShare(true);notice(on?t('New learnings go automatically. They’re listed in Settings, Activity.'):t('I’ll ask before sending learnings.'))}catch(err){errCaught(err);notice(err.message)}finally{b.disabled=!!state.team_learnings?.auto_careful}};
 $('#share-offer').onclick=async e=>{const b=e.currentTarget,on=b.getAttribute('aria-checked')!=='true';b.disabled=true;
  try{const r=await sharePost('set_learnings_offer',{on});state.team_learnings=r.team_learnings;renderShareOffer();renderShare(true);secLocal('learnings',on?'on':'off');notice(on?'I’ll offer learnings to share now and then.':'I won’t offer learnings to share.')}catch(err){errCaught(err);notice(err.message)}finally{b.disabled=false}};
-function renderSignatures(){const list=state.signatures||[],box=$('#settings-signatures');box.hidden=!list.length;if(!list.length||sigDirty.size)return;
+function renderSignatures(){const list=state.signatures||[],box=$('#settings-signatures');box.hidden=!list.length;if(!list.length||sigDirty.size||sigEditing())return;
+ // drawn again only when a signature changed: every refresh would load the frames again, under a cursor about to paste
+ const key=JSON.stringify(list)+sigDark();if(key===sigKey&&$('#signatures .sig-form'))return;sigKey=key;
  setHTML($('#signatures'),html`${list.map(sigCard)}`);
  for(const f of $('#signatures').querySelectorAll('.sig-form'))sigLoad(f,list.find(s=>s.account_id===f.dataset.account)?.html);
  // Nothing kept yet: import the mailbox's own once, so the editor starts from the real signature.
@@ -385,7 +409,7 @@ async function sigImport(id,auto){const form=()=>$(`#signatures .sig-form[data-a
   if((state.signatures||[]).find(s=>s.account_id===id)?.source==='owner'){  // the owner's own stays until they save the imported one
    const f=form();if(!f)return;if(!r.found){say(none);return}const src=f.querySelector('.sig-source');if(src.hidden)sigLoad(f,r.html);else src.value=r.html;sigChanged(f);say('Imported. Save to use it.');return}
   const s=(r.signatures||[]).find(x=>x.account_id===id),f=form();if(s)state.signatures=(state.signatures||[]).map(x=>x.account_id===id?s:x);  /* only this one: imports run side by side */
-  if(f&&s&&!sigDirty.has(id)){f.replaceWith(sigNode(s));sigLoad(form(),s.html)}
+  if(f&&s&&!sigDirty.has(id)&&!sigEditing(f)){f.replaceWith(sigNode(s));sigLoad(form(),s.html)}
   if(!r.found&&!auto)say(none)}
  catch(err){errCaught(err);say(err.message)}finally{const b=form()?.querySelector('[data-sig-import]');if(b)b.disabled=!(state.signatures||[]).find(x=>x.account_id===id)?.saveable}}
 function sigTool(f,tool,value){const fr=f.querySelector('.sig-paper'),d=fr.contentDocument,src=f.querySelector('.sig-source');
@@ -402,8 +426,9 @@ $('#signatures').addEventListener('mousedown',e=>{if(e.target.closest('button[da
 $('#signatures').addEventListener('click',async e=>{const f=e.target.closest('.sig-form');if(!f)return;const t=e.target.closest('button[data-sig-tool]');if(t){sigTool(f,t.dataset.sigTool);return}
  if(e.target.closest('[data-sig-import]'))return sigImport(f.dataset.account);
  if(e.target.closest('[data-sig-cancel]')){sigDirty.delete(f.dataset.account);const s=(state.signatures||[]).find(x=>x.account_id===f.dataset.account);f.replaceWith(sigNode(s));sigLoad($(`#signatures .sig-form[data-account="${CSS.escape(s.account_id)}"]`),s.html);return}
- const m=e.target.closest('[data-sig-mailbox]');if(m){m.disabled=true;try{state.signatures=await sigPost('set_signature',{account_id:f.dataset.account,use_mailbox:true});sigDirty.delete(f.dataset.account);if(!sigDirty.size)renderSignatures();notice('Using the mailbox signature.')}catch(err){errCaught(err);f.querySelector('[role=status]').textContent=err.message;m.disabled=false}}});
+ const m=e.target.closest('[data-sig-mailbox]');if(m){m.disabled=true;try{state.signatures=await sigPost('set_signature',{account_id:f.dataset.account,use_mailbox:true});sigDirty.delete(f.dataset.account);sigKey=null;if(!sigDirty.size)renderSignatures();notice('Using the mailbox signature.')}catch(err){errCaught(err);f.querySelector('[role=status]').textContent=err.message;m.disabled=false}}});
 $('#signatures').addEventListener('input',e=>{const f=e.target.closest('.sig-form');if(!f)return;if(e.target.matches('[data-sig-tool="color"]'))sigTool(f,'color',e.target.value);else if(e.target.matches('.sig-source'))sigChanged(f)});
-$('#signatures').addEventListener('submit',async e=>{e.preventDefault();const f=e.target,out=f.querySelector('[role=status]'),b=f.querySelector('.primary');b.disabled=true;
- try{state.signatures=await sigPost('set_signature',{account_id:f.dataset.account,html:sigHtml(f)});
-  sigDirty.delete(f.dataset.account);if(!sigDirty.size)renderSignatures();notice('Signature saved.')}catch(err){errCaught(err);out.textContent=err.message}finally{b.disabled=false}});
+$('#signatures').addEventListener('submit',async e=>{e.preventDefault();const f=e.target,out=f.querySelector('[role=status]'),b=f.querySelector('.primary'),h=sigHtml(f);
+ if(h.length>SIG_MAX){out.textContent=t('That signature is too long');return}b.disabled=true;
+ try{state.signatures=await sigPost('set_signature',{account_id:f.dataset.account,html:h});
+  sigDirty.delete(f.dataset.account);sigKey=null;if(!sigDirty.size)renderSignatures();notice('Signature saved.')}catch(err){errCaught(err);out.textContent=err.message}finally{b.disabled=false}});

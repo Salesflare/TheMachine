@@ -18,6 +18,7 @@ from html.parser import HTMLParser
 from pathlib import Path
 
 MAX_HTML = 20000
+MAX_PASTED = 60000  # what the owner may send to be cleaned (the dashboard's own check is the same)
 TAGS = {'a', 'b', 'strong', 'i', 'em', 'u', 'br', 'p', 'div', 'span', 'font', 'small', 'big', 'sub', 'sup', 'hr', 'img',
         'table', 'thead', 'tbody', 'tr', 'td', 'th', 'ul', 'ol', 'li', 'blockquote', 'center', 'h1', 'h2', 'h3', 'h4'}
 VOID = {'br', 'hr', 'img', 'meta', 'link', 'base', 'input', 'embed'}
@@ -80,13 +81,14 @@ class _Cleaner(HTMLParser):
             self.out.append(html.escape(data, quote=False))
 
 
-def clean(value):
-    """Only harmless formatting, links (http, https, mailto, tel) and images (https, cid or inline data)."""
+def clean(value, read=MAX_HTML * 2, keep=MAX_HTML):
+    """Only harmless formatting, links (http, https, mailto, tel) and images (https, cid or inline data); `read`: how
+    much of the value is read at most, `keep`: how much of what is left is kept (None: all, to measure it)."""
     parser = _Cleaner()
-    parser.feed(str(value or '')[:MAX_HTML * 2])
+    parser.feed(str(value or '')[:read])
     parser.close()
     out = ''.join(parser.out) + ''.join(f'</{t}>' for t in reversed(parser.open))
-    return out.strip()[:MAX_HTML]
+    return out.strip()[:keep]
 
 
 def text(value):
@@ -213,7 +215,7 @@ def save(config, account_id, value, source):
         current = load(config)
         if source != 'owner' and (current.get(account_id) or {}).get('source') == 'owner':
             return current[account_id]
-        current[account_id] = {'html': clean(value), 'source': source,
+        current[account_id] = {'html': clean(value, MAX_PASTED if source == 'owner' else MAX_HTML * 2), 'source': source,
                                'updated_at': dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds')}
         temp = where.with_name(where.name + '.tmp')
         fd = os.open(temp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
