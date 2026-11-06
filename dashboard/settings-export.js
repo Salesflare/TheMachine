@@ -2,7 +2,9 @@
 // opens its options: message text and private and Careful content, both off, and an optional passphrase. Download packs
 // it on the Machine (action knowledge_export) and fetches the file once by its token; nothing is kept on the device.
 {const rows=()=>document.querySelectorAll('#settings-export .export-opt'),note=$('#export-note');
- $('#export-knowledge').onclick=e=>{const open=e.currentTarget.getAttribute('aria-expanded')!=='true';e.currentTarget.setAttribute('aria-expanded',String(open));
+ // open, the top button turns into a quiet Cancel, so Download is the one action
+ $('#export-knowledge').onclick=e=>{const b=e.currentTarget,open=b.getAttribute('aria-expanded')!=='true';b.setAttribute('aria-expanded',String(open));
+  b.textContent=open?t('Cancel'):t('Export');b.classList.toggle('quiet',open);
   for(const r of rows())r.hidden=!open;note.textContent='';if(open)$('#export-download').focus()};
  for(const id of ['#export-messages','#export-private'])$(id).onclick=e=>{const b=e.currentTarget;b.setAttribute('aria-checked',String(b.getAttribute('aria-checked')!=='true'))};
  $('#export-download').onclick=async e=>{const b=e.currentTarget,pass=$('#export-pass').value,on=id=>$(id).getAttribute('aria-checked')==='true';
