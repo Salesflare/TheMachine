@@ -46,7 +46,7 @@ Startest du eine Aufgabe, darf sie die Nachrichten, aus denen sie kam, immer les
 
 Deine Machine liest jede Quelle alle paar Minuten, Tag und Nacht, und prüft das Neue auf Aufgaben, sobald 40 Nachrichten warten oder die älteste Nachricht 15 Minuten gewartet hat.
 
-**Jetzt prüfen** oben bei Aufgaben liest sofort jede Quelle und sieht sich an, was neu ist, auch wenn gerade nichts ansteht. Daneben steht, wann sie zuletzt geprüft hat, wann die nächste Prüfung fällig ist und wie viele Nachrichten warten. Ein zweiter Druck während der Prüfung zeigt dieselbe Prüfung. Die Handy-App hat es auch. Im Chat bittest du sie einfach, jetzt zu prüfen.
+**Jetzt prüfen** oben bei Aufgaben liest sofort jede Quelle und sieht sich an, was neu ist, auch wenn gerade nichts ansteht. Daneben steht, wann sie zuletzt geprüft hat, wann die nächste Prüfung fällig ist und wie viele neue Nachrichten warten, etwa „Geprüft 21:10 · nächste bis 21:26 · 2 neu“. Ein zweiter Druck während der Prüfung zeigt dieselbe Prüfung. Die Handy-App hat es auch. Im Chat bittest du sie einfach, jetzt zu prüfen.
 
 LinkedIn, X und Salesflare behalten ihr eigenes Tempo.
 

@@ -1078,7 +1078,7 @@ class Boards(unittest.TestCase):
         self.store.sort_text('run3'); self.store.sort_text('run4')
         with self.store.connect() as db:
             tile = next(p for p in graph.boards(db, NOW.isoformat())[1]['projects'] if p['name'] == 'Inkwell')
-            self.assertEqual(tile['sort_failed'], "Couldn't sort it in 3 reviews")
+            self.assertEqual(tile['sort_failed'], "Couldn't sort it in 3 checks")
             self.assertEqual(graph.unsorted_projects(db), [])
         self.assertEqual(self.store.sort_text('run5'), '')
 

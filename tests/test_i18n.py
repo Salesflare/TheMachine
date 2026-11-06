@@ -109,7 +109,7 @@ class CatalogTest(unittest.TestCase):
         # Android phone, and terminal-only text (setup errors, commands to type).
         allowed = {
             # Connections, Reviews: the one place that says what OpenClaw is
-            'Reviews read your new messages in small batches, so a busy or failed run can delay them. Sources keep collecting while OpenClaw, the engine The Machine runs on, is offline, except Android, which needs it and your phone.',
+            'Checks read your new messages in small batches, so a busy or failed run can delay them. Sources keep collecting while OpenClaw, the engine The Machine runs on, is offline, except Android, which needs it and your phone.',
             # Android: the owner installs and opens the OpenClaw app on their phone
             'In the OpenClaw app on your phone, add a Gateway and scan this code, or copy it and paste it there:',
             'Install OpenClaw from Google Play on your Android phone.',

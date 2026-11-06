@@ -187,7 +187,7 @@ Projekte einer Art in Phasen, etwa eine Pipeline für Evaluierungen. **⋯** auf
 
 **Nachfassen…** im **⋯** eines Boards fasst von selbst nach, wenn jemand nicht antwortet. Siehe [Nachfassen](follow-ups.md).
 
-**Fertig, wenn** unter **Bearbeiten** bei einem Projekt sagt in einfachen Worten, was es abschließt, mit Beleg: **Eine Live-Seite** (The Machine öffnet den Link aus ihrer Nachricht und prüft, ob er auf dich verlinkt) oder **Ihre Nachricht**. Reviews schlagen eine für Partner-Einträge vor. Ein Review setzt ein Projekt nur mit diesem Beleg in die letzte Phase, verlinkt auf seiner Seite; **Gewonnen** von Hand geht immer.
+**Fertig, wenn** unter **Bearbeiten** bei einem Projekt sagt in einfachen Worten, was es abschließt, mit Beleg: **Eine Live-Seite** (The Machine öffnet den Link aus ihrer Nachricht und prüft, ob er auf dich verlinkt) oder **Ihre Nachricht**. Prüfungen schlagen eine für Partner-Einträge vor. Eine Prüfung setzt ein Projekt nur mit diesem Beleg in die letzte Phase, verlinkt auf seiner Seite; **Gewonnen** von Hand geht immer.
 
 Die Seite zeigt auch, was es aufhält (seit 10+ Tagen keine Antwort, ein überfälliges Versprechen), und legt eine Aufgabe dafür an, wenn es keine hat. Nichts wird ohne dich gesendet.
 

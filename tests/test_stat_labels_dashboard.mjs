@@ -5,7 +5,7 @@ import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
-// Connections: a card's figure labels ("conversations", "notifications", "not reviewed") never break inside a word or
+// Connections: a card's figure labels ("conversations", "notifications", "not checked") never break inside a word or
 // hyphenate, with the dashboard's own fonts, for every source, at 1280, 390 and 320. Between words is fine.
 const dashboard=await dashboardPage();
 const brand={'/brand/avatar.png':'brand/app-icon-192.png','/brand/serif.woff2':'brand/fonts/source-serif-4-latin.woff2','/brand/sans.woff2':'brand/fonts/inter-latin.woff2'};
@@ -39,7 +39,7 @@ try{
     assert.ok(f.widest<=f.inner+0.5,`${width}: "${f.label}" has a word wider than its box (${f.widest} > ${f.inner})`);
     assert.ok(f.inside,`${width}: "${f.label}" sticks out of its card`)}
   }
-  assert.ok(seen.has('conversations')&&seen.has('notifications')&&seen.has('not reviewed'),[...seen].join());
+  assert.ok(seen.has('conversations')&&seen.has('notifications')&&seen.has('not checked'),[...seen].join());
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no sideways scroll');
   await context.close();
  }

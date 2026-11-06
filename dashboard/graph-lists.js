@@ -43,13 +43,13 @@ const GRAPH_TABS={people:{label:'People',tabs:[['people','All'],['quiet','Gone q
  orgs:{label:'Organizations',tabs:[['orgs','All'],['warmup','Warm up']],sorts:[['closest','Closest'],['last','Last contact'],['name','Name A–Z'],['value','Value'],['close','Close date']],
   notes:{orgs:'The ones you are most in touch with first.',warmup:'Mail from email warm-up tools, kept out of your Graph.'},empty:'No organizations yet.'},
  projects:{label:'Projects',tabs:[['projects','Open'],['projects_done','Done']],sorts:[['last','Last activity'],['name','Name A–Z'],['stage','Stage'],['value','Value'],['close','Close date']],
-  notes:{projects:'Named by the reviews and your to-dos. Busier or quieter compares the last two weeks.',projects_done:'Closed projects.'},empty:'No projects yet.'}};
+  notes:{projects:'Named by the checks and your to-dos. Busier or quieter compares the last two weeks.',projects_done:'Closed projects.'},empty:'No projects yet.'}};
 // A Graph page with nothing on it yet still opens: a short line says how it fills, and its head keeps + New.
 // People with nobody yet says what the graph read (g.read): all of it automated, so people come with real conversations.
 const GRAPH_READ=[['email',['{} email','{} emails']],['meeting',['{} meeting','{} meetings']],['message',['{} message','{} messages']]];
 function graphReadLine(read){const parts=GRAPH_READ.filter(([k])=>(+read?.[k]|0)>0).map(([k,w])=>t(w,+read[k]|0).replace(/^(\d+) /,'$1\u00a0'));if(!parts.length)return '';
  let list;try{list=new Intl.ListFormat(I18N.lang||'en',{type:'conjunction'}).format(parts)}catch{list=parts.join(', ')}return t('Read {}, all automated.',list)+' '+t('People show up as real conversations come in.')}
-const graphEmpty=(pane,team,read)=>{const [title,how]={people:['Nothing mapped yet.',graphReadLine(read)||'People appear as messages and meetings come in.'],orgs:['No organizations yet.','They come from the people you’re in touch with.'],projects:['No projects yet.','Reviews name them from your messages and to-dos.']}[pane];
+const graphEmpty=(pane,team,read)=>{const [title,how]={people:['Nothing mapped yet.',graphReadLine(read)||'People appear as messages and meetings come in.'],orgs:['No organizations yet.','They come from the people you’re in touch with.'],projects:['No projects yet.','Checks name them from your messages and to-dos.']}[pane];
  return html`<div class="empty all-clear graph-empty"><img class="sticker" src="brand/thinking.webp" alt=""><div><strong>${title}</strong>${team?'':html`<span class="poke-line">${how}</span>`}</div></div>`};
 const TEAM_NOTES={people:'Everyone your team shares, the closest first.',orgs:'The ones your team is most in touch with.',projects:'Your team’s open projects.'};
 const graphPick=(pane,what,fallback)=>{try{return localStorage.getItem(`graph-${what}-${pane}`)||fallback}catch{return fallback}};

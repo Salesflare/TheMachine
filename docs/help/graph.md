@@ -63,7 +63,7 @@ Under Fields on a person, organization or project, click a value to change it: *
 
 **Import CSV…**, under the order menu of People, Organizations or Projects, adds a spreadsheet saved as CSV. Your Machine guesses which column is which from the headers and what is in them; change any of them.
 
-When your model can run, it checks the columns too, in any language and however the headers are spelled, with a short reason where it isn't sure. It sees only the headers, a few values per column and the cells the rules couldn't read, on your Machine like a review. Without it, the guess from the headers stands.
+When your model can run, it checks the columns too, in any language and however the headers are spelled, with a short reason where it isn't sure. It sees only the headers, a few values per column and the cells the rules couldn't read, on your Machine like a check. Without it, the guess from the headers stands.
 
 **Review**, next to the fixes suggested, lists easy fixes as before and after: extra spaces, names in capitals, phone numbers in international form, email typos (gmial.com), websites as their domain, dates and values in any format ("€12k" is 12000), several tags in one cell, a stage spelled differently from the board's, and the same row twice.
 
@@ -105,7 +105,7 @@ Click the picture on a person's or organization's page to change it: **Upload a 
 
 **Edit**, at the top of their page, changes their name, title, organization, location, LinkedIn, phones and emails, what they are to you, and Work or Personal. **Save** keeps it, **Cancel** leaves it as it was.
 
-Your edits stay, also when their details are looked up again or a review reads something else, and through **Merge** and **Undo**. Empty a field to use the looked-up value again. An empty name brings back the one from their messages.
+Your edits stay, also when their details are looked up again or a check reads something else, and through **Merge** and **Undo**. Empty a field to use the looked-up value again. An empty name brings back the one from their messages.
 
 ## Bounced
 
@@ -183,11 +183,11 @@ Your pick in **Edit** always stays, also when you take it off. **Same organizati
 
 ### Boards
 
-Projects of one kind in stages, like an evaluation pipeline. **⋯** on a board: **Edit board** (name, stages, which projects belong), **Open on this board** and **New board**. Reviews keep adding projects that fit and place them in a stage. When they aren't sure, the board shows "2 projects could belong here": **Add** or **Leave out**.
+Projects of one kind in stages, like an evaluation pipeline. **⋯** on a board: **Edit board** (name, stages, which projects belong), **Open on this board** and **New board**. Checks keep adding projects that fit and place them in a stage. When they aren't sure, the board shows "2 projects could belong here": **Add** or **Leave out**.
 
 **Follow-ups…** in a board's **⋯** follows up by itself when someone doesn't reply. See [Follow-ups](follow-ups.md).
 
-**Done when**, under **Edit** on a project, says what finishes it in plain words, with its proof: **A live page** (The Machine opens the link from their message and checks it links to you) or **Their message**. Reviews suggest one for partner listings. A review only moves a project to the last stage with that proof, linked on its page; **Won** by hand still works.
+**Done when**, under **Edit** on a project, says what finishes it in plain words, with its proof: **A live page** (The Machine opens the link from their message and checks it links to you) or **Their message**. Checks suggest one for partner listings. A check only moves a project to the last stage with that proof, linked on its page; **Won** by hand still works.
 
 The page also shows what holds it up (no reply in 10+ days, an overdue promise) and adds one to-do for it when it has none. Nothing is sent without you.
 

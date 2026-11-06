@@ -16,7 +16,7 @@ Mehr Nachdenken beantwortet schwierigere Fragen besser, ist aber langsamer und v
 
 Ein Chat kann etwas anderes nutzen: Tippe unter seinem Nachrichtenfeld auf das Modell oder die Nachdenkstufe. Diese Wahl gilt nur für diesen Chat. Wähle wieder dasselbe wie in den Einstellungen, um den Einstellungen zu folgen.
 
-Reviews, dein Profil und vorab vorbereitete Entwürfe behalten ihr eigenes Modell.
+Prüfungen, dein Profil und vorab vorbereitete Entwürfe behalten ihr eigenes Modell.
 
 ## Limits
 

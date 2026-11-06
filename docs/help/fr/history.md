@@ -14,13 +14,13 @@ Sa carte indique jusqu’où il remonte : **Historique : jusqu’à** un mois, u
 
 ## Ce qu’il ne fait jamais
 
-L’historique sert seulement à retrouver des choses. Il ne crée jamais de tâche ni de promesse, n’entre jamais dans une revue, ne compte jamais comme nouveau et ne va jamais dans votre Graph ni à votre équipe. Aucun modèle d’IA ne le lit.
+L’historique sert seulement à retrouver des choses. Il ne crée jamais de tâche ni de promesse, n’entre jamais dans une vérification, ne compte jamais comme nouveau et ne va jamais dans votre Graph ni à votre équipe. Aucun modèle d’IA ne le lit.
 
 Les tâches et promesses viennent toujours seulement des nouveaux messages, comme avant.
 
 ## Quand il tourne
 
-Il commence une fois le premier coup d’œil à vos messages terminé, et avance lentement en arrière-plan. Il attend pendant une revue ou une synchronisation, et quand votre Machine manque d’espace disque ou de mémoire. Après un redémarrage, il reprend là où il en était.
+Il commence une fois le premier coup d’œil à vos messages terminé, et avance lentement en arrière-plan. Il attend pendant une vérification ou une synchronisation, et quand votre Machine manque d’espace disque ou de mémoire. Après un redémarrage, il reprend là où il en était.
 
 Il utilise l’accès que chaque connexion a déjà. Rien de nouveau n’est demandé.
 

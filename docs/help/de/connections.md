@@ -46,6 +46,6 @@ Websites, die der Browser deiner Machine nutzt, etwa LinkedIn oder X, können ei
 
 ## Prüfungen
 
-**Prüfungen** zeigt, wie deine Machine liest, was reinkommt: letzte Durchläufe und was jeder gefunden hat. Siehe [Prüfungen pausiert](reviews-paused.md).
+**Prüfungen** zeigt, wie deine Machine liest, was reinkommt: letzte Durchläufe und was jeder gefunden hat. Siehe [Keine neuen Aufgaben](reviews-paused.md).
 
 Jede Verbindung hat in diesem Bereich einen eigenen Artikel, mit dem, was sie liest und was sie senden kann.

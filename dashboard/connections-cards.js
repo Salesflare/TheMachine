@@ -34,7 +34,7 @@ function renderHealthTabs(){const cs=state.connectors||[],bad=g=>cs.filter(c=>he
  const panes=[['mail','Mail and calendar'],['chat','Chat'],['other','Other sources']].filter(([g])=>cs.some(c=>healthGroup(c.service)===g)).map(([id,label])=>({id,label,badge:bad(id),warn:true}));
  if(!panes.length)panes.push({id:'mail',label:'Sources'});
  panes.push({id:'add',label:'+ Add'});
- if(savedLoginCount||healthPicked&&healthPane==='signins')panes.push({id:'signins',label:'Sign-ins'});panes.push({id:'reviews',label:'Reviews'});
+ if(savedLoginCount||healthPicked&&healthPane==='signins')panes.push({id:'signins',label:'Sign-ins'});panes.push({id:'reviews',label:'Checks'});
  const ids=panes.map(p=>p.id),current=healthPicked&&ids.includes(healthPane)?healthPane:panes.find(p=>p.badge&&p.warn)?.id||(ids.includes(healthPane)?healthPane:ids[0]);
  healthPane=current;const row=$('#health-tabs');setHTML(row,subTabs('Connections','data-health-pane',panes,current));
  for(const el of document.querySelectorAll('#health [data-health-for]'))el.hidden=!el.dataset.healthFor.split(' ').includes(current);
@@ -109,7 +109,7 @@ function renderGbrain(){const g=connectGbrain,box=$('#connect-add'),back=html`<b
  else body=html`${g.version?html`<p class="muted">${t('Found {} at {}',g.version,g.brain||'')}</p>`:''}<p>What goes into GBrain:</p><ul class="gbrain-list"><li>People and projects from your Graph, with a link back</li><li>What The Machine learned about how you work</li></ul><p>Message text never goes in.</p><p><b>GBrain may send this to its own AI providers.</b></p>
   <label class="gbrain-check"><input type="checkbox" data-gbrain-work-pick><span>Include Work people and companies</span></label><label class="gbrain-check"><input type="checkbox" data-gbrain-consent><span>I agree</span></label>
   ${g.saveable?'':html`<p class="fine muted">Change this in config.json (gbrain) on this computer.</p>`}<p class="error" role="status">${g.error||''}</p><div class="actions"><button type="button" class="primary" data-gbrain-on disabled>Connect GBrain</button>${back}</div>`;
- const panel=html`<div class="connect-run gbrain-panel"><h3>GBrain</h3>${g.loading||g.on?'':html`<p class="muted">Optional, for developers. Keep your own AI memory app in sync with The Machine.</p><p class="muted">Reviews can read your brain to write better to-dos.</p>`}${body}</div>`,sig=JSON.stringify(['gbrain',g]);if(box.dataset.sig===sig)return;box.dataset.sig=sig;connectDraw(box,'gbrain',panel)}
+ const panel=html`<div class="connect-run gbrain-panel"><h3>GBrain</h3>${g.loading||g.on?'':html`<p class="muted">Optional, for developers. Keep your own AI memory app in sync with The Machine.</p><p class="muted">Checks can read your brain to write better to-dos.</p>`}${body}</div>`,sig=JSON.stringify(['gbrain',g]);if(box.dataset.sig===sig)return;box.dataset.sig=sig;connectDraw(box,'gbrain',panel)}
 async function gbrainDo(action,args,b){if(b)b.disabled=true;try{connectGbrain=await connectPost(action,args);if(connectList?.gbrain)connectList.gbrain.on=!!connectGbrain.on}catch(e){errCaught(e);if(action==='gbrain_on'){connectGbrain={...connectGbrain,error:e.message}}else toast(e.message,true)}renderGbrain()}
 $('#connect-add').addEventListener('click',e=>{const t=e.target;if(t.closest('[data-gbrain]')){gbrainOpen();return}
  if(t.closest('[data-gbrain-check]')){gbrainOpen();return}
@@ -433,9 +433,9 @@ document.addEventListener('click',async e=>{const b=e.target.closest('button[dat
  catch(err){errCaught(err);toast(err.message,true);b.setAttribute('aria-checked',String(!next[b.dataset.ability]));b.disabled=false}});
 // The card's three tiles. A calendar counts events: how many it keeps, how many come up in the next 7 days and how many
 // were new or changed in the last 24h (as the note above the cards says; its review runs in the background, so no
-// "not reviewed" there)
+// "not checked" there)
 const connFigures=(c,unit)=>CALENDAR_SERVICES.includes(c.service)?[[c.total,'events'],[c.upcoming_7d,'next 7 days'],[c.signals_24h,'last 24h']]
- :[[c.total,unit],[c.signals_24h,'last 24h'],[c.pending,'not reviewed']];
+ :[[c.total,unit],[c.signals_24h,'last 24h'],[c.pending,'not checked']];
 const CALENDAR_SERVICES=['calendar','outlook_calendar'];
 // How far back its history reaches (older messages kept to search and read, never as to-dos: docs/help/history.md).
 // One history line on a card: while WhatsApp's first chat history still counts in (c.history), only that one.

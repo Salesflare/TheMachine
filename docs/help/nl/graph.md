@@ -63,7 +63,7 @@ Klik onder Velden bij een persoon, organisatie of project op een waarde om ze te
 
 **CSV importeren…**, onder het sorteermenu van Personen, Organisaties of Projecten, voegt een spreadsheet toe die als CSV bewaard is. Je Machine raadt welke kolom welke is uit de koppen en wat erin staat; je kunt elke kolom wijzigen.
 
-Als je model kan draaien, controleert het de kolommen ook, in elke taal en hoe de koppen ook gespeld zijn, met een korte reden waar het niet zeker is. Het ziet alleen de koppen, een paar waarden per kolom en de cellen die de regels niet konden lezen, op je Machine zoals een review. Zonder model blijft de gok uit de koppen staan.
+Als je model kan draaien, controleert het de kolommen ook, in elke taal en hoe de koppen ook gespeld zijn, met een korte reden waar het niet zeker is. Het ziet alleen de koppen, een paar waarden per kolom en de cellen die de regels niet konden lezen, op je Machine zoals een check. Zonder model blijft de gok uit de koppen staan.
 
 **Nakijken**, naast de voorgestelde correcties, toont eenvoudige correcties als voor en na: extra spaties, namen in hoofdletters, telefoonnummers in internationale vorm, tikfouten in e-mailadressen (gmial.com), websites als hun domein, datums en waarden in elk formaat ("€12k" is 12000), meerdere tags in één cel, een fase die anders gespeld is dan op het bord, en dezelfde rij twee keer.
 
@@ -105,7 +105,7 @@ Klik op de foto op de pagina van een persoon of organisatie om ze te wijzigen: *
 
 **Bewerken**, bovenaan de pagina, wijzigt de naam, functie, organisatie, locatie, LinkedIn, telefoonnummers en e-mailadressen, wat die persoon voor jou is, en Werk of Privé. **Opslaan** bewaart het, **Annuleren** laat het zoals het was.
 
-Je wijzigingen blijven, ook als de gegevens opnieuw opgezocht worden of een review iets anders leest, en bij **Samenvoegen** en **Ongedaan maken**. Maak een veld leeg om weer de opgezochte waarde te gebruiken. Een lege naam brengt de naam uit de berichten terug.
+Je wijzigingen blijven, ook als de gegevens opnieuw opgezocht worden of een check iets anders leest, en bij **Samenvoegen** en **Ongedaan maken**. Maak een veld leeg om weer de opgezochte waarde te gebruiken. Een lege naam brengt de naam uit de berichten terug.
 
 ## Teruggekomen
 
@@ -183,11 +183,11 @@ Je keuze in **Bewerken** blijft altijd, ook als je ze weghaalt. **Zelfde organis
 
 ### Borden
 
-Projecten van één soort in fases, zoals een pipeline voor evaluaties. **⋯** op een bord: **Bord bewerken** (naam, fases, welke projecten erbij horen), **Openen op dit bord** en **Nieuw bord**. Reviews blijven projecten toevoegen die passen en zetten ze in een fase. Zijn ze niet zeker, dan toont het bord "2 projecten kunnen hier horen": **Toevoegen** of **Weglaten**.
+Projecten van één soort in fases, zoals een pipeline voor evaluaties. **⋯** op een bord: **Bord bewerken** (naam, fases, welke projecten erbij horen), **Openen op dit bord** en **Nieuw bord**. Checks blijven projecten toevoegen die passen en zetten ze in een fase. Zijn ze niet zeker, dan toont het bord "2 projecten kunnen hier horen": **Toevoegen** of **Weglaten**.
 
 **Opvolging…** in het **⋯** van een bord volgt vanzelf op als iemand niet antwoordt. Zie [Opvolging](follow-ups.md).
 
-**Klaar als**, onder **Bewerken** op een project, zegt in gewone woorden wat het afrondt, met het bewijs: **Een live pagina** (The Machine opent de link uit hun bericht en kijkt of die naar jou linkt) of **Hun bericht**. Reviews stellen er een voor bij partnervermeldingen. Een review zet een project pas in de laatste fase met dat bewijs, gelinkt op de pagina; **Gewonnen** met de hand kan altijd.
+**Klaar als**, onder **Bewerken** op een project, zegt in gewone woorden wat het afrondt, met het bewijs: **Een live pagina** (The Machine opent de link uit hun bericht en kijkt of die naar jou linkt) of **Hun bericht**. Checks stellen er een voor bij partnervermeldingen. Een check zet een project pas in de laatste fase met dat bewijs, gelinkt op de pagina; **Gewonnen** met de hand kan altijd.
 
 De pagina toont ook wat het tegenhoudt (geen antwoord in 10+ dagen, een te late belofte) en maakt er één to-do voor als er nog geen is. Er wordt niets verstuurd zonder jou.
 

@@ -27,7 +27,7 @@ Uma gravação é apagada assim que o texto volta.
 
 ## Preparação
 
-Para transcrever a fala sozinha, sua Machine precisa de um modelo de voz de 150 a 500 MB. Ela o baixa em segundo plano, com baixa prioridade, depois de configurada, quando a primeira revisão termina e ela fica tranquila por um tempo. Enquanto isso, as configurações mostram **Preparando (em segundo plano)**. Ela nunca faz isso quando a OpenAI está em uso.
+Para transcrever a fala sozinha, sua Machine precisa de um modelo de voz de 150 a 500 MB. Ela o baixa em segundo plano, com baixa prioridade, depois de configurada, quando a primeira verificação termina e ela fica tranquila por um tempo. Enquanto isso, as configurações mostram **Preparando (em segundo plano)**. Ela nunca faz isso quando a OpenAI está em uso.
 
 Até ficar pronta, **Automático** usa o reconhecimento de voz do seu navegador, se ele tiver um, e avisa embaixo da caixa. Alguns navegadores enviam isso ao fabricante. Com **Nesta Machine** escolhido, sua gravação espera e a caixa mostra "Preparando a voz…" com o tempo restante.
 

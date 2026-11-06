@@ -1,7 +1,7 @@
 // Reviews off (a new install, before --activate or the hosted "Turn it on" step): said on every tab, with the way to turn them on; with cards already there, that they came from the one-time first look.
 // Hosted, still setting up: the step that is missing on its setup page (no AI yet, or no mail), since reviews turn on by themselves after it.
 // A new hosted Machine (reviews_auto): reviews turn on by themselves once its AI and mail are connected, so it never
-// says "Reviews are off" or offers to turn them on; only a step that is really missing, else how far it is (SETUP_LINE).
+// says "Checks are off" or offers to turn them on; only a step that is really missing, else how far it is (SETUP_LINE).
 const startsByItself=()=>state.reviews_on===false&&!!state.manage_url&&!!state.reviews_auto;
 const SETUP_LINE='Reading your mail, first to-dos in a few minutes';
 // The AI the owner is signing in to on the setup page right now (ChatGPT, Claude), while the first look still waits for a
@@ -11,12 +11,12 @@ const setupLine=()=>{const ai=aiConnecting();return ai?t('Connecting {}…',ai):
 const setupStep=()=>{const why=state.manage_url&&state.reviews_on===false&&state.review_live?.first_look?.why,mail=(state.connectors||[]).some(c=>['gmail','outlook'].includes(c.service));
  if(why==='model'&&aiConnecting())return null;
  return why==='model'?{url:state.manage_url+'#model',action:'Pick your AI',text:'Pick your AI to get your first to-dos.'}:(why==='sources'||startsByItself())&&!mail?{url:state.manage_url+'#google',action:'Connect mail',text:'Connect your mail to get your first to-dos.'}:null};
-const turnOn=()=>{const step=setupStep();return step?{url:step.url,action:step.action}:state.manage_url?{url:state.manage_url+'#turn-on',action:'Turn on reviews'}:{action:'Run: ./install.sh --activate'}};
+const turnOn=()=>{const step=setupStep();return step?{url:step.url,action:step.action}:state.manage_url?{url:state.manage_url+'#turn-on',action:'Turn on checks'}:{action:'Run: ./install.sh --activate'}};
 // Whose sign-in a source's sign-in problem is: Google (Gmail, Calendar) or Microsoft (Outlook and its calendar), else ''
 const accountOf=c=>c.error==='docs_not_connected'?'':/google_signin_expired/.test(c.error||'')||['gmail','calendar'].includes(c.service)?'Google'
  :/microsoft_signin_expired/.test(c.error||'')||['outlook','outlook_calendar'].includes(c.service)?'Microsoft':'';
 function renderNeedsYou(){const items=[...(state.needs_you||[])],manage=state.manage_url;
-if(state.reviews_on===false&&(!startsByItself()||setupStep()))items.unshift({home:'health',text:setupStep()?.text||((state.suggestions||[]).length?'Reviews are off: the to-dos here come from a one-time first look, and no new ones arrive yet.':'Reviews are off, so no to-dos arrive yet.'),...turnOn()});
+if(state.reviews_on===false&&(!startsByItself()||setupStep()))items.unshift({home:'health',text:setupStep()?.text||((state.suggestions||[]).length?'Checks are off: the to-dos here come from a one-time first look, and no new ones arrive yet.':'Checks are off, so no to-dos arrive yet.'),...turnOn()});
 for(const c of state.connectors||[])if(c.signed_out)items.push({home:'health',conn:1,text:t('Signed out of {} ({}).',service(c.service),c.display_name||c.id),url:c.sign_in_url||null,action:c.sign_in_url?'Sign in again':'Show',tab:c.sign_in_url?null:'health',blank:true});
 else if(c.error==='android_offline')items.push({home:'health',conn:1,text:t('{} is not connected. Open the OpenClaw app on it.',c.display_name||c.id),action:'Show',tab:'health'});
 else if(c.error&&connectorHealth(c).tone==='orange'){

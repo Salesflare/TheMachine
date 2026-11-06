@@ -10,7 +10,7 @@ order: 1
 
 Het tabblad **Koppelingen** groepeert je bronnen in **Mail en agenda**, **Chat** en **Andere bronnen**. Elke bron zegt hoe het ermee gaat: Verbonden, Wacht op eerste sync, Verbindt automatisch opnieuw, of Heeft je hulp nodig. Open **Details** voor **Recente syncs**, waar de sync in gewone woorden staat (zoals "Bij" of "Eerste keer lezen"), en wat je moet doen.
 
-De tellers tonen wat de bron binnenbracht, hoeveel er de laatste 24 uur bij kwam en wat nog niet is nagekeken. Een agenda telt afspraken: alle, die van de volgende 7 dagen en de laatste 24 uur.
+De tellers tonen wat de bron binnenbracht, hoeveel er de laatste 24 uur bij kwam en wat nog niet is gecheckt. Een agenda telt afspraken: alle, die van de volgende 7 dagen en de laatste 24 uur.
 
 Onder de status zegt elke bron in één regel wat ze binnenbrengt en, als ze iets kan doen, dat ze dat pas doet nadat je op **Versturen** drukt of het goedkeurt.
 
@@ -40,8 +40,8 @@ Open de bron, **Details**, dan **Ontkoppelen**. Hij stopt met lezen. Wat al binn
 
 Sites die de browser van je Machine gebruikt, zoals LinkedIn of X, kunnen een login bewaren: vink **Bewaren voor de volgende keer** aan als je inlogt. Dan toont **Logins** ze. Als een site je Machine uitlogt, logt hij met één tik opnieuw in. Wachtwoorden blijven versleuteld op je Machine. **Vergeten** verwijdert er een.
 
-## Reviews
+## Checks
 
-**Reviews** toont hoe je Machine leest wat er binnenkomt: recente runs, en wat elke run vond. Zie [Reviews gepauzeerd](reviews-paused.md).
+**Checks** toont hoe je Machine leest wat er binnenkomt: recente runs, en wat elke run vond. Zie [Geen nieuwe to-do's](reviews-paused.md).
 
 Elke koppeling heeft een eigen artikel in deze sectie, met wat ze leest en wat ze kan versturen.

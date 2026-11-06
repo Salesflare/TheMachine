@@ -14,13 +14,13 @@ La sua scheda dice fin dove arriva: **Cronologia: fino a** un mese, quando è ar
 
 ## Cosa non fa mai
 
-La cronologia serve solo a ritrovare le cose. Non crea mai un'attività o una promessa, non entra mai in una revisione, non conta mai come nuova e non va mai nel tuo Graph o al tuo team. Nessun modello di IA la legge.
+La cronologia serve solo a ritrovare le cose. Non crea mai un'attività o una promessa, non entra mai in un controllo, non conta mai come nuova e non va mai nel tuo Graph o al tuo team. Nessun modello di IA la legge.
 
 Attività e promesse arrivano ancora solo dai messaggi nuovi, come prima.
 
 ## Quando funziona
 
-Comincia quando il primo sguardo ai tuoi messaggi è finito e procede piano in background. Aspetta mentre è in corso una revisione o una sincronizzazione, e quando la tua Machine ha poco spazio su disco o poca memoria. Dopo un riavvio riprende da dove era.
+Comincia quando il primo sguardo ai tuoi messaggi è finito e procede piano in background. Aspetta mentre è in corso un controllo o una sincronizzazione, e quando la tua Machine ha poco spazio su disco o poca memoria. Dopo un riavvio riprende da dove era.
 
 Usa l'accesso che ogni connessione ha già. Non viene chiesto niente di nuovo.
 

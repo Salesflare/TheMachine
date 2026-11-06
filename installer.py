@@ -340,7 +340,7 @@ def offer_openclaw(ui):
     settings = onboarding.openclaw_settings()
     if not settings:
         ui.say('\nOpenClaw is not set up yet. Its own guided setup comes next; this is what The Machine needs from it:\n'
-               '  1. Model: pick the provider you use and sign in or paste its key. Reviews and Do it run on it.\n'
+               '  1. Model: pick the provider you use and sign in or paste its key. Checks and Do it run on it.\n'
                '  2. Gateway: say yes to running it as a service, so it keeps running in the background.\n'
                '  3. Channels (optional): choose Telegram to get to-dos there too. Make a bot first: in Telegram, message\n'
                '     @BotFather, send /newbot, pick a name and a free username ending in "bot", and paste the token. Skip it to use the dashboard app\'s notifications.\n'
@@ -362,7 +362,7 @@ def offer_openclaw(ui):
         if not has_telegram(onboarding.openclaw_settings()):
             ui.say('  No Telegram bot yet; add one later with `openclaw channels add --channel telegram`.')
     if acted and run([openclaw, 'health'], timeout=60).returncode != 0:
-        ui.say('  note  the OpenClaw Gateway is not answering yet; `openclaw doctor --fix` says why (reviews and to-dos need it)')
+        ui.say('  note  the OpenClaw Gateway is not answering yet; `openclaw doctor --fix` says why (checks and to-dos need it)')
 
 
 # ---------------------------------------------------------------- config
@@ -1215,16 +1215,16 @@ def guided(paths, since, ui=None):
         subprocess.call([sys.executable, str(ROOT / 'cli.py'), '--config', str(paths.config), 'profile', '--workspace', str(paths.workspace)])
     if config.get('delivery_enabled') and config.get('review_worker', {}).get('enabled'):
         return config
-    if ready and ui.yes('Run a preview now? Your agent reviews the last 7 days and shows the to-dos here and on the dashboard;'
+    if ready and ui.yes('Run a preview now? Your agent checks the last 7 days and shows the to-dos here and on the dashboard;'
                         ' nothing is sent and nothing is done in your accounts', True):
         previewed = subprocess.call([sys.executable, str(ROOT / 'cli.py'), '--config', str(paths.config), 'preview']) == 0
         if not previewed:
-            say('  The preview did not finish; turn reviews on once it works (./install.sh --preview, then --activate).')
-        if ui.yes('Turn on daily reviews and to-dos in Telegram now? (Do it acts with your accounts only when you tap it;'
+            say('  The preview did not finish; turn checks on once it works (./install.sh --preview, then --activate).')
+        if ui.yes('Turn on checks and to-dos in Telegram now? (Do it acts with your accounts only when you tap it;'
                   ' see README "Security model")', previewed):
             config = activate(paths)
             restarted = service.restart(UNIT_NAME, run=run).returncode == 0
-            say('  Reviews and to-dos in Telegram are on.' if restarted else
+            say('  Checks and to-dos in Telegram are on.' if restarted else
                 f'  Saved; restart to apply: {service.hint("restart")}')
     return config
 
@@ -1259,7 +1259,7 @@ def next_steps(config, healthy, started, paths=None):
     lines += ['  - Keep `Do it` in mind: it lets the agent act with your accounts. Read README "Security model".',
               '  - After editing config.json: ' + service.hint('restart')]
     if not config.get('delivery_enabled') or not config.get('review_worker', {}).get('enabled'):
-        lines += ['  - See what it would suggest: ./install.sh --preview (one review of the last 7 days by your agent;',
+        lines += ['  - See what it would suggest: ./install.sh --preview (one check of the last 7 days by your agent;',
                   '    the to-dos show here and on the dashboard; nothing is sent and nothing is done in your accounts)',
                   '  - Once sources are connected and Security model is understood: ./install.sh --activate']
     lines.append('  - Check everything any time: assistant doctor (each problem comes with its fix)')
@@ -1379,8 +1379,8 @@ def main(argv=None):
     parser.add_argument('--purge', action='store_true', help='with --uninstall: also delete config, database and secrets')
     parser.add_argument('--no-start', action='store_true', help='install files but do not enable or start the service')
     parser.add_argument('--skip-plugin', action='store_true', help='do not install the OpenClaw plugin')
-    parser.add_argument('--activate', action='store_true', help='enable reviews and Telegram delivery on an existing install')
-    parser.add_argument('--preview', action='store_true', help='existing install: one review of the last 7 days, shown only (assistant preview)')
+    parser.add_argument('--activate', action='store_true', help='enable checks and Telegram delivery on an existing install')
+    parser.add_argument('--preview', action='store_true', help='existing install: one check of the last 7 days, shown only (assistant preview)')
     parser.add_argument('--browser-viewer', action='store_true', help='existing install: a browser of its own on a virtual display, viewed in yours (127.0.0.1 only)')
     parser.add_argument('--dry-run', action='store_true', help='check prerequisites and show what would be written; changes nothing')
     parser.add_argument('--from-main', action='store_true', help='first install: this checkout as it is, not the newest signed release')

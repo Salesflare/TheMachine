@@ -27,7 +27,7 @@ What your messages, to-dos, drafts or chats say. Names, email addresses, phone n
 
 ## Where errors come from
 
-- the service and its jobs: reviews, preparing to-dos, chat, connections and syncs;
+- the service and its jobs: checks of new messages, preparing to-dos, chat, connections and syncs;
 - the dashboard in your browser, also errors it caught and showed you, and its app copy on your device;
 - calls from the dashboard to your Machine that fail or time out: which call, never what it asked or sent;
 - Claude Code and Codex jobs that fail: the tool and the kind of failure only.
@@ -36,7 +36,7 @@ The same error counts once, with a count. At most a batch every 10 minutes. The 
 
 ## Pacing
 
-Background work waits when your AI plan's limits run low, to keep room for your own chats (see [Your AI model](model.md)). Reviews of what came in wait only near the limits; heavier work, like a look through your history, is spread over the week.
+Background work waits when your AI plan's limits run low, to keep room for your own chats (see [Your AI model](model.md)). Checks of what came in wait only near the limits; heavier work, like a look through your history, is spread over the week.
 
 With error reports on, your Machine also tells the team, once a day, how often that happened: for each time, the hour it started, which limit, how many minutes it lasted and how many jobs waited. Only counts and minutes, nothing about what the jobs were.
 

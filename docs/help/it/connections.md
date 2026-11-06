@@ -10,7 +10,7 @@ order: 1
 
 La scheda **Connessioni** raggruppa le tue fonti in **Email e calendario**, **Chat** e **Altre fonti**. Ognuna dice come sta andando: Connesso, In attesa della prima sincronizzazione, Riconnessione automatica o Serve il tuo aiuto. Apri **Dettagli** per vedere **Sincronizzazioni recenti**, dove la sincronizzazione è spiegata in parole semplici (come "In pari" o "Prima lettura"), e cosa fare.
 
-I suoi numeri mostrano cosa ha portato, cosa è arrivato nelle ultime 24 ore e cosa non è ancora stato esaminato. Un calendario conta eventi: tutti, quelli dei prossimi 7 giorni e delle ultime 24 ore.
+I suoi numeri mostrano cosa ha portato, cosa è arrivato nelle ultime 24 ore e cosa non è ancora stato controllato. Un calendario conta eventi: tutti, quelli dei prossimi 7 giorni e delle ultime 24 ore.
 
 Sotto lo stato, ogni fonte dice in una riga cosa porta e, quando può agire, che lo fa solo dopo che premi **Invia** o dai l’OK.
 
@@ -40,8 +40,8 @@ Apri la fonte, **Dettagli**, poi **Disconnetti**. Smette di leggere. Quello che 
 
 I siti usati dal browser della tua Machine, come LinkedIn o X, possono salvare un accesso: spunta **Salva per la prossima volta** quando accedi. Poi **Accessi** li elenca. Quando un sito disconnette la tua Machine, lei rientra con un tocco. Le password restano cifrate sulla tua Machine. **Dimentica** ne rimuove uno.
 
-## Revisioni
+## Controlli
 
-**Revisioni** mostra come la tua Machine sta leggendo quello che arriva: le esecuzioni recenti e cosa ha trovato ciascuna. Vedi [Revisioni in pausa](reviews-paused.md).
+**Controlli** mostra come la tua Machine sta leggendo quello che arriva: le esecuzioni recenti e cosa ha trovato ciascuna. Vedi [Nessuna nuova attività](reviews-paused.md).
 
 Ogni connessione ha un suo articolo in questa sezione, con cosa legge e cosa può inviare.

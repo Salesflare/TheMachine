@@ -27,7 +27,7 @@ Cosa dicono i tuoi messaggi, le attività, le bozze o le chat. Nomi, indirizzi e
 
 ## Da dove vengono gli errori
 
-- il servizio e i suoi job: revisioni, preparazione delle attività, chat, connessioni e sincronizzazioni;
+- il servizio e i suoi job: controlli dei nuovi messaggi, preparazione delle attività, chat, connessioni e sincronizzazioni;
 - la dashboard nel tuo browser, anche gli errori che ha intercettato e ti ha mostrato, e la sua copia dell’app sul tuo dispositivo;
 - le chiamate dalla dashboard alla tua Machine che falliscono o scadono: quale chiamata, mai cosa ha chiesto o inviato;
 - i job di Claude Code e Codex che falliscono: solo lo strumento e il tipo di errore.
@@ -36,7 +36,7 @@ Lo stesso errore conta una volta, con un conteggio. Al massimo un invio ogni 10 
 
 ## Ritmo
 
-Il lavoro in background aspetta quando i limiti del tuo piano AI si esauriscono, per lasciare spazio alle tue chat (vedi [Il tuo modello AI](model.md)). Le revisioni di quello che è arrivato aspettano solo vicino ai limiti; il lavoro più pesante, come scorrere la tua cronologia, è distribuito sulla settimana.
+Il lavoro in background aspetta quando i limiti del tuo piano AI si esauriscono, per lasciare spazio alle tue chat (vedi [Il tuo modello AI](model.md)). I controlli di quello che è arrivato aspettano solo vicino ai limiti; il lavoro più pesante, come scorrere la tua cronologia, è distribuito sulla settimana.
 
 Con le segnalazioni di errore attive, la tua Machine dice al team, una volta al giorno, quante volte è successo: per ogni volta, l'ora in cui è iniziato, quale limite, quanti minuti è durato e quanti lavori hanno aspettato. Solo conteggi e minuti, niente sui lavori.
 

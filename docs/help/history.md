@@ -14,13 +14,13 @@ Its card says how far back it reaches: **History: back to** a month, once it's i
 
 ## What it never does
 
-History is only there to look things up. It never makes a to-do or a promise, never goes into a review, never counts as new, and never goes to your Graph or your team. No AI model reads it.
+History is only there to look things up. It never makes a to-do or a promise, never goes into a check, never counts as new, and never goes to your Graph or your team. No AI model reads it.
 
 To-dos and promises still come only from new messages, as before.
 
 ## When it runs
 
-It starts once the first look at your messages is done, and runs slowly in the background. It waits while a review or a sync runs, and when your Machine is short on disk space or memory. After a restart it goes on where it was.
+It starts once the first look at your messages is done, and runs slowly in the background. It waits while a check or a sync runs, and when your Machine is short on disk space or memory. After a restart it goes on where it was.
 
 It uses the access each connection already has. Nothing new is asked.
 

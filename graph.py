@@ -3936,7 +3936,7 @@ def sort_state(db, p):
         except sqlite3.OperationalError:
             run = None
     if (p['sort_tries'] or 0) >= SORT_TRIES:
-        return 'failed', f"Couldn't sort it in {p['sort_tries']} reviews"
+        return 'failed', f"Couldn't sort it in {p['sort_tries']} checks"
     if run and run['status'] not in ('starting', 'running', 'recovering', 'ok'):
         return 'failed', 'Sorting failed, trying again'
     return 'sorting', None

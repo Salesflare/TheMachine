@@ -14,7 +14,7 @@ En una Machine alojada nueva, las revisiones empiezan solas en cuanto tu IA y tu
 
 ## Las revisiones están desactivadas
 
-La parte superior de Tareas dice "Las revisiones están desactivadas, así que aún no llegan tareas." En una Machine alojada, pulsa **Activar revisiones**. En tu propio ordenador, ejecuta `./install.sh --activate`.
+La parte superior de Tareas dice "Las revisiones están desactivadas, así que aún no llegan tareas." En una Machine alojada, pulsa **Activar las revisiones**. En tu propio ordenador, ejecuta `./install.sh --activate`.
 
 ## El límite de tu modelo
 

@@ -88,9 +88,9 @@ class Preview(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'already on'): self.app.start_preview()
         self.app.config['review_worker'] = {'enabled': False}
         with self.store.connect() as db: db.execute("INSERT INTO review_runs(run_id,status,started_at,updated_at) VALUES('x','running',?,?)", (a.now(), a.now()))
-        with self.assertRaisesRegex(ValueError, 'Another review'): self.app.start_preview()
+        with self.assertRaisesRegex(ValueError, 'Another check'): self.app.start_preview()
         with self.store.connect() as db: db.execute("UPDATE review_runs SET status='ok',finished_at=?", (a.now(),)); db.execute('UPDATE events SET analyzed_version=version')
-        with self.assertRaisesRegex(ValueError, 'No unreviewed signals'): self.app.start_preview()
+        with self.assertRaisesRegex(ValueError, 'No unchecked signals'): self.app.start_preview()
 
     def test_preview_cards_are_shown_never_sent_or_prepared_also_after_activation(self):
         self.app.start_preview()
@@ -139,8 +139,8 @@ class PreviewCli(unittest.TestCase):
     def test_shows_progress_then_the_cards_and_that_nothing_was_sent(self):
         out, calls = self.run_cli(status('starting'), status('running', ['Confirm the invoice']), status('ok', ['Confirm the invoice', 'Book the venue']))
         self.assertEqual(calls, ['preview_review', 'status', 'status', 'status'])
-        self.assertIn('Reviewing 40 signals from the last 7 days', out)
-        self.assertIn('starting the review in OpenClaw', out); self.assertIn('reviewing 40 signals · 1 suggestion so far', out)
+        self.assertIn('Checking 40 signals from the last 7 days', out)
+        self.assertIn('starting the check in OpenClaw', out); self.assertIn('checking 40 signals · 1 suggestion so far', out)
         self.assertIn('1. Confirm the invoice', out); self.assertIn('2. Book the venue', out)
         self.assertIn('Sam asks to confirm the amount.', out); self.assertNotIn('**', out)
         self.assertIn('Source: email from Sam Example', out); self.assertNotIn('Queued earlier', out)

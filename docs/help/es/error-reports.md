@@ -27,7 +27,7 @@ Lo que dicen tus mensajes, tareas, borradores o chats. Nombres, direcciones de c
 
 ## De dónde vienen los errores
 
-- el servicio y sus trabajos: revisiones, preparación de tareas, chat, conexiones y sincronizaciones;
+- el servicio y sus trabajos: revisiones de mensajes nuevos, preparación de tareas, chat, conexiones y sincronizaciones;
 - el panel en tu navegador, también los errores que detectó y te mostró, y su copia de la app en tu dispositivo;
 - las llamadas del panel a tu Machine que fallan o tardan demasiado: qué llamada, nunca lo que pidió o envió;
 - los trabajos de Claude Code y Codex que fallan: solo la herramienta y el tipo de fallo.

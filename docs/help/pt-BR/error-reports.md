@@ -27,7 +27,7 @@ O que dizem suas mensagens, tarefas, rascunhos ou chats. Nomes, endereços de e-
 
 ## De onde vêm os erros
 
-- o serviço e as tarefas dele: revisões, preparo de tarefas, chat, conexões e sincronizações;
+- o serviço e as tarefas dele: verificações de mensagens novas, preparo de tarefas, chat, conexões e sincronizações;
 - o painel no seu navegador, também erros que ele capturou e mostrou para você, e a cópia do app no seu dispositivo;
 - chamadas do painel para a sua Machine que falham ou demoram demais: qual chamada, nunca o que ela pediu ou enviou;
 - trabalhos do Claude Code e do Codex que falham: só a ferramenta e o tipo de falha.
@@ -36,7 +36,7 @@ O mesmo erro conta uma vez, com uma contagem. No máximo um lote a cada 10 minut
 
 ## Ritmo
 
-O trabalho em segundo plano espera quando os limites do seu plano de IA estão no fim, para sobrar espaço para os seus chats (veja [Seu modelo de IA](model.md)). As revisões do que chegou só esperam perto dos limites; o trabalho mais pesado, como percorrer seu histórico, é distribuído ao longo da semana.
+O trabalho em segundo plano espera quando os limites do seu plano de IA estão no fim, para sobrar espaço para os seus chats (veja [Seu modelo de IA](model.md)). As verificações do que chegou só esperam perto dos limites; o trabalho mais pesado, como percorrer seu histórico, é distribuído ao longo da semana.
 
 Com os relatórios de erro ligados, ela também conta à equipe, uma vez por dia, quantas vezes isso aconteceu: para cada vez, a hora do início, qual limite, quantos minutos durou e quantos trabalhos esperaram. Só contagens e minutos, nada sobre os trabalhos.
 

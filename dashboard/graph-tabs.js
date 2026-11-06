@@ -7,7 +7,7 @@ function promiseState(p){const late=p.due&&p.due<localDay(new Date());
  return p.state==='open'?(p.direction==='theirs'&&!p.together?['Waiting on '+promiseFirst(p.who),'var(--lavender)']:[late?'Past its date':'Open',late?'var(--orange)':'var(--mint)']):p.state==='card'?['Now a to-do','var(--amber)']
   :p.state==='kept'?['Kept','var(--muted)']:p.state==='answered'?['They wrote again','var(--muted)']:['Not needed','var(--muted)']}
 function promiseLine(p,h){const via=PROMISE_SAID[h.detail]||'a message';
- return {said:p.together?t('Planned together in {}',via):p.direction==='mine'?t('Promised to {} in {}',p.who,via):t('{} promised it in {}',p.who,via),noted:'Noted by a review',due:t('Date moved to {}',day(h.detail)),
+ return {said:p.together?t('Planned together in {}',via):p.direction==='mine'?t('Promised to {} in {}',p.who,via):t('{} promised it in {}',p.who,via),noted:'Noted by a check',due:t('Date moved to {}',day(h.detail)),
   kept:'Marked done',dropped:'Marked not needed',answered:'They wrote again',carded:'Became a to-do',together:'Both sides said it: one plan',merged:'The same as another promise'}[h.kind]||''}
 async function promisePage(id){const p=await request('api/promise?id='+encodeURIComponent(id)),[state,color]=promiseState(p),person=(p.links||[]).find(l=>l.kind==='person');
  const who=p.together?'With '+p.who:p.direction==='mine'?'Promised to '+p.who:p.who+' promised',when=p.due?'due '+day(p.due):'no date';

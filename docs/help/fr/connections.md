@@ -10,7 +10,7 @@ order: 1
 
 L’onglet **Connexions** regroupe vos sources en **Mail et agenda**, **Chat** et **Autres sources**. Chacune indique son état : Connectée, En attente de la première synchro, Reconnexion automatique ou Besoin de votre aide. Ouvrez **Détails** pour voir les **Synchros récentes**, où sa synchro est décrite en mots simples (comme « À jour » ou « Première lecture »), et quoi faire.
 
-Ses compteurs indiquent ce qu’elle a apporté, ce qui est arrivé ces dernières 24 h et ce qui n’est pas encore relu. Un agenda compte des événements : tous, ceux des 7 prochains jours et des dernières 24 h.
+Ses compteurs indiquent ce qu’elle a apporté, ce qui est arrivé ces dernières 24 h et ce qui n’est pas encore vérifié. Un agenda compte des événements : tous, ceux des 7 prochains jours et des dernières 24 h.
 
 Sous son état, chaque source dit en une ligne ce qu’elle apporte et, quand elle peut agir, qu’elle ne le fait qu’après que vous avez appuyé sur **Envoyer** ou donné votre accord.
 
@@ -40,8 +40,8 @@ Ouvrez la source, **Détails**, puis **Déconnecter**. Elle arrête de lire. Ce 
 
 Les sites qu’utilise le navigateur de votre Machine, comme LinkedIn ou X, peuvent enregistrer un identifiant : cochez **Enregistrer pour la prochaine fois** quand vous vous connectez. **Connexions aux sites** les liste ensuite. Quand un site déconnecte votre Machine, elle se reconnecte en un geste. Les mots de passe restent chiffrés sur votre Machine. **Oublier** en retire un.
 
-## Revues
+## Vérifications
 
-**Revues** montre comment votre Machine lit ce qui arrive : les exécutions récentes, et ce que chacune a trouvé. Voir [Revues en pause](reviews-paused.md).
+**Vérifications** montre comment votre Machine lit ce qui arrive : les exécutions récentes, et ce que chacune a trouvé. Voir [Aucune nouvelle tâche](reviews-paused.md).
 
 Chaque connexion a son propre article dans cette section, avec ce qu’elle lit et ce qu’elle peut envoyer.

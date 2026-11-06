@@ -27,7 +27,7 @@ Una registrazione viene eliminata appena torna il testo.
 
 ## Preparazione
 
-Per trascrivere la voce da sola, la tua Machine ha bisogno di un modello vocale da 150 a 500 MB. Lo scarica in background, a bassa priorità, quando è configurata, la sua prima revisione è finita ed è tranquilla da un po’. Nel frattempo le impostazioni mostrano **In preparazione (in background)**. Non lo fa mai quando si usa OpenAI.
+Per trascrivere la voce da sola, la tua Machine ha bisogno di un modello vocale da 150 a 500 MB. Lo scarica in background, a bassa priorità, quando è configurata, il suo primo controllo è finito ed è tranquilla da un po’. Nel frattempo le impostazioni mostrano **In preparazione (in background)**. Non lo fa mai quando si usa OpenAI.
 
 Finché non è pronta, **Automatico** usa il riconoscimento vocale del browser, se ne ha uno, e lo dice sotto la casella. Alcuni browser lo inviano al loro produttore. Con **Su questa Machine** scelto, la registrazione aspetta e la casella mostra "Preparazione della voce…" con il tempo rimanente.
 

@@ -10,7 +10,7 @@ order: 1
 
 The **Connections** tab groups your sources into **Mail and calendar**, **Chat** and **Other sources**. Each one says how it's doing: Connected, Waiting for first sync, Reconnecting automatically, or Needs your help. Open **Details** for **Recent syncs**, where its sync is in plain words (like "Caught up" or "First read"), and what to do.
 
-Its counts show what it brought in, how much came in the last 24h and what isn't reviewed yet. A calendar counts events: all it has, those in the next 7 days and the last 24h.
+Its counts show what it brought in, how much came in the last 24h and what isn't checked yet. A calendar counts events: all it has, those in the next 7 days and the last 24h.
 
 Under its status, each source says in one line what it brings in and, when it can act, that it does so only after you press **Send** or OK it.
 
@@ -44,8 +44,8 @@ Open the source, **Details**, then **Disconnect**. It stops reading. What it alr
 
 Sites your Machine's browser uses, like LinkedIn or X, can save a sign-in: tick **Save for next time** when you sign in. Then **Sign-ins** lists them. When a site logs your Machine out, it signs back in with one tap. Passwords stay encrypted on your Machine. **Forget** removes one.
 
-## Reviews
+## Checks
 
-**Reviews** shows how your Machine is reading what comes in: recent runs, and what each one found. See [Reviews paused](reviews-paused.md).
+**Checks** shows how your Machine is reading what comes in: recent runs, and what each one found. See [No new to-dos](reviews-paused.md).
 
 Each connection has its own article in this section, with what it reads and what it can send.

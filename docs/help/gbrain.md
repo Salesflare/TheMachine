@@ -1,7 +1,7 @@
 ---
 title: GBrain
 area: connections
-summary: Optional. Keep your own GBrain agent memory in sync with The Machine, and let reviews read it.
+summary: Optional. Keep your own GBrain agent memory in sync with The Machine, and let checks read it.
 covers: gbrain
 code: gbrain.py, dashboard.html
 order: 90
@@ -14,7 +14,7 @@ Your Machine says what goes in: people and projects from your Graph with a link 
 
 ## What it does
 
-Reviews can read your brain (search and read pages, never write) to write better to-dos. Your Machine writes its part of each page between clear markers. Edit or remove that part and it leaves it as you made it. Notes you write about a person in GBrain show up next to them in your Graph.
+Checks can read your brain (search and read pages, never write) to write better to-dos. Your Machine writes its part of each page between clear markers. Edit or remove that part and it leaves it as you made it. Notes you write about a person in GBrain show up next to them in your Graph.
 
 Work people and companies go in only when you check **Include Work people and companies**. Teammates' Team Graph data never goes in.
 

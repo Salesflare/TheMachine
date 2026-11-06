@@ -64,7 +64,7 @@ try{
   await page.waitForTimeout(1500);
   const [d]=await count(page);assert.ok(d>20&&d<60,String(d));
   if(shots)await page.screenshot({path:`${shots}/digging-${width}.png`});
-  // In Connections it is the first look, not "Reviewing new messages"
+  // In Connections it is the first look, not "Checking new messages"
   assert.ok((await page.locator('#review-live').innerText()).includes('First look: your last 7 days'));
   // Done, nothing worth a to-do: the ending says what it read, not "Nothing to report"
   run=null;dig=null;done={at:now,days:7,kinds:{email:64},read:{newsletters:50,notifications:14},todos:0,acted:false,next:['calendar','inbox']};

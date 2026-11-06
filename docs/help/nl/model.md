@@ -16,7 +16,7 @@ Meer denkwerk beantwoordt moeilijkere vragen beter, maar is trager en gebruikt m
 
 Eén chat kan iets anders gebruiken: tik onder het berichtvak op het model of het denkniveau. Die keuze geldt alleen voor die chat. Kies weer hetzelfde als in Instellingen om Instellingen te volgen.
 
-Reviews, je profiel en vooraf voorbereide concepten houden hun eigen model.
+Checks, je profiel en vooraf voorbereide concepten houden hun eigen model.
 
 ## Limieten
 
@@ -24,7 +24,7 @@ Heeft je abonnement gebruikslimieten, dan zie je hoeveel van elke limiet gebruik
 
 ## Ruimte voor je eigen chats
 
-Werk op de achtergrond (reviews, je profiel, concepten die vooraf klaargezet worden) laat ruimte voor je eigen chats. Het pauzeert bij ongeveer 65% van de 5-uurslimiet. Reviews van wat binnenkwam gaan door tot ongeveer 90% van de weeklimiet; de rest verdeelt die over ongeveer een zevende per dag. Een login zonder gebruikslimieten, zoals een API-sleutel, wordt nooit gepauzeerd.
+Werk op de achtergrond (checks, je profiel, concepten die vooraf klaargezet worden) laat ruimte voor je eigen chats. Het pauzeert bij ongeveer 65% van de 5-uurslimiet. Checks van wat binnenkwam gaan door tot ongeveer 90% van de weeklimiet; de rest verdeelt die over ongeveer een zevende per dag. Een login zonder gebruikslimieten, zoals een API-sleutel, wordt nooit gepauzeerd.
 
 Werk op de achtergrond draait nooit op GPT-6 Astra. Het gebruikt in plaats daarvan GPT-6.1 Sol.
 

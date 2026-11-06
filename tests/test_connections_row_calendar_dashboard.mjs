@@ -7,7 +7,7 @@ const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modul
 
 // Connections on a hosted Machine. The row under the cards: Connect Google, Connect Microsoft and Add another source are
 // whole pills (never split over two lines) and the ask for a missing source is its own line under them. A calendar's
-// card counts events (kept, next 7 days, last 24h), never messages or "not reviewed".
+// card counts events (kept, next 7 days, last 24h), never messages or "not checked".
 // SHOTS=<folder> saves each width and theme.
 const dashboard=await dashboardPage();
 const at=new Date().toISOString();
@@ -44,7 +44,7 @@ try{
   const tiles=await page.evaluate(()=>Object.fromEntries([...document.querySelectorAll('#connectors article[data-conn]')].map(a=>[a.dataset.conn,[...a.querySelectorAll('.figures div')].map(d=>d.textContent.trim().replace(/\s+/,' '))])));
   assert.deepEqual(tiles.cal,['52events','9next 7 days','4last 24h'],`${tag} Outlook Calendar: ${tiles.cal}`);
   assert.deepEqual(tiles.gcal,['31events','6next 7 days','1last 24h'],`${tag} Google Calendar: ${tiles.gcal}`);
-  assert.deepEqual(tiles.mail,['1,240messages','18last 24h','3not reviewed'],`${tag} Gmail: ${tiles.mail}`);
+  assert.deepEqual(tiles.mail,['1,240messages','18last 24h','3not checked'],`${tag} Gmail: ${tiles.mail}`);
   if(shots){await page.locator('#connectors article[data-conn="cal"]').scrollIntoViewIfNeeded();await page.screenshot({path:`${shots}/${tag}-card.png`});
    await page.locator('#connect-more').scrollIntoViewIfNeeded();await page.screenshot({path:`${shots}/${tag}-row.png`})}
   await context.close()}

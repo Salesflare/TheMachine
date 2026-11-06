@@ -63,7 +63,7 @@ Sous Champs, sur une personne, une organisation ou un projet, cliquez sur une va
 
 **Importer un CSV…**, dans le menu de tri de Personnes, Organisations ou Projets, ajoute un tableur enregistré en CSV. Votre Machine devine quelle colonne correspond à quoi d’après les en-têtes et leur contenu. Vous pouvez corriger n’importe laquelle.
 
-Quand votre modèle peut tourner, il vérifie aussi les colonnes, dans n’importe quelle langue et quelle que soit l’orthographe des en-têtes, avec une courte raison là où il a un doute. Il ne voit que les en-têtes, quelques valeurs par colonne et les cellules que les règles n’ont pas pu lire, sur votre Machine, comme pour une revue. Sans lui, la proposition tirée des en-têtes est conservée.
+Quand votre modèle peut tourner, il vérifie aussi les colonnes, dans n’importe quelle langue et quelle que soit l’orthographe des en-têtes, avec une courte raison là où il a un doute. Il ne voit que les en-têtes, quelques valeurs par colonne et les cellules que les règles n’ont pas pu lire, sur votre Machine, comme pour une vérification. Sans lui, la proposition tirée des en-têtes est conservée.
 
 **Vérifier**, à côté des corrections suggérées, liste les corrections simples en avant/après : espaces en trop, noms en majuscules, numéros de téléphone au format international, fautes de frappe dans les e-mails (gmial.com), sites web réduits à leur domaine, dates et valeurs dans n’importe quel format (« €12k » donne 12000), plusieurs tags dans une cellule, une étape écrite autrement que sur le tableau, et la même ligne en double.
 
@@ -105,7 +105,7 @@ Cliquez sur la photo de la page d’une personne ou d’une organisation pour la
 
 **Modifier**, en haut de sa page, change son nom, son poste, son organisation, son lieu, son LinkedIn, ses téléphones et e-mails, ce qu’elle est pour vous, et Travail ou Perso. **Enregistrer** garde les changements, **Annuler** laisse tout comme avant.
 
-Vos modifications restent, même quand ses informations sont recherchées à nouveau ou qu’une revue lit autre chose, et après **Fusionner** et **Annuler**. Videz un champ pour reprendre la valeur trouvée. Un nom vide remet celui tiré de ses messages.
+Vos modifications restent, même quand ses informations sont recherchées à nouveau ou qu’une vérification lit autre chose, et après **Fusionner** et **Annuler**. Videz un champ pour reprendre la valeur trouvée. Un nom vide remet celui tiré de ses messages.
 
 ## Rejetée
 
@@ -183,11 +183,11 @@ Votre choix dans **Modifier** est toujours conservé, même quand vous la retire
 
 ### Tableaux
 
-Des projets d’un même type répartis en étapes, comme un pipeline d’évaluation. **⋯** sur un tableau : **Modifier le tableau** (nom, étapes, projets concernés), **Ouvrir sur ce tableau** et **Nouveau tableau**. Les revues continuent d’ajouter les projets qui correspondent et les placent dans une étape. En cas de doute, le tableau affiche « 2 projets pourraient aller ici » : **Ajouter** ou **Exclure**.
+Des projets d’un même type répartis en étapes, comme un pipeline d’évaluation. **⋯** sur un tableau : **Modifier le tableau** (nom, étapes, projets concernés), **Ouvrir sur ce tableau** et **Nouveau tableau**. Les vérifications continuent d’ajouter les projets qui correspondent et les placent dans une étape. En cas de doute, le tableau affiche « 2 projets pourraient aller ici » : **Ajouter** ou **Exclure**.
 
 **Relances…** dans le **⋯** d’un tableau relance toute seule quand quelqu’un ne répond pas. Voir [Relances](follow-ups.md).
 
-**Terminé quand**, sous **Modifier** sur un projet, dit en mots simples ce qui le termine, avec sa preuve : **Une page en ligne** (The Machine ouvre le lien de leur message et vérifie qu’il renvoie vers vous) ou **Leur message**. Les revues en proposent une pour les fiches partenaires. Une revue ne passe un projet à la dernière étape qu’avec cette preuve, liée sur sa page ; **Gagné** à la main reste possible.
+**Terminé quand**, sous **Modifier** sur un projet, dit en mots simples ce qui le termine, avec sa preuve : **Une page en ligne** (The Machine ouvre le lien de leur message et vérifie qu’il renvoie vers vous) ou **Leur message**. Les vérifications en proposent une pour les fiches partenaires. Une vérification ne passe un projet à la dernière étape qu’avec cette preuve, liée sur sa page ; **Gagné** à la main reste possible.
 
 La page montre aussi ce qui le bloque (pas de réponse depuis 10+ jours, une promesse en retard) et ajoute une tâche quand il n’en a pas. Rien n’est envoyé sans vous.
 

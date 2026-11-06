@@ -34,7 +34,7 @@ try{
   assert.equal(await health.locator('.conn-head small').count(),0,'no kind or owner line under it');
   const text=await health.innerText();
   assert.doesNotMatch(text,/openclaw|gateway|owner:|system/i,text);
-  assert.deepEqual(await health.locator('.figures span').allInnerTexts(),['alerts','last 24h','not reviewed']);
+  assert.deepEqual(await health.locator('.figures span').allInnerTexts(),['alerts','last 24h','not checked']);
   assert.equal(await health.locator('details summary').filter({hasText:'Details'}).count(),1);
   assert.equal(await page.locator('#connectors article[data-conn="news"] .conn-head small').innerText(),'Feed · Work · Acme');
   if(shots){await health.scrollIntoViewIfNeeded();await page.screenshot({path:`${shots}/after-${width}x${height}.png`})}
