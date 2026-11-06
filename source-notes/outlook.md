@@ -1,0 +1,1 @@
+- **Outlook mail.** Only the last days are collected at first. For a mail from before that (one the owner sent weeks ago), `events` with `mailbox:true`, the accounts and a query (from:, to:, subject:, in:sent) searches the mailbox itself through Microsoft's search, read-only, and keeps what it finds to link. Never say a mail can't be found before that.
