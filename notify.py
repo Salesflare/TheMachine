@@ -341,31 +341,60 @@ def brief_line(titles, show_text=True):
     return clip(t('{} things for the team: {}', len(titles), names), APP_BODY)
 
 
-def compose(meetings, due, overnight, root='', show_text=True, clock=lambda iso: iso[11:16], waiting=None, total=None):
+def open_order(rows, current):
+    """The waiting to-dos [{id, title, due, due_at, created_at}] in the order the dashboard's open lists show them
+    (openOrder in dashboard/todos-cards.js): overdue or due by tomorrow first, then newest first by created_at, then
+    the id. `current` is the owner's local now (an aware datetime). The dashboard breaks a same-moment tie by the
+    people weight first; that needs the Graph, so here the id alone does."""
+    tomorrow = (current + dt.timedelta(days=1)).date().isoformat()
+
+    def at(value):
+        try:
+            when = dt.datetime.fromisoformat(str(value))
+            return (when if when.tzinfo else when.replace(tzinfo=current.tzinfo)).timestamp()
+        except (TypeError, ValueError):
+            return None
+
+    def soon(row):
+        if not row.get('due'):
+            return False
+        due_at = at(row.get('due_at')) if row.get('due_at') else None
+        return (due_at is not None and due_at < current.timestamp()) or str(row['due']) <= tomorrow
+
+    return sorted(rows, key=lambda r: (not soon(r), -(at(r.get('created_at')) or 0), str(r.get('id') or '')))
+
+
+def compose(meetings, due, overnight, root='', show_text=True, clock=lambda iso: iso[11:16], waiting=None, total=None,
+            top=None):
     """The digest from its three parts: meetings [{at, title, guests}], due and overnight [{title}].
     Returns None when there is nothing to say, else {push: {title, body, url, tag}, text, subject}.
     Without show_text (Careful, or notify_text off) it carries counts only. waiting [{title}] (the first ones) and
     total (how many) are the to-dos waiting for the owner, for the push's body (morning_line); left out: due and
-    overnight."""
-    if not (meetings or due or overnight):
+    overnight. top [{title}] are the first waiting to-dos in the dashboard's order (open_order): with total, a "Waiting
+    for you" part, so a pile that waits still gets its digest when nothing is due or new. Nothing at all: None."""
+    piled = total if top is not None and total else 0
+    if not (meetings or due or overnight or piled):
         return None
     # in the owner's language (i18n.py); English when there is no entry
     counts = [t('{} meetings', len(meetings)) if meetings else '', t('{} due', len(due)) if due else '',
-              t('{} new', len(overnight)) if overnight else '']
+              t('{} new', len(overnight)) if overnight else '', t('{} waiting', piled) if piled else '']
     summary = ' · '.join(c for c in counts if c)
     lines = []
     if show_text:
-        def part(head, items, line):
+        def part(head, items, line, count=None):
             if not items:
                 return
+            count = len(items) if count is None else max(count, len(items[:3]))
             lines.append(head)
             lines.extend('• ' + line(i) for i in items[:3])
-            if len(items) > 3:
-                lines.append(t('• +{} more', len(items) - 3))
+            if count > 3:
+                lines.append(t('• +{} more', count - 3))
             lines.append('')
         part(t('Today'), meetings, lambda m: clock(m['at']) + ' ' + m['title'])
         part(t('Due'), due, lambda d: d['title'])
         part(t('Overnight'), overnight, lambda o: o['title'])
+        if piled:
+            part(t('Waiting for you'), top, lambda w: w['title'], piled)
     else:
         lines += [summary, '']
     if root:

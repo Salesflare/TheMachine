@@ -443,6 +443,42 @@ class Notifications(unittest.TestCase):
         self.assertNotIn('merger', line(meeting, [], [], waiting=waiting, total=2))
         self.assertNotIn('—', long)
 
+    def test_a_waiting_pile_gets_its_digest_in_the_dashboards_order(self):
+        # It was skipped every morning while 17-19 to-dos waited: no meetings, nothing due or new overnight. A pile that
+        # waits now gets a digest with the first ones as the to-do list shows them (three, then "+N more"); truly
+        # nothing stays quiet. Made-up data.
+        top = [{'title': 'Reply to the landlord'}, {'title': 'Send the quote'}, {'title': 'Book the venue'}]
+        pile = notify.compose([], [], [], 'https://m.example/', waiting=top[:2], total=18, top=top)
+        self.assertEqual(pile['subject'], 'Your morning: 18 waiting')
+        self.assertIn('Waiting for you\n• Reply to the landlord\n• Send the quote\n• Book the venue\n• +15 more', pile['text'])
+        self.assertTrue(pile['push']['body'].startswith('18 to-dos: Reply to the landlord, Send the quote'))
+        careful = notify.compose([], [], [], '', show_text=False, waiting=top[:2], total=18, top=top)
+        self.assertNotIn('landlord', careful['text'] + careful['subject'] + careful['push']['body'])
+        self.assertIn('18 waiting', careful['text'])
+        self.assertIsNone(notify.compose([], [], [], waiting=[], total=0, top=[]))
+        # the whole way: the order of tests/test_open_order_dashboard.mjs (overdue or due by tomorrow first, then newest
+        # first; a deadline months away goes by its time)
+        current = a.dt.datetime(2026, 11, 5, 10, 0, tzinfo=UTC)
+        h = lambda n: (current - a.dt.timedelta(hours=n)).isoformat()
+        day = lambda n: (current + a.dt.timedelta(days=n)).date().isoformat()
+        cards = [('a', 'Send the venue the final count', h(24 * 13), day(-13)), ('b', 'Book the train for the offsite', h(24 * 9), None),
+                 ('c', 'Reply to Sam about the pilot', h(2), None), ('d', 'Answer the supplier about pallets', h(24 * 3), day(90)),
+                 ('e', 'Confirm the dentist', h(26), day(1)), ('h', 'Pick a date for the board call', h(24 * 6), None)]
+        for key, title, created, due in cards:
+            sid = self.card(key=key, title=title)
+            with self.store.connect() as db:
+                db.execute('UPDATE suggestions SET created_at=?,due=?,urgent=0 WHERE id=?', (created, due, sid))
+        with patch.object(a, 'local_tz', return_value=UTC), patch.object(a, 'recap_meetings', return_value=[]):
+            digest = self.app.digest(current + a.dt.timedelta(days=2, hours=-1))  # two days on: nothing new overnight, nothing due today
+        self.assertIn('Waiting for you\n• Confirm the dentist\n• Send the venue the final count\n• Reply to Sam about the pilot\n• +3 more', digest['text'])
+        self.assertEqual(digest['subject'], 'Your morning: 6 waiting')
+        order = notify.open_order([{'id': k, 'title': t, 'created_at': c, 'due': d} for k, t, c, d in cards], current)
+        self.assertEqual([r['id'] for r in order], ['e', 'a', 'c', 'd', 'h', 'b'])
+        with self.store.connect() as db:
+            db.execute("UPDATE suggestions SET status='completed'")
+        with patch.object(a, 'local_tz', return_value=UTC), patch.object(a, 'recap_meetings', return_value=[]):
+            self.assertIsNone(self.app.digest(current))
+
     def test_the_digest_goes_once_on_the_chosen_channels_and_the_preview_sends_nothing(self):
         self.app.action('push_subscribe', SUB, owner_dashboard=True)
         self.card(title='Answer the school')

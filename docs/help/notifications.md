@@ -12,7 +12,7 @@ In **Settings**, **Notifications**, pick per kind where it reaches you:
 - **New to-dos**: a reply someone waits for, a request, anything urgent.
 - **Results and questions**: a draft ready to approve or send, a task that's stuck or needs a sign-in, a Fleet question.
 - **Reminders**: snoozes and waits coming back.
-- **Morning digest**: today's meetings, what's due and what came in overnight.
+- **Morning digest**: today's meetings, what's due, what came in overnight and the first to-dos waiting, in your to-do list's order.
 
 Each has a switch for **Push** (the app on your phone or computer), **Telegram** when it's set up, and **Email** on a hosted Machine or one on The Machine Network. All are on, except the digest on Telegram.
 
@@ -33,7 +33,7 @@ Only what needs you notifies. Progress and edits don't. A burst buzzes once. The
 
 ## The morning digest
 
-It comes on work days at your **Morning digest** time, and is skipped when there's nothing to say. **Preview**, in its row, shows it on the page without sending it. By default it's a push and an email. The push says how many to-dos wait, the first two, and your first meeting's time. Tapping it opens today in the **Calendar**.
+It comes on work days at your **Morning digest** time, and is skipped only when there's nothing to say: no meetings, nothing due or new, and no to-dos waiting. **Preview**, in its row, shows it on the page without sending it. By default it's a push and an email. The push says how many to-dos wait, the first two, and your first meeting's time. Tapping it opens today in the **Calendar**.
 
 ## Privacy
 
