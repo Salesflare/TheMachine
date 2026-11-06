@@ -150,20 +150,21 @@ try{const n=+localStorage.getItem('skeleton-cards'),k=document.querySelector('#s
 <section id="fleet" hidden><div id="fleet-view"></div></section>
 <section id="feedback" hidden><div class="sub-tabs learn-tabs" id="learn-tabs" role="tablist" aria-label="Learning"></div><div class="learn-pane" id="learn-pane-going" data-learn-pane="going" role="tabpanel" aria-labelledby="learn-tab-going"><div id="quality"></div></div><div class="learn-pane" id="learn-pane-learned" data-learn-pane="learned" role="tabpanel" aria-labelledby="learn-tab-learned" hidden><p class="learn-intro">From your notes. Edit or remove anything that’s off.</p><div id="facts"></div></div><div class="learn-pane" id="learn-pane-changes" data-learn-pane="changes" role="tabpanel" aria-labelledby="learn-tab-changes" hidden><p class="learn-intro">What I picked up from your edits, dismissals and chats.</p><div id="learn-changes" class="list"></div></div><div class="learn-pane" id="learn-pane-decisions" data-learn-pane="decisions" role="tabpanel" aria-labelledby="learn-tab-decisions" hidden><p class="learn-intro">Your notes steer the next reviews.</p><div id="decisions" class="timeline"></div></div><div class="learn-pane" id="learn-pane-shared" data-learn-pane="shared" role="tabpanel" aria-labelledby="learn-tab-shared" hidden><div id="share-learnings" aria-live="polite"></div><div id="share-votes" aria-live="polite"></div></div></section>
 <section id="settings" hidden
-><div id="settings-acct" hidden><div class="section-head"><h2>Account</h2
-><p id="acct-email"></p></div
+><div id="settings-acct" hidden><div class="section-head acct-head"><div><h2>Account</h2
+><p id="acct-email"></p></div><div id="acct-out"></div></div
 ><div class="list settings-list acct-list" id="acct-list" aria-live="polite"></div
 ><div class="acct-foot" id="acct-foot"></div></div
 ><div id="settings-addresses" hidden><div class="section-head"><h2>Your addresses</h2><p>Mail from these is from you.</p></div
 ><div class="list settings-list addr-list" id="addr-list"></div
-><div id="addr-maybe" hidden><h3 class="addr-head">Maybe yours</h3><p class="fine addr-fine">Pick by who answers it today. Change it any time.</p
+><div id="addr-maybe" hidden><h3 class="addr-head">Maybe yours</h3><p class="fine addr-fine">Found in your mail. Whose is each one?</p
 ><div class="list settings-list addr-list" id="addr-maybe-list"></div></div
 ><div id="addr-team" hidden><h3 class="addr-head">The team’s</h3
 ><div class="list settings-list addr-list" id="addr-team-list"></div></div
 ><div id="addr-not" hidden><h3 class="addr-head">Not yours</h3
 ><div class="list settings-list addr-list" id="addr-not-list"></div></div></div
 ><div id="settings-domains" hidden><div class="section-head"><h2>Your company’s domains</h2><p>People at these are colleagues, never a client. Add another one your company uses, like acme.co next to acme.com.</p></div
-><div class="list settings-list addr-list" id="addr-domain-list"><form id="addr-domain-form" class="addr-domain-add"><input name="domain" placeholder="acme.co" aria-label="Another domain of your company" autocomplete="off" maxlength="190" required><button class="ghost">Add</button></form></div></div
+><div class="list settings-list addr-list" id="addr-domain-list"><form id="addr-domain-form" class="addr-domain-add"><input name="domain" placeholder="acme.co" aria-label="Another domain of your company" autocomplete="off" maxlength="190" required><button class="head-link">Add</button></form></div></div
+><div id="settings-acct-end" hidden><div class="acct-danger" id="acct-danger"></div></div
 ><div id="settings-notify" hidden><div class="section-head"><h2>Notifications</h2><p>Only what needs you, where you want it.</p></div
 ><div id="notify-grid" class="notify-grid" role="table" aria-label="Notifications"></div
 ><div class="list settings-list" id="notify-more"></div

@@ -1335,6 +1335,7 @@
  "Found": "Found",
  "Found for {}": "Found for {}",
  "Found in your Outlook sent mail": "Found in your Outlook sent mail",
+ "Found in your mail. Whose is each one?": "Found in your mail. Whose is each one?",
  "Found {} at {}": "Found {} at {}",
  "Found {} to-dos. Reading on.": {
   "one": "Found {} to-do. Reading on.",
@@ -1672,6 +1673,7 @@
  "In your projects": "In your projects",
  "In your work accounts: {}": "In your work accounts: {}",
  "In: {}": "In: {}",
+ "Inbox": "Inbox",
  "Inbox zero. I peaked.": "Inbox zero. I peaked.",
  "Include Work people and companies": "Include Work people and companies",
  "Include a support report": "Include a support report",
@@ -5376,6 +5378,7 @@
  "Your model is checking the columns…": "Your model is checking the columns…",
  "Your morning": "Your morning",
  "Your morning: {}": "Your morning: {}",
+ "Your name": "Your name",
  "Your new key": "Your new key",
  "Your note": "Your note",
  "Your note sends when you’re back online.": "Your note sends when you’re back online.",

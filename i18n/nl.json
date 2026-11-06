@@ -1335,6 +1335,7 @@
  "Found": "Gevonden",
  "Found for {}": "Gevonden voor {}",
  "Found in your Outlook sent mail": "Gevonden in je verzonden mail in Outlook",
+ "Found in your mail. Whose is each one?": "Gevonden in je mail. Van wie is elk adres?",
  "Found {} at {}": "{} gevonden in {}",
  "Found {} to-dos. Reading on.": {
   "one": "{} to-do gevonden. Ik lees verder.",
@@ -1672,6 +1673,7 @@
  "In your projects": "In je projecten",
  "In your work accounts: {}": "In je werkaccounts: {}",
  "In: {}": "Erbij: {}",
+ "Inbox": "Inbox",
  "Inbox zero. I peaked.": "Inbox zero. Hoger wordt het niet.",
  "Include Work people and companies": "Werk-personen en -bedrijven meenemen",
  "Include a support report": "Supportrapport meesturen",
@@ -5376,6 +5378,7 @@
  "Your model is checking the columns…": "Je model controleert de kolommen…",
  "Your morning": "Je ochtend",
  "Your morning: {}": "Je ochtend: {}",
+ "Your name": "Je naam",
  "Your new key": "Je nieuwe sleutel",
  "Your note": "Je notitie",
  "Your note sends when you’re back online.": "Je notitie gaat zodra je weer online bent.",
