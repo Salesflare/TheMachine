@@ -6,7 +6,7 @@ covers:
 code: dashboard.html, assistant.py
 order: 3
 ---
-Les tâches viennent des revues : votre Machine lit ce qui est arrivé, par petits lots, en une heure environ.
+Les tâches viennent des revues : votre Machine lit ce qui est arrivé, par petits lots, en 15 minutes environ.
 
 ## Tout juste inscrit
 

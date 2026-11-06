@@ -6,7 +6,7 @@ covers:
 code: dashboard.html, assistant.py
 order: 3
 ---
-Las tareas salen de las revisiones: tu Machine lee lo que ha llegado, en lotes pequeños, en más o menos una hora.
+Las tareas salen de las revisiones: tu Machine lee lo que ha llegado, en lotes pequeños, en unos 15 minutos.
 
 ## Recién registrado
 

@@ -6,7 +6,7 @@ covers:
 code: dashboard.html, assistant.py
 order: 3
 ---
-As tarefas vêm das revisões: sua Machine lê o que chegou, em pequenos lotes, em cerca de uma hora.
+As tarefas vêm das revisões: sua Machine lê o que chegou, em pequenos lotes, em cerca de 15 minutos.
 
 ## Acabou de se cadastrar
 

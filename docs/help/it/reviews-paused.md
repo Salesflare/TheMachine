@@ -6,7 +6,7 @@ covers:
 code: dashboard.html, assistant.py
 order: 3
 ---
-Le attività nascono dalle revisioni: la tua Machine legge quello che è arrivato, a piccoli gruppi, entro circa un’ora.
+Le attività nascono dalle revisioni: la tua Machine legge quello che è arrivato, a piccoli gruppi, entro circa 15 minuti.
 
 ## Appena registrato
 

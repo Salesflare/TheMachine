@@ -87,7 +87,7 @@ def make_config(directory, fixture, states, port, network_port):
         'delivery_enabled': False, 'digest_at': '08:30', 'bootstrap_days': 7, 'poll_seconds': 300, 'http_timeout': 15,
         'prompt_receipts': str(directory / 'prompt-receipts'), 'attachment_dir': str(directory / 'attachments'), 'attachment_sources': [],
         'booking_links': {'30-minute call': 'https://book.example/alex/30min'},
-        'review_worker': {'enabled': 'reviews-off' not in states, 'min_signals': 40, 'max_wait_minutes': 60},
+        'review_worker': {'enabled': 'reviews-off' not in states, 'min_signals': 40, 'max_wait_minutes': 15},
         'weekly_recap': {'enabled': False}, 'embeddings': {'enabled': False}, 'enrichment': {'enabled': False},
         'accounts': accounts, 'sandbox': True, 'openclaw_config': str(directory / 'openclaw.json'),
         'browser_cdp_url': 'http://127.0.0.1:9',  # no browser: never the one on this computer (guard.py refuses it too)

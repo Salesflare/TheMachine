@@ -1,6 +1,6 @@
 """Check now (docs/help/cards.md#check-now): every source is read and a review of what came in starts right away,
 outside the usual rhythm. Usually each source is read every few minutes (poll_seconds) and a review of what came in
-starts once enough new messages wait or the oldest one waited an hour (review_worker min_signals, max_wait_minutes). Nothing gates either
+starts once enough new messages wait or the oldest one waited 15 minutes (review_worker min_signals, max_wait_minutes). Nothing gates either
 by the time of day: there are no quiet hours for reading, and a hosted Machine never pauses while it is paid for.
 
 From the To-dos page head (the dashboard and the phone app, which loads the same dashboard) and from chat, where the

@@ -44,7 +44,7 @@ Cuando inicias una tarea, siempre puede leer los mensajes de los que vino, tambi
 
 ## Revisar ahora
 
-Tu Machine lee cada fuente cada pocos minutos, de día y de noche, y revisa lo que llegó en busca de tareas en cuanto hay 40 mensajes esperando o el mensaje más antiguo lleva una hora esperando.
+Tu Machine lee cada fuente cada pocos minutos, de día y de noche, y revisa lo que llegó en busca de tareas en cuanto hay 40 mensajes esperando o el mensaje más antiguo lleva 15 minutos esperando.
 
 **Revisar ahora**, arriba en Tareas, lee al momento cada fuente y revisa lo que llegó, también cuando todo está en calma. Al lado, una línea dice cuándo revisó por última vez, cuándo toca la próxima revisión y cuántos mensajes esperan. Pulsarlo otra vez mientras revisa muestra la misma revisión. La app del móvil también lo tiene. En el chat, pídele que revise ahora.
 
