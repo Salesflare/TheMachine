@@ -548,6 +548,27 @@ class AgentJobs(unittest.TestCase):
         self.assertTrue(all(a['summary'] and a['at'] for a in answers))
         self.assertEqual([a['turn'] for a in answers], [1, 2])
 
+    def test_changes_with_bytes_that_are_not_utf8(self):
+        # A job can write a Latin-1 file or a file name in another encoding: its changes still come back, the
+        # diff with those bytes replaced, the file found on disk by its own name.
+        jobs = self.jobs()
+        work = jobs.work('aj_00000000000000b1')
+        work.mkdir(parents=True)
+        agent_jobs.git(work, 'init', '-q')
+        agent_jobs.git(work, 'commit', '-q', '--allow-empty', '-m', 'The card, as handed off')
+        (work / 'notes.txt').write_bytes(b'caf\xe9 \xa1hola!\n')
+        odd = os.fsdecode(b'r\xe9sum\xe9.txt')
+        try:
+            (work / odd).write_bytes(b'x\n')
+        except (OSError, UnicodeError):  # a file system that only takes UTF-8 names (macOS)
+            odd = None
+        files, diff = jobs.changes('aj_00000000000000b1')
+        self.assertIn('+caf\ufffd \ufffdhola!', diff)
+        paths = sorted(f['path'] for f in files)
+        self.assertEqual(paths, ['notes.txt', 'r\ufffdsum\ufffd.txt'] if odd else ['notes.txt'])
+        json.dumps(files).encode('utf-8')  # kept as it is shown: plain UTF-8
+        diff.encode('utf-8')
+
     def test_claude_jobs_can_use_their_own_config_dir(self):
         other = Path(self.tmp.name) / 'claude-other'
         jobs = self.jobs(claude={'config_dir': str(other)})
