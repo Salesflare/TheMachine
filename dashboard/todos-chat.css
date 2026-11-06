@@ -1,0 +1,237 @@
+/* Card chat (#chat=<id>): the card's whole story as a conversation, with the task list beside it (a drawer on a phone).
+   One body size and one small size; quiet surfaces; the accent only on the one action that matters. */
+.card h3 a.title-link{color:inherit;text-decoration:none}.card h3 a.title-link:hover{text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px}
+.card .saved-feedback[data-chat-open]{cursor:pointer}
+.card .meta-side{display:inline-flex;align-items:center;gap:12px;margin-left:auto}
+.card-chat-link{position:relative;display:inline-flex;align-items:center;gap:4px;padding:2px 8px 2px 6px;margin:-2px -8px -2px 0;border-radius:999px;color:color-mix(in srgb,var(--text) 55%,var(--surface));font-size:.8rem;line-height:1.4;text-decoration:none;white-space:nowrap}
+.card-chat-link svg{width:15px;height:15px}.card-chat-link:hover,.card-chat-link:focus-visible{background:var(--c-hover);color:var(--text)}
+.card-chat-link.had::after{content:'';position:absolute;left:16px;top:2px;width:6px;height:6px;border-radius:50%;background:var(--c-accent);box-shadow:0 0 0 2px var(--surface)}
+.saved-feedback .see-chat{margin-left:auto;font-size:.8rem;color:color-mix(in srgb,var(--text) 55%,var(--surface));text-decoration:none}.saved-feedback .see-chat:hover{color:var(--text);text-decoration:underline}
+@media(hover:hover){.card{transition:border-color .15s,box-shadow .15s}.card:hover{border-color:var(--c-line-strong)}}
+/* The chat layout applies only while the Suggestions tab shows it; every other tab scrolls as a normal page */body.chat-open:has(#inbox:not([hidden])) main{max-width:calc(var(--measure) + 440px);padding-bottom:0;margin-bottom:0}body.chat-open:has(#inbox:not([hidden])) #suggestion-summary,body.chat-open:has(#inbox:not([hidden])) #suggestion-stats,body.chat-open:has(#inbox:not([hidden])) #first-look,body.chat-open:has(#inbox:not([hidden])) #needs-you,body.chat-open:has(#inbox:not([hidden])) .site-footer{display:none}
+/* Calm, like a chat app: replies are plain text, your own messages soft pills, sources light quotes, taps and times
+   small and muted; only what the Machine made for you (a draft, an outcome, files, the call it needs) is a raised card. */
+.chat-layout{--chat-body:1rem;--chat-meta:.75rem;--chat-col:720px;--chat-quiet:color-mix(in srgb,var(--text) 55%,var(--bg));display:grid;grid-template-columns:clamp(240px,calc(100% - var(--chat-col) - 92px),300px) minmax(0,1fr);gap:32px;align-items:start}
+.chat-side{position:sticky;top:12px;max-height:calc(100dvh - 24px);overflow:auto;display:grid;grid-auto-rows:max-content;align-content:start;gap:2px;padding-right:6px}
+/* Thin, quiet scrollbars: a faint thumb that only shows up more on hover */
+.chat-side::-webkit-scrollbar,.chat-log::-webkit-scrollbar,.side-cards::-webkit-scrollbar{width:6px;height:6px;background:transparent}
+.chat-side::-webkit-scrollbar-button,.chat-log::-webkit-scrollbar-button,.side-cards::-webkit-scrollbar-button{display:none;width:0;height:0}
+.side-cards::-webkit-scrollbar-track,.side-cards::-webkit-scrollbar-corner,.chat-side::-webkit-scrollbar-track,.chat-log::-webkit-scrollbar-track,.chat-side::-webkit-scrollbar-corner,.chat-log::-webkit-scrollbar-corner{background:transparent}
+.chat-side::-webkit-scrollbar-thumb,.chat-log::-webkit-scrollbar-thumb,.side-cards::-webkit-scrollbar-thumb{border-radius:6px;background:transparent}
+:is(.chat-side,.chat-log,.side-cards):is(:hover,.scrolling)::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--text) 22%,transparent)}
+:is(.chat-side,.chat-log,.side-cards)::-webkit-scrollbar-thumb:hover{background:color-mix(in srgb,var(--text) 36%,transparent)}
+/* Browsers without the pseudo-elements (Firefox): the standard thin bar, faint until hovered */
+@supports not selector(::-webkit-scrollbar){.chat-side,.chat-log,.side-cards{scrollbar-width:thin;scrollbar-color:transparent transparent}:is(.chat-side,.chat-log,.side-cards):is(:hover,.scrolling){scrollbar-color:color-mix(in srgb,var(--text) 22%,transparent) transparent}}
+:root{--i-mail:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='14' rx='2'/%3E%3Cpath d='m3 7 9 6 9-6'/%3E%3C/svg%3E");--i-chat:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 5.5h14a1.5 1.5 0 0 1 1.5 1.5v8.5a1.5 1.5 0 0 1-1.5 1.5h-7.5L7 20.5V17H5a1.5 1.5 0 0 1-1.5-1.5V7A1.5 1.5 0 0 1 5 5.5z'/%3E%3C/svg%3E");--i-cal:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3.5' y='5' width='17' height='15.5' rx='2'/%3E%3Cpath d='M3.5 10h17M8 3v4M16 3v4'/%3E%3C/svg%3E");--i-note:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 3.5h9l3.5 3.5v13.5H6z'/%3E%3Cpath d='M9.5 12h5.5M9.5 16h5.5'/%3E%3C/svg%3E");--i-file:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 3h8l4 4v14H6z'/%3E%3Cpath d='M14 3v4h4'/%3E%3C/svg%3E");--i-browser:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4.5' width='18' height='15' rx='2'/%3E%3Cpath d='M3 9h18'/%3E%3Cpath d='M6.5 6.8h.01M9 6.8h.01'/%3E%3C/svg%3E");--i-link:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1'/%3E%3Cpath d='M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1'/%3E%3C/svg%3E")}
+/* Services by their own logo, one color like the line icons (Simple Icons, CC0; the names are their owners' trademarks; their pictures: dashboard/todos-logos.js): a to-do's source and the step it goes out on */
+.via-gmail{--ico:var(--i-gmail)}.via-slack{--ico:var(--i-slack)}.via-whatsapp{--ico:var(--i-whatsapp)}.via-telegram{--ico:var(--i-telegram)}.via-linkedin{--ico:var(--i-linkedin)}.via-x{--ico:var(--i-x)}.via-intercom{--ico:var(--i-intercom)}.via-gdocs{--ico:var(--i-gdocs)}.via-gcal{--ico:var(--i-gcal)}.via-handoff{--ico:var(--i-handoff)}.via-github{--ico:var(--i-github)}
+/* The draft's header leads with the logo of where it goes; the primary button carries the same one */
+.card .draft .dm{display:flex;align-items:flex-start;gap:7px}.card .draft .dm>.via-ico{margin-top:calc((1lh - 14px)/2);opacity:.85}.card .draft .dm>span{min-width:0}
+.card .actions .primary>.via-ico{width:14px;height:14px;margin:0 7px 0 0;vertical-align:-2px;opacity:.9}
+/* An open to-do's source sits on it, right above the draft: one faint line */
+.card.todo>.card-source{margin:10px 0 0}.card.todo>.card-source .read-original{margin:0}
+.via-mail{--ico:var(--i-mail)}.via-chat{--ico:var(--i-chat)}.via-cal{--ico:var(--i-cal)}.via-note{--ico:var(--i-note)}.via-file{--ico:var(--i-file)}.via-browser{--ico:var(--i-browser)}.via-link{--ico:var(--i-link)}
+.via-ico{display:inline-block;flex:none;width:14px;height:14px;background:currentColor;opacity:.8;-webkit-mask:var(--ico,var(--i-chat)) center/contain no-repeat;mask:var(--ico,var(--i-chat)) center/contain no-repeat}
+.chat-from>span:first-child{display:inline-flex;align-items:center;gap:6px}
+:is(.card-foot,.card-source) .read-original[class*='via-']::before{-webkit-mask:var(--ico) center/contain no-repeat;mask:var(--ico) center/contain no-repeat}
+.chat-files .agent-file[class*='via-']::before{width:14px;height:14px;-webkit-mask:var(--ico) center/contain no-repeat;mask:var(--ico) center/contain no-repeat}
+
+.chat-side .scope-filter{box-sizing:border-box;height:40px;margin:2px 0 10px;align-items:center;justify-self:start}
+.chat-side h3{display:flex;justify-content:space-between;margin:14px 0 4px;padding:0 10px;font:var(--fw-medium) var(--fs-xs,.75rem)/1.2 var(--sans);text-transform:uppercase;letter-spacing:.06em;color:var(--chat-quiet)}
+.chat-side a{display:block;padding:7px 10px;border-radius:10px;color:var(--muted);text-decoration:none;font-size:.9rem;line-height:1.35;white-space:nowrap;overflow:hidden}
+.chat-side a.fade,.chat-title.fade{-webkit-mask-image:linear-gradient(to right,#000 calc(100% - 36px),transparent);mask-image:linear-gradient(to right,#000 calc(100% - 36px),transparent)}
+.chat-side a:hover{background:var(--c-hover);color:var(--text)}.chat-side a[aria-current]{background:color-mix(in srgb,var(--text) 8%,transparent);color:var(--text);font-weight:500}
+.chat-main{display:flex;flex-direction:column;min-height:calc(100dvh - 40px);font-size:var(--chat-body);line-height:1.6}
+.chat-head{position:sticky;top:0;z-index:6;display:flex;align-items:flex-start;gap:4px;box-sizing:border-box;min-height:44px;padding:6px 0;background:var(--bg)}
+@media(min-width:861px){.chat-head{align-self:center;width:min(100%,calc(var(--chat-col) + 21px));margin:0 -9px 0 -12px}}
+/* A soft edge under the header, so what scrolls under it fades instead of looking cut */
+.chat-head::after{content:'';position:absolute;left:0;right:0;top:100%;z-index:1;height:14px;background:linear-gradient(var(--bg) 30%,color-mix(in srgb,var(--bg) 0%,transparent));pointer-events:none}
+/* Back and ⋯ share one 32px box; the title's first line is centered on it (its x-height on the chevron), on one line or two */.chat-back,.chat-menu>summary{display:grid;place-items:center;flex:none;width:32px;height:32px;margin:0;border-radius:50%;color:var(--text);text-decoration:none;cursor:pointer}
+@media(hover:hover) and (pointer:fine){.chat-back:hover,.chat-menu>summary:hover{background:var(--c-hover)}}.chat-menu[open]>summary{background:var(--c-hover)}.chat-back svg{width:22px;height:22px}.chat-menu>summary svg{width:20px;height:20px}
+.chat-title{flex:1;min-width:0;margin:calc((32px - 1.35em)/2 - .09em) 0 0;font:600 1rem/1.35 var(--sans);white-space:nowrap;overflow:hidden}
+/* The chat's title is one line at every width, fading out at the right edge; its full text is in the title attribute. */
+:is(.chat-menu,.graph-sort){position:relative;flex:none;margin:0}:is(.chat-menu,.graph-sort)>summary{list-style:none}:is(.chat-menu,.graph-sort)>summary::-webkit-details-marker{display:none}:is(.chat-menu,.graph-sort)>summary::before,:is(.chat-menu,.graph-sort)>summary::after{content:none}
+:is(.chat-menu-list,.graph-sort-list){position:absolute;right:0;top:calc(100% + 4px);z-index:7;display:flex;flex-direction:column;min-width:190px;padding:6px;border:1px solid var(--border);border-radius:14px;background:var(--surface);box-shadow:0 12px 30px #0004}
+:is(.chat-menu-list,.graph-sort-list)>*{justify-content:flex-start;width:100%;min-height:38px;margin:0;padding:8px 12px;border:0;border-radius:9px;background:none;box-shadow:none;color:var(--text);font:500 .9rem/1.3 var(--sans);text-align:left}
+:is(.chat-menu-list,.graph-sort-list)>*:hover{background:var(--sunken)}:is(.chat-menu-list,.graph-sort-list)>hr{flex:none;width:auto;min-height:0;height:1px;margin:4px 6px;padding:0;border:0;background:var(--border)}.chat-layout [data-chat-drawer]{display:none}
+/* Nothing behind the ⋯ while the sidebar has the list (Not needed, its Undo gone): no ⋯ that opens an empty box */.chat-menu[data-empty]{visibility:hidden}
+/* What you're doing now (a handoff, a merge, a change) sits under the thread, just above the message box: the thread
+   keeps its place at the bottom and no gap opens between the two */
+.chat-panel{order:1;margin:0 auto 12px;width:min(100%,var(--chat-col));padding:0;background:none;box-shadow:none;border:0}.chat-panel:empty{display:none}.chat-main>.chat-compose{order:2}
+/* The thread: one readable column, centered in the pane, with room between turns */
+.chat-log{display:flex;flex-direction:column;padding:20px max(2px,calc((100% - var(--chat-col))/2)) 28px;flex:1}.chat-log>:first-child{margin-top:auto}
+.chat-log>*{margin-top:26px}.chat-log>.cont{margin-top:8px}.chat-log>.chat-options{margin-top:10px}
+.chat-day{align-self:center;margin-top:34px!important;font-size:var(--chat-meta);color:var(--chat-quiet);font-weight:500}.chat-log>.chat-day:first-child{margin-top:auto!important}
+.chat-msg{position:relative;display:flex;flex-direction:column;align-items:flex-start;max-width:100%}.chat-msg.you{align-self:flex-end;align-items:flex-end;max-width:min(80%,58ch)}
+.chat-msg.machine{align-self:stretch}
+.bubble{overflow-wrap:anywhere}.bubble>.say{display:contents}
+.bubble p,.bubble ul,.bubble ol{margin:0}.bubble p+p,.bubble p+ul,.bubble p+ol,.bubble ul+p,.bubble ol+p{margin-top:10px}.bubble ul,.bubble ol{padding-left:22px}.bubble li+li{margin-top:2px}
+/* Your own messages: a soft, low-contrast pill on the right; whom it went to, small above it, when that changes */
+.chat-msg.you .bubble{padding:9px 16px;border-radius:20px;background:color-mix(in srgb,var(--text) 8%,var(--bg))}
+.chat-to{margin:0 0 4px;font-size:var(--chat-meta);color:var(--chat-quiet)}
+/* People's messages (email, WhatsApp, Intercom): a light quote with the sender above */
+.chat-source .bubble{padding:1px 0 1px 14px;border-left:2px solid color-mix(in srgb,var(--text) 16%,transparent);color:var(--muted)}
+.chat-source.you{align-items:flex-end}.chat-source.you .bubble{padding:1px 14px 1px 0;border-left:0;border-right:2px solid color-mix(in srgb,var(--c-accent) 45%,transparent);border-radius:0;background:none}
+
+.chat-from{display:flex;gap:10px;align-items:center;margin:0 0 4px;font-size:var(--chat-meta);line-height:18px;color:var(--chat-quiet)}.chat-from>span{display:inline-flex;align-items:center;gap:6px}.chat-from .chat-time{font-size:inherit;line-height:inherit}.chat-from span{font-weight:600;color:var(--muted)}
+/* Times are quiet: on hover (or keyboard focus) on a computer; on a phone only by each sender's name */
+.chat-time{font-size:var(--chat-meta);color:var(--chat-quiet);line-height:1.5;font-variant-numeric:tabular-nums;font-weight:400;transition:opacity .15s}
+.chat-msg>.chat-time,.chat-result>.chat-time{position:absolute;top:100%;left:0;margin-top:3px;opacity:0;pointer-events:none}.chat-msg.you>.chat-time{left:auto;right:6px}
+.chat-event .chat-time,.chat-result-head .chat-time{opacity:0}
+.chat-log>:hover .chat-time,.chat-log>:focus-within .chat-time,.chat-from .chat-time{opacity:1}
+@media(hover:none){.chat-msg>.chat-time,.chat-result>.chat-time,.chat-event .chat-time,.chat-result-head .chat-time{display:none}}
+.chat-clamp{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:4;overflow:hidden}.chat-source .chat-clamp{-webkit-line-clamp:3}.chat-clamp.open{display:block}.chat-clamp p+p{margin-top:10px}
+#chat-log button.link,.chat-status button.link{display:inline;white-space:nowrap;min-height:0;margin:0;padding:0;border:0;background:none;box-shadow:none;color:var(--c-accent);font:500 var(--chat-meta)/1.5 var(--sans);cursor:pointer}
+#chat-log button.link:hover,.chat-status button.link:hover{text-decoration:underline}
+.chat-more,.chat-source .read-original{margin:6px 14px 0 0!important}
+.chat-log>.chat-source.cont{margin-top:14px}.chat-from-next{margin-bottom:2px}
+.chat-quoted{margin-top:10px;padding-top:8px;border-top:1px dashed color-mix(in srgb,var(--text) 14%,transparent);font-size:.82rem;color:var(--chat-quiet)}.chat-quoted summary{cursor:pointer;list-style:none;width:max-content;font-weight:400;font-size:inherit;color:inherit}.chat-quoted summary::-webkit-details-marker{display:none}.chat-quoted summary::before{content:none}.chat-quoted summary::after{content:' ›'}.chat-quoted[open] summary::after{content:' ‹'}
+.chat-quoted-text{margin-top:6px;max-height:24em;overflow:auto;opacity:.8;overflow-wrap:anywhere}.chat-quoted-text p+p{margin-top:8px}
+.chat-noted{margin:6px 0 0;font-size:var(--chat-meta);color:var(--chat-quiet)}.chat-noted+.chat-noted{margin-left:8px}.chat-msg>.chat-stopped:first-child{margin-top:0}.chat-files .chat-noted{margin:0 0 0 4px;align-self:center}
+.chat-q{margin:0!important;font-weight:600}
+.chat-agent-name{margin:0 0 4px;font-size:var(--chat-meta);font-weight:600;color:var(--chat-quiet)}
+.chat-files{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 0}.chat-files .agent-file{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border:1px solid var(--c-line-strong);border-radius:999px;font-size:.82rem;line-height:1.5;color:var(--text);text-decoration:none;overflow-wrap:anywhere}.chat-files .agent-file:hover{background:var(--c-hover)}.chat-files button.agent-file{min-height:0;margin:0;background:none;box-shadow:none;font:inherit;font-size:.82rem;cursor:pointer}
+.chat-quote{margin:8px 0;padding:0 0 0 12px;border-left:2px solid var(--border-strong);color:var(--muted)}.chat-quote p{margin:0}.chat-quote p+p{margin-top:8px}
+.chat-why,.copy-why{margin:8px 0 0;font-size:var(--chat-meta,.8rem);color:var(--chat-quiet,var(--muted))}.chat-result-head .link{margin-left:auto;font-size:.82rem}
+.chat-files .agent-file::before{content:'';width:12px;height:14px;flex:none;background:currentColor;opacity:.55;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 14'%3E%3Cpath d='M1 0h6l4 4v10H1z' fill='none' stroke='black' stroke-width='1.6'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 14'%3E%3Cpath d='M1 0h6l4 4v10H1z' fill='none' stroke='black' stroke-width='1.6'/%3E%3C/svg%3E") center/contain no-repeat}
+.chat-ask{margin:0}.chat-ask .ask-line{margin:0;font-weight:400}.chat-ask .ask-line>span{display:block;font-weight:600}.chat-ask .ask-q p{margin:2px 0}
+.chat-ask .reason-chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 2px}.chat-ask .reason{min-height:30px;padding:4px 12px;font-size:.85rem}
+.chat-options{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}.chat-options.under{align-self:flex-start}
+.chat-options>*{min-height:34px;margin:0;padding:6px 14px;border-radius:999px;font-size:.87rem;white-space:nowrap}
+.chat-options>.ghost{background:none;border:1px solid var(--c-line-strong);color:var(--text);box-shadow:none}.chat-options>.ghost:hover{background:var(--c-hover)}
+.chat-card-send{margin-top:14px}.chat-card-send>*{min-height:34px;padding:6px 16px;border-radius:999px;font-size:.87rem}
+.chat-agent{align-self:stretch}.chat-agent .agent-job{margin:0;padding:12px 14px;border-radius:14px;background:var(--surface);border:1px solid var(--c-line)}
+.chat-agent .agent-job .note{margin:0}.chat-agent .actions,.chat-agent .agent-tools{margin:8px 0 0}
+/* Steps, taps and day lines are metadata: small, muted, no surface */
+.chat-work{align-self:flex-start}
+.chat-steps{font-size:.82rem;color:var(--chat-quiet)}.chat-steps summary{cursor:pointer;list-style:none;font-weight:400}.chat-steps summary::-webkit-details-marker{display:none}
+.chat-steps summary::before{content:none}.chat-steps summary::after{content:' ›'}.chat-steps[open] summary::after{content:' ‹'}.chat-steps ol{margin:6px 0 2px;padding-left:18px}
+.chat-event{align-self:center;max-width:88%;font-size:var(--chat-meta);line-height:1.4;color:var(--chat-quiet);text-align:center;font-variant-numeric:tabular-nums}
+/* The time on hover sits outside the line (left of a right-aligned one), so it never shifts or indents it */
+.chat-event{position:relative}.chat-event .chat-time{position:absolute;top:0;font-size:inherit;line-height:inherit;left:100%;margin-left:8px;white-space:nowrap;pointer-events:none}
+.chat-log>.chat-event.cont{margin-top:4px}
+.chat-event.failed{color:var(--orange)}.chat-event.failed button.link{padding:0;min-height:0;border:0;background:none;color:inherit;font:inherit;text-decoration:underline;text-underline-offset:2px;cursor:pointer}
+.chat-handoff-options{align-self:stretch}.card .note.handoff-failed{color:var(--orange)}.card .note.no-ping{color:var(--amber);opacity:1}.card .note.handoff-failed button.link{padding:0;min-height:0;border:0;background:none;color:inherit;font:inherit;text-decoration:underline;text-underline-offset:2px;cursor:pointer}
+.chat-event a.learn-link{color:inherit;text-decoration:underline;text-underline-offset:3px}.chat-event a.learn-link:hover{color:var(--text)}
+.voice-form.voice-flash{animation:voice-flash 1.6s ease-out}@keyframes voice-flash{from{box-shadow:0 0 0 3px var(--lavender)}to{box-shadow:0 0 0 3px transparent}}
+@media(prefers-reduced-motion:reduce){.voice-form.voice-flash{animation:none}}
+.chat-event details{margin:0;padding:0;border:0;background:none;font:inherit}.chat-event summary{cursor:pointer;list-style:none;font:inherit;color:inherit;padding:0;margin:0}.chat-event summary::-webkit-details-marker{display:none}.chat-event summary::before{content:none}.chat-event .chev{margin-left:4px}.chat-event details[open] .chev{display:inline-block;transform:scaleX(-1)}
+.chat-event ol{margin:2px 0 0;padding:0;list-style:none}
+/* Something a note taught: a quiet line that opens it on What I've learned, with Edit and Undo, and what was saved under it */
+.chat-learned{display:grid;gap:3px;justify-items:center}.chat-learned .learned-acts{display:inline-flex;flex-wrap:wrap;justify-content:center;align-items:baseline;gap:2px 6px}
+#chat-log .chat-learned button.link{min-height:0;padding:8px 3px;margin:-8px -3px;border:0;background:none;box-shadow:none;font:inherit;font-weight:400;color:inherit;text-decoration:underline;text-decoration-color:color-mix(in srgb,currentColor 45%,transparent);text-underline-offset:3px;cursor:pointer}#chat-log .chat-learned button.link:is(:hover,:focus-visible){color:var(--text);text-decoration-color:currentColor}
+.chat-log>.chat-learned.cont,.chat-log>.chat-learned+.chat-learned{margin-top:12px}
+.chat-learned .learned-sep{opacity:.6}.chat-learned q{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;max-width:46ch;color:var(--chat-quiet);opacity:.9;quotes:'“' '”'}
+.chat-learned.gone q{text-decoration:line-through;text-decoration-color:color-mix(in srgb,currentColor 50%,transparent)}
+.chat-fixed.gone .learned-acts>span:first-child{text-decoration:line-through;text-decoration-color:color-mix(in srgb,currentColor 50%,transparent)}
+.chat-fixed .learned-acts{display:block;text-align:center}.chat-fixed .fixed-act{white-space:nowrap}.chat-fixed .learned-sep{margin:0 6px}
+/* A result: what the Machine or an agent made for you. The latest is the one raised card in the thread;
+   earlier ones step back to an outline with a short preview. */
+.chat-result{position:relative;align-self:stretch;padding:16px 18px 14px;border-radius:16px;background:var(--surface);border:1px solid var(--c-line);color:var(--muted)}
+.chat-result.current{color:var(--text);border-color:color-mix(in srgb,var(--c-accent) 38%,var(--c-line-strong));box-shadow:0 1px 2px #0000000d,0 14px 34px -18px #00000066}
+:root[data-theme="dark"] .chat-result.current{background:var(--c-raised);box-shadow:0 0 0 1px #ffffff08 inset,0 16px 36px -18px #000c}
+.chat-result.earlier{background:none;padding:12px 16px 10px;border-color:var(--c-line)}
+.chat-result-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin:0 0 6px}
+.chat-result-title{font-weight:600;color:var(--text);line-height:1.4}.chat-result.earlier .chat-result-title{font-weight:500;color:var(--muted)}
+.chat-result.earlier .chat-clamp:not(.open){-webkit-line-clamp:2}
+.chat-result>.chat-time{left:18px}
+.chat-result .chat-files{margin-top:12px}
+/* A draft inside its result: the text to send, with Show all and the one action that matters */
+.chat-draft{margin-top:12px;padding:12px 14px;border-radius:12px;background:color-mix(in srgb,var(--text) 4%,transparent);border:1px solid var(--c-line)}
+.chat-result.earlier .chat-draft{padding:8px 12px;background:none}
+/* A result that is just one draft: the draft is the card */
+.chat-result.only-draft .chat-draft{margin:0;padding:0;border:0;background:none}.chat-result.only-draft .chat-draft-head{font-size:.9rem;margin-bottom:6px}.chat-result.only-draft .chat-draft-head span:first-child{color:var(--text)}.chat-result.only-draft.earlier .chat-draft-head span:first-child{color:var(--muted);font-weight:500}
+.chat-result-head+.chat-draft,.chat-draft:first-child{margin-top:4px}
+.chat-draft-head{display:flex;justify-content:space-between;gap:8px;align-items:baseline;margin:0 0 4px;font-size:var(--chat-meta);color:var(--chat-quiet)}.chat-draft-head span:first-child{font-weight:600;color:var(--muted)}
+.chat-draft .went-tag{color:var(--chat-quiet)}
+.chat-sendstate{margin:10px 0 0;font-size:var(--chat-meta);line-height:18px;color:var(--chat-quiet)}.chat-sendstate.ok{color:var(--mint);font-weight:600}.chat-sendstate.failed{color:var(--orange);font-weight:600}.chat-draft .send-progress{margin:6px 0 0}
+.chat-draft-subject{margin:0 0 2px;font-weight:600}
+.chat-draft-foot{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between;margin:10px 0 0}.chat-draft-foot>span{display:flex;gap:14px}
+.chat-draft-foot>button{min-height:34px;margin:0 0 0 auto;padding:6px 16px;border-radius:999px;font-size:.87rem}
+.chat-result .chat-options{margin-top:12px}
+.chat-diff{margin:8px 0 0;padding:8px 10px;border-radius:10px;background:var(--sunken);white-space:pre-wrap;font-size:.88rem}
+.chat-diff ins{background:color-mix(in srgb,var(--c-accent) 22%,transparent);text-decoration:none;border-radius:3px}.chat-diff del{color:var(--muted);text-decoration:line-through}
+.chat-links{align-self:flex-start;display:flex;gap:14px;font-size:.88rem}
+.chat-note{align-self:center;text-align:center;margin:12px 0;font-size:var(--chat-meta);color:var(--chat-quiet)}
+.typing{display:inline-flex;gap:4px;padding:4px 0}.typing i{width:6px;height:6px;border-radius:50%;background:var(--muted);animation:typing 1.2s infinite}.typing i:nth-child(2){animation-delay:.2s}.typing i:nth-child(3){animation-delay:.4s}
+@keyframes typing{0%,60%,100%{opacity:.3}30%{opacity:1}}
+/* The bottom: a status line, at most two suggestions and a roomy message box, in the same column as the thread */
+.chat-compose{position:sticky;bottom:0;z-index:5;align-self:center;width:min(100%,var(--chat-col));padding:14px 0 calc(max(12px,env(safe-area-inset-bottom)) + 8px);background:var(--bg)}
+/* No fade above the box: a message passing under it must never look cut off */.chat-compose::before{content:none}
+.chat-status{display:flex;flex-wrap:wrap;gap:0 6px;align-items:baseline;justify-content:center;text-align:center;font-size:var(--chat-meta);color:var(--chat-quiet);line-height:1.5}.chat-status:empty{display:none}
+/* The model and thinking level of a chat (chat_model.py): one quiet line under the message box, each part opens the app's own menu (cmMenu) */
+.chat-model{display:flex;align-items:center;gap:0 2px;min-width:0;margin:6px 0 0 4px;font-size:var(--chat-meta,.75rem);line-height:1.5;color:var(--chat-quiet,var(--muted))}
+.chat-model:empty{display:none}
+.chat-model .model-pick{display:inline-flex;align-items:center;gap:3px;min-width:0;height:24px;min-height:0;margin:0;padding:0 7px 0 8px;border:0;border-radius:999px;background:none;box-shadow:none;color:inherit;font:inherit;white-space:nowrap;cursor:pointer}
+.chat-model .model-pick:is(:hover,[aria-expanded="true"]){color:var(--text);background:var(--c-hover)}
+.chat-model .model-pick:focus-visible{outline:0;color:var(--text);background:var(--c-hover);box-shadow:inset 0 0 0 1px var(--border-strong)}
+.model-pick>span{overflow:hidden;text-overflow:ellipsis}
+:is(.model-pick,.select-like) svg{flex:none;width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+:is(.model-pick,.select-like)[aria-expanded="true"] svg{transform:rotate(180deg)}
+#model-chats .grow{min-width:0}
+/* Settings' pickers look like a select and open the same menu */
+.select-like{flex:none;display:inline-flex;align-items:center;justify-content:space-between;gap:10px;min-width:200px;max-width:100%;min-height:0;margin:0;border:1px solid var(--border-strong);border-radius:10px;padding:8px 12px 8px 14px;white-space:nowrap;cursor:pointer;background:var(--surface-2);box-shadow:none;color:var(--text);font:inherit;text-align:left}
+.select-like:is(:hover,[aria-expanded="true"]){background:var(--surface-2);border-color:var(--c-line-strong,var(--border-strong))}
+.select-like:focus-visible{outline:0;border-color:var(--c-accent,var(--mint));box-shadow:0 0 0 3px color-mix(in srgb,var(--c-accent,var(--mint)) 18%,transparent)}
+.select-like svg{color:var(--muted)}
+/* The menu a picker opens: the app's menu (.fact-menu-list), fixed to the screen, up when the trigger is low */
+.fact-menu-list.cm-menu{position:fixed;inset:auto;margin:0;color:var(--text);z-index:90;gap:1px;min-width:200px;max-width:calc(100vw - 16px);overflow-y:auto;overscroll-behavior:contain;box-shadow:var(--shadow-pop,0 12px 30px #0005)}
+.fact-menu-list.cm-menu[hidden]{display:none}
+.cm-menu :is([role="menuitemradio"],[role="menuitemcheckbox"]){grid-template-columns:16px minmax(0,1fr);column-gap:8px;align-items:center;padding:7px 14px 7px 9px;font-weight:var(--fw-medium,500);white-space:nowrap}
+.cm-menu :is([role="menuitemradio"],[role="menuitemcheckbox"])>span{grid-column:2;overflow:hidden;text-overflow:ellipsis}
+.cm-menu :is([role="menuitemradio"],[role="menuitemcheckbox"])>small{grid-column:2;white-space:normal}
+.cm-menu .cm-check{grid-column:1;grid-row:1;width:16px;height:16px;fill:none;stroke:var(--c-accent,var(--mint));stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;visibility:hidden}
+.cm-menu [aria-checked="true"] .cm-check{visibility:visible}
+.cm-menu :is([role="menuitemradio"],[role="menuitemcheckbox"]):is(:hover,:focus-visible){outline:0;box-shadow:none;background:var(--tile)}
+.cm-menu :is([role="menuitemradio"],[role="menuitemcheckbox"]):focus{outline:0}
+.cm-menu [aria-disabled="true"]{cursor:default;color:var(--c-text-3,var(--muted))}
+.cm-menu [aria-disabled="true"]:hover{background:none}
+.model-pick .cm-fast-on{flex:none;margin-left:5px;padding:0 6px;border-radius:999px;background:var(--tile);color:var(--text);font-size:var(--fs-xs,.75rem);font-weight:var(--fw-semibold,600);line-height:18px}
+/* A provider: a section heading above its models, a line between providers */
+.cm-menu .cm-section{display:flex;flex-direction:column;gap:1px}
+.cm-menu .cm-section+.cm-section,.cm-menu [role="menuitemradio"]+.cm-section{margin-top:4px;padding-top:4px;border-top:1px solid var(--c-line,var(--border))}
+.cm-menu .cm-speed{display:flex;flex-direction:column;margin-top:4px;padding-top:4px;border-top:1px solid var(--c-line,var(--border))}
+.cm-menu .cm-group{margin:0;padding:6px 10px 3px 9px;color:var(--c-text-3,var(--muted));font-size:var(--fs-xs,.75rem);font-weight:var(--fw-semibold,600);letter-spacing:.04em;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(pointer:coarse){.cm-menu :is([role="menuitemradio"],[role="menuitemcheckbox"]){min-height:44px}}
+@media(max-width:520px){#model-panel .settings-list>div:first-child{flex-wrap:wrap}#model-chats .settings-list>div{flex-wrap:wrap}#model-chats .grow{flex-basis:100%}#model-chats .select-like{width:100%}}
+.chat-status:not(:empty){margin:0 0 12px}
+.chat-picks{display:flex;flex-wrap:nowrap;gap:8px;margin:0 0 12px;overflow-x:auto;scrollbar-width:none;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}.chat-picks::-webkit-scrollbar{display:none}.chat-picks:empty,.chat-picks[hidden]{display:none}
+.chat-say{flex:none;width:auto;min-height:30px;margin:0;padding:4px 12px;border:1px solid var(--c-line-strong);border-radius:999px;background:none;box-shadow:none;color:var(--muted);font:400 .84rem/1.3 var(--sans);white-space:nowrap;cursor:pointer}.chat-say:hover{background:var(--c-hover);color:var(--text)}
+.chat-box{display:flex;align-items:flex-end;gap:8px;padding:10px 10px 10px 8px;border-radius:28px;background:var(--surface);border:1px solid var(--c-line-strong);box-shadow:0 6px 20px -14px #0006}
+.chat-box:focus-within{border-color:color-mix(in srgb,var(--c-accent) 55%,var(--c-line-strong))}
+.chat-box textarea{flex:1;min-width:0;min-height:0;height:34px;max-height:160px;margin:0;padding:6px 0 6px 14px;box-sizing:border-box;border:0;border-radius:0;background:none;resize:none;box-shadow:none;outline:none;line-height:22px;font-size:1rem;text-indent:0;text-align:left;transition:none}
+.chat-box textarea::placeholder{text-indent:0;padding:0;opacity:1}
+.chat-tools{display:flex;align-items:center;gap:6px}.chat-tools .grow{display:none}
+.chat-send{display:grid;place-items:center;flex:none;width:34px;height:34px;min-height:0;margin:0;padding:0;border:0;border-radius:50%;background:var(--c-accent);color:var(--c-accent-ink,#fff);box-shadow:none;cursor:pointer}.chat-send svg{width:17px;height:17px}
+.chat-send:disabled{background:color-mix(in srgb,var(--text) 10%,transparent);color:var(--chat-quiet);cursor:default}
+/* The chat's Stop (while a reply runs) and the files added to the next message: attach, paste or drop */
+.chat-stop{background:var(--text);color:var(--bg)}.chat-stop svg{width:13px;height:13px}.chat-stop:disabled{opacity:.5}
+.chat-attach{display:grid;place-items:center;flex:none;align-self:flex-end;width:34px;height:34px;min-height:0;margin:0 0 0 2px;padding:0;border:0;border-radius:50%;background:none;color:var(--chat-quiet);box-shadow:none;cursor:pointer}
+.chat-attach:hover{color:var(--text);background:color-mix(in srgb,var(--text) 7%,transparent)}.chat-attach svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.chat-compose .chat-box textarea{padding-left:4px}
+/* Voice input: the mic next to Send. While it records, writes or gets ready, a bar over the box: Cancel, what is
+   happening (the clock and the level while it listens) and Done. */
+.chat-mic{display:grid;place-items:center;flex:none;width:34px;height:34px;min-height:0;margin:0;padding:0;border:0;border-radius:50%;background:none;color:var(--chat-quiet);box-shadow:none;cursor:pointer;touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.chat-mic:hover{color:var(--text);background:color-mix(in srgb,var(--text) 7%,transparent)}
+.chat-mic svg,.mic-done svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.mic-done svg{stroke-width:2.4}
+.chat-box,.mic-wrap{position:relative}
+.mic-wrap textarea{padding-right:46px}.mic-wrap>.chat-mic{position:absolute;right:6px;bottom:6px}
+/* over the box's own border; a long message grows it upward rather than cutting it off */
+.mic-bar{position:absolute;left:-1px;right:-1px;bottom:-1px;z-index:2;display:flex;align-items:center;gap:6px;box-sizing:border-box;min-height:calc(100% + 2px);padding:6px 10px 6px 6px;border:1px solid var(--c-line-strong);border-radius:inherit;background:var(--surface)}
+.mic-wrap>.mic-bar{border-radius:12px}
+.chat-mic.chat-talk{-webkit-tap-highlight-color:transparent;background:var(--c-accent);color:var(--c-accent-ink,#fff)}.chat-talk svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+.talk{display:grid;gap:6px;margin:0 0 8px}
+.talk-bar{display:flex;align-items:center;gap:8px;min-height:48px;box-sizing:border-box;padding:6px 6px 6px 14px;border:1px solid var(--c-line-strong);border-radius:24px;background:var(--surface)}
+.talk-live{flex:none;display:flex;align-items:center;gap:8px;font:500 .95rem/1.3 var(--sans);color:var(--text)}.talk-live.near .talk-time{color:var(--orange);font-weight:600}
+.talk-dot{width:10px;height:10px;border-radius:50%;background:var(--c-red,#d93025);animation:mic-pulse 1.4s ease-in-out infinite}.talk-dot.wait{background:var(--muted);animation:none}
+.talk-time{min-width:2.4em;font-variant-numeric:tabular-nums;color:var(--muted)}
+.talk-hint{flex:1;min-width:0;overflow:hidden;color:var(--muted);font:400 .9rem/1.3 var(--sans);text-overflow:ellipsis;white-space:nowrap}
+.talk-mute,.talk-end,.talk-again-btn{flex:none;width:auto;min-height:36px;margin:0;padding:4px 14px;border:1px solid var(--c-line-strong);border-radius:999px;background:none;box-shadow:none;color:var(--text);font:500 .88rem/1.2 var(--sans);white-space:nowrap;cursor:pointer}
+.talk-mute{margin-left:auto}@media(hover:hover){.talk-again-btn:hover{background:var(--c-hover)}}.talk-mute[aria-pressed="true"]{background:color-mix(in srgb,var(--text) 8%,transparent)}
+.talk-end{border-color:transparent;background:var(--c-red,#d93025);color:#fff}
+.talk-err{border-color:var(--orange)}.talk-err .grow{color:var(--orange);font:600 .88rem/1.3 var(--sans)}.talk-err .talk-end{background:none;border-color:var(--c-line-strong);color:var(--text)}
+.talk-cost{padding:0 14px;color:var(--muted);font-size:.8rem}
+/* A send by voice waits with Undo under the bar (tap it, or say "undo"), then says Sent for a moment */
+.talk-undo{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:6px;min-height:44px;box-sizing:border-box;padding:4px 6px 4px 14px;border:1px solid var(--c-line-strong);border-radius:22px;background:var(--surface)}.talk-undo[hidden]{display:none}
+.talk-sending{min-width:0;overflow-wrap:anywhere;font:600 .9rem/1.3 var(--sans);font-variant-numeric:tabular-nums}.talk-sending.sent{color:var(--c-green,#188038)}.talk-sending.failed{color:var(--orange)}  /* "in 5 s" never splits (talkSendingText) */
+.talk-undo-btn{flex:none;width:auto;min-height:36px;margin:0;padding:4px 18px;border:0;border-radius:999px;background:var(--text);color:var(--bg);font:600 .9rem/1.2 var(--sans);cursor:pointer}

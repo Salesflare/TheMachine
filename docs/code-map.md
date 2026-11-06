@@ -77,7 +77,7 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   imports `assistant` or a module of a higher layer.
 - **Dashboard code:** in its area's part in `dashboard/` (`<area>-<what>.js`: shell, todos, settings, graph, calendar,
   connections, help, events, new, fleet), next to the functions it works with, never at the end of the script. What
-  stays in `dashboard.html` is the page's core: the stylesheet, the markup, the i18n script, and in the main script the
+  stays in `dashboard.html` is the page's core: the markup, the i18n script, and in the main script the
   locale and error reports, network and outbox, `render()` and `refresh()`, `toast()` and the start. A new top-level
   statement goes in a part only whole (each part parses on its own). Parts run in the page's order, as they were in
   the one file, so a part may use what an earlier one declares. New UI strings go in every catalog in `i18n/`.
@@ -86,7 +86,9 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   line `<!--@include dashboard/<name>.html-->` in the markup (`base` is the area of the shared design layer). A
   stylesheet part is whole rules and the parts follow each other in the page's order, so the cascade is the one of the
   whole sheet: a rule that overrides another comes after it, in the same part or a later one. A markup part is whole
-  elements. `tests/test_dashboard_parts.py` checks both, and that each include line is in its place.
+  elements. `tests/test_dashboard_parts.py` checks both, and that each include line is in its place. The stylesheet
+  is in parts already, in the page's order (`base-tokens.css` with the shared design tokens first); some runs still mix
+  areas, as the sheet grew: a new rule goes in its area's part, after any rule it overrides.
 - **Reading the dashboard's source** (a test, a script): through `dashboard_parts.assemble()` in Python or
   `dashboardPage()` from `tests/dashboard-page.mjs` in Node, never `dashboard.html` itself. The page is served as one
   document, but its source can be split into parts (`dashboard/<name>.js`, `.css` and `.html`, each filling its include

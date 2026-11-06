@@ -318,7 +318,21 @@ def write_parts(html, parts, kind, page):
 # (part, anchor): dashboard/<part>.css holds the stylesheet's lines from the first top-level line after the previous
 # part that starts with `anchor` (a section's comment) up to the next part's, the last one up to </style>. The runs are
 # contiguous and in the page's order, so no rule moves and the cascade is the one before.
-CSS_PARTS = []
+CSS_PARTS = [
+    ('base-tokens', '/* The page keeps its place itself'),  # the shared design tokens (design-tokens:start/end) and palette
+    ('base-layout', '/* Header */'),
+    ('todos-cards', '/* Cards */'),
+    ('graph-pages', '/* People: the living graph'),
+    ('graph-crm', '/* The Graph as a CRM'),
+    ('todos-send', "/* Cards like the site's demo card"),
+    ('base-design', '/* Design system layer'),
+    ('todos-chat', '/* Card chat (#chat=<id>)'),
+    ('todos-talk', "/* Talk's own view"),
+    ('shell-sidebar', '/* App sidebar: one component'),
+    ('calendar-view', '/* Calendar: the next seven days'),
+    ('connections-newtodo', '/* Saved sign-ins (Connections, Sign-ins)'),
+    ('shell-palette-help', '/* Command palette (Ctrl/'),
+]
 
 
 def css_top_level_lines(text):

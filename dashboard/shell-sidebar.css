@@ -1,0 +1,232 @@
+/* App sidebar: one component. From 1024px it is a fixed column on the left, like a chat app: the brand, a card filter,
+   the tabs as quiet rows with icons (Graph with its People, Organizations and Projects), the cards as a list, and Browser,
+   Settings and the status at the bottom; it folds to icons. Below 1024px the same sidebar is a drawer that slides in from
+   the left under a slim top bar with a menu button. */
+:root{--side-w:260px;--side-bg:color-mix(in srgb,var(--c-sunken) 55%,var(--c-bg));--side-ink:var(--c-text-2);--side-quiet:var(--c-text-3)}
+.topbar,.drawer-scrim{display:none}
+body main{padding-top:0}
+.side-toggle .ic-x{display:none}
+.app-side>header{display:contents}
+.app-side .brand{order:0;flex:none;display:flex;align-items:center;gap:10px;min-height:36px;padding:0 0 0 8px}
+.app-side .avatar{width:28px;height:28px}
+.app-side h1{font:var(--fw-heading) 19px/1.2 var(--serif);letter-spacing:-.01em;white-space:nowrap}
+.app-side #tagline{display:none}
+.side-toggle{display:grid;place-items:center;flex:none;width:32px;height:32px;min-height:0;margin:0 0 0 auto;padding:0;border:0;border-radius:var(--r-sm);background:none;box-shadow:none;color:var(--side-quiet);cursor:pointer}
+@media(hover:hover) and (pointer:fine){.side-toggle:hover{background:var(--c-hover);color:var(--text)}}
+.side-toggle svg,.side-search svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.side-search{order:1;flex:none;display:flex;align-items:center;gap:8px;height:34px;margin:12px 0 8px;padding:0 10px;border:1px solid var(--c-line);border-radius:var(--r-sm);background:color-mix(in srgb,var(--c-bg) 70%,transparent);color:var(--side-quiet);cursor:text}
+.side-search:focus-within{border-color:var(--c-line-strong)}
+.side-search input,.side-search input:focus{flex:1;min-width:0;height:100%;min-height:0;margin:0;padding:0;border:0;border-radius:0;background:none;box-shadow:none;outline:none;color:var(--text);font:400 var(--fs-sm)/1 var(--sans)}
+.side-search input::placeholder{color:var(--side-quiet);opacity:1}
+.app-side nav,[data-theme="light"] .app-side nav{order:2;flex:none;flex-direction:column;gap:1px;margin:0;padding:0;border:0;border-radius:0;background:none;overflow:visible}
+.app-side nav button,.app-side .head-side>.settings-link{position:relative;flex:none;display:flex;justify-content:flex-start;align-items:center;gap:10px;width:100%;min-height:34px;margin:0;padding:0 10px;border:0;border-radius:var(--r-sm);background:none;box-shadow:none;color:var(--side-ink);font:var(--fw-medium) var(--fs-sm)/1.2 var(--sans);text-decoration:none;white-space:nowrap}
+.app-side nav button[hidden]{display:none}
+@media(hover:hover) and (pointer:fine){.app-side nav button:hover,[data-theme="light"] .app-side nav button:hover,.app-side .head-side>.settings-link:hover{background:color-mix(in srgb,var(--text) 4%,transparent);color:var(--text)}}
+.app-side nav button.active,.app-side nav button.active:hover,.app-side .head-side>.settings-link[aria-current="page"]{background:color-mix(in srgb,var(--text) 11%,transparent);color:var(--text);box-shadow:none;font-weight:600}
+.app-side nav .ni,.app-side .head-side>.settings-link svg{display:block;flex:none;width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.app-side nav .badge,.app-side nav button.active .badge,[data-theme="light"] .app-side nav button.active .badge{margin-left:auto;min-width:0;height:auto;padding:0;background:none;color:var(--side-quiet);font:500 var(--fs-xs)/1 var(--sans)}
+.app-side nav .badge.warn,.app-side nav button.active .badge.warn{color:var(--c-orange)}
+.side-cards{order:3;display:block;flex:1 1 0;min-height:0;margin:14px -8px 0 0;padding:0 2px 16px 0;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable}
+.side-label{display:flex;align-items:center;gap:2px;margin:0 0 2px;padding:0 4px 0 4px;min-height:26px;font:var(--fw-medium) var(--fs-xs)/1.3 var(--sans);color:var(--side-quiet)}
+.side-label>span{margin-right:auto}
+.side-label button{min-height:0;margin:0;padding:3px 7px;border:0;border-radius:6px;background:none;box-shadow:none;color:var(--side-quiet);font:inherit;cursor:pointer}
+@media(hover:hover) and (pointer:fine){.side-label button:hover{color:var(--text)}}
+.side-label button[aria-pressed="true"]{color:var(--text);background:var(--c-hover)}
+.side-head{display:flex;align-items:center;gap:6px;width:100%;min-height:28px;margin:6px 0 0;padding:0 10px;border:0;border-radius:var(--r-sm);background:none;box-shadow:none;color:var(--side-quiet);font:var(--fw-medium) var(--fs-xs)/1.3 var(--sans);text-align:left;cursor:pointer}
+@media(hover:hover) and (pointer:fine){.side-head:hover{color:var(--text)}}
+.side-head .count{margin-left:auto;font-variant-numeric:tabular-nums}
+.side-head svg{width:12px;height:12px;flex:none;margin-left:-2px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transition:transform var(--dur) var(--ease)}
+.side-head[aria-expanded="false"] svg{transform:rotate(-90deg)}
+.side-cards a{display:block;padding:5px 10px;border-radius:var(--r-sm);color:var(--side-ink);font:400 13px/1.45 var(--sans);text-decoration:none;white-space:nowrap;overflow:hidden}
+.side-cards a.side-ld{display:flex;align-items:baseline;gap:6px}.side-ld span{min-width:0;overflow:hidden;text-overflow:ellipsis}.side-ld small{flex:none;color:var(--side-quiet,var(--c-text-3));font-size:11.5px}
+.side-group.quiet a{color:var(--side-quiet)}
+@media(hover:hover) and (pointer:fine){.side-cards a:hover{background:var(--c-hover);color:var(--text)}}
+.side-cards a[aria-current]{background:color-mix(in srgb,var(--text) 8%,transparent);color:var(--text)}
+.side-more,.side-more:hover{display:block;width:100%;min-height:0;margin:1px 0 0;padding:5px 10px;border:0;border-radius:var(--r-sm);background:none;box-shadow:none;color:var(--side-quiet,var(--c-text-3));font:500 12.5px/1.45 var(--sans);text-align:left;cursor:pointer}
+.side-more:hover{background:var(--c-hover);color:var(--text)}
+/* Done: a board's sent and skipped follow-ups of one day as one row that opens to the list */
+.done-fold{display:flex;align-items:center;gap:6px;width:100%;min-height:0;margin:0;padding:5px 10px;border:0;border-radius:var(--r-sm);background:none;box-shadow:none;color:var(--side-quiet,var(--c-text-3));font:400 13px/1.45 var(--sans);text-align:left;cursor:pointer}
+.done-fold span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.done-fold small,.done-fold-n{flex:none;color:var(--side-quiet,var(--c-text-3));font-size:11.5px;font-variant-numeric:tabular-nums}.done-fold-n{font-size:var(--fs-sm);color:var(--c-text-3)}
+.done-fold svg{width:12px;height:12px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transition:transform var(--dur) var(--ease)}
+.done-fold[aria-expanded="false"] svg{transform:rotate(-90deg)}
+@media(hover:hover) and (pointer:fine){.done-fold:hover{background:var(--c-hover);color:var(--text)}}
+.done-fold-list{margin:0 0 4px 14px;padding-left:4px;border-left:1px solid var(--border)}
+:is(.side-cards,.chat-side) .done-fold-list a{display:flex;flex-direction:column;padding:4px 8px}
+.done-fold-list a span,.done-fold-list small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.done-fold-list small{color:var(--side-quiet,var(--c-text-3));font-size:11.5px;line-height:1.35}
+.fu-done details>summary{display:flex;align-items:baseline;gap:12px;list-style:none;cursor:pointer}
+.fu-done details>summary::-webkit-details-marker{display:none}
+.fu-done details>summary h3{flex:1;min-width:0;margin:0}
+.fu-done-list{display:grid;gap:6px;margin:10px 0 0;padding:0;list-style:none;font-size:var(--fs-sm)}
+.fu-done-list li{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1.5fr) 6em;grid-template-areas:'p t w';gap:14px}
+.fu-done-list a{grid-area:p}.fu-done-list li>span{grid-area:t;color:var(--c-text-2)}.fu-done-list li>.muted{grid-area:w;text-align:right;color:var(--c-text-3)}
+.fu-done-list li>*{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* A long list's next page: a quiet row while it loads, never a spinner over the page */
+.pager-loading{margin:0;padding:12px 16px;color:var(--c-text-3);font-size:var(--fs-sm);animation:pager-breathe 1.4s ease-in-out infinite}
+@keyframes pager-breathe{50%{opacity:.45}}@media(prefers-reduced-motion:reduce){.pager-loading{animation:none}}
+.pager-empty{margin:0;padding:12px 16px}
+.side-cards a.fade{-webkit-mask-image:linear-gradient(to right,#000 calc(100% - 32px),transparent);mask-image:linear-gradient(to right,#000 calc(100% - 32px),transparent)}
+.side-empty{margin:6px 10px;font-size:var(--fs-xs);color:var(--side-quiet)}
+.app-side .head-side{order:4;flex:none;align-self:stretch;display:flex;flex-direction:column;align-items:stretch;gap:1px;margin:0;padding:8px 0 0;border-top:1px solid var(--c-line)}
+.app-side .head-side>.settings-link[hidden]{display:none}
+.app-side .head-side>.settings-link .lbl{display:inline}.app-side .live .lbl{display:inline}  /* the drawer has room for "Updated" */
+.app-side .head-side>.live,[data-theme="light"] .app-side .head-side>.live{display:flex;justify-content:flex-start;gap:10px;min-height:30px;margin:0;padding:0 10px 0 16px;border:0;background:none;color:var(--side-quiet);font:400 var(--fs-xs)/1 var(--sans);cursor:pointer}
+.app-side .head-side>.live::before{flex:none}
+.page-head{display:flex;align-items:center;gap:14px;margin:0 0 32px}.page-head[hidden]{display:none}
+.page-title{margin:0;font:var(--fw-display) 30px/1.2 var(--serif);letter-spacing:-.015em;color:var(--text);text-wrap:balance}
+/* The tagline is a quiet line, not a headline: about body size, muted, one line where it fits; the count stays readable under it. */
+.page-head.greet{align-items:center;gap:12px;margin-bottom:24px}
+.page-head.greet .page-title{font:400 var(--fs-lg)/1.35 var(--serif);letter-spacing:0;color:var(--c-text-2);text-wrap:pretty}
+.page-head.greet .page-sub{margin-top:2px;color:var(--c-text-2);overflow-wrap:anywhere;text-wrap:pretty}.page-head.greet>div{min-width:0}
+.page-head.greet .page-avatar{width:32px;height:32px}
+/* A new owner's hello (helloLine): their name as the title, who waits longest on them under it, linked to that to-do */
+.page-head.hello .page-title{font:var(--fw-display) var(--fs-xl)/1.25 var(--serif);color:var(--text)}
+.page-hello{margin:4px 0 0;font-size:var(--fs-md);color:var(--text);text-wrap:pretty}
+.page-hello a{color:inherit;text-decoration:underline;text-decoration-color:var(--c-text-2);text-underline-offset:3px}
+.page-avatar{width:40px;height:40px;flex:none;object-fit:contain}
+.page-sub{margin:4px 0 0;color:var(--side-quiet);font-size:var(--fs-sm)}
+#inbox #suggestion-summary,#inbox #suggestion-stats{display:none}
+/* A To-dos filter that is on says so at the top of the list (scopeNote) */
+.scope-note{margin:0 0 12px;color:var(--muted);font-size:var(--fs-sm)}
+.scope-note span{color:var(--text);font-weight:var(--fw-medium,500)}
+.scope-note button.link{padding:0;min-height:0;border:0;background:none;box-shadow:none;color:inherit;font:inherit;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.scope-note button.link:hover{color:var(--text)}
+/* All clear: the title's line says it, so the block below is only the robot and its line */
+#suggestions .all-clear:not(.first-look-empty){padding-top:24px}
+/* The first look's ending: what it read, then one or two next steps */
+.first-look-end .fl-read{display:block;max-width:34em;margin:0 auto;text-wrap:balance}.first-look-end small{display:block;margin-top:4px;color:var(--muted)}
+.first-look-end .fl-next{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:12px}
+.first-look-note{margin:0 0 10px;color:var(--muted);font-size:.9rem;text-wrap:pretty}#suggestions .all-clear:not(.first-look-empty)>div>strong{display:none}
+.chat-layout{grid-template-columns:minmax(0,1fr)}.chat-layout>.chat-side{display:none}
+#settings-browser{display:none!important}  /* Browser is in the sidebar */
+/* Graph's own rows: People, Organizations and Projects, each a small colored square and a count, under a fold */
+.side-row{position:relative;display:flex;align-items:center}
+.side-row>button[data-tab]~.side-fold{right:auto;left:var(--fold-x,84px)}  /* just after the label, its hover box clear of the text, so the count keeps the rows' column */
+.app-side nav .side-fold{position:absolute;right:4px;top:50%;display:grid;place-items:center;justify-content:center;width:26px;height:26px;min-height:0;margin:-13px 0 0;padding:0;border:0;border-radius:6px;background:none;box-shadow:none;color:var(--side-quiet);cursor:pointer}
+/* One row: hovering the chevron keeps the row's own highlight and only darkens the arrow, no box of its own; touch gets no hover at all */
+@media(hover:hover) and (pointer:fine){.app-side nav .side-fold:hover,[data-theme="light"] .app-side nav .side-fold:hover{background:none;color:var(--text)}.side-row:has(>.side-fold:hover)>button[data-tab]{background:color-mix(in srgb,var(--text) 4%,transparent);color:var(--text)}}
+.app-side nav .side-fold:focus-visible{box-shadow:var(--ring)}  /* the keyboard still sees where it is */
+@media(hover:none),(pointer:coarse){:is(.app-side nav button,.side-toggle,.topbar-menu,.side-head,.side-new,.side-label button):hover:not(:active):not(.active):not([aria-pressed="true"]){background:none}}  /* a tap leaves no hover behind */
+@media(hover:none),(pointer:coarse){:is(.app-side nav button,.app-side nav .side-fold,.side-sub a,.side-cards a,.side-head,.side-new,.topbar-menu):active{background:color-mix(in srgb,var(--text) 6%,transparent)}}  /* a press shows while the finger is down, nothing stays */
+.app-side nav .side-fold svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transition:transform var(--dur) var(--ease)}
+.app-side nav .side-fold[aria-expanded="false"] svg{transform:rotate(-90deg)}
+@media(hover:hover){.app-side nav .side-fold{opacity:0;transition:opacity var(--dur) var(--ease)}.side-row:hover .side-fold,.app-side nav .side-fold:focus-visible,.app-side nav .side-fold[aria-expanded="false"]{opacity:1}}  /* calm until wanted */
+.side-sub{display:flex;flex-direction:column;gap:1px}.side-sub[hidden]{display:none}
+.side-sub a{display:flex;align-items:center;gap:10px;min-height:32px;padding:0 10px 0 20px;border-radius:var(--r-sm);color:var(--side-ink);font:var(--fw-medium) var(--fs-sm)/1.2 var(--sans);text-decoration:none;white-space:nowrap}
+@media(hover:hover) and (pointer:fine){.side-sub a:hover{background:color-mix(in srgb,var(--text) 4%,transparent);color:var(--text)}}
+.side-sub a[aria-current="page"]{background:color-mix(in srgb,var(--text) 11%,transparent);color:var(--text);font-weight:600}
+.side-sub .badge{margin-left:auto;min-width:0;height:auto;padding:0;background:none;color:var(--side-quiet);font:500 var(--fs-xs)/1 var(--sans);font-variant-numeric:tabular-nums}
+.sq{display:grid;place-items:center;flex:none;width:16px;height:16px;border-radius:4px;background:var(--sq)}
+.sq svg{width:11px;height:11px;fill:none;stroke:var(--bg);stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.sq-people{--sq:var(--lavender)}.sq-orgs{--sq:var(--mint)}.sq-projects{--sq:var(--amber)}.sq-roles{--sq:var(--orange)}
+.side-sub a[hidden]{display:none}
+.side-sub #count-roles:not(:empty){color:var(--c-accent)}
+.side-row:has(+.side-sub:not([hidden])) .badge{display:none}  /* the rows say it: Who's who has the count */
+.page-crumb{margin:0 0 2px;color:var(--side-quiet);font:var(--fw-medium) var(--fs-xs)/1.3 var(--sans);letter-spacing:.02em}
+.app-side nav button.active.sub-on{background:none;font-weight:600}
+@media(min-width:1024px){
+  :root[data-side="collapsed"]{--side-w:60px}
+  body{display:grid;grid-template-columns:var(--side-w) minmax(0,1fr);grid-template-rows:1fr auto;min-height:100dvh}
+  .app-side{grid-column:1;grid-row:1/3;position:sticky;top:0;align-self:start;z-index:20;display:flex;flex-direction:column;width:auto;max-width:none;height:100dvh;margin:0;padding:12px 10px 10px;border-right:1px solid var(--c-line);background:var(--side-bg);overflow:hidden auto;overscroll-behavior:contain;scrollbar-width:none}
+  .app-side::-webkit-scrollbar{display:none}
+  /* The to-do list has no box of its own at any window height: the whole sidebar scrolls as one column, as the phone's
+     drawer. The list grows to keep Browser, Help and Settings at the bottom; folded, the hidden list takes no room. */
+  .app-side .side-cards{flex:1 0 auto;min-height:0;overflow:visible;overscroll-behavior:auto;scrollbar-gutter:auto}
+  :root[data-side="collapsed"] .app-side .side-cards{flex:1 1 0;overflow:hidden}
+  body main{grid-column:2;grid-row:1;width:100%;max-width:calc(var(--measure) + 112px);margin:0 auto;padding:44px 56px 64px}
+  .site-footer{grid-column:2;grid-row:2;width:100%;max-width:calc(var(--measure) + 112px);padding-left:56px;padding-right:56px;background-size:calc(100% - 112px) 1px}
+  /* A chat open: the list is in the sidebar, so the chat gets the whole main area */
+  /* the thread scrolls across the whole main area, so its thin bar sits at the window's right edge */
+  html:has(body.chat-open #inbox:not([hidden])){scrollbar-gutter:auto}body.chat-open:has(#inbox:not([hidden])) main{max-width:none;padding:0}
+  /* The chat's header spans the whole main area, like Claude: back and title on the left, ⋯ on the right, a hairline under it; the thread and the box stay in the column */
+  body.chat-open:has(#inbox:not([hidden])) .chat-head{align-self:stretch;width:auto;margin:0;padding:10px 16px 10px 12px;gap:6px;border-bottom:1px solid var(--c-line);background:color-mix(in srgb,var(--bg) 92%,transparent);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+  body.chat-open:has(#inbox:not([hidden])) .chat-head::after{display:none}
+  body.chat-open:has(#inbox:not([hidden])) .chat-title{text-overflow:ellipsis}
+  body.chat-open:has(#inbox:not([hidden])) .chat-title.fade{-webkit-mask-image:none;mask-image:none}
+  body.chat-open:has(#inbox:not([hidden])) .chat-log{padding-top:12px}
+  body.chat-open:has(#inbox:not([hidden])) .chat-log{padding-left:max(24px,calc((100% - var(--chat-col))/2));padding-right:max(24px,calc((100% - var(--chat-col))/2))}
+  /* Folded to icons: the labels, the filter text and the list step out; the order and the places stay */
+  :root[data-side="collapsed"] .app-side{padding:12px 8px 10px}
+  :root[data-side="collapsed"] .app-side .brand{justify-content:center;padding:0}
+  :root[data-side="collapsed"] .app-side .brand>:not(.side-toggle){display:none}
+  :root[data-side="collapsed"] .side-toggle{margin:0}
+  :root[data-side="collapsed"] .side-search{justify-content:center;padding:0;border-color:transparent;background:none;cursor:pointer}
+  @media(hover:hover) and (pointer:fine){:root[data-side="collapsed"] .side-search:hover{background:var(--c-hover);color:var(--text)}}
+  :root[data-side="collapsed"] .side-search input{display:none}
+  :root[data-side="collapsed"] .app-side nav button,:root[data-side="collapsed"] .app-side .head-side>.settings-link,:root[data-side="collapsed"] .app-side .head-side>.live{justify-content:center;padding:0}
+  :root[data-side="collapsed"] .app-side .nl,:root[data-side="collapsed"] .app-side .head-side .lbl,:root[data-side="collapsed"] #updated{display:none}
+  :root[data-side="collapsed"] .app-side nav .badge:not(:empty){position:absolute;top:6px;right:8px;width:7px;height:7px;padding:0;border-radius:50%;background:var(--c-accent);font-size:0}
+  :root[data-side="collapsed"] .app-side nav .badge.warn:not(:empty){background:var(--c-orange)}
+  :root[data-side="collapsed"] .side-cards{visibility:hidden}
+
+  :root[data-side="collapsed"] .app-side nav .side-fold{display:none}
+  :root[data-side="collapsed"] .side-row>button[data-tab]{padding:0!important}
+  :root[data-side="collapsed"] .side-sub a{justify-content:center;padding:0}
+  :root[data-side="collapsed"] .side-sub .badge{display:none}
+}
+/* A phone and a tablet: a slim top bar with the menu button, the page's title in the column, and the sidebar as a drawer */
+@media(max-width:1023px){
+  :root{--side-bg:var(--bg)}
+  .topbar{position:sticky;top:0;z-index:40;display:flex;align-items:center;height:calc(52px + env(safe-area-inset-top));padding:env(safe-area-inset-top) max(1.1px,env(safe-area-inset-right)) 0 max(2.5px,env(safe-area-inset-left));background:color-mix(in srgb,var(--bg) 90%,transparent);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+  .topbar-title{position:absolute;left:50%;top:calc(env(safe-area-inset-top) + 26px);transform:translate(-50%,-50%);display:flex;align-items:center;gap:7px;padding:4px 8px;border-radius:var(--r-sm);color:var(--text);font:var(--fw-heading) 17px/1 var(--serif);letter-spacing:-.01em;text-decoration:none;white-space:nowrap}
+  .topbar-title img{width:22px;height:22px;object-fit:contain}
+  .topbar>:not(.topbar-title):last-child:not(:first-child){margin-left:auto}  /* a button on the right (New to-do) */
+  /* 44px boxes; the ☰ and + glyphs sit on the cards' 16px gutters */
+  .topbar-menu{display:grid;place-items:center;width:44px;height:44px;min-height:0;margin:0;padding:0;border:0;border-radius:var(--r-sm);background:none;box-shadow:none;color:var(--c-text-2);cursor:pointer}
+  @media(hover:hover) and (pointer:fine){.topbar-menu:hover{background:var(--c-hover);color:var(--text)}}
+  .topbar-menu svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+  .topbar-menu .dot{position:absolute;margin:-14px 0 0 16px;width:7px;height:7px;border-radius:50%;background:var(--c-orange)}.topbar-menu .dot[hidden]{display:none}
+  body.chat-open:has(#inbox:not([hidden])) .topbar{display:none}
+  /* Search on a phone: the search icon in the top bar opens the palette (cards, the Graph and commands in one field) */
+  #side-search{display:none}
+  #find-open{margin-left:auto}.topbar #find-open:not([hidden])~.new-card-top{margin-left:0}
+  .app-side{position:fixed;top:0;bottom:0;left:0;z-index:70;display:flex;flex-direction:column;width:min(88vw,380px);max-width:none;height:100dvh;margin:0;padding:4px 12px calc(6px + env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));border-top:env(safe-area-inset-top) solid var(--bg);border-right:1px solid var(--c-line);background:var(--bg);box-shadow:var(--shadow-pop);overflow:hidden auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;transform:translateX(-104%);visibility:hidden;transition:transform .26s var(--ease),visibility 0s linear .26s}
+  :root[data-drawer="open"] .app-side{transform:none;visibility:visible;transition:transform .26s var(--ease)}
+  .app-side.dragging{transition:none!important}
+  .drawer-scrim{display:block;position:fixed;inset:0;z-index:65;background:#0008;opacity:0;pointer-events:none;transition:opacity .26s var(--ease)}
+  :root[data-drawer="open"] .drawer-scrim{opacity:1;pointer-events:auto}
+  /* The page behind stays put: only the root stops scrolling. Hiding the body's overflow too made the body a scroll box of
+     its own, so the sticky top bar and page header jumped to the top of the page, out of sight when it was scrolled down */
+  :root[data-drawer="open"]{overflow:hidden}
+  .drawer-scrim{touch-action:none;overscroll-behavior:none}
+  .app-side .brand{gap:4px;min-height:44px;padding:0}
+  .app-side .avatar{display:none}
+  .app-side h1{font-size:22px}
+  .side-toggle{order:-1;width:44px;height:44px;margin:0 2px 0 -4px;color:var(--c-text-2)}
+  .side-toggle svg{width:22px;height:22px}
+  .side-toggle .ic-panel{display:none}.side-toggle .ic-x{display:block}
+
+  .side-search{height:44px;margin:8px 0 10px;padding:0 12px;border-color:transparent;border-radius:var(--r-md,12px);background:color-mix(in srgb,var(--text) 6%,transparent)}
+  .side-search input,.side-search input:focus{font-size:16px}  /* 16px: no zoom on focus on an iPhone */
+  .app-side nav button,.app-side .head-side>.settings-link{min-height:44px;gap:12px;font-size:var(--fs-md)}
+  .app-side nav .ni,.app-side .head-side>.settings-link svg{width:20px;height:20px}
+  .app-side nav .badge,.side-sub .badge{font-size:var(--fs-sm)}
+  .side-sub a{min-height:40px;gap:12px;padding-left:22px;font-size:var(--fs-md)}
+  .side-sub .sq{width:18px;height:18px}
+  .app-side nav .side-fold{width:40px;height:44px;margin-top:-22px}
+  .side-label{min-height:34px;font-size:var(--fs-sm)}.side-label button{padding:6px 9px}
+  .side-head{min-height:38px;font-size:var(--fs-sm)}
+  .side-cards{flex:none;min-height:auto;margin-top:12px;overflow:visible;scrollbar-gutter:auto}  /* on a phone the whole drawer scrolls as one column */
+  .side-cards a{padding:9px 10px;font-size:15px}
+  .side-more,.side-more:hover{padding:9px 10px;font-size:14px}
+  .done-fold{padding:9px 10px;font-size:15px}.done-fold svg{width:14px;height:14px}
+  .side-cards .done-fold-list a{padding:7px 10px}.done-fold-list small{font-size:13px}
+  .fu-done-list{gap:10px}.fu-done-list li{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:'p w' 't t';gap:0 12px}
+  .app-side .head-side>.live{min-height:36px}
+  #open-browser:not([hidden]){display:flex}
+  .page-head{display:flex;align-items:center;gap:12px;margin:4px 0 22px}
+  .page-title{font-size:26px}
+  /* A phone shows only the counts under the top bar; the tagline stays for screen readers */
+  .page-head.greet{margin:6px 0 20px}
+  .page-head.greet .page-title{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+  .page-head.greet .page-sub{margin:0;font-size:var(--fs-md)}
+  /* With cards a phone starts at the first section head (they carry the counts); all clear keeps its line */
+  .page-head.greet.busy{margin:0}.page-head.greet.busy .page-sub{display:none}
+  /* The hello shows on a phone too, over the to-dos */
+  .page-head.greet.hello{margin:6px 0 18px}
+  .page-head.greet.hello .page-title{position:static;width:auto;height:auto;overflow:visible;clip-path:none;white-space:normal}
+  .page-avatar{display:none}  /* the top bar carries the mascot on a phone */
+  .chat-layout [data-chat-drawer]{display:flex}.chat-menu[data-empty]{visibility:visible}
+}
+@media(prefers-reduced-motion:reduce){*{transition-duration:0s!important;animation-duration:0s!important}}
