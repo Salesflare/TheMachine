@@ -88,7 +88,8 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
 - **Code moved out of `assistant.py`:** in its area of `machine/`, in that area's layer (below). Nothing in `machine/`
   imports `assistant` or a module of a higher layer. Moved so far, besides the mixins above: `machine/config.py`
   (`ROOT`, `WORKSPACE`, `DEFAULT_CONFIG`, `LOG`, the brand assets and rule files), `machine/timing.py` (a request's
-  timing, `SLOW_REQUEST_SECONDS`).
+  timing, `SLOW_REQUEST_SECONDS`), `machine/text.py` (message text: quoted history, bodies, attachments, `clamp`,
+  `encoded`, `seal_copy`).
 - **Dashboard code:** in its area's part in `dashboard/` (`<area>-<what>.js`: shell, todos, settings, graph, calendar,
   connections, help, events, new, fleet), next to the functions it works with, never at the end of the script. The
   page's core is in the `shell-*` parts too: locale and error reports (`shell-core.js`), network and outbox, `render()`
