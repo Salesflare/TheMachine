@@ -115,7 +115,7 @@ const gapOr=list=>{try{return new Intl.ListFormat(I18N.lang||'en',{type:'disjunc
 const basedOnLine=s=>{const b=s.based_on;if(!b||typeof b!=='object')return '';
  const what=b.who&&b.where?t('Based on {} in {}',b.who,b.where):b.who?t('Based on {}',b.who):b.where?t('Based on a message in {}',b.where):t('Based on a message');
  const day=b.at?new Date(b.at).toLocaleDateString(DL,{weekday:'short',day:'numeric',month:'short'}):'';
- const label=html`${what}${day?html` · <span class="src-date">${day}</span>`:''}<span aria-hidden="true"> ↗</span>`;
+ const label=html`${what}${day?html` · <span class="src-date">${day}</span>`:''}`;  // opens here, so no ↗ (that is for links out)
  return html`<p class="note gap-line based-on"><button type="button" class="link" data-id="${s.id}"${b.event_id!=null?html` data-held-read="${b.event_id}"`:html` data-original="read"`}>${label}</button></p>`};
 const gapLine=(s,hint)=>{const g=s.gap;let w={};try{w=JSON.parse(s.awaiting||'{}')||{}}catch{}
  if(!g||closed(s)||s.status==='snoozed'||hint||w.delegated||s.follow_up||withTeammate(s))return '';
@@ -478,7 +478,7 @@ const drafts=s.status==='prepared'&&!tpSent?smart.filter(a=>DRAFT_KINDS.includes
     const results=(s.status==='prepared'&&!calOnly)||s.result_files?.length?html`<span class="foot-links"><button type="button" class="link" data-id="${s.id}" data-result="read">Read result</button>${(messageDrafts(s).length||s.result_files?.length)&&!copyLead(s,smart)&&!s.proposed_skill?html`<button type="button" class="link" data-id="${s.id}" data-result="copy">Copy draft</button>`:''}</span>`:'';
     const readLabel=isEmail(s)?'Read email':'Read message',src=s.source_line?sourceHtml(s.source_line):'';
     const srcOut=!closed(s)&&section!=='Chat';  // an open to-do shows where it came from on the to-do itself, a closed one under Details
-    const original=hasOriginal(s)?html`<button type="button" class="link read-original via-${cardViaIcon(s)}" data-id="${s.id}" data-original="read" aria-label="${readLabel}" title="${readLabel}">${src||readLabel}<span aria-hidden="true"> ↗</span></button>`:src?html`<p class="source">${src}</p>`:'';
+    const original=hasOriginal(s)?html`<button type="button" class="link read-original via-${cardViaIcon(s)}" data-id="${s.id}" data-original="read" aria-label="${readLabel}" title="${readLabel}">${src||readLabel}</button>`:src?html`<p class="source">${src}</p>`:'';
 // What only matters on a second look folds behind one Details: a closed to-do's coding agent result and the files it was
 // made with, your note and the source line. The row under it keeps
 // Details, when it comes back and the result links; a closed to-do's Reopen sits on the same row.

@@ -53,13 +53,15 @@ try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
  for(const [width,height] of [[1440,900],[1440,700],[390,844]]){
   const [context,page]=await open({width,height});
-  assert.deepEqual(await line(page,'b1'),['Based on Robin in #support · Wed, Nov 4 ↗']);
+  assert.deepEqual(await line(page,'b1'),['Based on Robin in #support · Wed, Nov 4']);
   assert.deepEqual(await line(page,'b2'),[],'no based_on: no line');
-  assert.deepEqual(await line(page,'b3'),['Based on a message · Tue, Nov 3 ↗']);
+  assert.deepEqual(await line(page,'b3'),['Based on a message · Tue, Nov 3']);
   assert.equal(await page.locator('#task-b1 .based-on a, #task-b3 .based-on a').count(),0,'never a link out to Slack or Gmail');
   assert.equal(await page.locator('#task-b1 .based-on button[data-held-read="3"]').count(),1,'it opens that message here');
   assert.equal(await page.locator('#task-b3 .based-on button[data-held-read="6"]').count(),1);
   assert.deepEqual(await line(page,'b4'),[],'the source line names the message: one line, no Based on');
+  // Both open the message here, so neither carries the ↗ of a link out (that stays on Open in Slack inside)
+  for(const id of ['b1','b4'])assert.ok(!/↗/.test(await page.locator(`#task-${id} :is(.based-on,.card-source)`).evaluateAll(n=>n.map(x=>x.textContent).join(''))),'no ↗ on '+id);
   // Right under the body, above the draft and the source line, never wider than the to-do
   const order=await page.locator('#task-b1').evaluate(c=>{const y=s=>c.querySelector(s)?.getBoundingClientRect().top??-1;return [y('.body'),y('.based-on'),y('.card-source')]});
   assert.ok(order[0]<order[1]&&order[1]<order[2],'under the body, above the source: '+order);
@@ -71,7 +73,7 @@ try{
    const dialog=page.locator('#email-dialog');await dialog.locator('.convo').waitFor();
    assert.match(await dialog.textContent(),/Lowest bounty is fine/);
    assert.equal(await dialog.locator('a.convo-source').getAttribute('href'),'https://acme.slack.com/archives/C0SUPPORT1/p1793792264759699');
-   assert.match(await dialog.locator('a.convo-source').textContent(),/Open in Slack/);
+   assert.match(await dialog.locator('a.convo-source').textContent(),/Open in Slack ↗/);
    if(shots)await page.screenshot({path:`${shots}/based-on-opened-${width}x${height}.png`});
    await page.keyboard.press('Escape');
   }
@@ -83,7 +85,7 @@ try{
  }
  language='nl';
  {const [context,page]=await open({width:390,height:844});
-  assert.deepEqual(await line(page,'b1'),['Op basis van Robin in #support · wo 4 nov ↗']);
+  assert.deepEqual(await line(page,'b1'),['Op basis van Robin in #support · wo 4 nov']);
   if(shots)await page.locator('#task-b1').screenshot({path:`${shots}/based-on-nl-390x844.png`});
   await context.close()}
  assert.deepEqual(errors,[]);
