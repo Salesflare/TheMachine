@@ -47,12 +47,21 @@ class SlowRequests(unittest.TestCase):
         response = conn.getresponse(); response.read(); conn.close()
         return response.status
 
+    def slow_line(self, logged, wanted):
+        """The slow-request line is written after the answer went out (its total includes writing it), so the client can
+        have its answer first: wait for the server thread's line before the log capture ends."""
+        deadline = time.monotonic() + 5
+        while not any(wanted in l for l in logged.output) and time.monotonic() < deadline:
+            time.sleep(0.01)
+        return next((l for l in logged.output if wanted in l), None)
+
     def test_a_slow_request_logs_its_path_action_and_database_time_only(self):
         port = self.serve()
         with patch.object(a, 'SLOW_REQUEST_SECONDS', 0.1), patch.object(a.App, 'action', side_effect=self.slow_action), \
                 self.assertLogs(a.LOG, 'WARNING') as logged:
             self.assertEqual(self.post(port, 'notify_active', {'client': 'secretclient', 'note': 'call sam@client.example'}), 200)
-        line = next(l for l in logged.output if 'slow request' in l)
+            line = self.slow_line(logged, 'slow request')
+        self.assertIsNotNone(line, logged.output)
         self.assertIn('method=POST path=/api/action action=notify_active', line)
         self.assertGreaterEqual(int(line.split('db_connections=')[1]), 1)
         held = float(line.split('db_held=')[1].split('s')[0])
@@ -62,12 +71,14 @@ class SlowRequests(unittest.TestCase):
 
     def test_a_query_stays_out_of_the_log(self):
         port = self.serve()
-        with patch.object(a, 'SLOW_REQUEST_SECONDS', 0.1), patch.object(a.App, 'graph_action', side_effect=self.slow_action), \
+        with patch.object(a, 'SLOW_REQUEST_SECONDS', 0.1), patch.object(a.App, 'graph_find', side_effect=self.slow_action), \
                 self.assertLogs(a.LOG, 'WARNING') as logged:
             conn = http.client.HTTPConnection('127.0.0.1', port, timeout=10)
-            conn.request('GET', '/api/graph?node=email:sam@client.example', headers={'Host': 'machine.example:8443', 'Tailscale-User-Login': 'owner@example.com'})
-            conn.getresponse().read(); conn.close()
-        self.assertTrue(any('slow request method=GET path=/api/graph action=-' in l for l in logged.output), logged.output)
+            conn.request('GET', '/api/graph?q=sam@client.example', headers={'Host': 'machine.example:8443', 'Tailscale-User-Login': 'owner@example.com'})
+            response = conn.getresponse(); response.read(); conn.close()
+            line = self.slow_line(logged, 'slow request method=GET path=/api/graph action=-')
+        self.assertEqual(response.status, 200)
+        self.assertIsNotNone(line, logged.output)
         self.assertNotIn('sam@client.example', '\n'.join(logged.output))
 
     def test_a_fast_request_logs_nothing(self):

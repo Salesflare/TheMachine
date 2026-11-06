@@ -50,10 +50,12 @@ try{
   await stuck.locator('[data-choice="retry"]').click();
   for(let i=0;i<100&&!posts.some(p=>p.action==='decide');i++)await page.waitForTimeout(50);
   assert.deepEqual([posts.find(p=>p.action==='decide')?.args.suggestion_id,posts.find(p=>p.action==='decide')?.args.choice],['s1s1s1s1s1s1s1s1','retry']);
-  // The project chip: its whole name in its tooltip, and whole on the line when it fits the to-do's width
+  // The project chip: its whole name in its tooltip, and whole on the line on a phone (on a desktop it keeps its cap)
   const chip=page.locator('#task-p1p1p1p1p1p1p1p1 a.chip.project-link');
   assert.equal(await chip.getAttribute('title'),project.name);
-  assert.ok(await chip.evaluate(a=>{const s=a.querySelector('span');return s.scrollWidth<=s.clientWidth+1}),'the project name is whole');
+  // measured once it is laid out: right after the list renders the chip can still be 0 wide, which passes by accident
+  await page.waitForFunction(()=>document.querySelector('#task-p1p1p1p1p1p1p1p1 a.chip.project-link span')?.clientWidth>0);
+  if(width<=600)assert.ok(await chip.evaluate(a=>{const s=a.querySelector('span');return s.scrollWidth<=s.clientWidth+1}),'the project name is whole');
   if(process.env.SHOTS_DIR)await page.locator('#task-p1p1p1p1p1p1p1p1').screenshot({path:`${process.env.SHOTS_DIR}/project-chip-${width}x${height}.png`});
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   await context.close();
