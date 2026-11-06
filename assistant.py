@@ -179,6 +179,7 @@ from machine.sources.slack import (
 )
 from machine.app.follow_ups import FollowUpsApp
 from machine.app.graph_actions import GraphActionsApp
+from machine.app.knowledge_export import KnowledgeExportApp
 from machine.app.meeting_writes import MeetingWritesApp
 from machine.app.model_pacing import ModelPacingApp
 from machine.app.promise_checks import PromiseChecksApp
@@ -758,6 +759,7 @@ OWNER_ACTIONS = {
     'graph_stage',
     'graph_summary',
     'graph_warmup',
+    'knowledge_export',
     'learning_undo',
     'meeting_notes_write',
     'model_reset',
@@ -1126,6 +1128,7 @@ DASHBOARD_ACTIONS = frozenset({
     'graph_stage',
     'graph_summary',
     'graph_warmup',
+    'knowledge_export',
     'learning_undo',
     'meeting_notes',
     'meeting_notes_write',
@@ -15536,7 +15539,8 @@ APP_MIXINS = (SupportApp, CalendarApp, SkillsApp, AgentsApp, GBrainApp, SharedGr
               WhatsAppImagesApp, CheckNowApp, SetupCardApp, HistoryApp)
 
 # App's mixins in machine/app/: methods moved out of App as is (docs/code-map.md)
-APP_MIXINS += (FollowUpsApp, GraphActionsApp, MeetingWritesApp, ModelPacingApp, PromiseChecksApp, SignaturesApp, SummariesApp, VoiceApp)
+APP_MIXINS += (FollowUpsApp, GraphActionsApp, KnowledgeExportApp, MeetingWritesApp, ModelPacingApp, PromiseChecksApp, SignaturesApp, SummariesApp,
+               VoiceApp)
 
 
 class App(*APP_MIXINS):
@@ -23692,6 +23696,8 @@ class App(*APP_MIXINS):
                             self.output(200, found)
                     except (ValueError, sqlite3.OperationalError):
                         self.output(404, {'error': 'Not in the graph'})
+                elif path.path == '/api/knowledge-export':  # Knowledge for another AI, downloaded once (machine/app/knowledge_export.py)
+                    app.knowledge_download(self, urllib.parse.parse_qs(path.query).get('token', [''])[0])
                 elif path.path == '/api/agent-jobs':  # polled while a Claude Code or Codex job runs: small, unlike /api/status
                     self.output(200, app.agents.live() if getattr(app, 'agents', None) else {'jobs': {}})
                 elif path.path in ('/api/agent-diff', '/api/agent-file'):

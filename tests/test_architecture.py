@@ -143,6 +143,7 @@ MACHINE_LAYERS = {
     'prompts': 1,
     'sources': 1,
     'store': 2,
+    'export': 2,       # Knowledge for another AI (reads through Store, never imports it)
     'delivery': 3,
     'web': 3,
     'app': 4,

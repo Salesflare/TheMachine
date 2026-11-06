@@ -9,7 +9,7 @@ order: 1
 Abra **Configurações** pela engrenagem no topo. As abas:
 
 - **Conta**: **Seus endereços**, os que contam como você, com a origem de cada um, e **Sair**. Em uma Machine hospedada, também seu plano, faturas, Machine, Fleet, endereço, amigos, login e dados, cada um com seu botão. Veja [Planos e cobrança](plans-and-billing.md). **Sair** fica no topo, **Cancelar plano** e **Excluir conta** bem no final.
-- **Geral**: idioma e região, entrada por voz, este dispositivo, o navegador da sua Machine, seu Fleet e sua conta.
+- **Geral**: idioma e região, entrada por voz, este dispositivo, o navegador da sua Machine, seu Fleet, a exportação e sua conta.
 - **Segurança**: Padrão ou Cuidadoso, e as configurações que cada um define. Veja [Níveis de segurança](security-levels.md). Também **Acesso de suporte**, enquanto está ativo: veja [Obter suporte](get-support.md#support-access).
 - **Atividade**: tudo o que The Machine fez por você, o mais recente primeiro. Veja [Atividade](activity.md).
 - **Notificações**: o que chega até você e onde, e o seu horário de trabalho. Veja [Notificações](notifications.md) e [Horário de trabalho](work-hours.md).
@@ -28,6 +28,7 @@ Uma aba sem nada para mostrar fica escondida.
 - **Entrada por voz**: como o que você fala vira texto, e a voz de Falar ao vivo. Veja [Entrada por voz](voice-input.md) e [Falar ao vivo](talk-live.md).
 - **Abrir o navegador da Machine ↗**: o navegador que a sua Machine usa para sites como o LinkedIn.
 - **Regras do Fleet**: veja [Regras de compartilhamento](sharing-rules.md).
+- **Exportar**: **Conhecimento para outra IA**, o que sua Machine aprendeu, em arquivos que qualquer IA consegue ler. Veja [Conhecimento para outra IA](knowledge-export.md).
 
 ## Nesta Machine
 

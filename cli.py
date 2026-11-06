@@ -739,6 +739,38 @@ def cmd_export(config, args):
     print('Put it back on another computer with:  assistant import ' + path.name)
 
 
+def cmd_export_knowledge(config, args):
+    """Knowledge for another AI (machine/export/knowledge.py): what The Machine learned, as Markdown, JSONL and CSV."""
+    from machine.export import knowledge
+    store = assistant.Store(config['database'], protect=config.get('message_protection'))
+    store.accounts = config.get('accounts', [])
+    reader = knowledge.StoreReader(store, config, workspace=assistant.WORKSPACE)
+    bundle = knowledge.collect(reader, knowledge.Options(messages=args.messages, private=args.private))
+    out = Path(args.out).expanduser()
+    name = f'{knowledge.FOLDER}-{dt.date.today().isoformat()}'
+    try:
+        if args.folder:
+            target = out / name
+            if target.exists():
+                raise CliError(f'{target} is there already; pick another --out')
+            knowledge.write(bundle, target)
+        else:
+            data = knowledge.zipped(bundle)
+            target = out / (name + '.zip')
+            if args.encrypt:
+                data, target = knowledge.encrypt(data, _passphrase(True)), out / (name + '.zip.enc')
+            out.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(data)
+            os.chmod(target, 0o600)
+    except ValueError as error:
+        raise CliError(str(error)) from None
+    if args.json:
+        return out_json({'path': str(target), 'counts': {k: len(bundle[k]) for k in ('entities', 'facts', 'todos', 'sources')},
+                         'left_out': bundle['left_out']})
+    print(f'Wrote {target}: {len(bundle["entities"])} people, organizations and projects, {len(bundle["facts"])} facts, {len(bundle["todos"])} open to-dos.')
+    print('Start with README.md in it.' + ('' if args.messages else ' Message text is not included (add --messages).'))
+
+
 def cmd_import(config, args):
     try:
         result = moving.import_(args.archive, args.config, passphrase=_passphrase(False) if args.archive.endswith('.enc') else None,
@@ -1057,6 +1089,13 @@ def parser():
     c.add_argument('--keys', action='store_true', help='include keys and tokens, with a passphrase you pick (without: an export code is made for you)')
     c.add_argument('--out', default='.', help='folder to write the archive to (default: here)')
     c.add_argument('--estimate', action='store_true', help='only say how big it would be')
+    c = add('export-knowledge', 'What The Machine learned, as Markdown, JSONL and CSV for another AI (no keys, no message text unless asked)',
+            cmd_export_knowledge)
+    c.add_argument('--out', default='.', help='folder to write it to (default: here)')
+    c.add_argument('--folder', action='store_true', help='write a folder instead of a .zip')
+    c.add_argument('--messages', action='store_true', help='also the text of each source message')
+    c.add_argument('--private', action='store_true', help='also private threads, Only-you projects and Careful team content')
+    c.add_argument('--encrypt', action='store_true', help='encrypt the .zip with a passphrase you pick')
     c = add('import', 'Put an export back on this computer (a fresh install)', cmd_import)
     c.add_argument('archive', help='the .tar.gz.enc file (older .zip and .tar.gz exports too)')
     c.add_argument('--force', action='store_true', help='replace a setup that already has sources (a copy of it is kept)')
