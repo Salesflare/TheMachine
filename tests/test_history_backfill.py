@@ -183,7 +183,7 @@ class WhenItRuns(Base):
             db.execute("INSERT INTO sync_activity VALUES('s1','wa','2026-10-01T09:00:00+00:00','success',3,NULL,NULL)")
         self.assertIsNone(self.app.history_wait())
 
-    def test_waits_for_a_review_a_first_import_a_sync_and_room(self):
+    def test_waits_for_a_review_a_first_import_and_room(self):
         self.first_look_over()
         with self.store.connect() as db:
             db.execute("INSERT INTO review_runs(run_id,status,started_at,updated_at) VALUES('r','running',?,?)", (NOW, NOW))
@@ -194,8 +194,8 @@ class WhenItRuns(Base):
         self.assertEqual(self.app.history_wait(), 'first_import')
         with self.store.connect() as db:
             db.execute("UPDATE checkpoints SET state=?", (json.dumps({'mode': 'incremental'}),))
-        self.app.collector_resting = set()  # WhatsApp's collector reads now
-        self.assertEqual(self.app.history_wait(), 'sync')
+        self.app.collector_resting = set()  # a sync read holds back only its own connection (history_step), never all
+        self.assertIsNone(self.app.history_wait())
         self.app.collector_resting = {'wa'}
         with mock.patch.object(app_history, 'free_disk', return_value=False):
             self.assertEqual(self.app.history_wait(), 'disk')
@@ -255,6 +255,31 @@ class WhatsAppHistory(Base):
         self.assertTrue(again.history_step())
         last = FakeWhatsApp.reads[-1]
         self.assertEqual(last[last.index('--before') + 1], cursor)
+
+
+class BetweenSyncs(Base):
+    """A Machine with many sources has some sync reading nearly all the time. History steps in between them: a
+    connection's own read holds back only that connection, a short while, and the wait is logged once per change."""
+    accounts = [WA, {'id': 'slack', 'service': 'slack', 'boundary': 'work:Example'}]
+
+    def test_other_reads_never_hold_it_back_and_its_own_only_briefly(self):
+        self.first_look_over()
+        FakeWhatsApp.rows = [wa_row(1, '2026-10-20T10:00:00Z', 'Older')]
+        self.app.collector_resting = {'wa'}  # Slack reads all the time
+        self.assertTrue(self.app.history_step())
+        self.assertIsNone(self.app.history_why)
+        self.app.collector_resting = {'slack'}  # WhatsApp's own sync reads now
+        with self.assertLogs(app_history.LOG, 'INFO') as logged:
+            reads = len(FakeWhatsApp.reads)
+            self.assertFalse(self.app.history_step())
+            self.assertFalse(self.app.history_step())
+            self.assertEqual(len(FakeWhatsApp.reads), reads)
+            self.assertEqual(self.app.history_why, 'sync')
+            self.assertIn('sync', app_history.SHORT_WAITS)  # tried again in STEP_GAP_SECONDS, not WAIT_SECONDS
+            self.app.collector_resting = {'wa', 'slack'}
+            self.assertTrue(self.app.history_step())
+        self.assertEqual([r.getMessage() for r in logged.records if 'history' in r.getMessage() and 'kept' not in r.getMessage()],
+                         ['history waits reason=sync', 'history goes'])  # once per change, not every step
 
 
 class MailHistory(Base):

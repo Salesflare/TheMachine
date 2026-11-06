@@ -26,6 +26,7 @@ LOG = logging.getLogger('personal-assistant')
 
 STEP_GAP_SECONDS = 20  # between two steps; a step is one small page from one source
 WAIT_SECONDS = 300  # after a step found a reason to wait
+SHORT_WAITS = {'review', 'first_import', 'sync'}  # over soon: tried again after STEP_GAP_SECONDS, so steps slot in between them
 MAIL_PAGE = 20  # messages per mail step: one list call and at most this many reads, far inside Gmail's and Graph's limits
 CALENDAR_PAGE = 100
 WHATSAPP_DAYS = 7  # one local read of the WhatsApp store per step covers this many days
@@ -85,7 +86,7 @@ class HistoryApp:
         wait = STEP_GAP_SECONDS
         while not self.stop.wait(wait):
             try:
-                wait = STEP_GAP_SECONDS if self.history_step() else WAIT_SECONDS
+                wait = STEP_GAP_SECONDS if self.history_step() or self.history_why in SHORT_WAITS else WAIT_SECONDS
             except sqlite3.OperationalError as error:
                 LOG.info('history waits error=%s', type(error).__name__); wait = WAIT_SECONDS
             except Exception as error:  # noqa: BLE001 - tried again later, never stops the service
@@ -96,9 +97,12 @@ class HistoryApp:
         return [a for a in self.config.get('accounts') or [] if kind(a) and abilities.signals_on(a) and not a.get('shared')
                 and (kind(a) != 'whatsapp' or a.get('store'))]
 
+    history_why = None  # why the last step waited (a code from history_wait, or 'sync'), None when it went
+
     def history_wait(self, current=None):
         """Why history waits now (a short code), or None when a step may go: it is off, the first look hasn't ended,
-        a review, a first import or a sync read runs, or the disk or memory is short."""
+        a review or a first import runs, or the disk or memory is short. A connection's own sync read only holds back
+        that connection (history_step), so on a Machine with many sources there's always a gap to step in."""
         if not history.depth(self.config) or not self.history_accounts():
             return 'off'
         current = current or dt.datetime.fromisoformat(now())
@@ -116,11 +120,6 @@ class HistoryApp:
                     state = json.loads(state)
                     if state.get('mode') in ('bootstrap', 'resync') or state.get('page_token'):
                         return 'first_import'
-            retrying = {r[0] for r in db.execute('SELECT account_id FROM checkpoints WHERE retry_at IS NOT NULL')}
-        resting = self.__dict__.get('collector_resting')
-        if resting is not None and any(a['id'] not in resting and a['id'] not in retrying
-                                       for a in self.config.get('accounts') or [] if abilities.signals_on(a)):
-            return 'sync'
         if not free_disk(self.store.path.parent):
             return 'disk'
         if not free_memory():
@@ -132,8 +131,9 @@ class HistoryApp:
         soon), False when there is nothing to do or a reason to wait."""
         why = self.history_wait(current)
         if why:
-            return False
+            return self.history_waits(why)
         days, stamp = history.depth(self.config), now()
+        resting, reading = self.__dict__.get('collector_resting'), False
         for account in self.history_accounts():
             with self.store.connect() as db:
                 found = history.get(db, account['id'])
@@ -142,6 +142,9 @@ class HistoryApp:
             state = dict(found['state']) if found else {}
             if state.get('error_at', '') > history.before(stamp, ERROR_WAIT_DAYS):
                 continue  # failed a while ago: the others first
+            if resting is not None and account['id'] not in resting:
+                reading = True
+                continue  # its own sync reads it now: another one, or this one once that read is done
             if found and found['done_at']:  # a deeper setting since: walk on from where it stopped
                 state.update(upper=state.get('target'), target=None, cursor=None, token=None)
             state['upper'] = state.get('upper') or self.history_upper(account, stamp)
@@ -153,12 +156,20 @@ class HistoryApp:
                 LOG.info('history account=%s waits error=%s', account['id'], error)
                 with self.store.connect() as db:
                     history.save(db, account['id'], {**state, 'error_at': stamp}, stamp)
-                return False
+                return self.history_waits('error')
             with self.store.connect() as db:
                 history.save(db, account['id'], state, now(), kept, oldest, done, days)
+            self.history_waits(None)
             if kept or done:
                 LOG.info('history account=%s kept=%d done=%s', account['id'], kept, done)
             return True
+        return self.history_waits('sync' if reading else 'done')
+
+    def history_waits(self, why):
+        """Note why it waits (None: it goes), logged once per change rather than every step. Always False."""
+        if why != self.history_why:
+            LOG.info('history %s', f'waits reason={why}' if why else 'goes')
+            self.history_why = why
         return False
 
     def history_upper(self, account, stamp):
