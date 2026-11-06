@@ -13675,6 +13675,8 @@ def push_notify(store, config, row, sender=None):
                    'body': plain(row['body']) if text else '', 'url': root + '#chat=' + row['id']}
         payload['_line'] = (notify.app_line_text('Reminder: {}' if row.get('reminder') else 'New to-do: {}', row['title']) if text
                             else i18n.t('Reminder') if row.get('reminder') else i18n.t('New to-do'))
+        if notify.kind_of(row) == 'result':  # a reminder for a prepared or stuck to-do: ready or needs-you, as a result says
+            payload['_state'] = 'ready' if row.get('status') == 'prepared' else 'needs'
     payload['tag'] = row['id']  # a newer notification for the same card replaces the older one
     if row.get('_silent'):
         payload['silent'] = True  # later cards of a batch still reach the phone, without a second buzz
@@ -13808,6 +13810,7 @@ def app_wake(store, config, kind, tag, device=None, state=None, line=None, detai
 APP_BUTTONS = {'prepare': 'accept', 'snooze': 'snooze', 'done': 'complete'}
 APP_BODY = 120
 APP_GONE = ('completed', 'rejected', 'snoozed')  # no longer waiting: its phone notification goes
+APP_EMPTY = 'Tap to open.'  # the body when there is nothing to say under the title, or Text in notifications is off
 
 
 def app_notice(store, config, tag):
@@ -13823,7 +13826,7 @@ def app_notice(store, config, tag):
                          'FROM suggestions s LEFT JOIN preparations p ON p.suggestion_id=s.id '
                          'WHERE s.id=?', (tag,)).fetchone() if notify.APP_ID.fullmatch(tag) else None
         if not row:
-            return {'line': line, 'title': line, 'body': detail, 'actions': []}
+            return {'line': line, 'title': line, 'body': detail or (i18n.t(APP_EMPTY) if line else ''), 'actions': []}
         row = dict(row)
         try:
             ids = json.loads(row.get('account_ids') or '[]')
@@ -13833,8 +13836,8 @@ def app_notice(store, config, tag):
         text = security_levels.notify_text(db, work)
         if reported(row):  # its confirmed step closed it: what happened, nothing left to tap but Open
             title = notify.app_line_text('Done: {}', row['title']) if text else i18n.t('Done')
-            return {'line': title, 'title': title, 'body': notify.clip(first_sentence(row.get('body') or ''), APP_BODY) if text else '',
-                    'actions': [], 'labels': {'open': i18n.t('Open')}}
+            body = notify.clip(first_sentence(row.get('body') or ''), APP_BODY) if text else ''
+            return {'line': title, 'title': title, 'body': body or i18n.t(APP_EMPTY), 'actions': [], 'labels': {'open': i18n.t('Open')}}
         if row['status'] in APP_GONE:
             return {'gone': True}
         blocked = row.get('preparation_status') == 'blocked'
@@ -13860,7 +13863,7 @@ def app_notice(store, config, tag):
         title = notify.app_line_text(leads[lead][0], row['title']) if text else leads[lead][1]
     else:  # what it is is in its title ("Waiting on Sam: the quote"): nothing in front
         title = notify.clip(row['title'], notify.APP_LINE) if text else t('To-do')
-    body = notify.clip(app_next_step(row, blocked), APP_BODY) if text else ''
+    body = (notify.clip(app_next_step(row, blocked), APP_BODY) if text else '') or t(APP_EMPTY)
     return {'line': title, 'title': title, 'body': body, 'actions': buttons,
             'labels': {'prepare': t('Prepare'), 'snooze': t('Snooze'), 'done': t('Mark done'), 'open': t('Open')},
             'events': {'prepare': t('Preparing it'), 'snooze': t('Snoozed it'), 'done': t('Marked it done'),
@@ -14161,6 +14164,11 @@ def push_send(store, config, subscriptions, payload, label, sender=None, kind=No
     wake = wake or payload.pop('_wake', None) or kind
     # The mobile app's line and a result's state: for its wakeup only, never in the web push
     line, state, detail = payload.pop('_line', None), payload.pop('_state', None), payload.pop('_body', None)
+    if wake == 'fleet' and detail is None and payload.get('body'):  # the app's body under the line, as the web push has it
+        with store.connect() as db:
+            detail = notify.clip(plain(payload['body']), notify.APP_BODY) if security_levels.notify_text(db, True) else ''
+    if not str(payload.get('body') or '').strip():  # never a title alone: a plain line that says nothing of the to-do
+        payload['body'] = i18n.t(APP_EMPTY)
     if kind:
         with store.connect() as db:
             if not notify.allowed(db, kind, 'push'):
@@ -18281,8 +18289,11 @@ class App(*APP_MIXINS):
         root = fleet.dashboard_root(self.config)
         subscriptions, phones = push_reach(self.store, self.config)
         if subscriptions or phones:
-            push_send(self.store, self.config, subscriptions, {'title': i18n.t('Your Fleet'), 'body': text[:200], 'url': root, 'tag': 'fleet-' + anchor},
-                      'fleet=' + anchor, kind='result', wake='fleet')
+            with self.store.connect() as db:
+                show = security_levels.notify_text(db, True)
+            body = text[:200] if show else ''
+            push_send(self.store, self.config, subscriptions, {'title': i18n.t('Fleet update'), 'body': body, 'url': root, 'tag': 'fleet-' + anchor,
+                                                               '_body': notify.clip(plain(body), notify.APP_BODY)}, 'fleet=' + anchor, kind='result', wake='fleet')
         if telegram_on(self.config) and self.notify_on('result', 'telegram'):
             fleet_telegram(self.config, {'text': text, 'buttons': [[{'text': i18n.t('Open in To-dos'), 'url': root}]] if root else []})
 
@@ -21215,16 +21226,18 @@ class App(*APP_MIXINS):
         """Without Telegram the recap's start goes to the dashboard app as a notification: what needs the owner first."""
         with self.store.connect() as db:
             subscriptions = [dict(r) for r in db.execute('SELECT endpoint,p256dh,auth FROM push_subscriptions')]
+            show = security_levels.notify_text(db)
+        body = '\n'.join(message.split('\n')[1:])  # the title says it is the week; the first section leads
         if subscriptions and self.config.get('dashboard_host'):
             root = 'https://' + self.config['dashboard_host'] + self.config.get('dashboard_path', '/')
-            body = '\n'.join(message.split('\n')[1:])  # the title says it is the week; the first section leads
             try:
                 push_node(self.config, {'action': 'send', 'subscriptions': subscriptions,
                                         'payload': {'title': i18n.t('Your week'), 'body': plain(body), 'url': root, 'tag': 'recap-' + week}})
             except (subprocess.TimeoutExpired, ValueError, KeyError) as error:
                 LOG.warning('push recap error=%s', type(error).__name__)
         try:
-            app_wake(self.store, self.config, 'digest', 'recap-' + week)  # the mobile app: a wakeup without text
+            app_wake(self.store, self.config, 'digest', 'recap-' + week, line=i18n.t('Your week'),  # the app asks for both
+                     detail=notify.clip(plain(body), notify.APP_BODY) if show else '')
         except Exception as error:  # noqa: BLE001 - best effort, like the web push
             LOG.warning('app push recap error=%s', type(error).__name__)
         return {'messageId': 'web-recap-' + week}

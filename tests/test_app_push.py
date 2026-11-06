@@ -237,7 +237,7 @@ class AppPush(unittest.TestCase):
             conn.close()
             return r.status, body
         # a tag that is no to-do (the morning, a Fleet question): its kept line, no buttons
-        self.assertEqual(get('/api/notice?tag=card_1'), (200, {'line': 'Ready: Pick a time with Sam', 'title': 'Ready: Pick a time with Sam', 'body': '', 'actions': []}))
+        self.assertEqual(get('/api/notice?tag=card_1'), (200, {'line': 'Ready: Pick a time with Sam', 'title': 'Ready: Pick a time with Sam', 'body': 'Tap to open.', 'actions': []}))
         self.assertEqual(get('/api/notice?tag=card_2'), (200, {'line': '', 'title': '', 'body': '', 'actions': []}))
         self.assertEqual(get('/api/notice'), (200, {'line': '', 'title': '', 'body': '', 'actions': []}))
         sid = self.card('Pick a time with Sam')
@@ -329,7 +329,7 @@ class AppPush(unittest.TestCase):
         with self.store.connect() as db:
             a.security_levels.set_pref(db, 'notify_text', 'off')
         notice = a.app_notice(self.store, self.config, self.card('Pay the secret invoice', status='prepared'))
-        self.assertEqual((notice['title'], notice['body'], notice['actions']), ('Ready', '', ['snooze', 'done']))
+        self.assertEqual((notice['title'], notice['body'], notice['actions']), ('Ready', 'Tap to open.', ['snooze', 'done']))
         self.assertNotIn('secret', json.dumps(notice))
 
     def test_a_todo_that_no_longer_waits_takes_its_notification_away_once(self):
@@ -473,6 +473,53 @@ class AppPush(unittest.TestCase):
             a.security_levels.set_pref(db, 'notify_text', 'off')
         self.app.fleet_notify_brief('Your Fleet today', 'https://m.example/#fleet-brief=' + fl, titles)
         self.assertEqual(a.app_notice(self.store, self.config, 'fleet-brief-' + fl)['body'], '3 things for the team')
+
+    def test_a_fleet_update_has_its_line_under_a_title_that_says_what_it_is(self):
+        # The phone showed "Your Fleet" with nothing under it (fleet_tell): its line was the title, its body never kept
+        self.register(fetch=True)
+        self.app.action('push_subscribe', SUB, owner_dashboard=True)
+        web = patch_everywhere(a, 'push_node', side_effect=lambda config, request: self.sender(request))
+        web.start(); self.addCleanup(web.stop)
+        self.app.fleet_tell('Pat accepted your handoff.', 'q_' + 'c' * 16)
+        notice = a.app_notice(self.store, self.config, 'fleet-q_' + 'c' * 16)
+        self.assertEqual((notice['title'], notice['body']), ('Fleet update', 'Pat accepted your handoff.'))
+        self.assertEqual((self.web[-1]['payload']['title'], self.web[-1]['payload']['body']), ('Fleet update', 'Pat accepted your handoff.'))
+        self.assertNotIn('Pat', json.dumps(self.wakes()))  # the line stays on the Machine
+        # a Fleet question and a notice keep their body for the app too
+        rows = [{'id': 'q_1', 'name': 'Kim Lee', 'kind': 'intro', 'question': json.dumps({'about': 'Acme'})}]
+        with patch.object(a.fleet, 'push_payload', return_value={'title': "Kim's Machine asks", 'body': 'An intro to Acme?', 'url': '.', 'tag': 'fleet-q_1'}):
+            a.fleet_push(self.store, self.config, rows, self.sender)
+        self.assertEqual(a.app_notice(self.store, self.config, 'fleet-q_1')['body'], 'An intro to Acme?')
+        # Text in notifications off: the title and a plain line, nothing of what happened
+        with self.store.connect() as db:
+            a.security_levels.set_pref(db, 'notify_text', 'off')
+        self.app.fleet_tell('Pat accepted your handoff.', 'q_' + 'd' * 16)
+        notice = a.app_notice(self.store, self.config, 'fleet-q_' + 'd' * 16)
+        self.assertEqual((notice['title'], notice['body']), ('Fleet update', 'Tap to open.'))
+        self.assertEqual(self.web[-1]['payload']['body'], 'Tap to open.')
+
+    def test_a_reminder_for_a_prepared_todo_says_it_is_ready_and_never_shows_a_title_alone(self):
+        # "A to-do is waiting for you" with nothing under it: a reminder for a prepared to-do woke the phone without
+        # its state, and the app could not reach the Machine. Now the relay's fixed words say ready or needs-you.
+        self.register(fetch=True)
+        self.app.action('push_subscribe', SUB, owner_dashboard=True)
+        for sid, row, state in (('card_r1', {'status': 'prepared'}, 'ready'), ('card_r2', {'status': 'accepted', 'preparation_status': 'blocked'}, 'needs')):
+            a.push_notify(self.store, self.config, {'id': sid, 'title': 'Pay the invoice', 'body': 'B', 'reminder': True, **row}, self.sender)
+            self.assertEqual((self.wakes()[-1]['kind'], self.wakes()[-1].get('state')), ('result', state))
+        # Every push has a line under its title: the web push and the phone's notice, also with Text in notifications off
+        with self.store.connect() as db:
+            a.security_levels.set_pref(db, 'notify_text', 'off')
+        sid = self.card('Pay the secret invoice', status='prepared')
+        a.push_notify(self.store, self.config, {'id': sid, 'title': 'Pay the secret invoice', 'body': 'B', 'status': 'prepared', '_result_notice': True}, self.sender)
+        self.assertEqual((self.web[-1]['payload']['title'], self.web[-1]['payload']['body']), ('Ready', 'Tap to open.'))
+        self.assertEqual(a.app_notice(self.store, self.config, sid)['body'], 'Tap to open.')
+        self.assertNotIn('secret', json.dumps(self.web[-1]))
+
+    def test_the_weekly_recap_wakes_the_phone_with_a_line_and_a_body(self):
+        self.register(fetch=True)
+        self.app.recap_push('Your week\nNeeds you first: Reply to Sam\nDone: 4', '2026-W45')
+        notice = a.app_notice(self.store, self.config, 'recap-2026-W45')
+        self.assertEqual((notice['title'], notice['body']), ('Your week', 'Needs you first: Reply to Sam Done: 4'))
 
     def test_devices_the_cloud_dropped_go_here_too(self):
         self.register()

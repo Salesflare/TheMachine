@@ -1368,7 +1368,7 @@ def notice_push(view, root):
     """The phone notification for a notice: its line, opening the Fleet tab at it."""
     title = t({'seat_request': 'Your Fleet asks you', 'seat_confirmed': 'Your Machine was confirmed',
                'seat_declined': 'Your Machine was not confirmed', 'friend_request': 'Friend request',
-               'friend_accepted': 'Friends now'}.get(view['kind'], 'Your Fleet'))
+               'friend_accepted': 'Friends now'}.get(view['kind'], 'Fleet update'))
     return {'title': title, 'body': view['text'], 'url': (root + '#fleet=' + view['id']) if root else view['url'],
             'tag': 'fleet-' + view['id']}
 
