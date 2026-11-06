@@ -18,6 +18,8 @@ Quand vous transférez une tâche **Par e-mail**, appuyez sur **Ajouter une page
 
 La tâche et ce que vous avez choisi de montrer, avec trois réponses : Je m’en occupe, Fait, ou Je ne peux pas. Sa réponse revient sur votre tâche.
 
+Appuyez sur **Page de tâche** sur la tâche pour l’ouvrir dans votre navigateur, telle que la personne la voit.
+
 La page est scellée avec une clé qui se trouve uniquement dans le lien. Nos serveurs savent seulement à quelle étape elle en est.
 
 ## Arrêter le partage

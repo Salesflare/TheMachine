@@ -11,8 +11,10 @@ function taskPageBlock(s){const p=s.task_page,id=s.id;if(!p)return'';
  const until=tpDay(p.until),led=taskPageSent(s,taskActions(s))&&p.lead,earlier=(p.answers||[]).slice(0,led?-1:undefined);
  const answers=html`${earlier.reverse().map(x=>html`<div class="tp-reply"><b>Reply on the task page:</b> ${TP_SAID[x.answer]||''}${x.note?html`<q>${x.note}</q>`:''}<small>${tpDay(x.at)}</small></div>`)}`;
  const stop=html`<span class="tp-dot" aria-hidden="true">·</span><button type="button" class="tp-stop" data-tp-stop="${id}">Stop sharing</button>`;
- const line=p.state==='shared'?html`<span class="tp-what"><b>Task page</b> until <span class="tp-nw">${until}</span></span>${stop}`
-  :p.state==='done'?html`<span class="tp-what"><b>Task page</b> ends <span class="tp-nw">${until}</span></span>${stop}`
+ // The page as they see it: opens outside the dashboard (a new tab; the phone app hands it to the browser)
+ const name=safeURL(p.link)?html`<a class="tp-open" href="${p.link}" target="_blank" rel="noreferrer">Task page<span aria-hidden="true"> ↗</span></a>`:html`<b>Task page</b>`;
+ const line=p.state==='shared'?html`<span class="tp-what"><span class="tp-name">${name}</span> until <span class="tp-nw">${until}</span></span>${stop}`
+  :p.state==='done'?html`<span class="tp-what"><span class="tp-name">${name}</span> ends <span class="tp-nw">${until}</span></span>${stop}`
   :html`<span>${p.state==='stopped'?'Task page stopped. The link no longer works.':'Task page ended.'}</span>`;
  return html`<div class="tp-shared">${line}</div>${answers}`}
 // Once the email went out, it folds into one quiet line that opens to the email itself.

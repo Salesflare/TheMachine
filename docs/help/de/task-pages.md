@@ -18,6 +18,8 @@ Wenn du eine Aufgabe **Per E-Mail** übergibst, tippe auf **Aufgabenseite hinzuf
 
 Die Aufgabe und was du zeigen wolltest, mit drei Antworten: Ich kümmere mich, Erledigt oder Kann ich nicht. Ihre Antwort kommt bei deiner Aufgabe zurück.
 
+Tippe bei der Aufgabe auf **Aufgabenseite**, um sie in deinem Browser so zu öffnen, wie die Person sie sieht.
+
 Die Seite ist mit einem Schlüssel versiegelt, der nur im Link steckt. Unsere Server erfahren nur, bei welchem Schritt sie ist.
 
 ## Nicht mehr teilen

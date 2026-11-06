@@ -18,6 +18,8 @@ Quando você passa uma tarefa **Por e-mail**, clique em **Adicionar uma página 
 
 A tarefa e o que você escolheu mostrar, com três respostas: Estou cuidando disso, Feito ou Não consigo fazer. A resposta volta na sua tarefa.
 
+Clique em **Página da tarefa** na tarefa para abri-la no navegador do jeito que a pessoa vê.
+
 A página é selada com uma chave que só existe no link. Nossos servidores só sabem em que etapa ela está.
 
 ## Pare de compartilhar

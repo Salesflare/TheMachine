@@ -4,6 +4,7 @@ sent anywhere (no email, Telegram or push)."""
 import json
 import unittest
 
+import fleet
 import task_invites
 import task_pages
 import test_fleet_requests as tr
@@ -197,6 +198,18 @@ class TaskPages(unittest.TestCase):
         self.assertNotIn('key', record)  # and the key is gone here
         with self.assertRaisesRegex(ValueError, 'no task page to stop'):
             self.app.action('task_page_stop', {'suggestion_id': card}, owner_dashboard=True)
+
+    def test_the_owner_can_open_the_page_while_it_is_live(self):
+        card = self.handed()
+        self.share(card)
+        key = task_invites.LINK.search(self.body(card)).group(2)
+        self.assertEqual(self.status(card)['link'], f'https://app.example.test/t/{LINK_ID}#k={key}')  # the same link as in the email
+        # A page shared before its link was kept: the hosted Network serves it
+        state, record = self.app.task_pages.load(card)
+        self.app.task_pages.save(card, state, {k: v for k, v in record.items() if k != 'url'})
+        self.assertEqual(self.status(card)['link'], f'{fleet.CONTROL}/t/{LINK_ID}#k={key}')
+        self.app.action('task_page_stop', {'suggestion_id': card}, owner_dashboard=True)
+        self.assertNotIn('link', self.status(card))  # stopped: nothing to open
 
     def test_stop_before_sending_takes_the_line_out_of_the_draft(self):
         card = self.handed()

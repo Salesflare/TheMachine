@@ -18,6 +18,8 @@ Quando passi un’attività **Via email**, premi **Aggiungi una pagina attività
 
 L’attività e quello che hai scelto di mostrare, con tre risposte: Ci penso io, Fatto, o Non posso farlo. La risposta torna sulla tua attività.
 
+Premi **Pagina dell’attività** sull’attività per aprirla nel browser così come la vede l’altra persona.
+
 La pagina è sigillata con una chiave che si trova solo nel link. I nostri server sanno solo a che punto è.
 
 ## Interrompi condivisione
