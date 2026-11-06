@@ -24,7 +24,7 @@ SKIP = {'LICENSE', 'THIRD_PARTY_NOTICES.md', 'TRADEMARKS.md', 'package-lock.json
 SUFFIXES = {'.py', '.md', '.html', '.mjs', '.js', '.ts', '.json', '.sh', '.ps1', '.webmanifest', '.yml', '.yaml', '.txt'}
 # (file, words on the line): kept on purpose
 ALLOWED = [
-    ('assistant.py', 'learned|learnt|remembered'),  # matches what the model writes
+    ('chat.py', 'learned|learnt|remembered'),  # matches what the model writes (machine/chat.py)
     ('skills.py', "'LICENCE'"),  # a file name in third-party skills
     ('shell-keys.js', "keywords:'organisation organization"),  # the palette finds it typed either way (dashboard/)
     ('test_dismiss_and_snooze.py', "I didn't realise"),  # a reason as the owner types it
