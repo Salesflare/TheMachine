@@ -8,6 +8,7 @@ from unittest.mock import patch
 
 from test_assistant import assistant as a, event
 import graph
+from seams import patch_everywhere  # noqa: E402
 
 
 class DonePages(unittest.TestCase):
@@ -17,11 +18,11 @@ class DonePages(unittest.TestCase):
         self.store.commit_page('work', {}, [event()])
         self.ids = []
         for n in range(75):
-            with patch.object(a, 'now', return_value=f'2026-10-01T10:{n // 60:02d}:{n % 60:02d}+00:00'):
+            with patch_everywhere(a, 'now', return_value=f'2026-10-01T10:{n // 60:02d}:{n % 60:02d}+00:00'):
                 sid = self.store.suggest(f'task-{n}', f'Card {n:02d}' + (' invoice' if n % 10 == 0 else ''), 'Body', [1])['id']
             self.ids.append(sid)
         for n, sid in enumerate(self.ids):  # closed in the reverse order they were made
-            with patch.object(a, 'now', return_value=f'2026-10-02T10:{(74 - n) // 60:02d}:{(74 - n) % 60:02d}+00:00'):
+            with patch_everywhere(a, 'now', return_value=f'2026-10-02T10:{(74 - n) // 60:02d}:{(74 - n) % 60:02d}+00:00'):
                 self.store.decide(sid, 'complete', '', 'done-' + sid, 'dashboard')
         self.store.suggest('task-open', 'Still open', 'Body', [1])
 
@@ -61,10 +62,10 @@ class DoneByWhenClosed(unittest.TestCase):
         self.store.commit_page('work', {}, [event()])
         self.ids = []
         for n in range(101):
-            with patch.object(a, 'now', return_value=f'2026-10-01T10:{n // 60:02d}:{n % 60:02d}+00:00'):
+            with patch_everywhere(a, 'now', return_value=f'2026-10-01T10:{n // 60:02d}:{n % 60:02d}+00:00'):
                 self.ids.append(self.store.suggest(f'task-{n}', f'Card {n:03d}', 'Body', [1])['id'])
         for n, sid in enumerate(self.ids[1:] + self.ids[:1]):  # the oldest one closed last, like a send tonight
-            with patch.object(a, 'now', return_value=f'2026-10-02T10:{n // 60:02d}:{n % 60:02d}+00:00'):
+            with patch_everywhere(a, 'now', return_value=f'2026-10-02T10:{n // 60:02d}:{n % 60:02d}+00:00'):
                 self.store.decide(sid, 'complete', '', 'done-' + sid, 'dashboard')
 
     def test_status_sends_the_hundred_closed_last_with_when(self):
@@ -87,7 +88,7 @@ class DoneByWhenClosed(unittest.TestCase):
         self.assertEqual(a.card_recipients(None), '')
 
     def test_one_that_looks_done_says_since_when(self):
-        with patch.object(a, 'now', return_value='2026-10-03T09:00:00+00:00'):
+        with patch_everywhere(a, 'now', return_value='2026-10-03T09:00:00+00:00'):
             sid = self.store.suggest('task-hint', 'Answer Elif', 'Body', [1])['id']
         with self.store.connect() as db:
             db.execute('UPDATE suggestions SET handled_hint=? WHERE id=?', (json.dumps({'reason': 'Elif confirmed it', 'at': '2026-10-03T11:00:00+00:00'}), sid))

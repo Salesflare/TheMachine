@@ -5,6 +5,7 @@ import re
 import tempfile
 import unittest
 from unittest.mock import patch
+from seams import patch_everywhere  # noqa: E402
 
 spec=importlib.util.spec_from_file_location('source_notes_assistant',Path(__file__).parent.parent.joinpath('assistant.py'))
 a=importlib.util.module_from_spec(spec);spec.loader.exec_module(a)
@@ -68,7 +69,7 @@ class PromptsCarryTheirNotes(unittest.TestCase):
 
     def test_review_gets_the_notes_of_this_machines_sources_only(self):
         runner=Runner('admitted')
-        with patch.object(a,'now',return_value=T.isoformat()):self.app.review_step(runner)
+        with patch_everywhere(a,'now',return_value=T.isoformat()):self.app.review_step(runner)
         message=runner.requests[0]['message']
         self.assertIn('**Gmail.**',message);self.assertIn('**Intercom**',message)
         self.assertNotIn('**X**',message);self.assertNotIn('**Stripe**',message);self.assertNotIn('**Slack.**',message)

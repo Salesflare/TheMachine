@@ -16,6 +16,7 @@ from unittest.mock import patch
 import assistant
 import onboarding
 import preparation_state
+from seams import patch_everywhere  # noqa: E402
 
 TAB = 'A0F20ED451EA2A1247613CAB889F3BCB'
 OTHER = 'DF829ED2FFBB4631972AF70080134B94'
@@ -149,7 +150,7 @@ class MessageCacheTest(unittest.TestCase):
             reads.append(args[5]['id'])
             time.sleep(0.05)
             return {'id': args[5]['id'], 'payload': {}}
-        with patch.object(assistant, 'gog_read', side_effect=read):
+        with patch_everywhere(assistant, 'gog_read', side_effect=read):
             threads = [threading.Thread(target=app.gmail_message, args=('work', 'm1')) for _ in range(3)]
             for t in threads:
                 t.start()
@@ -192,7 +193,7 @@ class WebConnectTest(unittest.TestCase):
             typed['ok'] = ui.yes('Also read old mail?')
             typed['email'] = ui.ask('Address', 'owner@example.org')
             return {'id': 'acme-crm', 'boundary': boundary}
-        with patch.object(onboarding, 'connect', connect), patch.object(assistant, 'restart_self', return_value=True) as restart:
+        with patch.object(onboarding, 'connect', connect), patch_everywhere(assistant, 'restart_self', return_value=True) as restart:
             with self.assertRaises(ValueError):
                 self.app.action('connect_start', {'source': 'crm'})  # not from the dashboard
             view = self.app.action('connect_start', {'source': 'crm'}, owner_dashboard=True)
@@ -378,7 +379,7 @@ class ReconnectDisconnectTest(unittest.TestCase):
         def connect(path, name, ui, account_id=None, restart=True):
             seen.update(name=name, account=account_id, again=ui.reconnect)
             return {'id': account_id or 'new'}
-        with patch.object(onboarding, 'connect', connect), patch.object(assistant, 'restart_self', return_value=True):
+        with patch.object(onboarding, 'connect', connect), patch_everywhere(assistant, 'restart_self', return_value=True):
             view = self.finish(self.app.action('connect_start', {'name': 'outlook', 'source': 'dashboard'}, owner_dashboard=True))
             self.assertEqual((view['state'], seen), ('done', {'name': 'outlook', 'account': None, 'again': False}))
             view = self.finish(self.app.action('connect_start', {'name': 'gmail', 'account': 'work-gmail', 'source': 'dashboard'}, owner_dashboard=True))
@@ -391,7 +392,7 @@ class ReconnectDisconnectTest(unittest.TestCase):
     def test_disconnect_takes_it_out_of_the_settings_and_keeps_the_rest(self):
         with self.assertRaises(ValueError):
             self.app.action('connect_remove', {'account': 'work-slack'})  # not from the dashboard
-        with patch.object(assistant, 'restart_self', return_value=True) as restart:
+        with patch_everywhere(assistant, 'restart_self', return_value=True) as restart:
             self.assertEqual(self.app.action('connect_remove', {'account': 'work-slack'}, owner_dashboard=True),
                              {'removed': 'work-slack', 'restarting': True})
         restart.assert_called_once()
@@ -404,7 +405,7 @@ class ReconnectDisconnectTest(unittest.TestCase):
         self.app.config['manage_url'] = 'https://cp.example.org/setup'  # the account page signs it in; marking stays here
         with self.assertRaises(ValueError):
             self.app.action('connect_scope', {'account': 'work-gmail', 'boundary': 'personal'})  # not from the dashboard
-        with patch.object(assistant, 'restart_self', return_value=True):
+        with patch_everywhere(assistant, 'restart_self', return_value=True):
             self.assertEqual(self.app.action('connect_scope', {'account': 'hosted-outlook', 'boundary': 'personal'}, owner_dashboard=True),
                              {'changed': ['work-gmail', 'hosted-outlook'], 'restarting': True})
             saved = {a['id']: a for a in json.loads(self.path.read_text())['accounts']}

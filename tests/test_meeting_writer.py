@@ -16,6 +16,7 @@ a = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(a)
 import meeting_notes  # noqa: E402
 import meeting_writer  # noqa: E402
+from seams import patch_everywhere  # noqa: E402
 
 WORK = {'id': 'cal', 'email': 'owner@example.com', 'service': 'calendar', 'boundary': 'work:Example'}
 # A 2h15m meeting, about 150,000 characters: three parts
@@ -61,7 +62,7 @@ class MeetingWriter(unittest.TestCase):
         with self.store.connect() as db:
             self.ids = {r['source_id']: r['id'] for r in db.execute("SELECT id,source_id FROM events WHERE kind='calendar.event'")}
         self.board = self.ids['board']
-        self.tz = patch.object(a, 'local_tz', return_value=a.ZoneInfo('Europe/Brussels'))
+        self.tz = patch_everywhere(a, 'local_tz', return_value=a.ZoneInfo('Europe/Brussels'))
         self.tz.start()
         self.addCleanup(self.tz.stop)
 

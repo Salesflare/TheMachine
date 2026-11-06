@@ -7,6 +7,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
+from seams import patch_everywhere  # noqa: E402
 
 spec = importlib.util.spec_from_file_location('assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 assistant = importlib.util.module_from_spec(spec)
@@ -31,7 +32,7 @@ class FactKinds(unittest.TestCase):
         self.store.decide(self.sid, 'reject', 'we stopped using them', 'owner-note', 'dashboard')
 
     def at(self, when):
-        return patch.object(assistant, 'now', return_value=when)
+        return patch_everywhere(assistant, 'now', return_value=when)
 
     def test_a_fact_keeps_its_sort_and_end_day_and_an_event_ends_by_itself(self):
         with self.at(NOW):

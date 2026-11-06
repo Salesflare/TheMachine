@@ -9,6 +9,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
+from seams import patch_everywhere  # noqa: E402
 
 spec = importlib.util.spec_from_file_location('newcard_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
@@ -248,7 +249,7 @@ class NewCard(unittest.TestCase):
         self.store.commit_page('w', {}, [mail('m1')])
         made = self.new(attach=[1], scope='work')
         self.review(event_ids=[made['event_id']])
-        with patch.object(a.dt, 'datetime', Daytime), patch.object(a, 'telegram') as telegram, patch.object(a.subprocess, 'run') as run:
+        with patch.object(a.dt, 'datetime', Daytime), patch_everywhere(a, 'telegram') as telegram, patch.object(a.subprocess, 'run') as run:
             a.deliver(self.store, {'telegram_owner': 'owner', 'accounts': ACCOUNTS})
         telegram.assert_not_called(); run.assert_not_called()
         with self.store.connect() as db:

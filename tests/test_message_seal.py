@@ -20,6 +20,7 @@ spec.loader.exec_module(assistant)
 import learnings
 import message_seal
 import moving
+from seams import patch_everywhere  # noqa: E402
 
 CANARY = 'Zanzibarquill'  # in every message's text; never in a sealed database's files
 SOURCES = ['gmail.message', 'outlook.message', 'imap.message', 'slack.message', 'whatsapp.message', 'telegram.message',
@@ -428,9 +429,7 @@ class Protected(unittest.TestCase):
         self.assertTrue(app.protection_waits)
         self.assertFalse(assistant.Store(self.path, protect=None).protected)
         restarts = []
-        original = assistant.restart_self
-        assistant.restart_self = lambda: restarts.append(1) or True
-        try:
+        with patch_everywhere(assistant, 'restart_self', lambda: restarts.append(1) or True):
             waiter = __import__('threading').Thread(target=app.protection_waiter, kwargs={'every': 0.05})
             waiter.start()
             __import__('time').sleep(0.3)
@@ -438,8 +437,6 @@ class Protected(unittest.TestCase):
             with sqlite3.connect(self.path) as db:
                 db.execute("UPDATE review_runs SET status='complete'")
             waiter.join(5)
-        finally:
-            assistant.restart_self = original
         self.assertEqual(restarts, [1])
         self.assertTrue(assistant.Store(self.path, protect=app.protection_now(app.config)).protected)
         self.assertFalse(app.protection_waits)

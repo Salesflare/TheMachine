@@ -2,6 +2,7 @@ import test_ux as ux
 a=ux.a
 from unittest.mock import patch
 import unittest,json,sqlite3,subprocess
+from seams import patch_everywhere  # noqa: E402
 
 class FeedbackPrompts(unittest.TestCase):
     setUp=ux.UX.setUp
@@ -18,7 +19,7 @@ class FeedbackPrompts(unittest.TestCase):
     def prompt(self):
         with self.store.connect() as db:return dict(db.execute('SELECT * FROM feedback_prompts').fetchone())
     def later(self):
-        return patch.object(a,'now',return_value=(a.dt.datetime.fromisoformat(a.now())+a.dt.timedelta(seconds=90)).isoformat())
+        return patch_everywhere(a,'now',return_value=(a.dt.datetime.fromisoformat(a.now())+a.dt.timedelta(seconds=90)).isoformat())
     def test_repeated_click_and_callback_replay_have_one_admission(self):
         app=self.app();self.request(app);self.request(app);self.request(app,'second-click')
         calls=[]
@@ -27,7 +28,7 @@ class FeedbackPrompts(unittest.TestCase):
         self.assertEqual(len(calls),1);self.assertEqual(self.prompt()['message_id'],'41')
     def test_unknown_native_outcome_is_held_without_fallback(self):
         app=self.app();self.request(app)
-        with patch.object(a,'telegram_request') as plain:
+        with patch_everywhere(a,'telegram_request') as plain:
             self.assertEqual(app.feedback_prompt_step(sender=lambda row:{}),'uncertain')
             self.request(app)
             with self.later():app.feedback_prompt_step(sender=lambda row:self.fail('Repeated native send'))
@@ -42,7 +43,7 @@ class FeedbackPrompts(unittest.TestCase):
         self.assertEqual(self.prompt()['status'],'sent');self.assertEqual(self.row()['feedback_prompt_message_id'],'41')
     def test_plain_unknown_response_never_resends(self):
         app=self.app();self.request(app);app.feedback_prompt_step(sender=lambda row:{'definitely_not_sent':True})
-        with self.later(),patch.object(a,'telegram_request',side_effect=subprocess.TimeoutExpired('Synthetic response lost',60)) as send:
+        with self.later(),patch_everywhere(a,'telegram_request',side_effect=subprocess.TimeoutExpired('Synthetic response lost',60)) as send:
             app.feedback_prompt_step();self.request(app);app.feedback_prompt_step()
             self.assertEqual(send.call_count,1)
         with self.later():app.feedback_prompt_step(sender=lambda row:self.fail('Resend'))
@@ -60,7 +61,7 @@ class FeedbackPrompts(unittest.TestCase):
     def test_legacy_unconfirmed_fallback_never_sends(self):
         app=self.app();args={'suggestion_id':self.sid,'request_id':'old','card_message_id':'40'}
         app.action('request_feedback',{**args,'defer_prompt':True})
-        with patch.object(a,'telegram_request') as send:
+        with patch_everywhere(a,'telegram_request') as send:
             app.action('request_feedback',{**args,'fallback_prompt':True});app.feedback_prompt_step()
             send.assert_not_called()
         self.assertEqual(self.prompt()['status'],'uncertain')
@@ -68,7 +69,7 @@ class FeedbackPrompts(unittest.TestCase):
         app=self.app();self.request(app)
         # Telegram cannot deliver before send admission; cross a second deterministically.
         attempted=(a.dt.datetime.fromisoformat(self.prompt()['created_at'])+a.dt.timedelta(seconds=2)).isoformat()
-        with patch.object(a,'now',return_value=attempted):app.feedback_prompt_step(sender=lambda row:{})
+        with patch_everywhere(a,'now',return_value=attempted):app.feedback_prompt_step(sender=lambda row:{})
         base={'message_id':41,'date':int(a.dt.datetime.fromisoformat(self.prompt()['attempted_at']).timestamp()),'from':{'is_bot':True},'chat':{'id':1000001},'reply_to_message':{'message_id':40},'text':a.prompt_text('Prepare a draft')}
         with sqlite3.connect(app.config['openclaw_state']) as db:
             db.execute('CREATE TABLE plugin_state_entries(plugin_id,namespace,value_json)')

@@ -4,6 +4,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 import test_ux as ux
+from seams import patch_everywhere  # noqa: E402
 a = ux.a
 
 NOW = '2026-10-16T10:00:00+00:00'
@@ -52,7 +53,7 @@ class Slipped(unittest.TestCase):
             return [db.execute('SELECT id FROM events WHERE source_id=?', (s,)).fetchone()[0] for s in source_ids]
 
     def test_candidates_are_real_unanswered_questions(self):
-        with patch.object(a, 'now', return_value=NOW):
+        with patch_everywhere(a, 'now', return_value=NOW):
             text = self.store.slipped('run-1')
         s1, q1 = self.ids('s1', 'q1')
         self.assertEqual(text.splitlines(), [
@@ -60,21 +61,21 @@ class Slipped(unittest.TestCase):
             f'- Waiting 4 days on the owner: sam@client.example asked "Invoice" on Mon, Oct 12 (work, event {q1}).'])
 
     def test_offered_once_to_a_review_that_saves(self):
-        with patch.object(a, 'now', return_value=NOW):
+        with patch_everywhere(a, 'now', return_value=NOW):
             self.assertTrue(self.store.slipped('run-1'))
             self.assertEqual(self.store.slipped('run-2'), '')  # just offered
         later = '2026-10-16T18:00:00+00:00'
-        with patch.object(a, 'now', return_value=later):
+        with patch_everywhere(a, 'now', return_value=later):
             self.assertEqual(len(self.store.slipped('run-3').splitlines()), 2)  # run-1 never saved: offered again
             with self.store.connect() as db:
                 db.execute("INSERT INTO analyses(id,started_at,items,status,owner_run) VALUES('x',?,'[]','complete','run-3')", (later,))
-        with patch.object(a, 'now', return_value='2026-10-17T10:00:00+00:00'):
+        with patch_everywhere(a, 'now', return_value='2026-10-17T10:00:00+00:00'):
             self.assertEqual(self.store.slipped('run-4'), '')
         # Something already on a card isn't offered at all.
         self.store.commit_page('work', {}, [sent('s7', '2026-10-09T09:00:00+00:00', 'kim@client.example', 'Demo', 'Free on Friday?', 't12')])
         [s7] = self.ids('s7')
         self.store.suggest('demo-kim', 'Follow up with Kim', 'Kim hasn’t answered.', [s7])
-        with patch.object(a, 'now', return_value='2026-10-17T10:00:00+00:00'):
+        with patch_everywhere(a, 'now', return_value='2026-10-17T10:00:00+00:00'):
             self.assertEqual(self.store.slipped('run-5'), '')
 
     def test_outreach_is_left_out(self):
@@ -88,7 +89,7 @@ class Slipped(unittest.TestCase):
         # Someone who pitched the owner and got a question back is a conversation, not their outreach.
         self.store.commit_page('work', {}, [mail('p1', '2026-10-07T09:00:00+00:00', 'Pat <pat@vendor.example>', 'owner@example.com', 'Collab', 'Shall we work together?', 'tp1'),
                                             sent('p2', '2026-10-08T09:00:00+00:00', 'pat@vendor.example', 'Re: Collab', 'What do you have in mind?', 'tp1')])
-        with patch.object(a, 'now', return_value=NOW):
+        with patch_everywhere(a, 'now', return_value=NOW):
             text = self.store.slipped('run-1')
         self.assertNotIn('ceo', text)
         self.assertNotIn('lee@prospect.example', text)

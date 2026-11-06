@@ -7,6 +7,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 import dashboard_parts
+from seams import patch_everywhere  # noqa: E402
 
 spec = importlib.util.spec_from_file_location('signin_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
@@ -75,7 +76,7 @@ class SigninHandoff(unittest.TestCase):
         with self.store.connect() as db:
             db.execute('DELETE FROM preparation_calls')
         self.steps(('browser', {'action': 'open', 'targetUrl': 'https://www.example.com/'}))
-        with patch.object(a, 'preparation_steps', return_value=[{'title': 'Opening the account page', 'at': None}]):
+        with patch_everywhere(a, 'preparation_steps', return_value=[{'title': 'Opening the account page', 'at': None}]):
             self.assertEqual(self.app.browser_now()['working'], [{'id': self.sid, 'title': 'Confirm your details', 'step': 'Opening the account page'}])
 
     def test_another_blocker_after_a_command_does_not(self):
@@ -86,7 +87,7 @@ class SigninHandoff(unittest.TestCase):
         # Store had no config: every snapshot failed while a run waited on the browser (2026-10-20).
         self.steps(('browser', {'action': 'open', 'targetUrl': 'https://www.example.com/login'}))
         self.store.config = {}
-        with patch.object(a, 'BROWSER_WAIT', 0):
+        with patch_everywhere(a, 'BROWSER_WAIT', 0):
             snapshot = self.store.snapshot([])
         card = next(s for s in snapshot['suggestions'] if s['id'] == self.sid)
         self.assertEqual(card['preparation_browser']['page'], 'https://www.example.com/login')
@@ -103,7 +104,7 @@ class SigninHandoff(unittest.TestCase):
     def test_the_blocker_notifies_on_telegram_with_the_button(self):
         self.block()
         sent = []
-        with patch.object(a, 'in_hours', return_value=True), patch.object(a, 'telegram_request', side_effect=lambda config, args: (sent.append(args), {'messageId': '7'})[1]):
+        with patch_everywhere(a, 'in_hours', return_value=True), patch_everywhere(a, 'telegram_request', side_effect=lambda config, args: (sent.append(args), {'messageId': '7'})[1]):
             a.deliver_one(self.store, self.app.config, edit_cards=True)  # the card is redrawn
             a.deliver_one(self.store, self.app.config, edit_cards=True)  # and a notification asks for the sign-in
         edit, notice = sent[0], sent[-1]

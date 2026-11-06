@@ -13,6 +13,7 @@ spec = importlib.util.spec_from_file_location('authorship_assistant', Path(__fil
 a = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(a)
 import authorship
+from seams import patch_everywhere  # noqa: E402
 
 OWNER = 'Owner <owner@example.com>'
 DRAFTED = 'Dear Sam,\n\nPlease find the signed contract attached. Let me know if anything is unclear.\n\nKind regards'
@@ -95,10 +96,10 @@ class Authorship(unittest.TestCase):
             db.execute("UPDATE suggestions SET status='prepared',next_action=? WHERE id=?", (json.dumps(draft), other))
             db.execute("INSERT INTO preparations(suggestion_id,decision_id,job_id,status,created_at,updated_at) VALUES(?,'d','jp','done',?,?)",
                        (other, '2026-10-01T10:30:00+00:00', '2026-10-01T10:30:00+00:00'))
-        with patch.object(a, 'now', return_value='2026-10-01T13:00:00+00:00'):
+        with patch_everywhere(a, 'now', return_value='2026-10-01T13:00:00+00:00'):
             self.assertEqual(self.store.learn_sent_elsewhere(), 0)  # the next message in t1 is the first to-do's send
         self.store.commit_page('work', {}, [mail('own2', '2026-10-01T12:30:00+00:00', 'sam, quick one: all fine. cheers')])
-        with patch.object(a, 'now', return_value='2026-10-01T13:00:00+00:00'):
+        with patch_everywhere(a, 'now', return_value='2026-10-01T13:00:00+00:00'):
             self.assertEqual(self.store.learn_sent_elsewhere(), 1)  # their own reply teaches
         with self.store.connect() as db:
             self.assertIn('all fine', db.execute("SELECT after_body FROM draft_edits WHERE source='elsewhere'").fetchone()[0])

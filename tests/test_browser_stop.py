@@ -9,6 +9,7 @@ import tempfile
 import threading
 import unittest
 from unittest.mock import patch
+from seams import patch_everywhere  # noqa: E402
 
 spec = importlib.util.spec_from_file_location('browser_stop_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
@@ -60,7 +61,7 @@ class BrowserStop(unittest.TestCase):
         self.app.config = {'accounts': [], 'database': str(self.root / 'events.sqlite')}
         FakeTab.calls, FakeTab.visible = [], None
         for p in (patch.object(a.browser_login.browser_cdp, 'Session', FakeTab),
-                  patch.object(a, 'preparation_steps', return_value=[{'title': 'Filling in the payment form', 'at': None}])):
+                  patch_everywhere(a, 'preparation_steps', return_value=[{'title': 'Filling in the payment form', 'at': None}])):
             p.start()
             self.addCleanup(p.stop)
 

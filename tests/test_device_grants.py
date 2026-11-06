@@ -20,6 +20,7 @@ import network_crypto as nc
 import onboarding
 from test_connectors import a
 from test_device_connect import context, fleet_with
+from seams import patch_everywhere  # noqa: E402
 
 REFRESH = 'fixture-refresh-token-1'
 DEVICE = 'fixture-device-token'
@@ -259,7 +260,7 @@ class Dashboard(unittest.TestCase):
         docs = {**outlook, 'id': 'acme-docs', 'service': 'docs', 'provider': 'microsoft'}
         app = self.app([outlook, docs])
         mail_grants.put(app.config, 'microsoft', 'dee@acme.example', REFRESH)
-        with patch.object(assistant, 'restart_self', return_value=False):
+        with patch_everywhere(assistant, 'restart_self', return_value=False):
             app.action('connect_remove', {'account': 'acme-outlook'}, owner_dashboard=True)
             self.assertEqual(mail_grants.get(app.config, 'microsoft', 'dee@acme.example'), REFRESH)  # Docs still reads with it
             app.config['accounts'] = [docs]
@@ -272,7 +273,7 @@ class Dashboard(unittest.TestCase):
         calendar = {**gmail, 'id': 'acme-calendar', 'service': 'calendar'}
         app = self.app([gmail, calendar])
         mail_grants.put(app.config, 'google', 'dee@acme.example', REFRESH)
-        with patch('urllib.request.urlopen', side_effect=AssertionError('no call to Google')), patch.object(assistant, 'restart_self', return_value=False):
+        with patch('urllib.request.urlopen', side_effect=AssertionError('no call to Google')), patch_everywhere(assistant, 'restart_self', return_value=False):
             app.action('connect_remove', {'account': 'acme-gmail'}, owner_dashboard=True)
             self.assertEqual(mail_grants.get(app.config, 'google', 'dee@acme.example'), REFRESH)  # Calendar still reads with it
             app.config['accounts'] = [calendar]

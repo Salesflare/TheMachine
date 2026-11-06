@@ -6,6 +6,7 @@ from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
+from seams import patch_everywhere  # noqa: E402
 
 spec = importlib.util.spec_from_file_location('card_titles_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
@@ -99,7 +100,7 @@ class CardTitles(unittest.TestCase):
         with self.store.connect() as db:
             db.execute("INSERT INTO push_subscriptions(endpoint,p256dh,auth,created_at) VALUES('https://push.example/1','k','a',?)", (a.now(),))
         row = {**self.card(), 'id': self.sid, 'reminder': 0}
-        with patch.object(a, 'push_send', lambda store, config, subs, payload, label, sender=None, kind=None: sent.append(payload)):
+        with patch_everywhere(a, 'push_send', lambda store, config, subs, payload, label, sender=None, kind=None: sent.append(payload)):
             a.push_notify(self.store, {'dashboard_host': 'machine.example'}, row)
         self.assertEqual(sent[0]['title'], 'Sam asks for a receipt for the bounty')
 

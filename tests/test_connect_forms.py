@@ -11,6 +11,7 @@ from unittest.mock import patch
 
 import assistant
 import onboarding
+from seams import patch_everywhere  # noqa: E402
 
 ACCOUNTS = [{'id': 'acme-gmail', 'service': 'gmail', 'email': 'owner@acme.example', 'boundary': 'work:Acme', 'boundary_by': 'owner'},
             {'id': 'acme-slack', 'service': 'slack', 'boundary': 'work:Acme'}]
@@ -26,7 +27,7 @@ class FormTest(unittest.TestCase):
         self.app = object.__new__(assistant.App)
         self.app.config, self.app.config_path = json.loads(self.path.read_text()), self.path
         patch.object(onboarding, '_assistant', assistant).start()
-        patch.object(assistant, 'restart_self', return_value=True).start()
+        patch_everywhere(assistant, 'restart_self', return_value=True).start()
         self.addCleanup(patch.stopall)
 
     def act(self, name, args):

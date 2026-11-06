@@ -8,6 +8,7 @@ from unittest.mock import patch
 
 import test_fleet as tf
 from test_fleet import a, fleet, NOW, TEAM, mail
+from seams import patch_everywhere  # noqa: E402
 
 fleet_requests = fleet.fleet_requests
 WORK = {**tf.WORK, 'transport': 'gog'}
@@ -997,7 +998,7 @@ class Requests(unittest.TestCase):
         for name in a.FLEET_REQUEST_ACTIONS:
             with self.assertRaisesRegex(ValueError, 'dashboard'):
                 self.app.action(name, {'id': 'q1', 'source': 'telegram', 'message_id': '77'})
-        with patch.object(a, 'telegram_request', side_effect=AssertionError('no Telegram')), patch.object(a, 'push_node', side_effect=AssertionError('no push')):
+        with patch_everywhere(a, 'telegram_request', side_effect=AssertionError('no Telegram')), patch_everywhere(a, 'push_node', side_effect=AssertionError('no push')):
             self.app.fleet_tell('Pat accepted your handoff.', 'q1')  # neither is configured here: nothing goes out
 
 

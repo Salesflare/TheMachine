@@ -15,6 +15,7 @@ import datetime as dt
 import hashlib
 import http.client
 import http.server
+import importlib.util
 import json
 import os
 import socket
@@ -28,6 +29,10 @@ sys.path.insert(0, str(HERE))
 import guard  # noqa: E402
 import load  # noqa: E402
 import stub_network as network  # noqa: E402
+# The tests' patch helper, loaded by its path so the rest of tests/ stays off sys.path
+_seams = importlib.util.spec_from_file_location('seams', HERE.parent / 'tests' / 'seams.py')
+seams = importlib.util.module_from_spec(_seams)
+_seams.loader.exec_module(seams)
 
 for name in ('http_proxy', 'https_proxy', 'HTTP_PROXY', 'HTTPS_PROXY', 'all_proxy', 'ALL_PROXY'):
     os.environ.pop(name, None)
@@ -80,11 +85,20 @@ def quiet_workers(app, sent):
     app.ai_reach_start = lambda stop: setattr(app, 'ai_reach_loop', type('Ready', (), {'state': 'ready'})())
     import onboarding
     onboarding.missing = lambda config, account: ''  # the made-up accounts count as set up; there is nothing to sign in to
-    assistant.push_send = lambda store, config, subscriptions, payload, label, sender=None: sent.record('push', payload)
-    assistant.fleet_push = lambda store, config, rows, sender=None: sent.record('push', {'fleet_questions': len(rows)})
-    assistant.fleet_notice_push = lambda store, config, view, sender=None: sent.record('push', view)
-    assistant.fleet_telegram = lambda config, message, message_id=None, request=None: sent.record('telegram', message) and {}
-    assistant.telegram = lambda config, row, action, message_id=None: sent.record('telegram', {'card': row.get('id') if hasattr(row, 'get') else None}) and {}
+    # Everywhere each send is bound (assistant and any module its code moved to), so no path around a stub sends
+    for name, stub in send_stubs(sent).items():
+        seams.replace_everywhere(assistant, name, stub)
+
+
+def send_stubs(sent):
+    """The phone and Telegram sends, each recorded in sent.jsonl instead."""
+    return {
+        'fleet_notice_push': lambda store, config, view, sender=None: sent.record('push', view),
+        'fleet_push': lambda store, config, rows, sender=None: sent.record('push', {'fleet_questions': len(rows)}),
+        'fleet_telegram': lambda config, message, message_id=None, request=None: sent.record('telegram', message) and {},
+        'push_send': lambda store, config, subscriptions, payload, label, sender=None: sent.record('push', payload),
+        'telegram': lambda config, row, action, message_id=None: sent.record('telegram', {'card': row.get('id') if hasattr(row, 'get') else None}) and {},
+    }
 
 
 def seed_model(app):

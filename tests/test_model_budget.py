@@ -11,6 +11,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import model_budget as b
+from seams import patch_everywhere  # noqa: E402
 
 spec = importlib.util.spec_from_file_location('budget_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
@@ -304,11 +305,11 @@ class ProviderIsolation(unittest.TestCase):
             {'provider': 'anthropic', 'windows': [{'label': '5h', 'used': 100, 'reset': time.time()+3600}]},
             {'provider': 'openai-codex', 'windows': [{'label': '5h', 'used': 10, 'reset': time.time()+3600}]}]
         app.usage_limit = {'provider': 'anthropic', 'until': time.time()+3600}
-        with patch.object(a, 'openclaw_model', return_value='openai/gpt-6.1-sol'):
+        with patch_everywhere(a, 'openclaw_model', return_value='openai/gpt-6.1-sol'):
             self.assertIsNone(app.background_pause(owner=True))
             self.assertIsNone(app.model_pause())
             self.assertIsNone(app.background_pause(signals=True))
-        with patch.object(a, 'openclaw_model', return_value='claude-cli/opus'):
+        with patch_everywhere(a, 'openclaw_model', return_value='claude-cli/opus'):
             self.assertTrue(app.background_pause(owner=True)['limited'])
 
 

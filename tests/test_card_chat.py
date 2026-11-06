@@ -7,6 +7,7 @@ from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
+from seams import patch_everywhere  # noqa: E402
 
 spec = importlib.util.spec_from_file_location('card_chat_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
@@ -448,7 +449,7 @@ class CardChat(unittest.TestCase):
         def slow(*args, **kwargs):
             self.assertGreaterEqual(kwargs['timeout'], 30)
             raise a.subprocess.TimeoutExpired('node', kwargs['timeout'])
-        with patch.object(a.subprocess, 'run', side_effect=slow), patch.object(a, 'node_bin', return_value='node'), patch.object(a, 'node_env', return_value={}):
+        with patch.object(a.subprocess, 'run', side_effect=slow), patch_everywhere(a, 'node_bin', return_value='node'), patch_everywhere(a, 'node_env', return_value={}):
             self.assertEqual(self.app.card_chat_gateway({'session_key': 'x'}), {'error': 'unavailable', 'reason': 'timeout'})
 
     def test_card_chat_refuses_what_is_not_a_card(self):

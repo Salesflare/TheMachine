@@ -6,6 +6,7 @@ from unittest.mock import patch
 import assistant as a
 import notify
 import timeutil
+from seams import patch_everywhere  # noqa: E402
 
 SUB = {'endpoint': 'https://fcm.googleapis.com/fcm/send/abc', 'keys': {'p256dh': 'B' + 'x' * 86, 'auth': 'y' * 22}}
 UTC = a.dt.timezone.utc
@@ -97,8 +98,8 @@ class Notifications(unittest.TestCase):
         self.mail = lambda url, token, subject, text: self.mails.append((subject, text)) or True
 
     def step(self, clock):
-        with patch.object(notify.time, 'time', return_value=clock), patch.object(a, 'local_tz', return_value=UTC), \
-                patch.object(a, 'credential', return_value='token'):
+        with patch.object(notify.time, 'time', return_value=clock), patch_everywhere(a, 'local_tz', return_value=UTC), \
+                patch_everywhere(a, 'credential', return_value='token'):
             return self.app.notify_step(current=a.dt.datetime.fromtimestamp(clock, UTC), push=self.sender, mail=self.mail)
 
     def deliver(self, sid, clock, row=None):
@@ -281,13 +282,13 @@ class Notifications(unittest.TestCase):
         self.app.action('notify_set', {'kind': 'result', 'channel': 'email', 'on': True}, owner_dashboard=True)
         # Telegram reaches them: no email for a handoff
         self.config['telegram_owner'] = '42'
-        with patch.object(a, 'fleet_telegram', return_value={}), patch.object(a.fleet, 'telegram_message', return_value={}), \
+        with patch_everywhere(a, 'fleet_telegram', return_value={}), patch.object(a.fleet, 'telegram_message', return_value={}), \
                 patch.object(notify.time, 'time', return_value=later):
             self.app.fleet_notify([self.handoff('q_' + 'e' * 16)])
         del self.config['telegram_owner']
         # A phone reaches them: no email either
         self.app.action('push_subscribe', SUB, owner_dashboard=True)
-        with patch.object(a, 'push_send', return_value=[]), patch.object(notify.time, 'time', return_value=later):
+        with patch_everywhere(a, 'push_send', return_value=[]), patch.object(notify.time, 'time', return_value=later):
             self.app.fleet_notify([self.handoff('q_' + 'f' * 16)])
         with self.store.connect() as db:
             self.assertEqual(db.execute("SELECT count(*) FROM notify_queue WHERE channel IN ('handoff','email')").fetchone()[0], 0)
@@ -355,8 +356,8 @@ class Notifications(unittest.TestCase):
         sid = self.card()
         self.app.action('notify_set', {'kind': 'todo', 'channel': 'telegram', 'on': False}, owner_dashboard=True)
         config = dict(self.config, telegram_owner='42')
-        with patch.object(a.dt, 'datetime', Daytime), patch.object(a, 'telegram', side_effect=AssertionError('no Telegram')), \
-                patch.object(a, 'push_notify') as push:
+        with patch.object(a.dt, 'datetime', Daytime), patch_everywhere(a, 'telegram', side_effect=AssertionError('no Telegram')), \
+                patch_everywhere(a, 'push_notify') as push:
             self.assertTrue(a.deliver_one(self.store, config, edit_cards=False))
         self.assertEqual([c.args[2]['id'] for c in push.call_args_list], [sid])
         with self.store.connect() as db:
@@ -365,7 +366,7 @@ class Notifications(unittest.TestCase):
         # Its later edits and result notices never go to Telegram for a card that isn't there.
         with patch.object(a.subprocess, 'run', side_effect=AssertionError('no Telegram helper')):
             self.assertEqual(a.telegram_request(config, {'action': 'edit', 'messageId': message}), {'messageId': message})
-        with patch.object(a, 'telegram_request', side_effect=lambda config, args: args) as request:
+        with patch_everywhere(a, 'telegram_request', side_effect=lambda config, args: args) as request:
             args = a.telegram(dict(config), {'id': sid, 'title': 'T', 'status': 'prepared', 'message_id': message, '_result_notice': True}, 'send')
         self.assertNotIn('replyTo', args)
 
@@ -373,8 +374,8 @@ class Notifications(unittest.TestCase):
         self.card()
         self.app.action('notify_active', {}, owner_dashboard=True)
         seen = []
-        with patch.object(a.dt, 'datetime', Daytime), patch.object(a, 'telegram', side_effect=lambda c, row, action: seen.append(row) or {'messageId': '7'}), \
-                patch.object(a, 'push_notify'):
+        with patch.object(a.dt, 'datetime', Daytime), patch_everywhere(a, 'telegram', side_effect=lambda c, row, action: seen.append(row) or {'messageId': '7'}), \
+                patch_everywhere(a, 'push_notify'):
             a.deliver_one(self.store, dict(self.config, telegram_owner='42'), edit_cards=False)
         self.assertTrue(seen[0]['_silent'])
 
@@ -468,7 +469,7 @@ class Notifications(unittest.TestCase):
             sid = self.card(key=key, title=title)
             with self.store.connect() as db:
                 db.execute('UPDATE suggestions SET created_at=?,due=?,urgent=0 WHERE id=?', (created, due, sid))
-        with patch.object(a, 'local_tz', return_value=UTC), patch.object(a, 'recap_meetings', return_value=[]):
+        with patch_everywhere(a, 'local_tz', return_value=UTC), patch_everywhere(a, 'recap_meetings', return_value=[]):
             digest = self.app.digest(current + a.dt.timedelta(days=2, hours=-1))  # two days on: nothing new overnight, nothing due today
         self.assertIn('Waiting for you\n• Confirm the dentist\n• Send the venue the final count\n• Reply to Sam about the pilot\n• +3 more', digest['text'])
         self.assertEqual(digest['subject'], 'Your morning: 6 waiting')
@@ -476,7 +477,7 @@ class Notifications(unittest.TestCase):
         self.assertEqual([r['id'] for r in order], ['e', 'a', 'c', 'd', 'h', 'b'])
         with self.store.connect() as db:
             db.execute("UPDATE suggestions SET status='completed'")
-        with patch.object(a, 'local_tz', return_value=UTC), patch.object(a, 'recap_meetings', return_value=[]):
+        with patch_everywhere(a, 'local_tz', return_value=UTC), patch_everywhere(a, 'recap_meetings', return_value=[]):
             self.assertIsNone(self.app.digest(current))
 
     def test_the_digest_goes_once_on_the_chosen_channels_and_the_preview_sends_nothing(self):
@@ -485,12 +486,12 @@ class Notifications(unittest.TestCase):
         self.config.update(telegram_owner='42', credentials={'fleet': 'fleet'}, fleet={'url': 'https://cp.example/api/fleet'})
         self.app.action('notify_set', {'kind': 'digest', 'channel': 'telegram', 'on': True}, owner_dashboard=True)
         self.app.action('notify_set', {'kind': 'digest', 'channel': 'email', 'on': True}, owner_dashboard=True)
-        with patch.object(a, 'push_node', side_effect=AssertionError('no push')), patch.object(a, 'telegram_request', side_effect=AssertionError('no Telegram')):
+        with patch_everywhere(a, 'push_node', side_effect=AssertionError('no push')), patch_everywhere(a, 'telegram_request', side_effect=AssertionError('no Telegram')):
             preview = self.app.action('notify_preview', {}, owner_dashboard=True)
         self.assertIn('Answer the school', preview['text'])
         morning = a.dt.datetime(2026, 10, 12, 8, 40, tzinfo=UTC)
         told, mailed = [], []
-        with patch.object(a, 'local_tz', return_value=UTC), patch.object(a, 'credential', return_value='token'), patch.object(self.app, 'digest', return_value=notify.compose([], [], [{'title': 'Answer the school'}])):
+        with patch_everywhere(a, 'local_tz', return_value=UTC), patch_everywhere(a, 'credential', return_value='token'), patch.object(self.app, 'digest', return_value=notify.compose([], [], [{'title': 'Answer the school'}])):
             went = self.app.digest_step(current=morning, push=self.sender, telegram_send=told.append,
                                         mail=lambda url, token, subject, text: mailed.append((url, token, subject)) or True)
             self.assertEqual(went, ['push', 'telegram', 'email'])
@@ -503,11 +504,11 @@ class Notifications(unittest.TestCase):
     def test_no_digest_when_there_is_nothing_or_it_is_turned_off(self):
         self.app.action('push_subscribe', SUB, owner_dashboard=True)
         monday = a.dt.datetime(2026, 10, 12, 8, 40, tzinfo=UTC)
-        with patch.object(a, 'local_tz', return_value=UTC), patch.object(self.app, 'digest', return_value=None):
+        with patch_everywhere(a, 'local_tz', return_value=UTC), patch.object(self.app, 'digest', return_value=None):
             self.assertEqual(self.app.digest_step(current=monday, push=self.sender), [])
         self.app.action('notify_set', {'kind': 'digest', 'channel': 'push', 'on': False}, owner_dashboard=True)
         self.app.action('notify_set', {'kind': 'digest', 'channel': 'email', 'on': False}, owner_dashboard=True)
-        with patch.object(a, 'local_tz', return_value=UTC):
+        with patch_everywhere(a, 'local_tz', return_value=UTC):
             self.assertIsNone(self.app.digest_step(current=monday + a.dt.timedelta(days=1), push=self.sender))
         self.assertEqual(self.sent, [])
 

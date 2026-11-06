@@ -9,6 +9,7 @@ from zoneinfo import ZoneInfo
 import test_ux as ux
 import timeutil
 from test_promises import GMAIL, SLACK, MONDAY, email
+from seams import patch_everywhere  # noqa: E402
 a = ux.a
 
 LONG_MINE = 'mark the Acme Sync and Beta Bridge apps as trusted clients and verify they still work after it'
@@ -46,7 +47,7 @@ class PromiseTitles(unittest.TestCase):
         zone = patch.object(timeutil, 'LOCAL_TZ', ZoneInfo('Europe/Brussels'))
         zone.start()
         self.addCleanup(zone.stop)
-        clock = patch.object(a, 'now', return_value='2026-10-30T07:00:00+00:00')
+        clock = patch_everywhere(a, 'now', return_value='2026-10-30T07:00:00+00:00')
         clock.start()
         self.addCleanup(clock.stop)
         self.store = a.Store(Path(self.tmp.name) / 'events.sqlite')

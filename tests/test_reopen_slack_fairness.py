@@ -5,6 +5,7 @@ import tempfile
 import unittest
 import unittest.mock
 from unittest.mock import patch
+from seams import patch_everywhere  # noqa: E402
 
 spec=importlib.util.spec_from_file_location('assistant_fairness',Path(__file__).parent.parent.joinpath('assistant.py'))
 a=importlib.util.module_from_spec(spec);spec.loader.exec_module(a)
@@ -33,7 +34,7 @@ class ReopenAndSlack(unittest.TestCase):
         self.assertEqual(len(state['decisions']),3)
         self.assertEqual(state['deliveries'][0]['message_id'],'123')
         self.assertEqual(state['deliveries'][0]['status'],'sent')
-        with patch.object(a,'telegram',return_value={'messageId':'123'}) as telegram:
+        with patch_everywhere(a,'telegram',return_value={'messageId':'123'}) as telegram:
             a.deliver(self.store,{})
         self.assertEqual(telegram.call_args.args[2],'edit')
         self.assertEqual(telegram.call_count,1)
@@ -105,7 +106,7 @@ class ReopenAndSlack(unittest.TestCase):
                     return {'channel':{'latest':{'ts':f'{now-3600:.6f}' if params['channel']=='D1' else f'{now-10:.6f}'}}}
                 return {'messages':[{'ts':f'{now-10:.6f}','text':'New','user':'U3'}]}
         source=Source()
-        names=unittest.mock.patch.object(a,'remember_slack_names');names.start();self.addCleanup(names.stop)
+        names=patch_everywhere(a,'remember_slack_names');names.start();self.addCleanup(names.stop)
         a.sync_slack(self.store,{},account,source)  # D1 has nothing new; D2 does
         self.assertEqual(calls,[('conversations.info','D1'),('conversations.info','D2'),('conversations.history','D2')])
         while a.sync_slack(self.store,{},account,source)['more']:pass
@@ -137,7 +138,7 @@ class ReopenAndSlack(unittest.TestCase):
                 if method=='conversations.info':
                     return {'channel':{'latest':{'ts':f'{now-40*86400:.6f}'}}}
                 return {'messages':[{'ts':f'{now-60:.6f}','text':'A new message','user':'U3'}] if params['channel']=='C1' else []}
-        names=unittest.mock.patch.object(a,'remember_slack_names');names.start();self.addCleanup(names.stop)
+        names=patch_everywhere(a,'remember_slack_names');names.start();self.addCleanup(names.stop)
         a.sync_slack(self.store,{},account,Source())
         reads=[c for c in calls if c[0]=='conversations.history']
         self.assertEqual(reads,[('conversations.history','C1')])

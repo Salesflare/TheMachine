@@ -10,6 +10,7 @@ from zoneinfo import ZoneInfo
 import cli
 import test_ux as ux
 import timeutil
+from seams import patch_everywhere  # noqa: E402
 a = ux.a
 
 GMAIL = {'id': 'work', 'email': 'owner@example.com', 'service': 'gmail', 'transport': 'gog', 'boundary': 'work:Example'}
@@ -31,7 +32,7 @@ class Promises(unittest.TestCase):
         zone = patch.object(timeutil, 'LOCAL_TZ', ZoneInfo('Europe/Brussels'))
         zone.start()
         self.addCleanup(zone.stop)
-        self.clock = patch.object(a, 'now', return_value=MONDAY)
+        self.clock = patch_everywhere(a, 'now', return_value=MONDAY)
         self.clock.start()
         self.addCleanup(lambda: self.clock.stop())  # at() swaps the patcher: stop whichever one runs last, or now() stays faked for later tests
         self.store = a.Store(Path(self.tmp.name) / 'events.sqlite')
@@ -43,7 +44,7 @@ class Promises(unittest.TestCase):
 
     def at(self, stamp):
         self.clock.stop()
-        self.clock = patch.object(a, 'now', return_value=stamp)
+        self.clock = patch_everywhere(a, 'now', return_value=stamp)
         self.clock.start()
 
     def app(self):

@@ -12,6 +12,7 @@ import assistant
 import fleet
 import i18n
 import locale_prefs
+from seams import patch_everywhere  # noqa: E402
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
@@ -120,13 +121,13 @@ class OwnersLanguageTest(unittest.TestCase):
         config = {'dashboard_host': 'machine.example', 'telegram_owner': '1'}
         row = {'_result_notice': True, 'title': 'Quote for Acme', 'status': 'prepared', 'id': 'c1', 'message_id': 'web-1'}
         for lang in self.each():
-            with mock.patch.object(assistant, 'telegram_request', side_effect=lambda config, args: args):
+            with patch_everywhere(assistant, 'telegram_request', side_effect=lambda config, args: args):
                 sent = assistant.telegram(config, row, 'send')
             self.assertTrue(sent['message'].startswith(i18n.t('Ready: {}', '**Quote for Acme**', lang=lang)), sent['message'])
             self.assertIn({'nl': 'Klaargezet', 'fr': 'Prêt'}[lang], sent['message'])
             self.assertIn('[' + i18n.t('View result', lang=lang) + ']', sent['message'])
             self.assertNotIn('View result', sent['message'])
-        with mock.patch.object(assistant, 'telegram_request', side_effect=lambda config, args: args):
+        with patch_everywhere(assistant, 'telegram_request', side_effect=lambda config, args: args):
             self.assertTrue(assistant.telegram(config, row, 'send')['message'].startswith('Ready: **Quote for Acme**'))
 
     def test_an_event_line(self):

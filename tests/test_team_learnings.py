@@ -15,6 +15,7 @@ from unittest.mock import patch
 
 import network_crypto as nc
 import team_learnings as tl
+from seams import patch_everywhere  # noqa: E402
 
 PINNED = tl.TEAM_KEY_FINGERPRINT  # as shipped: empty until the team key is made, then its fingerprint
 
@@ -207,7 +208,7 @@ class TeamLearnings(unittest.TestCase):
         ask = self.distil([{'text': 'Drafts for new contacts should introduce the context first.'}])
         self.assertEqual(self.app.action('learnings_later', {'id': ask['id']}, owner_dashboard=True)['team_learnings']['ask'], None)
         self.assertIsNone(self.store.learnings_due())  # not again within the week
-        with patch.object(a, 'now', return_value=(a.dt.datetime.fromisoformat(a.now()) + a.dt.timedelta(days=8)).isoformat()):
+        with patch_everywhere(a, 'now', return_value=(a.dt.datetime.fromisoformat(a.now()) + a.dt.timedelta(days=8)).isoformat()):
             with self.store.connect() as db:
                 db.execute("INSERT INTO facts(text,decision_id,created_at) VALUES('a','d0',?),('b','d1',?),('c','d2',?)", (a.now(),) * 3)
             self.fresh = False  # the error was more than a week ago
@@ -215,7 +216,7 @@ class TeamLearnings(unittest.TestCase):
             self.assertEqual(self.store.learnings_due(), None)  # one waits for the owner: no second one meanwhile
             view = self.app.action('learnings_never', {'id': ask['id']}, owner_dashboard=True)['team_learnings']
             self.assertEqual((view['offer'], view['ask']), (False, None))
-        with patch.object(a, 'now', return_value=(a.dt.datetime.fromisoformat(a.now()) + a.dt.timedelta(days=30)).isoformat()):
+        with patch_everywhere(a, 'now', return_value=(a.dt.datetime.fromisoformat(a.now()) + a.dt.timedelta(days=30)).isoformat()):
             self.assertIsNone(self.store.learnings_due())  # Never ask: no run at all
             with self.store.connect() as db:
                 db.execute("INSERT INTO facts(text,decision_id,created_at) VALUES('d','d0',?),('e','d1',?),('f','d2',?)", (a.now(),) * 3)
@@ -275,7 +276,7 @@ class TeamLearnings(unittest.TestCase):
 
 
     def later(self, **delta):
-        return patch.object(a, 'now', return_value=(a.dt.datetime.fromisoformat(a.now()) + a.dt.timedelta(**delta)).isoformat())
+        return patch_everywhere(a, 'now', return_value=(a.dt.datetime.fromisoformat(a.now()) + a.dt.timedelta(**delta)).isoformat())
 
     def material(self, *texts):
         with self.store.connect() as db:

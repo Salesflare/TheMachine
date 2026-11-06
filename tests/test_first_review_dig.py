@@ -7,6 +7,7 @@ nothing is sent."""
 import datetime as dt, importlib.util, tempfile, time, unittest
 from pathlib import Path
 from unittest.mock import patch
+from seams import patch_everywhere  # noqa: E402
 
 spec = importlib.util.spec_from_file_location('first_review_dig_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
@@ -37,11 +38,11 @@ class FirstReviewDig(unittest.TestCase):
         a.Store.accounts = [{'id': 'work', 'service': 'gmail', 'email': 'me@example.com'}]
         self.addCleanup(setattr, a.Store, 'accounts', [])
         for name, value in (('has_model', True), ('openclaw_model', 'claude-cli/claude-opus-5-5')):
-            p = patch.object(a, name, return_value=value); p.start(); self.addCleanup(p.stop)
+            p = patch_everywhere(a, name, return_value=value); p.start(); self.addCleanup(p.stop)
         self.app.model_usage = None  # an API key or a sign-in that reports no windows, unless a test sets them
 
     def later(self, minutes):
-        return patch.object(a, 'now', return_value=(dt.datetime.now(dt.timezone.utc) + dt.timedelta(minutes=minutes)).isoformat(timespec='seconds'))
+        return patch_everywhere(a, 'now', return_value=(dt.datetime.now(dt.timezone.utc) + dt.timedelta(minutes=minutes)).isoformat(timespec='seconds'))
 
     def step(self, runner, minutes=0):
         with self.later(minutes):

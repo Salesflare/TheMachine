@@ -7,6 +7,7 @@ import subprocess
 import tempfile
 import unittest
 from unittest.mock import patch
+from seams import patch_everywhere  # noqa: E402
 
 spec = importlib.util.spec_from_file_location('assistant_gh_stripe', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
@@ -145,18 +146,18 @@ class Stripe(Base):
                 seen.append(request)
                 return Response(connection)
             return urlopen
-        with patch.object(a, 'credential', return_value='OTHER=x\nKEY=secret\n'), patch('urllib.request.urlopen', opener('conn-1')):
+        with patch_everywhere(a, 'credential', return_value='OTHER=x\nKEY=secret\n'), patch('urllib.request.urlopen', opener('conn-1')):
             self.assertEqual(source.get('v1/account'), {'id': 'acct_1'})
         self.assertEqual(seen[0].get_method(), 'GET')
         self.assertEqual(seen[0].get_header('Authorization'), 'Bearer secret')
         self.assertEqual(seen[0].get_header('Maton-connection'), 'conn-1')
-        with patch.object(a, 'credential', return_value='KEY=secret'), patch('urllib.request.urlopen', opener('conn-2')):
+        with patch_everywhere(a, 'credential', return_value='KEY=secret'), patch('urllib.request.urlopen', opener('conn-2')):
             with self.assertRaises(a.SourceError) as caught:
                 source.get('v1/account')
         self.assertEqual(str(caught.exception), 'connection_identity_mismatch')
         # A restricted key straight to Stripe: same reads, no Maton header to check.
         direct = stripe.Source({}, {**STRIPE, 'transport': 'api', 'credential_variable': None}, H)
-        with patch.object(a, 'credential', return_value='restricted-key'), patch('urllib.request.urlopen', opener(None)):
+        with patch_everywhere(a, 'credential', return_value='restricted-key'), patch('urllib.request.urlopen', opener(None)):
             self.assertEqual(direct.get('v1/account'), {'id': 'acct_1'})
         self.assertEqual(seen[-1].full_url, 'https://api.stripe.com/v1/account')
         self.assertEqual(seen[-1].get_header('Authorization'), 'Bearer restricted-key')

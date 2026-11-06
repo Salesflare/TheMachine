@@ -8,6 +8,7 @@ from unittest.mock import patch
 import next_actions as n
 import test_ux as ux
 import timeutil
+from seams import patch_everywhere  # noqa: E402
 a = ux.a
 li = a.load_connector('linkedin')
 H = a.CONNECTOR_HELPERS
@@ -51,13 +52,13 @@ class LinkedInSource(unittest.TestCase):
 
     def test_sync_is_incremental_dedupes_and_sleeps_at_night(self):
         src = Source([raw(), raw()])
-        with patch.object(a, 'now', return_value=NOW):
+        with patch_everywhere(a, 'now', return_value=NOW):
             self.assertEqual(li.sync(self.store, {}, ACCOUNT, H, src)['events'], 1)
             li.sync(self.store, {}, ACCOUNT, H, src)
         self.assertEqual(src.calls[1], int(a.dt.datetime.fromisoformat(NOW).timestamp() * 1000) - 3600000)
         with self.store.connect() as db:
             self.assertEqual(db.execute('SELECT count(*) FROM events').fetchone()[0], 1)
-        with patch.object(a, 'now', return_value='2026-10-13T23:30:00+00:00'):  # 01:30 local time
+        with patch_everywhere(a, 'now', return_value='2026-10-13T23:30:00+00:00'):  # 01:30 local time
             li.sync(self.store, {}, ACCOUNT, H, src)
         self.assertEqual(len(src.calls), 2)
 
@@ -92,9 +93,9 @@ class LinkedInSource(unittest.TestCase):
                 self.calls.append((since, state))
                 return {'messages': [raw()], 'state': {'cursor': 'page2'} if len(self.calls) == 1 else {}, 'more': len(self.calls) == 1}
         src = Paged()
-        with patch.object(a, 'now', return_value=NOW):
+        with patch_everywhere(a, 'now', return_value=NOW):
             self.assertTrue(li.sync(self.store, {}, ACCOUNT, H, src)['more'])
-        with patch.object(a, 'now', return_value='2026-10-30T10:00:00+00:00'):
+        with patch_everywhere(a, 'now', return_value='2026-10-30T10:00:00+00:00'):
             self.assertFalse(li.sync(self.store, {}, ACCOUNT, H, src)['more'])
         self.assertEqual(src.calls[0][0], src.calls[1][0])
         self.assertEqual(src.calls[1][1], {'cursor': 'page2'})
@@ -195,7 +196,7 @@ class LinkedInSend(unittest.TestCase):
     def test_reply_in_that_conversation_answers_the_card(self):
         self.ready()
         self.confirm()
-        with patch.object(a, 'now', return_value='2026-10-13T10:00:00+00:00'):
+        with patch_everywhere(a, 'now', return_value='2026-10-13T10:00:00+00:00'):
             self.app().action_step(self.transport())
         later = li.event(ACCOUNT, raw(urn='urn:li:msg_message:(urn:li:fsd_profile:ME,2-M2==)', at=1792000000000, text='Great, see you then.'), H)
         own = li.event(ACCOUNT, raw(urn='urn:li:msg_message:(urn:li:fsd_profile:ME,2-M3==)', at=1792000000001, fromMe=True), H)
@@ -434,7 +435,7 @@ class ReadWindow(unittest.TestCase):
                 self.assertEqual(a.read_window(account, at), want)
 
     def test_the_dashboard_gets_it_with_each_source(self):
-        with tempfile.TemporaryDirectory() as tmp, patch.object(a, 'now', return_value='2026-10-28T02:00:00+00:00'), \
+        with tempfile.TemporaryDirectory() as tmp, patch_everywhere(a, 'now', return_value='2026-10-28T02:00:00+00:00'), \
                 patch.object(timeutil, 'LOCAL_TZ', a.ZoneInfo('Europe/Amsterdam')):
             store = a.Store(Path(tmp) / 'events.sqlite')
             found = {c['id']: c['read_window'] for c in store.snapshot([{**ACCOUNT, 'service': 'linkedin'}, {'id': 'gh', 'service': 'github', 'boundary': 'work'}])['connectors']}

@@ -5,6 +5,7 @@ from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
+from seams import patch_everywhere  # noqa: E402
 
 spec = importlib.util.spec_from_file_location('quality_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
@@ -35,7 +36,7 @@ class Base(unittest.TestCase):
             @classmethod
             def now(cls, tz=None):
                 return a.dt.datetime(2026, 10, 14, 12, tzinfo=a.ZoneInfo('Europe/Brussels')).astimezone(tz or a.dt.timezone.utc)
-        with patch.object(a.dt, 'datetime', Noon), patch.object(a, 'telegram', side_effect=lambda *x, **k: (sent.append(x), {'messageId': '7'})[1]):
+        with patch.object(a.dt, 'datetime', Noon), patch_everywhere(a, 'telegram', side_effect=lambda *x, **k: (sent.append(x), {'messageId': '7'})[1]):
             a.deliver_one(self.store, self.app.config, edit_cards=False)
 
 
@@ -50,7 +51,7 @@ class OthersPromises(Base):
                                            'event_ids': [1], 'awaiting_event_id': 1, 'due': '2099-10-20', 'newer_checked': [2], **extra})
 
     def test_follow_up_waits_for_the_deadline_and_needs_their_message(self):
-        with patch.object(a, 'now', return_value='2026-10-19T10:00:00+00:00'):
+        with patch_everywhere(a, 'now', return_value='2026-10-19T10:00:00+00:00'):
             made = self.follow_up()
         self.assertIn('closes itself', made['awaiting'])
         self.assertTrue(made['deliver_after'].startswith('2099-10-21T06:30'))  # the morning after, 08:30 Brussels
@@ -136,7 +137,7 @@ class HitRate(Base):
             for k, sid in ids.items():
                 db.execute('UPDATE suggestions SET created_at=? WHERE id=?', (at[k], sid))
                 db.execute('UPDATE decisions SET created_at=? WHERE suggestion_id=?', (at[k], sid))
-        with patch.object(a, 'now', return_value='2026-10-15T10:00:00+00:00'):
+        with patch_everywhere(a, 'now', return_value='2026-10-15T10:00:00+00:00'):
             t = self.store.quality_trend()
         days = {d['start']: d for d in t['daily']}
         self.assertEqual((len(t['daily']), t['daily'][-1]['start'], len(t['weekly']), t['weekly'][-1]['start']), (14, '2026-10-15', 8, '2026-10-12'))
@@ -147,7 +148,7 @@ class HitRate(Base):
         with self.store.connect() as db:  # an open to-do made earlier doesn't move the start
             db.execute("UPDATE suggestions SET status='pending' WHERE id=?", (ids['d'],))
             db.execute('DELETE FROM decisions WHERE suggestion_id=?', (ids['d'],))
-        with patch.object(a, 'now', return_value='2026-10-15T10:00:00+00:00'):
+        with patch_everywhere(a, 'now', return_value='2026-10-15T10:00:00+00:00'):
             self.assertEqual(self.store.quality_trend()['first'], '2026-10-12')
         self.assertIn('trend', self.store.quality_report())
 

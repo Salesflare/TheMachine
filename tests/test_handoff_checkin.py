@@ -7,6 +7,7 @@ from unittest.mock import patch
 
 import test_fleet_requests as tr
 from test_fleet import a
+from seams import patch_everywhere  # noqa: E402
 
 BXL = a.ZoneInfo('Europe/Amsterdam')
 
@@ -17,7 +18,7 @@ def at(y, m, d, h, mi=0):
 
 class CheckInTime(unittest.TestCase):
     def checkin(self, current, **card):
-        with patch.object(a, 'now', return_value=current):
+        with patch_everywhere(a, 'now', return_value=current):
             return a.handoff_checkin(**card)
 
     def test_due_today_checks_in_the_same_day(self):
@@ -69,19 +70,19 @@ class CheckInCard(unittest.TestCase):
         return row
 
     def test_an_urgent_handoff_stays_with_them_until_the_next_work_morning(self):
-        with patch.object(a, 'now', return_value=at(2026, 10, 22, 10)):
+        with patch_everywhere(a, 'now', return_value=at(2026, 10, 22, 10)):
             card = self.handed(urgent=True, due=None)
             self.assertEqual(self.card_row(card)['snoozed_until'], at(2026, 10, 23, 9))
-        with patch.object(a, 'now', return_value=at(2026, 10, 22, 13, 30)):  # the old 3-hour check-in: still under Later
+        with patch_everywhere(a, 'now', return_value=at(2026, 10, 22, 13, 30)):  # the old 3-hour check-in: still under Later
             self.store.wake_snoozed()
             self.assertEqual(self.card_row(card)['status'], 'snoozed')
-        with patch.object(a, 'now', return_value=at(2026, 10, 23, 9, 1)):  # its day has passed: back on top
+        with patch_everywhere(a, 'now', return_value=at(2026, 10, 23, 9, 1)):  # its day has passed: back on top
             self.store.wake_snoozed()
             self.assertEqual(self.card_row(card)['status'], 'pending')
 
     def woke_early(self, key=None):
         """An urgent card handed off Thursday 10:00 that the old rule brought back at 13:00, still with no answer."""
-        with patch.object(a, 'now', return_value=at(2026, 10, 22, 10)):
+        with patch_everywhere(a, 'now', return_value=at(2026, 10, 22, 10)):
             card = self.handed(urgent=True, due=None, key=key)
         with self.store.connect() as db:
             db.execute("UPDATE suggestions SET status='pending',snoozed_until=NULL,resume_status=NULL WHERE id=?", (card,))
@@ -89,11 +90,11 @@ class CheckInCard(unittest.TestCase):
 
     def test_a_card_the_old_rule_brought_back_goes_back_to_later(self):
         card = self.woke_early()
-        with patch.object(a, 'now', return_value=at(2026, 10, 22, 15)):
+        with patch_everywhere(a, 'now', return_value=at(2026, 10, 22, 15)):
             self.store.wake_snoozed()
             row = self.card_row(card)
             self.assertEqual((row['status'], row['snoozed_until']), ('snoozed', at(2026, 10, 23, 9)))
-        with patch.object(a, 'now', return_value=at(2026, 10, 23, 9, 1)):
+        with patch_everywhere(a, 'now', return_value=at(2026, 10, 23, 9, 1)):
             self.store.wake_snoozed()
             self.assertEqual(self.card_row(card)['status'], 'pending')  # its check-in came: it stays on top
             self.store.wake_snoozed()
@@ -103,18 +104,18 @@ class CheckInCard(unittest.TestCase):
         card = self.woke_early()
         with self.store.connect() as db:
             db.execute("UPDATE fleet_out SET status='answered',answer='{\"stage\":\"declined\"}' WHERE kind='handoff'")
-        with patch.object(a, 'now', return_value=at(2026, 10, 22, 15)):
+        with patch_everywhere(a, 'now', return_value=at(2026, 10, 22, 15)):
             self.store.wake_snoozed()
             self.assertEqual(self.card_row(card)['status'], 'pending')
         other = self.woke_early(key='k-other')
         self.assertNotEqual(other, card)
         self.store.decide(other, 'other', 'Ask Pat about it', 'dashboard:c1', 'dashboard')
-        with patch.object(a, 'now', return_value=at(2026, 10, 22, 15)):
+        with patch_everywhere(a, 'now', return_value=at(2026, 10, 22, 15)):
             self.store.wake_snoozed()
             self.assertNotEqual(self.card_row(other)['status'], 'snoozed')
 
     def test_the_card_says_it_is_a_check_in_not_a_snooze(self):
-        with patch.object(a, 'now', return_value=at(2026, 10, 23, 10)):  # Friday; due 3 Nov is far: Monday
+        with patch_everywhere(a, 'now', return_value=at(2026, 10, 23, 10)):  # Friday; due 3 Nov is far: Monday
             card = self.handed()
             row = self.shown(card)
             self.assertEqual(row['status'], 'snoozed')
@@ -125,11 +126,11 @@ class CheckInCard(unittest.TestCase):
             self.assertNotIn('Snoozed', a.card(row))
             labels = [b['label'] for block in a.controls(row)['blocks'] for b in block.get('buttons', [])]
             self.assertEqual(labels[:3], ['Check in now', 'Change time', 'Not needed'])
-        with patch.object(a, 'now', return_value=at(2026, 10, 26, 7)):
+        with patch_everywhere(a, 'now', return_value=at(2026, 10, 26, 7)):
             self.assertEqual(a.checkin_line(row), 'Check in with Pat today 09:00 if no answer')
 
     def test_a_plain_snooze_and_an_answered_handoff_keep_their_own_words(self):
-        with patch.object(a, 'now', return_value=at(2026, 10, 23, 10)):
+        with patch_everywhere(a, 'now', return_value=at(2026, 10, 23, 10)):
             card = self.handed()
             with self.store.connect() as db:
                 ask_id = db.execute("SELECT id FROM fleet_out WHERE kind='handoff'").fetchone()[0]

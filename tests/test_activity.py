@@ -8,6 +8,7 @@ from zoneinfo import ZoneInfo
 spec = importlib.util.spec_from_file_location('activity_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 import activity
+from seams import patch_everywhere  # noqa: E402
 
 TZ = ZoneInfo('America/New_York')
 NOW = '2026-10-29T15:00:00+00:00'  # 11:00 in New York
@@ -63,7 +64,7 @@ class Activity(unittest.TestCase):
             self.assertNotIn(secret, text)
 
     def test_dashboard_moments_count_distinct(self):
-        with patch.object(a, 'now', return_value=NOW), patch.object(a, 'local_tz', return_value=TZ):
+        with patch_everywhere(a, 'now', return_value=NOW), patch_everywhere(a, 'local_tz', return_value=TZ):
             self.store.note_activity('dashboard')
             self.store.note_activity('dashboard')  # within the minute: no second write
             self.store._activity_at = 0
@@ -97,7 +98,7 @@ class Activity(unittest.TestCase):
 
     def test_card_chat_counts_an_open_only_from_the_dashboard(self):
         app = object.__new__(a.App); app.store = self.store; app.config = {'accounts': []}
-        with patch.object(a.App, 'card_chat', return_value={'items': []}), patch.object(a, 'now', return_value=NOW), patch.object(a, 'local_tz', return_value=TZ):
+        with patch.object(a.App, 'card_chat', return_value={'items': []}), patch_everywhere(a, 'now', return_value=NOW), patch_everywhere(a, 'local_tz', return_value=TZ):
             app.action('card_chat', {'suggestion_id': '1' * 16}, owner_dashboard=True)
             app.action('card_chat', {'suggestion_id': '2' * 16, 'cursor': 'c'}, owner_dashboard=True)  # a poll of an open chat
             app.action('card_chat', {'suggestion_id': '3' * 16})  # not the owner's dashboard

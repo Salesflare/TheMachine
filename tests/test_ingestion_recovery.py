@@ -9,6 +9,7 @@ import types
 import unittest
 import urllib.parse
 from unittest.mock import patch
+from seams import patch_everywhere  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -93,7 +94,7 @@ class CatchUp(unittest.TestCase):
         self.store = a.Store(self.path)
         self.store.commit_page('github', {'since': '2026-10-16T11:00:00Z'}, [])
         self.store.commit_page('stripe', {'since': 1792140000}, [])
-        clock = patch.object(a, 'now', return_value=NOW)
+        clock = patch_everywhere(a, 'now', return_value=NOW)
         clock.start(); self.addCleanup(clock.stop)
 
     def reopen(self):
@@ -118,7 +119,7 @@ class CatchUp(unittest.TestCase):
         self.assertTrue(self.store.checkpoint('github')['coverage_complete'])
         q = urllib.parse.parse_qs(urllib.parse.urlsplit(next(path for path in source.calls if urllib.parse.parse_qs(urllib.parse.urlsplit(path).query)['page'] == ['6'])).query)
         self.assertEqual((q['page'], q['before']), (['6'], ['2026-10-16T12:00:00Z']))
-        with patch.object(a, 'now', return_value='2026-10-16T12:02:00+00:00'):
+        with patch_everywhere(a, 'now', return_value='2026-10-16T12:02:00+00:00'):
             github_sync(self.store, source)
         self.assertEqual(self.count('github'), 301)
         with self.store.connect() as db:

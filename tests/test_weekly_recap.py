@@ -8,6 +8,7 @@ from unittest.mock import patch
 from zoneinfo import ZoneInfo
 import test_ux as ux
 import timeutil
+from seams import patch_everywhere  # noqa: E402
 a = ux.a
 dt = a.dt
 
@@ -25,7 +26,7 @@ class WeeklyRecap(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
-        for p in (patch.object(timeutil, 'LOCAL_TZ', ZoneInfo('Europe/Brussels')), patch.object(a, 'now', return_value=FRIDAY)):
+        for p in (patch.object(timeutil, 'LOCAL_TZ', ZoneInfo('Europe/Brussels')), patch_everywhere(a, 'now', return_value=FRIDAY)):
             p.start()
             self.addCleanup(p.stop)
         self.path = Path(self.tmp.name) / 'config.json'
@@ -67,7 +68,7 @@ class WeeklyRecap(unittest.TestCase):
     def send(self):
         """The recap (message 555), then each choice as its own message (556, 557, ...), as sent to Telegram."""
         sent = []
-        with patch.object(a, 'telegram_request', side_effect=lambda config, args: sent.append(args) or {'messageId': str(555 + len(sent) - 1)}):
+        with patch_everywhere(a, 'telegram_request', side_effect=lambda config, args: sent.append(args) or {'messageId': str(555 + len(sent) - 1)}):
             self.assertEqual(self.app.recap_step(current=dt.datetime.fromisoformat(FRIDAY)), 'sent')
         self.assertTrue(sent[0]['message'].startswith('**Your week with The Machine**'))
         self.assertEqual([m['action'] for m in sent], ['send'] * len(sent))
@@ -79,7 +80,7 @@ class WeeklyRecap(unittest.TestCase):
 
     def tap(self, item, choice, message_id=None, decision='telegram:1'):
         message_id = message_id or next(i['message_id'] for i in self.items() if i['id'] == item)
-        with patch.object(a, 'telegram_request', side_effect=lambda config, args: self.edits.append(args) or {'messageId': args.get('messageId')}), \
+        with patch_everywhere(a, 'telegram_request', side_effect=lambda config, args: self.edits.append(args) or {'messageId': args.get('messageId')}), \
                 patch.object(a.threading, 'Thread', side_effect=lambda target, args, daemon: type('T', (), {'start': lambda s: target(*args)})()):
             return self.app.action('recap_decide', {'id': item, 'choice': choice, 'source': 'telegram', 'message_id': message_id, 'decision_id': decision})
 
@@ -265,8 +266,8 @@ class WeeklyRecap(unittest.TestCase):
         pushed = []
         with self.store.connect() as db:
             db.execute("INSERT INTO push_subscriptions(endpoint,p256dh,auth,created_at) VALUES('https://push.example/1','k','a',?)", (FRIDAY,))
-        with patch.object(a, 'push_node', side_effect=lambda config, request: pushed.append(request) or {'results': []}), \
-                patch.object(a, 'telegram_request', side_effect=AssertionError('no Telegram')):
+        with patch_everywhere(a, 'push_node', side_effect=lambda config, request: pushed.append(request) or {'results': []}), \
+                patch_everywhere(a, 'telegram_request', side_effect=AssertionError('no Telegram')):
             self.assertEqual(self.app.recap_step(current=dt.datetime.fromisoformat(FRIDAY)), 'sent')
         self.assertTrue(pushed[0]['payload']['body'].startswith('Needs you • Promised Alex: send the Q3 deck, due Mon, Oct 26'), pushed[0]['payload']['body'])
         self.assertEqual(self.items(), [])  # no buttons to tap without Telegram
@@ -280,7 +281,7 @@ class WeeklyRecap(unittest.TestCase):
             if len(sent) == 2:
                 raise a.DeliveryNotSent('delivery_not_admitted')
             return {'messageId': str(554 + len(sent))}
-        with patch.object(a, 'telegram_request', side_effect=deliver):
+        with patch_everywhere(a, 'telegram_request', side_effect=deliver):
             self.assertEqual(self.app.recap_step(current=dt.datetime.fromisoformat(FRIDAY)), 'sent')
         self.assertEqual([(i['kind'], i['message_id']) for i in self.items()], [('snoozed', '557')])  # the busy source comes up next week
 

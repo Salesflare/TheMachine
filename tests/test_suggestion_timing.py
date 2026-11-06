@@ -4,6 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
+from seams import patch_everywhere  # noqa: E402
 
 spec=importlib.util.spec_from_file_location('timing_assistant',Path(__file__).parent.parent.joinpath('assistant.py'))
 a=importlib.util.module_from_spec(spec);spec.loader.exec_module(a)
@@ -36,7 +37,7 @@ class HeldCards(unittest.TestCase):
     def test_agent_default_is_valid_and_work_boundary_enforces_weekend(self):
         app=object.__new__(a.App);app.store=self.store
         app.config={'accounts':[{'id':'work','boundary':'work:Acme'}]}
-        with patch.object(a,'now',return_value=at(2026,10,10,16).astimezone(dt.timezone.utc).isoformat()):
+        with patch_everywhere(a,'now',return_value=at(2026,10,10,16).astimezone(dt.timezone.utc).isoformat()):
             default=app.action('suggest',{'dedupe_key':'default','title':'Task','body':'Body','event_ids':[1]})
             immediate=app.action('suggest',{'dedupe_key':'explicit-now','title':'Task','body':'Body','event_ids':[1],'when':'now'})
             urgent=app.action('suggest',{'dedupe_key':'urgent','title':'Task','body':'Body','event_ids':[1],'when':'now','urgent':True})
@@ -47,12 +48,12 @@ class HeldCards(unittest.TestCase):
         app=object.__new__(a.App);app.store=self.store
         app.config={'accounts':[{'id':'work','boundary':'work:Acme'}]}
         base={'title':'Task','body':'Body','event_ids':[1]}
-        with patch.object(a,'now',return_value=at(2026,10,14,10,26).astimezone(dt.timezone.utc).isoformat()):  # Wednesday
+        with patch_everywhere(a,'now',return_value=at(2026,10,14,10,26).astimezone(dt.timezone.utc).isoformat()):  # Wednesday
             soon=app.action('suggest',{**base,'dedupe_key':'soon','due':'2026-10-17'})
             later=app.action('suggest',{**base,'dedupe_key':'later','due':'2026-10-18'})
         self.assertIsNone(soon['deliver_after'])
         self.assertEqual(later['deliver_after'],at(2026,10,15,8,30).astimezone(dt.timezone.utc).isoformat())
-        with patch.object(a,'now',return_value=at(2026,10,10,16).astimezone(dt.timezone.utc).isoformat()):  # Saturday
+        with patch_everywhere(a,'now',return_value=at(2026,10,10,16).astimezone(dt.timezone.utc).isoformat()):  # Saturday
             sunday=app.action('suggest',{**base,'dedupe_key':'sunday','due':'2026-10-11'})
             tuesday=app.action('suggest',{**base,'dedupe_key':'tuesday','due':'2026-10-13'})
         self.assertIsNone(sunday['deliver_after'])  # Monday would be too late: urgent
@@ -61,13 +62,13 @@ class HeldCards(unittest.TestCase):
             self.assertEqual(dict(db.execute("SELECT dedupe_key,urgent FROM suggestions WHERE dedupe_key IN ('sunday','tuesday')").fetchall()),{'sunday':1,'tuesday':0})
     def test_friday_work_delivery_catchup_waits_but_owner_reminder_does_not(self):
         friday=at(2026,10,9,16);saturday=at(2026,10,10,16)
-        with patch.object(a,'now',return_value=friday.astimezone(dt.timezone.utc).isoformat()):
+        with patch_everywhere(a,'now',return_value=friday.astimezone(dt.timezone.utc).isoformat()):
             sid=self.store.suggest('friday','Task','Body',[1],'now')['id']
         config={'accounts':[{'id':'work','boundary':'work:Acme'}]}
         class Weekend(dt.datetime):
             @classmethod
             def now(cls,tz=None):return saturday.astimezone(tz or dt.timezone.utc)
-        with patch.object(a.dt,'datetime',Weekend),patch.object(a,'now',return_value=saturday.astimezone(dt.timezone.utc).isoformat()),patch.object(a,'telegram',return_value={'messageId':'41'}) as send:
+        with patch.object(a.dt,'datetime',Weekend),patch_everywhere(a,'now',return_value=saturday.astimezone(dt.timezone.utc).isoformat()),patch_everywhere(a,'telegram',return_value={'messageId':'41'}) as send:
             a.deliver_one(self.store,config,edit_cards=False);send.assert_not_called()
             with self.store.connect() as db:
                 self.assertEqual(db.execute('SELECT deliver_after FROM suggestions').fetchone()[0],at(2026,10,12,8,30).astimezone(dt.timezone.utc).isoformat())
@@ -84,7 +85,7 @@ class HeldCards(unittest.TestCase):
             return db.execute("SELECT count(*) FROM suggestions s JOIN deliveries d ON s.id=d.suggestion_id WHERE d.status='queued' AND (s.deliver_after IS NULL OR s.deliver_after<=?)",(when,)).fetchone()[0]
 
     def test_digest_card_waits_and_shows_its_source(self):
-        with patch.object(a,'now',return_value=at(2026,10,11,21,0).astimezone(dt.timezone.utc).isoformat()):
+        with patch_everywhere(a,'now',return_value=at(2026,10,11,21,0).astimezone(dt.timezone.utc).isoformat()):
             result=self.store.suggest('k','Prepare the Iter brief','Body text.',[1],'digest')
         self.assertEqual(self.deliverable(at(2026,10,11,22,0).astimezone(dt.timezone.utc).isoformat()),0)
         self.assertEqual(self.deliverable(at(2026,10,12,8,31).astimezone(dt.timezone.utc).isoformat()),1)

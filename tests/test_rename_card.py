@@ -13,6 +13,7 @@ a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 
 import test_fleet_requests as tr  # noqa: E402
 from test_fleet import mail as fleet_mail  # noqa: E402
+from seams import patch_everywhere  # noqa: E402
 
 
 def mail(source_id, when='2026-10-20T09:00:00+00:00'):
@@ -105,7 +106,7 @@ class Rename(unittest.TestCase):
         self.rename('Contract for Sam')
         with self.store.connect() as db:
             self.assertEqual(db.execute('SELECT needs_edit FROM deliveries WHERE suggestion_id=?', (self.sid,)).fetchone()[0], 1)
-        with patch.object(a.dt, 'datetime', Daytime), patch.object(a, 'telegram', return_value={'messageId': '77'}) as telegram:
+        with patch.object(a.dt, 'datetime', Daytime), patch_everywhere(a, 'telegram', return_value={'messageId': '77'}) as telegram:
             a.deliver(self.store, {'telegram_owner': 'owner', 'accounts': self.app.config['accounts']})
         edits = [c.args for c in telegram.call_args_list if c.args[2] == 'edit']
         self.assertEqual(len(edits), 1)
