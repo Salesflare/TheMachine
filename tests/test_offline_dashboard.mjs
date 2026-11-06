@@ -177,7 +177,7 @@ try{
  withCheck=true;mode='ok';
  for(const [w,h,scheme] of [[390,844,'dark'],[1440,900,'light']]){const ctx=await browser.newContext({viewport:{width:w,height:h},isMobile:w<600,hasTouch:w<600,colorScheme:scheme});
   await ctx.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
-  const p=await ctx.newPage();p.on('pageerror',e=>errors.push(e.message));mode='ok';await p.goto(base);await p.locator('#page-head .check-now .check-line').filter({hasText:/Reviewed/}).waitFor();
+  const p=await ctx.newPage();p.on('pageerror',e=>errors.push(e.message));mode='ok';await p.goto(base);await p.locator('#page-head .check-now .check-line').filter({hasText:/Checked/}).waitFor();
   mode='down';await p.evaluate(()=>refresh().catch(()=>{}));await until(p,()=>!document.querySelector('#offline-bar').hidden,null,'banner under the Check now row');
   const g=await p.evaluate(()=>{const b=document.querySelector('#offline-bar').getBoundingClientRect().top;return Math.min(...['#page-head','#page-head .check-btn','#page-head .check-line'].map(s=>b-document.querySelector(s).getBoundingClientRect().bottom))});
   assert.ok(g>=12,`${w}: the offline banner keeps a gap under the Check now row (${g}px)`);

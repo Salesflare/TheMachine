@@ -64,7 +64,7 @@ try{
   assert.match(await page.locator('.tile[data-node="project:24"] .tile-why').textContent(),/^Not sorted: only an intro call so far · \w{3}, \w{3} \d{1,2}$/);
   assert.equal(await page.locator('.tile[data-node="project:24"] .tile-why [data-quote-event="124"]').count(),1);
   assert.match(await page.locator('.tile[data-node="project:25"] .tile-why.failed').textContent(),/^Sorting failed, trying again · /);
-  assert.match(await page.locator('.board-sub').textContent(),/17 projects · 1 waiting on a reply · sorting 1 · a review moves them as your messages come in/);
+  assert.match(await page.locator('.board-sub').textContent(),/17 projects · 1 waiting on a reply · sorting 1 · a check moves them as your messages come in/);
   assert.match(await page.locator('.lane[data-lane="Contacted"] .lane-sum').textContent(),/1 with no reply in 10\+ days/);
   await fits(page,'1440');await shot(page,'board-1440');
   // Chips switch boards, and the board shown is remembered

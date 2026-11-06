@@ -27,7 +27,7 @@ Un enregistrement est supprimé dès que le texte est revenu.
 
 ## Préparation
 
-Pour transcrire elle-même la parole, votre Machine a besoin d’un modèle vocal de 150 à 500 Mo. Elle le télécharge en arrière-plan, en priorité basse, une fois configurée, sa première revue terminée et après un moment de calme. Pendant ce temps, les paramètres affichent **Préparation en cours (en arrière-plan)**. Elle ne le fait jamais quand OpenAI est utilisé.
+Pour transcrire elle-même la parole, votre Machine a besoin d’un modèle vocal de 150 à 500 Mo. Elle le télécharge en arrière-plan, en priorité basse, une fois configurée, sa première vérification terminée et après un moment de calme. Pendant ce temps, les paramètres affichent **Préparation en cours (en arrière-plan)**. Elle ne le fait jamais quand OpenAI est utilisé.
 
 Tant qu’elle n’est pas prête, **Automatique** utilise la reconnaissance vocale de votre navigateur s’il en a une, et l’indique sous la zone. Certains navigateurs l’envoient à leur éditeur. Avec **Sur cette Machine**, votre enregistrement attend, et la zone affiche « Préparation de la voix… » avec le temps restant.
 

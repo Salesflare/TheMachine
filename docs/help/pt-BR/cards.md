@@ -46,7 +46,7 @@ Quando você inicia uma tarefa, ela sempre pode ler as mensagens de onde veio, t
 
 Sua Machine lê cada fonte a cada poucos minutos, de dia e de noite, e verifica o que chegou em busca de tarefas assim que 40 mensagens esperam ou a mensagem mais antiga espera há 15 minutos.
 
-**Verificar agora**, no topo de Tarefas, lê na hora cada fonte e olha o que chegou, também quando está tudo tranquilo. Ao lado, uma linha diz quando ela verificou pela última vez, quando é a próxima verificação e quantas mensagens esperam. Tocar de novo enquanto ela verifica mostra a mesma verificação. O app do celular também tem. No chat, peça para ela verificar agora.
+**Verificar agora**, no topo de Tarefas, lê na hora cada fonte e olha o que chegou, também quando está tudo tranquilo. Ao lado, uma linha diz quando ela verificou pela última vez, quando é a próxima verificação e quantas mensagens novas esperam, como "Verificado 21:10 · próxima até 21:26 · 2 novas". Tocar de novo enquanto ela verifica mostra a mesma verificação. O app do celular também tem. No chat, peça para ela verificar agora.
 
 LinkedIn, X e Salesflare mantêm o próprio ritmo.
 

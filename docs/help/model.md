@@ -16,7 +16,7 @@ More thinking answers harder questions better, but is slower and uses more of yo
 
 One chat can use something else: under its message box, tap the model or the thinking level. That choice is for that chat only. Pick the same as in Settings again to follow Settings.
 
-Reviews, your profile and drafts prepared ahead keep their own model.
+Checks, your profile and drafts prepared ahead keep their own model.
 
 ## Limits
 
@@ -24,7 +24,7 @@ If your plan has usage limits, it shows how much of each is used and when it res
 
 ## Room for your own chats
 
-Background work (reviews, your profile, drafts prepared ahead) leaves room for your own chats. It pauses at about 65% of the 5-hour limit. Reviews of what came in go on until about 90% of the weekly limit; the rest paces it at about a seventh a day. A sign-in without usage limits, like an API key, is never paused.
+Background work (checks, your profile, drafts prepared ahead) leaves room for your own chats. It pauses at about 65% of the 5-hour limit. Checks of what came in go on until about 90% of the weekly limit; the rest paces it at about a seventh a day. A sign-in without usage limits, like an API key, is never paused.
 
 Background work never runs on GPT-6 Astra. It uses GPT-6.1 Sol instead.
 

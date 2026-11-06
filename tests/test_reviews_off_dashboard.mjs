@@ -5,8 +5,8 @@ import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
-// Reviews still off: every tab says so at the top with the way to turn them on (hosted: the setup step; self-hosted:
-// the command), and Reviews of new messages shows one line for it instead of a first-look row next to "No reviews yet".
+// Checks still off: every tab says so at the top with the way to turn them on (hosted: the setup step; self-hosted:
+// the command), and Checks of new messages shows one line for it instead of a first-look row next to "No checks yet".
 const dashboard=await dashboardPage();
 let on=false,manage='https://control.example/setup',cards=[];const gmail=[{id:'work-gmail',service:'gmail',display_name:'Gmail'}];let conns=gmail;
 let look={state:'waiting',why:'sources',days:7};
@@ -28,13 +28,13 @@ try{
  const open=async()=>{const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));await page.goto('http://127.0.0.1:'+server.address().port);
   await page.locator('#needs-you').waitFor({state:on?'hidden':'visible'});return page};
  let page=await open();
- assert.match(await page.locator('#needs-you').textContent(),/Reviews are off/);
- assert.equal(await page.locator('#needs-you a',{hasText:'Turn on reviews'}).getAttribute('href'),manage+'#turn-on');
+ assert.match(await page.locator('#needs-you').textContent(),/Checks are off/);
+ assert.equal(await page.locator('#needs-you a',{hasText:'Turn on checks'}).getAttribute('href'),manage+'#turn-on');
  const rows=page.locator('#review-live .review-live');
  assert.equal(await rows.count(),1);
  const text=await rows.textContent();
- assert.ok(text.includes('Reviews are off.')&&text.includes('first look at your last 7 days')&&text.includes('It starts once a source'),text);
- assert.ok(!(await page.locator('#analyses').textContent()).includes('No reviews yet'));
+ assert.ok(text.includes('Checks are off.')&&text.includes('first look at your last 7 days')&&text.includes('It starts once a source'),text);
+ assert.ok(!(await page.locator('#analyses').textContent()).includes('No checks yet'));
  // Suggestions: while the first look is pending it says so, not "All clear"
  const empty=await page.locator('#suggestions').textContent();
  assert.ok(empty.includes('A first look at your last 7 days starts soon')&&!empty.includes('All clear'),empty);
@@ -44,7 +44,7 @@ try{
  await page.close();look={state:'waiting',why:'sources',days:7};
  cards=[{id:'s1',title:'Reply to Sam',body:'',status:'pending',scope:'work',created_at:'2026-10-21T10:00:00+00:00',event_ids:[],account_ids:[]}];
  page=await open();  // cards from the first look: the notice says where they came from
- assert.match(await page.locator('#needs-you').textContent(),/Reviews are off: the to-dos here come from a one-time first look/);
+ assert.match(await page.locator('#needs-you').textContent(),/Checks are off: the to-dos here come from a one-time first look/);
  await page.close();cards=[];
  // Hosted and still setting up: the missing setup step instead, since reviews turn on by themselves after it
  look={state:'waiting',why:'model',days:7};page=await open();
@@ -55,17 +55,17 @@ try{
  assert.equal(await page.locator('#needs-you a',{hasText:'Connect mail'}).getAttribute('href'),manage+'#google');
  await page.close();
  conns=gmail;page=await open();  // mail is there, just quiet: not that
- assert.equal(await page.locator('#needs-you a',{hasText:'Turn on reviews'}).count(),1);
+ assert.equal(await page.locator('#needs-you a',{hasText:'Turn on checks'}).count(),1);
  await page.close();
  manage=null;page=await open();  // self-hosted: the command instead of a link
  assert.match(await page.locator('#needs-you').textContent(),/install\.sh --activate/);
  assert.equal(await page.locator('#review-live code').textContent(),'./install.sh --activate');
  await page.close();
- on=true;page=await open();  // on: no notice; only the first look row, no "No reviews yet" beside it
+ on=true;page=await open();  // on: no notice; only the first look row, no "No checks yet" beside it
  assert.equal(await page.locator('#needs-you').isHidden(),true);
  assert.equal(await page.locator('#review-live .review-live').count(),1);
- assert.ok((await page.locator('#review-live').textContent()).includes('A first review of your last 7 days'));
- assert.ok(!(await page.locator('#analyses').textContent()).includes('No reviews yet'));
+ assert.ok((await page.locator('#review-live').textContent()).includes('A first check of your last 7 days'));
+ assert.ok(!(await page.locator('#analyses').textContent()).includes('No checks yet'));
  assert.deepEqual(errors,[]);
 }finally{await browser?.close();server.close()}
 console.log('reviews off dashboard ok');

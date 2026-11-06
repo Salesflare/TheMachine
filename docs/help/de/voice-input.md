@@ -27,7 +27,7 @@ Eine Aufnahme wird gelöscht, sobald der Text zurück ist.
 
 ## Vorbereitung
 
-Um Sprache selbst in Text umzuwandeln, braucht deine Machine ein Sprachmodell mit 150 bis 500 MB. Sie lädt es im Hintergrund mit niedriger Priorität herunter, sobald sie eingerichtet ist, ihre erste Durchsicht fertig ist und es eine Weile ruhig war. Solange zeigen die Einstellungen **Wird vorbereitet (im Hintergrund)**. Wenn OpenAI genutzt wird, macht sie das nie.
+Um Sprache selbst in Text umzuwandeln, braucht deine Machine ein Sprachmodell mit 150 bis 500 MB. Sie lädt es im Hintergrund mit niedriger Priorität herunter, sobald sie eingerichtet ist, ihre erste Prüfung fertig ist und es eine Weile ruhig war. Solange zeigen die Einstellungen **Wird vorbereitet (im Hintergrund)**. Wenn OpenAI genutzt wird, macht sie das nie.
 
 Bis sie bereit ist, nutzt **Automatisch** die Spracherkennung deines Browsers, falls er eine hat, und sagt das unter dem Feld. Manche Browser schicken das an ihren Hersteller. Wenn **Auf dieser Machine** gewählt ist, wartet deine Aufnahme, und das Feld zeigt „Sprache wird vorbereitet…“ mit der verbleibenden Zeit.
 

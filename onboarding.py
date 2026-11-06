@@ -2958,7 +2958,7 @@ def doctor(config_path, workspace=None):
                 add('✗', 'OpenClaw bridge plugin disabled',
                     'openclaw plugins enable personal-assistant-bridge && openclaw plugins reload personal-assistant-bridge --wait')
             elif not hooks_allowed(settings):
-                add('✗', 'OpenClaw skips the bridge plugin\'s review hooks, so reviews never finish',
+                add('✗', 'OpenClaw skips the bridge plugin\'s review hooks, so checks never finish',
                     'openclaw config set plugins.entries.personal-assistant-bridge.hooks.allowConversationAccess true --strict-json'
                     ' && openclaw plugins reload personal-assistant-bridge --wait')
             else:
@@ -2970,7 +2970,7 @@ def doctor(config_path, workspace=None):
             add('✗', f'OpenClaw bridge plugin {"disabled" if not bridge.get("enabled") else bridge.get("status")}',
                 'openclaw plugins enable personal-assistant-bridge && openclaw plugins reload personal-assistant-bridge --wait')
         elif not hooks_allowed(settings):
-            add('✗', 'OpenClaw skips the bridge plugin\'s review hooks, so reviews never finish',
+            add('✗', 'OpenClaw skips the bridge plugin\'s review hooks, so checks never finish',
                 'openclaw config set plugins.entries.personal-assistant-bridge.hooks.allowConversationAccess true --strict-json'
                 ' && openclaw plugins reload personal-assistant-bridge --wait')
         else:
@@ -3058,11 +3058,11 @@ def doctor(config_path, workspace=None):
     # Reviews and delivery
     on = config.get('delivery_enabled') and (config.get('review_worker') or {}).get('enabled')
     if not on:
-        add('!', 'reviews and to-dos in Telegram are off', 'try one: assistant preview; turn them on: ./install.sh --activate')
+        add('!', 'checks and to-dos in Telegram are off', 'try one: assistant preview; turn them on: ./install.sh --activate')
     elif not last_review or last_review < (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=2)).isoformat():
-        add('!', 'no review in the last 2 days' if last_review else 'no review yet', 'assistant reviews; openclaw logs')
+        add('!', 'no check in the last 2 days' if last_review else 'no check yet', 'assistant reviews; openclaw logs')
     else:
-        add('✓', f'reviews on, last one {ago(last_review)}')
+        add('✓', f'checks on, last one {ago(last_review)}')
     # Dashboard and USER.md
     served = dashboard_url(config)
     if served:

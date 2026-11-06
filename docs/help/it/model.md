@@ -16,7 +16,7 @@ Più ragionamento risponde meglio alle domande difficili, ma è più lento e usa
 
 Una chat può usare qualcos’altro: sotto la sua casella del messaggio, tocca il modello o il livello di ragionamento. Quella scelta vale solo per quella chat. Scegli di nuovo lo stesso delle Impostazioni per seguire le Impostazioni.
 
-Le revisioni, il tuo profilo e le bozze preparate in anticipo mantengono il loro modello.
+I controlli, il tuo profilo e le bozze preparate in anticipo mantengono il loro modello.
 
 ## Limiti
 
@@ -24,7 +24,7 @@ Se il tuo piano ha limiti di utilizzo, mostra quanto hai usato di ciascuno e qua
 
 ## Spazio per le tue chat
 
-Il lavoro in background (revisioni, il tuo profilo, bozze preparate in anticipo) lascia spazio alle tue chat. Si mette in pausa a circa il 65% del limite di 5 ore. Le revisioni di quello che è arrivato continuano fino a circa il 90% del limite settimanale; il resto lo distribuisce a circa un settimo al giorno. Un accesso senza limiti di utilizzo, come una chiave API, non va mai in pausa.
+Il lavoro in background (controlli, il tuo profilo, bozze preparate in anticipo) lascia spazio alle tue chat. Si mette in pausa a circa il 65% del limite di 5 ore. I controlli di quello che è arrivato continuano fino a circa il 90% del limite settimanale; il resto lo distribuisce a circa un settimo al giorno. Un accesso senza limiti di utilizzo, come una chiave API, non va mai in pausa.
 
 Il lavoro in background non gira mai su GPT-6 Astra. Usa invece GPT-6.1 Sol.
 

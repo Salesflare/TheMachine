@@ -42,6 +42,6 @@ Los sitios que usa el navegador de tu Machine, como LinkedIn o X, pueden guardar
 
 ## Revisiones
 
-**Revisiones** muestra cómo está leyendo tu Machine lo que llega: las ejecuciones recientes y lo que encontró cada una. Consulta [Revisiones en pausa](reviews-paused.md).
+**Revisiones** muestra cómo está leyendo tu Machine lo que llega: las ejecuciones recientes y lo que encontró cada una. Consulta [No hay tareas nuevas](reviews-paused.md).
 
 Cada conexión tiene su propio artículo en esta sección, con lo que lee y lo que puede enviar.

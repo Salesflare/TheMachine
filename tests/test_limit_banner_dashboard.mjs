@@ -50,9 +50,9 @@ try{
   const seven=await page.evaluate(()=>{const d=new Date();d.setHours(23,45,0,0);return d.getTime()/1000|0});
   r=await show(null,{window:'week',until:seven,name:'ChatGPT'});
   assert.ok(r.shown&&!r.wide,`${width}: the review pause fits`);
-  assert.equal(r.text,'Reviews wait until 11:45 PM to save your ChatGPT week.Review now');
+  assert.equal(r.text,'Checks wait until 11:45 PM to save your ChatGPT week.Check now');
   r=await show(null,{window:'5h',until:null,name:null});
-  assert.equal(r.text,'Reviews wait to save your AI 5-hour limit.Review now');
+  assert.equal(r.text,'Checks wait to save your AI 5-hour limit.Check now');
   r=await show({window:'5h',until:soon,name:'ChatGPT'},{window:'week',until:seven,name:'ChatGPT'});
   assert.match(r.text,/^ChatGPT 5-hour limit reached/,'a usage limit reached goes first');
   await show(null,{window:'week',until:seven,name:'ChatGPT'});

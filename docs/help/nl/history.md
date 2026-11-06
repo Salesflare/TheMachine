@@ -14,13 +14,13 @@ De kaart zegt hoe ver ze teruggaat: **Geschiedenis: terug tot** een maand, zodra
 
 ## Wat ze nooit doet
 
-Geschiedenis is er alleen om dingen op te zoeken. Ze maakt nooit een taak of een belofte, komt nooit in een review, telt nooit als nieuw en gaat nooit naar je Graph of je team. Geen AI-model leest ze.
+Geschiedenis is er alleen om dingen op te zoeken. Ze maakt nooit een taak of een belofte, komt nooit in een check, telt nooit als nieuw en gaat nooit naar je Graph of je team. Geen AI-model leest ze.
 
 Taken en beloftes komen nog altijd alleen uit nieuwe berichten, zoals voorheen.
 
 ## Wanneer ze loopt
 
-Ze begint zodra de eerste blik op je berichten klaar is en loopt traag op de achtergrond. Ze wacht terwijl een review of een synchronisatie loopt, en als je Machine weinig schijfruimte of geheugen heeft. Na een herstart gaat ze verder waar ze was.
+Ze begint zodra de eerste blik op je berichten klaar is en loopt traag op de achtergrond. Ze wacht terwijl een check of een synchronisatie loopt, en als je Machine weinig schijfruimte of geheugen heeft. Na een herstart gaat ze verder waar ze was.
 
 Ze gebruikt de toegang die elke koppeling al heeft. Er wordt niets nieuws gevraagd.
 

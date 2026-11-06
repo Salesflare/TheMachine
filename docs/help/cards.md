@@ -44,9 +44,9 @@ When you start a to-do, it can always read the messages it came from, also in an
 
 ## Check now
 
-Your Machine reads each source every few minutes, day and night, and reviews what came in for to-dos once 40 messages wait or the oldest message has waited 15 minutes.
+Your Machine reads each source every few minutes, day and night, and checks what came in for to-dos once 40 messages wait or the oldest message has waited 15 minutes.
 
-**Check now**, at the top of To-dos, reads every source right away and looks at what came in, also when all is clear. Next to it, a short line says when it last reviewed, when the next review is due and how many messages wait. Pressing it again while it checks shows the same check. The phone app has it too. In chat, ask it to check now.
+**Check now**, at the top of To-dos, reads every source right away and looks at what came in, also when all is clear. Next to it, a short line says when it last checked, when the next check is due and how many new messages wait, like "Checked 21:10 · next by 21:26 · 2 new". Pressing it again while it checks shows the same check. The phone app has it too. In chat, ask it to check now.
 
 LinkedIn, X and Salesflare keep their own pace.
 

@@ -58,24 +58,24 @@ try{
  for(let i=0;i<80&&await page.locator('#review-live .review-live').count();i++)await page.waitForTimeout(100);
  assert.equal(await page.locator('#review-live .review-live').count(),0);
  assert.equal(await page.locator('#review-runs > div:not(.muted)').count(),0);  // saved cleanly: only the review row
- assert.ok((await page.locator('#analyses').textContent()).includes('Reviewed'));
+ assert.ok((await page.locator('#analyses').textContent()).includes('Checked'));
  assert.equal(await banner.count(),0);
  assert.ok((await page.locator('#suggestions').textContent()).includes('All clear'));
  // Waiting: the next review and the first look say when they start
  live=()=>({runs:[],queue:{waiting:23,planned:23,starts_at:new Date(Date.now()+9*60e3).toISOString(),why:'gap'},first_look:null});
  await page.evaluate(()=>refresh());
- assert.match(await page.locator('#review-live').textContent(),/23 messages waiting for the next review.*Starts in 9 minutes/);
+ assert.match(await page.locator('#review-live').textContent(),/23 messages waiting for the next check.*Starts in 9 minutes/);
  // A new mailbox: the first review waits for its import, then starts at once
  live=()=>({runs:[],queue:{waiting:12,planned:12,starts_at:null,why:'mail',first:true},first_look:null});
  await page.evaluate(()=>refresh());
- assert.match(await page.locator('#review-live').textContent(),/First review starts when your mail is in.*12 messages so far/);
+ assert.match(await page.locator('#review-live').textContent(),/First check starts when your mail is in.*12 messages so far/);
  assert.match(await page.locator('#review-summary').textContent(),/The first one starts when your mail is in\./);
  live=()=>({runs:[],queue:{waiting:0,planned:0,starts_at:null,why:'mail',first:false},first_look:null});
  await page.evaluate(()=>refresh());
- assert.match(await page.locator('#review-live').textContent(),/Next review starts when your new mail is in.*Importing your mail/);
+ assert.match(await page.locator('#review-live').textContent(),/Next check starts when your new mail is in.*Importing your mail/);
  live=()=>({runs:[],queue:{waiting:2,planned:2,starts_at:new Date().toISOString(),why:'mail_in',first:true},first_look:null});
  await page.evaluate(()=>refresh());
- assert.match(await page.locator('#review-live').textContent(),/2 messages waiting for their first review.*Your mail is in\. Starting now/);
+ assert.match(await page.locator('#review-live').textContent(),/2 messages waiting for their first check.*Your mail is in\. Starting now/);
  live=()=>({runs:[],queue:null,first_look:{state:'waiting',why:'settling',days:7,waiting:30}});
  await page.evaluate(()=>refresh());
  assert.ok((await page.locator('#review-live').textContent()).includes('once the first import settles'));

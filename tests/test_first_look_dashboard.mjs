@@ -7,7 +7,7 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 
 // The first look once cards exist: a slim strip under the counters, not loose text above the filters. Its row on
 // Connections names each account once. A running review never sits next to
-// "No reviews yet", and the summary says it once: "0 waiting · 0 reviewed · last not yet".
+// "No checks yet", and the summary says it once: "0 waiting · 0 checked · last not yet".
 const dashboard=await dashboardPage();
 const started=new Date(Date.now()-60e3).toISOString();
 const run={run_id:'r1',status:'running',started_at:started,preview:1,auto:1,planned:67,done_count:5,account_ids:['gmail','calendar'],steps:[]};
@@ -30,12 +30,12 @@ try{
  const context=await browser.newContext({viewport:{width:390,height:844}});
  await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
  const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
- // Nothing running yet: "No reviews yet" and the plain summary
+ // Nothing running yet: "No checks yet" and the plain summary
  await page.goto('http://127.0.0.1:'+server.address().port);
  await page.locator('#analyses .no-reviews').waitFor({state:'attached'});
  assert.equal(await page.locator('#analyses .no-reviews').evaluate(e=>e.hidden),false);  // Connections is another tab: check the attribute
- assert.equal(await page.locator('#review-summary').textContent(),'0 waiting · 0 reviewed · last not yet. Next one when new messages come in.');
- // A running first look: no "No reviews yet" beside it, the accounts named once
+ assert.equal(await page.locator('#review-summary').textContent(),'0 waiting · 0 checked · last not yet. Next one when new messages come in.');
+ // A running first look: no "No checks yet" beside it, the accounts named once
  runs=[run];await page.evaluate(()=>refresh());
  assert.equal(await page.locator('#review-live .review-live').count(),1);
  assert.equal(await page.locator('#analyses .no-reviews:not([hidden])').count(),0);

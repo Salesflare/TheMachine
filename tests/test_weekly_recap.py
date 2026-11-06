@@ -163,7 +163,7 @@ class WeeklyRecap(unittest.TestCase):
         self.assertIn('**What changed**\n• 67% of to-dos worth it (2 of 3). Do it was right first time in 1 of 2.\n• Adjusted: 1 writing rule.\n', text)
         self.assertNotIn('got it right the first time', text)
         recap = a.weekly_recap_message(self.store, self.config, dt.datetime.fromisoformat(FRIDAY) + dt.timedelta(minutes=1))['text']
-        self.assertEqual(recap.split('\n')[-1], '_Behind the scenes: 0 signals reviewed this week, 61 still waiting._')  # one short line, at the end
+        self.assertEqual(recap.split('\n')[-1], '_Behind the scenes: 0 signals checked this week, 61 still waiting._')  # one short line, at the end
         self.assertEqual(text.count('Behind the scenes'), 1)
 
     def test_no_brief_ever_shows_a_cost(self):
@@ -186,7 +186,7 @@ class WeeklyRecap(unittest.TestCase):
         rows = choice['presentation']['blocks']
         item = self.items()[0]
         self.assertEqual(item['message_id'], '556')
-        self.assertEqual(self.labels(choice), [['Stop reviewing', 'Keep reviewing']])
+        self.assertEqual(self.labels(choice), [['Stop checking', 'Keep checking']])
         self.assertEqual(rows[0]['buttons'][0]['action'], {'type': 'callback', 'value': f"assistant:recap:{item['id']}:filter"})
         self.assertLessEqual(len(('tgcb1:xxxxx:' + rows[0]['buttons'][0]['action']['value']).encode()), 64)  # Telegram's callback limit
         with self.assertRaisesRegex(ValueError, 'not the recap'):
@@ -198,9 +198,9 @@ class WeeklyRecap(unittest.TestCase):
         self.assertEqual(self.store.exclusions['wa'], [{'chats': ['123@g.us']}])  # new messages from it are skipped from now on
         edit = self.edits.pop()
         self.assertEqual((edit['action'], edit['messageId']), ('edit', '556'))  # the choice's own message shows it; nothing new is sent
-        self.assertEqual(edit['message'], '**Busy without results**\nSchool parents (Phone WhatsApp): 30 this week, no to-dos · **No longer reviewed**')
+        self.assertEqual(edit['message'], '**Busy without results**\nSchool parents (Phone WhatsApp): 30 this week, no to-dos · **No longer checked**')
         self.assertEqual(self.labels(edit), [['Undo']])
-        self.assertEqual(self.tap(item['id'], 'keep', decision='telegram:2').get('reason'), 'Already done: no longer reviewed.')
+        self.assertEqual(self.tap(item['id'], 'keep', decision='telegram:2').get('reason'), 'Already done: no longer checked.')
         self.assertEqual(self.tap(item['id'], 'filter', decision='telegram:1').get('duplicate'), True)  # a replayed tap
 
         self.assertEqual(self.tap(item['id'], 'undo', decision='telegram:3')['status'], 'open')

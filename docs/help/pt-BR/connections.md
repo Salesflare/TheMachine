@@ -10,7 +10,7 @@ order: 1
 
 A aba **Conexões** agrupa suas fontes em **E-mail e agenda**, **Chat** e **Outras fontes**. Cada uma diz como está: Conectada, Aguardando a primeira sincronização, Reconectando automaticamente ou Precisa da sua ajuda. Abra **Detalhes** para ver **Sincronizações recentes**, onde a sincronização aparece em palavras simples (como "Em dia" ou "Primeira leitura"), e o que fazer.
 
-Seus números mostram o que ela trouxe, o que chegou nas últimas 24 h e o que ainda não foi revisado. Uma agenda conta eventos: todos, os dos próximos 7 dias e os das últimas 24 h.
+Seus números mostram o que ela trouxe, o que chegou nas últimas 24 h e o que ainda não foi verificado. Uma agenda conta eventos: todos, os dos próximos 7 dias e os das últimas 24 h.
 
 Abaixo do status, cada fonte diz em uma linha o que traz e, quando pode agir, que só faz isso depois que você toca em **Enviar** ou dá o seu OK.
 
@@ -40,8 +40,8 @@ Abra a fonte, **Detalhes** e depois **Desconectar**. Ela para de ler. O que ela 
 
 Sites que o navegador da sua Machine usa, como LinkedIn ou X, podem guardar um login salvo: marque **Salvar para a próxima vez** quando entrar. Depois, **Logins** mostra a lista. Quando um site desconecta sua Machine, ela entra de novo com um toque. As senhas ficam criptografadas na sua Machine. **Esquecer** remove um login.
 
-## Revisões
+## Verificações
 
-**Revisões** mostra como sua Machine está lendo o que chega: execuções recentes e o que cada uma encontrou. Veja [Revisões pausadas](reviews-paused.md).
+**Verificações** mostra como sua Machine está lendo o que chega: execuções recentes e o que cada uma encontrou. Veja [Nenhuma tarefa nova](reviews-paused.md).
 
 Cada conexão tem seu próprio artigo nesta seção, com o que ela lê e o que pode enviar.

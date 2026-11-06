@@ -59,7 +59,7 @@ actionAdd(
  {id:'project-lost',group:'Actions',label:'Mark this project lost',keywords:'project lost close deal',when:()=>!$('#people').hidden&&/^project:/.test(graphNode||''),run:()=>pjOpen({node:graphNode,mode:'lost'})},
  {id:'board-edit',group:'Actions',label:'Edit this board',keywords:'board stages rename',when:()=>!$('#people').hidden&&graphShown==='projects'&&!!document.querySelector('#people-view [data-board-edit]'),run:()=>document.querySelector('#people-view [data-board-edit]').click()},
  {id:'go-boards',group:'Go to',each:()=>(graphMineBoards||graphBoards).filter(b=>!b.team).map(b=>({id:'go-board-'+b.id,label:t('Board: {}',b.name),keywords:'projects board kanban '+b.name,run:()=>{boardShown=b.name;sideStore.set('board-shown',b.name);sideStore.set('projects-view','board');if(!$('#people').hidden&&graphShown==='projects'&&!graphNode){projectsViewSet('board');boardRedraw()}else kbNav('.side-sub a[data-graph-sub="projects"]')()}}))},
- {id:'go-connections-reviews',group:'Go to',label:'Connections: Reviews',keywords:'signal reviews runs delivery',run:()=>showTab('health','reviews')});
+ {id:'go-connections-reviews',group:'Go to',label:'Connections: Checks',keywords:'signal reviews runs delivery',run:()=>showTab('health','reviews')});
 // Actions
 actionAdd(
  {id:'new-card',group:'Actions',label:'New to-do',keywords:'add task todo card create',keys:'n',run:()=>ncOpen()},

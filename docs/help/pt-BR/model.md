@@ -16,7 +16,7 @@ Mais raciocínio responde melhor perguntas difíceis, mas é mais lento e usa ma
 
 Um chat pode usar outra coisa: abaixo da caixa de mensagem dele, toque no modelo ou no nível de raciocínio. Essa escolha vale só para esse chat. Escolha de novo o mesmo das Configurações para seguir as Configurações.
 
-Revisões, seu perfil e rascunhos preparados com antecedência mantêm o próprio modelo.
+Verificações, seu perfil e rascunhos preparados com antecedência mantêm o próprio modelo.
 
 ## Limites
 
@@ -24,7 +24,7 @@ Se o seu plano tem limites de uso, aparece quanto de cada um já foi usado e qua
 
 ## Espaço para os seus chats
 
-O trabalho em segundo plano (revisões, seu perfil, rascunhos preparados com antecedência) deixa espaço para os seus próprios chats. Ele pausa em cerca de 65% do limite de 5 horas. As revisões do que chegou seguem até cerca de 90% do limite semanal; o resto o distribui em cerca de um sétimo por dia. Um login sem limites de uso, como uma chave de API, nunca é pausado.
+O trabalho em segundo plano (verificações, seu perfil, rascunhos preparados com antecedência) deixa espaço para os seus próprios chats. Ele pausa em cerca de 65% do limite de 5 horas. As verificações do que chegou seguem até cerca de 90% do limite semanal; o resto o distribui em cerca de um sétimo por dia. Um login sem limites de uso, como uma chave de API, nunca é pausado.
 
 O trabalho em segundo plano nunca roda no GPT-6 Astra. Ele usa o GPT-6.1 Sol no lugar.
 

@@ -27,7 +27,7 @@ Een opname wordt gewist zodra de tekst terug is.
 
 ## Klaarzetten
 
-Om spraak zelf om te zetten naar tekst heeft je Machine een spraakmodel nodig, 150 tot 500 MB. Hij downloadt het op de achtergrond, met lage prioriteit, zodra hij is ingesteld, zijn eerste review klaar is en het een tijdje rustig is geweest. Intussen toont Instellingen **Wordt klaargezet (op de achtergrond)**. Als OpenAI gebruikt wordt, doet hij dat nooit.
+Om spraak zelf om te zetten naar tekst heeft je Machine een spraakmodel nodig, 150 tot 500 MB. Hij downloadt het op de achtergrond, met lage prioriteit, zodra hij is ingesteld, zijn eerste check klaar is en het een tijdje rustig is geweest. Intussen toont Instellingen **Wordt klaargezet (op de achtergrond)**. Als OpenAI gebruikt wordt, doet hij dat nooit.
 
 Tot hij klaar is, gebruikt **Automatisch** de eigen spraakherkenning van je browser, als je browser die heeft, en zegt dat onder het vak. Sommige browsers sturen dat naar hun maker. Met **Op deze Machine** gekozen wacht je opname, en toont het vak "Spraak klaarzetten…" met de resterende tijd.
 

@@ -73,7 +73,7 @@ try{
  await page.goto(base);await navClick(page.locator('nav [data-tab="health"]'));await page.locator('#health-tabs [role=tab]').first().waitFor();
  for(let i=0;i<100&&(await tabs(page,'#health-tabs')).length<6;i++)await page.waitForTimeout(20);
  // A number only where something needs you: Chat has a failing source; a saved sign-in needs nothing, so Sign-ins has none
- assert.deepEqual(await tabs(page,'#health-tabs'),['Mail and calendar','Chat\n1','Other sources','+ Add','Sign-ins','Reviews']);
+ assert.deepEqual(await tabs(page,'#health-tabs'),['Mail and calendar','Chat\n1','Other sources','+ Add','Sign-ins','Checks']);
  assert.equal(await page.locator('#health-tabs [data-health-pane="signins"] .badge').count(),0);
  assert.equal(await page.locator('#health-tabs [data-health-pane="chat"] .badge.warn').count(),1);
  assert.equal(await selected(page,'#health-tabs'),'Chat\n1');
@@ -82,8 +82,8 @@ try{
  await page.locator('#saved-logins-block').waitFor();assert.equal(await page.locator('#connectors>article:not([hidden])').count(),0);
  assert.equal(await page.locator('#review-summary').isVisible(),false);
  await page.goto(base+'/#connections=reviews');await page.locator('#review-summary').waitFor({state:'attached'});
- for(let i=0;i<100&&await selected(page,'#health-tabs').catch(()=>'')!=='Reviews';i++)await page.waitForTimeout(20);
- assert.equal(await selected(page,'#health-tabs'),'Reviews');
+ for(let i=0;i<100&&await selected(page,'#health-tabs').catch(()=>'')!=='Checks';i++)await page.waitForTimeout(20);
+ assert.equal(await selected(page,'#health-tabs'),'Checks');
  // Android is in Other sources; the old phone link opens it.
  await page.goto(base+'/#connections=phone');await page.locator('#connectors>article:not([hidden]) h3',{hasText:'phone'}).waitFor();
  assert.deepEqual(await page.locator('#connectors>article:not([hidden]) h3').allInnerTexts(),['phone','crm']);

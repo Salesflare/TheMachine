@@ -310,7 +310,7 @@ def cmd_sources(config, args):
     for c in connectors:
         state = 'ERROR ' + str(c['error']) if c.get('error') else 'ok'
         print(f"  {c['id']:<26} {c.get('service', ''):<11} {state:<10} last sync {local(c.get('last_success'))} · "
-              f"{c.get('signals_24h', 0)} in 24h · {c.get('pending', 0)} not reviewed · {c.get('failures_24h', 0)} failures in 24h")
+              f"{c.get('signals_24h', 0)} in 24h · {c.get('pending', 0)} not checked · {c.get('failures_24h', 0)} failures in 24h")
 
 
 def cmd_reviews(config, args):
@@ -325,8 +325,8 @@ def cmd_reviews(config, args):
             ('running since ' + local(run['started_at'])) if run.get('status') in ('starting', 'running') else \
             (f"last run {run['status']} at {local(run.get('finished_at'))}" if run else 'no run yet')
     aside = f" ({health['set_aside']} set aside)" if health.get('set_aside') else ''
-    print(f"Backlog: {health.get('pending')} of {health.get('total')} signals not reviewed{aside}. "
-          f"Last review saved {local(health.get('last_completed'))}. Review worker: {state}.\n")
+    print(f"Backlog: {health.get('pending')} of {health.get('total')} signals not checked{aside}. "
+          f"Last check saved {local(health.get('last_completed'))}. Check worker: {state}.\n")
     for a in analyses:
         print(f"  {local(a['started_at'])} {a['status']:<10} {len(loads(a['items'], []))} signals · {a.get('summary') or ''}"[:160])
     if runs:
@@ -375,13 +375,13 @@ def preview_cards(status, run):
 
 def preview_progress(run, cards):
     elapsed = int((dt.datetime.now(dt.timezone.utc) - dt.datetime.fromisoformat(run['started_at'])).total_seconds())
-    phase = {'starting': 'starting the review in OpenClaw', 'recovering': 'OpenClaw is not answering; waiting for it'}.get(
-        run['status'], f"reviewing {run['claimed_count']} signals" if run.get('claimed_count') else 'your agent is reading the signals')
+    phase = {'starting': 'starting the check in OpenClaw', 'recovering': 'OpenClaw is not answering; waiting for it'}.get(
+        run['status'], f"checking {run['claimed_count']} signals" if run.get('claimed_count') else 'your agent is reading the signals')
     return f"  {elapsed // 60}m {elapsed % 60:02d}s · {phase} · {len(cards)} suggestion{'s' if len(cards) != 1 else ''} so far"
 
 
 def cmd_check(config, args):
-    """Check now: every source reads now and a review of what came in starts (check_now.py). --wait follows it."""
+    """Check now: every source reads now and a check of what came in starts (check_now.py). --wait follows it."""
     found = call(config, 'check_now')
     view = found.get('check') or {}
     while args.wait and view.get('phase'):
@@ -390,21 +390,21 @@ def cmd_check(config, args):
     if args.json:
         return out_json({'started': found.get('started'), 'check': view})
     if view.get('phase'):
-        print(('Checking now: reading every source, then a review of what came in.' if found.get('started') else
+        print(('Checking now: reading every source, then a check of what came in.' if found.get('started') else
                'A check is running already.') + ' See it on the To-dos page.')
     elif view.get('ended'):
         new = view.get('found')
         print(f"Checked at {local(view['ended'])}." + (f" {new} new to-do{'' if new == 1 else 's'}." if new else ' Nothing new.'))
     if view.get('waiting'):
-        print(f"{view['waiting']} waiting. Next review: " + ('soon.' if view.get('soon') or not view.get('next_review') else f"by {local(view['next_review'])}."))
+        print(f"{view['waiting']} new. Next check: " + ('soon.' if view.get('soon') or not view.get('next_review') else f"by {local(view['next_review'])}."))
 
 
 def cmd_preview(config, args):
     started = call(config, 'preview_review')
     if not args.json:
         print('A preview is already running; following it.' if started.get('attached') else
-              f"Reviewing {started['signals']} signals from the last {assistant.PREVIEW_DAYS} days with your OpenClaw agent"
-              + (f" ({started['waiting']} are waiting; the rest are reviewed once activated)" if started['waiting'] > started['signals'] else '') + '.')
+              f"Checking {started['signals']} signals from the last {assistant.PREVIEW_DAYS} days with your OpenClaw agent"
+              + (f" ({started['waiting']} are waiting; the rest are checked once activated)" if started['waiting'] > started['signals'] else '') + '.')
         print('Nothing is sent to Telegram and nothing is done in your accounts. This usually takes a few minutes.\n')
     settings = config.get('review_worker') or {}
     # The service stops a run after timeout + outage grace; wait a little longer for its verdict.
@@ -429,7 +429,7 @@ def cmd_preview(config, args):
                 raise CliError('The preview is still running. It continues in the service: run assistant preview again to follow it.')
             time.sleep(PREVIEW_POLL)
     except KeyboardInterrupt:
-        print('\nStopped following. The review keeps running in the service; run assistant preview again to follow it.')
+        print('\nStopped following. The check keeps running in the service; run assistant preview again to follow it.')
         return
     finally:
         if tty:
@@ -446,16 +446,16 @@ def cmd_preview(config, args):
                 print('   ' + card['source_line'])
             print()
     elif not failed:
-        print(f"The review checked {run.get('checked_count', 0)} signals and found nothing worth your time right now. "
-              'That happens on a quiet week; regular reviews will keep looking once activated.\n')
+        print(f"The check read {run.get('checked_count', 0)} signals and found nothing worth your time right now. "
+              'That happens on a quiet week; regular checks will keep looking once activated.\n')
     dashboard = dashboard_url(config)
     print('These are real suggestions from your own signals. Nothing was sent and no action was taken in any account.')
-    print('Reviews and Telegram delivery are still off. ' + (f'The to-dos are on the dashboard: {dashboard} ' if dashboard else '')
+    print('Checks and Telegram delivery are still off. ' + (f'The to-dos are on the dashboard: {dashboard} ' if dashboard else '')
           + "(assistant tasks lists them too); they won't be sent to Telegram later.")
     print('When you want this every day, with to-dos in Telegram and Do it: ./install.sh --activate')
     if failed:
-        error = run.get('error') or run.get('last_error') or ('ended without saving its review' if run['status'] == 'ok' else run['status'])
-        raise CliError(f"The preview review didn't finish ({error}). See assistant reviews and openclaw logs, then run assistant preview again.")
+        error = run.get('error') or run.get('last_error') or ('ended without saving its check' if run['status'] == 'ok' else run['status'])
+        raise CliError(f"The preview check didn't finish ({error}). See assistant reviews and openclaw logs, then run assistant preview again.")
 
 
 def cmd_profile(config, args):
@@ -531,7 +531,7 @@ def save_draft(config, args, path, run):
         path.parent.mkdir(parents=True, exist_ok=True)
         onboarding.write_private(path, merged)
         break
-    print(f'Saved to {path}. Reviews and drafts read it from the next turn on.'
+    print(f'Saved to {path}. Checks and drafts read it from the next turn on.'
           + (f' It is now {len(merged):,} characters; OpenClaw chat sessions load the first {onboarding.USER_MD_BUDGET:,}.'
              if len(merged) > onboarding.USER_MD_BUDGET else ''))
 
@@ -564,7 +564,7 @@ def follow_roles(config, run_id, quiet=False):
         print('What your closest people and organizations are to you (confirm or change them in Who\'s who, in the dashboard\'s Graph tab):')
         print('\n'.join(f"  - {r['name']}: {r['role']}" for r in run['roles']))
     elif not quiet:
-        print('Their messages didn\'t make it clear for anyone yet. Reviews keep asking as more comes in.')
+        print('Their messages didn\'t make it clear for anyone yet. Checks keep asking as more comes in.')
     return run
 
 
@@ -1062,7 +1062,7 @@ def parser():
     c.add_argument('--body', help='file (or -) with the new doc\'s text; "# " to "### " lines are headings')
     add('sources', 'Connection health per source', cmd_sources)
     add('busy', 'What is running now (agent jobs, sends, preparations); exit status 3 while something runs, for scripts', cmd_busy)
-    c = add('reviews', 'Review backlog and recent review runs', cmd_reviews)
+    c = add('reviews', 'Check backlog and recent check runs', cmd_reviews)
     c.add_argument('--limit', type=int, default=10)
     c = add('feedback', 'Recent owner decisions and written feedback', cmd_feedback)
     c.add_argument('--limit', type=int, default=20)
@@ -1081,9 +1081,9 @@ def parser():
     source = c.add_mutually_exclusive_group(required=True)
     source.add_argument('--body')
     source.add_argument('--file', help='file with the text, or - for stdin')
-    c = add('check', 'Check now: every source reads now and a review of what came in starts, outside the usual rhythm', cmd_check)
+    c = add('check', 'Check now: every source reads now and a check of what came in starts, outside the usual rhythm', cmd_check)
     c.add_argument('--wait', action='store_true', help='wait until it is done and say what it found')
-    add('preview', f'First run: one review of the last {assistant.PREVIEW_DAYS} days, shown here and on the dashboard; nothing is sent', cmd_preview)
+    add('preview', f'First run: one check of the last {assistant.PREVIEW_DAYS} days, shown here and on the dashboard; nothing is sent', cmd_preview)
     c = add('enrich', 'Organization and work contact data from your enrichment service: status, or look up one domain now', cmd_enrich)
     c.add_argument('domain', nargs='?', help='a domain to look up now, like globex.com')
     c = add('roles', 'Note what your closest people and organizations are to you, from your messages with them (also part of profile)', cmd_roles)

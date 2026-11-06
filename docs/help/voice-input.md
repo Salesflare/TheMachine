@@ -27,7 +27,7 @@ A recording is deleted as soon as the text is back.
 
 ## Getting ready
 
-To turn speech into text itself, your Machine needs a speech model, 150 to 500 MB. It downloads it in the background, at a low priority, once it's set up, its first review is done and it has been quiet for a while. Settings says **Getting ready (in the background)** meanwhile. It never does this when OpenAI is in use.
+To turn speech into text itself, your Machine needs a speech model, 150 to 500 MB. It downloads it in the background, at a low priority, once it's set up, its first check is done and it has been quiet for a while. Settings says **Getting ready (in the background)** meanwhile. It never does this when OpenAI is in use.
 
 Until it's ready, **Automatic** uses your browser's own speech recognition where your browser has one, and says so under the box. Some browsers send that to their maker. With **On this Machine** picked, your recording waits, and the box shows "Getting voice ready…" with the time left.
 

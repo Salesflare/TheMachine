@@ -15,8 +15,8 @@ function limitBanner(p){if(!p)return [];if(p.fallback)return [make('span',{},t('
  return [make('span',{},make('strong',{},t(what,p.name||'AI')),(when?' '+t('Resets {}.',/^\d/.test(when)?t('at {}',when):when):'')+' '+t('Nothing is lost: The Machine picks up where it left off.'))]}
 // Reviews of new signals waiting for the budget (state.review_pause: window '5h' or 'week', until, name), with Review now
 function reviewBanner(p){if(!p)return [];const when=pauseWhen(p.until),name=p.name||'AI',week=p.window==='week';
- const line=when?t(week?'Reviews wait until {} to save your {} week.':'Reviews wait until {} to save your {} 5-hour limit.',when,name):t(week?'Reviews wait to save your {} week.':'Reviews wait to save your {} 5-hour limit.',name);
- return [make('span',{},line),make('button',{type:'button',class:'head-link','data-review-now':''},t('Review now'))]}
+ const line=when?t(week?'Checks wait until {} to save your {} week.':'Checks wait until {} to save your {} 5-hour limit.',when,name):t(week?'Checks wait to save your {} week.':'Checks wait to save your {} 5-hour limit.',name);
+ return [make('span',{},line),make('button',{type:'button',class:'head-link','data-review-now':''},t('Check now'))]}
 // A bug the owner reported, fixed and running here now: the control plane says so once this Machine runs the fix (its
 // cloud/support_fixes.py; hosted through /_machine/fixed with the owner's sign-in, self-hosted through the Network,
 // state.fixed, which the Fleet's hourly look keeps). One quiet line each, until Got it, which closes it on every Machine
@@ -37,5 +37,5 @@ function renderLimitBanner(){const b=$('#limit-banner');if(!b)return;const p=sta
  bannerSet(b,JSON.stringify([p,pauseWhen(p[1]?.until),document.documentElement.lang]),nodes)}
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-review-now]');if(!b)return;b.disabled=true;
  try{await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'review_now',args:{}})});
-  state.review_pause=null;renderLimitBanner();notice(t('A review starts in a moment.'))}catch(err){errCaught(err);b.disabled=false;notice(err.message,true)}});
+  state.review_pause=null;renderLimitBanner();notice(t('A check starts in a moment.'))}catch(err){errCaught(err);b.disabled=false;notice(err.message,true)}});
 function limitNote(m){if(!m?.limit_reached)return '';return html`<p class="limit-note"><strong>${t(m.chatgpt?'ChatGPT limit reached':'Model limit reached')}</strong>${m.limit_resets_at?t(', resets at {}',clockAt(m.limit_resets_at)):''}${resetAction(m)?html` · ${resetAction(m)}`:''}</p>`}

@@ -718,7 +718,7 @@ elif args[:2] == ["api", "call"]:
         self.assertIn('✓ work-gmail (Gmail): synced just now, 1 signals', text)
         self.assertIn('✗ personal-whatsapp (WhatsApp): not set up (identity_sha256 is still the example value) | assistant connect whatsapp', text)
         self.assertIn('! credential owner-token is readable by others | chmod 600', text)
-        self.assertIn('! reviews and to-dos in Telegram are off | try one: assistant preview', text)
+        self.assertIn('! checks and to-dos in Telegram are off | try one: assistant preview', text)
         self.assertIn('USER.md missing', text)
         ui = FakeUI()
         self.assertEqual(onboarding.print_doctor(results, ui), 1)
@@ -745,7 +745,7 @@ elif args[:2] == ["api", "call"]:
         settings.write_text(json.dumps({'plugins': {'entries': {'personal-assistant-bridge': {'enabled': True}}}}))
         self.config(openclaw=str(self.bin / 'openclaw'))
         text = '\n'.join(f'{m} {t} | {f}' for m, t, f in onboarding.doctor(self.path))
-        self.assertIn("✗ OpenClaw skips the bridge plugin's review hooks, so reviews never finish | "
+        self.assertIn("✗ OpenClaw skips the bridge plugin's review hooks, so checks never finish | "
                       'openclaw config set plugins.entries.personal-assistant-bridge.hooks.allowConversationAccess true --strict-json', text)
         settings.write_text(json.dumps({'plugins': {'entries': {'personal-assistant-bridge': {'enabled': True, 'hooks': {'allowConversationAccess': True}}}}}))
         text = '\n'.join(f'{m} {t} | {f}' for m, t, f in onboarding.doctor(self.path))

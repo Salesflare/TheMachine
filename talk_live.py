@@ -221,7 +221,7 @@ MAIN_TOOLS = [
          'required': ['words'], 'additionalProperties': False}},
     {'type': 'function', 'name': 'machine_status',
      'description': ('How the Machine itself is doing, as Connections shows it: each connected source and whether it '
-                     'needs the owner, the reviews, and anything else that needs them.'),
+                     'needs the owner, the checks of new messages, and anything else that needs them.'),
      'parameters': NONE},
     TOOL['ask_chat'], TOOL['create_todo'],
     # What a to-do's buttons on the dashboard do, through the same actions and rules; never a send
@@ -653,7 +653,7 @@ def main_instructions(language, now_text=None, languages=None, zone=None):
         '# The rest of the Machine',
         '- You can see everything the dashboard shows. Pick the direct tool when one fits: search and open_record for '
         'people, organizations, projects, messages, meetings and promises; calendar for meetings on a day; machine_status '
-        'for connections and reviews. They don’t change the to-do in focus.',
+        'for connections and checks of new messages. They don’t change the to-do in focus.',
         '- Never guess about someone or something: look it up first. Say what matters in a sentence or two.',
         '- Messages with someone ("did she text me?", "anything new from Acme?"): search with kind message and person. '
         'Say what came back, newest first, with when.',

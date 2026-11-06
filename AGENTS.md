@@ -177,7 +177,7 @@ For an explicitly owner-requested UI demo only, `{"kind":"email_demo","label":"S
 - **Check now:** `assistant check`.
 - **Privacy:** summarize status in shared logs instead of dumping private content, and never print credentials.
 - **One collector only:** don't run a second collector or `sync-once` while the service owns ingestion. Stop the service before manual syncs or source migrations, then resume from the existing checkpoint. Never reset a checkpoint to get past transient failures.
-- **Review troubleshooting:** check `assistant reviews --json` (`runs`) or Connections → Signal reviews → Recent runs before diagnosing a failed review. Compare the runtime status with `review_saved`, `checked_count` and `pending_count`: a runtime failure can follow a committed analysis, and a partly saved review can still have pending versions. Never replay saved signal versions to clear an error. Diagnose from the recorded failure category, phase and time, not a generic error label (it doesn't mean signals were lost). Don't invent explanations for old failures or widen retry or runtime limits without a specific need.
+- **Review troubleshooting:** check `assistant reviews --json` (`runs`) or Connections → Checks → Recent runs before diagnosing a failed review. Compare the runtime status with `review_saved`, `checked_count` and `pending_count`: a runtime failure can follow a committed analysis, and a partly saved review can still have pending versions. Never replay saved signal versions to clear an error. Diagnose from the recorded failure category, phase and time, not a generic error label (it doesn't mean signals were lost). Don't invent explanations for old failures or widen retry or runtime limits without a specific need.
 
 ## Public repository hygiene
 

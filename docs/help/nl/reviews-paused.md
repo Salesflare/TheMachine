@@ -1,29 +1,29 @@
 ---
 title: Geen nieuwe to-do's
 area: troubleshooting
-summary: Reviews staan uit, wachten, of zijn gestopt op de gebruikslimiet van je model. Hoe je dat ziet en wat je doet.
+summary: Checks staan uit, wachten, of zijn gestopt op de gebruikslimiet van je model. Hoe je dat ziet en wat je doet.
 covers: 
 code: dashboard.html, assistant.py
 order: 3
 ---
-To-do's komen uit reviews: je Machine leest wat er binnenkwam, in kleine porties, binnen ongeveer 15 minuten.
+To-do's komen uit checks: je Machine leest wat er binnenkwam, in kleine porties, binnen ongeveer 15 minuten.
 
 ## Net aangemeld
 
-Op een nieuwe gehoste Machine starten reviews vanzelf zodra je AI en je mail gekoppeld zijn. Terwijl je Machine je mail leest, staat bij To-do's "Je mail wordt gelezen, eerste to-do's over een paar minuten". Ontbreekt er een stap, dan noemt **Wacht op jou** die, zoals **Mail koppelen**, met een link naar die stap.
+Op een nieuwe gehoste Machine starten checks vanzelf zodra je AI en je mail gekoppeld zijn. Terwijl je Machine je mail leest, staat bij To-do's "Je mail wordt gelezen, eerste to-do's over een paar minuten". Ontbreekt er een stap, dan noemt **Wacht op jou** die, zoals **Mail koppelen**, met een link naar die stap.
 
-## Reviews staan uit
+## Checks staan uit
 
-Bovenaan To-do's staat "Reviews staan uit, dus er komen nog geen to-do's." Druk op een gehoste Machine op **Reviews aanzetten**. Voer op je eigen computer `./install.sh --activate` uit.
+Bovenaan To-do's staat "Checks staan uit, dus er komen nog geen to-do's." Druk op een gehoste Machine op **Checks aanzetten**. Voer op je eigen computer `./install.sh --activate` uit.
 
 ## De limiet van je model
 
-Reviews van wat binnenkwam pauzeren bij ongeveer 65% van de 5-uurslimiet van je abonnement en bij 90% van de weeklimiet, zodat er ruimte blijft voor je eigen chats. Een bord dat je geschiedenis doorloopt, gaat trager, met ongeveer een zevende van de week per dag. Met een werkend reservemodel op een ander abonnement of bij een andere aanbieder wachten reviews niet. Zie [Model](model.md).
+Checks van wat binnenkwam pauzeren bij ongeveer 65% van de 5-uurslimiet van je abonnement en bij 90% van de weeklimiet, zodat er ruimte blijft voor je eigen chats. Een bord dat je geschiedenis doorloopt, gaat trager, met ongeveer een zevende van de week per dag. Met een werkend reservemodel op een ander abonnement of bij een andere aanbieder wachten checks niet. Zie [Model](model.md).
 
-Terwijl reviews wachten, staat bovenaan het dashboard tot wanneer, zoals "Reviews wachten tot 07:15 om je ChatGPT-week te sparen." **Nu reviewen** start er meteen een. Als een limiet bereikt is, staat bovenaan het dashboard welke en wanneer die weer vrijkomt. **Koppelingen**, dan **Reviews**, toont het naast de run. **Instellingen**, **Model** toont je limieten. Zie [Model](model.md).
+Terwijl checks wachten, staat bovenaan het dashboard tot wanneer, zoals "Checks wachten tot 07:15 om je ChatGPT-week te sparen." **Nu checken** start er meteen een. Als een limiet bereikt is, staat bovenaan het dashboard welke en wanneer die weer vrijkomt. **Koppelingen**, dan **Checks**, toont het naast de run. **Instellingen**, **Model** toont je limieten. Zie [Model](model.md).
 
-Er gaat niets verloren terwijl het wacht: wat binnenkwam, wordt bekeken zodra het kan.
+Er gaat niets verloren terwijl het wacht: wat binnenkwam, wordt gecheckt zodra het kan.
 
 ## Een run is mislukt
 
-**Recente runs** onder **Reviews** toont elke run. Een mislukte portie wordt vanzelf opnieuw geprobeerd.
+**Recente runs** onder **Checks** toont elke run. Een mislukte portie wordt vanzelf opnieuw geprobeerd.

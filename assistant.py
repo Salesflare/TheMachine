@@ -7865,7 +7865,7 @@ class Store:
         if not shown:
             raise ValueError('That skill is gone')
         if shown.get('stale'):
-            raise ValueError(f"{shown['skill']} changed after this was suggested. Not now, or wait: the next review suggests it on the new version")
+            raise ValueError(f"{shown['skill']} changed after this was suggested. Not now, or wait: the next check suggests it on the new version")
         if source != 'dashboard' or not reviewed:
             raise ValueError('Open it on the dashboard to see the before and after first')
         if reviewed != shown['review']:
@@ -9716,7 +9716,7 @@ FAULT_AREAS = {
     'enrichment': ('Looking up contact details', 'Some people may miss details such as their company.'),
     'embeddings': ('Indexing messages for search', 'Search may miss recent messages.'),
     'preparation': ('Preparing a to-do', 'A to-do may stay unprepared.'),
-    'review': ('Reviewing new messages', 'New to-dos may come late.'),
+    'review': ('Checking new messages', 'New to-dos may come late.'),
     'sync': ('Reading a source', 'New messages from that source may come late.'),
     'collector': ('Reading a source', 'New messages from that source may come late.'),
     'delivery': ('Sending you to-dos', 'To-dos may reach you late.'),
@@ -11642,7 +11642,7 @@ def chat_prompt(job, config=None):
 
 # What a review's own tool calls say it is doing, in the owner's words. Only names and card titles (what a card already
 # shows) come from the call itself; never message text or search words.
-REVIEW_STEPS = {'begin_analysis': 'Taking the next signals to review', 'analysis_page': 'Reading the signals',
+REVIEW_STEPS = {'begin_analysis': 'Taking the next signals to check', 'analysis_page': 'Reading the signals',
                 'events': 'Looking through earlier messages', 'finish_analysis': 'Saving what it found',
                 'promise': 'Noting a promise', 'promise_close': 'Closing a promise that was kept',
                 'remember_fact': 'Remembering something about you', 'status': 'Checking open to-dos',
@@ -14027,7 +14027,7 @@ def recap_share_lines(store, config):
 
 RECAP_CIRCLE = 8  # a group chat with this many others or fewer is a circle of people, not a broadcast
 RECAP_CHOICES = {'noise': ('filter', 'keep', 'undo'), 'snoozed': ('drop', 'now', 'keep'), still_needed.KIND: ('drop', 'keep')}
-RECAP_DONE = {'filtered': 'No longer reviewed', 'kept': 'Kept', 'dropped': 'Dropped', 'started': 'Started'}
+RECAP_DONE = {'filtered': 'No longer checked', 'kept': 'Kept', 'dropped': 'Dropped', 'started': 'Started'}
 # Recaps sent before each choice had its own message: their buttons sit under the recap, numbered like its lines.
 RECAP_DONE_NUMBERED = {**RECAP_DONE, 'filtered': 'Filtered'}
 
@@ -14041,7 +14041,7 @@ def recap_buttons(items, numbered=False):
         value = f"assistant:recap:{item['id']}:"
         label = (lambda text: f"{i18n.t(text)} {item['n']}") if numbered else i18n.t
         if item['status'] == 'open':
-            choices = ([('Filter', 'filter'), ('Keep', 'keep')] if numbered else [('Stop reviewing', 'filter'), ('Keep reviewing', 'keep')]) \
+            choices = ([('Filter', 'filter'), ('Keep', 'keep')] if numbered else [('Stop checking', 'filter'), ('Keep checking', 'keep')]) \
                 if item['kind'] == 'noise' else [('Drop', 'drop'), ('Do it now', 'now'), ('Keep', 'keep')]
             rows.append([{'text': label(text), 'value': value + choice} for text, choice in choices])
         elif item['status'] == 'filtered':
@@ -14215,7 +14215,7 @@ def weekly_recap_message(store, config, current=None):
         lines += ['', '**' + t('People and projects') + '**', *alive]
 
     # 4. Behind the scenes, in one short line: what was read, never what it cost.
-    tail = t('{} signals reviewed this week, {} still waiting', f'{reviewed:,}', f'{backlog:,}') if backlog else t('{} signals reviewed this week', f'{reviewed:,}')
+    tail = t('{} signals checked this week, {} still waiting', f'{reviewed:,}', f'{backlog:,}') if backlog else t('{} signals checked this week', f'{reviewed:,}')
     lines += ['', '_' + t('Behind the scenes: {}.', tail) + '_']
 
     # 5. One-tap choices, each its own message with its own buttons, so it reads without scrolling back: nothing
@@ -14394,7 +14394,7 @@ def needs_you(config):
     model = main_model()
     if model and model_ready(config) is False:
         items.append({'id': 'model-signed-out', 'text': f'Your main model, {model}, can\u2019t run: nothing is signed in for it. '
-                      'Nothing gets reviewed until it can.', 'url': manage + '#model' if manage else None,
+                      'Nothing gets checked until it can.', 'url': manage + '#model' if manage else None,
                       'action': 'Fix it' if manage else 'Run: openclaw models auth login'})
     # The message key (message_seal.py): without it, the messages can't be read after a restart
     try:
@@ -14406,7 +14406,7 @@ def needs_you(config):
     import onboarding
     size = onboarding.user_md_too_long(config.get('openclaw_workspace') or WORKSPACE)
     if size:
-        items.append({'id': 'user-md-long', 'text': f'Your USER.md is {size:,} characters. Reviews and Do it read the first '
+        items.append({'id': 'user-md-long', 'text': f'Your USER.md is {size:,} characters. Checks and Do it read the first '
                       f'{onboarding.USER_MD_CONTEXT_LIMIT:,}, so the end is left out.', 'url': None, 'action': None})
     # `needs_you_file`: optional JSON list of notes from a hosting layer (a hosted machine), shown as they are.
     path = config.get('needs_you_file')
@@ -20168,7 +20168,7 @@ class App(*APP_MIXINS):
         week's signals, for a new install with reviews still off. Its cards are shown on the dashboard
         only (see Store.suggest); review_step monitors the run. Config stays as it is."""
         if (self.config.get('review_worker') or {}).get('enabled'):
-            raise ValueError('Reviews are already on: new to-dos arrive by themselves. See assistant tasks or the dashboard.')
+            raise ValueError('Checks are already on: new to-dos arrive by themselves. See assistant tasks or the dashboard.')
         accounts = [a['id'] for a in self.config['accounts']]
         hours = QUICK_LOOK_HOURS if quick else PREVIEW_DAYS * 24
         # The first look by itself: after the quick one, it digs on with the most promising FIRST_LOOK_NEXT_SIGNALS of the week
@@ -20182,11 +20182,11 @@ class App(*APP_MIXINS):
                 return {'run_id': run['run_id'], 'started_at': run['started_at'], 'attached': True}  # follow the running preview
             if run or db.execute("SELECT 1 FROM analyses WHERE status='running' AND coalesce(resumed_at,started_at)>?",
                                  ((dt.datetime.fromisoformat(now()) - dt.timedelta(hours=1)).isoformat(),)).fetchone():
-                raise ValueError('Another review is running. Try again when it has finished (assistant reviews).')
+                raise ValueError('Another check is running. Try again when it has finished (assistant reviews).')
             waiting = db.execute('SELECT count(*) FROM events WHERE analyzed_version<version AND deferrals<? AND occurred_at>=? AND account_id IN ('
                                  + ','.join('?' for _ in accounts) + ')', (SET_ASIDE_AFTER, since, *accounts)).fetchone()[0] if accounts else 0
             if not waiting:
-                raise ValueError(f'No unreviewed signals from the last {PREVIEW_DAYS} days yet. Check assistant sources; the first import can take a few minutes.')
+                raise ValueError(f'No unchecked signals from the last {PREVIEW_DAYS} days yet. Check assistant sources; the first import can take a few minutes.')
             run_id, started = uuid.uuid4().hex, now()
             db.execute("INSERT INTO review_runs(run_id,status,started_at,updated_at,preview,auto,planned,window_hours,budget,promising) VALUES(?,'starting',?,?,1,?,?,?,?,?)",
                        (run_id, started, started, int(auto), min(waiting, budget), QUICK_LOOK_HOURS if quick else None, budget if quick or nxt else None, int(nxt)))

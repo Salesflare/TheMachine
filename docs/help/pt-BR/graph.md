@@ -63,7 +63,7 @@ Em Campos, em uma pessoa, organização ou projeto, clique em um valor para mud�
 
 **Importar CSV…**, no menu de ordem de Pessoas, Organizações ou Projetos, adiciona uma planilha salva como CSV. Sua Machine adivinha qual coluna é qual pelos cabeçalhos e pelo conteúdo. Mude qualquer uma delas.
 
-Quando seu modelo pode rodar, ele também confere as colunas, em qualquer idioma e com qualquer grafia dos cabeçalhos, com um motivo curto quando não tem certeza. Ele vê só os cabeçalhos, alguns valores por coluna e as células que as regras não conseguiram ler, na sua Machine, como em uma revisão. Sem ele, vale o palpite pelos cabeçalhos.
+Quando seu modelo pode rodar, ele também confere as colunas, em qualquer idioma e com qualquer grafia dos cabeçalhos, com um motivo curto quando não tem certeza. Ele vê só os cabeçalhos, alguns valores por coluna e as células que as regras não conseguiram ler, na sua Machine, como em uma verificação. Sem ele, vale o palpite pelos cabeçalhos.
 
 **Revisar**, ao lado das correções sugeridas, lista as correções fáceis como antes e depois: espaços a mais, nomes em maiúsculas, telefones no formato internacional, erros de digitação em e-mails (gmial.com), sites como domínio, datas e valores em qualquer formato ("€12k" é 12000), várias tags em uma célula, uma etapa escrita diferente da do quadro e a mesma linha duas vezes.
 
@@ -105,7 +105,7 @@ Clique na foto da página de uma pessoa ou organização para mudá-la: **Enviar
 
 **Editar**, no topo da página, muda o nome, o cargo, a organização, o local, o LinkedIn, os telefones e e-mails, o que a pessoa é para você e Trabalho ou Pessoal. **Salvar** mantém, **Cancelar** deixa como estava.
 
-Suas edições ficam, mesmo quando os detalhes são buscados de novo ou uma revisão lê outra coisa, e também com **Mesclar** e **Desfazer**. Esvazie um campo para usar de novo o valor buscado. Um nome vazio traz de volta o das mensagens.
+Suas edições ficam, mesmo quando os detalhes são buscados de novo ou uma verificação lê outra coisa, e também com **Mesclar** e **Desfazer**. Esvazie um campo para usar de novo o valor buscado. Um nome vazio traz de volta o das mensagens.
 
 ## Voltou
 
@@ -183,11 +183,11 @@ Sua escolha em **Editar** sempre fica, mesmo quando você a tira. **Mesma organi
 
 ### Quadros
 
-Projetos de um tipo em etapas, como um pipeline de avaliação. **⋯** em um quadro: **Editar quadro** (nome, etapas, quais projetos fazem parte), **Abrir neste quadro** e **Novo quadro**. As revisões continuam adicionando projetos que se encaixam e os colocam em uma etapa. Quando não têm certeza, o quadro mostra "2 projetos podem fazer parte daqui": **Adicionar** ou **Deixar de fora**.
+Projetos de um tipo em etapas, como um pipeline de avaliação. **⋯** em um quadro: **Editar quadro** (nome, etapas, quais projetos fazem parte), **Abrir neste quadro** e **Novo quadro**. As verificações continuam adicionando projetos que se encaixam e os colocam em uma etapa. Quando não têm certeza, o quadro mostra "2 projetos podem fazer parte daqui": **Adicionar** ou **Deixar de fora**.
 
 **Follow-ups…** no **⋯** de um quadro faz follow-up sozinha quando alguém não responde. Veja [Follow-ups](follow-ups.md).
 
-**Concluído quando**, em **Editar** de um projeto, diz em palavras simples o que o conclui, com a prova: **Uma página no ar** (The Machine abre o link da mensagem deles e confere se ele aponta para você) ou **A mensagem deles**. As revisões sugerem uma para listagens de parceiros. Uma revisão só move um projeto para a última etapa com essa prova, com link na página dele; **Ganho** à mão continua valendo.
+**Concluído quando**, em **Editar** de um projeto, diz em palavras simples o que o conclui, com a prova: **Uma página no ar** (The Machine abre o link da mensagem deles e confere se ele aponta para você) ou **A mensagem deles**. As verificações sugerem uma para listagens de parceiros. Uma verificação só move um projeto para a última etapa com essa prova, com link na página dele; **Ganho** à mão continua valendo.
 
 A página também mostra o que o trava (sem resposta há 10+ dias, uma promessa atrasada) e cria uma tarefa quando ele não tem nenhuma. Nada é enviado sem você.
 

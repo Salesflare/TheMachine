@@ -27,7 +27,7 @@ Was in deinen Nachrichten, Aufgaben, Entwürfen oder Chats steht. Namen, E-Mail-
 
 ## Woher Fehler kommen
 
-- der Dienst und seine Jobs: Prüfungen, Aufgaben vorbereiten, Chat, Verbindungen und Syncs;
+- der Dienst und seine Jobs: Prüfungen neuer Nachrichten, Aufgaben vorbereiten, Chat, Verbindungen und Syncs;
 - das Dashboard in deinem Browser, auch Fehler, die es abgefangen und dir gezeigt hat, und seine App-Kopie auf deinem Gerät;
 - Aufrufe vom Dashboard an deine Machine, die fehlschlagen oder zu lange dauern: welcher Aufruf, nie was er gefragt oder gesendet hat;
 - fehlgeschlagene Jobs von Claude Code und Codex: nur das Tool und die Art des Fehlers.

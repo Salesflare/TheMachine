@@ -63,7 +63,7 @@ Sotto Campi in una persona, organizzazione o progetto, fai clic su un valore per
 
 **Importa CSV…**, nel menu di ordinamento di Persone, Organizzazioni o Progetti, aggiunge un foglio di calcolo salvato come CSV. La tua Machine indovina quale colonna è quale dalle intestazioni e da cosa contengono; puoi cambiarle tutte.
 
-Quando il tuo modello può girare, controlla anche le colonne, in qualsiasi lingua e comunque siano scritte le intestazioni, con un breve motivo dove non è sicuro. Vede solo le intestazioni, alcuni valori per colonna e le celle che le regole non sono riuscite a leggere, sulla tua Machine come una revisione. Senza modello, resta l'ipotesi fatta dalle intestazioni.
+Quando il tuo modello può girare, controlla anche le colonne, in qualsiasi lingua e comunque siano scritte le intestazioni, con un breve motivo dove non è sicuro. Vede solo le intestazioni, alcuni valori per colonna e le celle che le regole non sono riuscite a leggere, sulla tua Machine come un controllo. Senza modello, resta l'ipotesi fatta dalle intestazioni.
 
 **Rivedi**, accanto alle correzioni suggerite, elenca le correzioni semplici come prima e dopo: spazi in più, nomi in maiuscolo, numeri di telefono in formato internazionale, refusi nelle email (gmial.com), siti web ridotti al dominio, date e valori in qualsiasi formato ("€12k" è 12000), più tag in una cella, una fase scritta in modo diverso da quella della bacheca e la stessa riga due volte.
 
@@ -105,7 +105,7 @@ Fai clic sull'immagine nella pagina di una persona o di un'organizzazione per ca
 
 **Modifica**, in cima alla sua pagina, cambia nome, ruolo, organizzazione, luogo, LinkedIn, telefoni ed email, cosa rappresenta per te, e Lavoro o Personale. **Salva** conserva le modifiche, **Annulla** lascia tutto com'era.
 
-Le tue modifiche restano, anche quando i suoi dettagli vengono cercati di nuovo o una revisione legge qualcos'altro, e anche dopo **Unisci** e **Annulla**. Svuota un campo per usare di nuovo il valore trovato. Un nome vuoto riporta quello dei suoi messaggi.
+Le tue modifiche restano, anche quando i suoi dettagli vengono cercati di nuovo o un controllo legge qualcos'altro, e anche dopo **Unisci** e **Annulla**. Svuota un campo per usare di nuovo il valore trovato. Un nome vuoto riporta quello dei suoi messaggi.
 
 ## Respinto
 
@@ -183,11 +183,11 @@ La tua scelta in **Modifica** resta sempre, anche quando la togli. **Stessa orga
 
 ### Bacheche
 
-Progetti di un tipo organizzati in fasi, come una pipeline di valutazione. **⋯** su una bacheca: **Modifica bacheca** (nome, fasi, quali progetti ne fanno parte), **Apri su questa bacheca** e **Nuova bacheca**. Le revisioni continuano ad aggiungere i progetti adatti e li mettono in una fase. Quando non sono sicure, la bacheca mostra "2 progetti potrebbero stare qui": **Aggiungi** o **Escludi**.
+Progetti di un tipo organizzati in fasi, come una pipeline di valutazione. **⋯** su una bacheca: **Modifica bacheca** (nome, fasi, quali progetti ne fanno parte), **Apri su questa bacheca** e **Nuova bacheca**. I controlli continuano ad aggiungere i progetti adatti e li mettono in una fase. Quando non sono sicuri, la bacheca mostra "2 progetti potrebbero stare qui": **Aggiungi** o **Escludi**.
 
 **Ricontatti…** nel **⋯** di una bacheca ricontatta da sola chi non risponde. Vedi [Ricontatti](follow-ups.md).
 
-**Fatto quando**, in **Modifica** di un progetto, dice con parole semplici cosa lo conclude, con la sua prova: **Una pagina online** (The Machine apre il link del loro messaggio e controlla che punti a te) o **Il loro messaggio**. Le revisioni ne propongono una per le schede dei partner. Una revisione sposta un progetto all’ultima fase solo con quella prova, collegata nella sua pagina; **Vinto** a mano funziona sempre.
+**Fatto quando**, in **Modifica** di un progetto, dice con parole semplici cosa lo conclude, con la sua prova: **Una pagina online** (The Machine apre il link del loro messaggio e controlla che punti a te) o **Il loro messaggio**. I controlli ne propongono una per le schede dei partner. Un controllo sposta un progetto all’ultima fase solo con quella prova, collegata nella sua pagina; **Vinto** a mano funziona sempre.
 
 La pagina mostra anche cosa lo blocca (nessuna risposta da 10+ giorni, una promessa in ritardo) e aggiunge un’attività quando non ne ha. Niente viene inviato senza di te.
 
