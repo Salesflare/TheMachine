@@ -308,13 +308,16 @@ def git_dir(work):
     return work / '.git' if (work / '.git').exists() else work.parent / 'git'
 
 
-def git(folder, *args, check=True):
-    """Git in a job folder only, never the owner's own git config, hooks or signing."""
+def git(folder, *args, check=True, raw=False):
+    """Git in a job folder only, never the owner's own git config, hooks or signing. A job's files, names and diffs
+    can hold any bytes, not only UTF-8: the output is text with those bytes replaced (for showing), or bytes with
+    `raw` (for what goes back to git or the file system)."""
     env = {**os.environ, 'GIT_CONFIG_GLOBAL': os.devnull, 'GIT_CONFIG_NOSYSTEM': '1', 'GIT_TERMINAL_PROMPT': '0',
            'GIT_DIR': str(git_dir(folder)), 'GIT_WORK_TREE': str(folder)}
+    text = {} if raw else {'encoding': 'utf-8', 'errors': 'replace'}
     return subprocess.run(['git', '-c', 'core.hooksPath=' + os.devnull, '-c', 'user.name=The Machine', '-c', 'user.email=machine@localhost',
                            '-c', 'commit.gpgsign=false', '-c', 'core.quotepath=false', *args], cwd=folder, env=env, capture_output=True,
-                          text=True, timeout=60, check=check)
+                          timeout=60, check=check, **text)
 
 
 # ------------------------------------------------------------------ runners: one turn of a job
@@ -1841,17 +1844,16 @@ class AgentJobs:
             return files[:FILES_MAX], ''
         try:
             git(work, 'add', '-A')
-            names = git(work, 'diff', '--cached', '--name-status', '--no-renames', 'HEAD').stdout.splitlines()
+            names = git(work, 'diff', '--cached', '--name-status', '--no-renames', '-z', 'HEAD', raw=True).stdout.split(b'\0')
             diff = git(work, 'diff', '--cached', '--stat', '-p', 'HEAD').stdout
         except (subprocess.SubprocessError, OSError) as error:
             LOG.warning('agent job diff error=%s', type(error).__name__)
             return [], ''
         files = []
-        for line in names:
-            status, _, path = line.partition('\t')
-            found = work / path
-            if status != 'D' and found.is_file() and not found.is_symlink():
-                files.append({'path': path, 'size': found.stat().st_size})
+        for status, path in zip(names[0::2], names[1::2]):
+            found = work / os.fsdecode(path)  # the name as it is on disk, whatever its bytes
+            if status != b'D' and found.is_file() and not found.is_symlink():
+                files.append({'path': path.decode('utf-8', 'replace'), 'size': found.stat().st_size})
         if len(diff) > DIFF_MAX:
             diff = diff[:DIFF_MAX] + '\n… (cut here; the full changes are in the job folder)\n'
         return files[:FILES_MAX], diff
