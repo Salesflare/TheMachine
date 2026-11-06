@@ -5,9 +5,13 @@ methods they call (calendar_write, meeting_notes, meeting_write and its worker) 
 the hours, model and source helpers (now, local_tz, has_model, gog_read, ...), which move out of assistant.py first.
 
 Where the Calendar starts (calendar_starts): a calendar's first read goes CALENDAR_BACK_DAYS back from when it was
-connected (assistant.sync_calendar). Later reads roll on, and what came in stays, so nothing before that day is there."""
+connected (assistant.sync_calendar). Later reads roll on, and what came in stays, so nothing before that day is there.
+Once every calendar's history is in (machine/app/history.py, a year back by default), the Calendar starts where that
+history does."""
 import datetime as dt
 import sqlite3
+
+from machine.store import history
 
 from timeutil import local_tz
 
@@ -59,6 +63,7 @@ class CalendarApp:
                  f'SELECT MIN(day) FROM sync_daily WHERE syncs>failed AND account_id IN ({marks})']
         found = []
         with self.store.connect() as db:
+            older = history.calendar_start(db, ids)
             for read in reads:
                 try:
                     found.append(db.execute(read, ids).fetchone()[0])
@@ -68,5 +73,8 @@ class CalendarApp:
         if not first:
             return None
         started = _when(self.started_at() or '')
+        day = (first - dt.timedelta(days=CALENDAR_BACK_DAYS)).astimezone(local_tz()).date().isoformat()
+        if older and older < day:  # its history reaches further back
+            return {'day': older, 'joined': False, 'history': True}
         return {'day': (first - dt.timedelta(days=CALENDAR_BACK_DAYS)).astimezone(local_tz()).date().isoformat(),
                 'joined': bool(started and abs(first - started) <= dt.timedelta(days=2))}

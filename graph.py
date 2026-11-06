@@ -1154,7 +1154,8 @@ def _edits(db):
 
 
 def _signals(db, horizon):
-    rows = db.execute("SELECT id,account_id,kind,occurred_at,metadata FROM events WHERE deleted=0 AND occurred_at>=? ORDER BY occurred_at", (horizon,)).fetchall()
+    # Signals only: history (machine/store/history.py) is to search and read, never closeness, roles or projects
+    rows = db.execute("SELECT id,account_id,kind,occurred_at,metadata FROM events WHERE deleted=0 AND history=0 AND occurred_at>=? ORDER BY occurred_at", (horizon,)).fetchall()
     signals = []
     for r in rows:
         try:

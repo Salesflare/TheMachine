@@ -1014,7 +1014,7 @@ def brief_facts(db, accounts, since, secret, internal, today=None, team=(), mine
     start = (today - dt.timedelta(days=UNANSWERED_DAYS)).isoformat()
     later = ("SELECT 1 FROM events r WHERE r.account_id=e.account_id AND r.kind='gmail.message' AND r.deleted=0 AND r.occurred_at>e.occurred_at "
              "AND instr(r.metadata,'\"SENT\"')>0 AND json_extract(r.metadata,'$.thread_id')=json_extract(e.metadata,'$.thread_id')")
-    for row in db.execute(f"SELECT e.id,e.occurred_at,e.metadata,e.account_id,e.kind,EXISTS({later}) answered FROM events e WHERE e.kind='gmail.message' AND e.deleted=0 "
+    for row in db.execute(f"SELECT e.id,e.occurred_at,e.metadata,e.account_id,e.kind,EXISTS({later}) answered FROM events e WHERE e.kind='gmail.message' AND e.deleted=0 AND e.history=0 "
                           f"AND e.occurred_at>=? AND e.account_id IN ({marks}) AND instr(e.metadata,'\"SENT\"')=0 ORDER BY e.occurred_at DESC",
                           (start, *accounts)):
         m = json.loads(row['metadata'] or '{}')

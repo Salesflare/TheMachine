@@ -274,6 +274,24 @@ Story moves between workflow states (`shortcut.move`), with their owners and dea
 - Shortcut tokens have full account access (there is no read-only scope). This connector only reads: GET-only story search and story history, and it checks that the token belongs to the chosen workspace.
 - It starts with the last seven days, searches with a one-day overlap and commits its paging checkpoints. The story's current context may be newer than a single move.
 
+### History
+
+Signals start with the import window above (seven days for most sources). Older WhatsApp messages, email (Gmail and
+Outlook) and meetings come in afterwards as history, a year back by default (`history_days`, 0 to 730, 0 turns it
+off), with the sign-ins the connections already have: no new scopes (`machine/app/history.py`).
+
+- **History is never a signal.** It is stored reviewed (`events.history` = 1) and stays so through later edits, so no
+  review, first look, to-do, promise, Graph link or "new" count comes from it. Search, threads, a message and the
+  Calendar show it; search results mark it `history`. No model reads it, and local embeddings skip it.
+- **When it runs:** after the first look ended (or a day after the first read on a Machine from before the first
+  look), never while a review, a first import or a sync read runs, with at least 2 GB (and 10%) free on the disk and
+  500 MB of memory available, at the lowest CPU and disk priority. One small step every 20 seconds: a week of the
+  local WhatsApp store, 20 messages of a mailbox, or 100 meetings.
+- **How far:** WhatsApp has what `wacli` stored; email and calendars go back `history_days`. A deeper setting walks on
+  from where the last walk stopped; a shallower one keeps what came in.
+- **Resumable:** each step saves its cursor in `history_backfill`, and a row already here is never written again, so
+  a restart or a replayed step keeps nothing twice. Every Machine starts it by itself after an update.
+
 ## The Machine's browser
 
 ### Watching it work

@@ -284,7 +284,7 @@ class Reliability(unittest.TestCase):
         with self.store.connect() as db:
             plan = ' '.join(r[3] for r in db.execute(
                 'EXPLAIN QUERY PLAN SELECT count(*) FROM events WHERE account_id=? AND analyzed_version<version', ('work',)))
-        self.assertIn('events_pending_account', plan)
+        self.assertRegex(plan, r'events_pending_(account|time)\b')  # a partial index of pending rows, never a scan of history
 
 
 if __name__ == '__main__':
