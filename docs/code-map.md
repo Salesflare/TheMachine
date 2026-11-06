@@ -93,7 +93,8 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   `profile.py`: the profile, voices, skills, roles, organizations, history and import prompts), `machine/cards.py`
   (how a to-do reads: snooze times, titles, source lines, handoffs, ask and blocker text, controls, to-do states),
   `machine/browser.py` (browser leases, sign-in handoffs, tab peeks, safe links, preparation steps), `machine/chat.py`
-  (a to-do's chat: its items, replies, drafts, handoffs and redaction).
+  (a to-do's chat: its items, replies, drafts, handoffs and redaction), `machine/faults.py` (the Machine's own errors:
+  where they happened, their scrubbed message, the code version and release, the fault log).
 - **Dashboard code:** in its area's part in `dashboard/` (`<area>-<what>.js`: shell, todos, settings, graph, calendar,
   connections, help, events, new, fleet), next to the functions it works with, never at the end of the script. The
   page's core is in the `shell-*` parts too: locale and error reports (`shell-core.js`), network and outbox, `render()`
