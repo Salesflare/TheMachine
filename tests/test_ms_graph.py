@@ -56,6 +56,7 @@ class FakeGraph:
         self.sent_html = []
         self.files = {}
         self.calendars = {}
+        self.events = {}  # series masters read by id
 
     def add(self, mid, folder, received, modified, body=b'', conversation='conv-1', read=True, internet_id='<x@acme.test>'):
         self.messages[mid] = {'id': mid, 'conversationId': conversation, 'internetMessageId': internet_id, 'parentFolderId': folder,
@@ -166,6 +167,11 @@ class FakeGraph:
             return {'id': 'cal', 'owner': {'address': 'alex@acme.test'}}
         if path == '/me/calendarView/delta':
             return self.delta.pop(0)
+        if path.startswith('/me/events/') and verb == 'GET':
+            found = self.events.get(urllib.parse.unquote(path.split('/')[3]))
+            if not found:
+                raise http_error(path, 404)
+            return found
         raise AssertionError('unexpected call ' + verb + ' ' + path)
 
 
@@ -175,7 +181,7 @@ SENT_SIGNED = ('<html><body><div>Reply number {}.</div><div>Cheers,</div><div>Al
 
 class Base(unittest.TestCase):
     def setUp(self):
-        ms_graph._tokens.clear(); ms_graph._folders.clear()
+        ms_graph._tokens.clear(); ms_graph._folders.clear(); ms_graph._series.clear()
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
         token = Path(self.temp.name) / 'broker-token'; token.write_text('machine-token\n')
         self.mail = {'id': 'acme-outlook', 'service': 'outlook', 'transport': 'broker', 'email': 'alex@acme.test', 'boundary': 'work:Acme'}
@@ -408,6 +414,51 @@ class CalendarSync(Base):
         self.assertIn('startDateTime=', delta[0][1])
         self.assertEqual(delta[1][1], G + '/me/calendarView/delta?$deltatoken=one')
 
+
+    def test_recurring_occurrences_take_their_series_title_and_exceptions_keep_their_own(self):
+        """Graph's calendar view delta gives an occurrence only its id, type, times and seriesMasterId: the title, place
+        and people are on the series master (on this page, or read by id), which is never an event of its own."""
+        def when(day, hour):
+            return {'dateTime': f'2099-01-{day:02d}T{hour:02d}:00:00.0000000', 'timeZone': 'UTC'}
+        master = {'id': 'S1', 'type': 'seriesMaster', 'subject': 'Weekly sync', 'location': {'displayName': 'Room 4'},
+                  'organizer': {'emailAddress': {'address': 'alex@acme.test', 'name': 'Alex'}},
+                  'attendees': [{'emailAddress': {'address': 'bo@client.test', 'name': 'Bo'}, 'status': {'response': 'accepted'}}],
+                  'webLink': 'https://outlook.office365.com/owa/?itemid=S1', 'lastModifiedDateTime': '2098-12-01T00:00:00Z',
+                  'start': when(3, 9), 'end': when(3, 10), 'isAllDay': False}
+        self.fake.events['S2'] = {'id': 'S2', 'subject': 'Private 1:1', 'sensitivity': 'private', 'isAllDay': False,
+                                  'location': {'displayName': 'Cafe'}}
+        self.fake.delta = [{'value': [
+            {'id': 'o1', 'type': 'occurrence', 'seriesMasterId': 'S1', 'start': when(3, 9), 'end': when(3, 10)},
+            master,
+            {'id': 'o2', 'type': 'exception', 'seriesMasterId': 'S1', 'subject': 'Weekly sync: moved', 'start': when(10, 14), 'end': when(10, 15),
+             'location': {'displayName': 'Room 7'}, 'isAllDay': False, 'lastModifiedDateTime': '2098-12-02T00:00:00Z'},
+            {'id': 'p1', 'type': 'occurrence', 'seriesMasterId': 'S2', 'start': when(4, 16), 'end': when(4, 17)}],
+            '@odata.deltaLink': G + '/me/calendarView/delta?$deltatoken=one'}]
+        with patch_everywhere(a, 'now', return_value='2099-01-01T00:00:00+00:00'):
+            a.sync_calendar(self.store, self.config, self.cal)
+        with self.store.connect() as db:
+            rows = {r['source_id']: r for r in db.execute("SELECT source_id,title,metadata FROM events WHERE kind='calendar.event'")}
+        self.assertEqual(sorted(rows), ['o1', 'o2', 'p1'])  # the series master is no event of its own
+        self.assertEqual((rows['o1']['title'], json.loads(rows['o1']['metadata'])['location']), ('Weekly sync', 'Room 4'))
+        self.assertEqual(json.loads(rows['o1']['metadata'])['recurring_event_id'], 'S1')
+        self.assertEqual(json.loads(rows['o1']['metadata'])['attendees'][0]['email'], 'bo@client.test')
+        self.assertEqual((rows['o2']['title'], json.loads(rows['o2']['metadata'])['location']), ('Weekly sync: moved', 'Room 7'))
+        self.assertEqual((rows['p1']['title'], json.loads(rows['p1']['metadata'])['location']), ('Private 1:1', 'Cafe'))  # the owner's own private event
+        reads = [c[1] for c in self.fake.calls if '/me/events/' in c[1]]
+        self.assertEqual(len(reads), 1)  # only the master not on the page, read once
+        self.assertIn('/me/events/S2?', reads[0])
+        self.assertIn('subject', urllib.parse.parse_qs(urllib.parse.urlsplit(reads[0]).query)['$select'][0])
+
+    def test_an_outlook_calendar_read_before_series_titles_is_read_again(self):
+        self.fake.delta = [{'value': [], '@odata.deltaLink': G + '/me/calendarView/delta?$deltatoken=two'}]
+        with patch_everywhere(a, 'now', return_value='2099-01-01T00:00:00+00:00'):
+            self.store.commit_page(self.cal['id'], {'mode': 'incremental', 'sync_token': G + '/me/calendarView/delta?$deltatoken=old',
+                                                    'refresh_at': '2099-01-02T00:00:00+00:00', 'time_min': '2098-12-25T00:00:00+00:00',
+                                                    'time_max': '2099-01-31T00:00:00+00:00'}, [], record_sync=False)
+            a.sync_calendar(self.store, self.config, self.cal)
+        delta = [c[1] for c in self.fake.calls if '/calendarView/delta' in c[1]]
+        self.assertIn('startDateTime=', delta[0])  # the whole window again, not the old delta
+        self.assertEqual(self.store.checkpoint(self.cal['id'])['outlook_read'], ms_graph.CALENDAR_READ)
 
 class Sending(Base):
     def action(self, **extra):
