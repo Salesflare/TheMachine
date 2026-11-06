@@ -121,6 +121,7 @@ from models import background_model, claude_plan_route, has_model, main_model, m
 import follow_ups
 import bounces
 import recurring
+import still_needed
 import pacing
 import portable
 import service
@@ -1092,6 +1093,7 @@ DASHBOARD_ACTIONS = frozenset({
     'push_subscribe',
     'push_test',
     'push_unsubscribe',
+    'recap_decide',
     'review_now',
     'revise_draft',
     'security_level',
@@ -4558,6 +4560,19 @@ class Store:
             if person:
                 line = {'person': person, 'since': best[0], 'card': best[2]}
         return {'name': first, **({'line': line} if line else {})} if first or line else None
+
+    @staticmethod
+    def still_needed_ask(db, stamp, skip=lambda row: False, tz=dt.timezone.utc):
+        """Still needed? (still_needed.py) in the weekly recap's choices table: ends the question of a to-do that closed
+        (dropped when it was rejected), then asks once on each to-do still_needed.due names. Returns the ids asked now."""
+        db.execute("UPDATE recap_items SET status=CASE WHEN (SELECT status FROM suggestions WHERE id=recap_items.ref)='rejected' THEN 'dropped' "
+                   "ELSE 'closed' END,decided_at=? WHERE kind=? AND status='open' AND COALESCE((SELECT status FROM suggestions WHERE id=recap_items.ref),"
+                   "'rejected') IN ('completed','rejected')", (stamp, still_needed.KIND))
+        rows = still_needed.due(db, stamp, skip, tz)
+        for r in rows:
+            db.execute("INSERT INTO recap_items(id,week,n,kind,ref,line,data,status) VALUES(?,'',0,?,?,?,?,'open')",
+                       ('sn_' + secrets.token_hex(6), still_needed.KIND, r['id'], r['title'], json.dumps({'asked_at': stamp})))
+        return [r['id'] for r in rows]
 
     @staticmethod
     def greeting_on(db, at):
@@ -9055,6 +9070,7 @@ class Store:
             for sid, photos in whatsapp_images.of_cards(db, {'database': str(self.path)}, cards).items():
                 next(c for c in cards if c['id'] == sid)['photos'] = photos  # a WhatsApp photo it came from (whatsapp_images.py)
             recurring.annotate(db, cards, dt.datetime.now(local_tz()).date())  # "Repeats monthly" (recurring.py)
+            still_needed.annotate(db, cards, now(), local_tz())  # "Still needed?" on a to-do untouched for a week (still_needed.py)
             return
         few = len(cards) <= 200  # a Done page: only its own; the status payload: all at once
         found={r['suggestion_id']:dict(r) for r in db.execute('SELECT p.*,d.choice cause FROM preparations p LEFT JOIN decisions d ON d.id=p.decision_id'
@@ -14771,7 +14787,7 @@ def recap_share_lines(store, config):
 
 
 RECAP_CIRCLE = 8  # a group chat with this many others or fewer is a circle of people, not a broadcast
-RECAP_CHOICES = {'noise': ('filter', 'keep', 'undo'), 'snoozed': ('drop', 'now', 'keep')}
+RECAP_CHOICES = {'noise': ('filter', 'keep', 'undo'), 'snoozed': ('drop', 'now', 'keep'), still_needed.KIND: ('drop', 'keep')}
 RECAP_DONE = {'filtered': 'No longer reviewed', 'kept': 'Kept', 'dropped': 'Dropped', 'started': 'Started'}
 # Recaps sent before each choice had its own message: their buttons sit under the recap, numbered like its lines.
 RECAP_DONE_NUMBERED = {**RECAP_DONE, 'filtered': 'Filtered'}
@@ -21802,16 +21818,21 @@ class App(*APP_MIXINS):
 
     def recap_decide(self, args, owner_dashboard=False):
         """A tap on the weekly recap: Filter, Keep or Undo on a busy source; Drop, Do it now or Keep on a card snoozed
-        again and again. Only the owner's own filters and cards change; nothing is sent to anyone. From Telegram only
-        on the recap message that offered it."""
+        again and again. Also Keep or Drop on a to-do's own "Still needed?" (still_needed.py), from the dashboard only.
+        Only the owner's own filters and cards change; nothing is sent to anyone. From Telegram only on the recap
+        message that offered it."""
         item_id, choice = str(args.get('id') or ''), str(args.get('choice') or '')
         if not owner_dashboard and args.get('source') != 'telegram':
             raise ValueError('Recap choices come from the recap message')
         with self.store.connect() as db:
-            item = db.execute('SELECT i.*,r.message_id recap_message_id FROM recap_items i JOIN recaps r ON r.week=i.week WHERE i.id=?', (item_id,)).fetchone()
-        if not item:
+            item = db.execute('SELECT i.*,r.message_id recap_message_id,r.week recap_week FROM recap_items i LEFT JOIN recaps r ON r.week=i.week WHERE i.id=?',
+                              (item_id,)).fetchone()
+        if not item or (item['kind'] != still_needed.KIND and item['recap_week'] is None):  # a recap's line needs its recap
             raise ValueError('That recap line is no longer known')
         item = dict(item)
+        on_todo = item['kind'] == still_needed.KIND  # asked on the to-do, not in a recap message
+        if on_todo and not owner_dashboard:
+            raise ValueError('Still needed? is answered on the to-do')
         offered_in = item['message_id'] or item['recap_message_id']  # its own message, or the whole recap (sent before each choice had one)
         if not owner_dashboard and str(offered_in or '') != str(args.get('message_id') or ''):
             raise ValueError('That Telegram message is not the recap this line was sent in')
@@ -21838,8 +21859,8 @@ class App(*APP_MIXINS):
                 reason = 'That to-do is already closed.'
             else:
                 reason = None
-                if choice == 'drop':
-                    self.store.decide(card, 'reject', i18n.t('Dropped from the weekly recap'), decision + ':drop', source)
+                if choice == 'drop':  # the dashboard's own Not needed
+                    self.store.decide(card, 'reject', 'No longer needed' if on_todo else i18n.t('Dropped from the weekly recap'), decision + ':drop', source)
                 else:  # Unsnooze, then Do it: preparing never sends anything without the owner's own tap on the card
                     result = self.store.decide(card, 'accept', '', decision + ':back', source) if row['status'] == 'snoozed' else {'status': row['status']}
                     if result.get('status') == 'pending':
@@ -21847,12 +21868,20 @@ class App(*APP_MIXINS):
             if reason:
                 with self.store.connect() as db:
                     db.execute('UPDATE recap_items SET status=?,decision_id=?,decided_at=? WHERE id=?', (status, decision, now(), item['id']))
-                threading.Thread(target=self.recap_retell, args=(item['id'],), daemon=True).start()
+                if not on_todo:
+                    threading.Thread(target=self.recap_retell, args=(item['id'],), daemon=True).start()
                 return {'status': status, 'reason': reason}
         with self.store.connect() as db:
             db.execute('UPDATE recap_items SET status=?,decision_id=?,decided_at=? WHERE id=?', (status, decision, now(), item['id']))
-        threading.Thread(target=self.recap_retell, args=(item['id'],), daemon=True).start()
+        if not on_todo:  # a recap message shows what was done; a to-do just redraws
+            threading.Thread(target=self.recap_retell, args=(item['id'],), daemon=True).start()
         return {'status': status}
+
+    def still_needed_step(self, current=None):
+        """Still needed? (still_needed.py): asks once on each open to-do nobody touched for a week, and ends the question
+        of one that closed. current: an ISO time (tests)."""
+        with self.store.connect() as db:
+            return Store.still_needed_ask(db, current or now(), lambda row: looks_done(row) or waits_on_others(row), local_tz())
 
     def profile_step(self, runner=None):
         """Start and follow the one profile turn `assistant profile` asked for (reviews may be off)."""
@@ -22176,6 +22205,8 @@ class App(*APP_MIXINS):
             except Exception as error:LOG.error('share history error=%s',type(error).__name__)
             try:self.recap_step()
             except Exception as error:LOG.error('recap error=%s',type(error).__name__)
+            try:self.still_needed_step()
+            except Exception as error:LOG.error('still needed error=%s',type(error).__name__)
 
     def retention_worker(self):
         """Once a day at a quiet hour: old sync history and preparation logs go, the space goes back to the disk and

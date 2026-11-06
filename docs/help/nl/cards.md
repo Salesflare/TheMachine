@@ -16,7 +16,7 @@ De pagina **To-do's** groepeert ze:
 - **Wacht op je beslissing**: iets wat alleen jij kunt beslissen.
 - **Wordt voorbereid**: je Machine werkt eraan. Een to-do waarop je net **Doe het** zei, blijft staan waar hij stond terwijl hij voorbereid wordt, en gaat dan naar **Voor jou klaargezet**.
 - **Net gedaan**: een laatste stap die je bevestigde, zoals een formulier indienen of een issue aanmaken, is gelukt terwijl je weg was. Hij toont wat er gebeurde tot je op **Begrepen** tikt, hoogstens een dag, en je telefoon hoort het ook. Daarna staat hij alleen in Gedaan.
-- **Komt later terug**: gesnoozed.
+- **Komt later terug**: gesnoozed, en to-do's zonder antwoord op **Nog nodig?** (hieronder).
 - **Beloftes**: wat jij beloofde en wat anderen jou beloofden. Zie [Beloftes](promises.md).
 - **Gedaan / afgewezen**: elke afgeronde to-do, op het moment dat hij af was, nieuwste eerst, 30 tegelijk terwijl je scrolt. Een to-do die je net verstuurd hebt staat bovenaan, en elke to-do zegt wanneer, zoals "Gedaan 5 minuten geleden". To-do's die al af lijken staan ertussen op het moment dat ze zo begonnen te lijken, met het label **Lijkt gedaan**.
 
@@ -27,6 +27,8 @@ In Voor jou klaargezet, Wacht op je beslissing, Wordt voorbereid en Wacht op and
 Een to-do met **Lijkt gedaan** ziet eruit als een gedane, met wat laat zien dat hij gedaan is, zoals "PR #3451 gemerged". Hij is nog niet gesloten: **Heropenen** zet hem terug op je lijst, en je Machine leert ervan. Ze staan nooit als te laat en tellen niet mee als wachtend op jou.
 
 Een to-do waarvan de laatste stap nog openstaat bij iemand anders, zoals een review, een merge of een antwoord, zegt **Wacht op:** die stap en blijft open. Hij wacht in **Wacht op anderen**, ingeklapt boven Komt later terug, en telt niet mee als klaar voor jou. Een nieuw bericht erover brengt hem terug.
+
+Een to-do die een week niemand aanraakte, vraagt één keer: **Nog nodig?** **Laten vallen** sluit hem zoals **Niet nodig**, met **Ongedaan maken**. **Houden** houdt hem, en hij vraagt het nooit meer. Openen, een chatbericht, een aanpassing, snoozen of een nieuw bericht erover tellen allemaal als aanraken. Komt er een week later nog geen antwoord, dan vouwt hij weg in Komt later terug, onder Nog nodig?, in plaats van te verdwijnen. Aanraken haalt hem terug.
 
 **Alles is rustig.** betekent dat er nu niets op je wacht. De regel eronder zegt wanneer je Machine voor het laatst heeft gekeken.
 

@@ -16,7 +16,7 @@ The **To-dos** page groups them:
 - **Needs your decision**: something only you can decide.
 - **Preparing**: your Machine is working on it. A to-do you just said **Do it** to stays where it was while it prepares, then moves to **Ready for you**.
 - **Just done**: a last step you confirmed, like submitting a form or filing an issue, went through while you were away. It shows what happened until you tap **Got it**, for a day at most, and your phone hears of it too. Then it's only in Done.
-- **Coming back later**: snoozed.
+- **Coming back later**: snoozed, and to-dos with no answer to **Still needed?** (below).
 - **Promises**: what you promised and what others promised you. See [Promises](promises.md).
 - **Done / dismissed**: every finished to-do, by when it was finished, newest first, 30 at a time as you scroll. A to-do you just sent is at the top, and each one says when, like "Done 5 minutes ago". To-dos that seem finished already sit among them by when they started to, marked **Looks done**.
 
@@ -27,6 +27,8 @@ In Ready for you, Needs your decision, Preparing and Waiting on others, a to-do 
 A to-do marked **Looks done** shows like a done one, with what shows it's done, like "PR #3451 merged". It isn't closed yet: **Reopen** puts it back on your list, and your Machine learns from it. These never show as late and don't count as waiting for you.
 
 A to-do whose last step is still open on someone else's side, like a review, a merge or a reply, says **Waiting on:** that step and stays open. It waits in **Waiting on others**, folded above Coming back later, and doesn't count as ready for you. A new message on it brings it back.
+
+A to-do nobody touched for a week asks once: **Still needed?** **Drop** closes it like **Not needed**, with **Undo**. **Keep** keeps it, and it never asks again. Opening it, a chat message, an edit, a snooze or a new message on it all count as a touch. With no answer for another week, it folds into Coming back later, under Still needed?, instead of going away. A touch brings it back.
 
 **All clear.** means nothing needs you now. The line under it says when your Machine last looked.
 

@@ -16,7 +16,7 @@ La page **Tâches** les regroupe :
 - **Attend votre décision** : quelque chose que vous seul pouvez décider.
 - **En préparation** : votre Machine y travaille. Une tâche à laquelle vous venez de dire **Faire** reste à sa place pendant la préparation, puis passe dans **Prêt pour vous**.
 - **Tout juste fait** : une dernière étape que tu as confirmée, comme envoyer un formulaire ou créer un ticket, a réussi pendant ton absence. Elle montre ce qui s'est passé jusqu'à ce que tu touches **Compris**, un jour au plus, et ton téléphone l'apprend aussi. Ensuite, elle n'est plus que dans Fait.
-- **Revient plus tard** : mise en attente.
+- **Revient plus tard** : mise en attente, et les tâches sans réponse à **Toujours utile ?** (plus bas).
 - **Promesses** : ce que vous avez promis et ce que d’autres vous ont promis. Voir [Promesses](promises.md).
 - **Fait / écarté** : toutes les tâches terminées, selon le moment où elles l’ont été, les plus récentes d’abord, 30 à la fois quand vous faites défiler. Une tâche que vous venez d’envoyer est en haut, et chacune dit quand, comme « Fait il y a 5 minutes ». Les tâches qui semblent déjà terminées s’y placent selon le moment où elles ont commencé à le sembler, avec l’étiquette **Semble fait**.
 
@@ -27,6 +27,8 @@ Dans Prêt pour vous, Attend votre décision, En préparation et En attente des 
 Une tâche marquée **Semble fait** s’affiche comme une tâche faite, avec ce qui montre qu’elle est faite, comme « PR #3451 fusionnée ». Elle n’est pas encore fermée : **Rouvrir** la remet dans votre liste, et votre Machine en tient compte. Elles ne sont jamais en retard et ne comptent pas comme en attente de vous.
 
 Une tâche dont la dernière étape reste ouverte chez quelqu’un d’autre, comme une relecture, une fusion ou une réponse, affiche **En attente de :** cette étape et reste ouverte. Elle attend dans **En attente des autres**, repliée au-dessus de Revient plus tard, et ne compte pas comme prête pour vous. Un nouveau message à son sujet la ramène.
+
+Une tâche que personne n’a touchée depuis une semaine demande une fois : **Toujours utile ?** **Abandonner** la ferme comme **Pas nécessaire**, avec **Annuler**. **Garder** la garde, et elle ne redemande jamais. L’ouvrir, un message dans le chat, une modification, la mettre en attente ou un nouveau message à son sujet comptent comme une action. Sans réponse une semaine de plus, elle se range dans Revient plus tard, sous Toujours utile ?, au lieu de disparaître. Une action la ramène.
 
 **Tout est à jour.** veut dire que rien n’a besoin de vous pour l’instant. La ligne en dessous indique quand votre Machine a regardé pour la dernière fois.
 

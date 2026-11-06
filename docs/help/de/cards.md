@@ -16,7 +16,7 @@ Die Seite **Aufgaben** gruppiert sie:
 - **Braucht deine Entscheidung**: etwas, das nur du entscheiden kannst.
 - **Wird vorbereitet**: Deine Machine arbeitet daran. Eine Aufgabe, zu der du gerade **Ausführen** gesagt hast, bleibt an ihrem Platz, während sie vorbereitet wird, und wandert dann zu **Bereit für dich**.
 - **Gerade erledigt**: ein letzter Schritt, den du bestätigt hast, etwa ein Formular absenden oder ein Issue anlegen, ist gelungen, während du weg warst. Er zeigt, was passiert ist, bis du auf **Verstanden** tippst, höchstens einen Tag, und dein Handy erfährt es auch. Danach steht er nur noch unter Erledigt.
-- **Kommt später zurück**: zurückgestellt.
+- **Kommt später zurück**: zurückgestellt, und Aufgaben ohne Antwort auf **Noch nötig?** (unten).
 - **Versprechen**: was du versprochen hast und was andere dir versprochen haben. Siehe [Versprechen](promises.md).
 - **Erledigt / verworfen**: jede abgeschlossene Aufgabe, nach dem Zeitpunkt, an dem sie erledigt wurde, die neueste zuerst, 30 auf einmal beim Scrollen. Eine gerade gesendete Aufgabe steht oben, und jede sagt, wann, etwa „Erledigt vor 5 Minuten“. Aufgaben, die schon fertig aussehen, stehen dazwischen nach dem Zeitpunkt, ab dem sie so aussahen, markiert mit **Scheinbar erledigt**.
 
@@ -27,6 +27,8 @@ In Bereit für dich, Braucht deine Entscheidung, Wird vorbereitet und Wartet auf
 Eine Aufgabe mit **Scheinbar erledigt** sieht aus wie eine erledigte, mit dem, was zeigt, dass sie erledigt ist, etwa "PR #3451 gemergt". Sie ist noch nicht geschlossen: **Wieder öffnen** setzt sie wieder auf deine Liste, und deine Machine lernt daraus. Sie sind nie überfällig und zählen nicht als wartend auf dich.
 
 Eine Aufgabe, deren letzter Schritt noch bei jemand anderem offen ist, etwa ein Review, ein Merge oder eine Antwort, zeigt **Wartet auf:** diesen Schritt und bleibt offen. Sie wartet in **Wartet auf andere**, eingeklappt über Kommt später zurück, und zählt nicht als bereit für dich. Eine neue Nachricht dazu holt sie zurück.
+
+Eine Aufgabe, die eine Woche niemand angefasst hat, fragt einmal: **Noch nötig?** **Entfernen** schließt sie wie **Nicht nötig**, mit **Rückgängig**. **Behalten** behält sie, und sie fragt nie wieder. Öffnen, eine Chatnachricht, eine Änderung, Zurückstellen oder eine neue Nachricht dazu zählen als Anfassen. Kommt eine weitere Woche keine Antwort, wandert sie in Kommt später zurück, unter Noch nötig?, statt zu verschwinden. Anfassen holt sie zurück.
 
 **Alles erledigt** heißt, dass dich gerade nichts braucht. Die Zeile darunter sagt, wann deine Machine zuletzt nachgesehen hat.
 

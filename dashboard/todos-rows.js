@@ -1,5 +1,19 @@
 // Merge offer on an owner's card: the review thought it is the same as another card. Only the owner's tap merges.
 function mergeOther(s){if(s.origin!=='owner'||!s.merge_offer||closed(s))return null;try{const o=JSON.parse(s.merge_offer);return o.kept?null:(state.suggestions||[]).find(x=>x.id===o.card_id&&!closed(x))||null}catch{return null}}
+// Still needed? (still_needed.py): a to-do untouched for a week asks once, with the weekly recap's Drop and Keep. Drop is
+// Not needed (with its Undo); Keep never asks again. Unanswered a week more, it folds into Coming back later (setAside).
+const stillAsks=s=>!!s.still_needed&&!closed(s)&&s.status!=='snoozed'&&!looksDone(s)&&!waitsOnOthers(s);
+const setAside=s=>stillAsks(s)&&!!s.still_needed.folded;
+function stillNeeded(s){if(!stillAsks(s))return '';const days=Math.floor((Date.now()-Date.parse(s.still_needed.since))/864e5);  // touched since it asked: the question alone
+
+ return html`<div class="merge-offer still-needed"><span><strong>${t('Still needed?')}</strong> ${days>=7?html`<small>${t('Untouched for {} days',days)}</small>`:''}</span><span class="still-acts"><button type="button" class="ghost" data-still="drop" data-card="${s.id}">${t('Drop')}</button><button type="button" class="quiet" data-still="keep" data-card="${s.id}" data-ask="${s.still_needed.id}">${t('Keep')}</button></span></div>`}
+document.addEventListener('click',async e=>{const b=e.target.closest('[data-still]');if(!b)return;e.preventDefault();b.disabled=true;const id=b.dataset.card;
+ try{if(b.dataset.still==='drop'){await saveDecision(id,'reject','No longer needed');return}
+  await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'recap_decide',args:{id:b.dataset.ask,choice:'keep',decision_id:crypto.randomUUID()}})});
+  toast(t('Kept'));await refresh()}catch(err){errCaught(err);b.disabled=false;toast(err.message,true)}});
+// Coming back later (render): a heading per day they come back, then the ones Still needed? set aside
+const backDay=s=>{if(setAside(s))return t('Still needed?');const d=new Date(s.snoozed_until),next=new Date();next.setDate(next.getDate()+1);return localDay(d)===localDay(new Date())?'Today':localDay(d)===localDay(next)?'Tomorrow':d.toLocaleDateString(DL,{weekday:'long',day:'numeric',month:'short'})};
+const laterCards=items=>html`${items.map((s,i)=>html`${i===0||backDay(s)!==backDay(items[i-1])?html`<h3 class="day-head">${backDay(s)}</h3>`:''}${suggestionCard(s,'Later')}`)}`;
 function mergeOffer(s){const o=mergeOther(s);return o?html`<div class="merge-offer"><span>Looks like the same as “${o.title}”. Merge?</span><button type="button" class="ghost" data-merge="yes" data-card="${s.id}">Merge</button><button type="button" class="quiet" data-merge="no" data-card="${s.id}">Keep both</button></div>`:''}
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-merge]');if(!b)return;e.preventDefault();b.disabled=true;const id=b.dataset.card,merge=b.dataset.merge==='yes';
  try{const r=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'card_merge',args:{suggestion_id:id,merge,decision_id:crypto.randomUUID()}})});
