@@ -14,6 +14,10 @@ Your Machine's own log: failed runs, refused handoffs, Telegram messages that di
 
 When The Machine updates and one of its own fixes no longer fits the new version, the update sets that fix aside and goes on, so your Machine never stays on an old version. A to-do, **Redo a fix the update set aside**, names the fix. Ask to redo it on the new version, or close the to-do.
 
+## Your own files an update kept
+
+When a new version brings a file with the same name as one you added yourself, the update renames yours instead of overwriting it and goes on. A to-do says how many it kept and lists each old and new name. Close it once you've checked them.
+
 ## What it can do
 
 Nothing. It only reads the log on your own Machine.

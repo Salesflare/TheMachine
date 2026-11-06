@@ -1227,6 +1227,7 @@
  "File": "File",
  "File not available": "File not available",
  "Files": "Files",
+ "Files added on this Machine that an update renamed instead of overwriting them.": "Files added on this Machine that an update renamed instead of overwriting them.",
  "Files go in through your Machine’s browser.": "Files go in through your Machine’s browser.",
  "Files with that name are in your OneDrive already. Nothing was created; give it another title.": "Files with that name are in your OneDrive already. Nothing was created; give it another title.",
  "Files: none": "Files: none",
@@ -4464,6 +4465,7 @@
  "The model can only be changed in config.json here": "The model can only be changed in config.json here",
  "The model list isn’t loaded yet. Try again in a minute.": "The model list isn’t loaded yet. Try again in a minute.",
  "The new test also passes without the fix, so it doesn’t prove the fix. Not merged by itself.": "The new test also passes without the fix, so it doesn’t prove the fix. Not merged by itself.",
+ "The new version has files with the same names, so the update renamed yours: {}. Close this once you’ve checked them.": "The new version has files with the same names, so the update renamed yours: {}. Close this once you’ve checked them.",
  "The note is too long": "The note is too long",
  "The notifications on your Android phone, through the OpenClaw app.": "The notifications on your Android phone, through the OpenClaw app.",
  "The ones you are most in touch with first.": "The ones you are most in touch with first.",
@@ -5458,6 +5460,10 @@
  "Your turn": "Your turn",
  "Your turn: sign in": "Your turn: sign in",
  "Your update": "Your update",
+ "Your update kept {} of your own files": {
+  "one": "Your update kept {} of your own files",
+  "other": "Your update kept {} of your own files"
+ },
  "Your username: {}. Friends add you by it.": "Your username: {}. Friends add you by it.",
  "Your week": "Your week",
  "Your week with The Machine": "Your week with The Machine",

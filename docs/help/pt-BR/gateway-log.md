@@ -14,6 +14,10 @@ O próprio log da sua Machine: execuções que falharam, repasses recusados, men
 
 Quando a The Machine se atualiza e uma das suas próprias correções não serve mais na nova versão, a atualização deixa essa correção de lado e segue, para que sua Machine nunca fique numa versão antiga. Uma tarefa, **Refazer uma correção que a atualização deixou de lado**, nomeia a correção. Peça para refazê-la na nova versão, ou feche a tarefa.
 
+## Seus próprios arquivos que uma atualização manteve
+
+Quando uma nova versão traz um arquivo com o mesmo nome de um que você mesmo adicionou, a atualização renomeia o seu em vez de sobrescrevê-lo e segue. Uma tarefa diz quantos ela manteve e mostra cada nome antigo e novo. Feche-a depois de conferi-los.
+
 ## O que ele pode fazer
 
 Nada. Ele só lê o log na sua própria Machine.

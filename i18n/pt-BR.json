@@ -1227,6 +1227,7 @@
  "File": "Arquivo",
  "File not available": "Arquivo indisponível",
  "Files": "Arquivos",
+ "Files added on this Machine that an update renamed instead of overwriting them.": "Arquivos adicionados nesta Machine que uma atualização renomeou em vez de sobrescrevê-los.",
  "Files go in through your Machine’s browser.": "Os arquivos entram pelo navegador da sua Machine.",
  "Files with that name are in your OneDrive already. Nothing was created; give it another title.": "Já há arquivos com esse nome no seu OneDrive. Nada foi criado; dê outro título.",
  "Files: none": "Arquivos: nenhum",
@@ -4464,6 +4465,7 @@
  "The model can only be changed in config.json here": "O modelo só pode ser mudado aqui no config.json",
  "The model list isn’t loaded yet. Try again in a minute.": "A lista de modelos ainda não carregou. Tente de novo em um minuto.",
  "The new test also passes without the fix, so it doesn’t prove the fix. Not merged by itself.": "O novo teste também passa sem a correção, então não prova a correção. Não foi mesclado sozinho.",
+ "The new version has files with the same names, so the update renamed yours: {}. Close this once you’ve checked them.": "A nova versão tem arquivos com os mesmos nomes, então a atualização renomeou os seus: {}. Feche isto depois de conferi-los.",
  "The note is too long": "A nota é longa demais",
  "The notifications on your Android phone, through the OpenClaw app.": "As notificações do seu celular Android, pelo app do OpenClaw.",
  "The ones you are most in touch with first.": "Primeiro aqueles com quem você mais tem contato.",
@@ -5458,6 +5460,10 @@
  "Your turn": "Sua vez",
  "Your turn: sign in": "Sua vez: entrar",
  "Your update": "Sua atualização",
+ "Your update kept {} of your own files": {
+  "one": "Sua atualização manteve {} dos seus arquivos",
+  "other": "Sua atualização manteve {} dos seus arquivos"
+ },
  "Your username: {}. Friends add you by it.": "Seu nome de usuário: {}. Amigos adicionam você por ele.",
  "Your week": "Sua semana",
  "Your week with The Machine": "Sua semana com The Machine",

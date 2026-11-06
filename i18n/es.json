@@ -1227,6 +1227,7 @@
  "File": "Archivo",
  "File not available": "Archivo no disponible",
  "Files": "Archivos",
+ "Files added on this Machine that an update renamed instead of overwriting them.": "Archivos añadidos en esta Machine que una actualización renombró en vez de sobrescribirlos.",
  "Files go in through your Machine’s browser.": "Los archivos se suben con el navegador de tu Machine.",
  "Files with that name are in your OneDrive already. Nothing was created; give it another title.": "Ya hay archivos con ese nombre en tu OneDrive. No se creó nada; ponle otro título.",
  "Files: none": "Archivos: ninguno",
@@ -4464,6 +4465,7 @@
  "The model can only be changed in config.json here": "El modelo solo se puede cambiar aquí en config.json",
  "The model list isn’t loaded yet. Try again in a minute.": "La lista de modelos aún no se ha cargado. Inténtalo de nuevo en un minuto.",
  "The new test also passes without the fix, so it doesn’t prove the fix. Not merged by itself.": "La prueba nueva también pasa sin la corrección, así que no la demuestra. No se fusionó por sí sola.",
+ "The new version has files with the same names, so the update renamed yours: {}. Close this once you’ve checked them.": "La nueva versión tiene archivos con los mismos nombres, así que la actualización renombró los tuyos: {}. Cierra esto cuando los hayas revisado.",
  "The note is too long": "La nota es demasiado larga",
  "The notifications on your Android phone, through the OpenClaw app.": "Las notificaciones de tu teléfono Android, a través de la app de OpenClaw.",
  "The ones you are most in touch with first.": "Primero, con quienes más contacto tienes.",
@@ -5458,6 +5460,10 @@
  "Your turn": "Te toca",
  "Your turn: sign in": "Te toca: inicia sesión",
  "Your update": "Tu actualización",
+ "Your update kept {} of your own files": {
+  "one": "Tu actualización conservó {} de tus archivos",
+  "other": "Tu actualización conservó {} de tus archivos"
+ },
  "Your username: {}. Friends add you by it.": "Tu nombre de usuario: {}. Tus amigos te añaden con él.",
  "Your week": "Tu semana",
  "Your week with The Machine": "Tu semana con The Machine",

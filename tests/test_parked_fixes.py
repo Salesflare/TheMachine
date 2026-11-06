@@ -98,5 +98,26 @@ class ParkedFixes(unittest.TestCase):
         self.assertEqual(self.todos(), [])
 
 
+    def test_files_an_update_renamed_come_back_as_one_to_do_per_update_once(self):
+        release = 'a' * 40
+        log = self.app / '.git' / parked_fixes.KEPT
+        log.write_text(f'2026-11-06T04:00:00\t{release}\tnotes.md\tnotes.md.local-20261106\n'
+                       f'2026-11-06T04:00:00\t{release}\ttools/run.sh\ttools/run.sh.local-20261106\n'
+                       'not a record\n')
+        a.sync_gateway(self.store, self.config, GATEWAY, NoJournal())
+        a.sync_gateway(self.store, self.config, GATEWAY, NoJournal())  # the next sync: no second one
+        [todo] = self.todos()
+        self.assertEqual(todo['title'], 'Your update kept 2 of your own files')
+        self.assertIn('notes.md → notes.md.local-20261106, tools/run.sh → tools/run.sh.local-20261106', todo['body'])
+        with self.store.connect() as db:
+            [event] = db.execute("SELECT kind, body FROM events WHERE source_id=?", ('parked:kept-' + release,)).fetchall()
+        self.assertEqual(event['kind'], 'machine.parked_fix')
+        self.assertNotIn('notes.md', event['body'])  # the names once, in the to-do
+        with log.open('a') as out:  # a later update that renamed one more: a to-do of its own
+            out.write(f'2026-11-07T04:00:00\t{"b" * 40}\tUSER.md\tUSER.md.local-20261107\n')
+        a.sync_gateway(self.store, self.config, GATEWAY, NoJournal())
+        self.assertEqual([t['title'] for t in self.todos()],
+                         ['Your update kept 2 of your own files', 'Your update kept 1 of your own files'])
+
 if __name__ == '__main__':
     unittest.main()

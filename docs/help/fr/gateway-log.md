@@ -14,6 +14,10 @@ Le journal de votre Machine : exécutions échouées, transferts refusés, messa
 
 Quand The Machine se met à jour et qu’un de ses propres correctifs ne convient plus à la nouvelle version, la mise à jour met ce correctif de côté et continue, pour que votre Machine ne reste jamais sur une ancienne version. Une tâche, **Refaire un correctif mis de côté par la mise à jour**, nomme le correctif. Demandez à le refaire sur la nouvelle version, ou fermez la tâche.
 
+## Vos propres fichiers gardés par une mise à jour
+
+Quand une nouvelle version apporte un fichier portant le même nom qu’un fichier que vous avez ajouté vous-même, la mise à jour renomme le vôtre au lieu de l’écraser et continue. Une tâche indique combien elle en a gardé et donne chaque ancien et nouveau nom. Fermez-la une fois que vous les avez vérifiés.
+
 ## Ce qu’il peut faire
 
 Rien. Il ne fait que lire le journal sur votre propre Machine.

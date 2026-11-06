@@ -1227,6 +1227,7 @@
  "File": "Datei",
  "File not available": "Datei nicht verfügbar",
  "Files": "Dateien",
+ "Files added on this Machine that an update renamed instead of overwriting them.": "Auf dieser Machine hinzugefügte Dateien, die eine Aktualisierung umbenannt statt überschrieben hat.",
  "Files go in through your Machine’s browser.": "Dateien kommen über den Browser deiner Machine hinein.",
  "Files with that name are in your OneDrive already. Nothing was created; give it another title.": "Dateien mit diesem Namen gibt es schon in deinem OneDrive. Nichts wurde erstellt; gib ihm einen anderen Titel.",
  "Files: none": "Dateien: keine",
@@ -4464,6 +4465,7 @@
  "The model can only be changed in config.json here": "Das Modell lässt sich hier nur in config.json ändern",
  "The model list isn’t loaded yet. Try again in a minute.": "Die Modellliste ist noch nicht geladen. Versuch es in einer Minute noch einmal.",
  "The new test also passes without the fix, so it doesn’t prove the fix. Not merged by itself.": "Der neue Test besteht auch ohne die Korrektur, beweist sie also nicht. Nicht von selbst gemergt.",
+ "The new version has files with the same names, so the update renamed yours: {}. Close this once you’ve checked them.": "Die neue Version hat Dateien mit denselben Namen, also hat die Aktualisierung deine umbenannt: {}. Schließ das hier, wenn du sie geprüft hast.",
  "The note is too long": "Die Notiz ist zu lang",
  "The notifications on your Android phone, through the OpenClaw app.": "Die Benachrichtigungen auf deinem Android-Handy, über die OpenClaw-App.",
  "The ones you are most in touch with first.": "Die, mit denen du am meisten Kontakt hast, zuerst.",
@@ -5458,6 +5460,10 @@
  "Your turn": "Du bist dran",
  "Your turn: sign in": "Du bist dran: anmelden",
  "Your update": "Dein Update",
+ "Your update kept {} of your own files": {
+  "one": "Die Aktualisierung hat {} eigene Datei behalten",
+  "other": "Die Aktualisierung hat {} eigene Dateien behalten"
+ },
  "Your username: {}. Friends add you by it.": "Dein Benutzername: {}. Darüber fügen Freunde dich hinzu.",
  "Your week": "Deine Woche",
  "Your week with The Machine": "Deine Woche mit The Machine",
