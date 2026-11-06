@@ -689,6 +689,7 @@
  "Check in with {}": "Check in with {}",
  "Check in with {} {} {} if no answer": "Check in with {} {} {} if no answer",
  "Check my contacts": "Check my contacts",
+ "Check now": "Check now",
  "Check that the page in the new tab shows {}.": "Check that the page in the new tab shows {}.",
  "Check the text messages on your phone.": "Check the text messages on your phone.",
  "Check which of my contacts have a Machine": "Check which of my contacts have a Machine",
@@ -699,6 +700,11 @@
  "Checked {} things": {
   "one": "Checked {} thing",
   "other": "Checked {} things"
+ },
+ "Checked. Nothing new.": "Checked. Nothing new.",
+ "Checked. {} new to-dos.": {
+  "one": "Checked. {} new to-do.",
+  "other": "Checked. {} new to-dos."
  },
  "Checking delivery": "Checking delivery",
  "Checking for GBrain…": "Checking for GBrain…",
@@ -2242,6 +2248,8 @@
  "Next one shortly.": "Next one shortly.",
  "Next one when new messages come in.": "Next one when new messages come in.",
  "Next one when your new mail is in.": "Next one when your new mail is in.",
+ "Next review by {}": "Next review by {}",
+ "Next review soon": "Next review soon",
  "Next review starts when your new mail is in": "Next review starts when your new mail is in",
  "Next try": "Next try",
  "Next try {}.": "Next try {}.",
@@ -3204,6 +3212,7 @@
  "Reading docs needs its own OK": "Reading docs needs its own OK",
  "Reading everything, so you can pretend you did.": "Reading everything, so you can pretend you did.",
  "Reading it…": "Reading it…",
+ "Reading sources…": "Reading sources…",
  "Reading the last days again to fill a gap.": "Reading the last days again to fill a gap.",
  "Reading your mail, first to-dos in a few minutes": "Reading your mail, first to-dos in a few minutes",
  "Reads accounts, contacts, emails and meetings. Changes nothing.": "Reads accounts, contacts, emails and meetings. Changes nothing.",
@@ -3424,7 +3433,11 @@
  "Review: {}": "Review: {}",
  "Reviewed": "Reviewed",
  "Reviewed IDs must belong to this batch": "Reviewed IDs must belong to this batch",
+ "Reviewed {}": "Reviewed {}",
+ "Reviewed {} · next by {}": "Reviewed {} · next by {}",
+ "Reviewed {} · next soon": "Reviewed {} · next soon",
  "Reviewing": "Reviewing",
+ "Reviewing messages…": "Reviewing messages…",
  "Reviewing new messages": "Reviewing new messages",
  "Reviewing now (started {}).": "Reviewing now (started {}).",
  "Reviews": "Reviews",

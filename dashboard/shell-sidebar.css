@@ -79,6 +79,9 @@ body main{padding-top:0}
 .page-head.greet{align-items:center;gap:12px;margin-bottom:24px}
 .page-head.greet .page-title{font:400 var(--fs-lg)/1.35 var(--serif);letter-spacing:0;color:var(--c-text-2);text-wrap:pretty}
 .page-head.greet .page-sub{margin-top:2px;color:var(--c-text-2);overflow-wrap:anywhere;text-wrap:pretty}.page-head.greet>div{min-width:0}
+.page-head .check-now{position:relative;display:flex;flex:none;align-items:center;gap:10px;margin-left:auto;align-self:flex-start}.page-head .check-line{position:absolute;top:calc(100% + 5px);right:0;width:max-content;max-width:260px;text-align:right;color:var(--c-text-2);font-size:var(--fs-xs);line-height:1.35}.page-head:has(.check-now)>div:not(.check-now){max-width:calc(100% - 330px)}  /* under the button, so the hello keeps its width and never runs under it */
+.page-head .check-btn{min-height:32px;padding:5px 12px;font-size:var(--fs-sm);white-space:nowrap}.page-head .check-btn.busy{opacity:.7;cursor:progress;display:inline-flex;align-items:center;gap:7px}.page-head .check-btn .spin{width:10px;height:10px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:spin .8s linear infinite}
+@media(max-width:1199px){.page-head:has(.check-now){flex-wrap:wrap}.page-head .check-now{flex:1 0 100%;justify-content:space-between;margin:-4px 0 0}.page-head .check-line{position:static;width:auto;max-width:none;text-align:left;white-space:normal;min-width:0}.page-head .check-now{align-self:auto}.page-head:has(.check-now)>div:not(.check-now){max-width:none}.page-head .check-btn{flex:none}}  /* a phone or a narrow window: its own row under the hello */
 .page-head.greet .page-avatar{width:32px;height:32px}
 /* A new owner's hello (helloLine): their name as the title, who waits longest on them under it, linked to that to-do */
 .page-head.hello .page-title{font:var(--fw-display) var(--fs-xl)/1.25 var(--serif);color:var(--text)}

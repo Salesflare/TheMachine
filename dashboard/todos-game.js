@@ -15,7 +15,8 @@ clearTimeout(pokeTimer);pokeTimer=setTimeout(()=>{pokeAwake=false;pokeLine='';co
 // One short line in the robot's voice: when it last looked. The wording changes per day, not per render;
 // the time phrase ("52 minutes ago") keeps its spaces non-breaking, so it never wraps apart.
 const CLEAR_LINES=['Peeked at everything {}. All quiet.','Last snooped around {}. Nothing to report.','Checked in {}. Back to my nap.'];
-function clearLine(){const done=state?.review_health?.last_completed;
+function clearLine(){if(state?.check?.phase)return '';  // a check runs: the head says so
+ const done=[state?.check?.reviewed,state?.review_health?.last_completed].filter(Boolean).sort((a,b)=>Date.parse(b)-Date.parse(a))[0];  // the last read or review
  if(!done)return t('I’ll add something when it’s useful.');
  const now=new Date(),day=Math.floor((now-now.getTimezoneOffset()*6e4)/864e5);
  return t(CLEAR_LINES[day%CLEAR_LINES.length],ago(done).replace(/ /g,'\u00a0'))}

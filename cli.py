@@ -380,6 +380,25 @@ def preview_progress(run, cards):
     return f"  {elapsed // 60}m {elapsed % 60:02d}s · {phase} · {len(cards)} suggestion{'s' if len(cards) != 1 else ''} so far"
 
 
+def cmd_check(config, args):
+    """Check now: every source reads now and a review of what came in starts (check_now.py). --wait follows it."""
+    found = call(config, 'check_now')
+    view = found.get('check') or {}
+    while args.wait and view.get('phase'):
+        time.sleep(3)
+        view = call(config, 'check_now', {'status': True}).get('check') or {}
+    if args.json:
+        return out_json({'started': found.get('started'), 'check': view})
+    if view.get('phase'):
+        print(('Checking now: reading every source, then a review of what came in.' if found.get('started') else
+               'A check is running already.') + ' See it on the To-dos page.')
+    elif view.get('ended'):
+        new = view.get('found')
+        print(f"Checked at {local(view['ended'])}." + (f" {new} new to-do{'' if new == 1 else 's'}." if new else ' Nothing new.'))
+    if view.get('waiting'):
+        print(f"{view['waiting']} waiting. Next review: " + ('soon.' if view.get('soon') or not view.get('next_review') else f"by {local(view['next_review'])}."))
+
+
 def cmd_preview(config, args):
     started = call(config, 'preview_review')
     if not args.json:
@@ -1006,6 +1025,8 @@ def parser():
     source = c.add_mutually_exclusive_group(required=True)
     source.add_argument('--body')
     source.add_argument('--file', help='file with the text, or - for stdin')
+    c = add('check', 'Check now: every source reads now and a review of what came in starts, outside the usual rhythm', cmd_check)
+    c.add_argument('--wait', action='store_true', help='wait until it is done and say what it found')
     add('preview', f'First run: one review of the last {assistant.PREVIEW_DAYS} days, shown here and on the dashboard; nothing is sent', cmd_preview)
     c = add('enrich', 'Organization and work contact data from your enrichment service: status, or look up one domain now', cmd_enrich)
     c.add_argument('domain', nargs='?', help='a domain to look up now, like globex.com')

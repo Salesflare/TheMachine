@@ -42,6 +42,14 @@ Heeft een to-do een ander gebied nodig om verder te kunnen, dan vraagt hij het m
 
 Start je een to-do, dan mag hij altijd de berichten lezen waar hij uit kwam, ook in de mailbox van een ander bedrijf. Heeft hij andere berichten uit een ander gebied nodig, dan vraagt hij het met **Deze mail voor deze to-do gebruiken**; een tik voegt ze toe en hij gaat verder. Mail voor een ander bedrijf van je komt meteen bij de to-do's van dat bedrijf. Een to-do uit je eigen leven, zoals familie die naar je werkadres mailt, is meteen Privé.
 
+## Nu checken
+
+Je Machine leest elke bron om de paar minuten, dag en nacht, en kijkt wat er binnenkwam na op to-do’s zodra er 40 berichten wachten of het oudste bericht een uur wacht.
+
+**Nu checken**, bovenaan To-do's, leest meteen elke bron en bekijkt wat er binnenkwam, ook als alles rustig is. Ernaast staat wanneer hij het laatst nakeek, wanneer de volgende controle is en hoeveel berichten wachten. Druk je nog eens terwijl hij checkt, dan zie je dezelfde check. De telefoonapp heeft het ook. In de chat vraag je hem gewoon om nu te checken.
+
+LinkedIn, X en Salesflare houden hun eigen tempo.
+
 ## De knoppen
 
 Een to-do toont zijn volgende stap, zoals **Doe het** of **Nakijken en versturen**, met **Snoozen** ernaast. Zie [Doe het](do-it.md) en [Snoozen](snooze.md).

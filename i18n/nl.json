@@ -689,6 +689,7 @@
  "Check in with {}": "Navragen bij {}",
  "Check in with {} {} {} if no answer": "Navragen bij {} {} {} als er geen antwoord komt",
  "Check my contacts": "Mijn contacten checken",
+ "Check now": "Nu checken",
  "Check that the page in the new tab shows {}.": "Controleer of de pagina in het nieuwe tabblad {} toont.",
  "Check the text messages on your phone.": "Kijk naar de sms’jes op je telefoon.",
  "Check which of my contacts have a Machine": "Checken welke van mijn contacten een Machine hebben",
@@ -699,6 +700,11 @@
  "Checked {} things": {
   "one": "{} ding nagekeken",
   "other": "{} dingen nagekeken"
+ },
+ "Checked. Nothing new.": "Gecheckt. Niets nieuws.",
+ "Checked. {} new to-dos.": {
+  "one": "Gecheckt. {} nieuwe to-do.",
+  "other": "Gecheckt. {} nieuwe to-do's."
  },
  "Checking delivery": "Levering controleren",
  "Checking for GBrain…": "Zoeken naar GBrain…",
@@ -2242,6 +2248,8 @@
  "Next one shortly.": "De volgende zo meteen.",
  "Next one when new messages come in.": "De volgende wanneer er nieuwe berichten binnenkomen.",
  "Next one when your new mail is in.": "De volgende wanneer je nieuwe mail binnen is.",
+ "Next review by {}": "Volgende controle uiterlijk {}",
+ "Next review soon": "Volgende controle binnenkort",
  "Next review starts when your new mail is in": "De volgende review start zodra je nieuwe mail binnen is",
  "Next try": "Volgende poging",
  "Next try {}.": "Volgende poging {}.",
@@ -3204,6 +3212,7 @@
  "Reading docs needs its own OK": "Documenten lezen vraagt een eigen OK",
  "Reading everything, so you can pretend you did.": "Ik lees alles, zodat jij kunt doen alsof.",
  "Reading it…": "Lezen…",
+ "Reading sources…": "Bronnen lezen…",
  "Reading the last days again to fill a gap.": "Leest de laatste dagen opnieuw om een gat te vullen.",
  "Reading your mail, first to-dos in a few minutes": "Je mail wordt gelezen, eerste to-do's over een paar minuten",
  "Reads accounts, contacts, emails and meetings. Changes nothing.": "Leest accounts, contacten, e-mails en afspraken. Verandert niets.",
@@ -3424,7 +3433,11 @@
  "Review: {}": "Review: {}",
  "Reviewed": "Nagekeken",
  "Reviewed IDs must belong to this batch": "Nagekeken ID's moeten bij deze batch horen",
+ "Reviewed {}": "Nagekeken {}",
+ "Reviewed {} · next by {}": "Nagekeken {} · volgende uiterlijk {}",
+ "Reviewed {} · next soon": "Nagekeken {} · volgende binnenkort",
  "Reviewing": "Nakijken",
+ "Reviewing messages…": "Berichten bekijken…",
  "Reviewing new messages": "Nieuwe berichten nakijken",
  "Reviewing now (started {}).": "Nu aan het nakijken (gestart {}).",
  "Reviews": "Reviews",

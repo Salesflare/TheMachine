@@ -463,6 +463,7 @@ The to-do says it merged and has **Undo merge** for 24 hours, which reverts the 
 | `assistant events --account <id> --ids 12,13` | Specific signals, or `--query` within explicit accounts |
 | `assistant sources` | Connection health per source |
 | `assistant reviews` | Review backlog and recent runs |
+| `assistant check` | Check now: every source reads now and a review of what came in starts, as **Check now** on To-dos does; `--wait` waits and says what it found |
 | `assistant busy` | What runs right now: agent jobs, sends, confirmed steps and preparations being worked on. Exits 3 while something runs, 0 when a restart or update cuts nothing off. A run that stopped (Stuck, Needs your help, snoozed) isn't running |
 | `assistant feedback` | Recent decisions and written feedback |
 | `assistant prepare <id> --file brief.md` | Save a short preparation (at most 1,000 characters) on an accepted task; `--body` instead of `--file`, `--next-action` for an exact draft |
