@@ -72,7 +72,8 @@ DERIVED = {'suggestions': ('title', 'body', 'handled_hint', 'owner_words', 'titl
            'graph_unnamed': ('titles',), 'preparation_calls': ('params', 'result'), 'analyses': ('summary',),
            'fleet_in': ('question', 'draft'), 'fleet_out': ('question', 'answer'), 'network_replies': ('body',),
            'task_pages': ('record',), 'meet_links': ('record',), 'handoff_mails': ('record',), 'recaps': ('text',), 'chat_stops': ('text',),  # a stopped chat reply's partial text
-           'chat_files': ('name',),  # a file's name the owner added to a chat message (chat_files.py)
+           'chat_files': ('name',),
+           'whatsapp_photos': ('description', 'text'),  # what the Machine read in a WhatsApp photo (whatsapp_images.py)  # a file's name the owner added to a chat message (chat_files.py)
            'talk_lines': ('text',),  # what the owner and The Machine said in Talk live (talk_live.py)
            'recurring_series': ('text',), 'recurring_offers': ('title', 'text'),  # a recurring to-do's words (recurring.py)
            'recap_items': ('line', 'data'),

@@ -83,6 +83,7 @@ import retention
 import chat_files
 import talk_live
 import voice_input
+import whatsapp_images
 import security_levels
 import skills
 import handoff_mail
@@ -135,6 +136,7 @@ from meet_app import MeetApp
 from recurring_app import RecurringApp
 from shared_graph_app import SharedGraphApp
 from skills_app import SkillsApp
+from whatsapp_images_app import WhatsAppImagesApp
 from support_app import SupportApp
 
 ROOT = Path(__file__).resolve().parent
@@ -730,6 +732,7 @@ OWNER_ACTIONS = {
     'tip_done',
     'undo_merge',
     'unmerge_fact',
+    'whatsapp_photos',
 }
 # Warm intros, handoffs and shared follow-ups (fleet_requests.py): the owner's own, from their dashboard only.
 FLEET_REQUEST_ACTIONS = {
@@ -1100,6 +1103,7 @@ DASHBOARD_ACTIONS = frozenset({
     'tip_done',
     'undo_merge',
     'unmerge_fact',
+    'whatsapp_photos',
 })
 UPLOAD_ACTIONS = {
     'bug_later',
@@ -2243,6 +2247,29 @@ class WhatsApp:
         url, picture = str(data.get('url') or ''), str(data.get('id') or '')
         return {'id': picture[:64], 'url': url} if url.startswith('https://') and picture else {}
 
+    def download(self, chat, message_id, target):
+        """One message's photo into `target` (a file in a private folder), read-only: wacli takes the media key and the
+        checksums from its own store and the bytes from WhatsApp's media servers, checks them, and writes nothing else
+        (`--read-only`: no session, no phone recovery). Returns wacli's answer ({'path', 'bytes', 'mime_type', ...})."""
+        if not re.fullmatch(WHATSAPP_JID, str(chat)) or not re.fullmatch(r'[A-Za-z0-9_.:-]{1,128}', str(message_id)):
+            raise SourceError('whatsapp_invalid_message')
+        env = os.environ.copy()
+        env['WACLI_READONLY'] = '1'
+        args = [self.config.get('wacli', 'wacli'), '--store', self.account['store'], '--read-only', '--json', '--timeout', '60s',
+                'media', 'download', '--chat', chat, '--id', message_id, '--output', str(target)]
+        try:
+            result = subprocess.run(args, env=env, capture_output=True, text=True, timeout=75)
+            data = json.loads(result.stdout) if result.returncode == 0 else None
+        except subprocess.TimeoutExpired:
+            raise SourceError('whatsapp_read_timeout') from None
+        except (OSError, ValueError):
+            raise SourceError('whatsapp_source_unavailable') from None
+        if not isinstance(data, dict) or data.get('success') is not True or not isinstance(data.get('data'), dict):
+            raise SourceError('whatsapp_media_unavailable')
+        if str(data['data'].get('path') or '') != str(target):
+            raise SourceError('whatsapp_invalid_response')
+        return data['data']
+
 
 def whatsapp_photo_asker(config):
     """ask(account id, jid) for enrichment.whatsapp_photos_step: the owner's own WhatsApp accounts only (never one
@@ -2448,7 +2475,10 @@ def sync_whatsapp(store, config, account, source=None):
         middle = start + (end - start) / 2
         return read_window(start, middle) + read_window(middle, end)
     rows = read_window(dt.datetime.fromisoformat(after), stamp)
-    events = list({e['source_id']: e for e in (whatsapp_event(account, raw) for raw in rows)}.values())
+    pairs = [(whatsapp_event(account, raw), raw) for raw in rows]
+    events = list({e['source_id']: e for e, _ in pairs}.values())
+    with store.connect() as db:  # photos the owner has read (whatsapp_images.py): noted, and joined to their message once read
+        events = whatsapp_images.note(db, account, events, {e['source_id']: raw for e, raw in pairs}, now())
     state = store.checkpoint(account['id']) or {}
     state.update(mode='incremental', after=after, before=before, retained_days=config.get('bootstrap_days', 7),
                  available_messages=len(rows), source_latest_message=max((e['occurred_at'] for e in events), default=None),
@@ -3976,6 +4006,7 @@ class Store:
             preparation_state.initialize(db)
             retention.initialize(db)
             chat_files.initialize(db)
+            whatsapp_images.ensure(db)
             chat_model.initialize(db)
             voice_input.initialize(db)
             talk_live.initialize(db)
@@ -8764,6 +8795,8 @@ class Store:
         with self.connect() as db:
             rows = slack_named(db, [dict(r) for r in db.execute('SELECT id,account_id,source_id,kind,occurred_at,title,body,metadata FROM events WHERE id IN (' + ','.join('?' for _ in ids) + ')', ids)]) if ids else []
             own = own_addresses.yours(db, self.config) if rows else set()
+            photos = {r['id']: whatsapp_images.shown(db, {'database': str(self.path)}, json.loads(r['metadata']))
+                      for r in rows if r['kind'] == 'whatsapp.message'}  # a WhatsApp photo the Machine kept (whatsapp_images.py)
         own |= {str(a.get('email') or '').lower() for a in self.accounts if a.get('service', 'gmail') in MAIL_SERVICES and '@' in str(a.get('email') or '')}
         rows.sort(key=lambda r: ids.index(r['id']))
         result = []
@@ -8779,12 +8812,19 @@ class Store:
                 body, details = body.strip(), FAULT_WHERE + details.rstrip()
             if r['kind'] == 'machine.fault':
                 who = 'The Machine'
+            photo = photos.get(r['id'])
+            if photo:  # the photo shows; what it said stays with the message for the Machine (alt text: what it shows)
+                said = body.split('\n\n' + whatsapp_images.MARK, 1)
+                body = re.sub(r'^Sent image(?:\n|$)', '', said[0])  # the photo itself says that
+                shows = re.search(r'(?m)^Shows: (.+)$', said[1]) if len(said) > 1 else None
+                photo['alt'] = shows[1][:300] if shows else ''
             result.append({'kind': source_kind(r['kind']), 'from': str(who)[:300], 'to': str(m.get('to') or '')[:500],
                            'cc': str(m.get('cc') or '')[:500], 'title': r['title'][:500], 'occurred_at': r['occurred_at'],
                            'body': body[:20000], 'clipped': len(body) > 20000 or bool(m.get('truncated')),
                            **({'details': details[:4000]} if details else {}),
                            'url': url if isinstance(url, str) and urllib.parse.urlsplit(url).scheme == 'https' else None,
                            'event_id': r['id'], 'gmail': {'account_id': r['account_id'], 'message_id': r['source_id']} if r['kind'] == 'gmail.message' else None,
+                           **({'photo': photo} if photo else {}),
                            **chat_view(r['kind'], m, body, r['occurred_at'])})
         return result
 
@@ -9011,6 +9051,8 @@ class Store:
                 suggestion['latest_feedback'] = dict(feedback) if feedback else None
             for sid, files in chat_files.of_cards(db, [c['id'] for c in cards if c.get('origin') == 'owner']).items():
                 next(c for c in cards if c['id'] == sid)['files'] = files  # what the owner made it with (New to-do)
+            for sid, photos in whatsapp_images.of_cards(db, {'database': str(self.path)}, cards).items():
+                next(c for c in cards if c['id'] == sid)['photos'] = photos  # a WhatsApp photo it came from (whatsapp_images.py)
             recurring.annotate(db, cards, dt.datetime.now(local_tz()).date())  # "Repeats monthly" (recurring.py)
             return
         few = len(cards) <= 200  # a Done page: only its own; the status payload: all at once
@@ -9130,6 +9172,8 @@ class Store:
                 if account.get('service') == 'android':
                     feed = db.execute('SELECT last_checked,last_recorded,error FROM android_feed_health WHERE id=1').fetchone()
                     channel_health = {'transport':account.get('transport'), 'feed_health':dict(feed) if feed else None}
+                if account.get('service') == 'whatsapp' and not account.get('shared'):  # Read photos (whatsapp_images.py)
+                    channel_health = {'photos': whatsapp_images.view(db, account)}
                 if account.get('service') == 'slack':
                     channels = state.get('channels', [])
                     channel_health = {'conversations': len(channels),
@@ -15437,7 +15481,8 @@ def forget_in_notes(root, needles):
 
 
 # App's domain mixins (<domain>_app.py): each holds a domain's App methods and the actions it handles (its ACTIONS).
-APP_MIXINS = (SupportApp, CalendarApp, SkillsApp, AgentsApp, GBrainApp, SharedGraphApp, RecurringApp, CorrectionsApp, AiApp, MeetApp, MissedWorkApp)
+APP_MIXINS = (SupportApp, CalendarApp, SkillsApp, AgentsApp, GBrainApp, SharedGraphApp, RecurringApp, CorrectionsApp, AiApp, MeetApp, MissedWorkApp,
+              WhatsAppImagesApp)
 
 
 class App(*APP_MIXINS):
@@ -15854,6 +15899,24 @@ class App(*APP_MIXINS):
                     continue  # Attachments are a convenience; the email itself still shows.
             item['attachments'] = cache[key][1]
         return items
+
+    def whatsapp_source(self, account):
+        """The WhatsApp source of one of the owner's connections (whatsapp_images_app fetches photos through it)."""
+        return WhatsApp(self.config, account)
+
+    def whatsapp_photo_event(self, account_id, source_id):
+        """A message whose photo was kept or read, with the photo joined in (whatsapp_images.with_photo), the way its next
+        sync builds it: a new version, so the review reads what the photo says."""
+        with self.store.connect() as db:
+            row = db.execute('SELECT kind,occurred_at,title,body,metadata,deleted FROM events WHERE account_id=? AND source_id=?',
+                             (account_id, source_id)).fetchone()
+            photo = db.execute('SELECT * FROM whatsapp_photos WHERE account_id=? AND source_id=?', (account_id, source_id)).fetchone()
+        if not row or not photo or row['kind'] != 'whatsapp.message':
+            return False
+        event = {'account_id': account_id, 'source_id': source_id, 'kind': row['kind'], 'occurred_at': row['occurred_at'], 'title': row['title'],
+                 'body': whatsapp_images.base_body(row['body']), 'metadata': json.loads(row['metadata']), 'deleted': bool(row['deleted'])}
+        self.store.commit_page(account_id, None, [whatsapp_images.with_photo(event, dict(photo))], record_sync=False)
+        return True
 
     def email_view(self, suggestion_id, event_id):
         """The HTML of one source email, read live (read-only), with its embedded images."""
@@ -24362,7 +24425,7 @@ class App(*APP_MIXINS):
                         email = args.get('kind', [''])[0] == 'email'
                         rows = app.action('events', {'account_ids': args.get('account', []), 'query': query, 'semantic': bool(query.strip()) and not email,
                                                      'full': True, **({'kinds': sorted(EMAIL_KINDS)} if email else {})})
-                        self.output(200, [{**r, 'body': shown_body(r.get('body'))[0]} for r in rows])  # read by people: no model marker
+                        self.output(200, [{**r, 'body': whatsapp_images.listed(shown_body(r.get('body'))[0])} for r in rows])  # read by people: no model marker
                     except (ValueError, sqlite3.OperationalError):
                         self.output(400, {'error': 'Select accounts and use a valid search'})
                 elif path.path == '/api/account':
@@ -24665,6 +24728,24 @@ class App(*APP_MIXINS):
                     self.end_headers()
                     try:self.wfile.write(data)
                     except (BrokenPipeError, ConnectionResetError):self.close_connection = True
+                elif path.path == '/api/whatsapp-photo':  # a WhatsApp photo the Machine kept (whatsapp_images.py)
+                    try:
+                        with app.store.connect() as db:
+                            data, mime = whatsapp_images.data_of(db, app.config, urllib.parse.parse_qs(path.query).get('id', [''])[0])
+                    except (ValueError, OSError):
+                        self.output(404, {'error': 'Photo not available'})
+                        return
+                    self.send_response(200)
+                    self.send_header('Content-Type', mime)
+                    self.send_header('Content-Disposition', 'inline')
+                    self.send_header('Content-Length', str(len(data)))
+                    self.send_header('Cache-Control', 'private, max-age=86400')
+                    self.send_header('X-Content-Type-Options', 'nosniff')
+                    self.send_header('Referrer-Policy', 'no-referrer')
+                    self.send_header('Content-Security-Policy', "default-src 'none'; img-src 'self'; frame-ancestors 'none'; sandbox")
+                    self.end_headers()
+                    try:self.wfile.write(data)
+                    except (BrokenPipeError, ConnectionResetError):self.close_connection = True
                 elif path.path in ('/api/result','/result-file'):
                     args=urllib.parse.parse_qs(path.query)
                     try:
@@ -24864,6 +24945,7 @@ class App(*APP_MIXINS):
                              daemon=True).start()
         threading.Thread(target=self.delivery_worker, daemon=True).start()
         threading.Thread(target=self.preparation_worker, daemon=True).start()
+        threading.Thread(target=self.whatsapp_photo_worker, name='whatsapp-photos', daemon=True).start()
         threading.Thread(target=self.voice_warm_worker, name='voice-warm', daemon=True).start()
         threading.Thread(target=self.action_worker, daemon=True).start()
         threading.Thread(target=self.review_worker, daemon=True).start()

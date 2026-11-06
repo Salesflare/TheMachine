@@ -167,6 +167,14 @@ STORIES = [
      'chat': ('Sam Whitlock', [(660, False, 'Still on for climbing Saturday at 10?'),
                                (655, False, 'I can bring the long rope if you bring coffee.')]),
      'draft': ('telegram', 'Yes, I am in for 10. Bring the rope, I will bring the coffee.')},
+    # A photo Read photos read (whatsapp_images.py): the bill as a picture, what it says in the to-do
+    {'key': 'bill', 'family': True, 'status': 'pending', 'minutes': 470,
+     'title': 'Pay the boiler repair by November 14', 'body': 'Robin sent a photo of the Hollis Heating invoice: €240 for the boiler repair, due November 14.',
+     'chat': ('Robin Morgan', [(500, False, 'The boiler bill came, can you pay it?'),
+                               (498, False, 'Sent image'),
+                               (480, True, 'Will do this week.')]),
+     'photo': (1, {'file': 'photo-invoice.jpg', 'description': 'A photo of an invoice from Hollis Heating for a boiler repair, €240.00, due November 14.',
+                   'text': 'Hollis Heating\nInvoice 2041\nBoiler repair, November 3\nLabor and parts €240.00\nDue November 14'})},
 ]
 
 # Closed cards, one per earlier email: what the card said, by the email's topic (EMAIL_TOPICS order)
@@ -468,8 +476,10 @@ def build(profile):
                     add('home-telegram', 'telegram.message', m, chat, text, {'chat_name': chat, 'chat_id': '7001', 'chat_kind': 'dm', 'from_me': who is None,
                         **({'sender_name': who, 'sender_id': '7001'} if who else {}), 'message_id': f"tg-{story['key']}-{n}"}, key)
                 else:
+                    photo = story['photo'][1] if story.get('photo') and story['photo'][0] == n else None
                     add('home-whatsapp', 'whatsapp.message', m, chat, text, {'chat_name': chat, 'chat_id': slug(chat), 'from_me': who is None, 'group': group,
-                        **({'sender_display': who} if who else {}), 'message_id': f"wa-{story['key']}-{n}"}, key)
+                        **({'sender_display': who} if who else {}), 'message_id': f"wa-{story['key']}-{n}",
+                        **({'media_type': 'image', 'photo_fixture': photo} if photo else {})}, key)
                 out.append(key)
             account, source, to = ('home-telegram', 'Telegram from ' + chat, None) if story.get('telegram') else ('home-whatsapp', 'WhatsApp from Robin Morgan', None)
         card = {'key': 'open' + str(i), 'title': story['title'], 'body': story['body'], 'status': story['status'], 'events': out, 'accounts': [account],

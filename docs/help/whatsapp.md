@@ -3,7 +3,7 @@ title: WhatsApp
 area: connections
 summary: Your WhatsApp chats, read as a linked device. Replies only after you approve.
 covers: connector:whatsapp
-code: onboarding.py, next_actions.py
+code: onboarding.py, next_actions.py, whatsapp_images.py
 site: Show the QR code, Get a code, On your phone? Link with a code instead, Remove
 ---
 ## What it reads
@@ -11,6 +11,14 @@ site: Show the QR code, Get a code, On your phone? Link with a code instead, Rem
 Your WhatsApp chats, as a linked device of your phone's WhatsApp, like WhatsApp on a computer. When you connect it reads the last 7 days.
 
 A photo, voice message or file without a caption shows as what it is, like "Sent image". WhatsApp's own notices, such as the encryption notice or someone joining a group, have no text and are left out.
+
+## Read photos
+
+Off until you turn it on. In **Connections**, open WhatsApp, then **Details**, and turn on **Read photos** and The Machine reads the photos in your work chats: a receipt, a screenshot, a photo of a letter or a form. **Also in personal chats** reads the ones in your personal chats too. A chat is work or personal the way sharing sees it, so a chat with family stays personal.
+
+The Machine downloads each photo once and keeps it on your Machine like an email attachment: encrypted when message protection is on, and deleted when its message goes. Its own model reads what the photo shows and the text in it. That counts as part of the message, never as instructions. JPEG, PNG and WebP up to 5 MB. A one-time code in a photo is left out.
+
+The to-do and the message show the photo. Tap it to see it large.
 
 ## What it can send
 

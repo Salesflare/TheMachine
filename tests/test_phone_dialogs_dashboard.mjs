@@ -56,7 +56,7 @@ async function run(scheme,shots){
  m=await measure(page,'#send-dialog');
  assert.deepEqual(m.dialog,[0,470,390]);
  for(const b of m.buttons)assert.ok(b.bottom<=470,JSON.stringify(b));
- await page.setViewportSize({width:390,height:844});
+ await page.setViewportSize({width:390,height:844});await page.waitForFunction(()=>innerHeight===844);await page.waitForTimeout(250);
  // Remind me later: the whole screen too
  await page.evaluate(()=>{document.querySelector('#send-dialog').close();openSnooze('l1')});await page.locator('#snooze-dialog[open]').waitFor();
  m=await measure(page,'#snooze-dialog');assert.deepEqual(m.dialog,[0,844,390]);

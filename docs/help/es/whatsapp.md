@@ -3,7 +3,7 @@ title: WhatsApp
 area: connections
 summary: Tus chats de WhatsApp, leídos como dispositivo vinculado. Solo responde después de que lo apruebes.
 covers: connector:whatsapp
-code: onboarding.py, next_actions.py
+code: onboarding.py, next_actions.py, whatsapp_images.py
 site: Show the QR code, Get a code, On your phone? Link with a code instead, Remove
 ---
 ## Qué lee
@@ -11,6 +11,14 @@ site: Show the QR code, Get a code, On your phone? Link with a code instead, Rem
 Tus chats de WhatsApp, como dispositivo vinculado al WhatsApp de tu teléfono, igual que WhatsApp en un ordenador. Al conectar lee los últimos 7 días.
 
 Una foto, un mensaje de voz o un archivo sin texto aparece como lo que es, por ejemplo "Imagen enviada". Los avisos propios de WhatsApp, como el aviso de cifrado o que alguien se une a un grupo, no tienen texto y se dejan fuera.
+
+## Leer fotos
+
+Desactivado hasta que lo actives. En **Conexiones**, abre WhatsApp, luego **Detalles**, y activa **Leer fotos** y The Machine lee las fotos de tus chats de trabajo: un recibo, una captura, la foto de una carta o de un formulario. **También en chats personales** lee también las de tus chats personales. Un chat es de trabajo o personal según lo ve el uso compartido, así que un chat con la familia sigue siendo personal.
+
+The Machine descarga cada foto una vez y la guarda en tu Machine como un adjunto de correo: cifrada cuando la protección de mensajes está activa, y borrada cuando su mensaje desaparece. Su propio modelo lee lo que muestra la foto y el texto que tiene. Eso cuenta como parte del mensaje, nunca como instrucciones. JPEG, PNG y WebP de hasta 5 MB. Un código de un solo uso en una foto se omite.
+
+La tarea y el mensaje muestran la foto. Tócala para verla en grande.
 
 ## Qué puede enviar
 
