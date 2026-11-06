@@ -10,6 +10,10 @@ site: More sources, Remove
 
 El registro de tu OpenClaw Gateway: ejecuciones fallidas, traspasos rechazados, mensajes de Telegram que no salieron y los propios errores de The Machine. Una tarea te avisa cuando hay algo que arreglar.
 
+## Correcciones que una actualización dejó a un lado
+
+Cuando The Machine se actualiza y una de sus propias correcciones ya no encaja con la nueva versión, la actualización deja esa corrección a un lado y sigue, para que tu Machine nunca se quede en una versión antigua. Una tarea, **Rehacer una corrección que la actualización dejó a un lado**, nombra la corrección. Pide que la rehaga en la nueva versión, o cierra la tarea.
+
 ## Qué puede hacer
 
 Nada. Solo lee el registro en tu propia Machine.

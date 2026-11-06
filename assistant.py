@@ -56,6 +56,7 @@ import github_route
 import graph
 import knowledge
 import own_addresses
+import parked_fixes
 import project_success
 import crm
 import crm_fields
@@ -4823,6 +4824,26 @@ class Store:
         with self.connect() as db:
             for row in rows:
                 db.execute('UPDATE faults SET reported=? WHERE fingerprint=? AND day=?', (row['count'], row['fingerprint'], row['day']))
+
+    def parked_fix_cards(self, account_id, items):
+        """A to-do for each change an update set aside (parked_fixes.pending), once: its signal is already read, so
+        no review makes a second one. Returns how many are new."""
+        made = 0
+        for item in items:
+            title, body = parked_fixes.card(item)
+            stamp = now()
+            with self.connect() as db:
+                db.execute('BEGIN IMMEDIATE')
+                cursor = db.execute('INSERT OR IGNORE INTO events(account_id,source_id,kind,occurred_at,title,body,metadata,deleted,content_hash,'
+                                    "version,analyzed_version,ingested_at) VALUES(?,?,'machine.parked_fix',?,?,?,?,0,?,1,1,?)",
+                                    (account_id, 'parked:' + item['sha'], stamp, title, body,
+                                     json.dumps({'commit': item['sha'], 'subject': item['subject'], 'changes': item['changes']}),
+                                     hashlib.sha256(item['sha'].encode()).hexdigest(), stamp))
+                if not cursor.rowcount:
+                    continue
+                self.suggest('parked:' + item['sha'], title[:90], body[:699], [cursor.lastrowid], when='now', owner_step=True, _db=db)
+                made += 1
+        return made
 
     def failed(self, account, error):
         with self.connect() as db:
@@ -10562,6 +10583,8 @@ def sync_gateway(store, config, account, source=None):
     store.faults_reported(faults)
     if carries_faults:
         store.settle_faults(code_version(next_actions.app_dir(config)))
+        # the Machine's own changes an update set aside come back as to-dos (parked_fixes.py)
+        store.parked_fix_cards(account['id'], parked_fixes.pending(next_actions.app_dir(config)))
     return {'mode': 'incremental', 'events': len(events)}
 
 
@@ -11255,7 +11278,7 @@ TODO_SOURCE = {'gmail.message': 'Email', 'ms_graph.message': 'Email', 'outlook.m
                'slack.message': 'Slack', 'whatsapp.message': 'WhatsApp', 'telegram.message': 'Telegram', 'fleet.intercom': 'Intercom',
                'android.notification': 'Phone notifications', 'owner.card': 'Added by you',
                'fleet.request': 'Fleet', 'fleet.message': 'Fleet',
-               'gateway.alert': 'The Machine itself', 'machine.fault': 'The Machine itself'}
+               'gateway.alert': 'The Machine itself', 'machine.fault': 'The Machine itself', 'machine.parked_fix': 'The Machine itself'}
 TODO_SOURCE_OTHER = 'Other'
 
 

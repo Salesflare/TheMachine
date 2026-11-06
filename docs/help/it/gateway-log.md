@@ -10,6 +10,10 @@ site: More sources, Remove
 
 Il log del tuo OpenClaw Gateway: esecuzioni non riuscite, passaggi rifiutati, messaggi Telegram non partiti e gli errori di The Machine stessa. Un’attività ti avvisa quando c’è qualcosa da sistemare.
 
+## Correzioni messe da parte da un aggiornamento
+
+Quando The Machine si aggiorna e una delle sue correzioni non va più bene per la nuova versione, l’aggiornamento mette da parte quella correzione e va avanti, così la tua Machine non resta mai su una versione vecchia. Un’attività, **Rifai una correzione messa da parte dall’aggiornamento**, nomina la correzione. Chiedi di rifarla sulla nuova versione, oppure chiudi l’attività.
+
 ## Cosa può fare
 
 Niente. Legge solo il log sulla tua Machine.

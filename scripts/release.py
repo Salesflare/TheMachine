@@ -116,36 +116,75 @@ def cut(args):
           'everyone else after the soak time, or sooner when promoted on /admin.')
 
 
+# Where an update sets aside the Machine's own commits that don't apply on a release (and uncommitted changes that
+# are in its way): one ref per commit, so nothing is lost and the service brings each back to the owner as a to-do
+# (parked_fixes.py, which names the same folder).
+PARKED = 'refs/machine/parked/'
+STASH_NOTE = 'Uncommitted changes set aside by an update'
+NAMED = ('-c', 'user.name=m', '-c', 'user.email=m@localhost')  # for git runs that make a commit
+
+
 def move_to(sha, ref='main'):
     """Onto a verified release the way hosted Machines move: a fast-forward; else, with no commits of its own (all are
-    on the branch or in a release), straight there, uncommitted changes kept; else its own commits (a merged self-fix)
-    replayed on top, and left as they were when that does not apply cleanly. The git run that decided it."""
+    on the branch or in a release), straight there; else its own commits (a merged self-fix) replayed on top.
+    Uncommitted changes are kept. Own commits that don't apply, and changes that don't fit back on top, are set aside
+    under PARKED and the checkout moves to the release anyway: a Machine never stays behind on an old version. The git
+    run that decided it, with .parked: what was set aside (own commits oldest first, then the changes)."""
     if git('merge-base', '--is-ancestor', 'HEAD', sha, check=False).returncode == 0:
-        return git('merge', '--ff-only', '--quiet', sha, check=False)
-    before = git('rev-parse', '-q', '--verify', f'origin/{ref}@{{1}}', check=False).stdout.strip()  # before a rewrite
-    own = git('rev-list', 'HEAD', '--not', sha, f'refs/remotes/origin/{ref}', '--tags=release-*',
-              *([before] if before else []), check=False).stdout.split()
-    if not own:
-        return git('reset', '--keep', '-q', sha, check=False)
-    result = git('-c', 'user.name=m', '-c', 'user.email=m@localhost', 'rebase', '-q', '--onto', sha, own[-1] + '^',
-                 check=False)
-    if result.returncode:
+        result, own = git('merge', '--ff-only', '--quiet', sha, check=False), []
+    else:
+        before = git('rev-parse', '-q', '--verify', f'origin/{ref}@{{1}}', check=False).stdout.strip()  # before a rewrite
+        own = git('rev-list', '--reverse', 'HEAD', '--not', sha, f'refs/remotes/origin/{ref}', '--tags=release-*',
+                  *([before] if before else []), check=False).stdout.split()
+        result = None if own else git('reset', '--keep', '-q', sha, check=False)
+    if result is not None and result.returncode == 0:
+        result.parked = []
+        return result
+    # Own commits to replay, or changes in the way: the changes go aside for the move and come back on top after
+    parked = []
+    changes = git(*NAMED, 'stash', 'create', STASH_NOTE, check=False).stdout.strip()
+    if changes:
+        git('update-ref', PARKED + changes, changes)  # kept before the checkout is cleaned, dropped again when they fit
+        git('reset', '--hard', '-q', 'HEAD')
+    result = git(*NAMED, 'rebase', '-q', '--onto', sha, own[0] + '^', check=False) if own else None
+    if result is not None and result.returncode:
         git('rebase', '--abort', check=False)
+        parked += own
+    if result is None or result.returncode:
+        result = git('reset', '--keep', '-q', sha, check=False)
+    for commit in parked:
+        git('update-ref', PARKED + commit, commit)
+    if changes and git('stash', 'apply', '-q', changes, check=False).returncode:
+        git('reset', '--hard', '-q', 'HEAD')  # they don't fit on the release: they stay under PARKED
+        parked.append(changes)
+    elif changes:
+        git('update-ref', '-d', PARKED + changes)
+    result.parked = parked
     return result
+
+
+def moved(tag, result):
+    """What the update did with the Machine's own commits, for its log line; SystemExit when it didn't move."""
+    if result.returncode:
+        raise SystemExit(f'{tag} is verified, but the checkout could not move to it: nothing changed. '
+                         + (result.stderr or result.stdout).strip()[-300:])
+    if not result.parked:
+        return ''
+    return (f' {len(result.parked)} of this Machine\'s own changes did not apply on it, so they were set aside '
+            f'({PARKED}); each comes back to the owner as a to-do.')
 
 
 def first_install():
     """A fresh install from a clone (./install.sh with no config yet) starts from the newest signed release, not from
     whatever main is: (tag, sha) when the checkout moved there, None when it is already on it; Refused or SystemExit
-    when no release verifies or the move does not apply (nothing changed then)."""
+    when no release verifies or the checkout can't move (nothing changed then)."""
     git('fetch', '--quiet', '--tags', 'origin')
     tag, sha = verify()
     if git('rev-parse', 'HEAD').stdout.strip() == sha:
         return None
-    result = move_to(sha)
-    if result.returncode:
-        raise SystemExit(f'{tag} is verified, but this checkout\'s own commits do not apply on it: nothing changed. '
-                         + (result.stderr or result.stdout).strip()[-300:])
+    note = moved(tag, move_to(sha))
+    if note:
+        print(note.strip())
     return tag, sha
 
 
@@ -164,11 +203,8 @@ def update(args):
     if args.install and busy():
         print(f'{tag} is ready, but something is running: trying again next time.')
         return
-    result = move_to(sha)
-    if result.returncode:
-        raise SystemExit(f'{tag} is verified, but this checkout\'s own commits do not apply on it: nothing changed. '
-                         + (result.stderr or result.stdout).strip()[-300:])
-    print(f'Updated to {tag} ({sha[:7]}), signature verified.' + ('' if args.install else ' Now run ./install.sh'))
+    note = moved(tag, move_to(sha))
+    print(f'Updated to {tag} ({sha[:7]}), signature verified.' + note + ('' if args.install else ' Now run ./install.sh'))
     if args.install:
         code = subprocess.run([str(ROOT / 'install.sh'), '--non-interactive'], cwd=ROOT).returncode
         if code:
