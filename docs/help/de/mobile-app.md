@@ -21,13 +21,13 @@ Auf einer gehosteten Machine meldet sich die App mit deinem Konto an. Auf einer 
 
 Beim ersten Öffnen fragt die App, ob sie Benachrichtigungen senden darf. Tippe auf eine, um zu öffnen, worum es geht: Eine Aufgabe öffnet ihren Chat, der Morgen öffnet heute im **Kalender**, das Team-Briefing öffnet das Briefing dieser Fleet, und eine Frage aus der Fleet öffnet ihre Aufgabe. Kein Text einer Aufgabe geht über Apple, Google oder den Dienst von The Machine: Sie tragen nur eine feste Zeile, etwa „Eine Aufgabe braucht dich“.
 
-Die App fragt dann deine eigene Machine nach dem Titel und dem nächsten Schritt der Aufgabe, etwa „Bereit: Sam antworten“ mit „An Sam senden: Dienstag 10:00 passt“. Der Morgen bekommt, was wartet, und die Uhrzeit deines ersten Termins, das Team-Briefing seine ersten Punkte. Erreicht sie deine Machine nicht, bleibt die feste Zeile. Auf Android steht da, wie viele warten, etwa „2 Aufgaben brauchen dich“.
+Die App fragt dann deine eigene Machine nach dem Titel und dem nächsten Schritt der Aufgabe, etwa „Bereit: Sam antworten“ mit „An Sam senden: Dienstag 10:00 passt“. Der Morgen bekommt, was wartet, und die Uhrzeit deines ersten Termins, das Team-Briefing seine ersten Punkte, Neues aus der Fleet, was passiert ist. Erreicht sie deine Machine nicht, bleibt die feste Zeile. Auf Android steht da, wie viele warten, etwa „2 Aufgaben brauchen dich“.
 
 Eine Benachrichtigung hat **Zurückstellen** (bis morgen) und **Als erledigt markieren**, und **Vorbereiten** bei einer Aufgabe, die noch nicht begonnen hat. Sie funktionieren, nachdem du das Handy entsperrt hast, ohne die App zu öffnen. Senden und letzte Schritte öffnen immer die App. Eine Benachrichtigung pro Aufgabe: Aus „Wird vorbereitet“ wird „Bereit“, und sie verschwindet, sobald die Aufgabe erledigt oder zurückgestellt ist, hier oder anderswo.
 
 Ein letzter Schritt, den du bestätigt hast und der durchging, zeigt **Erledigt** mit dem, was passiert ist, bis du auf der Seite Aufgaben auf **Verstanden** tippst. Auf dem iPhone kann das warten, bis du die App das nächste Mal öffnest.
 
-Ist **Text in Benachrichtigungen** unter **Einstellungen**, **Sicherheit** aus, bleibt es bei der festen Zeile. Blendet dein Handy sensible Inhalte von Benachrichtigungen auf dem Sperrbildschirm aus, steht dort nur die feste Zeile.
+Ist **Text in Benachrichtigungen** unter **Einstellungen**, **Sicherheit** aus, bleibt es bei der festen Zeile. Blendet dein Handy sensible Inhalte von Benachrichtigungen auf dem Sperrbildschirm aus, steht dort nur die feste Zeile. Eine Benachrichtigung ist nie nur ein Titel: Darf sie nichts zeigen, steht darunter „Zum Öffnen tippen.“
 
 Es gelten dieselben Regeln wie für Push im Web: was du je Art unter [Benachrichtigungen](notifications.md) gewählt hast, deine [Arbeitszeiten](work-hours.md), und nichts, solange du ein Dashboard benutzt.
 

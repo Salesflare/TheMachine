@@ -44,6 +44,7 @@ public class MachinePushService extends MessagingService {
     static final String CHANNEL = "todos";
     private static final String PREFS = "machine_push";
     private static final int TIMEOUT = 5000;
+    private static final int RETRY = 2000;
     private static final int MAX_BYTES = 4096;
 
     @Override
@@ -64,7 +65,17 @@ public class MachinePushService extends MessagingService {
         if (!NotificationManagerCompat.from(c).areNotificationsEnabled()) return;
         String many = text(data.get("many"));
         String group = PushText.group(kind, state);
+        long asked = System.currentTimeMillis();
         Notice notice = fetchNotice(c, tag);
+        // the phone's network may still be waking up: once more, a moment later, while FCM's time for a push lasts
+        if (notice == null && System.currentTimeMillis() - asked < TIMEOUT) {
+            try {
+                Thread.sleep(RETRY);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            notice = fetchNotice(c, tag);
+        }
         if (notice != null && notice.gone) { // handled in the meantime: nothing to show
             clear(c, tag);
             return;
@@ -79,12 +90,13 @@ public class MachinePushService extends MessagingService {
         String id = line != null ? tag : group;
         String opens = line != null || count == 1 ? tag : kind;
         channel(c);
+        // Never a title alone: the Machine's line under it, else the plain "Tap to open."
+        String under = PushText.body(line != null ? notice.body : null, c.getString(R.string.push_open));
         NotificationCompat.Builder full = base(c, plain)
             .setContentTitle(line != null ? line : plain)
+            .setContentText(under)
+            .setStyle(new NotificationCompat.BigTextStyle().bigText(under))
             .setContentIntent(open(c, id, opens));
-        if (line != null && !notice.body.isEmpty()) {
-            full.setContentText(notice.body).setStyle(new NotificationCompat.BigTextStyle().bigText(notice.body));
-        }
         if (line != null) {
             for (String action : notice.actions) {
                 String label = notice.labels.get(action);
@@ -109,16 +121,22 @@ public class MachinePushService extends MessagingService {
         post(c, tag, b);
     }
 
-    /** A to-do's notification goes: done, snoozed or sent, here or elsewhere. */
-    static void clear(Context c, String tag) {
-        NotificationManagerCompat.from(c).cancel(tag, 0);
+    /**
+     * A to-do's notification goes: done, snoozed or sent, here or elsewhere. One shown without its line (the kind's,
+     * "A to-do is ready") goes too once nothing it counted still waits.
+     */
+    static synchronized void clear(Context c, String tag) {
+        NotificationManagerCompat manager = NotificationManagerCompat.from(c);
+        manager.cancel(tag, 0);
         SharedPreferences prefs = c.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         SharedPreferences.Editor edit = prefs.edit();
         for (Map.Entry<String, ?> entry : prefs.getAll().entrySet()) {
             if (!(entry.getValue() instanceof Set)) continue;
             @SuppressWarnings("unchecked")
             Set<String> tags = new HashSet<>((Set<String>) entry.getValue());
-            if (tags.remove(tag)) edit.putStringSet(entry.getKey(), tags);
+            if (!tags.remove(tag)) continue;
+            edit.putStringSet(entry.getKey(), tags);
+            if (tags.isEmpty()) manager.cancel(entry.getKey(), 0);
         }
         edit.apply();
     }
@@ -161,9 +179,13 @@ public class MachinePushService extends MessagingService {
         return tags.size();
     }
 
-    /** A notification whose lock-screen version, when the phone hides sensitive content, says only `plain`. */
+    /**
+     * A notification whose lock-screen version, when the phone hides sensitive content, says only `plain` and "Tap to
+     * open.": nothing of the to-do, never a title alone.
+     */
     private static NotificationCompat.Builder base(Context c, String plain) {
-        NotificationCompat.Builder hidden = icon(c, new NotificationCompat.Builder(c, CHANNEL)).setContentTitle(plain);
+        NotificationCompat.Builder hidden = icon(c, new NotificationCompat.Builder(c, CHANNEL)).setContentTitle(plain)
+            .setContentText(c.getString(R.string.push_open));
         return icon(c, new NotificationCompat.Builder(c, CHANNEL))
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)

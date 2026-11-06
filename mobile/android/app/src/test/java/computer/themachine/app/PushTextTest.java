@@ -66,6 +66,15 @@ public class PushTextTest {
     }
 
     @Test
+    public void aNotificationIsNeverATitleAlone() {
+        // "Your Fleet" and "A to-do is waiting for you" showed with nothing under them: the Machine's line, else the plain words
+        assertEquals("Pat accepted your handoff.", PushText.body("Pat accepted your handoff.", "Tap to open."));
+        assertEquals("Tap to open.", PushText.body("", "Tap to open."));
+        assertEquals("Tap to open.", PushText.body(null, "Tap to open."));
+        assertEquals("Tap to open.", PushText.body(" \n ", "Tap to open."));
+    }
+
+    @Test
     public void onlyPrepareSnoozeAndDoneAreButtonsAndNothingSends() {
         assertEquals("accept", PushText.choice("prepare"));
         assertEquals("snooze", PushText.choice("snooze"));

@@ -43,6 +43,12 @@ final class PushText {
         return clip(fetched, BODY);
     }
 
+    /** The line under the title: the Machine's, else `plain` ("Tap to open."), so a notification is never a title alone. */
+    static String body(String fetched, String plain) {
+        String text = clip(fetched, BODY);
+        return text.isEmpty() ? clip(plain, BODY) : text;
+    }
+
     /**
      * The dashboard's own decision for a notification button, or null for one the phone never does from a
      * notification: Prepare starts a to-do not started yet, Snooze is until tomorrow, Mark done closes it. Sending and

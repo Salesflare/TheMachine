@@ -3,4 +3,5 @@
     <string name="share_label">Zu The Machine hinzufügen</string>
     <string name="saved_download">In Downloads gespeichert: %1$s</string>
     <string name="not_saved">Die Datei konnte nicht gespeichert werden.</string>
+    <string name="push_open">Zum Öffnen tippen.</string>
 </resources>
