@@ -91,7 +91,9 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   timing, `SLOW_REQUEST_SECONDS`), `machine/text.py` (message text: quoted history, bodies, attachments, `clamp`,
   `encoded`, `seal_copy`), `machine/prompts/` (`review.py`: the review prompt, source notes, how facts are worded;
   `profile.py`: the profile, voices, skills, roles, organizations, history and import prompts), `machine/cards.py`
-  (how a to-do reads: snooze times, titles, source lines, handoffs, ask and blocker text, controls, to-do states).
+  (how a to-do reads: snooze times, titles, source lines, handoffs, ask and blocker text, controls, to-do states),
+  `machine/browser.py` (browser leases, sign-in handoffs, tab peeks, safe links, preparation steps), `machine/chat.py`
+  (a to-do's chat: its items, replies, drafts, handoffs and redaction).
 - **Dashboard code:** in its area's part in `dashboard/` (`<area>-<what>.js`: shell, todos, settings, graph, calendar,
   connections, help, events, new, fleet), next to the functions it works with, never at the end of the script. The
   page's core is in the `shell-*` parts too: locale and error reports (`shell-core.js`), network and outbox, `render()`

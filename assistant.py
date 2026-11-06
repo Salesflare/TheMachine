@@ -316,6 +316,85 @@ from machine.cards import (
     undated_card,
     waits_on_others,
 )
+from machine.browser import (
+    AGENT_DB,
+    BROWSER_DOWN,
+    BROWSER_RECOVERED,
+    BROWSER_WAIT,
+    BROWSER_WORK,
+    FINAL_STEPS,
+    PANE_QUERY,
+    PEEK_EVERY,
+    PEEK_WIDTH,
+    SECRET_PARAM,
+    SIGNIN_ADDRESS,
+    SIGNIN_KINDS,
+    SIGNIN_WATCH,
+    STEP_NAMES,
+    TAB_LOOK,
+    browser_lease_script,
+    browser_link,
+    browser_read_failure,
+    browser_result,
+    browser_view_link,
+    browser_wait,
+    own_tab,
+    peek_tab,
+    preparation_steps,
+    recover_browser,
+    run_page,
+    run_tab,
+    safe_link,
+    same_site,
+    signin_address,
+    signin_handoff,
+    signin_kind,
+    signin_link,
+    signin_name,
+    task_page,
+    transcript_tool_calls,
+)
+from machine.chat import (
+    AGENT_WORK_NOTE,
+    CHAT_AGENTS,
+    CHAT_FILES_ONLY,
+    CHAT_HISTORY_LIMIT,
+    CHAT_IDS,
+    CHAT_LEARNED,
+    CHAT_MARKER,
+    CHAT_NOTES,
+    CHAT_NOT_SENT,
+    CHAT_ON,
+    CHAT_OWNER_WORDS,
+    CHAT_PART,
+    CHAT_PATHS,
+    CHAT_RESULT_LINK,
+    CHAT_ROLES,
+    CHAT_SAVED,
+    CHAT_SECRETS,
+    CHAT_SENT,
+    CHAT_STEP_FAILED,
+    CHAT_STEP_HOW,
+    CHAT_UNDONE,
+    card_chat_handoffs,
+    chat_agent_text,
+    chat_cli_replies,
+    chat_conversation,
+    chat_draft,
+    chat_excerpt,
+    chat_items,
+    chat_ms,
+    chat_name,
+    chat_person,
+    chat_reply,
+    chat_result_files,
+    chat_run_keys,
+    chat_text,
+    chat_text_phase,
+    handoff_machine,
+    owner_time_line,
+    unseen_draft,
+)
 
 ANDROID_APP_NAMES = {
     'android': 'Android System', 'com.google.android.gm': 'Gmail',
@@ -474,69 +553,6 @@ def queue_delegate_wait(db, action, job, result):
     watch.update(account_id=action['account_id'], since=now(), delegated=True, name=action.get('to_name') or action['to'][0])
     db.execute("UPDATE suggestions SET awaiting=?,status='snoozed',snoozed_until=?,resume_status='prepared',undo_until=NULL WHERE id=?",
                (encoded(watch), thread_return_time(action['wait_days']), job['suggestion_id']))
-
-
-def browser_read_failure(service, stderr):
-    """Only fixed diagnostic codes, never the CLI's page text, URL or account details."""
-    text = str(stderr).lower()
-    if 'web client token not found' in text or 'not found in the web client' in text:
-        return service + '_query_unavailable'
-    if 'rejected the query' in text or 'query-failed' in text or 'http ' in text:
-        status = re.search(r'http[ _:]*(\d{3})', text)
-        return service + '_query_failed' + (':HTTP_' + status.group(1) if status else '')
-    if any(sign in text for sign in BROWSER_DOWN):
-        return service + '_browser_unreachable'
-    if 'browser command failed' in text or 'target page, context or browser' in text:
-        return service + '_browser_failed'
-    return service + '_read_failed'
-
-
-# The shared browser itself stopped answering (crashed, hung or closed), so no site in it can be read.
-BROWSER_DOWN = ('connectovercdp', 'browser request timed out', 'econnrefused', 'browser is not running', 'browser not running',
-                'browser has been closed', 'browser has disconnected')
-BROWSER_RECOVERED = {}  # profile -> time.monotonic() of the last restart attempt
-
-
-def recover_browser(profile, own_cdp=False, config=None):
-    """Restart an unresponsive managed browser under an exclusive lease, at most once per 15 minutes.
-    A busy lease waits for the next sync; external CDP/extension profiles and the Gateway stay untouched."""
-    if own_cdp or profile in ('chrome', 'user') or time.monotonic() - BROWSER_RECOVERED.get(profile, -900) < 900:
-        return False
-    owner = 'browser-recovery-' + secrets.token_hex(8)
-    lease = [sys.executable, str(browser_lease_script(config))]
-    try:
-        claimed = subprocess.run([*lease, 'claim', '--owner', owner, '--minutes', '5', '--exclusive'],
-                                 capture_output=True, text=True, timeout=15)
-    except (OSError, subprocess.SubprocessError):
-        return False
-    if claimed.returncode:
-        return False  # someone else is using it; don't consume the recovery cooldown
-    BROWSER_RECOVERED[profile] = time.monotonic()
-    try:
-        def browser(*args):
-            return subprocess.run(['openclaw', 'browser', '--browser-profile', profile, *args], capture_output=True, text=True, timeout=90)
-        try:
-            status = browser('--json', 'status')
-            state = json.loads(status.stdout) if status.returncode == 0 else None
-        except (OSError, subprocess.SubprocessError, ValueError):
-            return False
-        if not isinstance(state, dict):
-            return False  # the Gateway did not answer: not this browser's to fix
-        if state.get('running') and state.get('cdpReady') and state.get('cdpHttp'):
-            return False
-        try:
-            if state.get('running'):
-                browser('stop')
-            started = browser('start').returncode == 0
-        except (OSError, subprocess.SubprocessError):
-            return False
-        logging.warning('browser restart profile=%s ok=%s', profile, started)
-        return started
-    finally:
-        try:
-            subprocess.run([*lease, 'release', '--owner', owner], capture_output=True, text=True, timeout=15)
-        except (OSError, subprocess.SubprocessError):
-            pass  # the five-minute lease expires even if its helper is temporarily unavailable
 
 
 # Failures in a row before a transient sync failure (a rate limit, the service's own 5xx, the network) goes into the
@@ -10699,327 +10715,6 @@ def todo_source(kind):
 EMAIL_KINDS = frozenset({'gmail.message', 'ms_graph.message', 'outlook.message', 'salesflare.email', 'fleet.email'})
 
 
-AGENT_DB = Path.home() / '.openclaw/agents/main/agent/openclaw-agent.sqlite'
-STEP_NAMES = {'exec': 'Running a command', 'browser': 'Using the browser', 'read': 'Reading a file', 'write': 'Writing notes',
-              'edit': 'Writing notes', 'web_search': 'Searching the web', 'web_fetch': 'Reading a web page',
-              'assistant_signals': 'Checking the assistant', 'memory_search': 'Searching memory'}
-
-
-BROWSER_WAIT = 45  # seconds on the browser before a card offers it to the owner
-SIGNIN_WATCH = 20  # seconds between looks at the browser while a task waits on the owner's sign-in
-
-
-def browser_wait(db, job_id, status, at=None, reason=None):
-    """The browser a preparation waits on, as {since, page, sign_in}: it has been on the browser for BROWSER_WAIT seconds or
-    more (a sign-in, a captcha, a code or a page that does not load), or it stopped right after a browser step and
-    asks for help. None otherwise. `page` is the last address it opened, when it said one.
-
-    A blocker that hands a sign-in to the owner (`reason`, see HANDOFF) counts whenever the run used the browser at
-    all: the handoff releases the browser lease (a command) after its last browser step, so the steps no longer end
-    on the browser. Then `sign_in` is True."""
-    if status not in ('starting', 'running', 'blocked'):
-        return None
-    try:
-        calls = db.execute('SELECT tool,params,started_at FROM preparation_calls WHERE job_id=? ORDER BY started_at DESC,rowid DESC LIMIT 50',
-                           (job_id,)).fetchall()
-    except sqlite3.OperationalError:
-        return None
-    if status == 'blocked':  # saving the blocker is its own last step
-        calls = [c for c in calls if c['tool'] != 'assistant_signals']
-    streak = []
-    for call in calls:
-        if call['tool'] != 'browser':
-            break
-        streak.append(call)
-    sign_in = status == 'blocked' and signin_handoff(reason)
-    if not streak and sign_in:
-        streak = [c for c in calls if c['tool'] == 'browser'][:1]
-    if not streak:
-        return None
-    since = streak[-1]['started_at']
-    if status != 'blocked' and (at or dt.datetime.now(dt.timezone.utc)) - dt.datetime.fromisoformat(since) < dt.timedelta(seconds=BROWSER_WAIT):
-        return None
-    return {'since': since, 'page': run_page(db, job_id, calls), 'sign_in': bool(sign_in)}
-
-
-def run_page(db, job_id, calls):
-    """The address of the tab a run left off in, from its own steps: the last address opened in the tab its last browser
-    step used (OpenClaw's targetId, the tab's label), else the last one it opened. A run that only reused a tab an earlier
-    run of the same task opened (a retry, or after a Change) looks in those runs, in that tab only. None when unknown:
-    never another task's tab."""
-    def params(call):
-        try:
-            found = json.loads(call['params']) if call['tool'] == 'browser' else {}
-        except ValueError:
-            return {}
-        return found if isinstance(found, dict) else {}
-
-    def address(call, tab):
-        given = params(call)
-        found = given.get('url') or given.get('targetUrl')
-        if not isinstance(found, str) or urllib.parse.urlsplit(found).scheme not in ('http', 'https'):
-            return None
-        return found if tab is None or tab in (given.get('targetId'), given.get('label')) else None
-
-    tab = next((params(c).get('targetId') or params(c).get('label') for c in calls if c['tool'] == 'browser'), None)
-    tab = tab if isinstance(tab, str) and tab else None
-    for call in calls:
-        found = address(call, tab)
-        if found:
-            return found
-    if tab is None:  # without its tab's name, an earlier run's address could be any tab
-        return next((a for a in (address(c, None) for c in calls) if a), None)
-    try:
-        session = db.execute('SELECT session_job_id FROM preparation_runs WHERE job_id=?', (job_id,)).fetchone()
-        earlier = db.execute('SELECT job_id FROM preparation_runs WHERE session_job_id=? AND job_id!=? ORDER BY started_at DESC LIMIT 10',
-                             (session[0], job_id)).fetchall() if session else []
-        for run in earlier:
-            for call in db.execute("SELECT tool,params FROM preparation_calls WHERE job_id=? AND tool='browser' ORDER BY started_at DESC,rowid DESC LIMIT 200", (run[0],)):
-                found = address(call, tab)
-                if found:
-                    return found
-    except sqlite3.OperationalError:
-        pass
-    return None
-
-
-def signin_handoff(reason):
-    """A blocker that waits on the owner to sign in (a sign-in, a code, a passkey) rather than on something else."""
-    return bool(reason) and bool(HANDOFF.search(reason)) and 'try again' not in reason.lower()
-
-
-def signin_link(config, suggestion_id):
-    """The dashboard address that opens the sign-in for a card blocked on one (Telegram's Sign in button), or None
-    without a dashboard address."""
-    host = str(config.get('dashboard_host') or '')
-    return 'https://' + host + config.get('dashboard_path', '/') + '#signin-for=' + suggestion_id if host else None
-
-
-SIGNIN_ADDRESS = re.compile(r'(?i)log-?in|sign-?in|/auth|oauth|\bsso\b|/idp|switch-account|account-?select|challenge|/2fa|/mfa|verif|captcha')
-SIGNIN_KINDS = (('eid', re.compile(r'(?i)itsme|\be-?id\b|iamfas|\bcsam\b')), ('passkey', re.compile(r'(?i)passkey|security key')),
-                ('captcha', re.compile(r'(?i)captcha|not a robot')),
-                ('account', re.compile(r'(?i)switch-account|switch account|owning account|right account|choose (?:an |the )?account')),
-                ('code', re.compile(r'(?i)authenticator|one-time|six-digit|\b2fa\b|two-factor|verification code|sms code')))
-
-
-def signin_address(url, page):
-    """A tab address that is still a sign-in for the task waiting on `page`: another site (its identity provider, such
-    as itsme or eID) or a sign-in path on its own site."""
-    parts = urllib.parse.urlsplit(str(url or ''))
-    if parts.scheme not in ('http', 'https'):
-        return False
-    return not same_site(parts.hostname, page) or bool(SIGNIN_ADDRESS.search(parts.path + '?' + parts.query))
-
-
-def signin_kind(reason, urls=()):
-    """What a sign-in with nothing to type in the dialog wants (eid, passkey, captcha, account, code), from the task's
-    blocker and its tab's address, or None. The blocker says it best; a code it offers next to another way ("an
-    authenticator code or a security key") is a code, as that can go in the dialog."""
-    for text in (reason or '', ' '.join(str(u) for u in urls)):
-        kinds = [kind for kind, pattern in SIGNIN_KINDS if pattern.search(text)]
-        if kinds:
-            return 'code' if 'code' in kinds and 'passkey' in kinds else kinds[0]
-    return None
-
-
-def signin_name(reason, page):
-    """The site's name as the task's blocker says it ("the open Drone Portal tab"), else its address."""
-    found = re.search(r"\b(?:the|open)\s+(?:[a-z]+\s+)?([A-Z][\w.]*(?:\s+[A-Z][\w.]*){0,2})\s+(?:login\s+|sign-?in\s+)?tab\b", reason or '')
-    return found.group(1) if found else browser_login.site(urllib.parse.urlsplit(page or '').hostname)
-
-
-def same_site(a, b):
-    """Two hosts of one site: equal, one under the other, or the same last two labels (login.wise.com, wise.com)."""
-    a, b = (browser_login.site(urllib.parse.urlsplit(x).hostname if '//' in str(x or '') else x) for x in (a, b))
-    if not a or not b:
-        return False
-    return a == b or a.endswith('.' + b) or b.endswith('.' + a) or a.split('.')[-2:] == b.split('.')[-2:]
-
-
-TAB_LOOK = 5  # seconds: how often the cards read which tabs the Machine's browser has open (View in browser)
-PEEK_EVERY = 2  # seconds: one look per task at most this often, however many dashboards watch
-PEEK_WIDTH = 800  # pixels across: enough for a thumbnail and its larger view, small to send
-
-
-def browser_result(call):
-    """The JSON a browser step answered with (OpenClaw wraps it as text between markers), or {}."""
-    try:
-        content = json.loads(call['result'] or '{}').get('content') or []
-        text = next(c['text'] for c in content if isinstance(c, dict) and isinstance(c.get('text'), str) and '---\n' in c['text'])
-        found = json.loads(text.split('---\n', 1)[1].rsplit('\n<<<END', 1)[0])
-    except (ValueError, TypeError, AttributeError, StopIteration, IndexError, KeyError):
-        return {}
-    return found if isinstance(found, dict) else {}
-
-
-def peek_tab(db, job_id):
-    """The tab a running preparation is on now, as (DevTools target ID, DevTools port), for the dashboard's live
-    look at it: only while its latest step is a browser step, and only a tab this task opened itself (by the target
-    ID its own `open` step answered with): this run's, or, when this run carries on in a tab an earlier run of the same
-    task opened and left open (a retry, after a sign-in or a Change), that run's. None otherwise, never another task's
-    tab or one the owner uses."""
-    try:
-        calls = db.execute('SELECT tool,params,result FROM preparation_calls WHERE job_id=? ORDER BY started_at DESC,rowid DESC LIMIT 200',
-                           (job_id,)).fetchall()
-    except sqlite3.OperationalError:
-        return None
-    if not calls or calls[0]['tool'] != 'browser':
-        return None
-    try:
-        last = json.loads(calls[0]['params'] or '{}')
-    except ValueError:
-        return None
-    if not isinstance(last, dict) or last.get('action') == 'close':
-        return None
-    return own_tab(db, job_id, calls, last.get('targetId') or last.get('label'))
-
-
-def run_tab(db, job_id):
-    """The tab a running preparation last worked in, as (DevTools target ID, port), also between its browser steps
-    (peek_tab only while it is on one): the tab of its latest browser step, when this task opened it itself (own_tab).
-    None otherwise."""
-    try:
-        calls = db.execute('SELECT tool,params,result FROM preparation_calls WHERE job_id=? ORDER BY started_at DESC,rowid DESC LIMIT 200',
-                           (job_id,)).fetchall()
-    except sqlite3.OperationalError:
-        return None
-    for call in calls:
-        try:
-            last = json.loads(call['params'] or '{}') if call['tool'] == 'browser' else None
-        except ValueError:
-            continue
-        if isinstance(last, dict):
-            return None if last.get('action') == 'close' else own_tab(db, job_id, calls, last.get('targetId') or last.get('label'))
-    return None
-
-
-def own_tab(db, job_id, calls, want):
-    """(DevTools target ID, port) of the tab named `want` (a targetId or label a browser step used) that this run
-    opened itself, or that an earlier run of the same task opened (a retry, after a sign-in or a Change), while it was
-    not closed again. `calls` are this run's (tool, params, result), newest first. None otherwise."""
-    def opened(calls, want=None):
-        """A run's own tabs, newest first: (target ID, port, every name OpenClaw gave it). With `want`, only that tab
-        and only while the run had not closed it again."""
-        tabs = []
-        for call in calls:
-            try:
-                given = json.loads(call['params'] or '{}')
-            except ValueError:
-                continue
-            if call['tool'] != 'browser' or not isinstance(given, dict):
-                continue
-            if want and not tabs and given.get('action') == 'close' and str(want) in (str(given.get('targetId')), str(given.get('label'))):
-                return []
-            if given.get('action') != 'open':
-                continue
-            found = browser_result(call)
-            target, ws = found.get('targetId'), urllib.parse.urlsplit(str(found.get('wsUrl') or ''))
-            if not isinstance(target, str) or not re.fullmatch(r'[A-F0-9]{32}', target) or ws.hostname not in ('127.0.0.1', 'localhost', '::1') or not ws.port:
-                continue
-            names = {str(found.get(k)) for k in ('targetId', 'label', 'tabId', 'suggestedTargetId') if found.get(k)}
-            if not want or str(want) in names:
-                tabs.append((target, ws.port, names))
-        return tabs
-
-    mine = next(iter(opened(calls, want)), None)
-    if not mine and want:  # carrying on in a tab an earlier run of this same task opened
-        try:
-            session = db.execute('SELECT session_job_id FROM preparation_runs WHERE job_id=?', (job_id,)).fetchone()
-            earlier = db.execute('SELECT job_id FROM preparation_runs WHERE session_job_id=? AND job_id!=? ORDER BY started_at DESC LIMIT 10',
-                                 (session[0], job_id)).fetchall() if session else []
-        except sqlite3.OperationalError:
-            earlier = []
-        for run in earlier:
-            found = opened(db.execute('SELECT tool,params,result FROM preparation_calls WHERE job_id=? ORDER BY started_at DESC,rowid DESC LIMIT 200',
-                                      (run[0],)).fetchall(), want)
-            if found:
-                mine = found[0]
-                break
-    return (mine[0], mine[1]) if mine else None
-
-
-def browser_link(config):
-    """Where the owner sees the assistant's browser: `browser_url` (a hosted machine's viewer behind its sign-in, or
-    the local noVNC viewer of browser_viewer.py), else with `browser_vnc` the dashboard's own live view of this
-    computer's screen. None: the dashboard only brings the tab to the front; it does that with a link too."""
-    url = str(config.get('browser_url') or '')
-    if urllib.parse.urlsplit(url).scheme in ('http', 'https'):
-        return url
-    if config.get('browser_vnc') and config.get('dashboard_host'):
-        return 'https://' + str(config['dashboard_host']) + browser_viewer.view_link(config.get('dashboard_path', '/'), config.get('browser_novnc') or browser_viewer.WEB)
-    return None
-
-
-
-FINAL_STEPS = ('submit', 'pay', 'book', 'sign', 'confirm', 'order', 'apply')  # outcome:'your_step': the click left to the owner
-BROWSER_WORK = ('act', 'upload', 'dialog')  # browser steps that change a page (type, click, choose, upload, answer a dialog)
-SECRET_PARAM = re.compile(r'(?i)^(?:.*(?:token|secret|passw(?:or)?d|pwd|session|sess|sid|auth|signature|credential|api_?key|jwt|otp|nonce|ticket|saml).*|key|sig|code|state|hash|x-amz-.*)$')
-
-
-def safe_link(url):
-    """An http(s) address that is fine to show or send: no user name or password, no query value whose name looks
-    like a token, key, signature or session, and no fragment that carries one. None for anything else."""
-    parts = urllib.parse.urlsplit(str(url or '').strip())
-    if parts.scheme not in ('http', 'https') or not parts.hostname:
-        return None
-    query = urllib.parse.urlencode([(k, v) for k, v in urllib.parse.parse_qsl(parts.query, keep_blank_values=True) if not SECRET_PARAM.match(k)])
-    fragment = '' if '=' in parts.fragment or re.search(r'(?i)token|secret|session', parts.fragment) else parts.fragment
-    host = parts.hostname if not parts.port else f'{parts.hostname}:{parts.port}'
-    host = f'[{host}]' if ':' in parts.hostname else host
-    return urllib.parse.urlunsplit((parts.scheme, host, parts.path, query, fragment))
-
-
-def task_page(db, suggestion_id):
-    """The page a task's own browser work ended on, for its card's View in browser: {url, target, port, title, worked}
-    from the newest run of this task that used the browser. `url` is the last address that run recorded for the tab
-    its last browser step used (a step's answer says where the tab is now; else the address it opened), `target` that
-    tab's DevTools ID when this task opened it and did not close it again (own_tab), `worked` whether a step there
-    changed a page (typed, clicked, uploaded), not only read it. None without browser steps. Never another task's tab:
-    only this task's runs and the tabs they named."""
-    try:
-        jobs = [r[0] for r in db.execute('SELECT job_id FROM preparation_runs WHERE suggestion_id=? ORDER BY started_at DESC LIMIT 20', (suggestion_id,))]
-        current = db.execute('SELECT job_id FROM preparations WHERE suggestion_id=?', (suggestion_id,)).fetchone()
-        if current and current[0] not in jobs:
-            jobs.insert(0, current[0])
-        used = {r[0] for r in db.execute("SELECT DISTINCT job_id FROM preparation_calls WHERE tool='browser' AND job_id IN (%s)" % ','.join('?' * len(jobs)), jobs)} if jobs else set()
-        job = next((j for j in jobs if j in used), None)
-        calls = db.execute('SELECT tool,params,result FROM preparation_calls WHERE job_id=? ORDER BY started_at DESC,rowid DESC LIMIT 200',
-                           (job,)).fetchall() if job else []
-    except sqlite3.OperationalError:
-        return None
-    def params(call):
-        try:
-            found = json.loads(call['params'] or '{}')
-        except (ValueError, TypeError):
-            return {}
-        return found if isinstance(found, dict) else {}
-    steps = [(params(c), c) for c in calls if c['tool'] == 'browser']
-    if not steps:
-        return None
-    want = next((p.get('targetId') or p.get('label') for p, _ in steps if p.get('targetId') or p.get('label')), None)
-    want = want if isinstance(want, str) and want else None
-    closed = want and any(p.get('action') == 'close' and want in (str(p.get('targetId')), str(p.get('label'))) for p, _ in steps[:1])
-    tab = None if closed else own_tab(db, job, calls, want)
-    names = {want, tab[0] if tab else None} - {None}  # a step names its tab by label or ID; its answer by ID
-    url = title = None
-    for given, call in steps:
-        if given.get('action') == 'tabs':
-            continue  # a tab list names every tab, never this task's own
-        answer = browser_result(call)
-        found_names = {str(answer.get(k)) for k in ('targetId', 'label', 'tabId', 'suggestedTargetId') if answer.get(k)}
-        for found, named in ((answer.get('url'), found_names), (given.get('url') or given.get('targetUrl'), {str(given.get('targetId')), str(given.get('label'))})):
-            if isinstance(found, str) and urllib.parse.urlsplit(found).scheme in ('http', 'https') and (want is None or names & named):
-                url, title = found, answer.get('title') if found == answer.get('url') else None
-                break
-        if url:
-            break
-    url = url or run_page(db, job, calls)
-    if not url:
-        return None
-    return {'url': url, 'target': tab[0] if tab else None, 'port': tab[1] if tab else None,
-            'title': ' '.join(str(title).split())[:80] if isinstance(title, str) and title.strip() else None,
-            'worked': any(p.get('action') in BROWSER_WORK and (want is None or names & {str(p.get('targetId')), str(p.get('label'))}) for p, _ in steps)}
-
 
 def browser_embed(config, host=''):
     """The viewer on the dashboard's own address, for the dashboard to show it in its main area on a computer, or
@@ -11033,99 +10728,6 @@ def browser_embed(config, host=''):
     if url.scheme == 'https' and url.path == '/open' and url.query == 'to=browser' and (web / 'index.html').is_file():
         return '/browser/?' + PANE_QUERY
     return None
-
-
-PANE_QUERY = 'autoconnect=1&reconnect=1&resize=remote&path=browser/websockify'  # noVNC's own settings, any release
-
-
-def browser_view_link(config, suggestion_id):
-    """The dashboard address that shows a task's page in the Machine's own browser (View in browser, also from
-    Telegram): it brings that tab to the front, or reopens it there, then opens the browser's viewer. None without a
-    dashboard address. It carries only the task's ID, never the page's address."""
-    host = str(config.get('dashboard_host') or '')
-    return 'https://' + host + config.get('dashboard_path', '/') + '#browser-for=' + suggestion_id if host else None
-
-def transcript_tool_calls(session_key, agent_db=None, limit=4, scan=60):
-    """[(at, tool name, arguments)] of the latest tool calls in an agent session, newest first, read from the
-    agent's own transcript (read-only). Best effort: a missing or busy transcript gives none."""
-    path = agent_db or AGENT_DB
-    if not Path(path).exists():
-        return []
-    try:
-        with contextlib.closing(sqlite3.connect(f"file:{path}?mode=ro", uri=True, timeout=1)) as db:
-            session = db.execute('SELECT session_id FROM session_windows WHERE session_key=? ORDER BY created_at DESC LIMIT 1',
-                                 (session_key,)).fetchone()
-            if not session:
-                return []
-            rows = db.execute('SELECT created_at,event_json,event_zstd FROM transcript_events WHERE session_id=? ORDER BY seq DESC LIMIT ?',
-                              (session[0], scan)).fetchall()
-    except sqlite3.Error:
-        return []
-    calls = []
-    for created_at, text, packed in rows:
-        if text is None and packed is not None:
-            try:
-                from compression import zstd
-                text = zstd.decompress(packed).decode()
-            except Exception:
-                continue
-        if not text or '"toolCall"' not in text:
-            continue
-        try:
-            event = json.loads(text)
-        except ValueError:
-            continue
-        message = event.get('message') if isinstance(event.get('message'), dict) else {}
-        if message.get('role') != 'assistant' or not isinstance(message.get('content'), list):
-            continue
-        for part in reversed(message['content']):
-            if isinstance(part, dict) and part.get('type') == 'toolCall':
-                arguments = part.get('arguments') if isinstance(part.get('arguments'), dict) else {}
-                calls.append((dt.datetime.fromtimestamp(created_at / 1000, dt.timezone.utc).isoformat(), part.get('name'), arguments))
-        if len(calls) >= limit:
-            break
-    return calls[:limit]
-
-
-def preparation_steps(job_id, agent_db=None, limit=4):
-    """The latest step titles of a running preparation, read from the agent's own transcript (read-only).
-
-    Best effort: a missing or busy transcript simply shows no steps."""
-    if not re.fullmatch(r'[a-f0-9]{32}', job_id or ''):
-        return []
-    steps = []
-    for at, name, arguments in transcript_tool_calls('agent:main:assistant-review-preparation-' + job_id, agent_db, limit):
-        title = arguments.get('title') if isinstance(arguments.get('title'), str) else ''
-        steps.append({'title': ' '.join(title.split())[:120] or STEP_NAMES.get(name, 'Working'), 'at': at})
-    return steps[::-1]
-
-
-# A card's chat (dashboard #chat=<id>): the card's own preparation session, read with chat.history through
-# chat-history-run.mjs, shown as a conversation. The owner's side comes from this app's decisions, never from the long
-# service prompts in the transcript; the agent's side is its replies and its steps, in the owner's words.
-CHAT_HISTORY_LIMIT = 200
-CHAT_FILES_ONLY = ('Take a look at the attached file.', 'Take a look at the attached files.')
-CHAT_OWNER_WORDS = {'accept': 'Do it', 'retry': 'Try again', 'complete': 'Marked done', 'reject': 'Not needed', 'not_done': 'Not done yet',
-                    'snooze': 'Snoozed', 'reopen': 'Reopened', 'undo': 'Reopened', 'rename': 'Renamed',
-                    'rename_reset': 'Back to the suggested title', 'merge': 'Merged into the other to-do', 'keep_both': 'Kept both to-dos'}
-# A tap that the next one takes back within a minute (done then reopened, snoozed then unsnoozed), or that Undo took
-# back, is left out, both.
-CHAT_UNDONE = {('complete', 'reopen'), ('reject', 'reopen'), ('snooze', 'unsnooze')}
-# A conversation event's parts, one per line: "<unix time> · <author> · <part kind>: <text>"
-CHAT_PART = re.compile(r'^(\d{9,11}) · ([^·\n]{1,120}) · ([\w.-]{1,60}):[ \t]?(.*)$', re.M)
-CHAT_AGENTS = {'claude': 'Claude Code', 'codex': 'Codex'}
-CHAT_SENT = {'email': 'email', 'email_demo': 'email', 'linkedin': 'message', 'slack': 'message', 'x': 'post', 'whatsapp': 'message', 'telegram': 'message', 'intercom': 'reply', 'doc_reply': 'reply'}
-CHAT_SECRETS = (
-    (re.compile(r'-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----[\s\S]*?-----END [A-Z0-9 ]*PRIVATE KEY-----'), '[redacted private key]'),
-    (re.compile(r'\beyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}'), '[redacted token]'),
-    (re.compile(r'\b(?:xox[abcdeoprs]|xapp)-[A-Za-z0-9-]{10,}|\b(?:gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{40,}|glpat-[A-Za-z0-9_-]{20,})'), '[redacted token]'),
-    (re.compile(r'\bsk-(?:ant-|proj-|svcacct-)?[A-Za-z0-9_-]{20,}|\b(?:sk|rk)_(?:live|test)_[A-Za-z0-9]{16,}|\bya29\.[A-Za-z0-9_-]{20,}|\bAKIA[0-9A-Z]{16}\b'), '[redacted token]'),
-    (re.compile(r'bot\d+:[A-Za-z0-9_-]{20,}|\b\d{8,10}:AA[A-Za-z0-9_-]{30,}'), '[redacted token]'),
-    (re.compile(r'(?i)\b(Bearer|Basic)\s+[A-Za-z0-9._~+/=-]{16,}'), r'\1 [redacted]'),
-    (re.compile(r'(?i)\b(password|passwd|passphrase|client[_-]?secret|api[_-]?key|access[_-]?token|refresh[_-]?token|auth[_-]?token)(["\']?\s*[:=]\s*["\']?)(?!\[redacted)[^\s"\'`,;&<>]{6,}'), r'\1\2[redacted]'),
-)
-CHAT_PATHS = re.compile(r'(?:~|/home|/tmp|/var|/Users|/root|/opt)/[^\s,;:)"\'”]+')
-CHAT_IDS = re.compile(r'\b(?=[A-Za-z0-9_-]*\d)[A-Za-z0-9_-]{20,}\b|\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b')
 
 
 _DASHBOARD_VERSION = {}
@@ -11144,407 +10746,12 @@ def dashboard_version():
     return _DASHBOARD_VERSION['version']
 
 
-def chat_text(text, step=False, chars=4000):
-    """What the chat may show of the agent's words: no secrets and no local paths; a step line also without long IDs
-    (the card's Technical details rule). Replies keep their links."""
-    text = str(text or '')
-    for shape, replacement in CHAT_SECRETS:
-        text = shape.sub(replacement, text)
-    text = CHAT_PATHS.sub('…', text)
-    if step:
-        text = CHAT_IDS.sub('…', ' '.join(text.split()))
-    return text.strip()[:chars]
-
-
-# The agent's own bookkeeping, never shown in the chat: a learned or saved skill or memory line ("💾 Learned: updated
-# `some-skill` (…). Say "undo" to revert this skill change."). The chat only says it was noted.
-CHAT_LEARNED = re.compile(r'^\W*(?:learned|learnt|remembered|saved to memory|memory updated|skill (?:updated|saved|created))\b|\bskill change\b', re.I)
-CHAT_MARKER = re.compile(r'^[^\w\s"\'“‘(\[*_#>`~-]+\s*', re.M)  # an emoji or symbol a line starts with
-
-
-def chat_reply(text):
-    """(text, noted) of one reply: its learning lines left out (noted says there were some), no emoji markers at the
-    start of lines and no code ticks around names."""
-    kept, noted = [], False
-    for part in re.split(r'\n\s*\n', str(text or '')):
-        if CHAT_LEARNED.search(part.strip()):
-            noted = True
-            continue
-        kept.append(CHAT_MARKER.sub('', part.replace('`', '')))
-    return '\n\n'.join(p for p in kept if p.strip()).strip(), noted
-
-
-# A link in a saved result to one of its files ("[Draft and sources](memory/assistant/x.md)"): the chat shows it as a
-# chip that opens the file, never as a bare title.
-CHAT_RESULT_LINK = re.compile(r'\[([^\]\n]{1,200})\]\((?:[^)\s]*/)?(memory/assistant/[^)\s]{1,300})\)')
-
-
-def chat_result_files(body):
-    """(body without its result-file links, [{'label', 'path'}]) of a saved result; a line left with only the link goes."""
-    files, body = [], str(body or '')
-    for m in CHAT_RESULT_LINK.finditer(body):
-        path = m[2]
-        if '..' in path.split('/') or not re.fullmatch(r'memory/assistant/[\w.\-/ ]{1,300}', path):
-            continue
-        if all(f['path'] != path for f in files):
-            files.append({'label': clamp(m[1].strip() or path.rsplit('/', 1)[-1], 200), 'path': path})
-    lines = []
-    for line in body.split('\n'):
-        kept = re.sub(r'(?<=\S)  +', ' ', CHAT_RESULT_LINK.sub('', line))
-        if kept != line and re.fullmatch(r'[\s·•|,;:()\-–—]*', kept):
-            continue
-        lines.append(kept.rstrip())
-    return '\n'.join(lines), files[:6]
-
-
-# How a step without a draft went, after its label ("Merge fix: didn’t work"); done or sent says nothing more
-CHAT_STEP_HOW = {'queued': '…', 'sending': '…', 'blocked': ': didn’t work', 'failed': ': didn’t work', 'cancelled': ': canceled',
-                 'uncertain': ': not sure it went through', 'finish_uncertain': ': not sure it finished', 'undoing': ': undoing…', 'undone': ': undone'}
-CHAT_STEP_FAILED = {'blocked', 'failed', 'uncertain', 'finish_uncertain'}
-
-
-def handoff_machine(name):
-    """"Pat’s Machine" for a teammate named Pat Lee; "a teammate’s Machine" without a name."""
-    first = (str(name or '').split() or [''])[0]
-    return f'{first}’s Machine' if first and name != 'A teammate' else 'a teammate’s Machine'
-
-
-def card_chat_handoffs(db, suggestion_id):
-    """A card's handoffs to a teammate's Machine, for its chat: when it went, and what came back (accepted, declined,
-    done) once it did. A handoff that didn't go out says so, with Try again. A teammate's note is their words, as data.
-    A silent acceptance ("Pat is on it") has its own line from the card's decisions."""
-    if not db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='fleet_out'").fetchone():
-        return []  # no Fleet on this Machine yet
-    out = []
-    meta = db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='fleet_meta'").fetchone()
-    for r in db.execute("SELECT id,name,status,answer,at,answered_at FROM fleet_out WHERE kind='handoff' AND context=? ORDER BY at",
-                        ('handoff:' + str(suggestion_id),)):
-        first = (str(r['name'] or '').split() or ['Your teammate'])[0]
-        out.append({'kind': 'event', 'text': 'Handed off to ' + handoff_machine(r['name']), 'mine': True, 'handoff': True, 'at': chat_ms(r['at'])})
-        taken = db.execute('SELECT value FROM fleet_meta WHERE key=?', ('handoff_withdrawn:' + str(r['id']),)).fetchone() if meta else None
-        try:
-            taken = json.loads(taken[0]) if taken else None
-        except ValueError:
-            taken = {}
-        if taken is not None:  # handed to someone else instead: said once, when that one went
-            out.append({'kind': 'event', 'text': 'Taken back from ' + first, 'mine': True, 'handoff': True,
-                        'at': chat_ms((taken if isinstance(taken, dict) else {}).get('at') or r['at'])})
-        try:
-            answer = json.loads(r['answer'] or 'null') or {}
-        except ValueError:
-            answer = {}
-        answer = answer if isinstance(answer, dict) else {}
-        stage = answer.get('stage') or r['status']
-        if answer.get('silent') or stage in ('asked', 'waiting'):
-            continue
-        note = clamp(' '.join(str(answer.get('note') or '').split()), 300)
-        said = {'accepted': f'{first} accepted it', 'adjusted': f'{first} accepted it with a change',
-                'done': f'{first} marked it done', 'declined': f'{first} declined it', 'expired': f'{first} didn’t answer in time'}.get(stage)
-        if not said:
-            continue
-        said += f'. Their note: “{note}”' if note else ''
-        out.append({'kind': 'event', 'text': said, 'handoff': True, 'at': chat_ms(r['answered_at'] or r['at'])})
-    failed = db.execute("SELECT value FROM fleet_meta WHERE key=?", ('handoff_failed:' + str(suggestion_id),)).fetchone() if meta else None
-    try:
-        failed = json.loads(failed[0]) if failed else None
-    except ValueError:
-        failed = None
-    if isinstance(failed, dict):
-        out.append({'kind': 'event', 'text': 'Handoff didn’t go out to ' + handoff_machine(failed.get('name')), 'handoff': True,
-                    'retry_handoff': str(suggestion_id), 'at': chat_ms(failed.get('at'))})
-    return out
-
-
-def chat_draft(action):
-    """A draft in a saved result, for the chat: what goes out and to whom (no account or thread handles)."""
-    if not isinstance(action, dict) or action.get('kind') not in CHAT_SENT or not isinstance(action.get('body'), str):
-        return None
-    to = action.get('to')
-    to = [str(t) for t in to] if isinstance(to, list) else [str(to)] if to else []
-    if not to and (action.get('to_name') or action.get('to_email')):  # a chat send names its person apart from the channel
-        to = [str(action.get('to_name') or action.get('to_email'))]
-    to = [chat_plain_name(t) for t in to if not CHAT_HANDLE.fullmatch(t.strip())]
-    return {'kind': action['kind'], 'to': [clamp(t, 200) for t in to[:10]], 'subject': clamp(str(action.get('subject') or ''), 300),
-            'body': chat_text(action['body'], chars=8000), 'reply': bool(action.get('in_reply_to') or action.get('thread_id'))}
-
-
-def chat_excerpt(body, subject=''):
-    """The new part of a message: its quoted history and signature left out, the first lines kept."""
-    text = split_quoted_history(str(body or ''), subject)[0]
-    lines = [line.rstrip() for line in text.replace('\r', '').split('\n') if not line.lstrip().startswith('>')]
-    text = re.split(r'\n-- ?\n', '\n'.join(lines))[0]
-    return chat_text(re.sub(r'\n{3,}', '\n\n', text).strip(), chars=1500)
-
-
-def chat_person(name):
-    """A display name as people say it: "Lee, Sam" is Sam Lee."""
-    name = str(name or '').strip(' "\'')
-    match = re.fullmatch(r'([^,@]{1,60}),\s*([^,@]{1,60})', name)
-    return f'{match[2].strip()} {match[1].strip()}' if match else name
-
-
-CHAT_ON = {'slack': ' on Slack', 'whatsapp': ' on WhatsApp', 'telegram': ' on Telegram', 'linkedin': ' on LinkedIn', 'x': ' on X', 'intercom': ' in Intercom', 'doc_reply': ' in the doc'}
-
-
-def chat_name(address, names, fallback=''):
-    """Who a draft goes to, by first name when a source message names them; a chat handle that is no email address
-    (a WhatsApp or Slack ID) is the person the card is about (`fallback`)."""
-    found = names.get(_address(address))
-    if found:
-        return found.split()[0]
-    if CHAT_HANDLE.fullmatch(str(address).strip()):
-        return (fallback.split() or ['them'])[0]
-    if not _address(address) or '@' not in str(address):
-        return chat_plain_name(str(address)).split()[0] if str(address).strip() else (fallback.split() or ['them'])[0]
-    email = re.fullmatch(r'[^\s@<>]+@[\w.-]+\.[a-z]{2,}', _address(address) or '') and not re.search(r'@(s\.whatsapp\.net|g\.us|lid)$', _address(address))
-    return _address(address) if email else (fallback.split() or [_address(address) or str(address)])[0]
-
-
-# Who wrote a conversation part when it has no name: the person on the other side (Intercom's user, lead or visitor)
-CHAT_ROLES = {'user', 'lead', 'contact', 'visitor', 'customer'}
-CHAT_NOTES = {'note', 'note_and_reopen'}
-
-
-def chat_conversation(body, parts, title, owner_name, metadata):
-    """A conversation's source for the chat, as [(who, at ms, text, is_note)]: what the other side asked (the opening
-    question, then their latest messages), followed by a later internal note of whom the card names. Empty when the
-    conversation has no other side, and then the part the card is about stands alone."""
-    first = lambda p: p[2].split()[0].lower()
-    me = str(owner_name or '').strip().lower()
-    named = {first(p) for p in parts if first(p) in str(title or '').lower() and p[2].strip().lower() not in CHAT_ROLES}
-    def text_of(p):
-        rest = body[p.end():]
-        after = CHAT_PART.search(rest)
-        return chat_excerpt(p[4] + rest[:after.start() if after else None], '')
-    them = [p for p in parts if p[3] not in CHAT_NOTES and p[2].strip().lower() != me and first(p) not in named
-            and (p[2].strip().lower() in CHAT_ROLES or not named)]
-    if not them:
-        pick = ([p for p in parts if first(p) in named] or [p for p in parts if p[2].strip().lower() != me] or parts)[-1]
-        return [(chat_person(pick[2]), int(pick[1]) * 1000, text_of(pick), False)]
-    who = them[-1][2]
-    run = []  # their latest messages in a row; a one or two word "Great!" is left out when there is more
-    for p in reversed(parts):
-        if p[2] == who and p[3] not in CHAT_NOTES:
-            run.insert(0, p)
-        elif run and (p[2] != who and p[3] not in ('assignment', 'snoozed', 'open', 'close') or p[4].strip()):
-            break
-    said = [p for p in run if len(re.findall(r'\w+', p[4])) > 2] or run
-    name = 'Contact' if who.strip().lower() in CHAT_ROLES else chat_person(who)
-    out = []
-    opening = chat_excerpt(body[:CHAT_PART.search(body).start()], '')
-    if opening and (who.strip().lower() in CHAT_ROLES or not named):
-        start = metadata.get('created_at') if isinstance(metadata.get('created_at'), int) else int(parts[0][1]) - 1
-        out.append((name, start * 1000, opening, False))
-    out.append((name, int(said[-1][1]) * 1000, chat_text('\n'.join(text_of(p) for p in said), chars=1500), False))
-    note = [p for p in parts if first(p) in named and p[3] in CHAT_NOTES and int(p[1]) >= int(run[-1][1])]
-    if note:
-        out.append((chat_person(note[-1][2]), int(note[-1][1]) * 1000, text_of(note[-1]), True))
-    return out
-
-
-# A coding agent's housekeeping, which the chat leaves out: the files it saved (they show as chips) and what it did not send
-CHAT_SAVED = re.compile(r'\b(?:wrote|written|saved|created|edited|updated|made|put|left|added)\b', re.I)
-CHAT_NOT_SENT = re.compile(r'^(?:and\s+)?(?:nothing|no\s+\w+)(?:\s+else)?(?:\s+(?:was|has been|is))?\s+(?:\w+,?\s+){0,3}?(?:sent|posted|published|submitted|changed)\b[^.!?]*[.!?]?$', re.I)
-
-
-def chat_agent_text(summary, files, full=False):
-    """(text, nothing_sent) of a coding agent's result for the chat: what it found first, without the sentences (or
-    clauses) about the files it saved (shown as chips) or about what it did not send (a quiet line says so). With
-    `full`, also the whole answer when something was left out (the bubble's More shows it), else ''."""
-    text = chat_reply(re.sub(r'\[([^\]\n]{1,200})\]\((?!https?:)[^)\s]{1,500}\)', r'\1', chat_text(summary, chars=4000)))[0]
-    names = {Path(f).name.lower() for f in files} | {'this folder', 'the folder', 'your folder'}
-    quiet, dropped, kept = False, False, []
-    for line in text.split('\n'):
-        pieces = re.split(r'((?<=[.!?])\s+|;\s+)', line)  # sentences and clauses, each with what came after it
-        out = []
-        for part, after in zip(pieces[::2], pieces[1::2] + ['']):
-            bare = part.strip()
-            if CHAT_NOT_SENT.match(bare):
-                quiet = True
-            elif not (CHAT_SAVED.search(bare) and any(n in bare.lower() for n in names) and len(bare) < 200):
-                out.append((part, after))
-                continue
-            dropped = True
-        if len(out) == len(pieces[::2]):
-            kept.append(line)
-        elif out:  # a clause left alone ends as a sentence
-            kept.append(' '.join(p.strip() + ('.' if a.startswith(';') and not re.search(r'[.!?:]$', p.strip()) else '') for p, a in out))
-    clean = re.sub(r'\n{3,}', '\n\n', '\n'.join(kept)).strip()
-    if not full:
-        return (clean or text), quiet
-    return (clean or text), quiet, (text if dropped and clean and clean != text else '')
-
-
-def chat_ms(value):
-    try:
-        return int(dt.datetime.fromisoformat(str(value)).timestamp() * 1000)
-    except ValueError:
-        return 0
-
-
-def chat_text_phase(part):
-    """'commentary' or 'final_answer' of a text block that says which (an OpenAI Responses run's textSignature), else ''."""
-    signature = part.get('textSignature')
-    if not isinstance(signature, str) or not signature.startswith('{'):
-        return ''
-    try:
-        phase = json.loads(signature).get('phase')
-    except (ValueError, AttributeError):
-        return ''
-    return phase if phase in ('commentary', 'final_answer') else ''
-
-
-def chat_run_keys(messages):
-    """The run each message belongs to. A CLI agent's own turns (Claude Code), which OpenClaw imports into the session
-    without a run ID, belong to the run whose record follows them, up to the prompt that started it."""
-    keys, carry = [], ''
-    for message in reversed(messages):
-        meta = message.get('__openclaw') if isinstance(message.get('__openclaw'), dict) else {}
-        if meta.get('runId'):
-            carry = str(meta['runId'])
-        elif message.get('role') == 'user':
-            carry = ''
-        keys.append(str(meta.get('runId') or (carry if meta.get('importedFrom') else '')))
-    return keys[::-1]
-
-
-def chat_cli_replies(run):
-    """A CLI run's reply: its last turn's text, else OpenClaw's record of the run (all its text joined) without the
-    working notes. Never the notes, and never both, which showed the reply twice."""
-    found = run['finals']
-    if not found:
-        found = []
-        for reply in run['texts']:
-            text = reply['text']
-            for note, _ in run['notes']:
-                note = chat_reply(chat_text(note))[0]
-                if note:
-                    text = text.replace(note, '', 1)
-            text = re.sub(r'\n{3,}', '\n\n', text).strip()
-            if text:
-                found.append({**reply, 'text': text})
-        return found
-    texts = []
-    for raw, at in found:
-        text, noted = chat_reply(chat_text(raw))
-        run['noted'] = run['noted'] or noted
-        if not text:
-            continue
-        if texts and texts[-1]['at'] >= at - 60000:
-            texts[-1]['text'] = (texts[-1]['text'] + '\n\n' + text)[:8000]
-        else:
-            texts.append({'kind': 'reply', 'text': text, 'at': at})
-    return texts
-
-
-def chat_items(messages, owner, results=None):
-    """The conversation, strictly by time: the owner's own notes and taps and the card's source messages (`owner`,
-    from the service), each run's saved results (`results`, by job ID, from the service: what it said and the drafts
-    it left) and, from the run's own session, the steps it took before them. A run's free text shows only when it
-    saved no result. User rows in the transcript are the service's prompts and are never shown; tool results,
-    thinking and nested tool rows neither; learning lines only as a "noted" mark on that run's reply. Progress notes
-    (commentary, a CLI agent's text before a tool call, the Gateway's copies of them) never show; a CLI run's reply
-    shows once (chat_cli_replies)."""
-    results = results or {}
-    items = [dict(o) for o in owner]
-    runs, order = {}, []
-    number = lambda v: isinstance(v, (int, float)) and not isinstance(v, bool) and v > 0
-    messages = [m for m in messages if isinstance(m, dict)] if isinstance(messages, list) else []
-    keys = chat_run_keys(messages)
-    for message, key in zip(messages, keys):
-        if message.get('role') != 'assistant' or not isinstance(message.get('content'), list):
-            continue
-        if isinstance(message.get('openclawStreamFallback'), dict):  # the Gateway's copy of a run's progress notes
-            continue
-        meta = message.get('__openclaw') if isinstance(message.get('__openclaw'), dict) else {}
-        at = next((v for v in (message.get('timestamp'), meta.get('recordTimestampMs')) if number(v)), 0)
-        if key not in runs:
-            runs[key] = {'steps': [], 'at': at, 'texts': [], 'noted': False, 'notes': [], 'finals': []}
-            order.append(key)
-        run = runs[key]
-        imported = bool(meta.get('importedFrom'))
-        for part in message['content']:
-            if not isinstance(part, dict):
-                continue
-            if imported and part.get('type') == 'text':
-                # A CLI agent's own turn (Claude Code): text before a tool call is a working note, never the reply; its
-                # last turn's text is the reply, which OpenClaw's own record of the run repeats after all the notes.
-                if str(part.get('text') or '').strip():
-                    (run['notes'] if message.get('stopReason') == 'tool_use' else run['finals']).append((str(part['text']), at))
-                continue
-            if part.get('type') == 'text' and chat_text_phase(part) == 'commentary':
-                continue
-            if part.get('type') == 'toolCall':
-                arguments = part.get('arguments') if isinstance(part.get('arguments'), dict) else {}
-                title = arguments.get('title') if isinstance(arguments.get('title'), str) else ''
-                title = chat_text(title, step=True, chars=120) or STEP_NAMES.get(part.get('name'), 'Working')
-                if run['steps'][-1:] != [title]:
-                    run['steps'].append(title)
-                run['at'] = run['at'] or at
-            elif part.get('type') == 'text' and str(part.get('text') or '').strip():
-                text, noted = chat_reply(chat_text(part['text']))
-                run['noted'] = run['noted'] or noted
-                if text:
-                    if run['texts'] and run['texts'][-1]['at'] >= at - 60000:
-                        run['texts'][-1]['text'] = (run['texts'][-1]['text'] + '\n\n' + text)[:8000]
-                    else:
-                        run['texts'].append({'kind': 'reply', 'text': text, 'at': at})
-    for key in order:
-        run = runs[key]
-        if run['notes'] or run['finals']:
-            run['texts'] = chat_cli_replies(run)
-        saved = [dict(r) for r in results.get(key, [])]
-        replies = saved or run['texts']
-        if run['steps']:
-            first = min([run['at']] + [r['at'] for r in replies if r['at']]) if run['at'] or replies else 0
-            items.append({'kind': 'steps', 'steps': run['steps'][-30:], 'at': max(0, (first or 0) - 1)})
-        if run['noted']:  # a learning turn of its own belongs to the reply before it
-            target = replies[-1] if replies else next((i for i in reversed(items) if i['kind'] == 'reply'), None)
-            if target is not None:
-                target['noted'] = True
-        items.extend(replies)
-    for key, saved in results.items():  # a run whose session is gone: its results still show
-        if key not in runs:
-            items.extend(dict(r) for r in saved)
-    rank = {'source': 0, 'you': 1, 'event': 1, 'steps': 2}
-    items = sorted(items, key=lambda i: (i['at'], rank.get(i['kind'], 3)))
-    # What a run learned shows under its reply (the run saves it before it answers), unless the owner wrote in between
-    for learned in [i for i in items if i['kind'] in ('learned', 'fixed')][::-1]:
-        n = items.index(learned)
-        after = next((k for k in range(n + 1, len(items)) if items[k]['kind'] in ('reply', 'you')), None)
-        if after is not None and items[after]['kind'] == 'reply' and items[after]['at'] - learned['at'] <= 1800000:
-            items.insert(after, items.pop(n))
-            learned['at'] = max(learned['at'], items[after - 1]['at'])
-    return items
-
-
 def draft_saved(db, suggestion_id, action, at=None):
     """Note when each message draft first showed on the card (draft_saves): an assistant send needs the owner to have
     had it in front of them before they wrote the message that approves it (unseen_draft)."""
     for a in next_actions.actions(action) if action else []:
         if a.get('kind') in MESSAGE_KINDS and a.get('revision'):
             db.execute('INSERT OR IGNORE INTO draft_saves(suggestion_id,revision,saved_at) VALUES(?,?,?)', (suggestion_id, a['revision'], at or now()))
-
-
-def unseen_draft(db, suggestion_id, revision, job_id=None):
-    """Why the assistant may not send this draft revision for the owner now, or None when it may. It may only when the
-    owner approved this exact draft: it was on the card (unchanged since) before the owner's own latest turn, the one
-    that started this preparation (or, outside one, their latest note or Do it on the card). Whether that turn means
-    "send it" is the model's judgment; that the draft was there to see first is checked here."""
-    row = db.execute('SELECT next_action FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
-    if not row or not any(a.get('revision') == revision for a in next_actions.actions(row['next_action'] or 'null')):
-        return 'this draft is new or changed in this turn'
-    saved = db.execute('SELECT saved_at FROM draft_saves WHERE suggestion_id=? AND revision=?', (suggestion_id, revision)).fetchone()
-    job = db.execute('SELECT decision_id FROM preparations WHERE suggestion_id=? AND job_id=?', (suggestion_id, job_id)).fetchone() if job_id else None
-    turn = (db.execute("SELECT created_at FROM decisions WHERE id=? AND suggestion_id=? AND source IN ('dashboard','telegram') AND choice IN ('other','accept')",
-                       (job['decision_id'], suggestion_id)).fetchone() if job else None) if job_id else db.execute(
-        "SELECT created_at FROM decisions WHERE suggestion_id=? AND source IN ('dashboard','telegram') AND choice IN ('other','accept') "
-        'ORDER BY created_at DESC,rowid DESC LIMIT 1', (suggestion_id,)).fetchone()
-    if not turn:
-        return 'no message from the owner approves it'
-    if not saved or saved['saved_at'] >= turn['created_at']:
-        return 'the owner has not seen this draft before their latest message'
-    return None
 
 
 # A final step that goes to someone (a message, an invite, sharing) is a send: the owner sees and approves it on the
@@ -11582,14 +10789,6 @@ def ask_do_now(turn, steps):
             'or permissions, publishing) or they only asked a question, save again with do_now:false and it waits for their Confirm.')
 
 
-AGENT_WORK_NOTE = ('Work handed to Claude Code or Codex on this card, oldest first. It is part of the card\'s state, like a sent '
-                   'message or the owner\'s taps: what it reports done is done, even where earlier turns of this session said it was still to do. '
-                   'Build on it: never offer or describe work it already did as the next step; when it is still running, say so. '
-                   'When the owner asks you to apply, run, publish or deploy what it prepared, that is their approval: read its notes and '
-                   'scripts in its folder and run them yourself, then check the result. If a step is refused, say what was refused and their '
-                   'next step (for example: open the job in Codex and run it there).')
-
-
 def writable_calendars(config):
     """The owner's calendars The Machine may change: own or marked writable, on a sign-in with calendar write access."""
     return calendar_writes.calendars(config or {}, lambda account: abilities.actions_on(account) and calendar_writes.may_write(
@@ -11619,14 +10818,6 @@ def meeting_notes_prompt(config):
             "of its title>) lists that day's meetings with their event_id; then meeting_notes args event_id, field=notes or transcript, text=<it as "
             "Markdown, whole> (append:true adds below what that field has; event_id alone reads both). For a long file: assistant meeting-notes "
             "--event <id> --field transcript --file <path>.")
-
-
-def owner_time_line():
-    """The owner's time zone and local time now, for a prompt: relative and local times are theirs, never UTC."""
-    zone = getattr(local_tz(), 'key', None) or str(local_tz())
-    local = dt.datetime.fromisoformat(now()).astimezone(local_tz()).strftime('%a %Y-%m-%d %H:%M')
-    return (f"Their time zone is {zone}; it is now {local} there. Read every time they give (in an hour, at 9, tomorrow "
-            f"morning) in that zone and write times back in it; never ask which time zone.")
 
 
 def chat_prompt(job, config=None):
@@ -13741,11 +12932,6 @@ def deliver_one(store, config, edit_cards=True):
     else:
         LOG.info('delivery suggestion=%s reminder=%d status=%s error=%s', row['id'], row['reminder'] or 0, status, error)
     return status == 'sent'
-
-
-def browser_lease_script(config=None):
-    """The shared browser lease helper; `browser_lease_script` in config overrides the bundled one."""
-    return Path((config or {}).get('browser_lease_script') or ROOT / 'integrations/browser-lease.py').expanduser()
 
 
 def owner_details(config=None):
