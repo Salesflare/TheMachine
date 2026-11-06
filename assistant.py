@@ -4832,13 +4832,13 @@ class Store:
         no review makes a second one. Returns how many are new."""
         made = 0
         for item in items:
-            title, body = parked_fixes.card(item)
+            title, body, signal = parked_fixes.card(item)
             stamp = now()
             with self.connect() as db:
                 db.execute('BEGIN IMMEDIATE')
                 cursor = db.execute('INSERT OR IGNORE INTO events(account_id,source_id,kind,occurred_at,title,body,metadata,deleted,content_hash,'
                                     "version,analyzed_version,ingested_at) VALUES(?,?,'machine.parked_fix',?,?,?,?,0,?,1,1,?)",
-                                    (account_id, 'parked:' + item['sha'], stamp, title, body,
+                                    (account_id, 'parked:' + item['sha'], stamp, title, signal,
                                      json.dumps({'commit': item['sha'], 'subject': item['subject'], 'changes': item['changes']}),
                                      hashlib.sha256(item['sha'].encode()).hexdigest(), stamp))
                 if not cursor.rowcount:

@@ -122,43 +122,62 @@ def cut(args):
 PARKED = 'refs/machine/parked/'
 STASH_NOTE = 'Uncommitted changes set aside by an update'
 NAMED = ('-c', 'user.name=m', '-c', 'user.email=m@localhost')  # for git runs that make a commit
+SHA = re.compile(r'[0-9a-f]{40}')
+
+
+def undo_cut_off():
+    """A run cut off halfway (a restart, a crash) can leave a rebase or a cherry-pick going, with HEAD detached on the
+    release: undo it, so HEAD is the Machine's own branch again and none of its own commits is left only in the reflog.
+    Before anything looks at HEAD."""
+    where = lambda name: ROOT / git('rev-parse', '--git-path', name, check=False).stdout.strip()
+    if where('rebase-merge').exists() or where('rebase-apply').exists():
+        git('rebase', '--abort', check=False)
+    if where('CHERRY_PICK_HEAD').exists():
+        git('cherry-pick', '--abort', check=False)
 
 
 def move_to(sha, ref='main'):
     """Onto a verified release the way hosted Machines move: a fast-forward; else, with no commits of its own (all are
-    on the branch or in a release), straight there; else its own commits (a merged self-fix) replayed on top.
-    Uncommitted changes are kept. Own commits that don't apply, and changes that don't fit back on top, are set aside
-    under PARKED and the checkout moves to the release anyway: a Machine never stays behind on an old version. The git
-    run that decided it, with .parked: what was set aside (own commits oldest first, then the changes)."""
-    if git('merge-base', '--is-ancestor', 'HEAD', sha, check=False).returncode == 0:
-        result, own = git('merge', '--ff-only', '--quiet', sha, check=False), []
+    on the branch or in a release), straight there; else its own commits (merged self-fixes) replayed on top, one at a
+    time. Uncommitted changes are kept. Each own commit that doesn't apply, and changes that don't fit back on top, are
+    set aside under PARKED and the checkout moves to the release anyway: a Machine never stays behind on an old version.
+    The git run that decided it, with .parked: what was set aside (own commits oldest first, then the changes)."""
+    run = lambda *args: git(*args, check=False)
+    undo_cut_off()
+    if run('merge-base', '--is-ancestor', 'HEAD', sha).returncode == 0:
+        result, own = run('merge', '--ff-only', '--quiet', sha), []
     else:
-        before = git('rev-parse', '-q', '--verify', f'origin/{ref}@{{1}}', check=False).stdout.strip()  # before a rewrite
-        own = git('rev-list', '--reverse', 'HEAD', '--not', sha, f'refs/remotes/origin/{ref}', '--tags=release-*',
-                  *([before] if before else []), check=False).stdout.split()
-        result = None if own else git('reset', '--keep', '-q', sha, check=False)
+        before = run('rev-parse', '-q', '--verify', f'origin/{ref}@{{1}}').stdout.strip()  # the branch before a rewrite
+        own = run('rev-list', '--reverse', 'HEAD', '--not', sha, f'refs/remotes/origin/{ref}', '--tags=release-*',
+                  *([before] if before else [])).stdout.split()
+        result = None if own else run('reset', '--keep', '-q', sha)
     if result is not None and result.returncode == 0:
         result.parked = []
         return result
-    # Own commits to replay, or changes in the way: the changes go aside for the move and come back on top after
-    parked = []
-    changes = git(*NAMED, 'stash', 'create', STASH_NOTE, check=False).stdout.strip()
+    # Each own commit is kept under PARKED before anything moves, so a run cut off from here on loses none of them;
+    # the ones that replay drop their ref again. Uncommitted changes go aside the same way, only once their ref holds.
+    for commit in own:
+        run('update-ref', PARKED + commit, commit)
+    changes = run(*NAMED, 'stash', 'create', STASH_NOTE).stdout.strip()
+    if not SHA.fullmatch(changes) or run('update-ref', PARKED + changes, changes).returncode:
+        changes = ''  # nothing to set aside, or it can't be kept: the checkout is left as it is
     if changes:
-        git('update-ref', PARKED + changes, changes)  # kept before the checkout is cleaned, dropped again when they fit
-        git('reset', '--hard', '-q', 'HEAD')
-    result = git(*NAMED, 'rebase', '-q', '--onto', sha, own[0] + '^', check=False) if own else None
-    if result is not None and result.returncode:
-        git('rebase', '--abort', check=False)
-        parked += own
-    if result is None or result.returncode:
-        result = git('reset', '--keep', '-q', sha, check=False)
-    for commit in parked:
-        git('update-ref', PARKED + commit, commit)
-    if changes and git('stash', 'apply', '-q', changes, check=False).returncode:
-        git('reset', '--hard', '-q', 'HEAD')  # they don't fit on the release: they stay under PARKED
+        run('reset', '--hard', '-q', 'HEAD')
+    in_release = {line[2:] for line in run('cherry', sha, 'HEAD').stdout.splitlines() if line.startswith('- ')}
+    result, parked = run('reset', '--keep', '-q', sha), []
+    for commit in own:
+        if result.returncode or commit in in_release:  # it didn't move (it stays on the old checkout), or it's in the release
+            run('update-ref', '-d', PARKED + commit)
+        elif run(*NAMED, 'cherry-pick', commit).returncode:
+            run('cherry-pick', '--abort')
+            parked.append(commit)
+        else:
+            run('update-ref', '-d', PARKED + commit)
+    if changes and run('stash', 'apply', '-q', changes).returncode:
+        run('reset', '--hard', '-q', 'HEAD')  # they don't fit on the release: they stay under PARKED
         parked.append(changes)
     elif changes:
-        git('update-ref', '-d', PARKED + changes)
+        run('update-ref', '-d', PARKED + changes)
     result.parked = parked
     return result
 
@@ -180,6 +199,7 @@ def first_install():
     when no release verifies or the checkout can't move (nothing changed then)."""
     git('fetch', '--quiet', '--tags', 'origin')
     tag, sha = verify()
+    undo_cut_off()
     if git('rev-parse', 'HEAD').stdout.strip() == sha:
         return None
     note = moved(tag, move_to(sha))
@@ -197,6 +217,7 @@ def busy():
 def update(args):
     git('fetch', '--quiet', '--tags', 'origin')
     tag, sha = verify(args.tag)
+    undo_cut_off()
     if git('merge-base', '--is-ancestor', sha, 'HEAD', check=False).returncode == 0:
         print(f'Already on {tag} or newer.')
         return

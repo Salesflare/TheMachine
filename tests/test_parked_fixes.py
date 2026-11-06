@@ -33,7 +33,7 @@ class ParkedFixes(unittest.TestCase):
         self.app = Path(tmp.name) / 'app'
         self.app.mkdir()
         git(self.app, 'init', '-q', '-b', 'main')
-        self.commit('app.py', 'one', 'Start')
+        self.start = self.commit('app.py', 'one', 'Start')
         self.store = a.Store(Path(tmp.name) / 'a.sqlite')
         self.config = {'accounts': [GATEWAY], 'app_dir': str(self.app)}
 
@@ -44,8 +44,10 @@ class ParkedFixes(unittest.TestCase):
         return git(self.app, 'rev-parse', 'HEAD')
 
     def park(self, *shas):
+        """Set aside as an update does: kept under PARKED, and the checkout moved on without them."""
         for sha in shas:
             git(self.app, 'update-ref', parked_fixes.PARKED + sha, sha)
+        git(self.app, 'reset', '-q', '--hard', self.start)
 
     def todos(self):
         with self.store.connect() as db:
@@ -71,12 +73,24 @@ class ParkedFixes(unittest.TestCase):
         a.sync_gateway(self.store, self.config, GATEWAY, NoJournal())  # the next sync: no second one
         [todo] = self.todos()
         self.assertEqual(todo['title'], 'Redo a fix the update set aside')
-        self.assertIn('“Graph: a KeyError on an empty name”', todo['body'])
-        self.assertIn(fix[:12], todo['body'])
+        self.assertIn('Ask to redo it on the new version', todo['body'])
         with self.store.connect() as db:
-            event = db.execute("SELECT kind, version, analyzed_version FROM events WHERE source_id=?", ('parked:' + fix,)).fetchone()
-        self.assertEqual(tuple(event), ('machine.parked_fix', 1, 1))  # read already: no review makes another to-do
+            event = db.execute("SELECT kind, version, analyzed_version, body FROM events WHERE source_id=?", ('parked:' + fix,)).fetchone()
+        self.assertEqual(tuple(event)[:3], ('machine.parked_fix', 1, 1))  # read already: no review makes another to-do
+        # what was kept is the signal, what to do is the to-do: the open to-do shows each once
+        self.assertIn('“Graph: a KeyError on an empty name”', event['body'])
+        self.assertIn(fix[:12], event['body'])
+        self.assertNotIn(fix[:12], todo['body'])
+        self.assertNotIn(todo['body'], event['body'])
         self.assertEqual(a.todo_source('machine.parked_fix'), 'The Machine itself')
+
+    def test_one_still_on_the_checkout_is_left_out(self):
+        # an update that parked a fix and then could not move: the fix never left, so there is nothing to redo
+        fix = self.commit('graph.py', 'fixed', 'Graph: a fix')
+        git(self.app, 'update-ref', parked_fixes.PARKED + fix, fix)
+        self.assertEqual(parked_fixes.pending(self.app), [])
+        a.sync_gateway(self.store, self.config, GATEWAY, NoJournal())
+        self.assertEqual(self.todos(), [])
 
     def test_only_the_first_gateway_source_brings_them(self):
         self.park(self.commit('graph.py', 'fixed', 'Graph: a fix'))

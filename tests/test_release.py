@@ -167,6 +167,59 @@ class Releases(unittest.TestCase):
         self.assertEqual((self.app / 'fix.py').read_text(), 'still editing')
         self.assertEqual(len(self.parked()), 1)
 
+    def own_sha(self, name, text):
+        self.own_commit(name, text)
+        return run('git', 'rev-parse', 'HEAD', cwd=self.app)
+
+    def test_only_the_own_commits_that_do_not_apply_are_set_aside(self):
+        first = self.own_sha('fix.py', 'applies')
+        clash = self.own_sha('app.py', 'mine')
+        last = self.own_sha('z.py', 'applies too')
+        sha = self.commit('two')
+        self.tag('release-20261021-1200')
+        release.main(['update'])
+        self.assertEqual(run('git', 'rev-parse', 'HEAD~2', cwd=self.app), sha)  # the two that apply, on the release
+        self.assertEqual(run('git', 'log', '--format=%s', '-2', cwd=self.app).split('\n'), ['own: z.py', 'own: fix.py'])
+        self.assertEqual((self.app / 'app.py').read_text(), 'two')
+        self.assertEqual(self.parked(), [[release.PARKED + clash, clash]])
+        self.assertNotIn(first, run('git', 'rev-list', 'HEAD', cwd=self.app))  # replayed as new commits, refs dropped
+        self.assertNotIn(last, run('git', 'rev-list', 'HEAD', cwd=self.app))
+
+    def test_a_rerun_after_a_run_cut_off_mid_rebase_loses_no_commit(self):
+        first = self.own_sha('fix.py', 'applies')
+        clash = self.own_sha('app.py', 'mine')
+        last = self.own_sha('z.py', 'applies too')
+        sha = self.commit('two')
+        self.tag('release-20261021-1200')
+        run('git', 'fetch', '-q', '--tags', 'origin', cwd=self.app)
+        subprocess.run(['git', *WHO, 'rebase', '-q', '--onto', sha, first + '^'], cwd=self.app, capture_output=True)
+        self.assertTrue((self.app / '.git' / 'rebase-merge').exists())  # stopped on the clash, as a killed run leaves it
+        release.main(['update'])
+        self.assertFalse((self.app / '.git' / 'rebase-merge').exists())
+        self.assertEqual(run('git', 'rev-parse', 'HEAD~2', cwd=self.app), sha)
+        self.assertTrue((self.app / 'fix.py').exists() and (self.app / 'z.py').exists())
+        self.assertEqual(self.parked(), [[release.PARKED + clash, clash]])  # a full sha: no "needs merge" ref
+        release.main(['update'])  # and the next update still works
+        self.assertEqual(run('git', 'rev-parse', 'HEAD~2', cwd=self.app), sha)
+
+    def test_a_run_cut_off_after_the_checkout_moved_keeps_the_own_commits(self):
+        own = self.own_sha('fix.py', 'a merged self-fix')
+        (self.app / 'app.py').write_text('edited here')
+        self.commit('two')
+        self.tag('release-20261021-1200')
+        real = release.git
+
+        def cut_off(*args, **kwargs):
+            if 'cherry-pick' in args:
+                raise KeyboardInterrupt('the service stopped')
+            return real(*args, **kwargs)
+        with mock.patch.object(release, 'git', cut_off), self.assertRaises(KeyboardInterrupt):
+            release.main(['update'])
+        kept = dict(self.parked())
+        self.assertEqual(kept.pop(release.PARKED + own), own)  # the own commit and the changes both kept
+        [changes] = kept.values()
+        self.assertEqual(run('git', 'show', f'{changes}:app.py', cwd=self.app), 'edited here')
+
     def test_the_service_reads_the_same_folder(self):
         import parked_fixes
         self.assertEqual(parked_fixes.PARKED, release.PARKED)

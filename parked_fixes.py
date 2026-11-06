@@ -16,10 +16,11 @@ STASH_SUBJECT = 'Uncommitted changes set aside by an update'
 
 
 def pending(app, timeout=30):
-    """[{sha, subject, changes}] of the parked commits, oldest first (as far as their times tell). A fix parked together with its own undo is
-    left out (together they change nothing), and so is that undo. [] when git can't tell."""
+    """[{sha, subject, changes}] of the parked commits, oldest first (as far as their times tell). One still on the
+    checkout is left out (the update didn't move past it), and so is a fix parked together with its own undo (together
+    they change nothing) and that undo. [] when git can't tell."""
     try:
-        listed = subprocess.run(['git', '-C', str(app), 'for-each-ref', '--sort=committerdate',
+        listed = subprocess.run(['git', '-C', str(app), 'for-each-ref', '--sort=committerdate', '--no-merged=HEAD',
                                  '--format=%(objectname)%00%(contents:subject)%00%(contents:body)%00%(parent)%01', PARKED],
                                 capture_output=True, text=True, timeout=timeout)
     except (OSError, subprocess.TimeoutExpired):
@@ -41,12 +42,14 @@ def pending(app, timeout=30):
 
 
 def card(item):
-    """(title, body) of the to-do for one parked change."""
+    """(title, body, signal) of the to-do for one parked change: what to do, and what was kept (its signal), once each."""
     short = item['sha'][:12]
     if item['changes']:
         return (i18n.t('Bring back changes the update set aside'),
-                i18n.t('The update to the newest version set aside uncommitted changes in The Machine’s code, so it '
-                       'could move on. They are kept as {}. Ask to redo them on the new version, or close this.', short))
+                i18n.t('They no longer fit the newest version, so the update set them aside and moved on. Ask to redo them '
+                       'on the new version, or close this.'),
+                i18n.t('Uncommitted changes in The Machine’s code, kept as {}.', short))
     return (i18n.t('Redo a fix the update set aside'),
-            i18n.t('A fix of The Machine’s own no longer fit the newest version, so the update set it aside and moved '
-                   'on: “{}”. It is kept as {}. Ask to redo it on the new version, or close this.', item['subject'], short))
+            i18n.t('It no longer fit the newest version, so the update set it aside and moved on. Ask to redo it on the '
+                   'new version, or close this.'),
+            i18n.t('A fix of The Machine’s own: “{}”, kept as {}.', item['subject'], short))
