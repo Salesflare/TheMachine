@@ -116,7 +116,7 @@ def copy_db(path, copy, keys):
         with closing(sqlite3.connect(copy)) as db:
             for table in secret_tables(db):
                 try:
-                    db.execute(f'DELETE FROM "{table}"')
+                    db.execute('DELETE FROM ' + inventory.quoted(table))
                     emptied.append(table)
                 except sqlite3.Error:  # a virtual table whose module isn't here: its rows are in its own tables
                     pass
@@ -161,12 +161,12 @@ def _keep_signins(work, current):
         db.execute('ATTACH DATABASE ? AS here', (str(current),))
         here = {name for (name,) in db.execute("SELECT name FROM here.sqlite_master WHERE type='table'")}
         for table in secret_tables(db):
-            if table not in here or not db.execute(f'SELECT 1 FROM here."{table}" LIMIT 1').fetchone():
+            if table not in here or not db.execute('SELECT 1 FROM here.' + inventory.quoted(table) + ' LIMIT 1').fetchone():
                 continue
             try:
                 db.execute('SAVEPOINT keep')
-                db.execute(f'DELETE FROM main."{table}"')
-                db.execute(f'INSERT INTO main."{table}" SELECT * FROM here."{table}"')
+                db.execute('DELETE FROM main.' + inventory.quoted(table))
+                db.execute('INSERT INTO main.' + inventory.quoted(table) + ' SELECT * FROM here.' + inventory.quoted(table))
                 db.execute('RELEASE keep')
             except sqlite3.Error:  # its columns changed between versions: the new install's own table wins whole
                 db.execute('ROLLBACK TO keep')

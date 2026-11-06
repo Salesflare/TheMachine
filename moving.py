@@ -318,7 +318,7 @@ def not_exported(config, keys, emptied):
             continue
         out.append(dict(item))
     if emptied:
-        out.append({'what': "OpenClaw's own sign-ins", 'why': 'kept out without keys: ' + ', '.join(sorted(set(emptied))),
+        out.append({'what': "Your AI's own sign-ins", 'why': 'kept out without keys: ' + ', '.join(sorted(set(emptied))),
                     'after': "The new install's own sign-ins are kept"})
     out += [{'what': f'~/{path}', 'why': why, 'after': ''} for path, why in inventory.NOT_EXPORTED_HOME
             if not (keys and path == '.openclaw/credentials')]

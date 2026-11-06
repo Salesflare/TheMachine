@@ -129,5 +129,25 @@ class Staged(unittest.TestCase):
         self.assertIn('held', result)
 
 
+class Identifiers(unittest.TestCase):
+    """Table names come from the databases, and on an import from the archive: a quote in one stays part of the name."""
+
+    def test_a_quote_in_a_table_name_never_ends_the_identifier(self):
+        from machine.export import home, inventory
+        tmp = Path(tempfile.mkdtemp(prefix='export-ident-'))
+        self.addCleanup(__import__('portable').shred_tree, tmp)
+        source = tmp / 'agent.sqlite'
+        odd = 'auth_profile" ; DROP TABLE keep; --'
+        with closing(sqlite3.connect(source)) as db, db:
+            db.execute('CREATE TABLE ' + inventory.quoted(odd) + '(k TEXT)')
+            db.execute('INSERT INTO ' + inventory.quoted(odd) + " VALUES('sign-in')")
+            db.execute("CREATE TABLE keep(v TEXT)")
+            db.execute("INSERT INTO keep VALUES('stays')")
+        self.assertEqual([odd], home.copy_db(source, tmp / 'copy.sqlite', keys=False))
+        with closing(inventory.connect(tmp / 'copy.sqlite')) as db:
+            self.assertEqual(0, inventory.digest(db, odd)[0])
+            self.assertEqual([{'v': 'stays'}], list(inventory.rows(db, 'keep')))
+
+
 if __name__ == '__main__':
     unittest.main()

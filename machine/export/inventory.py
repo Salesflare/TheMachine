@@ -39,7 +39,7 @@ PARTS = {
     'sharing': 'Fleet, Network and sharing',
     'activity': 'Activity and history',
     'settings': 'Configuration',
-    'workspace': 'Your OpenClaw workspace (memory notes, USER.md)',
+    'workspace': "Your AI's workspace (memory notes, USER.md)",
     'index': 'Search and similarity indexes',
 }
 
@@ -109,10 +109,10 @@ DATA_FILES = {
 # Under the home folder, outside the data folder: (path relative to home, part, what it is). Files there move along
 # and come back to the same place; OpenClaw's databases are merged with the new install's sign-ins (moving.py).
 HOME_AREAS = [
-    ('.openclaw/agents/*/agent/openclaw-agent.sqlite', 'conversations', 'OpenClaw conversations, memory index and goals'),
-    ('.openclaw/agents/*/sessions', 'conversations', 'OpenClaw conversation transcripts'),
+    ('.openclaw/agents/*/agent/openclaw-agent.sqlite', 'conversations', "Your AI's conversations, memory index and goals"),
+    ('.openclaw/agents/*/sessions', 'conversations', "Your AI's conversation transcripts"),
     ('.openclaw/agents/*/agent/workshop-skills', 'skills', 'skills made in the workshop'),
-    ('.openclaw/state/openclaw.sqlite', 'conversations', 'OpenClaw scheduled jobs, plugin memory and its own state'),
+    ('.openclaw/state/openclaw.sqlite', 'conversations', "Your AI's scheduled jobs, plugin memory and state"),
     ('.openclaw/media/inbound', 'attachments', 'photos and files sent to your AI'),
     ('.openclaw/media/outbound', 'attachments', 'photos and files your AI sent'),
     ('.openclaw/media/tool-image-generation', 'attachments', 'images your AI made'),
@@ -138,13 +138,13 @@ NOT_EXPORTED = [
     {'what': 'AI connections (ChatGPT and Claude connectors)', 'why': 'their access tokens are for the old address',
      'after': 'Connect them again in Settings'},
     {'what': 'Phone notifications', 'why': 'each phone signs up with one Machine', 'after': 'Open the app on your phone once'},
-    {'what': 'Conversations you deleted', 'why': 'OpenClaw keeps them for a while, but they are deleted', 'after': ''},
+    {'what': 'Conversations you deleted', 'why': 'They are kept for a while, but they are deleted', 'after': ''},
     {'what': 'Installed programs, caches and browser sessions', 'why': 'any computer rebuilds them', 'after': ''},
     {'what': 'The Machine Network identity, without keys', 'why': 'it is a key',
      'after': 'Teammates and friends see a key-change notice once'},
 ]
 NOT_EXPORTED_HOME = [
-    ('.openclaw/agents/*/agent/codex-home', "Codex's own sign-in and caches inside OpenClaw"),
+    ('.openclaw/agents/*/agent/codex-home', "Codex's own sign-in and caches for your AI"),
     ('.openclaw/media/browser', 'browser screenshots, a cache'),
     ('.openclaw/media/playback-transcode', 'audio converted for playback, a cache'),
     ('.openclaw/browser', 'browser profiles: sign-ins tied to this computer'),
@@ -156,7 +156,7 @@ DATA_HOME = '.local/share/personal-assistant'  # the data folder's usual place: 
 
 # Other places under the home folder the code uses, and why an export does not need them as they are
 HOME_OTHER = {
-    '.openclaw/openclaw.json': "OpenClaw's settings with its keys: included only with keys",
+    '.openclaw/openclaw.json': "Your AI's settings with its keys: included only with keys",
     '.openclaw/workspace': 'exported as the workspace part',
     '.openclaw': "OpenClaw's folder: its parts are listed one by one",
     '.local/share': 'where the data folder sits',
@@ -213,12 +213,18 @@ def _plain(value):
     return value
 
 
+def quoted(name):
+    """A table or column name as an SQL identifier. Names come from sqlite_master, and on an import from the archive,
+    so a quote in one never ends the identifier early."""
+    return '"' + str(name).replace('"', '""') + '"'
+
+
 def _order(db, table):
     """A stable order for a table's rows: its rowid, or its primary key for a table without one."""
-    info = db.execute(f'PRAGMA table_info("{table}")').fetchall()
+    info = db.execute('PRAGMA table_info(' + quoted(table) + ')').fetchall()
     keys = [r[1] for r in sorted((r for r in info if r[5]), key=lambda r: r[5])]
     without_rowid = 'WITHOUT ROWID' in (db.execute("SELECT sql FROM sqlite_master WHERE name=?", (table,)).fetchone()[0] or '').upper()
-    return ','.join(f'"{k}"' for k in (keys if without_rowid and keys else [])) or 'rowid'
+    return ','.join(quoted(k) for k in (keys if without_rowid and keys else [])) or 'rowid'
 
 
 def connect(path, key=None):
@@ -234,14 +240,14 @@ def connect(path, key=None):
 
 def rows(db, table):
     """One table's rows as dicts, in a stable order, one at a time."""
-    for row in db.execute(f'SELECT * FROM "{table}" ORDER BY {_order(db, table)}'):
+    for row in db.execute('SELECT * FROM ' + quoted(table) + ' ORDER BY ' + _order(db, table)):
         yield {k: row[k] for k in row.keys()}
 
 
 def digest(db, table):
     """(rows, sha256 hex) of a table's rows in a stable order, every value as written (blobs in base64)."""
     h, count = hashlib.sha256(), 0
-    for row in db.execute(f'SELECT * FROM "{table}" ORDER BY {_order(db, table)}'):
+    for row in db.execute('SELECT * FROM ' + quoted(table) + ' ORDER BY ' + _order(db, table)):
         h.update(json.dumps([_plain(v) for v in tuple(row)], ensure_ascii=False, default=str).encode() + b'\n')
         count += 1
     return count, h.hexdigest()
