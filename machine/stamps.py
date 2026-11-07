@@ -32,7 +32,7 @@ def _trigger_sql(table, op):
     """The counter trigger for one of the module's own table names (a plain identifier that exists, checked: never a
     value from a request)."""
     if not IDENTIFIER.fullmatch(table) or op not in ('insert', 'update', 'delete'):
-        raise ValueError('not a table name')
+        raise ValueError(table)  # one of the module's own names, never shown
     return (f"CREATE TRIGGER stamp_{table}_{op} AFTER {op.upper()} ON {table} BEGIN "
             f"UPDATE data_stamps SET n=n+1 WHERE name='{table}'; END")
 

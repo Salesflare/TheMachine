@@ -5,8 +5,7 @@ import unittest
 from pathlib import Path
 
 import assistant as a
-import graph
-from machine.store import stamps
+from machine import stamps
 
 
 class Stamps(unittest.TestCase):
@@ -119,18 +118,18 @@ class PageQueries(unittest.TestCase):
         self.assertIn('decisions_suggestion', self.plan(
             "SELECT max(d.created_at) FROM decisions d WHERE d.suggestion_id=? AND d.choice IN ('complete','reject')", ('x',)))
 
-    def test_a_status_poll_keeps_the_who_is_who_count_until_a_role_changes(self):
+    def test_slack_names_are_kept_until_a_name_changes(self):
+        from machine.sources.slack import slack_name_table
         with self.store.connect() as db:
-            self.assertEqual(graph.waiting(db), 0)
-            db.execute("INSERT INTO graph_nodes(id,kind,name,info,strength,signals) VALUES('email:lee@client.example','person','Lee',?,1,1)",
-                       (json.dumps({}),))
-            db.execute("INSERT INTO person_roles(identifier,role,source,created_at) VALUES('email:lee@client.example','Buyer','review','2026-01-01')")
+            self.assertEqual(slack_name_table(db, {'U01234567'}), {})
+            db.execute("INSERT INTO identity_names(identifier,name,checked_at) VALUES('slack:U01234567','Lee','2026-01-01')")
         with self.store.connect() as db:
-            self.assertEqual(graph.waiting(db), 1)
-            db.execute("UPDATE person_roles SET source='owner'")
+            self.assertEqual(slack_name_table(db, {'U01234567'}), {'U01234567': 'Lee'})
+            slack_name_table(db, {'U01234567'})['U01234567'] = 'changed by a caller'  # each caller gets its own copy
+            self.assertEqual(slack_name_table(db, {'U01234567'}), {'U01234567': 'Lee'})
+            db.execute("UPDATE identity_names SET name='Lee Park'")
         with self.store.connect() as db:
-            self.assertEqual(graph.waiting(db), 0)
-
+            self.assertEqual(slack_name_table(db, {'U01234567'}), {'U01234567': 'Lee Park'})
 
 if __name__ == '__main__':
     unittest.main()

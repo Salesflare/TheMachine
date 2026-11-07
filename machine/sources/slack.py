@@ -19,6 +19,7 @@ import urllib.parse
 import urllib.request
 
 import graph
+from machine import stamps
 from sources import SourceError, credential
 from timeutil import now
 
@@ -446,8 +447,13 @@ SLACK_ID = re.compile(r'\b(?:Slack (?:teammate|user|member|colleague|contact) )?
 
 def slack_name_table(db, ids):
     """{user id: name} for these Slack member ids (graph.slack_names: the people graph, users.info, or the name kept for
-    an app, the owner or a former member). Unknown ones are left out."""
-    return graph.slack_names(db, ids)
+    an app, the owner or a former member). Unknown ones are left out. Kept until a name, a person or a member changes:
+    a page names the same few members on every open, and each time was a pass over every person."""
+    key = tuple(sorted({i for i in ids if isinstance(i, str)}))
+    return dict(_NAMES.get(key, stamps.stamp(db, ('identity_names', 'graph_nodes', 'slack_members')), lambda: graph.slack_names(db, key)))
+
+
+_NAMES = stamps.Kept(64)
 
 
 def slack_ids_named(db, text, names=None):

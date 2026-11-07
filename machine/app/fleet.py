@@ -31,6 +31,7 @@ from machine.store.review import own_message
 import notify
 import security_levels
 import shared_graph
+import shared_graph_kept
 from sources import credential, SourceError
 import team_learnings
 from timeutil import in_hours, is_work_day, local_tz, now, WORK_HOURS
@@ -630,6 +631,6 @@ class FleetApp:
         if not getattr(self, 'fleet', None):
             return {}
         try:
-            return copy.deepcopy(shared_graph.fleet_marks(db, self.fleet.fleets()))  # kept between requests (stamps.py)
+            return copy.deepcopy(shared_graph_kept.fleet_marks(db, self.fleet.fleets()))  # kept between requests (stamps.py)
         except (sqlite3.Error, ValueError, TypeError, KeyError, AttributeError):
             return {}

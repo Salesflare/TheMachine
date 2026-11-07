@@ -26,7 +26,7 @@ from __future__ import annotations
 import json
 import re
 
-from machine.store import stamps
+from machine import stamps
 
 SCHEMA = '''
 CREATE TABLE IF NOT EXISTS own_addresses(address TEXT PRIMARY KEY,sources TEXT NOT NULL,state TEXT NOT NULL,reason TEXT,updated_at TEXT NOT NULL);

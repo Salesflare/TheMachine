@@ -23,7 +23,7 @@ import re
 
 import enrichment
 import graph
-from machine.store import stamps
+from machine import stamps
 
 SCHEMA = '''
 CREATE TABLE IF NOT EXISTS record_owners(node_id TEXT PRIMARY KEY,owner TEXT NOT NULL,name TEXT,set_at TEXT NOT NULL);
