@@ -16,6 +16,8 @@ Ogni email mostra solo ciò che contiene di nuovo. I messaggi precedenti che cit
 
 ## Cosa chiedere
 
+Prima che tu scriva, la chat può offrire fino a tre suggerimenti presi da questa attività, come «Proponi martedì alle 10:00». Toccandone uno finisce nella casella del messaggio, da inviare o cambiare. Se non c'è niente di specifico, non ne mostra.
+
 - Sulla conversazione, sulle persone o sul contesto: "Cosa hanno chiesto l'ultima volta?"
 - Per cambiare la bozza: "Rendila più breve" o "Cita la nuova data".
 

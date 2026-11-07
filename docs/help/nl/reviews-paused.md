@@ -14,6 +14,8 @@ Op een nieuwe gehoste Machine starten checks vanzelf zodra je AI en je mail geko
 
 Terwijl hij leest, toont To-do's hoe ver hij is, een paar van de mensen en organisaties die hij tegenkwam, en je eerste to-do zodra die er is. De namen komen uit je eigen mail, en alleen jij ziet ze.
 
+Vindt hij bij de eerste blik niets voor je, dan zegt hij wat hij las en biedt hij volgende stappen aan, zoals een dienst koppelen die je vaak mailt of vragen wat er deze week veranderd is.
+
 ## Checks staan uit
 
 Bovenaan To-do's staat "Checks staan uit, dus er komen nog geen to-do's." Druk op een gehoste Machine op **Checks aanzetten**. Voer op je eigen computer `./install.sh --activate` uit.

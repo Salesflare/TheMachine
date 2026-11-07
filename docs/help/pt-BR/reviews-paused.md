@@ -14,6 +14,8 @@ Em uma Machine hospedada nova, as verificações começam sozinhas assim que sua
 
 Enquanto lê, Tarefas mostra até onde ela chegou, algumas das pessoas e organizações que encontrou e sua primeira tarefa assim que chega. Os nomes vêm do seu próprio e-mail, e só você os vê.
 
+Se na primeira olhada ela não encontrar nada para você, diz o que leu e oferece próximos passos, como conectar um serviço que te escreve com frequência ou perguntar o que mudou esta semana.
+
 ## As verificações estão desativadas
 
 O topo de Tarefas diz "As verificações estão desligadas, então nenhuma tarefa chega ainda." Em uma Machine hospedada, clique em **Ligar as verificações**. No seu próprio computador, execute `./install.sh --activate`.

@@ -20,7 +20,8 @@ const cards=[
  {id:'c2c2c2c2c2c2c2c2',title:'Renew the passport',body:'It runs out in May.',status:'pending',scope:'personal',created_at:now,event_ids:[2]},
  {id:'c3c3c3c3c3c3c3c3',title:'Old finished task',body:'Done.',status:'completed',scope:'work',created_at:now,event_ids:[3]},
  {id:'c4c4c4c4c4c4c4c4',title:'Pay the deposit',body:'Due Friday.',status:'snoozed',snoozed_until:new Date(Date.now()+86400000).toISOString(),scope:'personal',created_at:now,event_ids:[4]},
- {id:'c5c5c5c5c5c5c5c5',title:'Alex needs your call on the venue',body:'Alex found two dates. I can check both and draft a reply for Alex.',status:'pending',scope:'work',created_at:now,event_ids:[5]},
+ {id:'c5c5c5c5c5c5c5c5',title:'Alex needs your call on the venue',body:'Alex found two dates. I can check both and draft a reply for Alex.',status:'pending',scope:'work',created_at:now,event_ids:[5],
+  chat_asks:JSON.stringify(['Offer Tuesday 10:00 instead','Ask Alex for the venue’s price list','A line far too long to be a tap over the message box, so it never shows'])},
  // A draft the Machine can't send (an internal note): Copy draft leads, the draft itself shows, with one line why
  {id:'c6c6c6c6c6c6c6c6',title:'Andrea needs your call on 60 mailboxes',body:'Drafted your note for Andrea. Nothing sent.\n\n[Draft and sources](memory/assistant/note.md)',status:'prepared',scope:'work',created_at:now,event_ids:[6],
   result_files:[{name:'note.md',path:'memory/assistant/note.md'}]},
@@ -155,7 +156,7 @@ try{
  await agent.locator('.chat-more').click();
  await page.locator('#chat-log .chat-msg.machine',{hasText:'I wrote summary.md.'}).waitFor();
  assert.equal(await page.locator('#chat-log .chat-msg.machine',{hasText:'I wrote summary.md.'}).locator('.chat-more').textContent(),'Less');
- // No templated quick picks: cards don't propose next steps of their own yet, so there are none
+ // No canned quick picks: this to-do has no asks of its own and ends on no offer, so there are none
  await page.locator('#chat-input').focus();
  assert.equal(await page.locator('#chat-picks [data-chat-say]').count(),0);
  await page.locator('#chat-input').blur();
@@ -217,7 +218,11 @@ try{
  // The call it needs is the card's result: the raised card under its message
  assert.equal(await page.locator('#chat-log .chat-result.current .chat-q').textContent(),'Your call: the venue?');
  assert.doesNotMatch(await page.locator('#chat-log .chat-card .bubble').textContent(),/I can check/);
- assert.equal(await page.locator('#chat-picks [data-chat-say]').count(),0);
+ // its offer is a tap, then the review's asks for it (chat_asks), never a canned line; a tap fills the box
+ assert.deepEqual(await page.locator('#chat-picks [data-chat-say]').allTextContents(),['Check both and draft a reply for Alex','Offer Tuesday 10:00 instead','Ask Alex for the venue’s price list']);
+ await page.locator('#chat-picks [data-chat-say]').nth(1).click();
+ assert.equal(await page.locator('#chat-input').inputValue(),'Offer Tuesday 10:00 instead');
+ await page.locator('#chat-input').fill('');
  // A draft result shows the draft: copy-only leads with Copy draft (and says why); the result file is a chip, never a bare title
  await page.locator('.side-cards a',{hasText:'60 mailboxes'}).click();await page.locator('#chat-log .chat-result.current').waitFor();
  await page.locator('#chat-log .chat-result.current',{hasText:'Each person who uses the CRM needs their own seat'}).waitFor();

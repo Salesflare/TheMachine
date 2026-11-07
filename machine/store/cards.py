@@ -35,6 +35,7 @@ def active_preview(db):
 
 
 USE_MAIL_KINDS = ('gmail.message', 'ms_graph.message')
+CHAT_ASK_CHARS = 60  # a chat ask is a tap, one short line (set_chat_asks)
 
 
 def use_view(db, use_events):
@@ -268,6 +269,15 @@ def source_text(row):
 
 class CardsStore:
     """Store methods that make and change to-dos."""
+
+    def set_chat_asks(self, db, suggestion_id, asks):
+        """The review's asks for a to-do: up to two short things the owner may want to say in its chat, specific to it
+        ("Offer Tuesday 10:00 instead"), shown as taps over the message box (todos-chat-thread.js chatSuggestions).
+        Written with the to-do in the same review turn, so no model call of their own. Anything else is dropped: none
+        rather than a canned line. Each update replaces them, so they never outlive what the to-do says."""
+        lines = [' '.join(a.split()) for a in asks if isinstance(a, str)] if isinstance(asks, list) else []
+        lines = list(dict.fromkeys(a for a in lines if 0 < len(a) <= CHAT_ASK_CHARS))[:2]
+        db.execute('UPDATE suggestions SET chat_asks=? WHERE id=?', (encoded(lines) if lines else None, suggestion_id))
 
     def suggest(self, dedupe_key, title, body, event_ids, when='now', digest_at='08:30', work=False, urgent=False, due=None, ahead=False, awaiting=None, project=None,
                 card_id=None, separate=False, reopen=False, match=False, _db=None, suggestion_id=None, owner_step=None, expires_at=None, expires_what=None,

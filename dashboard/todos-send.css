@@ -11,6 +11,7 @@
 .card .body .lead-line{color:var(--faint)}
 .card .note{font-size:.92rem;line-height:1.45}
 /* What we don't know (gap_note.py): quieter than the body, one short line under it */.card .note.gap-line{font-size:var(--fs-sm);color:var(--faint);margin:6px 0 0}
+/* Its Connect: a quiet text link at the end of the line, like the others under a to-do */.card .note.gap-line button.gap-connect{display:inline;min-height:0;margin:0;padding:0;border:0;background:none;box-shadow:none;color:var(--text);font:inherit;font-weight:500;text-decoration:underline;text-decoration-color:var(--border-strong);text-underline-offset:3px;cursor:pointer;white-space:nowrap}
 /* Based on: opens that message here (Read message), a quiet underlined line like the link it was */.card .note.based-on button.link{display:inline;min-height:0;margin:0;padding:0;border:0;background:none;box-shadow:none;color:inherit;font:inherit;text-align:left;text-decoration:underline;text-decoration-color:var(--border-strong);text-underline-offset:3px;cursor:pointer}.card .note.based-on button.link:hover{color:var(--text)}
 .card .draft{max-width:680px;margin:12px 0 0;padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:var(--sunken);font-size:.92rem;line-height:1.5;color:var(--text)}
 .card .draft .dm{margin:0 0 6px;font-size:.8rem;color:var(--faint);overflow-wrap:anywhere}

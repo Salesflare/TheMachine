@@ -16,6 +16,8 @@ Elke e-mail toont alleen wat er nieuw in staat. De eerdere berichten die erin ge
 
 ## Wat je kunt vragen
 
+Voor je typt, biedt de chat soms tot drie suggesties uit deze to-do aan, zoals "Stel dinsdag 10:00 voor". Tik erop en hij staat in het berichtvak, om te versturen of aan te passen. Past er niets specifieks, dan zijn er geen.
+
 - Over de thread, de personen of de achtergrond: "Wat vroegen ze de vorige keer?"
 - Om het concept aan te passen: "Maak het korter" of "Noem de nieuwe datum".
 

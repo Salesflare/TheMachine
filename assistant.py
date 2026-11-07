@@ -3617,6 +3617,9 @@ class App(*APP_MIXINS):
             if isinstance(saved, dict) and saved.get('id') and not saved.get('duplicate') and args.get('based_on') is not None:
                 with self.store.connect() as db:  # the teammate's input the to-do follows: shown on it, with its link
                     self.store.mark_based_on(db, saved['id'], args['based_on'])
+            if isinstance(saved, dict) and saved.get('id') and not saved.get('duplicate') and not saved.get('attached'):
+                with self.store.connect() as db:  # what the owner may want to say in its chat: each update says it again
+                    self.store.set_chat_asks(db, saved['id'], args.get('asks'))
             unknown = self.store.no_role_yet(args['event_ids'])
             if isinstance(saved, dict) and unknown:  # name them now, while the evidence is open
                 saved['no_role_yet'] = unknown

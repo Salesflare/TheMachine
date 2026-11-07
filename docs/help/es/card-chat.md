@@ -16,6 +16,8 @@ Cada correo muestra solo lo nuevo. Los mensajes anteriores que cita quedan plega
 
 ## Qué preguntar
 
+Antes de escribir, el chat puede ofrecer hasta tres sugerencias hechas a partir de esta tarea, como «Ofrece el martes a las 10:00». Al tocar una, pasa al cuadro de mensaje para enviarla o cambiarla. Si nada concreto encaja, no hay ninguna.
+
 - Sobre el hilo, las personas o el contexto: "¿Qué pidieron la última vez?"
 - Para cambiar el borrador: "Hazlo más corto" o "Menciona la nueva fecha".
 

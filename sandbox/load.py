@@ -408,6 +408,8 @@ def load_cards(db, fixture, ids, base):
                     created, snoozed, 'pending' if snoozed else None, json.dumps(card['next_action']) if card.get('next_action') else None,
                     int(bool(card.get('urgent'))), f"Source: {card['source']} · {(base - dt.timedelta(minutes=card['minutes_ago'])).strftime('%a, %b %-d')}",
                     card.get('project')))
+        if card.get('asks'):  # its chat's taps (Store.set_chat_asks)
+            db.execute('UPDATE suggestions SET chat_asks=? WHERE id=?', (json.dumps(card['asks']), card_id))
         if card.get('based_on') in ids:  # the teammate's input the draft follows: "Based on Priya in #sales"
             db.execute('UPDATE suggestions SET based_on=? WHERE id=?', (ids[card['based_on']], card_id))
         db.execute('INSERT INTO deliveries(suggestion_id,status,updated_at) VALUES(?,?,?)', (card_id, 'sent', created))

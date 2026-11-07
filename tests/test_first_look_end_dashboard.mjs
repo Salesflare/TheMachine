@@ -11,11 +11,11 @@ const dashboard=await dashboardPage();
 const now=new Date().toISOString();
 const card={id:'ab'.repeat(8),title:'Reply to Robin about the garden plan',body:'Robin asked for the dates.',status:'pending',scope:'personal',created_at:now,event_ids:[1]};
 let run={run_id:'r1',status:'running',started_at:now,preview:1,auto:1,window_hours:168,planned:8,done_count:0,claimed_count:8,account_ids:['work'],steps:[]};
-let done=null,cards=[];
+let done=null,cards=[],model=null;
 const live=()=>({runs:run?[run]:[],queue:null,first_look:null});
 const state=()=>({suggestions:cards,promises:[],connectors:[{id:'work',display_name:'Work mail',service:'outlook'},{id:'work-cal',display_name:'Work calendar',service:'outlook_calendar'}],
  suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:run?{}:{last_completed:now},review_runs:[],reviews_on:true,greeting:{name:'Robin'},
- review_live:live(),first_look_done:done});
+ review_live:live(),first_look_done:done,...(model?{model_status:model}:{})});
 const errors=[],plain=s=>s.replace(/\u00a0/g,' ');  // a count keeps its word on the same line (a non-breaking space)
 const server=createServer((req,res)=>{
  const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
@@ -57,6 +57,21 @@ try{
  await page.waitForFunction(()=>/meetings/.test(document.querySelector('#suggestions .fl-read')?.textContent||''));
  assert.equal(plain(await end.locator('.fl-read').innerText()),'Read 8 emails and 2 meetings from the past week.');
  assert.deepEqual(await end.locator('[data-fl-next]').allInnerTexts(),['Connect your calendar','Add another inbox']);
+ // A service that mails the owner often and isn't connected (first_look_connect) comes first, as a concrete offer
+ done={...done,connect:[{service:'slack',label:'Slack'}],next:['calendar']};
+ await page.evaluate(async()=>{await refresh()});
+ await page.waitForFunction(()=>/Slack/.test(document.querySelector('#suggestions .fl-next')?.textContent||''));
+ assert.deepEqual(await end.locator('.fl-next button').allInnerTexts(),['Connect Slack','Connect your calendar']);
+ assert.equal(await end.locator('[data-connect-open="slack"]').count(),1);
+ // Nothing to connect, with a model: one question to ask instead of an empty "Give me a to-do"; it fills Search's ask
+ done={...done,connect:[],next:[]};model={ok:true};
+ await page.evaluate(async()=>{await refresh()});
+ await page.waitForFunction(()=>/Ask what changed/.test(document.querySelector('#suggestions .fl-next')?.textContent||''));
+ assert.deepEqual(await end.locator('.fl-next button').allInnerTexts(),['Ask what changed this week']);
+ await end.locator('[data-fl-next="ask"]').click();
+ await page.waitForFunction(()=>document.querySelector('#palette')?.open);
+ assert.equal(await page.locator('#pal-q').inputValue(),'what changed this week?');
+ await page.keyboard.press('Escape');model=null;
  // Done with to-dos: one line above them, gone once the owner acted on one
  cards=[card];done={...done,todos:1,next:[]};
  await page.evaluate(async()=>{await refresh()});

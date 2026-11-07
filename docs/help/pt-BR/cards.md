@@ -82,6 +82,8 @@ Cada tarefa começa pelo título. A linha abaixo diz de quem ela trata, a organi
 
 Às vezes uma linha discreta abaixo do texto diz o que não se sabe, como "Último contato há 12 dias por e-mail; nada desde então." Ela só aparece quando o último contato é antigo ou ainda está sem resposta, e cita canais não conectados por onde talvez tenham respondido, como o WhatsApp. Sua Machine prepara com os mesmos fatos, então ela diz o que não sabe em vez de adivinhar.
 
+Quando ela cita um canal não conectado, Conectar ao lado abre essa conexão.
+
 Um título diz o que precisa ser feito. Ele só muda quando isso muda, como com um novo pedido. Uma tarefa feita mantém o título, com embaixo como ela terminou, como o que foi enviado ou "Feito: Sam assinou na terça".
 
 Acima do rascunho, uma linha discreta mostra a mensagem de onde ela veio, com o logo do serviço (Gmail, Slack, WhatsApp…). Toque nela para ler a conversa. O rascunho começa com o logo de para onde vai, então você vê se é uma resposta no Slack ou um e-mail antes de ler. Um passo sem rascunho, como um repasse, mostra o logo no botão.

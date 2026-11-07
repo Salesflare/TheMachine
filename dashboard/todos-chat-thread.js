@@ -242,10 +242,16 @@ const isOpen=i=>!closed(s)&&(i.kind==='card'||!(i.drafts||[]).length||s.status==
  // said once the run is over, never as an aside under the typing dots; the next ask (a few seconds) tries again.
  if(chat.unavailable&&!chat.active)out.push(html`<p class="chat-note">I couldn’t load my replies just now. Trying again…</p>`);
  return html`${out}`}
-// At most two things to say, from what the card holds; tapping one fills the message box.
-// Quick picks only from next steps the card itself proposes; cards don't carry any yet, so there are none (no templated lines).
-function chatSuggestions(s){return []}
-const chatPicks=s=>html`${chatSuggestions(s).map(t=>html`<button type="button" class="chat-say" data-chat-say="${t}">${t}</button>`)}`;
+// Up to three things to say, each specific to this to-do; tapping one fills the message box. Never canned lines (the
+// old "What would you say?" chips went for that): the offer its text ends with ("I can check both dates" → "Check
+// both dates"), and the review's asks for it (chat_asks, written with the to-do: no model call of their own). None
+// when there is nothing that specific. In the to-do's own words, so never translated again.
+const CHAT_OFFER_LEAD=/^(?:I can|I could|I'll|I will|Happy to)\s+/i;
+function chatSuggestions(s){if(!chat||chat.active||closed(s))return [];let asks=[];try{asks=JSON.parse(s.chat_asks||'[]')}catch{}
+ const q=(chat.items||[]).some(i=>i.kind==='reply')?{}:chatQuestion(s),offer=String(q.offer||'').replace(CHAT_OFFER_LEAD,'').replace(/[.!?]+$/,'').trim();
+ const out=[offer&&offer[0].toUpperCase()+offer.slice(1),...(Array.isArray(asks)?asks:[])].map(x=>String(x||'').trim()).filter(x=>x&&x.length<=60);
+ return [...new Set(out)].slice(0,3)}
+const chatPicks=s=>html`${chatSuggestions(s).map(t=>html`<button type="button" class="chat-say" translate="no" data-chat-say="${t}">${t}</button>`)}`;
 // Suggestions show while nothing has been said yet, or while you are writing
 const chatPicksShown=()=>!(chat?.items||[]).some(i=>i.kind==='you')||document.activeElement?.id==='chat-input';
 const BACK=html`<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M15 5l-7 7 7 7"/></svg>`;
