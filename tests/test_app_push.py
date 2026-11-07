@@ -611,19 +611,19 @@ class InApp(unittest.TestCase):
         source = (Path(a.ROOT) / 'dashboard' / 'settings-general.js').read_text(encoding='utf-8')
         code = '\n'.join(re.search(rf'^(?:const|function) {name}\b.*?$(?:\n .*$)*', source, re.M)[0] for name in ('ACCT_GO', 'ACCT_BUY', 'acctGo'))
         script = ('const esc=s=>String(s);' + code + ';const links={account:"https://a.example/a",plan:"https://a.example/p",portal:"https://a.example/b",'
-                  'cancel:"https://a.example/c",fleet:"https://a.example/f",connections:"https://a.example/s"},actions=Object.keys(links);'
+                  'cancel:"https://a.example/c",fleet:"https://a.example/f",network:"https://a.example/n",connections:"https://a.example/s"},actions=Object.keys(links);'
                   'const out={};for(const k of actions)out[k]=[acctGo({actions,links},k),acctGo({actions,links,hop:true},k)];console.log(JSON.stringify(out))')
         out = json.loads(subprocess.run(['node', '-e', script], capture_output=True, text=True, check=True).stdout)
         for key, html in out.items():
             for one in html:
-                self.assertEqual('data-buy' in one, key in ('plan', 'portal', 'cancel', 'fleet'), (key, one))
+                self.assertEqual('data-buy' in one, key in ('plan', 'portal', 'cancel', 'fleet', 'network'), (key, one))
         self.assertIn('<div data-buy><span class="grow">Next invoice', source)
         self.assertIn('<small data-buy>${esc(p.price)}</small>', source)
         # The quiet end of the tab also holds Delete account, which the app keeps: each buying link is marked, and the
         # line goes when nothing in it is left to show
         self.assertIn("end.innerHTML=quiet.join('')", source)
         self.assertIn('.in-app .acct-danger:not(:has(>:not([data-buy]))){display:none}', dashboard_parts.assemble(Path(a.ROOT)))
-        self.assertIn("const ACCT_BUY=new Set(['plan','portal','cancel','fleet','billing','withdraw']);", source)
+        self.assertIn("const ACCT_BUY=new Set(['plan','portal','cancel','fleet','billing','withdraw','network']);", source)
         self.assertIn("b.toggleAttribute('data-buy',!paired)", source)  # Join the Network (a sign-up) when not paired
 
 
