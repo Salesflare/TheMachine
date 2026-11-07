@@ -16,7 +16,7 @@ from machine.cards import NOT_FOR_OWNER_SQL, plain
 from machine.config import LOG, ROOT, WORKSPACE
 from machine.model_usage import node_bin, node_env, telegram_on
 from machine.sources.connectors import HOSTED_SIGNINS
-from machine.text import encoded
+from machine.text import encoded, first_sentence
 import next_actions
 import notify
 import qr
@@ -561,12 +561,6 @@ def talk_about(node):
     if node.get('kind') == 'org':
         return ' · '.join(x for x in (str(node.get('role') or ''), str(node.get('domain') or ''), str(node.get('about') or '')) if x)
     return str(node.get('state') or '')
-
-
-def first_sentence(text):
-    """The first sentence of a card's body, plain: an already_done result leads with what shows it."""
-    text = ' '.join(re.sub(r'[*_`\[\]]|\(https?://[^)]*\)', '', str(text or '')).split())
-    return re.split(r'(?<=[.!?])\s', text, maxsplit=1)[0][:200]
 
 
 def waiting_count(db):

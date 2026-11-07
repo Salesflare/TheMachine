@@ -261,3 +261,9 @@ def open_copy(source, target, key):
             index += 1
         out.flush()
         os.fsync(out.fileno())
+
+
+def first_sentence(text):
+    """The first sentence of a card's body, plain: an already_done result leads with what shows it."""
+    text = ' '.join(re.sub(r'[*_`\[\]]|\(https?://[^)]*\)', '', str(text or '')).split())
+    return re.split(r'(?<=[.!?])\s', text, maxsplit=1)[0][:200]
