@@ -310,7 +310,8 @@ def sql_strings(found):
 
 # The Store moves out of assistant.py in parts (refactor PRs 13-18). Until it is whole in machine/store/, its parts
 # are one owner with assistant.py: a table the Store creates or writes from one of them is assistant.py's, as before.
-STORE_PARTS = {'machine/store/cards.py', 'machine/store/core.py', 'machine/store/events.py', 'machine/store/review.py'}
+STORE_PARTS = {'machine/store/cards.py', 'machine/store/core.py', 'machine/store/decisions.py', 'machine/store/events.py',
+               'machine/store/review.py'}
 
 
 @functools.lru_cache(maxsize=None)
@@ -372,7 +373,7 @@ PY_LINE_BUDGET = 2_500
 PY_BYTE_BUDGET = 450 * 1024
 PY_RATCHET_SLACK = (500, 50_000)
 PY_OVER_BUDGET = {
-    'assistant.py': (15_700, 1_140_000),
+    'assistant.py': (14_600, 1_050_000),
     'fleet.py': (3_800, PY_BYTE_BUDGET),
     'graph.py': (5_400, PY_BYTE_BUDGET),
     'next_actions.py': (2_650, PY_BYTE_BUDGET),

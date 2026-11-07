@@ -116,7 +116,8 @@ class Off(unittest.TestCase):
         import next_actions
         validate = Path(next_actions.__file__).read_text(encoding='utf-8').split('\ndef validate(', 1)[1].split('\ndef ', 1)[0]
         self.assertIn("abilities.refuse(config, result.get('account_id'))", validate)
-        confirm = Path(assistant.__file__).read_text(encoding='utf-8').split('def confirm_action', 1)[1].split('\n    def ', 1)[0]
+        decisions = Path(assistant.__file__).parent / 'machine' / 'store' / 'decisions.py'
+        confirm = decisions.read_text(encoding='utf-8').split('def confirm_action', 1)[1].split('\n    def ', 1)[0]
         self.assertIn('abilities.refuse(', confirm)
 
 

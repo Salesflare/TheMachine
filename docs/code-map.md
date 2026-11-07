@@ -110,7 +110,8 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   committing and reading events, the Android feed, tombstones, sync checkpoints), `machine/store/review.py`
   (`ReviewStore`: claiming signals for a review, the context it reads, keeping its result; how a signal is weighed and
   shown), `machine/store/cards.py` (`CardsStore`: making and changing to-dos: suggest, update, rename, move, merge,
-  the owner's own, their sources).
+  the owner's own, their sources), `machine/store/decisions.py` (the `DecisionsStore` mixin: decisions, handoffs,
+  feedback, preparing a to-do, sends and merges with their undo).
 - **Dashboard code:** in its area's part in `dashboard/` (`<area>-<what>.js`: shell, todos, settings, graph, calendar,
   connections, help, events, new, fleet), next to the functions it works with, never at the end of the script. The
   page's core is in the `shell-*` parts too: locale and error reports (`shell-core.js`), network and outbox, `render()`
