@@ -6,8 +6,9 @@ const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modul
 
 // The Graph answers at once. A board's "could belong here" Add and Leave out take the row away before the Machine
 // answers (board_fit goes behind it, then the overview reloads quietly); a refused one brings the row back with the
-// error. A person's row fetches its page when the pointer rests on it (graphPeekStart), so the click opens it without
-// asking again; a touch never does, and a change sent to the Machine forgets what was fetched ahead. INSTANT_SHOT=<dir>
+// error. A person's row fetches its page when the pointer rests on it (graphPeekStart) or a finger lands on it, so the
+// click opens it without asking again; a finger that scrolls calls it off, and a change sent to the Machine forgets what
+// was fetched ahead. Back to a list that answers fast never shows a loading line. INSTANT_SHOT=<dir>
 // writes screenshots.
 const dashboard=await dashboardPage();
 const stages=[{name:'Discovery'},{name:'Demo'},{name:'Won'},{name:'Stalled or declined',side:true}];
@@ -51,12 +52,24 @@ try{
    assert.deepEqual(nodeAsks,[person.id],'the click used it');
    // a change sent to the Machine forgets what was fetched ahead
    await page.evaluate(id=>graphPeekStart(id),'email:other@example.org');await page.waitForTimeout(100);
-   await page.evaluate(()=>graphPost('noop',{}));assert.equal(await page.evaluate(()=>graphPeek.size),0);
-   await page.evaluate(()=>graphBack());await page.locator('#people:not(.graph-on-node)').waitFor()}
+   await page.evaluate(()=>graphPost('noop',{}));assert.equal(await page.evaluate(()=>graphPeek.size),0)}
   else{const row=page.locator(`#people-view [data-node="${person.id}"]`).first();await row.waitFor();
+   const touch=(type,dx=0)=>row.evaluate((el,[type,dx])=>{const r=el.getBoundingClientRect();el.dispatchEvent(new PointerEvent(type,{bubbles:true,pointerType:'touch',clientX:r.left+20+dx,clientY:r.top+10}))},[type,dx]);
+   const ahead=()=>page.evaluate(id=>graphPeek.has(id),person.id);
    // a finger over a row is no hover: nothing is fetched ahead
-   await row.evaluate(el=>el.dispatchEvent(new PointerEvent('pointerover',{bubbles:true,pointerType:'touch'})));await page.waitForTimeout(300);
-   assert.deepEqual(nodeAsks,[],'no fetch on touch')}
+   await touch('pointerover');await page.waitForTimeout(300);assert.deepEqual(nodeAsks,[],'no fetch on a touch hover');
+   // a finger that moves is a scroll: the fetch it started is called off
+   await touch('pointerdown');assert.ok(await ahead(),'started on touch');await touch('pointermove',30);assert.ok(!await ahead(),'called off on a scroll');
+   await touch('pointerdown');await touch('pointercancel');assert.ok(!await ahead(),'called off when the browser scrolls');
+   // a tap: the fetch starts as the finger lands, and the click opens the page from it
+   await page.waitForTimeout(100);nodeAsks.length=0;await touch('pointerdown');assert.ok(await ahead());await touch('pointerup');
+   await row.evaluate(el=>el.click());await page.locator('#people.graph-on-node').waitFor();await page.locator('#people-view',{hasText:'Mara Ellison'}).waitFor();
+   assert.deepEqual(nodeAsks,[person.id],'the tap used the fetch from touching it')}
+  // From the page back to a list: no loading line in the first 100 ms (a fast answer never shows one), the page stays up
+  await page.evaluate(()=>{graphKept=null;window.sawLoading=null;new MutationObserver(()=>{if(window.sawLoading==null&&document.querySelector('#people-view .pager-loading'))window.sawLoading=performance.now()-window.t0}).observe(document.querySelector('#people-view'),{childList:true,subtree:true});
+   window.t0=performance.now();showTab('people','people');return !!document.querySelector('#people-view .person-head')}).then(up=>assert.ok(up,'the page stays up meanwhile'));
+  await page.locator('#people:not(.graph-on-node) [data-graph-panel="people"]').waitFor();
+  const saw=await page.evaluate(()=>window.sawLoading);assert.ok(saw==null||saw>=100,'no loading line within 100 ms: '+saw);
   await page.evaluate(()=>document.querySelector('[data-graph-sub="projects"]').click());
   await page.locator('#people-view .proj-board:not([hidden]) .pboard').waitFor();
   await page.locator('.board-fits summary').click();assert.match(await summary(page),/3 projects could belong here/);

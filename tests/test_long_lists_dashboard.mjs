@@ -124,7 +124,7 @@ async function graphPage(page,label){
  let release;searchHold=new Promise(r=>release=r);
  await q.fill('slow');await until(async()=>calls.some(c=>c.startsWith('/api/graph?q=slow')),'slow asked '+label);
  assert.equal(await page.locator('#people-view').textContent().then(t=>t.includes('Nobody by that name')),false,'no "Nobody" while it searches '+label);
- assert.equal(await page.locator('#people-view .pager-loading').count(),1,'a quiet loading row while it searches '+label);
+ await until(async()=>await page.locator('#people-view .pager-loading').count()===1,'a quiet loading row while it searches (after a moment) '+label);
  await q.fill('');release();await page.waitForTimeout(200);
  assert.equal(await page.locator('#people-view .graph-found').count(),0,'a late answer to an older search changes nothing '+label);
  assert.equal(await page.locator('[data-graph-panel="people"] .graph-list article').count(),had);
