@@ -129,6 +129,17 @@ def fake_help(config, prompt, model=None, thinking=None):
     return ' '.join(re.split(r'(?<=[.!?])\s+', ' '.join(text.split()))[:3]) + ' [1]'
 
 
+def fake_ask(config, prompt):
+    """Ask from search's stand-in model: a few keywords get NONE; a question gets one line on the best message found,
+    cited as [1]. No model runs."""
+    import re
+    question = prompt.rsplit('Question: <<<', 1)[-1].rstrip('>')
+    best = re.search(r'^\[1\] \w+ from ([^,\n]*), [^:\n]*: ([^\n]*)$', prompt, re.M)
+    if len(question.split()) < 4 or not best:
+        return 'NONE'
+    return f"{best[1]} wrote about it in “{best[2][:80]}” [1]."
+
+
 def seed_ai(app):
     """Settings, Apps (ai_access.py): Claude connected through the official app for Work with Read & edit, ChatGPT for
     Work with Read (each signed in twice, shown once), and a key
@@ -437,6 +448,7 @@ def main():
     quiet_workers(app, sent)
     seed_model(app)
     app.help_model = fake_help
+    app.ask_model = fake_ask
     app.notes_model = fake_notes
     app.summary_model = fake_summary
     seed_transcript(app)

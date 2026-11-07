@@ -219,6 +219,12 @@ CHAT_ACTIONS = {
     'chat_upload',
 }
 OWNER_ACTIONS |= CHAT_ACTIONS
+# Ask from search (search_ask.py): a question typed into Search answered from the owner's own messages in the area
+# they look at, as a one-shot turn without tools. It reads and answers; it never sends, drafts or makes a to-do.
+SEARCH_ASK_ACTIONS = {
+    'search_ask',
+}
+OWNER_ACTIONS |= SEARCH_ASK_ACTIONS
 # Voice input (voice_input.py): the owner's mic in the dashboard's message boxes, and its choices in Settings. The text
 # lands in the box; it never sends anything.
 VOICE_ACTIONS = {
@@ -398,6 +404,7 @@ DASHBOARD_ACTIONS = frozenset({
     *GRAPH_SHARE_ACTIONS,
     *LEARNING_ACTIONS,
     *MEET_ACTIONS,
+    *SEARCH_ASK_ACTIONS,
     *SHARE_ACTIONS,
     *SKILL_ACTIONS,
     *SUPPORT_ACTIONS,

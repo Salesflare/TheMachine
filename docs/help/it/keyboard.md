@@ -12,6 +12,10 @@ Premi `⌘K` su un Mac o `Ctrl K` su Windows e Linux, oppure `/`, per aprire **R
 
 Su un telefono, tocca l'icona di ricerca nella barra in alto.
 
+## Fare una domanda
+
+Scrivi una domanda, come “cosa ha detto Kim sul progetto pilota?”, e sopra i risultati compare una breve risposta presa dalla tua posta e dai tuoi messaggi, con un link a ogni messaggio usato. Risponde nella lingua della domanda, solo dall’area che stai guardando (Tutti, Lavoro o Personale). Un nome o qualche parola chiave fanno solo una ricerca. La risposta non invia mai nulla e non crea un to-do, e serve un modello (Impostazioni, Modello).
+
 ## Scorciatoie
 
 Premi `?` per **Scorciatoie da tastiera**, l'elenco completo per il tuo computer.

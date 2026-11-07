@@ -12,6 +12,10 @@ Appuyez sur `⌘K` sur Mac ou `Ctrl K` sur Windows et Linux, ou sur `/`, pour ou
 
 Sur un téléphone, appuyez sur l’icône de recherche dans la barre du haut.
 
+## Poser une question
+
+Tapez une question, comme « qu’a dit Kim sur le pilote ? », et une réponse courte tirée de vos propres e-mails et messages s’affiche au-dessus des résultats, avec un lien vers chaque message utilisé. Elle répond dans la langue de votre question, uniquement à partir de l’espace affiché (Tout, Travail ou Perso). Un nom ou quelques mots-clés lancent simplement une recherche. La réponse n’envoie jamais rien et n’ajoute pas de to-do, et elle a besoin d’un modèle (Paramètres, Modèle).
+
 ## Raccourcis
 
 Appuyez sur `?` pour **Raccourcis clavier**, la liste complète pour votre ordinateur.
