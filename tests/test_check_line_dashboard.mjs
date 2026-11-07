@@ -5,7 +5,7 @@ import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // The To-dos head's line next to Check now (dashboard/todos-check.js) calls the periodic pass a check, never a review:
-// "Checked 21:10 · next by 21:26 · 2 new", "Checking messages…" while one runs, and the same words in every state.
+// "Checked 21:10 · next by 21:26 · 2 new", and while one runs the robot's own words, the same in the head and under it.
 const dashboard=await dashboardPage();
 const server=createServer((req,res)=>{const url=new URL(req.url,'http://fixture.invalid');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
@@ -26,14 +26,13 @@ try{
  assert.equal(await line({reviewed:at(-2),waiting:0}),'Checked 21:10');
  assert.equal(await line({waiting:3,next_review:at(14)}),'Next check by 21:26 · 3 new');
  assert.equal(await line({waiting:1}),'Next check soon · 1 new');
- assert.equal(await line({phase:'reviewing',reviewed:at(-2),waiting:2}),'Checking messages…');
- assert.equal(await line({phase:'reading'}),'Reading sources…');
  // checkNow: the one state everything shows (the head's line, the robot and its line), and when the head says it.
  const now=(c,worker)=>page.evaluate(([c,worker])=>{state.check=c;state.review_health={worker};const n=checkNow();return [n.kind,n.line.replace(/ /g,' ')]},[c,worker]);
  assert.deepEqual(await now({reviewed:at(-2),waiting:2,next_review:at(14)}),['ok',''],'a check on time says nothing');
  assert.deepEqual(await now({reviewed:at(-2),waiting:0},{status:'ok'}),['ok','']);
- assert.deepEqual(await now({phase:'reviewing',reviewed:at(-2)}),['busy','Checking messages…']);
- assert.deepEqual(await now({reviewing:true,reviewed:at(-2)}),['busy','Checking messages…'],'a review the button did not start is busy too');
+ assert.ok(['Snooping around your messages…','Rummaging through the new stuff…'].includes((await now({phase:'reviewing',reviewed:at(-2)}))[1]));
+ assert.deepEqual(await now({phase:'reading',reviewed:at(-2),waiting:7}),['busy','Nosing through 7 new messages…']);
+ assert.deepEqual(await now({reviewing:true,reviewed:at(-2),waiting:1}),['busy','Nosing through 1 new message…'],'a review the button did not start is busy too');
  assert.deepEqual(await now({waiting:3,next_review:at(14)}),['first','Next check by 21:26 · 3 new']);
  assert.deepEqual(await now({reviewed:at(-30),waiting:0},{status:'error',review_saved:false}),['failed','The last check failed.']);
  assert.deepEqual(await now({reviewed:at(-30),waiting:0},{status:'recovering'}),['ok',''],'a pause that retries by itself is not a failure');
