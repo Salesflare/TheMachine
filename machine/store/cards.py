@@ -849,6 +849,9 @@ class CardsStore:
             db.execute("UPDATE action_jobs SET status='cancelled',updated_at=? WHERE suggestion_id=? AND status IN ('queued','blocked')", (stamp, own['id']))
             db.execute("UPDATE deliveries SET status='cancelled',updated_at=? WHERE suggestion_id=? AND status IN ('queued','not_sent')", (stamp, own['id']))
             db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id IN (?,?) AND message_id IS NOT NULL', (own['id'], other['id']))
+        if own['owner_words'] and other['status'] in ('accepted', 'instructions', 'prepared'):
+            # Work on X already started (a draft, a run): what the owner added is their note on it, so the draft takes it in
+            self.decide(other['id'], 'other', own['owner_words'], decision_id + ':note', source)
         return {'id': other['id'], 'merged': True, 'from': own['id']}
 
     def ahead_room(self, per_day):
