@@ -7,8 +7,9 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 
 // Settings, Signatures: Save shows for every change, not only for typing. 2026-11-06: an owner pasted the signature
 // copied from Outlook and found no Save to press. Here: a paste carrying Outlook's HTML (the clipboard event itself), a
-// plain-text paste from the keyboard, a drop, a change that brings no input event, undo, and a paste in the HTML view;
-// each shows Save, in view at a short window, and Save stores what was pasted, its lines as close as in Outlook. Clicking in without a change shows none.
+// plain-text paste from the keyboard, a drop, a change that brings no input event, undo, Safari's paste (no event at
+// all, cleaned as it lands) and a paste in the HTML view; each shows Save, in view at a short window, and Save stores
+// what was pasted, its lines as close as in Outlook. Clicking in without a change shows none.
 // Made-up fixtures, nothing sent. SIG_SHOTS=<folder> also saves the editor after a paste at 390 and 1440, light and dark.
 const dashboard=await dashboardPage(),shots=process.env.SIG_SHOTS;
 const fresh=()=>[{account_id:'work-outlook',email:'owner@example.com',service:'outlook',html:'',source:'detected',saveable:true}];
@@ -90,6 +91,24 @@ try{
  {const {context,page,save}=await open(1440,900);
   await page.evaluate(()=>{const d=document.querySelector('#signatures iframe.sig-paper').contentDocument,p=d.createElement('p');p.textContent='Robin Example';d.body.append(p)});
   await save.waitFor();await context.close()}
+ // Safari runs no listener in the editor (a sandboxed frame without scripts): its paste lands with no paste or input
+ // event, the markup as the clipboard had it. Here that paste, Outlook's HTML put in with no event: Save shows, it is
+ // cleaned as it lands (Safari's own page styles, -webkit-standard, go too), and Save stores it clean.
+ {const {context,page,body,save}=await open(1440,700);
+  await page.evaluate(h=>{const d=document.querySelector('#signatures iframe.sig-paper').contentDocument,t=d.createElement('template');
+   t.innerHTML=new DOMParser().parseFromString(h,'text/html').body.innerHTML.replace('<div class="WordSection1">','<div class="WordSection1" style="font-family: -webkit-standard; color: rgb(0, 0, 0)">');
+   d.body.append(t.content)},OUTLOOK);
+  await save.waitFor();await body.locator('b',{hasText:'Robin Example'}).waitFor();
+  const landed=await body.innerHTML();
+  assert.doesNotMatch(landed,/Mso|mso-|<o:p|class=|-webkit-|<!--/i,landed.slice(0,300));assert.match(landed,/<p style="margin:0/);assert.match(landed,/<img /);
+  for(let i=0;i<20&&!await inView(page);i++)await page.waitForTimeout(50);assert.equal(await inView(page),true,'Save in view after a Safari paste');
+  await save.locator('.primary').click();await page.locator('#notice',{hasText:'Signature saved.'}).waitFor({state:'attached'});
+  assert.doesNotMatch(posts.filter(p=>p.action==='set_signature').at(-1).args.html,/mso-|class=|-webkit-/i);
+  // Typing after it, and bold from the toolbar, stay as they are.
+  await body.click();await page.keyboard.type(' ok');await page.keyboard.press('Shift+Home');
+  await page.locator('#signatures [data-sig-tool="bold"]').click();await page.waitForTimeout(100);
+  assert.match(await body.innerHTML(),/font-weight|<b>/);
+  await context.close();signatures=fresh()}
  // The HTML view: a paste there shows Save.
  {const {context,page,form,save}=await open(1440,900);
   await form.locator('[data-sig-tool="html"]').click();
