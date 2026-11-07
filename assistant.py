@@ -4112,7 +4112,10 @@ class App(*APP_MIXINS):
                     if many is not None and not (isinstance(many, list) and all(isinstance(n, str) for n in many)):
                         raise ValueError('node_ids is a list of suggestion ids')
                     done = graph.decide_fit(db, args.get('board_id'), many if many is not None else args.get('node_id'), args.get('add') is not False, now())
-            self.graph_build()
+            if name == 'board_fit':  # the board reads its projects as they are now: the Graph follows in the background
+                self.graph_later()
+            else:
+                self.graph_build()
             return done
         if name == 'graph_stage':
             if not owner_dashboard:

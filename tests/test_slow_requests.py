@@ -88,6 +88,32 @@ class SlowRequests(unittest.TestCase):
             self.assertEqual(self.post(port, 'notify_active', {}), 200)
         self.assertFalse([c for c in warning.call_args_list if 'slow request' in str(c)])
 
+    def test_a_request_reads_the_fleet_directory_once(self):
+        """The Fleet tab asked for the Fleet directory some 400 times per answer, a database connection each (db_connections
+        420 in the slow-request line, most of 10 s): once per request now, each caller with its own copy, and read again
+        after this request saves a new one. Outside a request every read goes to the database, as before."""
+        import fleet
+        box = object.__new__(fleet.Fleet)
+        box.connect = self.app.store.connect
+        with self.app.store.connect() as db:
+            db.execute('CREATE TABLE IF NOT EXISTS fleet_meta(key TEXT PRIMARY KEY,value TEXT NOT NULL)')
+        one = {'fleets': [{'id': 'f1', 'kind': 'work'}]}
+        box.set_meta('directory', one)
+        a._REQUEST_TIMING.value = timing = {'db_wait': 0.0, 'db_held': 0.0, 'db_connections': 0}
+        self.addCleanup(setattr, a._REQUEST_TIMING, 'value', None)
+        for _ in range(50):
+            self.assertEqual(box.fleets(), {'f1': {'id': 'f1', 'kind': 'work'}})
+        self.assertEqual(timing['db_connections'], 1)
+        box.meta('directory')['fleets'].clear()  # a caller changing its copy changes nobody else's
+        self.assertEqual(box.meta('directory'), one)
+        two = {'fleets': [{'id': 'f1', 'kind': 'work'}, {'id': 'f2', 'kind': 'family'}]}
+        box.set_meta('directory', two)
+        self.assertEqual(box.meta('directory'), two)
+        a._REQUEST_TIMING.value = None
+        with self.app.store.connect() as db:
+            db.execute("UPDATE fleet_meta SET value=? WHERE key='directory'", (json.dumps(one),))
+        self.assertEqual(box.meta('directory'), one)
+
     def test_database_time_outside_a_request_is_not_counted(self):
         with self.app.store.connect() as db:
             db.execute('SELECT 1')

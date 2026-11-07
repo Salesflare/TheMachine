@@ -291,6 +291,35 @@ class SharedGraph(unittest.TestCase):
             labels = self.own.thread_labels(db, [dict(r) for r in db.execute('SELECT * FROM events')])
             self.assertNotIn(self.event_id(self.own, 'home-5'), labels)  # no label at all on a personal account
 
+    def test_labels_read_only_their_own_threads_for_automated_mail_and_say_the_same(self):
+        """A person's page labels its threads Team or Only you: whether a thread is automated mail is read from that
+        thread's own messages, never from every mail message (seconds per page on a real mailbox), with the same labels."""
+        self.olive_mail()
+        receipt = mail('work', 80, 'Tool Co <hello@toolco.example>', 'own1@acme.example', 'Your receipt', 'Receipt 99, paid.', 1, 't-r')
+        receipt['metadata']['labels'] = ['CATEGORY_UPDATES', 'INBOX']
+        self.add(self.own, receipt, mail('work', 81, 'Site Audit <no-reply@audit.example>', 'own1@acme.example', 'Audit', 'Broken links.', 1, 't-audit'),
+                 mail('work', 82, 'Olive <own1@acme.example>', 'no-reply@audit.example', 'Re: Audit', 'Thanks.', 0, 't-audit'),  # answered: not automated
+                 mail('work', 83, 'Alerts <alerts@bank.example>', 'own1@acme.example', 'Alert', 'Login.', 1, None))  # no thread id
+        self.judge(self.own, ('work-80', 'client', 'A receipt'), ('work-81', 'client', 'An audit'), ('work-83', 'client', 'An alert'))
+        full_set = sg.Scope.automated.fget
+
+        def never_all(scope):
+            if scope._automated is None:
+                raise AssertionError('read every mail message')
+            return full_set(scope)
+        with self.own.store.connect() as db:
+            rows = [dict(r) for r in db.execute('SELECT * FROM events')]
+            with patch.object(sg.Scope, 'automated', property(never_all)):
+                fast = self.own.thread_labels(db, rows)
+                one = self.own.thread_labels(db, [r for r in rows if r['source_id'] == 'work-80'])
+            with patch.object(sg.Scope, 'automated_only', lambda scope, threads: None):  # every mail message, as before
+                before = self.own.thread_labels(db, rows)
+        self.assertEqual(fast, before)
+        receipt_id = self.event_id(self.own, 'work-80')
+        self.assertEqual(one, {receipt_id: before[receipt_id]})
+        self.assertEqual(before[receipt_id]['why'], 'Only you: not a client conversation')  # automated mail, by rule
+        self.assertNotEqual(before[self.event_id(self.own, 'work-81')]['view'], 'other')  # answered by the owner
+
     def test_a_personal_thread_in_a_work_account_never_goes_not_by_hand_nor_a_later_review(self):
         self.add(self.own, mail('work', 6, 'Lee Park <lee@client.example>', 'own1@acme.example', 'Your daughter', 'Congrats on the graduation!', 1, 't-p'))
         self.judge(self.own, ('work-6', 'personal', 'Lee wrote'))
@@ -2451,6 +2480,54 @@ class StaticSql(unittest.TestCase):
         self.assertEqual(graph.project_event_ids(db, set()), set())
         self.assertEqual(set(sg.FLEET_DELETE), {'team_records', 'team_mail', 'team_files', 'team_asks', 'team_sources', 'team_blobs', 'team_wants', 'share_out',
                                                 'fleet_learnings', 'fleet_learn_seen', 'fleet_learn_read', 'fleet_learn_removed'})
+
+
+class AutomatedOnly(unittest.TestCase):
+    """Scope.automated_only says for each thread asked what the full `automated` set says, on a sealed database: Gmail and
+    CRM threads by their id (a number too), Intercom conversations, messages without a thread, deleted messages and
+    another account's messages in the same thread."""
+
+    def test_each_thread_as_the_full_set_says(self):
+        temp = tempfile.TemporaryDirectory(); self.addCleanup(temp.cleanup)
+        store = a.Store(Path(temp.name) / 'events.sqlite', protect=True)
+
+        def event(account, n, kind, sender, deleted=False, labels=('INBOX',), **meta):
+            return {'account_id': account, 'source_id': f'{account}-{n}', 'kind': kind, 'occurred_at': ago(1), 'title': f'Message {n}', 'body': 'Text',
+                    'deleted': deleted, 'metadata': {'from': sender, 'to': 'own1@acme.example', 'labels': list(labels), 'message-id': f'<{n}@x>', **meta}}
+        events = [event('work', 1, 'gmail.message', 'Audit <no-reply@audit.example>', thread_id='t-auto'),
+                  event('work', 2, 'gmail.message', 'Audit <no-reply@audit.example>', thread_id='t-auto'),
+                  event('work', 3, 'gmail.message', 'Lee <lee@client.example>', thread_id='t-human'),
+                  event('work', 4, 'gmail.message', 'Audit <no-reply@audit.example>', thread_id='t-mixed'),
+                  event('work', 5, 'gmail.message', 'Olive <own1@acme.example>', labels=('SENT',), thread_id='t-mixed'),
+                  event('work', 6, 'gmail.message', 'Shop <deals@shop.example>', labels=('CATEGORY_PROMOTIONS',), thread_id='t-promo'),
+                  event('work', 7, 'gmail.message', 'Alerts <alerts@bank.example>', labels=('CATEGORY_UPDATES',)),  # no thread id
+                  event('work', 8, 'gmail.message', 'Lee <lee@client.example>', deleted=True, thread_id='t-gone'),
+                  event('work', 9, 'gmail.message', 'Billing <billing@tool.example>', thread_id='t-gone'),
+                  event('home', 10, 'gmail.message', 'Sam <sam@friends.example>', thread_id='t-auto'),  # another account
+                  event('crm', 11, 'salesflare.email', 'Billing <billing@tool.example>', thread_id=123),
+                  event('crm', 12, 'salesflare.email', 'Lee <lee@client.example>', thread_id=124),
+                  event('desk', 13, 'intercom.conversation', 'Notifications <notifications@tool.example>', conversation_id=456),
+                  event('desk', 14, 'intercom.conversation', 'Kim <kim@client.example>', conversation_id='457')]
+        for e in events:
+            store.commit_page(e['account_id'], {}, [e])
+            if e['deleted']:
+                with store.connect() as db:
+                    db.execute('UPDATE events SET deleted=1 WHERE source_id=?', (e['source_id'],))
+        accounts = ['work', 'crm', 'desk']
+        raw = sqlite3.connect(store.path)
+        self.addCleanup(raw.close)
+        self.assertIn('mc1_sealed', raw.execute("SELECT metadata FROM events WHERE source_id='work-1'").fetchone()[0])  # sealed on disk
+        with store.connect() as db:
+            sg.ensure(db)
+            scope = lambda: sg.Scope(db, accounts, {'acme.example'}, {'own1@acme.example'})
+            full = scope().automated
+            rows = [dict(r) for r in db.execute('SELECT id,kind,metadata FROM events')]
+            threads = {sg.thread_of(r['kind'], json.loads(r['metadata']), r['id']) for r in rows} | {'gm:nowhere', 'ev:999999'}
+            for thread in sorted(threads):
+                self.assertEqual(thread in scope().automated_only([thread]), thread in full, thread)
+            self.assertEqual(scope().automated_only(threads), full & threads)
+        self.assertEqual(sorted(full & threads), sorted(['gm:t-auto', 'gm:t-promo', 'gm:t-gone', 'sf:123', 'ic:456',
+                                                         'ev:' + str(next(r['id'] for r in rows if 'thread_id' not in json.loads(r['metadata']) and r['kind'] == 'gmail.message'))]))
 
 if __name__ == '__main__':
     unittest.main()

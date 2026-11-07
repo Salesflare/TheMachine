@@ -409,6 +409,24 @@ class AnotherAddress(FollowUpsAfterABounce):
             self.assertEqual(bounces.mark_draft(db, steered)['moved'], {'sam@newco.example': 'sam@client.example'})  # "Bounced, now to ..."
             self.assertEqual(db.execute('SELECT state FROM follow_up_cards').fetchone()[0], 'open')  # not stopped
 
+    def test_marking_many_drafts_looks_each_bounce_up_once_per_connection(self):
+        """The to-do list marks every draft: each bounced address is looked up in the Graph once per connection, not once
+        per draft, and again after the connection changed something."""
+        self.add(report('dsn1', '2026-10-13T09:00:05+00:00'))
+        self.other_address()
+        self.app().bounce_step()
+        draft = {'kind': 'email', 'account_id': 'work', 'to': ['sam@newco.example'], 'subject': 'Re: Pilot', 'body': 'Any news?'}
+        with self.store.connect() as db, patch.object(bounces, 'person_emails', wraps=bounces.person_emails) as looked:
+            for _ in range(20):
+                self.assertEqual(bounces.mark_draft(db, draft)['moved'], {'sam@newco.example': 'sam@client.example'})
+            self.assertEqual(looked.call_count, 1)
+            graph.person_edit(db, 'email:sam@client.example', {'name': 'Sam Client'}, a.now())  # a change on this connection
+            bounces.mark_draft(db, draft)
+            self.assertEqual(looked.call_count, 2)  # read again
+        with self.store.connect() as db, patch.object(bounces, 'person_emails', wraps=bounces.person_emails) as looked:
+            bounces.mark_draft(db, draft)
+            self.assertEqual(looked.call_count, 1)  # a new connection reads again too
+
 
 # The follow-ups harness (a board, two projects, a fake outbox and mailbox), without running its own tests again here
 import test_follow_ups as tfu

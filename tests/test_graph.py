@@ -2,6 +2,7 @@ import datetime as dt
 import importlib.util
 import json
 import tempfile
+import threading
 import unittest
 from unittest.mock import patch
 from pathlib import Path
@@ -1470,6 +1471,26 @@ class Boards(unittest.TestCase):
             self.assertEqual([m['id'] for m in graph.boards(db, NOW.isoformat())[0]['maybes']], [f'project:{pid}'])
             with self.assertRaises(ValueError):
                 graph.undo_fit(db, done['undo'])  # once
+
+    def test_add_and_leave_out_answer_before_the_graph_is_built_again(self):
+        """With the graph worker running (the service), Add and Leave out answer at once and hand the rebuild to it: a
+        whole build took 15 s and more on a large Graph, with the database held. Without the worker it builds as before."""
+        board_id, pid, bram, partner, bramble = self.bundle()
+        builds = []
+        self.app.graph_build = lambda *a, **k: builds.append(1)
+        self.app.graph_dirty = threading.Event()
+        self.app.graph_worker_on = True
+        done = self.app.action('board_fit', {'board_id': board_id, 'node_id': f'project:{pid}'}, owner_dashboard=True)
+        self.assertEqual((done['projects'], builds, self.app.graph_dirty.is_set()), (2, [], True))
+        with self.store.connect() as db:
+            self.assertEqual(graph.boards(db, NOW.isoformat())[0]['maybes'], [])  # the board shows it right away
+            self.assertEqual(db.execute('SELECT count(*) FROM projects WHERE board_id=? AND closed_at IS NULL', (board_id,)).fetchone()[0], 2)
+        self.app.graph_dirty.clear()
+        self.app.action('board_fit', {'board_id': board_id, 'undo': done['undo']}, owner_dashboard=True)
+        self.assertEqual((builds, self.app.graph_dirty.is_set()), ([], True))
+        del self.app.graph_worker_on  # a command or a test without the worker: built before it answers
+        self.app.action('board_fit', {'board_id': board_id, 'node_id': f'project:{pid}', 'add': False}, owner_dashboard=True)
+        self.assertEqual(builds, [1])
 
     def test_bulk_add_and_leave_out_decide_several_at_once_and_undo_together(self):
         asked, agreed, later = self.mails()
