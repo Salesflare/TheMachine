@@ -525,6 +525,9 @@ from machine.sources.connectors import (
     CONNECTORS,
     CONNECTOR_HELPERS,
     HOSTED_SIGNINS,
+    ON_DASHBOARD,
+    SIGNIN_ONLY,
+    reconnect_help,
     hosted_docs_sources,
     REPLY_SERVICES,
     SILENT_HOURS,
@@ -1011,8 +1014,6 @@ QUICK_RETRY_MAX = 60  # a Retry-After longer than this waits in the checkpoint i
 SALESFLARE_RESTART_SPREAD = 180  # seconds: team Machines restarted together start their Salesflare rounds apart
 
 
-ON_DASHBOARD = ('github', 'whatsapp', 'android', 'codex')
-SIGNIN_ONLY = ('intercom', 'trello')  # connected only by signing in with the control plane's app, hosted or paired (fleet.connect_start)
 # LinkedIn and X sign in in the Machine's browser while their connect waits (onboarding.wait_signed_in), up to this long
 CONNECT_SIGNIN = {'linkedin': 'https://www.linkedin.com/login', 'x': 'https://x.com/i/flow/login'}
 CONNECT_SIGNIN_WAIT = 600
@@ -2455,38 +2456,6 @@ def sign_in_help(service, error, manage):
     return {'signed_out': True, 'sign_in_hint': hint,
             'sign_in_url': urllib.parse.urljoin(manage, '/open?' + urllib.parse.urlencode({'to': 'browser', 'site': site}))
             if manage and site else None}
-
-
-def reconnect_help(account, manage, docs_consent=False):
-    """How a connection is signed in again or disconnected from its card: `account_page` when a hosted machine's
-    account page holds its sign-in (Google and Microsoft there), else `connect_name`, the Add step that redoes it here."""
-    if not account:
-        return {}
-    service = account.get('service', 'gmail')
-    shared = account.get('shared') if isinstance(account.get('shared'), dict) else None
-    if shared and not shared.get('origin'):  # a Fleet admin's shared connector: only its admins change it (shared_connectors.py)
-        return {'shared_by': str(shared.get('fleet_name') or 'your Fleet')}
-    if shared:
-        return {'connect_name': 'crm' if service == 'salesflare' else service, 'shared_with': str(shared.get('fleet_name') or 'your Fleet')}
-    # A hosted Machine: Reconnect is the sign-in form under + Add (`hosted_signin`, the control plane's own sign-in, which
-    # comes back to it); Disconnect stays on the account page, which holds the grant
-    if manage and service == 'docs':  # its Connect Microsoft documents (or Connect Google Docs) consent, once the account page offers it
-        signin = 'google_docs' if account.get('provider') == 'google' else 'microsoft_docs'
-        return {'account_page': urllib.parse.urljoin(manage, '#docs'), 'hosted_signin': signin} if docs_consent else {}
-    if manage and account.get('transport') == 'broker':
-        provider = 'microsoft' if service in MICROSOFT_SERVICES else service if service in ('zoom', 'stripe', 'slack', 'google_meet') else 'google'
-        return {'account_page': urllib.parse.urljoin(manage, '#' + provider if provider in ('google', 'microsoft') else '#source-' + service),
-                'hosted_signin': provider}
-    if service == 'slack' and account.get('transport') != 'maton':
-        # Sign in with Slack (slack_api.py) through the control plane's own Slack app: on a hosted Machine from + Add, on
-        # a self-hosted one once paired. One read through Maton stays on Maton (its Reconnect is Maton's): until the app is
-        # in the Slack Marketplace, Slack holds it to 1 history call a minute, which would read less than Maton does.
-        return {'connect_name': 'slack', **({'hosted_signin': 'slack'} if manage else {'signin': 'slack'})}
-    if manage and service in SIGNIN_ONLY:  # Intercom, Trello: Sign in with it again under + Add; Disconnect here
-        return {'connect_name': service, 'hosted_signin': service}
-    if manage and service in ON_DASHBOARD:  # GitHub, WhatsApp, the phone: their code on the dashboard; Disconnect here
-        return {'connect_name': service, 'hosted_signin': service}
-    return {'connect_name': 'crm' if service == 'salesflare' else service}
 
 
 def needs_you(config):

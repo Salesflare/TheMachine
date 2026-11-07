@@ -588,6 +588,13 @@ class Area(unittest.TestCase):
         self.assertEqual(w.connect_line({'boundaries': ['personal:me']}), 'Connect Microsoft OneDrive for Personal')
         self.assertFalse(w.google_offered({'home-docs': self.HOTMAIL[1]}))
         self.assertTrue(w.google_offered(dict([home_gmail])))
+        # a hosted Machine whose account page offers Connect Google Docs names it too; one that doesn't, only OneDrive
+        hosted = {'manage_url': 'https://cp.example/account'}
+        self.assertTrue(w.google_offered({}, {**hosted, 'docs_consent': ['google', 'microsoft']}))
+        self.assertFalse(w.google_offered({}, {**hosted, 'docs_consent': ['microsoft']}))
+        with self.assertRaises(ValueError) as caught:
+            self.create('nowhere', {**self.context(self.HOTMAIL), 'google': True})
+        self.assertIn('Connect Google Docs or Microsoft OneDrive for Work', str(caught.exception))
 
     def test_the_conversations_own_address_first(self):
         other = ('acme-docs', {'name': 'docs@acme.example', 'email': 'docs@acme.example', 'provider': 'microsoft',
