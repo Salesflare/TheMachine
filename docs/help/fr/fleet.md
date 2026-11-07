@@ -86,7 +86,7 @@ Pour rejoindre une Fleet, en créer une ou associer une Machine sur votre propre
 **Réglages de la Fleet**, sous le nom de chaque Fleet dans son volet et dans Gérer, ouvre les réglages de cette Fleet sur votre compte : connexions partagées, sécurité, connexion d’entreprise, quelle Machine répond, et ces deux éléments :
 
 - **Retirés récemment** : chaque personne retirée, ou partie. La ligne indique **Supprimé, confirmé** une fois que sa Machine a supprimé les données de travail, que Google a confirmé la déconnexion et que tout jeton partagé qu’elle avait a été remplacé. D’ici là, elle indique **En attente** et pourquoi.
-- **Activité** : qui a fait quoi et quand. Invitations, arrivées, retraits, rôles, Machines hébergées et facturation, connecteurs partagés et accords. La liste indique aussi chaque fois que notre équipe a ouvert la Machine d’un membre ou ses journaux. Jamais le contenu des messages. **Télécharger le CSV** l’exporte. Conservé 12 mois.
+- **Activité** : qui a fait quoi et quand. Invitations, arrivées, retraits, rôles, Machines hébergées et facturation, connecteurs partagés et accords. La liste indique aussi chaque fois que notre équipe a lu le rapport ou les journaux de la Machine d’un membre. Jamais le contenu des messages. **Télécharger le CSV** l’exporte. Conservé 12 mois.
 
 **Me demander avant de démarrer la Machine d’un membre**, pour le propriétaire : activé, la nouvelle Machine d’un membre attend votre accord, même dans une Fleet gratuite. Désactivé, dans une Fleet gratuite elle démarre tout de suite et vous êtes prévenu. Une Machine payante attend toujours que vous confirmiez son montant.
 

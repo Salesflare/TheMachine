@@ -17,7 +17,7 @@ keywords: private, privacy, data, gdpr, encrypted, who can see, safe, stored, ke
 - Fehlerberichte, außer du schaltest sie aus: Wenn etwas kaputtgeht, die Art des Fehlers und wo im Code. Nie deine Nachrichten, Namen oder Adressen. Siehe [Fehlerberichte](error-reports.md).
 - Nutzungszahlen auf einer gehosteten Machine: tägliche Zahlen zu dem, was du getan hast (etwa geöffnete Aufgaben oder gesendete E-Mails), nie deren Inhalt.
 - Nimm sie mit oder lösche sie: Exportiere alles in einer Datei, oder lösche deine Machine und ihre Backups mit einem Button.
-- Unser Zugriff wird protokolliert: jedes Mal, wenn unser Team sich bei deiner gehosteten Machine anmeldet oder ihren Bericht liest. Owner und Admins einer Fleet sehen das unter **Aktivität**. Siehe [Fleets](fleet.md).
+- Unser Zugriff wird protokolliert: jedes Mal, wenn unser Team den Bericht oder die Logs deiner gehosteten Machine liest. Owner und Admins einer Fleet sehen das unter **Aktivität**. Siehe [Fleets](fleet.md).
 
 ## Sicherheitsstufen
 

@@ -86,7 +86,7 @@ Wie du einer Fleet beitrittst, eine gründest oder eine Machine auf deinem eigen
 **Fleet-Einstellungen**, unter dem Namen jeder Fleet in ihrem Bereich und in Verwalten, öffnet die Einstellungen dieser Fleet in deinem Konto: geteilte Verbindungen, Sicherheit, Firmenanmeldung, welche Machine antwortet, und diese zwei:
 
 - **Kürzlich entfernt**: jede Person, die entfernt wurde oder gegangen ist. Dort steht **Entfernt, bestätigt**, sobald ihre Machine die Arbeitsdaten entfernt hat, Google die Abmeldung bestätigt hat und jedes geteilte Token, das sie hatte, ersetzt wurde. Bis dahin steht dort **Ausstehend** und warum.
-- **Aktivität**: wer was wann gemacht hat. Einladungen, Beitritte, Entfernungen, Rollen, gehostete Machines und Abrechnung, geteilte Connectoren und Freigaben. Es listet auch jedes Mal, wenn unser Team die Machine eines Mitglieds oder ihre Logs geöffnet hat. Nie Nachrichteninhalte. **CSV herunterladen** exportiert es. Wird 12 Monate aufbewahrt.
+- **Aktivität**: wer was wann gemacht hat. Einladungen, Beitritte, Entfernungen, Rollen, gehostete Machines und Abrechnung, geteilte Connectoren und Freigaben. Es listet auch jedes Mal, wenn unser Team den Bericht oder die Logs der Machine eines Mitglieds gelesen hat. Nie Nachrichteninhalte. **CSV herunterladen** exportiert es. Wird 12 Monate aufbewahrt.
 
 **Frag mich, bevor die Machine eines Mitglieds startet**, für den Inhaber: an, dann wartet die neue Machine eines Mitglieds auf dein OK, auch in einer kostenlosen Fleet. Aus, dann startet sie in einer kostenlosen Fleet sofort und du wirst informiert. Eine Machine, die Geld kostet, wartet immer, bis du ihren Betrag bestätigst.
 

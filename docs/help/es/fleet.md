@@ -86,7 +86,7 @@ Para unirte a un Fleet, crear uno o vincular una Machine en tu propio ordenador,
 **Ajustes del Fleet**, bajo el nombre de cada Fleet en su panel y en Gestionar, abre los ajustes de ese Fleet en tu cuenta: conexiones compartidas, seguridad, inicio de sesión de empresa, qué Machine responde, y estas dos:
 
 - **Quitados hace poco**: cada persona quitada, o que se fue. Dice **Eliminado, confirmado** cuando su Machine eliminó los datos de trabajo, Google confirmó el cierre de sesión y se sustituyó cualquier token compartido que tuviera. Hasta entonces dice **Pendiente** y por qué.
-- **Actividad**: quién hizo qué y cuándo. Invitaciones, incorporaciones, bajas, roles, Machines alojadas y facturación, conectores compartidos y aprobaciones. También lista cada vez que nuestro equipo abrió la Machine de un miembro o sus registros. Nunca el contenido de los mensajes. **Descargar CSV** lo exporta. Se guarda 12 meses.
+- **Actividad**: quién hizo qué y cuándo. Invitaciones, incorporaciones, bajas, roles, Machines alojadas y facturación, conectores compartidos y aprobaciones. También lista cada vez que nuestro equipo leyó el informe o los registros de la Machine de un miembro. Nunca el contenido de los mensajes. **Descargar CSV** lo exporta. Se guarda 12 meses.
 
 **Preguntarme antes de crear la Machine de un miembro**, para el propietario: activado, la nueva Machine de un miembro espera tu OK, incluso en un Fleet gratuito. Desactivado, en un Fleet gratuito arranca enseguida y se te avisa. Una Machine que cuesta dinero siempre espera a que confirmes su importe.
 

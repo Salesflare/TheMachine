@@ -17,7 +17,7 @@ keywords: private, privacy, data, gdpr, encrypted, who can see, safe, stored, ke
 - Error reports, unless you turn them off: when something breaks, the type of error and where in the code. Never your messages, names or addresses. See [Error reports](error-reports.md).
 - Usage counts on a hosted Machine: daily counts of what you did (like to-dos opened or emails sent), never their content.
 - Take it with you, or delete it: export everything from **Settings** › **General**, or delete your Machine and its backups with one button. See [Cancel or delete](cancel-and-delete.md).
-- Our access is logged: every time our team signs in to your hosted Machine or reads its report. Fleet owners and admins see it under **Activity**. See [Fleets](fleet.md).
+- Our access is logged: every time our team reads your hosted Machine's report or its logs. Fleet owners and admins see it under **Activity**. See [Fleets](fleet.md).
 
 ## Security levels
 

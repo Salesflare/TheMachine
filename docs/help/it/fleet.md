@@ -86,7 +86,7 @@ Per entrare in una Fleet, crearne una o abbinare una Machine sul tuo computer, v
 **Impostazioni della Fleet**, sotto il nome di ogni Fleet nel suo pannello e in Gestisci, apre le impostazioni di quella Fleet sul tuo account: connessioni condivise, sicurezza, accesso aziendale, quale Machine risponde, e queste due:
 
 - **Rimossi di recente**: ogni persona rimossa o che è uscita. Dice **Rimosso, confermato** quando la sua Machine ha rimosso i dati di lavoro, Google ha confermato la disconnessione e ogni token condiviso che aveva è stato sostituito. Fino ad allora dice **In sospeso** e perché.
-- **Registro attività**: chi ha fatto cosa e quando. Inviti, ingressi, rimozioni, ruoli, Machine ospitate e fatturazione, connettori condivisi e approvazioni. Elenca anche ogni volta che il nostro team ha aperto la Machine di un membro o i suoi log. Mai il contenuto dei messaggi. **Scarica CSV** lo esporta. Conservato 12 mesi.
+- **Registro attività**: chi ha fatto cosa e quando. Inviti, ingressi, rimozioni, ruoli, Machine ospitate e fatturazione, connettori condivisi e approvazioni. Elenca anche ogni volta che il nostro team ha letto il report o i log della Machine di un membro. Mai il contenuto dei messaggi. **Scarica CSV** lo esporta. Conservato 12 mesi.
 
 **Chiedimi prima di avviare la Machine di un membro**, per il proprietario: attivo, la nuova Machine di un membro aspetta il tuo OK, anche in una Fleet gratuita. Disattivo, in una Fleet gratuita parte subito e ti avvisiamo. Una Machine che costa denaro aspetta sempre che tu ne confermi l’importo.
 

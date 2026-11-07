@@ -17,7 +17,7 @@ keywords: private, privacy, data, gdpr, encrypted, who can see, safe, stored, ke
 - Informes de errores, salvo que los desactives: cuando algo falla, el tipo de error y en qué parte del código. Nunca tus mensajes, nombres ni direcciones. Consulta [Informes de errores](error-reports.md).
 - Recuentos de uso en una Machine alojada: recuentos diarios de lo que hiciste (como tareas abiertas o correos enviados), nunca su contenido.
 - Llévatelo o elimínalo: exporta todo en un archivo, o elimina tu Machine y sus copias de seguridad con un botón.
-- Nuestro acceso queda registrado: cada vez que nuestro equipo entra en tu Machine alojada o lee su informe. Los propietarios y administradores del Fleet lo ven en **Actividad**. Consulta [Fleets](fleet.md).
+- Nuestro acceso queda registrado: cada vez que nuestro equipo lee el informe o los registros de tu Machine alojada. Los propietarios y administradores del Fleet lo ven en **Actividad**. Consulta [Fleets](fleet.md).
 
 ## Niveles de seguridad
 

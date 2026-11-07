@@ -17,7 +17,7 @@ keywords: private, privacy, data, gdpr, encrypted, who can see, safe, stored, ke
 - Foutrapporten, tenzij je ze uitzet: als er iets stukgaat, het soort fout en waar in de code. Nooit je berichten, namen of adressen. Zie [Foutrapporten](error-reports.md).
 - Gebruikscijfers op een gehoste Machine: dagelijkse aantallen van wat je deed (zoals geopende to-do's of verstuurde e-mails), nooit de inhoud.
 - Neem het mee, of verwijder het: exporteer alles in één bestand, of verwijder je Machine en de back-ups met één knop.
-- Onze toegang wordt gelogd: elke keer dat ons team inlogt op je gehoste Machine of het rapport ervan leest. Eigenaars en beheerders van een Fleet zien het onder **Activiteit**. Zie [Fleets](fleet.md).
+- Onze toegang wordt gelogd: elke keer dat ons team het rapport of de logboeken van je gehoste Machine leest. Eigenaars en beheerders van een Fleet zien het onder **Activiteit**. Zie [Fleets](fleet.md).
 
 ## Beveiligingsniveaus
 

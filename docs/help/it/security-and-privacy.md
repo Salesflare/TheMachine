@@ -17,7 +17,7 @@ keywords: private, privacy, data, gdpr, encrypted, who can see, safe, stored, ke
 - Segnalazioni di errore, a meno che tu non le disattivi: quando qualcosa si rompe, il tipo di errore e in che punto del codice. Mai i tuoi messaggi, nomi o indirizzi. Vedi [Segnalazioni di errore](error-reports.md).
 - Conteggi d’uso su una Machine in hosting: conteggi giornalieri di ciò che hai fatto (come attività aperte o email inviate), mai il loro contenuto.
 - Portala con te o eliminala: esporta tutto in un unico file, oppure elimina la tua Machine e i suoi backup con un pulsante.
-- Il nostro accesso viene registrato: ogni volta che il nostro team accede alla tua Machine ospitata o legge il suo report. I proprietari e gli admin della Fleet lo vedono in **Registro attività**. Vedi [Fleet](fleet.md).
+- Il nostro accesso viene registrato: ogni volta che il nostro team legge il report o i log della tua Machine ospitata. I proprietari e gli admin della Fleet lo vedono in **Registro attività**. Vedi [Fleet](fleet.md).
 
 ## Livelli di sicurezza
 

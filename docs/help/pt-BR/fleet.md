@@ -86,7 +86,7 @@ Para entrar em um Fleet, criar um ou parear uma Machine no seu próprio computad
 **Configurações do Fleet**, abaixo do nome de cada Fleet no seu painel e em Gerenciar, abre as configurações desse Fleet na sua conta: conexões compartilhadas, segurança, login da empresa, qual Machine responde, e estas duas:
 
 - **Removidos recentemente**: cada pessoa removida ou que saiu. Mostra **Removido, confirmado** quando a Machine dela removeu os dados de trabalho, o Google confirmou a saída e qualquer token compartilhado que ela tinha foi trocado. Até lá, mostra **Pendente** e o motivo.
-- **Atividade**: quem fez o quê e quando. Convites, entradas, remoções, funções, Machines hospedadas e cobrança, conectores compartilhados e aprovações. Também lista cada vez que nossa equipe abriu a Machine de um membro ou os logs dela. Nunca o conteúdo das mensagens. **Baixar CSV** exporta tudo. Guardado por 12 meses.
+- **Atividade**: quem fez o quê e quando. Convites, entradas, remoções, funções, Machines hospedadas e cobrança, conectores compartilhados e aprovações. Também lista cada vez que nossa equipe leu o relatório ou os logs da Machine de um membro. Nunca o conteúdo das mensagens. **Baixar CSV** exporta tudo. Guardado por 12 meses.
 
 **Perguntar antes de iniciar a Machine de um membro**, para o proprietário: ligado, a nova Machine de um membro espera seu OK, mesmo em um Fleet grátis. Desligado, em um Fleet grátis ela inicia na hora e você é avisado. Uma Machine que custa dinheiro sempre espera você confirmar o valor.
 
