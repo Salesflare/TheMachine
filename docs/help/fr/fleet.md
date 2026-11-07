@@ -4,7 +4,7 @@ area: fleet
 summary: Une Fleet Travail pour votre équipe, une Fleet Famille pour la maison. Des Machines qui s’entraident, selon vos règles de partage.
 covers: tab:fleet, network
 code: fleet.py, network.py, dashboard.html
-site: Company sign-in, Ask to join, Approve, Removed lately, Activity, Download CSV
+site: Company sign-in, Ask to join, Approve, Removed lately, Activity, Download CSV, Ask me before starting a member's Machine
 order: 1
 ---
 The Machine Network relie les Machines. Ce qu’elles se disent est chiffré de bout en bout, et chaque Machine ne répond que selon vos règles.
@@ -81,11 +81,13 @@ Pour rejoindre une Fleet, en créer une ou associer une Machine sur votre propre
 
 ## Pour les propriétaires et les admins
 
-**Gérer**, dans l’onglet Fleet, liste chaque Fleet que vous gérez : ses membres, leurs rôles et les invitations. Sur une Machine hébergée, vous y invitez, changez les rôles, retirez des personnes et répondez aux demandes d’adhésion directement. Un changement qui touche le prix ouvre d’abord votre compte pour le confirmer. Sur une Machine auto-hébergée, vous voyez qui en fait partie, avec un lien vers cette Fleet sur votre compte.
+**Gérer**, dans l’onglet Fleet, liste chaque Fleet que vous gérez : ses membres, leurs rôles et les invitations. Sur une Machine hébergée, vous y invitez, changez les rôles, retirez des personnes et répondez aux demandes d’adhésion directement. Un changement qui touche le prix ouvre d’abord votre compte pour le confirmer. Sur une Machine auto-hébergée, vous voyez qui en fait partie, avec un lien vers les réglages de cette Fleet sur votre compte, où vous gérez ses membres et ses invitations.
 
-La partie Fleet de la page de votre compte affiche deux éléments de plus :
+**Réglages de la Fleet**, sous le nom de chaque Fleet dans son volet et dans Gérer, ouvre les réglages de cette Fleet sur votre compte : connexions partagées, sécurité, connexion d’entreprise, quelle Machine répond, et ces deux éléments :
 
 - **Retirés récemment** : chaque personne retirée, ou partie. La ligne indique **Supprimé, confirmé** une fois que sa Machine a supprimé les données de travail, que Google a confirmé la déconnexion et que tout jeton partagé qu’elle avait a été remplacé. D’ici là, elle indique **En attente** et pourquoi.
 - **Activité** : qui a fait quoi et quand. Invitations, arrivées, retraits, rôles, Machines hébergées et facturation, connecteurs partagés et accords. La liste indique aussi chaque fois que notre équipe a ouvert la Machine d’un membre ou ses journaux. Jamais le contenu des messages. **Télécharger le CSV** l’exporte. Conservé 12 mois.
+
+**Me demander avant de démarrer la Machine d’un membre**, pour le propriétaire : activé, la nouvelle Machine d’un membre attend votre accord, même dans une Fleet gratuite. Désactivé, dans une Fleet gratuite elle démarre tout de suite et vous êtes prévenu. Une Machine payante attend toujours que vous confirmiez son montant.
 
 Après **Arrêter le partage**, un connecteur partagé affiche **Supprimé, confirmé** une fois que chaque Machine a supprimé le jeton.

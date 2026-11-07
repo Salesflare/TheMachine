@@ -4,7 +4,7 @@ area: fleet
 summary: Um Fleet de Trabalho para sua equipe, um Fleet de Família para casa. Machines que se ajudam, seguindo suas regras de compartilhamento.
 covers: tab:fleet, network
 code: fleet.py, network.py, dashboard.html
-site: Company sign-in, Ask to join, Approve, Removed lately, Activity, Download CSV
+site: Company sign-in, Ask to join, Approve, Removed lately, Activity, Download CSV, Ask me before starting a member's Machine
 order: 1
 ---
 A The Machine Network conecta Machines. O que elas dizem umas às outras é criptografado de ponta a ponta, e cada Machine só responde seguindo as suas regras.
@@ -81,11 +81,13 @@ Para entrar em um Fleet, criar um ou parear uma Machine no seu próprio computad
 
 ## Para proprietários e admins
 
-**Gerenciar**, na aba Fleet, lista cada Fleet que você administra: as pessoas, as funções delas e os convites. Em uma Machine hospedada, você convida, muda funções, remove pessoas e responde a pedidos para entrar ali mesmo. Uma mudança que afeta o preço abre antes a sua conta para confirmar. Em uma Machine auto-hospedada, você vê quem está nele, com um link para esse Fleet na sua conta.
+**Gerenciar**, na aba Fleet, lista cada Fleet que você administra: as pessoas, as funções delas e os convites. Em uma Machine hospedada, você convida, muda funções, remove pessoas e responde a pedidos para entrar ali mesmo. Uma mudança que afeta o preço abre antes a sua conta para confirmar. Em uma Machine auto-hospedada, você vê quem está nele, com um link para as configurações desse Fleet na sua conta, onde você gerencia as pessoas e os convites.
 
-A parte do Fleet na página da sua conta mostra mais duas coisas:
+**Configurações do Fleet**, abaixo do nome de cada Fleet no seu painel e em Gerenciar, abre as configurações desse Fleet na sua conta: conexões compartilhadas, segurança, login da empresa, qual Machine responde, e estas duas:
 
 - **Removidos recentemente**: cada pessoa removida ou que saiu. Mostra **Removido, confirmado** quando a Machine dela removeu os dados de trabalho, o Google confirmou a saída e qualquer token compartilhado que ela tinha foi trocado. Até lá, mostra **Pendente** e o motivo.
 - **Atividade**: quem fez o quê e quando. Convites, entradas, remoções, funções, Machines hospedadas e cobrança, conectores compartilhados e aprovações. Também lista cada vez que nossa equipe abriu a Machine de um membro ou os logs dela. Nunca o conteúdo das mensagens. **Baixar CSV** exporta tudo. Guardado por 12 meses.
+
+**Perguntar antes de iniciar a Machine de um membro**, para o proprietário: ligado, a nova Machine de um membro espera seu OK, mesmo em um Fleet grátis. Desligado, em um Fleet grátis ela inicia na hora e você é avisado. Uma Machine que custa dinheiro sempre espera você confirmar o valor.
 
 Depois de **Parar de compartilhar**, um conector compartilhado mostra **Removido, confirmado** quando todas as Machines excluírem o token.

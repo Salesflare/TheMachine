@@ -4,7 +4,7 @@ area: fleet
 summary: Una Fleet di Lavoro per il tuo team, una Fleet di Famiglia per casa. Machine che si aiutano a vicenda, secondo le tue regole di condivisione.
 covers: tab:fleet, network
 code: fleet.py, network.py, dashboard.html
-site: Company sign-in, Ask to join, Approve, Removed lately, Activity, Download CSV
+site: Company sign-in, Ask to join, Approve, Removed lately, Activity, Download CSV, Ask me before starting a member's Machine
 order: 1
 ---
 The Machine Network collega le Machine. Ciò che si dicono è cifrato end-to-end, e ogni Machine risponde solo secondo le tue regole.
@@ -81,11 +81,13 @@ Per entrare in una Fleet, crearne una o abbinare una Machine sul tuo computer, v
 
 ## Per proprietari e admin
 
-**Gestisci**, nella scheda Fleet, elenca ogni Fleet che gestisci: le persone, i loro ruoli e gli inviti. Su una Machine in hosting inviti, cambi ruoli, rimuovi persone e rispondi alle richieste di ingresso direttamente lì. Una modifica che tocca il prezzo apre prima il tuo account per confermarla. Su una Machine self-hosted vedi chi ne fa parte, con un link a quella Fleet sul tuo account.
+**Gestisci**, nella scheda Fleet, elenca ogni Fleet che gestisci: le persone, i loro ruoli e gli inviti. Su una Machine in hosting inviti, cambi ruoli, rimuovi persone e rispondi alle richieste di ingresso direttamente lì. Una modifica che tocca il prezzo apre prima il tuo account per confermarla. Su una Machine self-hosted vedi chi ne fa parte, con un link alle impostazioni di quella Fleet sul tuo account, dove gestisci persone e inviti.
 
-La parte Fleet della pagina del tuo account mostra altre due cose:
+**Impostazioni della Fleet**, sotto il nome di ogni Fleet nel suo pannello e in Gestisci, apre le impostazioni di quella Fleet sul tuo account: connessioni condivise, sicurezza, accesso aziendale, quale Machine risponde, e queste due:
 
 - **Rimossi di recente**: ogni persona rimossa o che è uscita. Dice **Rimosso, confermato** quando la sua Machine ha rimosso i dati di lavoro, Google ha confermato la disconnessione e ogni token condiviso che aveva è stato sostituito. Fino ad allora dice **In sospeso** e perché.
 - **Registro attività**: chi ha fatto cosa e quando. Inviti, ingressi, rimozioni, ruoli, Machine ospitate e fatturazione, connettori condivisi e approvazioni. Elenca anche ogni volta che il nostro team ha aperto la Machine di un membro o i suoi log. Mai il contenuto dei messaggi. **Scarica CSV** lo esporta. Conservato 12 mesi.
+
+**Chiedimi prima di avviare la Machine di un membro**, per il proprietario: attivo, la nuova Machine di un membro aspetta il tuo OK, anche in una Fleet gratuita. Disattivo, in una Fleet gratuita parte subito e ti avvisiamo. Una Machine che costa denaro aspetta sempre che tu ne confermi l’importo.
 
 Dopo **Interrompi condivisione**, un connettore condiviso mostra **Rimosso, confermato** quando ogni Machine ha eliminato il token.

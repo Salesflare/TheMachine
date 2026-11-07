@@ -47,9 +47,9 @@ try{
   // Hosted: forms that hop, each carrying its own Fleet
   mode='hosted';let page=await open(context,width);
   const work=pane(page,'fleet-'+FL);
-  assert.deepEqual(await work.locator('.fleet-acct button').allInnerTexts(),['What it costs','Start another Fleet','Leave this Fleet']);
+  assert.deepEqual(await work.locator('.fleet-acct button').allInnerTexts(),['What it costs','Fleet settings','Start another Fleet','Leave this Fleet']);
   assert.deepEqual(await work.locator('.fleet-acct form').evaluateAll(fs=>fs.map(f=>[f.getAttribute('action'),f.elements.to.value,f.elements.fleet?.value||''])),
-   [['/_machine/account-hop','fleet_costs',FL],['/_machine/account-hop','fleet_start',''],['/_machine/account-hop','fleet_leave',FL]]);
+   [['/_machine/account-hop','fleet_costs',FL],['/_machine/account-hop','fleet_settings',FL],['/_machine/account-hop','fleet_start',''],['/_machine/account-hop','fleet_leave',FL]]);
   assert.equal(await pane(page,'family').locator('.fleet-acct input[name="fleet"]').first().getAttribute('value'),FA);
   assert.equal(await work.locator('.fleet-acct').getAttribute('data-buy'),'');  // the phone app hides it
   assert.ok(await work.locator('.fleet-pane-head + .fleet-acct').count());  // right under the Fleet's name
@@ -69,6 +69,7 @@ try{
   mode='paired';page=await open(context,width);
   assert.deepEqual(await pane(page,'fleet-'+FL).locator('.fleet-acct a').evaluateAll(as=>as.map(a=>[a.textContent,a.getAttribute('href'),a.target])),
    [['What it costs ↗',`https://app.example.test/account?tab=fleet&part=costs&fleet=${FL}`,'_blank'],
+    ['Fleet settings ↗',`https://app.example.test/account?tab=fleet&part=settings&fleet=${FL}`,'_blank'],
     ['Start another Fleet ↗','https://app.example.test/account?tab=fleet&part=start','_blank'],
     ['Leave this Fleet ↗',`https://app.example.test/account?tab=fleet&part=leave&fleet=${FL}`,'_blank']]);
   assert.equal(await page.locator('#task-c1 .family-invite a[data-family-invite="open"]').getAttribute('href'),URL_);

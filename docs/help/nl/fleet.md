@@ -4,7 +4,7 @@ area: fleet
 summary: Een Werk-Fleet voor je team, een Familie-Fleet voor thuis. Machines die elkaar helpen, volgens je deelregels.
 covers: tab:fleet, network
 code: fleet.py, network.py, dashboard.html
-site: Company sign-in, Ask to join, Approve, Removed lately, Activity, Download CSV
+site: Company sign-in, Ask to join, Approve, Removed lately, Activity, Download CSV, Ask me before starting a member's Machine
 order: 1
 ---
 The Machine Network verbindt Machines. Wat ze elkaar vertellen, is end-to-end versleuteld, en elke Machine antwoordt alleen volgens jouw regels.
@@ -81,11 +81,13 @@ Om lid te worden van een Fleet, er een te starten of een Machine op je eigen com
 
 ## Voor eigenaars en beheerders
 
-**Beheren** in het tabblad Fleet toont elke Fleet die je beheert: de mensen, hun rollen en de uitnodigingen. Op een gehoste Machine nodig je daar meteen uit, wijzig je rollen, verwijder je mensen en beantwoord je verzoeken om lid te worden. Een wijziging die de prijs raakt, opent eerst je account om ze te bevestigen. Op een zelf gehoste Machine zie je wie erin zit, met een link naar die Fleet op je account.
+**Beheren** in het tabblad Fleet toont elke Fleet die je beheert: de mensen, hun rollen en de uitnodigingen. Op een gehoste Machine nodig je daar meteen uit, wijzig je rollen, verwijder je mensen en beantwoord je verzoeken om lid te worden. Een wijziging die de prijs raakt, opent eerst je account om ze te bevestigen. Op een zelf gehoste Machine zie je wie erin zit, met een link naar de instellingen van die Fleet op je account, waar je de mensen en uitnodigingen beheert.
 
-Het Fleet-deel van je accountpagina toont nog twee dingen:
+**Fleet-instellingen**, onder de naam van elke Fleet in haar paneel en in Beheren, opent de instellingen van die Fleet op je account: gedeelde connectors, beveiliging, bedrijfsaanmelding, welke Machine antwoordt, en deze twee:
 
 - **Onlangs verwijderd**: elke persoon die verwijderd is of vertrokken is. Er staat **Verwijderd, bevestigd** zodra hun Machine de werkgegevens verwijderd heeft, Google het uitloggen bevestigd heeft en elk gedeeld token dat ze hadden vervangen is. Tot dan staat er **In behandeling** en waarom.
 - **Activiteit**: wie wat deed en wanneer. Uitnodigingen, nieuwe leden, verwijderingen, rollen, gehoste Machines en facturatie, gedeelde connectors en goedkeuringen. Het toont ook elke keer dat ons team de Machine of de logboeken van een lid geopend heeft. Nooit de inhoud van berichten. **CSV downloaden** exporteert het. 12 maanden bewaard.
+
+**Vraag het me voor de Machine van een lid start**, voor de eigenaar: aan, dan wacht de nieuwe Machine van een lid op jouw OK, ook in een gratis Fleet. Uit, dan start hij in een gratis Fleet meteen en krijg je bericht. Een Machine die geld kost, wacht altijd tot je het bedrag bevestigt.
 
 Na **Stoppen met delen** toont een gedeelde connector **Verwijderd, bevestigd** zodra elke Machine het token verwijderd heeft.

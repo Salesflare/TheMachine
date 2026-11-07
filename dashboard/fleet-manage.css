@@ -1,5 +1,5 @@
 /* Fleet › Manage (dashboard/fleet-manage.js): a row per person or invite, its buttons to the right, under it on a phone */
-.manage-head{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;margin:0 0 14px}.manage-head h2{margin:0;font-size:1.15rem}
+.manage-head{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;margin:0 0 14px}.manage-head h2{margin:0;font-size:1.15rem}.manage-head+.fleet-acct{margin:calc(-1*var(--sp-2)) 0 var(--sp-4)}
 .manage-fleet{margin:0 0 28px}
 .manage-fleet .fleet-people{gap:0}
 .manage-fleet .fp-row{display:flex;align-items:center;gap:8px 14px;padding:10px 0;border-top:1px solid var(--border)}

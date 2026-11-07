@@ -6,10 +6,11 @@ import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Fleet › Manage (dashboard/fleet-manage.js). Self-hosted (no manage_url): read only, the people and their roles and a
-// link to that Fleet's part of the account in a new tab, and nothing that changes anything. Hosted: the control plane's
+// link to that Fleet's settings step on the account in a new tab, and nothing that changes anything. Hosted: the control plane's
 // answer (/_machine/fleet) with role, remove and invite; a change goes there as JSON from this page, and one that touches
 // a price ({confirm}) shows Review and confirm, a form to /_machine/account-hop (to=fleet_confirm) with the change's
-// fields. Invite people in an empty People box opens the view.
+// fields. Invite people in an empty People box opens the view. Under each Fleet's name, hosted and self-hosted, the quiet
+// link row of its pane, with Fleet settings: a hop (to=fleet_settings) with that Fleet's id, or that step in a new tab.
 const dashboard=await dashboardPage();
 const FL='fl_'+'a'.repeat(16),ACCOUNT='https://app.example.test/account';
 const fleet={on:true,kinds:{},kind_rules:{},no_details:[],scoped:[],scopes:{},intro_offers:[],waiting:[],asked:[],log:[],notices:[],free:[],briefs:{},
@@ -41,9 +42,11 @@ try{
  await page.locator('[data-manage-open]').click();
  assert.equal(await page.locator('.fleet-pane:not([hidden])').getAttribute('data-pane'),'manage');
  const link=page.locator('#manage-'+FL+' a.button');
- assert.equal(await link.getAttribute('href'),ACCOUNT+'?tab=fleet#fleet-'+FL);
+ assert.equal(await link.getAttribute('href'),ACCOUNT+'?tab=fleet&part=settings&fleet='+FL);
  assert.equal(await link.getAttribute('target'),'_blank');
  assert.equal(await page.locator('#manage-'+FL+' [data-manage-do], #manage-'+FL+' select, #manage-'+FL+' textarea').count(),0);
+ assert.deepEqual(await page.locator('#manage-'+FL+' .manage-head + .fleet-acct a').evaluateAll(as=>as.map(a=>[a.textContent,a.getAttribute('href')])).then(r=>r.slice(0,2)),
+  [['What it costs ↗',ACCOUNT+'?tab=fleet&part=costs&fleet='+FL],['Fleet settings ↗',ACCOUNT+'?tab=fleet&part=settings&fleet='+FL]]);  // under its name
  assert.match(await page.locator('#manage-'+FL).innerText(),/Owner/);
  assert.deepEqual(errors,[]);await page.context().close();
  // Hosted: the control plane's view, changes from this page
@@ -67,6 +70,10 @@ try{
  assert.match(await page.locator('.manage-confirm').innerText(),/Remove Pat Lee\?/);
  assert.equal(await page.locator('.manage-person:has([data-member="fm_2"]) .manage-confirm').count(),1);  // under the row it is about
  await page.locator('[data-manage-cancel]').click();assert.equal(await page.locator('.manage-confirm').count(),0);
+ const settings=page.locator('#manage-'+FL+' .manage-head + .fleet-acct form',{hasText:'Fleet settings'});
+ assert.equal(await settings.getAttribute('action'),'/_machine/account-hop');
+ assert.deepEqual(await settings.locator('input[type=hidden]').evaluateAll(xs=>Object.fromEntries(xs.map(x=>[x.name,x.value]))),{to:'fleet_settings',fleet:FL});
+ assert.equal((await settings.innerText()).trim(),'Fleet settings');
  assert.deepEqual(errors,[]);
 }finally{await browser.close();server.close()}
 console.log('ok');

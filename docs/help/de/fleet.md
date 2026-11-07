@@ -4,7 +4,7 @@ area: fleet
 summary: Eine Work Fleet für dein Team, eine Family Fleet für zu Hause. Machines, die sich gegenseitig helfen, nach deinen Freigaberegeln.
 covers: tab:fleet, network
 code: fleet.py, network.py, dashboard.html
-site: Company sign-in, Ask to join, Approve, Removed lately, Activity, Download CSV
+site: Company sign-in, Ask to join, Approve, Removed lately, Activity, Download CSV, Ask me before starting a member's Machine
 order: 1
 ---
 The Machine Network verbindet Machines. Was sie sich gegenseitig sagen, ist Ende-zu-Ende-verschlüsselt, und jede Machine antwortet nur nach deinen Regeln.
@@ -81,11 +81,13 @@ Wie du einer Fleet beitrittst, eine gründest oder eine Machine auf deinem eigen
 
 ## Für Owner und Admins
 
-**Verwalten** im Fleet-Tab zeigt jede Fleet, die du führst: ihre Leute, ihre Rollen und die Einladungen. Auf einer gehosteten Machine lädst du dort direkt ein, änderst Rollen, entfernst Leute und beantwortest Beitrittsanfragen. Eine Änderung, die den Preis betrifft, öffnet zuerst dein Konto, um sie zu bestätigen. Auf einer selbst gehosteten Machine siehst du, wer dabei ist, mit einem Link zu dieser Fleet in deinem Konto.
+**Verwalten** im Fleet-Tab zeigt jede Fleet, die du führst: ihre Leute, ihre Rollen und die Einladungen. Auf einer gehosteten Machine lädst du dort direkt ein, änderst Rollen, entfernst Leute und beantwortest Beitrittsanfragen. Eine Änderung, die den Preis betrifft, öffnet zuerst dein Konto, um sie zu bestätigen. Auf einer selbst gehosteten Machine siehst du, wer dabei ist, mit einem Link zu den Einstellungen dieser Fleet in deinem Konto, wo du ihre Leute und Einladungen verwaltest.
 
-Der Fleet-Teil deiner Kontoseite zeigt zwei weitere Dinge:
+**Fleet-Einstellungen**, unter dem Namen jeder Fleet in ihrem Bereich und in Verwalten, öffnet die Einstellungen dieser Fleet in deinem Konto: geteilte Verbindungen, Sicherheit, Firmenanmeldung, welche Machine antwortet, und diese zwei:
 
 - **Kürzlich entfernt**: jede Person, die entfernt wurde oder gegangen ist. Dort steht **Entfernt, bestätigt**, sobald ihre Machine die Arbeitsdaten entfernt hat, Google die Abmeldung bestätigt hat und jedes geteilte Token, das sie hatte, ersetzt wurde. Bis dahin steht dort **Ausstehend** und warum.
 - **Aktivität**: wer was wann gemacht hat. Einladungen, Beitritte, Entfernungen, Rollen, gehostete Machines und Abrechnung, geteilte Connectoren und Freigaben. Es listet auch jedes Mal, wenn unser Team die Machine eines Mitglieds oder ihre Logs geöffnet hat. Nie Nachrichteninhalte. **CSV herunterladen** exportiert es. Wird 12 Monate aufbewahrt.
+
+**Frag mich, bevor die Machine eines Mitglieds startet**, für den Inhaber: an, dann wartet die neue Machine eines Mitglieds auf dein OK, auch in einer kostenlosen Fleet. Aus, dann startet sie in einer kostenlosen Fleet sofort und du wirst informiert. Eine Machine, die Geld kostet, wartet immer, bis du ihren Betrag bestätigst.
 
 Nach **Nicht mehr teilen** zeigt ein geteilter Connector **Entfernt, bestätigt**, sobald jede Machine das Token gelöscht hat.
