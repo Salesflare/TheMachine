@@ -4,6 +4,7 @@ is. A mixin of assistant.App (APP_MIXINS)."""
 import datetime as dt
 import json
 import logging
+from pathlib import Path
 import re
 import sqlite3
 import time
@@ -12,13 +13,70 @@ import uuid
 import bounces
 import follow_ups
 import graph
+import i18n
+from machine.config import WORKSPACE
+from machine.sources.calendar import company_domains
+from machine.sources.gmail import Gmail
+from machine.store.review import own_message
+from machine.store.voices import conversation_of
+from machine.text import _address
 import model_budget
 import next_actions
 import own_addresses
+import skills
 from sources import MICROSOFT_SERVICES, SourceError
 from timeutil import WORK_HOURS, in_hours, local_tz, now
 
 LOG = logging.getLogger('personal-assistant')
+
+
+NEWER_KINDS = ('gmail.message', 'slack.message', 'whatsapp.message', 'linkedin.message', 'x.dm')
+
+
+def newer_activity(db, event_ids, owner_slack_ids=(), teammates=(), domains=(), limit=5):
+    """Messages already synced into a to-do's own conversations (its email thread, Slack thread or DM, chat) after its
+    newest evidence: someone may have answered or handled it since. Only who and when, from what is stored; no model
+    call and no message text. Newest last, at most `limit`, each {'id', 'at', 'channel', 'who'}."""
+    ids = [i for i in event_ids or [] if isinstance(i, int)]
+    if not ids:
+        return []
+    rows = db.execute('SELECT id,account_id,kind,occurred_at,metadata FROM events WHERE id IN (' + ','.join('?' * len(ids)) + ')', ids).fetchall()
+    found, seen = [], set(ids)
+    teammates = {str(e).lower(): name for e, name in dict(teammates).items()} if teammates else {}
+    for row in rows:
+        if row['kind'] not in NEWER_KINDS:
+            continue
+        m = json.loads(row['metadata'] or '{}')
+        key = conversation_of(row['kind'], m)
+        if not key or row['kind'] == 'slack.message' and not m.get('thread_ts') and not key.startswith('D'):
+            continue  # a channel message outside a thread: the channel holds many other matters
+        field = 'thread_id' if row['kind'] == 'gmail.message' else 'channel_id' if row['kind'] == 'slack.message' else 'chat_id' if m.get('chat_id') else 'conversation_id'
+        latest = max(r['occurred_at'] for r in rows if r['account_id'] == row['account_id'])
+        for e in db.execute(f"SELECT id,account_id,kind,occurred_at,metadata FROM events WHERE account_id=? AND kind=? AND deleted=0 AND occurred_at>? "
+                            f"AND json_extract(metadata,'$.{field}')=? ORDER BY occurred_at LIMIT 50", (row['account_id'], row['kind'], latest, key)):
+            if e['id'] in seen:
+                continue
+            em = json.loads(e['metadata'] or '{}')
+            # A Slack channel holds many matters: only the same thread counts there (a DM is one conversation).
+            if row['kind'] == 'slack.message' and m.get('thread_ts') and em.get('thread_ts') != m['thread_ts'] and em.get('ts') != m['thread_ts']:
+                continue
+            seen.add(e['id'])
+            if row['kind'] == 'gmail.message' and bounces.system_sender(em.get('from')):
+                continue  # a delivery report answers nothing (bounces.py tells what bounced)
+            found.append({'id': e['id'], 'at': e['occurred_at'], 'channel': e['kind'].split('.')[0], 'who': activity_who(e, em, owner_slack_ids, teammates, domains)})
+    return sorted(found, key=lambda x: x['at'])[-limit:]
+
+
+def activity_who(event, m, owner_slack_ids=(), teammates=(), domains=()):
+    """Who wrote a newer message, in a few words: the owner, a teammate, someone at the same company, or their address."""
+    address = _address(m.get('from'))
+    if own_message(dict(event), owner_slack_ids):
+        return 'the owner'
+    if address and address in teammates:
+        return f"{teammates[address] or address} (a teammate)"
+    if address and own_addresses.email_domain(address) in domains:
+        return f"{address} (same company)"
+    return address or str(m.get('sender_name') or m.get('user_name') or m.get('from') or 'someone else')[:80]
 
 
 class FollowUpsApp:
@@ -228,3 +286,164 @@ class FollowUpsApp:
                 follow_ups.sent_alone(db, sid)
             sent.append((sid, result.get('status')))
         return sent
+
+    def follow_up_mine(self):
+        ids = self.store.owner_user_ids
+        return lambda e: own_message(e, ids) or follow_ups.mine_default(e)
+
+    def follow_up_thread(self, account, thread_id):
+        """An email thread read now from its source, never from a cache: Gmail's thread or Outlook's conversation, who sent
+        each message and when, nothing else."""
+        return Gmail(self.config, account).get('threads/' + str(thread_id), {'format': 'metadata', 'metadataHeaders': ['From']})
+
+    def follow_up_recheck(self, job, action):
+        """Right before a follow-up goes out: is the thread still as it was when the draft was written (follow_ups.basis)?
+        None for a send that isn't a follow-up; else (why, news): why None (nothing new: it goes), 'bounced' (its To
+        bounced since: news is the addresses; hold_bounced), 'changed' (a message
+        was added since, by anyone: collected here, or in Gmail's thread or Outlook's conversation read fresh, or in the
+        WhatsApp chat) or 'unchecked' (the fresh read failed: it doesn't go). LinkedIn and other channels: the collected
+        messages. Outside any transaction."""
+        with self.store.connect() as db:
+            card, found = follow_ups.basis_of(db, job['suggestion_id'])
+            if card is None:
+                return None
+            # Its To bounced since the draft (bounces.py): held, and moved to a working address when there is one
+            bad = bounces.flags(db, action.get('to') or []) if action.get('kind') == 'email' else {}
+            if bad:
+                return 'bounced', sorted(bad)
+            news = follow_ups.collected_since(db, card['project_id'], found, self.follow_up_mine())
+            own = self.follow_up_own(db)
+        channels = found.get('channels') or {}
+        here = channels.get(action.get('kind')) or {'at': found.get('at')}
+        try:
+            if action.get('kind') == 'email':
+                account_id, thread_id = (action.get('account_id'), action['thread_id']) if action.get('thread_id') else (here.get('account_id'), here.get('thread_id'))
+                account = next((x for x in self.config.get('accounts') or () if isinstance(x, dict) and x.get('id') == account_id), None)
+                if account and thread_id and account.get('service', 'gmail') in ('gmail', *MICROSOFT_SERVICES):
+                    news = news + follow_ups.thread_since(self.follow_up_thread(account, thread_id), here,
+                                                          own['emails'] | {str(account.get('email') or '').lower()})
+            elif action.get('kind') == 'whatsapp':
+                news = news + follow_ups.chat_since(self.follow_up_chat(action), here)
+        except Exception as error:  # noqa: BLE001 - offline, signed out, an odd answer: fail closed
+            LOG.info('follow-up thread not checked job=%s why=%s', job['id'], type(error).__name__)
+            return 'unchecked', None
+        if news:  # this to-do's own earlier send (sent, then reopened and drafted again) is no new message for it
+            with self.store.connect() as db:
+                news = follow_ups.without_own_sends(db, job['suggestion_id'], news)
+        return ('changed', news) if news else (None, [])
+
+    def follow_up_step(self, limit=follow_ups.BATCH):
+        """Every five minutes: close follow-up to-dos that aren't needed any more, send the ones the owner said to send
+        without asking, end rounds that got no reply, then draft the next due ones while nothing else waits."""
+        mine, sendable = self.follow_up_mine(), self.follow_up_sendable()
+        with self.store.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            follow_ups.ensure(db)
+            if not follow_ups.any_on(db) and not db.execute("SELECT 1 FROM follow_up_cards WHERE state='open'").fetchone():
+                return {'drafted': 0}
+            follow_ups.settle(db, now(), mine)
+            for sid in follow_ups.rewrite_judged(db, now(), mine):  # closed on judgment by an earlier version: drafted after all
+                decision_id = 'ahead:' + sid + ':' + uuid.uuid4().hex[:8]
+                db.execute('INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
+                           (decision_id, sid, 'prepare_ahead', '', 'assistant', now()))
+                self.store.queue_preparation(db, sid, decision_id)
+        self.follow_up_send()
+        if not (self.config.get('review_worker') or {}).get('enabled'):
+            return {'drafted': 0}
+        drafted = 0
+        with self.store.connect() as db:
+            own = self.follow_up_own(db)
+        self.follow_up_threads(mine, sendable, own)
+        with self.store.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            items = follow_ups.plan(db, now(), sendable, mine, own, self.follow_up_work())  # Only on work days: nothing due on a day off
+            for item in items:
+                if item['state'] == 'end':
+                    follow_ups.end(db, item, now())
+            # Only once the round could be counted (its thread read or tried, or the quoted history read): never on a guess
+            due = sorted((x for x in items if x['state'] == 'due' and x.get('counted', True)), key=lambda x: (not x['late'], x['next_at']))
+            due = follow_ups.spaced(db, due, now())  # just resumed from a pause: what was due comes one by one
+            if not due:
+                return {'drafted': 0}
+            # Normal work first: no follow-up while another preparation waits, and only a few drafted at once
+            others = db.execute("SELECT count(*) FROM preparations p WHERE p.status IN ('queued','starting','running') "
+                                'AND p.suggestion_id NOT IN (SELECT suggestion_id FROM follow_up_cards)').fetchone()[0]
+            drafting = db.execute("SELECT count(*) FROM preparations p JOIN follow_up_cards f ON f.suggestion_id=p.suggestion_id "
+                                  "WHERE p.status IN ('queued','starting','running')").fetchone()[0]
+            room = min(limit, follow_ups.DRAFTING - drafting, follow_ups.PER_DAY - follow_ups.drafted_today(db, now()))
+            if others or room <= 0 or self.follow_up_pause(late=due[0]['late']):
+                return {'drafted': 0, 'waiting': len(due)}
+            for item in due[:room]:
+                if item['late'] is False and drafted and self.follow_up_pause():
+                    break
+                if self.follow_up_card(db, item):
+                    drafted += 1
+        return {'drafted': drafted}
+
+    def follow_up_card(self, db, item):
+        """A follow-up to-do for one due project, prepared ahead (the owner's voice, the last exchange). A board's go
+        into its grouped to-do; the first of a batch keeps its notification, the others don't add one each."""
+        p, board, settings = item['project'], item['board'], item['settings']
+        msgs = follow_ups.messages(db, p['id'], self.follow_up_mine())
+        theirs = [m for m in msgs if not m['mine']]
+        tail = [m for m in msgs if not theirs or m['at'] > theirs[-1]['at']]
+        evidence = [m['id'] for m in reversed(tail[-3:])] + ([theirs[-1]['id']] if theirs else [])
+        on_channel = [m['id'] for m in msgs if m['channel'] == item['channel']]
+        if on_channel and on_channel[-1] not in evidence:
+            evidence.append(on_channel[-1])  # switching channel: the conversation there, so the draft can go on it
+        newer = newer_activity(db, evidence, self.store.owner_user_ids, {x['email']: x['name'] for x in self.teammate_addresses()},
+                               company_domains(self.config))
+        if any(x['id'] not in evidence for x in newer):
+            return None  # something newer is still on its way into the project: next pass
+        grouped = item['source'] == 'board'
+        name = p['name']
+        title = i18n.t('Follow up with {}', follow_ups.short_name(name, board['name'] if board else ''))[:90]  # the board names the rest
+        # Since the round's first unanswered message (earlier sends from another app count too)
+        days = (dt.datetime.fromisoformat(now()) - follow_ups.parse(item.get('round_at') or item['after_at'])).days
+        body = i18n.t('No reply for {} days. Follow-up {} of at most {}.', days, item['n'], settings['max'])[:700]
+        try:
+            saved = self.store.suggest(f"follow-up:{p['id']}:{item['after']}", title, body, evidence, 'now', self.config.get('digest_at', '08:30'),
+                                       work=self.is_work(sorted({r[0] for r in db.execute(
+                                           f"SELECT account_id FROM events WHERE id IN ({','.join('?' * len(evidence))})", evidence)})),
+                                       ahead=True, project=name, _db=db, owner_step=False)
+        except ValueError as error:
+            LOG.info('follow-up skipped project=%s why=%s', p['id'], str(error)[:80])
+            return None
+        if saved.get('duplicate') or saved.get('preview'):
+            return None
+        batch = grouped and db.execute("SELECT 1 FROM follow_up_cards WHERE board_id=? AND grouped=1 AND state='open'", (p['board_id'],)).fetchone()
+        follow_ups.add_card(db, saved['id'], p, grouped, item, settings['max'], now())
+        follow_ups.remember(db, saved['id'], follow_ups.basis(db, p['id']), now())  # what the draft is written against: checked again before it goes
+        if batch:
+            db.execute("UPDATE deliveries SET status='grouped',updated_at=? WHERE suggestion_id=? AND status='queued'", (now(), saved['id']))
+        return saved['id']
+
+    def follow_up_skill_lines(self, suggestion_id, rules='', room=None):
+        """The owner's skills that are on and fit this open follow-up (follow_ups.fitting_skills: by the board's or the
+        project's name, or named in the draft rules shown for it), with their instructions, ranked above the follow-up
+        defaults (follow_ups.skill_note). '' when none fits or it isn't an open follow-up."""
+        with self.store.connect() as db:
+            f = db.execute("SELECT project_id,board_id FROM follow_up_cards WHERE suggestion_id=? AND state='open'", (suggestion_id,)).fetchone()
+            if not f or not db.execute("SELECT 1 FROM sqlite_master WHERE name='skills'").fetchone():
+                return ''
+            p = db.execute('SELECT name FROM projects WHERE id=?', (f['project_id'],)).fetchone()
+            b = db.execute('SELECT name FROM boards WHERE id=?', (f['board_id'],)).fetchone() if f['board_id'] else None
+            on = [dict(r) for r in db.execute("SELECT name,slug,description,body FROM skills WHERE status='on' ORDER BY name")]
+        fitting = follow_ups.fitting_skills(on, [b['name'] if b else '', p['name'] if p else ''], rules)
+        root = Path(getattr(getattr(self, 'skills', None), 'workspace', None) or self.config.get('openclaw_workspace') or WORKSPACE) / 'skills' / skills.FOLDER
+        return follow_ups.skill_note([{**k, 'path': str(root / k['slug'] / 'SKILL.md')} for k in fitting], room)
+
+    def follow_up_change_note(self, job):
+        """What a rewrite from the follow-up review's Change adds to its turn (follow_ups.change_note), else '': the
+        rewrite rules and the skills that are on now, read from the database at the start of the turn, so a skill the
+        owner added after the draft (or after the session began) is there with its file to read."""
+        try:
+            with self.store.connect() as db:
+                if not follow_ups.change_of(db, job['suggestion_id'], job['job_id']):
+                    return ''
+                on = [dict(r) for r in db.execute("SELECT name,slug,description FROM skills WHERE status='on' ORDER BY name")] \
+                    if db.execute("SELECT 1 FROM sqlite_master WHERE name='skills'").fetchone() else []
+        except sqlite3.Error:
+            return ''
+        root = Path(getattr(getattr(self, 'skills', None), 'workspace', None) or self.config.get('openclaw_workspace') or WORKSPACE) / 'skills' / skills.FOLDER
+        return '\n\n' + follow_ups.change_note([{**k, 'path': str(root / k['slug'] / 'SKILL.md')} for k in on])
