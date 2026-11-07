@@ -50,6 +50,7 @@ import locale_prefs
 import timeutil
 
 import enrichment
+import graph_publish
 import person_summary
 from machine.store import graph_history
 
@@ -1162,16 +1163,18 @@ class Outdated(Exception):
     computed without writing: build tries again."""
 
 
-def build(db, config, now, team=(), kin=None, history=False):
+def build(db, config, now, team=(), kin=None, history=False, lock_last=True):
     """Publish one coherent graph. Concurrent edits cannot be overwritten by an older build (graph_edits). team: the
     addresses of the people in the owner's Fleets, so an address they use too is never the owner's own (own_addresses.py).
     kin: which of them are in the owner's Work Fleets, Family or Friends (circles), so someone only in Family or
-    Friends is Personal. history: count the history rows a graph pass took in (machine/store/graph_history.py)."""
-    for _ in range(BUILD_TRIES):
+    Friends is Personal. history: count the history rows a graph pass took in (machine/store/graph_history.py).
+    lock_last=False: Outdated instead of a last try under the write lock throughout (the worker tries again soon)."""
+    for i in range(BUILD_TRIES):
         try:
             return _build(db, config, now, team, kin, locked=False, history=history)
         except Outdated:
-            continue
+            if i == BUILD_TRIES - 1 and not lock_last:
+                raise
     return _build(db, config, now, team, kin, locked=True, history=history)  # the last try holds the lock throughout
 
 
@@ -1848,18 +1851,7 @@ def _build_in(db, config, now, team, kin, locked, history=False):
     if side_rows is not None:
         db.executemany('INSERT OR REPLACE INTO side_changes(node_id,rule,before,after,why,at) VALUES(?,?,?,?,?,?)', side_rows)
         db.execute('INSERT OR REPLACE INTO side_rule(id,rule,at) VALUES(1,?,?)', (SIDE_RULE, now))
-    db.execute('DELETE FROM graph_nodes')
-    db.execute('DELETE FROM graph_links')
-    db.execute('DELETE FROM graph_events')
-    db.execute('DELETE FROM graph_unnamed')
-    db.execute('DELETE FROM graph_same')
-    db.executemany('INSERT OR REPLACE INTO graph_same(a,b,why,score) VALUES(?,?,?,?)', same_rows)
-    db.executemany('INSERT OR REPLACE INTO graph_nodes(id,kind,name,strength,last_at,signals,gap_days,quiet,trend,info) VALUES(?,?,?,?,?,?,?,?,?,?)', nodes)
-    db.executemany('INSERT OR REPLACE INTO graph_links(a,b,kind,strength,last_at) VALUES(?,?,?,?,?)', links)
-    # A confirmed label wins over a probable one for the same signal.
-    db.executemany('INSERT INTO graph_events(node_id,event_id,at,probable,direct) VALUES(?,?,?,?,?) '
-                   'ON CONFLICT(node_id,event_id) DO UPDATE SET probable=min(probable,excluded.probable),direct=max(direct,excluded.direct)', event_rows)
-    db.executemany('INSERT OR REPLACE INTO graph_unnamed(key,event_ids,people,titles,size,last_at) VALUES(?,?,?,?,?,?)', unnamed_rows)
+    graph_publish.publish(db, same_rows, nodes, links, event_rows, unnamed_rows)  # only what changed: a short write lock
     graph_history.publish(db, history_rows)
     db.execute('INSERT OR REPLACE INTO graph_state(id,built_at,signals,took_ms) VALUES(1,?,?,?)', (now, len(signals), took))
     fill_orgs(db, now)  # projects with no organization yet get their people's, where that is clear
@@ -5038,6 +5030,9 @@ def merge(db, a, b, same, now, source='agent'):
         raise ValueError('The owner already decided about these two; their word stays')
     db.execute('INSERT OR REPLACE INTO graph_merges(a,b,same,created_at,source) VALUES(?,?,?,?,?)', (a, b, int(bool(same)), now, source))
     db.execute('DELETE FROM graph_same WHERE a=? AND b=?', (a, b))
+    for node, other in ((a, b), (b, a)):  # their pages stop asking too, before the rebuild that joins them (graph_later)
+        db.execute("UPDATE graph_nodes SET info=json_set(info,'$.same',(SELECT json_group_array(json(j.value)) FROM json_each(info,'$.same') j "
+                   "WHERE json_extract(j.value,'$.id') IS NOT ?)) WHERE id=? AND json_type(info,'$.same')='array'", (other, node))
 
 
 def merge_all(db, pairs, now):

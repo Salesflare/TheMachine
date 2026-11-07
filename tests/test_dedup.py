@@ -1,6 +1,7 @@
 """Same person? Identities join on strong evidence only; a likely match is a question; a merge keeps everything and can be undone."""
 import json
 import unittest
+import unittest.mock
 from pathlib import Path
 
 import test_graph as tg
@@ -43,6 +44,39 @@ class SamePerson(unittest.TestCase):
         self.assertEqual(whys, {'message', 'name'})  # her CC, then one Rae Moreno per channel
         # An old link to one of her identities opens the merged person.
         self.assertEqual(self.app.graph_action({'node_id': 'wa:00000000021'})['id'], node)
+
+    def test_a_merge_answers_at_once_and_the_worker_joins_them(self):
+        self.add(tg.mail(3, 'Sam Rivera <sam.rivera@one.example>', 'sam@acme.com'), tg.mail(2, 'Sam Rivera <rivera@two.example>', 'sam@acme.com'))
+        self.build()
+        pair = ('email:rivera@two.example', 'email:sam.rivera@one.example')
+        self.assertIn(pair[1], [s['id'] for s in self.node(pair[0])['same']])
+        self.app.graph_worker_on, self.app.graph_dirty = True, tg.a.threading.Event()  # as on a running Machine: rebuilds go to the graph worker
+        builds = []
+        self.app.graph_build = lambda **k: builds.append(k)
+        self.say(*pair, True)
+        self.assertEqual(builds, [])  # no whole build in the request: it held the database for tens of seconds
+        self.assertTrue(self.app.graph_dirty.is_set())
+        self.assertNotIn(pair, self.same_pairs())
+        self.assertEqual(self.node(pair[0])['same'], [])  # her page stops asking before the rebuild
+        del self.app.graph_build
+        self.build()
+        self.assertEqual(len(self.people()), 1)
+
+    def test_the_graph_worker_tries_again_soon_when_edits_kept_coming(self):
+        app, calls = self.app, []
+        app.graph_dirty, app.stop = tg.a.threading.Event(), tg.a.threading.Event()
+        app.graph_freshness, app.own_addresses_fetch, app.history_graph_step = (lambda: 1), (lambda: None), (lambda: False)
+
+        def build(lock_last=True):
+            calls.append(lock_last)
+            if len(calls) == 1:
+                raise graph.Outdated()
+            app.stop.set()
+        app.graph_build = build
+        app.graph_dirty.set()
+        with unittest.mock.patch('machine.app.graph_actions.GRAPH_RETRY_SECONDS', 0):
+            app.graph_worker()
+        self.assertEqual(calls, [False, False])  # tried again at once, never a build that holds the write lock throughout
 
     def test_two_people_with_one_name_never_merge_by_themselves(self):
         self.add(tg.mail(3, 'Sam Rivera <sam.rivera@one.example>', 'sam@acme.com'),
