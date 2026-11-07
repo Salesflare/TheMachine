@@ -325,7 +325,10 @@ class AppPush(unittest.TestCase):
                 self.assertEqual(notice['events']['snooze2h'], 'Snoozed it')
                 # an older app keeps the three it knows
                 self.assertLessEqual(set(a.app_notice(self.store, self.config, sid)['actions']), {'prepare', 'snooze', 'done'})
-        self.assertEqual(a.app_notice(self.store, self.config, cards['new'], 'reminder', 2)['actions'], ['done', 'snooze', 'open'])
+        reminder = a.app_notice(self.store, self.config, cards['new'], 'reminder', 2)
+        self.assertEqual(reminder['actions'], ['done', 'snooze', 'open'])
+        self.assertTrue(reminder['title'].startswith('Reminder: '), reminder['title'])  # as its web push says it
+        self.assertTrue(a.app_notice(self.store, self.config, cards['new'], version=2)['title'].startswith('New to-do: '))
         stuck = self.card('Pay the invoice', status='accepted')
         with self.store.connect() as db:
             db.execute("INSERT INTO preparations(suggestion_id,decision_id,job_id,status,reason,error,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?)",

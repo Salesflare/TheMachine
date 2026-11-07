@@ -43,7 +43,7 @@ Chaque notification a des boutons pour l’étape suivante. Dans l’app sur le 
 
 Un navigateur et Telegram en affichent deux. Les questions du Fleet gardent Répondre une fois et Refuser.
 
-Rien n’est envoyé, payé ou soumis depuis une notification. Un brouillon s’ouvre toujours d’abord, pour que vous le voyiez avant qu’il parte.
+Rien n’est envoyé, payé ou soumis depuis une notification. Un brouillon s’ouvre toujours d’abord, pour que vous le voyiez avant qu’il parte. Ouvrir le brouillon montre la tâche dans votre liste avec le brouillon en entier. Faire lance seulement le travail sur une nouvelle tâche.
 
 Dans l’app, Mettre en attente et Marquer comme fait demandent d’abord de déverrouiller. Dans un navigateur, ils ouvrent le tableau de bord, qui le fait et propose Annuler. En attente 2 h fait revenir la tâche dans deux heures, Mettre en attente demain matin.
 

@@ -19,7 +19,7 @@ public class NotificationActions extends BroadcastReceiver {
         String tag = text(intent.getStringExtra("tag")), action = text(intent.getStringExtra("action"));
         String title = text(intent.getStringExtra("title")), event = text(intent.getStringExtra("event"));
         String failed = text(intent.getStringExtra("failed"));
-        String body = PushText.decide(tag, action, UUID.randomUUID().toString());
+        String body = PushText.decide(tag, action, "notify-" + UUID.randomUUID());
         if (body == null) return;
         PendingResult pending = goAsync();
         new Thread(() -> {

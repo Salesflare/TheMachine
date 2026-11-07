@@ -43,7 +43,7 @@ Ogni notifica ha pulsanti per il passo successivo. Nell’app sul telefono:
 
 Un browser e Telegram ne mostrano due. Le domande del Fleet mantengono Rispondi una volta e Rifiuta.
 
-Da una notifica non si invia, non si paga e non si inoltra mai nulla. Una bozza si apre sempre prima, così la vedi prima che parta.
+Da una notifica non si invia, non si paga e non si inoltra mai nulla. Una bozza si apre sempre prima, così la vedi prima che parta. Apri bozza mostra l’attività nella tua lista con la bozza completa. Fallo avvia solo il lavoro su una nuova attività.
 
 Nell’app, Posticipa e Segna come fatto chiedono prima di sbloccare. In un browser aprono la dashboard, che lo fa e mostra Annulla. Posticipa 2 ore riporta l’attività tra due ore, Posticipa domani mattina.
 

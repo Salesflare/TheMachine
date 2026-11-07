@@ -122,6 +122,35 @@ class CardAgentWork(unittest.TestCase):
         self.assertNotIn(AGENT_DO_IT_NOTE, work(decision_id='late', finish={'kind': 'finish'}))
         self.assertNotIn(AGENT_DO_IT_NOTE, self.app.agent_work(self.sid))
 
+    def test_do_it_from_a_notification_never_runs_the_step_a_job_left(self):
+        # The phone's Do it button (decision id notify-…): the owner hasn't seen the job's result, so the tap is refused
+        # before anything starts, and even a decision that got in is never the approval for that step.
+        self.job(summary='Remaining for you under this job\'s limits: run ./publish.sh to push and deploy.')
+        tap = lambda choice, suffix: self.app.action('decide', {'suggestion_id': self.sid, 'choice': choice, 'feedback': '',
+                                                               'decision_id': 'notify-' + suffix}, owner_dashboard=True)
+        with self.assertRaisesRegex(ValueError, 'Open the to-do to do this.'):
+            tap('accept', 'a' * 36)
+        with self.store.connect() as db:
+            self.assertIsNone(db.execute("SELECT 1 FROM decisions WHERE id LIKE 'notify-%'").fetchone())
+            db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,'accept','','dashboard','2026-10-23T10:00:00+00:00')",
+                       ('notify-' + 'b' * 36, self.sid))
+        self.assertNotIn(AGENT_DO_IT_NOTE, self.app.agent_work(self.sid, {'suggestion_id': self.sid, 'decision_id': 'notify-' + 'b' * 36}))
+        # Snooze and Mark done stay fine from a notification; nothing else comes from one
+        with self.assertRaisesRegex(ValueError, 'Open the to-do to do this.'):
+            tap('send', 'c' * 36)
+        self.assertEqual(tap('snooze', 'd' * 36)['status'], 'snoozed')
+
+    def test_do_it_from_a_notification_only_starts_a_to_do_not_started_yet(self):
+        tap = lambda suffix: self.app.action('decide', {'suggestion_id': self.sid, 'choice': 'accept', 'feedback': '',
+                                                       'decision_id': 'notify-' + suffix}, owner_dashboard=True)
+        with self.store.connect() as db:
+            db.execute("UPDATE suggestions SET status='prepared' WHERE id=?", (self.sid,))
+        with self.assertRaisesRegex(ValueError, 'Open the to-do to do this.'):
+            tap('e' * 36)  # an old notification tapped after the draft got ready: Do it on a draft is never a button
+        with self.store.connect() as db:
+            db.execute("UPDATE suggestions SET status='pending' WHERE id=?", (self.sid,))
+        self.assertEqual(tap('f' * 36)['status'], 'accepted')  # the old Prepare: the preparation starts
+
     def test_a_running_job_shows_its_progress(self):
         self.job(status='running', progress='Editing the German page')
         message = self.chat_turn()

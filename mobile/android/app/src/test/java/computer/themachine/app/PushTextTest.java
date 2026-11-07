@@ -99,6 +99,8 @@ public class PushTextTest {
         assertTrue(PushText.decide("card_1", "snooze", id).contains("\"choice\":\"snooze\",\"feedback\":\"\",\"snooze_option\":\"tomorrow\""));
         assertTrue(PushText.decide("card_1", "snooze2h", id).contains("\"choice\":\"snooze\",\"feedback\":\"\",\"snooze_option\":\"2h\""));
         assertNull(PushText.decide("card_1", "draft", id));
+        // a button's decision says it came from a notification (push.NOTICE_DECISION): Do it there only starts a to-do
+        assertTrue(PushText.decide("card_1", "prepare", "notify-" + id).contains("\"decision_id\":\"notify-" + id + "\""));
         assertTrue(PushText.decide("card_1", "prepare", id).contains("\"choice\":\"accept\""));
         assertNull(PushText.decide("card_1\",\"choice\":\"accept", "done", id));
         assertNull(PushText.decide("card_1", "send", id));

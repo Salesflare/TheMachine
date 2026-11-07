@@ -29,6 +29,7 @@ const server=createServer(async(req,res)=>{let body='';for await(const c of req)
    if(a.choice==='snooze'){s.status='snoozed';s.snoozed_until=new Date(Date.now()+2*36e5).toISOString();res.end(JSON.stringify({status:'snoozed',snoozed_until:s.snoozed_until}));return}
    if(a.choice==='complete'){s.status='completed';res.end(JSON.stringify({status:'completed'}));return}
    if(a.choice==='accept'){s.status='pending';delete s.snoozed_until;res.end(JSON.stringify({status:'pending'}));return}}
+  if(r.action==='card_chat'&&!cards.some(x=>x.id===r.args.suggestion_id)){res.statusCode=400;res.end(JSON.stringify({error:'Unknown suggestion'}));return}
   if(r.action==='card_chat'){res.end(JSON.stringify({session:true,status:'ok',active:false,cursor:'k',items:[]}));return}
   res.end('{}');return}
  res.statusCode=url.pathname.startsWith('/brand/')?404:200;res.end('{}')});
@@ -39,6 +40,7 @@ const errors=[];let browser;
 try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
  const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true,locale:'en-US'});
+ await context.grantPermissions(['notifications'],{origin:base.slice(0,-1)});
  await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
  const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
  await page.goto(base);await page.locator('#task-'+A).waitFor();
@@ -87,6 +89,39 @@ try{
  // a to-do done meanwhile: opens as it is, nothing runs
  await tap(await keep(C,'done'));
  await page.waitForFunction(c=>location.hash==='#chat='+c,C);assert.equal(await quiet(),before);
+
+ // a to-do that isn't there anymore (deleted, or merged away): one short line on the list, never a blank chat
+ const G='d4'.repeat(8);
+ for(const go of [()=>page.evaluate(g=>{location.hash='chat='+g},G),async()=>tap(await keep(G,'done'))]){
+  await go();
+  await page.waitForFunction(()=>/That to-do isn’t here anymore\./.test(document.querySelector('#toast.show')?.textContent||''));
+  assert.equal(new URL(page.url()).hash,'');assert.equal(await page.locator(`.chat-layout[data-chat="${G}"]`).count(),0);
+  await page.evaluate(()=>document.querySelector('#toast').classList.remove('show'))}
+ assert.equal(await quiet(),before);
+ // a chat opened from a list kept since before (a phone back from the background) on a to-do removed meanwhile: the
+ // next refresh closes it with the same line, never leaves the old to-do up
+ const R='e5'.repeat(8);cards.push({id:R,title:'Water the plants',body:'Before the weekend.',status:'pending',scope:'personal',created_at:now,event_ids:[4]});
+ await page.evaluate(()=>refresh());await page.locator('#task-'+R).waitFor();
+ await page.evaluate(r=>{location.hash='chat='+r},R);await page.waitForFunction(r=>chatId===r,R);
+ cards.pop();await page.evaluate(()=>refresh());
+ await page.waitForFunction(()=>/That to-do isn’t here anymore\./.test(document.querySelector('#toast.show')?.textContent||''));
+ assert.equal(await page.evaluate(()=>chatId),null);assert.equal(new URL(page.url()).hash,'');
+ await page.evaluate(()=>document.querySelector('#toast').classList.remove('show'));
+ // and a notification tapped on such a list: the Machine says the to-do is unknown, so the chat closes with the line at
+ // once, never "couldn't load my replies" with live buttons on a to-do that is gone
+ cards.push({...cards.at(-1),id:'f6'.repeat(8),title:'Feed the cat'});await page.evaluate(()=>refresh());await page.locator('#task-'+'f6'.repeat(8)).waitFor();
+ cards.pop();await page.evaluate(()=>{location.hash='chat='+'f6'.repeat(8)});
+ await page.waitForFunction(()=>/That to-do isn’t here anymore\./.test(document.querySelector('#toast.show')?.textContent||''),null,{timeout:4000});
+ assert.equal(await page.evaluate(()=>chatId),null);assert.equal(new URL(page.url()).hash,'');
+ await page.evaluate(()=>document.querySelector('#toast').classList.remove('show'));
+
+ // Open draft, through sw.js's own notificationclick: the to-do in the list (#card=), where its draft shows in full
+ const worker=context.serviceWorkers()[0]||await context.waitForEvent('serviceworker');
+ await worker.evaluate(async([B,url])=>{const w=ExtendableEvent.prototype.waitUntil;ExtendableEvent.prototype.waitUntil=function(p){if(this.isTrusted)return w.call(this,p);self.__last=Promise.resolve(p)};
+  await self.registration.showNotification('Ready: Find the train times',{tag:B,data:{url},actions:[{action:'draft',title:'Open draft'}]});
+  const [n]=await self.registration.getNotifications({tag:B});self.dispatchEvent(new NotificationEvent('notificationclick',{notification:n,action:'draft'}));await self.__last},[B,base+'#chat='+B]);
+ await page.waitForFunction(b=>document.getElementById('task-'+b)?.classList.contains('flash'),B);  // #card= scrolls it into view and flashes it
+ assert.equal(await page.locator(`.chat-layout[data-chat="${B}"]`).count(),0);assert.equal(await quiet(),before);
 
  // a tap that starts the page: done once the to-dos are in
  cards[0].status='pending';id=await keep(A,'done');

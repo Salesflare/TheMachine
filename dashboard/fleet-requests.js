@@ -25,7 +25,7 @@ function fleetShow(el){if(chatId){history.replaceState(null,'',location.pathname
 document.addEventListener('click',e=>{const a=e.target.closest?.('[data-side-fleet]');if(!a||e.ctrlKey||e.metaKey||e.shiftKey)return;e.preventDefault();fleetShow(a.dataset.sideFleet)});
 // Waiting asks from the same teammate, of the same kind, in the same Fleet: one Always or Never settles them all (fleet.py settle_waiting).
 const fleetAlike=(f,w)=>(f?.waiting||[]).filter(x=>x.fleet===w.fleet&&x.member_id===w.member_id&&x.kind===w.kind&&x.status!=='answered'&&x.status!=='declined');
-const fleetMore=btns=>btns.length?html`<details class="more-actions"><summary aria-label="More actions">More</summary><div class="more-menu" role="group" aria-label="More actions">${btns}</div></details>`:'';
+const fleetMore=btns=>btns.length?html`<details class="more-actions"><summary aria-label="${t('More actions')}" title="${t('More actions')}">${DOTS}</summary><div class="more-menu" role="group" aria-label="${t('More actions')}">${btns}</div></details>`:'';
 function fleetCardsOf(f){if(!f?.on)return[];const works=(f.fleets||[]).filter(x=>x.kind==='work'),several=works.length>1,frId=f.friends?.id;
  const famId=(f.fleets||[]).find(x=>x.kind==='family')?.id,isFamily=row=>!!famId&&row.fleet===famId;
  const fname=row=>several&&!isFamily(row)?(works.find(x=>row.fleet===x.id)?.name||''):'',isFriend=row=>!!frId&&(row.fleet===frId||row.fleet_id===frId)||/^friend_/.test(row.kind||'');

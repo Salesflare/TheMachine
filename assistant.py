@@ -585,6 +585,7 @@ from machine.delivery.push import (
     HINT_MAILS,
     HINT_SOURCES,
     HOSTED_REVIEWS_AUTO_SINCE,
+    NOTICE_DECISION,
     NUDGE_KINDS,
     QUICK,
     QUICK_LABELS,
@@ -600,6 +601,7 @@ from machine.delivery.push import (
     cloud_target,
     hold_handoff,
     hold_mail,
+    notice_decision_refused,
     mail_ready,
     nudge_wait,
     person_line,
@@ -4557,6 +4559,11 @@ class App(*APP_MIXINS):
             else:
                 raise ValueError('Decisions must come from the owner’s Telegram buttons or dashboard')
             args = {**args, 'source': source}
+            if str(args.get('decision_id', '')).startswith(NOTICE_DECISION):
+                with self.store.connect() as db:
+                    refused = notice_decision_refused(db, args.get('suggestion_id'), args.get('choice'))
+                if refused:
+                    raise ValueError(i18n.t(refused))
             terminal_job=None
             files=args.get('files') if owner_dashboard and args.get('choice')=='other' else None  # added in the chat's composer
             feedback=args.get('feedback', '')

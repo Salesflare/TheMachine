@@ -43,7 +43,7 @@ Elke melding heeft knoppen voor de volgende stap. In de app op je telefoon:
 
 Een browser en Telegram tonen er twee. Fleet-vragen houden Eén keer antwoorden en Weigeren.
 
-Vanuit een melding wordt nooit iets verstuurd, betaald of ingediend. Een concept opent altijd eerst, zodat je het ziet voor het vertrekt.
+Vanuit een melding wordt nooit iets verstuurd, betaald of ingediend. Een concept opent altijd eerst, zodat je het ziet voor het vertrekt. Concept openen toont de to-do in je lijst met het hele concept. Doe het start alleen het werk aan een nieuwe to-do.
 
 In de app vragen Snoozen en Markeer als gedaan eerst om te ontgrendelen. In een browser openen ze het dashboard, dat het doet en Ongedaan maken toont. 2 uur snoozen brengt de to-do over twee uur terug, Snoozen morgenochtend.
 

@@ -102,7 +102,7 @@ public class MachinePushService extends MessagingService {
                 String label = notice.labels.get(action);
                 if (label == null || label.isEmpty()) continue;
                 // Open, Open draft, Answer, Sign in: the to-do in the app, where the owner sees it first
-                if (PushText.opens(action)) full.addAction(new NotificationCompat.Action.Builder(0, label, open(c, tag + ":" + action, tag)).build());
+                if (PushText.opens(action)) full.addAction(new NotificationCompat.Action.Builder(0, label, open(c, tag + ":" + action, tag, "draft".equals(action))).build());
                 else if (PushText.choice(action) != null) full.addAction(button(c, tag, action, label, line, notice.events.get(action), notice.events.get("failed")));
             }
         }
@@ -208,8 +208,14 @@ public class MachinePushService extends MessagingService {
     }
 
     private static PendingIntent open(Context c, String id, String tag) {
+        return open(c, id, tag, false);
+    }
+
+    /** card: Open draft, the to-do in the list (#card=), where its draft shows in full; else its chat. */
+    private static PendingIntent open(Context c, String id, String tag, boolean card) {
         Intent intent = new Intent(c, MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         if (tag != null) intent.putExtra("tag", tag); // MachineShellPlugin.handleIntent opens that to-do
+        if (tag != null && card) intent.putExtra("card", true);
         return PendingIntent.getActivity(c, id.hashCode(), intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
     }
 

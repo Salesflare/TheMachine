@@ -7,14 +7,15 @@
 //    Once a week per token is enough (kept in this page's own storage on the Machine's address).
 //  - share: what was shared to the app (text, links, files) opens the dashboard's New to-do, filled in, for the
 //    owner to check and add (window.machineShare). A dashboard from before that only gets the text, as a new to-do.
-//  - tag: a tapped notification's to-do opens (#chat=<id>); listen: the same for taps while this page is open (iOS).
+//  - tag: a tapped notification's to-do opens (#chat=<id>), or with card (Open draft) its place in the list, where
+//    the draft shows in full (#card=<id>); listen: the same for taps while this page is open (iOS).
 //  - files: a download (a link with `download`, an export) goes to the app (MachineFiles on Android, machineFiles on
 //    iOS, both only there on the Machine's own address), which saves it on the phone. A WebView has no downloads.
 //    A file linked in a new tab (a to-do's files) goes the same way, for the phone to open in an app.
 //  The phone's id from app_push_register is kept with the token, so Settings can tell this phone's notifications.
 //  - phone: window.machinePhone, the phone's own questions (the microphone, notifications) and its settings page.
 // payload: {base, device: {platform, sandbox, label, fetch?}, push?: {platform, token, sandbox, label, fetch?},
-//           share?: {text, files: [{name, type, data(base64)}]}, tag?, listen?}
+//           share?: {text, files: [{name, type, data(base64)}]}, tag?, card?, listen?}
 // Returns a promise of {push: 'registered'|'failed'|undefined, share: 'opened'|'added'|'failed'|undefined}.
 (async function machineInject(payload) {
   'use strict';
@@ -44,7 +45,7 @@
     if (push && push.addListener) {
       push.addListener('pushNotificationActionPerformed', event => {
         const tag = event && event.notification && event.notification.data && event.notification.data.tag;
-        location.hash = typeof tag === 'string' && /^[A-Za-z0-9_-]{1,64}$/.test(tag) ? 'chat=' + tag : '';
+        location.hash = typeof tag === 'string' && /^[A-Za-z0-9_-]{1,64}$/.test(tag) ? (event.actionId === 'draft' ? 'card=' : 'chat=') + tag : '';
       });
     }
   }
@@ -68,7 +69,7 @@
     (document.body || document.documentElement).appendChild(x);
   }
 
-  if (typeof payload.tag === 'string' && /^[A-Za-z0-9_-]{1,64}$/.test(payload.tag)) location.hash = 'chat=' + payload.tag;
+  if (typeof payload.tag === 'string' && /^[A-Za-z0-9_-]{1,64}$/.test(payload.tag)) location.hash = (payload.card === true ? 'card=' : 'chat=') + payload.tag;
 
   const KEY = 'machine-app-push', WEEK = 7 * 24 * 3600 * 1000;
   let last = null;

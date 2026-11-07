@@ -206,6 +206,8 @@ self.addEventListener('notificationclick', event => {
   event.notification.close();
   let url = event.notification.data?.url || self.registration.scope;
   if (['once', 'decline'].includes(event.action) && /#fleet=q_[a-f0-9]{16}$/.test(url)) url += '&choice=' + event.action;
+  // Open draft: the to-do in the list, where its draft shows in full (its chat keeps it behind Review)
+  if (event.action === 'draft') url = url.replace(/#chat=([a-f0-9]{16})$/, '#card=$1');
   const tag = event.notification.tag, quick = QUICK.includes(event.action) && /^[a-f0-9]{16}$/.test(tag || '');
   event.waitUntil((async () => {
     if (quick) url = new URL('#quick=' + await quickKeep(tag, event.action), scopeUrl()).href;

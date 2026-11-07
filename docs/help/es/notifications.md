@@ -43,7 +43,7 @@ Cada notificación tiene botones para el siguiente paso. En la app del móvil:
 
 Un navegador y Telegram muestran dos de ellos. Las preguntas del Fleet mantienen Responder una vez y Rechazar.
 
-Desde una notificación nunca se envía, se paga ni se presenta nada. Un borrador siempre se abre primero, para que lo veas antes de que salga.
+Desde una notificación nunca se envía, se paga ni se presenta nada. Un borrador siempre se abre primero, para que lo veas antes de que salga. Abrir borrador muestra la tarea en tu lista con el borrador completo. Hazlo solo empieza el trabajo en una tarea nueva.
 
 En la app, Posponer y Marcar como hecha piden desbloquear primero. En un navegador abren el panel, que lo hace y muestra Deshacer. Posponer 2 h trae la tarea de vuelta en dos horas, Posponer mañana por la mañana.
 

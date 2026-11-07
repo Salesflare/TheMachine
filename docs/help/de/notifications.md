@@ -44,7 +44,7 @@ Jede Benachrichtigung hat Buttons für den nächsten Schritt. In der App auf dem
 
 Ein Browser und Telegram zeigen zwei davon. Fleet-Fragen behalten Einmal antworten und Ablehnen.
 
-Aus einer Benachrichtigung wird nie etwas gesendet, bezahlt oder eingereicht. Ein Entwurf öffnet sich immer zuerst, damit du ihn siehst, bevor er rausgeht.
+Aus einer Benachrichtigung wird nie etwas gesendet, bezahlt oder eingereicht. Ein Entwurf öffnet sich immer zuerst, damit du ihn siehst, bevor er rausgeht. Entwurf öffnen zeigt die Aufgabe in deiner Liste mit dem ganzen Entwurf. Ausführen startet nur die Arbeit an einer neuen Aufgabe.
 
 In der App fragen Zurückstellen und Als erledigt markieren zuerst nach dem Entsperren. Im Browser öffnen sie das Dashboard, das es erledigt und Rückgängig anbietet. 2 Std. zurückstellen bringt das To-do in zwei Stunden zurück, Zurückstellen morgen früh.
 

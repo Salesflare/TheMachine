@@ -44,7 +44,7 @@ Each notification has buttons for the next step. On the phone app:
 
 A browser and Telegram show two of them. Fleet questions keep Answer once and Decline.
 
-Nothing is sent, paid or submitted from a notification. A draft always opens first, so you see it before it goes.
+Nothing is sent, paid or submitted from a notification. A draft always opens first, so you see it before it goes. Open draft shows the to-do in your list with its draft in full. Do it only starts the work on a new to-do.
 
 On the phone app, Snooze and Mark done ask you to unlock first. In a browser they open the dashboard, which does it and shows Undo. Snooze 2h brings the to-do back in two hours, Snooze tomorrow morning.
 

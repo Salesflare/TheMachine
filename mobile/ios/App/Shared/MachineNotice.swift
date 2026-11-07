@@ -138,7 +138,7 @@ enum MachineNotice {
         guard validTag(tag), let choice = buttons[action] else { return done(false) }
         request("api/session") { s in
             guard let csrf = s?["csrf"] as? String, !csrf.isEmpty else { return done(false) }
-            var args: [String: Any] = ["suggestion_id": tag, "choice": choice, "feedback": "", "decision_id": UUID().uuidString.lowercased()]
+            var args: [String: Any] = ["suggestion_id": tag, "choice": choice, "feedback": "", "decision_id": "notify-" + UUID().uuidString.lowercased()]  // a button's, not a page's (push.NOTICE_DECISION)
             if choice == "snooze" { args["snooze_option"] = action == "snooze2h" ? "2h" : "tomorrow" }
             request("api/action", body: ["action": "decide", "args": args], csrf: csrf) { done($0 != nil) }
         }

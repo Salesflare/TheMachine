@@ -309,6 +309,29 @@ QUICK = {
 }
 QUICK_OPENS = ('open', 'draft', 'answer', 'signin')
 # What a button does: the dashboard's decide choice and its snooze time (Snooze alone is until tomorrow, as on a card)
+# A button's decision from the phone app carries this decision id prefix (NotificationActions, MachineNotice.decide).
+# From a notification, Do it only starts a to-do not started yet (notice_decision_refused): never a Do it on a draft or
+# result, and never the step a Claude Code or Codex job left for the owner (card_chat.owner_do_it), which they see first.
+NOTICE_DECISION = 'notify-'
+NOTICE_CHOICES = ('accept', 'snooze', 'complete')
+
+
+def notice_decision_refused(db, suggestion_id, choice):
+    """Why a phone notification's button may not make this decision, or None. Only Do it (accept), Snooze and Mark done
+    come from a notification; Do it only on a to-do still waiting to start, with no Claude Code or Codex work on it."""
+    if choice not in NOTICE_CHOICES:
+        return 'Open the to-do to do this.'
+    if choice != 'accept':
+        return None
+    row = db.execute('SELECT status FROM suggestions WHERE id=?', (str(suggestion_id),)).fetchone()
+    if not row or row['status'] != 'pending':
+        return 'Open the to-do to do this.'
+    if db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='agent_jobs'").fetchone() and \
+            db.execute('SELECT 1 FROM agent_jobs WHERE suggestion_id=? LIMIT 1', (str(suggestion_id),)).fetchone():
+        return 'Open the to-do to do this.'
+    return None
+
+
 QUICK_RUNS = {'prepare': ('accept', None), 'snooze2h': ('snooze', '2h'), 'snooze': ('snooze', 'tomorrow'), 'done': ('complete', None)}
 QUICK_LABELS = {'open': 'Open', 'draft': 'Open draft', 'answer': 'Answer', 'signin': 'Sign in', 'prepare': 'Do it',
                 'snooze2h': 'Snooze 2h', 'snooze': 'Snooze', 'done': 'Mark done'}
@@ -415,6 +438,8 @@ def app_notice(store, config, tag, kind=None, version=1):
               'failed': t('Couldn’t reach your Machine. Open the app to try again.')}
     if version >= 2:
         which = quick_kind(row, kind, blocked, browser.get('signin_url'))
+        if which == 'reminder':  # a snooze that came back says so, as its web push does
+            title = notify.app_line_text(leads['Reminder'][0], row['title']) if text else leads['Reminder'][1]
         return {'line': title, 'title': title, 'body': body, 'actions': list(QUICK[which]['app']),
                 'labels': {a: t(label) for a, label in QUICK_LABELS.items()}, 'events': {**events, 'snooze2h': t('Snoozed it')}}
     return {'line': title, 'title': title, 'body': body, 'actions': buttons,

@@ -43,7 +43,7 @@ Cada notificação tem botões para o próximo passo. No app do celular:
 
 Um navegador e o Telegram mostram dois deles. As perguntas do Fleet mantêm Responder uma vez e Recusar.
 
-Nada é enviado, pago ou enviado para aprovação a partir de uma notificação. Um rascunho sempre abre primeiro, para você ver antes de sair.
+Nada é enviado, pago ou enviado para aprovação a partir de uma notificação. Um rascunho sempre abre primeiro, para você ver antes de sair. Abrir rascunho mostra a tarefa na sua lista com o rascunho completo. Fazer só começa o trabalho em uma tarefa nova.
 
 No app, Adiar e Marcar como feita pedem para desbloquear primeiro. No navegador, eles abrem o painel, que faz isso e mostra Desfazer. Adiar 2 h traz a tarefa de volta em duas horas, Adiar amanhã de manhã.
 
