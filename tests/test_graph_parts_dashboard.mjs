@@ -39,6 +39,11 @@ try{
   assert.ok(fuAsked>0,tag);
   await page.locator('#people-view .tile-fu',{hasText:'Paused'}).waitFor();
   if(shotDir)await page.screenshot({path:`${shotDir}/board-${tag}.png`});
+  // A quiet refresh (each poll) draws the board once, with the follow-ups it was last given: not without them and again
+  const fu=fuAsked,redraws=await page.evaluate(async()=>{let n=0;const real=boardRedraw;window.boardRedraw=()=>{n++;real()};
+   try{await people(graphNode,true)}finally{window.boardRedraw=real}return n});
+  assert.deepEqual([redraws,fuAsked-fu],[0,0],tag);
+  assert.equal(await page.locator('#people-view .tile-fu',{hasText:'Paused'}).count(),1,tag);
   // A person: the head while the whole page is held back, then the timeline in the same place
   const heads=headAsked;await page.evaluate(()=>{people('person:a')});  // not awaited: the whole page is held back
   await page.locator('#people-view .person-page').waitFor();
