@@ -848,6 +848,30 @@ from machine.store.first_look import (
     TIP_SOURCES,
     TIP_USED,
 )
+from machine.web.serving import (
+    COMPRESSIBLE,
+    COMPRESS_MIN,
+    _DASHBOARD_VERSION,
+    _WHOIS,
+    _brotli,
+    _zstd,
+    compress_body,
+    content_codings,
+    dashboard_base,
+    dashboard_cache_scope,
+    dashboard_csrf,
+    dashboard_hosts,
+    dashboard_page,
+    dashboard_status,
+    dashboard_version,
+    etag_base,
+    etag_matches,
+    tailnet_login,
+)
+from machine.web.waiting import (
+    KeyWaitingPage,
+    message_key_keeper,
+)
 
 
 def hours_settings(config, changes):
@@ -1931,22 +1955,6 @@ def browser_embed(config, host=''):
     return None
 
 
-_DASHBOARD_VERSION = {}
-
-
-def dashboard_version():
-    """A short hash of the dashboard page being served (dashboard.html with its parts, dashboard_parts): an open page
-    that runs another one reloads itself."""
-    try:
-        mtime = tuple(path.stat().st_mtime_ns for path in dashboard_parts.files(ROOT))
-    except OSError:
-        return ''
-    if _DASHBOARD_VERSION.get('mtime') != mtime:
-        page = dashboard_parts.assemble(ROOT).encode('utf-8')
-        _DASHBOARD_VERSION.update(mtime=mtime, version=hashlib.sha256(page).hexdigest()[:12])
-    return _DASHBOARD_VERSION['version']
-
-
 # A final step that goes to someone (a message, an invite, sharing) is a send: the owner sees and approves it on the
 # card. Every other step of these kinds can run on the owner's own word (do_now).
 SENDING_FINISH = ('Send', 'Reply', 'Post', 'Invite', 'Share')
@@ -2407,131 +2415,6 @@ def event_glance(event, accounts, own=(), chars=240):
     return out
 
 
-def dashboard_hosts(config):
-    """The dashboard's own origin (`dashboard_host`, used for new links) plus older addresses that
-    keep working for existing Telegram links. Port 8443 since 2026-10-13: the OpenClaw web app
-    installed on the phone claims every path on :443, so the assistant needs its own origin."""
-    return [config['dashboard_host'], *config.get('dashboard_aliases', [])]
-
-
-_WHOIS = {}
-def tailnet_login(ip):
-    """Tailscale login of the tailnet peer at `ip`, for requests Caddy forwards (a custom
-    domain such as assistant.example.com): Tailscale Serve can't serve a custom domain, so Caddy holds :443 and passes the
-    client address in X-Tailnet-Client instead of Tailscale's own identity headers. Cached a minute."""
-    hit = _WHOIS.get(ip)
-    if hit and hit[0] > time.monotonic():
-        return hit[1]
-    try:
-        out = subprocess.run([portable.tailscale() or 'tailscale', 'whois', '--json', ip], capture_output=True, text=True, timeout=5)
-        login = json.loads(out.stdout).get('UserProfile', {}).get('LoginName', '') if out.returncode == 0 else ''
-    except (OSError, subprocess.TimeoutExpired, ValueError):
-        login = ''
-    _WHOIS[ip] = (time.monotonic() + 60, login)
-    return login
-
-
-def dashboard_csrf(token, owner):
-    """The dashboard's CSRF token: the same for every page of this owner on this Machine."""
-    return hmac.new(token.encode(), owner.encode(), hashlib.sha256).hexdigest()
-
-
-def dashboard_cache_scope(token, owner):
-    """Whose last data the dashboard may keep on a device (encrypted, see docs/architecture.md): another owner or a new
-    Machine token is another scope, and the device drops what it kept for the old one. It says nothing about either."""
-    return hmac.new(token.encode(), b'dashboard-cache\0' + owner.encode(), hashlib.sha256).hexdigest()[:32]
-
-
-def dashboard_page(token, owner, base):
-    """dashboard.html as served (with its parts, dashboard_parts): the release, the base path and the device cache's
-    scope filled in. Never the CSRF token: the page asks api/session for it (as a page opened from the app's on-device
-    copy always did), so the page holds no secret and can go compressed (compressible below)."""
-    return (dashboard_parts.assemble(ROOT).replace('__CSRF__', '')
-            .replace('__UI_VERSION__', dashboard_version()).replace('__BASE__', base)
-            .replace('__CACHE_SCOPE__', dashboard_cache_scope(token, owner)))
-
-
-# Compressed answers for the dashboard (the page is about 1 MB and api/status close to that; on a phone over 4G that
-# was most of the start). Only the answers in COMPRESSIBLE, and only because none of them holds a secret: compressing a
-# secret next to text an outsider can influence (an email's words in a card) would let them guess the secret from the
-# compressed size (BREACH). The CSRF token is only in api/session, which is never compressed, nor is anything else not
-# listed here (file downloads, the browser view, streams). Brotli when the module is there, else zstd (Python 3.14),
-# else gzip; the client's Accept-Encoding decides, q=0 refuses one.
-COMPRESSIBLE = frozenset({'/', '/sw.js', '/manifest.webmanifest', *(f'/i18n/{code}.json' for code in locale_prefs.LANGUAGES), '/api/status', '/api/events', '/api/calendar', '/api/meeting-notes', '/api/graph',
-                          '/api/graph/list', '/api/graph/timeline', '/api/cards/done', '/api/promise'})
-COMPRESS_MIN = 1024  # smaller answers fit a packet or two anyway
-try:
-    import brotli as _brotli
-except ImportError:
-    _brotli = None
-try:
-    from compression import zstd as _zstd
-except ImportError:
-    _zstd = None
-
-
-def content_codings(accept):
-    """The codings this server can send, best first, that the client's Accept-Encoding takes (q > 0)."""
-    taken, star = {}, None
-    for part in str(accept or '').split(','):
-        name, _, params = part.strip().partition(';')
-        name, q = name.strip().lower(), 1.0
-        for param in params.split(';'):
-            key, _, value = param.strip().partition('=')
-            if key.strip().lower() == 'q':
-                try:
-                    q = float(value)
-                except ValueError:
-                    q = 0.0
-        if name == '*':
-            star = q
-        elif name:
-            taken[name] = q
-    own = (['br'] if _brotli else []) + (['zstd'] if _zstd else []) + ['gzip']
-    return [c for c in own if taken.get(c, star or 0) > 0]
-
-
-def compress_body(data, coding, best=False):
-    """`data` in `coding`; `best` for answers kept and sent many times (the page), else fast enough for every request."""
-    if coding == 'br':
-        return _brotli.compress(data, quality=9 if best else 5)
-    if coding == 'zstd':
-        return _zstd.compress(data, 12 if best else 3)
-    return gzip.compress(data, 9 if best else 6, mtime=0)
-
-
-def etag_base(tag):
-    """An ETag without the coding it was sent in ("abc-gzip" is "abc"): the page is the same, only its transfer differs."""
-    tag = tag.strip()
-    tag = tag[2:] if tag.startswith('W/') else tag
-    return re.sub(r'-(br|zstd|gzip)"$', '"', tag)
-
-
-def etag_matches(if_none_match, etag):
-    return any(etag_base(t) == etag for t in str(if_none_match or '').split(',') if t.strip())
-
-
-def dashboard_status(status):
-    """api/status as the dashboard needs it: without what it never reads. A finished review's signal list (only its
-    count shows, and checked_count has it), its session names, a card's dedupe key and saved pre-close state, and a
-    delivery's message bookkeeping. The status action itself (CLI, plugin) keeps everything; copies, never its rows."""
-    def without(rows, keys, when=lambda row: True):
-        return [{k: v for k, v in row.items() if k not in keys} if isinstance(row, dict) and when(row) else row for row in rows or []]
-    status, drop = dict(status), {'analyses': {'owner_session', 'owner_run'}, 'suggestions': {'dedupe_key', 'closed_state'},
-                                  'deliveries': {'previous_message_ids', 'notification_message_id', 'last_notified_at',
-                                                 'edit_retry_at', 'edit_failures'}}
-    for name, keys in drop.items():
-        if isinstance(status.get(name), list):
-            status[name] = without(status[name], keys)
-    if isinstance(status.get('analyses'), list):
-        status['analyses'] = without(status['analyses'], {'items'}, lambda r: r.get('status') == 'complete' and r.get('checked_count') is not None)
-    return status
-
-
-def dashboard_base(config, host):
-    """The dashboard's own host serves it at `dashboard_path` (for example / on a custom
-    domain); ts.net aliases keep it under `dashboard_alias_path` (/assistant/)."""
-    return config.get('dashboard_path', '/') if host == config.get('dashboard_host') else config.get('dashboard_alias_path', '/assistant/')
 
 
 def owner_details(config=None):
@@ -11824,87 +11707,6 @@ def main():
             print(account['id'], sync_source(app.store, config, account))
 
 
-
-class KeyWaitingPage:
-    """While the service waits for the message key from the keyring (message_seal.wait_for_key), the dashboard's
-    address answers with why and that it starts by itself, instead of not answering at all. Nothing private: no data
-    is open yet. Called with the reason while it waits, with None when it is over (the app then takes the port)."""
-
-    def __init__(self, config):
-        self.config, self.server, self.reason = config, None, ''
-
-    def __call__(self, reason):
-        if reason is None:
-            if self.server:
-                self.server.shutdown()
-                self.server.server_close()
-                self.server = None
-            return
-        self.reason = reason
-        if self.server:
-            return
-        page = self
-
-        class Handler(http.server.BaseHTTPRequestHandler):
-            def log_message(self, *_):
-                pass
-
-            def do_GET(self):
-                text = ('The Machine is waiting for its message key from your keyring: ' + page.reason + '. '
-                        'It starts by itself once the keyring can be read. Unlock the keyring or sign in to the desktop. '
-                        'Details: assistant message-key status')
-                if self.path.startswith('/api/') or self.path == '/health':
-                    body, kind = json.dumps({'ok': False, 'waiting': 'message-key', 'error': text}).encode(), 'application/json'
-                else:
-                    body = ('<!doctype html><meta charset=utf-8><meta name=viewport content="width=device-width">'
-                            '<meta http-equiv=refresh content=15><title>The Machine</title>'
-                            '<p style="font:16px system-ui;max-width:32em;margin:3em auto;padding:0 1em">' + html.escape(text) + '</p>').encode()
-                    kind = 'text/html'
-                self.send_response(503)
-                self.send_header('Content-Type', kind + '; charset=utf-8')
-                self.send_header('Cache-Control', 'no-store')
-                self.send_header('Retry-After', '15')
-                self.end_headers()
-                self.wfile.write(body)
-
-            do_POST = do_GET
-
-        try:
-            self.server = http.server.ThreadingHTTPServer(('127.0.0.1', self.config.get('port', 8787)), Handler)
-        except OSError:
-            return  # the port is taken: the log says why it waits
-        self.server.daemon_threads = True
-        threading.Thread(target=self.server.serve_forever, name='key-waiting-page', daemon=True).start()
-
-
-def message_key_keeper(config, every=60):
-    """A key in the keyring (message_keyring.py): "message_key_store": "keyring" moves a key file there once the
-    keyring checks out; while the service runs, the runtime file the Gateway's plugin reads is put back from memory
-    if it goes (the keyring itself is not asked again)."""
-    database = Path(config['database']).expanduser() if config.get('database') else None
-    if not database:
-        return
-    import message_keyring
-    if config.get('message_key_store') == 'keyring' and not message_seal.in_keyring(database) \
-            and message_seal.key_path(database).is_file() and not message_seal.held_elsewhere(database):
-        try:
-            message_keyring.to_keyring(database, say=LOG.info)
-        except (message_keyring.Unavailable, message_seal.SealError, OSError) as error:
-            LOG.warning('message key stays in its file: %s', error)
-    if message_seal.in_keyring(database):
-        try:
-            message_keyring.settle(database)
-        except (OSError, ValueError):
-            pass
-
-        def keep():
-            while True:
-                time.sleep(every)
-                try:
-                    message_seal.load_key(database)
-                except (OSError, ValueError):
-                    pass
-        threading.Thread(target=keep, name='message-key-keeper', daemon=True).start()
 
 if __name__ == '__main__':
     os.umask(0o077)
