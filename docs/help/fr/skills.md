@@ -12,6 +12,10 @@ Une compétence explique à votre Machine comment faire quelque chose, comme « 
 
 Dans **Paramètres**, **Compétences**, appuyez sur **Nouvelle compétence** ou **Partir d’un exemple**. Donnez-lui un **Nom**, un **Quand l’utiliser** et des **Instructions**, puis **Enregistrer**.
 
+## Quand elle en utilise une
+
+Chaque tâche que votre Machine prépare reçoit la skill qui lui correspond, sans que vous le demandiez : celle qui porte le nom de son tableau, de son projet ou de son titre, en entier. Vos autres skills sont listées avec, pour qu'elle suive aussi celle qui convient à ce type de travail, comme une réponse dans un type de fil connu ou une mise à jour du CRM.
+
 ## Importer
 
 Appuyez sur **Importer** :

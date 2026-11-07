@@ -12,6 +12,10 @@ Ein Skill sagt deiner Machine, wie sie etwas erledigt, etwa „Fragen zu Preisen
 
 Tippe in **Einstellungen**, **Skills** auf **Neuer Skill** oder **Mit einem Beispiel starten**. Gib ihm einen **Name**, **Wann er gilt** und die **Anweisungen**, dann **Speichern**.
 
+## Wann sie einen nutzt
+
+Jede Aufgabe, die deine Machine vorbereitet, bekommt den passenden Skill, ohne dass du fragst: einen mit dem Namen ihres Boards, Projekts oder Titels, vollständig. Deine anderen Skills stehen dabei, sodass sie auch einen für diese Art Arbeit befolgt, etwa eine Antwort in einer bekannten Art Thread oder ein CRM-Update.
+
 ## Importieren
 
 Tippe auf **Importieren**:
