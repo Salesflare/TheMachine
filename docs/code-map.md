@@ -72,6 +72,8 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
     way out is one entry of `EXPORT_OPTIONS` in `dashboard/settings-export.js`.
   - `machine/names.py`: what the owner calls a service, app or agent; every key from data shown on screen goes
     through it, so a tool underneath (gog, wacli, msgraph-cli) is never a name (`tests/test_owner_names.py`).
+  - `machine/omarchy.py`: the current Omarchy theme's colors (`GET /api/omarchy-theme`), for Settings, General, This
+    device, Omarchy theme (`dashboard/settings-omarchy.js`, painted by `paintOmarchy` in dashboard.html).
   - `machine/app/history.py` (`HistoryApp`): the history backfill's worker, when it may run and one step per source;
     `machine/store/history.py` owns `history_backfill` and the line between history and signal (`events.history`).
     `machine/store/graph_history.py` lets history into the Graph's people and organizations in bounded passes, newest first.

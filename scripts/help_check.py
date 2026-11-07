@@ -87,6 +87,7 @@ FEATURES = {
     'ai-connections': ('ai_access.py', 'def handle'),
     'gbrain': ('gbrain.py', 'def '),
     'voice-input': ('voice_input.py', 'def pcm'),
+    'omarchy': ('machine/omarchy.py', 'def theme'),
     'follow-ups': ('follow_ups.py', 'def schedule'),
     'talk-live': ('talk_live.py', 'def lines'),
     'recurring': ('recurring.py', 'def tick'),
