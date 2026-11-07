@@ -5,8 +5,7 @@ AI should work for you, so you can do your best work and live your best life. Th
 - **Proactive.** You shouldn't have to figure out how AI can help; it figures that out. It doesn't wait for a
   prompt, it takes work off your hands every day.
 - **With you everywhere.** It follows you seamlessly across your computer, your phone and every app you use.
-- **Work and life, as one.** You're one person, not two. It sees your whole day, so nothing falls between work and
-  home, and what's private stays private.
+- **Work and life, as one.** You're one person, not two. It sees your whole day, and keeps private what's private.
 - **Always current.** It keeps pace with AI: new models and abilities reach your Machine as soon as they're good.
 - **Yours.** You own it and your data. No nation, corporation or anyone else controls it. Only you do.
 - **Secure, wherever it runs.** On your own computer for complete ownership, or on a private cloud computer we run
