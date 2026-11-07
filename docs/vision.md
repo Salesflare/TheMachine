@@ -1,6 +1,6 @@
 # Product vision
 
-AI should work for you, so you can do your best work and live your best life. The Machine is that AI:
+AI should work for you: proactive, on your side and yours alone. It takes work off your hands, so you have time for your best work and your best life. The Machine is that AI:
 
 - **Yours, and only yours.** Your AI and your data belong to you. No nation, corporation or anyone else
   controls them. Only you do.
