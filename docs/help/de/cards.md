@@ -28,7 +28,7 @@ Eine Aufgabe mit **Scheinbar erledigt** sieht aus wie eine erledigte, mit dem, w
 
 Eine Aufgabe, deren letzter Schritt noch bei jemand anderem offen ist, etwa ein Review, ein Merge oder eine Antwort, zeigt **Wartet auf:** diesen Schritt und bleibt offen. Sie wartet in **Wartet auf andere**, eingeklappt über Kommt später zurück, und zählt nicht als bereit für dich. Eine neue Nachricht dazu holt sie zurück.
 
-Eine Aufgabe, die eine Woche niemand angefasst hat, fragt einmal: **Noch nötig?** **Entfernen** schließt sie wie **Nicht nötig**, mit **Rückgängig**. **Behalten** behält sie, und sie fragt nie wieder. Öffnen, eine Chatnachricht, eine Änderung, Zurückstellen oder eine neue Nachricht dazu zählen als Anfassen. Kommt eine weitere Woche keine Antwort, wandert sie in Kommt später zurück, unter Noch nötig?, statt zu verschwinden. Anfassen holt sie zurück.
+Eine Aufgabe, die eine Woche niemand angefasst hat, fragt einmal: **Noch nötig?** **Entfernen** schließt sie wie **Nicht nötig**, mit **Rückgängig**. **Behalten** behält sie, und sie fragt nie wieder. Öffnen, eine Chatnachricht, eine Änderung, Zurückstellen oder eine neue Nachricht dazu zählen als Anfassen. Kommt eine weitere Woche keine Antwort, wandert sie in Kommt später zurück, unter Noch nötig?, statt zu verschwinden. Dann zählen auch die Zahl am App-Symbol und die morgendliche Zusammenfassung sie nicht mehr mit. Anfassen holt sie zurück.
 
 Wenn dich nichts braucht, macht deine Machine auf der leeren Liste ein Nickerchen. Während sie prüft, wird sie wach und sagt es. Ist eine Prüfung fehlgeschlagen oder spät dran, sagt ihre Zeile das, mit **Jetzt prüfen** darunter.
 

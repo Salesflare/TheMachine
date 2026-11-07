@@ -4839,9 +4839,10 @@ class App(*APP_MIXINS):
                 "AND (deliver_after IS NULL OR deliver_after<=?) ORDER BY urgent DESC,created_at DESC LIMIT 20", (utc(since), local.date().isoformat(), utc(current)))]
             # What waits for the owner (waiting_count, the app's badge), in the dashboard's order (notify.open_order): the
             # first two for the push's body, the first three for the digest's "Waiting for you", so a pile still gets one
+            later = still_needed.folded(db, utc(current), local_tz())  # a Still needed? left unanswered waits in Later
             top = notify.open_order([dict(r) for r in db.execute(
                 "SELECT id,title,due,due_at,created_at FROM suggestions WHERE status IN ('pending','prepared') AND NOT " + NOT_FOR_OWNER_SQL + " "
-                "AND (deliver_after IS NULL OR deliver_after<=?) LIMIT 2000", (utc(current),))], local)[:3]
+                "AND (deliver_after IS NULL OR deliver_after<=?) LIMIT 2000", (utc(current),)) if r['id'] not in later], local)[:3]
             waiting = top[:2]
             total = waiting_count(db)
             show = security_levels.notify_text(db, False)

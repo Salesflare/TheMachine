@@ -28,7 +28,7 @@ Une tâche marquée **Semble fait** s’affiche comme une tâche faite, avec ce 
 
 Une tâche dont la dernière étape reste ouverte chez quelqu’un d’autre, comme une relecture, une fusion ou une réponse, affiche **En attente de :** cette étape et reste ouverte. Elle attend dans **En attente des autres**, repliée au-dessus de Revient plus tard, et ne compte pas comme prête pour vous. Un nouveau message à son sujet la ramène.
 
-Une tâche que personne n’a touchée depuis une semaine demande une fois : **Toujours utile ?** **Abandonner** la ferme comme **Pas nécessaire**, avec **Annuler**. **Garder** la garde, et elle ne redemande jamais. L’ouvrir, un message dans le chat, une modification, la mettre en attente ou un nouveau message à son sujet comptent comme une action. Sans réponse une semaine de plus, elle se range dans Revient plus tard, sous Toujours utile ?, au lieu de disparaître. Une action la ramène.
+Une tâche que personne n’a touchée depuis une semaine demande une fois : **Toujours utile ?** **Abandonner** la ferme comme **Pas nécessaire**, avec **Annuler**. **Garder** la garde, et elle ne redemande jamais. L’ouvrir, un message dans le chat, une modification, la mettre en attente ou un nouveau message à son sujet comptent comme une action. Sans réponse une semaine de plus, elle se range dans Revient plus tard, sous Toujours utile ?, au lieu de disparaître. Le nombre sur l’icône de l’app et le récap du matin cessent alors de la compter. Une action la ramène.
 
 Quand rien n’a besoin de vous, votre Machine fait la sieste sur la liste vide. Pendant qu’elle vérifie, elle se réveille et le dit. Si une vérification a échoué ou est en retard, sa ligne le dit, avec **Vérifier maintenant** en dessous.
 

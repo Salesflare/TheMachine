@@ -28,7 +28,7 @@ In the open groups, to-dos that are overdue or due by tomorrow come first. The r
 
 A to-do still waiting on someone else, like a review or a reply, says **Waiting on:** that step. It sits in **Waiting on others**, folded above Coming back later, until a new message brings it back.
 
-A to-do nobody touched for a week asks once: **Still needed?** **Drop** closes it like **Not needed**, with **Undo**. **Keep** keeps it, and it never asks again. With no answer for another week, it folds into Coming back later. Opening it, a chat message, an edit, a snooze or a new message brings it back.
+A to-do nobody touched for a week asks once: **Still needed?** **Drop** closes it like **Not needed**, with **Undo**. **Keep** keeps it, and it never asks again. With no answer for another week, it folds into Coming back later, and the number on the app icon and the morning digest stop counting it. Opening it, a chat message, an edit, a snooze or a new message brings it back.
 
 When nothing needs you, your Machine naps on an empty list. While it checks, it wakes up and says so. If a check failed or is late, its line says that, with **Check now** under it.
 
