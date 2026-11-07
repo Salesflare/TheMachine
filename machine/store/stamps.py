@@ -7,8 +7,11 @@ ensure (watch, from Store, graph.ensure or shared_graph.ensure), never on a requ
 triggers has no stamp, and what reads it is worked out each time, as before."""
 import collections
 import os
+import re
 import sqlite3
 import threading
+
+IDENTIFIER = re.compile(r'[a-z][a-z0-9_]{0,62}')
 
 
 def watch(db, tables):
@@ -22,8 +25,16 @@ def watch(db, tables):
         db.execute('INSERT OR IGNORE INTO data_stamps(name,n) VALUES(?,0)', (table,))
         for op in ('insert', 'update', 'delete'):
             if f'stamp_{table}_{op}' not in made:
-                db.execute(f"CREATE TRIGGER stamp_{table}_{op} AFTER {op.upper()} ON {table} BEGIN "
-                           f"UPDATE data_stamps SET n=n+1 WHERE name='{table}'; END")
+                db.execute(_trigger_sql(table, op))
+
+
+def _trigger_sql(table, op):
+    """The counter trigger for one of the module's own table names (a plain identifier that exists, checked: never a
+    value from a request)."""
+    if not IDENTIFIER.fullmatch(table) or op not in ('insert', 'update', 'delete'):
+        raise ValueError('not a table name')
+    return (f"CREATE TRIGGER stamp_{table}_{op} AFTER {op.upper()} ON {table} BEGIN "
+            f"UPDATE data_stamps SET n=n+1 WHERE name='{table}'; END")
 
 
 def stamp(db, tables):
