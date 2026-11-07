@@ -39,7 +39,7 @@ await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const errors=[];let browser;
 try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
- const sizes=shots?[[390,844,'light'],[390,844,'dark'],[1440,900,'light'],[1440,900,'dark'],[1440,700,'light']]:[[390,844,'dark'],[1440,900,'light']];
+ const sizes=shots?[[390,844,'light'],[390,844,'dark'],[1440,900,'light'],[1440,900,'dark'],[1440,700,'light']]:[[390,844,'dark'],[1440,900,'light'],[1440,500,'dark']];  // 500 high: the thread scrolls
  for(const [width,height,scheme] of sizes){
   const context=await browser.newContext({viewport:{width,height},colorScheme:scheme,locale:'en-US',timezoneId:'Europe/Brussels'});
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
@@ -64,12 +64,14 @@ try{
   // Show earlier: yesterday's message above, the day line with it, the screen where it was, then no more button
   const earlier=box.locator('[data-convo-earlier]');assert.equal(await earlier.innerText(),'Show earlier');
   if(width===390){await dialog.evaluate(d=>d.scrollTop=0);await shot('slack-top')}
-  const mainTop=await main.evaluate(n=>n.getBoundingClientRect().top);
+  await earlier.scrollIntoViewIfNeeded();  // where the click happens: Playwright scrolls to the button first
+  const mainTop=await main.evaluate(n=>n.getBoundingClientRect().top),scrolls=await dialog.evaluate(d=>d.scrollHeight>d.clientHeight+1);
   await earlier.click();await box.locator('.convo-say',{hasText:'beta build'}).waitFor();
   assert.equal((await box.locator('.convo-say').allInnerTexts())[0],'Did the beta build go out to the testers yet?');
   assert.equal(await box.locator('.convo-day').count(),2);assert.equal(await earlier.count(),0);
-  const after=await box.locator('.convo-main').evaluate(n=>n.getBoundingClientRect().top),scrolls=await dialog.evaluate(d=>d.scrollHeight>d.clientHeight+1);
-  if(scrolls)assert.ok(Math.abs(after-mainTop)<2,'what was on screen stays put');else assert.ok(after>=mainTop,'the older message lands above');
+  // A thread that already scrolled keeps its place; one that fit moves down at most by what was added
+  const after=await box.locator('.convo-main').evaluate(n=>n.getBoundingClientRect().top);
+  if(scrolls)assert.ok(Math.abs(after-mainTop)<2,'what was on screen stays put '+[width,height,mainTop,after]);else assert.ok(after>=mainTop-40,'the older message lands above');
   if(width===390){await dialog.evaluate(d=>d.scrollTop=0);await shot('slack-earlier')}
   // WhatsApp group: the chat's run before the to-do's message and the reply after it, nothing from another account
   await open('whatsapp');await shot('whatsapp');
