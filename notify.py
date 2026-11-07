@@ -335,11 +335,16 @@ def drop_all(db):
     return db.execute('DELETE FROM notify_queue').rowcount
 
 
-def morning_line(meetings, waiting, total, show_text=True, clock=lambda iso: iso[11:16]):
-    """The morning notification's body, two lines at most: how many to-dos wait and the first two of them, and when
-    the first meeting starts ("3 to-dos: Reply to Sam, Pay the invoice, … · First meeting 10:00"). Without show_text
-    only the count and the time. Nothing waiting: a calm line. Meeting titles and people's words never go in it."""
+def morning_line(meetings, waiting, total, show_text=True, clock=lambda iso: iso[11:16], ready=0, promised=0):
+    """The morning notification's body, two lines at most: what is ready and which of the owner's promises are due
+    today first, then how many to-dos wait and the first two of them, and when the first meeting starts ("2 ready ·
+    1 promise due today · 3 to-dos: Reply to Sam, Pay the invoice, … · First meeting 10:00"), the digest's own order.
+    Without show_text only the counts and the time. Nothing waiting: a calm line. Meeting titles and people's words
+    never go in it."""
     first = clock(meetings[0]['at']) if meetings else ''
+    lead = ' · '.join(c for c in (t('{} ready', ready) if ready else '', t('{} promises due today', promised) if promised else '') if c)
+    if lead and not total:  # a promise without its to-do yet: no "Nothing waiting" after it
+        return clip(lead, APP_BODY)
     if total and show_text and waiting:
         names = ', '.join(clip(w['title'], 40) for w in waiting[:2]) + (', …' if total > 2 else '')
         line = t('{} to-dos: {} · First meeting {}', total, names, first) if first else t('{} to-dos: {}', total, names)
@@ -347,7 +352,7 @@ def morning_line(meetings, waiting, total, show_text=True, clock=lambda iso: iso
         line = t('{} to-dos waiting · First meeting {}', total, first) if first else t('{} to-dos waiting', total)
     else:
         line = t('Nothing waiting · First meeting {}', first) if first else t('Nothing waiting. A calm start.')
-    return clip(line, APP_BODY)
+    return clip(lead + ' · ' + line if lead else line, APP_BODY)
 
 
 def brief_line(titles, show_text=True):
@@ -385,21 +390,53 @@ def open_order(rows, current):
     return sorted(rows, key=lambda r: (not soon(r), -(at(r.get('created_at')) or 0), str(r.get('id') or '')))
 
 
+def promised_today(promises, top, today, text):
+    """The owner's own promises due today, still open (or their to-do still open), for the digest: [{id, title, covers}].
+    A to-do made from the promise's message (or its card) is that promise's work (covers): listed with the promise, not
+    again under Overnight or Waiting for you. top: the waiting to-dos with their event_ids; text: a promise's line."""
+    by_event = {}
+    for r in top:
+        try:
+            for event in json.loads(r.get('event_ids') or '[]'):
+                by_event.setdefault(event, r['id'])
+        except (TypeError, ValueError):
+            pass
+    return [{'id': 'promise:' + str(p['id']), 'title': text(p), 'covers': p.get('suggestion_id') or by_event.get(p['event_id'])}
+            for p in promises if p['direction'] == 'mine' and p.get('due') == today and p['state'] in ('open', 'card')]
+
+
 def compose(meetings, due, overnight, root='', show_text=True, clock=lambda iso: iso[11:16], waiting=None, total=None,
-            top=None, ready=''):
-    """The digest from its three parts: meetings [{at, title, guests}], due and overnight [{title}].
+            top=None, ready=(), promised=(), pace=''):
+    """The digest from its parts: meetings [{at, title, guests}], due and overnight [{id?, title}].
     Returns None when there is nothing to say, else {push: {title, body, url, tag}, text, subject}.
     Without show_text (Careful, or notify_text off) it carries counts only. waiting [{title}] (the first ones) and
-    total (how many) are the to-dos waiting for the owner, for the push's body (morning_line); left out: due and
-    overnight. top [{title}] are the first waiting to-dos in the dashboard's order (open_order): with total, a "Waiting
-    for you" part, so a pile that waits still gets its digest when nothing is due or new. ready: the time to clear what
-    waits, as the dashboard's Ready header says it ("4 ready · about 2 min", clear_pace.line), under that part.
-    Nothing at all: None."""
+    total (how many) are the to-dos waiting for the owner, for the push's body (morning_line); left out: ready, due and
+    overnight. top [{id?, title}] are the waiting to-dos in the dashboard's order (open_order): with total, a "Waiting
+    for you" part, so a pile that waits still gets its digest when nothing is due or new. Nothing at all: None.
+    ready [{id?, title}] (prepared, waiting for the owner's OK) and promised [{id?, title}] (the owner's own promises
+    due today; covers: the id of a to-do made from that promise) come first, in the text and the push: what can go out
+    in a click and what was promised for today.
+    A to-do is listed once, in the first part it belongs to (by id, else by title): Overnight and Waiting for you never
+    repeat what came before, and Waiting's "+N more" counts only the rest. pace: the time to clear what waits, as the
+    dashboard's Ready header says it ("4 ready · about 2 min", clear_pace.line), under the waiting part."""
+    seen = set()
+
+    def once(items):
+        key = lambda i: i.get('id') or ('title', i['title'])
+        fresh = [i for i in items if key(i) not in seen]
+        seen.update(key(i) for i in fresh)
+        return fresh
+    ready, promised = once(list(ready)), once(list(promised))
+    seen.update(p['covers'] for p in promised if p.get('covers'))  # a promise's own to-do: listed with the promise
+    due, overnight = once(list(due)), once(list(overnight))
     piled = total if top is not None and total else 0
-    if not (meetings or due or overnight or piled):
+    rest = [w for w in top or [] if (w.get('id') or ('title', w['title'])) not in seen]
+    left = max(0, piled - (len(top or []) - len(rest))) if rest else 0  # the waiting ones not listed above
+    if not (meetings or due or overnight or piled or ready or promised):
         return None
     # in the owner's language (i18n.py); English when there is no entry
-    counts = [t('{} meetings', len(meetings)) if meetings else '', t('{} due', len(due)) if due else '',
+    counts = [t('{} ready', len(ready)) if ready else '', t('{} promises due today', len(promised)) if promised else '',
+              t('{} meetings', len(meetings)) if meetings else '', t('{} due', len(due)) if due else '',
               t('{} new', len(overnight)) if overnight else '', t('{} waiting', piled) if piled else '']
     summary = ' · '.join(c for c in counts if c)
     lines = []
@@ -410,23 +447,25 @@ def compose(meetings, due, overnight, root='', show_text=True, clock=lambda iso:
             count = len(items) if count is None else max(count, len(items[:3]))
             lines.append(head)
             lines.extend('• ' + line(i) for i in items[:3])
-            if count > 3:
-                lines.append(t('• +{} more', count - 3))
+            if count > len(items[:3]):  # the ones not listed (fewer than three listed: the rest of a count)
+                lines.append(t('• +{} more', count - len(items[:3])))
             lines.append('')
+        part(t('Ready for you'), ready, lambda r: r['title'])
+        part(t('Promises due today'), promised, lambda p: p['title'])
         part(t('Today'), meetings, lambda m: clock(m['at']) + ' ' + m['title'])
         part(t('Due'), due, lambda d: d['title'])
         part(t('Overnight'), overnight, lambda o: o['title'])
-        if piled:
-            part(t('Waiting for you'), top, lambda w: w['title'], piled)
+        if left:
+            part(t('Waiting for you'), rest, lambda w: w['title'], left)
     else:
         lines += [summary, '']
-    if piled and ready:
-        lines += [ready, '']
+    if piled and pace:
+        lines += [pace, '']
     if root:
         lines.append(t('Open The Machine: {}', root))
-    if waiting is None:
-        waiting = due + [o for o in overnight if o not in due]
-    body = morning_line(meetings, waiting, len(waiting) if total is None else total, show_text, clock)
+    if waiting is None:  # the first ones in the digest's own order
+        waiting = ready + due + overnight + (rest if piled else [])
+    body = morning_line(meetings, waiting, len(waiting) if total is None else total, show_text, clock, len(ready), len(promised))
     return {'push': {'title': t('Your morning'), 'body': body[:200], 'url': (root or './') + DIGEST_VIEW, 'tag': 'digest'},
             'text': '\n'.join(lines).strip(), 'subject': t('Your morning: {}', summary)}
 

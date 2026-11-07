@@ -55,6 +55,16 @@ try{
   // Preview sits in the digest row of the grid; the card below is only This device
   assert.equal(await page.locator('#notify-grid [data-notify-preview]').count(),1);
   assert.deepEqual(await page.locator('#notify-more strong').allInnerTexts(),['This device']);
+  // The preview opens right under the grid (not under This device) and in view: the click shows what it did
+  assert.equal(await page.evaluate(()=>document.getElementById('notify-grid').nextElementSibling.id),'notify-preview');
+  const shown=await page.evaluate(()=>{const r=document.getElementById('notify-preview').getBoundingClientRect();return r.top<innerHeight&&r.bottom>0});
+  assert.equal(shown,true);
+  // The Settings tabs: on a desktop every one shows in full, none cut off at an edge; on a phone the row scrolls with
+  // the open tab in full
+  const tabs=await page.evaluate(()=>{const row=document.getElementById('settings-tabs').getBoundingClientRect(),inside=b=>{const r=b.getBoundingClientRect();return r.left>=row.left-0.5&&r.right<=row.right+0.5};
+   const bs=[...document.querySelectorAll('#settings-tabs button:not([hidden])')];return {cut:bs.filter(b=>!inside(b)).map(b=>b.textContent),open:inside(document.querySelector('#settings-tabs [aria-selected="true"]'))}});
+  if(width>1024)assert.deepEqual(tabs.cut,[],'every Settings tab shows at '+width);
+  assert.equal(tabs.open,true,'the open Settings tab shows in full at '+width);
   // Work hours are in this tab now, right under it: no second tab, no Change buttons that jump away
   assert.equal(await page.locator('#settings-tabs [data-settings-tab="hours"]').count(),0);
   assert.equal(await page.locator('#hours').isVisible(),true);

@@ -481,6 +481,51 @@ class Notifications(unittest.TestCase):
         with patch_everywhere(a, 'local_tz', return_value=UTC), patch_everywhere(a, 'recap_meetings', return_value=[]):
             self.assertIsNone(self.app.digest(current))
 
+    def test_ready_and_promises_due_today_lead_and_no_to_do_is_listed_twice(self):
+        # The preview listed the same three to-dos under Overnight and Waiting for you, and the ready drafts and the
+        # promises due today weren't among its first lines. Ready leads, then the promises due today; Overnight and
+        # Waiting never repeat what came before, and "+N more" counts only the rest. The push says the same first.
+        ready = [{'id': 'r1', 'title': 'Reply to Sam about the pilot'}, {'id': 'r2', 'title': 'Answer the supplier'}]
+        new = [{'id': 'n1', 'title': 'Book the venue'}, {'id': 'r1', 'title': 'Reply to Sam about the pilot'}]
+        top = ready + [{'id': 'n1', 'title': 'Book the venue'}, {'id': 'w1', 'title': 'Pay the invoice'}]
+        out = notify.compose([], [], new, 'https://m.example/', total=5, top=top, ready=ready,
+                             promised=[{'id': 'promise:1', 'title': 'Send the recap for Wren'}])
+        self.assertTrue(out['text'].startswith('Ready for you\n• Reply to Sam about the pilot\n• Answer the supplier\n\n'
+                                               'Promises due today\n• Send the recap for Wren\n\nOvernight\n• Book the venue\n\n'
+                                               'Waiting for you\n• Pay the invoice\n• +1 more\n\n'), out['text'])
+        self.assertEqual(out['subject'], 'Your morning: 2 ready · 1 promise due today · 1 new · 5 waiting')
+        self.assertEqual(out['push']['body'], '2 ready · 1 promise due today · 5 to-dos: Reply to Sam about the pilot, Answer the supplier, …')
+        # all of what waits is listed above: no Waiting part at all
+        self.assertNotIn('Waiting for you', notify.compose([], [], new, total=3, top=top[:3], ready=ready)['text'])
+        # a promise alone (its to-do not made yet) still gets a digest, without "Nothing waiting" after it
+        alone = notify.compose([], [], [], total=0, top=[], promised=[{'title': 'Send the recap for Wren'}])
+        self.assertEqual(alone['push']['body'], '1 promise due today')
+        careful = notify.compose([], [], new, show_text=False, total=5, top=top, ready=ready)
+        self.assertNotIn('Sam', careful['text'] + careful['subject'] + careful['push']['body'])
+        self.assertTrue(careful['push']['body'].startswith('2 ready · '))
+
+    def test_the_digest_finds_the_ready_ones_and_the_owners_promises_due_today(self):
+        current = a.dt.datetime(2026, 11, 5, 8, 30, tzinfo=UTC)
+        ready = self.card(key='a', title='Reply to Sam about the pilot')
+        self.card(key='b', title='Book the venue')
+        recap = self.card(key='c', title='Send Wren the pilot recap')
+        with self.store.connect() as db:
+            db.execute("UPDATE suggestions SET status='prepared' WHERE id=?", (ready,))
+            db.execute("UPDATE suggestions SET event_ids='[3]' WHERE id=?", (recap,))  # made from the promise's message
+            for who, what, direction, due, event in (('Wren', 'send the pilot recap', 'mine', '2026-11-05', 3), ('Jonah', 'send the rate limits', 'mine', '2026-11-06', 1),
+                                                     ('Mila', 'send the contract', 'theirs', '2026-11-05', 1)):
+                db.execute("INSERT INTO promises(direction,who,what,due,check_at,event_id,account_id,status,created_at,updated_at) VALUES(?,?,?,?,?,?,'home','open',?,?)",
+                           (direction, who, what, due, current.isoformat(), event, current.isoformat(), current.isoformat()))
+        with patch_everywhere(a, 'local_tz', return_value=UTC), patch_everywhere(a, 'recap_meetings', return_value=[]):
+            digest = self.app.digest(current)
+        self.assertTrue(digest['text'].startswith('Ready for you\n• Reply to Sam about the pilot\n\nPromises due today\n• Send the pilot recap for Wren\n\n'), digest['text'])
+        self.assertEqual(digest['text'].count('Reply to Sam about the pilot'), 1)
+        self.assertEqual(digest['text'].count('Book the venue'), 1)
+        self.assertNotIn('Send Wren the pilot recap', digest['text'])  # the promise's own to-do: listed as the promise
+        self.assertNotIn('rate limits', digest['text'])  # tomorrow's
+        self.assertNotIn('contract', digest['text'])  # someone else's
+        self.assertTrue(digest['push']['body'].startswith('1 ready · 1 promise due today · 3 to-dos: Reply to Sam about the pilot, Book the venue'), digest['push']['body'])
+
     def test_the_digest_goes_once_on_the_chosen_channels_and_the_preview_sends_nothing(self):
         self.app.action('push_subscribe', SUB, owner_dashboard=True)
         self.card(title='Answer the school')

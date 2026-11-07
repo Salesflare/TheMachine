@@ -4853,24 +4853,26 @@ class App(*APP_MIXINS):
             meetings = [m for m in meetings if m['at'] >= utc(local)] or []
             open_states = "('pending','accepted','prepared','instructions')"
             due = [dict(r) for r in db.execute(
-                f"SELECT title FROM suggestions WHERE (status IN {open_states} AND due=? AND NOT {NOT_FOR_OWNER_SQL}) OR (status='snoozed' AND snoozed_until>=? AND snoozed_until<?) "
+                f"SELECT id,title FROM suggestions WHERE (status IN {open_states} AND due=? AND NOT {NOT_FOR_OWNER_SQL}) OR (status='snoozed' AND snoozed_until>=? AND snoozed_until<?) "
                 "ORDER BY created_at LIMIT 20", (local.date().isoformat(), utc(local), utc(end)))]
             overnight = [dict(r) for r in db.execute(
-                "SELECT title FROM suggestions WHERE status='pending' AND handled_hint IS NULL AND created_at>=? AND (due IS NULL OR due!=?) "
+                "SELECT id,title FROM suggestions WHERE status='pending' AND handled_hint IS NULL AND created_at>=? AND (due IS NULL OR due!=?) "
                 "AND (deliver_after IS NULL OR deliver_after<=?) ORDER BY urgent DESC,created_at DESC LIMIT 20", (utc(since), local.date().isoformat(), utc(current)))]
             # What waits for the owner (waiting_count, the app's badge), in the dashboard's order (notify.open_order): the
-            # first two for the push's body, the first three for the digest's "Waiting for you", so a pile still gets one
+            # ready ones (prepared, the dashboard's Ready) lead the digest; the rest is its "Waiting for you", without
+            # what an earlier part already listed (notify.compose), so a pile still gets one
             later = still_needed.folded(db, utc(current), local_tz())  # a Still needed? left unanswered waits in Later
             top = notify.open_order([dict(r) for r in db.execute(
-                "SELECT id,title,due,due_at,created_at FROM suggestions WHERE status IN ('pending','prepared') AND NOT " + NOT_FOR_OWNER_SQL + " "
-                "AND (deliver_after IS NULL OR deliver_after<=?) LIMIT 2000", (utc(current),)) if r['id'] not in later], local)[:3]
-            waiting = top[:2]
+                "SELECT id,title,status,due,due_at,created_at,event_ids FROM suggestions WHERE status IN ('pending','prepared') AND NOT " + NOT_FOR_OWNER_SQL + " "
+                "AND (deliver_after IS NULL OR deliver_after<=?) LIMIT 2000", (utc(current),)) if r['id'] not in later], local)
+            ready = [r for r in top if r['status'] == 'prepared']
             total = waiting_count(db)
-            ready = clear_pace.line(total, clear_pace.seconds(db, current))  # "4 ready · about 2 min", as To-dos says it
+            pace = clear_pace.line(total, clear_pace.seconds(db, current))  # "4 ready · about 2 min", as To-dos says it
             show = security_levels.notify_text(db, False)
+        promised = notify.promised_today(self.store.promises(), top, local.date().isoformat(), lambda p: promise_text(p)[0])
         root = 'https://' + self.config['dashboard_host'] + self.config.get('dashboard_path', '/') if self.config.get('dashboard_host') else ''
         when = lambda iso: locale_prefs.clock_text(dt.datetime.fromisoformat(iso).astimezone(local_tz()))
-        return notify.compose(meetings, due, overnight, root, show, when, waiting, total, top, ready)
+        return notify.compose(meetings, due, overnight, root, show, when, None, total, top, ready, promised, pace)
 
     def digest_step(self, current=None, push=None, telegram_send=None, mail=None):
         """Send the morning digest once on a work day, at its time, on the channels the owner picked."""

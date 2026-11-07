@@ -12,7 +12,7 @@ En **Ajustes**, **Notificaciones**, elige por tipo por dónde te llega:
 - **Tareas nuevas**: una respuesta que alguien espera, una petición, cualquier cosa urgente.
 - **Resultados y preguntas**: un borrador listo para aprobar o enviar, una tarea atascada o que necesita iniciar sesión, una pregunta del Fleet.
 - **Recordatorios**: lo pospuesto y las esperas que vuelven.
-- **Resumen matutino**: las reuniones de hoy, lo que vence, lo que llegó durante la noche y las primeras tareas que esperan, en el orden de tu lista de tareas.
+- **Resumen matutino**: primero los borradores listos y las promesas que vencen hoy, luego las reuniones de hoy, lo que vence, lo que llegó durante la noche y las demás tareas que esperan. Cada tarea aparece una sola vez.
 
 Cada uno tiene un interruptor para **Push** (la app en tu teléfono u ordenador), **Telegram** cuando está configurado y **Correo** en una Machine alojada o en una que está en The Machine Network. Todos están activados, salvo el resumen en Telegram.
 

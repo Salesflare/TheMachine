@@ -52,6 +52,15 @@ class LookDone(unittest.TestCase):
         app.store = self.store
         self.assertFalse(app.notify_open('suggestion:' + self.sid))
 
+    def test_a_ready_to_do_without_an_outcome_counts_as_waiting(self):
+        # Most ready drafts have no outcome: NOT (... json_extract(NULL) ...) was NULL, so they were left out of the
+        # badge and the morning digest's ready part.
+        with self.store.connect() as db:
+            db.execute("UPDATE suggestions SET status='prepared',outcome=NULL")
+            self.assertEqual(a.waiting_count(db), 1)
+            db.execute("UPDATE suggestions SET outcome=?", (json.dumps({'state': 'waiting'}),))
+            self.assertEqual(a.waiting_count(db), 0)
+
     def test_not_done_puts_a_run_found_done_back_and_teaches(self):
         self.already_done()
         result = self.store.decide(self.sid, 'not_done', '', 'nd1', 'dashboard')

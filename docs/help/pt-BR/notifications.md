@@ -12,7 +12,7 @@ Em **Configurações**, **Notificações**, escolha por tipo onde cada coisa che
 - **Novas tarefas**: uma resposta que alguém está esperando, um pedido, qualquer coisa urgente.
 - **Resultados e perguntas**: um rascunho pronto para aprovar ou enviar, uma tarefa travada ou que precisa de login, uma pergunta do Fleet.
 - **Lembretes**: itens adiados e esperas que voltam.
-- **Resumo da manhã**: as reuniões de hoje, o que vence, o que chegou durante a noite e as primeiras tarefas esperando, na ordem da sua lista de tarefas.
+- **Resumo da manhã**: primeiro os rascunhos prontos e as promessas que vencem hoje, depois as reuniões de hoje, o que vence, o que chegou durante a noite e as outras tarefas esperando. Cada tarefa aparece uma vez só.
 
 Cada um tem um botão para **Push** (o app no seu celular ou computador), **Telegram** quando estiver configurado e **E-mail** em uma Machine hospedada ou em uma Machine na The Machine Network. Todos ficam ativados, menos o resumo no Telegram.
 

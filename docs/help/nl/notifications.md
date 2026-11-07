@@ -12,7 +12,7 @@ Kies in **Instellingen**, **Meldingen** per soort waar die je bereikt:
 - **Nieuwe to-do's**: een antwoord waarop iemand wacht, een verzoek, alles wat dringend is.
 - **Resultaten en vragen**: een concept dat klaar is om goed te keuren of te versturen, een taak die vastzit of een login nodig heeft, een vraag uit je Fleet.
 - **Herinneringen**: snoozes en wachttijden die terugkomen.
-- **Ochtendoverzicht**: de afspraken van vandaag, wat moet gebeuren, wat er 's nachts binnenkwam en de eerste wachtende to-do's, in de volgorde van je to-dolijst.
+- **Ochtendoverzicht**: eerst klaarstaande concepten en beloftes die vandaag moeten, dan de afspraken van vandaag, wat moet gebeuren, wat er 's nachts binnenkwam en de andere wachtende to-do's. Elke to-do staat er maar één keer in.
 
 Elk heeft een schakelaar voor **Push** (de app op je telefoon of computer), **Telegram** als dat ingesteld is, en **E-mail** op een gehoste Machine of een Machine op The Machine Network. Alles staat aan, behalve het overzicht op Telegram.
 

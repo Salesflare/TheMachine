@@ -12,7 +12,7 @@ Wähle in **Einstellungen**, **Benachrichtigungen** für jede Art, wo sie dich e
 - **Neue Aufgaben**: eine Antwort, auf die jemand wartet, eine Anfrage, alles Dringende.
 - **Ergebnisse und Fragen**: ein Entwurf, der bereit zum Freigeben oder Senden ist, eine Aufgabe, die festhängt oder eine Anmeldung braucht, eine Frage aus der Fleet.
 - **Erinnerungen**: Zurückgestelltes und Wartendes, das zurückkommt.
-- **Morgendliche Zusammenfassung**: die Meetings von heute, was fällig ist, was über Nacht reinkam und die ersten wartenden Aufgaben, in der Reihenfolge deiner Aufgabenliste.
+- **Morgendliche Zusammenfassung**: zuerst fertige Entwürfe und Versprechen, die heute fällig sind, dann die Meetings von heute, was fällig ist, was über Nacht reinkam und die anderen wartenden Aufgaben. Jede Aufgabe steht nur einmal darin.
 
 Jede hat einen Schalter für **Push** (die App auf deinem Handy oder Computer), **Telegram**, wenn es eingerichtet ist, und **E-Mail** auf einer gehosteten Machine oder einer im The Machine Network. Alle sind an, außer der Zusammenfassung auf Telegram.
 

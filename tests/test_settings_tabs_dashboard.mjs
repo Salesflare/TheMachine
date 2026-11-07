@@ -10,8 +10,8 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // to a control plane account (hosted, or self-hosted and paired) gets Account first (test_account_dashboard.mjs); one
 // with no account has none. A tab with nothing to show is
 // left out. Links open a tab (#settings/skills, #settings=model), the URL follows the tab, and the last tab is kept.
-// The row is one line at every width (1440x900, 1440x700, 390): it scrolls sideways with a fade at its edge, the
-// open tab scrolled into view, and the page stays inside the screen.
+// On a desktop (1440x900, 1440x700) every tab shows in full, none cut off at an edge, a second row if they don't fit. On a
+// phone (390) it scrolls sideways with a fade at its edge, the open tab scrolled into view. The page stays inside the screen.
 const dashboard=await dashboardPage();
 const hours={days:[0,1,2,3,4],start:'08:00',end:'18:00',morning:'09:00',digest_at:'08:30',timezone:'UTC',saveable:true};
 let hosted=true,paired=false,model=true;
@@ -58,11 +58,16 @@ try{
    assert.equal(await visible(page,sel),true,sel);assert.equal(await visible(page,'#theme-toggle'),false);
    assert.equal(await page.evaluate(()=>location.hash),'#settings/'+tab);
    assert.equal(await help(page),HELP+({notify:'notifications'}[tab]||tab))}
-  // The pills are one height and one row that scrolls sideways inside the screen, never a second row; the open tab in view.
-  const row=await page.evaluate(()=>{const bar=document.querySelector('#settings-tabs'),box=bar.getBoundingClientRect(),r=[...bar.children].filter(e=>!e.hidden).map(e=>e.getBoundingClientRect());
+  // The pills are one height and one row inside the screen, the open tab in full. On a desktop every tab shows (in a
+  // longer language they take a second row); on a phone the row scrolls sideways.
+  const row=await page.evaluate(()=>{const bar=document.querySelector('#settings-tabs'),box=bar.getBoundingClientRect(),r=[...bar.children].filter(e=>!e.hidden).map(e=>e.getBoundingClientRect()),
+   inside=x=>x.left>=box.left-.5&&x.right<=box.right+.5;
    return {top:new Set(r.map(x=>Math.round(x.top))).size,height:new Set(r.map(x=>Math.round(x.height))).size,fits:document.documentElement.scrollWidth<=innerWidth,overflow:getComputedStyle(bar).overflowX,
-    open:(x=>x.left>=box.left-.5&&x.right<=box.right+.5)(bar.querySelector('[aria-selected="true"]').getBoundingClientRect())}});
-  assert.deepEqual(row,{top:1,height:1,fits:true,overflow:'auto',open:true},`${width}x${height} `+JSON.stringify(row));
+    open:inside(bar.querySelector('[aria-selected="true"]').getBoundingClientRect()),all:r.every(inside)}});
+  const desk=width>=1024;
+  // (a desktop may take a second row: that depends on the fonts it has)
+  assert.deepEqual({...row,top:desk?Math.min(row.top,1):row.top},{top:1,height:1,fits:true,overflow:desk?'visible':'auto',open:true,all:desk},`${width}x${height} `+JSON.stringify(row));
+  if(desk)assert.ok(row.top<=2,'at most two rows of tabs at '+width);
   if(process.env.SHOTS)await page.screenshot({path:`${process.env.SHOTS}/settings-tabs-${width}x${height}.png`});
   // The last tab is kept; a link opens another; leaving Settings drops the link.
   await page.reload();await page.locator('#updated',{hasText:/\d/}).waitFor({state:'attached'});await page.locator('#settings:not([hidden])').waitFor();

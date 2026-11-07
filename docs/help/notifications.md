@@ -12,7 +12,7 @@ Fewer notifications, or other ones? In **Settings**, **Notifications**, pick whe
 - **New to-dos**: a reply someone waits for, a request, anything urgent.
 - **Results and questions**: a draft ready to send, a task that's stuck or needs a sign-in, a Fleet question.
 - **Reminders**: snoozed to-dos, and replies you wait for, coming back.
-- **Morning digest**: today's meetings, what's due, what came in overnight and the first to-dos waiting.
+- **Morning digest**: drafts ready for you and promises due today first, then today's meetings, what's due, what came in overnight and the other to-dos waiting. Each to-do shows up once.
 
 Each kind has a switch for **Push** (the app on your phone or computer), **Telegram** once it's set up, and **Email** on a hosted Machine or one on The Machine Network. All are on, except the digest on Telegram.
 
