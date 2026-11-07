@@ -31,7 +31,7 @@ Op een telefoon vult een dialoogvenster zoals **Deze e-mail versturen?** het hel
 
 ## Haal er meer uit
 
-Vanaf je eerste bezoek, zodra de eerste blik klaar is, staat bovenaan To-dos een kleine to-do met wat The Machine nuttiger maakt: de app voor je telefoon, meldingen, WhatsApp, de app op deze computer, nog een account en meer koppelingen. Elke rij heeft één knop die die stap doet, en vinkt zichzelf af zodra het klaar is.
+Vanaf je eerste bezoek, zodra de eerste blik klaar is, staat bovenaan To-dos een kleine to-do met wat The Machine nuttiger maakt: de app voor je telefoon, meldingen, WhatsApp, de app op deze computer, nog een account en meer koppelingen. Elke rij heeft één knop die die stap doet, en vinkt zichzelf af zodra het klaar is. Ze toont tot vijf rijen, open stappen eerst, zodat een tool die je mail doet vermoeden, zoals GitHub, een rij krijgt zodra eerdere stappen klaar zijn.
 
 Rijen staan er alleen waar ze passen: geen telefoon-app in de app zelf, geen installeren op een telefoon. Het × op een rij sluit hem op elk apparaat, en het × bovenaan sluit de hele to-do.
 

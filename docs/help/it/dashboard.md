@@ -31,7 +31,7 @@ Sul telefono, una finestra come **Inviare questa email?** occupa tutto lo scherm
 
 ## Ottieni di più
 
-Dalla prima visita, appena finita la prima occhiata, una piccola attività in cima alle Attività elenca ciò che rende The Machine più utile: l’app per il telefono, le notifiche, WhatsApp, l’app su questo computer, un altro account e altre connessioni. Ogni riga ha un pulsante che fa quel passaggio, e si spunta da sola una volta fatto.
+Dalla prima visita, appena finita la prima occhiata, una piccola attività in cima alle Attività elenca ciò che rende The Machine più utile: l’app per il telefono, le notifiche, WhatsApp, l’app su questo computer, un altro account e altre connessioni. Ogni riga ha un pulsante che fa quel passaggio, e si spunta da sola una volta fatto. Mostra fino a cinque righe, prima i passaggi aperti, così uno strumento suggerito dalla tua posta, come GitHub, ha la sua riga quando i passaggi precedenti sono fatti.
 
 Le righe compaiono solo dove servono: niente app per il telefono dentro l’app, niente installazione su un telefono. La × di una riga la chiude su ogni dispositivo, e la × in alto chiude l’intera attività.
 
