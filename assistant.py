@@ -1019,6 +1019,9 @@ from machine.app.review import (
     review_step_title,
     review_steps,
 )
+from machine.store.faults import (
+    FaultsStore,
+)
 
 
 def hours_settings(config, changes):
@@ -1333,118 +1336,9 @@ def google_photo_accounts(config):
     return list(seen.values())
 
 
-class Store(CardsStore, DecisionsStore, EventsStore, FactsStore, FirstLookStore, ProfileStore, PromisesStore,
-            MachineCardsStore, ReviewStore, StoreCore, ViewsStore, VoicesStore):
-
-    def tool_approval_proposal(self, proposal_id, title, detail):
-        if (not re.fullmatch(r'[a-f0-9]{64}', str(proposal_id)) or not isinstance(detail, str) or
-                len(detail.encode()) > 55000 or hashlib.sha256(detail.encode()).hexdigest() != proposal_id or
-                not isinstance(title, str) or len(title) > 80):
-            raise ValueError('Invalid full approval proposal')
-        with self.connect() as db:
-            # Content-addressed and immutable: retries reuse the same exact proposal.
-            db.execute('INSERT OR IGNORE INTO tool_approval_proposals VALUES(?,?,?,?)',
-                       (proposal_id, title, detail, now()))
-        return proposal_id
-
-    def tool_approval_document(self, proposal_id):
-        if not re.fullmatch(r'[a-f0-9]{64}', str(proposal_id)):
-            raise ValueError('Unknown approval proposal')
-        with self.connect() as db:
-            row = db.execute('SELECT * FROM tool_approval_proposals WHERE id=?', (proposal_id,)).fetchone()
-            if not row:
-                raise ValueError('Unknown approval proposal')
-            return dict(row)
-
-        # Rows older than 30 days go in the nightly retention run (retention.py), after their daily counts are kept.
-
-    def record_fault(self, fingerprint, kind, frames, location, version, message=None, origin=None):
-        stamp = now()
-        with self.connect() as db:
-            db.execute('INSERT INTO faults(fingerprint,day,kind,frames,location,version,first_at,last_at,count,message,origin) VALUES(?,?,?,?,?,?,?,?,1,?,?) '
-                       'ON CONFLICT(fingerprint,day) DO UPDATE SET count=count+1,last_at=excluded.last_at,frames=excluded.frames,version=excluded.version,'
-                       'message=coalesce(excluded.message,message),origin=excluded.origin',
-                       (fingerprint, stamp[:10], kind, json.dumps(frames), location, version, stamp, stamp, message,
-                        json.dumps(origin) if origin else None))
-            if version:
-                db.execute('INSERT INTO fault_versions VALUES(?,?,?,?,?,?,1) ON CONFLICT(fingerprint,version,day) '
-                           'DO UPDATE SET last_at=excluded.last_at,count=count+1', (fingerprint,version,stamp[:10],kind,stamp,stamp))
-            db.execute('DELETE FROM faults WHERE day<?', ((dt.datetime.fromisoformat(stamp) - dt.timedelta(days=30)).date().isoformat(),))
-            db.execute('DELETE FROM fault_versions WHERE day<?', ((dt.datetime.fromisoformat(stamp) - dt.timedelta(days=30)).date().isoformat(),))
-
-    def record_error(self, source, kind, message, file, function, line=None):
-        """Count an error for the error reports (error_feed.py): a signature only. Never raises."""
-        try:
-            with self.connect() as db:
-                return error_feed.record(db, source, kind, message, file, function, line, self.code_version)
-        except Exception:
-            return None  # recording an error must never cause one
-
-    def unreported_faults(self):
-        """Faults worth a (new) signal: the first one of a day, then again at 3, 10, 30, 100… occurrences."""
-        with self.connect() as db:
-            rows = [dict(r) for r in db.execute('SELECT * FROM faults WHERE count>reported ORDER BY last_at')]
-        return [r for r in rows if not r['reported'] or any(r['reported'] < step <= r['count'] for step in FAULT_STEPS)]
-
-    def faults_reported(self, rows):
-        with self.connect() as db:
-            for row in rows:
-                db.execute('UPDATE faults SET reported=? WHERE fingerprint=? AND day=?', (row['count'], row['fingerprint'], row['day']))
-
-    AHEAD_BLOCKERS = ("FROM preparations p JOIN suggestions s ON s.id=p.suggestion_id WHERE p.status='cancelled' "
-                      "AND trim(coalesce(p.reason,''))<>'' AND (s.status='pending' OR s.status='snoozed' AND s.resume_status='pending')")
-
-    def restore_ahead_blockers(self):
-        """Once: settle_ahead used to cancel the blocker of a prepared-ahead run it sent out as a new to-do, so the owner
-        never saw its reason, questions, Answer or Try again. Those preparations (canceled, reason kept, on a waiting or
-        snoozed new to-do) are blocked again. A copy of the database comes first, next to it (retention rotates it).
-        Returns how many."""
-        name = 'ahead-blockers'
-        with self.connect() as db:
-            db.execute('CREATE TABLE IF NOT EXISTS store_fixes(name TEXT PRIMARY KEY,at TEXT NOT NULL)')
-            if db.execute('SELECT 1 FROM store_fixes WHERE name=?', (name,)).fetchone():
-                return 0
-            found = db.execute('SELECT count(*) ' + self.AHEAD_BLOCKERS).fetchone()[0]
-        if found:
-            copy = self.path.with_name(f'{self.path.name}.before-{name}-{dt.datetime.now(dt.timezone.utc):%Y%m%dT%H%M%SZ}')
-            fd = os.open(copy, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
-            os.close(fd)
-            with contextlib.closing(sqlite3.connect(self.path, timeout=60)) as source, contextlib.closing(sqlite3.connect(copy)) as target:
-                source.backup(target)  # a consistent copy while the service keeps writing
-        with self.connect() as db:
-            db.execute('BEGIN IMMEDIATE')
-            if db.execute('SELECT 1 FROM store_fixes WHERE name=?', (name,)).fetchone():
-                return 0
-            changed = db.execute("UPDATE preparations SET status='blocked' WHERE suggestion_id IN (SELECT p.suggestion_id " + self.AHEAD_BLOCKERS + ')').rowcount
-            db.execute('INSERT INTO store_fixes(name,at) VALUES(?,?)', (name, now()))
-        return changed
-
-    def settle_faults(self, version, quiet=dt.timedelta(days=1)):
-        """A card about The Machine's own error that nobody acted on closes itself once the error stopped: not
-        seen for a day, and the code running now never recorded it (an update fixed it). Returns the closed ids."""
-        if not version:
-            return []
-        stamp = now()
-        cutoff = (dt.datetime.fromisoformat(stamp) - quiet).isoformat()
-        closed = []
-        with self.connect() as db:
-            db.execute('BEGIN IMMEDIATE')
-            for row in db.execute("SELECT s.id,s.event_ids FROM suggestions s WHERE s.status='pending' AND EXISTS(SELECT 1 FROM json_each(s.event_ids) i "
-                                  "JOIN events e ON e.id=i.value WHERE e.kind='machine.fault')").fetchall():
-                events = db.execute('SELECT e.kind,e.metadata FROM json_each(?) i JOIN events e ON e.id=i.value', (row['event_ids'],)).fetchall()
-                prints = {json.loads(e['metadata']).get('fingerprint') if e['kind'] == 'machine.fault' else None for e in events}
-                if not prints or None in prints:
-                    continue  # it is about more than the error
-                if any(db.execute('SELECT 1 FROM faults WHERE fingerprint=? AND last_at>=?', (fp, cutoff)).fetchone()
-                       or db.execute('SELECT 1 FROM fault_versions WHERE fingerprint=? AND version=?', (fp, version)).fetchone() for fp in prints):
-                    continue
-                db.execute("UPDATE suggestions SET status='completed',completed_from='pending',early=0 WHERE id=?", (row['id'],))
-                db.execute('INSERT OR IGNORE INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
-                           ('fault-stopped:' + row['id'], row['id'], 'complete', 'The error stopped after an update: not seen for a day.', 'assistant', stamp))
-                db.execute("UPDATE deliveries SET status='cancelled',reminder=0,updated_at=? WHERE suggestion_id=? AND message_id IS NULL", (stamp, row['id']))
-                db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL', (row['id'],))
-                closed.append(row['id'])
-        return closed
+class Store(CardsStore, DecisionsStore, EventsStore, FactsStore, FaultsStore, FirstLookStore, ProfileStore,
+            PromisesStore, MachineCardsStore, ReviewStore, StoreCore, ViewsStore, VoicesStore):
+    """The service's database: every table, through the Store mixins it is made of (machine/store/*)."""
 
 
 def sync_slack(store, config, account, source=None):

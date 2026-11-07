@@ -3,6 +3,7 @@ is), message protection (sealing, the safety copy, restores) and the purges of e
 checkpoint. assistant.py's Store subclasses StoreCore and keeps the rest of its methods until they move here by table
 group (machine/store/ mixins, docs/code-map.md). Moved out of assistant.py as is."""
 import contextlib
+import datetime as dt
 import hashlib
 import html
 import json
@@ -767,3 +768,53 @@ class StoreCore:
         with self.connect() as db:
             row = db.execute('SELECT state FROM checkpoints WHERE account_id=?', (account,)).fetchone()
             return json.loads(row[0]) if row else None
+
+    def tool_approval_proposal(self, proposal_id, title, detail):
+        if (not re.fullmatch(r'[a-f0-9]{64}', str(proposal_id)) or not isinstance(detail, str) or
+                len(detail.encode()) > 55000 or hashlib.sha256(detail.encode()).hexdigest() != proposal_id or
+                not isinstance(title, str) or len(title) > 80):
+            raise ValueError('Invalid full approval proposal')
+        with self.connect() as db:
+            # Content-addressed and immutable: retries reuse the same exact proposal.
+            db.execute('INSERT OR IGNORE INTO tool_approval_proposals VALUES(?,?,?,?)',
+                       (proposal_id, title, detail, now()))
+        return proposal_id
+
+    def tool_approval_document(self, proposal_id):
+        if not re.fullmatch(r'[a-f0-9]{64}', str(proposal_id)):
+            raise ValueError('Unknown approval proposal')
+        with self.connect() as db:
+            row = db.execute('SELECT * FROM tool_approval_proposals WHERE id=?', (proposal_id,)).fetchone()
+            if not row:
+                raise ValueError('Unknown approval proposal')
+            return dict(row)
+
+        # Rows older than 30 days go in the nightly retention run (retention.py), after their daily counts are kept.
+
+    AHEAD_BLOCKERS = ("FROM preparations p JOIN suggestions s ON s.id=p.suggestion_id WHERE p.status='cancelled' "
+                      "AND trim(coalesce(p.reason,''))<>'' AND (s.status='pending' OR s.status='snoozed' AND s.resume_status='pending')")
+
+    def restore_ahead_blockers(self):
+        """Once: settle_ahead used to cancel the blocker of a prepared-ahead run it sent out as a new to-do, so the owner
+        never saw its reason, questions, Answer or Try again. Those preparations (canceled, reason kept, on a waiting or
+        snoozed new to-do) are blocked again. A copy of the database comes first, next to it (retention rotates it).
+        Returns how many."""
+        name = 'ahead-blockers'
+        with self.connect() as db:
+            db.execute('CREATE TABLE IF NOT EXISTS store_fixes(name TEXT PRIMARY KEY,at TEXT NOT NULL)')
+            if db.execute('SELECT 1 FROM store_fixes WHERE name=?', (name,)).fetchone():
+                return 0
+            found = db.execute('SELECT count(*) ' + self.AHEAD_BLOCKERS).fetchone()[0]
+        if found:
+            copy = self.path.with_name(f'{self.path.name}.before-{name}-{dt.datetime.now(dt.timezone.utc):%Y%m%dT%H%M%SZ}')
+            fd = os.open(copy, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+            os.close(fd)
+            with contextlib.closing(sqlite3.connect(self.path, timeout=60)) as source, contextlib.closing(sqlite3.connect(copy)) as target:
+                source.backup(target)  # a consistent copy while the service keeps writing
+        with self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            if db.execute('SELECT 1 FROM store_fixes WHERE name=?', (name,)).fetchone():
+                return 0
+            changed = db.execute("UPDATE preparations SET status='blocked' WHERE suggestion_id IN (SELECT p.suggestion_id " + self.AHEAD_BLOCKERS + ')').rowcount
+            db.execute('INSERT INTO store_fixes(name,at) VALUES(?,?)', (name, now()))
+        return changed

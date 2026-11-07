@@ -136,7 +136,9 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   `App.meeting_notes` (the meeting_notes tool) into `MeetingWritesApp` (`machine/app/meeting_writes.py`),
   `machine/app/preparation.py` (`PreparationApp`: starting and checking a to-do's preparation run, its progress, peek
   and worker, with the preparation prompt and its helpers), `machine/app/review.py` (`ReviewApp`: the review step, its
-  queue, tick and worker, the live view and the preview on a new install, with their timing constants and step names).
+  queue, tick and worker, the live view and the preview on a new install, with their timing constants and step names),
+  `machine/store/faults.py` (`FaultsStore`: recording The Machine's own errors, reporting them and settling the ones
+  that stopped), the tool approval reads and the one-time ahead-blockers fix into `StoreCore`.
 - **Dashboard code:** in its area's part in `dashboard/` (`<area>-<what>.js`: shell, todos, settings, graph, calendar,
   connections, help, events, new, fleet), next to the functions it works with, never at the end of the script. The
   page's core is in the `shell-*` parts too: locale and error reports (`shell-core.js`), network and outbox, `render()`
