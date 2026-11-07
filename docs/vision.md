@@ -2,7 +2,8 @@
 
 AI should work for you, so you can do your best work and live your best life. The Machine is that AI:
 
-- **Proactive.** It doesn't wait for a prompt. It takes work off your hands every day.
+- **Proactive.** You shouldn't have to figure out how AI can help; it figures that out. It doesn't wait for a
+  prompt, it takes work off your hands every day.
 - **With you everywhere.** It follows you seamlessly across your computer, your phone and every app you use.
 - **Work and life, as one.** It handles both and bridges them seamlessly: the meeting that clashes with school pickup gets
   caught. What's private stays private.
@@ -10,7 +11,8 @@ AI should work for you, so you can do your best work and live your best life. Th
 - **Yours.** You own it and your data, not a big corporation.
 - **Secure, wherever it runs.** On your own computer for complete ownership, or on a private cloud computer we run
   for you when you'd rather not think about it.
-- **For everyone.** Easy to start and affordable.
+- **For everyone.** AI shouldn't only lift up technical people. It should lift up everyone, equally: easy to start
+  and affordable.
 
 This page says where we're going and what "best" means. Every change, agent and test is judged against it. It is
 reviewed every few days and changes only on the owner's word.
@@ -29,9 +31,10 @@ your head back for the work only you can do.
    code you can read. You pick the model (OpenAI, Claude, a local one) and use your own plan. Nothing locks you in. Nothing goes out without
    you seeing it, and security is never relaxed.
 2. **It gets it right.** It catches everything that matters (to-dos, promises, follow-ups) and lets the noise go.
-3. **It does the work, you keep control.** Every to-do arrives as close to done as it can be: one tap to approve, not
+3. **It does the work, you keep control.** You never have to work out what to ask; it spots what it can help with
+   and offers it. Every to-do arrives as close to done as it can be: one tap to approve, not
    homework. It takes work off your hands, never acts behind your back.
-4. **It's for everyone.** Easy: set up in minutes, no technical skills needed, plain words throughout. Affordable:
+4. **It's for everyone.** AI should lift up everyone equally, not just technical people. Easy: set up in minutes, no technical skills needed, plain words throughout. Affordable:
    a fair price for a hosted Machine, free to run yourself, and lean enough for a $20 model plan.
 5. **It's with you everywhere.** Desktop, phone, chat apps, browser, work and personal: one Machine that carries the
    context from one to the next and works with the tools you already use. It keeps work and personal apart where they
