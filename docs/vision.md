@@ -49,10 +49,8 @@ matter.
    matter. It asks for less of your attention, not more.
 8. **It's smart, not wasteful.** As much intelligence as possible per token, so it runs well on a $20 OpenAI or Claude
    plan. Model calls go where they change the outcome; plain code, caching and cheap checks do the rest.
-9. **It gets better by itself, for you and for everyone.** It learns you as fast as possible without you having to
-   teach it anything: your voice, your decisions, your people. And the whole system keeps evolving for the good of
-   all its users: each Machine weighs whether an improvement is good for its own person, and only what helps spreads,
-   without sharing anyone's private data. It fixes its own problems and keeps pace with AI.
+9. **It gets better by itself, for you and for everyone.** It learns you fast, without being taught. The whole
+   system improves too: each Machine judges changes for its own person, and only what helps spreads.
 10. **It works for teams and families.** A Fleet shares context, and the Graph and Boards become the CRM that
     replaces Salesflare.
 
