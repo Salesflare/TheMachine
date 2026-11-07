@@ -1,6 +1,6 @@
 """The conversation around a to-do's source message, for reading it on the dashboard (events-email.js): the messages
 before it in the same chat, channel, Slack thread or email thread and the replies after it, from what the Machine
-already stored. A mixin of Store (assistant.py).
+already stored. A mixin of Store, through ViewsStore.
 
 Only messages of the same connection (account) and kind as the source are read, so a Work to-do never shows a
 Personal message and the other way around; a teammate's shared message (fleet.*) and an Intercom conversation (one

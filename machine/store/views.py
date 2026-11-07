@@ -46,6 +46,7 @@ from machine.sources.salesflare import salesflare_progress
 from machine.sources.slack import slack_first_import_progress, SLACK_ID, slack_name_table, slack_named
 from machine.store import history as history_store
 from machine.store.cards import source_kind, SOURCE_KIND, use_view
+from machine.store.conversation import ConversationStore
 from machine.store.decisions import handoff_wait, send_retry_ok, skill_update_view, UNDO_MERGE
 from machine.store.events import SET_ASIDE_AFTER
 from machine.store.facts import suggestion_scope
@@ -255,8 +256,8 @@ def stopped_step(db, suggestion):
     return line
 
 
-class ViewsStore:
-    """Store methods for what the dashboard shows."""
+class ViewsStore(ConversationStore):
+    """Store methods for what the dashboard shows, with a source message's conversation (ConversationStore)."""
 
     def event_views(self, ids):
         """Collected messages, in the given order, for reading on the dashboard."""

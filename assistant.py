@@ -806,7 +806,6 @@ from machine.store.promises import (
     promise_title,
     promise_who_named,
 )
-from machine.store.conversation import ConversationStore
 from machine.store.views import (
     CHAT_KINDS,
     INTERCOM_PART,
@@ -1363,7 +1362,7 @@ def google_photo_accounts(config):
     return list(seen.values())
 
 
-class Store(CardsStore, ConversationStore, DecisionsStore, EventsStore, FactsStore, FirstLookStore, ProfileStore, PromisesStore, ReviewStore, StoreCore,
+class Store(CardsStore, DecisionsStore, EventsStore, FactsStore, FirstLookStore, ProfileStore, PromisesStore, ReviewStore, StoreCore,
             ViewsStore, VoicesStore):
 
     def tool_approval_proposal(self, proposal_id, title, detail):
