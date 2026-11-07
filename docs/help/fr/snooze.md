@@ -8,7 +8,7 @@ order: 3
 ---
 ## Mettre une tâche en attente
 
-Appuyez sur **Mettre en attente** sur une tâche. **Me le rappeler plus tard** propose quelques moments, comme dans 2 heures, demain, dans 3 jours ou dans une semaine, ou **Choisir une date** pour un autre jour et une **Heure**, puis **Enregistrer l’heure**.
+Appuyez sur **Mettre en attente** sur une tâche. **Me le rappeler plus tard** propose quelques moments, comme dans 2 heures, demain, dans 3 jours ou dans une semaine, ou **Choisir une date** pour un autre jour et une **Heure**, puis **Enregistrer l’heure**. Mise en attente par erreur ? **Annuler** dans le message la ramène tout de suite.
 
 Les mises en attente d’un jour ou plus reviennent à votre heure « Les mises en attente reviennent à », et les tâches de travail attendent un jour de travail. Réglez les deux dans [Heures de travail](work-hours.md).
 

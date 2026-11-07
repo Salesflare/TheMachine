@@ -84,6 +84,9 @@ the last exchange, short, one easy question), the owner's recent messages and ge
 what comes first, the offer, the ask and the length follow the skill, also in a follow-up. "Never repeat an earlier
 follow-up" means new words, never dropping what the skill says comes first. Without room for the text, the note names
 its SKILL.md to read before drafting. The agent's own skill list stays as it was; this only makes sure it is applied.
+Every other preparation gets the same (prep_skill_note): skills that fit by the to-do's board, project or title, or that
+its draft rules name, in full; and the other skills that are on as a short index (name, when to use it, SKILL.md), so
+one for this kind of work (a reply in a known kind of thread, a CRM update) is read and followed, judged by meaning.
 
 Open follow-up to-dos close by themselves (settle) when the person replies, someone else answered or the owner wrote
 again, the project is won, lost, Stalled, archived or its stage turned off, or follow-ups were turned off. Snoozing
@@ -1805,13 +1808,15 @@ def name_words(text):
     return out
 
 
-def fitting_skills(skills_on, names, rules=''):
+def fitting_skills(skills_on, names, rules='', title=''):
     """The owner's skills that are on ({name, slug, description, body}) that fit a follow-up, each with why, best
     first, at most SKILL_FITS. A skill fits when its name and one of names (the board's, the project's) match: every
     word of the shorter one is in the other, two words at least ("Partner listings" fits the board "Partner listing
-    deals"), or when the owner's draft rules for this to-do name it ("use the partner-listings skill")."""
+    deals"), when the owner's draft rules for this to-do name it ("use the partner-listings skill"), or when every word
+    of its name (two at least) is in the to-do's title ("CRM updates" fits "Update the CRM for Acme")."""
     said = ' ' + ' '.join(re.sub(r'[^a-z0-9]+', ' ', str(rules or '').lower()).split()) + ' '
     targets = [w for w in (name_words(n) for n in names if n) if len(w) >= 2]
+    titled = name_words(title)
     out = []
     for k in skills_on:
         own = name_words(k.get('name')) if len(name_words(k.get('name'))) >= 2 else name_words(str(k.get('slug') or '').replace('-', ' '))
@@ -1820,6 +1825,8 @@ def fitting_skills(skills_on, names, rules=''):
             out.append({**k, 'why': 'its name matches this board or project'})
         elif any(len(x.split()) >= 2 and ' ' + x + ' ' in said for x in spoken):  # one word is too common to be a mention
             out.append({**k, 'why': "the owner's draft rules for this to-do name it"})
+        elif len(own) >= 2 and own <= titled:
+            out.append({**k, 'why': "its name matches this to-do's title"})
     return out[:SKILL_FITS]
 
 
@@ -1839,6 +1846,30 @@ def skill_note(fitting, room=None):
     if room is None or len(full) <= room:
         return full
     return head + ''.join(f"\n- Skill {k['name']} ({k['why']}): read {k['path']} now, before drafting, and follow it." for k in fitting)
+
+
+SKILL_INDEX = 30  # other skills that are on, listed by name in a preparation's prompt, at most
+
+
+def prep_skill_note(fitting, others=(), room=None):
+    """The owner's skills for a preparation that isn't a follow-up: the ones that fit (fitting_skills) in full while
+    there is room, else their SKILL.md to read first; then the other skills that are on ({name, description, path}) as
+    a short index, so one for this kind of work is read and followed, judged by what it is for. '' for none."""
+    others = list(others)[:SKILL_INDEX]
+    if not fitting and not others:
+        return ''
+    head = ('\n\nThe owner\'s skills are their own way of doing a kind of work. Apply the one that fits this to-do without being asked: '
+            'its steps, sources, structure and rules outrank general defaults and the owner\'s recent messages. A "Guidance only" line in a '
+            'skill is about permissions: it never allows sending, and this Machine\'s approvals still apply.')
+    full = ''.join(f"\n\nSkill {k['name']} ({k['why']}; also in {k['path']}):\n<<<\n{str(k.get('body') or '').strip()}\n>>>" for k in fitting)
+    short = ''.join(f"\n- Skill {k['name']} ({k['why']}): read {k['path']} now, before preparing, and follow it." for k in fitting)
+    index = ('\n\nThe owner\'s other skills that are on. If one is for this kind of work (judged by what it is for, not shared words), '
+             'read its SKILL.md before preparing and follow it; if none is, ignore this list:\n'
+             + '\n'.join(f"- {k['name']}: {' '.join(str(k.get('description') or '').split())[:160]} ({k['path']})" for k in others)) if others else ''
+    for text in (head + full + index, head + short + index, head + short if fitting else ''):
+        if text and (room is None or len(text) <= room):
+            return text
+    return ''
 
 
 # What a rewrite keeps: the channel, who gets it, from which account, and the thread or chat it goes in

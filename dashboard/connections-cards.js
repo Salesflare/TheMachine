@@ -146,6 +146,7 @@ const SIGNIN_COPY={intercom:{label:'Intercom',about:'Reads your conversations. R
  microsoft_docs:{label:'Microsoft',title:'Microsoft OneDrive',about:'Word, OneDrive and SharePoint. Outlook isn’t needed. Edits wait for your OK.'},
  microsoft_docs_write:{label:'Microsoft',title:'Microsoft OneDrive',about:'Lets The Machine create and edit your Word documents. Each change waits for your OK.'},
  google_meet:{label:'Google',title:'Google Meet',about:'Transcripts and Gemini notes of your meetings. Reads only.'},
+ microsoft_teams:{label:'Microsoft',title:'Microsoft Teams',about:'Your chats and meeting chats. Channels and meeting notes need your admin’s OK. Reads only.'},
  google_docs:{label:'Google',title:'Google Docs',about:'Reads and edits the docs you point it to, and makes new ones. Edits wait for your OK.'},
  whatsapp:{label:'WhatsApp',about:'Your WhatsApp chats, as a linked device. Replies only when you press Send on a to-do.'},
  android:{about:'The notifications on your Android phone, through the OpenClaw app.'},
@@ -154,16 +155,17 @@ const SIGNIN_COPY={intercom:{label:'Intercom',about:'Reads your conversations. R
 // A work organization that lets only approved apps in: the short link its Microsoft 365 admin approves The Machine with.
 // It opens Microsoft's approval page with a fresh signed state on each visit (the control plane's site), so it never expires.
 const MS_ADMIN_LINK='https://themachine.computer/m365-admin-consent';
-const msAdmin=s=>s.provider!=='microsoft'?'':html`<div class="connect-admin"><p>Need your admin’s approval? Send them this link.</p><div class="connect-admin-link"><a href="${MS_ADMIN_LINK}" target="_blank" rel="noopener" translate="no">${MS_ADMIN_LINK.replace('https://','')}</a><button type="button" data-copy-link="${MS_ADMIN_LINK}">Copy link</button></div></div>`;
+// Teams: its own link, which also approves channels, transcripts and Copilot's meeting notes for the organization
+const msAdmin=s=>{const link=s.provider==='microsoft_teams'?MS_ADMIN_LINK+'/teams':s.provider==='microsoft'?MS_ADMIN_LINK:'';return !link?'':html`<div class="connect-admin"><p>Need your admin’s approval? Send them this link.</p><div class="connect-admin-link"><a href="${link}" target="_blank" rel="noopener" translate="no">${link.replace('https://','')}</a><button type="button" data-copy-link="${link}">Copy link</button></div></div>`};
 const signinOf=(x,state,command)=>{const hosted=!!(connectList?.manage_url&&x.hosted_signin),p=hosted?x.hosted_signin:x.signin===true?x.service:x.signin;
  return {source:x.name,provider:p,label:SIGNIN_COPY[p]?.label||x.label,own:!x.broker,hosted,another:!!x.connected,state,...(command?{command}:{}),...(!hosted&&x.signin_off?{off:true}:{})}};
 // A hosted Machine: Work or Personal here, then Sign in goes to the provider in this tab and comes back to this form.
 // Pasting a key or token stays on the account page's tile.
-const HOSTED_TILE={google:'#google',microsoft:'#microsoft',zoom:'#source-zoom',stripe:'#source-stripe',slack:'#source-slack',intercom:'#source-intercom',trello:'#source-trello',github:'#source-github'};
+const HOSTED_TILE={google:'#google',microsoft:'#microsoft',microsoft_teams:'#teams',zoom:'#source-zoom',stripe:'#source-stripe',slack:'#source-slack',intercom:'#source-intercom',trello:'#source-trello',github:'#source-github'};
 // GitHub, WhatsApp and the phone have no provider page to come back from: the Machine gets a code, shown right here
 // (GitHub's to type at GitHub, WhatsApp's QR code or pairing code, the OpenClaw app's setup code)
 const GITHUB_DEVICE=/^https:\/\/github\.com\/login\/device[\w/.-]*$/;
-const NO_SCOPE_SIGNIN=['intercom','android','microsoft_docs','microsoft_docs_write','codex'];
+const NO_SCOPE_SIGNIN=['intercom','android','microsoft_docs','microsoft_docs_write','microsoft_teams','codex'];
 const STARTING={github:'Getting a sign-in code from GitHub…',whatsapp:'Getting a code from WhatsApp…',android:'Making a setup code…'};
 const qrImg=s=>html`<img class="connect-qr" src="${safeHref('/_machine/connect-qr?s='+encodeURIComponent(s.provider)+'&c='+encodeURIComponent(s.command)+'&v='+encodeURIComponent(String(s.until||'')))}" alt="QR code">`;
 function phoneBody(s,back){const h=[];
@@ -193,7 +195,7 @@ function hostedSigninGo(s,way){const form=document.createElement('form'),box=$('
  form.method='post';form.action='/_machine/connect';form.hidden=true;add('source',s.provider);
  if(!NO_SCOPE_SIGNIN.includes(s.provider)){add('scope',box.querySelector('input[name="signin-scope"]:checked')?.value||'work');add('boundary','')}
  if((s.provider==='intercom'||s.provider==='trello')&&s.another)add('another','1');
- if(['microsoft_docs','microsoft_docs_write'].includes(s.provider)&&s.email)add('email',s.email);  // Reconnect on its card: that address
+ if(['microsoft_docs','microsoft_docs_write','microsoft_teams'].includes(s.provider)&&s.email)add('email',s.email);  // Reconnect on its card: that address
  if(s.provider==='whatsapp'&&way==='code'){add('way','code');add('phone',box.querySelector('input[name="signin-phone"]')?.value||'')}
  if(s.provider==='whatsapp'&&s.account)add('account_id',s.account);  // Link again: the one that is not linked any more
  document.body.append(form);form.submit()}
@@ -225,7 +227,7 @@ function hostedPoll(){clearTimeout(signinTimer);const s=connectSignin;if(!s?.hos
 // Back from the provider (cloud: open_dashboard to=connect): + Add, that sign-in's form, following how it goes
 // c_: the command its callback queued; f_: why the provider's answer was refused, which the account keeps for this form
 const ON_DASHBOARD=['github','whatsapp','android','codex'];
-async function openConnectLink(){const m=/^#connect=(google|microsoft|microsoft_docs|microsoft_docs_write|google_meet|google_docs|zoom|stripe|intercom|trello|github|whatsapp|android|codex)(?:\/([cf]_[0-9a-f]{16}|stopped))?$/.exec(location.hash);if(!m||!state.manage_url)return;
+async function openConnectLink(){const m=/^#connect=(google|microsoft|microsoft_docs|microsoft_docs_write|microsoft_teams|google_meet|google_docs|zoom|stripe|intercom|trello|github|whatsapp|android|codex)(?:\/([cf]_[0-9a-f]{16}|stopped))?$/.exec(location.hash);if(!m||!state.manage_url)return;
  history.replaceState(null,'',location.pathname+location.search);connectRun=null;connectForm=null;showTab('health','add');await connectAdd(true);
  const docs=m[1]==='microsoft_docs_write'&&connectList?.sources.find(v=>v.hosted_signin==='microsoft_docs');  // Allow edits: the Docs source, its own consent
  const x=m[1]==='codex'?connectList?.codex&&codexSource():docs?{...docs,hosted_signin:m[1]}:connectList?.sources.find(v=>v.hosted_signin===m[1]);if(!x||!connectList.manage_url)return;const command=m[2]&&m[2]!=='stopped'?m[2]:'';
@@ -413,10 +415,17 @@ function telegramNote(c){const stop=c.error==='telegram_app_blocked'?t('Telegram
 // as is under Details. One or two short lines, so the cards line up.
 const CONN_ACTS={send:'Sends email only after you press Send.',reply:'Replies only after you press Send.',calendar:'Changes events only after you OK them.'};
 // With one ability off (abilities.py) it says only what the other does: an action-only one nothing it brings in.
+// Teams: what it can't read yet, and why, in one short line (connectors/teams.py missing_by_scope and meeting_events)
+function teamsMissing(m){const meet=m.transcripts==='admin'||m.notes==='admin',lines=[];
+ if(m.channels==='admin'||meet)lines.push(m.channels==='admin'&&meet?'Channels and meeting notes need your admin’s OK.':meet?'Meeting notes need your admin’s OK.':'Channels need your admin’s OK.');
+ if(m.notes==='license')lines.push('Copilot notes need a Copilot license.');
+ if(m.transcripts==='blocked')lines.push('Your organization turned off transcripts.');
+ return lines}
 function connWhat(c){const span=s=>s?html`<span>${t(s)}</span>`:'',signals=c.signals!==false,acts=c.actions!==false;
  if(c.service==='docs'){const line=!signals?'Finds and reads docs for your to-dos.':!acts?'Reads comments, mentions, suggestions and shares.':null;
   if(!signals){const w=docsWritesLine(c);return html`<p class="muted conn-what">${span(line)}${w?html` <span>${w}</span>`:''}</p>`}
   return html`<p class="muted conn-what">${line?span(line):c.docs_provider==='microsoft'?html`${span(c.what)} ${span('Replies stay drafts for you to post in Word.')}`:span('Google Docs. Reads comments, mentions, suggestions and shares. Posts a reply only when you OK it.')}</p>${docsWrites(c)}`}
+ if(c.service==='teams'){const lines=teamsMissing(c.teams_missing||{});return html`<p class="muted conn-what">${span(c.what)}${lines.map(l=>html` ${span(l)}`)}</p>`}
  const what=signals?span(c.what):'',act=span(CONN_ACTS[c.acts]);
  return what||act?html`<p class="muted conn-what">${what}${what&&act?' ':''}${act}</p>`:''}
 // Brings in signals and Can do things, a switch each under Details, on a connection that has both (assistant.py

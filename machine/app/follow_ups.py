@@ -30,7 +30,7 @@ from timeutil import WORK_HOURS, in_hours, local_tz, now
 LOG = logging.getLogger('personal-assistant')
 
 
-NEWER_KINDS = ('gmail.message', 'slack.message', 'whatsapp.message', 'linkedin.message', 'x.dm')
+NEWER_KINDS = ('gmail.message', 'slack.message', 'teams.message', 'whatsapp.message', 'linkedin.message', 'x.dm')
 
 
 def newer_activity(db, event_ids, owner_slack_ids=(), teammates=(), domains=(), limit=5):
@@ -432,6 +432,33 @@ class FollowUpsApp:
         fitting = follow_ups.fitting_skills(on, [b['name'] if b else '', p['name'] if p else ''], rules)
         root = Path(getattr(getattr(self, 'skills', None), 'workspace', None) or self.config.get('openclaw_workspace') or WORKSPACE) / 'skills' / skills.FOLDER
         return follow_ups.skill_note([{**k, 'path': str(root / k['slug'] / 'SKILL.md')} for k in fitting], room)
+
+    def prep_skill_lines(self, suggestion_id, rules='', room=None):
+        """The owner's skills for any preparation: an open follow-up's as before (follow_up_skill_lines); for any
+        other to-do the skills that fit by its board, project or title or that its draft rules name, in full, and the
+        other skills that are on as a short index to judge by meaning (follow_ups.prep_skill_note). '' for none."""
+        lines = self.follow_up_skill_lines(suggestion_id, rules, room)
+        with self.store.connect() as db:
+            if lines or db.execute("SELECT 1 FROM follow_up_cards WHERE suggestion_id=? AND state='open'", (suggestion_id,)).fetchone():
+                return lines
+            if not db.execute("SELECT 1 FROM sqlite_master WHERE name='skills'").fetchone():
+                return ''
+            row = db.execute('SELECT title,project,event_ids FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
+            if not row:
+                return ''
+            names = [row['project'] or '']
+            ids = [i for i in json.loads(row['event_ids'] or '[]') if isinstance(i, int)][:200]
+            if ids and db.execute("SELECT 1 FROM sqlite_master WHERE name='event_projects'").fetchone():
+                marks = ','.join('?' * len(ids))
+                for p in db.execute(f'SELECT DISTINCT p.name,b.name AS board FROM event_projects e JOIN projects p ON p.id=e.project_id '
+                                    f'LEFT JOIN boards b ON b.id=p.board_id WHERE e.event_id IN ({marks})', ids):
+                    names += [p['name'] or '', p['board'] or '']
+            on = [dict(r) for r in db.execute("SELECT name,slug,description,body FROM skills WHERE status='on' ORDER BY name")]
+        root = Path(getattr(getattr(self, 'skills', None), 'workspace', None) or self.config.get('openclaw_workspace') or WORKSPACE) / 'skills' / skills.FOLDER
+        on = [{**k, 'path': str(root / k['slug'] / 'SKILL.md')} for k in on]
+        fitting = follow_ups.fitting_skills(on, names, rules, row['title'])
+        picked = {k['slug'] for k in fitting}
+        return follow_ups.prep_skill_note(fitting, [k for k in on if k['slug'] not in picked], room)
 
     def follow_up_change_note(self, job):
         """What a rewrite from the follow-up review's Change adds to its turn (follow_ups.change_note), else '': the

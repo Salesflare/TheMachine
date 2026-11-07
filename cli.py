@@ -961,17 +961,17 @@ def cmd_meeting_notes(config, args):
     if args.json:
         return out_json(found)
     print(found['title'])
-    zoom, meet = found.get('zoom') or {}, found.get('google_meet') or {}
+    zoom, meet, teams = found.get('zoom') or {}, found.get('google_meet') or {}, found.get('teams') or {}
     for key, word in (('notes', 'Notes'), ('transcript', 'Transcript')):
         print(f'\n## {word}')
-        for part, label in ((found.get(key), ''), (zoom.get(key), ' (from Zoom)'), (meet.get(key), ' (from Google Meet)')):
+        for part, label in ((found.get(key), ''), (zoom.get(key), ' (from Zoom)'), (meet.get(key), ' (from Google Meet)'), (teams.get(key), ' (from Teams)')):
             if part:
                 if label:
                     print(label.strip())
                 print(part['text'])
                 if part.get('next_offset'):
                     print(f"[{part['chars']:,} characters in all; read the rest with --json and offset]")
-        if not (found.get(key) or zoom.get(key) or meet.get(key)):
+        if not (found.get(key) or zoom.get(key) or meet.get(key) or teams.get(key)):
             print(f'No {word.lower()} yet.')
 
 

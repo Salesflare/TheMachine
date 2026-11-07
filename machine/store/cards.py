@@ -91,7 +91,7 @@ def awaiting_match(watch, event, owner_slack_ids=()):
     return not watch['sender'] or (m.get('sender_id') or m.get('from') or '') == watch['sender']
 
 
-SOURCE_KIND = {'gmail.message': 'email', 'calendar.event': 'calendar', 'slack.message': 'Slack',
+SOURCE_KIND = {'gmail.message': 'email', 'calendar.event': 'calendar', 'slack.message': 'Slack', 'teams.message': 'Teams',
                'salesflare.email': 'CRM email', 'salesflare.meeting': 'CRM meeting',
                'android.notification': 'phone', 'whatsapp.message': 'WhatsApp', 'telegram.message': 'Telegram',
                'gateway.alert': 'The Machine'}

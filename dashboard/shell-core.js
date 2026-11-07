@@ -59,6 +59,38 @@ const htmlPart=v=>v instanceof SafeHTML?v.s:Array.isArray(v)?v.map(htmlPart).joi
 const html=(parts,...vals)=>new SafeHTML(parts.reduce((o,p,i)=>o+htmlPart(vals[i-1])+p));
 const setHTML=(el,h)=>{if(h==='')return el.replaceChildren();if(!(h instanceof SafeHTML))throw new TypeError('setHTML takes html`` results only');el.innerHTML=h.s};  // '' empties it
 const htmlNodes=h=>{const t=document.createElement('template');setHTML(t,h);return t.content};  // for append, before, replaceWith
+// setHTML for a list that redraws on every poll: a node whose markup is the same as last time stays, keyed by its id
+// (else by its place), so focus, a text selection, an open menu, a button's in-flight state and the scroll all stay.
+// Only what changed is swapped. A <details> list is kept and its rows go the same way. A time that only says
+// "2 minutes ago" now is updated in place. A node under a pointer or key that's still down isn't swapped or removed
+// until it's let go, so the click lands; then `again` draws once more.
+const drawnHTML=new WeakMap(),agoFree=s=>s.replace(/(<(?:time|span class="elapsed")\b[^>]*>)[^<]*/g,'$1');
+let pressedNode=null,pressedAgain=null;
+addEventListener('pointerdown',e=>{pressedNode=e.target},true);
+addEventListener('keydown',e=>{if((e.key===' '||e.key==='Enter')&&e.target.closest?.('button,summary,a,[role=button]'))pressedNode=e.target},true);
+const pressLetGo=()=>{pressedNode=null;const again=pressedAgain;pressedAgain=null;if(again)setTimeout(again)};  // after the click it makes
+for(const type of ['pointerup','pointercancel','keyup','dragend'])addEventListener(type,pressLetGo,true);
+addEventListener('blur',e=>{if(e.target===window)pressLetGo()});
+const pressedIn=(node,again)=>{if(!pressedNode||!node.contains?.(pressedNode))return false;pressedAgain=again;return true};
+function drawKept(box,h,again){if(h==='')h=html``;keptKids(box,htmlNodes(h),again)}
+function keptKids(box,from,again){const kids=[...from.childNodes],ids=new Set(kids.map(n=>n.id).filter(Boolean)),byId=new Map(),used=new Set();
+ for(const o of box.children)if(o.id&&!byId.has(o.id))byId.set(o.id,o);
+ const stays=o=>!o.id||ids.has(o.id)&&byId.get(o.id)===o&&!used.has(o);  // a node with an id the new markup doesn't have goes: never moved around
+ let at=box.firstChild;
+ for(const n of kids){const el=n.nodeType===1,src=el?n.outerHTML:null;while(at&&!stays(at))at=at.nextSibling;
+  let o=el&&n.id?byId.get(n.id):null;if(o&&(used.has(o)||o.tagName!==n.tagName))o=null;
+  if(!o&&at&&!(at.nodeType===1&&at.id)&&!(el&&n.id)&&at.nodeType===n.nodeType&&(el?drawnHTML.get(at)===src:at.nodeValue===n.nodeValue))o=at;  // no id: the same thing in the same place
+  let put=n;
+  if(o){const was=drawnHTML.get(o);
+   if(!el||was===src)put=o;
+   else if(was!=null&&agoFree(was)===agoFree(src)){const fresh=n.querySelectorAll('time,.elapsed');o.querySelectorAll('time,.elapsed').forEach((x,i)=>{const y=fresh[i];if(y&&x.textContent!==y.textContent&&(x.getAttribute('datetime')||x.dataset.since)===(y.getAttribute('datetime')||y.dataset.since))x.textContent=y.textContent});drawnHTML.set(o,src);put=o}
+   else if(n.tagName==='DETAILS'){for(const a of [...o.attributes])if(!n.hasAttribute(a.name))o.removeAttribute(a.name);for(const a of n.attributes)if(o.getAttribute(a.name)!==a.value)o.setAttribute(a.name,a.value);
+    drawnHTML.set(o,src);keptKids(o,n,again);put=o}
+   else if(pressedIn(o,again))put=o}  // swapped once it's let go
+  if(put===n&&el)drawnHTML.set(n,src);
+  if(o&&put===n){o.replaceWith(n);if(at===o)at=n}  // swapped where it stood, so nothing after it moves
+  used.add(put);if(put===at)at=at.nextSibling;else box.insertBefore(put,at)}
+ for(const o of [...box.childNodes])if(!used.has(o)&&!pressedIn(o,again))o.remove()}
 // A change to built markup goes through the DOM: the parsed copy, changed with DOM calls, written back by the browser.
 const htmlEdit=(h,f)=>{const t=document.createElement('template');setHTML(t,h);f(t.content);return new SafeHTML(t.innerHTML)};
 // Nodes already on the page or parsed from html``, written out again by the browser (an element whole, a text node escaped)

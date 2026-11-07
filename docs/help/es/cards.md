@@ -24,7 +24,7 @@ Después de enviar, una nota breve dice dónde está la tarea, como «Enviado. M
 
 En Lista para ti, Necesita tu decisión, Preparando y Esperando a otros, una tarea vencida o que vence a más tardar mañana va primero. Las demás van de la más reciente a la más antigua, según la hora que muestra cada tarea. La barra lateral sigue el mismo orden.
 
-Una tarea con **Parece hecho** se ve como una hecha, con lo que muestra que está hecha, como "PR #3451 fusionado". Aún no está cerrada: **Reabrir** la devuelve a tu lista, y tu Machine aprende de ello. Nunca aparecen como atrasadas ni cuentan como pendientes de ti.
+Una tarea con **Parece hecho** se ve como una hecha, con lo que muestra que está hecha, como "PR #3451 fusionado". Aún no está cerrada: **Reabrir** la devuelve a tu lista, y tu Machine aprende de ello. Nunca aparecen como atrasadas ni cuentan como pendientes de ti. Una tarea con un borrador de respuesta también parece hecha cuando respondiste tú en esa conversación, como en Gmail o Slack.
 
 Una tarea cuyo último paso sigue abierto en manos de otra persona, como una revisión, una fusión o una respuesta, muestra **Esperando:** ese paso y sigue abierta. Espera en **Esperando a otros**, plegada encima de Vuelve más tarde, y no cuenta como lista para ti. Un mensaje nuevo sobre ella la trae de vuelta.
 
@@ -56,7 +56,7 @@ LinkedIn, X y Salesflare siguen su propio ritmo.
 
 Una tarea muestra su siguiente paso, como **Hazlo** o **Revisar y enviar**, con **Posponer** al lado. Consulta [Hazlo](do-it.md) y [Posponer](snooze.md).
 
-Sin preparar, tiene **Cambiar el enfoque** (di cómo hacerla en su lugar); lista, **Pedir cambios** (di qué cambiar en el borrador). Si la fila no cabe en el móvil, **Posponer** pasa a **…**. **Marcar como hecha** (ya está resuelta) también está: a la vista sin borrador, si no, arriba en **…**.
+Sin preparar, tiene **Cambiar el enfoque** (di cómo hacerla en su lugar); lista, **Pedir cambios** (di qué cambiar en el borrador). Si la fila no cabe en el móvil, **Posponer** pasa a **…**. **Marcar como hecha** (ya está resuelta) también está: a la vista sin borrador, si no, arriba en **…**. Sale de la lista al instante, con **Deshacer** en el mensaje.
 
 Para que se haga de otra forma, dilo en su **Chat**.
 

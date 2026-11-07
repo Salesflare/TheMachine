@@ -91,7 +91,7 @@ def area_hint(db, suggestion, accounts, here):
 
 
 # Chats read as one thread on the dashboard (events-email.js chatThreadHTML): the conversation named once, then turns.
-CHAT_KINDS = {'slack.message', 'whatsapp.message', 'telegram.message', 'linkedin.message', 'x.dm', 'fleet.message',
+CHAT_KINDS = {'slack.message', 'teams.message', 'whatsapp.message', 'telegram.message', 'linkedin.message', 'x.dm', 'fleet.message',
               'intercom.conversation', 'fleet.intercom'}
 
 
@@ -657,6 +657,8 @@ class ViewsStore(ConversationStore):
                     channel_health = {'salesflare': salesflare_progress(account, state)}
                 if account.get('service') == 'intercom':  # who a reply goes out as, after the owner's Send; none: it only reads
                     channel_health = {'replies_as': (account.get('reply_admin_name') or 'you') if next_actions.intercom_replies_on(account) else ''}
+                if account.get('service') == 'teams':  # what it can't read yet and why: admin, license or blocked (connectors/teams.py)
+                    channel_health = {'teams_missing': dict(state.get('missing') or {})}
                 if account.get('service') == 'docs':  # Google or Microsoft, and whether an approved reply can be posted
                     channel_health = docs_health(self.config, account, state)
                 if account.get('service') in CALENDAR_SERVICES:  # its card counts events coming up, not mail (Next 7 days)

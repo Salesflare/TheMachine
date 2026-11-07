@@ -24,7 +24,7 @@ Après un envoi, une courte note dit où se trouve la tâche, comme « Envoyé. 
 
 Dans Prêt pour vous, Attend votre décision, En préparation et En attente des autres, une tâche en retard ou due d’ici demain vient en premier. Les autres suivent, les plus récentes d’abord, selon l’heure affichée sur chaque tâche. La barre latérale garde le même ordre.
 
-Une tâche marquée **Semble fait** s’affiche comme une tâche faite, avec ce qui montre qu’elle est faite, comme « PR #3451 fusionnée ». Elle n’est pas encore fermée : **Rouvrir** la remet dans votre liste, et votre Machine en tient compte. Elles ne sont jamais en retard et ne comptent pas comme en attente de vous.
+Une tâche marquée **Semble fait** s’affiche comme une tâche faite, avec ce qui montre qu’elle est faite, comme « PR #3451 fusionnée ». Elle n’est pas encore fermée : **Rouvrir** la remet dans votre liste, et votre Machine en tient compte. Elles ne sont jamais en retard et ne comptent pas comme en attente de vous. Une tâche avec un brouillon de réponse semble aussi faite quand vous avez répondu vous-même dans cette conversation, comme dans Gmail ou Slack.
 
 Une tâche dont la dernière étape reste ouverte chez quelqu’un d’autre, comme une relecture, une fusion ou une réponse, affiche **En attente de :** cette étape et reste ouverte. Elle attend dans **En attente des autres**, repliée au-dessus de Revient plus tard, et ne compte pas comme prête pour vous. Un nouveau message à son sujet la ramène.
 
@@ -56,7 +56,7 @@ LinkedIn, X et Salesflare gardent leur propre rythme.
 
 Une tâche affiche son étape suivante, comme **Faire** ou **Vérifier et envoyer**, avec **Mettre en attente** à côté. Voir [Faire](do-it.md) et [Mettre en attente](snooze.md).
 
-Pas encore préparée, elle a **Changer d’approche** (dites comment faire autrement) ; prête, **Demander des modifications** (dites ce qu’il faut changer dans le brouillon). Quand la rangée est pleine sur un téléphone, **Mettre en attente** passe dans **…**. **Marquer comme fait** (c’est réglé) est là aussi : visible sans brouillon, sinon en haut de **…**.
+Pas encore préparée, elle a **Changer d’approche** (dites comment faire autrement) ; prête, **Demander des modifications** (dites ce qu’il faut changer dans le brouillon). Quand la rangée est pleine sur un téléphone, **Mettre en attente** passe dans **…**. **Marquer comme fait** (c’est réglé) est là aussi : visible sans brouillon, sinon en haut de **…**. Elle quitte la liste tout de suite, avec **Annuler** dans le message.
 
 Pour la faire autrement, dites-le dans son **Chat**.
 

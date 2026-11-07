@@ -173,6 +173,31 @@ class MessageContext(unittest.TestCase):
         with mock.patch.object(a.Gmail, 'get', side_effect=a.SourceError('offline')):
             self.assertEqual(self.app.message_context(self.cards['email'], self.ids['m3'])['before'], [])
 
+    def test_the_conversation_query_is_fixed_sql_with_the_key_bound(self):
+        """The metadata key and the side never go into the SQL text: one fixed query per side, the JSON path bound."""
+        from machine.store import conversation
+        seen = []
+        with self.app.store.connect() as db:
+            anchor = self.app.store.context_anchor(db, self.cards['whatsapp'])
+            real = db.execute
+
+            class Spy:
+                def execute(self, sql, params=()):
+                    seen.append((sql, params))
+                    return real(sql, params)
+            for side in ('before', 'after'):
+                self.app.store.conversation_ids(Spy(), anchor, side)
+        self.assertEqual([s for s, _ in seen], [conversation._SIDE_SQL['before'], conversation._SIDE_SQL['after']])
+        self.assertTrue(all(p[2] == '$.chat_id' for _, p in seen))
+        self.assertNotIn('chat_id', ''.join(conversation._SIDE_SQL.values()))
+
+    def test_a_chat_id_with_quotes_reads_only_its_chat(self):
+        with self.app.store.connect() as db:
+            db.execute("UPDATE events SET metadata=json_set(metadata,'$.chat_id',?) WHERE account_id='home-wa'", ("1203' OR '1'='1",))
+        around = self.app.message_context(self.cards['whatsapp'])
+        self.assertEqual(bodies(around['after']), ['Perfect, I’ll leave it by the gate'])
+        self.assertEqual(len(around['before']), 3)
+
     def test_a_source_without_a_conversation_has_none(self):
         self.app.store.commit_page('work-stripe', {}, [{'account_id': 'work-stripe', 'source_id': 'ch1', 'kind': 'stripe.event', 'title': 'Payment',
                                                          'occurred_at': DAY + '09:00:00+00:00', 'body': 'Paid', 'deleted': False, 'metadata': {}}], None)

@@ -8,7 +8,7 @@ order: 3
 ---
 ## Pospón una tarea
 
-Pulsa **Posponer** en una tarea. **Recuérdamelo luego** ofrece algunas horas, como dentro de 2 horas, mañana, dentro de 3 días o dentro de una semana, o **Elegir fecha** para otro día y **Hora**, y luego **Guardar hora**.
+Pulsa **Posponer** en una tarea. **Recuérdamelo luego** ofrece algunas horas, como dentro de 2 horas, mañana, dentro de 3 días o dentro de una semana, o **Elegir fecha** para otro día y **Hora**, y luego **Guardar hora**. ¿La pospusiste sin querer? **Deshacer** en el mensaje la trae de vuelta enseguida.
 
 Lo pospuesto un día o más vuelve a tu hora de "Lo pospuesto vuelve a las", y las tareas de trabajo esperan a un día laborable. Configura ambas cosas en [Horario laboral](work-hours.md).
 

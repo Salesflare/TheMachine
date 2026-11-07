@@ -18,7 +18,8 @@ import learning_loop
 from machine.config import LOG
 from machine.prompts.profile import VOICE_CHARS, VOICE_LINES
 from machine.sources.slack import slack_ids_named
-from machine.text import clamp
+from machine.text import clamp, encoded
+import i18n
 import next_actions
 import team_learnings
 from timeutil import now
@@ -46,7 +47,7 @@ PROFILE_SKIP = re.compile(r'^(?:Sent (?:an? )?(?:image|photo|video|sticker|audio
                           r'\[(?:image|photo|video|sticker|audio|voice|document|gif|file)[^\]]*\]$|!\[)', re.I)
 
 
-OWN_KINDS = {'gmail.message': 'email', 'slack.message': 'Slack', 'whatsapp.message': 'WhatsApp', 'telegram.message': 'Telegram', 'linkedin.message': 'LinkedIn', 'x.dm': 'X DM'}
+OWN_KINDS = {'gmail.message': 'email', 'slack.message': 'Slack', 'teams.message': 'Teams', 'whatsapp.message': 'WhatsApp', 'telegram.message': 'Telegram', 'linkedin.message': 'LinkedIn', 'x.dm': 'X DM'}
 
 
 # How the owner writes, per channel. A voice is a short block (a few lines); All holds what goes for every channel.
@@ -88,6 +89,12 @@ EVENT_CHANNELS = {kind: 'Email' if name == 'email' else name for kind, name in O
 
 
 ELSEWHERE_DAYS = 3        # the owner's own message in the draft's conversation this soon after it was ready replaced the draft
+# What shows a to-do the owner answered themselves (answered_elsewhere): its Looks done line, per channel
+ANSWERED_ELSEWHERE = {'gmail.message': 'Answered in the email thread', 'slack.message': 'Answered in Slack',
+                      'whatsapp.message': 'Answered on WhatsApp', 'telegram.message': 'Answered on Telegram',
+                      'linkedin.message': 'Answered on LinkedIn', 'x.dm': 'Answered on X'}
+CONVERSATION_KEYS = {'gmail.message': ('thread_id',), 'slack.message': ('channel_id',)}  # conversation_of; the chats: chat_id or conversation_id
+CONVERSATION_KEYS.update({kind: ('chat_id', 'conversation_id') for kind in ('whatsapp.message', 'telegram.message', 'linkedin.message', 'x.dm')})
 
 
 NOTE_KINDS = ('style', 'fact', 'continue', 'new_ask')
@@ -510,6 +517,55 @@ class VoicesStore:
                                                                        draft.get('subject'), before, found['title'] if kind == 'gmail.message' else None, text, now()))
                 learned += 1
         return learned
+
+    def answered_elsewhere(self):
+        """An open to-do with a reply draft the owner answered themselves in that conversation (from Gmail, Slack,
+        WhatsApp..., not from the card) looks done: the same hint a review gives with looks_handled, so it sits in Done
+        with Reopen. Their message counts when it came after what the to-do is about and after the to-do was made (or
+        reached the Machine after that, so the review that made it never saw it). The Machine's own sends, reactions
+        and media don't count, and a Not done after that message stands. Returns the ids marked."""
+        ids, marked = sorted(self.owner_user_ids), []
+        with self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            rows = db.execute("SELECT s.id,s.created_at,s.event_ids,s.next_action FROM suggestions s WHERE s.status IN ('pending','prepared') "
+                              'AND s.handled_hint IS NULL AND s.next_action IS NOT NULL '
+                              "AND NOT EXISTS(SELECT 1 FROM action_jobs j WHERE j.suggestion_id=s.id AND j.status NOT IN ('cancelled','blocked'))").fetchall()
+            sent = None
+            for row in rows:
+                draft = next((a for a in next_actions.actions(row['next_action']) if a.get('kind') in DRAFT_EVENT_KINDS
+                              and (next_actions.draft_text(a) or '').strip()), None)
+                if not draft:
+                    continue
+                kind = DRAFT_EVENT_KINDS[draft['kind']]
+                _, events = self.card_channels(row['id'], db)
+                conversations = {(e.get('account_id'), c) for e in events if e['kind'] == kind
+                                 if (c := conversation_of(kind, e['metadata'] if isinstance(e['metadata'], dict) else json.loads(e['metadata'] or '{}')))}
+                if not conversations:
+                    continue
+                # Slack: a channel holds many matters, so only the to-do's own thread counts there (a DM is one conversation)
+                threads = {str(m['thread_ts']) for e in events if e['kind'] == 'slack.message'
+                           if (m := e['metadata'] if isinstance(e['metadata'], dict) else json.loads(e['metadata'] or '{}')).get('thread_ts')}
+                threads |= {str(draft['thread_ts'])} if draft.get('thread_ts') else set()
+                newest = db.execute('SELECT max(e.occurred_at) FROM json_each(?) i JOIN events e ON e.id=i.value', (row['event_ids'],)).fetchone()[0]
+                sent = sent or authorship.MachineSent.load(db)  # another to-do's send in that conversation isn't theirs
+                predicate, params = own_predicate(kind, ids)
+                # Only in its conversations (the keys are kept in the clear), and after a Not done only what came in since
+                where = ' OR '.join(f"json_extract(metadata,'$.{key}') IN ({','.join('?' * len(conversations))})" for key in CONVERSATION_KEYS[kind])
+                keys = [c for _, c in conversations] * len(CONVERSATION_KEYS[kind])
+                said = db.execute("SELECT max(created_at) FROM decisions WHERE suggestion_id=? AND choice='not_done'", (row['id'],)).fetchone()[0]
+                found = next((e for e in db.execute(f'SELECT id,account_id,source_id,body,metadata FROM events WHERE deleted=0 AND kind=? AND ({predicate}) AND ({where}) '
+                                                    'AND occurred_at>? AND (occurred_at>? OR ingested_at>?) AND ingested_at>? ORDER BY occurred_at,id LIMIT 50',
+                                                    (kind, *params, *keys, newest or row['created_at'], row['created_at'], row['created_at'], said or ''))
+                              if (e['account_id'], conversation_of(kind, m := json.loads(e['metadata'] or '{}'))) in conversations
+                              and (kind != 'slack.message' or str(m.get('channel_id') or '').startswith('D') or str(m.get('thread_ts') or '') in threads)
+                              and (text := own_text(e['body'])) and not PROFILE_SKIP.match(text) and not sent.wrote(e, text)), None)
+                if not found:
+                    continue
+                db.execute('UPDATE suggestions SET handled_hint=? WHERE id=? AND handled_hint IS NULL',
+                           (encoded({'reason': i18n.t(ANSWERED_ELSEWHERE[kind]), 'event_ids': [found['id']], 'at': now()}), row['id']))
+                db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL', (row['id'],))
+                marked.append(row['id'])
+        return marked
 
     def edits_to_learn(self, run_id=None, limit=3, days=14, chars=350):
         """Edits not offered to a review yet, each offered once, for it to fold lasting habits into that channel's voice."""

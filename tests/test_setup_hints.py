@@ -8,6 +8,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import assistant as a
+from machine.delivery.push import sender_domain_in
 
 MANAGE = 'https://app.example.test/setup'
 
@@ -99,6 +100,25 @@ class SetupHints(unittest.TestCase):
             db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES('d1','s1','snooze','','dashboard','2026-10-01')")
         self.assertEqual(a.setup_hints(self.store, self.config)[0]['href'], MANAGE + '#telegram')
         self.assertEqual(self.ids(dict(self.config, telegram_owner='123')), [])
+
+    def test_only_the_services_own_domain_counts(self):
+        self.mail('fedex.com', 5)  # x.com inside another domain
+        self.mail('notslack.com', 5)
+        self.mail('slack.com.example.org', 5)
+        with self.store.connect() as db:  # a name that mentions slack.com, from another domain
+            when = a.dt.datetime.now(a.dt.timezone.utc).isoformat()
+            for i in range(5):
+                db.execute('INSERT INTO events(account_id,source_id,kind,occurred_at,title,body,metadata,content_hash,ingested_at) '
+                           'VALUES(?,?,?,?,?,?,?,?,?)', ('acme-gmail', f'named-{i}', 'gmail.message', when, 'Hi', '',
+                                                          json.dumps({'from': '"slack.com team" <news@example.org>'}), 'h', when))
+        self.assertEqual(self.ids(), [])
+        self.mail('email.slack.com', 3)  # a subdomain of the service's own
+        self.assertEqual(self.ids(), ['source-slack'])
+
+    def test_sender_domain_in(self):
+        for sender, want in (('Slack <feedback@slack.com>', True), ('no-reply@EMAIL.Slack.com', True), ('a@slack.com.', True),
+                             ('a@notslack.com', False), ('a@slack.com.evil.test', False), ('slack.com', False), ('', False), (None, False)):
+            self.assertEqual(sender_domain_in(sender, ('slack.com',)), want, sender)
 
     def test_only_a_hosted_machine_gets_hints(self):
         self.mail('slack.com', 5)

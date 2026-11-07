@@ -10,7 +10,12 @@ function showTab(tab,pane){if(tab==='people'&&pane){graphPane=pane;localStorage.
  document.querySelector(`nav [data-tab="${tab}"]`)?.click();if(tab==='health')renderHealthTabs();if(tab==='feedback')learnTabs()}
 function openTabLink(){const st=/^#settings(?:[/=]([a-z]+))?$/.exec(location.hash);if(st){if($('#settings').hidden||st[1]&&st[1]!==settingsNow)showSettings(st[1]);return}const m=/^#([a-z]+)(?:=([a-z]+))?$/.exec(location.hash);if(!m||!TAB_LINKS[m[1]])return;
  const tab=TAB_LINKS[m[1]];if(tab==='people'&&GRAPH_PANES.includes(m[2])){if(!$('#people').hidden&&!graphNode&&graphShown===m[2])return;showTab(tab,m[2]);return}
- history.replaceState(null,'',location.pathname+location.search);showTab(tab,m[2])}
+ // a tab's own link stays in the address, so a reload lands there again; a refresh with the tab on screen leaves it be.
+ // A link that does something there (#connections=add) goes once handled, so the same link works again.
+ if(!m[2]){if($('#'+tab).hidden)showTab(tab);return}history.replaceState(null,'',location.pathname+location.search);showTab(tab,m[2])}
+// Another tab tapped (or opened by the app): a link to some other tab leaves the address
+$('nav').addEventListener('click',e=>{const t=e.target.closest('button')?.dataset.tab,m=/^#([a-z]+)(?:[=/][\w-]+)?$/.exec(location.hash),was=m&&(m[1]==='fleet'?'fleet':TAB_LINKS[m[1]]);
+ if(t&&was&&was!==t)history.replaceState(null,'',location.pathname+location.search)});
 // A tapped phone notification opens #chat=<its tag> (mobile/www/inject.js, and every app out there): a to-do's id is
 // its chat; the other tags (assistant.py push_send, app_wake) and a bare kind (several at once) open their own view.
 function pushRoute(tag){let m;if(/^[a-f0-9]{16}$/.test(tag))return '#chat='+tag;
@@ -93,9 +98,11 @@ function updateMaybe(){if(!updateWaiting||!updateSafe())return false;let last=0;
  try{sessionStorage.setItem('tm-update-at',String(Date.now()))}catch{}updateWaiting=false;updateNow();return true}
 function uiVersionCheck(){if(!state.ui_version||UI_VERSION.startsWith('__')||state.ui_version===UI_VERSION)return false;
  if(!updateWaiting){updateWaiting=true;for(const b of document.querySelectorAll('[data-update-ready]'))b.hidden=false}return updateMaybe()}
-// After a quiet update: back on the tab and at the place the page was
+// After a quiet update: back on the tab and at the place the page was, unless it opened with a link (that link's view
+// stays, also one that left the address once handled)
+const linkAtLoad=!!location.hash;
 function updateViewBack(){let v=null;try{v=JSON.parse(sessionStorage.getItem('tm-update-view')||'null');sessionStorage.removeItem('tm-update-view')}catch{}if(!v||!(Date.now()-v.at<6e4))return;
- if(v.tab&&!location.hash)document.querySelector(`nav button[data-tab="${CSS.escape(v.tab)}"]`)?.click();requestAnimationFrame(()=>scrollTo(0,+v.y||0))}
+ if(v.tab&&!location.hash&&!linkAtLoad)document.querySelector(`nav button[data-tab="${CSS.escape(v.tab)}"]`)?.click();requestAnimationFrame(()=>scrollTo(0,+v.y||0))}
 // A new release: the app's copy of the page goes, so the reload gets the new one from the Machine
 async function shellDrop(){try{for(const k of await caches.keys())if(k.startsWith('tm-shell'))await caches.delete(k)}catch{}}
 // A snooze whose time has passed is back, even before the service's next wake-up reaches this page: never show a past

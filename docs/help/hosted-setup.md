@@ -10,7 +10,7 @@ A hosted Machine runs in the cloud, in the EU, just for you. We keep it running 
 
 ## Sign up
 
-1. At app.themachine.computer, press **Continue with Google** or **Continue with Microsoft**. This makes your account.
+1. At app.themachine.computer, press **Continue with Google** or **Continue with Microsoft**. This makes your account. With Google, the same screen asks for your Gmail and Calendar. Allow them and your mail is connected, with no second Google screen.
 2. Press **Add a passkey** and use your fingerprint, face or device PIN. Prefer an authenticator app? Open **Use an authenticator app instead**, scan the code, type the six digits and press **Turn on**. Save the recovery codes that follow.
 3. Pick your Machine's size and address. The first {trial_days} days are free and nothing is charged before they end. If setup doesn't ask for a payment card, add one on your account page before then.
 
@@ -18,8 +18,8 @@ A hosted Machine runs in the cloud, in the EU, just for you. We keep it running 
 
 Setup is one step per screen: your passkey, your plan, then **Mail and Calendar**, **Your AI** and **First to-dos**. The top shows which step you're on. Your Machine starts in the background, so you never wait for it.
 
-1. **Mail and Calendar**: press **Connect Google** or **Connect Microsoft**. It starts with the account you signed up with. Work or personal comes from the address; change it later on the account. See [Gmail](gmail.md) and [Microsoft](microsoft.md).
-2. **Your AI**: sign in with ChatGPT or Claude, or paste a key from your AI provider. With Claude, paste the code from Claude's page. See [ChatGPT](chatgpt.md).
+1. **Mail and Calendar**: press **Connect Google** or **Connect Microsoft**. It starts with the account you signed up with. Allowed Gmail and Calendar when you signed up with Google? Then setup skips this step and goes on to your AI. Work or personal comes from the address; change it later on the account. See [Gmail](gmail.md) and [Microsoft](microsoft.md).
+2. **Your AI**: sign in with ChatGPT or Claude, or paste a key from your AI provider. With Claude, paste the code from Claude's page. No plan? Get ChatGPT or Claude, or use a key: the step links to each provider's key page, and the provider bills you per use. See [ChatGPT](chatgpt.md).
 3. **First to-dos**: your Machine checks your newest mail first, then your last 7 days. When nothing needs you, it says what it read and what to connect next. A check that fails is tried again within minutes; if it keeps failing, the list says so.
 
 **Back** and your browser's back button go to the step before. Once mail and your AI work, you land on your dashboard.

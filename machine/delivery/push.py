@@ -2,6 +2,7 @@
 lines and buttons (app_notice, app_wake), reminders and setup hints, and what the to-do counts say. Moved out of
 assistant.py as is."""
 import datetime as dt
+import email.utils
 import functools
 import json
 import re
@@ -488,6 +489,14 @@ HINT_SOURCES = (('github', 'GitHub', ('github.com',)), ('slack', 'Slack', ('slac
 HINT_MAILS = 3  # this many mails in 30 days from a service before it is worth suggesting
 
 
+def sender_domain_in(sender, domains):
+    """Whether a From ("Name <a@mail.slack.com>" or the bare address) is at one of these domains or a subdomain of one:
+    the address's own domain, so notslack.com, slack.com.example and a name that mentions slack.com never count."""
+    address = email.utils.parseaddr(str(sender or ''))[1].lower()
+    host = address.rpartition('@')[2].rstrip('.') if '@' in address else ''
+    return bool(host) and any(host == d or host.endswith('.' + d) for d in domains)
+
+
 def setup_hints(store, config, now=None):
     """[{id, title, text, href, button}] for a hosted Machine (manage_url), most relevant first; [] elsewhere."""
     manage = str(config.get('manage_url') or '')
@@ -501,9 +510,13 @@ def setup_hints(store, config, now=None):
             if service in services:
                 continue
             like = ' OR '.join("lower(json_extract(metadata,'$.from')) LIKE ?" for _ in domains)
-            found = db.execute(f"SELECT count(*) FROM (SELECT 1 FROM events WHERE kind IN ('gmail.message','ms_graph.message') AND history=0 "
-                               f"AND occurred_at>=? AND ({like}) LIMIT {HINT_MAILS})",
-                               (since, *[f'%@%{d}%' for d in domains])).fetchone()[0]
+            rows = db.execute(f"SELECT json_extract(metadata,'$.from') FROM events WHERE kind IN ('gmail.message','ms_graph.message') AND history=0 "
+                              f"AND occurred_at>=? AND ({like})", (since, *[f'%@%{d}%' for d in domains]))
+            found = 0
+            for (sender,) in rows:  # the LIKE only narrows: the sender's own domain must be the service's (not x.com in fedex.com)
+                found += sender_domain_in(sender, domains)
+                if found >= HINT_MAILS:
+                    break
             if found >= HINT_MAILS:
                 # one that signs in from + Add (HOSTED_SIGNINS) opens its form there, any other + Add: on the dashboard itself
                 hints.append({'id': 'source-' + service, 'title': f'Connect {label}?',

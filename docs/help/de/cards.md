@@ -24,7 +24,7 @@ Nach dem Senden sagt ein kurzer Hinweis, wo die Aufgabe jetzt ist, etwa „Gesen
 
 In Bereit für dich, Braucht deine Entscheidung, Wird vorbereitet und Wartet auf andere steht eine Aufgabe, die überfällig ist oder bis morgen fällig ist, oben. Die übrigen kommen neueste zuerst, nach der Zeit, die jede Aufgabe zeigt. Die Seitenleiste hat dieselbe Reihenfolge.
 
-Eine Aufgabe mit **Scheinbar erledigt** sieht aus wie eine erledigte, mit dem, was zeigt, dass sie erledigt ist, etwa "PR #3451 gemergt". Sie ist noch nicht geschlossen: **Wieder öffnen** setzt sie wieder auf deine Liste, und deine Machine lernt daraus. Sie sind nie überfällig und zählen nicht als wartend auf dich.
+Eine Aufgabe mit **Scheinbar erledigt** sieht aus wie eine erledigte, mit dem, was zeigt, dass sie erledigt ist, etwa "PR #3451 gemergt". Sie ist noch nicht geschlossen: **Wieder öffnen** setzt sie wieder auf deine Liste, und deine Machine lernt daraus. Sie sind nie überfällig und zählen nicht als wartend auf dich. Eine Aufgabe mit einem Antwortentwurf scheint auch erledigt, wenn du in dieser Unterhaltung selbst geantwortet hast, etwa in Gmail oder Slack.
 
 Eine Aufgabe, deren letzter Schritt noch bei jemand anderem offen ist, etwa ein Review, ein Merge oder eine Antwort, zeigt **Wartet auf:** diesen Schritt und bleibt offen. Sie wartet in **Wartet auf andere**, eingeklappt über Kommt später zurück, und zählt nicht als bereit für dich. Eine neue Nachricht dazu holt sie zurück.
 
@@ -56,7 +56,7 @@ LinkedIn, X und Salesflare behalten ihr eigenes Tempo.
 
 Eine Aufgabe zeigt ihren nächsten Schritt, etwa **Ausführen** oder **Prüfen und senden**, mit **Zurückstellen** daneben. Siehe [Ausführen](do-it.md) und [Zurückstellen](snooze.md).
 
-Noch nicht vorbereitet, hat sie **Anders angehen** (sag, wie es stattdessen gehen soll); fertig, **Änderungen anfragen** (sag, was im Entwurf anders sein soll). Ist die Zeile auf dem Handy voll, wandert **Zurückstellen** unter **…**. **Als erledigt markieren** (sie ist erledigt) gibt es auch: sichtbar ohne Entwurf, sonst oben unter **…**.
+Noch nicht vorbereitet, hat sie **Anders angehen** (sag, wie es stattdessen gehen soll); fertig, **Änderungen anfragen** (sag, was im Entwurf anders sein soll). Ist die Zeile auf dem Handy voll, wandert **Zurückstellen** unter **…**. **Als erledigt markieren** (sie ist erledigt) gibt es auch: sichtbar ohne Entwurf, sonst oben unter **…**. Sie verschwindet sofort aus der Liste, mit **Rückgängig** in der Meldung.
 
 Soll sie anders erledigt werden, sag es in ihrem **Chat**.
 

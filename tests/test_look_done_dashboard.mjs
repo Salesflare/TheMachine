@@ -68,7 +68,7 @@ try{
   // newest first: c9 was made two days ago but closed two hours ago, so it sits between h1 and h2
   assert.deepEqual(await page.locator('#finished-list article').evaluateAll(n=>n.slice(0,5).map(x=>x.id)),['task-d1','task-d2','task-h1','task-c9','task-h2']);
   const card=id=>page.locator('#finished-list #task-'+id);
-  assert.equal(await card('d1').locator('.card-badges .chip').first().textContent(),'Looks done just now');
+  assert.match(await card('d1').locator('.card-badges .chip').first().textContent(),/^Looks done (just now|1 minute ago)$/);  // 36 s old at the start, and the list keeps it current
   assert.equal(await card('h1').locator('.card-badges .chip').first().textContent(),'Looks done 1 hour ago');
   assert.equal(await card('c9').locator('.card-badges .chip').first().textContent(),'Done 2 hours ago');  // when it closed, not when it came in
   assert.equal(await card('c9').locator('.meta-side time').count(),0);

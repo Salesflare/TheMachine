@@ -86,7 +86,7 @@ TODO_SOURCE = {'gmail.message': 'Email', 'ms_graph.message': 'Email', 'outlook.m
                'calendar.event': 'Calendar', 'outlook.event': 'Calendar', 'ms_graph.event': 'Calendar', 'outlook_calendar.event': 'Calendar',
                'meeting.notes': 'Meeting notes', 'meeting.transcript': 'Meeting notes',
                'salesflare.email': 'CRM email', 'salesflare.meeting': 'CRM meeting',
-               'slack.message': 'Slack', 'whatsapp.message': 'WhatsApp', 'telegram.message': 'Telegram', 'fleet.intercom': 'Intercom',
+               'slack.message': 'Slack', 'teams.message': 'Teams', 'whatsapp.message': 'WhatsApp', 'telegram.message': 'Telegram', 'fleet.intercom': 'Intercom',
                'android.notification': 'Phone notifications', 'owner.card': 'Added by you',
                'fleet.request': 'Fleet', 'fleet.message': 'Fleet',
                'gateway.alert': 'The Machine itself', 'machine.fault': 'The Machine itself', 'machine.parked_fix': 'The Machine itself'}
