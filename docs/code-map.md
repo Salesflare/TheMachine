@@ -98,7 +98,8 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   (a to-do's chat: its items, replies, drafts, handoffs and redaction), `machine/faults.py` (the Machine's own errors:
   where they happened, their scrubbed message, the code version and release, the fault log),
   `machine/sources/exclusions.py`, `salesflare.py` and `telegram.py` (the exclusion rules and the Salesflare and
-  Telegram sources).
+  Telegram sources), `machine/sources/gmail.py` and `calendar.py` (the Gmail and Calendar sources with their sync,
+  rooms, guests, owners and write helpers).
 - **Dashboard code:** in its area's part in `dashboard/` (`<area>-<what>.js`: shell, todos, settings, graph, calendar,
   connections, help, events, new, fleet), next to the functions it works with, never at the end of the script. The
   page's core is in the `shell-*` parts too: locale and error reports (`shell-core.js`), network and outbox, `render()`
