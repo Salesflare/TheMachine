@@ -29,7 +29,7 @@ Auf einer gehosteten Machine:
 2. Tippe unter **Mail und Kalender** auf **Google verbinden** und melde dich an. Auf dem Google-Bildschirm steht Salesflare, die Firma hinter The Machine.
 3. Gmail und Google Calendar werden zusammen verbunden.
 
-Mit Google registriert und auf diesem Bildschirm Gmail und Kalender erlaubt? Dann werden sie von selbst verbunden, nur zum Lesen. Zum Senden tippe noch einmal auf **Google verbinden**.
+Mit Google registriert und auf diesem Bildschirm Gmail und Kalender erlaubt? Dann werden sie von selbst verbunden. Gesendet wird nur, wenn du auf Senden tippst.
 
 Oder im Dashboard: **Verbindungen**, **+ Hinzufügen**, wähle Gmail und tippe auf **Mit Google anmelden**. Danach bist du zurück im Dashboard.
 

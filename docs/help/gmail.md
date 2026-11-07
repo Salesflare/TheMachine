@@ -29,7 +29,7 @@ On a hosted Machine:
 2. Under **Mail and Calendar**, press **Connect Google** and sign in. Google's screen names Salesflare, who makes The Machine.
 3. Gmail and Google Calendar connect together.
 
-Signed up with Google and allowed Gmail and Calendar on that screen? They connect by themselves, reading only. To send, press **Connect Google** once more.
+Signed up with Google and allowed Gmail and Calendar on that screen? They connect by themselves. It sends only when you press Send.
 
 Or in the dashboard: **Connections**, **+ Add**, pick Gmail and press **Sign in with Google**. When you're done, you're back in the dashboard.
 
