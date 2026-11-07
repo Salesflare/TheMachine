@@ -54,6 +54,7 @@ import urllib.request
 
 import graph
 import locale_prefs
+from machine.timing import _REQUEST_TIMING
 import ms_graph
 from i18n import t
 import fleet_requests
@@ -1776,11 +1777,24 @@ class Fleet(fleet_requests.Requests, fleet_reviews.Reviews, friends.Friends, con
 
     # -- state
     def meta(self, key, default=None):
-        with self.connect() as db:
-            row = db.execute('SELECT value FROM fleet_meta WHERE key=?', (key,)).fetchone()
-        return json.loads(row[0]) if row else default
+        # The directory, read once per dashboard request: the Fleet tab asked for it some 400 times, a connection each
+        # (most of a 10 s answer). Kept as its text, so each caller still gets its own copy; set_meta drops it.
+        timing = getattr(_REQUEST_TIMING, 'value', None) if key == 'directory' else None
+        memo = timing.setdefault('fleet_meta', {}) if timing is not None else None
+        if memo is not None and (id(self), key) in memo:
+            text = memo[(id(self), key)]
+        else:
+            with self.connect() as db:
+                row = db.execute('SELECT value FROM fleet_meta WHERE key=?', (key,)).fetchone()
+            text = row[0] if row else None
+            if memo is not None:
+                memo[(id(self), key)] = text
+        return json.loads(text) if text is not None else default
 
     def set_meta(self, key, value):
+        timing = getattr(_REQUEST_TIMING, 'value', None)
+        if timing is not None:
+            timing.get('fleet_meta', {}).pop((id(self), key), None)
         with self.connect() as db:
             db.execute('INSERT OR REPLACE INTO fleet_meta(key,value) VALUES(?,?)', (key, json.dumps(value)))
         self._sharing = (0, {})  # whether the Team Graph is shared is read again (team_sharing)

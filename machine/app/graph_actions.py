@@ -304,6 +304,15 @@ class GraphActionsApp:
             self.graph_build()
         return done
 
+    def graph_later(self):
+        """A rebuild after an owner's edit whose answer doesn't need the rebuilt Graph: the graph worker runs it at once
+        (graph_dirty), so the edit answers right away instead of after a whole build (seconds, more with history). Without
+        the worker (a command, a test) it builds here, as before."""
+        if self.__dict__.get('graph_worker_on'):
+            self.graph_dirty.set()
+        else:
+            self.graph_build()
+
     def graph_build(self):
         with self.store.connect() as db:
             db.isolation_level = None  # graph.build runs its own transaction
@@ -462,6 +471,7 @@ class GraphActionsApp:
         """Rebuilds the people and projects graph every ten minutes, soon after a label or merge, and within a minute
         of new organization profiles or, on a new install, of new signals: so enriched details show right away."""
         wait, built, seen = 30, 0.0, None
+        self.graph_worker_on = True  # graph_later hands its rebuilds here
         while not self.stop.is_set():
             dirty = self.graph_dirty.wait(min(wait, GRAPH_CHECK_SECONDS))
             if self.stop.is_set():

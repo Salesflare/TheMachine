@@ -627,6 +627,38 @@ class Scope:
             self._automated = found
         return self._automated
 
+    def automated_only(self, threads):
+        """`automated` for just these threads, from their own messages: a thread's answer depends only on its own
+        messages, so it is the same as the full set's for them. Reading every mail message (and opening each sealed
+        one) took seconds on each person's page; this reads a page's threads only. The scope then answers for these
+        threads only, so it is for a scope made for one call (thread_labels)."""
+        wanted = {t for t in threads if t}
+        found = set()
+        if self.accounts and wanted:
+            ids = [t[3:] for t in wanted if t.startswith('ev:') and t[3:].isdigit()]
+            # every message whose thread can be one of these, by the plain keys graph.thread_key reads (a superset:
+            # thread_of below keeps the exact ones)
+            spoken, seen = set(), set()
+            for e in self._db.execute(
+                    'SELECT id,kind,metadata FROM events WHERE deleted=0 AND kind IN (SELECT value FROM json_each(?)) '
+                    'AND account_id IN (SELECT value FROM json_each(?)) AND ('
+                    "(kind IN ('gmail.message','salesflare.email') AND CAST(json_extract(metadata,'$.thread_id') AS TEXT) IN (SELECT value FROM json_each(?))) "
+                    "OR (kind='intercom.conversation' AND CAST(json_extract(metadata,'$.conversation_id') AS TEXT) IN (SELECT value FROM json_each(?))) "
+                    'OR id IN (SELECT value FROM json_each(?)))',
+                    (json.dumps(sorted(MAIL_KINDS)), json.dumps(sorted(self.accounts)),
+                     json.dumps(sorted(t[3:] for t in wanted if t.startswith(('gm:', 'sf:')))),
+                     json.dumps(sorted(t[3:] for t in wanted if t.startswith('ic:'))), json.dumps([int(i) for i in ids]))):
+                metadata = json.loads(e['metadata'] or '{}')
+                thread = thread_of(e['kind'], metadata, e['id'])
+                if thread not in wanted:
+                    continue
+                seen.add(thread)
+                if self.owner_side(metadata) or not automated_message(metadata):
+                    spoken.add(thread)
+            found = seen - spoken
+        self._automated = found
+        return found
+
     def owner_side(self, metadata):
         """A message the owner or a colleague wrote."""
         if 'SENT' in (metadata.get('labels') or ()) or metadata.get('from_me') is True:
@@ -2694,6 +2726,11 @@ class SharedGraph:
         nothing for the rest (Personal). fixed: colleagues only or personal, never shared, so no switch."""
         scopes = self.scopes(db)
         names = self.member_names()
+        if scopes and rows:  # only these rows' threads are asked whether they are automated mail
+            threads = {thread_of(r['kind'], r['metadata'] if isinstance(r['metadata'], dict) else json.loads(r['metadata'] or '{}'), r['id'])
+                       for r in rows}
+            for scope in scopes.values():
+                scope.automated_only(threads)
         out = {}
         for r in rows:
             for scope in scopes.values():

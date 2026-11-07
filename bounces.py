@@ -420,6 +420,23 @@ def steer(db, raw, options):
     return raw, options
 
 
+def bounced_people(db):
+    """[(bounced address, its person's emails)] for the bounces not cleared, oldest first. The to-do list marks every
+    draft (mark_draft), and each looked up every bounced address in the Graph again (a scan of all people when the
+    address is no node): kept on the connection while it has made no change and the bounces are the same."""
+    addresses = tuple(r['address'] for r in db.execute('SELECT address FROM email_bounces WHERE cleared_at IS NULL ORDER BY bounced_at'))
+    key = (addresses, db.total_changes)
+    kept = getattr(db, '_bounced_people', None)
+    if kept and kept[0] == key:
+        return kept[1]
+    found = [(a, person_emails(db, a)) for a in addresses]
+    try:
+        db._bounced_people = (key, found)
+    except AttributeError:  # a plain sqlite3 connection: no room for it, looked up each time
+        pass
+    return found
+
+
 def moved(db, to):
     """{address: the bounced one it stands in for}: a draft's To that is a working address of someone whose other address
     bounced ("Bounced, now to <address>")."""
@@ -428,10 +445,10 @@ def moved(db, to):
         return {}
     out = {}
     # From each bounced address to its person's other ones (an address the owner added is no identifier to look up by)
-    for r in db.execute('SELECT address FROM email_bounces WHERE cleared_at IS NULL ORDER BY bounced_at'):
-        for other in person_emails(db, r['address']):
-            if other in to and other != r['address']:
-                out[other] = r['address']
+    for address, emails in bounced_people(db):
+        for other in emails:
+            if other in to and other != address:
+                out[other] = address
     bad = flags(db, list(out))
     return {a: b for a, b in out.items() if a not in bad}
 
