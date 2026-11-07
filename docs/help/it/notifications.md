@@ -12,7 +12,7 @@ In **Impostazioni**, **Notifiche**, scegli per ogni tipo dove ti arriva:
 - **Nuove attività**: una risposta che qualcuno aspetta, una richiesta, qualsiasi cosa urgente.
 - **Risultati e domande**: una bozza pronta da approvare o inviare, un compito bloccato o che richiede un accesso, una domanda della Fleet.
 - **Promemoria**: attività posticipate e attese che tornano.
-- **Riepilogo del mattino**: le riunioni di oggi, cosa scade, cosa è arrivato durante la notte e le prime attività in attesa, nell'ordine della tua lista di attività.
+- **Riepilogo del mattino**: prima le bozze pronte e le promesse in scadenza oggi, poi le riunioni di oggi, cosa scade, cosa è arrivato durante la notte e le altre attività in attesa. Ogni attività compare una sola volta.
 
 Ognuno ha un interruttore per **Push** (l'app sul telefono o sul computer), per **Telegram** quando è configurato e per **Email** su una Machine in hosting o su una Machine nel The Machine Network. Sono tutti attivi, tranne il riepilogo su Telegram.
 

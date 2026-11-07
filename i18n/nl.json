@@ -3321,6 +3321,7 @@
  "Promised {} on {}. Nothing shows it done yet.": "Aan {} beloofd op {}. Nog niets wijst erop dat het gedaan is.",
  "Promised {}: {}, ": "Beloofd aan {}: {}, ",
  "Promises": "Beloftes",
+ "Promises due today": "Beloftes voor vandaag",
  "Proof": "Bewijs",
  "Propose to everyone": "Aan iedereen voorstellen",
  "Proposed by your Machine": "Voorgesteld door je Machine",
@@ -6528,6 +6529,10 @@
  "{} promises": {
   "one": "{} belofte",
   "other": "{} beloftes"
+ },
+ "{} promises due today": {
+  "one": "{} belofte voor vandaag",
+  "other": "{} beloftes voor vandaag"
  },
  "{} proposed skills already wait for the owner": "Er wachten al {} voorgestelde skills op de eigenaar",
  "{} proposes a plan": "{} stelt een plan voor",

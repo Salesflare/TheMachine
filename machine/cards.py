@@ -646,14 +646,15 @@ def controls(row, root=''):
 # A to-do that looks done already: a later signal suggests it's handled (looks_handled), or its run found it done
 # (outcome already_done). Only a hint: it shows at the top of Done / dismissed but stays open until the owner closes it
 # (Reopen there puts it back on the list); it never counts as waiting for them (badge, reminders, nudges) and is never
-# late. Same rule as looksDone() in dashboard.html.
-LOOKS_DONE_SQL = "(handled_hint IS NOT NULL OR (status='prepared' AND json_extract(outcome,'$.state')='already_done'))"
+# late. Same rule as looksDone() in dashboard.html. A to-do without an outcome (most ready drafts) has no state: ifnull
+# keeps NOT (...) true for it, where a bare NULL left every such ready to-do out of the badge and the digest.
+LOOKS_DONE_SQL = "(handled_hint IS NOT NULL OR (status='prepared' AND ifnull(json_extract(outcome,'$.state'),'')='already_done'))"
 
 
 # Waiting on others: its run found a step still open on someone else's side (outcome waiting: a review, merge, deploy,
 # a reply). Nothing for the owner until that step moves; a new message on it (update_card) brings it back as open.
 # Neither kind counts as needing the owner. Same rule as waitsOnOthers() in dashboard.html.
-NOT_FOR_OWNER_SQL = "(" + LOOKS_DONE_SQL + " OR (status='prepared' AND json_extract(outcome,'$.state')='waiting'))"
+NOT_FOR_OWNER_SQL = "(" + LOOKS_DONE_SQL + " OR (status='prepared' AND ifnull(json_extract(outcome,'$.state'),'')='waiting'))"
 
 
 def card_recipients(next_action):

@@ -3321,6 +3321,7 @@
  "Promised {} on {}. Nothing shows it done yet.": "Promised {} on {}. Nothing shows it done yet.",
  "Promised {}: {}, ": "Promised {}: {}, ",
  "Promises": "Promises",
+ "Promises due today": "Promises due today",
  "Proof": "Proof",
  "Propose to everyone": "Propose to everyone",
  "Proposed by your Machine": "Proposed by your Machine",
@@ -6528,6 +6529,10 @@
  "{} promises": {
   "one": "{} promise",
   "other": "{} promises"
+ },
+ "{} promises due today": {
+  "one": "{} promise due today",
+  "other": "{} promises due today"
  },
  "{} proposed skills already wait for the owner": "{} proposed skills already wait for the owner",
  "{} proposes a plan": "{} proposes a plan",

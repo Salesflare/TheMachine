@@ -3321,6 +3321,7 @@
  "Promised {} on {}. Nothing shows it done yet.": "Prometido {} em {}. Nada indica ainda que foi feito.",
  "Promised {}: {}, ": "Prometido {}: {}, ",
  "Promises": "Promessas",
+ "Promises due today": "Promessas para hoje",
  "Proof": "Prova",
  "Propose to everyone": "Propor a todos",
  "Proposed by your Machine": "Proposta pela sua Machine",
@@ -6528,6 +6529,10 @@
  "{} promises": {
   "one": "{} promessa",
   "other": "{} promessas"
+ },
+ "{} promises due today": {
+  "one": "{} promessa para hoje",
+  "other": "{} promessas para hoje"
  },
  "{} proposed skills already wait for the owner": "{} habilidades propostas já esperam pelo dono",
  "{} proposes a plan": "{} propõe um plano",

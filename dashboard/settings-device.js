@@ -178,4 +178,5 @@ $('#settings-notify').addEventListener('click',async e=>{const rs=e.target.close
   try{await notifyPost('app_push_unregister',{id:rm.dataset.appRemove});state.notify.app_devices=(state.notify.app_devices||[]).filter(p=>p.id!==rm.dataset.appRemove);state.notify.push_devices=Math.max(0,(state.notify.push_devices||1)-1);toast('Removed');renderNotify()}catch(err){errCaught(err);toast(err.message,true)}finally{rm.disabled=false}return}
  const d=e.target.closest('[data-device]');if(d){d.disabled=true;try{await deviceRun(d.dataset.device)}finally{d.disabled=false;renderNotify()}return}
  const pv=e.target.closest('[data-notify-preview]');if(pv){const out=$('#notify-preview');if(!out.hidden){out.hidden=true;renderNotify();return}pv.disabled=true;
-  try{const r=await notifyPost('notify_preview');out.textContent=r.empty?'Nothing for a digest right now.':r.text;out.hidden=false;renderNotify()}catch(err){errCaught(err);toast(err.message,true)}finally{pv.disabled=false}}});
+  // Right under the digest's row, and scrolled to: the click shows what it opened, also at a short window
+  try{const r=await notifyPost('notify_preview');out.textContent=r.empty?'Nothing for a digest right now.':r.text;out.hidden=false;renderNotify();out.scrollIntoView({block:'nearest'})}catch(err){errCaught(err);toast(err.message,true)}finally{pv.disabled=false}}});

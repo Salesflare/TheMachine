@@ -12,7 +12,7 @@ Dans **Paramètres**, **Notifications**, choisissez pour chaque type où il vous
 - **Nouvelles tâches** : une réponse que quelqu’un attend, une demande, tout ce qui est urgent.
 - **Résultats et questions** : un brouillon prêt à approuver ou à envoyer, une tâche bloquée ou qui demande une connexion, une question de la Fleet.
 - **Rappels** : les mises en attente et les attentes qui reviennent.
-- **Récap du matin** : les réunions du jour, ce qui arrive à échéance, ce qui est arrivé pendant la nuit et les premières tâches en attente, dans l’ordre de votre liste de tâches.
+- **Récap du matin** : d’abord les brouillons prêts et les promesses à tenir aujourd’hui, puis les réunions du jour, ce qui arrive à échéance, ce qui est arrivé pendant la nuit et les autres tâches en attente. Chaque tâche n’apparaît qu’une fois.
 
 Chacun a un interrupteur pour **Push** (l’app sur votre téléphone ou votre ordinateur), **Telegram** quand il est configuré, et **E-mail** sur une Machine hébergée ou sur une Machine du The Machine Network. Tous sont activés, sauf le récap sur Telegram.
 
