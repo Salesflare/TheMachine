@@ -1086,7 +1086,8 @@ class ReviewStore:
                     continue
                 if item['id'] not in reviewed:
                     item['deferred'] = True
-                    db.execute('UPDATE events SET deferrals=deferrals+1 WHERE id=? AND version=?', (item['id'], item['version']))
+                    if item['id'] not in not_saved:  # a failed save is not the review's choice to wait: it never sets a message aside
+                        db.execute('UPDATE events SET deferrals=deferrals+1 WHERE id=? AND version=?', (item['id'], item['version']))
                     continue
                 db.execute('UPDATE events SET analyzed_version=? WHERE id=? AND version=?',
                            (item['version'], item['id'], item['version']))
