@@ -136,6 +136,9 @@ const NOTIFY_KINDS=[['todo','New to-dos','A reply, a request, anything urgent'],
 const NOTIFY_COLS={push:'Push',telegram:'Telegram',email:'Email'};
 const notifyPost=(action,args={})=>request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action,args})});
 const notifyHM=t=>{try{return fmtHM('2000-01-01T'+t)}catch{return t}};
+// Weekly recap (machine/app/recap_settings.py): weekly_recap in config.json, one switch for the recap wherever it comes
+const RECAP_DAYS=['Mondays after {}','Tuesdays after {}','Wednesdays after {}','Thursdays after {}','Fridays after {}','Saturdays after {}','Sundays after {}'];
+const recapRow=(r,cols)=>!r?'':html`<div class="notify-row" role="row"><span role="rowheader"><strong>Weekly recap</strong><small><span>${t(RECAP_DAYS[(r.weekday||5)-1]||RECAP_DAYS[4],notifyHM(r.at||'16:00'))}</span><span aria-hidden="true"> · </span><a class="learn" href="${HELP}weekly-recap" target="_blank" rel="noopener">Learn more</a></small></span>${cols.map((c,i)=>i<cols.length-1?html`<span class="notify-cell" role="cell"></span>`:html`<span class="notify-cell" role="cell">${r.saveable?html`<button type="button" class="lookup-switch" role="switch" aria-checked="${!!r.on}" aria-label="Weekly recap" data-recap-switch></button>`:html`<span class="notify-na">${r.on?'On':'Off'}</span>`}</span>`)}</div>`;
 function renderNotify(){const n=state?.notify,box=$('#settings-notify');
  const waiting=(state?.suggestions||[]).filter(x=>['pending','prepared'].includes(x.status)).length;
  try{if(navigator.setAppBadge){if(waiting)navigator.setAppBadge(waiting).catch(()=>{});else navigator.clearAppBadge().catch(()=>{})}}catch{}
@@ -147,7 +150,7 @@ function renderNotify(){const n=state?.notify,box=$('#settings-notify');
  const cell=(kind,label,ch)=>{const p=n.prefs[kind]||{};if(!(ch in p))return html`<span class="notify-cell" role="cell"><span class="notify-na">–</span></span>`;
   return html`<span class="notify-cell" role="cell"><button type="button" class="lookup-switch" role="switch" aria-checked="${!!p[ch]}" aria-label="${label+': '+NOTIFY_COLS[ch]}" data-notify-kind="${kind}" data-notify-channel="${ch}"></button></span>`};
  putHTML(grid,html`<div class="notify-row" role="row"><span role="columnheader"></span>${cols.map(c=>html`<span class="notify-col" role="columnheader">${NOTIFY_COLS[c]}</span>`)}</div>${
-  NOTIFY_KINDS.map(([k,label,hint])=>html`<div class="notify-row" role="row"><span role="rowheader"><strong>${label}</strong><small>${k==='digest'?digest:hint}</small></span>${cols.map(c=>cell(k,label,c))}</div>`)}`);
+  NOTIFY_KINDS.map(([k,label,hint])=>html`<div class="notify-row" role="row"><span role="rowheader"><strong>${label}</strong><small>${k==='digest'?digest:hint}</small></span>${cols.map(c=>cell(k,label,c))}</div>`)}${recapRow(n.weekly_recap,cols)}`);
  // In the mobile app this device is the phone: its own push (www/inject.js keeps the id app_push_register gave it),
  // not the web's, which a WebView doesn't have. It turns on with the phone's notifications for the app.
  const phone=phoneAppPush(),mine=phone&&(n.app_devices||[]).find(p=>p.id===phone.id);
@@ -160,7 +163,10 @@ function renderNotify(){const n=state?.notify,box=$('#settings-notify');
  // Phones with the mobile app (notify.py, app_push): each with Remove, which stops its notifications
  const phones=(n.app_devices||[]).filter(p=>p!==mine).map(p=>html`<div><span class="grow"><strong>${p.label}</strong><small>Phone with the app</small></span><button type="button" data-app-remove="${p.id}">Remove</button></div>`);
  putHTML($('#notify-more'),html`<div><span class="grow"><strong>This device</strong><small>${device}</small></span>${mine&&!app?html`<button type="button" class="ghost" data-app-test="${mine.id}">Send a test</button>`:''}${!on&&can?html`<button type="button" data-device="push-on">Turn on</button>`:''}${app==='blocked'?html`<button type="button" data-app-settings>Open settings</button>`:app==='off'?html`<button type="button" data-app-on>Turn on</button>`:''}</div>${phones}`)}
-$('#settings-notify').addEventListener('click',async e=>{const sw=e.target.closest('[data-notify-kind]');
+$('#settings-notify').addEventListener('click',async e=>{const rs=e.target.closest('[data-recap-switch]');
+ if(rs){const on=rs.getAttribute('aria-checked')!=='true';rs.disabled=true;
+  try{state.notify.weekly_recap=await notifyPost('recap_set',{on});renderNotify()}catch(err){errCaught(err);toast(err.message,true)}finally{rs.disabled=false}return}
+ const sw=e.target.closest('[data-notify-kind]');
  if(sw){const on=sw.getAttribute('aria-checked')!=='true';sw.disabled=true;
   try{state.notify=await notifyPost('notify_set',{kind:sw.dataset.notifyKind,channel:sw.dataset.notifyChannel,on});renderNotify()}catch(err){errCaught(err);toast(err.message,true)}finally{sw.disabled=false}return}
  const test=e.target.closest('[data-app-test]');if(test){test.disabled=true;

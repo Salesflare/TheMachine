@@ -3,7 +3,7 @@ title: Weekoverzicht
 area: weekly
 summary: Eén keer per week hoe je Machine het deed: to-do's, beloftes, personen en projecten, en wat hij opmerkte. Standaard uit.
 covers: weekly-recap
-code: assistant.py, config.example.json
+code: assistant.py, machine/app/recap_settings.py, config.example.json
 order: 1
 ---
 ## Wat erin staat

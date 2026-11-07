@@ -3,7 +3,7 @@ title: Weekly recap
 area: weekly
 summary: Once a week, how your Machine did: to-dos, promises, people and projects, and what it noticed. Off by default.
 covers: weekly-recap
-code: assistant.py, config.example.json
+code: assistant.py, machine/app/recap_settings.py, config.example.json
 order: 1
 ---
 ## What's in it
@@ -23,4 +23,4 @@ Once a week, on Friday after 16:00 in your time zone by default. It comes on [Te
 
 ## Turn it on
 
-It's off by default. The dashboard has no switch for it yet, so a hosted Machine can't turn it on today. On your own computer, set `weekly_recap` in your Machine's settings file, config.json: `enabled` true, and optionally `weekday` (1 to 7, Friday is 5) and `at` ("16:00"). See the [configuration guide](https://github.com/Salesflare/TheMachine/blob/main/docs/configuration.md).
+It's off by default. Turn it on in Settings › Notifications with the **Weekly recap** switch. On your own computer you can also set `weekly_recap` in config.json: `enabled` true, and optionally `weekday` (1 to 7, Friday is 5) and `at` ("16:00"). See the [configuration guide](https://github.com/Salesflare/TheMachine/blob/main/docs/configuration.md).
