@@ -620,7 +620,14 @@ def make_handler(app):
                 try:
                     args = urllib.parse.parse_qs(path.query)
                     events = [int(v) for v in args.get('events', [''])[0].split(',') if v.strip()][:60]  # one conversation from the Graph
-                    self.output(200, {'originals': app.originals(args.get('id', [''])[0], args.get('event', [''])[0], events)})
+                    card = args.get('id', [''])[0]
+                    if card and args.get('before', [''])[0]:  # Show earlier: older messages of the to-do's own conversation
+                        self.output(200, {'around': app.message_context(card, int(args['before'][0]))})
+                        return
+                    found = {'originals': app.originals(card, args.get('event', [''])[0], events)}
+                    if card:  # what was said around the to-do's source message (machine/app/conversation.py)
+                        found['around'] = app.message_context_quiet(card)
+                    self.output(200, found)
                 except (ValueError, sqlite3.OperationalError):
                     self.output(404, {'error': 'Original not available'})
             elif path.path == '/api/email':

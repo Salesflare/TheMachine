@@ -6,9 +6,10 @@
 // closes, so Cancel goes when there is a Send; the editor is the message, so no Message label over it (screen readers
 // still read it). Help: the answers fill the screen, the question box at the bottom. The quick add composer (#new-card)
 // stays a sheet on the keyboard and the palette stays under the top bar. Two :not(#…) lift these over each dialog's own
-// #id rules. Its own style sheet, after the page's (dashboard.html stays small enough to scan).
+// #id rules. While one is open the page keeps no scrollbar gutter (html's stable one), so the sheet is the full width
+// where scrollbars take room (desktop browsers, Android with a mouse). Its own style sheet, after the page's (dashboard.html stays small enough to scan).
 document.head.append(Object.assign(document.createElement('style'),{id:'phone-sheets',textContent:`@media(max-width:560px){
-  html:has(dialog[open]:modal:not(#palette):not(#new-card)){overflow:hidden}
+  html:has(dialog[open]:modal:not(#palette):not(#new-card)){overflow:hidden;scrollbar-gutter:auto}
   dialog:not(#palette):not(#new-card){position:fixed;inset:var(--vv-top,0px) 0 auto;width:100%;max-width:100%;height:var(--vv-h,100dvh);max-height:var(--vv-h,100dvh);margin:0;box-sizing:border-box;padding:0 16px;border:0;border-radius:0;background:var(--surface-2);overflow:auto;overscroll-behavior:contain;scroll-padding:72px 0 96px}
   dialog:not(#palette):not(#new-card)[open]{display:flex;flex-direction:column;gap:0}
   dialog:not(#palette):not(#new-card)[open]>:not(.fr-list){flex-shrink:0}

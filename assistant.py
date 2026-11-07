@@ -144,6 +144,7 @@ from support_app import SupportApp
 from machine import names as display_names
 from machine.sources.rows import SKIPPED, Skips
 from machine.app.check_now import CheckNowApp
+from machine.app.conversation import ConversationApp
 from machine.app.export import ExportApp
 from machine.export import staged as staged_import
 from machine.app.history import HistoryApp
@@ -2523,7 +2524,7 @@ APP_MIXINS = (SupportApp, CalendarApp, SkillsApp, AgentsApp, GBrainApp, SharedGr
 # App's mixins in machine/app/: methods moved out of App as is (docs/code-map.md)
 APP_MIXINS += (FollowUpsApp, GraphActionsApp, KnowledgeExportApp, MeetingWritesApp, ModelPacingApp, PromiseChecksApp, SignaturesApp, SummariesApp,
                VoiceApp)
-APP_MIXINS += (CardChatApp, ExportApp, FleetApp, RecapApp, TalkApp)
+APP_MIXINS += (CardChatApp, ConversationApp, ExportApp, FleetApp, RecapApp, TalkApp)
 APP_MIXINS += (RecapSettingsApp,)
 
 

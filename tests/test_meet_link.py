@@ -118,8 +118,9 @@ class BookingLinks(unittest.TestCase):
         self.assertFalse([s for s in starts if s.date() == dt.date(2026, 11, 3) and s.hour < 12])
         self.assertTrue(all(dt.date(2026, 11, 3) <= s.date() <= dt.date(2026, 11, 5) for s in starts))
         self.assertLessEqual(max(sum(1 for s in starts if s.date() == d) for d in {s.date() for s in starts}), meet_link.PER_DAY)
-        # the cloud keeps a blob it can't read
-        stored = json.dumps(self.links.links)
+        # the cloud keeps a blob it can't read: its plain fields name nothing (the sealed blob and check are random bytes,
+        # which can spell 'Ann' by chance, so they're left out of the scan; page() above reads the blob with the key)
+        stored = json.dumps([{k: v for k, v in l.items() if k not in ('sealed', 'check')} for l in self.links.links.values()])
         for word in ('Secret', 'merger', 'Carol', 'carol@', 'Ann', page['slots'][0]):
             self.assertNotIn(word, stored)
         self.assertEqual(next(iter(self.links.links.values()))['days'], 7)
