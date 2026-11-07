@@ -278,7 +278,12 @@ def backfill(connect, settings, batch=16, out=print):
 
 
 def cosine(a, b):
-    return sum(x * y for x, y in zip(a, b))
+    """Dot product of two normalized vectors. math.sumprod runs in C: a search scores every stored vector against the
+    query (20k and more), some 4x quicker than a Python sum. Unequal lengths compare their shared part, as zip did."""
+    if len(a) != len(b):
+        n = min(len(a), len(b))
+        a, b = a[:n], b[:n]
+    return math.sumprod(a, b)
 
 
 def fts_ids(db, accounts, query, limit, signals_only=False):
