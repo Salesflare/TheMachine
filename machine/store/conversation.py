@@ -15,6 +15,13 @@ CONTEXT_KEYS = {'slack.message': 'channel_id', 'whatsapp.message': 'chat_id', 't
                 'linkedin.message': 'conversation_id', 'x.dm': 'conversation_id', 'gmail.message': 'thread_id'}
 BEFORE_MAX, BEFORE_MIN, AFTER_MAX, EARLIER_PAGE = 10, 3, 20, 20
 SCAN = 400  # candidate rows read on each side; a busy channel's threads are filtered out in Python
+# One fixed query per side; the metadata key goes in as a bound JSON path, never into the SQL text
+_SIDE_SQL = {
+    'before': 'SELECT id,occurred_at,metadata FROM events WHERE account_id=? AND kind=? AND deleted=0 AND json_extract(metadata,?)=? '
+              'AND (occurred_at < ? OR (occurred_at=? AND id < ?)) ORDER BY occurred_at DESC,id DESC LIMIT ?',
+    'after': 'SELECT id,occurred_at,metadata FROM events WHERE account_id=? AND kind=? AND deleted=0 AND json_extract(metadata,?)=? '
+             'AND (occurred_at > ? OR (occurred_at=? AND id > ?)) ORDER BY occurred_at ASC,id ASC LIMIT ?',
+}
 
 
 def _meta(row):
@@ -66,11 +73,9 @@ class ConversationStore:
         read. cursor: an event of that conversation to page from instead of the anchor."""
         kind, key = anchor['kind'], CONTEXT_KEYS[anchor['kind']]
         start = cursor or anchor
-        op, order = ('<', 'DESC') if side == 'before' else ('>', 'ASC')
         rows = db.execute(
-            f"SELECT id,occurred_at,metadata FROM events WHERE account_id=? AND kind=? AND deleted=0 AND json_extract(metadata,'$.{key}')=? "
-            f'AND (occurred_at {op} ? OR (occurred_at=? AND id {op} ?)) ORDER BY occurred_at {order},id {order} LIMIT ?',
-            (anchor['account_id'], kind, str(_meta(anchor)[key]), start['occurred_at'], start['occurred_at'], start['id'], SCAN)).fetchall()
+            _SIDE_SQL['before' if side == 'before' else 'after'],
+            (anchor['account_id'], kind, '$.' + key, str(_meta(anchor)[key]), start['occurred_at'], start['occurred_at'], start['id'], SCAN)).fetchall()
         if kind == 'slack.message':
             m = _meta(anchor)
             rows = [r for r in rows if slack_member(m, _meta(r))]

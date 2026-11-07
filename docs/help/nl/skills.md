@@ -12,6 +12,10 @@ Een skill vertelt je Machine hoe hij iets doet, zoals "vragen over prijzen beant
 
 Druk in **Instellingen**, **Skills** op **Nieuwe skill** of **Begin met een voorbeeld**. Geef hem een **Naam**, **Wanneer je het gebruikt** en de **Instructies**, en druk dan op **Opslaan**.
 
+## Wanneer hij er een gebruikt
+
+Elke to-do die je Machine voorbereidt krijgt de skill die erbij past, zonder dat je het vraagt: een met de naam van het bord, het project of de titel, volledig. Je andere skills staan erbij, dus ook een voor dat soort werk, zoals een antwoord in een bekend soort thread of een CRM-update, volgt hij.
+
 ## Importeren
 
 Druk op **Importeren**:

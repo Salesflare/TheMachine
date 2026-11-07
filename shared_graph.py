@@ -77,11 +77,11 @@ TIMELINE_PROJECT = 40       # lines per project: its full timeline (messages, me
 MAIL_KINDS = ('gmail.message', 'ms_graph.message', 'outlook.message', 'salesflare.email', 'intercom.conversation')
 # A project's timeline beyond its email threads: meetings and their notes, Intercom conversations and chats. On a board
 # the team sees, or one shared with chosen teammates, they count as shared by being on it (visibility).
-ITEM_KINDS = ('calendar.event', 'salesflare.meeting', 'zoom.summary', 'meeting.notes', 'meeting.transcript', 'intercom.conversation', 'whatsapp.message', 'slack.message',
+ITEM_KINDS = ('calendar.event', 'salesflare.meeting', 'zoom.summary', 'meeting.notes', 'meeting.transcript', 'intercom.conversation', 'whatsapp.message', 'slack.message', 'teams.message',
               'linkedin.message', 'x.dm', 'x.mention', 'telegram.message', *graph.DOC_KINDS)
 # A chat (not a meeting, its notes or a doc): one the review judged colleagues only stays with the owner, also on a
 # team board (the owner's choice, 2026-10-31): a chat carries no addresses to tell, so the review's call is what decides.
-CHAT_KINDS = ('whatsapp.message', 'slack.message', 'linkedin.message', 'x.dm', 'x.mention', 'telegram.message')
+CHAT_KINDS = ('whatsapp.message', 'slack.message', 'teams.message', 'linkedin.message', 'x.dm', 'x.mention', 'telegram.message')
 ITEM_WORDS = {'meetings': 'Meeting', 'intercom': 'Intercom', 'chats': 'Chat', 'email': 'Email', 'docs': 'Doc'}
 
 

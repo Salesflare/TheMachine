@@ -8,7 +8,7 @@ order: 3
 ---
 ## Eine Aufgabe zurückstellen
 
-Tippe bei einer Aufgabe auf **Zurückstellen**. **Später erinnern** bietet ein paar Zeitpunkte an, etwa in 2 Stunden, morgen, in 3 Tagen oder in einer Woche, oder **Datum wählen** für einen anderen Tag und **Uhrzeit**, dann **Uhrzeit speichern**.
+Tippe bei einer Aufgabe auf **Zurückstellen**. **Später erinnern** bietet ein paar Zeitpunkte an, etwa in 2 Stunden, morgen, in 3 Tagen oder in einer Woche, oder **Datum wählen** für einen anderen Tag und **Uhrzeit**, dann **Uhrzeit speichern**. Aus Versehen zurückgestellt? **Rückgängig** in der Meldung holt sie gleich zurück.
 
 Was du um einen Tag oder länger zurückstellst, kommt zu deiner Uhrzeit bei „Zurückgestelltes kommt um“, und Arbeitsaufgaben warten auf einen Arbeitstag. Beides stellst du in [Arbeitszeiten](work-hours.md) ein.
 

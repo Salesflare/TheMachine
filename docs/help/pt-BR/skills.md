@@ -12,6 +12,10 @@ Uma habilidade diz à sua Machine como fazer algo, como "responder perguntas sob
 
 Em **Configurações**, **Habilidades**, clique em **Nova habilidade** ou **Começar de um exemplo**. Preencha **Nome**, **Quando usar** e **Instruções**, depois clique em **Salvar**.
 
+## Quando ela usa uma
+
+Cada tarefa que sua Machine prepara recebe a skill que combina com ela, sem você pedir: a que tem o nome do quadro, do projeto ou do título, completa. Suas outras skills vão em uma lista, então ela também segue a de um tipo de trabalho, como uma resposta em um tipo de conversa conhecido ou uma atualização do CRM.
+
 ## Importar
 
 Clique em **Importar**:

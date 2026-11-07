@@ -31,7 +31,7 @@ Op een telefoon vult een dialoogvenster zoals **Deze e-mail versturen?** het hel
 
 ## Haal er meer uit
 
-Vanaf je eerste bezoek, zodra de eerste blik klaar is, staat bovenaan To-dos een kleine to-do met wat The Machine nuttiger maakt: de app voor je telefoon, meldingen, WhatsApp, de app op deze computer, nog een account en meer koppelingen. Elke rij heeft één knop die die stap doet, en vinkt zichzelf af zodra het klaar is.
+Vanaf je eerste bezoek, zodra de eerste blik klaar is, staat bovenaan To-dos een kleine to-do met wat The Machine nuttiger maakt: de app voor je telefoon, meldingen, WhatsApp, de app op deze computer, nog een account en meer koppelingen. Elke rij heeft één knop die die stap doet, en vinkt zichzelf af zodra het klaar is. Ze toont tot vijf rijen, open stappen eerst, zodat een tool die je mail doet vermoeden, zoals GitHub, een rij krijgt zodra eerdere stappen klaar zijn.
 
 Rijen staan er alleen waar ze passen: geen telefoon-app in de app zelf, geen installeren op een telefoon. Het × op een rij sluit hem op elk apparaat, en het × bovenaan sluit de hele to-do.
 
@@ -44,6 +44,8 @@ Als er een nieuwe versie van het dashboard klaar is, herlaadt het nooit terwijl 
 ## Berichten
 
 Open zoeken met `⌘K` op een Mac of `Ctrl K` op Windows en Linux, of met het zoekicoon in de bovenbalk op een telefoon. Typ twee letters of meer: **Berichten** toont de beste resultaten uit alles wat je Machine gelezen heeft, op betekenis of op woorden. Oudere [geschiedenis](history.md) verschijnt op woorden.
+
+Je kunt ook een vraag stellen, zoals die een lege zoekopdracht voorstelt, voor een kort antwoord uit je eigen berichten ([Toetsenbord en het opdrachtpalet](keyboard.md)).
 
 **Alle resultaten** opent de volledige lijst, voor alle accounts of voor één. Elk resultaat opent in een lezer, met een link naar waar het vandaan kwam. Een lege zoekopdracht toont de nieuwste berichten.
 

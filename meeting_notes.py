@@ -29,9 +29,11 @@ FIELDS = {'notes': NOTES, 'transcript': TRANSCRIPT}  # the field's name in the A
 PREFIX = {NOTES: 'notes:', TRANSCRIPT: 'transcript:'}
 ZOOM = {'notes': 'zoom.summary', 'transcript': 'zoom.transcript'}
 GOOGLE_MEET = {'notes': 'google_meet.notes', 'transcript': 'google_meet.transcript'}
-SOURCES = {'zoom': ZOOM, 'google_meet': GOOGLE_MEET}  # a meeting app's records of each field, by its key in read()
-KINDS = (NOTES, TRANSCRIPT, 'zoom.summary', 'google_meet.notes')  # a meeting's record for its follow-ups, in this order (for_event)
+TEAMS = {'notes': 'teams.notes', 'transcript': 'teams.transcript'}  # Copilot's notes, Teams' transcript (connectors/teams.py)
+SOURCES = {'zoom': ZOOM, 'google_meet': GOOGLE_MEET, 'teams': TEAMS}  # a meeting app's records of each field, by its key in read()
+KINDS = (NOTES, TRANSCRIPT, 'zoom.summary', 'google_meet.notes', 'teams.notes')  # a meeting's record for its follow-ups, in this order (for_event)
 SOURCE = {'zoom.summary': 'Zoom', 'zoom.transcript': 'Zoom', 'google_meet.notes': 'Google Meet', 'google_meet.transcript': 'Google Meet',
+          'teams.notes': 'Teams', 'teams.transcript': 'Teams',
           NOTES: 'Meeting', TRANSCRIPT: 'Meeting'}
 MAX_CHARS = 400_000  # a long meeting's full transcript fits
 READ_CHARS = 20_000  # one read of a field for a tool result; the rest with offset
@@ -276,7 +278,7 @@ def _page(body, offset, limit):
 def read(db, event_id, offset=0, limit=READ_CHARS, field=None):
     """A meeting and its two records: notes and transcript, each the one added to it ({text, by, at, chars,
     next_offset}, and written_from when The Machine wrote the notes from the transcript; the transcript also with minutes, how long it runs) or None, and the meeting app's that match it
-    under zoom and google_meet ({notes, transcript, url}, each item with its own url, or None). field ('notes' or 'transcript') reads only that one, from offset."""
+    under zoom, google_meet and teams ({notes, transcript, url}, each item with its own url, or None). field ('notes' or 'transcript') reads only that one, from offset."""
     event = meeting(db, event_id)
     if not event:
         raise ValueError('No meeting with that event_id')
@@ -284,7 +286,7 @@ def read(db, event_id, offset=0, limit=READ_CHARS, field=None):
     offset = max(0, int(offset or 0))
     em = json.loads(event['metadata'] or '{}')
     out = {'event_id': event['id'], 'title': event['title'], 'start': event['occurred_at'], 'end': em.get('end_at') or event['occurred_at'],
-           'notes': None, 'transcript': None, 'zoom': None, 'google_meet': None}
+           'notes': None, 'transcript': None, 'zoom': None, 'google_meet': None, 'teams': None}
     meeting_minutes = _minutes(dict(event))
     for kind, key in ((NOTES, 'notes'), (TRANSCRIPT, 'transcript')):
         if only and kind != only:

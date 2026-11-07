@@ -54,7 +54,13 @@ SCOPES_SEND = ('Mail.ReadWrite', 'Mail.Send')
 # An ask for the scope on the left is answered by any one on the right.
 ANSWERS = {'User.Read': {'User.Read'}, 'Mail.Read': {'Mail.Read', 'Mail.ReadWrite'}, 'Mail.ReadWrite': {'Mail.ReadWrite'},
            'Mail.Send': {'Mail.Send'}, 'Calendars.Read': {'Calendars.Read', 'Calendars.ReadWrite'},
-           'Files.Read.All': {'Files.Read.All', 'Files.ReadWrite.All'}, 'Files.ReadWrite.All': {'Files.ReadWrite.All'}}
+           'Files.Read.All': {'Files.Read.All', 'Files.ReadWrite.All'}, 'Files.ReadWrite.All': {'Files.ReadWrite.All'},
+           # Teams (connectors/teams.py), read only
+           'Chat.Read': {'Chat.Read', 'Chat.ReadWrite'}, 'Team.ReadBasic.All': {'Team.ReadBasic.All'},
+           'Channel.ReadBasic.All': {'Channel.ReadBasic.All'}, 'ChannelMessage.Read.All': {'ChannelMessage.Read.All'},
+           'OnlineMeetings.Read': {'OnlineMeetings.Read', 'OnlineMeetings.ReadWrite'},
+           'OnlineMeetingTranscript.Read.All': {'OnlineMeetingTranscript.Read.All'},
+           'OnlineMeetingAiInsight.Read.All': {'OnlineMeetingAiInsight.Read.All'}}
 
 # name -> (verb, path, scope)
 READ = {
@@ -81,6 +87,20 @@ READ = {
     'drives.item': ('GET', '/drives/{drive}/items/{id}', 'Files.Read.All'),
     'drive.root.item': ('GET', '/me/drive/root:/{name}', 'Files.Read.All'),
     'drive.search': ('GET', "/me/drive/root/search(q='{q}')", 'Files.Read.All'),  # Find a doc, for a to-do (Can do things)
+    # Microsoft Teams (connectors/teams.py), each scope from its own Connect consent, never Outlook's: chats with Chat.Read;
+    # channels, transcripts and Copilot's meeting notes with the admin's OK. Reads only: Teams has no WRITE entry.
+    'teams.chats': ('GET', '/chats', 'Chat.Read'),
+    'teams.chat': ('GET', '/chats/{chat}', 'Chat.Read'),
+    'teams.chat.members': ('GET', '/chats/{chat}/members', 'Chat.Read'),
+    'teams.chat.messages': ('GET', '/chats/{chat}/messages', 'Chat.Read'),
+    'teams.joined': ('GET', '/me/joinedTeams', 'Team.ReadBasic.All'),
+    'teams.channels': ('GET', '/teams/{team}/channels', 'Channel.ReadBasic.All'),
+    'teams.channel.messages': ('GET', '/teams/{team}/channels/{channel}/messages', 'ChannelMessage.Read.All'),
+    'teams.meetings': ('GET', '/me/onlineMeetings', 'OnlineMeetings.Read'),
+    'teams.transcripts': ('GET', '/me/onlineMeetings/{meeting}/transcripts', 'OnlineMeetingTranscript.Read.All'),
+    'teams.transcript.content': ('GET', '/me/onlineMeetings/{meeting}/transcripts/{transcript}/content', 'OnlineMeetingTranscript.Read.All'),
+    'teams.insights': ('GET', '/copilot/users/{user}/onlineMeetings/{meeting}/aiInsights', 'OnlineMeetingAiInsight.Read.All'),
+    'teams.insight': ('GET', '/copilot/users/{user}/onlineMeetings/{meeting}/aiInsights/{insight}', 'OnlineMeetingAiInsight.Read.All'),
 }
 WRITE = {
     'messages.create': ('POST', '/me/messages', 'Mail.ReadWrite'),        # a draft from MIME (never sent by itself)
@@ -340,7 +360,9 @@ def url_for(method, params, write=False):
     if link:
         # A next or delta link Graph gave for this same call: only its query is new.
         parts = urllib.parse.urlsplit(str(link))
-        if parts.scheme != 'https' or parts.netloc != 'graph.microsoft.com' or parts.path != '/v1.0' + path:
+        # compared decoded: Graph writes a Teams chat id (19:...@thread.v2) in its links as is, this module quotes it
+        if parts.scheme != 'https' or parts.netloc != 'graph.microsoft.com' or \
+                urllib.parse.unquote(parts.path) != urllib.parse.unquote('/v1.0' + path):
             raise GraphError('unexpected_graph_link')
         return verb, scope, str(link)
     query = urllib.parse.urlencode({k: (str(v).lower() if isinstance(v, bool) else v) for k, v in rest.items()}, doseq=True)

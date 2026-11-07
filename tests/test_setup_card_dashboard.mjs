@@ -10,7 +10,8 @@ const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modul
 // The setup to-do at the top of To-dos (dashboard/setup-card.js): one small card, "Get more out of The Machine", a row per
 // step (the phone app, notifications, WhatsApp, the app on this computer, another account, more connections, then what
 // setup left out), at most 5, each with one button that does the step, ticked once done, closed for good with its ×
-// (setup_dismiss, kept on the Machine so every device agrees). Rows show only where they apply. From the first visit,
+// (setup_dismiss, kept on the Machine so every device agrees). Open steps come first: a done row only fills a slot no
+// open step needs. Rows show only where they apply. From the first visit,
 // once the first look is done; never in a frame but the site's demo. Settings, General, This device keeps the controls.
 // The browser's install, permission and push parts are stand-ins here. SHOTS=<folder> saves screenshots.
 const dashboard=await dashboardPage();
@@ -148,7 +149,7 @@ try{
  {reset();const {context,page}=await open();await page.evaluate(()=>__installPrompt());
   await page.locator('[data-setup-go="install"]').click();assert.deepEqual(await asked(page),['prompt']);
   await page.evaluate(()=>dispatchEvent(new Event('appinstalled')));
-  assert.deepEqual((await card(page)).rows[3],['install','Install on this computer','done']);
+  assert.deepEqual(await steps(page),['phone','push','whatsapp','account','connect'],'done: its slot goes to the next open step');
   assert.match((await settings(page)).app,/Installed/);await context.close()}
 
  // A row's ×: closed on the Machine, the next step fills its place, and it stays closed on another device.
@@ -172,8 +173,8 @@ try{
   setup={...FRESH,phones:1,mail_accounts:2};
   const {context,page}=await open({width,height,scheme,ua,perm:'granted',sub:true});if(width>600)await page.evaluate(()=>__installPrompt());
   const c=await card(page);
-  assert.deepEqual(c.rows.map(r=>r[2]==='done'?r[0]+' done':r[0]),width>600?['phone done','push done','whatsapp','install','account done']:['phone done','push done','whatsapp','account done','connect'],width+'');
-  assert.equal(c.head,'Get more out of The Machine 3 of 5 done');
+  assert.deepEqual(c.rows.map(r=>r[2]==='done'?r[0]+' done':r[0]),width>600?['phone done','push done','whatsapp','install','connect']:['phone done','push done','whatsapp','account done','connect'],width+': open steps before done ones');
+  assert.equal(c.head,`Get more out of The Machine ${width>600?2:3} of 5 done`);
   await fits(page,width+' partly done');await shot(page,`setup-partly-${width}-${scheme}`);
   await context.close()}
  // Everything done: the card goes away.
@@ -259,6 +260,16 @@ try{
   assert.deepEqual(await page.evaluate(()=>window.__opened),[['https://app.example.test/setup#source-github','_blank','noopener']]);
   await page.locator('[data-setup-dismiss="hint-source-github"]').click();await page.waitForFunction(()=>!document.querySelector('[data-step="hint-source-github"]'));
   await sent(()=>dismissed().at(-1),{action:'setup_dismiss',args:{step:'hint-source-github'}});
+  await context.close()}
+ // Done rows never push a hint out: nothing closed, the steps that are done give their slots to it.
+ for(const [width,height,scheme,ua] of [[1440,900,'light','chrome'],[1440,900,'dark','chrome'],[390,844,'light','android'],[390,844,'dark','android']]){reset();
+  setup={...FRESH,phones:1,mail_accounts:2};
+  setupHints=[{id:'source-github',title:'Connect GitHub?',text:'GitHub mails you often.',href:'#connect=github',button:'Connect'}];
+  const {context,page}=await open({width,height,scheme,ua,perm:'granted',sub:true});if(width>600)await page.evaluate(()=>__installPrompt());
+  const c=await card(page);
+  assert.deepEqual(c.rows.map(r=>r[2]==='done'?r[0]+' done':r[0]),width>600?['phone done','whatsapp','install','connect','hint-source-github']:['phone done','push done','whatsapp','connect','hint-source-github'],width+': the hint shows');
+  assert.deepEqual(c.rows.at(-1),['hint-source-github','Connect GitHub?','Connect']);
+  await fits(page,width+' hint');await shot(page,`setup-hint-${width}-${scheme}`);
   await context.close()}
 
  // From the first visit, but never while setting up: no source yet, or the first look still running.

@@ -31,7 +31,7 @@ Sur un téléphone, une fenêtre comme **Envoyer cet e-mail ?** occupe tout l’
 
 ## Tirez-en le meilleur
 
-Dès votre première visite, une fois le premier coup d’œil terminé, une petite tâche en haut des Tâches liste ce qui rend The Machine plus utile : l’app sur le téléphone, les notifications, WhatsApp, l’app sur cet ordinateur, un autre compte et d’autres connexions. Chaque ligne a un bouton qui fait cette étape, et se coche d’elle-même une fois faite.
+Dès votre première visite, une fois le premier coup d’œil terminé, une petite tâche en haut des Tâches liste ce qui rend The Machine plus utile : l’app sur le téléphone, les notifications, WhatsApp, l’app sur cet ordinateur, un autre compte et d’autres connexions. Chaque ligne a un bouton qui fait cette étape, et se coche d’elle-même une fois faite. Elle affiche jusqu’à cinq lignes, les étapes ouvertes d’abord : un outil que suggèrent vos e-mails, comme GitHub, a sa ligne dès que les étapes précédentes sont faites.
 
 Les lignes n’apparaissent que là où elles ont du sens : pas d’app de téléphone dans l’app, pas d’installation sur un téléphone. Le × d’une ligne la ferme sur tous les appareils, et le × en haut ferme toute la tâche.
 
@@ -44,6 +44,8 @@ Quand une nouvelle version du tableau de bord est prête, il ne se recharge jama
 ## Messages
 
 Ouvrez la recherche avec `⌘K` sur Mac ou `Ctrl K` sur Windows et Linux, ou avec l’icône de recherche dans la barre du haut sur un téléphone. Tapez au moins deux lettres : **Messages** montre les meilleurs résultats parmi tout ce que votre Machine a lu, par sens ou par mots. L’[historique](history.md) plus ancien apparaît par mots.
+
+Vous pouvez aussi poser une question, comme celle que propose une recherche vide, pour une réponse courte tirée de vos propres messages ([Clavier et palette de commandes](keyboard.md)).
 
 **Voir tous les résultats** ouvre la liste complète, pour tous les comptes ou un seul. Chaque résultat s’ouvre dans un lecteur, avec un lien vers son origine. Une recherche vide montre les messages les plus récents.
 

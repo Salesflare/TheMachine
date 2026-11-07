@@ -247,6 +247,83 @@ class Voices(unittest.TestCase):
         with patch_everywhere(a, 'now', return_value='2026-10-01T12:00:00+00:00'):
             self.assertEqual(self.store.learn_sent_elsewhere(), 1)  # not sent from the card: their own reply teaches
 
+    def ready(self, sid, draft):
+        with self.store.connect() as db:
+            db.execute("UPDATE suggestions SET status='prepared',next_action=? WHERE id=?", (json.dumps(draft), sid))
+
+    def hint(self, sid):
+        with self.store.connect() as db:
+            value = db.execute('SELECT handled_hint FROM suggestions WHERE id=?', (sid,)).fetchone()[0]
+        return json.loads(value) if value else None
+
+    def test_a_draft_answered_from_gmail_makes_the_to_do_look_done(self):
+        """The owner replied in the draft's thread from Gmail itself: the to-do looks done (Done, with Reopen), with their
+        message as what shows it. Their reply from before the to-do was made (the review saw it) and one in another
+        thread don't count."""
+        self.ready(self.sid, {'kind': 'email', 'label': 'Send', 'account_id': 'work', 'thread_id': 't1', 'to': ['sam@example.com'],
+                              'subject': 'Re: Contract', 'body': 'Dear Sam,\n\nThe contract is attached.', 'revision': 'r1'})
+        self.assertEqual(self.store.answered_elsewhere(), [])  # out1 came before the to-do: the review that made it saw it
+        self.store.commit_page('work', {}, [mail('out9', '2026-10-03T12:00:00+00:00', 'Other thread entirely', thread='t9', **SENT)])
+        self.assertEqual(self.store.answered_elsewhere(), [])
+        self.store.commit_page('work', {}, [mail('out3', '2026-10-03T11:00:00+00:00', 'Hey Sam,\n\nhere you go\n\n[Quoted earlier messages]\nold', **SENT)])
+        self.assertEqual(self.store.answered_elsewhere(), [self.sid])
+        hint = self.hint(self.sid)
+        self.assertEqual(hint['reason'], 'Answered in the email thread')
+        with self.store.connect() as db:
+            out3 = db.execute("SELECT id FROM events WHERE source_id='out3'").fetchone()[0]
+            row = dict(db.execute('SELECT * FROM suggestions WHERE id=?', (self.sid,)).fetchone())
+        self.assertEqual(hint['event_ids'], [out3])
+        self.assertEqual(a.todo_state(row), 'looks done')
+        self.assertEqual(row['status'], 'prepared')  # only a hint: nothing closed, the owner can say Not done
+        self.assertEqual(self.store.answered_elsewhere(), [])  # once
+
+    def test_not_done_stands_until_a_newer_message_of_theirs(self):
+        self.ready(self.chat_sid, {'kind': 'whatsapp', 'label': 'Send reply', 'account_id': 'phone', 'chat_id': 'c1', 'body': 'Yes, see you.', 'revision': 'r1'})
+        self.store.commit_page('phone', {}, [chat('w4', '2026-10-01T10:00:00+00:00', 'Sent a photo', mine=True)])
+        self.assertEqual(self.store.answered_elsewhere(), [])  # a photo says nothing
+        self.store.commit_page('phone', {}, [chat('w5', '2026-10-01T10:05:00+00:00', 'ja ik kom', mine=True)])
+        self.assertEqual(self.store.answered_elsewhere(), [self.chat_sid])
+        self.assertEqual(self.hint(self.chat_sid)['reason'], 'Answered on WhatsApp')
+        self.store.decide(self.chat_sid, 'not_done', '', 'nd1', 'dashboard')
+        self.assertIsNone(self.hint(self.chat_sid))
+        self.assertEqual(self.store.answered_elsewhere(), [])  # they saw that message and said Not done
+        self.store.commit_page('phone', {}, [chat('w6', '2026-10-01T18:00:00+00:00', 'top, tot zo', mine=True)])
+        self.assertEqual(self.store.answered_elsewhere(), [self.chat_sid])
+
+    def test_slack_counts_the_to_dos_own_thread_or_a_dm_not_the_whole_channel(self):
+        self.store.owner_user_ids = {'UOWNER1'}
+        def slack(source_id, at, body, channel='C1', ts='100.1', user='USAM001', thread=None):
+            return {'account_id': 'team', 'source_id': source_id, 'kind': 'slack.message', 'occurred_at': at, 'title': '#general',
+                    'body': body, 'deleted': False, 'metadata': {'channel_id': channel, 'message_ts': ts, 'thread_ts': thread or ts, 'user_id': user}}
+        self.store.commit_page('team', {}, [slack('s1', '2026-10-05T09:00:00+00:00', 'Can someone check the invoice?'),
+                                            slack('d1', '2026-10-05T09:00:00+00:00', 'Got a minute?', channel='D7', ts='200.1')])
+        with self.store.connect() as db:
+            s1, d1 = (db.execute('SELECT id FROM events WHERE source_id=?', (x,)).fetchone()[0] for x in ('s1', 'd1'))
+        sid = self.store.suggest('invoice', 'Check the invoice', 'Asked in #general.', [s1])['id']
+        dm = self.store.suggest('minute', 'Answer about a minute', 'Asked in a DM.', [d1])['id']
+        self.ready(sid, {'kind': 'slack', 'label': 'Reply', 'account_id': 'team', 'channel_id': 'C1', 'thread_ts': '100.1', 'body': 'On it.', 'revision': 'r1'})
+        self.ready(dm, {'kind': 'slack', 'label': 'Reply', 'account_id': 'team', 'channel_id': 'D7', 'body': 'Sure.', 'revision': 'r1'})
+        self.store.commit_page('team', {}, [slack('s2', '2026-10-05T10:00:00+00:00', 'Lunch anyone today?', ts='300.1', user='UOWNER1'),
+                                            slack('d2', '2026-10-05T10:00:00+00:00', 'sure, call me now', channel='D7', ts='400.1', user='UOWNER1')])
+        self.assertEqual(self.store.answered_elsewhere(), [dm])  # another matter in the same channel isn't an answer
+        self.store.commit_page('team', {}, [slack('s3', '2026-10-05T11:00:00+00:00', 'Checked it, all fine', ts='500.1', thread='100.1', user='UOWNER1')])
+        self.assertEqual(self.store.answered_elsewhere(), [sid])
+        self.assertEqual(self.hint(sid)['reason'], 'Answered in Slack')
+
+    def test_a_draft_sent_from_the_card_or_their_word_in_dutch(self):
+        self.ready(self.chat_sid, {'kind': 'whatsapp', 'label': 'Send reply', 'account_id': 'phone', 'chat_id': 'c1', 'body': 'Yes, see you.', 'revision': 'r1'})
+        self.store.commit_page('phone', {}, [chat('w4', '2026-10-01T10:00:00+00:00', 'ja ik kom', mine=True)])
+        with self.store.connect() as db:
+            db.execute("INSERT INTO action_jobs(id,suggestion_id,revision,payload,status,created_at,updated_at,approval_id,source,rfc_message_id) "
+                       "VALUES('j',?,'r1','{}','sent',?,?,'x','dashboard','')", (self.chat_sid, a.now(), a.now()))
+        self.assertEqual(self.store.answered_elsewhere(), [])  # sent from the card: Sent closes it, not this
+        with self.store.connect() as db:
+            db.execute("UPDATE action_jobs SET status='cancelled'")
+        with patch.object(a.locale_prefs, 'language', return_value='nl'):
+            self.assertEqual(self.store.answered_elsewhere(), [self.chat_sid])
+        self.assertEqual(self.hint(self.chat_sid)['reason'], 'Beantwoord op WhatsApp')
+
+
 class Learned(unittest.TestCase):
     """A preparation gets what was learned that bears on its card, not all of it; a review condenses the list now and
     then (merging what says the same, the newer winning), and the owner sees and can undo each merge."""
