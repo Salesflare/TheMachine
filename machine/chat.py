@@ -464,9 +464,20 @@ def unseen_draft(db, suggestion_id, revision, job_id=None):
 AGENT_WORK_NOTE = ('Work handed to Claude Code or Codex on this card, oldest first. It is part of the card\'s state, like a sent '
                    'message or the owner\'s taps: what it reports done is done, even where earlier turns of this session said it was still to do. '
                    'Build on it: never offer or describe work it already did as the next step; when it is still running, say so. '
-                   'When the owner asks you to apply, run, publish or deploy what it prepared, that is their approval: read its notes and '
+                   'When the owner taps Do it, or asks you to apply, run, publish or deploy what it prepared, that is their approval: read its notes and '
                    'scripts in its folder and run them yourself, then check the result. If a step is refused, say what was refused and their '
                    'next step (for example: open the job in Codex and run it there).')
+
+# A Do it tap on a to-do whose Claude Code or Codex result waits only on a step that job left for the owner (its brief's
+# limits keep sends, publishing and deploys for them): the tap is the owner doing that step, so the run carries it out
+# instead of offering it back as a Confirm (2026-11-07: a prepared blog update came back "Ready for you" twice).
+AGENT_DO_IT_NOTE = ('The owner tapped Do it after this work. That tap is their approval for the step the latest job left for them '
+                    'under its own limits: pushing, publishing or deploying what it prepared, or running the script it named for that '
+                    '(such as ./publish.sh). Those limits held only for that job, not for you, and nobody else has to approve it. Read its '
+                    'notes (HANDOFF.md) and scripts in its folder, check the step has not happened already and that nothing changed since, '
+                    'then run it now and check the result. Never offer it back as a Confirm or Publish button, and never ask who approves it. '
+                    'A message to someone that it prepared (a reply, an email) is not part of that step: save it as a draft on the to-do '
+                    'for the owner to read and send, and never send it in this turn.')
 
 
 def owner_time_line():

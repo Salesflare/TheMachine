@@ -14,7 +14,7 @@ order: 5
 
 Die Aufgabe zeigt dann, dass daran gearbeitet wird, und das Ergebnis, wenn es fertig ist, mit **Was es getan hat** und **Änderungen zeigen**. **Änderungen anfragen** sagt ihm, was es ändern soll. **Übergeben…** im **…** fängt von vorn an; **Ausblenden** legt das Ergebnis weg.
 
-Ein Auftrag sendet nie etwas für dich.
+Ein Auftrag sendet nie etwas für dich. Lässt er dir einen Schritt zum Veröffentlichen oder Deployen übrig, führt **Ausführen** auf der Aufgabe diesen Schritt aus. Eine Antwort, die er geschrieben hat, bleibt ein Entwurf, den du selbst sendest.
 
 ## In der Codex-App
 

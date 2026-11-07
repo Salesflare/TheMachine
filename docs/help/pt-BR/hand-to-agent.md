@@ -14,7 +14,7 @@ order: 5
 
 A tarefa então mostra que está em andamento e, quando terminar, o resultado, com **O que fez** e **Mostrar mudanças**. **Pedir mudanças** diz o que mudar. **Passar…** em **…** começa do zero. **Ocultar** guarda o resultado.
 
-Um trabalho nunca envia nada por você.
+Um trabalho nunca envia nada por você. Quando ele deixa uma etapa de publicar ou fazer deploy para você, **Fazer** na tarefa executa essa etapa. Uma resposta que ele escreveu continua como rascunho que você mesmo envia.
 
 ## No app do Codex
 

@@ -7,6 +7,7 @@ import tempfile
 import unittest
 
 import agent_jobs
+from machine.chat import AGENT_DO_IT_NOTE
 
 spec = importlib.util.spec_from_file_location('card_agent_work_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
@@ -79,6 +80,47 @@ class CardAgentWork(unittest.TestCase):
         self.assertIn(f'its folder: {work}', message)
         self.assertIn('run, publish or deploy what it prepared, that is their approval', message)
         self.assertIn('open the job in Codex and run it there', message)
+
+    def do_it_message(self, choice='accept', source='dashboard'):
+        """The owner's tap on the card after the job finished: the message its preparation starts with."""
+        self.store.decide(self.sid, choice, '' if choice == 'accept' else 'who approves this?', 'click' if choice == 'accept' else 'chat-' + 'c' * 36, source)
+        calls = []
+        self.app.preparation_step(lambda r: calls.append(r) or {'status': 'admitted'})
+        return next(c['message'] for c in calls if c.get('message'))
+
+    def test_do_it_after_a_job_left_the_publish_step_runs_that_step(self):
+        # A Codex job prepared and built a site update, then stopped under its own limits: "Remaining for you: run
+        # ./publish.sh to push and deploy, then send the prepared reply." The owner's Do it is the approval for that step.
+        self.job(summary='The update is committed and the production build passed. Remaining for you under this job\'s limits: '
+                         'run ./publish.sh to push and deploy, then send the prepared reply to Pat.')
+        message = self.do_it_message()
+        self.assertIn('the owner tapped Do it', message)
+        self.assertIn('./publish.sh to push and deploy', message)
+        self.assertIn(AGENT_DO_IT_NOTE, message)
+        self.assertIn('Never offer it back as a Confirm or Publish button', message)
+        # Sending stays separate: the prepared reply is a draft the owner reads and sends.
+        self.assertIn('save it as a draft on the to-do for the owner to read and send, and never send it in this turn', message)
+
+    def test_a_chat_question_or_a_closed_job_is_not_that_approval(self):
+        self.job()
+        self.assertNotIn(AGENT_DO_IT_NOTE, self.chat_turn())  # "what is the next step?" asks, it doesn't tap Do it
+        with self.store.connect() as db:
+            db.execute("UPDATE agent_jobs SET outcome='set_aside'")
+        self.assertNotIn(AGENT_DO_IT_NOTE, self.app.agent_work(self.sid, {'decision_id': 'click', 'suggestion_id': self.sid}))
+
+    def test_a_tap_before_the_job_finished_or_a_run_prepared_ahead_is_not_either(self):
+        self.job()
+        with self.store.connect() as db:
+            db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES('early',?,'accept','','dashboard','2026-10-23T09:00:00+00:00')", (self.sid,))
+            db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES('late',?,'accept','','dashboard','2026-10-23T10:00:00+00:00')", (self.sid,))
+            db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES('bot',?,'accept','','assistant','2026-10-23T10:00:00+00:00')", (self.sid,))
+        work = lambda **job: self.app.agent_work(self.sid, {'suggestion_id': self.sid, **job})
+        self.assertIn(AGENT_DO_IT_NOTE, work(decision_id='late'))
+        self.assertNotIn(AGENT_DO_IT_NOTE, work(decision_id='early'))
+        self.assertNotIn(AGENT_DO_IT_NOTE, work(decision_id='bot'))
+        self.assertNotIn(AGENT_DO_IT_NOTE, work(decision_id='late', ahead=True))
+        self.assertNotIn(AGENT_DO_IT_NOTE, work(decision_id='late', finish={'kind': 'finish'}))
+        self.assertNotIn(AGENT_DO_IT_NOTE, self.app.agent_work(self.sid))
 
     def test_a_running_job_shows_its_progress(self):
         self.job(status='running', progress='Editing the German page')

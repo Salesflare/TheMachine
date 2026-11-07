@@ -14,7 +14,7 @@ order: 5
 
 Luego la tarea muestra que está trabajando, y el resultado cuando termina, con **Qué hizo** y **Mostrar cambios**. **Pedir cambios** le dice qué cambiar; **Pasar…** en **…** empieza de cero; **Ocultar** guarda el resultado.
 
-Un trabajo nunca envía nada por ti.
+Un trabajo nunca envía nada por ti. Si te deja un paso de publicar o desplegar, **Hazlo** en la tarea ejecuta ese paso. Una respuesta que escribió queda como borrador que envías tú.
 
 ## En la app de Codex
 

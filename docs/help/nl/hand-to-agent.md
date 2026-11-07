@@ -14,7 +14,7 @@ order: 5
 
 De to-do toont dan dat er aan gewerkt wordt, en het resultaat als het klaar is, met **Wat het deed** en **Wijzigingen tonen**. **Wijzigingen vragen** zegt wat er anders moet; **Overdragen…** onder **…** begint opnieuw; **Verbergen** legt het resultaat weg.
 
-Een opdracht verstuurt nooit iets voor je.
+Een opdracht verstuurt nooit iets voor je. Laat ze een stap om te publiceren of te deployen voor jou over, dan voert **Doe het** op de to-do die stap uit. Een antwoord dat ze schreef blijft een concept dat je zelf verstuurt.
 
 ## In de Codex-app
 
