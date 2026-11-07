@@ -337,6 +337,73 @@ class Promises(unittest.TestCase):
             db.execute("UPDATE suggestions SET status='completed'")
         self.assertEqual(self.store.promises()[0]['state'], 'kept')
 
+    def carded(self):
+        """A promise that is a to-do now: its id and its to-do's id."""
+        promise = self.record(due='2026-10-20')['id']
+        self.at('2026-10-21T07:00:00+00:00')
+        self.app().promise_step()
+        return promise, self.row(promise)['suggestion_id']
+
+    def card_status(self, card):
+        with self.store.connect() as db:
+            return db.execute('SELECT status FROM suggestions WHERE id=?', (card,)).fetchone()[0]
+
+    def test_the_owner_closes_a_promise_that_is_a_to_do_from_its_row(self):
+        """Done or Drop on a promise that is a to-do now closes its to-do with it, so the two never disagree."""
+        promise, card = self.carded()
+        listed = self.store.promises()[0]
+        self.assertEqual((listed['state'], listed['suggestion_id']), ('card', card))  # "a to-do now" opens this one
+        self.app().action('promise_close', {'id': promise, 'status': 'kept'}, owner_dashboard=True)
+        self.assertEqual((self.card_status(card), self.store.promises()[0]['state']), ('completed', 'kept'))
+        with self.assertRaisesRegex(ValueError, 'closed already'):
+            self.app().action('promise_close', {'id': promise, 'status': 'dropped'}, owner_dashboard=True)
+        other = self.app().action('promise', {'direction': 'mine', 'event_id': self.mine, 'who': 'Alex', 'what': 'send the Q3 deck', 'due': '2026-10-22'})['id']
+        self.at('2026-10-22T07:00:00+00:00')
+        self.app().promise_step()
+        self.app().action('promise_close', {'id': other, 'status': 'dropped'}, owner_dashboard=True)
+        self.assertEqual(self.card_status(self.row(other)['suggestion_id']), 'rejected')
+        self.assertEqual({p['id']: p['state'] for p in self.store.promises()}[other], 'dropped')
+
+    def test_a_promise_follows_the_to_do_it_was_merged_into(self):
+        promise, card = self.carded()
+        other = self.store.suggest('work:deck', 'Send Sam the contract', 'Body.', [self.mine], 'now')['id']
+        with self.store.connect() as db:  # what merge_answer leaves behind
+            db.execute("UPDATE suggestions SET status='rejected',closed_from=status WHERE id=?", (card,))
+            db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES('m1',?,'merge','','dashboard',?)", (card, a.now()))
+            db.execute('INSERT INTO suggestion_keys(dedupe_key,suggestion_id,created_at) VALUES(?,?,?)', (f'promise:{promise}', other, a.now()))
+        listed = self.store.promises()[0]
+        self.assertEqual((listed['state'], listed['suggestion_id']), ('card', other))
+        self.assertEqual(self.store.promise_page(promise)['card']['id'], other)
+        self.store.decide(other, 'complete', '', 'done-other', 'dashboard')
+        self.assertEqual(self.store.promises()[0]['state'], 'kept')
+
+    def test_a_promise_whose_to_do_is_gone_is_open_again(self):
+        promise, card = self.carded()
+        with self.store.connect() as db:
+            db.execute('PRAGMA foreign_keys=OFF')
+            db.execute('DELETE FROM suggestions WHERE id=?', (card,))
+        listed = self.store.promises()[0]
+        self.assertEqual((listed['state'], listed['suggestion_id']), ('open', None))  # never "a to-do now" without one
+        self.app().action('promise_close', {'id': promise, 'status': 'kept'}, owner_dashboard=True)
+        self.assertEqual(self.row(promise)['status'], 'kept')
+
+    def test_the_machine_seeing_it_done_closes_the_promise_and_its_to_do(self):
+        """The Machine saw a promise's to-do done (looks_handled): the to-do goes to Done and the promise closes, with a
+        short line saying so. Reopened by the owner, it stays theirs."""
+        promise, card = self.carded()
+        self.store.looks_handled(card, 'Sam sent the signed contract', [self.theirs])
+        self.app().promise_step()
+        self.assertEqual(self.card_status(card), 'completed')
+        listed = self.store.promises()[0]
+        self.assertEqual((listed['state'], listed['note']), ('kept', 'The Machine saw it done: Sam sent the signed contract.'))
+        self.assertIn('seen', [h['kind'] for h in self.store.promise_page(promise)['history']])
+        with self.store.connect() as db:
+            self.assertEqual(db.execute("SELECT source FROM decisions WHERE suggestion_id=? AND choice='complete'", (card,)).fetchone()[0], 'assistant')
+        self.store.decide(card, 'reopen', '', 'reopen-1', 'dashboard')
+        self.app().promise_step()
+        self.assertNotEqual(self.card_status(card), 'completed')
+        self.assertEqual(self.store.promises()[0]['state'], 'card')
+
     def test_reviews_see_the_open_promises_and_how_to_record_them(self):
         self.record(due='2026-10-23')
         self.app().action('promise', {'direction': 'mine', 'event_id': self.mine, 'who': 'Alex', 'what': 'send the Q3 deck'})

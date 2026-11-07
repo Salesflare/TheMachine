@@ -5,13 +5,14 @@ import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
-// The Promises list on the Suggestions tab: both directions, due chips, Done/Drop for open ones only.
+// The Promises list on the Suggestions tab: both directions, due chips, Done/Drop on every one still open (a to-do one
+// too, its to-do closes with it), and "a to-do now" opens that to-do.
 const dashboard=await dashboardPage();
 const day=n=>{const d=new Date();d.setDate(d.getDate()+n);return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')};
 const made=new Date(Date.now()-2*864e5).toISOString(),check=new Date(Date.now()+864e5).toISOString();
 let promises=[
  {id:1,direction:'mine',who:'Alex Morgan',what:'send the Q3 deck with the updated pricing for the Globex renewal',due:day(0),state:'open',made_at:made,check_at:check},
- {id:2,direction:'theirs',who:'Sam Lee',what:'send the signed contract',due:day(-1),state:'card',made_at:made,check_at:check},
+ {id:2,direction:'theirs',who:'Sam Lee',what:'send the signed contract',due:day(-1),state:'card',suggestion_id:'c2',made_at:made,check_at:check},
  {id:3,direction:'theirs',who:'Kim',what:'get back about the pilot',due:null,state:'open',made_at:made,check_at:check},
  {id:4,direction:'mine',who:'Old',what:'already kept',due:null,state:'kept',made_at:made,check_at:check}];
 const state=()=>({suggestions:[],promises,connectors:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[]});
@@ -41,7 +42,8 @@ try{
  assert.ok(text.includes('To Alex Morgan: send the Q3 deck')&&text.includes('Due today'));
  assert.ok(text.includes('From Sam Lee: send the signed contract')&&text.includes('a to-do now')&&text.includes('Overdue'));
  assert.ok(text.includes('no date, follow-up')&&!text.includes('no date, checked'));  // check_at is tomorrow: the planned follow-up, not a check that happened
- assert.equal(await list.locator('[data-promise="2"]').count(),0);  // its card handles it
+ assert.equal(await list.locator('[data-promise="2"]').count(),2);  // Done and Drop, its to-do closes with it
+ assert.equal(await list.locator('a.promise-todo[href="#chat=c2"]').textContent(),'a to-do now');  // the to-do it is now
  const widths=[];
  for(const width of [320,390,768]){
   await page.setViewportSize({width,height:844});

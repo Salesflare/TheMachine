@@ -103,6 +103,8 @@ try{
   [context,page]=await open('en-US');await page.waitForFunction(l=>document.documentElement.lang===l,lang);
   assert.deepEqual(await page.evaluate(()=>[calSpan(new Date(2026,9,26)),calSpan(new Date(2026,9,26),5),t(['{} guest','{} guests'],1),t(['{} guest','{} guests'],3),i18nLookup('Wren · 1 guest')]),want,lang);
   assert.equal(await page.evaluate(()=>rangeText('09:45','10:30')),'09:45–10:30',lang);
+  // text already in the language is read as it is: "nu een to-do" holds no count, so "{} to-do" never makes it "to-do's"
+  if(lang==='nl')assert.deepEqual(await page.evaluate(()=>[i18nLookup('nu een to-do'),i18nLookup('Je zei het di 27 okt · nu een to-do'),i18nLookup('3 to-dos')]),[null,null,'3 to-do\'s']);
   await context.close()}
  locale=view('en');[context,page]=await open('en-US');
  assert.deepEqual(await page.evaluate(()=>[calSpan(new Date(2026,9,26)),rangeText('09:45','10:30'),t(['{} guest','{} guests'],1),t(['{} guest','{} guests'],3)]),['Oct 26 – Nov 1, 2026','09:45 to 10:30','1 guest','3 guests']);

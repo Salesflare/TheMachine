@@ -33,6 +33,8 @@ function i18nLookup(text){const s=text.replace(/\s+/g,' ').trim();if(!s||s.lengt
  if(I18N.memo.has(s))return I18N.memo.get(s);let out=null;const cat=I18N.cat;
  if(Object.prototype.hasOwnProperty.call(cat,s)){const v=cat[s];out=typeof v==='object'?(v.one&&I18N.en[s]?.one===s?v.one:v.other):v}
  else for(const p of I18N.pats){if(p.head&&!s.startsWith(p.head))continue;const m=p.re.exec(s);if(!m)continue;
+  // a plural entry counts something: text without a number in its holes is no count ("nu een to-do", already Dutch)
+  if(cat[p.key]&&typeof cat[p.key]==='object'&&!m.slice(1).some(a=>/\d/.test(a)))continue;
   const args=m.slice(1).map(a=>{const tr=i18nExact(a);return tr==null?a:/^\s*/.exec(a)[0]+tr+/\s*$/.exec(a)[0]});out=i18nFill(i18nPick(cat[p.key],m.slice(1),I18N.lang),args);break}
  // a row of parts joined by ' · ' (sources, plan, usage): each part on its own
  if(out==null&&s.includes(' · ')){const parts=s.split(' · '),tr=parts.map(x=>i18nLookup(x));if(tr.some(x=>x!=null))out=parts.map((x,i)=>tr[i]??x).join(' · ')}
