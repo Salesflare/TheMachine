@@ -160,8 +160,16 @@ def sender_first_name(metadata):
 
 def slack_people_names(db, ids):
     """{Slack member id: name} as the people graph shows them (the name from their mail over a lower-case Slack
-    handle, or the owner's own), else as users.info gave it."""
-    ids = sorted({i for i in ids if isinstance(i, str) and re.fullmatch(r'[UW][A-Z0-9]{8,11}', i)})
+    handle, or the owner's own), else as users.info gave it. Kept until a name, a person or a member changes: the to-do
+    list names the same few members on every status poll, and each time was a pass over every person."""
+    ids = tuple(sorted({i for i in ids if isinstance(i, str) and re.fullmatch(r'[UW][A-Z0-9]{8,11}', i)}))
+    return dict(SLACK_PEOPLE.get(ids, stamps.stamp(db, ('identity_names', 'graph_nodes', 'slack_members')), lambda: _slack_people_names(db, ids)))
+
+
+SLACK_PEOPLE = stamps.Kept(16)  # slack_people_names, by stamp
+
+
+def _slack_people_names(db, ids):
     names = slack_name_table(db, ids)
     if not ids:
         return names

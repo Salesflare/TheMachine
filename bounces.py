@@ -32,6 +32,8 @@ import email.utils
 import json
 import re
 
+from machine import stamps
+
 SCHEMA = '''
 CREATE TABLE IF NOT EXISTS email_bounce_events(event_id INTEGER NOT NULL,address TEXT NOT NULL,kind TEXT NOT NULL,status TEXT,
   original_id TEXT,thread_id TEXT,account_id TEXT,at TEXT NOT NULL,via TEXT NOT NULL,PRIMARY KEY(event_id,address));
@@ -428,16 +430,20 @@ def steer(db, raw, options):
     return raw, options
 
 
+PEOPLE = stamps.Kept(4)  # bounced_people between connections, by the graph_nodes stamp
+
+
 def bounced_people(db):
     """[(bounced address, its person's emails)] for the bounces not cleared, oldest first. The to-do list marks every
     draft (mark_draft), and each looked up every bounced address in the Graph again (a scan of all people when the
-    address is no node): kept on the connection while it has made no change and the bounces are the same."""
+    address is no node): kept on the connection while it has made no change and the bounces are the same, and between
+    connections until the graph's people change (each status poll looked them all up again, some 30 ms)."""
     addresses = tuple(r['address'] for r in db.execute('SELECT address FROM email_bounces WHERE cleared_at IS NULL ORDER BY bounced_at'))
     key = (addresses, db.total_changes)
     kept = getattr(db, '_bounced_people', None)
     if kept and kept[0] == key:
         return kept[1]
-    found = [(a, person_emails(db, a)) for a in addresses]
+    found = PEOPLE.get(addresses, stamps.stamp(db, ('graph_nodes',)), lambda: [(a, person_emails(db, a)) for a in addresses])
     try:
         db._bounced_people = (key, found)
     except AttributeError:  # a plain sqlite3 connection: no room for it, looked up each time

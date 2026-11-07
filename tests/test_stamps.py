@@ -131,5 +131,25 @@ class PageQueries(unittest.TestCase):
         with self.store.connect() as db:
             self.assertEqual(slack_name_table(db, {'U01234567'}), {'U01234567': 'Lee Park'})
 
+    def test_the_to_do_lists_slack_names_are_kept_until_a_person_changes(self):
+        """Each status poll names the cards' Slack members (source_lines_shown): one pass over every person, kept until a
+        person, a name or a member changes."""
+        from unittest.mock import patch
+        from machine.store import views
+        with self.store.connect() as db:
+            db.execute("INSERT INTO graph_nodes(id,kind,name,strength,signals,info) VALUES('email:lee@example.com','person','Lee',1,0,?)",
+                       ('{"identifiers": ["email:lee@example.com", "slack:U07654321"]}',))
+        with patch.object(views, '_slack_people_names', wraps=views._slack_people_names) as made:
+            for _ in range(3):
+                with self.store.connect() as db:
+                    self.assertEqual(views.slack_people_names(db, {'U07654321'}), {'U07654321': 'Lee'})
+            self.assertEqual(made.call_count, 1)
+            with self.store.connect() as db:
+                views.slack_people_names(db, {'U07654321'})['U07654321'] = 'changed by a caller'  # each caller gets its own copy
+                db.execute("UPDATE graph_nodes SET name='Lee Park'")
+            with self.store.connect() as db:
+                self.assertEqual(views.slack_people_names(db, {'U07654321'}), {'U07654321': 'Lee Park'})
+            self.assertEqual(made.call_count, 2)
+
 if __name__ == '__main__':
     unittest.main()
