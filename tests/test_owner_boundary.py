@@ -259,6 +259,28 @@ class OwnerBoundary(unittest.TestCase):
                 problems.append(node.targets[0].id)
         self.assertEqual(problems, [], 'one per line: spreads (*X) first, then the names, each sorted')
 
+    def test_the_action_sets_live_only_in_machine_actions(self):
+        # The security boundary stays in one reviewed file: a *_ACTIONS set, tuple or `|=` anywhere else (assistant.py
+        # included) would escape the sorted-lists check above and the review that file gets.
+        import ast
+        root = Path(a.__file__).parent
+        # Lists named *_ACTIONS that are not about who may call an action
+        other = {('preparation_state.py', 'FINISH_ACTIONS'),  # what a continuation may always save
+                 ('talk_live.py', 'TODO_ACTIONS')}  # the to-do buttons Talk live can press, each still an owner action
+        found = []
+        for path in sorted(root.rglob('*.py')):
+            name = path.relative_to(root).as_posix()
+            if name == 'machine/actions.py' or name.startswith(('tests/', 'node_modules/', '.')) or '/node_modules/' in name:
+                continue
+            for node in ast.parse(path.read_text(encoding='utf-8')).body:
+                target = node.targets[0] if isinstance(node, ast.Assign) else getattr(node, 'target', None)
+                if not (isinstance(target, ast.Name) and target.id.endswith('_ACTIONS')) or (name, target.id) in other:
+                    continue
+                value = node.value.args[0] if isinstance(node.value, ast.Call) and node.value.args else node.value
+                if isinstance(node, ast.AugAssign) or isinstance(value, (ast.Set, ast.Tuple, ast.List, ast.SetComp)):
+                    found.append(f'{name}:{node.lineno} {target.id}')
+        self.assertEqual(found, [], 'action sets belong in machine/actions.py, one name per line, sorted')
+
     def test_every_action_the_dashboard_posts_gets_through(self):
         # A save the dashboard makes that the allowlist lacks fails with "Operation is not available here" (Region did).
         html = dashboard_parts.assemble(Path(__file__).parent.parent)
