@@ -275,7 +275,7 @@ def load_connector(service):
 # Not Slack: until The Machine's Slack app is in the Slack Marketplace, + Add connects Slack through Maton; Sign in with
 # Slack shows only on the setup page, for the workspaces the control plane opens it to (its cloud/slack_app.py open_for).
 HOSTED_SIGNINS = {'google', 'microsoft', 'zoom', 'stripe', 'intercom', 'trello', 'github', 'whatsapp', 'android', 'microsoft_docs',
-                  'microsoft_docs_write', 'codex', 'google_meet', 'google_docs'}
+                  'microsoft_docs_write', 'codex', 'google_meet', 'google_docs', 'microsoft_teams'}
 
 
 ON_DASHBOARD = ('github', 'whatsapp', 'android', 'codex')
@@ -298,6 +298,8 @@ def reconnect_help(account, manage, docs_consent=False):
     if manage and service == 'docs':  # its Connect Microsoft documents (or Connect Google Docs) consent, once the account page offers it
         signin = 'google_docs' if account.get('provider') == 'google' else 'microsoft_docs'
         return {'account_page': urllib.parse.urljoin(manage, '#docs'), 'hosted_signin': signin} if docs_consent else {}
+    if manage and service == 'teams':  # its Connect Microsoft Teams consent; the admin's step is on the account page
+        return {'account_page': urllib.parse.urljoin(manage, '#teams'), 'hosted_signin': 'microsoft_teams'}
     if manage and account.get('transport') == 'broker':
         provider = 'microsoft' if service in MICROSOFT_SERVICES else service if service in ('zoom', 'stripe', 'slack', 'google_meet') else 'google'
         return {'account_page': urllib.parse.urljoin(manage, '#' + provider if provider in ('google', 'microsoft') else '#source-' + service),

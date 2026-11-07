@@ -30,7 +30,7 @@ from timeutil import WORK_HOURS, in_hours, local_tz, now
 LOG = logging.getLogger('personal-assistant')
 
 
-NEWER_KINDS = ('gmail.message', 'slack.message', 'whatsapp.message', 'linkedin.message', 'x.dm')
+NEWER_KINDS = ('gmail.message', 'slack.message', 'teams.message', 'whatsapp.message', 'linkedin.message', 'x.dm')
 
 
 def newer_activity(db, event_ids, owner_slack_ids=(), teammates=(), domains=(), limit=5):

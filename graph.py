@@ -180,7 +180,7 @@ BACKFILL_MAX = 400
 BACKFILL_CHARS = 14000  # the block's size in one review
 BACKFILL_SHOWN_DAYS = 3  # the board says what it found for this long
 BACKFILL_GIVE_UP_DAYS = 7
-BACKFILL_KINDS = ('gmail.message', 'salesflare.email', 'linkedin.message', 'slack.message', 'whatsapp.message', 'telegram.message', 'intercom.conversation', 'x.dm',
+BACKFILL_KINDS = ('gmail.message', 'salesflare.email', 'linkedin.message', 'slack.message', 'teams.message', 'whatsapp.message', 'telegram.message', 'intercom.conversation', 'x.dm',
                   'ms_graph.message', 'outlook.message', 'calendar.event', 'salesflare.meeting', 'outlook.event', 'ms_graph.event')
 STUCK_DAYS = 10         # no reply for this long after the owner wrote: the tile says so
 # A person's automatic side (Work or Personal), from what The Machine knows of them (2026-10-25, see auto_side). Raised
@@ -535,6 +535,20 @@ def _touches(kind, m, owner, wrote_to):
         if not chat.isdigit():
             return []
         return [('tg:' + chat, m.get('chat_name'), WEIGHTS['owner' if mine else 'them'], 'owner' if mine else 'them')]
+    if kind == 'teams.message':
+        # Teams people are work addresses (connectors/teams.py): a 1:1 chat is the other person, a group or
+        # meeting chat its sender, seen; a channel thread counts least
+        mine = m.get('from_me') is True
+        if m.get('chat_kind') == 'oneOnOne':
+            others = [str(a).lower() for a in m.get('to') or () if '@' in str(a)]
+            addr = others[0] if mine and len(others) == 1 else '' if mine else str(m.get('from_email') or '').lower()
+            if '@' not in addr or owner.mine(addr):
+                return []
+            return [('email:' + addr, None if mine else m.get('sender_display'), WEIGHTS['owner' if mine else 'them'], 'owner' if mine else 'them')]
+        addr = str(m.get('from_email') or '').lower()
+        if mine or '@' not in addr or owner.mine(addr):
+            return []
+        return [('email:' + addr, m.get('sender_display'), 0.05 if m.get('chat_kind') == 'channel' else 0.1, 'seen')]
     if kind == 'slack.message':
         if m.get('bot_id') or m.get('subtype') in ('bot_message', 'channel_join', 'channel_leave'):
             return []
@@ -2270,7 +2284,7 @@ def detail(db, node_id, events=12):
 TIMELINE_SOURCES = (('email', ('gmail.message', 'salesflare.email')),
                     ('meetings', ('calendar.event', 'salesflare.meeting', 'zoom.summary', 'meeting.notes', 'meeting.transcript')),
                     ('intercom', ('intercom.conversation',)),
-                    ('chats', ('whatsapp.message', 'slack.message', 'linkedin.message', 'x.dm', 'x.mention', 'telegram.message')))
+                    ('chats', ('whatsapp.message', 'slack.message', 'teams.message', 'linkedin.message', 'x.dm', 'x.mention', 'telegram.message')))
 TIMELINE_GROUPS = ('email', 'meetings', 'intercom', 'chats', 'cards', 'projects', 'other')
 TIMELINE_CARDS = (*OPEN_CARD, 'completed')  # a dismissed card is not part of the story
 ZOOM_NEAR = dt.timedelta(minutes=30)       # a Zoom summary within this of one of their meetings is that meeting's
@@ -2807,7 +2821,7 @@ def set_role(db, node_id, role, source, now, event_id=None, quote=None):
     return {'role': role or None}
 
 
-VIA = {'linkedin.message': 'LinkedIn', 'gmail.message': 'email', 'salesflare.email': 'email', 'calendar.event': 'calendar', 'slack.message': 'Slack',
+VIA = {'linkedin.message': 'LinkedIn', 'gmail.message': 'email', 'salesflare.email': 'email', 'calendar.event': 'calendar', 'slack.message': 'Slack', 'teams.message': 'Teams',
        'whatsapp.message': 'WhatsApp', 'telegram.message': 'Telegram', 'x.dm': 'X', 'x.mention': 'X', 'intercom.conversation': 'Intercom', 'github.notification': 'GitHub'}
 
 
@@ -4868,7 +4882,7 @@ def backfill_view(db, board_id, now, maybes):
     return {'state': 'done', 'added': added, 'review': len(maybes)}
 
 
-MESSAGE_KINDS = ('gmail.message', 'salesflare.email', 'linkedin.message', 'slack.message', 'whatsapp.message', 'telegram.message', 'intercom.conversation', 'x.dm',
+MESSAGE_KINDS = ('gmail.message', 'salesflare.email', 'linkedin.message', 'slack.message', 'teams.message', 'whatsapp.message', 'telegram.message', 'intercom.conversation', 'x.dm',
                  'ms_graph.message', 'outlook.message')
 
 

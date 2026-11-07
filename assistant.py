@@ -2054,7 +2054,7 @@ def signal_family(kind):
     return 'other'
 
 
-KIND_WORDS = {'gmail.message': ('email', 'emails'), 'calendar.event': ('meeting', 'meetings'), 'slack.message': ('Slack message', 'Slack messages'),
+KIND_WORDS = {'gmail.message': ('email', 'emails'), 'calendar.event': ('meeting', 'meetings'), 'slack.message': ('Slack message', 'Slack messages'), 'teams.message': ('Teams message', 'Teams messages'),
               'whatsapp.message': ('WhatsApp message', 'WhatsApp messages'), 'telegram.message': ('Telegram message', 'Telegram messages'), 'linkedin.message': ('LinkedIn message', 'LinkedIn messages'),
               'android.notification': ('phone notification', 'phone notifications'), 'x.message': ('X message', 'X messages')}
 
@@ -6113,6 +6113,7 @@ class App(*APP_MIXINS):
                 # itself, by the control plane, which comes back to this form
                 for source in found['sources']:
                     signin = source['service'] if source['service'] in ON_DASHBOARD else fleet.SIGNIN_OF.get(source['service'])
+                    signin = 'microsoft_teams' if source['service'] == 'teams' else signin  # its own Microsoft consent
                     if signin in HOSTED_SIGNINS:
                         source['hosted_signin'] = signin
                 found['sources'] = hosted_docs_sources(self.config, found['sources'])

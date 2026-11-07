@@ -46,7 +46,7 @@ PROFILE_SKIP = re.compile(r'^(?:Sent (?:an? )?(?:image|photo|video|sticker|audio
                           r'\[(?:image|photo|video|sticker|audio|voice|document|gif|file)[^\]]*\]$|!\[)', re.I)
 
 
-OWN_KINDS = {'gmail.message': 'email', 'slack.message': 'Slack', 'whatsapp.message': 'WhatsApp', 'telegram.message': 'Telegram', 'linkedin.message': 'LinkedIn', 'x.dm': 'X DM'}
+OWN_KINDS = {'gmail.message': 'email', 'slack.message': 'Slack', 'teams.message': 'Teams', 'whatsapp.message': 'WhatsApp', 'telegram.message': 'Telegram', 'linkedin.message': 'LinkedIn', 'x.dm': 'X DM'}
 
 
 # How the owner writes, per channel. A voice is a short block (a few lines); All holds what goes for every channel.
