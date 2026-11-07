@@ -410,8 +410,9 @@ class AnotherAddress(FollowUpsAfterABounce):
             self.assertEqual(db.execute('SELECT state FROM follow_up_cards').fetchone()[0], 'open')  # not stopped
 
     def test_marking_many_drafts_looks_each_bounce_up_once_per_connection(self):
-        """The to-do list marks every draft: each bounced address is looked up in the Graph once per connection, not once
-        per draft, and again after the connection changed something."""
+        """The to-do list marks every draft: each bounced address is looked up in the Graph once, not once per draft, and
+        again after the connection changed something. A new connection (the next status poll) keeps the look-up until the
+        graph's people change."""
         self.add(report('dsn1', '2026-10-13T09:00:05+00:00'))
         self.other_address()
         self.app().bounce_step()
@@ -424,8 +425,14 @@ class AnotherAddress(FollowUpsAfterABounce):
             bounces.mark_draft(db, draft)
             self.assertEqual(looked.call_count, 2)  # read again
         with self.store.connect() as db, patch.object(bounces, 'person_emails', wraps=bounces.person_emails) as looked:
+            self.assertEqual(bounces.mark_draft(db, draft)['moved'], {'sam@newco.example': 'sam@client.example'})
+            self.assertEqual(looked.call_count, 0)  # a new connection: kept, the graph is the same
+        with self.store.connect() as db:
+            graph.person_edit(db, 'email:sam@client.example', {'emails': ['sam@client.example', 'sam@other.example']}, a.now())
+        self.build()  # the graph's people change
+        with self.store.connect() as db, patch.object(bounces, 'person_emails', wraps=bounces.person_emails) as looked:
             bounces.mark_draft(db, draft)
-            self.assertEqual(looked.call_count, 1)  # a new connection reads again too
+            self.assertEqual(looked.call_count, 1)  # read again after the graph changed
 
 
 # The follow-ups harness (a board, two projects, a fake outbox and mailbox), without running its own tests again here
