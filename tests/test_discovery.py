@@ -261,6 +261,55 @@ class Discovery(unittest.TestCase):
         self.assertEqual((dad['status'], dad['hint'], dad['role'], [r['kind'] for r in dad['reasons']]), ('new', 'personal', 'Father', ['joined']))
         self.assertEqual(self.fleet.network_action('connect', 'dad@home.example', 'family'), {'status': 'requested', 'relation': 'family'})
 
+    def befriend(self, username, name):
+        """They are friends now on the Network (a request accepted): the next directory has them in the friends group."""
+        friends = next(f for f in self.relay.directory['fleets'] if f['kind'] == 'friends')
+        friends['members'].append({'member_id': 'fp_' + username, 'name': name, 'role': 'member', 'username': username, 'emails': []})
+
+    def test_accepting_their_friend_request_ends_their_network_suggestion(self):
+        """Their friend request accepted on the dashboard: the Network suggestion for them goes at once, not after a round."""
+        self.fleet.network_action('find_on')
+        self.assertEqual(self.people()['nia']['status'], 'new')
+        self.fleet.take_notice({**tfr.NOTICE, 'text': 'Nia North (@nia) wants to be friends.'})
+        self.befriend('nia', 'Nia North')
+        self.assertEqual(self.fleet.decide_notice(tfr.NOTICE['id'], 'confirm', 'x')['status'], 'confirmed')
+        self.assertEqual(self.people()['nia']['status'], 'connected')
+
+    def test_connect_with_someone_who_is_a_friend_already_closes_the_card(self):
+        """A card left from before they became friends: Friend closes it and sends nothing; the Network's 409 for a
+        friendship the directory did not show yet closes it too; a 409 for anything else still says why."""
+        self.fleet.network_action('find_on')
+        self.befriend('nia', 'Nia North')
+        self.fleet.directory(refresh=True)
+        with self.store.connect() as db:  # a card stuck from before: the next view clears it
+            db.execute("UPDATE network_people SET status='new' WHERE username='nia'")
+        self.assertEqual(self.people()['nia']['status'], 'connected')
+        with self.store.connect() as db:
+            db.execute("UPDATE network_people SET status='new' WHERE username='nia'")
+        sent = len(self.relay.sent('/friends'))
+        self.assertEqual(self.fleet.network_action('connect', 'nia@nia.example', 'friend'), {'status': 'connected', 'relation': 'friend'})
+        self.assertEqual(len(self.relay.sent('/friends')), sent)
+        real, refused = self.relay.call, []
+
+        def friends_already(method, path, body=None, timeout=40):
+            if path == '/friends':
+                refused.append(body)
+                if body['username'] == 'sam':
+                    self.befriend('sam', 'Sam')  # they accepted a moment ago
+                error = ValueError('You are friends already.' if body['username'] == 'sam' else 'Remove one first.')
+                error.code = 409
+                raise error
+            return real(method, path, body, timeout)
+        self.relay.call = friends_already
+        self.assertEqual(self.fleet.network_action('connect', 'sam@acme.example', 'colleague'), {'status': 'connected', 'relation': 'colleague'})
+        self.assertNotIn('sam', [p['username'] for p in self.fleet.network_view()['people'] if p['status'] == 'new'])
+        with self.store.connect() as db:
+            db.execute("UPDATE network_people SET status='new' WHERE username='nia'")
+            db.execute("UPDATE network_people SET username='notyet' WHERE username='nia'")
+        with self.assertRaisesRegex(ValueError, 'Remove one first'):
+            self.fleet.network_action('connect', 'nia@nia.example', 'friend')
+        self.assertEqual(len(refused), 2)
+
     def test_lookup_is_blinded_and_only_matches_are_resolved(self):
         self.fleet.network_action('find_on')
         match, resolve = [b for b in self.relay.sent('/discover') if b['action'] in ('match', 'resolve')]

@@ -23,12 +23,12 @@ const found={...base,network:{find:true,discoverable:true,asked:true,last:'2026-
  addresses:[{email:'sam@work.example',account:true,on:true,findable:true},{email:'sam.doe-with-a-long-address@personal-mail.example',account:false,on:true,findable:true},
   {email:'sam@other.example',account:false,on:false,findable:false},{email:'info@work.example',account:false,on:false,findable:false,shared:true},
   {email:'+12025550101',account:false,on:true,findable:true,phone:true,source:'whatsapp'},{email:'+12025550100',account:false,on:false,findable:false,phone:true,source:'about_you'}]}};
-const calls=[];let shown=ask;
+const calls=[];let shown=ask,answer='{"ok":true}';
 const firstCall=async()=>{for(let i=0;i<100&&!calls.length;i++)await new Promise(r=>setTimeout(r,50));return calls[0]};  // the call lands, also on a busy runner
 const server=createServer(async(req,res)=>{res.setHeader('Content-Type','application/json');
  if(req.url==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(req.url==='/api/status'){res.end(JSON.stringify({suggestions:[],connectors:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],fleet:{on:true,waiting:0}}));return}
- if(req.url==='/api/action'){let body='';for await(const b of req)body+=b;calls.push(JSON.parse(body));res.end('{"ok":true}');return}
+ if(req.url==='/api/action'){let body='';for await(const b of req)body+=b;calls.push(JSON.parse(body));res.end(answer);return}
  if(req.url.startsWith('/api/fleet')){res.end(JSON.stringify(shown));return}
  res.statusCode=404;res.end('{}')});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
@@ -52,6 +52,9 @@ try{
   assert.equal(await page.locator('#net-samb [data-net-do="connect"]').count(),1);
   calls.length=0;await page.locator('#net-nia [data-net-rel="family"]').click();
   assert.deepEqual(await firstCall(),{action:'fleet_network',args:{do:'connect',email:'nia@nia.example',relation:'family'}});
+  // Friends already (their request accepted a moment ago): nothing is sent, and the toast says so
+  answer='{"status":"connected","relation":"colleague"}';calls.length=0;await page.locator('#net-samb [data-net-do="connect"]').click();
+  await page.locator('#toast.show',{hasText:'Already friends. Nothing was sent.'}).waitFor();answer='{"ok":true}';
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`${scheme} ${width}px cards scroll sideways`);
   await navClick(page.locator('nav [data-tab="fleet"]'));await page.locator('[data-fleet-pane="network"]').click();await page.locator('#fleet-network').waitFor();
   const block=page.locator('#fleet-network');
