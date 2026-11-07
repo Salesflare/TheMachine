@@ -46,7 +46,7 @@ try{
   dig={...dig,failing:3};await page.evaluate(async()=>{await refresh()});
   await page.waitForFunction(k=>document.querySelector('#suggestions .first-look-empty')?.textContent.includes(k),KEEPS);
   assert.ok(!(await empty()).includes(ONCE));
-  assert.match(await empty(),/20 of 64 signals/);
+  assert.match(await empty(),/Reading 20 of 64 messages…/);
   assert.ok(!/All clear/.test(await page.locator('#page-head').innerText()));
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   if(shots)await page.screenshot({path:`${shots}/failing-${width}.png`});

@@ -12,6 +12,8 @@ Les tâches viennent des vérifications : votre Machine lit ce qui est arrivé, 
 
 Sur une nouvelle Machine hébergée, les vérifications démarrent d’elles-mêmes dès que votre IA et vos e-mails sont connectés. Pendant que votre Machine lit vos e-mails, Tâches affiche "Lecture de vos e-mails, premières tâches dans quelques minutes". S’il manque une étape, **Vous attend** la nomme, comme **Connecter vos e-mails**, avec un lien vers cette étape.
 
+Pendant qu’elle lit, Tâches montre où elle en est, quelques-unes des personnes et organisations qu’elle a croisées, et votre première tâche dès qu’elle arrive. Les noms viennent de vos propres e-mails et ne sont visibles que par vous.
+
 ## Les vérifications sont désactivées
 
 Le haut de Tâches indique « Les vérifications sont désactivées, donc aucune tâche n’arrive pour l’instant. » Sur une Machine hébergée, appuyez sur **Activer les vérifications**. Sur votre propre ordinateur, lancez `./install.sh --activate`.

@@ -72,6 +72,10 @@ def first_value(db, marks, since):
     return out
 
 
+# The live first look (first_look_names): at most this many names, from the signals of its newest batches
+FIRST_LOOK_NAMES, FIRST_LOOK_NAME_SIGNALS = 6, 80
+
+
 class FirstLookStore:
     """Store methods for a new Machine's first steps."""
 
@@ -119,6 +123,64 @@ class FirstLookStore:
         session = REVIEW_SESSION_PREFIX + run_id
         return bool(db.execute("SELECT 1 FROM analyses WHERE owner_run=? AND owner_session=? AND status='complete' LIMIT 1", (run_id, session)).fetchone()
                     and not db.execute("SELECT 1 FROM analyses WHERE owner_run=? AND status IN ('running','retryable') LIMIT 1", (run_id,)).fetchone())
+
+    def first_look_names(self, db, runs):
+        """Who the first look is reading about, for its live line on the owner's own dashboard ("Bumped into Mila, Acme
+        and Jonah so far"): up to FIRST_LOOK_NAMES first names of people and their organizations, from the signals its
+        batches claimed (the batch that reads now first, in the order it reads them). Each named as the Graph knows them,
+        else, for one its reviewer sorted as from a person, as the message names its sender (greeting_name's rules).
+        Never the owner, an address or a mailbox name, never a word of a message. Read from what the review already wrote
+        (no model call). Names only, for the owner alone: nothing of it goes into a report or leaves the Machine."""
+        if not runs:
+            return []
+        items = {}
+        for row in db.execute(f"SELECT items FROM analyses WHERE owner_run IN ({','.join('?' * len(runs))}) "
+                              "AND status IN ('running','complete') ORDER BY started_at DESC", runs):
+            for item in json.loads(row['items'] or '[]'):
+                try:
+                    items.setdefault(int(item['id']), item)
+                except (KeyError, TypeError, ValueError):
+                    continue
+            if len(items) >= FIRST_LOOK_NAME_SIGNALS:
+                break
+        ids = list(items)[:FIRST_LOOK_NAME_SIGNALS]
+        if not ids:
+            return []
+        marks = ','.join('?' * len(ids))
+        rows = {r['id']: r for r in db.execute(f'SELECT id,metadata FROM events WHERE deleted=0 AND id IN ({marks})', ids)}
+        known = {}
+        try:
+            for r in db.execute("SELECT g.event_id,n.name,o.name org FROM graph_events g JOIN graph_nodes n ON n.id=g.node_id LEFT JOIN graph_nodes o "
+                                "ON o.id=json_extract(n.info,'$.org') AND o.kind='org' WHERE g.direct=1 AND n.kind='person' AND g.event_id IN ("
+                                + marks + ') ORDER BY n.strength DESC', ids):
+                known.setdefault(r['event_id'], []).append(r)
+        except sqlite3.OperationalError:
+            pass  # no Graph yet on a new Machine: senders' own names only
+        own = self.review_own_addresses(db)
+        names, seen = [], set()
+
+        def add(name):
+            name = ' '.join(str(name or '').split())
+            if name and '@' not in name and re.search(r'[^\W\d_]{2}', name) and name.casefold() not in seen:
+                seen.add(name.casefold())
+                names.append(name)
+        for event_id in ids:
+            row = rows.get(event_id)
+            if not row or len(names) >= FIRST_LOOK_NAMES:
+                continue
+            try:
+                meta = json.loads(row['metadata'] or '{}')
+            except ValueError:
+                continue
+            sender = _address(meta.get('from')).lower()
+            if (sender and sender in own) or meta.get('from_me'):
+                continue  # the owner's own message: whom they wrote to is no find
+            for r in known.get(event_id, [])[:1]:
+                add(sender_first_name({'from': graph.person_name(r['name'] or '')}))
+                add(r['org'])
+            if event_id not in known and items[event_id].get('read') == 'people':
+                add(sender_first_name(meta))
+        return names[:FIRST_LOOK_NAMES]
 
     def note_first_look(self, db, look):
         """The first look's last state, for the health report (first_cards_report): kept only when it changed."""

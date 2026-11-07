@@ -17,7 +17,7 @@ const live=()=>({runs:run?[run]:[],queue:null,first_look:null,first_dig:dig});
 const state=()=>({suggestions:[],promises:[],connectors:[{id:'work',display_name:'Work mail',service:'outlook'}],
  suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],reviews_on:true,greeting:{name:'Robin'},
  review_live:live(),first_look_done:done});
-const errors=[],count=async page=>{const m=/^(\d+) of (\d+) signals$/.exec(await page.locator('#suggestions .fl-count').innerText());assert.ok(m);return [+m[1],+m[2]]};
+const errors=[],count=async page=>{const m=/^Reading (\d+) of (\d+) messages…$/.exec(await page.locator('#suggestions .fl-count').innerText());assert.ok(m);return [+m[1],+m[2]]};
 const server=createServer((req,res)=>{
  const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
@@ -40,7 +40,7 @@ try{
   await page.goto('http://127.0.0.1:'+server.address().port);
   await page.locator('#suggestions .first-look-empty .fl-count').waitFor();
   // The first batch: the count moves while it reads, one short of its batch until it saved, over the whole week
-  await page.waitForFunction(()=>/^[1-9]\d* of /.test(document.querySelector('#suggestions .fl-count')?.textContent||''),null,{timeout:8000});
+  await page.waitForFunction(()=>/^Reading [1-9]\d* of /.test(document.querySelector('#suggestions .fl-count')?.textContent||''),null,{timeout:8000});
   const [a,total]=await count(page);
   // Nothing got focus by itself: Done / dismissed has no ring on a page nobody pressed a key on yet
   const ringless=()=>page.evaluate(()=>!document.querySelector('#suggestions .kb-on')&&document.activeElement?.id!=='finished-head');

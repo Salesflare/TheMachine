@@ -12,6 +12,8 @@ Le attività nascono dai controlli: la tua Machine legge quello che è arrivato,
 
 Su una nuova Machine ospitata, i controlli partono da soli appena la tua IA e la tua posta sono collegate. Mentre la tua Machine legge la tua posta, Attività dice "Leggo la tua posta, le prime attività arrivano tra pochi minuti". Se manca un passaggio, **Serve il tuo intervento** lo indica, come **Collega la posta**, con un link a quel passaggio.
 
+Mentre legge, Attività mostra a che punto è, alcune delle persone e organizzazioni che ha incontrato e la tua prima attività appena arriva. I nomi vengono dalla tua posta e li vedi solo tu.
+
 ## I controlli sono disattivati
 
 In cima ad Attività compare "I controlli sono disattivati, quindi per ora non arrivano attività." Su una Machine in hosting, premi **Attiva i controlli**. Sul tuo computer, esegui `./install.sh --activate`.

@@ -30,8 +30,8 @@ try{
    now:good.querySelector('[role=progressbar]').getAttribute('aria-valuenow'),link:link.querySelectorAll('a').length,built:[built.children.length,built.textContent,built.title],real:real.querySelector('a')?.href}});
  assert.equal(got.hostile,0,'no markup from the counts');
  assert.equal(got.hostileText,'','a count that is no number shows no bar');
- assert.equal(got.text,'3 of 8 signals');
- assert.deepEqual([got.good,got.width,got.now],['3 of 12 signals','25%','3']);
+ assert.equal(got.text,'Reading 3 of 8 messages…');
+ assert.deepEqual([got.good,got.width,got.now],['Reading 3 of 12 messages…','25%','3']);
  assert.equal(got.link,0,'no javascript: link');
  assert.deepEqual(got.built,[0,'<img src=x onerror=alert(1)>','<b>'],'make: text stays text');
  assert.equal(got.real,'https://chatgpt.com/codex/settings/usage');

@@ -12,6 +12,8 @@ Aufgaben entstehen aus Prüfungen: Deine Machine liest, was reingekommen ist, in
 
 Auf einer neuen gehosteten Machine starten die Prüfungen von selbst, sobald deine KI und deine E-Mails verbunden sind. Während deine Machine deine E-Mails liest, steht unter Aufgaben "Deine E-Mails werden gelesen, die ersten Aufgaben kommen in ein paar Minuten". Fehlt ein Schritt, nennt ihn **Braucht dich**, etwa **Mail verbinden**, mit einem Link zu diesem Schritt.
 
+Während sie liest, zeigt Aufgaben, wie weit sie ist, ein paar der Personen und Organisationen, auf die sie gestoßen ist, und deine erste Aufgabe, sobald sie da ist. Die Namen stammen aus deinen eigenen E-Mails, und nur du siehst sie.
+
 ## Prüfungen sind aus
 
 Oben in Aufgaben steht „Die Prüfung ist aus, daher kommen noch keine Aufgaben.“ Auf einer gehosteten Machine tippst du auf **Prüfung einschalten**. Auf deinem eigenen Computer führst du `./install.sh --activate` aus.

@@ -45,7 +45,7 @@ try{
  cards=[card];await page.evaluate(()=>refresh());
  const strip=page.locator('#first-look');
  assert.equal(await strip.isVisible(),true);
- assert.match(await strip.textContent(),/Taking a first look at your last 7 days.*5 of 67 signals/);
+ assert.match(await strip.textContent(),/Taking a first look at your last 7 days.*Reading 5 of 67 messages…/);
  assert.equal(await page.locator('#suggestions .first-look-empty').count(),0);
  const order=await page.evaluate(()=>['#suggestion-summary','#suggestion-stats','#first-look'].map(s=>[...document.querySelectorAll('#inbox > *')].indexOf(document.querySelector(s))));
  assert.ok(order[0]<order[1]&&order[1]<order[2],String(order));

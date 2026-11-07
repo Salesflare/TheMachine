@@ -142,6 +142,39 @@ class FirstReviewDig(unittest.TestCase):
         self.assertEqual(a.first_look_batch(a.FIRST_LOOK_NEXT_SIGNALS + a.FIRST_LOOK_TAIL_SIGNALS + 1), a.FIRST_LOOK_NEXT_SIGNALS)
         self.assertEqual(a.first_look_batch(5), a.FIRST_LOOK_NEXT_SIGNALS)
 
+    def test_the_live_first_look_names_who_it_reads_about_and_its_first_to_do(self):
+        # The live first look: a few names from the batch it reads now (as the Graph knows them, never the owner or an
+        # address), whether it reads only mail, and the first to-do's title once saved. Never a word of a message.
+        people = [mail('a1', 'Mila Hart <mila@acme-freight.example>', 1), mail('a2', 'Jonah Reyes <jonah@example.org>', 2),
+                  mail('a3', 'noreply@shop.example', 3), mail('own', 'Robin <me@example.com>', 4)]
+        people[3]['metadata']['to'] = 'Caspian <caspian@example.net>'
+        self.store.commit_page('work', {}, people + [mail(f'm{n}', f'P{n} Lane <p{n}@example.org>', hours_ago=n + 5) for n in range(30)])
+        with self.store.connect() as db:
+            db.isolation_level = None
+            a.graph.build(db, self.app.config, a.now())
+        self.step(Runner('admitted'))
+        with self.store.connect() as db:
+            live = self.app.first_dig_live(db)
+        self.assertEqual((live['unit'], live['names'], live['first']), ('email', [], None))  # nothing claimed yet
+        run = self.runs()[-1]
+        claim = self.store.begin_analysis(['work'], 120, a.REVIEW_SESSION_PREFIX + run['run_id'], run['run_id'])
+        with self.store.connect() as db:
+            live = self.app.first_dig_live(db)
+        self.assertLessEqual(len(live['names']), a.FIRST_LOOK_NAMES)
+        self.assertTrue({'Mila', 'Jonah'} <= set(live['names']), live['names'])
+        for name in live['names']:
+            self.assertNotIn('@', name)
+            self.assertNotIn(name, ('Robin', 'Caspian', 'noreply', 'Hello', 'Text'))  # never the owner, whom they wrote to, an address or the message
+        ids = [e['id'] for e in claim['events']]
+        self.store.suggest('first-1', 'Send Mila the pricing sheet', 'Mila asked.', [ids[0]])
+        with self.store.connect() as db:
+            live = self.app.first_dig_live(db)
+        self.assertEqual((live['todos'], live['first']['title']), (1, 'Send Mila the pricing sheet'))
+        self.assertNotIn('Mila asked.', str(live))
+        self.app.config['accounts'].append({'id': 'chat', 'service': 'telegram'})
+        with self.store.connect() as db:
+            self.assertEqual(self.app.first_dig_live(db)['unit'], 'message')
+
     def test_the_bar_moves_at_the_last_batchs_time_over_the_batch_that_runs(self):
         # A batch takes about as long whatever its size (its steps, not its signals): 2026-11-04, 20 signals took 135 s and
         # 40 took 91 s, while the bar went on at the first batch's 9 s a signal and stood far behind

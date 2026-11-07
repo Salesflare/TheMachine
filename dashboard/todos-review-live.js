@@ -45,14 +45,25 @@ function firstLookInfo(live){const run=(live.runs||[]).find(r=>r.preview||r.wind
 // read already counts what a running batch saved (its done_count), so only the batch's estimate beyond that is added;
 // the total only grows (new mail), so the count never looks like it went back
 if(dig&&dig.total){const total=flTotal=Math.max(flTotal,0,+dig.total|0),todos=+dig.todos|0,ahead=run?Math.max(0,flRunDone(run,dig.pace)-(run.done_count||0)):0,done=Math.min(total,Math.max(flPeak,(+dig.read|0)+ahead));flPeak=done;flMark();
- return{title:t('Taking a first look at your last {} days',dig.days||7),done,total,wait:!run&&dig.failing?(flFailing(dig)?t('The last tries did not finish. Still trying.'):t(FIRST_LOOK_WAIT.retry)):!dig.read&&!run?.done_count?'':todos?t(['Found {} to-do. Reading on.','Found {} to-dos. Reading on.'],todos):t('Nothing for you yet. Reading on.')}}
+ const first=todos===1&&typeof dig.first?.title==='string'&&dig.first.title.trim();
+ return{title:t('Taking a first look at your last {} days',dig.days||7),done,total,unit:dig.unit,first:!!first&&!(!run&&dig.failing),names:Array.isArray(dig.names)?dig.names.filter(n=>typeof n==='string'&&n.trim()):[],
+  wait:!run&&dig.failing?(flFailing(dig)?t('The last tries did not finish. Still trying.'):t(FIRST_LOOK_WAIT.retry)):first?t('First one’s in: {}. Still reading…',first):!dig.read&&!run?.done_count?'':todos?t(['Found {} to-do. Reading on.','Found {} to-dos. Reading on.'],todos):t('Nothing for you yet. Reading on.')}}
 if(run){const total=run.planned||run.claimed_count||0;flMark();return{title:t('Taking a first look at your last {} days',firstLookDays(fl,run)),done:flRunDone(run,6),total}}
 if(startsByItself()&&fl?.state!=='due')return setupStep()?{title:t('Your first to-dos show up here'),wait:false}:flBack()?{title:t('Taking a first look at your last {} days',firstLookDays(fl))}:{title:setupLine(),working:!!aiConnecting()};  // not "All clear" before the first read ends
 if((fl?.state==='waiting'&&fl.why!=='model')||fl?.state==='due')return{title:t('A first look at your last {} days starts soon',firstLookDays(fl)),wait:fl.state==='due'?t(FIRST_LOOK_WAIT.due):flWait(fl)};return null}
 // the counts are whole numbers before they reach the page, whatever the status says
+// How far it read, in the robot's voice: "Reading 312 of 1,200 emails…" (messages when not every source is mail)
+const flCount=(done,total,unit)=>t(unit==='email'?'Reading {} of {} emails…':'Reading {} of {} messages…',done.toLocaleString(DL),total.toLocaleString(DL));
 const firstLookBar=i=>{const done=Math.max(0,+i.done|0),total=Math.max(0,+i.total|0);return total?[make('span',{class:'fl-bar',role:'progressbar','aria-label':'Signals checked','aria-valuemin':'0','aria-valuemax':total,'aria-valuenow':done},
- make('i',{style:{width:Math.round(100*done/total)+'%'}})),make('span',{class:'fl-count mono'},t('{} of {} signals',done,total))]:[]};
-const firstLookInner=i=>[make('img',{class:'sticker',src:'brand/wave.webp','data-blink':'brand/wave-blink.webp','data-look':'brand/wave-look.webp','data-hand':'brand/wave-hand.webp',alt:''}),make('div',{},make('strong',i.working?{class:'backfill-run'}:{},i.title),firstLookBar(i),i.wait===false?'':make('small',{},i.wait||t('To-dos show up here as they come.')))];
+ make('i',{style:{width:Math.round(100*done/total)+'%'}})),make('span',{class:'fl-count'},flCount(done,total,i.unit))]:[]};
+// Who it reads about (first_dig.names: the owner's own people and organizations, never a word of a message), one more
+// every few seconds up to three, so they show up as it finds them
+let flNamesAt=0;
+function flNames(i){const names=(i.names||[]).slice(0,3);if(!names.length){flNamesAt=0;return ''}flNamesAt||=Date.now();
+ const shown=names.slice(0,Math.min(names.length,1+Math.floor((Date.now()-flNamesAt)/4000)));let list;
+ try{list=new Intl.ListFormat(I18N.lang||'en',{type:'conjunction'}).format(shown)}catch{list=shown.join(', ')}return t('Bumped into {} so far.',list)}
+const flNamesNode=i=>{const line=flNames(i);return line?make('span',{class:'fl-names',translate:'no'},line):''};
+const firstLookInner=i=>[make('img',{class:'sticker',src:'brand/wave.webp','data-blink':'brand/wave-blink.webp','data-look':'brand/wave-look.webp','data-hand':'brand/wave-hand.webp',alt:''}),make('div',{},make('strong',i.working?{class:'backfill-run'}:{},i.title),firstLookBar(i),flNamesNode(i),i.wait===false?'':make('small',{},i.wait||t('To-dos show up here as they come.')))];
 // The list's empty state while the first look runs: a place the list fills with firstLookFill once it is on the page
 const firstLookEmpty=i=>i?html`<div class="empty all-clear first-look-empty"></div>`:'';
 function firstLookFill(){const box=$('#suggestions .first-look-empty'),i=box&&firstLookInfo(state.review_live||{});if(i)box.replaceChildren(...firstLookInner(i))}
@@ -73,11 +84,12 @@ $('#suggestions').addEventListener('click',e=>{const b=e.target.closest('[data-f
  if(k==='talk'){talkMain();return}if(k==='todo'){ncOpen();return}showTab('health','add');connectAdd(true)});
 function renderFirstLook(live){const i=firstLookInfo(live),el=$('#first-look'),empty=$('#suggestions .all-clear');
 if(empty){el.hidden=true;if(i){empty.classList.add('first-look-empty');empty.replaceChildren(...firstLookInner(i))}else if(empty.classList.contains('first-look-empty'))refresh();return}
-if(i){el.replaceChildren(make('strong',{},i.title),...firstLookBar(i),i.wait?make('small',{},i.wait):'');el.hidden=false}else el.hidden=true}
-// The count ticks between polls: only the bar and its number change, a second at a time
+if(i){el.replaceChildren(make('strong',{},i.title),...firstLookBar(i),flNamesNode(i),i.wait?make('small',i.first?{class:'fl-first'}:{},i.wait):'');el.hidden=false}else el.hidden=true}
+// The count ticks between polls: only the bar, its number and the names found change, a second at a time
 function firstLookTick(){if(document.hidden||!state)return;const i=firstLookInfo(state.review_live||{});if(!i?.total)return;
  for(const box of document.querySelectorAll('#first-look,#suggestions .first-look-empty')){const bar=box.querySelector('.fl-bar'),count=box.querySelector('.fl-count');if(!bar||!count)continue;
-  const done=Math.max(0,+i.done|0),total=Math.max(1,+i.total|0);bar.setAttribute('aria-valuenow',done);bar.setAttribute('aria-valuemax',total);bar.firstChild.style.width=Math.round(100*done/total)+'%';count.textContent=t('{} of {} signals',done,total)}}
+  const done=Math.max(0,+i.done|0),total=Math.max(1,+i.total|0);bar.setAttribute('aria-valuenow',done);bar.setAttribute('aria-valuemax',total);bar.firstChild.style.width=Math.round(100*done/total)+'%';count.textContent=flCount(done,total,i.unit);
+  const names=box.querySelector('.fl-names'),line=flNames(i);if(names&&line&&names.textContent!==line)names.textContent=line;else if(!names&&line)count.after(flNamesNode(i))}}
 setInterval(firstLookTick,1000);
 function renderReviewLive(){const live=state.review_live||{},rows=reviewLiveRows(live);$('#review-live').replaceChildren(...rows);const none=$('#analyses .no-reviews');if(none)none.hidden=!!rows.length;renderFirstLook(live)}
 let reviewWasLive=false,cardWaiting=false;
