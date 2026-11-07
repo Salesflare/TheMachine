@@ -436,7 +436,12 @@ def org_from_name(name, domain):
     """The organization a sender's display name gives ("Robin from Blue Harbor" at getblueharbor.com is "Blue Harbor"),
     or the whole name when the sender is the company itself ("Saltmarsh Media <hello@saltmarshmedia.com>"), only when
     it spells the address's domain (with get-, try-, -hq and the like around it). Else None."""
-    whole = ' '.join(str(name or '').split())
+    return _org_from_name(str(name or ''), str(domain or ''))
+
+
+@functools.lru_cache(maxsize=32768)
+def _org_from_name(name, domain):
+    whole = ' '.join(name.split())
     found = ORG_SAID.search(whole)
     said = ORG_LEGAL.sub('', ((found.group(1) or found.group(2)) if found else whole).strip(' ,.;:'))
     if not said or len(said) > 60 or '@' in said or DOMAIN_NAME.fullmatch(said):
@@ -452,6 +457,12 @@ def org_from_name(name, domain):
 def plain_name(name):
     """Comparable full name: accents, case, punctuation and extra spaces removed; None unless it
     looks like a person's full name (two or more words, no address)."""
+    return _plain_name(str(name or ''))
+
+
+@functools.lru_cache(maxsize=32768)
+def _plain_name(name):
+    """Once per name: a build compares the same names thousands of times."""
     name = person_name(name)
     if not name or '@' in name or name.casefold() in GENERIC_NAMES or DOMAIN_NAME.fullmatch(name):
         return None
@@ -1237,7 +1248,7 @@ def _build_in(db, config, now, team, kin, locked, history=False):
     signals = _signals(db, horizon)  # one statement: its own snapshot, no lock
     # History counts toward people and organizations only (machine/store/graph_history.py); the owner's own addresses,
     # projects and unnamed work stay from signals
-    old = [(r['id'], r['account_id'], r['kind'], parse_time(r['occurred_at']), _metadata(r['metadata'])) for r in graph_history.rows(db, horizon)] if history else []
+    old = [(r[0], r[1], r[2], parse_time(r[3]), _metadata(r[4])) for r in graph_history.rows(db, horizon)] if history else []
     old = [r for r in old if r[4] is not None]
     past = {r[0] for r in old}
     if not locked:
@@ -3713,13 +3724,32 @@ def org_key(org_id):
     return org_id[4:] if org_id.startswith('org:') and len(org_id) > 4 else None
 
 
-def own_domain(db, key):
-    """The owner's own company: their colleagues are at it, so it is never a project's counterpart."""
+def own_domain(db, key, colleagues=None):
+    """The owner's own company: their colleagues are at it, so it is never a project's counterpart. colleagues: what
+    colleagues() read once, for a caller that asks for many organizations (fill_orgs)."""
     tail = '@' + str(key or '')
+    if colleagues is not None:
+        orgs, identifiers = colleagues
+        return 'org:' + str(key or '') in orgs or any(i.endswith(tail) for i in identifiers)
     return bool(db.execute("SELECT 1 FROM graph_nodes WHERE kind='person' AND json_extract(info,'$.colleague') IS 1 "
                            "AND json_extract(info,'$.org')=? LIMIT 1", ('org:' + str(key or ''),)).fetchone()) or bool(
         db.execute("SELECT 1 FROM graph_nodes n, json_each(n.info,'$.identifiers') j WHERE n.kind='person' "
                    "AND json_extract(n.info,'$.colleague') IS 1 AND substr(j.value,-length(?))=? LIMIT 1", (tail, tail)).fetchone())
+
+
+def colleagues(db):
+    """(organizations, identifiers) of the owner's colleagues in the graph: own_domain for many organizations at once,
+    one read where each own_domain reads all people (a graph with history has thousands)."""
+    orgs, identifiers = set(), []
+    for r in db.execute("SELECT json_extract(info,'$.org'),json_extract(info,'$.identifiers') FROM graph_nodes WHERE kind='person' "
+                        "AND json_extract(info,'$.colleague') IS 1"):
+        orgs.add(r[0])
+        try:
+            found = json.loads(r[1] or '[]')
+        except ValueError:
+            found = []
+        identifiers += [i for i in found if isinstance(i, str)] if isinstance(found, list) else []
+    return orgs, identifiers
 
 
 def personal_mail(db, domain):
@@ -3766,7 +3796,12 @@ def infer_org(db, project_id, cache=None):
         key = org_key(info.get('org'))
         if key and key not in cache:
             org = db.execute("SELECT json_extract(info,'$.domain') domain FROM graph_nodes WHERE id=? AND kind='org'", ('org:' + key,)).fetchone()
-            cache[key] = bool(org) and not personal_mail(db, org['domain'] or key) and not own_domain(db, key)
+            if org and not personal_mail(db, org['domain'] or key):
+                if ('colleagues',) not in cache:
+                    cache[('colleagues',)] = colleagues(db)
+                cache[key] = not own_domain(db, key, cache[('colleagues',)])
+            else:
+                cache[key] = False
         if key and cache[key]:
             by_org[key] += w
     if not by_org or not total:
@@ -5062,7 +5097,7 @@ def forgotten(db):
         digests, salt = set(), None
     if not digests or not salt:
         return lambda identifier: False
-    return lambda identifier: forgotten_digest(salt, identifier) in digests
+    return functools.lru_cache(maxsize=None)(lambda identifier: forgotten_digest(salt, identifier) in digests)  # once per identifier and build
 
 
 def event_parties(kind, m, owner):
