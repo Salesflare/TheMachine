@@ -16,6 +16,7 @@ import fleet_learnings
 import graph
 import learning_loop
 import locale_prefs
+from machine.store.graph_history import live
 from machine.prompts.profile import VOICE_CHARS, VOICE_LINES
 from machine.sources.connectors import load_connector
 from machine.store.voices import OWN_KINDS, PROFILE_SKIP, sentences, similar, voice_block, voice_channel, VOICE_MAX
@@ -281,8 +282,8 @@ class ProfileStore:
         with self.connect() as db:
             owner = graph.Owner({'accounts': self.accounts}, db)
             owner.slack |= set(self.owner_user_ids)
-            rows = db.execute("SELECT * FROM graph_nodes WHERE kind='person' AND strength>=0.5 AND json_extract(info,'$.role') IS NULL AND coalesce(json_extract(info,'$.role_by'),'')!='owner' "
-                              'ORDER BY strength DESC LIMIT ?', (limit,)).fetchall()
+            rows = db.execute(f"SELECT * FROM graph_nodes WHERE kind='person' AND {live()}>=0.5 AND json_extract(info,'$.role') IS NULL AND coalesce(json_extract(info,'$.role_by'),'')!='owner' "
+                              f'ORDER BY {live()} DESC LIMIT ?', (limit,)).fetchall()
             for r in rows:
                 view = graph.node_view(r)
                 org = db.execute('SELECT name,info FROM graph_nodes WHERE id=?', (view['org'],)).fetchone() if view['org'] else None
@@ -300,8 +301,8 @@ class ProfileStore:
                      'about': (json.loads(r['info']).get('profile') or {}).get('about'), 'profile': enrichment.summary(json.loads(r['info']).get('profile')),
                      'people': [{'name': n['name'], 'role': n['role']} for n in graph.detail(db, r['id'], 0)['people_roles']][:6],
                      'messages': [m for n in graph.detail(db, r['id'], 0)['people_roles'][:2] for m in graph.person_evidence(db, n['id'], owner, 4)]}
-                    for r in db.execute("SELECT * FROM graph_nodes WHERE kind='org' AND strength>=1 AND json_extract(info,'$.role') IS NULL AND coalesce(json_extract(info,'$.role_by'),'')!='owner' "
-                                        'ORDER BY strength DESC LIMIT 6')]
+                    for r in db.execute(f"SELECT * FROM graph_nodes WHERE kind='org' AND {live()}>=1 AND json_extract(info,'$.role') IS NULL AND coalesce(json_extract(info,'$.role_by'),'')!='owner' "
+                                        f'ORDER BY {live()} DESC LIMIT 6')]
         return people, orgs
 
     def roles_start(self, again=False, auto=False):
@@ -334,8 +335,8 @@ class ProfileStore:
             owner = graph.Owner({'accounts': self.accounts}, db)
             owner.slack |= set(self.owner_user_ids)
             rows = db.execute("SELECT * FROM graph_nodes WHERE kind='person' AND json_extract(info,'$.org') IS NULL AND id NOT IN (SELECT identifier FROM person_orgs) "
-                              "AND (json_extract(info,'$.has_headline') OR (strength>=0.3 AND json_extract(info,'$.heard')>0)) "
-                              "ORDER BY NOT json_extract(info,'$.has_headline'),strength DESC LIMIT ?", (limit,)).fetchall()
+                              f"AND (json_extract(info,'$.has_headline') OR ({live()}>=0.3 AND json_extract(info,'$.heard')>0)) "
+                              f"ORDER BY NOT json_extract(info,'$.has_headline'),{live()} DESC LIMIT ?", (limit,)).fetchall()
             for r in rows:
                 said = graph.headline(db, r['id']) if json.loads(r['info'] or '{}').get('has_headline') else None
                 theirs = [m for m in graph.person_evidence(db, r['id'], owner) if m.get('from') not in (None, 'the owner')][-3:]

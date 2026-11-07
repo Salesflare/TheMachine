@@ -684,11 +684,15 @@ def _freemail_only(row):
     return not found or all(e.rsplit('@', 1)[1] in graph.FREEMAIL for e in found)
 
 
+# A node's signals and its history (machine/store/graph_history.py): who knows someone counts both, under the same rules
+NODE_EVENTS = '(SELECT node_id,event_id FROM graph_events UNION ALL SELECT node_id,event_id FROM graph_history_events)'
+
+
 def _work_last(db, node_id, accounts):
     """The last contact with someone in a work account, else None (then they're never mentioned)."""
     if not accounts:
         return None
-    row = db.execute('SELECT MAX(e.occurred_at) FROM graph_events g JOIN events e ON e.id=g.event_id WHERE g.node_id=? AND e.deleted=0 '
+    row = db.execute(f'SELECT MAX(e.occurred_at) FROM {NODE_EVENTS} g JOIN events e ON e.id=g.event_id WHERE g.node_id=? AND e.deleted=0 '
                      f'AND e.account_id IN ({",".join("?" * len(accounts))})', (node_id, *accounts)).fetchone()
     return row[0] if row and row[0] else None
 
@@ -697,7 +701,7 @@ def _shared_last(db, node_id, accounts, ok):
     """The last contact with someone in a work account that the Team Graph shares (ok), else None."""
     if not accounts:
         return None
-    for row in db.execute('SELECT e.id,e.occurred_at,e.account_id,e.kind,e.metadata FROM graph_events g JOIN events e ON e.id=g.event_id WHERE g.node_id=? '
+    for row in db.execute(f'SELECT e.id,e.occurred_at,e.account_id,e.kind,e.metadata FROM {NODE_EVENTS} g JOIN events e ON e.id=g.event_id WHERE g.node_id=? '
                           f'AND e.deleted=0 AND e.account_id IN ({",".join("?" * len(accounts))}) ORDER BY e.occurred_at DESC LIMIT 50', (node_id, *accounts)):
         if ok(row):
             return row['occurred_at']

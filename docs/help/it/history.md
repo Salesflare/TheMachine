@@ -1,26 +1,28 @@
 ---
 title: Cronologia
 area: connections
-summary: Circa un anno di vecchie email, riunioni e chat WhatsApp, da cercare e leggere. Mai un'attività.
+summary: Circa un anno di vecchie email, riunioni e chat WhatsApp, per cercare, leggere e conoscere le tue persone. Mai un'attività.
 covers: history
-code: machine/app/history.py, machine/store/history.py
+code: machine/app/history.py, machine/store/history.py, machine/store/graph_history.py
 keywords: older messages, backfill, archive, past emails
 ---
 ## Cosa tiene
 
-Ogni account email, calendario e WhatsApp tiene circa un anno di vecchi messaggi e riunioni. La ricerca li trova, una conversazione li mostra e il [Calendario](calendar.md) mostra le riunioni passate.
+Ogni account email, calendario e WhatsApp tiene circa un anno di vecchi messaggi e riunioni. La ricerca li trova, anche per significato, una conversazione li mostra e il [Calendario](calendar.md) mostra le riunioni passate.
 
 La sua scheda dice fin dove arriva: **Cronologia: fino a** un mese, quando è arrivata.
 
+## Cosa aggiunge al tuo Graph
+
+Il tuo [Graph](graph.md) la conta: quanto sei vicino alle persone, quando vi siete sentiti l'ultima volta, chi conosce chi, e le persone e le organizzazioni stesse. Le risposte della tua Fleet a "chi conosce qualcuno" la usano dagli account di lavoro, con le stesse [regole di condivisione](sharing-rules.md) delle email nuove.
+
 ## Cosa non fa mai
 
-La cronologia serve solo a ritrovare le cose. Non crea mai un'attività o una promessa, non entra mai in un controllo, non conta mai come nuova e non va mai nel tuo Graph o al tuo team. Nessun modello di IA la legge.
-
-Attività e promesse arrivano ancora solo dai messaggi nuovi, come prima.
+Non crea mai un'attività o una promessa, non conta mai come nuova, non avvia mai un controllo e non entra mai in un progetto. La cronologia personale resta personale, come le email personali. A parte la ricerca per significato, nessun modello di IA la legge.
 
 ## Quando funziona
 
-Comincia quando il primo sguardo ai tuoi messaggi è finito e procede piano in background. Aspetta mentre è in corso un controllo o una sincronizzazione, e quando la tua Machine ha poco spazio su disco o poca memoria. Dopo un riavvio riprende da dove era.
+Comincia quando il primo sguardo ai tuoi messaggi è finito, e per ogni connessione solo quando la sua prima settimana è arrivata, anche per una che aggiungi dopo. Procede piano in background e aspetta mentre è in corso un controllo o una sincronizzazione, quando un servizio chiede di rallentare o quando la tua Machine ha poco spazio. I messaggi nuovi vengono sempre prima.
 
 Usa l'accesso che ogni connessione ha già. Non viene chiesto niente di nuovo.
 

@@ -307,7 +307,7 @@ class GraphActionsApp:
     def graph_build(self):
         with self.store.connect() as db:
             db.isolation_level = None  # graph.build runs its own transaction
-            return graph.build(db, self.config, now(), self.fleet_addresses(), self.fleet_circles())
+            return graph.build(db, self.config, now(), self.fleet_addresses(), self.fleet_circles(), history=True)
 
     def graph_event_lines(self, event_ids, keep_order=False):
         """One line per signal, newest first (keep_order: in the order given): "<id> (<account>) <what, from whom, when> ·
@@ -481,6 +481,8 @@ class GraphActionsApp:
                 self.graph_build()
                 seen = self.graph_freshness()
                 wait = 600
+                if self.history_graph_step():  # a slice of history taken in: the next build counts it, in a minute
+                    wait = 60
             except Exception as error:
                 LOG.error('graph error=%s', type(error).__name__)
                 wait = 1800
@@ -519,17 +521,18 @@ class GraphActionsApp:
             row=db.execute('SELECT account_ids,event_ids FROM suggestions WHERE id=?',(suggestion_id,)).fetchone()
         accounts,ids=json.loads(row['account_ids'] or '[]'),json.loads(row['event_ids'] or '[]')
         if not accounts or not ids:return ''
-        found,_=self.related(accounts,ids,'',limit)
+        found,_=self.related(accounts,ids,'',limit,signals_only=True)  # a preparation: never history
         rows={r['id']:r for r in self.store.events(accounts,event_ids=[i for i,_ in found])} if found else {}
         # source_line skips the owner's own to-dos (owner.card: the card says "Added by you"); here each one names what it is
         where=lambda r:source_text(r) if r['kind']=='owner.card' else source_line([r])[8:]
         lines=[f"- {i} ({rows[i]['account_id']}) {where(rows[i])} · {clamp(' '.join(rows[i]['title'].split()),100)}" for i,_ in found if i in rows]
         return ('\n\nPossibly related (found by meaning in this task\'s accounts; read any that matter with events, its account and event_ids):\n'+'\n'.join(lines)) if lines else ''
 
-    def related(self, accounts, event_ids=(), query='', limit=8, exclude=(), timeout=30):
+    def related(self, accounts, event_ids=(), query='', limit=8, exclude=(), timeout=30, signals_only=False):
         """([(event_id, similarity)], semantic) within the given accounts. With the embedding server
         down (or slower than `timeout` seconds) a query still gets keyword matches."""
-        try:return embeddings.related(self.store.connect,embeddings.settings(self.config),accounts,event_ids,query,limit,exclude=exclude,timeout=timeout),True
+        try:return embeddings.related(self.store.connect,embeddings.settings(self.config),accounts,event_ids,query,limit,exclude=exclude,timeout=timeout,
+                                      signals_only=signals_only),True
         except embeddings.EmbeddingError as error:
             LOG.error('related error=%s',error)
             if not query.strip():return [],False

@@ -13,14 +13,19 @@ import logging
 import os
 from pathlib import Path
 import platform
+import re
 import shutil
 import sqlite3
 import threading
+import time
 
 import abilities
 import check_now
+import embeddings
+import graph
+from machine.store import graph_history
 from machine.store import history
-from sources import SourceError
+from sources import SourceError, rate_limited, upstream_busy
 from timeutil import now
 
 LOG = logging.getLogger('personal-assistant')
@@ -42,6 +47,10 @@ DATABASE_HEADROOM = 2
 FREE_MEMORY_BYTES = 500 * 1024 ** 2  # pauses with less memory available (a hosted Machine has 3.8 GB)
 ERROR_WAIT_DAYS = 1 / 24  # a connection whose step failed waits an hour, the others go on
 FIRST_LOOK_GRACE = dt.timedelta(days=1)  # a Machine from before the first look: history waits this long after its first read
+RATE_LIMIT_REST = 1800  # seconds all history work rests after a 429 or quota answer to it
+LIVE_LIMIT_WINDOW = dt.timedelta(minutes=30)  # a live sync's 429 this recent holds history back too
+EMBED_BATCH = 8  # history events per embedding request: small, so a live one never waits long behind it
+EMBED_GAP_SECONDS = 30  # between two history embedding batches
 MAIL, CALENDAR, WHATSAPP = ('gmail', 'outlook'), ('calendar', 'outlook_calendar'), ('whatsapp',)
 
 
@@ -110,13 +119,31 @@ class HistoryApp:
                 and (kind(a) != 'whatsapp' or a.get('store'))]
 
     history_why = None  # why the last step waited (a code from history_wait, or 'sync'), None when it went
+    history_rested = 0.0  # time.monotonic() until which history rests after a source or the embedding server said slow down
 
     def history_wait(self, current=None):
         """Why history waits now (a short code), or None when a step may go: it is off, the first look hasn't ended,
-        a review or a first import runs, or the disk or memory is short. A connection's own sync read only holds back
-        that connection (history_step), so on a Machine with many sources there's always a gap to step in."""
+        a review or a first import runs, a source asked to slow down, or the disk or memory is short. A connection's
+        own sync read, or its own first import not being in yet, only holds back that connection (history_step), so on
+        a Machine with many sources there's always a gap to step in."""
         if not history.depth(self.config) or not self.history_accounts():
             return 'off'
+        return self.history_hold(current)
+
+    def history_rest(self, error):
+        """A 429 or quota answer to a history read: all history work (backfill, Graph passes, embeddings) rests for
+        RATE_LIMIT_REST (or longer when the source says so), so the budget stays for live sync. True when it was one."""
+        if not (rate_limited(error) or upstream_busy(error)):
+            return False
+        self.history_rested = time.monotonic() + max(RATE_LIMIT_REST, int(getattr(error, 'retry_after', None) or 0))
+        return True
+
+    def history_hold(self, current=None):
+        """What holds back every kind of history work (the backfill, a Graph pass over history, history embeddings),
+        or None: the first look hasn't ended, a review or a first import runs, a source asked to slow down (a history
+        read's own 429, or a live sync's), or the disk or memory is short."""
+        if time.monotonic() < self.history_rested:
+            return 'rate_limit'
         current = current or dt.datetime.fromisoformat(now())
         with self.store.connect() as db:
             if not db.execute("SELECT 1 FROM milestones WHERE name='first_dig_done'").fetchone():
@@ -132,6 +159,11 @@ class HistoryApp:
                     state = json.loads(state)
                     if state.get('mode') in ('bootstrap', 'resync') or state.get('page_token'):
                         return 'first_import'
+            # a live sync the service asked to slow down: history spends none of what it has left
+            for error, at in db.execute('SELECT error,error_at FROM checkpoints WHERE error IS NOT NULL AND error_at>?',
+                                        ((current - LIVE_LIMIT_WINDOW).isoformat(),)):
+                if 'HTTP_429' in str(error) or re.search(r'rate_?limit|quota', str(error), re.I):
+                    return 'rate_limit'
         if not free_disk(self.store.path):
             return 'disk'
         if not free_memory():
@@ -149,13 +181,17 @@ class HistoryApp:
         for account in self.history_accounts():
             with self.store.connect() as db:
                 found = history.get(db, account['id'])
+                imported = history.first_import_done(db, account['id'])
             if found and found['done_at'] and (found['depth_days'] or 0) >= days:
                 continue
+            if not imported:
+                reading = reading or 'first_import'
+                continue  # its own first week isn't in yet (a connection added later too): never before that
             state = dict(found['state']) if found else {}
             if state.get('error_at', '') > history.before(stamp, ERROR_WAIT_DAYS):
                 continue  # failed a while ago: the others first
             if resting is not None and account['id'] not in resting:
-                reading = True
+                reading = 'sync'
                 continue  # its own sync reads it now: another one, or this one once that read is done
             if found and found['done_at']:  # a deeper setting since: walk on from where it stopped
                 state.update(upper=state.get('target'), target=None, cursor=None, token=None)
@@ -168,14 +204,14 @@ class HistoryApp:
                 LOG.info('history account=%s waits error=%s', account['id'], error)
                 with self.store.connect() as db:
                     history.save(db, account['id'], {**state, 'error_at': stamp}, stamp)
-                return self.history_waits('error')
+                return self.history_waits('rate_limit' if self.history_rest(error) else 'error')
             with self.store.connect() as db:
                 history.save(db, account['id'], state, now(), kept, oldest, done, days)
             self.history_waits(None)
             if kept or done:
                 LOG.info('history account=%s kept=%d done=%s', account['id'], kept, done)
             return True
-        return self.history_waits('sync' if reading else 'done')
+        return self.history_waits(reading or 'done')
 
     def history_waits(self, why):
         """Note why it waits (None: it goes), logged once per change rather than every step. Always False."""
@@ -183,6 +219,37 @@ class HistoryApp:
             LOG.info('history %s', f'waits reason={why}' if why else 'goes')
             self.history_why = why
         return False
+
+    def history_graph_step(self):
+        """After a graph build (graph_worker): the Graph takes in one more slice of history (graph_history.advance),
+        only while nothing holds history back. True when it did, so the next build counts it soon."""
+        if self.history_hold():
+            return False
+        stamp = now()
+        horizon = (dt.datetime.fromisoformat(stamp) - dt.timedelta(days=graph.HORIZON_DAYS)).isoformat()
+        with self.store.connect() as db:
+            graph_history.ensure(db)
+            return graph_history.advance(db, horizon, stamp)
+
+    def embed_pass(self, settings):
+        """One pass of embedding_worker: vectors for new and changed signals, newest first, then history's at a slower
+        pace once none waits. Seconds until the next pass."""
+        done = embeddings.embed_pending(self.store.connect, settings, 16)
+        return 5 if done == 16 else 60 if done else min(60, self.history_embed_step(settings))
+
+    def history_embed_step(self, settings):
+        """One small batch of history vectors for Search by meaning (embedding_worker calls it only when no signal waits
+        for one), newest first. Seconds until the next one: longer while held back, after a 429 or when all are in."""
+        if not settings or self.history_hold():
+            return WAIT_SECONDS
+        try:
+            done = embeddings.embed_pending(self.store.connect, settings, EMBED_BATCH, history=True)
+        except embeddings.EmbeddingError as error:
+            status = str(error)[5:] if str(error).startswith('http_') else ''
+            if status.isdigit() and self.history_rest(SourceError('embeddings', int(status))):
+                LOG.info('history embeddings rest error=%s', error)
+            return WAIT_SECONDS
+        return EMBED_GAP_SECONDS if done else WAIT_SECONDS
 
     def history_upper(self, account, stamp):
         """Where a connection's history ends: where its own import starts (a mailbox's first import, the week a

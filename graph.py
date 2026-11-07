@@ -32,6 +32,7 @@ import collections
 import contextlib
 import datetime as dt
 import email.utils
+import functools
 import hashlib
 import hmac
 import json
@@ -50,6 +51,7 @@ import timeutil
 
 import enrichment
 import person_summary
+from machine.store import graph_history
 
 SCHEMA = '''
 CREATE TABLE IF NOT EXISTS projects(id INTEGER PRIMARY KEY,name TEXT NOT NULL UNIQUE COLLATE NOCASE,created_at TEXT NOT NULL,closed_at TEXT);
@@ -125,6 +127,7 @@ DAY_CAP = 1.0           # one day of contact, however many messages
 FLOOR = 0.01            # faded below this: not stored
 HORIZON_DAYS = 400      # older signals have faded far below the floor anyway
 EVENTS_PER_NODE = 40
+NEW = "signals<=3 AND last_at>=? AND json_extract(info,'$.history') IS NULL"  # New this week: never someone history knows
 BULK_LABELS = {'CATEGORY_PROMOTIONS', 'CATEGORY_SOCIAL', 'CATEGORY_FORUMS', 'CATEGORY_UPDATES'}
 BULK = re.compile(r'(?:^|[._+-])(?:no[._-]?reply|do[._-]?not[._-]?reply|notifications?|notify|newsletters?|news|mailer-daemon|mailer|bounces?|postmaster|'
                   r'marketing|digest|alerts?|automated|receipts?|invoices?|billing|notetaker)(?:[._+-]|@)|@(?:[\w-]+\.)*(?:mcsv\.net|mcdlv\.net|'
@@ -215,6 +218,7 @@ cunhado amigo amiga namorada namorado madrinha padrinho
 def ensure(db):
     """Create the graph tables, and add columns that came later."""
     db.executescript(SCHEMA)
+    graph_history.ensure(db)
     if 'answer' not in {r[1] for r in db.execute('PRAGMA table_info(board_offers)')}:
         db.execute('ALTER TABLE board_offers ADD COLUMN answer TEXT')
     if 'probable' not in {r[1] for r in db.execute('PRAGMA table_info(graph_events)')}:
@@ -325,7 +329,13 @@ class Owner:
 def addresses(value):
     if isinstance(value, list):
         value = ', '.join(map(str, value))
-    return [(name.strip().strip('"'), addr.strip().lower()) for name, addr in email.utils.getaddresses([str(value or '')]) if '@' in addr]
+    return list(_addresses(str(value or '')))
+
+
+@functools.lru_cache(maxsize=32768)
+def _addresses(text):
+    """Parsed once per header: a build reads the same From and To lines thousands of times."""
+    return tuple((name.strip().strip('"'), addr.strip().lower()) for name, addr in email.utils.getaddresses([text]) if '@' in addr)
 
 
 def bulk(address):
@@ -356,7 +366,12 @@ def person_name(name):
     """Only the name, without what people or their tools add to it: "Kim Lee (Initech)", "Ann Bell | Acme",
     "Sam at Globex", "(second) Pat Lee", "Doe EXT, Sam" and "Smith, PhD". "Doe, Jane" is
     turned around. Left as it was when nothing that looks like a name is left."""
-    raw = ' '.join(str(name or '').replace('"', ' ').split())
+    return _person_name(str(name or ''))
+
+
+@functools.lru_cache(maxsize=32768)
+def _person_name(name):
+    raw = ' '.join(name.replace('"', ' ').split())
     text = re.sub(r'[\(\[\{<][^)\]}>]*[\)\]}>]', ' ', raw)  # (Initech), [Acme], (@handle), <note>
     text = SUFFIX.sub('', ' '.join(text.split()))  # "| Acme", "- Acme", "at Acme", "via LinkedIn"
     text = ''.join(c for c in text if not unicodedata.category(c).startswith('S'))  # emoji and symbols
@@ -1122,17 +1137,17 @@ class Outdated(Exception):
     computed without writing: build tries again."""
 
 
-def build(db, config, now, team=(), kin=None):
+def build(db, config, now, team=(), kin=None, history=False):
     """Publish one coherent graph. Concurrent edits cannot be overwritten by an older build (graph_edits). team: the
     addresses of the people in the owner's Fleets, so an address they use too is never the owner's own (own_addresses.py).
     kin: which of them are in the owner's Work Fleets, Family or Friends (circles), so someone only in Family or
-    Friends is Personal."""
+    Friends is Personal. history: count the history rows a graph pass took in (machine/store/graph_history.py)."""
     for _ in range(BUILD_TRIES):
         try:
-            return _build(db, config, now, team, kin, locked=False)
+            return _build(db, config, now, team, kin, locked=False, history=history)
         except Outdated:
             continue
-    return _build(db, config, now, team, kin, locked=True)  # the last try holds the lock throughout
+    return _build(db, config, now, team, kin, locked=True, history=history)  # the last try holds the lock throughout
 
 
 def _watch(db):
@@ -1153,8 +1168,16 @@ def _edits(db):
     return row[0] if row else 0
 
 
+def _metadata(text):
+    try:
+        m = json.loads(text)
+    except ValueError:
+        return None
+    return m if isinstance(m, dict) else {}
+
+
 def _signals(db, horizon):
-    # Signals only: history (machine/store/history.py) is to search and read, never closeness, roles or projects
+    # Signals only: history comes in apart (machine/store/graph_history.py), for people and organizations only
     rows = db.execute("SELECT id,account_id,kind,occurred_at,metadata FROM events WHERE deleted=0 AND history=0 AND occurred_at>=? ORDER BY occurred_at", (horizon,)).fetchall()
     signals = []
     for r in rows:
@@ -1173,13 +1196,13 @@ def _drop_unusable_profiles(db):
             db.execute("UPDATE org_profiles SET status='none',profile=NULL WHERE domain=? AND status='found'", (r['domain'],))
 
 
-def _build(db, config, now, team=(), kin=None, locked=True):
+def _build(db, config, now, team=(), kin=None, locked=True, history=False):
     """Recompute graph_nodes, graph_links and graph_events. Returns a short summary. locked: in one write transaction
     throughout; else computed from a read snapshot and published only when no edit came meanwhile (Outdated)."""
     try:
         if locked:
             db.execute('BEGIN IMMEDIATE')
-        return _build_in(db, config, now, team, kin, locked)
+        return _build_in(db, config, now, team, kin, locked, history)
     except sqlite3.OperationalError as error:
         if not locked and 'readonly' in str(error):  # something on the way writes after all: the next try holds the lock
             raise Outdated() from None
@@ -1191,13 +1214,18 @@ def _build(db, config, now, team=(), kin=None, locked=True):
             db.execute('ROLLBACK')
 
 
-def _build_in(db, config, now, team, kin, locked):
+def _build_in(db, config, now, team, kin, locked, history=False):
     import own_addresses
     started = dt.datetime.now(dt.timezone.utc)
     current = parse_time(now)
     tz = owner_tz(config)
     horizon = (current - dt.timedelta(days=HORIZON_DAYS)).isoformat()
     signals = _signals(db, horizon)  # one statement: its own snapshot, no lock
+    # History counts toward people and organizations only (machine/store/graph_history.py); the owner's own addresses,
+    # projects and unnamed work stay from signals
+    old = [(r['id'], r['account_id'], r['kind'], parse_time(r['occurred_at']), _metadata(r['metadata'])) for r in graph_history.rows(db, horizon)] if history else []
+    old = [r for r in old if r[4] is not None]
+    past = {r[0] for r in old}
     if not locked:
         db.execute('BEGIN IMMEDIATE')
     _watch(db)
@@ -1216,7 +1244,7 @@ def _build_in(db, config, now, team, kin, locked):
         seen = _edits(db)
         db.execute('PRAGMA query_only=ON')  # computing writes nothing: no lock is taken until the publish
     wrote_to = set()
-    for _, _, kind, _, m in signals:
+    for _, _, kind, _, m in signals + old:
         if kind == 'gmail.message' and ('SENT' in (m.get('labels') or ()) or any(a in owner.emails for _, a in addresses(m.get('from'))[:1])):
             wrote_to |= {a for _, a in addresses(m.get('to')) + addresses(m.get('cc'))}
 
@@ -1238,7 +1266,7 @@ def _build_in(db, config, now, team, kin, locked):
     headlines = set()  # LinkedIn conversations whose person has a headline (read at view time: it stays sealed in the signal)
     named_on = collections.defaultdict(lambda: collections.defaultdict(set))  # (message or conversation) -> full name -> identifiers
     senders = collections.defaultdict(list)  # email identifier -> [(at, event id)] of mail it wrote: its own text may carry its number
-    for event_id, account_id, kind, at, m in signals:
+    for event_id, account_id, kind, at, m in signals + old:  # signals first: the same email as a signal and history counts as the signal
         if kind == 'gmail.message' and m.get('message-id'):
             if m['message-id'] in seen_message_ids:
                 continue  # the same email in two mailboxes counts once
@@ -1273,7 +1301,7 @@ def _build_in(db, config, now, team, kin, locked):
                 named_on[('message', event_id)][full].add(identifier)
                 if key and exact:
                     named_on[('thread', account_id, key)][full].add(identifier)
-        if kind == 'gmail.message' and found[0][3] in ('them', 'seen') and found[0][0].startswith('email:'):
+        if kind == 'gmail.message' and found[0][3] in ('them', 'seen') and found[0][0].startswith('email:') and event_id not in past:
             senders[found[0][0]].append((at, event_id))
         if any(role in ('owner', 'met') for _, _, _, role in found):
             owner_events.add(event_id)
@@ -1358,10 +1386,12 @@ def _build_in(db, config, now, team, kin, locked):
     # How strong: per day, capped; faded by age.
     day_weight = collections.defaultdict(float)
     roles = collections.defaultdict(lambda: collections.defaultdict(set))
+    live_roles = collections.defaultdict(lambda: collections.defaultdict(set))  # wrote, heard, met: what reviews read
     pair_day = collections.defaultdict(float)
     node_events = collections.defaultdict(list)
     event_people, direct_people = {}, {}
     next_meeting, accounts = {}, collections.defaultdict(set)
+    live_weight, history_events = collections.defaultdict(float), collections.defaultdict(list)
     for event_id, (kind, at, account_id, m, found) in per_event.items():
         people = {}
         for identifier, _, weight, role in found:
@@ -1373,12 +1403,15 @@ def _build_in(db, config, now, team, kin, locked):
                 continue
             day = at.astimezone(tz).date()  # the owner's day: a message at 00:17 on Sunday is Sunday
             day_weight[(node, day)] += weight
+            if event_id not in past:
+                live_weight[(node, day)] += weight
+                live_roles[node][role].add(day)
             roles[node][role].add(day)
             accounts[node].add(account_id)
         event_people[event_id] = list(people)
         direct_people[event_id] = [union.find(i) for i, _, weight, role in found if role != 'seen']
         for node in people:
-            node_events[node].append((at, event_id))
+            (history_events if event_id in past else node_events)[node].append((at, event_id))
         if at <= current and 2 <= len(people) <= 8:
             ordered = sorted(people)
             for i, a in enumerate(ordered):
@@ -1388,10 +1421,13 @@ def _build_in(db, config, now, team, kin, locked):
     def age(day):
         return (current - dt.datetime.combine(day, dt.time(12), dt.timezone.utc)).total_seconds() / 86400
 
-    strength, last_day = collections.defaultdict(float), {}
+    strength, last_day, live = collections.defaultdict(float), {}, collections.defaultdict(float)
     for (node, day), weight in day_weight.items():
         strength[node] += fade(min(DAY_CAP, weight), age(day), HALF_LIFE['person'])
         last_day[node] = max(last_day.get(node, day), day)
+    for (node, day), weight in live_weight.items():
+        live[node] += fade(min(DAY_CAP, weight), age(day), HALF_LIFE['person'])
+    signal_events = {e: v for e, v in per_event.items() if e not in past}  # projects and unnamed work: signals only
 
     # Projects: labels, spread to the rest of their threads.
     projects = {r['id']: dict(r) for r in db.execute('SELECT id,name,created_at,closed_at,board_id,stage,made_by FROM projects')}
@@ -1414,9 +1450,9 @@ def _build_in(db, config, now, team, kin, locked):
                 if exact or abs((at - tagged_at).total_seconds()) <= 2 * 86400:
                     spread.setdefault(event_id, set()).update(ids)
     times = {event_id: at for event_id, _, _, at, _ in signals}
-    vectors = load_vectors(db, set(per_event), config['embeddings']) if isinstance(config.get('embeddings'), dict) and config['embeddings'].get('enabled') is not False else {}
+    vectors = load_vectors(db, set(signal_events), config['embeddings']) if isinstance(config.get('embeddings'), dict) and config['embeddings'].get('enabled') is not False else {}
     probable = probable_projects(spread, event_people, vectors, times, current, {pid for pid, p in projects.items() if not p['closed_at']},
-                                 {e: v[0] for e, v in per_event.items()})
+                                 {e: v[0] for e, v in signal_events.items()})
     heat_day = collections.defaultdict(float)
     project_events = collections.defaultdict(list)
     project_people = collections.defaultdict(float)
@@ -1439,7 +1475,7 @@ def _build_in(db, config, now, team, kin, locked):
             key = (r['node_id'], r['project_id'])
             project_people[key] = max(project_people[key], 0.5)
             project_people_last.setdefault(key, current)
-    unnamed = unnamed_work(per_event, event_people, owner_events, set(spread) | set(probable), vectors, current)
+    unnamed = unnamed_work(signal_events, event_people, owner_events, set(spread) | set(probable), vectors, current)
 
     # The owner's decisions on cards: once per card, for the people it was directly about.
     decided = collections.defaultdict(float)
@@ -1469,9 +1505,11 @@ def _build_in(db, config, now, team, kin, locked):
             heat_day[(project_id, card['at'].date())] += card['weight']
     for node, weight in decided.items():
         strength[node] = max(0.0, strength[node] + weight)
+        live[node] = max(0.0, live[node] + weight)
     for identifier in manual_people:  # added by hand: shown even before the first message
         node = union.find(identifier)
         strength[node] = max(strength[node], FLOOR)
+        live[node] = max(live[node], FLOOR)
 
     # What says a person is work or personal (auto_side): the sides of the accounts their conversations came from, the
     # sharing review's calls on their threads, and the projects they're on.
@@ -1611,13 +1649,15 @@ def _build_in(db, config, now, team, kin, locked):
                                        [side_of_account.get(a) for a in accounts[node]])
         info = {'ids': sorted({shown_id(i, x_names) for i in group if not i.startswith('manual:')}), 'org': ('org:' + domains[0]) if domains and not said_org else None,
                 'org_by': 'email' if domains and not said_org else None, 'has_headline': any(i in headlines for i in group),
-                'wrote': len(roles[node]['owner']), 'heard': len(roles[node]['them']), 'met': len(roles[node]['met']),
+                'wrote': len(live_roles[node]['owner']), 'heard': len(live_roles[node]['them']), 'met': len(live_roles[node]['met']),
                 'accounts': sorted(accounts[node]), 'next_meeting': next_meeting[node].isoformat() if node in next_meeting else None,
                 'colleague': colleague, 'role': role, 'role_by': role_by, 'role_id': role_id, 'identifiers': group, 'hints': hints, 'seen_only': not talk,
                 'profile': person_profile, 'edited': sorted(edited), 'side': side, 'side_by': 'owner' if edited.get('side') else None,
                 'side_why': side_why,
                 'manual': any(i in manual_people for i in group), 'notes': edited.get('notes'),
                 **contacts}
+        if history_events.get(node):
+            info.update(history=len(history_events[node]), live=round(live[node], 4))
         if len(group) > 1:
             info['joined'] = [{'a': x, 'b': y, 'a_shown': shown_id(x, x_names), 'b_shown': shown_id(y, x_names), 'why': JOINED_WHY.get(why, 'joined'),
                                'by': why} for x, y, why in joined.get(node, ()) if why]
@@ -1684,6 +1724,9 @@ def _build_in(db, config, now, team, kin, locked):
             ask['name'] = names_now.get(ask['id'])
     nodes = [n[:9] + (json.dumps(n[9]),) if isinstance(n[9], dict) else n for n in nodes]
     kept = {n[0] for n in nodes}
+
+    def org_live(people):  # an organization's closeness from signals alone, when history counts in it
+        return {'live': round(sum(live[p] for p in people), 4)} if any(history_events.get(p) for p in people) else {}
     for org_id, people in named_orgs.items():
         role, role_by = said.get(org_id, (None, None))
         made = next((r['name'] for r in manual if r['identifier'] == org_id), None)
@@ -1691,7 +1734,7 @@ def _build_in(db, config, now, team, kin, locked):
                       round(sum(v for _, v, _ in people), 4), max((last_day[p].isoformat() for p, _, _ in people if p in last_day), default=None),
                       len(people), None, 0, None, json.dumps({'domain': None, 'role': role, 'role_by': role_by, 'paying': False, 'profile': edits.get(org_id) or None,
                                                               'edited': sorted(edits.get(org_id, {})), 'wrong': False, 'stated': True,
-                                                              'manual': made is not None})))
+                                                              'manual': made is not None, **org_live([p for p, _, _ in people])})))
         for node, value, _ in people:
             links.append((node, org_id, 'member', round(value, 4), None))
     for domain, people in members.items():
@@ -1705,7 +1748,7 @@ def _build_in(db, config, now, team, kin, locked):
                       max((last_day[p].isoformat() for p, _ in people if p in last_day), default=None), len(people), None, 0, None,
                       json.dumps({'domain': domain, 'role': role, 'role_by': role_by, 'paying': domain in paying_names, 'profile': profile,
                                   'edited': sorted(edits.get(domain, {})), 'wrong': domain in wrong,
-                                  'manual': any(r['identifier'] == 'org:' + domain for r in manual)})))
+                                  'manual': any(r['identifier'] == 'org:' + domain for r in manual), **org_live([p for p, _ in people])})))
         for node, value in people:
             links.append((node, 'org:' + domain, 'member', round(value, 4), None))
     two_weeks = current - dt.timedelta(days=14)
@@ -1760,6 +1803,7 @@ def _build_in(db, config, now, team, kin, locked):
             # Complete membership for old task evidence; only readers cap display lists.
             # direct: the person was in contact with the owner on it, not merely on it.
             event_rows += [(node, e, at.isoformat(), guess, int(node in direct_people.get(e, ()))) for at, e, guess in sorted(items)]
+    history_rows = [(node, e, at.isoformat()) for node, items in history_events.items() if node in kept for at, e in items]
     names_of = {n[0]: n[2] for n in nodes}
     unnamed_rows = []
     for group, people, last in unnamed:
@@ -1791,11 +1835,12 @@ def _build_in(db, config, now, team, kin, locked):
     db.executemany('INSERT INTO graph_events(node_id,event_id,at,probable,direct) VALUES(?,?,?,?,?) '
                    'ON CONFLICT(node_id,event_id) DO UPDATE SET probable=min(probable,excluded.probable),direct=max(direct,excluded.direct)', event_rows)
     db.executemany('INSERT OR REPLACE INTO graph_unnamed(key,event_ids,people,titles,size,last_at) VALUES(?,?,?,?,?,?)', unnamed_rows)
+    graph_history.publish(db, history_rows)
     db.execute('INSERT OR REPLACE INTO graph_state(id,built_at,signals,took_ms) VALUES(1,?,?,?)', (now, len(signals), took))
     fill_orgs(db, now)  # projects with no organization yet get their people's, where that is clear
     db.execute('COMMIT')
     return {'people': sum(1 for n in nodes if n[1] == 'person'), 'projects': sum(1 for n in nodes if n[1] == 'project'),
-            'links': len(links), 'signals': len(signals), 'probable': len(probable), 'unnamed': len(unnamed_rows), 'same': len(same_rows),
+            'links': len(links), 'signals': len(signals), 'history': len(old), 'probable': len(probable), 'unnamed': len(unnamed_rows), 'same': len(same_rows),
             'joined': sum(1 for _, _, why in union.edges if why in ('message', 'thread', 'profile', 'signature', 'name')), 'took_ms': took}
 
 
@@ -2000,7 +2045,7 @@ def overview(db, limit=12):
             'projects': projects,
             'people': rows("SELECT * FROM graph_nodes WHERE kind='person' ORDER BY strength DESC LIMIT ?", limit),
             'quiet': rows("SELECT * FROM graph_nodes WHERE kind='person' AND quiet=1 ORDER BY strength DESC LIMIT ?", limit),
-            'new': rows("SELECT * FROM graph_nodes WHERE kind='person' AND signals<=3 AND last_at>=? ORDER BY strength DESC LIMIT ?",
+            'new': rows(f"SELECT * FROM graph_nodes WHERE kind='person' AND {NEW} ORDER BY strength DESC LIMIT ?",
                         week_ago, 8),
             'orgs': rows("SELECT * FROM graph_nodes WHERE kind='org' ORDER BY strength DESC LIMIT ?", 8),
             'whos_who': unconfirmed(db),
@@ -2040,7 +2085,7 @@ def _week_ago(db):
 # The lists the Graph panes show as tabs, each the whole list, strongest first: People (Closest, Gone quiet, New this
 # week), Organizations (Closest, Warm up) and Projects (Open, Done). The overview keeps its short lists for the agent.
 PAGED = {'people': ("kind='person'", ()), 'quiet': ("kind='person' AND quiet=1", ()),
-         'new': ("kind='person' AND signals<=3 AND last_at>=?", (_week_ago,)),
+         'new': ("kind='person' AND " + NEW, (_week_ago,)),
          'work': ("kind='person' AND json_extract(info,'$.side')='work'", ()), 'personal': ("kind='person' AND json_extract(info,'$.side')='personal'", ()),
          'orgs': ("kind='org'", ()),
          'projects': ("kind='project' AND json_extract(info,'$.closed_at') IS NULL", ()),

@@ -1,26 +1,28 @@
 ---
 title: Histórico
 area: connections
-summary: Cerca de um ano de e-mails, reuniões e conversas do WhatsApp antigos, para pesquisar e ler. Nunca uma tarefa.
+summary: Cerca de um ano de e-mails, reuniões e conversas do WhatsApp antigos, para pesquisar, ler e conhecer as suas pessoas. Nunca uma tarefa.
 covers: history
-code: machine/app/history.py, machine/store/history.py
+code: machine/app/history.py, machine/store/history.py, machine/store/graph_history.py
 keywords: older messages, backfill, archive, past emails
 ---
 ## O que ele guarda
 
-Cada conta de e-mail, agenda e WhatsApp guarda cerca de um ano de mensagens e reuniões antigas. A pesquisa as encontra, uma conversa as mostra e a [Agenda](calendar.md) mostra as reuniões passadas.
+Cada conta de e-mail, agenda e WhatsApp guarda cerca de um ano de mensagens e reuniões antigas. A pesquisa as encontra, também por significado, uma conversa as mostra e a [Agenda](calendar.md) mostra as reuniões passadas.
 
 O cartão diz até onde ele vai: **Histórico: até** um mês, quando já chegou.
 
+## O que ele traz para o seu Graph
+
+O seu [Graph](graph.md) conta com ele: o quanto você é próximo das pessoas, quando vocês se falaram pela última vez, quem conhece quem, e as próprias pessoas e organizações. As respostas da sua Fleet a "quem conhece alguém" usam ele a partir das contas de trabalho, com as mesmas [regras de compartilhamento](sharing-rules.md) dos e-mails novos.
+
 ## O que ele nunca faz
 
-O histórico serve só para consultar. Ele nunca cria uma tarefa ou uma promessa, nunca entra numa verificação, nunca conta como novo e nunca vai para o seu Graph ou a sua equipe. Nenhum modelo de IA o lê.
-
-Tarefas e promessas continuam vindo só de mensagens novas, como antes.
+Ele nunca cria uma tarefa ou uma promessa, nunca conta como novo, nunca inicia uma verificação e nunca entra num projeto. O histórico pessoal continua pessoal, como o e-mail pessoal. Fora a pesquisa por significado, nenhum modelo de IA o lê.
 
 ## Quando ele roda
 
-Ele começa quando a primeira olhada nas suas mensagens termina e anda devagar em segundo plano. Ele espera enquanto uma verificação ou uma sincronização roda, e quando a sua Machine tem pouco espaço em disco ou pouca memória. Depois de reiniciar, ele continua de onde parou.
+Ele começa quando a primeira olhada nas suas mensagens termina, e em cada conexão só quando a primeira semana dela já chegou, também numa que você adicionar depois. Ele anda devagar em segundo plano e espera enquanto uma verificação ou uma sincronização roda, quando um serviço pede para ir mais devagar ou quando a sua Machine tem pouco espaço. Mensagens novas sempre vêm primeiro.
 
 Ele usa o acesso que cada conexão já tem. Nada novo é pedido.
 

@@ -68,6 +68,23 @@ def indexes(db):
     Connected and reviews read stays as fast with a year of history (tests/history_measure.py)."""
     db.execute('CREATE INDEX IF NOT EXISTS events_signal_time ON events(account_id,occurred_at) WHERE history=0')
     db.execute('CREATE INDEX IF NOT EXISTS events_pending_time ON events(account_id,occurred_at) WHERE analyzed_version<version')
+    db.execute('CREATE INDEX IF NOT EXISTS events_history_time ON events(occurred_at) WHERE history=1')  # Graph passes over history
+
+
+def first_import_done(db, account_id):
+    """Whether a connection's own first import (its first week) is all in: its milestone (machine/store/first_look.py),
+    or for one from before those, a successful read whose cursor left bootstrap. A connection added later waits too."""
+    marks = {r[0] for r in db.execute('SELECT name FROM milestones WHERE name IN (?,?)', ('first_import:' + account_id, 'first_page:' + account_id))}
+    if 'first_import:' + account_id in marks:
+        return True
+    row = db.execute('SELECT state,last_success FROM checkpoints WHERE account_id=?', (account_id,)).fetchone()
+    if 'first_page:' + account_id in marks or not row or not row[1]:
+        return False  # started here and not in yet, or never read
+    try:
+        state = json.loads(row[0] or '{}')
+    except ValueError:
+        return False
+    return isinstance(state, dict) and state.get('mode') not in ('bootstrap', 'resync') and not state.get('page_token')
 
 
 def depth(config):

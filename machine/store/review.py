@@ -13,6 +13,7 @@ import bounces
 import chat_files
 import graph
 from machine.config import LOG
+from machine.store.graph_history import live
 from machine.sources.calendar import all_day_span, calendar_owned, calendar_owner_name
 from machine.sources.slack import slack_named, slack_named_out
 from machine.store.events import RUN_SIGNAL_BUDGET, SET_ASIDE_AFTER
@@ -880,16 +881,16 @@ class ReviewStore:
             on_cards = db.execute(f"SELECT DISTINCT n.* FROM suggestions s JOIN json_each(s.event_ids) j JOIN graph_events g ON g.event_id=j.value AND g.direct=1 "
                                   f"JOIN graph_nodes n ON n.id=g.node_id WHERE s.status IN ({marks}) AND n.kind='person' AND n.strength>=0.1 "
                                   f"AND json_extract(n.info,'$.role') IS NULL AND coalesce(json_extract(n.info,'$.role_by'),'')!='owner' {asked} ORDER BY n.strength DESC LIMIT ?", (*graph.OPEN_CARD, since, run_id, limit)).fetchall()
-            strongest = db.execute(f"SELECT * FROM graph_nodes n WHERE kind='person' AND strength>=0.5 AND json_extract(info,'$.role') IS NULL AND coalesce(json_extract(info,'$.role_by'),'')!='owner' {asked} "
-                                   'ORDER BY strength DESC LIMIT ?', (since, run_id, limit)).fetchall()
+            strongest = db.execute(f"SELECT * FROM graph_nodes n WHERE kind='person' AND {live('n')}>=0.5 AND json_extract(info,'$.role') IS NULL AND coalesce(json_extract(info,'$.role_by'),'')!='owner' {asked} "
+                                   f'ORDER BY {live("n")} DESC LIMIT ?', (since, run_id, limit)).fetchall()
             people = list({r['id']: r for r in on_cards + strongest}.values())[:limit]
             # An organization is asked again as soon as one of its people got a role after the last ask,
             # or when the last ask didn't show its people with their roles yet.
             news = ("EXISTS(SELECT 1 FROM graph_links l JOIN graph_nodes p ON p.id=l.a JOIN person_roles r ON r.identifier=coalesce(json_extract(p.info,'$.role_id'),p.id) "
                     "WHERE l.b=n.id AND l.kind='member' AND r.role!='' AND (coalesce(r.checked_at,r.created_at)>(SELECT max(asked_at) FROM graph_role_asks WHERE identifier=n.id) "
                     "OR EXISTS(SELECT 1 FROM graph_role_asks o WHERE o.identifier=n.id AND o.people_shown=0)))")
-            orgs = db.execute(f"SELECT * FROM graph_nodes n WHERE kind='org' AND strength>=1 AND json_extract(info,'$.role') IS NULL AND coalesce(json_extract(info,'$.role_by'),'')!='owner' "
-                              f"AND ({asked[4:]} OR {news}) ORDER BY {news} DESC,strength DESC LIMIT 2", (since, run_id)).fetchall()
+            orgs = db.execute(f"SELECT * FROM graph_nodes n WHERE kind='org' AND {live('n')}>=1 AND json_extract(info,'$.role') IS NULL AND coalesce(json_extract(info,'$.role_by'),'')!='owner' "
+                              f"AND ({asked[4:]} OR {news}) ORDER BY {news} DESC,{live('n')} DESC LIMIT 2", (since, run_id)).fetchall()
             stale = [r for r in graph.stale_roles(db, now()) if not db.execute("SELECT 1 FROM graph_role_asks o WHERE identifier=? AND asked_at>? AND (o.run_id IS NULL OR (o.run_id<>? AND (NOT EXISTS(SELECT 1 FROM review_runs r WHERE r.run_id=o.run_id) OR EXISTS(SELECT 1 FROM review_runs r WHERE r.run_id=o.run_id AND r.status='ok') OR EXISTS(SELECT 1 FROM analyses a WHERE a.owner_run=o.run_id AND a.status='complete'))))", (r['id'], since, run_id)).fetchone()]
             if people:
                 parts.append('\n'.join(line(r, json.loads(r['info'] or '{}')) + (' on an open card' if r in on_cards else '') for r in people))
@@ -907,7 +908,7 @@ class ReviewStore:
             # Where someone works, when a source may state it: people with no organization who have a LinkedIn headline
             # or are on an open card. Each asked once a month at most.
             org_asked = "AND n.id NOT IN (SELECT identifier FROM graph_org_asks WHERE asked_at>?)"
-            no_org = db.execute(f"SELECT DISTINCT n.* FROM graph_nodes n WHERE n.kind='person' AND n.strength>=0.1 AND json_extract(n.info,'$.org') IS NULL "
+            no_org = db.execute(f"SELECT DISTINCT n.* FROM graph_nodes n WHERE n.kind='person' AND {live('n')}>=0.1 AND json_extract(n.info,'$.org') IS NULL "
                                 f"AND json_extract(n.info,'$.has_headline') AND n.id NOT IN (SELECT identifier FROM person_orgs) {org_asked} "
                                 'ORDER BY n.strength DESC LIMIT ?', (since, limit)).fetchall()
             if no_org:
