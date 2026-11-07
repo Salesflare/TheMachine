@@ -12,7 +12,7 @@ Une note discrète en haut de Tâches propose les deux, l’un après l’autre,
 
 ## Sur un ordinateur (Chrome ou Edge)
 
-1. Ouvrez votre tableau de bord et cliquez sur **Installer** dans cette note, ou sur **Installer l’app** dans les Paramètres.
+1. Ouvrez votre tableau de bord et cliquez sur **Installer** dans cette note, sur **Installer l’app** dans Paramètres, **Général**, ou sur **Installer** à côté de **Ordinateur** dans Paramètres, **Applis**.
 2. The Machine s’ouvre dans sa propre fenêtre. Épinglez-la à votre barre des tâches ou à votre Dock.
 3. Cliquez sur **Activer** dans la note et autorisez les notifications. Une notification de test s’affiche tout de suite.
 

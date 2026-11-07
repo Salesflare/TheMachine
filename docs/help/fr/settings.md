@@ -15,7 +15,7 @@ Ouvrez **Paramètres** avec la roue dentée en haut. Ses onglets :
 - **Notifications** : ce qui vous parvient et où, et vos heures de travail. Voir [Notifications](notifications.md) et [Heures de travail](work-hours.md).
 - **Rédaction** : signatures et votre façon d’écrire. Voir [Rédaction](writing.md).
 - **Compétences** : les modes d’emploi que suit votre Machine. Voir [Compétences](skills.md).
-- **Applis** : les applis The Machine pour téléphone, puis Claude, ChatGPT et les autres IA que vous avez connectées, et ce que chacune peut faire. Voir [L’appli mobile](mobile-app.md) et [Connecter d’autres IA](ai-connections.md).
+- **Applis** : les applis The Machine pour téléphone et ordinateur, puis Claude, ChatGPT et les autres IA que vous avez connectées, et ce que chacune peut faire. Voir [L’appli mobile](mobile-app.md) et [Connecter d’autres IA](ai-connections.md).
 - **Modèle** : ce qui répond pour vous, et ses limites. Voir [Modèle](model.md). **Codex et Claude Code** aussi : voir [Transférer à Claude Code ou Codex](hand-to-agent.md).
 
 Un onglet sans rien à afficher est masqué.

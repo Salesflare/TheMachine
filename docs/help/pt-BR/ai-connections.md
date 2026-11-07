@@ -19,7 +19,7 @@ Um rascunho espera na sua Machine até você ler e tocar em **Enviar**. Uma IA c
 
 ## Conectar uma
 
-Abra **Configurações**, **Apps**. Primeiro vêm **Adicionar no ChatGPT** e **Adicionar no Claude**. Em **Ou adicione por endereço** ficam o endereço do app oficial para todas as Machines, `https://mcp.themachine.computer/mcp`, e seu **Endereço privado (ponta a ponta)**, `https://<seu nome>.mcp.themachine.computer/mcp`, cada um com **Copiar**.
+Abra **Configurações**, **Apps**. Abaixo de **Os apps da The Machine** vêm **Adicionar no ChatGPT** e **Adicionar no Claude**. Em **Ou adicione por endereço** ficam o endereço do app oficial para todas as Machines, `https://mcp.themachine.computer/mcp`, e seu **Endereço privado (ponta a ponta)**, `https://<seu nome>.mcp.themachine.computer/mcp`, cada um com **Copiar**.
 
 Numa Machine no seu próprio computador, toque antes em **Configurar** em **Obter seu endereço**. Abre uma página da sua conta: confira se ela mostra o mesmo código, confirme e escolha um nome. Sua Machine se pareia sozinha, sem reiniciar. Os dois jeitos precisam disso.
 

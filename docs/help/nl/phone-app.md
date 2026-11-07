@@ -12,7 +12,7 @@ Een rustige melding bovenaan To-do's biedt allebei aan, een voor een, zodra je j
 
 ## Op een computer (Chrome of Edge)
 
-1. Open je dashboard en klik op **Installeren** in die melding, of op **App installeren** in Instellingen.
+1. Open je dashboard en klik op **Installeren** in die melding, op **App installeren** in Instellingen, **Algemeen**, of op **Installeren** naast **Computer** in Instellingen, **Apps**.
 2. The Machine opent in een eigen venster. Zet hem vast op je taakbalk of in je Dock.
 3. Klik op **Aanzetten** in de melding en sta meldingen toe. Er verschijnt meteen een testmelding.
 

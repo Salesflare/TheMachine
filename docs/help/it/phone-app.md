@@ -12,7 +12,7 @@ Una nota discreta in cima ad Attività propone entrambe le cose, una alla volta,
 
 ## Su un computer (Chrome o Edge)
 
-1. Apri la dashboard e fai clic su **Installa** in quella nota, oppure su **Installa l’app** nelle Impostazioni.
+1. Apri la dashboard e fai clic su **Installa** in quella nota, su **Installa l’app** in Impostazioni, **Generali**, oppure su **Installa** accanto a **Computer** in Impostazioni, **App**.
 2. The Machine si apre in una finestra sua. Fissala sulla barra delle applicazioni o nel Dock.
 3. Fai clic su **Attiva** nella nota e consenti le notifiche. Arriva subito una notifica di prova.
 

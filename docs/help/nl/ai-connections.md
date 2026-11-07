@@ -19,7 +19,7 @@ Een concept wacht in je Machine tot je het leest en zelf op **Versturen** drukt.
 
 ## Er een koppelen
 
-Open **Instellingen**, **Apps**. Eerst komen **Toevoegen in ChatGPT** en **Toevoegen in Claude**. Onder **Of voeg hem toe met een adres** staan het ene adres van de officiële app voor elke Machine, `https://mcp.themachine.computer/mcp`, en je **Privéadres (end-to-end)**, `https://<jouw naam>.mcp.themachine.computer/mcp`, elk met **Kopiëren**.
+Open **Instellingen**, **Apps**. Onder **De apps van The Machine** komen **Toevoegen in ChatGPT** en **Toevoegen in Claude**. Onder **Of voeg hem toe met een adres** staan het ene adres van de officiële app voor elke Machine, `https://mcp.themachine.computer/mcp`, en je **Privéadres (end-to-end)**, `https://<jouw naam>.mcp.themachine.computer/mcp`, elk met **Kopiëren**.
 
 Op een Machine op je eigen computer druk je eerst op **Instellen** onder **Krijg je adres**. Er opent een pagina in je account: controleer of die dezelfde code toont, bevestig en kies een naam. Je Machine koppelt zichzelf, zonder herstart. Beide manieren hebben dit nodig.
 

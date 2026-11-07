@@ -16,7 +16,7 @@ In the phone app, **Get a ping when something needs you.** shows while notificat
 
 ## On a computer (Chrome or Edge)
 
-1. Open your dashboard and click **Install** on that note, or **Install app** in Settings.
+1. Open your dashboard and click **Install** on that note, **Install app** in Settings, **General**, or **Install** next to **Computer** in Settings, **Apps**.
 2. The Machine opens in its own window. Pin it to your taskbar or dock.
 3. Click **Turn on** on the note and allow notifications. A test notification shows up right away.
 

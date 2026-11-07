@@ -12,7 +12,7 @@ Um aviso discreto no topo de Tarefas oferece as duas coisas, uma de cada vez, as
 
 ## No computador (Chrome ou Edge)
 
-1. Abra seu painel e clique em **Instalar** nesse aviso, ou em **Instalar app** em Configurações.
+1. Abra seu painel e clique em **Instalar** nesse aviso, em **Instalar app** em Configurações, **Geral**, ou em **Instalar** ao lado de **Computador** em Configurações, **Apps**.
 2. A The Machine abre em uma janela própria. Fixe na barra de tarefas ou no Dock.
 3. Clique em **Ativar** no aviso e permita as notificações. Uma notificação de teste aparece na hora.
 

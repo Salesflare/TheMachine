@@ -66,6 +66,8 @@ function appPushFirst(){if(appPushAsking||phonePush!=='prompt'||!appPushOff()||d
 // Only the phone app's own notification line here; every other step is a row of the setup to-do (setup-card.js).
 function nudgeKind(){return !DEV.framed&&appPushOff()&&!appPushAsking&&!(+devStore.get('nudge-app-push')>Date.now())?'app-push':null}
 const SHARE_ICON='<svg class="ios-share" viewBox="0 0 24 24" role="img" aria-label="Share"><path d="M12 14V3.5M8.2 7.2 12 3.4l3.8 3.8"/><path d="M8.5 10H7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2h-1.5"/></svg>';
+// How to install from this browser when it has no prompt to show (This device here, and Computer in Settings, Apps)
+const installSteps=()=>DEV.ios?html`Tap Share ${raw(SHARE_ICON)}, then Add to Home Screen.`:DEV.macSafari?'In Safari’s menu bar: File, then Add to Dock.':DEV.chromium?'Find Install in the browser’s menu, or the icon in the address bar.':'This browser can’t install apps. Chrome, Edge and Safari can.';
 const nudgeHTML=()=>html`<div class="nudge-text"><strong>Get a ping when something needs you.</strong></div><div class="nudge-act">${phonePush==='blocked'?html`<button type="button" class="primary" data-app-settings>Open settings</button>`:html`<button type="button" class="primary" data-app-on>Turn on</button>`}<button type="button" class="nudge-x" data-nudge-x aria-label="Close" title="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17"/></svg></button></div>`;
 const nudgeBox=(()=>{const el=document.createElement('div');el.id='device-nudge';el.className='notice-card device-nudge';el.setAttribute('role','region');el.setAttribute('aria-label','This device');el.hidden=true;el.dataset.kind='';
  $('#inbox').prepend(el);el.onclick=async e=>{const b=e.target.closest('button');if(!b)return;
@@ -87,7 +89,7 @@ function deviceSettings(){const {app}=deviceRows,small=app.querySelector('small'
  app.hidden=!nudgeable;
  if(installEvt){set(small,html`${DEV.mobile?'Opens like an app, from your home screen.':'Pin it to your taskbar or dock.'}${DEVICE_HELP}`);set(act,html`<button type="button" data-device="install-app">Install app</button>`)}
  else if(appInstalled()){set(small,html`${'Installed on this device.'}${DEVICE_HELP}`);set(act,html`<span class="device-done">Installed</span>`)}
- else{set(small,html`${DEV.ios?html`Tap Share ${raw(SHARE_ICON)}, then Add to Home Screen.`:DEV.macSafari?'In Safari’s menu bar: File, then Add to Dock.':DEV.chromium?'Find Install in the browser’s menu, or the icon in the address bar.':'This browser can’t install apps. Chrome, Edge and Safari can.'}${DEVICE_HELP}`);set(act,html``)}
+ else{set(small,html`${installSteps()}${DEVICE_HELP}`);set(act,html``)}
  const b=$('#push-toggle'),note=deviceRows.push.querySelector('small'),on=pushOn(),blocked=pushOK&&devicePush.perm==='denied';
  b.hidden=!(pushOK?!blocked:iosTab&&!navigator.standalone);b.title=!pushOK?iosHint:on?'Notifications on':'Turn on notifications';b.setAttribute('aria-pressed',String(on));
  $('#push-test').hidden=!on;
