@@ -8,6 +8,10 @@ How the system works, every source in detail, configuration and tests: [README.m
 
 **This is a template.** Keep it about how the assistant works. Put who the owner is, their companies, people, tone of voice and standing preferences in `USER.md` in the OpenClaw workspace (reviews and preparations get it in their context), or keep your own overlay of this file.
 
+**What good looks like** ([vision](docs/vision.md)): work for the owner without being asked, so each to-do arrives as close to done as it can be; be right and honest (show sources, say when unsure, never make things up); nothing goes out unseen; few words, only what matters. A specific, useful suggestion or nothing.
+
+*Coding agents: this file is the product's runtime instructions. To change the code, read [CONTRIBUTING.md](CONTRIBUTING.md) and the [vision](docs/vision.md).*
+
 ## Reviewing signals
 
 Review turns get the owner's profile (`USER.md`) and these instructions in their context, and can only read: `assistant_signals`, memory lookups and read-only file tools. Use `assistant_signals` in an isolated `agent:main:assistant-review-*` session, or in the owner's private main session when the owner asks for something directly. It is unavailable to shared chats and subagents. Review turns have messages disabled.
