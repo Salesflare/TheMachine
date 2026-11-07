@@ -246,7 +246,7 @@ class OwnerBoundary(unittest.TestCase):
         # One action per line, sorted: pull requests that add different actions merge without conflicts.
         import ast
         problems = []
-        for node in ast.parse(Path(a.__file__).read_text()).body:
+        for node in ast.parse((Path(a.__file__).parent / 'machine' / 'actions.py').read_text()).body:
             if not (isinstance(node, ast.Assign) and isinstance(node.targets[0], ast.Name) and node.targets[0].id.endswith('_ACTIONS')):
                 continue
             value = node.value.args[0] if isinstance(node.value, ast.Call) and node.value.args else node.value

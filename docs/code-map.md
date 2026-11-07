@@ -44,7 +44,7 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   listed in `APP_MIXINS` in `assistant.py`), a line in its `ACTIONS` (`'name': 'method'`) and the method there, called
   as `method(name, args, owner_dashboard)`; `App.action` looks there first. Otherwise its branch in `App.action`, with
   the code it calls in its domain's module when there is one. Either way, add the name to the right `*_ACTIONS` set in
-  `assistant.py`, one name per line, sorted. Those sets are the security boundary and stay together in `assistant.py`;
+  `machine/actions.py`, one name per line, sorted. Those sets are the security boundary and stay together there;
   a handler still checks `owner_dashboard` itself where its branch did.
 - **App methods of a domain** (workers, reads, what its actions call): in its mixin when it has one. A mixin imports
   what it needs like any module, never `assistant`, and only `assistant.py` imports it. The mixins today:
@@ -104,7 +104,8 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   notification feed and the Gateway journal source), `machine/sources/connectors.py` (connector plugins and helpers,
   hosted sign-ins, silent failures, read windows, the connector prompt lines) and `whatsapp.py` (the WhatsApp source),
   `machine/delivery/` (`push.py`: phone pushes, app notices, reminders and setup hints; `telegram.py`: Telegram sends;
-  `deliver.py`: the delivery loop, Fleet pushes and uncertain sends).
+  `deliver.py`: the delivery loop, Fleet pushes and uncertain sends), `machine/actions.py` (the `*_ACTIONS` sets: who
+  may call which action).
 - **Dashboard code:** in its area's part in `dashboard/` (`<area>-<what>.js`: shell, todos, settings, graph, calendar,
   connections, help, events, new, fleet), next to the functions it works with, never at the end of the script. The
   page's core is in the `shell-*` parts too: locale and error reports (`shell-core.js`), network and outbox, `render()`

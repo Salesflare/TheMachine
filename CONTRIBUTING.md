@@ -64,7 +64,7 @@ What every pull request needs:
     and markup go in their area's part too (`dashboard/<area>-<what>.css` and `.html`, [Code map](docs/code-map.md));
   - the dashboard's static markup has one element with an id per line (break inside the tag before it,
     `</div` newline `><div id=…>`, so the page stays the same);
-  - the action lists in `assistant.py` (`*_ACTIONS`) have one name per line, sorted (`tests/test_owner_boundary.py`
+  - the action lists in `machine/actions.py` (`*_ACTIONS`) have one name per line, sorted (`tests/test_owner_boundary.py`
     checks).
 
 ### Sources and sends
