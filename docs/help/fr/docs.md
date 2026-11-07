@@ -61,10 +61,19 @@ Il vérifie que la connexion peut lire les documents. Sans cet accord, il n’es
 
 ## Google Docs
 
-Google Docs ne peut pas encore être connecté. Les lire demande une autorisation Google que The Machine ne demande pas encore. Ce qui marche aujourd’hui :
+Sur une Machine hébergée, ouvrez **Connexions**, puis **+ Ajouter**, et choisissez **Google Docs**. Google vous demande de lui permettre de voir et modifier les documents que vous lui indiquez, et d’en créer de nouveaux. Gmail n’a pas besoin d’être connecté, et votre accès Gmail ne change pas.
 
-- Sur votre propre ordinateur, votre Machine peut créer un nouveau Google Doc dans un compte Gmail connecté sur cet ordinateur qui a déjà accès à Drive. Elle ne lit pas vos autres Google Docs ni leurs commentaires.
-- Une Machine hébergée ne peut pas encore utiliser Google Docs.
+Ensuite votre Machine :
+
+- Lit un document Google lié dans les messages d’une tâche, seulement pendant qu’elle travaille sur cette tâche.
+- Prépare des modifications de ce document. Chacune attend votre accord, comme plus haut.
+- Crée de nouveaux documents privés dans votre Google Drive.
+
+Elle ne fouille pas votre Drive. Elle ne voit les commentaires, partages et suggestions que sur les documents qu’elle a créés. Plus demanderait l’accès à tout votre Drive, ce qu’elle ne demande pas.
+
+Google Docs s’ouvre petit à petit. S’il n’est pas encore sous **+ Ajouter**, il arrive.
+
+Sur votre propre ordinateur, votre Machine peut créer un nouveau document Google dans un compte Gmail connecté là-bas qui a déjà accès à Drive. Elle ne lit pas vos autres Google Docs ni leurs commentaires.
 
 ## Travail ou perso
 
@@ -72,4 +81,4 @@ Microsoft OneDrive suit l’étiquette travail ou perso de sa connexion, comme l
 
 ## Le retirer
 
-Dans le tableau de bord : **Connexions**, ouvrez Microsoft OneDrive, **Détails**, puis **Déconnecter**. Il arrête de lire. Ce qu’il a déjà récupéré reste.
+Dans le tableau de bord : **Connexions**, ouvrez Microsoft OneDrive ou Google Docs, **Détails**, puis **Déconnecter**. Il arrête de lire. Ce qu’il a déjà récupéré reste.

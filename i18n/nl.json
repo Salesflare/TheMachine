@@ -3337,6 +3337,8 @@
  "Reading your notes and conversations for the first time…": "Leest je notities en gesprekken voor het eerst…",
  "Reads accounts, contacts, emails and meetings. Changes nothing.": "Leest accounts, contacten, e-mails en afspraken. Verandert niets.",
  "Reads again at {}": "Leest weer om {}",
+ "Reads and edits the Google Docs you point it to, and makes new ones.": "Leest en bewerkt de Google Docs die je hem aanwijst, en maakt nieuwe.",
+ "Reads and edits the docs you point it to, and makes new ones. Edits wait for your OK.": "Leest en bewerkt de documenten die je hem aanwijst, en maakt nieuwe. Wijzigingen wachten op je OK.",
  "Reads cards, comments and activity on one board you pick next. Never changes anything in Trello.": "Leest kaarten, opmerkingen en activiteit op één bord dat je hierna kiest. Verandert nooit iets in Trello.",
  "Reads comments, mentions, suggestions and shares.": "Leest opmerkingen, vermeldingen, suggesties en gedeelde documenten.",
  "Reads everything. Sends nothing you didn’t approve.": "Leest alles. Verstuurt niets wat je niet goedkeurde.",

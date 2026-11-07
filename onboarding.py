@@ -770,6 +770,9 @@ def missing(config, account):
     if account.get('service') == 'docs':  # it signs in as the owner's own Google or Microsoft connection on that address
         if not account.get('email'):
             return 'email is not set'
+        if account.get('provider') == 'google' and account.get('own_grant') and account.get('transport') == 'broker' \
+                and not (config.get('google_docs_broker') or {}).get('url'):
+            return 'google_docs_broker url is not set'  # Google Docs with its own sign-in (a hosted Machine's Connect Google Docs)
         docs = plugin('docs')
         try:
             docs and docs.signin(config, account, types.SimpleNamespace(SourceError=SetupError))

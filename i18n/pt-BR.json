@@ -3337,6 +3337,8 @@
  "Reading your notes and conversations for the first time…": "Lendo suas notas e conversas pela primeira vez…",
  "Reads accounts, contacts, emails and meetings. Changes nothing.": "Lê contas, contatos, e-mails e reuniões. Não altera nada.",
  "Reads again at {}": "Lê de novo às {}",
+ "Reads and edits the Google Docs you point it to, and makes new ones.": "Lê e edita os Google Docs que você indicar a ela, e cria novos.",
+ "Reads and edits the docs you point it to, and makes new ones. Edits wait for your OK.": "Lê e edita os documentos que você indicar a ela, e cria novos. As alterações esperam o seu OK.",
  "Reads cards, comments and activity on one board you pick next. Never changes anything in Trello.": "Lê cartões, comentários e atividade de um quadro que você escolhe em seguida. Nunca muda nada no Trello.",
  "Reads comments, mentions, suggestions and shares.": "Lê comentários, menções, sugestões e compartilhamentos.",
  "Reads everything. Sends nothing you didn’t approve.": "Lê tudo. Não envia nada que você não aprovou.",

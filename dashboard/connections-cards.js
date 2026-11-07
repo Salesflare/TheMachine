@@ -146,6 +146,7 @@ const SIGNIN_COPY={intercom:{label:'Intercom',about:'Reads your conversations. R
  microsoft_docs:{label:'Microsoft',title:'Microsoft OneDrive',about:'Word, OneDrive and SharePoint. Outlook isn’t needed. Edits wait for your OK.'},
  microsoft_docs_write:{label:'Microsoft',title:'Microsoft OneDrive',about:'Lets The Machine create and edit your Word documents. Each change waits for your OK.'},
  google_meet:{label:'Google',title:'Google Meet',about:'Transcripts and Gemini notes of your meetings. Reads only.'},
+ google_docs:{label:'Google',title:'Google Docs',about:'Reads and edits the docs you point it to, and makes new ones. Edits wait for your OK.'},
  whatsapp:{label:'WhatsApp',about:'Your WhatsApp chats, as a linked device. Replies only when you press Send on a to-do.'},
  android:{about:'The notifications on your Android phone, through the OpenClaw app.'},
  stripe:{label:'Stripe',about:'Failed payments, disputes, cancellations and new subscriptions. Reads only, never changes anything in Stripe.',other:'Or paste a restricted key',how:'A restricted key with Read on Events, Customers and Account.',go:'Paste a key',off:'Sign in with {} isn’t available yet. Paste a restricted key instead.'},
@@ -224,7 +225,7 @@ function hostedPoll(){clearTimeout(signinTimer);const s=connectSignin;if(!s?.hos
 // Back from the provider (cloud: open_dashboard to=connect): + Add, that sign-in's form, following how it goes
 // c_: the command its callback queued; f_: why the provider's answer was refused, which the account keeps for this form
 const ON_DASHBOARD=['github','whatsapp','android','codex'];
-async function openConnectLink(){const m=/^#connect=(google|microsoft|microsoft_docs|microsoft_docs_write|google_meet|zoom|stripe|intercom|trello|github|whatsapp|android|codex)(?:\/([cf]_[0-9a-f]{16}|stopped))?$/.exec(location.hash);if(!m||!state.manage_url)return;
+async function openConnectLink(){const m=/^#connect=(google|microsoft|microsoft_docs|microsoft_docs_write|google_meet|google_docs|zoom|stripe|intercom|trello|github|whatsapp|android|codex)(?:\/([cf]_[0-9a-f]{16}|stopped))?$/.exec(location.hash);if(!m||!state.manage_url)return;
  history.replaceState(null,'',location.pathname+location.search);connectRun=null;connectForm=null;showTab('health','add');await connectAdd(true);
  const docs=m[1]==='microsoft_docs_write'&&connectList?.sources.find(v=>v.hosted_signin==='microsoft_docs');  // Allow edits: the Docs source, its own consent
  const x=m[1]==='codex'?connectList?.codex&&codexSource():docs?{...docs,hosted_signin:m[1]}:connectList?.sources.find(v=>v.hosted_signin===m[1]);if(!x||!connectList.manage_url)return;const command=m[2]&&m[2]!=='stopped'?m[2]:'';

@@ -525,6 +525,7 @@ from machine.sources.connectors import (
     CONNECTORS,
     CONNECTOR_HELPERS,
     HOSTED_SIGNINS,
+    hosted_docs_sources,
     REPLY_SERVICES,
     SILENT_HOURS,
     SILENT_MIN_FAILURES,
@@ -2469,8 +2470,9 @@ def reconnect_help(account, manage, docs_consent=False):
         return {'connect_name': 'crm' if service == 'salesflare' else service, 'shared_with': str(shared.get('fleet_name') or 'your Fleet')}
     # A hosted Machine: Reconnect is the sign-in form under + Add (`hosted_signin`, the control plane's own sign-in, which
     # comes back to it); Disconnect stays on the account page, which holds the grant
-    if manage and service == 'docs':  # its Connect Microsoft documents consent, once the account page offers it
-        return {'account_page': urllib.parse.urljoin(manage, '#docs'), 'hosted_signin': 'microsoft_docs'} if docs_consent else {}
+    if manage and service == 'docs':  # its Connect Microsoft documents (or Connect Google Docs) consent, once the account page offers it
+        signin = 'google_docs' if account.get('provider') == 'google' else 'microsoft_docs'
+        return {'account_page': urllib.parse.urljoin(manage, '#docs'), 'hosted_signin': signin} if docs_consent else {}
     if manage and account.get('transport') == 'broker':
         provider = 'microsoft' if service in MICROSOFT_SERVICES else service if service in ('zoom', 'stripe', 'slack', 'google_meet') else 'google'
         return {'account_page': urllib.parse.urljoin(manage, '#' + provider if provider in ('google', 'microsoft') else '#source-' + service),
@@ -3120,11 +3122,11 @@ class App(*APP_MIXINS):
         if not re.fullmatch(r'[A-Za-z0-9_-]{1,80}', job):
             raise ValueError('Give the job_id of this preparation')
         with self.store.connect() as db:
-            run = db.execute("SELECT s.event_ids FROM preparations p JOIN suggestions s ON s.id=p.suggestion_id "
+            run = db.execute("SELECT s.event_ids,s.account_ids FROM preparations p JOIN suggestions s ON s.id=p.suggestion_id "
                              "WHERE p.job_id=? AND p.status IN ('queued','starting','running','blocked')", (job,)).fetchone()
             if not run:
                 raise ValueError('Doc drafts are checked only for a running preparation of the task the owner started')
-            files = doc_write_files(db, run['event_ids'])
+            files = doc_write_files(db, run['event_ids'], self.config, doc_writes.area(self.config, json.loads(run['account_ids'] or '[]')))
             file_id = None
             if args.get('event_id') is not None:
                 row = db.execute("SELECT metadata FROM events WHERE id=? AND kind LIKE 'docs.%' AND id IN (SELECT value FROM json_each(?))",
@@ -3764,7 +3766,7 @@ class App(*APP_MIXINS):
                 telegram_chats.update(owner_telegram_chats(self.config,db,args.get('next_actions',args.get('next_action')),telegram_chats))
                 calendar_events=calendar_write_events(db,calendar_write_ids(args.get('next_actions',args.get('next_action'))),self.owner_emails())
                 spots=reply_spots(self.config,db,row['event_ids'])  # a Slack reply in its message's thread, a WhatsApp one quoting it
-                doc_files=doc_write_files(db,row['event_ids'])
+                doc_files=doc_write_files(db,row['event_ids'],self.config,doc_writes.area(self.config,json.loads(row['account_ids'] or '[]')))
             # A doc write: the owner's Docs connections, and each doc an edit names read now, its version pinned (doc_writes.py)
             doc_context=doc_writes.context(self.config,load_connector('docs'),CONNECTOR_HELPERS,doc_files,args.get('next_actions',args.get('next_action')),
                                            doc_writes.area(self.config,json.loads(row['account_ids'] or '[]')))
@@ -6161,6 +6163,7 @@ class App(*APP_MIXINS):
                     signin = source['service'] if source['service'] in ON_DASHBOARD else fleet.SIGNIN_OF.get(source['service'])
                     if signin in HOSTED_SIGNINS:
                         source['hosted_signin'] = signin
+                found['sources'] = hosted_docs_sources(self.config, found['sources'])
             if not hosted:
                 # Sign in with <provider> through The Machine's own app (fleet.py connect_start), once this Machine is
                 # paired with an account; pasting a token stays as the fallback. One the control plane has no app for

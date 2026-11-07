@@ -61,10 +61,19 @@ Hij controleert of de login documenten mag lezen. Zonder die OK wordt het niet t
 
 ## Google Docs
 
-Google Docs kun je nog niet koppelen. Om ze te lezen is een Google-toestemming nodig waar The Machine nog niet om vraagt. Wat vandaag werkt:
+Open op een gehoste Machine **Koppelingen**, dan **+ Toevoegen**, en kies **Google Docs**. Google vraagt je om hem de documenten te laten zien en bewerken die je hem aanwijst, en nieuwe te laten maken. Gmail hoeft niet gekoppeld te zijn, en je Gmail-toegang verandert niet.
 
-- Op je eigen computer kan je Machine een nieuw Google-document maken in een Gmail-account dat daar is aangemeld en al toegang tot Drive heeft. Je andere Google Docs en hun reacties leest hij niet.
-- Een gehoste Machine kan Google Docs nog niet gebruiken.
+Daarna kan je Machine:
+
+- Een Google-document lezen dat gelinkt is in de berichten van een taak, alleen terwijl hij aan die taak werkt.
+- Wijzigingen aan dat document voorbereiden. Elke wijziging wacht op je OK, zoals hierboven.
+- Nieuwe privédocumenten maken in je Google Drive.
+
+Hij doorzoekt je Drive niet. Reacties, delen en suggesties ziet hij alleen bij documenten die hij zelf maakte. Meer zou toegang tot je hele Drive vragen, en daar vraagt hij niet om.
+
+Google Docs gaat stap voor stap open. Staat het nog niet onder **+ Toevoegen**, dan komt het eraan.
+
+Op je eigen computer kan je Machine een nieuw Google-document maken in een Gmail-account dat daar is aangemeld en al toegang tot Drive heeft. Je andere Google Docs en hun reacties leest hij niet.
 
 ## Werk of privé
 
@@ -72,4 +81,4 @@ Microsoft OneDrive volgt het label werk of privé van de koppeling, net als mail
 
 ## Verwijderen
 
-In het dashboard: **Koppelingen**, open Microsoft OneDrive, **Details**, dan **Ontkoppelen**. Het stopt met lezen. Wat al binnengehaald is, blijft.
+In het dashboard: **Koppelingen**, open Microsoft OneDrive of Google Docs, **Details**, dan **Ontkoppelen**. Het stopt met lezen. Wat al binnengehaald is, blijft.
