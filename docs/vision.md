@@ -1,8 +1,12 @@
 # Product vision
 
-AI should work for you. Not wait for a prompt, but take work off your hands every day, on your side. The Machine
-is that AI: proactive and working for you. And it's yours: you own it and your data, not a big corporation. Made for everyone:
-easy to start and affordable.
+AI should work for you, so you can do your best work. The Machine is that AI:
+
+- **Proactive.** It doesn't wait for a prompt. It takes work off your hands every day.
+- **With you everywhere.** Across your computer, your phone and every app you use, it knows where you left off.
+- **Always current.** It keeps pace with AI: new models and abilities reach your Machine as soon as they're good.
+- **Yours.** You own it and your data, not a big corporation.
+- **For everyone.** Easy to start and affordable.
 
 This page says where we're going and what "best" means. Every change, agent and test is judged against it. It is
 reviewed every few days and changes only on the owner's word.
@@ -24,13 +28,15 @@ your head back for the work only you can do.
    homework. It takes work off your hands, never acts behind your back.
 4. **It's for everyone.** Easy: set up in minutes, no technical skills needed, plain words throughout. Affordable:
    a fair price for a hosted Machine, free to run yourself, and lean enough for a $20 model plan.
-5. **It feels instant and calm.** Every click answers in about 100 ms. Few words, few notifications, only ones that
+5. **It's with you everywhere.** Desktop, phone, chat apps, browser: one Machine that carries the context from one to
+   the next and works with the tools you already use. New connections are added as people need them.
+6. **It feels instant and calm.** Every click answers in about 100 ms. Few words, few notifications, only ones that
    matter.
-6. **It's smart, not wasteful.** As much intelligence as possible per token, so it runs well on a $20 OpenAI or Claude
+7. **It's smart, not wasteful.** As much intelligence as possible per token, so it runs well on a $20 OpenAI or Claude
    plan. Model calls go where they change the outcome; plain code, caching and cheap checks do the rest.
-7. **It gets better by itself.** It learns your voice and your decisions, fixes its own problems, and shares what it
-   learns across Machines.
-8. **It works for teams and families.** A Fleet shares context, and the Graph and Boards become the CRM that replaces
+8. **It gets better by itself.** It learns your voice and your decisions, fixes its own problems, and shares what it
+   learns across Machines. It keeps pace with AI: when a better model or ability arrives, your Machine can use it.
+9. **It works for teams and families.** A Fleet shares context, and the Graph and Boards become the CRM that replaces
    Salesflare.
 
 ## What it isn't
