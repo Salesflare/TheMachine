@@ -6,7 +6,7 @@ const applyLocale=l=>{if(!l)return;DL=l.date_locale||'en-US';H12=!!l.hour12;if(t
 // list stamps hundreds of times): localeDate and localeTime give the same text from one kept formatter per locale and
 // options, with the same defaults (a date with no date part shows year, month and day; a time hour, minute and second).
 const LOCALE_FMT=new Map(),LOCALE_DATE=['weekday','year','month','day'],LOCALE_TIME=['dayPeriod','hour','minute','second','fractionalSecondDigits'];
-function localeFmt(v,loc,o,time){const d=v instanceof Date?v:new Date(v);if(isNaN(d))return 'Invalid Date';o=o||{};
+function localeFmt(v,loc,o,time){const d=v instanceof Date?v:new Date(v);if(isNaN(d))return String(d);  /* the browser's own words for a date that isn't one */o=o||{};
  if(!o.dateStyle&&!o.timeStyle&&!(time?LOCALE_TIME:LOCALE_DATE).some(k=>o[k]!==undefined))o={...o,...(time?{hour:'numeric',minute:'numeric',second:'numeric'}:{year:'numeric',month:'numeric',day:'numeric'})};
  const key=(loc||'')+'|'+JSON.stringify(o);let f=LOCALE_FMT.get(key);if(!f){if(LOCALE_FMT.size>500)LOCALE_FMT.clear();f=new Intl.DateTimeFormat(loc,o);LOCALE_FMT.set(key,f)}return f.format(d)}
 const localeDate=(v,loc,o)=>localeFmt(v,loc,o,false),localeTime=(v,loc,o)=>localeFmt(v,loc,o,true);
