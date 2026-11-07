@@ -11,8 +11,9 @@ ready, a meeting prepped, a promise tracked. You decide, it does.
 
 ## What "best" means, in order
 
-1. **Trust.** Nothing goes out unseen. Your data is yours: local-first, open source, an end-to-end encrypted Network.
-   Security is never relaxed.
+1. **Trust, and it's yours.** Nothing goes out unseen. You own your data: local-first, open source, an end-to-end
+   encrypted Network, easy to take with you. You use the model you want (OpenAI, Claude, a local one), on your own plan.
+   No lock-in, unlike the big players. Security is never relaxed.
 2. **Right.** It catches everything that matters (to-dos, promises, follow-ups) and ignores the noise.
 3. **Does as much as possible, without you losing control.** Every to-do arrives as close to done as it can be, so it
    is one tap to approve, not homework. Taking work off your hands never means acting behind your back.
@@ -26,7 +27,8 @@ ready, a meeting prepped, a promise tracked. You decide, it does.
 
 ## What it isn't
 
-Not a chatbot you have to prompt. Not a dashboard of everything. Not something that acts behind your back.
+Not a chatbot you have to prompt. Not a dashboard of everything. Not something that acts behind your back. Not a walled garden that holds your data or your
+model choice hostage.
 
 ## Fast learning, no churn
 
