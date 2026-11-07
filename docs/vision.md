@@ -1,22 +1,22 @@
 # Product vision
 
-Everyone deserves a chief of staff. Not just CEOs with an assistant and a team, but anyone who runs a company, a
-team or a family. The Machine is that chief of staff, and it is yours.
+AI should work for you. Not wait for a prompt, not work for a big corporation, but take work off your hands every
+day, on your side. The Machine is that AI: proactive, working for you, and owned by you, along with all your data.
 
 This page says where we're going and what "best" means. Every change, agent and test is judged against it. It is
 reviewed every few days and changes only on the owner's word.
 
 ## The idea
 
-Your day shouldn't be spent sorting mail, chasing replies and remembering what you promised. The Machine reads
-everything that comes in (mail, Slack, WhatsApp, Telegram, calendar) and hands you a short list of to-dos with the
+Your day shouldn't be spent sorting mail, chasing replies and remembering what you promised. Without being asked,
+The Machine reads everything that comes in (mail, Slack, WhatsApp, Telegram, calendar) and hands you a short list of to-dos with the
 work already done: the draft written, the meeting prepped, the promise kept track of. You decide, it does. You get
 your head back for the work only you can do.
 
 ## What we believe, in order
 
-1. **It's yours.** Your data lives on your computer, in open source code you can read. You pick the model (OpenAI,
-   Claude, a local one) and use your own plan. Nothing locks you in, unlike the big players. Nothing goes out without
+1. **It's yours.** You own it and your data, not a big corporation. Your data lives on your computer, in open source
+   code you can read. You pick the model (OpenAI, Claude, a local one) and use your own plan. Nothing locks you in. Nothing goes out without
    you seeing it, and security is never relaxed.
 2. **It gets it right.** It catches everything that matters (to-dos, promises, follow-ups) and lets the noise go.
 3. **It does the work, you keep control.** Every to-do arrives as close to done as it can be: one tap to approve, not
@@ -32,7 +32,7 @@ your head back for the work only you can do.
 
 ## What it isn't
 
-Not a chatbot you have to prompt. Not a dashboard of everything. Not something that acts behind your back. Not a
+Not a chatbot that waits for you to prompt it. Not a dashboard of everything. Not something that acts behind your back. Not a
 walled garden that holds your data or your choice of model hostage.
 
 ## How we get there: fast learning, no churn
