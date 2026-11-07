@@ -1,14 +1,14 @@
 ---
 title: Microsoft OneDrive: file Word in OneDrive e SharePoint
 area: connections
-summary: Commenti, menzioni, revisioni e condivisioni sui tuoi file Word in OneDrive e SharePoint, più nuovi documenti privati, e modifiche che approvi. Google Docs arriverà più avanti.
+summary: Commenti, menzioni, revisioni e condivisioni sui tuoi file Word in OneDrive e SharePoint, più nuovi documenti privati, e modifiche che approvi.
 covers: connector:docs
 code: connectors/docs.py, doc_writes.py, next_actions.py, onboarding.py
 site: Sign in with Microsoft
 ---
 ## Cosa legge
 
-La connessione **Microsoft OneDrive** legge i file Word in OneDrive e SharePoint. Accedi con Microsoft apposta, con o senza Outlook collegato. Funziona su una Machine ospitata e sul tuo computer collegato al tuo account. Google Docs arriverà più avanti: l’accesso Google di The Machine non può ancora leggere i documenti. Porta dentro:
+La connessione **Microsoft OneDrive** legge i file Word in OneDrive e SharePoint. Accedi con Microsoft apposta, con o senza Outlook collegato. Funziona su una Machine ospitata e sul tuo computer collegato al tuo account. Per Google Docs, vedi più sotto. Porta dentro:
 
 - I documenti che qualcuno condivide con te.
 - Commenti e risposte sui documenti di cui sei proprietario, e i commenti che ti menzionano.
@@ -58,6 +58,13 @@ Non serve avere Outlook collegato.
 - Il tuo computer, abbinato al tuo account: apri **Connessioni**, **+ Aggiungi**, scegli **Microsoft OneDrive** e premi **Accedi con Microsoft**.
 
 Verifica che l’accesso possa leggere i documenti. Senza quell’OK non viene aggiunto. Se tocchi **Consenti le modifiche** e Microsoft non le consente, lo dice invece di mostrare Connesso.
+
+## Google Docs
+
+Google Docs non si può ancora collegare. Per leggerli serve un’autorizzazione Google che The Machine non chiede ancora. Cosa funziona oggi:
+
+- Sul tuo computer, la tua Machine può creare un nuovo Google Doc in un account Gmail collegato lì che ha già accesso a Drive. Non legge gli altri tuoi Google Docs né i loro commenti.
+- Una Machine ospitata non può ancora usare Google Docs.
 
 ## Lavoro o personale
 

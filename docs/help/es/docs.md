@@ -1,14 +1,14 @@
 ---
 title: Microsoft OneDrive: archivos de Word en OneDrive y SharePoint
 area: connections
-summary: Comentarios, menciones, cambios con seguimiento y archivos compartidos en tus archivos de Word en OneDrive y SharePoint, además de documentos nuevos privados, y cambios que apruebas. Google Docs llegará más adelante.
+summary: Comentarios, menciones, cambios con seguimiento y archivos compartidos en tus archivos de Word en OneDrive y SharePoint, además de documentos nuevos privados, y cambios que apruebas.
 covers: connector:docs
 code: connectors/docs.py, doc_writes.py, next_actions.py, onboarding.py
 site: Sign in with Microsoft
 ---
 ## Qué lee
 
-La conexión **Microsoft OneDrive** lee archivos de Word en OneDrive y SharePoint. Inicias sesión con Microsoft para ella, con o sin Outlook conectado. Funciona en una Machine alojada y en tu propio ordenador vinculado a tu cuenta. Google Docs llegará más adelante: el inicio de sesión de Google de The Machine aún no puede leer documentos. Trae:
+La conexión **Microsoft OneDrive** lee archivos de Word en OneDrive y SharePoint. Inicias sesión con Microsoft para ella, con o sin Outlook conectado. Funciona en una Machine alojada y en tu propio ordenador vinculado a tu cuenta. Para Google Docs, consulta más abajo. Trae:
 
 - Documentos que alguien comparte contigo.
 - Comentarios y respuestas en documentos tuyos, y comentarios que te mencionan.
@@ -58,6 +58,13 @@ No necesitas tener Outlook conectado.
 - Tu propio ordenador, vinculado a tu cuenta: abre **Conexiones**, **+ Añadir**, elige **Microsoft OneDrive** y pulsa **Iniciar sesión con Microsoft**.
 
 Comprueba que el inicio de sesión puede leer documentos. Sin ese OK no se añade. Si tocas **Permitir cambios** y Microsoft no permite cambios, lo dice en lugar de mostrar Conectado.
+
+## Google Docs
+
+Google Docs aún no se puede conectar. Leerlos necesita un permiso de Google que The Machine aún no pide. Lo que funciona hoy:
+
+- En tu propio ordenador, tu Machine puede crear un Google Doc nuevo en una cuenta de Gmail iniciada allí que ya tiene acceso a Drive. No lee tus otros Google Docs ni sus comentarios.
+- Una Machine alojada aún no puede usar Google Docs.
 
 ## Trabajo o personal
 

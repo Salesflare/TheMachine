@@ -1,14 +1,14 @@
 ---
 title: Microsoft OneDrive: Word-bestanden in OneDrive en SharePoint
 area: connections
-summary: Reacties, vermeldingen, bijgehouden wijzigingen en gedeelde bestanden in je Word-bestanden in OneDrive en SharePoint, plus nieuwe privédocumenten, en wijzigingen die je goedkeurt. Google Docs komen later.
+summary: Reacties, vermeldingen, bijgehouden wijzigingen en gedeelde bestanden in je Word-bestanden in OneDrive en SharePoint, plus nieuwe privédocumenten, en wijzigingen die je goedkeurt.
 covers: connector:docs
 code: connectors/docs.py, doc_writes.py, next_actions.py, onboarding.py
 site: Sign in with Microsoft
 ---
 ## Wat het leest
 
-De koppeling **Microsoft OneDrive** leest Word-bestanden in OneDrive en SharePoint. Je logt er apart voor in met Microsoft, met of zonder gekoppelde Outlook. Dat werkt op een gehoste Machine en op je eigen computer die aan je account gekoppeld is. Google Docs komen later: de Google-login van The Machine kan nog geen documenten lezen. Het haalt binnen:
+De koppeling **Microsoft OneDrive** leest Word-bestanden in OneDrive en SharePoint. Je logt er apart voor in met Microsoft, met of zonder gekoppelde Outlook. Dat werkt op een gehoste Machine en op je eigen computer die aan je account gekoppeld is. Voor Google Docs, zie verderop. Het haalt binnen:
 
 - Documenten die iemand met je deelt.
 - Reacties en antwoorden op documenten van jou, en reacties die jou vermelden.
@@ -58,6 +58,13 @@ Je hebt er geen gekoppelde Outlook voor nodig.
 - Je eigen computer, gekoppeld aan je account: open **Koppelingen**, **+ Toevoegen**, kies **Microsoft OneDrive** en druk op **Inloggen met Microsoft**.
 
 Hij controleert of de login documenten mag lezen. Zonder die OK wordt het niet toegevoegd. Druk je op **Bewerken toestaan** en staat Microsoft bewerken niet toe, dan zegt hij dat in plaats van Gekoppeld.
+
+## Google Docs
+
+Google Docs kun je nog niet koppelen. Om ze te lezen is een Google-toestemming nodig waar The Machine nog niet om vraagt. Wat vandaag werkt:
+
+- Op je eigen computer kan je Machine een nieuw Google-document maken in een Gmail-account dat daar is aangemeld en al toegang tot Drive heeft. Je andere Google Docs en hun reacties leest hij niet.
+- Een gehoste Machine kan Google Docs nog niet gebruiken.
 
 ## Werk of privé
 

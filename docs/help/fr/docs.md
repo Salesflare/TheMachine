@@ -1,14 +1,14 @@
 ---
 title: Microsoft OneDrive : fichiers Word dans OneDrive et SharePoint
 area: connections
-summary: Commentaires, mentions, modifications suivies et partages sur vos fichiers Word dans OneDrive et SharePoint, ainsi que les nouveaux documents privés, et les modifications que vous approuvez. Google Docs viendra plus tard.
+summary: Commentaires, mentions, modifications suivies et partages sur vos fichiers Word dans OneDrive et SharePoint, ainsi que les nouveaux documents privés, et les modifications que vous approuvez.
 covers: connector:docs
 code: connectors/docs.py, doc_writes.py, next_actions.py, onboarding.py
 site: Sign in with Microsoft
 ---
 ## Ce qu’il lit
 
-La connexion **Microsoft OneDrive** lit les fichiers Word dans OneDrive et SharePoint. Vous vous connectez avec Microsoft pour elle, avec ou sans Outlook connecté. Cela fonctionne sur une Machine hébergée et sur votre propre ordinateur associé à votre compte. Google Docs viendra plus tard : la connexion Google de The Machine ne peut pas encore lire les documents. Il récupère :
+La connexion **Microsoft OneDrive** lit les fichiers Word dans OneDrive et SharePoint. Vous vous connectez avec Microsoft pour elle, avec ou sans Outlook connecté. Cela fonctionne sur une Machine hébergée et sur votre propre ordinateur associé à votre compte. Pour Google Docs, voir plus bas. Il récupère :
 
 - Les documents que quelqu’un partage avec vous.
 - Les commentaires et réponses sur vos documents, et les commentaires qui vous mentionnent.
@@ -58,6 +58,13 @@ Outlook n’a pas besoin d’être connecté.
 - Votre propre ordinateur, associé à votre compte : ouvrez **Connexions**, **+ Ajouter**, choisissez **Microsoft OneDrive** et appuyez sur **Se connecter avec Microsoft**.
 
 Il vérifie que la connexion peut lire les documents. Sans cet accord, il n’est pas ajouté. Si vous touchez **Autoriser les modifications** et que Microsoft ne les autorise pas, il le dit au lieu d’afficher Connecté.
+
+## Google Docs
+
+Google Docs ne peut pas encore être connecté. Les lire demande une autorisation Google que The Machine ne demande pas encore. Ce qui marche aujourd’hui :
+
+- Sur votre propre ordinateur, votre Machine peut créer un nouveau Google Doc dans un compte Gmail connecté sur cet ordinateur qui a déjà accès à Drive. Elle ne lit pas vos autres Google Docs ni leurs commentaires.
+- Une Machine hébergée ne peut pas encore utiliser Google Docs.
 
 ## Travail ou perso
 
