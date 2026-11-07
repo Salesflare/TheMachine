@@ -134,12 +134,12 @@ async function sessionCheck(){if(sessionAsked||!localCache.on&&csrfLive)return;s
 // same, a row {"=":id} is that row as before. statusRaw stays as the server sent it; the page works on a copy.
 let statusRaw=null;
 const statusRow=x=>x&&typeof x==='object'&&!Array.isArray(x)&&Object.keys(x).length===1&&'='in x;
-function statusMerge(r){if(!r._since){statusRaw=r;return structuredClone(r)}if(!statusRaw||r._since!==statusRaw._token)return null;
+function statusMerge(r){if(!r._since){statusRaw=r;return JSON.parse(JSON.stringify(r))}if(!statusRaw||r._since!==statusRaw._token)return null;
  const out={...statusRaw};for(const k of r._gone||[])delete out[k];
  for(const[k,v]of Object.entries(r)){if(k==='_since'||k==='_gone')continue;
   if(Array.isArray(v)&&v.some(statusRow)){const was=new Map((statusRaw[k]||[]).map(x=>[typeof x?.id+':'+x?.id,x]));out[k]=v.map(x=>statusRow(x)?was.get(typeof x['=']+':'+x['=']):x);if(out[k].includes(undefined))return null}
   else out[k]=v}
- statusRaw=out;return structuredClone(out)}
+ statusRaw=out;return JSON.parse(JSON.stringify(out))}
 async function statusGet(){const since=statusRaw?._token,got=statusMerge(await request('api/status'+(since?'?since='+encodeURIComponent(since):''),{redirect:'manual'}));
  if(got)return got;statusRaw=null;return statusMerge(await request('api/status',{redirect:'manual'}))}
 async function refresh(){refreshes++;try{const edits=localEdits,next=wakeSnoozed(await statusGet());if(edits!==localEdits)return await refresh();
