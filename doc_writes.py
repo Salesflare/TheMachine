@@ -217,14 +217,21 @@ def area_name(boundary):
     return 'Personal' if kind_of(kind) == 'personal' else 'another area'
 
 
-def connect_line(area):
-    """What the owner does when no doc connection fits the to-do's area."""
-    return f'Connect Google Docs or Microsoft OneDrive for {"Work" if kind_of(area_of(area)) == "work" else "Personal"}'
+def google_offered(accounts):
+    """Whether the owner can add a Google place for docs on this setup: only when Google already takes docs here (their
+    own Google sign-in with Drive on their own computer). A hosted Machine's Google sign-in has no Drive scope."""
+    return any((a or {}).get('provider') == 'google' for a in (accounts or {}).values())
 
 
-def none_fits(area):
+def connect_line(area, google=False):
+    """What the owner does when no doc connection fits the to-do's area: only what they can connect on this setup."""
+    where = 'Google Docs or Microsoft OneDrive' if google else 'Microsoft OneDrive'
+    return f'Connect {where} for {"Work" if kind_of(area_of(area)) == "work" else "Personal"}'
+
+
+def none_fits(area, google=False):
     return (f'No Docs connection is in this to-do’s area ({area_name(area_of(area))}). Don’t draft a doc: give its text in the '
-            f'to-do and say needs: "{connect_line(area)}"')
+            f'to-do and say needs: "{connect_line(area, google)}"')
 
 
 WHERE_WORDS = {'microsoft': re.compile(r'\bGoogle (?:Docs?|Drive)\b', re.I),
@@ -276,11 +283,11 @@ def validate(value, context):
         fitting = {k: a for k, a in accounts.items() if fits(a.get('boundary'), area)}
         account = accounts.get(value.get('account_id'))
         if not account:
-            raise ValueError('account_id is one of your Docs connections: ' + (', '.join(sorted(fitting)) or none_fits(area)))
+            raise ValueError('account_id is one of your Docs connections: ' + (', '.join(sorted(fitting)) or none_fits(area, google_offered(accounts))))
         if not fits(account.get('boundary'), area):
             raise ValueError(f'{account.get("name") or value["account_id"]} is {area_name(account.get("boundary"))}, not this '
                              f'to-do’s area ({area_name(area_of(area))}). Never put its doc there. '
-                             + ('Use ' + ' or '.join(sorted(fitting)) + ' instead' if fitting else none_fits(area)))
+                             + ('Use ' + ' or '.join(sorted(fitting)) + ' instead' if fitting else none_fits(area, google_offered(accounts))))
         own = (area or {}).get('emails') or ()
         better = sorted(k for k, a in fitting.items() if str(a.get('email') or '').lower() in own and 'create' in a.get('writes', ()))
         if better and str(account.get('email') or '').lower() not in own:

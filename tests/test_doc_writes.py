@@ -571,10 +571,23 @@ class Area(unittest.TestCase):
     def test_none_in_the_area_says_so_plainly(self):
         with self.assertRaises(ValueError) as caught:
             self.create('home-docs', self.context(self.HOTMAIL))
-        self.assertIn('Connect Google Docs or Microsoft OneDrive for Work', str(caught.exception))
+        # a hosted Machine: Google takes no docs there, so only what the owner can connect is named
+        self.assertIn('Connect Microsoft OneDrive for Work', str(caught.exception))
+        self.assertNotIn('Google', str(caught.exception))
         # a personal to-do may use it
         self.assertEqual(self.create('home-docs', self.context(self.HOTMAIL, area={'boundaries': ['personal:phone'], 'emails': []}))['provider'],
                          'microsoft')
+
+    def test_google_is_named_only_where_the_owner_can_connect_it(self):
+        """Their own Google sign-in with Drive on their own computer takes docs, so another one can be added: the line
+        names Google Docs too. 2026-11-07: hosted to-dos asked to connect Google Docs, which a hosted Machine can't."""
+        home_gmail = ('home-gmail', {**self.GOG[1], 'email': 'me@gmail.example', 'boundary': 'personal:me'})
+        with self.assertRaises(ValueError) as caught:
+            self.create('home-gmail', self.context(home_gmail))
+        self.assertIn('Connect Google Docs or Microsoft OneDrive for Work', str(caught.exception))
+        self.assertEqual(w.connect_line({'boundaries': ['personal:me']}), 'Connect Microsoft OneDrive for Personal')
+        self.assertFalse(w.google_offered({'home-docs': self.HOTMAIL[1]}))
+        self.assertTrue(w.google_offered(dict([home_gmail])))
 
     def test_the_conversations_own_address_first(self):
         other = ('acme-docs', {'name': 'docs@acme.example', 'email': 'docs@acme.example', 'provider': 'microsoft',
