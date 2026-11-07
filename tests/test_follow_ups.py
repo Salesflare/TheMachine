@@ -703,6 +703,32 @@ class FollowUps(unittest.TestCase):
         # Not a follow-up: nothing added
         self.assertEqual(app.follow_up_skill_lines('nope'), '')
 
+    def test_every_preparation_gets_the_skill_that_fits_and_the_others_as_an_index(self):
+        """Not only follow-ups: any to-do's preparation carries the skill that fits it in full (by its project's board
+        or its title), and the other skills that are on as a short index to judge by what they are for."""
+        import skills
+        app = self.app(openclaw_workspace=self.tmp.name)
+        app.skills = skills.Skills(self.store.connect, self.tmp.name)
+        app.skills.save(None, 'Alpha testers outreach', 'Reach out to alpha testers', 'Open with early access, then the ask.')
+        app.skills.save(None, 'CRM updates', 'Keep the CRM current', 'Set the stage, then the next step with a date.')
+        app.skills.save(None, 'Support replies', 'Answer customer support threads', 'Check the status page first.')
+        board = self.store.suggest('reply-acme', 'Answer Acme about the pilot', 'They asked about access.', [self.ev['in1']])['id']
+        lines = app.prep_skill_lines(board)
+        self.assertIn('Open with early access, then the ask.', lines)  # fits by its project's board, in full
+        self.assertIn("Apply the one that fits this to-do without being asked", lines)
+        self.assertIn('- Support replies: Answer customer support threads (', lines)  # the rest: an index to judge by meaning
+        self.assertIn(str(Path(self.tmp.name) / 'skills' / skills.FOLDER / 'support-replies' / 'SKILL.md'), lines)
+        self.assertNotIn('Check the status page first.', lines)
+        crm = self.store.suggest('crm-kim', 'Update the CRM for Kim', 'New stage.', [self.ev['in2']])['id']
+        lines = app.prep_skill_lines(crm)
+        self.assertIn("Skill CRM updates (its name matches this to-do's title", lines)
+        self.assertIn('Set the stage, then the next step with a date.', lines)
+        # Without room for the text: read the file first
+        short = app.prep_skill_lines(crm, room=len(lines) - 1)
+        self.assertIn('read ' + str(Path(self.tmp.name) / 'skills' / skills.FOLDER / 'crm-updates' / 'SKILL.md') + ' now, before preparing', short)
+        self.assertNotIn('Set the stage', short)
+        self.assertEqual(follow_ups.prep_skill_note([], []), '')
+
     def test_a_change_takes_the_full_context_and_a_skill_added_after_the_drafts(self):
         """"I added a skill, use it now": the rewrite is a full preparation turn (style, the thread, earlier follow-ups),
         never the chat's short turn, and it names the skills on right now, one added after the drafts included, with

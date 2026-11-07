@@ -5646,8 +5646,9 @@ class App(*APP_MIXINS):
 
     def style_step(self):
         """Every ten minutes: a finished profile's channel lines fill voices still empty, and a draft the owner
-        answered themselves instead of sending becomes a lesson for the next drafts."""
+        answered themselves instead of sending becomes a lesson for the next drafts, and that to-do looks done."""
         seeded, learned = self.store.seed_voices(), self.store.learn_sent_elsewhere()
+        self.store.answered_elsewhere()
         if (self.config.get('review_worker') or {}).get('enabled'):  # read how they write from their own messages, now and then
             self.store.voice_study_due()
             self.store.tune_due()  # keep learning from edits, dismissals, snoozes and chat corrections (learning_loop.py)
@@ -5954,10 +5955,10 @@ class App(*APP_MIXINS):
                     with self.store.connect() as db:lines=recurring.prep_lines(db,job['suggestion_id'])
                     if lines and len(request['message'])+len(lines)<PROMPT_LIMIT-1000:request['message']+=lines
                 except Exception as error:LOG.error('recurring lines error=%s',type(error).__name__)
-                try:  # a skill of the owner's that fits this follow-up: its instructions, ranked above the follow-up defaults
-                    lines=self.follow_up_skill_lines(job['suggestion_id'],rules,PROMPT_LIMIT-1000-len(request['message']))
+                try:  # the owner's skill that fits this to-do (or follow-up): its instructions, ranked above the defaults
+                    lines=self.prep_skill_lines(job['suggestion_id'],rules,PROMPT_LIMIT-1000-len(request['message']))
                     if lines and len(request['message'])+len(lines)<PROMPT_LIMIT-1000:request['message']+=lines
-                except Exception as error:LOG.error('follow-up skill error=%s',type(error).__name__)
+                except Exception as error:LOG.error('skill lines error=%s',type(error).__name__)
                 if getattr(self, 'fleet', None):
                     try:
                         lines=self.fleet.lines(job['suggestion_id'])

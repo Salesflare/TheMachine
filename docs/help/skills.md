@@ -12,6 +12,10 @@ A skill teaches your Machine how to do one kind of task, like "answer pricing qu
 
 In **Settings**, **Skills**, press **New skill** or **Start from an example**. Give it a **Name**, **When to use it** and the **Instructions**, then **Save**.
 
+## When it's used
+
+Every to-do your Machine prepares gets the skill that fits it, without you asking: one named like its board, project or title, in full. Your other skills are listed with it, so one for that kind of work, like a reply in a known kind of thread or a CRM update, is followed too.
+
 ## Import
 
 Press **Import**:

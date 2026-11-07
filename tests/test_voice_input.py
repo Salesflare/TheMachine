@@ -364,6 +364,12 @@ class OpenAIWorker(unittest.TestCase):
         self.voice.warm()
         self.assertEqual(len(self.started), 1)
 
+    def test_a_computer_just_booted_still_starts_it(self):
+        # time.monotonic() counts from boot: right after one, a worker that never failed is still tried
+        with patch.object(v.time, 'monotonic', return_value=5.0):
+            self.assertEqual(self.voice.transcribe(b'\x02\x00' * 16000, ''), {'text': 'Hallo daar', 'language': None})
+        self.assertEqual(len(self.started), 1)
+
     def test_a_tap_starts_it(self):
         self.voice.warm()
         for _ in range(100):

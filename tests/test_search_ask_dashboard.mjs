@@ -19,8 +19,8 @@ const MSGS=[
 const ANSWER='Kim said the pilot moves to March, and Lee confirmed the budget stays the same. Nothing changes for the kickoff on the 4th.';
 let asks,mode,release;
 const reset=()=>{asks=[];mode='answer';release=null};reset();
-const state=()=>({suggestions:[{id:id(1),title:'Send Kim the pilot plan',body:'',status:'pending',scope:'work',created_at:ago(0),event_ids:[41]}],promises:[],suggestion_counts:{},
- decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},connectors:[],fleet:{on:false,fleets:[]}});
+const state=()=>({suggestions:[{id:id(1),title:'Send Kim the pilot plan',body:'',status:'pending',scope:'work',created_at:ago(0),event_ids:[41],people:[{id:'p1',name:'Kim Vale'}]}],promises:[],suggestion_counts:{},
+ decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},connectors:[],fleet:{on:false,fleets:[]},model_status:{model:'acme/lm-2'}});
 const server=createServer(async(req,res)=>{let body='';for await(const c of req)body+=c;const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(url.pathname==='/api/status'){res.end(JSON.stringify(state()));return}
@@ -52,7 +52,17 @@ try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
  // The flow, once at desktop size
  {const {context,page}=await open(1440,900);
+  // Easy to find: Search says it can answer, and an empty field shows one question to try, a different one each
+  // time (someone from the open to-dos, or a general one); a click asks it
+  assert.equal(await page.locator('#side-find').getAttribute('placeholder'),'Search or ask');
   await palOpenNow(page,1440);
+  assert.equal(await page.locator('#pal-q').getAttribute('placeholder'),'Search or ask anything');
+  const tries=[await page.locator('#pal-hint').textContent()];await page.keyboard.press('Escape');
+  await palOpenNow(page,1440);tries.push(await page.locator('#pal-hint').textContent());
+  assert.deepEqual(tries.sort(),['Try: what changed this week?','Try: what did Kim say last week?']);
+  await page.locator('#pal-hint').click();assert.match(await page.locator('#pal-q').inputValue(),/^what (changed|did Kim)/);
+  assert.ok(await page.locator('#pal-hint').isHidden(),'gone once there is text');
+  await page.keyboard.press('Escape');await palOpenNow(page,1440);
   // Keywords: the results at once; asked, nothing back, nothing shown
   await page.keyboard.type('pilot march kickoff');
   await page.locator('#pal-list .pal-group',{hasText:'Messages'}).waitFor();
@@ -96,10 +106,13 @@ try{
   assert.ok(!(await groups(page)).includes('Answer'));const n=asks.length;
   await page.locator('#pal-q').fill('what did kim say then?');await page.evaluate(()=>new Promise(r=>setTimeout(r,1200)));
   assert.equal(asks.length,n,'no model: not asked again');
+  await page.locator('#pal-q').fill('');assert.ok(await page.locator('#pal-hint').isHidden(),'no model: nothing to try');
+  assert.equal(await page.locator('#pal-q').getAttribute('placeholder'),'Search or type a command');
   await context.close()}
  // Shots: 390 and 1440, light and dark
  for(const colorScheme of ['light','dark'])for(const [w,h] of [[390,844],[1440,900]]){
   const {context,page}=await open(w,h,colorScheme);await palOpenNow(page,w);
+  await page.locator('#pal-hint').waitFor();if(shots)await page.screenshot({path:`${shots}/search-try-${w}-${colorScheme}.png`});
   await page.keyboard.type('what did kim say about the pilot?');
   await page.waitForFunction(t=>document.querySelector('#pal-answer')?.textContent===t,ANSWER);
   // the answer reads in full and fits the palette, never wider than the screen

@@ -45,6 +45,8 @@ Quando è pronta una nuova versione della dashboard, non si ricarica mai mentre 
 
 Apri la ricerca con `⌘K` su un Mac o `Ctrl K` su Windows e Linux, oppure con l'icona di ricerca nella barra in alto su un telefono. Scrivi almeno due lettere: **Messaggi** mostra i risultati migliori tra tutto ciò che la tua Machine ha letto, per significato o per parole. La [cronologia](history.md) più vecchia appare per parole.
 
+Puoi anche fare una domanda, come quella che suggerisce una ricerca vuota, per una risposta breve dai tuoi messaggi ([Tastiera e palette dei comandi](keyboard.md)).
+
 **Vedi tutti i risultati** apre l'elenco completo, per tutti gli account o per uno solo. Ogni risultato si apre in un lettore, con un link al punto da cui è arrivato. Una ricerca vuota mostra i messaggi più recenti.
 
 ## Apprendimento

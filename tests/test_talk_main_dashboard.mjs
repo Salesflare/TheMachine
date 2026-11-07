@@ -354,7 +354,11 @@ try{
  // what timers did runs on the voice's own events, so slowed-down timers don't hold it up. Back on screen it checks the
  // connection is still there; one that went away while hidden ends cleanly and says so.
  {const BACKGROUND=()=>{window.__wakes=[];Object.defineProperty(navigator,'wakeLock',{value:{request:async kind=>{const l={kind,released:false,release:async()=>{l.released=true}};window.__wakes.push(l);return l}}});
-   const ms={handlers:{},metadata:null,playbackState:'none',setActionHandler(n,f){if(n==='hangup'||n==='togglemicrophone')throw new TypeError('not supported here');if(f)this.handlers[n]=f;else delete this.handlers[n]},setMicrophoneActive(on){this.mic=on}};
+   const ms={handlers:{},metadata:null,playbackState:'none',setActionHandler(n,f){if(n==='hangup'||n==='togglemicrophone')throw new TypeError('not supported here');if(f)this.handlers[n]=f;else delete this.handlers[n]},
+    // as in Chrome: a promise, refused (InvalidStateError) when it unmutes without a fresh tap on the page. talkReady runs
+    // when the connection opens, seconds after the tap, and the lock screen's play is no tap: here it always refuses
+    // (page.evaluate counts as a tap), and neither may reach the error feed
+    setMicrophoneActive(on){this.mic=on;return on?Promise.reject(new DOMException('Unmuting must be triggered from a user gesture.','InvalidStateError')):Promise.resolve()}};
    Object.defineProperty(navigator,'mediaSession',{value:ms});window.__hidden=false;
    Object.defineProperty(document,'hidden',{get:()=>window.__hidden});Object.defineProperty(document,'visibilityState',{get:()=>window.__hidden?'hidden':'visible'});
    window.__show=hidden=>{window.__hidden=hidden;document.dispatchEvent(new Event('visibilitychange'))};
@@ -413,6 +417,9 @@ try{
   await page.evaluate(()=>__show(false));
   await page.waitForFunction(()=>document.getElementById('toast').textContent==='Talk stopped while in the background.');
   if(SHOTS)await page.screenshot({path:`${SHOTS}/m7-stopped-in-the-background-390-light.png`});
+  // None of it went to the error feed: the refused indicator (going live, the lock screen's play) is no error
+  await page.waitForTimeout(2500);
+  assert.deepEqual(actions.filter(a=>a.action==='client_error').flatMap(a=>a.args.errors),[],'nothing for the error feed');
   await context.close()}
  // Without OpenAI (the page's status says so): no Talk
  talkReady=false;reset();actions.length=0;
