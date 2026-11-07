@@ -44,7 +44,7 @@ Per non ricevere più la richiesta, disattiva **Proponi di condividere apprendim
 
 Anche alla tua arrivano gli apprendimenti condivisi da altre Machine. Una volta al giorno un breve controllo fa una domanda: questo avrebbe cambiato qualcosa sulla tua Machine nell’ultima settimana? Rimanda indietro solo un voto. Niente su di te parte. I tuoi apprendimenti non ti vengono mai rimandati da votare.
 
-Un voto utile richiede un caso concreto della tua ultima settimana, raccontato in modo generico e controllato come un caso d’uso. Senza, il voto è **Non pertinente qui**. Il team conta solo i voti utili con un caso.
+Un voto utile o non pertinente richiede un caso concreto della tua ultima settimana: un’attività o qualcosa che hai chiesto nella sua chat, raccontato in modo generico e controllato come un caso d’uso. Senza, la tua Machine si astiene e il voto non conta. In una settimana senza attività non vota.
 
 Il team vede gli apprendimenti in ordine di voti e sceglie cosa entra in The Machine per tutti. Niente cambia da solo.
 

@@ -44,7 +44,7 @@ Pour ne plus être sollicité, désactivez **Proposer de partager des apprentiss
 
 Les apprentissages partagés par d’autres Machines arrivent aussi sur la vôtre. Une fois par jour, une courte vérification pose une question : est-ce que cela aurait changé quelque chose sur votre Machine la semaine passée ? Elle renvoie seulement un vote. Rien sur vous n’est transmis. Vos propres apprentissages ne vous sont jamais renvoyés pour un vote.
 
-Un vote utile demande un cas concret de votre semaine passée, raconté de façon générique et vérifié comme un cas d’usage. Sans cas, le vote devient **Pas pertinent ici**. L’équipe ne compte que les votes utiles avec un cas.
+Un vote utile ou pas pertinent demande un cas concret de votre semaine passée : une tâche ou une demande faite dans son chat, raconté de façon générique et vérifié comme un cas d’usage. Sans cas, votre Machine s’abstient et le vote ne compte pas. Une semaine sans activité, elle ne vote pas.
 
 L’équipe voit les apprentissages classés par votes et choisit ce qui entre dans The Machine pour tout le monde. Rien ne change tout seul.
 

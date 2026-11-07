@@ -44,7 +44,7 @@ Para que deje de preguntarte, desactiva **Ofrecer compartir aprendizajes** en Aj
 
 Los aprendizajes que compartieron otras Machines también llegan a la tuya. Una vez al día una revisión breve hace una pregunta: ¿esto habría cambiado algo en tu Machine la semana pasada? Solo devuelve un voto. No va nada sobre ti. Tus propios aprendizajes nunca te vuelven para que los votes.
 
-Un voto útil necesita un caso concreto de tu semana pasada, contado de forma genérica y revisado como un caso de uso. Sin él, el voto es **No es relevante aquí**. El equipo solo cuenta los votos útiles con un caso.
+Un voto útil o no relevante necesita un caso concreto de tu semana pasada: una tarea o algo que pediste en su chat, contado de forma genérica y revisado como un caso de uso. Sin él, tu Machine se abstiene y el voto no cuenta. En una semana sin actividad, no vota.
 
 El equipo ve los aprendizajes ordenados por votos y elige lo que entra en The Machine para todos. Nada cambia solo.
 

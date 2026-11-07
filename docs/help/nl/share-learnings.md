@@ -44,7 +44,7 @@ Wil je het niet meer gevraagd worden, zet dan **Aanbieden om inzichten te delen*
 
 Inzichten die andere Machines deelden, komen ook bij de jouwe. Eén keer per dag stelt een korte controle één vraag: had dit de afgelopen week iets veranderd op jouw Machine? Hij stuurt alleen een stem terug. Er gaat niets over jou mee. Je eigen inzichten worden nooit naar je teruggestuurd om op te stemmen.
 
-Een nuttige stem heeft een concreet geval uit jouw afgelopen week nodig, algemeen verteld en gecontroleerd zoals een use case. Zonder dat wordt de stem **Hier niet relevant**. Het team telt alleen nuttige stemmen met een geval.
+Een stem voor nuttig of niet relevant heeft een concreet geval uit jouw afgelopen week nodig: een to-do of iets wat je in de chat ervan vroeg, algemeen verteld en gecontroleerd zoals een use case. Zonder dat onthoudt je Machine zich van stemming en telt de stem niet. In een week zonder activiteit stemt hij niet.
 
 Het team ziet de inzichten gerangschikt op stemmen en kiest wat er voor iedereen in The Machine komt. Er verandert niets vanzelf.
 

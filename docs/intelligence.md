@@ -822,12 +822,18 @@ example and area only; never its log or who sent it).
 
 - Once a day a Machine with voting on fetches up to 20 candidates, skips its own and any the strip would change.
 - One small background turn (kind `team_votes`, at most five learnings) answers one question for each: would this have
-  changed something on this Machine in the past week? It reads the owner's rules, facts and channels and the past
-  week's to-dos with what the owner did.
-- **Useful** needs a concrete case from that week as the vote's use case (passing `check_case`); without one the vote
-  goes as `not_relevant`. Agreeing with the idea is not a vote.
+  changed something on this Machine in the past week? It reads the owner's rules, facts and channels, the past
+  week's to-dos with what the owner did, and what the owner asked in to-do chats that week (`chat_requests`).
+- **Useful** and **Not relevant** each need a concrete case from that week as the vote's use case (passing
+  `check_case`); without one the vote becomes an abstain. Agreeing with the idea is not a vote, and a placeholder
+  case ("no case was found") is not a case.
+- **Abstain**: a Machine with no to-do decisions and no to-do chat requests that week runs no turn and sends nothing;
+  the learnings are fetched again on a later day. The turn abstains on a learning nothing in its week touches. Under
+  On an abstain goes as just `abstain` (no reason, no case), so the control plane stops offering it there and never
+  counts it; under Ask first it stays on the Machine.
 - Only the vote goes back: `useful`, `not_useful` or `not_relevant`, a reason and a use case, each dropped when the
-  strip or check would change it. A learning is judged once at most.
+  strip or check would change it, plus `judged` (this Machine abstains when it has nothing to judge by). A learning is
+  judged once at most.
 - The control plane counts the votes per account without keeping the account, and ranks the learnings for the team,
   who pick what goes into the shipped defaults (AGENTS.md, a prompt, the docs) as a change a person makes.
 

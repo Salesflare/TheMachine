@@ -23,6 +23,8 @@ spec = importlib.util.spec_from_file_location('learnings_assistant', Path(__file
 a = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(a)
 
+QUIET = {'given': 'a newsletter arrives in the inbox', 'when': 'the owner archives it without a to-do',
+         'then': 'nothing would have changed'}
 CASE = {'given': 'a first reply to a customer who has not heard of the owner yet', 'when': 'the owner opens the draft',
         'then': 'the draft says who the owner is before the ask'}
 PERSONAL = ('Sam Lee', 'Globex', 'sam@globex.example', 'Office move', 'https://globex.example/deal', '+32 470 12 34 56')
@@ -471,30 +473,80 @@ class TeamLearnings(unittest.TestCase):
             {'id': 'c3', 'ref': 'tl_other00001', 'text': 'Ask sam@globex.example before every invoice reminder goes out.', 'area': 'other'},
             {'id': 'c4', 'ref': 'tl_other00002', 'text': 'Snoozed newsletters should not come back as to-dos.', 'area': 'cards'}],
             lambda page: [{'id': 'c1', 'vote': 'useful', 'reason': 'Sam Lee at Globex would like that.', 'use_case': CASE},
-                          {'id': 'c4', 'vote': 'not_relevant', 'reason': 'No newsletters in this inbox.'},
+                          {'id': 'c4', 'vote': 'not_relevant', 'reason': 'No newsletters in this inbox.', 'use_case': QUIET},
                           {'id': 'c9', 'vote': 'useful'}])
         self.assertEqual([r['id'] for r in page['learnings']], ['c1', 'c4'])  # not its own, not one with an address in it
         self.assertIn('past_week', page['owner'])
         votes = [b for b in self.network.sent if b['action'] == 'vote']
-        self.assertEqual(votes, [{'action': 'vote', 'id': 'c1', 'vote': 'useful', 'use_case': CASE},  # a reason with a name in it is dropped, the vote goes
-                                 {'action': 'vote', 'id': 'c4', 'vote': 'not_relevant', 'reason': 'No newsletters in this inbox.'}])
+        self.assertEqual(votes, [{'action': 'vote', 'id': 'c1', 'vote': 'useful', 'judged': True, 'use_case': CASE},  # a reason with a name in it is dropped, the vote goes
+                                 {'action': 'vote', 'id': 'c4', 'vote': 'not_relevant', 'judged': True, 'reason': 'No newsletters in this inbox.',
+                                  'use_case': QUIET}])
 
     def test_useful_needs_a_concrete_case_from_this_machine(self):
         page = self.votes([
             {'id': 'c1', 'ref': 'tl_other00000', 'text': 'Drafts for people who don’t know the context yet should introduce it first.', 'area': 'drafts'},
             {'id': 'c2', 'ref': 'tl_other00001', 'text': 'Snoozed newsletters should not come back as to-dos.', 'area': 'cards'},
             {'id': 'c3', 'ref': 'tl_other00002', 'text': 'Invoice reminders should wait until the due date has passed.', 'area': 'cards'}],
-            lambda page: [{'id': 'c1', 'vote': 'useful', 'reason': 'Good idea.'},  # agrees, no case: not relevant here
+            lambda page: [{'id': 'c1', 'vote': 'useful', 'reason': 'Good idea.'},  # agrees, no case: an abstain
                           {'id': 'c2', 'vote': 'useful', 'use_case': {**CASE, 'when': 'Sam Lee opens the draft'}},  # a case with a name: dropped
                           {'id': 'c3', 'vote': 'useful', 'use_case': CASE}])
         self.assertIn('Introduce yourself first, Sam Lee has never heard of us', json.dumps(page['owner']['past_week']))  # private, its own turn only
         self.assertIn('would this have changed something on this Machine in the past week?', tl.vote_prompt('r', page))
         votes = {b['id']: b for b in self.network.sent if b['action'] == 'vote'}
-        self.assertEqual({k: v['vote'] for k, v in votes.items()}, {'c1': 'not_relevant', 'c2': 'not_relevant', 'c3': 'useful'})
+        self.assertEqual({k: v['vote'] for k, v in votes.items()}, {'c1': 'abstain', 'c2': 'abstain', 'c3': 'useful'})
+        self.assertEqual(votes['c1'], {'action': 'vote', 'id': 'c1', 'vote': 'abstain'})  # an abstain carries nothing else
         self.assertNotIn('use_case', votes['c2'])
         self.assertNotIn('Sam', json.dumps(list(votes.values())))
         self.assertEqual(votes['c3']['use_case'], CASE)
         self.assertIsNone(self.app.team_votes_due())  # fetched today: nothing more until tomorrow, and nothing waits
+
+    def test_the_owners_to_do_chat_requests_are_evidence_and_only_theirs(self):
+        with self.store.connect() as db:
+            db.execute("INSERT INTO suggestions(id,dedupe_key,title,body,event_ids,account_ids,status,created_at) "
+                       "VALUES('s9','s9','Invoice reminder','','[]','[\"work\"]','open',?)", (a.now(),))
+            for i, (choice, source, text) in enumerate((('other', 'telegram', 'Make the reminder shorter and mention the first one'),
+                                                        ('other', 'auto', 'Not the owner: placed by itself'),
+                                                        ('reject', 'dashboard', 'Not this one'))):
+                db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)",
+                           (f'dc{i}', 's9', choice, text, source, a.now()))
+        page = self.votes([{'id': 'c1', 'ref': 'tl_other00000', 'text': 'Reminders should say how many came before.', 'area': 'drafts'}],
+                          lambda page: [{'id': 'c1', 'vote': 'useful', 'use_case': CASE}])
+        asked = page['owner']['chat_requests']
+        self.assertIn({'todo': 'Invoice reminder', 'asked': 'Make the reminder shorter and mention the first one'}, asked)
+        self.assertIn('Send it on WhatsApp instead', json.dumps(asked))
+        self.assertNotIn('placed by itself', json.dumps(asked))
+        self.assertNotIn('Not this one', json.dumps(asked))
+        self.assertIn('chat_requests', tl.vote_prompt('r', page))
+        # Only the vote leaves: none of the requests
+        self.assertNotIn('reminder shorter', json.dumps(self.network.sent))
+
+    def test_an_idle_machine_abstains_and_sends_nothing(self):
+        with self.store.connect() as db:
+            old = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=tl.VOTE_RECENT_DAYS + 1)).isoformat(timespec='seconds')
+            db.execute('UPDATE decisions SET created_at=?', (old,))
+        candidates = [{'id': 'c1', 'ref': 'tl_other00000', 'text': 'Snoozed newsletters should not come back as to-dos.', 'area': 'cards'}]
+        self.assertIsNone(self.votes(candidates, lambda page: self.fail('an idle Machine runs no turn')))
+        self.assertEqual([b for b in self.network.sent if b['action'] == 'vote'], [])
+        with self.store.connect() as db:
+            self.assertEqual(db.execute('SELECT count(*) FROM team_learning_votes').fetchone()[0], 0)  # let go, fetched again later
+            self.assertEqual(db.execute("SELECT count(*) FROM profile_runs WHERE kind='team_votes'").fetchone()[0], 0)
+            tl.set_pref(db, 'votes_fetched_at', old)  # a day later, with a chat request this week, it judges them
+            db.execute("UPDATE decisions SET created_at=? WHERE id='d1'", (a.now(),))
+        page = self.votes(candidates, lambda page: [{'id': 'c1', 'vote': 'abstain', 'reason': 'Nothing about newsletters.', 'use_case': QUIET}])
+        self.assertEqual([r['id'] for r in page['learnings']], ['c1'])
+        # The turn's own abstain goes as just that under On, so it isn't offered here again, and never shows as a vote
+        self.assertEqual([b for b in self.network.sent if b['action'] == 'vote'], [{'action': 'vote', 'id': 'c1', 'vote': 'abstain'}])
+        with self.store.connect() as db:
+            # no sent_at: Activity lists only votes that went (activity_log)
+            self.assertEqual(tuple(db.execute("SELECT status,sent_at FROM team_learning_votes WHERE candidate_id='c1'").fetchone()), ('abstain_sent', None))
+
+    def test_an_abstain_under_ask_first_stays_here(self):
+        self.app.action('set_learnings_vote', {'mode': 'ask'}, owner_dashboard=True)
+        self.votes([{'id': 'c1', 'ref': 'tl_other00000', 'text': 'Snoozed newsletters should not come back as to-dos.', 'area': 'cards'}],
+                   lambda page: [{'id': 'c1', 'vote': 'not_relevant', 'reason': 'Nothing here.'}])  # no case: an abstain
+        self.assertEqual(self.app.learnings_view()['votes_waiting'], [])
+        self.app.team_votes_due()
+        self.assertEqual([b for b in self.network.sent if b['action'] == 'vote'], [])
 
     def test_voting_off_in_settings_fetches_and_sends_nothing(self):
         self.assertTrue(self.app.learnings_view()['vote'])
@@ -511,7 +563,8 @@ class TeamLearnings(unittest.TestCase):
         self.assertEqual((view['vote_mode'], view['vote']), ('ask', True))
         self.votes([{'id': 'c1', 'ref': 'tl_other00000', 'text': 'Drafts for people who don’t know the context yet should introduce it first.', 'area': 'drafts'},
                     {'id': 'c2', 'ref': 'tl_other00001', 'text': 'Snoozed newsletters should not come back as to-dos.', 'area': 'cards'}],
-                   lambda page: [{'id': 'c1', 'vote': 'useful', 'reason': 'Works for short chat replies too.', 'use_case': CASE}, {'id': 'c2', 'vote': 'not_relevant'}])
+                   lambda page: [{'id': 'c1', 'vote': 'useful', 'reason': 'Works for short chat replies too.', 'use_case': CASE},
+                                 {'id': 'c2', 'vote': 'not_relevant', 'use_case': QUIET}])
         self.assertEqual([b for b in self.network.sent if b['action'] == 'vote'], [], 'judged, but nothing goes before the owner says so')
         waiting = self.app.learnings_view()['votes_waiting']
         self.assertEqual(sorted((v['id'], v['vote']) for v in waiting), [('c1', 'useful'), ('c2', 'not_relevant')])
@@ -526,7 +579,7 @@ class TeamLearnings(unittest.TestCase):
         self.assertEqual(self.app.learnings_view()['votes_waiting'], [])
         self.app.team_votes_due()  # the next send, ten minutes on at most
         self.assertEqual([b for b in self.network.sent if b['action'] == 'vote'],
-                         [{'action': 'vote', 'id': 'c1', 'vote': 'useful', 'reason': 'Works for short chat replies too.', 'use_case': CASE}])
+                         [{'action': 'vote', 'id': 'c1', 'vote': 'useful', 'judged': True, 'reason': 'Works for short chat replies too.', 'use_case': CASE}])
 
     def test_a_vote_left_waiting_goes_unsent_and_off_drops_what_waits(self):
         with self.store.connect() as db:
