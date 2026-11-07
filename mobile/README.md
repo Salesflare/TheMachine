@@ -46,8 +46,9 @@ rename). Every other link opens in the system browser. Only the app's own start 
 3. When something needs the owner, the Machine asks the relay to wake the phone. The push carries a fixed text and a
    to-do id, never the content.
 4. The app registers with `fetch`, and asks the saved Machine about the to-do (`GET api/notice?tag=`): its title
-   ("Ready: <title>", at most 60 characters), next step (at most 120), buttons and their words, or `gone` for a
-   to-do that no longer waits. No answer: the fixed text. The Machine's Text in notifications off gives the fixed
+   (what it is about, at most 60 characters: "Pick a time with Sam"; a state other than ready in front, "Preparing:
+   ..."), next step (at most 120: the draft's recipient and first words, "Send to Sam: Tuesday works", or the question
+   for the owner), buttons and their words, or `gone` for a to-do that no longer waits. No answer: the fixed text. The Machine's Text in notifications off gives the fixed
    text too. The lock screen with previews hidden shows the fixed text only.
 5. Buttons: the notice lists them per kind (`QUICK` in `machine/delivery/push.py`; the app asks with `v=2` and the
    wakeup's kind, an older app gets Do it, Snooze and Mark done). Do it (a to-do not started yet), Snooze (2 hours,
@@ -60,7 +61,9 @@ rename). Every other link opens in the system browser. Only the app's own start 
 7. Android (`MachinePushService`, which replaces Capacitor's FCM service and still runs it): a data-only push (kind,
    ready or needs-you, the to-do id, the fixed text and a "{} to-dos need you" line), the notice with the WebView's
    cookies (over Tailscale for a Machine of their own), buttons in `NotificationActions` (Android 12+: unlock first; the opening ones open the app).
-   No answer: the fixed text, or the count of that kind since the app was last opened. Words: `PushText` (tests:
+   No answer: the fixed text with "Tap to open.", or the count of that kind since the app was last opened, at once;
+   the app asks once more 2 seconds later, and an answer then takes its place without a second buzz. Several of the
+   app's notifications are grouped by Android itself (its summary is only the header). Words: `PushText` (tests:
    `PushTextTest`).
 8. iOS: the relay's alert has `mutable-content`, and the Notification Service extension (`NotificationService/`,
    bundle `computer.themachine.app.notifications`) asks for the notice with the sign-in the app keeps in the app

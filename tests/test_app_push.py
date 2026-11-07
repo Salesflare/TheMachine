@@ -280,7 +280,7 @@ class AppPush(unittest.TestCase):
                             'body': 'Hi Sam,\n\nTuesday 10:00 works for me. See you then.', 'revision': 'r1'})
         ready = a.app_notice(self.store, self.config, self.card('Pick a time with Sam', status='prepared', next_action=reply))
         self.assertEqual((ready['title'], ready['body'], ready['actions']),
-                         ('Ready: Pick a time with Sam', 'Send to Sam Lee: Tuesday 10:00 works for me.', ['snooze', 'done']))
+                         ('Pick a time with Sam', 'Send to Sam Lee: Tuesday 10:00 works for me.', ['snooze', 'done']))
         labelled = json.dumps({'kind': 'email', 'label': 'Reply to Sam', 'to': ['sam@client.example'], 'body': 'Confirm Tuesday 10:00.', 'revision': 'r1'})
         self.assertEqual(a.app_notice(self.store, self.config, self.card('Meeting', status='prepared', next_action=labelled))['body'],
                          'Reply to Sam: Confirm Tuesday 10:00.')
@@ -291,6 +291,33 @@ class AppPush(unittest.TestCase):
         self.assertLessEqual((len(long['title']), len(long['body'])), (notify.APP_LINE, a.APP_BODY))
         for status in a.APP_GONE:
             self.assertEqual(a.app_notice(self.store, self.config, self.card('Gone ' + status, status=status)), {'gone': True})
+
+    def test_a_ready_draft_leads_with_what_it_is_about_and_says_who_and_how_it_starts(self):
+        # The phone has room for one short title: no "Ready:" in front, and the generic "check the draft and send it"
+        # gives way to the draft itself, without its greeting or a line that is only a link
+        draft = json.dumps({'kind': 'email', 'account_id': 'work', 'to': ['Jo Park <jo@client.example>'], 'subject': 'Re: Listing',
+                            'body': 'Hey Jo,\n\nUpdated the address on every page:\nhttps://blog.example.com/best-agencies\n\nThanks for flagging it!',
+                            'revision': 'r1'})
+        generic = json.dumps({'needs': 'check the draft and send it', 'state': 'needs_you'})
+        notice = a.app_notice(self.store, self.config, self.card('Correct the agency location', status='prepared', next_action=draft,
+                                                                outcome=generic), 'result', 2)
+        self.assertEqual((notice['title'], notice['body'], notice['actions']),
+                         ('Correct the agency location', 'Send to Jo Park: Updated the address on every page: Thanks for flagging it!',
+                          ['draft', 'snooze2h', 'done']))
+        self.assertNotIn('Ready', notice['title'])
+        # a question for the owner still leads, draft or not; a result without a draft says what it found
+        asks = json.dumps({'needs': 'Send it from the work address?', 'state': 'needs_you'})
+        self.assertEqual(a.app_notice(self.store, self.config, self.card('Reply to Jo', status='prepared', next_action=draft,
+                                                                        outcome=asks))['body'], 'Send it from the work address?')
+        found = a.app_notice(self.store, self.config, self.card('Assess the Swiss tax review', 'The review found no tax due. Details below.',
+                                                               status='prepared', outcome=json.dumps({'state': 'answered'})))
+        self.assertEqual((found['title'], found['body']), ('Assess the Swiss tax review', 'The review found no tax due.'))
+        # other states keep their word in front, and Text in notifications off still says only "Ready"
+        self.assertEqual(a.app_notice(self.store, self.config, self.card('Draft the memo', status='accepted'))['title'], 'Preparing: Draft the memo')
+        with self.store.connect() as db:
+            a.security_levels.set_pref(db, 'notify_text', 'off')
+        hidden = a.app_notice(self.store, self.config, self.card('Correct the location', status='prepared', next_action=draft, outcome=generic))
+        self.assertEqual((hidden['title'], hidden['body']), ('Ready', 'Tap to open.'))
 
     # -- quick buttons (push.QUICK): every kind has its own, and none of them sends anything
     def quick_cards(self):
@@ -405,7 +432,7 @@ class AppPush(unittest.TestCase):
             return sid
         waiting = promised(theirs, 'Waiting on Sam Lee: the quote')
         self.assertEqual(a.app_notice(self.store, self.config, waiting)['title'], 'Waiting on Sam Lee: the quote')
-        self.assertEqual(a.app_notice(self.store, self.config, promised(mine, 'Send Sam the deck'))['title'], 'Ready: Send Sam the deck')
+        self.assertEqual(a.app_notice(self.store, self.config, promised(mine, 'Send Sam the deck'))['title'], 'Send Sam the deck')
         back = self.card('Call the plumber', status='prepared', outcome=json.dumps({'state': 'snoozed'}))
         self.assertEqual(a.app_notice(self.store, self.config, back)['title'], 'Reminder: Call the plumber')
         # the web push, the phone's line and Telegram say the same
