@@ -9,14 +9,14 @@ order: 1
 Apri **Impostazioni** con l’ingranaggio in alto. Le sue schede:
 
 - **Account**: **I tuoi indirizzi**, quelli che contano come te, con la loro provenienza, ed **Esci**. Su una Machine in hosting anche piano, fatture, Machine, Fleet, indirizzo, amici, accesso e dati, ognuno con il suo pulsante. Vedi [Piani e fatturazione](plans-and-billing.md). **Esci** è in alto, **Annulla il piano** ed **Elimina l’account** in fondo. Su una Machine sul tuo computer, collegata al Network: la tua Fleet, nome utente, amici e accesso, ognuno con un link che apre quella parte del tuo account (accedi lì), ed **Elimina l’account** in fondo.
-- **Generale**: lingua e area geografica, input vocale, questo dispositivo, il browser della tua Machine, la tua Fleet, esportazione e importazione, e il tuo account.
+- **Generale**: lingua e area geografica, input vocale, questo dispositivo, il browser della tua Machine, la tua Fleet, esportazione e importazione, la versione che esegue, e il tuo account.
 - **Sicurezza**: Standard o Prudente, e le impostazioni che applicano. Vedi [Livelli di sicurezza](security-levels.md). C’è anche **Accesso per l’assistenza**, finché è attivo: vedi [Ricevi assistenza](get-support.md#support-access).
 - **Movimenti**: tutto ciò che The Machine ha fatto per te, dal più recente. Vedi [Movimenti](activity.md).
 - **Notifiche**: cosa ti arriva e dove, e il tuo orario di lavoro. Vedi [Notifiche](notifications.md) e [Orario di lavoro](work-hours.md).
 - **Scrittura**: firme e il tuo modo di scrivere. Vedi [Scrittura](writing.md).
 - **Skill**: istruzioni che la tua Machine segue. Vedi [Skill](skills.md).
 - **App**: le app di The Machine per telefono e computer, poi Claude, ChatGPT e le altre IA che hai collegato, e cosa può fare ognuna. Vedi [L’app mobile](mobile-app.md) e [Collegare altre IA](ai-connections.md).
-- **Modello**: chi risponde per te, e i suoi limiti. Vedi [Modello](model.md). C’è anche **Codex e Claude Code**: vedi [Passa a Claude Code o Codex](hand-to-agent.md).
+- **Modello**: chi risponde per te, e i suoi limiti. Vedi [Modello](model.md). C’è anche **Codex e Claude Code**: vedi [Passa a Claude Code o Codex](hand-to-agent.md). E **Ricerca per significato**, più sotto.
 
 Una scheda senza niente da mostrare resta nascosta.
 
@@ -31,6 +31,18 @@ Una scheda senza niente da mostrare resta nascosta.
 - **Esporta**:
   - **Tutto**: tutto ciò che la tua Machine sa in un unico file cifrato, per traslocare o conservare, e **Importa** per portarne dentro uno. Vedi [Passa a un altro computer](moving.md).
   - **Conoscenze per un’altra IA**: ciò che la tua Machine ha imparato, in file che qualsiasi IA può leggere. Vedi [Conoscenze per un’altra IA](knowledge-export.md).
+
+## Versione
+
+La release che la tua Machine esegue. Gli aggiornamenti si installano da soli. Quando su una Machine in hosting è disponibile una versione più recente, **Aggiorna ora** la installa subito. Ci vogliono pochi minuti, e i tuoi dati restano.
+
+Sul tuo computer, un timer giornaliero installa ogni nuova release firmata su Linux. Vedi [Usala sul tuo computer](self-hosted-setup.md).
+
+## Ricerca per significato
+
+In **Impostazioni**, **Modello**. Trova email, messaggi e note in base all’argomento, non solo alle parole. Su una Machine in hosting lo fa una piccola IA sulla Machine stessa, e non viene inviato nulla altrove. È attiva da 8 GB di memoria. Con 4 GB, attivala con il suo interruttore. Usa circa mezzo gigabyte, quindi una Machine impegnata può rallentare.
+
+Sul tuo computer, è il blocco `embeddings` in `config.json`. Riavvia la Machine dopo una modifica.
 
 ## Su questa Machine
 

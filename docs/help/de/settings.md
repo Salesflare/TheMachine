@@ -9,14 +9,14 @@ order: 1
 Öffne **Einstellungen** über das Zahnrad oben. Die Tabs:
 
 - **Konto**: **Deine Adressen**, die als du zählen, jeweils mit Herkunft, und **Abmelden**. Auf einer gehosteten Machine auch dein Tarif, Rechnungen, Machine, Fleet, Adresse, Freunde, Anmeldung und Daten, jeweils mit Button. Siehe [Tarife und Abrechnung](plans-and-billing.md). **Abmelden** steht oben, **Tarif kündigen** und **Konto löschen** ganz unten. Auf einer Machine auf deinem eigenen Computer, mit dem Network gekoppelt: deine Fleet, Benutzername, Freunde und Anmeldung, jeweils mit einem Link, der diesen Teil deines Kontos öffnet (dort anmelden), und **Konto löschen** ganz unten.
-- **Allgemein**: Sprache und Region, Spracheingabe, dieses Gerät, der Browser deiner Machine, deine Fleet, Export und Import und dein Konto.
+- **Allgemein**: Sprache und Region, Spracheingabe, dieses Gerät, der Browser deiner Machine, deine Fleet, Export und Import, die Version, mit der sie läuft, und dein Konto.
 - **Sicherheit**: Standard oder Vorsichtig und die Einstellungen, die sie festlegen. Siehe [Sicherheitsstufen](security-levels.md). Auch **Support-Zugriff**, solange er an ist: siehe [Support bekommen](get-support.md#support-access).
 - **Aktivität**: alles, was The Machine für dich getan hat, das Neueste zuerst. Siehe [Aktivität](activity.md).
 - **Benachrichtigungen**: was dich wo erreicht, und deine Arbeitszeiten. Siehe [Benachrichtigungen](notifications.md) und [Arbeitszeiten](work-hours.md).
 - **Schreiben**: Signaturen und wie du schreibst. Siehe [Schreiben](writing.md).
 - **Skills**: Anleitungen, denen deine Machine folgt. Siehe [Skills](skills.md).
 - **Apps**: die Apps von The Machine für Handy und Computer, dann Claude, ChatGPT und andere KIs, die du verbunden hast, und was jede darf. Siehe [Die mobile App](mobile-app.md) und [Andere KIs verbinden](ai-connections.md).
-- **Modell**: was für dich antwortet, und seine Limits. Siehe [Modell](model.md). Auch **Codex und Claude Code**: siehe [An Claude Code oder Codex übergeben](hand-to-agent.md).
+- **Modell**: was für dich antwortet, und seine Limits. Siehe [Modell](model.md). Auch **Codex und Claude Code**: siehe [An Claude Code oder Codex übergeben](hand-to-agent.md). Und **Suche nach Bedeutung**, weiter unten.
 
 Ein Tab ohne Inhalt wird ausgeblendet.
 
@@ -31,6 +31,18 @@ Ein Tab ohne Inhalt wird ausgeblendet.
 - **Exportieren**:
   - **Alles**: alles, was deine Machine weiß, in einer verschlüsselten Datei, zum Umziehen oder Aufbewahren, und **Importieren**, um einen hereinzuholen. Siehe [Auf einen anderen Computer umziehen](moving.md).
   - **Wissen für eine andere KI**: was deine Machine gelernt hat, in Dateien, die jede KI lesen kann. Siehe [Wissen für eine andere KI](knowledge-export.md).
+
+## Version
+
+Das Release, mit dem deine Machine läuft. Updates installieren sich von selbst. Ist auf einer gehosteten Machine eine neuere Version verfügbar, installiert **Jetzt aktualisieren** sie sofort. Das dauert ein paar Minuten, und deine Daten bleiben erhalten.
+
+Auf deinem eigenen Computer installiert ein täglicher Timer unter Linux jedes neue signierte Release. Siehe [Auf deinem eigenen Computer betreiben](self-hosted-setup.md).
+
+## Suche nach Bedeutung
+
+In **Einstellungen**, **Modell**. Sie findet E-Mails, Nachrichten und Notizen nach ihrem Inhalt, nicht nur nach ihren Wörtern. Auf einer gehosteten Machine macht das eine kleine KI auf der Machine selbst, und nichts wird nach außen gesendet. Ab 8 GB Arbeitsspeicher ist sie an. Bei 4 GB schaltest du sie mit ihrem Schalter ein. Sie braucht etwa ein halbes Gigabyte, eine ausgelastete Machine kann also langsamer werden.
+
+Auf deinem eigenen Computer ist es der Block `embeddings` in `config.json`. Starte die Machine nach einer Änderung neu.
 
 ## Auf dieser Machine
 

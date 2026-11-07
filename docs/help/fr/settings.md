@@ -9,14 +9,14 @@ order: 1
 Ouvrez **Paramètres** avec la roue dentée en haut. Ses onglets :
 
 - **Compte** : **Vos adresses**, celles qui comptent comme vous, avec leur provenance, et **Se déconnecter**. Sur une Machine hébergée, aussi votre forfait, vos factures, votre Machine, votre Fleet, votre adresse, vos amis, votre connexion et vos données, chacun avec son bouton. Voir [Forfaits et facturation](plans-and-billing.md). **Se déconnecter** est en haut, **Résilier le forfait** et **Supprimer le compte** tout en bas. Sur une Machine sur votre propre ordinateur, associée au Network : votre Fleet, nom d’utilisateur, amis et connexion, chacun avec un lien qui ouvre cette partie de votre compte (connectez-vous là-bas), et **Supprimer le compte** tout en bas.
-- **Général** : langue et région, saisie vocale, cet appareil, le navigateur de votre Machine, votre Fleet, l’export et l’import, et votre compte.
+- **Général** : langue et région, saisie vocale, cet appareil, le navigateur de votre Machine, votre Fleet, l’export et l’import, la version qu’elle exécute, et votre compte.
 - **Sécurité** : Standard ou Prudent, et les paramètres qu’ils règlent. Voir [Niveaux de sécurité](security-levels.md). **Accès du support** aussi, tant qu’il est actif : voir [Obtenir de l’aide](get-support.md#support-access).
 - **Activité** : tout ce que The Machine a fait pour vous, le plus récent d’abord. Voir [Activité](activity.md).
 - **Notifications** : ce qui vous parvient et où, et vos heures de travail. Voir [Notifications](notifications.md) et [Heures de travail](work-hours.md).
 - **Rédaction** : signatures et votre façon d’écrire. Voir [Rédaction](writing.md).
 - **Compétences** : les modes d’emploi que suit votre Machine. Voir [Compétences](skills.md).
 - **Applis** : les applis The Machine pour téléphone et ordinateur, puis Claude, ChatGPT et les autres IA que vous avez connectées, et ce que chacune peut faire. Voir [L’appli mobile](mobile-app.md) et [Connecter d’autres IA](ai-connections.md).
-- **Modèle** : ce qui répond pour vous, et ses limites. Voir [Modèle](model.md). **Codex et Claude Code** aussi : voir [Transférer à Claude Code ou Codex](hand-to-agent.md).
+- **Modèle** : ce qui répond pour vous, et ses limites. Voir [Modèle](model.md). **Codex et Claude Code** aussi : voir [Transférer à Claude Code ou Codex](hand-to-agent.md). Et **Recherche par le sens**, plus bas.
 
 Un onglet sans rien à afficher est masqué.
 
@@ -31,6 +31,18 @@ Un onglet sans rien à afficher est masqué.
 - **Exporter** :
   - **Tout** : tout ce que votre Machine sait dans un seul fichier chiffré, pour changer d’ordinateur ou pour garder, et **Importer** pour en faire entrer un. Voir [Passer sur un autre ordinateur](moving.md).
   - **Connaissances pour une autre IA** : ce que votre Machine a appris, dans des fichiers que toute IA sait lire. Voir [Connaissances pour une autre IA](knowledge-export.md).
+
+## Version
+
+La version que votre Machine exécute. Les mises à jour s’installent toutes seules. Quand une version plus récente est disponible sur une Machine hébergée, **Mettre à jour** l’installe tout de suite. Cela prend quelques minutes, et vos données restent.
+
+Sur votre propre ordinateur, un minuteur quotidien installe chaque nouvelle version signée sous Linux. Voir [L’installer sur votre propre ordinateur](self-hosted-setup.md).
+
+## Recherche par le sens
+
+Dans **Paramètres**, **Modèle**. Elle trouve les e-mails, messages et notes selon leur sujet, pas seulement selon leurs mots. Sur une Machine hébergée, une petite IA sur la Machine elle-même s’en charge, et rien n’est envoyé ailleurs. Elle est activée à partir de 8 Go de mémoire. Avec 4 Go, activez-la avec son interrupteur. Elle utilise environ un demi-gigaoctet, donc une Machine chargée peut ralentir.
+
+Sur votre propre ordinateur, c’est le bloc `embeddings` de `config.json`. Redémarrez la Machine après une modification.
 
 ## Sur cette Machine
 

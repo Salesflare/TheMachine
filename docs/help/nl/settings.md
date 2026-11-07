@@ -9,14 +9,14 @@ order: 1
 Open **Instellingen** met het tandwiel bovenaan. De tabbladen:
 
 - **Account**: **Je adressen**, de adressen die als jou tellen, met waar elk vandaan komt, en **Uitloggen**. Op een gehoste Machine ook je abonnement, facturen, Machine, Fleet, adres, vrienden, inloggen en gegevens, elk met een knop. Zie [Abonnementen en facturatie](plans-and-billing.md). **Uitloggen** staat bovenaan, **Abonnement opzeggen** en **Account verwijderen** helemaal onderaan. Op een Machine op je eigen computer, gekoppeld aan het Network: je Fleet, gebruikersnaam, vrienden en inloggen, elk met een link die dat deel van je account opent (log daar in), en **Account verwijderen** onderaan.
-- **Algemeen**: taal en regio, spraakinvoer, dit apparaat, de browser van je Machine, je Fleet, exporteren en importeren, en je account.
+- **Algemeen**: taal en regio, spraakinvoer, dit apparaat, de browser van je Machine, je Fleet, exporteren en importeren, de versie die hij draait, en je account.
 - **Beveiliging**: Standaard of Voorzichtig, en de instellingen die ze bepalen. Zie [Beveiligingsniveaus](security-levels.md). Ook **Toegang voor support**, zolang het aanstaat: zie [Hulp krijgen](get-support.md#support-access).
 - **Activiteit**: alles wat The Machine voor je deed, nieuwste eerst. Zie [Activiteit](activity.md).
 - **Meldingen**: wat je waar bereikt, en je werkuren. Zie [Meldingen](notifications.md) en [Werkuren](work-hours.md).
 - **Schrijven**: handtekeningen en hoe je schrijft. Zie [Schrijven](writing.md).
 - **Skills**: handleidingen die je Machine volgt. Zie [Skills](skills.md).
 - **Apps**: de apps van The Machine voor je telefoon en computer, en daarna Claude, ChatGPT en andere AI's die je koppelde, en wat elk mag doen. Zie [De mobiele app](mobile-app.md) en [Andere AI's koppelen](ai-connections.md).
-- **Model**: wat voor je antwoordt, en de limieten. Zie [Model](model.md). Ook **Codex en Claude Code**: zie [Overdragen aan Claude Code of Codex](hand-to-agent.md).
+- **Model**: wat voor je antwoordt, en de limieten. Zie [Model](model.md). Ook **Codex en Claude Code**: zie [Overdragen aan Claude Code of Codex](hand-to-agent.md). En **Zoeken op betekenis**, hieronder.
 
 Een tabblad zonder inhoud wordt verborgen.
 
@@ -31,6 +31,18 @@ Een tabblad zonder inhoud wordt verborgen.
 - **Exporteren**:
   - **Alles**: alles wat je Machine weet in één versleuteld bestand, om te verhuizen of te bewaren, en **Importeren** om er een binnen te halen. Zie [Verhuizen naar een andere computer](moving.md).
   - **Kennis voor een andere AI**: wat je Machine geleerd heeft, in bestanden die elke AI kan lezen. Zie [Kennis voor een andere AI](knowledge-export.md).
+
+## Versie
+
+De release die je Machine draait. Updates installeren zichzelf. Staat er op een gehoste Machine een nieuwere versie klaar, dan installeert **Nu bijwerken** die meteen. Dat duurt een paar minuten, en je gegevens blijven.
+
+Op je eigen computer installeert een dagelijkse timer op Linux elke nieuwe ondertekende release. Zie [Op je eigen computer draaien](self-hosted-setup.md).
+
+## Zoeken op betekenis
+
+In **Instellingen**, **Model**. Het vindt e-mails, berichten en notities op waar ze over gaan, niet alleen op hun woorden. Op een gehoste Machine doet een kleine AI op de Machine zelf het, en er gaat niets naar buiten. Vanaf 8 GB geheugen staat het aan. Op 4 GB zet je het aan met de schakelaar. Het gebruikt ongeveer een halve gigabyte, dus een drukke Machine kan trager worden.
+
+Op je eigen computer is het het blok `embeddings` in `config.json`. Herstart de Machine na een wijziging.
 
 ## Op deze Machine
 

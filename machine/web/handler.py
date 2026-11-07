@@ -22,6 +22,7 @@ import chat_files
 import crm
 import crm_fields
 import crm_import
+import embeddings
 import enrichment
 import fleet
 import graph
@@ -338,7 +339,7 @@ def make_handler(app):
                 tag = (urllib.parse.parse_qs(path.query).get('tag') or [''])[0]
                 self.output(200, app_notice(app.store, app.config, tag))
             elif path.path == '/api/status':
-                self.output(200, {**dashboard_status(app.action('status', {'full': True})), 'talk_ready': app.talk_ready(), 'ui_version': dashboard_version(), 'source_url': source_url(), 'fixed': list(getattr(getattr(app, 'fleet', None), 'fixed_now', None) or ()), 'browser_link': browser_link(app.config),
+                self.output(200, {**dashboard_status(app.action('status', {'full': True})), 'talk_ready': app.talk_ready(), 'ui_version': dashboard_version(), 'source_url': source_url(), 'meaning': {'on': bool(embeddings.settings(app.config))}, 'fixed': list(getattr(getattr(app, 'fleet', None), 'fixed_now', None) or ()), 'browser_link': browser_link(app.config),
                                   'browser_embed': browser_embed(app.config, self.headers.get('Host', ''))})
                 try:
                     app.store.note_card_shown()
