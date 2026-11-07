@@ -233,6 +233,10 @@ try{
   await page.evaluate(()=>showSettings('general'));await page.waitForSelector('#settings-dictation:not([hidden]) #dictation-engine');
   assert.equal(await page.locator('#dictation-engine option[value="openai"]').isDisabled(),true,'With OpenAI needs a key');
   assert.ok(await page.evaluate(()=>{const dev=[...document.querySelectorAll('#settings h2')].find(h=>h.textContent==='This device');return dev.getBoundingClientRect().top<document.querySelector('#settings-dictation').getBoundingClientRect().top}),'Voice input sits below This device');
+  // Its dropdowns stay inside the card, at phone width too (a select is as wide as its longest option)
+  const outside=await page.evaluate(()=>[...document.querySelectorAll('#settings-dictation .settings-list>div>select')].filter(s=>{const row=s.parentElement,r=s.getBoundingClientRect(),edge=row.getBoundingClientRect().right-parseFloat(getComputedStyle(row).paddingRight);return r.width&&r.right>edge+0.5}).map(s=>s.id));
+  assert.deepEqual(outside,[],`Voice input's dropdowns stay inside their row's padding at ${w}px`);
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'no sideways scroll');
   assert.equal(await page.locator('#dictation-note').textContent(),'In use: this Machine. Your recordings never leave it.');
   assert.match(await page.locator('#talk-note').textContent(),/^Ready\. Tap Talk in the menu, or the wave/);
   await page.locator('#settings-dictation').scrollIntoViewIfNeeded();await shot('11-settings');
