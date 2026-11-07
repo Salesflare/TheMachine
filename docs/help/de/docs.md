@@ -38,7 +38,7 @@ Deine Machine kann ein neues Dokument schreiben oder ein Dokument ändern, um da
 
 Sie ersetzt Text, fügt Text hinzu und fügt Absätze und Überschriften ein. Tabellen, Bilder, nachverfolgte Änderungen und Felder lässt sie in Ruhe. Ein neues Dokument landet in deinem Google Drive oder OneDrive und bleibt privat, bis du es teilst.
 
-Ein neues Dokument kommt in ein Konto aus dem Bereich der Aufgabe: das Dokument einer Arbeitsaufgabe in das Konto dieser Firma, wenn möglich das Konto des Gesprächs, nie in ein privates. Auf deinem eigenen Computer kann auch ein Google-Konto, das für Gmail angemeldet ist und schon Zugriff auf Drive hat, ein neues Google-Dokument bekommen. Passt kein Konto, sagt die Aufgabe **Verbinde Google Docs oder Microsoft OneDrive für Arbeit**.
+Ein neues Dokument kommt in ein Konto aus dem Bereich der Aufgabe: das Dokument einer Arbeitsaufgabe in das Konto dieser Firma, wenn möglich das Konto des Gesprächs, nie in ein privates. Auf deinem eigenen Computer kann auch ein Google-Konto, das für Gmail angemeldet ist und schon Zugriff auf Drive hat, ein neues Google-Dokument bekommen. Passt kein Konto, sagt die Aufgabe, was du für Arbeit verbinden kannst: Microsoft OneDrive, oder Google Docs, wo deine Machine es nutzen kann.
 
 Ist das Dokument nicht das Ende der Aufgabe, etwa wenn noch eine Antwort mit dem Link fehlt, bleibt die Aufgabe offen und bereitet diesen nächsten Schritt für dein OK vor.
 

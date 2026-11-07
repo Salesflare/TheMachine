@@ -38,7 +38,7 @@ Je Machine kan een nieuw document schrijven, of een document aanpassen waar een 
 
 Hij vervangt tekst, voegt tekst toe en voegt alinea's en koppen toe. Tabellen, afbeeldingen, bijgehouden wijzigingen en velden laat hij met rust. Een nieuw document komt in je Google Drive of OneDrive en blijft privé tot je het deelt.
 
-Een nieuw document gaat naar een account in het eigen gebied van de taak: een document voor een Werk-taak naar het account van dat bedrijf, het account van het gesprek als dat kan, nooit naar een privé-account. Op je eigen computer kan ook een Google-account dat voor Gmail is aangemeld en al toegang tot Drive heeft een nieuw Google-document krijgen. Past geen enkel account, dan zegt de taak **Koppel Google Docs of Microsoft OneDrive voor Werk**.
+Een nieuw document gaat naar een account in het eigen gebied van de taak: een document voor een Werk-taak naar het account van dat bedrijf, het account van het gesprek als dat kan, nooit naar een privé-account. Op je eigen computer kan ook een Google-account dat voor Gmail is aangemeld en al toegang tot Drive heeft een nieuw Google-document krijgen. Past geen enkel account, dan zegt de taak wat je voor Werk kunt koppelen: Microsoft OneDrive, of Google Docs waar je Machine het kan gebruiken.
 
 Is het document niet het einde van de taak, zoals een antwoord met de link, dan blijft de taak open en maakt hij die volgende stap klaar voor je OK.
 

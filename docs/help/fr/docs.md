@@ -38,7 +38,7 @@ Votre Machine peut écrire un nouveau document, ou modifier un document dont par
 
 Elle remplace du texte, ajoute du texte et ajoute des paragraphes et des titres. Elle ne touche pas aux tableaux, images, modifications suivies et champs. Un nouveau document arrive dans votre Google Drive ou OneDrive et reste privé tant que vous ne le partagez pas.
 
-Un nouveau document va dans un compte du domaine de la tâche : le document d’une tâche Travail dans le compte de cette entreprise, celui de la conversation quand c’est possible, jamais dans un compte perso. Sur votre propre ordinateur, un compte Google connecté pour Gmail qui a déjà accès à Drive peut aussi recevoir un nouveau Google Doc. Si aucun compte ne convient, la tâche indique **Connectez Google Docs ou Microsoft OneDrive pour Travail**.
+Un nouveau document va dans un compte du domaine de la tâche : le document d’une tâche Travail dans le compte de cette entreprise, celui de la conversation quand c’est possible, jamais dans un compte perso. Sur votre propre ordinateur, un compte Google connecté pour Gmail qui a déjà accès à Drive peut aussi recevoir un nouveau Google Doc. Si aucun compte ne convient, la tâche indique quoi connecter pour Travail : Microsoft OneDrive, ou Google Docs là où votre Machine peut l’utiliser.
 
 Quand le document n’est pas la fin de la tâche, par exemple une réponse avec son lien, la tâche reste ouverte et prépare cette étape suivante pour votre OK.
 

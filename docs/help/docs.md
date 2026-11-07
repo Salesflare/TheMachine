@@ -38,7 +38,7 @@ Your Machine can write a new doc, or change a doc a to-do is about:
 
 It can replace text and add text, paragraphs and headings. Tables, images, tracked changes and fields stay as they are.
 
-A Work to-do's doc goes to that company's account, never to a personal one. On your own computer, a Google account connected for Gmail with Drive access can take new Google Docs too. If no account fits, the to-do says **Connect Google Docs or Microsoft OneDrive for Work**.
+A Work to-do's doc goes to that company's account, never to a personal one. On your own computer, a Google account connected for Gmail with Drive access can take new Google Docs too. If no account fits, the to-do says what to connect for Work: Microsoft OneDrive, or Google Docs where your Machine can use it.
 
 When the doc isn't the last step, like a reply with its link, the to-do stays open and drafts that step for your OK.
 

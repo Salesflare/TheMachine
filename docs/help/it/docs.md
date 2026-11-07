@@ -38,7 +38,7 @@ La tua Machine può scrivere un nuovo documento, o modificare un documento di cu
 
 Sostituisce testo, aggiunge testo e aggiunge paragrafi e titoli. Lascia stare tabelle, immagini, revisioni e campi. Un nuovo documento finisce nel tuo Google Drive o OneDrive e resta privato finché non lo condividi.
 
-Un nuovo documento va in un account dell’area dell’attività: il documento di un’attività di Lavoro nell’account di quell’azienda, quello della conversazione quando si può, mai in uno personale. Sul tuo computer, anche un account Google collegato per Gmail che ha già accesso a Drive può ricevere un nuovo Google Doc. Se nessun account va bene, l’attività dice **Collega Google Docs o Microsoft OneDrive per Lavoro**.
+Un nuovo documento va in un account dell’area dell’attività: il documento di un’attività di Lavoro nell’account di quell’azienda, quello della conversazione quando si può, mai in uno personale. Sul tuo computer, anche un account Google collegato per Gmail che ha già accesso a Drive può ricevere un nuovo Google Doc. Se nessun account va bene, l’attività dice cosa collegare per Lavoro: Microsoft OneDrive, o Google Docs dove la tua Machine può usarlo.
 
 Quando il documento non è la fine dell’attività, come una risposta con il suo link, l’attività resta aperta e prepara quel passo successivo per il tuo OK.
 
