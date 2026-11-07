@@ -121,7 +121,8 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   view, actions, tools, drafts and sends), `machine/app/fleet.py` (`FleetApp`: attaching the Fleet, its pings,
   notices, votes, shared learnings and connectors), follow-up and promise steps into `FollowUpsApp` and
   `PromiseChecksApp` (`machine/app/follow_ups.py`, `promise_checks.py`), the graph worker and timeline methods into
-  `GraphActionsApp` (`machine/app/graph_actions.py`).
+  `GraphActionsApp` (`machine/app/graph_actions.py`), `machine/app/card_chat.py` (`CardChatApp`: a to-do's chat turn,
+  its models, stop and hand-offs).
 - **Dashboard code:** in its area's part in `dashboard/` (`<area>-<what>.js`: shell, todos, settings, graph, calendar,
   connections, help, events, new, fleet), next to the functions it works with, never at the end of the script. The
   page's core is in the `shell-*` parts too: locale and error reports (`shell-core.js`), network and outbox, `render()`
