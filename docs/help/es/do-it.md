@@ -22,7 +22,8 @@ Antes de redactar un seguimiento o pasar algo a otra persona, revisa la conversa
 - Una respuesta contesta al correo más reciente de su hilo, y la fuente de la tarea abre ese correo.
 - Un paso que compromete algo, como enviar un formulario, pagar o reservar, se detiene y espera tu confirmación.
 - En el chat de una tarea, un borrador nunca se envía en el mismo mensaje que lo escribió.
-- Hasta que la apruebes, la tarea dice **Lista para aprobar** o **Te necesita**, nunca terminada. Solo dice que un borrador salió cuando de verdad salió.
+- Hasta que la apruebes, la tarea espera en **Lista para ti**, que dice una vez que nada sale hasta que lo apruebes, o dice **Te necesita**, nunca terminada. Solo dice que un borrador salió cuando de verdad salió.
+- Un borrador largo muestra sus 3 primeras líneas. **Mostrar más** abre el resto; **Revisar y enviar** siempre lo muestra entero.
 
 Lo que puede enviar depende de la fuente: un correo, un mensaje directo de Slack, un mensaje de WhatsApp, Telegram, LinkedIn o X. El artículo de cada conexión dice qué puede enviar.
 

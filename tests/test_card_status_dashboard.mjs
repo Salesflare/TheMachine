@@ -7,7 +7,7 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 
 // Every card leads with one status line under its title: where it stands and what's left to do. A sign that it's
 // handled replaces the result's own line, a result that found it already done shows once, "Ready to approve" only
-// appears when there is something to approve, and a long body folds to a few lines. Another open card named by its
+// (once, in Ready's header) appears when there is something to approve, and a long body folds to a few lines. Another open card named by its
 // title links to it. (A to-do that looks done shows this at the top of Done: test_look_done_dashboard.mjs.)
 const dashboard=await dashboardPage();
 const now=new Date().toISOString(),long='The run checked every source and wrote down what it found in detail. '.repeat(8);
@@ -61,12 +61,13 @@ try{
   assert.deepEqual(await notes('n1'),['Looks handled: You replied to Kim and closed the conversation']);
   assert.equal(await page.locator('#probe #task-n1 .body.clamp').count(),1);
   assert.equal(await page.locator('#probe #task-n1 button.more').textContent(),'Show more');
-  // Prepared ahead with a draft: the one line says nothing goes out until you approve
-  assert.deepEqual(await notes('a1'),['Ready to approve. Nothing goes out until you do.']);
+  // Prepared ahead with a draft: no line of its own; Ready's header says once that nothing goes out until you approve
+  assert.deepEqual(await notes('a1'),[]);
+  assert.equal(await page.locator('#section-ready .section-note').textContent(),'Nothing goes out until you approve it.');
   // Once the reply went out, the old needs line is gone; the sent line says it
   assert.ok(!(await text('s1')).includes('Needs you'));
   // Prepared, not done: a result saved as done while its draft still waits reads as ready to approve, never Finished
-  assert.deepEqual(await notes('w1'),['Ready to approve. Nothing goes out until you do.']);
+  assert.deepEqual(await notes('w1'),[]);
   assert.ok(!(await text('w1')).includes('Finished'));
   // Prepared ahead, nothing to approve: no approve line, just finished
   assert.deepEqual(await notes('b1'),['Finished. Mark it done if it looks right.']);

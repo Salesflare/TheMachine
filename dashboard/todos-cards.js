@@ -4,10 +4,17 @@ function cardBody(s,section){const asked=section==='Chat'?'':askedBody(s);if(ask
 if(s.skill_proposal?.related)text=text.split(/\n\s*\n/).filter(p=>!p.trim().startsWith('Related to ')).join('\n\n');const m=text.match(/^\*\*([^*\n]+)\*\*\s*\n([\s\S]+)$/);if(m){lead=m[1];text=m[2].trim()}
 const body=html`${lead?html`<p class="lead-line" translate="no">${named.fill(lead)}</p>`:''}${text.split(/\n\s*\n/).map(p=>p.trim()).filter(Boolean).map(p=>html`<p>${richText(p,true,{br:true,pieces:(x,mark)=>named.mark(cardLinks(x,s,mark),mark)})}</p>`)}`;
 const proposal=html`${skillProposal(s)}${proposedSkillBox(s)}`;
-// Short by default: the status line says where it stands; the rest folds behind Show more.
+// Short by default: the status line says where it stands; the rest folds behind Show more. A ready draft's card has one
+// Show more, under the draft, that opens both (cardDrafted).
 const lines=2,per=innerWidth<600?38:72,rows=named.plain(text).split('\n').reduce((n,l)=>n+(l.trim()?Math.ceil(l.length/per):.6),0);
-if(closed(s)||rows<=lines+.5)return html`<div class="body" translate="no">${body}</div>${proposal}`;const open=expandedBodies.has(s.id);
-return html`<div class="body${open?'':html` clamp`}" style="--lines:${lines}" translate="no">${body}</div><button type="button" class="more" data-more="${s.id}" aria-expanded="${open}">${open?'Show less':'Show more'}</button>${proposal}`}
+if(closed(s)||rows<=lines+.5)return html`<div class="body" translate="no">${body}</div>${proposal}`;const open=expandedBodies.has(s.id),shared=section!=='Chat'&&cardDrafted(s);
+return html`<div class="body${open?'':html` clamp`}" style="--lines:${lines}" data-clamp="${s.id}" translate="no">${body}</div>${shared?'':html`<button type="button" class="more" data-more="${s.id}" aria-expanded="${open}">${open?'Show less':'Show more'}</button>`}${proposal}`}
+// Said once, in the Ready header, for every ready to-do under it: nothing goes out before the owner's OK.
+const sectionNote=(key,items)=>key==='ready'&&items.some(s=>s?.status==='prepared')?html`<p class="section-note">${t('Nothing goes out until you approve it.')}</p>`:'';
+// A ready to-do with a draft to read: its summary and the first 3 lines of the draft, then one Show more for the rest
+const DRAFT_LINES=3,draftRows=text=>{const per=innerWidth<600?34:64;return String(text).split('\n').reduce((n,l)=>n+(l.trim()?Math.ceil(l.length/per):0),0)};
+const draftFolds=(s,a)=>a.kind!=='finish'&&(a.state||s.action_status)?.status!=='sent'&&draftRows(draftText(a))>DRAFT_LINES+1;  // 4 lines still show whole
+const cardDrafted=s=>s.status==='prepared'&&!closed(s)&&taskActions(s).some(a=>DRAFT_KINDS.includes(a.kind)&&draftText(a)&&draftFolds(s,a));
 const snoozedUntil=v=>new Date(v).toLocaleDateString(DL,{weekday:'short',day:'numeric',month:'short'})+' at '+fmtHM(v);
 // With a teammate who hasn't answered a handoff: Later is when it comes back to check in with them, not a snooze.
 const checkinLabel=s=>'Check in with '+s.handoff_wait.name+' '+chatUntil(s.snoozed_until)+' if no answer';
@@ -223,8 +230,9 @@ const fin=a.kind==='finish',sent=(a.state||s.action_status)?.status===(fin?'done
 const to=a.kind==='x'&&!a.to_name&&a.to_screen_name?'@'+a.to_screen_name:a.to_name||(a.to||[]).join(', ');
 // A final step (Submit, Pay…): its label, and who gets the message when it posts one.
 const head=fin?(sent?'Done: ':'')+a.label+(to?' · '+t('To: {}',to):''):(label?label+' · ':'')+(sent?'Sent to':'To')+': '+(to||'…')+(replyWhere(a)?' · '+replyWhere(a):'')+(mail&&a.subject?' · '+a.subject:'');
-const key='draft-'+s.id+'-'+a.revision,rows=String(text).split('\n').reduce((n,l)=>n+(l.trim()?Math.ceil(l.length/56):1),0),fold=rows>16,open=expandedBodies.has(key);
-return html`<div class="draft${sent?html` sent`:''}${fold&&!open?html` clamp`:''}"${sent||fin?'':html` data-rev="${a.revision||''}"`} role="group" aria-label="${fin?(a.message?'Message to post':'What goes out'):(sent?'Sent':'Draft')+' '+(mail?'email':'message')}"><div class="dm">${viaIco(actionVia(a))}<span>${head}</span></div>${mail&&!sent&&INTERCOM_WHY[a.intercom_fallback]?html`<p class="draft-why">${INTERCOM_WHY[a.intercom_fallback]}${a.intercom_fallback==='off'?'':html` <a href="#health" class="draft-connect" data-connect-open="intercom">Connect your own Intercom</a>`}</p>`:''}${!sent&&replyElsewhere(a)?html`<p class="draft-why">${replyElsewhere(a)}</p>`:''}${!sent?githubWhy(a):''}<div class="db${mail?html` mail`:''}">${draftBody(a,text)}</div>${(a.attachments||[]).length?html`<div class="attachments">${draftFileLinks(s.id,a.attachments)}</div>`:''}</div>${fold?html`<button type="button" class="more" data-more="${key}" aria-expanded="${open}">${open?'Show less':'Show more'}</button>`:''}`}
+const short=s.status==='prepared'&&!closed(s)&&draftFolds(s,a),rows=String(text).split('\n').reduce((n,l)=>n+(l.trim()?Math.ceil(l.length/56):1),0);
+const key=short?s.id:'draft-'+s.id+'-'+a.revision,fold=short||rows>16,open=expandedBodies.has(key);
+return html`<div class="draft${sent?html` sent`:''}${short?html` short`:''}${fold&&!open?html` clamp`:''}" data-clamp="${key}"${sent||fin?'':html` data-rev="${a.revision||''}"`} role="group" aria-label="${fin?(a.message?'Message to post':'What goes out'):(sent?'Sent':'Draft')+' '+(mail?'email':'message')}"><div class="dm">${viaIco(actionVia(a))}<span>${head}</span></div>${mail&&!sent&&INTERCOM_WHY[a.intercom_fallback]?html`<p class="draft-why">${INTERCOM_WHY[a.intercom_fallback]}${a.intercom_fallback==='off'?'':html` <a href="#health" class="draft-connect" data-connect-open="intercom">Connect your own Intercom</a>`}</p>`:''}${!sent&&replyElsewhere(a)?html`<p class="draft-why">${replyElsewhere(a)}</p>`:''}${!sent?githubWhy(a):''}<div class="db${mail?html` mail`:''}">${draftBody(a,text)}</div>${(a.attachments||[]).length?html`<div class="attachments">${draftFileLinks(s.id,a.attachments)}</div>`:''}</div>${fold&&!short?html`<button type="button" class="more" data-more="${key}" aria-expanded="${open}">${open?'Show less':'Show more'}</button>`:''}`}
 // The order of the choices in a to-do's … menu (cardActions): a decision's Snooze first, a ready one's Ask for changes.
 const SECONDARY={pending:['snooze','reject','complete','accept','change','handoff'],snoozed:['accept','snooze','reject'],prepared:['change','complete','snooze','reject','handoff']};
 // Already handled (a later message, or the teammate's own Machine): nothing to hand on.
@@ -468,9 +476,9 @@ const statusLine=(()=>{const line=(text,cls='')=>html`<p class="note status-line
  if(o?.state==='needs_you'&&!skillDecided(s))return line('Needs you: '+sentence(o.needs),' outcome');
  // Waiting on a step still open elsewhere (a review, a merge, their reply): an open to-do, never "Looks done"
  if(o?.state==='waiting')return line(t('Waiting on: {}',sentence(o.waiting_on||'')),' outcome');
- if(s.early&&s.status==='prepared'&&smart.some(a=>a.kind!=='open'))return line('Ready to approve. Nothing goes out until you do.');
+ if(s.early&&s.status==='prepared'&&smart.some(a=>a.kind!=='open'))return '';  // Ready's header says it once (sectionNote)
  // Prepared is not done: while a draft, change or final click still waits for them, never "Finished" (next_actions.WAITING_KINDS).
- if(s.status==='prepared'&&(!o||o.state==='done')&&smart.some(a=>[...DRAFT_KINDS,'merge'].includes(a.kind)))return line('Ready to approve. Nothing goes out until you do.',' outcome');
+ if(s.status==='prepared'&&(!o||o.state==='done')&&smart.some(a=>[...DRAFT_KINDS,'merge'].includes(a.kind)))return '';  // said once, in Ready's header
  if(o?.state==='answered')return line('Answered. Nothing done yet.');
  if(o?.state==='snoozed')return line('Back, as you asked.');
  if(o?.state==='your_step')return line('Ready for you to check and '+o.step+'.',' outcome');
@@ -489,7 +497,8 @@ const drafts=s.status==='prepared'&&!tpSent?smart.filter(a=>DRAFT_KINDS.includes
 // Details, when it comes back and the result links; a closed to-do's Reopen sits on the same row.
     const panel=html`${section==='Chat'?'':cardFields(s)}${section==='Chat'?'':techPanel(s,ask)}${closed(s)?html`${agentBlock(s)}${cardFiles(s)}`:''}${teamLearningsUsed(s)}${s.latest_feedback?html`<div class="saved-feedback" data-chat-open="${s.id}" title="Open the chat"><div class="row"><strong>Your note</strong>${time(s.latest_feedback.created_at,true)}<a class="see-chat" href="#chat=${s.id}">See in chat ›</a></div><blockquote>${format(s.latest_feedback.feedback)}</blockquote></div>`:''}${original&&!srcOut?html`<div class="card-source">${original}</div>`:''}`;
     const detailsOpen=expandedDetails.has(s.id),toggle=String(panel)||closed(s)&&section!=='Chat'&&String(s.body||'').length>40;  // a closed one's body is one line until Details opens
-    const foot=toggle||s.snoozed_until&&!s.handoff_wait||results||section!=='Chat'?html`<div class="card-foot">${toggle?html`<button type="button" class="link details-toggle" data-details="${s.id}" aria-expanded="${detailsOpen}" aria-controls="details-${s.id}">Details</button>`:''}${s.snoozed_until&&!s.handoff_wait?html`<span class="back-on" title="${date(s.snoozed_until)}">${backLabel(s.snoozed_until)}</span>`:''}${results}${section==='Chat'?'':chatLink(s)}</div>${toggle?html`<div class="card-details" id="details-${s.id}"${detailsOpen?'':html` hidden`}>${panel}</div>`:''}`:'';
+    const shared=section!=='Chat'&&cardDrafted(s),sharedOpen=expandedBodies.has(s.id);  // the one Show more of a short ready to-do leads the row
+    const foot=shared||toggle||s.snoozed_until&&!s.handoff_wait||results||section!=='Chat'?html`<div class="card-foot">${shared?html`<button type="button" class="more" data-more="${s.id}" aria-expanded="${sharedOpen}">${sharedOpen?'Show less':'Show more'}</button>`:''}${toggle?html`<button type="button" class="link details-toggle" data-details="${s.id}" aria-expanded="${detailsOpen}" aria-controls="details-${s.id}">Details</button>`:''}${s.snoozed_until&&!s.handoff_wait?html`<span class="back-on" title="${date(s.snoozed_until)}">${backLabel(s.snoozed_until)}</span>`:''}${results}${section==='Chat'?'':chatLink(s)}</div>${toggle?html`<div class="card-details" id="details-${s.id}"${detailsOpen?'':html` hidden`}>${panel}</div>`:''}`:'';
 // A step without a draft box above it (one with nothing to read first) carries its service's logo on its button instead.
 // A page the task's own run worked on opens in the Machine's browser (its viewer, with that tab in front), never in yours.
 const viewIn=s.browser_view&&!smart.some(a=>a.browser)?[{kind:'open',browser:true,label:s.browser_view.label,site:s.browser_view.site}]:[];
