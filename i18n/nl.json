@@ -1347,6 +1347,7 @@
  "First one’s in: {}. Still reading…": "De eerste is binnen: {}. Ik lees verder…",
  "First read: catching up on the last days.": "Eerste keer lezen: haalt de laatste dagen in.",
  "First seen this week.": "Deze week voor het eerst gezien.",
+ "First to-dos in about {} min.": "Eerste to-do's over zo'n {} min.",
  "First try": "Meteen goed",
  "Five more minutes. Robot minutes.": "Nog vijf minuutjes. Robotminuutjes.",
  "Fix": "Fix",
@@ -2522,6 +2523,10 @@
  "None of these are yours yet.": "Hier staat nog niets van jou.",
  "None yet": "Nog geen",
  "None yet. Checks add the ones that fit.": "Nog geen. Checks voegen de passende toe.",
+ "Nosing through {} new messages. First to-dos in about {} min.": {
+  "one": "Even neuzen in {} nieuw bericht. Eerste to-do's over zo'n {} min.",
+  "other": "Even neuzen in {} nieuwe berichten. Eerste to-do's over zo'n {} min."
+ },
  "Nosing through {} new messages…": {
   "one": "Even neuzen in {} nieuw bericht…",
   "other": "Even neuzen in {} nieuwe berichten…"

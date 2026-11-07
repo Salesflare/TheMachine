@@ -72,8 +72,8 @@ function fakeBrowser(o){
 }
 const shots=process.env.SHOTS;if(shots)await mkdir(shots,{recursive:true});
 const errors=[];let browser;
-const open=async({width=1440,height=900,ua='chrome',scheme='dark',url=base,...o}={})=>{const mobile=width<600;
- const context=await browser.newContext({viewport:{width,height},isMobile:mobile,hasTouch:mobile,userAgent:UA[ua],colorScheme:scheme,locale:'en-US'});
+const open=async({width=1440,height=900,ua='chrome',scheme='dark',url=base,...o}={})=>{const mobile=width<600,touch=o.touch??mobile;
+ const context=await browser.newContext({viewport:{width,height},isMobile:mobile&&touch,hasTouch:touch,userAgent:UA[ua],colorScheme:scheme,locale:'en-US'});
  await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
  await context.addInitScript(fakeBrowser,o);
  const page=await context.newPage();page.on('pageerror',e=>errors.push(ua+' '+width+': '+e.message));
@@ -187,7 +187,7 @@ try{
  // (phone_app_store.qr), then one code with both stores beside it. Never a help article.
  for(const [width,height,scheme] of [[1440,900,'light'],[1440,900,'dark'],[390,844,'light'],[390,844,'dark']])for(const one of [false,true]){reset();
   phoneStore=one?{ios:STORE.ios,android:STORE.android,phones:0,qr:codes[2]}:STORE;
-  const {context,page}=await open({width,height,scheme,perm:'granted',sub:true});
+  const {context,page}=await open({width,height,scheme,perm:'granted',sub:true,touch:false});  // a narrow computer window
   await page.locator('[data-setup-go="phone"]').click();
   const qr=await page.evaluate(()=>{const q=document.querySelector('.setup-qr');return {codes:q.querySelectorAll('svg.connect-qr').length,stores:[...q.querySelectorAll('a.store-badge')].map(a=>[a.textContent,a.href]),
    help:!!document.querySelector('#setup-card a[href*="help"]'),open:document.querySelector('[data-setup-go="phone"]').getAttribute('aria-expanded')}});
@@ -201,9 +201,19 @@ try{
  for(const [ua,o,store] of [['android',{},STORE.android],['iphone',{noPush:true},STORE.ios]]){reset();
   const {context,page}=await open({width:390,height:844,ua,...o});await opened(page);await page.evaluate(()=>__installPrompt());
   assert.deepEqual(await steps(page),ua==='android'?['phone','push','whatsapp','account','connect']:['phone','whatsapp','account','connect'],ua+': no install row'+(ua==='iphone'?', no push in a Safari tab':''));
+  // Get it is a link straight to this phone's store: no QR code, no popup
+  const go=await page.evaluate(()=>{const a=document.querySelector('[data-setup-go="phone"]');return [a.tagName,a.getAttribute('href'),a.target]});
+  assert.deepEqual(go,['A',store,'_blank'],ua);
+  assert.equal(await page.locator('#setup-card svg.connect-qr').count(),0);
+  await fits(page,ua);await shot(page,`setup-phone-${ua}`,'#setup-card');await context.close()}
+ // A phone whose browser asks for desktop sites (a desktop user agent on a small touch screen): its two store links
+ // in the row, never a QR code to scan with the phone it is on, and no installing on this computer.
+ for(const scheme of ['light','dark']){reset();const {context,page}=await open({width:390,height:844,scheme,perm:'granted',sub:true});
+  assert.ok(!(await steps(page)).includes('install'),'no install row on a phone');
   await page.locator('[data-setup-go="phone"]').click();
-  assert.deepEqual(await page.evaluate(()=>window.__opened),[[store,'_blank','noopener']]);
-  await fits(page,ua);await context.close()}
+  const got=await page.evaluate(()=>({codes:document.querySelectorAll('#setup-card svg.connect-qr').length,stores:[...document.querySelectorAll('#setup-card a.store-badge')].map(a=>a.href),scan:/Scan/.test(document.querySelector('#setup-card').textContent)}));
+  assert.deepEqual(got,{codes:0,stores:[STORE.ios,STORE.android],scan:false});
+  await fits(page,'desktop site');await shot(page,`setup-phone-desktop-site-${scheme}`,'#setup-card');await context.close()}
  // Inside the phone app: neither the phone app, nor the browser's notifications, nor installing.
  {reset();const {context,page}=await open({width:390,height:844,ua:'phoneApp'});
   assert.deepEqual(await steps(page),['whatsapp','account','connect']);await context.close()}

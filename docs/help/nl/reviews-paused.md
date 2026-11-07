@@ -10,7 +10,7 @@ To-do's komen uit checks: je Machine leest wat er binnenkwam, in kleine porties,
 
 ## Net aangemeld
 
-Op een nieuwe gehoste Machine starten checks vanzelf zodra je AI en je mail gekoppeld zijn. Terwijl je Machine je mail leest, staat bij To-do's "Je mail wordt gelezen, eerste to-do's over een paar minuten". Ontbreekt er een stap, dan noemt **Wacht op jou** die, zoals **Mail koppelen**, met een link naar die stap.
+Op een nieuwe gehoste Machine starten checks vanzelf zodra je AI en je mail gekoppeld zijn. Terwijl je Machine je mail leest, staat bij To-do's "Je mail wordt gelezen, eerste to-do's over een paar minuten". Zodra hij weet hoeveel het is, zegt hij ongeveer hoe lang het duurt: "Eerste to-do's over zo'n 10 min." Ontbreekt er een stap, dan noemt **Wacht op jou** die, zoals **Mail koppelen**, met een link naar die stap.
 
 Terwijl hij leest, toont To-do's hoe ver hij is, een paar van de mensen en organisaties die hij tegenkwam, en je eerste to-do zodra die er is. De namen komen uit je eigen mail, en alleen jij ziet ze.
 
