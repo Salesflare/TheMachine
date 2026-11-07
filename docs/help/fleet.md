@@ -4,7 +4,7 @@ area: fleet
 summary: A Work Fleet for your team, a Family Fleet for home. Machines that help each other, by your sharing rules.
 covers: tab:fleet, network
 code: fleet.py, network.py, dashboard.html
-site: Company sign-in, Ask to join, Approve, Removed lately, Activity, Download CSV
+site: Company sign-in, Ask to join, Approve, Removed lately, Activity, Download CSV, Ask me before starting a member's Machine
 order: 1
 ---
 A Fleet lets your Machine work with the Machines of your team, family or friends, over The Machine Network. What they tell each other is encrypted end to end, and your Machine answers only by your rules.

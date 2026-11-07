@@ -4,7 +4,7 @@ area: fleet
 summary: Eine Work Fleet für dein Team, eine Family Fleet für zu Hause. Machines, die sich gegenseitig helfen, nach deinen Freigaberegeln.
 covers: tab:fleet, network
 code: fleet.py, network.py, dashboard.html
-site: Company sign-in, Ask to join, Approve, Removed lately, Activity, Download CSV
+site: Company sign-in, Ask to join, Approve, Removed lately, Activity, Download CSV, Ask me before starting a member's Machine
 order: 1
 ---
 The Machine Network verbindet Machines. Was sie sich gegenseitig sagen, ist Ende-zu-Ende-verschlüsselt, und jede Machine antwortet nur nach deinen Regeln.

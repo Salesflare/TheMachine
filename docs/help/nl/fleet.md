@@ -4,7 +4,7 @@ area: fleet
 summary: Een Werk-Fleet voor je team, een Familie-Fleet voor thuis. Machines die elkaar helpen, volgens je deelregels.
 covers: tab:fleet, network
 code: fleet.py, network.py, dashboard.html
-site: Company sign-in, Ask to join, Approve, Removed lately, Activity, Download CSV
+site: Company sign-in, Ask to join, Approve, Removed lately, Activity, Download CSV, Ask me before starting a member's Machine
 order: 1
 ---
 The Machine Network verbindt Machines. Wat ze elkaar vertellen, is end-to-end versleuteld, en elke Machine antwoordt alleen volgens jouw regels.
