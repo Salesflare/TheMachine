@@ -146,7 +146,9 @@ def make_handler(app):
             # the request line is in: the clock starts here, not while a kept-alive connection waits for the next one
             self.started, self.action_name = time.monotonic(), ''
             _REQUEST_TIMING.value = {'db_wait': 0.0, 'db_held': 0.0, 'db_connections': 0}
-            return super().parse_request()
+            ok = super().parse_request()
+            _REQUEST_TIMING.value['read'] = ok and self.command == 'GET'  # a read: what it reads twice can be kept (Fleet.meta)
+            return ok
 
         def handle_one_request(self):
             """An unexpected error answers a plain 500 with its reason instead of dropping the connection: a proxy in
@@ -494,9 +496,10 @@ def make_handler(app):
                     elif node and app.about_you_node(node):  # the owner's own record, also by one of their addresses
                         self.output(200, {**app.about_you(), 'can_share': app.contact_shareable()})  # Share my contact
                     elif node:
-                        found = app.graph_action({'node_id': node, 'limit': 10, 'events': 120})  # a run of chat messages is one row
+                        # a run of chat messages is one row; the event ids only (lines: False), as the timeline below shows them
+                        found = app.graph_action({'node_id': node, 'limit': 10, 'events': 120, 'lines': False})
                         found['owners'] = app.owner_choices()
-                        rows = app.store.events([a['id'] for a in app.config['accounts']], event_ids=[int(line.split(' ', 1)[0]) for line in found['recent']])
+                        rows = app.store.events([a['id'] for a in app.config['accounts']], event_ids=[int(i) for i in found['recent']])
                         # The timeline: every source, newest first, a page at a time (/api/graph/timeline for the next)
                         found['timeline'] = app.graph_timeline(found['id'])
                         found['recent'] = found['timeline'].pop('items')

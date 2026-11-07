@@ -37,9 +37,12 @@ import fleet_learnings
 import fleet_trust as ft
 import graph
 from i18n import t
+from machine import stamps
+from machine.timing import _REQUEST_TIMING
 import network_crypto as nc
 import own_addresses
 import security_levels
+import shared_graph_kept
 
 LOG = logging.getLogger('personal-assistant')
 TAG = b'tm-shared-graph/1\n'
@@ -148,6 +151,16 @@ class Had(ValueError):
 
 
 def ensure(db):
+    stamps.once(db, 'shared_graph', _ensure, 'team_wants')  # the tables once per schema: a page asked some seven times
+    if not db.execute("SELECT 1 FROM share_meta WHERE key='sorter' AND value='2'").fetchone():
+        # Sorted again with the tuned review (deals, peers, notifications), before anything goes: every call the review
+        # made before. A hand choice stays; until the review looks again, the thread stays with the owner.
+        db.execute("UPDATE share_threads SET verdict=NULL,sorted_at=NULL WHERE hand IS NULL")
+        db.execute("DELETE FROM share_lines")
+        db.execute("INSERT OR REPLACE INTO share_meta(key,value) VALUES('sorter','2')")
+
+
+def _ensure(db):
     db.executescript(SCHEMA)
     if 'sorted_at' not in {r[1] for r in db.execute('PRAGMA table_info(share_threads)')}:
         db.execute('ALTER TABLE share_threads ADD COLUMN sorted_at TEXT')  # when the review first called it client: the hold
@@ -156,15 +169,10 @@ def ensure(db):
         # it, so "Share these?" asks once per group, not once per thread
         db.execute('ALTER TABLE share_threads ADD COLUMN grp TEXT')
         db.execute('ALTER TABLE share_threads ADD COLUMN suggest TEXT')
-    if not db.execute("SELECT 1 FROM share_meta WHERE key='sorter' AND value='2'").fetchone():
-        # Sorted again with the tuned review (deals, peers, notifications), before anything goes: every call the review
-        # made before. A hand choice stays; until the review looks again, the thread stays with the owner.
-        db.execute("UPDATE share_threads SET verdict=NULL,sorted_at=NULL WHERE hand IS NULL")
-        db.execute("DELETE FROM share_lines")
-        db.execute("INSERT OR REPLACE INTO share_meta(key,value) VALUES('sorter','2')")
     import message_seal
     if message_seal.is_protected(db):  # teammates' mail, records, files and the review's lines: sealed at rest like the owner's own
         message_seal.ensure_triggers(db)
+    stamps.watch(db, shared_graph_kept.WATCHED)
 
 
 def now():
@@ -632,22 +640,30 @@ class Scope:
         messages, so it is the same as the full set's for them. Reading every mail message (and opening each sealed
         one) took seconds on each person's page; this reads a page's threads only. The scope then answers for these
         threads only, so it is for a scope made for one call (thread_labels)."""
-        wanted = {t for t in threads if t}
+        memo = getattr(self, '_automated_memo', None)
+        asked = {t for t in threads if t}
+        wanted = asked - set(memo) if memo is not None else asked  # a page asks twice (timeline, labels): once each
         found = set()
         if self.accounts and wanted:
             ids = [t[3:] for t in wanted if t.startswith('ev:') and t[3:].isdigit()]
             # every message whose thread can be one of these, by the plain keys graph.thread_key reads (a superset:
             # thread_of below keeps the exact ones)
             spoken, seen = set(), set()
+            # each part by its own index (events_thread_id, events_conversation: Store; +kind keeps SQLite off the kind
+            # index), never a pass over all mail;
+            # a key is asked as text and as a number, as json_extract gives either
+            keyed_as = lambda prefixes: json.dumps(sorted({v for t in wanted if t.startswith(prefixes)
+                                                           for v in ((t[3:], int(t[3:])) if t[3:].isdigit() else (t[3:],))}, key=str))
             for e in self._db.execute(
                     'SELECT id,kind,metadata FROM events WHERE deleted=0 AND kind IN (SELECT value FROM json_each(?)) '
-                    'AND account_id IN (SELECT value FROM json_each(?)) AND ('
-                    "(kind IN ('gmail.message','salesflare.email') AND CAST(json_extract(metadata,'$.thread_id') AS TEXT) IN (SELECT value FROM json_each(?))) "
-                    "OR (kind='intercom.conversation' AND CAST(json_extract(metadata,'$.conversation_id') AS TEXT) IN (SELECT value FROM json_each(?))) "
-                    'OR id IN (SELECT value FROM json_each(?)))',
-                    (json.dumps(sorted(MAIL_KINDS)), json.dumps(sorted(self.accounts)),
-                     json.dumps(sorted(t[3:] for t in wanted if t.startswith(('gm:', 'sf:')))),
-                     json.dumps(sorted(t[3:] for t in wanted if t.startswith('ic:'))), json.dumps([int(i) for i in ids]))):
+                    'AND account_id IN (SELECT value FROM json_each(?)) AND id IN ('
+                    "SELECT id FROM events WHERE json_extract(metadata,'$.thread_id') IN (SELECT value FROM json_each(?)) "
+                    "AND +kind IN ('gmail.message','salesflare.email') UNION "
+                    "SELECT id FROM events WHERE json_extract(metadata,'$.conversation_id') IN (SELECT value FROM json_each(?)) "
+                    "AND +kind='intercom.conversation' UNION "
+                    'SELECT value FROM json_each(?))',
+                    (json.dumps(sorted(MAIL_KINDS)), json.dumps(sorted(self.accounts)), keyed_as(('gm:', 'sf:')), keyed_as(('ic:',)),
+                     json.dumps([int(i) for i in ids]))):
                 metadata = json.loads(e['metadata'] or '{}')
                 thread = thread_of(e['kind'], metadata, e['id'])
                 if thread not in wanted:
@@ -656,6 +672,9 @@ class Scope:
                 if self.owner_side(metadata) or not automated_message(metadata):
                     spoken.add(thread)
             found = seen - spoken
+        if memo is not None:
+            memo.update((t, t in found) for t in wanted)
+            found = {t for t in asked if memo.get(t)}
         self._automated = found
         return found
 
@@ -2658,23 +2677,21 @@ class SharedGraph:
     def hash_index(self, db):
         """{hash: local node id} for this Machine's own people (by address) and organizations (by domain), with every
         graph key it holds."""
-        index = {}
         keys = [k['key'] for ref in self.work_fleets() for k in self.graph_keys(ref).values()]
         if not keys:
-            return index
-        for row in db.execute("SELECT id,kind,info FROM graph_nodes WHERE kind IN ('person','org')"):
-            info = json.loads(row['info'] or '{}')
-            values = (['email:' + i[6:].lower() for i in [row['id'], *info.get('identifiers', [])] if str(i).startswith('email:')]
-                      if row['kind'] == 'person' else (['domain:' + info['domain']] if info.get('domain') else []))
-            for key in keys:
-                for v in values:
-                    index.setdefault(keyed(key, v), row['id'])
-        return index
+            return {}
+        # an HMAC per address and key (some 60k): kept until the graph's people or organizations change
+        return shared_graph_kept.KEPT.get(('hash_index', tuple(keys)), stamps.stamp(db, ('graph_nodes',)), lambda: shared_graph_kept.hash_index(db, keys, keyed))
 
     def team_graph(self, db, kinds=('person', 'org', 'project')):
         """The team's entities: [{key, kind, local (node id or None), sources: [(fleet, member, record)]}], matched by
-        hashed address, hashed domain, or board and name."""
-        index = self.hash_index(db)
+        hashed address, hashed domain, or board and name. Kept until what it is made of changes (stamps.py); the same
+        list is handed to each caller, which reads it only."""
+        at = stamps.stamp(db, ('graph_nodes', 'team_records', 'team_sources', 'projects', 'boards', 'board_suggestions'))
+        keys = tuple(k['key'] for ref in self.work_fleets() for k in self.graph_keys(ref).values())  # what hash_index hashes with
+        return shared_graph_kept.KEPT.get(('team_graph', tuple(kinds), keys), at, lambda: self._team_graph(db, kinds, self.hash_index(db)))
+
+    def _team_graph(self, db, kinds, index):
         names = {(f, m): (s.get('name') or '', bool(s.get('left_at'))) for (f, m), s in self.team_sources().items()}
         hidden = {'project:' + str(i) for i in graph.hidden_project_ids(db)}  # a teammate's project never lands on an Only-you one
         local_projects = {row['name'].casefold(): row['id'] for row in db.execute("SELECT id,name FROM graph_nodes WHERE kind='project'") if row['id'] not in hidden}
@@ -2705,18 +2722,27 @@ class SharedGraph:
 
     def scopes(self, db):
         """{fleet: Scope} for each Work Fleet this Machine is in."""
-        found = {}
+        found, personal, at = {}, None, None
         for group in self._kept_groups():
             if group.get('kind') == 'work' and group.get('id') and self._me_in(group):
-                found[group['id']] = Scope(db, self.graph_accounts(group['id']), self.internal(group['id']), self.my_emails(),
-                                           self._personal_people(db))
+                if personal is None:
+                    personal, at = self._personal_people(db), stamps.stamp(db, shared_graph_kept.SCOPE_TABLES)
+                accounts, internal, mine = self.graph_accounts(group['id']), self.internal(group['id']), self.my_emails()
+                # The sharing rules, worked out once (a pass over every person and organization, the Only-you projects
+                # and their threads) and kept until one of the tables they come from changes: a person's page and the
+                # to-do list asked for them on every request. Each caller gets its own copy, current to the second.
+                key = ('scope', group['id'], frozenset(accounts), frozenset(internal), frozenset(m.lower() for m in mine), frozenset(personal))
+                base = shared_graph_kept.KEPT.get(key, at, lambda: Scope(db, accounts, internal, mine, personal))
+                timing = getattr(_REQUEST_TIMING, 'value', None)  # a GET reads only: its answers hold for the request
+                memo = timing.setdefault('automated', {}).setdefault(key, {}) if timing is not None and timing.get('read') else None
+                found[group['id']] = shared_graph_kept.renewed(base, db, memo, HOLD)
         return found
 
     def _personal_people(self, db):
         """Graph people who are only in the owner's Family or Friends (graph.fleet_marks, from the directory this
         Machine keeps): the owner's own life, whatever address they write from. Never shared with a Work Fleet."""
         try:
-            marks = graph.fleet_marks(db, self.fleets())
+            marks = shared_graph_kept.fleet_marks(db, self.fleets())
         except (ValueError, TypeError, KeyError, AttributeError):
             return set()
         return {node for node, mark in marks.items() if mark['in'] and all(x['kind'] in ('family', 'friends') for x in mark['in'])}

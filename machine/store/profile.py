@@ -563,16 +563,28 @@ class ProfileStore:
         follow-up that arrived) don't count."""
         end = until or now()
         since = since or (dt.datetime.fromisoformat(end) - dt.timedelta(days=days)).isoformat()
+        return self._quality_of(self._quality_rows(since, end), days, since, end)
+
+    def _quality_rows(self, since, end):
+        """The to-dos made from since until end, and the owner's decisions from since on (quality reads both): one read
+        for every period inside, as quality_trend counts 22 of them."""
         with self.connect() as db:
             cards = [dict(r) for r in db.execute(
-                "SELECT s.id,s.status,(SELECT e.kind FROM events e WHERE e.id=json_extract(s.event_ids,'$[0]')) kind FROM suggestions s "
+                "SELECT s.id,s.status,s.created_at,(SELECT e.kind FROM events e WHERE e.id=json_extract(s.event_ids,'$[0]')) kind FROM suggestions s "
                 "WHERE s.created_at>=? AND s.created_at<? AND s.id NOT IN (SELECT suggestion_id FROM decisions WHERE id LIKE 'followed-up:%' OR id LIKE 'expired:%')", (since, end))]
-            choices = collections.defaultdict(list)
-            for d in db.execute("SELECT d.suggestion_id,d.choice,k.kind FROM decisions d LEFT JOIN note_kinds k ON k.decision_id=d.id "
-                                "WHERE d.source IN ('telegram','dashboard') AND d.created_at>=? ORDER BY d.created_at", (since,)):
+            decisions = [dict(d) for d in db.execute(
+                "SELECT d.suggestion_id,d.choice,k.kind,d.created_at FROM decisions d LEFT JOIN note_kinds k ON k.decision_id=d.id "
+                "WHERE d.source IN ('telegram','dashboard') AND d.created_at>=? ORDER BY d.created_at", (since,))]
+        return cards, decisions
+
+    def _quality_of(self, rows, days, since, end):
+        """quality() from _quality_rows read for this period or a longer one around it."""
+        cards = [c for c in rows[0] if since <= c['created_at'] < end and c['kind'] != 'assistant.test']
+        choices = collections.defaultdict(list)
+        for d in rows[1]:
+            if d['created_at'] >= since:
                 # A Change counts as what it was: other:style, other:continue, … (other: when not sorted).
                 choices[d['suggestion_id']].append(d['choice'] + (':' + (d['kind'] or '') if d['choice'] == 'other' else ''))
-        cards = [c for c in cards if c['kind'] != 'assistant.test']
         def outcome(c):
             made = choices.get(c['id'], [])
             if c['status'] == 'rejected':
@@ -616,11 +628,14 @@ class ProfileStore:
         Rule changes are not marked: drafting rules and PREPARATION.md change nearly every day, so a mark said nothing."""
         zone = local_tz()
         today = dt.datetime.fromisoformat(now()).astimezone(zone).date()
-        def bucket(start, end):
-            utc = lambda d: dt.datetime.combine(d, dt.time(), zone).astimezone(dt.timezone.utc).isoformat()
-            q = self.quality(until=utc(end), since=utc(start))
-            return {'start': start.isoformat(), **{k: q[k] for k in ('worth_it', 'dismissed', 'open', 'hit_rate', 'do_it', 'first_time_rate', 'finished_rate')}}
+        utc = lambda d: dt.datetime.combine(d, dt.time(), zone).astimezone(dt.timezone.utc).isoformat()
         monday = today - dt.timedelta(days=today.weekday())
+        # every period read at once: the earliest start (a day or a week back) to the latest end (tomorrow)
+        rows = self._quality_rows(utc(min(today - dt.timedelta(days=days - 1), monday - dt.timedelta(weeks=weeks - 1))),
+                                  utc(max(today + dt.timedelta(days=1), monday + dt.timedelta(weeks=1))))
+        def bucket(start, end):
+            q = self._quality_of(rows, 30, utc(start), utc(end))
+            return {'start': start.isoformat(), **{k: q[k] for k in ('worth_it', 'dismissed', 'open', 'hit_rate', 'do_it', 'first_time_rate', 'finished_rate')}}
         with self.connect() as db:  # decided as quality() counts it: dismissed, done, or Do it or Send by the owner
             first = db.execute(
                 "SELECT min(s.created_at) FROM suggestions s WHERE (s.status IN ('rejected','completed') OR EXISTS(SELECT 1 FROM decisions d "

@@ -2532,10 +2532,10 @@ def people_by_phone(db, numbers):
     return sorted(out)
 
 
-def fleet_marks(db, fleets):
+def fleet_marks(db, fleets, network=True):
     """{node_id: {'name', 'machine', 'in': [...]}} for the people in the graph who are members of the owner's Fleets,
     Family or Friends (fleets: the directory by Fleet id, as fleet.Fleet.fleets() gives it). Members only: a pending
-    friend request or a blocked person is not one."""
+    friend request or a blocked person is not one. network: with the people found on the Network (network_marks)."""
     by_email = collections.defaultdict(list)
     for ref, found in (fleets or {}).items():
         kind = (found or {}).get('kind')
@@ -2561,7 +2561,7 @@ def fleet_marks(db, fleets):
     order = {'work': 0, 'family': 1, 'friends': 2}
     for mark in marks.values():
         mark['in'].sort(key=lambda x: (order[x['kind']], x['fleet_name'].casefold()))
-    return network_marks(db, marks, fleets)
+    return network_marks(db, marks, fleets) if network else marks
 
 
 def network_marks(db, marks, fleets=None):

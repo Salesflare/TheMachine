@@ -46,6 +46,7 @@ from machine.sources.connectors import docs_health, read_window, silent_failure,
 from machine.sources.salesflare import salesflare_progress
 from machine.sources.slack import slack_first_import_progress, SLACK_ID, slack_name_table, slack_named
 from machine.store import history as history_store
+from machine import stamps
 from machine.store.cards import source_kind, SOURCE_KIND, use_view
 from machine.store.conversation import ConversationStore
 from machine.store.decisions import handoff_wait, send_retry_ok, skill_update_view, UNDO_MERGE
@@ -63,6 +64,8 @@ import still_needed
 from timeutil import local_tz, now
 import todo_areas
 import whatsapp_images
+
+WAITING = stamps.Kept(4)  # the Who's who count (snapshot)
 
 
 def skill_labels(cluster):
@@ -627,7 +630,8 @@ class ViewsStore(ConversationStore):
             result['suggestion_counts'] = {r['status']: r['count'] for r in db.execute('SELECT status,count(*) count FROM suggestions GROUP BY status')}
             result['areas'] = todo_areas.areas(accounts)  # where a to-do can move (More, Move to)
             try:  # roles waiting in Graph, Who's who: the Graph tab's badge
-                result['graph_waiting'] = graph.waiting(db)
+                # the Who's who count reads every person: kept until a role or a person changes (stamps.py)
+                result['graph_waiting'] = WAITING.get('waiting', stamps.stamp(db, ('person_roles', 'graph_nodes')), lambda: graph.waiting(db))
             except sqlite3.Error:
                 result['graph_waiting'] = 0
             try:  # Connections, Disconnected lately (mail_grants.py receipts): confirmed or pending, with no token
@@ -697,14 +701,14 @@ class ViewsStore(ConversationStore):
             for row in db.execute('SELECT * FROM review_runs ORDER BY started_at DESC LIMIT 20'):
                 result['review_runs'].append(self.review_run_view(db, dict(row)))
             result['review_health']['worker'] = result['review_runs'][0] if result['review_runs'] else None
+            listed = {review['id']: json.loads(review['items']) for review in result['analyses']}
+            # each listed signal's review state in one read, not one per signal (thousands over the last 100 reviews)
+            analyzed = {r[0]: r[1] for r in db.execute('SELECT id,analyzed_version FROM events WHERE id IN (SELECT value FROM json_each(?))',
+                                                       (json.dumps(sorted({i['id'] for items in listed.values() for i in items})),))}
             for review in result['analyses']:
-                items = json.loads(review['items'])
+                items = listed[review['id']]
                 review['checked_count'] = sum(not i.get('excluded') and not i.get('deferred') for i in items) if review['status']=='complete' else 0
-                outstanding = 0
-                for item in items:
-                    row = db.execute('SELECT analyzed_version FROM events WHERE id=?', (item['id'],)).fetchone()
-                    if row and row['analyzed_version'] < item['version']:
-                        outstanding += 1
+                outstanding = sum(1 for item in items if item['id'] in analyzed and analyzed[item['id']] < item['version'])
                 review['remaining_count'] = outstanding
                 review['recovered_count'] = sum(not i.get('excluded') for i in items) - outstanding if review['status']!='complete' else None
         result['quality'] = self.quality_report()
