@@ -54,7 +54,7 @@ LinkedIn, X und Salesflare behalten ihr eigenes Tempo.
 
 Eine Aufgabe zeigt ihren nächsten Schritt, etwa **Ausführen** oder **Prüfen und senden**, mit **Zurückstellen** daneben. Siehe [Ausführen](do-it.md) und [Zurückstellen](snooze.md).
 
-Noch nicht vorbereitet, hat sie **Anders angehen** (sag, wie es stattdessen gehen soll); fertig, **Änderungen anfragen** (sag, was im Entwurf anders sein soll). Ist die Zeile auf dem Handy voll, wandert **Zurückstellen** unter **…**. **Als erledigt markieren** (sie ist erledigt) gibt es auch: sichtbar ohne Entwurf, sonst oben unter **…**.
+Noch nicht vorbereitet, hat sie **Anders angehen** (sag, wie es stattdessen gehen soll); fertig, **Änderungen anfragen** (sag, was im Entwurf anders sein soll). Ist die Zeile auf dem Handy voll, wandert **Zurückstellen** unter **…**. **Als erledigt markieren** (sie ist erledigt) gibt es auch: sichtbar ohne Entwurf, sonst oben unter **…**. Sie verschwindet sofort aus der Liste, mit **Rückgängig** in der Meldung.
 
 Soll sie anders erledigt werden, sag es in ihrem **Chat**.
 
