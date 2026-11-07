@@ -37,7 +37,7 @@ Die Entwürfe eines Boards kommen als eine Aufgabe, nie eine pro E-Mail. Währen
 
 **Überspringen** nimmt den Haken weg und schiebt den Entwurf nach unten, markiert als Übersprungen mit **Rückgängig**; endgültig übersprungen ist er erst, wenn du die Prüfung schließt. Mit **Zurückholen** in den Nachfassen des Projekts oder an der Aufgabe unter Erledigt kommt er zurück, solange kein neueres Nachfassen da ist. Ein einzelnes Projekt bekommt eine normale Aufgabe.
 
-**Ändern…** schreibt alle markierten Entwürfe oder nur den aktuellen so um, wie du es sagst; nichts wird gesendet, und **Änderung rückgängig machen** holt den alten Text zurück. Solange das Feld zum Ändern offen ist oder umgeschrieben wird, geht nichts raus, und ein geänderter Entwurf wird erst wieder gezeigt.
+**Änderungen anfragen…** schreibt alle markierten Entwürfe oder nur den aktuellen so um, wie du es sagst; nichts wird gesendet, und **Änderung rückgängig machen** holt den alten Text zurück. Solange das Feld zum Ändern offen ist oder umgeschrieben wird, geht nichts raus, und ein geänderter Entwurf wird erst wieder gezeigt.
 
 Gehen mehrere nacheinander raus, auch mit Ohne Nachfrage senden, sendet jedes Postfach nur alle 30 bis 45 Sekunden eine, und die Aufgabe zeigt den Stand: „3 von 8 wird gesendet…“. **Senden stoppen** hält den Rest an: eine, die schon unterwegs ist, geht noch, die anderen sind wieder als Entwürfe in der Prüfung, zum späteren Senden („Gestoppt. 1 gesendet, 11 als Entwürfe behalten.“).
 

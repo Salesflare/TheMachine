@@ -37,7 +37,7 @@ De opvolgingen van een bord komen als één to-do, nooit één per e-mail. Terwi
 
 **Overslaan** vinkt een concept uit en zet het onderaan, met Overgeslagen en **Ongedaan maken**; het is pas echt overgeslagen als je het nakijken sluit. Een overgeslagen opvolging komt terug met **Terughalen** bij de opvolgingen van het project of op de to-do in Gedaan, zolang er geen nieuwere opvolging is. De opvolging van één project is een gewone to-do.
 
-**Wijzigen…** herschrijft alle aangevinkte concepten, of alleen het huidige, zoals jij het zegt; er wordt niets verstuurd en **Wijziging ongedaan maken** zet de oude tekst terug. Zolang het wijzigvak open is of er herschreven wordt, gaat er niets weg, en een concept dat veranderde zie je eerst opnieuw.
+**Wijzigingen vragen…** herschrijft alle aangevinkte concepten, of alleen het huidige, zoals jij het zegt; er wordt niets verstuurd en **Wijziging ongedaan maken** zet de oude tekst terug. Zolang het wijzigvak open is of er herschreven wordt, gaat er niets weg, en een concept dat veranderde zie je eerst opnieuw.
 
 Gaan er meerdere na elkaar weg, ook met Versturen zonder te vragen, dan verstuurt elke mailbox er één per 30 tot 45 seconden en de to-do toont hoe ver het is: "3 van 8 versturen…". **Stop met versturen** stopt de rest: een die al onderweg is gaat nog, de andere staan weer als concept in het nakijken, om later te versturen ("Gestopt. 1 verstuurd, 11 bewaard als concepten.").
 

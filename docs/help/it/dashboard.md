@@ -64,7 +64,7 @@ Apprendimento ha una fila di schede. Una scheda ancora vuota non compare.
   - **Utile**: delle attività su cui hai deciso, su quante hai agito (**Fallo**, inviata o fatta) invece di scartarle.
   - **Al primo colpo**: delle attività avviate con **Fallo**, quante non hanno avuto bisogno di correzioni dopo.
   - **Completata**: delle attività avviate con **Fallo**, quante sono finite senza che tu le chiedessi di continuare o di riprovare.
-  - **Inviata così com’è**: delle bozze che hai inviato, quante sono partite senza una modifica o un **Cambia** prima.
+  - **Inviata così com’è**: delle bozze che hai inviato, quante sono partite senza una modifica o un **Chiedi modifiche** prima.
   - Ogni numero dice come si confronta con i 30 giorni precedenti. Il grafico parte dalla tua prima attività decisa: una barra al giorno nelle prime due settimane, poi una a settimana, fino alle ultime 8 settimane.
   - **Utile per origine**: da dove arrivano le attività, come **Email**, **Aggiunto da te** (create con **Nuova attività**), **Notifiche del telefono** o **The Machine stessa** (problemi in The Machine, come un errore), e su quante hai agito.
   - **Attività sfuggite**: una volta a settimana The Machine controlla un campione di messaggi rimasti senza attività, e mostra la quota che probabilmente ne richiedeva una, con il suo margine. Quelli trovati sono elencati: **Apri** mostra il messaggio, e **Vera svista** o **Non è una svista** le dice se aveva ragione. Le tue risposte restano sulla tua Machine e rendono il numero più preciso. Il numero tiene conto anche di quante volte il controllo stesso sbaglia, misurato su esempi inventati e sulle tue risposte. Compare dopo il primo controllo settimanale.

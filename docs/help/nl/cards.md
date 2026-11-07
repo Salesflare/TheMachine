@@ -28,7 +28,7 @@ Een to-do met **Lijkt gedaan** ziet eruit als een gedane, met wat laat zien dat 
 
 Een to-do waarvan de laatste stap nog openstaat bij iemand anders, zoals een review, een merge of een antwoord, zegt **Wacht op:** die stap en blijft open. Hij wacht in **Wacht op anderen**, ingeklapt boven Komt later terug, en telt niet mee als klaar voor jou. Een nieuw bericht erover brengt hem terug.
 
-Een to-do die een week niemand aanraakte, vraagt één keer: **Nog nodig?** **Laten vallen** sluit hem zoals **Niet nodig**, met **Ongedaan maken**. **Houden** houdt hem, en hij vraagt het nooit meer. Openen, een chatbericht, een aanpassing, snoozen of een nieuw bericht erover tellen allemaal als aanraken. Komt er een week later nog geen antwoord, dan vouwt hij weg in Komt later terug, onder Nog nodig?, in plaats van te verdwijnen. Dan telt hij ook niet meer mee in het getal op het app-icoon en het ochtendoverzicht. Aanraken haalt hem terug.
+Een to-do die een week niemand aanraakte, vraagt één keer: **Nog nodig?** **Niet nodig** sluit hem, met **Ongedaan maken**. **Houden** houdt hem, en hij vraagt het nooit meer. Openen, een chatbericht, een aanpassing, snoozen of een nieuw bericht erover tellen allemaal als aanraken. Komt er een week later nog geen antwoord, dan vouwt hij weg in Komt later terug, onder Nog nodig?, in plaats van te verdwijnen. Dan telt hij ook niet meer mee in het getal op het app-icoon en het ochtendoverzicht. Aanraken haalt hem terug.
 
 Als er niets op je wacht, doet je Machine een dutje op de lege lijst. Terwijl hij checkt, wordt hij wakker en zegt hij dat. Is een check mislukt of laat, dan zegt zijn regel dat, met **Nu checken** eronder.
 
@@ -56,7 +56,7 @@ LinkedIn, X en Salesflare houden hun eigen tempo.
 
 Een to-do toont zijn volgende stap, zoals **Doe het** of **Nakijken en versturen**, met **Snoozen** ernaast. Zie [Doe het](do-it.md) en [Snoozen](snooze.md).
 
-Nog niet voorbereid heeft hij **Anders aanpakken** (zeg hoe het anders moet); klaar, **Wijzigingen vragen** (zeg wat er in het concept moet veranderen). Is de rij op een telefoon vol, dan gaat **Snoozen** naar **…**. **Markeer als gedaan** (hij is geregeld) is er ook: in beeld zonder concept, anders bovenaan onder **…**. Hij gaat meteen uit de lijst, met **Ongedaan maken** in de melding.
+**Wijzigingen vragen** zegt wat er anders moet: hoe het moet, of, zodra er een concept klaarstaat, wat erin moet veranderen. Is de rij op een telefoon vol, dan gaat **Snoozen** naar **…**. **Markeer als gedaan** (hij is geregeld) is er ook: in beeld zonder concept, anders bovenaan onder **…**. Hij gaat meteen uit de lijst, met **Ongedaan maken** in de melding.
 
 Wil je hem anders laten doen, zeg het dan in zijn **Chat**.
 
@@ -72,7 +72,7 @@ Een gesloten to-do kan terugkomen met **Heropenen**. Hij komt ook vanzelf terug 
 
 Een to-do die maar tot een bepaald moment telde, zoals een bevestiging voor een vergadering, sluit vanzelf zodra dat moment voorbij is. Hij gaat naar **Gedaan / afgewezen** met "Niet meer nodig" en wanneer het was. **Ongedaan maken** brengt hem een dag lang terug.
 
-Bij je eerste to-do's staat onder de knoppen één korte regel met wat je moet weten: **Anders aanpakken** (of **Wijzigingen vragen**) en **Niet nodig** als een to-do niet helemaal klopt, en bij je eerste klaarstaande concept dat er niets weggaat tot je op **Versturen** drukt. Een tip verdwijnt voorgoed zodra je die knop gebruikt of op × drukt, op al je apparaten.
+Bij je eerste to-do's staat onder de knoppen één korte regel met wat je moet weten: **Wijzigingen vragen** en **Niet nodig** als een to-do niet helemaal klopt, en bij je eerste klaarstaande concept dat er niets weggaat tot je op **Versturen** drukt. Een tip verdwijnt voorgoed zodra je die knop gebruikt of op × drukt, op al je apparaten.
 
 Op je eerste dag zegt de bovenkant van To-do's hallo met je naam en wie het langst op je antwoord wacht. The Machine schrijft dat antwoord eerst, zodat het klaarstaat als je binnenkomt. Er gaat niets weg tot je het verstuurt. De regel verdwijnt na je eerste dag of je eerste besliste to-do.
 

@@ -79,7 +79,7 @@ class Delegate(unittest.TestCase):
         self.assertIn('waits 3 days for Sam’s reply', n.preview(action))
         # Same rows as the plugin's packRows: the Send shares its row with Mark done.
         self.assertEqual([[b['label'] for b in block['buttons']] for block in a.controls(self.row())['blocks']],
-                         [['Send to Sam', 'Mark done', 'Snooze'], ['Change', 'Not needed']])
+                         [['Send to Sam', 'Mark done', 'Snooze'], ['Ask for changes', 'Not needed']])
         for bad in ({'account_id': 'other-slack'}, {'user_id': 'U0SAM12'}, {'to_email': None, 'user_id': 'nope'},
                     {'wait_days': 30}, {'delegate': 'yes'}, {'label': 'Delegate'}, {'to_name': ''}, {'channel': 'C1'}):
             with self.subTest(bad), self.assertRaises(ValueError):

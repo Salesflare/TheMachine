@@ -19,7 +19,7 @@ Une mission n’envoie jamais rien à votre place. Quand elle vous laisse une é
 ## Dans l’app Codex
 
 - **Ouvrir dans Codex** ouvre le fil de la tâche dans l’app Codex. Tant que Codex y travaille ici, l’app ne peut pas encore l’ouvrir. Il s’ouvre une fois terminé.
-- **Modifier** sur un fil ouvert dans l’app Codex continue dans cette même conversation là-bas, et la tâche la suit.
+- **Demander des modifications** sur un fil ouvert dans l’app Codex continue dans cette même conversation là-bas, et la tâche la suit.
 - Un travail ne s’arrête que si Codex ne fait rien pendant 30 minutes, ou après 6 heures au total. Un redémarrage de The Machine ne l’arrête pas.
 
 ## La configurer

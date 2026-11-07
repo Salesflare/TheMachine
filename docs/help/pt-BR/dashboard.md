@@ -64,7 +64,7 @@ O Aprendizado tem uma fileira de abas. Uma aba ainda sem nada fica de fora.
   - **Valeu a pena**: das tarefas que você decidiu, quantas você levou adiante (**Fazer**, enviada ou feita) em vez de dispensar.
   - **De primeira**: das tarefas que você começou com **Fazer**, quantas não precisaram de correção depois.
   - **Concluída**: das tarefas que você começou com **Fazer**, quantas terminaram sem você pedir para continuar ou tentar de novo.
-  - **Enviado como está**: dos rascunhos que você enviou, quantos foram sem edição nem **Mudar** antes.
+  - **Enviado como está**: dos rascunhos que você enviou, quantos foram sem edição nem **Pedir mudanças** antes.
   - Cada número mostra como se compara com os 30 dias anteriores. O gráfico começa na sua primeira tarefa decidida: uma barra por dia nas duas primeiras semanas, depois uma por semana, até as últimas 8 semanas.
   - **Valeu a pena por origem**: de onde vieram as tarefas, como **E-mail**, **Adicionado por você** (criadas com **Nova tarefa**), **Notificações no celular** ou **A própria The Machine** (problemas na The Machine, como um erro), e quantas você levou adiante.
   - **Tarefas esquecidas**: uma vez por semana, The Machine verifica uma amostra de mensagens que ficaram sem tarefa, e mostra a parte que provavelmente precisava de uma, com sua margem. As que ela encontrou aparecem listadas: **Abrir** mostra a mensagem, e **Esquecimento real** ou **Não é esquecimento** diz a ela se acertou. Suas respostas ficam na sua Machine e deixam o número mais preciso. O número também corrige quantas vezes a própria verificação erra, medido com exemplos inventados e suas respostas. Aparece depois da primeira verificação semanal.

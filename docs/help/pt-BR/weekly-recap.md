@@ -15,7 +15,7 @@ order: 1
 - Pessoas e projetos, como quem sumiu.
 - O que eu notei: rascunhos enviados como estavam ou editados, tarefas dispensadas em poucos minutos, tarefas adiadas mais de uma vez.
 - Nos bastidores: quantos sinais ela verificou nesta semana e quantos ainda aguardam.
-- Opções, cada uma em sua própria mensagem depois do resumo: uma fonte movimentada sem resultados (**Parar de verificar** ou **Continuar verificando**) e uma tarefa adiada mais de uma vez (**Descartar**, **Fazer agora** ou **Manter**). Nada muda até você tocar.
+- Opções, cada uma em sua própria mensagem depois do resumo: uma fonte movimentada sem resultados (**Parar de verificar** ou **Continuar verificando**) e uma tarefa adiada mais de uma vez (**Não precisa**, **Fazer** ou **Manter**). Nada muda até você tocar.
 
 ## Quando e onde
 

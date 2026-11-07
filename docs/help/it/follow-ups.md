@@ -37,7 +37,7 @@ I ricontatti di una bacheca arrivano come un’unica attività, mai una per emai
 
 **Salta** toglie la spunta a una bozza e la sposta in fondo, segnata come Saltata con **Annulla**; viene saltata davvero solo quando chiudi la revisione. Un ricontatto saltato torna con **Ripristina** nei ricontatti del progetto o sulla sua attività in Fatto, finché non ne arriva uno più recente. Il ricontatto di un singolo progetto è un’attività normale.
 
-**Cambia…** riscrive tutte le bozze selezionate, o solo quella attuale, come dici tu; non viene inviato nulla e **Annulla modifica** riporta il testo di prima. Finché il riquadro Cambia è aperto o una riscrittura è in corso non parte nulla, e una bozza cambiata ti viene mostrata di nuovo prima di partire.
+**Chiedi modifiche…** riscrive tutte le bozze selezionate, o solo quella attuale, come dici tu; non viene inviato nulla e **Annulla modifica** riporta il testo di prima. Finché il riquadro Cambia è aperto o una riscrittura è in corso non parte nulla, e una bozza cambiata ti viene mostrata di nuovo prima di partire.
 
 Quando ne partono diversi di seguito, anche con Invia senza chiedere, ogni casella ne invia uno ogni 30-45 secondi e l’attività mostra a che punto è: “Invio 3 di 8…”. **Interrompi l’invio** ferma il resto: quello già in uscita parte comunque, gli altri tornano come bozze nella revisione, da inviare più tardi (“Interrotto. Inviati: 1. 11 tenuti come bozze.”).
 

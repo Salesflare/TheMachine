@@ -12,7 +12,7 @@ Premi **Posticipa** su un'attività. **Ricordamelo più tardi** offre alcuni ora
 
 I posticipi di un giorno o più arrivano all'ora impostata in "I posticipi arrivano alle", e le attività di lavoro aspettano un giorno lavorativo. Imposta entrambe le cose in [Orario di lavoro](work-hours.md).
 
-Anche un **Cambia** come "ricordamelo martedì prossimo" la posticipa.
+Anche un **Chiedi modifiche** come "ricordamelo martedì prossimo" la posticipa.
 
 ## Quando torna
 

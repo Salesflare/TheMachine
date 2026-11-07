@@ -12,7 +12,7 @@ Druk op **Snoozen** op een to-do. **Herinner me later** biedt een paar tijdstipp
 
 Snoozes van een dag of langer komen terug op je tijdstip bij "Gesnoozede items komen terug om", en werk-to-do's wachten op een werkdag. Je stelt allebei in bij [Werkuren](work-hours.md).
 
-Een **Wijzigen** zoals "herinner me hier volgende dinsdag aan" snoozet hem ook.
+Een **Wijzigingen vragen** zoals "herinner me hier volgende dinsdag aan" snoozet hem ook.
 
 ## Wanneer hij terugkomt
 

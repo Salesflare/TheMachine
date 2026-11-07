@@ -64,7 +64,7 @@ Apprentissage a une rangée d’onglets. Un onglet encore vide n’est pas affic
   - **Utile** : parmi les tâches que vous avez tranchées, combien vous avez traitées (**Faire**, envoyée ou faite) au lieu de les écarter.
   - **Du premier coup** : parmi les tâches lancées avec **Faire**, combien n’ont demandé aucune correction ensuite.
   - **Terminée** : parmi les tâches lancées avec **Faire**, combien ont abouti sans que vous demandiez de continuer ou de réessayer.
-  - **Envoyé tel quel** : parmi les brouillons envoyés, combien sont partis sans retouche ni **Modifier** avant.
+  - **Envoyé tel quel** : parmi les brouillons envoyés, combien sont partis sans retouche ni **Demander des modifications** avant.
   - Chaque chiffre se compare aux 30 jours précédents. Le graphique commence à votre première tâche décidée : une barre par jour les deux premières semaines, puis une par semaine, jusqu’aux 8 dernières semaines.
   - **Utile par source** : d’où viennent les tâches, comme **E-mail**, **Ajouté par vous** (créées avec **Nouvelle tâche**), **Notifications sur le téléphone** ou **The Machine elle-même** (problèmes dans The Machine, comme une erreur), et combien vous en avez traitées.
   - **Tâches oubliées** : une fois par semaine, The Machine vérifie un échantillon de messages restés sans tâche, et montre la part qui en demandait sans doute une, avec sa fourchette. Ceux qu’elle a trouvés sont listés : **Ouvrir** affiche le message, et **Vrai oubli** ou **Pas un oubli** lui dit si elle avait raison. Vos réponses restent sur votre Machine et rendent le chiffre plus juste. Le chiffre tient aussi compte des erreurs de la vérification elle-même, mesurées sur des exemples inventés et vos réponses. Visible après la première vérification hebdomadaire.

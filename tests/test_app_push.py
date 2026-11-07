@@ -268,7 +268,7 @@ class AppPush(unittest.TestCase):
         new = a.app_notice(self.store, self.config, self.card())
         self.assertEqual((new['title'], new['body'], new['actions']),
                          ('New to-do: Pay the Monizze invoice', 'The Monizze invoice of 120 EUR is due Friday.', ['prepare', 'snooze', 'done']))
-        self.assertEqual(new['labels'], {'prepare': 'Prepare', 'snooze': 'Snooze', 'done': 'Mark done', 'open': 'Open'})
+        self.assertEqual(new['labels'], {'prepare': 'Do it', 'snooze': 'Snooze', 'done': 'Mark done', 'open': 'Open'})
         self.assertEqual(new['events'], {'prepare': 'Preparing it', 'snooze': 'Snoozed it', 'done': 'Marked it done',
                                          'failed': 'Couldn’t reach your Machine. Open the app to try again.'})
         self.assertEqual(new['line'], new['title'])  # what an older app shows

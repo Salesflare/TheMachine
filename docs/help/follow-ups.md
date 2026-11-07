@@ -37,7 +37,7 @@ A board's follow-ups come as one to-do, never one per email. While they're draft
 
 **Skip** unticks a draft and moves it to the bottom, marked Skipped with an **Undo**; it's skipped for good when you close the review. A skipped one comes back with **Bring back** in the project's follow-ups or on its to-do in Done, as long as no newer follow-up came. A single project's follow-up is a normal to-do.
 
-**Change…** rewrites all checked drafts, or only the current one, the way you say; nothing is sent, and **Undo change** brings back the old text. While the Change box is open or a rewrite runs, nothing can be sent, and a draft that changed is shown again before it can go.
+**Ask for changes…** rewrites all checked drafts, or only the current one, the way you say; nothing is sent, and **Undo change** brings back the old text. While its box is open or a rewrite runs, nothing can be sent, and a draft that changed is shown again before it can go.
 
 When several go out in a row, also with Send without asking, each mailbox sends one every 30 to 45 seconds, and the to-do shows how far it got: "Sending 3 of 8…". **Stop sending** stops the rest: one already on its way still goes, and the others are back in the review as drafts, to send later ("Stopped. 1 sent, 11 kept as drafts.").
 

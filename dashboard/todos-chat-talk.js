@@ -251,7 +251,7 @@ async function talkDo(v,args){const id=String(args.id||v.sid||''),act=String(arg
    return say('Reopened. Say so in a few words.')}
   if(!open)return {error:s?'It is closed. Reopen it first.':'No open to-do with that id. Use list_todos or find_todos.'};
   if(act==='mark_done'){await go('complete');return say('Marked done. Say so in a few words.')}
-  if(act==='dismiss'){await go('reject',{},String(args.why||'').trim().slice(0,1000));return say('Dismissed. Say so in a few words.')}
+  if(act==='dismiss'){await go('reject',{},String(args.why||'').trim().slice(0,1000));return say('Marked not needed. Say so in a few words.')}
   if(act==='snooze'){const r=await go('snooze',talkSnoozeWhen(args));
    return r?.snoozed_until?say('Snoozed until {until}, the owner’s local time. Say so in a few words.'.replace('{until}',talkLocal(r.snoozed_until)),{until:talkLocal(r.snoozed_until),time_zone:talkZone()}):say('Snoozed. Say so in a few words.')}
   if(act==='unsnooze'){if(s.status!=='snoozed')return {error:'It isn’t snoozed.'};await go('accept');return say('Back on the list. Say so in a few words.')}
@@ -275,7 +275,7 @@ async function talkDoIt(v,args={}){const id=String(args.id||v.sid||''),s=state.s
   return {ok:true,started:true,note:'The Machine started on it, browser work included. Say so in a few words, and that they can follow it on the to-do.'}}
  catch(err){refresh().catch(()=>{});return {error:err.message||'That didn’t work.'}}}
 // A correction right after an action (undo_last_action): taken back on the to-do that action touched, which opens again
-const TALK_UNDO={mark_done:['reopen','Marked done'],dismiss:['reopen','Dismissed'],snooze:['unsnooze','Snoozed'],rename:['rename','Renamed']};
+const TALK_UNDO={mark_done:['reopen','Marked done'],dismiss:['reopen','Marked not needed'],snooze:['unsnooze','Snoozed'],rename:['rename','Renamed']};
 async function talkUndoLast(v){const l=v.last;if(!l||Date.now()-l.at>600000)return {error:'Nothing you did is left to undo.'};
  const how=TALK_UNDO[l.act];if(!how)return {error:l.act==='do_it'?'The Machine’s job has started; it can be stopped on the to-do itself.':'That can’t be undone from here.'};
  const r=await talkDo(v,{id:l.id,action:how[0],...(l.act==='rename'?{title:l.title}:{})});v.last=null;if(r.error)return r;

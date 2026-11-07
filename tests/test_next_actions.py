@@ -360,7 +360,7 @@ class NextActions(unittest.TestCase):
     def test_finished_email_uses_send_and_change_not_more_drafting(self):
         self.menu();row=self.row()
         labels=[b['label'] for block in a.controls(row)['blocks'] for b in block['buttons']]
-        self.assertEqual(labels,['Send reply','Open the Zap','Mark done','Snooze','Change','Not needed'])
+        self.assertEqual(labels,['Send reply','Open the Zap','Mark done','Snooze','Ask for changes','Not needed'])
         hidden=row['next_action']['actions'][1]
         with self.assertRaises(ValueError):self.confirm(hidden['revision'])
         self.assertNotIn('Draft support email',[x['label'] for x in row['next_actions']])
@@ -371,7 +371,7 @@ class NextActions(unittest.TestCase):
             {'kind':'prepare','label':'Draft shorter reply','instructions':'Shorten this'},
             {'kind':'prepare','label':'Draft follow-up','instructions':'Rewrite it'}]})
         self.assertEqual(self.row()['next_actions'],[])
-        self.assertEqual([b['label'] for block in a.controls(self.row())['blocks'] for b in block['buttons']],['Mark done','Snooze','Change','Not needed'])
+        self.assertEqual([b['label'] for block in a.controls(self.row())['blocks'] for b in block['buttons']],['Mark done','Snooze','Ask for changes','Not needed'])
 
     def test_demo_preview_cannot_send_or_approve_and_requires_test_evidence(self):
         self.decide('accept');demo={'kind':'email_demo','label':'Send','subject':'Demo supplier reply','body':'Thanks for the proposal.'}

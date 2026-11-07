@@ -43,7 +43,7 @@ GROUPS = {
     'done': ('completed', 'rejected'),
 }
 LABELS = {'pending': 'Needs your decision', 'accepted': 'Accepted', 'instructions': 'Changes requested',
-          'prepared': 'Ready for you', 'snoozed': 'Later', 'completed': 'Done', 'rejected': 'Dismissed'}
+          'prepared': 'Ready for you', 'snoozed': 'Later', 'completed': 'Done', 'rejected': 'Not needed'}
 
 
 class CliError(Exception):

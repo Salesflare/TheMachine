@@ -28,7 +28,7 @@ Eine Aufgabe mit **Scheinbar erledigt** sieht aus wie eine erledigte, mit dem, w
 
 Eine Aufgabe, deren letzter Schritt noch bei jemand anderem offen ist, etwa ein Review, ein Merge oder eine Antwort, zeigt **Wartet auf:** diesen Schritt und bleibt offen. Sie wartet in **Wartet auf andere**, eingeklappt über Kommt später zurück, und zählt nicht als bereit für dich. Eine neue Nachricht dazu holt sie zurück.
 
-Eine Aufgabe, die eine Woche niemand angefasst hat, fragt einmal: **Noch nötig?** **Entfernen** schließt sie wie **Nicht nötig**, mit **Rückgängig**. **Behalten** behält sie, und sie fragt nie wieder. Öffnen, eine Chatnachricht, eine Änderung, Zurückstellen oder eine neue Nachricht dazu zählen als Anfassen. Kommt eine weitere Woche keine Antwort, wandert sie in Kommt später zurück, unter Noch nötig?, statt zu verschwinden. Dann zählen auch die Zahl am App-Symbol und die morgendliche Zusammenfassung sie nicht mehr mit. Anfassen holt sie zurück.
+Eine Aufgabe, die eine Woche niemand angefasst hat, fragt einmal: **Noch nötig?** **Nicht nötig** schließt sie, mit **Rückgängig**. **Behalten** behält sie, und sie fragt nie wieder. Öffnen, eine Chatnachricht, eine Änderung, Zurückstellen oder eine neue Nachricht dazu zählen als Anfassen. Kommt eine weitere Woche keine Antwort, wandert sie in Kommt später zurück, unter Noch nötig?, statt zu verschwinden. Dann zählen auch die Zahl am App-Symbol und die morgendliche Zusammenfassung sie nicht mehr mit. Anfassen holt sie zurück.
 
 Wenn dich nichts braucht, macht deine Machine auf der leeren Liste ein Nickerchen. Während sie prüft, wird sie wach und sagt es. Ist eine Prüfung fehlgeschlagen oder spät dran, sagt ihre Zeile das, mit **Jetzt prüfen** darunter.
 
@@ -56,7 +56,7 @@ LinkedIn, X und Salesflare behalten ihr eigenes Tempo.
 
 Eine Aufgabe zeigt ihren nächsten Schritt, etwa **Ausführen** oder **Prüfen und senden**, mit **Zurückstellen** daneben. Siehe [Ausführen](do-it.md) und [Zurückstellen](snooze.md).
 
-Noch nicht vorbereitet, hat sie **Anders angehen** (sag, wie es stattdessen gehen soll); fertig, **Änderungen anfragen** (sag, was im Entwurf anders sein soll). Ist die Zeile auf dem Handy voll, wandert **Zurückstellen** unter **…**. **Als erledigt markieren** (sie ist erledigt) gibt es auch: sichtbar ohne Entwurf, sonst oben unter **…**. Sie verschwindet sofort aus der Liste, mit **Rückgängig** in der Meldung.
+**Änderungen anfragen** sagt, was anders sein soll: wie es gehen soll, oder, sobald ein Entwurf fertig ist, was darin anders sein soll. Ist die Zeile auf dem Handy voll, wandert **Zurückstellen** unter **…**. **Als erledigt markieren** (sie ist erledigt) gibt es auch: sichtbar ohne Entwurf, sonst oben unter **…**. Sie verschwindet sofort aus der Liste, mit **Rückgängig** in der Meldung.
 
 Soll sie anders erledigt werden, sag es in ihrem **Chat**.
 
@@ -72,7 +72,7 @@ Eine geschlossene Aufgabe kommt mit **Wieder öffnen** zurück. Sie kommt auch v
 
 Eine Aufgabe, die nur bis zu einem bestimmten Zeitpunkt zählte, etwa eine Bestätigung vor einem Meeting, schließt sich von selbst, sobald dieser Zeitpunkt vorbei ist. Sie wandert zu **Erledigt / verworfen** mit „Nicht mehr nötig“ und wann es war. **Rückgängig** holt sie einen Tag lang zurück.
 
-Bei deinen ersten Aufgaben zeigt eine kurze Zeile unter den Buttons das Wichtigste: **Anders angehen** (oder **Änderungen anfragen**) und **Nicht nötig**, wenn eine Aufgabe nicht ganz passt, und bei deinem ersten fertigen Entwurf, dass nichts rausgeht, bevor du auf **Senden** tippst. Ein Tipp verschwindet für immer, sobald du seinen Button nutzt oder auf × tippst, auf all deinen Geräten.
+Bei deinen ersten Aufgaben zeigt eine kurze Zeile unter den Buttons das Wichtigste: **Änderungen anfragen** und **Nicht nötig**, wenn eine Aufgabe nicht ganz passt, und bei deinem ersten fertigen Entwurf, dass nichts rausgeht, bevor du auf **Senden** tippst. Ein Tipp verschwindet für immer, sobald du seinen Button nutzt oder auf × tippst, auf all deinen Geräten.
 
 An deinem ersten Tag begrüßt dich der Kopf von Aufgaben mit Namen und zeigt, wer am längsten auf deine Antwort wartet. Die Machine entwirft diese Antwort zuerst, damit sie bereitliegt, wenn du ankommst. Nichts geht raus, bevor du sie sendest. Die Zeile verschwindet nach deinem ersten Tag oder deiner ersten entschiedenen Aufgabe.
 

@@ -265,7 +265,7 @@ class Promises(unittest.TestCase):
         self.assertEqual(card['body'], 'Promised Sam at the paint shop on Mon, Oct 19 for Tue, Oct 20. Nothing shows it done yet.')
         self.assertEqual((card['status'], card['owner_step']), ('pending', 1))
         labels = [b['label'] for block in a.controls(card)['blocks'] for b in block['buttons']]
-        self.assertEqual(labels[:2], ['Done', 'Plan it'])
+        self.assertEqual(labels[:2], ['Mark done', 'Plan it'])
         self.assertNotIn('Do it', labels)
         prompt = a.preparation_prompt({'job_id': 'j' * 32, 'suggestion_id': card['id'], 'owner_step': True})
         self.assertIn('only the owner can do themselves', prompt)

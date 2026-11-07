@@ -3482,7 +3482,7 @@ class App(*APP_MIXINS):
             if not owner_dashboard:
                 raise ValueError('Task pages are shared from the dashboard')
             return self.task_pages.action(name, args)
-        if name == 'recap_decide':  # a tap on the weekly recap's Filter, Keep, Undo, Drop or Do it now
+        if name == 'recap_decide':  # a tap on the weekly recap's Filter, Keep, Undo, Not needed or Do it
             return self.recap_decide(args, owner_dashboard)
         if name.startswith('fleet_') or name in FAMILY_ACTIONS:
             return self.fleet_action(name, args, owner_dashboard)

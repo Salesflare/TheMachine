@@ -37,7 +37,7 @@ Los seguimientos de un tablero llegan como una sola tarea, nunca una por correo.
 
 **Omitir** desmarca un borrador y lo lleva al final, marcado como Omitido con **Deshacer**; queda omitido del todo al cerrar la revisión. Uno omitido vuelve con **Recuperar** en los seguimientos del proyecto o en su tarea en Hecho, mientras no haya uno más reciente. El seguimiento de un solo proyecto es una tarea normal.
 
-**Cambiar…** reescribe todos los borradores marcados, o solo el actual, como digas; no se envía nada y **Deshacer cambio** recupera el texto anterior. Mientras el cuadro de cambio está abierto o se reescribe algo, no se envía nada, y un borrador que cambió se muestra otra vez antes de salir.
+**Pedir cambios…** reescribe todos los borradores marcados, o solo el actual, como digas; no se envía nada y **Deshacer cambio** recupera el texto anterior. Mientras el cuadro de cambio está abierto o se reescribe algo, no se envía nada, y un borrador que cambió se muestra otra vez antes de salir.
 
 Cuando salen varios seguidos, también con Enviar sin preguntar, cada buzón envía uno cada 30 a 45 segundos y la tarea muestra cómo va: “Enviando 3 de 8…”. **Dejar de enviar** detiene el resto: el que ya está saliendo sale igual, y los demás vuelven como borradores a la revisión, para enviarlos más tarde (“Detenido. Enviados: 1. 11 guardados como borradores.”).
 

@@ -194,7 +194,7 @@ class AnswerQuestion(unittest.TestCase):
     def test_a_question_leads_with_answer_and_keeps_its_mark(self):
         row={**ux.UX.row(self),'status':'prepared','outcome':json.dumps({'state':'needs_you','needs':'Which date goes in the cash-out field?'})}
         self.assertEqual(self.labels(row)[:2],['Answer','Mark done'])
-        self.assertNotIn('Change',self.labels(row))
+        self.assertNotIn('Ask for changes',self.labels(row))
         answer=next(b for block in a.controls(row)['blocks'] for b in block['buttons'] if b['label']=='Answer')
         self.assertTrue(answer['action']['value'].endswith(':other'))  # the Change path
         self.assertTrue(a.card(row).endswith('Needs you: Which date goes in the cash-out field?'))

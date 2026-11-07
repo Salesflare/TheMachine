@@ -8,7 +8,7 @@ site: Add my bot, Add more any time, Disconnect Telegram
 ---
 ## What it does
 
-Get your to-dos in Telegram, from a bot of your own, within your [work hours](work-hours.md). Each comes with the dashboard's buttons: **Do it**, **Snooze**, **Change**, **Mark done**, **Not needed**, and **Send** for a prepared message. To have The Machine read your Telegram chats instead, see [Telegram chats](telegram-chats.md).
+Get your to-dos in Telegram, from a bot of your own, within your [work hours](work-hours.md). Each comes with the dashboard's buttons: **Do it**, **Snooze**, **Ask for changes**, **Mark done**, **Not needed**, and **Send** for a prepared message. To have The Machine read your Telegram chats instead, see [Telegram chats](telegram-chats.md).
 
 It's optional: the phone app sends the same to-dos as notifications.
 

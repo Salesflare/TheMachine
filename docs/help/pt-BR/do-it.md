@@ -38,5 +38,5 @@ O que ela pode enviar depende da fonte: um e-mail, uma mensagem direta no Slack,
 
 - "Isso não pode ser enviado daqui." significa que você copia o rascunho com **Copiar rascunho** e envia você mesmo.
 - **Precisa da sua ajuda** significa que ela tem uma pergunta para você: clique em **Responder**. **Travada** significa que ela parou sem pergunta, ou demorou demais e foi parada. A tarefa diz por quê.
-- **Tentar de novo** roda mais uma vez. **Mudar** pede outra coisa. Numa tarefa travada, **Tentar de novo** vem primeiro, e **Detalhes** mostra o que ela tentou.
+- **Tentar de novo** roda mais uma vez. **Pedir mudanças** pede outra coisa. Numa tarefa travada, **Tentar de novo** vem primeiro, e **Detalhes** mostra o que ela tentou.
 - Um código enviado para o seu celular, ou uma permissão que falta, faz ela parar. A tarefa diz em uma linha o que precisa, como o código no navegador dela ou acesso a um arquivo, e depois **Continuar** ou **Tentar de novo**.

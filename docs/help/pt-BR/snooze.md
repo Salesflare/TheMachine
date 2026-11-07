@@ -12,7 +12,7 @@ Clique em **Adiar** em uma tarefa. **Lembrar mais tarde** oferece alguns horári
 
 Tarefas adiadas por um dia ou mais voltam no seu horário de "Itens adiados voltam às", e as tarefas de trabalho esperam um dia de trabalho. Defina os dois em [Horário de trabalho](work-hours.md).
 
-Um **Mudar** como "me lembre disso na próxima terça" também adia a tarefa.
+Um **Pedir mudanças** como "me lembre disso na próxima terça" também adia a tarefa.
 
 ## Quando ela volta
 

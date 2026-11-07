@@ -12,7 +12,7 @@ Tippe bei einer Aufgabe auf **Zurückstellen**. **Später erinnern** bietet ein 
 
 Was du um einen Tag oder länger zurückstellst, kommt zu deiner Uhrzeit bei „Zurückgestelltes kommt um“, und Arbeitsaufgaben warten auf einen Arbeitstag. Beides stellst du in [Arbeitszeiten](work-hours.md) ein.
 
-Auch ein **Ändern** wie „erinnere mich nächsten Dienstag daran“ stellt sie zurück.
+Auch **Änderungen anfragen** mit etwas wie „erinnere mich nächsten Dienstag daran“ stellt sie zurück.
 
 ## Wenn sie zurückkommt
 

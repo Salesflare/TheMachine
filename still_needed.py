@@ -2,12 +2,12 @@
 
 To-dos pile up when nobody says no to them: a draft is ready, the moment passed, and the to-do just sits. Looks done
 needs a sign it was handled and a time-bound to-do closes by itself (Store.expire_passed); the rest waits for the owner.
-So once a to-do has sat untouched for DAYS, the to-do asks "Still needed?" with the weekly recap's own Drop and Keep:
+So once a to-do has sat untouched for DAYS, the to-do asks "Still needed?" with the weekly recap's own Not needed and Keep:
 
 - touched: opened (its chat read on the dashboard or by Talk: the 'opened' marks activity.py keeps a few days), a decision by the owner (a chat message, a
   change, a snooze, a rename...), an edit of its draft, or a new message on it (an event it is about);
 - asked once: the question is a row in the weekly recap's choices table (recap_items, kind KIND), never added twice
-  for a to-do, so Keep (status 'kept') means never again. Drop is the dashboard's own Not needed (a reject decision),
+  for a to-do, so Keep (status 'kept') means never again. Not needed is the dashboard's own (a reject decision),
   answered there; a to-do that closes any way ends its question (Store.still_needed_ask);
 - no answer: once the question has waited DAYS more without a touch, the dashboard folds the to-do into Coming back
   later, under its own heading, instead of deleting it (annotate: folded). A touch brings it back; the question stays.

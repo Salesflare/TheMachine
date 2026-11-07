@@ -15,7 +15,7 @@ order: 1
 - Personen en projecten, zoals wie stil is gevallen.
 - Wat me opviel: concepten die verstuurd zijn zoals ze geschreven waren of na bewerking, to-do's die binnen enkele minuten genegeerd zijn, to-do's die meer dan eens gesnoozed zijn.
 - Achter de schermen: hoeveel signalen hij deze week gecheckt heeft, en hoeveel er nog wachten.
-- Keuzes, elk in een eigen bericht na het overzicht: een drukke bron zonder resultaat (**Niet meer checken** of **Blijven checken**) en een to-do die meer dan eens gesnoozed is (**Laten vallen**, **Doe het nu** of **Houden**). Er verandert niets tot je tikt.
+- Keuzes, elk in een eigen bericht na het overzicht: een drukke bron zonder resultaat (**Niet meer checken** of **Blijven checken**) en een to-do die meer dan eens gesnoozed is (**Niet nodig**, **Doe het** of **Houden**). Er verandert niets tot je tikt.
 
 ## Wanneer en waar
 

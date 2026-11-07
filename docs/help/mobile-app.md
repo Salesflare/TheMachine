@@ -23,7 +23,7 @@ The app asks to allow notifications when it first opens. Tap one to open what it
 
 The app then asks your own Machine for the to-do's title and next step, like "Ready: Reply to Sam" with "Send to Sam: Tuesday 10:00 works". The morning gets what waits and your first meeting's time, the team brief its first items, a Fleet update what happened. When it can't reach your Machine, the fixed line stays. On Android it says how many wait, like "2 to-dos need you".
 
-A notification has **Snooze** (until tomorrow) and **Mark done**, and **Prepare** for a to-do not started yet. They work after you unlock the phone, without opening the app. Sending and final steps always open the app. One notification per to-do: "Preparing" turns into "Ready", and it goes away once the to-do is done or snoozed, here or anywhere.
+A notification has **Snooze** (until tomorrow) and **Mark done**, and **Do it** for a to-do not started yet. They work after you unlock the phone, without opening the app. Sending and final steps always open the app. One notification per to-do: "Preparing" turns into "Ready", and it goes away once the to-do is done or snoozed, here or anywhere.
 
 When a step you confirmed goes through, its notification says **Done** and what happened, until you tap **Got it** on To-dos. On iPhone that can wait until you next open the app.
 

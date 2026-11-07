@@ -19,7 +19,7 @@ A job never sends anything for you. When it leaves a publish or deploy step for 
 ## In the Codex app
 
 - **Open in Codex** opens the job's thread in the Codex app, once the job is done.
-- **Change** goes on in that same Codex conversation, and the to-do follows it.
+- **Ask for changes** goes on in that same Codex conversation, and the to-do follows it.
 - A job stops after 30 minutes without progress, or 6 hours in all. A restart doesn't stop it.
 
 ## Set it up

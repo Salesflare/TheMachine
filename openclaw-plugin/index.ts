@@ -58,9 +58,9 @@ function cardButtons(item: any) {
     ? [[item.handoff_wait ? 'Check in now' : 'Unsnooze', 'accept'], ['Change time', 'snooze'], ['Not needed', 'reject']]  // with a teammate: back to check in
     : ['accepted', 'prepared', 'instructions'].includes(item.status)
       ? item.preparation_status!=='blocked'&&answeredOnly(item)
-        ? [['Do it', 'accept'], ['Snooze', 'snooze'], ['Change', 'other'], ['Mark done', 'complete'], ['Not needed', 'reject']]
-        : [...(item.preparation_status==='blocked' ? [[retryLabel(item.preparation_reason),'retry']] : []),['Mark done', 'complete'], ['Snooze', 'snooze'], ['Change', 'other'], ['Not needed', 'reject']]
-      : [['Do it', 'accept'], ['Mark done', 'complete'], ['Snooze', 'snooze'], ['Change', 'other'], ['Not needed', 'reject']];
+        ? [['Do it', 'accept'], ['Snooze', 'snooze'], ['Ask for changes', 'other'], ['Mark done', 'complete'], ['Not needed', 'reject']]
+        : [...(item.preparation_status==='blocked' ? [[retryLabel(item.preparation_reason),'retry']] : []),['Mark done', 'complete'], ['Snooze', 'snooze'], ['Ask for changes', 'other'], ['Not needed', 'reject']]
+      : [['Do it', 'accept'], ['Mark done', 'complete'], ['Snooze', 'snooze'], ['Ask for changes', 'other'], ['Not needed', 'reject']];
   const buttons:any[]=[];
   // A run waiting on the browser keeps its Open the browser link on every redraw. Same rule as controls() in assistant.py.
   const browser=String(item.preparation_browser?.link||'');
