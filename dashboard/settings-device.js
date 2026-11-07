@@ -12,6 +12,9 @@ const DEV=(()=>{const ua=navigator.userAgent;let framed=true;try{framed=window.t
  return {phoneApp:/ TheMachineApp\//.test(ua),ios:iosTab,android:/Android/.test(ua),mobile:iosTab||/Android|Mobi/.test(ua),framed,chromium:'onbeforeinstallprompt' in window,
   macSafari:!iosTab&&/Macintosh/.test(ua)&&/Version\/(1[7-9]|[2-9]\d)\b.*Safari/.test(ua)&&!/Chrome|Chromium|CriOS|Edg|Firefox|FxiOS|OPR/.test(ua)}})();
 const nudgeable=!DEV.framed&&'serviceWorker' in navigator;
+// A phone: by its user agent, or a small touch screen whose browser asks for desktop sites (no "Mobile" in it). On a
+// phone the phone app is a store link, never a QR code to scan with the phone it is on.
+const onPhone=()=>{if(DEV.mobile)return true;try{return matchMedia('(pointer: coarse)').matches&&Math.min(screen.width,screen.height)<600}catch{return false}};
 const inApp=()=>['standalone','fullscreen','window-controls-overlay'].some(m=>matchMedia(`(display-mode: ${m})`).matches)||navigator.standalone===true;
 let installEvt=null,relatedInstalled=false;
 const appInstalled=()=>inApp()||relatedInstalled||devStore.get('app-installed')==='1';
@@ -115,7 +118,7 @@ function phoneAppRender(){const p=state?.notify?.phone_app,inApp=document.docume
  if(inApp&&state?.notify&&!state.notify.app_push_ready&&!devStore.get('app-push-network')){devStore.set('app-push-network',1);toast(t('Notifications in the app need The Machine Network. The app works without them.'))}
  const get=html`<a class="btn-link phone-get" href="${PHONE_APP_GET}" target="_blank" rel="noopener">Get the app</a>`;
  const h=inApp?'':p?.hosted?html`<span class="grow"><strong>Phone app</strong><small>${t('The app signs in with your account.')}</small></span>${get}`:
-  p?.url?html`<span class="grow"><strong>Phone app</strong><small>${t('The app signs in with your account on The Machine Network.')}</small><details class="connect-alt phone-own"><summary>${t('Not on the Network?')}</summary><small>${t('Install the app, then scan this with the phone’s camera.')}</small>${p.qr?.length?qrSvg(p.qr):''}<small>${htmlT('Or enter this address in the app: {}',html`<code class="phone-url">${p.url}</code>`)}</small></details></span>${get}`:
+  p?.url?html`<span class="grow"><strong>Phone app</strong><small>${t('The app signs in with your account on The Machine Network.')}</small><details class="connect-alt phone-own"><summary>${t('Not on the Network?')}</summary>${onPhone()?'':html`<small>${t('Install the app, then scan this with the phone’s camera.')}</small>${p.qr?.length?qrSvg(p.qr):''}`}<small>${htmlT('Or enter this address in the app: {}',html`<code class="phone-url">${p.url}</code>`)}</small></details></span>${get}`:
   html`<span class="grow"><strong>Phone app</strong><small>iPhone and Android.</small></span>${get}`;
  if(!h){row?.remove();return}  // not inside the app itself
  if(!row){row=document.createElement('div');row.id='device-phone';deviceRows.app.after(row)}

@@ -15,7 +15,7 @@ const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modul
 const dashboard=await dashboardPage();
 const cats={};for(const l of ['en','nl'])cats[l]=await readFile(new URL(`../i18n/${l}.json`,import.meta.url),'utf8');
 const DAY=Date.UTC(2026,9,28,12,0,0);
-let reviewHealth,check,language,promises=[];const actions=[];
+let reviewHealth,check,language,promises=[],reviewLive=null;const actions=[];
 const server=createServer(async(req,res)=>{let body='';for await(const c of req)body+=c;
  const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname.startsWith('/brand/')){const f=url.pathname.startsWith('/brand/fonts/')||url.pathname.endsWith('.webp')?url.pathname.slice(1):'brand/app-icon-192.png';
@@ -24,7 +24,7 @@ const server=createServer(async(req,res)=>{let body='';for await(const c of req)
  const cat=/^\/i18n\/(\w\w)\.json$/.exec(url.pathname);if(cat){res.end(cats[cat[1]]||'{}');return}
  if(url.pathname==='/api/action'){const a=JSON.parse(body||'{}');actions.push(a.action);if(a.action==='check_now'){check={...check,phase:'reading'};res.end(JSON.stringify({started:true,check}));return}res.end('{}');return}
  if(url.pathname==='/api/status'){res.end(JSON.stringify({suggestions:[],promises,connectors:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],
-  review_health:reviewHealth,review_runs:[],...(check?{check}:{}),locale:{locale:'en-BE',region:'BE',language,language_set:true,clock:'auto',hour12:false,auto_hour12:false,
+  review_health:reviewHealth,review_runs:[],...(check?{check}:{}),...(reviewLive?{review_live:reviewLive}:{}),locale:{locale:'en-BE',region:'BE',language,language_set:true,clock:'auto',hour12:false,auto_hour12:false,
   date_locale:language==='en'?'en-US':'nl-BE',languages:{en:'English',nl:'Nederlands'},saveable:true}}));return}
  res.end('{}');
 });
@@ -91,6 +91,18 @@ try{
   assert.match(await line(page),want);assert.equal(await pose(page),img);
   assert.deepEqual(await page.locator('#suggestions .all-clear .check-row button').allInnerTexts(),['Check now']);
   delete reviewHealth.worker;await context.close()}
+ // Someone new, mail in, the first review on its way by itself: what it reads and about when the first to-dos come
+ // (review_live.first_eta), awake and looking, and no Check now to press. Without the estimate: the line from before.
+ for(const [width,height,scheme] of [[1440,900,'light'],[1440,900,'dark'],[390,844,'light'],[390,844,'dark']]){
+  check={waiting:55,reviewing:false,reading:false,phase:null,soon:true};reviewLive={runs:[],first_look:null,first_dig:null,cards:{count:0,newest:null},first_eta:11};
+  [context,page]=await open({width,height,scheme});
+  assert.equal(await line(page),'Nosing through 55 new messages. First to-dos in about 11 min.');
+  assert.equal(await pose(page),'brand/wave-look.webp');
+  assert.equal(await page.locator('#suggestions .all-clear .check-row button').count(),0,'nothing to press: it starts by itself');
+  if(shots)await page.screenshot({path:`${shots}/first-eta-${width}-${scheme}.png`});
+  await context.close()}
+ reviewLive={runs:[],cards:{count:0,newest:null},first_eta:null};[context,page]=await open();
+ assert.equal(await line(page),'Haven’t snooped around yet.');await context.close();reviewLive=null;
  // Check now under a late line: awake at once, nothing new after: the line says so, then back to all clear
  check={...done(40),waiting:5,next_review:new Date(DAY-15*60000).toISOString()};[context,page]=await open();
  await page.locator('#suggestions .all-clear [data-check-now]').click();

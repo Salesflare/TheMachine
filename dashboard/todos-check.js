@@ -45,15 +45,20 @@ function checkHead(){const n=checkNow();if(!n||$('#suggestions .all-clear .clear
 // looking while a check runs; what a press found for a few seconds; and for the first check, a failed or a late one a
 // line with a small Check now under it. The wording changes per day, not per render. Before anything was ever read
 // (no check state), all clear would only mean nothing has come in yet.
+// Before the very first to-do: what it reads and about when the first to-dos come (review_live.first_eta, the timing
+// the setup page uses too), so someone new sees it is on its way, not a button to press. 0 when it isn't known.
+const firstEta=()=>{const l=state?.review_live,m=+l?.first_eta|0;return m>0&&m<600&&!l?.cards?.count?m:0};
+const firstEtaLine=()=>firstEta()&&+state.check?.waiting>0?t(['Nosing through {} new message. First to-dos in about {} min.','Nosing through {} new messages. First to-dos in about {} min.'],+state.check.waiting|0,firstEta()):'';
 function clearLine(){const n=checkNow(),c=state?.check,say=k=>sayToday(k,checkClock(c?.reviewed));
+ if(n&&['first','busy'].includes(n.kind)&&firstEtaLine())return firstEtaLine();
  if(!n)return state?.review_health?.last_completed?say('ok'):t('I’ll add something when it’s useful.');
  if(n.kind==='busy')return n.line;
  if(n.kind==='said')return c.found?n.line:t('Snooped around. Nothing new.');
  return say(n.kind)}
-function clearPose(){const k=checkNow()?.kind;return k==='busy'?'brand/wave-look.webp':k==='failed'?'brand/sad.webp':'brand/sleepy.webp'}
+function clearPose(){const k=checkNow()?.kind;return k==='busy'||k==='first'&&firstEtaLine()?'brand/wave-look.webp':k==='failed'?'brand/sad.webp':'brand/sleepy.webp'}
 // Under the line: Check now when the line asks for it; on 'ok' a tap on the line shows Check now and Details (clearOpen).
 let clearOpen=false;
-function clearCheck(){const n=checkNow();if(!n||n.kind==='busy'||n.kind==='said'||n.kind==='ok'&&!clearOpen)return '';
+function clearCheck(){const n=checkNow();if(!n||n.kind==='busy'||n.kind==='said'||n.kind==='ok'&&!clearOpen||n.kind==='first'&&firstEtaLine())return '';
  return html`<div class="check-row">${checkButton()}${n.kind==='ok'?html`<button type="button" class="quiet check-more" data-check-details>${t('Details')}</button>`:''}</div>`}
 document.addEventListener('click',e=>{const m=e.target.closest('#suggestions .all-clear [data-clear-more]');
  if(m){clearOpen=!clearOpen;m.setAttribute('aria-expanded',clearOpen);checkDraw();return}

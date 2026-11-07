@@ -10,7 +10,7 @@ Les tâches viennent des vérifications : votre Machine lit ce qui est arrivé, 
 
 ## Tout juste inscrit
 
-Sur une nouvelle Machine hébergée, les vérifications démarrent d’elles-mêmes dès que votre IA et vos e-mails sont connectés. Pendant que votre Machine lit vos e-mails, Tâches affiche "Lecture de vos e-mails, premières tâches dans quelques minutes". S’il manque une étape, **Vous attend** la nomme, comme **Connecter vos e-mails**, avec un lien vers cette étape.
+Sur une nouvelle Machine hébergée, les vérifications démarrent d’elles-mêmes dès que votre IA et vos e-mails sont connectés. Pendant que votre Machine lit vos e-mails, Tâches affiche "Lecture de vos e-mails, premières tâches dans quelques minutes". Dès qu’elle sait combien il y en a, elle indique à peu près le temps qu’il faut : "Premières tâches dans environ 10 min." S’il manque une étape, **Vous attend** la nomme, comme **Connecter vos e-mails**, avec un lien vers cette étape.
 
 Pendant qu’elle lit, Tâches montre où elle en est, quelques-unes des personnes et organisations qu’elle a croisées, et votre première tâche dès qu’elle arrive. Les noms viennent de vos propres e-mails et ne sont visibles que par vous.
 
