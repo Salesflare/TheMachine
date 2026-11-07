@@ -47,6 +47,8 @@ A new version of the dashboard never reloads while you're using it. It loads whe
 
 Open search with `⌘K` on a Mac or `Ctrl K` on Windows and Linux, or the search icon on a phone. Type two letters or more: **Messages** shows the best matches from everything your Machine read, by meaning or by words. Older [history](history.md) matches by words.
 
+Ask a question there too, like the one an empty search suggests, for a short answer from your own messages ([Keyboard and the command palette](keyboard.md)).
+
 **See all results** opens the full list, for all accounts or one. Each result opens in a reader, with a link to where it came from. An empty search shows the newest messages.
 
 ## Learning
