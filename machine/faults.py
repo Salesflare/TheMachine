@@ -235,6 +235,10 @@ def watch_faults(store, root=APP_ROOT):
 
 
 FAULT_WHERE = 'Where (innermost last):'  # the technical part of a fault signal starts here; the dashboard shows it under Details
+# One line in each fault signal's metadata for the Do it run that fixes it: the product vision in short, so the fix is
+# judged against it without the whole file in every prompt (vision: lean on tokens).
+FIX_BY = ("Judge the fix against docs/vision.md: it's the owner's (their data, nothing unseen, safe) first, then right, "
+          'in their control, easy, calm, lean on tokens. Small, no reshuffles.')
 
 
 def fault_event(account, row, config):
@@ -256,7 +260,7 @@ def fault_event(account, row, config):
             'metadata': {'fault_kind': row['kind'], 'fingerprint': row['fingerprint'], 'location': row['location'], 'frames': frames,
                          'count': count, 'day': row['day'], 'version': row.get('version'), 'message': message,
                          'outside': origin,  # an outside service failed: nothing to fix in The Machine's code
-                         'app_dir': str(next_actions.app_dir(config)), 'fix_dir': str(next_actions.fix_dir(config)), 'transport': 'internal',
+                         'app_dir': str(next_actions.app_dir(config)), 'fix_dir': str(next_actions.fix_dir(config)), 'fix_by': FIX_BY, 'transport': 'internal',
                          'coverage': 'Errors raised in The Machine’s own code: type, code location and the message with anything private taken out, never values.'},
             'deleted': False}
 

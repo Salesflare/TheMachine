@@ -3,6 +3,10 @@
 The Machine is an early release: one owner per installation, on Linux, with macOS and Windows in beta.
 Small fixes, clearer setup instructions and new general-purpose sources are welcome.
 
+Read the [product vision](docs/vision.md) first, people and coding agents alike: every change is judged against what
+it believes, in that order, starting with "It's yours" (you own it and your data, and nothing goes out unseen).
+Ideas that would reshuffle the product go to the owner as a proposal, not a pull request.
+
 ## Development
 
 1. Clone the repository. Use Python 3.12+ and a supported Node version ([README](README.md#requirements)).
