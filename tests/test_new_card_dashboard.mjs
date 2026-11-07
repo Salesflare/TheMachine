@@ -48,6 +48,9 @@ const open=async(width,height)=>{const mobile=width<600;reset();
 const sent=name=>actions.filter(a=>a.action===name);
 const shot=async(page,what)=>{if(process.env.SHOT_DIR)await page.screenshot({path:`${process.env.SHOT_DIR}/after-${what}-${page.viewportSize().width}.png`})};
 const until=async(f,what)=>{for(let i=0;i<50;i++){if(await f())return;await new Promise(r=>setTimeout(r,60))}assert.fail('timed out: '+what)};
+// A tap opens a chat only once the page has stopped scrolling (chatRealTap: the tap that ends a fling or a scroll
+// doesn't count). Under load a scroll lands late, so a tap waits for the page to be still, never a fixed time.
+const still=page=>page.waitForFunction(()=>Date.now()-chatScrolledAt>300);
 const renameTo=async(page,text)=>{const input=page.locator('.rename-box input');await input.waitFor();await input.fill(text);await input.press('Enter');await page.locator('.rename-box').waitFor({state:'detached'})};
 try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
@@ -164,9 +167,9 @@ await page.locator('.rename-reset').click();
   await page.locator('#drawer-open').tap();await page.locator('#side-new').waitFor();await page.waitForTimeout(400);await page.locator('#side-new').tap();
   await page.locator('#new-card').waitFor();assert.notEqual(await page.evaluate(()=>document.documentElement.dataset.drawer),'open','the drawer closes');
   await page.locator('#new-card form button[aria-label="Close"]').tap();await page.locator('#new-card').waitFor({state:'hidden'});
-  await page.waitForTimeout(800);await page.locator('#task-'+id(1)+' h3 .title-link').tap();await page.locator('.rename-box').waitFor();assert.equal(await page.locator('#chat-log').count(),0,'a tap on the title renames');
+  await still(page);await page.locator('#task-'+id(1)+' h3 .title-link').tap();await page.locator('.rename-box').waitFor();assert.equal(await page.locator('#chat-log').count(),0,'a tap on the title renames');
   await page.keyboard.press('Escape');await page.locator('.rename-box').waitFor({state:'detached'});
-  await page.locator('#task-'+id(1)+' .card-chat-link').tap();await page.locator('#chat-log').waitFor();
+  await still(page);await page.locator('#task-'+id(1)+' .card-chat-link').tap();await page.locator('#chat-log').waitFor();
   // All tasks as a person reaches it: open the menu, then tap (an open menu is never redrawn under the tap)
   await page.locator('#chat-menu summary').tap();await page.locator('#chat-menu [data-chat-drawer]').tap();const link=page.locator(`#side-cards a[href="#chat=${id(2)}"]`);await link.waitFor();
   await page.waitForTimeout(500);const box=await link.boundingBox();const cdp=await context.newCDPSession(page);
