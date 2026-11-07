@@ -367,8 +367,8 @@ function reviewSend(label){const whole=label.replace(/^Send\b/,'Review and send'
 // can do around it (a calendar slot, directions, a message if plans change). Never Do it. Same rule as controls() in assistant.py.
 const ownerStep=s=>!!s.owner_step&&!closed(s)&&s.status!=='snoozed';
 // One The Machine made about itself (origin machine: what an update set aside or kept) has nothing to plan: Done and Snooze.
-// One from the computer's logs with a safe fix (machine_fix) also offers Do it, which runs only that fix.
-const ownerStepChoices=(choices,s)=>[...(s?.origin==='machine'&&s.machine_fix?[['accept','Do it']]:[]),['complete','Mark done'],...choices.filter(([c])=>c!=='complete'&&(s?.origin!=='machine'||c==='snooze')).map(([c,t])=>c==='accept'?[c,'Plan it']:[c,t])];
+// One from the computer's logs (machine_log) keeps Not needed, and with a safe fix (machine_fix) also offers Do it, which runs only that fix.
+const ownerStepChoices=(choices,s)=>[...(s?.origin==='machine'&&s.machine_fix?[['accept','Do it']]:[]),['complete','Mark done'],...choices.filter(([c])=>c!=='complete'&&(s?.origin!=='machine'||c==='snooze'||(c==='reject'&&s.machine_log))).map(([c,t])=>c==='accept'?[c,'Plan it']:[c,t])];
 // A to-do's project (graph.set_card_project): a chip to its page, and a small picker to change it or take it off.
 // Set by hand it stays; otherwise the review or the project its thread or people are on chose it.
 // The chip opens the project's page; Project under Details opens the picker.
