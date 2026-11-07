@@ -11,6 +11,7 @@ import urllib.request
 import bounces
 import browser_login
 import chat_files
+import clear_pace
 import doc_writes
 import follow_ups
 import gap_note
@@ -622,6 +623,7 @@ class ViewsStore(ConversationStore):
             self.card_views(db, result['suggestions'], jobs=False)
             # How many cards are done or dismissed, per scope: the Done lists' counts; they load the rest a page at a time
             result['done_counts'] = self.done_counts(db)
+            result['clear_pace'] = clear_pace.seconds(db)  # seconds per action, the owner's own: To-dos' time to clear
             result['suggestion_counts'] = {r['status']: r['count'] for r in db.execute('SELECT status,count(*) count FROM suggestions GROUP BY status')}
             result['areas'] = todo_areas.areas(accounts)  # where a to-do can move (More, Move to)
             try:  # roles waiting in Graph, Who's who: the Graph tab's badge

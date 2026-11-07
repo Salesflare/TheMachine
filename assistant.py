@@ -66,6 +66,7 @@ import crm_import
 import i18n
 import locale_prefs
 import notify
+import clear_pace
 import todo_areas
 import mail_attachments
 import message_seal
@@ -4852,10 +4853,11 @@ class App(*APP_MIXINS):
                 "AND (deliver_after IS NULL OR deliver_after<=?) LIMIT 2000", (utc(current),)) if r['id'] not in later], local)[:3]
             waiting = top[:2]
             total = waiting_count(db)
+            ready = clear_pace.line(total, clear_pace.seconds(db, current))  # "4 ready · about 2 min", as To-dos says it
             show = security_levels.notify_text(db, False)
         root = 'https://' + self.config['dashboard_host'] + self.config.get('dashboard_path', '/') if self.config.get('dashboard_host') else ''
         when = lambda iso: locale_prefs.clock_text(dt.datetime.fromisoformat(iso).astimezone(local_tz()))
-        return notify.compose(meetings, due, overnight, root, show, when, waiting, total, top)
+        return notify.compose(meetings, due, overnight, root, show, when, waiting, total, top, ready)
 
     def digest_step(self, current=None, push=None, telegram_send=None, mail=None):
         """Send the morning digest once on a work day, at its time, on the channels the owner picked."""

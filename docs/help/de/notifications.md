@@ -37,6 +37,6 @@ Sie kommt an Arbeitstagen zu deiner Uhrzeit für die **Morgendliche Zusammenfass
 
 ## Datenschutz
 
-Push geht von deiner Machine direkt an dein Gerät, verschlüsselt für dieses Gerät. Die Steuerungsebene sieht ihn nie. E-Mails verschickt der Mailserver von The Machine an die Adresse deines Kontos, der Text geht also über ihn und deinen Mailanbieter. Wenn [Vorsichtig](security-levels.md) den Text von Aufgaben in Benachrichtigungen ausblendet, enthalten E-Mails nur Anzahlen. Schalte **E-Mail** für eine Art aus, damit sie gar nicht per E-Mail kommt.
+Push geht von deiner Machine direkt an dein Gerät, verschlüsselt für dieses Gerät. Die Steuerungsebene sieht ihn nie. E-Mails verschickt der Mailserver von The Machine an die Adresse deines Kontos, der Text geht also über ihn und deinen Mailanbieter. Wenn [Vorsichtig](security-levels.md) den Text von Aufgaben in Benachrichtigungen ausblendet, enthalten E-Mails nur Anzahlen. Schalte **E-Mail** für eine Art aus, damit sie gar nicht per E-Mail kommt. Sie sagt auch, wie lange dich die wartenden Aufgaben kosten, etwa "4 bereit · etwa 2 Min.".
 
 Schalte Push für ein Gerät unter **Dieses Gerät** ein, oder siehe [App installieren](phone-app.md). Die [mobile App](mobile-app.md) bekommt über Apple oder Google eine feste Zeile, ohne Text einer Aufgabe. Dann fragt sie deine Machine nach dem Titel und dem nächsten Schritt.

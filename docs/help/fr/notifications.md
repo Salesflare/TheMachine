@@ -36,6 +36,6 @@ Il arrive les jours de travail à l’heure du **Récap du matin**, et il n’es
 
 ## Confidentialité
 
-Le push va directement de votre Machine à votre appareil, chiffré pour cet appareil. Le plan de contrôle ne le voit jamais. L’e-mail est envoyé par le serveur mail de The Machine à l’adresse de votre compte, donc le texte passe par lui et par votre fournisseur de messagerie. Quand [Prudent](security-levels.md) masque le texte des tâches dans les notifications, les e-mails ne contiennent que des chiffres. Désactivez **E-mail** pour un type afin de le tenir entièrement à l’écart de l’e-mail.
+Le push va directement de votre Machine à votre appareil, chiffré pour cet appareil. Le plan de contrôle ne le voit jamais. L’e-mail est envoyé par le serveur mail de The Machine à l’adresse de votre compte, donc le texte passe par lui et par votre fournisseur de messagerie. Quand [Prudent](security-levels.md) masque le texte des tâches dans les notifications, les e-mails ne contiennent que des chiffres. Désactivez **E-mail** pour un type afin de le tenir entièrement à l’écart de l’e-mail. Il dit aussi combien de temps les tâches en attente vous prennent, comme "4 prêts · environ 2 min".
 
 Activez le push pour un appareil dans **Cet appareil**, ou voir [Installer l’app](phone-app.md).

@@ -526,6 +526,7 @@
  "Back online. Your waiting changes are saved.": "De retour en ligne. Vos modifications en attente sont enregistrées.",
  "Back to Only you. Taken back from their Machines.": "Retour à Vous seul. Repris de leurs Machines.",
  "Back to review.": "De retour, à vérifier.",
+ "Back to the list": "Retour à la liste",
  "Back to the rule for everyone": "Retour à la règle pour tout le monde",
  "Back to the rule for everyone.": "Retour à la règle pour tous.",
  "Back to the suggested title": "Retour au titre proposé",
@@ -818,6 +819,7 @@
  "ClawHub sent a SKILL.md that doesn't match its release; not shown": "ClawHub a envoyé un SKILL.md qui ne correspond pas à sa version ; non affiché",
  "ClawHub’s scan: {}{}.{}": "Analyse de ClawHub : {}{}.{}",
  "Clear": "Effacer",
+ "Clear Ready": "Traiter les prêts",
  "Clear all": "Tout effacer",
  "Clear formatting": "Effacer la mise en forme",
  "Clear the looked-up details? This domain won’t be looked up again until you ask.": "Effacer les détails trouvés ? Ce domaine ne sera plus recherché sauf si vous le demandez.",
@@ -2669,6 +2671,7 @@
  "Notes:": "Notes :",
  "Notes: {}": "Notes : {}",
  "Nothing came in from the past week yet.": "Rien n’est encore arrivé de la semaine passée.",
+ "Nothing cleared.": "Rien de traité.",
  "Nothing connects until they accept.": "Rien ne se connecte tant qu’ils n’acceptent pas.",
  "Nothing connects until you accept. Declining tells them nothing.": "Rien ne se connecte tant que vous n’acceptez pas. Refuser ne leur dit rien.",
  "Nothing finished or dismissed yet.": "Rien de terminé ni d’ignoré pour l’instant.",
@@ -6532,6 +6535,7 @@
   "other": "{} prêtes pour vous"
  },
  "{} ready for you · {} to decide": "{} prêtes pour vous · {} à décider",
+ "{} ready · about {} min": "{} prêts · environ {} min",
  "{} recovery codes left": {
   "one": "{} code de récupération restant",
   "other": "{} codes de récupération restants"
@@ -6552,6 +6556,10 @@
   "other": "{} messages liés"
  },
  "{} replied, so I closed this.": "{} a répondu, j’ai donc clôturé ceci.",
+ "{} replies out in {}": {
+  "one": "{} réponse envoyée en {}",
+  "other": "{} réponses envoyées en {}"
+ },
  "{} requires your Work calendar.": "{} exige votre agenda pro.",
  "{} requires your Work email and Work calendar.": "{} exige votre e-mail pro et votre agenda pro.",
  "{} requires your Work email.": "{} exige votre e-mail pro.",
@@ -6666,9 +6674,14 @@
   "other": "{} fois"
  },
  "{} to decide": "{} à décider",
+ "{} to decide · about {} min": "{} à décider · environ {} min",
  "{} to-dos": {
   "one": "{} tâche",
   "other": "{} tâches"
+ },
+ "{} to-dos cleared in {}": {
+  "one": "{} tâche traitée en {}",
+  "other": "{} tâches traitées en {}"
  },
  "{} to-dos waiting": {
   "one": "{} tâche en attente",

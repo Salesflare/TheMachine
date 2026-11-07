@@ -36,6 +36,6 @@ Arriva nei giorni lavorativi all'ora del **Riepilogo del mattino**, e salta solo
 
 ## Privacy
 
-Le push vanno dalla tua Machine direttamente al tuo dispositivo, crittografate per quel dispositivo. Il control plane non le vede mai. Le email le invia il server di posta di The Machine all'indirizzo del tuo account, quindi il testo passa da lì e dal provider di posta. Quando [Prudente](security-levels.md) nasconde il testo delle attività nelle notifiche, le email contengono solo conteggi. Disattiva **Email** per un tipo per tenerlo del tutto fuori dalle email.
+Le push vanno dalla tua Machine direttamente al tuo dispositivo, crittografate per quel dispositivo. Il control plane non le vede mai. Le email le invia il server di posta di The Machine all'indirizzo del tuo account, quindi il testo passa da lì e dal provider di posta. Quando [Prudente](security-levels.md) nasconde il testo delle attività nelle notifiche, le email contengono solo conteggi. Disattiva **Email** per un tipo per tenerlo del tutto fuori dalle email. Dice anche quanto ti richiedono le attività in attesa, come "4 pronti · circa 2 min".
 
 Attiva le push per un dispositivo in **Questo dispositivo**, oppure vedi [Installa l'app](phone-app.md).

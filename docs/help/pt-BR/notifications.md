@@ -36,6 +36,6 @@ Ele chega nos dias de trabalho, no horário do **Resumo da manhã**, e só não 
 
 ## Privacidade
 
-O push vai da sua Machine direto para o seu dispositivo, criptografado para esse dispositivo. O plano de controle nunca vê. O e-mail é enviado pelo servidor de e-mail da The Machine para o endereço da sua conta, então o texto passa por ele e pelo provedor de e-mail. Quando o modo [Cuidadoso](security-levels.md) esconde o texto das tarefas nas notificações, os e-mails só trazem números. Desative **E-mail** para um tipo para deixá-lo totalmente fora do e-mail.
+O push vai da sua Machine direto para o seu dispositivo, criptografado para esse dispositivo. O plano de controle nunca vê. O e-mail é enviado pelo servidor de e-mail da The Machine para o endereço da sua conta, então o texto passa por ele e pelo provedor de e-mail. Quando o modo [Cuidadoso](security-levels.md) esconde o texto das tarefas nas notificações, os e-mails só trazem números. Desative **E-mail** para um tipo para deixá-lo totalmente fora do e-mail. Ele também diz quanto tempo as tarefas esperando levam, como "4 para revisar · cerca de 2 min".
 
 Ative o push para um dispositivo em **Este dispositivo**, ou veja [Instalar o app](phone-app.md).

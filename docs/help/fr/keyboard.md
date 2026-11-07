@@ -38,4 +38,4 @@ Les touches ne fonctionnent pas pendant la saisie dans un champ.
 
 ## Aucune touche n’envoie rien
 
-Envoyer, approuver ou publier ne se fait jamais depuis une touche ni directement depuis la palette. Des entrées comme Vérifier l’e-mail ouvrent seulement le brouillon, où il peut être lu, modifié et envoyé avec son propre bouton.
+Envoyer, approuver ou publier ne se fait jamais depuis une touche ni directement depuis la palette. Des entrées comme Vérifier l’e-mail ouvrent seulement le brouillon, où il peut être lu, modifié et envoyé avec son propre bouton. La seule exception est [Traiter les prêts](cards.md) : là, Entrée envoie le brouillon affiché en entier.

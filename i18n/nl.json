@@ -526,6 +526,7 @@
  "Back online. Your waiting changes are saved.": "Weer online. Je wachtende wijzigingen zijn opgeslagen.",
  "Back to Only you. Taken back from their Machines.": "Terug naar Alleen jij. Teruggehaald van hun Machines.",
  "Back to review.": "Terug om na te kijken.",
+ "Back to the list": "Terug naar de lijst",
  "Back to the rule for everyone": "Terug naar de regel voor iedereen",
  "Back to the rule for everyone.": "Terug naar de regel voor iedereen.",
  "Back to the suggested title": "Terug naar de voorgestelde titel",
@@ -818,6 +819,7 @@
  "ClawHub sent a SKILL.md that doesn't match its release; not shown": "ClawHub stuurde een SKILL.md die niet bij de release past; niet getoond",
  "ClawHub’s scan: {}{}.{}": "Scan van ClawHub: {}{}.{}",
  "Clear": "Wissen",
+ "Clear Ready": "Klaargezet afhandelen",
  "Clear all": "Alles wissen",
  "Clear formatting": "Opmaak wissen",
  "Clear the looked-up details? This domain won’t be looked up again until you ask.": "De opgezochte details wissen? Dit domein wordt pas opnieuw opgezocht als je erom vraagt.",
@@ -2669,6 +2671,7 @@
  "Notes:": "Notities:",
  "Notes: {}": "Notities: {}",
  "Nothing came in from the past week yet.": "Van de afgelopen week is nog niets binnengekomen.",
+ "Nothing cleared.": "Niets afgehandeld.",
  "Nothing connects until they accept.": "Er wordt niets gekoppeld tot ze aanvaarden.",
  "Nothing connects until you accept. Declining tells them nothing.": "Er wordt niets gekoppeld tot je aanvaardt. Weigeren laat hen niets weten.",
  "Nothing finished or dismissed yet.": "Nog niets afgerond of genegeerd.",
@@ -6532,6 +6535,7 @@
   "other": "{} klaargezet voor je"
  },
  "{} ready for you · {} to decide": "{} klaargezet voor je · {} te beslissen",
+ "{} ready · about {} min": "{} klaargezet · ongeveer {} min",
  "{} recovery codes left": {
   "one": "nog {} herstelcode",
   "other": "nog {} herstelcodes"
@@ -6552,6 +6556,10 @@
   "other": "{} verwante berichten"
  },
  "{} replied, so I closed this.": "{} heeft geantwoord, dus ik heb dit gesloten.",
+ "{} replies out in {}": {
+  "one": "{} antwoord verstuurd in {}",
+  "other": "{} antwoorden verstuurd in {}"
+ },
  "{} requires your Work calendar.": "{} vereist je werkagenda.",
  "{} requires your Work email and Work calendar.": "{} vereist je werkmail en werkagenda.",
  "{} requires your Work email.": "{} vereist je werkmail.",
@@ -6666,9 +6674,14 @@
   "other": "{} keer"
  },
  "{} to decide": "{} te beslissen",
+ "{} to decide · about {} min": "{} te beslissen · ongeveer {} min",
  "{} to-dos": {
   "one": "{} to-do",
   "other": "{} to-do's"
+ },
+ "{} to-dos cleared in {}": {
+  "one": "{} to-do afgehandeld in {}",
+  "other": "{} to-do's afgehandeld in {}"
  },
  "{} to-dos waiting": {
   "one": "{} to-do wacht",
