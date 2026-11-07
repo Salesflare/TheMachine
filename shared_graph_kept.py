@@ -22,10 +22,14 @@ KEPT = stamps.Kept(16)  # what the dashboard's requests work out from the sharin
 def fleet_marks(db, fleets):
     """graph.fleet_marks: the Fleet members kept until the graph's people or the directory change (a pass over every
     person's addresses, asked on each person's page and graph list), the people found on the Network read each time (a
-    setting and a table of their own). Its marks are shared by every caller: copy them before changing them."""
-    members = KEPT.get(('marks', json.dumps(fleets, sort_keys=True, default=str)), stamps.stamp(db, ('graph_nodes',)),
-                       lambda: graph.fleet_marks(db, fleets, network=False))
-    return graph.network_marks(db, members, fleets)
+    setting and a table of their own; who in the graph has their addresses kept with the people). Its marks are shared
+    by every caller: copy them before changing them."""
+    at = stamps.stamp(db, ('graph_nodes',))
+    members = KEPT.get(('marks', json.dumps(fleets, sort_keys=True, default=str)), at, lambda: graph.fleet_marks(db, fleets, network=False))
+    # who in the graph has the addresses and numbers found on the Network: two passes over every person (some 90 ms on
+    # a big graph, on each person's page, the Graph tab and its search), kept until the graph's people change
+    return graph.network_marks(db, members, fleets, people=lambda addresses, numbers: KEPT.get(
+        ('network people', tuple(addresses), tuple(numbers)), at, lambda: graph.people_by_email(db, addresses) + graph.people_by_phone(db, numbers)))
 
 
 def hash_index(db, keys, keyed):

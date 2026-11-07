@@ -2558,12 +2558,14 @@ def fleet_marks(db, fleets, network=True):
     return network_marks(db, marks, fleets) if network else marks
 
 
-def network_marks(db, marks, fleets=None):
+def network_marks(db, marks, fleets=None, people=None):
     """The Fleet marks and the people found on the Network (discovery.py) with "Check which of my contacts have a
     Machine" on: in no Fleet with the owner, yet they have a Machine. Only while the last lookup still found them
     (gone_at unset); they are no member of anything by it and get no name from it. Their 'network' says what the person
     page offers: can_add (a friend request, the way the Suggestions card's Connect sends it) or requested, never for
-    someone in a Fleet, Family or Friends with the owner (fleets: the directory, for its open requests and members)."""
+    someone in a Fleet, Family or Friends with the owner (fleets: the directory, for its open requests and members).
+    people(addresses, numbers): who in the graph has them, when the caller keeps that (shared_graph_kept.fleet_marks);
+    else people_by_email and people_by_phone, each a pass over every person."""
     if not _table(db, 'network_people') or not _table(db, 'fleet_meta'):
         return marks
     row = db.execute("SELECT value FROM fleet_meta WHERE key='network'").fetchone()
@@ -2585,7 +2587,8 @@ def network_marks(db, marks, fleets=None):
             asked |= {str(r.get('username') or '').lower() for r in f['requests'].get('out') or () if isinstance(r, dict)}
     marks = dict(marks or {})
     # A row is an address, or a number (+15550100) found with a mutual reason (discovery.py, phone lookups)
-    for node_id, email in people_by_email(db, [e for e in found if not e.startswith('+')]) + people_by_phone(db, [e for e in found if e.startswith('+')]):
+    addresses, numbers = sorted(e for e in found if not e.startswith('+')), sorted(e for e in found if e.startswith('+'))
+    for node_id, email in (people or (lambda a, n: people_by_email(db, a) + people_by_phone(db, n)))(addresses, numbers):
         mark = marks.get(node_id) or {'name': '', 'machine': False, 'in': []}
         p = found[email]
         name = str(p['username'] or '').lower()

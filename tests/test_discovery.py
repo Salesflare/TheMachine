@@ -4,6 +4,7 @@ Never, findable, and leaving. A fake Network stands in for the control plane; no
 import datetime as dt
 import json
 import secrets
+import sys
 import unittest
 
 import test_fleet as tf
@@ -640,6 +641,18 @@ class PhoneDiscovery(unittest.TestCase):
             marks = graph.network_marks(db, {})
         self.assertEqual(list(marks), ['p-ria'])
         self.assertEqual((marks['p-ria']['machine'], marks['p-ria']['network']['email'], marks['p-ria']['network']['can_add']), (True, '+12025550142', True))
+        # Kept (a person's page, the Graph tab): the same marks without a pass over every person, until the people change
+        kept = sys.modules['shared_graph_kept']  # the module the assistant loaded
+        with self.store.connect() as db:
+            self.assertEqual(kept.fleet_marks(db, {}), marks)
+            seen = []
+            db.set_trace_callback(seen.append)
+            self.assertEqual(kept.fleet_marks(db, {}), marks)
+            db.set_trace_callback(None)
+            self.assertEqual([s for s in seen if 'json_each(n.info' in s], [])
+            db.execute("UPDATE graph_nodes SET info=? WHERE id='p-ria'", (json.dumps({'identifiers': ['wa:12025550199']}),))
+        with self.store.connect() as db:
+            self.assertEqual(kept.fleet_marks(db, {}), {})
         # Tom looks the owner up too: found on the next daily lookup; numbers seen are not sent again before that
         self.relay.mutual.add('+12025550143')
         self.fleet.discovery_round()
