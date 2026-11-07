@@ -1,7 +1,7 @@
 // Projects as a board: projects of one kind in stages (graph.boards), a view of Graph › Projects next to the list. Board by
 // default when there is a board; the choice is remembered on this device. Moves come from what the messages mean; the owner
 // drags a tile (or picks a stage from its menu) and that stands until a newer message moves it. Nothing here sends anything.
-let graphBoards=[],boardShown=sideStore.get('board-shown')||'',boardStage={},boardOpen=new Set(),fitsOpen=new Set(),fitsPicked=new Map();
+let graphBoards=[],boardShown=sideStore.get('board-shown')||'',boardStage={},boardOpen=new Set(),fitsOpen=new Set(),fitsPicked=new Map(),fitsGoing=new Set();
 const projView=()=>graphBoards.length?(sideStore.get('projects-view')==='list'?'list':'board'):'list';
 const shortDay=v=>v?new Date(String(v).length<=10?v+'T12:00':v).toLocaleDateString(DL,{weekday:'short',day:'numeric',month:'short'}):'';  /* Fri, Oct 23 */
 const boardNow=()=>{const fb=graphBoards[0]&&!graphBoards[0].team&&crmF('projects').board;return (fb&&graphBoards.find(b=>String(b.id)===String(fb)))||graphBoards.find(b=>b.name===boardShown)||graphBoards[0]};
@@ -56,7 +56,7 @@ const lane=(b,s,items,on)=>{const key=b.name+'|'+s.name,oneOwner=items.length>1&
 // "N projects could belong here": Add or Leave out one, or tick some (or Select all) and do them at once. A project that bundles several
 // counterparts says so and becomes one project per counterpart. The fold stays open (and in place) until nothing is left.
 const fitsBulkText=(b,picked)=>{const n=picked.size;return n?[`Add ${n}`,`Leave out ${n}`]:['Add all','Leave out all']};
-function fitsReview(b){const ids=new Set(b.maybes.map(m=>m.id)),picked=new Set([...(fitsPicked.get(b.id)||[])].filter(i=>ids.has(i)));fitsPicked.set(b.id,picked);
+function fitsReview(b){const maybes=(b.maybes||[]).filter(m=>!fitsGoing.has(m.id));if(!maybes.length)return '';b={...b,maybes};const ids=new Set(b.maybes.map(m=>m.id)),picked=new Set([...(fitsPicked.get(b.id)||[])].filter(i=>ids.has(i)));fitsPicked.set(b.id,picked);
  const [add,skip]=fitsBulkText(b,picked),all=picked.size===b.maybes.length,n=b.maybes.length;
  return html`<details class="board-fits" data-fits-board="${b.id}"${fitsOpen.has(b.id)?html` open`:''}><summary><b>${n} project${n===1?'':'s'} could belong here</b> · Review</summary>${n>1?html`<div class="fits-bulk"><label class="fit-pick"><input type="checkbox" data-fit-all="${b.id}"${all?html` checked`:''} aria-label="Select all"><span>Select all</span></label><span class="fit-acts"><button type="button" class="ghost" data-fit-bulk="add" data-fit-board="${b.id}">${add}</button><button type="button" class="ghost" data-fit-bulk="skip" data-fit-board="${b.id}">${skip}</button></span></div>`:''}<ul>${b.maybes.map(m=>html`<li>${n>1?html`<label class="fit-pick"><input type="checkbox" data-fit-pick="${m.id}" data-fit-board="${b.id}"${picked.has(m.id)?html` checked`:''} aria-label="Select ${m.name}"></label>`:''}<span class="fit-text">${m.name}${m.split?html`<small>Splits into ${m.split} projects, one per counterpart</small>`:m.why?html`<small>${m.why}</small>`:''}</span><span class="fit-acts"><button type="button" class="ghost" data-fit-add="${m.id}" data-fit-board="${b.id}"${m.split?html` aria-label="Add as ${m.split} projects"`:''}>${m.split?`Add as ${m.split}`:'Add'}</button><button type="button" class="ghost" data-fit-skip="${m.id}" data-fit-board="${b.id}">Leave out</button></span></li>`)}</ul></details>`}
 function fitsBulkSync(box){const b=+box.dataset.fitsBoard,picked=fitsPicked.get(b)||new Set(),boxes=[...box.querySelectorAll('[data-fit-pick]')],all=box.querySelector('[data-fit-all]');
@@ -66,12 +66,17 @@ document.addEventListener('toggle',e=>{const d=e.target;if(d?.classList?.contain
 document.addEventListener('change',e=>{const c=e.target.closest?.('[data-fit-pick],[data-fit-all]'),box=c?.closest('.board-fits');if(!box)return;const b=+box.dataset.fitsBoard,picked=fitsPicked.get(b)||new Set();fitsPicked.set(b,picked);
  if(c.dataset.fitAll){for(const x of box.querySelectorAll('[data-fit-pick]')){x.checked=c.checked;c.checked?picked.add(x.dataset.fitPick):picked.delete(x.dataset.fitPick)}}else c.checked?picked.add(c.dataset.fitPick):picked.delete(c.dataset.fitPick);
  fitsBulkSync(box)});
-async function fitsDecide(t,board,ids,add){const box=t.closest('.board-fits');fitsOpen.add(board);for(const b of box?.querySelectorAll('button')||[])b.disabled=true;const y=scrollY;
- const r=await graphPost('board_fit',ids.length===1&&!t.dataset.fitBulk?{board_id:board,node_id:ids[0],add}:{board_id:board,node_ids:ids,add});
+// Add and Leave out answer at once: the rows leave the fold (fitsGoing) and the save goes behind them, then the overview
+// reloads quietly. A refusal brings the rows back with the error.
+async function fitsDecide(t,board,ids,add){fitsOpen.add(board);const b=graphBoards.find(x=>x.id===board),bulk=!!t.dataset.fitBulk;
+ const redraw=()=>{const cur=document.querySelector(`#people-view .board-fits[data-fits-board="${board}"]`);if(!cur||!b)return;const h=fitsReview(b);if(!h){cur.hidden=true;return}const [next]=htmlNodes(h).children;cur.replaceWith(next);fitsBulkSync(next)};
  const picked=fitsPicked.get(board);if(picked)for(const i of ids)picked.delete(i);
+ for(const i of ids)fitsGoing.add(i);redraw();
+ let r;try{r=await graphPost('board_fit',ids.length===1&&!bulk?{board_id:board,node_id:ids[0],add}:{board_id:board,node_ids:ids,add})}
+ catch(err){for(const i of ids)fitsGoing.delete(i);const cur=document.querySelector(`#people-view .board-fits[data-fits-board="${board}"]`);if(cur)cur.hidden=false;redraw();throw err}
  const n=r.projects||0,done=r.decided??1;
  toastFitUndo((add?(n>1?`Added ${n} projects.`:n===1?'Added to the board.':'Nothing new to add.'):done>1?`Left out ${done}.`:'Left out.')+(r.skipped?` ${r.skipped} could not be decided.`:''),r.undo,board);
- graphMineBoards=null;await people('',true);scrollTo({top:y})}
+ graphMineBoards=null;const y=scrollY;people('',true).then(()=>scrollTo({top:y})).catch(errCaught).finally(()=>{for(const i of ids)fitsGoing.delete(i)})}
 function toastFitUndo(text,token,board){toast(text);if(token){$('#toast').append(htmlNodes(html` <button type="button" data-fit-undo="${token}" data-fit-board="${board}">Undo</button>`));clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('show'),10000)}}
 // Share board… and Share with… on a thread: chosen teammates of the Work Fleet get it, sealed to their Machines only.
 // Personal, other companies' accounts and automated mail never go, also on a shared board (shared_graph.Scope.granted).
@@ -341,8 +346,8 @@ document.addEventListener('click',async e=>{const t=e.target.closest('[data-proj
   if(t.dataset.projReopen){await pjEnd(t.dataset.projReopen,null,'');toast('Reopened.');return people(graphNode,true)}
   if(t.dataset.projArchive)return pjArchive(t.dataset.projArchive,!t.hasAttribute('data-restore'));
   if(t.dataset.boardDefault){await graphPost('board_default',{board_id:+t.dataset.boardDefault});toast('Projects opens on this board now.');return people('',true)}
-  if(t.dataset.fitAdd||t.dataset.fitSkip)return fitsDecide(t,+t.dataset.fitBoard,[t.dataset.fitAdd||t.dataset.fitSkip],!!t.dataset.fitAdd);
-  if(t.dataset.fitBulk){const box=t.closest('.board-fits'),b=+t.dataset.fitBoard,picked=fitsPicked.get(b),ids=picked?.size?[...picked]:[...box.querySelectorAll('[data-fit-add]')].map(x=>x.dataset.fitAdd);if(ids.length)return fitsDecide(t,b,ids,t.dataset.fitBulk==='add')}}
+  if(t.dataset.fitAdd||t.dataset.fitSkip)return await fitsDecide(t,+t.dataset.fitBoard,[t.dataset.fitAdd||t.dataset.fitSkip],!!t.dataset.fitAdd);
+  if(t.dataset.fitBulk){const box=t.closest('.board-fits'),b=+t.dataset.fitBoard,picked=fitsPicked.get(b),ids=picked?.size?[...picked]:[...box.querySelectorAll('[data-fit-add]')].map(x=>x.dataset.fitAdd);if(ids.length)return await fitsDecide(t,b,ids,t.dataset.fitBulk==='add')}}
  catch(err){errCaught(err);t.disabled=false;toast(err.message,true)}},true);
 // A tile from the keyboard: Enter opens it, E edits it
 $('#people-view').addEventListener('keydown',e=>{const t=e.target.closest?.('.proj-board .tile:not(.team)');if(t&&e.target===t&&(e.key==='e'||e.key==='E')&&!e.metaKey&&!e.ctrlKey&&!e.altKey){e.preventDefault();pjOpen({node:t.dataset.node})}});

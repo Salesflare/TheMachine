@@ -40,23 +40,29 @@ function pageHead(){const h=$('#page-head'),tab=[...document.querySelectorAll('m
  if(h.innerHTML.replace(/<img class="page-avatar[^"]*" src="[^"]*"/,'<img class="page-avatar" src="brand/avatar.png"')!==head.s)setHTML(h,head);h.hidden=false}
 {const o=new MutationObserver(()=>graphSubSync());document.querySelectorAll('main>section').forEach(x=>o.observe(x,{attributes:true,attributeFilter:['hidden']}));o.observe($('#tagline'),{childList:true,characterData:true,subtree:true})}
 $('#suggestions').oninput=e=>{if(e.target.tagName==='TEXTAREA')e.target.classList.toggle('filled',!!e.target.value)};
-// Mark done answers at once: the to-do closes on screen, "Marked done" with Undo shows, and the save goes behind it. A
-// refusal puts the to-do back as it was, with the error. Undo tapped before the save landed waits for it, then undoes.
-// Only while the Machine is reachable: a done that has to wait offline shows on the to-do instead (decideOrWait).
-const doneSaving=new Map();
-async function doneAtOnce(id,feedback){const s=state.suggestions.find(x=>x.id===id),before={status:s.status,closed_at:s.closed_at};let landed=false,end;
+// Mark done, Not needed and Snooze answer at once: the to-do leaves the list in this frame, its message (with Undo)
+// shows, and the save goes behind it. A refusal puts the to-do back as it was, with the error. Undo tapped before the
+// save landed waits for it, then undoes. Only while the Machine is reachable: a change that has to wait offline shows
+// on the to-do instead (decideOrWait). said: the message at once, or, called with the answer, once it landed (Snooze
+// says when it comes back, which a preset only knows then).
+const atOnceSaving=new Map();
+const atOnceOK=id=>!atOnceSaving.has(id)&&state.suggestions.some(s=>s.id===id&&!closed(s))&&!outbox.items.length&&navigator.onLine!==false&&!(netDown&&!csrfLive);
+async function decideAtOnce(id,step,said){const s=state.suggestions.find(x=>x.id===id),before={status:s.status,closed_at:s.closed_at,snoozed_until:s.snoozed_until};let landed=false,end,saved;
  // The card goes and the toast shows in this frame; the lists redraw just after it is painted (a long list takes a moment)
  const cards=()=>document.querySelectorAll(`#suggestions article#task-${CSS.escape(id)}`),back=()=>{Object.assign(s,before);localEdits++;for(const n of cards())n.style.display='';focusKept(render)};
  sentWatch.delete(id);  // closed by hand: no "Sent. Moved to Done." over this toast
- doneSaving.set(id,new Promise(r=>end=r));Object.assign(s,{status:'completed',closed_at:new Date().toISOString()});localEdits++;for(const n of cards())n.style.display='none';toast('Marked done',false,id);
- const going=decideOrWait(id,[{choice:'complete',feedback,decision_id:crypto.randomUUID()}],'complete');requestAnimationFrame(()=>setTimeout(()=>focusKept(render)));
- try{const saved=await going;landed=!saved?.waiting;if(!landed){$('#toast').classList.remove('show');back();return}}
+ atOnceSaving.set(id,new Promise(r=>end=r));
+ Object.assign(s,step.choice==='snooze'?{status:'snoozed',snoozed_until:step.snoozed_until||s.snoozed_until||null}:{status:step.choice==='reject'?'rejected':'completed',closed_at:new Date().toISOString()});
+ localEdits++;for(const n of cards())n.style.display='none';if(typeof said==='string')toast(said,false,id);
+ const going=decideOrWait(id,[{...step,decision_id:crypto.randomUUID()}],step.choice);requestAnimationFrame(()=>setTimeout(()=>focusKept(render)));
+ try{saved=await going;landed=!saved?.waiting;if(!landed){if(typeof said==='string')$('#toast').classList.remove('show');back();return saved}}
  catch(err){back();refresh().catch(()=>{});throw err}
- finally{doneSaving.delete(id);end(landed)}
- await refresh()}
+ finally{atOnceSaving.delete(id);end(landed)}
+ if(typeof said==='function')said(saved);
+ await refresh();return saved}
 async function saveDecision(id,choice,feedback='',answer=false){
-if(choice==='undo'&&doneSaving.has(id)&&!await doneSaving.get(id))return;  // the done it undoes never landed: nothing to undo
-if(choice==='complete'&&!doneSaving.has(id)&&state.suggestions.some(s=>s.id===id&&!closed(s))&&!outbox.items.length&&navigator.onLine!==false&&!(netDown&&!csrfLive))return doneAtOnce(id,feedback);
+if(choice==='undo'&&atOnceSaving.has(id)&&!await atOnceSaving.get(id))return;  // the change it undoes never landed: nothing to undo
+if(['complete','reject'].includes(choice)&&atOnceOK(id)){await decideAtOnce(id,{choice,feedback},choice==='complete'?'Marked done':'Marked not needed');return}
 let saved;try{const args={choice,feedback,decision_id:crypto.randomUUID()};saved=OUTBOX_CHOICES.includes(choice)?await decideOrWait(id,[args],choice):await decidePost(id,args)}
 catch(err){await refresh().catch(()=>{});throw err}  // the card was drawn before something changed it: show it as it is now
 // Offline: it waits on the device and says so on the to-do; the typed note is on its way, so the editor closes
