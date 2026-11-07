@@ -8,7 +8,7 @@ const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modul
 // A toast can be swiped away on a phone (touch) and dragged away with a mouse: sideways, or up when it sits at the top.
 // Going that way is the same as timing out: no Undo is sent and the change stays. A short drag settles back and the toast
 // stays; a tap on Undo still undoes. On a phone a swipe that starts on the toast doesn't open the drawer. With reduced
-// motion it still goes. A plain toast (no button) keeps letting clicks through. SHOTS=<dir>: mid-swipe and after, at 390 and 1440, light and dark. No network beyond this server.
+// motion it still goes. A plain toast ("Saved.") swipes away too, and takes only its own box. SHOTS=<dir>: mid-swipe and after, at 390 and 1440, light and dark. No network beyond this server.
 const dashboard=await dashboardPage();
 const shots=process.env.SHOTS||'';
 const now=new Date().toISOString(),A='a1'.repeat(8);
@@ -72,8 +72,10 @@ try{
   await (await drag(page,cdp,{x:u.x+u.width/2,y:u.y+u.height/2},-width*.4,0))();
   await page.waitForFunction(()=>!document.querySelector('#toast').classList.contains('show'),null,{timeout:2000});await page.waitForTimeout(300);
   assert.deepEqual(decides,[],at+': a swipe that starts on Undo sends no Undo');
-  // A plain toast (no button) still lets clicks through to what is under it, and goes by itself
-  await page.evaluate(()=>toast('Saved.'));assert.equal(await page.locator('#toast').evaluate(t=>getComputedStyle(t).pointerEvents),'none',at+': a plain toast takes no click');
+  // A plain toast (no button) swipes away too; a click just beside it still reaches the page
+  await page.evaluate(()=>toast('Saved.'));await page.waitForFunction(()=>getComputedStyle(document.querySelector('#toast')).opacity==='1');
+  assert.deepEqual(await page.locator('#toast').evaluate(t=>{const r=t.getBoundingClientRect(),y=r.top+r.height/2;return [t.contains(document.elementFromPoint(r.left-2,y)),t.contains(document.elementFromPoint(r.right+2,y))]}),[false,false],at+': beside a toast is the page');
+  await go(page,cdp,width*.4,0);await page.waitForFunction(()=>!document.querySelector('#toast').classList.contains('show'),null,{timeout:2000});
   await context.close()}
  if(shots)for(const [width,height] of [[390,844],[1440,900]])for(const scheme of ['light','dark']){const phone=width<600;
   const context=await browser.newContext({viewport:{width,height},isMobile:phone,hasTouch:phone,colorScheme:scheme,locale:'en-US'});
@@ -82,7 +84,10 @@ try{
   await page.goto(base);await page.waitForFunction(()=>typeof toast==='function');await page.waitForTimeout(800);
   await say(page);await page.screenshot({path:`${shots}/toast-swipe-${width}-${scheme}-1-before.png`});
   const end=await drag(page,cdp,await center(page),-Math.min(110,width*.25),0);await page.screenshot({path:`${shots}/toast-swipe-${width}-${scheme}-2-mid.png`});
-  await end();await page.waitForTimeout(400);await page.screenshot({path:`${shots}/toast-swipe-${width}-${scheme}-3-after.png`});await context.close()}
+  await end();await page.waitForTimeout(400);await page.screenshot({path:`${shots}/toast-swipe-${width}-${scheme}-3-after.png`});
+  if(phone&&scheme==='light'){await page.evaluate(()=>toast('Saved.'));await page.waitForFunction(()=>getComputedStyle(document.querySelector('#toast')).opacity==='1');
+   const e2=await drag(page,cdp,await center(page),-45,0);await page.screenshot({path:`${shots}/toast-swipe-plain-${width}-${scheme}-mid.png`});await e2()}
+  await context.close()}
  assert.deepEqual(errors,[]);
  console.log('toast swipe dashboard ok');
 }finally{await browser?.close();server.close()}

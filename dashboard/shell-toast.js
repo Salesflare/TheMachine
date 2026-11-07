@@ -50,9 +50,9 @@ setInterval(async()=>{if(document.hidden)return;for(const id of [...new Set([...
 /* A toast can be swiped away (touch) or dragged away (mouse): sideways, or toward the edge it sits nearer (up when it
    sits at the top, down at the bottom). It follows the pointer, leaves past a third of its width (or most of its height,
    or a quick flick) and settles back when let go sooner. Going this way is the same as timing out: no Undo, the change
-   stays as it is. A tap (under 8px of movement) stays a tap, so Undo and the other buttons work as before. Only a toast
-   with a button (Undo, Open, Report a bug) takes the pointer; a plain one lets clicks through to what is under it and
-   goes by itself in a few seconds. With reduced motion it still follows the pointer, then goes or settles without the
+   stays as it is. A tap (under 8px of movement) stays a tap, so Undo and the other buttons work as before. Every toast
+   on show takes the pointer on its own box (plain ones like "Saved." too, so they can be swiped); the rest of the screen
+   stays as it was, and on a phone toastLift keeps it off buttons. With reduced motion it still follows the pointer, then goes or settles without the
    slide. */
 function toastSwipeReset(t){t.classList.remove('dragging','leaving');t.style.transform='';t.style.opacity=''}
 (()=>{const t=$('#toast'),still=matchMedia('(prefers-reduced-motion: reduce)');let d=null,swallow=0;
