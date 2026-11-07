@@ -151,6 +151,7 @@ from machine.export import staged as staged_import
 from machine.app.history import HistoryApp
 from machine.store import history as history_store
 from machine.store import review_backoff
+from machine.store.machine_cards import MachineCardsStore
 from machine.store.core import StoreCore
 from machine.app.setup_card import (
     PHONE_APP_STORE,
@@ -1310,8 +1311,8 @@ def google_photo_accounts(config):
     return list(seen.values())
 
 
-class Store(CardsStore, DecisionsStore, EventsStore, FactsStore, FirstLookStore, ProfileStore, PromisesStore, ReviewStore, StoreCore,
-            ViewsStore, VoicesStore):
+class Store(CardsStore, DecisionsStore, EventsStore, FactsStore, FirstLookStore, ProfileStore, PromisesStore,
+            MachineCardsStore, ReviewStore, StoreCore, ViewsStore, VoicesStore):
 
     def tool_approval_proposal(self, proposal_id, title, detail):
         if (not re.fullmatch(r'[a-f0-9]{64}', str(proposal_id)) or not isinstance(detail, str) or
@@ -1368,26 +1369,21 @@ class Store(CardsStore, DecisionsStore, EventsStore, FactsStore, FirstLookStore,
             for row in rows:
                 db.execute('UPDATE faults SET reported=? WHERE fingerprint=? AND day=?', (row['count'], row['fingerprint'], row['day']))
 
-    def parked_fix_cards(self, account_id, items):
-        """A to-do for each change an update set aside (parked_fixes.pending), once: its signal is already read, so
-        no review makes a second one. Returns how many are new."""
-        made = 0
-        for item in items:
-            title, body, signal = parked_fixes.card(item)
-            stamp = now()
-            with self.connect() as db:
-                db.execute('BEGIN IMMEDIATE')
-                cursor = db.execute('INSERT OR IGNORE INTO events(account_id,source_id,kind,occurred_at,title,body,metadata,deleted,content_hash,'
-                                    "version,analyzed_version,ingested_at) VALUES(?,?,'machine.parked_fix',?,?,?,?,0,?,1,1,?)",
-                                    (account_id, 'parked:' + item['sha'], stamp, title, signal,
-                                     json.dumps({'commit': item['sha'], 'subject': item['subject'], 'changes': item['changes']}),
-                                     hashlib.sha256(item['sha'].encode()).hexdigest(), stamp))
-                if not cursor.rowcount:
-                    continue
-                card = self.suggest('parked:' + item['sha'], title[:90], body[:699], [cursor.lastrowid], when='now', owner_step=True, _db=db)
-                db.execute("UPDATE suggestions SET origin='machine' WHERE id=?", (card['id'],))  # no thread to read, nothing to plan
-                made += 1
-        return made
+    def machine_card(self, account_id, kind, source_id, title, body, signal, metadata, digest=None, at=None):
+        """A to-do of The Machine's own (an update's note, a problem in the computer's logs) with its signal, once per
+        source_id: the signal is already read, so no review makes a second one. Whether it is new."""
+        stamp = now()
+        with self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            cursor = db.execute('INSERT OR IGNORE INTO events(account_id,source_id,kind,occurred_at,title,body,metadata,deleted,content_hash,'
+                                'version,analyzed_version,ingested_at) VALUES(?,?,?,?,?,?,?,0,?,1,1,?)',
+                                (account_id, source_id, kind, at or stamp, title, signal, json.dumps(metadata),
+                                 hashlib.sha256((digest or source_id).encode()).hexdigest(), stamp))
+            if not cursor.rowcount:
+                return False
+            card = self.suggest(source_id, title[:90], body[:699], [cursor.lastrowid], when='now', owner_step=True, _db=db)
+            db.execute("UPDATE suggestions SET origin='machine' WHERE id=?", (card['id'],))  # no thread to read, nothing to plan
+        return True
 
     AHEAD_BLOCKERS = ("FROM preparations p JOIN suggestions s ON s.id=p.suggestion_id WHERE p.status='cancelled' "
                       "AND trim(coalesce(p.reason,''))<>'' AND (s.status='pending' OR s.status='snoozed' AND s.resume_status='pending')")

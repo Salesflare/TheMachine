@@ -3063,6 +3063,7 @@ def doctor(config_path, workspace=None):
             add('✓', f'{title}: synced {ago(point["last_success"])}, {counts.get(account["id"], 0)} signals')
     if not config.get('accounts'):
         add('✗', 'no sources configured', 'assistant connect gmail (or any of: ' + ', '.join(sources()) + ')')
+    results += importlib.import_module('machine.system_logs').doctor(config)  # the computer's own logs, read only
     # Reviews and delivery
     on = config.get('delivery_enabled') and (config.get('review_worker') or {}).get('enabled')
     if not on:

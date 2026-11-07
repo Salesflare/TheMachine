@@ -79,6 +79,7 @@ FEATURES = {
     'keyboard': ('dashboard.html', 'Search and commands'),
     'share-learnings': ('team_learnings.py', 'def '),
     'error-reports': ('error_feed.py', 'def '),
+    'computer-logs': ('machine/system_logs.py', 'def scan'),
     'team-graph': ('shared_graph.py', 'def overview'),
     'share-contact': ('contact_share.py', 'def contact_send'),
     'help-chat': ('dashboard.html', "helpBox.id='help-panel'"),

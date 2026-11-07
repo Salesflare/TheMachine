@@ -94,7 +94,7 @@ def awaiting_match(watch, event, owner_slack_ids=()):
 SOURCE_KIND = {'gmail.message': 'email', 'calendar.event': 'calendar', 'slack.message': 'Slack', 'teams.message': 'Teams',
                'salesflare.email': 'CRM email', 'salesflare.meeting': 'CRM meeting',
                'android.notification': 'phone', 'whatsapp.message': 'WhatsApp', 'telegram.message': 'Telegram',
-               'gateway.alert': 'The Machine'}
+               'gateway.alert': 'The Machine', 'machine.system_log': 'The Machine'}
 
 
 def own_life_evidence(db, event_ids):
