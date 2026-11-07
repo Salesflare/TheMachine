@@ -310,7 +310,8 @@ def proxy(public_port, app_port, config):
             body = self.rfile.read(length) if length else None
             headers = {k: v for k, v in self.headers.items() if k.lower() not in ('host', 'origin', 'tailscale-user-login', 'x-tailnet-client',
                                                                                     'x-forwarded-for', 'authorization', 'connection')}
-            headers.update({'Host': host, 'Tailscale-User-Login': owner})
+            # Serve's proxy also names the browser's address, as here: one on this computer
+            headers.update({'Host': host, 'Tailscale-User-Login': owner, 'X-Forwarded-For': self.client_address[0]})
             if self.command == 'POST':
                 headers['Origin'] = 'https://' + host
             connection = http.client.HTTPConnection('127.0.0.1', app_port, timeout=120)

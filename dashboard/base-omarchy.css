@@ -1,0 +1,9 @@
+/* Omarchy theme (settings-omarchy.js): the tokens come from the theme, so the few fixed colors go too. One soft glow of
+   the theme's accent at the top instead of the mint and lavender ones, toasts in the theme's ink, and a short fade when
+   the theme switches. */
+html[data-omarchy] body{background:radial-gradient(900px 420px at 12% -120px,color-mix(in srgb,var(--mint) 14%,transparent),transparent 70%),var(--bg)}
+html[data-omarchy] .live{background:transparent}
+html[data-omarchy] .toast{background:var(--text);color:var(--bg)}
+html[data-omarchy] dialog::backdrop{background:#00000066}
+html.omarchy-fade,html.omarchy-fade *{transition:background-color .35s var(--ease),color .35s var(--ease),border-color .35s var(--ease)!important}
+@media(prefers-reduced-motion:reduce){html.omarchy-fade,html.omarchy-fade *{transition:none!important}}
