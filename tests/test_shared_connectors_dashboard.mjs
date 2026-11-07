@@ -52,8 +52,10 @@ try{
   await page.locator('.share-form button.primary').click();
   await page.locator('.fleet-box article',{hasText:'Shared by Sam Doe'}).waitFor();
   // The toast never takes a click meant for a button under it; on a phone it isn't over one at all (it moves above
-  // them or to the top), on a desktop it sits at the bottom
-  assert.equal(await page.locator('#toast').evaluate(t=>getComputedStyle(t).pointerEvents),'none');
+  // them or to the top), on a desktop it sits at the bottom. It takes the pointer only on its own box (to be swiped
+  // away): a click just beside it still reaches the page.
+  assert.deepEqual(await page.locator('#toast').evaluate(t=>{const r=t.getBoundingClientRect(),y=r.top+r.height/2,at=(x,y)=>t.contains(document.elementFromPoint(x,y));
+   return [t.classList.contains('show'),at(r.left+r.width/2,y),at(r.left-2,y),at(r.right+2,y),at(r.left+r.width/2,r.top-2)]}),[true,true,false,false,false]);
   await page.waitForTimeout(900);
   if(width<1024)assert.deepEqual(await page.locator('#toast').evaluate(t=>{const r=t.getBoundingClientRect();return [...document.querySelectorAll('button,a[href],input')].filter(b=>!t.contains(b)&&b.offsetParent&&!b.closest('.site-footer,#topbar')).map(b=>b.getBoundingClientRect())
    .filter(b=>b.width&&b.right>r.left&&b.left<r.right&&b.bottom>r.top&&b.top<r.bottom).length}),0);

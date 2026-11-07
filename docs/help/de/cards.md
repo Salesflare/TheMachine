@@ -58,7 +58,7 @@ LinkedIn, X und Salesflare behalten ihr eigenes Tempo.
 
 Eine Aufgabe zeigt ihren nächsten Schritt, etwa **Ausführen** oder **Prüfen und senden**, mit **Zurückstellen** daneben. Siehe [Ausführen](do-it.md) und [Zurückstellen](snooze.md).
 
-**Änderungen anfragen** sagt, was anders sein soll: wie es gehen soll, oder, sobald ein Entwurf fertig ist, was darin anders sein soll. Ist die Zeile auf dem Handy voll, wandert **Zurückstellen** unter **…**. **Als erledigt markieren** (sie ist erledigt) gibt es auch: sichtbar ohne Entwurf, sonst oben unter **…**. Sie verschwindet sofort aus der Liste, mit **Rückgängig** in der Meldung.
+**Änderungen anfragen** sagt, was anders sein soll: wie es gehen soll, oder, sobald ein Entwurf fertig ist, was darin anders sein soll. Ist die Zeile auf dem Handy voll, wandert **Zurückstellen** unter **…**. **Als erledigt markieren** (sie ist erledigt) gibt es auch: sichtbar ohne Entwurf, sonst oben unter **…**. Sie verschwindet sofort aus der Liste, mit **Rückgängig** in der Meldung. Wisch die Meldung weg oder zieh sie mit der Maus weg, um sie früher zu schließen. Die Änderung bleibt.
 
 Soll sie anders erledigt werden, sag es in ihrem **Chat**.
 

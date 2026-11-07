@@ -58,7 +58,7 @@ LinkedIn, X e Salesflare mantêm o próprio ritmo.
 
 Uma tarefa mostra o próximo passo, como **Fazer** ou **Revisar e enviar**, com **Adiar** ao lado. Veja [Fazer](do-it.md) e [Adiar](snooze.md).
 
-**Pedir mudanças** diz o que mudar: como fazer, ou, com um rascunho pronto, o que mudar nele. Se a linha não couber no celular, **Adiar** vai para **…**. **Marcar como feita** (já está resolvida) também está lá: à vista sem rascunho, senão no topo de **…**. Ela sai da lista na hora, com **Desfazer** na mensagem.
+**Pedir mudanças** diz o que mudar: como fazer, ou, com um rascunho pronto, o que mudar nele. Se a linha não couber no celular, **Adiar** vai para **…**. **Marcar como feita** (já está resolvida) também está lá: à vista sem rascunho, senão no topo de **…**. Ela sai da lista na hora, com **Desfazer** na mensagem. Deslize a mensagem para o lado, ou arraste com o mouse, para fechá-la antes. A mudança continua.
 
 Para fazer de outro jeito, diga isso no **Chat** dela.
 
