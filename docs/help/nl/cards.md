@@ -54,7 +54,7 @@ LinkedIn, X en Salesflare houden hun eigen tempo.
 
 Een to-do toont zijn volgende stap, zoals **Doe het** of **Nakijken en versturen**, met **Snoozen** ernaast. Zie [Doe het](do-it.md) en [Snoozen](snooze.md).
 
-Nog niet voorbereid heeft hij **Anders aanpakken** (zeg hoe het anders moet); klaar, **Wijzigingen vragen** (zeg wat er in het concept moet veranderen). Is de rij op een telefoon vol, dan gaat **Snoozen** naar **…**. **Markeer als gedaan** (hij is geregeld) is er ook: in beeld zonder concept, anders bovenaan onder **…**.
+Nog niet voorbereid heeft hij **Anders aanpakken** (zeg hoe het anders moet); klaar, **Wijzigingen vragen** (zeg wat er in het concept moet veranderen). Is de rij op een telefoon vol, dan gaat **Snoozen** naar **…**. **Markeer als gedaan** (hij is geregeld) is er ook: in beeld zonder concept, anders bovenaan onder **…**. Hij gaat meteen uit de lijst, met **Ongedaan maken** in de melding.
 
 Wil je hem anders laten doen, zeg het dan in zijn **Chat**.
 

@@ -54,7 +54,7 @@ LinkedIn, X e Salesflare mantengono il loro ritmo.
 
 Un'attività mostra il passo successivo, come **Fallo** o **Rivedi e invia**, con **Posticipa** accanto. Vedi [Fallo](do-it.md) e [Posticipa](snooze.md).
 
-Non ancora preparata, ha **Cambia approccio** (di' come farla invece); pronta, **Chiedi modifiche** (di' cosa cambiare nella bozza). Se sul telefono la riga è piena, **Posticipa** passa in **…**. C'è anche **Segna come fatto** (è sistemata): in vista senza bozza, altrimenti in cima a **…**.
+Non ancora preparata, ha **Cambia approccio** (di' come farla invece); pronta, **Chiedi modifiche** (di' cosa cambiare nella bozza). Se sul telefono la riga è piena, **Posticipa** passa in **…**. C'è anche **Segna come fatto** (è sistemata): in vista senza bozza, altrimenti in cima a **…**. Esce subito dall’elenco, con **Annulla** nel messaggio.
 
 Per farla in un altro modo, dillo nella sua **Chat**.
 

@@ -54,7 +54,7 @@ LinkedIn, X e Salesflare mantêm o próprio ritmo.
 
 Uma tarefa mostra o próximo passo, como **Fazer** ou **Revisar e enviar**, com **Adiar** ao lado. Veja [Fazer](do-it.md) e [Adiar](snooze.md).
 
-Ainda não preparada, ela tem **Mudar a abordagem** (diga como fazer de outro jeito); pronta, **Pedir mudanças** (diga o que mudar no rascunho). Se a linha não couber no celular, **Adiar** vai para **…**. **Marcar como feita** (já está resolvida) também está lá: à vista sem rascunho, senão no topo de **…**.
+Ainda não preparada, ela tem **Mudar a abordagem** (diga como fazer de outro jeito); pronta, **Pedir mudanças** (diga o que mudar no rascunho). Se a linha não couber no celular, **Adiar** vai para **…**. **Marcar como feita** (já está resolvida) também está lá: à vista sem rascunho, senão no topo de **…**. Ela sai da lista na hora, com **Desfazer** na mensagem.
 
 Para fazer de outro jeito, diga isso no **Chat** dela.
 

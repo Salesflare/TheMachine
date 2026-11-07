@@ -8,7 +8,7 @@ order: 3
 ---
 ## Snooze a to-do
 
-Press **Snooze** on a to-do. **Remind me later** offers a few times, like in 2 hours, tomorrow or in a week. For another moment, pick **Choose date** and **Time**, then **Save time**.
+Press **Snooze** on a to-do. **Remind me later** offers a few times, like in 2 hours, tomorrow or in a week. For another moment, pick **Choose date** and **Time**, then **Save time**. Snoozed by mistake? **Undo** in the message brings it right back.
 
 Snoozes of a day or more land at your "Snoozes land at" time, and work to-dos wait for a work day. Set both in [Work hours](work-hours.md).
 
