@@ -49,6 +49,11 @@ const reviewSession = (key: string) => /^agent:main:assistant-review-signals-/.t
 // or "openclaw__assistant_signals". Compare on the plain tool name.
 export const plainToolName = (name: string) => String(name || '').replace(/^openclaw_*/, '');
 const codeModeRunner = (event: any, ctx: any) => event.toolKind === 'code_mode_exec' || ctx.toolKind === 'code_mode_exec';
+// Without Code Mode, OpenClaw lists a model's tools through tool search: tool_search and tool_describe only look them
+// up, and a tool that tool_call runs passes this hook on its own, by its own name. Allowed like Code Mode's runner, so
+// a review on a model without Code Mode can reach assistant_signals (it ended with "Done." and analyzed nothing).
+export const TOOL_SEARCH_TOOLS = new Set(['tool_search', 'tool_describe', 'tool_call']);
+const toolRunner = (event: any, ctx: any) => codeModeRunner(event, ctx) || TOOL_SEARCH_TOOLS.has(plainToolName(event.toolName));
 const preparationSession = (key: string) => /^agent:main:assistant-review-preparation-/.test(key || '');
 // assistant profile: one read-only turn that drafts USER.md lines from the owner's own messages.
 const profileSession = (key: string) => /^agent:main:assistant-review-profile-/.test(key || '');
@@ -330,11 +335,11 @@ export function registerReviewRecovery(api: any, call: (action: string, args?: a
   // tool's execute() from host-owned context; this hook only ever blocks, never rewrites.
   api.on('before_tool_call', async (event: any, ctx: any) => {
     // Code Mode's script runner is allowed: every tool the script calls passes this hook on its own.
-    if ((reviewSession(ctx.sessionKey) || profileSession(ctx.sessionKey)) && !codeModeRunner(event, ctx) &&
+    if ((reviewSession(ctx.sessionKey) || profileSession(ctx.sessionKey)) && !toolRunner(event, ctx) &&
         (!(reviewSession(ctx.sessionKey) ? reviewTools() : REVIEW_TOOLS).has(plainToolName(event.toolName)) || readsSecret(event))) {
       return {block: true, blockReason: 'Signal reviews and profile drafts only read: use assistant_signals, memory lookups or read-only file tools.'};
     }
-    if (skillsSession(ctx.sessionKey) && !codeModeRunner(event, ctx) && (!SKILLS_TOOLS.has(plainToolName(event.toolName)) || readsSecret(event))) {
+    if (skillsSession(ctx.sessionKey) && !toolRunner(event, ctx) && (!SKILLS_TOOLS.has(plainToolName(event.toolName)) || readsSecret(event))) {
       return {block: true, blockReason: 'Find my skills reads the owner\'s accounts in the browser and reports with assistant_signals skills_found; nothing else.'};
     }
     const policy = preparationSession(ctx.sessionKey) ? preparationToolPolicy(event, ctx) : undefined;

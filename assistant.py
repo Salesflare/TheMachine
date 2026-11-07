@@ -150,6 +150,7 @@ from machine.app.export import ExportApp
 from machine.export import staged as staged_import
 from machine.app.history import HistoryApp
 from machine.store import history as history_store
+from machine.store import review_backoff
 from machine.store.core import StoreCore
 from machine.app.setup_card import (
     PHONE_APP_STORE,
@@ -6722,6 +6723,8 @@ class App(*APP_MIXINS):
                     gap = min(gap, 60)  # after the quick first review, the rest follows right away
                 if dig and not failed:
                     gap = 0
+                # ok runs that never claimed a batch back off the same way (machine/store/review_backoff.py)
+                gap = review_backoff.empty_gap(review_backoff.empty_in_a_row(db), gap, settings)
                 if last and (stamp - dt.datetime.fromisoformat(last['finished_at'])).total_seconds() < gap and not asked:
                     return None
                 # Leave a review claimed elsewhere (a manual run) alone until it ends or expires.

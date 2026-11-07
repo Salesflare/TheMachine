@@ -42,6 +42,24 @@ class ReviewWorker(unittest.TestCase):
         self.assertEqual(self.step(runner,T+dt.timedelta(minutes=11)),'admitted')
         self.assertNotEqual(runner.requests[-1]['job_id'],start['job_id'])
 
+    def test_runs_that_claim_nothing_back_off_instead_of_starting_again_at_once(self):
+        # A model that couldn't reach its tools ended each review with "Done.": ok, nothing claimed. While the first
+        # review dug on (no gap) it started again every minute, about 100k tokens a run.
+        self.app.first_dig=lambda db,stamp:{'left':20}
+        runner=Runner('admitted','ok','admitted','ok','admitted','ok','admitted')
+        at=lambda minutes:T+dt.timedelta(minutes=minutes)
+        self.assertEqual(self.step(runner,at(0)),'admitted');self.assertEqual(self.step(runner,at(1)),'ok')
+        self.assertIsNone(self.step(runner,at(1.5)))  # a minute after the first empty run
+        self.assertEqual(self.step(runner,at(2.1)),'admitted');self.assertEqual(self.step(runner,at(3)),'ok')
+        self.assertIsNone(self.step(runner,at(4.5)))  # two after the second
+        self.assertEqual(self.step(runner,at(5.1)),'admitted')
+        job=runner.requests[-1]['job_id']  # this one claims its batch: the dig goes on right away again
+        claim=self.store.begin_analysis(['work'],120,a.REVIEW_SESSION_PREFIX+job,job)
+        self.store.finish_analysis(claim['analysis_id'],'Reviewed',a.REVIEW_SESSION_PREFIX+job,job)
+        self.store.commit_page('work',{},[{'account_id':'work','source_id':'two','kind':'gmail.message','occurred_at':a.now(),'title':'Hi','body':'More','metadata':{},'deleted':False}])
+        self.assertEqual(self.step(runner,at(6)),'ok')
+        self.assertEqual(self.step(runner,at(6.1)),'admitted')
+
     def test_unconfirmed_start_retries_with_the_same_id_after_a_minute(self):
         runner=Runner('unavailable','admitted')
         self.step(runner,T)
