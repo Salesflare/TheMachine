@@ -1015,6 +1015,7 @@ def queue_delegate_wait(db, action, job, result):
 QUICK_RETRY_SECONDS = 15
 QUICK_RETRY_MAX = 60  # a Retry-After longer than this waits in the checkpoint instead
 SALESFLARE_RESTART_SPREAD = 180  # seconds: team Machines restarted together start their Salesflare rounds apart
+SALESFLARE_ROUND_SPREAD = 60  # seconds: and a fresh spread each round, so two whose starts landed close drift apart again
 
 
 # LinkedIn and X sign in in the Machine's browser while their connect waits (onboarding.wait_signed_in), up to this long
@@ -4659,6 +4660,11 @@ class App(*APP_MIXINS):
                     state = self.store.checkpoint(account['id'])
                     if not result.get('stopped') and (result.get('more') or state.get('mode', result['mode']) != 'incremental' or state.get('page_token')):  # a plugin's checkpoint may not keep a mode
                         delay = account.get('poll_seconds', 3600) if account.get('service') == 'x' else 30 if account.get('service') == 'linkedin' else 0 if source else 5
+                    elif account.get('service') == 'salesflare':
+                        # A finished round: the next one opens with the slow account lists. Rounds of teammates' Machines
+                        # take about as long, so two that started close stay together for hours (both answered 504 in a
+                        # regular round, 41 minutes after a shared restart). A fresh spread each round breaks that up.
+                        delay += secrets.randbelow(SALESFLARE_ROUND_SPREAD + 1)
                 except SourceError as error:
                     if self.stop.is_set():
                         break

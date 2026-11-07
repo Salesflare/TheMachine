@@ -103,6 +103,34 @@ class Reliability(unittest.TestCase):
         self.assertEqual(app.resume_wait(crm), 0)  # mid-round: its account list is read, the batches go now
         self.assertEqual(app.resume_wait({'id': 'crm', 'service': 'gmail', 'poll_seconds': 300}), 0)  # other fast sources go now
 
+    def test_each_finished_salesflare_round_adds_a_fresh_spread_so_teammates_do_not_stay_in_step(self):
+        # Two teammates' Machines restarted at the same second kept starting rounds about 10 s apart for hours, and both
+        # answered 504 in a regular round. A finished round waits its poll plus a new spread; a round with batches
+        # left goes on after 5 s, and other sources keep their plain poll.
+        class Stop:
+            calls = 0
+            def is_set(self): return self.calls >= 1
+            def wait(self, seconds): self.calls += 1; self.waited = seconds; return self.is_set()
+        def waited(account, result):
+            app = object.__new__(a.App)
+            app.config, app.store, app.stop = {}, self.store, Stop()
+            app.collector_rest = lambda _, seconds: app.stop.wait(seconds)
+            self.store.commit_page(account['id'], {'mode': 'incremental'}, [])
+            with patch.object(a.App, 'resume_wait', return_value=0), patch.object(a.App, 'sync_retrying', return_value=result), \
+                    patch.object(a.secrets, 'randbelow', return_value=41) as spread:
+                app.collector(account)
+            return app.stop.waited, spread
+        crm = {'id': 'crm', 'service': 'salesflare', 'poll_seconds': 300}
+        seconds, spread = waited(crm, {'mode': 'incremental', 'events': 0, 'more': False})
+        self.assertEqual(seconds, 341)
+        spread.assert_called_once_with(a.SALESFLARE_ROUND_SPREAD + 1)
+        seconds, spread = waited(crm, {'mode': 'incremental', 'events': 5, 'more': True})
+        self.assertEqual(seconds, 5)  # mid-round: its account list is read, the next batch goes on
+        spread.assert_not_called()
+        seconds, spread = waited({'id': 'mail', 'service': 'gmail', 'poll_seconds': 300}, {'mode': 'incremental', 'events': 0})
+        self.assertEqual(seconds, 300)
+        spread.assert_not_called()
+
     def test_restart_resumes_catchup_without_ignoring_x_budget_or_retry_deadline(self):
         app = object.__new__(a.App)
         app.config, app.store = {}, self.store
