@@ -22,7 +22,7 @@ async function request(path,options){let r;
  // an HTML 502 or 503 is the Machine away or restarting, as is an answer that says so
  if(r.status>=500&&!d?.restarting&&(json||r.status===504))errApi(path,options,json?r.status:'timeout')
  if(r.status>=500||r.ok&&!json){const wait=+r.headers.get('retry-after');if(d?.restarting)netSetup=!!d.setting_up||setupUnderway();throw Object.assign(offline(d?.error),{restarting:!!d?.restarting||restartDue(),retryAfter:wait>0?Math.min(wait,60)*1000:0})}
- if(!r.ok)throw Object.assign(Error(d?.error||'Request failed'),{status:r.status});return d}
+ if(!r.ok)throw Object.assign(Error(d?.error||'Request failed'),{status:r.status,retry:!!d?.retry});return d}
 let retryIn=0,retryTimer=null;
 // On the device: the last cards, the open card's chat and the Graph's lists, so the app opens with them at once and
 // then refreshes. Sensitive, so: encrypted at rest (AES-GCM, a non-extractable key that stays in this browser's
