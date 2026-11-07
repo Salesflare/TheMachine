@@ -9,6 +9,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
+from seams import patch_everywhere  # noqa: E402
 
 spec = importlib.util.spec_from_file_location('review_saves_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
@@ -73,7 +74,7 @@ class ReviewSaves(unittest.TestCase):
 
     def test_read_what_came_after_first_is_a_step_not_a_failed_save(self):
         claim = self.store.begin_analysis(['work'], 40)
-        with patch.object(self.app, 'newer_unchecked', return_value=[{'id': 2}]), patch.object(a, 'activity_lines', return_value='2 Sam'):
+        with patch.object(self.app, 'newer_unchecked', return_value=[{'id': 2}]), patch_everywhere(a, 'activity_lines', return_value='2 Sam'):
             with self.assertRaisesRegex(ValueError, 'Something happened after'):
                 self.suggest()
         self.assertNotIn('not_saved', self.store.finish_analysis(claim['analysis_id'], 'Handled already'))
