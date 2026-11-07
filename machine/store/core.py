@@ -426,7 +426,7 @@ class StoreCore:
                 db.execute('ALTER TABLE suggestions ADD COLUMN project_by TEXT')
                 db.execute("UPDATE suggestions SET project_by='review' WHERE project IS NOT NULL AND project<>''")
             # A step only the owner can do themselves, in person or offline (a visit, a pickup, attending): the review's
-            # judgment. The card offers Done and help around it (Plan it), never Do it.
+            # judgment. The card offers Mark done and help around it (Plan it), never Do it.
             if 'owner_step' not in {r[1] for r in db.execute('PRAGMA table_info(suggestions)')}:
                 db.execute('ALTER TABLE suggestions ADD COLUMN owner_step INTEGER NOT NULL DEFAULT 0')
             # Notes saved before a meeting's Notes and Transcript were apart: a transcript among them becomes the meeting's

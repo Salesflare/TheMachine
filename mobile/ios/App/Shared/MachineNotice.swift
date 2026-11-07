@@ -155,7 +155,7 @@ enum MachineNotice {
         }
         let snooze = button("snooze", "Snooze"), done = button("done", "Mark done")
         UNUserNotificationCenter.current().setNotificationCategories([
-            UNNotificationCategory(identifier: fresh, actions: [button("prepare", "Prepare"), snooze, done], intentIdentifiers: []),
+            UNNotificationCategory(identifier: fresh, actions: [button("prepare", "Do it"), snooze, done], intentIdentifiers: []),
             UNNotificationCategory(identifier: waiting, actions: [snooze, done], intentIdentifiers: []),
         ])
     }

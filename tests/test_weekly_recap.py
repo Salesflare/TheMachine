@@ -230,7 +230,7 @@ class WeeklyRecap(unittest.TestCase):
         sent = self.send()
         self.assertEqual(sent[2]['message'], f'**Snoozed more than once**\n[Share the tow-bar cost](https://m.example/assistant/#chat={drop}), 4 times')
         items = {i['ref']: i for i in self.items() if i['kind'] == 'snoozed'}
-        self.assertEqual(self.labels(sent[2]), [['Drop', 'Do it now', 'Keep']])
+        self.assertEqual(self.labels(sent[2]), [['Not needed', 'Do it', 'Keep']])
         self.assertEqual([items[x]['message_id'] for x in (drop, now, keep)], ['557', '558', '559'])
         with self.store.connect() as db:
             status = lambda sid: db.execute('SELECT status FROM suggestions WHERE id=?', (sid,)).fetchone()[0]
@@ -243,7 +243,7 @@ class WeeklyRecap(unittest.TestCase):
             self.assertEqual([status(x) for x in (drop, now, keep)], ['rejected', 'accepted', 'snoozed'])
             self.assertEqual(db.execute('SELECT count(*) FROM action_jobs').fetchone()[0], 0)  # Do it prepares; nothing is sent
         self.assertEqual([(e['messageId'], e['message'].split(' · ')[-1], self.labels(e)) for e in self.edits],
-                         [('557', '**Dropped**', []), ('558', '**Started**', []), ('559', '**Kept**', [])])  # each edit on its own message
+                         [('557', '**Not needed**', []), ('558', '**Started**', []), ('559', '**Kept**', [])])  # each edit on its own message
         with self.assertRaisesRegex(ValueError, 'not the recap'):
             self.tap(items[now]['id'], 'keep', message_id='557', decision='telegram:5')  # another choice's message
         with self.store.connect() as db:

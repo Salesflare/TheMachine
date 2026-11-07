@@ -84,7 +84,7 @@ actionAdd(
  {id:'card-project',group:'This to-do',label:'Put on a project',keywords:'project board link change',when:c=>!!c.card,run:c=>cardProjectPick(c.id,document.getElementById('task-'+c.id)||document.body)},
  {id:'card-snooze',group:'This to-do',label:'Snooze',keywords:'later remind',keys:'s',when:c=>!!kbBtn(c,'[data-choice="snooze"]'),run:c=>openSnooze(c.id)},
  {id:'card-done',group:'This to-do',label:'Mark done',keywords:'complete finish',keys:'d',when:c=>!!kbBtn(c,'[data-choice="complete"]'),run:c=>kbBtn(c,'[data-choice="complete"]').click()},
- {id:'card-change',group:'This to-do',label:'Change…',keywords:'edit feedback',when:c=>!!kbBtn(c,'[data-choice="change"]'),run:c=>kbBtn(c,'[data-choice="change"]').click()},
+ {id:'card-change',group:'This to-do',label:'Ask for changes…',keywords:'edit feedback change how',when:c=>!!kbBtn(c,'[data-choice="change"]'),run:c=>kbBtn(c,'[data-choice="change"]').click()},
  {id:'card-reject',group:'This to-do',label:'Not needed…',keywords:'dismiss reject',when:c=>!!kbBtn(c,'[data-choice="reject"]'),run:c=>kbBtn(c,'[data-choice="reject"]').click()},
  {id:'card-handoff',group:'This to-do',label:'Hand off…',keywords:'teammate fleet delegate',review:true,when:c=>!!c.id&&!!document.querySelector(`#suggestions [data-fleet-handoff="${CSS.escape(c.id)}"]`),run:c=>document.querySelector(`#suggestions [data-fleet-handoff="${CSS.escape(c.id)}"]`).click()},
  // Hand to Codex / Claude Code: opens the brief sheet to read and edit; only its own Send there hands it over.
@@ -102,7 +102,7 @@ function palScore(q,text){q=q.trim().toLowerCase();const t=String(text||'').toLo
 // A to-do by its title or who its messages went to (Northfield, Dana, dana@…), open, later and done alike; its line says where
 // it is when that's not the main list (Later, Waiting on others, Done 5 minutes ago)
 const palCardScore=(q,s)=>Math.max(palScore(q,s.title),cardWho(s)?palScore(q,cardWho(s))-5:-1);
-const palCardSub=s=>[closed(s)?t(s.status==='completed'&&!lapsed(s)?'Done {}':'Not needed {}',ago(closedAt(s))):s.status==='snoozed'?t('Later'):waitsOnOthers(s)?t('Waiting on others'):looksDone(s)?t('Looks done'):'',s.scope==='work'?t('Work'):s.scope==='personal'?t('Personal'):''].filter(Boolean).join(' · ');
+const palCardSub=s=>[closed(s)?t(s.status==='completed'&&!lapsed(s)?'Done {}':'Marked not needed {}',ago(closedAt(s))):s.status==='snoozed'?t('Later'):waitsOnOthers(s)?t('Waiting on others'):looksDone(s)?t('Looks done'):'',s.scope==='work'?t('Work'):s.scope==='personal'?t('Personal'):''].filter(Boolean).join(' · ');
 // Keywords count for whole words only ("mode" finds the theme); letters in order only on the label itself.
 const palMatch=(q,a,label)=>{const l=palScore(q,label),w=q.trim().toLowerCase(),k=a.keywords&&w.split(/\s+/).every(x=>a.keywords.toLowerCase().includes(x))?palScore(q,a.keywords)*.6:-1;return Math.max(l,k)};
 // Recent commands, newest first (this browser only).

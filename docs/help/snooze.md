@@ -12,7 +12,7 @@ Press **Snooze** on a to-do. **Remind me later** offers a few times, like in 2 h
 
 Snoozes of a day or more land at your "Snoozes land at" time, and work to-dos wait for a work day. Set both in [Work hours](work-hours.md).
 
-Or ask in **Change**, like "remind me about this next Tuesday".
+Or say it in **Ask for changes**, like "remind me about this next Tuesday".
 
 ## When it comes back
 

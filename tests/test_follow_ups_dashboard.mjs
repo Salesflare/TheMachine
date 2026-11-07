@@ -392,7 +392,7 @@ try{
    assert.equal(await page.locator('.board-sub .fu-state').count(),0);assert.equal(await page.locator('.fu-nudge').count(),0);
    await context.close()}
   boardsNow=null}
- // Change: c (or Change…) opens "What should change?" with the scope (all checked, or only this one); Rewrite asks
+ // Ask for changes: c (or Ask for changes…) opens "What should change?" with the scope (all checked, or only this one); Rewrite asks
  // follow_up_change and sends nothing. Each draft in scope says "Rewriting…" where it is; a poll puts each new text in
  // place (same list, same scroll, still checked) with Undo change, and one that came back unchanged says so. The titles
  // are the project alone (never "<board>: <project>"), and a draft reads as paragraphs with "Regards," over the name.

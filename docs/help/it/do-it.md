@@ -37,5 +37,5 @@ Cosa può inviare dipende dalla fonte: un'email, un messaggio diretto su Slack, 
 
 - "Non si può inviare da qui." vuol dire che copi la bozza con **Copia bozza** e la invii tu.
 - **Serve il tuo aiuto** vuol dire che ti chiede qualcosa: **Rispondi**. **Bloccata** vuol dire che si è fermata senza una domanda, o è andata avanti troppo ed è stata fermata; l'attività dice perché.
-- **Riprova** la esegue un'altra volta. **Cambia** chiede qualcos'altro. Su un'attività bloccata, **Riprova** viene per primo e **Dettagli** mostra cosa ha provato.
+- **Riprova** la esegue un'altra volta. **Chiedi modifiche** chiede qualcos'altro. Su un'attività bloccata, **Riprova** viene per primo e **Dettagli** mostra cosa ha provato.
 - Un codice inviato al tuo telefono, o un permesso che manca, la ferma. L'attività dice in una riga cosa serve, come il codice nel suo browser o l'accesso a un file, poi **Continua** o **Riprova**.

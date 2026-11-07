@@ -19,7 +19,7 @@ Um trabalho nunca envia nada por você. Quando ele deixa uma etapa de publicar o
 ## No app do Codex
 
 - **Abrir no Codex** abre a conversa do trabalho no app do Codex. Enquanto o Codex trabalha nela aqui, o app ainda não consegue abri-la. Ela abre quando terminar.
-- **Alterar** numa conversa aberta no app do Codex continua nessa mesma conversa lá, e a tarefa acompanha.
+- **Pedir mudanças** numa conversa aberta no app do Codex continua nessa mesma conversa lá, e a tarefa acompanha.
 - Um trabalho só para se o Codex ficar 30 minutos sem fazer nada, ou depois de 6 horas no total. Reiniciar The Machine não o para.
 
 ## Configurar

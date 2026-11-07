@@ -12,7 +12,7 @@ Pulsa **Posponer** en una tarea. **Recuérdamelo luego** ofrece algunas horas, c
 
 Lo pospuesto un día o más vuelve a tu hora de "Lo pospuesto vuelve a las", y las tareas de trabajo esperan a un día laborable. Configura ambas cosas en [Horario laboral](work-hours.md).
 
-Un **Cambiar** como "recuérdamelo el martes que viene" también la pospone.
+Un **Pedir cambios** como "recuérdamelo el martes que viene" también la pospone.
 
 ## Cuándo vuelve
 

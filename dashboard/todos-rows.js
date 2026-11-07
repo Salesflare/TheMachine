@@ -1,12 +1,12 @@
 // Merge offer on an owner's card: the review thought it is the same as another card. Only the owner's tap merges.
 function mergeOther(s){if(s.origin!=='owner'||!s.merge_offer||closed(s))return null;try{const o=JSON.parse(s.merge_offer);return o.kept?null:(state.suggestions||[]).find(x=>x.id===o.card_id&&!closed(x))||null}catch{return null}}
-// Still needed? (still_needed.py): a to-do untouched for a week asks once, with the weekly recap's Drop and Keep. Drop is
-// Not needed (with its Undo); Keep never asks again. Unanswered a week more, it folds into Coming back later (setAside).
+// Still needed? (still_needed.py): a to-do untouched for a week asks once, with the weekly recap's Not needed and Keep. Not needed is
+// the to-do's own Not needed (with its Undo); Keep never asks again. Unanswered a week more, it folds into Coming back later (setAside).
 const stillAsks=s=>!!s.still_needed&&!closed(s)&&s.status!=='snoozed'&&!looksDone(s)&&!waitsOnOthers(s);
 const setAside=s=>stillAsks(s)&&!!s.still_needed.folded;
 function stillNeeded(s){if(!stillAsks(s))return '';const days=Math.floor((Date.now()-Date.parse(s.still_needed.since))/864e5);  // touched since it asked: the question alone
 
- return html`<div class="merge-offer still-needed"><span><strong>${t('Still needed?')}</strong> ${days>=7?html`<small>${t('Untouched for {} days',days)}</small>`:''}</span><span class="still-acts"><button type="button" class="ghost" data-still="drop" data-card="${s.id}">${t('Drop')}</button><button type="button" class="quiet" data-still="keep" data-card="${s.id}" data-ask="${s.still_needed.id}">${t('Keep')}</button></span></div>`}
+ return html`<div class="merge-offer still-needed"><span><strong>${t('Still needed?')}</strong> ${days>=7?html`<small>${t('Untouched for {} days',days)}</small>`:''}</span><span class="still-acts"><button type="button" class="ghost" data-still="drop" data-card="${s.id}">${t('Not needed')}</button><button type="button" class="quiet" data-still="keep" data-card="${s.id}" data-ask="${s.still_needed.id}">${t('Keep')}</button></span></div>`}
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-still]');if(!b)return;e.preventDefault();b.disabled=true;const id=b.dataset.card;
  try{if(b.dataset.still==='drop'){await saveDecision(id,'reject','No longer needed');return}
   await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'recap_decide',args:{id:b.dataset.ask,choice:'keep',decision_id:crypto.randomUUID()}})});

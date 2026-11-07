@@ -14,7 +14,7 @@ It starts with their photo, name, title, organization and place, and one line on
 - **Contact**: their phones and emails. Tap one to call or write, or **Copy** it.
 - **With you**: what they are to you, Work or Personal contact, and your Family or Fleet, with **See in Fleet**.
 - **Also on**: the other places you talk with them. **Slack** opens them in Slack, or your newest Slack thread with them.
-- **People** and **Projects** they're part of, **Open between you** (promises both ways, with **Done** and **Drop**), and their **Timeline**.
+- **People** and **Projects** they're part of, **Open between you** (promises both ways, with **Mark done** and **Drop**), and their **Timeline**.
 
 Someone's addresses and chats are joined by themselves when it's clear they're one person, like a work email with their own address in CC.
 

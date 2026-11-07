@@ -12,7 +12,7 @@ Appuyez sur **Mettre en attente** sur une tâche. **Me le rappeler plus tard** p
 
 Les mises en attente d’un jour ou plus reviennent à votre heure « Les mises en attente reviennent à », et les tâches de travail attendent un jour de travail. Réglez les deux dans [Heures de travail](work-hours.md).
 
-Un **Modifier** comme « rappelle-moi ça mardi prochain » la met aussi en attente.
+Un **Demander des modifications** comme « rappelle-moi ça mardi prochain » la met aussi en attente.
 
 ## Quand elle revient
 

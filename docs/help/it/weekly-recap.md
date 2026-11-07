@@ -15,7 +15,7 @@ order: 1
 - Persone e progetti, per esempio chi non si fa più sentire.
 - Cosa ho notato: bozze inviate così com'erano o modificate, attività scartate in pochi minuti, attività posticipate più di una volta.
 - Dietro le quinte: quanti segnali ha controllato questa settimana e quanti sono ancora in attesa.
-- Scelte, ognuna in un suo messaggio dopo il riepilogo: una fonte molto attiva senza risultati (**Smetti di controllare** o **Continua a controllare**) e un'attività posticipata più di una volta (**Lascia perdere**, **Fallo ora** o **Tieni**). Non cambia nulla finché non tocchi.
+- Scelte, ognuna in un suo messaggio dopo il riepilogo: una fonte molto attiva senza risultati (**Smetti di controllare** o **Continua a controllare**) e un'attività posticipata più di una volta (**Non serve**, **Fallo** o **Tieni**). Non cambia nulla finché non tocchi.
 
 ## Quando e dove
 

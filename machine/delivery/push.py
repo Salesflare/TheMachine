@@ -347,7 +347,7 @@ def app_notice(store, config, tag):
         title = notify.clip(row['title'], notify.APP_LINE) if text else t('To-do')
     body = (notify.clip(app_next_step(row, blocked), APP_BODY) if text else '') or t(APP_EMPTY)
     return {'line': title, 'title': title, 'body': body, 'actions': buttons,
-            'labels': {'prepare': t('Prepare'), 'snooze': t('Snooze'), 'done': t('Mark done'), 'open': t('Open')},
+            'labels': {'prepare': t('Do it'), 'snooze': t('Snooze'), 'done': t('Mark done'), 'open': t('Open')},
             'events': {'prepare': t('Preparing it'), 'snooze': t('Snoozed it'), 'done': t('Marked it done'),
                        'failed': t('Couldn’t reach your Machine. Open the app to try again.')}}
 

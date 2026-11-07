@@ -19,7 +19,7 @@ import still_needed
 from timeutil import local_tz, now
 
 
-# First-use tips on the dashboard (Store.first_tips): 'change' on a new person's first to-do (Change how and
+# First-use tips on the dashboard (Store.first_tips): 'change' on a new person's first to-do (Ask for changes and
 # Not needed), 'send' on their first ready draft (nothing goes out until Send). Each goes once its button was used.
 FIRST_TIPS = ('change', 'send')
 

@@ -28,7 +28,7 @@ Uma tarefa com **Parece feito** aparece como uma feita, com o que mostra que est
 
 Uma tarefa cujo último passo ainda está aberto do lado de outra pessoa, como uma revisão, um merge ou uma resposta, mostra **Aguardando:** esse passo e continua aberta. Ela espera em **Aguardando outras pessoas**, recolhida acima de Volta mais tarde, e não conta como pronta para você. Uma nova mensagem sobre ela a traz de volta.
 
-Uma tarefa que ninguém tocou em uma semana pergunta uma vez: **Ainda precisa?** **Descartar** fecha a tarefa como **Não precisa**, com **Desfazer**. **Manter** mantém a tarefa, e ela não pergunta de novo. Abrir, uma mensagem no chat, uma edição, adiar ou uma mensagem nova sobre ela contam como um toque. Sem resposta por mais uma semana, ela vai para Volta mais tarde, sob Ainda precisa?, em vez de sumir. Aí o número no ícone do app e o resumo da manhã deixam de contá-la. Um toque traz de volta.
+Uma tarefa que ninguém tocou em uma semana pergunta uma vez: **Ainda precisa?** **Não precisa** fecha a tarefa, com **Desfazer**. **Manter** mantém a tarefa, e ela não pergunta de novo. Abrir, uma mensagem no chat, uma edição, adiar ou uma mensagem nova sobre ela contam como um toque. Sem resposta por mais uma semana, ela vai para Volta mais tarde, sob Ainda precisa?, em vez de sumir. Aí o número no ícone do app e o resumo da manhã deixam de contá-la. Um toque traz de volta.
 
 Quando nada precisa de você, sua Machine tira uma soneca na lista vazia. Enquanto verifica, ela acorda e avisa. Se uma verificação falhou ou está atrasada, a linha dela diz isso, com **Verificar agora** embaixo.
 
@@ -54,7 +54,7 @@ LinkedIn, X e Salesflare mantêm o próprio ritmo.
 
 Uma tarefa mostra o próximo passo, como **Fazer** ou **Revisar e enviar**, com **Adiar** ao lado. Veja [Fazer](do-it.md) e [Adiar](snooze.md).
 
-Ainda não preparada, ela tem **Mudar a abordagem** (diga como fazer de outro jeito); pronta, **Pedir mudanças** (diga o que mudar no rascunho). Se a linha não couber no celular, **Adiar** vai para **…**. **Marcar como feita** (já está resolvida) também está lá: à vista sem rascunho, senão no topo de **…**. Ela sai da lista na hora, com **Desfazer** na mensagem.
+**Pedir mudanças** diz o que mudar: como fazer, ou, com um rascunho pronto, o que mudar nele. Se a linha não couber no celular, **Adiar** vai para **…**. **Marcar como feita** (já está resolvida) também está lá: à vista sem rascunho, senão no topo de **…**. Ela sai da lista na hora, com **Desfazer** na mensagem.
 
 Para fazer de outro jeito, diga isso no **Chat** dela.
 
@@ -70,7 +70,7 @@ Uma tarefa fechada pode voltar com **Reabrir**. Ela também volta sozinha quando
 
 Uma tarefa que só importava até um certo momento, como uma confirmação antes de uma reunião, fecha sozinha quando esse momento passa. Ela vai para as feitas com "Não precisa mais" e quando foi. **Desfazer** traz a tarefa de volta por um dia.
 
-Nas suas primeiras tarefas, uma linha curta abaixo dos botões mostra o essencial: **Mudar a abordagem** (ou **Pedir mudanças**) e **Não precisa** quando uma tarefa não está bem certa, e no seu primeiro rascunho pronto, que nada sai até você tocar em **Enviar**. Uma dica some de vez assim que você usa o botão dela ou toca no ×, em todos os seus aparelhos.
+Nas suas primeiras tarefas, uma linha curta abaixo dos botões mostra o essencial: **Pedir mudanças** e **Não precisa** quando uma tarefa não está bem certa, e no seu primeiro rascunho pronto, que nada sai até você tocar em **Enviar**. Uma dica some de vez assim que você usa o botão dela ou toca no ×, em todos os seus aparelhos.
 
 No seu primeiro dia, o topo de Tarefas diz oi pelo seu nome e mostra quem espera sua resposta há mais tempo. A Machine rascunha essa resposta primeiro, para que esteja pronta quando você chegar. Nada sai até você enviar. A linha some depois do seu primeiro dia ou da sua primeira tarefa decidida.
 

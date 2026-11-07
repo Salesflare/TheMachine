@@ -42,10 +42,10 @@ try{
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
   await page.goto('http://127.0.0.1:'+server.address().port);await page.locator('#task-r1').waitFor();
   const r1=page.locator('#task-r1');
-  // Ask for changes, in sight on a draft, says what it changes; a decision's Change how, in sight too, does it another way
+  // Ask for changes, in sight on a draft, says what it changes; a decision's, in sight too, does it another way
   const change=r1.locator('.actions>[data-choice="change"]');
   assert.equal(await change.innerText(),'Ask for changes');assert.equal(await change.getAttribute('title'),'Tell me what to change in the draft, and I redo it');
-  {const how=page.locator('#task-p1 .actions>[data-choice="change"]:not([hidden])');assert.equal(await how.textContent(),'Change how');assert.equal(await how.getAttribute('title'),'Tell me how to do it instead')}
+  {const how=page.locator('#task-p1 .actions>[data-choice="change"]:not([hidden])');assert.equal(await how.textContent(),'Ask for changes');assert.equal(await how.getAttribute('title'),'Tell me how to do it instead')}
   // In the change editor, Review and send stays in reach
   await change.click();
   await r1.getByText('What should I change?').waitFor();

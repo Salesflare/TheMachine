@@ -14,7 +14,7 @@ Sie beginnt mit Foto, Name, Position, Organisation und Ort und einer Zeile dazu,
 - **Kontakt**: Telefonnummern und E-Mail-Adressen. Tippe auf eine, um anzurufen oder zu schreiben, oder **Kopieren**.
 - **Mit dir**: was die Person für dich ist, Kontakt aus Arbeit oder Privat, und deine Familie oder Fleet, mit **In Fleet ansehen**.
 - **Auch auf**: die anderen Orte, an denen ihr miteinander sprecht. **Slack** öffnet die Person in Slack, oder deinen neuesten Slack-Thread mit ihr.
-- **Personen** und **Projekte**, zu denen sie gehört, **Offen zwischen euch** (Versprechen in beide Richtungen, mit **Erledigt** und **Entfernen**) und ihr **Verlauf**.
+- **Personen** und **Projekte**, zu denen sie gehört, **Offen zwischen euch** (Versprechen in beide Richtungen, mit **Als erledigt markieren** und **Fallen lassen**) und ihr **Verlauf**.
 
 Adressen und Chats einer Person werden von selbst zusammengeführt, wenn klar ist, dass es eine Person ist, etwa eine Arbeitsadresse mit der privaten Adresse in CC.
 

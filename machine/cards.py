@@ -357,7 +357,7 @@ def card(row):
     if row['status'] == 'completed' and row.get('expired_at') and row.get('expires_at'):
         status = expired_text(row)  # its moment passed: closed by itself (Store.expire_passed)
     if row['status'] not in ('completed','rejected','snoozed') and row.get('change_prompt',{}).get('status')=='uncertain':
-        status+='\n'+t('I couldn’t confirm the message asking what to change. If it arrived, reply to it; otherwise use Change on the dashboard.')
+        status+='\n'+t('I couldn’t confirm the message asking what to change. If it arrived, reply to it; otherwise use Ask for changes on the dashboard.')
     # A hashtag, so tapping it in Telegram lists every #work or #personal card.
     tag = '#' + row['scope'] if row.get('scope') else ''
     due = ''
@@ -582,16 +582,16 @@ def controls(row, root=''):
     elif row['status'] == 'snoozed':
         choices = [('Check in now' if row.get('handoff_wait') else 'Unsnooze','accept'),('Change time','snooze'),('Not needed','reject')]
     elif row['status'] in ['accepted','prepared','instructions']:
-        choices = [('Mark done','complete'),('Snooze','snooze'),('Change','other'),('Not needed','reject')]
+        choices = [('Mark done','complete'),('Snooze','snooze'),('Ask for changes','other'),('Not needed','reject')]
         if row.get('preparation_status')=='blocked':choices.insert(0,(retry_label(row.get('preparation_reason')),'retry'))
-        elif answered_only(row):choices=[('Do it','accept'),('Snooze','snooze'),('Change','other'),('Mark done','complete'),('Not needed','reject')]
+        elif answered_only(row):choices=[('Do it','accept'),('Snooze','snooze'),('Ask for changes','other'),('Mark done','complete'),('Not needed','reject')]
     else:
-        choices = [('Do it','accept'),('Mark done','complete'),('Snooze','snooze'),('Change','other'),('Not needed','reject')]
+        choices = [('Do it','accept'),('Mark done','complete'),('Snooze','snooze'),('Ask for changes','other'),('Not needed','reject')]
         if row.get('preparation_status') == 'blocked':  # its prepared-ahead run got stuck (settle_ahead): Try again leads
             choices[0] = (retry_label(row.get('preparation_reason')), 'retry')
     if row.get('owner_step') and row['status'] not in ('completed','rejected','snoozed'):
-        # Only the owner can do this step (a visit, a pickup): Done leads; Plan it is what The Machine can do around it.
-        choices = [('Done','complete')] + [('Plan it' if choice == 'accept' else label, choice) for label, choice in choices if choice != 'complete'
+        # Only the owner can do this step (a visit, a pickup): Mark done leads; Plan it is what The Machine can do around it.
+        choices = [('Mark done','complete')] + [('Plan it' if choice == 'accept' else label, choice) for label, choice in choices if choice != 'complete'
                                            and (row.get('origin') != 'machine' or choice == 'snooze')]  # an update's note: Done, Snooze
     actions=next_actions.visible_actions({'kind':'menu','actions':row['next_actions']}) if row.get('next_actions') is not None else next_actions.visible_actions(row.get('next_action'))
     if ask_question(row,actions):choices=[('Answer','other'),*([(retry_label(row.get('preparation_reason')),'retry')] if row.get('preparation_status')=='blocked' and not retry_pointless(row) else []),('Mark done','complete'),('Snooze','snooze'),('Not needed','reject')]

@@ -86,7 +86,7 @@ await handler(ctx('back'));assert.equal(edits.pop().buttons.flat()[0].text,'Send
  await handler(ctx('confirm_abcdef123456'));assert.equal(choices.pop().revision,'abcdef123456');edits.pop();}
 // Handing it to a colleague on Slack: the Send shares a row with Mark done, and the preview says the card waits.
 item.status='prepared';item.next_action={kind:'slack',label:'Send to Sam',revision:'abcdef123456',account_id:'slack',to_email:'sam@example.com',to_name:'Sam',body:'Could you check the invoice?',delegate:true,wait_days:3};
-await handler(ctx('back'));assert.deepEqual(edits.pop().buttons.map(row=>row.map(b=>b.text)),[['Send to Sam','Mark done','Snooze'],['Change','Not needed']]);
+await handler(ctx('back'));assert.deepEqual(edits.pop().buttons.map(row=>row.map(b=>b.text)),[['Send to Sam','Mark done','Snooze'],['Ask for changes','Not needed']]);
 {const before=choices.length;await handler(ctx('send_abcdef123456'));const r=edits.pop();
  assert.equal(r.text,'Send this Slack message?\nTo: Sam (sam@example.com)\n\nCould you check the invoice?\n\nAfter sending, this to-do waits 3 days for Sam’s reply; it closes when they answer.');
  assert.deepEqual(r.buttons.flat().map(b=>b.text).filter(t=>t!=='Edit'),['Send now','Cancel']);assert.equal(choices.length,before);
@@ -129,7 +129,7 @@ item.next_action.state={status:'done'};
  await handler(ctx('confirm_abcdef123456'));assert.equal(choices.length,before);edits.pop();}
 item.next_action.state={status:'needs_input'};
 await handler(ctx('back'));assert.ok(edits.pop().buttons.flat().some(b=>b.text==='Submit claim'));
-item.status='pending';await handler(ctx('back'));assert.deepEqual(edits.pop().buttons.map(row=>row.map(b=>b.text)),[['Do it','Mark done','Snooze'],['Change','Not needed']]);
+item.status='pending';await handler(ctx('back'));assert.deepEqual(edits.pop().buttons.map(row=>row.map(b=>b.text)),[['Do it','Mark done','Snooze'],['Ask for changes','Not needed']]);
 delete item.next_action;
 item.status='pending';await handler(ctx('reject'));assert.equal(choices.length,0);assert.deepEqual(edits.pop().buttons.flat().map(b=>b.text),['Not relevant','Wrong facts','Other reason…','No reason','Cancel']);
 await handler(ctx('dismiss_handled'));{const d=choices.pop();assert.equal(d.choice,'reject');assert.equal(d.feedback,'Already handled');}

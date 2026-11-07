@@ -64,7 +64,7 @@ Leren heeft een rij tabbladen. Een tabblad waar nog niets in staat, valt weg.
   - **De moeite waard**: van de to-do's waarover je besliste, hoeveel je oppakte (**Doe het**, verstuurd of gedaan) in plaats van weg te klikken.
   - **Meteen goed**: van de to-do's die je startte met **Doe het**, hoeveel er achteraf geen correctie nodig hadden.
   - **Afgerond**: van de to-do's die je startte met **Doe het**, hoeveel er klaar raakten zonder dat je vroeg om door te gaan of het opnieuw te proberen.
-  - **Ongewijzigd verstuurd**: van de concepten die je verstuurde, hoeveel er gingen zonder bewerking of eerst **Wijzigen**.
+  - **Ongewijzigd verstuurd**: van de concepten die je verstuurde, hoeveel er gingen zonder bewerking of eerst **Wijzigingen vragen**.
   - Elk getal zegt hoe het zich verhoudt tot de 30 dagen ervoor. De grafiek begint bij je eerste besliste to-do: de eerste twee weken één staaf per dag, daarna één per week, tot de laatste 8 weken.
   - **De moeite waard per bron**: waar de to-do's vandaan kwamen, zoals **E-mail**, **Door jou toegevoegd** (gemaakt met **Nieuwe to-do**), **Telefoonmeldingen** of **The Machine zelf** (problemen in The Machine, zoals een fout), en hoeveel je er oppakte.
   - **Gemiste to-do’s**: één keer per week controleert The Machine een steekproef van berichten zonder to-do, en toont hij welk deel er waarschijnlijk een nodig had, met de marge. De gevonden berichten staan eronder: **Openen** toont het bericht, en met **Echt gemist** of **Niet gemist** zeg je of hij gelijk had. Je antwoorden blijven op je Machine en maken het getal nauwkeuriger. Het getal houdt ook rekening met hoe vaak de controle zelf fout zit, gemeten op verzonnen voorbeelden en jouw antwoorden. Te zien na de eerste wekelijkse controle.

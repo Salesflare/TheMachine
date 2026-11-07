@@ -37,7 +37,7 @@ Les relances d’un tableau arrivent en une seule tâche, jamais une par e-mail.
 
 **Ignorer** décoche un brouillon et le place en bas, marqué Ignorée avec **Annuler** ; il n’est vraiment ignoré qu’à la fermeture de la vérification. Une relance ignorée revient avec **Récupérer** dans les relances du projet ou sur sa tâche dans Fait, tant qu’aucune relance plus récente n’est venue. La relance d’un seul projet est une tâche normale.
 
-**Modifier…** réécrit tous les brouillons cochés, ou seulement celui en cours, comme vous le demandez ; rien n’est envoyé, et **Annuler la modification** rétablit l’ancien texte. Tant que la zone de modification est ouverte ou qu’une réécriture tourne, rien ne part, et un brouillon qui a changé s’affiche d’abord à nouveau.
+**Demander des modifications…** réécrit tous les brouillons cochés, ou seulement celui en cours, comme vous le demandez ; rien n’est envoyé, et **Annuler la modification** rétablit l’ancien texte. Tant que la zone de modification est ouverte ou qu’une réécriture tourne, rien ne part, et un brouillon qui a changé s’affiche d’abord à nouveau.
 
 Quand plusieurs partent à la suite, aussi avec Envoyer sans demander, chaque boîte mail en envoie une toutes les 30 à 45 secondes, et la tâche montre où on en est : « Envoi de 3 sur 8… ». **Arrêter l’envoi** arrête le reste : celle déjà en route part quand même, les autres reviennent en brouillons dans la vérification, à envoyer plus tard (« Envoi arrêté. Envoyées : 1. 11 gardées en brouillons. »).
 

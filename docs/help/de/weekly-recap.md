@@ -15,7 +15,7 @@ order: 1
 - Personen und Projekte, etwa wer still geworden ist.
 - Was mir aufgefallen ist: Entwürfe, die unverändert oder bearbeitet gesendet wurden, Aufgaben, die innerhalb von Minuten verworfen wurden, Aufgaben, die mehr als einmal zurückgestellt wurden.
 - Hinter den Kulissen: wie viele Signale sie diese Woche geprüft hat und wie viele noch warten.
-- Auswahl, jede in einer eigenen Nachricht nach dem Rückblick: eine aktive Quelle ohne Ergebnisse (**Nicht mehr prüfen** oder **Weiter prüfen**) und eine Aufgabe, die mehr als einmal zurückgestellt wurde (**Entfernen**, **Jetzt ausführen** oder **Behalten**). Nichts ändert sich, bevor du tippst.
+- Auswahl, jede in einer eigenen Nachricht nach dem Rückblick: eine aktive Quelle ohne Ergebnisse (**Nicht mehr prüfen** oder **Weiter prüfen**) und eine Aufgabe, die mehr als einmal zurückgestellt wurde (**Nicht nötig**, **Ausführen** oder **Behalten**). Nichts ändert sich, bevor du tippst.
 
 ## Wann und wo
 

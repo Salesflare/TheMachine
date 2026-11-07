@@ -64,7 +64,7 @@ Aprendizaje tiene una fila de pestañas. Una pestaña que aún no tiene nada no 
   - **Valió la pena**: de las tareas que decidiste, en cuántas actuaste (**Hazlo**, enviada o hecha) en vez de descartarlas.
   - **A la primera**: de las tareas que empezaste con **Hazlo**, cuántas no necesitaron ninguna corrección después.
   - **Terminada**: de las tareas que empezaste con **Hazlo**, cuántas terminaron sin que le pidieras seguir o volver a intentarlo.
-  - **Enviado tal cual**: de los borradores que enviaste, cuántos salieron sin una edición ni **Cambiar** antes.
+  - **Enviado tal cual**: de los borradores que enviaste, cuántos salieron sin una edición ni **Pedir cambios** antes.
   - Cada número dice cómo se compara con los 30 días anteriores. El gráfico empieza en tu primera tarea decidida: una barra por día las dos primeras semanas, luego una por semana, hasta las últimas 8 semanas.
   - **Valió la pena por origen**: de dónde vinieron las tareas, como **Correo**, **Añadido por ti** (creadas con **Nueva tarea**), **Notificaciones del teléfono** o **The Machine misma** (problemas en The Machine, como un error), y en cuántas actuaste.
   - **Tareas olvidadas**: una vez por semana, The Machine revisa una muestra de mensajes que quedaron sin tarea, y muestra la parte que probablemente necesitaba una, con su margen. Los que encontró aparecen debajo: **Abrir** muestra el mensaje, y **Olvido real** o **No es un olvido** le dice si acertó. Tus respuestas se quedan en tu Machine y hacen el número más preciso. La cifra también corrige cuántas veces se equivoca la propia revisión, medido con ejemplos inventados y tus respuestas. Aparece tras la primera revisión semanal.

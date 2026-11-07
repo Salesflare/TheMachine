@@ -66,7 +66,7 @@ Learning shows what The Machine learned from you and how well its to-dos work. E
   - **Worth it**: of the to-dos you decided, how many you acted on (**Do it**, sent or done) instead of dismissing.
   - **First try**: of the to-dos you started with **Do it**, how many needed no correction afterward.
   - **Finished**: of the to-dos you started with **Do it**, how many finished without you asking it to keep going or try again.
-  - **Sent as is**: of the drafts you sent, how many went without an edit or **Change** first.
+  - **Sent as is**: of the drafts you sent, how many went without an edit or **Ask for changes** first.
   - Each number compares with the 30 days before. The chart shows a bar per day for the first two weeks, then per week, up to 8 weeks.
   - **Worth it per source**: how many you acted on per source, like **Email**, **Added by you** (from **New to-do**), **Phone notifications** or **The Machine itself** (problems like an error).
   - **Missed to-dos**: once a week The Machine checks a sample of messages that got no to-do, and estimates how many likely needed one. It lists the ones it found: **Open** shows the message, and **Real miss** or **Not a miss** tells it whether it was right. Your answers make the number more accurate and stay on your Machine. Shows after the first weekly check.

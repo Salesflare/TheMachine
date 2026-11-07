@@ -28,7 +28,7 @@ Un’attività con **Sembra fatto** appare come una fatta, con ciò che mostra c
 
 Un’attività il cui ultimo passo è ancora aperto da parte di qualcun altro, come una revisione, un merge o una risposta, mostra **In attesa di:** quel passo e resta aperta. Aspetta in **In attesa di altri**, chiusa sopra Torna più tardi, e non conta come pronta per te. Un nuovo messaggio su di essa la riporta indietro.
 
-Un’attività che nessuno tocca da una settimana chiede una volta: **Serve ancora?** **Lascia perdere** la chiude come **Non serve**, con **Annulla**. **Tieni** la tiene, e non lo chiede più. Aprirla, un messaggio in chat, una modifica, posticiparla o un nuovo messaggio su di lei contano come un tocco. Senza risposta per un’altra settimana, finisce in Torna più tardi, sotto Serve ancora?, invece di sparire. Allora il numero sull’icona dell’app e il riepilogo del mattino smettono di contarla. Un tocco la riporta indietro.
+Un’attività che nessuno tocca da una settimana chiede una volta: **Serve ancora?** **Non serve** la chiude, con **Annulla**. **Tieni** la tiene, e non lo chiede più. Aprirla, un messaggio in chat, una modifica, posticiparla o un nuovo messaggio su di lei contano come un tocco. Senza risposta per un’altra settimana, finisce in Torna più tardi, sotto Serve ancora?, invece di sparire. Allora il numero sull’icona dell’app e il riepilogo del mattino smettono di contarla. Un tocco la riporta indietro.
 
 Quando niente ha bisogno di te, la tua Machine fa un pisolino sull’elenco vuoto. Mentre controlla, si sveglia e lo dice. Se un controllo non è riuscito o è in ritardo, la sua riga lo dice, con **Controlla ora** sotto.
 
@@ -54,7 +54,7 @@ LinkedIn, X e Salesflare mantengono il loro ritmo.
 
 Un'attività mostra il passo successivo, come **Fallo** o **Rivedi e invia**, con **Posticipa** accanto. Vedi [Fallo](do-it.md) e [Posticipa](snooze.md).
 
-Non ancora preparata, ha **Cambia approccio** (di' come farla invece); pronta, **Chiedi modifiche** (di' cosa cambiare nella bozza). Se sul telefono la riga è piena, **Posticipa** passa in **…**. C'è anche **Segna come fatto** (è sistemata): in vista senza bozza, altrimenti in cima a **…**. Esce subito dall’elenco, con **Annulla** nel messaggio.
+**Chiedi modifiche** dice cosa cambiare: come farla, o, con una bozza pronta, cosa cambiarci. Se sul telefono la riga è piena, **Posticipa** passa in **…**. C'è anche **Segna come fatto** (è sistemata): in vista senza bozza, altrimenti in cima a **…**. Esce subito dall’elenco, con **Annulla** nel messaggio.
 
 Per farla in un altro modo, dillo nella sua **Chat**.
 
@@ -70,7 +70,7 @@ Un'attività chiusa può tornare con **Riapri**. Torna anche da sola quando succ
 
 Un'attività che contava solo fino a un certo momento, come una conferma prima di una riunione, si chiude da sola quando quel momento è passato. Passa tra quelle fatte con "Non serve più" e quando era. **Annulla** la riporta indietro per un giorno.
 
-Sulle tue prime attività, una riga breve sotto i pulsanti mostra l'essenziale: **Cambia approccio** (o **Chiedi modifiche**) e **Non serve** quando un'attività non è proprio giusta, e sulla tua prima bozza pronta, che non parte nulla finché non premi **Invia**. Un suggerimento sparisce per sempre appena usi il suo pulsante o premi ×, su tutti i tuoi dispositivi.
+Sulle tue prime attività, una riga breve sotto i pulsanti mostra l'essenziale: **Chiedi modifiche** e **Non serve** quando un'attività non è proprio giusta, e sulla tua prima bozza pronta, che non parte nulla finché non premi **Invia**. Un suggerimento sparisce per sempre appena usi il suo pulsante o premi ×, su tutti i tuoi dispositivi.
 
 Il primo giorno, la parte alta delle Attività ti saluta per nome e mostra chi aspetta la tua risposta da più tempo. The Machine prepara prima quella risposta, così è pronta quando arrivi. Non parte nulla finché non la invii. La riga sparisce dopo il primo giorno o la prima attività decisa.
 

@@ -28,7 +28,7 @@ Una tarea con **Parece hecho** se ve como una hecha, con lo que muestra que est�
 
 Una tarea cuyo último paso sigue abierto en manos de otra persona, como una revisión, una fusión o una respuesta, muestra **Esperando:** ese paso y sigue abierta. Espera en **Esperando a otros**, plegada encima de Vuelve más tarde, y no cuenta como lista para ti. Un mensaje nuevo sobre ella la trae de vuelta.
 
-Una tarea que nadie tocó en una semana pregunta una vez: **¿Aún hace falta?** **Descartar** la cierra como **No hace falta**, con **Deshacer**. **Mantener** la mantiene, y no vuelve a preguntar. Abrirla, un mensaje en el chat, un cambio, posponerla o un mensaje nuevo sobre ella cuentan como tocarla. Si no hay respuesta en otra semana, se guarda en Vuelve más tarde, bajo ¿Aún hace falta?, en lugar de desaparecer. Entonces el número en el icono de la app y el resumen matutino dejan de contarla. Tocarla la trae de vuelta.
+Una tarea que nadie tocó en una semana pregunta una vez: **¿Aún hace falta?** **No hace falta** la cierra, con **Deshacer**. **Mantener** la mantiene, y no vuelve a preguntar. Abrirla, un mensaje en el chat, un cambio, posponerla o un mensaje nuevo sobre ella cuentan como tocarla. Si no hay respuesta en otra semana, se guarda en Vuelve más tarde, bajo ¿Aún hace falta?, en lugar de desaparecer. Entonces el número en el icono de la app y el resumen matutino dejan de contarla. Tocarla la trae de vuelta.
 
 Cuando nada te necesita, tu Machine se echa una siesta en la lista vacía. Mientras revisa, se despierta y lo dice. Si una revisión falló o va con retraso, su línea lo dice, con **Revisar ahora** debajo.
 
@@ -54,7 +54,7 @@ LinkedIn, X y Salesflare siguen su propio ritmo.
 
 Una tarea muestra su siguiente paso, como **Hazlo** o **Revisar y enviar**, con **Posponer** al lado. Consulta [Hazlo](do-it.md) y [Posponer](snooze.md).
 
-Sin preparar, tiene **Cambiar el enfoque** (di cómo hacerla en su lugar); lista, **Pedir cambios** (di qué cambiar en el borrador). Si la fila no cabe en el móvil, **Posponer** pasa a **…**. **Marcar como hecha** (ya está resuelta) también está: a la vista sin borrador, si no, arriba en **…**. Sale de la lista al instante, con **Deshacer** en el mensaje.
+**Pedir cambios** dice qué cambiar: cómo hacerla, o, con un borrador listo, qué cambiar en él. Si la fila no cabe en el móvil, **Posponer** pasa a **…**. **Marcar como hecha** (ya está resuelta) también está: a la vista sin borrador, si no, arriba en **…**. Sale de la lista al instante, con **Deshacer** en el mensaje.
 
 Para que se haga de otra forma, dilo en su **Chat**.
 
@@ -70,7 +70,7 @@ Una tarea cerrada puede volver con **Reabrir**. También vuelve sola cuando pasa
 
 Una tarea que solo importaba hasta un momento concreto, como una confirmación antes de una reunión, se cierra sola cuando ese momento pasa. Pasa a las hechas con "Ya no hace falta" y cuándo fue. **Deshacer** la recupera durante un día.
 
-En tus primeras tareas, una línea corta bajo los botones muestra lo esencial: **Cambiar el enfoque** (o **Pedir cambios**) y **No hace falta** cuando una tarea no es del todo así, y en tu primer borrador listo, que no sale nada hasta que pulsas **Enviar**. Un consejo desaparece para siempre en cuanto usas su botón o pulsas ×, en todos tus dispositivos.
+En tus primeras tareas, una línea corta bajo los botones muestra lo esencial: **Pedir cambios** y **No hace falta** cuando una tarea no es del todo así, y en tu primer borrador listo, que no sale nada hasta que pulsas **Enviar**. Un consejo desaparece para siempre en cuanto usas su botón o pulsas ×, en todos tus dispositivos.
 
 En tu primer día, la parte de arriba de Tareas te saluda por tu nombre y muestra quién lleva más tiempo esperando tu respuesta. The Machine redacta esa respuesta primero, para que esté lista cuando llegues. No sale nada hasta que la envías. La línea desaparece después de tu primer día o de tu primera tarea decidida.
 

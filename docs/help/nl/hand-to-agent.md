@@ -19,7 +19,7 @@ Een opdracht verstuurt nooit iets voor je. Laat ze een stap om te publiceren of 
 ## In de Codex-app
 
 - **Openen in Codex** opent de thread van de opdracht in de Codex-app. Zolang Codex er hier aan werkt, kan de app hem nog niet openen. Hij opent zodra het klaar is.
-- **Wijzigen** op een thread die open staat in de Codex-app gaat verder in datzelfde gesprek daar, en de to-do volgt het.
+- **Wijzigingen vragen** op een thread die open staat in de Codex-app gaat verder in datzelfde gesprek daar, en de to-do volgt het.
 - Een opdracht stopt alleen als Codex 30 minuten niets doet, of na 6 uur in totaal. Een herstart van The Machine stopt hem niet.
 
 ## Instellen

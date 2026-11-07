@@ -319,7 +319,7 @@ try{
  await page.locator('h2.chat-title',{hasText:'Reply to the venue'}).waitFor();
  await page.evaluate(()=>{location.hash=''});await page.locator('#suggestions .chat-layout').waitFor({state:'detached'});
  // A Change sent from the card stays on the card: the chat never opens by itself
- // A decision's Change how, in sight on the card
+ // A decision's Ask for changes, in sight on the card
  await page.locator('#task-c2c2c2c2c2c2c2c2 .actions>[data-choice="change"]:not([hidden])').click();
  await page.locator('#feedback-c2c2c2c2c2c2c2c2').fill('Use the new address');
  await page.locator('#task-c2c2c2c2c2c2c2c2 [data-choice="other"]').click();

@@ -15,7 +15,7 @@ Under **Promises** on the To-dos page:
 - What you said you'd do, and for whom: **You promised**.
 - What others said they'd do: **Promised to you**.
 
-Each open one has **Done** and **Drop**. An open promise becomes a to-do when it's due, and shows on its day in the [Calendar](calendar.md). One that is a to-do now links to it, and **Done** or **Drop** closes that to-do too. When your Machine sees it done, both close, with a line saying so.
+Each open one has **Mark done** and **Drop**. An open promise becomes a to-do when it's due, and shows on its day in the [Calendar](calendar.md). One that is a to-do now links to it, and **Done** or **Drop** closes that to-do too. When your Machine sees it done, both close, with a line saying so.
 
 Already kept, like a reply you sent or a meeting that covered it? It closes by itself, with no to-do.
 

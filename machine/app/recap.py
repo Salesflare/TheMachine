@@ -157,7 +157,7 @@ RECAP_CIRCLE = 8  # a group chat with this many others or fewer is a circle of p
 RECAP_CHOICES = {'noise': ('filter', 'keep', 'undo'), 'snoozed': ('drop', 'now', 'keep'), still_needed.KIND: ('drop', 'keep')}
 
 
-RECAP_DONE = {'filtered': 'No longer checked', 'kept': 'Kept', 'dropped': 'Dropped', 'started': 'Started'}
+RECAP_DONE = {'filtered': 'No longer checked', 'kept': 'Kept', 'dropped': 'Not needed', 'started': 'Started'}
 
 
 # Recaps sent before each choice had its own message: their buttons sit under the recap, numbered like its lines.
@@ -165,7 +165,7 @@ RECAP_DONE_NUMBERED = {**RECAP_DONE, 'filtered': 'Filtered'}
 
 
 def recap_buttons(items, numbered=False):
-    """One row per line still open: Stop reviewing / Keep reviewing for a busy source, Drop / Do it now / Keep for a
+    """One row per line still open: Stop reviewing / Keep reviewing for a busy source, Not needed / Do it / Keep for a
     card snoozed again and again; a filtered source keeps Undo. Each choice is its own message, so a label needs no
     number; numbered is for a recap sent before that, whose buttons sit under the whole recap."""
     rows = []
@@ -174,7 +174,7 @@ def recap_buttons(items, numbered=False):
         label = (lambda text: f"{i18n.t(text)} {item['n']}") if numbered else i18n.t
         if item['status'] == 'open':
             choices = ([('Filter', 'filter'), ('Keep', 'keep')] if numbered else [('Stop checking', 'filter'), ('Keep checking', 'keep')]) \
-                if item['kind'] == 'noise' else [('Drop', 'drop'), ('Do it now', 'now'), ('Keep', 'keep')]
+                if item['kind'] == 'noise' else [('Not needed', 'drop'), ('Do it', 'now'), ('Keep', 'keep')]
             rows.append([{'text': label(text), 'value': value + choice} for text, choice in choices])
         elif item['status'] == 'filtered':
             rows.append([{'text': label('Undo'), 'value': value + 'undo'}])
@@ -501,7 +501,7 @@ class RecapApp:
             self.store.exclusions[account['id']] = (live.get('exclude') or []) + default_exclusions(self.config, live)
 
     def recap_decide(self, args, owner_dashboard=False):
-        """A tap on the weekly recap: Filter, Keep or Undo on a busy source; Drop, Do it now or Keep on a card snoozed
+        """A tap on the weekly recap: Filter, Keep or Undo on a busy source; Not needed, Do it or Keep on a card snoozed
         again and again. Also Keep or Drop on a to-do's own "Still needed?" (still_needed.py), from the dashboard only.
         Only the owner's own filters and cards change; nothing is sent to anyone. From Telegram only on the recap
         message that offered it."""
@@ -544,7 +544,7 @@ class RecapApp:
             else:
                 reason = None
                 if choice == 'drop':  # the dashboard's own Not needed
-                    self.store.decide(card, 'reject', 'No longer needed' if on_todo else i18n.t('Dropped from the weekly recap'), decision + ':drop', source)
+                    self.store.decide(card, 'reject', 'No longer needed' if on_todo else i18n.t('Marked not needed in the weekly recap'), decision + ':drop', source)
                 else:  # Unsnooze, then Do it: preparing never sends anything without the owner's own tap on the card
                     result = self.store.decide(card, 'accept', '', decision + ':back', source) if row['status'] == 'snoozed' else {'status': row['status']}
                     if result.get('status') == 'pending':

@@ -28,7 +28,7 @@ Une tâche marquée **Semble fait** s’affiche comme une tâche faite, avec ce 
 
 Une tâche dont la dernière étape reste ouverte chez quelqu’un d’autre, comme une relecture, une fusion ou une réponse, affiche **En attente de :** cette étape et reste ouverte. Elle attend dans **En attente des autres**, repliée au-dessus de Revient plus tard, et ne compte pas comme prête pour vous. Un nouveau message à son sujet la ramène.
 
-Une tâche que personne n’a touchée depuis une semaine demande une fois : **Toujours utile ?** **Abandonner** la ferme comme **Pas nécessaire**, avec **Annuler**. **Garder** la garde, et elle ne redemande jamais. L’ouvrir, un message dans le chat, une modification, la mettre en attente ou un nouveau message à son sujet comptent comme une action. Sans réponse une semaine de plus, elle se range dans Revient plus tard, sous Toujours utile ?, au lieu de disparaître. Le nombre sur l’icône de l’app et le récap du matin cessent alors de la compter. Une action la ramène.
+Une tâche que personne n’a touchée depuis une semaine demande une fois : **Toujours utile ?** **Pas nécessaire** la ferme, avec **Annuler**. **Garder** la garde, et elle ne redemande jamais. L’ouvrir, un message dans le chat, une modification, la mettre en attente ou un nouveau message à son sujet comptent comme une action. Sans réponse une semaine de plus, elle se range dans Revient plus tard, sous Toujours utile ?, au lieu de disparaître. Le nombre sur l’icône de l’app et le récap du matin cessent alors de la compter. Une action la ramène.
 
 Quand rien n’a besoin de vous, votre Machine fait la sieste sur la liste vide. Pendant qu’elle vérifie, elle se réveille et le dit. Si une vérification a échoué ou est en retard, sa ligne le dit, avec **Vérifier maintenant** en dessous.
 
@@ -54,7 +54,7 @@ LinkedIn, X et Salesflare gardent leur propre rythme.
 
 Une tâche affiche son étape suivante, comme **Faire** ou **Vérifier et envoyer**, avec **Mettre en attente** à côté. Voir [Faire](do-it.md) et [Mettre en attente](snooze.md).
 
-Pas encore préparée, elle a **Changer d’approche** (dites comment faire autrement) ; prête, **Demander des modifications** (dites ce qu’il faut changer dans le brouillon). Quand la rangée est pleine sur un téléphone, **Mettre en attente** passe dans **…**. **Marquer comme fait** (c’est réglé) est là aussi : visible sans brouillon, sinon en haut de **…**. Elle quitte la liste tout de suite, avec **Annuler** dans le message.
+**Demander des modifications** dit ce qu’il faut changer : comment faire, ou, une fois le brouillon prêt, ce qu’il faut y changer. Quand la rangée est pleine sur un téléphone, **Mettre en attente** passe dans **…**. **Marquer comme fait** (c’est réglé) est là aussi : visible sans brouillon, sinon en haut de **…**. Elle quitte la liste tout de suite, avec **Annuler** dans le message.
 
 Pour la faire autrement, dites-le dans son **Chat**.
 
@@ -70,7 +70,7 @@ Une tâche fermée peut revenir avec **Rouvrir**. Elle revient aussi d’elle-m�
 
 Une tâche qui ne comptait que jusqu’à un moment précis, comme une confirmation avant une réunion, se ferme d’elle-même une fois ce moment passé. Elle passe dans les tâches terminées avec « Plus nécessaire » et la date. **Annuler** la fait revenir pendant un jour.
 
-Sur vos premières tâches, une courte ligne sous les boutons montre l’essentiel : **Changer d’approche** (ou **Demander des modifications**) et **Pas nécessaire** quand une tâche ne convient pas tout à fait, et sur votre premier brouillon prêt, que rien ne part avant que vous appuyiez sur **Envoyer**. Une astuce disparaît pour de bon dès que vous utilisez son bouton ou appuyez sur ×, sur tous vos appareils.
+Sur vos premières tâches, une courte ligne sous les boutons montre l’essentiel : **Demander des modifications** et **Pas nécessaire** quand une tâche ne convient pas tout à fait, et sur votre premier brouillon prêt, que rien ne part avant que vous appuyiez sur **Envoyer**. Une astuce disparaît pour de bon dès que vous utilisez son bouton ou appuyez sur ×, sur tous vos appareils.
 
 Le premier jour, le haut des Tâches vous salue par votre prénom et indique qui attend votre réponse depuis le plus longtemps. The Machine rédige cette réponse en premier, pour qu’elle soit prête à votre arrivée. Rien ne part avant que vous l’envoyiez. La ligne disparaît après votre premier jour ou votre première tâche décidée.
 

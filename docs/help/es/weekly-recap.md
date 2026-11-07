@@ -15,7 +15,7 @@ order: 1
 - Personas y proyectos, como quién se ha quedado en silencio.
 - Lo que noté: borradores enviados tal cual o editados, tareas descartadas en pocos minutos, tareas pospuestas más de una vez.
 - Entre bastidores: cuántas señales revisó esta semana y cuántas siguen en espera.
-- Opciones, cada una en su propio mensaje después del resumen: una fuente con mucha actividad sin resultados (**Dejar de revisar** o **Seguir revisando**) y una tarea pospuesta más de una vez (**Descartar**, **Hazlo ahora** o **Mantener**). No cambia nada hasta que toques.
+- Opciones, cada una en su propio mensaje después del resumen: una fuente con mucha actividad sin resultados (**Dejar de revisar** o **Seguir revisando**) y una tarea pospuesta más de una vez (**No hace falta**, **Hazlo** o **Mantener**). No cambia nada hasta que toques.
 
 ## Cuándo y dónde
 

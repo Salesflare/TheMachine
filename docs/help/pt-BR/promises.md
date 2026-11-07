@@ -15,7 +15,7 @@ Em **Promessas**, na página Tarefas:
 - O que você disse que faria, e para quem: **Você prometeu**.
 - O que outras pessoas disseram que fariam: **Prometido a você**.
 
-Cada promessa em aberto tem **Feito** e **Descartar**. Uma promessa em aberto vira tarefa quando vence e aparece no dia dela no [Calendário](calendar.md). Uma que já é tarefa leva até ela, e **Feito** ou **Descartar** fecha essa tarefa também. Quando sua Machine vê que está feita, as duas fecham, com uma linha dizendo isso.
+Cada promessa em aberto tem **Marcar como feita** e **Descartar**. Uma promessa em aberto vira tarefa quando vence e aparece no dia dela no [Calendário](calendar.md). Uma que já é tarefa leva até ela, e **Marcar como feita** ou **Descartar** fecha essa tarefa também. Quando sua Machine vê que está feita, as duas fecham, com uma linha dizendo isso.
 
 Antes disso, sua Machine lê o que veio depois. Já cumprida, como com uma resposta sua ou uma reunião que tratou disso? Ela fecha como cumprida, sem tarefa.
 

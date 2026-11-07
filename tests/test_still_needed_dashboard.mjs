@@ -5,7 +5,7 @@ import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Still needed? on the dashboard (dashboard/todos-rows.js, still_needed.py): a to-do untouched for a week asks once
-// with Drop and Keep, on the to-do and in its chat. Drop is Not needed (with Undo), Keep posts recap_decide. One with
+// with Not needed and Keep, on the to-do and in its chat. Not needed is the to-do's own (with Undo), Keep posts recap_decide. One with
 // no answer for another week sits folded in Coming back later, under its own heading, and leaves the open lists. Made up.
 const dashboard=await dashboardPage();
 const day=864e5,at=n=>new Date(Date.now()-n*day).toISOString(),posts=[];
@@ -42,10 +42,10 @@ try{
   await page.goto('http://127.0.0.1:'+server.address().port);await page.locator('#task-'+ASK).waitFor();
   // The question on the to-do untouched for a week, and on no other
   const q=page.locator('#task-'+ASK+' .still-needed');
-  assert.match((await q.innerText()).replace(/\s+/g,' '),/^Still needed\? Untouched for 9 days Drop Keep$/);
+  assert.match((await q.innerText()).replace(/\s+/g,' '),/^Still needed\? Untouched for 9 days Not needed Keep$/);
   assert.equal(await page.locator('#task-'+FRESH+' .still-needed').count(),0);
   // Touched since it asked (opened, say): the question stays, without the untouched days
-  assert.match((await page.locator('#task-'+'e5'.repeat(8)+' .still-needed').innerText()).replace(/\s+/g,' '),/^Still needed\? Drop Keep$/);
+  assert.match((await page.locator('#task-'+'e5'.repeat(8)+' .still-needed').innerText()).replace(/\s+/g,' '),/^Still needed\? Not needed Keep$/);
   if(width<600){const box=await page.locator('#task-'+ASK).boundingBox(),qb=await q.boundingBox();assert.ok(qb.x+qb.width<=box.x+box.width+1,'it fits the to-do at phone width')}
   // No answer for another week: out of the open lists, folded in Coming back later under its own heading, still asking
   const open=await page.locator('#suggestions>article[id], #suggestions>.section-head~article[id]').evaluateAll(n=>n.map(x=>x.id));
@@ -60,7 +60,7 @@ try{
   await page.locator('#task-'+ASK+' [data-still="keep"]').click();await q.waitFor({state:'detached'});
   assert.deepEqual(sent('recap_decide').map(({decision_id,...p})=>p),[{action:'recap_decide',id:'sn_ask',choice:'keep'}]);
   await page.getByText('Kept',{exact:true}).waitFor();
-  // Drop: the dashboard's own Not needed, with its Undo
+  // Not needed: the dashboard's own Not needed, with its Undo
   await page.locator('#task-'+FOLD+' [data-still="drop"]').click();
   await page.waitForFunction(()=>document.querySelector('#toast')?.textContent.includes('Marked not needed'));
   assert.deepEqual(sent('decide').map(p=>[p.suggestion_id,p.choice,p.feedback]),[[FOLD,'reject','No longer needed']]);

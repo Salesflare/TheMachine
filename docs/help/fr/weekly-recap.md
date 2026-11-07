@@ -15,7 +15,7 @@ order: 1
 - Personnes et projets, comme qui ne donne plus de nouvelles.
 - Ce que j’ai remarqué : brouillons envoyés tels quels ou modifiés, tâches écartées en quelques minutes, tâches mises en attente plus d’une fois.
 - En coulisses : combien de signaux elle a vérifiés cette semaine, et combien attendent encore.
-- Des choix, chacun dans son propre message après le récapitulatif : une source très active sans résultat (**Ne plus vérifier** ou **Continuer à vérifier**) et une tâche mise en attente plus d’une fois (**Abandonner**, **Faire maintenant** ou **Garder**). Rien ne change tant que vous ne touchez pas.
+- Des choix, chacun dans son propre message après le récapitulatif : une source très active sans résultat (**Ne plus vérifier** ou **Continuer à vérifier**) et une tâche mise en attente plus d’une fois (**Pas nécessaire**, **Faire** ou **Garder**). Rien ne change tant que vous ne touchez pas.
 
 ## Quand et où
 

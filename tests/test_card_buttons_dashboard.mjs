@@ -5,7 +5,7 @@ import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
-// Card buttons: the next step, Snooze, on a decision Change how, on a ready draft Ask for changes (Mark done tops its …), and a quiet … with
+// Card buttons: the next step, Snooze, Ask for changes (on a decision and on a ready draft) (Mark done tops its …), and a quiet … with
 // Hand off…, Repeat… and Not needed last. A draft's button says it opens the preview ("Review and send to …"), and Not needed is
 // one compact choice that hides the card's buttons until it is confirmed or canceled.
 const dashboard=await dashboardPage();
@@ -39,20 +39,20 @@ try{
   await page.goto('http://127.0.0.1:'+server.address().port);await page.locator('#task-p1').waitFor();
   const shown=id=>page.locator(`#task-${id} .actions>:is(button,a.open,.more-actions):not([hidden])`).evaluateAll(n=>n.map(x=>x.tagName==='DETAILS'?'More':x.textContent.trim()));
   const menu=id=>page.locator(`#task-${id} .more-menu>button`).evaluateAll(n=>n.filter(x=>getComputedStyle(x).display!=='none').map(x=>x.textContent.trim()));  // Snooze waits there while it fits in the row
-  // A decision: Do it, Change how and Snooze; Hand off, Repeat and Not needed under …, never above the buttons
-  assert.deepEqual(await shown('p1'),['Do it','Change how','Snooze','More']);
+  // A decision: Do it, Ask for changes and Snooze; Hand off, Repeat and Not needed under …, never above the buttons
+  assert.deepEqual(await shown('p1'),['Do it','Ask for changes','Snooze','More']);
   assert.deepEqual(await menu('p1'),['Hand off','Repeat…','Not needed']);
   assert.equal(await page.getByText('Hand off to a teammate').count(),0);
   // A ready draft: the button says it opens the preview first
   assert.deepEqual(await shown('r1'),['Review and send to Noor','Ask for changes','Snooze','More']);
   assert.deepEqual(await menu('r1'),['Mark done','Hand off','Repeat…','Not needed']);  // with a draft, Mark done tops the …
-  // A step only the owner can do: Done leads, Plan it (the help around it) is under …; never Do it
-  assert.deepEqual(await shown('v1'),['Done','Snooze','More']);
+  // A step only the owner can do: Mark done leads, Plan it (the help around it) is under …; never Do it
+  assert.deepEqual(await shown('v1'),['Mark done','Snooze','More']);
   assert.deepEqual(await menu('v1'),['Plan it','Repeat…','Not needed']);
-  assert.equal(await page.locator('#task-v1 .actions>button.primary').innerText(),'Done');
+  assert.equal(await page.locator('#task-v1 .actions>button.primary').innerText(),'Mark done');
   assert.equal(await page.locator('#task-v1 [data-choice="complete"]').getAttribute('data-choice'),'complete');
   assert.ok(!(await shown('v2')).includes('Do it'));
-  assert.equal(await page.locator('#task-v2 .actions>button.primary').innerText(),'Done');
+  assert.equal(await page.locator('#task-v2 .actions>button.primary').innerText(),'Mark done');
   assert.ok(await page.locator('#task-v2 .more-menu>a.open').evaluate(a=>a.textContent.trim())==='Open in Maps ↗');
   // A personal card has no Hand off
   assert.ok(!(await menu('h1')).includes('Hand off'));

@@ -37,7 +37,7 @@ Os follow-ups de um quadro chegam como uma tarefa só, nunca uma por e-mail. Enq
 
 **Pular** desmarca um rascunho e o leva para o fim, marcado como Ignorada com **Desfazer**; ele só é pulado de vez quando você fecha a revisão. Um pulado volta com **Trazer de volta** nos follow-ups do projeto ou na tarefa em Feito, enquanto não houver um mais novo. O follow-up de um único projeto é uma tarefa normal.
 
-**Alterar…** reescreve todos os rascunhos marcados, ou só o atual, do jeito que você disser; nada é enviado e **Desfazer alteração** traz o texto antigo de volta. Enquanto a caixa de alteração está aberta ou uma reescrita está rodando, nada é enviado, e um rascunho que mudou aparece de novo antes de sair.
+**Pedir mudanças…** reescreve todos os rascunhos marcados, ou só o atual, do jeito que você disser; nada é enviado e **Desfazer alteração** traz o texto antigo de volta. Enquanto a caixa de alteração está aberta ou uma reescrita está rodando, nada é enviado, e um rascunho que mudou aparece de novo antes de sair.
 
 Quando vários saem em sequência, também com Enviar sem perguntar, cada caixa de e-mail envia um a cada 30 a 45 segundos, e a tarefa mostra o andamento: “Enviando 3 de 8…”. **Parar o envio** para o resto: o que já está saindo ainda vai, e os outros voltam como rascunhos para a revisão, para enviar depois (“Parado. Enviados: 1. 11 mantidos como rascunhos.”).
 
