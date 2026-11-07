@@ -135,7 +135,8 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   (`FirstLookApp`: the quick first review, the dig after it and its ending, with their timing constants),
   `App.meeting_notes` (the meeting_notes tool) into `MeetingWritesApp` (`machine/app/meeting_writes.py`),
   `machine/app/preparation.py` (`PreparationApp`: starting and checking a to-do's preparation run, its progress, peek
-  and worker, with the preparation prompt and its helpers).
+  and worker, with the preparation prompt and its helpers), `machine/app/review.py` (`ReviewApp`: the review step, its
+  queue, tick and worker, the live view and the preview on a new install, with their timing constants and step names).
 - **Dashboard code:** in its area's part in `dashboard/` (`<area>-<what>.js`: shell, todos, settings, graph, calendar,
   connections, help, events, new, fleet), next to the functions it works with, never at the end of the script. The
   page's core is in the `shell-*` parts too: locale and error reports (`shell-core.js`), network and outbox, `render()`
