@@ -2,8 +2,16 @@
 // clock (2:05 PM or 14:05). A Machine without a region keeps US dates and 24-hour times.
 let DL='en-US',H12=false;
 const applyLocale=l=>{if(!l)return;DL=l.date_locale||'en-US';H12=!!l.hour12;if(typeof i18nApply==='function')i18nApply(l)};
-const fmtHM=(v,o)=>new Date(v).toLocaleTimeString(H12?'en-US':'en-GB',{...(H12?{hour:'numeric',minute:'2-digit',hour12:true}:{hour:'2-digit',minute:'2-digit',hourCycle:'h23'}),...o});
-const fmtDHM=(v,d,o)=>new Date(v).toLocaleDateString(DL,{...d,...o})+', '+fmtHM(v,o);  // Sat, Oct 24, 14:05
+// toLocaleDateString and toLocaleTimeString make a new formatter on every call (a fraction of a millisecond each, and a
+// list stamps hundreds of times): localeDate and localeTime give the same text from one kept formatter per locale and
+// options, with the same defaults (a date with no date part shows year, month and day; a time hour, minute and second).
+const LOCALE_FMT=new Map(),LOCALE_DATE=['weekday','year','month','day'],LOCALE_TIME=['dayPeriod','hour','minute','second','fractionalSecondDigits'];
+function localeFmt(v,loc,o,time){const d=v instanceof Date?v:new Date(v);if(isNaN(d))return String(d);  /* the browser's own words for a date that isn't one */o=o||{};
+ if(!o.dateStyle&&!o.timeStyle&&!(time?LOCALE_TIME:LOCALE_DATE).some(k=>o[k]!==undefined))o={...o,...(time?{hour:'numeric',minute:'numeric',second:'numeric'}:{year:'numeric',month:'numeric',day:'numeric'})};
+ const key=(loc||'')+'|'+JSON.stringify(o);let f=LOCALE_FMT.get(key);if(!f){if(LOCALE_FMT.size>500)LOCALE_FMT.clear();f=new Intl.DateTimeFormat(loc,o);LOCALE_FMT.set(key,f)}return f.format(d)}
+const localeDate=(v,loc,o)=>localeFmt(v,loc,o,false),localeTime=(v,loc,o)=>localeFmt(v,loc,o,true);
+const fmtHM=(v,o)=>localeTime(v,H12?'en-US':'en-GB',{...(H12?{hour:'numeric',minute:'2-digit',hour12:true}:{hour:'2-digit',minute:'2-digit',hourCycle:'h23'}),...o});
+const fmtDHM=(v,d,o)=>localeDate(v,DL,{...d,...o})+', '+fmtHM(v,o);  // Sat, Oct 24, 14:05
 let snoozeId=null,snoozeDay=null,snoozeMonth=null,lastOk=0,refreshFailed=false;
 const localDay=d=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
 const csrf='__CSRF__',UI_VERSION='__UI_VERSION__';let state={};

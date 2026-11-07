@@ -106,10 +106,11 @@ document.addEventListener('click',async e=>{
 function renderModelUsage(){const now=Date.now()/1000,label=l=>['Week','168h','7d'].includes(l)?t('Weekly'):['Day','24h'].includes(l)?t('Daily'):/^\d+h$/.test(l)?t('{}-hour limit',parseInt(l)):l;
 renderModelPanel();renderChatModel();cmPaint('chat');renderLimitBanner();setHTML($('#model-usage'),html`${limitNote(state.model_status)}${(state.model_usage||[]).map(p=>html`${p.windows.filter(w=>!(w.reset<now)).map(w=>{const r=w.reset?new Date(w.reset*1000):null,when=r?t(', resets {}',(w.reset-now>86400?r.toLocaleDateString(DL,{weekday:'short'})+' ':'')+fmtHM(r)):'';
 return html`<div class="usage"><span>${t('{}: {}% used',p.name+' '+label(w.label),+w.used|0)}${when}</span><progress max="100" value="${+w.used|0}">${+w.used|0}%</progress></div>`})}`)}`)}
-const ago=v=>{if(!v)return t('Not yet');const s=(new Date(v)-Date.now())/1000,a=Math.abs(s),f=new Intl.RelativeTimeFormat(DL,{numeric:'auto'});for(const[u,n]of[['day',86400],['hour',3600],['minute',60]])if(a>=n)return f.format(Math.round(s/n),u);return a<45?t('just now'):f.format(Math.round(s/60),'minute')};
+const RELATIVE_FMT=new Map(),relativeFmt=loc=>{let f=RELATIVE_FMT.get(loc);if(!f)RELATIVE_FMT.set(loc,f=new Intl.RelativeTimeFormat(loc,{numeric:'auto'}));return f};  // one per locale, as localeFmt
+const ago=v=>{if(!v)return t('Not yet');const s=(new Date(v)-Date.now())/1000,a=Math.abs(s),f=relativeFmt(DL);for(const[u,n]of[['day',86400],['hour',3600],['minute',60]])if(a>=n)return f.format(Math.round(s/n),u);return a<45?t('just now'):f.format(Math.round(s/60),'minute')};
 const time=(v,plain)=>html`<time class="${plain?'':'mono '}muted" datetime="${v||''}" title="${date(v)}">${ago(v)}</time>`;
 const timeNode=(v,plain)=>make('time',{class:(plain?'':'mono ')+'muted',datetime:v||'',title:date(v)},ago(v));
-const calendarDate=v=>new Date(v+'T12:00:00').toLocaleDateString(DL,{month:'short',day:'numeric',year:'numeric'});
+const calendarDate=v=>localeDate(v+'T12:00:00',DL,{month:'short',day:'numeric',year:'numeric'});
 // A signal's time as people say it: Today 08:46, Yesterday 17:20, Wed, Oct 21 09:00 (the year only when it isn't this
 // one), no seconds; a meeting as a range, Tomorrow 10:46 to 11:46
 const humanDay=d=>{const t=new Date(),k=localDay(d),off=n=>{const x=new Date(t);x.setDate(t.getDate()+n);return localDay(x)};return k===off(0)?'Today':k===off(-1)?'Yesterday':k===off(1)?'Tomorrow':d.toLocaleDateString(DL,{weekday:'short',day:'numeric',month:'short',...(d.getFullYear()!==t.getFullYear()?{year:'numeric'}:{})})};
