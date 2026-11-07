@@ -273,7 +273,7 @@ OTHER_WRITERS = {
     'preparation_calls': {'retention.py'},
     'preparation_runs': {'assistant.py'},
     'preparations': {'follow_ups.py', 'preparation_state.py'},
-    'profile_runs': {'fleet_learnings.py', 'learning_loop.py', 'retention.py', 'team_learnings.py'},
+    'profile_runs': {'fleet_learnings.py', 'learning_loop.py', 'machine/app/fleet.py', 'retention.py', 'team_learnings.py'},
     'project_moves': {'crm_import.py', 'follow_ups.py'},
     'projects': {'crm.py', 'crm_import.py', 'follow_ups.py', 'machine/app/graph_actions.py', 'sandbox/load.py'},
     'promises': {'graph.py', 'sandbox/load.py'},
@@ -374,7 +374,7 @@ PY_LINE_BUDGET = 2_500
 PY_BYTE_BUDGET = 450 * 1024
 PY_RATCHET_SLACK = (500, 50_000)
 PY_OVER_BUDGET = {
-    'assistant.py': (10_400, 730_000),
+    'assistant.py': (9_800, 680_000),
     'fleet.py': (3_800, PY_BYTE_BUDGET),
     'graph.py': (5_400, PY_BYTE_BUDGET),
     'next_actions.py': (2_650, PY_BYTE_BUDGET),

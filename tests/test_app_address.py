@@ -67,7 +67,7 @@ class AppAddress(unittest.TestCase):
         with mock.patch.object(onboarding.portable, 'tailscale', return_value='tailscale'), \
                 mock.patch.object(onboarding, 'run', return_value=mock.Mock(stdout=json.dumps(status))):
             self.assertEqual(a.fleet_served({}), 'https://desk.tail1234.ts.net:8443/assistant/')
-        self.assertIn('self.fleet.served = fleet_served', Path(a.__file__).read_text())  # the app sets it
+        self.assertIn('self.fleet.served = fleet_served', Path(a.__file__).parent.joinpath('machine/app/fleet.py').read_text())  # the app sets it
 
 
 class ToldTheNetwork(unittest.TestCase):
@@ -106,7 +106,7 @@ class ToldTheNetwork(unittest.TestCase):
         self.fleet.set_meta('me_sent', None)  # what App.fleet_live does after pairing
         self.fleet.directory(refresh=True)
         self.assertEqual(len(self.relay.sent('/me')), 2)
-        self.assertIn("self.fleet.set_meta('me_sent', None)", Path(a.__file__).read_text())
+        self.assertIn("self.fleet.set_meta('me_sent', None)", Path(a.__file__).parent.joinpath('machine/app/fleet.py').read_text())
 
 
 if __name__ == '__main__':

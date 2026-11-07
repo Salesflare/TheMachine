@@ -75,7 +75,7 @@ class Watch(unittest.TestCase):
         self.assertFalse(f.connects_watch_lock.locked())
 
     def test_the_app_asks_for_the_watch_where_it_takes_connects(self):
-        source = Path(assistant.__file__).read_text()
+        source = Path(assistant.__file__).parent.joinpath('machine/app/fleet.py').read_text()
         self.assertIn('self.fleet.connect_delivered = self.fleet_connect_delivered', source)
         self.assertIn('self.fleet.watch_connects = True', source)
 
