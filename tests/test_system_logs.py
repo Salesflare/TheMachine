@@ -220,5 +220,137 @@ class ToDos(unittest.TestCase):
         self.assertEqual(s.doctor({'computer_logs': False}, scan_logs=lambda: self.fail('read while off')), [])
 
 
+class DoIt(unittest.TestCase):
+    """Do it runs one safe, known fix after the owner's OK: a failed unit of their own started again (never The
+    Machine's own units, never the OpenClaw Gateway) or Omarchy's bar brought back. Nothing runs by itself."""
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.store = a.Store(Path(tmp.name) / 'a.sqlite')
+        self.which = lambda name: '/usr/bin/' + name
+
+    def test_only_a_failed_unit_of_the_owners_own_and_the_bar_get_a_fix(self):
+        old = [result('backup.service', 120 + i) for i in range(3)]
+        [found] = detect(old, failed={'backup.service'})
+        self.assertEqual(found['fix'], 'restart_unit')
+        [found] = detect(old)  # running again now: nothing to start
+        self.assertNotIn('fix', found)
+        for unit in ('openclaw-gateway.service', 'personal-assistant.service', 'the-machine-update.service'):
+            [found] = detect([], failed={unit})
+            self.assertEqual(found['kind'], 'stays_failed')
+            self.assertNotIn('fix', found)
+            self.assertIsNone(s.fix_command({**found, 'fix': 'restart_unit'}, self.which))  # a to-do's metadata can't ask for it either
+        loop = [restart('sync.service', i) for i in range(6)]
+        self.assertNotIn('fix', detect(loop, failed={'sync.service'})[0])  # it restarts by itself: a restart fixes nothing
+        bar = detect([crash('/usr/bin/quickshell', 5, ''), crash('/usr/bin/Hyprland', 5, '')], on_omarchy=True)
+        self.assertEqual({f['name']: f.get('fix') for f in bar}, {'quickshell': 'restart_bar', 'Hyprland': None})
+
+    def test_the_to_do_says_what_do_it_runs_and_the_crash_in_plain_words(self):
+        finding = {'key': 'crashed:quickshell', 'kind': 'crashed', 'name': 'quickshell', 'program': 'quickshell', 'count': 2,
+                   'pid': '4242', 'signal': 'SIGSEGV', 'piece': 'bar', 'fix': 'restart_bar', 'last_at': NOW.isoformat()}
+        title, body, signal = s.card(finding, self.which)
+        self.assertIn('Do it runs omarchy-restart-shell and nothing else.', body)
+        self.assertIn('coredumpctl info 4242', body)
+        self.assertIn('Crashed (SIGSEGV)', signal)
+        self.assertNotIn('Signal:', signal)
+        _, body, _ = s.card(finding, which=lambda name: None)  # no Omarchy command here: no Do it, the command to run instead
+        self.assertNotIn('Do it runs', body)
+
+    def test_run_fix_runs_only_that_command_and_never_reads_its_output(self):
+        calls = []
+        def run(argv, **kw):
+            calls.append((argv, kw.get('stdout')))
+            return mock.Mock(returncode=0)
+        finding = {'kind': 'stays_failed', 'name': 'backup', 'unit': 'backup.service', 'fix': 'restart_unit'}
+        ok, text = s.run_fix(finding, run, self.which)
+        self.assertTrue(ok)
+        self.assertEqual(text, 'Ran systemctl --user restart backup.service. backup is running again.')
+        self.assertEqual([c[0] for c in calls], [['systemctl', '--user', 'restart', 'backup.service'],
+                                                ['systemctl', '--user', 'is-active', '--quiet', 'backup.service']])
+        self.assertTrue(all(out == s.subprocess.DEVNULL for _, out in calls))
+        stopped = lambda argv, **kw: mock.Mock(returncode=3 if 'is-active' in argv else 0)
+        ok, text = s.run_fix(finding, stopped, self.which)
+        self.assertFalse(ok)
+        self.assertIn('stopped again', text)
+        def missing(argv, **kw):
+            raise OSError
+        self.assertEqual(s.run_fix({'fix': 'restart_bar', 'name': 'quickshell'}, missing, self.which),
+                         (False, 'Couldn’t run omarchy-restart-shell on this computer.'))
+        calls.clear()
+        self.assertFalse(s.run_fix({**finding, 'unit': 'openclaw-gateway.service'}, run, self.which)[0])
+        self.assertEqual(calls, [])
+
+    def todo(self, fix='restart_unit'):
+        finding = {'key': 'stays_failed:backup', 'kind': 'stays_failed', 'name': 'backup', 'unit': 'backup.service', 'count': 1,
+                   'fix': fix, 'last_at': None}
+        with mock.patch('shutil.which', self.which):
+            self.store.system_log_cards(GATEWAY['id'], [finding])
+        with self.store.connect() as db:
+            return dict(db.execute('SELECT * FROM suggestions').fetchone())
+
+    def views(self, card):
+        with mock.patch('shutil.which', self.which), self.store.connect() as db:
+            self.store.machine_fix_views(db, [card])
+        return card
+
+    def job(self, sid):
+        with self.store.connect() as db:
+            db.execute("UPDATE preparations SET status='starting' WHERE suggestion_id=?", (sid,))
+            return dict(db.execute('SELECT * FROM preparations WHERE suggestion_id=?', (sid,)).fetchone())
+
+    def test_do_it_runs_the_fix_and_its_result_lands_in_the_to_do(self):
+        card = self.views(self.todo())
+        self.assertEqual(card['machine_fix'], 'systemctl --user restart backup.service')
+        labels = [b['label'] for block in a.controls(card)['blocks'] for b in block['buttons']]
+        self.assertEqual(labels[:3], ['Do it', 'Mark done', 'Snooze'])
+        self.store.decide(card['id'], 'accept', '', 'd1', 'dashboard')
+        with mock.patch('machine.system_logs.run_fix', return_value=(True, 'Ran systemctl --user restart backup.service. backup is running again.')) as run:
+            self.assertTrue(self.store.machine_fix(self.job(card['id'])))
+        self.assertEqual(run.call_args[0][0]['unit'], 'backup.service')
+        with self.store.connect() as db:
+            row = db.execute('SELECT status, body FROM suggestions WHERE id=?', (card['id'],)).fetchone()
+        self.assertEqual(row['status'], 'prepared')
+        self.assertIn('Do it runs systemctl --user restart backup.service', row['body'])  # the to-do keeps its text
+        self.assertNotIn('machine_fix', self.views(dict(self.store_card(card['id']))))  # done: Mark done and Snooze
+
+    def store_card(self, sid):
+        with self.store.connect() as db:
+            return db.execute('SELECT * FROM suggestions WHERE id=?', (sid,)).fetchone()
+
+    def test_a_fix_that_didnt_work_offers_do_it_again_and_a_chat_message_is_an_ai_turn(self):
+        card = self.views(self.todo())
+        self.store.decide(card['id'], 'accept', '', 'd1', 'dashboard')
+        with mock.patch('machine.system_logs.run_fix', return_value=(False, 'systemctl --user restart backup.service didn’t work (exit code 1).')):
+            self.store.machine_fix(self.job(card['id']))
+        self.assertIn('machine_fix', self.views(dict(self.store_card(card['id']))))
+        self.store.decide(card['id'], 'other', 'Why does it fail?', 'chat-1', 'dashboard')
+        with mock.patch('machine.system_logs.run_fix') as run:
+            self.assertFalse(self.store.machine_fix(self.job(card['id'])))
+        run.assert_not_called()
+
+    def test_its_chat_says_do_it_and_reads_no_ai_session(self):
+        card = self.views(self.todo())
+        self.store.decide(card['id'], 'accept', '', 'd1', 'dashboard')
+        with self.store.connect() as db:  # the worker admits it as any run (preparation_runs), then machine_fix takes it
+            job = self.job(card['id'])
+            db.execute("INSERT INTO preparation_runs(job_id,suggestion_id,session_job_id,status,started_at) VALUES(?,?,?,'starting',?)",
+                       (job['job_id'], card['id'], job['session_job_id'] or job['job_id'], NOW.isoformat()))
+        with mock.patch('machine.system_logs.run_fix', return_value=(True, 'Ran omarchy-restart-shell. The bar is back.')):
+            self.store.machine_fix(job)
+        app = object.__new__(a.App)
+        app.store, app.config = self.store, {'accounts': []}
+        with mock.patch.object(app, 'card_chat_gateway', side_effect=AssertionError('no AI session to read')):
+            chat = app.card_chat(card['id'])
+        self.assertNotIn('unavailable', chat)
+        texts = [i.get('text') for i in chat['items']]
+        self.assertIn('Do it', texts)
+        self.assertNotIn('Plan it', texts)
+        self.assertEqual(texts[-1], 'Ran omarchy-restart-shell. The bar is back.')  # how it went, after the tap
+
+    def test_without_a_safe_fix_no_do_it(self):
+        card = self.views(self.todo(fix=None))
+        self.assertNotIn('machine_fix', card)
+
+
 if __name__ == '__main__':
     unittest.main()

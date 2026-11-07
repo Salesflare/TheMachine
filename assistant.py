@@ -1369,22 +1369,6 @@ class Store(CardsStore, DecisionsStore, EventsStore, FactsStore, FirstLookStore,
             for row in rows:
                 db.execute('UPDATE faults SET reported=? WHERE fingerprint=? AND day=?', (row['count'], row['fingerprint'], row['day']))
 
-    def machine_card(self, account_id, kind, source_id, title, body, signal, metadata, digest=None, at=None):
-        """A to-do of The Machine's own (an update's note, a problem in the computer's logs) with its signal, once per
-        source_id: the signal is already read, so no review makes a second one. Whether it is new."""
-        stamp = now()
-        with self.connect() as db:
-            db.execute('BEGIN IMMEDIATE')
-            cursor = db.execute('INSERT OR IGNORE INTO events(account_id,source_id,kind,occurred_at,title,body,metadata,deleted,content_hash,'
-                                'version,analyzed_version,ingested_at) VALUES(?,?,?,?,?,?,?,0,?,1,1,?)',
-                                (account_id, source_id, kind, at or stamp, title, signal, json.dumps(metadata),
-                                 hashlib.sha256((digest or source_id).encode()).hexdigest(), stamp))
-            if not cursor.rowcount:
-                return False
-            card = self.suggest(source_id, title[:90], body[:699], [cursor.lastrowid], when='now', owner_step=True, _db=db)
-            db.execute("UPDATE suggestions SET origin='machine' WHERE id=?", (card['id'],))  # no thread to read, nothing to plan
-        return True
-
     AHEAD_BLOCKERS = ("FROM preparations p JOIN suggestions s ON s.id=p.suggestion_id WHERE p.status='cancelled' "
                       "AND trim(coalesce(p.reason,''))<>'' AND (s.status='pending' OR s.status='snoozed' AND s.resume_status='pending')")
 
@@ -5839,6 +5823,7 @@ class App(*APP_MIXINS):
     def preparation_run_step(self, job, runner):
         """One start or status check for one admitted preparation."""
         action='status' if job['status']=='running' else 'start'
+        if action=='start' and self.store.machine_fix(job):return  # Do it on a to-do from the computer's logs: its one fix
         request={'action':action,'job_id':job['job_id'],'session_job_id':job.get('session_job_id') or job['job_id']}
         if action=='status' and job.get('started_at'):
             # Old enough that it can't still be waiting in the queue: the runner also checks the run is still in its session.

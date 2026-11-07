@@ -89,6 +89,8 @@ class CardChatApp:
             job = db.execute('SELECT job_id,session_job_id,status FROM preparations WHERE suggestion_id=?', (suggestion_id,)).fetchone()
             owner, results = self.card_chat_service(db, suggestion_id)
             own = chat_model.card_choice(db, suggestion_id)  # this chat's own model and thinking level (chat_model.py)
+            kinds = {r[0] for r in db.execute('SELECT status FROM preparation_runs WHERE session_job_id=?', (job['session_job_id'] or job['job_id'],))} if job else set()
+            fix_only = kinds == {'machine_fix'}
         # The cursor also carries a digest of what the service itself adds (sends, taps, results): when that moved
         # ("Sending to Sam…" became "Sent to Sam"), the whole chat comes back even if the conversation didn't.
         digest = hashlib.sha256(json.dumps([owner, results], sort_keys=True, default=str).encode()).hexdigest()[:16]
@@ -97,7 +99,7 @@ class CardChatApp:
             gateway_cursor = None
         active = bool(job) and job['status'] in ('queued', 'starting', 'running')
         result = {'session': bool(job), 'active': active, 'status': job['status'] if job else None, 'model': own}
-        if not job:
+        if not job or fix_only:  # fix_only: Do it ran a computer-log fix (Store.machine_fix), no AI session to read
             return {**result, 'items': chat_items([], owner, results), 'cursor': None}
         found = self.card_chat_gateway({'session_key': 'agent:main:assistant-review-preparation-' + (job['session_job_id'] or job['job_id']),
                                         'cursor': gateway_cursor, 'limit': CHAT_HISTORY_LIMIT})
@@ -275,9 +277,10 @@ class CardChatApp:
         except (ValueError, TypeError):
             ids = []
         names, owner, kinds, metas = {}, [], {}, {}
-        card = db.execute('SELECT title,owner_step FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
+        card = db.execute('SELECT title,owner_step,origin FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
         own_files = chat_files.of_cards(db, [suggestion_id])
-        title, planned = (card['title'] or '', bool(card['owner_step'])) if card else ('', False)  # planned: only the owner can do its step
+        # planned: only the owner can do its step; one of The Machine's own (origin machine) has Do it, never Plan it
+        title, planned = (card['title'] or '', bool(card['owner_step']) and card['origin'] != 'machine') if card else ('', False)
         for r in db.execute('SELECT id,kind,metadata FROM events WHERE id IN (' + ','.join('?' * len(ids)) + ')', ids) if ids else []:
             m = json.loads(r['metadata'])
             kinds[r['id']], metas[r['id']] = r['kind'], m
@@ -437,6 +440,14 @@ class CardChatApp:
                 d['to'] = [chat_name(t, names, about) for t in d['to']]
             results.setdefault(r['job_id'], []).append({'kind': 'reply', 'text': text, 'drafts': drafts, 'files': files,
                                                        'at': chat_ms(r['started_at'])})
+        # Do it on a to-do from the computer's logs (Store.machine_fix): how each run of its fix went, as its reply
+        try:
+            ran = {x.get('job_id'): x.get('text') for x in json.loads(db.execute('SELECT outcome FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()[0] or '{}').get('fix_results', [])}
+        except (ValueError, TypeError, AttributeError):
+            ran = {}
+        for r in db.execute("SELECT job_id,finished_at FROM preparation_runs WHERE suggestion_id=? AND status='machine_fix'", (suggestion_id,)) if ran else []:
+            if ran.get(r['job_id']):
+                results[r['job_id']] = [{'kind': 'reply', 'text': str(ran[r['job_id']]), 'drafts': [], 'files': [], 'at': chat_ms(r['finished_at'])}]
         # The chat's Stop: what the run had said so far stays (unless it had saved a result), cut off with "…" and
         # marked Stopped on the reply itself (the dashboard's small note under it), also when it had said nothing yet
         # Stop in the Browser view says so as an event line; the reply shows only when the run had said something.

@@ -322,7 +322,7 @@ def sql_strings(found):
 # The Store moves out of assistant.py in parts (refactor PRs 13-18). Until it is whole in machine/store/, its parts
 # are one owner with assistant.py: a table the Store creates or writes from one of them is assistant.py's, as before.
 STORE_PARTS = {'machine/store/cards.py', 'machine/store/core.py', 'machine/store/decisions.py', 'machine/store/events.py',
-               'machine/store/facts.py', 'machine/store/first_look.py', 'machine/store/profile.py', 'machine/store/promises.py',
+               'machine/store/facts.py', 'machine/store/first_look.py', 'machine/store/machine_cards.py', 'machine/store/profile.py', 'machine/store/promises.py',
                'machine/store/review.py', 'machine/store/views.py', 'machine/store/voices.py'}
 
 

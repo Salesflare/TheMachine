@@ -54,6 +54,13 @@ RANK = ('out_of_memory', 'gave_up', 'crash_loop', 'repeated_failures', 'stays_fa
 # Omarchy's desktop pieces, by the crashed program's name
 TRANSIENT = re.compile(r'run-[\w-]+\.service$')  # one-off commands started with systemd-run (a restart later, a test)
 OMARCHY_PIECES = {'hyprland': 'hyprland', 'quickshell': 'bar', 'qs': 'bar', 'waybar': 'bar'}
+# Do it: the one safe, known fix a finding may offer, and only after the owner's OK. A failed unit of the owner's own is
+# started again, never The Machine's own units and never the OpenClaw Gateway; the bar is brought back with Omarchy's
+# own command. Nothing else ever runs from here.
+RESTARTABLE = ('gave_up', 'repeated_failures', 'stays_failed')
+PROTECTED = re.compile(r'(openclaw|personal-assistant|the-machine)', re.I)
+SAFE_UNIT = re.compile(r'[A-Za-z0-9][A-Za-z0-9_.@:-]{0,200}\.service')
+FIX_TIMEOUT = 60
 
 
 def run_quiet(args, timeout=TIMEOUT, env=None):
@@ -233,16 +240,20 @@ def detect(rows, failed=(), now=None, on_omarchy=False, config_errors=0, uid=Non
             kind = next(k for k in RANK if k in kinds)
             found[unit] = {'kind': kind, 'unit': unit, 'name': unit_name(unit), 'count': int(kinds[kind] or 1),
                            'last_at': max(entry['failures'] + entry['restarts']).isoformat()}
+            if kind in RESTARTABLE and unit in failed and restartable(unit):
+                found[unit]['fix'] = 'restart_unit'
     for unit in failed:  # failed before the window: it has stayed failed at least that long
         if unit not in units and not TRANSIENT.match(unit):
-            found[unit] = {'kind': 'stays_failed', 'unit': unit, 'name': unit_name(unit), 'count': 1, 'last_at': None}
+            found[unit] = {'kind': 'stays_failed', 'unit': unit, 'name': unit_name(unit), 'count': 1, 'last_at': None,
+                           **({'fix': 'restart_unit'} if restartable(unit) else {})}
     findings = [dict(f, key=f"{f['kind']}:{f['name']}") for f in found.values()]
     for exe, item in crashes.items():
         if not item['known'] and len(item['times']) < 2:  # no command line to tell a helper apart: two crashes or quiet
             continue
         piece = OMARCHY_PIECES.get(exe.lower()) if on_omarchy else None
         findings.append({'key': f'crashed:{exe}', 'kind': 'crashed', 'name': item['name'], 'program': exe, 'count': len(item['times']),
-                         'pid': item.get('pid'), 'signal': item['signal'], 'piece': piece, 'last_at': max(item['times']).isoformat()})
+                         'pid': item.get('pid'), 'signal': item['signal'], 'piece': piece, 'last_at': max(item['times']).isoformat(),
+                         **({'fix': 'restart_bar'} if piece == 'bar' else {})})
     if on_omarchy and config_errors:
         findings.append({'key': 'hyprland_config:hyprland', 'kind': 'hyprland_config', 'name': 'Hyprland', 'count': int(config_errors),
                          'piece': 'hyprland', 'last_at': now.isoformat()})
@@ -268,6 +279,52 @@ def scan(window=WINDOW, run=run_quiet, now=None, which=shutil.which):
 
 def _bar_command(which=shutil.which):
     return 'omarchy-restart-waybar' if which('omarchy-restart-waybar') and not which('omarchy-restart-shell') else 'omarchy-restart-shell'
+
+
+def restartable(unit):
+    """Whether Do it may start this unit again: an owner's own service, never The Machine's or the OpenClaw Gateway."""
+    return bool(SAFE_UNIT.fullmatch(str(unit or ''))) and not PROTECTED.search(str(unit))
+
+
+def fix_command(finding, which=shutil.which):
+    """The exact command Do it runs for a finding (or a to-do's metadata), checked again here: [argv] or None."""
+    if finding.get('fix') == 'restart_unit' and restartable(finding.get('unit')) and which('systemctl'):
+        return ['systemctl', '--user', 'restart', finding['unit']]
+    if finding.get('fix') == 'restart_bar' and which(_bar_command(which)):
+        return [_bar_command(which)]
+    return None
+
+
+def run_fix(finding, run=subprocess.run, which=shutil.which):
+    """Do it on a to-do from the computer's logs: runs only its exact fix_command, once, and says how it went in plain
+    words. (ok, text). Its output is never read: no log text reaches the to-do."""
+    argv = fix_command(finding, which)
+    if not argv:
+        return False, i18n.t('There is no safe fix to run for this here. To see why, ask in this to-do’s chat.')
+    shown = ' '.join(argv)
+    try:
+        code = run(argv, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=FIX_TIMEOUT,
+                   start_new_session=True).returncode
+    except subprocess.TimeoutExpired:
+        code = 'timeout'
+    except OSError:
+        code = None
+    if code == 0 and argv[0] == 'systemctl':
+        try:
+            active = run(['systemctl', '--user', 'is-active', '--quiet', finding['unit']], stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                         stderr=subprocess.DEVNULL, timeout=TIMEOUT).returncode == 0
+        except (OSError, subprocess.TimeoutExpired):
+            active = False
+        if active:
+            return True, i18n.t('Ran {}. {} is running again.', shown, finding['name'])
+        return False, i18n.t('Ran {}, but {} stopped again. To see why: journalctl --user -u {} -n 50', shown, finding['name'], finding['unit'])
+    if code == 0:
+        return True, i18n.t('Ran {}. The bar is back.', shown)
+    if code is None:
+        return False, i18n.t('Couldn’t run {} on this computer.', shown)
+    if code == 'timeout':
+        return False, i18n.t('{} didn’t finish within a minute.', shown)
+    return False, i18n.t('{} didn’t work (exit code {}).', shown, code)
 
 
 def explain(finding, which=shutil.which):
@@ -312,14 +369,28 @@ def explain(finding, which=shutil.which):
             i18n.t('To see where it crashed: coredumpctl info {}. If it keeps crashing after an update, report it to its makers.', pid))
 
 
+def see_why(finding, which=shutil.which):
+    """The command that shows why, for a to-do whose fix Do it runs."""
+    if finding.get('fix') == 'restart_bar':
+        return i18n.t('To see where it crashed: coredumpctl info {}', finding.get('pid') or '')
+    if finding['kind'] == 'stays_failed':
+        return i18n.t('To see why: systemctl --user status {}', finding['unit'])
+    return i18n.t('To see why: journalctl --user -u {} -n 50', finding['unit'])
+
+
 def card(finding, which=shutil.which):
-    """(title, body, signal) of the to-do for one finding. No log text: only names, counts and the commands to run."""
+    """(title, body, signal) of the to-do for one finding. No log text: only names, counts and the commands to run.
+    With a safe fix (fix_command), the to-do says what Do it runs; else what to run to see why."""
     title, cause, fix = explain(finding, which)
-    body = '\n\n'.join((cause, fix, i18n.t('Ask in this to-do’s chat and The Machine looks into it. Anything it changes on this computer waits for your OK.')))
+    argv = fix_command(finding, which)
+    if argv:
+        body = '\n\n'.join((cause, i18n.t('Do it runs {} and nothing else.', ' '.join(argv)), see_why(finding, which)))
+    else:
+        body = '\n\n'.join((cause, fix, i18n.t('Ask in this to-do’s chat and The Machine looks into it. Anything it changes on this computer waits for your OK.')))
     # what was seen is the signal, what it means and what to do is the to-do: the open to-do shows each once
     facts = [f'Unit: {finding["unit"]}'] if finding.get('unit') else []
     facts += [f'Program: {finding["program"]}'] if finding.get('program') else []
-    facts += [f'Signal: {finding["signal"]}'] if finding.get('signal') else []
+    facts += [i18n.t('Crashed ({})', finding['signal'])] if finding.get('signal') else []
     facts += [f"Seen: {finding['count']}× in the last {int(WINDOW.total_seconds() // 3600)} hours"]
     signal = i18n.t('Seen in this computer’s own logs.') + '\n\n' + '\n'.join(facts)
     return title[:90], body[:699], signal

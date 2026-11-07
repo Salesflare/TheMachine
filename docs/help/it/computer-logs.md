@@ -1,7 +1,7 @@
 ---
 title: Problemi sul tuo computer
 area: troubleshooting
-summary: La tua Machine legge i log del suo computer e ti segnala i problemi veri, con la causa e una soluzione. Legge e basta.
+summary: La tua Machine legge i log del suo computer e ti segnala i problemi veri, con la causa e una soluzione. Una soluzione parte solo quando tocchi Do it.
 covers: computer-logs
 code: machine/system_logs.py, machine/sources/gateway.py, onboarding.py
 keywords: logs, journal, journalctl, crash, coredump, systemd, Hyprland, Omarchy, bar
@@ -22,6 +22,8 @@ Un solo riavvio o una sola esecuzione fallita è normale e non dà avvisi.
 ## Cosa ricevi
 
 Un’attività che dice in parole semplici cosa è successo, perché conta e il comando che lo mostra o lo sistema. Chiedi nella sua chat e The Machine ci guarda. Tutto ciò che lei cambia aspetta il tuo OK, come con Do it.
+
+Quando c’è una correzione sicura, l’attività ha Do it. Riavvia un tuo servizio rimasto fermo e, su Omarchy, riporta la barra. Do it esegue solo quel comando, e il risultato compare nella chat dell’attività. Non tocca mai i servizi di The Machine né l’OpenClaw Gateway.
 
 Lo stesso problema porta al massimo un’attività ogni due settimane, e mai mentre la sua attività è ancora aperta. Al massimo due nuove al giorno.
 

@@ -1,7 +1,7 @@
 ---
 title: Problemas en tu equipo
 area: troubleshooting
-summary: Tu Machine lee los registros de su propio equipo y te avisa de los problemas reales, con la causa y una solución. Solo lee.
+summary: Tu Machine lee los registros de su propio equipo y te avisa de los problemas reales, con la causa y una solución. Una solución solo se ejecuta cuando tocas Do it.
 covers: computer-logs
 code: machine/system_logs.py, machine/sources/gateway.py, onboarding.py
 keywords: logs, journal, journalctl, crash, coredump, systemd, Hyprland, Omarchy, bar
@@ -22,6 +22,8 @@ Un solo reinicio o una sola ejecución fallida es normal y no avisa.
 ## Qué recibes
 
 Una tarea que dice con palabras simples qué pasó, por qué importa y el comando que lo muestra o lo arregla. Pregunta en su chat y The Machine lo revisa. Todo lo que ella cambie espera tu OK, como con Do it.
+
+Cuando hay un arreglo seguro, la tarea tiene Do it. Si uno de tus servicios sigue caído, lo vuelve a iniciar, y en Omarchy recupera la barra. Do it ejecuta solo ese comando, y el resultado aparece en el chat de la tarea. Nunca toca los servicios de The Machine ni el OpenClaw Gateway.
 
 Un mismo problema trae como mucho una tarea cada dos semanas, y nunca mientras su tarea siga abierta. Como mucho dos nuevas al día.
 

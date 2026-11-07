@@ -1,7 +1,7 @@
 ---
 title: Problems on your computer
 area: troubleshooting
-summary: Your Machine reads its computer's own logs and tells you about real problems, with the cause and a fix. It only reads.
+summary: Your Machine reads its computer's own logs and tells you about real problems, with the cause and a fix. A fix runs only when you tap Do it.
 covers: computer-logs
 code: machine/system_logs.py, machine/sources/gateway.py, onboarding.py
 keywords: logs, journal, journalctl, crash, coredump, systemd, Hyprland, Omarchy, bar
@@ -22,6 +22,8 @@ A single restart or a single failed run is normal and stays quiet.
 ## What you get
 
 A to-do that says what happened in plain words, why it matters and the command that shows or fixes it. Ask in its chat and The Machine looks into it. Anything it changes waits for your OK, as with Do it.
+
+When there is a safe fix, the to-do has Do it. For a service of yours that stays down it starts it again, and on Omarchy it brings the bar back. Do it runs only that command, and the result shows in the to-do's chat. It never touches The Machine's own services or the OpenClaw Gateway.
 
 The same problem brings at most one to-do every two weeks, and never while its to-do is still open. At most two new ones a day.
 

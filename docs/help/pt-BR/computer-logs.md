@@ -1,7 +1,7 @@
 ---
 title: Problemas no seu computador
 area: troubleshooting
-summary: Sua Machine lê os registros do próprio computador e avisa sobre problemas reais, com a causa e uma solução. Ela só lê.
+summary: Sua Machine lê os registros do próprio computador e avisa sobre problemas reais, com a causa e uma solução. Uma correção só roda quando você toca em Do it.
 covers: computer-logs
 code: machine/system_logs.py, machine/sources/gateway.py, onboarding.py
 keywords: logs, journal, journalctl, crash, coredump, systemd, Hyprland, Omarchy, bar
@@ -22,6 +22,8 @@ Um único reinício ou uma única execução com falha é normal e não gera avi
 ## O que você recebe
 
 Uma tarefa que diz em palavras simples o que aconteceu, por que importa e o comando que mostra ou corrige. Pergunte no chat dela e The Machine verifica. Tudo o que ela mudar espera o seu OK, como no Do it.
+
+Quando há uma correção segura, a tarefa tem Do it. Um serviço seu que continua parado é iniciado de novo, e no Omarchy a barra volta. O Do it executa só esse comando, e o resultado aparece no chat da tarefa. Ele nunca mexe nos serviços da própria The Machine nem no OpenClaw Gateway.
 
 O mesmo problema gera no máximo uma tarefa a cada duas semanas, e nunca enquanto a tarefa dele ainda estiver aberta. No máximo duas novas por dia.
 

@@ -1,7 +1,7 @@
 ---
 title: Problemen op je computer
 area: troubleshooting
-summary: Je Machine leest de eigen logs van zijn computer en meldt echte problemen, met de oorzaak en een oplossing. Hij leest alleen.
+summary: Je Machine leest de eigen logs van zijn computer en meldt echte problemen, met de oorzaak en een oplossing. Een oplossing draait alleen als je op Do it tikt.
 covers: computer-logs
 code: machine/system_logs.py, machine/sources/gateway.py, onboarding.py
 keywords: logs, journal, journalctl, crash, coredump, systemd, Hyprland, Omarchy, bar
@@ -22,6 +22,8 @@ Een enkele herstart of een enkele mislukte run is normaal en blijft stil.
 ## Wat je krijgt
 
 Een to-do die in gewone woorden zegt wat er gebeurde, waarom het telt en welk commando het toont of oplost. Vraag het in de chat ervan en The Machine zoekt het uit. Alles wat hij verandert, wacht op je OK, zoals bij Do it.
+
+Is er een veilige oplossing, dan heeft de to-do Do it. Een dienst van jou die uit blijft, start het opnieuw, en op Omarchy brengt het de balk terug. Do it voert alleen dat commando uit, en het resultaat staat in de chat van de to-do. Het komt nooit aan de diensten van The Machine zelf of de OpenClaw Gateway.
 
 Hetzelfde probleem geeft hooguit één to-do per twee weken, en nooit zolang die to-do nog openstaat. Hooguit twee nieuwe per dag.
 

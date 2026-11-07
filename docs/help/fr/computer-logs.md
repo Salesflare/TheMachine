@@ -1,7 +1,7 @@
 ---
 title: Problèmes sur votre ordinateur
 area: troubleshooting
-summary: Votre Machine lit les journaux de son ordinateur et vous signale les vrais problèmes, avec la cause et une solution. Elle ne fait que lire.
+summary: Votre Machine lit les journaux de son ordinateur et vous signale les vrais problèmes, avec la cause et une solution. Une solution ne s’exécute que si vous touchez Do it.
 covers: computer-logs
 code: machine/system_logs.py, machine/sources/gateway.py, onboarding.py
 keywords: logs, journal, journalctl, crash, coredump, systemd, Hyprland, Omarchy, bar
@@ -22,6 +22,8 @@ Un seul redémarrage ou une seule exécution ratée, c’est normal : rien ne s�
 ## Ce que vous recevez
 
 Une tâche qui dit en mots simples ce qui s’est passé, pourquoi c’est important et la commande qui le montre ou le répare. Demandez dans son chat et The Machine s’en occupe. Tout ce qu’elle modifie attend votre accord, comme avec Do it.
+
+Quand il existe un correctif sûr, la tâche propose Do it. Un de vos services resté arrêté est relancé, et sur Omarchy la barre revient. Do it lance seulement cette commande, et le résultat s’affiche dans le chat de la tâche. Il ne touche jamais aux services de The Machine ni à l’OpenClaw Gateway.
 
 Un même problème donne au plus une tâche toutes les deux semaines, et jamais tant que sa tâche est ouverte. Au plus deux nouvelles par jour.
 
