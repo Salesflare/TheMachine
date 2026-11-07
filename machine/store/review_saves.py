@@ -10,12 +10,22 @@ from timeutil import now
 # A failed save older than this no longer holds its messages back: the review that hit it is long over.
 FAILED_HOURS = 6
 
+# After this many failed saves a message is reviewed like any other: a save that keeps failing doesn't come back forever.
+# Held-back messages don't count as the review's own deferrals, so they are never set aside (SET_ASIDE_AFTER) for it.
+MAX_TRIES = 3
+
 # How suggest's "read what came after the evidence first" starts (assistant.py): a step of the review, not a failed save.
 GUIDANCE = 'Something happened after this to-do'
 
 
 def ensure(db):
-    db.execute('CREATE TABLE IF NOT EXISTS review_save_failures(event_id INTEGER PRIMARY KEY, failed_at TEXT NOT NULL, error TEXT NOT NULL)')
+    db.execute('CREATE TABLE IF NOT EXISTS review_save_failures(event_id INTEGER PRIMARY KEY, failed_at TEXT NOT NULL, error TEXT NOT NULL, '
+               'tries INTEGER NOT NULL DEFAULT 1, held_at TEXT)')
+    columns = {r[1] for r in db.execute('PRAGMA table_info(review_save_failures)')}
+    if 'tries' not in columns:
+        db.execute('ALTER TABLE review_save_failures ADD COLUMN tries INTEGER NOT NULL DEFAULT 1')
+    if 'held_at' not in columns:
+        db.execute('ALTER TABLE review_save_failures ADD COLUMN held_at TEXT')
 
 
 def slug(text, words=6):
@@ -60,7 +70,8 @@ def failed(db, event_ids, error):
     ids = [i for i in event_ids if isinstance(i, int) and not isinstance(i, bool)] if isinstance(event_ids, list) else []
     if ids:
         ensure(db)
-        db.executemany('INSERT OR REPLACE INTO review_save_failures(event_id,failed_at,error) VALUES(?,?,?)',
+        db.executemany('INSERT INTO review_save_failures(event_id,failed_at,error) VALUES(?,?,?) ON CONFLICT(event_id) DO UPDATE SET '
+                       'failed_at=excluded.failed_at,error=excluded.error,tries=tries+1',
                        [(i, now(), str(error)[:200]) for i in ids])
 
 
@@ -70,10 +81,13 @@ def saved(db, event_ids):
 
 
 def take(db, event_ids, since):
-    """{event_id} of these whose last save failed since then; their records go, so each failure holds them back once."""
+    """{event_id} of these whose last save failed since then and not held back for that failure yet: each failure holds
+    them back once, up to MAX_TRIES failures. The records stay (with their tries) until a save goes through."""
     ensure(db)
+    if not event_ids:
+        return set()
     marks = ','.join('?' * len(event_ids))
-    held = {r[0] for r in db.execute(f'SELECT event_id FROM review_save_failures WHERE event_id IN ({marks}) AND failed_at>=?', (*event_ids, since))} if event_ids else set()
-    if event_ids:
-        db.execute(f'DELETE FROM review_save_failures WHERE event_id IN ({marks})', event_ids)
+    held = {r[0] for r in db.execute(f"SELECT event_id FROM review_save_failures WHERE event_id IN ({marks}) AND failed_at>=? "
+                                     "AND failed_at>coalesce(held_at,'') AND tries<=?", (*event_ids, since, MAX_TRIES))}
+    db.execute(f'UPDATE review_save_failures SET held_at=? WHERE event_id IN ({marks})', (now(), *event_ids))
     return held

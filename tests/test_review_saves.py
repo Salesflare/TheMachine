@@ -10,6 +10,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 from seams import patch_everywhere  # noqa: E402
+from machine.store import review_saves  # noqa: E402
 
 spec = importlib.util.spec_from_file_location('review_saves_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
@@ -64,12 +65,39 @@ class ReviewSaves(unittest.TestCase):
                 self.suggest()
         done = self.store.finish_analysis(claim['analysis_id'], 'One to-do')
         self.assertEqual(done['not_saved'], [1])
-        self.assertEqual(tuple(self.row('SELECT analyzed_version, deferrals FROM events WHERE id=1')), (0, 1))  # back next time
+        self.assertEqual(tuple(self.row('SELECT analyzed_version, deferrals FROM events WHERE id=1')), (0, 0))  # back next time
         self.assertEqual(self.row('SELECT analyzed_version FROM events WHERE id=2')[0], 1)
         claim = self.store.begin_analysis(['work'], 40)  # the next review gets it, saves it, and it is reviewed
         self.assertEqual([e['id'] for e in claim['events']], [1])
         self.assertTrue(self.suggest()['id'])
         self.assertNotIn('not_saved', self.store.finish_analysis(claim['analysis_id'], 'One to-do'))
+        self.assertEqual(self.row('SELECT analyzed_version FROM events WHERE id=1')[0], 1)
+
+    def test_failed_saves_never_set_a_message_aside(self):
+        # A test review's saves failed twice for the same messages; each failure counted as a deferral, so after two
+        # (SET_ASIDE_AFTER) they were set aside: never reviewed again and no to-do. Now a failed save holds a message back
+        # without a deferral, up to MAX_TRIES failures, after which it is reviewed like any other.
+        for n in range(review_saves.MAX_TRIES + 1):
+            claim = self.store.begin_analysis(['work'], 40)
+            self.assertIn(1, [e['id'] for e in claim['events']], f'review {n + 1}')
+            with patch.object(self.store, 'suggest', side_effect=sqlite3.OperationalError('database is locked')):
+                with self.assertRaises(ValueError):
+                    self.suggest()
+            done = self.store.finish_analysis(claim['analysis_id'], 'No to-do saved')
+            if n < review_saves.MAX_TRIES:
+                self.assertEqual(done['not_saved'], [1])
+                self.assertEqual(tuple(self.row('SELECT analyzed_version, deferrals FROM events WHERE id=1')), (0, 0))
+        self.assertNotIn('not_saved', done)
+        self.assertEqual(self.row('SELECT analyzed_version FROM events WHERE id=1')[0], 1)
+
+    def test_a_failure_holds_back_once(self):
+        claim = self.store.begin_analysis(['work'], 40)
+        with patch.object(self.store, 'suggest', side_effect=sqlite3.OperationalError('database is locked')):
+            with self.assertRaises(ValueError):
+                self.suggest()
+        self.assertEqual(self.store.finish_analysis(claim['analysis_id'], 'x')['not_saved'], [1])
+        claim = self.store.begin_analysis(['work'], 40)  # this review decides on no to-do: reviewed, not held again
+        self.assertNotIn('not_saved', self.store.finish_analysis(claim['analysis_id'], 'Nothing to do'))
         self.assertEqual(self.row('SELECT analyzed_version FROM events WHERE id=1')[0], 1)
 
     def test_read_what_came_after_first_is_a_step_not_a_failed_save(self):
