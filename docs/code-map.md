@@ -118,7 +118,8 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   `ProfileStore` and `FirstLookStore` mixins), `machine/web/serving.py` (the dashboard page, hosts, CSRF, compression,
   ETags, status) and `machine/web/waiting.py` (`KeyWaitingPage`, `message_key_keeper`), `machine/web/handler.py`
   (`make_handler(app)`: the dashboard's HTTP `Handler`, out of `App.serve`), `machine/app/talk.py` (`TalkApp`: Talk's
-  view, actions, tools, drafts and sends).
+  view, actions, tools, drafts and sends), `machine/app/fleet.py` (`FleetApp`: attaching the Fleet, its pings,
+  notices, votes, shared learnings and connectors).
 - **Dashboard code:** in its area's part in `dashboard/` (`<area>-<what>.js`: shell, todos, settings, graph, calendar,
   connections, help, events, new, fleet), next to the functions it works with, never at the end of the script. The
   page's core is in the `shell-*` parts too: locale and error reports (`shell-core.js`), network and outbox, `render()`
