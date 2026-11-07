@@ -3,7 +3,7 @@ title: Riepilogo settimanale
 area: weekly
 summary: Una volta a settimana, com'è andata la tua Machine: attività, promesse, persone e progetti, e cosa ha notato. Disattivato di default.
 covers: weekly-recap
-code: assistant.py, config.example.json
+code: assistant.py, machine/app/recap_settings.py, config.example.json
 order: 1
 ---
 ## Cosa contiene

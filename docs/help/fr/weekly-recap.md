@@ -3,7 +3,7 @@ title: Récap de la semaine
 area: weekly
 summary: Une fois par semaine, le bilan de votre Machine : tâches, promesses, personnes et projets, et ce qu’elle a remarqué. Désactivé par défaut.
 covers: weekly-recap
-code: assistant.py, config.example.json
+code: assistant.py, machine/app/recap_settings.py, config.example.json
 order: 1
 ---
 ## Ce qu’il contient

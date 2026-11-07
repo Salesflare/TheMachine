@@ -3,7 +3,7 @@ title: Resumo semanal
 area: weekly
 summary: Uma vez por semana, como sua Machine se saiu: tarefas, promessas, pessoas e projetos, e o que ela notou. Desativado por padrão.
 covers: weekly-recap
-code: assistant.py, config.example.json
+code: assistant.py, machine/app/recap_settings.py, config.example.json
 order: 1
 ---
 ## O que vem nele

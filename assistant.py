@@ -184,6 +184,7 @@ from machine.sources.slack import (
 from machine.app.knowledge_export import KnowledgeExportApp
 from machine.app.meeting_writes import MeetingWritesApp
 from machine.app.model_pacing import ModelPacingApp
+from machine.app.recap_settings import RecapSettingsApp
 from machine.app.signatures import SignaturesApp
 from machine.app.summaries import SummariesApp
 from machine.app.voice import VoiceApp
@@ -2576,6 +2577,7 @@ APP_MIXINS = (SupportApp, CalendarApp, SkillsApp, AgentsApp, GBrainApp, SharedGr
 APP_MIXINS += (FollowUpsApp, GraphActionsApp, KnowledgeExportApp, MeetingWritesApp, ModelPacingApp, PromiseChecksApp, SignaturesApp, SummariesApp,
                VoiceApp)
 APP_MIXINS += (CardChatApp, ExportApp, FleetApp, RecapApp, TalkApp)
+APP_MIXINS += (RecapSettingsApp,)
 
 
 class App(*APP_MIXINS):
@@ -4852,7 +4854,8 @@ class App(*APP_MIXINS):
         return {'prefs': prefs, 'telegram': telegram_on(self.config), 'email': mail_ready(self.config),
                 'push_devices': devices + len(phones), 'app_devices': phones,
                 'app_push_ready': bool(cloud_target(self.config)), 'phone_app': phone_app(self.config),
-                'push_ready': bool(self.config.get('dashboard_host')), 'digest_at': self.config.get('digest_at', '08:30')}
+                'push_ready': bool(self.config.get('dashboard_host')), 'digest_at': self.config.get('digest_at', '08:30'),
+                'weekly_recap': self.recap_switch_view()}
 
     def digest(self, current=None):
         """The morning digest as of `current` (notify.compose), or None when there is nothing to say."""
