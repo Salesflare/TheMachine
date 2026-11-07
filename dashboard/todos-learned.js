@@ -73,7 +73,9 @@ const pagerSlot=(key,empty='',rows='')=>html`<div class="pager" data-pager="${ke
 const pagerFoot=p=>p.busy?html`<p class="pager-loading" role="status">Loading…</p>`:p.failed?html`<button type="button" class="quiet more-rows" data-pager-more>Couldn’t load. Try again</button>`:p.next!=null?html`<button type="button" class="quiet more-rows" data-pager-more>Show more</button>`:html``;
 function pagerFootPaint(el,p){const empty=!p.items.length&&p.next==null&&!p.busy&&!p.failed;setHTML(el.querySelector('.pager-foot'),empty&&el.dataset.empty?html`<p class="muted pager-empty">${el.dataset.empty}</p>`:pagerFoot(p))}
 function pagerMount(root=document){for(const el of root.querySelectorAll('[data-pager]')){const p=pagers.get(el.dataset.pager);if(!p)continue;
- if(!el.firstChild){if(p.rows)p.html=p.rows(p.items);setHTML(el,html`<div class="pager-rows ${el.dataset.rows||''}">${p.html}</div><div class="pager-foot"></div>`);pagerSeen.observe(el.querySelector('.pager-foot'));detailsSync(el)}pagerFootPaint(el,p)}}
+ // a slot a redraw kept (drawKept) keeps its rows, redrawn as they change; a new pager under the same key fills it anew
+ if(el.firstChild&&el._pager===p){if(p.rows){const h=p.rows(p.items),rows=el.querySelector('.pager-rows');if(String(h)!==String(p.html)){p.html=h;if(rows)drawKept(rows,h)}}}
+ else{el._pager=p;if(p.rows)p.html=p.rows(p.items);setHTML(el,html`<div class="pager-rows ${el.dataset.rows||''}">${p.html}</div><div class="pager-foot"></div>`);pagerSeen.observe(el.querySelector('.pager-foot'));detailsSync(el)}pagerFootPaint(el,p)}}
 const pagerNear=el=>{const f=el.querySelector('.pager-foot');if(!f||!el.offsetParent)return false;const r=f.getBoundingClientRect(),box=el.closest('.side-cards,.chat-side');return r.top<innerHeight+600&&r.bottom>-600&&!box};
 function pagerMore(key){const p=pagers.get(key);if(!p||p.next==null&&!p.busy)return Promise.resolve();if(p.busy)return p.pending;return p.pending=pagerLoad(key,p)}
 async function pagerLoad(key,p,paint=true){p.busy=true;p.failed=false;const els=()=>paint?[...document.querySelectorAll('[data-pager]')].filter(e=>e.dataset.pager===key):[];
