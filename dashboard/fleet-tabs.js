@@ -25,10 +25,13 @@ function showFleetPane(id){const view=$('#fleet-view');if(!view.querySelector(`[
 const fleetReveal=el=>{const p=el?.closest('.fleet-pane');if(p&&p.hidden)showFleetPane(p.dataset.pane)};
 // #fleet=<question> from a phone notification or Telegram: the Fleet tab at that question; &choice= asks to confirm it.
 // #fleet-brief=<fleet> (the brief's notification; without a Fleet, a phone's older wakeup): the Fleet tab at that team brief, in its pane
-function openFleetLink(){const brief=/^#fleet-brief(?:=(fl_[0-9a-f]{16}))?$/.exec(location.hash),m=brief?[]:/^#fleet(?:=((?:q|fn)_[a-f0-9]{16})(?:&choice=(once|decline))?)?$/.exec(location.hash),card=/^q_/.test(m?.[1]||'');
+// #fleet and #fleet/<pane> (#fleet/sharing, #fleet/activity) are links to the tab: they stay in the address, as #todos does.
+function openFleetLink(){const brief=/^#fleet-brief(?:=(fl_[0-9a-f]{16}))?$/.exec(location.hash),sub=/^#fleet\/([a-z0-9_-]{1,40})$/.exec(location.hash),m=brief||sub?[]:/^#fleet(?:=((?:q|fn)_[a-f0-9]{16})(?:&choice=(once|decline))?)?$/.exec(location.hash),card=/^q_/.test(m?.[1]||''),tab=sub||m&&!brief&&!m[1];
  // before the status comes (a tapped notification on a slow start): the Fleet tab at once, its own data fills it; a question's card waits for its to-dos
- if(!m||(card||state.suggestions)&&!state.fleet?.on)return;history.replaceState(null,'',location.pathname+location.search);document.querySelector(`nav [data-tab="${card?'inbox':'fleet'}"]`).click();
- (card?fleetSync(true):fleetShown).then(()=>{const c=brief?brief[1]&&document.getElementById('fleet-brief-'+brief[1])||$('#fleet-view .fleet-brief'):m[1]&&document.getElementById('fleet-'+m[1]);if(!c)return;fleetReveal(c);c.scrollIntoView({block:'center',behavior:'smooth'});c.classList.remove('flash');void c.offsetWidth;c.classList.add('flash');
+ if(!m||(card||state.suggestions)&&!state.fleet?.on)return;
+ if(!tab)history.replaceState(null,'',location.pathname+location.search);else if(!$('#fleet').hidden&&(!sub||sub[1]===fleetPane))return;  // on screen already: a refresh leaves it be
+ if(card||$('#fleet').hidden)document.querySelector(`nav [data-tab="${card?'inbox':'fleet'}"]`).click();
+ (card?fleetSync(true):fleetShown).then(()=>{if(sub){showFleetPane(sub[1]);return}const c=brief?brief[1]&&document.getElementById('fleet-brief-'+brief[1])||$('#fleet-view .fleet-brief'):m[1]&&document.getElementById('fleet-'+m[1]);if(!c)return;fleetReveal(c);c.scrollIntoView({block:'center',behavior:'smooth'});c.classList.remove('flash');void c.offsetWidth;c.classList.add('flash');
   const w=m[2]&&fleetData?.waiting.find(x=>x.id===m[1]);if(w&&confirm(`${m[2]==='once'?'Share once':'Decline'}? ${w.name} asks: ${w.question}`))c.querySelector(`[data-choice-f="${m[2]}"]`)?.click()})}
 async function fleetView(refresh=false,cached=false){const view=$('#fleet-view'),before=fleetSig(),version=++fleetViewVersion;if(!cached||!fleetData)try{const next=await request('api/fleet'+(refresh?'?refresh=1':''));if(version!==fleetViewVersion)return;fleetData=next;fleetAt=Date.now();if(state?.suggestions&&fleetSig()!==before)render()}catch(e){errCaught(e);if(version===fleetViewVersion){view._fleetHTML=null;setHTML(view,html`<p class="error">${e.message}</p>`)}return}
  const f=fleetData;if(!f.on){view._fleetHTML=null;setHTML(view,html`<p class="muted">This Machine is not in a Fleet. Pair it with your account to join your team's. <a href="${HELP}fleet" target="_blank" rel="noopener">Learn more</a></p>`);return}
@@ -158,7 +161,7 @@ fleetOn('click',async e=>{const b=e.target.closest('[data-fleet-send]');if(!b)re
  try{await fleetPost('fleet_decide',{id:b.dataset.fleetSend,choice:'once',text});toast('Sent.');await fleetView();await refresh()}catch(err){errCaught(err);b.disabled=false;toast(err.message,true)}});
 fleetOn('submit',async e=>{if(!e.target.classList.contains('fleet-ask-form'))return;e.preventDefault();const about=e.target.elements.about.value.trim();if(!about)return;
  try{await fleetPost('fleet_ask',{kind:'relationships',question:{about},fleet:e.target.dataset.fleet});e.target.reset();toast(/^fr_/.test(e.target.dataset.fleet||'')?'Asked your friends.':'Asked your Fleet.');await fleetView()}catch(err){errCaught(err);toast(err.message,true)}});
-$('#fleet-view').addEventListener('click',e=>{const pane=e.target.closest('[data-fleet-pane]');if(pane){showFleetPane(pane.dataset.fleetPane);return}if(e.target.closest('[data-tab-go]'))document.querySelector('nav [data-tab="inbox"]').click()});
+$('#fleet-view').addEventListener('click',e=>{const pane=e.target.closest('[data-fleet-pane]');if(pane){showFleetPane(pane.dataset.fleetPane);if(/^#fleet(\/|$)/.test(location.hash))history.replaceState(null,'',location.pathname+location.search+'#fleet/'+fleetPane);return}if(e.target.closest('[data-tab-go]'))document.querySelector('nav [data-tab="inbox"]').click()});
 fleetOn('click',async e=>{const b=e.target.closest('[data-fleet-notice]');if(!b)return;b.disabled=true;
  try{const r=await fleetPost('fleet_notice_decide',{id:b.dataset.fleetNotice,choice:b.dataset.choiceN,key:b.dataset.key});
   const fr=/^friend/.test(fleetData?.notices?.find(n=>n.id===b.dataset.fleetNotice)?.kind||'');
