@@ -91,7 +91,7 @@ button.node:hover{text-decoration:underline;background:none}
 .tap:hover,.tap:focus-visible{border-color:var(--border-strong)}
 /* A promise's page: the person page's layout, with its state, quiet actions and a short history */
 .promise-state{margin:6px 0 2px}.promise-actions{display:flex;flex-wrap:wrap;gap:0 2px;margin:8px 0 4px -10px}.promise-actions .ghost{padding-left:10px;padding-right:10px;margin:0}.promise-due-form{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:6px 0}
-.promise-about p{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;margin:4px 0}.promise-card a,.promise-link{color:inherit;text-decoration:underline;text-decoration-color:var(--c-line-strong);text-underline-offset:2px;overflow-wrap:anywhere}
+.promise-about p{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;margin:4px 0}.promise-card a,.promise-link,.promise-todo{color:inherit;text-decoration:underline;text-decoration-color:var(--c-line-strong);text-underline-offset:2px;overflow-wrap:anywhere}
 .promise-history{list-style:none;margin:0;padding:0}.promise-history li{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-top:1px solid var(--border);font-size:var(--fs-sm)}.promise-history li:first-child{border-top:0}
 .promise-history time{flex:none;color:var(--faint);font-variant-numeric:tabular-nums}.promise-page h3{overflow-wrap:anywhere}
 @media (min-width:700px){.person-page.promise-page>:not(.name-row){margin-left:0}}

@@ -5,6 +5,7 @@ import datetime as dt
 import json
 import re
 import sqlite3
+import uuid
 
 import follow_ups
 import graph
@@ -42,10 +43,50 @@ def promise_logged(db, promise_id, kind, detail=None):
 
 
 def promise_state(row):
-    """open, card (its card is out), kept, dropped or answered; a card closes the promise with it."""
+    """open, card (its card is out), kept, dropped or answered; a card closes the promise with it. A promise whose
+    to-do is gone reads open again, so it never says "a to-do now" without one to open."""
     if row['status'] == 'carded':
-        return {'completed': 'kept', 'rejected': 'dropped'}.get(row.get('card_status'), 'card')
+        if not row.get('card_status'):
+            return 'open'
+        return {'completed': 'kept', 'rejected': 'dropped'}.get(row['card_status'], 'card')
     return row['status']
+
+
+def promise_card(db, suggestion_id):
+    """A promise's to-do as it stands now: the one the owner merged it into (merge_answer keeps its key there), else its
+    own; None when there is none any more."""
+    pick = 'SELECT id,status,dedupe_key,handled_hint,outcome,title FROM suggestions '
+    card = db.execute(pick + 'WHERE id=?', (suggestion_id,)).fetchone() if suggestion_id else None
+    seen = set()
+    while card and card['status'] == 'rejected' and card['id'] not in seen:
+        seen.add(card['id'])
+        if not db.execute("SELECT 1 FROM decisions WHERE suggestion_id=? AND choice='merge'", (card['id'],)).fetchone():
+            break
+        into = db.execute(pick + 'WHERE id=(SELECT suggestion_id FROM suggestion_keys WHERE dedupe_key=? AND suggestion_id!=? ORDER BY created_at DESC LIMIT 1)',
+                          (card['dedupe_key'], card['id'])).fetchone()
+        if not into:
+            break
+        card = into
+    return dict(card) if card else None
+
+
+def card_looks_done(card):
+    """The Machine's word that a promise's open to-do is done (a later message showed it, or its run found it done):
+    its reason, else None."""
+    if not card or card['status'] in ('completed', 'rejected', 'snoozed'):
+        return None
+    try:
+        hint = json.loads(card['handled_hint'] or 'null')
+    except (TypeError, ValueError):
+        hint = None
+    try:
+        outcome = json.loads(card['outcome'] or '{}')
+    except (TypeError, ValueError):
+        outcome = {}
+    if not card['handled_hint'] and not (card['status'] == 'prepared' and isinstance(outcome, dict) and outcome.get('state') == 'already_done'):
+        return None
+    why = ' '.join(str(hint.get('reason') or '').split())[:160] if isinstance(hint, dict) else ''
+    return i18n.t('The Machine saw it done: {}.', why.rstrip('.')) if why else i18n.t('The Machine saw it done.')
 
 
 # A title too long for a to-do ends at a clause (", ", " and ", " then "...) or else a word, with an ellipsis, never
@@ -186,6 +227,8 @@ class PromisesStore:
             row = db.execute('SELECT p.*,e.occurred_at made_at FROM promises p JOIN events e ON e.id=p.event_id WHERE p.id=?', (args.get('id'),)).fetchone()
             if not row:
                 raise ValueError('Unknown promise id')
+            if row['status'] == 'carded' and source == 'dashboard' and args.get('status') in ('kept', 'dropped'):
+                return self.close_carded_promise(db, dict(row), args['status'])
             if row['status'] != 'open':
                 raise ValueError('This promise is no longer open: its card is out, use looks_handled on that card' if row['status'] == 'carded' else 'This promise is no longer open')
             status, reason = args.get('status'), ' '.join(str(args.get('reason') or '').split())[:200]
@@ -206,6 +249,40 @@ class PromisesStore:
                 promise_logged(db, row['id'], 'due', due)
                 return {'id': row['id'], 'status': 'open', 'due': due, 'check_at': check_at}
         raise ValueError("Update a promise with status 'kept' or 'dropped' and a reason, or with a new due date")
+
+    def close_carded_promise(self, db, row, status):
+        """The owner's Done or Drop on a promise that is a to-do now: its to-do closes with it (Done, or Not needed), so
+        the two never disagree. One whose to-do is gone closes by itself."""
+        card = promise_card(db, row['suggestion_id'])
+        if card and card['status'] not in ('completed', 'rejected'):
+            self._decide(db, card['id'], 'complete' if status == 'kept' else 'reject', '', 'promise-close:' + uuid.uuid4().hex, 'dashboard')
+        elif card and {'completed': 'kept', 'rejected': 'dropped'}[card['status']] != status:
+            raise ValueError('Its to-do is closed already. Open the to-do to change that.')
+        if not card:
+            db.execute('UPDATE promises SET status=?,note=?,updated_at=? WHERE id=?',
+                       (status, ('Done' if status == 'kept' else 'Not needed') + ' (you)', now(), row['id']))
+        promise_logged(db, row['id'], status, 'dashboard')
+        return {'id': row['id'], 'status': status, **({'card': card['id']} if card else {})}
+
+    def close_seen_done(self, db):
+        """A promise whose to-do The Machine saw done (looks_handled, or its run found it done): the to-do goes to Done
+        and the promise closes as kept, with a short line saying so. The owner can reopen the to-do from Done."""
+        for row in db.execute("SELECT id,suggestion_id FROM promises WHERE status='carded' AND suggestion_id IS NOT NULL").fetchall():
+            card = promise_card(db, row['suggestion_id'])
+            line = card_looks_done(card)
+            if not line:
+                continue
+            try:
+                seen_at = (json.loads(card['handled_hint'] or 'null') or {}).get('at') or ''
+            except (TypeError, ValueError, AttributeError):
+                seen_at = ''
+            # The owner's own word since (Reopen, Undo, Not done) stands: theirs to close
+            if db.execute("SELECT 1 FROM decisions WHERE suggestion_id=? AND choice IN ('reopen','undo','not_done') AND created_at>=?",
+                          (card['id'], seen_at)).fetchone():
+                continue
+            self._decide(db, card['id'], 'complete', line, 'promise-seen:' + uuid.uuid4().hex, 'assistant')
+            db.execute('UPDATE promises SET note=?,updated_at=? WHERE id=?', (line, now(), row['id']))
+            promise_logged(db, row['id'], 'seen', card['id'])
 
     def settle_promises(self, db):
         """Someone else's email promise closes when that sender replies in the same thread (address only
@@ -237,6 +314,7 @@ class PromisesStore:
                 db.execute("UPDATE promises SET status='answered',note=?,updated_at=? WHERE id=?",
                            (f"They wrote again: {answer['title'][:150]}", now(), row['id']))
                 promise_logged(db, row['id'], 'answered', answer['id'])
+        self.close_seen_done(db)
         self.retitle_cut_promises(db)
 
     def retitle_cut_promises(self, db):
@@ -272,6 +350,9 @@ class PromisesStore:
                 "WHERE p.status IN ('open','carded') OR p.updated_at>=? ORDER BY coalesce(p.due,substr(p.check_at,1,10)),p.id", (since,))]
             for row in rows:
                 row['who'] = slack_ids_named(db, row['who'])  # one noted before its sender's name was known
+                if row['status'] == 'carded':  # the to-do it is now: the one it was merged into, or none when it's gone
+                    card = promise_card(db, row['suggestion_id'])
+                    row['suggestion_id'], row['card_status'] = (card['id'], card['status']) if card else (None, None)
         for row in rows:
             row['state'] = promise_state(row)
         return [r for r in rows if r['state'] in ('open', 'card') or r['updated_at'] >= since]
@@ -286,6 +367,9 @@ class PromisesStore:
                 raise ValueError('Unknown promise')
             p = dict(row)
             p['who'] = slack_ids_named(db, p['who'])
+            if p['status'] == 'carded':
+                card = promise_card(db, p['suggestion_id'])
+                p['suggestion_id'], p['card_status'], p['card_title'] = (card['id'], card['status'], card['title']) if card else (None, None, None)
             try:
                 links = [dict(r) for r in db.execute("SELECT n.id,n.kind,n.name FROM graph_events g JOIN graph_nodes n ON n.id=g.node_id "
                                                      "WHERE g.event_id=? AND n.kind IN ('person','org','project') ORDER BY n.kind DESC,n.name LIMIT 12", (p['event_id'],))]

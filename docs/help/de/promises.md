@@ -15,7 +15,7 @@ Unter **Versprechen** auf der Seite Aufgaben:
 - Was du zugesagt hast, und für wen: **Du hast versprochen**.
 - Was andere zugesagt haben: **Dir versprochen**.
 
-Jedes offene hat **Erledigt** und **Entfernen**. Ein offenes Versprechen wird zur Aufgabe, wenn es fällig ist, und erscheint an seinem Tag im [Kalender](calendar.md).
+Jedes offene hat **Erledigt** und **Entfernen**. Ein offenes Versprechen wird zur Aufgabe, wenn es fällig ist, und erscheint an seinem Tag im [Kalender](calendar.md). Ist es schon eine Aufgabe, führt es zu ihr, und **Erledigt** oder **Entfernen** schließt diese Aufgabe mit. Sieht deine Machine, dass es erledigt ist, schließen beide, mit einer Zeile dazu.
 
 Vorher liest deine Machine, was danach kam. Schon gehalten, etwa durch eine Antwort von dir oder ein Meeting dazu? Dann schließt es sich als gehalten, ohne Aufgabe.
 
