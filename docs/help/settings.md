@@ -8,7 +8,7 @@ order: 1
 ---
 Open **Settings** with the gear at the top. Its tabs:
 
-- **Account**: **Your addresses** (the ones that count as you) and **Sign out**, at the top. On a hosted Machine also your plan, invoices, Fleet, friends, sign-in and data, with **Cancel plan** and **Delete account** at the very bottom. See [Plans and billing](plans-and-billing.md).
+- **Account**: **Your addresses** (the ones that count as you) and **Sign out**, at the top. On a hosted Machine also your plan, invoices, Fleet, friends, sign-in and data, with **Cancel plan** and **Delete account** at the very bottom. On a Machine on your own computer, paired with the Network: your Fleet, username, friends and sign-in, each with a link that opens that part of your account (sign in there), and **Delete account** at the bottom. See [Plans and billing](plans-and-billing.md).
 - **General**: language and region, this device, voice input, your Machine's browser, your Fleet, export and import, and your account.
 - **Security**: Standard or Careful. See [Security levels](security-levels.md). Also **Support access**, while it's on: see [Get support](get-support.md#support-access).
 - **Activity**: everything The Machine did for you, newest first. See [Activity](activity.md).

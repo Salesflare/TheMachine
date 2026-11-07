@@ -3526,7 +3526,8 @@ class Fleet(fleet_requests.Requests, fleet_reviews.Reviews, friends.Friends, con
                 stop.wait(backoff)
 
     # -- for the dashboard and preparations
-    ACCOUNT_KEYS = ('email', 'plan', 'next_invoice', 'server', 'connections', 'fleets', 'actions', 'links')
+    # The account's own parts too (counts only: recovery codes, passkeys, phones, friend requests waiting) and the username
+    ACCOUNT_KEYS = ('email', 'plan', 'next_invoice', 'server', 'connections', 'fleets', 'actions', 'links', 'security', 'friends', 'username')
     ACCOUNT_SECONDS = 60
 
     def bug_report(self, body):
