@@ -54,6 +54,8 @@ try{
  await page.locator('[data-manage-do="join-approve"]').click();
  await page.waitForTimeout(200);
  assert.deepEqual(posts.at(-1),{do:'join-approve',fleet:FL,member:'',plan:'',invite:'',request:'jr_1',origin:url});
+ assert.equal(await page.locator('.manage-invite-form').count(),0);  // behind Invite people until asked
+ await page.locator('[data-manage-invite]').click();
  await page.locator('.manage-invite-form textarea').fill('a@acme.example\nb@acme.example');
  await page.locator('.manage-invite-form button.primary').click();await page.waitForTimeout(200);
  assert.deepEqual(posts.at(-1),{do:'invite',fleet:FL,emails:'a@acme.example\nb@acme.example',plan:'own',mail:true,origin:url});
@@ -63,6 +65,7 @@ try{
  const fields=await form.locator('input[type=hidden]').evaluateAll(xs=>Object.fromEntries(xs.map(x=>[x.name,x.value])));
  assert.deepEqual(fields,{to:'fleet_confirm',what:'remove',member:'fm_2'});
  assert.match(await page.locator('.manage-confirm').innerText(),/Remove Pat Lee\?/);
+ assert.equal(await page.locator('.manage-person:has([data-member="fm_2"]) .manage-confirm').count(),1);  // under the row it is about
  await page.locator('[data-manage-cancel]').click();assert.equal(await page.locator('.manage-confirm').count(),0);
  assert.deepEqual(errors,[]);
 }finally{await browser.close();server.close()}

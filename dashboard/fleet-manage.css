@@ -20,7 +20,8 @@
 .manage-invite-form .fleet-option{justify-content:flex-start;align-items:center}.manage-invite-form .fleet-option input{flex:0 0 auto;margin:0}
 .manage-older{margin:6px 0 10px}
 .manage-older summary{cursor:pointer;color:var(--muted);font-size:var(--fs-sm)}
-.manage-confirm{margin:0 0 14px}
+.manage-confirm{flex:1 0 100%;margin:4px 0 0;padding:var(--sp-4)}.manage-invites>.manage-confirm{margin:12px 0 0}
+.manage-invite-open{display:flex;margin:4px 0 0}
 .manage-confirm p{margin:0 0 10px}
 .manage-confirm form{display:flex;flex-wrap:wrap;gap:8px;margin:0}
 .manage-go{margin:10px 0 0}
