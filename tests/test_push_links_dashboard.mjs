@@ -25,10 +25,12 @@ const fleetView={on:true,kinds:{relationships:'who knows someone',brief:'brief f
  asked:[],log:[],notices:[{id:N,fleet:FL2,kind:'seat_confirmed',text:'Your Machine was confirmed in Northwind.',buttons:[]}]};
 const state=()=>({suggestions:cards,promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},
  connectors:[],fleet:{on:true,waiting:1,fleets:fleetView.fleets}});
-let slow=0,statusDone=0;  // a Machine slow to answer the status: the tapped view still opens at once
+// A Machine slow to answer the status: the tapped view still opens at once. Each status read is logged with when it
+// started, so one still sleeping from an earlier load (its page long gone) never counts for the next.
+let slow=0;const statuses=[];
 const server=createServer(async(req,res)=>{let body='';for await(const c of req)body+=c;const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
- if(url.pathname==='/api/status'){if(slow)await new Promise(r=>setTimeout(r,slow));res.end(JSON.stringify(state()));statusDone++;return}
+ if(url.pathname==='/api/status'){const s={at:Date.now(),done:false};statuses.push(s);if(slow)await new Promise(r=>setTimeout(r,slow));res.end(JSON.stringify(state()));s.done=true;return}
  if(url.pathname==='/api/fleet'){res.end(JSON.stringify(fleetView));return}
  if(url.pathname==='/api/calendar'){res.end(JSON.stringify({calendars:[],meetings:[]}));return}
  if(url.pathname==='/api/action'){const r=JSON.parse(body||'{}');
@@ -45,8 +47,8 @@ try{
   const context=await browser.newContext({viewport,locale:'en-US',...(label==='phone'?{isMobile:true,hasTouch:true}:{})});
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
-  const shown=sel=>page.locator(sel).first().evaluate(el=>{const r=el.getBoundingClientRect();return !el.closest('[hidden]')&&r.height>0&&r.bottom>0&&r.top<innerHeight});
-  const landed=async(sel,why)=>{for(let i=0;i<100;i++){if(await page.locator(sel).count()&&await shown(sel))return;await page.waitForTimeout(50)}assert.fail(`${label} ${why}: ${sel} is not on screen (at ${new URL(page.url()).hash}) `+JSON.stringify(await page.locator(sel).first().evaluate(el=>({r:el.getBoundingClientRect().toJSON(),h:!!el.closest("[hidden]"),hid:el.closest("[hidden]")?.id,ih:innerHeight})).catch(e=>String(e))))};
+  // on screen: waits for the page itself to show it (busy CI machines included), then says where it was if it never did
+  const landed=async(sel,why)=>{if(await page.waitForFunction(s=>{const el=document.querySelector(s);if(!el)return false;const r=el.getBoundingClientRect();return !el.closest('[hidden]')&&r.height>0&&r.bottom>0&&r.top<innerHeight},sel,{timeout:15000}).then(()=>true,()=>false))return;assert.fail(`${label} ${why}: ${sel} is not on screen (at ${new URL(page.url()).hash}) `+JSON.stringify(await page.locator(sel).first().evaluate(el=>({r:el.getBoundingClientRect().toJSON(),h:!!el.closest("[hidden]"),hid:el.closest("[hidden]")?.id,ih:innerHeight})).catch(e=>String(e))))};
   const tab=async name=>page.evaluate(n=>!document.getElementById(n).hidden,name);
   // somewhere else first: the to-do's chat open, the Fleet tab on the other pane
   const elsewhere=async()=>{await page.evaluate(id=>{location.hash='chat='+id},TODO);await landed(`.chat-layout[data-chat="${TODO}"] .chat-title`,'the chat to start from')};
@@ -76,12 +78,12 @@ try{
   await page.goto(base+'#chat=digest');await landed('#calendar','the morning on a cold start');
   await page.goto(base+'#chat=fleet-brief-'+FL);await landed(`#fleet-brief-${FL}`,'the brief on a cold start');
   // A slow status (a big Machine): the tapped view opens at once, its own data fills it, the to-dos come later
-  slow=6000;
+  slow=12000;
   for(const [hash,sel,why] of [['#chat=digest','#calendar','the morning'],[`#chat=fleet-brief-${FL2}`,`#fleet-brief-${FL2}`,'the brief'],['#chat=fleet','#fleet-view .fleet-pane:not([hidden])','the Fleet tab']]){
    await page.evaluate(()=>localStorage.setItem('fleet-pane','sharing'));
-   await page.goto('about:blank');const t0=Date.now(),before=statusDone;await page.goto(base+hash,{waitUntil:'domcontentloaded'});await landed(sel,why+' before the status');
+   await page.goto('about:blank');const t0=Date.now();await page.goto(base+hash,{waitUntil:'domcontentloaded'});await landed(sel,why+' before the status');
    assert.ok(Date.now()-t0<slow-1000,`${label} ${why}: on screen in ${Date.now()-t0} ms, not after the status`);
-   assert.equal(statusDone,before,`${label} ${why}: the status hasn't come yet`)}
+   assert.equal(statuses.filter(s=>s.at>=t0&&s.done).length,0,`${label} ${why}: the status hasn't come yet`)}
   slow=0;
   await context.close()}
  assert.deepEqual(errors,[]);
