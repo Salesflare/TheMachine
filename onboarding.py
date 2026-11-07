@@ -34,6 +34,7 @@ import message_seal
 import portable
 import service
 import wacli_release
+from machine.sources import teams_setup
 
 ROOT = Path(__file__).resolve().parent
 UNIT_NAME = service.UNIT_NAME
@@ -304,8 +305,8 @@ def catalog(config):
             continue  # a hosted Machine: Docs waits until its account page offers the Docs consent (assistant.docs_offered)
         if service == 'google_meet' and config.get('manage_url') and not config.get('google_meet_broker'):
             continue  # a hosted Machine: Google Meet waits until its control plane has its own sign-in for it
-        if service == 'teams' and not config.get('teams_consent'):
-            continue  # Teams signs in through the control plane's Microsoft consent: shown once it offers it (teams_consent)
+        if service == 'teams' and not teams_setup.offered(config):
+            continue
         setup = setup_of(service) or {}
         found.append({'name': name, 'service': service, 'label': label(service), 'note': setup.get('note'), 'what': setup.get('what'),
                       'connected': have.get(service, 0), 'broker': service in brokered or bool(setup.get('broker')),
@@ -781,17 +782,8 @@ def missing(config, account):
         except SetupError:
             return 'no Google or Microsoft sign-in for this address yet'
         return ''
-    if account.get('service') == 'teams':  # Outlook's Microsoft sign-in for that address, or its own (connectors/teams.py)
-        if not account.get('email'):
-            return 'email is not set'
-        if account.get('transport') == 'broker' and not (config.get('microsoft_broker') or {}).get('url'):
-            return 'microsoft_broker url is not set'
-        teams = plugin('teams')
-        try:
-            teams and teams.signin(config, account, types.SimpleNamespace(SourceError=SetupError))
-        except SetupError:
-            return 'no Microsoft sign-in for this address yet'
-        return ''
+    if account.get('service') == 'teams':  # machine/sources/teams_setup.py
+        return teams_setup.missing(config, account, plugin, SetupError)
     for key, value in PLACEHOLDERS.items():
         if account.get(key) in (value if isinstance(value, tuple) else (value,)):
             return f'{key} is still the example value'
