@@ -317,7 +317,7 @@ Type what needs doing and press Enter; nothing else is needed. Optional chips: W
 
 It is a normal to-do made by the same path as the review's (`card_new`), with the same buttons, chat, snooze, Done, projects and handoffs, and "Added by you" in quiet text. Creating it sends nothing.
 
-The next review fills it in (a cleaner title, people and threads, the next step, a draft prepared ahead), but never dismisses it or folds it into another to-do. Its title and body keep everything you said, and your words open its chat. If the review thinks it is the same as another to-do, the to-do asks "Looks like the same as … Merge?" and only your tap merges.
+The next review fills it in (a cleaner title, people and threads, the next step, a draft prepared ahead), but never dismisses it or folds it into another to-do. Its title and body keep everything you said, and your words open its chat. If the review thinks it is the same as another to-do, the to-do asks "Looks like the same as … Merge?" and only your tap merges. When work on the other to-do has started (a draft, a run), your words become your note on it, so its draft takes them in.
 
 <a id="rename"></a>
 ## Rename
