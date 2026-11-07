@@ -524,6 +524,7 @@ from machine.sources.connectors import (
     CONNECTORS,
     CONNECTOR_HELPERS,
     HOSTED_SIGNINS,
+    hosted_docs_sources,
     REPLY_SERVICES,
     SILENT_HOURS,
     SILENT_MIN_FAILURES,
@@ -2449,27 +2450,6 @@ def sign_in_help(service, error, manage):
     return {'signed_out': True, 'sign_in_hint': hint,
             'sign_in_url': urllib.parse.urljoin(manage, '/open?' + urllib.parse.urlencode({'to': 'browser', 'site': site}))
             if manage and site else None}
-
-
-def hosted_docs_sources(config, sources):
-    """A hosted Machine's Docs under + Add, by the consents its account page offers (docs_consent: ["google",
-    "microsoft"]): Microsoft OneDrive (Connect Microsoft documents) and Google Docs (Connect Google Docs, its own Google
-    sign-in), each its own tile."""
-    consent = config.get('docs_consent')
-    if not isinstance(consent, list):
-        return sources
-    out = []
-    for source in sources:
-        if source.get('service') != 'docs':
-            out.append(source)
-            continue
-        google = sum(1 for a in config.get('accounts') or () if a.get('service') == 'docs' and a.get('provider') == 'google')
-        if 'microsoft' in consent:
-            out.append({**source, 'connected': max(0, int(source.get('connected') or 0) - google)})
-        if 'google' in consent:
-            out.append({**source, 'name': 'google_docs', 'label': 'Google Docs', 'hosted_signin': 'google_docs', 'connected': google,
-                        'what': 'Reads and edits the Google Docs you point it to, and makes new ones.'})
-    return out
 
 
 def reconnect_help(account, manage, docs_consent=False):

@@ -277,6 +277,27 @@ HOSTED_SIGNINS = {'google', 'microsoft', 'zoom', 'stripe', 'intercom', 'trello',
                   'microsoft_docs_write', 'codex', 'google_meet', 'google_docs'}
 
 
+def hosted_docs_sources(config, sources):
+    """A hosted Machine's Docs under + Add, by the consents its account page offers (docs_consent: ["google",
+    "microsoft"]): Microsoft OneDrive (Connect Microsoft documents) and Google Docs (Connect Google Docs, its own Google
+    sign-in), each its own tile."""
+    consent = config.get('docs_consent')
+    if not isinstance(consent, list):
+        return sources
+    out = []
+    for source in sources:
+        if source.get('service') != 'docs':
+            out.append(source)
+            continue
+        google = sum(1 for a in config.get('accounts') or () if a.get('service') == 'docs' and a.get('provider') == 'google')
+        if 'microsoft' in consent:
+            out.append({**source, 'connected': max(0, int(source.get('connected') or 0) - google)})
+        if 'google' in consent:
+            out.append({**source, 'name': 'google_docs', 'label': 'Google Docs', 'hosted_signin': 'google_docs', 'connected': google,
+                        'what': 'Reads and edits the Google Docs you point it to, and makes new ones.'})
+    return out
+
+
 # Connected but silent: a source whose polls succeed while its real read keeps failing and nothing new arrives (the
 # OpenClaw notification feed answers while the phone itself is offline) must not stay green. Quiet means longer than both
 # a few hours and its longest quiet stretch in the week before (a phone with 80 to 130 notifications a day goes quiet
