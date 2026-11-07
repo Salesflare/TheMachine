@@ -3250,51 +3250,6 @@ class App(*APP_MIXINS):
         self._started_at = row[0] if row and row[0] else None
         return self._started_at
 
-    def meeting_notes(self, args, owner_dashboard=False, limit=meeting_notes.READ_CHARS):
-        """A meeting's Notes and Transcript (meeting_notes.py). Without event_id: the meetings of a day (day, YYYY-MM-DD,
-        today when left out; query narrows them by title), to find the one. With event_id: both, added ones and Zoom's
-        (field reads only one, offset reads on). With text: add to field (notes when left out; append:true below what it
-        has), or remove:true. Saving never moves text to the other field. The owner adds them on the meeting in the
-        Calendar, a Do it run or the owner's chat with its tool; a signal review only reads them, since what it reads
-        can't tell it what to write."""
-        writes = 'text' in args or args.get('remove') is True
-        session = str(args.get('_notes_session') or '')
-        if writes and not owner_dashboard and re.match(r'agent:main:assistant-review-(?!preparation-)', session):
-            raise ValueError('Reviews read meeting notes; the owner or a Do it run adds them')
-        calendars = [a['id'] for a in self.config['accounts'] if a.get('service') in CALENDAR_SERVICES]
-        with self.store.connect() as db:
-            if args.get('event_id') in (None, ''):
-                day = str(args.get('day') or dt.datetime.now(local_tz()).date().isoformat())
-                try:
-                    dt.date.fromisoformat(day)
-                except ValueError:
-                    raise ValueError('day is YYYY-MM-DD') from None
-                return {'day': day, 'meetings': meeting_notes.meetings_on(db, calendars, day, local_tz(), str(args.get('query') or '')[:200])}
-            event = meeting_notes.meeting(db, args.get('event_id'))
-            if not event or event['account_id'] not in calendars:
-                raise ValueError('No meeting with that event_id. Find it with day (and query) first')
-            if not writes:
-                try:
-                    offset = max(0, int(args.get('offset') or 0))
-                except (TypeError, ValueError):
-                    raise ValueError('offset is a number') from None
-                found = meeting_notes.read(db, event['id'], offset, limit, args.get('field') or None)
-                if owner_dashboard and not args.get('field'):  # the Calendar: Generate notes, while it writes (meeting_writer.py)
-                    found['writing'] = meeting_writer.view(db, event['id'])
-                return found
-            field = args.get('field') or 'notes'
-            meeting_notes.field_kind(field)
-            text = '' if args.get('remove') is True else args.get('text')
-            if not isinstance(text, str) or (not text.strip() and args.get('remove') is not True):
-                raise ValueError('text is the notes or transcript, as Markdown; remove:true takes them off')
-            db.execute('BEGIN IMMEDIATE')
-            saved, write = meeting_notes.plan(db, event['id'], text, 'owner' if owner_dashboard else 'machine', now(), args.get('append') is True, field)
-            if write:
-                saved.update(self.store.save_meeting_notes(db, write))
-        if getattr(self, 'graph_dirty', None):
-            self.graph_dirty.set()  # the notes show on the timelines of the people in the meeting
-        return saved
-
     def action(self, name, args, owner_dashboard=False):
         accounts = [a['id'] for a in self.config['accounts']]
         selected = args.get('account_ids', [])
