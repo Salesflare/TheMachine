@@ -14,7 +14,7 @@ order: 5
 
 The to-do shows it's working, then the result, with **What it did** and **Show changes**. **Ask for changes** sends it what to change. **Hand off…** in **…** starts over. **Hide** puts the result away.
 
-A job never sends anything for you.
+A job never sends anything for you. When it leaves a publish or deploy step for you, **Do it** on the to-do runs that step. A reply it wrote stays a draft you send yourself.
 
 ## In the Codex app
 

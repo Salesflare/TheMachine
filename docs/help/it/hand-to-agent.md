@@ -14,7 +14,7 @@ order: 5
 
 L'attività mostra poi che ci sta lavorando, e il risultato quando ha finito, con **Cosa ha fatto** e **Mostra modifiche**. **Chiedi modifiche** gli dice cosa cambiare; **Passa…** in **…** ricomincia da capo; **Nascondi** mette via il risultato.
 
-Un lavoro non invia mai nulla per te.
+Un lavoro non invia mai nulla per te. Se ti lascia un passaggio di pubblicazione o di deploy, **Fallo** sull’attività esegue quel passaggio. Una risposta che ha scritto resta una bozza che invii tu.
 
 ## Nell’app Codex
 

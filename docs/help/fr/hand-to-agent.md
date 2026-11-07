@@ -14,7 +14,7 @@ order: 5
 
 La tâche indique ensuite qu’elle est en cours, puis le résultat une fois terminé, avec **Ce qu’il a fait** et **Afficher les modifications**. **Demander des modifications** lui dit quoi changer. **Transférer…** dans **…** recommence de zéro. **Masquer** range le résultat.
 
-Une mission n’envoie jamais rien à votre place.
+Une mission n’envoie jamais rien à votre place. Quand elle vous laisse une étape de publication ou de déploiement, **Faire** sur la tâche exécute cette étape. Une réponse qu’elle a rédigée reste un brouillon que vous envoyez vous-même.
 
 ## Dans l’app Codex
 

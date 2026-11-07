@@ -24,6 +24,7 @@ from machine import names as display_names
 from machine.browser import run_tab
 from machine.cards import CHAT_HANDLE
 from machine.chat import (
+    AGENT_DO_IT_NOTE,
     AGENT_WORK_NOTE,
     card_chat_handoffs,
     chat_agent_text,
@@ -494,13 +495,16 @@ class CardChatApp:
                         'at': chat_ms(r['created_at'])})
         return out
 
-    def agent_work(self, suggestion_id):
+    def agent_work(self, suggestion_id, job=None):
         """Work handed to Claude Code or Codex on this card (agent_jobs.card_work), as a block for its chat turn or
-        preparation: part of the card's state and the latest truth of what was done. Empty without any."""
+        preparation: part of the card's state and the latest truth of what was done. Empty without any. `job`: the
+        preparation it goes in; when that is the owner's own Do it after a finished job, the step that job left for them
+        (a push, publish or deploy) is theirs to have run now (AGENT_DO_IT_NOTE)."""
         with self.store.connect() as db:
             if not db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='agent_jobs'").fetchone():
                 return ''
             rows = db.execute('SELECT * FROM agent_jobs WHERE suggestion_id=? ORDER BY created_at', (str(suggestion_id),)).fetchall()
+            do_it = bool(rows) and self.owner_do_it(db, job, rows[-1])
         def when(value):
             try:
                 found = dt.datetime.fromisoformat(str(value))
@@ -508,7 +512,27 @@ class CardChatApp:
                 return ''
             return (found if found.tzinfo else found.replace(tzinfo=dt.timezone.utc)).astimezone(local_tz()).strftime('%a %Y-%m-%d %H:%M')
         lines = agent_jobs.card_work(rows[-3:], self.agent_folder, when)
+        if lines and do_it:
+            lines.append(AGENT_DO_IT_NOTE)
         return ('\n\n' + AGENT_WORK_NOTE + '\n' + '\n'.join(lines)) if lines else ''
+
+    @staticmethod
+    def owner_do_it(db, job, latest):
+        """Whether this preparation is the owner's own Do it tap (dashboard or Telegram), made after the card's latest
+        Claude Code or Codex job finished with a result they haven't closed or set aside. Not a run prepared ahead (nobody
+        tapped), not a confirmed final step (that runs its own step) and not a chat message (that says what it wants).
+        Without `job`, the card's preparation starting or running now."""
+        if job is None:
+            row = db.execute("SELECT p.suggestion_id,p.decision_id,p.action_id,s.early FROM preparations p JOIN suggestions s ON s.id=p.suggestion_id "
+                             "WHERE p.suggestion_id=? AND p.status IN ('starting','running')", (latest['suggestion_id'],)).fetchone()
+            job = row and {'suggestion_id': row['suggestion_id'], 'decision_id': row['decision_id'], 'ahead': bool(row['early']), 'finish': row['action_id']}
+        if not isinstance(job, dict) or job.get('ahead') or job.get('finish') or not job.get('decision_id'):
+            return False
+        if latest['status'] != 'result' or latest['outcome'] in ('done', 'set_aside'):
+            return False
+        tap = db.execute("SELECT created_at FROM decisions WHERE id=? AND suggestion_id=? AND choice='accept' AND source IN ('dashboard','telegram')",
+                         (str(job['decision_id']), str(job.get('suggestion_id') or latest['suggestion_id']))).fetchone()
+        return bool(tap) and str(tap['created_at']) >= str(latest['finished_at'] or latest['updated_at'] or '')
 
     def card_chat_gateway(self, request):
         """chat-history-run.mjs: the Gateway's chat.history for one preparation session; {'error'} when unavailable."""
