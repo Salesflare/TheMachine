@@ -182,7 +182,9 @@ function talkMedia(v){const m=navigator.mediaSession;if(!m)return;const on=talk=
  handle('pause',()=>talkMute(v,true));handle('play',()=>talkMute(v,false));handle('stop',()=>talkEnd());handle('hangup',()=>talkEnd());
  handle('togglemicrophone',()=>talkMute(v,!v.muted));
  try{m.playbackState=on?v.muted?'paused':'playing':'none'}catch{}
- try{if(on)m.setMicrophoneActive?.(!v.muted)}catch{}}
+ // A promise: Chrome refuses an unmute without a tap on the page (talkReady runs when the connection opens, the lock
+ // screen's play is no tap). The microphone itself started from the tap on Talk; only the browser's indicator waits.
+ try{if(on)m.setMicrophoneActive?.(!v.muted)?.catch?.(()=>{})}catch{}}
 document.addEventListener('visibilitychange',()=>{const v=talk;if(!v)return;
  if(document.hidden){v.hiddenAt=Date.now();return}
  v.hiddenAt=0;if(v.state!=='live')return;
