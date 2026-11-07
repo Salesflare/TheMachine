@@ -36,11 +36,13 @@ Quando nada precisa de você, sua Machine tira uma soneca na lista vazia. Enquan
 
 Uma tarefa de um projeto mostra o nome do projeto na linha abaixo do título; ele abre o projeto. **Projeto** em **Detalhes** muda ou tira o projeto. Veja [as tarefas de um projeto](projects.md#a-projects-to-dos).
 
-**Área** em **Detalhes** passa a tarefa para a sua outra área, como uma pessoal que precisa sair do seu endereço de trabalho. O que ela pode ler e de onde pode enviar muda junto; as mensagens de onde ela veio ficam onde estão. **Desfazer** no aviso que aparece depois a traz de volta.
+**Área** em **Detalhes** passa a tarefa para a sua outra área. O que ela pode ler e de onde pode enviar muda junto; as mensagens de onde ela veio ficam onde estão. **Desfazer** no aviso que aparece depois a traz de volta.
 
 Quando uma tarefa precisa de outra área para seguir e todas as mensagens de onde ela veio estão lá, ela muda sozinha e continua. Se não, ela pede com um botão **Mover para Trabalho**. Nada muda até você tocar; depois ela continua sozinha. Uma tarefa que você adicionou sem escolher Trabalho ou Pessoal muda sozinha assim que sabe onde fica.
 
 Quando você inicia uma tarefa, ela sempre pode ler as mensagens de onde veio, também na caixa de outra empresa. Se precisar de outras mensagens de outra área, ela pede com **Usar este e-mail para esta tarefa**; um toque as adiciona e ela continua. O e-mail para outra das suas empresas vai desde o início para as tarefas dessa empresa. Uma tarefa da sua vida pessoal, como a família escrevendo para o seu endereço de trabalho, é Pessoal desde o início.
+
+A resposta sai mesmo assim do endereço de trabalho onde chegou, e nunca aparece em uma Work Fleet nem no Graph da equipe.
 
 ## Verificar agora
 

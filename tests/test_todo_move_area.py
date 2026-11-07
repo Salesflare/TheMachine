@@ -271,5 +271,45 @@ class MovesByItself(unittest.TestCase):
         self.assertEqual(self.store.preparation_blocked(sid, job, 'It needs the Acme Slack.', move_to='work:Acme')['status'], 'blocked')
 
 
+HOME_MAIL = {'id': 'home-mail', 'service': 'gmail', 'transport': 'gog', 'email': 'robin@mail.example', 'boundary': 'personal:mail'}
+
+
+class PersonalReplyFromWorkMailbox(unittest.TestCase):
+    """A matter of the owner's own life that came in on a mailbox labeled Work is Personal (its accounts are the
+    Personal area's), but its reply goes from the mailbox its thread came in on: not refused, not rerouted to the
+    Personal mailbox. Only the sender changes; the to-do stays Personal for sharing."""
+    config = {'accounts': [*ACCOUNTS, HOME_MAIL]}
+    replied = {'<family@school.example>': {'to': ['robin@acme.example'], 'from': 'teacher@school.example', 'sent': False,
+                                           'account_id': 'acme-mail', 'thread_id': 'abc123', 'homes': {}}}
+
+    def draft(self, **extra):
+        return {'kind': 'email', 'account_id': 'acme-mail', 'to': ['teacher@school.example'], 'subject': 'Re: Field trip',
+                'body': 'Yes, Kai can come.\n\nRobin', 'in_reply_to': '<family@school.example>', **extra}
+
+    def test_the_reply_goes_from_the_work_mailbox_it_came_in_on(self):
+        action = next_actions.validate(self.draft(), self.config, ['home-mail', 'home-chat'], replied=self.replied)
+        self.assertEqual((action['account_id'], action['from'], action.get('thread_id')), ('acme-mail', 'robin@acme.example', 'abc123'))
+        self.assertNotIn('reply_elsewhere', action)
+        self.assertEqual(todo_areas.current(['home-mail', 'home-chat'], self.config['accounts']), 'personal')  # still Personal
+
+    def test_only_its_own_thread_and_only_for_a_personal_to_do(self):
+        new = self.draft(subject='Hello', in_reply_to=None)
+        new.pop('in_reply_to')
+        with self.assertRaises(ValueError):  # a new email from the Work mailbox: not its thread
+            next_actions.validate(new, self.config, ['home-mail'], replied=self.replied)
+        with self.assertRaises(ValueError):  # a thread in another mailbox
+            next_actions.validate(self.draft(account_id='side-mail'), self.config, ['home-mail'], replied=self.replied)
+        beta = {'accounts': [*self.config['accounts'], *BETA]}
+        with self.assertRaises(ValueError):  # a Work to-do at another company keeps its company's mailboxes
+            next_actions.validate(self.draft(), beta, ['beta-mail'], replied=self.replied)
+
+    def test_the_run_is_told_to_reply_from_there_and_not_to_ask_for_a_move(self):
+        line = a.area_prompt(self.config, '["home-mail", "home-chat"]', [(1, 'acme-mail')])
+        self.assertIn('goes from the mailbox that thread came in on (robin@acme.example), also one labeled Work', line)
+        self.assertIn('never ask to move this to-do to Work for it', line)
+        self.assertNotIn('goes from the mailbox that thread', a.area_prompt(self.config, '["home-mail"]', [(1, 'home-mail')]))
+        self.assertNotIn('goes from the mailbox that thread', a.area_prompt(self.config, '["acme-mail"]', [(1, 'acme-mail')]))
+
+
 if __name__ == '__main__':
     unittest.main()

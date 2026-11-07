@@ -63,6 +63,20 @@ def sending_account(config, account_ids):
     return None
 
 
+def personal_reply_home(account, task_accounts, value, replied):
+    """A Personal to-do's reply may go from the mailbox its thread came in on, also one labeled Work (a matter of the
+    owner's own life on a work mailbox, todo_areas.py): True when every account of the to-do is Personal and the email it
+    answers (in_reply_to, one of the to-do's own emails: replied) is in this account. Only where it is sent from changes:
+    the to-do stays Personal, so it never goes to a Work Fleet or the Team Graph."""
+    import todo_areas
+    if not task_accounts or any(todo_areas.area_of_account(a) != todo_areas.PERSONAL for a in task_accounts):
+        return False
+    original = (replied or {}).get(str(value.get('in_reply_to') or '').strip())
+    if not original:
+        return False
+    return account['id'] == original.get('account_id') or account['id'] in (original.get('homes') or {})
+
+
 def outlook(account):
     return account.get('service') == 'outlook'
 
@@ -595,7 +609,8 @@ def validate(value, config, allowed_accounts, recipient_options=None, linkedin_t
         emails = {str(a.get('email') or '').lower() for a in task_accounts if a.get('email')}
         account = next((a for a in config['accounts'] if a['id'] == value.get('account_id') and mail_account(a)), None)
         if not account or (account['id'] not in allowed_accounts and account.get('boundary') not in boundaries
-                           and str(account.get('email') or '').lower() not in emails):
+                           and str(account.get('email') or '').lower() not in emails
+                           and not personal_reply_home(account, task_accounts, value, replied)):
             raise ValueError('Use a Gmail or Outlook account of this task’s company')
         result = {'kind': 'email', 'account_id': account['id'], 'from': account['email']}
         if value.get('label'):
