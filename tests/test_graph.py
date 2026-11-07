@@ -921,6 +921,30 @@ class Boards(unittest.TestCase):
             # A project on a board keeps its node in the graph
             self.assertTrue(db.execute('SELECT 1 FROM graph_nodes WHERE id=?', (node,)).fetchone())
 
+    def test_the_board_view_reads_its_projects_in_a_few_queries_however_many_there_are(self):
+        """graph_boards.py: to-dos, messages, owners and moves come in one query each for all projects; what is left per
+        project is a handful of small lookups, not one query per to-do or message (a Graph tab open with 600 projects)."""
+        asked, answered, mine = self.mails()
+
+        def statements(count):
+            for i in range(count):
+                with self.store.connect() as db:
+                    graph.set_stage(db, 'Deal %d' % i, 'Contacted', 'review', NOW.isoformat(), board='Listings', stages=self.STAGES,
+                                    reason='asked', event_id=asked, org='partner.example')
+                self.store.suggest('deal-%d-%d' % (count, i), 'Follow up %d' % i, 'Made up.', [mine], project='Deal %d' % i)
+            self.build()
+            seen = []
+            with self.store.connect() as db:
+                db.set_trace_callback(seen.append)
+                board, = graph.boards(db, NOW.isoformat())
+                db.set_trace_callback(None)
+            return len(board['projects']), len(seen)
+
+        few, before = statements(2)
+        many, after = statements(10)
+        self.assertEqual((few, many), (2, 10))
+        self.assertLessEqual(after - before, many - few)  # was 7 more per project; now the same 14 for 2 or 10
+
     def test_no_reply_in_ten_days_is_a_filter_for_the_list_and_the_board(self):
         asked, answered, mine = self.mails()
         with self.store.connect() as db:

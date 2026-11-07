@@ -87,20 +87,27 @@ class FollowUpsApp:
     ACTIONS = {}  # its actions are still App.action's own branches
 
     # Automated follow-ups (follow_ups.py): drafted in a low-priority background pass, sent only through the outbox.
-    def follow_up_annotate(self, db, boards):
-        """The board view's follow-up state: per board on and the next date, per project its next follow-up or the note."""
+    def follow_up_board_views(self, db):
+        """The board view's follow-up state, asked after the board (api/graph/follow-ups): per board whether they're on
+        and the next date ({'boards': {id: …}}), per project its next follow-up or the note ({'projects': {node: …}})."""
         try:
             follow_ups.ensure(db)
             found = follow_ups.views(db, now(), self.follow_up_sendable(), self.follow_up_mine(), self.follow_up_own(db),
                                    self.follow_up_work())
         except sqlite3.Error:
-            return
+            return {'boards': {}, 'projects': {}}
+        return {'boards': {str(k): v for k, v in found['boards'].items()},
+                'projects': {f'project:{pid}': {k: view[k] for k in ('state', 'next_at', 'n', 'max', 'own', 'end', 'reason', 'pause')}
+                             for pid, view in found['projects'].items() if view['on'] or view.get('end') or view.get('reason') == 'bounced'}}
+
+    def follow_up_annotate(self, db, boards):
+        """The board view's follow-up state on these boards (graph.boards), as the board view had it before it came apart."""
+        found = self.follow_up_board_views(db)
         for b in boards:
-            b['follow_ups'] = found['boards'].get(b['id']) or {'on': False, 'next_at': None}
+            b['follow_ups'] = found['boards'].get(str(b['id'])) or {'on': False, 'next_at': None}
             for p in b['projects']:
-                view = found['projects'].get(int(p['id'].split(':', 1)[1]))
-                if view and (view['on'] or view.get('end') or view.get('reason') == 'bounced'):
-                    p['follow_up'] = {k: view[k] for k in ('state', 'next_at', 'n', 'max', 'own', 'end', 'reason', 'pause')}
+                if p['id'] in found['projects']:
+                    p['follow_up'] = found['projects'][p['id']]
 
     def follow_up_project(self, db, node_id):
         """A project page's follow-ups: the setting that applies (its own or its board's), the next one, the note when a

@@ -446,6 +446,9 @@ def make_handler(app):
                     self.output(200, found)
                 except (ValueError, sqlite3.OperationalError):
                     self.output(404, {'error': 'No such promise'})
+            elif path.path == '/api/graph/follow-ups':  # "Follow-ups on", "Next follow-up: Thu": after the board, which they held up
+                with app.store.connect() as db:
+                    self.output(200, app.follow_up_board_views(db))
             elif path.path in ('/api/graph/list', '/api/cards/done'):  # the long lists, a page at a time
                 args = {k: v[0] for k, v in urllib.parse.parse_qs(path.query).items()}
                 try:
@@ -497,6 +500,10 @@ def make_handler(app):
                         self.output(200, app.graph_find(query, urllib.parse.parse_qs(path.query).get('cursor', ['0'])[0] or 0))
                     elif node and app.about_you_node(node):  # the owner's own record, also by one of their addresses
                         self.output(200, {**app.about_you(), 'can_share': app.contact_shareable()})  # Share my contact
+                    elif node and params.get('part', [''])[0] == 'head':  # the record's head first; its timeline comes with the whole page
+                        found = app.graph_action({'node_id': node, 'limit': 10, 'events': 1})
+                        found.update(owners=app.owner_choices(), recent=[], head_only=True)
+                        self.output(200, found)
                     elif node:
                         # a run of chat messages is one row; the event ids only (lines: False), as the timeline below shows them
                         found = app.graph_action({'node_id': node, 'limit': 10, 'events': 120, 'lines': False})
@@ -534,7 +541,6 @@ def make_handler(app):
                         found = app.graph_action({'limit': 15})
                         with app.store.connect() as db:
                             found['boards'] = graph.boards(db, now())  # the Projects board view
-                            app.follow_up_annotate(db, found['boards'])  # "Follow-ups on", "Next follow-up: Thu" (follow_ups.py)
                             found['board_suggestions'] = graph.board_suggestions(db)  # "Start a board for …?", saved by the owner or not
                             found['project_names'] = [{'id': 'project:' + str(r['id']), 'name': r['name'], 'board_id': r['board_id']} for r in db.execute(
                                 'SELECT id,name,board_id FROM projects WHERE closed_at IS NULL ORDER BY name COLLATE NOCASE LIMIT 2000')]  # the board editor's picker

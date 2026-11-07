@@ -26,6 +26,12 @@ const fuChip=()=>html`<span class="fu-chip">${t('Paused')}</span>`;
 const fuTile=f=>!f?'':f.state==='paused'?html`<p class="tile-fu quiet">${fuChip()}</p>`:f.reason==='bounced'?html`<p class="tile-fu quiet">${t('Email bounced')}</p>`:f.end?html`<p class="tile-fu quiet">${fuNoReply(f.end.n)}</p>`:f.state==='open'?html`<p class="tile-fu">${t('Follow-up ready')}</p>`:['due','waiting'].includes(f.state)&&f.next_at?html`<p class="tile-fu">${t('Next follow-up: {}',fuDay(f.next_at))}</p>`:'';
 // On or off, the board's line says so and opens its settings; a stage with no-reply projects on a board with follow-ups off
 // offers "Follow them up" (the owner's own boards only: a Team board isn't theirs to change)
+// The board's follow-ups come after the board (api/graph/follow-ups): working them out held up the whole Graph tab
+// (kept a minute: the quiet refresh that redraws the Graph tab on every poll uses the last answer; a change clears it)
+let fuKept=null;
+async function fuLoad(version){let f=fuKept&&Date.now()-fuKept.at<6e4?fuKept.f:null;if(!f){try{f=await request('api/graph/follow-ups')}catch{return}if(!f?.boards)return;fuKept={at:Date.now(),f}}if(version!==graphRequest)return;
+ for(const b of graphBoards){b.follow_ups=f.boards?.[b.id]||{on:false,next_at:null};for(const p of b.projects||[]){if(f.projects?.[p.id])p.follow_up=f.projects[p.id];else delete p.follow_up}}
+ boardRedraw()}
 const fuBoardLine=b=>b.follow_ups?html` · <button type="button" class="link fu-state${b.follow_ups.on?'':html` off`}" data-fu-open="board:${b.id}">${!b.follow_ups.on?t('Follow-ups off'):b.follow_ups.pause?t('Follow-ups on'):b.follow_ups.next_at?t('Follow-ups on, next {}',fuDay(b.follow_ups.next_at)):t('Follow-ups on')}</button>${b.follow_ups.on&&b.follow_ups.pause?html`${' '}${fuChip()}`:''}`:'';
 const fuNudge=(b,s)=>b.team||!b.follow_ups||b.follow_ups.on?'':html` · <button type="button" class="fu-nudge" data-fu-open="board:${b.id}" data-fu-for="${s.name}">${t('Follow them up')}</button>`;
 const fuAct=a=>{const ch=FU_CHANNELS[a.channel]||a.channel;return a.why==='bounced'?t('Follow-up {} bounced',a.n):a.state==='sent'?(a.auto?t('Follow-up {} sent automatically ({})',a.n,ch):t('Follow-up {} sent ({})',a.n,ch)):a.state==='open'?t('Follow-up {} ready to review',a.n):a.state==='skipped'?t('Follow-up {} skipped',a.n):a.why==='owner'?t('Follow-ups stopped at follow-up {}',a.n):a.why==='replied'?t('They replied before follow-up {}',a.n):t('Follow-up {} not needed',a.n)};

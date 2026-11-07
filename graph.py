@@ -4960,39 +4960,8 @@ def boards(db, now):
     moved and when (with the message), its next step, its organization (logo from enrichment), how long it has been
     in the stage, how long the other side hasn't answered the owner (no_reply_days, from its messages), and an open
     card about it."""
-    out, org_cache = [], {}
-    today = parse_time(now)
-    cards_on = _project_cards_where() if _has_column(db, 'suggestions', 'project_by') else \
-        ("(s.project=? COLLATE NOCASE OR EXISTS(SELECT 1 FROM json_each(s.event_ids) j JOIN graph_events g ON g.event_id=j.value "
-         "WHERE g.node_id=? AND g.probable=0))")
-    for b in db.execute('SELECT * FROM boards ORDER BY is_default DESC,id').fetchall():
-        rows = db.execute('SELECT * FROM projects WHERE board_id=? AND closed_at IS NULL ORDER BY coalesce(stage_at,created_at) DESC', (b['id'],)).fetchall()
-        names, items = stage_names(b), []
-        for p in rows:
-            node = 'project:' + str(p['id'])
-            org = project_org(db, p['org'] or (infer_org(db, p['id'], org_cache) if not p['org_by'] else None))  # set, or what fill_orgs will set
-            mine_since = _waiting_since(db, node)
-            since = parse_time(p['stage_at'] or p['created_at'])
-            last = None if p['stage_by'] else next(iter(project_events(db, p['id'], 1, now)), None)  # an unplaced tile: its latest message
-            todos = db.execute(f"SELECT s.id,s.title FROM suggestions s WHERE s.status IN ({','.join('?' for _ in OPEN_CARD)}) AND {cards_on} "
-                               "ORDER BY s.created_at DESC", (*OPEN_CARD, p['name'], node)).fetchall()
-            card = todos[0] if todos else None
-            items.append({'id': node, 'name': p['name'], 'stage': p['stage'] if p['stage'] in names else names[0], 'reason': p['stage_reason'],
-                          'by': p['stage_by'], **sort_view(db, p), 'at': p['stage_at'], 'event_id': p['stage_event_id'], 'next': p['next_step'],
-                          'first': not db.execute('SELECT 1 FROM project_moves WHERE project_id=? LIMIT 1 OFFSET 1', (p['id'],)).fetchone(),
-                          'days': max(0, (today - since).days), 'closed': bool(p['closed_at']), 'visibility': p['visibility'],
-                          'no_reply_days': max(0, (today - parse_time(mine_since)).days) if mine_since else None,
-                          'org': {**org, 'node_id': org['id']} if org else None, 'card': {'id': card['id'], 'title': card['title']} if card else None,
-                          'todos': len(todos),
-                          **({'last_at': last['occurred_at'], 'last_event_id': last['id']} if last else {}),
-                          **({'value': p['value']} if p['value'] is not None else {}), **({'close_date': p['close_date']} if p['close_date'] else {}),
-                          **({'outcome': p['outcome']} if p['outcome'] else {}), **owner_of(db, node)})
-        out.append({'id': b['id'], 'name': b['name'], 'about': b['about'], 'side': bool(b['side']), 'visibility': b['visibility'] or 'team',
-                    'stages': json.loads(b['stages']) + ([{'name': STALLED, 'side': True}] if b['side'] else []), 'projects': items,
-                    'stuck': sum(1 for i in items if (i['no_reply_days'] or 0) >= STUCK_DAYS and i['stage'] != STALLED),
-                    'sorting': sum(1 for i in items if i['sorting']), 'default': bool(b['is_default']), 'maybes': board_maybes(db, b['id'])})
-        out[-1]['backfill'] = backfill_view(db, b['id'], now, out[-1]['maybes'])
-    return out
+    import graph_boards  # read in a few queries for all projects at once
+    return graph_boards.boards(db, now)
 
 
 def owner_of(db, node_id):
