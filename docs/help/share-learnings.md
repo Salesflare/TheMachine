@@ -46,7 +46,7 @@ The same switch turns off [team learnings](fleet.md#team-learnings) for your Wor
 
 Learnings from other Machines come to yours too. Once a day a short check asks: would this have changed something on your Machine in the past week? Only the vote goes back. Your own learnings never come back to you.
 
-A useful vote needs a concrete case from your past week, told in general terms and checked like a use case. Without one, the vote is **Not relevant here**.
+A useful or not relevant vote needs a concrete case from your past week: a to-do or something you asked in its chat, told in general terms and checked like a use case. Without one, your Machine abstains and the vote doesn't count. A week without any activity means no voting at all.
 
 The team ranks learnings by useful votes and picks what goes into The Machine for everyone. Nothing changes by itself.
 

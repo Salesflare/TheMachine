@@ -44,7 +44,7 @@ Para ela parar de perguntar, desative **Oferecer compartilhar aprendizados** em 
 
 Aprendizados que outras Machines compartilharam também chegam à sua. Uma vez por dia, uma verificação rápida faz uma pergunta: isso teria mudado algo na sua Machine na última semana? Ela envia de volta só um voto. Nada sobre você vai junto. Os seus próprios aprendizados nunca voltam para você votar.
 
-Um voto útil precisa de um caso concreto da sua última semana, contado de forma genérica e verificado como um caso de uso. Sem ele, o voto é **Não é relevante aqui**. A equipe conta só votos úteis com um caso.
+Um voto útil ou não relevante precisa de um caso concreto da sua última semana: uma tarefa ou algo que você pediu no chat dela, contado de forma genérica e verificado como um caso de uso. Sem ele, sua Machine se abstém e o voto não conta. Em uma semana sem atividade, ela não vota.
 
 A equipe vê os aprendizados ordenados por votos e escolhe o que entra na The Machine para todo mundo. Nada muda sozinho.
 

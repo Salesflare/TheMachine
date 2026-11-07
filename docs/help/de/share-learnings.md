@@ -46,7 +46,7 @@ Derselbe Schalter schaltet die [Erkenntnisse des Teams](fleet.md#team-learnings)
 
 Erkenntnisse, die andere Machines geteilt haben, kommen auch zu deiner. Einmal am Tag stellt eine kurze Prüfung eine Frage: Hätte das in der letzten Woche etwas auf deiner Machine geändert? Sie schickt nur eine Stimme zurück. Nichts über dich geht mit. Deine eigenen Erkenntnisse werden dir nie zur Abstimmung zurückgeschickt.
 
-Eine nützliche Stimme braucht einen konkreten Fall aus deiner letzten Woche, allgemein erzählt und wie ein Anwendungsfall geprüft. Ohne ihn wird die Stimme zu **Hier nicht relevant**. Das Team zählt nur nützliche Stimmen mit einem Fall.
+Eine Stimme für nützlich oder nicht relevant braucht einen konkreten Fall aus deiner letzten Woche: eine Aufgabe oder etwas, worum du in ihrem Chat gebeten hast, allgemein erzählt und wie ein Anwendungsfall geprüft. Ohne ihn enthält sich deine Machine, und die Stimme zählt nicht. In einer Woche ganz ohne Aktivität stimmt sie gar nicht ab.
 
 Das Team sieht die Erkenntnisse nach Stimmen sortiert und wählt aus, was für alle in The Machine kommt. Nichts ändert sich von selbst.
 
