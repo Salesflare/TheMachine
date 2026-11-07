@@ -8,7 +8,7 @@ site: Sign in with Microsoft
 ---
 ## What it reads
 
-**Microsoft OneDrive** reads your Word files in OneDrive and SharePoint. Outlook doesn't need to be connected. Google Docs come later. It brings in:
+**Microsoft OneDrive** reads your Word files in OneDrive and SharePoint, on a hosted Machine and on your own computer. Outlook doesn't need to be connected. For Google Docs, see below. It brings in:
 
 - Docs someone shares with you.
 - Comments and replies on your docs, and comments that mention you.
@@ -58,6 +58,13 @@ On a hosted Machine, or your own computer paired with your account:
 - Press **Sign in with Microsoft** and allow reading and editing your files.
 
 If Microsoft doesn't allow reading, it isn't added. If you press **Allow edits** and Microsoft doesn't allow edits, it says so.
+
+## Google Docs
+
+Google Docs can't be connected yet. Reading them needs a Google permission The Machine doesn't ask for yet. What works today:
+
+- On your own computer, your Machine can make a new Google Doc in a Gmail account signed in there that already has Drive access. It doesn't read your other Google Docs or their comments.
+- A hosted Machine can't use Google Docs yet.
 
 ## Work or personal
 

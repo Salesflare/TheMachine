@@ -8,7 +8,7 @@ site: Sign in with Microsoft
 ---
 ## Was es liest
 
-Die Verbindung **Microsoft OneDrive** liest Word-Dateien in OneDrive und SharePoint. Du meldest dich dafür mit Microsoft an, mit oder ohne verbundenes Outlook. Das geht auf einer gehosteten Machine und auf deinem eigenen Computer, der mit deinem Konto gekoppelt ist. Google Docs kommen später: Die Google-Anmeldung von The Machine kann noch keine Dokumente lesen. Es bringt rein:
+Die Verbindung **Microsoft OneDrive** liest Word-Dateien in OneDrive und SharePoint. Du meldest dich dafür mit Microsoft an, mit oder ohne verbundenes Outlook. Das geht auf einer gehosteten Machine und auf deinem eigenen Computer, der mit deinem Konto gekoppelt ist. Zu Google Docs siehe unten. Es bringt rein:
 
 - Dokumente, die jemand mit dir teilt.
 - Kommentare und Antworten in Dokumenten, die dir gehören, und Kommentare, die dich erwähnen.
@@ -58,6 +58,13 @@ Du brauchst dafür kein verbundenes Outlook.
 - Dein eigener Computer, gekoppelt mit deinem Konto: Öffne **Verbindungen**, **+ Hinzufügen**, wähle **Microsoft OneDrive** und tippe auf **Mit Microsoft anmelden**.
 
 Es prüft, ob die Anmeldung Dokumente lesen darf. Ohne dieses OK wird es nicht hinzugefügt. Tippst du auf **Bearbeiten erlauben** und Microsoft erlaubt keine Änderungen, sagt es das, statt Verbunden zu zeigen.
+
+## Google Docs
+
+Google Docs lassen sich noch nicht verbinden. Zum Lesen braucht es eine Google-Berechtigung, nach der The Machine noch nicht fragt. Was heute geht:
+
+- Auf deinem eigenen Computer kann deine Machine ein neues Google-Dokument in einem dort angemeldeten Gmail-Konto anlegen, das schon Zugriff auf Drive hat. Deine anderen Google Docs und ihre Kommentare liest sie nicht.
+- Eine gehostete Machine kann Google Docs noch nicht nutzen.
 
 ## Arbeit oder privat
 
