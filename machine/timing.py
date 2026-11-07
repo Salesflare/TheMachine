@@ -9,3 +9,10 @@ SLOW_REQUEST_SECONDS = 5.0
 
 
 _REQUEST_TIMING = threading.local()  # this thread's request, while one is answered (Store.connect adds to it)
+
+
+def close_kept(timing):
+    """Close the connections a request kept for its next store.connect (Store._connect): at the end of each request."""
+    for kept in (timing or {}).pop('kept', {}).values():
+        while kept:
+            kept.pop().close()

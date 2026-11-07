@@ -2419,7 +2419,7 @@ def needs_you(config):
                           'url': '#connections=add' if manage else None, 'action': 'Finish it' if manage else 'Run: assistant connect'})
     # The main model can't run (no sign-in or key for its provider): nothing gets reviewed, the first look neither
     model = main_model()
-    if model and model_ready(config) is False:
+    if model and model_ready(config, wait=False) is False:  # the poll never waits on `openclaw models status`
         items.append({'id': 'model-signed-out', 'text': f'Your main model, {model}, can\u2019t run: nothing is signed in for it. '
                       'Nothing gets checked until it can.', 'url': manage + '#model' if manage else None,
                       'action': 'Fix it' if manage else 'Run: openclaw models auth login'})
@@ -3242,10 +3242,13 @@ class App(*APP_MIXINS):
         given = str(self.config.get('started_at') or '')
         if given:
             return given
+        if getattr(self, '_started_at', None):  # found once, it stays: the poll asked each time, two passes over big tables
+            return self._started_at
         with self.store.connect() as db:
             row = db.execute("SELECT MIN(t) FROM (SELECT MIN(started_at) t FROM analyses UNION ALL SELECT MIN(created_at) FROM suggestions"
                              " UNION ALL SELECT MIN(at) FROM sync_activity UNION ALL SELECT MIN(day) FROM sync_daily)").fetchone()
-        return row[0] if row and row[0] else None
+        self._started_at = row[0] if row and row[0] else None
+        return self._started_at
 
     def meeting_notes(self, args, owner_dashboard=False, limit=meeting_notes.READ_CHARS):
         """A meeting's Notes and Transcript (meeting_notes.py). Without event_id: the meetings of a day (day, YYYY-MM-DD,

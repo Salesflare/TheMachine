@@ -36,7 +36,7 @@ from machine import omarchy
 from machine.sources.calendar import calendar_account_owner, company_domains, invite_people, team_people
 from machine.sources.connectors import writable_calendars
 from machine.text import _address, ATTACHMENT_INLINE, encoded, shown_body
-from machine.timing import _REQUEST_TIMING, SLOW_REQUEST_SECONDS
+from machine.timing import _REQUEST_TIMING, SLOW_REQUEST_SECONDS, close_kept
 from machine.web import status_delta
 from machine.web.serving import (
     compress_body,
@@ -147,6 +147,7 @@ def make_handler(app):
         def parse_request(self):
             # the request line is in: the clock starts here, not while a kept-alive connection waits for the next one
             self.started, self.action_name = time.monotonic(), ''
+            close_kept(getattr(_REQUEST_TIMING, 'value', None))  # a request before it on this thread that wasn't logged
             _REQUEST_TIMING.value = {'db_wait': 0.0, 'db_held': 0.0, 'db_connections': 0}
             ok = super().parse_request()
             _REQUEST_TIMING.value['read'] = ok and self.command == 'GET'  # a read: what it reads twice can be kept (Fleet.meta)
@@ -164,6 +165,7 @@ def make_handler(app):
         def log_slow(self):
             """A request over SLOW_REQUEST_SECONDS: its path (no query), the action, the total and the database time."""
             timing, _REQUEST_TIMING.value = getattr(_REQUEST_TIMING, 'value', None), None
+            close_kept(timing)  # the connections it kept between its store.connect calls
             if self.started is None or timing is None:
                 return
             total = time.monotonic() - self.started

@@ -126,7 +126,11 @@ def owner_choices(fleets):
 # ------------------------------------------------------------------ the build: owners and organizations with several websites
 
 def aliases(db):
-    """{alias org id: the org id it is part of}, followed through chains."""
+    """{alias org id: the org id it is part of}, followed through chains. Kept on the connection while it has made no
+    change: the Projects board asked once per project (over a thousand reads of the table for one Graph tab)."""
+    kept = getattr(db, '_org_aliases', None)
+    if kept and kept[0] == db.total_changes:
+        return kept[1]
     rows = dict(db.execute('SELECT alias,target FROM org_aliases').fetchall())
     out = {}
     for alias in rows:
@@ -136,6 +140,10 @@ def aliases(db):
             target = rows[target]
         if target != alias:
             out[alias] = target
+    try:
+        db._org_aliases = (db.total_changes, out)
+    except AttributeError:  # a plain sqlite3 connection: read each time
+        pass
     return out
 
 

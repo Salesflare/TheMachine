@@ -6,6 +6,7 @@ are; both default to the usual places)."""
 import json
 from pathlib import Path
 import subprocess
+import threading
 import time
 
 # Background work never runs on these models (several times the cost for the same result): the cheaper one instead.
@@ -56,18 +57,41 @@ def main_model():
 
 MODEL_READY_SECONDS = {True: 600, False: 60}  # how long one reading of `models status` holds, by its answer
 _model_ready = {}
+_model_reading = set()  # models whose `models status` is being read in the background now
+_model_lock = threading.Lock()
 
 
-def model_ready(config=None, run=subprocess.run):
+def model_ready(config=None, run=subprocess.run, wait=True):
     """Whether the main model can run, as `openclaw models status` says (no model call; the same reading a hosted
     Machine's health report uses): its provider has a sign-in or key, and any provider in use without one is only a
-    fallback's. None when that can't be read. Cached a short while; a not-ready answer for less long."""
+    fallback's. None when that can't be read. Cached a short while; a not-ready answer for less long.
+
+    wait=False never runs the command on the caller's thread (a request answering the status poll: one `openclaw`
+    process takes 20 s or more on a busy Machine): the last reading, even an expired one, or None before the first,
+    while one background thread reads it again."""
     model = main_model()
     if not model:
         return False
     hit = _model_ready.get(model)
     if hit and hit[0] > time.monotonic():
         return hit[1]
+    if wait:
+        return _read_model_ready(model, config, run)
+    with _model_lock:
+        start = model not in _model_reading
+        _model_reading.add(model)
+    if start:
+        def read():
+            try:
+                _read_model_ready(model, config, run)
+            finally:
+                with _model_lock:
+                    _model_reading.discard(model)
+        threading.Thread(target=read, name='model-ready', daemon=True).start()
+    return hit[1] if hit else None
+
+
+def _read_model_ready(model, config, run):
     try:
         result = run([str((config or {}).get('openclaw') or 'openclaw'), 'models', 'status', '--json'],
                      capture_output=True, text=True, timeout=90)

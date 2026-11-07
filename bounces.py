@@ -60,7 +60,15 @@ def ensure(db):
 
 
 def _table(db):
-    return bool(db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='email_bounces'").fetchone())
+    """Whether the bounces table is there; once it is, kept on the connection (each draft on the to-do list asked twice)."""
+    if getattr(db, '_bounces_table', False):
+        return True
+    found = bool(db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='email_bounces'").fetchone())
+    try:
+        db._bounces_table = found
+    except AttributeError:  # a plain sqlite3 connection: asked each time
+        pass
+    return found
 
 
 def parse_time(value):
