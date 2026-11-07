@@ -8,14 +8,14 @@ function fleetAskRow(n){if(!state?.fleet?.on||!['person','org'].includes(n.kind)
 // What a Fleet costs, leaving it and starting one stay on the account (quotes, confirmations, Stripe), each its own
 // focused step there: hosted, a one-time hop (/_machine/account-hop) carrying which Fleet; paired, a link that opens the
 // account in a new tab, signing in there (this Machine's token opens nothing). Hidden in the phone app ([data-buy]).
-const FLEET_PARTS={fleet_costs:'costs',fleet_leave:'leave',fleet_start:'start'};
+const FLEET_PARTS={fleet_costs:'costs',fleet_leave:'leave',fleet_start:'start',fleet_settings:'settings'};
 function fleetAcctGo(to,label,fleet=''){
  if(state.manage_url)return html`<form method="post" action="/_machine/account-hop" class="inline"><input type="hidden" name="to" value="${to}">${fleet?html`<input type="hidden" name="fleet" value="${fleet}">`:''}<button class="fleet-acct-link">${label}</button></form>`;
  if(!/^https:\/\//.test(state.account_url||''))return'';
  return html`<a class="fleet-acct-link" href="${state.account_url}?tab=fleet&part=${FLEET_PARTS[to]}${fleet?'&fleet='+fleet:''}" target="_blank" rel="noopener">${label} ↗</a>`}
-// Under each Fleet's pane (or Friends, while there is no Fleet): its costs and leaving it, then starting another
+// Under each Fleet's name, in its pane and in Manage (or Friends, while there is no Fleet): its costs, its settings, starting another, leaving it
 function fleetAcct(x,start){const go=fleetAcctGo('fleet_start',start);if(!go)return'';
- return html`<div class="fleet-acct" data-buy>${/^fl_[0-9a-f]{16}$/.test(x?.id||'')?html`${fleetAcctGo('fleet_costs','What it costs',x.id)}${go}<span class="fleet-leave">${fleetAcctGo('fleet_leave','Leave this Fleet',x.id)}</span>`:go}</div>`}
+ return html`<div class="fleet-acct" data-buy>${/^fl_[0-9a-f]{16}$/.test(x?.id||'')?html`${fleetAcctGo('fleet_costs','What it costs',x.id)}${fleetAcctGo('fleet_settings','Fleet settings',x.id)}${go}<span class="fleet-leave">${fleetAcctGo('fleet_leave','Leave this Fleet',x.id)}</span>`:go}</div>`}
 let fleetData=null,fleetShown=Promise.resolve(),fleetViewVersion=0,fleetPane=localStorage.getItem('fleet-pane')||'';
 // The Fleet tab shows one view at a time; switching is instant (no reload) and remembered.
 function showFleetPane(id){const view=$('#fleet-view');if(!view.querySelector(`[data-pane="${CSS.escape(id)}"]`))return;fleetPane=id;localStorage.setItem('fleet-pane',id);

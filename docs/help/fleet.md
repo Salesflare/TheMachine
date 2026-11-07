@@ -81,11 +81,13 @@ To join a Fleet, start one, or pair a Machine on your own computer, see [Plans a
 
 ## For owners and admins
 
-**Manage** in the Fleet tab lists each Fleet you run: its people, their roles and the invites. On a hosted Machine you invite, change roles, remove people and answer join requests right there. A change that affects the price opens your account to confirm it first. On a self-hosted Machine it shows who is in it, with a link to that Fleet on your account.
+**Manage** in the Fleet tab lists each Fleet you run: its people, their roles and the invites. On a hosted Machine you invite, change roles, remove people and answer join requests right there. A change that affects the price opens your account to confirm it first. On a self-hosted Machine it shows who is in it, with a link to that Fleet's settings on your account, where you manage its people and invites.
 
-The Fleet part of your account page shows two more things:
+**Fleet settings**, under each Fleet's name in its pane and in Manage, opens that Fleet's settings on your account: shared connections, security, company sign-in, which Machine answers, and these two:
 
 - **Removed lately**: each person removed, or who left. **Removed, confirmed** means their Machine deleted the work data and they're signed out everywhere. Until then it says **Pending** and why.
 - **Activity**: who did what and when: invites, joins, removals, roles, hosted Machines, billing, shared connections and approvals. Also every time our support team opened a member's Machine or its logs. Never message content. **Download CSV** exports it. Kept 12 months.
+
+**Ask me before starting a member's Machine**, for the owner: on, a new member's Machine waits for your OK, even in a free Fleet. Off, in a free Fleet it starts at once and you're told. A Machine that costs money always waits for you to confirm its amount.
 
 After **Stop sharing**, a shared connection shows **Removed, confirmed** once every Machine lost access to it.
