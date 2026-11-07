@@ -294,7 +294,8 @@ class OwnerBoundary(unittest.TestCase):
                  'Origin': 'https://machine.example:8443', 'X-CSRF-Token': csrf}
         status, body = self.post(port, {'action': 'set_locale', 'args': {'locale': 'en-GB'}}, owner)
         self.assertNotEqual(status, 403, body)  # through the real allowlist (no config file here: it says so instead)
-        self.assertIn(b'config.json', body)
+        self.assertIn(b'be changed on this Machine', body)  # set_locale's own refusal, in plain words
+        self.assertNotIn(b'not available here', body)
 
     def test_an_action_the_server_cant_read_says_what_to_do(self):
         # A Fleet card's Share once also sent a to-do decision without a to-do (decide, no suggestion_id): a KeyError the
