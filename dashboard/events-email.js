@@ -57,16 +57,21 @@ const box=container.querySelector('.email-body');if(!box||box.dataset.filled)ret
 const said=String(o.body||'').replace(/\r\n/g,'\n').split('\n').filter(l=>!(o.kind==='calendar'&&/^Participants: /.test(l))).join('\n').trim();  // an invite's raw guest addresses: the meeting's With has them by name
 const text=()=>{setHTML(box,said?html`<div class="email-text">${linkify(said)}</div>`:html`<p class="muted">${t('No description.')}</p>`)};
 if(o.kind!=='email'||o.near){text();return}  // a message around the source reads as its stored text
-const view=await emailViewFor(id,o.event_id);if(!view.html){text();return}
+const view=await emailViewFor(id,o.event_id);if(!view.html){text();if(view.failed)emailRetry(container,box,o,id);return}
 const frame=document.createElement('iframe');frame.className='email-frame';frame.title='Email';frame.setAttribute('sandbox','allow-same-origin allow-popups allow-popups-to-escape-sandbox');frame.setAttribute('referrerpolicy','no-referrer');
 frame.style.visibility='hidden';const reveal=()=>{const doc=frame.contentDocument;if(doc?.body&&dark())try{darkenEmail(doc)}catch{}frame.style.visibility=''};setTimeout(reveal,1500);
 frame.addEventListener('load',()=>{reveal();const doc=frame.contentDocument;if(!doc)return;const fit=()=>{frame.style.height=Math.min(Math.max(Math.ceil(doc.body.getBoundingClientRect().height),80),20000)+'px'};fit();new ResizeObserver(fit).observe(doc.body)});
 frame.srcdoc=emailDoc(view.html,view.images||{},id,o.event_id);box.replaceChildren(frame)}
+// The full email didn't come (Gmail or the Machine didn't answer): the saved text stays, with one line to try again.
+// Not when there is no full email to read (an email from another provider): that is the saved text alone.
+function emailRetry(container,box,o,id){const p=document.createElement('p');p.className='email-retry muted';
+setHTML(p,html`${t('Couldn’t load the full email.')} <button type="button" class="link" data-email-retry>${t('Try again')}</button>`);box.append(p);
+p.querySelector('button').onclick=()=>{delete box.dataset.filled;setHTML(box,html`<p class="muted">Loading…</p>`);fillMessage(container,o,id)}}
 // Files attached to this card's email draft, as links that open over the Tailscale dashboard.
 const draftFileLinks=(id,files)=>html`${(files||[]).map(a=>html`<a class="attachment" href="${'api/draft-attachment?id='+encodeURIComponent(id)+'&sha='+encodeURIComponent(a.sha256)}" target="_blank" rel="noreferrer">📎 ${a.name}<small>${fileSize(a.size)}</small></a>`)}`;
 const draftFiles=s=>{const seen=new Set();return taskActions(s).filter(a=>['email','email_demo'].includes(a.kind)).flatMap(a=>a.attachments||[]).filter(a=>!seen.has(a.sha256)&&seen.add(a.sha256))};
 const draftFilesBlock=s=>{const files=draftFiles(s);return files.length?html`<div class="draft-files"><h3>Attached to your draft</h3><div class="attachments">${draftFileLinks(s.id,files)}</div></div>`:''};
-const emailViewFor=(id,ev)=>{const key=id+':'+ev;if(!emailViews.has(key))emailViews.set(key,request(`api/email?id=${id}&event=${encodeURIComponent(ev)}`).catch(()=>{emailViews.delete(key);return {html:''}}));return emailViews.get(key)};
+const emailViewFor=(id,ev)=>{const key=id+':'+ev;if(!emailViews.has(key))emailViews.set(key,request(`api/email?id=${id}&event=${encodeURIComponent(ev)}`).catch(e=>{emailViews.delete(key);return {html:'',failed:e?.status!==404||!!e.retry}}));return emailViews.get(key)};
 // Cards on screen read their email ahead, quietly: two at a time when the browser is idle, each card once, the last
 // PREFETCH_KEEP kept. Opening one is then instant.
 const PREFETCH_KEEP=30,prefetchQueue=[],prefetched=new Set();let prefetching=0;

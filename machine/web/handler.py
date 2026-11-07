@@ -634,8 +634,10 @@ def make_handler(app):
                 args = urllib.parse.parse_qs(path.query)
                 try:
                     self.output(200, app.email_view(args.get('id', [''])[0], args.get('event', [''])[0]))
-                except (ValueError, SourceError, StopIteration, sqlite3.OperationalError):
+                except (ValueError, StopIteration, sqlite3.OperationalError):
                     self.output(404, {'error': 'Email not available'})
+                except (OSError, SourceError):  # Gmail didn't answer (network, token, rate limit): the viewer offers a retry
+                    self.output(404, {'error': 'Email not available', 'retry': True})
             elif path.path in ('/api/attachment', '/api/draft-attachment', '/api/team-file'):
                 args = urllib.parse.parse_qs(path.query)
                 try:
