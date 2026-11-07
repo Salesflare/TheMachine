@@ -1,36 +1,59 @@
 # Product vision
 
-A short, living description of what The Machine is and what "best" means. Every change, agent and test is judged
-against it. It is reviewed every few days and changes only on the owner's word.
+AI should work for you, so you can do your best work and live your best life. The Machine is that AI:
 
-## What it is
+- **Proactive.** It doesn't wait for a prompt. It takes work off your hands every day.
+- **With you everywhere.** It follows you seamlessly across your computer, your phone and every app you use.
+- **Work and life, as one.** It handles both and bridges them seamlessly: the meeting that clashes with school pickup gets
+  caught. What's private stays private.
+- **Always current.** It keeps pace with AI: new models and abilities reach your Machine as soon as they're good.
+- **Yours.** You own it and your data, not a big corporation.
+- **Secure, wherever it runs.** On your own computer for complete ownership, or on a private cloud computer we run
+  for you when you'd rather not think about it.
+- **For everyone.** Easy to start and affordable.
 
-The Machine is your chief of staff, running on your own computer or one we host. It reads what comes in (mail, Slack,
-WhatsApp, Telegram, calendar) and turns it into a short list of to-dos that arrive with the work already done: a draft
-ready, a meeting prepped, a promise tracked. You decide, it does.
+This page says where we're going and what "best" means. Every change, agent and test is judged against it. It is
+reviewed every few days and changes only on the owner's word.
 
-## What "best" means, in order
+## The idea
 
-1. **Trust.** Nothing goes out unseen. Your data is yours: local-first, open source, an end-to-end encrypted Network.
-   Security is never relaxed.
-2. **Right.** It catches everything that matters (to-dos, promises, follow-ups) and ignores the noise.
-3. **Does as much as possible, without you losing control.** Every to-do arrives as close to done as it can be, so it
-   is one tap to approve, not homework. Taking work off your hands never means acting behind your back.
-4. **Instant and calm.** Clicks answer in about 100 ms. Short copy, few notifications, only ones that matter.
-5. **Lean on tokens.** As much intelligence as possible per token, so a Machine runs well on a $20 OpenAI or Claude
-   plan. Spend model calls where they change the outcome; do the rest with plain code, caching and cheap checks.
-6. **Gets better by itself.** It learns your voice and decisions, fixes its own problems, and shares learnings across
-   Machines.
-7. **For teams and families.** A Fleet shares work context, and the Graph and Boards become the CRM that replaces
+Your day shouldn't be spent sorting mail, chasing replies and remembering what you promised. Without being asked,
+The Machine reads everything that comes in (mail, Slack, WhatsApp, Telegram, calendar) and hands you a short list of to-dos with the
+work already done: the draft written, the meeting prepped, the promise kept track of. You decide, it does. You get
+your head back for the work only you can do.
+
+## What we believe, in order
+
+1. **It's yours, and secure.** It runs on your own computer, or on a private cloud computer of your own that we host.
+   Either way your data stays in it, in open source
+   code you can read. You pick the model (OpenAI, Claude, a local one) and use your own plan. Nothing locks you in. Nothing goes out without
+   you seeing it, and security is never relaxed.
+2. **It gets it right.** It catches everything that matters (to-dos, promises, follow-ups) and lets the noise go.
+3. **It does the work, you keep control.** Every to-do arrives as close to done as it can be: one tap to approve, not
+   homework. It takes work off your hands, never acts behind your back.
+4. **It's for everyone.** Easy: set up in minutes, no technical skills needed, plain words throughout. Affordable:
+   a fair price for a hosted Machine, free to run yourself, and lean enough for a $20 model plan.
+5. **It's with you everywhere.** Desktop, phone, chat apps, browser, work and personal: one Machine that carries the
+   context from one to the next and works with the tools you already use. It keeps work and personal apart where they
+   should be (your team never sees your personal life) and bridges them where it helps. New connections are added as
+   people need them.
+6. **It feels instant and calm.** Every click answers in about 100 ms. Few words, few notifications, only ones that
+   matter.
+7. **It's smart, not wasteful.** As much intelligence as possible per token, so it runs well on a $20 OpenAI or Claude
+   plan. Model calls go where they change the outcome; plain code, caching and cheap checks do the rest.
+8. **It gets better by itself.** It learns your voice and your decisions, fixes its own problems, and shares what it
+   learns across Machines. It keeps pace with AI: when a better model or ability arrives, your Machine can use it.
+9. **It works for teams and families.** A Fleet shares context, and the Graph and Boards become the CRM that replaces
    Salesflare.
 
 ## What it isn't
 
-Not a chatbot you have to prompt. Not a dashboard of everything. Not something that acts behind your back.
+Not a chatbot that waits for you to prompt it. Not a dashboard of everything. Not something that acts behind your back. Not a
+walled garden that holds your data or your choice of model hostage.
 
-## Fast learning, no churn
+## How we get there: fast learning, no churn
 
-- Bugs and misses are fixed the same day. People feel things getting better, not moving around.
+- Bugs and misses are fixed the same day. People feel it getting better, not moving around.
 - Names, layout and flows stay stable. Changes are small and one at a time; anything big goes to the owner first.
 - The nightly agent-users test is a scoreboard, not a redesign engine. It tracks missed to-dos, wrong to-dos, time to
   the first to-do, friction per step, click speed and tokens per day. Progress shows as those numbers improving week
