@@ -105,7 +105,8 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   hosted sign-ins, silent failures, read windows, the connector prompt lines) and `whatsapp.py` (the WhatsApp source),
   `machine/delivery/` (`push.py`: phone pushes, app notices, reminders and setup hints; `telegram.py`: Telegram sends;
   `deliver.py`: the delivery loop, Fleet pushes and uncertain sends), `machine/actions.py` (the `*_ACTIONS` sets: who
-  may call which action).
+  may call which action), `machine/store/core.py` (`StoreCore`: opening the database, its schema, message protection,
+  exclusion purges, connect; `Store` in `assistant.py` subclasses it).
 - **Dashboard code:** in its area's part in `dashboard/` (`<area>-<what>.js`: shell, todos, settings, graph, calendar,
   connections, help, events, new, fleet), next to the functions it works with, never at the end of the script. The
   page's core is in the `shell-*` parts too: locale and error reports (`shell-core.js`), network and outbox, `render()`
