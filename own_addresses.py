@@ -26,6 +26,8 @@ from __future__ import annotations
 import json
 import re
 
+from machine.store import stamps
+
 SCHEMA = '''
 CREATE TABLE IF NOT EXISTS own_addresses(address TEXT PRIMARY KEY,sources TEXT NOT NULL,state TEXT NOT NULL,reason TEXT,updated_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS own_address_choices(address TEXT PRIMARY KEY,choice TEXT NOT NULL,at TEXT NOT NULL);
@@ -53,6 +55,10 @@ NAMED_ONLY = 'Has your name'
 
 
 def ensure(db):
+    stamps.once(db, 'own_addresses', _ensure, 'own_domains')  # a page asked two dozen times
+
+
+def _ensure(db):
     for statement in filter(str.strip, SCHEMA.split(';')):  # never executescript: it would commit a build's transaction
         db.execute(statement)
 

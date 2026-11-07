@@ -1777,9 +1777,12 @@ class Fleet(fleet_requests.Requests, fleet_reviews.Reviews, friends.Friends, con
 
     # -- state
     def meta(self, key, default=None):
-        # The directory, read once per dashboard request: the Fleet tab asked for it some 400 times, a connection each
-        # (most of a 10 s answer). Kept as its text, so each caller still gets its own copy; set_meta drops it.
-        timing = getattr(_REQUEST_TIMING, 'value', None) if key == 'directory' else None
+        # The directory read once per dashboard request, and every key once per GET: the Fleet tab asked for the
+        # directory some 400 times, a connection each (most of a 10 s answer), and a person's page its graph keys and
+        # settings dozens of times. Kept as its text, so each caller still gets its own copy; set_meta drops it.
+        timing = getattr(_REQUEST_TIMING, 'value', None)
+        if timing is not None and key != 'directory' and not timing.get('read'):
+            timing = None  # an action can write a key straight in fleet_meta and read it back: only a GET keeps the rest
         memo = timing.setdefault('fleet_meta', {}) if timing is not None else None
         if memo is not None and (id(self), key) in memo:
             text = memo[(id(self), key)]

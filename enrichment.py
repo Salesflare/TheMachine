@@ -1305,10 +1305,12 @@ def offer_facts(db, offers, source, now):
     return changed
 
 
-def people_facts(db, fields=None):
-    """{identifier: {field: (value, rank, source, seen_at)}}."""
+def people_facts(db, fields=None, ids=None):
+    """{identifier: {field: (value, rank, source, seen_at)}}; ids: only these identifiers (a person's page), by the key."""
     try:
-        rows = db.execute('SELECT identifier,field,value,rank,source,seen_at FROM person_facts').fetchall()
+        rows = (db.execute('SELECT identifier,field,value,rank,source,seen_at FROM person_facts WHERE identifier IN (SELECT value FROM json_each(?))',
+                           (json.dumps(sorted({str(i) for i in ids})),)).fetchall() if ids is not None else
+                db.execute('SELECT identifier,field,value,rank,source,seen_at FROM person_facts').fetchall())
     except Exception:
         return {}
     out = {}
@@ -1347,7 +1349,7 @@ def with_facts(profile, found):
 
 def view_facts(db, ids):
     """A person's headline and bio in their own words, for their page."""
-    found = people_facts(db, VIEW_FACTS)
+    found = people_facts(db, VIEW_FACTS, ids)
     best = best_facts([found[i] for i in ids if i in found])
     return {field: {'text': value, 'from': FACT_SOURCES.get(source, source), 'at': seen_at[:10]}
             for field, (value, rank, source, seen_at) in best.items()}

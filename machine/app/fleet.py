@@ -1,6 +1,7 @@
 """The Fleet in the service (refactor PR 22; fleet.py has the Fleet itself): attaching it to this Machine, its pings and
 notices, the to-dos and briefs it makes, team votes and shared learnings, shared connectors and device grants, and the
 view Settings shows. Moved out of assistant.App as is. A mixin of assistant.App (APP_MIXINS)."""
+import copy
 import datetime as dt
 import json
 import re
@@ -629,6 +630,6 @@ class FleetApp:
         if not getattr(self, 'fleet', None):
             return {}
         try:
-            return graph.fleet_marks(db, self.fleet.fleets())
+            return copy.deepcopy(shared_graph.fleet_marks(db, self.fleet.fleets()))  # kept between requests (stamps.py)
         except (sqlite3.Error, ValueError, TypeError, KeyError, AttributeError):
             return {}

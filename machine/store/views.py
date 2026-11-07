@@ -697,14 +697,14 @@ class ViewsStore(ConversationStore):
             for row in db.execute('SELECT * FROM review_runs ORDER BY started_at DESC LIMIT 20'):
                 result['review_runs'].append(self.review_run_view(db, dict(row)))
             result['review_health']['worker'] = result['review_runs'][0] if result['review_runs'] else None
+            listed = {review['id']: json.loads(review['items']) for review in result['analyses']}
+            # each listed signal's review state in one read, not one per signal (thousands over the last 100 reviews)
+            analyzed = {r[0]: r[1] for r in db.execute('SELECT id,analyzed_version FROM events WHERE id IN (SELECT value FROM json_each(?))',
+                                                       (json.dumps(sorted({i['id'] for items in listed.values() for i in items})),))}
             for review in result['analyses']:
-                items = json.loads(review['items'])
+                items = listed[review['id']]
                 review['checked_count'] = sum(not i.get('excluded') and not i.get('deferred') for i in items) if review['status']=='complete' else 0
-                outstanding = 0
-                for item in items:
-                    row = db.execute('SELECT analyzed_version FROM events WHERE id=?', (item['id'],)).fetchone()
-                    if row and row['analyzed_version'] < item['version']:
-                        outstanding += 1
+                outstanding = sum(1 for item in items if item['id'] in analyzed and analyzed[item['id']] < item['version'])
                 review['remaining_count'] = outstanding
                 review['recovered_count'] = sum(not i.get('excluded') for i in items) - outstanding if review['status']!='complete' else None
         result['quality'] = self.quality_report()
