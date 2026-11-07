@@ -55,6 +55,30 @@ new MutationObserver(()=>document.querySelectorAll('.fleet-tabs:not([data-faded]
 const GRAPH_PANES=['people','roles','projects','orgs'];
 function showGraphPane(id){graphPane=id;localStorage.setItem('graph-pane',id);graphShown=id;graphHashSync();graphSubSync();const view=$('#people-view');if(!view.querySelector(`[data-graph-panel="${CSS.escape(id)}"]`)){if(!graphNode&&!$('#people-query').value.trim())return;$('#people-query').value='';people('');return}
  for(const b of view.querySelectorAll('[data-graph-pane]'))b.setAttribute('aria-selected',b.dataset.graphPane===id);for(const p of view.querySelectorAll('[data-graph-panel]'))p.hidden=p.dataset.graphPanel!==id;tabsShow(view.querySelector('.sub-tabs'));tabsShow(view.querySelector(`[data-graph-panel="${CSS.escape(id)}"] .sub-tabs`))}
+// A record opens from what was fetched when the pointer rested on its link (80 ms) or the link got focus: kept 30 s, the
+// last 8, each used once. A finger starts it on touching the link, never on a scroll; a node already on its way is not
+// asked again. Any change sent to the Machine (request, not a GET) forgets them, so a page never opens older than
+// what was just saved; a quiet refresh always asks the Machine.
+const PEEK_MS=30000,PEEK_MAX=8;  // graphPeek: shell-network.js, which forgets it on a change
+const peekFresh=node=>{const hit=graphPeek.get(node);return hit&&Date.now()-hit.at<PEEK_MS?hit:null};
+function graphPeekTake(node){const hit=peekFresh(node);graphPeek.delete(node);if(hit)return hit.p;
+ const p=request('api/graph?node='+encodeURIComponent(node));graphPeek.set(node,{at:Date.now(),p,taken:true});const off=()=>{if(graphPeek.get(node)?.p===p)graphPeek.delete(node)};p.then(off,off);return p}
+function graphPeekStart(node,ctl){if(!node||/^promise:/.test(node)||node===graphNode&&!$('#people').hidden||peekFresh(node))return null;
+ const p=request('api/graph?node='+encodeURIComponent(node),ctl?{signal:ctl.signal}:undefined),hit={at:Date.now(),p,ctl};graphPeek.set(node,hit);p.catch(()=>{if(graphPeek.get(node)?.p===p)graphPeek.delete(node)});
+ while(graphPeek.size>PEEK_MAX)graphPeek.delete(graphPeek.keys().next().value);return hit}
+{const PEEK_LINK='[data-node],a[href^="#graph/"]',peekNode=el=>{if(el.dataset.node)return el.dataset.node;try{return decodeURIComponent(el.getAttribute('href').slice(7))}catch{return ''}};let timer=0,on=null;
+ document.addEventListener('pointerover',e=>{if(e.pointerType==='touch')return;const el=e.target.closest?.(PEEK_LINK);if(el===on)return;clearTimeout(timer);on=el;if(el)timer=setTimeout(()=>graphPeekStart(peekNode(el)),80)},{passive:true});
+ document.addEventListener('pointerout',e=>{if(on&&!on.contains(e.relatedTarget)){clearTimeout(timer);on=null}},{passive:true});
+ document.addEventListener('focusin',e=>{const el=e.target.closest?.(PEEK_LINK);if(el)graphPeekStart(peekNode(el))});
+ // A finger: the fetch starts as it touches the link, so it is about 100 ms ahead of the click. A finger that moves
+ // (more than 10 px) or that the browser takes for a scroll (pointercancel) was no tap: that fetch is called off,
+ // unless the click already took it.
+ let press=null;const off=()=>{if(!press)return;const {node,hit}=press;press=null;if(hit&&graphPeek.get(node)===hit){graphPeek.delete(node);hit.ctl.abort()}};
+ document.addEventListener('pointerdown',e=>{if(e.pointerType!=='touch')return;off();const el=e.target.closest?.(PEEK_LINK);if(!el)return;const node=peekNode(el);
+  press={node,x:e.clientX,y:e.clientY,hit:graphPeekStart(node,new AbortController())}},{passive:true});
+ document.addEventListener('pointermove',e=>{if(press&&e.pointerType==='touch'&&Math.hypot(e.clientX-press.x,e.clientY-press.y)>10)off()},{passive:true});
+ document.addEventListener('pointercancel',off,{passive:true});document.addEventListener('touchcancel',off,{passive:true});
+ document.addEventListener('pointerup',e=>{if(e.pointerType==='touch')press=null},{passive:true})}
 async function people(node=graphNode,quiet=false){const was=graphNode;graphNode=node;if(was!==node&&!$('#people').hidden)graphSubSync();  /* the head names the page's section; + New … is for the lists, not a page */const version=++graphRequest,view=$('#people-view'),oldHtml=view.innerHTML;let headShown=false;const draw=(body,mode='list')=>{if(version!==graphRequest||(quiet||headShown)&&([...view.querySelectorAll('form:not([hidden])')].some(f=>f.checkVisibility())||view.querySelector('.team-thread[open],.tile-menu[open],.tile.dragging,.tile:active,.lane.drop,.board-menu[open],.graph-sort[open],.tag-add input:focus')))return;  /* a refresh never closes what the owner is typing or reading */const back=(quiet||headShown)&&foldsKeep(view);setHTML(view,body);view.dataset.mode=mode;pagerMount(view);if(back)back();if(graphDrawn!==graphNode){graphDrawn=graphNode;if(!$('#people').hidden)pageHead()}};  /* the head changes with the page it names, not before it has loaded */  /* the rows a list already loaded come with it, so the page keeps its height and the reader keeps their place (placeKeep) */
  function nodeDraw(n){const head=n.head_only,again=!head&&headShown;  /* the whole page after its head: keeps the reader's place */
   if(n.owners)graphOwners=n.owners;if(n.timeline){const was=graphTl.page;if(quiet&&was?.id===n.id&&was.timeline?.source){n.recent=was.recent;n.timeline={...n.timeline,...was.timeline}}else n.timeline.shown=GRAPH_ROWS;graphTl.page=n}const group=k=>n.links.filter(l=>l.kind===k&&l.id!==n.org);
@@ -71,14 +95,14 @@ async function people(node=graphNode,quiet=false){const was=graphNode;graphNode=
   if(!quiet&&!again)scrollTo({top:0})}
  try{
  if(node&&/^promise:\d+$/.test(node)){const body=await promisePage(node.slice(8));draw(body,'node');if(version!==graphRequest)return;graphKept=null;$('#people').classList.add('graph-on-node');pageHead();if(!quiet)scrollTo({top:0});return}
- if(node){let n,whole=false;const page=request('api/graph?node='+encodeURIComponent(node)).finally(()=>{whole=true});  /* a record's head first (part=head, no timeline), the whole page when it comes */if(!quiet&&!node.startsWith('team:'))request('api/graph?node='+encodeURIComponent(node)+'&part=head').then(h=>{if(!whole&&version===graphRequest&&h.head_only&&h.kind!=='me'&&!h.team_only)nodeDraw(h)}).catch(()=>{});try{n=await page}catch(e){errCaught(e);if(version!==graphRequest||quiet&&oldHtml)return;  /* a page that didn't load says so, with Try again; a quiet refresh keeps what is shown */
+ if(node){let n,whole=false;const peeked=!quiet&&!!peekFresh(node),page=(quiet?request('api/graph?node='+encodeURIComponent(node)):graphPeekTake(node)).finally(()=>{whole=true});  /* a record's head first (part=head, no timeline), the whole page when it comes */if(!quiet&&!peeked&&!node.startsWith('team:'))request('api/graph?node='+encodeURIComponent(node)+'&part=head').then(h=>{if(!whole&&version===graphRequest&&h.head_only&&h.kind!=='me'&&!h.team_only)nodeDraw(h)}).catch(()=>{});try{n=await page}catch(e){errCaught(e);if(version!==graphRequest||quiet&&oldHtml)return;  /* a page that didn't load says so, with Try again; a quiet refresh keeps what is shown */
    draw(html`<div class="empty graph-load-failed" role="alert"><div><strong>Couldn’t load this page.</strong></div><button type="button" data-graph-retry>Try again</button></div>`,'node');$('#people').classList.add('graph-on-node');return}
   nodeDraw(n);return}
  $('#people').classList.remove('graph-on-node');
  const q=$('#people-query').value.trim();
- if(!q&&graphUnstash(view))return;if(!q&&view.dataset.mode==='search')draw(html`<p class="pager-loading" role="status">Loading…</p>`);
+ if(!q&&graphUnstash(view))return;if(!q&&view.dataset.mode==='search')lateShow(()=>{if(version===graphRequest&&view.dataset.mode==='search')draw(html`<p class="pager-loading" role="status">Loading…</p>`)});
  if(q){const key='gsearch:'+q,p=pager(key,cursor=>request('api/graph?q='+encodeURIComponent(q)+'&cursor='+encodeURIComponent(cursor)).then(r=>({items:r.found,next:r.next})),graphItem);
-  graphStash(view);if(!p.items.length&&p.next!=null){if(view.dataset.mode!=='search'||!view.querySelector('.graph-found'))draw(html`<p class="pager-loading" role="status">Searching…</p>`,'search');await pagerMore(key)}
+  graphStash(view);if(!p.items.length&&p.next!=null){const stop=view.dataset.mode!=='search'||!view.querySelector('.graph-found')?lateShow(()=>{if(version===graphRequest)draw(html`<p class="pager-loading" role="status">Searching…</p>`,'search')}):null;await pagerMore(key);stop?.()}
   if(version!==graphRequest||$('#people-query').value.trim()!==q)return;  /* a late answer to an older search changes nothing */
   if(p.failed&&!p.items.length)throw new Error('Couldn’t search. Try again.');
   draw(p.items.length?html`<div class="graph-found"><div class="section-head"><h2>Found</h2></div>${pagerSlot(key,'','graph-list')}</div>`:html`<div class="empty all-clear graph-found"><img class="sticker" src="brand/thinking.webp" alt=""><div><strong>Nobody by that name.</strong>Try part of a name, an address or a company.</div></div>`,'search');pagerMount(view);return}

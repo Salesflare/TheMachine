@@ -8,7 +8,8 @@ let restartUntil=0;const restartSoon=(ms=120000)=>{restartUntil=Date.now()+ms},r
 // which brings it (sessionCheck).
 let csrfLive=csrf,csrfSet=null;const csrfReady=csrf?Promise.resolve():new Promise(r=>csrfSet=r);
 const sessionGone=()=>Object.assign(Error('Signed out. Sign in again to see your Machine.'),{sessionGone:true});
-async function request(path,options){let r;
+const graphPeek=new Map();  // Graph records fetched ahead of a click (graphPeekStart)
+async function request(path,options){let r;if(options?.method&&options.method!=='GET')graphPeek.clear();  // a change: records fetched ahead may be older now
  if(options?.headers&&'X-CSRF-Token' in options.headers&&!options.headers['X-CSRF-Token']){if(!csrfLive&&navigator.onLine===false)throw offline();
   // The Machine away: wait a little for api/session, then say offline (a change that may wait then waits, decideOrWait)
   await(netDown?Promise.race([csrfReady,new Promise((ok,no)=>setTimeout(()=>no(offline()),8000))]):csrfReady);options={...options,headers:{...options.headers,'X-CSRF-Token':csrfLive}}}
