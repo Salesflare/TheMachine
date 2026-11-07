@@ -32,7 +32,7 @@ Outras Machines podem votar em um aprendizado que você compartilhou, sem saber 
 
 **Enviar aprendizados automaticamente** em Configurações, Segurança vem ligado por padrão. Novos aprendizados vão sem perguntar, verificados do mesmo jeito. Desligue para ela perguntar toda vez. Se você já desligou antes, continua desligado.
 
-Para aprendizados das suas tarefas de Pessoal, ela continua perguntando antes.
+Para aprendizados das suas tarefas de Pessoal, ela continua perguntando antes. Se você já tinha ativado antes, eles também vão sozinhos, como você escolheu.
 
 Cada aprendizado enviado aparece em Configurações, **Atividade**, e em Fleet, **Atividade**, exatamente como foi. Toque em **Retirar** e a equipe não o vê mais.
 

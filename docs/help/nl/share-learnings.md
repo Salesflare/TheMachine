@@ -32,7 +32,7 @@ Andere Machines kunnen stemmen op een inzicht dat je deelde, zonder te weten wie
 
 **Inzichten automatisch versturen** in Instellingen, Beveiliging staat standaard aan. Nieuwe inzichten gaan zonder te vragen, op dezelfde manier gecontroleerd. Zet het uit als hij elke keer moet vragen. Zette je het eerder uit, dan blijft het uit.
 
-Voor inzichten uit je Privé-to-do's vraagt hij nog altijd eerst.
+Voor inzichten uit je Privé-to-do's vraagt hij nog altijd eerst. Had je het eerder zelf aangezet, dan gaan ook die vanzelf, zoals je koos.
 
 Elk verstuurd inzicht staat in Instellingen, **Activiteit**, en in Fleet, **Activiteit**, precies zoals het ging. Tik op **Intrekken** en het team ziet het niet meer.
 

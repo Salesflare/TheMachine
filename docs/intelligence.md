@@ -742,7 +742,7 @@ most five per note.
 
 Now and then your Machine offers to share a few general learnings with The Machine team, so the product gets better for
 everyone (`team_learnings.py`). They go by themselves (Send automatically, on by default) unless you turned that off;
-learnings from Personal to-dos always wait for your Send. For learnings
+learnings from Personal to-dos wait for your Send, unless you had turned Send automatically on yourself before. For learnings
 shared within a Work Fleet, see [Team learnings](fleet.md#team-learnings).
 
 ### What is written
@@ -801,6 +801,9 @@ turned off the offer, Never ask or Careful, stays off; only a Machine that never
 - A batch made from a Personal to-do waits for the owner too (`personal`): a note on a to-do whose label is Personal
   (`suggestion_scope`), or a fact or rule taken from such a note, or a waiting Personal offer it carried over. A run made
   only from Work material leaves a waiting Personal offer alone, so it keeps waiting. The offer then says so.
+- An owner who had turned Send automatically on before Personal to-dos asked first keeps that choice: their Personal
+  batches go by themselves too (`auto_personal`, set once by `ensure`, `personal_auto`). Turning it off ends that, and
+  back on goes by today's rule.
 - It only runs while the offer is on, the owner's level isn't Careful and no Work Fleet is Careful (`auto_on`). Turning
   the offer off (also Never ask and Careful) turns it off.
 

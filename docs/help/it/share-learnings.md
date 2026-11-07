@@ -32,7 +32,7 @@ Altre Machine possono votare un apprendimento che hai condiviso, senza sapere ch
 
 **Invia apprendimenti in automatico** in Impostazioni, Sicurezza è attivo di default. I nuovi apprendimenti partono senza chiedere, controllati allo stesso modo. Disattivalo perché chieda ogni volta. Se l'hai già disattivato, resta disattivato.
 
-Per gli apprendimenti dalle tue attività di Personale, chiede comunque prima.
+Per gli apprendimenti dalle tue attività di Personale, chiede comunque prima. Se l’avevi attivato tu prima, partono anche loro da soli, come hai scelto.
 
 Ogni apprendimento inviato è elencato in Impostazioni, **Movimenti**, e in Fleet, **Movimenti**, esattamente come è partito. Tocca **Ritira** e il team non lo vede più.
 

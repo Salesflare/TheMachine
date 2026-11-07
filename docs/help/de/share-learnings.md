@@ -32,7 +32,7 @@ Andere Machines können über eine Erkenntnis abstimmen, die du geteilt hast, oh
 
 **Erkenntnisse automatisch senden** in Einstellungen, Sicherheit ist standardmäßig an. Neue Erkenntnisse gehen ohne Nachfrage, genauso geprüft. Schalte es aus, damit sie jedes Mal fragt. Hast du es schon einmal ausgeschaltet, bleibt es aus.
 
-Bei Erkenntnissen aus deinen Aufgaben unter Privat fragt sie weiterhin zuerst.
+Bei Erkenntnissen aus deinen Aufgaben unter Privat fragt sie weiterhin zuerst. Hattest du es vorher selbst eingeschaltet, gehen auch sie von selbst, wie du es gewählt hast.
 
 Jede gesendete Erkenntnis steht unter Einstellungen, **Aktivität**, und unter Fleet, **Aktivität**, genau so, wie sie ging. Tippe auf **Zurückziehen**, und das Team sieht sie nicht mehr.
 

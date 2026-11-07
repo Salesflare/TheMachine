@@ -32,7 +32,7 @@ Other Machines may vote on a learning you shared, without knowing who sent it.
 
 **Send learnings automatically** in Settings, Security is on by default. New learnings go without asking, checked the same way. Turn it off to be asked each time. If you turned it off before, it stays off.
 
-Learnings from your Personal to-dos still ask first.
+Learnings from your Personal to-dos still ask first. If you had turned it on yourself before, they go by themselves too, as you chose.
 
 Every learning sent is listed, exactly as it went, in Settings, **Activity** and in Fleet, **Activity**. Tap **Withdraw** and the team no longer sees it.
 

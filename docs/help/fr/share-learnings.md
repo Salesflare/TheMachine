@@ -32,7 +32,7 @@ D’autres Machines peuvent voter sur un apprentissage que vous avez partagé, s
 
 **Envoyer les apprentissages automatiquement** dans Paramètres, Sécurité est activé par défaut. Les nouveaux apprentissages partent sans demander, vérifiés de la même façon. Désactivez-le pour qu’elle demande à chaque fois. Si vous l’avez déjà désactivé, il reste désactivé.
 
-Pour les apprentissages tirés de vos tâches Perso, elle demande toujours d’abord.
+Pour les apprentissages tirés de vos tâches Perso, elle demande toujours d’abord. Si vous l’aviez activé vous-même avant, ils partent aussi tout seuls, comme vous l’aviez choisi.
 
 Chaque apprentissage envoyé figure dans Paramètres, **Activité**, et dans Fleet, **Activité**, exactement comme il est parti. Touchez **Retirer** et l’équipe ne le voit plus.
 

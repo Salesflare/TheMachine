@@ -84,6 +84,12 @@ def ensure(db):
     for table, column, kind in MIGRATE:  # columns added after the table first shipped
         if column not in {r[1] for r in db.execute(f'PRAGMA table_info({table})')}:
             db.execute(f'ALTER TABLE {table} ADD COLUMN {column} {kind}')
+    # Once, when Personal to-dos started asking first: an owner who had turned Send learnings automatically on keeps
+    # what they chose, Personal batches included (auto_personal). An owner on the default gets the Personal rule.
+    if db.execute("SELECT 1 FROM team_learning_prefs WHERE key='auto_since'").fetchone() is None:
+        if db.execute("SELECT 1 FROM team_learning_prefs WHERE key='auto' AND value='on'").fetchone():
+            db.execute("INSERT OR REPLACE INTO team_learning_prefs(key,value) VALUES('auto_personal','on')")
+        db.execute("INSERT INTO team_learning_prefs(key,value) VALUES('auto_since','personal-asks')")
 
 
 def now():
@@ -134,6 +140,18 @@ def auto_chosen(db):
     ('on' or 'off': the switch, the offer's own tick, and turning the offer off, Never ask or Careful, which store 'off'),
     so an owner who turned it off stays off; only a Machine that never chose gets the default."""
     return offer_on(db) and pref(db, 'auto', 'on') == 'on'
+
+
+def set_auto_off(db):
+    """Send learnings automatically off. Back on later goes by today's rules: Personal batches ask first."""
+    set_pref(db, 'auto', 'off')
+    db.execute("DELETE FROM team_learning_prefs WHERE key='auto_personal'")
+
+
+def personal_auto(db):
+    """An owner who turned Send learnings automatically on before Personal to-dos asked first: their Personal batches
+    go by themselves too, as they chose (ensure)."""
+    return pref(db, 'auto_personal') == 'on' and auto_chosen(db)
 
 
 def auto_on(db):
@@ -467,8 +485,9 @@ def evidence(db, quality=None, current=None, accounts=None):
                        'GROUP BY fingerprint ORDER BY n DESC LIMIT 15', (week[:10],))
     before = seen(db)
     # What waits for the owner (an offer not answered yet, Not now) is carried over, and the new batch replaces it. A
-    # run made only from Work material that will go by itself leaves a Personal offer out, so that one keeps waiting.
-    alone = not personal and auto_on(db)
+    # run made only from Work material that will go by itself leaves a Personal offer out, so that one keeps waiting
+    # (unless the owner's own earlier choice sends Personal batches too: personal_auto).
+    alone = not personal and auto_on(db) and not personal_auto(db)
     held = [r for r in _rows(db, "SELECT id,items,personal FROM team_learnings WHERE status IN ('ready','later') ORDER BY created_at DESC LIMIT 4")
             if not (alone and r['personal'])][:2]
     personal = personal or any(r['personal'] for r in held)
@@ -584,7 +603,8 @@ def finish(db, run_id):
         db.executemany("UPDATE team_learnings SET status='replaced' WHERE id=? AND status IN ('ready','later')", [(str(c),) for c in carried])
     batch = 'tl_' + uuid.uuid4().hex[:20]
     db.execute("INSERT INTO team_learnings(id,run_id,status,items,created_at,auto,personal) VALUES(?,?,'ready',?,?,?,?)",
-               (batch, run_id, json.dumps(items), now(), 1 if auto_on(db) and not personal else 0, 1 if personal else 0))
+               (batch, run_id, json.dumps(items), now(), 1 if auto_on(db) and (not personal or personal_auto(db)) else 0,
+                1 if personal else 0))
     return batch
 
 
@@ -608,7 +628,7 @@ def view(db, network=True):
     last = db.execute("SELECT decided_at,sent FROM team_learnings WHERE status='sent' ORDER BY decided_at DESC LIMIT 1").fetchone()
     mode = vote_mode(db)
     out = {'offer': offer_on(db), 'vote': mode != 'off', 'vote_mode': mode, 'network': bool(network and TEAM_KEY_FINGERPRINT), 'ask': None,  # off until the key is pinned
-           'auto': auto_chosen(db), 'auto_careful': careful_floor(db),
+           'auto': auto_chosen(db), 'auto_personal': personal_auto(db), 'auto_careful': careful_floor(db),
            'last_shared': {'at': last[0], 'count': len(json.loads(last[1] or '{}').get('items') or [])} if last else None,
            'shared': shared(db) if network else [],
            'votes_waiting': votes_waiting(db) if network and mode == 'ask' else []}
@@ -653,7 +673,7 @@ def later(db, batch_id):
 def never(db, batch_id=None):
     ensure(db)
     set_pref(db, 'offer', 'off')
-    set_pref(db, 'auto', 'off')  # back on later means asking each time again
+    set_auto_off(db)  # back on later means asking each time again
     db.execute("UPDATE team_learnings SET status='never',decided_at=? WHERE status IN ('ready','later')" + (' AND id=?' if batch_id else ''),
                (now(), batch_id) if batch_id else (now(),))
     return {'offer': False}
@@ -663,7 +683,7 @@ def set_offer(db, on):
     ensure(db)
     set_pref(db, 'offer', 'on' if on else 'off')
     if not on:
-        set_pref(db, 'auto', 'off')  # back on later means asking each time again
+        set_auto_off(db)  # back on later means asking each time again
     return {'offer': bool(on)}
 
 
@@ -675,7 +695,10 @@ def set_auto(db, on):
         raise ValueError('Turn on Offer to share learnings first.')
     if on and careful_floor(db):
         raise ValueError('A Careful Work Fleet keeps asking each time.')
-    set_pref(db, 'auto', 'on' if on else 'off')
+    if on:
+        set_pref(db, 'auto', 'on')
+    else:
+        set_auto_off(db)
     return {'auto': bool(on)}
 
 
@@ -825,8 +848,8 @@ def auto_send(db_connect, config, call, version=None):
         ensure(db)
         if not auto_on(db):
             return None
-        row = db.execute("SELECT id,items,status,sent,created_at FROM team_learnings WHERE auto=1 AND coalesce(personal,0)=0 "
-                         "AND status IN ('ready','sending') ORDER BY created_at DESC LIMIT 1").fetchone()
+        row = db.execute("SELECT id,items,status,sent,created_at FROM team_learnings WHERE auto=1 AND (coalesce(personal,0)=0 OR ?) "
+                         "AND status IN ('ready','sending') ORDER BY created_at DESC LIMIT 1", (1 if personal_auto(db) else 0,)).fetchone()
         if not row:
             return None
         batch, stored, record = row[0], json.loads(row[1]), json.loads(row[3] or '{}')

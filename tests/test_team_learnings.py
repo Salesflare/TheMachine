@@ -421,6 +421,50 @@ class TeamLearnings(unittest.TestCase):
             self.assertTrue(tl.evidence(db, None, None, self.store.accounts)['personal'])
         self.assertEqual(len(self.sends()), 1)
 
+    def from_before(self, auto=None):
+        """A Machine from before Personal to-dos asked first: its own 'auto' choice (None: it never chose), then the update."""
+        with self.store.connect() as db:
+            db.execute("DELETE FROM team_learning_prefs WHERE key IN ('auto','auto_since','auto_personal')")
+            if auto:
+                tl.set_pref(db, 'auto', auto)
+            tl.ensure(db)
+
+    def test_an_owner_who_turned_it_on_before_keeps_personal_batches_going(self):
+        self.from_before('on')
+        self.personal()
+        self.assertTrue(self.app.learnings_view()['auto_personal'])
+        self.assertIsNone(self.distil([{'text': 'Drafts for new contacts should introduce the context first.'}]))  # not asked: it went
+        self.assertEqual(len(self.sends()), 1)
+        self.assertTrue(self.app.learnings_view()['shared'][0]['auto'])
+        with self.store.connect() as db:
+            tl.ensure(db)  # once only: a later start changes nothing
+            self.assertEqual(tl.pref(db, 'auto_personal'), 'on')
+        # Off and on again is a new choice, under today's rule: Personal batches ask first
+        self.app.action('set_learnings_auto', {'on': False}, owner_dashboard=True)
+        self.app.action('set_learnings_auto', {'on': True}, owner_dashboard=True)
+        self.assertFalse(self.app.learnings_view()['auto_personal'])
+        with self.later(hours=25):
+            self.fresh = False
+            with self.store.connect() as db:  # something new from the Personal to-do
+                db.execute("INSERT INTO facts(text,decision_id,suggestion_id,created_at) VALUES('Prefers calls before noon','d0','s0',?)", (a.now(),))
+            ask = self.distil([{'text': 'Suggested call times should avoid the afternoon for this kind of owner.'}])
+        self.assertTrue(ask['personal'])
+        self.assertEqual(len(self.sends()), 1)
+
+    def test_an_owner_on_the_default_before_gets_the_personal_rule(self):
+        self.from_before(None)
+        self.personal()
+        view = self.app.learnings_view()
+        self.assertEqual((view['auto'], view['auto_personal']), (True, False))
+        ask = self.distil([{'text': 'Drafts for new contacts should introduce the context first.'}])
+        self.assertTrue(ask['personal'])
+        self.app.learnings_auto_send()
+        self.assertEqual(self.sends(), [])
+        # and one who had it off stays off, with nothing kept for later
+        self.from_before('off')
+        with self.store.connect() as db:
+            self.assertEqual((tl.auto_chosen(db), tl.pref(db, 'auto_personal')), (False, None))
+
     def test_a_personal_batch_can_still_be_sent_by_the_owner(self):
         self.by_default()
         self.personal()

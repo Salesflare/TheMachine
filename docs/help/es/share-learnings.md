@@ -32,7 +32,7 @@ Otras Machines pueden votar un aprendizaje que compartiste, sin saber quién lo 
 
 **Enviar aprendizajes automáticamente** en Ajustes, Seguridad está activado por defecto. Los nuevos aprendizajes se envían sin preguntar, revisados de la misma forma. Desactívalo para que pregunte cada vez. Si ya lo desactivaste, sigue desactivado.
 
-Con los aprendizajes de tus tareas de Personal, sigue preguntando primero.
+Con los aprendizajes de tus tareas de Personal, sigue preguntando primero. Si ya lo habías activado tú antes, también se envían solos, como elegiste.
 
 Cada aprendizaje enviado aparece en Ajustes, **Actividad**, y en Fleet, **Actividad**, tal como se envió. Toca **Retirar** y el equipo ya no lo ve.
 
