@@ -1,38 +1,43 @@
 # Product vision
 
-A short, living description of what The Machine is and what "best" means. Every change, agent and test is judged
-against it. It is reviewed every few days and changes only on the owner's word.
+Everyone deserves a chief of staff. Not just CEOs with an assistant and a team, but anyone who runs a company, a
+team or a family. The Machine is that chief of staff, and it is yours.
 
-## What it is
+This page says where we're going and what "best" means. Every change, agent and test is judged against it. It is
+reviewed every few days and changes only on the owner's word.
 
-The Machine is your chief of staff, running on your own computer or one we host. It reads what comes in (mail, Slack,
-WhatsApp, Telegram, calendar) and turns it into a short list of to-dos that arrive with the work already done: a draft
-ready, a meeting prepped, a promise tracked. You decide, it does.
+## The idea
 
-## What "best" means, in order
+Your day shouldn't be spent sorting mail, chasing replies and remembering what you promised. The Machine reads
+everything that comes in (mail, Slack, WhatsApp, Telegram, calendar) and hands you a short list of to-dos with the
+work already done: the draft written, the meeting prepped, the promise kept track of. You decide, it does. You get
+your head back for the work only you can do.
 
-1. **Trust, and it's yours.** Nothing goes out unseen. You own your data: local-first, open source, an end-to-end
-   encrypted Network, easy to take with you. You use the model you want (OpenAI, Claude, a local one), on your own plan.
-   No lock-in, unlike the big players. Security is never relaxed.
-2. **Right.** It catches everything that matters (to-dos, promises, follow-ups) and ignores the noise.
-3. **Does as much as possible, without you losing control.** Every to-do arrives as close to done as it can be, so it
-   is one tap to approve, not homework. Taking work off your hands never means acting behind your back.
-4. **Instant and calm.** Clicks answer in about 100 ms. Short copy, few notifications, only ones that matter.
-5. **Lean on tokens.** As much intelligence as possible per token, so a Machine runs well on a $20 OpenAI or Claude
-   plan. Spend model calls where they change the outcome; do the rest with plain code, caching and cheap checks.
-6. **Gets better by itself.** It learns your voice and decisions, fixes its own problems, and shares learnings across
-   Machines.
-7. **For teams and families.** A Fleet shares work context, and the Graph and Boards become the CRM that replaces
+## What we believe, in order
+
+1. **It's yours.** Your data lives on your computer, in open source code you can read. You pick the model (OpenAI,
+   Claude, a local one) and use your own plan. Nothing locks you in, unlike the big players. Nothing goes out without
+   you seeing it, and security is never relaxed.
+2. **It gets it right.** It catches everything that matters (to-dos, promises, follow-ups) and lets the noise go.
+3. **It does the work, you keep control.** Every to-do arrives as close to done as it can be: one tap to approve, not
+   homework. It takes work off your hands, never acts behind your back.
+4. **It feels instant and calm.** Every click answers in about 100 ms. Few words, few notifications, only ones that
+   matter.
+5. **It's smart, not wasteful.** As much intelligence as possible per token, so it runs well on a $20 OpenAI or Claude
+   plan. Model calls go where they change the outcome; plain code, caching and cheap checks do the rest.
+6. **It gets better by itself.** It learns your voice and your decisions, fixes its own problems, and shares what it
+   learns across Machines.
+7. **It works for teams and families.** A Fleet shares context, and the Graph and Boards become the CRM that replaces
    Salesflare.
 
 ## What it isn't
 
-Not a chatbot you have to prompt. Not a dashboard of everything. Not something that acts behind your back. Not a walled garden that holds your data or your
-model choice hostage.
+Not a chatbot you have to prompt. Not a dashboard of everything. Not something that acts behind your back. Not a
+walled garden that holds your data or your choice of model hostage.
 
-## Fast learning, no churn
+## How we get there: fast learning, no churn
 
-- Bugs and misses are fixed the same day. People feel things getting better, not moving around.
+- Bugs and misses are fixed the same day. People feel it getting better, not moving around.
 - Names, layout and flows stay stable. Changes are small and one at a time; anything big goes to the owner first.
 - The nightly agent-users test is a scoreboard, not a redesign engine. It tracks missed to-dos, wrong to-dos, time to
   the first to-do, friction per step, click speed and tokens per day. Progress shows as those numbers improving week
