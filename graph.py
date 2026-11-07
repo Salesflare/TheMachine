@@ -140,6 +140,8 @@ FREEMAIL = {'gmail.com', 'googlemail.com', 'hotmail.com', 'hotmail.be', 'outlook
 ROLE = re.compile(r'^(?:info|support|hello|hi|team|sales|billing|admin|office|contact|help|accounts?|finance|jobs|hr|press|legal|security|privacy|feedback)@')
 GENERIC_NAMES = {'you', 'linkedin member', 'x conversation', 'linkedin conversation', 'unknown', 'unknown sender', 'unknown caller'}
 WEIGHTS = {'owner': 0.6, 'them': 0.3, 'met': 0.5}
+# A person's identifiers, one per channel (touches) plus someone added by hand (manual_nodes): the ids Merge takes.
+PERSON_ID = re.compile(r'(?:email|wa|tg|slack|li|x|gh|manual):\S+')
 DECISION_WEIGHT = {'accept': 1.0, 'send': 1.0, 'complete': 1.0, 'other': 0.5, 'reject': -0.5}
 # Cosine between local embeddings (see embeddings.py). Meaning alone groups by genre (every partnership
 # email reads alike), so a probable link also needs a shared person; tried on live data, 2026-10-18.
@@ -2202,7 +2204,7 @@ def headline(db, node_id):
 def resolve(db, node_id):
     """A node by its id, or the person an identifier is now part of (an old link after a merge)."""
     row = db.execute('SELECT * FROM graph_nodes WHERE id=?', (node_id,)).fetchone()
-    if row or not re.fullmatch(r'(?:email|wa|slack|li|x|gh|manual):\S+', str(node_id or '')):
+    if row or not PERSON_ID.fullmatch(str(node_id or '')):
         return row
     return db.execute("SELECT n.* FROM graph_nodes n, json_each(n.info,'$.identifiers') j WHERE n.kind='person' AND j.value=? LIMIT 1",
                       (node_id,)).fetchone()
@@ -5019,9 +5021,13 @@ def project_moves(db, node_id, limit=8):
 def merge(db, a, b, same, now, source='agent'):
     """Merge (same) or Not the same. Not the same on a pair that was joined undoes that join for good: the two are never
     joined again, directly or through others, until someone merges them."""
-    a, b = sorted((str(a), str(b)))
-    if a == b or not all(re.fullmatch(r'(?:email|wa|slack|li|x|gh):\S+', i) for i in (a, b)):
-        raise ValueError('Merge two different person ids from graph results (like email:… or wa:…)')
+    a, b = sorted((str(a).strip(), str(b).strip()))
+    if not all(PERSON_ID.fullmatch(i) for i in (a, b)):
+        raise ValueError('Pick two people')
+    if a == b:
+        if same:
+            return  # one person already: nothing to merge (a double click, or a page from before the merge)
+        raise ValueError('Pick two people')
     gone = forgotten(db)
     if gone(a) or gone(b):
         raise ValueError('That person was deleted permanently')
