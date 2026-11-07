@@ -8,7 +8,7 @@ AI should work for you, so you can do your best work and live your best life. Th
 - **Work and life, as one.** It handles both and bridges them seamlessly: the meeting that clashes with school pickup gets
   caught. What's private stays private.
 - **Always current.** It keeps pace with AI: new models and abilities reach your Machine as soon as they're good.
-- **Yours.** You own it and your data, not a big corporation.
+- **Yours.** You own it and your data. No nation, corporation or anyone else controls it. Only you do.
 - **Secure, wherever it runs.** On your own computer for complete ownership, or on a private cloud computer we run
   for you when you'd rather not think about it.
 - **For everyone.** AI shouldn't only lift up technical people. It should lift up everyone, equally: easy to start
@@ -26,7 +26,7 @@ your head back for the work only you can do.
 
 ## What we believe, in order
 
-1. **It's yours, and secure.** It runs on your own computer, or on a private cloud computer of your own that we host.
+1. **It's yours, and secure.** Only you control it, not a nation, a company or anyone else. It runs on your own computer, or on a private cloud computer of your own that we host.
    Either way your data stays in it, in open source
    code you can read. You pick the model (OpenAI, Claude, a local one) and use your own plan. Nothing locks you in. Nothing goes out without
    you seeing it, and security is never relaxed.
