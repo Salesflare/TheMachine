@@ -19,6 +19,12 @@ The Machine Network verbindet Machines. Was sie sich gegenseitig sagen, ist Ende
 
 Er erscheint, sobald du in einer Fleet bist, mit einem Bereich für jede Fleet, Familie, Freunde, Network, Teilen und Aktivität.
 
+## Was sie kostet, verlassen und eine Fleet starten
+
+Unter dem Namen jeder Fleet zeigt **Was sie kostet** ihre Plätze, wer deine Machine bezahlt und, für den Owner, die Karte und Rechnungen der Fleet. **Diese Fleet verlassen** verlässt sie; ein Owner übergibt sie vorher an jemand anderen. **Weitere Fleet starten** startet eine neue.
+
+Jede Schaltfläche öffnet diesen Schritt in deinem Konto, und eine Preisänderung zeigt dir zuerst den Betrag zum Bestätigen. Auf einer selbst gehosteten Machine öffnen sie dein Konto in einem neuen Tab, wo du dich anmeldest.
+
 ## Deine Fleet fragen
 
 Frag „Wer kennt jemanden bei Acme?“ im Fleet-Tab, oder nutze **Die Fleet fragen** bei einer Organisation im [Graph](graph.md). Die Machine jeder Person im Team antwortet nach deren eigenen Freigaberegeln und fragt sie zuerst, wenn die Regel das verlangt.

@@ -5,6 +5,17 @@ const fleetLine=n=>[n.fleet?.machine?'Has a Machine':'',...(n.fleet?.in||[]).map
 const fleetChip=(n,where)=>n.fleet?.in?.length?html`<span class="chip fleet-chip${where?' fleet-chip-'+where:''}" style="--c:var(--mint)" title="${fleetLine(n)}"><span class="ct">${fleetGroups(n)}</span></span>`:'';
 function fleetAskRow(n){if(!state?.fleet?.on||!['person','org'].includes(n.kind)||n.fleet?.in?.some(x=>x.kind==='work'))return'';const about=n.kind==='org'?(n.domain||n.name):/^email:/.test(n.id)?n.id.slice(6):n.name;
  return html`<p class="graph-sub detail-fleet-ask"><button type="button" class="link" data-fleet-ask="${about}">Ask the Fleet who knows ${n.name||about}</button></p>`}
+// What a Fleet costs, leaving it and starting one stay on the account (quotes, confirmations, Stripe), each its own
+// focused step there: hosted, a one-time hop (/_machine/account-hop) carrying which Fleet; paired, a link that opens the
+// account in a new tab, signing in there (this Machine's token opens nothing). Hidden in the phone app ([data-buy]).
+const FLEET_PARTS={fleet_costs:'costs',fleet_leave:'leave',fleet_start:'start'};
+function fleetAcctGo(to,label,fleet=''){
+ if(state.manage_url)return html`<form method="post" action="/_machine/account-hop" class="inline"><input type="hidden" name="to" value="${to}">${fleet?html`<input type="hidden" name="fleet" value="${fleet}">`:''}<button class="fleet-acct-link">${label}</button></form>`;
+ if(!/^https:\/\//.test(state.account_url||''))return'';
+ return html`<a class="fleet-acct-link" href="${state.account_url}?tab=fleet&part=${FLEET_PARTS[to]}${fleet?'&fleet='+fleet:''}" target="_blank" rel="noopener">${label} ↗</a>`}
+// Under each Fleet's pane (or Friends, while there is no Fleet): its costs and leaving it, then starting another
+function fleetAcct(x,start){const go=fleetAcctGo('fleet_start',start);if(!go)return'';
+ return html`<div class="fleet-acct" data-buy>${/^fl_[0-9a-f]{16}$/.test(x?.id||'')?html`${fleetAcctGo('fleet_costs','What it costs',x.id)}${go}<span class="fleet-leave">${fleetAcctGo('fleet_leave','Leave this Fleet',x.id)}</span>`:go}</div>`}
 let fleetData=null,fleetShown=Promise.resolve(),fleetViewVersion=0,fleetPane=localStorage.getItem('fleet-pane')||'';
 // The Fleet tab shows one view at a time; switching is instant (no reload) and remembered.
 function showFleetPane(id){const view=$('#fleet-view');if(!view.querySelector(`[data-pane="${CSS.escape(id)}"]`))return;fleetPane=id;localStorage.setItem('fleet-pane',id);
@@ -37,7 +48,7 @@ async function fleetView(refresh=false,cached=false){const view=$('#fleet-view')
  const notices=f.notices||[],asking=notices.filter(n=>n.buttons.length),told=notices.filter(n=>!n.buttons.length&&!/^friend_/.test(n.kind));
  const noticeCard=n=>html`<article id="fleet-${n.id}"><p>${n.text}</p>${n.detail?html`<p class="muted">${n.detail}</p>`:''}${n.outcome?html`<p class="muted">→ ${n.outcome}</p>`:''}${n.reason?html`<p class="note">${n.reason}</p>`:''}${n.buttons.length?html`<div class="actions">${n.buttons.map(b=>html`<button${b.choice==='confirm'?html` class="primary"`:''} data-fleet-notice="${n.id}" data-choice-n="${b.choice}" data-key="${n.key}">${b.label}</button>`)}</div>`:''}<p><small class="mono">${fmtDHM(n.at,{day:'numeric',month:'short'})}</small></p></article>`;
  for(const work of works){const asked=f.asked.filter(a=>inFleet(a,work)&&a.kind!=='handoff');  // handoffs have their own box
-  let h=html`<div id="fleet-${work.id}">${head(work,(work.people||[]).length)}${people(work)}${fleetShared(f,work)}`;
+  let h=html`<div id="fleet-${work.id}">${head(work,(work.people||[]).length)}${fleetAcct(work,'Start another Fleet')}${people(work)}${fleetShared(f,work)}`;
   if(work.members.length){
    h=html`${h}${box('Who knows someone?','Their Machines say how well they know someone there and when they last talked. Names only if they allow it.',
     html`${html`<form class="fleet-ask fleet-ask-form" data-fleet="${work.id}"><input name="about" maxlength="120" placeholder="Company, domain, email or name" aria-label="Who knows someone at"><button class="primary">Ask ${several?work.name:'the Fleet'}</button></form>`}${fleetIntroOffers(f,work,inFleet)}${asked.length?html`<div class="list">${asked.map(a=>html`<article><p><strong>${a.name}</strong> · ${a.question}</p><p class="muted">${a.status==='answered'?a.answer:a.status==='waiting'?'Waiting for them to allow it':a.status==='asked'?(a.delivered===false?'Not delivered yet':'Asked'):a.status}</p></article>`)}</div>`:''}`)}`;
@@ -46,12 +57,12 @@ async function fleetView(refresh=false,cached=false){const view=$('#fleet-view')
   h=html`${h}${fleetBriefAsks(f,work,inFleet)}`;
   panes.push({id:'fleet-'+work.id,label:work.name,html:html`${h}${html`</div>`}`,at:work.joined_at});
   if((f.shared?.graph||[]).some(s=>s.fleet===work.id))panes.push({id:'shared-'+work.id,label:several?`What's shared · ${work.name}`:'What\'s shared',html:html`<div class="shared-view" data-shared-fleet="${work.id}"><p class="muted">Loading…</p></div>`,at:work.joined_at})}
- if(family)panes.push({id:'family',label:family.name||'Family',html:html`${head(family,(family.people||[]).length)}${familySection(f,family)}`,at:family.joined_at});
+ if(family)panes.push({id:'family',label:family.name||'Family',html:html`${head(family,(family.people||[]).length)}${fleetAcct(family,'Start another Fleet')}${familySection(f,family)}`,at:family.joined_at});
  // Every Fleet together, Work and Family, by when you joined or made it (the directory's order when it doesn't say); then Friends, Network, Sharing.
  const listed=p=>f.fleets.findIndex(x=>p.id.replace(/^shared-/,'fleet-')===(x.kind==='family'?'family':'fleet-'+x.id))+(/^shared-/.test(p.id)?.5:0);
  panes.sort((a,b)=>a.at&&b.at&&a.at!==b.at?(a.at<b.at?-1:1):listed(a)-listed(b));
  const fr=f.friends,friendsHtml=friendsSection(f,notices);
- if(friendsHtml)panes.push({id:'friends',label:'Friends',badge:(fr?.in||[]).length,html:friendsHtml});
+ if(friendsHtml)panes.push({id:'friends',label:'Friends',badge:(fr?.in||[]).length,html:works.length||family?friendsHtml:html`${friendsHtml}${fleetAcct(null,'Start a Fleet')}`});
  {const net=networkSection(f);if(net)panes.push({id:'network',label:'Network',html:net})}
  // Sharing: every rule in one place. What the three choices mean, once, at the top; per kind a plain question and an example.
  const friendsToo=!!fr&&(f.fleets.find(x=>x.id===fr.id)?.members||[]).length,rulesOf=works.filter(x=>x.members.length),familyToo=!!family&&family.members.length;
