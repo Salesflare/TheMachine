@@ -30,7 +30,7 @@ A to-do still waiting on someone else, like a review or a reply, says **Waiting 
 
 A to-do nobody touched for a week asks once: **Still needed?** **Drop** closes it like **Not needed**, with **Undo**. **Keep** keeps it, and it never asks again. With no answer for another week, it folds into Coming back later. Opening it, a chat message, an edit, a snooze or a new message brings it back.
 
-**All clear.** means nothing needs you now. The line under it says when your Machine last looked.
+When nothing needs you, your Machine naps on an empty list. While it checks, it wakes up and says so. If a check failed or is late, its line says that, with **Check now** under it.
 
 **All**, **Work** and **Personal** at the top of the sidebar list show all to-dos or only one kind. Your phone and computer show the same choice. While Work or Personal is on, **Show all** goes back.
 
@@ -46,7 +46,7 @@ A to-do can always read the messages it came from. When it needs other messages 
 
 Your Machine reads each source every few minutes, day and night. It checks what came in once 40 messages wait or the oldest has waited 15 minutes.
 
-**Check now**, at the top of To-dos, reads every source right away. Next to it, a short line says when it last checked, when the next check is due and how many new messages wait, like "Checked 21:10 · next by 21:26 · 2 new". The phone app has it too, or ask in chat.
+**Check now** reads every source right away. With nothing open, tap your Machine's line to see it, with **Details**, which opens Checks under Connections. With to-dos open, it's at the top on a computer. A short line there shows only while a check runs, or when one failed or is late. You can also ask in chat.
 
 LinkedIn, X and Salesflare keep their own pace.
 

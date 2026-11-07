@@ -5,7 +5,7 @@ import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
-// The dashboard's shell. On a phone the All clear line wraps and nothing is wider than the screen. On a short computer
+// The dashboard's shell. On a phone all clear has no count line, the robot's line stays on screen and nothing is wider than it. On a short computer
 // screen the whole sidebar scrolls, so Settings stays reachable. The lit Graph row follows the page on screen (a person
 // lights People) and goes out with Settings. A person's page keeps the section's head above its breadcrumb. The week
 // grid's columns line up under its head also with a scrollbar that takes room, and the grid fills the window so only it scrolls. View in browser on a computer shows
@@ -35,12 +35,13 @@ const open=async(size,extra={})=>{const context=await browser.newContext({viewpo
  const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));await page.goto(base);await page.waitForFunction(()=>!/Connecting/.test(document.querySelector('#updated')?.textContent||'Connecting'));return page};
 try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage'],ignoreDefaultArgs:['--hide-scrollbars']});
- // A phone, all clear with a long count line: it wraps inside the screen
+ // A phone, all clear with to-dos coming back later and promises: no count line over the robot (the sections carry
+ // the counts), and the robot's line stays on screen
  cards=[card('a'.repeat(16),{status:'snoozed',snoozed_until:day(2)}),card('b'.repeat(16),{status:'snoozed',snoozed_until:day(3)})];
  let page=await open({width:390,height:844},{isMobile:true,hasTouch:true});
- const sub=page.locator('#page-head .page-sub');await sub.waitFor();
- assert.match(await sub.textContent(),/^All clear · 2 coming back later · 12 promises kept track of$/);
- const box=await sub.boundingBox();assert.ok(box.x>=0&&box.x+box.width<=390,'the line stays on screen');
+ const cap=page.locator('#suggestions .all-clear .poke-line');await cap.waitFor();
+ assert.equal(await page.locator('#page-head .page-sub').count(),0,'no count line when nothing is open');
+ const box=await cap.boundingBox();assert.ok(box.x>=0&&box.x+box.width<=390,'the line stays on screen');
  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no sideways scroll');
  await page.context().close();
  // A short computer screen: the sidebar scrolls down to Settings

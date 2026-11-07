@@ -30,7 +30,7 @@ Un’attività il cui ultimo passo è ancora aperto da parte di qualcun altro, c
 
 Un’attività che nessuno tocca da una settimana chiede una volta: **Serve ancora?** **Lascia perdere** la chiude come **Non serve**, con **Annulla**. **Tieni** la tiene, e non lo chiede più. Aprirla, un messaggio in chat, una modifica, posticiparla o un nuovo messaggio su di lei contano come un tocco. Senza risposta per un’altra settimana, finisce in Torna più tardi, sotto Serve ancora?, invece di sparire. Un tocco la riporta indietro.
 
-**Tutto a posto.** significa che ora niente ha bisogno di te. La riga sotto dice quando la tua Machine ha controllato l’ultima volta.
+Quando niente ha bisogno di te, la tua Machine fa un pisolino sull’elenco vuoto. Mentre controlla, si sveglia e lo dice. Se un controllo non è riuscito o è in ritardo, la sua riga lo dice, con **Controlla ora** sotto.
 
 **Tutti**, **Lavoro** e **Personale** sopra l'elenco nella barra laterale mostrano tutte le attività o solo un tipo. La tua Machine ricorda la scelta, così telefono e computer mostrano lo stesso elenco. Quando è attivo Lavoro o Personale, la parte alta dell'elenco lo indica, con **Mostra tutto** per tornare indietro.
 
@@ -46,7 +46,7 @@ Quando avvii un'attività, può sempre leggere i messaggi da cui è nata, anche 
 
 La tua Machine legge ogni fonte ogni pochi minuti, giorno e notte, e controlla cosa è arrivato in cerca di attività appena 40 messaggi sono in attesa o il messaggio più vecchio aspetta da 15 minuti.
 
-**Controlla ora**, in cima ad Attività, legge subito ogni fonte e guarda cosa è arrivato, anche quando è tutto tranquillo. Accanto, una riga dice quando ha controllato l’ultima volta, quando è previsto il prossimo controllo e quanti messaggi nuovi aspettano, come «Controllato 21:10 · prossimo entro 21:26 · 2 nuovi». Premerlo di nuovo mentre controlla mostra lo stesso controllo. Anche l’app per il telefono lo ha. In chat, chiedile di controllare ora.
+**Controlla ora** legge subito ogni fonte. Se non c’è niente di aperto, tocca la riga della tua Machine per vederlo, con **Dettagli**, che apre Controlli in Connessioni. Con attività aperte, è in alto su un computer. Lì compare una breve riga solo mentre un controllo è in corso, o quando uno non è riuscito o è in ritardo. Puoi anche chiederlo in chat.
 
 LinkedIn, X e Salesflare mantengono il loro ritmo.
 

@@ -30,7 +30,7 @@ Een to-do waarvan de laatste stap nog openstaat bij iemand anders, zoals een rev
 
 Een to-do die een week niemand aanraakte, vraagt één keer: **Nog nodig?** **Laten vallen** sluit hem zoals **Niet nodig**, met **Ongedaan maken**. **Houden** houdt hem, en hij vraagt het nooit meer. Openen, een chatbericht, een aanpassing, snoozen of een nieuw bericht erover tellen allemaal als aanraken. Komt er een week later nog geen antwoord, dan vouwt hij weg in Komt later terug, onder Nog nodig?, in plaats van te verdwijnen. Aanraken haalt hem terug.
 
-**Alles is rustig.** betekent dat er nu niets op je wacht. De regel eronder zegt wanneer je Machine voor het laatst heeft gekeken.
+Als er niets op je wacht, doet je Machine een dutje op de lege lijst. Terwijl hij checkt, wordt hij wakker en zegt hij dat. Is een check mislukt of laat, dan zegt zijn regel dat, met **Nu checken** eronder.
 
 **Alle**, **Werk** en **Privé** boven de lijst in de zijbalk tonen alle to-do's of maar één soort. Je Machine onthoudt de keuze, zodat je telefoon en computer dezelfde lijst tonen. Staat Werk of Privé aan, dan staat dat bovenaan de lijst, met **Alles tonen** om terug te gaan.
 
@@ -46,7 +46,7 @@ Start je een to-do, dan mag hij altijd de berichten lezen waar hij uit kwam, ook
 
 Je Machine leest elke bron om de paar minuten, dag en nacht, en checkt wat er binnenkwam op to-do’s zodra er 40 berichten wachten of het oudste bericht 15 minuten wacht.
 
-**Nu checken**, bovenaan To-do's, leest meteen elke bron en bekijkt wat er binnenkwam, ook als alles rustig is. Ernaast staat wanneer hij het laatst checkte, wanneer de volgende check is en hoeveel nieuwe berichten wachten, zoals "Gecheckt 21:10 · volgende uiterlijk 21:26 · 2 nieuw". Druk je nog eens terwijl hij checkt, dan zie je dezelfde check. De telefoonapp heeft het ook. In de chat vraag je hem gewoon om nu te checken.
+**Nu checken** leest meteen elke bron. Staat er niets open, tik dan op de regel van je Machine om het te zien, met **Details**, dat Checks onder Koppelingen opent. Staan er to-do's open, dan staat het op een computer bovenaan. Een korte regel verschijnt daar alleen terwijl een check loopt, of als er een mislukt of laat is. Je kunt het ook in de chat vragen.
 
 LinkedIn, X en Salesflare houden hun eigen tempo.
 

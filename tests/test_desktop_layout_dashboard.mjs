@@ -113,7 +113,7 @@ try{
   const m=await page.evaluate(()=>{const s=document.querySelector('#app-side').getBoundingClientRect(),c=document.querySelector('#suggestions').getBoundingClientRect(),w=document.body.getBoundingClientRect().right;
    return {off:Math.abs((c.left+c.right)/2-(s.right+w)/2),pad:Math.min(...['.app-side .brand','#side-search','.app-side nav button'].map(q=>document.querySelector(q).getBoundingClientRect().left))}});
   assert.ok(m.off<2,`column centered next to the sidebar (${empty?'all clear':'cards'}, off by ${m.off})`);assert.ok(m.pad>=8,`sidebar padding (${empty?'all clear':'cards'}: ${m.pad})`);
-  if(empty)assert.equal(await page.locator('#page-head .page-sub').innerText(),'All clear · 3 promises kept track of');
+  if(empty)assert.equal(await page.locator('#page-head .page-sub').count(),0,'all clear: the sections carry the counts');
   await context.close()}
  emptyOn=false;
  // Folded, every row has a name and a tooltip to its right: after a moment on hover, at once on keyboard focus, with its count in words; Ctrl+B folds and unfolds

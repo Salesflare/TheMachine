@@ -30,7 +30,7 @@ Une tâche dont la dernière étape reste ouverte chez quelqu’un d’autre, co
 
 Une tâche que personne n’a touchée depuis une semaine demande une fois : **Toujours utile ?** **Abandonner** la ferme comme **Pas nécessaire**, avec **Annuler**. **Garder** la garde, et elle ne redemande jamais. L’ouvrir, un message dans le chat, une modification, la mettre en attente ou un nouveau message à son sujet comptent comme une action. Sans réponse une semaine de plus, elle se range dans Revient plus tard, sous Toujours utile ?, au lieu de disparaître. Une action la ramène.
 
-**Tout est à jour.** veut dire que rien n’a besoin de vous pour l’instant. La ligne en dessous indique quand votre Machine a regardé pour la dernière fois.
+Quand rien n’a besoin de vous, votre Machine fait la sieste sur la liste vide. Pendant qu’elle vérifie, elle se réveille et le dit. Si une vérification a échoué ou est en retard, sa ligne le dit, avec **Vérifier maintenant** en dessous.
 
 **Tout**, **Travail** et **Perso** au-dessus de la liste dans la barre latérale affichent toutes les tâches ou un seul type. Votre Machine garde ce choix, pour que votre téléphone et votre ordinateur affichent la même liste. Quand Travail ou Perso est actif, le haut de la liste l’indique, avec **Tout afficher** pour revenir.
 
@@ -46,7 +46,7 @@ Quand vous lancez une tâche, elle peut toujours lire les messages d’où elle 
 
 Votre Machine lit chaque source toutes les quelques minutes, jour et nuit, et vérifie ce qui est arrivé pour en tirer des tâches dès que 40 messages attendent ou que le plus ancien attend depuis 15 minutes.
 
-**Vérifier maintenant**, en haut des Tâches, lit tout de suite chaque source et examine ce qui est arrivé, même quand tout est calme. À côté, une ligne dit quand elle a vérifié pour la dernière fois, quand aura lieu la prochaine vérification et combien de nouveaux messages attendent, comme « Vérifié à 21:10 · prochaine vers 21:26 · 2 nouveaux ». Appuyer encore pendant la vérification montre la même vérification. L’app mobile l’a aussi. Dans le chat, demandez-lui de vérifier maintenant.
+**Vérifier maintenant** lit tout de suite chaque source. Quand rien n’est ouvert, touchez la ligne de votre Machine pour le voir, avec **Détails**, qui ouvre Vérifications dans Connexions. Quand des tâches sont ouvertes, il est en haut sur un ordinateur. Une courte ligne n’y apparaît que pendant une vérification, ou quand une a échoué ou est en retard. Vous pouvez aussi le demander dans le chat.
 
 LinkedIn, X et Salesflare gardent leur propre rythme.
 

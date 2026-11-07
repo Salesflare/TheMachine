@@ -28,6 +28,17 @@ try{
  assert.equal(await line({waiting:1}),'Next check soon · 1 new');
  assert.equal(await line({phase:'reviewing',reviewed:at(-2),waiting:2}),'Checking messages…');
  assert.equal(await line({phase:'reading'}),'Reading sources…');
+ // checkNow: the one state everything shows (the head's line, the robot and its line), and when the head says it.
+ const now=(c,worker)=>page.evaluate(([c,worker])=>{state.check=c;state.review_health={worker};const n=checkNow();return [n.kind,n.line.replace(/ /g,' ')]},[c,worker]);
+ assert.deepEqual(await now({reviewed:at(-2),waiting:2,next_review:at(14)}),['ok',''],'a check on time says nothing');
+ assert.deepEqual(await now({reviewed:at(-2),waiting:0},{status:'ok'}),['ok','']);
+ assert.deepEqual(await now({phase:'reviewing',reviewed:at(-2)}),['busy','Checking messages…']);
+ assert.deepEqual(await now({reviewing:true,reviewed:at(-2)}),['busy','Checking messages…'],'a review the button did not start is busy too');
+ assert.deepEqual(await now({waiting:3,next_review:at(14)}),['first','Next check by 21:26 · 3 new']);
+ assert.deepEqual(await now({reviewed:at(-30),waiting:0},{status:'error',review_saved:false}),['failed','The last check failed.']);
+ assert.deepEqual(await now({reviewed:at(-30),waiting:0},{status:'recovering'}),['ok',''],'a pause that retries by itself is not a failure');
+ assert.deepEqual(await now({reviewed:at(-40),waiting:5,next_review:at(-15)}),['late','Last checked 20:32. The next check is late.']);
+ assert.deepEqual(await now({reviewed:at(-20),waiting:5,next_review:at(-5)}),['ok',''],'a few minutes over is not late');
  assert.deepEqual(errors,[]);
  console.log('ok: the check line says checked, never reviewed');
 }finally{await browser?.close();server.close()}

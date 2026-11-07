@@ -10,16 +10,8 @@ let pokes=0,pokeLine='',pokeAwake=false,pokeTimer;
 const PLAY_AFTER=POKES.length,PLAY_BUTTON=html`<button class="play" type="button">▶ Play a mini game <small>Catch the Zzz · 20s</small></button>`;
 function poke(){if(pokes<POKES.length)pokeLine=POKES[pokes];else{let next;do next=POKE_MORE[Math.floor(Math.random()*POKE_MORE.length)];while(next===pokeLine);pokeLine=next}pokes++;pokeAwake=true;localStorage.setItem('pokes-total',(+localStorage.getItem('pokes-total')||0)+1);$('#suggestions .poke-hint')?.remove();if(pokes>=PLAY_AFTER&&!$('#suggestions .all-clear .play'))$('#suggestions .all-clear')?.append(htmlNodes(PLAY_BUTTON));
 const img=$('#suggestions .all-clear img.sleepy'),line=$('#suggestions .poke-line');if(line)line.textContent=pokeLine;if(img){img.src='brand/wave.webp';img.classList.remove('wobble');void img.offsetWidth;img.classList.add('wobble')}
-clearTimeout(pokeTimer);pokeTimer=setTimeout(()=>{pokeAwake=false;pokeLine='';const i=$('#suggestions .all-clear img.sleepy'),l=$('#suggestions .poke-line');if(i)i.src='brand/sleepy.webp';if(l)l.textContent=clearLine()},6000)}
-// All clear says what was read and what's next, so an empty list reads as quiet, not stuck: a quiet mailbox has little to do
-// One short line in the robot's voice: when it last looked. The wording changes per day, not per render;
-// the time phrase ("52 minutes ago") keeps its spaces non-breaking, so it never wraps apart.
-const CLEAR_LINES=['Peeked at everything {}. All quiet.','Last snooped around {}. Nothing to report.','Checked in {}. Back to my nap.'];
-function clearLine(){if(state?.check?.phase)return '';  // a check runs: the head says so
- const done=[state?.check?.reviewed,state?.review_health?.last_completed].filter(Boolean).sort((a,b)=>Date.parse(b)-Date.parse(a))[0];  // the last read or review
- if(!done)return t('I’ll add something when it’s useful.');
- const now=new Date(),day=Math.floor((now-now.getTimezoneOffset()*6e4)/864e5);
- return t(CLEAR_LINES[day%CLEAR_LINES.length],ago(done).replace(/ /g,'\u00a0'))}
+clearTimeout(pokeTimer);pokeTimer=setTimeout(()=>{pokeAwake=false;pokeLine='';const i=$('#suggestions .all-clear img.sleepy'),l=$('#suggestions .poke-line');if(i)i.src=clearPose();if(l)l.textContent=clearLine()},6000)}
+// All clear's line and pose follow the check (clearLine, clearPose in todos-check.js).
 // Until the first poke, the robot sometimes mumbles a hint, so people find out they can;
 // not on a fresh install, where "all clear" only means nothing has come in yet. Once you've poked
 // three times (counted on this device), it hints at most once a week.
