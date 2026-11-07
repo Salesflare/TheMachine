@@ -55,7 +55,7 @@ _BY_PART = {
         android_receipts android_feed_health chats messages state outbox photo_asks email_bounce_events email_bounce_scan
         email_bounces own_addresses own_address_choices own_address_fetched own_domains slack_members meet_links meet_log
         meet_pins meet_seen meet_sessions meet_prefs meeting_moves talk_lines moved_in'''),
-    'todos': _names('''suggestions suggestion_keys card_moves card_uses analyses review_runs first_look_ahead feedback_prompts
+    'todos': _names('''suggestions suggestion_keys card_moves card_uses analyses review_runs review_save_failures first_look_ahead feedback_prompts
         recaps recap_items thread_snoozes slipped milestones chat_stops preparations preparation_runs preparation_calls
         recurring_cards recurring_offers recurring_series task_pages follow_up_advice follow_up_basis follow_up_cards
         follow_up_changes follow_up_ends follow_up_holds follow_up_pace follow_up_pauses follow_up_rules follow_up_threads
