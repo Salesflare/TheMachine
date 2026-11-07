@@ -702,3 +702,32 @@ def todo_state(row):
     if row['status'] == 'pending' or row.get('preparation_status') == 'blocked':
         return 'to decide'
     return 'ready' if row['status'] == 'prepared' else 'preparing'
+
+
+def delivery_time(when, digest_at='08:30', current=None, work=False, urgent=False):
+    """When a new suggestion's card goes out: now, the next morning digest, or a given day."""
+    current = current or dt.datetime.fromisoformat(now())
+    local = current.astimezone(local_tz())
+    hour, minute = (int(x) for x in digest_at.split(':'))
+    def weekend(target):
+        # Work waits for a work day (work_hours.days), at the digest.
+        local_target=target.astimezone(local_tz())
+        if work and not urgent and not is_work_day(local_target):
+            return next_work_day(local_target).replace(hour=hour,minute=minute,second=0,microsecond=0).astimezone(dt.timezone.utc).isoformat()
+        return None if target<=current else target.astimezone(dt.timezone.utc).isoformat()
+    if when == 'now':
+        return weekend(current)
+    if when and when != 'digest':
+        try:
+            target = dt.datetime.fromisoformat(str(when))
+        except ValueError:
+            raise ValueError('when is "now", "digest" or a date/time like 2026-10-12 or 2026-10-12T09:00') from None
+        if target.tzinfo is None:
+            target = target.replace(tzinfo=local_tz())
+            if len(str(when)) <= 10:
+                target = target.replace(hour=hour, minute=minute)
+        return weekend(max(target,current))
+    digest = local.replace(hour=hour, minute=minute, second=0, microsecond=0)
+    if digest <= local:
+        digest += dt.timedelta(days=1)
+    return weekend(digest)
