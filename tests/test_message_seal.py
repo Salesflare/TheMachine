@@ -593,7 +593,7 @@ class NothingOutsideTheSealedFields(unittest.TestCase):
                 self.assertNotRegex(text, r'\bsqlite3\b|INSERT\s+INTO|UPDATE\s+\w+\s+SET')
         # every module, subfolders included, so code moved into a folder stays covered. The sandbox's fixture loader
         # writes made-up events into a throwaway database through Store.connect(), so they are sealed as the app's are.
-        allowed = {'assistant.py', 'sandbox/load.py'}
+        allowed = {'assistant.py', 'machine/store/core.py', 'sandbox/load.py'}  # the Store (assistant.py and its parts)
         modules = [p for p in sorted(ROOT.rglob('*.py'))
                    if not {'tests', 'node_modules', '.git', '.venv'} & set(p.relative_to(ROOT).parts[:-1]) and not p.name.startswith('test_')]
         self.assertIn(ROOT / 'connectors' / 'x.py', modules)

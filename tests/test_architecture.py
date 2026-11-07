@@ -308,13 +308,20 @@ def sql_strings(found):
             yield node.lineno, node.value
 
 
+# The Store moves out of assistant.py in parts (refactor PRs 13-18). Until it is whole in machine/store/, its parts
+# are one owner with assistant.py: a table the Store creates or writes from one of them is assistant.py's, as before.
+STORE_PARTS = {'machine/store/core.py'}
+
+
 @functools.lru_cache(maxsize=None)
 def schema_and_writes():
     """({table: {module: line}} of CREATE TABLE, {table: {module: line}} of INSERT/REPLACE/UPDATE/DELETE), for every
-    module outside tests/. Statements with a computed table name (f'DELETE FROM {table}') aren't seen."""
+    module outside tests/. Statements with a computed table name (f'DELETE FROM {table}') aren't seen. STORE_PARTS
+    count as assistant.py."""
     creates, writes = {}, {}
-    for name in python_files(tests=False):
-        for line, text in sql_strings(nodes(name)):
+    for path in python_files(tests=False):
+        name = 'assistant.py' if path in STORE_PARTS else path
+        for line, text in sql_strings(nodes(path)):
             if not SQL_WORD.search(text):
                 continue
             for m in CREATE.finditer(text):
@@ -365,7 +372,7 @@ PY_LINE_BUDGET = 2_500
 PY_BYTE_BUDGET = 450 * 1024
 PY_RATCHET_SLACK = (500, 50_000)
 PY_OVER_BUDGET = {
-    'assistant.py': (18_700, 1_370_000),
+    'assistant.py': (18_000, 1_320_000),
     'fleet.py': (3_800, PY_BYTE_BUDGET),
     'graph.py': (5_400, PY_BYTE_BUDGET),
     'next_actions.py': (2_650, PY_BYTE_BUDGET),
