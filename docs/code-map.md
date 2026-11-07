@@ -101,7 +101,8 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   Telegram sources), `machine/sources/gmail.py` and `calendar.py` (the Gmail and Calendar sources with their sync,
   rooms, guests, owners and write helpers), `machine/model_usage.py` (the model's usage and resets, the Codex app
   server, Node and Telegram environment helpers), `machine/sources/android.py` and `gateway.py` (the Android
-  notification feed and the Gateway journal source).
+  notification feed and the Gateway journal source), `machine/sources/connectors.py` (connector plugins and helpers,
+  hosted sign-ins, silent failures, read windows, the connector prompt lines) and `whatsapp.py` (the WhatsApp source).
 - **Dashboard code:** in its area's part in `dashboard/` (`<area>-<what>.js`: shell, todos, settings, graph, calendar,
   connections, help, events, new, fleet), next to the functions it works with, never at the end of the script. The
   page's core is in the `shell-*` parts too: locale and error reports (`shell-core.js`), network and outbox, `render()`

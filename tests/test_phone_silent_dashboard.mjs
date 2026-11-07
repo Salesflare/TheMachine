@@ -5,7 +5,7 @@ import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // The notification feed answers while the phone is offline: the server marks the phone card android_offline with
-// silent_since (assistant.py silent_failure). The card says "Phone disconnected" with its fix, and Needs you says what to
+// silent_since (machine/sources/connectors.py silent_failure). The card says "Phone disconnected" with its fix, and Needs you says what to
 // do, not "sign in again". Another source that goes silent while failing reads as reconnecting. SHOTS=<dir> saves shots.
 const dashboard=await dashboardPage();
 const hour=3600e3,ago=h=>new Date(Date.now()-h*hour).toISOString();
