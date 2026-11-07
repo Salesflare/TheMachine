@@ -1,7 +1,7 @@
 ---
 title: Resumen semanal
 area: weekly
-summary: Una vez por semana, cómo le fue a tu Machine: tareas, promesas, personas y proyectos, y lo que notó. Desactivado por defecto.
+summary: Una vez por semana, cómo le fue a tu Machine: tareas, promesas, personas y proyectos, y lo que notó. Activado por defecto.
 covers: weekly-recap
 code: assistant.py, machine/app/recap_settings.py, config.example.json
 order: 1
@@ -19,8 +19,8 @@ order: 1
 
 ## Cuándo y dónde
 
-Una vez por semana, por defecto el viernes después de las 16:00 en tu zona horaria. Llega por [Telegram](telegram.md), o como una notificación titulada "Tu semana" desde la [app del teléfono](phone-app.md).
+Una vez por semana, por defecto el viernes después de las 16:00 en tu zona horaria. Llega por [Telegram](telegram.md), o como una notificación titulada "Tu semana" desde la [app del teléfono](phone-app.md) y la app del panel. También llega por correo cuando el correo está activado para **Resumen matutino** en Ajustes › Notificaciones. Con [Prudente](security-levels.md) no llega por correo.
 
-## Actívalo
+## Desactívalo
 
-Está desactivado por defecto, y el panel aún no tiene un interruptor para él, así que hoy una Machine alojada no puede activarlo. En tu propio ordenador, configura `weekly_recap` en el config.json de tu Machine: `enabled` en true y, si quieres, `weekday` (de 1 a 7, el viernes es 5) y `at` ("16:00"). Consulta la [guía de configuración](https://github.com/Salesflare/TheMachine/blob/main/docs/configuration.md).
+Está activado por defecto. Desactívalo en Ajustes › Notificaciones con el interruptor **Resumen semanal**. Si lo desactivaste, sigue desactivado. En tu propio ordenador también puedes configurar `weekly_recap` en el config.json: `enabled` en false con `chosen` en true y, si quieres, `weekday` (de 1 a 7, el viernes es 5) y `at` ("16:00"). Consulta la [guía de configuración](https://github.com/Salesflare/TheMachine/blob/main/docs/configuration.md).

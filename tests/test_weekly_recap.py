@@ -273,6 +273,69 @@ class WeeklyRecap(unittest.TestCase):
         self.assertEqual(self.items(), [])  # no buttons to tap without Telegram
         self.assertNotIn('Choices follow', pushed[0]['payload']['body'])
 
+    def test_it_comes_by_default_and_not_once_the_owner_turned_it_off(self):
+        # Every install wrote enabled: false before (config.example.json): no choice, so it comes, and the recaps table fills
+        for written in (None, {'enabled': False, 'weekday': 5, 'at': '16:00'}):
+            self.app.config['weekly_recap'] = written
+            if written is None:
+                del self.app.config['weekly_recap']
+            with self.store.connect() as db:
+                db.execute('DELETE FROM recaps')
+            self.send()
+            with self.store.connect() as db:
+                self.assertEqual([tuple(r) for r in db.execute('SELECT week,status FROM recaps')], [('2026-W43', 'sent')])
+        self.assertFalse(self.app.recap_set_action('recap_set', {'on': False}, True)['on'])  # the owner's own choice
+        with self.store.connect() as db:
+            db.execute('DELETE FROM recaps')
+        self.assertIsNone(self.app.recap_step(current=dt.datetime.fromisoformat(FRIDAY), sender=lambda *a: self.fail('turned off')))
+        self.assertFalse(json.loads(self.path.read_text())['weekly_recap']['enabled'])
+
+    def mailed(self, prefs=None, careful=False):
+        """recap_step without Telegram, with a stand-in for the control plane's mailer: what it was handed."""
+        if not self.store.promises(7):
+            self.promise('mine', 'Alex', 'send the Q3 deck', due='2026-10-26')
+        self.app.config['telegram_owner'] = ''
+        with self.store.connect() as db:
+            for kind_channel, on in (prefs or {}).items():
+                a.notify.set_pref(db, *kind_channel, on)
+            if careful:
+                a.security_levels.set_pref(db, 'notify_text', 'off')
+        mails = []
+        self.app.notify_mail_target = lambda: ('https://cloud.example/api', 'token')
+        with patch_everywhere(a, 'push_node', side_effect=lambda config, request: {'results': []}), \
+                patch_everywhere(a, 'telegram_request', side_effect=AssertionError('no Telegram')):
+            status = self.app.recap_step(current=dt.datetime.fromisoformat(FRIDAY),
+                                         mail=lambda url, token, subject, text, delivery=None: mails.append((subject, text, delivery)) or True)
+        self.assertEqual(status, 'sent')
+        return mails
+
+    def test_it_comes_by_email_too_when_the_owners_email_notifications_are_on(self):
+        [(subject, text, delivery)] = self.mailed()
+        self.assertEqual((subject, delivery), ('Your week with The Machine', 'recap-2026-W43'))
+        self.assertTrue(text.startswith('Your week with The Machine · '), text)
+        self.assertIn('• Promised Alex: send the Q3 deck (https://m.example/assistant/#promise/', text)  # the link, readable in a plain email
+        self.assertNotIn('**', text)
+        self.assertNotIn('Choices follow', text)
+
+    def test_no_email_when_email_is_off_or_careful(self):
+        self.assertEqual(self.mailed({('digest', 'email'): False}), [])
+        with self.store.connect() as db:
+            db.execute('DELETE FROM recaps')
+        self.assertEqual(self.mailed({('digest', 'email'): True}, careful=True), [])  # the text would pass the mailer in the clear
+
+    def test_the_email_counts_when_telegram_did_not_take_it(self):
+        mails = []
+        self.app.notify_mail_target = lambda: ('https://cloud.example/api', 'token')
+        with patch_everywhere(a, 'telegram_request', side_effect=a.DeliveryNotSent('delivery_not_admitted')):
+            self.assertEqual(self.app.recap_step(current=dt.datetime.fromisoformat(FRIDAY), mail=lambda *args, **kw: mails.append(args) or True), 'sent')
+        self.assertEqual(len(mails), 1)
+        self.assertIsNone(self.app.recap_step(current=dt.datetime.fromisoformat(FRIDAY), mail=lambda *args, **kw: self.fail('once a week')))
+
+    def test_mail_text_keeps_what_the_owner_wrote(self):
+        from machine.app.recap import recap_mail_text
+        self.assertEqual(recap_mail_text('**Needs you**\n• ' + a.recap_escape('snake_case *x* [y]') + ': [open](https://m.example/#chat=1)\n_Behind the scenes._'),
+                         'Needs you\n• snake_case *x* [y]: open (https://m.example/#chat=1)\nBehind the scenes.')
+
     def test_a_choice_that_did_not_go_out_is_forgotten(self):
         self.snoozed_card('Pay the painter', 3)
         sent = []

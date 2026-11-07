@@ -57,7 +57,9 @@ Telegram uses OpenClaw's existing bot and message route, never a second poller.
 
 ### Weekly recap
 
-The weekly recap (`weekly_recap`, off by default) arrives once a week, Fridays from 16:00 local time.
+The weekly recap (`weekly_recap`, on by default) arrives once a week, Fridays from 16:00 local time: on Telegram, else
+as a push to the dashboard app and the phone app, and also by email when email is on for the morning digest (not with
+Careful). Turn it off in Settings, Notifications.
 
 It leads with what needs you:
 

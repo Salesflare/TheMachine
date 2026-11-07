@@ -1,7 +1,7 @@
 ---
 title: Riepilogo settimanale
 area: weekly
-summary: Una volta a settimana, com'è andata la tua Machine: attività, promesse, persone e progetti, e cosa ha notato. Disattivato di default.
+summary: Una volta a settimana, com'è andata la tua Machine: attività, promesse, persone e progetti, e cosa ha notato. Attivo di default.
 covers: weekly-recap
 code: assistant.py, machine/app/recap_settings.py, config.example.json
 order: 1
@@ -19,8 +19,8 @@ order: 1
 
 ## Quando e dove
 
-Una volta a settimana, di default il venerdì dopo le 16:00 nel tuo fuso orario. Arriva su [Telegram](telegram.md), oppure come notifica dal titolo "La tua settimana" dall'[app per telefono](phone-app.md).
+Una volta a settimana, di default il venerdì dopo le 16:00 nel tuo fuso orario. Arriva su [Telegram](telegram.md), oppure come notifica dal titolo "La tua settimana" dall'[app per telefono](phone-app.md) e dall'app della dashboard. Arriva anche via email quando l'email è attiva per **Riepilogo del mattino** in Impostazioni › Notifiche. Con [Prudente](security-levels.md) non arriva via email.
 
-## Attivalo
+## Disattivalo
 
-È disattivato di default, e la dashboard non ha ancora un interruttore, quindi oggi una Machine ospitata non può attivarlo. Sul tuo computer, imposta `weekly_recap` nel config.json della tua Machine: `enabled` true, e se vuoi `weekday` (da 1 a 7, il venerdì è 5) e `at` ("16:00"). Vedi la [guida alla configurazione](https://github.com/Salesflare/TheMachine/blob/main/docs/configuration.md).
+È attivo di default. Disattivalo in Impostazioni › Notifiche con l'interruttore **Riepilogo settimanale**. Se l'hai disattivato, resta disattivato. Sul tuo computer puoi anche impostare `weekly_recap` nel config.json: `enabled` false con `chosen` true, e se vuoi `weekday` (da 1 a 7, il venerdì è 5) e `at` ("16:00"). Vedi la [guida alla configurazione](https://github.com/Salesflare/TheMachine/blob/main/docs/configuration.md).

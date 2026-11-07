@@ -1,7 +1,7 @@
 ---
 title: Weekoverzicht
 area: weekly
-summary: Eén keer per week hoe je Machine het deed: to-do's, beloftes, personen en projecten, en wat hij opmerkte. Standaard uit.
+summary: Eén keer per week hoe je Machine het deed: to-do's, beloftes, personen en projecten, en wat hij opmerkte. Standaard aan.
 covers: weekly-recap
 code: assistant.py, machine/app/recap_settings.py, config.example.json
 order: 1
@@ -19,8 +19,8 @@ order: 1
 
 ## Wanneer en waar
 
-Eén keer per week, standaard op vrijdag na 16:00 in je tijdzone. Het komt op [Telegram](telegram.md), of als melding met de titel "Je week" van de [telefoonapp](phone-app.md).
+Eén keer per week, standaard op vrijdag na 16:00 in je tijdzone. Het komt op [Telegram](telegram.md), of als melding met de titel "Je week" van de [telefoonapp](phone-app.md) en de dashboard-app. Het komt ook per e-mail als e-mail aanstaat voor **Ochtendoverzicht** in Instellingen › Meldingen. Met [Voorzichtig](security-levels.md) komt het niet per e-mail.
 
-## Aanzetten
+## Uitzetten
 
-Het staat standaard uit, en het dashboard heeft er nog geen schakelaar voor, dus een gehoste Machine kan het vandaag niet aanzetten. Stel op je eigen computer `weekly_recap` in de config.json van je Machine in: `enabled` true, en eventueel `weekday` (1 tot 7, vrijdag is 5) en `at` ("16:00"). Zie de [configuratiegids](https://github.com/Salesflare/TheMachine/blob/main/docs/configuration.md).
+Het staat standaard aan. Zet het uit in Instellingen › Meldingen met de schakelaar **Weekoverzicht**. Zette je het uit, dan blijft het uit. Op je eigen computer kun je ook `weekly_recap` in de config.json instellen: `enabled` false met `chosen` true, en eventueel `weekday` (1 tot 7, vrijdag is 5) en `at` ("16:00"). Zie de [configuratiegids](https://github.com/Salesflare/TheMachine/blob/main/docs/configuration.md).
