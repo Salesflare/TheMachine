@@ -217,10 +217,13 @@ def area_name(boundary):
     return 'Personal' if kind_of(kind) == 'personal' else 'another area'
 
 
-def google_offered(accounts):
-    """Whether the owner can add a Google place for docs on this setup: only when Google already takes docs here (their
-    own Google sign-in with Drive on their own computer). A hosted Machine's Google sign-in has no Drive scope."""
-    return any((a or {}).get('provider') == 'google' for a in (accounts or {}).values())
+def google_offered(accounts, config=None):
+    """Whether the owner can add a Google place for docs on this setup: when Google already takes docs here (their own
+    Google sign-in with Drive on their own computer, or a Google Docs connection), or a hosted Machine's account page
+    offers Connect Google Docs (docs_consent lists google). A hosted Machine's mail sign-in has no Drive scope."""
+    consent = (config or {}).get('docs_consent')
+    return (any((a or {}).get('provider') == 'google' for a in (accounts or {}).values())
+            or bool((config or {}).get('manage_url') and isinstance(consent, list) and 'google' in consent))
 
 
 def connect_line(area, google=False):
@@ -283,11 +286,11 @@ def validate(value, context):
         fitting = {k: a for k, a in accounts.items() if fits(a.get('boundary'), area)}
         account = accounts.get(value.get('account_id'))
         if not account:
-            raise ValueError('account_id is one of your Docs connections: ' + (', '.join(sorted(fitting)) or none_fits(area, google_offered(accounts))))
+            raise ValueError('account_id is one of your Docs connections: ' + (', '.join(sorted(fitting)) or none_fits(area, context.get('google', google_offered(accounts)))))
         if not fits(account.get('boundary'), area):
             raise ValueError(f'{account.get("name") or value["account_id"]} is {area_name(account.get("boundary"))}, not this '
                              f'to-do’s area ({area_name(area_of(area))}). Never put its doc there. '
-                             + ('Use ' + ' or '.join(sorted(fitting)) + ' instead' if fitting else none_fits(area, google_offered(accounts))))
+                             + ('Use ' + ' or '.join(sorted(fitting)) + ' instead' if fitting else none_fits(area, context.get('google', google_offered(accounts)))))
         own = (area or {}).get('emails') or ()
         better = sorted(k for k, a in fitting.items() if str(a.get('email') or '').lower() in own and 'create' in a.get('writes', ()))
         if better and str(account.get('email') or '').lower() not in own:
@@ -1003,4 +1006,4 @@ def context(config, connector, helpers, files, value, area=None):
                                   'docs_file_too_large': 'That file is too large to edit here',
                                   'docs_not_connected': 'Reading docs is not allowed for this connection'}.get(
                                       error.category, f'The doc could not be read ({error.category})')
-    return {'accounts': accounts, 'files': files, 'snapshots': snapshots, 'area': area}
+    return {'accounts': accounts, 'files': files, 'snapshots': snapshots, 'area': area, 'google': google_offered(accounts, config)}
