@@ -21,7 +21,7 @@ from machine.actions import CONTACT_ACTIONS
 from machine.cards import card_task, plain
 from machine.config import LOG
 from machine.delivery.deliver import fleet_notice_push, fleet_push
-from machine.delivery.push import hold_handoff, hold_mail, mail_ready, push_reach, push_send
+from machine.delivery.push import hold_handoff, hold_mail, mail_ready, push_reach, push_send, quick_web
 from machine.delivery.telegram import fleet_telegram
 from machine.faults import code_version, restart_self, running_release
 from machine.model_usage import telegram_on
@@ -205,7 +205,8 @@ class FleetApp:
                 show = security_levels.notify_text(db, True)
             line = notify.brief_line(titles, show) if titles is not None else notify.clip(text.split('\n', 2)[-1], notify.APP_BODY) if show else ''
             push_send(self.store, self.config, subscriptions, {'title': i18n.t('What your Fleet saw'), 'body': line,
-                                                               'url': url, 'tag': tag, '_body': line}, 'fleet-brief', kind='result', wake='fleet')
+                                                               'url': url, 'tag': tag, '_body': line, 'actions': quick_web('view')},
+                      'fleet-brief', kind='result', wake='fleet')
         if not telegram_on(self.config) or not self.notify_on('result', 'telegram'):
             return None
         result = fleet_telegram(self.config, {'text': text, 'buttons': [[{'text': i18n.t('Open the brief'), 'url': url}]] if url else []})
@@ -222,7 +223,8 @@ class FleetApp:
                 show = security_levels.notify_text(db, True)
             body = text[:200] if show else ''
             push_send(self.store, self.config, subscriptions, {'title': i18n.t('Fleet update'), 'body': body, 'url': root, 'tag': 'fleet-' + anchor,
-                                                               '_body': notify.clip(plain(body), notify.APP_BODY)}, 'fleet=' + anchor, kind='result', wake='fleet')
+                                                               '_body': notify.clip(plain(body), notify.APP_BODY), 'actions': quick_web('view')},
+                      'fleet=' + anchor, kind='result', wake='fleet')
         if telegram_on(self.config) and self.notify_on('result', 'telegram'):
             fleet_telegram(self.config, {'text': text, 'buttons': [[{'text': i18n.t('Open in To-dos'), 'url': root}]] if root else []})
 

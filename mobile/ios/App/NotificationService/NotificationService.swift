@@ -13,7 +13,7 @@ class NotificationService: UNNotificationServiceExtension {
         let content = (request.content.mutableCopy() as? UNMutableNotificationContent) ?? UNMutableNotificationContent()
         lock.lock(); handler = contentHandler; self.content = content; lock.unlock()
         guard let tag = content.userInfo["tag"] as? String, MachineNotice.validTag(tag) else { return finish(nil) }
-        MachineNotice.fetch(tag) { [weak self] notice in self?.finish(notice) }
+        MachineNotice.fetch(tag, kind: content.userInfo["kind"] as? String) { [weak self] notice in self?.finish(notice) }
     }
 
     override func serviceExtensionTimeWillExpire() {
@@ -30,7 +30,7 @@ class NotificationService: UNNotificationServiceExtension {
             content.title = title
             content.body = n.body
             if let category = MachineNotice.category(n.actions) {
-                MachineNotice.register(labels: n.labels)
+                MachineNotice.register(labels: n.labels, actions: n.actions)
                 content.categoryIdentifier = category
             }
             content.userInfo["events"] = n.events

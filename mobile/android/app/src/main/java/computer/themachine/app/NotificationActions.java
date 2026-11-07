@@ -7,7 +7,7 @@ import java.util.UUID;
 import org.json.JSONObject;
 
 /**
- * A notification's button (MachinePushService.button): Prepare, Snooze or Mark done, as the dashboard's own decision,
+ * A notification's button (MachinePushService.button): Do it, Snooze or Mark done, as the dashboard's own decision,
  * sent to the saved Machine with the owner's sign-in. The notification then says what happened ("Snoozed it") or that
  * the Machine couldn't be reached. Nothing is ever sent to anyone from here: a draft or a final step opens the app.
  */

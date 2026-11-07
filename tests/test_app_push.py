@@ -243,6 +243,10 @@ class AppPush(unittest.TestCase):
         sid = self.card('Pick a time with Sam')
         status, notice = get('/api/notice?tag=' + sid)
         self.assertEqual((status, notice['title'], notice['actions']), (200, 'New to-do: Pick a time with Sam', ['prepare', 'snooze', 'done']))
+        # an app with the quick buttons asks with v=2 and the wakeup's kind
+        self.assertEqual(get('/api/notice?tag=' + sid + '&v=2')[1]['actions'], ['prepare', 'snooze2h', 'done'])
+        self.assertEqual(get('/api/notice?tag=' + sid + '&v=2&kind=reminder')[1]['actions'], ['done', 'snooze', 'open'])
+        self.assertEqual(get('/api/notice?tag=' + sid + '&v=2&kind=x%26y')[1]['actions'], ['prepare', 'snooze2h', 'done'])
         with patch('sys.stderr'):
             self.assertEqual(get('/api/notice?tag=card_1', login='someone@example.com')[0], 403)
 
@@ -287,6 +291,99 @@ class AppPush(unittest.TestCase):
         self.assertLessEqual((len(long['title']), len(long['body'])), (notify.APP_LINE, a.APP_BODY))
         for status in a.APP_GONE:
             self.assertEqual(a.app_notice(self.store, self.config, self.card('Gone ' + status, status=status)), {'gone': True})
+
+    # -- quick buttons (push.QUICK): every kind has its own, and none of them sends anything
+    def quick_cards(self):
+        reply = json.dumps({'kind': 'email', 'account_id': 'work', 'to': ['sam@client.example'], 'body': 'Tuesday works.', 'revision': 'r1'})
+        return {'new': self.card('Answer the school'),
+                'draft': self.card('Pick a time with Sam', status='prepared', next_action=reply),
+                'ready': self.card('Find the train times', status='prepared', outcome=json.dumps({'state': 'answered'})),
+                'question': self.card('Book the trip', status='prepared', outcome=json.dumps({'needs': 'Which dates work?'})),
+                'preparing': self.card('Draft the plan', status='accepted')}
+
+    def test_no_quick_button_sends_publishes_pays_or_submits(self):
+        ids = {a for which in a.QUICK.values() for where in which.values() for a in where}
+        self.assertLessEqual(ids, set(a.QUICK_OPENS) | set(a.QUICK_RUNS))
+        self.assertEqual({choice for choice, _ in a.QUICK_RUNS.values()}, {'accept', 'snooze', 'complete'})
+        # Prepare (accept) only on a to-do not started yet: on a draft accept is Do it, never a notification button
+        self.assertEqual([k for k, which in a.QUICK.items() if 'prepare' in which['app'] + which['web']], ['new'])
+        for which in a.QUICK.values():
+            self.assertLessEqual(len(which['web']), 2)  # what a browser shows
+            self.assertLessEqual(len(which['app']), 3)  # what Android and iOS show
+        self.assertEqual(set(a.QUICK_LABELS), ids)
+
+    def test_the_notice_has_quick_buttons_for_an_app_that_knows_them(self):
+        cards = self.quick_cards()
+        expect = {'new': ['prepare', 'snooze2h', 'done'], 'draft': ['draft', 'snooze2h', 'done'], 'ready': ['open', 'done', 'snooze2h'],
+                  'question': ['answer', 'snooze2h', 'done'], 'preparing': ['snooze2h', 'done']}
+        for which, sid in cards.items():
+            with self.subTest(which):
+                notice = a.app_notice(self.store, self.config, sid, version=2)
+                self.assertEqual(notice['actions'], expect[which])
+                self.assertEqual(notice['labels']['snooze2h'], 'Snooze 2h')
+                self.assertEqual(notice['labels']['draft'], 'Open draft')
+                self.assertEqual(notice['events']['snooze2h'], 'Snoozed it')
+                # an older app keeps the three it knows
+                self.assertLessEqual(set(a.app_notice(self.store, self.config, sid)['actions']), {'prepare', 'snooze', 'done'})
+        self.assertEqual(a.app_notice(self.store, self.config, cards['new'], 'reminder', 2)['actions'], ['done', 'snooze', 'open'])
+        stuck = self.card('Pay the invoice', status='accepted')
+        with self.store.connect() as db:
+            db.execute("INSERT INTO preparations(suggestion_id,decision_id,job_id,status,reason,error,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?)",
+                       (stuck, 'd1', 'j1', 'blocked', 'Exact needs a login.', '', 'x', 'x'))
+        self.assertEqual(a.app_notice(self.store, self.config, stuck, version=2)['actions'], ['open', 'snooze2h', 'done'])
+        with self.store.connect() as db:
+            notify.app_line_save(db, 'digest', 'Your morning')
+        self.assertEqual(a.app_notice(self.store, self.config, 'digest', version=2)['actions'], [])  # the tap opens it
+
+    def test_web_push_quick_buttons_by_kind(self):
+        self.app.action('push_subscribe', SUB, owner_dashboard=True)
+        cards = self.quick_cards()
+        expect = {'new': [('snooze2h', 'Snooze 2h'), ('open', 'Open')], 'draft': [('draft', 'Open draft'), ('snooze2h', 'Snooze 2h')],
+                  'ready': [('open', 'Open'), ('done', 'Mark done')], 'question': [('answer', 'Answer'), ('snooze2h', 'Snooze 2h')]}
+        for which, want in expect.items():
+            with self.subTest(which), self.store.connect() as db:
+                row = dict(db.execute('SELECT * FROM suggestions WHERE id=?', (cards[which],)).fetchone(), _result_notice=which != 'new')
+            a.push_notify(self.store, self.config, row, self.sender)
+            self.assertEqual([(b['action'], b['title']) for b in self.web[-1]['payload']['actions']], want)
+        with self.store.connect() as db:
+            back = dict(db.execute('SELECT * FROM suggestions WHERE id=?', (cards['new'],)).fetchone(), reminder=1)
+        a.push_notify(self.store, self.config, back, self.sender)
+        self.assertEqual([b['action'] for b in self.web[-1]['payload']['actions']], ['done', 'snooze'])
+        row = {'id': '0123456789abcdef', 'title': 'Top up Wise', 'body': '', 'status': 'accepted', '_result_notice': True, 'preparation_status': 'blocked',
+               'preparation_reason': 'Sign in to Wise.', 'preparation_browser': {'signin_url': 'https://the-machine.example/assistant/browser/signin'}}
+        a.push_notify(self.store, self.config, row, self.sender)
+        self.assertEqual([b['action'] for b in self.web[-1]['payload']['actions']], ['signin', 'snooze2h'])
+        self.assertEqual(self.web[-1]['payload']['url'], 'https://the-machine.example/assistant/browser/signin')
+        with self.store.connect() as db:
+            a.security_levels.set_pref(db, 'notify_text', 'off')  # no text on the lock screen: the buttons stay, they say nothing of it
+        a.push_notify(self.store, self.config, back, self.sender)
+        self.assertEqual([b['action'] for b in self.web[-1]['payload']['actions']], ['done', 'snooze'])
+
+    def test_telegram_result_notice_has_the_quick_buttons(self):
+        cards = self.quick_cards()
+        config = {**self.config, 'dashboard_host': 'machine.example'}
+        def sent(which, **extra):
+            with self.store.connect() as db:
+                row = dict(db.execute('SELECT * FROM suggestions WHERE id=?', (cards[which],)).fetchone(), _result_notice=True, message_id='41', **extra)
+            with patch_everywhere(a, 'telegram_request', side_effect=lambda config, args: args):
+                return [(b['label'], b['action'].get('url') or b['action'].get('value')) for b in a.telegram(config, row, 'send')['presentation']['blocks'][0]['buttons']]
+        sid = cards['draft']
+        self.assertEqual(sent('draft'), [('Open draft', 'https://machine.example/assistant/#chat=' + sid), ('Snooze 2h', f'assistant:{sid}:snooze_2h')])
+        sid = cards['ready']
+        self.assertEqual(sent('ready'), [('Open', 'https://machine.example/assistant/#chat=' + sid), ('Mark done', f'assistant:{sid}:complete')])
+        signin = 'https://machine.example/assistant/browser/signin'
+        self.assertEqual(sent('preparing', preparation_status='blocked', preparation_browser={'signin_url': signin})[0], ('Sign in', signin))
+
+    def test_the_waiting_email_has_open_and_snooze_links_that_only_open(self):
+        root = 'https://m.example/'
+        mail = notify.waiting_mail([{'title': 'Pay the invoice', 'show': True, 'ref': 'suggestion:0123456789abcdef'},
+                                    {'title': "Kim's Machine asks: Who knows Acme?", 'show': True, 'ref': 'fleet:q_' + '1' * 16},
+                                    {'title': 'Old line', 'show': True}], root)
+        self.assertIn('• Pay the invoice · [Open](https://m.example/#chat=0123456789abcdef) · [Snooze](https://m.example/#snooze=0123456789abcdef)', mail['text'])
+        self.assertIn("• Kim's Machine asks: Who knows Acme? · [Open](https://m.example/#fleet=q_" + '1' * 16 + ')', mail['text'])
+        self.assertIn('• Old line\n', mail['text'])
+        self.assertNotIn('[Open]', notify.waiting_mail([{'title': 'Secret', 'show': False, 'ref': 'suggestion:0123456789abcdef'}], root)['text'])
+        self.assertNotIn('suggestion:', notify.waiting_mail([{'title': 'X', 'show': True, 'ref': 'suggestion:../evil'}], root)['text'])
 
     def test_ready_leads_only_where_something_was_prepared_to_review(self):
         # "Ready:" in front fits a draft or handoff waiting for the owner's OK, not a to-do about what someone

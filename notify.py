@@ -212,7 +212,8 @@ def take_due(db, still_open=lambda ref: True, clock=wall):
     db.executemany('DELETE FROM notify_queue WHERE id=?', [(i,) for i in gone])
     db.executemany('UPDATE notify_queue SET claimed_until=? WHERE id=?', [(at + 60, r['id']) for r in pushes + lines])
     return ([{'payload': json.loads(r['payload'] or '{}'), 'kind': r['kind'], 'delivery': r['delivery']} for r in pushes],
-            [{'title': r['title'], 'show': bool(r['show']), 'kind': r['kind'], 'delivery': r['delivery'], 'batch': r['batch']} for r in lines])
+            [{'title': r['title'], 'show': bool(r['show']), 'kind': r['kind'], 'delivery': r['delivery'], 'batch': r['batch'], 'ref': r['ref']}
+             for r in lines])
 
 
 def delivered(db, items):
@@ -253,8 +254,23 @@ def mailed(db, clock=wall):
     db.execute("INSERT INTO notify_prefs(key,value) VALUES('_mail_last',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", (str(clock()),))
 
 
+def mail_links(ref, root=''):
+    """An email line's quick buttons, as links (docs/help/notifications.md): Open and Snooze for a to-do, Open for a
+    Fleet question. They only open the dashboard (Snooze at its snooze times): a link in an email never does anything
+    by itself, since mail apps and scanners open links on their own."""
+    kind, _, ident = str(ref or '').partition(':')
+    if not root:
+        return ''
+    if kind == 'suggestion' and re.fullmatch(r'[a-f0-9]{16}', ident):
+        return f" · [{t('Open')}]({root}#chat={ident}) · [{t('Snooze')}]({root}#snooze={ident})"
+    if kind == 'fleet' and re.fullmatch(r'q_[a-f0-9]{16}', ident):
+        return f" · [{t('Open')}]({root}#fleet={ident})"
+    return ''
+
+
 def waiting_mail(lines, root=''):
-    """One email for what still waits: {subject, text}. Titles only where the security level shows them."""
+    """One email for what still waits: {subject, text}. Titles only where the security level shows them, each with its
+    quick links (mail_links)."""
     show = all(line['show'] for line in lines)
     if len(lines) == 1 and show:
         subject = t('Waiting for you: {}', lines[0]['title'])
@@ -262,7 +278,7 @@ def waiting_mail(lines, root=''):
         subject = t('{} things wait for you', len(lines))
     body = []
     if show:
-        body += ['• ' + line['title'] for line in lines[:8]]
+        body += ['• ' + line['title'] + mail_links(line.get('ref'), root) for line in lines[:8]]
         if len(lines) > 8:
             body.append(t('• +{} more', len(lines) - 8))
     else:

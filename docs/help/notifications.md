@@ -31,6 +31,25 @@ It checks whether you're actually using the dashboard, not just whether it's ope
 
 Only what needs you notifies, not progress or edits. A burst buzzes once. The app's icon shows how many to-dos need you.
 
+## Buttons on notifications
+
+Each notification has buttons for the next step. On the phone app:
+
+- New to-do: Do it, Snooze 2h, Mark done.
+- Draft ready: Open draft, Snooze 2h, Mark done.
+- Result ready: Open, Mark done, Snooze 2h.
+- Question, stuck or a sign-in: Answer, Open or Sign in, then Snooze 2h and Mark done.
+- Reminder: Mark done, Snooze, Open.
+- Morning digest: tap it to open.
+
+A browser and Telegram show two of them. Fleet questions keep Answer once and Decline.
+
+Nothing is sent, paid or submitted from a notification. A draft always opens first, so you see it before it goes.
+
+On the phone app, Snooze and Mark done ask you to unlock first. In a browser they open the dashboard, which does it and shows Undo. Snooze 2h brings the to-do back in two hours, Snooze tomorrow morning.
+
+Emails that list what waits for you have Open and Snooze links. They only open the dashboard.
+
 ## The morning digest
 
 It comes on work days at your **Morning digest** time, unless there's nothing to say. **Preview** shows it without sending it. By default it's a push and an email. The push names how many to-dos wait, the first two, and your first meeting's time. Tap it to open today in the **Calendar**.

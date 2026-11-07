@@ -46,6 +46,17 @@ item.status='pending';const baseline=replies.length;await handler(ctx('accept'))
 item.status='pending';await handler(ctx('other'));const prompt=choices.pop();assert.equal(prompt.card_message_id,'123');assert.equal(prompt.managed_prompt,true);assert.equal(choices.length,0);assert.equal(replies.length,baseline);
 {const saved=globalThis.fixtureCall;globalThis.fixtureCall=async(action,args)=>action==='request_feedback'?{awaiting_feedback:true,duplicate:true,earlier_prompt:'uncertain'}:saved(action,args);
 item.status='pending';const before=replies.length;await handler(ctx('other'));await handler(ctx('other'));assert.equal(replies.length,before);globalThis.fixtureCall=saved;}
+// The result notice's quick buttons (telegram.py TELEGRAM_QUICK): Snooze 2h and Mark done run from it, then it says what
+// happened with one Open; anything else from it does nothing; a to-do handled meanwhile keeps only Open.
+{const saved=globalThis.fixtureCall;globalThis.fixtureCall=async(action,args)=>{const r=await saved(action,args);if(action==='status')r.deliveries[0].notification_message_id='777';return r};
+ delete item.next_action;delete item.next_actions;item.status='prepared';
+ await handler(ctx('snooze_2h','777'));{const c=choices.pop();assert.equal(c.choice,'snooze');assert.equal(c.snooze_option,'2h');}
+ {const b=edits.pop().buttons.flat();assert.deepEqual(b.map(x=>x.text),['Snoozed it']);assert.match(b[0].url,/#chat=a{16}$/);}
+ item.status='prepared';await handler(ctx('complete','777'));assert.equal(choices.pop().choice,'complete');assert.deepEqual(edits.pop().buttons.flat().map(x=>x.text),['Marked it done']);
+ item.status='prepared';{const before=[choices.length,replies.length];await handler(ctx('reject','777'));await handler(ctx('confirm_abcdef123456','777'));
+  assert.equal(choices.length,before[0]);assert.equal(replies.length,before[1]+2);}
+ item.status='snoozed';{const before=choices.length;await handler(ctx('complete','777'));assert.equal(choices.length,before);assert.deepEqual(edits.pop().buttons.flat().map(x=>x.text),['Open']);}
+ globalThis.fixtureCall=saved;}
 item.status='prepared';item.next_action={kind:'email',revision:'abcdef123456',from:'owner@example.com',to:['recipient@example.com'],cc:[],bcc:[],subject:'Verified subject',body:'Exact draft'};
 await handler(ctx('back'));buttons=edits.pop().buttons.flat();assert.equal(buttons[0].text,'Send');assert.ok(buttons.every(b=>!b.callback_data||Buffer.byteLength(b.callback_data)<=64));
 const beforeSend=choices.length;await handler(ctx('send_abcdef123456'));const review=edits.pop();assert.match(review.text,/From: owner@example.com/);assert.match(review.text,/Exact draft/);assert.equal(choices.length,beforeSend);

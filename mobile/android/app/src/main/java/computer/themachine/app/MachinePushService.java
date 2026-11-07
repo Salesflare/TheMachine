@@ -34,7 +34,7 @@ import org.json.JSONObject;
  * opaque id and fixed words. For one that leaves showing it to the app (data "fetch"), the app asks the owner's own
  * Machine about that to-do (GET api/notice, with the WebView's own sign-in, or over Tailscale for a Machine of their
  * own) and shows its title and next step ("Ready: Pick a time with Sam", "Send to Sam: Tuesday 10:00 works") with
- * Prepare, Snooze and Mark done buttons (NotificationActions). Without an answer (offline, signed out, Tailscale off)
+ * Do it, Snooze and Mark done buttons (NotificationActions). Without an answer (offline, signed out, Tailscale off)
  * it shows the fixed words, or how many are waiting ("2 to-dos need you"). The lock screen gets only the fixed words
  * when the phone hides sensitive content (the public version). A "clear" push takes a to-do's notification away.
  * Replaces Capacitor's own service, which it still runs.
@@ -66,7 +66,7 @@ public class MachinePushService extends MessagingService {
         String many = text(data.get("many"));
         String group = PushText.group(kind, state);
         long asked = System.currentTimeMillis();
-        Notice notice = fetchNotice(c, tag);
+        Notice notice = fetchNotice(c, tag, kind);
         // the phone's network may still be waking up: once more, a moment later, while FCM's time for a push lasts
         if (notice == null && System.currentTimeMillis() - asked < TIMEOUT) {
             try {
@@ -74,7 +74,7 @@ public class MachinePushService extends MessagingService {
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
-            notice = fetchNotice(c, tag);
+            notice = fetchNotice(c, tag, kind);
         }
         if (notice != null && notice.gone) { // handled in the meantime: nothing to show
             clear(c, tag);
@@ -100,8 +100,10 @@ public class MachinePushService extends MessagingService {
         if (line != null) {
             for (String action : notice.actions) {
                 String label = notice.labels.get(action);
-                if (PushText.choice(action) == null || label == null || label.isEmpty()) continue;
-                full.addAction(button(c, tag, action, label, line, notice.events.get(action), notice.events.get("failed")));
+                if (label == null || label.isEmpty()) continue;
+                // Open, Open draft, Answer, Sign in: the to-do in the app, where the owner sees it first
+                if (PushText.opens(action)) full.addAction(new NotificationCompat.Action.Builder(0, label, open(c, tag + ":" + action, tag)).build());
+                else if (PushText.choice(action) != null) full.addAction(button(c, tag, action, label, line, notice.events.get(action), notice.events.get("failed")));
             }
         }
         post(c, id, full);
@@ -221,8 +223,8 @@ public class MachinePushService extends MessagingService {
         final Map<String, String> events = new HashMap<>();
     }
 
-    private static Notice fetchNotice(Context c, String tag) {
-        String answer = request(c, PushText.noticeUrl(machine(c), tag), null, null, null);
+    private static Notice fetchNotice(Context c, String tag, String kind) {
+        String answer = request(c, PushText.noticeUrl(machine(c), tag, kind), null, null, null);
         if (answer == null) return null;
         try {
             JSONObject json = new JSONObject(answer);
@@ -242,7 +244,7 @@ public class MachinePushService extends MessagingService {
 
     /** The to-do's title as the Machine says it now ("Preparing: ..."), or null. */
     static String title(Context c, String tag) {
-        Notice notice = fetchNotice(c, tag);
+        Notice notice = fetchNotice(c, tag, null);
         return notice == null || notice.gone ? null : notice.title;
     }
 

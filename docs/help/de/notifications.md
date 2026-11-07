@@ -31,6 +31,25 @@ Wie Slack schaut es, ob du das Dashboard benutzt, nicht nur, ob es offen ist:
 
 Nur was dich braucht, benachrichtigt. Fortschritt und Änderungen nicht. Viele auf einmal vibrieren nur einmal. Das App-Symbol zeigt, wie viele Aufgaben dich brauchen.
 
+## Buttons in Benachrichtigungen
+
+Jede Benachrichtigung hat Buttons für den nächsten Schritt. In der App auf dem Handy:
+
+- Neues To-do: Ausführen, 2 Std. zurückstellen, Als erledigt markieren.
+- Entwurf fertig: Entwurf öffnen, 2 Std. zurückstellen, Als erledigt markieren.
+- Ergebnis fertig: Öffnen, Als erledigt markieren, 2 Std. zurückstellen.
+- Frage, hängt fest oder Anmeldung nötig: Antworten, Öffnen oder Anmelden, dann 2 Std. zurückstellen und Als erledigt markieren.
+- Erinnerung: Als erledigt markieren, Zurückstellen, Öffnen.
+- Morgendliche Zusammenfassung: zum Öffnen antippen.
+
+Ein Browser und Telegram zeigen zwei davon. Fleet-Fragen behalten Einmal antworten und Ablehnen.
+
+Aus einer Benachrichtigung wird nie etwas gesendet, bezahlt oder eingereicht. Ein Entwurf öffnet sich immer zuerst, damit du ihn siehst, bevor er rausgeht.
+
+In der App fragen Zurückstellen und Als erledigt markieren zuerst nach dem Entsperren. Im Browser öffnen sie das Dashboard, das es erledigt und Rückgängig anbietet. 2 Std. zurückstellen bringt das To-do in zwei Stunden zurück, Zurückstellen morgen früh.
+
+E-Mails mit dem, was auf dich wartet, haben die Links Öffnen und Zurückstellen. Sie öffnen nur das Dashboard.
+
 ## Die morgendliche Zusammenfassung
 
 Sie kommt an Arbeitstagen zu deiner Uhrzeit für die **Morgendliche Zusammenfassung** und fällt nur aus, wenn es nichts zu sagen gibt: keine Meetings, nichts fällig oder neu und keine wartenden Aufgaben. **Vorschau** in ihrer Zeile zeigt sie auf der Seite, ohne sie zu senden. Standardmäßig kommt sie als Push und als E-Mail. Der Push nennt, wie viele Aufgaben warten, die ersten zwei und die Uhrzeit deines ersten Termins. Tippst du auf den Push, öffnet sich heute im **Kalender**.

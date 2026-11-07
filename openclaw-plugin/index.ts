@@ -323,13 +323,24 @@ export default definePluginEntry({
         const state = await call('status', {full:true});
         const delivery = state.deliveries.find((d: any) => d.suggestion_id === id);
         const recorded = delivery ? [String(delivery.message_id), ...JSON.parse(delivery.previous_message_ids || '[]').map(String)] : [];
-        if (!delivery || !recorded.includes(String(ctx.callback.messageId))) {
+        // The result notice ("Ready: ...", a reply under the to-do): its quick buttons Snooze 2h and Mark done run from
+        // it too (machine/delivery/telegram.py TELEGRAM_QUICK); nothing else does. Afterwards it says what happened.
+        const notice = !!delivery?.notification_message_id && String(delivery.notification_message_id) === String(ctx.callback.messageId);
+        if (notice && !['snooze_2h', 'complete'].includes(choice)) {
+          await ctx.respond.reply({ text: t('That button did nothing: it is not one this Machine knows. Please use the dashboard.') }).catch(()=>{});
+          return { handled: true };
+        }
+        if (!delivery || !(notice || recorded.includes(String(ctx.callback.messageId)))) {
           await ctx.respond.reply({ text: t('This to-do is not the current recorded delivery. Please use the dashboard.') });
           return { handled: true };
         }
         const item = state.suggestions.find((s: any) => s.id === id);
         if (!item) {
           await ctx.respond.clearButtons();
+          return { handled: true };
+        }
+        if (notice && ['completed', 'rejected', 'snoozed'].includes(item.status)) {  // handled meanwhile: only Open stays
+          await ctx.respond.editButtons({ buttons: [[{ text: t('Open'), url: `https://${config.dashboard_host}${config.dashboard_path||'/'}#chat=${id}` }]] }).catch(()=>{});
           return { handled: true };
         }
         if(choice.startsWith('send_')||choice.startsWith('confirm_')||choice.startsWith('next_')){
@@ -435,6 +446,12 @@ export default definePluginEntry({
           return {handled:true};
         }
         const updated=(await call('status',{full:true})).suggestions.find((s:any)=>s.id===id);
+        if (notice) {
+          // The to-do's own card updates by itself (the outbox); the notice keeps one button that opens it, with what happened
+          const root=`https://${config.dashboard_host}${config.dashboard_path||'/'}`;
+          await ctx.respond.editButtons({ buttons: [[{ text: choice === 'complete' ? t('Marked it done') : t('Snoozed it'), url: `${root}#chat=${id}` }]] }).catch(()=>{});
+          return { handled: true };
+        }
         await ctx.respond.editButtons({ buttons: cardButtons(updated || { ...item, status: result.status }) });
         // The durable outbox edits the card. No second confirmation message.
         return { handled: true };

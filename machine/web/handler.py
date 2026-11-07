@@ -53,6 +53,7 @@ from machine.web.serving import (
 )
 import meeting_notes
 import next_actions
+import notify
 import places
 import shared_graph
 from sources import SourceError
@@ -336,8 +337,10 @@ def make_handler(app):
             elif path.path == '/api/notice':
                 # The mobile app, woken by a push without text: what its notification says and which buttons it
                 # gets (app_notice), over the owner's own sign-in, so no to-do text passes through the push
-                tag = (urllib.parse.parse_qs(path.query).get('tag') or [''])[0]
-                self.output(200, app_notice(app.store, app.config, tag))
+                query = urllib.parse.parse_qs(path.query)
+                tag, kind = (query.get('tag') or [''])[0], (query.get('kind') or [''])[0]
+                version = 2 if (query.get('v') or [''])[0] == '2' else 1  # an app with the quick buttons (QUICK)
+                self.output(200, app_notice(app.store, app.config, tag, kind if kind in notify.KINDS else None, version))
             elif path.path == '/api/status':
                 self.output(200, {**dashboard_status(app.action('status', {'full': True})), 'talk_ready': app.talk_ready(), 'ui_version': dashboard_version(), 'source_url': source_url(), 'meaning': {'on': bool(embeddings.settings(app.config))}, 'fixed': list(getattr(getattr(app, 'fleet', None), 'fixed_now', None) or ()), 'browser_link': browser_link(app.config),
                                   'browser_embed': browser_embed(app.config, self.headers.get('Host', ''))})

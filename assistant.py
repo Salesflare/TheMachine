@@ -586,6 +586,10 @@ from machine.delivery.push import (
     HINT_SOURCES,
     HOSTED_REVIEWS_AUTO_SINCE,
     NUDGE_KINDS,
+    QUICK,
+    QUICK_LABELS,
+    QUICK_OPENS,
+    QUICK_RUNS,
     REPORT_HOURS,
     TALK_KINDS,
     app_clear_step,
@@ -605,6 +609,8 @@ from machine.delivery.push import (
     push_notify,
     push_reach,
     push_send,
+    quick_kind,
+    quick_web,
     reminder_channels,
     reminder_line,
     report_done,
@@ -4882,7 +4888,8 @@ class App(*APP_MIXINS):
                 subscriptions, phones = push_reach(self.store, self.config)
                 if subscriptions or phones:
                     payload = {**digest['push'], **({'silent': True} if notify.active() else {}),  # at the dashboard: no buzz
-                               '_line': digest['push']['title'], '_body': digest['push']['body']}  # the mobile app asks for these
+                               '_line': digest['push']['title'], '_body': digest['push']['body'],  # the mobile app asks for these
+                               'actions': quick_web('view')}
                     if push_send(self.store, self.config, subscriptions, payload, 'digest', push, wake='digest'):
                         went.append('push')
             if prefs.get('telegram') and telegram_on(self.config):

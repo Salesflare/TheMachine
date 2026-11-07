@@ -33,7 +33,7 @@
             </intent-filter>
         </service>
 
-        <!-- A notification's Prepare, Snooze and Mark done buttons: the dashboard's own decision, never a send -->
+        <!-- A notification's Do it, Snooze and Mark done buttons: the dashboard's own decision, never a send -->
         <receiver
             android:name=".NotificationActions"
             android:exported="false" />
