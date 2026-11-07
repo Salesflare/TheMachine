@@ -28,7 +28,7 @@ Un’attività con **Sembra fatto** appare come una fatta, con ciò che mostra c
 
 Un’attività il cui ultimo passo è ancora aperto da parte di qualcun altro, come una revisione, un merge o una risposta, mostra **In attesa di:** quel passo e resta aperta. Aspetta in **In attesa di altri**, chiusa sopra Torna più tardi, e non conta come pronta per te. Un nuovo messaggio su di essa la riporta indietro.
 
-Un’attività che nessuno tocca da una settimana chiede una volta: **Serve ancora?** **Lascia perdere** la chiude come **Non serve**, con **Annulla**. **Tieni** la tiene, e non lo chiede più. Aprirla, un messaggio in chat, una modifica, posticiparla o un nuovo messaggio su di lei contano come un tocco. Senza risposta per un’altra settimana, finisce in Torna più tardi, sotto Serve ancora?, invece di sparire. Un tocco la riporta indietro.
+Un’attività che nessuno tocca da una settimana chiede una volta: **Serve ancora?** **Lascia perdere** la chiude come **Non serve**, con **Annulla**. **Tieni** la tiene, e non lo chiede più. Aprirla, un messaggio in chat, una modifica, posticiparla o un nuovo messaggio su di lei contano come un tocco. Senza risposta per un’altra settimana, finisce in Torna più tardi, sotto Serve ancora?, invece di sparire. Allora il numero sull’icona dell’app e il riepilogo del mattino smettono di contarla. Un tocco la riporta indietro.
 
 Quando niente ha bisogno di te, la tua Machine fa un pisolino sull’elenco vuoto. Mentre controlla, si sveglia e lo dice. Se un controllo non è riuscito o è in ritardo, la sua riga lo dice, con **Controlla ora** sotto.
 

@@ -23,7 +23,8 @@ import notify
 import qr
 import security_levels
 from sources import credential
-from timeutil import now
+import still_needed
+from timeutil import local_tz, now
 
 
 @functools.lru_cache(maxsize=4)
@@ -565,9 +566,13 @@ def talk_about(node):
 
 
 def waiting_count(db):
-    """To-dos that need the owner now, for the app icon's badge (not the ones that look done or wait on others)."""
-    return db.execute("SELECT count(*) FROM suggestions WHERE status IN ('pending','prepared') AND NOT " + NOT_FOR_OWNER_SQL + " "
-                      "AND (deliver_after IS NULL OR deliver_after<=?)", (now(),)).fetchone()[0]
+    """To-dos that need the owner now, for the app icon's badge (not the ones that look done or wait on others, nor a
+    Still needed? left unanswered: folded into Coming back later)."""
+    current = now()
+    rows = db.execute("SELECT id FROM suggestions WHERE status IN ('pending','prepared') AND NOT " + NOT_FOR_OWNER_SQL + " "
+                      "AND (deliver_after IS NULL OR deliver_after<=?)", (current,)).fetchall()
+    later = still_needed.folded(db, current, local_tz()) if rows else set()
+    return sum(1 for r in rows if r[0] not in later)
 
 
 def push_send(store, config, subscriptions, payload, label, sender=None, kind=None, held=False, wake=None):

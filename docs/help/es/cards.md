@@ -28,7 +28,7 @@ Una tarea con **Parece hecho** se ve como una hecha, con lo que muestra que est�
 
 Una tarea cuyo último paso sigue abierto en manos de otra persona, como una revisión, una fusión o una respuesta, muestra **Esperando:** ese paso y sigue abierta. Espera en **Esperando a otros**, plegada encima de Vuelve más tarde, y no cuenta como lista para ti. Un mensaje nuevo sobre ella la trae de vuelta.
 
-Una tarea que nadie tocó en una semana pregunta una vez: **¿Aún hace falta?** **Descartar** la cierra como **No hace falta**, con **Deshacer**. **Mantener** la mantiene, y no vuelve a preguntar. Abrirla, un mensaje en el chat, un cambio, posponerla o un mensaje nuevo sobre ella cuentan como tocarla. Si no hay respuesta en otra semana, se guarda en Vuelve más tarde, bajo ¿Aún hace falta?, en lugar de desaparecer. Tocarla la trae de vuelta.
+Una tarea que nadie tocó en una semana pregunta una vez: **¿Aún hace falta?** **Descartar** la cierra como **No hace falta**, con **Deshacer**. **Mantener** la mantiene, y no vuelve a preguntar. Abrirla, un mensaje en el chat, un cambio, posponerla o un mensaje nuevo sobre ella cuentan como tocarla. Si no hay respuesta en otra semana, se guarda en Vuelve más tarde, bajo ¿Aún hace falta?, en lugar de desaparecer. Entonces el número en el icono de la app y el resumen matutino dejan de contarla. Tocarla la trae de vuelta.
 
 Cuando nada te necesita, tu Machine se echa una siesta en la lista vacía. Mientras revisa, se despierta y lo dice. Si una revisión falló o va con retraso, su línea lo dice, con **Revisar ahora** debajo.
 

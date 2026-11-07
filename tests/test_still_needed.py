@@ -163,6 +163,27 @@ class StillNeeded(unittest.TestCase):
         self.assertEqual(self.step(), [])
         self.assertEqual([self.rows(s) for s in skipped + [repeat]], [[]] * (len(skipped) + 1))
 
+    def test_folded_it_leaves_the_badge_and_the_digest_too(self):
+        """Folded into Coming back later on the dashboard, it stops waiting on the owner elsewhere: the app's badge and
+        the morning digest's "Waiting for you" leave it out. A touch brings it back to both."""
+        brochure, venue = self.card('Send the brochure', 8), self.card('Book the venue', 2)
+        self.assertEqual(self.step(), [brochure])
+        def badge(at):
+            with patch_everywhere(a, 'now', return_value=at), self.store.connect() as db:
+                return a.waiting_count(db), still_needed.folded(db, at, TZ)
+        self.assertEqual(badge(ago(-1)), (2, set()))  # asked, not folded yet
+        self.assertEqual(badge(ago(-7.5)), (1, {brochure}))
+        with patch_everywhere(a, 'now', return_value=ago(-7.5)), patch_everywhere(a, 'recap_meetings', return_value=[]):
+            digest = self.app.digest(dt.datetime.fromisoformat(ago(-7.5)))
+        self.assertIn('Waiting for you\n• Book the venue', digest['text'])
+        self.assertNotIn('brochure', digest['text'])
+        self.assertEqual(digest['subject'], 'Your morning: 1 waiting')
+        with self.store.connect() as db:
+            db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES('r1',?,'rename','','dashboard',?)", (brochure, ago(-7)))
+        self.assertEqual(badge(ago(-7.5)), (2, set()))  # touched: waiting again
+        with self.store.connect() as db:
+            self.assertNotIn(venue, still_needed.folded(db, ago(-30), TZ))  # never asked: never folded
+
     def test_the_status_payload_carries_it(self):
         sid = self.card('Send Ayla the quote', 8, 'prepared')
         self.step()

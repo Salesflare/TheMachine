@@ -28,7 +28,7 @@ Uma tarefa com **Parece feito** aparece como uma feita, com o que mostra que est
 
 Uma tarefa cujo último passo ainda está aberto do lado de outra pessoa, como uma revisão, um merge ou uma resposta, mostra **Aguardando:** esse passo e continua aberta. Ela espera em **Aguardando outras pessoas**, recolhida acima de Volta mais tarde, e não conta como pronta para você. Uma nova mensagem sobre ela a traz de volta.
 
-Uma tarefa que ninguém tocou em uma semana pergunta uma vez: **Ainda precisa?** **Descartar** fecha a tarefa como **Não precisa**, com **Desfazer**. **Manter** mantém a tarefa, e ela não pergunta de novo. Abrir, uma mensagem no chat, uma edição, adiar ou uma mensagem nova sobre ela contam como um toque. Sem resposta por mais uma semana, ela vai para Volta mais tarde, sob Ainda precisa?, em vez de sumir. Um toque traz de volta.
+Uma tarefa que ninguém tocou em uma semana pergunta uma vez: **Ainda precisa?** **Descartar** fecha a tarefa como **Não precisa**, com **Desfazer**. **Manter** mantém a tarefa, e ela não pergunta de novo. Abrir, uma mensagem no chat, uma edição, adiar ou uma mensagem nova sobre ela contam como um toque. Sem resposta por mais uma semana, ela vai para Volta mais tarde, sob Ainda precisa?, em vez de sumir. Aí o número no ícone do app e o resumo da manhã deixam de contá-la. Um toque traz de volta.
 
 Quando nada precisa de você, sua Machine tira uma soneca na lista vazia. Enquanto verifica, ela acorda e avisa. Se uma verificação falhou ou está atrasada, a linha dela diz isso, com **Verificar agora** embaixo.
 

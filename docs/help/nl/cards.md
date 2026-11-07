@@ -28,7 +28,7 @@ Een to-do met **Lijkt gedaan** ziet eruit als een gedane, met wat laat zien dat 
 
 Een to-do waarvan de laatste stap nog openstaat bij iemand anders, zoals een review, een merge of een antwoord, zegt **Wacht op:** die stap en blijft open. Hij wacht in **Wacht op anderen**, ingeklapt boven Komt later terug, en telt niet mee als klaar voor jou. Een nieuw bericht erover brengt hem terug.
 
-Een to-do die een week niemand aanraakte, vraagt één keer: **Nog nodig?** **Laten vallen** sluit hem zoals **Niet nodig**, met **Ongedaan maken**. **Houden** houdt hem, en hij vraagt het nooit meer. Openen, een chatbericht, een aanpassing, snoozen of een nieuw bericht erover tellen allemaal als aanraken. Komt er een week later nog geen antwoord, dan vouwt hij weg in Komt later terug, onder Nog nodig?, in plaats van te verdwijnen. Aanraken haalt hem terug.
+Een to-do die een week niemand aanraakte, vraagt één keer: **Nog nodig?** **Laten vallen** sluit hem zoals **Niet nodig**, met **Ongedaan maken**. **Houden** houdt hem, en hij vraagt het nooit meer. Openen, een chatbericht, een aanpassing, snoozen of een nieuw bericht erover tellen allemaal als aanraken. Komt er een week later nog geen antwoord, dan vouwt hij weg in Komt later terug, onder Nog nodig?, in plaats van te verdwijnen. Dan telt hij ook niet meer mee in het getal op het app-icoon en het ochtendoverzicht. Aanraken haalt hem terug.
 
 Als er niets op je wacht, doet je Machine een dutje op de lege lijst. Terwijl hij checkt, wordt hij wakker en zegt hij dat. Is een check mislukt of laat, dan zegt zijn regel dat, met **Nu checken** eronder.
 

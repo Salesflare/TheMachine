@@ -11,6 +11,8 @@ So once a to-do has sat untouched for DAYS, the to-do asks "Still needed?" with 
   answered there; a to-do that closes any way ends its question (Store.still_needed_ask);
 - no answer: once the question has waited DAYS more without a touch, the dashboard folds the to-do into Coming back
   later, under its own heading, instead of deleting it (annotate: folded). A touch brings it back; the question stays.
+  Folded, it no longer waits on the owner anywhere else either: not in the app's badge, nor in the morning digest's
+  "Waiting for you" (folded).
 
 Asked only of to-dos waiting on the owner (OPEN): not snoozed, closed or still preparing, and not of one that looks done,
 waits on others (the caller's skip), has a date still ahead, closes by itself at a set time or repeats (recurring.py)."""
@@ -126,3 +128,12 @@ def annotate(db, cards, stamp, tz=dt.timezone.utc):
             asked = current
         since = touched.get(c['id']) or asked
         c['still_needed'] = {'id': row['id'], 'since': since.isoformat(), 'folded': current - max(asked, since) >= dt.timedelta(days=DAYS)}
+
+
+def folded(db, stamp, tz=dt.timezone.utc):
+    """The ids of the open to-dos folded into Coming back later (annotate's folded): asked, and no answer or touch
+    for DAYS since. The badge and the digest leave them out, as the dashboard's open groups do."""
+    rows = [dict(r) for r in db.execute("SELECT s.id,s.status,s.created_at,s.event_ids FROM suggestions s JOIN recap_items i ON i.ref=s.id "
+                                        f"WHERE i.kind=? AND i.status='open' AND s.status IN ({','.join('?' * len(OPEN))})", (KIND, *OPEN))]
+    annotate(db, rows, stamp, tz)
+    return {r['id'] for r in rows if (r.get('still_needed') or {}).get('folded')}
