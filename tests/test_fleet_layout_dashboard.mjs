@@ -51,9 +51,9 @@ try{
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto('http://127.0.0.1:'+server.address().port);
   await navClick(page.locator('nav [data-tab="fleet"]'));await page.locator('.fleet-tabs').waitFor();
-  assert.deepEqual(await page.locator('.fleet-tabs [data-fleet-pane]').allInnerTexts(),['Acme','Friends\n1','Sharing','Activity']);
+  assert.deepEqual(await page.locator('.fleet-tabs [data-fleet-pane]').allInnerTexts(),['Acme','Manage','Friends\n1','Sharing','Activity']);
   assert.equal(await page.locator('#fleet-discover').count(),1);  // the slot for suggested connections
-  for(const pane of ['fleet-'+FL,'friends','sharing','activity']){
+  for(const pane of ['fleet-'+FL,'manage','friends','sharing','activity']){
    await page.locator(`[data-fleet-pane="${pane}"]`).click();
    assert.equal(await page.locator('.fleet-pane:not([hidden])').getAttribute('data-pane'),pane);
    assert.equal(await page.locator(`[data-fleet-pane="${pane}"]`).getAttribute('aria-selected'),'true');

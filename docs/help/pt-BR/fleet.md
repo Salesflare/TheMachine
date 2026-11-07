@@ -81,6 +81,8 @@ Para entrar em um Fleet, criar um ou parear uma Machine no seu próprio computad
 
 ## Para proprietários e admins
 
+**Gerenciar**, na aba Fleet, lista cada Fleet que você administra: as pessoas, as funções delas e os convites. Em uma Machine hospedada, você convida, muda funções, remove pessoas e responde a pedidos para entrar ali mesmo. Uma mudança que afeta o preço abre antes a sua conta para confirmar. Em uma Machine auto-hospedada, você vê quem está nele, com um link para esse Fleet na sua conta.
+
 A parte do Fleet na página da sua conta mostra mais duas coisas:
 
 - **Removidos recentemente**: cada pessoa removida ou que saiu. Mostra **Removido, confirmado** quando a Machine dela removeu os dados de trabalho, o Google confirmou a saída e qualquer token compartilhado que ela tinha foi trocado. Até lá, mostra **Pendente** e o motivo.

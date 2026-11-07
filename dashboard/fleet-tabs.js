@@ -45,7 +45,7 @@ async function fleetView(refresh=false,cached=false){const view=$('#fleet-view')
      :html`<small class="fp-meta">${[p.email,p.answers_with].filter(Boolean).join(' · ')}</small>`}</li>`})}</ul>`:''};
  const box=(title,sub,body,cls='')=>html`<div class="fleet-box${cls?' '+cls:''}"><h3>${title}</h3>${sub?html`<p class="sub">${sub}</p>`:''}${body}</div>`;
  const head=(x,count)=>html`<div class="fleet-pane-head"><h2 class="ell">${x.name}</h2><span class="chip"><span class="ct">${x.label}</span></span>${count?html`<span class="muted">${count} ${count===1?'person':'people'}</span>`:''}</div>`;
- const people=x=>box('People','',html`${who(x)}${x.members.length||(x.people||[]).some(p=>!p.me)?'':html`<p class="muted">Nobody else yet. Invite teammates from your account page.</p>`}`);
+ const people=x=>box('People','',html`${who(x)}${x.members.length||(x.people||[]).some(p=>!p.me)?'':manageInvite(x,'Nobody else yet. Invite teammates from your account page.')}`);
  // One view at a time: each Work Fleet, Friends, Family, Sharing (every rule in one place) and Activity, as pills.
  const panes=[];
  const notices=f.notices||[],asking=notices.filter(n=>n.buttons.length),told=notices.filter(n=>!n.buttons.length&&!/^friend_/.test(n.kind));
@@ -64,6 +64,7 @@ async function fleetView(refresh=false,cached=false){const view=$('#fleet-view')
  // Every Fleet together, Work and Family, by when you joined or made it (the directory's order when it doesn't say); then Friends, Network, Sharing.
  const listed=p=>f.fleets.findIndex(x=>p.id.replace(/^shared-/,'fleet-')===(x.kind==='family'?'family':'fleet-'+x.id))+(/^shared-/.test(p.id)?.5:0);
  panes.sort((a,b)=>a.at&&b.at&&a.at!==b.at?(a.at<b.at?-1:1):listed(a)-listed(b));
+ {const manage=managePane(f);if(manage)panes.push({id:'manage',label:'Manage',badge:manageWaiting(f),html:manage})}  // fleet-manage.js
  const fr=f.friends,friendsHtml=friendsSection(f,notices);
  if(friendsHtml)panes.push({id:'friends',label:'Friends',badge:(fr?.in||[]).length,html:works.length||family?friendsHtml:html`${friendsHtml}${fleetAcct(null,'Start a Fleet')}`});
  {const net=networkSection(f);if(net)panes.push({id:'network',label:'Network',html:net})}
@@ -99,7 +100,7 @@ const familyWhen=v=>{const d=new Date(String(v).length<=10?v+'T12:00':v);if(isNa
 const familyMoment=v=>{if(!v)return '';const off=-new Date(v).getTimezoneOffset(),a=Math.abs(off);return `${v.slice(0,16)}${off<0?'-':'+'}${String(Math.floor(a/60)).padStart(2,'0')}:${String(a%60).padStart(2,'0')}`};
 function familySection(f,family){const fam=f.family||{free:[],todos:[],plans:[],mine:[]},people=(family.people||[]).filter(p=>!p.me),today=new Date().toISOString().slice(0,10);
  const who=html`<ul class="fleet-people">${(family.people||[]).map(p=>html`<li id="fleet-m-${p.member_id||''}"><strong>${p.label||p.name}</strong>${p.me?html` <span class="muted">(you)</span>`:''}${inGraph(p)}<br><small class="muted">${p.answers_with||''}</small></li>`)}</ul>`;
- if(!people.length)return html`<div id="fleet-family" class="family">${who}<p class="muted">Nobody else yet. Invite your family from your account page.</p></div>`;
+ if(!people.length)return html`<div id="fleet-family" class="family">${who}${manageInvite(family,'Nobody else yet. Invite your family from your account page.')}</div>`;
  const opts=html`${people.map(p=>html`<option value="${p.member_id}">${p.name}</option>`)}`,latest=fam.free[0];
  const stage={accepted:'accepted',declined:'declined',done:'done',asked:'asked','waiting for them':'waiting'};
  let h=html`<div id="fleet-family" class="family">${who}`;

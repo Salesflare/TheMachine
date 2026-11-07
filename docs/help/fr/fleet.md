@@ -81,6 +81,8 @@ Pour rejoindre une Fleet, en créer une ou associer une Machine sur votre propre
 
 ## Pour les propriétaires et les admins
 
+**Gérer**, dans l’onglet Fleet, liste chaque Fleet que vous gérez : ses membres, leurs rôles et les invitations. Sur une Machine hébergée, vous y invitez, changez les rôles, retirez des personnes et répondez aux demandes d’adhésion directement. Un changement qui touche le prix ouvre d’abord votre compte pour le confirmer. Sur une Machine auto-hébergée, vous voyez qui en fait partie, avec un lien vers cette Fleet sur votre compte.
+
 La partie Fleet de la page de votre compte affiche deux éléments de plus :
 
 - **Retirés récemment** : chaque personne retirée, ou partie. La ligne indique **Supprimé, confirmé** une fois que sa Machine a supprimé les données de travail, que Google a confirmé la déconnexion et que tout jeton partagé qu’elle avait a été remplacé. D’ici là, elle indique **En attente** et pourquoi.

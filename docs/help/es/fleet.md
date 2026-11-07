@@ -81,6 +81,8 @@ Para unirte a un Fleet, crear uno o vincular una Machine en tu propio ordenador,
 
 ## Para propietarios y administradores
 
+**Gestionar**, en la pestaña Fleet, muestra cada Fleet que diriges: sus personas, sus roles y las invitaciones. En una Machine alojada invitas, cambias roles, quitas personas y respondes a las solicitudes para unirse ahí mismo. Un cambio que afecta al precio abre primero tu cuenta para confirmarlo. En una Machine autoalojada ves quién está, con un enlace a ese Fleet en tu cuenta.
+
 La parte de Fleet de la página de tu cuenta muestra dos cosas más:
 
 - **Quitados hace poco**: cada persona quitada, o que se fue. Dice **Eliminado, confirmado** cuando su Machine eliminó los datos de trabajo, Google confirmó el cierre de sesión y se sustituyó cualquier token compartido que tuviera. Hasta entonces dice **Pendiente** y por qué.
