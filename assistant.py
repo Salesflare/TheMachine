@@ -5643,8 +5643,9 @@ class App(*APP_MIXINS):
 
     def style_step(self):
         """Every ten minutes: a finished profile's channel lines fill voices still empty, and a draft the owner
-        answered themselves instead of sending becomes a lesson for the next drafts."""
+        answered themselves instead of sending becomes a lesson for the next drafts, and that to-do looks done."""
         seeded, learned = self.store.seed_voices(), self.store.learn_sent_elsewhere()
+        self.store.answered_elsewhere()
         if (self.config.get('review_worker') or {}).get('enabled'):  # read how they write from their own messages, now and then
             self.store.voice_study_due()
             self.store.tune_due()  # keep learning from edits, dismissals, snoozes and chat corrections (learning_loop.py)

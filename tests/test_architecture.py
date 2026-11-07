@@ -358,7 +358,10 @@ BUDGETS = {'dashboard.html': 24 * 1024, 'dashboard/*.js': 160 * 1024, 'dashboard
 OVER_BUDGET = {}
 # The page as served (dashboard.html with its parts): what a phone downloads. Not a scan rule, a watch: a ceiling that
 # may only come down; raise it on purpose, in a pull request that says why.
-PAGE_CEILING = 2_000_000
+# 2,000,000 -> 2,100,000 (2026-11-07): main passed 2,000,000 with no single big piece to take out (no inline assets,
+# no string table). The real fix is the dashboard split of the code refactor (load parts when they're used); this is
+# headroom while that lands, so main stays green. Bring it back down with the split.
+PAGE_CEILING = 2_100_000
 
 
 def budget(name):
