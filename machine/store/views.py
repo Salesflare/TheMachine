@@ -355,7 +355,7 @@ class ViewsStore(ConversationStore):
         if suggestion.get('status') not in ('completed','rejected'):
             stopped=stopped_step(db,suggestion)
             if stopped:extra['step_stopped']=stopped
-        prompt=db.execute('SELECT status,error FROM feedback_prompts WHERE request_id=?',(suggestion.get('feedback_request_id'),)).fetchone()
+        prompt=suggestion.get('feedback_request_id') and db.execute('SELECT status,error FROM feedback_prompts WHERE request_id=?',(suggestion['feedback_request_id'],)).fetchone()
         if prompt:extra['change_prompt']=dict(prompt)
         job=db.execute('SELECT job_id,status,reason FROM preparations WHERE suggestion_id=?',(suggestion['id'],)).fetchone()
         waiting=browser_wait(db,job['job_id'],job['status'],reason=job['reason']) if job else None
@@ -521,7 +521,7 @@ class ViewsStore(ConversationStore):
                         pass
                 if suggestion.get('next_action'):
                     suggestion['next_action']=json.loads(suggestion['next_action'])
-                prompt=db.execute('SELECT status,error FROM feedback_prompts WHERE request_id=?',(suggestion.get('feedback_request_id'),)).fetchone()
+                prompt=suggestion.get('feedback_request_id') and db.execute('SELECT status,error FROM feedback_prompts WHERE request_id=?',(suggestion['feedback_request_id'],)).fetchone()
                 if prompt:suggestion['change_prompt']=dict(prompt)
                 feedback = db.execute("SELECT id,feedback,choice,created_at,source FROM decisions WHERE suggestion_id=? AND trim(feedback)<>'' AND source IN ('telegram','dashboard') AND id NOT IN (SELECT decision_id FROM decision_annotations) ORDER BY created_at DESC,rowid DESC LIMIT 1", (suggestion['id'],)).fetchone()
                 suggestion['latest_feedback'] = dict(feedback) if feedback else None

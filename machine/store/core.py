@@ -418,6 +418,12 @@ class StoreCore:
                         "CREATE INDEX IF NOT EXISTS events_kind_meeting_transcript ON events(occurred_at) WHERE kind='meeting.transcript'"):
                 db.execute(sql)
             db.execute('CREATE INDEX IF NOT EXISTS analyses_owner ON analyses(owner_run,owner_session)')
+            # Status asks each connection for its last failed read and its failures today. Most never fail, so without
+            # this each ask walked all that connection's reads (hundreds of thousands for the phone feed) and found none.
+            db.execute("CREATE INDEX IF NOT EXISTS sync_activity_failed ON sync_activity(account_id,at) WHERE status='failed'")
+            # Status counts each connection's signals, pending and new today, and all of them for review health: from
+            # the index alone, not a row read per signal.
+            db.execute('CREATE INDEX IF NOT EXISTS events_signal_counts ON events(account_id,ingested_at,analyzed_version,version,deferrals) WHERE history=0')
             # A to-do's decisions: the to-do list and the Done list ask each to-do's latest one, a pass over all decisions each
             db.execute('CREATE INDEX IF NOT EXISTS decisions_suggestion ON decisions(suggestion_id,created_at)')
             for schema in embeddings.SCHEMAS:  # after the monotonic-ID migration, which rebuilds events
@@ -694,6 +700,11 @@ class StoreCore:
 
     @contextlib.contextmanager
     def connect(self):
+        """A connection in a transaction of its own (committed when the block ends, rolled back on an error). During a
+        request (the dashboard's, the API's) the connection goes back for the request's next connect instead of being
+        closed, and the request closes it when it ends (timing.close_kept): opening one reads the whole schema, sets it
+        up and attaches the sealer, and the status poll asked for some 40 of them. A connect inside another one's block
+        gets a connection of its own, as before."""
         timing = getattr(_REQUEST_TIMING, 'value', None)  # a request being answered on this thread: its database time
         if timing is None:
             with self._connect() as db:
@@ -707,28 +718,35 @@ class StoreCore:
                 yield db
         finally:
             done = time.monotonic()
-            timing['db_connections'] += 1
             timing['db_held'] += done - (held or done)
             if held is None:
                 timing['db_wait'] += done - started
 
     @contextlib.contextmanager
     def _connect(self, timing=None, started=0.0):
-        db = sqlite3.connect(self.path, timeout=20, factory=message_seal.Connection)
-        db.row_factory = sqlite3.Row
-        db.protected = self.protected
-        if self.sealer:
-            message_seal.attach(db, self.sealer)
-            db.execute('PRAGMA secure_delete=ON')  # a deleted or replaced message leaves no copy in a free page
-            if self.protected and db.execute('PRAGMA schema_version').fetchone()[0] != self._sealed_schema:
-                # a table made since (a migration, joining a Fleet): its guards, and anything it got meanwhile
-                with db:
-                    message_seal.ensure_triggers(db)
-                    sealed_now = message_seal.leftovers(db, seal=True)
-                if sealed_now:  # their plain text leaves the log too (secure_delete already cleared the old cells)
-                    LOG.info('message contents sealed in place: %s values', sealed_now)
-                    db.execute('PRAGMA wal_checkpoint(TRUNCATE)')
-                self._sealed_schema = db.execute('PRAGMA schema_version').fetchone()[0]
+        kept = None if timing is None else timing.setdefault('kept', {}).setdefault((str(self.path), id(self.sealer), self.protected), [])
+        db = kept.pop() if kept else None
+        if db is None:
+            db = sqlite3.connect(self.path, timeout=20, factory=message_seal.Connection)
+            db.row_factory = sqlite3.Row
+            db.protected = self.protected
+            if self.sealer:
+                message_seal.attach(db, self.sealer)
+                db.execute('PRAGMA secure_delete=ON')  # a deleted or replaced message leaves no copy in a free page
+            db.kept_rows = db.row_factory
+            if timing is not None:
+                timing['db_connections'] += 1
+        else:  # kept from this request's last connect: as a new one would be
+            db.row_factory, db.isolation_level = db.kept_rows, ''
+        if self.sealer and self.protected and db.execute('PRAGMA schema_version').fetchone()[0] != self._sealed_schema:
+            # a table made since (a migration, joining a Fleet): its guards, and anything it got meanwhile
+            with db:
+                message_seal.ensure_triggers(db)
+                sealed_now = message_seal.leftovers(db, seal=True)
+            if sealed_now:  # their plain text leaves the log too (secure_delete already cleared the old cells)
+                LOG.info('message contents sealed in place: %s values', sealed_now)
+                db.execute('PRAGMA wal_checkpoint(TRUNCATE)')
+            self._sealed_schema = db.execute('PRAGMA schema_version').fetchone()[0]
         db.execute('PRAGMA foreign_keys=ON')
         if timing is not None:  # opened and set up: waiting on a lock to read the schema counts here
             timing['db_wait'] += time.monotonic() - started
@@ -736,7 +754,10 @@ class StoreCore:
             with db:
                 yield db
         finally:
-            db.close()
+            if kept is not None and not db.in_transaction:
+                kept.append(db)
+            else:
+                db.close()
 
     def checkpoint(self, account):
         with self.connect() as db:
