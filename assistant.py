@@ -186,6 +186,7 @@ from machine.app.knowledge_export import KnowledgeExportApp
 from machine.app.meeting_writes import MeetingWritesApp
 from machine.app.model_pacing import ModelPacingApp
 from machine.app.recap_settings import RecapSettingsApp
+from machine.app.search_ask import SearchAskApp
 from machine.app.signatures import SignaturesApp
 from machine.app.summaries import SummariesApp
 from machine.app.voice import VoiceApp
@@ -649,6 +650,7 @@ from machine.actions import (
     LEARNING_ACTIONS,
     MEET_ACTIONS,
     OWNER_ACTIONS,
+    SEARCH_ASK_ACTIONS,
     SHARE_ACTIONS,
     SKILL_ACTIONS,
     SUPPORT_ACTIONS,
@@ -2527,6 +2529,7 @@ APP_MIXINS += (FollowUpsApp, GraphActionsApp, KnowledgeExportApp, MeetingWritesA
                VoiceApp)
 APP_MIXINS += (CardChatApp, ConversationApp, ExportApp, FleetApp, RecapApp, TalkApp)
 APP_MIXINS += (RecapSettingsApp,)
+APP_MIXINS += (SearchAskApp,)
 
 
 class App(*APP_MIXINS):

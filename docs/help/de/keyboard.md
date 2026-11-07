@@ -12,6 +12,10 @@ Drück `⌘K` auf einem Mac oder `Ctrl K` unter Windows und Linux, oder `/`, um 
 
 Auf dem Handy tippst du auf das Suchsymbol in der oberen Leiste.
 
+## Eine Frage stellen
+
+Tippe eine Frage, etwa „Was hat Kim über das Pilotprojekt gesagt?“, und über den Ergebnissen erscheint eine kurze Antwort aus deinen eigenen Mails und Nachrichten, mit einem Link zu jeder verwendeten Nachricht. Sie antwortet in der Sprache deiner Frage, nur aus dem Bereich, den du gerade ansiehst (Alle, Arbeit oder Privat). Ein Name oder ein paar Stichwörter suchen einfach. Die Antwort sendet nie etwas und legt kein To-do an, und sie braucht ein Modell (Einstellungen, Modell).
+
 ## Tastenkürzel
 
 Drück `?` für **Tastenkürzel**, die vollständige Liste für deinen Computer.

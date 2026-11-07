@@ -12,6 +12,10 @@ Pulsa `⌘K` en un Mac o `Ctrl K` en Windows y Linux, o `/`, para abrir **Búsqu
 
 En un teléfono, toca el icono de búsqueda en la barra superior.
 
+## Hacer una pregunta
+
+Escribe una pregunta, como «¿qué dijo Kim sobre el piloto?», y sobre los resultados aparece una respuesta corta sacada de tu propio correo y mensajes, con un enlace a cada mensaje que usó. Responde en el idioma en que preguntas, solo con el área que estás viendo (Todo, Trabajo o Personal). Un nombre o unas palabras clave solo buscan. La respuesta nunca envía nada ni crea un to-do, y necesita un modelo (Ajustes, Modelo).
+
 ## Atajos
 
 Pulsa `?` para ver **Atajos de teclado**, la lista completa para tu ordenador.

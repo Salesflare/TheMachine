@@ -12,6 +12,10 @@ Press `⌘K` on a Mac, `Ctrl K` on Windows and Linux, or `/` to open **Search an
 
 On a phone, tap the search icon in the top bar.
 
+## Ask a question
+
+Type a question, like “what did Kim say about the pilot?”, and a short answer from your own mail and messages shows above the results, with a link to each message it used. It answers in the language you ask in, only from the area you're viewing (All, Work or Personal). A name or a few keywords just search. The answer never sends anything or adds a to-do, and it needs a model (Settings, Model).
+
 ## Shortcuts
 
 Press `?` for **Keyboard shortcuts**, the full list for your computer.

@@ -12,6 +12,10 @@ Aperte `⌘K` no Mac ou `Ctrl K` no Windows e no Linux, ou `/`, para abrir **Pes
 
 No celular, toque no ícone de busca na barra superior.
 
+## Fazer uma pergunta
+
+Digite uma pergunta, como “o que a Kim disse sobre o piloto?”, e uma resposta curta tirada dos seus próprios e-mails e mensagens aparece acima dos resultados, com um link para cada mensagem usada. Ela responde no idioma da pergunta, só com a área que você está vendo (Todos, Trabalho ou Pessoal). Um nome ou algumas palavras-chave só fazem uma busca. A resposta nunca envia nada nem cria um to-do, e precisa de um modelo (Configurações, Modelo).
+
 ## Atalhos
 
 Aperte `?` para ver **Atalhos de teclado**, a lista completa para o seu computador.
