@@ -37,11 +37,12 @@ import fleet_learnings
 import fleet_trust as ft
 import graph
 from i18n import t
-from machine.store import stamps
+from machine import stamps
 from machine.timing import _REQUEST_TIMING
 import network_crypto as nc
 import own_addresses
 import security_levels
+import shared_graph_kept
 
 LOG = logging.getLogger('personal-assistant')
 TAG = b'tm-shared-graph/1\n'
@@ -149,12 +150,6 @@ class Had(ValueError):
     """Already here: a second copy (the publisher's own and one passed on), or older than what this Machine has."""
 
 
-# What sharing works out from on a person's page and the to-do list, kept between requests (machine/store/stamps.py):
-# its tables carry change counters, so a kept answer is worked out again after any change to them
-WATCHED = ('share_private', 'share_rules', 'share_threads', 'graph_nodes', 'projects', 'boards', 'board_suggestions', 'event_projects',
-           'graph_events', 'slack_members', 'identity_names', 'team_records', 'team_sources')
-
-
 def ensure(db):
     stamps.once(db, 'shared_graph', _ensure, 'team_wants')  # the tables once per schema: a page asked some seven times
     if not db.execute("SELECT 1 FROM share_meta WHERE key='sorter' AND value='2'").fetchone():
@@ -177,7 +172,7 @@ def _ensure(db):
     import message_seal
     if message_seal.is_protected(db):  # teammates' mail, records, files and the review's lines: sealed at rest like the owner's own
         message_seal.ensure_triggers(db)
-    stamps.watch(db, WATCHED)
+    stamps.watch(db, shared_graph_kept.WATCHED)
 
 
 def now():
@@ -442,34 +437,6 @@ def _items(db, event_ids):
     return set(found)
 
 
-# What a Scope is made from (besides the time and the Slack checkpoints, read again for each request: Scope.on)
-SCOPE_TABLES = ('share_private', 'share_rules', 'share_threads', 'graph_nodes', 'projects', 'boards', 'board_suggestions',
-                'event_projects', 'graph_events', 'slack_members', 'identity_names')
-KEPT = stamps.Kept(16)  # what the dashboard's requests work out from the sharing tables (WATCHED), by stamp
-
-
-def fleet_marks(db, fleets):
-    """graph.fleet_marks: the Fleet members kept until the graph's people or the directory change (a pass over every
-    person's addresses, asked on each person's page and graph list), the people found on the Network read each time (a
-    setting and a table of their own). Its marks are shared by every caller: copy them before changing them."""
-    members = KEPT.get(('marks', json.dumps(fleets, sort_keys=True, default=str)), stamps.stamp(db, ('graph_nodes',)),
-                       lambda: graph.fleet_marks(db, fleets, network=False))
-    return graph.network_marks(db, members, fleets)
-
-
-def _hash_index(db, keys):
-    """{hash: local node id} for these graph keys (SharedGraph.hash_index)."""
-    index = {}
-    for row in db.execute("SELECT id,kind,info FROM graph_nodes WHERE kind IN ('person','org')"):
-        info = json.loads(row['info'] or '{}')
-        values = (['email:' + i[6:].lower() for i in [row['id'], *info.get('identifiers', [])] if str(i).startswith('email:')]
-                  if row['kind'] == 'person' else (['domain:' + info['domain']] if info.get('domain') else []))
-        for key in keys:
-            for v in values:
-                index.setdefault(keyed(key, v), row['id'])
-    return index
-
-
 def _threads_of(db, event_ids):
     out = set()
     if event_ids:
@@ -574,19 +541,6 @@ class Scope:
                     self.private_ids |= {i[6:].lower() for i in ids if str(i).startswith('email:')}
             elif row['id'] in self.private and info.get('domain'):
                 self.private_ids.add('@' + info['domain'])
-
-    def on(self, db, memo=None):
-        """A copy of this scope for another request on its connection: what depends on the time (the hold on threads the
-        review just called) and the Slack conversations (from the sync checkpoints, which change all the time) read again,
-        and the parts worked out on demand left to work out again. memo: {thread: automated} shared by the scopes of
-        one read-only request (automated_only)."""
-        out = copy.copy(self)
-        out._db, out._automated, out._team_items, out._private_events = db, None, None, None
-        out._automated_memo = memo
-        out.hold = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(seconds=HOLD)).isoformat(timespec='seconds')
-        out.fresh = {r[0] for r in db.execute('SELECT thread FROM share_threads WHERE hand IS NULL AND sorted_at>?', (out.hold,))}
-        out._slack_load(db)
-        return out
 
     def _slack_load(self, db):
         """Who is outside the company's own Slack: members of another company or guests (slack_members, from users.info),
@@ -2727,7 +2681,7 @@ class SharedGraph:
         if not keys:
             return {}
         # an HMAC per address and key (some 60k): kept until the graph's people or organizations change
-        return KEPT.get(('hash_index', tuple(keys)), stamps.stamp(db, ('graph_nodes',)), lambda: _hash_index(db, keys))
+        return shared_graph_kept.KEPT.get(('hash_index', tuple(keys)), stamps.stamp(db, ('graph_nodes',)), lambda: shared_graph_kept.hash_index(db, keys, keyed))
 
     def team_graph(self, db, kinds=('person', 'org', 'project')):
         """The team's entities: [{key, kind, local (node id or None), sources: [(fleet, member, record)]}], matched by
@@ -2735,7 +2689,7 @@ class SharedGraph:
         list is handed to each caller, which reads it only."""
         at = stamps.stamp(db, ('graph_nodes', 'team_records', 'team_sources', 'projects', 'boards', 'board_suggestions'))
         keys = tuple(k['key'] for ref in self.work_fleets() for k in self.graph_keys(ref).values())  # what hash_index hashes with
-        return KEPT.get(('team_graph', tuple(kinds), keys), at, lambda: self._team_graph(db, kinds, self.hash_index(db)))
+        return shared_graph_kept.KEPT.get(('team_graph', tuple(kinds), keys), at, lambda: self._team_graph(db, kinds, self.hash_index(db)))
 
     def _team_graph(self, db, kinds, index):
         names = {(f, m): (s.get('name') or '', bool(s.get('left_at'))) for (f, m), s in self.team_sources().items()}
@@ -2772,23 +2726,23 @@ class SharedGraph:
         for group in self._kept_groups():
             if group.get('kind') == 'work' and group.get('id') and self._me_in(group):
                 if personal is None:
-                    personal, at = self._personal_people(db), stamps.stamp(db, SCOPE_TABLES)
+                    personal, at = self._personal_people(db), stamps.stamp(db, shared_graph_kept.SCOPE_TABLES)
                 accounts, internal, mine = self.graph_accounts(group['id']), self.internal(group['id']), self.my_emails()
                 # The sharing rules, worked out once (a pass over every person and organization, the Only-you projects
                 # and their threads) and kept until one of the tables they come from changes: a person's page and the
                 # to-do list asked for them on every request. Each caller gets its own copy, current to the second.
                 key = ('scope', group['id'], frozenset(accounts), frozenset(internal), frozenset(m.lower() for m in mine), frozenset(personal))
-                base = KEPT.get(key, at, lambda: Scope(db, accounts, internal, mine, personal))
+                base = shared_graph_kept.KEPT.get(key, at, lambda: Scope(db, accounts, internal, mine, personal))
                 timing = getattr(_REQUEST_TIMING, 'value', None)  # a GET reads only: its answers hold for the request
                 memo = timing.setdefault('automated', {}).setdefault(key, {}) if timing is not None and timing.get('read') else None
-                found[group['id']] = base.on(db, memo)
+                found[group['id']] = shared_graph_kept.renewed(base, db, memo, HOLD)
         return found
 
     def _personal_people(self, db):
         """Graph people who are only in the owner's Family or Friends (graph.fleet_marks, from the directory this
         Machine keeps): the owner's own life, whatever address they write from. Never shared with a Work Fleet."""
         try:
-            marks = fleet_marks(db, self.fleets())
+            marks = shared_graph_kept.fleet_marks(db, self.fleets())
         except (ValueError, TypeError, KeyError, AttributeError):
             return set()
         return {node for node, mark in marks.items() if mark['in'] and all(x['kind'] in ('family', 'friends') for x in mark['in'])}
