@@ -12,6 +12,8 @@ To-dos come from checks: your Machine looks at what came in within about 15 minu
 
 On a new hosted Machine, checks start by themselves once your AI and mail are connected. While your Machine reads your mail, To-dos says "Reading your mail, first to-dos in a few minutes." If a step is missing, **Needs you** names it, like **Connect mail**, with a link to that step.
 
+While it reads, To-dos shows how far it got, a few of the people and organizations it came across, and your first to-do as soon as it's in. The names come from your own mail, and only you see them.
+
 ## Checks are off
 
 The top of To-dos says "Checks are off, so no to-dos arrive yet." On a hosted Machine, press **Turn on checks**. On your own computer, run `./install.sh --activate`.

@@ -45,14 +45,14 @@ try{
   at={look:null,ai:{name:'ChatGPT',since:now},runs:[run],dig:{read:0,total:102,todos:0,goal:3,days:7,pace:30}};
   await page.evaluate(async()=>{await refresh()});
   await box.filter({hasText:'Taking a first look at your last 7 days'}).waitFor();
-  assert.ok((await box.innerText()).includes('of 102 signals'));
+  assert.ok((await box.innerText()).includes('of 102 messages'));
   assert.ok(!/Nothing is sent/.test(await page.locator('#suggestions').innerText()));
   if(shots)await page.screenshot({path:`${shots}/first-look-${width}.png`});
   // A smaller total for a moment: the count keeps its total
   at={...at,dig:{...at.dig,total:82}};
   await page.evaluate(async()=>{await refresh()});
   await page.waitForTimeout(1200);
-  assert.ok((await box.innerText()).includes('of 102 signals'),await box.innerText());
+  assert.ok((await box.innerText()).includes('of 102 messages'),await box.innerText());
   // Back to the connecting state for a moment (a restart as reviews turn on): still the first look, not Connecting
   at=connecting;
   await page.evaluate(async()=>{await refresh()});

@@ -842,6 +842,7 @@ from machine.store.profile import (
 )
 from machine.store.first_look import (
     FIRST_ACTIONS,
+    FIRST_LOOK_NAMES,
     FIRST_MAGIC_SETTLE_SECONDS,
     FIRST_TIPS,
     FIRST_TIPS_UNTIL,
@@ -7081,8 +7082,10 @@ class App(*APP_MIXINS):
         over the week, so the dashboard shows one bar that keeps moving until it has its to-dos or has read the week,
         instead of All clear between batches. {'read': signals its batches saved so far, 'total': read plus the week's
         signals left (at most FIRST_DIG_SIGNALS in all while more are left), 'todos', 'goal': FIRST_DIG_CARDS, 'days',
-        'pace': seconds per signal of the batch that runs now, at the time its last finished batch took (FIRST_DIG_PACE_SECONDS before one finished)}. None once
-        it stopped, or on an install that had no first look. 'failing': Store.reviews_failing. Counts only."""
+        'pace': seconds per signal of the batch that runs now, at the time its last finished batch took (FIRST_DIG_PACE_SECONDS before one finished), 'unit': 'email' when
+        every source is a mailbox, else 'message', 'names': who it reads about (Store.first_look_names), 'first': the first
+        to-do it found, {'id', 'title'}, or None}. None once it stopped, or on an install that had no first look. Counts,
+        names and a to-do title only, never a message's text. 'failing': Store.reviews_failing."""
         dig = self.first_dig(db, current)
         if not dig or 'left' not in dig:
             return None
@@ -7090,9 +7093,10 @@ class App(*APP_MIXINS):
         # counting them only after the run ended made the total dip by a batch for a moment (2026-11-04: 82, then 102)
         # A batch takes about as long whatever its size (its turn's steps, not its signals: 2026-11-04, 20 signals took
         # 135 s, 40 took 91 s), so the pace is the last batch's time spread over the batch that runs now
-        read, last, size = 0, None, None
+        read, last, size, runs = 0, None, None, []
         for run in db.execute("SELECT run_id,status,started_at,finished_at,planned FROM review_runs WHERE (preview=1 AND auto=1) OR window_hours IS NOT NULL OR promising=1 "
                               "ORDER BY started_at"):
+            runs.append(run['run_id'])
             items = sum(len(json.loads(row[0] or '[]')) for row in db.execute(
                 "SELECT items FROM analyses WHERE owner_run=? AND status='complete'", (run['run_id'],)))
             read += items
@@ -7105,8 +7109,15 @@ class App(*APP_MIXINS):
         total = read + dig['left']
         if dig['left'] and total > FIRST_DIG_SIGNALS:
             total = max(FIRST_DIG_SIGNALS, read + min(dig['left'], FIRST_LOOK_NEXT_SIGNALS))
+        # The live first look: who it reads about, the first to-do's title the moment it is saved, and whether all it
+        # reads is mail ('email') or also other messages; from what its batches already wrote, no model call
+        start = db.execute('SELECT min(started_at) FROM review_runs WHERE window_hours IS NOT NULL').fetchone()[0]
+        first = db.execute('SELECT id,title FROM suggestions WHERE created_at>=? AND ' + activity.SHOWN + ' ORDER BY created_at LIMIT 1',
+                           (start, now())).fetchone() if dig['cards'] else None
+        services = {a.get('service') for a in self.config.get('accounts', []) if a.get('service') not in SYSTEM_SERVICES}
         return {'read': read, 'total': total, 'todos': dig['cards'], 'goal': FIRST_DIG_CARDS, 'days': PREVIEW_DAYS, 'pace': pace,
-                'failing': self.store.reviews_failing(db)}
+                'unit': 'email' if services and services <= set(MAIL_SERVICES) else 'message', 'names': self.store.first_look_names(db, runs),
+                'first': {'id': first['id'], 'title': first['title']} if first else None, 'failing': self.store.reviews_failing(db)}
 
     def first_look_done(self, current=None):
         """The first look's ending, for the dashboard: what it read and what came of it, so an empty list says what the
