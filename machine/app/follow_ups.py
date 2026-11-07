@@ -30,6 +30,9 @@ from timeutil import WORK_HOURS, in_hours, local_tz, now
 LOG = logging.getLogger('personal-assistant')
 
 
+# A to-do's projects and boards, for the skills that fit its preparation: its event ids bound as one JSON list
+PREP_PROJECTS_SQL = ('SELECT DISTINCT p.name,b.name AS board FROM event_projects e JOIN projects p ON p.id=e.project_id '
+                     'LEFT JOIN boards b ON b.id=p.board_id WHERE e.event_id IN (SELECT value FROM json_each(?))')
 NEWER_KINDS = ('gmail.message', 'slack.message', 'teams.message', 'whatsapp.message', 'linkedin.message', 'x.dm')
 
 
@@ -40,7 +43,8 @@ def newer_activity(db, event_ids, owner_slack_ids=(), teammates=(), domains=(), 
     ids = [i for i in event_ids or [] if isinstance(i, int)]
     if not ids:
         return []
-    rows = db.execute('SELECT id,account_id,kind,occurred_at,metadata FROM events WHERE id IN (' + ','.join('?' * len(ids)) + ')', ids).fetchall()
+    rows = db.execute('SELECT id,account_id,kind,occurred_at,metadata FROM events WHERE id IN (SELECT value FROM json_each(?))',
+                      (json.dumps(ids),)).fetchall()
     found, seen = [], set(ids)
     teammates = {str(e).lower(): name for e, name in dict(teammates).items()} if teammates else {}
     for row in rows:
@@ -404,7 +408,7 @@ class FollowUpsApp:
         try:
             saved = self.store.suggest(f"follow-up:{p['id']}:{item['after']}", title, body, evidence, 'now', self.config.get('digest_at', '08:30'),
                                        work=self.is_work(sorted({r[0] for r in db.execute(
-                                           f"SELECT account_id FROM events WHERE id IN ({','.join('?' * len(evidence))})", evidence)})),
+                                           'SELECT account_id FROM events WHERE id IN (SELECT value FROM json_each(?))', (json.dumps(evidence),))})),
                                        ahead=True, project=name, _db=db, owner_step=False)
         except ValueError as error:
             LOG.info('follow-up skipped project=%s why=%s', p['id'], str(error)[:80])
@@ -449,9 +453,7 @@ class FollowUpsApp:
             names = [row['project'] or '']
             ids = [i for i in json.loads(row['event_ids'] or '[]') if isinstance(i, int)][:200]
             if ids and db.execute("SELECT 1 FROM sqlite_master WHERE name='event_projects'").fetchone():
-                marks = ','.join('?' * len(ids))
-                for p in db.execute(f'SELECT DISTINCT p.name,b.name AS board FROM event_projects e JOIN projects p ON p.id=e.project_id '
-                                    f'LEFT JOIN boards b ON b.id=p.board_id WHERE e.event_id IN ({marks})', ids):
+                for p in db.execute(PREP_PROJECTS_SQL, (json.dumps(ids),)):  # fixed SQL; the ids go in as one bound JSON list
                     names += [p['name'] or '', p['board'] or '']
             on = [dict(r) for r in db.execute("SELECT name,slug,description,body FROM skills WHERE status='on' ORDER BY name")]
         root = Path(getattr(getattr(self, 'skills', None), 'workspace', None) or self.config.get('openclaw_workspace') or WORKSPACE) / 'skills' / skills.FOLDER

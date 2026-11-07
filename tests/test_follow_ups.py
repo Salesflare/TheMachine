@@ -729,6 +729,41 @@ class FollowUps(unittest.TestCase):
         self.assertNotIn('Set the stage', short)
         self.assertEqual(follow_ups.prep_skill_note([], []), '')
 
+    def test_a_preparations_projects_query_is_fixed_sql_with_the_ids_bound(self):
+        """The to-do's event ids go in as one bound JSON list, never into the SQL text: the same query for one id or
+        two hundred, and the board still fits."""
+        import contextlib
+        import skills
+        from machine.app import follow_ups as app_follow_ups
+        app = self.app(openclaw_workspace=self.tmp.name)
+        app.skills = skills.Skills(self.store.connect, self.tmp.name)
+        app.skills.save(None, 'Alpha testers outreach', 'Reach out to alpha testers', 'Open with early access, then the ask.')
+        seen, real = [], self.store.connect
+
+        class Spy:
+            def __init__(self, db):
+                self.db = db
+
+            def execute(self, sql, params=()):
+                seen.append((sql, params))
+                return self.db.execute(sql, params)
+
+        @contextlib.contextmanager
+        def spying():
+            with real() as db:
+                yield Spy(db)
+        for name, ids in (('one', [self.ev['in1']]), ('many', list(range(900000, 900199)) + [self.ev['in1']])):
+            sid = self.store.suggest(name, 'Answer Acme about the pilot', 'They asked about access.', [self.ev['in1']])['id']
+            with self.store.connect() as db:  # many ids: more than any one query's text could fairly carry
+                db.execute('UPDATE suggestions SET event_ids=? WHERE id=?', (json.dumps(ids), sid))
+            seen.clear()
+            with patch.object(self.store, 'connect', spying):
+                lines = app.prep_skill_lines(sid)
+            self.assertIn('Open with early access, then the ask.', lines)
+            projects = [(s, p) for s, p in seen if 'event_projects e' in s]
+            self.assertEqual([s for s, _ in projects], [app_follow_ups.PREP_PROJECTS_SQL])
+            self.assertEqual(json.loads(projects[0][1][0])[-1], self.ev['in1'])
+
     def test_a_change_takes_the_full_context_and_a_skill_added_after_the_drafts(self):
         """"I added a skill, use it now": the rewrite is a full preparation turn (style, the thread, earlier follow-ups),
         never the chat's short turn, and it names the skills on right now, one added after the drafts included, with
