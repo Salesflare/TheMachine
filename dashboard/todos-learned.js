@@ -117,6 +117,7 @@ const doneFoldSkipped=g=>g.skipped&&g.skipped<g.items.length?t('{} skipped',g.sk
 function doneFoldWho(s){const a=frDraft(s),to=a?(a.to_name||(a.to||[]).join(', ')):'';return to?t('To {}',to):''}
 const doneFoldWhen=s=>fuDoneState(s)==='sent'?new Date(closedAt(s)).toLocaleTimeString(DL,{hour:'numeric',minute:'2-digit'}):t('Skipped');
 function sideRow(x,cur){const here=id=>id===cur?html` aria-current="page"`:'';
+ if(x.fleet)return html`<a href="#${x.fleet}" data-side-fleet="${x.fleet}" title="${x.title}" translate="no">${x.title}</a>`;  // a Fleet item (fleetSide)
  if(x.fuGroup)return x.writing?html`<a href="#" data-fu-card="${x.fuGroup}" title="${x.title}" translate="no">${x.title}</a>`:html`<a href="#" data-fu-review="${x.fuGroup}" title="${x.title}" translate="no">${x.title}</a>`;
  if(x.fuFold){const open=doneOpen.has(x.fuFold);
   const n=doneFoldSkipped(x);

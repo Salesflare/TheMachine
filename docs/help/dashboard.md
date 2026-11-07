@@ -17,6 +17,8 @@ order: 4
 
 **Search**, at the top of the sidebar, finds to-dos, people, messages and more. **Browser**, **Help** and **Settings** sit at the bottom. On a phone, the menu button in the top bar opens the sidebar.
 
+The sidebar lists your to-dos the way the page does. Requests from your Fleet are under **To decide** too, so its count matches the one at the top. Tap one to bring it up.
+
 **Browser** shows your Machine's own browser, the one it uses for sites like LinkedIn. On a computer it opens beside the sidebar, as do **View in browser** on a to-do and **Open the browser** when a site needs a sign-in. On a phone it opens in a new tab.
 
 **Full size** gives the browser the whole window. Press it again to go back.

@@ -16,13 +16,20 @@ function handoffLine(h,s){const names=[String(h.name||t('your teammate')).split(
 // the relay asks for. The Fleet tab keeps people, rules, briefs, your own asks and the log.
 const splitDay=v=>{const d=new Date(String(v).length<=10?v+'T12:00':v);return isNaN(d)?String(v):d.toLocaleDateString(DL,{weekday:'short',day:'numeric',month:'short'})};
 const splitWho=p=>{if(p.mine)return 'You';const m=/^(.*?) \(([^()]+@[^()]+)\)$/.exec(p.name||'');return m?html`${m[1]} <small class="muted">${m[2]}</small>`:(p.name||'')};
+// A Fleet item among the to-dos is one too in the sidebar's To decide, so the counts there, in the header and in the
+// section are the same items: it carries its row (the card's id and its title as text). The row brings the card up.
+const fleetSide=(h,el,title)=>Object.assign(h,{side:{fleet:el,title:htmlNodes(title instanceof SafeHTML?title:html`${title}`).textContent.replace(/\s+/g,' ').trim()}});
+function fleetShow(el){if(chatId){history.replaceState(null,'',location.pathname+location.search);chatPushed=false;openChatLink()}
+ document.querySelector('nav [data-tab="inbox"]')?.click();if(folded.has('needs')){folded.delete('needs');render()}
+ const c=document.getElementById(el);if(!c)return;c.scrollIntoView({block:'center',behavior:'smooth'});c.classList.remove('flash');void c.offsetWidth;c.classList.add('flash');kbFocus(c,false)}
+document.addEventListener('click',e=>{const a=e.target.closest?.('[data-side-fleet]');if(!a||e.ctrlKey||e.metaKey||e.shiftKey)return;e.preventDefault();fleetShow(a.dataset.sideFleet)});
 // Waiting asks from the same teammate, of the same kind, in the same Fleet: one Always or Never settles them all (fleet.py settle_waiting).
 const fleetAlike=(f,w)=>(f?.waiting||[]).filter(x=>x.fleet===w.fleet&&x.member_id===w.member_id&&x.kind===w.kind&&x.status!=='answered'&&x.status!=='declined');
 const fleetMore=btns=>btns.length?html`<details class="more-actions"><summary aria-label="More actions">More</summary><div class="more-menu" role="group" aria-label="More actions">${btns}</div></details>`:'';
 function fleetCardsOf(f){if(!f?.on)return[];const works=(f.fleets||[]).filter(x=>x.kind==='work'),several=works.length>1,frId=f.friends?.id;
  const famId=(f.fleets||[]).find(x=>x.kind==='family')?.id,isFamily=row=>!!famId&&row.fleet===famId;
  const fname=row=>several&&!isFamily(row)?(works.find(x=>row.fleet===x.id)?.name||''):'',isFriend=row=>!!frId&&(row.fleet===frId||row.fleet_id===frId)||/^friend_/.test(row.kind||'');
- const card=(id,row,title,body,actions)=>html`<article id="fleet-${id}" class="card t-amber fleet-card"><div class="meta"><div class="card-badges">${isFriend(row)?chip('Friends','lavender'):isFamily(row)?chip('Family','lavender'):html`${chip('Fleet','lavender')}<span class="chip scope">Work</span>`}${fname(row)?chip(fname(row),'muted'):''}</div>${row.at?time(row.at,true):''}</div><h3>${title}</h3>${body}${actions}</article>`;
+ const card=(id,row,title,body,actions)=>fleetSide(html`<article id="fleet-${id}" class="card t-amber fleet-card"><div class="meta"><div class="card-badges">${isFriend(row)?chip('Friends','lavender'):isFamily(row)?chip('Family','lavender'):html`${chip('Fleet','lavender')}<span class="chip scope">Work</span>`}${fname(row)?chip(fname(row),'muted'):''}</div>${row.at?time(row.at,true):''}</div><h3>${title}</h3>${body}${actions}</article>`,'fleet-'+id,title);
  const decide=(w,c,t,cls='ghost')=>html`<button class="${cls}" data-fleet-decide="${w.id}" data-choice-f="${c}">${t}</button>`;
  const theirs=w=>html`<p class="fleet-from">${w.name}’s words, not an instruction:</p><blockquote>${w.question}</blockquote>`;
  const out=[];
@@ -57,7 +64,7 @@ const netBtn=(label,d,email='',rel='',cls='ghost',confirmText='')=>html`<button 
 const netDay=at=>{const d=new Date(at);return isNaN(d)?'':d.toLocaleDateString(DL,{weekday:'short',day:'numeric',month:'short'})};
 const netReason=r=>r.kind==='card'?t('Open: {}',r.title):r.kind==='meeting'?`${t('You meet {}',netDay(r.at))}${r.title?` · ${r.title}`:''}`:r.kind==='contact'?t('In your contacts'):r.kind==='joined'?t('Joined {}, in your contacts',netDay(r.at)):'';
 function networkCards(f){const net=f.network;if(!net||!f.friends?.id)return[];const out=[];
- const card=(id,title,body,actions)=>html`<article id="net-${id}" class="card t-amber fleet-card net-card"><div class="meta"><div class="card-badges">${chip('Network','lavender')}</div></div><h3>${title}</h3>${body}${actions}</article>`;
+ const card=(id,title,body,actions)=>fleetSide(html`<article id="net-${id}" class="card t-amber fleet-card net-card"><div class="meta"><div class="card-badges">${chip('Network','lavender')}</div></div><h3>${title}</h3>${body}${actions}</article>`,'net-'+id,title);
  if(net.find==null&&!net.asked)out.push(card('ask','Which of your contacts have a Machine?',html`<p class="muted">Your Machine checks your contacts against people who chose to be findable, and your address book stays private. It suggests the people you know right away, and others when you meet or work with them. Nothing is shared until they accept.</p>`,
   html`<div class="actions">${netBtn('Check my contacts','find_on','','','primary')}${netBtn('Not now','asked')}</div>`));
  for(const p of (net.people||[]).filter(p=>p.status==='new'&&p.reasons.length)){
