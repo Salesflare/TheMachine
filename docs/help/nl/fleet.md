@@ -19,6 +19,12 @@ The Machine Network verbindt Machines. Wat ze elkaar vertellen, is end-to-end ve
 
 Het verschijnt zodra je in een Fleet zit, met een paneel voor elke Fleet, Familie, Vrienden, Network, Delen en Activiteit.
 
+## Wat het kost, verlaten en een Fleet starten
+
+Onder het paneel van elke Fleet toont **Wat het kost** de plaatsen, wie je Machine betaalt en, voor de eigenaar, de kaart en facturen van de Fleet. **Deze Fleet verlaten** haalt je eruit; een eigenaar draagt hem eerst over aan iemand anders. **Nog een Fleet starten** start een nieuwe.
+
+Elk opent die stap van je account, en een prijswijziging toont eerst het bedrag om te bevestigen. Op een zelf gehoste Machine openen ze je account in een nieuw tabblad, waar je inlogt.
+
 ## Vraag het je Fleet
 
 Vraag "wie kent iemand bij Acme?" vanuit het tabblad Fleet, of met **Vraag het de Fleet** op een organisatie in de [Graph](graph.md). De Machine van elke teamgenoot antwoordt volgens diens eigen deelregels, en vraagt het die teamgenoot eerst als de regel dat zegt.

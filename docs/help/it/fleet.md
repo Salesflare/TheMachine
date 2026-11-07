@@ -19,6 +19,12 @@ The Machine Network collega le Machine. Ciò che si dicono è cifrato end-to-end
 
 Compare quando sei in una Fleet, con un pannello per ogni Fleet, Famiglia, Amici, Network, Condivisione e Registro attività.
 
+## Quanto costa, uscire e creare una Fleet
+
+Sotto il pannello di ogni Fleet, **Quanto costa** mostra i suoi posti, chi paga la tua Machine e, per il proprietario, la carta e le fatture della Fleet. **Lascia questa Fleet** ti fa uscire; un proprietario prima la passa a qualcun altro. **Crea un’altra Fleet** ne crea una nuova.
+
+Ognuno apre quel passaggio del tuo account, e un cambio di prezzo ti mostra prima l'importo da confermare. Su una Machine self-hosted aprono il tuo account in una nuova scheda, dove accedi.
+
 ## Chiedi alla tua Fleet
 
 Chiedi "chi conosce qualcuno in Acme?" dalla scheda Fleet, oppure **Chiedi alla Fleet** su un'organizzazione nel [Graph](graph.md). La Machine di ogni collega risponde secondo le sue regole di condivisione, e prima chiede al collega quando la regola lo prevede.

@@ -19,6 +19,12 @@ A Fleet lets your Machine work with the Machines of your team, family or friends
 
 It shows once you're in a Fleet, with a pane for each Fleet, Family, Friends, Network, Sharing and Activity.
 
+## What it costs, leaving and starting a Fleet
+
+Under each Fleet's pane, **What it costs** shows its seats, who pays for your Machine and, for the owner, the Fleet's card and invoices. **Leave this Fleet** leaves it; an owner first hands it to someone else. **Start another Fleet** starts a new one.
+
+Each opens that step of your account, and a change in price shows the amount to confirm first. On a self-hosted Machine they open your account in a new tab, where you sign in.
+
 ## Ask your Fleet
 
 Ask "who knows someone at Acme?" from the Fleet tab, or **Ask the Fleet** on an organization in the [Graph](graph.md). Each teammate's Machine answers by their own sharing rules, and asks them first when the rule says so.
