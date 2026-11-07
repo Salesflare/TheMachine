@@ -19,6 +19,9 @@
 .draft.cal-change .cal-rows{margin:4px 0 0;font:400 var(--fs-md,.95rem)/1.5 var(--sans);color:var(--text)}.draft.cal-change .cal-rows div{display:flex;gap:12px;padding:2px 0}.draft.cal-change .cal-rows dt{flex:0 0 56px;color:var(--faint)}.draft.cal-change .cal-rows dd{margin:0;min-width:0;overflow-wrap:anywhere;white-space:pre-wrap}
 .card .draft.sent{opacity:.75}
 .card .draft.clamp .db{max-height:calc(14*1.5em);overflow:hidden;-webkit-mask-image:linear-gradient(#000 70%,transparent);mask-image:linear-gradient(#000 70%,transparent)}
+/* A ready to-do's draft (cardDrafted): its first 3 lines, blank lines left out, until Show more */
+.card .draft.short.clamp .db{max-height:calc(3*1.55em);-webkit-mask-image:linear-gradient(#000 60%,transparent);mask-image:linear-gradient(#000 60%,transparent)}
+.card .draft.short.clamp .db>div:has(>br:only-child){display:none}
 .card .draft .attachments{margin:10px 0 0;gap:6px}.card .draft .attachment{padding:4px 11px;font-size:.82rem;background:var(--surface)}
 .card .card-foot{margin-top:10px;font-size:.84rem;color:var(--faint)}.card .card-foot .source{color:var(--faint)}
 .card .checkin-line{margin:-4px 0 0;font-size:.84rem;color:var(--faint)}  /* when a handoff comes back to check in: the source line's style, under the status */
@@ -306,3 +309,8 @@ strong.nb{white-space:nowrap}
 .import-list .import-why{color:var(--mint)}.import-list .import-no{color:var(--orange,#e8a33d)}.import-list .skill-off .tick{opacity:.5}.import-list .import-ok{color:var(--mint)}.import-list .import-here{color:var(--muted)}.skills-list .skill-flash{outline:2px solid var(--mint);outline-offset:2px}
 .import-list .grow strong,.import-list .grow small{white-space:normal;overflow-wrap:anywhere}.import-list label{display:inline;color:inherit;font-size:inherit}
 @media(max-width:560px){.skills-list>div{flex-wrap:wrap}.skills-list .skill-buttons{flex:1 1 100%;justify-content:flex-start;margin-top:6px}}
+/* Ready's header says once that nothing goes out before the owner's OK (sectionNote), not every ready to-do */
+#suggestions .section-head .section-note{font-size:var(--fs-xs)}
+@media(max-width:560px){#section-ready{flex-wrap:wrap;row-gap:2px}#section-ready .section-note{flex-basis:100%;margin:0}}
+/* Its one Show more sits at the start of the row of links under the draft (Details, Read result, ...), not on a line of its own */
+.card .card-foot>.more{margin:0;padding:0;font-size:inherit}

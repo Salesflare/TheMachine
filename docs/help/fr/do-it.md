@@ -22,7 +22,8 @@ Avant de rédiger une relance ou de passer la main, elle vérifie la conversatio
 - Une réponse répond au dernier e-mail du fil, et la source de la tâche ouvre cet e-mail.
 - Une étape qui engage quelque chose, comme valider, payer ou réserver, s’arrête et attend votre confirmation.
 - Dans le chat d’une tâche, un brouillon n’est jamais envoyé dans le message qui l’a rédigé.
-- Tant que vous n’avez pas approuvé, la tâche dit **Prêt à approuver** ou **À vous**, jamais terminé. Elle dit qu’un brouillon est parti seulement une fois qu’il l’est.
+- Tant que vous n’avez pas approuvé, la tâche attend sous **Prêt pour vous**, qui dit une fois que rien ne part avant votre accord, ou elle dit **À vous**, jamais terminé. Elle dit qu’un brouillon est parti seulement une fois qu’il l’est.
+- Un long brouillon montre ses 3 premières lignes. **Afficher plus** ouvre la suite ; **Vérifier et envoyer** montre toujours tout.
 
 Ce qu’elle peut envoyer dépend de la source : un e-mail, un message direct Slack, un message WhatsApp, Telegram, LinkedIn ou X. L’article de chaque connexion dit ce qu’elle peut envoyer.
 

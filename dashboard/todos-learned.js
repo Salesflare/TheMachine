@@ -5,7 +5,10 @@ function toggleSection(key){
 if(key==='later'){const l=$('#later-list');if(!l)return;l.open=!l.open;if(l.open)l.scrollIntoView({behavior:'smooth',block:'start'});return}
 folded.has(key)?folded.delete(key):folded.add(key);localStorage.setItem('folded-sections',JSON.stringify([...folded]));render();
 if(!folded.has(key))document.getElementById('section-'+key)?.scrollIntoView({behavior:'smooth',block:'start'})}
-$('#suggestions').addEventListener('click',e=>{const h=e.target.closest('.section-head[data-fold]');if(h)toggleSection(h.dataset.fold);const m=e.target.closest('[data-more]');if(!m)return;const id=m.dataset.more,open=!expandedBodies.has(id);open?expandedBodies.add(id):expandedBodies.delete(id);m.previousElementSibling.classList.toggle('clamp',!open);m.setAttribute('aria-expanded',open);m.textContent=open?'Show less':'Show more'})
+$('#suggestions').addEventListener('click',e=>{const h=e.target.closest('.section-head[data-fold]');if(h)toggleSection(h.dataset.fold);const m=e.target.closest('[data-more]');if(!m)return;const id=m.dataset.more,open=!expandedBodies.has(id);open?expandedBodies.add(id):expandedBodies.delete(id);m.previousElementSibling?.classList.toggle('clamp',!open);
+ // a ready draft's card: its one Show more (first on the row under the draft) opens the summary with the draft (data-clamp, the card's id)
+ const card=m.closest('article');if(card)for(const el of card.querySelectorAll('[data-clamp]'))if(el.dataset.clamp===id)el.classList.toggle('clamp',!open);
+ m.setAttribute('aria-expanded',open);m.textContent=open?'Show less':'Show more'})
 // Long history lists show the latest few; Show more adds ten at a time and survives the refresh.
 const notesN=n=>`${n} note${n===1?'':'s'}`;
 // What I've learned: one block per kind (how they write per channel, facts, how to do things, moved into skills); newest first.

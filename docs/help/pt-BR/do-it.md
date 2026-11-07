@@ -22,7 +22,8 @@ Antes de escrever um follow-up ou passar algo adiante, ela confere a conversa em
 - Uma resposta responde ao e-mail mais recente da conversa, e a fonte da tarefa abre esse e-mail.
 - Uma etapa que compromete algo, como enviar um formulário, pagar ou reservar, para e espera sua confirmação.
 - No chat de uma tarefa, um rascunho nunca é enviado na mesma mensagem que o escreveu.
-- Até você aprovar, a tarefa diz **Pronta para aprovar** ou **Precisa de você**, nunca concluída. Ela só diz que um rascunho saiu quando ele saiu de verdade.
+- Até você aprovar, a tarefa espera em **Pronta para você**, que diz uma vez que nada sai até você aprovar, ou ela diz **Precisa de você**, nunca concluída. Ela só diz que um rascunho saiu quando ele saiu de verdade.
+- Um rascunho longo mostra as 3 primeiras linhas. **Mostrar mais** abre o resto; **Revisar e enviar** sempre mostra tudo.
 
 O que ela pode enviar depende da fonte: um e-mail, uma mensagem direta no Slack, uma mensagem no WhatsApp, Telegram, LinkedIn ou X. O artigo de cada conexão diz o que ela pode enviar.
 
