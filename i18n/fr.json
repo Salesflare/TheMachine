@@ -4584,6 +4584,7 @@
  "The images are too big together. A to-do can carry up to {} of images.": "Les images sont trop volumineuses ensemble. Une tâche peut contenir jusqu’à {} d’images.",
  "The import didn’t go through. The export is still here to try again.": "L’import n’a pas abouti. L’export est toujours là pour réessayer.",
  "The last check failed.": "La dernière vérification a échoué.",
+ "The last tries did not finish. Still trying.": "Les derniers essais n’ont pas abouti. Je continue d’essayer.",
  "The last try did not finish; it tries again shortly.": "Le dernier essai n’a pas abouti ; nouvel essai sous peu.",
  "The last update didn’t finish. Your Machine kept the version before it.": "La dernière mise à jour n’a pas abouti. Votre Machine a gardé la version précédente.",
  "The link isn’t in their message": "Le lien n’est pas dans leur message",

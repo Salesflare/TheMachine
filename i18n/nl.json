@@ -4584,6 +4584,7 @@
  "The images are too big together. A to-do can carry up to {} of images.": "De afbeeldingen zijn samen te groot. Een to-do kan tot {} aan afbeeldingen bevatten.",
  "The import didn’t go through. The export is still here to try again.": "De import is niet gelukt. De export staat er nog om het opnieuw te proberen.",
  "The last check failed.": "De laatste check is mislukt.",
+ "The last tries did not finish. Still trying.": "De laatste pogingen zijn niet afgerond. Ik blijf het proberen.",
  "The last try did not finish; it tries again shortly.": "De laatste poging is niet afgerond; het probeert zo opnieuw.",
  "The last update didn’t finish. Your Machine kept the version before it.": "De laatste update is niet afgerond. Je Machine draait nog de vorige versie.",
  "The link isn’t in their message": "De link staat niet in hun bericht",

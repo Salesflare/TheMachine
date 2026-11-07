@@ -11,8 +11,10 @@ import time
 import activity
 import graph
 from machine.config import LOG
+from machine.store.review import REVIEW_SESSION_PREFIX
 from machine.store.views import sender_first_name
 from machine.text import _address, encoded
+import next_actions
 import still_needed
 from timeutil import local_tz, now
 
@@ -40,6 +42,36 @@ FIRST_ACTIONS = {'accept': 'approve', 'other': 'approve', 'prepare_next': 'appro
 FIRST_MAGIC_SETTLE_SECONDS = 900  # no card shown yet: a finished review counts as the first look after this long
 
 
+# Onboarding value past the first approval (a click), for first_cards_report: the first to-do whose preparation finished
+# with a result or draft (first_prepared: 'result' or 'draft'), and the first action the provider confirmed went through
+# (first_verified_action: its kind). A demo send and a fix merged into The Machine itself don't count.
+VERIFIED_KINDS = tuple(k for k in next_actions.APPROVE_KINDS if k not in ('email_demo', 'merge'))
+
+
+def first_value(db, marks, since):
+    """{first_prepared_at, first_prepared, first_prepared_backfill, first_verified_action_at, ...} for first_cards_report.
+    From the marks (note_first); on an install that had them before they were marked, estimated from what it kept: when a
+    draft first showed or a preparation last finished, when a confirmed send or final step was last updated. Those are
+    never earlier than the real first, so they are flagged as backfill. Nothing from before tracking_since."""
+    out = {}
+    found = {}
+    for at, kind in db.execute("SELECT min(saved_at),'draft' FROM draft_saves WHERE saved_at>=? UNION ALL "
+                               "SELECT min(updated_at),'result' FROM preparations WHERE status='done' AND updated_at>=?", (since, since)).fetchall():
+        if at and ('first_prepared' not in found or at < found['first_prepared'][0]):
+            found['first_prepared'] = (at, kind)
+    row = db.execute("SELECT updated_at,json_extract(payload,'$.kind') FROM action_jobs WHERE updated_at>=? AND (status='sent' AND message_id IS NOT NULL "
+                     "AND json_extract(payload,'$.kind') IN (" + ','.join('?' for _ in VERIFIED_KINDS) + ") OR status='done' "
+                     "AND json_extract(payload,'$.kind')='finish' AND json_extract(payload,'$.finish_result.state')='completed') "
+                     "ORDER BY updated_at LIMIT 1", (since, *VERIFIED_KINDS)).fetchall()
+    if row:
+        found['first_verified_action'] = tuple(row[0])
+    for name in ('first_prepared', 'first_verified_action'):
+        mark = marks.get(name)
+        at, kind = mark if mark else found.get(name, (None, None))
+        out[name + '_at'], out[name], out[name + '_backfill'] = at, kind, bool(at and not mark)
+    return out
+
+
 class FirstLookStore:
     """Store methods for a new Machine's first steps."""
 
@@ -57,14 +89,36 @@ class FirstLookStore:
         if (state or {}).get('mode', 'incremental') not in ('bootstrap', 'resync') and not (state or {}).get('page_token'):
             db.execute('INSERT OR IGNORE INTO milestones(name,at) VALUES(?,?)', ('first_import:' + account, now()))
 
-    def first_look_run(self, run_id):
+    def first_look_run(self, run_id, db=None):
         """Whether a review run is part of the first look: a preview it started by itself, the quick first review, or
-        its digging on after (first_dig), before the first look stopped digging."""
-        with self.connect() as db:
-            if db.execute("SELECT 1 FROM milestones WHERE name='first_dig_done'").fetchone():
-                return False
-            row = db.execute('SELECT preview,auto,window_hours,promising FROM review_runs WHERE run_id=?', (run_id,)).fetchone()
+        its digging on after (first_dig), before the first look stopped digging. `db`: a caller's open connection."""
+        if db is None:
+            with self.connect() as db:
+                return self.first_look_run(run_id, db)
+        if db.execute("SELECT 1 FROM milestones WHERE name='first_dig_done'").fetchone():
+            return False
+        row = db.execute('SELECT preview,auto,window_hours,promising FROM review_runs WHERE run_id=?', (run_id,)).fetchone()
         return bool(row and ((row['preview'] and row['auto']) or row['window_hours'] or row['promising']))
+
+    @staticmethod
+    def reviews_failing(db):
+        """How many reviews in a row ended without going well, the newest back to the last one that did (at most a dozen
+        counted). For the dashboard's first look (App.first_look, App.first_dig_live): from the third on, it says the
+        tries keep failing instead of "Reading on"."""
+        failed = 0
+        for (status,) in db.execute('SELECT status FROM review_runs WHERE finished_at IS NOT NULL ORDER BY finished_at DESC LIMIT 12'):
+            if status == 'ok':
+                break
+            failed += 1
+        return failed
+
+    @staticmethod
+    def review_batch_saved(db, run_id):
+        """The run's reviewer saved its batch (finish_analysis) and left no batch of its own unfinished: a first look's
+        pass that did its work, also when its runtime reported a failure after it (App.review_step)."""
+        session = REVIEW_SESSION_PREFIX + run_id
+        return bool(db.execute("SELECT 1 FROM analyses WHERE owner_run=? AND owner_session=? AND status='complete' LIMIT 1", (run_id, session)).fetchone()
+                    and not db.execute("SELECT 1 FROM analyses WHERE owner_run=? AND status IN ('running','retryable') LIMIT 1", (run_id,)).fetchone())
 
     def note_first_look(self, db, look):
         """The first look's last state, for the health report (first_cards_report): kept only when it changed."""

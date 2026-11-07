@@ -4584,6 +4584,7 @@
  "The images are too big together. A to-do can carry up to {} of images.": "The images are too big together. A to-do can carry up to {} of images.",
  "The import didn’t go through. The export is still here to try again.": "The import didn’t go through. The export is still here to try again.",
  "The last check failed.": "The last check failed.",
+ "The last tries did not finish. Still trying.": "The last tries did not finish. Still trying.",
  "The last try did not finish; it tries again shortly.": "The last try did not finish; it tries again shortly.",
  "The last update didn’t finish. Your Machine kept the version before it.": "The last update didn’t finish. Your Machine kept the version before it.",
  "The link isn’t in their message": "The link isn’t in their message",

@@ -20,7 +20,7 @@ Setup is one step per screen: your passkey, your plan, then **Mail and Calendar*
 
 1. **Mail and Calendar**: press **Connect Google** or **Connect Microsoft**. It starts with the account you signed up with. Work or personal comes from the address; change it later on the account. See [Gmail](gmail.md) and [Microsoft](microsoft.md).
 2. **Your AI**: sign in with ChatGPT or Claude, or paste a key from your AI provider. With Claude, paste the code from Claude's page. See [ChatGPT](chatgpt.md).
-3. **First to-dos**: your Machine checks your newest mail first, then your last 7 days. When nothing needs you, it says what it read and what to connect next.
+3. **First to-dos**: your Machine checks your newest mail first, then your last 7 days. When nothing needs you, it says what it read and what to connect next. A check that fails is tried again within minutes; if it keeps failing, the list says so.
 
 **Back** and your browser's back button go to the step before. Once mail and your AI work, you land on your dashboard.
 
