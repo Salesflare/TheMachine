@@ -1,6 +1,6 @@
 // The messages behind each card, read in a dialog. HTML renders in a sandboxed frame:
 // no scripts, forms or navigation of the dashboard; links open in a new tab.
-const originals=new Map(),emailViews=new Map();
+const originals=new Map(),emailViews=new Map(),around=new Map();  // around: what was said around a to-do's source message
 const fileSize=b=>!b?'':b<1024?b+' B':b<1048576?Math.round(b/1024)+' KB':(b/1048576).toFixed(1)+' MB';
 // A mailing list's rewrite as people say it: Google Groups' "'Sam Lee' via Sales" is "Sam Lee via Sales", and a group named
 // after its address ("info@acme.com readers") is that address (assistant.group_sender).
@@ -26,7 +26,7 @@ const cardViaIcon=s=>{const v=(/^Source:\s*([^·\n]+)/i.exec(s.source_line||'')?
 // A card the owner added has their own words as its only signal until the review links an email: nothing to open yet.
 const hasOriginal=s=>Boolean(s.source_line||(!['owner','machine'].includes(s.origin)&&eventIds(s).length)||(s.original_urls||[]).length);  // machine: an update's note, no thread
 const isEmail=s=>/^Source: email/.test(s.source_line||'')||(s.original_urls||[]).some(u=>/^https:\/\/(mail\.google\.com|outlook\.(office|office365|live)\.com)\//.test(u));
-const originalsFor=id=>{if(!originals.has(id))originals.set(id,request('api/originals?id='+id).then(r=>r.originals).catch(e=>{originals.delete(id);throw e}));return originals.get(id)};
+const originalsFor=id=>{if(!originals.has(id))originals.set(id,request('api/originals?id='+id).then(r=>{around.set(id,r.around||null);return r.originals}).catch(e=>{originals.delete(id);throw e}));return originals.get(id)};
 // Dark mode for HTML emails, like Gmail's: light backgrounds turn dark and dark text turns light,
 // keeping each color's hue. Images are left alone.
 function rgbHsl(r,g,b){r/=255;g/=255;b/=255;const max=Math.max(r,g,b),min=Math.min(r,g,b),l=(max+min)/2;if(max===min)return [0,0,l];const d=max-min,s=l>.5?d/(2-max-min):d/(max+min);const h=max===r?(g-b)/d+(g<b?6:0):max===g?(b-r)/d+2:(r-g)/d+4;return [h*60,s,l]}
@@ -56,7 +56,7 @@ async function fillMessage(container,o,id){
 const box=container.querySelector('.email-body');if(!box||box.dataset.filled)return;box.dataset.filled='1';
 const said=String(o.body||'').replace(/\r\n/g,'\n').split('\n').filter(l=>!(o.kind==='calendar'&&/^Participants: /.test(l))).join('\n').trim();  // an invite's raw guest addresses: the meeting's With has them by name
 const text=()=>{setHTML(box,said?html`<div class="email-text">${linkify(said)}</div>`:html`<p class="muted">${t('No description.')}</p>`)};
-if(o.kind!=='email'){text();return}
+if(o.kind!=='email'||o.near){text();return}  // a message around the source reads as its stored text
 const view=await emailViewFor(id,o.event_id);if(!view.html){text();return}
 const frame=document.createElement('iframe');frame.className='email-frame';frame.title='Email';frame.setAttribute('sandbox','allow-same-origin allow-popups allow-popups-to-escape-sandbox');frame.setAttribute('referrerpolicy','no-referrer');
 frame.style.visibility='hidden';const reveal=()=>{const doc=frame.contentDocument;if(doc?.body&&dark())try{darkenEmail(doc)}catch{}frame.style.visibility=''};setTimeout(reveal,1500);
@@ -73,25 +73,25 @@ const PREFETCH_KEEP=30,prefetchQueue=[],prefetched=new Set();let prefetching=0;
 const idle=f=>(window.requestIdleCallback||(g=>setTimeout(g,200)))(f);
 function trim(map){while(map.size>PREFETCH_KEEP)map.delete(map.keys().next().value)}
 function prefetchNext(){while(prefetching<2&&prefetchQueue.length){const id=prefetchQueue.shift();prefetching++;
- idle(async()=>{try{const list=await originalsFor(id),first=list[0];if(first?.kind==='email')await emailViewFor(id,first.event_id);trim(originals);trim(emailViews)}catch{prefetched.delete(id)}finally{prefetching--;prefetchNext()}})}}
+ idle(async()=>{try{const list=await originalsFor(id),first=list[0];if(first?.kind==='email')await emailViewFor(id,first.event_id);trim(originals);trim(emailViews);trim(around)}catch{prefetched.delete(id)}finally{prefetching--;prefetchNext()}})}}
 // A to-do's source sits behind Details: the to-do itself coming into sight reads its original ahead.
 const prefetchSeen=window.IntersectionObserver?new IntersectionObserver(entries=>{for(const e of entries){if(!e.isIntersecting)continue;prefetchSeen.unobserve(e.target);const id=e.target.dataset.id||e.target.querySelector('[data-original="read"][data-id]')?.dataset.id;
  if(id&&!prefetched.has(id)&&!originals.has(id)){prefetched.add(id);prefetchQueue.push(id)}}prefetchNext()},{rootMargin:'100px'}):null;
 let prefetchScan=0;if(prefetchSeen)new MutationObserver(()=>{cancelAnimationFrame(prefetchScan);prefetchScan=requestAnimationFrame(()=>{for(const b of document.querySelectorAll('[data-original="read"][data-id]'))if(!prefetched.has(b.dataset.id))prefetchSeen.observe(b.closest('.card-details')?b.closest('article'):b)})}).observe(document.body,{childList:true,subtree:true});
 // Chats (Slack, WhatsApp, Telegram, Intercom and the rest: event_views' chat) read as one thread, oldest first: the
 // conversation named once on top, a day line when the day changes, each sender's run of messages under their name and
-// time once, a light time inside a run only after a pause. The to-do's own message is tinted when more came after it.
+// time once, a light time inside a run only after a pause. The to-do's own message is tinted when the thread holds more.
 // One link opens the whole thread where it lives. Slack's :emoji: codes read as emoji (chatEmoji).
 const THREAD_APP={Slack:'Slack',WhatsApp:'WhatsApp',Telegram:'Telegram',Intercom:'Intercom',LinkedIn:'LinkedIn','X message':'X'};
 const THREAD_VIA={Slack:'slack',WhatsApp:'whatsapp',Telegram:'telegram',Intercom:'intercom',LinkedIn:'linkedin','X message':'x'};
 const isChat=o=>typeof o?.chat==='string';
 const chatTitle=o=>o.dm&&o.chat?t('DM with {}',o.chat):o.chat||'';
 const THREAD_PAUSE=10*6e4;
-function chatThreadHTML(items,{main,names=true,head=true,src}={}){
+function chatThreadHTML(items,{main,names=true,head=true,src,earlier}={}){
 const dayOf=at=>{const d=new Date(at);return d.toLocaleDateString(DL,{weekday:'long',day:'numeric',month:'long',...(d.getFullYear()!==new Date().getFullYear()?{year:'numeric'}:{})})};
 const msgs=items.flatMap(o=>o.turns?.length?o.turns.map(x=>({...x,kind:o.kind})):[o]).filter(o=>String(o.body||'').trim()||o.photo).sort((a,b)=>Date.parse(a.occurred_at)-Date.parse(b.occurred_at));
 const days=[];let prev=null;
-for(const o of msgs){const at=Date.parse(o.occurred_at),day=dayOf(at),me=o.from==='You',mark=main!=null&&o.event_id===main&&o!==msgs.at(-1);
+for(const o of msgs){const at=Date.parse(o.occurred_at),day=dayOf(at),me=o.from==='You',mark=main!=null&&o.event_id===main&&msgs.length>1;
  if(days.at(-1)?.day!==day){days.push({day,turns:[]});prev=null}
  const turns=days.at(-1).turns,say=html`${o.note?html`<span class="convo-tag">${t('Note')}</span>`:''}${linkify(chatEmoji(String(o.body||'').replace(/\r\n/g,'\n').trim()))}${o.photo?photoThumbs([o.photo]):''}`;
  if(!prev||prev.from!==o.from)turns.push({me,says:[],meta:html`<p class="convo-meta">${!me&&names&&sender(o.from)?html`<b>${sender(o.from)}</b> · `:''}<time datetime="${o.occurred_at}">${fmtHM(at)}</time></p>`});
@@ -99,19 +99,36 @@ for(const o of msgs){const at=Date.parse(o.occurred_at),day=dayOf(at),me=o.from=
  turns.at(-1).says.push(html`<div class="convo-say${mark?' convo-main':''}${o.note?' convo-note':''}"${mark?html` aria-label="${t('The message this to-do is about')}"`:''}>${say}</div>`);prev=o}
 const first=items.find(o=>o.event_id===main)||items[0]||{},title=head?chatTitle(first):'',app=THREAD_APP[first.kind]||src;
 const url=[first,...[...items].reverse()].find(o=>o?.url&&safeURL(o.url))?.url;
-return html`<div class="convo">${title?html`<p class="convo-chat">${viaIco(THREAD_VIA[first.kind],true)}<span>${title}</span></p>`:''}${days.map(d=>html`<p class="convo-day">${d.day}</p>${d.turns.map(x=>html`<div class="convo-turn${x.me?' me':''}">${x.meta}${x.says}</div>`)}`)}${url?html`<a class="convo-source" href="${url}" target="_blank" rel="noreferrer">${app?t('Open in {} ↗',app):t('Open original')}</a>`:''}</div>`}
+return html`<div class="convo">${title?html`<p class="convo-chat">${viaIco(THREAD_VIA[first.kind],true)}<span>${title}</span></p>`:''}${earlier?earlierButton():''}${days.map(d=>html`<p class="convo-day">${d.day}</p>${d.turns.map(x=>html`<div class="convo-turn${x.me?' me':''}">${x.meta}${x.says}</div>`)}`)}${url?html`<a class="convo-source" href="${url}" target="_blank" rel="noreferrer">${app?t('Open in {} ↗',app):t('Open original')}</a>`:''}</div>`}
 // A to-do's chat sources by conversation: the to-do's own conversation first, each one thread.
 function chatThreads(list){const by=new Map();for(const o of list.filter(isChat)){const k=o.kind+'\u0000'+o.chat;if(!by.has(k))by.set(k,[]);by.get(k).push(o)}return [...by.values()]}
-async function openEmail(id){const s=state.suggestions.find(s=>s.id===id);const dialog=$('#email-dialog');$('#email-title').textContent=s?.title||'Original';setHTML($('#email-content'),html`<p class="muted">Loading…</p>`);dialog.showModal();
+// A to-do's source opens with what was said around it (api/originals' around, machine/store/conversation.py): the
+// messages before it and the replies after it, the source tinted and in view, and a quiet Show earlier for older ones.
+const earlierButton=()=>html`<button type="button" class="link convo-earlier" data-convo-earlier>${t('Show earlier')}</button>`;
+const nearOf=(id,list)=>{const c=around.get(id);if(!c)return {before:[],after:[]};const have=new Set(list.map(o=>o.event_id)),mark=o=>({...o,near:true}),keep=o=>o.event_id==null||!have.has(o.event_id);
+ return {before:c.before.filter(keep).map(mark),after:c.after.filter(keep).map(mark),main:c.event_id,earlier:c.earlier}};
+async function showEarlier(id,button){const c=around.get(id),from=c?.before.find(o=>o.event_id!=null)?.event_id??c?.event_id;if(!c||from==null)return;
+ button.disabled=true;let r;try{r=(await request(`api/originals?id=${encodeURIComponent(id)}&before=${encodeURIComponent(from)}`)).around}catch(e){button.disabled=false;errCaught(e);toast(e.message,true);return}
+ const dialog=$('#email-dialog'),fromEnd=dialog.scrollHeight-dialog.scrollTop;  // what was in view stays in view
+ const seen=new Set(c.before.map(o=>o.event_id).filter(v=>v!=null)),live=new Set(c.before.filter(o=>o.event_id==null).map(o=>o.occurred_at+o.from));
+ c.before=[...(r?.before||[]).filter(o=>o.event_id==null?!live.has(o.occurred_at+o.from):!seen.has(o.event_id)),...c.before];c.earlier=Boolean(r?.earlier);
+ await openEmail(id,{keep:true});dialog.scrollTop=dialog.scrollHeight-fromEnd}
+const peek=o=>String(o.body||'').replace(/\s+/g,' ').trim().slice(0,160);  // a folded email's first words, on one line
+const emailRow=(o,i)=>html`<details class="email email-near" data-msg="${i}"><summary>${sender(o.from)||kindLabel(o.kind)} · ${new Date(o.occurred_at).toLocaleDateString(DL,{day:'numeric',month:'short'})}${peek(o)?html`<span class="email-peek">${peek(o)}</span>`:''}</summary>${messageHTML(o,'',i)}</details>`;
+async function openEmail(id,{keep}={}){const s=state.suggestions.find(s=>s.id===id);const dialog=$('#email-dialog');
+if(!keep){$('#email-title').textContent=s?.title||'Original';setHTML($('#email-content'),html`<p class="muted">Loading…</p>`);dialog.showModal()}
 let list;try{list=await originalsFor(id)}catch(e){errCaught(e);setHTML($('#email-content'),html`<p class="muted">${e.message}</p>`);return}
 if(!list.length){setHTML($('#email-content'),html`${draftFilesBlock(s)}<p class="muted">The original is no longer available.</p>`);return}
-const [first,...rest]=list;
+const [first,...rest]=list,near=nearOf(id,list),all=[...list,...near.before,...near.after],at=o=>all.indexOf(o);
 if(first.kind==='calendar'&&!rest.length&&!draftFiles(s||{}).length){openMeeting(first.event_id,s?.title);return}  // a to-do from a meeting: the meeting itself
-// A chat to-do: its conversation as one thread (its other conversations after it); anything else still as related messages
-if(isChat(first)){const others=list.filter(o=>!isChat(o));
- setHTML($('#email-content'),html`${draftFilesBlock(s)}${chatThreads(list).map(c=>chatThreadHTML(c,{main:first.event_id}))}${others.length?html`<h3 class="email-earlier">${t(['{} related message','{} related messages'],others.length)}</h3>${others.map(o=>html`<details class="email" data-msg="${list.indexOf(o)}"><summary>${sender(o.from)||kindLabel(o.kind)} · ${new Date(o.occurred_at).toLocaleDateString(DL,{day:'numeric',month:'short'})}</summary>${messageHTML(o,id,list.indexOf(o))}</details>`)}`:''}`);
- $('#email-content').querySelectorAll('details.email').forEach(d=>d.addEventListener('toggle',()=>{if(d.open)fillMessage(d,list[+d.dataset.msg],id)}));return}
-const chats=rest.filter(isChat),mails=rest.filter(o=>!isChat(o));
-setHTML($('#email-content'),html`${draftFilesBlock(s)}<div class="email" data-msg="0">${messageHTML(first,id,0)}</div>${mails.length?html`<h3 class="email-earlier">${t(['{} related message','{} related messages'],mails.length)}</h3>${mails.map(o=>html`<details class="email" data-msg="${list.indexOf(o)}"><summary>${sender(o.from)||kindLabel(o.kind)} · ${new Date(o.occurred_at).toLocaleDateString(DL,{day:'numeric',month:'short'})}</summary>${messageHTML(o,id,list.indexOf(o))}</details>`)}`:''}${chatThreads(chats).map(c=>chatThreadHTML(c))}`);
-fillMessage($('#email-content [data-msg="0"]'),first,id);
-$('#email-content').querySelectorAll('details.email').forEach(d=>d.addEventListener('toggle',()=>{if(d.open)fillMessage(d,list[+d.dataset.msg],id)}))}
+const box=$('#email-content'),wire=()=>{box.querySelectorAll('details.email').forEach(d=>d.addEventListener('toggle',()=>{if(d.open)fillMessage(d,all[+d.dataset.msg],id)}));
+ box.querySelector('[data-convo-earlier]')?.addEventListener('click',e=>showEarlier(id,e.currentTarget))};
+const inView=()=>{if(!keep)box.querySelector('.convo-main,.email-main')?.scrollIntoView({block:box.querySelector('.convo-main')?'center':'start'})};
+// A chat to-do: its conversation as one thread, with what was said around it (its other conversations after it); anything else still as related messages
+if(isChat(first)){const others=list.filter(o=>!isChat(o)),main=near.main??first.event_id;
+ setHTML(box,html`${draftFilesBlock(s)}${chatThreads([...list,...near.before,...near.after]).map(c=>chatThreadHTML(c,{main,earlier:near.earlier&&c.some(o=>o.event_id===main)}))}${others.length?html`<h3 class="email-earlier">${t(['{} related message','{} related messages'],others.length)}</h3>${others.map(o=>html`<details class="email" data-msg="${at(o)}"><summary>${sender(o.from)||kindLabel(o.kind)} · ${new Date(o.occurred_at).toLocaleDateString(DL,{day:'numeric',month:'short'})}</summary>${messageHTML(o,id,at(o))}</details>`)}`:''}`);
+ wire();inView();return}
+// An email: the thread's earlier mail folded above it and the replies below, the to-do's own one open and marked
+const chats=rest.filter(isChat),mails=rest.filter(o=>!isChat(o)),threaded=near.before.length||near.after.length||near.earlier;
+setHTML(box,html`${draftFilesBlock(s)}${near.earlier?earlierButton():''}${near.before.map(o=>emailRow(o,at(o)))}<div class="email${threaded?' email-main':''}" data-msg="0"${threaded?html` aria-label="${t('The message this to-do is about')}"`:''}>${messageHTML(first,id,0)}</div>${near.after.map(o=>emailRow(o,at(o)))}${mails.length?html`<h3 class="email-earlier">${t(['{} related message','{} related messages'],mails.length)}</h3>${mails.map(o=>html`<details class="email" data-msg="${at(o)}"><summary>${sender(o.from)||kindLabel(o.kind)} · ${new Date(o.occurred_at).toLocaleDateString(DL,{day:'numeric',month:'short'})}</summary>${messageHTML(o,id,at(o))}</details>`)}`:''}${chatThreads(chats).map(c=>chatThreadHTML(c))}`);
+fillMessage(box.querySelector('[data-msg="0"]'),first,id);wire();inView()}

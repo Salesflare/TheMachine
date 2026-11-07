@@ -84,7 +84,7 @@ Above the draft, one faint line names the message it came from, with that servic
 
 When the draft follows someone's input elsewhere, like a teammate's suggestion in Slack, a line says so, like "Based on Sam in #ops". Tap it to read that message.
 
-A chat (Slack, WhatsApp, Telegram, Intercom…) reads as one conversation, oldest first. The message the to-do is about has a thin line beside it.
+A chat (Slack, WhatsApp, Telegram, Intercom…) reads as one conversation, oldest first: the messages before the one the to-do is about and the replies after it. That message has a thin line beside it and opens in view. **Show earlier** adds older messages. An email shows the rest of its thread folded above and below it.
 
 **Details** shows its name, project and area (tap one to change it), your last note and a coding agent's result. **Chat ›** opens the chat. A done to-do stays short; the message it came from is under **Details**.
 
