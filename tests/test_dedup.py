@@ -62,6 +62,22 @@ class SamePerson(unittest.TestCase):
         self.build()
         self.assertEqual(len(self.people()), 1)
 
+    def test_a_telegram_contact_merges_and_an_already_same_pair_is_no_error(self):
+        # Merge on a Telegram contact said "Merge two different person ids from graph results": tg: wasn't a person id.
+        self.add(tg.chat(2, '00000000031', 'Noor Haddad'),
+                 {'account_id': 'tg', 'source_id': 't1', 'kind': 'telegram.message', 'occurred_at': tg.at(1), 'title': 'Noor', 'body': 'Hi',
+                  'deleted': False, 'metadata': {'chat_id': '4242', 'chat_name': 'Noor H.', 'chat_kind': 'private', 'from_me': False, 'from': 'Noor H.'}})
+        self.build()
+        self.assertEqual(set(self.people()), {'tg:4242', 'wa:00000000031'})
+        self.say('tg:4242', 'wa:00000000031', True)
+        self.say('tg:4242', 'wa:00000000031', True)  # a second click on the same Merge
+        self.say('wa:00000000031', 'wa:00000000031', True)  # a page from before the merge: one person already, so done
+        self.build()
+        self.assertEqual(list(self.people().values()), [['tg:4242', 'wa:00000000031']])
+        for x, y, same in (('org:acme.com', 'wa:00000000031', True), ('tg:4242', 'tg:4242', False), ('', 'wa:00000000031', True)):
+            with self.assertRaisesRegex(ValueError, '^Pick two people$'):  # plain words, never an id format
+                self.say(x, y, same)
+
     def test_the_graph_worker_tries_again_soon_when_edits_kept_coming(self):
         app, calls = self.app, []
         app.graph_dirty, app.stop = tg.a.threading.Event(), tg.a.threading.Event()
