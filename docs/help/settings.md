@@ -9,14 +9,14 @@ order: 1
 Open **Settings** with the gear at the top. Its tabs:
 
 - **Account**: **Your addresses** (the ones that count as you) and **Sign out**, at the top. On a hosted Machine also your plan, invoices, Fleet, friends, sign-in and data, with **Cancel plan** and **Delete account** at the very bottom. On a Machine on your own computer, paired with the Network: your Fleet, username, friends and sign-in, each with a link that opens that part of your account (sign in there), and **Delete account** at the bottom. See [Plans and billing](plans-and-billing.md).
-- **General**: language and region, this device, voice input, your Machine's browser, your Fleet, export and import, and your account.
+- **General**: language and region, this device, voice input, your Machine's browser, your Fleet, export and import, the version it runs, and your account.
 - **Security**: Standard or Careful. See [Security levels](security-levels.md). Also **Support access**, while it's on: see [Get support](get-support.md#support-access).
 - **Activity**: everything The Machine did for you, newest first. See [Activity](activity.md).
 - **Notifications**: what reaches you where, and your work hours. See [Notifications](notifications.md) and [Work hours](work-hours.md).
 - **Writing**: signatures and how you write. See [Writing](writing.md).
 - **Skills**: how-tos your Machine follows. See [Skills](skills.md).
 - **Apps**: The Machine's apps for your phone and computer, then Claude, ChatGPT and other AIs you connected, and what each may do. See [The mobile app](mobile-app.md) and [Connect other AIs](ai-connections.md).
-- **Model**: the AI that reads and drafts for you, and its limits. See [Model](model.md). Also **Codex and Claude Code**: see [Hand to Claude Code or Codex](hand-to-agent.md).
+- **Model**: the AI that reads and drafts for you, and its limits. See [Model](model.md). Also **Codex and Claude Code**: see [Hand to Claude Code or Codex](hand-to-agent.md). And **Search by meaning**, below.
 
 A tab with nothing to show is hidden.
 
@@ -31,6 +31,18 @@ A tab with nothing to show is hidden.
 - **Export**:
   - **Everything**: everything your Machine knows in one encrypted file, to move or to keep, and **Import** to bring one in. See [Move to another computer](moving.md).
   - **Knowledge for another AI**: what your Machine learned in files any AI can read. See [Knowledge for another AI](knowledge-export.md).
+
+## Version
+
+The release your Machine runs. Updates install by themselves. When a newer version is ready on a hosted Machine, **Update now** installs it at once. It takes a few minutes, and your data stays.
+
+On your own computer, a daily timer installs each new signed release on Linux. See [Run it on your own computer](self-hosted-setup.md).
+
+## Search by meaning
+
+In **Settings**, **Model**. It finds emails, messages and notes by what they're about, not only by their words. On a hosted Machine a small AI on the Machine itself does it, and nothing is sent anywhere. It's on from 8 GB of memory. On 4 GB, turn it on with its switch. It uses about half a gigabyte, so a busy Machine can slow down.
+
+On your own computer, it's the `embeddings` block in `config.json`. Restart the Machine after a change.
 
 ## On this Machine
 

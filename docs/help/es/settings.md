@@ -9,14 +9,14 @@ order: 1
 Abre **Ajustes** con el engranaje de arriba. Sus pestañas:
 
 - **Cuenta**: **Tus direcciones**, las que cuentan como tú, con de dónde salió cada una, y **Cerrar sesión**. En una Machine alojada, también tu plan, facturas, Machine, Fleet, dirección, amigos, inicio de sesión y datos, cada uno con su botón. Consulta [Planes y facturación](plans-and-billing.md). **Cerrar sesión** está arriba, **Cancelar plan** y **Eliminar la cuenta** al final del todo. En una Machine en tu propio ordenador, vinculada al Network: tu Fleet, usuario, amigos e inicio de sesión, cada uno con un enlace que abre esa parte de tu cuenta (inicia sesión allí), y **Eliminar la cuenta** al final.
-- **General**: idioma y región, entrada de voz, este dispositivo, el navegador de tu Machine, tu Fleet, exportar e importar, y tu cuenta.
+- **General**: idioma y región, entrada de voz, este dispositivo, el navegador de tu Machine, tu Fleet, exportar e importar, la versión que ejecuta, y tu cuenta.
 - **Seguridad**: Estándar o Prudente, y los ajustes que fijan. Consulta [Niveles de seguridad](security-levels.md). También **Acceso de soporte**, mientras está activo: consulta [Obtener ayuda](get-support.md#support-access).
 - **Actividad**: todo lo que The Machine hizo por ti, lo más reciente primero. Consulta [Actividad](activity.md).
 - **Notificaciones**: qué te llega y por dónde, y tu horario laboral. Consulta [Notificaciones](notifications.md) y [Horario laboral](work-hours.md).
 - **Redacción**: firmas y cómo escribes. Consulta [Redacción](writing.md).
 - **Habilidades**: guías que sigue tu Machine. Consulta [Habilidades](skills.md).
 - **Apps**: las apps de The Machine para el móvil y el ordenador, y después Claude, ChatGPT y otras IA que conectaste, y lo que puede hacer cada una. Consulta [La app móvil](mobile-app.md) y [Conectar otras IA](ai-connections.md).
-- **Modelo**: qué responde por ti, y sus límites. Consulta [Modelo](model.md). También **Codex y Claude Code**: consulta [Pasar a Claude Code o Codex](hand-to-agent.md).
+- **Modelo**: qué responde por ti, y sus límites. Consulta [Modelo](model.md). También **Codex y Claude Code**: consulta [Pasar a Claude Code o Codex](hand-to-agent.md). Y **Búsqueda por significado**, más abajo.
 
 Una pestaña sin nada que mostrar se oculta.
 
@@ -31,6 +31,18 @@ Una pestaña sin nada que mostrar se oculta.
 - **Exportar**:
   - **Todo**: todo lo que sabe tu Machine en un solo archivo cifrado, para mudarte o guardarlo, e **Importar** para traer uno. Consulta [Pásate a otro ordenador](moving.md).
   - **Conocimiento para otra IA**: lo que tu Machine ha aprendido, en archivos que cualquier IA puede leer. Consulta [Conocimiento para otra IA](knowledge-export.md).
+
+## Versión
+
+La versión que ejecuta tu Machine. Las actualizaciones se instalan solas. Cuando hay una versión más reciente en una Machine alojada, **Actualizar ahora** la instala al momento. Tarda unos minutos, y tus datos se quedan.
+
+En tu propio ordenador, un temporizador diario instala cada nueva versión firmada en Linux. Consulta [Ejecútala en tu propio ordenador](self-hosted-setup.md).
+
+## Búsqueda por significado
+
+En **Ajustes**, **Modelo**. Encuentra correos, mensajes y notas según de qué tratan, no solo por sus palabras. En una Machine alojada lo hace una pequeña IA en la propia Machine, y no se envía nada a ningún sitio. Está activada a partir de 8 GB de memoria. Con 4 GB, actívala con su interruptor. Usa aproximadamente medio gigabyte, así que una Machine ocupada puede ir más lenta.
+
+En tu propio ordenador, es el bloque `embeddings` de `config.json`. Reinicia la Machine después de un cambio.
 
 ## En esta Machine
 
