@@ -2,7 +2,7 @@
 // stands, the message it came from, who and what it is about, its card as a link, and what happened since.
 const promiseHref=p=>'#promise/'+encodeURIComponent(p.id);
 const promiseFirst=who=>String(who||'').split(/\s+/)[0]||who;
-const PROMISE_SAID={'gmail.message':'an email','slack.message':'Slack','whatsapp.message':'WhatsApp','telegram.message':'Telegram','linkedin.message':'LinkedIn','x.message':'X','intercom.message':'Intercom','calendar.event':'a meeting'};
+const PROMISE_SAID={'gmail.message':'an email','slack.message':'Slack','teams.message':'Teams','whatsapp.message':'WhatsApp','telegram.message':'Telegram','linkedin.message':'LinkedIn','x.message':'X','intercom.message':'Intercom','calendar.event':'a meeting'};
 function promiseState(p){const late=p.due&&p.due<localDay(new Date());
  return p.state==='open'?(p.direction==='theirs'&&!p.together?['Waiting on '+promiseFirst(p.who),'var(--lavender)']:[late?'Past its date':'Open',late?'var(--orange)':'var(--mint)']):p.state==='card'?['Now a to-do','var(--amber)']
   :p.state==='kept'?['Kept','var(--muted)']:p.state==='answered'?['They wrote again','var(--muted)']:['Not needed','var(--muted)']}

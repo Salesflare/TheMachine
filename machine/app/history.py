@@ -52,11 +52,13 @@ LIVE_LIMIT_WINDOW = dt.timedelta(minutes=30)  # a live sync's 429 this recent ho
 EMBED_BATCH = 8  # history events per embedding request: small, so a live one never waits long behind it
 EMBED_GAP_SECONDS = 30  # between two history embedding batches
 MAIL, CALENDAR, WHATSAPP = ('gmail', 'outlook'), ('calendar', 'outlook_calendar'), ('whatsapp',)
+CONNECTOR_HISTORY = ('teams',)  # a connector with its own history_page (connectors/teams.py)
 
 
 def kind(account):
     service = account.get('service', 'gmail')
-    return 'mail' if service in MAIL else 'calendar' if service in CALENDAR else 'whatsapp' if service in WHATSAPP else None
+    return ('mail' if service in MAIL else 'calendar' if service in CALENDAR else 'whatsapp' if service in WHATSAPP
+            else 'connector' if service in CONNECTOR_HISTORY else None)
 
 
 def free_disk(database):
@@ -195,6 +197,7 @@ class HistoryApp:
                 continue  # its own sync reads it now: another one, or this one once that read is done
             if found and found['done_at']:  # a deeper setting since: walk on from where it stopped
                 state.update(upper=state.get('target'), target=None, cursor=None, token=None)
+                state.pop('chats', None)  # a connector's walk (history_connector) lists its chats again
             state['upper'] = state.get('upper') or self.history_upper(account, stamp)
             state['target'] = state.get('target') or history.before(stamp, days)  # fixed for the walk: a page token holds its query
             state.pop('error_at', None)
@@ -296,6 +299,16 @@ class HistoryApp:
         kept, oldest = self.history_keep(account, list(events.values()))
         state['cursor'] = start.isoformat()
         return kept, oldest, start <= target
+
+    def history_connector(self, account, state):
+        """One step of a connector's older messages (its history_page: Teams chats), newest first, back to the target."""
+        from machine.sources.connectors import CONNECTOR_HELPERS, load_connector
+        module = load_connector(account.get('service'))
+        if not module or not hasattr(module, 'history_page'):
+            return 0, None, True
+        events, done = module.history_page(self.config, account, CONNECTOR_HELPERS, state, state['upper'], state['target'])
+        kept, oldest = self.history_keep(account, [e for e in events if not e.get('deleted')])
+        return kept, oldest, done
 
     def history_mail(self, account, state):
         """One page of the mailbox's older mail (Gmail or Outlook, the read-only sign-in it has), newest first."""

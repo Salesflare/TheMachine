@@ -12,6 +12,10 @@ Una skill dice alla tua Machine come fare qualcosa, per esempio "rispondere alle
 
 In **Impostazioni**, **Skill**, premi **Nuova skill** o **Parti da un esempio**. Dalle un **Nome**, **Quando usarla** e le **Istruzioni**, poi **Salva**.
 
+## Quando ne usa una
+
+Ogni attività che la tua Machine prepara riceve la skill adatta, senza che tu lo chieda: quella con il nome della sua bacheca, del progetto o del titolo, per intero. Le altre tue skill sono elencate insieme, così segue anche quella per quel tipo di lavoro, come una risposta in un tipo di thread noto o un aggiornamento del CRM.
+
 ## Importa
 
 Premi **Importa**:

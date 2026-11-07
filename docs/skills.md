@@ -20,6 +20,13 @@ its full instructions go into the drafting prompt, ranked above the generic foll
 exchange, keep it short") and your recent messages. So the skill's rules on how the email is built, like what comes
 first, hold for every follow-up too.
 
+Every other preparation gets the same. A skill that fits the to-do (its name matches the board's or the project's, every
+word of its name is in the to-do's title, like "CRM updates" for "Update the CRM for Acme", or your draft rules for that
+to-do name it) goes into the prompt in full, at most two. Your other skills that are on follow as a short index (name,
+when to use it, its `SKILL.md`), so the agent reads and follows the one for this kind of work, like a reply in a known
+kind of thread, judged by what it is for rather than shared words. Without room in the prompt for the full text, it
+names the `SKILL.md` to read first. This lives in the prompt code, not in `PREPARATION.md`.
+
 The `the-machine` folder belongs to The Machine: it is rewritten from Settings > Skills, so edit skills there. Your
 other skills in the workspace are left alone. If a name is already taken by one of them, The Machine's copy gets a
 different folder name (`-2`), so it never replaces yours. A whole `SKILL.md` can be pasted into the instructions box:
