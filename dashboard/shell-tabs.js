@@ -5,7 +5,7 @@ const TAB_LINKS={inbox:'inbox',todos:'inbox',suggestions:'inbox',calendar:'calen
 // says it's loading; the Graph's quiet refresh comes after. The switch never waits for the Machine's answer.
 function showTab(tab,pane){if(tab==='people'&&pane){graphPane=pane;localStorage.setItem('graph-pane',pane);const view=$('#people-view'),was=graphNode;graphNode='';$('#people-query').value='';
   if(view.querySelector(`[data-graph-panel="${CSS.escape(pane)}"]`)&&view.dataset.mode==='list'&&!was){showGraphPane(pane);graphSkip=!$('#people').hidden&&Date.now()-graphAt<60000}  /* the lists on screen are a minute old at most: no reload */
-  else if(was&&!graphKept){view.dataset.mode='loading';view.innerHTML='<p class="pager-loading" role="status">Loading…</p>';$('#people').classList.remove('graph-on-node')}}
+  else if(was&&!graphKept){view.dataset.mode='loading';lateShow(()=>{if(view.dataset.mode!=='loading')return;view.innerHTML='<p class="pager-loading" role="status">Loading…</p>';$('#people').classList.remove('graph-on-node')})}}  /* the page stays up for a fast answer */
  if(tab==='health'&&pane){healthPane=pane==='phone'?'other':pane;healthPicked=true}if(tab==='feedback'&&pane==='team')pane='shared';if(tab==='feedback'&&LEARN_PANES.some(([id])=>id===pane)){learnPane=pane;try{localStorage.setItem('learn-pane',pane)}catch{}}
  document.querySelector(`nav [data-tab="${tab}"]`)?.click();if(tab==='health')renderHealthTabs();if(tab==='feedback')learnTabs()}
 function openTabLink(){const st=/^#settings(?:[/=]([a-z]+))?$/.exec(location.hash);if(st){if($('#settings').hidden||st[1]&&st[1]!==settingsNow)showSettings(st[1]);return}const m=/^#([a-z]+)(?:=([a-z]+))?$/.exec(location.hash);if(!m||!TAB_LINKS[m[1]])return;

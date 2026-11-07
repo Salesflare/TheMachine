@@ -58,6 +58,9 @@ const raw=s=>new SafeHTML(String(s));
 const htmlPart=v=>v instanceof SafeHTML?v.s:Array.isArray(v)?v.map(htmlPart).join(''):esc(v);
 const html=(parts,...vals)=>new SafeHTML(parts.reduce((o,p,i)=>o+htmlPart(vals[i-1])+p));
 const setHTML=(el,h)=>{if(h==='')return el.replaceChildren();if(!(h instanceof SafeHTML))throw new TypeError('setHTML takes html`` results only');el.innerHTML=h.s};  // '' empties it
+// A loading line or busy label shows only for an answer that takes a moment: lateShow(fn) runs fn after 120 ms, and
+// the returned function, called when the answer is in, cancels it (what was on screen stays meanwhile).
+const LOADING_MS=120,lateShow=fn=>{const t=setTimeout(fn,LOADING_MS);return ()=>clearTimeout(t)};
 const htmlNodes=h=>{const t=document.createElement('template');setHTML(t,h);return t.content};  // for append, before, replaceWith
 // setHTML for a list that redraws on every poll: a node whose markup is the same as last time stays, keyed by its id
 // (else by its place), so focus, a text selection, an open menu, a button's in-flight state and the scroll all stay.

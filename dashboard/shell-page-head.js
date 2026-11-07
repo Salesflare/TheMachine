@@ -100,7 +100,7 @@ if(choice==='reject'){dismissing.add(id);changing.delete(id);render();return}
 if(choice==='cancel-dismiss'){dismissing.delete(id);render();return}
 if(choice==='dismiss-pick'){const on=b.getAttribute('aria-pressed')!=='true';for(const r of b.parentElement.children)r.setAttribute('aria-pressed','false');b.setAttribute('aria-pressed',String(on));return}
 if(choice==='dismiss-typed'){const card=b.closest('.dismiss-editor'),why=[card?.querySelector('.reason[aria-pressed="true"]')?.dataset.reason,($('#dismiss-'+id)?.value||'').trim()].filter(Boolean).join(': ');
- b.disabled=true;b.setAttribute('aria-busy','true');b.textContent='Saving…';try{await saveDecision(id,'reject',why);dismissing.delete(id)}catch(e){errCaught(e);toast(e.message,true)}finally{b.disabled=false;b.removeAttribute('aria-busy');b.textContent='Confirm not needed'}return}
+ b.disabled=true;const stop=lateShow(()=>{b.setAttribute('aria-busy','true');b.textContent='Saving…'});try{await saveDecision(id,'reject',why);dismissing.delete(id)}catch(e){errCaught(e);toast(e.message,true)}finally{stop();b.disabled=false;b.removeAttribute('aria-busy');b.textContent='Confirm not needed'}return}
 if(choice==='snooze'){openSnooze(id);return}
 const feedback=$('#feedback-'+id)?.value||'';if(choice==='other'&&!feedback.trim()){$('#feedback-'+id)?.focus();toast(b.dataset.answer?'Type your answer first.':'Tell me what to change first.',true);return}
 b.disabled=true;try{await saveDecision(id,choice,feedback,!!b.dataset.answer)}catch(e){errCaught(e);toast(e.message,true)}finally{b.disabled=false}};
