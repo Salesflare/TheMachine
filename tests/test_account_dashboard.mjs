@@ -24,9 +24,12 @@ const hostedSummary={email:'alex@example.org',hop:true,
  actions:['account','fleet','plan','portal','cancel','connections','overview','username','security','data','delete','support','friends'],
  name:'alex.themachine.example',security:{recovery:9,passkeys:2,phones:1},friends:{on:true,waiting:1},export:{ready:false,until:null},
  links:{account:CP+'/account',fleet:CP+'/account?tab=fleet',plan:CP+'/account?tab=overview#status',portal:CP+'/account?tab=billing',cancel:CP+'/account/cancel',connections:CP+'/setup#sources'}};
+const APP='https://app.themachine.computer';
 const pairedSummary={on:true,email:'sam@example.org',hop:false,plan:null,next_invoice:null,server:null,connections:[],
- fleets:[{name:'Family',kind:'family',role:'member',people:3}],actions:['account','fleet'],
- links:{account:'https://app.themachine.computer/account',fleet:'https://app.themachine.computer/account?tab=fleet'}};
+ fleets:[{name:'Family',kind:'family',role:'member',people:3}],actions:['account','fleet','security','friends','delete'],
+ security:{recovery:10,passkeys:1,phones:0},friends:{on:true,waiting:2},username:'sam-k',
+ links:{account:APP+'/account',fleet:APP+'/account?tab=fleet&focus=1',security:APP+'/account?tab=security&focus=1',
+  friends:APP+'/account?tab=friends&focus=1',delete:APP+'/account?tab=data&focus=1#wipe'}};
 let mode='hosted',fail=false;const hops=[],posts=[],asked=[];
 const server=createServer(async(req,res)=>{
  const url=new URL(req.url,'http://fixture.invalid');
@@ -104,10 +107,18 @@ try{
    mode='paired';fail=false;await page.goto('about:blank');await page.goto(base+'/#settings/account');await page.locator('#acct-list',{hasText:'Family'}).waitFor();
    assert.equal(asked.at(-1),'machine');
    assert.equal(await page.locator(':is(#settings-acct,#settings-acct-end) form[action="/_machine/account-hop"]').count(),0);
-   assert.deepEqual(await page.locator('#settings-acct a[data-acct-go]').evaluateAll(as=>as.map(a=>[a.getAttribute('href'),a.target])),
-    [['https://app.themachine.computer/account?tab=fleet','_blank'],['https://app.themachine.computer/account','_blank']]);
+   // The account's own parts too (counts only), each a link to that part of the account, a focused step there
+   assert.deepEqual(await page.locator('#settings-acct a[data-acct-go]').evaluateAll(as=>as.map(a=>[a.dataset.acctGo,a.getAttribute('href'),a.target])),
+    [['fleet',APP+'/account?tab=fleet&focus=1','_blank'],['friends',APP+'/account?tab=friends&focus=1','_blank'],
+     ['security',APP+'/account?tab=security&focus=1','_blank'],['account',APP+'/account','_blank']]);
    assert.equal(await page.locator('#settings-acct form[action="/_machine/logout"]').count(),0);
-   assert.ok((await text(page,'#acct-list')).includes('Member · 3 people'));
+   const paired=await text(page,'#acct-list');
+   for(const bit of ['Member · 3 people','Username','sam-k','2 friend requests waiting','Two-factor on · 10 recovery codes left · 1 passkey'])
+    assert.ok(paired.includes(bit),bit);
+   assert.ok(!/Address|Your data|phone signed in/.test(paired));
+   // Delete account is the quiet way out at the very end, a link too (the Machine on this computer stays)
+   assert.deepEqual(await page.locator('#acct-danger a[data-acct-go]').evaluateAll(as=>as.map(a=>[a.dataset.acctGo,a.getAttribute('href'),a.target])),
+    [['delete',APP+'/account?tab=data&focus=1#wipe','_blank']]);
    if(process.env.SHOTS)await page.screenshot({path:`${process.env.SHOTS}/account-paired-${width}-${scheme}.png`,fullPage:true});
    // Not linked: no Account tab; General keeps the Network card
    mode='none';await page.goto('about:blank');await page.goto(base+'/#settings');await page.locator('#settings-cloud:not([hidden])').waitFor();
