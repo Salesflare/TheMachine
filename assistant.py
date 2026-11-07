@@ -1908,6 +1908,10 @@ def area_prompt(config, account_ids, sources=(), owner_started=False, unplaced=F
                'another company of the owner\'s, its product or its code, stays here when these accounts can do the work. When the '
                'messages it came from all came in on that area, it moves there by itself and carries on in a new run; otherwise the '
                'to-do shows the owner a button to move it. You never move it yourself. Once it moves, it carries on by itself.')
+        homes = sorted({a['email'] for a in accounts if a['id'] in {x for _, x in sources or ()} - inside and next_actions.mail_account(a) and a.get('email')}) if here == todo_areas.PERSONAL else []
+        if homes:  # a matter of the owner's own life on a work mailbox: its reply goes where its thread is (next_actions.personal_reply_home)
+            out += (' A reply in one of its own threads goes from the mailbox that thread came in on (' + ', '.join(homes) + '), also one '
+                    'labeled Work: set that account_id, and never ask to move this to-do to Work for it. It stays Personal.')
         if unplaced:
             out += (' The owner added it without picking an area, and it is only in ' + name + ' until it is placed: to find what it refers '
                     'to (a mail they sent, a thread), search every area\'s mail, the mailboxes themselves too (events with mailbox:true). '

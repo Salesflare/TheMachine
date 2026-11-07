@@ -36,11 +36,13 @@ Wenn dich nichts braucht, macht deine Machine auf der leeren Liste ein Nickerche
 
 Eine Aufgabe in einem Projekt zeigt den Projektnamen in der Zeile unter ihrem Titel; er öffnet das Projekt. **Projekt** unter **Details** ändert es oder entfernt es. Siehe [Aufgaben eines Projekts](projects.md#a-projects-to-dos).
 
-**Bereich** unter **Details** verschiebt die Aufgabe in deinen anderen Bereich, etwa eine private, die von deiner Arbeitsadresse aus rausgehen muss. Was sie lesen und wovon sie senden darf, zieht mit; die Nachrichten, aus denen sie kam, bleiben, wo sie sind. **Rückgängig** in der Meldung danach verschiebt sie zurück.
+**Bereich** unter **Details** verschiebt die Aufgabe in deinen anderen Bereich. Was sie lesen und wovon sie senden darf, zieht mit; die Nachrichten, aus denen sie kam, bleiben, wo sie sind. **Rückgängig** in der Meldung danach verschiebt sie zurück.
 
 Braucht eine Aufgabe einen anderen Bereich, um weiterzukommen, und kamen ihre Nachrichten alle von dort, verschiebt sie sich von selbst und macht weiter. Sonst fragt sie mit einer Schaltfläche **Nach Arbeit verschieben**. Nichts wird verschoben, bevor du tippst; danach macht sie von selbst weiter. Eine Aufgabe, die du ohne Arbeit oder Privat angelegt hast, verschiebt sich von selbst, sobald sie weiß, wohin sie gehört.
 
 Startest du eine Aufgabe, darf sie die Nachrichten, aus denen sie kam, immer lesen, auch im Postfach einer anderen Firma. Braucht sie andere Nachrichten aus einem anderen Bereich, fragt sie mit **Diese E-Mail für diese Aufgabe verwenden**; ein Tippen fügt sie hinzu und sie macht weiter. Mail für eine andere deiner Firmen landet gleich bei den Aufgaben dieser Firma. Eine Aufgabe aus deinem eigenen Leben, etwa Familie, die an deine Arbeitsadresse schreibt, ist von Anfang an Privat.
+
+Die Antwort geht trotzdem von der Arbeitsadresse, an der sie ankam, und sie erscheint nie in einer Work Fleet oder im Team-Graph.
 
 ## Jetzt prüfen
 
