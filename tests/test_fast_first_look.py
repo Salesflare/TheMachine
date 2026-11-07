@@ -92,6 +92,24 @@ class FastFirstLook(unittest.TestCase):
         with self.store.connect() as db:
             self.assertEqual(a.first_cards_report(db, self.app.config['accounts'])['dig'], 'covered')
 
+    def test_the_empty_state_and_the_setup_page_say_the_same_time_to_the_first_to_dos(self):
+        # The dashboard said "Haven't snooped around yet." with Check now while the first review was on its way by
+        # itself. review_live now carries about when the first to-dos come, at the setup page's own pace.
+        current = dt.datetime(2026, 11, 7, 10, 0, tzinfo=dt.timezone.utc)
+        eta = lambda *args: a.first_eta_minutes(*args, current=current)
+        self.assertEqual(eta({'planned': 20, 'done': 5}, None, None), -(-15 * a.FIRST_LOOK_SIGNAL_SECONDS // 60))
+        self.assertEqual(eta(None, {'state': 'due', 'waiting': 20}, None), 1 + -(-20 * a.FIRST_LOOK_SIGNAL_SECONDS // 60))
+        self.assertIsNone(eta(None, {'state': 'waiting', 'why': 'model'}, None))  # waits on the owner: no time to say
+        queue = {'first': True, 'planned': 55, 'starts_at': (current + dt.timedelta(minutes=2)).isoformat()}
+        self.assertEqual(eta(None, None, queue), -(-(120 + 55 * a.FIRST_LOOK_SIGNAL_SECONDS) // 60))
+        self.assertIsNone(eta(None, None, {**queue, 'first': False}))  # not the first review: not for someone new
+        self.assertIsNone(eta(None, None, None))
+        self.store.commit_page('work', {}, [signal('m1')])
+        self.app.config['review_worker'] = {'enabled': True}
+        live = self.app.review_live()
+        self.assertEqual(live['cards']['count'], 0)
+        self.assertIn('first_eta', live)
+
     def test_after_a_quick_look_that_left_nothing_the_first_look_is_done(self):
         self.store.commit_page('work', {}, [signal('m1')])
         self.step(Runner('admitted'))

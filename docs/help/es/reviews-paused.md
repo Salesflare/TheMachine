@@ -10,7 +10,7 @@ Las tareas salen de las revisiones: tu Machine lee lo que ha llegado, en lotes p
 
 ## Recién registrado
 
-En una Machine alojada nueva, las revisiones empiezan solas en cuanto tu IA y tu correo están conectados. Mientras tu Machine lee tu correo, Tareas dice "Leyendo tu correo, tus primeras tareas llegan en unos minutos". Si falta un paso, **Te necesita** lo nombra, como **Conectar correo**, con un enlace a ese paso.
+En una Machine alojada nueva, las revisiones empiezan solas en cuanto tu IA y tu correo están conectados. Mientras tu Machine lee tu correo, Tareas dice "Leyendo tu correo, tus primeras tareas llegan en unos minutos". En cuanto sabe cuánto hay, dice más o menos cuánto tarda: "Primeras tareas en unos 10 min." Si falta un paso, **Te necesita** lo nombra, como **Conectar correo**, con un enlace a ese paso.
 
 Mientras lee, Tareas muestra cuánto lleva, algunas de las personas y organizaciones que encontró y tu primera tarea en cuanto llega. Los nombres salen de tu propio correo y solo tú los ves.
 

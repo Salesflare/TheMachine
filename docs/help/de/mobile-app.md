@@ -9,7 +9,7 @@ keywords: ios, android, app store, play store, share sheet, share, phone, mobile
 ---
 Die mobile App öffnet dein eigenes Dashboard, angemeldet wie im Web. Hol sie dir im [App Store](https://apps.apple.com/app/id6829875215) für iPhone und iPad oder bei [Google Play](https://play.google.com/store/apps/details?id=computer.themachine.app) für Android.
 
-Ab deinem ersten Besuch schlägt die kleine Aufgabe **Hol mehr aus The Machine heraus** oben in Aufgaben sie als Erstes vor. Im Browser auf dem Handy öffnet **Holen** ihren Store. Auf einem Computer zeigt sie einen QR-Code, der auf dem Handy den richtigen Store öffnet, mit Links zu beiden. In der App selbst erscheint sie nie.
+Ab deinem ersten Besuch schlägt die kleine Aufgabe **Hol mehr aus The Machine heraus** oben in Aufgaben sie als Erstes vor. Im Browser auf dem Handy öffnet **Holen** ihren Store. Zeigt das Handy Desktop-Seiten, erscheinen Links zu beiden Stores. Auf einem Computer zeigt sie einen QR-Code, der auf dem Handy den richtigen Store öffnet, mit Links zu beiden. In der App selbst erscheint sie nie.
 
 Auf jedem Handy öffnet [themachine.computer/app](https://themachine.computer/app) den richtigen Store, und **Einstellungen**, **Allgemein**, **Handy-App** hat immer den Link dazu. **Einstellungen**, **Apps** zeigt oben beide Stores, auf dem Handy nur seinen Store. Auf dem Computer installiert **Computer** das Dashboard als App: siehe [App installieren](phone-app.md).
 

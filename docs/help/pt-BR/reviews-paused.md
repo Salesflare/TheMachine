@@ -10,7 +10,7 @@ As tarefas vêm das verificações: sua Machine lê o que chegou, em pequenos lo
 
 ## Acabou de se cadastrar
 
-Em uma Machine hospedada nova, as verificações começam sozinhas assim que sua IA e seu e-mail estão conectados. Enquanto sua Machine lê seus e-mails, Tarefas mostra "Lendo seus e-mails, primeiras tarefas em poucos minutos". Se faltar uma etapa, **Precisa de você** mostra qual, como **Conectar e-mail**, com um link para essa etapa.
+Em uma Machine hospedada nova, as verificações começam sozinhas assim que sua IA e seu e-mail estão conectados. Enquanto sua Machine lê seus e-mails, Tarefas mostra "Lendo seus e-mails, primeiras tarefas em poucos minutos". Assim que sabe quanto há, ela diz mais ou menos quanto falta: "Primeiras tarefas em cerca de 10 min." Se faltar uma etapa, **Precisa de você** mostra qual, como **Conectar e-mail**, com um link para essa etapa.
 
 Enquanto lê, Tarefas mostra até onde ela chegou, algumas das pessoas e organizações que encontrou e sua primeira tarefa assim que chega. Os nomes vêm do seu próprio e-mail, e só você os vê.
 

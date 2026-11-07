@@ -1376,6 +1376,7 @@
  "First one’s in: {}. Still reading…": "First one’s in: {}. Still reading…",
  "First read: catching up on the last days.": "First read: catching up on the last days.",
  "First seen this week.": "First seen this week.",
+ "First to-dos in about {} min.": "First to-dos in about {} min.",
  "First try": "First try",
  "Five more minutes. Robot minutes.": "Five more minutes. Robot minutes.",
  "Fix": "Fix",
@@ -2577,6 +2578,10 @@
  "None of these are yours yet.": "None of these are yours yet.",
  "None yet": "None yet",
  "None yet. Checks add the ones that fit.": "None yet. Checks add the ones that fit.",
+ "Nosing through {} new messages. First to-dos in about {} min.": {
+  "one": "Nosing through {} new message. First to-dos in about {} min.",
+  "other": "Nosing through {} new messages. First to-dos in about {} min."
+ },
  "Nosing through {} new messages…": {
   "one": "Nosing through {} new message…",
   "other": "Nosing through {} new messages…"
