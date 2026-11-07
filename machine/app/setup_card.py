@@ -2,11 +2,12 @@
 about each step (setup_card), a row closed with its × (setup_dismiss) and brought back (setup_restore), and the phone
 app's store links with their QR code (phone_app_nudge). The setup hints stay in assistant.py for now: they read the
 reminder channels. A mixin of assistant.App (APP_MIXINS) for the two actions."""
-import functools
 import re
 import sqlite3
 
-import qr
+from machine.delivery.push import (
+    phone_qr,
+)
 
 
 class SetupCardApp:
@@ -20,11 +21,6 @@ class SetupCardApp:
             raise ValueError('Only the owner closes a setup step, on the dashboard' if name == 'setup_dismiss'
                              else 'Only the owner brings back a setup step, on the dashboard')
         return (setup_dismiss if name == 'setup_dismiss' else setup_restore)(self.store, self.config, args.get('step'))
-
-
-@functools.lru_cache(maxsize=4)
-def phone_qr(link):
-    return tuple(qr.encode(link))
 
 
 # The mobile app (iOS and Android), live in both stores: their links, and a page with both (its help article, for the

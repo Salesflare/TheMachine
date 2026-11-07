@@ -235,7 +235,7 @@ OTHER_WRITERS = {
     'checkpoints': {'sandbox/load.py'},
     'crm_tags': {'crm_import.py'},
     'decisions': {'follow_ups.py', 'graph.py', 'sandbox/load.py', 'work_removal.py'},
-    'deliveries': {'fleet.py', 'follow_ups.py', 'machine/export/hold.py', 'sandbox/load.py'},
+    'deliveries': {'fleet.py', 'follow_ups.py', 'machine/delivery/deliver.py', 'machine/export/hold.py', 'sandbox/load.py'},
     'draft_edits': {'graph.py'},
     'enrich_prefs': {'security_levels.py'},
     'event_search': {'assistant.py'},
@@ -277,12 +277,12 @@ OTHER_WRITERS = {
     'project_moves': {'crm_import.py', 'follow_ups.py'},
     'projects': {'crm.py', 'crm_import.py', 'follow_ups.py', 'machine/app/graph_actions.py', 'sandbox/load.py'},
     'promises': {'graph.py', 'sandbox/load.py'},
-    'push_subscriptions': {'machine/export/hold.py'},
+    'push_subscriptions': {'machine/delivery/push.py', 'machine/export/hold.py'},
     'record_owners': {'crm_import.py'},
     'review_runs': {'sandbox/load.py'},
     'rule_changes': {'learning_loop.py'},
     'skills': {'sandbox/load.py'},
-    'suggestions': {'fleet.py', 'follow_ups.py', 'graph.py', 'sandbox/load.py', 'work_removal.py'},
+    'suggestions': {'fleet.py', 'follow_ups.py', 'graph.py', 'machine/delivery/deliver.py', 'sandbox/load.py', 'work_removal.py'},
     'sync_activity': {'retention.py', 'sandbox/load.py'},
     'team_learning_prefs': {'security_levels.py'},
     'voices': {'learning_loop.py'},
@@ -365,7 +365,7 @@ PY_LINE_BUDGET = 2_500
 PY_BYTE_BUDGET = 450 * 1024
 PY_RATCHET_SLACK = (500, 50_000)
 PY_OVER_BUDGET = {
-    'assistant.py': (20_000, 1_440_000),
+    'assistant.py': (19_200, 1_390_000),
     'fleet.py': (3_800, PY_BYTE_BUDGET),
     'graph.py': (5_400, PY_BYTE_BUDGET),
     'next_actions.py': (2_650, PY_BYTE_BUDGET),
