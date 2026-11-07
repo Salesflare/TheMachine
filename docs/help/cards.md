@@ -24,7 +24,7 @@ After you send, a short note says where the to-do went, like "Sent. Moved to Don
 
 In the open groups, to-dos that are overdue or due by tomorrow come first. The rest are newest first. The sidebar keeps the same order.
 
-**Looks done** means your Machine sees it's done, like "PR #3451 merged", but it isn't closed yet. **Reopen** puts it back on your list, and your Machine learns from it. These never show as late.
+**Looks done** means your Machine sees it's done, like "PR #3451 merged", but it isn't closed yet. **Reopen** puts it back on your list, and your Machine learns from it. These never show as late. A to-do with a reply draft also looks done when you answered that conversation yourself, like in Gmail or Slack.
 
 A to-do still waiting on someone else, like a review or a reply, says **Waiting on:** that step. It sits in **Waiting on others**, folded above Coming back later, until a new message brings it back.
 
