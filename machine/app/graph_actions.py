@@ -1,19 +1,63 @@
 """The Graph's and the CRM's actions in the service (graph.py and crm.py do the work): the agent's and the dashboard's
 graph calls (graph_action), finding and listing people, organizations and projects, About you and the CRM actions
 (crm_action). Moved out of assistant.App as is. A mixin of assistant.App (APP_MIXINS)."""
+import contextlib
 import json
 import re
 import sqlite3
+import time
 
 import crm
 import crm_fields
 import crm_fixes
 import crm_import
+import embeddings
 import fleet
+import gap_note
 import gbrain
 import graph
+from machine.config import LOG, WORKSPACE
+from machine.sources.calendar import calendar_room, calendar_rooms
+from machine.store.cards import source_line, source_text
+from machine.store.review import own_message
+from machine.text import clamp
+from machine.web.handler import event_glance
+import meeting_notes
+import own_addresses
 import project_success
+from sources import gog_read, SourceError
 from timeutil import local_tz, now
+import work_removal
+
+
+GRAPH_CHECK_SECONDS = 60  # how often the graph worker looks for new organization profiles
+
+
+def account_services(config, account_ids=None):
+    """The services of the configured accounts, or of only these account IDs (no service is Gmail)."""
+    wanted = None if account_ids is None else set(account_ids)
+    return [a.get('service', 'gmail') for a in config.get('accounts', []) if wanted is None or a.get('id') in wanted]
+
+
+def forget_in_notes(root, needles):
+    """Takes out the lines of the agent's memory notes (Markdown and text under memory/) that name someone deleted
+    permanently: their full name or an address. Returns how many lines went."""
+    if not needles or not root.is_dir():
+        return 0
+    removed = 0
+    for path in sorted(root.rglob('*')):
+        if path.is_symlink() or not path.is_file() or path.suffix.lower() not in ('.md', '.txt') or path.stat().st_size > 5_000_000:
+            continue
+        try:
+            text = path.read_text(encoding='utf-8')
+        except (OSError, UnicodeDecodeError):
+            continue
+        lines = text.splitlines(keepends=True)
+        kept = [line for line in lines if not graph.mentions(line, needles)]
+        if len(kept) != len(lines):
+            removed += len(lines) - len(kept)
+            path.write_text(''.join(kept), encoding='utf-8')
+    return removed
 
 
 class GraphActionsApp:
@@ -259,3 +303,272 @@ class GraphActionsApp:
         if name != 'graph_org_apart' and not done.get('kept'):
             self.graph_build()
         return done
+
+    def graph_build(self):
+        with self.store.connect() as db:
+            db.isolation_level = None  # graph.build runs its own transaction
+            return graph.build(db, self.config, now(), self.fleet_addresses(), self.fleet_circles())
+
+    def graph_event_lines(self, event_ids, keep_order=False):
+        """One line per signal, newest first (keep_order: in the order given): "<id> (<account>) <what, from whom, when> ·
+        <title>". A signal that can't be read is logged and left out, so one odd event never fails a whole page."""
+        event_ids = list(event_ids)
+        rows = self.store.events([a['id'] for a in self.config['accounts']], event_ids=event_ids) if event_ids else []
+        lines = []
+        place = {e: i for i, e in enumerate(event_ids)}
+        for r in sorted(rows, key=lambda r: place.get(r['id'], 0)) if keep_order else sorted(rows, key=lambda r: str(r['occurred_at'] or ''), reverse=True):
+            try:
+                lines.append(f"{r['id']} ({r['account_id']}) {source_text(r)} · {clamp(' '.join(str(r['title'] or '').split()), 100)}")
+            except (ValueError, KeyError, TypeError, AttributeError) as error:
+                LOG.warning('graph event line skipped event=%s error=%s', r.get('id') if isinstance(r, dict) else '?', type(error).__name__)
+        return lines
+
+    def graph_timeline(self, node, source='', cursor=0, limit=40, now=None):
+        """A page of a person's, organization's or project's timeline for the owner's dashboard (graph.timeline), each
+        signal as a row: who wrote it, the start of its text, its link, an Intercom conversation's state and a thread's
+        Team or Only you. Never part of what the team's Graph sends."""
+        accounts = self.config['accounts']
+        with self.store.connect() as db:
+            found = graph.timeline(db, node, source, cursor, limit, now)
+        if found is None:
+            raise ValueError('Not in the graph')
+        both = found['items'] + found.get('upcoming', [])
+        ids = [i['id'] for i in both if i['type'] == 'event']
+        ids += [c for i in both for c in i.get('copies') or ()]
+        rows = {r['id']: r for r in self.store.events([a['id'] for a in accounts], event_ids=ids)} if ids else {}
+        # Who is on a meeting, without the owner and without the person whose page this is: they are a given here
+        with self.store.connect() as db:
+            got = graph.resolve(db, node)
+        info = json.loads(got['info'] or '{}') if got and got['kind'] == 'person' else {}
+        with self.store.connect() as db:
+            graph_owner = graph.Owner(self.config, db)
+        owner = self.owner_emails() | graph_owner.emails
+        given = owner | {str(i)[6:].lower() for i in [got['id'] if got else '', *(info.get('identifiers') or [])] if str(i).startswith('email:')}
+
+        # People on a meeting by the name the graph has for them, when the invite has only their address
+        invited = {str(a.get('email') or '').strip().lower() for r in rows.values() if r['kind'] == 'calendar.event'
+                   for a in [*(r['metadata'].get('attendees') or ()), r['metadata'].get('organizer')] if isinstance(a, dict)} - {''}
+        # (one person under two addresses is one node: keyed by it, they show once) and without the rooms booked on it
+        known, nodes, noted = {}, {}, {}
+        rooms, kept, _ = calendar_rooms(self.store.connect) if invited else (set(), set(), {})
+        if invited:
+            with self.store.connect() as db:
+                for start in range(0, len(invited), 400):
+                    chunk = ['email:' + e for e in sorted(invited)[start:start + 400]]
+                    marks = ','.join('?' * len(chunk))
+                    for n in db.execute(f"SELECT id,name,id identifier FROM graph_nodes WHERE kind='person' AND id IN ({marks}) UNION ALL "
+                                        f"SELECT n.id,n.name,j.value FROM graph_nodes n, json_each(n.info,'$.identifiers') j WHERE n.kind='person' AND j.value IN ({marks})",
+                                        (*chunk, *chunk)):
+                        address = n['identifier'][6:]
+                        nodes.setdefault(address, n['id'])
+                        if n['name'] and '@' not in n['name']:
+                            known.setdefault(address, n['name'])
+        if any(r['kind'] == 'calendar.event' for r in rows.values()):  # a meeting with notes or a transcript says so on its row
+            try:
+                with self.store.connect() as db:
+                    noted = meeting_notes.added_for(db, [i for i, r in rows.items() if r['kind'] == 'calendar.event'])
+            except sqlite3.OperationalError:
+                noted = {}
+
+        def row_for(item):
+            if item['type'] != 'event':
+                return item
+            r = rows.get(item['id'])
+            if not r:
+                return None
+            m = r['metadata']
+            row = {'id': r['id'], 'type': 'event', 'account_id': r['account_id'], 'kind': r['kind'], 'occurred_at': r['occurred_at'], 'title': r['title'][:200],
+                   'source': item['source'], 'source_url': m.get('source_url'), 'probable': item['probable'], **event_glance(r, accounts, owner)}
+            if r['kind'] == 'intercom.conversation':
+                row['state'] = 'open' if m.get('open') is True or m.get('state') in ('open', 'snoozed') else 'closed'
+                row['thread'] = None  # one conversation is one row
+                opening = next((line for line in str(r.get('body') or '').splitlines() if line.strip()), '')  # the first line, not the log of parts
+                row['preview'] = ' '.join(opening.split())[:240]
+                if '@' in str(row.get('from') or ''):  # who opened it by name, not by address
+                    row['from'] = (str(m.get('from_name') or '') or str(m.get('contact_name') or '') or row['from'])[:80]
+            if r['kind'] in meeting_notes.PREFIX and (said := re.fullmatch(r'(?:notes|transcript):(\d+)', str(r['source_id']))):
+                row['meeting_id'] = int(said[1])  # a meeting's notes or transcript open with the meeting
+            if r['kind'] == 'calendar.event':  # one row for its copies on several calendars, everyone on it once
+                row['all_day'] = bool(m.get('all_day'))
+                people, copies = {}, [r, *(rows[i] for i in item.get('copies') or () if i in rows)]
+                # The owner under another address of theirs: the name they have on their own calendar's copy
+                own = {' '.join(str(a.get('displayName') or '').split()).casefold() for c in copies for a in c['metadata'].get('attendees') or ()
+                       if isinstance(a, dict) and a.get('self') and str(a.get('email') or '').lower() in owner} - {''}
+                for c in copies:
+                    cm = c['metadata']
+                    for a in [*(cm.get('attendees') or ()), cm.get('organizer') or {}]:
+                        if not isinstance(a, dict) or a.get('responseStatus') == 'declined':
+                            continue
+                        address = str(a.get('email') or '').strip().lower()
+                        if address in given or graph_owner.mine(address) or not (address or a.get('displayName')):
+                            continue
+                        if ' '.join(str(a.get('displayName') or '').split()).casefold() in own:
+                            continue
+                        if a.get('resource') or 'email:' + address in rooms or calendar_room(a, rooms, kept):
+                            continue  # a meeting room is where, not who
+                        if nodes.get(address) and nodes[address] in {nodes.get(g) for g in given}:
+                            continue  # this page's person under another address of theirs
+                        shown = ' '.join(str(a.get('displayName') or '').split())
+                        name = (shown if shown and '@' not in shown else '') or known.get(address) or shown or address
+                        key = nodes.get(address) or address or name.casefold()
+                        if key not in people or '@' in people[key] and '@' not in name:
+                            people[key] = name[:80]
+                where = str(m.get('location') or '').strip()
+                said = [line for line in str(r.get('body') or '').splitlines() if line.strip() and not line.startswith('Participants: ') and line.strip() != where]
+                names = list(people.values())
+                line = ' · '.join(filter(None, ['With ' + ', '.join(names[:6]) + (f' and {len(names) - 6} more' if len(names) > 6 else '') if names else '',
+                                                where, ' '.join(' '.join(said).split()) if said else '']))
+                row['preview'] = line[:240] + ('…' if len(line) > 240 else '')
+                for c in copies:
+                    for field in ('notes', 'transcript'):
+                        if field in noted.get(c['id'], {}):
+                            row[field] = True
+            return row
+        def safe_row(item):  # one signal that can't be read is logged and left out, never the whole timeline
+            try:
+                return row_for(item)
+            except (ValueError, KeyError, TypeError, AttributeError) as error:
+                LOG.warning('graph timeline row skipped event=%s error=%s', item.get('id'), type(error).__name__)
+                return None
+        items = [x for x in map(safe_row, found['items']) if x]
+        found['upcoming'] = [x for x in map(safe_row, found.get('upcoming', [])) if x]
+        if getattr(self, 'fleet', None) and rows:  # the Shared Graph: each Work thread's Team or Only you
+            try:
+                with self.store.connect() as db:
+                    labels = self.fleet.thread_labels(db, list(rows.values()))
+                for row in items + found['upcoming']:
+                    if row.get('type') == 'event' and row['id'] in labels:
+                        row['share'] = labels[row['id']]
+            except (sqlite3.Error, ValueError, KeyError, TypeError) as error:
+                LOG.info('shared graph timeline error=%s', type(error).__name__)
+        found['items'] = items
+        return found
+
+    def graph_freshness(self):
+        """What makes a rebuild worth it before the ten minutes are up: new organization or people profiles (looked up by the
+        enrichment worker, or by a hosting agent writing straight into the database), who is in the owner's Family,
+        Friends and Work Fleets (a Personal contact follows within a minute), and, while the graph has no organizations
+        yet (the first import), new signals."""
+        circles = tuple(sorted((e, tuple(sorted(k))) for e, k in self.fleet_circles().items()))
+        with self.store.connect() as db:
+            profiles = tuple(db.execute("SELECT count(*),max(fetched_at) FROM org_profiles WHERE status!='error'").fetchone()) \
+                + tuple(db.execute("SELECT count(*),max(fetched_at) FROM person_profiles WHERE status!='error'").fetchone()) \
+                + tuple(db.execute('SELECT count(*),max(saved_at) FROM person_photos').fetchone())
+            empty = not db.execute("SELECT 1 FROM graph_nodes WHERE kind='org' LIMIT 1").fetchone()
+            signals = tuple(db.execute('SELECT count(*),max(ingested_at) FROM events WHERE history=0').fetchone()) if empty else None
+        return profiles, signals, circles
+
+    def graph_worker(self):
+        """Rebuilds the people and projects graph every ten minutes, soon after a label or merge, and within a minute
+        of new organization profiles or, on a new install, of new signals: so enriched details show right away."""
+        wait, built, seen = 30, 0.0, None
+        while not self.stop.is_set():
+            dirty = self.graph_dirty.wait(min(wait, GRAPH_CHECK_SECONDS))
+            if self.stop.is_set():
+                return
+            with contextlib.suppress(Exception):
+                work_removal.prune(self.config)  # a work removal's safety copy goes after its days
+            try:
+                fresh = self.graph_freshness()
+            except Exception:
+                fresh = seen
+            if not dirty and time.monotonic() - built < wait and fresh == seen:
+                continue
+            self.graph_dirty.clear()
+            built, seen = time.monotonic(), fresh  # a failing build is not retried every minute
+            try:
+                self.own_addresses_fetch()  # once a day per mailbox: its aliases, before the build tells the owner apart
+                self.graph_build()
+                seen = self.graph_freshness()
+                wait = 600
+            except Exception as error:
+                LOG.error('graph error=%s', type(error).__name__)
+                wait = 1800
+
+    def gap_lines(self, suggestion_id):
+        """What isn't known about the people on a task, from synced signals only (gap_note.py), for a preparation."""
+        with self.store.connect() as db:
+            row = db.execute('SELECT event_ids FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
+            ids = json.loads(row['event_ids'] or '[]') if row else []
+            found = gap_note.for_card(db, ids, account_services(self.config), lambda e: own_message(e, self.store.owner_user_ids),
+                                      now(), skip_card=suggestion_id) if ids else []
+        return gap_note.prompt_lines(found)
+
+    def graph_lines(self, suggestion_id):
+        """Who the people on a task are to the owner, and the projects around them, for a preparation."""
+        with self.store.connect() as db:
+            row = db.execute('SELECT event_ids,project,account_ids FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
+            ids = json.loads(row['event_ids'] or '[]') if row else []
+            area = {a.get('id'): graph.account_side(a) for a in self.config.get('accounts', []) if a.get('id')}
+            sides = {area.get(a) for a in json.loads(row['account_ids'] or '[]')} - {None} if row else set()  # a summary's lines in this area only
+            text = graph.context_lines(db, ids, skip_card=suggestion_id, sides=sides) if ids else ''
+            brain = self.gbrain_lines(db, ids) if text else ''
+        if not text:
+            return ''
+        unknown = self.store.no_role_yet(ids)
+        return ('\n\nPeople and projects (from all signals, closeness fades with time; look up anyone with assistant_signals graph '
+                'and a query or node_id, and keep personal details out of work messages and the other way round). Write to each person '
+                'as the owner would to who they are to them: a cofounder, a sister or a friend reads differently from a customer, an accountant '
+                'or someone new:\n' + text
+                + (('\nNo role yet for ' + ', '.join(f"{p['name']} ({p['node_id']})" for p in unknown) + ': if what you read shows what they are to '
+                    'the owner, set it with assistant_signals graph node_id, role, event_id and quote.') if unknown else '') + brain)
+
+    def related_lines(self, suggestion_id, limit=8):
+        """A short "Possibly related" list for a preparation: the task's own accounts, not its evidence."""
+        with self.store.connect() as db:
+            row=db.execute('SELECT account_ids,event_ids FROM suggestions WHERE id=?',(suggestion_id,)).fetchone()
+        accounts,ids=json.loads(row['account_ids'] or '[]'),json.loads(row['event_ids'] or '[]')
+        if not accounts or not ids:return ''
+        found,_=self.related(accounts,ids,'',limit)
+        rows={r['id']:r for r in self.store.events(accounts,event_ids=[i for i,_ in found])} if found else {}
+        # source_line skips the owner's own to-dos (owner.card: the card says "Added by you"); here each one names what it is
+        where=lambda r:source_text(r) if r['kind']=='owner.card' else source_line([r])[8:]
+        lines=[f"- {i} ({rows[i]['account_id']}) {where(rows[i])} · {clamp(' '.join(rows[i]['title'].split()),100)}" for i,_ in found if i in rows]
+        return ('\n\nPossibly related (found by meaning in this task\'s accounts; read any that matter with events, its account and event_ids):\n'+'\n'.join(lines)) if lines else ''
+
+    def related(self, accounts, event_ids=(), query='', limit=8, exclude=(), timeout=30):
+        """([(event_id, similarity)], semantic) within the given accounts. With the embedding server
+        down (or slower than `timeout` seconds) a query still gets keyword matches."""
+        try:return embeddings.related(self.store.connect,embeddings.settings(self.config),accounts,event_ids,query,limit,exclude=exclude,timeout=timeout),True
+        except embeddings.EmbeddingError as error:
+            LOG.error('related error=%s',error)
+            if not query.strip():return [],False
+            with self.store.connect() as db:
+                return [(i,None) for i in embeddings.fts_ids(db,accounts,query,limit) if i not in {*map(int,event_ids),*map(int,exclude)}],False
+
+    def own_addresses_fetch(self, read=None):
+        """Each of the owner's own mailboxes' send-as addresses, once a day: Gmail's sendAs list (gmail.readonly, the
+        scope mail already reads with) or Outlook's proxy addresses (User.Read). A read that fails waits a day too."""
+        read = read or gog_read
+        for account in own_addresses.mail_accounts(self.config):
+            if getattr(self, 'stop', None) and self.stop.is_set():
+                return
+            with self.store.connect() as db:
+                if not own_addresses.fetch_due(db, account['id'], now()):
+                    continue
+            try:
+                answer = read(self.config, account, 'gmail', 'v1', 'gmail.users.settings.sendAs.list', {'userId': 'me'},
+                              'https://www.googleapis.com/auth/gmail.readonly')
+                entries = own_addresses.send_as_entries(answer, account.get('email'))
+            except (SourceError, OSError, ValueError, KeyError, TypeError) as error:
+                LOG.info('own addresses account=%s error=%s', account['id'], type(error).__name__)
+                entries = None
+            with self.store.connect() as db:
+                own_addresses.save_fetched(db, account['id'], entries, now())
+
+    def own_addresses_view(self):
+        """Settings, Account: the owner's addresses, where each came from, and the ones that may be theirs."""
+        try:
+            with self.store.connect() as db:
+                return own_addresses.view(db, self.config)
+        except sqlite3.Error:
+            return None
+
+    def delete_person(self, node_id, workspace=None):
+        """Delete permanently (graph.delete_person), then the lines in the agent's memory notes that name them, then a
+        rebuild so nothing derived from them is left."""
+        with self.store.connect() as db:
+            done = graph.delete_person(db, node_id, self.config, now())
+        notes = forget_in_notes((workspace or WORKSPACE) / 'memory', done.pop('needles'))
+        self.graph_build()
+        return {**done, 'notes': notes}
