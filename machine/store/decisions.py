@@ -137,6 +137,20 @@ def owner_area_open(db, suggestion_id):
     return []
 
 
+def follows_sources(db, suggestion_id, area, accounts):
+    """Whether a run's move to area happens by itself (Store.preparation_blocked): every message the to-do came from
+    came in on that area (todo_areas.sources_area), so the move takes it where its sources already are, and nothing on
+    it reaches anyone they did not already. Not for a to-do pinned Personal (its own life, never a Work Fleet's), nor
+    once it has moved: the owner's own move stands, and after a move it made itself or an Undo the next one is theirs."""
+    row = db.execute('SELECT area,event_ids FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
+    if not row or row['area'] == todo_areas.PERSONAL:
+        return False
+    if db.execute('SELECT 1 FROM card_moves WHERE suggestion_id=? LIMIT 1', (suggestion_id,)).fetchone():
+        return False
+    found = [r[0] for r in db.execute('SELECT e.account_id FROM events e JOIN json_each(?) j ON j.value=e.id', (row['event_ids'] or '[]',))]
+    return bool(found) and todo_areas.sources_area(found, accounts) == area
+
+
 def draft_saved(db, suggestion_id, action, at=None):
     """Note when each message draft first showed on the card (draft_saves): an assistant send needs the owner to have
     had it in front of them before they wrote the message that approves it (unseen_draft)."""
@@ -1057,8 +1071,9 @@ class DecisionsStore:
 
     def preparation_blocked(self, suggestion_id, job_id, reason, details=None, note_kind=None, questions=None, move_to=None, use_event_ids=None):
         """A run that can't go on. move_to: it needs the to-do in another of the owner's areas (todo_areas.py), such as Work
-        to send from the company's mailbox. It never moves the to-do: the to-do offers the move for the owner's tap
-        (move_card), and carries on after it. use_event_ids: collected messages from another area it needs (up to 5, not
+        to send from the company's mailbox. The to-do offers the move for the owner's tap (move_card), and carries on after
+        it; it moves by itself when the owner added it without an area (owner_area_open) or the messages it came from are
+        all in that area (follows_sources). use_event_ids: collected messages from another area it needs (up to 5, not
         its own sources already): the to-do offers "Use this email for this to-do" (use_sources), and carries on after it."""
         if not reason.strip() or len(reason)>400:
             raise ValueError('Give a short, specific blocker')
@@ -1093,15 +1108,18 @@ class DecisionsStore:
             db.execute("UPDATE preparations SET status='blocked',reason=?,details=?,questions=?,move_to=?,use_events=?,updated_at=? WHERE suggestion_id=?",
                        (reason,(details or '').strip() or None,encoded(questions),move_to,use_event_ids,now(),suggestion_id))
             pause_idle_steps(db,suggestion_id)  # nothing runs now: its confirmed step waits for Try again or an answer
-            # One the owner added without an area that nothing placed yet moves itself (no tap): the run found where it belongs
+            # It moves itself (no tap) when the owner added it without an area and nothing placed it yet (the run found where
+            # it belongs), or when the messages it came from are all in that area (follows_sources)
             unplaced=move_to is not None and move_to in owner_area_open(db,suggestion_id)
-            if not unplaced:
+            sourced=move_to is not None and not unplaced and follows_sources(db,suggestion_id,move_to,getattr(self,'accounts',None) or [])
+            if not (unplaced or sourced):
                 db.execute("UPDATE deliveries SET status='queued',reminder=1,needs_edit=1,error=NULL WHERE suggestion_id=? AND status IN ('queued','sent','uncertain')",(suggestion_id,))
-        if unplaced:
+        if unplaced or sourced:
             try:
                 moved=self.move_card(suggestion_id,move_to,'placed:'+job_id,'placed')
+                why='The owner gave this to-do no area' if unplaced else 'The messages this to-do came from are all in that area'
                 return {'status':'moved','area':moved['area'],'resumed':moved['resumed'],
-                        'note':'The owner gave this to-do no area, so it moved to '+moved['label']+' by itself and carries on in a new run there. Stop here.'}
+                        'note':why+', so it moved to '+moved['label']+' by itself and carries on in a new run there. Stop here.'}
             except ValueError as error:  # it can't move now (closed meanwhile): the owner gets the one-tap move as usual
                 LOG.info('placing move skipped suggestion=%s error=%s',suggestion_id,error)
                 with self.connect() as db:

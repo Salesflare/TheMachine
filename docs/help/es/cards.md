@@ -38,7 +38,7 @@ Una tarea de un proyecto muestra el nombre del proyecto en la línea bajo su tí
 
 **Área** en **Detalles** pasa la tarea a tu otra área, como una personal que tiene que salir desde tu dirección del trabajo. Lo que puede leer y desde dónde puede enviar cambia con ella; los mensajes de los que vino se quedan donde están. **Deshacer** en el aviso que sigue la devuelve.
 
-Cuando una tarea necesita otra área para seguir, lo pide con un botón **Mover a Trabajo**. Nada se mueve hasta que lo tocas; después sigue sola. Una tarea que añadiste sin elegir Trabajo o Personal se mueve sola en cuanto sabe dónde va.
+Cuando una tarea necesita otra área para seguir y todos los mensajes de los que salió están allí, se mueve sola y sigue. Si no, lo pide con un botón **Mover a Trabajo**. Nada se mueve hasta que lo tocas; después sigue sola. Una tarea que añadiste sin elegir Trabajo o Personal se mueve sola en cuanto sabe dónde va.
 
 Cuando inicias una tarea, siempre puede leer los mensajes de los que vino, también en el buzón de otra empresa. Si necesita otros mensajes de otra área, lo pide con **Usar este correo para esta tarea**; un toque los añade y sigue. El correo para otra de tus empresas va desde el principio a las tareas de esa empresa. Una tarea de tu propia vida, como tu familia escribiendo a tu dirección del trabajo, es Personal desde el principio.
 

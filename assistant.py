@@ -1919,11 +1919,15 @@ def area_prompt(config, account_ids, sources=(), owner_started=False, unplaced=F
     out = ''
     if here and others:
         name = next((a['label'] for a in found if a['id'] == here), here)
-        out = ('\n\nArea: this to-do is in ' + name + '. What it may read and send from follows its area (a Work to-do sends from that '
+        held = lambda area: (': ' + todo_areas.holds(area, accounts)) if todo_areas.holds(area, accounts) else ''
+        out = ('\n\nArea: this to-do is in ' + name + ' (its accounts' + (held(here) or ': none') + '). What it may read and send from follows its area (a Work to-do sends from that '
                'company\'s accounts)' + (', apart from its own sources below' if outside else '') + '. When it needs another area, such as an email from the company\'s address, do not work around it '
                'or say it can\'t be moved: record a blocker with assistant_signals preparation_blocked and move_to=<'
-               + ' | '.join(f"{a['id']} ({a['label']})" for a in others) + '>, and a reason that says why in one line. The to-do shows '
-               'the owner a button to move it; you never move it yourself. Once they move it, it carries on by itself.')
+               + ' | '.join(f"{a['id']} ({a['label']}{held(a['id'])})" for a in others) + '>, and a reason that says why in one line. '
+               'Ask for a move only to use an account that area has (listed with it), never for what the to-do is about: one about '
+               'another company of the owner\'s, its product or its code, stays here when these accounts can do the work. When the '
+               'messages it came from all came in on that area, it moves there by itself and carries on in a new run; otherwise the '
+               'to-do shows the owner a button to move it. You never move it yourself. Once it moves, it carries on by itself.')
         if unplaced:
             out += (' The owner added it without picking an area, and it is only in ' + name + ' until it is placed: to find what it refers '
                     'to (a mail they sent, a thread), search every area\'s mail, the mailboxes themselves too (events with mailbox:true). '
