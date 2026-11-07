@@ -21,7 +21,7 @@ Un solo riavvio o una sola esecuzione fallita è normale e non dà avvisi.
 
 ## Cosa ricevi
 
-Un’attività che dice in parole semplici cosa è successo, perché conta e il comando che lo mostra o lo sistema. Chiedi nella sua chat e The Machine ci guarda. Tutto ciò che lei cambia aspetta il tuo OK, come con Do it.
+Un’attività che dice in parole semplici cosa è successo, perché conta e cosa puoi fare. I comandi che mostrano il perché sono sotto Mostra altro. Chiedi nella sua chat e The Machine ci guarda. Tutto ciò che lei cambia aspetta il tuo OK, come con Do it.
 
 Quando c’è una correzione sicura, l’attività ha Do it. Riavvia un tuo servizio rimasto fermo e, su Omarchy, riporta la barra. Do it esegue solo quel comando, e il risultato compare nella chat dell’attività. Non tocca mai i servizi di The Machine né l’OpenClaw Gateway.
 

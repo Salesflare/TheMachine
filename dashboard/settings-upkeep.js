@@ -26,9 +26,9 @@ function upkeepRender(){const v=upkeepVersion(),m=upkeepMeaning(),vb=$('#setting
  upkeepHide(mb,!m);if(m){const turning=m.want!==m.on&&!m.error;
   const head=m.error?t('Not on yet'):turning?(m.want?t('Turning on…'):t('Turning off…')):m.on?t('On'):t('Off');
   const more=m.error?t('It couldn’t be turned on. Your Machine tries again by itself.'):m.on&&!turning&&UPKEEP_NOTE[m.note]?t(UPKEEP_NOTE[m.note]):'';
-  const cost=m.local?t('Change it in config.json (embeddings) on this computer.'):m.big?t('It uses about half a gigabyte of memory.'):m.memory_gb?t('It uses about half a gigabyte of your {} GB, so a busy Machine can slow down.',m.memory_gb):'';
+  const cost=m.local?t('Set up by hand on this computer. Learn more shows how.'):m.big?t('It uses about half a gigabyte of memory.'):m.memory_gb?t('It uses about half a gigabyte of your {} GB, so a busy Machine can slow down.',m.memory_gb):'';
   const sw=m.hop?html`<button type="button" id="meaning-switch" class="lookup-switch" role="switch" aria-checked="${m.want?'true':'false'}" aria-label="${t('Search by meaning')}"${upkeep.busy==='meaning'?raw(' disabled'):''}></button>`:'';
-  upkeepSet($('#meaning-list'),html`<div><span class="grow"><strong>${head}</strong>${[more,cost].filter(Boolean).map(x=>html`<small>${x}</small>`)}</span>${sw}</div>`);
+  upkeepSet($('#meaning-list'),html`<div><span class="grow"><strong>${head}</strong>${[more,cost].filter(Boolean).map(x=>html`<small>${x}</small>`)}${m.local?cantSaveMore('embeddings'):''}</span>${sw}</div>`);
   upkeepHide($('#meaning-private'),!!m.local)}}
 async function upkeepCall(part,body){const r=await fetch('/_machine/'+part,{credentials:'same-origin',redirect:'manual',...(body?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}:{})});
  if(!r.ok)throw Error(r.status===401?'Can’t reach your account right now. Try again.':'Can’t reach your Machine right now. Try again in a moment.');

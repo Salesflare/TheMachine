@@ -162,8 +162,11 @@ class ToDos(unittest.TestCase):
     def test_a_finding_reads_in_plain_words_with_its_fix_and_no_log_text(self):
         title, body, signal = s.card(self.finding())
         self.assertEqual(title, 'backup failed 3 times in a day')
-        self.assertIn('journalctl --user -u backup.service -n 50', body)
         self.assertIn('waits for your OK', body)
+        # plain words first; the command comes last, so the to-do keeps it under Show more
+        self.assertTrue(body.endswith('In a terminal, journalctl --user -u backup.service -n 50 shows why.'), body)
+        self.assertLess(body.index('waits for your OK'), body.index('journalctl'))
+        self.assertNotIn('systemd', body.split('In a terminal')[0])
         self.assertIn('Unit: backup.service', signal)
         title, body, _ = s.card(self.finding('crashed', 'quickshell', unit=None, program='quickshell', piece='bar', pid='4242', count=1),
                                 which=lambda name: '/usr/bin/' + name)
@@ -249,8 +252,8 @@ class DoIt(unittest.TestCase):
         finding = {'key': 'crashed:quickshell', 'kind': 'crashed', 'name': 'quickshell', 'program': 'quickshell', 'count': 2,
                    'pid': '4242', 'signal': 'SIGSEGV', 'piece': 'bar', 'fix': 'restart_bar', 'last_at': NOW.isoformat()}
         title, body, signal = s.card(finding, self.which)
-        self.assertIn('Do it restarts the bar (omarchy-restart-shell).', body)
-        self.assertIn('coredumpctl info 4242', body)
+        self.assertIn('Do it restarts the bar.', body)
+        self.assertTrue(body.endswith('Do it runs omarchy-restart-shell. In a terminal, coredumpctl info 4242 shows where it crashed.'), body)
         self.assertIn('Crashed (SIGSEGV)', signal)
         self.assertNotIn('Signal:', signal)
         _, body, _ = s.card(finding, which=lambda name: None)  # no Omarchy command here: no Do it, the command to run instead
@@ -271,7 +274,8 @@ class DoIt(unittest.TestCase):
         stopped = lambda argv, **kw: mock.Mock(returncode=3 if 'is-active' in argv else 0)
         ok, text = s.run_fix(finding, stopped, self.which)
         self.assertFalse(ok)
-        self.assertIn('stopped again', text)
+        self.assertEqual(text, 'Ran systemctl --user restart backup.service, but backup stopped again. Ask in this to-do’s chat and '
+                               'The Machine looks into why.')
         def missing(argv, **kw):
             raise OSError
         self.assertEqual(s.run_fix({'fix': 'restart_bar', 'name': 'quickshell'}, missing, self.which),
@@ -310,7 +314,8 @@ class DoIt(unittest.TestCase):
         with self.store.connect() as db:
             row = db.execute('SELECT status, body FROM suggestions WHERE id=?', (card['id'],)).fetchone()
         self.assertEqual(row['status'], 'prepared')
-        self.assertIn('Do it restarts backup (systemctl --user restart backup.service).', row['body'])  # the to-do keeps its text
+        self.assertIn('Do it restarts backup.', row['body'])  # the to-do keeps its text
+        self.assertIn('Do it runs systemctl --user restart backup.service.', row['body'])
         self.assertNotIn('machine_fix', self.views(dict(self.store_card(card['id']))))  # done: Mark done and Snooze
 
     def store_card(self, sid):

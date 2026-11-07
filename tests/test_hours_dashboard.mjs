@@ -84,11 +84,14 @@ try{
  // A refresh while editing does not undo the edit.
  await page.evaluate(()=>refresh());
  assert.equal(await page.locator('#hours-days [aria-pressed="true"]').count(),0);
- // Not saveable here (no config file): shown, read-only, with where to change it.
+ // Not saveable here (no config file): shown, read-only, in plain words; the file and its key under Show more.
  hours={...hours,saveable:false};
  await page.reload();await navClick(page.locator('#open-settings'));
  assert.equal(await page.locator('#hours-save').isDisabled(),true);
- assert.match(await page.locator('#hours-error').textContent(),/config\.json/);
+ assert.equal(await page.locator('#hours-error').textContent(),'This can’t be changed on this Machine.');
+ assert.equal(await page.locator('#hours-more details.cant-save[open]').count(),0);
+ await page.locator('#hours-more summary').click();
+ assert.equal(await page.locator('#hours-more p').textContent(),'Set in config.json (work_hours) on this computer.');
  // Another tab clears the gear; the gear brings Settings back. Light mode reads well too.
  await navClick(page.locator('nav [data-tab="feedback"]'));
  assert.equal(await page.locator('#open-settings').getAttribute('aria-current'),'false');

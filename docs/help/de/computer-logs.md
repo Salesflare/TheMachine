@@ -21,7 +21,7 @@ Ein einzelner Neustart oder ein einzelner gescheiterter Lauf ist normal und blei
 
 ## Was du bekommst
 
-Eine Aufgabe, die in einfachen Worten sagt, was passiert ist, warum es wichtig ist und welcher Befehl es zeigt oder behebt. Frag in ihrem Chat, und The Machine sieht es sich an. Alles, was sie ändert, wartet auf dein OK, wie bei Do it.
+Eine Aufgabe, die in einfachen Worten sagt, was passiert ist, warum es wichtig ist und was du tun kannst. Die Befehle, die den Grund zeigen, stehen unter Mehr anzeigen. Frag in ihrem Chat, und The Machine sieht es sich an. Alles, was sie ändert, wartet auf dein OK, wie bei Do it.
 
 Gibt es eine sichere Lösung, hat die Aufgabe Do it. Einen deiner Dienste, der aus bleibt, startet es neu, und auf Omarchy holt es die Leiste zurück. Do it führt nur diesen einen Befehl aus, und das Ergebnis steht im Chat der Aufgabe. Die Dienste von The Machine selbst und das OpenClaw Gateway fasst es nie an.
 

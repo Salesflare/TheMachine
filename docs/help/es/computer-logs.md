@@ -21,7 +21,7 @@ Un solo reinicio o una sola ejecución fallida es normal y no avisa.
 
 ## Qué recibes
 
-Una tarea que dice con palabras simples qué pasó, por qué importa y el comando que lo muestra o lo arregla. Pregunta en su chat y The Machine lo revisa. Todo lo que ella cambie espera tu OK, como con Do it.
+Una tarea que dice con palabras simples qué pasó, por qué importa y qué puedes hacer. Los comandos que muestran por qué están en Mostrar más. Pregunta en su chat y The Machine lo revisa. Todo lo que ella cambie espera tu OK, como con Do it.
 
 Cuando hay un arreglo seguro, la tarea tiene Do it. Si uno de tus servicios sigue caído, lo vuelve a iniciar, y en Omarchy recupera la barra. Do it ejecuta solo ese comando, y el resultado aparece en el chat de la tarea. Nunca toca los servicios de The Machine ni el OpenClaw Gateway.
 

@@ -6,7 +6,7 @@ covers: self-hosted
 code: install.sh, install.ps1, docs/getting-started.md
 order: 2
 ---
-Run The Machine on your own computer for free. It's open source (AGPL), and your data stays with you. Setup takes a terminal.
+Run The Machine on your own computer for free. It's open source (AGPL), and your data stays with you. Installing it takes a terminal. Connecting your accounts doesn't.
 
 ## What it needs
 
@@ -28,7 +28,9 @@ The installer finds your accounts, connects them one by one, and shows a preview
 
 ## After installing
 
-- Add sources with `assistant connect`, or **Connections**, then **+ Add**, in the dashboard.
+- Pair it with your account: in the dashboard, **Connections**, **+ Add**, pick Gmail and press **Pair this Machine**.
+- Then press **Sign in with Google** (or **Sign in with Microsoft** for Outlook). Mail and calendar connect together.
+- Other sources: **Connections**, then **+ Add**. Your own Google client or Entra app: `assistant connect` in a terminal.
 - Check everything with `assistant doctor`. It prints a fix for each problem.
 - It installs the newest signed release, and updates come as signed releases too.
 - Pair it with your account, and the phone app opens it after you sign in. Unpairing removes that link.

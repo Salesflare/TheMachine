@@ -28,7 +28,9 @@ Der Installer findet deine Konten, verbindet sie eins nach dem anderen und zeigt
 
 ## Nach der Installation
 
-- Füge Quellen mit `assistant connect` hinzu, oder im Dashboard über **Verbindungen**, dann **+ Hinzufügen**.
+- Verbinde sie mit deinem Konto: im Dashboard **Verbindungen**, **+ Hinzufügen**, Gmail wählen und **Diese Machine verbinden** drücken.
+- Dann **Mit Google anmelden** drücken (oder **Mit Microsoft anmelden** für Outlook). Mail und Kalender verbinden sich zusammen.
+- Andere Quellen: **Verbindungen**, dann **+ Hinzufügen**. Eigener Google-Client oder eigene Entra-App: `assistant connect` im Terminal.
 - Prüfe alles mit `assistant doctor`. Es zeigt für jedes Problem eine Lösung.
 - Der Installer nimmt das neueste signierte Release, und auch Updates kommen als signierte Releases.
 - Mit The Machine Network gekoppelt, teilt deine Machine ihre Tailscale-Adresse mit deinem Konto, damit die App auf deinem Handy sie nach der Anmeldung öffnet. Hebst du die Kopplung auf, wird die Adresse gelöscht.

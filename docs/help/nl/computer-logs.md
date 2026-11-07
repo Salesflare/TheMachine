@@ -21,7 +21,7 @@ Een enkele herstart of een enkele mislukte run is normaal en blijft stil.
 
 ## Wat je krijgt
 
-Een to-do die in gewone woorden zegt wat er gebeurde, waarom het telt en welk commando het toont of oplost. Vraag het in de chat ervan en The Machine zoekt het uit. Alles wat hij verandert, wacht op je OK, zoals bij Do it.
+Een to-do die in gewone woorden zegt wat er gebeurde, waarom het telt en wat je kunt doen. De commando's die tonen waarom, staan onder Meer tonen. Vraag het in de chat ervan en The Machine zoekt het uit. Alles wat hij verandert, wacht op je OK, zoals bij Do it.
 
 Is er een veilige oplossing, dan heeft de to-do Do it. Een dienst van jou die uit blijft, start het opnieuw, en op Omarchy brengt het de balk terug. Do it voert alleen dat commando uit, en het resultaat staat in de chat van de to-do. Het komt nooit aan de diensten van The Machine zelf of de OpenClaw Gateway.
 

@@ -145,7 +145,7 @@ class CardChatApp:
         saved in config.json, only what differs from OpenClaw's own, so the rest keeps following OpenClaw. In use from
         the next turn; OpenClaw's config and its Gateway are left as they are."""
         if not getattr(self, 'config_path', None):
-            raise ValueError('The model can only be changed in config.json here')
+            raise ValueError('This can’t be changed on this Machine.')
         models = self.chat_models()
         picked = chat_model.check(args, models, {**self.config, 'chat_model': None})
         value = chat_model.minimal({**self.config, 'chat_model': None}, models, picked) or None
@@ -172,7 +172,7 @@ class CardChatApp:
         """The person's Fast choice for to-do chats (the model menu under a chat's message box), kept in config.json
         (`chat_fast`, chat_model.fast_on) for every to-do chat, from the next message. Off removes it."""
         if not getattr(self, 'config_path', None):
-            raise ValueError('Fast can only be changed in config.json here')
+            raise ValueError('This can’t be changed on this Machine.')
         if not isinstance(args.get('fast'), bool):
             raise ValueError('Say on or off')
         value = True if args['fast'] else None

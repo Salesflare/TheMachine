@@ -3127,7 +3127,7 @@ class App(*APP_MIXINS):
     def set_hours(self, args):
         """The owner's Work hours from the dashboard: checked, saved in config.json and in use at once."""
         if not getattr(self, 'config_path', None):
-            raise ValueError('Work hours can only be changed in config.json here')
+            raise ValueError('This can’t be changed on this Machine.')
         values = hours_settings(self.config, args)
         save_hours(self.config_path, values)
         self.config.update(values)
@@ -3142,7 +3142,7 @@ class App(*APP_MIXINS):
     def set_locale(self, args):
         """The owner's language, region, time format and To-dos filter from the dashboard: checked, saved in config.json and in use at once."""
         if not getattr(self, 'config_path', None):
-            raise ValueError('Region can only be changed in config.json here')
+            raise ValueError('This can’t be changed on this Machine.')
         if 'browser' in args:  # the dashboard's first load on a Machine without a region: the browser's, never over a choice
             browser = args['browser'] if isinstance(args['browser'], dict) else {}
             found = locale_prefs.guess(browser.get('zone'), browser.get('language'))
@@ -3173,7 +3173,7 @@ class App(*APP_MIXINS):
     def set_agents(self, args):
         import agent_remote
         if not getattr(self, 'config_path', None):
-            raise ValueError('Change these in config.json (agents) on this computer')
+            raise ValueError('This can’t be changed on this Machine.')
         session = str(args.get('claude_session') or '').strip()
         found = agent_remote.session_id(session) if session else ''
         if session and not found:
@@ -3206,7 +3206,7 @@ class App(*APP_MIXINS):
         if name == 'gbrain_status':
             return self.gbrain_view()
         if not getattr(self, 'config_path', None):
-            raise ValueError('Change this in config.json (gbrain) on this computer')
+            raise ValueError('This can’t be changed on this Machine.')
         brain = gbrain.Brain(self.config)
         if name == 'gbrain_on':
             # Nothing goes into GBrain, and reviews get none of its tools, before the owner agreed to what goes in.

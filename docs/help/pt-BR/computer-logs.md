@@ -21,7 +21,7 @@ Um único reinício ou uma única execução com falha é normal e não gera avi
 
 ## O que você recebe
 
-Uma tarefa que diz em palavras simples o que aconteceu, por que importa e o comando que mostra ou corrige. Pergunte no chat dela e The Machine verifica. Tudo o que ela mudar espera o seu OK, como no Do it.
+Uma tarefa que diz em palavras simples o que aconteceu, por que importa e o que você pode fazer. Os comandos que mostram o porquê ficam em Mostrar mais. Pergunte no chat dela e The Machine verifica. Tudo o que ela mudar espera o seu OK, como no Do it.
 
 Quando há uma correção segura, a tarefa tem Do it. Um serviço seu que continua parado é iniciado de novo, e no Omarchy a barra volta. O Do it executa só esse comando, e o resultado aparece no chat da tarefa. Ele nunca mexe nos serviços da própria The Machine nem no OpenClaw Gateway.
 

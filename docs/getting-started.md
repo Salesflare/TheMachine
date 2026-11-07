@@ -2,13 +2,15 @@
 
 From installation to your first to-dos. Setup time depends on account sign-in, source catch-up and the model; each step says how to check it worked.
 
+The short way: install it (step 1), open the dashboard, pair the Machine with your account and press **Sign in with Google** (or Microsoft). No OAuth client, keyring or app registration of your own. The terminal way for each source stays, second, in step 2.
+
 ## Before you start
 
 - [ ] **OpenClaw** 2026.10.7 or later, with the Gateway running. Telegram is optional: with a bot, check that it answers you in Telegram; without one, to-dos reach you through the dashboard app (see Phone notifications below). No OpenClaw yet? Skip this one: the installer offers to install it and walks you through its setup (step 1).
 - [ ] **Node.js** 24.22.1+ (24.x) or 26.12.1+, and **Python 3.12+**.
 - [ ] **Tailscale** on this machine and your phone, logged in (`sudo tailscale up`), for the dashboard.
 - [ ] Your own user account, not root. Linux: a systemd user session (a normal login; over SSH that works too). macOS: you are signed in to the desktop. Windows: see [Windows](#windows-beta).
-- [ ] Per source you want: `gog` for Gmail and Calendar, `wacli` for WhatsApp, the OpenClaw Android app paired as a node for phone notifications ([how](#pairing-your-android-phone)), a [Maton](https://maton.ai) Slack connection, a Salesflare API key, `gh` for GitHub. You can add any of them later.
+- [ ] Gmail, Google Calendar and Outlook need nothing extra: once the Machine is paired with your account, **Sign in with Google** or **Sign in with Microsoft** in the dashboard connects them ([step 2](#2-connect-your-sources)). Other sources, any time later: `wacli` for WhatsApp, the OpenClaw Android app paired as a node for phone notifications ([how](#pairing-your-android-phone)), a [Maton](https://maton.ai) Slack connection, a Salesflare API key, `gh` for GitHub. Only the terminal way for Gmail needs `gog` with your own OAuth client.
 
 ## 1. Install
 
@@ -32,11 +34,11 @@ The wizard fills in what it can find, so most questions only need Enter:
 - **Tailscale login and dashboard host:** from `tailscale status` (on a tagged machine, type the login you use on your phone).
 - **Company:** from your email address; answer "personal" if these are private accounts.
 - **Sources:** suggested from what is installed and linked here (gog, a linked WhatsApp, a paired Android phone).
-- **Email:** from the Google accounts gog already knows. Outlook: `assistant connect outlook`.
+- **Email:** from the Google accounts gog already knows, if you use it. Otherwise skip it and use **Sign in with Google** in the dashboard ([step 2](#2-connect-your-sources)). Outlook: **Sign in with Microsoft** there too, or `assistant connect outlook`.
 
 ### macOS (beta)
 
-The same three commands. Get the prerequisites with [Homebrew](https://brew.sh): `brew install python@3.12 node@24 git`, plus `brew install gogcli` for Gmail and Calendar, and the [Tailscale app](https://tailscale.com/download/mac). The service runs as a launchd agent (`~/Library/LaunchAgents/computer.themachine.assistant.plist`) that starts at login; its log is in `~/Library/Logs/TheMachine/assistant.log`. OpenClaw's Gateway runs as its own launchd agent (`openclaw gateway install`). Not on macOS yet: the browser viewer (`--browser-viewer`) and the Gateway log source.
+The same three commands. Get the prerequisites with [Homebrew](https://brew.sh): `brew install python@3.12 node@24 git`, plus `brew install gogcli` only for the terminal way to Gmail and Calendar, and the [Tailscale app](https://tailscale.com/download/mac). The service runs as a launchd agent (`~/Library/LaunchAgents/computer.themachine.assistant.plist`) that starts at login; its log is in `~/Library/Logs/TheMachine/assistant.log`. OpenClaw's Gateway runs as its own launchd agent (`openclaw gateway install`). Not on macOS yet: the browser viewer (`--browser-viewer`) and the Gateway log source.
 
 ### Windows (beta)
 
@@ -57,7 +59,17 @@ Already use OpenClaw's Windows Hub with its own `OpenClawGateway` distro? It ins
 
 ## 2. Connect your sources
 
-Right after the service starts, the installer walks through each source:
+### Sign in with Google (the short way)
+
+1. Open the dashboard at the address the installer prints ([step 3](#3-open-the-dashboard)).
+2. **Connections**, **+ Add**, pick Gmail and press **Pair this Machine**. Your account page opens; sign in there (or make an account) and confirm the code it shows. Nothing to copy, no restart.
+3. Back in the dashboard, press **Sign in with Google** and sign in in the tab that opens. Gmail and Google Calendar connect together. It asks Google for sending too, and sends an email only after you approve it. Outlook works the same with **Sign in with Microsoft**.
+
+Pairing also gives the Machine its address for the phone app and the Network ([Pairing](ai-connections.md#pairing)). Check: Connections shows Gmail with its first sync.
+
+### In the terminal (your own app or client)
+
+For your own Google OAuth client or Entra app, or a Machine you'd rather not pair. Right after the service starts, the installer walks through each source (skip Gmail, Calendar and Outlook there to use the short way instead):
 
 | Source | What happens |
 |---|---|
@@ -170,7 +182,7 @@ One pass over the service, the OpenClaw bridge, your Telegram approval, every so
 ## Later
 
 - Add or redo a source: `assistant connect <source>`. With one already there it asks whether to redo it or add another (a second company, a partner's calendar); the new one reuses your client, keys and settings and follows your naming. `assistant connect` on its own also shows accounts this machine has that nothing reads yet.
-- Sending approved emails needs `gmail.send` on top of read-only access; add it with gog when you want it. Connecting never asks for more than read access.
+- Sending approved emails: **Sign in with Google** asks for it already. With gog it needs `gmail.send` on top of read-only access; add it when you want it. Connecting with gog never asks for more than read access.
 - Company facts next to each organization (industry, size, location): add a key for an enrichment service you use (Apollo, People Data Labs, Hunter or any that looks companies up by domain). Only domains are sent. When a look-up gets a company wrong, Edit on its page fixes the details or clears them. See [Organization data](intelligence.md#organization-data-optional-enrichment). With a service that knows people too, people with a company address get a job title, photo and location ([People data](intelligence.md#people-data)).
 - Upgrade: on Linux a daily timer installs each new signed release by itself. By hand: inspect local changes, then `python3 scripts/release.py update` (it takes the newest signed release, and only if its signature checks out) and `./install.sh`. Preserve custom work; see [Operations](operations.md#update-and-rollback). Your config, data and secrets are kept.
 - Backups: on your own computer nothing backs up by itself. A nightly encrypted [restic](https://restic.net) backup of your home folder is enough.

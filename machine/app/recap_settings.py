@@ -34,7 +34,7 @@ class RecapSettingsApp:
         if not owner_dashboard:
             raise ValueError('Only the owner turns the weekly recap on or off, in Settings')
         if not getattr(self, 'config_path', None):
-            raise ValueError('Turn the weekly recap on in config.json here')
+            raise ValueError('This can’t be changed on this Machine.')
         value = {**recap_settings(self.config), 'enabled': args.get('on') is True, 'chosen': True}
         save_hours(self.config_path, {'weekly_recap': value})
         self.config['weekly_recap'] = value

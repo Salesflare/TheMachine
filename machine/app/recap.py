@@ -522,7 +522,7 @@ class RecapApp:
         once for new signals. Signals already stored stay; only new ones are skipped."""
         import onboarding
         if not getattr(self, 'config_path', None):
-            raise ValueError('Filters on this Machine are set in config.json')
+            raise ValueError('This can’t be changed on this Machine.')
         config = onboarding.load(self.config_path)
         account = next((x for x in config.get('accounts', []) if x.get('id') == data.get('account')), None)
         if not account or not isinstance(data.get('rule'), dict):

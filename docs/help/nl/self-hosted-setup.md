@@ -28,7 +28,9 @@ Het installatieprogramma vindt je accounts, koppelt ze een voor een en toont een
 
 ## Na de installatie
 
-- Voeg bronnen toe met `assistant connect`, of met **Koppelingen**, dan **+ Toevoegen**, in het dashboard.
+- Koppel hem aan je account: in het dashboard, **Koppelingen**, **+ Toevoegen**, kies Gmail en druk op **Koppel deze Machine**.
+- Druk dan op **Inloggen met Google** (of **Inloggen met Microsoft** voor Outlook). Mail en agenda koppelen samen.
+- Andere bronnen: **Koppelingen**, dan **+ Toevoegen**. Je eigen Google-client of Entra-app: `assistant connect` in een terminal.
 - Controleer alles met `assistant doctor`. Het toont een oplossing voor elk probleem.
 - Het installatieprogramma neemt de nieuwste ondertekende release, en ook updates komen als ondertekende releases.
 - Gekoppeld aan The Machine Network deelt je Machine zijn Tailscale-adres met je account, zodat de app op je telefoon hem opent nadat je je aanmeldt. Ontkoppelen wist het.

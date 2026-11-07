@@ -21,7 +21,7 @@
 ><form id="hours" class="hours" hidden novalidate><fieldset class="hours-days"><legend>Work days</legend
 ><div id="hours-days"></div><small>Work to-dos and snoozed work wait for a work day.</small></fieldset><div class="hours-grid"><label>Messages from<input type="time" id="hours-start" required></label><label>Until<input type="time" id="hours-end" required></label><label>Snoozes land at<input type="time" id="hours-morning" required></label><label>Morning digest<input type="time" id="hours-digest" required></label></div><label class="hours-zone">Time zone<select id="hours-zone"></select></label
 ><button type="button" id="hours-detect" class="ghost" hidden></button><p class="fine">Nothing is sent outside these hours. Snoozes of a day or more land at the snooze time. <a class="learn" href="https://themachine.computer/help/work-hours" target="_blank" rel="noopener">Learn more</a></p
-><p id="hours-error" role="status"></p><div class="actions"
+><p id="hours-error" role="status"></p><div id="hours-more"></div><div class="actions"
 ><button id="hours-save" class="primary">Save</button></div></form
 ><div id="settings-signatures" hidden><div class="section-head"><h2>Signatures</h2><p>Added below the emails you send.</p></div
 ><div id="signatures"></div></div
@@ -40,7 +40,7 @@
 ><input id="agents-branch" maxlength="120" placeholder="main" autocomplete="off" spellcheck="false"></div><div><label class="grow" for="agents-session"><strong>Claude Code</strong><small>The link of a Claude Code session.</small></label
 ><input id="agents-session" placeholder="https://claude.ai/code/session_…" autocomplete="off" spellcheck="false"></div></div
 ><p class="fine" id="agents-connector-note" hidden>Claude sends its result back through The Machine connector. Add it once in claude.ai, Settings, Connectors, Add custom connector: <code id="agents-connector"></code></p
-><p id="agents-error" role="status"></p
+><p id="agents-error" role="status"></p><div id="agents-more"></div
 ><div class="actions" id="agents-actions" hidden
 ><button id="agents-save" class="primary">Save</button></div></form
 ><div id="settings-meaning" hidden><div class="section-head"><h3>Search by meaning</h3><p>Finds emails, messages and notes by what they’re about. <span id="meaning-private">A small AI on your own Machine does it. Nothing is sent anywhere.</span> <a class="learn" href="https://themachine.computer/help/settings#search-by-meaning" target="_blank" rel="noopener">Learn more</a></p></div

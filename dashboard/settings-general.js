@@ -87,7 +87,7 @@ function renderHours(){if(typeof upkeepRender==='function')upkeepRender();const 
  $('#hours-start').value=h.start;$('#hours-end').value=h.end;$('#hours-morning').value=h.morning;$('#hours-digest').value=h.digest_at;
  const list=[...new Set([h.timezone,...zones()])].sort();$('#hours-zone').innerHTML=list.map(z=>`<option${z===h.timezone?' selected':''}>${esc(z)}</option>`).join('');
  const here=Intl.DateTimeFormat().resolvedOptions().timeZone,detect=$('#hours-detect');detect.hidden=!here||here===h.timezone;detect.textContent=t('Use this device’s: {}',here);detect.dataset.zone=here||'';
- for(const el of form.querySelectorAll('input,select,button'))el.disabled=!h.saveable;$('#hours-error').textContent=h.saveable?'':'Change these in config.json (work_hours) on this computer.'}
+ for(const el of form.querySelectorAll('input,select,button'))el.disabled=!h.saveable;$('#hours-error').textContent=h.saveable?'':CANT_SAVE;setHTML($('#hours-more'),h.saveable?'':cantSaveMore('work_hours'))}
 $('#hours').addEventListener('input',()=>{hoursDirty=true});
 $('#hours').addEventListener('click',e=>{const day=e.target.closest('[data-day]');if(day){day.setAttribute('aria-pressed',day.getAttribute('aria-pressed')!=='true');hoursDirty=true}
  if(e.target.id==='hours-detect'){const z=e.target.dataset.zone,sel=$('#hours-zone');if(![...sel.options].some(o=>o.value===z))sel.add(new Option(z,z));sel.value=z;e.target.hidden=true;hoursDirty=true}});
@@ -166,7 +166,7 @@ function renderAgents(){const f=$('#agents-settings'),a=state.agents_settings;f.
  for(const [id,v] of [['agents-session',a.claude_session?'https://claude.ai/code/'+a.claude_session:''],['agents-env',a.codex_env||''],['agents-branch',a.codex_branch||'']]){const el=$('#'+id);el.value=el.defaultValue=v}
  $('#agents-connector').textContent=a.connector;$('#agents-connector-note').hidden=!a.claude_session;$('#agents-actions').hidden=true;
  for(const el of f.querySelectorAll('input,button'))el.disabled=!a.saveable;
- $('#agents-error').textContent=a.saveable?(a.claude_session&&!a.on_network?'Claude results need The Machine Network.':''):'Change these in config.json (agents) on this computer.'}
+ $('#agents-error').textContent=a.saveable?(a.claude_session&&!a.on_network?'Claude results need The Machine Network.':''):CANT_SAVE;setHTML($('#agents-more'),a.saveable?'':cantSaveMore('agents'))}
 let agentsDirty=false;$('#agents-settings').addEventListener('input',()=>{agentsDirty=true;$('#agents-actions').hidden=false;$('#agents-error').textContent=''});
 $('#agents-settings').addEventListener('submit',async e=>{e.preventDefault();const a=state.agents_settings||{},args={claude_session:$('#agents-session').value.trim(),device:a.device||'',codex_env:$('#agents-env').value.trim(),codex_branch:$('#agents-branch').value.trim()};
  try{$('#agents-save').disabled=true;state.agents_settings=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'set_agents',args})});
