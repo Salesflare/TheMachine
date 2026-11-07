@@ -500,19 +500,24 @@ from machine.model_usage import (
     usage_status,
     use_model_reset,
 )
-
-ANDROID_APP_NAMES = {
-    'android': 'Android System', 'com.google.android.gm': 'Gmail',
-    'com.google.android.apps.tasks': 'Google Tasks', 'com.google.android.apps.wellbeing': 'Digital Wellbeing',
-    'com.openai.chatgpt': 'ChatGPT', 'com.tailscale.ipn': 'Tailscale', 'org.telegram.messenger': 'Telegram',
-    'com.whatsapp': 'WhatsApp', 'com.whatsapp.w4b': 'WhatsApp Business',
-    'com.android.chrome': 'Chrome', 'com.google.android.calendar': 'Google Calendar',
-}
-
-
-def android_app_name(package):
-    # Exact known package labels only; unknown apps retain their package ID.
-    return ANDROID_APP_NAMES.get(package, package)
+from machine.sources.android import (
+    ANDROID_APP_NAMES,
+    Android,
+    android_app_name,
+    android_event,
+    sync_android,
+    sync_android_feed,
+    sync_android_preferred,
+)
+from machine.sources.gateway import (
+    GATEWAY_BUCKET,
+    GATEWAY_SIGNALS,
+    GatewayJournal,
+    gateway_classify,
+    gateway_event,
+    gateway_line,
+    sync_gateway,
+)
 
 
 def hours_settings(config, changes):
@@ -2165,183 +2170,6 @@ def sync_whatsapp(store, config, account, source=None):
                  coverage='Seven-day reread of existing synced store. No network sync, backfill or media download by this collector.')
     store.commit_page(account['id'], state, events)
     return {'mode':'incremental','events':len(events),'filtered':sum(skipped.values())}
-
-
-class Android:
-    def __init__(self, config, account):
-        self.config, self.account = config, account
-
-    def snapshot(self):
-        try:
-            result = subprocess.run([node_bin(self.config), str(ROOT / 'android-notifications.mjs'),
-                                     self.account['node_id']], env=node_env(self.config), capture_output=True, text=True, timeout=25)
-        except subprocess.TimeoutExpired:
-            raise SourceError('android_timeout', retry_after=600) from None
-        if result.returncode:
-            # The helper emits only an allowlisted class, never protocol contents.
-            label = result.stderr.strip()
-            raise SourceError(label if label in ('android_offline', 'android_identity_mismatch',
-                'android_notifications_unavailable', 'android_gateway_unavailable') else 'android_read_failed', retry_after=600)
-        try:
-            data = json.loads(result.stdout)
-        except ValueError:
-            raise SourceError('android_invalid_json') from None
-        if not isinstance(data, dict):
-            raise SourceError('android_invalid_snapshot')
-        return data
-
-
-def android_event(account, raw):
-    if (not isinstance(raw.get('key'), str) or not isinstance(raw.get('packageName'), str)
-            or not isinstance(raw.get('postTimeMs'), int)):
-        raise SourceError('android_invalid_notification')
-    title = str(raw.get('title') or raw['packageName'])
-    body = '\n'.join(str(raw.get(k) or '') for k in ('text', 'subText')).strip()
-    # OTP values are credentials, not useful long-lived assistant context.
-    sensitive = bool(re.search(r'(?i)verification code|security code|one.time (?:code|password)|\bOTP\b|verificatiecode', title + ' ' + body))
-    if sensitive:
-        body = '[One-time security code omitted]'
-        title = re.sub(r'(?<!\d)\d{4,8}(?!\d)', '[code]', title)
-    identity = hashlib.sha256((raw['key'] + ':' + str(raw['postTimeMs'])).encode()).hexdigest()
-    return {'account_id': account['id'], 'source_id': identity, 'kind': 'android.notification',
-            'occurred_at': dt.datetime.fromtimestamp(raw['postTimeMs'] / 1000, dt.timezone.utc).isoformat(),
-            'title': title[:1000], 'body': body[:40000], 'deleted': False,
-            'metadata': {'package_name': raw['packageName'], 'app_name': android_app_name(raw['packageName']),
-                         'notification_key_hash': hashlib.sha256(raw['key'].encode()).hexdigest(),
-                         'app_name_source': 'known_package_label' if raw['packageName'] in ANDROID_APP_NAMES else 'package_id_fallback', 'post_time_ms': raw['postTimeMs'],
-                         'is_ongoing': bool(raw.get('isOngoing')), 'category': raw.get('category'),
-                         'channel_id': raw.get('channelId'), 'source_account': 'unknown',
-                         'security_code_omitted': sensitive, 'truncated': True,
-                         'coverage': 'Current notifications only; Android limits each text field to 512 characters.'}}
-
-
-def sync_android_feed(store, config, account):
-    with store.connect() as db:
-        health = db.execute('SELECT * FROM android_feed_health WHERE id=1').fetchone()
-        # Pick complete notification-key groups, not the first 100 observations
-        # of a noisy progress bar. Arrival rowid also orders same-ms changes.
-        rows = db.execute("SELECT rowid AS arrival_order,* FROM android_inbox WHERE json_extract(payload,'$.notification_key_hash') IN (SELECT json_extract(payload,'$.notification_key_hash') FROM android_inbox GROUP BY json_extract(payload,'$.notification_key_hash') ORDER BY min(rowid) LIMIT 100) ORDER BY rowid").fetchall()
-        acked = {r['id'] for r in rows if db.execute('SELECT 1 FROM android_receipts WHERE id=? AND account_id=?',(r['id'],account['id'])).fetchone()}
-    healthy = bool(health and health['last_checked'] and not health['error'] and
-        (dt.datetime.fromisoformat(now()) - dt.datetime.fromisoformat(health['last_checked'])).total_seconds() <= 90)
-    if not healthy and not rows:
-        raise SourceError('android_feed_unavailable', retry_after=15)
-    events, consumed = store.android_feed_batch(account, [r for r in rows if r['id'] not in acked])
-    consumed += list(acked)
-    state = store.checkpoint(account['id']) or {}
-    if healthy: state.pop('feed_unavailable_since', None)
-    else: state.setdefault('feed_unavailable_since', now())
-    state.update(mode='incremental', transport='existing_feed_with_reconciliation' if account.get('reconcile_seconds') else 'existing_openclaw_feed',
-                 feed_last_checked=health['last_checked'] if health else None, feed_last_event=health['last_recorded'] if health else None,
-                 coverage='Existing forwarded notifications only. Phone filters, disconnection and the bounded Gateway queue may omit events.')
-    # Evidence, checkpoint and inbox acknowledgment share one transaction.
-    store.commit_page(account['id'], state, events, android_inbox_ids=consumed)
-    if not healthy:
-        # Captured evidence is usable without the Gateway; collection remains
-        # visibly degraded rather than calling an offline bridge healthy.
-        raise SourceError('android_feed_unavailable', retry_after=15)
-    return {'mode': 'incremental', 'events': len(events), 'more': len(rows) >= 100 and bool(consumed)}
-
-
-def sync_android_preferred(store, config, account, fallback=None):
-    result, feed_available = None, True
-    try:
-        result = sync_android_feed(store, config, account)
-    except SourceError as error:
-        if error.category != 'android_feed_unavailable' or not account.get('direct_fallback', False):
-            raise
-        feed_available = False
-    if feed_available and not account.get('reconcile_seconds'):
-        return result
-    state = store.checkpoint(account['id']) or {}
-    minimum = max(600, int(account.get('reconcile_seconds') or account.get('fallback_seconds', 600)))
-    attempt = state.get('fallback_last_attempt')
-    elapsed = (dt.datetime.fromisoformat(now()) - dt.datetime.fromisoformat(attempt)).total_seconds() if attempt else minimum + 1
-    if elapsed < minimum:
-        if not feed_available:
-            raise SourceError('android_feed_unavailable', retry_after=max(15, int(minimum - elapsed))) from None
-        return result
-    state['fallback_last_attempt'] = now()
-    store.commit_page(account['id'], state, [], record_sync=False)
-    try:
-        snapshot_result = sync_android(store, config, account, fallback, reconcile=True)
-    except SourceError as error:
-        state = store.checkpoint(account['id'])
-        state.update(reconciliation_error=error.category, reconciliation_error_at=now())
-        store.commit_page(account['id'], state, [], record_sync=False)
-        # Preserve a redacted failed-read receipt even if the passive feed works.
-        raise
-    else:
-        state = store.checkpoint(account['id'])
-        state.pop('reconciliation_error', None)
-        state.pop('reconciliation_error_at', None)
-        state.update(transport='existing_feed_with_reconciliation' if feed_available else 'direct_fallback')
-        if not feed_available: state.setdefault('feed_unavailable_since', now())
-        store.commit_page(account['id'], state, [], record_sync=False)
-        return snapshot_result
-
-
-def sync_android(store, config, account, source=None, reconcile=False):
-    source = source or Android(config, account)
-    state = store.checkpoint(account['id']) or {}
-    try:
-        snapshot = source.snapshot()
-        rows = snapshot.get('notifications')
-        if snapshot.get('enabled') is not True or snapshot.get('connected') is not True:
-            raise SourceError('android_notifications_unavailable', retry_after=600)
-        if not isinstance(rows, list) or snapshot.get('count') != len(rows):
-            raise SourceError('android_invalid_snapshot')
-        skipped = Skips('android_invalid_notification')  # a notification it can't take is counted, never failing the read
-        events = [e for e, _ in skipped.every([r for r in rows if not isinstance(r, dict) or r.get('packageName') != 'ai.openclaw.app'],
-                                             android_event, account)]
-        skipped.check()
-        if reconcile:
-            with store.connect() as db:
-                for i, event in enumerate(events):
-                    key = event['metadata']['notification_key_hash']
-                    old = db.execute("SELECT * FROM events WHERE account_id=? AND json_extract(metadata,'$.notification_key_hash')=? ORDER BY occurred_at DESC,id DESC LIMIT 1",(account['id'],key)).fetchone()
-                    if not old: continue
-                    meta = json.loads(old['metadata'])
-                    # A forwarded active episode is the same exact current
-                    # notification. Do not guess matches by app/title or merge
-                    # a post after an observed clear into the previous episode.
-                    if meta.get('transport') == 'existing_openclaw_feed' and meta.get('is_active', True):
-                        # The passive preview and snapshot have different text
-                        # formats. Retain captured text until a newer native post;
-                        # presence checks must not create alternating versions.
-                        events[i] = {k:old[k] for k in ('account_id','source_id','kind','occurred_at','title','body','deleted')}
-                        events[i]['deleted'] = bool(old['deleted'])
-                        fingerprint = hashlib.sha256(encoded([event['title'],event['body']]).encode()).hexdigest()
-                        prior_fingerprint = meta.get('snapshot_content_hash')
-                        if prior_fingerprint and prior_fingerprint != fingerprint:
-                            # A changed current snapshot recovers an update lost
-                            # by forwarding. First observation establishes a
-                            # baseline, since the two preview formats differ.
-                            events[i]['title'] = event['title']
-                            events[i]['body'] = event['body']
-                            meta.update(security_code_omitted=event['metadata']['security_code_omitted'],
-                                        last_notification_event_ms=int(dt.datetime.fromisoformat(now()).timestamp()*1000))
-                        meta['snapshot_content_hash'] = fingerprint
-                        meta['snapshot_checked_at'] = now()
-                        events[i]['metadata'] = meta
-                    elif old['source_id'] == event['source_id']:
-                        event['occurred_at'] = old['occurred_at']
-    except SourceError:
-        if not state.get('offline_since'):
-            state['offline_since'] = now()
-            store.commit_page(account['id'], state, [], record_sync=False)
-        raise
-    stamp = now()
-    if state.get('offline_since'):
-        gaps = state.get('gaps', [])
-        gaps.append({'from': state.pop('offline_since'), 'to': stamp})
-        state['gaps'] = gaps[-20:]
-    state.update(mode='incremental', observed_from=state.get('observed_from', stamp),
-                 snapshot_count=len(rows), last_observed=stamp,
-                 coverage='Snapshots only. Notifications cleared between reads or during disconnection can be missed.')
-    skipped.note(state)
-    store.commit_page(account['id'], state, events)
-    return {'mode': 'incremental', 'events': len(events), 'skipped': sum(skipped.values())}
 
 
 NOTE_KINDS = ('style', 'fact', 'continue', 'new_ask')
@@ -8544,79 +8372,6 @@ def remember_slack_names(store, source, events, channels=(), per_page=3):
         name_slack_titles(store, source.account['id'], named)
 
 
-GATEWAY_SIGNALS = (
-    # Owner-selected (October 10, 2026): agent runs that ended in an error on Telegram,
-    # requests whose hand-off to another session was refused before dispatch, and
-    # failed Telegram sends/edits/button answers. Restarts, model retries, memory
-    # pressure and other routine Gateway noise are deliberately not collected.
-    ('agent_run_failed', 'Agent run ended in an error', re.compile(r'\[telegram\] embedded run agent end: .*\bisError=true\b')),
-    ('handoff_failed', 'Request hand-off failed before dispatch',
-     re.compile(r'\[tools\] \S+ failed: .*(?:authority closed|authority is no longer active|before dispatch)', re.I)),
-    ('telegram_send_failed', 'Telegram send failed',
-     re.compile(r'\[telegram\] (?:\w+ failed[:!]|callback handler failed|spooled update \S+ failed)')),
-)
-GATEWAY_BUCKET = dt.timedelta(minutes=30)  # one review heartbeat
-
-
-def gateway_classify(message):
-    for kind, title, pattern in GATEWAY_SIGNALS:
-        if pattern.search(message):
-            return kind, title
-    return None
-
-
-def gateway_line(message):
-    text = re.sub(r'^\d{4}-\d\d-\d\dT\S+\s+', '', message)
-    text = re.sub(r'bot\d+:[A-Za-z0-9_-]{20,}', 'bot<redacted>', text)
-    text = re.sub(r'(?i)\b(token|secret|password|api[_-]?key|authorization)(["\']?\s*[:=]\s*)\S+', r'\1\2<redacted>', text)
-    text = re.sub(r'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}', '<id>', text)
-    return text[:1500]
-
-
-class GatewayJournal:
-    """Read-only journald reader for the OpenClaw Gateway unit."""
-    def __init__(self, account):
-        self.unit = account.get('unit', 'openclaw-gateway.service')
-
-    def read(self, cursor=None, since=None):
-        args = ['journalctl', '--user', '-u', self.unit, '-o', 'json', '--output-fields=MESSAGE', '--no-pager']
-        args += ['--after-cursor', cursor] if cursor else ['--since', since]
-        try:
-            result = subprocess.run(args, capture_output=True, text=True, timeout=120)
-        except (OSError, subprocess.TimeoutExpired) as error:
-            raise SourceError('journal_unavailable:' + type(error).__name__) from None
-        if result.returncode:
-            raise SourceError('journal_read_failed')
-        entries = []
-        for line in result.stdout.splitlines():
-            try:
-                row = json.loads(line)
-                message = row.get('MESSAGE') or ''
-                if isinstance(message, list):  # journald encodes non-UTF-8 text as bytes
-                    message = bytes(message).decode('utf-8', 'replace')
-                at = dt.datetime.fromtimestamp(int(row['__REALTIME_TIMESTAMP']) / 1e6, dt.timezone.utc)
-                entries.append((row['__CURSOR'], at, message))
-            except (ValueError, KeyError, TypeError):
-                raise SourceError('journal_invalid_entry') from None
-        return entries
-
-
-def gateway_event(account, source_id, bucket):
-    local = lambda value: dt.datetime.fromisoformat(value).astimezone(local_tz()).strftime('%H:%M:%S')
-    lines = [f"{local(line['at'])} {line['text']}" for line in bucket['lines']]
-    more = bucket['count'] - len(bucket['lines'])
-    if more > 0:
-        lines.append(f'… and {more} more like this in the same half hour.')
-    title = bucket['title'] + (f" ({bucket['count']}×)" if bucket['count'] > 1 else '')
-    return {'account_id': account['id'], 'source_id': source_id, 'kind': 'gateway.alert',
-            'occurred_at': bucket['lines'][0]['at'], 'title': title, 'body': '\n'.join(lines),
-            'metadata': {'gateway_kind': bucket['kind'], 'count': bucket['count'], 'bucket_start': bucket['start'],
-                         'bucket_minutes': int(GATEWAY_BUCKET.total_seconds() // 60), 'unit': account.get('unit', 'openclaw-gateway.service'),
-                         'lines_shown': len(bucket['lines']), 'truncated': more > 0, 'transport': 'journald',
-                         'coverage': 'Selected OpenClaw Gateway log lines grouped per kind and half hour; journal retention limits history.'},
-            'deleted': False}
-
-
 
 
 def fleet_served(config):
@@ -8624,56 +8379,6 @@ def fleet_served(config):
     its Tailscale names answers, for the phone app's address (fleet.app_address)."""
     import onboarding
     return onboarding.dashboard_served(config)
-
-
-def sync_gateway(store, config, account, source=None):
-    source = source or GatewayJournal(account)
-    state = store.checkpoint(account['id']) or {}
-    last = state.get('last_at')
-    since = f'@{int(dt.datetime.fromisoformat(last).timestamp())}' if last else f"-{int(account.get('bootstrap_hours', 24))}h"
-    try:
-        entries = source.read(state.get('cursor'), since)
-    except SourceError:
-        if not state.get('cursor'):
-            raise
-        # A rotated/vacuumed journal invalidates the cursor; resume from the last seen time.
-        entries = source.read(None, since)
-    buckets = state.get('open_buckets', {})
-    changed = []
-    for _, at, message in entries:
-        found = gateway_classify(message)
-        if not found:
-            continue
-        kind, title = found
-        epoch = dt.datetime(1970, 1, 1, tzinfo=dt.timezone.utc)
-        start = (epoch + ((at - epoch) // GATEWAY_BUCKET) * GATEWAY_BUCKET).isoformat()
-        source_id = f'{kind}:{start}'
-        bucket = buckets.setdefault(source_id, {'kind': kind, 'title': title, 'start': start, 'count': 0, 'lines': []})
-        bucket['count'] += 1
-        if len(bucket['lines']) < 20:
-            bucket['lines'].append({'at': at.isoformat(), 'text': gateway_line(message)})
-        if source_id not in changed:
-            changed.append(source_id)
-    events = [gateway_event(account, source_id, buckets[source_id]) for source_id in changed]
-    # The Machine's own errors come in through the first Gateway source.
-    faults = []
-    carries_faults = next((a['id'] for a in config.get('accounts', []) if a.get('service') == 'gateway'), None) == account['id']
-    if carries_faults:
-        faults = store.unreported_faults()
-        events += [fault_event(account, row, config) for row in faults]
-    # Only the last two windows can still grow; older ones are final.
-    cutoff = (dt.datetime.fromisoformat(now()) - 2 * GATEWAY_BUCKET).isoformat()
-    state.update(mode='incremental', cursor=entries[-1][0] if entries else state.get('cursor'),
-                 last_at=entries[-1][1].isoformat() if entries else state.get('last_at'),
-                 open_buckets={k: v for k, v in buckets.items() if v['start'] >= cutoff},
-                 coverage='OpenClaw Gateway journal from the saved cursor; selected failure kinds only.')
-    store.commit_page(account['id'], state, events)
-    store.faults_reported(faults)
-    if carries_faults:
-        store.settle_faults(code_version(next_actions.app_dir(config)))
-        # the Machine's own changes an update set aside come back as to-dos (parked_fixes.py)
-        store.parked_fix_cards(account['id'], parked_fixes.pending(next_actions.app_dir(config)))
-    return {'mode': 'incremental', 'events': len(events)}
 
 
 SYNC_LOCKS, SYNC_LOCKS_LOCK = {}, threading.Lock()
