@@ -452,6 +452,19 @@ The to-do says it merged and has **Undo merge** for 24 hours, which reverts the 
 - A fix that merged by itself stays on this machine. It isn't pushed upstream (often the public project) unless you set `self_fix_auto_push: true`, and the to-do suggests pushing it or opening a pull request.
 - A later push never carries along commits that aren't upstream yet, and an undo is pushed only when its fix was.
 
+## The computer's own logs
+
+On Linux with systemd, the Machine health source also reads the computer's own logs (`machine/system_logs.py`) every 30 minutes, to explain and fix problems on the computer itself.
+
+- **What it reads:** `journalctl --user` for the owner's own session and units, filtered to systemd's own records (a restart was scheduled, a unit ended with a result, a process dumped core) over the last 24 hours, at most 3,000 of them. `coredumpctl list` only when that journal has no crash records. On Omarchy also `hyprctl configerrors`. No sudo, never the system journal.
+- **No log text:** it reads only structured fields (unit, result, restart count, program name, signal). A crash's command line is read only to tell a browser's helper or a headless test browser apart, and is never kept.
+- **Real problems only:** a unit that restarted 5 times within an hour, one systemd gave up on (`start-limit-hit`), one killed for memory, one that failed 3 times in a day, one still failed an hour after its last failure, and a crash dump of a program's main process. On Omarchy, a Hyprland or bar crash and Hyprland settings errors get their own words and Omarchy's commands. Routine restarts and single failures stay silent, as the Gateway source has done since October 10, 2026.
+- **To-dos:** each finding is a to-do with the cause in plain words and the command that shows why. Nothing runs by itself.
+- **Do it:** when a finding has a safe, known fix, its to-do offers Do it, which runs only that command once and saves how it went as the to-do's result, in its chat: `systemctl --user restart <unit>` for a failed unit of the owner's own (never The Machine's own units or the OpenClaw Gateway), or Omarchy's `omarchy-restart-shell` for a bar crash. Its output is never read. A chat message on the to-do is an ordinary AI turn. One that didn't work offers Do it again.
+- **Quiet:** the same problem comes back at most once in 14 days and never while its to-do is open; at most 2 new ones a day. `assistant doctor` lists the same findings, scrubbed like learnings, since bug reports carry its output.
+- **Elsewhere:** macOS, Windows, WSL without systemd and other systems without journald read nothing; `assistant doctor` says why.
+- **Off:** `"computer_logs": false` in config.json.
+
 ## Command line
 
 `assistant` (linked by the installer; code in `cli.py`) talks to the running service with the local API token. `busy`, `connect`, `doctor`, `export`, `import`, `message-key`, `service` and `support-bundle` work on this machine's files and also run while the service is down. Every command takes `--json`.

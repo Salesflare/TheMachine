@@ -135,6 +135,7 @@ MACHINE_LAYERS = {
     'config': 0,
     'names': 0,        # what the owner calls a service, app or agent (never the tool underneath)
     'stamps': 0,       # change counters per table, so a request's answer is kept until its tables change
+    'system_logs': 0,  # the computer's own logs: journald and crash dumps, read only
     'text': 0,         # message parsing
     'timing': 0,       # request timing, shared by web and store
     'browser': 1,
@@ -321,7 +322,7 @@ def sql_strings(found):
 # The Store moves out of assistant.py in parts (refactor PRs 13-18). Until it is whole in machine/store/, its parts
 # are one owner with assistant.py: a table the Store creates or writes from one of them is assistant.py's, as before.
 STORE_PARTS = {'machine/store/cards.py', 'machine/store/core.py', 'machine/store/decisions.py', 'machine/store/events.py',
-               'machine/store/facts.py', 'machine/store/first_look.py', 'machine/store/profile.py', 'machine/store/promises.py',
+               'machine/store/facts.py', 'machine/store/first_look.py', 'machine/store/machine_cards.py', 'machine/store/profile.py', 'machine/store/promises.py',
                'machine/store/review.py', 'machine/store/views.py', 'machine/store/voices.py'}
 
 

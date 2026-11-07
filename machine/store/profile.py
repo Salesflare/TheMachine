@@ -89,7 +89,8 @@ TODO_SOURCE = {'gmail.message': 'Email', 'ms_graph.message': 'Email', 'outlook.m
                'slack.message': 'Slack', 'teams.message': 'Teams', 'whatsapp.message': 'WhatsApp', 'telegram.message': 'Telegram', 'fleet.intercom': 'Intercom',
                'android.notification': 'Phone notifications', 'owner.card': 'Added by you',
                'fleet.request': 'Fleet', 'fleet.message': 'Fleet',
-               'gateway.alert': 'The Machine itself', 'machine.fault': 'The Machine itself', 'machine.parked_fix': 'The Machine itself'}
+               'gateway.alert': 'The Machine itself', 'machine.fault': 'The Machine itself', 'machine.parked_fix': 'The Machine itself',
+               'machine.system_log': 'The Machine itself'}
 
 
 TODO_SOURCE_OTHER = 'Other'

@@ -1,11 +1,14 @@
 """The OpenClaw Gateway's log as a source (Machine health): the journal lines it reads (GatewayJournal), how a line is
-classified, one heartbeat event per half hour (gateway_event) and its sync (sync_gateway). Moved out of assistant.py
-as is."""
+classified, one heartbeat event per half hour (gateway_event) and its sync (sync_gateway), which also brings the
+service's own errors, the fixes an update set aside and the problems in the computer's own logs (machine/system_logs.py).
+Moved out of assistant.py as is."""
 import datetime as dt
 import json
 import re
 import subprocess
 
+from machine import system_logs
+from machine.config import LOG
 from machine.faults import code_version, fault_event
 import next_actions
 import parked_fixes
@@ -88,8 +91,9 @@ def gateway_event(account, source_id, bucket):
             'deleted': False}
 
 
-def sync_gateway(store, config, account, source=None):
-    source = source or GatewayJournal(account)
+def sync_gateway(store, config, account, source=None, scan_logs=None):
+    if source is None:  # the real journal: the computer's own logs too (a test passes its own source and scan)
+        source, scan_logs = GatewayJournal(account), scan_logs or system_logs.scan
     state = store.checkpoint(account['id']) or {}
     last = state.get('last_at')
     since = f'@{int(dt.datetime.fromisoformat(last).timestamp())}' if last else f"-{int(account.get('bootstrap_hours', 24))}h"
@@ -123,6 +127,17 @@ def sync_gateway(store, config, account, source=None):
     if carries_faults:
         faults = store.unreported_faults()
         events += [fault_event(account, row, config) for row in faults]
+    # The computer's own logs (machine/system_logs.py): read at most every half hour, quietly, through the first Gateway
+    # source as with the service's own errors; off with "computer_logs": false.
+    found = []
+    last_scan = state.get('computer_logs_at')
+    if scan_logs and carries_faults and config.get('computer_logs', True) is not False and (
+            not last_scan or dt.datetime.fromisoformat(now()) - dt.datetime.fromisoformat(last_scan) >= system_logs.EVERY):
+        state['computer_logs_at'] = now()
+        try:
+            found = scan_logs()['findings']
+        except Exception as error:  # a bug here never stops the Gateway's own log; it becomes a fault to fix
+            LOG.error('computer logs error=%s', type(error).__name__, exc_info=True)
     # Only the last two windows can still grow; older ones are final.
     cutoff = (dt.datetime.fromisoformat(now()) - 2 * GATEWAY_BUCKET).isoformat()
     state.update(mode='incremental', cursor=entries[-1][0] if entries else state.get('cursor'),
@@ -135,4 +150,6 @@ def sync_gateway(store, config, account, source=None):
         store.settle_faults(code_version(next_actions.app_dir(config)))
         # the Machine's own changes an update set aside come back as to-dos (parked_fixes.py)
         store.parked_fix_cards(account['id'], parked_fixes.pending(next_actions.app_dir(config)))
+        if found:
+            store.system_log_cards(account['id'], found)
     return {'mode': 'incremental', 'events': len(events)}

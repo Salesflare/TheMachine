@@ -489,6 +489,7 @@ class ViewsStore(ConversationStore):
         if not jobs:
             source_lines_shown(db, cards)  # a Slack DM by the person's name, never a raw chat handle
             based_on_views(db, cards)  # "Based on Sam in #ops": the teammate's input the draft follows, with its link
+            self.machine_fix_views(db, cards)  # a to-do from the computer's logs with a safe fix offers Do it
             labels = {r['suggestion_id']: skill_labels(r) for r in db.execute("SELECT suggestion_id,target_id,target_name FROM skill_clusters WHERE status IN ('pending','declined')")}
             for card in cards:
                 if card['id'] in labels:

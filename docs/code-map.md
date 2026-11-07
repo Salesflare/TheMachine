@@ -100,7 +100,8 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   (how a to-do reads: snooze times, titles, source lines, handoffs, ask and blocker text, controls, to-do states),
   `machine/browser.py` (browser leases, sign-in handoffs, tab peeks, safe links, preparation steps), `machine/chat.py`
   (a to-do's chat: its items, replies, drafts, handoffs and redaction), `machine/faults.py` (the Machine's own errors:
-  where they happened, their scrubbed message, the code version and release, the fault log),
+  where they happened, their scrubbed message, the code version and release, the fault log), `machine/system_logs.py`
+  (the computer's own logs: journald and crash dumps read only, the real problems in them and their to-dos),
   `machine/sources/exclusions.py`, `salesflare.py` and `telegram.py` (the exclusion rules and the Salesflare and
   Telegram sources), `machine/sources/gmail.py` and `calendar.py` (the Gmail and Calendar sources with their sync,
   rooms, guests, owners and write helpers), `machine/model_usage.py` (the model's usage and resets, the Codex app
@@ -118,7 +119,8 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   feedback, preparing a to-do, sends and merges with their undo), `machine/store/voices.py`, `machine/store/facts.py`
   and `machine/store/promises.py` (the `VoicesStore`, `FactsStore` and `PromisesStore` mixins),
   `machine/store/views.py`, `machine/store/profile.py` and `machine/store/first_look.py` (the `ViewsStore`,
-  `ProfileStore` and `FirstLookStore` mixins), `machine/web/serving.py` (the dashboard page, hosts, CSRF, compression,
+  `ProfileStore` and `FirstLookStore` mixins), `machine/store/machine_cards.py` (the `MachineCardsStore` mixin: The
+  Machine's own to-dos, through `Store.machine_card`), `machine/web/serving.py` (the dashboard page, hosts, CSRF, compression,
   ETags, status) and `machine/web/waiting.py` (`KeyWaitingPage`, `message_key_keeper`), `machine/web/handler.py`
   (`make_handler(app)`: the dashboard's HTTP `Handler`, out of `App.serve`), `machine/app/talk.py` (`TalkApp`: Talk's
   view, actions, tools, drafts and sends), `machine/app/fleet.py` (`FleetApp`: attaching the Fleet, its pings,
