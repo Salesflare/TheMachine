@@ -104,7 +104,10 @@ def docs_health(config, account, state):
     plugin = load_connector('docs')
     kind = plugin.provider(config, account) if plugin else 'google'
     writes = [w for w in state.get('writes') or [] if w in doc_writes.OPS] if not account.get('shared') else []
-    return {'docs_provider': kind, 'docs_replies': bool(state.get('replies')) and kind == 'google', 'docs_writes': writes}
+    # a hosted Machine's own Google Docs sign-in has documents and drive.file only: it opens docs by their link, and its own
+    linked_only = kind == 'google' and bool(account.get('own_grant')) and account.get('transport') == 'broker'
+    return {'docs_provider': kind, 'docs_replies': bool(state.get('replies')) and kind == 'google', 'docs_writes': writes,
+            'docs_linked_only': linked_only}
 
 
 # A connection's card, under Connected: what it brings in (the line + Add shows for it: onboarding.WHAT, a connector's

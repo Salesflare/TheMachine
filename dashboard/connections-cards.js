@@ -422,9 +422,9 @@ function teamsMissing(m){const meet=m.transcripts==='admin'||m.notes==='admin',l
  if(m.transcripts==='blocked')lines.push('Your organization turned off transcripts.');
  return lines}
 function connWhat(c){const span=s=>s?html`<span>${t(s)}</span>`:'',signals=c.signals!==false,acts=c.actions!==false;
- if(c.service==='docs'){const line=!signals?'Finds and reads docs for your to-dos.':!acts?'Reads comments, mentions, suggestions and shares.':null;
+ if(c.service==='docs'){const narrow=c.docs_linked_only,line=!signals?'Finds and reads docs for your to-dos.':!acts?(narrow?'Opens only docs linked in your mail and the docs it makes.':'Reads comments, mentions, suggestions and shares.'):null;
   if(!signals){const w=docsWritesLine(c);return html`<p class="muted conn-what">${span(line)}${w?html` <span>${w}</span>`:''}</p>`}
-  return html`<p class="muted conn-what">${line?span(line):c.docs_provider==='microsoft'?html`${span(c.what)} ${span('Replies stay drafts for you to post in Word.')}`:span('Google Docs. Reads comments, mentions, suggestions and shares. Posts a reply only when you OK it.')}</p>${docsWrites(c)}`}
+  return html`<p class="muted conn-what">${line?span(line):c.docs_provider==='microsoft'?html`${span(c.what)} ${span('Replies stay drafts for you to post in Word.')}`:span(narrow?'Opens only docs linked in your mail and the docs it makes.':'Google Docs. Reads comments, mentions, suggestions and shares. Posts a reply only when you OK it.')}</p>${docsWrites(c)}`}
  if(c.service==='teams'){const lines=teamsMissing(c.teams_missing||{});return html`<p class="muted conn-what">${span(c.what)}${lines.map(l=>html` ${span(l)}`)}</p>`}
  const what=signals?span(c.what):'',act=span(CONN_ACTS[c.acts]);
  return what||act?html`<p class="muted conn-what">${what}${what&&act?' ':''}${act}</p>`:''}
