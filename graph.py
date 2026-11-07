@@ -47,7 +47,6 @@ import unicodedata
 from zoneinfo import ZoneInfo
 
 import locale_prefs
-from machine.store import stamps
 import timeutil
 
 import enrichment
@@ -672,16 +671,6 @@ def slack_names(db, ids):
     ids = sorted({i for i in ids if isinstance(i, str) and re.fullmatch(r'[UW][A-Z0-9]{8,11}', i)})
     if not ids:
         return {}
-    # kept until a name, a person or a member changes: a page names the same few members on every open, and each time
-    # was a pass over every person
-    return dict(_SLACK_NAMES.get(tuple(ids), stamps.stamp(db, ('identity_names', 'graph_nodes', 'slack_members')),
-                                 lambda: _slack_names(db, ids)))
-
-
-_SLACK_NAMES = stamps.Kept(64)
-
-
-def _slack_names(db, ids):
     marks = ','.join('?' * len(ids))
     try:
         found_rows = db.execute(f'SELECT identifier,name,email FROM identity_names WHERE identifier IN ({marks})',
@@ -3048,15 +3037,7 @@ def unconfirmed(db, limit=30):
 
 
 def waiting(db):
-    """How many of the review's roles wait for the owner: the Who's who count, for the Graph tab's badge. Kept until a
-    role or a person changes: it reads every person, on each status poll."""
-    return _WAITING.get('waiting', stamps.stamp(db, ('person_roles', 'graph_nodes')), lambda: _waiting(db))
-
-
-_WAITING = stamps.Kept(4)
-
-
-def _waiting(db):
+    """How many of the review's roles wait for the owner: the Who's who count, for the Graph tab's badge."""
     return db.execute("SELECT count(*) FROM person_roles r JOIN graph_nodes n ON r.identifier=coalesce(json_extract(n.info,'$.role_id'),n.id) "
                       "WHERE r.source!='owner'").fetchone()[0]
 
