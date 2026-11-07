@@ -17,7 +17,23 @@ if(window.crypto?.getRandomValues)def(crypto,'randomUUID',()=>{const b=crypto.ge
 // Theme: light or dark as picked here or in the hosted app (the "theme" cookie, shared under the app's domain), else the device's own setting.
 (()=>{const root=document.documentElement,sys=matchMedia('(prefers-color-scheme: light)');
 const saved=()=>{const c=document.cookie.match(/(?:^|;\s*)theme=(light|dark)(?:;|$)/);if(c)return c[1];const l=localStorage.getItem('theme');return l==='light'||l==='dark'?l:'auto'};
-const pick=()=>{const m=saved(),t=m==='auto'?(sys.matches?'light':'dark'):m;root.dataset.theme=t;root.dataset.themeMode=m;document.querySelector('meta[name=theme-color]')?.setAttribute('content',t==='light'?'#f8f7f3':'#1b1c1f');
+// On Omarchy, a device can follow the computer's Omarchy theme instead (settings-omarchy.js): its mode and colors from
+// the copy kept here, so the first paint already has them.
+const omarchy=()=>{try{const p=localStorage.getItem('omarchy-theme')==='1'&&JSON.parse(localStorage.getItem('omarchy-palette'));return p&&p.colors?p:null}catch{return null}};
+// The theme's colors onto the dashboard's tokens (base-tokens.css), in the style of the page itself; null takes them off.
+// Colors are #rrggbb only (machine/omarchy.py); a light theme gets near-white cards, as the dashboard's own light mode.
+let painted=[];window.paintOmarchy=o=>{const s=root.style;for(const n of painted)s.removeProperty(n);painted=[];delete root.dataset.omarchy;if(!o)return;
+ const c=o.colors,fg=c.foreground,bg=c.background,mix=(a,p,b='transparent')=>`color-mix(in srgb,${a} ${p}%,${b})`,
+  surface=o.mode==='light'?mix('#fff',60,bg):mix(fg,5,bg),raised=o.mode==='light'?mix('#fff',80,bg):mix(fg,9,bg),sunken=c.dark_background||mix(fg,3,bg),
+  orange=c.orange||c.red||c.accent,amber=c.yellow||orange,link=c.blue||c.accent,second=c.magenta||link;
+ const v={'--c-bg':bg,'--c-surface':surface,'--c-raised':raised,'--c-sunken':sunken,'--c-line':mix(fg,10),'--c-line-strong':mix(fg,18),
+  '--c-text':fg,'--c-text-2':mix(fg,78,bg),'--c-text-3':mix(fg,60,bg),'--c-accent':c.accent,'--c-accent-hover':mix(c.accent,85,fg),'--c-accent-ink':bg,
+  '--c-accent-tint':mix(c.accent,17,surface),'--c-amber':amber,'--c-orange':orange,'--c-lavender':second,'--c-hover':mix(fg,6),
+  '--mint':c.accent,'--cream':fg,'--amber':amber,'--orange':orange,'--lavender':link,'--lavender-light':mix(link,70,fg),'--night-lavender':c.muted||mix(fg,40,bg),
+  '--charcoal':bg,'--screen':sunken,'--bg':bg,'--surface':surface,'--surface-2':raised,'--sunken':sunken,'--border':mix(fg,14),'--border-strong':mix(fg,26),
+  '--text':fg,'--muted':mix(fg,85,bg),'--faint':mix(fg,65,bg)};
+ for(const k in v)s.setProperty(k,v[k]);painted=Object.keys(v);root.dataset.omarchy=o.name||'omarchy'};
+const pick=()=>{const m=saved(),o=omarchy(),t=o?o.mode:m==='auto'?(sys.matches?'light':'dark'):m;root.dataset.theme=t;root.dataset.themeMode=o?'omarchy':m;window.paintOmarchy(o);document.querySelector('meta[name=theme-color]')?.setAttribute('content',o?o.colors.background:t==='light'?'#f8f7f3':'#1b1c1f');
 // On an iPhone home-screen app the page is drawn under the status bar in dark (white text), and iOS's light bar is used in light.
 let sb=document.querySelector('meta[name=apple-mobile-web-app-status-bar-style]');if(!sb){sb=document.createElement('meta');sb.name='apple-mobile-web-app-status-bar-style';document.head.appendChild(sb)}sb.content=t==='light'?'default':'black-translucent'};
 // On a hosted dashboard (<name>.app.example) the cookie goes on the app's domain, so the app's pages follow; else on this host only.
@@ -36,6 +52,7 @@ try{if(localStorage.getItem('side')==='collapsed')root.dataset.side='collapsed'}
 <meta name="apple-mobile-web-app-title" content="The Machine">
 <style>
 /*@include dashboard/base-tokens.css*/
+/*@include dashboard/base-omarchy.css*/
 /*@include dashboard/base-layout.css*/
 /*@include dashboard/todos-cards.css*/
 /*@include dashboard/graph-pages.css*/
@@ -115,6 +132,7 @@ try{if(localStorage.getItem('side')==='collapsed')root.dataset.side='collapsed'}
 /*@include dashboard/todos-clear.js*/
 /*@include dashboard/setup-card.js*/
 /*@include dashboard/settings-device.js*/
+/*@include dashboard/settings-omarchy.js*/
 /*@include dashboard/settings-apps.js*/
 /*@include dashboard/todos-chat-thread.js*/
 /*@include dashboard/todos-chat-voice.js*/

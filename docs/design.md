@@ -58,6 +58,13 @@ Observed on claude.ai, claude.com and anthropic.com (public pages, light and dar
   600 only for card titles and numbers. Both are bundled under the SIL Open Font License.
 - **The mascot and logo** stay as they are: the mascot beside the title in the dashboard, on empty states and in the
   website's hero; the wordmark in the website's header.
+- **Omarchy theme.** On a Machine that runs on Omarchy, a device can follow the Omarchy theme (Settings, General, This
+  device). `machine/omarchy.py` reads the current theme's `colors.toml` (only `#rrggbb` values pass) and
+  `paintOmarchy` in dashboard.html maps it onto the tokens above: page `background`, cards a 5% foreground mix (dark)
+  or 60% white (light), text `foreground` with 78% and 60% mixes, accent `accent`, amber `yellow`, orange `orange`,
+  links `blue`, lavender `magenta`. The theme's `mode` sets light or dark. `dashboard/base-omarchy.css` swaps the few
+  fixed colors (the page glow, toasts) for tokens. The page asks every 2 s while it is in view, so a theme switch
+  shows within seconds.
 
 ## Components
 

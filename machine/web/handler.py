@@ -32,6 +32,7 @@ from machine.browser import browser_link, PANE_QUERY
 from machine.config import BRAND_ASSETS, LOG, ROOT
 from machine.delivery.push import app_notice, push_key
 from machine.faults import source_url
+from machine import omarchy
 from machine.sources.calendar import calendar_account_owner, company_domains, invite_people, team_people
 from machine.sources.connectors import writable_calendars
 from machine.text import _address, ATTACHMENT_INLINE, encoded, shown_body
@@ -328,6 +329,8 @@ def make_handler(app):
                 self.output(200, (ROOT / 'i18n' / path.path[6:]).read_bytes(), 'application/json')  # the catalogs (i18n.py)
             elif path.path == '/api/push-key':
                 self.output(200, {'key': push_key(app.config)})
+            elif path.path == '/api/omarchy-theme':  # this computer's Omarchy colors, or {} without Omarchy (machine/omarchy.py)
+                self.output(200, omarchy.theme() or {})
             elif path.path in BRAND_ASSETS:
                 asset = BRAND_ASSETS[path.path]
                 self.output(200, asset.read_bytes(), {'.webp': 'image/webp', '.woff2': 'font/woff2', '.mp3': 'audio/mpeg'}.get(asset.suffix, 'image/png'))
