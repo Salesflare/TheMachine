@@ -40,6 +40,8 @@ import json
 import re
 import secrets
 
+from machine.graph_history import live
+
 # The Network's group (cloud/discovery.py has the same): RFC 3526's 2048-bit MODP prime, its subgroup of squares.
 P = int(
     'FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD129024E088A67CC74020BBEA63B139B22514A08798E3404DD'
@@ -188,7 +190,7 @@ class Discovery:
         from fleet import _emails
         mine = {normal(a.get('email')) for a in self.config.get('accounts', [])} | {normal(e) for e in self.my_emails()}
         out, seen = [], set()
-        for row in db.execute("SELECT * FROM graph_nodes WHERE kind='person' AND quiet=0 ORDER BY strength DESC LIMIT 3000"):
+        for row in db.execute(f"SELECT * FROM graph_nodes WHERE kind='person' AND quiet=0 AND {live()}>0 ORDER BY {live()} DESC LIMIT 3000"):  # never from history alone
             added = {normal(e.get('value')) for e in json.loads(row['info'] or '{}').get('emails') or () if isinstance(e, dict) and e.get('by') == 'owner'}
             for email in sorted(_emails(row) | {e for e in added if '@' in e}):
                 if email in mine or email in seen:
@@ -243,7 +245,7 @@ class Discovery:
         owner is not looked up by number. The owner's own numbers left out."""
         code, mine = self._region_code(), set(self.own_numbers())
         out, seen = [], set()
-        for row in db.execute("SELECT id,name,info FROM graph_nodes WHERE kind='person' AND quiet=0 ORDER BY strength DESC LIMIT 3000"):
+        for row in db.execute(f"SELECT id,name,info FROM graph_nodes WHERE kind='person' AND quiet=0 AND {live()}>0 ORDER BY {live()} DESC LIMIT 3000"):
             try:
                 info = json.loads(row['info'] or '{}')
             except ValueError:

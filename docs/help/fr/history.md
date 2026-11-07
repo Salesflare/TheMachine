@@ -1,26 +1,28 @@
 ---
 title: Historique
 area: connections
-summary: Environ un an d’anciens e-mails, réunions et discussions WhatsApp, à chercher et lire. Jamais une tâche.
+summary: Environ un an d’anciens e-mails, réunions et chats WhatsApp, pour chercher, lire et connaître vos contacts. Jamais une tâche.
 covers: history
-code: machine/app/history.py, machine/store/history.py
+code: machine/app/history.py, machine/store/history.py, machine/graph_history.py
 keywords: older messages, backfill, archive, past emails
 ---
 ## Ce qu’il garde
 
-Chaque compte e-mail, agenda et WhatsApp garde environ un an d’anciens messages et réunions. La recherche les trouve, une conversation les montre et l’[Agenda](calendar.md) montre les réunions passées.
+Chaque compte e-mail, agenda et WhatsApp garde environ un an d’anciens messages et réunions. La recherche les trouve, aussi par le sens, une conversation les montre et l’[Agenda](calendar.md) montre les réunions passées.
 
 Sa carte indique jusqu’où il remonte : **Historique : jusqu’à** un mois, une fois arrivé.
 
+## Ce qu’il apporte à votre Graph
+
+Votre [Graph](graph.md) le compte : votre proximité avec chacun, votre dernier échange, qui connaît qui, et les personnes et organisations elles-mêmes. Les réponses de votre Fleet à « qui connaît quelqu’un » l’utilisent depuis les comptes de travail, avec les mêmes [règles de partage](sharing-rules.md) que les nouveaux e-mails.
+
 ## Ce qu’il ne fait jamais
 
-L’historique sert seulement à retrouver des choses. Il ne crée jamais de tâche ni de promesse, n’entre jamais dans une vérification, ne compte jamais comme nouveau et ne va jamais dans votre Graph ni à votre équipe. Aucun modèle d’IA ne le lit.
-
-Les tâches et promesses viennent toujours seulement des nouveaux messages, comme avant.
+Il ne crée jamais de tâche ni de promesse, ne compte jamais comme nouveau, ne lance jamais de vérification et n’entre jamais dans un projet. L’historique personnel reste personnel, comme les e-mails personnels. En dehors de la recherche par le sens, aucun modèle d’IA ne le lit.
 
 ## Quand il tourne
 
-Il commence une fois le premier coup d’œil à vos messages terminé, et avance lentement en arrière-plan. Il attend pendant une vérification ou une synchronisation, et quand votre Machine manque d’espace disque ou de mémoire. Après un redémarrage, il reprend là où il en était.
+Il commence une fois le premier coup d’œil à vos messages terminé, et pour chaque connexion seulement quand sa première semaine est arrivée, aussi pour une connexion ajoutée plus tard. Il avance lentement en arrière-plan et attend pendant une vérification ou une synchronisation, quand un service demande de ralentir ou quand votre Machine manque d’espace. Les nouveaux messages passent toujours en premier.
 
 Il utilise l’accès que chaque connexion a déjà. Rien de nouveau n’est demandé.
 

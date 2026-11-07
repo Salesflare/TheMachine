@@ -1,26 +1,28 @@
 ---
 title: History
 area: connections
-summary: About a year of older mail, meetings and WhatsApp chats, to search and read. Never a to-do.
+summary: About a year of older mail, meetings and WhatsApp chats, to search, read and know your people. Never a to-do.
 covers: history
-code: machine/app/history.py, machine/store/history.py
+code: machine/app/history.py, machine/store/history.py, machine/graph_history.py
 keywords: older messages, backfill, archive, past emails
 ---
 ## What it keeps
 
-Your Machine brings in about a year of older email, meetings and WhatsApp chats. Search finds them, threads show them, and the [Calendar](calendar.md) shows past meetings.
+Your Machine brings in about a year of older email, meetings and WhatsApp chats. Search finds them, also by meaning, threads show them, and the [Calendar](calendar.md) shows past meetings.
 
 Each connection in **Connections** says how far back it reaches, like **History: back to** November 2025.
 
+## What it adds to your Graph
+
+Your [Graph](graph.md) counts it: how close you are to people, when you last talked, who knows whom, and the people and organizations themselves. Your Fleet's "who knows someone" answers use it from work accounts, with the same [sharing rules](sharing-rules.md) as new mail.
+
 ## What it never does
 
-History is only there to look things up. It never makes a to-do or a promise, and never goes to your Graph or your team. No AI model reads it.
-
-To-dos and promises come only from new messages.
+It never makes a to-do or a promise, never counts as new, never starts a check and never adds to a project. Personal history stays personal, like personal mail. Apart from Search by meaning, no AI model reads it.
 
 ## When it runs
 
-It starts after the first look at your messages and runs slowly in the background. It pauses while your Machine is busy or short on space, and picks up where it left off.
+It starts after the first look at your messages, and for each connection only once its first week is in, also for one you add later. It runs slowly in the background and pauses while a check or a sync runs, when a service asks it to slow down, or when your Machine is short on space. New messages always come first.
 
 It uses the access each connection already has. Nothing new to approve.
 

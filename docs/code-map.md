@@ -74,6 +74,7 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
     through it, so a tool underneath (gog, wacli, msgraph-cli) is never a name (`tests/test_owner_names.py`).
   - `machine/app/history.py` (`HistoryApp`): the history backfill's worker, when it may run and one step per source;
     `machine/store/history.py` owns `history_backfill` and the line between history and signal (`events.history`).
+    `machine/graph_history.py` lets history into the Graph's people and organizations in bounded passes, newest first.
   - `machine/upkeep/agent_workspaces.py`: the nightly cleanup of Claude Code and Codex job folders nothing needs any
     more (retention.py runs it; it only reads `agent_jobs`, `suggestions` and `agent_relayed`).
   - `machine/app/knowledge_export.py` (`KnowledgeExportApp`): Knowledge for another AI (Settings, General, Export) and its

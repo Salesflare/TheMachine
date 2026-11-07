@@ -183,14 +183,16 @@ def unpack(blob):
     return struct.unpack('<%df' % (len(blob) // 4), blob)
 
 
-def pending(db, settings, limit, newest=True):
-    """Live signals without a vector for their current version, model and size. Never history (machine/store/history.py):
-    keyword search finds it, and a Machine with a year of it spends no embedding time on it."""
+def pending(db, settings, limit, newest=True, history=False):
+    """Live signals without a vector for their current version, model and size. history: history rows instead
+    (machine/store/history.py), newest first, which the service embeds only once no signal waits, at a slower pace
+    (machine/app/history.py history_embed_step)."""
+    order = ('e.occurred_at DESC' if newest else 'e.occurred_at ASC') if history else 'e.id ' + ('DESC' if newest else 'ASC')
     return [dict(r) for r in db.execute(
         'SELECT e.id,e.version,e.title,e.body FROM events e LEFT JOIN event_vectors v ON v.event_id=e.id '
         'LEFT JOIN event_vector_skips s ON s.event_id=e.id AND s.version=e.version AND s.model=? AND s.at>? '
-        'WHERE e.deleted=0 AND e.history=0 AND (v.event_id IS NULL OR v.version<>e.version OR v.model<>? OR v.dims<>?) AND s.event_id IS NULL '
-        'ORDER BY e.id ' + ('DESC' if newest else 'ASC') + ' LIMIT ?',
+        f'WHERE e.deleted=0 AND e.history={int(bool(history))} AND (v.event_id IS NULL OR v.version<>e.version OR v.model<>? OR v.dims<>?) AND s.event_id IS NULL '
+        'ORDER BY ' + order + ' LIMIT ?',
         (settings.get('model', ''), time.time() - SKIP_SECONDS, settings.get('model', ''), int(settings.get('dims', 256)), limit))]
 
 
@@ -230,11 +232,11 @@ def skip(db, settings, failed):
                    [(r['id'], r['version'], settings.get('model', ''), reason, time.time(), r['id'], r['version']) for r, reason in failed])
 
 
-def embed_pending(connect, settings, limit=16, newest=True):
+def embed_pending(connect, settings, limit=16, newest=True, history=False):
     """One small pass: read, embed outside any transaction, write. Returns the number of events done
     (embedded, or set aside because the server refused that one input while it took the others)."""
     with connect() as db:
-        rows = pending(db, settings, limit, newest)
+        rows = pending(db, settings, limit, newest, history)
     if not rows:
         return 0
     done, failed = embed_isolating(settings, rows, [document(r['title'], r['body']) for r in rows])
@@ -279,7 +281,7 @@ def cosine(a, b):
     return sum(x * y for x, y in zip(a, b))
 
 
-def fts_ids(db, accounts, query, limit):
+def fts_ids(db, accounts, query, limit, signals_only=False):
     """Keyword ranking (bm25) within the accounts; any word may match, rarer words weigh more."""
     words = [w for w in re.findall(r'\w+', query) if len(w) > 1]
     if not words:
@@ -287,12 +289,14 @@ def fts_ids(db, accounts, query, limit):
     marks = ','.join('?' for _ in accounts)
     return [r[0] for r in db.execute(
         'SELECT e.id FROM event_search JOIN events e ON e.id=event_search.rowid WHERE event_search MATCH ? '
-        'AND e.account_id IN (' + marks + ') AND e.deleted=0 ORDER BY event_search.rank LIMIT ?',
+        'AND e.account_id IN (' + marks + ') AND e.deleted=0' + (' AND e.history=0' if signals_only else '') + ' ORDER BY event_search.rank LIMIT ?',
         (message_seal.match(db, words, ' OR '), *accounts, limit))]
 
 
-def related(connect, settings, accounts, event_ids=(), query='', limit=8, floor=None, exclude=(), timeout=30, query_floor=None):
-    """[(event_id, similarity or None)] best first, only from `accounts`, never the given/excluded ids.
+def related(connect, settings, accounts, event_ids=(), query='', limit=8, floor=None, exclude=(), timeout=30, query_floor=None,
+            signals_only=False):
+    """[(event_id, similarity or None)] best first, only from `accounts`, never the given/excluded ids. signals_only:
+    never history (what a preparation reads: no model reads history).
     Probes are the given events' own vectors (each candidate scores its best match, against `floor`)
     and the query (against the lower `query_floor`). With a query the meaning and keyword rankings
     are fused (reciprocal rank)."""
@@ -328,7 +332,8 @@ def related(connect, settings, accounts, event_ids=(), query='', limit=8, floor=
             live_probes = [vector for event_id, version, vector in probes if versions.get(event_id) == version]
             for event_id, blob in db.execute(
                     'SELECT v.event_id,v.vector FROM event_vectors v JOIN events e ON e.id=v.event_id '
-                    'WHERE e.account_id IN (' + marks + ') AND e.deleted=0 AND v.version=e.version AND v.model=? AND v.dims=?', (*accounts, model, dims)):
+                    'WHERE e.account_id IN (' + marks + ') AND e.deleted=0 AND v.version=e.version AND v.model=? AND v.dims=?'
+                    + (' AND e.history=0' if signals_only else ''), (*accounts, model, dims)):
                 if event_id in skip:
                     continue
                 vector = unpack(blob)
@@ -344,7 +349,7 @@ def related(connect, settings, accounts, event_ids=(), query='', limit=8, floor=
     if not query.strip():
         return [(i, round(similarity[i], 3)) for i in semantic[:limit]]
     with connect() as db:
-        keyword = [i for i in fts_ids(db, accounts, query, max(limit * 3, 30)) if i not in skip]
+        keyword = [i for i in fts_ids(db, accounts, query, max(limit * 3, 30), signals_only) if i not in skip]
     fused = {}
     for ranking in (semantic, keyword):
         for rank, event_id in enumerate(ranking):

@@ -1,26 +1,28 @@
 ---
 title: Verlauf
 area: connections
-summary: Etwa ein Jahr ältere Mails, Meetings und WhatsApp-Chats zum Suchen und Lesen. Nie eine Aufgabe.
+summary: Etwa ein Jahr ältere Mails, Meetings und WhatsApp-Chats zum Suchen, Lesen und Kennen deiner Leute. Nie eine Aufgabe.
 covers: history
-code: machine/app/history.py, machine/store/history.py
+code: machine/app/history.py, machine/store/history.py, machine/graph_history.py
 keywords: older messages, backfill, archive, past emails
 ---
 ## Was er behält
 
-Jedes E-Mail-Konto, jeder Kalender und WhatsApp behält etwa ein Jahr ältere Nachrichten und Meetings. Die Suche findet sie, ein Verlauf zeigt sie, und der [Kalender](calendar.md) zeigt vergangene Meetings.
+Jedes E-Mail-Konto, jeder Kalender und WhatsApp behält etwa ein Jahr ältere Nachrichten und Meetings. Die Suche findet sie, auch nach Bedeutung, ein Verlauf zeigt sie, und der [Kalender](calendar.md) zeigt vergangene Meetings.
 
 Die Karte sagt, wie weit er zurückreicht: **Verlauf: zurück bis** zu einem Monat, sobald er da ist.
 
+## Was er deinem Graph gibt
+
+Dein [Graph](graph.md) zählt ihn mit: wie nah du Leuten bist, wann ihr zuletzt Kontakt hattet, wer wen kennt, und die Personen und Organisationen selbst. Die Antworten deiner Fleet auf „Wer kennt jemanden“ nutzen ihn aus Arbeitskonten, mit denselben [Teilregeln](sharing-rules.md) wie neue Mails.
+
 ## Was er nie tut
 
-Der Verlauf ist nur zum Nachschlagen da. Er macht nie eine Aufgabe oder ein Versprechen, kommt nie in eine Prüfung, zählt nie als neu und geht nie in deinen Graph oder an dein Team. Kein KI-Modell liest ihn.
-
-Aufgaben und Versprechen kommen weiter nur aus neuen Nachrichten, wie bisher.
+Er macht nie eine Aufgabe oder ein Versprechen, zählt nie als neu, startet nie eine Prüfung und kommt nie in ein Projekt. Privater Verlauf bleibt privat, wie private Mails. Außer für die Suche nach Bedeutung liest ihn kein KI-Modell.
 
 ## Wann er läuft
 
-Er beginnt, wenn der erste Blick auf deine Nachrichten fertig ist, und läuft langsam im Hintergrund. Er wartet, während eine Prüfung oder ein Abgleich läuft und wenn deine Machine wenig Speicherplatz oder Arbeitsspeicher hat. Nach einem Neustart macht er dort weiter, wo er war.
+Er beginnt, wenn der erste Blick auf deine Nachrichten fertig ist, und für jede Verbindung erst, wenn ihre erste Woche da ist, auch bei einer, die du später hinzufügst. Er läuft langsam im Hintergrund und wartet, während eine Prüfung oder ein Abgleich läuft, wenn ein Dienst um weniger Tempo bittet oder wenn deine Machine wenig Speicherplatz hat. Neue Nachrichten gehen immer vor.
 
 Er nutzt den Zugriff, den jede Verbindung schon hat. Nichts Neues wird gefragt.
 

@@ -7595,11 +7595,15 @@ class App(*APP_MIXINS):
                 LOG.error('chat files sweep error=%s', type(error).__name__)
 
     def embedding_worker(self):
-        """Small background passes: vectors for new and changed signals, newest first. Never blocks
-        ingestion (no transaction spans the embedding call); failures wait and retry."""
+        """Small background passes: vectors for new and changed signals, newest first, then history's at a slower pace
+        once none waits (history_embed_step). Never blocks ingestion (no transaction spans the embedding call);
+        failures wait and retry."""
         wait=10
         while not self.stop.wait(wait):
-            try:wait=5 if embeddings.embed_pending(self.store.connect,embeddings.settings(self.config),16)==16 else 60
+            try:
+                settings=embeddings.settings(self.config)
+                done=embeddings.embed_pending(self.store.connect,settings,16)
+                wait=5 if done==16 else 60 if done else min(60,self.history_embed_step(settings))
             except Exception as error:
                 LOG.error('embeddings error=%s',error if isinstance(error,embeddings.EmbeddingError) else type(error).__name__);wait=300
 

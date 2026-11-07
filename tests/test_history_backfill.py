@@ -19,6 +19,7 @@ import check_now  # noqa: E402
 import embeddings  # noqa: E402
 import graph  # noqa: E402
 import ms_graph  # noqa: E402
+from machine import graph_history  # noqa: E402
 from machine.app import history as app_history  # noqa: E402
 from machine.store import history  # noqa: E402
 
@@ -99,6 +100,8 @@ class Base(unittest.TestCase):
         self.app.HISTORY_SOURCES = {'whatsapp': (FakeWhatsApp, a.whatsapp_event), 'mail': (FakeGmail, a.message_event),
                                     'calendar': (FakeCalendar, a.calendar_event, a.calendar_title_excluded)}
         FakeWhatsApp.rows, FakeWhatsApp.reads, FakeGmail.reads, FakeCalendar.reads = [], [], [], []
+        with self.store.connect() as db:  # each connection's own first week is in (OnboardingFirst tests one that isn't)
+            db.executemany('INSERT INTO milestones(name,at) VALUES(?,?)', [('first_import:' + i, NOW) for i in ('wa', 'work', 'cal')])
         for x in [p for p in (mock.patch.object(app_history, 'free_disk', return_value=True),
                               mock.patch.object(app_history, 'free_memory', return_value=True))]:
             x.start(); self.addCleanup(x.stop)
@@ -362,6 +365,97 @@ class CalendarHistory(Base):
             history.save(db, 'cal', {'target': '2025-11-06T09:00:00+00:00'}, a.now(), 3, '2026-06-01T10:00:00+00:00')
         with mock.patch.object(a.App, 'started_at', return_value='2026-10-30T09:00:00+00:00'):
             self.assertIsNone(self.app.calendar_starts())  # its meetings land before the first-read start: no edge there yet
+
+
+class OnboardingFirst(Base):
+    """History never holds back onboarding: a connection's own first week first (also one added later), nothing of
+    history (backfill, Graph passes, embeddings) while the first look or a check runs, and a 429 to history rests
+    history alone, never live sync."""
+    accounts = [MAIL]
+
+    def setUp(self):
+        super().setUp()
+        FakeGmail.messages = {'m3': mail(3, '2026-02-01T10:00:00+00:00', 'Contract draft')}
+        FakeGmail.pages = {None: {'messages': [{'id': 'm3'}]}}
+
+    def test_a_connection_added_after_setup_waits_for_its_own_first_week(self):
+        self.first_look_over()
+        with self.store.connect() as db:
+            db.execute("DELETE FROM milestones WHERE name='first_import:work'")  # added just now: never read yet
+        self.assertFalse(self.app.history_step())
+        self.assertEqual((FakeGmail.reads, self.app.history_why), ([], 'first_import'))
+        self.assertIn('first_import', app_history.SHORT_WAITS)  # looked at again soon, then it goes
+        with self.store.connect() as db:  # its first week is coming in
+            db.execute("INSERT INTO milestones(name,at) VALUES('first_page:work',?)", (NOW,))
+            db.execute('INSERT INTO checkpoints(account_id,state,last_success) VALUES(?,?,?)', ('work', json.dumps({'mode': 'incremental'}), NOW))
+        self.assertFalse(self.app.history_step())
+        self.assertEqual(FakeGmail.reads, [])
+        with self.store.connect() as db:
+            db.execute("INSERT INTO milestones(name,at) VALUES('first_import:work',?)", (NOW,))
+        self.assertTrue(self.app.history_step())
+        self.assertTrue(FakeGmail.reads)
+
+    def test_setup_runs_no_history_work_at_all(self):
+        with self.store.connect() as db:
+            db.execute("INSERT INTO sync_activity VALUES('s1','work',?,'success',3,NULL,NULL)", (NOW,))
+        self.store.commit_page('work', None, [a.message_event(MAIL, mail(4, '2026-01-01T10:00:00+00:00'))], record_sync=False, history=True)
+        with mock.patch.object(embeddings, 'embed_pending', side_effect=AssertionError('no history embedding during setup')):
+            for why in ('first_look', 'review'):
+                if why == 'review':
+                    self.first_look_over()
+                    with self.store.connect() as db:
+                        db.execute("INSERT INTO review_runs(run_id,status,started_at,updated_at) VALUES('r','running',?,?)", (NOW, NOW))
+                self.assertEqual(self.app.history_wait(), why)
+                self.assertFalse(self.app.history_step())
+                self.assertFalse(self.app.history_graph_step())
+                self.assertEqual(self.app.history_embed_step({'url': 'http://127.0.0.1:1', 'model': 'm'}), app_history.WAIT_SECONDS)
+        self.assertEqual(FakeGmail.reads, [])
+        with self.store.connect() as db:
+            self.assertIsNone(graph_history.since(db))  # so a build during setup reads no history row
+            db.isolation_level = None
+            self.assertEqual(graph.build(db, self.app.config, NOW, history=True)['history'], 0)
+
+    def test_a_history_429_rests_history_and_never_live_sync(self):
+        self.first_look_over()
+
+        def busy(resource, params=None):
+            FakeGmail.reads.append((resource, params))
+            raise a.SourceError('gmail', 429, retry_after=60)
+        with mock.patch.object(FakeGmail, 'get', side_effect=busy):
+            self.assertFalse(self.app.history_step())
+        self.assertEqual(len(FakeGmail.reads), 1)  # no quick retry: none of the budget live sync needs
+        self.assertEqual(self.app.history_why, 'rate_limit')
+        self.assertEqual(self.app.history_wait(), 'rate_limit')  # all history work rests
+        self.assertFalse(self.app.history_graph_step())
+        with self.store.connect() as db:  # what live sync waits on is untouched
+            self.assertIsNone(db.execute("SELECT 1 FROM checkpoints WHERE account_id='work' AND (error IS NOT NULL OR retry_at IS NOT NULL)").fetchone())
+        self.app.history_rested = 0.0  # its rest over: it goes on
+        self.assertIsNone(self.app.history_wait())
+
+    def test_a_live_429_holds_history_back(self):
+        self.first_look_over()
+        with self.store.connect() as db:
+            db.execute('INSERT INTO checkpoints(account_id,state,error,error_at,failures) VALUES(?,?,?,?,1)',
+                       ('work', json.dumps({'mode': 'incremental'}), 'gmail:HTTP_429', NOW))
+        self.assertEqual(self.app.history_wait(), 'rate_limit')
+        self.assertFalse(self.app.history_step())
+        self.assertEqual(FakeGmail.reads, [])
+
+    def test_history_embeddings_come_after_signals_newest_first_and_rest_on_a_429(self):
+        self.first_look_over()
+        self.store.commit_page('work', {}, [a.message_event(MAIL, mail(1, '2026-11-05T10:00:00+00:00', 'Live'))])
+        for n, at in ((5, '2026-01-01T10:00:00+00:00'), (6, '2026-06-01T10:00:00+00:00')):
+            self.store.commit_page('work', None, [a.message_event(MAIL, mail(n, at, f'Old {n}'))], record_sync=False, history=True)
+        settings = {'url': 'http://127.0.0.1:1', 'model': 'm', 'dims': 4}
+        with self.store.connect() as db:
+            self.assertEqual([r['title'] for r in embeddings.pending(db, settings, 10)], ['Live'])
+            self.assertEqual([r['title'] for r in embeddings.pending(db, settings, 10, history=True)], ['Old 6', 'Old 5'])
+        with mock.patch.object(embeddings, 'embed_pending', return_value=2) as embedded:
+            self.assertEqual(self.app.history_embed_step(settings), app_history.EMBED_GAP_SECONDS)
+        self.assertEqual(embedded.call_args.kwargs, {'history': True})
+        with mock.patch.object(embeddings, 'embed_pending', side_effect=embeddings.EmbeddingError('http_429')):
+            self.assertEqual(self.app.history_embed_step(settings), app_history.WAIT_SECONDS)
+        self.assertEqual(self.app.history_wait(), 'rate_limit')
 
 
 if __name__ == '__main__':

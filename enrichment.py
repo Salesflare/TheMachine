@@ -602,7 +602,9 @@ def people_due(db, now, limit):
     left = False
     looked = {r[0]: (r[1], r[2], r[3]) for r in db.execute('SELECT identifier,status,fetched_at,profile FROM person_profiles')}
     ranked = []
-    for node, name, strength, raw in db.execute("SELECT id,name,strength,info FROM graph_nodes WHERE kind='person'"):
+    # closeness from signals alone: someone only history knows is never looked up (machine/graph_history.py)
+    for node, name, strength, raw in db.execute("SELECT id,name,coalesce(json_extract(info,'$.live'),strength),info FROM graph_nodes "
+                                                "WHERE kind='person' AND coalesce(json_extract(info,'$.live'),strength)>0"):
         try:
             info = json.loads(raw or '{}')
         except ValueError:

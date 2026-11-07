@@ -34,6 +34,7 @@ import datetime as dt
 import json
 import re
 
+from machine.graph_history import live
 import timeutil
 
 SCHEMA = '''
@@ -104,7 +105,7 @@ def active(db, current, limit=200):
     since = (current - dt.timedelta(days=ACTIVE_DAYS)).isoformat()
     rows = db.execute("SELECT n.id,n.name,n.info,n.strength,(SELECT count(*) FROM graph_events g WHERE g.node_id=n.id AND g.direct=1 AND g.at>=?) recent,"
                       "(SELECT max(g.at) FROM graph_events g WHERE g.node_id=n.id AND g.direct=1) last FROM graph_nodes n "
-                      "WHERE n.kind='person' AND n.strength>=? ORDER BY n.strength DESC LIMIT ?", (since, MIN_STRENGTH, limit)).fetchall()
+                      f"WHERE n.kind='person' AND {live('n')}>=? ORDER BY {live('n')} DESC LIMIT ?", (since, MIN_STRENGTH, limit)).fetchall()
     out = []
     for r in rows:
         info = json.loads(r['info'] or '{}')
