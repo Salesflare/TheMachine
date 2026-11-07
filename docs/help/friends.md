@@ -20,7 +20,7 @@ In **Fleet**, under **Network**:
 
 Both are on by default, and off at the Careful security level. Turn either off any time; your choice stays. People can find you by your sign-in email and your connected addresses, except shared ones like info@, which stay off until you turn them on.
 
-People you know show up right away when you turn it on, and as they join later. Each one comes with Connect, Not now or **Never suggest**. **Leave the Network** takes you off it.
+People you know show up right away when you turn it on, and as they join later. Each one comes with Connect, Not now or **Never suggest**. Once you're friends, they're no longer suggested. **Leave the Network** takes you off it.
 
 People it finds say **Has a Machine** in your People list. It checks the addresses in your messages and the ones you added to a person with **Edit**: if someone signed up with another address, add it to them. On the page of someone it found, **Add as friend** in the ⋯ menu sends the same request as Connect.
 

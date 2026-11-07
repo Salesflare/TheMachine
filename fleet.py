@@ -654,7 +654,9 @@ class NetworkClient:
                         except (TypeError, ValueError):
                             pass
                     raise limited from None
-            raise ValueError(message or f'The Network said {error.code}') from None
+            refused = ValueError(message or f'The Network said {error.code}')
+            refused.code = error.code  # a refusal is told apart by its code (409: friends already), never its words
+            raise refused from None
 
 
 Relay = NetworkClient  # its name before the rename, for code that still says Relay
@@ -2413,6 +2415,15 @@ class Fleet(fleet_requests.Requests, fleet_reviews.Reviews, friends.Friends, con
             name = view['text'].split(' wants ')[0]
             self.log(db, 'in', view['fleet_id'] or view['fleet'], None, name, 'friend' if row['kind'] == 'friend_request' else 'seat', view['text'],
                      {'confirmed': f'confirmed ({via})', 'declined': f'declined ({via})'}.get(status, 'nothing done: ' + reason))
+        if row['kind'] == 'friend_request' and status == 'confirmed':
+            # The new friend is in the Fleet tab, and their Network suggestion goes (network_view): at once on the
+            # dashboard; a Telegram tap has no time to spare (TAP_TIMEOUT), so the loop's next step fetches it
+            self.last['directory'] = float('-inf')
+            if via != 'telegram':
+                try:
+                    self.directory(refresh=True)
+                except Exception:  # the loop's next step tries again
+                    pass
         if via != 'telegram' and row['telegram_message_id']:
             self.retell_notice_now(row['telegram_message_id'])
         return {'status': status, 'reason': reason, 'notice': view}

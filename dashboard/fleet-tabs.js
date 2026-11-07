@@ -139,8 +139,8 @@ fleetOn('submit',async e=>{const t=e.target;if(t.classList.contains('friend-add-
  else if(t.classList.contains('friend-avail-form')){e.preventDefault();
   try{await fleetPost('fleet_availability',{member_id:t.elements.member.value,start:t.elements.start.value,days:Number(t.elements.days.value)});toast('Asked. Their busy times show here.');await fleetView()}catch(err){errCaught(err);toast(err.message,true)}}});
 fleetOn('click',async e=>{const b=e.target.closest('[data-net-do]');if(!b)return;if(b.dataset.confirmText&&!confirm(b.dataset.confirmText))return;b.disabled=true;
- try{await fleetPost('fleet_network',{do:b.dataset.netDo,email:b.dataset.netEmail||'',relation:b.dataset.netRel||''});
-  toast({find_on:'On. Your Machine checks your contacts privately.',asked:'Okay. Turn it on any time in the Fleet tab.',connect:'Request sent. It waits until they accept.',later:'Hidden for now.',never:'Won’t suggest them again.',leave:'You left the Network.'}[b.dataset.netDo]||'Done.');await fleetView();await refresh()}catch(err){errCaught(err);b.disabled=false;toast(err.message,true)}});
+ try{const r=await fleetPost('fleet_network',{do:b.dataset.netDo,email:b.dataset.netEmail||'',relation:b.dataset.netRel||''});
+  toast(r?.status==='connected'?'Already friends. Nothing was sent.':{find_on:'On. Your Machine checks your contacts privately.',asked:'Okay. Turn it on any time in the Fleet tab.',connect:'Request sent. It waits until they accept.',later:'Hidden for now.',never:'Won’t suggest them again.',leave:'You left the Network.'}[b.dataset.netDo]||'Done.');await fleetView();await refresh()}catch(err){errCaught(err);b.disabled=false;toast(err.message,true)}});
 fleetOn('change',async e=>{const t=e.target.closest('[data-net-addr]');if(!t)return;t.disabled=true;
  try{await fleetPost('fleet_network',{do:t.checked?'address_on':'address_off',email:t.dataset.netAddr});await fleetView()}catch(err){errCaught(err);t.checked=!t.checked;toast(err.message,true)}finally{t.disabled=false}});
 fleetOn('change',async e=>{const t=e.target.closest('[data-net-toggle]');if(!t)return;t.disabled=true;

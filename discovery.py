@@ -473,7 +473,7 @@ class Discovery:
             self._set_network(joined_buckets=[])
         if full and not found.get('first_done'):
             self._set_network(first_done=now())  # the lookup when the owner joined: what it found is "in your contacts"
-        friends = {m.get('username') for m in self.teammates(self.friends_ref())} if self.friends_ref() else set()
+        friends = self.network_friends()
         mates = self.fleet_mates()
         with self.connect() as db:
             ensure(db)
@@ -671,7 +671,17 @@ class Discovery:
             raise ValueError('Not someone found on the Network')
         if do == 'connect':
             relation = relation if relation in ('friend', 'family', 'colleague') else ('colleague' if row['hint'] == 'colleague' else 'friend')
-            self.friend_action('add', row['username'])
+            if row['username'] in self.network_friends():
+                return self._connected_already(email, relation)
+            try:
+                self.friend_action('add', row['username'])
+            except ValueError as error:
+                if getattr(error, 'code', None) != 409:
+                    raise
+                self.directory(refresh=True)  # friends already since the last directory (they accepted, or it was theirs)
+                if row['username'] not in self.network_friends():
+                    raise
+                return self._connected_already(email, relation)
             with self.connect() as db:
                 db.execute("UPDATE network_people SET status='requested',relation=?,decided_at=? WHERE email=?", (relation, now(), email))
             return {'status': 'requested', 'relation': relation}
@@ -681,10 +691,30 @@ class Discovery:
             return {'status': do}
         raise ValueError('Unknown Network action')
 
+    def network_friends(self):
+        """The usernames of the owner's friends, from the directory's friends group."""
+        ref = self.friends_ref()
+        return {m.get('username') for m in self.teammates(ref) if m.get('username')} if ref else set()
+
+    def mark_friends_connected(self, db, friends=None):
+        """Someone found who is a friend already (their request accepted, added from the Fleet tab) is connected: no
+        Network suggestion for them. Idempotent: every view and round runs it, so a card left from before goes too."""
+        friends = sorted(self.network_friends() if friends is None else friends)
+        if friends:
+            db.execute(f"UPDATE network_people SET status='connected' WHERE status IN ('new','requested','later') "
+                       f"AND username IN ({','.join('?' * len(friends))})", friends)
+
+    def _connected_already(self, email, relation):
+        with self.connect() as db:
+            db.execute("UPDATE network_people SET status='connected',relation=?,decided_at=? WHERE email=?", (relation, now(), email))
+            self.log(db, 'out', self.friends_ref() or 'friends', None, 'Network', 'discover', 'Friends already: nothing sent', 'done')
+        return {'status': 'connected', 'relation': relation}
+
     def network_view(self):
         found = self.network_settings()
         with self.connect() as db:
             ensure(db)
+            self.mark_friends_connected(db)
             mates = self.fleet_mates()
             people = [{**{k: r[k] for k in ('email', 'username', 'name', 'hint', 'role', 'relation', 'status', 'found_at')},
                        'reasons': json.loads(r['reasons'] or '[]')}
