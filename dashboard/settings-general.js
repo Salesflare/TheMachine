@@ -72,7 +72,7 @@ function renderAccount(){const d=acct.data,list=$('#acct-list'),foot=$('#acct-fo
  if(p?.cancel_at)rows.push(`<div><span class="grow">Ends<small>${esc(acctDay(p.cancel_at))}</small></span></div>`);
  // Network for Friends, a paid subscription from before the Network was free (self-hosted only), until it stops: stopping,
  // keeping it and the card are on the account's Billing part
- const net=d.network;if(net?.on)rows.push(acctRow(esc(t('Network for Friends')),[net.status==='past_due'?t('Payment is being retried'):'',net.until?t('Stops on {}',acctDay(net.until)):[net.price,t('Renews every month')].filter(Boolean).join(' · ')].filter(Boolean).map(esc).join(' · '),acctGo(d,'network'),true));
+ const net=d.network;if(net?.on)rows.push(acctRow(esc(t('Network for Friends')),[net.status==='past_due'?t('Payment is being retried'):'',net.until?t('Stops on {}',acctDay(net.until)):[net.price,t('The Network is free now, so you can stop this')].filter(Boolean).join(' · ')].filter(Boolean).map(esc).join(' · '),acctGo(d,'network'),true));
  if(srv)rows.push(`<div><span class="grow">Machine<small>${esc(srv.size)} · ${esc(srv.region)}</small></span>${d.hop?acctGo(d,'overview'):''}</div>`);
  if(srv){const c=d.connections||[];rows.push(`<div><span class="grow">Connected accounts<small>${c.length?c.map(x=>esc(x.service)+': '+esc(x.email)).join('<br>'):'None yet'}</small></span>${acctGo(d,'connections')}</div>`)}
  const fl=d.fleets||[],role={owner:'Owner',admin:'Admin',member:'Member'};

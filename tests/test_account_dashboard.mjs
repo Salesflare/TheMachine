@@ -113,7 +113,7 @@ try{
     [['network',APP+'/account?tab=billing&focus=1#network-sub','_blank'],['fleet',APP+'/account?tab=fleet&focus=1','_blank'],['friends',APP+'/account?tab=friends&focus=1','_blank'],
      ['security',APP+'/account?tab=security&focus=1','_blank'],['account',APP+'/account','_blank']]);
    // Network for Friends (an older paid one): its state in short; stopping it and the card are on the account's Billing part
-   assert.ok((await text(page,'#acct-list')).includes('Network for Friends\n€4/month, excl. VAT · Renews every month'));
+   assert.ok((await text(page,'#acct-list')).includes('Network for Friends\n€4/month, excl. VAT · The Network is free now, so you can stop this'));
    pairedSummary.network={on:true,status:'past_due',until:'2026-11-30',price:'€4/month, excl. VAT'};
    await page.goto('about:blank');await page.goto(base+'/#settings/account');await page.locator('#acct-list',{hasText:'Stops on'}).waitFor();
    assert.ok((await text(page,'#acct-list')).includes('Payment is being retried · Stops on Mon, Nov 30'));
