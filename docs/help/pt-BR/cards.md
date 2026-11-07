@@ -30,7 +30,7 @@ Uma tarefa cujo último passo ainda está aberto do lado de outra pessoa, como u
 
 Uma tarefa que ninguém tocou em uma semana pergunta uma vez: **Ainda precisa?** **Descartar** fecha a tarefa como **Não precisa**, com **Desfazer**. **Manter** mantém a tarefa, e ela não pergunta de novo. Abrir, uma mensagem no chat, uma edição, adiar ou uma mensagem nova sobre ela contam como um toque. Sem resposta por mais uma semana, ela vai para Volta mais tarde, sob Ainda precisa?, em vez de sumir. Um toque traz de volta.
 
-**Tudo em dia.** significa que nada precisa de você agora. A linha abaixo diz quando sua Machine olhou pela última vez.
+Quando nada precisa de você, sua Machine tira uma soneca na lista vazia. Enquanto verifica, ela acorda e avisa. Se uma verificação falhou ou está atrasada, a linha dela diz isso, com **Verificar agora** embaixo.
 
 **Todos**, **Trabalho** e **Pessoal**, acima da lista na barra lateral, mostram todas as tarefas ou só um tipo. A sua Machine guarda a escolha, então o celular e o computador mostram a mesma lista. Enquanto Trabalho ou Pessoal estiver ativo, o topo da lista avisa, com **Mostrar todas** para voltar.
 
@@ -46,7 +46,7 @@ Quando você inicia uma tarefa, ela sempre pode ler as mensagens de onde veio, t
 
 Sua Machine lê cada fonte a cada poucos minutos, de dia e de noite, e verifica o que chegou em busca de tarefas assim que 40 mensagens esperam ou a mensagem mais antiga espera há 15 minutos.
 
-**Verificar agora**, no topo de Tarefas, lê na hora cada fonte e olha o que chegou, também quando está tudo tranquilo. Ao lado, uma linha diz quando ela verificou pela última vez, quando é a próxima verificação e quantas mensagens novas esperam, como "Verificado 21:10 · próxima até 21:26 · 2 novas". Tocar de novo enquanto ela verifica mostra a mesma verificação. O app do celular também tem. No chat, peça para ela verificar agora.
+**Verificar agora** lê na hora cada fonte. Sem nada aberto, toque na linha da sua Machine para ver, com **Detalhes**, que abre Verificações em Conexões. Com tarefas abertas, fica no topo no computador. Uma linha curta aparece ali só enquanto uma verificação roda, ou quando uma falhou ou está atrasada. Você também pode pedir no chat.
 
 LinkedIn, X e Salesflare mantêm o próprio ritmo.
 

@@ -30,7 +30,7 @@ Eine Aufgabe, deren letzter Schritt noch bei jemand anderem offen ist, etwa ein 
 
 Eine Aufgabe, die eine Woche niemand angefasst hat, fragt einmal: **Noch nötig?** **Entfernen** schließt sie wie **Nicht nötig**, mit **Rückgängig**. **Behalten** behält sie, und sie fragt nie wieder. Öffnen, eine Chatnachricht, eine Änderung, Zurückstellen oder eine neue Nachricht dazu zählen als Anfassen. Kommt eine weitere Woche keine Antwort, wandert sie in Kommt später zurück, unter Noch nötig?, statt zu verschwinden. Anfassen holt sie zurück.
 
-**Alles erledigt** heißt, dass dich gerade nichts braucht. Die Zeile darunter sagt, wann deine Machine zuletzt nachgesehen hat.
+Wenn dich nichts braucht, macht deine Machine auf der leeren Liste ein Nickerchen. Während sie prüft, wird sie wach und sagt es. Ist eine Prüfung fehlgeschlagen oder spät dran, sagt ihre Zeile das, mit **Jetzt prüfen** darunter.
 
 **Alle**, **Arbeit** und **Privat** über der Liste in der Seitenleiste zeigen alle Aufgaben oder nur eine Art. Deine Machine merkt sich die Wahl, sodass Handy und Computer dieselbe Liste zeigen. Wenn Arbeit oder Privat aktiv ist, steht das oben in der Liste, mit **Alle anzeigen** zum Zurückgehen.
 
@@ -46,7 +46,7 @@ Startest du eine Aufgabe, darf sie die Nachrichten, aus denen sie kam, immer les
 
 Deine Machine liest jede Quelle alle paar Minuten, Tag und Nacht, und prüft das Neue auf Aufgaben, sobald 40 Nachrichten warten oder die älteste Nachricht 15 Minuten gewartet hat.
 
-**Jetzt prüfen** oben bei Aufgaben liest sofort jede Quelle und sieht sich an, was neu ist, auch wenn gerade nichts ansteht. Daneben steht, wann sie zuletzt geprüft hat, wann die nächste Prüfung fällig ist und wie viele neue Nachrichten warten, etwa „Geprüft 21:10 · nächste bis 21:26 · 2 neu“. Ein zweiter Druck während der Prüfung zeigt dieselbe Prüfung. Die Handy-App hat es auch. Im Chat bittest du sie einfach, jetzt zu prüfen.
+**Jetzt prüfen** liest sofort jede Quelle. Ist nichts offen, tippe auf die Zeile deiner Machine, um es zu sehen, mit **Details**, das Prüfungen unter Verbindungen öffnet. Sind Aufgaben offen, steht es auf einem Computer oben. Eine kurze Zeile dort erscheint nur, während eine Prüfung läuft oder wenn eine fehlgeschlagen oder spät dran ist. Du kannst auch im Chat fragen.
 
 LinkedIn, X und Salesflare behalten ihr eigenes Tempo.
 

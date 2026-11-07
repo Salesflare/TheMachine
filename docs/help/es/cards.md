@@ -30,7 +30,7 @@ Una tarea cuyo último paso sigue abierto en manos de otra persona, como una rev
 
 Una tarea que nadie tocó en una semana pregunta una vez: **¿Aún hace falta?** **Descartar** la cierra como **No hace falta**, con **Deshacer**. **Mantener** la mantiene, y no vuelve a preguntar. Abrirla, un mensaje en el chat, un cambio, posponerla o un mensaje nuevo sobre ella cuentan como tocarla. Si no hay respuesta en otra semana, se guarda en Vuelve más tarde, bajo ¿Aún hace falta?, en lugar de desaparecer. Tocarla la trae de vuelta.
 
-**Todo al día.** significa que ahora nada te necesita. La línea de abajo dice cuándo tu Machine revisó por última vez.
+Cuando nada te necesita, tu Machine se echa una siesta en la lista vacía. Mientras revisa, se despierta y lo dice. Si una revisión falló o va con retraso, su línea lo dice, con **Revisar ahora** debajo.
 
 **Todo**, **Trabajo** y **Personal**, encima de la lista en la barra lateral, muestran todas las tareas o solo un tipo. Tu Machine guarda la elección, así que tu teléfono y tu ordenador muestran la misma lista. Mientras Trabajo o Personal está activo, la parte de arriba de la lista lo indica, con **Mostrar todo** para volver.
 
@@ -46,7 +46,7 @@ Cuando inicias una tarea, siempre puede leer los mensajes de los que vino, tambi
 
 Tu Machine lee cada fuente cada pocos minutos, de día y de noche, y revisa lo que llegó en busca de tareas en cuanto hay 40 mensajes esperando o el mensaje más antiguo lleva 15 minutos esperando.
 
-**Revisar ahora**, arriba en Tareas, lee al momento cada fuente y revisa lo que llegó, también cuando todo está en calma. Al lado, una línea dice cuándo revisó por última vez, cuándo toca la próxima revisión y cuántos mensajes nuevos esperan, como «Revisado 21:10 · próxima antes de 21:26 · 2 nuevos». Pulsarlo otra vez mientras revisa muestra la misma revisión. La app del móvil también lo tiene. En el chat, pídele que revise ahora.
+**Revisar ahora** lee al momento cada fuente. Si no hay nada abierto, toca la línea de tu Machine para verlo, con **Detalles**, que abre Revisiones en Conexiones. Con tareas abiertas, está arriba en un ordenador. Ahí solo aparece una línea corta mientras una revisión está en marcha, o cuando una falló o va con retraso. También puedes pedirlo en el chat.
 
 LinkedIn, X y Salesflare siguen su propio ritmo.
 

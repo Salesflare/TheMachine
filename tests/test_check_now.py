@@ -100,7 +100,7 @@ class CheckNow(unittest.TestCase):
         self.assertIsNone(self.app.check.phase())
         self.assertEqual(getattr(self.app, 'review_asked', 0), 0)
         page = dashboard_parts.assemble(ROOT)
-        self.assertIn('const busy=!!(c.phase||c.reviewing||c.reading)', page)  # the button greys out with its spinner
+        self.assertIn("if(c.phase||c.reviewing||c.reading)return {kind:'busy'", page)  # busy: the line says it runs, the robot wakes
 
     def test_a_resting_collector_reads_at_once_and_then_a_review_starts(self):
         reads = []

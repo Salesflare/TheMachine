@@ -71,6 +71,7 @@ try{
  // Past its day: the usual All clear again
  cards=[];done=null;await page.evaluate(async()=>{await refresh()});
  await page.locator('#suggestions img.sleepy').waitFor();
- assert.ok((await page.locator('#page-head').innerText()).includes('All clear'));
+ assert.equal(await page.locator('#page-head .page-sub').count(),0,'the sections carry the counts');
+ assert.ok((await page.locator('#suggestions .all-clear .poke-line').innerText()).length>0,'the robot says all clear');
  assert.deepEqual(errors,[]);
 }finally{await browser?.close();server.close()}
