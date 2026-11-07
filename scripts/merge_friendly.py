@@ -1,8 +1,8 @@
 """Lay out the two files every pull request adds to so parallel pull requests merge cleanly (CONTRIBUTING.md).
 
-    python3 scripts/merge_friendly.py      # rewrite assistant.py's action lists and the dashboard's long markup lines
+    python3 scripts/merge_friendly.py      # rewrite machine/actions.py's action lists and the dashboard's long markup lines
 
-assistant.py: each module-level *_ACTIONS set or tuple gets one name per line, spreads (*X) first, then the names, each
+machine/actions.py: each module-level *_ACTIONS set or tuple gets one name per line, spreads (*X) first, then the names, each
 sorted, with trailing commas. Comments inside a list move above it. tests/test_owner_boundary.py checks the order.
 dashboard.html and its markup parts (dashboard/*.html): a static markup line longer than LONG breaks before each element
 with an id, inside the previous tag (`</div` newline `><div id=...>`), so the parsed page is exactly the same. Running it
@@ -73,7 +73,7 @@ def markup_part(src):
 
 
 def main():
-    jobs = [('assistant.py', actions), ('dashboard.html', markup)]
+    jobs = [('machine/actions.py', actions), ('dashboard.html', markup)]
     jobs += [(str(path.relative_to(ROOT)), markup_part) for path in sorted((ROOT / 'dashboard').glob('*.html'))]
     for name, fix in jobs:
         path = ROOT / name
