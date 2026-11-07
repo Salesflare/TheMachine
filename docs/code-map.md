@@ -107,7 +107,9 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   `deliver.py`: the delivery loop, Fleet pushes and uncertain sends), `machine/actions.py` (the `*_ACTIONS` sets: who
   may call which action), `machine/store/core.py` (`StoreCore`: opening the database, its schema, message protection,
   exclusion purges, connect; `Store` in `assistant.py` subclasses it), `machine/store/events.py` (`EventsStore`:
-  committing and reading events, the Android feed, tombstones, sync checkpoints).
+  committing and reading events, the Android feed, tombstones, sync checkpoints), `machine/store/review.py`
+  (`ReviewStore`: claiming signals for a review, the context it reads, keeping its result; how a signal is weighed and
+  shown).
 - **Dashboard code:** in its area's part in `dashboard/` (`<area>-<what>.js`: shell, todos, settings, graph, calendar,
   connections, help, events, new, fleet), next to the functions it works with, never at the end of the script. The
   page's core is in the `shell-*` parts too: locale and error reports (`shell-core.js`), network and outbox, `render()`
