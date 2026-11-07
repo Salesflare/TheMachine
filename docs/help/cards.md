@@ -38,7 +38,7 @@ A to-do on a project shows the project's name under its title. Tap it to open th
 
 **Area** under **Details** moves a to-do to your other area, like a personal one that has to go out from your work address. What it may read and send from moves with it. **Undo** on the note moves it back.
 
-When a to-do needs your other area to go on, it shows **Move to Work**. Nothing moves until you tap it. A to-do you added without picking Work or Personal moves by itself once it finds where it belongs.
+When a to-do needs your other area to go on and the messages it came from are all there, it moves there by itself and goes on. Otherwise it shows **Move to Work**, and nothing moves until you tap it. A to-do you added without picking Work or Personal moves by itself once it finds where it belongs.
 
 A to-do can always read the messages it came from. When it needs other messages from your other area, it asks with **Use this email for this to-do**. Mail for another of your companies goes to that company's to-dos, and a to-do about your own life, like family writing to your work address, is Personal from the start.
 

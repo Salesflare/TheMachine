@@ -38,7 +38,7 @@ Une tâche liée à un projet affiche le nom du projet sur la ligne sous son tit
 
 **Domaine** sous **Détails** déplace la tâche vers votre autre espace, comme une tâche perso qui doit partir de votre adresse pro. Ce qu’elle peut lire et d’où elle peut envoyer suit le déplacement ; les messages d’où elle vient restent où ils sont. **Annuler** dans le message qui suit la remet en place.
 
-Quand une tâche a besoin d’un autre espace pour avancer, elle le demande avec un bouton **Déplacer vers Travail**. Rien ne bouge avant que vous appuyiez ; ensuite, elle continue toute seule. Une tâche ajoutée sans choisir Travail ou Perso se déplace toute seule dès qu’elle sait où elle va.
+Quand une tâche a besoin d’un autre espace pour avancer et que tous les messages dont elle vient s’y trouvent, elle s’y déplace toute seule et continue. Sinon, elle le demande avec un bouton **Déplacer vers Travail**. Rien ne bouge avant que vous appuyiez ; ensuite, elle continue toute seule. Une tâche ajoutée sans choisir Travail ou Perso se déplace toute seule dès qu’elle sait où elle va.
 
 Quand vous lancez une tâche, elle peut toujours lire les messages d’où elle vient, même dans la boîte d’une autre entreprise. Si elle a besoin d’autres messages d’un autre espace, elle le demande avec **Utiliser cet e-mail pour cette tâche** ; un appui les ajoute et elle continue. Le courrier pour une autre de vos entreprises va dès le départ dans les tâches de cette entreprise. Une tâche de votre vie privée, comme votre famille qui écrit à votre adresse pro, est Perso dès le départ.
 

@@ -1,7 +1,8 @@
 """Moving a to-do to another area (todo_areas.py): Personal to Work at the owner's company and back, from the to-do's
 More menu. Its accounts become that area's, so what it may send from follows; the move is an event line and has an
-Undo. Its run can ask for a move (preparation_blocked move_to) but never makes one: the owner's tap does, and a to-do
-stuck on exactly that carries on by itself. Offline: nothing is sent and no site is contacted."""
+Undo. Its run can ask for a move (preparation_blocked move_to): the owner's tap makes it, and a to-do stuck on exactly that
+carries on by itself. When the messages it came from are all in that area, it moves there by itself. Offline: nothing is
+sent and no site is contacted."""
 import importlib.util
 import json
 import tempfile
@@ -200,11 +201,74 @@ class MoveCard(unittest.TestCase):
 
     def test_the_run_is_told_its_area_and_how_to_ask(self):
         line = a.area_prompt(self.app.config, '["home-chat"]')
-        self.assertIn('this to-do is in Personal', line)
-        self.assertIn('move_to=<work:Acme (Work)>', line)
+        self.assertIn('this to-do is in Personal (its accounts: whatsapp, android)', line)
+        self.assertIn('move_to=<work:Acme (Work: gmail, slack)>', line)  # what a move would get it
+        self.assertIn('never for what the to-do is about', line)
         self.assertIn('never move it yourself', line)
         self.assertEqual(a.area_prompt({'accounts': ACCOUNTS[:2]}, '["home-chat"]'), '')  # only one area: nothing to say
         self.assertIn('Area: this to-do is in', (ROOT / 'PREPARATION.md').read_text() + line)
+
+
+
+BETA = [{'id': 'beta-mail', 'service': 'gmail', 'transport': 'gog', 'email': 'robin@beta.example', 'boundary': 'work:Beta'}]
+
+
+class MovesByItself(unittest.TestCase):
+    """A run's move to the area all its sources are in happens with no tap; anything less clear keeps the button."""
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
+        self.accounts = ACCOUNTS + BETA
+        self.store = a.Store(Path(self.temp.name) / 'e.sqlite')
+        self.store.accounts = self.accounts
+        self.app = object.__new__(a.App); self.app.store = self.store
+        self.app.config = {'accounts': self.accounts, 'prepare_ahead': False, 'database': str(Path(self.temp.name) / 'e.sqlite')}
+        self.store.config = self.app.config
+        self.store.commit_page('acme-chat', {}, [{'account_id': 'acme-chat', 'source_id': 's1', 'kind': 'slack.message',
+                                                  'occurred_at': '2026-11-04T13:00:00+00:00', 'title': 'Bug report', 'body': 'The report did not show up.',
+                                                  'metadata': {'channel_name': 'DM Sam Lee', 'conversation_type': 'dm'}, 'deleted': False}])
+        self.store.commit_page('home-chat', {}, [chat('m1', '2026-11-04T09:00:00+00:00')])
+
+    def card(self, event_ids, **placed):
+        sid = self.store.suggest('k' + ''.join(map(str, event_ids)) + str(placed), 'Look into the missing report', 'Sam asked about it.', event_ids, **placed)['id']
+        self.store.decide(sid, 'accept', '', 'click-' + sid, 'dashboard')
+        self.app.preparation_step(lambda req: {'status': 'admitted'})
+        with self.store.connect() as db:
+            return sid, db.execute('SELECT job_id FROM preparations WHERE suggestion_id=?', (sid,)).fetchone()['job_id']
+
+    def view(self, sid):
+        with self.store.connect() as db:
+            row = dict(db.execute('SELECT * FROM suggestions WHERE id=?', (sid,)).fetchone())
+            self.store.card_views(db, [row])
+            owner, _ = self.app.card_chat_service(db, sid)
+        return row, [i['text'] for i in owner if i.get('kind') == 'event']
+
+    def test_a_to_do_asking_for_the_area_its_sources_are_in_moves_there_and_carries_on(self):
+        sid, job = self.card([1], company='work:Beta')  # the review placed it with another company
+        self.assertEqual(self.view(sid)[0]['area'], 'work:Beta')
+        out = self.store.preparation_blocked(sid, job, 'The reply has to go from the Acme Slack.', move_to='work:Acme')
+        self.assertEqual((out['status'], out['area'], out['resumed']), ('moved', 'work:Acme', True))
+        card, lines = self.view(sid)
+        self.assertEqual((json.loads(card['account_ids']), card['preparation_status']), (['acme-mail', 'acme-chat'], 'queued'))
+        self.assertEqual(lines, ['Do it', 'Moved to Work at Acme'])  # a quiet line, no "You"; the area chip can move it back
+        undo = self.app.action('card_move', {'suggestion_id': sid, 'area': 'work:Beta', 'decision_id': 'back-1'}, owner_dashboard=True)
+        self.assertEqual(undo['area'], 'work:Beta')
+
+    def test_anything_less_clear_keeps_the_button(self):
+        cases = {'sources in another area': ([1], {}, 'work:Beta'),
+                 'sources in two areas': ([1, 2], {'company': 'work:Beta'}, 'work:Acme'),
+                 'pinned Personal (its own life)': ([1], {'personal': True}, 'work:Acme')}
+        for case, (events, placed, to) in cases.items():
+            with self.subTest(case):
+                sid, job = self.card(events, **placed)
+                before = self.view(sid)[0]['account_ids']
+                self.assertEqual(self.store.preparation_blocked(sid, job, 'It needs the other area.', move_to=to)['status'], 'blocked')
+                card = self.view(sid)[0]
+                self.assertEqual((card['account_ids'], card['preparation_move_to']), (before, to))
+
+    def test_after_a_move_the_next_one_is_the_owners(self):
+        sid, job = self.card([1], company='work:Beta')
+        self.app.action('card_move', {'suggestion_id': sid, 'area': 'personal', 'decision_id': 'mine-1'}, owner_dashboard=True)
+        self.assertEqual(self.store.preparation_blocked(sid, job, 'It needs the Acme Slack.', move_to='work:Acme')['status'], 'blocked')
 
 
 if __name__ == '__main__':

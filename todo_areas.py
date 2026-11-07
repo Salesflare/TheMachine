@@ -3,8 +3,10 @@
 A to-do's area comes from its accounts (assistant.suggestion_scope): what it may read and send from, and whether it
 counts as Work for timing, sharing and handoffs, all follow them. The owner can move a to-do to another of their areas
 (More, Move to Work): its accounts become that area's, so everything that follows the accounts follows the move. The
-messages it came from stay where they are; only the to-do moves. Nothing moves a to-do by itself: its run can ask for a
-move (preparation_blocked move_to), which the to-do shows as a button for the owner's tap.
+messages it came from stay where they are; only the to-do moves. Its run can ask for a move (preparation_blocked
+move_to): when the messages it came from all came in on that area (sources_area), it moves there by itself and carries
+on, since that takes it where its sources already are; otherwise the to-do shows the move as a button for the owner's
+tap.
 
 An area is 'personal' (every account with a personal boundary) or a company: a work boundary ('work:Acme', the accounts
 with it). An account whose own `scope` says the other side (a work boundary labeled personal) is in neither. A work
@@ -102,6 +104,21 @@ def current(account_ids, accounts, pinned=None):
         return (next(iter(firms)) if len(firms) == 1 else None) if firms else WORK
     # suggestion_scope reads a to-do with no Work account as Personal
     return PERSONAL if mine or ids else None
+
+
+def sources_area(source_accounts, accounts):
+    """The one area every account a to-do's messages came in on is in: None when they span several areas, or one is
+    in none (a work mailbox labeled personal, the Machine itself, an account no longer set up)."""
+    where = {a.get('id'): area_of_account(a) for a in accounts or ()}
+    found = {where.get(i) for i in source_accounts or ()}
+    return next(iter(found)) if len(found) == 1 and None not in found else None
+
+
+def holds(area, accounts):
+    """What an area's accounts are, for a run judging whether a move gets it what it needs: their services ('gmail,
+    slack, github'; an account without a service is Gmail), in config order."""
+    return ', '.join(dict.fromkeys(str(a.get('service') or 'gmail') for a in accounts or ()
+                                   if area_of_account(a) == area))
 
 
 def accounts_in(area, accounts):
