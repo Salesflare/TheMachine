@@ -47,6 +47,7 @@ import unicodedata
 from zoneinfo import ZoneInfo
 
 import locale_prefs
+from machine.store import stamps
 import timeutil
 
 import enrichment
@@ -671,6 +672,16 @@ def slack_names(db, ids):
     ids = sorted({i for i in ids if isinstance(i, str) and re.fullmatch(r'[UW][A-Z0-9]{8,11}', i)})
     if not ids:
         return {}
+    # kept until a name, a person or a member changes: a page names the same few members on every open, and each time
+    # was a pass over every person
+    return dict(_SLACK_NAMES.get(tuple(ids), stamps.stamp(db, ('identity_names', 'graph_nodes', 'slack_members')),
+                                 lambda: _slack_names(db, ids)))
+
+
+_SLACK_NAMES = stamps.Kept(64)
+
+
+def _slack_names(db, ids):
     marks = ','.join('?' * len(ids))
     try:
         found_rows = db.execute(f'SELECT identifier,name,email FROM identity_names WHERE identifier IN ({marks})',
@@ -2532,10 +2543,10 @@ def people_by_phone(db, numbers):
     return sorted(out)
 
 
-def fleet_marks(db, fleets):
+def fleet_marks(db, fleets, network=True):
     """{node_id: {'name', 'machine', 'in': [...]}} for the people in the graph who are members of the owner's Fleets,
     Family or Friends (fleets: the directory by Fleet id, as fleet.Fleet.fleets() gives it). Members only: a pending
-    friend request or a blocked person is not one."""
+    friend request or a blocked person is not one. network: with the people found on the Network (network_marks)."""
     by_email = collections.defaultdict(list)
     for ref, found in (fleets or {}).items():
         kind = (found or {}).get('kind')
@@ -2561,7 +2572,7 @@ def fleet_marks(db, fleets):
     order = {'work': 0, 'family': 1, 'friends': 2}
     for mark in marks.values():
         mark['in'].sort(key=lambda x: (order[x['kind']], x['fleet_name'].casefold()))
-    return network_marks(db, marks, fleets)
+    return network_marks(db, marks, fleets) if network else marks
 
 
 def network_marks(db, marks, fleets=None):
@@ -3037,7 +3048,15 @@ def unconfirmed(db, limit=30):
 
 
 def waiting(db):
-    """How many of the review's roles wait for the owner: the Who's who count, for the Graph tab's badge."""
+    """How many of the review's roles wait for the owner: the Who's who count, for the Graph tab's badge. Kept until a
+    role or a person changes: it reads every person, on each status poll."""
+    return _WAITING.get('waiting', stamps.stamp(db, ('person_roles', 'graph_nodes')), lambda: _waiting(db))
+
+
+_WAITING = stamps.Kept(4)
+
+
+def _waiting(db):
     return db.execute("SELECT count(*) FROM person_roles r JOIN graph_nodes n ON r.identifier=coalesce(json_extract(n.info,'$.role_id'),n.id) "
                       "WHERE r.source!='owner'").fetchone()[0]
 

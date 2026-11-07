@@ -165,9 +165,12 @@ def added_for(db, event_ids):
     if not ids:
         return {}
     out = {}
-    for kind, field in ((NOTES, 'notes'), (TRANSCRIPT, 'transcript')):
-        for r in db.execute('SELECT source_id,body,metadata FROM events WHERE kind=? AND deleted=0 AND source_id IN (SELECT ? || value FROM json_each(?))',
-                            (kind, PREFIX[kind], json.dumps(ids))):
+    # the kind written out, so SQLite reads it by its own small index (events_kind_*: Store), not a pass over all events
+    for kind, field, sql in ((NOTES, 'notes', "SELECT source_id,body,metadata FROM events WHERE kind='meeting.notes' AND deleted=0 "
+                                              'AND source_id IN (SELECT ? || value FROM json_each(?))'),
+                             (TRANSCRIPT, 'transcript', "SELECT source_id,body,metadata FROM events WHERE kind='meeting.transcript' "
+                                                        'AND deleted=0 AND source_id IN (SELECT ? || value FROM json_each(?))')):
+        for r in db.execute(sql, (PREFIX[kind], json.dumps(ids))):
             m = json.loads(r['metadata'] or '{}')
             out.setdefault(_meeting_id(r['source_id']), {})[field] = {'by': m.get('added_by') or 'owner', 'at': m.get('added_at'),
                                                                        'chars': len(r['body'] or '')}

@@ -434,6 +434,29 @@ class SharedGraph(unittest.TestCase):
         self.assertEqual(self.team(self.mem), [])
         self.assertEqual(self.team(self.mem, 'team_mail'), [])
 
+    def test_the_sharing_rules_are_kept_between_requests_until_one_of_their_tables_changes(self):
+        """A person's page and the to-do list ask for the sharing rules on every request: worked out once (a pass over
+        every person and organization) and kept, but a Keep private takes effect on the very next label."""
+        self.olive_mail()
+        self.rounds()
+        made = []
+        real = sg.Scope.__init__
+
+        def counted(scope, *args, **kwargs):
+            made.append(1)
+            real(scope, *args, **kwargs)
+        with patch.object(sg.Scope, '__init__', counted), self.own.store.connect() as db:
+            rows = [dict(r) for r in db.execute("SELECT * FROM events WHERE account_id='work'")]
+            first = self.own.thread_labels(db, rows)
+            self.assertEqual(self.own.thread_labels(db, rows), first)
+            self.assertEqual(len(made), 1)  # the second request reused the first one's rules
+            self.assertIn('team', {x['share'] for x in first.values()})
+            sg.keep_private(db, 'org:client.example')
+            db.commit()
+            after = self.own.thread_labels(db, rows)
+        self.assertEqual(len(made), 2)  # worked out again after the change
+        self.assertNotIn('team', {x['share'] for x in after.values()})
+
     def board(self, box, name, visibility, projects, stage='Talks'):
         with box.store.connect() as db:
             for project, sources in projects.items():

@@ -112,7 +112,7 @@ class FollowUpsApp:
             return None
         settings, source = follow_ups.effective(db, p)
         view = follow_ups.views(db, now(), self.follow_up_sendable(), self.follow_up_mine(), self.follow_up_own(db),
-                                   self.follow_up_work())['projects'].get(pid) or {}
+                                   self.follow_up_work(), only=pid)['projects'].get(pid) or {}  # only this one: not every project's
         ends = [dict(r) for r in db.execute('SELECT n,moved,judged,at FROM follow_up_ends WHERE project_id=? ORDER BY at DESC LIMIT 4', (pid,))]
         return {'on': bool(settings and settings.get('on')), 'source': source, 'next_at': view.get('next_at'), 'state': view.get('state'),
                 'reason': view.get('reason'), 'n': view.get('n'), 'max': (settings or {}).get('max'), 'ends': ends,

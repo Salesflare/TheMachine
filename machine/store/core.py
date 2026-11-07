@@ -27,6 +27,7 @@ import learning_loop
 from machine.config import LOG
 from machine.sources.exclusions import calendar_title_excluded, email_subject_excluded, excluded_by_rules, routine_rules
 from machine.store import history as history_store
+from machine.store import stamps
 from machine.text import QUOTED_HISTORY_KEPT, encoded, open_copy, seal_copy, trim_quoted_history
 from machine.timing import _REQUEST_TIMING
 import meet_link
@@ -402,12 +403,26 @@ class StoreCore:
             # events_pending index cannot serve; this keeps them off a full scan.
             db.execute('CREATE INDEX IF NOT EXISTS events_pending_account ON events(account_id,ingested_at,id) WHERE analyzed_version<version')
             history_store.ensure(db)  # after the monotonic-ID rebuild, as its indexes are
+            # A thread's messages by its key: a person's page asks which of its threads are automated mail (shared_graph
+            # Scope.automated_only), and bounces and replies look up a thread's messages, without a pass over all mail
+            db.execute("CREATE INDEX IF NOT EXISTS events_thread_id ON events(json_extract(metadata,'$.thread_id'))")
+            db.execute("CREATE INDEX IF NOT EXISTS events_conversation ON events(json_extract(metadata,'$.conversation_id'))")
+            # The few kinds a record's timeline reads in full on each page open (graph.timeline: the owner's to-dos, Zoom
+            # summaries, Intercom conversations, notes and transcripts added to meetings), each a pass over all events
+            # without these. One partial index per kind, never one on kind itself: SQLite would then pick it over the
+            # better index of many other queries.
+            for kind in ('owner.card', 'zoom.summary', 'intercom.conversation', 'meeting.notes', 'meeting.transcript'):
+                db.execute(f"CREATE INDEX IF NOT EXISTS \"events_kind_{kind.replace('.', '_')}\" ON events(occurred_at) WHERE kind='{kind}'")
             db.execute('CREATE INDEX IF NOT EXISTS analyses_owner ON analyses(owner_run,owner_session)')
+            # A to-do's decisions: the to-do list and the Done list ask each to-do's latest one, a pass over all decisions each
+            db.execute('CREATE INDEX IF NOT EXISTS decisions_suggestion ON decisions(suggestion_id,created_at)')
             for schema in embeddings.SCHEMAS:  # after the monotonic-ID migration, which rebuilds events
                 db.execute(schema)
             graph.ensure(db)
             follow_ups.ensure(db)  # automated follow-ups on boards and projects (follow_ups.py): new tables only
             bounces.ensure(db)  # addresses that bounce (bounces.py): new tables only
+            # Change counters for what a status poll keeps between requests, after the tables (machine/store/stamps.py: graph.waiting, graph.slack_names)
+            stamps.watch(db, ('graph_nodes', 'person_roles', 'identity_names', 'slack_members'))
             recurring.ensure(db)  # recurring to-dos (recurring.py): new tables only
             if 'project' not in {r[1] for r in db.execute('PRAGMA table_info(suggestions)')}:
                 db.execute('ALTER TABLE suggestions ADD COLUMN project TEXT')

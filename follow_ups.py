@@ -1216,12 +1216,13 @@ def open_card(db, project_id):
                       'ORDER BY f.created_at DESC LIMIT 1', (project_id,)).fetchone()
 
 
-def plan(db, now, sendable, mine=mine_default, own=None, work=None):
+def plan(db, now, sendable, mine=mine_default, own=None, work=None, only=None):
     """Every project follow-ups are on for, with where it stands: [{'project', 'board', 'settings', 'source', 'state',
     'next_at', 'n', 'after', 'after_at', 'channel', 'reason', 'pause'}]. state as schedule's, or 'off' with a reason, 'open'
     when a follow-up to-do is out for it already, or 'paused' (pause: the pause that holds it) instead of due, waiting or
     a round's end. own: the owner's {'emails', 'names'}, to read quoted history
-    (earlier_sends). work: the owner's work week (work_week), for Only on work days."""
+    (earlier_sends). work: the owner's work week (work_week), for Only on work days. only: just this project's (its
+    page), as each project's is worked out on its own."""
     if not any_on(db):
         return []
     boards = {b['id']: b for b in db.execute('SELECT * FROM boards').fetchall()}
@@ -1229,6 +1230,8 @@ def plan(db, now, sendable, mine=mine_default, own=None, work=None):
     own_rules = {r[0] for r in db.execute("SELECT ref FROM follow_up_rules WHERE scope='project'")}
     ids = sorted(own_rules | {r[0] for r in db.execute(f"SELECT id FROM projects WHERE board_id IN ({','.join('?' * len(on_boards))})", tuple(on_boards))}
                  if on_boards else own_rules)
+    if only is not None:
+        ids = [pid for pid in ids if pid == only]
     out = []
     for pid in ids:
         p = db.execute('SELECT * FROM projects WHERE id=?', (pid,)).fetchone()
@@ -1349,16 +1352,17 @@ def panel(db, scope, ref, sendable, now, sides=None):
     return view
 
 
-def views(db, now, sendable, mine=mine_default, own=None, work=None):
+def views(db, now, sendable, mine=mine_default, own=None, work=None, only=None):
     """{'boards': {board_id: {'on', 'next_at', 'pause'}}, 'projects': {project_id: {'on', 'state', 'next_at', 'n', 'max', 'own',
     'end', 'pause'}}}: next_at the next follow-up's date (due or waiting), end the quiet note when a round ended without a
-    reply, pause the pause that holds it (current_pause, paused) or None."""
+    reply, pause the pause that holds it (current_pause, paused) or None. only: one project's (then a board's next_at
+    counts that project only)."""
     out = {'boards': {}, 'projects': {}}
     try:
         for r in db.execute("SELECT ref,settings FROM follow_up_rules WHERE scope='board'"):
             on = bool(json.loads(r[1]).get('on'))
             out['boards'][r[0]] = {'on': on, 'next_at': None, 'pause': current_pause(db, 'board', r[0], now) if on else None}
-        items = plan(db, now, sendable, mine, own, work)
+        items = plan(db, now, sendable, mine, own, work, only)
     except Exception:  # noqa: BLE001 - the board shows without it
         return out
     for x in items:
