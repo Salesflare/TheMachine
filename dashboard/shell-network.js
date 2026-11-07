@@ -9,7 +9,8 @@ const NET_SLOW_TEXT='Your Machine is slow to answer.',NET_SLOW=8000,NET_HEARD=12
 let netHeardAt=0,netSlow=false,netWaits=0;
 const slowErr=e=>Object.assign(offline(e),{message:NET_SLOW_TEXT,slow:true});
 // The host in front of the Machine answers (any answer, also a sign-in gate's redirect): the link is fine
-const hostAnswers=()=>fetch('manifest.webmanifest',{cache:'no-store',credentials:'same-origin',redirect:'manual',signal:AbortSignal.timeout(4000)}).then(r=>r.type==='opaqueredirect'||r.status<500,()=>false);
+const hostAnswers=()=>{const stop=new AbortController(),timer=setTimeout(()=>stop.abort(),4000);
+ return fetch('manifest.webmanifest',{cache:'no-store',credentials:'same-origin',redirect:'manual',signal:stop.signal}).then(r=>r.type==='opaqueredirect'||r.status<500,()=>false).finally(()=>clearTimeout(timer))};
 const heardLately=()=>Date.now()-netHeardAt<NET_HEARD;
 // A restart this page asked for or was told of (a connect, a disconnect, a scope change answered restarting): while it
 // lasts, the Machine away is the Machine restarting, also where nothing in front of it says so (a self-hosted one)
