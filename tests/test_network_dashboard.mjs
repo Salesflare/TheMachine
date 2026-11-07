@@ -56,6 +56,9 @@ try{
   answer='{"status":"connected","relation":"colleague"}';calls.length=0;await page.locator('#net-samb [data-net-do="connect"]').click();
   await page.locator('#toast.show',{hasText:'Already friends. Nothing was sent.'}).waitFor();answer='{"ok":true}';
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`${scheme} ${width}px cards scroll sideways`);
+  // Friend, Family, Not now and More share one row, and More is one line (it wrapped as "Mor / e" at 390px)
+  assert.deepEqual(await page.evaluate(()=>{const bs=[...document.querySelectorAll('#net-nia .actions>button,#net-nia .actions>.more-actions')];
+   return [new Set(bs.map(b=>Math.round(b.getBoundingClientRect().top))).size,document.querySelector('#net-nia .more-actions>summary').getBoundingClientRect().height<50]}),[1,true],`${scheme} ${width}px Network buttons`);
   await navClick(page.locator('nav [data-tab="fleet"]'));await page.locator('[data-fleet-pane="network"]').click();await page.locator('#fleet-network').waitFor();
   const block=page.locator('#fleet-network');
   assert.match(await block.innerText(),/Check which of my contacts have a Machine/);assert.match(await block.innerText(),/Zed Zee/);
