@@ -5951,10 +5951,10 @@ class App(*APP_MIXINS):
                     with self.store.connect() as db:lines=recurring.prep_lines(db,job['suggestion_id'])
                     if lines and len(request['message'])+len(lines)<PROMPT_LIMIT-1000:request['message']+=lines
                 except Exception as error:LOG.error('recurring lines error=%s',type(error).__name__)
-                try:  # a skill of the owner's that fits this follow-up: its instructions, ranked above the follow-up defaults
-                    lines=self.follow_up_skill_lines(job['suggestion_id'],rules,PROMPT_LIMIT-1000-len(request['message']))
+                try:  # the owner's skill that fits this to-do (or follow-up): its instructions, ranked above the defaults
+                    lines=self.prep_skill_lines(job['suggestion_id'],rules,PROMPT_LIMIT-1000-len(request['message']))
                     if lines and len(request['message'])+len(lines)<PROMPT_LIMIT-1000:request['message']+=lines
-                except Exception as error:LOG.error('follow-up skill error=%s',type(error).__name__)
+                except Exception as error:LOG.error('skill lines error=%s',type(error).__name__)
                 if getattr(self, 'fleet', None):
                     try:
                         lines=self.fleet.lines(job['suggestion_id'])
