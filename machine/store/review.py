@@ -700,7 +700,7 @@ class ReviewStore:
     def conversation_context(self, rows, limit=4, hours=48):
         """Up to four earlier messages from the same chat for each Slack/WhatsApp signal, so a
         short reply ("let me check") is reviewed with what it answers."""
-        keys = {'slack.message': 'channel_id', 'whatsapp.message': 'chat_id', 'telegram.message': 'chat_id', 'linkedin.message': 'conversation_id', 'x.dm': 'conversation_id', 'x.mention': 'conversation_id'}
+        keys = {'slack.message': 'channel_id', 'whatsapp.message': 'chat_id', 'teams.message': 'chat_id', 'telegram.message': 'chat_id', 'linkedin.message': 'conversation_id', 'x.dm': 'conversation_id', 'x.mention': 'conversation_id'}
         context = {}
         with self.connect() as db:
             for row in rows:
