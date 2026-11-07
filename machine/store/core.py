@@ -411,8 +411,12 @@ class StoreCore:
             # summaries, Intercom conversations, notes and transcripts added to meetings), each a pass over all events
             # without these. One partial index per kind, never one on kind itself: SQLite would then pick it over the
             # better index of many other queries.
-            for kind in ('owner.card', 'zoom.summary', 'intercom.conversation', 'meeting.notes', 'meeting.transcript'):
-                db.execute(f"CREATE INDEX IF NOT EXISTS \"events_kind_{kind.replace('.', '_')}\" ON events(occurred_at) WHERE kind='{kind}'")
+            for sql in ("CREATE INDEX IF NOT EXISTS events_kind_owner_card ON events(occurred_at) WHERE kind='owner.card'",
+                        "CREATE INDEX IF NOT EXISTS events_kind_zoom_summary ON events(occurred_at) WHERE kind='zoom.summary'",
+                        "CREATE INDEX IF NOT EXISTS events_kind_intercom_conversation ON events(occurred_at) WHERE kind='intercom.conversation'",
+                        "CREATE INDEX IF NOT EXISTS events_kind_meeting_notes ON events(occurred_at) WHERE kind='meeting.notes'",
+                        "CREATE INDEX IF NOT EXISTS events_kind_meeting_transcript ON events(occurred_at) WHERE kind='meeting.transcript'"):
+                db.execute(sql)
             db.execute('CREATE INDEX IF NOT EXISTS analyses_owner ON analyses(owner_run,owner_session)')
             # A to-do's decisions: the to-do list and the Done list ask each to-do's latest one, a pass over all decisions each
             db.execute('CREATE INDEX IF NOT EXISTS decisions_suggestion ON decisions(suggestion_id,created_at)')
