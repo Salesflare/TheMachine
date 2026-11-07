@@ -520,6 +520,7 @@
  "Back online. Your waiting changes are saved.": "De volta online. Suas alterações pendentes foram salvas.",
  "Back to Only you. Taken back from their Machines.": "De volta a Só você. Retirado das Machines dessas pessoas.",
  "Back to review.": "De volta para revisar.",
+ "Back to the list": "Voltar à lista",
  "Back to the rule for everyone": "Voltar à regra para todos",
  "Back to the rule for everyone.": "De volta à regra para todos.",
  "Back to the suggested title": "De volta ao título sugerido",
@@ -810,6 +811,7 @@
  "ClawHub sent a SKILL.md that doesn't match its release; not shown": "O ClawHub enviou um SKILL.md que não corresponde à versão; não mostrado",
  "ClawHub’s scan: {}{}.{}": "Análise do ClawHub: {}{}.{}",
  "Clear": "Limpar",
+ "Clear Ready": "Esvaziar Para revisar",
  "Clear all": "Limpar tudo",
  "Clear formatting": "Limpar formatação",
  "Clear the looked-up details? This domain won’t be looked up again until you ask.": "Apagar os detalhes encontrados? Este domínio não será buscado de novo até você pedir.",
@@ -2632,6 +2634,7 @@
  "Notes:": "Notas:",
  "Notes: {}": "Notas: {}",
  "Nothing came in from the past week yet.": "Nada da última semana chegou ainda.",
+ "Nothing cleared.": "Nada resolvido.",
  "Nothing connects until they accept.": "Nada se conecta até a pessoa aceitar.",
  "Nothing connects until you accept. Declining tells them nothing.": "Nada se conecta até você aceitar. Recusar não avisa a pessoa.",
  "Nothing finished or dismissed yet.": "Nada concluído ou descartado ainda.",
@@ -6465,6 +6468,7 @@
   "other": "{} prontas para você"
  },
  "{} ready for you · {} to decide": "{} prontas para você · {} a decidir",
+ "{} ready · about {} min": "{} para revisar · cerca de {} min",
  "{} recovery codes left": {
   "one": "resta {} código de recuperação",
   "other": "restam {} códigos de recuperação"
@@ -6485,6 +6489,10 @@
   "other": "{} mensagens relacionadas"
  },
  "{} replied, so I closed this.": "{} respondeu, então fechei isto.",
+ "{} replies out in {}": {
+  "one": "{} resposta enviada em {}",
+  "other": "{} respostas enviadas em {}"
+ },
  "{} requires your Work calendar.": "{} exige sua agenda de trabalho.",
  "{} requires your Work email and Work calendar.": "{} exige seu e-mail e sua agenda de trabalho.",
  "{} requires your Work email.": "{} exige seu e-mail de trabalho.",
@@ -6599,9 +6607,14 @@
   "other": "{} vezes"
  },
  "{} to decide": "{} a decidir",
+ "{} to decide · about {} min": "{} a decidir · cerca de {} min",
  "{} to-dos": {
   "one": "{} tarefa",
   "other": "{} tarefas"
+ },
+ "{} to-dos cleared in {}": {
+  "one": "{} tarefa resolvida em {}",
+  "other": "{} tarefas resolvidas em {}"
  },
  "{} to-dos waiting": {
   "one": "{} tarefa esperando",

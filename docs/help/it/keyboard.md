@@ -38,4 +38,4 @@ I tasti non funzionano mentre scrivi in un campo.
 
 ## Nessun tasto invia niente
 
-Inviare, approvare o pubblicare non succede mai da un tasto o direttamente dalla palette. Voci come Rivedi l'email aprono solo la bozza, dove puoi leggerla, modificarla e inviarla con il suo pulsante.
+Inviare, approvare o pubblicare non succede mai da un tasto o direttamente dalla palette. Voci come Rivedi l'email aprono solo la bozza, dove puoi leggerla, modificarla e inviarla con il suo pulsante. L’unica eccezione è [Smaltisci i pronti](cards.md): lì Invio invia la bozza che mostra per intero.

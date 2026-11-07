@@ -38,4 +38,4 @@ Toetsen werken niet terwijl je in een veld typt.
 
 ## Een toets verstuurt nooit iets
 
-Versturen, goedkeuren of plaatsen gebeurt nooit met een toets of rechtstreeks vanuit het palet. Items zoals De e-mail nakijken openen alleen het concept, waar je het kunt lezen, wijzigen en versturen met een eigen knop.
+Versturen, goedkeuren of plaatsen gebeurt nooit met een toets of rechtstreeks vanuit het palet. Items zoals De e-mail nakijken openen alleen het concept, waar je het kunt lezen, wijzigen en versturen met een eigen knop. De enige uitzondering is [Klaargezet afhandelen](cards.md): daar verstuurt Enter het concept dat het volledig toont.

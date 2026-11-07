@@ -201,10 +201,13 @@ if(body!==draftText(sendDraft)||subject!==sendDraft.subject){const r=await reque
  // The saved text is what goes out. When saving changed it (a blank line before the name), it shows first and Send waits.
  if(r.body!=null){sendDraft={...sendDraft,revision:r.revision,...(subject===undefined?{}:{subject}),...(sendDraft.kind==='finish'?{[sendDraft.message?'message':'preview']:r.body}:{body:r.body})};
   if(r.body.trim()!==body.trim()){if(mail)mailLoad(r.body);else $('#send-body').value=plainDraft(r.body);$('#send-error').textContent=t('Saved with a small change. Check the message, then send.');b.disabled=false;return}}}}
-await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'confirm_action',args:{suggestion_id:sendTask,revision:sendRevision,approval_id:crypto.randomUUID(),...($('#send-recipients').hidden?{}:{recipients:sendRecipients()}),...(sendDraft.kind==='email'&&sendDraft.from_options?.length>1&&sendFrom?{sender:sendFrom}:{})}})});
-if(SENT_WATCH.includes(sendDraft.kind))sentWatch.set(sendTask,{revision:sendRevision,kind:sendDraft.kind,at:Date.now()});
+await sendConfirmed(sendTask,sendRevision,sendDraft.kind,{...($('#send-recipients').hidden?{}:{recipients:sendRecipients()}),...(sendDraft.kind==='email'&&sendDraft.from_options?.length>1&&sendFrom?{sender:sendFrom}:{})});
 $('#send-dialog').close();toast(sendDraft.kind==='merge'?'Testing and merging the fix…':sendDraft.kind==='finish'?'On it. I’ll report back.':sendDraft.kind==='calendar'?'Changing the calendar…':sendDraft.kind==='doc_write'?'Writing the doc…':'Sending your approved draft…');await refresh();
 }catch(e){errCaught(e);$('#send-error').textContent=e.offline?t('Offline. Send again when you’re back online.'):e.message;b.disabled=false}};
+// The one way a draft goes out from the dashboard: the send dialog's Send and Clear Ready's (todos-clear.js), for exactly
+// the revision the owner saw. The server sends that revision or refuses (Store.confirm_action).
+async function sendConfirmed(id,revision,kind,extra={}){await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'confirm_action',args:{suggestion_id:id,revision,approval_id:crypto.randomUUID(),...extra}})});
+ if(SENT_WATCH.includes(kind))sentWatch.set(id,{revision,kind,at:Date.now()})}
 // Once a send went out, one short toast says where the to-do is now, with Open to go to it there: "Sent. Moved to
 // Done.", "Sent. Moved to Later until Mon." (handed to someone: back then unless they reply). Nothing when it failed.
 const SENT_WATCH=['email','linkedin','slack','x','whatsapp','telegram','intercom','doc_reply','finish'],sentWatch=new Map();

@@ -38,4 +38,4 @@ Tasten funktionieren nicht, während du in ein Feld tippst.
 
 ## Keine Taste sendet etwas
 
-Senden, Freigeben oder Posten passiert nie über eine Taste oder direkt aus der Palette. Einträge wie E-Mail prüfen öffnen nur den Entwurf, wo du ihn lesen, ändern und mit seinem eigenen Button senden kannst.
+Senden, Freigeben oder Posten passiert nie über eine Taste oder direkt aus der Palette. Einträge wie E-Mail prüfen öffnen nur den Entwurf, wo du ihn lesen, ändern und mit seinem eigenen Button senden kannst. Die einzige Ausnahme ist [Bereit abarbeiten](cards.md): Dort sendet Enter den Entwurf, den es vollständig zeigt.

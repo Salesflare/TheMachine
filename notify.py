@@ -370,13 +370,15 @@ def open_order(rows, current):
 
 
 def compose(meetings, due, overnight, root='', show_text=True, clock=lambda iso: iso[11:16], waiting=None, total=None,
-            top=None):
+            top=None, ready=''):
     """The digest from its three parts: meetings [{at, title, guests}], due and overnight [{title}].
     Returns None when there is nothing to say, else {push: {title, body, url, tag}, text, subject}.
     Without show_text (Careful, or notify_text off) it carries counts only. waiting [{title}] (the first ones) and
     total (how many) are the to-dos waiting for the owner, for the push's body (morning_line); left out: due and
     overnight. top [{title}] are the first waiting to-dos in the dashboard's order (open_order): with total, a "Waiting
-    for you" part, so a pile that waits still gets its digest when nothing is due or new. Nothing at all: None."""
+    for you" part, so a pile that waits still gets its digest when nothing is due or new. ready: the time to clear what
+    waits, as the dashboard's Ready header says it ("4 ready · about 2 min", clear_pace.line), under that part.
+    Nothing at all: None."""
     piled = total if top is not None and total else 0
     if not (meetings or due or overnight or piled):
         return None
@@ -402,6 +404,8 @@ def compose(meetings, due, overnight, root='', show_text=True, clock=lambda iso:
             part(t('Waiting for you'), top, lambda w: w['title'], piled)
     else:
         lines += [summary, '']
+    if piled and ready:
+        lines += [ready, '']
     if root:
         lines.append(t('Open The Machine: {}', root))
     if waiting is None:

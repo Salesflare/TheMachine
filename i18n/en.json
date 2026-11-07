@@ -520,6 +520,7 @@
  "Back online. Your waiting changes are saved.": "Back online. Your waiting changes are saved.",
  "Back to Only you. Taken back from their Machines.": "Back to Only you. Taken back from their Machines.",
  "Back to review.": "Back to review.",
+ "Back to the list": "Back to the list",
  "Back to the rule for everyone": "Back to the rule for everyone",
  "Back to the rule for everyone.": "Back to the rule for everyone.",
  "Back to the suggested title": "Back to the suggested title",
@@ -810,6 +811,7 @@
  "ClawHub sent a SKILL.md that doesn't match its release; not shown": "ClawHub sent a SKILL.md that doesn't match its release; not shown",
  "ClawHub’s scan: {}{}.{}": "ClawHub’s scan: {}{}.{}",
  "Clear": "Clear",
+ "Clear Ready": "Clear Ready",
  "Clear all": "Clear all",
  "Clear formatting": "Clear formatting",
  "Clear the looked-up details? This domain won’t be looked up again until you ask.": "Clear the looked-up details? This domain won’t be looked up again until you ask.",
@@ -2632,6 +2634,7 @@
  "Notes:": "Notes:",
  "Notes: {}": "Notes: {}",
  "Nothing came in from the past week yet.": "Nothing came in from the past week yet.",
+ "Nothing cleared.": "Nothing cleared.",
  "Nothing connects until they accept.": "Nothing connects until they accept.",
  "Nothing connects until you accept. Declining tells them nothing.": "Nothing connects until you accept. Declining tells them nothing.",
  "Nothing finished or dismissed yet.": "Nothing finished or dismissed yet.",
@@ -6465,6 +6468,7 @@
   "other": "{} ready for you"
  },
  "{} ready for you · {} to decide": "{} ready for you · {} to decide",
+ "{} ready · about {} min": "{} ready · about {} min",
  "{} recovery codes left": {
   "one": "{} recovery code left",
   "other": "{} recovery codes left"
@@ -6485,6 +6489,10 @@
   "other": "{} related messages"
  },
  "{} replied, so I closed this.": "{} replied, so I closed this.",
+ "{} replies out in {}": {
+  "one": "{} reply out in {}",
+  "other": "{} replies out in {}"
+ },
  "{} requires your Work calendar.": "{} requires your Work calendar.",
  "{} requires your Work email and Work calendar.": "{} requires your Work email and Work calendar.",
  "{} requires your Work email.": "{} requires your Work email.",
@@ -6599,9 +6607,14 @@
   "other": "{} times"
  },
  "{} to decide": "{} to decide",
+ "{} to decide · about {} min": "{} to decide · about {} min",
  "{} to-dos": {
   "one": "{} to-do",
   "other": "{} to-dos"
+ },
+ "{} to-dos cleared in {}": {
+  "one": "{} to-do cleared in {}",
+  "other": "{} to-dos cleared in {}"
  },
  "{} to-dos waiting": {
   "one": "{} to-do waiting",

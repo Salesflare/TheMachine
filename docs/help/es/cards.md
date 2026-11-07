@@ -44,6 +44,8 @@ Cuando inicias una tarea, siempre puede leer los mensajes de los que vino, tambi
 
 Su respuesta sale igual desde la dirección del trabajo donde llegó, y nunca aparece en una Work Fleet ni en el Graph del equipo.
 
+Con dos o más esperando, **Vaciar Para revisar** en el encabezado las recorre una a una, cada borrador completo, con **Enviar** o **Hazlo**, **Pedir cambios**, **Posponer** y **Omitir**. En una computadora, Intro envía lo que está en pantalla, `S` pospone, `→` omite y Esc termina. El encabezado también dice cuánto tardan a tu ritmo, como "4 para revisar · unos 2 min".
+
 ## Revisar ahora
 
 Tu Machine lee cada fuente cada pocos minutos, de día y de noche, y revisa lo que llegó en busca de tareas en cuanto hay 40 mensajes esperando o el mensaje más antiguo lleva 15 minutos esperando.

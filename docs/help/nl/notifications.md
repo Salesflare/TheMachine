@@ -36,6 +36,6 @@ Het komt op werkdagen op je tijdstip bij **Ochtendoverzicht**, en wordt alleen o
 
 ## Privacy
 
-Push gaat van je Machine rechtstreeks naar je apparaat, versleuteld voor dat apparaat. Het control plane ziet het nooit. E-mail wordt verstuurd door de mailserver van The Machine naar het adres van je account, dus de tekst gaat langs die server en de mailprovider. Als [Voorzichtig](security-levels.md) de tekst van to-do's in meldingen verbergt, bevatten e-mails alleen aantallen. Zet **E-mail** uit voor een soort om die helemaal uit je e-mail te houden.
+Push gaat van je Machine rechtstreeks naar je apparaat, versleuteld voor dat apparaat. Het control plane ziet het nooit. E-mail wordt verstuurd door de mailserver van The Machine naar het adres van je account, dus de tekst gaat langs die server en de mailprovider. Als [Voorzichtig](security-levels.md) de tekst van to-do's in meldingen verbergt, bevatten e-mails alleen aantallen. Zet **E-mail** uit voor een soort om die helemaal uit je e-mail te houden. Het zegt ook hoe lang de wachtende to-do's je kosten, zoals "4 klaargezet · ongeveer 2 min".
 
 Zet push aan voor een apparaat in **Dit apparaat**, of zie [De app installeren](phone-app.md).

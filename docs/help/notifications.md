@@ -37,6 +37,6 @@ It comes on work days at your **Morning digest** time, unless there's nothing to
 
 ## Privacy
 
-Push goes from your Machine straight to your device, encrypted for it. Email passes through The Machine's mail server and your mail provider. When [Careful](security-levels.md) hides to-do text in notifications, emails only have counts. Turn off **Email** for a kind to keep it off email.
+Push goes from your Machine straight to your device, encrypted for it. Email passes through The Machine's mail server and your mail provider. When [Careful](security-levels.md) hides to-do text in notifications, emails only have counts. Turn off **Email** for a kind to keep it off email. It also says how long the waiting to-dos take you, like "4 ready · about 2 min".
 
 Turn on push for a device in **This device**, or see [Install the app](phone-app.md). The [mobile app](mobile-app.md) gets a plain line through Apple or Google, then asks your Machine for the title and next step.

@@ -44,6 +44,8 @@ Start je een to-do, dan mag hij altijd de berichten lezen waar hij uit kwam, ook
 
 Zo'n privé-to-do antwoordt toch vanaf het werkadres waar de mail binnenkwam, en hij komt nooit in een Work Fleet of de Team-Graph.
 
+Wachten er twee of meer, dan loopt **Klaargezet afhandelen** in de kop ze een voor een door, elk concept volledig, met **Versturen** of **Doe het**, **Wijzigingen vragen**, **Snoozen** en **Overslaan**. Op een computer verstuurt Enter wat in beeld is, `S` snoozet, `→` slaat over en Esc stopt. De kop zegt ook hoe lang ze op jouw tempo duren, zoals "4 klaargezet · ongeveer 2 min".
+
 ## Nu checken
 
 Je Machine leest elke bron om de paar minuten, dag en nacht, en checkt wat er binnenkwam op to-do’s zodra er 40 berichten wachten of het oudste bericht 15 minuten wacht.

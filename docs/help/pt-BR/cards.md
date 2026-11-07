@@ -44,6 +44,8 @@ Quando você inicia uma tarefa, ela sempre pode ler as mensagens de onde veio, t
 
 A resposta sai mesmo assim do endereço de trabalho onde chegou, e nunca aparece em uma Work Fleet nem no Graph da equipe.
 
+Com duas ou mais esperando, **Esvaziar Para revisar** no cabeçalho passa por elas uma a uma, cada rascunho inteiro, com **Enviar** ou **Fazer**, **Pedir mudanças**, **Adiar** e **Pular**. No computador, Enter envia o que está na tela, `S` adia, `→` pula e Esc para. O cabeçalho também diz quanto tempo levam no seu ritmo, como "4 para revisar · cerca de 2 min".
+
 ## Verificar agora
 
 Sua Machine lê cada fonte a cada poucos minutos, de dia e de noite, e verifica o que chegou em busca de tarefas assim que 40 mensagens esperam ou a mensagem mais antiga espera há 15 minutos.

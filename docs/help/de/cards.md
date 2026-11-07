@@ -44,6 +44,8 @@ Startest du eine Aufgabe, darf sie die Nachrichten, aus denen sie kam, immer les
 
 Die Antwort geht trotzdem von der Arbeitsadresse, an der sie ankam, und sie erscheint nie in einer Work Fleet oder im Team-Graph.
 
+Ab zwei wartenden Aufgaben geht **Bereit abarbeiten** in der Überschrift sie einzeln durch, jeden Entwurf vollständig, mit **Senden** oder **Ausführen**, **Änderungen anfragen**, **Zurückstellen** und **Überspringen**. Am Computer sendet Enter, was zu sehen ist, `S` stellt zurück, `→` überspringt und Esc hört auf. Die Überschrift sagt auch, wie lange sie in deinem Tempo dauern, etwa "4 bereit · etwa 2 Min.".
+
 ## Jetzt prüfen
 
 Deine Machine liest jede Quelle alle paar Minuten, Tag und Nacht, und prüft das Neue auf Aufgaben, sobald 40 Nachrichten warten oder die älteste Nachricht 15 Minuten gewartet hat.

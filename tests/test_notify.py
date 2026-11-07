@@ -473,6 +473,7 @@ class Notifications(unittest.TestCase):
             digest = self.app.digest(current + a.dt.timedelta(days=2, hours=-1))  # two days on: nothing new overnight, nothing due today
         self.assertIn('Waiting for you\n• Confirm the dentist\n• Send the venue the final count\n• Reply to Sam about the pilot\n• +3 more', digest['text'])
         self.assertEqual(digest['subject'], 'Your morning: 6 waiting')
+        self.assertIn('• +3 more\n\n6 ready · about 3 min\n', digest['text'])  # the To-dos header's line, at the default pace
         order = notify.open_order([{'id': k, 'title': t, 'created_at': c, 'due': d} for k, t, c, d in cards], current)
         self.assertEqual([r['id'] for r in order], ['e', 'a', 'c', 'd', 'h', 'b'])
         with self.store.connect() as db:

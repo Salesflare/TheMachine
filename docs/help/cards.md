@@ -44,6 +44,8 @@ A to-do can always read the messages it came from. When it needs other messages 
 
 Such a Personal to-do still replies from the work address its email came in on, and it never shows up in a Work Fleet or the Team Graph.
 
+With two or more waiting, **Clear Ready** in the header goes through them one at a time, each draft in full, with **Send** or **Do it**, **Ask for changes**, **Snooze** and **Skip**. On a computer, Enter sends what's on screen, `S` snoozes, `→` skips and Esc stops. The header also says how long they take at your own pace, like "4 ready · about 2 min".
+
 ## Check now
 
 Your Machine reads each source every few minutes, day and night. It checks what came in once 40 messages wait or the oldest has waited 15 minutes.
