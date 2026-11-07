@@ -17,7 +17,10 @@ const cards=[{id:'p1',title:'Reply to Sam about pricing',body:'Sam asked for pri
  // A step only the owner can do (the review's owner_step): a visit
  {id:'v1',title:'Come by the paint shop this afternoon for the order',body:'Promised Sam on Fri 23 Oct. Nothing shows it done yet.',status:'pending',scope:'personal',owner_step:1,due:now.slice(0,10),created_at:now,event_ids:[4]},
  {id:'v2',title:'Come by the paint shop this afternoon',body:'Added a calendar slot at 15:00.',status:'prepared',scope:'personal',owner_step:1,created_at:now,preparation_status:'done',event_ids:[5],
-  outcome:JSON.stringify({state:'needs_you',needs:'go to the shop this afternoon'}),next_actions:[{kind:'open',revision:'o1',label:'Open in Maps',url:'https://www.google.com/maps/search/?api=1&query=paint+shop'}]}];
+  outcome:JSON.stringify({state:'needs_you',needs:'go to the shop this afternoon'}),next_actions:[{kind:'open',revision:'o1',label:'Open in Maps',url:'https://www.google.com/maps/search/?api=1&query=paint+shop'}]},
+ // The Machine's own to-dos: a problem in the computer's logs (machine_log) and an update's note
+ {id:'m1',title:'backup failed 3 times in a day',body:'It waits for your OK.',status:'pending',scope:'personal',origin:'machine',owner_step:1,machine_log:true,created_at:now,event_ids:[6]},
+ {id:'m2',title:'Your update kept 1 of your own files',body:'notes.md',status:'pending',scope:'personal',origin:'machine',owner_step:1,created_at:now,event_ids:[7]}];
 const state=()=>({suggestions:cards,promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},connectors:[],fleet:{on:true,fleets:[]},
  // en-BE: English date words in the day-month order (a source date is shown in the region's order)
  locale:{locale:'en-BE',region:'BE',language:'en',language_set:true,clock:'auto',hour12:false,auto_hour12:false,date_locale:'en-GB',languages:{en:'English'},saveable:true}});
@@ -54,6 +57,10 @@ try{
   assert.ok(!(await shown('v2')).includes('Do it'));
   assert.equal(await page.locator('#task-v2 .actions>button.primary').innerText(),'Mark done');
   assert.ok(await page.locator('#task-v2 .more-menu>a.open').evaluate(a=>a.textContent.trim())==='Open in Maps ↗');
+  // A problem in the computer's logs keeps Not needed (it never comes back); an update's note just Mark done and Snooze
+  assert.deepEqual(await shown('m1'),['Mark done','Snooze','More']);
+  assert.ok((await menu('m1')).includes('Not needed'));
+  assert.ok(!(await menu('m2')).includes('Not needed'));
   // A personal card has no Hand off
   assert.ok(!(await menu('h1')).includes('Hand off'));
   // The buttons line up: one row height on a wide screen

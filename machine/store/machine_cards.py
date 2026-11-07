@@ -35,8 +35,8 @@ class MachineCardsStore:
 
     def system_log_cards(self, account_id, findings, quiet=system_logs.QUIET, per_day=system_logs.PER_DAY):
         """A to-do for each problem in the computer's own logs (system_logs.detect), quietly: the same problem at most
-        once in `quiet` and never while its to-do is still open, and at most `per_day` new ones a day. Returns how many
-        are new."""
+        once in `quiet`, never while its to-do is still open and never again once the owner said Not needed, and at
+        most `per_day` new ones a day. Returns how many are new."""
         made = 0
         stamp = now()
         since = (dt.datetime.fromisoformat(stamp) - quiet).isoformat()
@@ -49,7 +49,7 @@ class MachineCardsStore:
             key = 'syslog:' + finding['key']
             with self.connect() as db:
                 seen = db.execute("SELECT 1 FROM events e WHERE e.kind='machine.system_log' AND substr(e.source_id,1,?)=? AND (e.ingested_at>=? "
-                                  "OR EXISTS(SELECT 1 FROM suggestions s, json_each(s.event_ids) i WHERE i.value=e.id AND s.status IN ('pending','snoozed')))",
+                                  "OR EXISTS(SELECT 1 FROM suggestions s, json_each(s.event_ids) i WHERE i.value=e.id AND s.status IN ('pending','snoozed','rejected')))",
                                   (len(key) + 1, key + ':', since)).fetchone()
             if seen:
                 continue
@@ -72,7 +72,16 @@ class MachineCardsStore:
         return finding if finding.get('fix') else None
 
     def machine_fix_views(self, db, cards):
-        """machine_fix on each such open to-do: the command Do it runs, so it offers Do it (cards.controls, the dashboard)."""
+        """machine_log on each to-do from the computer's logs, so it keeps Not needed (cards.controls, the dashboard), and
+        machine_fix on each such open one with a safe fix: the command Do it runs, so it offers Do it."""
+        ids = [c['id'] for c in cards if c.get('origin') == 'machine']
+        for n in range(0, len(ids), 500):
+            chunk = ids[n:n + 500]
+            logs = {r[0] for r in db.execute("SELECT s.id FROM suggestions s JOIN events e ON e.id=json_extract(s.event_ids,'$[0]') "
+                                             f"WHERE e.kind='machine.system_log' AND s.id IN ({','.join('?' * len(chunk))})", chunk)}
+            for card in cards:
+                if card['id'] in logs:
+                    card['machine_log'] = True
         for card in cards:
             if card.get('origin') == 'machine' and card.get('status') in ('pending', 'prepared'):
                 finding = self.machine_fix_finding(db, card['id'])

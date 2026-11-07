@@ -591,11 +591,12 @@ def controls(row, root=''):
             choices[0] = (retry_label(row.get('preparation_reason')), 'retry')
     if row.get('owner_step') and row['status'] not in ('completed','rejected','snoozed'):
         # Only the owner can do this step (a visit, a pickup): Mark done leads; Plan it is what The Machine can do around it.
-        # An update's note: Done, Snooze; a problem in the computer's logs with a safe fix also Do it (machine_fix)
+        # An update's note: Done, Snooze; a problem in the computer's logs also Not needed (machine_log: it never comes
+        # back), and with a safe fix Do it (machine_fix)
         fix = row.get('origin') == 'machine' and row.get('machine_fix')
         choices = ([('Do it','accept')] if fix else []) + [('Mark done','complete')] + [
             ('Plan it' if choice == 'accept' else label, choice) for label, choice in choices if choice != 'complete'
-            and (row.get('origin') != 'machine' or choice == 'snooze')]
+            and (row.get('origin') != 'machine' or choice == 'snooze' or (choice == 'reject' and row.get('machine_log')))]
     actions=next_actions.visible_actions({'kind':'menu','actions':row['next_actions']}) if row.get('next_actions') is not None else next_actions.visible_actions(row.get('next_action'))
     if ask_question(row,actions):choices=[('Answer','other'),*([(retry_label(row.get('preparation_reason')),'retry')] if row.get('preparation_status')=='blocked' and not retry_pointless(row) else []),('Mark done','complete'),('Snooze','snooze'),('Not needed','reject')]
     choices = [(t(label), choice) for label, choice in choices]

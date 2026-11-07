@@ -351,6 +351,26 @@ class DoIt(unittest.TestCase):
         card = self.views(self.todo(fix=None))
         self.assertNotIn('machine_fix', card)
 
+    def taps(self, card):
+        return [b['action']['value'].rsplit(':', 1)[1] for block in a.controls(card)['blocks'] for b in block['buttons']]
+
+    def test_a_log_to_do_keeps_not_needed_and_then_never_comes_back(self):
+        card = self.views(self.todo())
+        self.assertTrue(card['machine_log'])
+        self.assertEqual(self.taps(card), ['accept', 'complete', 'snooze', 'reject'])  # Not needed, like every other to-do
+        self.assertEqual(self.taps({**card, 'machine_fix': None}), ['complete', 'snooze', 'reject'])  # also without a safe fix
+        self.store.decide(card['id'], 'reject', '', 'd1', 'dashboard')
+        finding = {'key': 'stays_failed:backup', 'kind': 'stays_failed', 'name': 'backup', 'unit': 'backup.service', 'count': 1, 'last_at': None}
+        with self.store.connect() as db:  # long past the quiet time
+            db.execute("UPDATE events SET ingested_at=? WHERE kind='machine.system_log'", ((NOW - s.QUIET - dt.timedelta(days=300)).isoformat(),))
+        self.assertEqual(self.store.system_log_cards(GATEWAY['id'], [finding], per_day=10), 0)  # the same unit and cause: never again
+        other = [dict(finding, key='crash_loop:backup', kind='crash_loop'), dict(finding, key='stays_failed:sync', name='sync', unit='sync.service')]
+        self.assertEqual(self.store.system_log_cards(GATEWAY['id'], other, per_day=10), 2)  # another cause or unit still does
+
+    def test_other_machine_notes_keep_only_done_and_snooze(self):
+        card = {'id': 'x', 'origin': 'machine', 'owner_step': True, 'status': 'pending', 'title': 'Your update kept 1 of your own files'}
+        self.assertEqual(self.taps(card), ['complete', 'snooze'])
+
 
 if __name__ == '__main__':
     unittest.main()
