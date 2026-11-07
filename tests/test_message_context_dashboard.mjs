@@ -61,6 +61,7 @@ try{
   assert.equal(await box.locator('a.convo-source').innerText(),'Open in Slack ↗');
   assert.equal(await box.locator('a.convo-source').getAttribute('href'),data.slack.originals[0].url,'the link opens the to-do\'s own message');
   assert.ok(await box.evaluate(n=>n.closest('dialog').scrollWidth<=n.closest('dialog').clientWidth+1),'no sideways scroll');
+  if(width<=560)assert.equal(await dialog.evaluate(d=>Math.round(d.getBoundingClientRect().width)),width,'on a phone the sheet is the full width, no scrollbar gutter beside it');
   // Show earlier: yesterday's message above, the day line with it, the screen where it was, then no more button
   const earlier=box.locator('[data-convo-earlier]');assert.equal(await earlier.innerText(),'Show earlier');
   if(width===390){await dialog.evaluate(d=>d.scrollTop=0);await shot('slack-top')}
