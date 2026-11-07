@@ -13,9 +13,10 @@ Your proactive AI assistant. It reads your email, chats, calendar and phone, tur
 
 ## Where it's going
 
-AI should work for you: not wait for a prompt, but take work off your hands every day, on your side. The Machine is
-that AI. And it's yours: you own it and your data, not a big corporation. You pick the model, nothing goes out without
-your OK, and nothing locks you in. Made for everyone: easy to start and affordable. What we believe, in order, and how every change is judged: [Product vision](docs/vision.md).
+AI should work for you, so you can do your best work and live your best life. The Machine is that AI: proactive, with
+you everywhere, work and life as one, always current, yours (you own it and your data, not a big corporation), secure
+wherever it runs, and for everyone. What we believe, in order, and how every change is judged:
+[Product vision](docs/vision.md).
 
 Website: [themachine.computer](https://themachine.computer). Rather not run it yourself? The same Machine is also [hosted for you](https://themachine.computer/pricing) on a private server in the EU (beta). Export and import move everything between the two.
 
