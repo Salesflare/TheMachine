@@ -16,6 +16,7 @@ from machine.config import LOG
 from machine.store.graph_history import live
 from machine.sources.calendar import all_day_span, calendar_owned, calendar_owner_name
 from machine.sources.slack import slack_named, slack_named_out
+from machine.store import review_saves
 from machine.store.events import RUN_SIGNAL_BUDGET, SET_ASIDE_AFTER
 from machine.text import _address, clamp, encoded
 import own_addresses
@@ -1011,6 +1012,10 @@ class ReviewStore:
             reviewed = set(reviewed_ids) if reviewed_ids is not None else {i['id'] for i in items}
             if not reviewed <= {i['id'] for i in items}:
                 raise ValueError('Reviewed IDs must belong to this batch')
+            # a message whose to-do save failed is not reviewed: deferred, so a later review tries it again
+            since = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(hours=review_saves.FAILED_HOURS)).isoformat()
+            not_saved = review_saves.take(db, [i['id'] for i in items], since) & reviewed
+            reviewed -= not_saved
             if projects is not None:
                 # Signals that belong to an ongoing piece of work, named for the people and projects graph.
                 if not isinstance(projects, dict) or not all(isinstance(v, list) for v in projects.values()):
@@ -1092,7 +1097,9 @@ class ReviewStore:
             self.project_blockers(db)
             db.execute("UPDATE analyses SET status='complete',finished_at=?,summary=?,items=? WHERE id=?",
                        (now(), summary[:4000], encoded(items), analysis_id))
-        return {'status': 'complete', **({'stages': moved} if moved else {})}
+        return {'status': 'complete', **({'stages': moved} if moved else {}),
+                **({'not_saved': sorted(not_saved), 'note': 'A to-do save failed for these messages: they stay unreviewed and come '
+                    'back in a later review.'} if not_saved else {})}
 
     def project_blockers(self, db):
         """With each review: what stands in the way of each project with a success condition, and its one to-do when

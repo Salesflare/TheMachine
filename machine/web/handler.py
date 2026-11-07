@@ -886,5 +886,8 @@ def make_handler(app):
                     # busy database: what to do about it, never "Invalid request"; the log says which action and why
                     LOG.warning('action failed action=%s error=%s', str(request.get('action') if isinstance(request, dict) else '')[:60],
                                 type(error).__name__)
+                if isinstance(error, KeyError) and not dashboard and error.args:  # an agent's call: the argument to add
+                    self.output(400, {'error': f'Missing argument {str(error.args[0])[:60]}: add it and call again.'})
+                    return
                 self.output(400, {'error': str(error) if isinstance(error, ValueError) else ACTION_FAILED})
     return Handler

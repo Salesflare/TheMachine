@@ -188,6 +188,7 @@ from machine.app.knowledge_export import KnowledgeExportApp
 from machine.app.meeting_writes import MeetingWritesApp
 from machine.app.model_pacing import ModelPacingApp
 from machine.app.recap_settings import RecapSettingsApp
+from machine.app.review_saves import ReviewSavesApp
 from machine.app.search_ask import SearchAskApp
 from machine.app.signatures import SignaturesApp
 from machine.app.summaries import SummariesApp
@@ -2493,6 +2494,7 @@ APP_MIXINS += (FollowUpsApp, GraphActionsApp, KnowledgeExportApp, MeetingWritesA
 APP_MIXINS += (CardChatApp, ConversationApp, ExportApp, FirstLookApp, FleetApp, RecapApp, TalkApp)
 APP_MIXINS += (RecapSettingsApp,)
 APP_MIXINS += (SearchAskApp,)
+APP_MIXINS += (ReviewSavesApp,)
 
 
 class App(*APP_MIXINS):
@@ -3563,7 +3565,7 @@ class App(*APP_MIXINS):
             return self.store.review_context(args['owner_session'], args.get('owner_run'))
         if name == 'review_failed':
             return self.store.review_failed(args['owner_session'], args['owner_run'], args['reason'], args.get('terminal', False))
-        if name == 'suggest':
+        if name == 'suggest_save':  # suggest, with its args checked first (machine/app/review_saves.py)
             # The agent's suggestions wait for the morning digest unless it says otherwise.
             with self.store.connect() as db:
                 source_accounts={r[0] for r in db.execute('SELECT account_id FROM events WHERE id IN ('+','.join('?' for _ in args['event_ids'])+')',args['event_ids'])} if args['event_ids'] else set()
