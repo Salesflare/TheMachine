@@ -7,7 +7,7 @@ work event with each personal one it overlaps. Only a found clash becomes a to-d
 Nothing goes out until the owner approves it on the to-do.
 
 What counts: both events timed (never all day), busy (not free/transparent), on a calendar of the owner's or one they
-are on (calendar_owned), not cancelled or declined, and firm: an event marked tentative, or one the owner answered
+are on (calendar_owned), not canceled or declined, and firm: an event marked tentative, or one the owner answered
 Maybe, never clashes. An invite still waiting for an answer counts, since that is the moment to say no. The same
 meeting on both calendars (one iCalUID, or the same title and times) is one meeting, not a clash. Two blocks with
 nobody else on either (a focus block over a gym slot) aren't one either: the owner put both there, and there is no one
