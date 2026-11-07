@@ -317,7 +317,7 @@ def run_fix(finding, run=subprocess.run, which=shutil.which):
             active = False
         if active:
             return True, i18n.t('Ran {}. {} is running again.', shown, finding['name'])
-        return False, i18n.t('Ran {}, but {} stopped again. To see why: journalctl --user -u {} -n 50', shown, finding['name'], finding['unit'])
+        return False, i18n.t('Ran {}, but {} stopped again. Ask in this to-do’s chat and The Machine looks into why.', shown, finding['name'])
     if code == 0:
         return True, i18n.t('Ran {}. The bar is back.', shown)
     if code is None:
@@ -327,68 +327,87 @@ def run_fix(finding, run=subprocess.run, which=shutil.which):
     return False, i18n.t('{} didn’t work (exit code {}).', shown, code)
 
 
+def _journal(unit):
+    return f'journalctl --user -u {unit} -n 50'
+
+
 def explain(finding, which=shutil.which):
-    """(title, cause, fix) in the owner's language: what happened, why it matters, and what fixes it."""
+    """(title, cause, detail) in the owner's language: what happened, why it matters, and the technical detail (the
+    commands that show why), which the to-do keeps under Show more and the doctor prints as its fix."""
     kind, name, unit, count = finding['kind'], finding['name'], finding.get('unit', ''), finding['count']
     if kind == 'crash_loop':
         return (i18n.t('{} keeps restarting', name),
                 i18n.t('It stopped and started again {} times within an hour, so something keeps making it fail.', count),
-                i18n.t('To see why: journalctl --user -u {} -n 50', unit))
+                i18n.t('In a terminal, {} shows why.', _journal(unit)))
     if kind == 'gave_up':
         return (i18n.t('{} stopped after failing to start', name),
-                i18n.t('It failed several times in a row, so systemd stopped trying. It stays off until it is started again.'),
-                i18n.t('To see why: journalctl --user -u {0} -n 50. Once fixed: systemctl --user restart {0}', unit))
+                i18n.t('It failed several times in a row, so this computer stopped trying. It stays off until it is started again.'),
+                i18n.t('In a terminal, {0} shows why, and {1} starts it again once fixed.', _journal(unit), f'systemctl --user restart {unit}'))
     if kind == 'out_of_memory':
         return (i18n.t('{} ran out of memory', name),
                 i18n.t('It used more memory than it is allowed, so the system stopped it.'),
-                i18n.t('Close other heavy apps, or raise its MemoryMax. To see when: journalctl --user -u {} -n 50', unit))
+                i18n.t('In a terminal, {} shows when. A higher MemoryMax gives it more room.', _journal(unit)))
     if kind == 'repeated_failures':
         return (i18n.t('{} failed {} times in a day', name, count),
                 i18n.t('Each run ended in an error, so what it does is not getting done.'),
-                i18n.t('To see why: journalctl --user -u {} -n 50', unit))
+                i18n.t('In a terminal, {} shows why.', _journal(unit)))
     if kind == 'stays_failed':
         return (i18n.t('{} is down after a failure', name),
                 i18n.t('It failed and has not started again since, so what it does is not running.'),
-                i18n.t('To see why: systemctl --user status {0}. If it is no longer needed: systemctl --user reset-failed {0}', unit))
+                i18n.t('In a terminal, {0} shows why, and {1} clears it if it is no longer needed.', f'systemctl --user status {unit}',
+                       f'systemctl --user reset-failed {unit}'))
     if kind == 'hyprland_config':
         return (i18n.t('Hyprland reports {} errors in its settings', count) if count > 1 else i18n.t('Hyprland reports an error in its settings'),
                 i18n.t('Some lines in your Hyprland settings could not be read, so those settings are not applied.'),
-                i18n.t('To see them: hyprctl configerrors. Then fix those lines in ~/.config/hypr.'))
-    pid = finding.get('pid') or ''
+                i18n.t('In a terminal, hyprctl configerrors shows them. The settings are in ~/.config/hypr.'))
+    where = f"coredumpctl info {finding.get('pid') or ''}".strip()
     crashed = i18n.t('{} crashed {} times in a day', name, count) if count > 1 else i18n.t('{} crashed', name)
     if finding.get('piece') == 'bar':
         return (i18n.t('The bar crashed {} times in a day', count) if count > 1 else i18n.t('The bar crashed'),
                 i18n.t('The bar at the top of the screen stopped unexpectedly and left a crash report.'),
-                i18n.t('To bring it back: {}. To see where it crashed: coredumpctl info {}', _bar_command(which), pid))
+                i18n.t('In a terminal, {0} brings it back and {1} shows where it crashed.', _bar_command(which), where))
     if finding.get('piece') == 'hyprland':
         return (crashed,
                 i18n.t('Hyprland, the window manager, stopped unexpectedly and left a crash report. Open apps close with it.'),
-                i18n.t('To see where it crashed: coredumpctl info {}. omarchy-update brings the latest fixes.', pid))
+                i18n.t('In a terminal, {} shows where it crashed.', where))
     return (crashed,
             i18n.t('The program stopped unexpectedly ({}) and left a crash report.', finding.get('signal') or i18n.t('no signal recorded')),
-            i18n.t('To see where it crashed: coredumpctl info {}. If it keeps crashing after an update, report it to its makers.', pid))
+            i18n.t('In a terminal, {} shows where it crashed.', where))
+
+
+def next_step(finding):
+    """What the owner can do about a finding without a terminal, in plain words, or '' (the to-do's chat is offered too)."""
+    if finding['kind'] == 'out_of_memory':
+        return i18n.t('Closing other heavy apps gives it more room.')
+    if finding['kind'] == 'crashed' and finding.get('piece') == 'hyprland':
+        return i18n.t('Updating Omarchy brings the latest fixes.')
+    if finding['kind'] == 'crashed' and finding.get('piece') != 'bar':
+        return i18n.t('If it keeps crashing after an update, report it to its makers.')
+    return ''
 
 
 def see_why(finding, which=shutil.which):
     """The command that shows why, for a to-do whose fix Do it runs."""
     if finding.get('fix') == 'restart_bar':
-        return i18n.t('To see where it crashed: coredumpctl info {}', finding.get('pid') or '')
+        return i18n.t('In a terminal, {} shows where it crashed.', f"coredumpctl info {finding.get('pid') or ''}".strip())
     if finding['kind'] == 'stays_failed':
-        return i18n.t('To see why: systemctl --user status {}', finding['unit'])
-    return i18n.t('To see why: journalctl --user -u {} -n 50', finding['unit'])
+        return i18n.t('In a terminal, {} shows why.', f"systemctl --user status {finding['unit']}")
+    return i18n.t('In a terminal, {} shows why.', _journal(finding['unit']))
 
 
 def card(finding, which=shutil.which):
-    """(title, body, signal) of the to-do for one finding. No log text: only names, counts and the commands to run.
-    With a safe fix (fix_command), the to-do says in plain words what Do it does, with its command; else what to run to see why."""
-    title, cause, fix = explain(finding, which)
+    """(title, body, signal) of the to-do for one finding. No log text: only names and counts. Plain words first: what
+    happened, what Do it does (with a safe fix, fix_command) or what the owner can do and that the chat looks into it;
+    the commands come last, so the to-do keeps them under Show more."""
+    title, cause, detail = explain(finding, which)
     argv = fix_command(finding, which)
     if argv:
-        does = (i18n.t('Do it restarts the bar ({}).', ' '.join(argv)) if finding.get('fix') == 'restart_bar'
-                else i18n.t('Do it restarts {} ({}).', finding['name'], ' '.join(argv)))
-        body = '\n\n'.join((cause, does, see_why(finding, which)))
+        does = i18n.t('Do it restarts the bar.') if finding.get('fix') == 'restart_bar' else i18n.t('Do it restarts {}.', finding['name'])
+        body = '\n\n'.join((cause, does, i18n.t('Do it runs {}.', ' '.join(argv)) + ' ' + see_why(finding, which)))
     else:
-        body = '\n\n'.join((cause, fix, i18n.t('Ask in this to-do’s chat and The Machine looks into it. Anything it changes on this computer waits for your OK.')))
+        body = '\n\n'.join(filter(None, (cause, next_step(finding),
+                                         i18n.t('Ask in this to-do’s chat and The Machine looks into it. Anything it changes on this computer waits for your OK.'),
+                                         detail)))
     # what was seen is the signal, what it means and what to do is the to-do: the open to-do shows each once
     facts = [f'Unit: {finding["unit"]}'] if finding.get('unit') else []
     facts += [f'Program: {finding["program"]}'] if finding.get('program') else []

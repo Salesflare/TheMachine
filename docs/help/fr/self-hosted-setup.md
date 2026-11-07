@@ -28,7 +28,9 @@ L’installateur trouve vos comptes, les connecte un par un et montre un aperçu
 
 ## Après l’installation
 
-- Ajoutez des sources avec `assistant connect`, ou **Connexions**, puis **+ Ajouter**, dans le tableau de bord.
+- Associez-la à votre compte : dans le tableau de bord, **Connexions**, **+ Ajouter**, choisissez Gmail et appuyez sur **Associer cette Machine**.
+- Puis appuyez sur **Se connecter avec Google** (ou **Se connecter avec Microsoft** pour Outlook). Les e-mails et l’agenda se connectent ensemble.
+- Autres sources : **Connexions**, puis **+ Ajouter**. Votre propre client Google ou app Entra : `assistant connect` dans un terminal.
 - Vérifiez tout avec `assistant doctor`. Il affiche une solution pour chaque problème.
 - L’installateur prend la dernière version signée, et les mises à jour arrivent aussi sous forme de versions signées.
 - Associée à The Machine Network, votre Machine partage son adresse Tailscale avec votre compte, pour que l’app sur votre téléphone l’ouvre après votre connexion. La dissocier efface cette adresse.

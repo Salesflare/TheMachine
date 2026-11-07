@@ -110,7 +110,7 @@ blockquote{margin:10px 0 0;padding:6px 12px;border-left:2px solid var(--lavender
 /* One line: Preparing… and the clock, then the latest step; it holds that height from the start. Too narrow for that
 (a phone, the browser links): the line wraps and the step goes below, never wider than the to-do */.prep-main{flex:1;min-width:0;display:flex;flex-wrap:wrap;align-items:center;column-gap:6px;line-height:1.45}.prep-main>.note{flex:0 1 auto;min-width:0;max-width:100%;margin:0}.prep .prep-main>.steps{flex:1 1 0;min-width:3em;margin:0}
 @media(max-width:560px){.prep{flex-direction:column;gap:0}.prep .steps,.prep-main{align-self:stretch}.peek{width:100%}.peek-thumb{width:100%}.peek-thumb img{max-height:200px}}
-details.tech{margin:6px 0 0;font-size:.82rem}details.tech>summary{cursor:pointer;color:var(--muted)}
+details.tech{margin:6px 0 0;font-size:.82rem}details.tech>summary{cursor:pointer;color:var(--muted)}details.cant-save>p{margin:4px 0 0;color:var(--muted)}
 /* A stuck run's technical details under the to-do's Details */.tech-log{font-size:.82rem}.tech-log .tech-head{margin:0 0 4px;color:var(--muted);font-size:var(--fs-xs);font-weight:600}.tech-log pre{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
 .conn-more{margin-top:auto;padding-top:6px}
 .conn-more details p{margin:4px 0;font-size:.85rem}

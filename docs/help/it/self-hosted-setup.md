@@ -28,7 +28,9 @@ Il programma di installazione trova i tuoi account, li collega uno alla volta e 
 
 ## Dopo l'installazione
 
-- Aggiungi fonti con `assistant connect`, oppure con **Connessioni**, poi **+ Aggiungi**, nella dashboard.
+- Abbinala al tuo account: nella dashboard, **Connessioni**, **+ Aggiungi**, scegli Gmail e premi **Abbina questa Machine**.
+- Poi premi **Accedi con Google** (o **Accedi con Microsoft** per Outlook). Posta e calendario si collegano insieme.
+- Altre fonti: **Connessioni**, poi **+ Aggiungi**. Il tuo client Google o la tua app Entra: `assistant connect` in un terminale.
 - Controlla tutto con `assistant doctor`. Mostra una soluzione per ogni problema.
 - Il programma di installazione prende la release firmata più recente, e anche gli aggiornamenti arrivano come release firmate.
 - Collegata a The Machine Network, la tua Machine condivide il suo indirizzo Tailscale con il tuo account, così l’app sul telefono la apre dopo l’accesso. Scollegandola, l’indirizzo viene eliminato.

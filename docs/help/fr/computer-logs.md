@@ -21,7 +21,7 @@ Un seul redémarrage ou une seule exécution ratée, c’est normal : rien ne s�
 
 ## Ce que vous recevez
 
-Une tâche qui dit en mots simples ce qui s’est passé, pourquoi c’est important et la commande qui le montre ou le répare. Demandez dans son chat et The Machine s’en occupe. Tout ce qu’elle modifie attend votre accord, comme avec Do it.
+Une tâche qui dit en mots simples ce qui s’est passé, pourquoi c’est important et ce que vous pouvez faire. Les commandes qui montrent pourquoi sont sous Afficher plus. Demandez dans son chat et The Machine s’en occupe. Tout ce qu’elle modifie attend votre accord, comme avec Do it.
 
 Quand il existe un correctif sûr, la tâche propose Do it. Un de vos services resté arrêté est relancé, et sur Omarchy la barre revient. Do it lance seulement cette commande, et le résultat s’affiche dans le chat de la tâche. Il ne touche jamais aux services de The Machine ni à l’OpenClaw Gateway.
 

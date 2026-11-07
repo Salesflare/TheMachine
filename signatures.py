@@ -208,7 +208,7 @@ def save(config, account_id, value, source):
     Returns the stored entry."""
     where = path(config)
     if not where:
-        raise ValueError('Signatures can only be saved with a database path in config.json')
+        raise ValueError('This can’t be changed on this Machine.')
     where.parent.mkdir(parents=True, exist_ok=True)
     with open(where.with_name(where.name + '.lock'), 'w') as lock:
         portable.lock(lock)

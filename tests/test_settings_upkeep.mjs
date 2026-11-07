@@ -94,7 +94,10 @@ try{
   assert.equal(await m.locator('#meaning-list strong').innerText(),'On');
   assert.equal(await m.locator('#meaning-switch').count(),0);
   assert.ok(await m.locator('#meaning-private').isHidden());  // its config may point anywhere: no "nothing is sent" promise
-  assert.ok((await m.innerText()).includes('Change it in config.json (embeddings) on this computer.'));
+  assert.ok((await m.innerText()).includes('Set up by hand on this computer. Learn more shows how.'));
+  assert.ok(!(await m.innerText()).includes('config.json'));  // the file and its key only under Show more
+  await m.locator('details.cant-save summary').click();
+  assert.ok((await m.innerText()).includes('Set in config.json (embeddings) on this computer.'));
   await shot(page,'#settings-meaning',`meaning-selfhosted-${tag}`);
   await open('selfhosted-dev','general');await page.waitForTimeout(200);
   assert.ok(await v.isHidden());  // not a release: nothing to say

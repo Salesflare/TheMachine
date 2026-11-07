@@ -107,6 +107,10 @@ const htmlEdit=(h,f)=>{const t=document.createElement('template');setHTML(t,h);f
 // Nodes already on the page or parsed from html``, written out again by the browser (an element whole, a text node escaped)
 const nodeHTML=(...ns)=>new SafeHTML(ns.map(n=>!n?'':n.nodeType===1?n.outerHTML:n.nodeType===3?esc(n.data):'').join(''));
 const orEmpty=h=>String(h)?h:'';  // '' stays falsy
+// A setting this Machine can't save (it runs without a settings file): plain words first, the file and its key under
+// Show more for whoever wants them
+const CANT_SAVE='This can’t be changed on this Machine.';
+const cantSaveMore=key=>html`<details class="tech cant-save"><summary>Show more</summary><p>${t('Set in config.json ({}) on this computer.',key)}</p></details>`;
 const htmlT=(key,...a)=>{const tok=i=>`\u0000${i}\u0000`;let s=esc(t(key,...a.map((v,i)=>v instanceof SafeHTML?tok(i):v)));a.forEach((v,i)=>{if(v instanceof SafeHTML)s=s.split(tok(i)).join(v.s)});return new SafeHTML(s)};
 // A link from data: web, mail and phone links and this page's own (relative or same origin) stay; anything else
 // (javascript:, data:, a broken address) becomes '#'. safeURL in todos-cards.js is stricter: http(s) only, '' otherwise.

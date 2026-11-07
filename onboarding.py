@@ -333,7 +333,7 @@ WEB_NOTES = {
 WEB_LEARN = {'telegram': 'telegram-chats'}  # its help article, behind Learn more: how it reads, and that it isn't the to-dos bot
 WEB_SECRETS = {'slack': 'Maton API key', 'salesflare': 'Salesflare API key'}
 WEB_ASKS = {'whatsapp': [['phone', 'Your WhatsApp phone number, with its country code (+32 470 12 34 56)']]}
-TERMINAL_NOTE = re.compile(r'\b(?:openclaw|gh auth|assistant connect|wacli)\b')
+TERMINAL_NOTE = re.compile(r'\b(?:openclaw|gh auth|assistant connect|wacli)\b|config\.json')  # setup-file notes stay in the terminal
 NO_SCOPE = {'android', 'gateway', 'docs'}  # a device or the server itself; Docs follows the address it reads for
 
 
