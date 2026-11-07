@@ -39,7 +39,7 @@ matter.
    and offers it. Every to-do arrives as close to done as it can be: one tap to approve, not homework. It starts by
    asking and earns more freedom as it proves itself. You can always see what it did, and undo it.
 4. **It's for everyone.** Easy: set up in minutes, no technical skills needed, plain words in your own language.
-   Affordable: a fair price for a hosted Machine, free to run yourself, and lean enough for a $20 model plan.
+   Affordable: a fair price for a hosted Machine, and free to run yourself.
 5. **It brings you closer to people.** It helps you show up for the people in your life: remember, follow up, keep
    your word. It writes in your voice, but never pretends to be you behind your back.
 6. **It's with you everywhere.** Desktop, phone, chat apps, browser: one Machine that carries the context from one to
@@ -49,8 +49,10 @@ matter.
    matter. It asks for less of your attention, not more.
 8. **It's smart, not wasteful.** As much intelligence as possible per token, so it runs well on a $20 OpenAI or Claude
    plan. Model calls go where they change the outcome; plain code, caching and cheap checks do the rest.
-9. **It gets better by itself.** It learns your voice and your decisions, fixes its own problems, and keeps pace with
-   AI. Machines learn from each other without sharing anyone's private data.
+9. **It gets better by itself, for you and for everyone.** It learns you as fast as possible without you having to
+   teach it anything: your voice, your decisions, your people. And the whole system keeps evolving for the good of
+   all its users: each Machine weighs whether an improvement is good for its own person, and only what helps spreads,
+   without sharing anyone's private data. It fixes its own problems and keeps pace with AI.
 10. **It works for teams and families.** A Fleet shares context, and the Graph and Boards become the CRM that
     replaces Salesflare.
 
