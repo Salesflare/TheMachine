@@ -3,7 +3,7 @@ title: Agenda
 area: calendar
 summary: De komende week op één plek: afspraken, to-do's die moeten gebeuren, gesnoozede to-do's en beloftes.
 covers: tab:calendar
-code: dashboard.html, meeting_notes.py, meeting_writer.py
+code: dashboard.html, meeting_notes.py, meeting_writer.py, calendar_clashes.py
 order: 1
 ---
 ## Wat het toont
@@ -68,3 +68,9 @@ Kan een agenda van hieruit gewijzigd worden, dan voegt **Nieuwe afspraak** er ee
 Een to-do kan ook een wijziging aanbieden, zoals een ophaalmoment om toe te voegen. Hij toont precies wat er verandert, en alleen jouw **Toevoegen**, **Opslaan** of **Verwijderen** voert het uit.
 
 Nog geen afspraken? Zonder agenda opent **Koppel je agenda** Koppelingen: koppel [Google Calendar](google-calendar.md) of [Outlook-agenda](microsoft.md).
+
+## Botsingen met je andere agenda
+
+Als een werkafspraak overlapt met iets in je persoonlijke agenda, of omgekeerd, maakt The Machine één to-do over de nieuwste van de twee. Hij kan een kort concept schrijven om die te verzetten, of aanbieden om af te zeggen. Er gaat niets weg tot je het goedkeurt.
+
+Afspraken van een hele dag, vrije en voorlopige afspraken tellen nooit mee, en elke botsing komt één keer. Een Werk-to-do zegt alleen dat er een conflict is, zodat je team de persoonlijke afspraak nooit ziet. Alleen jij ziet waarmee het botst.

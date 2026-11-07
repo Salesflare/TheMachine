@@ -79,6 +79,9 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
     `machine/store/graph_history.py` lets history into the Graph's people and organizations in bounded passes, newest first.
   - `machine/app/search_ask.py` (`SearchAskApp`): Ask from search: the messages a question in Search finds in the area
     in view and the one-shot turn that answers it (`search_ask.py` has the prompt and the answer).
+  - `calendar_clashes.py` with `machine/app/calendar_clashes.py` (`CalendarClashesApp`): a work meeting overlapping a
+    personal event, found by plain code and raised once as a to-do that names only its own side; the owner's dashboard
+    reads the other side at view time (`annotate`), so no Fleet sees it.
   - `machine/upkeep/agent_workspaces.py`: the nightly cleanup of Claude Code and Codex job folders nothing needs any
     more (retention.py runs it; it only reads `agent_jobs`, `suggestions` and `agent_relayed`).
   - `machine/app/knowledge_export.py` (`KnowledgeExportApp`): Knowledge for another AI (Settings, General, Export) and its

@@ -3,7 +3,7 @@ title: Calendar
 area: calendar
 summary: The week ahead in one place: meetings, to-dos that are due, snoozed to-dos and promises.
 covers: tab:calendar
-code: dashboard.html, meeting_notes.py, meeting_writer.py
+code: dashboard.html, meeting_notes.py, meeting_writer.py, calendar_clashes.py
 order: 1
 ---
 ## What it shows
@@ -68,3 +68,9 @@ When a calendar can be changed from here, **New event** adds one (on a phone it'
 A to-do can offer a change too, like a pick-up to add. It shows exactly what changes, and only your **Add**, **Save** or **Delete** makes it.
 
 No meetings yet? Without a calendar, **Connect your calendar** opens Connections: connect [Google Calendar](google-calendar.md) or [Outlook Calendar](microsoft.md).
+
+## Clashes with your other calendar
+
+When a work meeting overlaps something in your personal calendar, or the other way around, The Machine makes one to-do about the newer of the two. It can draft a short note to move it, or offer to decline. Nothing goes out until you approve it.
+
+All-day, free and tentative events never count, and each clash comes up once. A Work to-do only says there is a conflict, so your team never sees the personal event. Only you see what it clashes with.

@@ -3,7 +3,7 @@ title: Calendario
 area: calendar
 summary: La semana que viene en un solo sitio: reuniones, tareas que vencen, tareas pospuestas y promesas.
 covers: tab:calendar
-code: dashboard.html, meeting_notes.py, meeting_writer.py
+code: dashboard.html, meeting_notes.py, meeting_writer.py, calendar_clashes.py
 order: 1
 ---
 ## Qué muestra
@@ -68,3 +68,9 @@ Cuando un calendario se puede cambiar desde aquí, **Nuevo evento** añade uno (
 Una tarea también puede ofrecer un cambio, como añadir una recogida. Muestra exactamente qué cambia, y solo tu **Añadir**, **Guardar** o **Eliminar** lo hace.
 
 ¿Aún no hay reuniones? Sin calendario, **Conecta tu calendario** abre Conexiones: conecta [Google Calendar](google-calendar.md) o el [Calendario de Outlook](microsoft.md).
+
+## Coincidencias con tu otro calendario
+
+Cuando una reunión de trabajo se solapa con algo de tu calendario personal, o al revés, The Machine crea una tarea sobre el más reciente de los dos. Puede preparar un borrador corto para moverlo, u ofrecer rechazarlo. No se envía nada hasta que lo apruebes.
+
+Los eventos de todo el día, libres o provisionales nunca cuentan, y cada coincidencia aparece una sola vez. Una tarea de Trabajo solo dice que hay un conflicto, así que tu equipo nunca ve el evento personal. Solo tú ves con qué coincide.

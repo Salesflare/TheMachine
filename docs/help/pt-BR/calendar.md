@@ -3,7 +3,7 @@ title: Calendário
 area: calendar
 summary: A semana em um só lugar: reuniões, tarefas com prazo, tarefas adiadas e promessas.
 covers: tab:calendar
-code: dashboard.html, meeting_notes.py, meeting_writer.py
+code: dashboard.html, meeting_notes.py, meeting_writer.py, calendar_clashes.py
 order: 1
 ---
 ## O que ele mostra
@@ -68,3 +68,9 @@ Quando uma agenda pode ser alterada daqui, **Novo evento** adiciona um (no celul
 Uma tarefa também pode sugerir uma mudança, como adicionar uma busca de alguém. Ela mostra exatamente o que muda, e só o seu **Adicionar**, **Salvar** ou **Excluir** faz a mudança.
 
 Ainda sem reuniões? Sem agenda, **Conecte seu calendário** abre Conexões: conecte o [Google Calendar](google-calendar.md) ou o [Outlook Calendar](microsoft.md).
+
+## Conflitos com sua outra agenda
+
+Quando uma reunião de trabalho se sobrepõe a algo na sua agenda pessoal, ou o contrário, The Machine cria uma tarefa sobre o mais recente dos dois. Ela pode preparar um rascunho curto para remarcar, ou oferecer recusar. Nada sai antes da sua aprovação.
+
+Eventos de dia inteiro, livres ou provisórios nunca contam, e cada conflito aparece uma vez só. Uma tarefa de Trabalho diz só que há um conflito, então sua equipe nunca vê o evento pessoal. Só você vê com o que ele conflita.
