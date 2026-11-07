@@ -44,6 +44,9 @@ const open=async(width,height,platform='Linux x86_64')=>{const mobile=width<600;
  const page=await context.newPage();page.on('pageerror',e=>errors.push(width+': '+e.message));
  await page.goto(base);await page.locator('#task-'+id(1)).waitFor();return {context,page}};
 const sent=name=>actions.filter(a=>a.action===name);
+// Posts the page makes by itself, never for a to-do: bookkeeping (the browser's region, an error report, a seen line)
+// and reads (voice input's state, loaded when Settings or a mic gets ready). They don't count as a to-do's action
+const PAGE_BOOKKEEPING=new Set(['set_locale','client_error','card_report_seen','tip_done','voice_status','talk_status']);
 const pal=page=>page.locator('#palette');
 const isOpen=page=>page.evaluate(()=>!!document.querySelector('#palette')?.open);
 const labels=page=>page.locator('#pal-list .pal-item .pal-label').allTextContents();
@@ -146,7 +149,8 @@ try{
   assert.deepEqual(await page.evaluate(()=>ACTIONS.filter(a=>a.review&&a.keys).map(a=>a.id)),[],'no review action has a key');
   const before=actions.length;await page.keyboard.press('Control+k');await page.keyboard.type('review');
   assert.equal((await labels(page))[0],'Review the email…');await page.keyboard.press('Enter');await page.locator('#send-dialog').waitFor();
-  assert.equal(actions.length,before,'opening the review posts nothing');assert.match(await page.locator('#send-preview').textContent(),/Thursday works/);
+  // (the page's own bookkeeping and reads may post meanwhile on a busy machine)
+  const acted=actions.slice(before).filter(a=>!PAGE_BOOKKEEPING.has(a.action));assert.deepEqual(acted,[],'opening the review posts nothing');assert.match(await page.locator('#send-preview').textContent(),/Thursday works/);
   await page.locator('#send-cancel').click();assert.equal(sent('confirm_action').length,0);
   // In a chat: R writes in the chat's box; J goes to the next card
   await page.locator(`#side-cards a[href="#chat=${id(3)}"]`).click();await page.locator('#chat-log').waitFor();await page.locator('body').click({position:{x:700,y:5}});
