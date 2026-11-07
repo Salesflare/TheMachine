@@ -221,11 +221,13 @@ const sigNode=s=>{const tp=document.createElement('template');setHTML(tp,sigCard
 const sigDark=()=>(document.documentElement.dataset.theme||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'))==='dark';
 function sigLoad(f,html){const fr=f.querySelector('.sig-paper');fr.onload=()=>{const d=fr.contentDocument;if(!d?.body)return;try{d.execCommand('styleWithCSS',false,true)}catch{}
   const fit=()=>{if(!fr.offsetWidth)return;fr.style.height=Math.max(72,Math.min(420,d.body.scrollHeight+26))+'px';if(f._reveal>Date.now())f.querySelector('.sig-save').scrollIntoView({block:'nearest'})};fr._fit=fit;fit();sigSized.observe(fr);
-  d.addEventListener('load',e=>{if(e.target.localName==='img')fit()},true);  // images load late, pasted ones too
+  new ResizeObserver(()=>fit()).observe(d.body);  // images load late, pasted ones too
   if(f.querySelector('[data-sig-tool]').disabled){d.body.contentEditable='false';return}
   // Every change shows Save: typing, paste, cut, drop, undo, autocomplete, the formatting tools. Watched on the page
-  // itself, so a change that brings no input event (an insert from a paste, in some browsers) counts too.
-  new MutationObserver(()=>{sigChanged(f);fit()}).observe(d.body,{childList:true,subtree:true,characterData:true,attributes:true});
+  // itself: Safari runs no listener in this frame (sandboxed, no scripts), so there it is the only way to see a change.
+  // What a paste or a drop brings is cleaned here as it lands, for Safari, as the paste and drop listeners do elsewhere.
+  new MutationObserver(rows=>{sigChanged(f);for(const r of rows)for(const n of r.addedNodes)if(n.isConnected&&n!==d.body)sigTidy(n);fit()})
+   .observe(d.body,{childList:true,subtree:true,characterData:true,attributes:true});
   d.addEventListener('input',()=>{sigChanged(f);fit()});
   // A paste or a drop from Outlook or Word keeps only the signature's own formatting (sigPasteClean). A drag inside the
   // editor moves what it drags, as the browser does it.
@@ -246,15 +248,26 @@ function sigPasteClean(h){const doc=new DOMParser().parseFromString(h,'text/html
  const walk=(from,to)=>{for(const n of [...from.childNodes]){
   if(n.nodeType===3){to.append(n.data);continue}if(n.nodeType!==1)continue;const tag=n.localName;if(SIG_DROP.has(tag)||tag.endsWith(':xml'))continue;
   if(!SIG_TAGS.has(tag)){walk(n,to);continue}  // o:p, w:..., section and the rest: their text stays
-  const el=doc.createElement(tag);
-  for(const {name,value} of [...n.attributes]){const v=value.trim();if(!SIG_ATTRS.has(name))continue;
-   if(name==='href'&&!/^(https?:|mailto:|tel:)/i.test(v))continue;if(name==='src'&&!/^(https:|cid:|data:image\/(png|gif|jpe?g|webp);base64,)/i.test(v))continue;
-   if(name==='style'){const keep=v.split(';').map(x=>x.trim()).filter(x=>x&&!/^mso-|expression|url\s*\(|@import|behaviou?r|javascript:|-moz-binding/i.test(x)).join(';');if(keep)el.setAttribute('style',keep);continue}
-   el.setAttribute(name,v)}
-  // Word's paragraphs have no margin (its style block, which goes, says so): kept that way, or the lines spread out
-  if(/^Mso/.test(n.getAttribute('class')||'')&&!/margin/i.test(el.getAttribute('style')||''))el.setAttribute('style',['margin:0',el.getAttribute('style')].filter(Boolean).join(';'));
+  const el=doc.createElement(tag);for(const [k,v] of sigKeep(n))el.setAttribute(k,v);
   walk(n,el);to.append(el)}};
  walk(doc.body,out);return out.innerHTML.replace(/^(\s|<br>)+|(\s|<br>)+$/g,'')}
+// The attributes an element keeps. Safari's own paste also brings its page styles (font-family:-webkit-standard): those go.
+function sigKeep(n){const out=[];
+ for(const {name,value} of [...n.attributes]){const v=value.trim();if(!SIG_ATTRS.has(name))continue;
+  if(name==='href'&&!/^(https?:|mailto:|tel:)/i.test(v))continue;if(name==='src'&&!/^(https:|cid:|data:image\/(png|gif|jpe?g|webp);base64,)/i.test(v))continue;
+  if(name==='style'){const keep=v.split(';').map(x=>x.trim()).filter(x=>x&&!/^mso-|-webkit-|expression|url\s*\(|@import|behaviou?r|javascript:|-moz-binding/i.test(x)).join(';');if(keep)out.push(['style',keep]);continue}
+  out.push([name,v])}
+ // Word's paragraphs have no margin (its style block, which goes, says so): kept that way, or the lines spread out
+ if(/^Mso/.test(n.getAttribute('class')||'')){const st=out.find(a=>a[0]==='style');if(!st)out.push(['style','margin:0']);else if(!/margin/i.test(st[1]))st[1]='margin:0;'+st[1]}
+ return out}
+// sigPasteClean in place, on what landed in the editor (Safari's paste and drop): same tags, attributes and styles kept.
+function sigTidy(n){if(n.nodeType===8){n.remove();return}if(n.nodeType!==1)return;const tag=n.localName;
+ if(SIG_DROP.has(tag)||tag.endsWith(':xml')){n.remove();return}
+ for(const c of [...n.childNodes])sigTidy(c);
+ if(!SIG_TAGS.has(tag)){n.replaceWith(...n.childNodes);return}
+ const keep=sigKeep(n),same=(k,v)=>(k==='style'?(n.getAttribute(k)||'').split(';').map(x=>x.trim()).filter(Boolean).join(';'):n.getAttribute(k))===v;
+ if(keep.length===n.attributes.length&&keep.every(([k,v])=>same(k,v)))return;
+ for(const {name} of [...n.attributes])n.removeAttribute(name);for(const [k,v] of keep)n.setAttribute(k,v)}
 // A long paste can push Save below the window: it comes into view, also as the editor grows with the images loading.
 function sigChanged(f){sigDirty.add(f.dataset.account);f.querySelector('[role=status]').textContent='';const s=f.querySelector('.sig-save');if(!s.hidden)return;
  s.hidden=false;f._reveal=Date.now()+3000;s.scrollIntoView({block:'nearest'})}
