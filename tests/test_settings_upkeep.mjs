@@ -77,6 +77,11 @@ try{
   assert.equal(await m.locator('#meaning-list strong').innerText(),'On');
   assert.ok((await m.innerText()).includes('Reading your notes and conversations for the first time…'));
   await shot(page,'#settings-meaning',`meaning-hosted-on-${tag}`);
+  // The control plane's values are data: a switch state that isn't a boolean never becomes markup
+  meaning={...meaning,on:true,want:'"><img src=x onerror="window.__upkeepXss=1">'};await open('hosted','model');await m.locator('#meaning-switch').waitFor();
+  assert.equal(await m.locator('#meaning-switch').getAttribute('aria-checked'),'true');
+  assert.equal(await m.locator('#meaning-list img').count(),0);
+  assert.equal(await page.evaluate(()=>window.__upkeepXss),undefined);
   // A control plane that doesn't send them yet: neither shows (its Overview still has them)
   await open('hosted-old','general');await page.waitForTimeout(300);
   assert.ok(await v.isHidden());assert.ok(await m.isHidden());
