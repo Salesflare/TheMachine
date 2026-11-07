@@ -374,6 +374,21 @@ def open_order(rows, current):
     return sorted(rows, key=lambda r: (not soon(r), -(at(r.get('created_at')) or 0), str(r.get('id') or '')))
 
 
+def promised_today(promises, top, today, text):
+    """The owner's own promises due today, still open (or their to-do still open), for the digest: [{id, title, covers}].
+    A to-do made from the promise's message (or its card) is that promise's work (covers): listed with the promise, not
+    again under Overnight or Waiting for you. top: the waiting to-dos with their event_ids; text: a promise's line."""
+    by_event = {}
+    for r in top:
+        try:
+            for event in json.loads(r.get('event_ids') or '[]'):
+                by_event.setdefault(event, r['id'])
+        except (TypeError, ValueError):
+            pass
+    return [{'id': 'promise:' + str(p['id']), 'title': text(p), 'covers': p.get('suggestion_id') or by_event.get(p['event_id'])}
+            for p in promises if p['direction'] == 'mine' and p.get('due') == today and p['state'] in ('open', 'card')]
+
+
 def compose(meetings, due, overnight, root='', show_text=True, clock=lambda iso: iso[11:16], waiting=None, total=None,
             top=None, ready=(), promised=(), pace=''):
     """The digest from its parts: meetings [{at, title, guests}], due and overnight [{id?, title}].

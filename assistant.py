@@ -4856,18 +4856,7 @@ class App(*APP_MIXINS):
             total = waiting_count(db)
             pace = clear_pace.line(total, clear_pace.seconds(db, current))  # "4 ready · about 2 min", as To-dos says it
             show = security_levels.notify_text(db, False)
-        # The owner's own promises due today, still open (or their to-do still open): what they said they'd do today.
-        # A to-do made from the promise's message (or its card) is that promise's work: listed with the promise, not
-        # again under Overnight or Waiting for you (covers)
-        by_event = {}
-        for r in top:
-            try:
-                for event in json.loads(r.get('event_ids') or '[]'):
-                    by_event.setdefault(event, r['id'])
-            except (TypeError, ValueError):
-                pass
-        promised = [{'id': 'promise:' + str(p['id']), 'title': promise_text(p)[0], 'covers': p.get('suggestion_id') or by_event.get(p['event_id'])}
-                    for p in self.store.promises() if p['direction'] == 'mine' and p.get('due') == local.date().isoformat() and p['state'] in ('open', 'card')]
+        promised = notify.promised_today(self.store.promises(), top, local.date().isoformat(), lambda p: promise_text(p)[0])
         root = 'https://' + self.config['dashboard_host'] + self.config.get('dashboard_path', '/') if self.config.get('dashboard_host') else ''
         when = lambda iso: locale_prefs.clock_text(dt.datetime.fromisoformat(iso).astimezone(local_tz()))
         return notify.compose(meetings, due, overnight, root, show, when, None, total, top, ready, promised, pace)
