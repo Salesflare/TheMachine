@@ -58,7 +58,7 @@ LinkedIn, X and Salesflare keep their own pace.
 
 A to-do shows its next step, like **Do it** or **Review and send**, with **Snooze** beside it. See [Do it](do-it.md) and [Snooze](snooze.md).
 
-**Ask for changes** says what to change: how to do it, or, once a draft is ready, what to change in it. **Mark done** means it's handled: in sight when there is no draft, otherwise at the top of **…**. It leaves the list at once, with **Undo** in the message.
+**Ask for changes** says what to change: how to do it, or, once a draft is ready, what to change in it. **Mark done** means it's handled: in sight when there is no draft, otherwise at the top of **…**. It leaves the list at once, with **Undo** in the message. Swipe the message away, or drag it off with the mouse, to close it sooner. The change stays.
 
 To have it done another way, say so in its **Chat**.
 

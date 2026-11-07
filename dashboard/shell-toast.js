@@ -47,3 +47,36 @@ document.querySelectorAll('.refresh-tap').forEach(e=>{e.addEventListener('click'
 document.addEventListener('toggle',e=>{const id=e.target.dataset?.tech;if(id)e.target.open?openTech.add(id):openTech.delete(id)},true);
 setInterval(()=>document.querySelectorAll('.elapsed[data-since]').forEach(x=>x.textContent=elapsed(x.dataset.since)),1000);
 setInterval(async()=>{if(document.hidden)return;for(const id of [...new Set([...document.querySelectorAll('[data-steps],[data-peek]')].map(n=>n.dataset.steps||n.dataset.peek))].slice(0,3)){const list=document.querySelector(`[data-steps="${CSS.escape(id)}"]`);try{const p=await request('api/progress?id='+encodeURIComponent(id));if(!['starting','running'].includes(p.status)){peeks.delete(id);paintPeek(id);refresh();return}steps.set(id,p.steps);if(p.peek)peeks.set(id,{image:null,...peeks.get(id),on:true});else if(peeks.has(id)){peeks.get(id).on=false;paintPeek(id)}if(list)putIfChanged(list,stepNodes(p.steps));const slot=document.querySelector(`[data-browser="${CSS.escape(id)}"]`);if(slot)putIfChanged(slot,browserNodes(id,p.browser))}catch{}}},4000);
+/* A toast can be swiped away (touch) or dragged away (mouse): sideways, or toward the edge it sits nearer (up when it
+   sits at the top, down at the bottom). It follows the pointer, leaves past a third of its width (or most of its height,
+   or a quick flick) and settles back when let go sooner. Going this way is the same as timing out: no Undo, the change
+   stays as it is. A tap (under 8px of movement) stays a tap, so Undo and the other buttons work as before. Only a toast
+   with a button (Undo, Open, Report a bug) takes the pointer; a plain one lets clicks through to what is under it and
+   goes by itself in a few seconds. With reduced motion it still follows the pointer, then goes or settles without the
+   slide. */
+function toastSwipeReset(t){t.classList.remove('dragging','leaving');t.style.transform='';t.style.opacity=''}
+(()=>{const t=$('#toast'),still=matchMedia('(prefers-reduced-motion: reduce)');let d=null,swallow=0;
+ // On a phone the page doesn't scroll under it (touch-action), and the drawer's edge swipe, the calendar's day swipe
+ // and a row's long press don't see a swipe that starts on it
+ for(const ev of ['touchstart','touchmove','touchend'])t.addEventListener(ev,e=>e.stopPropagation(),{passive:true});
+ const place=(dx,out)=>{const w=t.offsetWidth||1,h=t.offsetHeight||1;t.style.transform=`translate(calc(-50% + ${dx}px),${d.top?-out:out}px)`;
+  t.style.opacity=String(Math.max(.15,1-Math.max(Math.abs(dx)/w,Math.max(out,0)/(h*2))))};
+ const settle=()=>{toastSwipeReset(t);clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),t.querySelector('button')?8000:2500)};
+ const leave=(dx,out)=>{clearTimeout(toastTimer);t.classList.remove('dragging');t.classList.add('leaving');const r=t.getBoundingClientRect();
+  if(Math.abs(dx)>=out)t.style.transform=`translate(calc(-50% + ${Math.sign(dx)*(innerWidth/2+r.width)}px),${d.top?-Math.max(out,0):Math.max(out,0)}px)`;
+  else t.style.transform=`translate(calc(-50% + ${dx}px),${d.top?-(r.bottom+16):innerHeight-r.top+16}px)`;
+  t.style.opacity='0';setTimeout(()=>{if(!t.classList.contains('leaving'))return;t.classList.remove('show');toastSwipeReset(t)},still.matches?0:210)};  // a new toast meanwhile stays
+ t.addEventListener('pointerdown',e=>{d=null;if(!t.classList.contains('show')||t.classList.contains('leaving')||e.button>0||!e.isPrimary)return;
+  const r=t.getBoundingClientRect();d={id:e.pointerId,x:e.clientX,y:e.clientY,on:false,top:r.top+r.height/2<innerHeight/2,dx:0,out:0,v:0,at:e.timeStamp}});
+ // moves and the release are followed on the whole page: a quick mouse drag leaves the toast before it counts as one
+ addEventListener('pointermove',e=>{if(!d||e.pointerId!==d.id)return;const dx=e.clientX-d.x,dy=e.clientY-d.y;
+  if(!d.on){if(Math.hypot(dx,dy)<8)return;d.on=true;try{t.setPointerCapture(e.pointerId)}catch{}t.classList.add('dragging');clearTimeout(toastTimer)}
+  e.preventDefault();const raw=d.top?-dy:dy,out=raw>0?raw:raw*.2,dt=Math.max(1,e.timeStamp-d.at);  // toward its own edge freely; the other way only a little
+  d.v=Math.max(Math.abs(dx-d.dx),out-d.out)/dt;d.dx=dx;d.out=out;d.at=e.timeStamp;place(dx,out)},true);
+ const up=e=>{if(!d||e.pointerId!==d.id)return;const g=d;if(!g.on){d=null;return}swallow=e.timeStamp;  // the click after a drag is no tap
+  const w=t.offsetWidth,h=t.offsetHeight,far=Math.abs(g.dx)>w/3||g.out>h*.8,flick=g.v>.6&&(Math.abs(g.dx)>24||g.out>16);
+  if(e.type!=='pointercancel'&&(far||flick))leave(g.dx,g.out);else settle();d=null};
+ addEventListener('pointerup',up,true);addEventListener('pointercancel',up,true);
+ // a new toast while one is leaving or held shows as usual, in its place
+ new MutationObserver(()=>{if(t.classList.contains('leaving')||d?.on){d=null;toastSwipeReset(t)}}).observe(t,{childList:true});
+ addEventListener('click',e=>{if(swallow&&e.timeStamp-swallow<400){e.stopImmediatePropagation();e.preventDefault()}swallow=0},true)})();

@@ -58,7 +58,7 @@ LinkedIn, X en Salesflare houden hun eigen tempo.
 
 Een to-do toont zijn volgende stap, zoals **Doe het** of **Nakijken en versturen**, met **Snoozen** ernaast. Zie [Doe het](do-it.md) en [Snoozen](snooze.md).
 
-**Wijzigingen vragen** zegt wat er anders moet: hoe het moet, of, zodra er een concept klaarstaat, wat erin moet veranderen. Is de rij op een telefoon vol, dan gaat **Snoozen** naar **…**. **Markeer als gedaan** (hij is geregeld) is er ook: in beeld zonder concept, anders bovenaan onder **…**. Hij gaat meteen uit de lijst, met **Ongedaan maken** in de melding.
+**Wijzigingen vragen** zegt wat er anders moet: hoe het moet, of, zodra er een concept klaarstaat, wat erin moet veranderen. Is de rij op een telefoon vol, dan gaat **Snoozen** naar **…**. **Markeer als gedaan** (hij is geregeld) is er ook: in beeld zonder concept, anders bovenaan onder **…**. Hij gaat meteen uit de lijst, met **Ongedaan maken** in de melding. Veeg de melding weg, of sleep hem weg met de muis, om hem eerder te sluiten. De wijziging blijft.
 
 Wil je hem anders laten doen, zeg het dan in zijn **Chat**.
 
