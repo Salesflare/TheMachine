@@ -134,6 +134,7 @@ MACHINE_LAYERS = {
     'actions': 0,      # the *_ACTIONS sets, the security boundary
     'config': 0,
     'names': 0,        # what the owner calls a service, app or agent (never the tool underneath)
+    'stamps': 0,       # change counters per table, so a request's answer is kept until its tables change
     'text': 0,         # message parsing
     'timing': 0,       # request timing, shared by web and store
     'browser': 1,

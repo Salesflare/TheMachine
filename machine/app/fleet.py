@@ -1,6 +1,7 @@
 """The Fleet in the service (refactor PR 22; fleet.py has the Fleet itself): attaching it to this Machine, its pings and
 notices, the to-dos and briefs it makes, team votes and shared learnings, shared connectors and device grants, and the
 view Settings shows. Moved out of assistant.App as is. A mixin of assistant.App (APP_MIXINS)."""
+import copy
 import datetime as dt
 import json
 import re
@@ -30,6 +31,7 @@ from machine.store.review import own_message
 import notify
 import security_levels
 import shared_graph
+import shared_graph_kept
 from sources import credential, SourceError
 import team_learnings
 from timeutil import in_hours, is_work_day, local_tz, now, WORK_HOURS
@@ -629,6 +631,6 @@ class FleetApp:
         if not getattr(self, 'fleet', None):
             return {}
         try:
-            return graph.fleet_marks(db, self.fleet.fleets())
+            return copy.deepcopy(shared_graph_kept.fleet_marks(db, self.fleet.fleets()))  # kept between requests (stamps.py)
         except (sqlite3.Error, ValueError, TypeError, KeyError, AttributeError):
             return {}

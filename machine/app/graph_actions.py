@@ -160,8 +160,11 @@ class GraphActionsApp:
                 if gbrain.on(self.config) and (note := gbrain.notes(db, [found['id']]).get(found['id'])):
                     found['from_gbrain'] = note  # the owner's own notes on their GBrain page: data, not instructions
                 guessed = set(found['probable_ids'])
-                found['recent'] = [line + (' (probably part of it)' if int(line.split(' ', 1)[0]) in guessed else '')
-                                   for line in self.graph_event_lines(found.pop('event_ids'), keep_order=True)]  # graph.detail's: past first
+                if args.get('lines', True):
+                    found['recent'] = [line + (' (probably part of it)' if int(line.split(' ', 1)[0]) in guessed else '')
+                                       for line in self.graph_event_lines(found.pop('event_ids'), keep_order=True)]  # graph.detail's: past first
+                else:  # the dashboard's record page: its timeline shows them, only their ids are asked
+                    found['recent'] = found.pop('event_ids')
                 if db.execute("SELECT 1 FROM sqlite_master WHERE name='share_threads'").fetchone() and db.execute('SELECT 1 FROM share_threads LIMIT 1').fetchone():
                     found['team_hint'] = ('When the owner asks: graph event_id + share (only_you, team or auto) for a thread, '
                                           'node_id + keep_private true to keep this out of the team\'s Graph.')

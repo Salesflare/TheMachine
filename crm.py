@@ -23,6 +23,7 @@ import re
 
 import enrichment
 import graph
+from machine import stamps
 
 SCHEMA = '''
 CREATE TABLE IF NOT EXISTS record_owners(node_id TEXT PRIMARY KEY,owner TEXT NOT NULL,name TEXT,set_at TEXT NOT NULL);
@@ -408,14 +409,34 @@ def _label(domain):
     return first if len(first) >= 4 and first not in SHORT_LABELS else None
 
 
+DOUBLES = stamps.Kept(4)
+
+
 def org_doubles(db, limit=30, node_id=None):
     """Same organization? Likely doubles among the organizations: the same name, the same company name on another
     domain (acme.com and acme.io), or the same LinkedIn page. Kept-apart pairs never come back. node_id: only the
     ones for this organization."""
-    rows = db.execute("SELECT id,name,strength,info FROM graph_nodes WHERE kind='org'").fetchall()
-    if len(rows) < 2:
+    candidates = DOUBLES.get('doubles', stamps.stamp(db, ('graph_nodes',)), lambda: _org_candidates(db))
+    if not candidates:
         return []
     apart = {(r['a'], r['b']) for r in db.execute('SELECT a,b FROM org_apart')}
+    out = []
+    for pair, (score, why, x, y) in candidates:
+        if pair in apart or (node_id and node_id not in pair):
+            continue
+        x, y = sorted((x, y), key=lambda r: (-r['strength'], r['id']))  # the closer one first: the other joins it
+        out.append({'a': _brief(x), 'b': _brief(y), 'why': why})
+        if len(out) >= limit:
+            break
+    return out
+
+
+def _org_candidates(db):
+    """Every likely pair of doubles, best first: [((a, b), (score, why, row a, row b))]. Worked out once per change to
+    the Graph (a pass over every organization), kept apart pairs left in: org_doubles leaves those out."""
+    rows = [dict(r) for r in db.execute("SELECT id,name,strength,info FROM graph_nodes WHERE kind='org'")]
+    if len(rows) < 2:
+        return []
     groups = {}
     for r in rows:
         info = json.loads(r['info'] or '{}')
@@ -441,16 +462,10 @@ def org_doubles(db, limit=30, node_id=None):
         for i, x in enumerate(members):
             for y in members[i + 1:]:
                 pair = tuple(sorted((x['id'], y['id'])))
-                if pair in apart or (node_id and node_id not in pair):
-                    continue
                 score = (3 if kind == 'linkedin' else 2 if kind == 'name' else 1) + min(x['strength'], y['strength']) / 10
                 if pair not in pairs or pairs[pair][0] < score:
                     pairs[pair] = (score, why_text[kind], x if x['id'] == pair[0] else y, y if y['id'] == pair[1] else x)
-    out = []
-    for (a, b), (score, why, x, y) in sorted(pairs.items(), key=lambda p: -p[1][0])[:limit]:
-        x, y = sorted((x, y), key=lambda r: (-r['strength'], r['id']))  # the closer one first: the other joins it
-        out.append({'a': _brief(x), 'b': _brief(y), 'why': why})
-    return out
+    return sorted(pairs.items(), key=lambda p: -p[1][0])
 
 
 def _brief(row):
