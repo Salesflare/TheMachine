@@ -50,6 +50,9 @@ assert.equal((await hooks.before_tool_call({toolName:'openclawbrowser',params:{}
 assert.notEqual((await hooks.before_tool_call({toolName:'exec',toolKind:'code_mode_exec',params:{}},ctx))?.block,true);
 assert.equal(await hooks.before_tool_call({toolName:'openclawassistant_signals',params:{action:'begin_analysis',args:{}}},ctx),undefined);  // no rewrite under Code Mode names
 assert.notEqual((await hooks.before_tool_call({toolName:'memory_search',params:{}},ctx))?.block,true);
+// Without Code Mode, tool search: looking tools up and tool_call pass; the tool it runs is checked by its own name
+for(const toolName of ['tool_search','tool_describe','tool_call'])assert.notEqual((await hooks.before_tool_call({toolName,params:{name:'assistant_signals'}},ctx))?.block,true,toolName);
+assert.equal((await hooks.before_tool_call({toolName:'exec',params:{command:'ls'}},ctx)).block,true);  // what tool_call would run
 assert.equal(await hooks.before_tool_call({toolName:'browser',params:{}},main),undefined);  // main session unaffected
 // Profile drafts (assistant profile) read the same way and get only the owner's USER.md, not review instructions.
 const profileCtx={...ctx,sessionKey:'agent:main:assistant-review-profile-'+'b'.repeat(32),runId:'profile-run'};
