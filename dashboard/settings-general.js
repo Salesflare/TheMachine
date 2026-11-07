@@ -36,11 +36,11 @@ const CLOUD='https://app.themachine.computer';
 // buttons link to the account, which asks to sign in. Read when the tab opens, at most once a minute.
 var acct={at:0,data:null,busy:false};  // var: settingsSync may run before this line
 const ACCT_GO={account:'Open account',plan:'Change plan',portal:'Billing',cancel:'Cancel plan',connections:'Manage',fleet:'Fleet',
- overview:'Details',username:'Change',friends:'Manage',security:'Manage',data:'Export',delete:'Delete account',withdraw:'Withdraw from contract',billing:'Billing'};
+ overview:'Details',username:'Change',friends:'Manage',security:'Manage',data:'Export',delete:'Delete account',withdraw:'Withdraw from contract',billing:'Billing',network:'Manage'};
 const acctDay=d=>{const x=new Date(d+'T12:00:00');return isNaN(x)?d:humanDay(x)};  // the app's style: Fri 20 Nov, the year only when not this one
 // In the mobile app (.in-app) the plan, billing and Fleet seat pages are hidden ([data-buy]); Open account stays, for
 // deleting the account.
-const ACCT_BUY=new Set(['plan','portal','cancel','fleet','billing','withdraw']);
+const ACCT_BUY=new Set(['plan','portal','cancel','fleet','billing','withdraw','network']);
 // A hosted Machine has no account dashboard besides this tab (the control plane sends a bare /account back here): each
 // button is a focused step there (one part of the account, Stripe's page, a passkey, a confirmation) in this same tab,
 // with the way back to here. Billing and delete keep their own confirmation and sign-in there. Self-hosted and paired:
@@ -70,6 +70,9 @@ function renderAccount(){const d=acct.data,list=$('#acct-list'),foot=$('#acct-fo
  if(p)rows.push(`<div><span class="grow"><strong>${esc(p.name)}</strong><span class="acct-status s-${esc(p.status)}">${esc(p.status_text)}</span>${p.price?`<small data-buy>${esc(p.price)}</small>`:''}</span>${acctGo(d,'plan')}${n?'':acctGo(d,'portal')||acctGo(d,'billing')}</div>`);
  if(n)rows.push(`<div data-buy><span class="grow">Next invoice<small>${esc(acctDay(n.date))}${n.amount?' · '+esc(n.amount):''}</small></span>${acctGo(d,'portal')}</div>`);
  if(p?.cancel_at)rows.push(`<div><span class="grow">Ends<small>${esc(acctDay(p.cancel_at))}</small></span></div>`);
+ // Network for Friends, a paid subscription from before the Network was free (self-hosted only), until it stops: stopping,
+ // keeping it and the card are on the account's Billing part
+ const net=d.network;if(net?.on)rows.push(acctRow(esc(t('Network for Friends')),[net.status==='past_due'?t('Payment is being retried'):'',net.until?t('Stops on {}',acctDay(net.until)):[net.price,t('The Network is free now, so you can stop this')].filter(Boolean).join(' · ')].filter(Boolean).map(esc).join(' · '),acctGo(d,'network'),true));
  if(srv)rows.push(`<div><span class="grow">Machine<small>${esc(srv.size)} · ${esc(srv.region)}</small></span>${d.hop?acctGo(d,'overview'):''}</div>`);
  if(srv){const c=d.connections||[];rows.push(`<div><span class="grow">Connected accounts<small>${c.length?c.map(x=>esc(x.service)+': '+esc(x.email)).join('<br>'):'None yet'}</small></span>${acctGo(d,'connections')}</div>`)}
  const fl=d.fleets||[],role={owner:'Owner',admin:'Admin',member:'Member'};
