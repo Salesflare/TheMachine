@@ -6550,6 +6550,10 @@
   "one": "{} tentative de démarrage",
   "other": "{} tentatives de démarrage"
  },
+ "{} steps left": {
+  "one": "Encore {} étape",
+  "other": "Encore {} étapes"
+ },
  "{} still waiting.": "{} encore en attente.",
  "{} stopped: {}": "{} s’est arrêté : {}",
  "{} suggested changes": "{} a suggéré des modifications",

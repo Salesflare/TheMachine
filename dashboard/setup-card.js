@@ -8,8 +8,14 @@
 // notifications where this browser can't have them, no installing on a phone or in Firefox, WhatsApp and another
 // account only on a hosted Machine (their sign-in runs there). From the first visit, once the first look is done; never
 // in a frame, except the site's demo (setup_card.demo: fixed rows, buttons that do nothing).
+// After the first day with to-dos (setup_card.since), it folds into one quiet line above Ready, "2 steps left · Continue",
+// which opens the card on a tap (and its chevron folds it again), so a daily owner sees their to-dos first.
 // Loaded before settings-device.js, whose deviceRender() draws it (setupRender).
 const SETUP_MAX=5;
+const SETUP_DAY=864e5;
+let setupOpen=false;  // the folded line opened with a tap, until the next load
+// Past the first day with to-dos: one line (the Machine always says since when; without it, the full card)
+const setupQuiet=s=>{const at=Date.parse(s?.since||'');return at>0&&at<=Date.now()-SETUP_DAY};
 const SETUP_ICON={
  phone:'<rect x="7" y="2.5" width="10" height="19" rx="2.2"/><path d="M11 18.5h2"/>',
  push:'<path d="M6.5 16.5V11a5.5 5.5 0 0 1 11 0v5.5l1.5 2h-14z"/><path d="M10.2 20.5a2 2 0 0 0 3.6 0"/>',
@@ -56,8 +62,10 @@ function setupQRHTML(){const p=state?.phone_app_store||{},rows=v=>Array.isArray(
   each.length?html`<div class="setup-codes">${each.map(([q,b])=>html`<div class="setup-code">${qrSvg(rows(q))}${b}</div>`)}</div>`:'';
  // no code at all (a Machine from before): the two store links alone
  return html`<div class="setup-qr">${codes||html`<div class="setup-codes">${ios}${android}</div>`}${codes?html`<small>Scan with your phone’s camera.</small>`:''}</div>`}
-function setupHTML(rows){const done=rows.filter(r=>r.done).length,desk=!DEV.mobile,hidden=setupHidden();
- return html`<div class="setup-head"><strong>Get more out of The Machine</strong><span class="setup-count">${t('{} of {} done',done,rows.length)}</span><button type="button" class="setup-x" data-setup-close aria-label="Close" title="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17"/></svg></button></div><ul class="setup-rows">${
+const SETUP_CHEVRON='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 14 5-5 5 5"/></svg>';
+function setupHTML(rows,quiet){const done=rows.filter(r=>r.done).length,desk=!DEV.mobile,hidden=setupHidden();
+ if(quiet&&!setupOpen)return html`<button type="button" class="setup-line" data-setup-open aria-expanded="false">${setupSvg('hint')}<span>${t(['{} step left','{} steps left'],rows.length-done)}</span><span class="setup-sep" aria-hidden="true">·</span><span class="setup-continue">${t('Continue')}</span></button>`;
+ return html`<div class="setup-head"><strong>Get more out of The Machine</strong><span class="setup-count">${t('{} of {} done',done,rows.length)}</span>${quiet?html`<button type="button" class="setup-x setup-fold" data-setup-fold aria-expanded="true" aria-label="Show less" title="Show less">${raw(SETUP_CHEVRON)}</button>`:''}<button type="button" class="setup-x" data-setup-close aria-label="Close" title="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17"/></svg></button></div><ul class="setup-rows">${
   rows.map(r=>html`<li class="setup-row${r.done?' done':''}" data-step="${r.id}">${setupSvg(r.done?'done':r.hint?'hint':r.id)}<span class="setup-label">${setupLabel(r)}</span>${r.done?'':html`<button type="button" class="setup-go" data-setup-go="${r.id}"${r.id==='phone'&&desk?html` aria-expanded="${setupQR}"`:''}>${setupButton(r)}</button><button type="button" class="setup-x" data-setup-dismiss="${r.id}" aria-label="Dismiss" title="Dismiss"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17"/></svg></button>`}${
    r.id==='phone'&&desk&&setupQR&&!r.done?setupQRHTML():''}</li>`)}</ul>${hidden?html`<button type="button" class="setup-more" data-setup-restore="all">${t(['Show {} hidden','Show {} hidden'],hidden)}</button>`:''}`}
 function setupBox(){let el=$('#setup-card');if(el)return el;
@@ -65,9 +73,9 @@ function setupBox(){let el=$('#setup-card');if(el)return el;
  const nudge=$('#device-nudge');if(nudge)nudge.after(el);else $('#inbox').prepend(el);
  el.addEventListener('click',setupClick);return el}
 function setupRender(){const s=state?.setup_card,el=setupBox(),off=!s||settingUp()||(DEV.framed&&!s.demo);
- const rows=off||s.closed?[]:setupRows();
- const show=rows.some(r=>!r.done),h=show?String(setupHTML(rows)):'';
- if(el.dataset.html!==h){setHTML(el,show?raw(h):html``);el.dataset.html=h}el.hidden=!show;
+ const rows=off||s.closed?[]:setupRows(),quiet=!off&&setupQuiet(s);
+ const show=rows.some(r=>!r.done),h=show?String(setupHTML(rows,quiet)):'';
+ if(el.dataset.html!==h){setHTML(el,show?raw(h):html``);el.dataset.html=h}el.hidden=!show;el.classList.toggle('quiet',quiet&&!setupOpen);
  setupSettings(!off&&(s.closed||!show)&&(s.closed||setupHidden()>0))}
 // Settings, General, Setup to-do: while the to-do is closed, or shows nothing but has closed rows, one row brings it all back
 function setupSettings(on){let sec=$('#settings-setup');
@@ -90,6 +98,7 @@ async function setupRestore(step){const s=state?.setup_card;if(!s)return;
  try{const r=await setupPost('setup_restore',step);if(r?.setup_card)state.setup_card=r.setup_card}catch(e){errCaught(e);toast(e.message,true)}setupRender()}
 $('#toast').addEventListener('click',e=>{const b=e.target.closest('[data-setup-undo]');if(!b)return;e.stopPropagation();$('#toast').classList.remove('show');setupRestore(b.dataset.setupUndo)},true);
 async function setupClick(e){const b=e.target.closest('button');if(!b)return;const s=state?.setup_card;if(!s)return;
+ if(b.matches('[data-setup-open],[data-setup-fold]')){setupOpen=b.matches('[data-setup-open]');setupRender();$('#setup-card [data-setup-open],#setup-card [data-setup-fold]')?.focus();return}
  if(b.matches('[data-setup-close]'))return setupDismiss('card');
  if(b.matches('[data-setup-restore]')){if(b.closest('#settings-setup'))toast('Back at the top of To-dos.');return setupRestore(b.dataset.setupRestore)}
  if(b.matches('[data-setup-dismiss]'))return setupDismiss(b.dataset.setupDismiss);

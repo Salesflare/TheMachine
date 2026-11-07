@@ -19,8 +19,18 @@ class SetupCard(unittest.TestCase):
         return a.setup_card(self.store, config or self.config)
 
     def test_a_new_machine_has_every_step_open(self):
-        self.assertEqual(self.card(), {'closed': False, 'dismissed': [], 'phones': 0, 'whatsapp': False, 'mail_accounts': 1,
-                                       'add': 'google', 'more': False})
+        card = self.card()
+        self.assertTrue(card.pop('since'))  # when this Machine started counting, until a first to-do shows
+        self.assertEqual(card, {'closed': False, 'dismissed': [], 'phones': 0, 'whatsapp': False, 'mail_accounts': 1,
+                                'add': 'google', 'more': False})
+
+    def test_since_is_the_first_to_do_shown(self):
+        with self.store.connect() as db:
+            db.execute("INSERT OR REPLACE INTO milestones(name,at) VALUES('tracking_since','2026-10-01T09:00:00+00:00')")
+        self.assertEqual(self.card()['since'], '2026-10-01T09:00:00+00:00')
+        with self.store.connect() as db:
+            db.execute("INSERT INTO milestones(name,at,detail) VALUES('first_card_shown','2026-10-02T09:00:00+00:00','3')")
+        self.assertEqual(self.card()['since'], '2026-10-02T09:00:00+00:00')  # the dashboard folds it a day after this
 
     def test_steps_tick_off_from_what_the_machine_has(self):
         accounts = [*self.config['accounts'], {'id': 'wa', 'service': 'whatsapp'}, {'id': 'me-outlook', 'service': 'outlook'},

@@ -37,6 +37,8 @@ Ab deinem ersten Besuch, sobald der erste Blick fertig ist, zeigt eine kleine Au
 
 Zeilen erscheinen nur, wo sie passen: keine Handy-App in der App selbst, kein Installieren auf dem Handy. Das × einer Zeile schließt sie auf jedem Gerät, und das × oben schließt die ganze Aufgabe.
 
+Nach deinem ersten Tag wird sie zu einer ruhigen Zeile über **Bereit für dich**, etwa „Noch 2 Schritte · Weiter“. Tippe darauf, um die Aufgabe zu öffnen, und auf den Pfeil, um sie wieder einzuklappen.
+
 **Rückgängig** in der Meldung danach holt sie zurück, ebenso **1 ausgeblendeten Schritt zeigen** unten in der Aufgabe. Ist die ganze Aufgabe geschlossen, holt **Einstellungen**, **Allgemein**, **Einrichtungs-Aufgabe** sie zurück. **Einstellungen**, **Allgemein**, **Dieses Gerät** hat dieselben Schalter, und dort führt die Handy-App immer zum Download.
 
 ## Neue Versionen

@@ -35,6 +35,8 @@ Dès votre première visite, une fois le premier coup d’œil terminé, une pet
 
 Les lignes n’apparaissent que là où elles ont du sens : pas d’app de téléphone dans l’app, pas d’installation sur un téléphone. Le × d’une ligne la ferme sur tous les appareils, et le × en haut ferme toute la tâche.
 
+Après votre premier jour, elle se replie en une ligne discrète au-dessus de **Prêt pour vous**, comme « Encore 2 étapes · Continuer ». Touchez-la pour ouvrir la tâche, et touchez la flèche pour la replier.
+
 **Annuler** dans le message qui suit la fait revenir, tout comme **Afficher 1 étape masquée** en bas de la tâche. Une fois toute la tâche fermée, **Paramètres**, **Général**, **Tâche de démarrage** la fait revenir. **Paramètres**, **Général**, **Cet appareil** garde les mêmes réglages, et **App mobile** y propose toujours de télécharger l’app.
 
 ## Nouvelles versions

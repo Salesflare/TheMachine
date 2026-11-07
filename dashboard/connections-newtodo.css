@@ -164,6 +164,15 @@ body:has(#browser-pane:not([hidden])) :is(#page-head,#needs-you,#notice,#limit-b
 .device-nudge[hidden],body.chat-open .device-nudge{display:none}
 /* A usage limit reached (state.model_pause), or reviews waiting for the budget (state.review_pause): the same quiet notice card, with an amber dot, at the top of every view. */
 #fixed-notice{display:grid;gap:var(--sp-2);margin-bottom:var(--sp-4)}#fixed-notice .notice-card{margin:0}.fixed-notice::before{content:"";flex:none;width:6px;height:6px;border-radius:50%;background:var(--mint)}
+/* The banners above every view (#banners: a usage limit, Fixed, Needs you) stack into one box with a hairline between, never a pile of cards over the to-dos. */
+.banner-stack:has(>:not([hidden])){margin-bottom:var(--sp-4);border:1px solid var(--border);border-radius:var(--r-lg);background:var(--surface);box-shadow:var(--shadow-sm);overflow:hidden}
+#banners :is(#needs-you,.notice-card){margin:0;padding:8px var(--sp-4);border:0;border-radius:0;background:none;box-shadow:none}
+#banners #fixed-notice{gap:0;margin:0}
+#banners #needs-you>strong{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}  /* each line keeps the amber dot instead */
+#banners #needs-you li{justify-content:flex-start;gap:var(--sp-3);padding:0}#banners #needs-you li>span{flex:1 1 auto;min-width:0}
+#banners #needs-you li::before{content:"";flex:none;width:6px;height:6px;border-radius:50%;background:var(--amber)}
+#banners>:not([hidden])~:is(#fixed-notice,#needs-you):not([hidden]),#banners #fixed-notice .notice-card+.notice-card{border-top:1px solid var(--border)}
+body:has(#browser-pane:not([hidden])) .banner-stack{display:none}
 .limit-banner{flex-wrap:nowrap;align-items:flex-start}.limit-banner::before{content:"";flex:none;width:6px;height:6px;margin-top:.55em;border-radius:50%;background:var(--amber)}
 .nudge-text{flex:1 1 240px;min-width:0}.nudge-text>span{display:block}
 .nudge-text strong{display:block;margin-bottom:1px;color:var(--cream);font-size:var(--fs-md);font-weight:var(--fw-strong)}

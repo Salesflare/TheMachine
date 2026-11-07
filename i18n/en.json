@@ -6550,6 +6550,10 @@
   "one": "{} start attempt",
   "other": "{} start attempts"
  },
+ "{} steps left": {
+  "one": "{} step left",
+  "other": "{} steps left"
+ },
  "{} still waiting.": "{} still waiting.",
  "{} stopped: {}": "{} stopped: {}",
  "{} suggested changes": "{} suggested changes",

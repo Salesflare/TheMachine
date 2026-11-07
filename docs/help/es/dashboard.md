@@ -35,6 +35,8 @@ Desde tu primera visita, cuando termina el primer vistazo, una pequeña tarea ar
 
 Las filas solo aparecen donde tienen sentido: nada de app del móvil dentro de la app, nada de instalar en un móvil. La × de una fila la cierra en todos los dispositivos, y la × de arriba cierra toda la tarea.
 
+Después de tu primer día, se reduce a una línea discreta encima de **Lista para ti**, como «Faltan 2 pasos · Continuar». Tócala para abrir la tarea, y toca la flecha para plegarla otra vez.
+
 **Deshacer** en el mensaje que sale después la recupera, igual que **Mostrar 1 paso oculto** al final de la tarea. Si cerraste toda la tarea, **Ajustes**, **General**, **Tarea de configuración** la recupera. **Ajustes**, **General**, **Este dispositivo** tiene los mismos controles, y ahí la app del móvil siempre tiene su enlace de descarga.
 
 ## Versiones nuevas

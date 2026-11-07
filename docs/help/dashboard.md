@@ -37,6 +37,8 @@ A small to-do at the top of To-dos lists what makes The Machine more useful: the
 
 Rows show only where they make sense. The × on a row closes it on every device. The × at the top closes the whole to-do.
 
+After your first day, it folds into one quiet line above **Ready for you**, like "2 steps left · Continue". Tap it to open the to-do, and tap the arrow to fold it again.
+
 **Undo** or **Show 1 hidden** brings a row back. To bring back the whole to-do, use **Settings**, **General**, **Setup to-do**. **Settings**, **General**, **This device** has the same controls, including **Get the app**.
 
 ## New versions
