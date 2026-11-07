@@ -17,9 +17,9 @@ if(window.crypto?.getRandomValues)def(crypto,'randomUUID',()=>{const b=crypto.ge
 // Theme: light or dark as picked here or in the hosted app (the "theme" cookie, shared under the app's domain), else the device's own setting.
 (()=>{const root=document.documentElement,sys=matchMedia('(prefers-color-scheme: light)');
 const saved=()=>{const c=document.cookie.match(/(?:^|;\s*)theme=(light|dark)(?:;|$)/);if(c)return c[1];const l=localStorage.getItem('theme');return l==='light'||l==='dark'?l:'auto'};
-// On Omarchy, a device can follow the computer's Omarchy theme instead (settings-omarchy.js): its mode and colors from
-// the copy kept here, so the first paint already has them.
-const omarchy=()=>{try{const p=localStorage.getItem('omarchy-theme')==='1'&&JSON.parse(localStorage.getItem('omarchy-palette'));return p&&p.colors?p:null}catch{return null}};
+// On Omarchy, the dashboard follows the computer's Omarchy theme instead (settings-omarchy.js; on by default on that
+// computer itself): its mode and colors from the copy kept here, so the first paint already has them.
+const omarchy=()=>{try{const p=['1','auto'].includes(localStorage.getItem('omarchy-theme'))&&JSON.parse(localStorage.getItem('omarchy-palette'));return p&&p.colors?p:null}catch{return null}};
 // The theme's colors onto the dashboard's tokens (base-tokens.css), in the style of the page itself; null takes them off.
 // Colors are #rrggbb only (machine/omarchy.py); a light theme gets near-white cards, as the dashboard's own light mode.
 let painted=[];window.paintOmarchy=o=>{const s=root.style;for(const n of painted)s.removeProperty(n);painted=[];delete root.dataset.omarchy;if(!o)return;

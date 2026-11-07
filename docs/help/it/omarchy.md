@@ -1,7 +1,7 @@
 ---
 title: Omarchy
 area: settings
-summary: Su Omarchy, la dashboard può indossare il tema Omarchy e cambiare con lui.
+summary: Su Omarchy, la dashboard segue il tuo tema Omarchy e cambia con lui.
 covers: omarchy
 code: machine/omarchy.py, dashboard/settings-omarchy.js
 order: 7
@@ -9,9 +9,9 @@ keywords: omarchy, theme, colors, hyprland, arch, linux, desktop
 ---
 ## Seguire il tema Omarchy
 
-Quando la tua Machine gira su un computer con [Omarchy](https://omarchy.org), **Impostazioni**, **Generale**, **Questo dispositivo** ha **Tema Omarchy**. Attivalo e la dashboard prende i colori del tema Omarchy attuale, chiaro o scuro. Cambia tema in Omarchy e lei lo segue in pochi secondi, senza ricaricare.
+Quando la tua Machine gira su un computer con [Omarchy](https://omarchy.org), lì la dashboard segue il tema Omarchy, come le app di Omarchy stesse. Prende i colori del tema attuale, chiaro o scuro, e cambia con lui in pochi secondi, senza ricaricare.
 
-Vale per dispositivo: l'app desktop può seguire Omarchy mentre un telefono tiene la sua modalità chiara o scura. **Modalità chiara** è nascosta finché è attivo, perché decide il tema.
+È attivo di default in un browser o nell'app desktop su quel computer, e spento sugli altri computer finché non lo scegli. Attivalo o spegnilo in **Impostazioni**, **Generale**, **Questo dispositivo**, **Tema Omarchy**, e la scelta resta. **Modalità chiara** è nascosta finché è attivo, perché decide il tema.
 
 ## Cosa legge
 

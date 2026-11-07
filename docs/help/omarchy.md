@@ -1,17 +1,17 @@
 ---
 title: Omarchy
 area: settings
-summary: On Omarchy, the dashboard can wear the Omarchy theme and change with it.
+summary: On Omarchy, the dashboard follows your Omarchy theme and switches with it.
 covers: omarchy
 code: machine/omarchy.py, dashboard/settings-omarchy.js
 order: 7
 keywords: omarchy, theme, colors, hyprland, arch, linux, desktop
 ---
-## Match the Omarchy theme
+## Follow the Omarchy theme
 
-When your Machine runs on a computer with [Omarchy](https://omarchy.org), **Settings**, **General**, **This device** has **Omarchy theme**. Turn it on and the dashboard takes the colors of the current Omarchy theme, light or dark. Switch themes in Omarchy and it follows within seconds, without a reload.
+When your Machine runs on a computer with [Omarchy](https://omarchy.org), the dashboard follows the Omarchy theme there, like Omarchy's own apps. It takes the colors of the current theme, light or dark, and switches with it within seconds, without a reload.
 
-It is per device: the desktop app can follow Omarchy while a phone keeps its own light or dark mode. **Light mode** is hidden while it is on, since the theme decides.
+It is on by default in a browser or the desktop app on that computer, and off on other computers until picked. Turn it on or off in **Settings**, **General**, **This device**, **Omarchy theme**, and that choice stays. **Light mode** is hidden while it is on, since the theme decides.
 
 ## What it reads
 
