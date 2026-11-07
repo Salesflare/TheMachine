@@ -21,7 +21,7 @@ Il apparaît dès que vous faites partie d’une Fleet, avec un volet pour chaqu
 
 ## Ce qu’elle coûte, la quitter et créer une Fleet
 
-Sous le volet de chaque Fleet, **Ce qu’elle coûte** montre ses places, qui paie votre Machine et, pour le propriétaire, la carte et les factures de la Fleet. **Quitter cette Fleet** vous en fait sortir ; un propriétaire la confie d’abord à quelqu’un d’autre. **Créer une autre Fleet** en crée une nouvelle.
+Sous le nom de chaque Fleet, **Ce qu’elle coûte** montre ses places, qui paie votre Machine et, pour le propriétaire, la carte et les factures de la Fleet. **Quitter cette Fleet** vous en fait sortir ; un propriétaire la confie d’abord à quelqu’un d’autre. **Créer une autre Fleet** en crée une nouvelle.
 
 Chacun ouvre cette étape de votre compte, et un changement de prix vous montre d’abord le montant à confirmer. Sur une Machine auto-hébergée, ils ouvrent votre compte dans un nouvel onglet, où vous vous connectez.
 

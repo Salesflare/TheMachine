@@ -21,7 +21,7 @@ Compare quando sei in una Fleet, con un pannello per ogni Fleet, Famiglia, Amici
 
 ## Quanto costa, uscire e creare una Fleet
 
-Sotto il pannello di ogni Fleet, **Quanto costa** mostra i suoi posti, chi paga la tua Machine e, per il proprietario, la carta e le fatture della Fleet. **Lascia questa Fleet** ti fa uscire; un proprietario prima la passa a qualcun altro. **Crea un’altra Fleet** ne crea una nuova.
+Sotto il nome di ogni Fleet, **Quanto costa** mostra i suoi posti, chi paga la tua Machine e, per il proprietario, la carta e le fatture della Fleet. **Lascia questa Fleet** ti fa uscire; un proprietario prima la passa a qualcun altro. **Crea un’altra Fleet** ne crea una nuova.
 
 Ognuno apre quel passaggio del tuo account, e un cambio di prezzo ti mostra prima l'importo da confermare. Su una Machine self-hosted aprono il tuo account in una nuova scheda, dove accedi.
 

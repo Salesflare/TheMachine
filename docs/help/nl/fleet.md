@@ -21,7 +21,7 @@ Het verschijnt zodra je in een Fleet zit, met een paneel voor elke Fleet, Famili
 
 ## Wat het kost, verlaten en een Fleet starten
 
-Onder het paneel van elke Fleet toont **Wat het kost** de plaatsen, wie je Machine betaalt en, voor de eigenaar, de kaart en facturen van de Fleet. **Deze Fleet verlaten** haalt je eruit; een eigenaar draagt hem eerst over aan iemand anders. **Nog een Fleet starten** start een nieuwe.
+Onder de naam van elke Fleet toont **Wat het kost** de plaatsen, wie je Machine betaalt en, voor de eigenaar, de kaart en facturen van de Fleet. **Deze Fleet verlaten** haalt je eruit; een eigenaar draagt hem eerst over aan iemand anders. **Nog een Fleet starten** start een nieuwe.
 
 Elk opent die stap van je account, en een prijswijziging toont eerst het bedrag om te bevestigen. Op een zelf gehoste Machine openen ze je account in een nieuw tabblad, waar je inlogt.
 

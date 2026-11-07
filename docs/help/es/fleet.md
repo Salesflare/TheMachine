@@ -21,7 +21,7 @@ Aparece en cuanto estás en un Fleet, con un panel para cada Fleet, Familia, Ami
 
 ## Lo que cuesta, salir y crear un Fleet
 
-Bajo el panel de cada Fleet, **Lo que cuesta** muestra sus plazas, quién paga tu Machine y, para el propietario, la tarjeta y las facturas del Fleet. **Salir de este Fleet** te saca de él; un propietario primero se lo pasa a otra persona. **Crear otro Fleet** crea uno nuevo.
+Bajo el nombre de cada Fleet, **Lo que cuesta** muestra sus plazas, quién paga tu Machine y, para el propietario, la tarjeta y las facturas del Fleet. **Salir de este Fleet** te saca de él; un propietario primero se lo pasa a otra persona. **Crear otro Fleet** crea uno nuevo.
 
 Cada botón abre ese paso de tu cuenta, y un cambio de precio te muestra antes el importe para confirmarlo. En una Machine autoalojada abren tu cuenta en una pestaña nueva, donde inicias sesión.
 

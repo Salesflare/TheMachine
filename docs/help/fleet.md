@@ -21,7 +21,7 @@ It shows once you're in a Fleet, with a pane for each Fleet, Family, Friends, Ne
 
 ## What it costs, leaving and starting a Fleet
 
-Under each Fleet's pane, **What it costs** shows its seats, who pays for your Machine and, for the owner, the Fleet's card and invoices. **Leave this Fleet** leaves it; an owner first hands it to someone else. **Start another Fleet** starts a new one.
+Under each Fleet's name, **What it costs** shows its seats, who pays for your Machine and, for the owner, the Fleet's card and invoices. **Leave this Fleet** leaves it; an owner first hands it to someone else. **Start another Fleet** starts a new one.
 
 Each opens that step of your account, and a change in price shows the amount to confirm first. On a self-hosted Machine they open your account in a new tab, where you sign in.
 

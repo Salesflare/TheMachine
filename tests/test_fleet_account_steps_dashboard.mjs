@@ -5,7 +5,7 @@ import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // What a Fleet costs, leaving it and starting one are focused steps on the account (quotes, confirmations, Stripe).
-// The Fleet tab links to them under each Fleet's pane: on a hosted Machine a one-time hop (/_machine/account-hop) that
+// The Fleet tab links to them in a quiet row under each Fleet's name: on a hosted Machine a one-time hop (/_machine/account-hop) that
 // carries which Fleet, on a paired one a link to the account in a new tab, without an account none at all. A hosted
 // Machine's Family invite suggestion hops too, with who, after marking it used. Hidden in the phone app ([data-buy]).
 // SHOTS=<folder> saves the hosted to-do's invite line.
@@ -47,11 +47,13 @@ try{
   // Hosted: forms that hop, each carrying its own Fleet
   mode='hosted';let page=await open(context,width);
   const work=pane(page,'fleet-'+FL);
-  assert.deepEqual(await work.locator('.fleet-acct button').allInnerTexts(),['What it costs','Leave this Fleet','Start another Fleet']);
+  assert.deepEqual(await work.locator('.fleet-acct button').allInnerTexts(),['What it costs','Start another Fleet','Leave this Fleet']);
   assert.deepEqual(await work.locator('.fleet-acct form').evaluateAll(fs=>fs.map(f=>[f.getAttribute('action'),f.elements.to.value,f.elements.fleet?.value||''])),
-   [['/_machine/account-hop','fleet_costs',FL],['/_machine/account-hop','fleet_leave',FL],['/_machine/account-hop','fleet_start','']]);
+   [['/_machine/account-hop','fleet_costs',FL],['/_machine/account-hop','fleet_start',''],['/_machine/account-hop','fleet_leave',FL]]);
   assert.equal(await pane(page,'family').locator('.fleet-acct input[name="fleet"]').first().getAttribute('value'),FA);
   assert.equal(await work.locator('.fleet-acct').getAttribute('data-buy'),'');  // the phone app hides it
+  assert.ok(await work.locator('.fleet-pane-head + .fleet-acct').count());  // right under the Fleet's name
+  assert.ok(await page.evaluate(()=>[...document.querySelectorAll('.fleet-acct')].every(r=>r.scrollWidth<=r.clientWidth)));
   assert.equal(await pane(page,'friends').locator('.fleet-acct').count(),0);  // in a Fleet already: not under Friends
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   await page.evaluate(id=>document.querySelector(`[data-fleet-pane="fleet-${id}"]`).click(),FL);
@@ -67,8 +69,8 @@ try{
   mode='paired';page=await open(context,width);
   assert.deepEqual(await pane(page,'fleet-'+FL).locator('.fleet-acct a').evaluateAll(as=>as.map(a=>[a.textContent,a.getAttribute('href'),a.target])),
    [['What it costs ↗',`https://app.example.test/account?tab=fleet&part=costs&fleet=${FL}`,'_blank'],
-    ['Leave this Fleet ↗',`https://app.example.test/account?tab=fleet&part=leave&fleet=${FL}`,'_blank'],
-    ['Start another Fleet ↗','https://app.example.test/account?tab=fleet&part=start','_blank']]);
+    ['Start another Fleet ↗','https://app.example.test/account?tab=fleet&part=start','_blank'],
+    ['Leave this Fleet ↗',`https://app.example.test/account?tab=fleet&part=leave&fleet=${FL}`,'_blank']]);
   assert.equal(await page.locator('#task-c1 .family-invite a[data-family-invite="open"]').getAttribute('href'),URL_);
   // No account: nothing to link to
   mode='none';page=await open(context,width);

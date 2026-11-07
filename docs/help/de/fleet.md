@@ -21,7 +21,7 @@ Er erscheint, sobald du in einer Fleet bist, mit einem Bereich für jede Fleet, 
 
 ## Was sie kostet, verlassen und eine Fleet starten
 
-Unter dem Bereich jeder Fleet zeigt **Was sie kostet** ihre Plätze, wer deine Machine bezahlt und, für den Owner, die Karte und Rechnungen der Fleet. **Diese Fleet verlassen** verlässt sie; ein Owner übergibt sie vorher an jemand anderen. **Weitere Fleet starten** startet eine neue.
+Unter dem Namen jeder Fleet zeigt **Was sie kostet** ihre Plätze, wer deine Machine bezahlt und, für den Owner, die Karte und Rechnungen der Fleet. **Diese Fleet verlassen** verlässt sie; ein Owner übergibt sie vorher an jemand anderen. **Weitere Fleet starten** startet eine neue.
 
 Jede Schaltfläche öffnet diesen Schritt in deinem Konto, und eine Preisänderung zeigt dir zuerst den Betrag zum Bestätigen. Auf einer selbst gehosteten Machine öffnen sie dein Konto in einem neuen Tab, wo du dich anmeldest.
 

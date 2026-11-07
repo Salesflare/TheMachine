@@ -21,7 +21,7 @@ Ela aparece quando você está em um Fleet, com um painel para cada Fleet, Famí
 
 ## Quanto custa, sair e criar um Fleet
 
-Abaixo do painel de cada Fleet, **Quanto custa** mostra as vagas, quem paga a sua Machine e, para o dono, o cartão e as faturas do Fleet. **Sair deste Fleet** tira você dele; um dono primeiro o passa para outra pessoa. **Criar outro Fleet** cria um novo.
+Abaixo do nome de cada Fleet, **Quanto custa** mostra as vagas, quem paga a sua Machine e, para o dono, o cartão e as faturas do Fleet. **Sair deste Fleet** tira você dele; um dono primeiro o passa para outra pessoa. **Criar outro Fleet** cria um novo.
 
 Cada um abre essa etapa da sua conta, e uma mudança de preço mostra antes o valor para confirmar. Em uma Machine auto-hospedada, eles abrem a sua conta em uma nova aba, onde você entra.
 
