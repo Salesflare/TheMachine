@@ -489,9 +489,10 @@ class AccountSummary(unittest.TestCase):
     fields the tab shows, links only to the account's own host, never a hop, read at most once a minute."""
     def test_only_what_the_tab_shows_and_links_to_the_account_only(self):
         answer = {'email': 'sam@example.org', 'plan': None, 'fleets': [{'name': 'Family', 'role': 'member', 'people': 3}],
-                  'actions': ['account', 'fleet', 'security', 'friends', 'delete'], 'hop': True, 'token': 'not-for-the-dashboard',
+                  'actions': ['account', 'fleet', 'security', 'friends', 'delete', 'network'], 'hop': True, 'token': 'not-for-the-dashboard',
                   'security': {'recovery': 9, 'passkeys': 1, 'phones': 0}, 'friends': {'on': True, 'waiting': 2}, 'username': 'sam-k',
                   'name': 'not-a-hosted-address.example',
+                  'network': {'on': True, 'status': 'active', 'until': None, 'price': '€4/month, excl. VAT'},
                   'links': {'account': 'https://cp.example.org/account', 'fleet': 'https://evil.example/account',
                             'plan': 'http://cp.example.org/account', 'cancel': 'javascript:alert(1)'}}
         relay = FakeRelay()
@@ -509,6 +510,7 @@ class AccountSummary(unittest.TestCase):
             # The account's own parts, in counts: sign-in, friends and the username, each part a link
             self.assertEqual((found['security'], found['friends'], found['username']), (answer['security'], answer['friends'], 'sam-k'))
             self.assertNotIn('name', found)  # a hosted Machine's address and its hops: never on a self-hosted one
+            self.assertEqual(found['network'], answer['network'])  # Network for Friends in short, for its row
             box.account()
             self.assertEqual(len(relay.calls), 1)  # once a minute
 

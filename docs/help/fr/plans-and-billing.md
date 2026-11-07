@@ -23,6 +23,8 @@ Tous les prix sont mensuels, HT. Voir [Tarifs](/pricing).
 
 Les prix hébergé, place Travail et Fleet Famille sont des tarifs early adopter, au lieu de {price.standard_list}, {price.seat_list} et {price.family_pair_list}. Les early adopters les gardent tant que leur abonnement reste actif.
 
+Vous avez lancé Network pour les amis avant que le Network devienne gratuit ? Il apparaît dans **Paramètres** › **Compte** jusqu’à ce que vous l’arrêtiez. **Gérer** l’ouvre dans votre compte, où vous l’arrêtez ou changez sa carte. Votre nom d’utilisateur et vos amis restent.
+
 ## Carte et factures
 
 Dans **Paramètres** › **Compte**, appuyez sur **Facturation**, puis sur **Gérer l’abonnement**. Cela ouvre Stripe, où vous changez de carte et téléchargez vos factures. Les données de votre carte ne nous parviennent jamais.

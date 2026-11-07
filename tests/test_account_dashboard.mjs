@@ -26,10 +26,11 @@ const hostedSummary={email:'alex@example.org',hop:true,
  links:{account:CP+'/account',fleet:CP+'/account?tab=fleet',plan:CP+'/account?tab=overview#status',portal:CP+'/account?tab=billing',cancel:CP+'/account/cancel',connections:CP+'/setup#sources'}};
 const APP='https://app.themachine.computer';
 const pairedSummary={on:true,email:'sam@example.org',hop:false,plan:null,next_invoice:null,server:null,connections:[],
- fleets:[{name:'Family',kind:'family',role:'member',people:3}],actions:['account','fleet','security','friends','delete'],
+ fleets:[{name:'Family',kind:'family',role:'member',people:3}],actions:['account','fleet','security','friends','delete','network'],
  security:{recovery:10,passkeys:1,phones:0},friends:{on:true,waiting:2},username:'sam-k',
+ network:{on:true,status:'active',until:null,price:'€4/month, excl. VAT'},
  links:{account:APP+'/account',fleet:APP+'/account?tab=fleet&focus=1',security:APP+'/account?tab=security&focus=1',
-  friends:APP+'/account?tab=friends&focus=1',delete:APP+'/account?tab=data&focus=1#wipe'}};
+  friends:APP+'/account?tab=friends&focus=1',delete:APP+'/account?tab=data&focus=1#wipe',network:APP+'/account?tab=billing&focus=1#network-sub'}};
 let mode='hosted',fail=false;const hops=[],posts=[],asked=[];
 const server=createServer(async(req,res)=>{
  const url=new URL(req.url,'http://fixture.invalid');
@@ -109,8 +110,14 @@ try{
    assert.equal(await page.locator(':is(#settings-acct,#settings-acct-end) form[action="/_machine/account-hop"]').count(),0);
    // The account's own parts too (counts only), each a link to that part of the account, a focused step there
    assert.deepEqual(await page.locator('#settings-acct a[data-acct-go]').evaluateAll(as=>as.map(a=>[a.dataset.acctGo,a.getAttribute('href'),a.target])),
-    [['fleet',APP+'/account?tab=fleet&focus=1','_blank'],['friends',APP+'/account?tab=friends&focus=1','_blank'],
+    [['network',APP+'/account?tab=billing&focus=1#network-sub','_blank'],['fleet',APP+'/account?tab=fleet&focus=1','_blank'],['friends',APP+'/account?tab=friends&focus=1','_blank'],
      ['security',APP+'/account?tab=security&focus=1','_blank'],['account',APP+'/account','_blank']]);
+   // Network for Friends (an older paid one): its state in short; stopping it and the card are on the account's Billing part
+   assert.ok((await text(page,'#acct-list')).includes('Network for Friends\n€4/month, excl. VAT · Renews every month'));
+   pairedSummary.network={on:true,status:'past_due',until:'2026-11-30',price:'€4/month, excl. VAT'};
+   await page.goto('about:blank');await page.goto(base+'/#settings/account');await page.locator('#acct-list',{hasText:'Stops on'}).waitFor();
+   assert.ok((await text(page,'#acct-list')).includes('Payment is being retried · Stops on Mon, Nov 30'));
+   pairedSummary.network={on:true,status:'active',until:null,price:'€4/month, excl. VAT'};
    assert.equal(await page.locator('#settings-acct form[action="/_machine/logout"]').count(),0);
    const paired=await text(page,'#acct-list');
    for(const bit of ['Member · 3 people','Username','sam-k','2 friend requests waiting','Two-factor on · 10 recovery codes left · 1 passkey'])

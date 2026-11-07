@@ -21,6 +21,8 @@ Your AI plan is billed by your provider, like OpenAI. We add nothing to it.
 
 All prices are per month, excl. VAT. See [Pricing](/pricing).
 
+Started Network for Friends before the Network became free? It shows in **Settings** › **Account** until you stop it. **Manage** opens it in your account, where you stop it or change its card. Your username and friends stay.
+
 ## Card and invoices
 
 In **Settings** › **Account**, press **Billing**, then **Manage subscription**. It opens Stripe, where you change your card and download invoices. Your card details never reach us.

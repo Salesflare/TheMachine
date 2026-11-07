@@ -23,6 +23,8 @@ Todos los precios son al mes, sin IVA. Consulta [Precios](/pricing).
 
 Los precios alojado, de puesto de trabajo y de Fleet familiar son precios early adopter, antes {price.standard_list}, {price.seat_list} y {price.family_pair_list}. Los early adopters los mantienen mientras su suscripción siga activa.
 
+¿Empezaste Network para amigos antes de que el Network fuera gratis? Aparece en **Ajustes** › **Cuenta** hasta que lo detengas. **Gestionar** lo abre en tu cuenta, donde lo detienes o cambias su tarjeta. Tu usuario y tus amigos se quedan.
+
 ## Tarjeta y facturas
 
 En **Ajustes** › **Cuenta**, pulsa **Facturación** y luego **Gestionar suscripción**. Se abre Stripe, donde cambias tu tarjeta y descargas las facturas. Los datos de tu tarjeta nunca nos llegan.

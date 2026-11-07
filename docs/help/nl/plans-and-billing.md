@@ -23,6 +23,8 @@ Alle prijzen zijn per maand, excl. btw. Zie [Prijzen](/pricing).
 
 De prijzen voor gehost, Werk-plaatsen en Familie-Fleets zijn early-adopterprijzen, verlaagd van {price.standard_list}, {price.seat_list} en {price.family_pair_list}. Early adopters houden ze zolang hun abonnement actief blijft.
 
+Network voor Vrienden gestart voordat het Network gratis werd? Het staat in **Instellingen** › **Account** tot je het stopt. **Beheren** opent het in je account, waar je het stopt of de kaart wijzigt. Je gebruikersnaam en vrienden blijven.
+
 ## Kaart en facturen
 
 Druk in **Instellingen** › **Account** op **Facturatie** en dan op **Abonnement beheren**. Dat opent Stripe, waar je je kaart wijzigt en facturen downloadt. Je kaartgegevens komen nooit bij ons.

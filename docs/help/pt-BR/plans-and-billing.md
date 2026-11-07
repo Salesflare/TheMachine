@@ -23,6 +23,8 @@ Todos os preços são por mês, sem IVA. Veja [Preços](/pricing).
 
 Os preços hospedado, de vaga de Trabalho e de Fleet da Família são preços early adopter, antes {price.standard_list}, {price.seat_list} e {price.family_pair_list}. Os early adopters mantêm esses preços enquanto a assinatura continuar ativa.
 
+Começou o Network para amigos antes de o Network ficar grátis? Ele aparece em **Configurações** › **Conta** até você parar. **Gerenciar** abre ele na sua conta, onde você para ou troca o cartão. Seu usuário e seus amigos continuam.
+
 ## Cartão e faturas
 
 Em **Configurações** › **Conta**, clique em **Cobrança** e depois em **Gerenciar assinatura**. Isso abre o Stripe, onde você troca o cartão e baixa as faturas. Os dados do seu cartão nunca chegam até nós.

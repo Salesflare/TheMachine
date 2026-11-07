@@ -21,6 +21,8 @@ Deinen KI-Tarif rechnet dein Anbieter ab, etwa OpenAI. Wir schlagen nichts drauf
 
 Alle Preise gelten pro Monat, zzgl. MwSt. Siehe [Preise](/pricing).
 
+Network für Freunde begonnen, bevor das Network kostenlos wurde? Es steht in **Einstellungen** › **Konto**, bis du es beendest. **Verwalten** öffnet es in deinem Konto, wo du es beendest oder die Karte änderst. Dein Benutzername und deine Freunde bleiben.
+
 ## Karte und Rechnungen
 
 Tippe in **Einstellungen** › **Konto** auf **Abrechnung** und dann auf **Abo verwalten**. Das öffnet Stripe, wo du deine Karte änderst und Rechnungen herunterlädst. Deine Kartendaten erreichen uns nie.

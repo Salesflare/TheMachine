@@ -23,6 +23,8 @@ Tutti i prezzi sono al mese, IVA esclusa. Vedi [Prezzi](/pricing).
 
 I prezzi in hosting, per posto di lavoro e per la Fleet di famiglia sono prezzi early adopter, invece di {price.standard_list}, {price.seat_list} e {price.family_pair_list}. Gli early adopter li mantengono finché l’abbonamento resta attivo.
 
+Hai attivato Network per gli amici prima che il Network diventasse gratuito? Compare in **Impostazioni** › **Account** finché non lo interrompi. **Gestisci** lo apre nel tuo account, dove lo interrompi o cambi la carta. Il tuo nome utente e i tuoi amici restano.
+
 ## Carta e fatture
 
 In **Impostazioni** › **Account**, premi **Fatturazione** e poi **Gestisci abbonamento**. Si apre Stripe, dove cambi la carta e scarichi le fatture. I dati della tua carta non arrivano mai a noi.
