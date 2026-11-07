@@ -86,7 +86,7 @@ Om lid te worden van een Fleet, er een te starten of een Machine op je eigen com
 **Fleet-instellingen**, onder de naam van elke Fleet in haar paneel en in Beheren, opent de instellingen van die Fleet op je account: gedeelde connectors, beveiliging, bedrijfsaanmelding, welke Machine antwoordt, en deze twee:
 
 - **Onlangs verwijderd**: elke persoon die verwijderd is of vertrokken is. Er staat **Verwijderd, bevestigd** zodra hun Machine de werkgegevens verwijderd heeft, Google het uitloggen bevestigd heeft en elk gedeeld token dat ze hadden vervangen is. Tot dan staat er **In behandeling** en waarom.
-- **Activiteit**: wie wat deed en wanneer. Uitnodigingen, nieuwe leden, verwijderingen, rollen, gehoste Machines en facturatie, gedeelde connectors en goedkeuringen. Het toont ook elke keer dat ons team de Machine of de logboeken van een lid geopend heeft. Nooit de inhoud van berichten. **CSV downloaden** exporteert het. 12 maanden bewaard.
+- **Activiteit**: wie wat deed en wanneer. Uitnodigingen, nieuwe leden, verwijderingen, rollen, gehoste Machines en facturatie, gedeelde connectors en goedkeuringen. Het toont ook elke keer dat ons team het rapport of de logboeken van de Machine van een lid gelezen heeft. Nooit de inhoud van berichten. **CSV downloaden** exporteert het. 12 maanden bewaard.
 
 **Vraag het me voor de Machine van een lid start**, voor de eigenaar: aan, dan wacht de nieuwe Machine van een lid op jouw OK, ook in een gratis Fleet. Uit, dan start hij in een gratis Fleet meteen en krijg je bericht. Een Machine die geld kost, wacht altijd tot je het bedrag bevestigt.
 

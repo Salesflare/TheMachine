@@ -17,7 +17,7 @@ keywords: private, privacy, data, gdpr, encrypted, who can see, safe, stored, ke
 - Relatórios de erro, a menos que você os desative: quando algo quebra, o tipo de erro e onde no código. Nunca suas mensagens, nomes ou endereços. Veja [Relatórios de erro](error-reports.md).
 - Contagens de uso em uma Machine hospedada: contagens diárias do que você fez (como tarefas abertas ou e-mails enviados), nunca o conteúdo.
 - Leve com você ou exclua: exporte tudo em um arquivo ou exclua sua Machine e os backups com um botão.
-- Nosso acesso fica registrado: cada vez que nossa equipe entra na sua Machine hospedada ou lê o relatório dela. Donos e admins de um Fleet veem isso em **Atividade**. Veja [Fleets](fleet.md).
+- Nosso acesso fica registrado: cada vez que nossa equipe lê o relatório ou os logs da sua Machine hospedada. Donos e admins de um Fleet veem isso em **Atividade**. Veja [Fleets](fleet.md).
 
 ## Níveis de segurança
 

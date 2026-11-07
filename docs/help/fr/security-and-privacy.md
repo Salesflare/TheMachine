@@ -17,7 +17,7 @@ keywords: private, privacy, data, gdpr, encrypted, who can see, safe, stored, ke
 - Des rapports d’erreur, sauf si vous les désactivez : quand quelque chose casse, le type d’erreur et l’endroit du code. Jamais vos messages, noms ou adresses. Voir [Rapports d’erreur](error-reports.md).
 - Des compteurs d’utilisation sur une Machine hébergée : le nombre de choses faites chaque jour (comme les tâches ouvertes ou les e-mails envoyés), jamais leur contenu.
 - Emportez-la, ou supprimez-la : exportez tout dans un seul fichier, ou supprimez votre Machine et ses sauvegardes d’un seul bouton.
-- Nos accès sont enregistrés : chaque fois que notre équipe se connecte à votre Machine hébergée ou lit son rapport. Les propriétaires et admins d’une Fleet le voient sous **Activité**. Voir [Fleets](fleet.md).
+- Nos accès sont enregistrés : chaque fois que notre équipe lit le rapport ou les journaux de votre Machine hébergée. Les propriétaires et admins d’une Fleet le voient sous **Activité**. Voir [Fleets](fleet.md).
 
 ## Niveaux de sécurité
 

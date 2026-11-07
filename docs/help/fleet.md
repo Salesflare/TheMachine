@@ -86,7 +86,7 @@ To join a Fleet, start one, or pair a Machine on your own computer, see [Plans a
 **Fleet settings**, under each Fleet's name in its pane and in Manage, opens that Fleet's settings on your account: shared connections, security, company sign-in, which Machine answers, and these two:
 
 - **Removed lately**: each person removed, or who left. **Removed, confirmed** means their Machine deleted the work data and they're signed out everywhere. Until then it says **Pending** and why.
-- **Activity**: who did what and when: invites, joins, removals, roles, hosted Machines, billing, shared connections and approvals. Also every time our support team opened a member's Machine or its logs. Never message content. **Download CSV** exports it. Kept 12 months.
+- **Activity**: who did what and when: invites, joins, removals, roles, hosted Machines, billing, shared connections and approvals. Also every time our support team read a member's Machine report or its logs. Never message content. **Download CSV** exports it. Kept 12 months.
 
 **Ask me before starting a member's Machine**, for the owner: on, a new member's Machine waits for your OK, even in a free Fleet. Off, in a free Fleet it starts at once and you're told. A Machine that costs money always waits for you to confirm its amount.
 
