@@ -1,7 +1,7 @@
 # Product vision
 
-AI should work for you. Not wait for a prompt, not work for a big corporation, but take work off your hands every
-day, on your side. The Machine is that AI: proactive, working for you, and owned by you, along with all your data.
+AI should work for you. Not wait for a prompt, but take work off your hands every day, on your side. The Machine
+is that AI: proactive and working for you. And it's yours: you own it and your data, not a big corporation.
 
 This page says where we're going and what "best" means. Every change, agent and test is judged against it. It is
 reviewed every few days and changes only on the owner's word.
@@ -15,7 +15,7 @@ your head back for the work only you can do.
 
 ## What we believe, in order
 
-1. **It's yours.** You own it and your data, not a big corporation. Your data lives on your computer, in open source
+1. **It's yours.** Your data lives on your computer, in open source
    code you can read. You pick the model (OpenAI, Claude, a local one) and use your own plan. Nothing locks you in. Nothing goes out without
    you seeing it, and security is never relaxed.
 2. **It gets it right.** It catches everything that matters (to-dos, promises, follow-ups) and lets the noise go.
