@@ -16,6 +16,11 @@ About the test runner:
   `THE_MACHINE_TEST_JOBS=1` runs them one by one.
 - It returns a failing exit code if any suite fails.
 - Name files to run only those: `python3 scripts/test.py test_moving.py`.
+- To run what a change needs, as CI does on a pull request: `git diff --name-only origin/main > /tmp/changed`, then
+  `python3 scripts/test.py $(python3 scripts/test_select.py /tmp/changed | grep -vx ALL)`. `scripts/test_select.py --why
+  test_x.py /tmp/changed` says why a test was picked. Main and release tags run every test.
+- `THE_MACHINE_TEST_MAX_FAILURES=5` stops starting files after 5 failed ones. Each file's line shows its CPU time,
+  and the summary how many cores the run kept busy.
 - If OpenClaw is installed outside the Node prefix, set `OPENCLAW_PACKAGE_DIR` to its package directory.
   `PLAYWRIGHT_CORE` may point to another `playwright-core/index.mjs`.
 
