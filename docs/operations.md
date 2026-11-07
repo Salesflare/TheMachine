@@ -243,7 +243,7 @@ A running service after a reboot is not enough: verify the checkpoint resumed, m
 
 ## Releases
 
-Hosted Machines install only signed releases, and self-hosted installs should too. A commit pushed to main reaches no one until it is released. To cut one, the release key holder runs `python3 scripts/release.py cut`: it signs origin/main with the release key, checks the signature against `deploy/release-signers` and pushes the tag. The private key is never in this repository or in CI. The hosted service gives each release to its own Machines first and to everyone else a few hours later.
+Hosted Machines install only signed releases of the app, and self-hosted installs should too. (The hosted server agent itself comes from the control plane, not from a signed tag.) A commit pushed to main reaches no one until it is released. To cut one, the release key holder runs `python3 scripts/release.py cut`: it signs origin/main with the release key, checks the signature against `deploy/release-signers` and pushes the tag. The private key is never in this repository or in CI. The hosted service gives each release to its own Machines first and to everyone else a few hours later.
 
 ## Disable one feature
 

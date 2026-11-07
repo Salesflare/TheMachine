@@ -9,7 +9,7 @@ keywords: private, privacy, data, gdpr, encrypted, who can see, safe, stored, ke
 ---
 ## In short
 
-- Your own Machine: a hosted one runs in the EU cloud, just for you, never shared. Or run it on your own computer.
+- Your own Machine: a hosted one runs in the EU cloud, private to you and isolated from others. Its keys are held by The Machine's cloud so support and restores work. For complete ownership, run it on your own computer.
 - We don't read your email: messages are stored encrypted, and our support tools can't open them.
 - Nothing is sent without your OK: it reads and drafts; you decide what goes out. See [Do it](do-it.md).
 - Not used to train AI: we have no AI of our own. Your provider works under your account and their terms.

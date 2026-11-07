@@ -18,7 +18,7 @@ only yours (only you control your AI and your data), proactive (you don't have t
 you everywhere, work and life as one, always current, secure wherever it runs, and for everyone, not just technical
 people. What we believe, in order, and how every change is judged: [Product vision](docs/vision.md).
 
-Website: [themachine.computer](https://themachine.computer). Rather not run it yourself? The same Machine is also [hosted for you](https://themachine.computer/pricing) on a private server in the EU (beta). Export and import move everything between the two.
+Website: [themachine.computer](https://themachine.computer). Rather not run it yourself? The same Machine is also [hosted for you](https://themachine.computer/pricing) on a private server in the EU (beta), isolated from others. Its keys are held by The Machine's cloud so support and restores work; for complete ownership, run it on your own computer. Export and import move everything between the two.
 
 **Early release.** One owner per installation. Runs on Linux; macOS and Windows are in beta. The core assistant needs no cloud account. Fleets and Friends connect through The Machine Network.
 

@@ -9,7 +9,8 @@ with a key listed in `deploy/release-signers`.
 
 - Update with `python3 scripts/release.py update`. It installs only a release whose signature checks out.
   On Linux, `./install.sh` sets up a daily timer that does this (signed releases only; off with `"auto_update": false`).
-- Hosted Machines check the same signature before every update.
+- Hosted Machines check the same signature before every app update. The server agent that applies them comes from the
+  hosted service and is not signed with the release key yet.
 - CI checks OpenClaw 2026.10.7 and, weekly, the latest release. Future releases and older snapshots are not
   certified by those tests.
 
@@ -82,6 +83,8 @@ invalid receipt or timeout blocks it as well. The token is never included in rel
 - Message contents from every source are encrypted in the database by default, on every install, with a key next to
   it for the service user ([configuration](docs/configuration.md#message-protection)). It protects copies of the
   database and tools without the key, not against root on the machine.
+- On a hosted Machine the key is kept in memory only, and the hosted service holds a sealed copy so restarts, support
+  and restores work. It holds the disk and backup keys the same way. For complete ownership, run it on your own computer.
 - Back the key up with the database: without it the messages are lost. `"message_protection": false` turns it off.
 - Email attachments a Do-it run saves are encrypted on disk with the same key. The run reads a private copy that is
   removed when it ends. Files a run makes itself are not encrypted.
@@ -102,7 +105,7 @@ invalid receipt or timeout blocks it as well. The token is never included in rel
 
 - The dashboard's sign-in dialog fills in sites in the assistant's browser for the owner and can save those passwords
   in the data folder, encrypted with the message key. On a hosted Machine that key is never on the disk, so disk
-  backups can't open them.
+  backups can't open them; the hosted service holds a sealed copy, as above.
 - Saved passwords never go to the model, the logs or a support bundle. An export holds them only with a passphrase.
 - On a self-hosted install the key sits next to them for the service user: protect that user's account and disk
   (full-disk encryption) accordingly. Without message protection they keep a key of their own next to them.
