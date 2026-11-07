@@ -3,6 +3,7 @@ the people and organizations, by counting only; never toward projects, "new", re
 Fleet answers read it under the same rules as signals. Nothing of it before a graph pass took it in."""
 import json
 import unittest
+from unittest import mock
 
 import test_graph as tg
 import fleet
@@ -91,6 +92,38 @@ class HistoryGraph(unittest.TestCase):
             picked = db.execute(f"SELECT id FROM graph_nodes WHERE kind='person' AND {graph_history.live()}>=0.01").fetchall()
             self.assertNotIn('email:ann@client.example', [r[0] for r in picked])
             self.assertNotIn('email:ann@client.example', [p['id'] for p in person_summary.active(db, tg.NOW)])
+
+    def graph_tables(self):
+        with self.store.connect() as db:
+            return {t: [tuple(r) for r in db.execute(f'SELECT * FROM {t} ORDER BY 1,2,3')]
+                    for t in ('graph_nodes', 'graph_links', 'graph_events', 'graph_history_events', 'graph_same', 'graph_unnamed')}
+
+    @staticmethod
+    def opened(spy):
+        return sum(len(c.args[1]) for c in spy.call_args_list)
+
+    def test_a_build_opens_only_new_or_changed_history_and_equals_one_that_opens_all(self):
+        self.advance()
+        self.build()  # this process has opened every history row
+        later = old(60, 'Lee Park <lee@client.example>', 'sam@acme.com')
+        self.store.commit_page('work', None, [later], record_sync=False, history=True)
+        with self.store.connect() as db:
+            ann = db.execute("SELECT id,metadata FROM events WHERE history=1 AND kind='gmail.message' AND json_extract(metadata,'$.from') LIKE 'Ann%'").fetchone()
+            db.execute('UPDATE events SET metadata=? WHERE id=?', (json.dumps({**json.loads(ann[1]), 'from': 'Ann Bell-Ray <ann@client.example>'}), ann[0]))
+            db.execute("UPDATE events SET deleted=1 WHERE history=1 AND account_id='home'")  # Pat's two, gone
+            db.execute("INSERT INTO graph_merges(a,b,same,source,created_at) VALUES('email:ann@client.example','email:kim@client.example',0,'owner',?)",
+                       (tg.NOW.isoformat(),))  # an owner edit: the rebuild it starts
+        with mock.patch.object(graph_history, '_open', wraps=graph_history._open) as opening:
+            self.build()
+        self.assertEqual(self.opened(opening), 2)  # Lee's new row and Ann's rewritten one; the rest as this process had them
+        cached = self.graph_tables()
+        self.assertEqual(self.node('email:ann@client.example')['name'], 'Ann Bell-Ray')
+        self.assertIsNone(self.node('email:pat@gmail.com'))
+        graph_history._opened.clear()  # a new process: every row opened again
+        with mock.patch.object(graph_history, '_open', wraps=graph_history._open) as opening:
+            self.build()
+        self.assertEqual(self.opened(opening), 6)
+        self.assertEqual(self.graph_tables(), cached)
 
     def test_fleet_who_knows_reads_work_history_and_never_personal_history(self):
         self.advance()
