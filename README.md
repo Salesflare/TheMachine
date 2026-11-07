@@ -11,6 +11,12 @@ Your proactive AI assistant. It reads your email, chats, calendar and phone, tur
 - **Fleets:** your teammates' Machines answer each other's questions, sharing only what the Team Graph allows. A Family Fleet shares free times, to-dos and plans.
 - **Connected AIs:** Claude, ChatGPT, Cursor and other AIs can read your to-dos and Graph over MCP, and add to-dos or Graph changes you can undo. They never send anything.
 
+## Where it's going
+
+AI should work for you: not wait for a prompt, but take work off your hands every day, on your side. The Machine is
+that AI. And it's yours: you own it and your data, not a big corporation. You pick the model, nothing goes out without
+your OK, and nothing locks you in. Made for everyone: easy to start and affordable. What we believe, in order, and how every change is judged: [Product vision](docs/vision.md).
+
 Website: [themachine.computer](https://themachine.computer). Rather not run it yourself? The same Machine is also [hosted for you](https://themachine.computer/pricing) on a private server in the EU (beta). Export and import move everything between the two.
 
 **Early release.** One owner per installation. Runs on Linux; macOS and Windows are in beta. The core assistant needs no cloud account. Fleets and Friends connect through The Machine Network.
@@ -60,6 +66,7 @@ The full walkthrough: [Getting started](docs/getting-started.md).
 
 | Topic | Guide |
 |---|---|
+| Where The Machine is going, and what "best" means | [Product vision](docs/vision.md) |
 | First install, sources, phone and preview | [Getting started](docs/getting-started.md) |
 | Install flags, updates, backups, moving and recovery | [Operations](docs/operations.md) |
 | Settings and defaults | [Configuration](docs/configuration.md), [example JSON](config.example.json) |

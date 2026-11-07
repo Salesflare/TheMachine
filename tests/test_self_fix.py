@@ -93,7 +93,12 @@ class Faults(unittest.TestCase):
         self.assertIn("Error: KeyError: 'x'", event['body'])
         self.assertTrue(event['body'].startswith('Updating who knows whom failed. Who-knows-whom answers may be out of date. Nothing to do yet.'))
         self.assertIn('test_self_fix.py:', event['body'])
-        self.assertEqual(json.loads(event['metadata'])['app_dir'] if isinstance(event['metadata'], str) else event['metadata']['app_dir'], '/srv/machine')
+        meta = json.loads(event['metadata']) if isinstance(event['metadata'], str) else event['metadata']
+        self.assertEqual(meta['app_dir'], '/srv/machine')
+        # the fix is judged against the product vision, as one short line rather than the whole file
+        self.assertIn('docs/vision.md', meta['fix_by'])
+        self.assertLess(len(meta['fix_by']), 200)
+        self.assertTrue((Path(a.ROOT) / 'docs/vision.md').exists())
         self.fail_in_code(KeyError('x'))
         a.sync_gateway(self.store, config, gateway, FakeJournal())
         self.assertEqual(self.store.events([gateway['id']])[0]['title'], 'The Machine: KeyError in fail_in_code')  # 2 is not a step
