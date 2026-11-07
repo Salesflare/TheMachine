@@ -249,12 +249,12 @@ class DoIt(unittest.TestCase):
         finding = {'key': 'crashed:quickshell', 'kind': 'crashed', 'name': 'quickshell', 'program': 'quickshell', 'count': 2,
                    'pid': '4242', 'signal': 'SIGSEGV', 'piece': 'bar', 'fix': 'restart_bar', 'last_at': NOW.isoformat()}
         title, body, signal = s.card(finding, self.which)
-        self.assertIn('Do it runs omarchy-restart-shell and nothing else.', body)
+        self.assertIn('Do it restarts the bar (omarchy-restart-shell).', body)
         self.assertIn('coredumpctl info 4242', body)
         self.assertIn('Crashed (SIGSEGV)', signal)
         self.assertNotIn('Signal:', signal)
         _, body, _ = s.card(finding, which=lambda name: None)  # no Omarchy command here: no Do it, the command to run instead
-        self.assertNotIn('Do it runs', body)
+        self.assertNotIn('Do it restarts', body)
 
     def test_run_fix_runs_only_that_command_and_never_reads_its_output(self):
         calls = []
@@ -310,7 +310,7 @@ class DoIt(unittest.TestCase):
         with self.store.connect() as db:
             row = db.execute('SELECT status, body FROM suggestions WHERE id=?', (card['id'],)).fetchone()
         self.assertEqual(row['status'], 'prepared')
-        self.assertIn('Do it runs systemctl --user restart backup.service', row['body'])  # the to-do keeps its text
+        self.assertIn('Do it restarts backup (systemctl --user restart backup.service).', row['body'])  # the to-do keeps its text
         self.assertNotIn('machine_fix', self.views(dict(self.store_card(card['id']))))  # done: Mark done and Snooze
 
     def store_card(self, sid):

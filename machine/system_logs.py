@@ -380,11 +380,13 @@ def see_why(finding, which=shutil.which):
 
 def card(finding, which=shutil.which):
     """(title, body, signal) of the to-do for one finding. No log text: only names, counts and the commands to run.
-    With a safe fix (fix_command), the to-do says what Do it runs; else what to run to see why."""
+    With a safe fix (fix_command), the to-do says in plain words what Do it does, with its command; else what to run to see why."""
     title, cause, fix = explain(finding, which)
     argv = fix_command(finding, which)
     if argv:
-        body = '\n\n'.join((cause, i18n.t('Do it runs {} and nothing else.', ' '.join(argv)), see_why(finding, which)))
+        does = (i18n.t('Do it restarts the bar ({}).', ' '.join(argv)) if finding.get('fix') == 'restart_bar'
+                else i18n.t('Do it restarts {} ({}).', finding['name'], ' '.join(argv)))
+        body = '\n\n'.join((cause, does, see_why(finding, which)))
     else:
         body = '\n\n'.join((cause, fix, i18n.t('Ask in this to-do’s chat and The Machine looks into it. Anything it changes on this computer waits for your OK.')))
     # what was seen is the signal, what it means and what to do is the to-do: the open to-do shows each once
