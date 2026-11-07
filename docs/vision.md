@@ -3,8 +3,8 @@
 AI should work for you, so you can do your best work and live your best life. The Machine is that AI:
 
 - **Proactive.** It doesn't wait for a prompt. It takes work off your hands every day.
-- **With you everywhere.** Across your computer, your phone and every app you use, it knows where you left off.
-- **Work and life, as one.** It handles both and bridges them: the meeting that clashes with school pickup gets
+- **With you everywhere.** It follows you seamlessly across your computer, your phone and every app you use.
+- **Work and life, as one.** It handles both and bridges them seamlessly: the meeting that clashes with school pickup gets
   caught. What's private stays private.
 - **Always current.** It keeps pace with AI: new models and abilities reach your Machine as soon as they're good.
 - **Yours.** You own it and your data, not a big corporation.
