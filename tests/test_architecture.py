@@ -261,6 +261,7 @@ OTHER_WRITERS = {
     'meeting_moves': {'assistant.py'},
     'meeting_writes': {'machine/app/meeting_writes.py'},
     'messages': {'telegram_mirror.py'},
+    'milestones': {'machine/app/first_look.py'},
     'network_people': {'graph.py'},
     'network_request_nodes': {'network.py'},
     'org_edits': {'crm.py', 'crm_import.py'},
@@ -381,7 +382,7 @@ PY_LINE_BUDGET = 2_500
 PY_BYTE_BUDGET = 450 * 1024
 PY_RATCHET_SLACK = (500, 50_000)
 PY_OVER_BUDGET = {
-    'assistant.py': (8_200, 560_000),
+    'assistant.py': (8_000, 550_000),
     'fleet.py': (3_800, PY_BYTE_BUDGET),
     'graph.py': (5_400, PY_BYTE_BUDGET),
     'next_actions.py': (2_650, PY_BYTE_BUDGET),
