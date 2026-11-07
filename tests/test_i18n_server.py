@@ -18,9 +18,11 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 # The functions that build text the Machine sends to its owner or writes into a to-do or its Events.
 PATHS = {
-    'assistant.py': ['prompt_text', 'reminder_line', 'push_notify', 'telegram', 'promise_text', 'settle_sent', 'recap_graph_lines',
-                     'recap_share_lines', 'weekly_recap_message', 'recap_buttons', 'fleet_notify_brief', 'fleet_tell'],
+    'assistant.py': ['prompt_text', 'promise_text', 'settle_sent', 'recap_graph_lines', 'recap_share_lines', 'weekly_recap_message',
+                     'recap_buttons', 'fleet_notify_brief', 'fleet_tell'],
     'machine/cards.py': ['card', 'checkin_line', 'controls'],
+    'machine/delivery/push.py': ['push_notify', 'reminder_line'],
+    'machine/delivery/telegram.py': ['telegram'],
     'fleet.py': ['question_text', 'asks_line', 'push_payload', 'telegram_message', 'notice_push', 'friend_settled', 'brief_text',
                  'decide_notice_from_telegram', '_people',
                  'brief_items', '_team_why', '_waited', '_on_day'],
