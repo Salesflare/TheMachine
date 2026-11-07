@@ -5,7 +5,7 @@ import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
-// A web push's quick buttons (machine/delivery/push.py QUICK): Snooze 2h, Snooze and Mark done. A browser can't ask for
+// A web push's quick buttons (machine/delivery/push.py QUICK): Snooze (2 hours, or tomorrow on a reminder) and Mark done. A browser can't ask for
 // an unlock first, so sw.js never runs them itself: it keeps the tapped button under a random id (quickKeep) and opens
 // the dashboard at #quick=<id>; the page takes it from the worker once and does it, with Undo. A #quick= link the worker
 // didn't make, an old one or one used twice does nothing; a to-do handled meanwhile opens as it is. Here the worker's
@@ -16,7 +16,7 @@ const root=new URL('..',import.meta.url);
 const sw=await readFile(new URL('sw.js',root),'utf8');
 const now=new Date().toISOString(),A='a1'.repeat(8),B='b2'.repeat(8),C='c3'.repeat(8);
 const cards=[{id:A,title:'Answer the school about the trip',body:'They need a yes by Friday.',status:'pending',scope:'personal',created_at:now,event_ids:[1]},
- {id:B,title:'Find the train times to Ghent',body:'For Saturday morning.',status:'prepared',preparation_status:'ok',scope:'personal',created_at:now,event_ids:[2]},
+ {id:B,title:'Find the train times to Ghent',body:'For Saturday morning. The 8:14 and the 9:14 both stop in Ghent, and the later one has a direct connection to the coast, which is what the weekend plan needs.',next_actions:[{kind:'email',to:['sam@example.invalid'],to_name:'Sam',subject:'Train times',revision:1,body:'Hi Sam,\n\nThe 8:14 gets to Ghent at 9:05.\nThe 9:14 gets there at 10:05.\nBoth run on Saturday.\nThe later one connects to the coast.\nTickets are cheaper before 9.\nI can book either one.\nTell me which you like.\n\nTalk soon'}],status:'prepared',preparation_status:'ok',scope:'personal',created_at:now,event_ids:[2]},
  {id:C,title:'Renew the passport',body:'It runs out in May.',status:'completed',scope:'personal',created_at:now,event_ids:[3]}];
 const decides=[];
 const state=()=>({suggestions:cards,promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},connectors:[],fleet:{on:false,fleets:[]}});
@@ -54,7 +54,7 @@ try{
  const toast=()=>page.locator('#toast.show');
  const quiet=async()=>{await page.waitForTimeout(800);return decides.length};
 
- // Snooze 2h: snoozed from the page, said, with Undo that puts it back
+ // Snooze (2 hours): snoozed from the page, said, with Undo that puts it back
  let id=await keep(A,'snooze2h');await tap(id);
  await page.waitForFunction(()=>/Snoozed\./.test(document.querySelector('#toast.show')?.textContent||''));
  assert.deepEqual(decides,[[A,'snooze','2h']]);
@@ -116,11 +116,16 @@ try{
  await page.evaluate(()=>document.querySelector('#toast').classList.remove('show'));
 
  // Open draft, through sw.js's own notificationclick: the to-do in the list (#card=), where its draft shows in full
+ Object.assign(cards[1],{status:'prepared'});delete cards[1].snoozed_until;await page.evaluate(()=>refresh());await page.locator(`#task-${B} .draft`).waitFor();
  const worker=context.serviceWorkers()[0]||await context.waitForEvent('serviceworker');
  await worker.evaluate(async([B,url])=>{const w=ExtendableEvent.prototype.waitUntil;ExtendableEvent.prototype.waitUntil=function(p){if(this.isTrusted)return w.call(this,p);self.__last=Promise.resolve(p)};
   await self.registration.showNotification('Ready: Find the train times',{tag:B,data:{url},actions:[{action:'draft',title:'Open draft'}]});
   const [n]=await self.registration.getNotifications({tag:B});self.dispatchEvent(new NotificationEvent('notificationclick',{notification:n,action:'draft'}));await self.__last},[B,base+'#chat='+B]);
  await page.waitForFunction(b=>document.getElementById('task-'+b)?.classList.contains('flash'),B);  // #card= scrolls it into view and flashes it
+ // and shows it whole: the summary and the draft, nothing behind Show more
+assert.equal(await page.locator(`#task-${B} .clamp`).count(),0);assert.ok(await page.locator(`#task-${B} .draft`).isVisible());
+ assert.ok(/Talk soon/.test(await page.locator(`#task-${B} .draft`).innerText()));
+ if(shots)await page.screenshot({path:shots+'/open-draft-whole.png'});
  assert.equal(await page.locator(`.chat-layout[data-chat="${B}"]`).count(),0);assert.equal(await quiet(),before);
 
  // a tap that starts the page: done once the to-dos are in

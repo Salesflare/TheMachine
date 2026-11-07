@@ -320,7 +320,7 @@ class AppPush(unittest.TestCase):
             with self.subTest(which):
                 notice = a.app_notice(self.store, self.config, sid, version=2)
                 self.assertEqual(notice['actions'], expect[which])
-                self.assertEqual(notice['labels']['snooze2h'], 'Snooze 2h')
+                self.assertEqual(notice['labels']['snooze2h'], 'Snooze')
                 self.assertEqual(notice['labels']['draft'], 'Open draft')
                 self.assertEqual(notice['events']['snooze2h'], 'Snoozed it')
                 # an older app keeps the three it knows
@@ -341,8 +341,8 @@ class AppPush(unittest.TestCase):
     def test_web_push_quick_buttons_by_kind(self):
         self.app.action('push_subscribe', SUB, owner_dashboard=True)
         cards = self.quick_cards()
-        expect = {'new': [('snooze2h', 'Snooze 2h'), ('open', 'Open')], 'draft': [('draft', 'Open draft'), ('snooze2h', 'Snooze 2h')],
-                  'ready': [('open', 'Open'), ('done', 'Mark done')], 'question': [('answer', 'Answer'), ('snooze2h', 'Snooze 2h')]}
+        expect = {'new': [('snooze2h', 'Snooze'), ('open', 'Open')], 'draft': [('draft', 'Open draft'), ('snooze2h', 'Snooze')],
+                  'ready': [('open', 'Open'), ('done', 'Mark done')], 'question': [('answer', 'Answer'), ('snooze2h', 'Snooze')]}
         for which, want in expect.items():
             with self.subTest(which), self.store.connect() as db:
                 row = dict(db.execute('SELECT * FROM suggestions WHERE id=?', (cards[which],)).fetchone(), _result_notice=which != 'new')
@@ -371,7 +371,7 @@ class AppPush(unittest.TestCase):
             with patch_everywhere(a, 'telegram_request', side_effect=lambda config, args: args):
                 return [(b['label'], b['action'].get('url') or b['action'].get('value')) for b in a.telegram(config, row, 'send')['presentation']['blocks'][0]['buttons']]
         sid = cards['draft']
-        self.assertEqual(sent('draft'), [('Open draft', 'https://machine.example/assistant/#chat=' + sid), ('Snooze 2h', f'assistant:{sid}:snooze_2h')])
+        self.assertEqual(sent('draft'), [('Open draft', 'https://machine.example/assistant/#chat=' + sid), ('Snooze', f'assistant:{sid}:snooze_2h')])
         sid = cards['ready']
         self.assertEqual(sent('ready'), [('Open', 'https://machine.example/assistant/#chat=' + sid), ('Mark done', f'assistant:{sid}:complete')])
         signin = 'https://machine.example/assistant/browser/signin'

@@ -51,7 +51,7 @@ final class PushText {
 
     /**
      * The dashboard's own decision for a notification button, or null for one the phone never does from a
-     * notification: Do it starts a to-do not started yet, Snooze 2h and Snooze (until tomorrow) snooze it, Mark done
+     * notification: Do it starts a to-do not started yet, Snooze (snooze2h, 2 hours; on a reminder until tomorrow) snooze it, Mark done
      * closes it. Sending and every final step open the app instead (opens).
      */
     static String choice(String action) {
@@ -100,7 +100,7 @@ final class PushText {
 
     /**
      * The saved Machine's address for a wakeup's line, or null for anything that isn't a plain id. With the wakeup's
-     * kind (a reminder) and v=2: the quick buttons (Snooze 2h, Open draft) this version knows.
+     * kind (a reminder) and v=2: the quick buttons (snooze2h, Open draft) this version knows.
      */
     static String noticeUrl(String machine, String tag, String kind) {
         if (machine == null || !machine.startsWith("https://") || !machine.endsWith("/") || tag == null || !TAG.matcher(tag).matches()) return null;

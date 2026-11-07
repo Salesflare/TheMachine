@@ -34,10 +34,10 @@ Notifica solo ciò che ha bisogno di te. Avanzamenti e modifiche no. Una raffica
 
 Ogni notifica ha pulsanti per il passo successivo. Nell’app sul telefono:
 
-- Nuova attività: Fallo, Posticipa 2 ore, Segna come fatto.
-- Bozza pronta: Apri bozza, Posticipa 2 ore, Segna come fatto.
-- Risultato pronto: Apri, Segna come fatto, Posticipa 2 ore.
-- Domanda, bloccata o accesso richiesto: Rispondi, Apri o Accedi, poi Posticipa 2 ore e Segna come fatto.
+- Nuova attività: Fallo, Posticipa, Segna come fatto.
+- Bozza pronta: Apri bozza, Posticipa, Segna come fatto.
+- Risultato pronto: Apri, Segna come fatto, Posticipa.
+- Domanda, bloccata o accesso richiesto: Rispondi, Apri o Accedi, poi Posticipa e Segna come fatto.
 - Promemoria: Segna come fatto, Posticipa, Apri.
 - Riepilogo del mattino: toccalo per aprirlo.
 
@@ -45,7 +45,7 @@ Un browser e Telegram ne mostrano due. Le domande del Fleet mantengono Rispondi 
 
 Da una notifica non si invia, non si paga e non si inoltra mai nulla. Una bozza si apre sempre prima, così la vedi prima che parta. Apri bozza mostra l’attività nella tua lista con la bozza completa. Fallo avvia solo il lavoro su una nuova attività.
 
-Nell’app, Posticipa e Segna come fatto chiedono prima di sbloccare. In un browser aprono la dashboard, che lo fa e mostra Annulla. Posticipa 2 ore riporta l’attività tra due ore, Posticipa domani mattina.
+Nell’app, Posticipa e Segna come fatto chiedono prima di sbloccare. In un browser aprono la dashboard, che lo fa e mostra Annulla. Posticipa riporta l’attività tra due ore, o domani mattina su un promemoria.
 
 Le email con ciò che ti aspetta hanno i link Apri e Posticipa. Aprono solo la dashboard.
 

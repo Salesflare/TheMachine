@@ -46,7 +46,7 @@ item.status='pending';const baseline=replies.length;await handler(ctx('accept'))
 item.status='pending';await handler(ctx('other'));const prompt=choices.pop();assert.equal(prompt.card_message_id,'123');assert.equal(prompt.managed_prompt,true);assert.equal(choices.length,0);assert.equal(replies.length,baseline);
 {const saved=globalThis.fixtureCall;globalThis.fixtureCall=async(action,args)=>action==='request_feedback'?{awaiting_feedback:true,duplicate:true,earlier_prompt:'uncertain'}:saved(action,args);
 item.status='pending';const before=replies.length;await handler(ctx('other'));await handler(ctx('other'));assert.equal(replies.length,before);globalThis.fixtureCall=saved;}
-// The result notice's quick buttons (telegram.py TELEGRAM_QUICK): Snooze 2h and Mark done run from it, then it says what
+// The result notice's quick buttons (telegram.py TELEGRAM_QUICK): Snooze (2 hours) and Mark done run from it, then it says what
 // happened with one Open; anything else from it does nothing; a to-do handled meanwhile keeps only Open.
 {const saved=globalThis.fixtureCall;globalThis.fixtureCall=async(action,args)=>{const r=await saved(action,args);if(action==='status')r.deliveries[0].notification_message_id='777';return r};
  delete item.next_action;delete item.next_actions;item.status='prepared';

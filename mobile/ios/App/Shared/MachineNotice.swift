@@ -10,7 +10,7 @@ import UserNotifications
 enum MachineNotice {
     static let group = "group.computer.themachine.app"
     private static let service = "computer.themachine.app.notice"
-    /// A button and the dashboard's decision it makes: Do it starts a to-do not started yet, Snooze 2h and Snooze
+    /// A button and the dashboard's decision it makes: Do it starts a to-do not started yet, Snooze (2 hours; on a reminder until tomorrow)
     /// (until tomorrow) snooze it, Mark done closes it.
     static let buttons = ["prepare": "accept", "snooze": "snooze", "snooze2h": "snooze", "done": "complete"]
     /// Buttons that only open the to-do in the app (Open, Open draft, Answer, Sign in), where the owner sees it first.
@@ -115,7 +115,7 @@ enum MachineNotice {
     }
 
     /// What the Machine says about a to-do now, or nil when it can't be reached or says nothing. With the wakeup's
-    /// kind (a reminder) and v=2: the quick buttons this version knows (Snooze 2h, Open draft).
+    /// kind (a reminder) and v=2: the quick buttons this version knows (snooze2h, Open draft).
     static func fetch(_ tag: String, kind: String? = nil, done: @escaping (Notice?) -> Void) {
         guard validTag(tag) else { return done(nil) }
         let kindPart = validTag(kind) ? "&kind=" + kind! : ""
@@ -165,7 +165,7 @@ enum MachineNotice {
             defaults?.set(sets, forKey: "noticeSets")
         }
         let kept = (defaults?.dictionary(forKey: "noticeLabels") as? [String: String]) ?? [:]
-        let fallback = ["prepare": "Do it", "snooze": "Snooze", "snooze2h": "Snooze 2h", "done": "Mark done", "open": "Open",
+        let fallback = ["prepare": "Do it", "snooze": "Snooze", "snooze2h": "Snooze", "done": "Mark done", "open": "Open",
                         "draft": "Open draft", "answer": "Answer", "signin": "Sign in"]
         func button(_ id: String) -> UNNotificationAction {
             UNNotificationAction(identifier: id, title: kept[id].flatMap { $0.isEmpty ? nil : $0 } ?? fallback[id] ?? id,

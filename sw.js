@@ -185,7 +185,7 @@ self.addEventListener('push', event => {
   }).catch(e => swReport(e, 'push')));
 });
 
-// A to-do's Snooze 2h, Snooze or Mark done: a browser can't ask for an unlock first, so it never runs from here. The
+// A to-do's Snooze (2 hours, or tomorrow on a reminder) or Mark done: a browser can't ask for an unlock first, so it never runs from here. The
 // dashboard opens and does it, with Undo (openQuickLink in todos-list.js). It takes the button from this worker only,
 // once and within QUICK_AGE, by a random id (#quick=): a link from anywhere else can't make it do anything.
 const QUICK = ['snooze2h', 'snooze', 'done'], QUICK_ID = /^k_[a-f0-9]{16}$/, QUICK_AGE = 5 * 6e4;

@@ -34,10 +34,10 @@ Só notifica o que precisa de você. Andamento e edições não. Várias de uma 
 
 Cada notificação tem botões para o próximo passo. No app do celular:
 
-- Nova tarefa: Fazer, Adiar 2 h, Marcar como feita.
-- Rascunho pronto: Abrir rascunho, Adiar 2 h, Marcar como feita.
-- Resultado pronto: Abrir, Marcar como feita, Adiar 2 h.
-- Pergunta, travada ou login necessário: Responder, Abrir ou Entrar, depois Adiar 2 h e Marcar como feita.
+- Nova tarefa: Fazer, Adiar, Marcar como feita.
+- Rascunho pronto: Abrir rascunho, Adiar, Marcar como feita.
+- Resultado pronto: Abrir, Marcar como feita, Adiar.
+- Pergunta, travada ou login necessário: Responder, Abrir ou Entrar, depois Adiar e Marcar como feita.
 - Lembrete: Marcar como feita, Adiar, Abrir.
 - Resumo da manhã: toque para abrir.
 
@@ -45,7 +45,7 @@ Um navegador e o Telegram mostram dois deles. As perguntas do Fleet mantêm Resp
 
 Nada é enviado, pago ou enviado para aprovação a partir de uma notificação. Um rascunho sempre abre primeiro, para você ver antes de sair. Abrir rascunho mostra a tarefa na sua lista com o rascunho completo. Fazer só começa o trabalho em uma tarefa nova.
 
-No app, Adiar e Marcar como feita pedem para desbloquear primeiro. No navegador, eles abrem o painel, que faz isso e mostra Desfazer. Adiar 2 h traz a tarefa de volta em duas horas, Adiar amanhã de manhã.
+No app, Adiar e Marcar como feita pedem para desbloquear primeiro. No navegador, eles abrem o painel, que faz isso e mostra Desfazer. Adiar traz a tarefa de volta em duas horas, ou amanhã de manhã em um lembrete.
 
 Os e-mails com o que espera por você têm links Abrir e Adiar. Eles só abrem o painel.
 

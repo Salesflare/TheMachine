@@ -205,9 +205,11 @@ class IOSNotifications(unittest.TestCase):
 
     def test_buttons_unlock_first_and_never_send(self):
         shared = (self.IOS / 'Shared/MachineNotice.swift').read_text()
-        self.assertIn('["prepare": "accept", "snooze": "snooze", "done": "complete"]', shared)
-        self.assertIn('options: [.authenticationRequired]', shared)
-        self.assertNotIn('.foreground', shared)
+        self.assertIn('["prepare": "accept", "snooze": "snooze", "snooze2h": "snooze", "done": "complete"]', shared)
+        # every button that runs needs the unlock; only the ones that open the to-do in the app (nothing runs) open it
+        self.assertIn('options: opens.contains(id) ? [.foreground] : [.authenticationRequired]', shared)
+        self.assertIn('static let opens: Set<String> = ["open", "draft", "answer", "signin"]', shared)
+        self.assertEqual(shared.count('.foreground'), 1)
         self.assertNotIn('"send"', shared)
         self.assertIn('kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly', shared)
         self.assertIn('completionHandler(nil)', shared)  # never follows a redirect
@@ -220,8 +222,9 @@ class IOSNotifications(unittest.TestCase):
 
     def test_android_buttons_are_the_same_decisions(self):
         java = (MOBILE / 'android/app/src/main/java/computer/themachine/app/PushText.java').read_text()
-        for action, choice in (('prepare', 'accept'), ('snooze', 'snooze'), ('done', 'complete')):
+        for action, choice in (('prepare', 'accept'), ('done', 'complete')):
             self.assertIn(f'if ("{action}".equals(action)) return "{choice}";', java)
+        self.assertIn('if ("snooze".equals(action) || "snooze2h".equals(action)) return "snooze";', java)
         service = (MOBILE / 'android/app/src/main/java/computer/themachine/app/MachinePushService.java').read_text()
         self.assertIn('.setAuthenticationRequired(true)', service)
         self.assertIn('"clear".equals(kind)', service)

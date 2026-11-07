@@ -48,7 +48,7 @@ class PhoneNotifications(unittest.TestCase):
         a.push_notify(self.store, self.config, row, sender)
         self.assertEqual(sent[-1]['payload'], {'title': 'Top up Wise', 'body': 'Stripe debits €420 on Tuesday.',
                                                'url': 'https://the-machine.example/assistant/#chat=0123456789abcdef', 'tag': '0123456789abcdef',
-                                           'actions': [{'action': 'snooze2h', 'title': 'Snooze 2h'}, {'action': 'open', 'title': 'Open'}],
+                                           'actions': [{'action': 'snooze2h', 'title': 'Snooze'}, {'action': 'open', 'title': 'Open'}],
                                                'badge': 0})  # the app icon's count (notify.py)
         self.assertEqual(sent[-1]['subscriptions'][0]['endpoint'], SUB['endpoint'])
         a.push_notify(self.store, self.config, dict(row, status='prepared', _result_notice=True, body='Draft ready.'), sender)

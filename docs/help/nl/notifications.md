@@ -34,10 +34,10 @@ Alleen wat jou nodig heeft, geeft een melding. Voortgang en wijzigingen niet. Ee
 
 Elke melding heeft knoppen voor de volgende stap. In de app op je telefoon:
 
-- Nieuwe to-do: Doe het, 2 uur snoozen, Markeer als gedaan.
-- Concept klaar: Concept openen, 2 uur snoozen, Markeer als gedaan.
-- Resultaat klaar: Openen, Markeer als gedaan, 2 uur snoozen.
-- Vraag, vastgelopen of inloggen nodig: Antwoorden, Openen of Inloggen, dan 2 uur snoozen en Markeer als gedaan.
+- Nieuwe to-do: Doe het, Snoozen, Markeer als gedaan.
+- Concept klaar: Concept openen, Snoozen, Markeer als gedaan.
+- Resultaat klaar: Openen, Markeer als gedaan, Snoozen.
+- Vraag, vastgelopen of inloggen nodig: Antwoorden, Openen of Inloggen, dan Snoozen en Markeer als gedaan.
 - Herinnering: Markeer als gedaan, Snoozen, Openen.
 - Ochtendoverzicht: tik erop om het te openen.
 
@@ -45,7 +45,7 @@ Een browser en Telegram tonen er twee. Fleet-vragen houden Eén keer antwoorden 
 
 Vanuit een melding wordt nooit iets verstuurd, betaald of ingediend. Een concept opent altijd eerst, zodat je het ziet voor het vertrekt. Concept openen toont de to-do in je lijst met het hele concept. Doe het start alleen het werk aan een nieuwe to-do.
 
-In de app vragen Snoozen en Markeer als gedaan eerst om te ontgrendelen. In een browser openen ze het dashboard, dat het doet en Ongedaan maken toont. 2 uur snoozen brengt de to-do over twee uur terug, Snoozen morgenochtend.
+In de app vragen Snoozen en Markeer als gedaan eerst om te ontgrendelen. In een browser openen ze het dashboard, dat het doet en Ongedaan maken toont. Snoozen brengt de to-do over twee uur terug, of morgenochtend bij een herinnering.
 
 Mails met wat op je wacht hebben de links Openen en Snoozen. Die openen alleen het dashboard.
 

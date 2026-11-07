@@ -334,7 +334,7 @@ def notice_decision_refused(db, suggestion_id, choice):
 
 QUICK_RUNS = {'prepare': ('accept', None), 'snooze2h': ('snooze', '2h'), 'snooze': ('snooze', 'tomorrow'), 'done': ('complete', None)}
 QUICK_LABELS = {'open': 'Open', 'draft': 'Open draft', 'answer': 'Answer', 'signin': 'Sign in', 'prepare': 'Do it',
-                'snooze2h': 'Snooze 2h', 'snooze': 'Snooze', 'done': 'Mark done'}
+                'snooze2h': 'Snooze', 'snooze': 'Snooze', 'done': 'Mark done'}
 
 
 def quick_kind(row, kind=None, blocked=None, signin=None):

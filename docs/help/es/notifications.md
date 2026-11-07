@@ -34,10 +34,10 @@ Solo avisa lo que te necesita. El progreso y los cambios no. Una ráfaga vibra u
 
 Cada notificación tiene botones para el siguiente paso. En la app del móvil:
 
-- Tarea nueva: Hazlo, Posponer 2 h, Marcar como hecha.
-- Borrador listo: Abrir borrador, Posponer 2 h, Marcar como hecha.
-- Resultado listo: Abrir, Marcar como hecha, Posponer 2 h.
-- Pregunta, atascada o con inicio de sesión: Responder, Abrir o Iniciar sesión, y luego Posponer 2 h y Marcar como hecha.
+- Tarea nueva: Hazlo, Posponer, Marcar como hecha.
+- Borrador listo: Abrir borrador, Posponer, Marcar como hecha.
+- Resultado listo: Abrir, Marcar como hecha, Posponer.
+- Pregunta, atascada o con inicio de sesión: Responder, Abrir o Iniciar sesión, y luego Posponer y Marcar como hecha.
 - Recordatorio: Marcar como hecha, Posponer, Abrir.
 - Resumen matutino: tócalo para abrirlo.
 
@@ -45,7 +45,7 @@ Un navegador y Telegram muestran dos de ellos. Las preguntas del Fleet mantienen
 
 Desde una notificación nunca se envía, se paga ni se presenta nada. Un borrador siempre se abre primero, para que lo veas antes de que salga. Abrir borrador muestra la tarea en tu lista con el borrador completo. Hazlo solo empieza el trabajo en una tarea nueva.
 
-En la app, Posponer y Marcar como hecha piden desbloquear primero. En un navegador abren el panel, que lo hace y muestra Deshacer. Posponer 2 h trae la tarea de vuelta en dos horas, Posponer mañana por la mañana.
+En la app, Posponer y Marcar como hecha piden desbloquear primero. En un navegador abren el panel, que lo hace y muestra Deshacer. Posponer trae la tarea de vuelta en dos horas, o mañana por la mañana en un recordatorio.
 
 Los correos con lo que te espera tienen enlaces Abrir y Posponer. Solo abren el panel.
 

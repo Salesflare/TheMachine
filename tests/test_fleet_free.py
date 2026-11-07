@@ -105,7 +105,7 @@ class Free(unittest.TestCase):
         done = self.fleet.decide_from_telegram('q1', 'once', '55')
         self.assertEqual(done['status'], 'answered')
         self.assertTrue(self.relay.sent('/answer')[-1]['answer']['text'].startswith('Yes, I have'))
-        self.assertEqual(fleet.push_payload([row], 'https://m.example/')['actions'], [])  # the phone opens the draft
+        self.assertEqual(fleet.push_payload([row], 'https://m.example/')['actions'], [{'action': 'open', 'title': 'Open draft'}])  # it opens the draft, nothing else
 
     def test_the_asker_sees_answers_per_teammate_and_no_answer_after_a_while(self):
         self.relay.directory['fleets'][0]['members'].append({'member_id': 'kim1', 'name': 'Kim', 'emails': ['kim@acme.example']})

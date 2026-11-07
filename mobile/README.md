@@ -50,8 +50,8 @@ rename). Every other link opens in the system browser. Only the app's own start 
    to-do that no longer waits. No answer: the fixed text. The Machine's Text in notifications off gives the fixed
    text too. The lock screen with previews hidden shows the fixed text only.
 5. Buttons: the notice lists them per kind (`QUICK` in `machine/delivery/push.py`; the app asks with `v=2` and the
-   wakeup's kind, an older app gets Do it, Snooze and Mark done). Do it (a to-do not started yet), Snooze 2h,
-   Snooze (until tomorrow) and Mark done are each the dashboard's own `decide` (`GET api/session` for the CSRF token,
+   wakeup's kind, an older app gets Do it, Snooze and Mark done). Do it (a to-do not started yet), Snooze (2 hours,
+   or until tomorrow on a reminder) and Mark done are each the dashboard's own `decide` (`GET api/session` for the CSRF token,
    then `POST api/action` with the Machine's Origin and the sign-in), after unlocking, without opening the app; then
    the to-do's line says what happened ("Snoozed it"). Open, Open draft, Answer and Sign in open the app at the
    to-do. Nothing is sent from a notification: a draft or final step opens the app.

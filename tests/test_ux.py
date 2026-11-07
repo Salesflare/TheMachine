@@ -194,7 +194,10 @@ class UX(unittest.TestCase):
         self.assertEqual([p['action'] for p in payloads],['edit','send'])
         self.assertIn('Unique complete result content',payloads[0]['message'])
         self.assertNotIn('Unique complete result content',payloads[1]['message'])
-        self.assertEqual(payloads[1]['replyTo'],'40');self.assertEqual(payloads[1]['presentation']['blocks'],[])
+        self.assertEqual(payloads[1]['replyTo'],'40')
+        # the short notice carries only its quick buttons (push.QUICK 'ready'): open the result, or Mark done; nothing sends
+        [block]=payloads[1]['presentation']['blocks'];self.assertEqual(block['type'],'buttons')
+        self.assertEqual([b['label'] for b in block['buttons']],['Open','Mark done'])
         self.assertIn('Ready:',payloads[1]['message'])
         with self.store.connect() as db:
             row=dict(db.execute('SELECT * FROM deliveries').fetchone())

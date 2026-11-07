@@ -45,7 +45,7 @@ def telegram(config, row, action, message_id=None):
         message+='\n\n['+(i18n.t('View result') if ready else i18n.t('View task'))+']('+root+'#chat='+row['id']+')'  # the card's own page, as a tap in the list opens
         # A sign-in blocker opens the dashboard's sign-in for this task; once in, the task carries on by itself.
         # Its quick buttons, as the phone's (push.QUICK): the first opens (the draft, the sign-in), the second is a
-        # Snooze 2h or Mark done the plugin takes from this message too (openclaw-plugin/index.ts, notice taps).
+        # Snooze (2 hours) or Mark done the plugin takes from this message too (openclaw-plugin/index.ts, notice taps).
         blocks=[{'type':'buttons','buttons':[{'label':i18n.t(QUICK_LABELS[a]),'action':{'type':'url','url':signin or root+'#chat='+row['id']}} if a in QUICK_OPENS
                                              else {'label':i18n.t(QUICK_LABELS[a]),'action':{'type':'callback','value':f"assistant:{row['id']}:{TELEGRAM_QUICK[a]}"}}
                                              for a in QUICK[quick_kind(row,'result',not ready,signin)]['web'] if a in QUICK_OPENS or a in TELEGRAM_QUICK]}]

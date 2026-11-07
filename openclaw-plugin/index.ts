@@ -323,7 +323,7 @@ export default definePluginEntry({
         const state = await call('status', {full:true});
         const delivery = state.deliveries.find((d: any) => d.suggestion_id === id);
         const recorded = delivery ? [String(delivery.message_id), ...JSON.parse(delivery.previous_message_ids || '[]').map(String)] : [];
-        // The result notice ("Ready: ...", a reply under the to-do): its quick buttons Snooze 2h and Mark done run from
+        // The result notice ("Ready: ...", a reply under the to-do): its quick buttons Snooze (2 hours) and Mark done run from
         // it too (machine/delivery/telegram.py TELEGRAM_QUICK); nothing else does. Afterwards it says what happened.
         const notice = !!delivery?.notification_message_id && String(delivery.notification_message_id) === String(ctx.callback.messageId);
         if (notice && !['snooze_2h', 'complete'].includes(choice)) {

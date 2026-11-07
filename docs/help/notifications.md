@@ -35,10 +35,10 @@ Only what needs you notifies, not progress or edits. A burst buzzes once. The ap
 
 Each notification has buttons for the next step. On the phone app:
 
-- New to-do: Do it, Snooze 2h, Mark done.
-- Draft ready: Open draft, Snooze 2h, Mark done.
-- Result ready: Open, Mark done, Snooze 2h.
-- Question, stuck or a sign-in: Answer, Open or Sign in, then Snooze 2h and Mark done.
+- New to-do: Do it, Snooze, Mark done.
+- Draft ready: Open draft, Snooze, Mark done.
+- Result ready: Open, Mark done, Snooze.
+- Question, stuck or a sign-in: Answer, Open or Sign in, then Snooze and Mark done.
 - Reminder: Mark done, Snooze, Open.
 - Morning digest: tap it to open.
 
@@ -46,7 +46,7 @@ A browser and Telegram show two of them. Fleet questions keep Answer once and De
 
 Nothing is sent, paid or submitted from a notification. A draft always opens first, so you see it before it goes. Open draft shows the to-do in your list with its draft in full. Do it only starts the work on a new to-do.
 
-On the phone app, Snooze and Mark done ask you to unlock first. In a browser they open the dashboard, which does it and shows Undo. Snooze 2h brings the to-do back in two hours, Snooze tomorrow morning.
+On the phone app, Snooze and Mark done ask you to unlock first. In a browser they open the dashboard, which does it and shows Undo. Snooze brings the to-do back in two hours, or tomorrow morning on a reminder.
 
 Emails that list what waits for you have Open and Snooze links. They only open the dashboard.
 

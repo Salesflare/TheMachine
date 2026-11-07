@@ -220,7 +220,7 @@ function sentWhere(){for(const [id,w] of sentWatch){const s=(state?.suggestions|
  if(text)toastOpen(text,s.status==='prepared'&&!waitsOnOthers(s)?'':id)}}
 function toastOpen(text,id){toast(text);if(!id)return;const b=make('button',{type:'button','data-toast-open':id},t('Open'));$('#toast').append(' ',b);clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('show'),8000)}
 $('#toast').addEventListener('click',e=>{const b=e.target.closest('[data-toast-open]');if(!b)return;$('#toast').classList.remove('show');location.hash='#card='+b.dataset.toastOpen});
-// A notification's quick button (sw.js quickKeep, #quick=): Snooze 2h, Snooze or Mark done on its to-do. A browser's
+// A notification's quick button (sw.js quickKeep, #quick=): Snooze (2 hours, or tomorrow on a reminder) or Mark done on its to-do. A browser's
 // notification can't ask for an unlock first, so it opens here and this does it, with Undo. The button comes from the
 // worker only, once: a #quick= link from anywhere else does nothing. A to-do handled meanwhile opens as it is now.
 const QUICK_RUN={snooze2h:['snooze','2h'],snooze:['snooze','tomorrow'],done:['complete']};let quickBusy=false;
