@@ -129,7 +129,7 @@ class TitleOnDone(unittest.TestCase):
 
     def test_the_instructions_say_it(self):
         self.assertIn('A title says what needs doing, never how it ended', (ROOT / 'AGENTS.md').read_text())
-        self.assertIn('never to say it is done, sent or handled', (ROOT / 'assistant.py').read_text())
+        self.assertIn('never to say it is done, sent or handled', (ROOT / 'machine/app/preparation.py').read_text())
 
 
 @unittest.skipUnless(shutil.which('node'), 'needs node')

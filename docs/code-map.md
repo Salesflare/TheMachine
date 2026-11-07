@@ -133,7 +133,9 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   recap, its steps, view and choices), `machine/store/conversation.py` and `machine/app/conversation.py`
   (`ConversationStore`, `ConversationApp`: what was said around a to-do's source message), `machine/app/first_look.py`
   (`FirstLookApp`: the quick first review, the dig after it and its ending, with their timing constants),
-  `App.meeting_notes` (the meeting_notes tool) into `MeetingWritesApp` (`machine/app/meeting_writes.py`).
+  `App.meeting_notes` (the meeting_notes tool) into `MeetingWritesApp` (`machine/app/meeting_writes.py`),
+  `machine/app/preparation.py` (`PreparationApp`: starting and checking a to-do's preparation run, its progress, peek
+  and worker, with the preparation prompt and its helpers).
 - **Dashboard code:** in its area's part in `dashboard/` (`<area>-<what>.js`: shell, todos, settings, graph, calendar,
   connections, help, events, new, fleet), next to the functions it works with, never at the end of the script. The
   page's core is in the `shell-*` parts too: locale and error reports (`shell-core.js`), network and outbox, `render()`
