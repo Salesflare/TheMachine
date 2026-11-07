@@ -8,10 +8,13 @@ removed or withdrawn is dropped (seen). Then it asks, under Learning, Shared and
 send them to The Machine team. The owner sees each item exactly as it would go, can edit or remove it, and ticks
 separately whether an item's error excerpt goes along (off by default). Only an explicit Send sends.
 
-Send automatically (opt-in, in the offer or Settings, Security; the default asks each time): new distillations go
-without asking, as they are, never with an error excerpt or the owner's email. Every sent learning is listed under
-Settings, Activity (and Fleet, Activity), exactly as it went, and can be withdrawn there (withdraw: the control plane deletes it for the team).
-Turning off the offer, Never ask, Careful, or a Careful Work Fleet stops it; turning the offer off also turns it off.
+Send automatically (on by default, in the offer or Settings, Security; an owner who turned it off stays off): new
+distillations go without asking, as they are, never with an error excerpt or the owner's email. One made from a to-do
+in the Personal area (a note on it, or a fact or rule from such a note) still waits for the owner's OK. Every sent
+learning is listed under Settings, Activity (and Fleet, Activity), exactly as it went, and can be withdrawn there
+(withdraw: the control plane deletes it for the team). Turning off the offer, Never ask, Careful, or a Careful Work
+Fleet stops it; turning the offer off also turns it off. An offer still waiting doesn't hold back the next one: the
+next run carries over what still holds and replaces it.
 
 What is stripped, twice:
 - the turn is told to write only the general pattern, with a short made-up example at most, and nothing that names
@@ -50,10 +53,10 @@ CREATE TABLE IF NOT EXISTS team_learning_votes(candidate_id TEXT PRIMARY KEY,ref
   status TEXT NOT NULL,vote TEXT,reason TEXT,fetched_at TEXT NOT NULL,sent_at TEXT,error TEXT);
 '''
 MIGRATE = (('team_learning_votes', 'use_cases', 'TEXT'), ('team_learning_votes', 'use_case', 'TEXT'), ('team_learning_votes', 'decided_at', 'TEXT'),
-           ('team_learnings', 'auto', 'INTEGER'))
+           ('team_learnings', 'auto', 'INTEGER'), ('team_learnings', 'personal', 'INTEGER'))
 DAYS = 1              # a new distillation at most this often
 SINCE_DAYS = 30       # the first one reads the last month; after that only what came since the last one that ran
-MIN_MATERIAL = 3      # notes, facts and rule changes since the last one; less says too little
+MIN_MATERIAL = 1      # notes, facts and rule changes since the last one: one is enough, the turn saves none when nothing general stands out
 LATER_DAYS = 7        # Not now: no new offer for a week
 FAULT_DAYS = 7        # errors it reads: since the last one, at most a week back
 SAME = 0.6            # word overlap (Jaccard) from which a new learning repeats one sent, removed or withdrawn before
@@ -127,8 +130,10 @@ def careful_floor(db):
 
 
 def auto_chosen(db):
-    """Settings, Send learnings automatically: the owner's choice, off by default and only with the offer on."""
-    return offer_on(db) and pref(db, 'auto', 'off') == 'on'
+    """Settings, Send learnings automatically: on by default, only with the offer on. Every explicit choice is stored
+    ('on' or 'off': the switch, the offer's own tick, and turning the offer off, Never ask or Careful, which store 'off'),
+    so an owner who turned it off stays off; only a Machine that never chose gets the default."""
+    return offer_on(db) and pref(db, 'auto', 'on') == 'on'
 
 
 def auto_on(db):
@@ -353,13 +358,14 @@ def since(db, current):
 
 
 def due(db, current=None):
-    """A distillation is due: the owner wants to be offered, none ran in the last DAYS, nothing waits for them still,
-    Not now was not tapped this week, and there is enough new to learn from."""
+    """A distillation is due: the owner wants to be offered, none ran in the last DAYS, no send is on its way, Not now
+    was not tapped this week, and there is something new to learn from. An offer still waiting for the owner doesn't
+    hold a new one back: the new run carries over what still holds and its batch replaces the waiting one (finish)."""
     current = current or dt.datetime.now(dt.timezone.utc)
     ensure(db)
     if not TEAM_KEY_FINGERPRINT or not offer_on(db):
         return False
-    if db.execute("SELECT 1 FROM team_learnings WHERE status IN ('ready','sending')").fetchone():
+    if db.execute("SELECT 1 FROM team_learnings WHERE status='sending'").fetchone():
         return False
     if db.execute("SELECT 1 FROM team_learnings WHERE status='later' AND decided_at>?",
                   ((current - dt.timedelta(days=LATER_DAYS)).isoformat(),)).fetchone():
@@ -416,26 +422,57 @@ def _owner_facts(db):
     return "AND coalesce(source,'') NOT LIKE 'ai:%'" if has else ''
 
 
-def evidence(db, quality=None, current=None):
+def personal_cards(db, ids, accounts):
+    """Which of these to-dos are in the Personal area, the way their label says (machine.store.facts.suggestion_scope:
+    pinned Personal, or no Work account among their accounts)."""
+    from machine.store.facts import suggestion_scope
+    ids = sorted({i for i in ids if i})
+    rows = _rows(db, f"SELECT id,account_ids,area FROM suggestions WHERE id IN ({','.join('?' * len(ids)) or 'NULL'})", ids)
+    return {r['id'] for r in rows if suggestion_scope(r['account_ids'], accounts or [], r.get('area')) == 'personal'}
+
+
+def _fact_card(db, ref):
+    """The to-do a fact came from: a fact id, or 'fact:<id>' (a condense), else None (a rule the learning loop drew
+    from many to-dos, a voice, a filter)."""
+    ref = str(ref or '')
+    ref = ref[5:] if ref.startswith('fact:') else ref
+    if not ref.isdigit():
+        return None
+    row = db.execute('SELECT suggestion_id FROM facts WHERE id=?', (int(ref),)).fetchone()
+    return row[0] if row else None
+
+
+def evidence(db, quality=None, current=None, accounts=None):
     """What the turn reads: private, so it stays in the sealed evidence of its run and goes only to the owner's own
-    agent. Only the general patterns it writes from it come back."""
+    agent. Only the general patterns it writes from it come back. `personal` says whether any of it came from a to-do in
+    the Personal area (a note on one, or a fact or rule taken from such a note), or from a waiting offer that did:
+    learnings from it then wait for the owner's OK, also with Send automatically on (finish)."""
     current = current or dt.datetime.now(dt.timezone.utc)
     start = since(db, current)
     week = max(start, (current - dt.timedelta(days=FAULT_DAYS)).isoformat())
-    notes = _rows(db, "SELECT d.choice,d.feedback note,d.created_at at,(SELECT e.kind FROM events e JOIN suggestions s ON s.id=d.suggestion_id "
+    notes = _rows(db, "SELECT d.choice,d.feedback note,d.created_at at,d.suggestion_id card,(SELECT e.kind FROM events e JOIN suggestions s ON s.id=d.suggestion_id "
                       "WHERE e.id=json_extract(s.event_ids,'$[0]')) kind FROM decisions d WHERE d.source IN ('telegram','dashboard') "
                       "AND coalesce(d.feedback,'')!='' AND d.created_at>=? ORDER BY d.created_at DESC LIMIT 80", (start,))
     for n in notes:
         n['note'] = str(n['note'])[:400]
-    facts = [r['text'][:300] for r in _rows(db, f"SELECT text FROM facts WHERE removed_at IS NULL AND created_at>=? {_owner_facts(db)} ORDER BY created_at DESC LIMIT 40", (start,))]
-    rules = [r['text'][:300] for r in _rows(db, 'SELECT text FROM rule_changes WHERE at>=? ORDER BY at DESC LIMIT 40', (start,))]
+    fact_rows = _rows(db, f"SELECT text,suggestion_id card FROM facts WHERE removed_at IS NULL AND created_at>=? {_owner_facts(db)} ORDER BY created_at DESC LIMIT 40", (start,))
+    facts = [r['text'][:300] for r in fact_rows]
+    rule_rows = _rows(db, 'SELECT text,ref FROM rule_changes WHERE at>=? ORDER BY at DESC LIMIT 40', (start,))
+    rules = [r['text'][:300] for r in rule_rows]
+    cards = [n.pop('card') for n in notes] + [r['card'] for r in fact_rows] + [_fact_card(db, r['ref']) for r in rule_rows]
+    personal = bool(personal_cards(db, cards, accounts))
     voices = [{'channel': r['channel'], 'text': r['text'][:400]} for r in _rows(db, 'SELECT channel,text FROM voices LIMIT 8')]
     edits = _rows(db, 'SELECT kind,count(*) n FROM draft_edits WHERE created_at>=? GROUP BY kind', (start,))
     faults = _rows(db, 'SELECT fingerprint,kind,location,max(version) version,sum(count) n,max(message) message FROM faults WHERE day>=? '
                        'GROUP BY fingerprint ORDER BY n DESC LIMIT 15', (week[:10],))
     before = seen(db)
-    waiting = [i['text'] for r in _rows(db, "SELECT items FROM team_learnings WHERE status='later' ORDER BY created_at DESC LIMIT 2")
-               for i in json.loads(r['items'] or '[]')][:10]
+    # What waits for the owner (an offer not answered yet, Not now) is carried over, and the new batch replaces it. A
+    # run made only from Work material that will go by itself leaves a Personal offer out, so that one keeps waiting.
+    alone = not personal and auto_on(db)
+    held = [r for r in _rows(db, "SELECT id,items,personal FROM team_learnings WHERE status IN ('ready','later') ORDER BY created_at DESC LIMIT 4")
+            if not (alone and r['personal'])][:2]
+    personal = personal or any(r['personal'] for r in held)
+    waiting = [i['text'] for r in held for i in json.loads(r['items'] or '[]')][:10]
     q = {}
     if quality:
         try:
@@ -447,7 +484,8 @@ def evidence(db, quality=None, current=None):
     return {'learnings': True, 'rows': rows, 'quality': q, 'draft_edits': edits,
             'faults': [{'fingerprint': f['fingerprint'], 'kind': f['kind'], 'where': f['location'], 'count': f['n'],
                         'message': str(f.get('message') or '')[:200]} for f in faults],
-            'shared_before': before['shared'][:30], 'removed_before': before['removed'][:30], 'not_shared_yet': waiting}
+            'shared_before': before['shared'][:30], 'removed_before': before['removed'][:30], 'not_shared_yet': waiting,
+            'personal': personal, 'carried': [r['id'] for r in held]}
 
 
 def evidence_page(evidence, page):
@@ -519,12 +557,20 @@ def save_draft(db, run_id, profile, config=None):
 
 
 def finish(db, run_id):
-    """A finished run's learnings become the batch the owner is asked about (none when it found nothing). Earlier
-    batches still waiting are replaced: the new one carried over what still holds."""
+    """A finished run's learnings become the batch the owner is asked about, or that goes by itself (none when it
+    found nothing). The waiting batches the run carried over are replaced: the new one says again what still holds. A
+    batch from Personal material always waits for the owner's OK, also with Send automatically on."""
     ensure(db)
-    row = db.execute("SELECT draft FROM profile_runs WHERE run_id=? AND kind='learnings' AND status='ok'", (run_id,)).fetchone()
+    row = db.execute("SELECT draft,evidence FROM profile_runs WHERE run_id=? AND kind='learnings' AND status='ok'", (run_id,)).fetchone()
     if not row or db.execute('SELECT 1 FROM team_learnings WHERE run_id=?', (run_id,)).fetchone():
         return None
+    try:
+        evidence = json.loads(row[1] or '{}')
+    except ValueError:
+        evidence = {}
+    # A run from before this field: what it read is unknown, so it is treated as Personal and asks
+    personal = evidence.get('personal') is not False
+    carried = evidence.get('carried') if isinstance(evidence.get('carried'), list) else None
     before = seen(db)
     earlier = before['shared'] + before['removed']
     items = [i for i in (json.loads(row[0] or '{}').get('learnings') or []) if not any(repeats(i.get('text'), t) for t in earlier)][:MAX_ITEMS]
@@ -532,19 +578,33 @@ def finish(db, run_id):
         return None
     for n, item in enumerate(items, 1):
         item['n'] = n
-    db.execute("UPDATE team_learnings SET status='replaced' WHERE status IN ('ready','later')")
+    if carried is None:  # a run from before: everything waiting, as then
+        db.execute("UPDATE team_learnings SET status='replaced' WHERE status IN ('ready','later')")
+    else:
+        db.executemany("UPDATE team_learnings SET status='replaced' WHERE id=? AND status IN ('ready','later')", [(str(c),) for c in carried])
     batch = 'tl_' + uuid.uuid4().hex[:20]
-    db.execute("INSERT INTO team_learnings(id,run_id,status,items,created_at,auto) VALUES(?,?,'ready',?,?,?)",
-               (batch, run_id, json.dumps(items), now(), 1 if auto_on(db) else 0))
+    db.execute("INSERT INTO team_learnings(id,run_id,status,items,created_at,auto,personal) VALUES(?,?,'ready',?,?,?,?)",
+               (batch, run_id, json.dumps(items), now(), 1 if auto_on(db) and not personal else 0, 1 if personal else 0))
     return batch
 
 
 # ---------------------------------------------------------------- asking
 
+def asking(db):
+    """The newest batch that waits for the owner: (id, items, created_at, error, status, sent, auto, personal), or None.
+    One on its way by itself (auto_send) asks nothing."""
+    on = auto_on(db)
+    for row in db.execute("SELECT id,items,created_at,error,status,sent,auto,personal FROM team_learnings WHERE status IN ('ready','sending') "
+                          'ORDER BY created_at DESC'):
+        if not (row[6] and on):
+            return row
+    return None
+
+
 def view(db, network=True):
     """For the dashboard: the batch waiting for the owner, the Settings switch, and what was shared before."""
     ensure(db)
-    row = db.execute("SELECT id,items,created_at,error,status,sent,auto FROM team_learnings WHERE status IN ('ready','sending') ORDER BY created_at DESC LIMIT 1").fetchone()
+    row = asking(db)
     last = db.execute("SELECT decided_at,sent FROM team_learnings WHERE status='sent' ORDER BY decided_at DESC LIMIT 1").fetchone()
     mode = vote_mode(db)
     out = {'offer': offer_on(db), 'vote': mode != 'off', 'vote_mode': mode, 'network': bool(network and TEAM_KEY_FINGERPRINT), 'ask': None,  # off until the key is pinned
@@ -552,10 +612,8 @@ def view(db, network=True):
            'last_shared': {'at': last[0], 'count': len(json.loads(last[1] or '{}').get('items') or [])} if last else None,
            'shared': shared(db) if network else [],
            'votes_waiting': votes_waiting(db) if network and mode == 'ask' else []}
-    if row and row[6] and auto_on(db):
-        row = None  # on its way by itself (auto_send): nothing to ask
     if row and network and out['offer']:
-        out['ask'] = {'id': row[0], 'created_at': row[2], 'error': row[3], 'items': json.loads(row[1])}
+        out['ask'] = {'id': row[0], 'created_at': row[2], 'error': row[3], 'items': json.loads(row[1]), 'personal': bool(row[7])}
         record = json.loads(row[5] or '{}')
         if row[4] == 'sending' and record.get('request'):
             out['ask']['pending'] = {'items': record.get('chosen') or [], 'named': record['named']}
@@ -581,8 +639,8 @@ def waiting(db):
     ensure(db)
     if not offer_on(db):
         return 0
-    row = db.execute("SELECT items,auto FROM team_learnings WHERE status='ready' ORDER BY created_at DESC LIMIT 1").fetchone()
-    return len(json.loads(row[0])) if row and not (row[1] and auto_on(db)) else 0
+    row = asking(db)
+    return len(json.loads(row[1])) if row and row[4] == 'ready' else 0
 
 
 def later(db, batch_id):
@@ -767,8 +825,8 @@ def auto_send(db_connect, config, call, version=None):
         ensure(db)
         if not auto_on(db):
             return None
-        row = db.execute("SELECT id,items,status,sent,created_at FROM team_learnings WHERE auto=1 AND status IN ('ready','sending') "
-                         'ORDER BY created_at DESC LIMIT 1').fetchone()
+        row = db.execute("SELECT id,items,status,sent,created_at FROM team_learnings WHERE auto=1 AND coalesce(personal,0)=0 "
+                         "AND status IN ('ready','sending') ORDER BY created_at DESC LIMIT 1").fetchone()
         if not row:
             return None
         batch, stored, record = row[0], json.loads(row[1]), json.loads(row[3] or '{}')

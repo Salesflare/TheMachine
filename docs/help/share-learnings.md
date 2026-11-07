@@ -20,9 +20,9 @@ Each learning comes with 1 to 3 use cases: a situation, what you do, and what sh
 - Filtering can miss details, so read the exact text before **Send**.
 - An error log goes only when you tick **Add the error log**. Read that excerpt too.
 
-## Nothing without your OK
+## When it asks
 
-Under **Learning**, **Shared**, a note asks "Share 3 learnings with The Machine team?" Tap **Review** to see exactly what would go. Edit or remove any learning or use case (each learning keeps at least one), then **Send**. Or pick **Not now** or **Never ask**.
+Learnings go by themselves unless you turned that off (see below). When it asks, a note under **Learning**, **Shared** says "Share 3 learnings with The Machine team?" Tap **Review** to see exactly what would go. Edit or remove any learning or use case (each learning keeps at least one), then **Send**. Or pick **Not now** or **Never ask**. A newer offer replaces one you haven't answered yet.
 
 It's sealed for the team and sent under a made-up name, unless you tick **Add my email so the team can reply**.
 
@@ -30,7 +30,9 @@ Other Machines may vote on a learning you shared, without knowing who sent it.
 
 ## Send automatically
 
-Tick **Send automatically from now on** next to **Send**, or turn on **Send learnings automatically** in Settings, Security. New learnings then go without asking, checked the same way. It's off by default.
+**Send learnings automatically** in Settings, Security is on by default. New learnings go without asking, checked the same way. Turn it off to be asked each time. If you turned it off before, it stays off.
+
+Learnings from your Personal to-dos still ask first.
 
 Every learning sent is listed, exactly as it went, in Settings, **Activity** and in Fleet, **Activity**. Tap **Withdraw** and the team no longer sees it.
 

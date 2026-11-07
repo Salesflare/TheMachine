@@ -20,9 +20,9 @@ Chaque apprentissage est accompagné de 1 à 3 cas d’usage : une situation, ce
 - C’est conçu pour partager des apprentissages généraux, pas vos messages ni les personnes avec qui vous travaillez. Le filtrage peut laisser passer des détails : relisez le texte exact avant **Envoyer**.
 - Un journal d’erreurs seulement si vous cochez **Joindre le journal d’erreurs**. Relisez aussi l’extrait : le filtrage fait de son mieux.
 
-## Rien sans votre accord
+## Quand elle demande
 
-Dans **Apprentissage**, **Partagé**, une courte note demande « Partager 3 apprentissages avec l’équipe The Machine ? ». Appuyez sur **Vérifier** pour voir exactement ce qui serait envoyé. Modifiez ou retirez un apprentissage ou un cas d’usage (chaque apprentissage garde au moins un cas d’usage), puis **Envoyer**. Ou choisissez **Pas maintenant** ou **Ne plus demander**.
+Les apprentissages partent tout seuls, sauf si vous l’avez désactivé (voir plus bas). Quand elle demande, dans **Apprentissage**, **Partagé**, une courte note demande « Partager 3 apprentissages avec l’équipe The Machine ? ». Appuyez sur **Vérifier** pour voir exactement ce qui serait envoyé. Modifiez ou retirez un apprentissage ou un cas d’usage (chaque apprentissage garde au moins un cas d’usage), puis **Envoyer**. Ou choisissez **Pas maintenant** ou **Ne plus demander**. Une offre plus récente remplace celle à laquelle vous n’avez pas encore répondu.
 
 C’est scellé pour l’équipe et envoyé sous un nom inventé, sauf si vous cochez **Ajouter mon e-mail pour que l’équipe puisse répondre**.
 
@@ -30,7 +30,9 @@ D’autres Machines peuvent voter sur un apprentissage que vous avez partagé, s
 
 ## Envoyer automatiquement
 
-Cochez **Envoyer automatiquement désormais** à côté de **Envoyer**, ou activez **Envoyer les apprentissages automatiquement** dans Paramètres, Sécurité. Les nouveaux apprentissages partent alors sans demander, vérifiés de la même façon. Désactivé par défaut.
+**Envoyer les apprentissages automatiquement** dans Paramètres, Sécurité est activé par défaut. Les nouveaux apprentissages partent sans demander, vérifiés de la même façon. Désactivez-le pour qu’elle demande à chaque fois. Si vous l’avez déjà désactivé, il reste désactivé.
+
+Pour les apprentissages tirés de vos tâches Perso, elle demande toujours d’abord.
 
 Chaque apprentissage envoyé figure dans Paramètres, **Activité**, et dans Fleet, **Activité**, exactement comme il est parti. Touchez **Retirer** et l’équipe ne le voit plus.
 

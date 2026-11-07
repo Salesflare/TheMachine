@@ -20,9 +20,9 @@ Cada aprendizaje viene con 1 a 3 casos de uso: una situación, lo que haces y lo
 - Está pensado para compartir aprendizajes generales, no tus mensajes ni con quién tratas. El filtrado puede pasar por alto detalles: revisa el texto exacto antes de **Enviar**.
 - Un registro de errores solo cuando marcas **Añadir el registro de errores**. Revisa también el extracto: el filtrado se hace lo mejor posible.
 
-## Nada sin tu OK
+## Cuando pregunta
 
-En **Aprendizaje**, **Compartido**, una nota breve pregunta "¿Compartir 3 aprendizajes con el equipo de The Machine?" Toca **Revisar** para ver exactamente qué se enviaría. Edita o quita cualquier aprendizaje o caso de uso (cada aprendizaje conserva al menos un caso de uso), y luego **Enviar**. O elige **Ahora no** o **No preguntar nunca**.
+Los aprendizajes se envían solos, salvo que lo hayas desactivado (ver abajo). Cuando pregunta, en **Aprendizaje**, **Compartido**, una nota breve pregunta "¿Compartir 3 aprendizajes con el equipo de The Machine?" Toca **Revisar** para ver exactamente qué se enviaría. Edita o quita cualquier aprendizaje o caso de uso (cada aprendizaje conserva al menos un caso de uso), y luego **Enviar**. O elige **Ahora no** o **No preguntar nunca**. Una oferta nueva sustituye a la que aún no has respondido.
 
 Va sellado para el equipo y sale con un nombre inventado, a menos que marques **Añadir mi correo para que el equipo pueda responder**.
 
@@ -30,7 +30,9 @@ Otras Machines pueden votar un aprendizaje que compartiste, sin saber quién lo 
 
 ## Enviar automáticamente
 
-Marca **Enviar automáticamente a partir de ahora** junto a **Enviar**, o activa **Enviar aprendizajes automáticamente** en Ajustes, Seguridad. Los nuevos aprendizajes se envían entonces sin preguntar, revisados de la misma forma. Desactivado por defecto.
+**Enviar aprendizajes automáticamente** en Ajustes, Seguridad está activado por defecto. Los nuevos aprendizajes se envían sin preguntar, revisados de la misma forma. Desactívalo para que pregunte cada vez. Si ya lo desactivaste, sigue desactivado.
+
+Con los aprendizajes de tus tareas de Personal, sigue preguntando primero.
 
 Cada aprendizaje enviado aparece en Ajustes, **Actividad**, y en Fleet, **Actividad**, tal como se envió. Toca **Retirar** y el equipo ya no lo ve.
 

@@ -20,9 +20,9 @@ Elk inzicht komt met 1 tot 3 use cases: een situatie, wat je doet, en wat er moe
 - Het is gemaakt om algemene inzichten te delen, niet je berichten of met wie je te maken hebt. Filteren kan details missen: kijk de exacte tekst na voor **Versturen**.
 - Een foutenlogboek alleen als je **Het foutenlogboek toevoegen** aanvinkt. Kijk het fragment ook na: filteren gebeurt zo goed mogelijk.
 
-## Niets zonder je OK
+## Als hij het vraagt
 
-Onder **Leren**, **Gedeeld** vraagt een korte melding "3 inzichten delen met het team van The Machine?" Tik op **Nakijken** om precies te zien wat er verstuurd zou worden. Bewerk of verwijder een inzicht of use case (elk inzicht houdt minstens één use case), en dan **Versturen**. Of kies **Niet nu** of **Nooit vragen**.
+Inzichten gaan vanzelf, tenzij je dat uitzette (zie hieronder). Als hij het vraagt, vraagt een korte melding onder **Leren**, **Gedeeld** "3 inzichten delen met het team van The Machine?" Tik op **Nakijken** om precies te zien wat er verstuurd zou worden. Bewerk of verwijder een inzicht of use case (elk inzicht houdt minstens één use case), en dan **Versturen**. Of kies **Niet nu** of **Nooit vragen**. Een nieuwer aanbod vervangt een aanbod waar je nog niet op antwoordde.
 
 Het is verzegeld voor het team en komt van een verzonnen naam, tenzij je **Voeg mijn e-mail toe zodat het team kan antwoorden** aanvinkt.
 
@@ -30,7 +30,9 @@ Andere Machines kunnen stemmen op een inzicht dat je deelde, zonder te weten wie
 
 ## Automatisch versturen
 
-Vink **Voortaan automatisch versturen** aan naast **Versturen**, of zet **Inzichten automatisch versturen** aan in Instellingen, Beveiliging. Nieuwe inzichten gaan dan zonder te vragen, op dezelfde manier gecontroleerd. Standaard uit.
+**Inzichten automatisch versturen** in Instellingen, Beveiliging staat standaard aan. Nieuwe inzichten gaan zonder te vragen, op dezelfde manier gecontroleerd. Zet het uit als hij elke keer moet vragen. Zette je het eerder uit, dan blijft het uit.
+
+Voor inzichten uit je Privé-to-do's vraagt hij nog altijd eerst.
 
 Elk verstuurd inzicht staat in Instellingen, **Activiteit**, en in Fleet, **Activiteit**, precies zoals het ging. Tik op **Intrekken** en het team ziet het niet meer.
 
