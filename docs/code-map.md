@@ -18,7 +18,7 @@ writes it; other modules call the owner's functions.
 
 | domain | modules | tables (owner) |
 |---|---|---|
-| service core | `assistant.py`: sources and sync, `Store`, `App` (actions, workers), the HTTP `Handler`, notify delivery, prompts | `events` (sealed, the only writer), `suggestions` (to-dos), `decisions`, `deliveries`, `preparations`, `action_jobs`, `analyses`, `profile_runs`, `facts`, `promises`, `voices`, `checkpoints`, `faults` and the rest of its 45 |
+| service core | `assistant.py`: sources and sync, `Store`, `App` (actions, workers), notify delivery, prompts | `events` (sealed, the only writer), `suggestions` (to-dos), `decisions`, `deliveries`, `preparations`, `action_jobs`, `analyses`, `profile_runs`, `facts`, `promises`, `voices`, `checkpoints`, `faults` and the rest of its 45 |
 | message sealing | `message_seal`, `message_keyring`, `network_crypto` | `event_search` |
 | graph and CRM | `graph`, `crm`, `crm_fields`, `crm_import`, `crm_fixes`, `enrichment`, `own_addresses`, `bounces`, `places`, `signatures`, `person_summary`, `project_success` (a project's done-when, its proof and blocker), `knowledge` (what every surface asks about a record, no table) | `graph_*`, `projects`, `boards`, `board_*`, `person_*`, `org_*` (graph); `record_*`, `org_aliases` (crm); `crm_fields`, `crm_tags`, `crm_values`; `person_facts`, `enrich_prefs`, photo and logo tries (enrichment); `own_*`; `email_bounce*`; `person_summar*` (person_summary); `project_success` |
 | follow-ups | `follow_ups`, `task_invites`, `task_pages` | `follow_up_*`, `task_pages` |
@@ -82,8 +82,9 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   when the owner last talked to them), from any surface: through `knowledge.py` with the caller's `Caller`
   (`knowledge.owner()`, or `knowledge.connection(config, area)` for a connected AI), never a query of its own. Add a
   case to `tests/knowledge_eval.py` for every surface that answers it.
-- **A new route:** `Handler.do_GET` or `do_POST` inside `App.serve`. JSON reads go through `App` methods; owner-only and
-  CSP headers stay as the neighboring routes have them (`tests/test_owner_boundary.py`).
+- **A new route:** `Handler.do_GET` or `do_POST` in `machine/web/handler.py` (`make_handler(app)`, which `App.serve`
+  runs). JSON reads go through `App` methods; owner-only and CSP headers stay as the neighboring routes have them
+  (`tests/test_owner_boundary.py`).
 - **A new table:** in its domain module's `ensure(db)`, called from `Store.__init__`, with the functions that write it in
   that same module.
 - **A new domain:** a new flat module at the root that the others import. It never imports `assistant`.
@@ -115,7 +116,8 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   and `machine/store/promises.py` (the `VoicesStore`, `FactsStore` and `PromisesStore` mixins),
   `machine/store/views.py`, `machine/store/profile.py` and `machine/store/first_look.py` (the `ViewsStore`,
   `ProfileStore` and `FirstLookStore` mixins), `machine/web/serving.py` (the dashboard page, hosts, CSRF, compression,
-  ETags, status) and `machine/web/waiting.py` (`KeyWaitingPage`, `message_key_keeper`).
+  ETags, status) and `machine/web/waiting.py` (`KeyWaitingPage`, `message_key_keeper`), `machine/web/handler.py`
+  (`make_handler(app)`: the dashboard's HTTP `Handler`, out of `App.serve`).
 - **Dashboard code:** in its area's part in `dashboard/` (`<area>-<what>.js`: shell, todos, settings, graph, calendar,
   connections, help, events, new, fleet), next to the functions it works with, never at the end of the script. The
   page's core is in the `shell-*` parts too: locale and error reports (`shell-core.js`), network and outbox, `render()`

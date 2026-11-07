@@ -152,7 +152,7 @@ class MobileShellTest(unittest.TestCase):
         self.assertIn('https://my.themachine.computer/', test)
         # The dashboard's own words that check: the manifest's name and its refusal for someone not its owner
         self.assertEqual(json.loads((ROOT / 'manifest.webmanifest').read_text())['name'], 'The Machine')
-        self.assertIn("'Use the owner-authenticated Tailscale dashboard'", (ROOT / 'assistant.py').read_text())
+        self.assertIn("'Use the owner-authenticated Tailscale dashboard'", (ROOT / 'machine/web/handler.py').read_text())
 
 
     def test_web_features_only_for_the_machine(self):

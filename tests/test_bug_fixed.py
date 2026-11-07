@@ -70,7 +70,7 @@ class Fixed(unittest.TestCase):
         self.assertIn('<div id="fixed-notice" role="status" hidden></div>', page)
         self.assertIn("action:'bug_fixed'", page)
         self.assertIn('state.fixed', page)  # self-hosted: from the state, no call of its own on each render
-        self.assertIn("'fixed': list(getattr(getattr(app, 'fleet', None), 'fixed_now', None) or ())", (ROOT / 'assistant.py').read_text())
+        self.assertIn("'fixed': list(getattr(getattr(app, 'fleet', None), 'fixed_now', None) or ())", (ROOT / 'machine/web/handler.py').read_text())
         self.assertIn("'/_machine/fixed'", page)
 
 
