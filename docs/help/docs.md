@@ -61,10 +61,19 @@ If Microsoft doesn't allow reading, it isn't added. If you press **Allow edits**
 
 ## Google Docs
 
-Google Docs can't be connected yet. Reading them needs a Google permission The Machine doesn't ask for yet. What works today:
+On a hosted Machine, open **Connections**, then **+ Add**, and pick **Google Docs**. Google asks you to let it see and edit the docs you point it to, and make new ones. Gmail doesn't need to be connected, and your Gmail access doesn't change.
 
-- On your own computer, your Machine can make a new Google Doc in a Gmail account signed in there that already has Drive access. It doesn't read your other Google Docs or their comments.
-- A hosted Machine can't use Google Docs yet.
+Then your Machine:
+
+- Reads a Google Doc linked in a to-do's messages, only while it works on that to-do.
+- Prepares changes to that doc. Each waits for your OK, as above.
+- Makes new private docs in your Google Drive.
+
+It doesn't search your Drive. It sees comments, shares and suggestions only on docs it made. More would need access to your whole Drive, which it doesn't ask for.
+
+Google Docs is opening up step by step. If it isn't under **+ Add** yet, it's on its way.
+
+On your own computer, your Machine can make a new Google Doc in a Gmail account signed in there that already has Drive access. It doesn't read your other Google Docs or their comments.
 
 ## Work or personal
 
@@ -72,4 +81,4 @@ It follows its connection's Work or Personal label, like mail. Work docs can rea
 
 ## Remove it
 
-Open **Connections**, then Microsoft OneDrive, **Details** and **Disconnect**. It stops reading. What it already brought in stays.
+Open **Connections**, then Microsoft OneDrive or Google Docs, **Details** and **Disconnect**. It stops reading. What it already brought in stays.

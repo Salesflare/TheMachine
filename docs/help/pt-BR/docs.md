@@ -61,10 +61,19 @@ Ela confere se o login pode ler documentos. Sem esse OK, o Microsoft OneDrive n�
 
 ## Google Docs
 
-O Google Docs ainda não pode ser conectado. Lê-los exige uma permissão do Google que a The Machine ainda não pede. O que funciona hoje:
+Em uma Machine hospedada, abra **Conexões**, depois **+ Adicionar**, e escolha **Google Docs**. O Google pede para você permitir que ela veja e edite os documentos que você indicar, e crie novos. O Gmail não precisa estar conectado, e seu acesso ao Gmail não muda.
 
-- No seu próprio computador, sua Machine pode criar um novo Google Doc em uma conta do Gmail conectada nele que já tem acesso ao Drive. Ela não lê seus outros Google Docs nem os comentários deles.
-- Uma Machine hospedada ainda não pode usar o Google Docs.
+Depois a sua Machine:
+
+- Lê um documento do Google com link nas mensagens de uma tarefa, só enquanto trabalha nessa tarefa.
+- Prepara alterações nesse documento. Cada uma espera o seu OK, como acima.
+- Cria novos documentos privados no seu Google Drive.
+
+Ela não pesquisa o seu Drive. Vê comentários, compartilhamentos e sugestões só nos documentos que ela criou. Mais do que isso exigiria acesso ao seu Drive inteiro, e ela não pede.
+
+O Google Docs está sendo aberto aos poucos. Se ainda não aparece em **+ Adicionar**, está chegando.
+
+No seu próprio computador, a sua Machine pode criar um novo documento do Google em uma conta do Gmail conectada ali que já tenha acesso ao Drive. Ela não lê seus outros Google Docs nem os comentários deles.
 
 ## Trabalho ou pessoal
 
@@ -72,4 +81,4 @@ Microsoft OneDrive segue o rótulo de trabalho ou pessoal da conexão dele, como
 
 ## Remova
 
-No painel: **Conexões**, abra Microsoft OneDrive, **Detalhes** e depois **Desconectar**. Ela para de ler. O que já foi trazido continua lá.
+No painel: **Conexões**, abra o Microsoft OneDrive ou o Google Docs, **Detalhes** e depois **Desconectar**. Ela para de ler. O que já foi trazido continua lá.

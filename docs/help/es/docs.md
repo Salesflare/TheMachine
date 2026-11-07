@@ -61,10 +61,19 @@ Comprueba que el inicio de sesión puede leer documentos. Sin ese OK no se añad
 
 ## Google Docs
 
-Google Docs aún no se puede conectar. Leerlos necesita un permiso de Google que The Machine aún no pide. Lo que funciona hoy:
+En una Machine alojada, abre **Conexiones**, luego **+ Añadir**, y elige **Google Docs**. Google te pide permitir que vea y edite los documentos que le indicas, y que cree otros nuevos. No hace falta tener Gmail conectado, y tu acceso a Gmail no cambia.
 
-- En tu propio ordenador, tu Machine puede crear un Google Doc nuevo en una cuenta de Gmail iniciada allí que ya tiene acceso a Drive. No lee tus otros Google Docs ni sus comentarios.
-- Una Machine alojada aún no puede usar Google Docs.
+Después tu Machine:
+
+- Lee un documento de Google enlazado en los mensajes de una tarea, solo mientras trabaja en esa tarea.
+- Prepara cambios en ese documento. Cada uno espera tu OK, como arriba.
+- Crea documentos privados nuevos en tu Google Drive.
+
+No busca en tu Drive. Ve comentarios, accesos compartidos y sugerencias solo en los documentos que ella creó. Para más necesitaría acceso a todo tu Drive, y no lo pide.
+
+Google Docs se abre poco a poco. Si aún no está en **+ Añadir**, ya llega.
+
+En tu propio ordenador, tu Machine puede crear un documento de Google nuevo en una cuenta de Gmail con sesión iniciada allí que ya tenga acceso a Drive. No lee tus otros Google Docs ni sus comentarios.
 
 ## Trabajo o personal
 
@@ -72,4 +81,4 @@ Microsoft OneDrive sigue la etiqueta de trabajo o personal de su conexión, como
 
 ## Quítalo
 
-En el panel: **Conexiones**, abre Microsoft OneDrive, **Detalles** y luego **Desconectar**. Deja de leer. Lo que ya trajo se queda.
+En el panel: **Conexiones**, abre Microsoft OneDrive o Google Docs, **Detalles** y luego **Desconectar**. Deja de leer. Lo que ya trajo se queda.

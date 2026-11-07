@@ -61,10 +61,19 @@ Es prüft, ob die Anmeldung Dokumente lesen darf. Ohne dieses OK wird es nicht h
 
 ## Google Docs
 
-Google Docs lassen sich noch nicht verbinden. Zum Lesen braucht es eine Google-Berechtigung, nach der The Machine noch nicht fragt. Was heute geht:
+Öffne auf einer gehosteten Machine **Verbindungen**, dann **+ Hinzufügen**, und wähle **Google Docs**. Google bittet dich zu erlauben, dass sie die Dokumente sieht und bearbeitet, auf die du sie hinweist, und neue erstellt. Gmail muss nicht verbunden sein, und dein Gmail-Zugriff ändert sich nicht.
 
-- Auf deinem eigenen Computer kann deine Machine ein neues Google-Dokument in einem dort angemeldeten Gmail-Konto anlegen, das schon Zugriff auf Drive hat. Deine anderen Google Docs und ihre Kommentare liest sie nicht.
-- Eine gehostete Machine kann Google Docs noch nicht nutzen.
+Dann kann deine Machine:
+
+- Ein Google-Dokument lesen, das in den Nachrichten einer Aufgabe verlinkt ist, nur solange sie an dieser Aufgabe arbeitet.
+- Änderungen an diesem Dokument vorbereiten. Jede wartet auf dein OK, wie oben.
+- Neue private Dokumente in deinem Google Drive erstellen.
+
+Sie durchsucht dein Drive nicht. Kommentare, Freigaben und Vorschläge sieht sie nur bei Dokumenten, die sie erstellt hat. Mehr bräuchte Zugriff auf dein ganzes Drive, und danach fragt sie nicht.
+
+Google Docs wird Schritt für Schritt freigeschaltet. Steht es noch nicht unter **+ Hinzufügen**, kommt es bald.
+
+Auf deinem eigenen Computer kann deine Machine ein neues Google-Dokument in einem dort angemeldeten Gmail-Konto erstellen, das schon Zugriff auf Drive hat. Deine anderen Google Docs und ihre Kommentare liest sie nicht.
 
 ## Arbeit oder privat
 
@@ -72,4 +81,4 @@ Microsoft OneDrive folgt der Kennzeichnung Arbeit oder privat seiner Verbindung,
 
 ## Entfernen
 
-Im Dashboard: **Verbindungen**, Microsoft OneDrive öffnen, **Details**, dann **Trennen**. Es hört auf zu lesen. Was es schon reingebracht hat, bleibt.
+Im Dashboard: **Verbindungen**, Microsoft OneDrive oder Google Docs öffnen, **Details**, dann **Trennen**. Es hört auf zu lesen. Was es schon reingebracht hat, bleibt.

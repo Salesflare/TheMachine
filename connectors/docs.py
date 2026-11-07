@@ -64,6 +64,8 @@ READ_SCOPE = 'https://www.googleapis.com/auth/drive.readonly'
 REPLY_SCOPE = 'https://www.googleapis.com/auth/drive'
 MS_SCOPE = 'Files.Read.All'
 DOCS_READ_SCOPE = 'https://www.googleapis.com/auth/documents.readonly'  # a Google Doc's text by its id (not restricted)
+DOCS_SCOPE = 'https://www.googleapis.com/auth/documents'  # a Google Doc by its id, and an owner-approved edit to it (not restricted)
+GOOGLE_DOCS = 'google_docs'  # Google Docs with its own sign-in and broker (google_docs_broker): documents and drive.file only
 DOC_LINK = re.compile(r'https://docs\.google\.com/document/d/([A-Za-z0-9_-]{20,100})')
 MAX_FOUND = 10
 FILE_SCOPE = 'https://www.googleapis.com/auth/drive.file'  # Google: only files this app created (a new doc)
@@ -105,6 +107,10 @@ def signin(config, account, helpers):
     if not email:
         raise helpers.SourceError('docs_no_email')
     kind = provider(config, account)
+    if kind == 'google' and account.get('own_grant') and account.get('transport') == 'broker':
+        # its own Google sign-in (a hosted Machine's Connect Google Docs), never Gmail's: kept as provider google_docs
+        return {'id': account['id'], 'email': email, 'transport': 'broker', 'provider': GOOGLE_DOCS,
+                **{k: account[k] for k in ('connected_at',) if account.get(k)}}
     if kind == 'microsoft' and account.get('own_grant') and account.get('transport') == 'broker':
         return {'id': account['id'], 'email': email, 'transport': 'broker',
                 **{k: account[k] for k in ('connected_at',) if account.get(k)}}
@@ -121,6 +127,12 @@ def signin(config, account, helpers):
             **{k: base[k] for k in ('credential', 'connected_at') if base.get(k)}}
 
 
+def google_scopes(config, helpers, sign):
+    """The scopes the owner granted this Google sign-in, at its own broker (Gmail's, or Google Docs' own)."""
+    import google_api  # noqa: PLC0415
+    return set(google_api.scopes(config, helpers.credential, sign, provider=sign.get('provider') or 'google'))
+
+
 class Google:
     def __init__(self, config, account, helpers):
         import google_api
@@ -131,7 +143,7 @@ class Google:
         """The scopes this sign-in has (asked once; unknown: none)."""
         if not hasattr(self, '_granted'):
             try:
-                self._granted = set(self.api.scopes(self.config, self.helpers.credential, self.signin))
+                self._granted = google_scopes(self.config, self.helpers, self.signin)
             except Exception:  # noqa: BLE001 - unknown: the call itself says what is missing
                 self._granted = set()
         return self._granted
@@ -146,7 +158,8 @@ class Google:
         scope = scope or self.read_scope()
         try:
             return self.api.call(self.config, self.helpers.credential, self.signin, method, params, scope, body=body,
-                                 write=write, raw=raw, limit=limit, **({'content_type': content_type} if content_type else {}))
+                                 write=write, raw=raw, limit=limit, provider=self.signin.get('provider') or 'google',
+                                 **({'content_type': content_type} if content_type else {}))
         except self.api.BrokerError as error:
             if error.category == 'google_scope_not_granted':
                 raise self.helpers.SourceError('docs_not_connected', error.status) from None
@@ -219,8 +232,8 @@ class Google:
         return doc_suggestions(doc)
 
     def text(self, file_id):
-        if self.read_scope() != READ_SCOPE and DOCS_READ_SCOPE in self.granted():
-            return self.doc_text(file_id)  # no drive.readonly: a Google Doc by its id, with documents.readonly
+        if self.read_scope() != READ_SCOPE and self.granted() & {DOCS_READ_SCOPE, DOCS_SCOPE}:
+            return self.doc_text(file_id)  # no drive.readonly: a Google Doc by its id, with documents(.readonly)
         info = self.call('drive.files.get', {'fileId': file_id, 'fields': 'id,name,mimeType,webViewLink', 'supportsAllDrives': True})
         mime = EXPORT.get(info.get('mimeType'))
         if not mime:
@@ -232,7 +245,7 @@ class Google:
     def doc_text(self, file_id):
         """A Google Doc's title, link and text through the Docs API (documents.readonly): Google Docs only."""
         try:
-            doc = self.call('docs.documents.get', {'documentId': file_id}, scope=DOCS_READ_SCOPE)
+            doc = self.call('docs.documents.get', {'documentId': file_id}, scope=self.docs_scope())
         except self.helpers.SourceError as error:
             if error.status in (400, 404):
                 raise self.helpers.SourceError('docs_text_unsupported', error.status) from None
@@ -240,6 +253,10 @@ class Google:
         import doc_writes  # noqa: PLC0415
         text = '\n'.join(p['text'] for p in doc_writes.google_paragraphs(doc))
         return {'name': doc.get('title'), 'webViewLink': doc_writes.google_link(file_id)}, text
+
+    def docs_scope(self):
+        """The Docs API scope for a doc by its id: documents.readonly when granted (reads only), else documents."""
+        return DOCS_READ_SCOPE if DOCS_READ_SCOPE in self.granted() or DOCS_SCOPE not in self.granted() else DOCS_SCOPE
 
     def find(self, words):
         """Docs matching these words: Drive's full-text search with drive.readonly, else among the docs this app made
@@ -715,8 +732,7 @@ def replies_on(config, account, helpers):
     if account.get('shared') or provider(config, account) != 'google':
         return False
     try:
-        import google_api
-        return REPLY_SCOPE in google_api.scopes(config, helpers.credential, signin(config, account, helpers))
+        return REPLY_SCOPE in google_scopes(config, helpers, signin(config, account, helpers))
     except Exception:  # noqa: BLE001 - unknown means off: the draft stays a draft to post by hand
         return False
 
@@ -856,9 +872,9 @@ def writes_on(config, account, helpers):
             import ms_graph
             granted = {str(s).rsplit('/', 1)[-1] for s in ms_graph.scopes(config, helpers.credential, sign)}
             return {'create', 'edit'} if MS_WRITE_SCOPE in granted else set()
-        import google_api
-        granted = google_api.scopes(config, helpers.credential, sign)
-        return {'create', 'edit'} if REPLY_SCOPE in granted else {'create'} if FILE_SCOPE in granted else set()
+        granted = google_scopes(config, helpers, sign)
+        # drive does both; documents edits a doc by its id, drive.file makes a new one (a Google Docs sign-in has these two)
+        return ({'create'} if granted & {REPLY_SCOPE, FILE_SCOPE} else set()) | ({'edit'} if granted & {REPLY_SCOPE, DOCS_SCOPE} else set())
     except Exception:  # noqa: BLE001 - unknown means off: the change stays text in the to-do
         return set()
 
@@ -877,12 +893,20 @@ class Writer:
         """Google: drive when granted (any doc), else drive.file (only docs this app created)."""
         if self.gog:
             return self.source.drive_scope()
+        granted = self.granted()
+        return REPLY_SCOPE if REPLY_SCOPE in granted or FILE_SCOPE not in granted else FILE_SCOPE
+
+    def granted(self):
+        """The Google sign-in's scopes (unknown: none)."""
         import google_api
         try:
-            granted = google_api.scopes(self.config, self.helpers.credential, self.source.signin)
+            return google_scopes(self.config, self.helpers, self.source.signin)
         except google_api.BrokerError:
-            granted = set()
-        return REPLY_SCOPE if REPLY_SCOPE in granted or FILE_SCOPE not in granted else FILE_SCOPE
+            return set()
+
+    def docs_write_scope(self):
+        """An edit through the Docs API: drive when granted, else documents (a Google Docs sign-in's)."""
+        return DOCS_SCOPE if not self.gog and REPLY_SCOPE not in self.granted() and DOCS_SCOPE in self.granted() else REPLY_SCOPE
 
     def make(self, token, title, body, upload, fill):
         """A new Google Doc in the owner's My Drive, tagged with this write's token (appProperties) so an unclear outcome
@@ -909,10 +933,12 @@ class Writer:
 
     # Google Docs
     def document(self, file_id):
-        return self.source.call('docs.documents.get', {'documentId': file_id})
+        # a Google Docs sign-in (documents, drive.file) reads any doc by its id with documents, not only the ones it made
+        scope = DOCS_SCOPE if not self.gog and DOCS_SCOPE in self.granted() and READ_SCOPE not in self.granted() else None
+        return self.source.call('docs.documents.get', {'documentId': file_id}, **({'scope': scope} if scope else {}))
 
     def update(self, file_id, requests, revision):
-        return self.source.call('docs.documents.batchUpdate', {'documentId': file_id}, scope=REPLY_SCOPE, write=True,
+        return self.source.call('docs.documents.batchUpdate', {'documentId': file_id}, scope=self.docs_write_scope(), write=True,
                                 body={'requests': requests, 'writeControl': {'requiredRevisionId': revision}})
 
     def written(self, token):

@@ -3317,6 +3317,8 @@
  "Reading your mail, first to-dos in a few minutes": "Reading your mail, first to-dos in a few minutes",
  "Reads accounts, contacts, emails and meetings. Changes nothing.": "Reads accounts, contacts, emails and meetings. Changes nothing.",
  "Reads again at {}": "Reads again at {}",
+ "Reads and edits the Google Docs you point it to, and makes new ones.": "Reads and edits the Google Docs you point it to, and makes new ones.",
+ "Reads and edits the docs you point it to, and makes new ones. Edits wait for your OK.": "Reads and edits the docs you point it to, and makes new ones. Edits wait for your OK.",
  "Reads cards, comments and activity on one board you pick next. Never changes anything in Trello.": "Reads cards, comments and activity on one board you pick next. Never changes anything in Trello.",
  "Reads comments, mentions, suggestions and shares.": "Reads comments, mentions, suggestions and shares.",
  "Reads everything. Sends nothing you didn’t approve.": "Reads everything. Sends nothing you didn’t approve.",

@@ -146,15 +146,23 @@ def docs_write_transport(config):
     return doc_writes.DocWriteTransport(config, plugin, CONNECTOR_HELPERS) if plugin and hasattr(plugin, 'Writer') else None
 
 
-def doc_write_files(db, event_ids):
-    """The docs this task's own doc events are about, {file_id: {account_id, doc_title, provider}}: the ones a doc_write
-    may edit."""
+def doc_write_files(db, event_ids, config=None, area=None):
+    """The docs a doc_write may edit, {file_id: {account_id, doc_title, provider}}: the ones this task's own doc events are
+    about, and with config, a Google Doc linked in the task's messages, through the owner's Google Docs connection in the
+    to-do's area that can do things (a hosted Machine's Connect Google Docs reads and edits a doc by its id)."""
     found = {}
     for r in db.execute("SELECT e.account_id,e.metadata FROM events e JOIN json_each(?) ids ON ids.value=e.id "
                         "WHERE e.kind LIKE 'docs.%' ORDER BY e.occurred_at", (event_ids,)):
         m = json.loads(r[1])
         if m.get('file_id'):
             found[str(m['file_id'])] = {'account_id': r[0], 'doc_title': m.get('doc_title'), 'provider': m.get('provider')}
+    plugin = load_connector('docs') if config else None
+    google = [a for a in (config or {}).get('accounts') or () if plugin and a.get('service') == 'docs' and not a.get('shared')
+              and abilities.actions_on(a) and doc_writes.fits(a.get('boundary'), area) and plugin.provider(config, a) == 'google']
+    if google:
+        for r in db.execute("SELECT e.body,e.metadata FROM events e JOIN json_each(?) ids ON ids.value=e.id ORDER BY e.occurred_at", (event_ids,)):
+            for file_id in plugin.doc_links(str(r[0] or '') + ' ' + str(r[1] or '')):
+                found.setdefault(file_id, {'account_id': google[0]['id'], 'doc_title': None, 'provider': 'google'})
     return found
 
 
@@ -188,7 +196,7 @@ def doc_write_prompt(config):
             "unless their message in this turn asks for that change: then save it with do_now:true and it is made now. Sharing a doc "
             "always waits for their OK (a step after it). The shapes: {kind:'doc_write',op:'create',account_id,title,body} (body plain text, '# ' to '### ' lines are headings; the title is the doc's name and "
             "the to-do shows it, so the body doesn't start with it again) or "
-            "{kind:'doc_write',op:'edit',file_id:<metadata.file_id of this task's doc event>,changes:[{find,replace} | {after,insert} | {append}]}. "
+            "{kind:'doc_write',op:'edit',file_id:<metadata.file_id of this task's doc event, or the id in a Google Doc link in this task's messages>,changes:[{find,replace} | {after,insert} | {append}]}. "
             "A new doc goes only to a place in this to-do's own area (Work at that company, or Personal, as its accounts are), and to the one with "
             "the conversation's own address when that one can; never to another area's account. When none fits, draft no doc: give its text in "
             "the to-do and say needs:'Connect Google Docs or Microsoft OneDrive for Work' (or for Personal). Name the place exactly as listed "
@@ -266,7 +274,7 @@ def load_connector(service):
 # Not Slack: until The Machine's Slack app is in the Slack Marketplace, + Add connects Slack through Maton; Sign in with
 # Slack shows only on the setup page, for the workspaces the control plane opens it to (its cloud/slack_app.py open_for).
 HOSTED_SIGNINS = {'google', 'microsoft', 'zoom', 'stripe', 'intercom', 'trello', 'github', 'whatsapp', 'android', 'microsoft_docs',
-                  'microsoft_docs_write', 'codex', 'google_meet'}
+                  'microsoft_docs_write', 'codex', 'google_meet', 'google_docs'}
 
 
 # Connected but silent: a source whose polls succeed while its real read keeps failing and nothing new arrives (the

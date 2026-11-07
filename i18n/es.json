@@ -3317,6 +3317,8 @@
  "Reading your mail, first to-dos in a few minutes": "Leyendo tu correo, tus primeras tareas llegan en unos minutos",
  "Reads accounts, contacts, emails and meetings. Changes nothing.": "Lee cuentas, contactos, correos y reuniones. No cambia nada.",
  "Reads again at {}": "Vuelve a leer a las {}",
+ "Reads and edits the Google Docs you point it to, and makes new ones.": "Lee y edita los Google Docs que le indicas, y crea otros nuevos.",
+ "Reads and edits the docs you point it to, and makes new ones. Edits wait for your OK.": "Lee y edita los documentos que le indicas, y crea otros nuevos. Los cambios esperan tu OK.",
  "Reads cards, comments and activity on one board you pick next. Never changes anything in Trello.": "Lee tarjetas, comentarios y actividad de un tablero que eliges a continuación. Nunca cambia nada en Trello.",
  "Reads comments, mentions, suggestions and shares.": "Lee comentarios, menciones, sugerencias y documentos compartidos.",
  "Reads everything. Sends nothing you didn’t approve.": "Lo lee todo. No envía nada que no hayas aprobado.",
