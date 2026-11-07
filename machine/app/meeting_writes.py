@@ -1,7 +1,9 @@
 """Meeting writes in the service (meeting_writer.py writes them): the queue a meeting note or a calendar change waits in,
-its worker and one run with the model (meeting_write_run), resumed after a restart. Moved out of assistant.App as is. A
-mixin of assistant.App (APP_MIXINS)."""
+its worker and one run with the model (meeting_write_run), resumed after a restart; and the meeting_notes tool that reads
+and adds a meeting's Notes and Transcript. Moved out of assistant.App as is. A mixin of assistant.App (APP_MIXINS)."""
+import datetime as dt
 import logging
+import re
 import sqlite3
 import threading
 import time
@@ -12,7 +14,7 @@ import meeting_notes
 import meeting_writer
 from models import background_model, has_model
 from sources import CALENDAR_SERVICES
-from timeutil import now
+from timeutil import local_tz, now
 
 LOG = logging.getLogger('personal-assistant')
 
@@ -167,3 +169,48 @@ class MeetingWritesApp:
             return
         if left:
             self.meeting_write_kick()
+
+    def meeting_notes(self, args, owner_dashboard=False, limit=meeting_notes.READ_CHARS):
+        """A meeting's Notes and Transcript (meeting_notes.py). Without event_id: the meetings of a day (day, YYYY-MM-DD,
+        today when left out; query narrows them by title), to find the one. With event_id: both, added ones and Zoom's
+        (field reads only one, offset reads on). With text: add to field (notes when left out; append:true below what it
+        has), or remove:true. Saving never moves text to the other field. The owner adds them on the meeting in the
+        Calendar, a Do it run or the owner's chat with its tool; a signal review only reads them, since what it reads
+        can't tell it what to write."""
+        writes = 'text' in args or args.get('remove') is True
+        session = str(args.get('_notes_session') or '')
+        if writes and not owner_dashboard and re.match(r'agent:main:assistant-review-(?!preparation-)', session):
+            raise ValueError('Reviews read meeting notes; the owner or a Do it run adds them')
+        calendars = [a['id'] for a in self.config['accounts'] if a.get('service') in CALENDAR_SERVICES]
+        with self.store.connect() as db:
+            if args.get('event_id') in (None, ''):
+                day = str(args.get('day') or dt.datetime.now(local_tz()).date().isoformat())
+                try:
+                    dt.date.fromisoformat(day)
+                except ValueError:
+                    raise ValueError('day is YYYY-MM-DD') from None
+                return {'day': day, 'meetings': meeting_notes.meetings_on(db, calendars, day, local_tz(), str(args.get('query') or '')[:200])}
+            event = meeting_notes.meeting(db, args.get('event_id'))
+            if not event or event['account_id'] not in calendars:
+                raise ValueError('No meeting with that event_id. Find it with day (and query) first')
+            if not writes:
+                try:
+                    offset = max(0, int(args.get('offset') or 0))
+                except (TypeError, ValueError):
+                    raise ValueError('offset is a number') from None
+                found = meeting_notes.read(db, event['id'], offset, limit, args.get('field') or None)
+                if owner_dashboard and not args.get('field'):  # the Calendar: Generate notes, while it writes (meeting_writer.py)
+                    found['writing'] = meeting_writer.view(db, event['id'])
+                return found
+            field = args.get('field') or 'notes'
+            meeting_notes.field_kind(field)
+            text = '' if args.get('remove') is True else args.get('text')
+            if not isinstance(text, str) or (not text.strip() and args.get('remove') is not True):
+                raise ValueError('text is the notes or transcript, as Markdown; remove:true takes them off')
+            db.execute('BEGIN IMMEDIATE')
+            saved, write = meeting_notes.plan(db, event['id'], text, 'owner' if owner_dashboard else 'machine', now(), args.get('append') is True, field)
+            if write:
+                saved.update(self.store.save_meeting_notes(db, write))
+        if getattr(self, 'graph_dirty', None):
+            self.graph_dirty.set()  # the notes show on the timelines of the people in the meeting
+        return saved

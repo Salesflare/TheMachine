@@ -122,17 +122,18 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   and `machine/store/promises.py` (the `VoicesStore`, `FactsStore` and `PromisesStore` mixins),
   `machine/store/views.py`, `machine/store/profile.py` and `machine/store/first_look.py` (the `ViewsStore`,
   `ProfileStore` and `FirstLookStore` mixins), `machine/store/machine_cards.py` (the `MachineCardsStore` mixin: The
-  Machine's own to-dos, through `Store.machine_card`), `machine/web/serving.py` (the dashboard page, hosts, CSRF, compression,
-  ETags, status) and `machine/web/waiting.py` (`KeyWaitingPage`, `message_key_keeper`), `machine/web/handler.py`
-  (`make_handler(app)`: the dashboard's HTTP `Handler`, out of `App.serve`), `machine/app/talk.py` (`TalkApp`: Talk's
-  view, actions, tools, drafts and sends), `machine/app/fleet.py` (`FleetApp`: attaching the Fleet, its pings,
-  notices, votes, shared learnings and connectors), follow-up and promise steps into `FollowUpsApp` and
-  `PromiseChecksApp` (`machine/app/follow_ups.py`, `promise_checks.py`), the graph worker and timeline methods into
-  `GraphActionsApp` (`machine/app/graph_actions.py`), `machine/app/card_chat.py` (`CardChatApp`: a to-do's chat turn,
-  its models, stop and hand-offs), `machine/app/recap.py` (`RecapApp`: the weekly recap, its steps, view and choices),
-  `machine/store/conversation.py` and `machine/app/conversation.py` (`ConversationStore`, `ConversationApp`: what was
-  said around a to-do's source message), `machine/app/first_look.py` (`FirstLookApp`: the quick first review, the dig
-  after it and its ending, with their timing constants).
+  Machine's own to-dos, through `Store.machine_card`), `machine/web/serving.py` (the dashboard page, hosts, CSRF,
+  compression, ETags, status) and `machine/web/waiting.py` (`KeyWaitingPage`, `message_key_keeper`),
+  `machine/web/handler.py` (`make_handler(app)`: the dashboard's HTTP `Handler`, out of `App.serve`),
+  `machine/app/talk.py` (`TalkApp`: Talk's view, actions, tools, drafts and sends), `machine/app/fleet.py`
+  (`FleetApp`: attaching the Fleet, its pings, notices, votes, shared learnings and connectors), follow-up and promise
+  steps into `FollowUpsApp` and `PromiseChecksApp` (`machine/app/follow_ups.py`, `promise_checks.py`), the graph
+  worker and timeline methods into `GraphActionsApp` (`machine/app/graph_actions.py`), `machine/app/card_chat.py`
+  (`CardChatApp`: a to-do's chat turn, its models, stop and hand-offs), `machine/app/recap.py` (`RecapApp`: the weekly
+  recap, its steps, view and choices), `machine/store/conversation.py` and `machine/app/conversation.py`
+  (`ConversationStore`, `ConversationApp`: what was said around a to-do's source message), `machine/app/first_look.py`
+  (`FirstLookApp`: the quick first review, the dig after it and its ending, with their timing constants),
+  `App.meeting_notes` (the meeting_notes tool) into `MeetingWritesApp` (`machine/app/meeting_writes.py`).
 - **Dashboard code:** in its area's part in `dashboard/` (`<area>-<what>.js`: shell, todos, settings, graph, calendar,
   connections, help, events, new, fleet), next to the functions it works with, never at the end of the script. The
   page's core is in the `shell-*` parts too: locale and error reports (`shell-core.js`), network and outbox, `render()`
