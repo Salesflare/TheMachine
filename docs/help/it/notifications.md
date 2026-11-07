@@ -30,6 +30,25 @@ Come Slack, guarda se stai usando la dashboard, non solo se è aperta:
 
 Notifica solo ciò che ha bisogno di te. Avanzamenti e modifiche no. Una raffica vibra una volta sola. L'icona dell'app mostra quante attività hanno bisogno di te.
 
+## Pulsanti nelle notifiche
+
+Ogni notifica ha pulsanti per il passo successivo. Nell’app sul telefono:
+
+- Nuova attività: Fallo, Posticipa, Segna come fatto.
+- Bozza pronta: Apri bozza, Posticipa, Segna come fatto.
+- Risultato pronto: Apri, Segna come fatto, Posticipa.
+- Domanda, bloccata o accesso richiesto: Rispondi, Apri o Accedi, poi Posticipa e Segna come fatto.
+- Promemoria: Segna come fatto, Posticipa, Apri.
+- Riepilogo del mattino: toccalo per aprirlo.
+
+Un browser e Telegram ne mostrano due. Le domande del Fleet mantengono Rispondi una volta e Rifiuta.
+
+Da una notifica non si invia, non si paga e non si inoltra mai nulla. Una bozza si apre sempre prima, così la vedi prima che parta. Apri bozza mostra l’attività nella tua lista con la bozza completa. Fallo avvia solo il lavoro su una nuova attività.
+
+Nell’app, Posticipa e Segna come fatto chiedono prima di sbloccare. In un browser aprono la dashboard, che lo fa e mostra Annulla. Posticipa riporta l’attività tra due ore, o domani mattina su un promemoria.
+
+Le email con ciò che ti aspetta hanno i link Apri e Posticipa. Aprono solo la dashboard.
+
 ## Il riepilogo del mattino
 
 Arriva nei giorni lavorativi all'ora del **Riepilogo del mattino**, e salta solo quando non c'è niente da dire: nessuna riunione, niente in scadenza o di nuovo e nessuna attività in attesa. **Anteprima**, nella sua riga, lo mostra sulla pagina senza inviarlo. Di default è una push e un'email. La push dice quante attività aspettano, le prime due e l'ora della tua prima riunione. Toccando la push si apre oggi nel **Calendario**.

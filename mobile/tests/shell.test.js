@@ -241,6 +241,10 @@ test('inject: a tapped notification opens its to-do, and only a plain id', async
   const q = page('https://sam.app.themachine.computer/');
   await q.run({base: 'https://sam.app.themachine.computer/', tag: 'x"><script>'});
   assert.equal(q.win.location.hash, '');
+  // Open draft: the to-do in the list, where its draft shows in full
+  const d = page('https://sam.app.themachine.computer/');
+  await d.run({base: 'https://sam.app.themachine.computer/', tag: 'abc_12', card: true});
+  assert.equal(d.win.location.hash, 'card=abc_12');
 });
 
 test('inject: an app that shows the notification itself says so, and registers again at once after the update', async () => {

@@ -42,7 +42,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 }
 
-/// A notification's Prepare, Snooze and Mark done (MachineNotice.register): the dashboard's own decision, sent after
+/// A notification's Do it, Snooze and Mark done (MachineNotice.register): the dashboard's own decision, sent after
 /// the phone unlocks, without opening the app. Every other tap goes on to Capacitor's own delegate, as before.
 final class MachineActions: NSObject, UNUserNotificationCenterDelegate {
     static let shared = MachineActions()

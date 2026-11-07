@@ -1305,11 +1305,11 @@ def push_payload(rows, root):
         row = rows[0]
         return {'title': t("{}'s Machine asks", row['name']), 'body': question_text(row['kind'], json.loads(row['question']))[:200],
                 'url': root + '#fleet=' + row['id'], 'tag': 'fleet-' + row['id'],
-                # a free question opens on its draft, to read and edit before anything goes
-                'actions': [] if row['kind'] == 'anything' else [{'action': 'once', 'title': t('Accept') if row['kind'] in fleet_requests.STAGED else t('Answer once')}, {'action': 'decline', 'title': t('Decline')}]}
+                # a free question opens on its draft, to read and edit before anything goes (quick buttons: push.QUICK)
+                'actions': [{'action': 'open', 'title': t('Open draft')}] if row['kind'] == 'anything' else [{'action': 'once', 'title': t('Accept') if row['kind'] in fleet_requests.STAGED else t('Answer once')}, {'action': 'decline', 'title': t('Decline')}]}
     return {'title': t('{} Fleet questions wait for you', len(rows)),
             'body': ' · '.join(asks_line(r) for r in rows[:3]) + (' · …' if len(rows) > 3 else ''),
-            'url': root + '#fleet', 'tag': 'fleet-' + rows[0]['id']}
+            'url': root + '#fleet', 'tag': 'fleet-' + rows[0]['id'], 'actions': [{'action': 'open', 'title': t('Open')}]}
 
 
 def telegram_message(rows, root):
@@ -1377,7 +1377,7 @@ def notice_push(view, root):
                'seat_declined': 'Your Machine was not confirmed', 'friend_request': 'Friend request',
                'friend_accepted': 'Friends now'}.get(view['kind'], 'Fleet update'))
     return {'title': title, 'body': view['text'], 'url': (root + '#fleet=' + view['id']) if root else view['url'],
-            'tag': 'fleet-' + view['id']}
+            'tag': 'fleet-' + view['id'], 'actions': [{'action': 'open', 'title': t('Open')}]}
 
 
 FRIEND_SETTLED = {'accepted': 'Accepted: you and {name} are now Friends.',

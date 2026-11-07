@@ -15,7 +15,7 @@ import i18n
 import locale_prefs
 from machine.cards import plain
 from machine.config import LOG
-from machine.delivery.push import app_wake, push_node
+from machine.delivery.push import app_wake, push_node, quick_web
 from machine.delivery.telegram import DeliveryNotSent, telegram_request
 from machine.model_usage import telegram_account, telegram_on
 from machine.sources.android import android_app_name
@@ -397,7 +397,8 @@ class RecapApp:
             root = 'https://' + self.config['dashboard_host'] + self.config.get('dashboard_path', '/')
             try:
                 push_node(self.config, {'action': 'send', 'subscriptions': subscriptions,
-                                        'payload': {'title': i18n.t('Your week'), 'body': plain(body), 'url': root, 'tag': 'recap-' + week}})
+                                        'payload': {'title': i18n.t('Your week'), 'body': plain(body), 'url': root, 'tag': 'recap-' + week,
+                                                    'actions': quick_web('view')}})
             except (subprocess.TimeoutExpired, ValueError, KeyError) as error:
                 LOG.warning('push recap error=%s', type(error).__name__)
         try:

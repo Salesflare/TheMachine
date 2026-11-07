@@ -154,6 +154,8 @@ def push_notify(store, config, row, sender=None):
         if notify.kind_of(row) == 'result':  # a reminder for a prepared or stuck to-do: ready or needs-you, as a result says
             payload['_state'] = 'ready' if row.get('status') == 'prepared' else 'needs'
     payload['tag'] = row['id']  # a newer notification for the same card replaces the older one
+    blocked = bool(row.get('_result_notice')) and row['status'] != 'prepared' or row.get('preparation_status') == 'blocked'
+    payload['actions'] = quick_web(quick_kind(row, notify.kind_of(row), blocked, (row.get('preparation_browser') or {}).get('signin_url')))
     if row.get('_silent'):
         payload['silent'] = True  # later cards of a batch still reach the phone, without a second buzz
     return push_send(store, config, subscriptions, payload, 'suggestion=' + row['id'], sender, kind=notify.kind_of(row))
@@ -194,7 +196,8 @@ def report_done(store, config, suggestion_id, sender=None):
     root = 'https://' + config['dashboard_host'] + config.get('dashboard_path', '/') if config.get('dashboard_host') else ''
     payload = {'title': i18n.t('Done: {}', row['title']) if text else i18n.t('Done'),
                'body': plain(row['body'] or '') if text else '', 'url': root + '#chat=' + row['id'], 'tag': row['id'],
-               '_line': notify.app_line_text('Done: {}', row['title']) if text else i18n.t('Done'), '_state': 'ready'}
+               '_line': notify.app_line_text('Done: {}', row['title']) if text else i18n.t('Done'), '_state': 'ready',
+               'actions': quick_web('done')}
     return push_send(store, config, subscriptions, payload, 'done=' + row['id'], sender, kind='result')
 
 
@@ -282,8 +285,90 @@ def app_wake(store, config, kind, tag, device=None, state=None, line=None, detai
 
 
 # The phone app's notification buttons (app_notice): the dashboard's own decide choices, sent by the app with the
-# owner's sign-in. Prepare only for a to-do not started yet; sending and every final step open the app instead.
+# owner's sign-in. Do it only for a to-do not started yet; sending and every final step open the app instead.
 APP_BUTTONS = {'prepare': 'accept', 'snooze': 'snooze', 'done': 'complete'}
+
+
+# Quick buttons on every notification (docs/help/notifications.md, "Buttons on notifications"), by what the to-do
+# needs now. Nothing that sends, publishes, pays or submits ever runs from one: a draft opens in the app, where the
+# owner reads it first ('draft', 'open', 'answer' and 'signin' only open). Snooze, Mark done and Do it run from a
+# phone's notification after the phone unlocks (iOS authenticationRequired, Android setAuthenticationRequired); a
+# browser can't ask for that, so there they open the dashboard, which does it and offers Undo (sw.js, #quick=).
+# 'web': the browser's and Telegram's (at most two), 'app': the phone app's (at most three). The first leads.
+QUICK = {
+    'new': {'web': ('snooze2h', 'open'), 'app': ('prepare', 'snooze2h', 'done')},
+    'draft': {'web': ('draft', 'snooze2h'), 'app': ('draft', 'snooze2h', 'done')},
+    'ready': {'web': ('open', 'done'), 'app': ('open', 'done', 'snooze2h')},
+    'question': {'web': ('answer', 'snooze2h'), 'app': ('answer', 'snooze2h', 'done')},
+    'stuck': {'web': ('open', 'snooze2h'), 'app': ('open', 'snooze2h', 'done')},
+    'signin': {'web': ('signin', 'snooze2h'), 'app': ('signin', 'snooze2h', 'done')},
+    'preparing': {'web': ('open',), 'app': ('snooze2h', 'done')},
+    'reminder': {'web': ('done', 'snooze'), 'app': ('done', 'snooze', 'open')},
+    'done': {'web': ('open',), 'app': ('open',)},
+    'view': {'web': ('open',), 'app': ()},  # the morning, the week, a Fleet update: it only opens (a tap, on a phone)
+}
+QUICK_OPENS = ('open', 'draft', 'answer', 'signin')
+# What a button does: the dashboard's decide choice and its snooze time (Snooze alone is until tomorrow, as on a card)
+# A button's decision from the phone app carries this decision id prefix (NotificationActions, MachineNotice.decide).
+# From a notification, Do it only starts a to-do not started yet (notice_decision_refused): never a Do it on a draft or
+# result, and never the step a Claude Code or Codex job left for the owner (card_chat.owner_do_it), which they see first.
+NOTICE_DECISION = 'notify-'
+NOTICE_CHOICES = ('accept', 'snooze', 'complete')
+
+
+def notice_decision_refused(db, suggestion_id, choice):
+    """Why a phone notification's button may not make this decision, or None. Only Do it (accept), Snooze and Mark done
+    come from a notification; Do it only on a to-do still waiting to start, with no Claude Code or Codex work on it."""
+    if choice not in NOTICE_CHOICES:
+        return 'Open the to-do to do this.'
+    if choice != 'accept':
+        return None
+    row = db.execute('SELECT status FROM suggestions WHERE id=?', (str(suggestion_id),)).fetchone()
+    if not row or row['status'] != 'pending':
+        return 'Open the to-do to do this.'
+    if db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='agent_jobs'").fetchone() and \
+            db.execute('SELECT 1 FROM agent_jobs WHERE suggestion_id=? LIMIT 1', (str(suggestion_id),)).fetchone():
+        return 'Open the to-do to do this.'
+    return None
+
+
+QUICK_RUNS = {'prepare': ('accept', None), 'snooze2h': ('snooze', '2h'), 'snooze': ('snooze', 'tomorrow'), 'done': ('complete', None)}
+QUICK_LABELS = {'open': 'Open', 'draft': 'Open draft', 'answer': 'Answer', 'signin': 'Sign in', 'prepare': 'Do it',
+                'snooze2h': 'Snooze', 'snooze': 'Snooze', 'done': 'Mark done'}
+
+
+def quick_kind(row, kind=None, blocked=None, signin=None):
+    """Which notification a to-do's is, for its buttons (QUICK): new, draft, ready, question, stuck, signin,
+    preparing, reminder or done. kind (notify.KINDS) says a snooze or a wait came back."""
+    if reported(row):
+        return 'done'
+    blocked = row.get('preparation_status') == 'blocked' if blocked is None else blocked
+    if blocked:
+        return 'signin' if signin else 'stuck'
+    status = row.get('status')
+    if status == 'prepared':
+        try:
+            outcome = json.loads(row.get('outcome') or '{}') or {}
+        except (TypeError, ValueError):
+            outcome = {}
+        if str(outcome.get('needs') or '').strip():
+            return 'question'
+        if outcome.get('state') == 'snoozed' and kind == 'reminder':
+            return 'reminder'
+        try:
+            steps = next_actions.visible_actions(row.get('next_action'))
+        except (TypeError, ValueError, AttributeError):
+            steps = []
+        return 'draft' if any(s.get('kind') in next_actions.APPROVE_KINDS for s in steps) else 'ready'
+    if status in ('accepted', 'instructions', 'local_preparation'):
+        return 'preparing'
+    return 'reminder' if kind == 'reminder' else 'new'
+
+
+def quick_web(which, t=None):
+    """A web push's buttons, [{action, title}], in the owner's language."""
+    t = t or i18n.t
+    return [{'action': a, 'title': t(QUICK_LABELS[a])} for a in QUICK[which]['web']]
 
 
 APP_BODY = 120
@@ -295,9 +380,11 @@ APP_GONE = ('completed', 'rejected', 'snoozed')  # no longer waiting: its phone 
 APP_EMPTY = 'Tap to open.'  # the body when there is nothing to say under the title, or Text in notifications is off
 
 
-def app_notice(store, config, tag):
+def app_notice(store, config, tag, kind=None, version=1):
     """What the phone app's notification for a wakeup says (GET /api/notice): {line, title, body, actions, labels,
     events}, or {gone: True} for a to-do no longer waiting (done, snoozed, not needed), whose notification goes.
+    An app from version 2 on (it asks with v=2 and the wakeup's kind) gets the quick buttons (QUICK); an older app
+    the three it knows, Do it, Snooze (until tomorrow) and Mark done.
     title is the to-do's state and title ("Ready: Pay the Monizze invoice"), body the next step ("Reply to Sam:
     confirm Tuesday 10:00"). With Text in notifications off (or a Careful work to-do): only the fixed words.
     A tag that is no to-do (the morning, a Fleet question): the line and body kept for it (notify.app_line)."""
@@ -319,7 +406,8 @@ def app_notice(store, config, tag):
         if reported(row):  # its confirmed step closed it: what happened, nothing left to tap but Open
             title = notify.app_line_text('Done: {}', row['title']) if text else i18n.t('Done')
             body = notify.clip(first_sentence(row.get('body') or ''), APP_BODY) if text else ''
-            return {'line': title, 'title': title, 'body': body or i18n.t(APP_EMPTY), 'actions': [], 'labels': {'open': i18n.t('Open')}}
+            return {'line': title, 'title': title, 'body': body or i18n.t(APP_EMPTY), 'actions': list(QUICK['done']['app']) if version >= 2 else [],
+                    'labels': {'open': i18n.t('Open')}}
         if row['status'] in APP_GONE:
             return {'gone': True}
         blocked = row.get('preparation_status') == 'blocked'
@@ -346,10 +434,17 @@ def app_notice(store, config, tag):
     else:  # what it is is in its title ("Waiting on Sam: the quote"): nothing in front
         title = notify.clip(row['title'], notify.APP_LINE) if text else t('To-do')
     body = (notify.clip(app_next_step(row, blocked), APP_BODY) if text else '') or t(APP_EMPTY)
+    events = {'prepare': t('Preparing it'), 'snooze': t('Snoozed it'), 'done': t('Marked it done'),
+              'failed': t('Couldn’t reach your Machine. Open the app to try again.')}
+    if version >= 2:
+        which = quick_kind(row, kind, blocked, browser.get('signin_url'))
+        if which == 'reminder':  # a snooze that came back says so, as its web push does
+            title = notify.app_line_text(leads['Reminder'][0], row['title']) if text else leads['Reminder'][1]
+        return {'line': title, 'title': title, 'body': body, 'actions': list(QUICK[which]['app']),
+                'labels': {a: t(label) for a, label in QUICK_LABELS.items()}, 'events': {**events, 'snooze2h': t('Snoozed it')}}
     return {'line': title, 'title': title, 'body': body, 'actions': buttons,
             'labels': {'prepare': t('Do it'), 'snooze': t('Snooze'), 'done': t('Mark done'), 'open': t('Open')},
-            'events': {'prepare': t('Preparing it'), 'snooze': t('Snoozed it'), 'done': t('Marked it done'),
-                       'failed': t('Couldn’t reach your Machine. Open the app to try again.')}}
+            'events': events}
 
 
 def app_next_step(row, blocked=False):

@@ -86,6 +86,7 @@ public class MachineShellPlugin extends Plugin {
 
     private JSONObject pendingShare;
     private String pendingTag;
+    private boolean pendingCard;
     private String injectSource;
 
     @Override
@@ -785,7 +786,9 @@ public class MachineShellPlugin extends Plugin {
         String tag = intent.getStringExtra("tag"); // a tapped notification (FCM data: kind, tag)
         if (tag != null && TAG.matcher(tag).matches()) {
             pendingTag = tag;
+            pendingCard = intent.getBooleanExtra("card", false);
             intent.removeExtra("tag");
+            intent.removeExtra("card");
             String url = bridge.getWebView().getUrl();
             if (url != null && machine() != null && url.startsWith(machine())) onMachinePage(url);
         }
@@ -949,7 +952,9 @@ public class MachineShellPlugin extends Plugin {
             }
             if (pendingTag != null) {
                 payload.put("tag", pendingTag);
+                if (pendingCard) payload.put("card", true);
                 pendingTag = null;
+                pendingCard = false;
             }
             bridge.getWebView().evaluateJavascript("(" + inject() + ")(" + payload + ")", null);
         } catch (JSONException e) {

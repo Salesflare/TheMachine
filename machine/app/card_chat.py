@@ -23,6 +23,7 @@ import i18n
 from machine import names as display_names
 from machine.browser import run_tab
 from machine.cards import CHAT_HANDLE
+from machine.delivery.push import NOTICE_DECISION
 from machine.chat import (
     AGENT_DO_IT_NOTE,
     AGENT_WORK_NOTE,
@@ -528,6 +529,8 @@ class CardChatApp:
             job = row and {'suggestion_id': row['suggestion_id'], 'decision_id': row['decision_id'], 'ahead': bool(row['early']), 'finish': row['action_id']}
         if not isinstance(job, dict) or job.get('ahead') or job.get('finish') or not job.get('decision_id'):
             return False
+        if str(job['decision_id']).startswith(NOTICE_DECISION):
+            return False  # a notification's button: the owner hasn't seen the job's result (push.notice_decision_refused)
         if latest['status'] != 'result' or latest['outcome'] in ('done', 'set_aside'):
             return False
         tap = db.execute("SELECT created_at FROM decisions WHERE id=? AND suggestion_id=? AND choice='accept' AND source IN ('dashboard','telegram')",

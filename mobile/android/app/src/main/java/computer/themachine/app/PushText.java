@@ -51,14 +51,24 @@ final class PushText {
 
     /**
      * The dashboard's own decision for a notification button, or null for one the phone never does from a
-     * notification: Prepare starts a to-do not started yet, Snooze is until tomorrow, Mark done closes it. Sending and
-     * every final step open the app instead.
+     * notification: Do it starts a to-do not started yet, Snooze (snooze2h, 2 hours; on a reminder until tomorrow) snooze it, Mark done
+     * closes it. Sending and every final step open the app instead (opens).
      */
     static String choice(String action) {
         if ("prepare".equals(action)) return "accept";
-        if ("snooze".equals(action)) return "snooze";
+        if ("snooze".equals(action) || "snooze2h".equals(action)) return "snooze";
         if ("done".equals(action)) return "complete";
         return null;
+    }
+
+    /** A button that only opens the to-do in the app (Open, Open draft, Answer, Sign in): nothing runs from it. */
+    static boolean opens(String action) {
+        return "open".equals(action) || "draft".equals(action) || "answer".equals(action) || "signin".equals(action);
+    }
+
+    /** How long a snooze button snoozes for, as the dashboard names it. */
+    static String snoozeFor(String action) {
+        return "snooze2h".equals(action) ? "2h" : "tomorrow";
     }
 
     /** The POST api/action body for a button, as the dashboard sends it; null for anything that isn't one. */
@@ -66,7 +76,7 @@ final class PushText {
         String choice = choice(action);
         if (choice == null || tag == null || !TAG.matcher(tag).matches() || decisionId == null || !decisionId.matches("[A-Za-z0-9-]{8,64}")) return null;
         return "{\"action\":\"decide\",\"args\":{\"suggestion_id\":\"" + tag + "\",\"choice\":\"" + choice + "\",\"feedback\":\"\","
-            + ("snooze".equals(choice) ? "\"snooze_option\":\"tomorrow\"," : "") + "\"decision_id\":\"" + decisionId + "\"}}";
+            + ("snooze".equals(choice) ? "\"snooze_option\":\"" + snoozeFor(action) + "\"," : "") + "\"decision_id\":\"" + decisionId + "\"}}";
     }
 
     /** The Origin a button's request carries: the saved Machine's own, as its page sends (the Machine checks it). */
@@ -88,9 +98,12 @@ final class PushText {
         return "machine-" + kind + (state == null || state.isEmpty() ? "" : "-" + state);
     }
 
-    /** The saved Machine's address for a wakeup's line, or null for anything that isn't a plain id. */
-    static String noticeUrl(String machine, String tag) {
+    /**
+     * The saved Machine's address for a wakeup's line, or null for anything that isn't a plain id. With the wakeup's
+     * kind (a reminder) and v=2: the quick buttons (snooze2h, Open draft) this version knows.
+     */
+    static String noticeUrl(String machine, String tag, String kind) {
         if (machine == null || !machine.startsWith("https://") || !machine.endsWith("/") || tag == null || !TAG.matcher(tag).matches()) return null;
-        return machine + "api/notice?tag=" + tag;
+        return machine + "api/notice?tag=" + tag + (kind != null && TAG.matcher(kind).matches() ? "&kind=" + kind : "") + "&v=2";
     }
 }

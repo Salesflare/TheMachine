@@ -220,4 +220,19 @@ function sentWhere(){for(const [id,w] of sentWatch){const s=(state?.suggestions|
  if(text)toastOpen(text,s.status==='prepared'&&!waitsOnOthers(s)?'':id)}}
 function toastOpen(text,id){toast(text);if(!id)return;const b=make('button',{type:'button','data-toast-open':id},t('Open'));$('#toast').append(' ',b);clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('show'),8000)}
 $('#toast').addEventListener('click',e=>{const b=e.target.closest('[data-toast-open]');if(!b)return;$('#toast').classList.remove('show');location.hash='#card='+b.dataset.toastOpen});
+// A notification's quick button (sw.js quickKeep, #quick=): Snooze (2 hours, or tomorrow on a reminder) or Mark done on its to-do. A browser's
+// notification can't ask for an unlock first, so it opens here and this does it, with Undo. The button comes from the
+// worker only, once: a #quick= link from anywhere else does nothing. A to-do handled meanwhile opens as it is now.
+const QUICK_RUN={snooze2h:['snooze','2h'],snooze:['snooze','tomorrow'],done:['complete']};let quickBusy=false;
+function openQuickLink(){const m=/^#quick=(k_[a-f0-9]{16})$/.exec(location.hash);if(!m||!state?.suggestions||quickBusy)return;history.replaceState(null,'',location.pathname+location.search);if(!navigator.serviceWorker)return;quickBusy=true;
+ navigator.serviceWorker.ready.then(r=>new Promise((ok,no)=>{const ch=new MessageChannel();ch.port1.onmessage=e=>ok(e.data);setTimeout(()=>no(Error('timeout')),15000);
+  (navigator.serviceWorker.controller||r.active).postMessage({quick:m[1]},[ch.port2])})).then(d=>d&&quickRun(String(d.tag||''),String(d.action||''))).catch(e=>{errCaught(e);toast(e.message,true)}).finally(()=>{quickBusy=false})}
+async function quickRun(id,action){const run=QUICK_RUN[action],s=state.suggestions.find(x=>x.id===id);if(!run||!/^[a-f0-9]{16}$/.test(id))return;
+ if(!s||closed(s)||s.status==='snoozed'){chatGo(id);return}
+ const done=await decideOrWait(id,[{choice:run[0],feedback:'',...(run[1]?{snooze_option:run[1]}:{})}],run[0]);await refresh();if(done?.waiting)return;
+ if(run[0]==='complete'){toast(t('Marked done'),false,id);return}
+ toast(t('Snoozed.')+' '+remindBack(done?.snoozed_until).line);const b=make('button',{type:'button','data-quick-undo':id},t('Undo'));$('#toast').append(' ',b);clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('show'),15000)}
+// Undo of that snooze: back where it was (Unsnooze). Its own attribute: the Snooze dialog's toast has its own Undo
+$('#toast').addEventListener('click',async e=>{const b=e.target.closest('[data-quick-undo]');if(!b)return;b.disabled=true;
+ try{await decidePost(b.dataset.quickUndo,{choice:'accept',feedback:'',decision_id:crypto.randomUUID()});await refresh();toast(t('Unsnoozed it'))}catch(err){errCaught(err);toast(err.message,true)}});
 function openSnoozeLink(){const link=/^#snooze(-custom)?=([a-f0-9]{16})$/.exec(location.hash);if(link&&state.suggestions){if(state.suggestions.some(s=>s.id===link[2]&&!closed(s))){if($('#snooze-dialog').open)$('#snooze-dialog').close();openSnooze(link[2],!!link[1])}history.replaceState(null,'',location.pathname)}}

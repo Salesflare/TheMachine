@@ -30,6 +30,25 @@ Comme Slack, il regarde si vous utilisez le tableau de bord, pas seulement s’i
 
 Seul ce qui a besoin de vous envoie une notification. Pas les avancées ni les modifications. Une rafale ne vibre qu’une fois. L’icône de l’app montre combien de tâches ont besoin de vous.
 
+## Boutons sur les notifications
+
+Chaque notification a des boutons pour l’étape suivante. Dans l’app sur le téléphone :
+
+- Nouvelle tâche : Faire, Mettre en attente, Marquer comme fait.
+- Brouillon prêt : Ouvrir le brouillon, Mettre en attente, Marquer comme fait.
+- Résultat prêt : Ouvrir, Marquer comme fait, Mettre en attente.
+- Question, bloquée ou connexion requise : Répondre, Ouvrir ou Se connecter, puis Mettre en attente et Marquer comme fait.
+- Rappel : Marquer comme fait, Mettre en attente, Ouvrir.
+- Récap du matin : touchez-le pour l’ouvrir.
+
+Un navigateur et Telegram en affichent deux. Les questions du Fleet gardent Répondre une fois et Refuser.
+
+Rien n’est envoyé, payé ou soumis depuis une notification. Un brouillon s’ouvre toujours d’abord, pour que vous le voyiez avant qu’il parte. Ouvrir le brouillon montre la tâche dans votre liste avec le brouillon en entier. Faire lance seulement le travail sur une nouvelle tâche.
+
+Dans l’app, Mettre en attente et Marquer comme fait demandent d’abord de déverrouiller. Dans un navigateur, ils ouvrent le tableau de bord, qui le fait et propose Annuler. Mettre en attente fait revenir la tâche dans deux heures, ou demain matin sur un rappel.
+
+Les e-mails qui listent ce qui vous attend ont des liens Ouvrir et Mettre en attente. Ils ouvrent seulement le tableau de bord.
+
 ## Le récap du matin
 
 Il arrive les jours de travail à l’heure du **Récap du matin**, et il n’est sauté que quand il n’y a rien à dire : pas de réunion, rien d’échu ni de nouveau, et aucune tâche en attente. **Aperçu**, sur sa ligne, l’affiche sur la page sans l’envoyer. Par défaut, c’est un push et un e-mail. Le push indique combien de tâches attendent, les deux premières et l’heure de votre première réunion. Toucher le push ouvre aujourd’hui dans l’**Agenda**.

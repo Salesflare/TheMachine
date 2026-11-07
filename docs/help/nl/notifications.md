@@ -30,6 +30,25 @@ Net als Slack kijkt het of je het dashboard gebruikt, niet alleen of het open st
 
 Alleen wat jou nodig heeft, geeft een melding. Voortgang en wijzigingen niet. Een reeks meldingen trilt één keer. Het icoon van de app toont hoeveel to-do's jou nodig hebben.
 
+## Knoppen op meldingen
+
+Elke melding heeft knoppen voor de volgende stap. In de app op je telefoon:
+
+- Nieuwe to-do: Doe het, Snoozen, Markeer als gedaan.
+- Concept klaar: Concept openen, Snoozen, Markeer als gedaan.
+- Resultaat klaar: Openen, Markeer als gedaan, Snoozen.
+- Vraag, vastgelopen of inloggen nodig: Antwoorden, Openen of Inloggen, dan Snoozen en Markeer als gedaan.
+- Herinnering: Markeer als gedaan, Snoozen, Openen.
+- Ochtendoverzicht: tik erop om het te openen.
+
+Een browser en Telegram tonen er twee. Fleet-vragen houden Eén keer antwoorden en Weigeren.
+
+Vanuit een melding wordt nooit iets verstuurd, betaald of ingediend. Een concept opent altijd eerst, zodat je het ziet voor het vertrekt. Concept openen toont de to-do in je lijst met het hele concept. Doe het start alleen het werk aan een nieuwe to-do.
+
+In de app vragen Snoozen en Markeer als gedaan eerst om te ontgrendelen. In een browser openen ze het dashboard, dat het doet en Ongedaan maken toont. Snoozen brengt de to-do over twee uur terug, of morgenochtend bij een herinnering.
+
+Mails met wat op je wacht hebben de links Openen en Snoozen. Die openen alleen het dashboard.
+
 ## Het ochtendoverzicht
 
 Het komt op werkdagen op je tijdstip bij **Ochtendoverzicht**, en wordt alleen overgeslagen als er niets te melden is: geen afspraken, niets te doen of nieuw en geen wachtende to-do's. **Voorbeeld**, in de rij ervan, toont het op de pagina zonder het te versturen. Standaard is het een push en een e-mail. De push zegt hoeveel to-do's wachten, de eerste twee en het uur van je eerste afspraak. Tik je op de push, dan opent vandaag in de **Agenda**.

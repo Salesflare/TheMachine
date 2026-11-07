@@ -30,6 +30,25 @@ Como Slack, mira si estás usando el panel, no solo si está abierto:
 
 Solo avisa lo que te necesita. El progreso y los cambios no. Una ráfaga vibra una vez. El icono de la app muestra cuántas tareas te necesitan.
 
+## Botones en las notificaciones
+
+Cada notificación tiene botones para el siguiente paso. En la app del móvil:
+
+- Tarea nueva: Hazlo, Posponer, Marcar como hecha.
+- Borrador listo: Abrir borrador, Posponer, Marcar como hecha.
+- Resultado listo: Abrir, Marcar como hecha, Posponer.
+- Pregunta, atascada o con inicio de sesión: Responder, Abrir o Iniciar sesión, y luego Posponer y Marcar como hecha.
+- Recordatorio: Marcar como hecha, Posponer, Abrir.
+- Resumen matutino: tócalo para abrirlo.
+
+Un navegador y Telegram muestran dos de ellos. Las preguntas del Fleet mantienen Responder una vez y Rechazar.
+
+Desde una notificación nunca se envía, se paga ni se presenta nada. Un borrador siempre se abre primero, para que lo veas antes de que salga. Abrir borrador muestra la tarea en tu lista con el borrador completo. Hazlo solo empieza el trabajo en una tarea nueva.
+
+En la app, Posponer y Marcar como hecha piden desbloquear primero. En un navegador abren el panel, que lo hace y muestra Deshacer. Posponer trae la tarea de vuelta en dos horas, o mañana por la mañana en un recordatorio.
+
+Los correos con lo que te espera tienen enlaces Abrir y Posponer. Solo abren el panel.
+
 ## El resumen matutino
 
 Llega los días laborables a tu hora de **Resumen matutino**, y solo se omite cuando no hay nada que contar: ni reuniones, ni nada que venza o nuevo, ni tareas esperando. **Vista previa**, en su fila, lo muestra en la página sin enviarlo. Por defecto es un push y un correo. El push dice cuántas tareas esperan, las dos primeras y la hora de tu primera reunión. Al tocar el push se abre hoy en el **Calendario**.

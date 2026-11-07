@@ -1,6 +1,7 @@
 package computer.themachine.app;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -43,12 +44,13 @@ public class PushTextTest {
 
     @Test
     public void onlyAPlainIdIsAskedFor() {
-        assertEquals("https://sam.app.themachine.computer/api/notice?tag=card_1", PushText.noticeUrl("https://sam.app.themachine.computer/", "card_1"));
-        assertEquals("https://desk.tail1234.ts.net:8443/assistant/api/notice?tag=abc", PushText.noticeUrl("https://desk.tail1234.ts.net:8443/assistant/", "abc"));
-        assertNull(PushText.noticeUrl("https://sam.app.themachine.computer/", "a&b=c"));
-        assertNull(PushText.noticeUrl("https://sam.app.themachine.computer/", ""));
-        assertNull(PushText.noticeUrl("http://sam.app.themachine.computer/", "card_1"));
-        assertNull(PushText.noticeUrl(null, "card_1"));
+        assertEquals("https://sam.app.themachine.computer/api/notice?tag=card_1&kind=reminder&v=2", PushText.noticeUrl("https://sam.app.themachine.computer/", "card_1", "reminder"));
+        assertEquals("https://desk.tail1234.ts.net:8443/assistant/api/notice?tag=abc&v=2", PushText.noticeUrl("https://desk.tail1234.ts.net:8443/assistant/", "abc", null));
+        assertEquals("https://sam.app.themachine.computer/api/notice?tag=card_1&v=2", PushText.noticeUrl("https://sam.app.themachine.computer/", "card_1", "a&b"));
+        assertNull(PushText.noticeUrl("https://sam.app.themachine.computer/", "a&b=c", "todo"));
+        assertNull(PushText.noticeUrl("https://sam.app.themachine.computer/", "", "todo"));
+        assertNull(PushText.noticeUrl("http://sam.app.themachine.computer/", "card_1", "todo"));
+        assertNull(PushText.noticeUrl(null, "card_1", "todo"));
     }
 
     @Test
@@ -78,10 +80,14 @@ public class PushTextTest {
     public void onlyPrepareSnoozeAndDoneAreButtonsAndNothingSends() {
         assertEquals("accept", PushText.choice("prepare"));
         assertEquals("snooze", PushText.choice("snooze"));
+        assertEquals("snooze", PushText.choice("snooze2h"));
         assertEquals("complete", PushText.choice("done"));
         assertNull(PushText.choice("send"));
         assertNull(PushText.choice("accept"));
         assertNull(PushText.choice("open"));
+        assertNull(PushText.choice("draft"));
+        assertTrue(PushText.opens("open") && PushText.opens("draft") && PushText.opens("answer") && PushText.opens("signin"));
+        assertFalse(PushText.opens("done") || PushText.opens("snooze2h") || PushText.opens("send") || PushText.opens(null));
         assertNull(PushText.choice(null));
     }
 
@@ -91,6 +97,10 @@ public class PushTextTest {
         assertEquals("{\"action\":\"decide\",\"args\":{\"suggestion_id\":\"card_1\",\"choice\":\"complete\",\"feedback\":\"\",\"decision_id\":\"" + id + "\"}}",
             PushText.decide("card_1", "done", id));
         assertTrue(PushText.decide("card_1", "snooze", id).contains("\"choice\":\"snooze\",\"feedback\":\"\",\"snooze_option\":\"tomorrow\""));
+        assertTrue(PushText.decide("card_1", "snooze2h", id).contains("\"choice\":\"snooze\",\"feedback\":\"\",\"snooze_option\":\"2h\""));
+        assertNull(PushText.decide("card_1", "draft", id));
+        // a button's decision says it came from a notification (push.NOTICE_DECISION): Do it there only starts a to-do
+        assertTrue(PushText.decide("card_1", "prepare", "notify-" + id).contains("\"decision_id\":\"notify-" + id + "\""));
         assertTrue(PushText.decide("card_1", "prepare", id).contains("\"choice\":\"accept\""));
         assertNull(PushText.decide("card_1\",\"choice\":\"accept", "done", id));
         assertNull(PushText.decide("card_1", "send", id));

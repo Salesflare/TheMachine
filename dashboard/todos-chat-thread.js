@@ -16,11 +16,14 @@ linkedCardId=target.id;const fuEl=()=>target.follow_up?.group&&document.getEleme
 // Reveal this destination without overwriting the device's saved filter/fold preferences.
 if(scopeFilter!=='all'&&target.scope!==scopeFilter)scopeFilter='all';
 folded.delete(placeOf(target));if(looksDone(target))lookExpanded.add(target.id);
+// a link to this to-do (Open draft from a notification) shows it whole: its summary and its draft, never behind Show more
+expandedBodies.add(target.id);for(const a of target.next_actions||(target.next_action?.kind==='menu'?target.next_action.actions:target.next_action?[target.next_action]:[]))expandedBodies.add('draft-'+target.id+'-'+a.revision);
 render();document.querySelector('nav [data-tab="inbox"]').click();
 const c=document.getElementById('task-'+target.id)||fuEl();if(!c)return;
 for(let parent=c.parentElement;parent;parent=parent.parentElement)if(parent.tagName==='DETAILS')parent.open=true;
 history.replaceState(null,'',location.pathname+location.search);
-c.scrollIntoView({block:'center',behavior:'smooth'});c.classList.remove('flash');void c.offsetWidth;c.classList.add('flash');kbFocus(c,false)}
+// a tall card (a draft in full) from its top, under the header, so its title shows too
+const tall=c.offsetHeight>innerHeight*.7;c.style.scrollMarginTop=tall?'72px':'';c.scrollIntoView({block:tall?'start':'center',behavior:'smooth'});c.classList.remove('flash');void c.offsetWidth;c.classList.add('flash');kbFocus(c,false)}
 // Card chat (#chat=<id>): a card's whole story as a conversation, strictly by time: the messages it is about, what the
 // Machine did (its steps folded into one quiet line before each reply) and the drafts it wrote, what you said and
 // what went out. The card's buttons sit in a slim bar above the message box. A message is a Change (the same decide

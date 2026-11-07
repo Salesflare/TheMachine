@@ -70,12 +70,22 @@ async function chatPoll(){clearTimeout(chatTimer);const id=chatId;if(!id)return;
   // A read that failed while the chat was already on screen changes nothing but whether the run still goes: what was
   // shown stays (with the live answer), quietly, and the next ask catches up
   if(r.unavailable&&chat?.items?.length&&!chat.unavailable)chat={...chat,active:r.active,status:r.status,live:r.active?chat.live:null,stale:true};
-  else{const keep=r.unchanged;chat={...r,items:keep?chat.items:r.items,cursor:(keep?chat.cursor:r.cursor)||null}}paintChat();if(!r.unchanged&&!r.unavailable)localCache.put('chat:'+id,{...chat,cursor:null});if(first){requestAnimationFrame(chatScrollStart);setTimeout(chatScrollStart,150)}if(was&&!r.active){refresh();talkTurnDone()}}catch(e){errCaught(e);if(id===chatId&&!chat){chat={items:[],unavailable:true};paintChat()}}
+  else{const keep=r.unchanged;chat={...r,items:keep?chat.items:r.items,cursor:(keep?chat.cursor:r.cursor)||null}}paintChat();if(!r.unchanged&&!r.unavailable)localCache.put('chat:'+id,{...chat,cursor:null});if(first){requestAnimationFrame(chatScrollStart);setTimeout(chatScrollStart,150)}if(was&&!r.active){refresh();talkTurnDone()}}catch(e){errCaught(e);if(id===chatId&&!chat){chat={items:[],unavailable:true};paintChat()}
+  // the to-do is gone from the Machine (a list kept from before): the fresh list closes its chat with the line, at once
+  if(id===chatId&&e.status===400&&/^Unknown suggestion/.test(e.message||''))refresh()}
  if(id===chatId)chatTimer=setTimeout(chatPoll,chat?.active?1000:chat?.unavailable||chat?.stale?4000:10000)}
 // Whether this page put the open chat on the history (so back can take it off again instead of adding an entry)
 let chatPushed=false;
+let chatGone=null;
 function openChatLink(refreshed){if(!state.suggestions||location.hash==='#browser')return;  // the browser pane over a chat keeps that chat for Back
 const m=/^#chat=([a-f0-9]{16})$/.exec(location.hash),id=m&&state.suggestions.some(s=>s.id===m[1])?m[1]:null;
+ // A link to a to-do that isn't here (an old notification, the to-do removed or long done): once the Machine's latest
+ // list says so too, one short line on the list instead of a blank page
+ const gone=()=>{history.replaceState(null,'',location.pathname+location.search);openChatLink();toast(t('That to-do isn’t here anymore.'))};  // and a chat open on it closes
+ // right after a refresh the list is the Machine's latest already: a chat open on it (from a list kept since before) closes with the line
+ if(m&&!id&&refreshed){gone();return}
+ if(m&&!id&&!chatGone){chatGone=m[1];refresh().then(()=>{if(location.hash==='#chat='+chatGone&&!state.suggestions.some(s=>s.id===chatGone))gone()}).finally(()=>{chatGone=null});return}
+ if(m&&!id)return;
  // Only a link or a step back closes the chat on screen, never a refresh (a sent message, a job that starts or moves the
  // to-do to another list): an address that lost the chat's link on the way gets it back
  if(refreshed&&!location.hash&&chatId&&!$('#inbox').hidden&&chatOpen()){history.replaceState(history.state,'',location.pathname+location.search+'#chat='+chatId);return}

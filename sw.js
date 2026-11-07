@@ -164,6 +164,10 @@ self.addEventListener('message', event => {
   const port = event.ports?.[0], id = event.data?.share;
   if (port && typeof id === 'string' && SHARE_ID.test(id) && event.source?.url?.startsWith(scopeUrl().href))
     event.waitUntil(shareOut(id).then(d => port.postMessage(d), e => { swReport(e, 'shareOut'); port.postMessage(null); }));
+  // A notification's quick button (quickKeep): handed over once, to a page of this dashboard only
+  const quick = event.data?.quick;
+  if (port && typeof quick === 'string' && QUICK_ID.test(quick) && event.source?.url?.startsWith(scopeUrl().href))
+    event.waitUntil(quickTake(quick).then(d => port.postMessage(d), e => { swReport(e, 'quickTake'); port.postMessage(null); }));
 });
 
 self.addEventListener('push', event => {
@@ -175,16 +179,38 @@ self.addEventListener('push', event => {
     body: data.body || '', tag: data.tag || undefined, renotify: !!data.tag && !data.silent, silent: !!data.silent,
     icon: 'brand/app-icon-192.png', badge: 'brand/app-icon-badge-96.png',
     data: {url: new URL(data.url || '.', self.registration.scope).href},
-    // Fleet questions: Answer once and Decline open the dashboard at the question, which asks to confirm.
+    // Quick buttons (machine/delivery/push.py QUICK), at most two. Fleet questions: Answer once and Decline open the
+    // dashboard at the question, which asks to confirm.
     actions: Array.isArray(data.actions) ? data.actions.slice(0, 2) : [],
   }).catch(e => swReport(e, 'push')));
 });
+
+// A to-do's Snooze (2 hours, or tomorrow on a reminder) or Mark done: a browser can't ask for an unlock first, so it never runs from here. The
+// dashboard opens and does it, with Undo (openQuickLink in todos-list.js). It takes the button from this worker only,
+// once and within QUICK_AGE, by a random id (#quick=): a link from anywhere else can't make it do anything.
+const QUICK = ['snooze2h', 'snooze', 'done'], QUICK_ID = /^k_[a-f0-9]{16}$/, QUICK_AGE = 5 * 6e4;
+async function quickKeep(tag, action) {
+  const id = 'k_' + [...crypto.getRandomValues(new Uint8Array(8))].map(b => b.toString(16).padStart(2, '0')).join('');
+  await (await caches.open(SHARE)).put(new URL('quick/' + id, scopeUrl()).href,
+    new Response(JSON.stringify({tag, action}), {headers: {'Content-Type': 'application/json', 'X-At': String(Date.now())}}));
+  return id;
+}
+async function quickTake(id) {
+  const cache = await caches.open(SHARE), href = new URL('quick/' + id, scopeUrl()).href, kept = await cache.match(href);
+  if (!kept) return null;
+  await cache.delete(href);
+  return Date.now() - +kept.headers.get('X-At') > QUICK_AGE ? null : kept.json();
+}
 
 self.addEventListener('notificationclick', event => {
   event.notification.close();
   let url = event.notification.data?.url || self.registration.scope;
   if (['once', 'decline'].includes(event.action) && /#fleet=q_[a-f0-9]{16}$/.test(url)) url += '&choice=' + event.action;
+  // Open draft: the to-do in the list, where its draft shows in full (its chat keeps it behind Review)
+  if (event.action === 'draft') url = url.replace(/#chat=([a-f0-9]{16})$/, '#card=$1');
+  const tag = event.notification.tag, quick = QUICK.includes(event.action) && /^[a-f0-9]{16}$/.test(tag || '');
   event.waitUntil((async () => {
+    if (quick) url = new URL('#quick=' + await quickKeep(tag, event.action), scopeUrl()).href;
     const open = await self.clients.matchAll({type: 'window', includeUncontrolled: true});
     const client = open.find(c => c.url.startsWith(self.registration.scope));
     // An open dashboard shows the link itself (only its # part changes): never navigate it, which reloads the page.

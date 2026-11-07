@@ -585,7 +585,12 @@ from machine.delivery.push import (
     HINT_MAILS,
     HINT_SOURCES,
     HOSTED_REVIEWS_AUTO_SINCE,
+    NOTICE_DECISION,
     NUDGE_KINDS,
+    QUICK,
+    QUICK_LABELS,
+    QUICK_OPENS,
+    QUICK_RUNS,
     REPORT_HOURS,
     TALK_KINDS,
     app_clear_step,
@@ -596,6 +601,7 @@ from machine.delivery.push import (
     cloud_target,
     hold_handoff,
     hold_mail,
+    notice_decision_refused,
     mail_ready,
     nudge_wait,
     person_line,
@@ -605,6 +611,8 @@ from machine.delivery.push import (
     push_notify,
     push_reach,
     push_send,
+    quick_kind,
+    quick_web,
     reminder_channels,
     reminder_line,
     report_done,
@@ -4551,6 +4559,11 @@ class App(*APP_MIXINS):
             else:
                 raise ValueError('Decisions must come from the owner’s Telegram buttons or dashboard')
             args = {**args, 'source': source}
+            if str(args.get('decision_id', '')).startswith(NOTICE_DECISION):
+                with self.store.connect() as db:
+                    refused = notice_decision_refused(db, args.get('suggestion_id'), args.get('choice'))
+                if refused:
+                    raise ValueError(i18n.t(refused))
             terminal_job=None
             files=args.get('files') if owner_dashboard and args.get('choice')=='other' else None  # added in the chat's composer
             feedback=args.get('feedback', '')
@@ -4882,7 +4895,8 @@ class App(*APP_MIXINS):
                 subscriptions, phones = push_reach(self.store, self.config)
                 if subscriptions or phones:
                     payload = {**digest['push'], **({'silent': True} if notify.active() else {}),  # at the dashboard: no buzz
-                               '_line': digest['push']['title'], '_body': digest['push']['body']}  # the mobile app asks for these
+                               '_line': digest['push']['title'], '_body': digest['push']['body'],  # the mobile app asks for these
+                               'actions': quick_web('view')}
                     if push_send(self.store, self.config, subscriptions, payload, 'digest', push, wake='digest'):
                         went.append('push')
             if prefs.get('telegram') and telegram_on(self.config):

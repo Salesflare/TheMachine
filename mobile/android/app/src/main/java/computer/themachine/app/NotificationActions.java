@@ -7,7 +7,7 @@ import java.util.UUID;
 import org.json.JSONObject;
 
 /**
- * A notification's button (MachinePushService.button): Prepare, Snooze or Mark done, as the dashboard's own decision,
+ * A notification's button (MachinePushService.button): Do it, Snooze or Mark done, as the dashboard's own decision,
  * sent to the saved Machine with the owner's sign-in. The notification then says what happened ("Snoozed it") or that
  * the Machine couldn't be reached. Nothing is ever sent to anyone from here: a draft or a final step opens the app.
  */
@@ -19,7 +19,7 @@ public class NotificationActions extends BroadcastReceiver {
         String tag = text(intent.getStringExtra("tag")), action = text(intent.getStringExtra("action"));
         String title = text(intent.getStringExtra("title")), event = text(intent.getStringExtra("event"));
         String failed = text(intent.getStringExtra("failed"));
-        String body = PushText.decide(tag, action, UUID.randomUUID().toString());
+        String body = PushText.decide(tag, action, "notify-" + UUID.randomUUID());
         if (body == null) return;
         PendingResult pending = goAsync();
         new Thread(() -> {
