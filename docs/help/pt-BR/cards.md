@@ -24,7 +24,7 @@ Depois de enviar, um aviso curto diz onde a tarefa está, como "Enviado. Movido 
 
 Em Pronta para você, Precisa da sua decisão, Preparando e Aguardando outras pessoas, uma tarefa atrasada ou que vence até amanhã vem primeiro. As demais vêm das mais novas para as mais antigas, pela hora que cada tarefa mostra. A barra lateral segue a mesma ordem.
 
-Uma tarefa com **Parece feito** aparece como uma feita, com o que mostra que está feita, como "PR #3451 mesclado". Ela ainda não foi fechada: **Reabrir** a devolve para a sua lista, e a sua Machine aprende com isso. Elas nunca aparecem como atrasadas e não contam como esperando por você.
+Uma tarefa com **Parece feito** aparece como uma feita, com o que mostra que está feita, como "PR #3451 mesclado". Ela ainda não foi fechada: **Reabrir** a devolve para a sua lista, e a sua Machine aprende com isso. Elas nunca aparecem como atrasadas e não contam como esperando por você. Uma tarefa com um rascunho de resposta também parece feita quando você respondeu nessa conversa, como no Gmail ou no Slack.
 
 Uma tarefa cujo último passo ainda está aberto do lado de outra pessoa, como uma revisão, um merge ou uma resposta, mostra **Aguardando:** esse passo e continua aberta. Ela espera em **Aguardando outras pessoas**, recolhida acima de Volta mais tarde, e não conta como pronta para você. Uma nova mensagem sobre ela a traz de volta.
 
@@ -54,7 +54,7 @@ LinkedIn, X e Salesflare mantêm o próprio ritmo.
 
 Uma tarefa mostra o próximo passo, como **Fazer** ou **Revisar e enviar**, com **Adiar** ao lado. Veja [Fazer](do-it.md) e [Adiar](snooze.md).
 
-Ainda não preparada, ela tem **Mudar a abordagem** (diga como fazer de outro jeito); pronta, **Pedir mudanças** (diga o que mudar no rascunho). Se a linha não couber no celular, **Adiar** vai para **…**. **Marcar como feita** (já está resolvida) também está lá: à vista sem rascunho, senão no topo de **…**.
+Ainda não preparada, ela tem **Mudar a abordagem** (diga como fazer de outro jeito); pronta, **Pedir mudanças** (diga o que mudar no rascunho). Se a linha não couber no celular, **Adiar** vai para **…**. **Marcar como feita** (já está resolvida) também está lá: à vista sem rascunho, senão no topo de **…**. Ela sai da lista na hora, com **Desfazer** na mensagem.
 
 Para fazer de outro jeito, diga isso no **Chat** dela.
 

@@ -53,7 +53,9 @@ const snooze=async({width=1440,height=900,ua='chrome',shot,...o}={})=>{const mob
  await page.waitForFunction(()=>devicePush.checked||!pushOK);
  await page.evaluate(id=>openSnooze(id),ID);await page.locator('#snooze-dialog [data-snooze="tomorrow"]').click();
  await page.waitForFunction(()=>document.querySelector('#toast').classList.contains('show'));
- const toast=await page.evaluate(()=>{const t=document.querySelector('#toast');return {text:t.innerText.replace(/\s+/g,' ').trim(),button:t.querySelector('button')?.textContent||null}});
+ // Undo leads every snooze toast; the rest is the line and the device action
+ const toast=await page.evaluate(()=>{const t=document.querySelector('#toast'),c=t.cloneNode(true);const undo=c.querySelector('button');if(undo?.dataset.unsnooze!=='cdcdcdcdcdcdcdcd')throw Error('no Undo first: '+t.innerHTML);undo.remove();
+  return {text:c.textContent.replace(/\s+/g,' ').trim(),button:t.querySelector('[data-toast-device]')?.textContent||null}});
  if(shots&&shot){await page.waitForTimeout(250);await page.screenshot({path:`${shots}/${shot}.png`})}
  return {context,page,toast}};
 try{
@@ -79,7 +81,7 @@ try{
  for(const [width,height,ua,name] of [[1440,900,'chrome','neither-desktop'],[390,844,'android','neither-phone']]){
   const {context,page,toast}=await snooze({width,height,ua,shot:name});
   assert.deepEqual(toast,{text:'Snoozed. It’ll be back here tomorrow at 09:00. Turn on notifications',button:'Turn on notifications'});
-  const before=actions.length;await page.locator('#toast button').click();
+  const before=actions.length;await page.locator('#toast [data-toast-device]').click();
   await page.waitForFunction(()=>document.querySelector('#toast').innerText.includes('Notifications on'));
   assert.deepEqual(await page.evaluate(()=>window.__log),['requestPermission','subscribe']);
   assert.deepEqual(actions.slice(before).map(a=>a.action),['push_subscribe','push_test']);
@@ -87,7 +89,7 @@ try{
  // iPhone Safari outside the installed app can't have notifications yet: Add to Home Screen, which shows the steps.
  {const {context,page,toast}=await snooze({noPush:true,width:390,height:844,ua:'iphone',shot:'neither-iphone'});
   assert.deepEqual(toast,{text:'Snoozed. It’ll be back here tomorrow at 09:00. Add to Home Screen',button:'Add to Home Screen'});
-  await page.locator('#toast button').click();
+  await page.locator('#toast [data-toast-device]').click();
   await page.waitForFunction(()=>document.querySelector('#toast').innerText.includes('Add to Home Screen. Open The Machine'));
   await context.close()}
  // Notifications blocked in this browser: only when it's back, nothing to tap.

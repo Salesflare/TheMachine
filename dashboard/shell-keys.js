@@ -110,9 +110,9 @@ const PAL_RECENT='palette-recent';
 const palRecent=()=>{try{const v=JSON.parse(localStorage.getItem(PAL_RECENT)||'[]');return Array.isArray(v)?v.filter(x=>typeof x==='string').slice(0,5):[]}catch{return []}};
 function palRemember(id){try{localStorage.setItem(PAL_RECENT,JSON.stringify([id,...palRecent().filter(x=>x!==id)].slice(0,5)))}catch{}}
 
-const pal={from:null,ctx:null,items:[],sel:0,q:'',seq:0,timer:0,found:null,msgs:null,ask:null,askTimer:0,askOff:false};
+const pal={from:null,ctx:null,items:[],sel:0,q:'',seq:0,timer:0,found:null,msgs:null,ask:null,askTimer:0,askOff:false,opens:0};
 function palDialog(){let d=$('#palette');if(d)return d;d=document.createElement('dialog');d.id='palette';d.setAttribute('aria-label','Search and commands');
- d.innerHTML=`<div class="pal-field"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/></svg><input id="pal-q" type="text" role="combobox" aria-expanded="true" aria-controls="pal-list" aria-autocomplete="list" placeholder="Search or type a command" autocomplete="off" spellcheck="false" enterkeyhint="go"></div><div class="pal-list" id="pal-list" role="listbox" aria-label="Results"></div><div class="pal-foot"><span><kbd>↑</kbd><kbd>↓</kbd> move</span><span><kbd>Enter</kbd> run</span><span><kbd>Esc</kbd> close</span><span><kbd>?</kbd> shortcuts</span></div>`;
+ d.innerHTML=`<div class="pal-field"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/></svg><input id="pal-q" type="text" role="combobox" aria-expanded="true" aria-controls="pal-list" aria-autocomplete="list" placeholder="Search or ask anything" autocomplete="off" spellcheck="false" enterkeyhint="go"></div><button type="button" class="pal-hint" id="pal-hint" hidden></button><div class="pal-list" id="pal-list" role="listbox" aria-label="Results"></div><div class="pal-foot"><span><kbd>↑</kbd><kbd>↓</kbd> move</span><span><kbd>Enter</kbd> run</span><span><kbd>Esc</kbd> close</span><span><kbd>?</kbd> shortcuts</span></div>`;
  document.body.append(d);const q=d.querySelector('#pal-q');
  q.addEventListener('input',()=>{pal.q=q.value;pal.sel=0;palRender();palFind()});
  q.addEventListener('keydown',e=>{if(e.isComposing||e.keyCode===229)return;
@@ -121,12 +121,23 @@ function palDialog(){let d=$('#palette');if(d)return d;d=document.createElement(
   if(e.key==='Tab'){e.preventDefault();return}  // focus stays in the field while it is open
   if(e.key==='Escape'){e.preventDefault();palClose()}});
  d.addEventListener('cancel',e=>{e.preventDefault();palClose()});
- d.addEventListener('click',e=>{if(e.target===d){palClose();return}const o=e.target.closest('[data-pal]');if(o)palPick(+o.dataset.pal)});
+ d.addEventListener('click',e=>{if(e.target===d){palClose();return}if(e.target.closest('#pal-hint')){palTry();return}const o=e.target.closest('[data-pal]');if(o)palPick(+o.dataset.pal)});
  d.addEventListener('mousemove',e=>{const o=e.target.closest('[data-pal]');if(o&&+o.dataset.pal!==pal.sel){pal.sel=+o.dataset.pal;palPaint(false)}});
  return d}
 function palOpen(o){const d=palDialog();if(d.open)return;for(const x of document.querySelectorAll('dialog[open]'))if(x!==d)return;
- pal.todos=!!o?.todos;pal.from=document.activeElement;pal.ctx=kbCtx();pal.q='';pal.sel=0;pal.found=null;pal.msgs=null;pal.done=[];pal.ask=null;pal.seq++;if(typeof drawerClose==='function')drawerClose();
+ pal.todos=!!o?.todos;pal.from=document.activeElement;pal.ctx=kbCtx();pal.q='';pal.sel=0;pal.found=null;pal.msgs=null;pal.done=[];pal.ask=null;pal.seq++;pal.opens++;pal.hint=palExample();if(typeof drawerClose==='function')drawerClose();
  const q=d.querySelector('#pal-q');q.value='';d.showModal();q.focus();palRender()}
+// Ask from search, there to find: the placeholder says it, and an empty field shows one question to try, a
+// different one each time it opens: about someone from the open to-dos in the area in view, else a general one.
+// Only with a model (the one Settings, Model shows); once the Machine says there is none, Search reads as before.
+const palAskable=()=>!pal.askOff&&!!(state.model_status||state.chat_model?.models?.length);
+function palExample(){const names=[...new Set((state.suggestions||[]).filter(s=>!closed(s)&&(scopeFilter==='all'||!scopeFilter||s.scope===scopeFilter))
+  .map(s=>String((s.people||[])[0]?.name||'').trim().split(/\s+/)[0]).filter(n=>/^\p{L}[\p{L}'’-]{1,19}$/u.test(n)))].slice(0,3);
+  const i=pal.opens%(names.length+1);return i<names.length?t('what did {} say last week?',names[i]):t('what changed this week?')}
+function palTry(){const q=$('#pal-q');if(!q||!pal.hint)return;q.value=pal.hint;q.focus();q.dispatchEvent(new Event('input'))}
+function palAskShow(){const on=palAskable(),h=$('#pal-hint'),q=$('#pal-q'),side=$('#side-find');
+  if(q)q.placeholder=t(on?'Search or ask anything':'Search or type a command');if(side)side.placeholder=t(on?'Search or ask':'Search');
+  if(h){h.hidden=!on||!!pal.q.trim()||!pal.hint;if(!h.hidden)h.textContent=t('Try: {}',pal.hint)}}
 function palClose(){const d=$('#palette');clearTimeout(pal.timer);clearTimeout(pal.askTimer);pal.ask=null;pal.seq++;if(d?.open)d.close();if(d?.contains(document.activeElement))document.activeElement.blur();  /* never left in the closed field, or keys would think you type */
  const f=pal.from;pal.from=null;if(f?.isConnected&&f!==document.body)f.focus({preventScroll:true})}
 const palToggle=()=>$('#palette')?.open?palClose():palOpen();
@@ -156,7 +167,7 @@ function palRows(){const q=pal.q.trim(),ctx=pal.ctx,recent=palRecent(),groups=[]
  const a=pal.ask;if(q&&a&&a.q===q&&(a.state==='done'||a.mark&&a.state!=='none'))groups.unshift(['Answer',a.sources.map(m=>({a:{id:'ask:'+m.id,run:()=>msgOpen(m),entity:true},label:m.title||m.from||t('Message'),sub:[m.title?m.from:'',m.at?humanTime(m.at):''].filter(Boolean).join(' · ')})),a]);
  return groups}
 const palAnswer=a=>a.state==='done'?`<p class="pal-answer" id="pal-answer" translate="no" dir="auto">${esc(a.text.slice(0,a.shown))}</p>`:`<p class="pal-answer muted" id="pal-answer">${esc(a.state==='error'?t('Couldn’t answer that right now.'):t('Looking…'))}</p>`;
-function palRender(){const d=$('#palette');if(!d?.open)return;const groups=palRows(),list=d.querySelector('#pal-list'),was=pal.items[pal.sel]?.a.id;pal.items=[];let html='';
+function palRender(){const d=$('#palette');if(!d?.open)return;palAskShow();const groups=palRows(),list=d.querySelector('#pal-list'),was=pal.items[pal.sel]?.a.id;pal.items=[];let html='';
  for(const [g,xs,ask] of groups){html+=`<div class="pal-group" role="presentation">${esc(g)}</div>${ask?palAnswer(ask):''}`;
   for(const x of xs){const i=pal.items.push(x)-1;const keys=x.a.review?'':x.a.keys;
    html+=`<div class="pal-item" role="option" id="pal-o-${i}" data-pal="${i}" aria-selected="false"><span class="pal-label">${esc(x.label)}</span>${x.sub?`<small>${esc(x.sub)}</small>`:''}${keys?`<span class="pal-keys" aria-label="${esc(kbText(keys))}">${kbKeys(keys)}</span>`:''}</div>`}}

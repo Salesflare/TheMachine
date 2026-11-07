@@ -33,7 +33,7 @@ On a phone, a dialog like **Send this email?** fills the screen, with its button
 
 ## Get more out of it
 
-A small to-do at the top of To-dos lists what makes The Machine more useful: the phone app, notifications, WhatsApp, the app on this computer, another account and more connections. Each row has one button for that step, and ticks itself off once done.
+A small to-do at the top of To-dos lists what makes The Machine more useful: the phone app, notifications, WhatsApp, the app on this computer, another account and more connections. Each row has one button for that step, and ticks itself off once done. It shows up to five rows, open steps first, so a tool your mail suggests, like GitHub, gets a row once earlier steps are done.
 
 Rows show only where they make sense. The × on a row closes it on every device. The × at the top closes the whole to-do.
 
@@ -46,6 +46,8 @@ A new version of the dashboard never reloads while you're using it. It loads whe
 ## Messages
 
 Open search with `⌘K` on a Mac or `Ctrl K` on Windows and Linux, or the search icon on a phone. Type two letters or more: **Messages** shows the best matches from everything your Machine read, by meaning or by words. Older [history](history.md) matches by words.
+
+Ask a question there too, like the one an empty search suggests, for a short answer from your own messages ([Keyboard and the command palette](keyboard.md)).
 
 **See all results** opens the full list, for all accounts or one. Each result opens in a reader, with a link to where it came from. An empty search shows the newest messages.
 

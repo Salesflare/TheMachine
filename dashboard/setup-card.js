@@ -1,6 +1,7 @@
 // The setup to-do at the top of To-dos, "Get more out of The Machine": one small card with a row per step, in this order:
 // the phone app, notifications, WhatsApp, the app on this computer, another mail account, more connections, then what
-// setup left out once it is relevant (state.setup_hints). At most SETUP_MAX rows; each has one button that does the step
+// setup left out once it is relevant (state.setup_hints). At most SETUP_MAX rows, open steps first (a done row only takes a slot
+// no open step needs); each has one button that does the step
 // itself, ticks off once done, and closes for good with its × (setup_dismiss, kept on the Machine so every device
 // agrees, with Undo in the toast); the card's own × closes all of it. Closed rows come back with "Show 1 hidden" at the
 // card's foot, and everything (the card too) with Settings, General, Setup to-do (setup_restore). A row shows only where it applies: no phone app inside it, no
@@ -37,7 +38,10 @@ function setupRows(all=false){const s=state?.setup_card;if(!s)return [];const cl
  add('account',hosted,s.mail_accounts>=2);
  add('connect',true,s.more);
  for(const h of state.setup_hints||[])if(h?.id&&/^[a-z0-9-]{1,40}$/.test(h.id))add('hint-'+h.id,true,false,h);
- return all?rows:rows.slice(0,SETUP_MAX)}
+ if(all)return rows;
+ // Open steps first: a done row only fills a slot no open step needs, so the tool hints after the base rows show
+ const open=rows.filter(r=>!r.done).slice(0,SETUP_MAX),keep=new Set([...open,...rows.filter(r=>r.done).slice(0,SETUP_MAX-open.length)]);
+ return rows.filter(r=>keep.has(r))}
 // The closed rows that would still apply here and aren't done: what Show hidden brings back
 function setupHidden(){const closed=new Set(state?.setup_card?.dismissed||[]);return setupRows(true).filter(r=>closed.has(r.id)&&!r.done).length}
 const setupLabel=r=>r.hint?r.hint.title:

@@ -24,7 +24,7 @@ Na het versturen zegt een korte melding waar de to-do nu staat, zoals "Verstuurd
 
 In Voor jou klaargezet, Wacht op je beslissing, Wordt voorbereid en Wacht op anderen staat een to-do die te laat is of uiterlijk morgen moet, bovenaan. De rest staat nieuwste eerst, volgens de tijd die elke to-do toont. De zijbalk houdt dezelfde volgorde.
 
-Een to-do met **Lijkt gedaan** ziet eruit als een gedane, met wat laat zien dat hij gedaan is, zoals "PR #3451 gemerged". Hij is nog niet gesloten: **Heropenen** zet hem terug op je lijst, en je Machine leert ervan. Ze staan nooit als te laat en tellen niet mee als wachtend op jou.
+Een to-do met **Lijkt gedaan** ziet eruit als een gedane, met wat laat zien dat hij gedaan is, zoals "PR #3451 gemerged". Hij is nog niet gesloten: **Heropenen** zet hem terug op je lijst, en je Machine leert ervan. Ze staan nooit als te laat en tellen niet mee als wachtend op jou. Een to-do met een conceptantwoord lijkt ook gedaan als je zelf in dat gesprek hebt geantwoord, zoals in Gmail of Slack.
 
 Een to-do waarvan de laatste stap nog openstaat bij iemand anders, zoals een review, een merge of een antwoord, zegt **Wacht op:** die stap en blijft open. Hij wacht in **Wacht op anderen**, ingeklapt boven Komt later terug, en telt niet mee als klaar voor jou. Een nieuw bericht erover brengt hem terug.
 
@@ -54,7 +54,7 @@ LinkedIn, X en Salesflare houden hun eigen tempo.
 
 Een to-do toont zijn volgende stap, zoals **Doe het** of **Nakijken en versturen**, met **Snoozen** ernaast. Zie [Doe het](do-it.md) en [Snoozen](snooze.md).
 
-Nog niet voorbereid heeft hij **Anders aanpakken** (zeg hoe het anders moet); klaar, **Wijzigingen vragen** (zeg wat er in het concept moet veranderen). Is de rij op een telefoon vol, dan gaat **Snoozen** naar **…**. **Markeer als gedaan** (hij is geregeld) is er ook: in beeld zonder concept, anders bovenaan onder **…**.
+Nog niet voorbereid heeft hij **Anders aanpakken** (zeg hoe het anders moet); klaar, **Wijzigingen vragen** (zeg wat er in het concept moet veranderen). Is de rij op een telefoon vol, dan gaat **Snoozen** naar **…**. **Markeer als gedaan** (hij is geregeld) is er ook: in beeld zonder concept, anders bovenaan onder **…**. Hij gaat meteen uit de lijst, met **Ongedaan maken** in de melding.
 
 Wil je hem anders laten doen, zeg het dan in zijn **Chat**.
 

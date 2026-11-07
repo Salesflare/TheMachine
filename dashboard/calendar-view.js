@@ -338,13 +338,13 @@ function calNotesPoll(){clearTimeout(calNotesTimer);const n=calNote;if(!calWriti
   if(calNote!==n)return;if(d){const had=!!n.data.notes;n.data=d;if(d.notes&&!had){calNotesMark(n.m,calNotesMarks(d));toast('Notes written.')}if(!n.editing.notes){calNotesShow();calNotesFit()}}calNotesPoll()},3000)}
 // A transcript reads as it was written, line by line; notes are Markdown
 // The meeting apps whose notes and transcripts match a meeting: the block's id, and its key in the API
-const CAL_APPS=[['zoom','zoom'],['meet','google_meet']];
+const CAL_APPS=[['zoom','zoom'],['meet','google_meet'],['teams','teams']];
 const calNotesHtml=(f,text)=>f==='tr'?esc(text):chatMarkdown(text);
 function calNotesShow(){const n=calNote,d=n?.data,ready=!!d;
  for(const [f,c] of Object.entries(CAL_FIELDS)){const added=d?.[c.api],editing=!!n?.editing[f],q=id=>$('#cal-v-'+f+'-'+id);
   q('by').textContent=added&&!editing?t(added.by==='owner'?'Added by you · {}':added.written_from==='transcript'?'Written by The Machine · {}':'Added by The Machine · {}',t(humanDay(new Date(added.at)))):'';
   const body=q('body');body.hidden=!added||editing;body.classList.remove('all','cut');body.classList.toggle('plain',f==='tr');body.innerHTML=added&&!editing?calNotesHtml(f,added.text):'';q('more').hidden=true;
-  // The meeting app's (Zoom, Google Meet) under the owner's own and its buttons; alone, above Add
+  // The meeting app's (Zoom, Google Meet, Teams) under the owner's own and its buttons; alone, above Add
   const nact=q('in').querySelector('.cal-v-nact');let after=nact,app=null;
   for(const [k,api] of CAL_APPS){const x=d?.[api]?.[c.api],z=q(k),zb=q(k+'-body');app=app||x;if(added){after.after(z);after=z}else nact.before(z);
    z.hidden=!x||editing;zb.classList.remove('all','cut');zb.classList.toggle('plain',f==='tr');zb.innerHTML=x&&!editing?calNotesHtml(f,x.text):'';q(k+'-more').hidden=true;

@@ -24,7 +24,7 @@ Dopo l’invio, una breve nota dice dove si trova l’attività, come «Inviato.
 
 In Pronta per te, Serve una tua decisione, In preparazione e In attesa di altri, un'attività scaduta o in scadenza entro domani viene prima. Le altre seguono dalla più recente, secondo l'ora che mostra ogni attività. La barra laterale ha lo stesso ordine.
 
-Un’attività con **Sembra fatto** appare come una fatta, con ciò che mostra che è fatta, come "PR #3451 unita". Non è ancora chiusa: **Riapri** la rimette nella tua lista, e la tua Machine ne tiene conto. Non risultano mai in ritardo e non contano come in attesa di te.
+Un’attività con **Sembra fatto** appare come una fatta, con ciò che mostra che è fatta, come "PR #3451 unita". Non è ancora chiusa: **Riapri** la rimette nella tua lista, e la tua Machine ne tiene conto. Non risultano mai in ritardo e non contano come in attesa di te. Un’attività con una bozza di risposta sembra fatta anche quando hai risposto tu in quella conversazione, come in Gmail o Slack.
 
 Un’attività il cui ultimo passo è ancora aperto da parte di qualcun altro, come una revisione, un merge o una risposta, mostra **In attesa di:** quel passo e resta aperta. Aspetta in **In attesa di altri**, chiusa sopra Torna più tardi, e non conta come pronta per te. Un nuovo messaggio su di essa la riporta indietro.
 
@@ -54,7 +54,7 @@ LinkedIn, X e Salesflare mantengono il loro ritmo.
 
 Un'attività mostra il passo successivo, come **Fallo** o **Rivedi e invia**, con **Posticipa** accanto. Vedi [Fallo](do-it.md) e [Posticipa](snooze.md).
 
-Non ancora preparata, ha **Cambia approccio** (di' come farla invece); pronta, **Chiedi modifiche** (di' cosa cambiare nella bozza). Se sul telefono la riga è piena, **Posticipa** passa in **…**. C'è anche **Segna come fatto** (è sistemata): in vista senza bozza, altrimenti in cima a **…**.
+Non ancora preparata, ha **Cambia approccio** (di' come farla invece); pronta, **Chiedi modifiche** (di' cosa cambiare nella bozza). Se sul telefono la riga è piena, **Posticipa** passa in **…**. C'è anche **Segna come fatto** (è sistemata): in vista senza bozza, altrimenti in cima a **…**. Esce subito dall’elenco, con **Annulla** nel messaggio.
 
 Per farla in un altro modo, dillo nella sua **Chat**.
 

@@ -471,11 +471,13 @@ class OpenAIVoice:
         self.worker = None
         self.used = 0.0
         self.timer = None
-        self.broken = 0.0   # when it last failed to start: the CLI does clips for a while after that
+        # when it last failed to start (time.monotonic()), None when it never did: the CLI does clips for a while after
+        # that. Not 0.0: monotonic counts from boot, so a computer up less than 10 minutes would look broken
+        self.broken = None
 
     def warm(self):
         """Starts it in the background (the mic was tapped)."""
-        if self.worker and self.worker.poll() is None or time.monotonic() - self.broken < 600:
+        if self.worker and self.worker.poll() is None or self._resting():
             return
         threading.Thread(target=self._warm, daemon=True, name='voice-openai-warm').start()
 
@@ -485,10 +487,14 @@ class OpenAIVoice:
             self.used = time.monotonic()
             self._idle()
 
+    def _resting(self):
+        """It failed to start less than 10 minutes ago."""
+        return self.broken is not None and time.monotonic() - self.broken < 600
+
     def _worker(self):
         if self.worker and self.worker.poll() is None:
             return self.worker
-        if time.monotonic() - self.broken < 600:
+        if self._resting():
             raise ValueError('unavailable')
         self.root.mkdir(parents=True, exist_ok=True, mode=0o700)
         argv, env = self.command()

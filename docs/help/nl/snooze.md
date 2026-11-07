@@ -8,7 +8,7 @@ order: 3
 ---
 ## Een to-do snoozen
 
-Druk op **Snoozen** op een to-do. **Herinner me later** biedt een paar tijdstippen, zoals over 2 uur, morgen, over 3 dagen of over een week, of **Kies een datum** voor een andere dag en **Tijd**, dan **Tijd opslaan**.
+Druk op **Snoozen** op een to-do. **Herinner me later** biedt een paar tijdstippen, zoals over 2 uur, morgen, over 3 dagen of over een week, of **Kies een datum** voor een andere dag en **Tijd**, dan **Tijd opslaan**. Per ongeluk gesnoozed? **Ongedaan maken** in de melding haalt hem meteen terug.
 
 Snoozes van een dag of langer komen terug op je tijdstip bij "Gesnoozede items komen terug om", en werk-to-do's wachten op een werkdag. Je stelt allebei in bij [Werkuren](work-hours.md).
 

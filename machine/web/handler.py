@@ -113,7 +113,7 @@ def event_glance(event, accounts, own=(), chars=240):
         if not out['dm'] and m.get('channel_name'):
             out['place'] = '#' + str(m['channel_name'])[:80]
     # The conversation a chat message is part of, so the Graph shows a run of them as one row. Mail and meetings: none.
-    thread = {'whatsapp.message': m.get('chat_id'), 'telegram.message': m.get('chat_id'), 'slack.message': m.get('channel_id'), 'linkedin.message': m.get('conversation_id'),
+    thread = {'whatsapp.message': m.get('chat_id'), 'telegram.message': m.get('chat_id'), 'teams.message': m.get('chat_id'), 'slack.message': m.get('channel_id'), 'linkedin.message': m.get('conversation_id'),
               'x.dm': m.get('conversation_id'), 'intercom.conversation': m.get('conversation_id')}.get(event.get('kind'))
     if thread:
         out['thread'] = f"{event.get('account_id')}:{event.get('kind')}:{thread}"

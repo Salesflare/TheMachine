@@ -31,7 +31,7 @@ En un teléfono, un diálogo como **¿Enviar este correo?** ocupa toda la pantal
 
 ## Sácale más partido
 
-Desde tu primera visita, cuando termina el primer vistazo, una pequeña tarea arriba en Tareas muestra lo que hace más útil a The Machine: la app del móvil, las notificaciones, WhatsApp, la app en este ordenador, otra cuenta y más conexiones. Cada fila tiene un botón que hace ese paso, y se marca sola cuando está hecho.
+Desde tu primera visita, cuando termina el primer vistazo, una pequeña tarea arriba en Tareas muestra lo que hace más útil a The Machine: la app del móvil, las notificaciones, WhatsApp, la app en este ordenador, otra cuenta y más conexiones. Cada fila tiene un botón que hace ese paso, y se marca sola cuando está hecho. Muestra hasta cinco filas, primero los pasos pendientes, así que una herramienta que sugiere tu correo, como GitHub, tiene su fila cuando los pasos anteriores están hechos.
 
 Las filas solo aparecen donde tienen sentido: nada de app del móvil dentro de la app, nada de instalar en un móvil. La × de una fila la cierra en todos los dispositivos, y la × de arriba cierra toda la tarea.
 
@@ -44,6 +44,8 @@ Cuando hay lista una versión nueva del panel, nunca se recarga mientras lo usas
 ## Mensajes
 
 Abre la búsqueda con `⌘K` en un Mac o `Ctrl K` en Windows y Linux, o con el icono de búsqueda de la barra superior en un teléfono. Escribe dos letras o más: **Mensajes** muestra lo que mejor encaja de todo lo que ha leído tu Machine, por significado o por palabras. El [historial](history.md) más antiguo aparece por palabras.
+
+También puedes hacer una pregunta, como la que sugiere una búsqueda vacía, para una respuesta corta sacada de tus propios mensajes ([Teclado y la paleta de comandos](keyboard.md)).
 
 **Ver todos los resultados** abre la lista completa, de todas las cuentas o de una. Cada resultado se abre en un lector, con un enlace al lugar de donde llegó. Una búsqueda vacía muestra los mensajes más recientes.
 

@@ -63,7 +63,7 @@ Z = 1.96
 EMAIL = frozenset({'gmail.message', 'ms_graph.message', 'outlook.message', 'salesflare.email', 'fleet.email'})
 MEETING = frozenset({'calendar.event', 'outlook.event', 'ms_graph.event', 'outlook_calendar.event', 'salesflare.meeting', 'zoom.summary',
                      'meeting.notes', 'meeting.transcript'})
-MESSAGE = frozenset({'slack.message', 'whatsapp.message', 'telegram.message', 'linkedin.message', 'x.dm', 'intercom.conversation',
+MESSAGE = frozenset({'slack.message', 'teams.message', 'whatsapp.message', 'telegram.message', 'linkedin.message', 'x.dm', 'intercom.conversation',
                      'android.notification', 'fleet.intercom'})
 CHANNELS = ('email', 'message', 'meeting')
 WHAT = ('reply', 'promise_by_owner', 'promise_to_owner', 'deadline', 'request', 'none')
