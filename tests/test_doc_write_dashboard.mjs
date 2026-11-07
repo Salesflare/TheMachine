@@ -158,7 +158,8 @@ try{
   connectors=[docs({docs_provider:'google',docs_linked_only:true,own_grant:true,docs_writes:['create','edit']})];
   await page.evaluate(()=>refresh());await page.waitForTimeout(200);
   const narrow=await conn.textContent();
-  assert.ok(narrow.includes('Google Docs. Opens only docs linked in your mail and the docs it makes.'),narrow);
+  assert.ok(narrow.includes('Opens only docs linked in your mail and the docs it makes.'),narrow);
+  assert.ok(!narrow.includes('Google Docs. Opens'),'the card names Google Docs already: '+narrow);
   assert.ok(!narrow.includes('Reads comments'),narrow);
   if(shots)await conn.screenshot({path:`${shots}/docs-card-google-hosted-${name}.png`});
   connectors=[docs({docs_provider:'google',docs_writes:['create','edit']})];
