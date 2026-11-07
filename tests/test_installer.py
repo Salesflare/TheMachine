@@ -393,7 +393,7 @@ class InstallerTest(unittest.TestCase):
         self.assertEqual(again['owner_name'], 'Changed By Hand')
         self.assertEqual(again['accounts'][0]['exclude'], [{'senders': ['noise@example.com']}])
         self.assertEqual(len(again['accounts']), 3)
-        self.assertEqual(again['weekly_recap'], {'enabled': False, 'weekday': 5, 'at': '16:00'})  # missing default restored
+        self.assertEqual(again['weekly_recap'], {'enabled': True, 'weekday': 5, 'at': '16:00'})  # missing default restored
         self.assertEqual(self.mode(self.config), 0o600)
         self.assertEqual((self.data / 'api-token').read_text(), token)
         self.assertEqual((self.data / 'vapid.json').read_text(), vapid)

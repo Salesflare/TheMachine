@@ -61,7 +61,7 @@
     "max_retry_seconds": 1800
   },
   "weekly_recap": {
-    "enabled": false,
+    "enabled": true,
     "weekday": 5,
     "at": "16:00"
   },

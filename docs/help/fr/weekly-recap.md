@@ -1,7 +1,7 @@
 ---
 title: Récap de la semaine
 area: weekly
-summary: Une fois par semaine, le bilan de votre Machine : tâches, promesses, personnes et projets, et ce qu’elle a remarqué. Désactivé par défaut.
+summary: Une fois par semaine, le bilan de votre Machine : tâches, promesses, personnes et projets, et ce qu’elle a remarqué. Activé par défaut.
 covers: weekly-recap
 code: assistant.py, machine/app/recap_settings.py, config.example.json
 order: 1
@@ -19,8 +19,8 @@ order: 1
 
 ## Quand et où
 
-Une fois par semaine, par défaut le vendredi après 16:00 dans votre fuseau horaire. Il arrive sur [Telegram](telegram.md), ou comme notification intitulée « Votre semaine » depuis l’[app mobile](phone-app.md).
+Une fois par semaine, par défaut le vendredi après 16:00 dans votre fuseau horaire. Il arrive sur [Telegram](telegram.md), ou comme notification intitulée « Votre semaine » depuis l’[app mobile](phone-app.md) et l’app du tableau de bord. Il arrive aussi par e-mail quand l’e-mail est activé pour **Récap du matin** dans Paramètres › Notifications. Avec [Prudent](security-levels.md), il n’arrive pas par e-mail.
 
-## L’activer
+## Le désactiver
 
-Il est désactivé par défaut, et le tableau de bord n’a pas encore d’interrupteur pour lui, donc une Machine hébergée ne peut pas l’activer aujourd’hui. Sur votre propre ordinateur, réglez `weekly_recap` dans le config.json de votre Machine : `enabled` à true, et en option `weekday` (de 1 à 7, le vendredi est 5) et `at` ("16:00"). Voir le [guide de configuration](https://github.com/Salesflare/TheMachine/blob/main/docs/configuration.md).
+Il est activé par défaut. Désactivez-le dans Paramètres › Notifications avec l’interrupteur **Récap hebdo**. Si vous l’avez désactivé, il reste désactivé. Sur votre propre ordinateur, vous pouvez aussi régler `weekly_recap` dans le config.json : `enabled` à false avec `chosen` à true, et en option `weekday` (de 1 à 7, le vendredi est 5) et `at` ("16:00"). Voir le [guide de configuration](https://github.com/Salesflare/TheMachine/blob/main/docs/configuration.md).

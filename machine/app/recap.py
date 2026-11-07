@@ -22,6 +22,7 @@ from machine.sources.android import android_app_name
 from machine.sources.calendar import calendar_keys, calendar_owned
 from machine.sources.connectors import UNNAMED
 from machine.sources.exclusions import default_exclusions
+from machine.app.recap_settings import recap_settings
 from machine.store.profile import recap_day
 from machine.text import encoded
 import notify
@@ -368,6 +369,19 @@ def weekly_recap_message(store, config, current=None):
 
 
 RECAP_CHOICES_NOTE = 'Choices follow below. Nothing changes until you tap.'
+RECAP_MAIL_SUBJECT = 'Your week with The Machine'
+
+
+def recap_mail_text(text):
+    """The recap as a plain email: its lines kept, bold and italics dropped, a link as its words with the address after."""
+    out = []
+    for line in str(text or '').split('\n'):
+        kept = []  # what recap_escape escaped is the owner's own text: kept as written
+        line = re.sub(r'\\(.)', lambda m: kept.append(m.group(1)) or f'\x00{len(kept) - 1}\x00', line)
+        line = re.sub(r'\[([^\]]+)\]\(([^)\s]+)\)', r'\1 (\2)', line)
+        line = re.sub(r'\*\*|(?<!\w)_|_(?!\w)', '', line)
+        out.append(re.sub('\x00(\\d+)\x00', lambda m: kept[int(m.group(1))], line).rstrip())
+    return '\n'.join(out).strip()
 
 
 class RecapApp:
@@ -393,11 +407,27 @@ class RecapApp:
             LOG.warning('app push recap error=%s', type(error).__name__)
         return {'messageId': 'web-recap-' + week}
 
-    def recap_step(self, sender=None, current=None):
-        """Send the weekly recap once, Fridays from 16:00: the recap, then each choice as its own short message with
-        its own buttons. Its choices are stored with it, so a tap on a button is checked against the message it came
-        from. sender(message, buttons) stands in for the delivery (tests)."""
-        settings = self.config.get('weekly_recap') or {}
+    def recap_mail(self, text, week, mail=None):
+        """The recap by email too, when the owner's email notifications for the digest are on (Settings, Notifications),
+        through the control plane's mailer like the digest. Not with Careful or notification text off: the text would
+        pass the mailer in the clear. True when the mailer took it."""
+        with self.store.connect() as db:
+            notify.ensure(db)
+            on, show = notify.allowed(db, 'digest', 'email'), security_levels.notify_text(db)
+        target = on and show and self.notify_mail_target()
+        if not target:
+            if on:
+                LOG.info('recap email skipped reason=%s', 'careful' if not show else 'not_paired')
+            return False
+        return bool((mail or notify.mail)(target[0], target[1], i18n.t(RECAP_MAIL_SUBJECT), recap_mail_text(text), delivery='recap-' + week))
+
+    def recap_step(self, sender=None, current=None, mail=None):
+        """Send the weekly recap once, Fridays from 16:00 (on unless the owner turned it off: recap_settings): the
+        recap, then each choice as its own short message with its own buttons. Its choices are stored with it, so a tap
+        on a button is checked against the message it came from. It goes on Telegram, else by push to the dashboard app
+        and the phone, and also by email when the owner's email notifications are on (recap_mail). sender(message,
+        buttons) and mail stand in for the delivery (tests)."""
+        settings = recap_settings(self.config)
         if not settings.get('enabled'):
             return None
         current = current or dt.datetime.fromisoformat(now())
@@ -436,6 +466,13 @@ class RecapApp:
             status, error = 'not_sent', str(failure)
         except (subprocess.TimeoutExpired, ValueError):
             error = 'delivery_outcome_unknown'  # never resend blindly
+        try:
+            emailed = self.recap_mail(recap['text'], week, mail)  # without the note on Telegram's choices
+        except Exception as failure:  # noqa: BLE001 - best effort, like the push
+            LOG.warning('recap email error=%s', type(failure).__name__)
+            emailed = False
+        if emailed and status == 'not_sent':  # the email went: no second try next round
+            status = 'sent'
         with self.store.connect() as db:
             if status == 'not_sent':
                 db.execute('DELETE FROM recap_items WHERE week=?', (week,))

@@ -1,7 +1,7 @@
 ---
 title: Wochenrückblick
 area: weekly
-summary: Einmal pro Woche, wie es deiner Machine ging: Aufgaben, Versprechen, Personen und Projekte, und was ihr aufgefallen ist. Standardmäßig aus.
+summary: Einmal pro Woche, wie es deiner Machine ging: Aufgaben, Versprechen, Personen und Projekte, und was ihr aufgefallen ist. Standardmäßig an.
 covers: weekly-recap
 code: assistant.py, machine/app/recap_settings.py, config.example.json
 order: 1
@@ -19,8 +19,8 @@ order: 1
 
 ## Wann und wo
 
-Einmal pro Woche, standardmäßig freitags nach 16:00 in deiner Zeitzone. Er kommt über [Telegram](telegram.md) oder als Benachrichtigung mit dem Titel „Deine Woche“ aus der [App auf dem Handy](phone-app.md).
+Einmal pro Woche, standardmäßig freitags nach 16:00 in deiner Zeitzone. Er kommt über [Telegram](telegram.md) oder als Benachrichtigung mit dem Titel „Deine Woche“ aus der [App auf dem Handy](phone-app.md) und der Dashboard-App. Er kommt auch per E-Mail, wenn E-Mail für **Morgendliche Zusammenfassung** in Einstellungen › Benachrichtigungen an ist. Mit [Vorsichtig](security-levels.md) kommt er nicht per E-Mail.
 
-## Einschalten
+## Ausschalten
 
-Er ist standardmäßig aus. Schalte ihn in Einstellungen › Benachrichtigungen mit dem Schalter **Wochenrückblick** ein. Auf deinem eigenen Computer kannst du auch `weekly_recap` in der config.json setzen: `enabled` auf true, und optional `weekday` (1 bis 7, Freitag ist 5) und `at` ("16:00"). Siehe den [Konfigurations-Leitfaden](https://github.com/Salesflare/TheMachine/blob/main/docs/configuration.md).
+Er ist standardmäßig an. Schalte ihn in Einstellungen › Benachrichtigungen mit dem Schalter **Wochenrückblick** aus. Hast du ihn ausgeschaltet, bleibt er aus. Auf deinem eigenen Computer kannst du auch `weekly_recap` in der config.json setzen: `enabled` auf false mit `chosen` auf true, und optional `weekday` (1 bis 7, Freitag ist 5) und `at` ("16:00"). Siehe den [Konfigurations-Leitfaden](https://github.com/Salesflare/TheMachine/blob/main/docs/configuration.md).
