@@ -3,7 +3,7 @@ title: Historique
 area: connections
 summary: Environ un an d’anciens e-mails, réunions et chats WhatsApp, pour chercher, lire et connaître vos contacts. Jamais une tâche.
 covers: history
-code: machine/app/history.py, machine/store/history.py, machine/graph_history.py
+code: machine/app/history.py, machine/store/history.py, machine/store/graph_history.py
 keywords: older messages, backfill, archive, past emails
 ---
 ## Ce qu’il garde

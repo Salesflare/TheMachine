@@ -684,7 +684,7 @@ def _freemail_only(row):
     return not found or all(e.rsplit('@', 1)[1] in graph.FREEMAIL for e in found)
 
 
-# A node's signals and its history (machine/graph_history.py): who knows someone counts both, under the same rules
+# A node's signals and its history (machine/store/graph_history.py): who knows someone counts both, under the same rules
 NODE_EVENTS = '(SELECT node_id,event_id FROM graph_events UNION ALL SELECT node_id,event_id FROM graph_history_events)'
 
 

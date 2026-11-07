@@ -51,7 +51,7 @@ import timeutil
 
 import enrichment
 import person_summary
-from machine import graph_history
+from machine.store import graph_history
 
 SCHEMA = '''
 CREATE TABLE IF NOT EXISTS projects(id INTEGER PRIMARY KEY,name TEXT NOT NULL UNIQUE COLLATE NOCASE,created_at TEXT NOT NULL,closed_at TEXT);
@@ -1141,7 +1141,7 @@ def build(db, config, now, team=(), kin=None, history=False):
     """Publish one coherent graph. Concurrent edits cannot be overwritten by an older build (graph_edits). team: the
     addresses of the people in the owner's Fleets, so an address they use too is never the owner's own (own_addresses.py).
     kin: which of them are in the owner's Work Fleets, Family or Friends (circles), so someone only in Family or
-    Friends is Personal. history: count the history rows a graph pass took in (machine/graph_history.py)."""
+    Friends is Personal. history: count the history rows a graph pass took in (machine/store/graph_history.py)."""
     for _ in range(BUILD_TRIES):
         try:
             return _build(db, config, now, team, kin, locked=False, history=history)
@@ -1177,7 +1177,7 @@ def _metadata(text):
 
 
 def _signals(db, horizon):
-    # Signals only: history comes in apart (machine/graph_history.py), for people and organizations only
+    # Signals only: history comes in apart (machine/store/graph_history.py), for people and organizations only
     rows = db.execute("SELECT id,account_id,kind,occurred_at,metadata FROM events WHERE deleted=0 AND history=0 AND occurred_at>=? ORDER BY occurred_at", (horizon,)).fetchall()
     signals = []
     for r in rows:
@@ -1221,7 +1221,7 @@ def _build_in(db, config, now, team, kin, locked, history=False):
     tz = owner_tz(config)
     horizon = (current - dt.timedelta(days=HORIZON_DAYS)).isoformat()
     signals = _signals(db, horizon)  # one statement: its own snapshot, no lock
-    # History counts toward people and organizations only (machine/graph_history.py); the owner's own addresses,
+    # History counts toward people and organizations only (machine/store/graph_history.py); the owner's own addresses,
     # projects and unnamed work stay from signals
     old = [(r['id'], r['account_id'], r['kind'], parse_time(r['occurred_at']), _metadata(r['metadata'])) for r in graph_history.rows(db, horizon)] if history else []
     old = [r for r in old if r[4] is not None]

@@ -3,7 +3,7 @@ title: Geschiedenis
 area: connections
 summary: Ongeveer een jaar oudere mails, vergaderingen en WhatsApp-chats, om te zoeken, te lezen en je mensen te kennen. Nooit een taak.
 covers: history
-code: machine/app/history.py, machine/store/history.py, machine/graph_history.py
+code: machine/app/history.py, machine/store/history.py, machine/store/graph_history.py
 keywords: older messages, backfill, archive, past emails
 ---
 ## Wat ze bewaart

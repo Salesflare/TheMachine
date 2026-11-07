@@ -3,7 +3,7 @@ title: Verlauf
 area: connections
 summary: Etwa ein Jahr ältere Mails, Meetings und WhatsApp-Chats zum Suchen, Lesen und Kennen deiner Leute. Nie eine Aufgabe.
 covers: history
-code: machine/app/history.py, machine/store/history.py, machine/graph_history.py
+code: machine/app/history.py, machine/store/history.py, machine/store/graph_history.py
 keywords: older messages, backfill, archive, past emails
 ---
 ## Was er behält

@@ -19,7 +19,7 @@ import check_now  # noqa: E402
 import embeddings  # noqa: E402
 import graph  # noqa: E402
 import ms_graph  # noqa: E402
-from machine import graph_history  # noqa: E402
+from machine.store import graph_history  # noqa: E402
 from machine.app import history as app_history  # noqa: E402
 from machine.store import history  # noqa: E402
 

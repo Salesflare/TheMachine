@@ -34,7 +34,7 @@ import datetime as dt
 import json
 import re
 
-from machine.graph_history import live
+from machine.store.graph_history import live
 import timeutil
 
 SCHEMA = '''

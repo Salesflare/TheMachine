@@ -3,7 +3,7 @@ title: History
 area: connections
 summary: About a year of older mail, meetings and WhatsApp chats, to search, read and know your people. Never a to-do.
 covers: history
-code: machine/app/history.py, machine/store/history.py, machine/graph_history.py
+code: machine/app/history.py, machine/store/history.py, machine/store/graph_history.py
 keywords: older messages, backfill, archive, past emails
 ---
 ## What it keeps

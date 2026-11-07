@@ -1,4 +1,4 @@
-"""History in the Graph (machine/graph_history.py): older mail counts toward closeness, last talked, who knows whom and
+"""History in the Graph (machine/store/graph_history.py): older mail counts toward closeness, last talked, who knows whom and
 the people and organizations, by counting only; never toward projects, "new", reviews, lookups or the Network, and
 Fleet answers read it under the same rules as signals. Nothing of it before a graph pass took it in."""
 import json
@@ -7,7 +7,7 @@ import unittest
 import test_graph as tg
 import fleet
 import person_summary
-from machine import graph_history
+from machine.store import graph_history
 
 a, graph, mail = tg.a, tg.graph, tg.mail
 HOME = {'id': 'home', 'email': 'sam@home.example', 'boundary': 'personal:Home'}

@@ -16,7 +16,7 @@ import fleet_learnings
 import graph
 import learning_loop
 import locale_prefs
-from machine.graph_history import live
+from machine.store.graph_history import live
 from machine.prompts.profile import VOICE_CHARS, VOICE_LINES
 from machine.sources.connectors import load_connector
 from machine.store.voices import OWN_KINDS, PROFILE_SKIP, sentences, similar, voice_block, voice_channel, VOICE_MAX

@@ -40,7 +40,7 @@ import json
 import re
 import secrets
 
-from machine.graph_history import live
+from machine.store.graph_history import live
 
 # The Network's group (cloud/discovery.py has the same): RFC 3526's 2048-bit MODP prime, its subgroup of squares.
 P = int(

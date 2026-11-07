@@ -23,7 +23,7 @@ import abilities
 import check_now
 import embeddings
 import graph
-from machine import graph_history
+from machine.store import graph_history
 from machine.store import history
 from sources import SourceError, rate_limited, upstream_busy
 from timeutil import now
@@ -230,6 +230,12 @@ class HistoryApp:
         with self.store.connect() as db:
             graph_history.ensure(db)
             return graph_history.advance(db, horizon, stamp)
+
+    def embed_pass(self, settings):
+        """One pass of embedding_worker: vectors for new and changed signals, newest first, then history's at a slower
+        pace once none waits. Seconds until the next pass."""
+        done = embeddings.embed_pending(self.store.connect, settings, 16)
+        return 5 if done == 16 else 60 if done else min(60, self.history_embed_step(settings))
 
     def history_embed_step(self, settings):
         """One small batch of history vectors for Search by meaning (embedding_worker calls it only when no signal waits

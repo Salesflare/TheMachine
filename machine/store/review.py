@@ -13,7 +13,7 @@ import bounces
 import chat_files
 import graph
 from machine.config import LOG
-from machine.graph_history import live
+from machine.store.graph_history import live
 from machine.sources.calendar import all_day_span, calendar_owned, calendar_owner_name
 from machine.sources.slack import slack_named, slack_named_out
 from machine.store.events import RUN_SIGNAL_BUDGET, SET_ASIDE_AFTER

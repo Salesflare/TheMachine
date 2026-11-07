@@ -3,7 +3,7 @@ title: Cronologia
 area: connections
 summary: Circa un anno di vecchie email, riunioni e chat WhatsApp, per cercare, leggere e conoscere le tue persone. Mai un'attività.
 covers: history
-code: machine/app/history.py, machine/store/history.py, machine/graph_history.py
+code: machine/app/history.py, machine/store/history.py, machine/store/graph_history.py
 keywords: older messages, backfill, archive, past emails
 ---
 ## Cosa tiene
