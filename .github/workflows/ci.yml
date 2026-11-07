@@ -1,10 +1,14 @@
 name: Tests and privacy checks
 
 on:
-  # GitHub Actions minutes cost money (macOS 10x, Windows 2x Linux), and the full suite runs locally before every push.
-  # So a pull request gets one Linux run of the pinned versions. Main, the merge queue and release tags run nothing here
-  # (the required check is Aikido's). The full matrix, Windows and macOS run weekly and on demand.
+  # GitHub Actions minutes cost money (macOS 10x, Windows 2x Linux). So a pull request gets one Linux run of the pinned
+  # versions, of the tests its change needs (scripts/test_select.py). Main and release tags run every test, on our own
+  # runner too, so anything the selection missed shows up right after the merge. The full matrix, Windows and macOS run
+  # weekly and on demand.
   pull_request:
+  push:
+    branches: [main]
+    tags: ['release-*']
   workflow_dispatch:
   schedule:
     - cron: '17 5 * * 1'  # weekly, so a new OpenClaw release that breaks something shows up here
@@ -13,29 +17,30 @@ permissions:
   contents: read
 
 # A new push to a pull request cancels its run still going: only the newest commit can be merged anyway.
-# The weekly run is never canceled.
+# Main is never canceled: a run goes on while the next merge waits (GitHub keeps only the newest one waiting).
 concurrency:
   group: ci-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
-# Pull requests run on our own runner (a Hetzner server, one fresh runner per job; the themachine-cloud repo's
-# docs/operations.md, CI runner), so they cost no Actions minutes. The weekly and manual runs stay on GitHub's.
+# Pull requests and pushes to main run on our own runner (Hetzner servers, one fresh runner per job; the themachine-cloud
+# repo's docs/operations.md, CI runner), so they cost no Actions minutes. The weekly and manual runs stay on GitHub's.
 # To fall back to GitHub's runners for pull requests too, set the repository variable CI_PR_RUNNER to "ubuntu-24.04"
 # (with the quotes); unset it to go back.
 # A contrib/ branch (a connector shared from a hosted Machine, opened by The Machine's cloud from its contributions fork)
 # is model-written code nobody reviewed yet: after its fork approval it runs on GitHub's runners, never ours.
 jobs:
   tests:
-    runs-on: ${{ github.event_name == 'pull_request' && !startsWith(github.head_ref, 'contrib/') && fromJSON(vars.CI_PR_RUNNER || '["self-hosted","linux","themachine-ci"]') || 'ubuntu-24.04' }}
+    runs-on: ${{ (github.event_name == 'push' || github.event_name == 'pull_request' && !startsWith(github.head_ref, 'contrib/')) && fromJSON(vars.CI_PR_RUNNER || '["self-hosted","linux","themachine-ci"]') || 'ubuntu-24.04' }}
     timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
-        # A pull request runs the pinned versions only; the weekly run and a manual run add the newest Python, Node and OpenClaw.
-        include: ${{ fromJSON(github.event_name == 'pull_request' && '[{"python":"3.12","node":"24.22.1","openclaw":"2026.10.7"}]' || '[{"python":"3.12","node":"24.22.1","openclaw":"2026.10.7"},{"python":"3.14","node":"26","openclaw":"latest"}]') }}
+        # A pull request and main run the pinned versions only; the weekly run and a manual run add the newest Python, Node and OpenClaw.
+        include: ${{ fromJSON((github.event_name == 'pull_request' || github.event_name == 'push') && '[{"python":"3.12","node":"24.22.1","openclaw":"2026.10.7"}]' || '[{"python":"3.12","node":"24.22.1","openclaw":"2026.10.7"},{"python":"3.14","node":"26","openclaw":"latest"}]') }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
+          fetch-depth: 2  # a pull request's merge commit and main under it, for the tests the change needs
           persist-credentials: false
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
@@ -43,9 +48,16 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: ${{ matrix.node }}
+          cache: npm  # our runner wipes a slot's home after every job: npm's downloads come from GitHub's cache instead
+          cache-dependency-path: package-lock.json
+      - name: Keep Chromium between runs
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-1.63.0-chromium-${{ runner.os }}-${{ runner.arch }}
       - name: Install OpenClaw and browser
         run: |
-          npm install --global openclaw@${{ matrix.openclaw }}
+          npm install --global --prefer-offline --no-audit --no-fund openclaw@${{ matrix.openclaw }}
           # our runner has Chromium's system libraries already, and a job there has no sudo
           npx --yes --package=playwright@1.63.0 playwright install ${{ runner.environment == 'github-hosted' && '--with-deps' || '' }} chromium
           printf 'OPENCLAW_PACKAGE_DIR=%s/openclaw\n' "$(npm root -g)" >> "$GITHUB_ENV"
@@ -56,18 +68,39 @@ jobs:
           node --input-type=module -e 'const {chromium}=await import(process.env.OPENCLAW_PACKAGE_DIR+"/node_modules/playwright-core/index.mjs"); console.log("CHROMIUM_PATH="+chromium.executablePath())' >> "$GITHUB_ENV"
       - name: Install cryptography (the address for AIs needs it; tests/test_ai_reach.py)
         run: python -m pip install --quiet cryptography==46.0.3
+      - name: Choose the tests
+        # A pull request runs the tests its change needs (scripts/test_select.py: what imports or names each changed file,
+        # all of them when that isn't clear); main, release tags and the weekly run run every one.
+        id: pick
+        if: github.event_name == 'pull_request'
+        run: |
+          changed="$RUNNER_TEMP/changed" picked="$RUNNER_TEMP/picked"
+          # anything that goes wrong here runs every test
+          git diff --name-only HEAD^1 HEAD > "$changed" && [ -s "$changed" ] && python3 scripts/test_select.py "$changed" > "$picked" || echo ALL > "$picked"
+          if [ "$(head -n1 "$picked")" = ALL ]; then
+            echo "Every test file"
+            echo "files=" >> "$GITHUB_OUTPUT"
+          else
+            echo "$(wc -l < "$picked") test files for:" && cat "$changed"
+            echo "files=$(tr '\n' ' ' < "$picked")" >> "$GITHUB_OUTPUT"
+          fi
       - name: Test Python, Node, OpenClaw SDK and dashboard
         env:
-          # 6 at a time on our runner: several PR jobs share it, and 8 browser tests each starve it into flaky timeouts
+          # 6 at a time on our runner: 8 browser tests each starved it into flaky timeouts. When every slot is busy the
+          # box is short of CPU whatever this is (the suite's own CPU time sets the pace; the log's "CPU ... cores busy"
+          # line shows it); fewer would only slow a run when the box is quiet.
           THE_MACHINE_TEST_JOBS: ${{ runner.environment == 'self-hosted' && '6' || '' }}
-        run: python3 scripts/test.py
+          # a pull request stops starting files after 5 failed ones: the slot goes to the next pull request
+          THE_MACHINE_TEST_MAX_FAILURES: ${{ github.event_name == 'pull_request' && '5' || '' }}
+          FILES: ${{ steps.pick.outputs.files }}
+        run: python3 scripts/test.py $FILES
       - name: Check whitespace
         run: git diff --check
 
   help:
     # The help articles (docs/help/, the help at themachine.computer/help) against the code: every connector, dashboard
     # tab and Settings tab has one, and each names only buttons, routes and commands that still exist.
-    runs-on: ${{ github.event_name == 'pull_request' && !startsWith(github.head_ref, 'contrib/') && fromJSON(vars.CI_PR_RUNNER || '["self-hosted","linux","themachine-ci"]') || 'ubuntu-24.04' }}
+    runs-on: ${{ (github.event_name == 'push' || github.event_name == 'pull_request' && !startsWith(github.head_ref, 'contrib/')) && fromJSON(vars.CI_PR_RUNNER || '["self-hosted","linux","themachine-ci"]') || 'ubuntu-24.04' }}
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -132,7 +165,7 @@ jobs:
         run: ./install.ps1 -DryRun
 
   secrets:
-    runs-on: ${{ github.event_name == 'pull_request' && !startsWith(github.head_ref, 'contrib/') && fromJSON(vars.CI_PR_RUNNER || '["self-hosted","linux","themachine-ci"]') || 'ubuntu-24.04' }}
+    runs-on: ${{ (github.event_name == 'push' || github.event_name == 'pull_request' && !startsWith(github.head_ref, 'contrib/')) && fromJSON(vars.CI_PR_RUNNER || '["self-hosted","linux","themachine-ci"]') || 'ubuntu-24.04' }}
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4

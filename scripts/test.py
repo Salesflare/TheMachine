@@ -85,6 +85,38 @@ def browsers():
                 yield str(Path(base) / 'Google/Chrome/Application/chrome.exe')
 
 
+def execute(command, env, limit, folder):
+    """Run one test file: (passed, output, CPU seconds or None). On Linux and macOS the CPU time is the file's own
+    process and every process it waited for (a browser, a server), from wait4."""
+    if not hasattr(os, 'wait4'):
+        try:
+            result = subprocess.run(command, cwd=ROOT, env=env, timeout=limit, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                    text=True, errors='replace')
+            return result.returncode == 0, result.stdout, None
+        except subprocess.TimeoutExpired as timeout:
+            out = timeout.output or ''
+            return False, (out.decode(errors='replace') if isinstance(out, bytes) else out) + f'\nTimed out after {limit} s', None
+    log = folder / '.test-output'
+    with open(log, 'wb') as sink:
+        process = subprocess.Popen(command, cwd=ROOT, env=env, stdout=sink, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL)
+    deadline, status, usage, late = time.monotonic() + limit, 0, None, False
+    while True:
+        pid, status, usage = os.wait4(process.pid, os.WNOHANG)
+        if pid:
+            break
+        if time.monotonic() > deadline:
+            process.kill()
+            _, status, usage = os.wait4(process.pid, 0)
+            late = True
+            break
+        time.sleep(0.1)
+    process.returncode = os.waitstatus_to_exitcode(status)
+    output = log.read_bytes().decode(errors='replace')
+    if late:
+        return False, output + f'\nTimed out after {limit} s', usage.ru_utime + usage.ru_stime
+    return process.returncode == 0, output, usage.ru_utime + usage.ru_stime
+
+
 def main():
     node = shutil.which('node')
     if not node:
@@ -133,31 +165,40 @@ def main():
             own = Path(home) / file.name
             own.mkdir()
             audit = {'MESSAGE_SEAL_AUDIT': '1'} if file.stem in SEAL_AUDIT else {}
-            try:
-                # Windows finds the home folder through USERPROFILE, not HOME.
-                result = subprocess.run(command, cwd=ROOT, env={**env, **audit, 'HOME': str(own), 'USERPROFILE': str(own)}, timeout=limit,
-                                        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, errors='replace')
-                ok, output = result.returncode == 0, result.stdout
-                if audit and SEAL_LEAK in output:
-                    ok, output = False, output + f'\nA connector {SEAL_LEAK} (MESSAGE_SEAL_AUDIT)'
-            except subprocess.TimeoutExpired as timeout:
-                out = timeout.output or ''
-                ok, output = False, (out.decode(errors='replace') if isinstance(out, bytes) else out) + f'\nTimed out after {limit} s'
-            return file.name, ok, output, time.monotonic() - started
+            # Windows finds the home folder through USERPROFILE, not HOME.
+            ok, output, cpu = execute(command, {**env, **audit, 'HOME': str(own), 'USERPROFILE': str(own)}, limit, own)
+            if audit and SEAL_LEAK in output:
+                ok, output = False, output + f'\nA connector {SEAL_LEAK} (MESSAGE_SEAL_AUDIT)'
+            return file.name, ok, output, time.monotonic() - started, cpu
 
-        failed, took = [], []
+        failed, took, cpu_total = [], [], 0.0
+        # THE_MACHINE_TEST_MAX_FAILURES=N: after N failed files, start no more (the ones running finish), so a change that
+        # breaks much doesn't hold a CI slot for the whole suite. Unset or 0: run everything.
+        max_failures = int(os.environ.get('THE_MACHINE_TEST_MAX_FAILURES') or 0)
+        wall = time.monotonic()
         print(f'Running {len(files)} test files, {jobs} at a time' + (f' ({len(skips)} skipped on {sys.platform})' if skips else ''), flush=True)
         with concurrent.futures.ThreadPoolExecutor(jobs) as pool:
             # the biggest files first, so a slow one doesn't start last and keep everyone waiting
             started = [pool.submit(run, file) for file in sorted(files, key=lambda f: -f.stat().st_size)]
             for done in concurrent.futures.as_completed(started):
-                name, ok, output, seconds = done.result()
+                if done.cancelled():
+                    continue
+                name, ok, output, seconds, cpu = done.result()
                 took.append((seconds, name))
-                print(f'{"ok  " if ok else "FAIL"} {name} ({seconds:.0f} s)', flush=True)
+                cpu_total += cpu or 0
+                print(f'{"ok  " if ok else "FAIL"} {name} ({seconds:.0f} s' + (f', {cpu:.0f} s CPU' if cpu is not None else '') + ')', flush=True)
                 if not ok:
                     failed.append(name)
                     print(output.rstrip() + '\n', flush=True)
-        print('Slowest: ' + ', '.join(f'{name} {seconds:.0f} s' for seconds, name in sorted(took, reverse=True)[:5]))
+                    if max_failures and len(failed) == max_failures:
+                        skipped_now = sum(future.cancel() for future in started)
+                        if skipped_now:
+                            print(f'{len(failed)} files failed: {skipped_now} not started (THE_MACHINE_TEST_MAX_FAILURES)', flush=True)
+        wall = time.monotonic() - wall
+        if cpu_total:
+            # how busy the files kept the computer: about `jobs` here means the workers fit the cores they have
+            print(f'CPU {cpu_total:.0f} s in {wall:.0f} s: {cpu_total / wall:.1f} cores busy on average, {jobs} workers')
+        print('Slowest: ' + ', '.join(f'{name} {seconds:.0f} s' for seconds, name in sorted(took, reverse=True)[:10]))
         print('\n'+('Failed: '+', '.join(sorted(failed)) if failed else 'All Python and Node suites passed.'))
         return 1 if failed else 0
 
