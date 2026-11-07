@@ -10,8 +10,8 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // to a control plane account (hosted, or self-hosted and paired) gets Account first (test_account_dashboard.mjs); one
 // with no account has none. A tab with nothing to show is
 // left out. Links open a tab (#settings/skills, #settings=model), the URL follows the tab, and the last tab is kept.
-// The row is one line (1440x900, 1440x700, 390). On a desktop every tab shows in full, none cut off at an edge. On a
-// phone it scrolls sideways with a fade at its edge, the open tab scrolled into view. The page stays inside the screen.
+// On a desktop (1440x900, 1440x700) every tab shows in full, none cut off at an edge, a second row if they don't fit. On a
+// phone (390) it scrolls sideways with a fade at its edge, the open tab scrolled into view. The page stays inside the screen.
 const dashboard=await dashboardPage();
 const hours={days:[0,1,2,3,4],start:'08:00',end:'18:00',morning:'09:00',digest_at:'08:30',timezone:'UTC',saveable:true};
 let hosted=true,paired=false,model=true;
@@ -65,7 +65,9 @@ try{
    return {top:new Set(r.map(x=>Math.round(x.top))).size,height:new Set(r.map(x=>Math.round(x.height))).size,fits:document.documentElement.scrollWidth<=innerWidth,overflow:getComputedStyle(bar).overflowX,
     open:inside(bar.querySelector('[aria-selected="true"]').getBoundingClientRect()),all:r.every(inside)}});
   const desk=width>=1024;
-  assert.deepEqual(row,{top:1,height:1,fits:true,overflow:desk?'visible':'auto',open:true,all:desk},`${width}x${height} `+JSON.stringify(row));
+  // (a desktop may take a second row: that depends on the fonts it has)
+  assert.deepEqual({...row,top:desk?Math.min(row.top,1):row.top},{top:1,height:1,fits:true,overflow:desk?'visible':'auto',open:true,all:desk},`${width}x${height} `+JSON.stringify(row));
+  if(desk)assert.ok(row.top<=2,'at most two rows of tabs at '+width);
   if(process.env.SHOTS)await page.screenshot({path:`${process.env.SHOTS}/settings-tabs-${width}x${height}.png`});
   // The last tab is kept; a link opens another; leaving Settings drops the link.
   await page.reload();await page.locator('#updated',{hasText:/\d/}).waitFor({state:'attached'});await page.locator('#settings:not([hidden])').waitFor();
