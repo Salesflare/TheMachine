@@ -20,7 +20,7 @@ Tu Machine arranca, y luego la página de configuración te guía por el resto, 
 
 1. **Correo y calendario**: conecta Google o Microsoft. Puedes hacerlo mientras arranca tu Machine. Después de iniciar sesión, el paso indica que está trabajando hasta que tu Machine esté instalada y haya leído tu correo, más o menos un minuto. Consulta [Gmail](gmail.md) y [Microsoft](microsoft.md).
 2. **Tu IA**: inicia sesión con ChatGPT o Claude, o usa una clave de tu proveedor de IA. Consulta [ChatGPT](chatgpt.md). Un panel abierto mientras tanto dice **Conectando ChatGPT…** hasta que termine.
-3. Las revisiones se activan solas. Las primeras tareas salen de tu correo más reciente, y luego de tus últimos 7 días. Si nada te necesita, la lista dice qué leyó y qué conectar después.
+3. Las revisiones se activan solas. Las primeras tareas salen de tu correo más reciente, y luego de tus últimos 7 días. Si nada te necesita, la lista dice qué leyó y qué conectar después. Si una revisión falla, se vuelve a intentar en pocos minutos; si sigue fallando, la lista lo dice.
 
 En **Añade más cuando quieras** están las opcionales: **Más fuentes** como Slack, WhatsApp o GitHub, [Telegram](telegram.md), [Codex](hand-to-agent.md) y la conexión de tu navegador. Ninguna hace falta para empezar. Tu panel te las sugiere cuando ayudan, por ejemplo GitHub cuando no para de llegar su correo.
 

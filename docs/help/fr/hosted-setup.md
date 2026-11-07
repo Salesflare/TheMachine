@@ -20,7 +20,7 @@ Votre Machine démarre, puis la page de configuration vous guide pour le reste, 
 
 1. **E-mail et agenda** : connectez Google ou Microsoft. Vous pouvez le faire pendant que votre Machine démarre. Après la connexion, l’étape indique qu’elle travaille jusqu’à ce que votre Machine soit installée et ait lu vos e-mails, environ une minute. Voir [Gmail](gmail.md) et [Microsoft](microsoft.md).
 2. **Votre IA** : connectez-vous avec ChatGPT ou Claude, ou utilisez une clé de votre fournisseur d’IA. Voir [ChatGPT](chatgpt.md). Un tableau de bord ouvert entre-temps affiche **Connexion à ChatGPT…** jusqu’à la fin.
-3. Les vérifications s’activent d’elles-mêmes. Les premières tâches viennent de vos e-mails les plus récents, puis de vos 7 derniers jours. Si rien ne vous attend, la liste dit ce qu’elle a lu et quoi connecter ensuite.
+3. Les vérifications s’activent d’elles-mêmes. Les premières tâches viennent de vos e-mails les plus récents, puis de vos 7 derniers jours. Si rien ne vous attend, la liste dit ce qu’elle a lu et quoi connecter ensuite. Une vérification qui échoue est relancée en quelques minutes ; si elle échoue encore, la liste le dit.
 
 Sous **Ajoutez-en d’autres à tout moment** se trouvent les options : **Plus de sources** comme Slack, WhatsApp ou GitHub, [Telegram](telegram.md), [Codex](hand-to-agent.md) et la connexion de votre navigateur. Aucune n’est nécessaire pour commencer. Votre tableau de bord les suggère quand elles sont utiles, par exemple GitHub dès que ses e-mails continuent d’arriver.
 

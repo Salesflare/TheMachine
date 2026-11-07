@@ -51,9 +51,9 @@ class FirstReviewDig(unittest.TestCase):
     def runs(self):
         with self.store.connect() as db: return [dict(r) for r in db.execute('SELECT * FROM review_runs ORDER BY started_at')]
 
-    def review(self, minutes, cards=0, status='ok', save=True, receipt=None):
+    def review(self, minutes, cards=0, status='ok', save=True, receipt=None, counted=None):
         """The running review sees its batch, saves `cards` to-dos (each one shows at once) and saves the batch (or not),
-        then ends with `status`."""
+        then ends with `status` (`counted`: what the run counts as, when not that)."""
         run = self.runs()[-1]
         with self.later(minutes):
             claim = self.store.begin_analysis(['work'], 120, a.REVIEW_SESSION_PREFIX + run['run_id'], run['run_id'])
@@ -64,7 +64,7 @@ class FirstReviewDig(unittest.TestCase):
                 with self.store.connect() as db:
                     db.execute('UPDATE events SET analyzed_version=version WHERE id IN (' + ','.join('?' * len(ids)) + ')', ids)
                     db.execute("UPDATE analyses SET status='complete',finished_at=? WHERE id=?", (a.now(), claim['analysis_id']))
-        self.assertEqual(self.step(Runner(receipt or status), minutes), status)
+        self.assertEqual(self.step(Runner(receipt or status), minutes), counted or status)
         return ids
 
     def dig(self, minutes=0):
@@ -261,18 +261,70 @@ class FirstReviewDig(unittest.TestCase):
         # 2026-10-27, a hosted Machine on a Claude plan: the quick review and the next one each saved their batch, then
         # the runtime reported the silent NO_REPLY ending as runtime_error (receipts from before silent_end). No
         # review ever ended ok and nothing was left to review, so nothing ran for nine hours; the report said failed.
+        # A first look's batch that was saved is a finished pass now, whatever the runtime said after it.
         self.store.commit_page('work', {}, [mail(f'm{n}', hours_ago=n + 1) for n in range(30)])
         self.step(Runner('admitted'))
+        with self.assertLogs(a.LOG, 'WARNING') as logs:
+            self.review(8, cards=1, status='error', counted='ok')  # saved, reported failed
+        self.assertIn('error=runtime_error phase=runtime saved_claims=1 counted=ok', logs.output[-1])
+        first = self.runs()[0]
+        self.assertEqual((first['status'], first['error'], first['last_error']), ('ok', None, 'runtime_error'))
+        with self.store.connect() as db:  # the error class still reaches the error reports
+            self.assertEqual(db.execute("SELECT kind FROM error_feed WHERE source='review'").fetchall()[0][0], 'runtime_error')
+        # Signals of the week left: the next batch comes at once, no backoff as after a failure
+        self.assertEqual(self.step(Runner('admitted'), 8), 'admitted')
         with self.assertLogs(a.LOG, 'WARNING'):
-            self.review(8, status='error')  # saved, reported failed
-        # Signals of the week left: the next batch comes within the backoff, it does not wait for new mail
-        self.assertIsNone(self.step(Runner(), 8.5))
-        self.assertEqual(self.step(Runner('admitted'), 9.1), 'admitted')
-        with self.assertLogs(a.LOG, 'WARNING'):
-            self.review(10, status='error')
-        # Nothing of the week left: the first review is done, not waiting for its first "ok" forever
+            self.review(10, status='error', counted='ok')
+        # Nothing of the week left: the first review is done, and the report says the quick look went well
         self.assertEqual(self.dig(13), {'done': 'covered'})
         self.assertIsNone(self.step(Runner(), 13))
+        with self.store.connect() as db:
+            report = a.first_cards_report(db, self.app.config['accounts'])
+        self.assertEqual((report['quick']['status'], report['quick']['cards'], report['cards']), ('ok', 1, 1))
+
+    def test_a_first_look_pass_that_fails_after_saving_to_dos_keeps_them(self):
+        # The to-dos a failed pass saved stay on the list; the pass is tried again only for what it did not save
+        self.store.commit_page('work', {}, [mail(f'm{n}', hours_ago=n + 1) for n in range(30)])
+        self.step(Runner('admitted'))
+        run = self.runs()[-1]
+        with self.later(2):
+            claim = self.store.begin_analysis(['work'], 120, a.REVIEW_SESSION_PREFIX + run['run_id'], run['run_id'])
+            self.store.suggest('kept-1', 'Reply to Sam', 'Asked.', [claim['events'][0]['id']])
+        with self.assertLogs(a.LOG, 'WARNING'):
+            self.assertEqual(self.step(Runner('error'), 3), 'error')  # its batch not saved: a real failure
+        with self.store.connect() as db:
+            self.assertEqual(db.execute("SELECT status FROM suggestions WHERE dedupe_key='kept-1'").fetchone()[0], 'pending')
+            self.assertEqual(db.execute("SELECT status FROM analyses").fetchone()[0], 'retryable')
+            self.assertEqual(a.first_cards_report(db, self.app.config['accounts'])['cards'], 1)
+
+    def test_a_regular_review_that_fails_after_saving_stays_a_failure(self):
+        # Only the first look's passes count as finished that way; afterwards a failure stays one (backoff, ops alert)
+        with self.store.connect() as db:
+            db.execute("INSERT INTO milestones(name,at,detail) VALUES('first_dig_done',?,'cards')", (a.now(),))
+        self.store.commit_page('work', {}, [mail(f'm{n}', hours_ago=n + 1) for n in range(45)])
+        self.step(Runner('admitted'))
+        with self.assertLogs(a.LOG, 'WARNING'):
+            self.review(2, status='error')
+        self.assertEqual((self.runs()[0]['status'], self.runs()[0]['error']), ('error', 'runtime_error'))
+
+    def test_a_first_look_that_keeps_failing_says_so(self):
+        # The dashboard's first look: "Reading on" while it works, the backoff's "tries again shortly" after a failure,
+        # and from the third failure in a row a line that says the tries keep failing (first_dig_live.failing)
+        self.store.commit_page('work', {}, [mail(f'm{n}', hours_ago=n + 1) for n in range(30)])
+        self.step(Runner('admitted'))
+        minutes = 0
+        for n in range(1, 4):
+            with self.assertLogs(a.LOG, 'WARNING'):
+                self.review(minutes + 1, status='error', save=False)
+            with self.later(minutes + 1), self.store.connect() as db:
+                self.assertEqual(self.app.first_dig_live(db)['failing'], n)
+            minutes += 1
+            while self.step(Runner('admitted'), minutes) != 'admitted':
+                minutes += 1
+                self.assertLess(minutes, 60)
+        self.review(minutes + 1)  # it went well: the line goes
+        with self.later(minutes + 1), self.store.connect() as db:
+            self.assertEqual(self.app.first_dig_live(db)['failing'], 0)
 
     def test_a_failed_first_review_comes_back_within_half_an_hour_however_often_it_failed(self):
         self.store.commit_page('work', {}, [mail(f'm{n}', hours_ago=n + 1) for n in range(30)])

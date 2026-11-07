@@ -3,6 +3,10 @@
 // the lists below.
 const REVIEW_ACTIVE=['starting','running','recovering'];
 const FIRST_LOOK_WAIT={model:'It starts once your main model can run: sign in for it or add a key.',sources:'It starts once a source has brought in its first messages.',settling:'It starts in a few minutes, once the first import settles.',mail:'It starts when your mail is in.',retry:'The last try did not finish; it tries again shortly.',due:'Starting now.'};
+// A first look whose tries keep failing (first_look.failing / first_dig.failing: tries in a row that failed, from the
+// third on, as FIRST_LOOK_TRIES) says so in one line instead of "tries again shortly" or "Reading on"
+const FL_KEEPS_FAILING=3,flFailing=f=>(+f?.failing|0)>=FL_KEEPS_FAILING;
+const flWait=fl=>fl?.why==='retry'&&flFailing(fl)?t('The last tries did not finish. Still trying.'):t(FIRST_LOOK_WAIT[fl?.why]||'');
 const firstLookDays=(fl,run)=>{const hours=run?run.window_hours:fl?.quick&&fl.hours;return hours?Math.max(1,Math.round(hours/24)):fl?.days||7};
 function reviewLiveRows(live){const rows=[];const name=id=>{const c=(state.connectors||[]).find(c=>c.id===id);return c?(c.display_name||c.email||id):id};
 for(const r of live.runs||[]){const total=r.planned||r.claimed_count||0,done=Math.min(r.done_count||0,total||Infinity);const steps=r.steps||[],[latest,...earlier]=steps;
@@ -14,13 +18,13 @@ rows.push(make('div',{class:'review-live','data-run':r.run_id},chipNode(r.status
  r.preview?make('small',{},'A preview: to-dos show under To-dos, and nothing is sent or done.'):''))}
 if(!(live.runs||[]).length&&startsByItself()){if(!setupStep())rows.push(make('div',{class:'review-live queued'},chipNode(aiConnecting()?'Connecting':'Starting','lavender'),make('span',{class:'grow'},setupLine())));return rows}
 if(!(live.runs||[]).length&&state.reviews_on===false){const on=turnOn(),fl=live.first_look;
- rows.push(make('div',{class:'review-live queued'},chipNode('Off','orange'),make('span',{class:'grow'},t('Checks are off.'),fl?.state==='waiting'?` ${t('A first look at your last {} days comes first.',firstLookDays(fl))} ${t(FIRST_LOOK_WAIT[fl.why]||'')}`:''),
+ rows.push(make('div',{class:'review-live queued'},chipNode('Off','orange'),make('span',{class:'grow'},t('Checks are off.'),fl?.state==='waiting'?` ${t('A first look at your last {} days comes first.',firstLookDays(fl))} ${flWait(fl)}`:''),
   on.url?make('a',{class:'head-link',href:on.url},on.action):make('code',{},'./install.sh --activate')));return rows}
 if(!(live.runs||[]).length&&live.queue){const q=live.queue,n=()=>q.waiting.toLocaleString(DL);
  rows.push(make('div',{class:'review-live queued'},chipNode(q.first?'First':'Next','lavender'),
   make('span',{class:'grow'},q.why==='mail'?(q.first?t('First check starts when your mail is in'):t('Next check starts when your new mail is in')):q.first?t(['{} message waiting for its first check','{} messages waiting for their first check'],n()):t(['{} message waiting for the next check','{} messages waiting for the next check'],n())),
   make('small',{},q.why==='mail'?(q.waiting?t(['{} message so far','{} messages so far'],n()):'Importing your mail'):q.why==='mail_in'?'Your mail is in. Starting now':`Starts ${ago(q.starts_at)}`)))}
-if(!(live.runs||[]).length&&live.first_look?.state==='waiting')rows.push(make('div',{class:'review-live queued'},chipNode('First look','lavender'),make('span',{class:'grow'},`A first check of your last ${live.first_look.days} days`),make('small',{},FIRST_LOOK_WAIT[live.first_look.why]||'')));
+if(!(live.runs||[]).length&&live.first_look?.state==='waiting')rows.push(make('div',{class:'review-live queued'},chipNode('First look','lavender'),make('span',{class:'grow'},`A first check of your last ${live.first_look.days} days`),make('small',{},flWait(live.first_look))));
 return rows}
 // The first look (a review of the last days, right after setup): while there are no cards yet it is the empty
 // state itself; once cards come in, a slim progress strip under the counters.
@@ -41,10 +45,10 @@ function firstLookInfo(live){const run=(live.runs||[]).find(r=>r.preview||r.wind
 // read already counts what a running batch saved (its done_count), so only the batch's estimate beyond that is added;
 // the total only grows (new mail), so the count never looks like it went back
 if(dig&&dig.total){const total=flTotal=Math.max(flTotal,0,+dig.total|0),todos=+dig.todos|0,ahead=run?Math.max(0,flRunDone(run,dig.pace)-(run.done_count||0)):0,done=Math.min(total,Math.max(flPeak,(+dig.read|0)+ahead));flPeak=done;flMark();
- return{title:t('Taking a first look at your last {} days',dig.days||7),done,total,wait:!dig.read&&!run?.done_count?'':todos?t(['Found {} to-do. Reading on.','Found {} to-dos. Reading on.'],todos):t('Nothing for you yet. Reading on.')}}
+ return{title:t('Taking a first look at your last {} days',dig.days||7),done,total,wait:!run&&dig.failing?(flFailing(dig)?t('The last tries did not finish. Still trying.'):t(FIRST_LOOK_WAIT.retry)):!dig.read&&!run?.done_count?'':todos?t(['Found {} to-do. Reading on.','Found {} to-dos. Reading on.'],todos):t('Nothing for you yet. Reading on.')}}
 if(run){const total=run.planned||run.claimed_count||0;flMark();return{title:t('Taking a first look at your last {} days',firstLookDays(fl,run)),done:flRunDone(run,6),total}}
 if(startsByItself()&&fl?.state!=='due')return setupStep()?{title:t('Your first to-dos show up here'),wait:false}:flBack()?{title:t('Taking a first look at your last {} days',firstLookDays(fl))}:{title:setupLine(),working:!!aiConnecting()};  // not "All clear" before the first read ends
-if((fl?.state==='waiting'&&fl.why!=='model')||fl?.state==='due')return{title:t('A first look at your last {} days starts soon',firstLookDays(fl)),wait:FIRST_LOOK_WAIT[fl.state==='due'?'due':fl.why]||''};return null}
+if((fl?.state==='waiting'&&fl.why!=='model')||fl?.state==='due')return{title:t('A first look at your last {} days starts soon',firstLookDays(fl)),wait:fl.state==='due'?t(FIRST_LOOK_WAIT.due):flWait(fl)};return null}
 // the counts are whole numbers before they reach the page, whatever the status says
 const firstLookBar=i=>{const done=Math.max(0,+i.done|0),total=Math.max(0,+i.total|0);return total?[make('span',{class:'fl-bar',role:'progressbar','aria-label':'Signals checked','aria-valuemin':'0','aria-valuemax':total,'aria-valuenow':done},
  make('i',{style:{width:Math.round(100*done/total)+'%'}})),make('span',{class:'fl-count mono'},t('{} of {} signals',done,total))]:[]};

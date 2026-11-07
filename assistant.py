@@ -849,6 +849,8 @@ from machine.store.first_look import (
     GREETING_HOURS,
     TIP_SOURCES,
     TIP_USED,
+    VERIFIED_KINDS,
+    first_value,
 )
 from machine.web.serving import (
     COMPRESSIBLE,
@@ -1172,36 +1174,6 @@ def first_look_retry_at(runs, current):
 
 
 FIRST_LOOK_SIGNAL_SECONDS = 12  # about how long a first look takes per signal, for "first cards in about N min"
-# Onboarding value past the first approval (a click), for first_cards_report: the first to-do whose preparation finished
-# with a result or draft (first_prepared: 'result' or 'draft'), and the first action the provider confirmed went through
-# (first_verified_action: its kind). A demo send and a fix merged into The Machine itself don't count.
-VERIFIED_KINDS = tuple(k for k in next_actions.APPROVE_KINDS if k not in ('email_demo', 'merge'))
-
-
-def first_value(db, marks, since):
-    """{first_prepared_at, first_prepared, first_prepared_backfill, first_verified_action_at, ...} for first_cards_report.
-    From the marks (note_first); on an install that had them before they were marked, estimated from what it kept: when a
-    draft first showed or a preparation last finished, when a confirmed send or final step was last updated. Those are
-    never earlier than the real first, so they are flagged as backfill. Nothing from before tracking_since."""
-    out = {}
-    found = {}
-    for at, kind in db.execute("SELECT min(saved_at),'draft' FROM draft_saves WHERE saved_at>=? UNION ALL "
-                               "SELECT min(updated_at),'result' FROM preparations WHERE status='done' AND updated_at>=?", (since, since)).fetchall():
-        if at and ('first_prepared' not in found or at < found['first_prepared'][0]):
-            found['first_prepared'] = (at, kind)
-    row = db.execute("SELECT updated_at,json_extract(payload,'$.kind') FROM action_jobs WHERE updated_at>=? AND (status='sent' AND message_id IS NOT NULL "
-                     "AND json_extract(payload,'$.kind') IN (" + ','.join('?' for _ in VERIFIED_KINDS) + ") OR status='done' "
-                     "AND json_extract(payload,'$.kind')='finish' AND json_extract(payload,'$.finish_result.state')='completed') "
-                     "ORDER BY updated_at LIMIT 1", (since, *VERIFIED_KINDS)).fetchall()
-    if row:
-        found['first_verified_action'] = tuple(row[0])
-    for name in ('first_prepared', 'first_verified_action'):
-        mark = marks.get(name)
-        at, kind = mark if mark else found.get(name, (None, None))
-        out[name + '_at'], out[name], out[name + '_backfill'] = at, kind, bool(at and not mark)
-    return out
-
-
 def first_cards_report(db, accounts=(), current=None):
     """How fast a new install got to its first useful card, for the hosted health report: per source when its first
     import was in, each first-look pass (start, end, status, reason, cards), when the first card was shown on the
@@ -6910,8 +6882,11 @@ class App(*APP_MIXINS):
                 fallback = {'error':'runtime_error','timed_out':'runtime_timeout','aborted':'runtime_aborted','lost':'runtime_lost'}
                 error = (receipt.get('error') if receipt.get('error') in REVIEW_FAILURES else fallback.get(result)) if result!='ok' else None
                 phase = (receipt.get('error_phase') if receipt.get('error_phase') in REVIEW_FAILURE_PHASES else 'runtime') if error else None
+                # A first look's pass whose batch was saved is finished, whatever the runtime said after it (2026-10-27:
+                # a 9-hour first look). Its error code still goes to the error reports and the log.
+                status = 'ok' if error and self.store.first_look_run(run['run_id'], db) and self.store.review_batch_saved(db, run['run_id']) else result
                 db.execute('UPDATE review_runs SET status=?,error=?,error_phase=?,last_error=coalesce(?,last_error),last_error_phase=coalesce(?,last_error_phase),error_at=CASE WHEN ? IS NOT NULL THEN ? ELSE error_at END,finished_at=?,updated_at=?,retry_at=NULL,unavailable_since=NULL WHERE run_id=?',
-                           (result,error,phase,error,phase,error,now(),now(),now(),run['run_id']))
+                           (status,None if status == 'ok' else error,None if status == 'ok' else phase,error,phase,error,now(),now(),now(),run['run_id']))
                 # Terminal runtime proof makes its unfinished claim immediately
                 # transferable. No event is marked reviewed by this recovery.
                 db.execute("UPDATE analyses SET status='retryable',last_error=coalesce(last_error,'run_interrupted'),error_at=? WHERE owner_session=? AND owner_run=? AND status IN ('running','retryable')",
@@ -6921,8 +6896,9 @@ class App(*APP_MIXINS):
                     saved = db.execute("SELECT count(*) FROM analyses WHERE owner_run=? AND owner_session=? AND status='complete'",
                                        (run['run_id'],REVIEW_SESSION_PREFIX+run['run_id'])).fetchone()[0]
                     reason = receipt.get('reason') if receipt.get('reason') in REVIEW_REASONS else None
-                    LOG.warning('review runtime outcome=%s error=%s phase=%s saved_claims=%s' + (' reason=%s' if reason else ''),
+                    LOG.warning('review runtime outcome=%s error=%s phase=%s saved_claims=%s' + (' reason=%s' if reason else '') + (' counted=ok' if status == 'ok' else ''),
                                 result, error, phase, saved, *([reason] if reason else []))
+                result = status
             elif result == 'unavailable':
                 db.execute("UPDATE review_runs SET status=CASE WHEN ? THEN 'recovering' ELSE status END,error='openclaw_unavailable',error_phase='connection',last_error='connection_error',last_error_phase='connection',error_at=?,unavailable_since=coalesce(unavailable_since,?),retry_at=?,updated_at=? WHERE run_id=?",
                            (int(expired), now(), now(), (stamp + dt.timedelta(seconds=60)).isoformat(), now(), run['run_id']))
@@ -6963,7 +6939,7 @@ class App(*APP_MIXINS):
         Read-only like any preview: its cards show on the dashboard, nothing is sent, nothing is prepared while reviews
         are off (Store.prepare_first_look, after), nothing is done in any account; turning reviews on stays the owner's choice. None when it is not (or no longer) for this
         install, else its state: 'due' (with `quick` for the quick one), or 'waiting' with why (model, sources,
-        settling, mail, retry)."""
+        settling, mail, retry; a retry with `failing`: Store.reviews_failing)."""
         settings = self.config.get('review_worker') or {}
         if settings.get('enabled') or settings.get('first_look') is False:
             return None
@@ -6997,7 +6973,7 @@ class App(*APP_MIXINS):
             if recent and not first_page:
                 quick = {**out, 'waiting': min(recent, QUICK_LOOK_SIGNALS), 'quick': True, 'hours': QUICK_LOOK_HOURS}
                 retry = first_look_retry_at(runs, current)
-                return {**quick, 'state': 'waiting', 'why': 'retry', 'retry_at': retry} if retry else {**quick, 'state': 'due'}
+                return {**quick, 'state': 'waiting', 'why': 'retry', 'retry_at': retry, 'failing': self.store.reviews_failing(db)} if retry else {**quick, 'state': 'due'}
             if first_page:
                 return {**out, 'state': 'waiting', 'why': 'mail'}
         if mail['filling'] and (not waiting or newest > (current - dt.timedelta(minutes=review_max_wait(settings))).isoformat()) \
@@ -7011,7 +6987,7 @@ class App(*APP_MIXINS):
             return {**out, 'state': 'waiting', 'why': 'settling'}
         retry = first_look_retry_at(runs, current)  # also after a failed quick look: a rate limit holds for both
         if retry:
-            return {**out, 'state': 'waiting', 'why': 'retry', 'retry_at': retry}
+            return {**out, 'state': 'waiting', 'why': 'retry', 'retry_at': retry, 'failing': self.store.reviews_failing(db)}
         return {**out, 'state': 'due'}
 
     def review_queue(self, db, current=None):
@@ -7106,7 +7082,7 @@ class App(*APP_MIXINS):
         instead of All clear between batches. {'read': signals its batches saved so far, 'total': read plus the week's
         signals left (at most FIRST_DIG_SIGNALS in all while more are left), 'todos', 'goal': FIRST_DIG_CARDS, 'days',
         'pace': seconds per signal of the batch that runs now, at the time its last finished batch took (FIRST_DIG_PACE_SECONDS before one finished)}. None once
-        it stopped, or on an install that had no first look. Counts only."""
+        it stopped, or on an install that had no first look. 'failing': Store.reviews_failing. Counts only."""
         dig = self.first_dig(db, current)
         if not dig or 'left' not in dig:
             return None
@@ -7129,7 +7105,8 @@ class App(*APP_MIXINS):
         total = read + dig['left']
         if dig['left'] and total > FIRST_DIG_SIGNALS:
             total = max(FIRST_DIG_SIGNALS, read + min(dig['left'], FIRST_LOOK_NEXT_SIGNALS))
-        return {'read': read, 'total': total, 'todos': dig['cards'], 'goal': FIRST_DIG_CARDS, 'days': PREVIEW_DAYS, 'pace': pace}
+        return {'read': read, 'total': total, 'todos': dig['cards'], 'goal': FIRST_DIG_CARDS, 'days': PREVIEW_DAYS, 'pace': pace,
+                'failing': self.store.reviews_failing(db)}
 
     def first_look_done(self, current=None):
         """The first look's ending, for the dashboard: what it read and what came of it, so an empty list says what the

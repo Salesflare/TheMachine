@@ -20,7 +20,7 @@ Die Registrierung ist ein Ablauf in fünf Schritten, einer pro Bildschirm: dein 
 
 1. **E-Mail und Kalender**: ein Tippen auf **Google verbinden** oder **Microsoft verbinden**. Es beginnt mit dem Konto, mit dem du dich angemeldet hast. Arbeit oder privat ergibt sich aus der Adresse; das änderst du später beim Konto. Siehe [Gmail](gmail.md) und [Microsoft](microsoft.md).
 2. **Deine KI**: Melde dich mit ChatGPT oder Claude an, oder nutze einen Schlüssel deines KI-Anbieters. Bei Claude fügst du den Code von der Seite von Claude ein, und es geht von selbst weiter. Siehe [ChatGPT](chatgpt.md).
-3. Prüfungen schalten sich von selbst ein. Die ersten Aufgaben kommen aus deinen neuesten Mails, dann aus deinen letzten 7 Tagen. Braucht dich nichts, sagt die Liste, was sie gelesen hat und was du noch verbinden kannst.
+3. Prüfungen schalten sich von selbst ein. Die ersten Aufgaben kommen aus deinen neuesten Mails, dann aus deinen letzten 7 Tagen. Braucht dich nichts, sagt die Liste, was sie gelesen hat und was du noch verbinden kannst. Schlägt eine Prüfung fehl, versucht die Machine es in wenigen Minuten erneut; klappt es weiter nicht, sagt es die Liste.
 
 **Zurück** und die Zurück-Taste deines Browsers gehen zum vorigen Schritt. Sobald Mail und deine KI funktionieren, landest du in deinem Dashboard.
 
