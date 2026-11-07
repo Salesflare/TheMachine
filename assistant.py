@@ -4265,7 +4265,7 @@ class App(*APP_MIXINS):
                         raise ValueError('pairs is the list of [a, b] person ids shown under Same person?')
                     said = graph.merge_all(db, pairs[:200], now())
             if said.get('merged') or said.get('split'):
-                self.graph_build()
+                self.graph_later()
             return said
         if name == 'graph_person_delete':
             if not owner_dashboard:

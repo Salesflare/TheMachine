@@ -126,6 +126,20 @@ class Crm(unittest.TestCase):
             self.assertEqual(json.loads(db.execute("SELECT fields FROM org_edits WHERE domain='globex.example'").fetchone()[0])['notes'], 'Main office')
             self.assertEqual(crm.org_doubles(db), [])  # kept apart from then on
 
+    def test_same_organisation_answers_at_once_and_the_worker_moves_its_people(self):
+        self.mails()
+        self.app.graph_worker_on, self.app.graph_dirty = True, tg.a.threading.Event()  # rebuilds go to the graph worker
+        builds = []
+        self.app.graph_build = lambda **k: builds.append(k)
+        done = self.act('graph_org_merge', node_id='org:globex.io', into='org:globex.example')
+        self.assertEqual((done['node_id'], builds), ('org:globex.example', []))  # no whole build in the request
+        self.assertTrue(self.app.graph_dirty.is_set())
+        with self.store.connect() as db:
+            self.assertEqual(crm.canonical(db, 'org:globex.io'), 'org:globex.example')  # saved before the answer
+        del self.app.graph_build
+        self.build()
+        self.assertEqual(self.node('email:jo@globex.io')['org'], 'org:globex.example')
+
     def test_split_off_preserves_later_edits_to_the_combined_organization(self):
         self.mails()
         self.act('graph_org_edit', node_id='org:globex.io', fields={'notes': 'Met at the fair'})

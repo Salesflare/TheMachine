@@ -7,6 +7,7 @@ import unittest
 from unittest.mock import patch
 
 import crm
+import graph_publish
 import test_graph as tg
 from test_graph import NOW, graph, mail
 
@@ -89,6 +90,36 @@ class Lock(unittest.TestCase):
         self.assertEqual(len(calls), graph.BUILD_TRIES + 1)
         self.assertEqual(found['people'], 1)
         self.assertEqual(self.node(KIM)['name'], f'Kim {graph.BUILD_TRIES}')  # the last edit that got in
+
+    def test_the_worker_tries_again_later_instead_of_holding_the_lock(self):
+        def edit(other, n):
+            other.execute("INSERT OR REPLACE INTO graph_names(node_id,name,created_at) VALUES(?,?,?)", (KIM, f'Kim {n}', NOW.isoformat()))
+        hook, calls = self.during(edit)
+        with hook, self.store.connect() as db:
+            db.isolation_level = None
+            with self.assertRaises(graph.Outdated):  # lock_last=False: the graph worker builds again in a few seconds
+                graph.build(db, {**tg.CONFIG, 'embeddings': {'model': 'test', 'dims': 4}}, NOW.isoformat(), lock_last=False)
+        self.assertEqual(len(calls), graph.BUILD_TRIES)  # never a try under the lock throughout
+        self.assertEqual(len([c for c in calls if c]), len(calls))  # each computed from a read snapshot
+
+    def test_a_build_writes_only_what_changed(self):
+        self.build()
+        with self.store.connect() as db:
+            db.isolation_level = None
+            before = {t: sorted(map(tuple, db.execute(f'SELECT * FROM {t}'))) for t in graph_publish.TABLES}
+            edits = graph._edits(db)
+            self.build()
+            self.assertEqual(graph._edits(db), edits)  # nothing in the graph changed: no row written again
+            self.assertEqual({t: sorted(map(tuple, db.execute(f'SELECT * FROM {t}'))) for t in graph_publish.TABLES}, before)
+            db.execute("INSERT OR REPLACE INTO graph_names(node_id,name,created_at) VALUES(?,?,?)", (KIM, 'Kimberly Lee', NOW.isoformat()))
+            edits = graph._edits(db)
+            self.build()
+            self.assertEqual(self.node(KIM)['name'], 'Kimberly Lee')
+            self.assertLessEqual(graph._edits(db) - edits, 3)  # her row, not every row again
+
+    def test_a_signal_on_a_node_twice_keeps_the_confirmed_label(self):
+        rows = [('project:1', 7, '2026-01-02', 1, 0), ('project:1', 7, '2026-01-03', 0, 0), ('project:1', 7, '2026-01-04', 1, 1)]
+        self.assertEqual(graph_publish._events(rows), {('project:1', 7): ('project:1', 7, '2026-01-02', 0, 1)})
 
     def test_only_edits_to_the_graph_are_counted(self):
         with self.store.connect() as db:  # the triggers exist once a build ran: a sync's or the review's write is no edit

@@ -31,6 +31,8 @@ import work_removal
 
 
 GRAPH_CHECK_SECONDS = 60  # how often the graph worker looks for new organization profiles
+GRAPH_RETRY_SECONDS = 5   # a build that met edits on the way: the next try
+GRAPH_LOCK_AFTER = 1800   # this long without a published build: the last try holds the write lock (graph.build lock_last)
 
 
 def account_services(config, account_ids=None):
@@ -146,7 +148,9 @@ class GraphActionsApp:
                                     int(args['event_id']) if args.get('event_id') not in (None, '') and 'role' not in args and 'org' not in args else None)
                 changed = changed or 'kept' not in said
         if changed:
-            self.graph_build()
+            # The owner's Merge or Not the same: the Same person? card is gone from the table already, the rebuild that
+            # joins them runs in the graph worker (a whole build in the request held the database for its tens of seconds)
+            (self.graph_later if source == 'owner' and (args.get('merge') or args.get('different')) else self.graph_build)()
         if args.get('split'):
             return {'split': split, 'changed': True}
         limit = min(int(args.get('limit') or 12), 30)
@@ -304,7 +308,7 @@ class GraphActionsApp:
             else:
                 done = crm_import.undo(db, args.get('import_id'), now())
         if name != 'graph_org_apart' and not done.get('kept'):
-            self.graph_build()
+            self.graph_later()  # the owner's edit is saved; its people and projects follow in the graph worker's rebuild
         return done
 
     def graph_later(self):
@@ -316,10 +320,10 @@ class GraphActionsApp:
         else:
             self.graph_build()
 
-    def graph_build(self):
+    def graph_build(self, lock_last=True):
         with self.store.connect() as db:
             db.isolation_level = None  # graph.build runs its own transaction
-            return graph.build(db, self.config, now(), self.fleet_addresses(), self.fleet_circles(), history=True)
+            return graph.build(db, self.config, now(), self.fleet_addresses(), self.fleet_circles(), history=True, lock_last=lock_last)
 
     def graph_event_lines(self, event_ids, keep_order=False):
         """One line per signal, newest first (keep_order: in the order given): "<id> (<account>) <what, from whom, when> ·
@@ -473,7 +477,7 @@ class GraphActionsApp:
     def graph_worker(self):
         """Rebuilds the people and projects graph every ten minutes, soon after a label or merge, and within a minute
         of new organization profiles or, on a new install, of new signals: so enriched details show right away."""
-        wait, built, seen = 30, 0.0, None
+        wait, built, seen, published = 30, 0.0, None, time.monotonic()
         self.graph_worker_on = True  # graph_later hands its rebuilds here
         while not self.stop.is_set():
             dirty = self.graph_dirty.wait(min(wait, GRAPH_CHECK_SECONDS))
@@ -491,11 +495,15 @@ class GraphActionsApp:
             built, seen = time.monotonic(), fresh  # a failing build is not retried every minute
             try:
                 self.own_addresses_fetch()  # once a day per mailbox: its aliases, before the build tells the owner apart
-                self.graph_build()
-                seen = self.graph_freshness()
-                wait = 600
+                # A build that keeps meeting edits tries again in a few seconds instead of holding the write lock for a
+                # whole build (every request that writes waited); only after half an hour without one does it hold it
+                self.graph_build(lock_last=time.monotonic() - published > GRAPH_LOCK_AFTER)
+                published, seen, wait = time.monotonic(), self.graph_freshness(), 600
                 if self.history_graph_step():  # a slice of history taken in: the next build counts it, in a minute
                     wait = 60
+            except graph.Outdated:
+                self.graph_dirty.set()
+                self.stop.wait(GRAPH_RETRY_SECONDS)
             except Exception as error:
                 LOG.error('graph error=%s', type(error).__name__)
                 wait = 1800

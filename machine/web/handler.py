@@ -36,6 +36,7 @@ from machine.sources.calendar import calendar_account_owner, company_domains, in
 from machine.sources.connectors import writable_calendars
 from machine.text import _address, ATTACHMENT_INLINE, encoded, shown_body
 from machine.timing import _REQUEST_TIMING, SLOW_REQUEST_SECONDS
+from machine.web import status_delta
 from machine.web.serving import (
     compress_body,
     COMPRESS_MIN,
@@ -344,8 +345,9 @@ def make_handler(app):
                 version = 2 if (query.get('v') or [''])[0] == '2' else 1  # an app with the quick buttons (QUICK)
                 self.output(200, app_notice(app.store, app.config, tag, kind if kind in notify.KINDS else None, version))
             elif path.path == '/api/status':
-                self.output(200, {**dashboard_status(app.action('status', {'full': True})), 'talk_ready': app.talk_ready(), 'ui_version': dashboard_version(), 'source_url': source_url(), 'meaning': {'on': bool(embeddings.settings(app.config))}, 'fixed': list(getattr(getattr(app, 'fleet', None), 'fixed_now', None) or ()), 'browser_link': browser_link(app.config),
-                                  'browser_embed': browser_embed(app.config, self.headers.get('Host', ''))})
+                since = (urllib.parse.parse_qs(path.query).get('since') or [''])[0]
+                self.output(200, status_delta.changes({**dashboard_status(app.action('status', {'full': True})), 'talk_ready': app.talk_ready(), 'ui_version': dashboard_version(), 'source_url': source_url(), 'meaning': {'on': bool(embeddings.settings(app.config))}, 'fixed': list(getattr(getattr(app, 'fleet', None), 'fixed_now', None) or ()), 'browser_link': browser_link(app.config),
+                                  'browser_embed': browser_embed(app.config, self.headers.get('Host', ''))}, since))
                 try:
                     app.store.note_card_shown()
                     app.store.note_activity('dashboard')

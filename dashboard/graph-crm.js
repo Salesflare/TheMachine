@@ -113,13 +113,15 @@ document.addEventListener('click',async e=>{const t=e.target.closest('[data-crm-
  if(t.hasAttribute('data-crm-waiting')){const f={...crmF('projects')};if(f.waiting)delete f.waiting;else f.waiting='1';return crmSet('projects',f)}
  if(t.hasAttribute('data-org-same'))return crmOrgOpen('org-same');
  if(t.hasAttribute('data-org-site'))return crmOrgOpen('org-site');
- t.disabled=true;
+ t.disabled=true;let gone=null;
  try{if(t.dataset.crmUndoImport){if(!t.hasAttribute('data-now')&&!confirm('Undo the last import? What it added goes, and what it changed goes back.'))return;$('#toast').classList.remove('show');
    await graphPost('graph_import_undo',{import_id:+t.dataset.crmUndoImport});toast('Import undone.');return crmAfter()}
   if(t.dataset.orgSplit){await graphPost('graph_org_split',{alias:t.dataset.orgSplit});toast('Split off.');return crmAfter()}
+  // Same organization?: the pair goes from the screen at once; its people and projects follow in the background rebuild
+  if(t.dataset.orgMerge||t.dataset.orgApart)gone=t.closest('.same-pair,.same-ask'),gone&&(gone.hidden=true);
   if(t.dataset.orgMerge){const r=await graphPost('graph_org_merge',{node_id:t.dataset.orgMerge,into:t.dataset.orgInto});toast('Merged. Split off undoes it.');return crmAfter(graphNode?r.node_id:null)}
   if(t.dataset.orgApart){await graphPost('graph_org_apart',{a:t.dataset.orgApart,b:t.dataset.orgB});toast('Kept apart.');return crmAfter()}}
- catch(err){errCaught(err);toast(err.message,true)}finally{t.disabled=false}},true);
+ catch(err){errCaught(err);if(gone)gone.hidden=false;toast(err.message,true)}finally{t.disabled=false}},true);
 document.addEventListener('change',async e=>{const t=e.target.closest?.('[data-owner-pick]');if(!t)return;t.disabled=true;
  try{await graphPost('graph_owner',{node_id:t.dataset.ownerPick,owner:t.value});toast(t.value==='me'?'You own it.':`${ownerName(t.value)} owns it.`);graphMineBoards=null;await people(graphNode,true)}catch(err){errCaught(err);toast(err.message,true)}finally{t.disabled=false}});
 
@@ -226,7 +228,8 @@ $('#people-view').onclick=async e=>{const tab=e.target.closest('[data-graph-pane
  const ed=e.target.closest('[data-role-edit-for]');if(ed){editRole=ed.dataset.roleEditFor;graphOpen(ed.dataset.roleEditFor);return}
  const sameAll=e.target.closest('[data-same-all]');if(sameAll){const pairs=JSON.parse(sameAll.dataset.sameAll);if(!confirm(`Merge ${pairs.length} pairs?`))return;sameAll.disabled=true;
   try{const said=await graphPost('graph_same_all',{pairs});toastUnmerge(said.merged===1?'Merged 1 pair.':`Merged ${said.merged} pairs.`,said.batch);await people(graphNode,true)}catch(err){errCaught(err);sameAll.disabled=false;toast(err.message,true)}return}
- const same=e.target.closest('[data-same]');if(same){const yes=same.dataset.same==='1';same.disabled=true;try{await graphPost('graph_same',{a:same.dataset.a,b:same.dataset.b,same:yes});toast(yes?'Merged.':same.matches('[data-split]')?'Split. Won’t be joined again.':'Kept apart.');await people(graphNode,true)}catch(err){errCaught(err);same.disabled=false;toast(err.message,true)}return}
+ const same=e.target.closest('[data-same]');if(same){const yes=same.dataset.same==='1',box=same.closest('.same-pair,.same-ask');same.disabled=true;if(box)box.hidden=true;  // gone at once; the rebuild runs in the background
+  try{await graphPost('graph_same',{a:same.dataset.a,b:same.dataset.b,same:yes});toast(yes?'Merged.':same.matches('[data-split]')?'Split. Won’t be joined again.':'Kept apart.');await people(graphNode,true)}catch(err){errCaught(err);same.disabled=false;if(box)box.hidden=false;toast(err.message,true)}return}
  const un=e.target.closest('[data-unrelate]');if(un){un.disabled=true;try{await graphPost('graph_relation',{node_id:un.dataset.unrelate,related_to:un.dataset.relatedTo,relation:''});toast('Removed.');await people(graphNode,true)}catch(err){errCaught(err);un.disabled=false;toast(err.message,true)}return}const del=e.target.closest('[data-person-delete],[data-person-delete-no],[data-person-delete-yes]');if(del){const ask=$('#people-view .person-delete-confirm');
   if(del.matches('[data-person-delete]')){del.closest('details').open=false;const nf=$('#people-view .name-form');if(nf)nf.hidden=true;ask.hidden=false;ask.querySelector('[data-person-delete-no]').focus();return}
   if(del.matches('[data-person-delete-no]')){ask.hidden=true;return}
