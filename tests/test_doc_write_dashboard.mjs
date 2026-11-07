@@ -25,6 +25,9 @@ const madeNow={...create,revision:'777777777777',url:undefined,last:true,state:{
 // One Google refused: the line says what was refused, and Review and create tries again
 const refusedLine='Google Docs is turned off for this Google sign-in, so it can’t write docs. Nothing was changed.';
 const refused={...create,revision:'888888888888',url:undefined,state:{status:'failed',error:refusedLine}},refusedId='99aa88bb77cc66dd';
+// Done, with a reply too: a doc write saved without a label (a Machine-made edit) says what happened, no "undefined: "
+const {label:_l,...unlabeled}={...saved,revision:'999999999999'},doneTwoId='aabbccddeeff0011';
+const reply={kind:'email',label:'Send reply',revision:'aaaaaaaaaaaa',to:'pat@example.com',subject:'Q4 pricing',body:'Moved it to week 3.',state:{status:'sent',sent_at:new Date().toISOString()}};
 const docs=(extra)=>({id:'docs',display_name:'Work docs',email:'owner@example.com',service:'docs',transport:'broker',boundary:'work',events:3,recent_events:3,
   last_success:new Date().toISOString(),docs_provider:'microsoft',docs_replies:false,docs_writes:[],...extra});
 let connectors=[docs({docs_write_signin:'microsoft_docs_write',connect_name:'docs'})];
@@ -33,7 +36,8 @@ const card=(id,title,a,extra={})=>({id,title,body:'Drafted the change.',status:'
 const state=()=>({suggestions:[card(editId,'Move the launch in Q4 pricing',edit),card(newId,'Write up the launch notes',create),
   card(doneId,'Fix the owner line',saved,{status:'completed',outcome:null}),card(madeId,'Partner copy',made),
   card(madeNowId,'Listing entry for a partner',madeNow,{body:'Made the listing entry in Google Docs.',outcome:JSON.stringify({state:'needs_you',needs:'Open the doc and check it'})}),
-  card(refusedId,'Partner one-pager',refused,{body:'Wrote the one-pager for Google Docs.'})],
+  card(refusedId,'Partner one-pager',refused,{body:'Wrote the one-pager for Google Docs.'}),
+  {...card(doneTwoId,'Fix the launch week',unlabeled,{status:'completed',outcome:null}),next_actions:[unlabeled,reply]}],
   connectors,suggestion_counts:{prepared:2},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[]});
 const calls=[],errors=[];
 const server=createServer(async(req,res)=>{
@@ -48,13 +52,13 @@ const shots=process.env.SHOT_DIR;if(shots)await mkdir(shots,{recursive:true});
 let browser;
 try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
- for(const [width,height,scheme] of [[390,844,'light'],[1440,900,'dark'],[1440,700,'light']]){
+ for(const [width,height,scheme] of [[390,844,'light'],[390,844,'dark'],[1440,900,'dark'],[1440,900,'light'],[1440,700,'light']]){
   const context=await browser.newContext({viewport:{width,height},colorScheme:scheme}),page=await context.newPage();
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   page.on('pageerror',e=>errors.push(e.message));
   await page.goto('http://127.0.0.1:'+server.address().port);
   await page.evaluate(()=>refresh());
-  const name=`${width}x${height}`;
+  const name=`${width}x${height}-${scheme}`;
   // The edit on its to-do: where, and each paragraph before and after, what goes struck through, what comes marked
   const task=page.locator(`#task-${editId}`);
   await task.waitFor();
@@ -104,6 +108,10 @@ try{
   const text=await page.locator(`#task-${doneId}`).evaluate(n=>n.textContent);
   assert.match(text,/Changes saved in the doc( at \d\d:\d\d)?\./);
   assert.ok(!/\bYou (saved|changed|edited)/.test(text));
+  const two=page.locator(`#task-${doneTwoId}`),twoText=await two.evaluate(n=>n.textContent);
+  assert.match(twoText,/Changes saved in the doc( at \d\d:\d\d)?\./);
+  assert.ok(!twoText.includes('undefined'),'no "undefined: " before an unlabeled write: '+twoText);
+  if(shots){await page.evaluate(()=>{document.querySelector('#finished-list').open=true});await two.screenshot({path:`${shots}/done-two-todo-${name}.png`});await page.evaluate(()=>{document.querySelector('#finished-list').open=false})}
   // A created doc on a to-do that goes on (the reply with its link): in Word, its title once
   const madeBox=page.locator(`#task-${madeId} .draft.doc-write`);
   assert.match(await madeBox.locator('.dm').textContent(),/^Created in Word/);
@@ -146,6 +154,16 @@ try{
   await page.evaluate(()=>refresh());await page.waitForTimeout(200);
   assert.ok((await conn.textContent()).includes('Creates private docs. Edits docs only after you OK each change.'));
   assert.equal(await conn.locator('button',{hasText:'Allow edits'}).count(),0);
+  // A hosted Machine's own Google Docs sign-in (documents and drive.file): it says what it can open, nothing more
+  connectors=[docs({docs_provider:'google',docs_linked_only:true,own_grant:true,docs_writes:['create','edit']})];
+  await page.evaluate(()=>refresh());await page.waitForTimeout(200);
+  const narrow=await conn.textContent();
+  assert.ok(narrow.includes('Google Docs. Opens only docs linked in your mail and the docs it makes.'),narrow);
+  assert.ok(!narrow.includes('Reads comments'),narrow);
+  if(shots)await conn.screenshot({path:`${shots}/docs-card-google-hosted-${name}.png`});
+  connectors=[docs({docs_provider:'google',docs_writes:['create','edit']})];
+  await page.evaluate(()=>refresh());await page.waitForTimeout(200);
+  assert.ok((await conn.textContent()).includes('Google Docs. Reads comments, mentions, suggestions and shares.'));
   connectors=[docs({docs_write_signin:'microsoft_docs_write',connect_name:'docs'})];
   await context.close();
  }

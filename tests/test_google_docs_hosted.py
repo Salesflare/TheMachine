@@ -55,6 +55,12 @@ class Connector(unittest.TestCase):
         google_api._tokens.clear()
         self.assertEqual(docs.writes_on(self.config, ACCOUNT, _helpers()), {'create'})
 
+    def test_its_card_says_it_opens_only_linked_docs(self):
+        from machine.sources import connectors
+        self.assertTrue(connectors.docs_health(self.config, ACCOUNT, {})['docs_linked_only'])
+        gmails = {**t.ACCOUNT, 'provider': 'google'}  # through Gmail's sign-in, with drive.readonly: it reads them all
+        self.assertFalse(connectors.docs_health({'accounts': [gmails]}, gmails, {})['docs_linked_only'])
+
     def test_reads_a_doc_by_its_id_with_documents_only(self):
         found = docs.read_text(self.config, ACCOUNT, 'doc1', _helpers())
         self.assertEqual(found['url'], 'https://docs.google.com/document/d/doc1/edit')
