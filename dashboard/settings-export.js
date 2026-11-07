@@ -10,7 +10,7 @@ function exportOption(o){const i=EXPORT_OPTIONS.findIndex(x=>x.id===o.id);if(i>=
  EXPORT_OPTIONS.sort((a,b)=>(a.order||0)-(b.order||0));if(exportView)renderExport()}
 const exportCall=(action,args={})=>request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action,args})});
 const exportWhen=iso=>{const d=new Date(iso);return isNaN(d)?'':d.toLocaleString(DL,{weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})};
-const exportDay=iso=>{const d=new Date(iso);return isNaN(d)?'':d.toLocaleDateString(DL,{weekday:'short',month:'short',day:'numeric'})};
+const exportDay=iso=>{const d=new Date(iso);return isNaN(d)?'':localeDate(d,DL,{weekday:'short',month:'short',day:'numeric'})};
 // A part as a line: its name and how many items or files it has
 const exportPart=p=>html`<li><span>${t(p.label)}</span><small>${p.rows?t(['{} item','{} items'],p.rows.toLocaleString(DL)):p.files?t(['{} file','{} files'],p.files.toLocaleString(DL)):''}</small></li>`;
 function exportContents(v){const parts=v.parts||[],not=v.not_exported||[];

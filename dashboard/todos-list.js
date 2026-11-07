@@ -211,7 +211,7 @@ async function sendConfirmed(id,revision,kind,extra={}){await request('api/actio
 // Once a send went out, one short toast says where the to-do is now, with Open to go to it there: "Sent. Moved to
 // Done.", "Sent. Moved to Later until Mon." (handed to someone: back then unless they reply). Nothing when it failed.
 const SENT_WATCH=['email','linkedin','slack','x','whatsapp','telegram','intercom','doc_reply','finish'],sentWatch=new Map();
-const sentDay=v=>{const d=new Date(v),days=(d-Date.now())/864e5;return days<6?d.toLocaleDateString(DL,{weekday:'short'}):d.toLocaleDateString(DL,{weekday:'short',day:'numeric',month:'short'})};
+const sentDay=v=>{const d=new Date(v),days=(d-Date.now())/864e5;return days<6?localeDate(d,DL,{weekday:'short'}):localeDate(d,DL,{weekday:'short',day:'numeric',month:'short'})};
 function sentWhere(){for(const [id,w] of sentWatch){const s=(state?.suggestions||[]).find(x=>x.id===id),st=s&&(taskActions(s).find(a=>a.revision===w.revision)?.state||s.action_status)?.status;
  if(!s||Date.now()-w.at>6e5){sentWatch.delete(id);continue}
  if(s.status==='prepared'&&!['sent','done'].includes(st)){if(['failed','blocked','uncertain','undone'].includes(st))sentWatch.delete(id);continue}  // still going, or it didn't go (the to-do says why)

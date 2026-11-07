@@ -128,7 +128,7 @@ document.addEventListener('change',async e=>{const t=e.target.closest?.('[data-o
 // Pipeline on a board: what is open per stage and what is expected to close per month, from each project's value and
 // expected close date (the projects on the board as shown, so Mine counts only the owner's own). One series, so one
 // color; every bar carries its label and value as text.
-const pipeMonth=k=>{const d=new Date(Math.floor(k/12),k%12,1),y=d.getFullYear()!==new Date().getFullYear();return d.toLocaleDateString(DL,{month:'short',...(y?{year:'numeric'}:{})})};
+const pipeMonth=k=>{const d=new Date(Math.floor(k/12),k%12,1),y=d.getFullYear()!==new Date().getFullYear();return localeDate(d,DL,{month:'short',...(y?{year:'numeric'}:{})})};
 const pipeRow=(label,value,n,max,cls='')=>html`<div class="pipe-row${cls}" title="${label}: ${moneyFull(value)} in ${n} project${n===1?'':'s'}"><span class="pipe-k ell">${label}</span><span class="pipe-bar" aria-hidden="true">${value>0?html`<i style="width:${Math.max(2,Math.round(value/max*100))}%"></i>`:''}</span><span class="pipe-v">${money(value)} <small>${n}</small></span></div>`;
 function pipeline(b){if(!b.projects.some(p=>p.value!=null))return '';
  // Open is what can still close: not won or lost, not in the last stage (where Won puts it) nor Stalled or declined

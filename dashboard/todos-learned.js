@@ -20,7 +20,7 @@ const f=(state.facts||[]).find(x=>x.id===id);
  if(edit&&f){learnEdit=id;learnEditText=null}const group=f?(f.kind==='draft'?'rules':'facts'):null;if(group)learnAll.add(group);
  setHTML($('#facts'),learnedList());const row=f?document.getElementById('learned-'+id):null;
  requestAnimationFrame(()=>{(row||$('#facts')).scrollIntoView({block:row?'center':'start'});if(row){row.classList.remove('flash');void row.offsetWidth;row.classList.add('flash')}const t=row?.querySelector('textarea');if(t){t.focus();t.setSelectionRange(t.value.length,t.value.length)}})}
-const learnDay=d=>d.toLocaleDateString(DL,{weekday:'short',day:'numeric',month:'short',...(d.getFullYear()!==new Date().getFullYear()?{year:'numeric'}:{})});  // Tue, Oct 20, as elsewhere
+const learnDay=d=>localeDate(d,DL,{weekday:'short',day:'numeric',month:'short',...(d.getFullYear()!==new Date().getFullYear()?{year:'numeric'}:{})});  // Tue, Oct 20, as elsewhere
 const VOICE_ICON={linkedin:'linkedin',whatsapp:'whatsapp',telegram:'telegram',slack:'slack',email:'gmail',gmail:'gmail',outlook:'gmail',x:'x','x dm':'x',twitter:'x',github:'github'};
 // The learning loop's changes (learning_loop.py): what changed, why, and Undo; an undone one stays, marked.
 const LEARN_WHAT={voice:c=>`${c.channel==='All'?'Everywhere':c.channel}: how you write`,source:()=>'Fixed at the source',draft:c=>c.before?'Rule changed':'Rule added',fact:c=>c.before?'Fact changed':'Fact added'};
@@ -28,7 +28,7 @@ function learnChange(c){const what=(LEARN_WHAT[c.kind]||(()=>'Changed'))(c),text
  return html`<div class="change-row${c.undone?html` undone`:''}"><span class="grow"><strong>${what}</strong><span class="change-text">${text}</span>${c.why?html`<small>${c.why}</small>`:''}<small class="change-when">${learnDay(new Date(c.at))}${c.undone?' · Undone':''}</small></span>${c.undone?'':html`<span class="learn-acts"><button type="button" class="quiet" data-learn-undo="${c.id}" aria-label="Undo: ${what}">Undo</button></span>`}</div>`}
 // A fact's sort and end day, quietly under it: "Temporary · Until Nov 14". A plain fact without an end shows nothing.
 const FACT_SORT={event:'Temporary',commitment:'Commitment',preference:'Preference'};
-const factUntil=d=>new Date(d+'T12:00:00').toLocaleDateString(DL,{day:'numeric',month:'short',...(d.slice(0,4)!==String(new Date().getFullYear())?{year:'numeric'}:{})});
+const factUntil=d=>localeDate(new Date(d+'T12:00:00'),DL,{day:'numeric',month:'short',...(d.slice(0,4)!==String(new Date().getFullYear())?{year:'numeric'}:{})});
 function factMeta(f){const bits=[FACT_SORT[f.fact_kind]?t(FACT_SORT[f.fact_kind]):'',f.valid_until?t('Until {}',factUntil(f.valid_until)):'',String(f.source||'').startsWith('ai:')?t('AI: {}',f.source.slice(3)):''].filter(Boolean);return bits.length?html`<small class="fact-meta">${bits.join(' · ')}</small>`:''}
 // Learning's sub-tabs, like the Graph's and the Fleet's: How it's going first, then what I learned, the learning loop's
 // changes, the decisions, and Team (sharing with The Machine team, votes waiting) only while something waits there. A
@@ -120,7 +120,7 @@ function doneFoldTitle(g){const sent=g.items.filter(s=>fuDoneState(s)==='sent').
 const doneFoldSkipped=g=>g.skipped&&g.skipped<g.items.length?t('{} skipped',g.skipped):'';
 // One folded follow-up: the project, who it went to, and when (or that it was skipped)
 function doneFoldWho(s){const a=frDraft(s),to=a?(a.to_name||(a.to||[]).join(', ')):'';return to?t('To {}',to):''}
-const doneFoldWhen=s=>fuDoneState(s)==='sent'?new Date(closedAt(s)).toLocaleTimeString(DL,{hour:'numeric',minute:'2-digit'}):t('Skipped');
+const doneFoldWhen=s=>fuDoneState(s)==='sent'?localeTime(new Date(closedAt(s)),DL,{hour:'numeric',minute:'2-digit'}):t('Skipped');
 function sideRow(x,cur){const here=id=>id===cur?html` aria-current="page"`:'';
  if(x.fleet)return html`<a href="#${x.fleet}" data-side-fleet="${x.fleet}" title="${x.title}" translate="no">${x.title}</a>`;  // a Fleet item (fleetSide)
  if(x.fuGroup)return x.writing?html`<a href="#" data-fu-card="${x.fuGroup}" title="${x.title}" translate="no">${x.title}</a>`:html`<a href="#" data-fu-review="${x.fuGroup}" title="${x.title}" translate="no">${x.title}</a>`;
@@ -203,7 +203,7 @@ async function lookNotDone(b){const id=b.dataset.ldNot;b.disabled=true;
  try{await decidePost(id,{choice:'not_done',feedback:'',decision_id:crypto.randomUUID()});lookExpanded.delete(id);await refresh();toast(t('Back on your list. I’ll learn from it.'))}
  catch(err){errCaught(err);toast(err.message,true);await refresh().catch(()=>{})}finally{b.disabled=false}}
 function promisesList(open){const items=(state.promises||[]).filter(p=>['open','card'].includes(p.state));if(!items.length)return '';
-const pday=v=>new Date(v).toLocaleDateString(DL,{weekday:'short',day:'numeric',month:'short'});
+const pday=v=>localeDate(new Date(v),DL,{weekday:'short',day:'numeric',month:'short'});
 const row=p=>html`<div class="promise"><span class="grow">${htmlT(p.together?'With {}:':p.direction==='mine'?'To {}:':'From {}:',html`<b>${p.who}</b>`)} <a class="promise-link" href="${promiseHref(p)}">${p.what}</a><small>${t(p.direction==='mine'?'You said it {}':'Said {}',pday(p.made_at))}${p.state==='card'&&p.suggestion_id?html` · <a class="promise-todo" href="#chat=${p.suggestion_id}">${t('a to-do now')}</a>`:p.due?'':' · '+(new Date(p.check_at)>Date.now()?t('no date, follow-up {}',pday(p.check_at)):t('no date, checked {}',pday(p.check_at)))}</small></span>${dueChip(p)}${['open','card'].includes(p.state)?html`<button type="button" class="quiet" data-promise="${p.id}" data-close="kept" aria-label="${t('Mark done: {}',p.what)}">Mark done</button><button type="button" class="quiet" data-promise="${p.id}" data-close="dropped" aria-label="${t('Drop: {}',p.what)}">Drop</button>`:''}</div>`;
 const group=(direction,title)=>{const rows=items.filter(p=>p.direction===direction);return rows.length?html`<h3 class="promise-head">${title}<span class="count">${rows.length}</span></h3>${rows.map(row)}`:''};
 return html`<details id="promises-list" ${open?'open':''}><summary id="promises-head"><span>Promises</span><span class="count">${items.length}</span></summary>${group('mine','You promised')}${group('theirs','Promised to you')}</details>`}

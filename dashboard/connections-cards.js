@@ -455,7 +455,7 @@ const connFigures=(c,unit)=>CALENDAR_SERVICES.includes(c.service)?[[c.total,'eve
 const CALENDAR_SERVICES=['calendar','outlook_calendar'];
 // How far back its history reaches (older messages kept to search and read, never as to-dos: docs/help/history.md).
 // One history line on a card: while WhatsApp's first chat history still counts in (c.history), only that one.
-const connBackfill=c=>{const b=c.backfill;if(!b?.back_to||c.service==='whatsapp'&&c.history)return '';const [y,m]=b.back_to.split('-').map(Number),when=new Date(y,m-1,1).toLocaleDateString(DL,{month:'long',year:'numeric'});
+const connBackfill=c=>{const b=c.backfill;if(!b?.back_to||c.service==='whatsapp'&&c.history)return '';const [y,m]=b.back_to.split('-').map(Number),when=localeDate(new Date(y,m-1,1),DL,{month:'long',year:'numeric'});
  return html`<p class="note">${b.done?t('History: back to {}.',when):t('History coming in: back to {} so far.',when)}</p>`};
 // Under the name: the kind of source and Work or personal. The Machine's own health (owner:system) has neither to say.
 function connSubtitle(c){const kind=c.service==='docs'&&c.docs_provider==='google'?'Google Docs':service(c.service),parts=[kind===(c.display_name||c.email)?'':kind,scopeLabel(c.boundary)].filter(Boolean);

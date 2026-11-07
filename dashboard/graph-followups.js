@@ -19,7 +19,7 @@ document.addEventListener('change',async e=>{const t=e.target.closest?.('[data-p
 // the board's "Follow-ups on" line, a project's "Next follow-up", and a board's grouped to-do with its fast review:
 // one follow-up at a time or the whole list, Send, Edit or Skip each, keys to move, Send all checked.
 const FU_CHANNELS={email:'Email',linkedin:'LinkedIn',whatsapp:'WhatsApp',slack:'Slack',telegram:'Telegram',intercom:'Intercom'};
-const fuDay=v=>{if(!v)return '';const d=new Date(v),n=new Date();if(d<=n||localDay(d)===localDay(n))return t('today');return (d-n)/864e5<6?d.toLocaleDateString(DL,{weekday:'short'}):d.toLocaleDateString(DL,{day:'numeric',month:'short'})};
+const fuDay=v=>{if(!v)return '';const d=new Date(v),n=new Date();if(d<=n||localDay(d)===localDay(n))return t('today');return (d-n)/864e5<6?localeDate(d,DL,{weekday:'short'}):localeDate(d,DL,{day:'numeric',month:'short'})};
 const fuNoReply=n=>n?t(['No reply after {} follow-up','No reply after {} follow-ups'],n):t('Follow-ups stopped');
 // Paused (follow_ups.pause): a small chip where the follow-up status shows; nothing is drafted, sent or ended meanwhile
 const fuChip=()=>html`<span class="fu-chip">${t('Paused')}</span>`;
@@ -62,7 +62,7 @@ function fuDraw(){const f=$('#fu-form'),s=fu.s,proj=fu.scope==='project',on=proj
 // Pause / Resume (follow_up_pause): only where follow-ups are on as saved. Applies at once, apart from Save; a project held
 // by its board's pause says so and resumes on the board.
 function fuPauseRow(){const p=fu.pause,on=!!fu.settings?.on;if(!on&&!p)return '';
- const until=p?.until?new Date(p.until).toLocaleDateString(DL,{weekday:'short',day:'numeric',month:'short'}):'';
+ const until=p?.until?localeDate(new Date(p.until),DL,{weekday:'short',day:'numeric',month:'short'}):'';
  if(p)return html`<div class="fu-pause" role="group" aria-label="${t('Pause')}">${fuChip()}<span class="fu-pause-when">${fu.scope==='project'&&p.scope==='board'?t('With its board'):until?t('Until {}',until):t('Until you resume')}</span>${fu.scope==='project'&&p.scope==='board'?'':html`<button type="button" data-fu-resume>${t('Resume')}</button>`}</div>`;
  return html`<div class="fu-pause" role="group" aria-label="${t('Pause')}"><button type="button" data-fu-pause>${t('Pause')}</button><label class="fu-until">${t('Resume on')} <input type="date" name="fu-until" min="${localDay(new Date(Date.now()+864e5))}"></label></div><p class="fu-note">${t('No new follow-ups or sends while paused. Open to-dos stay. No date: until you resume.')}</p>`}
 async function fuPauseSet(paused){if(!fu)return;fuRead();const f=$('#fu-form'),err=f.querySelector('[data-fu-error]'),day=f.elements['fu-until']?.value;

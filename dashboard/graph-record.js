@@ -59,7 +59,7 @@ function phoneShown(v){const t=String(v||'').trim();if(!/^\+\d{8,15}$/.test(t))r
  return '+'+cc+' '+g.join(' ')}
 const breakable=t=>html`${String(t).split('@').map((x,i)=>i?html`@<wbr>${x}`:x)}`;
 // An address that bounced (bounces.py): "Bounced Oct 28", muted, beside it; never struck through, so it stays readable.
-const bounceDay=v=>new Date(v).toLocaleDateString(DL,{day:'numeric',month:'short'});
+const bounceDay=v=>localeDate(new Date(v),DL,{day:'numeric',month:'short'});
 const bounceNote=at=>at?html`<span class="bounce-note">${t('Bounced {}',bounceDay(at))}</span>`:'';
 const kv=(k,v,acts='',cls='')=>html`<div class="kv${cls?' '+cls:''}"><span class="k">${k}</span><span class="v">${v}</span>${acts?html`<span class="acts">${acts}</span>`:''}</div>`;
 const copyBtn=(t,what)=>html`<button type="button" class="ghost" data-copy-command="${t}" aria-label="Copy ${what}">Copy</button>`;
@@ -214,7 +214,7 @@ const graphSource=k=>k==='salesflare.email'?'gmail':k==='salesflare.meeting'?'ca
 const sourceIcon=(k,type)=>{const s=type&&type!=='event'?type:graphSource(k);return GRAPH_SOURCE[s]?html`<span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24">${GRAPH_SOURCE[s]}</svg></span>`:icon(s)};
 const SOURCE_NAME={gmail:'Email',salesflare:'Email',calendar:'Calendar',whatsapp:'WhatsApp',slack:'Slack',intercom:'Intercom',linkedin:'LinkedIn',android:'Phone',x:'X',github:'GitHub',stripe:'Stripe',zoom:'Zoom',telegram:'Telegram',docs:'Docs'};
 const TL_SOURCES={email:'Email',meetings:'Meetings',intercom:'Intercom',chats:'Chats',cards:'To-dos',projects:'Projects',other:'Other'};
-const dayLabel=d=>{const t=new Date(),y=new Date(t),m=new Date(t);y.setDate(t.getDate()-1);m.setDate(t.getDate()+1);const same=(a,b)=>a.toDateString()===b.toDateString();return same(d,t)?'Today':same(d,y)?'Yesterday':same(d,m)?'Tomorrow':d.toLocaleDateString(DL,{weekday:'short',day:'numeric',month:'short',...(d.getFullYear()!==t.getFullYear()?{year:'numeric'}:{})})};
+const dayLabel=d=>{const t=new Date(),y=new Date(t),m=new Date(t);y.setDate(t.getDate()-1);m.setDate(t.getDate()+1);const same=(a,b)=>a.toDateString()===b.toDateString();return same(d,t)?'Today':same(d,y)?'Yesterday':same(d,m)?'Tomorrow':localeDate(d,DL,{weekday:'short',day:'numeric',month:'short',...(d.getFullYear()!==t.getFullYear()?{year:'numeric'}:{})})};
 // A run of chat messages in one conversation (same thread, same day, under half an hour apart) is one row.
 const GRAPH_GAP=30*6e4,GRAPH_ROWS=15;
 const graphRuns=rows=>{const out=[];for(const e of rows){const run=out[out.length-1],prev=run?.at(-1);

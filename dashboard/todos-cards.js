@@ -15,7 +15,7 @@ const sectionNote=(key,items)=>key==='ready'&&items.some(s=>s?.status==='prepare
 const DRAFT_LINES=3,draftRows=text=>{const per=innerWidth<600?34:64;return String(text).split('\n').reduce((n,l)=>n+(l.trim()?Math.ceil(l.length/per):0),0)};
 const draftFolds=(s,a)=>a.kind!=='finish'&&(a.state||s.action_status)?.status!=='sent'&&draftRows(draftText(a))>DRAFT_LINES+1;  // 4 lines still show whole
 const cardDrafted=s=>s.status==='prepared'&&!closed(s)&&taskActions(s).some(a=>DRAFT_KINDS.includes(a.kind)&&draftText(a)&&draftFolds(s,a));
-const snoozedUntil=v=>new Date(v).toLocaleDateString(DL,{weekday:'short',day:'numeric',month:'short'})+' at '+fmtHM(v);
+const snoozedUntil=v=>localeDate(new Date(v),DL,{weekday:'short',day:'numeric',month:'short'})+' at '+fmtHM(v);
 // With a teammate who hasn't answered a handoff: Later is when it comes back to check in with them, not a snooze.
 const checkinLabel=s=>'Check in with '+s.handoff_wait.name+' '+chatUntil(s.snoozed_until)+' if no answer';
 const backLabel=v=>t('Back {}',fmtDHM(v,{weekday:'short',day:'numeric',month:'short'}))+' · '+ago(v);
@@ -26,7 +26,7 @@ const SRC_MON=(()=>{const m={};for(const row of ['jan feb mar apr may jun jul au
  'janv févr mars avr mai juin juil août sept oct nov déc','jan feb märz apr mai juni juli aug sep okt nov dez','ene feb mar abr may jun jul ago sept oct nov dic',
  'gen feb mar apr mag giu lug ago set ott nov dic','jan fev mar abr mai jun jul ago set out nov dez'])row.split(' ').forEach((w,i)=>{m[w]=i});return m})();
 const sourceDay=d=>{const m=/^[\p{L}.]+,?\s+(?:([\p{L}]+)\.?\s+(\d{1,2})|(\d{1,2})\.?\s+(?:de\s+)?([\p{L}]+)\.?)$/u.exec(d);if(!m)return d;const mon=SRC_MON[(m[1]||m[4]).toLowerCase()];if(mon==null)return d;
- const now=new Date(),at=new Date(now.getFullYear(),mon,+(m[2]||m[3]),12);if(at-now>864e5*31)at.setFullYear(at.getFullYear()-1);return at.toLocaleDateString(DL,{weekday:'short',day:'numeric',month:'short'})};
+ const now=new Date(),at=new Date(now.getFullYear(),mon,+(m[2]||m[3]),12);if(at-now>864e5*31)at.setFullYear(at.getFullYear()-1);return localeDate(at,DL,{weekday:'short',day:'numeric',month:'short'})};
 const sourceText=v=>{let s=String(v||'').replace(/^Source:\s*/i,''),more='';
  s=s.replace(/ \(\+(\d+) more\)$/,(_,n)=>{more=' '+t('(+{} more) (a source)',n);return ''});
  const i=s.lastIndexOf(' · '),head=i<0?s:s.slice(0,i),day=i<0?'':' · '+sourceDay(s.slice(i+3)),m=/^(.+?) from (.+)$/.exec(head),dm=/^Slack DM with (.+)$/.exec(head);
@@ -76,9 +76,9 @@ const chipNode=(text,tone)=>make('span',{class:`chip t-${tone}`},make('span',{cl
 function dueChip(s){if(!s.due||closed(s)||looksDone(s))return '';const today=new Date(localDay(new Date())+'T12:00'),due=new Date(s.due+'T12:00'),days=Math.round((due-today)/864e5);
  // With a time (New to-do's "15:00", "in 2 hours"): the time shows, and it is overdue from that moment
  const at=s.due_at?new Date(s.due_at):null,timed=at&&!isNaN(at),late=timed?at<new Date():days<0;
- const text=late?'Overdue':timed?'Due '+(days===0?'':at.toLocaleDateString(DL,days<7?{weekday:'short'}:{day:'numeric',month:'short'})+' ')+fmtHM(at)
-  :days===0?'Due today':days===1?'Due tomorrow':'Due '+due.toLocaleDateString(DL,days<7?{weekday:'long'}:{day:'numeric',month:'short'});
- return html`<span class="chip t-${late||days<=0?'orange':days===1?'amber':'muted'}" title="Due ${due.toLocaleDateString(DL,{weekday:'long',day:'numeric',month:'long'})+(timed?' '+fmtHM(at):'')}">${text}</span>`}
+ const text=late?'Overdue':timed?'Due '+(days===0?'':localeDate(at,DL,days<7?{weekday:'short'}:{day:'numeric',month:'short'})+' ')+fmtHM(at)
+  :days===0?'Due today':days===1?'Due tomorrow':'Due '+localeDate(due,DL,days<7?{weekday:'long'}:{day:'numeric',month:'short'});
+ return html`<span class="chip t-${late||days<=0?'orange':days===1?'amber':'muted'}" title="Due ${localeDate(due,DL,{weekday:'long',day:'numeric',month:'long'})+(timed?' '+fmtHM(at):'')}">${text}</span>`}
 const closed=s=>['completed','rejected'].includes(s.status);
 // The open lists' order (Ready, To decide, Preparing, Waiting on others; the sidebar the same): what is overdue or due
 // by tomorrow first, then the rest; each newest first by when it was added, the time its to-do shows. A tie (one review
@@ -95,7 +95,7 @@ const doneLine=s=>{if(s.status!=='completed')return '';let why='';try{why=JSON.p
 const expiredLine=s=>{const at=new Date(s.expires_at||'');if(!s.expired_at||isNaN(at))return '';const what=s.expires_what||'',hm=fmtHM(at),
  days=Math.round((new Date(localDay(new Date())+'T12:00')-new Date(localDay(at)+'T12:00'))/864e5);
  return days===0?t('No longer needed: {} was today at {}.',what,hm):days===1?t('No longer needed: {} was yesterday at {}.',what,hm)
-  :t('No longer needed: {} was on {} at {}.',what,at.toLocaleDateString(DL,{weekday:'short',day:'numeric',month:'short'}),hm)};
+  :t('No longer needed: {} was on {} at {}.',what,localeDate(at,DL,{weekday:'short',day:'numeric',month:'short'}),hm)};
 // A to-do that looks done already: its run found it done, or a later message suggests it's handled (LOOKS_DONE_SQL in
 // assistant.py). It waits in one quiet group above Done (lookDoneList), is never late and never counts as waiting for
 // you. Only you close it.
@@ -126,7 +126,7 @@ const gapOr=list=>{try{return new Intl.ListFormat(I18N.lang||'en',{type:'disjunc
 // has to dig for it in the project. The service leaves it out when the source line already names that message.
 const basedOnLine=s=>{const b=s.based_on;if(!b||typeof b!=='object')return '';
  const what=b.who&&b.where?t('Based on {} in {}',b.who,b.where):b.who?t('Based on {}',b.who):b.where?t('Based on a message in {}',b.where):t('Based on a message');
- const day=b.at?new Date(b.at).toLocaleDateString(DL,{weekday:'short',day:'numeric',month:'short'}):'';
+ const day=b.at?localeDate(new Date(b.at),DL,{weekday:'short',day:'numeric',month:'short'}):'';
  const label=html`${what}${day?html` · <span class="src-date">${day}</span>`:''}`;  // opens here, so no ↗ (that is for links out)
  return html`<p class="note gap-line based-on"><button type="button" class="link" data-id="${s.id}"${b.event_id!=null?html` data-held-read="${b.event_id}"`:html` data-original="read"`}>${label}</button></p>`};
 const GAP_CONNECT={WhatsApp:'whatsapp',LinkedIn:'linkedin',Telegram:'telegram',Slack:'slack',X:'x'};  // gap_note.py ELSEWHERE
@@ -170,7 +170,7 @@ const placeOf=s=>{const now=needsDecision(s)?'needs':s.status==='prepared'?'read
 function deliveryLabel(value,ch=state?.todo_channels){
 const tg=!!ch?.telegram,push=(ch?.push||0)>0;if(!tg&&!push)return '';
 const target=new Date(value),today=localDay(new Date()),tomorrow=new Date();tomorrow.setDate(tomorrow.getDate()+1);
-const day=localDay(target)===today?t('Today'):localDay(target)===localDay(tomorrow)?t('Tomorrow'):target.toLocaleDateString(DL,{weekday:'short',day:'numeric',month:'short'});
+const day=localDay(target)===today?t('Today'):localDay(target)===localDay(tomorrow)?t('Tomorrow'):localeDate(target,DL,{weekday:'short',day:'numeric',month:'short'});
 const when=day+' · '+fmtHM(target);
 return tg&&push?t('Telegram and notification {}',when):tg?t('Telegram {}',when):t('Notification {}',when);
 }

@@ -9,7 +9,7 @@ const SHARE_ON_POINTS=name=>[`Each member's Machine shares Work contacts, projec
  'Personal, sensitive and automated mail never goes. Each person looks it over before their first share and can keep anything private.',
  'Teammates keep what they got. Unshare and Turn off can remove it from their Machines.'];
 const sharedFleetName=fleet=>(fleetData?.fleets||[]).find(x=>x.id===fleet)?.name||'this Fleet';
-const sharedWhen=at=>{if(!at)return 'soon';const d=new Date(at);return isNaN(d)||d<=new Date()?'soon':'from '+d.toLocaleDateString(DL,{weekday:'short'})+' '+fmtHM(d)};
+const sharedWhen=at=>{if(!at)return 'soon';const d=new Date(at);return isNaN(d)||d<=new Date()?'soon':'from '+localeDate(d,DL,{weekday:'short'})+' '+fmtHM(d)};
 let sharedData={},sharedShown={};
 // What the sharing review sorted the Work threads into (shared_graph), each with where it goes; the title says what it is
 const SHARED_TILES=[['client','Client','goes to the team','Threads with clients and partners'],['sensitive','Sensitive','not shared','Deals, HR, legal, health, money or security'],

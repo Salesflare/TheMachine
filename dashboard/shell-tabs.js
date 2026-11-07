@@ -55,16 +55,16 @@ function trendChart(trend){const first=trend?.first,today=trend?.daily?.at(-1)?.
  const monday=ymdOf((d=>{d.setDate(d.getDate()-(d.getDay()+6)%7);return d})(at(first)));
  const all=byDay?trend.daily:trend.weekly,rows=all.filter(r=>r.start>=(byDay?first:monday)),dated=n=>rows.filter(r=>r.worth_it+r.dismissed).length>=n;
  if(!dated(2))return make('p',{class:'trend-wait'},t('The chart starts after a few more days.'));
- const full=r=>at(r.start).toLocaleDateString(DL,byDay?{weekday:'short',day:'numeric',month:'short'}:{day:'numeric',month:'short'});
+ const full=r=>localeDate(at(r.start),DL,byDay?{weekday:'short',day:'numeric',month:'short'}:{day:'numeric',month:'short'});
  // The label under a bar stays on one line: a weekday and date ("Mon 26", stacked on a phone), or a week's date with its
  // month only where it starts or changes ("Sep 7", "14", "21", "Oct 5")
  // A first week that starts mid-week shows its first day, as "Since" says ("20 Sept", not "14 Sept")
  const from=(r,i)=>at(!byDay&&!i&&r.start<first?first:r.start);
- const label=(r,i)=>{const d=from(r,i);if(byDay)return [make('span',{},d.toLocaleDateString(DL,{weekday:'short'})),' ',make('span',{},d.toLocaleDateString(DL,{day:'numeric'}))];
-  return i&&from(rows[i-1],i-1).getMonth()===d.getMonth()?d.toLocaleDateString(DL,{day:'numeric'}):d.toLocaleDateString(DL,{day:'numeric',month:'short'})};
+ const label=(r,i)=>{const d=from(r,i);if(byDay)return [make('span',{},localeDate(d,DL,{weekday:'short'})),' ',make('span',{},localeDate(d,DL,{day:'numeric'}))];
+  return i&&from(rows[i-1],i-1).getMonth()===d.getMonth()?localeDate(d,DL,{day:'numeric'}):localeDate(d,DL,{day:'numeric',month:'short'})};
  const col=(r,i)=>{const n=r.worth_it+r.dismissed,name=byDay?full(r):t('Week of {}',full({start:ymdOf(from(r,i))})),tip=n?t('{}: {}% worth it, {} decided',name,r.hit_rate,n):t('{}: nothing decided',name);
   return make('div',{role:'listitem','aria-label':tip,title:tip},make('small',{class:'v'},n?r.hit_rate+'%':''),make('span',{class:'bar'},make('em',n?{style:{height:Math.max(2,r.hit_rate)+'%'}}:{class:'none'})),make('span',{class:'w'},label(r,i)),make('span',{class:'n'},n?t('{} decided',n):''))};
- const since=rows[0].start<=first,sub=byDay?t('Since {}. Each bar is that day’s Worth it.',full({start:first})):since?t('Since {}. Each bar is that week’s Worth it.',at(first).toLocaleDateString(DL,{day:'numeric',month:'short'})):t('Last 8 weeks. Each bar is that week’s Worth it.');
+ const since=rows[0].start<=first,sub=byDay?t('Since {}. Each bar is that day’s Worth it.',full({start:first})):since?t('Since {}. Each bar is that week’s Worth it.',localeDate(at(first),DL,{day:'numeric',month:'short'})):t('Last 8 weeks. Each bar is that week’s Worth it.');
  return make('figure',{class:'trend'},make('figcaption',{},make('strong',{},t(byDay?'Worth it, day by day':'Worth it, week by week')),make('small',{},sub)),make('div',{class:'bars'+(byDay?' days':''),role:'list'},rows.map(col)))}
 let refreshes=0;
 // A redraw keeps the field someone is in: focus and caret back on the same field (by id) when the redraw replaced it
