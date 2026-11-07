@@ -4,14 +4,14 @@ area: graph
 summary: Secteur, taille, lieu et logo à côté de chaque organisation, recherchés à partir de son adresse web.
 covers: enrichment
 code: enrichment.py, graph.py, dashboard.html
-order: 2
+order: 5
 ---
 ## D’où ils viennent
 
 - Sur une Machine hébergée, les détails des organisations sont recherchés pour vous, gratuitement.
 - Sur votre propre ordinateur, c’est désactivé jusqu’à ce que vous ajoutiez une clé pour un service de recherche que vous utilisez, comme Apollo, People Data Labs ou Hunter. Voir le [guide de configuration](https://github.com/Salesflare/TheMachine/blob/main/docs/configuration.md).
 
-Seule l’adresse web d’une organisation est envoyée, jamais vos messages ni les personnes que vous y connaissez. Quelques-unes sont recherchées à la fois, 50 par jour au maximum, et actualisées tous les 90 jours. Les personnes ont leur propre recherche : voir [Poste et photo](graph.md#job-title-and-photo). Les hébergeurs partagés et les fournisseurs de messagerie, comme google.com, sites.google.com ou gmail.com, ne sont jamais recherchés : ce n’est le site d’aucune entreprise en particulier.
+Seule l’adresse web d’une organisation est envoyée, jamais vos messages ni les personnes que vous y connaissez. Quelques-unes sont recherchées à la fois, 50 par jour au maximum, et actualisées tous les 90 jours. Les personnes ont leur propre recherche : voir [Poste et photo](people.md#job-title-and-photo). Les hébergeurs partagés et les fournisseurs de messagerie, comme google.com, sites.google.com ou gmail.com, ne sont jamais recherchés : ce n’est le site d’aucune entreprise en particulier.
 
 Quand la recherche ne donne pas de logo, ou qu’il n’y a pas de recherche, le logo vient du site de l’organisation elle-même : l’icône que nomme sa page d’accueil. Il est enregistré sur votre Machine, ainsi aucun service de logos ne sait avec qui vous êtes en contact. Un site sans icône est de nouveau interrogé après 30 jours. Si la recherche a trouvé l’organisation mais pas de logo, elle est refaite une fois après une semaine, et le logo qu’elle trouve alors remplace l’icône du site.
 

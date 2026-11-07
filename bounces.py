@@ -1,4 +1,4 @@
-"""Email addresses that bounce, recorded per address so the rest of the app can use it (docs/help/graph.md, "Bounced").
+"""Email addresses that bounce, recorded per address so the rest of the app can use it (docs/help/people.md, "Bounced").
 
 Detection reads the structure of a delivery report, never its wording:
 

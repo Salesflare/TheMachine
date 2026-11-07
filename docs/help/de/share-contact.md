@@ -4,7 +4,7 @@ area: graph
 summary: Schick einen Kontakt, oder deinen eigenen, an ein Teammitglied, einen Freund oder jemanden aus der Familie. Wähle, was mitgeht, und sieh es dir vor dem Senden an.
 covers: share-contact
 code: contact_share.py, fleet.py, dashboard.html
-order: 3
+order: 6
 ---
 ## Jemanden teilen
 

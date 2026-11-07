@@ -4,7 +4,7 @@ area: graph
 summary: Fasst von selbst nach, wenn jemand nicht antwortet, für ein ganzes Board oder ein Projekt. Fragt zuerst, außer du sagst etwas anderes.
 covers: follow-ups
 code: follow_ups.py, assistant.py, dashboard.html
-order: 4
+order: 7
 ---
 Wenn jemand auf einem Board nicht mehr antwortet, entwirft deine Machine das Nachfassen für dich, in deinem Ton und im selben Gespräch. Aus, bis du es einschaltest. Passt einer deiner Skills zum Board, folgen die Entwürfe ihm, auch darin, was in der E-Mail zuerst kommt.
 

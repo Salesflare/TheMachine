@@ -4,7 +4,7 @@ area: graph
 summary: Stuur iemands contactgegevens, of die van jezelf, naar een teamgenoot, vriend of familielid. Kies wat er meegaat en bekijk het voordat het verstuurd wordt.
 covers: share-contact
 code: contact_share.py, fleet.py, dashboard.html
-order: 3
+order: 6
 ---
 ## Iemand delen
 

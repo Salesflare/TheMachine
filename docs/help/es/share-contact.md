@@ -4,7 +4,7 @@ area: graph
 summary: Envía el contacto de alguien, o el tuyo, a un compañero, un amigo o alguien de tu Family. Elige qué se envía y míralo antes de enviarlo.
 covers: share-contact
 code: contact_share.py, fleet.py, dashboard.html
-order: 3
+order: 6
 ---
 ## Comparte a alguien
 
