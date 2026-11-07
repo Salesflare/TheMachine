@@ -8,6 +8,8 @@ AI should work for you, so you can do your best work and live your best life. Th
   caught. What's private stays private.
 - **Always current.** It keeps pace with AI: new models and abilities reach your Machine as soon as they're good.
 - **Yours.** You own it and your data, not a big corporation.
+- **Secure, wherever it runs.** On your own computer for complete ownership, or on a private cloud computer we run
+  for you when you'd rather not think about it.
 - **For everyone.** Easy to start and affordable.
 
 This page says where we're going and what "best" means. Every change, agent and test is judged against it. It is
@@ -22,7 +24,8 @@ your head back for the work only you can do.
 
 ## What we believe, in order
 
-1. **It's yours.** Your data lives on your computer, in open source
+1. **It's yours, and secure.** It runs on your own computer, or on a private cloud computer of your own that we host.
+   Either way your data stays in it, in open source
    code you can read. You pick the model (OpenAI, Claude, a local one) and use your own plan. Nothing locks you in. Nothing goes out without
    you seeing it, and security is never relaxed.
 2. **It gets it right.** It catches everything that matters (to-dos, promises, follow-ups) and lets the noise go.
