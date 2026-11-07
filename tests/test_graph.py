@@ -665,6 +665,33 @@ class Graph(unittest.TestCase):
         self.assertEqual(glance('whatsapp.message', 'hi', chat_id='g1@g.us')['thread'], 'slack:whatsapp.message:g1@g.us')
         self.assertNotIn('thread', glance('gmail.message', 'Hi', thread_id='t1'))
 
+    def test_the_graph_tabs_counts_are_one_pass_kept_until_the_graph_changes(self):
+        """The Graph tab counts each list and its Who's who on every open and every poll while it is open: one pass over
+        the graph (one per list was some 130 ms on a big graph), kept until a node or a role changes."""
+        self.add(mail(3, 'Kim Lee (Initech) <kim@initech.example>', 'sam@acme.com'), mail(2, 'Sam <sam@acme.com>', 'kim@initech.example', ('SENT',)))
+        self.build()
+        graph.KEPT.clear()
+
+        def counted():
+            seen = []
+            with self.store.connect() as db:
+                db.set_trace_callback(seen.append)
+                found = graph.list_counts(db), graph.counts(db), graph.waiting(db), graph.unconfirmed(db)
+                db.set_trace_callback(None)
+                each = {n: db.execute(f'SELECT COUNT(*) FROM graph_nodes WHERE {w}', args).fetchone()[0]
+                        for n, (w, args) in ((n, graph._paged_where(db, n)) for n in graph.PAGED)}
+            return found, each, [s for s in seen if 'graph_nodes' in s and 'data_stamps' not in s]
+        (lists, totals, waiting, roles), each, read = counted()
+        self.assertEqual(len(read), 3)  # the lists' counts in one pass, then the Who's who count and list
+        self.assertEqual({k: v for k, v in lists.items() if k != 'warmup'}, each)
+        self.assertEqual(totals, {'person': each['people'], 'org': each['orgs'], 'project': each['projects']})
+        self.assertGreater(each['people'], 0)
+        self.assertEqual(counted()[2], [])  # the next poll: kept
+        with self.store.connect() as db:
+            db.execute("INSERT INTO graph_nodes(id,kind,name,strength,signals,info) VALUES('email:new@example.com','person','New',1,0,'{}')")
+        (lists, totals, waiting, roles), each, read = counted()
+        self.assertEqual((len(read), lists['people'], totals['person']), (3, each['people'], each['people']))
+
 
 def linkedin(days_ago, conv, name, text, mine=False, headline=None):
     n = next(counter)
