@@ -33,9 +33,11 @@ Auf dem Handy füllt ein Dialog wie **Diese E-Mail senden?** den ganzen Bildschi
 
 ## Hol mehr heraus
 
-Ab deinem ersten Besuch, sobald der erste Blick fertig ist, zeigt eine kleine Aufgabe oben in Aufgaben, was The Machine nützlicher macht: die App fürs Handy, Benachrichtigungen, WhatsApp, die App auf diesem Computer, ein weiteres Konto und weitere Verbindungen. Jede Zeile hat einen Knopf, der diesen Schritt erledigt, und hakt sich selbst ab, sobald er erledigt ist. Sie zeigt bis zu fünf Zeilen, offene Schritte zuerst, sodass ein Tool, das deine Mails nahelegen, etwa GitHub,, eine Zeile bekommt, sobald frühere Schritte erledigt sind.
+Ab deinem ersten Besuch, sobald der erste Blick fertig ist, zeigt eine kleine Aufgabe oben in Aufgaben, was The Machine nützlicher macht: die App fürs Handy, Benachrichtigungen, WhatsApp, die App auf diesem Computer, ein weiteres Konto und weitere Verbindungen. Jede Zeile hat einen Knopf, der diesen Schritt erledigt, und verschwindet, sobald er erledigt ist, so zeigt die Aufgabe nur, was noch fehlt. Sie zeigt bis zu fünf Zeilen, offene Schritte zuerst, sodass ein Tool, das deine Mails nahelegen, etwa GitHub,, eine Zeile bekommt, sobald frühere Schritte erledigt sind.
 
 Zeilen erscheinen nur, wo sie passen: keine Handy-App in der App selbst, kein Installieren auf dem Handy. Das × einer Zeile schließt sie auf jedem Gerät, und das × oben schließt die ganze Aufgabe.
+
+Nach deinem ersten Tag wird sie zu einer ruhigen Zeile über **Bereit für dich**, etwa „Noch 2 Schritte · Weiter“. Tippe darauf, um die Aufgabe zu öffnen, und auf den Pfeil, um sie wieder einzuklappen.
 
 **Rückgängig** in der Meldung danach holt sie zurück, ebenso **1 ausgeblendeten Schritt zeigen** unten in der Aufgabe. Ist die ganze Aufgabe geschlossen, holt **Einstellungen**, **Allgemein**, **Einrichtungs-Aufgabe** sie zurück. **Einstellungen**, **Allgemein**, **Dieses Gerät** hat dieselben Schalter, und dort führt die Handy-App immer zum Download.
 

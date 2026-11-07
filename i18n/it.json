@@ -6551,6 +6551,10 @@
   "one": "{} tentativo di avvio",
   "other": "{} tentativi di avvio"
  },
+ "{} steps left": {
+  "one": "Manca {} passaggio",
+  "other": "Mancano {} passaggi"
+ },
  "{} still waiting.": "{} ancora in attesa.",
  "{} stopped: {}": "{} interrotto: {}",
  "{} suggested changes": "{} ha suggerito modifiche",

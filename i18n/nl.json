@@ -6551,6 +6551,10 @@
   "one": "{} startpoging",
   "other": "{} startpogingen"
  },
+ "{} steps left": {
+  "one": "Nog {} stap",
+  "other": "Nog {} stappen"
+ },
  "{} still waiting.": "{} wachten nog.",
  "{} stopped: {}": "{} gestopt: {}",
  "{} suggested changes": "{} stelde wijzigingen voor",

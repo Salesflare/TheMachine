@@ -68,12 +68,15 @@ SETUP_BASIC = {'gmail', 'outlook', 'calendar', 'outlook_calendar', 'whatsapp'}  
 
 
 def setup_card(store, config):
-    """{closed, dismissed, phones, whatsapp, mail_accounts, add, more} for the setup to-do: closed with its × (for good),
-    the rows closed, phones with the app, a WhatsApp connected, how many mail accounts (another one: add, the provider
-    the owner has), and a connection beyond mail, calendar and WhatsApp (more). The owner's own accounts only."""
+    """{closed, dismissed, phones, whatsapp, mail_accounts, add, more, since} for the setup to-do: closed with its × (for
+    good), the rows closed, phones with the app, a WhatsApp connected, how many mail accounts (another one: add, the
+    provider the owner has), a connection beyond mail, calendar and WhatsApp (more), and since when the owner has had
+    to-dos (the first one shown, else when this Machine started counting): after that first day the dashboard folds the
+    to-do into one line. The owner's own accounts only."""
     services = [str(a.get('service') or '') for a in config.get('accounts') or [] if isinstance(a, dict) and not a.get('shared')]
     with store.connect() as db:
         closed = {r['name'][6:] for r in db.execute("SELECT name FROM milestones WHERE name LIKE 'setup:%'")}
+        at = dict(db.execute("SELECT name,at FROM milestones WHERE name IN ('first_card_shown','tracking_since')").fetchall())
         try:
             phones = db.execute('SELECT count(*) FROM notify_app_devices').fetchone()[0]
         except sqlite3.Error:
@@ -81,7 +84,8 @@ def setup_card(store, config):
     mail = [s for s in services if s in ('gmail', 'outlook')]
     return {'closed': 'card' in closed, 'dismissed': sorted(closed - {'card'}), 'phones': phones, 'whatsapp': 'whatsapp' in services,
             'mail_accounts': len(mail), 'add': 'microsoft' if 'outlook' in mail and 'gmail' not in mail else 'google',
-            'more': any(s and s not in SETUP_BASIC for s in services)}
+            'more': any(s and s not in SETUP_BASIC for s in services),
+            'since': at.get('first_card_shown') or at.get('tracking_since') or None}
 
 
 def setup_dismiss(store, config, step):

@@ -31,9 +31,11 @@ En un teléfono, un diálogo como **¿Enviar este correo?** ocupa toda la pantal
 
 ## Sácale más partido
 
-Desde tu primera visita, cuando termina el primer vistazo, una pequeña tarea arriba en Tareas muestra lo que hace más útil a The Machine: la app del móvil, las notificaciones, WhatsApp, la app en este ordenador, otra cuenta y más conexiones. Cada fila tiene un botón que hace ese paso, y se marca sola cuando está hecho. Muestra hasta cinco filas, primero los pasos pendientes, así que una herramienta que sugiere tu correo, como GitHub, tiene su fila cuando los pasos anteriores están hechos.
+Desde tu primera visita, cuando termina el primer vistazo, una pequeña tarea arriba en Tareas muestra lo que hace más útil a The Machine: la app del móvil, las notificaciones, WhatsApp, la app en este ordenador, otra cuenta y más conexiones. Cada fila tiene un botón que hace ese paso, y desaparece cuando está hecho, así la tarea muestra solo lo que falta. Muestra hasta cinco filas, primero los pasos pendientes, así que una herramienta que sugiere tu correo, como GitHub, tiene su fila cuando los pasos anteriores están hechos.
 
 Las filas solo aparecen donde tienen sentido: nada de app del móvil dentro de la app, nada de instalar en un móvil. La × de una fila la cierra en todos los dispositivos, y la × de arriba cierra toda la tarea.
+
+Después de tu primer día, se reduce a una línea discreta encima de **Lista para ti**, como «Faltan 2 pasos · Continuar». Tócala para abrir la tarea, y toca la flecha para plegarla otra vez.
 
 **Deshacer** en el mensaje que sale después la recupera, igual que **Mostrar 1 paso oculto** al final de la tarea. Si cerraste toda la tarea, **Ajustes**, **General**, **Tarea de configuración** la recupera. **Ajustes**, **General**, **Este dispositivo** tiene los mismos controles, y ahí la app del móvil siempre tiene su enlace de descarga.
 

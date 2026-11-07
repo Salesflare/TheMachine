@@ -31,9 +31,11 @@ Sul telefono, una finestra come **Inviare questa email?** occupa tutto lo scherm
 
 ## Ottieni di più
 
-Dalla prima visita, appena finita la prima occhiata, una piccola attività in cima alle Attività elenca ciò che rende The Machine più utile: l’app per il telefono, le notifiche, WhatsApp, l’app su questo computer, un altro account e altre connessioni. Ogni riga ha un pulsante che fa quel passaggio, e si spunta da sola una volta fatto. Mostra fino a cinque righe, prima i passaggi aperti, così uno strumento suggerito dalla tua posta, come GitHub, ha la sua riga quando i passaggi precedenti sono fatti.
+Dalla prima visita, appena finita la prima occhiata, una piccola attività in cima alle Attività elenca ciò che rende The Machine più utile: l’app per il telefono, le notifiche, WhatsApp, l’app su questo computer, un altro account e altre connessioni. Ogni riga ha un pulsante che fa quel passaggio, e sparisce una volta fatto, così l’attività mostra solo quello che manca. Mostra fino a cinque righe, prima i passaggi aperti, così uno strumento suggerito dalla tua posta, come GitHub, ha la sua riga quando i passaggi precedenti sono fatti.
 
 Le righe compaiono solo dove servono: niente app per il telefono dentro l’app, niente installazione su un telefono. La × di una riga la chiude su ogni dispositivo, e la × in alto chiude l’intera attività.
+
+Dopo il tuo primo giorno, si riduce a una riga discreta sopra **Pronta per te**, come «Mancano 2 passaggi · Continua». Toccala per aprire l’attività, e tocca la freccia per richiuderla.
 
 **Annulla** nel messaggio che segue la riporta, come **Mostra 1 passaggio nascosto** in fondo all’attività. Se hai chiuso l’intera attività, **Impostazioni**, **Generali**, **Attività di configurazione** la riporta. **Impostazioni**, **Generali**, **Questo dispositivo** ha gli stessi controlli, e lì l’app per il telefono ha sempre il suo link per scaricarla.
 
