@@ -230,7 +230,7 @@ OTHER_WRITERS = {
     'action_jobs': {'follow_ups.py', 'machine/app/preparation.py', 'machine/export/hold.py'},
     'agent_jobs': {'agent_remote.py', 'assistant.py', 'sandbox/load.py'},
     'agent_result_receipts': {'agent_remote.py'},
-    'analyses': {'graph.py', 'sandbox/load.py', 'work_removal.py'},
+    'analyses': {'graph.py', 'machine/app/review.py', 'sandbox/load.py', 'work_removal.py'},
     'board_backfills': {'sandbox/load.py'},
     'board_offers': {'assistant.py'},
     'boards': {'shared_graph.py'},
@@ -241,6 +241,7 @@ OTHER_WRITERS = {
     'deliveries': {'fleet.py', 'follow_ups.py', 'machine/app/follow_ups.py', 'machine/app/preparation.py',
                    'machine/delivery/deliver.py', 'machine/export/hold.py', 'sandbox/load.py'},
     'draft_edits': {'graph.py'},
+    'edits_offered': {'machine/app/review.py'},
     'enrich_prefs': {'security_levels.py'},
     'event_search': {'assistant.py'},
     'events': {'sandbox/load.py', 'work_removal.py'},
@@ -290,7 +291,7 @@ OTHER_WRITERS = {
     'recap_items': {'machine/app/recap.py'},
     'recaps': {'machine/app/recap.py'},
     'record_owners': {'crm_import.py'},
-    'review_runs': {'sandbox/load.py'},
+    'review_runs': {'machine/app/review.py', 'sandbox/load.py'},
     'rule_changes': {'learning_loop.py', 'machine/app/recap.py'},
     'skills': {'sandbox/load.py'},
     'suggestions': {'fleet.py', 'follow_ups.py', 'graph.py', 'machine/app/promise_checks.py', 'machine/delivery/deliver.py',
@@ -389,7 +390,7 @@ PY_LINE_BUDGET = 2_500
 PY_BYTE_BUDGET = 450 * 1024
 PY_RATCHET_SLACK = (500, 50_000)
 PY_OVER_BUDGET = {
-    'assistant.py': (7_400, 485_000),
+    'assistant.py': (6_900, 445_000),
     'fleet.py': (3_800, PY_BYTE_BUDGET),
     'graph.py': (5_400, PY_BYTE_BUDGET),
     'next_actions.py': (2_650, PY_BYTE_BUDGET),
