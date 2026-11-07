@@ -20,9 +20,9 @@ Cada aprendizado vem com 1 a 3 casos de uso: uma situação, o que você faz e o
 - Ela foi feita para compartilhar aprendizados gerais, não as suas mensagens nem com quem você lida. O filtro pode deixar passar detalhes: revise o texto exato antes de **Enviar**.
 - Um log de erros só quando você marca **Adicionar o log de erros**. Revise o trecho também: o filtro faz o melhor possível.
 
-## Nada sem o seu OK
+## Quando ela pergunta
 
-Em **Aprendizado**, **Compartilhado**, uma nota curta pergunta "Compartilhar 3 aprendizados com a equipe da The Machine?" Toque em **Revisar** para ver exatamente o que seria enviado. Edite ou remova qualquer aprendizado ou caso de uso (cada aprendizado fica com pelo menos um caso de uso), depois toque em **Enviar**. Ou escolha **Agora não** ou **Nunca perguntar**.
+Os aprendizados vão sozinhos, a não ser que você tenha desligado isso (veja abaixo). Quando ela pergunta, em **Aprendizado**, **Compartilhado**, uma nota curta pergunta "Compartilhar 3 aprendizados com a equipe da The Machine?" Toque em **Revisar** para ver exatamente o que seria enviado. Edite ou remova qualquer aprendizado ou caso de uso (cada aprendizado fica com pelo menos um caso de uso), depois toque em **Enviar**. Ou escolha **Agora não** ou **Nunca perguntar**. Uma oferta mais nova substitui a que você ainda não respondeu.
 
 Tudo vai lacrado para a equipe e sai com um nome inventado, a não ser que você marque **Adicionar meu e-mail para a equipe poder responder**.
 
@@ -30,7 +30,9 @@ Outras Machines podem votar em um aprendizado que você compartilhou, sem saber 
 
 ## Enviar automaticamente
 
-Marque **Enviar automaticamente daqui em diante** ao lado de **Enviar**, ou ative **Enviar aprendizados automaticamente** em Configurações, Segurança. Novos aprendizados vão então sem perguntar, verificados do mesmo jeito. Desligado por padrão.
+**Enviar aprendizados automaticamente** em Configurações, Segurança vem ligado por padrão. Novos aprendizados vão sem perguntar, verificados do mesmo jeito. Desligue para ela perguntar toda vez. Se você já desligou antes, continua desligado.
+
+Para aprendizados das suas tarefas de Pessoal, ela continua perguntando antes. Se você já tinha ativado antes, eles também vão sozinhos, como você escolheu.
 
 Cada aprendizado enviado aparece em Configurações, **Atividade**, e em Fleet, **Atividade**, exatamente como foi. Toque em **Retirar** e a equipe não o vê mais.
 

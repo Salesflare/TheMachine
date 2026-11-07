@@ -74,6 +74,7 @@ def set_pref(db, key, value):
         _put(db, "INSERT INTO team_learning_prefs(key,value) VALUES('offer',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", (value,))
         if value == 'off':  # and Send learnings automatically with it: back on means asking each time again
             _put(db, "INSERT INTO team_learning_prefs(key,value) VALUES('auto','off') ON CONFLICT(key) DO UPDATE SET value=excluded.value", ())
+            _put(db, "DELETE FROM team_learning_prefs WHERE key='auto_personal'", ())  # and an earlier choice with it
     elif key == 'help_topics':
         import help_topics
         help_topics.set_on(db, value == 'on')  # off also deletes what waits to be sent

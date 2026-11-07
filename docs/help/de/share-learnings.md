@@ -20,9 +20,9 @@ Jede Erkenntnis kommt mit 1 bis 3 Anwendungsfällen: eine Situation, was du tust
 - Sie ist dafür gebaut, allgemeine Erkenntnisse zu teilen, nicht deine Nachrichten oder mit wem du zu tun hast. Filter können Details übersehen: Prüfe den genauen Text vor **Senden**.
 - Ein Fehlerprotokoll nur, wenn du **Fehlerprotokoll anhängen** anhakst. Prüfe auch den Auszug: Das Filtern geschieht nach bestem Bemühen.
 
-## Nichts ohne dein OK
+## Wenn sie fragt
 
-Unter **Lernen**, **Geteilt** fragt ein kurzer Hinweis: „3 Erkenntnisse mit dem Team von The Machine teilen?“ Tippe auf **Prüfen**, um genau zu sehen, was gesendet würde. Bearbeite oder entferne jede Erkenntnis oder jeden Anwendungsfall (jede Erkenntnis behält mindestens einen Anwendungsfall) und dann **Senden**. Oder wähle **Nicht jetzt** oder **Nie fragen**.
+Erkenntnisse gehen von selbst, außer du hast das ausgeschaltet (siehe unten). Wenn sie fragt, fragt unter **Lernen**, **Geteilt** ein kurzer Hinweis: „3 Erkenntnisse mit dem Team von The Machine teilen?“ Tippe auf **Prüfen**, um genau zu sehen, was gesendet würde. Bearbeite oder entferne jede Erkenntnis oder jeden Anwendungsfall (jede Erkenntnis behält mindestens einen Anwendungsfall) und dann **Senden**. Oder wähle **Nicht jetzt** oder **Nie fragen**. Ein neueres Angebot ersetzt eines, das du noch nicht beantwortet hast.
 
 Es ist für das Team versiegelt und kommt unter einem ausgedachten Namen, außer du hakst **Meine E-Mail-Adresse anhängen, damit das Team antworten kann** an.
 
@@ -30,7 +30,9 @@ Andere Machines können über eine Erkenntnis abstimmen, die du geteilt hast, oh
 
 ## Automatisch senden
 
-Hake **Ab jetzt automatisch senden** neben **Senden** an, oder schalte **Erkenntnisse automatisch senden** in Einstellungen, Sicherheit ein. Neue Erkenntnisse gehen dann ohne Nachfrage, genauso geprüft. Standardmäßig aus.
+**Erkenntnisse automatisch senden** in Einstellungen, Sicherheit ist standardmäßig an. Neue Erkenntnisse gehen ohne Nachfrage, genauso geprüft. Schalte es aus, damit sie jedes Mal fragt. Hast du es schon einmal ausgeschaltet, bleibt es aus.
+
+Bei Erkenntnissen aus deinen Aufgaben unter Privat fragt sie weiterhin zuerst. Hattest du es vorher selbst eingeschaltet, gehen auch sie von selbst, wie du es gewählt hast.
 
 Jede gesendete Erkenntnis steht unter Einstellungen, **Aktivität**, und unter Fleet, **Aktivität**, genau so, wie sie ging. Tippe auf **Zurückziehen**, und das Team sieht sie nicht mehr.
 

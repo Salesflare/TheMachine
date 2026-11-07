@@ -741,12 +741,13 @@ most five per note.
 ## Sharing learnings
 
 Now and then your Machine offers to share a few general learnings with The Machine team, so the product gets better for
-everyone (`team_learnings.py`). Nothing goes without your Send, unless you chose to send automatically. For learnings
+everyone (`team_learnings.py`). They go by themselves (Send automatically, on by default) unless you turned that off;
+learnings from Personal to-dos wait for your Send, unless you had turned Send automatically on yourself before. For learnings
 shared within a Work Fleet, see [Team learnings](fleet.md#team-learnings).
 
 ### What is written
 
-- At most once a day (`DAYS`), when there are at least three new notes, facts or rule changes (`MIN_MATERIAL`), one
+- At most once a day (`DAYS`), when there is at least one new note, fact or rule change (`MIN_MATERIAL`), one
   cheap background turn reads what this Machine learned since the last run: the owner's notes on to-dos, facts, rule
   changes, voices, how drafts were edited and recent errors. The first run reads the last 30 days (`SINCE_DAYS`).
 - It writes up to five general learnings, like "Drafts for people who don't know the context yet should introduce it
@@ -780,19 +781,29 @@ them.
 
 ### Asking
 
-A quiet offer under Learning, Shared and a line in the weekly recap: "Share 3 learnings with The Machine team?"
+When it asks (Send automatically off, or learnings from Personal to-dos): a quiet offer under Learning, Shared and a
+line in the weekly recap: "Share 3 learnings with The Machine team?"
 
 - **Review** shows exactly what would be sent, item by item, to edit or remove. An edit that adds a name back is
   refused.
 - **Add the error log** is off by default, per learning.
 - **Send** sends only what is on screen; **Not now** asks again in a week (`LATER_DAYS`); **Never ask** turns it off.
+- An offer left unanswered doesn't hold the next one back (`due`): the next run carries over what it still holds
+  (`not_shared_yet`) and its batch replaces the waiting one (`finish`, the batches in `carried`).
 
-**Send automatically.** Opt-in: **Send automatically from now on** in the offer, or Settings, Security, **Send learnings
-automatically** (off by default).
+**Send automatically.** On by default: Settings, Security, **Send learnings automatically**, or **Send automatically
+from now on** in the offer. Every choice is stored (`team_learning_prefs` key `auto`), so an owner who turned it off, or
+turned off the offer, Never ask or Careful, stays off; only a Machine that never chose gets the default (`auto_chosen`).
 
 - A batch made while it is on goes as it is, through the same `final_items` check and sealing (`auto_send`), never with
   an error excerpt or the owner's email.
 - A batch the check would change, or one not through within 24 hours, waits for the owner under Learning, Shared.
+- A batch made from a Personal to-do waits for the owner too (`personal`): a note on a to-do whose label is Personal
+  (`suggestion_scope`), or a fact or rule taken from such a note, or a waiting Personal offer it carried over. A run made
+  only from Work material leaves a waiting Personal offer alone, so it keeps waiting. The offer then says so.
+- An owner who had turned Send automatically on before Personal to-dos asked first keeps that choice: their Personal
+  batches go by themselves too (`auto_personal`, set once by `ensure`, `personal_auto`). Turning it off ends that, and
+  back on goes by today's rule.
 - It only runs while the offer is on, the owner's level isn't Careful and no Work Fleet is Careful (`auto_on`). Turning
   the offer off (also Never ask and Careful) turns it off.
 

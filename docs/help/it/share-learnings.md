@@ -20,9 +20,9 @@ Ogni apprendimento ha da 1 a 3 casi d'uso: una situazione, cosa fai tu e cosa do
 - È pensato per condividere apprendimenti generali, non i tuoi messaggi o le persone con cui hai a che fare. Il filtro può lasciarsi sfuggire dei dettagli: rileggi il testo esatto prima di **Invia**.
 - Un log degli errori solo se spunti **Aggiungi il log degli errori**. Rileggi anche l'estratto: il filtro fa del suo meglio.
 
-## Niente senza il tuo OK
+## Quando chiede
 
-In **Apprendimento**, **Condiviso**, una breve nota chiede "Condividere 3 apprendimenti con il team di The Machine?" Tocca **Rivedi** per vedere esattamente cosa verrebbe inviato. Modifica o togli qualsiasi apprendimento o caso d'uso (ogni apprendimento tiene almeno un caso d'uso), poi **Invia**. Oppure scegli **Non ora** o **Non chiedere più**.
+Gli apprendimenti partono da soli, a meno che tu non l'abbia disattivato (vedi sotto). Quando chiede, in **Apprendimento**, **Condiviso**, una breve nota chiede "Condividere 3 apprendimenti con il team di The Machine?" Tocca **Rivedi** per vedere esattamente cosa verrebbe inviato. Modifica o togli qualsiasi apprendimento o caso d'uso (ogni apprendimento tiene almeno un caso d'uso), poi **Invia**. Oppure scegli **Non ora** o **Non chiedere più**. Un'offerta più recente sostituisce quella a cui non hai ancora risposto.
 
 È sigillato per il team e arriva da un nome inventato, a meno che tu non spunti **Aggiungi la mia email così il team può rispondere**.
 
@@ -30,7 +30,9 @@ Altre Machine possono votare un apprendimento che hai condiviso, senza sapere ch
 
 ## Invio automatico
 
-Spunta **Invia in automatico d’ora in poi** accanto a **Invia**, oppure attiva **Invia apprendimenti in automatico** in Impostazioni, Sicurezza. I nuovi apprendimenti partono allora senza chiedere, controllati allo stesso modo. Disattivato di default.
+**Invia apprendimenti in automatico** in Impostazioni, Sicurezza è attivo di default. I nuovi apprendimenti partono senza chiedere, controllati allo stesso modo. Disattivalo perché chieda ogni volta. Se l'hai già disattivato, resta disattivato.
+
+Per gli apprendimenti dalle tue attività di Personale, chiede comunque prima. Se l’avevi attivato tu prima, partono anche loro da soli, come hai scelto.
 
 Ogni apprendimento inviato è elencato in Impostazioni, **Movimenti**, e in Fleet, **Movimenti**, esattamente come è partito. Tocca **Ritira** e il team non lo vede più.
 

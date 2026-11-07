@@ -61,7 +61,7 @@ class TeamLearnings(unittest.TestCase):
         self.addCleanup(self.join_background, set(threading.enumerate()))  # runs first: no worker writes into the folder as it goes
         database = Path(self.temp.name) / 'events.sqlite'
         self.store = a.Store(database)
-        self.store.accounts = [{'id': 'work', 'service': 'gmail', 'email': 'owner@globex.example', 'display_name': 'Owner Work'}]
+        self.store.accounts = [{'id': 'work', 'service': 'gmail', 'email': 'owner@globex.example', 'display_name': 'Owner Work', 'boundary': 'work:globex'}]
         self.app = object.__new__(a.App)
         self.app.store = self.store
         self.app.config = {'accounts': self.store.accounts, 'database': str(database), 'review_worker': {'enabled': True}}
@@ -83,6 +83,8 @@ class TeamLearnings(unittest.TestCase):
             db.execute("INSERT INTO faults(fingerprint,day,kind,frames,location,version,first_at,last_at,count,message) "
                        "VALUES('fp1',?,'KeyError','x','graph.py:120 build','abc',?,?,7,'missing key \"…\"')", (a.now()[:10], a.now(), a.now()))
             db.execute("INSERT INTO milestones(name,at) VALUES('first_card_shown',?)", (a.now(),))  # past the first look (background turns wait for it)
+            tl.ensure(db)  # an owner who turned Send automatically off: asked each time (by_default: the default)
+            tl.set_pref(db, 'auto', 'off')
 
     fresh = True
 
@@ -215,7 +217,7 @@ class TeamLearnings(unittest.TestCase):
                 db.execute("INSERT INTO facts(text,decision_id,created_at) VALUES('a','d0',?),('b','d1',?),('c','d2',?)", (a.now(),) * 3)
             self.fresh = False  # the error was more than a week ago
             ask = self.distil([{'text': 'Drafts for new contacts should introduce the context first, again.'}])
-            self.assertEqual(self.store.learnings_due(), None)  # one waits for the owner: no second one meanwhile
+            self.assertEqual(self.store.learnings_due(), None)  # not twice a day
             view = self.app.action('learnings_never', {'id': ask['id']}, owner_dashboard=True)['team_learnings']
             self.assertEqual((view['offer'], view['ask']), (False, None))
         with patch_everywhere(a, 'now', return_value=(a.dt.datetime.fromisoformat(a.now()) + a.dt.timedelta(days=30)).isoformat()):
@@ -289,7 +291,7 @@ class TeamLearnings(unittest.TestCase):
         return [b for b in self.network.sent if b['action'] == 'send']
 
     def test_daily_it_reads_only_what_is_new_and_never_offers_the_same_learning_twice(self):
-        self.assertEqual((tl.DAYS, tl.MIN_MATERIAL), (1, 3))
+        self.assertEqual((tl.DAYS, tl.MIN_MATERIAL), (1, 1))
         ask = self.distil([{'text': 'Drafts for people who don’t know the context yet should introduce it first.'},
                            {'text': 'Invoice reminders should wait until the due date has passed.'}])
         self.app.action('learnings_share', {'id': ask['id'], 'items': [{'n': 1}]}, owner_dashboard=True)  # the second one removed
@@ -322,13 +324,164 @@ class TeamLearnings(unittest.TestCase):
         with self.later(days=8):
             self.assertTrue(self.store.learnings_due())
 
-    def test_asking_each_time_is_the_default(self):
+    def test_an_owner_who_turned_sending_automatically_off_is_asked_each_time(self):
         view = self.app.learnings_view()
-        self.assertEqual((view['offer'], view['auto']), (True, False))
+        self.assertEqual((view['offer'], view['auto']), (True, False))  # off by their choice (setUp), kept
         ask = self.distil([{'text': 'Drafts for new contacts should introduce the context first.'}])
         self.assertTrue(ask)
         self.app.learnings_auto_send()
         self.assertEqual(self.sends(), [])  # nothing goes by itself
+
+    def test_one_new_note_is_enough_and_a_waiting_offer_no_longer_holds_back_the_next_one(self):
+        first = self.distil([{'text': 'Drafts for new contacts should introduce the context first.'}])
+        self.material('Prefers short replies')  # one is enough (MIN_MATERIAL)
+        with self.later(hours=25):
+            self.fresh = False
+            run_id = self.store.learnings_due()
+            self.assertTrue(run_id)  # the first offer still waits, unanswered
+            page = self.store.profile_evidence(1, a.PROFILE_SESSION_PREFIX + run_id)
+            self.assertEqual(page['not_shared_yet'], ['Drafts for new contacts should introduce the context first.'])  # carried over
+            with self.store.connect() as db:
+                db.execute("DELETE FROM profile_runs WHERE run_id=?", (run_id,))
+            second = self.distil([{'text': 'Drafts for new contacts should introduce the context first.'},
+                                  {'text': 'Short replies work better for quick questions from colleagues.'}])
+        self.assertNotEqual(second['id'], first['id'])  # the newer offer replaces the older one
+        self.assertEqual(len(second['items']), 2)
+        with self.store.connect() as db:
+            self.assertEqual(db.execute('SELECT status FROM team_learnings WHERE id=?', (first['id'],)).fetchone()[0], 'replaced')
+            self.assertEqual(tl.waiting(db), 2)
+        with self.assertRaisesRegex(ValueError, 'no longer waiting'):
+            self.app.action('learnings_share', {'id': first['id'], 'items': [{'n': 1}]}, owner_dashboard=True)
+        self.assertEqual(self.sends(), [])
+
+    # Send learnings automatically is on for a Machine whose owner never chose; Personal material still asks.
+    def by_default(self):
+        with self.store.connect() as db:
+            db.execute("DELETE FROM team_learning_prefs WHERE key='auto'")
+
+    def personal(self, card='s0'):
+        with self.store.connect() as db:  # a family matter on the work mailbox: pinned Personal (todo_areas.py)
+            db.execute("UPDATE suggestions SET area='personal' WHERE id=?", (card,))
+
+    def test_it_is_on_by_default_and_each_send_is_in_activity_with_withdraw(self):
+        self.by_default()
+        import activity_log
+        view = self.app.learnings_view()
+        self.assertEqual((view['offer'], view['auto']), (True, True))
+        self.assertIsNone(self.distil([{'text': 'Drafts for new contacts should introduce the context first.'}]))  # not asked: it went
+        [body] = self.sends()
+        self.assertFalse(body['named'])
+        self.assertEqual([i['text'] for i in self.network.opened()['items']], ['Drafts for new contacts should introduce the context first.'])
+        with self.store.connect() as db:
+            [line] = activity_log.page(db, self.app.config, 'learnings')['items']
+        self.assertEqual((line['outcome'], line['by'], line['withdraw']['n']), ('done', 'By itself', 1))
+        self.app.action('learnings_withdraw', line['withdraw'], owner_dashboard=True)
+        self.assertEqual(self.network.sent[-1]['action'], 'withdraw')
+
+    def test_an_owner_who_turned_it_off_stays_off(self):
+        self.by_default()
+        for off in (lambda: self.app.action('set_learnings_auto', {'on': False}, owner_dashboard=True),
+                    lambda: self.app.action('set_learnings_offer', {'on': False}, owner_dashboard=True)):
+            with self.store.connect() as db:
+                db.execute("DELETE FROM team_learning_prefs")
+                self.assertTrue(tl.auto_chosen(db))
+            off()
+            self.app.action('set_learnings_offer', {'on': True}, owner_dashboard=True)
+            with self.store.connect() as db:
+                self.assertEqual((tl.pref(db, 'auto'), tl.auto_chosen(db)), ('off', False))  # stored: the default doesn't come back
+
+    def test_learnings_from_a_personal_todo_wait_for_the_owner_and_work_ones_still_go(self):
+        self.by_default()
+        self.personal()
+        ask = self.distil([{'text': 'Drafts for new contacts should introduce the context first.'}])
+        self.assertTrue(ask['personal'])  # the offer says why it asks
+        self.app.learnings_auto_send()
+        self.assertEqual(self.sends(), [])
+        with self.store.connect() as db:
+            self.assertEqual(tl.waiting(db), 1)
+        # A later run from Work material only goes by itself, and leaves the Personal offer waiting
+        with self.store.connect() as db:
+            db.execute("INSERT INTO facts(text,decision_id,suggestion_id,created_at) VALUES('Prefers calls before noon','d1','s1',?)", (a.now(),))
+        with self.later(hours=25):
+            self.fresh = False
+            run_id = self.store.learnings_due()
+            page = self.store.profile_evidence(1, a.PROFILE_SESSION_PREFIX + run_id)
+            self.assertEqual(page['not_shared_yet'], [])  # the Personal offer isn't carried into one that goes by itself
+            with self.store.connect() as db:
+                db.execute("DELETE FROM profile_runs WHERE run_id=?", (run_id,))
+            again = self.distil([{'text': 'Suggested call times should avoid the afternoon for this kind of owner.'}])
+        self.assertEqual(again['id'], ask['id'])  # still the Personal one, asking
+        self.assertEqual([i['text'] for i in self.network.opened()['items']], ['Suggested call times should avoid the afternoon for this kind of owner.'])
+        # A rule from a Personal to-do's note counts as Personal too
+        with self.later(hours=50), self.store.connect() as db:  # only the rule change is new: traced through its fact id
+            fact = db.execute("INSERT INTO facts(text,decision_id,suggestion_id,created_at,kind) VALUES('Keep it short','d0','s0','2000-01-01','draft')").lastrowid
+            db.execute("UPDATE team_learnings SET status='never' WHERE id=?", (ask['id'],))  # nothing Personal carried over
+            self.assertFalse(tl.evidence(db, None, None, self.store.accounts)['personal'])
+            db.execute("INSERT INTO rule_changes(at,kind,text,ref) VALUES(?,'draft_rule','Draft rule: Keep it short',?)", (a.now(), str(fact)))
+            self.assertTrue(tl.evidence(db, None, None, self.store.accounts)['personal'])
+        self.assertEqual(len(self.sends()), 1)
+
+    def from_before(self, auto=None):
+        """A Machine from before Personal to-dos asked first: its own 'auto' choice (None: it never chose), then the update."""
+        with self.store.connect() as db:
+            db.execute("DELETE FROM team_learning_prefs WHERE key IN ('auto','auto_since','auto_personal')")
+            if auto:
+                tl.set_pref(db, 'auto', auto)
+            tl.ensure(db)
+
+    def test_an_owner_who_turned_it_on_before_keeps_personal_batches_going(self):
+        self.from_before('on')
+        self.personal()
+        self.assertTrue(self.app.learnings_view()['auto_personal'])
+        self.assertIsNone(self.distil([{'text': 'Drafts for new contacts should introduce the context first.'}]))  # not asked: it went
+        self.assertEqual(len(self.sends()), 1)
+        self.assertTrue(self.app.learnings_view()['shared'][0]['auto'])
+        with self.store.connect() as db:
+            tl.ensure(db)  # once only: a later start changes nothing
+            self.assertEqual(tl.pref(db, 'auto_personal'), 'on')
+        # Off and on again is a new choice, under today's rule: Personal batches ask first
+        self.app.action('set_learnings_auto', {'on': False}, owner_dashboard=True)
+        self.app.action('set_learnings_auto', {'on': True}, owner_dashboard=True)
+        self.assertFalse(self.app.learnings_view()['auto_personal'])
+        with self.later(hours=25):
+            self.fresh = False
+            with self.store.connect() as db:  # something new from the Personal to-do
+                db.execute("INSERT INTO facts(text,decision_id,suggestion_id,created_at) VALUES('Prefers calls before noon','d0','s0',?)", (a.now(),))
+            ask = self.distil([{'text': 'Suggested call times should avoid the afternoon for this kind of owner.'}])
+        self.assertTrue(ask['personal'])
+        self.assertEqual(len(self.sends()), 1)
+
+    def test_an_owner_on_the_default_before_gets_the_personal_rule(self):
+        self.from_before(None)
+        self.personal()
+        view = self.app.learnings_view()
+        self.assertEqual((view['auto'], view['auto_personal']), (True, False))
+        ask = self.distil([{'text': 'Drafts for new contacts should introduce the context first.'}])
+        self.assertTrue(ask['personal'])
+        self.app.learnings_auto_send()
+        self.assertEqual(self.sends(), [])
+        # and one who had it off stays off, with nothing kept for later
+        self.from_before('off')
+        with self.store.connect() as db:
+            self.assertEqual((tl.auto_chosen(db), tl.pref(db, 'auto_personal')), (False, None))
+
+    def test_a_personal_batch_can_still_be_sent_by_the_owner(self):
+        self.by_default()
+        self.personal()
+        ask = self.distil([{'text': 'Drafts for new contacts should introduce the context first.'}])
+        self.app.action('learnings_share', {'id': ask['id'], 'items': [{'n': 1}]}, owner_dashboard=True)
+        self.assertEqual(len(self.sends()), 1)
+        self.assertFalse(self.app.learnings_view()['shared'][0]['auto'])  # after the owner's OK
+
+    def test_a_careful_fleet_still_keeps_it_asking(self):
+        self.by_default()
+        with self.store.connect() as db:
+            db.execute('CREATE TABLE IF NOT EXISTS fleet_meta(key TEXT PRIMARY KEY,value TEXT)')
+            db.execute("INSERT INTO fleet_meta(key,value) VALUES('directory',?)",
+                       (json.dumps({'fleets': [{'id': 'fl_w', 'kind': 'work', 'name': 'Work', 'security': {'level': 'careful'}}]}),))
+        self.assertTrue(self.distil([{'text': 'Drafts for new contacts should introduce the context first.'}]))
+        self.app.learnings_auto_send()
+        self.assertEqual(self.sends(), [])
 
     def test_send_automatically_sends_new_learnings_lists_them_and_withdraws_one(self):
         view = self.app.action('set_learnings_auto', {'on': True}, owner_dashboard=True)['team_learnings']

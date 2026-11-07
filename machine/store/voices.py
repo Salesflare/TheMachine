@@ -324,13 +324,14 @@ class VoicesStore:
     def learnings_due(self, current=None):
         """At most once a day, with new material, when the owner wants to be offered: one cheap turn distils what was
         learned since the last one into a few general learnings for The Machine team (team_learnings.py). Nothing is
-        sent here: the owner is asked first, unless they chose to send automatically (team_learnings.auto_send)."""
+        sent here: it goes by itself with Send automatically on (team_learnings.auto_send, the default), else the owner is
+        asked first; learnings from Personal to-dos always ask."""
         current = current or dt.datetime.fromisoformat(now())
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             if db.execute("SELECT 1 FROM profile_runs WHERE status IN ('starting','running')").fetchone() or not team_learnings.due(db, current):
                 return None
-            evidence = team_learnings.evidence(db, lambda: self.quality(team_learnings.SINCE_DAYS), current)
+            evidence = team_learnings.evidence(db, lambda: self.quality(team_learnings.SINCE_DAYS), current, getattr(self, 'accounts', None))
             run_id, started = uuid.uuid4().hex, now()
             db.execute("INSERT INTO profile_runs(run_id,status,started_at,updated_at,evidence,kind,auto) VALUES(?,'starting',?,?,?,'learnings',1)",
                        (run_id, started, started, json.dumps(evidence)))
