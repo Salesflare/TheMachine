@@ -9,7 +9,7 @@ keywords: ios, android, app store, play store, share sheet, share, phone, mobile
 ---
 The mobile app opens your own dashboard, signed in as on the web. Get it on the [App Store](https://apps.apple.com/app/id6829875215) for iPhone and iPad, or on [Google Play](https://play.google.com/store/apps/details?id=computer.themachine.app) for Android.
 
-The **Get more out of The Machine** to-do at the top of To-dos suggests it. In a phone's browser, **Get it** opens the store. On a computer it shows a QR code to scan with your phone, and links to both stores.
+The **Get more out of The Machine** to-do at the top of To-dos suggests it. In a phone's browser, **Get it** opens the store. On a phone set to show desktop sites, it shows both store links. On a computer it shows a QR code to scan with your phone, and links to both stores.
 
 On any phone, [themachine.computer/app](https://themachine.computer/app) opens the right store, and **Settings**, **General**, **Phone app** always has **Get the app**. **Settings**, **Apps** has both stores at the top, or just your phone's store on a phone. On a computer, **Computer** installs the dashboard as an app: see [Install the app](phone-app.md).
 

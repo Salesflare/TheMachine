@@ -10,7 +10,7 @@ Aufgaben entstehen aus Prüfungen: Deine Machine liest, was reingekommen ist, in
 
 ## Gerade angemeldet
 
-Auf einer neuen gehosteten Machine starten die Prüfungen von selbst, sobald deine KI und deine E-Mails verbunden sind. Während deine Machine deine E-Mails liest, steht unter Aufgaben "Deine E-Mails werden gelesen, die ersten Aufgaben kommen in ein paar Minuten". Fehlt ein Schritt, nennt ihn **Braucht dich**, etwa **Mail verbinden**, mit einem Link zu diesem Schritt.
+Auf einer neuen gehosteten Machine starten die Prüfungen von selbst, sobald deine KI und deine E-Mails verbunden sind. Während deine Machine deine E-Mails liest, steht unter Aufgaben "Deine E-Mails werden gelesen, die ersten Aufgaben kommen in ein paar Minuten". Sobald sie weiß, wie viel es ist, sagt sie ungefähr, wie lange es dauert: "Erste Aufgaben in etwa 10 Min." Fehlt ein Schritt, nennt ihn **Braucht dich**, etwa **Mail verbinden**, mit einem Link zu diesem Schritt.
 
 Während sie liest, zeigt Aufgaben, wie weit sie ist, ein paar der Personen und Organisationen, auf die sie gestoßen ist, und deine erste Aufgabe, sobald sie da ist. Die Namen stammen aus deinen eigenen E-Mails, und nur du siehst sie.
 

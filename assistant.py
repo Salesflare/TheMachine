@@ -1159,6 +1159,33 @@ REVIEW_PROBE_SECONDS = 120  # the same for a review: old enough to be past the G
 
 
 FIRST_LOOK_SIGNAL_SECONDS = 12  # about how long a first look takes per signal, for "first cards in about N min"
+
+
+def first_eta_minutes(run=None, look=None, queue=None, current=None):
+    """About how many minutes until the first to-dos, for the setup page (first_cards_report) and the empty state
+    (App.review_live), so both say the same. run {planned, done}: a first review running now. look: the first look's
+    state (App.first_look). queue (App.review_queue): the first regular review. None when nothing is on its way."""
+    current = current or dt.datetime.fromisoformat(now())
+    if run:
+        return max(1, -(-max((run.get('planned') or 0) - (run.get('done') or 0), 1) * FIRST_LOOK_SIGNAL_SECONDS // 60))
+    if look:
+        if not (look.get('state') == 'due' or look.get('why') in ('mail', 'settling', 'retry')):
+            return None
+        eta = 1 + -(-(look.get('waiting') or QUICK_LOOK_SIGNALS) * FIRST_LOOK_SIGNAL_SECONDS // 60)
+        if look.get('why') == 'settling':
+            eta += FIRST_LOOK_SETTLE_SECONDS // 60
+        if look.get('retry_at'):
+            eta += max(0, int((dt.datetime.fromisoformat(look['retry_at']) - current).total_seconds() // 60))
+        return eta
+    if queue and queue.get('first') and queue.get('planned'):
+        try:
+            wait = max(0, int((dt.datetime.fromisoformat(queue['starts_at']) - current).total_seconds())) if queue.get('starts_at') else 0
+        except (TypeError, ValueError):
+            wait = 0
+        return max(1, -(-(wait + queue['planned'] * FIRST_LOOK_SIGNAL_SECONDS) // 60))
+    return None
+
+
 def first_cards_report(db, accounts=(), current=None):
     """How fast a new install got to its first useful card, for the hosted health report: per source when its first
     import was in, each first-look pass (start, end, status, reason, cards), when the first card was shown on the
@@ -1219,15 +1246,10 @@ def first_cards_report(db, accounts=(), current=None):
     if active:
         done = sum(len(json.loads(items)) for (items,) in rows("SELECT items FROM analyses WHERE owner_run=? AND status='complete'", (active[0],)))
         out['look'] = {'state': 'running', 'quick': bool(active[5]), 'done': done, 'planned': active[6] or 0}
-        eta = max(1, -(-max((active[6] or 0) - done, 1) * FIRST_LOOK_SIGNAL_SECONDS // 60))
+        eta = first_eta_minutes({'planned': active[6] or 0, 'done': done}, None, None, current)
     elif state:
         out['look'] = {k: state.get(k) for k in ('state', 'why', 'quick', 'waiting', 'retry_at')}
-        if state.get('state') == 'due' or state.get('why') in ('mail', 'settling', 'retry'):
-            eta = 1 + -(-(state.get('waiting') or QUICK_LOOK_SIGNALS) * FIRST_LOOK_SIGNAL_SECONDS // 60)
-            if state.get('why') == 'settling':
-                eta += FIRST_LOOK_SETTLE_SECONDS // 60
-            if state.get('retry_at'):
-                eta += max(0, int((dt.datetime.fromisoformat(state['retry_at']) - current).total_seconds() // 60))
+        eta = first_eta_minutes(None, state, None, current)
     if eta and not out['cards']:
         out['eta_minutes'] = eta
     return out
@@ -6945,8 +6967,12 @@ class App(*APP_MIXINS):
                 run['steps'] = review_steps(db, run, self.config.get('agent_db'))
             # The newest card: the dashboard shows a card as soon as a running review saves it, not after the review
             newest = db.execute('SELECT count(*),max(created_at) FROM suggestions').fetchone()
-            return {'runs': runs, 'queue': self.review_queue(db), 'first_look': self.first_look(db), 'first_dig': self.first_dig_live(db),
-                    'cards': {'count': newest[0], 'newest': newest[1]}, 'ai_connecting': ai_connecting(self.config)}
+            queue, look = self.review_queue(db), self.first_look(db)
+            # Before the first to-do ever: about when the first ones come (first_eta_minutes), for the empty state
+            eta = None if newest[0] else first_eta_minutes(
+                {'planned': runs[0].get('planned') or runs[0].get('claimed_count') or 0, 'done': runs[0].get('done_count') or 0} if runs else None, look, queue)
+            return {'runs': runs, 'queue': queue, 'first_look': look, 'first_dig': self.first_dig_live(db),
+                    'cards': {'count': newest[0], 'newest': newest[1]}, 'ai_connecting': ai_connecting(self.config), 'first_eta': eta}
 
     def start_preview(self, auto=False, quick=False):
         """`assistant preview`: one regular review run (same session, prompt and tool) over the last

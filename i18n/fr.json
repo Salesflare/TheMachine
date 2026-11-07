@@ -1376,6 +1376,7 @@
  "First one’s in: {}. Still reading…": "La première est là : {}. Je continue à lire…",
  "First read: catching up on the last days.": "Première lecture : rattrape les derniers jours.",
  "First seen this week.": "Vu pour la première fois cette semaine.",
+ "First to-dos in about {} min.": "Premières tâches dans environ {} min.",
  "First try": "Du premier coup",
  "Five more minutes. Robot minutes.": "Encore cinq minutes. Des minutes de robot.",
  "Fix": "Correctif",
@@ -2576,6 +2577,10 @@
  "None of these are yours yet.": "Rien de tout cela n’est encore à vous.",
  "None yet": "Aucun pour l’instant",
  "None yet. Checks add the ones that fit.": "Aucun pour l’instant. Les vérifications ajoutent ceux qui correspondent.",
+ "Nosing through {} new messages. First to-dos in about {} min.": {
+  "one": "Je fouine dans {} nouveau message. Premières tâches dans environ {} min.",
+  "other": "Je fouine dans {} nouveaux messages. Premières tâches dans environ {} min."
+ },
  "Nosing through {} new messages…": {
   "one": "Je fouine dans {} nouveau message…",
   "other": "Je fouine dans {} nouveaux messages…"
