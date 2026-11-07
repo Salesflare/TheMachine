@@ -1,9 +1,11 @@
 # Product vision
 
-AI should work for you, so you can do your best work. The Machine is that AI:
+AI should work for you, so you can do your best work and live your best life. The Machine is that AI:
 
 - **Proactive.** It doesn't wait for a prompt. It takes work off your hands every day.
 - **With you everywhere.** Across your computer, your phone and every app you use, it knows where you left off.
+- **Work and life, as one.** It handles both and bridges them: the meeting that clashes with school pickup gets
+  caught. What's private stays private.
 - **Always current.** It keeps pace with AI: new models and abilities reach your Machine as soon as they're good.
 - **Yours.** You own it and your data, not a big corporation.
 - **For everyone.** Easy to start and affordable.
@@ -28,8 +30,10 @@ your head back for the work only you can do.
    homework. It takes work off your hands, never acts behind your back.
 4. **It's for everyone.** Easy: set up in minutes, no technical skills needed, plain words throughout. Affordable:
    a fair price for a hosted Machine, free to run yourself, and lean enough for a $20 model plan.
-5. **It's with you everywhere.** Desktop, phone, chat apps, browser: one Machine that carries the context from one to
-   the next and works with the tools you already use. New connections are added as people need them.
+5. **It's with you everywhere.** Desktop, phone, chat apps, browser, work and personal: one Machine that carries the
+   context from one to the next and works with the tools you already use. It keeps work and personal apart where they
+   should be (your team never sees your personal life) and bridges them where it helps. New connections are added as
+   people need them.
 6. **It feels instant and calm.** Every click answers in about 100 ms. Few words, few notifications, only ones that
    matter.
 7. **It's smart, not wasteful.** As much intelligence as possible per token, so it runs well on a $20 OpenAI or Claude
