@@ -33,9 +33,10 @@ import org.json.JSONObject;
  * Push on Android (mobile/README.md). The push says nothing about the to-do: its kind, a ready or needs-you state, an
  * opaque id and fixed words. For one that leaves showing it to the app (data "fetch"), the app asks the owner's own
  * Machine about that to-do (GET api/notice, with the WebView's own sign-in, or over Tailscale for a Machine of their
- * own) and shows its title and next step ("Ready: Pick a time with Sam", "Send to Sam: Tuesday 10:00 works") with
- * Do it, Snooze and Mark done buttons (NotificationActions). Without an answer (offline, signed out, Tailscale off)
- * it shows the fixed words, or how many are waiting ("2 to-dos need you"). The lock screen gets only the fixed words
+ * own) and shows its title and next step ("Pick a time with Sam", "Send to Sam: Tuesday 10:00 works") with its
+ * buttons (NotificationActions). Without an answer (offline, signed out, Tailscale off) it shows the fixed words with
+ * "Tap to open.", or how many are waiting ("2 to-dos need you"), and asks once more: an answer then takes their
+ * place. The lock screen gets only the fixed words
  * when the phone hides sensitive content (the public version). A "clear" push takes a to-do's notification away.
  * Replaces Capacitor's own service, which it still runs.
  */
@@ -63,23 +64,38 @@ public class MachinePushService extends MessagingService {
             return;
         }
         if (!NotificationManagerCompat.from(c).areNotificationsEnabled()) return;
-        String many = text(data.get("many"));
-        String group = PushText.group(kind, state);
-        long asked = System.currentTimeMillis();
         Notice notice = fetchNotice(c, tag, kind);
-        // the phone's network may still be waking up: once more, a moment later, while FCM's time for a push lasts
-        if (notice == null && System.currentTimeMillis() - asked < TIMEOUT) {
+        if (notice == null) {
+            // No answer yet (the phone's network still waking up, the Machine busy): the fixed words now, so the
+            // phone says something at once, then once more a moment later, while FCM's time for a push lasts. With
+            // the answer the to-do's own notification takes the fixed one's place, quietly: it already buzzed.
+            present(c, data, null, false);
             try {
                 Thread.sleep(RETRY);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
+                return;
             }
             notice = fetchNotice(c, tag, kind);
+            if (notice == null) return;
+            clear(c, tag); // out of the fixed one's count, which goes once it counts nothing
+            if (text(data.get("many")).isEmpty()) NotificationManagerCompat.from(c).cancel(PushText.group(kind, state), 0); // one that counts nothing
+            if (notice.gone) return;
+            present(c, data, notice, true);
+            return;
         }
-        if (notice != null && notice.gone) { // handled in the meantime: nothing to show
+        if (notice.gone) { // handled in the meantime: nothing to show
             clear(c, tag);
             return;
         }
+        present(c, data, notice, false);
+    }
+
+    /** The notification for a wakeup: the to-do's own with its notice, else the fixed words for its kind. */
+    private static void present(Context c, Map<String, String> data, Notice notice, boolean quiet) {
+        String kind = text(data.get("kind")), state = text(data.get("state")), tag = text(data.get("tag"));
+        String many = text(data.get("many"));
+        String group = PushText.group(kind, state);
         int count = many.isEmpty() || (notice != null && notice.title != null) ? 1 : waiting(c, group, tag);
         String plain = PushText.fallback(data.get("body"), many, count);
         if (plain.isEmpty()) plain = PushText.fallback(data.get("title"), null, 1);
@@ -97,6 +113,7 @@ public class MachinePushService extends MessagingService {
             .setContentText(under)
             .setStyle(new NotificationCompat.BigTextStyle().bigText(under))
             .setContentIntent(open(c, id, opens));
+        if (quiet) full.setSilent(true);
         if (line != null) {
             for (String action : notice.actions) {
                 String label = notice.labels.get(action);

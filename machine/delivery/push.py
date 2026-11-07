@@ -351,15 +351,17 @@ def quick_kind(row, kind=None, blocked=None, signin=None):
             outcome = json.loads(row.get('outcome') or '{}') or {}
         except (TypeError, ValueError):
             outcome = {}
-        if str(outcome.get('needs') or '').strip():
-            return 'question'
-        if outcome.get('state') == 'snoozed' and kind == 'reminder':
-            return 'reminder'
         try:
             steps = next_actions.visible_actions(row.get('next_action'))
         except (TypeError, ValueError, AttributeError):
             steps = []
-        return 'draft' if any(s.get('kind') in next_actions.APPROVE_KINDS for s in steps) else 'ready'
+        drafted = any(s.get('kind') in next_actions.APPROVE_KINDS for s in steps)
+        needs = str(outcome.get('needs') or '').strip()
+        if needs and (needs.endswith('?') or not drafted):  # "check the draft and send it" is the draft's: Open draft
+            return 'question'
+        if outcome.get('state') == 'snoozed' and kind == 'reminder':
+            return 'reminder'
+        return 'draft' if drafted else 'ready'
     if status in ('accepted', 'instructions', 'local_preparation'):
         return 'preparing'
     return 'reminder' if kind == 'reminder' else 'new'
@@ -385,8 +387,9 @@ def app_notice(store, config, tag, kind=None, version=1):
     events}, or {gone: True} for a to-do no longer waiting (done, snoozed, not needed), whose notification goes.
     An app from version 2 on (it asks with v=2 and the wakeup's kind) gets the quick buttons (QUICK); an older app
     the three it knows, Do it, Snooze (until tomorrow) and Mark done.
-    title is the to-do's state and title ("Ready: Pay the Monizze invoice"), body the next step ("Reply to Sam:
-    confirm Tuesday 10:00"). With Text in notifications off (or a Careful work to-do): only the fixed words.
+    title is the to-do's title, with its state in front unless it is ready ("Pick a time with Sam", "Preparing: Pay
+    the Monizze invoice"): the phone has little room, and the body says what is ready, the next step ("Send to Sam:
+    Tuesday 10:00 works for me."). With Text in notifications off (or a Careful work to-do): only the fixed words.
     A tag that is no to-do (the morning, a Fleet question): the line and body kept for it (notify.app_line)."""
     tag = str(tag or '')
     with store.connect() as db:
@@ -429,7 +432,9 @@ def app_notice(store, config, tag, kind=None, version=1):
              'Needs your help': ('Needs your help: {}', t('Needs your help')),
              'Needs you to sign in': ('Needs you to sign in: {}', t('Needs you to sign in')),
              'Reminder': ('Reminder: {}', t('Reminder'))}
-    if lead:
+    if lead == 'Ready' and text:  # what it is about leads; the line under it says what is ready (a draft, a result)
+        title = notify.clip(row['title'], notify.APP_LINE)
+    elif lead:
         title = notify.app_line_text(leads[lead][0], row['title']) if text else leads[lead][1]
     else:  # what it is is in its title ("Waiting on Sam: the quote"): nothing in front
         title = notify.clip(row['title'], notify.APP_LINE) if text else t('To-do')
@@ -457,15 +462,18 @@ def app_next_step(row, blocked=False):
     except (TypeError, ValueError):
         outcome = {}
     if row['status'] == 'prepared':
-        if outcome.get('needs'):
-            return plain(outcome['needs'])
-        if outcome.get('state') == 'waiting' and outcome.get('waiting_on'):
-            return i18n.t('Waiting on: {}', plain(outcome['waiting_on']))
         try:
             steps = next_actions.visible_actions(row.get('next_action'))
         except (TypeError, ValueError, AttributeError):
             steps = []
         step = next((a for a in steps if a.get('kind') != 'open'), None)
+        needs = plain(outcome.get('needs') or '')
+        # What the owner does: a question for them leads; for a draft, the draft itself says more than "check the
+        # draft and send it" (who it goes to and how it starts)
+        if needs and (needs.endswith('?') or not (step and step.get('kind') in next_actions.APPROVE_KINDS)):
+            return needs
+        if outcome.get('state') == 'waiting' and outcome.get('waiting_on'):
+            return i18n.t('Waiting on: {}', plain(outcome['waiting_on']))
         if step:
             label = plain(next_actions.label(step))
             to = step.get('to') if isinstance(step.get('to'), list) else []
@@ -483,8 +491,9 @@ def app_next_step(row, blocked=False):
 
 
 def app_draft_lead(text):
-    """A draft without its greeting line ("Hi Mila,"), so the notification starts with what it says."""
-    lines = [line.strip() for line in str(text or '').splitlines() if line.strip()]
+    """A draft without its greeting line ("Hi Mila,") and lines that are only a link, so the notification starts with
+    what it says."""
+    lines = [line.strip() for line in str(text or '').splitlines() if line.strip() and not re.fullmatch(r'<?\w+://\S+', line.strip())]
     if len(lines) > 1 and len(lines[0]) <= 40 and lines[0].endswith(','):
         lines = lines[1:]
     return '\n'.join(lines)
