@@ -12,8 +12,6 @@
 .setup-row{display:flex;flex-wrap:wrap;align-items:center;gap:0 10px;padding:7px 0;border-top:1px solid var(--border)}
 .setup-ic{flex:none;width:20px;height:20px;fill:none;stroke:var(--muted);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .setup-label{display:flex;align-items:center;flex:1;min-width:0;min-height:30px;color:var(--text)}
-.setup-row.done .setup-ic{stroke:var(--mint)}
-.setup-row.done .setup-label{color:var(--muted)}
 .setup-card .setup-go{flex:none;min-height:30px;margin:0;padding:0 12px;font-size:var(--fs-xs);white-space:nowrap}
 .setup-qr{display:grid;gap:8px;flex:1 1 100%;padding:8px 0 6px 30px;color:var(--muted)}
 .setup-qr small{font-size:var(--fs-xs)}

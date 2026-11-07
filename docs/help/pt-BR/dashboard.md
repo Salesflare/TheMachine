@@ -31,7 +31,7 @@ No celular, uma janela como **Enviar este e-mail?** ocupa a tela toda: o título
 
 ## Aproveite mais
 
-Desde a sua primeira visita, assim que a primeira olhada termina, uma pequena tarefa no topo de Tarefas lista o que deixa a The Machine mais útil: o app no celular, as notificações, o WhatsApp, o app neste computador, outra conta e mais conexões. Cada linha tem um botão que faz essa etapa, e se marca sozinha quando está feita. Ela mostra até cinco linhas, as etapas abertas primeiro, então uma ferramenta que o seu e-mail sugere, como o GitHub, ganha uma linha assim que as etapas anteriores estão feitas.
+Desde a sua primeira visita, assim que a primeira olhada termina, uma pequena tarefa no topo de Tarefas lista o que deixa a The Machine mais útil: o app no celular, as notificações, o WhatsApp, o app neste computador, outra conta e mais conexões. Cada linha tem um botão que faz essa etapa, e some quando está feita, assim a tarefa mostra só o que falta. Ela mostra até cinco linhas, as etapas abertas primeiro, então uma ferramenta que o seu e-mail sugere, como o GitHub, ganha uma linha assim que as etapas anteriores estão feitas.
 
 As linhas só aparecem onde fazem sentido: nada de app do celular dentro do app, nada de instalar no celular. O × de uma linha a fecha em todos os aparelhos, e o × no topo fecha a tarefa inteira.
 

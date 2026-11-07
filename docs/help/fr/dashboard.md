@@ -31,7 +31,7 @@ Sur un téléphone, une fenêtre comme **Envoyer cet e-mail ?** occupe tout l’
 
 ## Tirez-en le meilleur
 
-Dès votre première visite, une fois le premier coup d’œil terminé, une petite tâche en haut des Tâches liste ce qui rend The Machine plus utile : l’app sur le téléphone, les notifications, WhatsApp, l’app sur cet ordinateur, un autre compte et d’autres connexions. Chaque ligne a un bouton qui fait cette étape, et se coche d’elle-même une fois faite. Elle affiche jusqu’à cinq lignes, les étapes ouvertes d’abord : un outil que suggèrent vos e-mails, comme GitHub, a sa ligne dès que les étapes précédentes sont faites.
+Dès votre première visite, une fois le premier coup d’œil terminé, une petite tâche en haut des Tâches liste ce qui rend The Machine plus utile : l’app sur le téléphone, les notifications, WhatsApp, l’app sur cet ordinateur, un autre compte et d’autres connexions. Chaque ligne a un bouton qui fait cette étape, et disparaît une fois faite, la tâche ne montre donc que ce qui reste. Elle affiche jusqu’à cinq lignes, les étapes ouvertes d’abord : un outil que suggèrent vos e-mails, comme GitHub, a sa ligne dès que les étapes précédentes sont faites.
 
 Les lignes n’apparaissent que là où elles ont du sens : pas d’app de téléphone dans l’app, pas d’installation sur un téléphone. Le × d’une ligne la ferme sur tous les appareils, et le × en haut ferme toute la tâche.
 

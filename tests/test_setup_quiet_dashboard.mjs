@@ -16,7 +16,7 @@ let setup,banners;
 const status=()=>({suggestions:[{id:CARD,title:'Reply to Robin about the garden plan',body:'Robin asked for the dates.',status:'pending',scope:'personal',created_at:now,event_ids:[1]}],
  promises:[],connectors:[{id:'mail',service:'gmail',email:'owner@example.org',display_name:'Mail',status:'ok'}],suggestion_counts:{pending:1},decisions:[],analyses:[],deliveries:[],
  review_health:{},review_runs:[],review_live:{runs:[]},setup_hints:[],phone_app_store:{ios:'https://apps.example.test/ios',android:'https://play.example.test/android'},setup_card:setup,
- ...(banners?{fixed:[{id:'fix-1',text:'Fixed: the Projects tab now opens when it’s empty.'}],skills:{waiting:2}}:{})});
+ ...(banners?{fixed:[{id:'fix-1',text:'Fixed: the Projects tab now opens when it’s empty.'}],skills:{waiting:2,skills:[]}}:{})});
 const server=createServer(async(req,res)=>{for await(const _ of req);const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(url.pathname==='/api/status'){res.end(JSON.stringify(status()));return}

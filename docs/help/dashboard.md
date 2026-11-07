@@ -33,7 +33,7 @@ On a phone, a dialog like **Send this email?** fills the screen, with its button
 
 ## Get more out of it
 
-A small to-do at the top of To-dos lists what makes The Machine more useful: the phone app, notifications, WhatsApp, the app on this computer, another account and more connections. Each row has one button for that step, and ticks itself off once done. It shows up to five rows, open steps first, so a tool your mail suggests, like GitHub, gets a row once earlier steps are done.
+A small to-do at the top of To-dos lists what makes The Machine more useful: the phone app, notifications, WhatsApp, the app on this computer, another account and more connections. Each row has one button for that step, and leaves the list once done, so the to-do shows only what is left. It shows up to five rows, open steps first, so a tool your mail suggests, like GitHub, gets a row once earlier steps are done.
 
 Rows show only where they make sense. The × on a row closes it on every device. The × at the top closes the whole to-do.
 

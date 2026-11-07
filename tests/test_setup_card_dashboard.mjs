@@ -79,10 +79,10 @@ const open=async({width=1440,height=900,ua='chrome',scheme='dark',url=base,...o}
  const page=await context.newPage();page.on('pageerror',e=>errors.push(ua+' '+width+': '+e.message));
  await page.goto(url);if(url===base){await page.locator('#task-'+'ab'.repeat(8)).waitFor();await ready(page)}return {context,page}};
 const ready=page=>page.waitForFunction(()=>(devicePush.checked||!pushOK)&&(!navigator.getInstalledRelatedApps||document.readyState==='complete')).then(()=>page.waitForTimeout(100));
-// The setup to-do as shown: whether it is, its title line, and each row [step, label, button or 'done']
+// The setup to-do as shown: whether it is, its title line, and each row [step, label, button]
 const card=page=>page.evaluate(()=>{const el=document.querySelector('#setup-card');const shown=!!el&&!el.hidden&&el.getBoundingClientRect().height>0;
  return {shown,head:shown?el.querySelector('.setup-head').innerText.replace(/\s+/g,' ').trim():'',
-  rows:shown?[...el.querySelectorAll('.setup-row')].map(r=>[r.dataset.step,r.querySelector('.setup-label').textContent,r.classList.contains('done')?'done':r.querySelector('.setup-go').textContent]):[]}});
+  rows:shown?[...el.querySelectorAll('.setup-row')].map(r=>[r.dataset.step,r.querySelector('.setup-label').textContent,r.querySelector('.setup-go').textContent]):[]}});
 const steps=async page=>(await card(page)).rows.map(r=>r[0]);
 const asked=page=>page.evaluate(()=>window.__log);
 const stored=(page,k)=>page.evaluate(k=>{const v=localStorage.getItem(k);try{return JSON.parse(v)}catch{return v}},k);
@@ -115,7 +115,7 @@ try{
  for(const scheme of ['light','dark']){reset();
   const {context,page}=await open({scheme});await page.evaluate(()=>__installPrompt());
   const c=await card(page);assert.ok(c.shown);
-  assert.equal(c.head,'Get more out of The Machine 0 of 5 done');
+  assert.equal(c.head,'Get more out of The Machine 5 steps left');
   assert.deepEqual(c.rows,[['phone','Get the phone app','Get it'],['push','Turn on notifications','Turn on'],['whatsapp','Connect WhatsApp','Connect'],
    ['install','Install on this computer','Install'],['account','Add another email account','Add']],'at most 5, in order: more connections waits');
   assert.doesNotMatch(c.head+c.rows.flat().join(' '),copy);
@@ -126,13 +126,13 @@ try{
   await shot(page,`setup-1440-${scheme}`);
   await context.close()}
 
- // Each button does its step. Notifications: the browser's question from the tap, a subscription and a test; the row ticks.
+ // Each button does its step. Notifications: the browser's question from the tap, a subscription and a test; the row goes.
  {reset();setup={...FRESH,dismissed:['phone']};const {context,page}=await open({mode:'standalone'});await opened(page);
-  assert.deepEqual((await card(page)).rows.map(r=>r[2]==='done'?r[0]+' done':r[0]),['push','whatsapp','install done','account','connect'],'running as the installed app: ticked');
+  assert.deepEqual(await steps(page),['push','whatsapp','account','connect'],'running as the installed app: Install is done, so it is gone');
   await page.locator('[data-setup-go="push"]').click();
   await page.waitForFunction(()=>document.querySelector('#toast').textContent.includes('A test is on its way'));
   assert.deepEqual(await asked(page),['requestPermission','subscribe']);assert.deepEqual(actionNames(),['push_subscribe','push_test']);
-  let c=await card(page);assert.deepEqual(c.rows[0],['push','Turn on notifications','done']);assert.equal(c.head,'Get more out of The Machine 2 of 5 done');
+  let c=await card(page);assert.deepEqual(c.rows.map(r=>r[0]),['whatsapp','account','connect'],'done: the row goes');assert.equal(c.head,'Get more out of The Machine 3 steps left');
   // WhatsApp opens its own sign-in under Connections; another email account and more connections the + Add picker,
   // where Google and Microsoft both are
   for(const [step,hash] of [['whatsapp','#connect=whatsapp'],['account','#connections=add'],['connect','#connections=add']]){
@@ -145,11 +145,11 @@ try{
     if(step==='account')assert.deepEqual(await page.evaluate(()=>[...document.querySelectorAll('#connect-add [data-connect-signin]')].map(b=>b.dataset.connectSignin).filter(n=>['google','microsoft'].includes(n))),['google','microsoft'],'both mail providers')}
    await page.evaluate(()=>{document.querySelector('nav [data-tab="inbox"]').click()})}
   await context.close()}
- // Installing: the browser's own prompt from the tap, then the row is ticked.
+ // Installing: the browser's own prompt from the tap, then the row goes.
  {reset();const {context,page}=await open();await page.evaluate(()=>__installPrompt());
   await page.locator('[data-setup-go="install"]').click();assert.deepEqual(await asked(page),['prompt']);
   await page.evaluate(()=>dispatchEvent(new Event('appinstalled')));
-  assert.deepEqual(await steps(page),['phone','push','whatsapp','account','connect'],'done: its slot goes to the next open step');
+  await page.waitForFunction(()=>!document.querySelector('[data-step="install"]'));assert.deepEqual(await steps(page),['phone','push','whatsapp','account','connect']);
   assert.match((await settings(page)).app,/Installed/);await context.close()}
 
  // A row's ×: closed on the Machine, the next step fills its place, and it stays closed on another device.
@@ -168,13 +168,15 @@ try{
   assert.match((await settings(page)).app,/^App /,'Settings still has the controls');
   await context.close()}
 
- // Partly done: what the Machine knows (a phone has the app, a second account) and this device (notifications on) ticks.
+ // Partly done: what the Machine knows (a phone has the app, a second account, WhatsApp) and this device (notifications on)
+ // is gone from the card, so it shows only what is left; never "Connect WhatsApp" once WhatsApp is connected.
  for(const [width,height,scheme,ua] of [[1440,900,'light','chrome'],[1440,900,'dark','chrome'],[390,844,'light','android'],[390,844,'dark','android']]){reset();
-  setup={...FRESH,phones:1,mail_accounts:2};
+  setup={...FRESH,phones:1,mail_accounts:2,whatsapp:true};
   const {context,page}=await open({width,height,scheme,ua,perm:'granted',sub:true});if(width>600)await page.evaluate(()=>__installPrompt());
   const c=await card(page);
-  assert.deepEqual(c.rows.map(r=>r[2]==='done'?r[0]+' done':r[0]),width>600?['phone done','push done','whatsapp','install','connect']:['phone done','push done','whatsapp','account done','connect'],width+': open steps before done ones');
-  assert.equal(c.head,`Get more out of The Machine ${width>600?2:3} of 5 done`);
+  assert.deepEqual(c.rows,width>600?[['install','Install on this computer','Install'],['connect','Add more connections','Browse']]:[['connect','Add more connections','Browse']],width+'');
+  assert.equal(c.head,'Get more out of The Machine '+(width>600?'2 steps left':'1 step left'));
+  assert.equal(await page.evaluate(()=>document.querySelector('#setup-card').innerText.includes('WhatsApp')),false,width+': no WhatsApp step once it is connected');
   await fits(page,width+' partly done');await shot(page,`setup-partly-${width}-${scheme}`);
   await context.close()}
  // Everything done: the card goes away.
@@ -214,7 +216,7 @@ try{
   assert.ok(!(await steps(page)).includes('push'),JSON.stringify(o));await context.close()}
  // Self-hosted: WhatsApp and another account sign in from a terminal there, so only the rows the dashboard can do.
  {reset();manage='';const {context,page}=await open({mode:'standalone'});
-  assert.deepEqual(await steps(page),['phone','push','install','connect']);await context.close()}
+  assert.deepEqual(await steps(page),['phone','push','connect'],'installed already, so no install row');await context.close()}
  // Microsoft mail: another Microsoft account
  {reset();setup={...FRESH,add:'microsoft'};const {context,page}=await open({mode:'standalone'});
   assert.deepEqual((await card(page)).rows.find(r=>r[0]==='account'),['account','Add another email account','Add'],'the same row, whichever provider they have');await context.close()}
@@ -255,19 +257,19 @@ try{
  {reset();setup={...FRESH,phones:1,whatsapp:true,dismissed:['account','install']};manage='https://app.example.test/setup';
   setupHints=[{id:'source-github',title:'Connect GitHub?',text:'GitHub mails you often.',href:'https://app.example.test/setup#source-github',button:'Connect'}];
   const {context,page}=await open({mode:'standalone',perm:'granted',sub:true});await opened(page);
-  assert.deepEqual(await steps(page),['phone','push','whatsapp','connect','hint-source-github']);
+  assert.deepEqual(await steps(page),['connect','hint-source-github'],'the done steps are gone');
   await page.locator('[data-setup-go="hint-source-github"]').click();
   assert.deepEqual(await page.evaluate(()=>window.__opened),[['https://app.example.test/setup#source-github','_blank','noopener']]);
   await page.locator('[data-setup-dismiss="hint-source-github"]').click();await page.waitForFunction(()=>!document.querySelector('[data-step="hint-source-github"]'));
   await sent(()=>dismissed().at(-1),{action:'setup_dismiss',args:{step:'hint-source-github'}});
   await context.close()}
- // Done rows never push a hint out: nothing closed, the steps that are done give their slots to it.
+ // Done rows never push a hint out: nothing closed, the steps that are done leave the card.
  for(const [width,height,scheme,ua] of [[1440,900,'light','chrome'],[1440,900,'dark','chrome'],[390,844,'light','android'],[390,844,'dark','android']]){reset();
   setup={...FRESH,phones:1,mail_accounts:2};
   setupHints=[{id:'source-github',title:'Connect GitHub?',text:'GitHub mails you often.',href:'#connect=github',button:'Connect'}];
   const {context,page}=await open({width,height,scheme,ua,perm:'granted',sub:true});if(width>600)await page.evaluate(()=>__installPrompt());
   const c=await card(page);
-  assert.deepEqual(c.rows.map(r=>r[2]==='done'?r[0]+' done':r[0]),width>600?['phone done','whatsapp','install','connect','hint-source-github']:['phone done','push done','whatsapp','connect','hint-source-github'],width+': the hint shows');
+  assert.deepEqual(c.rows.map(r=>r[0]),width>600?['whatsapp','install','connect','hint-source-github']:['whatsapp','connect','hint-source-github'],width+': the hint shows, the done steps are gone');
   assert.deepEqual(c.rows.at(-1),['hint-source-github','Connect GitHub?','Connect']);
   await fits(page,width+' hint');await shot(page,`setup-hint-${width}-${scheme}`);
   await context.close()}
@@ -290,7 +292,7 @@ try{
   assert.deepEqual(await frame.evaluate(()=>window.__log),[]);
   setup={demo:true,rows:[{id:'phone',done:true},{id:'push'},{id:'whatsapp'},{id:'install',done:true},{id:'account'}]};
   await frame.evaluate(()=>refresh());await frame.locator('#setup-card:not([hidden])').waitFor();
-  assert.equal(await frame.evaluate(()=>document.querySelector('.setup-head').innerText.replace(/\s+/g,' ').trim()),'Get more out of The Machine 2 of 5 done');
+  assert.equal(await frame.evaluate(()=>document.querySelector('.setup-head').innerText.replace(/\s+/g,' ').trim()),'Get more out of The Machine 3 steps left');
   actions.length=0;await frame.locator('[data-setup-go="push"]').click();await frame.locator('[data-setup-dismiss="whatsapp"]').click();
   // the ×, its Undo and Show hidden work in the demo too, on the page alone
   await frame.waitForFunction(()=>!document.querySelector('[data-step="whatsapp"]'));await frame.locator('.setup-more').click();await frame.locator('[data-step="whatsapp"]').waitFor();
