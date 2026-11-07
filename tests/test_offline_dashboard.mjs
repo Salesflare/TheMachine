@@ -51,6 +51,12 @@ const errors=[];let browser;
 const until=async(p,fn,arg,label,timeout=15000)=>{try{await p.waitForFunction(fn,arg,{timeout})}catch{throw Error('timed out: '+label)}};
 // waitForFunction takes a promise as true at once: an async check is polled here
 const poll=async(p,fn,arg,label,timeout=15000)=>{const end=Date.now()+timeout;while(Date.now()<end){if(await p.evaluate(fn,arg).catch(()=>false))return;await p.waitForTimeout(100)}throw Error('timed out: '+label)};
+// The waiting changes go by themselves, each try after the last one's back-off (outboxRetry: 2 s, 4 s, 8 s, ...). A busy
+// machine can add a try (a fetch right as the link comes back), so the deadline follows the page's own next try
+// (outbox.wait, +20% jitter) with room for the post itself, instead of one fixed time for all of them
+const outboxDrained=async(p,label)=>{let seen=-1,deadline=0;for(;;){const o=await p.evaluate(()=>({n:outbox.items.length,wait:outbox.wait||0,busy:!!outbox.busy}));
+ if(!o.n)return;if(o.wait!==seen||o.busy){seen=o.wait;deadline=Date.now()+o.wait*1.2+15000}
+ if(Date.now()>deadline)throw Error('timed out: '+label+' (next try planned in '+o.wait+' ms never came)');await p.waitForTimeout(200)}};
 // Every image on the page drew (none broken), and the sidebar's line says offline like the bar
 const imagesOk=p=>p.evaluate(()=>[...document.images].filter(i=>i.isConnected&&i.getAttribute('src')&&i.offsetParent&&!(i.complete&&i.naturalWidth>0)).map(i=>i.getAttribute('src')));
 const bar=p=>p.evaluate(()=>{const b=document.querySelector('#offline-bar');return b.hidden||!b.offsetParent?'':b.innerText.replace(/\s+/g,' ').trim()});
@@ -132,7 +138,7 @@ try{
  // 8. Back, but spotty: the first answers are lost (502). The changes go again by themselves with the same ids, in the
  // order they were made, and each is saved once; then the banner goes
  flaky=2;await context.setOffline(false);
- await until(tab,()=>outbox.items.length===0,null,'the waiting changes went',30000);
+ await outboxDrained(tab,'the waiting changes went');
  assert.deepEqual(order,['other:'+A,'reject:'+B],'in order, once each');
  const ids=posts.filter(p=>p.action==='decide').map(p=>p.args.decision_id);
  assert.ok(ids.length>new Set(ids).size,'sent again after a lost answer, with the same decision_id');
