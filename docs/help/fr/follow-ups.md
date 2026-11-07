@@ -4,7 +4,7 @@ area: graph
 summary: Relance d’elle-même quand quelqu’un ne répond pas, pour tout un tableau ou un seul projet. Demande d’abord, sauf si vous dites autrement.
 covers: follow-ups
 code: follow_ups.py, assistant.py, dashboard.html
-order: 4
+order: 7
 ---
 Quand une personne d’un tableau ne répond plus, votre Machine rédige la relance pour vous, avec votre ton et dans la même conversation. Désactivé tant que vous ne l’activez pas. Si l’une de vos compétences correspond au tableau, les brouillons la suivent, y compris pour ce qui vient en premier dans l’e-mail.
 

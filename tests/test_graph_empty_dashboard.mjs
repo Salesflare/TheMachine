@@ -37,16 +37,20 @@ try{
   assert.equal((await shown(page).innerText()).replace(/\s+/g,' ').trim(),'No projects yet. Checks name them from your messages and to-dos.',tag);
   if(!mobile)assert.match(await page.locator('#page-head').innerText(),/Projects[\s\S]*\+ New project/,tag);  // a phone's head has no room for + New
   assert.equal(await page.locator('.side-sub a[data-graph-sub="projects"][aria-current="page"]').count(),1,`the Projects row is the current one ${tag}`);
+  const help=()=>page.locator('#help-link').getAttribute('href');  // the footer's Help opens the page of the list on screen
+  assert.equal(await help(),'https://themachine.computer/help/projects',tag);
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`no sideways scroll ${tag}`);
   if(shotDir){await page.evaluate(()=>scrollTo(0,0));await page.screenshot({path:`${shotDir}/projects-empty-${tag}.png`})}
   // Organizations, none yet
   await navClick(page.locator('.side-sub a[data-graph-sub="orgs"]'));
   await page.locator('#people-view [data-graph-panel="orgs"]:not([hidden]) .graph-empty').waitFor();
   assert.equal((await shown(page).innerText()).replace(/\s+/g,' ').trim(),'No organizations yet. They come from the people you’re in touch with.',tag);
+  assert.equal(await help(),'https://themachine.computer/help/organizations',tag);
   if(!mobile)assert.match(await page.locator('#page-head').innerText(),/\+ New organization/,tag);  // a phone's head has no room for + New
   if(shotDir)await page.screenshot({path:`${shotDir}/orgs-empty-${tag}.png`});
   // Back to People, with someone on it
   await navClick(page.locator('.side-sub a[data-graph-sub="people"]'));await page.locator('#people-view [data-graph-panel="people"]:not([hidden]) article[data-node]').waitFor();
+  assert.equal(await help(),'https://themachine.computer/help/people',tag);
   // Nobody at all: People says so too, and Projects still opens
   anyone=false;await page.evaluate(()=>{pagerDrop('graph');return people('')});
   await page.locator('#people-view [data-graph-panel="people"]:not([hidden]) .graph-empty').waitFor();

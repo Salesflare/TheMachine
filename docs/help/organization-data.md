@@ -4,14 +4,14 @@ area: graph
 summary: Industry, size, location and a logo next to each organization, looked up by its web address.
 covers: enrichment
 code: enrichment.py, graph.py, dashboard.html
-order: 2
+order: 5
 ---
 ## Where they come from
 
 - On a hosted Machine, organization details are looked up for you, at no cost.
 - On your own computer, it's off until you add a key for a look-up service, like Apollo, People Data Labs or Hunter. See the [configuration guide](https://github.com/Salesflare/TheMachine/blob/main/docs/configuration.md).
 
-Only an organization's web address is sent, never your messages or who you know there. Up to 50 are looked up a day, and each is refreshed every 90 days. Shared sites and mail providers, like gmail.com, are never looked up. People have their own look-up: see [Job title and photo](graph.md#job-title-and-photo).
+Only an organization's web address is sent, never your messages or who you know there. Up to 50 are looked up a day, and each is refreshed every 90 days. Shared sites and mail providers, like gmail.com, are never looked up. People have their own look-up: see [Job title and photo](people.md#job-title-and-photo).
 
 Without a logo from the look-up, The Machine uses the icon from the organization's own website, saved on your Machine. No logo service learns who you deal with.
 

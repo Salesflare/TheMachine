@@ -4,14 +4,14 @@ area: graph
 summary: Sector, tamaño, ubicación y un logo junto a cada organización, buscados a partir de su dirección web.
 covers: enrichment
 code: enrichment.py, graph.py, dashboard.html
-order: 2
+order: 5
 ---
 ## De dónde salen
 
 - En una Machine alojada, los datos de las organizaciones se buscan por ti, sin coste.
 - En tu propio ordenador, está desactivado hasta que añadas una clave de un servicio de búsqueda que uses, como Apollo, People Data Labs o Hunter. Consulta la [guía de configuración](https://github.com/Salesflare/TheMachine/blob/main/docs/configuration.md).
 
-Solo se envía la dirección web de la organización, nunca tus mensajes ni a quién conoces allí. Se buscan unas pocas a la vez, como mucho 50 al día, y se actualizan cada 90 días. Las personas tienen su propia búsqueda: consulta [Cargo y foto](graph.md#job-title-and-photo). Los alojamientos compartidos y los proveedores de correo, como google.com, sites.google.com o gmail.com, nunca se buscan: no son la web de una empresa concreta.
+Solo se envía la dirección web de la organización, nunca tus mensajes ni a quién conoces allí. Se buscan unas pocas a la vez, como mucho 50 al día, y se actualizan cada 90 días. Las personas tienen su propia búsqueda: consulta [Cargo y foto](people.md#job-title-and-photo). Los alojamientos compartidos y los proveedores de correo, como google.com, sites.google.com o gmail.com, nunca se buscan: no son la web de una empresa concreta.
 
 Si la búsqueda no trae logo, o no hay búsqueda, el logo sale de la propia web de la organización: el icono que indica su página de inicio. Se guarda en tu Machine, así ningún servicio de logos sabe con quién tratas. A una web sin icono se le vuelve a preguntar a los 30 días. Si la búsqueda encontró la organización pero no su logo, se repite una vez más a la semana, y el logo que traiga entonces sustituye al icono de la web.
 

@@ -34,7 +34,7 @@ A to-do nobody touched for a week asks once: **Still needed?** **Drop** closes i
 
 **All**, **Work** and **Personal** at the top of the sidebar list show all to-dos or only one kind. Your phone and computer show the same choice. While Work or Personal is on, **Show all** goes back.
 
-A to-do on a project shows the project's name under its title. Tap it to open the project. **Project** under **Details** changes it or takes it off. See [a project's to-dos](graph.md#a-projects-to-dos).
+A to-do on a project shows the project's name under its title. Tap it to open the project. **Project** under **Details** changes it or takes it off. See [a project's to-dos](projects.md#a-projects-to-dos).
 
 **Area** under **Details** moves a to-do to your other area, like a personal one that has to go out from your work address. What it may read and send from moves with it. **Undo** on the note moves it back.
 

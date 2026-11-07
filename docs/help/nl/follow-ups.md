@@ -4,7 +4,7 @@ area: graph
 summary: Volgt vanzelf op als iemand niet antwoordt, voor een heel bord of één project. Vraagt het eerst, tenzij je anders zegt.
 covers: follow-ups
 code: follow_ups.py, assistant.py, dashboard.html
-order: 4
+order: 7
 ---
 Als iemand op een bord niet meer antwoordt, schrijft je Machine de opvolging voor je, in jouw stem en in hetzelfde gesprek. Staat uit tot je het aanzet. Past een van je skills bij het bord, dan volgen de concepten die, ook in wat eerst komt in de e-mail.
 

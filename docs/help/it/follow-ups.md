@@ -4,7 +4,7 @@ area: graph
 summary: Ricontatta da sola chi non risponde, per un’intera bacheca o un solo progetto. Chiede prima, a meno che tu non dica altro.
 covers: follow-ups
 code: follow_ups.py, assistant.py, dashboard.html
-order: 4
+order: 7
 ---
 Quando qualcuno su una bacheca smette di rispondere, la tua Machine scrive il ricontatto per te, con il tuo stile e nella stessa conversazione. Disattivati finché non li attivi. Se una delle tue skill è adatta alla bacheca, le bozze la seguono, anche in ciò che viene prima nell’email.
 

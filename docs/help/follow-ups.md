@@ -4,7 +4,7 @@ area: graph
 summary: Follow up by itself when someone doesn't reply, for a whole board or one project. Asks first unless you say otherwise.
 covers: follow-ups
 code: follow_ups.py, assistant.py, dashboard.html
-order: 4
+order: 7
 ---
 When a person on a board stops replying, your Machine drafts the follow-up for you, in your voice and in the same conversation. Off until you turn it on. When one of your skills fits the board, the drafts follow it, including what comes first in the email.
 

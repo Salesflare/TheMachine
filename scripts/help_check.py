@@ -17,7 +17,7 @@ It fails when:
   (the sidebar's data-tab buttons), every Settings tab (SETTINGS_TABS) and every entry of FEATURES below must be in
   some article's `covers`, unless PENDING says why not yet;
 - an article covers a feature that no longer exists, or names a `code` path that is gone, or the dashboard's Help link
-  (HELP_FOR in dashboard.html) points at an article that doesn't exist;
+  (HELP_FOR and GRAPH_HELP in dashboard.html) points at an article that doesn't exist;
 - an article names app text that no longer exists: every **bold** phrase is button or label text and must appear in
   the app's code; a `/route` in backticks must appear in the code; `assistant <command>` must be a CLI command.
   Text the hosted control plane shows (its setup and account pages) goes in `site:`, and its own test checks it
@@ -251,9 +251,10 @@ def check(folder=HELP):
         problems += [f'{where}: {p}' for p in check_copy(name, fields, body, found)]
         problems += [f'{where}: lists "{s}" under site: but does not use it' for s in fields['site'] if s not in body]
     html = dashboard_parts.assemble(ROOT)
-    for tab, slug in re.findall(r"(\w+):'([a-z0-9-]+)'", (re.search(r'HELP_FOR=\{(.*?)\}', html) or [None, ''])[1]):
-        if slug not in found:
-            problems.append(f'dashboard.html: HELP_FOR sends {tab} to the help article {slug}, which docs/help/ does not have')
+    for links in ('HELP_FOR', 'GRAPH_HELP'):  # the footer's Help link per tab, and per list of the Graph
+        for tab, slug in re.findall(r"(\w+):'([a-z0-9-]+)'", (re.search(links + r'=\{(.*?)\}', html) or [None, ''])[1]):
+            if slug not in found:
+                problems.append(f'dashboard.html: {links} sends {tab} to the help article {slug}, which docs/help/ does not have')
     problems += check_links(found)
     for f in sorted(exist - set(covered) - set(PENDING)):
         problems.append(f'{f} has no help article: add one in docs/help/ with "covers: {f}" (or a reason in PENDING)')

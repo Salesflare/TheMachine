@@ -3,215 +3,46 @@ title: The Graph
 area: graph
 summary: The people, organizations and projects in your messages, kept up to date by themselves.
 covers: tab:people
-code: graph.py, crm.py, crm_import.py, crm_fixes.py, crm_fields.py, enrichment.py, bounces.py, dashboard.html
+code: graph.py, crm.py, crm_import.py, crm_fixes.py, crm_fields.py, dashboard.html
 order: 1
 ---
 Your Machine builds a map of who you deal with and what's going on, from your messages, meetings and decisions. Nothing to set up, and it stays on your Machine.
 
-## People
-
-Everyone you're in touch with, closest first. A person's page starts with their photo, name, title, organization and place, and one line on how you're in touch ("Talk daily · last Fri, Oct 23 · next meeting Tue, Oct 27"). Below that:
-
-- **Contact**: their phones and emails. Tap one to call or write, or **Copy** it.
-- **With you**: what they are to you, Work or Personal contact, and your Family or Fleet, with **See in Fleet**.
-- **Also on**: the other places you talk with them. **Slack** opens them in Slack, or your newest Slack thread with them.
-- **People** and **Projects** they're part of, **Open between you** (promises both ways, with **Done** and **Drop**), and their **Timeline**.
-
-Someone's addresses and chats are joined by themselves when it's clear they're one person, like a work email with their own address in CC.
-
-The **Work** and **Personal** tabs list people by their Type, the one on their page. Your own pick (**Edit**) wins. Otherwise your Family and Friends, and family or friends to you (a wife, a father), are Personal, whatever address they write from. Your team never gets Personal contacts. **Download CSV**, under the order menu, saves the tab you're on as a spreadsheet, also for Organizations and Projects.
-
-### Summary
-
-A few short lines at the top of a person's page: who they are to you, where things stand and what's open both ways. The Machine rewrites it in the background when there's something new, only for people you're really in touch with. Each line links to where it came from.
-
-**Edit** it to say it your way. Your words stay: when there's news, The Machine shows a **Suggested update** with **Use it** and **Keep mine**. **Let The Machine write it** gives it back. Meeting preps use it, only the lines from that to-do's side (Work or Personal). It stays on your Machine; your team never sees it.
-
-### Timeline
-
-Every person and organization page has one, newest first: email, meetings and their Zoom summaries, Intercom conversations (open or closed, with **Open in Intercom**), WhatsApp, Telegram, Slack, LinkedIn and X chats, to-dos, promises and project moves. The chips on top show one source at a time. **Show more** loads older ones.
-
-Meetings still to come sit apart on top under **Coming up**, soonest first; **Show all upcoming** shows the rest. A meeting on more than one of your calendars shows once.
-
-A meeting shows who was on it by name, each person once, without meeting rooms. One with notes or a transcript says **Notes** or **Transcript**; click it to read them.
-
-An organization's timeline has its people's messages and the Intercom conversations from its domain. Your timelines are yours: the team's Graph shows only what your sharing rules allow.
-
-If a page says **Couldn’t load this page.**, tap **Try again**. If it keeps saying so, use **Something's wrong?** at the bottom of the page.
+- [People](people.md): everyone you're in touch with, with a summary and timeline for each.
+- [Organizations](organizations.md): the companies they work at, with their people and projects.
+- [Projects](projects.md): what's going on, on boards with stages, like deals in a CRM.
 
 ## Filter and sort
 
-**Filter**, next to the tabs on People, Organizations and Projects, narrows the list by owner, tag, board, stage, organization, value, expected close date and **No reply in 10+ days**. People and organizations match through their open projects. On Projects, the List and the Board share one Filter.
+**Filter**, next to the tabs, narrows the list by owner, tag, board, stage, organization, value, expected close date and **No reply in 10+ days**. People and organizations match through their open projects. The filters you picked show above the list, with **Clear**. On Projects, the list and the board share one Filter. On a phone they open as a sheet.
 
-The filters you picked show above the list, with **Clear**. The order menu also sorts by **Value** and **Close date**. On a phone the filters open as a sheet.
-
-## Team
-
-**Team**, next to Mine, shows what your teammates share. It has the same tabs, order menu and **New person** or **New organization** as Mine; what you add is yours. **Filter** narrows it by who shared it, an organization (People) or state (Projects). On Projects, **Mine**, **Needs me** and **All** pick the same projects as on a shared board.
-
-## Owner
-
-In a Work Fleet, each person, organization and project has an owner: **Owner** under With you on its page. It's you, unless you pick someone from your Work Fleet. **Owner** in Filter shows only yours, on the list and the board. A project on a board shows its owner's name. Each change shows in its timeline. A record shared with your team carries its owner with it, under the same sharing rules as the rest.
+The order menu sorts the list, also by **Value** and **Close date**. **Download CSV**, under the order menu, saves the tab you're on as a spreadsheet.
 
 ## Fields and tags
 
-Under Fields on a person, organization or project, click a value to change it: **Save** or Enter keeps it, **Cancel** or Escape leaves it, **Remove** empties it. **Manage fields** adds or removes fields: **New field** adds one for all of that kind: text, number, date or a choice from a list. **Remove** takes a field away for all of them.
+Under Fields on a person, organization or project, click a value to change it: **Save** or Enter keeps it, **Cancel** or Escape leaves it, **Remove** empties it.
 
-**+ Tag** adds a tag, like VIP or partner; **×** takes it off. Tags show in the lists and **Filter** finds them. A record shared with your team carries its fields and tags with it.
+**Manage fields** adds or removes fields for all records of that kind. **New field** adds one: text, number, date or a choice from a list.
+
+**+ Tag** adds a tag, like VIP or partner; **×** takes it off. Tags show in the lists and **Filter** finds them.
 
 ## Import a spreadsheet
 
-**Import CSV…**, under the order menu of People, Organizations or Projects, adds a spreadsheet saved as CSV. Your Machine guesses which column is which from the headers and what is in them; change any of them.
+**Import CSV…**, under the order menu of People, Organizations or Projects, adds a spreadsheet saved as CSV.
 
-When your model can run, it checks the columns too, in any language and however the headers are spelled, with a short reason where it isn't sure. It sees only the headers, a few values per column and the cells the rules couldn't read, on your Machine like a check. Without it, the guess from the headers stands.
+1. Check the columns. Your Machine guesses which is which from the headers and what's in them; change any of them. When your model can run, it checks them too, with a short reason where it isn't sure. It sees only the headers, a few values per column and the cells the rules couldn't read.
+2. Check the fixes. **Review** lists them as before and after: extra spaces, names in capitals, phone numbers in international form, email typos (gmial.com), websites as their domain, dates and values in any format ("€12k" is 12000), several tags in one cell, a stage spelled differently and the same row twice. Untick a kind or a row to leave it as it is.
+3. Check the preview. Each row is new, matches one already in your Graph, or is skipped, with why. A person matches on email (else name and organization), an organization on website or name, a project on name.
+4. **Import** adds the new ones and fills in the matches. An empty cell changes nothing.
 
-**Review**, next to the fixes suggested, lists easy fixes as before and after: extra spaces, names in capitals, phone numbers in international form, email typos (gmial.com), websites as their domain, dates and values in any format ("€12k" is 12000), several tags in one cell, a stage spelled differently from the board's, and the same row twice.
+**Undo** right after, or **Undo last import** under the order menu, takes the last import back while those records haven't changed since. If it would overwrite a later correction, it says why instead. The file stays on your Machine.
 
-Untick a kind or a single row to leave it as it is. Nothing is fixed unless it's ticked.
+## Owner
 
-The preview shows each row as new, matching one already in your Graph, or skipped, with why. A match is the same email for a person (else the same name at the same organization), the same website or name for an organization, and the same name for a project.
+In a Work Fleet, each person, organization and project has an owner: **Owner** under With you on its page. It's you, unless you pick someone from your Work Fleet. **Owner** in Filter shows only yours. Each change shows in its timeline.
 
-**Import** adds the new ones and fills in the matches; an empty cell changes nothing. **Undo** right after, or **Undo last import** under the order menu, takes the last import back while those records have not been changed since. Later corrections are kept: if Undo would overwrite one, it explains why instead. The file stays on your Machine.
+## Team
 
-## One organization, several websites
+**Team**, next to Mine, shows what your teammates share, with the same tabs and order menu. **Filter** narrows it by who shared it, an organization (People) or state (Projects). What you add there is yours.
 
-**⋯**, **Same organization as…** on an organization's page makes it part of another one, with its people, projects and notes. **Add a website…** adds one more of its websites, like its .io next to its .com: people with an address there join it, and its details are looked up for every website.
-
-They're listed under **Websites**, each with **Split off** to undo it. Later edits to the combined organization are kept. Organizations that look like doubles show under **Same organization?**: **Merge** or **Not the same**.
-
-## Add someone or an organization
-
-**New person** at the top of People, **New organization** at the top of Organizations, or, on a phone, **+** in the top bar. Give a name, and for a person an email and organization if you have them; for an organization, its website. When someone like it is already in your Graph, the form shows them first, so you can open that one instead. **Add** opens the new page.
-
-Someone you add stays, also with no messages yet. Their first message joins them. An organization you added can be deleted from its **⋯** menu while nobody is in it.
-
-## About you
-
-Your own addresses and numbers, aliases too, are always you, never someone in your Graph. Searching for yourself, or adding a person with one of your addresses, opens **About you**, and an import skips your own row.
-
-About you lists your addresses with where each came from; change them in **Settings**, under Account. A person made from your own address before goes into About you by itself, with a backup kept on your Machine.
-
-To send your own contact to a teammate or friend, pick **Share my contact**. See [Share a contact](share-contact.md).
-
-## Picture
-
-Click the picture on a person's or organization's page to change it: **Upload a picture**, pick one found for them, or **Remove picture**. It stays on your Machine.
-
-## Notes
-
-**Edit** on a person's or organization's page has a **Notes** field, for anything you want to remember. Notes show on the page and stay through merges.
-
-## Edit someone
-
-**Edit**, at the top of their page, changes their name, title, organization, location, LinkedIn, phones and emails, what they are to you, and Work or Personal. **Save** keeps it, **Cancel** leaves it as it was.
-
-Your edits stay, also when their details are looked up again or a check reads something else, and through **Merge** and **Undo**. Empty a field to use the looked-up value again. An empty name brings back the one from their messages.
-
-## Bounced
-
-When an email to someone bounces, their address shows **Bounced** with the date, and another address of theirs comes first. New drafts never go to it when another address is known. If it's their only one, the send sheet warns you, and you can still send. Their details are looked up again.
-
-A bounce counts when the mail server says the address doesn't exist, or after 3 temporary failures over a week. It clears when they write from that address again, or when an email to it goes through.
-
-## Same person?
-
-When two people might be one, their page asks if they are the same person, and People lists them under **Same person?**. **Merge** joins them, with all their messages, notes, roles and projects. **Not the same** keeps them apart for good.
-
-**Merge all** merges every pair in the list at once, except the ones you marked **Not the same**. **Undo** right after splits them all again.
-
-A joined person's page lists why under **Joined from**. **Undo** splits them again.
-
-To join two people yourself, open one of them, then **⋯**, **Same person as…** and pick the other.
-
-## Job title and photo
-
-People with a company address get a job title, photo, LinkedIn and city, looked up like [organization details](organization-data.md). Only their name and company domain are sent on a hosted Machine. Turn it off in **Settings**, under Security: **Look up work contacts**.
-
-Your connections fill in more as they run, with what they already read and nothing extra asked: a title, phone and time zone from Slack, a bio, place and website from X, a headline and photo from LinkedIn, and job titles from Google contacts and Salesflare. What someone says about themselves comes first. Hover over the line under their name to see where it came from. It all stays on your Machine.
-
-WhatsApp and Telegram pictures come through your WhatsApp sync and your Telegram chats connection, when they allow them: up to 50 a day each, only for people already in your Graph. Nothing is sent to them.
-
-## Delete someone permanently
-
-On their page, open the ⋯ menu and pick **Delete permanently…**, then **Delete**. It removes them and what your Machine knows about them: their entry, addresses, looked-up details, the messages only between the two of you, and notes about them. To-dos that involve them stay, with their name taken out. They won't be added again. It can't be undone.
-
-## Who's who
-
-Roles your Machine read in your messages, waiting for your word. **✓ Right** confirms one; **Edit** opens their page in Edit. It learns from your edits. This shows only when roles are waiting.
-
-## In a Work Fleet
-
-Client work is shared with your teammates' Machines, and theirs shows in yours. Each thread shows **Team** or **Only you**. See [Team Graph](team-graph.md).
-
-## Organizations
-
-Companies, from the addresses and names in your messages. See [Organization details](organization-data.md).
-
-An organization's page is built like a person's: its logo, name and what it does, one line on how you're in touch, then **Contact** (its website and LinkedIn), **With you** (what it is to you), the people there and its **Timeline**.
-
-Its **Projects** list open ones first, each with its stage. Their moves show in its timeline. **Edit** at the top changes its details and what it is to you. **Ask the Fleet who knows** it finds a way in through your Fleet.
-
-Mail from email warm-up tools is kept out, under "Hidden as warm-up", with **Undo** per domain.
-
-## Projects
-
-Named by your Machine from what your messages are about. Messages that look like they belong show as "probably part of it". Renaming a project to another project's name joins the two.
-
-Or run them by hand, like deals in a CRM:
-
-- **New project**: at the top of a board, **+ Add** under a stage, **New project** at the top of the list, **+** in the top bar on a phone, or from a person's or organization's page. Give it a name, a board and stage, an organization (search your Graph, or **Add** a new one), a value, an expected close date, people and notes. Projects already in your Graph with a name like it show first.
-- **Edit** on a project's page, or **Edit** in its **⋯** on the board (or press E). It changes all of the above.
-- **Won** or **Lost**, with why. Won moves it to the board's last stage, Lost to Stalled or declined. **Reopen** undoes it.
-- **Archive** takes it off the board and lists; a new message about it brings it back. **Delete** removes it for good; its messages and people stay.
-- Move a project by dragging it, or with **⋯**, **Move to** on a phone. Your move stands until a newer message moves it.
-- **Stages**, at the top of a board, shows only the stages you pick, per board. **Clear** shows them all again.
-- "4 with no reply in 10+ days" under a stage: tap it to show only those, on the board and the list. Tap again to show all.
-
-### A project's to-dos
-
-A to-do can belong to one project. Your Machine picks it when its thread or the people it's about are on a single open project, and the to-do shows its name under the title. **Project** under the to-do's **Details**, or **Put on a project** in the command menu (Ctrl K), changes it or takes it off. Your choice stays.
-
-A project's page lists its to-dos under **To-dos**, open ones first, and the board says how many are open. Linking a to-do to a shared project shares nothing more: your team still sees only what came from shared messages.
-
-### A project's organization
-
-Each project can be linked to one organization. Its page, the list and the board show it, with a link.
-
-When nobody picked one, your Machine sets it from the people on the project and its messages, leaving out your colleagues. It only does that when one organization is clearly the other side: personal email like Gmail never counts, and a project with several companies stays without one. The project form then says "From its people".
-
-Your pick in **Edit** always stays, also when you take it off. **Same organization as…** moves an organization's projects along, and **Split off** moves them back.
-
-### Boards
-
-Projects of one kind in stages, like an evaluation pipeline. **⋯** on a board: **Edit board** (name, stages, which projects belong), **Open on this board** and **New board**. Checks keep adding projects that fit and place them in a stage. When they aren't sure, the board shows "2 projects could belong here": **Add** or **Leave out**.
-
-**Follow-ups…** in a board's **⋯** follows up by itself when someone doesn't reply. See [Follow-ups](follow-ups.md).
-
-**Done when**, under **Edit** on a project, says what finishes it in plain words, with its proof: **A live page** (The Machine opens the link from their message and checks it links to you) or **Their message**. Checks suggest one for partner listings. A check only moves a project to the last stage with that proof, linked on its page; **Won** by hand still works.
-
-The page also shows what holds it up (no reply in 10+ days, an overdue promise) and adds one to-do for it when it has none. Nothing is sent without you.
-
-Tick a few, or **Select all**, to do them at once, and **Undo** right after if you change your mind. A project that bundles several counterparts becomes one project per counterpart when you add it.
-
-**Pipeline**, at the top of a board, adds up the value of its open projects per stage, and what's expected to close per month from their close dates. Won, lost and stalled projects aren't open; what you won this month shows apart. Values are in euros unless your Machine is set to another currency. With **Owner** in Filter, it counts only yours.
-
-A new board, or a suggested board you save, looks through your whole history once. It finds projects and organizations that fit, makes one project per organization and puts each in a stage. The header says "Looking through your history…" while it works, then how many it added and how many wait for you to review. An Only-you board keeps what it finds to you.
-
-### A teammate's board
-
-In **Team**, boards your teammates share show next to yours, the ones with most of your projects first. Each project says what happened last, with its date, like on its owner's board: the newest line shared with the team, else its last move. Its owner's name shows only when a stage has projects of more than one teammate; when one person owns the whole board, the header says so.
-
-**Mine**, **Needs me** and **All** pick what a shared board shows, and the Team list of projects with it. Mine is what you're on: a thread of it, a project you own or have yourself, or a to-do of yours about it. Needs me is what waits on you: an open to-do about it, or a thread where the newest message was written to you.
-
-The rest of a stage folds into **Show N more**. Projects that look alike, like a run of "… CRM evaluation" trials, fold into one row with a count; tap it to open them. None of this changes what's shared.
-
-## A to-do about someone
-
-**New to-do** in the **⋯** menu of a person, organization or project starts a to-do about them.
-
-## What it knows about someone
-
-Under Known about, each fact has a menu:
-
-- **Forget** deletes it everywhere.
-- Not about them only takes it off that page.
+Client work is shared with your teammates' Machines, with its owner, fields and tags, and theirs shows in yours. Each thread shows **Team** or **Only you**. See [Team Graph](team-graph.md).
