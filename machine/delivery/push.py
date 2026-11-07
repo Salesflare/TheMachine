@@ -531,18 +531,6 @@ def reminder_line(channels):
     return i18n.t('It’ll be back on the dashboard then.')
 
 
-def looks_done_at(db, row):
-    """When a to-do started to look done: the later sign that it's handled, else when its run found it done already."""
-    try:
-        at = (json.loads(row.get('handled_hint') or 'null') or {}).get('at')
-    except (TypeError, ValueError, AttributeError):
-        at = None
-    if not at:
-        found = db.execute('SELECT updated_at FROM preparations WHERE suggestion_id=?', (row['id'],)).fetchone()
-        at = found[0] if found else None
-    return at or row.get('created_at')
-
-
 # Talk's records by kind, as the voice says them, and their one line ("CTO · Acme", "acme.com", "a project, active")
 TALK_KINDS = {'person': 'person', 'org': 'organization', 'project': 'project'}
 
