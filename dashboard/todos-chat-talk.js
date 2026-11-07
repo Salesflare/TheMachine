@@ -146,7 +146,7 @@ async function talkStart(main,first=null){const s=main?null:chatOpen();if(talk||
   const dc=v.dc=pc.createDataChannel('oai-events');dc.onopen=()=>talkReady(v);dc.onmessage=e=>talkEvent(v,e.data);
   const offer=await pc.createOffer();await pc.setLocalDescription(offer);
   const a=await micPost('talk_offer',{id:v.id,sdp:offer.sdp});if(talk!==v)return;await pc.setRemoteDescription({type:'answer',sdp:a.sdp})}
- catch(err){if(err.offline)netSet(true,err.restarting);talkFail(v,err.offline?t('Offline. Start it again when you’re back online.'):err.message||t('Talk live couldn’t start. Try again.'))}}
+ catch(err){if(err.offline)netSet(true,err.restarting);talkFail(v,err.offline&&!err.slow?t('Offline. Start it again when you’re back online.'):err.message||t('Talk live couldn’t start. Try again.'))}}
 // The voice's own setup: this page's instructions and tools (never the Gateway's agent), and what the owner says written down
 function talkReady(v){if(talk!==v)return;v.state='live';v.t0=Date.now();talkWake(v);talkMedia(v);
  v.dc.send(JSON.stringify({type:'session.update',session:{type:'realtime',instructions:v.instructions,tools:v.tools,tool_choice:'auto',audio:{input:{transcription:v.transcription||{model:'gpt-4o-mini-transcribe'},...(v.noise?{noise_reduction:v.noise}:{}),...(v.turn?{turn_detection:v.turn}:{})},output:{...(v.voice?{voice:v.voice}:{}),...(v.speed?{speed:v.speed}:{})}}}}));

@@ -5657,6 +5657,7 @@
  "Your Machine did not answer just now, so nothing was done. Tap the button again in a minute.": "Sua Machine não respondeu agora, então nada foi feito. Toque no botão de novo em um minuto.",
  "Your Machine is restarting.": "Sua Machine está reiniciando.",
  "Your Machine is signed out of {}, so your skills there aren’t listed yet.": "Sua Machine saiu de {}, então suas habilidades de lá ainda não aparecem.",
+ "Your Machine is slow to answer.": "Sua Machine está demorando para responder.",
  "Your Machine renews their access every hour. While it is off, their Stripe pauses.": "Sua Machine renova o acesso deles a cada hora. Enquanto ela estiver desligada, o Stripe deles fica pausado.",
  "Your Machine rewrote it with what it learned. Nothing else changes.": "Sua Machine reescreveu com o que aprendeu. Nada mais muda.",
  "Your Machine uses it to do tasks on websites for you. Sign in to a site here so it can act there. Nothing runs in it until you ask.": "Sua Machine o usa para fazer tarefas em sites por você. Entre em um site aqui para que ela possa agir lá. Nada roda nele até você pedir.",

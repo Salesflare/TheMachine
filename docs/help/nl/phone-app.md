@@ -56,6 +56,7 @@ In het vliegtuig of de trein blijft het dashboard werken. Een balk bovenaan zegt
 - Berichten aan anderen wachten nooit. **Versturen** zegt dat je offline bent: verstuur opnieuw als je terug bent.
 - Wat je in een chat typt, blijft op het apparaat tot je het verstuurt, ook na herladen.
 - De app probeert het zelf opnieuw, telkens iets later. **Nu proberen** probeert het meteen.
+- Een drukke Machine kan even nodig hebben om te antwoorden. De app zegt dan **Je Machine reageert traag** en houdt wat je ziet. Dat is niet offline.
 
 ## Meer apparaten
 

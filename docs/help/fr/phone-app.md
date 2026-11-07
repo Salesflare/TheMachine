@@ -56,6 +56,7 @@ Dans un avion ou un train, le tableau de bord continue de fonctionner. Une barre
 - Les messages à d’autres personnes n’attendent jamais. **Envoyer** indique que vous êtes hors ligne : renvoyez une fois de retour.
 - Ce que vous tapez dans un chat reste sur l’appareil jusqu’à l’envoi, même après un rechargement.
 - L’app réessaie d’elle-même, un peu plus tard à chaque fois. **Essayer maintenant** réessaie tout de suite.
+- Une Machine occupée peut mettre du temps à répondre. L’app indique alors **Votre Machine met du temps à répondre** et garde ce que vous voyez. Ce n’est pas hors ligne.
 
 ## Plus d’appareils
 

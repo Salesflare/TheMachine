@@ -39,7 +39,7 @@ async function crAct(what){if(!cr||cr.busy)return;const s=crNow();if(!s)return;c
  if(what==='snooze'){openSnooze(id);crAfter('#snooze-dialog',id,false);return}
  if(what==='ask'){cr.asking=true;crDraw();return}
  if(what==='ask-back'){cr.asking=false;crDraw();return}
- const run=async(f,sent)=>{cr.busy=true;try{await f();cr.asking=false;sent?cr.sent++:cr.done++;cr.at++;await refresh().catch(()=>{});crDraw()}catch(e){errCaught(e);crDraw(e.offline?t('Offline. Send again when you’re back online.'):e.message)}finally{if(cr)cr.busy=false}};
+ const run=async(f,sent)=>{cr.busy=true;try{await f();cr.asking=false;sent?cr.sent++:cr.done++;cr.at++;await refresh().catch(()=>{});crDraw()}catch(e){errCaught(e);crDraw(e.offline&&!e.slow?t('Offline. Send again when you’re back online.'):e.message)}finally{if(cr)cr.busy=false}};
  if(what==='ask-save'){const text=$('#cr-ask')?.value.trim();if(!text){$('#cr-ask')?.focus();return}return run(()=>saveDecision(id,'other',text),false)}
  if(what!=='go')return;
  if(kind==='do')return run(()=>saveDecision(id,'accept'),false);

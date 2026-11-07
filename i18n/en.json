@@ -5657,6 +5657,7 @@
  "Your Machine did not answer just now, so nothing was done. Tap the button again in a minute.": "Your Machine did not answer just now, so nothing was done. Tap the button again in a minute.",
  "Your Machine is restarting.": "Your Machine is restarting.",
  "Your Machine is signed out of {}, so your skills there aren’t listed yet.": "Your Machine is signed out of {}, so your skills there aren’t listed yet.",
+ "Your Machine is slow to answer.": "Your Machine is slow to answer.",
  "Your Machine renews their access every hour. While it is off, their Stripe pauses.": "Your Machine renews their access every hour. While it is off, their Stripe pauses.",
  "Your Machine rewrote it with what it learned. Nothing else changes.": "Your Machine rewrote it with what it learned. Nothing else changes.",
  "Your Machine uses it to do tasks on websites for you. Sign in to a site here so it can act there. Nothing runs in it until you ask.": "Your Machine uses it to do tasks on websites for you. Sign in to a site here so it can act there. Nothing runs in it until you ask.",
