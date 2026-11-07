@@ -971,6 +971,16 @@ class Boards(unittest.TestCase):
         many, after = statements(10)
         self.assertEqual((few, many), (2, 10))
         self.assertLessEqual(after - before, many - few)  # was 7 more per project; now the same 14 for 2 or 10
+        # the open to-dos' signals are looked up in graph_events by an index of its own, never one built for each Graph load
+        with self.store.connect() as db:
+            plans = []
+            db.set_trace_callback(lambda sql: plans.append(sql) if 'json_each(s.event_ids)' in sql else None)
+            graph.boards(db, NOW.isoformat())
+            db.set_trace_callback(None)
+            sql, = plans
+            plan = ' '.join(r[-1] for r in db.execute('EXPLAIN QUERY PLAN ' + sql.replace('?', "'[]'")))
+        self.assertRegex(plan, r'SCAN j .*SEARCH g USING (COVERING )?INDEX (graph_events_event|sqlite_autoindex_graph_events)')
+        self.assertNotIn('AUTOMATIC', plan)
 
     def test_no_reply_in_ten_days_is_a_filter_for_the_list_and_the_board(self):
         asked, answered, mine = self.mails()
