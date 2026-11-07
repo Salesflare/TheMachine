@@ -14,6 +14,8 @@ Auf einer neuen gehosteten Machine starten die Prüfungen von selbst, sobald dei
 
 Während sie liest, zeigt Aufgaben, wie weit sie ist, ein paar der Personen und Organisationen, auf die sie gestoßen ist, und deine erste Aufgabe, sobald sie da ist. Die Namen stammen aus deinen eigenen E-Mails, und nur du siehst sie.
 
+Findet sie beim ersten Blick nichts für dich, sagt sie, was sie gelesen hat, und bietet nächste Schritte an, etwa einen Dienst zu verbinden, der dir oft mailt, oder zu fragen, was sich diese Woche geändert hat.
+
 ## Prüfungen sind aus
 
 Oben in Aufgaben steht „Die Prüfung ist aus, daher kommen noch keine Aufgaben.“ Auf einer gehosteten Machine tippst du auf **Prüfung einschalten**. Auf deinem eigenen Computer führst du `./install.sh --activate` aus.

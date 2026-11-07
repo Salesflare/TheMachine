@@ -82,6 +82,8 @@ Elke to-do begint met de titel. De regel eronder zegt over wie hij gaat, hun org
 
 Soms zegt een rustige regel onder de tekst wat niet bekend is, zoals "Laatste contact 12 dagen geleden via e-mail; niets sindsdien." Die staat er alleen als het laatste contact oud is of nog onbeantwoord, en noemt kanalen die niet gekoppeld zijn waar ze misschien geantwoord hebben, zoals WhatsApp. Je Machine bereidt voor met dezelfde feiten, dus hij zegt wat hij niet weet in plaats van te gokken.
 
+Noemt de regel een kanaal dat niet gekoppeld is, dan opent Koppelen ernaast die koppeling.
+
 Een titel zegt wat er moet gebeuren. Hij verandert alleen als dat verandert, zoals bij een nieuwe vraag. Een to-do die gedaan is houdt zijn titel, met eronder hoe hij afliep, zoals wat er verstuurd is of "Gedaan: Sam heeft dinsdag getekend".
 
 Boven het concept noemt een rustige regel het bericht waar hij uit komt, met het logo van de dienst (Gmail, Slack, WhatsApp…). Tik erop om de thread te lezen. Het concept begint met het logo van waar het heen gaat, zo zie je vóór het lezen of het een Slack-antwoord of een e-mail is. Een stap zonder concept, zoals een overdracht, toont het logo op zijn knop.

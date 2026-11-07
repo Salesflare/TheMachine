@@ -129,10 +129,13 @@ const basedOnLine=s=>{const b=s.based_on;if(!b||typeof b!=='object')return '';
  const day=b.at?new Date(b.at).toLocaleDateString(DL,{weekday:'short',day:'numeric',month:'short'}):'';
  const label=html`${what}${day?html` · <span class="src-date">${day}</span>`:''}`;  // opens here, so no ↗ (that is for links out)
  return html`<p class="note gap-line based-on"><button type="button" class="link" data-id="${s.id}"${b.event_id!=null?html` data-held-read="${b.event_id}"`:html` data-original="read"`}>${label}</button></p>`};
+const GAP_CONNECT={WhatsApp:'whatsapp',LinkedIn:'linkedin',Telegram:'telegram',Slack:'slack',X:'x'};  // gap_note.py ELSEWHERE
 const gapLine=(s,hint)=>{const g=s.gap;let w={};try{w=JSON.parse(s.awaiting||'{}')||{}}catch{}
  if(!g||closed(s)||s.status==='snoozed'||hint||w.delegated||s.follow_up||withTeammate(s))return '';
  const via=g.channel==='email'?t('email'):g.channel,more=g.unsynced?.length?' '+t('They may have replied on {} (not synced).',gapOr(g.unsynced)):'';
- return html`<p class="note gap-line">${(g.wrote_last?t('Your last message: {} days ago by {}; no reply since.',g.days,via):t('Last contact {} days ago by {}; nothing since.',g.days,via))+more}</p>`};
+ // the first channel not synced here gets its Connect, straight to that source in Connections, + Add (connectOpen)
+ const conn=g.unsynced?.length&&GAP_CONNECT[g.unsynced[0]];
+ return html`<p class="note gap-line">${(g.wrote_last?t('Your last message: {} days ago by {}; no reply since.',g.days,via):t('Last contact {} days ago by {}; nothing since.',g.days,via))+more}${conn?html` <button type="button" class="link gap-connect" data-connect-open="${conn}">${t('Connect {}',g.unsynced[0])}</button>`:''}</p>`};
 const handedNote=s=>{let w={};try{w=JSON.parse(s.awaiting||'{}')}catch{}if(!w.delegated)return '';const text=s.status==='snoozed'?t('Sent to {}. Waiting for their reply; it closes when they answer.',w.name):s.status==='completed'&&w.answered?t('{} replied, so I closed this.',w.name):s.status==='prepared'?t('No reply from {} yet.',w.name):'';return text?html`<p class="note">${text}</p>`:''};
 // Under way or done, so no Send. An unconfirmed send checked long enough (retry_ok) may be sent again by the owner.
 const sendBusy=a=>['queued','sending','sent','uncertain','local_preparation','paused','undoing','undone'].includes(a?.status)&&!a?.retry_ok;

@@ -4,9 +4,11 @@ ending on the dashboard, with their timing constants. Moved out of assistant.App
 import collections
 import datetime as dt
 import json
+import time
 
 import activity
 from machine.config import LOG
+from machine.delivery.push import mailing_sources
 from machine.store.events import RUN_SIGNAL_BUDGET, SET_ASIDE_AFTER
 from machine.store.first_look import FIRST_ACTIONS, TIP_SOURCES
 from machine.store.review import FIRST_LOOK_READ, PREVIEW_DAYS
@@ -278,7 +280,8 @@ class FirstLookApp:
         and codes only, never a message's text: {'at', 'days', 'kinds': {email, meeting, message, other}, 'read': the
         groups its reviewer sorted them into (FIRST_LOOK_READ, finish_analysis read; empty when it gave none), 'todos',
         'acted' (the owner decided a to-do since), 'next': the setup steps that would help most ('calendar': no calendar
-        connected; 'inbox': one mailbox only)}. None before, after, or on an install that had no first look."""
+        connected; 'inbox': one mailbox only), 'connect': with no to-dos, sources that mail the owner often and aren't
+        connected (first_look_connect)}. None before, after, or on an install that had no first look."""
         current = current or dt.datetime.fromisoformat(now())
         with self.store.connect() as db:
             done = db.execute("SELECT at,detail FROM milestones WHERE name='first_dig_done'").fetchone()
@@ -305,7 +308,22 @@ class FirstLookApp:
         services = [a.get('service') for a in self.config.get('accounts', []) if a.get('service') not in SYSTEM_SERVICES]
         nxt = [step for step, missing in (('calendar', not any(s in CALENDAR_SERVICES for s in services)),
                                           ('inbox', sum(s in MAIL_SERVICES for s in services) == 1)) if missing]
-        return {'at': done['at'], 'days': PREVIEW_DAYS, 'kinds': dict(kinds), 'read': dict(read), 'todos': todos, 'acted': acted, 'next': nxt}
+        connect = self.first_look_connect(services) if not todos else []
+        return {'at': done['at'], 'days': PREVIEW_DAYS, 'kinds': dict(kinds), 'read': dict(read), 'todos': todos, 'acted': acted, 'next': nxt,
+                'connect': connect}
+
+    def first_look_connect(self, services):
+        """For an ending with no to-dos: the services that mail the owner often and aren't connected (mailing_sources), at
+        most two as [{service, label}], so it offers "Connect Slack" rather than an empty ask. Worked out at most every 10
+        minutes (the dashboard asks every few seconds); connecting one drops it at once."""
+        key = tuple(sorted(str(s) for s in services))
+        cached = getattr(self, '_first_look_connect', None)
+        if cached and cached[1] == key and time.monotonic() - cached[0] < 600:
+            return cached[2]
+        with self.store.connect() as db:
+            found = [{'service': s, 'label': label} for s, label in mailing_sources(db, self.config)][:2]
+        self._first_look_connect = (time.monotonic(), key, found)
+        return found
 
     def note_dig_start(self, db):
         """Where the 5-hour window stood when the first review started, so first_dig_spent counts only its own share."""

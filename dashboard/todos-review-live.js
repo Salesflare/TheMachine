@@ -73,15 +73,20 @@ function firstLookFill(){const box=$('#suggestions .first-look-empty'),i=box&&fi
 const FL_KINDS=[['email',['{} email','{} emails']],['meeting',['{} meeting','{} meetings']],['message',['{} message','{} messages']],['other',['{} other signal','{} other signals']]];
 const FL_READ=[['people',['{} from a person','{} from people']],['newsletters',['{} newsletter','{} newsletters']],['notifications',['{} notification','{} notifications']],['other',['{} other','{} other']]];
 const flList=(counts,words)=>{const parts=words.filter(([k])=>(+counts?.[k]|0)>0).map(([k,w])=>t(w,+counts[k]|0).replace(/^(\d+) /,'$1\u00a0'));try{return new Intl.ListFormat(I18N.lang||'en',{type:'conjunction'}).format(parts)}catch{return parts.join(', ')}};
-const FL_NEXT={calendar:'Connect your calendar',inbox:'Add another inbox',talk:'Talk to me',todo:'Give me a to-do'};
-function flNext(d){const steps=[...(d.next||[]).filter(k=>k==='calendar'||k==='inbox'),typeof talkOk==='function'&&talkOk()?'talk':'todo'];return steps.slice(0,2)}
+// Concrete offers first, never an empty ask while there is one: a source that mails the owner often (d.connect, "Connect
+// Slack"), the setup steps that fit; then one question to ask (Search's ask), else Talk or a to-do of their own.
+const FL_NEXT={calendar:'Connect your calendar',inbox:'Add another inbox',ask:'Ask what changed this week',talk:'Talk to me',todo:'Give me a to-do'};
+function flNext(d){const steps=[...(d.connect||[]).map(c=>({key:'connect',service:c.service,label:t('Connect {}',c.label)})),
+  ...(d.next||[]).filter(k=>k==='calendar'||k==='inbox').map(k=>({key:k,label:t(FL_NEXT[k])}))];
+ const last=typeof palAskable==='function'&&palAskable()?'ask':typeof talkOk==='function'&&talkOk()?'talk':'todo';
+ return [...steps,{key:last,label:t(FL_NEXT[last])}].slice(0,2)}
 function firstLookEnd(){const d=state.first_look_done;if(!d||d.todos>0)return '';const kinds=flList(d.kinds,FL_KINDS),read=flList(d.read,FL_READ);
  const line=!kinds?t('Nothing came in from the past week yet.'):read?t('Read {} from the past week: {}.',kinds,read):t('Read {} from the past week.',kinds);
- return html`<div class="empty all-clear first-look-end"><img class="sticker" src="brand/wave.webp" alt=""><div><span class="fl-read">${line}</span>${state.reviews_on?html`<small>${t('New mail gets a look as it comes in.')}</small>`:''}</div><div class="fl-next">${flNext(d).map((k,i)=>html`<button type="button" class="${i?'quiet':''}" data-fl-next="${k}">${t(FL_NEXT[k])}</button>`)}</div></div>`}
+ return html`<div class="empty all-clear first-look-end"><img class="sticker" src="brand/wave.webp" alt=""><div><span class="fl-read">${line}</span>${state.reviews_on?html`<small>${t('New mail gets a look as it comes in.')}</small>`:''}</div><div class="fl-next">${flNext(d).map((x,i)=>x.service?html`<button type="button" class="${i?'quiet':''}" data-connect-open="${x.service}">${x.label}</button>`:html`<button type="button" class="${i?'quiet':''}" data-fl-next="${x.key}">${x.label}</button>`)}</div></div>`}
 function firstLookNote(shown){const d=state.first_look_done;if(!d||!d.todos||d.acted||!shown||scopeFilter!=='all')return '';const kinds=flList(d.kinds,FL_KINDS);if(!kinds)return '';
  return html`<p class="first-look-note">${t(['Read {} from the past week and found {} to-do.','Read {} from the past week and found {} to-dos.'],kinds,d.todos)}</p>`}
 $('#suggestions').addEventListener('click',e=>{const b=e.target.closest('[data-fl-next]');if(!b)return;const k=b.dataset.flNext;
- if(k==='talk'){talkMain();return}if(k==='todo'){ncOpen();return}showTab('health','add');connectAdd(true)});
+ if(k==='talk'){talkMain();return}if(k==='todo'){ncOpen();return}if(k==='ask'){palOpen();pal.hint=t('what changed this week?');palTry();return}showTab('health','add');connectAdd(true)});
 function renderFirstLook(live){const i=firstLookInfo(live),el=$('#first-look'),empty=$('#suggestions .all-clear');
 if(empty){el.hidden=true;if(i){empty.classList.add('first-look-empty');empty.replaceChildren(...firstLookInner(i))}else if(empty.classList.contains('first-look-empty'))refresh();return}
 if(i){el.replaceChildren(make('strong',{},i.title),...firstLookBar(i),flNamesNode(i),i.wait?make('small',i.first?{class:'fl-first'}:{},i.wait):'');el.hidden=false}else el.hidden=true}

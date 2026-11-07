@@ -16,6 +16,8 @@ Each email shows only what is new in it. The earlier messages it quotes are fold
 
 ## What to ask
 
+Before you write, the chat may offer up to three taps made from this to-do, like "Offer Tuesday 10:00 instead". Tapping one puts it in the message box, to send or change. When nothing specific fits, there are none.
+
 - About the thread, the people or the background: "What did they ask last time?"
 - To change the draft: "Make it shorter" or "Mention the new date".
 

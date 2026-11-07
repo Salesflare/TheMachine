@@ -16,6 +16,8 @@ Chaque e-mail ne montre que ce qui est nouveau. Les messages précédents qu’i
 
 ## Quoi demander
 
+Avant que vous écriviez, le chat peut proposer jusqu’à trois suggestions tirées de cette tâche, comme « Proposer mardi 10:00 à la place ». En toucher une la place dans la zone de message, à envoyer ou modifier. Si rien de précis ne convient, il n’y en a aucune.
+
 - Sur le fil, les personnes ou le contexte : « Qu’ont-ils demandé la dernière fois ? »
 - Pour changer le brouillon : « Fais plus court » ou « Mentionne la nouvelle date ».
 

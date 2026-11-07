@@ -82,6 +82,8 @@ Ogni attività inizia con il suo titolo. La riga sotto dice chi riguarda, la sua
 
 A volte una riga discreta sotto il testo dice cosa non si sa, come «Ultimo contatto 12 giorni fa via email; niente da allora.» Compare solo quando l'ultimo contatto è vecchio o ancora senza risposta, e nomina i canali non collegati dove potrebbero aver risposto, come WhatsApp. La tua Machine prepara con gli stessi fatti, quindi dice cosa non sa invece di tirare a indovinare.
 
+Quando nomina un canale non collegato, Collega accanto apre quel collegamento.
+
 Un titolo dice cosa c'è da fare. Cambia solo quando cambia quello, come per una nuova richiesta. Un'attività fatta mantiene il suo titolo, con sotto come è finita, come cosa è stato inviato o "Fatto: Sam ha firmato martedì".
 
 Sopra la bozza, una riga discreta indica il messaggio da cui viene, con il logo del servizio (Gmail, Slack, WhatsApp…). Toccala per leggere la conversazione. La bozza inizia con il logo di dove va, così vedi se è una risposta su Slack o un'email prima di leggere. Un passo senza bozza, come un passaggio, mostra il logo sul suo pulsante.

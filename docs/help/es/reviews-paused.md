@@ -14,6 +14,8 @@ En una Machine alojada nueva, las revisiones empiezan solas en cuanto tu IA y tu
 
 Mientras lee, Tareas muestra cuánto lleva, algunas de las personas y organizaciones que encontró y tu primera tarea en cuanto llega. Los nombres salen de tu propio correo y solo tú los ves.
 
+Si en el primer vistazo no encuentra nada para ti, dice lo que leyó y ofrece próximos pasos, como conectar un servicio que te escribe a menudo o preguntar qué cambió esta semana.
+
 ## Las revisiones están desactivadas
 
 La parte superior de Tareas dice "Las revisiones están desactivadas, así que aún no llegan tareas." En una Machine alojada, pulsa **Activar las revisiones**. En tu propio ordenador, ejecuta `./install.sh --activate`.

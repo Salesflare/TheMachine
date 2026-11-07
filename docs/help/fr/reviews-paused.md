@@ -14,6 +14,8 @@ Sur une nouvelle Machine hébergée, les vérifications démarrent d’elles-mê
 
 Pendant qu’elle lit, Tâches montre où elle en est, quelques-unes des personnes et organisations qu’elle a croisées, et votre première tâche dès qu’elle arrive. Les noms viennent de vos propres e-mails et ne sont visibles que par vous.
 
+Si elle ne trouve rien pour vous au premier coup d’œil, elle dit ce qu’elle a lu et propose la suite, comme connecter un service qui vous écrit souvent ou demander ce qui a changé cette semaine.
+
 ## Les vérifications sont désactivées
 
 Le haut de Tâches indique « Les vérifications sont désactivées, donc aucune tâche n’arrive pour l’instant. » Sur une Machine hébergée, appuyez sur **Activer les vérifications**. Sur votre propre ordinateur, lancez `./install.sh --activate`.

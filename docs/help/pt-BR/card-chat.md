@@ -16,6 +16,8 @@ Cada e-mail mostra só o que há de novo nele. As mensagens anteriores que ele c
 
 ## O que perguntar
 
+Antes de você escrever, o chat pode oferecer até três sugestões feitas a partir desta tarefa, como "Ofereça terça às 10:00". Tocar em uma coloca o texto na caixa de mensagem, para enviar ou mudar. Quando nada específico se encaixa, não aparece nenhuma.
+
 - Sobre a conversa, as pessoas ou o contexto: "O que eles pediram da última vez?"
 - Para mudar o rascunho: "Deixe mais curto" ou "Mencione a nova data".
 

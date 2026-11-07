@@ -191,6 +191,10 @@ class StoreCore:
             # issue): when, until the owner saw it. The list shows it under Just done and the phone hears of it (report_done).
             if 'done_report' not in columns:
                 db.execute('ALTER TABLE suggestions ADD COLUMN done_report TEXT')
+            # What the owner may want to say in the to-do's chat, from the review that wrote it (Store.set_chat_asks):
+            # a JSON list of up to two short lines, shown as taps over its message box
+            if 'chat_asks' not in columns:
+                db.execute('ALTER TABLE suggestions ADD COLUMN chat_asks TEXT')
             delivery_columns = {r['name'] for r in db.execute('PRAGMA table_info(deliveries)')}
             if 'reminder' not in delivery_columns:
                 db.execute('ALTER TABLE deliveries ADD COLUMN reminder INTEGER NOT NULL DEFAULT 0')

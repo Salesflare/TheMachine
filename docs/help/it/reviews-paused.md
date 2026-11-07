@@ -14,6 +14,8 @@ Su una nuova Machine ospitata, i controlli partono da soli appena la tua IA e la
 
 Mentre legge, Attività mostra a che punto è, alcune delle persone e organizzazioni che ha incontrato e la tua prima attività appena arriva. I nomi vengono dalla tua posta e li vedi solo tu.
 
+Se al primo sguardo non trova niente per te, dice cosa ha letto e propone i passi successivi, come collegare un servizio che ti scrive spesso o chiedere cosa è cambiato questa settimana.
+
 ## I controlli sono disattivati
 
 In cima ad Attività compare "I controlli sono disattivati, quindi per ora non arrivano attività." Su una Machine in hosting, premi **Attiva i controlli**. Sul tuo computer, esegui `./install.sh --activate`.

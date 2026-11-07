@@ -82,6 +82,8 @@ Cada tarea empieza por su título. La línea de debajo dice de quién trata, su 
 
 A veces una línea discreta bajo el texto dice lo que no se sabe, como «Último contacto hace 12 días por correo; nada desde entonces.» Solo aparece cuando el último contacto es antiguo o sigue sin respuesta, y nombra los canales no conectados por los que quizá respondieron, como WhatsApp. Tu Machine prepara con los mismos datos, así que dice lo que no sabe en vez de adivinar.
 
+Cuando nombra un canal no conectado, Conectar al lado abre esa conexión.
+
 Un título dice qué hay que hacer. Solo cambia cuando eso cambia, como con una nueva petición. Una tarea hecha conserva su título, con debajo cómo terminó, como lo que se envió o "Hecho: Sam lo firmó el martes".
 
 Sobre el borrador, una línea discreta nombra el mensaje del que viene, con el logo del servicio (Gmail, Slack, WhatsApp…). Tócala para leer el hilo. El borrador empieza con el logo de adónde va, así ves si es una respuesta en Slack o un correo antes de leer. Un paso sin borrador, como un traspaso, muestra el logo en su botón.

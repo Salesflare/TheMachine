@@ -50,8 +50,14 @@ function renderHealthTabs(){const cs=state.connectors||[],bad=g=>cs.filter(c=>he
 let connectList=null,connectListAt=0,connectRun=null,connectTimer=0,connectSignin=null,signinTimer=0,connectForm=null,connectSiteShown=null,connectGbrain=null;
 const BROKER_LINK={gmail:'#google',calendar:'#google',outlook:'#microsoft',outlook_calendar:'#microsoft',zoom:'#source-zoom',stripe:'#source-stripe',slack:'#source-slack'};
 const connectPost=(action,args={})=>request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action,args})});
-async function connectAdd(force){if(connectRun)return;if(!force&&connectList&&Date.now()-connectListAt<60000)return;connectListAt=Date.now();
- try{connectList=await connectPost('connect_sources')}catch(e){errCaught(e);setHTML($('#connect-add'),html`<p class="error">${e.message}</p>`);return}renderConnectAdd()}
+// Only the latest load draws: opening + Add starts one and connectOpen another, and the earlier answering last would
+// draw the grid again over the source connectOpen just picked
+let connectAddSeq=0,connectAddLast=Promise.resolve();
+async function connectAdd(force){if(connectRun)return;if(!force&&connectList&&Date.now()-connectListAt<60000)return;connectListAt=Date.now();const n=++connectAddSeq;
+ const load=connectPost('connect_sources');connectAddLast=load.catch(()=>{});
+ try{const list=await load;if(n!==connectAddSeq)return;connectList=list}catch(e){if(n!==connectAddSeq)return;errCaught(e);setHTML($('#connect-add'),html`<p class="error">${e.message}</p>`);return}renderConnectAdd()}
+// once the latest load has drawn (connectOpen)
+async function connectAddSettled(){for(let n=-1;n!==connectAddSeq;){n=connectAddSeq;await connectAddLast}}
 // + Add shows one view at a time in its box: the grid of sources, or one source's sign-in, form, run or GBrain panel.
 // Another view than before starts at its top, under the top bar, with focus on it (its first field, else its heading):
 // from far down the grid the page would otherwise stay down there, the short view above it and only the footer showing.
@@ -346,9 +352,9 @@ $('#connect-add').addEventListener('submit',e=>{const setup=e.target.closest('[d
  if(!e.target.closest('[data-connect-form]'))return;e.preventDefault();connectAnswer($('#connect-answer').value)});
 $('#connect-add').addEventListener('change',e=>{if(e.target.name!=='scope')return;const form=e.target.closest('form'),co=form.querySelector('.connect-company'),personal=e.target.value==='personal';
  co.hidden=personal;co.querySelector('input').required=!personal});
-// "Connect your own Intercom" on a to-do: Connections, + Add, at that source. A source that signs in here opens its
+// "Connect your own Intercom" on a to-do (also its "not synced" line and the first look's ending): Connections, + Add, at that source. A source that signs in here opens its
 // sign-in intro (nothing starts before Continue); one set up on the account page or by questions is shown and focused.
-async function connectOpen(name){showTab('health','add');await connectAdd(true);const box=$('#connect-add');
+async function connectOpen(name){showTab('health','add');await connectAdd(true);await connectAddSettled();const box=$('#connect-add');
  const item=box.querySelector(`[data-connect-signin="${CSS.escape(name)}"]`);if(item){item.click();viewTop(box);return}
  const x=connectList?.sources.find(v=>v.name===name),el=x&&[...box.querySelectorAll('.connect-source')].find(n=>n.dataset.connect===name||n.querySelector('b')?.textContent.replace(' ↗','')===x.label);
  viewTop(box);if(el){el.classList.add('picked');el.focus()}}

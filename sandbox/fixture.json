@@ -7304,6 +7304,10 @@
    "urgent": true,
    "snooze_hours": null,
    "based_on": "story:pricing:input",
+   "asks": [
+    "Ask Mila which other tools they compare",
+    "Offer a call before the end of the month"
+   ],
    "next_action": {
     "kind": "email",
     "account_id": "work-gmail",
@@ -7337,7 +7341,11 @@
    "source": "email from Hanne Ashgrove",
    "project": null,
    "urgent": false,
-   "snooze_hours": null
+   "snooze_hours": null,
+   "asks": [
+    "Plan the demo around shared inbox reminders",
+    "Invite Elif to Thursday 14:00 too"
+   ]
   },
   {
    "key": "open2",
@@ -7357,6 +7365,9 @@
    "project": null,
    "urgent": true,
    "snooze_hours": null,
+   "asks": [
+    "Attach the Stripe receipt for INV-4821"
+   ],
    "next_action": {
     "kind": "email",
     "account_id": "work-gmail",
@@ -7424,6 +7435,9 @@
    "project": "Harborline pilot",
    "urgent": false,
    "snooze_hours": null,
+   "asks": [
+    "Add the security answers for the IT lead"
+   ],
    "next_action": {
     "kind": "email",
     "account_id": "work-gmail",

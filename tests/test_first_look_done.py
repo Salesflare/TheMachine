@@ -129,3 +129,22 @@ class FirstLookDone(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+    # With no to-dos the ending offers something concrete: a service that mails the owner often and isn't connected
+    # (push.mailing_sources, the setup hints' own count), on a self-hosted Machine too.
+
+    def test_a_service_that_mails_often_is_offered_when_it_found_nothing(self):
+        slack = [dict(signal(f's{n}'), metadata={'from': 'Slack <notification@slack.com>'}) for n in range(3)]
+        self.look([signal('m0')] + slack)
+        self.done()
+        self.assertEqual(self.app.first_look_done()['connect'], [{'service': 'slack', 'label': 'Slack'}])
+        self.app.config['accounts'].append({'id': 'slack', 'service': 'slack'})
+        self.assertEqual(self.app.first_look_done()['connect'], [])  # connected just now: gone at once
+
+    def test_nothing_to_offer_with_to_dos_or_too_few_mails(self):
+        self.look([signal('m0'), dict(signal('s0'), metadata={'from': 'GitHub <noreply@github.com>'})])
+        self.done()
+        self.assertEqual(self.app.first_look_done()['connect'], [])  # one mail from GitHub: not worth it yet
+        with self.store.connect() as db:
+            db.execute("INSERT INTO suggestions(id,dedupe_key,title,body,event_ids,account_ids,created_at) VALUES('s0','k0','Reply','','[1]','[\"work\"]',?)", (a.now(),))
+        self.assertEqual(self.app.first_look_done()['connect'], [])

@@ -82,6 +82,8 @@ Each to-do starts with its title. The line under it says who it's about, their o
 
 Sometimes a quiet line says what isn't known, like "Last contact 12 days ago by email; nothing since." It shows when the last word with them is old or unanswered, and names channels that aren't connected, like WhatsApp. Your Machine says what it doesn't know instead of guessing.
 
+When it names a channel that isn't connected, Connect next to it opens that connection.
+
 A title says what needs doing, and changes only when that does. A done to-do keeps its title, with how it ended under it, like "Done: Sam signed it on Tuesday".
 
 Above the draft, one faint line names the message it came from, with that service's logo. Tap it to read the thread. The draft shows the logo of where it goes, so you see at once if it's a Slack reply or an email.

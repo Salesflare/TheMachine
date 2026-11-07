@@ -21,12 +21,14 @@ const cards=[
  {id:'g4',title:'Check in with Jo',body:'Jo is back next week.',status:'snoozed',snoozed_until:new Date(Date.now()+864e5).toISOString(),scope:'work',created_at:now,event_ids:[4],
   gap:{name:'Jo',days:30,channel:'Slack',wrote_last:false,unsynced:[]}},
  {id:'g5',title:'Thank Sam for the intro',body:'Sent.',status:'completed',scope:'work',created_at:now,event_ids:[5],gap:{name:'Sam',days:20,channel:'email',wrote_last:false,unsynced:[]}}];
-let language='en';
+let language='en';const asked=[];
 const server=createServer((req,res)=>{
  const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname.startsWith('/brand/')){readFile(new URL('../'+(url.pathname.startsWith('/brand/fonts/')?url.pathname.slice(1):'brand/app-icon-192.png'),import.meta.url)).then(b=>{res.setHeader('Content-Type',url.pathname.endsWith('.woff2')?'font/woff2':'image/png');res.end(b)},()=>{res.statusCode=404;res.end()});return}
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  const cat=/^\/i18n\/(\w\w)\.json$/.exec(url.pathname);if(cat){res.end(cats[cat[1]]||'{}');return}
+ if(url.pathname==='/api/action'&&req.method==='POST'){let body='';req.on('data',c=>body+=c);req.on('end',()=>{let a={};try{a=JSON.parse(body)}catch{}asked.push(a.action);
+  res.end(JSON.stringify(a.action==='connect_sources'?{sources:[],manage_url:null,saveable:true}:{ok:true}))});return}
  if(url.pathname==='/api/status'){res.end(JSON.stringify({suggestions:cards,promises:[],connectors:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],
   review_health:{},review_runs:[],review_live:{runs:[]},fleet:{on:false,fleets:[]},locale:{locale:'en-BE',region:'BE',language,language_set:true,clock:'auto',hour12:false,auto_hour12:false,
   date_locale:language==='en'?'en-US':'nl-BE',languages:{en:'English',nl:'Nederlands'},saveable:true}}));return}
@@ -48,7 +50,7 @@ try{
  for(const [width,height] of [[1440,900],[390,844]]){
   const [context,page]=await open({width,height});
   assert.deepEqual(await line(page,'g1'),['Last contact 12 days ago by email; nothing since.']);
-  assert.deepEqual(await line(page,'g2'),['Your last message: 5 days ago by email; no reply since. They may have replied on WhatsApp or LinkedIn (not synced).']);
+  assert.deepEqual(await line(page,'g2'),['Your last message: 5 days ago by email; no reply since. They may have replied on WhatsApp or LinkedIn (not synced). Connect WhatsApp']);
   assert.deepEqual(await line(page,'g3'),[],'no gap: no line');
   // One line, under the body, never wider than the to-do
   const fits=await page.locator('#task-g2 .gap-line').evaluate(n=>n.scrollWidth<=n.clientWidth+1&&n.getBoundingClientRect().right<=n.closest('.card').getBoundingClientRect().right+1);
@@ -58,6 +60,13 @@ try{
   if(shots)await page.screenshot({path:`${shots}/gap-page-${width}x${height}.png`});
   await context.close();
  }
+ // Connect on the line opens that source in Connections, + Add (its own form when this install has it there)
+ {const [context,page]=await open();
+  await page.locator('#task-g2 .gap-line [data-connect-open="whatsapp"]').click();
+  await page.waitForFunction(()=>!document.querySelector('#health').hidden);
+  assert.ok(asked.includes('connect_sources'),asked.join());
+  assert.equal(await page.locator('#task-g1 [data-connect-open]').count(),0,'nothing unsynced: no Connect');
+  await context.close()}
  // Snoozed and done ones say nothing, wherever they show
  {const [context,page]=await open();
   await page.evaluate(()=>{state.suggestions.find(s=>s.id==='g2').status='snoozed';render()});
@@ -66,7 +75,7 @@ try{
  language='nl';
  {const [context,page]=await open({width:390,height:844});
   assert.deepEqual(await line(page,'g1'),['Laatste contact 12 dagen geleden via e-mail; niets sindsdien.']);
-  assert.deepEqual(await line(page,'g2'),['Je laatste bericht: 5 dagen geleden via e-mail; nog geen antwoord. Misschien hebben ze geantwoord via WhatsApp of LinkedIn (niet gesynchroniseerd).']);
+  assert.deepEqual(await line(page,'g2'),['Je laatste bericht: 5 dagen geleden via e-mail; nog geen antwoord. Misschien hebben ze geantwoord via WhatsApp of LinkedIn (niet gesynchroniseerd). WhatsApp koppelen']);
   if(shots)await page.locator('#task-g2').screenshot({path:`${shots}/gap-line-nl-390x844.png`});
   await context.close()}
  assert.deepEqual(errors,[]);

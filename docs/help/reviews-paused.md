@@ -14,6 +14,8 @@ On a new hosted Machine, checks start by themselves once your AI and mail are co
 
 While it reads, To-dos shows how far it got, a few of the people and organizations it came across, and your first to-do as soon as it's in. The names come from your own mail, and only you see them.
 
+When the first look finds nothing for you, it says what it read and offers next steps, like connecting a service that mails you often or asking what changed this week.
+
 ## Checks are off
 
 The top of To-dos says "Checks are off, so no to-dos arrive yet." On a hosted Machine, press **Turn on checks**. On your own computer, run `./install.sh --activate`.

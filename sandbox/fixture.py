@@ -94,7 +94,7 @@ ANDROID = [('Bank', 'Card payment of €42.10 at Orchard Street Bakery'), ('Parc
 # whether the owner wrote it. Bodies use {first} for the person, the rest is spelled out.
 STORIES = [
     {'key': 'pricing', 'person': ('Mila Underhay', 'Northwind Analytics'), 'project': 'Northwind rollout', 'status': 'prepared', 'urgent': True, 'minutes': 20,
-     'title': 'Reply to Mila about pricing for Northwind Analytics',
+     'title': 'Reply to Mila about pricing for Northwind Analytics', 'asks': ['Ask Mila which other tools they compare', 'Offer a call before the end of the month'],
      'body': 'They want annual pricing for 25 seats, maybe 40 next year, and whether onboarding is included. They decide this month.',
      'thread': [(2900, False, 'Pricing for our sales team', 'Hi Alex,\n\nWe are comparing three tools for our sales team. Could you send pricing for annual billing?\n\nThanks,\nMila'),
                 (1500, True, 'Re: Pricing for our sales team', 'Hi Mila,\n\nHappy to. How many seats are you thinking of, to start and in a year?\n\nAlex'),
@@ -103,12 +103,12 @@ STORIES = [
      'team_input': (90, 'Priya Okonedo', 'sales', 'For Northwind: €29 a seat on annual is fine, and onboarding is included from 10 seats.'),
      'draft': ('email', 'Hi Mila,\n\nFor 25 seats on annual billing it is €29 a seat a month, so €8,700 for the year. Moving to 40 seats later keeps the same price per seat.\n\nOnboarding is included from 10 seats: two live sessions for your team and a call with your admin.\n\nWould Thursday or Friday suit for a short call to walk through it?\n\nBest,\nAlex')},
     {'key': 'demo', 'person': ('Hanne Ashgrove', 'Brightpath Logistics'), 'status': 'pending', 'minutes': 70,
-     'title': 'Prepare for the Brightpath Logistics demo',
+     'title': 'Prepare for the Brightpath Logistics demo', 'asks': ['Plan the demo around shared inbox reminders', 'Invite Elif to Thursday 14:00 too'],
      'body': 'Thursday 14:00 with Hanne and Elif from operations. They want to see reminders on shared inboxes.',
      'thread': [(23000, True, 'Demo in two weeks?', 'Hi Hanne,\n\nGood to meet you at the meetup. Would a 45 minute demo in two weeks work?\n\nAlex'),
                 (21000, False, 'Re: Demo in two weeks?', 'Hi Alex,\n\nThursday at 14:00 works for us. I will bring Elif from operations. Could you show how reminders work for shared inboxes? That is our main pain.\n\nBest,\nHanne')]},
     {'key': 'invoice', 'person': ('Caspian Northcott', 'Cobalt & Finch'), 'status': 'prepared', 'urgent': True, 'minutes': 110,
-     'title': 'Answer Cobalt & Finch about invoice INV-4821',
+     'title': 'Answer Cobalt & Finch about invoice INV-4821', 'asks': ['Attach the Stripe receipt for INV-4821'],
      'body': 'Their second reminder: INV-4821 is 14 days overdue. Stripe shows the card payment failed on the 9th.',
      'thread': [(10300, False, 'Invoice INV-4821', 'Hello,\n\nPlease find attached invoice INV-4821 for October, due in 7 days.\n\nKind regards,\nCaspian\nAccounts, Cobalt & Finch'),
                 (240, False, 'Re: Invoice INV-4821 overdue', 'Hello,\n\nOur records show INV-4821 is now 14 days overdue. Could you let us know when we can expect payment, or whether something is wrong with it?\n\nKind regards,\nCaspian')],
@@ -121,7 +121,7 @@ STORIES = [
                 (300, False, 'Re: Rate limit on the contacts endpoint?', 'Thanks! If it helps, it is one API key, and we page through 100 contacts at a time.\n\nJonah')],
      'draft': ('email', 'Hi Jonah,\n\nThe contacts endpoint allows 600 requests a minute per API key. Past that it answers 429 with a Retry-After header, so waiting that many seconds and going on is enough.\n\nWith 100 contacts per page your sync stays under the limit with a short pause every 600 pages. Or use the bulk export, which needs one request for everything.\n\nAlex')},
     {'key': 'recap', 'person': ('Wren Fairhaven', 'Harborline Health'), 'project': 'Harborline pilot', 'status': 'pending', 'minutes': 230,
-     'title': 'Send Wren the pilot recap',
+     'title': 'Send Wren the pilot recap', 'asks': ['Add the security answers for the IT lead'],
      'body': 'You promised a written recap of the pilot after Tuesday’s call: 10 users from the 3rd, check-in after two weeks.',
      'thread': [(1600, True, 'Pilot call Tuesday', 'Hi Wren,\n\nLooking forward to Tuesday. I will send a written recap after the call.\n\nAlex'),
                 (1300, False, 'Re: Pilot call Tuesday', 'Thanks for the time today. A recap would help, I need it for our IT lead before Friday.\n\nWren')],
@@ -508,7 +508,8 @@ def build(profile):
             out.append(based_on)
         card = {'key': 'open' + str(i), 'title': story['title'], 'body': story['body'], 'status': story['status'], 'events': out, 'accounts': [account],
                 'minutes_ago': story['minutes'], 'source': source, 'project': story.get('project'), 'urgent': bool(story.get('urgent')),
-                'snooze_hours': story.get('snooze_hours'), **({'based_on': based_on} if based_on else {})}
+                'snooze_hours': story.get('snooze_hours'), **({'based_on': based_on} if based_on else {}),
+                **({'asks': story['asks']} if story.get('asks') else {})}  # its chat's taps, as the review writes them (chat_asks)
         kind, body = story.get('draft') or (None, None)
         if kind == 'email':
             last = story['thread'][-1][2]

@@ -16,6 +16,8 @@ Jede E-Mail zeigt nur, was neu darin ist. Die früheren Nachrichten, die sie zit
 
 ## Was du fragen kannst
 
+Bevor du schreibst, bietet der Chat vielleicht bis zu drei Vorschläge aus dieser Aufgabe an, etwa „Stattdessen Dienstag 10:00 anbieten“. Ein Tipp setzt ihn ins Nachrichtenfeld, zum Senden oder Ändern. Passt nichts Bestimmtes, gibt es keine.
+
 - Zum Verlauf, zu den Personen oder zum Hintergrund: „Was haben sie letztes Mal gefragt?“
 - Um den Entwurf zu ändern: „Mach ihn kürzer“ oder „Erwähne das neue Datum“.
 

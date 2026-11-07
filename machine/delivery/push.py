@@ -602,31 +602,40 @@ def sender_domain_in(sender, domains):
     return bool(host) and any(host == d or host.endswith('.' + d) for d in domains)
 
 
+def mailing_sources(db, config, now=None):
+    """[(service, label)] of HINT_SOURCES that mailed the owner HINT_MAILS times or more in 30 days and aren't connected:
+    worth connecting. From the senders' addresses only (setup_hints, and the first look's ending: first_look_done)."""
+    services = {a.get('service') for a in config.get('accounts') or [] if isinstance(a, dict)}
+    since = ((now or dt.datetime.now(dt.timezone.utc)) - dt.timedelta(days=30)).isoformat()
+    out = []
+    for service, label, domains in HINT_SOURCES:
+        if service in services:
+            continue
+        like = ' OR '.join("lower(json_extract(metadata,'$.from')) LIKE ?" for _ in domains)
+        rows = db.execute(f"SELECT json_extract(metadata,'$.from') FROM events WHERE kind IN ('gmail.message','ms_graph.message') AND history=0 "
+                          f"AND occurred_at>=? AND ({like})", (since, *[f'%@%{d}%' for d in domains]))
+        found = 0
+        for (sender,) in rows:  # the LIKE only narrows: the sender's own domain must be the service's (not x.com in fedex.com)
+            found += sender_domain_in(sender, domains)
+            if found >= HINT_MAILS:
+                out.append((service, label))
+                break
+    return out
+
+
 def setup_hints(store, config, now=None):
     """[{id, title, text, href, button}] for a hosted Machine (manage_url), most relevant first; [] elsewhere."""
     manage = str(config.get('manage_url') or '')
     if not manage.startswith('https://'):
         return []
     services = {a.get('service') for a in config.get('accounts') or [] if isinstance(a, dict)}
-    since = ((now or dt.datetime.now(dt.timezone.utc)) - dt.timedelta(days=30)).isoformat()
     hints = []
     with store.connect() as db:
-        for service, label, domains in HINT_SOURCES:
-            if service in services:
-                continue
-            like = ' OR '.join("lower(json_extract(metadata,'$.from')) LIKE ?" for _ in domains)
-            rows = db.execute(f"SELECT json_extract(metadata,'$.from') FROM events WHERE kind IN ('gmail.message','ms_graph.message') AND history=0 "
-                              f"AND occurred_at>=? AND ({like})", (since, *[f'%@%{d}%' for d in domains]))
-            found = 0
-            for (sender,) in rows:  # the LIKE only narrows: the sender's own domain must be the service's (not x.com in fedex.com)
-                found += sender_domain_in(sender, domains)
-                if found >= HINT_MAILS:
-                    break
-            if found >= HINT_MAILS:
-                # one that signs in from + Add (HOSTED_SIGNINS) opens its form there, any other + Add: on the dashboard itself
-                hints.append({'id': 'source-' + service, 'title': f'Connect {label}?',
-                              'text': f'{label} mails you often. Connected, I read it directly.',
-                              'href': f'#connect={service}' if service in HOSTED_SIGNINS else '#connections=add', 'button': 'Connect'})
+        for service, label in mailing_sources(db, config, now):
+            # one that signs in from + Add (HOSTED_SIGNINS) opens its form there, any other + Add: on the dashboard itself
+            hints.append({'id': 'source-' + service, 'title': f'Connect {label}?',
+                          'text': f'{label} mails you often. Connected, I read it directly.',
+                          'href': f'#connect={service}' if service in HOSTED_SIGNINS else '#connections=add', 'button': 'Connect'})
         snoozed = db.execute("SELECT 1 FROM decisions WHERE choice='snooze' LIMIT 1").fetchone()
     channels = reminder_channels(store, config)
     if snoozed and not channels['telegram'] and not channels['push']:
