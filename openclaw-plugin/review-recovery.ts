@@ -1,8 +1,9 @@
 import {readFile} from 'node:fs/promises';
-import {readFileSync, realpathSync} from 'node:fs';
+import {existsSync, readFileSync, realpathSync} from 'node:fs';
 import {dirname, resolve} from 'node:path';
 import {createHash} from 'node:crypto';
 import {homedir} from 'node:os';
+import {fileURLToPath} from 'node:url';
 
 const HOME = homedir();
 const CONFIG_PATH = process.env.ASSISTANT_CONFIG || `${HOME}/.local/share/personal-assistant/config.json`;
@@ -220,13 +221,21 @@ const readsSecret = (event: any) => pathParams(event.params || {}).some(secretPa
 // USER.md is not loaded into isolated sessions by default; reviews and preparations need it.
 // The only files a review or preparation context reads, by name; nothing else can become a path here.
 const USER_MD = resolve(WORKSPACE, 'USER.md');
-const PREPARATION_MD = resolve(APP_DIR, 'PREPARATION.md');
-const AGENTS_MD = resolve(APP_DIR, 'AGENTS.md');
+// AGENTS.md and PREPARATION.md come from the install as it is now, not as it was when the Gateway loaded this plugin: a
+// Gateway started before the service first wrote its config (a new install) read them from nowhere, and every review
+// then ran without its instructions. Without app_dir, this plugin's own checkout, which holds them too.
+const PLUGIN_APP_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+export function appDir() {
+  const configured = String(assistantConfig().app_dir || '').replace(/^~(?=\/|$)/, HOME);
+  if (configured) return resolve(configured);
+  const workspaceDir = resolve(WORKSPACE, 'tools/personal-assistant');
+  return existsSync(resolve(workspaceDir, 'AGENTS.md')) ? workspaceDir : PLUGIN_APP_DIR;
+}
 const readContextFile = (name: string) => {
   switch (name) {
     case 'USER': return readFile(USER_MD, 'utf8');
-    case 'PREPARATION': return readFile(PREPARATION_MD, 'utf8');
-    case 'AGENTS': return readFile(AGENTS_MD, 'utf8');
+    case 'PREPARATION': return readFile(resolve(appDir(), 'PREPARATION.md'), 'utf8');
+    case 'AGENTS': return readFile(resolve(appDir(), 'AGENTS.md'), 'utf8');
     default: return Promise.reject(new Error(`not a context file: ${name}`));
   }
 };
@@ -256,6 +265,9 @@ const assistantInstructions = () => contextFile('AGENTS', 'Assistant instruction
 const sessionRuns = new Map<string, string>();
 export const currentReviewRun = (sessionKey: string) => sessionRuns.get(sessionKey);
 
+// How long a review's prompt waits for the service's word on an unfinished review (review_context).
+export const REVIEW_CONTEXT_MS = 3000;
+
 export function registerReviewRecovery(api: any, call: (action: string, args?: any) => Promise<any>) {
   const runs = new Map<string, {session: string; started: number; reviewTouched: boolean}>();
   const background = (ctx: any) => privateReviewContext(ctx) && !!ctx.runId &&
@@ -276,6 +288,11 @@ export function registerReviewRecovery(api: any, call: (action: string, args?: a
     .replace(' Genuine actionable alerts and authorized preparation results/reminders remain enabled.', '');
   const reviewInstruction = (quiet: string) => 'This turn reviews the personal-assistant signals inbox. Resume an unfinished review through assistant_signals begin_analysis with the same explicit accounts, then finish_analysis after a real conclusion. Do not switch to unrelated old main-chat tasks after a provider retry. Follow the assistant instructions below; they are the parts of tools/personal-assistant/AGENTS.md for reviews, so do not read that file again. Claim once with begin_analysis limit 120 and read every page with analysis_page; finish within about fifteen minutes. The service balances accounts, oldest backlog and newer signals. For body_clipped=true read the rest with events, event_ids and body_offset. Defer only what you expect to judge better later; pass the rest as finish_analysis reviewed_ids. Publish only genuinely useful distinct suggestions; no quota or duplicate direct Telegram send. Quiet hours limit delivery, not private review. Do not claim a complete review when only a preview was assessed. ' + quiet;
   const instruction = reviewInstruction(quietInstruction);
+  const reviewState = (ctx: any): Promise<any> => new Promise(done => {
+    const timer = setTimeout(() => done({}), REVIEW_CONTEXT_MS);
+    call('review_context', {owner_session: ctx.sessionKey, owner_run: ctx.runId})
+      .then(state => done(state || {}), () => done({})).finally(() => clearTimeout(timer));
+  });
   api.on('before_prompt_build', async (_event: any, ctx: any) => {
     if (preparationSession(ctx.sessionKey) && privateReviewContext(ctx)) {
       if (ctx.runId) sessionRuns.set(ctx.sessionKey,ctx.runId);
@@ -294,15 +311,20 @@ export function registerReviewRecovery(api: any, call: (action: string, args?: a
     // Notification continuations are not a new review schedule: do not make
     // every phone event start a review or redirect unrelated background work.
     if (!eligible(ctx)) return {prependContext: quietInstruction};
-    const state = await call('review_context', {owner_session: ctx.sessionKey, owner_run: ctx.runId});
+    // The instructions never wait on the service: a slow or busy Machine answers review_context late or not at all, and a
+    // hook past its time limit is dropped whole, so the review ran without its instructions. Read them meanwhile; past
+    // REVIEW_CONTEXT_MS the review starts without the resume hint (begin_analysis resumes an unfinished claim anyway).
+    const instructions = reviewSession(ctx.sessionKey) ? Promise.all([ownerContext(), assistantInstructions()]) : undefined;
+    const state = await reviewState(ctx);
     const hint = state.review ? ` Unfinished review ${state.review.id}; ${state.review.last_error || 'completion not committed'}. Resume it before claiming another batch.` : '';
     if (!reviewSession(ctx.sessionKey)) return {prependContext: instruction + hint};
     // The same for every review (nothing from this run in it), so it goes at the very start of the system prompt, where
     // the model's prompt cache can reuse it from one review to the next. In the turn's message it sat after OpenClaw's
     // per-run lines (the session key, the date) and was never reused. Only this run's own words stay in the message.
-    const context = reviewInstruction(sessionQuietInstruction) + gbrainHint() + (await ownerContext()) + (await assistantInstructions());
+    const [owner, agents] = await instructions!;
+    const context = reviewInstruction(sessionQuietInstruction) + gbrainHint() + owner + agents;
     return {prependSystemContext: context, ...(hint ? {prependContext: hint.trim()} : {})};
-  }, {timeoutMs: 5000});
+  }, {timeoutMs: 15000});
 
   // Gate review tools and note which run touched a review. Ownership itself is bound in the
   // tool's execute() from host-owned context; this hook only ever blocks, never rewrites.
