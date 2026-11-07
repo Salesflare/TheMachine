@@ -29,6 +29,12 @@ const open=async(opts={})=>{const context=await browser.newContext({viewport:{wi
   reducedMotion:opts.still?'reduce':'no-preference',colorScheme:opts.light?'light':'dark'});
  await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
  const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
+ // Deterministic: the page's Math.random is seeded, and every image decode is kept so a run waits for them all before
+ // the clock moves. Under load a decode can take longer than the fake seconds, or fail once: then the glance and the
+ // wave were left out (only hops, or a late first move). A failed decode is tried once more, as a slow disk would.
+ await page.addInitScript(()=>{let a=0x5eed;Math.random=()=>{a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
+  const decode=HTMLImageElement.prototype.decode;window.decodes=[];
+  HTMLImageElement.prototype.decode=function(){const p=decode.call(this).catch(()=>decode.call(this));decodes.push(p.catch(()=>{}));(decodes.src||(decodes.src=new Set())).add(this.src.replace(/^.*\/brand\//,'brand/'));return p}});
  await page.clock.install({time:T0});await page.clock.pauseAt(T0+1000);await page.goto(base);
  // The clock only moves in run(); every frame and move of the working mascot is logged with its time and size
  // (a redraw of the list puts a new one in its place: each has its own id; the size is its layout box, not a tilt)
@@ -37,13 +43,16 @@ const open=async(opts={})=>{const context=await browser.newContext({viewport:{wi
   log.push({id:ids.get(el),at:performance.now(),src,cls:[...el.classList].filter(c=>c.startsWith('m-')).join(' '),w:el.offsetWidth,h:el.offsetHeight})}})
   .observe(document.body,{attributes:true,attributeFilter:['src','class'],subtree:true})});
  return {context,page}};
+// The working mascot is in, and the frames its moves use are decoded (the page's own reads of them answered first)
+const settled=async page=>{await page.locator('#suggestions .first-look-empty img.sticker').waitFor();
+ await page.waitForFunction(()=>{const el=document.querySelector('#suggestions img[data-look][data-hand]');return el&&decodes.src?.has(el.dataset.look)&&decodes.src.has(el.dataset.hand)});await page.evaluate(()=>Promise.all(decodes))};
 const run=async(page,ms)=>{for(let t=0;t<ms;t+=250)await page.clock.runFor(250);return page.evaluate(()=>log.splice(0))};
 const kinds=log=>{const out=[];for(const e of log){const k=e.cls.includes('m-hop')?'hop':e.src==='wave-look.webp'?'look':e.src==='wave-hand.webp'?'wave':'';
  if(k&&out.at(-1)?.k!==k||k&&e.at-out.at(-1).at>2000)out.push({k,at:e.at})}return out};
 try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
  {const {context,page}=await open();
-  await page.locator('#suggestions .first-look-empty img.sticker').waitFor();
+  await settled(page);
   assert.match(await page.locator('#suggestions .first-look-empty').innerText(),/Taking a first look at your last 7 days/);
   const log=await run(page,125000);
   assert.ok(log.filter(e=>e.src==='wave-blink.webp').length>=8,'it blinks every few seconds');
