@@ -81,6 +81,8 @@ Om lid te worden van een Fleet, er een te starten of een Machine op je eigen com
 
 ## Voor eigenaars en beheerders
 
+**Beheren** in het tabblad Fleet toont elke Fleet die je beheert: de mensen, hun rollen en de uitnodigingen. Op een gehoste Machine nodig je daar meteen uit, wijzig je rollen, verwijder je mensen en beantwoord je verzoeken om lid te worden. Een wijziging die de prijs raakt, opent eerst je account om ze te bevestigen. Op een zelf gehoste Machine zie je wie erin zit, met een link naar die Fleet op je account.
+
 Het Fleet-deel van je accountpagina toont nog twee dingen:
 
 - **Onlangs verwijderd**: elke persoon die verwijderd is of vertrokken is. Er staat **Verwijderd, bevestigd** zodra hun Machine de werkgegevens verwijderd heeft, Google het uitloggen bevestigd heeft en elk gedeeld token dat ze hadden vervangen is. Tot dan staat er **In behandeling** en waarom.

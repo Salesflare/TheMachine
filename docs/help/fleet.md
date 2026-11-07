@@ -81,6 +81,8 @@ To join a Fleet, start one, or pair a Machine on your own computer, see [Plans a
 
 ## For owners and admins
 
+**Manage** in the Fleet tab lists each Fleet you run: its people, their roles and the invites. On a hosted Machine you invite, change roles, remove people and answer join requests right there. A change that affects the price opens your account to confirm it first. On a self-hosted Machine it shows who is in it, with a link to that Fleet on your account.
+
 The Fleet part of your account page shows two more things:
 
 - **Removed lately**: each person removed, or who left. **Removed, confirmed** means their Machine deleted the work data and they're signed out everywhere. Until then it says **Pending** and why.

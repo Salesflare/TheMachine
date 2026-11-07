@@ -81,6 +81,8 @@ Per entrare in una Fleet, crearne una o abbinare una Machine sul tuo computer, v
 
 ## Per proprietari e admin
 
+**Gestisci**, nella scheda Fleet, elenca ogni Fleet che gestisci: le persone, i loro ruoli e gli inviti. Su una Machine in hosting inviti, cambi ruoli, rimuovi persone e rispondi alle richieste di ingresso direttamente lì. Una modifica che tocca il prezzo apre prima il tuo account per confermarla. Su una Machine self-hosted vedi chi ne fa parte, con un link a quella Fleet sul tuo account.
+
 La parte Fleet della pagina del tuo account mostra altre due cose:
 
 - **Rimossi di recente**: ogni persona rimossa o che è uscita. Dice **Rimosso, confermato** quando la sua Machine ha rimosso i dati di lavoro, Google ha confermato la disconnessione e ogni token condiviso che aveva è stato sostituito. Fino ad allora dice **In sospeso** e perché.

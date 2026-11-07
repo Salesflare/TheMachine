@@ -49,7 +49,7 @@ try{
   await navClick(page.locator('nav [data-tab="fleet"]'));await page.locator('.fleet-pane-head h2',{hasText:/^Acme$/}).waitFor();
   assert.deepEqual(errors,[]);
   // One view at a time, picked with pills: the Fleet, Sharing (every rule), Activity.
-  assert.deepEqual(await page.locator('.fleet-tabs [data-fleet-pane]').allInnerTexts(),['Acme','Sharing','Activity']);
+  assert.deepEqual(await page.locator('.fleet-tabs [data-fleet-pane]').allInnerTexts(),['Acme','Manage','Sharing','Activity']);
   assert.equal(await page.locator('.fleet-pane:not([hidden])').count(),1);
   const people=await page.locator('.fleet-people li').allInnerTexts();
   assert.match(people[0],/^Sam Doe\s*you\s*owner\nsam@acme\.example · Self-hosted: Desk$/);assert.match(people[1],/Hosted: sam\.example\.test/);

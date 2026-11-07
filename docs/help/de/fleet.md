@@ -81,6 +81,8 @@ Wie du einer Fleet beitrittst, eine gründest oder eine Machine auf deinem eigen
 
 ## Für Owner und Admins
 
+**Verwalten** im Fleet-Tab zeigt jede Fleet, die du führst: ihre Leute, ihre Rollen und die Einladungen. Auf einer gehosteten Machine lädst du dort direkt ein, änderst Rollen, entfernst Leute und beantwortest Beitrittsanfragen. Eine Änderung, die den Preis betrifft, öffnet zuerst dein Konto, um sie zu bestätigen. Auf einer selbst gehosteten Machine siehst du, wer dabei ist, mit einem Link zu dieser Fleet in deinem Konto.
+
 Der Fleet-Teil deiner Kontoseite zeigt zwei weitere Dinge:
 
 - **Kürzlich entfernt**: jede Person, die entfernt wurde oder gegangen ist. Dort steht **Entfernt, bestätigt**, sobald ihre Machine die Arbeitsdaten entfernt hat, Google die Abmeldung bestätigt hat und jedes geteilte Token, das sie hatte, ersetzt wurde. Bis dahin steht dort **Ausstehend** und warum.

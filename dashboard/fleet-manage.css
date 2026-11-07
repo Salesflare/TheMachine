@@ -1,0 +1,30 @@
+/* Fleet › Manage (dashboard/fleet-manage.js): a row per person or invite, its buttons to the right, under it on a phone */
+.manage-head{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;margin:0 0 14px}.manage-head h2{margin:0;font-size:1.15rem}
+.manage-fleet{margin:0 0 28px}
+.manage-fleet .fleet-people{gap:0}
+.manage-fleet .fp-row{display:flex;align-items:center;gap:8px 14px;padding:10px 0;border-top:1px solid var(--border)}
+.manage-fleet .fp-row:first-child{border-top:0;padding-top:2px}
+.manage-fleet .fp-who{flex:1 1 220px;min-width:0;display:flex;flex-direction:column}
+.manage-fleet .fp-who strong{max-width:100%}
+.manage-fleet .fp-row>.actions{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end;margin:0}
+.manage-fleet .fp-row select{width:auto}
+.manage-fleet .fp-wrap{flex-wrap:wrap}
+.manage-ask{margin:6px 0 0;font-size:var(--fs-sm)}
+.manage-fleet .manage-ask+.actions{display:flex;gap:6px;margin:8px 0 0}
+.manage-invite-form{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:12px;align-items:start;margin:0 0 10px}
+.manage-field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.manage-field>span{font-weight:var(--fw-medium);font-size:var(--fs-sm)}
+.manage-field textarea{width:100%;resize:vertical;font:inherit}
+.manage-invite-form .fleet-option,.manage-invite-form .actions{grid-column:1/-1;margin:0}
+.manage-sub{margin:16px 0 8px;font-size:var(--fs-sm);font-weight:var(--fw-medium)}
+.manage-invite-form .fleet-option{justify-content:flex-start;align-items:center}.manage-invite-form .fleet-option input{flex:0 0 auto;margin:0}
+.manage-older{margin:6px 0 10px}
+.manage-older summary{cursor:pointer;color:var(--muted);font-size:var(--fs-sm)}
+.manage-confirm{flex:1 0 100%;margin:4px 0 0;padding:var(--sp-4)}.manage-invites>.manage-confirm{margin:12px 0 0}
+.manage-invite-open{display:flex;margin:4px 0 0}
+.manage-confirm p{margin:0 0 10px}
+.manage-confirm form{display:flex;flex-wrap:wrap;gap:8px;margin:0}
+.manage-go{margin:10px 0 0}
+#fleet-view .manage-invite-link,#fleet-view button.link[data-manage-open]{min-height:0;box-shadow:none;background:none;border:0;padding:0;font:inherit;color:var(--text);text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+@media (max-width:640px){.manage-invite-form{grid-template-columns:minmax(0,1fr)}.manage-fleet .fp-row>.actions{justify-content:flex-start}}
+.manage-fleet .actions>button,.manage-fleet .actions>select{flex:0 0 auto;width:auto;min-width:0}
