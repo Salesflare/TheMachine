@@ -731,3 +731,15 @@ def delivery_time(when, digest_at='08:30', current=None, work=False, urgent=Fals
     if digest <= local:
         digest += dt.timedelta(days=1)
     return weekend(digest)
+
+
+def looks_done_at(db, row):
+    """When a to-do started to look done: the later sign that it's handled, else when its run found it done already."""
+    try:
+        at = (json.loads(row.get('handled_hint') or 'null') or {}).get('at')
+    except (TypeError, ValueError, AttributeError):
+        at = None
+    if not at:
+        found = db.execute('SELECT updated_at FROM preparations WHERE suggestion_id=?', (row['id'],)).fetchone()
+        at = found[0] if found else None
+    return at or row.get('created_at')

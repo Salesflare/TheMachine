@@ -112,7 +112,9 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   shown), `machine/store/cards.py` (`CardsStore`: making and changing to-dos: suggest, update, rename, move, merge,
   the owner's own, their sources), `machine/store/decisions.py` (the `DecisionsStore` mixin: decisions, handoffs,
   feedback, preparing a to-do, sends and merges with their undo), `machine/store/voices.py`, `machine/store/facts.py`
-  and `machine/store/promises.py` (the `VoicesStore`, `FactsStore` and `PromisesStore` mixins).
+  and `machine/store/promises.py` (the `VoicesStore`, `FactsStore` and `PromisesStore` mixins),
+  `machine/store/views.py`, `machine/store/profile.py` and `machine/store/first_look.py` (the `ViewsStore`,
+  `ProfileStore` and `FirstLookStore` mixins).
 - **Dashboard code:** in its area's part in `dashboard/` (`<area>-<what>.js`: shell, todos, settings, graph, calendar,
   connections, help, events, new, fleet), next to the functions it works with, never at the end of the script. The
   page's core is in the `shell-*` parts too: locale and error reports (`shell-core.js`), network and outbox, `render()`
