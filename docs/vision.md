@@ -2,12 +2,13 @@
 
 AI should work for you, so you can do your best work and live your best life. The Machine is that AI:
 
+- **Yours, and only yours.** Your AI and your data belong to you. No nation, corporation or anyone else
+  controls them. Only you do.
 - **Proactive.** You shouldn't have to figure out how AI can help; it figures that out and takes work off your hands
   every day.
 - **With you everywhere.** It follows you seamlessly across your computer, your phone and every app you use.
 - **Work and life, as one.** You're one person, not two. It sees your whole day, and keeps private what's private.
 - **Always current.** It keeps pace with AI: new models and abilities reach your Machine as soon as they're good.
-- **Yours.** You own it and your data. No nation, corporation or anyone else controls it. Only you do.
 - **Secure, wherever it runs.** On your own computer for complete ownership, or on a private cloud computer we run
   for you when you'd rather not think about it.
 - **For everyone.** AI shouldn't only lift up technical people. It should lift up everyone, equally: easy to start,
@@ -26,7 +27,8 @@ matter.
 
 ## What we believe, in order
 
-1. **It's yours, and secure.** Only you control it, not a nation, a company or anyone else. It runs on your own
+1. **It's yours, and only yours.** Only you control your AI and your data, not a nation, a company or anyone
+   else. It runs on your own
    computer, or on a private cloud computer of your own that we host, in open source code you can read. You pick the
    model (OpenAI, Claude, a local one) and use your own plan. It outlives any provider: your Machine and everything it
    learned stay yours, in open formats you can take with you, even if a model or a company disappears. Nothing goes
