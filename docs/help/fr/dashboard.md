@@ -17,6 +17,8 @@ order: 4
 
 **Rechercher**, en haut de la barre latérale, trouve d’abord les tâches, puis les personnes, les messages et plus encore. **Navigateur**, **Aide** et **Paramètres** sont en bas de la barre latérale. Sur un téléphone, le bouton de menu de la barre du haut ouvre la barre latérale.
 
+La barre latérale liste vos tâches comme la page. Les demandes de votre Fleet sont aussi sous **À décider**, donc son nombre correspond à celui du haut. Touchez-en une pour l’afficher.
+
 **Navigateur** montre le navigateur de votre Machine. Sur ordinateur, il s’ouvre à côté de la barre latérale, à la taille de l’espace disponible, tout comme **Voir dans le navigateur** sur une tâche et **Ouvrir le navigateur** quand un site demande une connexion. Sur un téléphone, il s’ouvre dans un nouvel onglet.
 
 La fenêtre au premier plan du navigateur s’affiche au milieu et le reste de l’écran est sombre ; un bouton dans le coin montre tout l’écran. Sur un petit écran, toute la barre latérale défile comme une seule colonne, tâches comprises, comme le menu sur un téléphone.

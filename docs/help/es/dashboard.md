@@ -17,6 +17,8 @@ order: 4
 
 **Buscar**, arriba en la barra lateral, encuentra primero tareas, luego personas, mensajes y más. **Navegador**, **Ayuda** y **Ajustes** están abajo en la barra lateral. En un teléfono, el botón de menú de la barra superior abre la barra lateral.
 
+La barra lateral muestra tus tareas igual que la página. Las solicitudes de tu Fleet también están en **Por decidir**, así su número coincide con el de arriba. Toca una para verla.
+
 **Navegador** muestra el navegador propio de tu Machine. En un ordenador se abre junto a la barra lateral, al tamaño del espacio que tiene, igual que **Ver en el navegador** en una tarea y **Abrir el navegador** cuando un sitio pide iniciar sesión. En un teléfono se abre en una pestaña nueva.
 
 La ventana delantera del navegador se muestra en el centro y el resto de la pantalla queda oscuro; un botón en la esquina muestra la pantalla entera. En una pantalla baja, toda la barra lateral se desplaza como una sola columna, tareas incluidas, como el menú en un teléfono.

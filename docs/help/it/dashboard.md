@@ -17,6 +17,8 @@ order: 4
 
 **Cerca**, in cima alla barra laterale, trova prima le attività, poi persone, messaggi e altro. **Browser**, **Aiuto** e **Impostazioni** sono in fondo alla barra laterale. Su un telefono, il pulsante del menu nella barra in alto apre la barra laterale.
 
+La barra laterale elenca le tue attività come la pagina. Anche le richieste della tua Fleet sono in **Da decidere**, così il numero corrisponde a quello in alto. Toccane una per vederla.
+
 **Browser** mostra il browser della tua Machine. Su un computer si apre accanto alla barra laterale, grande quanto lo spazio disponibile, e lo stesso fanno **Vedi nel browser** su un'attività e **Apri il browser** quando un sito richiede l'accesso. Su un telefono si apre in una nuova scheda.
 
 La finestra in primo piano del browser compare al centro e il resto dello schermo è scuro; un pulsante nell'angolo mostra lo schermo intero. Su uno schermo basso l'intera barra laterale scorre come un'unica colonna, attività comprese, come il menu su un telefono.

@@ -17,6 +17,8 @@ order: 4
 
 **Suchen**, oben in der Seitenleiste, findet zuerst Aufgaben, dann Personen, Nachrichten und mehr. **Browser**, **Hilfe** und **Einstellungen** sind unten in der Seitenleiste. Auf dem Handy öffnet die Menütaste in der oberen Leiste die Seitenleiste.
 
+Die Seitenleiste listet deine Aufgaben wie die Seite. Anfragen aus deiner Fleet stehen auch unter **Zu entscheiden**, so stimmt die Zahl mit der oben überein. Tippe auf eine, um sie zu zeigen.
+
 **Browser** zeigt den eigenen Browser deiner Machine. Auf einem Computer öffnet er sich neben der Seitenleiste, ebenso **Im Browser ansehen** bei einer Aufgabe und **Browser öffnen**, wenn eine Website eine Anmeldung braucht. Ein schmales Fenster, etwa die App auf dem halben Bildschirm, zeigt ihn unter der oberen Leiste, nicht in einem zweiten Fenster. Auf dem Handy öffnet er sich in einem neuen Tab.
 
 Das vordere Fenster des Browsers steht in der Mitte, und der Rest des Bildschirms ist dunkel. Ein Button in der Ecke zeigt den ganzen Bildschirm. Ändert sich die Größe des Fensters, passt sich die Ansicht wieder an. **Vergrößern** gibt ihm das ganze Fenster; ein zweiter Druck geht zurück. Die Anmeldung aus einer Aufgabe hat auch **Vergrößern**.

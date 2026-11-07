@@ -17,6 +17,8 @@ order: 4
 
 **Pesquisar**, no topo da barra lateral, encontra primeiro tarefas, depois pessoas, mensagens e mais. **Navegador**, **Ajuda** e **Configurações** ficam na parte de baixo da barra lateral. No celular, o botão de menu na barra superior abre a barra lateral.
 
+A barra lateral lista suas tarefas como a página. Os pedidos do seu Fleet também ficam em **A decidir**, então o número bate com o de cima. Toque em um para vê-lo.
+
 **Navegador** mostra o navegador da própria Machine. No computador, ele abre ao lado da barra lateral, no tamanho do espaço disponível, e o mesmo vale para **Ver no navegador** em uma tarefa e **Abrir o navegador** quando um site precisa de login. No celular, ele abre em uma nova aba.
 
 A janela da frente do navegador aparece no meio e o resto da tela fica escuro. Um botão no canto mostra a tela inteira. Em uma tela baixa, a barra lateral inteira rola como uma coluna só, tarefas incluídas, como o menu no celular.
