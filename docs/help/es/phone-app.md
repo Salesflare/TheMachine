@@ -12,7 +12,7 @@ Una nota discreta arriba en Tareas ofrece ambas cosas, de una en una, en cuanto 
 
 ## En un ordenador (Chrome o Edge)
 
-1. Abre tu panel y haz clic en **Instalar** en esa nota, o en **Instalar app** en Ajustes.
+1. Abre tu panel y haz clic en **Instalar** en esa nota, en **Instalar app** en Ajustes, **General**, o en **Instalar** junto a **Ordenador** en Ajustes, **Apps**.
 2. The Machine se abre en su propia ventana. Fíjala en la barra de tareas o en el Dock.
 3. Haz clic en **Activar** en la nota y permite las notificaciones. Aparece al momento una notificación de prueba.
 

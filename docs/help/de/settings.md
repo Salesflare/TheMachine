@@ -15,7 +15,7 @@ order: 1
 - **Benachrichtigungen**: was dich wo erreicht, und deine Arbeitszeiten. Siehe [Benachrichtigungen](notifications.md) und [Arbeitszeiten](work-hours.md).
 - **Schreiben**: Signaturen und wie du schreibst. Siehe [Schreiben](writing.md).
 - **Skills**: Anleitungen, denen deine Machine folgt. Siehe [Skills](skills.md).
-- **Apps**: die Apps von The Machine fürs Handy, dann Claude, ChatGPT und andere KIs, die du verbunden hast, und was jede darf. Siehe [Die mobile App](mobile-app.md) und [Andere KIs verbinden](ai-connections.md).
+- **Apps**: die Apps von The Machine für Handy und Computer, dann Claude, ChatGPT und andere KIs, die du verbunden hast, und was jede darf. Siehe [Die mobile App](mobile-app.md) und [Andere KIs verbinden](ai-connections.md).
 - **Modell**: was für dich antwortet, und seine Limits. Siehe [Modell](model.md). Auch **Codex und Claude Code**: siehe [An Claude Code oder Codex übergeben](hand-to-agent.md).
 
 Ein Tab ohne Inhalt wird ausgeblendet.

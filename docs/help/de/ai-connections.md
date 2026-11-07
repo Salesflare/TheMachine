@@ -19,7 +19,7 @@ Ein Entwurf wartet in deiner Machine, bis du ihn liest und selbst auf **Senden**
 
 ## Eine verbinden
 
-Öffne **Einstellungen**, **Apps**. Zuerst kommen **In ChatGPT hinzufügen** und **In Claude hinzufügen**. Unter **Oder per Adresse hinzufügen** stehen die eine Adresse der offiziellen App für jede Machine, `https://mcp.themachine.computer/mcp`, und deine **Private Adresse (Ende-zu-Ende)**, `https://<dein Name>.mcp.themachine.computer/mcp`, jeweils mit **Kopieren**.
+Öffne **Einstellungen**, **Apps**. Unter **Die Apps von The Machine** kommen **In ChatGPT hinzufügen** und **In Claude hinzufügen**. Unter **Oder per Adresse hinzufügen** stehen die eine Adresse der offiziellen App für jede Machine, `https://mcp.themachine.computer/mcp`, und deine **Private Adresse (Ende-zu-Ende)**, `https://<dein Name>.mcp.themachine.computer/mcp`, jeweils mit **Kopieren**.
 
 Bei einer Machine auf deinem eigenen Computer tippst du zuerst unter **Adresse holen** auf **Einrichten**. Eine Seite in deinem Konto öffnet sich: Prüfe, ob sie denselben Code zeigt, bestätige und wähle einen Namen. Deine Machine verbindet sich selbst, ohne Neustart. Beide Wege brauchen das.
 

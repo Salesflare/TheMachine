@@ -19,7 +19,7 @@ A draft waits until you read it and press Send yourself. A connected AI never se
 
 ## Connect one
 
-Open **Settings**, **Apps**. **Add in ChatGPT** and **Add in Claude** come first. Under **Or add it by address** are the official app's one address for every Machine, `https://mcp.themachine.computer/mcp`, and your **Private address (end-to-end)**, `https://<your name>.mcp.themachine.computer/mcp`, each with **Copy**.
+Open **Settings**, **Apps**. Below **The Machine apps** come **Add in ChatGPT** and **Add in Claude**. Under **Or add it by address** are the official app's one address for every Machine, `https://mcp.themachine.computer/mcp`, and your **Private address (end-to-end)**, `https://<your name>.mcp.themachine.computer/mcp`, each with **Copy**.
 
 On a Machine on your own computer, press **Set up** under **Get your address** first. A page on your account opens: check that it shows the same code, confirm and pick a name. Your Machine pairs by itself, no restart. Both ways need this.
 

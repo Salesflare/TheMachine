@@ -15,7 +15,7 @@ Open **Settings** with the gear at the top. Its tabs:
 - **Notifications**: what reaches you where, and your work hours. See [Notifications](notifications.md) and [Work hours](work-hours.md).
 - **Writing**: signatures and how you write. See [Writing](writing.md).
 - **Skills**: how-tos your Machine follows. See [Skills](skills.md).
-- **Apps**: The Machine's phone apps, then Claude, ChatGPT and other AIs you connected, and what each may do. See [The mobile app](mobile-app.md) and [Connect other AIs](ai-connections.md).
+- **Apps**: The Machine's apps for your phone and computer, then Claude, ChatGPT and other AIs you connected, and what each may do. See [The mobile app](mobile-app.md) and [Connect other AIs](ai-connections.md).
 - **Model**: the AI that reads and drafts for you, and its limits. See [Model](model.md). Also **Codex and Claude Code**: see [Hand to Claude Code or Codex](hand-to-agent.md).
 
 A tab with nothing to show is hidden.

@@ -24,7 +24,7 @@
 .store-badge{display:inline-flex;align-items:center;gap:7px;min-height:34px;padding:0 12px;border:1px solid #ffffff33;border-radius:8px;background:#000;color:#fff;font-size:var(--fs-xs);font-weight:var(--fw-strong);text-decoration:none;white-space:nowrap}
 .store-badge:hover{background:#1f1f1f;color:#fff}
 .store-badge svg{width:15px;height:15px;fill:currentColor}
-#apps-list .store-badge{flex:none;min-width:136px;justify-content:center}  /* Settings, Apps (settings-apps.js) */
+#apps-list .store-badge,#apps-list [data-app-computer] button{flex:none;min-width:136px;justify-content:center}  /* Settings, Apps (settings-apps.js) */
 @media(max-width:1023px){.setup-card{margin-top:var(--sp-6)}}
 @media(max-width:560px){.setup-card{padding:8px 12px 2px}.setup-qr{padding-left:0}}
 /* Show 1 hidden: the closed rows back, a quiet line at the card's foot */

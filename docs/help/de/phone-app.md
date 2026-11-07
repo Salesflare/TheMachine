@@ -16,7 +16,7 @@ In der Handy-App steht oben eine kurze Zeile **Erhalte einen Hinweis, wenn etwas
 
 ## Auf einem Computer (Chrome oder Edge)
 
-1. Öffne dein Dashboard und klick in diesem Hinweis auf **Installieren**, oder in den Einstellungen auf **App installieren**.
+1. Öffne dein Dashboard und klick in diesem Hinweis auf **Installieren**, in den Einstellungen unter **Allgemein** auf **App installieren** oder unter **Apps** neben **Computer** auf **Installieren**.
 2. The Machine öffnet sich in einem eigenen Fenster. Hefte sie an deine Taskleiste oder dein Dock.
 3. Klick im Hinweis auf **Einschalten** und erlaube Benachrichtigungen. Eine Testbenachrichtigung erscheint sofort.
 
