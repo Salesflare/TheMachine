@@ -1,7 +1,7 @@
 ---
 title: Omarchy
 area: settings
-summary: En Omarchy, el panel puede llevar el tema de Omarchy y cambiar con él.
+summary: En Omarchy, el panel sigue tu tema de Omarchy y cambia con él.
 covers: omarchy
 code: machine/omarchy.py, dashboard/settings-omarchy.js
 order: 7
@@ -9,9 +9,9 @@ keywords: omarchy, theme, colors, hyprland, arch, linux, desktop
 ---
 ## Seguir el tema de Omarchy
 
-Cuando tu Machine funciona en un ordenador con [Omarchy](https://omarchy.org), **Ajustes**, **General**, **Este dispositivo** tiene **Tema de Omarchy**. Actívalo y el panel toma los colores del tema actual de Omarchy, claro u oscuro. Cambia de tema en Omarchy y lo sigue en segundos, sin recargar.
+Cuando tu Machine funciona en un ordenador con [Omarchy](https://omarchy.org), el panel sigue allí el tema de Omarchy, como las propias apps de Omarchy. Toma los colores del tema actual, claro u oscuro, y cambia con él en segundos, sin recargar.
 
-Es por dispositivo: la app de escritorio puede seguir a Omarchy mientras un teléfono mantiene su propio modo claro u oscuro. **Modo claro** se oculta mientras está activado, porque decide el tema.
+Está activado por defecto en un navegador o la app de escritorio de ese ordenador, y desactivado en otros ordenadores hasta que lo elijas. Actívalo o desactívalo en **Ajustes**, **General**, **Este dispositivo**, **Tema de Omarchy**, y esa elección se mantiene. **Modo claro** se oculta mientras está activado, porque decide el tema.
 
 ## Qué lee
 

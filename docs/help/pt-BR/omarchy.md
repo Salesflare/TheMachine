@@ -1,7 +1,7 @@
 ---
 title: Omarchy
 area: settings
-summary: No Omarchy, o painel pode usar o tema do Omarchy e mudar junto com ele.
+summary: No Omarchy, o painel segue seu tema do Omarchy e muda junto com ele.
 covers: omarchy
 code: machine/omarchy.py, dashboard/settings-omarchy.js
 order: 7
@@ -9,9 +9,9 @@ keywords: omarchy, theme, colors, hyprland, arch, linux, desktop
 ---
 ## Seguir o tema do Omarchy
 
-Quando sua Machine roda em um computador com [Omarchy](https://omarchy.org), **Configurações**, **Geral**, **Este dispositivo** tem **Tema do Omarchy**. Ative e o painel pega as cores do tema atual do Omarchy, claro ou escuro. Troque de tema no Omarchy e ele acompanha em segundos, sem recarregar.
+Quando sua Machine roda em um computador com [Omarchy](https://omarchy.org), o painel segue ali o tema do Omarchy, como os próprios apps do Omarchy. Ele pega as cores do tema atual, claro ou escuro, e muda junto em segundos, sem recarregar.
 
-Vale por dispositivo: o app de desktop pode seguir o Omarchy enquanto um celular mantém seu próprio modo claro ou escuro. **Modo claro** fica oculto enquanto estiver ativado, porque o tema decide.
+Vem ativado por padrão em um navegador ou no app de desktop desse computador, e desativado em outros computadores até você escolher. Ative ou desative em **Configurações**, **Geral**, **Este dispositivo**, **Tema do Omarchy**, e essa escolha fica. **Modo claro** fica oculto enquanto estiver ativado, porque o tema decide.
 
 ## O que ele lê
 

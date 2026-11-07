@@ -1,7 +1,7 @@
 ---
 title: Omarchy
 area: settings
-summary: Unter Omarchy kann das Dashboard das Omarchy-Theme tragen und mit ihm wechseln.
+summary: Unter Omarchy folgt das Dashboard deinem Omarchy-Theme und wechselt mit ihm.
 covers: omarchy
 code: machine/omarchy.py, dashboard/settings-omarchy.js
 order: 7
@@ -9,9 +9,9 @@ keywords: omarchy, theme, colors, hyprland, arch, linux, desktop
 ---
 ## Dem Omarchy-Theme folgen
 
-Läuft deine Machine auf einem Computer mit [Omarchy](https://omarchy.org), gibt es unter **Einstellungen**, **Allgemein**, **Dieses Gerät** die Option **Omarchy-Theme**. Schalte sie ein, und das Dashboard übernimmt die Farben des aktuellen Omarchy-Themes, hell oder dunkel. Wechselst du in Omarchy das Theme, folgt es innerhalb von Sekunden, ohne Neuladen.
+Läuft deine Machine auf einem Computer mit [Omarchy](https://omarchy.org), folgt das Dashboard dort dem Omarchy-Theme, wie die Apps von Omarchy selbst. Es übernimmt die Farben des aktuellen Themes, hell oder dunkel, und wechselt innerhalb von Sekunden mit, ohne Neuladen.
 
-Das gilt pro Gerät: Die Desktop-App kann Omarchy folgen, während ein Handy seinen eigenen hellen oder dunklen Modus behält. **Heller Modus** ist ausgeblendet, solange es an ist, denn das Theme entscheidet.
+Auf diesem Computer ist es im Browser und in der Desktop-App standardmäßig an, auf anderen Computern aus, bis du es wählst. Schalte es unter **Einstellungen**, **Allgemein**, **Dieses Gerät**, **Omarchy-Theme** ein oder aus, und diese Wahl bleibt. **Heller Modus** ist ausgeblendet, solange es an ist, denn das Theme entscheidet.
 
 ## Was es liest
 

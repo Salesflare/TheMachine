@@ -330,7 +330,21 @@ def make_handler(app):
             elif path.path == '/api/push-key':
                 self.output(200, {'key': push_key(app.config)})
             elif path.path == '/api/omarchy-theme':  # this computer's Omarchy colors, or {} without Omarchy (machine/omarchy.py)
-                self.output(200, omarchy.theme() or {})
+                # The browser's own address as the proxy in front saw it (as owner() reads it); no proxy header: direct.
+                peer = self.headers.get('X-Tailnet-Client')
+                if not peer:
+                    peer = self.headers.get('X-Forwarded-For', '').split(',')[-1].strip() or (None if peer == '' or self.headers.get('Tailscale-User-Login') else '')
+                here = omarchy.same_host(peer)
+                etag = omarchy.tag(here=here)
+                if etag and etag_matches(self.headers.get('If-None-Match'), etag):  # asked every 2 s: a stat until the theme changes
+                    self.send_response(304)
+                    self.send_header('ETag', etag)
+                    self.send_header('Cache-Control', 'no-store')
+                    self.end_headers()
+                    return
+                current = omarchy.theme()
+                self.etag = etag if current else None
+                self.output(200, {**current, 'here': here} if current else {})
             elif path.path in BRAND_ASSETS:
                 asset = BRAND_ASSETS[path.path]
                 self.output(200, asset.read_bytes(), {'.webp': 'image/webp', '.woff2': 'font/woff2', '.mp3': 'audio/mpeg'}.get(asset.suffix, 'image/png'))

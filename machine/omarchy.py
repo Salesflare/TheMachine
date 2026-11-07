@@ -2,11 +2,13 @@
 
 Omarchy (omarchy.org) renders the current theme's palette to colors.toml in the user's state folder on every theme
 switch, the same file it fills its own app templates from. Only that file is read: nothing in Omarchy's folders is
-written, and a computer without Omarchy has no file, so theme() is None and the dashboard never offers the setting.
+written, and a computer without Omarchy has no file, so theme() is None and the dashboard never offers the setting. On by default only in a browser on this computer
+itself (same_host), as Omarchy themes its own apps; any other device has it off until picked.
 
 A leaf module: no imports from the app."""
 from pathlib import Path
 import re
+import socket
 import tomllib
 
 # Omarchy 4 keeps the current theme under ~/.local/state, Omarchy 3 under ~/.config.
@@ -16,6 +18,41 @@ KEYS = ('accent', 'background', 'dark_background', 'foreground', 'muted', 'selec
         'green', 'blue', 'magenta')
 REQUIRED = ('accent', 'background', 'foreground')
 HEX = re.compile(r'#[0-9a-fA-F]{6}')
+
+
+def tag(home=None, here=False):
+    """A strong ETag for theme(): the theme files' sizes and change times, so a dashboard that asks every two seconds
+    gets a 304 from a stat until the theme changes. None without Omarchy."""
+    home = Path(home) if home else Path.home()
+    for place in PLACES:
+        folder = home / place
+        try:
+            colors = (folder / 'theme' / 'colors.toml').stat()
+        except OSError:
+            continue
+        try:
+            name = (folder / 'theme.name').stat()
+            name = f'{name.st_mtime_ns:x}.{name.st_size:x}'
+        except OSError:
+            name = '-'
+        return f'"omarchy-{colors.st_mtime_ns:x}.{colors.st_size:x}-{name}-{int(here)}"'
+    return None
+
+
+def same_host(peer):
+    """True when the browser runs on this computer: no proxy in between (peer ''), or the address the proxy saw is one
+    of this computer's own (loopback, or its tailnet or LAN address, which only this computer can bind to). None (a
+    proxy that didn't say who it serves) and anything else is another device."""
+    if peer == '':
+        return True
+    if not peer or not re.fullmatch(r'[0-9a-fA-F.:]{2,45}', peer):
+        return False
+    try:
+        with socket.socket(socket.AF_INET6 if ':' in peer else socket.AF_INET, socket.SOCK_DGRAM) as probe:
+            probe.bind((peer, 0))
+        return True
+    except (OSError, ValueError):
+        return False
 
 
 def theme(home=None):
