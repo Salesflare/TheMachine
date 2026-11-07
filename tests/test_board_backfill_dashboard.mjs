@@ -89,14 +89,14 @@ try{
   await page.evaluate(()=>scrollTo({top:document.querySelector('.fits-bulk').getBoundingClientRect().top+scrollY-120}));await shot(page,`backfill-picked-${tag}`);
   calls=[];await page.locator('[data-fit-bulk="skip"]').click();await page.locator('.board-fits summary',{hasText:'5 projects could belong here'}).waitFor();
   assert.deepEqual(calls.map(c=>[c.action,c.args]),[['board_fit',{board_id:1,node_ids:['org:m0.example','org:m1.example'],add:false}]]);
-  assert.match(await page.locator('#toast').textContent(),/Left out 2\./);await shot(page,`backfill-undo-${tag}`);
+  await page.waitForFunction(()=>/Left out 2\./.test(document.querySelector('#toast').textContent));  // the rows go at once, the toast once it is savedawait shot(page,`backfill-undo-${tag}`);
   calls=[];await page.locator('#toast [data-fit-undo]').click();await page.locator('.board-fits summary',{hasText:'9 projects could belong here'}).waitFor();
   assert.deepEqual(calls.map(c=>[c.action,c.args]),[['board_fit',{board_id:1,undo:'tok2'}]]);
   // Select all, then Add all of them in one go
   await page.locator('[data-fit-all]').check();assert.deepEqual(await page.locator('[data-fit-bulk]').allTextContents(),['Add 9','Leave out 9']);
   await page.locator('[data-fit-all]').uncheck();assert.deepEqual(await page.locator('[data-fit-bulk]').allTextContents(),['Add all','Leave out all']);
   calls=[];await page.locator('[data-fit-bulk="add"]').click();await page.locator('.board-fits').waitFor({state:'detached'});
-  assert.equal(calls[0].args.node_ids.length,9);assert.equal(calls[0].args.add,true);assert.match(await page.locator('#toast').textContent(),/Added 9 projects\./);
+  assert.equal(calls[0].args.node_ids.length,9);assert.equal(calls[0].args.add,true);await page.waitForFunction(()=>/Added 9 projects\./.test(document.querySelector('#toast').textContent));
   // Running: a short line that says it is looking
   await page.locator(width<600?'.board-pick':'.board-chips [data-board="Customer support cases"]').first().evaluate(el=>el.tagName==='SELECT'?(el.value='Customer support cases',el.dispatchEvent(new Event('change',{bubbles:true}))):el.click());
   await page.locator('.board-title',{hasText:'Customer support cases'}).waitFor({state:'attached'});

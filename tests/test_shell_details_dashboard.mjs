@@ -95,7 +95,7 @@ try{
  // Graph: open a person while the page loads slowly; the head stays as it was until the page is drawn
  await page.evaluate(()=>document.querySelector('[data-graph-sub="people"]').click());await page.locator('#people-view [data-node]:visible').first().waitFor();await page.waitForTimeout(300);
  const head=()=>page.evaluate(()=>{const h=document.querySelector('#page-head');return {text:h.textContent.replace(/\s+/g,' ').trim(),height:h.offsetHeight}});
- const before=await head();nodeWait=800;
+ const before=await head();nodeWait=800;await page.evaluate(()=>graphPeek.clear());  // a row under the resting pointer may have fetched its page ahead (graphPeekStart)
  await page.locator('#people-view [data-node]:visible').first().click();await page.waitForTimeout(300);
  assert.equal(await page.locator('.graph-crumbs').count(),0,'the person is still loading');
  assert.deepEqual(await head(),before,'the head stays until the person is there');
