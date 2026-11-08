@@ -71,8 +71,6 @@ Depois a sua Machine:
 
 Ela não pesquisa o seu Drive. Vê comentários, compartilhamentos e sugestões só nos documentos que ela criou. Mais do que isso exigiria acesso ao seu Drive inteiro, e ela não pede.
 
-O Google Docs está sendo aberto aos poucos. Se ainda não aparece em **+ Adicionar**, está chegando.
-
 No seu próprio computador, a sua Machine pode criar um novo documento do Google em uma conta do Gmail conectada ali que já tenha acesso ao Drive. Ela não lê seus outros Google Docs nem os comentários deles.
 
 ## Trabalho ou pessoal

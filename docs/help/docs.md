@@ -71,8 +71,6 @@ Then your Machine:
 
 It doesn't search your Drive. It sees comments, shares and suggestions only on docs it made. More would need access to your whole Drive, which it doesn't ask for.
 
-Google Docs is opening up step by step. If it isn't under **+ Add** yet, it's on its way.
-
 On your own computer, your Machine can make a new Google Doc in a Gmail account signed in there that already has Drive access. It doesn't read your other Google Docs or their comments.
 
 ## Work or personal

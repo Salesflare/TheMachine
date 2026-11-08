@@ -71,8 +71,6 @@ Después tu Machine:
 
 No busca en tu Drive. Ve comentarios, accesos compartidos y sugerencias solo en los documentos que ella creó. Para más necesitaría acceso a todo tu Drive, y no lo pide.
 
-Google Docs se abre poco a poco. Si aún no está en **+ Añadir**, ya llega.
-
 En tu propio ordenador, tu Machine puede crear un documento de Google nuevo en una cuenta de Gmail con sesión iniciada allí que ya tenga acceso a Drive. No lee tus otros Google Docs ni sus comentarios.
 
 ## Trabajo o personal

@@ -1606,7 +1606,7 @@ class App(*APP_MIXINS):
                         if available is not None and source['signin'] not in available:
                             source['signin_off'] = True
                 # Google Meet has no other way: shown only once the control plane says it opens Meet's sign-in for this
-                # owner (it lists them while its Google app is in Testing, where Google blocks everyone else)
+                # owner (for everyone, or only the owners it lists)
                 found['sources'] = [x for x in found['sources'] if x['service'] != 'google_meet' or (available is not None and 'google_meet' in available)]
                 found['paired'], found['pair_url'] = getattr(self, 'fleet', None) is not None, fleet.PAIR_PAGE
             if not hosted or gbrain.on(self.config):
