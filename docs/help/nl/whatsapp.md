@@ -26,6 +26,8 @@ Een tekst in een chat die al bestaat, pas nadat je het goedkeurt op de to-do. Ee
 
 Kwam een to-do binnen via e-mail maar praat je met die persoon op WhatsApp, zeg dat dan in de chat van de to-do. The Machine vindt je bestaande chat met die persoon en zet het concept om naar WhatsApp, zodat je het kunt nakijken en versturen. Het begint nooit een nieuwe chat.
 
+WhatsApp biedt hier geen officiële manier voor. Lezen en af en toe een antwoord dat je goedkeurde, geeft vrijwel nooit problemen; massaal of automatisch versturen kan tot een blokkering van het account leiden.
+
 ## Koppelen
 
 Op een gehoste Machine:

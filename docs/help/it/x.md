@@ -14,6 +14,8 @@ Le tue menzioni, risposte e messaggi diretti su X. Li legge nel browser della tu
 
 Una risposta o un messaggio diretto, e solo dopo che l'hai approvato sull'attività.
 
+Questo non passa dall’API ufficiale di X. Leggere e inviare ogni tanto una risposta che hai approvato difficilmente crea problemi; inviare in massa o in automatico può far bloccare un account.
+
 ## Collegalo
 
 Su una Machine in hosting:

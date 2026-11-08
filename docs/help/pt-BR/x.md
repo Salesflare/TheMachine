@@ -14,6 +14,8 @@ Suas menções, respostas e mensagens diretas no X. Ele lê tudo no próprio nav
 
 Uma resposta ou uma mensagem direta, e só depois que você aprova na tarefa.
 
+Isso não passa pela API oficial do X. Ler e enviar de vez em quando uma resposta que você aprovou dificilmente causa problema; enviar em massa ou de forma automática pode fazer uma conta ser bloqueada.
+
 ## Conectar
 
 Em uma Machine hospedada:

@@ -14,6 +14,8 @@ Tus menciones, respuestas y mensajes directos en X. Los lee en el navegador prop
 
 Una respuesta o un mensaje directo, y solo después de que lo apruebes en la tarea.
 
+Esto no pasa por la API oficial de X. Leer y enviar de vez en cuando una respuesta que aprobaste casi nunca da problemas; enviar en masa o de forma automática puede hacer que bloqueen una cuenta.
+
 ## Conéctalo
 
 En una Machine alojada:

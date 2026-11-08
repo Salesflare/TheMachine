@@ -14,6 +14,8 @@ Vos mentions, réponses et messages privés sur X. Il les lit dans le navigateur
 
 Une réponse ou un message privé, et seulement après votre accord sur la tâche.
 
+Cela ne passe pas par l’API officielle de X. Lire et envoyer de temps en temps une réponse que vous avez validée ne pose presque jamais de problème ; un envoi en masse ou automatisé peut faire bloquer un compte.
+
 ## Le connecter
 
 Sur une Machine hébergée :

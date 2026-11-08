@@ -26,6 +26,8 @@ Un texte dans une discussion qui existe déjà, seulement après votre accord su
 
 Si une tâche est arrivée par e-mail mais que vous parlez à cette personne sur WhatsApp, dites-le dans le chat de la tâche. The Machine trouve votre discussion existante avec elle et passe le brouillon sur WhatsApp, pour que vous le vérifiiez et l’envoyiez. Il ne lance jamais de nouvelle discussion.
 
+WhatsApp ne propose pas de moyen officiel pour cela. Lire et envoyer de temps en temps une réponse que vous avez validée ne pose presque jamais de problème ; un envoi en masse ou automatisé peut faire bloquer un compte.
+
 ## Le connecter
 
 Sur une Machine hébergée :

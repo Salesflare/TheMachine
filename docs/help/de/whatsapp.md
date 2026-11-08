@@ -26,6 +26,8 @@ Einen Text in einen Chat, den es schon gibt, erst nachdem du ihn bei der Aufgabe
 
 Kam eine Aufgabe per E-Mail rein, aber du schreibst mit der Person über WhatsApp, sag es im Chat der Aufgabe. The Machine findet euren bestehenden Chat und stellt den Entwurf auf WhatsApp um, damit du ihn prüfst und sendest. Sie startet nie einen neuen Chat.
 
+WhatsApp bietet dafür keinen offiziellen Weg. Lesen und ab und zu eine Antwort, die du freigegeben hast, machen so gut wie nie Probleme; massenhaftes oder automatisches Senden kann zur Sperrung eines Kontos führen.
+
 ## Verbinden
 
 Auf einer gehosteten Machine:

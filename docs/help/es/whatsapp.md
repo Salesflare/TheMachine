@@ -26,6 +26,8 @@ Un texto en un chat que ya existe, solo después de que lo apruebes en la tarea.
 
 Si una tarea llegó por correo pero con esa persona hablas por WhatsApp, dilo en el chat de la tarea. The Machine encuentra tu chat con ella y pasa el borrador a WhatsApp, para que lo revises y lo envíes. Nunca empieza un chat nuevo.
 
+WhatsApp no ofrece una forma oficial de hacerlo. Leer y enviar de vez en cuando una respuesta que aprobaste casi nunca da problemas; enviar en masa o de forma automática puede hacer que bloqueen una cuenta.
+
 ## Conéctalo
 
 En una Machine alojada:

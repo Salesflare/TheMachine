@@ -26,6 +26,8 @@ Un testo in una chat che esiste già, solo dopo che l'hai approvato sull'attivit
 
 Se un'attività è arrivata via email ma con quella persona parli su WhatsApp, dillo nella chat dell'attività. The Machine trova la chat che hai già con lei e sposta la bozza su WhatsApp, da rivedere e inviare. Non apre mai una nuova chat.
 
+WhatsApp non offre un modo ufficiale per farlo. Leggere e inviare ogni tanto una risposta che hai approvato difficilmente crea problemi; inviare in massa o in automatico può far bloccare un account.
+
 ## Collegalo
 
 Su una Machine ospitata:

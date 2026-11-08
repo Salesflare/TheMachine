@@ -14,6 +14,8 @@ Je vermeldingen, antwoorden en directe berichten op X. Het leest ze in de eigen 
 
 Een antwoord of een direct bericht, en pas nadat je het goedkeurt op de to-do.
 
+Dit loopt niet via de officiële API van X. Lezen en af en toe een antwoord dat je goedkeurde, geeft vrijwel nooit problemen; massaal of automatisch versturen kan tot een blokkering van het account leiden.
+
 ## Koppelen
 
 Op een gehoste Machine:
