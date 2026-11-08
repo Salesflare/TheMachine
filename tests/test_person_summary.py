@@ -343,6 +343,135 @@ class PersonSummary(unittest.TestCase):
             graph.delete_person(db, ANN, self.app.config, a.now())
             self.assertEqual(db.execute('SELECT count(*) FROM person_summaries').fetchone()[0], 0)
 
+    # Early refresh: a matter that moved later the same day ---------------------------------------------------------
+
+    def message(self, node, body, hours_ago=0.0, direct=1):
+        """A new message from someone (a made-up one), in their graph, `hours_ago` hours back."""
+        at = (self.now - dt.timedelta(hours=hours_ago)).isoformat(timespec='seconds')
+        with self.store.connect() as db:
+            event_id = db.execute("INSERT INTO events(account_id,source_id,kind,occurred_at,title,body,metadata,content_hash,ingested_at) VALUES('work',?,'gmail.message',?,'Proposal',?,?,'h',?)",
+                                  (f'm{body}{hours_ago}', at, body, json.dumps({'from': 'Ann <ann@acme.example>'}), at)).lastrowid
+            db.execute('INSERT INTO graph_events(node_id,event_id,at,probable,direct) VALUES(?,?,?,0,?)', (node, event_id, at, direct))
+        return event_id
+
+    def written(self, hours_ago):
+        """Ann's summary as written `hours_ago` hours back, the last pass long enough ago for the next."""
+        with self.store.connect() as db:
+            stamp = (self.now - dt.timedelta(hours=hours_ago)).isoformat(timespec='seconds')
+            db.execute('UPDATE person_summaries SET written_at=?,evidence_at=?', (stamp, stamp))
+            db.execute('UPDATE person_summary_runs SET started_at=?', ((self.now - dt.timedelta(hours=2)).isoformat(),))
+
+    def made(self, hours_ago):
+        """The to-dos and decisions so far as made `hours_ago` hours back."""
+        stamp = (self.now - dt.timedelta(hours=hours_ago)).isoformat(timespec='seconds')
+        with self.store.connect() as db:
+            db.execute('UPDATE suggestions SET created_at=? WHERE created_at>?', (stamp, stamp))
+            db.execute('UPDATE decisions SET created_at=? WHERE created_at>?', (stamp, stamp))
+
+    def due_now(self):
+        with self.store.connect() as db:
+            return [p['id'] for p in person_summary.due(db)]
+
+    def test_an_escalation_the_review_puts_on_a_to_do_makes_them_due_early(self):
+        """Ann asks for the proposal by Monday; the summary says so. Later that day she needs it today: the review brings
+        the to-do up to date, and her summary is rewritten early, not 20 hours later."""
+        self.answer = lambda prompt: json.dumps(self.lines())
+        self.run_pass()
+        ask = self.message(ANN, 'Could you send the proposal by Monday?', hours_ago=6)
+        card = self.store.suggest('proposal-ann', 'Send Ann the proposal', 'Ann asks for the proposal by Monday.', [ask], match=True)['id']
+        self.made(6)
+        self.written(5)  # written after that to-do, 5 hours ago
+        self.message(ANN, 'Just a nudge: still on track?', hours_ago=1)
+        self.assertEqual(self.due_now(), [])  # a new message alone waits for the 20 hours
+        later = self.message(ANN, 'We need it today, or the board slot moves a month.', hours_ago=0.5)
+        saved = self.store.suggest('proposal-ann-today', 'Send Ann the proposal today', 'Ann needs it today.', [later], card_id=card, match=True, urgent=True)
+        self.assertTrue(saved.get('updated'))
+        self.assertEqual(self.due_now(), [ANN])  # the review moved the matter: due early
+        self.made(1.5)
+        self.written(1)  # written an hour ago, after that change: nothing new to catch up on
+        self.assertEqual(self.due_now(), [])
+        self.made(0.5)
+        self.written(1)  # a change after it, but the summary is under EARLY_HOURS old
+        self.assertEqual(self.due_now(), [])
+        self.written(2.5)
+        self.assertEqual(self.due_now(), [ANN])
+
+    def test_a_to_do_closed_or_a_promise_rescheduled_makes_them_due_early(self):
+        """A request taken back (its to-do closed) or a new deadline on a promise changes what the summary says is open."""
+        self.answer = lambda prompt: json.dumps(self.lines())
+        self.run_pass()
+        ask = self.message(ANN, 'Can you drop off the samples?', hours_ago=8)
+        card = self.store.suggest('samples-ann', 'Drop off the samples', 'Ann asks for the samples.', [ask], match=True)['id']
+        self.made(7)
+        self.written(6)
+        self.assertEqual(self.due_now(), [])
+        self.store.decide(card, 'reject', '', 'no-longer-needed', 'dashboard')  # she took it back
+        self.assertEqual(self.due_now(), [ANN])
+        self.made(4)
+        self.written(3)  # rewritten since
+        self.assertEqual(self.due_now(), [])
+        with self.store.connect() as db:
+            from machine.store.promises import promise_logged
+            db.execute('UPDATE promises SET due=? WHERE id=?', ((self.now + dt.timedelta(days=3)).date().isoformat(), self.promise))
+            promise_logged(db, self.promise, 'due', 'later')  # a new date for the contract
+        self.assertEqual(self.due_now(), [ANN])
+
+    def test_someone_only_in_cc_or_an_unrelated_change_is_not_due_early(self):
+        """Only people a message came from or went to directly; a to-do about someone else leaves Ann's summary alone."""
+        self.answer = lambda prompt: json.dumps(self.lines())
+        self.run_pass()
+        self.written(5)
+        other = self.message('email:cy@other.example', 'Can you review the brief?', hours_ago=1)
+        copied = self.message(ANN, 'cc', hours_ago=1, direct=0)
+        with self.store.connect() as db:
+            db.execute('INSERT INTO graph_events(node_id,event_id,at,probable,direct) VALUES(?,?,?,0,0)', (ANN, other, a.now()))
+            db.execute('DELETE FROM graph_events WHERE event_id=? AND node_id=?', (copied, ANN))
+        self.store.suggest('brief-cy', 'Review the brief', 'Cy asks for a review.', [other], match=True, separate=True)
+        self.assertEqual(self.due_now(), [])
+        with self.store.connect() as db:
+            self.assertNotIn(ANN, person_summary.changes(db, (self.now - dt.timedelta(hours=20)).isoformat()))
+
+    def test_early_ones_go_first_and_a_pass_keeps_its_limits(self):
+        """A person due early is first in the pass; the pass still runs at most once an hour."""
+        self.answer = lambda prompt: json.dumps(self.lines())
+        self.run_pass()
+        ask = self.message(ANN, 'Can you confirm the venue?', hours_ago=0.5)
+        self.written(4)
+        self.store.suggest('venue-ann', 'Confirm the venue', 'Ann asks to confirm the venue.', [ask], match=True)
+        with self.store.connect() as db:
+            self.assertEqual([p['id'] for p in person_summary.due(db, limit=1)], [ANN])
+            db.execute('UPDATE person_summary_runs SET started_at=?', (a.now(),))
+            self.assertEqual(person_summary.due(db), [])  # a pass ran within the hour
+
+    def test_past_the_days_passes_only_early_ones_and_spread_out(self):
+        """Eight passes used by noon: a change in the afternoon still gets a pass of only early ones, a few a day, spread out."""
+        self.answer = lambda prompt: json.dumps(self.lines())
+        self.run_pass()
+        self.written(5)
+        with self.store.connect() as db:
+            old = (self.now - dt.timedelta(hours=6)).isoformat(timespec='seconds')
+            for _ in range(person_summary.PASSES_PER_DAY):
+                person_summary.start_run(db, 6, old)
+            bo = 'email:bo@x.example'  # someone else regular-due, who must wait for tomorrow's passes
+            db.execute('UPDATE graph_nodes SET strength=1.0 WHERE id=?', (bo,))
+        for n in range(2):
+            self.message(bo, f'note {n}', hours_ago=2 + n, direct=1)
+        self.assertEqual(self.due_now(), [])  # nothing moved for Ann
+        ask = self.message(ANN, 'Can you move the call to today?', hours_ago=0.5)
+        self.store.suggest('call-ann', 'Move the call', 'Ann asks to move the call to today.', [ask], match=True)
+        with self.store.connect() as db:
+            people = person_summary.due(db)
+            self.assertEqual([(p['id'], p.get('extra')) for p in people], [(ANN, True)])  # only Ann, marked extra
+            person_summary.start_run(db, 1, (self.now - dt.timedelta(hours=1)).isoformat(timespec='seconds'), extra=True)
+            self.assertEqual(person_summary.due(db), [])  # one extra pass every EARLY_PASS_HOURS
+            db.execute('UPDATE person_summary_runs SET started_at=? WHERE extra=1', ((self.now - dt.timedelta(hours=4)).isoformat(timespec='seconds'),))
+            self.assertEqual([p['id'] for p in person_summary.due(db)], [ANN])
+            for _ in range(person_summary.EARLY_PASSES - 1):
+                person_summary.start_run(db, 1, (self.now - dt.timedelta(hours=4)).isoformat(timespec='seconds'), extra=True)
+            self.assertEqual(person_summary.due(db), [])  # and at most EARLY_PASSES a day
+            db.execute('DELETE FROM person_summary_runs')
+            self.assertEqual([p['id'] for p in person_summary.due(db)], [ANN, bo])  # with passes left, Bo too, after Ann
+
 
 if __name__ == '__main__':
     unittest.main()

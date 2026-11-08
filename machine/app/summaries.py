@@ -44,7 +44,7 @@ class SummariesApp:
         import help_chat
         stand_in = getattr(self, 'summary_model', None)  # a stand-in in the sandbox and tests: (config, prompt)
         with self.store.connect() as db:
-            run_id = person_summary.start_run(db, len(people), now())
+            run_id = person_summary.start_run(db, len(people), now(), extra=any(p.get('extra') for p in people))
         status, error, written = 'ok', None, 0
         try:
             with self.store.connect() as db:
