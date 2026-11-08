@@ -324,8 +324,9 @@ class PerTaskSite(unittest.TestCase):
                            ('old', str(i), 'browser', json.dumps(params), '2026-10-20T08:10:0%d+00:00' % i))
         self.forms = [{'host': 'wise.com', 'id': '0:w'}, {'host': 'app.profit.example', 'id': '0:p'}]
 
-    def pages(self, sid):
-        with patch.object(a.browser_login, 'pages', return_value=self.forms):
+    def pages(self, sid, forms=None, walls=()):
+        with patch.object(a.browser_login, 'pages', return_value=self.forms if forms is None else forms), \
+                patch.object(a.browser_login, 'walls', return_value=list(walls)):
             return self.app.action('browser_login_pages', {'suggestion_id': sid}, owner_dashboard=True)
 
     def test_each_task_finds_its_own_site_from_its_own_runs(self):
@@ -333,14 +334,20 @@ class PerTaskSite(unittest.TestCase):
         self.assertEqual(self.app.signin_page(self.sid), 'https://wise.com/login')
 
     def test_the_dialog_offers_only_the_tasks_own_sign_in(self):
-        self.assertEqual(self.pages(self.other), {'pages': [self.forms[1]], 'task_site': 'app.profit.example'})
-        self.assertEqual(self.pages(self.sid), {'pages': [self.forms[0]], 'task_site': 'wise.com'})
+        self.assertEqual(self.pages(self.other), {'pages': [self.forms[1]], 'walls': [], 'task_site': 'app.profit.example'})
+        self.assertEqual(self.pages(self.sid), {'pages': [self.forms[0]], 'walls': [], 'task_site': 'wise.com'})
+
+    def test_a_bot_wall_on_the_tasks_own_site_is_said_so_another_sites_is_not(self):
+        walls = [{'host': 'wise.com', 'site': 'wise.com'}, {'host': 'app.profit.example', 'site': 'app.profit.example'}]
+        self.assertEqual(self.pages(self.sid, [], walls)['walls'], [walls[0]])
+        self.assertEqual(self.pages(self.other, [], walls)['walls'], [walls[1]])
+        self.assertEqual(self.pages(self.sid, None, walls)['walls'], [])  # a form to fill comes first: no wall looked for
 
     def test_an_unknown_site_offers_nothing_rather_than_another_tasks(self):
         with self.store.connect() as db:
             db.execute("DELETE FROM preparation_calls WHERE job_id='old'")
         self.assertIsNone(self.app.signin_page(self.other))
-        self.assertEqual(self.pages(self.other), {'pages': [], 'task_site': None})
+        self.assertEqual(self.pages(self.other), {'pages': [], 'walls': [], 'task_site': None})
         with patch.object(a.browser_viewer, 'focus') as focus:
             self.assertEqual(self.app.action('browser_focus', {'suggestion_id': self.other}, owner_dashboard=True), {'shown': False, 'unknown': True})
         focus.assert_not_called()

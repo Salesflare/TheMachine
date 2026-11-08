@@ -3,7 +3,7 @@ title: Von einer Website abgemeldet
 area: troubleshooting
 summary: LinkedIn oder X hat deine Machine abgemeldet. Melde sie wieder an, einmal oder dauerhaft.
 covers: 
-code: browser_login.py, dashboard.html
+code: browser_login.py, dashboard.html, dashboard/connections-signin.js
 order: 2
 ---
 Websites wie LinkedIn und X werden im eigenen Browser deiner Machine gelesen. Manchmal meldet eine Website ihn ab.
@@ -19,3 +19,9 @@ Setz beim Anmelden ein Häkchen bei **Für nächstes Mal speichern**. Wenn die W
 Gib Passwörter selbst ein. Codes für die Zwei-Schritt-Bestätigung gibst du ebenfalls selbst ein.
 
 Gespeicherte Anmeldungen stehen unter **Verbindungen**, **Anmeldungen**. **Vergessen** entfernt eine.
+
+## Wenn die Seite ablehnt oder eine Roboterprüfung will
+
+LinkedIn, X und Seiten hinter einer Cloudflare-Prüfung lehnen Anmeldungen aus einem Browser in der Cloud oft ab. Auf einer gehosteten Machine zeigt die Anmeldung dann **Über deine Verbindung zu Hause anmelden**. Das öffnet deine Einrichtungsseite, wo der Browser deiner Machine über dein Internet zu Hause rausgehen kann, mit Tailscale oder über deinen eigenen Proxy. Melde dich danach erneut an.
+
+Auf deinem eigenen Computer brauchst du das nicht: Sein Browser ist schon zu Hause.

@@ -53,6 +53,12 @@ PAGES = {
     '/li/robot': b'''<!doctype html><title>LinkedIn Login</title><form action="/checkpoint/challenge/robot" method="post">
         <input name="session_key" type="email"><input name="session_password" type="password"><button>Sign in</button></form>''',
     '/checkpoint/challenge/robot': b'<!doctype html><title>Security Verification</title><iframe src="/captcha-frame" width="300" height="200"></iframe>',
+    # a bot wall in front of the site, on an ordinary address: Cloudflare's browser check, and its block page
+    '/cf/login': b'''<!doctype html><title>Log in</title><form action="/cf/check" method="post">
+        <input name="email" type="email"><input name="pw" type="password"><button>Log in</button></form>''',
+    '/cf/check': b'''<!doctype html><title>Just a moment...</title><script>window._cf_chl_opt = {cType: 'managed'};</script>
+        <form id="challenge-form" action="/cf/check?__cf_chl_f_tk=x" method="POST"></form>''',
+    '/cf/blocked': b'<!doctype html><title>Attention Required!</title><div id="cf-wrapper"><h1 data-translate="block_headline">Blocked</h1></div>',
 }
 
 
@@ -247,6 +253,24 @@ class FillTest(unittest.TestCase):
         self.open('/checkpoint/challenge/x')  # approving in the app: no frame, still waited on
         tab = [t for t in browser_login.browser_cdp._http(self.config['browser_cdp_url'], '/json/list') if t.get('type') == 'page'][0]
         self.assertEqual(browser_login.watch(self.config, '0:' + tab['id']), {'state': 'waiting'})
+
+    def test_a_bot_wall_in_front_of_the_site_is_a_robot_check_not_signed_in(self):
+        self.open('/cf/login')
+        for _ in range(20):  # a loaded machine can take a moment to show the form
+            found = browser_login.pages(self.config)
+            if found:
+                break
+            time.sleep(0.5)
+        [page] = found
+        done = browser_login.fill(self.config, page['id'], page['host'], USER, SECRET, settle=5)
+        self.assertEqual(done['result'], 'captcha')  # not 'done': its address is no sign-in step, the page is the wall
+        self.assertEqual(browser_login.watch(self.config, page['id']), {'state': 'captcha'})
+        self.assertEqual(browser_login.pages(self.config), [])
+        self.assertEqual([w['site'] for w in browser_login.walls(self.config)], [page['site']])
+        self.open('/cf/blocked')
+        self.assertEqual(len(browser_login.walls(self.config)), 1)
+        self.open('/home')  # an ordinary page is no wall
+        self.assertEqual(browser_login.walls(self.config), [])
 
     def test_a_tab_opened_from_the_json_endpoint_takes_the_front_a_background_one_does_not(self):
         self.open('/news')

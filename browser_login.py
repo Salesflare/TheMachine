@@ -281,8 +281,24 @@ def pages(config, store=None, account=None):
     """The open tabs that show a sign-in form: [{id, host, title, username, password, code, saved}]. Looks in the
     browser of `account` (an account id) when it has one of its own, else in the shared one: asking a browser that is
     not running can start it."""
-    found, own = [], next((a.get('browser_cdp') for a in config.get('accounts', []) if a.get('id') == account), None)
-    for i, base in enumerate(endpoints(config)):
+    found, bases = [], endpoints(config)
+    for base, tab in _tabs(config, account):
+        try:
+            form = browser_cdp.evaluate(base, tab['id'], DETECT, timeout_ms=3000)
+        except (browser_cdp.CdpError, OSError):
+            continue
+        if isinstance(form, dict) and form.get('host'):
+            saved = store.get(form['host']) if store else None
+            found.append({**describe(form), 'id': f'{bases.index(base)}:{tab["id"]}', 'site': site(form['host']),
+                          'saved': {'username': saved['username']} if saved else None})
+    return found
+
+
+def _tabs(config, account=None):
+    """(DevTools address, tab) for each web page open in the browser of `account` (an account id) when it has one of
+    its own, else in the shared one."""
+    own = next((a.get('browser_cdp') for a in config.get('accounts', []) if a.get('id') == account), None)
+    for base in endpoints(config):
         if base != (own.rstrip('/') if isinstance(own, str) and _loopback(own) else endpoints(config)[0]):
             continue
         try:
@@ -290,17 +306,8 @@ def pages(config, store=None, account=None):
         except (browser_cdp.CdpError, TypeError, AttributeError):
             continue
         for tab in tabs:
-            if urllib.parse.urlsplit(tab.get('url') or '').scheme not in ('http', 'https'):
-                continue
-            try:
-                form = browser_cdp.evaluate(base, tab['id'], DETECT, timeout_ms=3000)
-            except (browser_cdp.CdpError, OSError):
-                continue
-            if isinstance(form, dict) and form.get('host'):
-                saved = store.get(form['host']) if store else None
-                found.append({**describe(form), 'id': f'{i}:{tab["id"]}', 'site': site(form['host']),
-                              'saved': {'username': saved['username']} if saved else None})
-    return found
+            if urllib.parse.urlsplit(tab.get('url') or '').scheme in ('http', 'https'):
+                yield base, tab
 
 
 _filling = threading.Lock()
@@ -383,6 +390,8 @@ def fill(config, page, host, username=None, password=None, code=None, settle=SET
             # a code sent, and the site asks for the username and password again: it stopped this sign-in
             back = 'c' in wanted and shown.get('username') and shown.get('password') and not shown.get('code')
             return {'result': 'blocked' if back else 'next', 'page': {**shown, 'id': page, 'site': site(shown['host'])}}
+        if _wall(base, target):  # the site put a bot wall up instead of letting the sign-in through
+            return {'result': 'captcha', 'page': {'id': page, 'host': host, 'site': site(host)}}
         if _checkpoint(base, target):  # nothing to type, but not in yet: a robot check, or approve it in the site's app
             return {'result': 'captcha' if _captcha(base, target) else 'approve', 'page': {'id': page, 'host': host, 'site': site(host)}}
         return {'result': 'done', 'page': None}
@@ -444,6 +453,31 @@ CAPTCHA = r'''() => [...document.querySelectorAll('iframe[src], [id*="captcha" i
   return r.width > 0 && r.height > 0 && (e.tagName !== 'IFRAME' || /captcha|arkoselabs|funcaptcha|challenges\.cloudflare\.com/i.test(e.src)); })'''
 
 
+# A whole page that is a bot wall in front of the site: Cloudflare's browser check (its challenge script and form) or
+# its block page, DataDome's or PerimeterX's check. Sites often show one to a browser in the cloud. By what the page is
+# made of (its scripts, forms, frames and the block page's own markup), never what it says.
+WALL = r'''() => !!(window._cf_chl_opt || document.querySelector([
+  'script[src*="/cdn-cgi/challenge-platform/"]', 'form#challenge-form', '[data-translate="block_headline"]',
+  'iframe[src*="challenges.cloudflare.com"]', 'iframe[src*="captcha-delivery.com"]', '#px-captcha'].join()))'''
+
+
+def _wall(base, target):
+    try:
+        return browser_cdp.evaluate(base, target, WALL, timeout_ms=3000) is True
+    except (browser_cdp.CdpError, OSError):
+        return False
+
+
+def walls(config, account=None):
+    """The open tabs that show a bot wall rather than a sign-in form: [{host, site}]. Read-only, like pages()."""
+    found = []
+    for base, tab in _tabs(config, account):
+        if _wall(base, tab['id']):
+            host = urllib.parse.urlsplit(tab.get('url') or '').hostname or ''
+            found.append({'host': host, 'site': site(host)})
+    return found
+
+
 def _checkpoint(base, target):
     try:
         return bool(CHECKPOINT.search(str(browser_cdp.evaluate(base, target, ADDRESS, timeout_ms=3000) or '')))
@@ -475,6 +509,8 @@ def watch(config, page):
         return {'state': 'waiting'}  # mid-navigation, or the browser is slow: look again
     if isinstance(shown, dict) and shown.get('host'):
         return {'state': 'form', 'page': {**shown, 'id': page, 'site': site(shown['host'])}}
+    if _wall(base, target):  # not past it: a bot wall is not a signed-in page
+        return {'state': 'captcha'}
     if _checkpoint(base, target):
         return {'state': 'captcha' if _captcha(base, target) else 'waiting'}
     return {'state': 'done'}

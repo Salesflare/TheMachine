@@ -3,7 +3,7 @@ title: Uitgelogd op een site
 area: troubleshooting
 summary: LinkedIn of X heeft je Machine uitgelogd. Log hem opnieuw in, één keer of voorgoed.
 covers: 
-code: browser_login.py, dashboard.html
+code: browser_login.py, dashboard.html, dashboard/connections-signin.js
 order: 2
 ---
 Sites zoals LinkedIn en X worden gelezen in de eigen browser van je Machine. Soms logt een site hem uit.
@@ -19,3 +19,9 @@ Vink **Bewaren voor de volgende keer** aan als je inlogt. De volgende keer dat d
 Typ wachtwoorden zelf. Codes voor tweestapsverificatie vul je ook zelf in.
 
 Opgeslagen logins staan onder **Koppelingen**, **Logins**. **Vergeten** verwijdert er een.
+
+## Als de site weigert of een robotcheck wil
+
+LinkedIn, X en sites achter een Cloudflare-check weigeren vaak logins vanuit een browser in de cloud. Op een gehoste Machine toont de login dan **Inloggen via je thuisverbinding**. Dat opent je setuppagina, waar de browser van je Machine via je internet thuis naar buiten kan met Tailscale, of via je eigen proxy. Log daarna opnieuw in.
+
+Op je eigen computer heb je dit niet nodig: die browser staat al thuis.
