@@ -67,6 +67,7 @@ LEFT_OUT = {
         'contact_photo_links', 'contact_photo_runs', 'org_logo_retries', 'org_logo_tries', 'person_photo_tries', 'person_photos',
         'photo_asks', 'telegram_photo_asks', 'whatsapp_photo_asks', 'whatsapp_photos',
     },
+    'derived from the Graph and rebuilt from it on import': {'graph_identifiers'},
     'in the owner\'s own GBrain already': {'gbrain_meta', 'gbrain_notes', 'gbrain_pages'},
     'proposals the owner has not taken on': {
         'board_suggestions', 'skill_clusters', 'skill_hints', 'team_learning_votes', 'team_learnings', 'board_fits', 'tool_approval_proposals',
