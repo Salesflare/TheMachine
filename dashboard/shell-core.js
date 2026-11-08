@@ -97,11 +97,25 @@ function keptKids(box,from,again){const kids=[...from.childNodes],ids=new Set(ki
    else if(was!=null&&agoFree(was)===agoFree(src)){const fresh=n.querySelectorAll('time,.elapsed');o.querySelectorAll('time,.elapsed').forEach((x,i)=>{const y=fresh[i];if(y&&x.textContent!==y.textContent&&(x.getAttribute('datetime')||x.dataset.since)===(y.getAttribute('datetime')||y.dataset.since))x.textContent=y.textContent});drawnHTML.set(o,src);put=o}
    else if(n.tagName==='DETAILS'){for(const a of [...o.attributes])if(!n.hasAttribute(a.name))o.removeAttribute(a.name);for(const a of n.attributes)if(o.getAttribute(a.name)!==a.value)o.setAttribute(a.name,a.value);
     drawnHTML.set(o,src);keptKids(o,n,again);put=o}
+   else if(typedKept(o,n,src))put=o
    else if(pressedIn(o,again))put=o}  // swapped once it's let go
   if(put===n&&el)drawnHTML.set(n,src);
   if(o&&put===n){o.replaceWith(n);if(at===o)at=n}  // swapped where it stood, so nothing after it moves
   used.add(put);if(put===at)at=at.nextSibling;else box.insertBefore(put,at)}
  for(const o of [...box.childNodes])if(!used.has(o)&&!pressedIn(o,again))o.remove()}
+// The field someone is typing in is never swapped for a copy, even when what's around it changed (a status line, a
+// note): on a phone a new field starts a new keyboard session, and spell check and suggestions drop out for a moment.
+// Everything around it is redrawn from the new markup; the field itself (text, caret, keyboard state) stays. Only when
+// the new markup has the same field (same id and tag) on the same path; otherwise the node is swapped as before.
+function typedKept(o,n,src){const f=document.activeElement;if(!f?.id||f===o||!o.contains(f)||!f.matches(TYPED))return false;
+ const g=n.querySelector('#'+CSS.escape(f.id));if(!g||g.tagName!==f.tagName)return false;
+ const up=(x,top)=>{const p=[];for(;x!==top;x=x.parentNode)p.push(x);return p},fs=up(f,o),gs=up(g,n);
+ if(fs.length!==gs.length||fs.some((x,i)=>x.tagName!==gs[i].tagName))return false;
+ const attrs=(x,y)=>{for(const a of [...x.attributes])if(!y.hasAttribute(a.name))x.removeAttribute(a.name);for(const a of y.attributes)if(x.getAttribute(a.name)!==a.value)x.setAttribute(a.name,a.value)};
+ attrs(o,n);for(let i=fs.length-1;i>=0;i--){const x=fs[i],y=gs[i],xp=fs[i+1]||o,yp=gs[i+1]||n;
+  for(const c of [...xp.childNodes])if(c!==x)c.remove();const ys=[...yp.childNodes],at=ys.indexOf(y);x.before(...ys.slice(0,at));x.after(...ys.slice(at+1));
+  if(x!==f)attrs(x,y)}
+ drawnHTML.set(o,src);return true}
 // A change to built markup goes through the DOM: the parsed copy, changed with DOM calls, written back by the browser.
 const htmlEdit=(h,f)=>{const t=document.createElement('template');setHTML(t,h);f(t.content);return new SafeHTML(t.innerHTML)};
 // Nodes already on the page or parsed from html``, written out again by the browser (an element whole, a text node escaped)
