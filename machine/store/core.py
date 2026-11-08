@@ -420,7 +420,9 @@ class StoreCore:
                         "CREATE INDEX IF NOT EXISTS events_kind_zoom_summary ON events(occurred_at) WHERE kind='zoom.summary'",
                         "CREATE INDEX IF NOT EXISTS events_kind_intercom_conversation ON events(occurred_at) WHERE kind='intercom.conversation'",
                         "CREATE INDEX IF NOT EXISTS events_kind_meeting_notes ON events(occurred_at) WHERE kind='meeting.notes'",
-                        "CREATE INDEX IF NOT EXISTS events_kind_meeting_transcript ON events(occurred_at) WHERE kind='meeting.transcript'"):
+                        "CREATE INDEX IF NOT EXISTS events_kind_meeting_transcript ON events(occurred_at) WHERE kind='meeting.transcript'",
+                        # and the Calendar tab's week (Store._calendar): without it, a pass over every event of every account
+                        "CREATE INDEX IF NOT EXISTS events_kind_calendar_event ON events(occurred_at) WHERE kind='calendar.event'"):
                 db.execute(sql)
             db.execute('CREATE INDEX IF NOT EXISTS analyses_owner ON analyses(owner_run,owner_session)')
             # Status asks each connection for its last failed read and its failures today. Most never fail, so without
