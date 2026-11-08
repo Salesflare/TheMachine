@@ -39,7 +39,7 @@ class Gmail:
 
 def list_headers(headers):
     """What says a message went to a list: List-Unsubscribe (only that it is there, never its link or address), List-Id
-    and Precedence. Lowercased header names, as message_event reads them."""
+    and Precedence; and Auto-Submitted, that a program sent it. Lowercased header names, as message_event reads them."""
     found = {}
     if headers.get('list-unsubscribe', '').strip():
         found['list_unsubscribe'] = True
@@ -47,6 +47,8 @@ def list_headers(headers):
         found['list_id'] = ' '.join(headers['list-id'].split())[:200]
     if headers.get('precedence', '').strip():
         found['precedence'] = headers['precedence'].strip().lower()[:20]
+    if headers.get('auto-submitted', '').strip().lower() not in ('', 'no'):
+        found['auto_submitted'] = True  # an auto-reply or other mail a program sent (RFC 3834)
     return found
 
 

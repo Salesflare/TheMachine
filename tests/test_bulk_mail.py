@@ -51,7 +51,11 @@ class BulkMail(unittest.TestCase):
         self.assertNotIn('unsubscribe?u=', json.dumps(event))
         self.assertNotIn('leave@shop.example', json.dumps(event))
         plain = a.message_event(WORK, raw('p', 'Sam <sam@example.org>'))['metadata']
-        self.assertFalse({'list_unsubscribe', 'list_id', 'precedence'} & set(plain))
+        self.assertFalse({'list_unsubscribe', 'list_id', 'precedence', 'auto_submitted'} & set(plain))
+        replied = a.message_event(WORK, raw('r', 'Owner <owner@example.com>', headers=[('Auto-Submitted', 'auto-replied')]))['metadata']
+        self.assertIs(replied['auto_submitted'], True)  # an out-of-office reply: a program sent it
+        said_no = a.message_event(WORK, raw('s', 'Sam <sam@example.org>', headers=[('Auto-Submitted', 'no')]))['metadata']
+        self.assertNotIn('auto_submitted', said_no)
 
     def test_bulk_mail_reaches_the_review_as_a_title_line_with_a_snippet(self):
         rows = self.ingest(raw('promo', 'Shop <deals@shop.example>', 'Autumn sale', labels=['CATEGORY_PROMOTIONS', 'INBOX'], body='Forty percent off ' * 100),

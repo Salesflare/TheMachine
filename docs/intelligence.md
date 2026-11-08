@@ -31,7 +31,13 @@ Left out:
   them), bots and mass mailings (over 20 recipients);
 - system and relay addresses, even when you wrote to them: Intercom's Operator bot and its reply relays, no-reply and
   notification senders (Slack, Google Calendar, GitHub), GitHub's noreply addresses and reply+ relays (`graph.relay`).
-  A support conversation the Operator bot opened counts for the customer who wrote in it.
+  A support conversation the Operator bot opened counts for the customer who wrote in it. A mailing system's return
+  path is one of them too: the recipient written into it (bounces+sam=acme.com@), a signed bounce tag (prvs=) or a
+  message id;
+- mail your mailbox sent by itself: an out-of-office reply (Precedence bulk, or Auto-Submitted), list mail you sent,
+  and the unsubscribe mail your mail app sends for a list. Those go to bounce and unsubscribe addresses
+  (pm_bounces@pm-bounces.example.com), so they never make anyone a person or an organization, nor someone you wrote to
+  (`graph.automated`, `graph.list_unsubscribes`).
 
 <a id="your-addresses"></a>
 ### Your addresses
@@ -96,7 +102,10 @@ Identities join by themselves only on strong evidence:
 
 A name alone never joins two identities on one channel. Weaker evidence is only a question: the same full name that two
 people on one channel carry, or a similar name ("Ann" and "Ann Lee", a nameless jane.doe@ and Jane Doe) with something
-shared besides (the same company domain, people seen with both, a project, the same role).
+shared besides (the same company domain, people seen with both, a project, the same role). A name read from an address
+(jane.doe@ with no name given) is only ever similar, so the same local part at two domains is never asked by itself; an
+initial ("P") is no name, and a sender named for their own company ("Blue Harbor" at blueharbor.com) has no person's
+name to compare.
 
 - The person page asks it quietly ("Same person as …?"), and People lists them under **Same person?** with **Merge** and
   **Not the same**. Not the same is remembered (`graph_merges` `same=0`).
