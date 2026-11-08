@@ -68,14 +68,14 @@ function connectDraw(box,kind,h,focus){const was=box.dataset.view;setHTML(box,h)
   scrollTo(scrollX,g.y);tile?.focus({preventScroll:true});placeNote();return}
  viewTop(box,focus&&box.querySelector(focus))}
 $('#connect-add').addEventListener('click',e=>{const tile=e.target.closest('.connect-sources>button.connect-source');if(tile)connectGrid={y:scrollY,sig:placeSig(tile)}},true);
-// The grid: Suggested for you first (connect_suggested: only tiles with a signal, each with its why; none without one),
+// The list: Suggested for you first, at most 3 (connect_suggested: only tiles with a signal, each with its why),
 // then every other source under its group (onboarding.GROUPS), A to Z within it. A group with nothing to show is left out.
 const CONNECT_GROUPS=[['mail','Mail and calendar'],['chat','Chat'],['meetings','Meetings'],['docs','Docs and files'],['customers','Customers'],['work','Projects and code'],['other','Other']];
 const connectWhy=(s,x)=>s.why==='unfinished'?t('Setup didn’t finish'):s.why==='mail'?t(['{} email from {} in 30 days','{} emails from {} in 30 days'],s.count,x.label)
  :s.why==='meetings'?t(['{} {} meeting on your calendar','{} {} meetings on your calendar'],s.count,x.label):s.why==='links'?t(['{} message links to {}','{} messages link to {}'],s.count,x.label):'';
-// A tile: the source's icon (todos-cards ICONS, with the ones below), its name, and one line under it: why it is suggested,
-// else what it brings in (clamped; hidden on a phone, where its sheet says it). Connected: a check on the icon, still
-// tappable for a second account. `note`: a status line of its own (Codex, GBrain).
+// A row: the source's logo (connections-logos.js, else a line icon below), its name, why it is suggested or what it
+// brings in, never cut off, and › (↗: opens elsewhere). Connected: a check on the icon, still tappable for a second
+// account. `note`: a status line of its own (Codex, GBrain).
 Object.entries({outlook:ICONS.gmail,outlook_calendar:ICONS.calendar,teams:'<path d="M4 5h11v8H8l-4 3z"/><path d="M15 9h5v8l-3-2h-5v-2"/>',
  zoom:'<rect x="3" y="6" width="12" height="12" rx="2"/><path d="m15 10 6-3v10l-6-3"/>',docs:'<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 12h6M9 16h6"/>',
  intercom:'<path d="M4 5h16v11H9l-5 4z"/><path d="M8.5 9v3M12 8v5M15.5 9v3"/>',rss:'<path d="M5 19h.01M5 12a7 7 0 0 1 7 7M5 5a14 14 0 0 1 14 14"/>',
@@ -83,9 +83,12 @@ Object.entries({outlook:ICONS.gmail,outlook_calendar:ICONS.calendar,teams:'<path
  codex:'<path d="m8 8-4 4 4 4M16 8l4 4-4 4M13.5 6l-3 12"/>',gbrain:'<circle cx="12" cy="12" r="8"/><path d="M12 4v16M8.5 8.5c2 1 2 2.5 0 3.5s-2 2.5 0 3.5M15.5 8.5c-2 1-2 2.5 0 3.5s2 2.5 0 3.5"/>'})
  .forEach(([k,v])=>{if(!ICONS[k])ICONS[k]=v});
 const CONNECT_ICON={google_meet:'zoom',google_docs:'docs',crm:'salesflare'};
+const connectLogo=x=>{const b=BRAND_LOGOS[x.name];
+ const c=b&&b[0]?'color:#'+b[0]+';':'';if(!b)return icon(CONNECT_ICON[x.name]||x.service||x.name);
+ return html`<span class="icon brand" aria-hidden="true" style="${c}">${b[1].startsWith('--')?html`<i style="--m:var(${b[1]})"></i>`:html`<svg viewBox="0 0 24 24"><path d="${b[1]}"/></svg>`}</span>`};
 function connectInner(x,why,ext,note){const on=x.connected?html`<span class="cs-on" title="${t('{} connected',x.connected)}" aria-label="${t('{} connected',x.connected)}">✓</span>`:'';
  const line=why?html`<small class="why">${why}</small>`:x.what?html`<small class="what">${x.what}</small>`:'';
- return html`<span class="cs-icon">${icon(CONNECT_ICON[x.name]||x.service||x.name)}${on}</span><span class="cs-text"><b>${x.label}${ext?' ↗':''}</b>${line}${note?html`<small class="count">${note}</small>`:''}</span>`}
+ return html`<span class="cs-icon">${connectLogo(x)}${on}</span><span class="cs-text"><b>${x.label}</b>${line}${note?html`<small class="count">${note}</small>`:''}</span><span class="cs-go" aria-hidden="true">${ext?'↗':'›'}</span>`}
 function connectTile(x,why){
  if(x.hosted_signin&&connectList.manage_url)return html`<button type="button" class="connect-source" data-connect-signin="${x.name}">${connectInner(x,why)}</button>`;
  if(x.account_page&&connectList.manage_url)return html`<a class="connect-source" href="${safeHref(connectList.manage_url+'#'+x.account_page)}" target="_blank" rel="noopener">${connectInner(x,why,true)}</a>`;
@@ -93,7 +96,7 @@ function connectTile(x,why){
  return x.broker?(connectList.manage_url?html`<a class="connect-source" href="${safeHref(connectList.manage_url+(BROKER_LINK[x.service]||'#sources'))}" target="_blank" rel="noopener">${connectInner(x,why,true)}</a>`:''):html`<button type="button" class="connect-source" data-connect="${x.name}">${connectInner(x,why)}</button>`}
 function renderConnectAdd(){const box=$('#connect-add');if(connectRun)return renderConnectRun();if(connectSignin)return renderConnectSignin();if(connectForm)return renderConnectForm();if(connectGbrain)return renderGbrain();if(!connectList)return;
  const by=new Map(connectList.sources.map(x=>[x.name,x])),picks=[];
- for(const s of connectList.suggested||[]){const x=by.get(s.name),why=x&&!x.connected&&connectWhy(s,x),tile=why&&connectTile(x,why);if(tile)picks.push([s.name,tile])}
+ for(const s of connectList.suggested||[]){const x=by.get(s.name),why=x&&!x.connected&&connectWhy(s,x),tile=why&&picks.length<3&&connectTile(x,why);if(tile)picks.push([s.name,tile])}
  const picked=new Set(picks.map(([n])=>n)),groups=new Map(CONNECT_GROUPS.map(([k])=>[k,[]])),add=(g,label,tile)=>{if(tile)(groups.get(g)||groups.get('other')).push([label,tile])};
  for(const x of connectList.sources)if(!picked.has(x.name))add(x.group,x.label,connectTile(x));
  add('work','Codex',codexTile());add('other','GBrain',gbrainTile());

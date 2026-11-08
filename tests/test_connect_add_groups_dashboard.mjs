@@ -51,7 +51,7 @@ const base='http://127.0.0.1:'+server.address().port;
 const shots=process.env.SHOTS;if(shots)await mkdir(shots,{recursive:true});
 const errors=[];let browser;
 const read=page=>page.evaluate(()=>[...document.querySelectorAll('#connect-add .connect-group')].map(g=>({suggested:g.classList.contains('suggested'),
- head:g.querySelector('h4').textContent,tiles:[...g.querySelectorAll('.connect-source')].map(n=>({name:n.querySelector('b').textContent.replace(' ↗',''),
+ head:g.querySelector('h4').textContent,tiles:[...g.querySelectorAll('.connect-source')].map(n=>({name:n.querySelector('b').textContent,
  why:n.querySelector('small.why')?.textContent||null}))})));
 try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
@@ -70,7 +70,7 @@ try{
     assert.ok(groups[0].suggested,`${tag}: Suggested for you comes first`);
     assert.equal(groups[0].head,'Suggested for you');
     assert.deepEqual(groups[0].tiles,[{name:'Trello',why:'Setup didn’t finish'},{name:'Stripe',why:'12 emails from Stripe in 30 days'},
-     {name:'Zoom',why:'9 Zoom meetings on your calendar'},{name:'Google Docs',why:'7 messages link to Google Docs'}],`${tag}: the suggestions with their why, connected and unknown ones left out`);
+     {name:'Zoom',why:'9 Zoom meetings on your calendar'}],`${tag}: at most 3 suggestions with their why, connected and unknown ones left out`);
    }else assert.ok(!groups.some(g=>g.suggested)&&!heads.includes('Suggested for you'),`${tag}: no signal, no Suggested section`);
    const rest=groups.filter(g=>!g.suggested);
    assert.deepEqual(rest.map(g=>g.head),['Mail and calendar','Chat','Meetings','Docs and files','Customers','Projects and code','Other'],`${tag}: the groups in order`);
@@ -78,7 +78,8 @@ try{
     assert.deepEqual(names,[...names].sort((a,b)=>a.localeCompare(b,'en',{sensitivity:'base'})),`${tag}: ${g.head} reads A to Z`);
     assert.ok(g.tiles.every(x=>x.why===null),`${tag}: ${g.head} shows what each brings in, not a why`)}
    const all=rest.flatMap(g=>g.tiles.map(x=>x.name));
-   if(mode==='suggested')for(const n of ['Trello','Stripe','Zoom','Google Docs'])assert.ok(!all.includes(n),`${tag}: ${n} is not repeated under its group`);
+   if(mode==='suggested'){for(const n of ['Trello','Stripe','Zoom'])assert.ok(!all.includes(n),`${tag}: ${n} is not repeated under its group`);
+    assert.ok(rest.find(g=>g.head==='Docs and files').tiles.some(x=>x.name==='Google Docs'),`${tag}: a 4th suggestion stays under its group`)}
    else assert.deepEqual(rest.find(g=>g.head==='Meetings').tiles.map(x=>x.name),['Google Meet','Zoom']);
    assert.deepEqual(rest.find(g=>g.head==='Projects and code').tiles.map(x=>x.name),mode==='suggested'?['Codex','GitHub','Shortcut']:['Codex','GitHub','Shortcut','Trello']);
    assert.ok(rest.find(g=>g.head==='Other').tiles.some(x=>x.name==='Newthing'),`${tag}: a source without a known group is under Other`);

@@ -11,7 +11,7 @@ import re
 from machine.sources.mail_senders import HINT_MAILS, HINT_SOURCES, mails_from
 from meet import VIDEO_LINKS
 
-SHOWN = 4      # at most this many suggestions
+SHOWN = 3      # at most this many suggestions
 ENOUGH = HINT_MAILS  # signals of one kind before it counts: the setup hints' bar for "mails you often"
 COUNT_UP_TO = 99
 DAYS = 30

@@ -36,7 +36,8 @@ try{
   await link.waitFor();
   assert.equal(await link.getAttribute('href'),'https://app.example.org/setup#source-intercom');
   assert.equal(await link.getAttribute('target'),'_blank');
-  assert.match(await link.innerText(),/Intercom ↗/);
+  assert.equal(await link.locator('b').innerText(),'Intercom');
+  assert.equal(await link.locator('.cs-go').innerText(),'↗','opens elsewhere: ↗ at the right edge, not a ›');
   assert.equal(await page.locator('#connect-add [data-connect="intercom"]').count(),0,'no second way here: the page has both');
   assert.equal(await page.locator('#connect-add [data-connect="github"]').count(),1);
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no sideways scroll');
