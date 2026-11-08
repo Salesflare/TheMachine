@@ -287,7 +287,12 @@ remove them.
 - A preparation weighs facts by how fresh they are: half-lives of 7 days for events, 90 for commitments and
   preferences, 365 for other facts, after GBrain's decay. A fact past its end day is left out; the next review retires
   it, and Learning lists it under **Ended** with **Bring back**.
-- Facts about someone in the Graph don't count toward the cap of 80; the cap is for the rest.
+- Facts about someone in the Graph don't count toward the cap of 80; the cap is for the rest. A save never fails for
+  room. At the cap, the fact or rule not used for longest is set aside when it wasn't used in 21 days (used: a
+  preparation picked it as close to its to-do, or a note said it again); else the list grows, up to 120. Each review
+  also sets aside those not used in 21 days while there are more than 70. Learning lists them under **Set aside** with
+  **Bring back**. One the owner edited or brought back is never set aside.
+- A review gets the facts used or said most lately first, up to its limit, so a long list leaves out the stalest.
 - Now and then a review condenses the list. Notes that say the same thing or contradict each other become one (the
   newer wins), a note about how you write on one channel moves into that channel's block, and the originals stay
   behind it.

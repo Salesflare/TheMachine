@@ -56,7 +56,8 @@ Puoi anche fare una domanda, come quella che suggerisce una ricerca vuota, per u
 Apprendimento ha una fila di schede. Una scheda ancora vuota non compare.
 
 - **Cosa ho imparato**: come scrivi, i fatti e come preferisci che si facciano le cose, dalle tue note. **Modifica** qualsiasi voce con parole tue e **Rimuovi** ciò che non è più vero. Quando una nota su un'attività insegna un fatto o una regola, la chat dell'attività lo dice sotto la risposta (**Salvato in ciò che ho imparato**, con **Modifica** e **Annulla**); quella riga viene da ciò che è stato salvato, quindi una risposta non lo afferma mai e basta.
-- Un fatto può dire cos’è (**Temporaneo**, **Impegno**, **Preferenza**) e **Fino a** quando vale. Un fatto temporaneo sbiadisce in settimane, una preferenza o un impegno in mesi, gli altri fatti in un anno. I fatti su qualcuno non hanno limite; gli altri si fermano a 80. Passata la data, un fatto va in **Scaduti**, dove **Ripristina** lo riporta.
+- Un fatto può dire cos’è (**Temporaneo**, **Impegno**, **Preferenza**) e **Fino a** quando vale. Un fatto temporaneo sbiadisce in settimane, una preferenza o un impegno in mesi, gli altri fatti in un anno. Passata la data, un fatto va in **Scaduti**, dove **Ripristina** lo riporta.
+- L’elenco non si riempie mai. Quando si allunga, i fatti e le regole non usati da tre settimane vanno in **Messi da parte**, dove **Ripristina** ne riporta uno. Quello che hai modificato o ripristinato resta.
 - **Modifiche**: cosa ha ricavato dalle tue modifiche, dai rifiuti e dalle chat, ognuna con **Annulla**. Vedi [Scrittura](writing.md#it-keeps-learning).
 - **Decisioni**: una cronologia delle tue scelte sulle attività.
 - **Condiviso**: apprendimenti da condividere con il team di The Machine e voti che ti aspettano. Compare solo quando qualcosa aspetta. Vedi [Condividi gli apprendimenti](share-learnings.md).

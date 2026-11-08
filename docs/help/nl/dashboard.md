@@ -56,7 +56,8 @@ Je kunt ook een vraag stellen, zoals die een lege zoekopdracht voorstelt, voor e
 Leren heeft een rij tabbladen. Een tabblad waar nog niets in staat, valt weg.
 
 - **Wat ik geleerd heb**: hoe je schrijft, feiten en hoe je dingen graag gedaan ziet, uit je notities. **Bewerk** alles in je eigen woorden, en **Verwijder** wat niet meer klopt. Leert een notitie op een to-do een feit of regel, dan zegt de chat van de to-do dat onder het antwoord (**Bewaard bij wat ik geleerd heb**, met **Bewerken** en **Ongedaan maken**); die regel komt uit wat opgeslagen is, dus een antwoord beweert het nooit zomaar.
-- Een feit kan zeggen wat het is (**Tijdelijk**, **Toezegging**, **Voorkeur**) en **Tot** wanneer het geldt. Een tijdelijk feit vervaagt in weken, een voorkeur of toezegging in maanden, andere feiten in een jaar. Feiten over iemand hebben geen limiet; andere feiten stoppen bij 80. Na de datum gaat een feit naar **Afgelopen**, waar **Terughalen** het terugzet.
+- Een feit kan zeggen wat het is (**Tijdelijk**, **Toezegging**, **Voorkeur**) en **Tot** wanneer het geldt. Een tijdelijk feit vervaagt in weken, een voorkeur of toezegging in maanden, andere feiten in een jaar. Na de datum gaat een feit naar **Afgelopen**, waar **Terughalen** het terugzet.
+- De lijst raakt nooit vol. Wordt ze lang, dan gaan feiten en regels die drie weken niet gebruikt zijn naar **Opzijgezet**, waar **Terughalen** er een terugzet. Wat je bewerkte of terughaalde, blijft.
 - **Wijzigingen**: wat hij oppikte uit je bewerkingen, weggeklikte to-do's en chats, elk met **Ongedaan maken**. Zie [Schrijven](writing.md#it-keeps-learning).
 - **Beslissingen**: een tijdlijn van je keuzes op to-do's.
 - **Gedeeld**: inzichten om te delen met het team van The Machine, en stemmen die op je wachten. Alleen te zien als er iets wacht. Zie [Inzichten delen](share-learnings.md).

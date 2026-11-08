@@ -56,7 +56,8 @@ También puedes hacer una pregunta, como la que sugiere una búsqueda vacía, pa
 Aprendizaje tiene una fila de pestañas. Una pestaña que aún no tiene nada no aparece.
 
 - **Lo que he aprendido**: cómo escribes, datos y cómo te gusta hacer las cosas, a partir de tus notas. **Editar** cualquier parte con tus propias palabras, y **Quitar** lo que ya no sea cierto. Cuando una nota en una tarea enseña un dato o una regla, el chat de la tarea lo dice debajo de la respuesta (**Guardado en lo aprendido**, con **Editar** y **Deshacer**); esa línea sale de lo que se guardó, así que una respuesta nunca lo afirma sin más.
-- Un dato puede decir qué es (**Temporal**, **Compromiso**, **Preferencia**) y **Hasta el** día en que vale. Un dato temporal se desvanece en semanas, una preferencia o un compromiso en meses, los demás datos en un año. Los datos sobre alguien no tienen límite; los demás paran en 80. Pasada su fecha, un dato pasa a **Terminados**, donde **Recuperar** lo devuelve.
+- Un dato puede decir qué es (**Temporal**, **Compromiso**, **Preferencia**) y **Hasta el** día en que vale. Un dato temporal se desvanece en semanas, una preferencia o un compromiso en meses, los demás datos en un año. Pasada su fecha, un dato pasa a **Terminados**, donde **Recuperar** lo devuelve.
+- La lista nunca se llena. Cuando crece, los datos y las reglas sin usar en tres semanas pasan a **Apartados**, donde **Recuperar** devuelve uno. Lo que editaste o recuperaste se queda.
 - **Cambios**: lo que aprendió de tus ediciones, descartes y chats, cada uno con **Deshacer**. Consulta [Redacción](writing.md#it-keeps-learning).
 - **Decisiones**: una cronología de tus decisiones sobre las tareas.
 - **Compartido**: aprendizajes para compartir con el equipo de The Machine, y votos que te esperan. Solo aparece cuando algo espera. Consulta [Compartir aprendizajes](share-learnings.md).

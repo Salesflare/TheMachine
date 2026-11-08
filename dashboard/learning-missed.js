@@ -35,7 +35,7 @@ function learnChange(c){const what=(LEARN_WHAT[c.kind]||(()=>'Changed'))(c),text
  return html`<div class="change-row${c.undone?html` undone`:''}"><span class="grow"><strong>${what}</strong><span class="change-text">${text}</span>${c.why?html`<small>${c.why}</small>`:''}<small class="change-when">${learnDay(new Date(c.at))}${c.undone?' · Undone':''}</small></span>${c.undone?'':html`<span class="learn-acts"><button type="button" class="quiet" data-learn-undo="${c.id}" aria-label="Undo: ${what}">Undo</button></span>`}</div>`}
 const learnTeamWaiting=()=>{const tl=state?.team_learnings;return (tl?.ask?1:0)+(tl?.vote_mode==='ask'?(tl.votes_waiting||[]).length:0)};
 function learnHas(id){const s=state||{};
- return id==='going'||id==='learned'&&!!((s.voices||[]).length||(s.facts||[]).length||(s.facts_ended||[]).length||(s.moved||[]).length)||id==='changes'&&!!(s.learning_changes||[]).length
+ return id==='going'||id==='learned'&&!!((s.voices||[]).length||(s.facts||[]).length||(s.facts_ended||[]).length||(s.facts_aside||[]).length||(s.moved||[]).length)||id==='changes'&&!!(s.learning_changes||[]).length
   ||id==='decisions'&&!!(s.decisions||[]).length||id==='shared'&&learnTeamWaiting()>0}
 const learnShown=()=>{const ids=LEARN_PANES.map(([id])=>id).filter(learnHas);return ids.includes(learnPane)?learnPane:ids[0]};
 // one pane only (a new Machine: How it's going) shows no pill row
@@ -57,6 +57,7 @@ function learnedList(){
   ['facts','Facts','Things I keep in mind about your work.',facts.filter(f=>f.kind!=='draft').sort(newest).map(fact)],
   ['rules','How to do things','Rules for a kind of task.',facts.filter(f=>f.kind==='draft').sort(newest).map(fact)],
   ['ended','Ended','Past their end date. Bring one back if it still holds.',(state.facts_ended||[]).map(f=>html`<div class="fact-row"><span class="grow">${f.text}${factMeta(f)}</span><span class="learn-acts"><button type="button" class="quiet" data-fact-back="${f.id}" aria-label="${t('Bring back: {}',f.text)}">${t('Bring back')}</button></span></div>`)],
+  ['aside','Set aside','Not used lately, to make room. Bring one back if it still holds.',(state.facts_aside||[]).map(f=>html`<div class="fact-row"><span class="grow">${f.text}${factMeta(f)}</span><span class="learn-acts"><button type="button" class="quiet" data-fact-back="${f.id}" aria-label="${t('Bring back: {}',f.text)}">${t('Bring back')}</button></span></div>`)],
   ['skills','Moved into skills','Notes that now live in a skill.',(state.moved||[]).map(m=>html`<div><span class="grow"><strong>${m.name}</strong> ${notesN(m.notes)}</span><span class="learn-acts"><button type="button" class="quiet" data-unmerge-skill="${m.skill_id}" aria-label="Put back the notes in ${m.name}">Put back</button></span></div>`)]].filter(g=>g[3].length);
  if(!groups.length)return html`<div class="muted">Nothing yet. When a note on a to-do holds beyond it, I keep it here.</div>`;
  const c=state.condensed;
