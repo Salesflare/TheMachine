@@ -2,23 +2,34 @@
 function toast(text,error=false,undoId=null){if(error&&text===NET_SLOW_TEXT)error=false;const t=$('#toast');t.replaceChildren(undoId||error?text+' ':text,undoId?make('button',{'data-undo':undoId},'Undo'):error?make('button',{type:'button','data-bug-report':''},'Report a bug'):'');t.classList.toggle('error',error);t.classList.add('show');toastLift(t);clearTimeout(toastLiftTimer);toastLiftTimer=setTimeout(()=>{if(t.classList.contains('show'))toastLift(t)},700);  /* again once what the action changed has drawn */clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),undoId?15000:text.length>90?9000:error?6000:2500)}
 async function manualRefresh(){if(manualBusy)return;manualBusy=true;newTagline();document.querySelectorAll('.refresh-tap').forEach(e=>e.classList.add('busy'));const ok=await refresh();document.querySelectorAll('.refresh-tap').forEach(e=>e.classList.remove('busy'));manualBusy=false;toast(ok?'Up to date':netSlow?NET_SLOW_TEXT:'Couldn’t refresh. Try again in a moment.',!ok)}
 document.querySelectorAll('.refresh-tap').forEach(e=>{e.addEventListener('click',manualRefresh);e.addEventListener('keydown',k=>{if(k.key==='Enter'||k.key===' '){k.preventDefault();manualRefresh()}})});
-// The mascot blinks now and then: its closed-eyes frame (data-blink) for 150ms every 4 to 9 seconds, sometimes twice.
-// Each mascot (sidebar, phone top bar, over the cards) on its own timer, never two at once. Not with reduced motion, in a hidden tab, while busy (refreshing) or mid-move (a hop, glance or wave below).
-(()=>{const still=matchMedia('(prefers-reduced-motion: reduce)'),seen=new Map();let until=0;
+// The mascot blinks now and then: its closed-eyes frame for 150ms every 4 to 9 seconds, sometimes twice. Every robot
+// image whose pose has one blinks (SHUT; data-blink names it for the image's first pose), also one drawn later or that
+// changes pose (the all-clear robot follows the check): the frame is looked up at each blink. Sleepy and the other moods
+// have none (their eyes are shut already, or the face is the point).
+// Each mascot (sidebar, phone top bar, over the cards, the empty states) on its own timer, never two at once. Not with reduced motion, in a hidden tab, while busy (refreshing) or mid-move (a hop, glance or wave below).
+(()=>{const still=matchMedia('(prefers-reduced-motion: reduce)'),seen=new Map(),ready=new Map();let until=0;
+ const SHUT={'brand/avatar.png':'brand/avatar-blink.png','brand/wave.webp':'brand/wave-blink.webp','brand/wave-look.webp':'brand/wave-blink.webp'};
  const off=()=>still.matches||document.hidden;
  const busy=el=>{if(el.classList.contains('busy')||el.matches('.m-hop,.m-look,.m-wave')||el.closest('[data-blink-off]'))return true;const r=el.getBoundingClientRect();return !r.width||r.bottom<=0||r.top>=innerHeight||r.right<=0||r.left>=innerWidth};  // busy, or out of sight (a closed drawer)
- const shut=(el,on)=>{const s=seen.get(el);if(s.shut){const src=el.getAttribute('src');if(on&&src!==s.open)return false;if(src===(on?s.open:s.shut))el.setAttribute('src',on?s.shut:s.open)}el.classList.toggle('blinking',on);return true};
+ // A frame is used once it has loaded (no empty flash); one that can't load is left out
+ const load=src=>{if(!ready.has(src)){ready.set(src,false);const im=new Image();im.src=src;im.decode().then(()=>ready.set(src,true),()=>ready.set(src,null))}return ready.get(src)===true};
+ const frameOf=(el,s,src)=>src===s.first&&el.dataset.blink||SHUT[src]||'';
+ // Eyes open again only if the closed frame still shows (a redraw or a pose swap in between keeps what is there)
+ const shut=(el,on)=>{const s=seen.get(el),src=el.getAttribute('src');
+  if(on){const f=frameOf(el,s,src);if(!f||!load(f))return false;s.open=src;s.shut=f;el.setAttribute('src',f)}
+  else if(s.shut&&src===s.shut)el.setAttribute('src',s.open);
+  el.classList.toggle('blinking',on);return true};
  const plan=(el,first)=>{const s=seen.get(el);clearTimeout(s.t);if(!el.isConnected){seen.delete(el);return}if(!off())s.t=setTimeout(()=>blink(el),first?1500+Math.random()*6000:4000+Math.random()*5000)};
  const blink=el=>{if(!el.isConnected){seen.delete(el);return}const s=seen.get(el),now=performance.now();
   if(now<until+600){s.t=setTimeout(()=>blink(el),until+600-now+Math.random()*900);return}  // never two at once
   if(off()||busy(el)||!shut(el,true)){plan(el);return}
   const twice=Math.random()<.2;until=now+(twice?430:150);
   s.t=setTimeout(()=>{shut(el,false);if(!twice||off())return plan(el);s.t=setTimeout(()=>{if(off()||busy(el)||!shut(el,true))return plan(el);s.t=setTimeout(()=>{shut(el,false);plan(el)},150)},130)},150)};
- const add=el=>{if(seen.has(el))return;const shutSrc=el.dataset.blink,s={open:el.getAttribute('src'),shut:shutSrc||'',t:0};seen.set(el,s);
-  if(!shutSrc)return plan(el,true);const im=new Image();im.src=shutSrc;im.decode().then(()=>{s.ready=true;plan(el,true)},()=>{})};
- const all=()=>{for(const [el,s] of seen)if(!s.shut||s.ready){if(off()){clearTimeout(s.t);if(el.isConnected)shut(el,false)}else plan(el,true)}};
+ const add=el=>{if(seen.has(el))return;const src=el.getAttribute('src');seen.set(el,{first:src,open:src,shut:'',t:0});const f=frameOf(el,seen.get(el),src);if(f)load(f);plan(el,true)};
+ const all=()=>{for(const [el,s] of seen){if(off()){clearTimeout(s.t);if(el.isConnected)shut(el,false)}else plan(el,true)}};
  document.addEventListener('visibilitychange',all);still.addEventListener('change',all);
- const scan=()=>document.querySelectorAll('[data-blink]').forEach(add);
+ // Any robot image: one in another pose now may change into one with a frame later
+ const scan=()=>document.querySelectorAll('img[data-blink],img[src^="brand/"]:not([src^="brand/app-icon"])').forEach(add);
  let queued=false;scan();new MutationObserver(()=>{if(!queued){queued=true;queueMicrotask(()=>{queued=false;scan()})}}).observe(document.body,{childList:true,subtree:true})})();
 // The mascot while it works (data-look, data-hand: the first look, setting up) does one small thing every 15 to 30 seconds,
 // never the same twice in a row: a hop, a glance aside (eyes and a slight tilt) or a wave (the hand's lines move, a little
