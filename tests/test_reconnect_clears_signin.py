@@ -132,7 +132,7 @@ class RestartAnnounced(unittest.TestCase):
         source = (ROOT / 'dashboard' / 'connections-cards.js').read_text(encoding='utf-8')
         self.assertIn("connectPost('connect_remove',{account:b.dataset.disconnect});if(r.restarting)restartSoon();", source)
         self.assertIn("connectPost('connect_scope',{account:s.dataset.scope,boundary:b});if(r.restarting)restartSoon();", source)
-        self.assertIn("if(connectRun.state==='done'&&connectRun.restarting){restartSoon();connectFollow(connectRun)}", source)
+        self.assertIn("if(connectRun?.state==='done'&&connectRun.restarting&&!connectRun.followed){connectRun.followed=true;restartSoon();connectFollow(connectRun);return}", source)
 
 
 if __name__ == '__main__':
