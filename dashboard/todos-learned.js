@@ -97,7 +97,8 @@ const doneAt=s=>looksDone(s)?lookAt(s):closedAt(s);
 const doneKey=()=>'done:'+scopeFilter;
 // A Machine from before the Done pages has no api/cards/done: then the done cards in the status payload are the list
 const doneLocal=()=>{const items=(state?.suggestions||[]).filter(s=>closed(s)&&(scopeFilter==='all'||s.scope===scopeFilter)).sort((a,b)=>closedAt(b).localeCompare(closedAt(a)));return {items,next:null,total:items.length}};
-// The first page is the done cards the status payload already has, so the list is there at once; the Machine sends the rest
+// The first page is the done cards the status payload already has (the Machine sends its first page, DONE_FIRST, and every
+// one done in the last day), so the list is there at once; the Machine sends the rest
 function donePager(){const fresh=!pagers.has(doneKey()),p=pager(doneKey(),cursor=>request(`api/cards/done?cursor=${encodeURIComponent(cursor)}${scopeFilter==='all'?'':'&scope='+scopeFilter}`).catch(()=>null).then(r=>{
   if(!Array.isArray(r?.cards)){const l=doneLocal(),n=Number(cursor)||0;return {items:l.items.slice(n,n+30),next:n+30<l.items.length?String(n+30):null,total:l.total}}
   for(const c of r.cards)doneExtra.set(c.id,c);cardsMerge();return {items:r.cards,next:r.next,total:r.total}}),s=>suggestionCard(s),doneRows);
@@ -143,6 +144,11 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-done-fold]
  (inSide?$('#side-cards'):document).querySelector(`[data-done-fold="${CSS.escape(k)}"]`)?.focus()});
 document.addEventListener('toggle',e=>{const d=e.target;if(!d.matches?.('[data-done-fold-card]'))return;d.open?donePageOpen.add(d.dataset.doneFoldCard):donePageOpen.delete(d.dataset.doneFoldCard)},true);
 function cardsMerge(){if(!state?.suggestions)return;const ids=new Set(state.suggestions.map(s=>s.id));for(const c of doneExtra.values())if(!ids.has(c.id))state.suggestions.push(c)}
+// A done to-do past the ones the status sends (a chat or card link to an older one): asked for once, kept with the Done
+// pages' ones, then `then` runs. false: asked already (here or not, the list says so now)
+const doneAsked=new Set();
+function doneFetch(id,then){if(doneAsked.has(id))return false;doneAsked.add(id);
+ request('api/cards/done?id='+encodeURIComponent(id)).then(r=>{const c=(r?.cards||[]).find(c=>c.id===id);if(c){doneExtra.set(id,c);cardsMerge()}}).catch(()=>{}).finally(then);return true}
 let doneSeen='';  // done counts and ids as last shown: when they change, the Done lists start over from the top
 const listShown={};const clipList=(id,rows,empty,n=3)=>{const k=listShown[id]||n;return rows.length?html`${rows.slice(0,k)}${rows.length>k?html`<button type="button" class="quiet more-rows" data-more="${id}" data-shown="${k}">Show ${Math.min(10,rows.length-k)} more</button>`:''}`:empty};
 // clipList for html`` rows

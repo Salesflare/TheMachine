@@ -11,7 +11,7 @@ const notifyPresence=(()=>{const id=Math.random().toString(36).slice(2,12)||'pag
  return {beat,inUse,id}})();
 function openCardLink(){
 const m=/^#card=([a-f0-9]{16})$/.exec(location.hash);if(!m||!state.suggestions)return;
-const target=state.suggestions.find(s=>s.id===m[1]);if(!target)return; // Keep the link for a later successful refresh.
+const target=state.suggestions.find(s=>s.id===m[1]);if(!target){doneFetch(m[1],()=>{if(location.hash==='#card='+m[1])openCardLink()});return} // an older done one: asked for; else kept for a later refresh
 linkedCardId=target.id;const fuEl=()=>target.follow_up?.group&&document.getElementById('fu-'+target.follow_up.group.replace(':','-'));
 // Reveal this destination without overwriting the device's saved filter/fold preferences.
 if(scopeFilter!=='all'&&target.scope!==scopeFilter)scopeFilter='all';

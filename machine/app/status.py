@@ -128,7 +128,9 @@ class StatusApp:
     ACTIONS = {'status': 'status_action'}
 
     def status_action(self, name, args, owner_dashboard=False):
-        result = self.store.snapshot(self.config['accounts'])
+        # done: how many done to-dos (the dashboard: its Done list's first page, it loads the rest itself); else the last 100
+        done = args.get('done')
+        result = self.store.snapshot(self.config['accounts'], **({'done': max(0, min(int(done), 100))} if isinstance(done, int) else {}))
         # `manage_url`: where this install is set up when that is a web page (a hosted machine); the dashboard links to it.
         manage = str(self.config.get('manage_url') or '')
         result['manage_url'] = manage if manage.startswith('https://') else None
