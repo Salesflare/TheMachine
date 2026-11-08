@@ -123,14 +123,14 @@ class Sources(unittest.TestCase):
         job, _ = self.start(sid)
         self.store.preparation_blocked(sid, job, 'Something else stopped it.')
         self.app.action('card_move', {'suggestion_id': sid, 'area': 'personal', 'decision_id': 'move-1'}, owner_dashboard=True)
-        self.assertEqual(json.loads(self.row(sid)['account_ids']), ['home-chat'])
+        self.assertEqual(json.loads(self.row(sid)['account_ids']), ['home-chat', 'side-mail', 'side-cal'])  # Side's are Personal
         self.store.decide(sid, 'retry', '', 'retry-1', 'dashboard')
         sent = []
         # the old run, which saved its blocker, has ended; then the new run starts
         self.app.preparation_step(lambda req: sent.append(req) or {'status': 'ok' if req.get('action') in ('status', 'stop') else 'admitted'})
         message = next(r['message'] for r in reversed(sent) if r.get('message'))
         self.assertIn('this to-do is in Personal', message)
-        self.assertIn('wherever they live (acme-mail, side-mail too)', message)
+        self.assertIn('wherever they live (acme-mail too)', message)  # side-mail is in Personal itself
 
     def test_a_run_prepared_ahead_gets_no_more_than_before(self):
         accounts = '["home-chat"]'
@@ -138,6 +138,23 @@ class Sources(unittest.TestCase):
         self.assertIn('Its own sources', a.area_prompt(self.app.config, accounts, [(1, 'acme-mail')], owner_started=True))
         # All its sources in its area: nothing to add
         self.assertNotIn('Its own sources', a.area_prompt(self.app.config, '["acme-mail"]', [(1, 'acme-mail')], owner_started=True))
+
+    def test_a_mailbox_labeled_personal_is_in_personal_so_a_personal_to_do_never_asks_for_it(self):
+        # A Personal to-do from a company mailbox the owner labeled personal: that mailbox is its area's, not another one
+        line = a.area_prompt(self.app.config, '["side-mail"]', [(1, 'side-mail')], owner_started=True)
+        self.assertIn('this to-do is in Personal (its accounts: whatsapp, gmail, calendar)', line)
+        self.assertNotIn('Its own sources', line)  # nothing outside its area to ask for
+        self.assertEqual(todo_areas.sources_area(['side-mail', 'home-chat'], ACCOUNTS), 'personal')
+        # Work and Personal still cross: a Personal to-do's Acme mail, and a Work to-do's Side mail, are outside
+        self.assertIn('wherever they live (acme-mail too)', a.area_prompt(self.app.config, '["side-mail"]', [(1, 'acme-mail')], owner_started=True))
+        self.assertIn('wherever they live (side-mail too)', a.area_prompt(self.app.config, '["acme-mail"]', [(1, 'side-mail')], owner_started=True))
+
+    def test_a_personal_handoff_sends_from_a_personal_mailbox_before_a_company_one_labeled_so(self):
+        import next_actions
+        home = {'id': 'home-mail', 'service': 'gmail', 'transport': 'gog', 'email': 'robin@mail.example', 'boundary': 'personal:me'}
+        self.assertEqual(next_actions.sending_account({'accounts': ACCOUNTS + [home]}, ['home-chat'])['id'], 'home-mail')
+        self.assertEqual(next_actions.sending_account({'accounts': ACCOUNTS}, ['home-chat'])['id'], 'side-mail')  # the only Personal one
+        self.assertEqual(next_actions.sending_account({'accounts': ACCOUNTS + [home]}, ['side-mail'])['id'], 'side-mail')  # its own first
 
     def test_a_run_stuck_on_other_mail_offers_to_use_it_and_carries_on(self):
         sid = self.suggest()

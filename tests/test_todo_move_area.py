@@ -43,7 +43,9 @@ class Areas(unittest.TestCase):
         self.assertEqual(todo_areas.current(['home-chat', 'acme-chat'], ACCOUNTS), 'work:Acme')  # any Work account makes it Work
         self.assertIsNone(todo_areas.current(['acme-chat', 'b'], ACCOUNTS + [{'id': 'b', 'boundary': 'work:Beta'}]))  # two companies
         self.assertEqual(todo_areas.accounts_in('work:Acme', ACCOUNTS), ['acme-mail', 'acme-chat'])
-        self.assertEqual(todo_areas.accounts_in('personal', ACCOUNTS), ['home-chat', 'home-phone'])  # a work mailbox labeled personal is in neither
+        self.assertEqual(todo_areas.accounts_in('personal', ACCOUNTS), ['home-chat', 'home-phone', 'side-mail'])  # a work mailbox labeled personal is Personal
+        self.assertEqual(todo_areas.current(['side-mail'], ACCOUNTS), 'personal')
+        self.assertIsNone(todo_areas.area_of_account({'id': 'p', 'boundary': 'personal:me', 'scope': 'work'}))  # labeled work: no company, in neither
         with self.assertRaisesRegex(ValueError, 'Pick one of your areas'):
             todo_areas.check('work:Side', ['home-chat'], ACCOUNTS)
         with self.assertRaisesRegex(ValueError, 'in that area already'):
@@ -201,7 +203,7 @@ class MoveCard(unittest.TestCase):
 
     def test_the_run_is_told_its_area_and_how_to_ask(self):
         line = a.area_prompt(self.app.config, '["home-chat"]')
-        self.assertIn('this to-do is in Personal (its accounts: whatsapp, android)', line)
+        self.assertIn('this to-do is in Personal (its accounts: whatsapp, android, gmail)', line)  # gmail: Side's, labeled personal
         self.assertIn('move_to=<work:Acme (Work: gmail, slack)>', line)  # what a move would get it
         self.assertIn('never for what the to-do is about', line)
         self.assertIn('never move it yourself', line)
