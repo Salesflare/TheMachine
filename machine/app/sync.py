@@ -1,6 +1,7 @@
 """Reading the owner's accounts: each account's collector with its lock and waits, a connector's sync, and what an
 action-only connection may do. Moved out of assistant.App as is. A mixin of assistant.App (APP_MIXINS)."""
 import datetime as dt
+from decimal import Decimal
 import json
 import re
 import secrets
@@ -8,12 +9,22 @@ import sqlite3
 import threading
 import time
 
+import enrichment
+import graph
 from machine.config import LOG, SIGNIN_ERROR
 from machine.faults import db_busy, DB_BUSY_RETRY
+from machine.sources.android import sync_android, sync_android_preferred
+from machine.sources.calendar import sync_calendar
 from machine.sources.connectors import ABILITY_CHECK_SECONDS, BUILT_IN_SERVICES, CONNECTOR_HELPERS, load_connector
-from machine.sources.salesflare import salesflare_progress
-from machine.sources.slack import Slack
-from sources import gog_signed_in_since, SourceError
+from machine.sources.gateway import sync_gateway
+from machine.sources.gmail import sync_gmail
+from machine.sources.rows import Skips
+from machine.sources.salesflare import salesflare_progress, sync_salesflare
+from machine.sources.slack import (Slack, slack_error, slack_event, slack_first_import_next, slack_first_import_plan,
+                                   slack_interval, slack_next_due, slack_order, slack_page_names)
+from machine.sources.telegram import sync_telegram
+from machine.sources.whatsapp import sync_whatsapp
+from sources import CALENDAR_SERVICES, gog_signed_in_since, MAIL_SERVICES, rate_limited, SourceError, upstream_busy
 from timeutil import now
 
 
@@ -24,6 +35,344 @@ SALESFLARE_ROUND_SPREAD = 60  # seconds: and a fresh spread each round, so two w
 
 
 SYNC_LOCKS, SYNC_LOCKS_LOCK = {}, threading.Lock()
+
+
+QUICK_RETRY_SECONDS = 15
+
+
+QUICK_RETRY_MAX = 60  # a Retry-After longer than this waits in the checkpoint instead
+
+
+def sync_slack(store, config, account, source=None):
+    source = source or Slack(config, account)
+    source.profile()
+    state = store.checkpoint(account['id']) or {}
+    if not state:
+        state = {'mode': 'bootstrap', 'phase': 'discover', 'channels': [],
+                 'after': f'{time.time() - config.get("bootstrap_days", 7) * 86400:.6f}'}
+        store.commit_page(account['id'], state, [], record_sync=False)
+    if state['phase'] == 'discover':
+        params = {'user': account['user_id'], 'types': 'public_channel,private_channel,im,mpim',
+                  'exclude_archived': 'true', 'limit': 100}
+        if state.get('page_token'):
+            params['cursor'] = state['page_token']
+        try:
+            page = source.get('users.conversations', params)
+        except SourceError as error:
+            if slack_error(error) == 'slack_invalid_cursor':
+                state.pop('page_token', None)
+                store.commit_page(account['id'], state, [], record_sync=False)
+            raise
+        channels = {c['id']: c for c in state['channels']}
+        for c in page.get('channels', []):
+            if c.get('is_archived'):
+                continue
+            # users.conversations is scoped to actual membership. Never join or open DMs.
+            kind = 'dm' if c.get('is_im') else 'group' if c.get('is_mpim') else 'channel'
+            channels.setdefault(c['id'], {'id': c['id'], 'name': c.get('name') or
+                ('My notes' if c.get('user') == account['user_id'] else 'DM ' + c.get('user', c['id'])),
+                'type': kind, 'threads': []})
+            # Slack Connect: shared with another company. Everything else is the company's own Slack, among colleagues.
+            if c.get('is_ext_shared') or c.get('is_pending_ext_shared'):
+                channels[c['id']]['external'] = True
+            else:
+                channels[c['id']].pop('external', None)
+        state['channels'] = list(channels.values())
+        cursor = page.get('response_metadata', {}).get('next_cursor')
+        if cursor:
+            state['page_token'] = cursor
+        else:
+            state.pop('page_token', None)
+            state['next_discovery'] = time.time() + 86400
+            if state['mode'] == 'bootstrap' and 'index' not in state:
+                # First import: a cheap look at every conversation first, so the read order follows activity.
+                state.update(phase='triage', triage=0)
+            else:
+                slack_order(state['channels'])
+                state.update(phase='scan', index=0)
+        store.commit_page(account['id'], state, [])
+        return {'mode': state['mode'], 'events': 0, 'more': True}
+
+    if (state['mode'] == 'bootstrap' and state['phase'] == 'scan' and 'step' not in state and not state.get('scan')
+            and state.get('channels') and isinstance(source, Slack)):
+        # A first import begun in the old name order: the rest of it follows activity. Conversations already read
+        # stay read.
+        state.update(phase='triage', triage=0)
+        store.commit_page(account['id'], state, [], record_sync=False)
+
+    if state['phase'] == 'triage':
+        # conversations.info isn't held to Slack's one-read-a-minute limit. A direct message shows its newest
+        # message; a channel or group only when you last read it, which stands in for its activity.
+        for _ in range(10):
+            if state['triage'] >= len(state['channels']):
+                break
+            channel = state['channels'][state['triage']]
+            try:
+                info = source.get('conversations.info', {'channel': channel['id']}).get('channel') or {}
+            except SourceError as error:
+                if slack_error(error) not in ('slack_channel_not_found', 'slack_not_in_channel', 'slack_missing_scope'):
+                    store.commit_page(account['id'], state, [], record_sync=False)
+                    raise
+                info = {}
+            latest = info.get('latest') if isinstance(info.get('latest'), dict) else {}
+            mark = latest.get('ts') if channel['type'] == 'dm' else info.get('last_read')
+            try:
+                channel['hint'] = float(mark or 0)
+            except (TypeError, ValueError):
+                channel['hint'] = 0.0
+            state['triage'] += 1
+        if state['triage'] >= len(state['channels']):
+            slack_first_import_plan(config, state)
+        store.commit_page(account['id'], state, [], record_sync=False)
+        return {'mode': state['mode'], 'events': 0, 'more': True}
+
+    if not state['channels']:
+        state.update(mode='incremental', phase='discover')
+        store.commit_page(account['id'], state, [], record_sync=False)
+        return {'mode': 'incremental', 'events': 0, 'more': False}
+    if state['mode'] == 'incremental' and not state.get('scan') and not slack_next_due(store, config, account, source, state):
+        return {'mode': 'incremental', 'events': 0, 'more': False}
+    channel = state['channels'][state['index']]
+    scan = state.get('scan')
+    if not scan:
+        # Six-hour overlap catches recent edits; daily retained-window replay catches older
+        # edits and thread metadata. No timestamp advances before every page commits.
+        full = not channel.get('last_scan') or time.time() >= channel.get('next_full', 0)
+        # The retained window rolls forward; state['after'] (first install) only bounds it.
+        retained = max(Decimal(state['after']),
+                       Decimal(f'{time.time() - config.get("bootstrap_days", 7) * 86400:.6f}'))
+        oldest = str(retained) if full else str(max(retained, Decimal(channel['last_scan']) - Decimal(21600)))
+        latest = f'{time.time():.6f}'
+        step = state.get('step')
+        if step == 'recent':
+            # First import, active conversations: the last day first; the rest of the window comes after.
+            oldest, full = str(max(retained, Decimal(f'{time.time() - 86400:.6f}'))), False
+            deepen_to = oldest if Decimal(oldest) > retained else None
+        elif step == 'deepen' and channel.get('deepen'):
+            oldest, latest = str(retained), channel['deepen']
+        # Known threads are polled for late replies only while reasonably recent; the
+        # list otherwise grows forever and is rewritten on every page commit.
+        horizon = time.time() - config.get('slack_thread_retention_days', 30) * 86400
+        channel['threads'] = [ts for ts in channel.get('threads', []) if float(ts) >= horizon]
+        scan = {'oldest': oldest, 'latest': latest, 'phase': 'history',
+                'thread_index': 0, 'threads': list(channel.get('threads', [])), 'full': full}
+        if step:
+            scan['step'] = step
+            if step == 'recent' and deepen_to:
+                scan['deepen_to'] = deepen_to
+        if channel.get('threads_waiting'):
+            # Threads left for later on the first pass: read them now over the whole window.
+            scan.update(thread_oldest=str(retained), thread_latest=f'{time.time():.6f}')
+        elif account.get('fair_incremental') and channel.get('last_scan') and not step:
+            # One old thread per channel turn, not its entire retained history.
+            # Preserve all known threads and rotate durably on completed scans.
+            scan['known_threads'] = list(scan['threads'])
+            scan['thread_start'] = channel.get('next_thread_index',0)
+            scan['threads'] = []
+        state['scan'] = scan
+        store.commit_page(account['id'], state, [], record_sync=False)
+    params = {'channel': channel['id'], 'oldest': scan['oldest'], 'latest': scan['latest'],
+              'inclusive': 'true', 'limit': 15}
+    if scan['phase'] == 'threads':
+        params['ts'] = scan['threads'][scan['thread_index']]
+        if scan.get('thread_oldest'):
+            params.update(oldest=scan['thread_oldest'],latest=scan['thread_latest'])
+    if scan.get('cursor'):
+        params['cursor'] = scan['cursor']
+    try:
+        page = source.get('conversations.history' if scan['phase'] == 'history' else 'conversations.replies', params)
+    except SourceError as error:
+        if (account.get('fair_incremental') and 'known_threads' in scan and
+                scan['phase']=='threads' and error.category.startswith('network:')):
+            # Save the failed frozen thread page, then let other conversations
+            # progress. A repeated timeout cannot starve new channel messages.
+            channel['deferred_thread'] = {'ts':params['ts'],'oldest':params['oldest'],'latest':params['latest'],
+                                          'retry_at':time.time()+600, 'error':str(error)}
+            if scan.get('cursor'):
+                channel['deferred_thread']['cursor'] = scan['cursor']
+            channel.update(last_scan=scan['latest'],threads=scan['known_threads'],
+                           next_thread_index=scan['thread_start']+1)
+            state.pop('scan',None)
+            state['index']=(state['index']+1)%len(state['channels'])
+            store.commit_page(account['id'],state,[],record_sync=False)
+            error.retry_after = 65
+        elif slack_error(error) == 'slack_invalid_cursor':
+            scan.pop('cursor', None)
+            store.commit_page(account['id'], state, [], record_sync=False)
+        elif slack_error(error) in ('slack_thread_not_found', 'slack_channel_not_found', 'slack_not_in_channel'):
+            # Keep a visible failure; don't silently mark a partial inaccessible channel complete.
+            channel['error'] = slack_error(error)
+            state.pop('scan', None)
+            if state.get('step'):
+                state['index'] += 1
+                slack_first_import_next(state)
+            else:
+                state['index'] = (state['index'] + 1) % len(state['channels'])
+            store.commit_page(account['id'], state, [], record_sync=False)
+        raise
+    names = slack_page_names(store, channel, page.get('messages', []))
+    skipped = Skips('slack_invalid_message')  # a message it can't take is counted, never failing the channel's page
+    def one(raw):
+        if raw.get('subtype') == 'message_deleted':
+            return store.tombstone(account['id'], channel['id'] + ':' + raw['deleted_ts'])
+        e = slack_event(account, channel, raw, names)
+        ts = e['metadata']['message_ts']
+        channel['last_activity'] = max(float(channel.get('last_activity') or 0), float(ts))
+        if e['metadata']['reply_count'] and ts not in scan['threads']:
+            scan['threads'].append(ts)
+            if 'known_threads' in scan and ts not in scan['known_threads']:
+                scan['known_threads'].append(ts)
+        return e
+    events = [e for e, _ in skipped.every(page.get('messages', []), one) if e]
+    cursor = page.get('response_metadata', {}).get('next_cursor')
+    if cursor:
+        scan['cursor'] = cursor
+    elif page.get('has_more'):
+        raise SourceError('slack_missing_cursor')
+    else:
+        scan.pop('cursor', None)
+        if scan['phase'] == 'history':
+            scan['phase'] = 'threads'
+            if state['mode'] == 'bootstrap' and len(state['channels']) > 1 and scan['threads']:
+                # First pass: every conversation's own messages before any thread replies. Slack
+                # allows about one read a minute, so one busy channel's threads would otherwise
+                # hold up all the others for hours. The next turn of this channel reads them.
+                scan['waiting'], scan['threads'] = scan['threads'], []
+            elif 'known_threads' in scan:
+                known = scan['known_threads']
+                selected = scan['threads'][:1]
+                if not selected and known:
+                    selected = [known[scan['thread_start'] % len(known)]]
+                postponed = channel.get('deferred_thread')
+                if postponed and time.time() < postponed['retry_at']:
+                    selected = []
+                if postponed and time.time() >= postponed['retry_at']:
+                    scan['threads'] = [postponed['ts']]
+                    scan['thread_oldest'], scan['thread_latest'] = postponed['oldest'], postponed['latest']
+                    if postponed.get('cursor'):
+                        scan['cursor'] = postponed['cursor']
+                    selected = scan['threads']
+                scan['threads'] = selected
+        else:
+            scan['thread_index'] += 1
+            postponed = channel.get('deferred_thread')
+            if postponed and params.get('ts') == postponed['ts']:
+                channel.pop('deferred_thread',None)
+        if scan['thread_index'] >= len(scan['threads']):
+            if scan.get('step') == 'deepen' and channel.get('deepen'):
+                # The older part of the window: the newest read (last_scan) stays where it was.
+                channel.pop('deepen')
+                channel['threads'] = list(dict.fromkeys(channel.get('threads', []) + scan['threads'] + scan.get('waiting', [])))
+            else:
+                channel.update(last_scan=scan['latest'], threads=scan.get('known_threads', scan['threads'] + scan.get('waiting', [])))
+                if scan.get('deepen_to'):
+                    channel['deepen'] = scan['deepen_to']
+            if scan.get('waiting'):
+                channel['threads_waiting'] = True
+            else:
+                channel.pop('threads_waiting', None)
+            if 'known_threads' in scan:
+                channel['next_thread_index'] = scan['thread_start'] + 1
+            channel.pop('error', None)
+            # Thread replies held back on the first pass are read on the very next round.
+            channel['due'] = time.time() + (0 if scan.get('waiting') else slack_interval(config, channel))
+            if scan['full']:
+                channel['next_full'] = time.time() + 86400
+            state.pop('scan', None)
+            state['index'] += 1
+            if state.get('step'):
+                slack_first_import_next(state)
+            elif state['index'] >= len(state['channels']):
+                state.update(index=0, mode='incremental')
+                if time.time() >= state.get('next_discovery', 0):
+                    state['phase'] = 'discover'
+    if not state.get('titles_named'):  # once: titles stored before members were named in them
+        store.name_slack_titles(account['id'])
+        state['titles_named'] = True
+    skipped.check().note(state)
+    store.commit_page(account['id'], state, events)
+    if isinstance(source, Slack):
+        remember_slack_names(store, source, events, state.get('channels') or ())
+    more = state['mode'] != 'incremental' or state['index'] != 0 or bool(state.get('scan'))
+    return {'mode': state['mode'], 'events': len(events), 'more': more, 'skipped': sum(skipped.values())}
+
+
+def remember_slack_names(store, source, events, channels=(), per_page=3):
+    """Names and emails for the people graph: Slack messages carry only user IDs. A few lookups per
+    page (new senders, people they mention, then the people behind known DMs), each once a month; the email joins the
+    person to their mail. Whether each is outside the company's own Slack (another company's member through Slack
+    Connect, or a guest) is kept too (slack_members): shared_graph.visibility shares on it. Titles with a member's id
+    are written again with the name once it is known. Best effort."""
+    users = {e['metadata'].get('user_id') for e in events} | {
+        m[0] for e in events for m in graph.SLACK_MENTION.findall(str(e.get('body') or ''))} | {
+        m[1] for name in [e['metadata'].get('channel_name') for e in events] + [c.get('name') for c in channels]
+        for m in [re.fullmatch(r'DM ([UW][A-Z0-9]+)', name or '')] if m}
+    owner = source.account.get('user_id')
+    users = {u for u in users if u}
+    with store.connect() as db:
+        known = graph.slack_members_known(db, users)
+    wanted = sorted(set(store.names_to_check(['slack:' + u for u in users - {owner}])) | {'slack:' + u for u in users - known})
+    named = []
+    for identifier in wanted[:per_page]:
+        member = identifier.split(':', 1)[1]
+        try:
+            user = source.get('users.info', {'user': member}).get('user', {})
+        except SourceError as error:
+            if not str(error).startswith(('slack_user_not_found', 'slack_user_not_visible')):
+                return  # away, or Slack's limit: the rest next page
+            user = {'id': member, 'deleted': True}  # an account Slack no longer has
+        profile = user.get('profile') or {}
+        shown = (profile.get('real_name') or profile.get('display_name') or user.get('real_name')
+                 or profile.get('real_name_normalized') or profile.get('display_name_normalized') or user.get('name'))
+        person = not user.get('is_bot') and member != owner and not user.get('deleted')
+        email = str(profile.get('email') or '').lower()[:320] or None
+        if member != owner:  # a person's name and email for the people graph (an app: none, checked once a month)
+            real = None if user.get('is_bot') else (profile.get('real_name') or profile.get('display_name') or user.get('real_name'))
+            store.remember_name(identifier, real and str(real)[:200], None if user.get('is_bot') else email)
+        # who is no person in the graph still has a name to show: an app by its name, the owner as themselves, someone
+        # whose account is gone by the name it had, else "a former Slack user"
+        label = None if person else (shown or (graph.FORMER_SLACK_USER if user.get('deleted') else None))
+        team = source.account.get('team_id')
+        outside = bool(user.get('is_stranger') or user.get('is_restricted') or user.get('is_ultra_restricted')
+                       or (team and user.get('team_id') and user['team_id'] != team))
+        with store.connect() as db:
+            graph.remember_slack_member(db, member, outside, now(), label)
+        if shown or label:
+            named.append(member)
+        if member == owner or (user.get('deleted') and not profile):
+            continue  # the owner's own picture and facts aren't a contact's
+        user = {**user, 'id': user.get('id') or member}
+        offer, facts = enrichment.slack_photo(user), enrichment.slack_facts(user)
+        if offer or facts:
+            with store.connect() as db:
+                enrichment.offer_photos(db, [offer], 'slack', now(), known_only=False) if offer else None
+                enrichment.offer_facts(db, [facts], 'slack', now()) if facts else None
+    if named and source.account.get('id'):
+        store.name_slack_titles(source.account['id'], named)
+
+
+def sync_source(store, config, account):
+    service = account.get('service', 'gmail')
+    if service in MAIL_SERVICES:
+        return sync_gmail(store, config, account)
+    if service in CALENDAR_SERVICES:
+        return sync_calendar(store, config, account)
+    if service == 'slack':
+        return sync_slack(store, config, account)
+    if service == 'whatsapp':
+        return sync_whatsapp(store, config, account)
+    if service == 'telegram':
+        return sync_telegram(store, config, account)
+    if service == 'salesflare':
+        return sync_salesflare(store, config, account)
+    if service == 'gateway':
+        return sync_gateway(store, config, account)
+    if service == 'android':
+        return sync_android_preferred(store, config, account) if account['transport'] == 'openclaw-feed' else sync_android(store, config, account)
+    plugin = load_connector(service)
+    if plugin is None:
+        raise SourceError('unsupported_service')
+    return plugin.sync(store, config, account, CONNECTOR_HELPERS)
 
 
 class SyncApp:
@@ -195,3 +544,34 @@ class SyncApp:
         if do != 'stop':
             self.sync_soon(account['id'])
         return {'ok': True, 'do': do, 'salesflare': salesflare_progress(account, state)}
+
+    def sync_retrying(self, account, source=None):
+        """One sync of the account; when the service answers 429 or a transient 5xx, one more try shortly after (its
+        Retry-After when that is short, else QUICK_RETRY_SECONDS). A second failure goes to the caller. Not for Slack's
+        rate limit: its reads keep their own round (Slack.read_went), and a quick extra read would spend the next one."""
+        for attempt in (0, 1):
+            try:
+                with self.sync_lock(account['id']):
+                    return sync_slack(self.store, self.config, account, source) if source else sync_source(self.store, self.config, account)
+            except SourceError as error:
+                wait = error.retry_after or QUICK_RETRY_SECONDS
+                if attempt or not upstream_busy(error) or (source and rate_limited(error)) or wait > QUICK_RETRY_MAX \
+                        or self.stop.is_set():
+                    raise
+                LOG.info('sync account=%s service busy (%s), retrying in %ds', account['id'], error, wait)
+                if self.stop.wait(wait):
+                    raise
+
+    def sync_soon(self, account_id):
+        """Read this calendar again now instead of at its next poll, so a change shows in the Calendar in seconds."""
+        account = next((a for a in self.config.get('accounts', []) if a.get('id') == account_id), None)
+        if not account:
+            return
+
+        def read():
+            try:
+                with self.sync_lock(account_id):
+                    sync_source(self.store, self.config, account)
+            except Exception as error:  # noqa: BLE001 - the next poll reads it anyway
+                LOG.warning('sync_soon account=%s error=%s', account_id, type(error).__name__)
+        threading.Thread(target=read, name='sync-soon-' + account_id, daemon=True).start()
