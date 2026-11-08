@@ -5,7 +5,7 @@ summary: Alle, mit denen du in Kontakt bist: ihre Seite, Zusammenfassung und Ver
 code: graph.py, crm.py, bounces.py, enrichment.py, dashboard.html
 order: 2
 ---
-Alle, mit denen du in Kontakt bist, die engsten zuerst, aus deinen Nachrichten und Meetings. Filter, Felder, Tags und Import funktionieren in allen drei Listen gleich: siehe [Der Graph](graph.md).
+Alle, mit denen du in Kontakt bist, die engsten zuerst, aus deinen Nachrichten und Meetings. Newsletter, Belege und andere Massenmails fügen niemanden hinzu, bis du zurückschreibst. Sie stehen unter Ausgeblendete Absender, unter der Liste: Als Person zeigen holt sie herein. Filter, Felder, Tags und Import funktionieren in allen drei Listen gleich: siehe [Der Graph](graph.md).
 
 ## Die Seite einer Person
 
