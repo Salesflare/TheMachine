@@ -17,7 +17,7 @@ const RUNS={
  github:{session:'s3',state:'running',label:'GitHub',lines:[],code:{kind:'device',code:'ABCD-1234',url:'https://github.com/login/device'}},
  whatsapp:{session:'s4',state:'running',label:'WhatsApp',lines:[],code:{kind:'pair',code:'K7PQ-2M9X'}},
  gmail:{session:'s5',state:'running',label:'Gmail',lines:['Google account to read: sam@gmail.com']},
- outlook:{session:'s6',state:'running',label:'Outlook',lines:[],question:{id:1,kind:'choose',prompt:'Is this account work or personal?',options:['Work · Moreaudesign','Personal']}}};
+ outlook:{session:'s6',state:'running',label:'Outlook',lines:[],question:{id:1,kind:'choose',prompt:'Is this account work or personal?',options:['Personal','Work · Moreaudesign']}}};
 // Gmail and Outlook: Work or Personal from the address once it is known, no question up front. A guess shows with
 // Change; an address that doesn't say (its own domain) asks the one question, and the answer is the owner's.
 const GMAIL_CARD={id:'work-gmail',service:'gmail',email:'sam@gmail.com',boundary:'personal:me',boundary_by:'guess'};
@@ -125,8 +125,8 @@ try{
   assert.equal(await pane.locator('input[name="company"]').count(),0);
   await shot(page,`form-gmail-${tag}`);
   await pane.getByRole('button',{name:'Connect'}).click();
-  assert.deepEqual(started(),{name:'gmail',form:true,answers:{},secret:''});
   await pane.locator('.connect-guess').waitFor();
+  assert.deepEqual(started(),{name:'gmail',form:true,answers:{},secret:''});
   assert.equal(await pane.locator('.connect-guess').innerText(),'Set to Personal from its address.');
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no sideways scroll');
   await shot(page,`form-gmail-done-${tag}`);
