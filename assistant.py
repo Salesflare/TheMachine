@@ -1099,6 +1099,9 @@ from machine.app.sync import (
     sync_slack,
     sync_source,
 )
+from machine.app.mail import (
+    MailApp,
+)
 
 
 # LinkedIn and X sign in in the Machine's browser while their connect waits (onboarding.wait_signed_in), up to this long
@@ -1428,6 +1431,7 @@ APP_MIXINS = (SupportApp, CalendarApp, SkillsApp, AgentsApp, GBrainApp, SharedGr
 APP_MIXINS += (FollowUpsApp, GraphActionsApp, KnowledgeExportApp, MeetingWritesApp, ModelPacingApp, PromiseChecksApp, SignaturesApp, SummariesApp,
                VoiceApp)
 APP_MIXINS += (CardChatApp, ConversationApp, ExportApp, FirstLookApp, FleetApp, PreparationApp, RecapApp, ReviewApp, TalkApp)
+APP_MIXINS += (MailApp,)
 APP_MIXINS += (SyncApp,)
 APP_MIXINS += (ActionRunsApp,)
 APP_MIXINS += (WorkersApp,)
@@ -1449,45 +1453,6 @@ class App(*APP_MIXINS):
     # may call an action is still the reviewed sets above (OWNER_ACTIONS, DASHBOARD_ACTIONS, SUPPORT_ACTIONS, ...).
     ACTION_HANDLERS = {name: method for mixin in APP_MIXINS for name, method in mixin.ACTIONS.items()}
     HISTORY_SOURCES = {'mail': (Gmail, message_event), 'calendar': (Calendar, calendar_event, calendar_title_excluded), 'whatsapp': (WhatsApp, whatsapp_event)}
-
-    @functools.cached_property
-    def task_pages(self):
-        """Pages for tasks handed off by email (task_pages.py)."""
-        return task_pages.TaskPages(self)
-
-    @functools.cached_property
-    def handoff_mail(self):
-        """Handoffs by email to a colleague who isn't on The Machine (handoff_mail.py)."""
-        return handoff_mail.HandoffMail(self, handoff_checkin, promise_check_at)
-
-    def handoff_mail_draft(self, card_id, body, next_action, outcome):
-        """The handoff email, ready on the to-do for the owner to read and send (a pending to-do counts as accepted)."""
-        with self.store.connect() as db:
-            db.execute("UPDATE suggestions SET status='accepted' WHERE id=? AND status='pending'", (card_id,))
-        self.store.prepare(card_id, body, next_action=next_action, outcome=outcome)
-
-    def handoff_mail_wait(self, db, card_id, until):
-        """A handoff email went out: the to-do waits under Later until its check-in, then comes back as it was."""
-        db.execute("UPDATE suggestions SET status='snoozed',snoozed_until=?,resume_status='prepared',outcome=NULL,undo_until=NULL WHERE id=?",
-                   (until, card_id))
-
-    def handoff_mail_promise(self, db, card_id, event_ids, who, what, due, check_at, event):
-        """Their promise to take on a to-do handed off by email, from the sent email (watch NULL: only the review closes it
-        by meaning, or the to-do). The to-do then holds that email, so it is the promise's home. Returns its id."""
-        stamp = dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds')
-        cursor = db.execute("INSERT INTO promises(direction,who,what,due,check_at,event_id,account_id,watch,status,created_at,updated_at) "
-                            "VALUES('theirs',?,?,?,?,?,?,NULL,'open',?,?) ON CONFLICT(event_id,direction,who,what) DO NOTHING",
-                            (who, what, due, check_at, event['id'], event['account_id'], stamp, stamp))
-        if event['id'] not in event_ids:
-            db.execute('UPDATE suggestions SET event_ids=? WHERE id=?', (json.dumps([*event_ids, event['id']]), card_id))
-        return cursor.lastrowid or None
-
-    def email_handoff_round(self):
-        """In the Fleet's round: answers from task pages, then handoffs by email (take links, promises, moves)."""
-        try:
-            self.task_pages.round()
-        finally:
-            self.handoff_mail.round()
 
     def __init__(self, config, config_path=None):
         set_timezone(config.get('timezone'))
@@ -1542,55 +1507,7 @@ class App(*APP_MIXINS):
     MESSAGE_CACHE = 40  # source emails kept in memory for the dashboard, newest used last
     MESSAGE_TTL = 600  # seconds
 
-    def gmail_message(self, account_id, message_id):
-        """One source email, read live (read-only). Opening it on the dashboard reads it for its attachments, its
-        HTML and each embedded image, and visible cards read it ahead, so a few recent ones stay in memory for
-        MESSAGE_TTL; one read at a time per message."""
-        account = next(a for a in self.config['accounts'] if a['id'] == account_id)
-        cache = self.__dict__.setdefault('_messages', collections.OrderedDict())
-        locks = self.__dict__.setdefault('_message_locks', collections.defaultdict(threading.Lock))
-        key = (account_id, message_id)
-        with locks[key]:
-            hit = cache.get(key)
-            if hit and time.monotonic() - hit[0] < self.MESSAGE_TTL:
-                cache.move_to_end(key)
-                return account, hit[1]
-            message = gog_read(self.config, account, 'gmail', 'v1', 'gmail.users.messages.get',
-                               {'userId': 'me', 'id': message_id, 'format': 'full'}, 'https://www.googleapis.com/auth/gmail.readonly')
-            cache[key] = (time.monotonic(), message)
-            cache.move_to_end(key)
-            while len(cache) > self.MESSAGE_CACHE:
-                cache.popitem(last=False)
-        if len(locks) > 4 * self.MESSAGE_CACHE:
-            locks.clear()  # at worst one message is read twice
-        return account, message
-
     MAILBOX_LOOKUP_MAX = 10  # messages per mailbox one search keeps
-
-    def mailbox_lookup(self, account_ids, query, limit=5):
-        """Search the owner's own mailboxes themselves (Gmail's search, Outlook's), read-only, for mail older than what
-        is collected: a mail they sent weeks ago that a to-do follows up on. What it finds is kept as collected signals
-        (Store.keep_found: reviewed, so it is context, not news) for the run to read and link. Only the mail accounts
-        among account_ids, never one shared from a Fleet. Returns (event ids, {account id: error category})."""
-        query = ' '.join(str(query or '').split())[:200]
-        if not query:
-            raise ValueError('mailbox_search needs a query: Gmail search words, such as from:sam subject:pricing in:sent')
-        limit = max(1, min(int(limit or 5), self.MAILBOX_LOOKUP_MAX))
-        found, failed = [], {}
-        for account in self.config.get('accounts', []):
-            if account['id'] not in account_ids or account.get('service', 'gmail') not in MAIL_SERVICES or account.get('shared'):
-                continue
-            source = Gmail(self.config, account)
-            try:
-                source.profile()  # fail closed on account routing, as a sync does
-                refs = source.get('messages', {'q': query, 'maxResults': limit}).get('messages') or []
-                events = [e for e in (message_event(account, source.get('messages/' + r['id'], {'format': 'full'}), self.config)
-                                      for r in refs[:limit]) if e]
-            except SourceError as error:
-                failed[account['id']] = error.category
-                continue
-            found += self.store.keep_found(account['id'], events)
-        return found, failed
 
     def agent_card(self, suggestion_id):
         """What a Claude Code or Codex brief is made of: the card, its next step as the task, the owner's note, who it is
@@ -1623,178 +1540,6 @@ class App(*APP_MIXINS):
         return {'card': card, 'drafts': drafts, 'links': links, 'files': files, 'messages': agent_messages(views), 'sources': views,
                 'task': card_task(card), 'note': note, 'about': agent_about(card, views), 'history': agent_history(*chat, skip=note),
                 'message_kinds': [v['kind'] for v in views]}
-
-    def newer_unchecked(self, event_ids, checked=None):
-        """Before a new to-do: what happened after its evidence (activity_since) that the review hasn't said it read
-        (newer_checked). [] when nothing came after, so most to-dos save at once and the check costs no extra step."""
-        ids = [int(i) for i in event_ids or [] if isinstance(i, int) or str(i).isdigit()]
-        with self.store.connect() as db:
-            found = activity_since(db, ids, self.store.owner_user_ids, {x['email']: x['name'] for x in self.teammate_addresses()},
-                                   company_domains(self.config))
-        read = {int(i) for i in (checked if isinstance(checked, list) else []) if isinstance(i, int) or str(i).isdigit()}
-        return [x for x in found if x['id'] not in read]
-
-    def teammate_addresses(self):
-        """The members of the owner's Work Fleets, each address with their name: who Hand off by email suggests first."""
-        out = []
-        try:
-            for found in (self.fleet.fleets().values() if getattr(self, 'fleet', None) else ()):
-                if found.get('kind') != 'work':
-                    continue
-                for member in found.get('members', []):
-                    if member.get('me'):
-                        continue
-                    for email in dict.fromkeys(str(e).lower() for e in [member.get('account_email'), *(member.get('emails') or [])] if e and '@' in str(e)):
-                        out.append({'name': ' '.join(str(member.get('name') or '').split())[:80], 'email': email})
-        except Exception:  # noqa: BLE001 - suggestions only: the Graph and the domains still help
-            return out
-        return out
-
-    def owner_emails(self):
-        """The owner's addresses: each account's (its owner_emails, else its own) and the ones found as theirs
-        (own_addresses.py: aliases, their calendar, their profiles; never a shared one or one they removed)."""
-        found = {str(e).lower() for a in self.config.get('accounts', []) for e in a.get('owner_emails', [a.get('email')]) if e}
-        try:
-            with self.store.connect() as db:
-                return found | own_addresses.yours(db, self.config)
-        except sqlite3.Error:
-            return found
-
-    def calendar_write(self, args, transport=None):
-        """The Calendar form's Add, Save or Delete: the owner filled it in and tapped it, so this one change runs now.
-        request_id is the tap: the same id again is that same write (a create keeps its Google event id), never a second.
-        guests: who the owner invited; the form listed them above a button that said how many (invite), so a list that
-        doesn't match that count is refused, and nobody gets an invite without that tap."""
-        request_id = str(args.get('request_id') or '')
-        if not re.fullmatch(r'[a-f0-9-]{16,64}', request_id):
-            raise ValueError('Invalid request')
-        change = {k: v for k, v in args.items() if k in calendar_writes.KEYS - {'kind', 'label'}}
-        if args.get('guests'):
-            if not isinstance(args['guests'], list) or args.get('invite') != len(args['guests']):
-                raise ValueError('Check who gets an invite and tap again. Nothing was sent.')
-            change['guests'] = args['guests']
-        with self.store.connect() as db:
-            done = db.execute('SELECT status,result FROM calendar_writes WHERE id=?', (request_id,)).fetchone()
-            if done and done['status'] == 'done':
-                return {'status': 'done', 'duplicate': True}
-            if done and done['status'] == 'sending':
-                raise ValueError('That change is still going through.')
-            events = calendar_write_events(db, [change.get('event')], self.owner_emails())
-        action = calendar_writes.validate({'kind': 'calendar', **change}, self.config, events, invite=True)
-        transport = transport or calendar_writes.CalendarTransport(self.config, credential, gog_read)
-        transport.preflight(action)
-        stamp = now()
-        with self.store.connect() as db:
-            db.execute('BEGIN IMMEDIATE')
-            if db.execute("SELECT 1 FROM calendar_writes WHERE id=? AND status IN ('sending','done')", (request_id,)).fetchone():
-                raise ValueError('That change is still going through.')
-            db.execute('INSERT INTO calendar_writes(id,account_id,op,payload,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?) '
-                       "ON CONFLICT(id) DO UPDATE SET status='sending',payload=excluded.payload,error=NULL,updated_at=excluded.updated_at",
-                       (request_id, action['account_id'], action['op'], hashlib.sha256(encoded(action).encode()).hexdigest(), 'sending', stamp, stamp))
-        job = {'id': request_id}
-        try:
-            result = transport.send(action, job)
-        except Exception:  # noqa: BLE001 - unknown outcome: read it back below
-            result = {}
-        if not result.get('message_id') and not result.get('rejected'):
-            try:
-                result = transport.reconcile(action, job) or result
-            except Exception:  # noqa: BLE001
-                pass
-        status = 'done' if result.get('message_id') else 'failed' if result.get('rejected') else 'uncertain'
-        error = {'done': None, 'failed': f"Google Calendar refused it (error {result.get('rejected')}). Nothing was changed.",
-                 'uncertain': 'I couldn’t confirm the change. Check the calendar before you try again.'}[status]
-        with self.store.connect() as db:
-            db.execute('UPDATE calendar_writes SET status=?,result=?,error=?,updated_at=? WHERE id=?',
-                       (status, result.get('message_id'), error, now(), request_id))
-        if status == 'done':
-            self.sync_soon(action['account_id'])
-        return {'status': status, 'error': error, 'op': action['op'], 'calendar': action['calendar_name'], 'invited': len(action.get('guests') or ())}
-
-    def originals(self, suggestion_id, event_id='', event_ids=None):
-        """Source messages for the dashboard, with Gmail attachments looked up live (read-only):
-        a card's, one collected event opened from the Events or People tab, or a conversation's messages in order."""
-        items = self.store.originals(suggestion_id) if suggestion_id else self.store.event_views(event_ids or [event_id])
-        cache = self.__dict__.setdefault('_attachments', {})
-        for item in items:
-            body, cut = shown_body(item['body'])  # read by people: never the model's quoted-history marker
-            item.update(body=body, clipped=item['clipped'] or cut)
-            source = item.pop('gmail')
-            item['attachments'] = []
-            if not source:
-                continue
-            key = (source['account_id'], source['message_id'])
-            if key not in cache or cache[key][0] < time.monotonic() - 600:
-                try:
-                    cache[key] = (time.monotonic(), message_attachments(self.gmail_message(*key)[1].get('payload')))
-                except Exception:
-                    continue  # Attachments are a convenience; the email itself still shows.
-            item['attachments'] = cache[key][1]
-        return items
-
-    def whatsapp_source(self, account):
-        """The WhatsApp source of one of the owner's connections (whatsapp_images_app fetches photos through it)."""
-        return WhatsApp(self.config, account)
-
-    def whatsapp_photo_event(self, account_id, source_id):
-        """A message whose photo was kept or read, with the photo joined in (whatsapp_images.with_photo), the way its next
-        sync builds it: a new version, so the review reads what the photo says."""
-        with self.store.connect() as db:
-            row = db.execute('SELECT kind,occurred_at,title,body,metadata,deleted FROM events WHERE account_id=? AND source_id=?',
-                             (account_id, source_id)).fetchone()
-            photo = db.execute('SELECT * FROM whatsapp_photos WHERE account_id=? AND source_id=?', (account_id, source_id)).fetchone()
-        if not row or not photo or row['kind'] != 'whatsapp.message':
-            return False
-        event = {'account_id': account_id, 'source_id': source_id, 'kind': row['kind'], 'occurred_at': row['occurred_at'], 'title': row['title'],
-                 'body': whatsapp_images.base_body(row['body']), 'metadata': json.loads(row['metadata']), 'deleted': bool(row['deleted'])}
-        self.store.commit_page(account_id, None, [whatsapp_images.with_photo(event, dict(photo))], record_sync=False)
-        return True
-
-    def email_view(self, suggestion_id, event_id):
-        """The HTML of one source email, read live (read-only), with its embedded images."""
-        source = self.gmail_source(suggestion_id, event_id)
-        if not source:
-            raise ValueError('Email not available')
-        payload = self.gmail_message(source['account_id'], source['message_id'])[1].get('payload')
-        return {'html': message_html(payload), 'images': message_images(payload)}
-
-    def gmail_source(self, suggestion_id, event_id):
-        items = self.store.originals(suggestion_id) if suggestion_id else self.store.event_views([event_id])
-        return next((item['gmail'] for item in items if str(item['event_id']) == str(event_id) and item['gmail']), None)
-
-    def draft_attachment(self, suggestion_id, sha256):
-        """A file attached to this card's own email draft, served from the service's store by checksum."""
-        with self.store.connect() as db:
-            row = db.execute('SELECT next_action FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
-        record = next((r for action in next_actions.actions(row['next_action'] if row else None)
-                       for r in action.get('attachments', []) if r['sha256'] == sha256), None)
-        if not record:
-            raise ValueError('Attachment not available')
-        return next_actions.attachment_bytes(record, self.config), record['type'], record['name']
-
-    def attachment(self, suggestion_id, event_id, part):
-        source = self.gmail_source(suggestion_id, event_id)
-        if not source:
-            raise ValueError('Attachment not available')
-        account, message = self.gmail_message(source['account_id'], source['message_id'])
-        payload = message.get('payload') or {}
-        # Only this message's real attachments and its embedded images are served.
-        if part not in [a['part'] for a in message_attachments(payload)] + list(message_images(payload).values()):
-            raise ValueError('Attachment not available')
-        found = []
-        def walk(node):
-            if str(node.get('partId', '')) == part:
-                found.append(node)
-            for child in node.get('parts', []):
-                walk(child)
-        walk(payload)
-        if not found:
-            raise ValueError('Attachment not available')
-        node = found[0];body = node.get('body') or {}
-        data = body.get('data') or gog_read(self.config, account, 'gmail', 'v1', 'gmail.users.messages.attachments.get',
-                                            {'userId': 'me', 'messageId': source['message_id'], 'id': body['attachmentId']},
-                                            'https://www.googleapis.com/auth/gmail.readonly').get('data', '')
-        return base64.urlsafe_b64decode(data + '=' * (-len(data) % 4)), node.get('mimeType', 'application/octet-stream'), node.get('filename') or 'image'
 
     def mail_attachment(self, args):
         """An email's attachments for a preparation, read-only (Gmail and Outlook): a list, or one saved in the job's

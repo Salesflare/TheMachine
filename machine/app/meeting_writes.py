@@ -2,18 +2,22 @@
 its worker and one run with the model (meeting_write_run), resumed after a restart; and the meeting_notes tool that reads
 and adds a meeting's Notes and Transcript. Moved out of assistant.App as is. A mixin of assistant.App (APP_MIXINS)."""
 import datetime as dt
+import hashlib
 import logging
 import re
 import sqlite3
 import threading
 import time
 
+import calendar_writes
 import i18n
 import locale_prefs
+from machine.sources.calendar import calendar_write_events
+from machine.text import encoded
 import meeting_notes
 import meeting_writer
 from models import background_model, has_model
-from sources import CALENDAR_SERVICES
+from sources import CALENDAR_SERVICES, credential, gog_read
 from timeutil import local_tz, now
 
 LOG = logging.getLogger('personal-assistant')
@@ -214,3 +218,54 @@ class MeetingWritesApp:
         if getattr(self, 'graph_dirty', None):
             self.graph_dirty.set()  # the notes show on the timelines of the people in the meeting
         return saved
+
+    def calendar_write(self, args, transport=None):
+        """The Calendar form's Add, Save or Delete: the owner filled it in and tapped it, so this one change runs now.
+        request_id is the tap: the same id again is that same write (a create keeps its Google event id), never a second.
+        guests: who the owner invited; the form listed them above a button that said how many (invite), so a list that
+        doesn't match that count is refused, and nobody gets an invite without that tap."""
+        request_id = str(args.get('request_id') or '')
+        if not re.fullmatch(r'[a-f0-9-]{16,64}', request_id):
+            raise ValueError('Invalid request')
+        change = {k: v for k, v in args.items() if k in calendar_writes.KEYS - {'kind', 'label'}}
+        if args.get('guests'):
+            if not isinstance(args['guests'], list) or args.get('invite') != len(args['guests']):
+                raise ValueError('Check who gets an invite and tap again. Nothing was sent.')
+            change['guests'] = args['guests']
+        with self.store.connect() as db:
+            done = db.execute('SELECT status,result FROM calendar_writes WHERE id=?', (request_id,)).fetchone()
+            if done and done['status'] == 'done':
+                return {'status': 'done', 'duplicate': True}
+            if done and done['status'] == 'sending':
+                raise ValueError('That change is still going through.')
+            events = calendar_write_events(db, [change.get('event')], self.owner_emails())
+        action = calendar_writes.validate({'kind': 'calendar', **change}, self.config, events, invite=True)
+        transport = transport or calendar_writes.CalendarTransport(self.config, credential, gog_read)
+        transport.preflight(action)
+        stamp = now()
+        with self.store.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            if db.execute("SELECT 1 FROM calendar_writes WHERE id=? AND status IN ('sending','done')", (request_id,)).fetchone():
+                raise ValueError('That change is still going through.')
+            db.execute('INSERT INTO calendar_writes(id,account_id,op,payload,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?) '
+                       "ON CONFLICT(id) DO UPDATE SET status='sending',payload=excluded.payload,error=NULL,updated_at=excluded.updated_at",
+                       (request_id, action['account_id'], action['op'], hashlib.sha256(encoded(action).encode()).hexdigest(), 'sending', stamp, stamp))
+        job = {'id': request_id}
+        try:
+            result = transport.send(action, job)
+        except Exception:  # noqa: BLE001 - unknown outcome: read it back below
+            result = {}
+        if not result.get('message_id') and not result.get('rejected'):
+            try:
+                result = transport.reconcile(action, job) or result
+            except Exception:  # noqa: BLE001
+                pass
+        status = 'done' if result.get('message_id') else 'failed' if result.get('rejected') else 'uncertain'
+        error = {'done': None, 'failed': f"Google Calendar refused it (error {result.get('rejected')}). Nothing was changed.",
+                 'uncertain': 'I couldn’t confirm the change. Check the calendar before you try again.'}[status]
+        with self.store.connect() as db:
+            db.execute('UPDATE calendar_writes SET status=?,result=?,error=?,updated_at=? WHERE id=?',
+                       (status, result.get('message_id'), error, now(), request_id))
+        if status == 'done':
+            self.sync_soon(action['account_id'])
+        return {'status': status, 'error': error, 'op': action['op'], 'calendar': action['calendar_name'], 'invited': len(action.get('guests') or ())}
