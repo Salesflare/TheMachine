@@ -37,6 +37,7 @@ import secrets
 import shutil
 import subprocess
 import sys
+import threading
 import time
 import urllib.request
 from pathlib import Path
@@ -97,7 +98,18 @@ class Paths:
         self.workspace = Path(os.environ.get('OPENCLAW_WORKSPACE') or self.home / '.openclaw/workspace')
 
 
+# A first install in a terminal runs the steps that need no answers (bytecode, Node packages, the OpenClaw bridge and
+# settings) while the questions are asked (Ahead). Their lines are kept for after the questions, their programs never
+# read the terminal, and OpenClaw is never called by both at once (OPENCLAW_TURN: the questions' Telegram pairing).
+_ahead = threading.local()
+OPENCLAW_TURN = threading.Lock()
+
+
 def say(*parts):
+    lines = getattr(_ahead, 'lines', None)
+    if lines is not None:
+        lines.append(' '.join(str(p) for p in parts))
+        return
     print(*parts, flush=True)
 
 
@@ -109,7 +121,15 @@ def version_tuple(text):
 def run(args, check=False, **kwargs):
     kwargs.setdefault('capture_output', True)
     kwargs.setdefault('text', True)
+    behind = getattr(_ahead, 'lines', None) is not None
+    if behind:  # the terminal belongs to the questions
+        kwargs['capture_output'] = True
+        if 'input' not in kwargs:
+            kwargs['stdin'] = subprocess.DEVNULL
     try:
+        if behind:
+            with OPENCLAW_TURN:
+                return subprocess.run(args, check=check, timeout=kwargs.pop('timeout', 120), **kwargs)
         return subprocess.run(args, check=check, timeout=kwargs.pop('timeout', 120), **kwargs)
     except (OSError, subprocess.TimeoutExpired) as error:
         return subprocess.CompletedProcess(args, 127, '', str(error))
@@ -428,7 +448,13 @@ def answers(interactive, facts):
         say('\nA few questions (Enter keeps the default):')
         values['owner_name'] = ask('Your name (used to sign emails)', values['owner_name'])
         if not values['telegram_owner'] and facts.get('openclaw'):
-            values['telegram_owner'] = onboarding.telegram_from_pairing(facts['openclaw'], onboarding.UI()) or ''
+            if not OPENCLAW_TURN.acquire(blocking=False):  # it approves a pairing: not while the steps ahead call OpenClaw
+                say('One moment: OpenClaw is busy with the install.')
+                OPENCLAW_TURN.acquire()
+            try:
+                values['telegram_owner'] = onboarding.telegram_from_pairing(facts['openclaw'], onboarding.UI()) or ''
+            finally:
+                OPENCLAW_TURN.release()
         values['telegram_owner'] = ask_until('Your Telegram user ID (the private chat with your OpenClaw bot'
                                              + (', found in OpenClaw)' if values['telegram_owner'] else
                                                 '; your bot\'s pairing reply shows it. Optional: Enter skips Telegram,'
@@ -846,6 +872,59 @@ def install_node_packages(node, root=ROOT):
         return False
     say('Node packages: installed (package-lock.json)')
     return True
+
+
+def precompile(facts):
+    """The app's bytecode, so the service's first start reads it instead of compiling every module (about 6 of its
+    9 seconds on a busy machine). Not fatal: the service compiles what is missing itself."""
+    python = facts.get('python') or sys.executable
+    result = run([python, '-m', 'compileall', '-q', '-j', '0', '-x', r'/(tests|node_modules|\.git)/', str(ROOT)], timeout=300)
+    return result.returncode == 0
+
+
+def prepare(facts, paths, fresh, start, skip_plugin, bytecode=False):
+    """The install steps that need no answers: on a first install in a terminal they run while the questions are asked
+    (Ahead), with the bytecode too, which is free there. False when the bridge could not go into OpenClaw (the install
+    then stops, as before)."""
+    paths.data.mkdir(mode=0o700, parents=True, exist_ok=True)  # its stamps go here; setup_secrets keeps it 700
+    if bytecode:
+        precompile(facts)
+    install_node_packages(facts['node'])
+    # The bridge reads config.json when it needs it; before the answers, the credentials it guards are all in paths.data
+    if not (skip_plugin or install_plugin(facts, reload=start, stamp=paths.data / 'plugin-installed')):
+        return False
+    quiet_openclaw(facts, paths.data / 'openclaw-quiet.json')
+    gateway_keep_retrying(paths)
+    memory_rules(paths.workspace, paths.data / 'memory-rules.json')
+    if fresh:
+        start_thinking(facts)
+    return True
+
+
+class Ahead(threading.Thread):
+    """prepare() in the background while the questions are asked; result() waits for it and says its lines."""
+
+    def __init__(self, step, *args):
+        super().__init__(name='install-ahead')
+        self.step, self.args, self.lines, self.ok, self.error = step, args, [], False, None
+        self.start()
+
+    def run(self):
+        _ahead.lines = self.lines
+        try:
+            self.ok = self.step(*self.args)
+        except BaseException as error:  # raised again in result(), where the install would have raised it
+            self.error = error
+
+    def result(self):
+        if self.is_alive():
+            print('Finishing the OpenClaw steps...', flush=True)
+        self.join()
+        for line in self.lines:
+            say(line)
+        if self.error:
+            raise self.error
+        return self.ok
 
 
 def warn_path(paths):
@@ -1427,22 +1506,25 @@ def main(argv=None):
         say('\nFix the FAIL items above and rerun ./install.sh')
         return 1
     fresh = not paths.config.exists()
+    steps = (facts, paths, fresh, not args.no_start, args.skip_plugin)
+    ahead = Ahead(prepare, *steps, True) if fresh and interactive else None  # only a first install asks questions
     try:
         config = setup_config(interactive, facts, paths)
     except (KeyboardInterrupt, EOFError):
+        if ahead:
+            say('\nStopped; your answers were not saved.')
+            try:
+                ahead.result()  # the OpenClaw steps already under way finish; nothing half done is left
+            except Exception:
+                pass
+            say('Rerun ./install.sh to go on.')
+            return 1
         say('\nStopped; nothing was written.')
         return 1
     setup_secrets(config, facts, paths)
     install_cli(paths)
-    install_node_packages(facts['node'])
-    plugin_ok = args.skip_plugin or install_plugin(facts, reload=not args.no_start, stamp=paths.data / 'plugin-installed')
-    if not plugin_ok:
+    if not (ahead.result() if ahead else prepare(*steps)):
         return 1
-    quiet_openclaw(facts, paths.data / 'openclaw-quiet.json')
-    gateway_keep_retrying(paths)
-    memory_rules(paths.workspace, paths.data / 'memory-rules.json')
-    if fresh:
-        start_thinking(facts)
     if args.activate:
         config = activate(paths)
     since = onboarding.now()
