@@ -72,12 +72,15 @@ def dashboard_page(token, owner, base):
     """dashboard.html as served (with its parts, dashboard_parts): the release, the base path and the device cache's
     scope filled in. Never the CSRF token: the page asks api/session for it (as a page opened from the app's on-device
     copy always did), so the page holds no secret and can go compressed (compressible below)."""
-    return (dashboard_parts.assemble(ROOT).replace('__CSRF__', '')
-            .replace('__UI_VERSION__', dashboard_version()).replace('__BASE__', base)
+    return _filled(dashboard_parts.assemble(ROOT), token, owner, base)
+
+
+def _filled(source, token, owner, base):
+    return (source.replace('__CSRF__', '').replace('__UI_VERSION__', dashboard_version()).replace('__BASE__', base)
             .replace('__CACHE_SCOPE__', dashboard_cache_scope(token, owner)))
 
 
-SCRIPT_NAME = re.compile(r'/app-[0-9a-f]{16}\.js')
+SCRIPT_NAME = re.compile(r'/(app|lazy-[a-z]+)-[0-9a-f]{16}\.js')  # the main script, a LAZY group's file
 SCRIPT_CACHE = 'private, max-age=31536000, immutable'  # its name changes with every change to it
 
 
@@ -92,6 +95,33 @@ def dashboard_script(page):
     script = page[start + len('<script>\n'):end]
     name = 'app-' + hashlib.sha256(script.encode()).hexdigest()[:16] + '.js'
     return page[:start] + f'<script src="{name}"></script></html>' + page[end + len('</script></html>'):], name, script
+
+
+def dashboard_files(token, owner, base):
+    """(page, {name: script}): the dashboard as a browser gets it. The page (dashboard_page) without the parts that load
+    when first needed (dashboard_parts.LAZY): each group of them is a file of its own, lazy-<group>-<hash>.js, named by
+    its contents and named in the page's self.LAZY_FILES, just before its main script, which is a file of its own too
+    (dashboard_script). Like the main script, a group's file holds nothing per owner or request."""
+    source, lazy = dashboard_parts.assemble_split(ROOT)
+    files = {f'lazy-{group}-' + hashlib.sha256(script.encode()).hexdigest()[:16] + '.js': script
+             for group, script in lazy.items() if script}
+    page, name, script = dashboard_script(_filled(source, token, owner, base))
+    if not name:
+        return page, files
+    files[name] = script
+    named = json.dumps({name.rsplit('-', 1)[0][len('lazy-'):]: name for name in files if name.startswith('lazy-')})
+    tag = f'<script src="{name}"></script></html>'
+    return page.replace(tag, f'<script>self.LAZY_FILES={named}</script>' + tag), files
+
+
+def served_file(files, name):
+    """(name, script): the file a page asks for by name among dashboard_files. A name from another release gets this
+    release's file of the same kind (the main script, or the same group's), under its own name, so it isn't kept under
+    the old one: the page then sees the new release and loads it. (None, None) when there is none."""
+    if name in files:
+        return name, files[name]
+    kind = name.rsplit('-', 1)[0]
+    return next(((other, script) for other, script in files.items() if other.rsplit('-', 1)[0] == kind), (None, None))
 
 
 # Compressed answers for the dashboard (the page is about 1 MB and api/status close to that; on a phone over 4G that

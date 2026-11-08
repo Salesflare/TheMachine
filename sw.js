@@ -69,22 +69,25 @@ async function keepShell(response) {
 }
 
 // The page's main script is a file of its own (app-<hash>.js, machine/web/serving.py dashboard_script), named by its
-// contents: kept with the shell, so the kept page starts offline too, and only the one the kept page names.
-const SCRIPT = /^app-[0-9a-f]{16}\.js$/;
+// contents, and so is each group of parts that loads when first needed (lazy-<group>-<hash>.js, named in the page's
+// LAZY_FILES): kept with the shell, so the kept page starts offline too, and only the ones the kept page names.
+const SCRIPT = /^(app|lazy-[a-z]+)-[0-9a-f]{16}\.js$/;
 const scriptOk = r => r.status === 200 && r.type === 'basic' && /javascript/i.test(r.headers.get('Content-Type') || '');
 async function keepScript(cache, text) {
   const name = (text.match(/<script src="(app-[0-9a-f]{16}\.js)"><\/script><\/html>\s*$/) || [])[1];
   if (!name) return;
-  const href = new URL(name, scopeUrl()).href;
-  if (!await cache.match(href)) {
+  const lazy = (text.match(/<script>self\.LAZY_FILES=(\{[^<]*\})<\/script><script src="app-/) || [])[1];
+  const keep = [name, ...Object.values(lazy ? JSON.parse(lazy) : {}).filter(n => SCRIPT.test(n))].map(n => new URL(n, scopeUrl()).href);
+  for (const href of keep) {
+    if (await cache.match(href)) continue;
     const r = await fetch(href, {credentials: 'same-origin'});
     if (!scriptOk(r)) throw new Error('script ' + r.status);  // the page isn't kept without it
     await cache.put(href, r);
   }
-  for (const req of await cache.keys()) if (req.url !== href && SCRIPT.test(new URL(req.url).pathname.split('/').pop())) await cache.delete(req);
+  for (const req of await cache.keys()) if (!keep.includes(req.url) && SCRIPT.test(new URL(req.url).pathname.split('/').pop())) await cache.delete(req);
 }
 
-// The script: the kept one, else from the Machine (and the browser's own cache, where it stays a year under its name).
+// A script (the main one or a lazy group's): the kept one, else from the Machine (and the browser's own cache, where it stays a year under its name).
 async function script(event, name) {
   const href = new URL(name, scopeUrl()).href, cache = await caches.open(SHELL);
   const kept = await cache.match(href);

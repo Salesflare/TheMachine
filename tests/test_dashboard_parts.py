@@ -89,6 +89,25 @@ class DashboardParts(unittest.TestCase):
                          .replace('__CACHE_SCOPE__', assistant.dashboard_cache_scope('token', 'owner')))
         self.assertNotIn('/*@include dashboard/', page)
 
+    def test_the_parts_that_load_later_are_whole_main_script_parts_and_lose_nothing(self):
+        # dashboard_parts.LAZY: each group's parts are .js parts of the main script (the page's last script), in one
+        # group only; the page without them and the groups are the whole page again, and nothing in them is per page
+        source = (ROOT / dashboard_parts.PAGE).read_text(encoding='utf-8')
+        main = source[source.rindex('<script>\n'):].split('\n')
+        names = [name for group in dashboard_parts.LAZY.values() for name in group]
+        self.assertEqual(sorted(set(names)), sorted(names), 'a part is in two groups')
+        for name in names:
+            self.assertTrue(name.endswith('.js'), name)
+            self.assertIn(dashboard_parts.marker(name), main, f'{name} is a part of the main script')
+        first, lazy = dashboard_parts.assemble_split(ROOT)
+        self.assertEqual(sorted(lazy), sorted(dashboard_parts.LAZY))
+        for group, script in lazy.items():
+            self.assertEqual(script, ''.join((ROOT / 'dashboard' / name).read_text(encoding='utf-8') for name in dashboard_parts.LAZY[group]))
+            self.assertNotRegex(script, '__(CSRF|UI_VERSION|BASE|CACHE_SCOPE)__')
+            self.assertNotIn(script, first)
+        whole = dashboard_parts.assemble(ROOT)
+        self.assertEqual(sorted(first.split('\n') + ''.join(lazy.values()).split('\n')[:-1]), sorted(whole.split('\n')))
+
     def test_parts_fill_in_their_lines_and_python_and_node_agree(self):
         with tempfile.TemporaryDirectory() as tmp:
             tmp = Path(tmp)

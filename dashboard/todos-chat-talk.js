@@ -288,6 +288,7 @@ async function talkUndoSend(v){const x=v.sent;if(!x||x.undone||Date.now()>x.unti
  return n?{ok:true,canceled:n,note:'Canceled. Nothing was sent. Say so in a few words.'}:{error:'It was already on its way.'}}
 // Report a bug, by voice (report_bug): the same report Help's Report a bug sends, with what the owner agreed to add
 async function talkBug(v,args={}){const summary=String(args.summary||'').trim().slice(0,3000);if(!summary)return {error:'Say what went wrong first.'};
+ await lazyPart('help').catch(()=>{});  // the bug report's sending is in Help (help-panel.js), which loads when first needed
  if(typeof bugHosted!=='function'||!bugHosted()&&!state.fleet)return {error:'This Machine isn’t linked to an account, so the report can’t go from here. Say they can email support@themachine.computer.'};
  const s=v.sid&&state.suggestions?.find(x=>x.id===v.sid),parts=[`From Talk: ${summary}`];
  if(args.context===true){if(s)parts.push(`To-do in focus: ${String(s.title||'').slice(0,200)}`);if(v.recent?.length)parts.push('Last lines in Talk:\n'+v.recent.join('\n'))}

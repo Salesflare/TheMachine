@@ -23,6 +23,16 @@ ROOT = Path(__file__).resolve().parent
 PAGE = 'dashboard.html'
 FOLDER = 'dashboard'
 KINDS = ('js', 'css', 'html')
+# Parts the served page loads when they're first needed, not with the main script (machine/web/serving.py
+# dashboard_script): each group's parts leave the main script and are served as one file of their own, named by its
+# contents, that lazyPart(group) in shell-core.js loads (and the page loads in the background once To-dos is drawn).
+# The source keeps every part in its place, so assemble(), the tests and the demo have them all inline and
+# lazyPart() is done at once there. A group's parts run after the main script, so the main script reads none of their
+# names while it loads, and calls into them only through lazyPart() (tests/test_dashboard_lazy.py checks both).
+LAZY = {
+    'game': ('todos-game.js',),
+    'help': ('help-panel.js',),
+}
 MARKER = re.compile(r'/\*@include dashboard/([a-z0-9-]+\.(?:js|css))\*/|<!--@include dashboard/([a-z0-9-]+\.html)-->')
 
 
@@ -74,3 +84,18 @@ def files(root=None):
     """dashboard.html and the parts it includes: what a change to the page's source changes."""
     root = Path(root or ROOT)
     return [root / PAGE] + [root / FOLDER / name for name in includes((root / PAGE).read_text(encoding='utf-8'))]
+
+
+def assemble_split(root=None):
+    """(page, {group: script}): the page's source as assemble() gives it, without the LAZY parts, and each LAZY
+    group's parts joined in the source's order."""
+    path = Path(root or ROOT) / PAGE
+    group_of = {name: group for group, names in LAZY.items() for name in names}
+    lazy, out = {group: [] for group in LAZY}, []
+    for line in re.split(r'(?<=\n)', path.read_text(encoding='utf-8')):
+        name = included(line.rstrip('\n'))
+        if name in group_of:
+            lazy[group_of[name]].append(expand(line if line.endswith('\n') else line + '\n', path.parent / FOLDER))
+        else:
+            out.append(line)
+    return expand(''.join(out), path.parent / FOLDER), {group: ''.join(parts) for group, parts in lazy.items()}

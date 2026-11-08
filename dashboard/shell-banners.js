@@ -39,3 +39,5 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-revi
  try{await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'review_now',args:{}})});
   state.review_pause=null;renderLimitBanner();notice(t('A check starts in a moment.'))}catch(err){errCaught(err);b.disabled=false;notice(err.message,true)}});
 function limitNote(m){if(!m?.limit_reached)return '';return html`<p class="limit-note"><strong>${t(m.chatgpt?'ChatGPT limit reached':'Model limit reached')}</strong>${m.limit_resets_at?t(', resets at {}',clockAt(m.limit_resets_at)):''}${resetAction(m)?html` · ${resetAction(m)}`:''}</p>`}
+// A hosted Machine (it has an account): Report a bug (help-panel.js) and Support access (settings-activity.js) go through its account
+const bugHosted=()=>!!state.manage_url;
