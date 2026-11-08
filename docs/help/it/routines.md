@@ -33,9 +33,11 @@ Le routine girano una alla volta e aspettano quando l’uso del tuo piano IA è 
 
 È nel menu ⋯ della routine. **Cambia quando** prende un nuovo ritmo con parole tue, come "ogni giorno feriale alle 8". **Metti in pausa** ferma le esecuzioni fino a **Riprendi**; ciò che è stato perso durante la pausa non gira dopo. **Ferma** chiude una routine per sempre.
 
-## Passaggi di script
+## Avanzate: passaggi di script
 
-Una routine può eseguire i tuoi comandi sulla tua Machine. In **Modifica**, apri **Passaggi di script**. **Recupera dati** esegue prima un comando, come `python3 ~/scripts/deals.py`, nella sua cartella (vuota: la tua cartella home) e al massimo per i suoi secondi. Ciò che stampa va all’esecuzione per lavorarci. Senza parole, ciò che stampa è il risultato.
+Non ti serve mai uno script: di’ con parole tue cosa deve fare una routine.
+
+Per gli utenti esperti, una routine può anche eseguire i tuoi comandi sulla tua Machine: nel menu ⋯, scegli **Avanzate: passaggi di script**. **Modifica** li mostra solo se una routine ne ha già. **Recupera dati** esegue prima un comando, nella sua cartella (vuota: la tua cartella home) e al massimo per i suoi secondi. Ciò che stampa va all’esecuzione per lavorarci. Senza parole, ciò che stampa è il risultato.
 
 **Verifica** riceve il risultato come input dopo l’esecuzione. Se termina con un errore, l’esecuzione mostra **Non è andato** con ciò che ha detto la verifica. Un comando di Recupera dati che fallisce si mostra allo stesso modo.
 

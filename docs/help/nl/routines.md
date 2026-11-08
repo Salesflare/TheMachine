@@ -33,9 +33,11 @@ Routines draaien één voor één en wachten als het gebruik van je AI-abonnemen
 
 Dit staat in het ⋯-menu van de routine. **Wanneer wijzigen** neemt een nieuw ritme in je eigen woorden, zoals "elke werkdag om 8". **Pauzeren** stopt de runs tot **Hervatten**; wat tijdens de pauze gemist werd, draait niet achteraf. **Stoppen** beëindigt een routine voorgoed.
 
-## Scriptstappen
+## Geavanceerd: scriptstappen
 
-Een routine kan je eigen commando's op je Machine draaien. Open in **Bewerken** de **Scriptstappen**. **Gegevens ophalen** draait eerst een commando, zoals `python3 ~/scripts/deals.py`, in zijn map (leeg: je thuismap) en hoogstens zijn aantal seconden. Wat het afdrukt, krijgt de run om mee te werken. Zonder woorden is wat het afdrukt het resultaat.
+Een script heb je nooit nodig: zeg in je eigen woorden wat een routine moet doen.
+
+Voor gevorderden kan een routine ook je eigen commando's op je Machine draaien: kies in het ⋯-menu **Geavanceerd: scriptstappen**. **Bewerken** toont ze alleen als een routine er al heeft. **Gegevens ophalen** draait eerst een commando, in zijn map (leeg: je thuismap) en hoogstens zijn aantal seconden. Wat het afdrukt, krijgt de run om mee te werken. Zonder woorden is wat het afdrukt het resultaat.
 
 **Controle** krijgt na de run het resultaat als invoer. Eindigt die met een fout, dan toont de run **Lukte niet** met wat de controle zei. Een commando bij Gegevens ophalen dat faalt, toont zich net zo.
 

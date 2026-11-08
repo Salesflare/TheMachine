@@ -43,9 +43,11 @@ In **Bearbeiten** lässt **Ausprobieren** die neuen Worte einmal laufen und zeig
 
 **Pausieren** hält die Läufe an bis **Fortsetzen**; pausierte Routinen warten unten unter **Pausiert**, und was während der Pause verpasst wurde, läuft danach nicht. **Stopp** beendet eine Routine endgültig.
 
-## Skriptschritte
+## Erweitert: Skriptschritte
 
-Eine Routine kann deine eigenen Befehle auf deiner Machine ausführen. Öffne in **Bearbeiten** die **Skriptschritte**. **Daten holen** führt zuerst einen Befehl aus, etwa `python3 ~/scripts/deals.py`, in seinem Ordner (leer: dein Home-Ordner) und höchstens für seine Sekunden. Was er ausgibt, bekommt der Lauf zum Arbeiten. Ohne Worte ist die Ausgabe das Ergebnis.
+Ein Skript brauchst du nie: Sag in deinen eigenen Worten, was eine Routine tun soll.
+
+Für Fortgeschrittene kann eine Routine auch deine eigenen Befehle auf deiner Machine ausführen: Wähle im ⋯-Menü **Erweitert: Skriptschritte**. **Bearbeiten** zeigt sie nur, wenn eine Routine schon welche hat. **Daten holen** führt zuerst einen Befehl aus, in seinem Ordner (leer: dein Home-Ordner) und höchstens für seine Sekunden. Was er ausgibt, bekommt der Lauf zum Arbeiten. Ohne Worte ist die Ausgabe das Ergebnis.
 
 **Prüfung** bekommt nach dem Lauf das Ergebnis als Eingabe. Endet sie mit einem Fehler, zeigt der Lauf **Hat nicht geklappt** mit dem, was die Prüfung gesagt hat. Ein fehlgeschlagener Befehl bei Daten holen zeigt sich genauso.
 

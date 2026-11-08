@@ -33,9 +33,11 @@ As rotinas rodam uma de cada vez e esperam quando o uso do seu plano de IA está
 
 Fica no menu ⋯ da rotina. **Mudar quando** aceita um novo ritmo com suas próprias palavras, como "todo dia útil às 8". **Pausar** para as execuções até **Retomar**; o que foi perdido durante a pausa não roda depois. **Parar** encerra uma rotina de vez.
 
-## Etapas de script
+## Avançado: etapas de script
 
-Uma rotina pode rodar seus próprios comandos na sua Machine. Em **Editar**, abra **Etapas de script**. **Buscar dados** roda primeiro um comando, como `python3 ~/scripts/deals.py`, na pasta dele (vazia: sua pasta pessoal) e no máximo pelos segundos dele. O que ele imprime vai para a execução trabalhar. Sem palavras, o que ele imprime é o resultado.
+Você nunca precisa de um script: diga com suas palavras o que uma rotina deve fazer.
+
+Para usuários avançados, uma rotina também pode rodar seus próprios comandos na sua Machine: no menu ⋯, escolha **Avançado: etapas de script**. **Editar** só as mostra se uma rotina já tiver. **Buscar dados** roda primeiro um comando, na pasta dele (vazia: sua pasta pessoal) e no máximo pelos segundos dele. O que ele imprime vai para a execução trabalhar. Sem palavras, o que ele imprime é o resultado.
 
 **Verificação** recebe o resultado como entrada depois da execução. Se terminar com erro, a execução mostra **Não funcionou** com o que a verificação disse. Um comando de Buscar dados que falha aparece do mesmo jeito.
 
