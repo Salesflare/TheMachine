@@ -11,7 +11,8 @@ const SOURCE_TIPS={'Added by you':'Made with New to-do','The Machine itself':'Pr
 // the same as at the last whole render; Learning, Connections and the rest stay as they are drawn (a chat's open or
 // close redrew them all, some 40 ms of each).
 let drawnWhole=null;
-function render(view){scopeSync(state.locale);try{talkFromStatus();talkViewPaint()}catch{}applyLocale(state.locale);renderNeedsYou();renderNotify();fixedLoad();try{palAskShow()}catch{}
+function render(view){const first=!drawnWhole&&!view&&/^(#todos|#chat=[a-f0-9]{16})?$/.test(location.hash);  // a page's first drawing on To-dos (below)
+scopeSync(state.locale);try{talkFromStatus();talkViewPaint()}catch{}applyLocale(state.locale);renderNeedsYou();if(!first)renderNotify();fixedLoad();try{palAskShow()}catch{}
 const finishedOpen=listOpen('finished-list'),laterOpen=listOpen('later-list'),promisesOpen=listOpen('promises-list'),waitOpen=listOpen('waiting-list');
 const drafts=Object.fromEntries([...document.querySelectorAll('#suggestions textarea,#suggestions .fleet-card input[id]')].filter(t=>t.value).map(t=>[t.id,t.value]));
 const moreOpen=[...document.querySelectorAll('#suggestions article[id] .more-actions[open]')].map(d=>d.closest('article[id]').id);  // a refresh keeps an opened More menu open
@@ -38,7 +39,7 @@ const anyShown=fuv.ready.length+fuv.needs.length+fuv.preparing.length+(scopeFilt
 later.sort((a,b)=>(setAside(a)-setAside(b))||(a.snoozed_until||'').localeCompare(b.snoozed_until||''));
 
 const recent=finished.sort((a,b)=>closedAt(b).localeCompare(closedAt(a))),doneTotal=state.done_counts?.[scopeFilter]??recent.length;
-{const seen=doneTotal+':'+recent.slice(0,30).map(s=>s.id).join(',');if(seen!==doneSeen){doneSeen=seen;pagerDrop('done')}}donePager();
+{const seen=doneTotal+':'+recent.slice(0,30).map(s=>s.id).join(',');if(seen!==doneSeen){doneSeen=seen;pagerDrop('done')}}if(!first)donePager();
 putIfChanged($('#suggestion-summary'),make('div',{class:'summary-row'},make('div',{class:'scope-filter',role:'group','aria-label':'Show'},[['all','All'],['work','Work'],['personal','Personal']].map(([v,label])=>make('button',{type:'button','data-scope':v,'aria-pressed':scopeFilter===v},label)))));
 putIfChanged($('#suggestion-stats'),make('div',{class:'stats'},[[fuv.ready,'Ready','mint','ready'],[fuv.needs,'To decide','amber','needs'],[fuv.preparing,'Preparing','lavender','preparing'],[later,'Later','lavender','later']].map(([items,title,tone,key])=>make('button',{type:'button',class:`stat t-${tone}${items.length?'':' zero'}`,'data-fold-tile':key,'aria-expanded':!!items.length&&(key==='later'?laterOpen:!folded.has(key)),
  'aria-label':items.length?t('{} {}, tap to show or hide',items.length,t(title)):items.length+' '+t(title),...(items.length?{}:{disabled:''})},make('b',{},items.length),make('span',{},title)))));
@@ -57,9 +58,9 @@ for(const[id,v]of Object.entries(drafts)){const t=document.getElementById(id);if
 for(const id of moreOpen){const menu=document.getElementById(id)?.querySelector('.more-actions');if(menu)menu.open=true}foldsBack();
 fleetSync();
 // A page's first drawing on To-dos (the device's copy, else the Machine's first answer): the to-dos, the sidebar and a chat now,
-// and the rest (Learning, Connections, Settings, the other tabs' parts) just after that first paint, not before it.
+// and the rest (the Done list, Learning, Connections, Settings, the other tabs' parts) just after that first paint, not before it.
 // A link to another tab or part (#settings/notify) draws it all at once, since that part is the one it opens on
-if(!drawnWhole&&!view&&/^(#todos|#chat=[a-f0-9]{16})?$/.test(location.hash)){const later=()=>{if(drawnWhole)return;try{render('whole')}catch(e){errCaught(e);console.error(e)}};  // caught as in refresh, where it ran before
+if(first){const later=()=>{if(drawnWhole)return;try{render('whole')}catch(e){errCaught(e);console.error(e)}};  // caught as in refresh, where it ran before
 requestAnimationFrame(()=>setTimeout(later));setTimeout(later,300);return}
 if(view==='view'&&drawnWhole===state)return;drawnWhole=state;lazySoon();  // the parts that load when first needed come after (shell-core.js)
 const choiceTone={accept:'mint',complete:'mint',reject:'muted',snooze:'lavender',other:'amber',reopen:'lavender',undo:'lavender',retry:'lavender',update:'lavender'};
