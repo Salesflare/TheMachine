@@ -8,6 +8,7 @@ import threading
 
 import gbrain
 import graph
+from machine.app.card_chat import save_hours
 from timeutil import now
 
 LOG = logging.getLogger('personal-assistant')
@@ -115,3 +116,7 @@ class GBrainApp:
             with self.store.connect() as db:
                 gbrain.forget(db)
         return self.gbrain_view()
+
+    def gbrain_save(self, value):
+        save_hours(self.config_path, {'gbrain': value})
+        self.config['gbrain'] = value

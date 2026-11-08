@@ -174,3 +174,20 @@ class SupportApp:
         if getattr(self, 'bug_queue_wake', None):
             self.bug_queue_wake.set()
         return {'sent': False, 'queued': True, 'at': item['next_at']}
+
+    def bug_offer(self, args):
+        """A problem with The Machine itself, told in chat (assistant_signals bug_offer, `assistant report-bug`): the
+        report written up for Report a bug (bug_queue.offer), with the link that opens it filled in. The owner checks it
+        there and taps Send; nothing goes from here. A Machine with no account to send to says where to write instead."""
+        hosted = str(self.config.get('manage_url') or '').startswith('https://')
+        if not hosted and not getattr(self, 'fleet', None):
+            return {'linked': False, 'say': ('This Machine isn’t linked to an account, so it can’t send a report. Say they can email '
+                                              'support@themachine.computer (with a file from `assistant support-bundle` if they like) '
+                                              'or open an issue at https://github.com/Salesflare/TheMachine/issues. Nothing was sent or filed.')}
+        item = bug_queue.offer(self.config, args.get('words'), args.get('summary'))
+        host = str(self.config.get('dashboard_host') or '')
+        url = 'https://' + host + self.config.get('dashboard_path', '/') + '#bug-offer=' + item['id'] if host else None
+        how = f'Tap to check it and send: {url}' if url else 'Open Help, then Report a bug, in the dashboard: it is filled in there.'
+        return {'linked': True, 'id': item['id'], 'url': url,
+                'say': ('Offer it in one short message: you wrote it up as a bug report for The Machine team. ' + how +
+                        ' Nothing is sent until they tap Send there. Never say it was sent, filed or that anyone is looking at it.')}

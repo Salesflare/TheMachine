@@ -9,6 +9,7 @@ a, graph = tg.a, tg.graph
 import crm  # noqa: E402
 import crm_import  # noqa: E402
 import shared_graph  # noqa: E402
+from seams import patch_everywhere  # noqa: E402
 
 DIRECTORY = {'w1': {'kind': 'work', 'name': 'Acme', 'members': [
     {'member_id': 'm-me', 'name': 'Sam', 'emails': ['sam@acme.com'], 'me': True},
@@ -358,14 +359,11 @@ class Crm(unittest.TestCase):
         self.app.config['country'] = 'BE'
         text = 'Klant,Bedrag,Fase,Wie\nTeal,ongeveer vijf,Mondeling ja,Ann\nUmber,8000,Lead,Bo\n'
         self.app.model_room = lambda most=80: True
-        ready = a.model_ready
-        try:
-            a.model_ready = lambda config=None, run=None: False
+        # through patch_everywhere, so machine/app/card_actions.py's import check sees it too
+        with patch_everywhere(a, 'model_ready', lambda config=None, run=None: False):
             self.assertEqual(self.act('graph_import_ai', kind='project', text=text), {'ai': False, 'why': 'model'})
-            a.model_ready = lambda config=None, run=None: True
+        with patch_everywhere(a, 'model_ready', lambda config=None, run=None: True):
             started = self.act('graph_import_ai', kind='project', text=text)
-        finally:
-            a.model_ready = ready
         self.assertTrue(started['ai'])
         session = a.PROFILE_SESSION_PREFIX + started['run_id']
         sent = []

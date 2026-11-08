@@ -127,3 +127,32 @@ class DocsApp:
 
     def doc_write_draft_action(self, name, args, owner_dashboard=False):
         return self.doc_write_draft(args)
+
+    def doc_run(self, args):
+        """The running preparation a doc read is for (Do it, or a to-do chat's run): its job id, its own events and its
+        area (doc_writes.area). Docs are read only for a run the owner started."""
+        job = str(args.get('job_id') or '')
+        if not re.fullmatch(r'[A-Za-z0-9_-]{1,80}', job):
+            raise ValueError('Give the job_id of this preparation')
+        with self.store.connect() as db:
+            run = db.execute("SELECT s.event_ids,s.account_ids FROM preparations p JOIN suggestions s ON s.id=p.suggestion_id "
+                             "WHERE p.job_id=? AND p.status IN ('queued','starting','running','blocked')", (job,)).fetchone()
+            if not run:
+                raise ValueError('Docs are read only for a running preparation of the task the owner started')
+            links, plugin = {}, load_connector('docs')
+            for r in db.execute("SELECT e.account_id,e.body,e.metadata FROM events e JOIN json_each(?) ids ON ids.value=e.id",
+                                (run['event_ids'],)) if plugin else ():
+                for file_id in plugin.doc_links(str(r['body'] or '') + ' ' + str(r['metadata'] or '')):
+                    links.setdefault(file_id, r['account_id'])
+        return job, run, links, doc_writes.area(self.config, json.loads(run['account_ids'] or '[]'))
+
+    def doc_connections(self, area, provider=None):
+        """The owner's own Docs connections in this area that can do things (abilities.py), Google or Microsoft."""
+        plugin = load_connector('docs')
+        return [a for a in self.config.get('accounts', []) if a.get('service') == 'docs' and plugin and abilities.actions_on(a)
+                and doc_writes.fits(a.get('boundary'), area) and (provider is None or plugin.provider(self.config, a) == provider)]
+
+    def doc_read_error(self, error):
+        return ValueError({'docs_not_connected': 'Reading docs is not allowed for this account yet (Connect Google Docs or Microsoft documents)',
+                           'docs_text_unsupported': 'That file has no text to read here (open it in the browser instead)'}.get(
+                               error.category, f'The doc could not be read ({error.category})'))

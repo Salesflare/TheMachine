@@ -8,7 +8,10 @@ import uuid
 
 import bounces
 import chat_files
+import crm_fixes
+import crm_import
 import doc_writes
+import fleet
 import follow_ups
 import i18n
 from machine.browser import FINAL_STEPS
@@ -21,9 +24,11 @@ from machine.sources.calendar import calendar_write_events, calendar_write_ids
 from machine.sources.connectors import CONNECTOR_HELPERS, doc_comments, doc_write_files, load_connector
 from machine.sources.telegram import owner_telegram_chats
 from machine.sources.whatsapp import owner_whatsapp_chats, reply_spots
+from models import model_ready
 import next_actions
 import own_addresses
-from timeutil import now
+import task_invites
+from timeutil import local_tz, now
 
 
 # A final step that goes to someone (a message, an invite, sharing) is a send: the owner sees and approves it on the
@@ -421,3 +426,81 @@ class CardActionsApp:
             # as "skip extra chat acknowledgment", after editing buttons.
             result.update(decision_saved=not result.get('skipped',False),duplicate=True,card_confirmation_only=True)
         return result
+
+    def task_import(self, link):
+        """Add a task someone sent by email (task_invites.py) as a card, and say who sent it so the owner can connect
+        with them on the Network. Works without being on the Network: the link alone opens it."""
+        invite_id, key = task_invites.parse_link(link)
+        network = getattr(self, 'fleet', None)
+        if network:  # signed in, so the Network can count it as added by this Machine
+            found = network.relay.call('POST', '/task-invite', {'action': 'claim', 'id': invite_id})
+        else:
+            found = task_invites.claim(task_invites.network_url(self.config, fleet), invite_id)
+        task = task_invites.unseal(str(found.get('sealed') or ''), key)
+        who = found.get('from') or {}
+        name = ' '.join(str(who.get('name') or task.get('from_name') or 'Someone').split())[:60]
+        body = (task.get('summary') or task['title']) + (f"\n\nThey'd like it by {task['due']}." if task.get('due') else '')
+        body += f'\n\n{name} sent this by email. Answer them there.'
+        card_id = self.fleet_card('task', 'task:' + invite_id, name, task['title'], body, [], due=task.get('due'), via='by email')
+        if network:
+            try:
+                network.relay.call('POST', '/task-invite', {'action': 'added', 'id': invite_id})
+            except (ValueError, OSError):
+                LOG.warning('task invite local card saved; remote addition receipt unavailable')
+        username = who.get('username') if isinstance(who.get('username'), str) and re.fullmatch(r'[a-z0-9][a-z0-9-]{1,28}[a-z0-9]', who['username']) else None
+        connected = False
+        if network and username:  # a friend already, or in a Work or Family Fleet together: nothing to connect
+            ref = network.friends_ref()
+            friends = {str(m.get('username') or '').lower() for m in network.teammates(ref)} if ref else set()
+            connected = username in friends or network.in_my_fleet(network.fleet_mates(), username)
+        return {'card_id': card_id, 'from': {'name': name, 'username': username}, 'can_connect': bool(network and username and not connected)}
+
+    def handoff_email(self, card_id, email, title, summary, keep=None, take=None, name=''):
+        """Hand a Work card to someone who is not on The Machine: an ordinary email draft on the card, from the card's
+        Gmail or Outlook account, built from what the owner ticked (handoff_mail.py), for the owner to read and send.
+        Nothing about the task leaves this Machine until the owner sends it, or approves a task page for it
+        (task_pages.py), which this offers on the card."""
+        made = self.handoff_mail.prepare(card_id, email, name, title, summary, keep, take)
+        self.task_pages.offer(made['card_id'], made['task'])
+        return {'card_id': made['card_id']}
+
+    def import_check_start(self, kind, text):
+        """The owner's model looks at a file being imported (crm_import.ai_evidence: headers, a few values, unclear
+        cells), when it can run now: signed in, with room in its limits and no other agent pass going. Else the
+        rules' guess stands and {'ai': False, 'why'} says why."""
+        if kind not in crm_import.FIELDS:
+            raise ValueError('Import people, organizations or projects')
+        if self.config.get('import_check') is False:
+            return {'ai': False, 'why': 'off'}
+        if model_ready(self.config) is False or not self.model_room():
+            return {'ai': False, 'why': 'model'}
+        region = crm_fixes.region_of({'country': self.config.get('country'), 'timezone': self.config.get('timezone') or getattr(local_tz(), 'key', '')})
+        with self.store.connect() as db:
+            evidence = crm_import.ai_evidence(db, kind, text, region, self.currency())
+        run_id, started = uuid.uuid4().hex, now()
+        with self.store.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            db.execute("UPDATE profile_runs SET status='error',error='replaced',finished_at=?,updated_at=? WHERE kind='import' AND status='starting'", (started, started))
+            if db.execute("SELECT 1 FROM profile_runs WHERE status IN ('starting','running') AND kind!='import'").fetchone():
+                return {'ai': False, 'why': 'busy'}  # an agent pass is going: the import doesn't wait for it
+            db.execute("INSERT INTO profile_runs(run_id,status,started_at,updated_at,evidence,kind) VALUES(?,'starting',?,?,?,'import')",
+                       (run_id, started, started, json.dumps({'kind': kind, 'digest': crm_import.digest(kind, text), 'import': evidence})))
+        return {'ai': True, 'run_id': run_id, 'cells': len(evidence['cells'])}
+
+    def import_check_status(self, run_id):
+        with self.store.connect() as db:
+            row = db.execute("SELECT status,error,draft FROM profile_runs WHERE run_id=? AND kind='import'", (str(run_id or ''),)).fetchone()
+        if not row:
+            raise ValueError('Unknown import check')
+        draft = json.loads(row['draft']) if row['draft'] else {}
+        return {'status': row['status'], 'columns': len(draft.get('mapping') or {}), 'fixes': len(draft.get('fixes') or ())}
+
+    def import_check_draft(self, run_id, kind, text):
+        """The model's draft for this very file (the same kind and text), else None."""
+        if not run_id:
+            return None
+        with self.store.connect() as db:
+            row = db.execute("SELECT evidence,draft FROM profile_runs WHERE run_id=? AND kind='import' AND draft IS NOT NULL", (str(run_id),)).fetchone()
+        if not row or json.loads(row['evidence']).get('digest') != crm_import.digest(kind, text):
+            return None
+        return json.loads(row['draft'])
