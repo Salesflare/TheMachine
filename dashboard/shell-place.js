@@ -11,7 +11,8 @@ const placeShown=n=>n.isConnected&&n.getClientRects().length>0;
 const placeTop=()=>{const t=document.querySelector('.topbar'),r=t?.getBoundingClientRect();return r&&r.height&&r.bottom>0&&getComputedStyle(t).position!=='static'?r.bottom:0};
 const placeSig=n=>[...n.attributes].filter(a=>!/^(class|style|hidden|open|tabindex|aria-|data-fit)/.test(a.name)).map(a=>a.name+'='+a.value).join(' ');
 const placeText=n=>n.textContent.trim().slice(0,160);
-function placeNote(){const y=placeTop()+1,levels=[];let el=document.body;
+function placeNote(){if(scrollY<1){place.mark=null;return}  // at the very top nothing is held (placeKeep): nothing to measure
+ const y=placeTop()+1,levels=[];let el=document.body;
  for(let d=0;d<40;d++){let next=null,i=0;
   for(const k of el.children){const r=k.getBoundingClientRect();if(r.height>0&&r.bottom>y&&!['SCRIPT','STYLE','DIALOG'].includes(k.tagName)){const p=getComputedStyle(k).position;if(p!=='fixed'&&p!=='sticky'){next=k;break}}i++}
   if(!next)break;levels.push({node:next,id:next.id,idx:i,tag:next.tagName,sig:placeSig(next),top:next.getBoundingClientRect().top});el=next;if(next.getBoundingClientRect().top>=y)break}
