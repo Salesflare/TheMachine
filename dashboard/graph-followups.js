@@ -29,9 +29,13 @@ const fuTile=f=>!f?'':f.state==='paused'?html`<p class="tile-fu quiet">${fuChip(
 // The board's follow-ups come after the board (api/graph/follow-ups): working them out held up the whole Graph tab
 // (kept a minute: the quiet refresh that redraws the Graph tab on every poll uses the last answer; a change clears it)
 let fuKept=null;
-async function fuLoad(version){let f=fuKept&&Date.now()-fuKept.at<6e4?fuKept.f:null;if(!f){try{f=await request('api/graph/follow-ups')}catch{return}if(!f?.boards)return;fuKept={at:Date.now(),f}}if(version!==graphRequest)return;
- for(const b of graphBoards){b.follow_ups=f.boards?.[b.id]||{on:false,next_at:null};for(const p of b.projects||[]){if(f.projects?.[p.id])p.follow_up=f.projects[p.id];else delete p.follow_up}}
- boardRedraw()}
+// A refresh with the last answer still kept puts it on the boards before they draw (fuKeptOn, projectsPane): the board drew
+// twice on every quiet refresh, once without its follow-ups and once with them (some 60 ms per poll on a big board)
+const fuFresh=()=>fuKept&&Date.now()-fuKept.at<6e4?fuKept.f:null;
+const fuOn=f=>{for(const b of graphBoards){b.follow_ups=f.boards?.[b.id]||{on:false,next_at:null};for(const p of b.projects||[]){if(f.projects?.[p.id])p.follow_up=f.projects[p.id];else delete p.follow_up}}};
+const fuKeptOn=()=>{const f=fuFresh();if(f)fuOn(f)};
+async function fuLoad(version){let f=fuFresh();if(!f){try{f=await request('api/graph/follow-ups')}catch{return}if(!f?.boards)return;fuKept={at:Date.now(),f}}if(version!==graphRequest)return;
+ fuOn(f);boardRedraw()}
 const fuBoardLine=b=>b.follow_ups?html` · <button type="button" class="link fu-state${b.follow_ups.on?'':html` off`}" data-fu-open="board:${b.id}">${!b.follow_ups.on?t('Follow-ups off'):b.follow_ups.pause?t('Follow-ups on'):b.follow_ups.next_at?t('Follow-ups on, next {}',fuDay(b.follow_ups.next_at)):t('Follow-ups on')}</button>${b.follow_ups.on&&b.follow_ups.pause?html`${' '}${fuChip()}`:''}`:'';
 const fuNudge=(b,s)=>b.team||!b.follow_ups||b.follow_ups.on?'':html` · <button type="button" class="fu-nudge" data-fu-open="board:${b.id}" data-fu-for="${s.name}">${t('Follow them up')}</button>`;
 const fuAct=a=>{const ch=FU_CHANNELS[a.channel]||a.channel;return a.why==='bounced'?t('Follow-up {} bounced',a.n):a.state==='sent'?(a.auto?t('Follow-up {} sent automatically ({})',a.n,ch):t('Follow-up {} sent ({})',a.n,ch)):a.state==='open'?t('Follow-up {} ready to review',a.n):a.state==='skipped'?t('Follow-up {} skipped',a.n):a.why==='owner'?t('Follow-ups stopped at follow-up {}',a.n):a.why==='replied'?t('They replied before follow-up {}',a.n):t('Follow-up {} not needed',a.n)};
