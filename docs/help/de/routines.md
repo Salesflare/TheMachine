@@ -3,9 +3,9 @@ title: Routinen
 area: cards
 summary: Arbeit, die deine Machine von selbst in einem Rhythmus erledigt, wie eine Montagsübersicht deiner offenen Deals. Sie liest nur.
 covers: tab:routines
-code: routines.py, routines_app.py, routine_imports.py, dashboard/routines-page.js
+code: routines.py, routines_app.py, routine_imports.py, routine_patterns.py, dashboard/routines-page.js
 order: 10
-keywords: routine, automation, scheduled, every week, every morning, report
+keywords: routine, automation, scheduled, every week, every morning, report, suggested, digest, newsletter
 ---
 ## Eine anlegen
 
@@ -56,6 +56,19 @@ Hast du vorher geplante Jobs in OpenClaw angelegt, liest deine Machine sie (sie 
 Deine Korrekturen am Job bleiben drin, was er gesendet oder gepostet hat, fällt weg. Ein Job, der ein Skript ausgeführt oder gelesen hat, was ein Skript-Job gesammelt hat, bringt es als Daten holen mit. **Hinzufügen** macht daraus eine Routine, **Nein danke** fragt nie wieder nach diesem Job. Ein Job, der dich an etwas erinnert hat, kommt stattdessen als Angebot für eine wiederkehrende Aufgabe unter Aufgaben.
 
 Höchstens drei Vorschläge warten gleichzeitig. Nach einer Woche guter Läufe fragt die Routine **Den alten OpenClaw-Job ausschalten?** Er wird nur ausgeschaltet, wenn du auf **Ausschalten** tippst, und du kannst ihn in OpenClaw wieder einschalten.
+
+## Aus dem, was du tust
+
+Deine Machine bemerkt auch Arbeit, die du in einem Rhythmus erledigst, und schlägt sie unter **Vorgeschlagen** als Routine vor, auch ohne OpenClaw. Sie achtet auf:
+
+- dieselbe Bitte, dreimal oder öfter hintereinander, wie „fasse die offenen Support-Tickets zusammen“ jeden Montag;
+- eine Mail, die du in einem Rhythmus sendest, wie einen Wochenbericht an dein Team;
+- Newsletter und Update-Mails, die jede Woche wieder kommen;
+- einen vollen Slack-Kanal, in dem andere jede Woche schreiben.
+
+Jeder Vorschlag sagt, was sie gesehen hat, wie „4 Mal hintereinander gefragt“, und lief einmal, damit du ein echtes Ergebnis siehst. Denk an eine Team-Zusammenfassung, ein Briefing vor einem wöchentlichen Call, eine Support- oder Dev-Übersicht, einen Puls deiner Zahlen oder einen Digest der Newsletter, die du bekommst.
+
+Sie schlägt nur vor, was zu dir passt und klar hilft: einen News-Digest nur über deine eigenen Newsletter, nie einen allgemeinen. Passt nichts, gibt es keinen Vorschlag. Sie schaut höchstens einmal am Tag, und alles bleibt auf deiner Machine. Eine Aufgabe, die du in einem Rhythmus erledigst, kommt stattdessen als Angebot für eine wiederkehrende Aufgabe.
 
 ## Routinen und wiederkehrende Aufgaben
 

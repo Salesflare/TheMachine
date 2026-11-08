@@ -408,9 +408,18 @@ def find_offers(db, today, stamp, tz):
 
 
 def add_offer(db, key, source, title, rule, anchor, stamp):
-    """An offer from elsewhere (an old OpenClaw job, routines_app.py), asked once like the rest. rule as JSON text."""
+    """An offer from elsewhere (an old OpenClaw job or a pattern, routines_app.py), asked once like the rest. rule as JSON text."""
     db.execute('INSERT OR IGNORE INTO recurring_offers(key,source,title,text,rule,anchor,created_at) VALUES(?,?,?,?,?,?,?)',
                (key, source, title[:120], title, rule, anchor, stamp))
+
+
+def cover(db, titles, source, rule, anchor, stamp):
+    """To-do titles (title_key) a routine suggestion already covers (routine_patterns.py): find_offers never asks about
+    them as a recurring to-do too. Kept as offers with status covered, never shown."""
+    for key_text in titles:
+        if len(key_text) >= 4:
+            db.execute("INSERT OR IGNORE INTO recurring_offers(key,source,title,text,rule,anchor,status,created_at,decided_at) "
+                       "VALUES(?,?,?,?,?,?,'covered',?,?)", ('title:' + key_text, source, key_text[:120], key_text, rule, anchor, stamp, stamp))
 
 
 def answer_offer(db, key, yes, stamp):

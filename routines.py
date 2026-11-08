@@ -27,6 +27,9 @@ until Add (accept), and Edit's Try it runs new words (the run's `trial`) without
 dry: it reads like any run, but it is never a routine's result, its next run's "last time" or a reason to rename it,
 until Add or Save keeps it.
 
+A suggestion can also come from what the owner does on a rhythm (routine_patterns.py, origin 'pattern:<kind>:<key>'): it
+is sorted the same way, with `why` (JSON numbers, like {"kind": "ask", "n": 4}) for the line that says what it saw.
+
 Tables (this module owns them): routines, routine_runs."""
 import datetime as dt
 import json
@@ -37,9 +40,9 @@ import uuid
 import recurring
 
 STATES = ('on', 'paused', 'stopped')
-LIVE = ('on', 'paused')  # the owner's routines; 'sorting', 'suggested' and 'skipped' come from OpenClaw jobs; 'trying': a new one on trial
+LIVE = ('on', 'paused')  # the owner's routines; 'sorting', 'suggested' and 'skipped' are suggestions (OpenClaw jobs, patterns); 'trying': a new one on trial
 SHORT_MAX = 18  # a suggested routine's name: it fits a phone's row next to its status
-MAX_SUGGESTED = 3  # open suggestions at a time: the next job is sorted once one is answered
+MAX_SUGGESTED = 3  # open suggestions at a time: the next job or pattern is sorted once one is answered
 OLD_JOB_AFTER = 7  # days a routine from an OpenClaw job runs before it offers to turn the old job off
 RUN_STATES = ('running', 'ready', 'nothing', 'failed')
 DEFAULT_AT = '08:00'
@@ -68,7 +71,7 @@ def ensure(db):
       CREATE INDEX IF NOT EXISTS routine_runs_routine ON routine_runs(routine_id,started_at);
     ''')
     have = {r[1] for r in db.execute('PRAGMA table_info(routines)')}
-    for column in ('origin', 'accepted_at', 'old_job', 'name_check', 'steps'):  # added after the first release (#916; name_check: Edit)
+    for column in ('origin', 'accepted_at', 'old_job', 'name_check', 'steps', 'why'):  # added after the first release (#916; name_check: Edit; why: patterns)
         if column not in have:
             db.execute(f'ALTER TABLE routines ADD COLUMN {column} TEXT')
     have = {r[1] for r in db.execute('PRAGMA table_info(routine_runs)')}
@@ -221,7 +224,7 @@ def steps_of(row):
         return {}
 
 
-def create(db, instructions, rule, anchor, at, now_local, stamp, name=None, work=False, origin=None, state='on', steps=None):
+def create(db, instructions, rule, anchor, at, now_local, stamp, name=None, work=False, origin=None, state='on', steps=None, why=None):
     if state in ('on', 'trying'):
         _full(db)
     rule, at = recurring.clean_rule(rule), clean_at(at)
@@ -229,11 +232,12 @@ def create(db, instructions, rule, anchor, at, now_local, stamp, name=None, work
     steps = clean_steps(steps)
     instructions = _words(instructions, steps)
     rid = uuid.uuid4().hex
-    db.execute('INSERT INTO routines(id,name,instructions,rule,anchor,at,state,work,next_due,origin,accepted_at,steps,created_at,updated_at) '
-               'VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+    db.execute('INSERT INTO routines(id,name,instructions,rule,anchor,at,state,work,next_due,origin,accepted_at,steps,why,created_at,updated_at) '
+               'VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
                (rid, (name or name_of(instructions) or 'Get data')[:NAME_MAX], instructions, json.dumps(rule), anchor.isoformat(), at, state,
                 int(bool(work)), first_due(rule, anchor, at, now_local).isoformat() if state == 'on' else None, origin,
-                stamp if state == 'on' else None, json.dumps(steps) if steps else None, stamp, stamp))
+                stamp if state == 'on' else None, json.dumps(steps) if steps else None,
+                json.dumps(why) if why else None, stamp, stamp))
     return rid
 
 
@@ -457,11 +461,12 @@ def view(db, states=LIVE):
         out.append({'id': r['id'], 'name': r['name'], 'instructions': r['instructions'], 'rule': json.loads(r['rule']),
                     'anchor': r['anchor'], 'at': r['at'], 'state': r['state'], 'next_due': r['next_due'] if r['state'] == 'on' else None,
                     'origin': r['origin'], 'accepted_at': r['accepted_at'], 'old_job': r['old_job'], 'runs': runs, 'test': test,
+                    'why': json.loads(r['why']) if r['why'] else None,
                     'steps': steps_of(r)})
     return out
 
 
-# --- from OpenClaw jobs ------------------------------------------------------------------------------------------------
+# --- suggestions: from OpenClaw jobs and from patterns -----------------------------------------------------------------
 
 def sorted_origins(db):
     """Every origin a row was made for, in any state: a job is sorted once."""
@@ -483,6 +488,18 @@ def start_sorting(db, job, now_local, stamp):
     rid = create(db, 'Sort the OpenClaw job ' + job['name'], job['rule'], job['anchor'], job['at'], now_local, stamp,
                  name=short_name(job['name']) or 'OpenClaw job', origin='openclaw:' + job['id'], state='sorting', steps=job.get('steps'))
     return rid, begin(db, rid, 'sort:' + stamp, stamp)
+
+
+def start_pattern(db, found, now_local, stamp):
+    """A 'sorting' row for a pattern in the owner's activity (routine_patterns.candidates) and its one run."""
+    rid = create(db, 'Sort a pattern: ' + found['name'], found['rule'], found['anchor'], found['at'], now_local, stamp,
+                 name=short_name(found['name']) or 'Pattern', origin=found['key'], state='sorting', why=found['why'])
+    return rid, begin(db, rid, 'sort:' + stamp, stamp)
+
+
+def last_pattern_at(db):
+    """When the last pattern was handed to a sorting run (its row's created_at), or None."""
+    return db.execute("SELECT max(created_at) FROM routines WHERE origin LIKE 'pattern:%'").fetchone()[0]
 
 
 def sort_again(db, row, stamp):
