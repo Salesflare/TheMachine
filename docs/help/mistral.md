@@ -4,7 +4,7 @@ area: connections
 summary: Run your Machine on Mistral's models with an API key from Mistral. Le Chat Pro includes API credits.
 covers: mistral
 code: docs/models.md, dashboard/settings-models.js
-site: Other AI services, Save key
+site: Other AI services, Save key, Keys, Remove
 ---
 ## What it is for
 
@@ -28,4 +28,4 @@ On your own computer, see the [models guide](https://github.com/Salesflare/TheMa
 
 ## Remove it
 
-Pick another main model on your setup page. To stop the key, delete it in the Mistral console.
+On your setup page, under Your AI, press **Remove** next to Mistral in **Keys**. The key is deleted from your Machine, and if Mistral ran your main model, another connected model takes over. To cancel the key itself, delete it in the Mistral console.

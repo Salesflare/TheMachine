@@ -4,7 +4,7 @@ area: connections
 summary: Lass deine Machine mit den Modellen von Mistral laufen, mit einem API-Schlüssel von Mistral. Le Chat Pro enthält API-Guthaben.
 covers: mistral
 code: docs/models.md, dashboard/settings-models.js
-site: Other AI services, Save key
+site: Other AI services, Save key, Keys, Remove
 ---
 ## Wofür es ist
 
@@ -28,4 +28,4 @@ Auf deinem eigenen Computer: siehe den [Modell-Leitfaden](https://github.com/Sal
 
 ## Entfernen
 
-Wähle auf deiner Einrichtungsseite ein anderes Hauptmodell. Um den Schlüssel zu stoppen, lösche ihn in der Mistral-Konsole.
+Drücke auf deiner Einrichtungsseite unter Deine KI bei Mistral in **Schlüssel** auf **Entfernen**. Der Schlüssel wird von deiner Machine gelöscht, und wenn Mistral dein Hauptmodell war, übernimmt ein anderes verbundenes Modell. Um den Schlüssel selbst zu widerrufen, lösche ihn in der Mistral-Konsole.

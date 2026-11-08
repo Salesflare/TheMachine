@@ -4,7 +4,7 @@ area: connections
 summary: Laat je Machine draaien op de modellen van Mistral, met een API-sleutel van Mistral. Le Chat Pro bevat API-tegoed.
 covers: mistral
 code: docs/models.md, dashboard/settings-models.js
-site: Other AI services, Save key
+site: Other AI services, Save key, Keys, Remove
 ---
 ## Waarvoor het dient
 
@@ -28,4 +28,4 @@ Op je eigen computer: zie de [modellengids](https://github.com/Salesflare/TheMac
 
 ## Verwijderen
 
-Kies een ander hoofdmodel op je setuppagina. Om de sleutel te stoppen, verwijder je hem in de Mistral-console.
+Druk op je setuppagina, onder Je AI, op **Verwijderen** naast Mistral in **Sleutels**. De sleutel verdwijnt van je Machine, en als Mistral je hoofdmodel was, neemt een ander verbonden model het over. Om de sleutel zelf te schrappen, verwijder je hem in de Mistral-console.
