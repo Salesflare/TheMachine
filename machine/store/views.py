@@ -311,8 +311,8 @@ class ViewsStore(ConversationStore):
                            **chat_view(r['kind'], m, body, r['occurred_at'])})
         return result
 
-    def suggestion_result(self, suggestion, db):
-        """Only owner-workspace reports explicitly linked by this task are served."""
+    def suggestion_result(self, suggestion, db, pre=None):
+        """Only owner-workspace reports explicitly linked by this task are served. pre: card_reads for a list of cards."""
         files=[]
         for match in re.findall(r'memory/assistant/[^\s<>"\)]+', suggestion['body']):
             relative=match.rstrip('.,;]')
@@ -321,12 +321,14 @@ class ViewsStore(ConversationStore):
                 files.append({'name':candidate.name,'path':relative})
         ids=json.loads(suggestion['event_ids'])
         originals=[]
-        for row in sorted(db.execute('SELECT id,metadata FROM events WHERE id IN ('+','.join('?' for _ in ids)+')',ids).fetchall() if ids else [],key=lambda r:ids.index(r['id'])):
+        rows=[{'id':i,'metadata':pre['events'][i]} for i in dict.fromkeys(ids) if i in pre['events']] if pre else \
+            sorted(db.execute('SELECT id,metadata FROM events WHERE id IN ('+','.join('?' for _ in ids)+')',ids).fetchall() if ids else [],key=lambda r:ids.index(r['id']))
+        for row in rows:
             url=json.loads(row['metadata']).get('source_url')
             if isinstance(url,str) and urllib.parse.urlsplit(url).scheme in ('https','http') and url not in originals:
                 originals.append(url)
         extra={'result_files':files,'original_urls':originals[:5]}
-        proposal = db.execute("SELECT * FROM skill_clusters WHERE suggestion_id=?", (suggestion['id'],)).fetchone()
+        proposal = (not pre or suggestion['id'] in pre['clusters']) and db.execute("SELECT * FROM skill_clusters WHERE suggestion_id=?", (suggestion['id'],)).fetchone()
         if proposal:
             extra['skill_proposal'] = {'name': proposal['name'], 'body': proposal['body'],
                                       'notes': [r[0] for r in db.execute('SELECT text FROM facts WHERE id IN (' + ','.join('?' for _ in json.loads(proposal['fact_ids'])) + ') ORDER BY id', json.loads(proposal['fact_ids']))]}
@@ -337,7 +339,7 @@ class ViewsStore(ConversationStore):
             if proposal['status'] in ('pending', 'declined', 'failed'):
                 extra['labels'] = skill_labels(proposal)
         # A skill this to-do's run proposed (skills-propose --job): the card shows it and offers Create skill or Update skill
-        proposed = skills.for_task(db, suggestion['id'])
+        proposed = skills.for_task(db, suggestion['id']) if not pre or 'skills' not in pre or suggestion['id'] in pre['skills'] else None
         if proposed:
             extra['proposed_skill'] = proposed
         action=suggestion.get('next_action');action=json.loads(action) if isinstance(action,str) else action
@@ -355,7 +357,8 @@ class ViewsStore(ConversationStore):
                                       if send_retry_ok(r,json.loads(r['payload']).get('kind')) else {}),
                                    # A merged fix can be undone for a day.
                                    **({'undo_until':(dt.datetime.fromisoformat(r['updated_at'])+UNDO_MERGE).isoformat()} if r['status']=='sent' and str(r['message_id']).startswith('merge:') else {})}
-                    for r in db.execute('SELECT j.id,j.revision,j.status,j.error,j.message_id,j.approval_id,j.updated_at,j.payload,t.status snooze_status,t.until snooze_until,t.error snooze_error FROM action_jobs j LEFT JOIN thread_snoozes t ON t.job_id=j.id WHERE j.suggestion_id=?',(suggestion['id'],))}
+                    for r in (db.execute('SELECT j.id,j.revision,j.status,j.error,j.message_id,j.approval_id,j.updated_at,j.payload,t.status snooze_status,t.until snooze_until,t.error snooze_error FROM action_jobs j LEFT JOIN thread_snoozes t ON t.job_id=j.id WHERE j.suggestion_id=?',(suggestion['id'],))
+                              if not pre or suggestion['id'] in pre['jobs'] else ())}
             extra['next_actions']=[{**bounces.mark_draft(db,item),**({'state':states[item['revision']]} if item['revision'] in states else {})} for item in next_actions.visible_actions(action)]
             if action['kind']!='menu' and action['revision'] in states:extra['action_status']=states[action['revision']]
             # The draft Telegram shows in full on the card, so its Send there confirms directly (card_draft).
@@ -366,7 +369,7 @@ class ViewsStore(ConversationStore):
             if stopped:extra['step_stopped']=stopped
         prompt=suggestion.get('feedback_request_id') and db.execute('SELECT status,error FROM feedback_prompts WHERE request_id=?',(suggestion['feedback_request_id'],)).fetchone()
         if prompt:extra['change_prompt']=dict(prompt)
-        job=db.execute('SELECT job_id,status,reason FROM preparations WHERE suggestion_id=?',(suggestion['id'],)).fetchone()
+        job=pre['preparations'].get(suggestion['id']) if pre else db.execute('SELECT job_id,status,reason FROM preparations WHERE suggestion_id=?',(suggestion['id'],)).fetchone()
         waiting=browser_wait(db,job['job_id'],job['status'],reason=job['reason']) if job else None
         if waiting:
             extra['preparation_browser']={**waiting,'link':browser_link(self.config)}
@@ -505,6 +508,11 @@ class ViewsStore(ConversationStore):
                     card['labels'] = labels[card['id']]
             # Written requests belong on the card too, even after preparation
             # or a later button click, and beyond the recent-feedback limit.
+            # Which cards have any: one read for all, then only theirs are looked up (was one read per card)
+            with_feedback = {r[0] for r in db.execute(
+                "SELECT DISTINCT suggestion_id FROM decisions WHERE suggestion_id IN (SELECT value FROM json_each(?)) AND trim(feedback)<>'' "
+                "AND source IN ('telegram','dashboard') AND id NOT IN (SELECT decision_id FROM decision_annotations)", (json.dumps([c['id'] for c in cards]),))}
+            projects = {}  # a project's chip, read once per name
             for suggestion in cards:
                 if looks_done(suggestion):  # where it sits in Done, among the closed ones (dashboard doneAt)
                     suggestion['looks_done_at'] = looks_done_at(db, suggestion)
@@ -525,14 +533,16 @@ class ViewsStore(ConversationStore):
                         pass
                 if suggestion.get('project'):  # its project's page, for the chip on the to-do
                     try:
-                        suggestion['project_node'] = graph.card_project_view(db, suggestion['project'])
+                        if suggestion['project'] not in projects:
+                            projects[suggestion['project']] = graph.card_project_view(db, suggestion['project'])
+                        suggestion['project_node'] = projects[suggestion['project']]
                     except sqlite3.Error:
                         pass
                 if suggestion.get('next_action'):
                     suggestion['next_action']=json.loads(suggestion['next_action'])
                 prompt=suggestion.get('feedback_request_id') and db.execute('SELECT status,error FROM feedback_prompts WHERE request_id=?',(suggestion['feedback_request_id'],)).fetchone()
                 if prompt:suggestion['change_prompt']=dict(prompt)
-                feedback = db.execute("SELECT id,feedback,choice,created_at,source FROM decisions WHERE suggestion_id=? AND trim(feedback)<>'' AND source IN ('telegram','dashboard') AND id NOT IN (SELECT decision_id FROM decision_annotations) ORDER BY created_at DESC,rowid DESC LIMIT 1", (suggestion['id'],)).fetchone()
+                feedback = suggestion['id'] in with_feedback and db.execute("SELECT id,feedback,choice,created_at,source FROM decisions WHERE suggestion_id=? AND trim(feedback)<>'' AND source IN ('telegram','dashboard') AND id NOT IN (SELECT decision_id FROM decision_annotations) ORDER BY created_at DESC,rowid DESC LIMIT 1", (suggestion['id'],)).fetchone()
                 suggestion['latest_feedback'] = dict(feedback) if feedback else None
             for sid, files in chat_files.of_cards(db, [c['id'] for c in cards if c.get('origin') == 'owner']).items():
                 next(c for c in cards if c['id'] == sid)['files'] = files  # what the owner made it with (New to-do)
@@ -545,6 +555,7 @@ class ViewsStore(ConversationStore):
         few = len(cards) <= 200  # a Done page: only its own; the status payload: all at once
         found={r['suggestion_id']:dict(r) for r in db.execute('SELECT p.*,d.choice cause FROM preparations p LEFT JOIN decisions d ON d.id=p.decision_id'
                                                               +(' WHERE p.suggestion_id IN ('+','.join('?' for _ in cards)+')' if few else ''),[c['id'] for c in cards] if few else [])} if cards else {}
+        pre=self.card_reads(db,cards)
         for suggestion in cards:
             job=found.get(suggestion['id'])
             if job: suggestion.update(preparation_status=job['status'],preparation_reason=job['reason'],preparation_error=job['error'],
@@ -554,7 +565,29 @@ class ViewsStore(ConversationStore):
                                       preparation_move_to=job.get('move_to') if job['status']=='blocked' else None,
                                       preparation_use=use_view(db,job.get('use_events')) if job['status']=='blocked' else None,
                                       preparation_hold=getattr(self,'preparation_holds',{}).get(suggestion['id']) if job['status']=='queued' else None)
-            suggestion.update(self.suggestion_result(suggestion, db))
+            suggestion.update(self.suggestion_result(suggestion, db, pre))
+
+    def card_reads(self, db, cards):
+        """What suggestion_result reads for each card, read once for all of them (the status payload read it per card,
+        some 750 reads for 127 cards): their messages' links, their preparations, and which cards have a skill proposal,
+        a proposed or decided skill, or action jobs at all (only those are looked up one by one, as before)."""
+        ids = json.dumps([c['id'] for c in cards])
+        events = set()
+        for card in cards:
+            try:
+                events.update(json.loads(card['event_ids'] or '[]'))
+            except (ValueError, TypeError):
+                pass
+        pre = {'events': {r['id']: r['metadata'] for r in db.execute('SELECT id,metadata FROM events WHERE id IN (SELECT value FROM json_each(?))', (json.dumps(sorted(events, key=str)),))},
+               'clusters': {r[0] for r in db.execute('SELECT DISTINCT suggestion_id FROM skill_clusters WHERE suggestion_id IN (SELECT value FROM json_each(?))', (ids,))},
+               'jobs': {r[0] for r in db.execute('SELECT DISTINCT suggestion_id FROM action_jobs WHERE suggestion_id IN (SELECT value FROM json_each(?))', (ids,))},
+               'preparations': {r['suggestion_id']: r for r in db.execute('SELECT suggestion_id,job_id,status,reason FROM preparations WHERE suggestion_id IN (SELECT value FROM json_each(?))', (ids,))}}
+        try:  # skills.for_task reads these two; before their columns exist it looks per card as before
+            pre['skills'] = {r[0] for r in db.execute("SELECT task FROM skills WHERE task IN (SELECT value FROM json_each(?)) AND status='proposed' AND origin='proposed' "
+                                                      "UNION SELECT task FROM skill_task_decided WHERE task IN (SELECT value FROM json_each(?))", (ids, ids))}
+        except sqlite3.OperationalError:
+            pass
+        return pre
 
     def done_rows(self, db, titles=False):
         """Every done or dismissed card, the latest closed first, with its scope: light rows to count, filter and page.
