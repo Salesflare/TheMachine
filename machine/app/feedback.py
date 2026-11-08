@@ -177,3 +177,28 @@ class FeedbackApp:
             return reply
         except OSError:return {'definitely_not_sent':True}
         except (ValueError,subprocess.TimeoutExpired):return {}
+
+    def feedback_prompt_safe(self,request_id=None):
+        try:self.feedback_prompt_step(request_id=request_id)
+        except Exception as error:LOG.error('Change prompt delivery error=%s',type(error).__name__)
+
+    def prompt_receipt_dir(self):
+        return Path(self.config.get('prompt_receipts',str(Path.home()/'.local/share/personal-assistant/prompt-receipts')))
+
+    def save_prompt_receipt(self,row,message_id):
+        folder=self.prompt_receipt_dir()
+        folder.mkdir(parents=True,exist_ok=True,mode=0o700)
+        dest=folder/(hashlib.sha256(row['request_id'].encode()).hexdigest()+'.json')
+        temp=dest.with_suffix('.tmp')
+        with temp.open('w') as stream:
+            os.chmod(temp,0o600);json.dump({'messageId':message_id},stream);stream.flush();os.fsync(stream.fileno())
+        temp.replace(dest)
+
+    def prompt_receipt_file(self,row):
+        folder=self.prompt_receipt_dir()
+        path=folder/(hashlib.sha256(row['request_id'].encode()).hexdigest()+'.json')
+        try:
+            receipt=json.loads(path.read_text())
+            if re.fullmatch(r'\d+',str(receipt.get('messageId',''))):return str(receipt['messageId'])
+        except (OSError,ValueError):pass
+        return None

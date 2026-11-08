@@ -5,17 +5,20 @@ skill_import_report), the skills kept here, and the end of a Find my skills turn
 the reviewed list of the owner's skill actions. The Find my skills browser turn, skills_read and the notes prompt
 are here too."""
 import concurrent.futures
+import datetime as dt
 import json
 import re
 import secrets
 import subprocess
 import sys
 import time
+import uuid
 
 import browser_login
-from machine.browser import browser_lease_script
+import browser_viewer
+from machine.browser import browser_lease_script, browser_link
 from machine.config import LOG
-from machine.prompts.profile import SKILLS_LEASE, SKILLS_PAGES, SKILLS_READ, SKILLS_SITES
+from machine.prompts.profile import SKILLS_LEASE, SKILLS_PAGES, SKILLS_READ, SKILLS_SIGNIN, SKILLS_SITES
 from machine.store.decisions import skill_update_after
 from machine.store.voices import sentences
 import skills as skills_module
@@ -373,3 +376,53 @@ class SkillsApp:
                    "you got>; the card offers to update that skill. When one is related but a separate job (say the other direction of the "
                    "same exchange), add related=<its name> and relation=<how they relate, one short line>: still a new skill. When none "
                    "is, add new=true.\nSkills here:\n" + listed if on_hand else "They have no skills yet."))
+
+    def skills_find_start(self, token, items, sites=None, more=False):
+        """Find my skills on the service: reads the owner's own skills from claude.ai and chatgpt.com (`sites`: only
+        those) in the Machine's own browser, then a turn judges which listed skills would help with this Machine's
+        actual work. One at a time. `more`: looking again after the owner signed in to one."""
+        with self.store.connect() as db:
+            if db.execute("SELECT 1 FROM profile_runs WHERE status IN ('starting','running')").fetchone():
+                return None  # another turn of this kind is on; the list still shows what is on this computer
+            since = (dt.datetime.fromisoformat(now()) - dt.timedelta(days=30)).isoformat()
+            cards = [r[0] for r in db.execute('SELECT title FROM suggestions WHERE created_at>? ORDER BY created_at DESC LIMIT 40', (since,))]
+            run_id, started = uuid.uuid4().hex, now()
+            evidence = {'token': token, 'cards': cards, 'sites': [s for s in (sites or SKILLS_SITES) if s in SKILLS_SITES], 'more': bool(more),
+                        'sources': sorted({str(a.get('service') or '') for a in self.config.get('accounts', []) if a.get('service')}),
+                        'skills': sorted(self.skills.mine())[:60]}
+            db.execute("INSERT INTO profile_runs(run_id,status,started_at,updated_at,evidence,kind) VALUES(?,'starting',?,?,?,'skills')",
+                       (run_id, started, started, json.dumps(evidence)))
+        return run_id
+
+    def skills_signin(self, site):
+        """Sign in to ChatGPT or claude.ai for Find my skills: its sign-in page in front in the Machine's browser, for
+        the dashboard's sign-in dialog. Nothing is typed here."""
+        if site not in SKILLS_SIGNIN:
+            raise ValueError('Which account?')
+        try:
+            base = browser_login.endpoints(self.config)[0]
+            tab = browser_login.browser_cdp.open_tab(base, SKILLS_SIGNIN[site])
+        except (browser_login.browser_cdp.CdpError, OSError, IndexError):
+            raise ValueError('I couldn’t open the sign-in page in the browser') from None
+        self.__dict__.setdefault('skills_signin_tabs', {})[site] = tab
+        try:
+            browser_viewer.focus(SKILLS_SIGNIN[site], base)
+        except (ValueError, OSError):
+            pass
+        return {'opened': True, 'site': SKILLS_SITES[site], 'view': browser_link(self.config)}
+
+    def skills_found(self, args):
+        run_id = str(args.get('run') or '')
+        with self.store.connect() as db:
+            run = db.execute("SELECT evidence FROM profile_runs WHERE run_id=? AND kind='skills' AND status IN ('starting','running')", (run_id,)).fetchone()
+            if not run:
+                raise ValueError('This Find my skills run is no longer active')
+            db.execute('UPDATE profile_runs SET draft=?,updated_at=? WHERE run_id=?', (json.dumps({'reported': True}), now(), run_id))
+        token = json.loads(run['evidence'])['token']
+        return self.skills.importer.report(token, args.get('found'), args.get('recommended'), args.get('browser'))
+
+    def skills_lease_release(self):
+        try:
+            subprocess.run([sys.executable, str(browser_lease_script(self.config)), 'release', '--owner', SKILLS_LEASE], capture_output=True, timeout=30)
+        except (OSError, subprocess.TimeoutExpired):
+            pass

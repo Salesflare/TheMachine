@@ -155,7 +155,9 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   `machine/app/docs.py` (`DocsApp`: doc_text, doc_find, doc_write_draft) and `machine/app/status.py` (`StatusApp`: the
   status action with `needs_you`, `compact_status`, `sign_in_help` and `agent_work_status`), App methods for feedback
   prompts, profile steps, digest and notify, gbrain, skills and support: into FeedbackApp, ProfileApp,
-  NotificationsApp, GBrainApp, SkillsApp and SupportApp.
+  NotificationsApp, GBrainApp, SkillsApp and SupportApp, Browser and sign-in App methods into BrowserApp;
+  first-profile, share-history and orgs backfill steps into ProfileApp; skills sign-in, notify views and prompt
+  receipts into SkillsApp, NotificationsApp and FeedbackApp.
 - **Dashboard code:** in its area's part in `dashboard/` (`<area>-<what>.js`: shell, todos, settings, graph, calendar,
   connections, help, events, new, fleet), next to the functions it works with, never at the end of the script. The
   page's core is in the `shell-*` parts too: locale and error reports (`shell-core.js`), network and outbox, `render()`
