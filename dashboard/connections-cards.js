@@ -39,7 +39,7 @@ function renderHealthTabs(){const cs=state.connectors||[],bad=g=>cs.filter(c=>he
  healthPane=current;const row=$('#health-tabs');setHTML(row,subTabs('Connections','data-health-pane',panes,current));
  for(const el of document.querySelectorAll('#health [data-health-for]'))el.hidden=!el.dataset.healthFor.split(' ').includes(current);
  for(const a of document.querySelectorAll('#connectors>article'))a.hidden=a.dataset.group!==current;if(!$('#health').hidden)tabsShow(row.firstChild);if(current==='add')connectAdd();
- else if(!connectResumed&&!healthPicked&&$('#health')?.hidden===false){connectResumed=true;connectResume().then(found=>{if(found&&!healthPicked){healthPane='add';healthPicked=true;renderHealthTabs();renderConnectRun()}})}}  // measured once the other panes are hidden, never with every source shown at once
+ else if(!connectResumed&&!healthPicked&&!$('#health').hidden){connectResumed=true;connectResume().then(found=>{if(found&&!healthPicked){healthPane='add';healthPicked=true;renderHealthTabs();renderConnectRun()}})}}  // measured once the other panes are hidden, never with every source shown at once
 // and only while Connections shows: every redraw calls this, and a measure mid-redraw lays out the whole page (some 60 ms
 // of each click that redraws). Opening Connections (showTab) calls it again, and measures then.
 // Connections, Add: every source this install can add, set up right here with the same steps as `assistant connect`;
@@ -56,9 +56,8 @@ const connectPost=(action,args={})=>request('api/action',{method:'POST',headers:
 // Only the latest load draws: opening + Add starts one and connectOpen another, and the earlier answering last would
 // draw the grid again over the source connectOpen just picked
 let connectAddSeq=0,connectAddLast=Promise.resolve();
-// A setup under way (connect_running) is picked up where it is: after a reload, in another tab or on the phone, + Add
-// shows its step, with what it did already above it, never a fresh start. Connections opens on + Add for it.
-let connectResumed=false,connectPicking=false;  // picking a source (connectOpen) opens that one, not a setup left halfway
+// A setup under way (connect_running) resumes at its step, on any device
+let connectResumed=false,connectPicking=false;
 async function connectResume(){if(connectPicking)return false;try{const r=await connectPost('connect_running');if(!r?.session||connectRun)return false;
  connectRun=r;connectSignin=null;connectForm=null;connectGbrain=null;$('#connect-add').dataset.sig='';connectPoll();return true}catch{return false}}
 async function connectAdd(force){if(connectRun)return;if(!force&&connectList&&Date.now()-connectListAt<60000)return;connectListAt=Date.now();
@@ -339,7 +338,6 @@ function renderConnectRun(){const r=connectRun,box=$('#connect-add'),q=r.questio
   if(connectSiteShown!==r.session){connectSiteShown=r.session;setTimeout(()=>connectSiteSignin(r.signin),0)}}
  else if(code)body=code;
  else if(r.state==='running'&&q){const lead=q.kind==='choose'&&Number.isInteger(q.phone_first)&&(matchMedia('(max-width:560px)').matches||matchMedia('(pointer:coarse)').matches)?q.phone_first:-1,order=q.kind==='choose'?q.options.map((o,i)=>i).sort((a,b)=>(b===lead)-(a===lead)):[];
-  // Your own Google app (onboarding.sign_in_web): two steps in plain words, the long address behind a button
   const g=q.google&&/^https:\/\/accounts\.google\.com\//.test(q.google.url||'')?q.google:null;
   const field=g?html`<form class="connect-form connect-google" data-connect-form><ol class="connect-steps"><li><span>${t(g.again?'Sign in as {} and allow access again.':'Sign in as {} and allow read-only access.',g.email)}</span><a class="btn-link primary" href="${safeHref(g.url)}" target="_blank" rel="noopener">${t('Open Google')} ↗</a></li><li><label for="connect-answer">${t('Google then shows a page that may not load. Copy its whole address and paste it here.')}</label><input id="connect-answer" type="text" inputmode="url" autocomplete="off" spellcheck="false"></li></ol><div class="actions"><button>Continue</button></div></form>`
    :q.kind==='choose'?html`<div class="connect-choices">${order.map(i=>html`<button type="button"${i===lead?html` class="primary"`:''} data-connect-pick="${i}">${q.options[i]}</button>`)}</div>`:q.kind==='yes'?html`<div class="actions"><button type="button" class="primary" data-connect-pick="yes">Yes</button><button type="button" data-connect-pick="no">No</button></div>`:html`<form class="connect-form" data-connect-form><label for="connect-answer">${q.prompt}</label><input id="connect-answer" ${q.kind==='secret'?html`type="password" autocomplete="off"`:html`type="text"`} value="${q.kind==='secret'?'':q.default||''}" spellcheck="false"${q.resend?html` inputmode="numeric" autocomplete="one-time-code"`:''}><div class="actions"><button class="primary">Continue</button>${q.resend?html`<button type="button" data-connect-resend>${t('Send the code again')}</button>`:''}</div></form>`;
@@ -387,15 +385,13 @@ $('#connect-add').addEventListener('click',async e=>{const t=e.target;
  const site=t.closest('[data-connect-site]');if(site){connectSiteSignin(site.dataset.connectSite);return}
  if(t.closest('[data-connect-resend]')){connectAnswer('again');return}
  const pick=t.closest('[data-connect-pick]');if(pick){const v=pick.dataset.connectPick;connectAnswer(v==='yes'?true:v==='no'?false:+v);return}
- // Cancel: back to the list at once; the setup ends on the Machine meanwhile
  if(t.closest('[data-connect-stop]')&&connectRun){const s=connectRun.session;connectRun=null;clearTimeout(connectTimer);$('#connect-add').dataset.sig='';if(connectList)renderConnectAdd();else connectDraw($('#connect-add'),'grid',html``);
   try{await connectPost('connect_cancel',{session:s})}catch{}connectAdd(true);return}
  const card=t.closest('[data-connect-card]');if(card){cardShow(card.dataset.connectCard,true);return}
  if(t.closest('[data-connect-back]')){connectRun=null;connectSignin=null;connectForm=null;connectGbrain=null;clearTimeout(signinTimer);$('#connect-add').dataset.sig='';connectAdd(true)}});
 $('#connect-add').addEventListener('submit',e=>{const setup=e.target.closest('[data-connect-setup]');if(setup){e.preventDefault();connectSetup(setup);return}
  if(!e.target.closest('[data-connect-form]'))return;e.preventDefault();connectAnswer($('#connect-answer').value)});
-// The Google address typed in the form fills in an empty Company from its domain (jo@acme.io: Acme), as
-// onboarding.company_of guesses; a webmail address leaves it empty. What the owner typed there stays.
+// An empty Company follows the address's domain (onboarding.company_of)
 const WEBMAIL=/^(gmail|googlemail|outlook|hotmail|live|msn|yahoo|icloud|me|mac|aol|proton|protonmail|gmx|yandex|zoho|example)$/;
 function companyOf(email){const p=String(email||'').split('@')[1]?.toLowerCase().split('.').slice(0,-1)||[];if(p.length>1&&/^(co|com|org|net|ac|gov)$/.test(p[p.length-1]))p.pop();
  const n=p[p.length-1]||'';return !n||WEBMAIL.test(n)?'':n[0].toUpperCase()+n.slice(1)}
