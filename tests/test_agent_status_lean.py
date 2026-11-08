@@ -92,7 +92,7 @@ class LeanAgentStatus(unittest.TestCase):
 
     def test_preparations_are_told_to_read_their_own_card(self):
         rules = (Path(__file__).parent.parent / 'PREPARATION.md').read_text()
-        self.assertIn('status with args {suggestion_id:', rules)
+        self.assertIn('status {suggestion_id} first', rules)
         self.assertNotIn('status first, find ONLY this suggestion', rules)
 
 
