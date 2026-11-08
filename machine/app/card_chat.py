@@ -74,7 +74,10 @@ def save_hours(path, values):
 
 
 class CardChatApp:
-    ACTIONS = {}  # its actions are still App.action's own branches
+    # action name -> the method that handles it, called as method(name, args, owner_dashboard) (App.action)
+    ACTIONS = {'card_chat': 'card_chat_action', 'chat_stop': 'chat_stop_action',
+               'chat_model_default': 'chat_model_action', 'chat_model_set': 'chat_model_action',
+               'chat_fast_set': 'chat_model_action'}
 
     def card_chat(self, suggestion_id, cursor=None):
         """The chat view of one card (chat_items): read-only. While its run is going the dashboard asks about once a
@@ -560,3 +563,18 @@ class CardChatApp:
             return {'error': 'unavailable', 'reason': 'timeout'}
         except (ValueError, OSError):
             return {'error': 'unavailable'}
+
+    def card_chat_action(self, name, args, owner_dashboard=False):
+        if owner_dashboard and not args.get('cursor'):
+            self.store.note_activity('opened', args.get('suggestion_id'))  # a to-do opened (its chat's first read)
+        return self.card_chat(args.get('suggestion_id'), args.get('cursor'))
+
+    def chat_stop_action(self, name, args, owner_dashboard=False):
+        return self.chat_stop(args.get('suggestion_id'), via='browser' if args.get('via') == 'browser' else None)
+
+    def chat_model_action(self, name, args, owner_dashboard=False):
+        if not owner_dashboard:
+            raise ValueError('Only the owner picks the model, on the dashboard')
+        if name == 'chat_fast_set':
+            return self.chat_fast_set(args)
+        return self.chat_model_default(args) if name == 'chat_model_default' else self.chat_model_set(args)

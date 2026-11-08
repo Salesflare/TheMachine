@@ -278,7 +278,11 @@ Drafts the owner edited themselves before sending. Write the next drafts the way
 
 
 class PreparationApp:
-    ACTIONS = {}  # its actions are still App.action's own branches
+    # action name -> the method that handles it, called as method(name, args, owner_dashboard) (App.action)
+    ACTIONS = {'preparation_tool_intent': 'preparation_tool_action',
+               'preparation_tool_result': 'preparation_tool_action', 'preparation_history': 'preparation_tool_action',
+               'tool_approval_proposal': 'tool_approval_proposal_action',
+               'preparation_blocked': 'preparation_blocked_action'}
 
     def preparation_step(self, runner=None):
         runner=runner or self.preparation_gateway
@@ -670,3 +674,21 @@ class PreparationApp:
             if not job or (job['status'] == 'blocked' and signin_handoff(job['reason'])):
                 return None
             return (task_page(db, suggestion_id) or {}).get('url')
+
+    def preparation_tool_action(self, name, args, owner_dashboard=False):
+        with self.store.connect() as db:
+            if name == 'preparation_tool_intent': return preparation_state.tool_intent(db,args,now())
+            if name == 'preparation_tool_result': return preparation_state.tool_result(db,args,now())
+            return preparation_state.history(db,args['job_id'],args.get('offset',0),args.get('call_ref'))
+
+    def tool_approval_proposal_action(self, name, args, owner_dashboard=False):
+        host = self.config.get('dashboard_host')
+        if not host:
+            raise ValueError('Private dashboard unavailable for full approval')
+        proposal_id = self.store.tool_approval_proposal(args['id'], args['title'], args['detail'])
+        root = 'https://' + host + self.config.get('dashboard_path', '/')
+        return {'id': proposal_id, 'url': root.rstrip('/') + '/approval?id=' + proposal_id}
+
+    def preparation_blocked_action(self, name, args, owner_dashboard=False):
+        return self.store.preparation_blocked(args['suggestion_id'],args['job_id'],args['reason'],args.get('details'),args.get('note_kind'),args.get('questions'),
+                                              args.get('move_to'),args.get('use_event_ids'))

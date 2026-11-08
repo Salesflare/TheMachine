@@ -2838,18 +2838,6 @@ class App(*APP_MIXINS):
         selected = args.get('account_ids', [])
         if name in self.ACTION_HANDLERS:  # an action a domain mixin handles (APP_MIXINS)
             return getattr(self, self.ACTION_HANDLERS[name])(name, args, owner_dashboard)
-        if name in ('preparation_tool_intent','preparation_tool_result','preparation_history'):
-            with self.store.connect() as db:
-                if name == 'preparation_tool_intent': return preparation_state.tool_intent(db,args,now())
-                if name == 'preparation_tool_result': return preparation_state.tool_result(db,args,now())
-                return preparation_state.history(db,args['job_id'],args.get('offset',0),args.get('call_ref'))
-        if name == 'tool_approval_proposal':
-            host = self.config.get('dashboard_host')
-            if not host:
-                raise ValueError('Private dashboard unavailable for full approval')
-            proposal_id = self.store.tool_approval_proposal(args['id'], args['title'], args['detail'])
-            root = 'https://' + host + self.config.get('dashboard_path', '/')
-            return {'id': proposal_id, 'url': root.rstrip('/') + '/approval?id=' + proposal_id}
         if name == 'bug_offer':
             return self.bug_offer(args)
         if name in ('events', 'related') and selected in ('all', ['all']):
@@ -2985,8 +2973,6 @@ class App(*APP_MIXINS):
             if not owner_dashboard:
                 raise ValueError('Task pages are shared from the dashboard')
             return self.task_pages.action(name, args)
-        if name == 'recap_decide':  # a tap on the weekly recap's Filter, Keep, Undo, Not needed or Do it
-            return self.recap_decide(args, owner_dashboard)
         if name.startswith('fleet_') or name in FAMILY_ACTIONS:
             return self.fleet_action(name, args, owner_dashboard)
         if name == 'related':
@@ -3076,16 +3062,6 @@ class App(*APP_MIXINS):
                 return found
             with self.store.connect() as db:
                 return {**enrichment.status(db, self.config), 'people': enrichment.people_status(db)}
-        if name == 'preview_review':
-            return self.start_preview()
-        if name == 'review_now':  # the dashboard's Review now while reviews wait for the budget: the owner's own, like a preview
-            if not owner_dashboard:
-                raise ValueError('Only the owner can do this, on the dashboard')
-            if not (self.config.get('review_worker') or {}).get('enabled'):
-                return self.start_preview()
-            self.review_asked, self.review_paused = time.time(), None
-            LOG.info('review now asked')
-            return {'asked': True}
         if name == 'roles_start':
             return self.store.roles_start(bool(args.get('again')))
         if name == 'profile_start':
@@ -3102,66 +3078,6 @@ class App(*APP_MIXINS):
             if not session.startswith(SKILLS_SESSION_PREFIX):
                 raise ValueError('Only the Find my skills turn reports skills')
             return self.skills_found({**args, 'run': session[len(SKILLS_SESSION_PREFIX):]})
-        if name == 'review_context':
-            return self.store.review_context(args['owner_session'], args.get('owner_run'))
-        if name == 'review_failed':
-            return self.store.review_failed(args['owner_session'], args['owner_run'], args['reason'], args.get('terminal', False))
-        if name == 'suggest_save':  # suggest, with its args checked first (machine/app/review_saves.py)
-            # The agent's suggestions wait for the morning digest unless it says otherwise.
-            with self.store.connect() as db:
-                source_accounts={r[0] for r in db.execute('SELECT account_id FROM events WHERE id IN ('+','.join('?' for _ in args['event_ids'])+')',args['event_ids'])} if args['event_ids'] else set()
-            company=args.get('company') or None  # mail for another of the owner's companies: the to-do goes there (owner_companies)
-            if company is not None:
-                source_accounts=set(todo_areas.company_accounts(company,self.config['accounts']))
-            # the owner's own life (family, friends, home), also on a work mailbox: Personal from the start (todo_areas.py)
-            personal=company is None and (args.get('personal') is True or bool(args.get('family_with')))
-            work=not personal and any(a['id'] in source_accounts and a.get('boundary','').startswith('work:') for a in self.config['accounts'])
-            if not args.get('card_id'):
-                # A new to-do only when nothing since shows it handled: what came after its evidence is read first
-                newer = self.newer_unchecked(args['event_ids'], args.get('newer_checked'))
-                if newer:
-                    raise ValueError('Something happened after this to-do\'s evidence. Read these with events before making it:\n' + activity_lines(newer)
-                                     + '\nWhen they show it handled (the owner answered or did it, here or on another channel, someone else took '
-                                     'care of it, a meeting covered it, a later message settled it) or no longer the owner\'s, make no to-do. '
-                                     'Otherwise suggest again with newer_checked: [these event ids], saying in the body what is still open.')
-            # A title or summary that says "today" or "tomorrow" is wrong the day after: saved with the day itself
-            (title, body), stale = undated_card(str(args['title'] or ''), str(args['body'] or ''))
-            if args.get('based_on') is not None:
-                with self.store.connect() as db:
-                    self.store.based_on_check(db, args['based_on'])
-            saved = self.store.suggest(args['dedupe_key'], title, body, args['event_ids'], args.get('when') or 'digest',
-                                       self.config.get('digest_at', '08:30'),work=work,urgent=args.get('urgent') is True,due=args.get('due'),
-                                       ahead=args.get('prepare_ahead') is True and self.config.get('prepare_ahead', True) is not False
-                                       and self.store.ahead_room(int(self.config.get('prepare_ahead_per_day', 10))),
-                                       awaiting=args.get('awaiting_event_id'),project=args.get('project'),card_id=args.get('card_id'),
-                                       separate=args.get('separate') is True,reopen=args.get('reopen') is True,match=True,
-                                       owner_step=(args['owner_step'] is True) if 'owner_step' in args else None,
-                                       expires_at=args.get('expires_at'), expires_what=args.get('expires_what'), company=company, personal=personal)
-            if isinstance(saved, dict) and stale:
-                saved['dates'] = (f"Saved {', '.join(sorted({w.lower() for w in stale}))} as the day itself: a to-do is read on later days, so name "
-                                  'the weekday or date, never today, tomorrow or yesterday.')
-            if isinstance(saved, dict) and saved.get('id') and args.get('skill_hint') and getattr(self, 'skills', None):
-                saved['skill_hint'] = self.skills.hint(saved['id'], args['skill_hint'])  # "There's a skill for this", if it clearly helps
-            if isinstance(saved, dict) and saved.get('id') and not saved.get('duplicate') and args.get('meet'):
-                saved['meet'] = self.meet_begin(saved['id'], args['meet'], args['event_ids'])  # their Machine, if any, agrees a time (meet_app.py)
-            if isinstance(saved, dict) and saved.get('id') and args.get('family_with') and getattr(self, 'fleet', None):
-                # family coordination with someone the review knows is family: maybe a quiet "Invite them?" (family_invites.py)
-                try:
-                    saved['family_invite'] = self.fleet.family_invite_offer(saved['id'], str(args['family_with']), work)
-                except (sqlite3.Error, ValueError) as error:
-                    LOG.warning('family invite offer error=%s', type(error).__name__)
-            if isinstance(saved, dict) and saved.get('id') and not saved.get('duplicate') and args.get('based_on') is not None:
-                with self.store.connect() as db:  # the teammate's input the to-do follows: shown on it, with its link
-                    self.store.mark_based_on(db, saved['id'], args['based_on'])
-            if isinstance(saved, dict) and saved.get('id') and not saved.get('duplicate') and not saved.get('attached'):
-                with self.store.connect() as db:  # what the owner may want to say in its chat: each update says it again
-                    self.store.set_chat_asks(db, saved['id'], args.get('asks'))
-            unknown = self.store.no_role_yet(args['event_ids'])
-            if isinstance(saved, dict) and unknown:  # name them now, while the evidence is open
-                saved['no_role_yet'] = unknown
-                saved['hint'] = ('The people on this card have no role yet. If the evidence shows what they are to the owner, '
-                                 'set it with graph node_id, role, event_id and quote; otherwise leave it.')
-            return saved
         if name == 'prepare':
             with self.store.connect() as db:
                 row=db.execute('SELECT account_ids,event_ids,body FROM suggestions WHERE id=?',(args['suggestion_id'],)).fetchone()
@@ -3671,10 +3587,6 @@ class App(*APP_MIXINS):
             with self.store.connect() as db:
                 enrichment.set_people(db, args.get('on') is not False)
             return self.lookups_view()
-        if name in ('set_signature', 'detect_signature'):
-            if not owner_dashboard:
-                raise ValueError('Only the owner sets a signature, on the dashboard (Settings, Signatures)')
-            return self.signature_action(name, args)
         if name == 'set_agents':
             if not owner_dashboard:
                 raise ValueError('Only the owner changes this, on the dashboard (Settings)')
@@ -3709,9 +3621,6 @@ class App(*APP_MIXINS):
             status = getattr(self, 'model_status', None)
             return {'model_status': status, 'model_usage': getattr(self, 'model_usage', None),
                     **({'outcome': outcome} if name == 'model_reset' else {})}
-        if name == 'preparation_blocked':
-            return self.store.preparation_blocked(args['suggestion_id'],args['job_id'],args['reason'],args.get('details'),args.get('note_kind'),args.get('questions'),
-                                                  args.get('move_to'),args.get('use_event_ids'))
         if name == 'refresh_card':
             with self.store.connect() as db:
                 db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=?',(args['suggestion_id'],))
@@ -3775,26 +3684,6 @@ class App(*APP_MIXINS):
             if result.get('handled') and not result.get('cancelled'):
                 result.update(duplicate=True,card_confirmation_only=True)
             return result
-        if name == 'card_chat':
-            if owner_dashboard and not args.get('cursor'):
-                self.store.note_activity('opened', args.get('suggestion_id'))  # a to-do opened (its chat's first read)
-            return self.card_chat(args.get('suggestion_id'), args.get('cursor'))
-        if name == 'chat_stop':
-            return self.chat_stop(args.get('suggestion_id'), via='browser' if args.get('via') == 'browser' else None)
-        if name in ('chat_model_default', 'chat_model_set', 'chat_fast_set'):
-            if not owner_dashboard:
-                raise ValueError('Only the owner picks the model, on the dashboard')
-            if name == 'chat_fast_set':
-                return self.chat_fast_set(args)
-            return self.chat_model_default(args) if name == 'chat_model_default' else self.chat_model_set(args)
-        if name in VOICE_ACTIONS:
-            if not owner_dashboard:
-                raise ValueError('Only the owner uses voice input, on the dashboard')
-            return self.voice_action(name, args)
-        if name in TALK_ACTIONS:
-            if not owner_dashboard:
-                raise ValueError('Only the owner talks live, on the dashboard')
-            return self.talk_action(name, args)
         if name in ('chat_upload', 'chat_file_remove'):
             # A New to-do form's files upload before the to-do exists, under the form's own draft key
             sid = 'new:' + str(args['draft']) if args.get('draft') is not None else str(args.get('suggestion_id') or '')

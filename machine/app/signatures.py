@@ -8,7 +8,8 @@ from sources import credential, gog_read
 
 
 class SignaturesApp:
-    ACTIONS = {}  # its actions are still App.action's own branches
+    # action name -> the method that handles it, called as method(name, args, owner_dashboard) (App.action)
+    ACTIONS = {'set_signature': 'set_signature_action', 'detect_signature': 'set_signature_action'}
 
     def signature_view(self):
         """Each mailbox's signature for Settings: the owner's own, or the one imported from the mailbox (cleaned HTML),
@@ -63,3 +64,8 @@ class SignaturesApp:
             raise ValueError('That signature is too long')
         signatures.save(self.config, account['id'], value, 'owner')
         return self.signature_view()
+
+    def set_signature_action(self, name, args, owner_dashboard=False):
+        if not owner_dashboard:
+            raise ValueError('Only the owner sets a signature, on the dashboard (Settings, Signatures)')
+        return self.signature_action(name, args)

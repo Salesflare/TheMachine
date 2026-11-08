@@ -16,6 +16,7 @@ import enrichment
 import graph
 import knowledge
 import locale_prefs
+from machine.actions import TALK_ACTIONS
 from machine.cards import todo_state
 from machine.chat import chat_name, chat_person
 from machine.config import LOG, ROOT
@@ -33,7 +34,8 @@ import voice_input
 
 
 class TalkApp:
-    ACTIONS = {}  # its actions are still App.action's own branches
+    # action name -> the method that handles it, called as method(name, args, owner_dashboard) (App.action)
+    ACTIONS = {**dict.fromkeys(TALK_ACTIONS, 'talk_actions_action')}
 
     @property
     def talk(self):
@@ -582,3 +584,8 @@ class TalkApp:
         except sqlite3.Error:
             required = False
         return {'people_available': available, 'people': on, **({'required_off': True} if required else {})}
+
+    def talk_actions_action(self, name, args, owner_dashboard=False):
+        if not owner_dashboard:
+            raise ValueError('Only the owner talks live, on the dashboard')
+        return self.talk_action(name, args)

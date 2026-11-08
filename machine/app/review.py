@@ -190,7 +190,9 @@ def ai_connecting(config, current=None):
 
 
 class ReviewApp:
-    ACTIONS = {}  # its actions are still App.action's own branches
+    # action name -> the method that handles it, called as method(name, args, owner_dashboard) (App.action)
+    ACTIONS = {'preview_review': 'preview_review_action', 'review_now': 'review_now_action',
+               'review_context': 'review_context_action', 'review_failed': 'review_failed_action'}
 
     def review_subject(self, card_id):
         """What Ask to review shows of an open to-do (fleet_reviews.py): its ready draft (to, subject, text, revision) when
@@ -585,3 +587,22 @@ class ReviewApp:
             except Exception as error:LOG.error('recap error=%s',type(error).__name__)
             try:self.still_needed_step()
             except Exception as error:LOG.error('still needed error=%s',type(error).__name__)
+
+    def preview_review_action(self, name, args, owner_dashboard=False):
+        return self.start_preview()
+
+    def review_now_action(self, name, args, owner_dashboard=False):
+        # the dashboard's Review now while reviews wait for the budget: the owner's own, like a preview
+        if not owner_dashboard:
+            raise ValueError('Only the owner can do this, on the dashboard')
+        if not (self.config.get('review_worker') or {}).get('enabled'):
+            return self.start_preview()
+        self.review_asked, self.review_paused = time.time(), None
+        LOG.info('review now asked')
+        return {'asked': True}
+
+    def review_context_action(self, name, args, owner_dashboard=False):
+        return self.store.review_context(args['owner_session'], args.get('owner_run'))
+
+    def review_failed_action(self, name, args, owner_dashboard=False):
+        return self.store.review_failed(args['owner_session'], args['owner_run'], args['reason'], args.get('terminal', False))
