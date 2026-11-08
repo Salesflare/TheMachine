@@ -153,7 +153,9 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   `ReviewApp`, `machine/app/card_actions.py` (`CardActionsApp`: a to-do's own actions of `App.action`: prepare,
   decide, revise_draft, confirm_action, refresh_card, chat files and task_import, with the helpers only they use),
   `machine/app/docs.py` (`DocsApp`: doc_text, doc_find, doc_write_draft) and `machine/app/status.py` (`StatusApp`: the
-  status action with `needs_you`, `compact_status`, `sign_in_help` and `agent_work_status`).
+  status action with `needs_you`, `compact_status`, `sign_in_help` and `agent_work_status`), App methods for feedback
+  prompts, profile steps, digest and notify, gbrain, skills and support: into FeedbackApp, ProfileApp,
+  NotificationsApp, GBrainApp, SkillsApp and SupportApp.
 - **Dashboard code:** in its area's part in `dashboard/` (`<area>-<what>.js`: shell, todos, settings, graph, calendar,
   connections, help, events, new, fleet), next to the functions it works with, never at the end of the script. The
   page's core is in the `shell-*` parts too: locale and error reports (`shell-core.js`), network and outbox, `render()`

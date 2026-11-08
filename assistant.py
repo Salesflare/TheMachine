@@ -1032,11 +1032,13 @@ from machine.app.browser import (
     BrowserApp,
 )
 from machine.app.profile import (
+    PROFILE_SECONDS,
     ProfileApp,
     SKILLS_SESSION_PREFIX,
 )
 from machine.app.feedback import (
     FeedbackApp,
+    prompt_text,
 )
 from machine.app.card_actions import (
     CardActionsApp,
@@ -1058,6 +1060,10 @@ from machine.app.status import (
     compact_status,
     needs_you,
     sign_in_help,
+)
+from skills_app import (
+    SKILL_NOTES_MIN,
+    SKILL_REGROW,
 )
 
 
@@ -1323,10 +1329,6 @@ LIVE_CONFIG = ('delivery_enabled', 'review_worker')
 # out instead of spent in its first minutes. A draft prepared ahead is on the owner's board as Preparing, so it doesn't
 # wait for this gap (2026-10-29: one waited 8 minutes behind a review's start); the usage budget still holds it.
 BACKGROUND_GAP_SECONDS = 600
-
-PROFILE_SECONDS = 900
-SKILL_NOTES_MIN = 5   # notes about one kind of task before they're offered as a skill
-SKILL_REGROW = 3      # after Not now, offered again only once this many more notes joined them
 
 
 # Contact photos from the owner's Google contacts and Workspace directory, with the scopes the gog sign-in already has
@@ -1849,15 +1851,6 @@ def agent_history(owner, results, skip='', keep=6):
     lines = [f'{who}: {agent_jobs.gist(text, 400)}' for at, who, text in sorted(turns, key=lambda t: t[0] or 0)
              if str(text or '').strip() and ' '.join(str(text).split()) != skip]
     return lines[-keep:]
-
-
-def prompt_text(title,plain=False,kind='change'):
-    t = i18n.t  # “cancel” stays the word the reply handler takes, in every language
-    if kind=='dismiss':
-        if plain:return t('Why isn’t this needed? Reply to this message. Send “cancel” to keep it.')
-        return t('Not needed: {}', title[:90])+'\n\n'+t('Why isn’t this needed? Reply here, or send “cancel” to keep it.')
-    if plain:return t('What would you like instead? Reply to this message. Send “cancel” to stop.')
-    return t('Change: {}', title[:90])+'\n\n'+t('What would you like instead? Reply here, or send “cancel”.')
 
 
 
@@ -2510,41 +2503,6 @@ class App(*APP_MIXINS):
         save_hours(self.config_path, {'gbrain': value})
         self.config['gbrain'] = value
 
-    def gbrain_action(self, name, args):
-        if name == 'gbrain_status':
-            return self.gbrain_view()
-        if not getattr(self, 'config_path', None):
-            raise ValueError('This can’t be changed on this Machine.')
-        brain = gbrain.Brain(self.config)
-        if name == 'gbrain_on':
-            # Nothing goes into GBrain, and reviews get none of its tools, before the owner agreed to what goes in.
-            if args.get('consent') is not True:
-                raise ValueError('Agree to what goes into GBrain first')
-            binary = brain.binary()
-            if not binary:
-                raise ValueError('Install GBrain on this Machine first')
-            try:
-                linked = brain.link()
-            except gbrain.BrainError:
-                raise ValueError('The Machine could not add GBrain. Try again.') from None
-            self.gbrain_save({'on': True, 'consent_at': now(), 'work': args.get('work') is True, 'linked': linked, 'bin': binary})
-            self.gbrain_start()
-        elif name == 'gbrain_work':
-            if not gbrain.on(self.config):
-                raise ValueError('Turn GBrain on first')
-            self.gbrain_save({**gbrain.settings(self.config), 'work': args.get('on') is True})
-            self.gbrain_start()
-        elif name == 'gbrain_off':
-            # The brain and the pages in it stay: only OpenClaw's link to it, when The Machine made it, and what came back.
-            try:
-                brain.unlink()
-            except gbrain.BrainError:
-                pass
-            self.gbrain_save({'on': False})
-            with self.store.connect() as db:
-                gbrain.forget(db)
-        return self.gbrain_view()
-
     def started_at(self):
         """When this Machine started: `started_at` in the config (a hosted machine's signup), else its first own activity."""
         given = str(self.config.get('started_at') or '')
@@ -2857,81 +2815,6 @@ class App(*APP_MIXINS):
                     return False
         return True
 
-    def notify_step(self, current=None, push=None, mail=None):
-        """Held notifications (notify.take_due): a push a minute after the owner left the dashboard, and one email for
-        what is still unseen and waiting a while later. Within work hours only; a held push outside them is dropped."""
-        local = (current or dt.datetime.now(dt.timezone.utc)).astimezone(local_tz())
-        with self.store.connect() as db:
-            notify.ensure(db)
-            if not in_hours(local):
-                notify.drop_pushes(db)
-                return None
-            pushes, lines = notify.take_due(db, self.notify_open)
-            handoffs = notify.take_handoffs(db)
-        subscriptions, phones = push_reach(self.store, self.config) if pushes else ([], 0)
-        went = []
-        if pushes and not subscriptions and not phones:
-            with self.store.connect() as db:
-                notify.delivered(db, pushes)  # nowhere to push to: dropped, not kept to go off later
-            pushes = []
-        for item in pushes:
-            if push_send(self.store, self.config, subscriptions, item['payload'], 'held', push, kind=item['kind'], held=True):
-                with self.store.connect() as db:
-                    notify.delivered(db, [item])
-                went.append('push')
-        target = (lines or handoffs) and self.notify_mail_target()
-        if target:
-            root = 'https://' + self.config['dashboard_host'] + self.config.get('dashboard_path', '/') if self.config.get('dashboard_host') else ''
-            for item in handoffs:  # each its own email, once
-                message = notify.handoff_mail(item, root)
-                if (mail(*target, message['subject'], message['text']) if mail else notify.mail(*target, message['subject'], message['text'], delivery=item['delivery'])):
-                    with self.store.connect() as db:
-                        notify.delivered(db, [item])
-                    went.append('email')
-            message = notify.waiting_mail(lines, root) if lines else None
-            if message and (mail(*target, message['subject'], message['text']) if mail else notify.mail(*target, message['subject'], message['text'], delivery=lines[0]['batch'])):
-                with self.store.connect() as db:
-                    notify.delivered(db, lines)
-                    notify.mailed(db)
-                went.append('email')
-        if went:
-            LOG.info('notify held channels=%s', ','.join(went))
-        return went
-
-    def app_push_action(self, name, args):
-        """The mobile app's phones (app_push_register, app_push_unregister): the control plane keeps the push token and
-        sends the wakeups (app_wake); this Machine keeps the phone's id, platform and name for Settings, never the token."""
-        if name == 'app_push_unregister':
-            device = str(args.get('id') or '')
-            if not notify.APP_ID.fullmatch(device):
-                raise ValueError('Invalid phone')
-            target = cloud_target(self.config)
-            answer = notify.app_push(*target, {'action': 'unregister', 'id': device}) if target else {'missing': True}
-            if not answer:
-                raise ValueError('Couldn’t remove this phone. Try again.')
-            with self.store.connect() as db:
-                notify.app_device_remove(db, [device])
-            return {'removed': True}
-        platform, token = args.get('platform'), args.get('token')
-        if platform not in ('fcm', 'apns') or not isinstance(token, str) or not re.fullmatch(r'[A-Za-z0-9_:.-]{16,4096}', token):
-            raise ValueError('Invalid phone')
-        label = ' '.join(re.sub(r'[\x00-\x1f\x7f<>]', ' ', str(args.get('label') or '')).split())[:60]
-        label = label or ('iPhone' if platform == 'apns' else 'Android')
-        target = cloud_target(self.config)
-        if not target:  # self-hosted off The Machine Network: the relay doesn't know it. The app works without them.
-            return {'registered': False, 'reason': 'network'}
-        # fetch: the app shows the notification itself, with what it asks this Machine for (GET /api/notice): the Android
-        # app, and the iPhone's Notification Service extension
-        answer = notify.app_push(*target, {'action': 'register', 'platform': platform, 'token': token, 'label': label,
-                                           'sandbox': args.get('sandbox') is True, 'fetch': args.get('fetch') is True})
-        device = str((answer or {}).get('id') or '')
-        if not notify.APP_ID.fullmatch(device):
-            raise ValueError('Couldn’t turn on notifications for this phone. Try again.')
-        with self.store.connect() as db:
-            notify.app_device_add(db, device, platform, label, now())
-        LOG.info('app push registered platform=%s', platform)
-        return {'registered': True, 'id': device, 'platform': platform, 'label': label}
-
     def notify_view(self):
         with self.store.connect() as db:
             prefs = notify.prefs(db)
@@ -2942,89 +2825,6 @@ class App(*APP_MIXINS):
                 'app_push_ready': bool(cloud_target(self.config)), 'phone_app': phone_app(self.config),
                 'push_ready': bool(self.config.get('dashboard_host')), 'digest_at': self.config.get('digest_at', '08:30'),
                 'weekly_recap': self.recap_switch_view()}
-
-    def digest(self, current=None):
-        """The morning digest as of `current` (notify.compose), or None when there is nothing to say."""
-        current = current or dt.datetime.fromisoformat(now())
-        local = current.astimezone(local_tz())
-        start = local.replace(hour=0, minute=0, second=0, microsecond=0)
-        end = start + dt.timedelta(days=1)
-        # Overnight: since the end of the last work day's hours (or a day back)
-        hour, minute = clock(WORK_HOURS['end'])
-        since = (local - dt.timedelta(days=1)).replace(hour=hour, minute=minute, second=0, microsecond=0)
-        if since > local:
-            since -= dt.timedelta(days=1)
-        utc = lambda t: t.astimezone(dt.timezone.utc).isoformat()
-        with self.store.connect() as db:
-            meetings = recap_meetings(db, utc(start), utc(end), {})
-            meetings = [m for m in meetings if m['at'] >= utc(local)] or []
-            open_states = "('pending','accepted','prepared','instructions')"
-            due = [dict(r) for r in db.execute(
-                f"SELECT id,title FROM suggestions WHERE (status IN {open_states} AND due=? AND NOT {NOT_FOR_OWNER_SQL}) OR (status='snoozed' AND snoozed_until>=? AND snoozed_until<?) "
-                "ORDER BY created_at LIMIT 20", (local.date().isoformat(), utc(local), utc(end)))]
-            overnight = [dict(r) for r in db.execute(
-                "SELECT id,title FROM suggestions WHERE status='pending' AND handled_hint IS NULL AND created_at>=? AND (due IS NULL OR due!=?) "
-                "AND (deliver_after IS NULL OR deliver_after<=?) ORDER BY urgent DESC,created_at DESC LIMIT 20", (utc(since), local.date().isoformat(), utc(current)))]
-            # What waits for the owner (waiting_count, the app's badge), in the dashboard's order (notify.open_order): the
-            # ready ones (prepared, the dashboard's Ready) lead the digest; the rest is its "Waiting for you", without
-            # what an earlier part already listed (notify.compose), so a pile still gets one
-            later = still_needed.folded(db, utc(current), local_tz())  # a Still needed? left unanswered waits in Later
-            top = notify.open_order([dict(r) for r in db.execute(
-                "SELECT id,title,status,due,due_at,created_at,event_ids FROM suggestions WHERE status IN ('pending','prepared') AND NOT " + NOT_FOR_OWNER_SQL + " "
-                "AND (deliver_after IS NULL OR deliver_after<=?) LIMIT 2000", (utc(current),)) if r['id'] not in later], local)
-            ready = [r for r in top if r['status'] == 'prepared']
-            total = waiting_count(db)
-            pace = clear_pace.line(total, clear_pace.seconds(db, current))  # "4 ready · about 2 min", as To-dos says it
-            show = security_levels.notify_text(db, False)
-        promised = notify.promised_today(self.store.promises(), top, local.date().isoformat(), lambda p: promise_text(p)[0])
-        root = 'https://' + self.config['dashboard_host'] + self.config.get('dashboard_path', '/') if self.config.get('dashboard_host') else ''
-        when = lambda iso: locale_prefs.clock_text(dt.datetime.fromisoformat(iso).astimezone(local_tz()))
-        return notify.compose(meetings, due, overnight, root, show, when, None, total, top, ready, promised, pace)
-
-    def digest_step(self, current=None, push=None, telegram_send=None, mail=None):
-        """Send the morning digest once on a work day, at its time, on the channels the owner picked."""
-        current = current or dt.datetime.fromisoformat(now())
-        local = current.astimezone(local_tz())
-        day = local.date().isoformat()
-        with self.store.connect() as db:
-            notify.ensure(db)
-            prefs = notify.prefs(db)['digest']
-            if not any(prefs.values()):
-                return None
-            sent = notify.digest_sent(db, day)
-        if not notify.digest_due(local, self.config.get('digest_at', '08:30'), WORK_HOURS['start'], WORK_HOURS['end'], is_work_day, sent):
-            return None
-        with self.store.connect() as db:
-            if not notify.digest_claim(db, day, now()):
-                return None
-        digest = self.digest(current)
-        went = []
-        if digest:
-            if prefs.get('push'):
-                subscriptions, phones = push_reach(self.store, self.config)
-                if subscriptions or phones:
-                    payload = {**digest['push'], **({'silent': True} if notify.active() else {}),  # at the dashboard: no buzz
-                               '_line': digest['push']['title'], '_body': digest['push']['body'],  # the mobile app asks for these
-                               'actions': quick_web('view')}
-                    if push_send(self.store, self.config, subscriptions, payload, 'digest', push, wake='digest'):
-                        went.append('push')
-            if prefs.get('telegram') and telegram_on(self.config):
-                try:
-                    (telegram_send or (lambda text: telegram_request(self.config, {'action': 'send', 'channel': 'telegram', 'accountId': telegram_account(self.config),
-                                                                                  'target': self.config.get('telegram_owner'), 'message': recap_escape(text),
-                                                                                  'presentation': {'blocks': [{'type': 'buttons', 'buttons': []}]}})))(digest['text'])
-                    went.append('telegram')
-                except (DeliveryNotSent, subprocess.TimeoutExpired, ValueError) as error:
-                    LOG.warning('digest telegram error=%s', type(error).__name__)
-            target = prefs.get('email') and self.notify_mail_target()
-            if prefs.get('email') and not target:
-                LOG.info('digest email skipped reason=not_paired')
-            if target and (mail or notify.mail)(target[0], target[1], digest['subject'], digest['text']):
-                went.append('email')
-        with self.store.connect() as db:
-            notify.digest_done(db, day, 'sent' if went else 'empty' if not digest else 'not_sent', went)
-        LOG.info('digest day=%s channels=%s', day, ','.join(went) or '-')
-        return went
 
     def waiting_handoffs_text(self):
         """Teammates' handoffs waiting for the owner, for the review (silent acceptance); nothing when off the Network."""
@@ -3270,50 +3070,6 @@ class App(*APP_MIXINS):
                        (run_id, started, started, json.dumps(evidence)))
         return run_id
 
-    def skills_read(self, sites):
-        """The owner's own skills on claude.ai and chatgpt.com, read in the Machine's browser: a tab straight on each
-        site's skills page (SKILLS_PAGES), SKILLS_READ run there, the tab closed again. {'chatgpt': {'state': 'ok' |
-        'signed_out' | 'unavailable', 'skills': [...], 'where': <page>, 'detail': …}}. Read-only; nothing is clicked."""
-        try:
-            base = browser_login.endpoints(self.config)[0]
-        except (IndexError, TypeError):
-            return {s: {'state': 'unavailable', 'where': SKILLS_PAGES[s], 'detail': 'the Machine’s browser isn’t running'} for s in sites}
-        cdp = browser_login.browser_cdp
-
-        def read(site):
-            seen = {'where': SKILLS_PAGES[site]}
-            try:
-                tab = cdp.open_tab(base, SKILLS_PAGES[site])
-            except (cdp.CdpError, OSError):
-                return {**seen, 'state': 'unavailable', 'detail': 'the Machine’s browser didn’t open it'}
-            try:
-                for _ in range(25):  # up to ~25 seconds for the page to load its own origin
-                    time.sleep(1)
-                    try:
-                        if cdp.evaluate(base, tab, "() => location.hostname + ' ' + document.readyState", timeout_ms=3000) == SKILLS_SITES[site] + ' complete':
-                            break
-                    except (cdp.CdpError, OSError):
-                        pass
-                got = cdp.evaluate(base, tab, SKILLS_READ[site], timeout_ms=120000)
-            except (cdp.CdpError, OSError):
-                return {**seen, 'state': 'unavailable', 'detail': 'the page didn’t answer'}
-            finally:
-                try:
-                    cdp.close_tab(base, tab)
-                except (cdp.CdpError, OSError):
-                    pass
-            if not isinstance(got, dict) or got.get('state') not in ('ok', 'signed_out', 'unavailable'):
-                return {**seen, 'state': 'unavailable', 'detail': 'the page didn’t answer'}
-            skills = [f for f in got.get('skills') or [] if isinstance(f, dict)][:60]
-            out = {**seen, 'state': got['state'], 'skills': skills}
-            if got['state'] == 'ok' and not skills:
-                out['detail'] = (f"{got.get('failed')} couldn’t be downloaded" if got.get('failed') else 'none you made or uploaded yourself')
-            elif got.get('detail'):
-                out['detail'] = str(got['detail'])[:120]
-            return out
-        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
-            return dict(zip(sites, pool.map(read, sites)))
-
     def skills_signin(self, site):
         """Sign in to ChatGPT or claude.ai for Find my skills: its sign-in page in front in the Machine's browser, for
         the dashboard's sign-in dialog. Nothing is typed here."""
@@ -3351,57 +3107,6 @@ class App(*APP_MIXINS):
             row = db.execute('SELECT account_ids FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
         return bool(row) and self.is_work(row['account_ids'])
 
-    def feedback_prompt_step(self, request_id=None, sender=None):
-        """Durable prompt admission, receipt recovery and conservative ambiguous-send hold."""
-        sender=sender or self.native_change_prompt
-        stamp=now()
-        with self.store.connect() as db:
-            db.execute('BEGIN IMMEDIATE')
-            if not telegram_on(self.config):
-                # No Telegram chat to ask in: the dashboard takes the change request itself.
-                db.execute("UPDATE feedback_prompts SET status='cancelled' WHERE status NOT IN ('sent','cancelled')")
-                return
-            db.execute("UPDATE feedback_prompts SET status='cancelled' WHERE status!='sent' AND NOT EXISTS(SELECT 1 FROM suggestions s WHERE s.id=feedback_prompts.suggestion_id AND s.feedback_request_id=feedback_prompts.request_id AND s.feedback_until>? AND s.status NOT IN ('completed','rejected') AND (feedback_prompts.kind='dismiss' OR s.status!='snoozed'))",(stamp,))
-            row=db.execute("SELECT * FROM feedback_prompts WHERE status NOT IN ('sent','cancelled') AND (retry_at IS NULL OR retry_at<=?)"+(' AND request_id=?' if request_id else '')+' ORDER BY created_at LIMIT 1', (stamp,request_id) if request_id else (stamp,)).fetchone()
-            if not row:return
-            row=dict(row)
-            if row['status'] in ('native_sending','plain_sending') and row['updated_at']>(dt.datetime.fromisoformat(stamp)-dt.timedelta(seconds=75)).isoformat() and not self.prompt_receipt_file(row):return
-            if row['retry_at'] and row['retry_at']>stamp:return
-            if row['status'] in ('uncertain','native_sending','plain_sending'):
-                # No receipt is not proof of non-delivery. Only positive evidence binds.
-                message_id=self.recovered_prompt_receipt(row)
-                if message_id:
-                    db.execute("UPDATE feedback_prompts SET status='sent',message_id=?,error=NULL,updated_at=? WHERE request_id=?",(message_id,stamp,row['request_id']))
-                    db.execute('UPDATE suggestions SET feedback_prompt_message_id=? WHERE id=? AND feedback_request_id=? AND feedback_until>?',
-                        (message_id,row['suggestion_id'],row['request_id'],stamp))
-                else:db.execute("UPDATE feedback_prompts SET status='uncertain',error='prompt_outcome_unknown',retry_at=? WHERE request_id=?",
-                    ((dt.datetime.fromisoformat(stamp)+dt.timedelta(seconds=30)).isoformat(),row['request_id']))
-                return
-            if row['status']=='queued' and hasattr(self,'stop') and self.stop.is_set():return
-            mode='plain' if row['status']=='plain_queued' else 'native'
-            db.execute('UPDATE feedback_prompts SET status=?,updated_at=?,attempted_at=? WHERE request_id=?',
-                       (mode+'_sending',stamp,stamp,row['request_id']))
-        result=None
-        try:
-            if mode=='native':result=sender(row)
-            else:result=telegram_request(self.config,{'action':'send','channel':'telegram','accountId':telegram_account(self.config),'target':self.config.get('telegram_owner'),
-                'message':prompt_text(row['title'],plain=True,kind=row.get('kind') or 'change'),'replyTo':row['card_id']})
-        except DeliveryNotSent:
-            result={'definitely_not_sent':True}
-        except (ValueError,OSError,subprocess.TimeoutExpired):
-            result={}
-        if result and re.fullmatch(r'\d+',str(result.get('messageId',''))):
-            self.save_prompt_receipt(row,str(result['messageId']))
-            self.store.bind_feedback_prompt(row['suggestion_id'],row['request_id'],result['messageId'])
-            return 'sent'
-        with self.store.connect() as db:
-            # Plain fallback is safe only when native setup never entered send.
-            status='plain_queued' if result and result.get('definitely_not_sent') else 'uncertain'
-            db.execute('UPDATE feedback_prompts SET status=?,error=?,retry_at=?,updated_at=? WHERE request_id=? AND status=?',
-                (status,'prompt_not_sent' if status=='plain_queued' else 'prompt_outcome_unknown',
-                 (dt.datetime.fromisoformat(stamp)+dt.timedelta(seconds=10 if mode=='native' and status=='plain_queued' else 60)).isoformat(),now(),row['request_id'],mode+'_sending'))
-        return status
-
     def feedback_prompt_safe(self,request_id=None):
         try:self.feedback_prompt_step(request_id=request_id)
         except Exception as error:LOG.error('Change prompt delivery error=%s',type(error).__name__)
@@ -3426,37 +3131,6 @@ class App(*APP_MIXINS):
             if re.fullmatch(r'\d+',str(receipt.get('messageId',''))):return str(receipt['messageId'])
         except (OSError,ValueError):pass
         return None
-
-    def recovered_prompt_receipt(self,row):
-        message_id=self.prompt_receipt_file(row)
-        if message_id:return message_id
-        path=self.config.get('openclaw_state',str(Path.home()/'.openclaw/state/openclaw.sqlite'))
-        try:
-            with contextlib.closing(sqlite3.connect('file:'+path+'?mode=ro',uri=True,timeout=2)) as native:
-                found=set()
-                for value, in native.execute("SELECT value_json FROM plugin_state_entries WHERE plugin_id='telegram' AND namespace='telegram.message-cache'"):
-                    msg=json.loads(value).get('sourceMessage',{})
-                    if (str(msg.get('chat',{}).get('id'))!=self.config.get('telegram_owner') or not msg.get('from',{}).get('is_bot')
-                        or not msg.get('message_id') or (msg.get('date') or 0)<int(dt.datetime.fromisoformat(row.get('attempted_at') or row['created_at']).timestamp())
-                        or str(msg.get('reply_to_message',{}).get('message_id'))!=row['card_id']):continue
-                    if msg.get('text') in (prompt_text(row['title'],kind=row.get('kind') or 'change'),prompt_text(row['title'],plain=True,kind=row.get('kind') or 'change')):found.add(str(msg['message_id']))
-                if len(found)==1:return found.pop()
-        except (sqlite3.Error,OSError,ValueError):pass
-        return None
-
-    def native_change_prompt(self,row):
-        request={'receipt_key':hashlib.sha256(row['request_id'].encode()).hexdigest(),'card_id':row['card_id'],'text':prompt_text(row['title'],kind=row.get('kind') or 'change'),
-                 'target':str(self.config.get('telegram_owner'))}
-        try:
-            env={**node_env(self.config),'ASSISTANT_PROMPT_RECEIPTS':os.path.abspath(self.prompt_receipt_dir())}  # where receipts go: the service's, never the request's
-            result=subprocess.run([node_bin(self.config),str(ROOT/'change-prompt-run.mjs')],env=env,input=encoded(request),capture_output=True,text=True,timeout=60)
-            reply=json.loads(result.stdout)
-            if reply.get('definitely_not_sent'):
-                # e.g. OpenClaw helpers removed or renamed by an update: visible, then the plain prompt.
-                LOG.warning('native Change prompt unavailable; using plain prompt')
-            return reply
-        except OSError:return {'definitely_not_sent':True}
-        except (ValueError,subprocess.TimeoutExpired):return {}
 
     def delivery_worker(self):
         while not self.stop.wait(10):
@@ -3621,127 +3295,6 @@ class App(*APP_MIXINS):
             row=db.execute("SELECT j.*,e.operation,e.receipt FROM merge_effects e JOIN action_jobs j ON j.id=e.action_id WHERE e.status='pending' LIMIT 1").fetchone()
         if row:
             job=dict(row);self.merge_effect(job,json.loads(job['payload']),json.loads(job['receipt']),job['operation'],next_actions.MergeTransport(self.config,restart_self))
-
-    def skills_from_notes_prompt(self):
-        """The condense pass's line on turning notes into a skill: the skills here first, by name and what each is for,
-        so the review judges by meaning whether one already does that job (update it) or sits next to it (related)."""
-        try:
-            on_hand = self.skills_on_hand()
-        except Exception:
-            on_hand = []
-        listed = '\n'.join(f"- {s['name']}: {s['description']}" + (" (a teammate's: can be related, never updated)" if s['origin'] == 'shared' else '')
-                           for s in on_hand)[:4000]
-        return (f"\nWhen {SKILL_NOTES_MIN} or more notes are all about one specific kind of task or scenario (not how the owner writes in general), "
-                "suggest moving them into a skill: remember_fact kind=skill, name, description=<when to use it, one sentence>, "
-                "text=<SKILL.md instructions that keep everything those notes say>, replaces=[their ids]. The owner decides on a card. "
-                + ("First check the skills below by what each is for, judging the meaning, not shared words. When one of the owner's own "
-                   "already does the same job, add skill=<its name>: you get its instructions back, then send the whole skill rewritten as "
-                   "one in text, with what the notes add merged into its own sections (no heading twice, no step said twice), and base=<what "
-                   "you got>; the card offers to update that skill. When one is related but a separate job (say the other direction of the "
-                   "same exchange), add related=<its name> and relation=<how they relate, one short line>: still a new skill. When none "
-                   "is, add new=true.\nSkills here:\n" + listed if on_hand else "They have no skills yet."))
-
-    def propose_skill_from_notes(self, name, description, body, replaces, into=None, related=None, relation=None, new=False, base=None):
-        """Notes that are all about one kind of task become a suggestion card. It is checked against the skills here
-        first (the review judges that by meaning, from their names and descriptions): when one of the owner's own already
-        does the same job (into), the card offers Update <skill>: the review gets its instructions first (rewrite_needed)
-        and sends the whole skill rewritten as one with the notes merged in (base names that version); when one is related but a
-        separate job (related, e.g. the other direction of an exchange), the card says how in one line (relation) and
-        still offers the new skill. Nothing changes until they tap Create skill (or Update, after its before and after);
-        Not now isn't asked again until the same notes have grown by SKILL_REGROW."""
-        if not getattr(self, 'skills', None):
-            raise ValueError('Skills are not set up here')
-        name, description, body = skills.validate(name, description, body)
-        target, linked, relation = skills.check_against(self.skills_on_hand(), into, related, relation, new)
-        if target:  # the whole skill rewritten as one, on the version the review was shown
-            asked = skills.rewrite_needed(target, base)
-            if asked:
-                return asked
-            skills.check_rewrite(target['body'], body)
-        with self.store.connect() as db:
-            db.execute('BEGIN IMMEDIATE')
-            notes = self.store.replaced_facts(db, replaces)
-            if not SKILL_NOTES_MIN <= len(notes) <= 20:
-                raise ValueError(f'A skill takes {SKILL_NOTES_MIN} to 20 current notes (replaces=[their ids])')
-            ids = {n['id'] for n in notes}
-            title = sentences(f'Update {target["name"]} with {len(notes)} notes' if target else f'Turn {len(notes)} notes into a skill: {name}', 90)
-            if target:
-                text = (sentences(description, 250) + f"\n\nThese {len(notes)} notes fit {target['name']}. Update shows the before and after first; "
-                        'only that skill changes. Not now keeps the notes as they are.')
-            else:
-                text = (sentences(description, 250) + (f"\n\nRelated to {linked['name']}: {relation}" if linked else '')
-                        + f"\n\nI can keep these {len(notes)} notes together in a skill. Read the full instructions and notes before deciding. "
-                        'Create skill makes it, on, under Skills. Not now keeps them as they are.')
-            fields = {'name': name, 'description': description, 'body': body, 'target_id': target and target['id'], 'target_name': target and target['name'],
-                      'base_sha': target and target['sha'],
-                      'related_id': linked and linked['id'], 'related_name': linked and linked['name'], 'relation': relation if linked else None}
-            for old in db.execute("SELECT c.id,c.fact_ids,c.status,c.checked,c.suggestion_id,c.base_sha,k.sha target_sha FROM skill_clusters c "
-                                  "LEFT JOIN skills k ON k.id=c.target_id WHERE c.status IN ('pending','accepting','declined')").fetchall():
-                before = set(json.loads(old['fact_ids']))
-                if len(ids & before) * 2 >= len(before):
-                    if old['status'] == 'pending' and (not old['checked'] or not old['base_sha'] and old['target_sha'] or old['base_sha'] and old['base_sha'] != old['target_sha']):
-                        # Offered before skills were checked first, as an addition, or on a version of the skill changed since:
-                        # the same card, brought up to date.
-                        db.execute('UPDATE skill_clusters SET fact_ids=?,' + ','.join(k + '=?' for k in fields) + ',checked=1,updated_at=? WHERE id=?',
-                                   (json.dumps(sorted(ids)), *fields.values(), now(), old['id']))
-                        db.execute("UPDATE suggestions SET title=?,body=? WHERE id=? AND status='pending'", (title, text[:700], old['suggestion_id']))
-                        db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL', (old['suggestion_id'],))
-                        return {'id': old['id'], 'suggestion_id': old['suggestion_id'], 'updated': True}
-                    if old['status'] != 'declined':
-                        return {'id': old['id'], 'duplicate': True}
-                    if len(ids) < len(before) + SKILL_REGROW:
-                        raise ValueError(f'The owner said Not now to these notes; suggest it again once {SKILL_REGROW} more have joined them')
-            cards = [n['suggestion_id'] for n in notes if n['suggestion_id']]
-            events = list(dict.fromkeys(i for r in db.execute('SELECT event_ids FROM suggestions WHERE id IN (' + ','.join('?' for _ in cards) + ')', cards)
-                                        for i in json.loads(r['event_ids'] or '[]')))[:20] if cards else []
-            if not events:
-                raise ValueError('These notes have no cards behind them to show as evidence')
-            cluster = 'sc_' + secrets.token_hex(6)
-            card = self.store.suggest('skill-notes:' + cluster, title, text[:700], events, _db=db)
-            db.execute('INSERT INTO skill_clusters(id,fact_ids,' + ','.join(fields) + ",suggestion_id,status,checked,created_at,updated_at) "
-                       'VALUES(?,?,' + ','.join('?' for _ in fields) + ",?,'pending',1,?,?)",
-                       (cluster, json.dumps(sorted(ids)), *fields.values(), card['id'], now(), now()))
-        return {'id': cluster, 'suggestion_id': card['id']}
-
-    def apply_skill_clusters(self):
-        """The owner tapped Create skill (or Update <skill>, after its before and after): write the skill with the instructions, and move the notes into it.
-        They stay in the database, shown with the skill, and leave the list every task gets."""
-        if not getattr(self, 'skills', None):
-            return 0
-        with self.store.connect() as db:
-            rows = [dict(r) for r in db.execute("SELECT * FROM skill_clusters WHERE status='accepting'")]
-        for offered in rows:
-            try:
-                with self.store.connect() as db:
-                    db.execute('BEGIN IMMEDIATE')
-                    # Dashboard and the worker can both pick the same offer; reconcile under the write lock.
-                    c = db.execute("SELECT * FROM skill_clusters WHERE id=? AND status='accepting'", (offered['id'],)).fetchone()
-                    if not c:
-                        continue
-                    if c['target_id']:
-                        row = db.execute("SELECT * FROM skills WHERE id=? AND status IN ('on','off') AND origin!='shared'", (c['target_id'],)).fetchone()
-                        if not row:
-                            raise ValueError('That skill is gone')
-                        if c['reviewed_sha'] and row['sha'] != c['reviewed_sha'] or c['base_sha'] and row['sha'] != c['base_sha']:
-                            raise ValueError('That skill changed after its before and after were shown')
-                        after = c['body'] if c['base_sha'] else skill_update_after(row['body'], c['body'])
-                        skill_id = self.skills.save(row['id'], row['name'], row['description'], after, _db=db)
-                    else:
-                        skill_id = self.skills.save(None, c['name'], c['description'], c['body'], _db=db)
-                    ids = json.loads(c['fact_ids'])
-                    moved = db.execute('UPDATE facts SET removed_at=?,merged_into=? WHERE removed_at IS NULL AND id IN (' + ','.join('?' for _ in ids) + ')',
-                                       (now(), 'skill:' + skill_id, *ids)).rowcount
-                    db.execute("INSERT INTO rule_changes(at,kind,text,ref) VALUES(?,'condense',?,?)",
-                               (now(), f'Moved {moved} notes into the skill {c["target_name"] or c["name"]}', 'skill:' + skill_id))
-                    db.execute("UPDATE skill_clusters SET status='done',skill_id=?,updated_at=? WHERE id=?", (skill_id, now(), c['id']))
-            except (ValueError, OSError) as error:
-                LOG.error('skill from notes error=%s', type(error).__name__)
-                with self.store.connect() as db:
-                    db.execute("UPDATE skill_clusters SET status='failed',updated_at=? WHERE id=? AND status='accepting'", (now(), offered['id']))
-                    db.execute("UPDATE suggestions SET status='pending' WHERE id=? AND EXISTS(SELECT 1 FROM skill_clusters WHERE id=? AND status='failed')", (offered['suggestion_id'], offered['id']))
-        # Files are derived from the committed skills, never a reason to replay the database operation.
-        self.skills.sync()
-        return len(rows)
 
     def style_step(self):
         """Every ten minutes: a finished profile's channel lines fill voices still empty, and a draft the owner
@@ -4408,94 +3961,6 @@ class App(*APP_MIXINS):
         with self.store.connect() as db:
             return Store.still_needed_ask(db, current or now(), lambda row: looks_done(row) or waits_on_others(row), local_tz())
 
-    def profile_step(self, runner=None):
-        """Start and follow the one profile turn `assistant profile` asked for (reviews may be off)."""
-        runner = runner or self.preparation_gateway
-        with self.store.connect() as db:
-            # The one being followed first, then what the owner asked for, then The Machine's own
-            run = db.execute("SELECT * FROM profile_runs WHERE status IN ('starting','running') ORDER BY status='running' DESC,coalesce(auto,0),started_at LIMIT 1").fetchone()
-            ready = run and run['status'] == 'starting' and (not run['auto'] or self.store.first_magic_done(db))
-        if not run:
-            return None
-        run, stamp = dict(run), dt.datetime.fromisoformat(now())
-        if run['status'] == 'starting':
-            # One usage check before every background turn (model_budget); The Machine's own turns (profile, voices, roles,
-            # organizations) wait for the first card and start one per BACKGROUND_GAP_SECONDS. A usage limit holds all.
-            if self.background_pause(owner=not run['auto'], job='profile:' + run['run_id']) or (run['auto'] and not (ready and self.background_spaced())):
-                return None
-        age = (stamp - dt.datetime.fromisoformat(run['started_at'])).total_seconds()
-        if run['status'] == 'starting' and run['attempts'] and run['updated_at'] > (stamp - dt.timedelta(minutes=1)).isoformat():
-            return None
-        if run['status'] == 'starting' and run['attempts'] >= 5:
-            with self.store.connect() as db:
-                db.execute("UPDATE profile_runs SET status='error',error='openclaw_unavailable',finished_at=?,updated_at=? WHERE run_id=?", (now(), now(), run['run_id']))
-            return 'error'
-        action = 'stop' if age > PROFILE_SECONDS + 300 else 'start' if run['status'] == 'starting' else 'status'
-        skills_run = run.get('kind') == 'skills'
-        request = {'kind': 'skills' if skills_run else 'profile', 'job_id': run['run_id'], 'action': action}
-        accounts = None
-        if action == 'start' and skills_run:
-            started = self.skills_find_begin(run)
-            if started is None:
-                return None  # the browser is busy with another task: try again on the next step
-            if started is False:
-                return 'ok'  # nothing to read: every account asked for is signed out
-            accounts = started
-        if action == 'start':
-            first = self.store.profile_evidence(1, PROFILE_SESSION_PREFIX + run['run_id']) if not skills_run else None
-            request['message'] = (skills_find_prompt(run['run_id'], {**json.loads(run['evidence']), 'items': accounts['items']}, self.config) if skills_run else
-                                  roles_prompt(run['run_id'], first['pages']) if run.get('kind') == 'roles' else
-                                  import_prompt(run['run_id']) if run.get('kind') == 'import' else
-                                  orgs_prompt(run['run_id'], first['pages']) if run.get('kind') == 'orgs' else
-                                  share_history_prompt(run['run_id'], first['pages'], self.share_groups()) if run.get('kind') == 'share' else
-                                  voices_prompt(run['run_id'], first['counts'], first['pages']) if run.get('kind') == 'voices' else
-                                  team_learnings.prompt(run['run_id'], json.loads(run['evidence'])) if run.get('kind') == 'learnings' else
-                                  learning_loop.prompt(run['run_id']) if run.get('kind') == 'tune' else
-                                  fleet_learnings.prompt(run['run_id']) if run.get('kind') == 'fleet_learn' else
-                                  team_learnings.vote_prompt(run['run_id'], json.loads(run['evidence'])) if run.get('kind') == 'team_votes' else
-                                  profile_prompt(run['run_id'], first['counts'], run.get('room') or PROFILE_ROOM))
-            with self.store.connect() as db:
-                db.execute('UPDATE profile_runs SET attempts=attempts+1,updated_at=? WHERE run_id=?', (now(), run['run_id']))
-        result = runner(request).get('status', 'unavailable')
-        with self.store.connect() as db:
-            if result == 'admitted':
-                if run['auto']:
-                    self.background_started()
-                db.execute("UPDATE profile_runs SET status='running',error=NULL,updated_at=? WHERE run_id=?", (now(), run['run_id']))
-            elif result in REVIEW_TERMINAL or (action == 'stop' and age > PROFILE_SECONDS + 900):
-                draft = db.execute('SELECT draft FROM profile_runs WHERE run_id=?', (run['run_id'],)).fetchone()[0]
-                if run.get('kind') in ('roles', 'orgs'):  # done is done: a person left without one was unclear
-                    draft = draft or (result == 'ok')
-                status = 'ok' if draft else 'error'
-                error = None if draft else ('no_draft' if result == 'ok' else result)
-                db.execute('UPDATE profile_runs SET status=?,error=?,finished_at=?,updated_at=? WHERE run_id=?', (status, error, now(), now(), run['run_id']))
-                if run.get('kind') == 'skills':
-                    self.skills_find_done(run, status)
-        if run.get('kind') == 'learnings':  # asks the owner only once the run is ok
-            with self.store.connect() as db:
-                batch = team_learnings.finish(db, run['run_id'])
-            if batch:
-                LOG.info('learnings ready')
-                self.learnings_auto_send()  # sent at once when the owner chose Send automatically
-        if run.get('kind') == 'tune':  # applies only once the run is ok; each change can be undone
-            changed = self.store.apply_tune(run['run_id'])
-            if changed:
-                LOG.info('learning pass changes=%s', changed)
-        if run.get('kind') == 'fleet_learn' and getattr(self, 'fleet', None):  # kept only once the run is ok, each one checked
-            with self.store.connect() as db:
-                kept = fleet_learnings.finish(db, run['run_id'], team_learnings.known_names(db, self.config), log=self.fleet.log)
-            if kept:
-                LOG.info('team learnings kept=%s', len(kept))
-        if run.get('kind') == 'team_votes':  # sends only the votes, once the run is ok
-            self.team_votes_send(run['run_id'])
-        if run.get('kind') == 'voices':  # applies only once the run is ok
-            written = self.store.apply_voice_study(run['run_id'])
-            if written:
-                LOG.info('voice study channels=%s', written)
-        if run.get('auto') and run.get('kind') == 'profile':  # saves only once the run is ok
-            self.first_profile_save(run['run_id'])
-        return result
-
     def owner_first_names(self):
         """The owner's first name, as the config and USER.md give it ("- Name: …", "# USER.md - About …"): for
         Learning's older why lines that name them (learning_loop.to_you)."""
@@ -4631,49 +4096,6 @@ class App(*APP_MIXINS):
         onboarding.write_private(path, merged)
         LOG.info('first profile saved to USER.md chars=%s', len(merged))
         return True
-
-    def skills_find_begin(self, run):
-        """Before the Find my skills turn: the service takes the browser lease, reads the owner's own skills from the
-        accounts asked for (skills_read) and adds them to the list. Returns {'accounts': states, 'items': the list to
-        judge}, None when the browser is busy, or False when there is nothing to judge (the run is then done)."""
-        evidence = json.loads(run['evidence'])
-        try:
-            claimed = subprocess.run([sys.executable, str(browser_lease_script(self.config)), 'claim', '--owner', SKILLS_LEASE,
-                                      '--minutes', '20'], capture_output=True, timeout=60).returncode
-        except (OSError, subprocess.TimeoutExpired):
-            claimed = 0  # no lease helper: the read goes ahead as before
-        if claimed == 3:
-            return None
-        for site in evidence.get('sites') or ():  # the sign-in tab the dashboard opened has done its job
-            tab = self.__dict__.get('skills_signin_tabs', {}).pop(site, None)
-            if tab:
-                try:
-                    browser_login.browser_cdp.close_tab(browser_login.endpoints(self.config)[0], tab)
-                except (browser_login.browser_cdp.CdpError, OSError, IndexError):
-                    pass
-        sites = [s for s in evidence.get('sites') or SKILLS_SITES if s in SKILLS_SITES]
-        try:
-            read = self.skills_read(sites) if sites else {}
-        finally:  # the turn after this reads no page: the browser is free again
-            self.skills_lease_release()
-        accounts = {s: r.get('state', 'unavailable') for s, r in read.items()}
-        found = [{**f, 'from': s} for s, r in read.items() for f in r.get('skills') or []]
-        importer, token, items = self.skills.importer, evidence['token'], []
-        try:
-            importer.accounts(token, accounts, read)
-            importer.report(token, found, [], accounts)  # every account read is done now
-            scan = importer.scan(token)
-            items = importer.brief(i for i in scan['items'].values() if not evidence.get('more') or i['public']['from'] in sites)
-            LOG.info('skills read from accounts %s', ' '.join(f"{s}={r.get('state')}:{len(r.get('skills') or [])}" for s, r in read.items()))
-        except (KeyError, AttributeError, ValueError):
-            pass
-        if not any(not i['blocked'] and not i['here'] for i in items):  # nothing to judge: no turn
-            with self.store.connect() as db:
-                db.execute("UPDATE profile_runs SET status='ok',draft=?,finished_at=?,updated_at=? WHERE run_id=?",
-                           (json.dumps({'reported': False}), now(), now(), run['run_id']))
-            self.skills_find_done(run, 'ok')
-            return False
-        return {'accounts': accounts, 'items': items[:150]}
 
     def skills_lease_release(self):
         try:
@@ -4861,112 +4283,6 @@ class App(*APP_MIXINS):
 
     BUG_SHOT_BYTES = 2 * 1024 * 1024
     BUG_TEXT = 4000
-
-    def support_action(self, name, args):
-        """Help's question (help_chat.ask, on this Machine's own model, a one-shot turn without tools) and Report a
-        bug: the scrubbed support report to show (bug_preview), then that report sent to the control plane on a
-        self-hosted Machine paired with the Network (bug_send). A hosted Machine's dashboard sends it to its control
-        plane itself, with the owner's sign-in there."""
-        import help_chat
-        import onboarding
-        import support
-        if name == 'help_article':
-            return help_chat.article(args.get('slug'))
-        if name == 'help_ask':
-            run = getattr(self, 'help_model', None)  # a stand-in in the sandbox and tests
-            if not run and not has_model(self.config):
-                raise ValueError(i18n.t('Help needs a model. Set one up in Settings, Model.'))
-            swap = background_model(self.config)
-            model, thinking = '/'.join(swap) if swap else None, None
-            own = chat_model.clean({'model': args.get('model'), 'thinking': args.get('thinking')})
-            if chat_model.chosen(self.config, own):  # a model picked for Help or for chats (chat_model.py)
-                models = self.chat_models()
-                picked = chat_model.resolve(self.config, models, chat_model.check(own, models, self.config) if own else {})
-                model, thinking = picked['model'] or model, picked['thinking']
-            try:
-                found = help_chat.ask(args.get('question'), args.get('history') or [], run=run, config=self.config,
-                                      model=model, thinking=thinking, role=self.owner_role())
-            except help_chat.Unavailable as error:
-                raise ValueError(str(error)) from None
-            topic, answered = found.pop('topic', ''), found.pop('answered', False)
-            try:  # the topic for The Machine team, when the owner shares it (help_topics.py); never the question
-                if not getattr(self, 'fleet', None):
-                    return found  # without the Network nothing goes, so nothing is kept
-                with self.store.connect() as db:
-                    help_topics.record(db, self.config, topic, answered)
-            except (sqlite3.Error, ValueError) as error:
-                LOG.info('help topic not kept error=%s', type(error).__name__)
-            return found
-        path = getattr(self, 'config_path', None) or os.environ.get('ASSISTANT_CONFIG') or ''
-        if name == 'support_access':
-            if not getattr(self, 'fleet', None):
-                raise ValueError('This Machine isn’t linked to an account.')
-            allow = args.get('allow')
-            try:
-                return self.fleet.support_access(None if allow is None else bool(allow))
-            except (fleet.Off, OSError, ValueError) as error:
-                LOG.info('support access not reached error=%s', type(error).__name__)
-                if allow is None:
-                    return {'until': self.fleet.support_until(), 'hours': self.fleet.SUPPORT_HOURS, 'accesses': [], 'error': True}
-                raise ValueError('Can’t reach your account right now. Try again.') from None
-        if name == 'bug_preview':
-            return {**support.report(path, doctor=onboarding.doctor, budget=self.REPORT_BUDGET), 'paired': bool(getattr(self, 'fleet', None))}
-        if name == 'bug_fixed':  # a bug the owner reported, fixed and running here now (fleet.Fleet.fixed); seen closes one
-            if not getattr(self, 'fleet', None):
-                return {'fixed': []}
-            try:
-                return {'fixed': self.fleet.fixed(args.get('seen') or None)}
-            except (fleet.Off, fleet.Unavailable, OSError, ValueError) as error:
-                LOG.info('fixed reports not read error=%s', type(error).__name__)
-                return {'fixed': [], 'error': True}
-        if name == 'bug_queued':  # the reports still waiting to go out (bug_queue.py)
-            return {'queued': bug_queue.view(self.config)}
-        if name == 'bug_offer_open':  # a report written up in chat (bug_offer), to fill Report a bug; sent marks it sent
-            found = bug_queue.offered(self.config, str(args.get('id') or '') or None, args.get('sent') is True)
-            return {'offer': {k: found[k] for k in ('id', 'words', 'summary', 'sent')} if found else None}
-        text = str(args.get('description') or '').strip()[:self.BUG_TEXT]
-        if not text:
-            raise ValueError('Say what went wrong first.')
-        shot = args.get('screenshot')
-        if shot is not None and not (isinstance(shot, str) and re.fullmatch(r'data:image/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+', shot)
-                                     and len(shot) <= self.BUG_SHOT_BYTES * 4 // 3 + 64):
-            raise ValueError('That screenshot can’t be sent. Try a smaller PNG or JPEG.')
-        report = args.get('report')
-        if report is not None and not isinstance(report, dict):
-            raise ValueError('That report can’t be sent.')
-        if not getattr(self, 'fleet', None):
-            raise ValueError('This Machine isn’t linked to an account. Email support@themachine.computer instead.')
-        # What the owner saw, scrubbed once more here: whatever the page sent, nothing else leaves
-        body = {'description': text, 'screenshot': shot,
-                'report': support.scrub_value(report) if report is not None else None}
-        # Sent now, or kept here and sent by itself later when the control plane can't take it now (bug_queue.py):
-        # bug_later is a hosted dashboard's report its control plane refused for now, kept the same way
-        # Include a support report ticked, on a self-hosted Machine: kept here at once (it is never lost) and sent by the
-        # worker right away, with the report built there; the dashboard doesn't wait for the checks and logs.
-        if name == 'bug_send' and args.get('diagnostics') and report is None:
-            item = bug_queue.add(self.config, {**body, 'diagnostics': True}, now=True)
-            if getattr(self, 'bug_queue_wake', None):
-                self.bug_queue_wake.set()
-            return {'sent': True, 'id': item['id']}
-        retry_after = 0
-        if name == 'bug_later':
-            try:
-                retry_after = max(0, min(int(args.get('retry_after') or 0), 86400))
-            except (TypeError, ValueError):
-                retry_after = 0
-        else:
-            try:
-                return {'sent': True, **(self.fleet.bug_report(body) or {})}
-            except Exception as error:  # noqa: BLE001 - said to the owner below
-                LOG.info('bug report not sent now error=%s', type(error).__name__)
-                if not bug_queue.retryable(error):
-                    said = str(error)  # the control plane's reason when it is one for the owner (a sentence), else ours
-                    raise ValueError(said if said.endswith('.') else 'The report didn’t go out. Email support@themachine.computer.') from None
-                retry_after = getattr(error, 'retry_after', 0)
-        item = bug_queue.add(self.config, body, retry_after)
-        if getattr(self, 'bug_queue_wake', None):
-            self.bug_queue_wake.set()
-        return {'sent': False, 'queued': True, 'at': item['next_at']}
 
     def bug_offer(self, args):
         """A problem with The Machine itself, told in chat (assistant_signals bug_offer, `assistant report-bug`): the

@@ -59,7 +59,7 @@ FEATURES = {
     'card-chat': ('dashboard.html', 'id="chat'),
     'hand-to-agent': ('dashboard.html', 'Hand to Codex'),
     'promises': ('dashboard.html', 'You promised'),
-    'telegram': ('assistant.py', 'telegram_owner'),
+    'telegram': ('machine/delivery/telegram.py', 'telegram_owner'),
     'chatgpt': ('docs/models.md', 'ChatGPT'),
     'phone-app': ('manifest.webmanifest', '"name"'),
     'mobile-app': ('notify.py', 'def app_push'),
