@@ -332,7 +332,8 @@ class NextActions(unittest.TestCase):
 
     def test_smart_labels_and_choices_do_not_fake_execution_or_confuse_owner_status(self):
         config=self.app().config
-        for invalid in [[],[self.draft()]*4,[[self.draft()]],
+        self.assertIsNone(n.validate([],config,['work']))  # no buttons, as PREPARATION.md allows ("usually zero or one")
+        for invalid in [[self.draft()]*4,[[self.draft()]],
                         [self.draft(),self.draft(body='Different body')],
                         {'kind':'prepare','label':'Pay invoice','instructions':'Pay it'},
                         {'kind':'prepare','label':'Create event','instructions':'Add it'},

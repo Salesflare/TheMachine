@@ -146,8 +146,7 @@ Retries keep this exact confirmed step and preview. Read preparation_history and
 
 ### Other buttons
 
-- A local follow-up is appropriate only if the current result isn't already the draft it would revise: `{kind:prepare,label:Draft support email,instructions:<concrete next local preparation>}`.
-- A follow-up `{kind:prepare,label:Apply fix,instructions:...}` runs another Do it turn with those exact instructions under the same limits; use it only when the change is a separate step the owner should start.
+- A follow-up `{kind:prepare,label:Draft support email,instructions:<the exact next step>}` runs another Do it turn with them under the same limits: only when the result isn't already the draft it would revise, or for a separate change the owner should start. Its label starts with Draft, Prepare, Check, Compare, Research, Investigate, Update, Apply, Fix, Test, Implement, Set up or Configure.
 - A useful verified original link can say Open the automation or View proposal.
 - Never label anything Pay, Create event, Send or Reply unless it is an email or chat send action or a `kind:finish` last step.
 
