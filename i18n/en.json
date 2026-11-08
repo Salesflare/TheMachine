@@ -6553,6 +6553,8 @@
   "one": "{} line",
   "other": "{} lines"
  },
+ "{} looks like personal mail. Change it to Personal?": "{} looks like personal mail. Change it to Personal?",
+ "{} looks like work mail. Change it to Work?": "{} looks like work mail. Change it to Work?",
  "{} marked {} done.": "{} marked {} done.",
  "{} matches": {
   "one": "{} match",

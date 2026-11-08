@@ -6553,6 +6553,8 @@
   "one": "{} ligne",
   "other": "{} lignes"
  },
+ "{} looks like personal mail. Change it to Personal?": "{} ressemble à une boîte perso. Passer en Perso ?",
+ "{} looks like work mail. Change it to Work?": "{} ressemble à une boîte pro. Passer en Travail ?",
  "{} marked {} done.": "{} a marqué {} comme fait.",
  "{} matches": {
   "one": "{} résultat",

@@ -6553,6 +6553,8 @@
   "one": "{} línea",
   "other": "{} líneas"
  },
+ "{} looks like personal mail. Change it to Personal?": "{} parece correo personal. ¿Cambiar a Personal?",
+ "{} looks like work mail. Change it to Work?": "{} parece correo de trabajo. ¿Cambiar a Trabajo?",
  "{} marked {} done.": "{} marcó {} como hecha.",
  "{} matches": {
   "one": "{} coincidencia",

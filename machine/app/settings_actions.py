@@ -18,6 +18,7 @@ import locale_prefs
 from machine.app.card_chat import save_hours
 from machine.config import LOG
 from machine.delivery.push import setup_hints
+from machine.sources.scope_check import scope_hints
 from machine.model_usage import telegram_on, usage_status, use_model_reset
 import own_addresses
 import security_levels
@@ -189,6 +190,7 @@ class SettingsActionsApp:
         """setup_hints, worked out at most every 10 minutes: the dashboard asks for its state every few seconds."""
         # a source, Telegram or Codex connected just now drops its hint at once
         key = (tuple(sorted(str(a.get('service')) for a in self.config.get('accounts') or [] if isinstance(a, dict))),
+               tuple(sorted(str(a.get('boundary')) for a in self.config.get('accounts') or [] if isinstance(a, dict) and a.get('scope_check'))),
                telegram_on(self.config), json.dumps(self.config.get('agents'), sort_keys=True, default=str))
         cached = getattr(self, '_setup_hints', None)
         if cached and cached[1] == key and time.monotonic() - cached[0] < 600:
@@ -197,6 +199,11 @@ class SettingsActionsApp:
             hints = setup_hints(self.store, self.config)
         except (sqlite3.Error, OSError, ValueError):
             hints = []
+        try:  # Work or Personal, when its mail says the other (scope_check.py): on every Machine, hosted or not
+            team = self.team_domains() if key[1] and hasattr(self, 'team_domains') else ()
+            hints = scope_hints(self.store, self.config, team) + hints
+        except (sqlite3.Error, OSError, ValueError):
+            pass
         self._setup_hints = (time.monotonic(), key, hints)
         return hints
 

@@ -404,6 +404,19 @@ def call(config, credential, account, method, params=None, body=None, write=Fals
             raise GraphError('invalid_json') from None
 
 
+def tenant_of(access_token):
+    """The tenant an access token was issued in (its "tid" claim), or None: read for a hint only (Work or Personal at
+    sign-in, onboarding.organization_of), never trusted for access; Microsoft checks the token itself. A token that
+    isn't a readable JWT (some personal accounts get those) names none."""
+    try:
+        part = str(access_token).split('.')[1]
+        claims = json.loads(base64.urlsafe_b64decode(part + '=' * (-len(part) % 4)))
+    except (IndexError, ValueError, TypeError):
+        return None
+    tid = str(claims.get('tid') or '').lower() if isinstance(claims, dict) else ''
+    return tid if re.fullmatch(r'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}', tid) else None
+
+
 def identity(me):
     """The mailbox address of a /me answer: `mail`, else the sign-in name (personal accounts often have no `mail`)."""
     return str(me.get('mail') or me.get('userPrincipalName') or '').lower()
@@ -880,9 +893,10 @@ def _calendar_view(config, credential, account, owner, calendar_id, params):
 
 # ------------------------------------------------------------------------------------------- device-code sign-in
 
-def device_signin(app, scopes_wanted, say, wait=900, poll=None):
+def device_signin(app, scopes_wanted, say, wait=900, poll=None, seen=None):
     """Sign in with a device code against the owner's own app: shows where to go and the code, waits for it, and
-    returns (refresh token, granted short scopes, signed-in address). Nothing is stored here."""
+    returns (refresh token, granted short scopes, signed-in address). Nothing is stored here. seen: a dict that gets
+    the account's tenant ("tid", tenant_of) when the access token names it."""
     tenant = urllib.parse.quote(app.get('tenant') or 'common')
     scope = ' '.join(['offline_access', *('https://graph.microsoft.com/' + s for s in scopes_wanted)])
     try:
@@ -920,5 +934,7 @@ def device_signin(app, scopes_wanted, say, wait=900, poll=None):
                 me = json.loads(response.read(200_000))
         except (urllib.error.URLError, TimeoutError, OSError, ValueError, http.client.HTTPException):
             raise GraphError('microsoft_signin:profile') from None
+        if isinstance(seen, dict) and tenant_of(answer['access_token']):
+            seen['tid'] = tenant_of(answer['access_token'])
         return answer['refresh_token'], short_scopes(answer.get('scope')), identity(me)
     raise GraphError('microsoft_signin:timed_out')

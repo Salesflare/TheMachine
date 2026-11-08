@@ -71,7 +71,8 @@ PLACEHOLDERS = {'email': 'alex@example.com', 'connection_id': '00000000-0000-000
 # Per-account identity: never copied when a new account starts from one you already have.
 IDENTITY = {'id', 'email', 'owner_emails', 'display_name', 'connection_id', 'team_id', 'user_id', 'slack_host', 'node_id',
             'identity_sha256', 'store', 'calendar_id', 'handle', 'login', 'url', 'workspace_id', 'workspace_name', 'admin_id', 'region', 'stripe_account', 'account_name', 'shared',
-            'exclude', 'excluded_terms', 'scope', 'browser_profile', 'browser_cdp', 'connected_at', 'boundary_by'}
+            'exclude', 'excluded_terms', 'scope', 'browser_profile', 'browser_cdp', 'connected_at', 'boundary_by', 'tenant_id',
+            'scope_check'}
 # The source is set up but can't serve right now (shared browser in use, rate limit): saved anyway, and the
 # collector's own retry reads it, instead of failing setup over a moment's contention.
 BUSY = ('x_browser_busy', 'linkedin_browser_busy', 'x_rate_limited', 'outlook:microsoft_signin_pending', 'microsoft_broker_busy')
@@ -856,6 +857,8 @@ WEBMAIL = {'gmail', 'googlemail', 'outlook', 'hotmail', 'live', 'msn', 'yahoo', 
 # Sources that sign in as an address: Work or Personal comes from that address once it is known (guess_boundary), so
 # + Add asks neither. A Google Workspace or Microsoft work address is on the company's own domain; a consumer one is not.
 ADDRESS_SCOPE = ('gmail', 'calendar', 'outlook', 'outlook_calendar')
+CONSUMER_TENANT = '9188040d-6c67-4c5b-b112-36a304b66dad'  # Microsoft's tenant for Outlook.com accounts (ms_graph.py)
+TENANT_ID = re.compile(r'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
 
 
 def company_of(email):
@@ -867,12 +870,13 @@ def company_of(email):
     return '' if not name or name in WEBMAIL or name == 'example' else name.capitalize()
 
 
-def guess_boundary(config, email, account=None, team_domains=()):
+def guess_boundary(config, email, account=None, team_domains=(), tid=None):
     """(boundary, by) for a new sign-in from what is known about its address, or (None, None) when that is too weak to
     guess: then the owner is asked. Sharing follows Work, so a wrong Work guess would share personal mail with a team;
     a doubt is asked, never guessed Work. In order: another account on the same address (the owner's marking travels);
-    a mail provider's address is Personal; an address on the domain of a Work Fleet teammate is Work. A company's own
-    domain alone is not enough: people use their own domain for personal mail too."""
+    a mail provider's address, or a Microsoft account in the consumer tenant (tid), is Personal; an address on the
+    domain of a Work Fleet teammate is Work. A company's own domain alone is not enough, not even a Google Workspace or
+    Microsoft work tenant on it: people use their own domain for personal mail too."""
     email = str(email or '').strip().lower()
     same = [a for a in config.get('accounts', []) if a is not account and str(a.get('email') or '').strip().lower() == email
             and ':' in str(a.get('boundary') or '') and not str(a['boundary']).startswith('owner:')]
@@ -880,20 +884,38 @@ def guess_boundary(config, email, account=None, team_domains=()):
     if owned or same:
         return (owned or same)[0]['boundary'], (owned or same)[0].get('boundary_by') or 'guess'
     company = company_of(email)
-    if not company:
+    if not company or str(tid or '').lower() == CONSUMER_TENANT:
         return 'personal:me', 'guess'
     if email.rpartition('@')[2] in {str(d).lower() for d in team_domains}:
         return 'work:' + company, 'guess'
     return None, None
 
 
-def ask_scope(config, account, ui):
+def ask_scope(config, account, ui, organization=False):
     """The one Work or Personal question for an address that doesn't say (guess_boundary): Work with the company its
-    domain names, or Personal. The owner's own marking."""
+    domain names, or Personal. The owner's own marking. organization: the sign-in is a Google Workspace or Microsoft
+    work account (organization_of), so Work comes first; else Personal does."""
     company = company_of(account.get('email')) or 'Main'
-    options = [('work:' + company, scope_label('work:' + company))] + [(b, scope_label(b)) for b in boundaries(config, account.get('service', 'gmail'))
-                                                                       if b != 'work:' + company] + [('personal:me', 'Personal')]
+    work, personal = ('work:' + company, scope_label('work:' + company)), ('personal:me', 'Personal')
+    rest = [(b, scope_label(b)) for b in boundaries(config, account.get('service', 'gmail')) if b not in (work[0], personal[0])]
+    options = [work, *rest, personal] if organization else [personal, work, *rest]
     return ui.choose('Is this account work or personal?', list(dict(options).items()))
+
+
+def organization_of(config, account):
+    """Whether the sign-in belongs to an organization, from what its provider says about it with the access it has (no
+    other scope): a Microsoft account's tenant (tenant_id; the consumer tenant is not one), a Google account's
+    Workspace domain (`hd` in its OpenID user info, which the sign-in's email scope reads). None when unknown."""
+    if account.get('service') in ('outlook', 'outlook_calendar'):
+        tid = str(account.get('tenant_id') or '').lower()
+        return (tid != CONSUMER_TENANT) if TENANT_ID.fullmatch(tid) else None
+    try:
+        import sources
+        info = sources.gog_read(config, account, 'oauth2', 'v2', 'oauth2.userinfo.get', {},
+                                'https://www.googleapis.com/auth/userinfo.email')
+    except Exception:  # noqa: BLE001 - a hint only: without it the question keeps its plain order
+        return None
+    return bool(str(info.get('hd') or '').strip()) if isinstance(info, dict) else None
 
 
 def boundary_label(text, default='work:Main'):
@@ -2118,12 +2140,15 @@ def step_microsoft(config, account, ui):
         ui.say(f'  {email} is already signed in')
         return
     try:
-        refresh, granted, signed_in = ms_graph.device_signin(app, sorted(wanted - ({'Mail.Read'} if send else set())), ui.say)
+        seen = {}
+        refresh, granted, signed_in = ms_graph.device_signin(app, sorted(wanted - ({'Mail.Read'} if send else set())), ui.say, seen=seen)
     except ms_graph.GraphError as error:
         raise SetupError(f'Microsoft sign-in failed: {error}', 'rerun: assistant connect outlook')
     if signed_in != email:
         raise SetupError(f'You signed in as {signed_in}, not {email}', 'rerun and sign in with ' + email)
     ms_graph.save_signin(path, refresh, granted)
+    if seen.get('tid'):
+        account['tenant_id'] = seen['tid']  # Work or Personal at sign-in (organization_of), and its Outlook links
     ui.say('  signed in' if getattr(ui, 'web', False) else '  signed in; the sign-in is saved to ' + str(path))
 
 
@@ -2258,8 +2283,12 @@ def connect(config_path, name, ui, account_id=None, restart=True):
         raise SetupError(f'{account["id"]} does not work yet: {error}', own or hint(error) or f'rerun: assistant connect {name}')
     offer_phone_skip(config, account, ui)
     if not existing and getattr(ui, 'guess', False) and account.get('email'):
-        boundary, by = guess_boundary(config, account['email'], account, getattr(ui, 'team_domains', ()))
-        account['boundary'], account['boundary_by'] = (boundary, by) if boundary else (ask_scope(config, account, ui), 'owner')
+        boundary, by = guess_boundary(config, account['email'], account, getattr(ui, 'team_domains', ()), account.get('tenant_id'))
+        if boundary:
+            account['boundary'], account['boundary_by'] = boundary, by
+        else:  # asked: once its mail is in, scope_check.py looks whether it says the other (a to-do, never a switch)
+            account['boundary'] = ask_scope(config, account, ui, organization_of(config, account))
+            account['boundary_by'], account['scope_check'] = 'owner', True
     config['accounts'] = [account if a['id'] == account['id'] else a for a in config.get('accounts', [])] + ([] if existing else [account])
     save(config_path, config)
     ui.say(f'  ✓ {label(service)} connected')
@@ -2351,7 +2380,7 @@ class AnswersUI(UI):
         return options[0][0]
 
 
-def connect_delivered(config_path, args):
+def connect_delivered(config_path, args, team_domains=()):
     """A sign-in started on this Machine's dashboard, sealed for this paired self-hosted Machine (fleet.py connects_round):
     {source, answers, secrets, replies?, another?}, as a hosted Machine's `connect` command. Only the sources in
     DELIVERED, and only the key that source asks for. The connector checks the key first (Intercom: GET /me, its
@@ -2359,7 +2388,7 @@ def connect_delivered(config_path, args):
     which also replies as them (enable_replies checks their admin first). Returns {'ok', 'name', 'replies'?}."""
     source = args.get('source') if isinstance(args, dict) else None
     if source in GRANT_SERVICES and source in DELIVERED:
-        return connect_grant(config_path, source, args)
+        return connect_grant(config_path, source, args, team_domains)
     if source in ('microsoft_docs', 'microsoft_docs_write'):  # read, or Allow edits: the same Docs connection
         return connect_docs_grant(config_path, args)
     service = SERVICES.get(source, source)
@@ -2385,13 +2414,16 @@ def connect_delivered(config_path, args):
     return result
 
 
-def connect_grant(config_path, provider, args):
+def connect_grant(config_path, provider, args, team_domains=()):
     """Google (Gmail and Calendar), Microsoft (Outlook mail and calendar) or Zoom, signed in from this paired Machine's
     dashboard with the control plane's own app: {source, grant: {provider, email, refresh_token, scopes}}. The refresh
     token is kept here only (mail_grants.py); access tokens come from the control plane this Machine is paired with
     (POST <Network>/<provider>-token, with this Machine's own device token), which uses it for that one call and keeps
     nothing, as for a hosted Machine's broker accounts. Each account is checked first with a real read as the address it
-    signed in as (check); when one does not check out, nothing is kept. Returns {'ok', 'name'}."""
+    signed in as (check); when one does not check out, nothing is kept. Work or Personal: guess_boundary, with the
+    Microsoft tenant the grant names (tid) and the domains of Work Fleet teammates (team_domains); nobody can be asked
+    here, so a doubt is Personal, a guess, which scope_check.py checks against the mail once it is in. Returns
+    {'ok', 'name'}."""
     import fleet
     import mail_grants
     name = GRANT_LABELS[provider]
@@ -2416,8 +2448,15 @@ def connect_grant(config_path, provider, args):
         raise SetupError('This Machine cannot keep sign-ins yet', 'try again in a minute') from None
     config[key] = {'url': url}
     config.setdefault('credentials', {})[provider + '-broker'] = device_token  # its own device token, as for the Network
+    tid = str(grant.get('tid') or '').lower() if provider == 'microsoft' else ''
+    tid = tid if TENANT_ID.fullmatch(tid) else ''
     same = [a for a in config.get('accounts', []) if str(a.get('email', '')).lower() == email and a.get('boundary')]
-    boundary = same[0]['boundary'] if same else boundary_label(company_of(email) or ('work' if provider in ('zoom', 'google_meet') else 'personal'))
+    if same or provider not in ('google', 'microsoft'):
+        boundary = same[0]['boundary'] if same else boundary_label(company_of(email) or ('work' if provider in ('zoom', 'google_meet') else 'personal'))
+        doubt = False
+    else:
+        boundary = guess_boundary(config, email, None, team_domains, tid)[0]
+        boundary, doubt = boundary or 'personal:me', not boundary
     if provider == 'stripe':
         return _connect_stripe_grant(config_path, config, email, refresh, previous)
     if provider == 'slack':
@@ -2432,11 +2471,15 @@ def connect_grant(config_path, provider, args):
                                                                      'address': email}))
                 account['boundary'] = boundary
                 account['boundary_by'] = 'guess'  # guessed from the address; Work or Personal stays the owner's to set
+                if doubt:
+                    account['scope_check'] = True
             account = {**account, 'email': email, 'transport': 'broker'}
             for kept in ('client', 'credential', 'credential_variable'):
                 account.pop(kept, None)  # gog's client, or a token pasted before: the sign-in reads it now
             if service in ('calendar', 'outlook_calendar'):
                 account.setdefault('calendar_id', 'primary')
+            if tid:
+                account['tenant_id'] = tid
             if provider == 'microsoft':  # a refused sign-in right after this is Microsoft still settling (ms_graph.py)
                 account['connected_at'] = dt.datetime.now(dt.timezone.utc).strftime('%Y-%m-%dT%H:%M:%S+00:00')
             error = check(config, account)

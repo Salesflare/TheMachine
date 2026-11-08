@@ -6553,6 +6553,8 @@
   "one": "{} regel",
   "other": "{} regels"
  },
+ "{} looks like personal mail. Change it to Personal?": "{} lijkt op privémail. Naar Privé zetten?",
+ "{} looks like work mail. Change it to Work?": "{} lijkt op werkmail. Naar Werk zetten?",
  "{} marked {} done.": "{} markeerde {} als gedaan.",
  "{} matches": {
   "one": "{} treffer",

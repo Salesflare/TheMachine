@@ -273,6 +273,20 @@ try{
   await page.locator('[data-setup-dismiss="hint-source-github"]').click();await page.waitForFunction(()=>!document.querySelector('[data-step="hint-source-github"]'));
   await sent(()=>dismissed().at(-1),{action:'setup_dismiss',args:{step:'hint-source-github'}});
   await context.close()}
+ // Work or Personal, when its mail says the other (scope_check.py), on a self-hosted Machine too: Change sets it on the
+ // Machine (connect_scope) and closes the row for good; nothing switched before that.
+ for(const [width,height,ua] of [[1440,900,'chrome'],[1440,700,'chrome'],[390,844,'android']]){reset();manage=null;setup={...FRESH,phones:1};
+  const title='jules@moreaudesign.io looks like personal mail. Change it to Personal?';
+  setupHints=[{id:'scope-0123456789',title,text:'',button:'Change',scope:{account:'moreau-gmail',boundary:'personal:me'}}];
+  const {context,page}=await open({width,height,ua,perm:'granted',sub:true});
+  assert.deepEqual((await card(page)).rows.at(-1),['hint-scope-0123456789',title,'Change']);
+  await fits(page,width+' scope');await shot(page,`setup-scope-${width}x${height}`);
+  assert.deepEqual(actions.filter(a=>a.action==='connect_scope'),[],'never by itself');
+  await page.locator('[data-setup-go="hint-scope-0123456789"]').click();
+  await sent(()=>actions.filter(a=>a.action==='connect_scope'),[{action:'connect_scope',args:{account:'moreau-gmail',boundary:'personal:me'}}]);
+  await sent(()=>dismissed().at(-1),{action:'setup_dismiss',args:{step:'hint-scope-0123456789'}});
+  await page.waitForFunction(()=>!document.querySelector('[data-step="hint-scope-0123456789"]'));
+  await context.close()}
  // Done rows never push a hint out: nothing closed, the steps that are done leave the card.
  for(const [width,height,scheme,ua] of [[1440,900,'light','chrome'],[1440,900,'dark','chrome'],[390,844,'light','android'],[390,844,'dark','android']]){reset();
   setup={...FRESH,phones:1,mail_accounts:2};

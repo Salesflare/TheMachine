@@ -54,7 +54,8 @@ class ConnectGrant(unittest.TestCase):
         config = self.config()
         self.assertEqual(sorted((x['service'], x['email'], x['transport']) for x in config['accounts']),
                          [('calendar', 'dee@acme.example', 'broker'), ('gmail', 'dee@acme.example', 'broker')])
-        self.assertEqual({x['boundary'] for x in config['accounts']}, {'work:Acme'})
+        # its own domain alone says nothing for sure, and nobody can be asked here: Personal, a guess its mail is checked against
+        self.assertEqual({(x['boundary'], x['boundary_by'], x.get('scope_check')) for x in config['accounts']}, {('personal:me', 'guess', True)})
         self.assertEqual(config['google_broker'], {'url': fleet.NETWORK + '/api/fleet/google-token'})
         self.assertEqual(config['credentials']['google-broker'], config['credentials']['fleet'])  # its own device token
         self.assertNotIn(REFRESH, self.path.read_text())
@@ -71,6 +72,15 @@ class ConnectGrant(unittest.TestCase):
         self.assertTrue(zoom['boundary'].startswith('work'))
         self.assertEqual((config['microsoft_broker']['url'], config['zoom_broker']['url']),
                          (fleet.NETWORK + '/api/fleet/microsoft-token', fleet.NETWORK + '/api/fleet/zoom-token'))
+
+    def test_work_or_personal_follows_a_teammates_domain_or_the_consumer_tenant_never_the_domain_alone(self):
+        onboarding.connect_delivered(self.path, self.args(), {'acme.example'})  # a Work Fleet teammate's domain: Work
+        onboarding.connect_delivered(self.path, self.args('microsoft', email='kai@kai-home.dev', tid=onboarding.CONSUMER_TENANT.upper()))
+        onboarding.connect_delivered(self.path, self.args('microsoft', email='robin@robin-studio.dev', tid='0a0b0c0d-1111-2222-3333-444455556666'))
+        got = {(x['email'], x['service']): (x['boundary'], x.get('scope_check'), x.get('tenant_id')) for x in self.config()['accounts']}
+        self.assertEqual(got[('dee@acme.example', 'gmail')], ('work:Acme', None, None))
+        self.assertEqual(got[('kai@kai-home.dev', 'outlook')], ('personal:me', None, onboarding.CONSUMER_TENANT))
+        self.assertEqual(got[('robin@robin-studio.dev', 'outlook')], ('personal:me', True, '0a0b0c0d-1111-2222-3333-444455556666'))
 
     def test_an_account_that_does_not_check_out_leaves_nothing(self):
         self.answer = 'account_identity_mismatch'

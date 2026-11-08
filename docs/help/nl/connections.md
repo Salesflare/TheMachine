@@ -26,7 +26,7 @@ De lijst is gegroepeerd (**Mail en agenda**, **Chat**, **Afspraken**, **Document
 
 ## Werk of privé
 
-Elke bron telt als werk (voor een bedrijf dat je noemt) of als privé. Wijzig het onder **Details**. Er staat alleen **Geraden** als je Machine het uit het adres afleidde; zodra je zelf kiest, blijft het jouw keuze. Werk-to-do's wachten op je werkdagen. Mail en agenda van Google en Microsoft volgen hun adres als dat duidelijk is: een mailprovider zoals Gmail of Outlook.com is Privé, het domein van je team is Werk. Anders vraagt hij het één keer, meteen na het inloggen. Met **Wijzigen** stel je het zelf in.
+Elke bron telt als werk (voor een bedrijf dat je noemt) of als privé. Wijzig het onder **Details**. Er staat alleen **Geraden** als je Machine het uit het adres afleidde; zodra je zelf kiest, blijft het jouw keuze. Werk-to-do's wachten op je werkdagen. Mail en agenda van Google en Microsoft volgen hun adres als dat duidelijk is: een mailprovider zoals Gmail of Outlook.com is Privé, het domein van je team is Werk. Anders vraagt hij het één keer, meteen na het inloggen. Met **Wijzigen** stel je het zelf in. Zegt de mail daarna het omgekeerde, dan vraagt de to-do **Haal meer uit The Machine** één keer of je het wilt wijzigen.
 
 ## Vaardigheden
 

@@ -124,6 +124,11 @@ async function setupClick(e){const b=e.target.closest('button');if(!b)return;con
  if(step==='phone'&&!DEV.mobile){setupQR=!setupQR;setupRender();return}  // the QR code opens right in the row
  if(s.demo)return;  // the site's demo: nothing happens
  const row=setupRows().find(r=>r.id===step),hint=row?.hint;
+ // Work or Personal, when its mail says the other (scope_check.py): Change sets it, and the row closes for good
+ if(hint?.scope){b.disabled=true;try{const r=await connectPost('connect_scope',{account:String(hint.scope.account),boundary:String(hint.scope.boundary)});
+  s.dismissed=[...new Set([...(s.dismissed||[]),step])];setupRender();await setupPost('setup_dismiss',step).catch(errCaught);
+  if(r.restarting)restartSoon();toast(r.restarting?'Saved. Restarting…':'Saved. Restart the service to use it.');setTimeout(refresh,r.restarting?8000:500)}
+  catch(err){errCaught(err);toast(err.message,true);b.disabled=false}return}
  if(hint){const u=String(hint.href||'');if(/^https:\/\//.test(u))window.open(u,'_blank','noopener');else if(/^#connect(?:=[a-z_]+|ions=add)$/.test(u))location.hash=u;return}
  if(step==='phone'){const u=setupStore();if(u)window.open(u,'_blank','noopener');return}
  if(step==='whatsapp'){location.hash='#connect=whatsapp';return}

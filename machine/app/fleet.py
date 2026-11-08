@@ -462,7 +462,8 @@ class FleetApp:
             if any(v['state'] == 'running' for v in self.__dict__.setdefault('connect_sessions', {}).values()):
                 return {'ok': False, 'error': 'Another source is being added on this Machine. Sign in again once that is done.'}
             try:
-                result = onboarding.connect_delivered(self.config_path, body['args'])
+                team = self.team_domains() if body['args'].get('source') in ('google', 'microsoft') and hasattr(self, 'team_domains') else ()
+                result = onboarding.connect_delivered(self.config_path, body['args'], team)
             except onboarding.SetupError as error:  # its words name the step, never what it carried
                 return {'ok': False, 'error': error.message}
         LOG.info('connect delivered source=%s replies=%s', body['args'].get('source'), result.get('replies'))
