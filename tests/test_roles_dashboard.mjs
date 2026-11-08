@@ -78,6 +78,14 @@ try{
  assert.deepEqual(calls[0],{action:'graph_role',args:{node_id:'org:client.example',role:'customer'}});
  for(let i=0;i<100&&await list.locator('.whos').count()!==1;i++)await page.waitForTimeout(20);
  assert.equal(await list.locator('.whos').count(),1);
+ // With you on the person's page: the review's quote and its Read are markup, not printed tags.
+ await page.evaluate(()=>people('email:pat@client.example'));
+ const about=page.locator('.graph-detail .person-about .kv-role');
+ await about.locator('.role-why').waitFor();
+ assert.ok(!(await about.textContent()).includes('<'),await about.textContent());
+ assert.ok(await about.locator('.role-why button[data-quote-event="41"]').isVisible());
+ await navClick(page.locator('.side-sub a[data-graph-sub="roles"]'));
+ await list.locator('[data-role-edit-for="email:pat@client.example"]').waitFor();
  // Edit opens the person in Edit, with the role field ready.
  await list.locator('[data-role-edit-for="email:pat@client.example"]').click();
  await page.locator('.person-form:not([hidden]) [name=role]').waitFor();
