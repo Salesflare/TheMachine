@@ -575,14 +575,18 @@ class GraphActionsApp:
 
     def related(self, accounts, event_ids=(), query='', limit=8, exclude=(), timeout=30, signals_only=False):
         """([(event_id, similarity)], semantic) within the given accounts. With the embedding server
-        down (or slower than `timeout` seconds) a query still gets keyword matches."""
-        try:return embeddings.related(self.store.connect,embeddings.settings(self.config),accounts,event_ids,query,limit,exclude=exclude,timeout=timeout,
+        down (or slower than `timeout` seconds), or not set up, a query still gets keyword matches."""
+        settings=embeddings.settings(self.config)
+        try:
+            if not settings:raise embeddings.EmbeddingError('not_set_up')
+            return embeddings.related(self.store.connect,settings,accounts,event_ids,query,limit,exclude=exclude,timeout=timeout,
                                       signals_only=signals_only),True
         except embeddings.EmbeddingError as error:
-            LOG.error('related error=%s',error)
+            if settings:LOG.error('related error=%s',error)
             if not query.strip():return [],False
+            skip={*map(int,event_ids),*map(int,exclude)}
             with self.store.connect() as db:
-                return [(i,None) for i in embeddings.fts_ids(db,accounts,query,limit) if i not in {*map(int,event_ids),*map(int,exclude)}],False
+                return [(i,None) for i in embeddings.fts_ids(db,accounts,query,limit+len(skip),signals_only) if i not in skip][:limit],False
 
     def own_addresses_fetch(self, read=None):
         """Each of the owner's own mailboxes' send-as addresses, once a day: Gmail's sendAs list (gmail.readonly, the

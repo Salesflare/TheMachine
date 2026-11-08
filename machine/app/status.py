@@ -127,7 +127,24 @@ class StatusApp:
     # action name -> the method that handles it, called as method(name, args, owner_dashboard) (App.action)
     ACTIONS = {'status': 'status_action'}
 
+    def heartbeat_health(self, health):
+        """Read only the existing heartbeat's runtime facts, never conversation
+        content or scheduler configuration. Missing evidence stays unknown."""
+        try:
+            with sqlite3.connect('file:' + str(Path.home() / '.openclaw/state/openclaw.sqlite') + '?mode=ro', uri=True, timeout=1) as db:
+                # `heartbeat_job_id`: the OpenClaw cron job id of the main heartbeat (optional).
+                row = db.execute('SELECT state_json FROM cron_jobs WHERE job_id=?', (self.config.get('heartbeat_job_id', ''),)).fetchone()
+                if row:
+                    scheduler = json.loads(row[0])
+                    reason = scheduler.get('lastError', '')
+                    health['heartbeat'] = {k: scheduler.get(k) for k in ['lastRunAtMs', 'nextRunAtMs', 'lastRunStatus', 'consecutiveSkipped']}
+                    health['heartbeat']['reason'] = 'busy' if reason in ['heartbeat skipped: cron-in-progress','heartbeat skipped: requests-in-flight','heartbeat skipped: active-run','heartbeat skipped: plugin-operation-in-progress','heartbeat skipped: runtime-draining'] else 'failed' if scheduler.get('lastRunStatus')=='error' else None
+        except (sqlite3.Error, OSError, ValueError):
+            pass
+
     def status_action(self, name, args, owner_dashboard=False):
+        if not args.get('full'):  # an agent: only what compact_status reads, so it stays fast on a busy Machine
+            return self.agent_status()
         # done: how many done to-dos (the dashboard: its Done list's first page, it loads the rest itself); else the last 100
         done = args.get('done')
         result = self.store.snapshot(self.config['accounts'], **({'done': max(0, min(int(done), 100))} if isinstance(done, int) else {}))
@@ -203,19 +220,7 @@ class StatusApp:
         result['own_addresses'] = self.own_addresses_view()
         result['team_learnings'] = self.learnings_view()
         result['security'] = self.security_view()
-        # Read only the existing heartbeat's runtime facts, never conversation
-        # content or scheduler configuration. Missing evidence stays unknown.
-        try:
-            with sqlite3.connect('file:' + str(Path.home() / '.openclaw/state/openclaw.sqlite') + '?mode=ro', uri=True, timeout=1) as db:
-                # `heartbeat_job_id`: the OpenClaw cron job id of the main heartbeat (optional).
-                row = db.execute('SELECT state_json FROM cron_jobs WHERE job_id=?', (self.config.get('heartbeat_job_id', ''),)).fetchone()
-                if row:
-                    scheduler = json.loads(row[0])
-                    reason = scheduler.get('lastError', '')
-                    result['review_health']['heartbeat'] = {k: scheduler.get(k) for k in ['lastRunAtMs', 'nextRunAtMs', 'lastRunStatus', 'consecutiveSkipped']}
-                    result['review_health']['heartbeat']['reason'] = 'busy' if reason in ['heartbeat skipped: cron-in-progress','heartbeat skipped: requests-in-flight','heartbeat skipped: active-run','heartbeat skipped: plugin-operation-in-progress','heartbeat skipped: runtime-draining'] else 'failed' if scheduler.get('lastRunStatus')=='error' else None
-        except (sqlite3.Error, OSError, ValueError):
-            pass
+        self.heartbeat_health(result['review_health'])
         for suggestion in result.get('suggestions', []):
             suggestion['snooze_choices'] = snooze_choices(self.is_work(suggestion.get('account_ids')))
         if getattr(self, 'agents', None):
@@ -241,4 +246,18 @@ class StatusApp:
                 result['fleet']['take_line'] = self.handoff_mail.take_line()
         except (sqlite3.Error, ValueError) as error:
             LOG.error('task pages status error=%s', type(error).__name__)
-        return result if args.get('full') else compact_status(result)
+        return result
+
+    def agent_status(self):
+        """The agent's compact status, built from a lean snapshot without the dashboard's views: the whole status took
+        longer than the tool's 30 seconds on a busy Machine, while an agent reads only this."""
+        result = self.store.snapshot(self.config['accounts'], lean=True)
+        result['connectors'] = [c for c in result['connectors'] if not docs_unset(c)]
+        self.heartbeat_health(result['review_health'])
+        if getattr(self, 'agents', None):
+            try:
+                with self.store.connect() as db:
+                    self.agents.annotate(db, result.get('suggestions', []))
+            except (sqlite3.Error, ValueError) as error:
+                LOG.error('agent jobs status error=%s', type(error).__name__)
+        return compact_status(result)
