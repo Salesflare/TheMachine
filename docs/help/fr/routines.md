@@ -33,9 +33,11 @@ Les routines tournent une à la fois et attendent quand l’usage de votre forfa
 
 C’est dans le menu ⋯ de la routine. **Changer quand** prend un nouveau rythme dans vos propres mots, comme « chaque jour ouvré à 8 h ». **Mettre en pause** arrête les exécutions jusqu’à **Reprendre** ; ce qui a été manqué pendant la pause ne tourne pas ensuite. **Arrêter** met fin à une routine pour de bon.
 
-## Étapes de script
+## Avancé : étapes de script
 
-Une routine peut lancer vos propres commandes sur votre Machine. Dans **Modifier**, ouvrez **Étapes de script**. **Récupérer les données** lance d’abord une commande, comme `python3 ~/scripts/deals.py`, dans son dossier (vide : votre dossier personnel) et pendant au plus ses secondes. Ce qu’elle affiche va à l’exécution pour travailler avec. Sans mots, ce qu’elle affiche est le résultat.
+Vous n’avez jamais besoin d’un script : dites avec vos propres mots ce qu’une routine doit faire.
+
+Pour les utilisateurs avancés, une routine peut aussi lancer vos propres commandes sur votre Machine : dans le menu ⋯, choisissez **Avancé : étapes de script**. **Modifier** ne les montre que si une routine en a déjà. **Récupérer les données** lance d’abord une commande, dans son dossier (vide : votre dossier personnel) et pendant au plus ses secondes. Ce qu’elle affiche va à l’exécution pour travailler avec. Sans mots, ce qu’elle affiche est le résultat.
 
 **Vérification** reçoit le résultat en entrée après l’exécution. Si elle se termine par une erreur, l’exécution affiche **N’a pas marché** avec ce que la vérification a dit. Une commande de Récupérer les données qui échoue s’affiche de la même façon.
 

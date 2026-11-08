@@ -33,9 +33,11 @@ Las rutinas corren de una en una y esperan cuando el uso de tu plan de IA está 
 
 Está en el menú ⋯ de la rutina. **Cambiar cuándo** toma un nuevo ritmo en tus propias palabras, como "cada día laborable a las 8". **Pausar** detiene las ejecuciones hasta **Reanudar**; lo perdido durante la pausa no corre después. **Detener** termina una rutina para siempre.
 
-## Pasos de script
+## Avanzado: pasos de script
 
-Una rutina puede ejecutar tus propios comandos en tu Machine. En **Editar**, abre **Pasos de script**. **Obtener datos** ejecuta primero un comando, como `python3 ~/scripts/deals.py`, en su carpeta (vacía: tu carpeta personal) y como mucho durante sus segundos. Lo que imprime va a la ejecución para trabajar con ello. Sin palabras, lo que imprime es el resultado.
+Nunca necesitas un script: di con tus propias palabras qué debe hacer una rutina.
+
+Para usuarios avanzados, una rutina también puede ejecutar tus propios comandos en tu Machine: en el menú ⋯, elige **Avanzado: pasos de script**. **Editar** solo los muestra si una rutina ya tiene. **Obtener datos** ejecuta primero un comando, en su carpeta (vacía: tu carpeta personal) y como mucho durante sus segundos. Lo que imprime va a la ejecución para trabajar con ello. Sin palabras, lo que imprime es el resultado.
 
 **Comprobación** recibe el resultado como entrada después de la ejecución. Si termina con un error, la ejecución muestra **No funcionó** con lo que dijo la comprobación. Un comando de Obtener datos que falla se muestra igual.
 

@@ -71,7 +71,7 @@ try{
   assert.equal(await cw.inputValue(),'Sum up my deals');assert.equal(await tc.locator('.actions').isVisible(),false);
   assert.deepEqual(await tc.locator('.rt-form-acts>button').evaluateAll(n=>n.map(x=>x.textContent)),['Try it','Cancel']);
   await cw.fill('Sum up my open deals');await cw.press('Enter');await tc.locator('.rt-form').waitFor({state:'detached'});
-  assert.deepEqual(sent('routine_try').at(-1),{action:'routine_try',id:TID,words:'Sum up my open deals',steps:{}});
+  assert.deepEqual(sent('routine_try').at(-1),{action:'routine_try',id:TID,words:'Sum up my open deals'});
   // Cancel: never kept
   await tc.locator('[data-rt-do="no"]').click();await tc.waitFor({state:'detached'});
   assert.deepEqual(sent('routine_state'),[{action:'routine_state',id:TID,to:'stop'}]);posts.length=0;
@@ -88,7 +88,7 @@ try{
   assert.deepEqual(await card.locator('.actions>button').evaluateAll(n=>n.map(x=>x.textContent)),['Run now']);
   assert.equal(await card.locator('.more-menu').isVisible(),false);
   await card.locator('.more-actions>summary').click();
-  assert.deepEqual(await card.locator('.more-menu>button').evaluateAll(n=>n.map(x=>x.textContent)),['Edit','Change when','Pause','Stop']);
+  assert.deepEqual(await card.locator('.more-menu>button').evaluateAll(n=>n.map(x=>x.textContent)),['Edit','Change when','Pause','Advanced: script steps','Stop']);
   const menu=await card.locator('.more-menu').boundingBox();assert.ok(menu.x>=0&&menu.x+menu.width<=width,'the menu fits the screen');
   // Change when: the menu closes so it never covers the field; Cancel and Esc leave it, Save changes this routine (never adds one)
   await card.locator('[data-rt-do="when"]').click();const when=card.locator('.rt-form[data-rt-form="when"] input');
@@ -107,17 +107,21 @@ try{
   assert.deepEqual(await card.locator('.rt-form-acts>button').evaluateAll(n=>n.map(x=>x.textContent)),['Save','Try it','Cancel']);
   // Try it: the new words' test run in the form, the routine as it was; the form and its words stay
   await card.locator('[data-rt-try]').click();await card.locator('.rt-form .rt-result strong').waitFor();
-  assert.deepEqual(sent('routine_try'),[{action:'routine_try',id:ID,words:'Sum up my won deals',steps:{}}]);
+  assert.deepEqual(sent('routine_try'),[{action:'routine_try',id:ID,words:'Sum up my won deals'}],'no script steps unless Advanced shows them');
   assert.match(await card.locator('.rt-form .rt-run-head').innerText(),/^Test run\s+Nothing sent or saved$/);
   assert.equal(await card.locator('.rt-body').isVisible(),false,'the card\'s own result waits while Edit is open');
   assert.equal(await card.locator('.rt-what').isVisible(),false,'its words show once, in the box');
   assert.equal(await edit.inputValue(),'Sum up my won deals');
   await card.locator('.rt-form .primary').click();
   for(let i=0;i<60&&!sent('routine_edit').length;i++)await page.waitForTimeout(50);
-  assert.deepEqual(sent('routine_edit'),[{action:'routine_edit',id:ID,words:'Sum up my won deals',steps:{}}]);
-  // Script steps: folded until opened; Get data with its folder and seconds, and Check, sent with Try it and Save
+  assert.deepEqual(sent('routine_edit'),[{action:'routine_edit',id:ID,words:'Sum up my won deals'}],'its script steps stay as they are');
+  // Script steps: never in Edit by default; Advanced in the ... menu shows them, empty, with no made-up commands
   await card.locator('.more-actions>summary').click();await card.locator('[data-rt-do="edit"]').click();
-  assert.equal(await card.locator('.rt-steps').getAttribute('open'),null);await card.locator('.rt-steps>summary').click();
+  assert.equal(await card.locator('.rt-form .rt-steps').count(),0,'Edit is the routine\'s words only');
+  await card.locator('[data-rt-cancel]').click();await card.locator('.more-actions>summary').click();await card.locator('[data-rt-do="steps"]').click();await card.locator('.rt-form[data-rt-form="edit"] .rt-steps').waitFor();
+  assert.equal(await card.locator('.rt-steps legend').innerText(),'Advanced: script steps');
+  assert.deepEqual(await card.locator('[data-step]').evaluateAll(n=>n.map(x=>[x.value,x.placeholder])),[['',''],['',''],['',''],['','']]);
+  assert.equal(await page.evaluate(()=>document.activeElement.dataset.step),'get');
   await card.locator('[data-step="get"]').fill('python3 ~/scripts/deals.py --open');await card.locator('[data-step="cwd"]').fill('~/scripts');
   await card.locator('[data-step="timeout"]').fill('90');await card.locator('[data-step="check"]').fill('python3 ~/scripts/check.py');
   const steps={get:{command:'python3 ~/scripts/deals.py --open',cwd:'~/scripts',timeout:'90'},check:{command:'python3 ~/scripts/check.py'}};
@@ -130,6 +134,10 @@ try{
   assert.deepEqual(sent('routine_edit').at(-1),{action:'routine_edit',id:ID,words:'Sum up my deals',steps});
   await card.locator('.rt-step').first().waitFor();
   assert.deepEqual(await card.locator('.rt-step').evaluateAll(n=>n.map(x=>x.textContent)),['Get data python3 ~/scripts/deals.py --open','Check python3 ~/scripts/check.py']);
+  // A routine with script steps: Edit shows them, filled in
+  await card.locator('.more-actions>summary').click();await card.locator('[data-rt-do="edit"]').click();
+  assert.equal(await card.locator('.rt-form [data-step="get"]').inputValue(),'python3 ~/scripts/deals.py --open');
+  await card.locator('[data-rt-cancel]').click();
   // Didn't work: what the script said, as text
   list=list.map(r=>({...r,runs:[{id:'r3',state:'failed',started_at:now,why:'Get data didn’t work.',detail:'<b>no such report</b>'}]}));await page.evaluate(()=>routinesView(true));
   assert.equal(await card.locator('.rt-detail').innerText(),'<b>no such report</b>');

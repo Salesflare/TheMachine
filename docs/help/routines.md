@@ -43,9 +43,11 @@ In **Edit**, **Try it** runs the new words once and shows the result there. The 
 
 **Pause** stops the runs until **Resume**; paused routines wait under **Paused** at the bottom, and nothing missed while paused runs afterwards. **Stop** ends a routine for good.
 
-## Script steps
+## Advanced: script steps
 
-A routine can run your own commands on your Machine. In **Edit**, open **Script steps**. **Get data** runs a command first, like `python3 ~/scripts/deals.py`, in its folder (your home folder if empty) for at most its seconds. What it prints goes to the run to work with. With no words, what it prints is the result.
+No script needed: say what a routine should do in your own words, and your Machine works out the rest.
+
+For power users, a routine can also run your own commands on your Machine: in the ⋯ menu, pick **Advanced: script steps**. **Edit** shows them only once a routine has some. **Get data** runs a command first, in its folder (your home folder if empty) for at most its seconds. What it prints goes to the run to work with. With no words, what it prints is the result.
 
 **Check** gets the result as input after the run. If it exits with an error, the run shows **Didn’t work** with what the check said. A Get data command that fails shows the same way.
 
