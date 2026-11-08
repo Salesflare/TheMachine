@@ -1022,6 +1022,12 @@ from machine.app.review import (
 from machine.store.faults import (
     FaultsStore,
 )
+from machine.app.settings_actions import (
+    SettingsActionsApp,
+)
+from machine.app.notifications import (
+    NotificationsApp,
+)
 
 
 def hours_settings(config, changes):
@@ -2076,6 +2082,7 @@ APP_MIXINS = (SupportApp, CalendarApp, SkillsApp, AgentsApp, GBrainApp, SharedGr
 APP_MIXINS += (FollowUpsApp, GraphActionsApp, KnowledgeExportApp, MeetingWritesApp, ModelPacingApp, PromiseChecksApp, SignaturesApp, SummariesApp,
                VoiceApp)
 APP_MIXINS += (CardChatApp, ConversationApp, ExportApp, FirstLookApp, FleetApp, PreparationApp, RecapApp, ReviewApp, TalkApp)
+APP_MIXINS += (NotificationsApp, SettingsActionsApp)
 APP_MIXINS += (RecapSettingsApp,)
 APP_MIXINS += (SearchAskApp,)
 APP_MIXINS += (ReviewSavesApp,)
@@ -3314,11 +3321,6 @@ class App(*APP_MIXINS):
             if done.pop('graph', False):  # a fix in the Graph put back (corrections.py)
                 self.correction_refresh()
             return done
-        if name == 'set_voice':
-            if not owner_dashboard:
-                raise ValueError('Only the owner edits how they write, in Settings')
-            self.store.save_voice(args.get('channel'), args.get('text'), 'owner')
-            return {'voices': self.store.voices()}
         if name == 'looks_handled':
             return self.store.looks_handled(args['suggestion_id'], args.get('reason'), args.get('event_ids') or [])
         if name == 'handoff_on_it':  # the review: a message the owner sent or a call they joined shows they took a waiting handoff on
@@ -3329,67 +3331,6 @@ class App(*APP_MIXINS):
             if not getattr(self, 'fleet', None):
                 raise ValueError('This Machine is not on the Network')
             return self.fleet.fill_split(str(args.get('split_id') or ''), args.get('event_id'), args.get('parts') or {})
-        if name in ('notify_set', 'notify_active', 'notify_preview'):  # Settings, Notifications (notify.py)
-            if not owner_dashboard:
-                raise ValueError('Notifications are set in the dashboard')
-            if name == 'notify_active':  # a page says whether it is in use (visible, in focus, touched lately) or not
-                client = str(args.get('client') or 'page')
-                if not re.fullmatch(r'[a-z0-9]{1,16}', client):
-                    raise ValueError('Invalid page')
-                on = args.get('active', True) is not False
-                try:
-                    idle = max(0, min(int(args.get('idle') or 0), 86400))
-                except (TypeError, ValueError):
-                    idle = 0
-                notify.mark_active(client=client, on=on, idle=idle)
-                return {'active': notify.active()}
-            if name == 'notify_preview':  # shown on the page only: nothing is sent
-                digest = self.digest()
-                return {'empty': not digest, 'text': digest['text'] if digest else '', 'push': digest['push'] if digest else None}
-            with self.store.connect() as db:
-                notify.set_pref(db, str(args.get('kind') or ''), str(args.get('channel') or ''), bool(args.get('on')))
-            return self.notify_view()
-        if name == 'push_test':  # Settings or the nudge: one test notification to this device's own subscription
-            if not owner_dashboard:
-                raise ValueError('Phone notifications are turned on in the dashboard app')
-            if 'app_device' in args:  # the mobile app: a test wakeup to that phone only
-                device = str(args.get('app_device') or '')
-                with self.store.connect() as db:
-                    known = notify.APP_ID.fullmatch(device) and any(d['id'] == device for d in notify.app_devices(db))
-                if not known:
-                    raise ValueError('Notifications are off on this device. Turn them on first.')
-                if not app_wake(self.store, self.config, 'test', 'push-test', device):
-                    raise ValueError('The test didn’t go through. Turn notifications off and on again.')
-                return {'sent': True}
-            with self.store.connect() as db:
-                row = db.execute('SELECT endpoint,p256dh,auth FROM push_subscriptions WHERE endpoint=?', (str(args.get('endpoint') or ''),)).fetchone()
-            if not row:
-                raise ValueError('Notifications are off on this device. Turn them on first.')
-            results = push_send(self.store, self.config, [dict(row)], {'title': i18n.t('Notifications are on'), 'body': i18n.t('This is how a new to-do shows up.'), 'url': '.', 'tag': 'push-test'}, 'test')
-            if not any(200 <= r.get('status', 0) < 300 for r in results):
-                raise ValueError('The test didn’t go through. Turn notifications off and on again.')
-            return {'sent': True}
-        if name in ('app_push_register', 'app_push_unregister'):
-            if not owner_dashboard:
-                raise ValueError('Phone notifications are turned on in the dashboard app')
-            return self.app_push_action(name, args)
-        if name in ('push_subscribe', 'push_unsubscribe'):
-            if not owner_dashboard:
-                raise ValueError('Phone notifications are turned on in the dashboard app')
-            endpoint = str(args.get('endpoint') or '')
-            if not re.fullmatch(r'https://[^\s]{1,2000}', endpoint):
-                raise ValueError('Invalid push subscription')
-            with self.store.connect() as db:
-                if name == 'push_unsubscribe':
-                    db.execute('DELETE FROM push_subscriptions WHERE endpoint=?', (endpoint,))
-                    return {'subscribed': False}
-                keys = args.get('keys') or {}
-                if not all(re.fullmatch(r'[A-Za-z0-9_-]{16,200}=*', str(keys.get(k) or '')) for k in ('p256dh', 'auth')):
-                    raise ValueError('Invalid push subscription')
-                db.execute('''INSERT INTO push_subscriptions(endpoint,p256dh,auth,created_at) VALUES(?,?,?,?)
-                    ON CONFLICT(endpoint) DO UPDATE SET p256dh=excluded.p256dh,auth=excluded.auth''',
-                           (endpoint, keys['p256dh'].rstrip('='), keys['auth'].rstrip('='), now()))
-            return {'subscribed': True}
         if name in ('board_save', 'board_delete', 'board_dismiss'):
             if not owner_dashboard:
                 raise ValueError('Only the owner saves, deletes or dismisses a board, on the dashboard; reviews suggest one with graph suggest_board')
@@ -3549,78 +3490,6 @@ class App(*APP_MIXINS):
                 else:
                     team_learnings.set_offer(db, args.get('on') is not False)
             return {'team_learnings': self.learnings_view()}
-        if name in ('security_level', 'security_setting'):  # Settings, Security (security_levels.py)
-            if not owner_dashboard:
-                raise ValueError('Only the owner changes security settings, in Settings on the dashboard')
-            with self.store.connect() as db:
-                if name == 'security_level':
-                    rules = security_levels.apply(db, str(args.get('level') or ''))
-                else:
-                    rules = []
-                    security_levels.set_pref(db, str(args.get('key') or ''), str(args.get('value') or ''))
-            for ref, kind, rule in rules:
-                if ref and self.fleet:
-                    self.fleet.set_rule(ref, security_levels.ALL, kind, rule)
-            if name == 'security_level' and self.fleet:  # the Network switches follow the level now, not on the next round
-                try:
-                    self.fleet.network_defaults()
-                except Exception as error:  # noqa: BLE001 - the next Network round sets them
-                    LOG.info('network defaults after a level change failed error=%s', type(error).__name__)
-            return {'security': self.security_view(), 'lookups': self.lookups_view(), 'team_learnings': self.learnings_view()}
-        if name == 'own_address':
-            if not owner_dashboard:
-                raise ValueError('Only the owner confirms or removes their addresses, in Settings')
-            with self.store.connect() as db:
-                own_addresses.choose(db, args.get('address'), str(args.get('choice') or ''), now(), self.config)
-            self.graph_dirty.set()  # who counts as the owner changed: the graph follows within a minute
-            return {'own_addresses': self.own_addresses_view()}
-        if name == 'own_domain':
-            if not owner_dashboard:
-                raise ValueError('Only the owner changes their company’s domains, in Settings')
-            with self.store.connect() as db:
-                own_addresses.set_domain(db, args.get('domain'), args.get('on') is not False, now(), self.config)
-            self.graph_dirty.set()  # its people become colleagues and its organization folds into the owner's: within a minute
-            return {'own_addresses': self.own_addresses_view()}
-        if name == 'set_people_lookup':
-            if not owner_dashboard:
-                raise ValueError('Only the owner turns Look up work contacts on or off, in Settings')
-            with self.store.connect() as db:
-                enrichment.set_people(db, args.get('on') is not False)
-            return self.lookups_view()
-        if name == 'set_agents':
-            if not owner_dashboard:
-                raise ValueError('Only the owner changes this, on the dashboard (Settings)')
-            return self.set_agents(args)
-        if name == 'tip_done':
-            if not owner_dashboard:
-                raise ValueError('Only the owner closes a tip, on the dashboard')
-            return self.store.tip_done(args.get('tip'))
-        if name == 'set_locale':
-            if not owner_dashboard:
-                raise ValueError('Only the owner changes region and time format, on the dashboard (Settings, General)')
-            return self.set_locale(args)
-        if name == 'connector_sync':
-            if not owner_dashboard:
-                raise ValueError('Only the owner stops or restarts a sync, on the dashboard (Connections)')
-            return self.connector_sync(args)
-        if name == 'set_work_hours':
-            if not owner_dashboard:
-                raise ValueError('Only the owner changes work hours, on the dashboard or with: assistant hours')
-            return self.set_hours(args)
-        if name in ('model_usage_refresh', 'model_reset'):
-            if not owner_dashboard:
-                raise ValueError('Only the owner can do this, on the dashboard')
-            if name == 'model_reset':
-                reply = getattr(self, 'model_usage_reply', None) or usage_status(self.config)
-                key = str(args.get('key') or '')
-                if not re.fullmatch(r'[A-Za-z0-9-]{8,80}', key):
-                    raise ValueError('Invalid request')
-                outcome = use_model_reset(self.config, reply, key)
-                LOG.info('model usage reset outcome=%s', outcome)
-            self.refresh_model_usage()
-            status = getattr(self, 'model_status', None)
-            return {'model_status': status, 'model_usage': getattr(self, 'model_usage', None),
-                    **({'outcome': outcome} if name == 'model_reset' else {})}
         if name == 'refresh_card':
             with self.store.connect() as db:
                 db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=?',(args['suggestion_id'],))
