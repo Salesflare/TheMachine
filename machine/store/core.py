@@ -805,6 +805,41 @@ class StoreCore:
     AHEAD_BLOCKERS = ("FROM preparations p JOIN suggestions s ON s.id=p.suggestion_id WHERE p.status='cancelled' "
                       "AND trim(coalesce(p.reason,''))<>'' AND (s.status='pending' OR s.status='snoozed' AND s.resume_status='pending')")
 
+    def fix_done(self, name):
+        """A one-time fix by this name already ran (store_fixes)."""
+        with self.connect() as db:
+            db.execute('CREATE TABLE IF NOT EXISTS store_fixes(name TEXT PRIMARY KEY,at TEXT NOT NULL)')
+            return bool(db.execute('SELECT 1 FROM store_fixes WHERE name=?', (name,)).fetchone())
+
+    def requeue_once(self, name, find):
+        """Once (store_fixes): the messages find(db) gives go back to the review, pending with no deferrals, after a copy
+        of the database (copy_before). find is asked again in the write transaction, so it acts on them as they are then.
+        Returns how many (review_requeue.py)."""
+        if self.fix_done(name):
+            return 0
+        with self.connect() as db:
+            found = find(db)
+        if found:
+            self.copy_before(name)
+        with self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            if db.execute('SELECT 1 FROM store_fixes WHERE name=?', (name,)).fetchone():
+                return 0
+            found = sorted(find(db))
+            db.executemany('UPDATE events SET analyzed_version=min(analyzed_version,version-1),deferrals=0 WHERE id=?', [(i,) for i in found])
+            db.execute('INSERT INTO store_fixes(name,at) VALUES(?,?)', (name, now()))
+        return len(found)
+
+    def copy_before(self, name):
+        """A copy of the database next to it before a one-time fix changes it (events.sqlite.before-<name>-<time>Z, only
+        the owner can read it; retention rotates it like other copies)."""
+        copy = self.path.with_name(f'{self.path.name}.before-{name}-{dt.datetime.now(dt.timezone.utc):%Y%m%dT%H%M%SZ}')
+        fd = os.open(copy, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        os.close(fd)
+        with contextlib.closing(sqlite3.connect(self.path, timeout=60)) as source, contextlib.closing(sqlite3.connect(copy)) as target:
+            source.backup(target)  # a consistent copy while the service keeps writing
+        return copy
+
     def restore_ahead_blockers(self):
         """Once: settle_ahead used to cancel the blocker of a prepared-ahead run it sent out as a new to-do, so the owner
         never saw its reason, questions, Answer or Try again. Those preparations (canceled, reason kept, on a waiting or
@@ -817,11 +852,7 @@ class StoreCore:
                 return 0
             found = db.execute('SELECT count(*) ' + self.AHEAD_BLOCKERS).fetchone()[0]
         if found:
-            copy = self.path.with_name(f'{self.path.name}.before-{name}-{dt.datetime.now(dt.timezone.utc):%Y%m%dT%H%M%SZ}')
-            fd = os.open(copy, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
-            os.close(fd)
-            with contextlib.closing(sqlite3.connect(self.path, timeout=60)) as source, contextlib.closing(sqlite3.connect(copy)) as target:
-                source.backup(target)  # a consistent copy while the service keeps writing
+            self.copy_before(name)
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             if db.execute('SELECT 1 FROM store_fixes WHERE name=?', (name,)).fetchone():

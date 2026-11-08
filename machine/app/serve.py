@@ -10,7 +10,10 @@ import abilities
 import agent_jobs
 import browser_login
 import embeddings
+from machine.browser import AGENT_DB
 from machine.config import LOG
+from machine.model_usage import node_bin
+from machine.store import review_requeue
 from machine.faults import watch_faults
 from machine.web.handler import make_handler
 from machine.web.serving import compress_body
@@ -77,6 +80,12 @@ class ServeApp:
         threading.Thread(target=self.whatsapp_photo_worker, name='whatsapp-photos', daemon=True).start()
         threading.Thread(target=self.voice_warm_worker, name='voice-warm', daemon=True).start()
         threading.Thread(target=self.action_worker, daemon=True).start()
+        try:  # once: messages whose to-do save failed before the fix of 2026-11-07 go back to the review (review_requeue.py)
+            back = review_requeue.requeue(self.store, AGENT_DB, node_bin(self.config))
+            if back:
+                LOG.info('Sent %d message(s) whose to-do save had failed back to the review', back)
+        except Exception as error:  # noqa: BLE001 - never stops the service; the next start tries again
+            LOG.error('failed saves requeue error=%s', type(error).__name__)
         threading.Thread(target=self.review_worker, daemon=True).start()
         threading.Thread(target=self.graph_worker, daemon=True).start()
         if getattr(self, 'fleet', None):
