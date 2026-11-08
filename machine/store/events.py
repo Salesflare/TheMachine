@@ -386,8 +386,10 @@ class EventsStore:
         if not account_ids:
             return []
         with self.connect() as db:
+            # by the meetings' own index (events_kind_calendar_event), not each account's events: +account_id keeps SQLite
+            # off events_account_time, which walked every message of every account up to the week's end (some 80 ms)
             rows = db.execute("SELECT id,account_id,title,occurred_at,metadata FROM events WHERE kind='calendar.event' AND deleted=0 "
-                              'AND account_id IN (' + ','.join('?' for _ in account_ids) + ') AND occurred_at<? '
+                              'AND +account_id IN (' + ','.join('?' for _ in account_ids) + ') AND occurred_at<? '
                               "AND coalesce(json_extract(metadata,'$.end_at'),occurred_at)>? ORDER BY occurred_at,id LIMIT 300",
                               (*account_ids, end, start)).fetchall()
         owner = {str(e).lower() for e in owner if e}

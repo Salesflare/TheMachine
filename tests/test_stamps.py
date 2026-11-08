@@ -115,6 +115,11 @@ class PageQueries(unittest.TestCase):
             plan = self.plan(sql, ('a', 'b') if '?' in sql else ())
             self.assertIn('events_kind_', plan, sql)
             self.assertNotRegex(plan, r'SCAN events(?! USING INDEX events_kind_)', sql)
+        # the Calendar tab's week: by the meetings' own index, not every message of every account
+        week = self.plan("SELECT id FROM events WHERE kind='calendar.event' AND deleted=0 AND +account_id IN (?,?) AND occurred_at<? "
+                         "AND coalesce(json_extract(metadata,'$.end_at'),occurred_at)>? ORDER BY occurred_at,id LIMIT 300", ('a', 'b', 'x', 'y'))
+        self.assertIn('events_kind_calendar_event', week)
+        self.assertNotIn('events_account_time', week)
         self.assertIn('decisions_suggestion', self.plan(
             "SELECT max(d.created_at) FROM decisions d WHERE d.suggestion_id=? AND d.choice IN ('complete','reject')", ('x',)))
 
