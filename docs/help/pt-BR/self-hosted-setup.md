@@ -28,7 +28,7 @@ O instalador encontra suas contas, conecta uma por uma e mostra uma prévia da s
 
 ## Depois de instalar
 
-- Pareie com a sua conta: no painel, **Conexões**, **+ Adicionar**, escolha Gmail e toque em **Parear esta Machine**.
+- Conecte seu e-mail: no topo de **Tarefas**, toque em **Gmail** (ou **Outlook**) e depois em **Parear esta Machine** para pareá-la com a sua conta. Sem conta, **Usar seu próprio app** fica logo abaixo.
 - Depois toque em **Entrar com Google** (ou **Entrar com Microsoft** para o Outlook). E-mail e agenda se conectam juntos.
 - Outras fontes: **Conexões**, depois **+ Adicionar**. Seu próprio cliente Google ou app Entra: `assistant connect` em um terminal.
 - Verifique tudo com `assistant doctor`. Ele mostra uma solução para cada problema.

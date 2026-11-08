@@ -28,7 +28,7 @@ Der Installer findet deine Konten, verbindet sie eins nach dem anderen und zeigt
 
 ## Nach der Installation
 
-- Verbinde sie mit deinem Konto: im Dashboard **Verbindungen**, **+ Hinzufügen**, Gmail wählen und **Diese Machine verbinden** drücken.
+- Verbinde deine Mail: oben in **Aufgaben** **Gmail** (oder **Outlook**) drücken, dann **Diese Machine verbinden**, um sie mit deinem Konto zu verbinden. Ohne Konto steht **Eigene App nutzen** gleich darunter.
 - Dann **Mit Google anmelden** drücken (oder **Mit Microsoft anmelden** für Outlook). Mail und Kalender verbinden sich zusammen.
 - Andere Quellen: **Verbindungen**, dann **+ Hinzufügen**. Eigener Google-Client oder eigene Entra-App: `assistant connect` im Terminal.
 - Prüfe alles mit `assistant doctor`. Es zeigt für jedes Problem eine Lösung.

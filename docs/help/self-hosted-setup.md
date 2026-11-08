@@ -28,7 +28,7 @@ The installer finds your accounts, connects them one by one, and shows a preview
 
 ## After installing
 
-- Pair it with your account: in the dashboard, **Connections**, **+ Add**, pick Gmail and press **Pair this Machine**.
+- Connect your mail: at the top of **To-dos**, press **Gmail** (or **Outlook**), then **Pair this Machine** to pair it with your account. Without an account, **Use your own app** is right below it.
 - Then press **Sign in with Google** (or **Sign in with Microsoft** for Outlook). Mail and calendar connect together.
 - Other sources: **Connections**, then **+ Add**. Your own Google client or Entra app: `assistant connect` in a terminal.
 - Check everything with `assistant doctor`. It prints a fix for each problem.

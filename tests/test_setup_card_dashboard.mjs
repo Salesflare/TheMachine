@@ -19,7 +19,7 @@ const now=new Date().toISOString();
 // Real codes for the store links (qr.py, as assistant.phone_app_nudge makes them)
 const codes=JSON.parse(execFileSync('python3',['-c','import json,qr;print(json.dumps([qr.encode(u) for u in ("https://apps.example.test/ios","https://play.example.test/android","https://example.test/app")]))'],{cwd:new URL('..',import.meta.url)}).toString());
 const STORE={ios:'https://apps.example.test/ios',android:'https://play.example.test/android',phones:0,qr_ios:codes[0],qr_android:codes[1]};
-const FRESH={closed:false,dismissed:[],phones:0,whatsapp:false,mail_accounts:1,add:'google',more:false};
+const FRESH={closed:false,dismissed:[],phones:0,whatsapp:false,calendar:true,mail_accounts:1,add:'google',more:false};
 let setupHints=[],phoneStore=STORE,setup={...FRESH},manage='https://app.example.test/setup',firstLook=null;
 let connectors=[{id:'mail',service:'gmail',email:'owner@example.org',display_name:'Mail',status:'ok'}];
 const status=()=>({suggestions:[{id:'ab'.repeat(8),title:'Reply to Robin about the garden plan',body:'Robin asked for the dates.',status:'pending',scope:'personal',created_at:now,event_ids:[1]}],
@@ -284,9 +284,10 @@ try{
   await fits(page,width+' hint');await shot(page,`setup-hint-${width}-${scheme}`);
   await context.close()}
 
- // From the first visit, but never while setting up: no source yet, or the first look still running.
+ // From the first visit, but never while setting up: no source yet (then only the first step, Connect your mail:
+ // test_setup_mail_first_dashboard.mjs), or the first look still running.
  {reset();connectors=[];const {context,page}=await open();
-  assert.equal((await card(page)).shown,false,'no source yet');
+  assert.deepEqual(await page.evaluate(()=>{const el=document.querySelector('#setup-card');return [el.classList.contains('mail-first'),el.querySelectorAll('.setup-row').length]}),[true,0],'no source yet');
   connectors=[{id:'mail',service:'gmail',email:'owner@example.org',display_name:'Mail',status:'ok'}];await page.evaluate(()=>refresh());
   assert.equal((await card(page)).shown,true,'right away, no first Do it needed');
   await context.close()}

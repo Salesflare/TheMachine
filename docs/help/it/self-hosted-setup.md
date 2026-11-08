@@ -28,7 +28,7 @@ Il programma di installazione trova i tuoi account, li collega uno alla volta e 
 
 ## Dopo l'installazione
 
-- Abbinala al tuo account: nella dashboard, **Connessioni**, **+ Aggiungi**, scegli Gmail e premi **Abbina questa Machine**.
+- Collega la tua posta: in cima ad **Attività**, premi **Gmail** (o **Outlook**), poi **Abbina questa Machine** per abbinarla al tuo account. Senza account, **Usa la tua app** è subito sotto.
 - Poi premi **Accedi con Google** (o **Accedi con Microsoft** per Outlook). Posta e calendario si collegano insieme.
 - Altre fonti: **Connessioni**, poi **+ Aggiungi**. Il tuo client Google o la tua app Entra: `assistant connect` in un terminale.
 - Controlla tutto con `assistant doctor`. Mostra una soluzione per ogni problema.
