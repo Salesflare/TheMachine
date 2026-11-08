@@ -35,11 +35,15 @@ class SearchAsk(unittest.TestCase):
     def setUp(self):
         tg.Graph.setUp(self)
         self.app.config = CONFIG
-        self.prompts = []
+        self.prompts, self.plans = [], []
         self.reply = 'Kim said the pilot moves to March [1].'
+        self.plan = {'question': True, 'person': None, 'said_by': 'both', 'from': None, 'to': None, 'about': ''}
         search_ask._asked.clear()
 
         def model(config, text):
+            if 'reply with one JSON object' in text:  # the first turn: what the question means
+                self.plans.append(text)
+                return json.dumps(self.plan)
             self.prompts.append(text)
             if isinstance(self.reply, Exception):
                 raise self.reply
@@ -131,7 +135,7 @@ class SearchAsk(unittest.TestCase):
         self.assertLessEqual(len(long['answer']), search_ask.ANSWER_CHARS + 1)
         self.assertEqual([s['id'] for s in long['sources']], [1])
         self.assertIsNone(search_ask.parse(' NONE. ', found))
-        self.assertEqual(len(search_ask.parse('Nothing in these messages says so.', found)['sources']), 3)  # none cited: the best few
+        self.assertEqual(search_ask.parse('Nothing in these messages says so.', found)['sources'], [])  # none cited: no sources
         with mock.patch.object(search_ask, 'PER_HOUR', 1):
             search_ask._asked.clear()
             search_ask.ask('what changed here?', rows, lambda p: 'A [1].')
@@ -145,6 +149,107 @@ class SearchAsk(unittest.TestCase):
         self.app.chat_models = lambda read=True: None  # the model list not read yet: OpenClaw's own level
         with mock.patch.object(app_ask, 'background_model', return_value=None):
             self.assertEqual(self.app.search_ask_model()[1], None)
+
+
+# Today is Friday 2026-10-16 (tg.NOW): last week is Monday 5 to Sunday 11 October, 5 to 11 days ago.
+LAST_WEEK = {'from': '2026-10-05', 'to': '2026-10-11'}
+
+
+class PersonAndDays(unittest.TestCase):
+    """A question about someone and some days ("what did Andrea say last week?") reads that person's messages from those
+    days, found through the Graph, never any text with the name in it or messages from another time."""
+    add, ask = tg.Graph.add, SearchAsk.ask
+
+    def setUp(self):
+        SearchAsk.setUp(self)
+        self.add(work_mail(7, 'Andrea Vale <andrea@initech.example>', 'Rollout', 'The rollout slips to Thursday.'),
+                 work_mail(20, 'Andrea Vale <andrea@initech.example>', 'Invoices', 'Old note about invoices.'),
+                 work_mail(6, 'Andreas Berg <andreas@globex.example>', 'Pilot', 'Andreas here about the pilot.'),
+                 work_mail(6, 'Kim Vale <kim@initech.example>', 'Hello', 'Andrea said hi to everyone.'))
+        self.graph()
+
+    def graph(self):
+        with self.store.connect() as db:
+            db.isolation_level = None
+            graph.build(db, CONFIG, tg.NOW.isoformat())
+
+    def person(self, address):
+        with self.store.connect() as db:
+            return db.execute("SELECT id FROM graph_nodes WHERE kind='person' AND id=?", ('email:' + address,)).fetchone()[0]
+
+    def test_only_their_messages_from_those_days(self):
+        self.plan = {'question': True, 'person': 'Andrea', 'said_by': 'person', **LAST_WEEK, 'about': ''}
+        self.reply = 'On Fri 9 Oct Andrea said the rollout slips to Thursday [1].'
+        found = self.ask('what did Andrea say last week?')
+        prompt = self.prompts[-1]
+        self.assertIn('The rollout slips to Thursday.', prompt)
+        self.assertNotIn('Old note about invoices', prompt)  # her message from another week
+        self.assertNotIn('Andreas here', prompt)  # Andreas is another name
+        self.assertNotIn('Andrea said hi', prompt)  # someone else's message with her name in it
+        self.assertIn('Andrea Vale', prompt)
+        self.assertIn('2026-10-05 to', prompt)
+        self.assertEqual([s['title'] for s in found['sources']], ['Rollout'])
+        self.assertEqual(found['messages'], [])  # nothing else it read
+
+    def test_the_days_are_the_owners_own(self):
+        tz = tg.dt.timezone(tg.dt.timedelta(hours=2))
+        start, until = search_ask.bounds(tg.dt.date(2026, 10, 5), tg.dt.date(2026, 10, 11), tz)
+        self.assertEqual((start, until), ('2026-10-04T22:00:00+00:00', '2026-10-11T22:00:00+00:00'))  # midnight to midnight there
+        self.assertEqual(search_ask.last_week(tg.dt.date(2026, 11, 8)), (tg.dt.date(2026, 10, 26), tg.dt.date(2026, 11, 1)))
+        self.assertEqual(search_ask.last_week(tg.dt.date(2026, 11, 9)), (tg.dt.date(2026, 11, 2), tg.dt.date(2026, 11, 8)))
+        got = search_ask.parse_plan('Sure: {"question": true, "person": "Andrea", "said_by": "person", "from": "2026-10-11", "to": "2026-10-05", "about": ""}')
+        self.assertEqual((got['person'], got['start'], got['end']), ('Andrea', tg.dt.date(2026, 10, 5), tg.dt.date(2026, 10, 11)))
+        self.assertIsNone(search_ask.parse_plan('no idea'))
+        self.assertFalse(search_ask.parse_plan('{"question": false}')['question'])
+
+    def test_a_time_without_a_person_keeps_only_those_days(self):
+        self.add(work_mail(1, 'Lee Park <lee@initech.example>', 'Pilot again', 'The pilot is on track.'))
+        self.plan = {'question': True, 'person': None, 'said_by': 'both', 'from': '2026-10-12', 'to': '2026-10-16', 'about': 'pilot'}
+        self.ask('what changed about the pilot this week?')
+        self.assertIn('The pilot is on track.', self.prompts[-1])
+        self.assertNotIn('Andreas here about the pilot', self.prompts[-1])  # 6 days ago: last week
+        self.assertIn('moves to March', self.prompts[-1])  # Kim's, 2 days ago: this week too
+
+    def test_nothing_in_those_days_says_so_and_gives_their_latest(self):
+        self.plan = {'question': True, 'person': 'Andrea', 'said_by': 'person', 'from': '2026-10-12', 'to': '2026-10-16', 'about': ''}
+        self.reply = 'Andrea Vale sent nothing this week. Her latest, on Fri 9 Oct, said the rollout slips to Thursday [1].'
+        found = self.ask('what did Andrea say this week?')
+        prompt = self.prompts[-1]
+        self.assertIn('There are no messages from Andrea Vale', prompt)
+        self.assertIn('Say that plainly first', prompt)
+        self.assertIn('The rollout slips to Thursday.', prompt)  # her latest, with its date
+        self.assertIn('Fri 2026-10-09', prompt)
+        self.assertNotIn('Old note about invoices', prompt)
+        self.assertEqual([s['title'] for s in found['sources']], ['Rollout'])
+
+    def test_several_with_the_name_are_named(self):
+        self.add(work_mail(8, 'Andrea Moss <andrea@moss.example>', 'Venue', 'The venue is booked.'))
+        self.graph()
+        self.plan = {'question': True, 'person': 'Andrea', 'said_by': 'person', **LAST_WEEK, 'about': ''}
+        self.ask('what did Andrea say last week?')
+        prompt = self.prompts[-1]
+        self.assertIn('Other people with that name: ', prompt)
+        self.assertIn('Andrea Moss', prompt)
+        self.assertIn('Andrea Vale', prompt)
+        self.assertNotIn('Andreas Berg', prompt)
+
+    def test_a_suggested_question_comes_with_its_person_and_days(self):
+        self.add(work_mail(2, 'Noor Lind <noor@initech.example>', 'Lunch again', 'Lunch next week?'))
+        self.graph()
+        andrea, noor = self.person('andrea@initech.example'), self.person('noor@initech.example')
+        got = self.app.action('search_ask_examples', {'people': [noor, andrea, 'email:nobody@x.example']}, owner_dashboard=True)
+        self.assertEqual([(p['name'], p['from'], p['to']) for p in got['people']], [('Andrea Vale', *LAST_WEEK.values())])  # Noor wrote this week only
+        found = self.app.action('search_ask', {'query': 'what did Andrea say last week?', 'plan': {'person': andrea, **LAST_WEEK}}, owner_dashboard=True)
+        self.assertEqual(self.plans, [])  # no first turn: it knows who and when
+        self.assertIn('The rollout slips to Thursday.', self.prompts[-1])
+        self.assertTrue(found['answer'])
+        self.assertIn('search_ask_examples', a.DASHBOARD_ACTIONS)
+        self.assertIn('search_ask_examples', a.OWNER_ACTIONS)
+
+    def test_not_a_question_takes_one_small_turn(self):
+        self.plan = {'question': False, 'person': 'Andrea', 'said_by': 'both', 'from': None, 'to': None, 'about': ''}
+        self.assertEqual(self.ask('andrea vale invoices'), {'none': True})
+        self.assertEqual((len(self.plans), self.prompts), (1, []))
 
 
 if __name__ == '__main__':

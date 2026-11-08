@@ -43,7 +43,7 @@ const send=async(page,cid,rev)=>{await page.locator(`#task-${cid} [data-smart="$
 const toastText=page=>page.locator('#toast.show').textContent();
 const palFind=async(page,q,width)=>{if(width<1024)await page.locator('#find-open').click();else await page.keyboard.press('Control+k');await page.locator('#palette #pal-q').waitFor();
  await page.locator('#pal-q').fill(q);await page.waitForFunction(()=>!/Looking…/.test(document.querySelector('#pal-list')?.textContent||''));
- return page.locator('#pal-list').evaluate(l=>{const out=[];let g='';for(const n of l.children){if(n.classList.contains('pal-group'))g=n.textContent;else if(n.classList.contains('pal-item'))out.push([g,n.querySelector('.pal-label').textContent,n.querySelector('small')?.textContent||''])}return out.filter(([g])=>g!=='Messages')})};
+ return page.locator('#pal-list').evaluate(l=>{const out=[];let g='';for(const n of l.children){if(n.classList.contains('pal-group'))g=n.textContent;else if(n.classList.contains('pal-item'))out.push([g,n.querySelector('.pal-label').textContent,n.querySelector('small')?.textContent||''])}return out.filter(([g,label])=>g!=='Messages'&&!label.startsWith('See all results'))})};
 try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
  for(const [width,height] of [[1440,900],[390,844]]){reset();const mobile=width<600;

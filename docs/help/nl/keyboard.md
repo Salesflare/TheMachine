@@ -16,6 +16,10 @@ Tik op een telefoon op het zoekicoon in de bovenste balk.
 
 Typ een vraag, zoals “wat zei Kim over de pilot?”, en boven de resultaten verschijnt een kort antwoord uit je eigen mail en berichten, met een link naar elk bericht dat het gebruikte. Het antwoordt in de taal waarin je vraagt, alleen uit het gebied dat je bekijkt (Alle, Werk of Privé). Een naam of een paar trefwoorden zoeken gewoon. Het antwoord verstuurt nooit iets en maakt geen to-do, en het heeft een model nodig (Instellingen, Model).
 
+Vraag je naar iemand en een tijd, zoals “wat zei Kim vorige week?”, dan leest het alleen de berichten van of met die persoon op die dagen, in jouw tijdzone. Stuurde die toen niets, dan zegt het dat en geeft het hun laatste bericht met de datum.
+
+Hebben meerdere mensen die naam, dan zegt het wie het bedoelt. De andere berichten die het las staan onder Berichten. De vraag die een lege zoekopdracht voorstelt, is altijd een waar berichten voor zijn.
+
 ## Sneltoetsen
 
 Druk op `?` voor **Sneltoetsen**, de volledige lijst voor je computer.

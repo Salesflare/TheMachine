@@ -14,7 +14,11 @@ On a phone, tap the search icon in the top bar.
 
 ## Ask a question
 
-Type a question, like “what did Kim say about the pilot?”, and a short answer from your own mail and messages shows above the results, with a link to each message it used. It answers in the language you ask in, only from the area you're viewing (All, Work or Personal). A name or a few keywords just search. The answer never sends anything or adds a to-do, and it needs a model (Settings, Model).
+Type a question, like “what did Kim say about the pilot?”, and a short answer from your own mail and messages shows above the results, with a link to each message it used. It answers in the language you ask in, only from the area you're viewing (All, Work or Personal). A name or a few keywords just search.
+
+Ask about someone and a time, like “what did Kim say last week?”, and it reads only the messages from or with that person on those days, in your time zone. If they sent nothing then, it says so and gives their latest message with its date.
+
+If several people have that name, it says which one it means. The other messages it read show under Messages. The question an empty search suggests is only one it has messages for. The answer never sends anything or adds a to-do, and it needs a model (Settings, Model).
 
 ## Shortcuts
 

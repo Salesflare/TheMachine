@@ -9,6 +9,8 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // Ask from search (search_ask.py) in the palette, on made-up data: the usual results show at once; a question gets a
 // short answer above them that comes in a few words at a time, with its messages as rows that open the message;
 // keywords get nothing; it asks for the area in view; a failure says so in one line; without a model it stops asking.
+// The question to try is only one the Machine said it can answer (search_ask_examples), and picking it asks at once
+// with its person and days; while it works, three dots; a question about someone lists their messages under it.
 // SEARCH_ASK_SHOTS=dir saves shots at 390 and 1440, light and dark.
 const dashboard=await dashboardPage();
 const now=new Date(),ago=d=>new Date(now-d*864e5).toISOString();
@@ -17,8 +19,9 @@ const MSGS=[
  {id:41,account_id:'work',kind:'gmail.message',title:'Pilot timing',occurred_at:ago(2),body:'The pilot moves to March.',metadata:{from:'Kim Vale <kim@initech.example>'}},
  {id:42,account_id:'work',kind:'slack.message',title:'#pilot',occurred_at:ago(1),body:'Budget stays as it is.',metadata:{channel_name:'pilot',sender_display:'Lee Park'}}];
 const ANSWER='Kim said the pilot moves to March, and Lee confirmed the budget stays the same. Nothing changes for the kickoff on the 4th.';
-let asks,mode,release;
-const reset=()=>{asks=[];mode='answer';release=null};reset();
+let asks,mode,release,examples;
+const reset=()=>{asks=[];mode='answer';release=null;examples=[]};reset();
+const LAST={from:'2026-10-26',to:'2026-11-01'};
 const state=()=>({suggestions:[{id:id(1),title:'Send Kim the pilot plan',body:'',status:'pending',scope:'work',created_at:ago(0),event_ids:[41],people:[{id:'p1',name:'Kim Vale'}]}],promises:[],suggestion_counts:{},
  decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},connectors:[],fleet:{on:false,fleets:[]},model_status:{model:'acme/lm-2'}});
 const server=createServer(async(req,res)=>{let body='';for await(const c of req)body+=c;const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
@@ -29,19 +32,22 @@ const server=createServer(async(req,res)=>{let body='';for await(const c of req)
  if(url.pathname==='/api/originals'){const m=MSGS.find(x=>String(x.id)===url.searchParams.get('event'));
   res.end(JSON.stringify({originals:m?[{event_id:m.id,kind:'email',from:m.metadata.from,occurred_at:m.occurred_at,subject:m.title,body:m.body}]:[]}));return}
  if(url.pathname==='/api/action'){const r=JSON.parse(body||'{}');
+  if(r.action==='search_ask_examples'){examples.push(r.args);
+   res.end(JSON.stringify({people:r.args.people.includes('p1')?[{id:'p1',name:'Kim Vale',...LAST}]:[]}));return}
   if(r.action==='search_ask'){asks.push(r.args);
    if(release)await release;
    const q=r.args.query;
    res.end(JSON.stringify(mode==='off'?{off:true}:mode==='error'?{error:true}:/^(what|did|how|wat)\b/i.test(q)?{answer:ANSWER,sources:[
-    {id:41,kind:'gmail.message',title:'Pilot timing',from:'Kim Vale',at:MSGS[0].occurred_at},{id:42,kind:'slack.message',title:'#pilot',from:'Lee Park',at:MSGS[1].occurred_at}]}:{none:true}));return}
+    {id:41,kind:'gmail.message',title:'Pilot timing',from:'Kim Vale',at:MSGS[0].occurred_at},{id:42,kind:'slack.message',title:'#pilot',from:'Lee Park',at:MSGS[1].occurred_at}],
+    ...(mode==='scoped'?{sources:[{id:41,kind:'gmail.message',title:'Pilot timing',from:'Kim Vale',at:MSGS[0].occurred_at}],messages:[{id:43,kind:'gmail.message',title:'Kickoff date',from:'Kim Vale',at:ago(3)}]}:{})}:{none:true}));return}
   res.end('{}');return}
  res.statusCode=url.pathname.startsWith('/brand/')?404:200;res.end('{}')});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const base='http://127.0.0.1:'+server.address().port+'/';
 const shots=process.env.SEARCH_ASK_SHOTS;if(shots)await mkdir(shots,{recursive:true});
 const errors=[];let browser;
-const open=async(width,height,colorScheme='light')=>{const mobile=width<600;reset();
- const context=await browser.newContext({viewport:{width,height},isMobile:mobile,hasTouch:mobile,locale:'en-US',timezoneId:'Europe/Brussels',colorScheme});
+const open=async(width,height,colorScheme='light',reducedMotion='no-preference')=>{const mobile=width<600;reset();
+ const context=await browser.newContext({viewport:{width,height},isMobile:mobile,hasTouch:mobile,locale:'en-US',timezoneId:'Europe/Brussels',colorScheme,reducedMotion});
  await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
  const page=await context.newPage();page.on('pageerror',e=>errors.push(width+': '+e.message));
  await page.goto(base);await page.locator('#task-'+id(1)).waitFor();return {context,page}};
@@ -57,11 +63,16 @@ try{
   assert.equal(await page.locator('#side-find').getAttribute('placeholder'),'Search or ask');
   await palOpenNow(page,1440);
   assert.equal(await page.locator('#pal-q').getAttribute('placeholder'),'Search or ask anything');
+  await page.locator('#pal-hint').waitFor();assert.deepEqual(examples[0],{people:['p1'],area:null},'asks which of the to-dos\' people it can answer about');
   const tries=[await page.locator('#pal-hint').textContent()];await page.keyboard.press('Escape');
-  await palOpenNow(page,1440);tries.push(await page.locator('#pal-hint').textContent());
-  assert.deepEqual(tries.sort(),['Try: what changed this week?','Try: what did Kim say last week?']);
-  await page.locator('#pal-hint').click();assert.match(await page.locator('#pal-q').inputValue(),/^what (changed|did Kim)/);
+  await palOpenNow(page,1440);await page.locator('#pal-hint').waitFor();tries.push(await page.locator('#pal-hint').textContent());
+  assert.deepEqual(tries,['Try: what did Kim say last week?','Try: what did Kim say last week?'],'only a question it has messages for');
+  assert.equal(examples.length,1,'asked once, not on every open');
+  await page.locator('#pal-hint').click();assert.equal(await page.locator('#pal-q').inputValue(),'what did Kim say last week?');
   assert.ok(await page.locator('#pal-hint').isHidden(),'gone once there is text');
+  await settled(()=>asks.length===1,true,'asked');
+  assert.deepEqual(asks[0].plan,{person:'p1',...LAST,said_by:'person'},'with its person and days: no first turn');
+  await page.keyboard.press('Escape');asks.length=0;
   await page.keyboard.press('Escape');await palOpenNow(page,1440);
   // Keywords: the results at once; asked, nothing back, nothing shown
   await page.keyboard.type('pilot march kickoff');
@@ -72,8 +83,11 @@ try{
   // A question: the results first, Looking… (it ends in ?), then the answer above them, a few words at a time
   let go;release=new Promise(r=>go=r);
   await page.locator('#pal-q').fill('what did kim say about the pilot?');
-  await page.locator('#pal-list .pal-group',{hasText:'Messages'}).waitFor();
-  await page.locator('#pal-answer',{hasText:'Looking…'}).waitFor();
+  await page.locator('#pal-list .pal-item',{hasText:'See all results'}).waitFor();
+  await page.locator('#pal-answer .pal-dots').waitFor();
+  assert.ok(!(await groups(page)).includes('Messages'),'while it answers: no Messages heading over See all results alone');
+  assert.equal(await page.locator('#pal-answer').getAttribute('role'),'status');assert.equal(await page.locator('#pal-answer .pal-sr').textContent(),'Looking…');
+  assert.notEqual(await page.locator('#pal-answer .pal-dots i').first().evaluate(e=>getComputedStyle(e).animationName),'none','the dots move');
   assert.equal((await groups(page))[0],'Answer');
   assert.ok((await labels(page)).length>0,'the results are there while it answers');
   const selBefore=await page.locator('#pal-list [aria-selected="true"] .pal-label').textContent();
@@ -91,6 +105,11 @@ try{
   await page.locator('#pal-list .pal-item',{hasText:'Pilot timing'}).first().click();  // the answer's own row
   await page.locator('#email-dialog[open]').waitFor();assert.equal(await page.locator('#email-title').textContent(),'Pilot timing');
   await page.keyboard.press('Escape');
+  // A question about someone: the other messages it read are the Messages, not keyword hits from another time
+  mode='scoped';await palOpenNow(page,1440);await page.locator('#pal-q').fill('what did kim say this week?');
+  await page.waitForFunction(t=>document.querySelector('#pal-answer')?.textContent===t,ANSWER);
+  {const l=await labels(page);assert.deepEqual(l.slice(0,2),['Pilot timing','Kickoff date']);assert.ok(!l.includes('#pilot'),'no keyword hit');}
+  mode='answer';await page.keyboard.press('Escape');
   // The area in view goes with it
   await page.evaluate(()=>{scopeFilter='work'});await palOpenNow(page,1440);await page.keyboard.type('what about the pilot budget');
   await settled(()=>asks.at(-1)?.query==='what about the pilot budget',true,'asked');assert.equal(asks.at(-1).area,'work');
@@ -117,7 +136,23 @@ try{
   await page.waitForFunction(t=>document.querySelector('#pal-answer')?.textContent===t,ANSWER);
   // the answer reads in full and fits the palette, never wider than the screen
   const box=await page.locator('#pal-answer').boundingBox();assert.ok(box.x>=0&&box.x+box.width<=w,'fits '+w);
+  assert.ok(!(await groups(page)).includes('Messages'),'its messages are the answer\'s: no empty Messages heading');
+  // a solid panel with room under its last row, so nothing behind reads as part of it
+  const edge=await page.evaluate(()=>{const d=document.querySelector('#palette'),l=document.querySelector('#pal-list'),last=[...l.querySelectorAll('.pal-item')].at(-1);
+   return {bg:getComputedStyle(d).backgroundColor,gap:d.getBoundingClientRect().bottom-last.getBoundingClientRect().bottom}});
+  assert.ok(!/rgba\(.*, 0(\.\d+)?\)$/.test(edge.bg)&&edge.bg!=='transparent','opaque '+edge.bg);assert.ok(edge.gap>=8,'room under the last row at '+w+': '+edge.gap);
   if(shots)await page.screenshot({path:`${shots}/search-ask-${w}-${colorScheme}.png`});
+  await context.close()}
+ // Reduced motion: the dots stand still
+ {const {context,page}=await open(1440,900,'light','reduce');release=new Promise(()=>{});await palOpenNow(page,1440);
+  await page.keyboard.type('what did kim say about the pilot?');await page.locator('#pal-answer .pal-dots').waitFor();
+  assert.equal(await page.locator('#pal-answer .pal-dots i').first().evaluate(e=>getComputedStyle(e).animationName),'none');
+  if(shots)for(const n of [0,1]){await page.waitForTimeout(300);await page.locator('#palette').screenshot({path:`${shots}/search-dots-reduced-${n}.png`})}
+  await context.close()}
+ // The dots, two frames apart
+ if(shots){const {context,page}=await open(1440,900);release=new Promise(()=>{});await palOpenNow(page,1440);
+  await page.keyboard.type('what did kim say about the pilot?');await page.locator('#pal-answer .pal-dots').waitFor();
+  for(const n of [0,1]){await page.waitForTimeout(n?400:0);await page.locator('#pal-answer').screenshot({path:`${shots}/search-dots-${n}.png`})}
   await context.close()}
  assert.deepEqual(errors,[]);
  console.log('search ask dashboard ok');

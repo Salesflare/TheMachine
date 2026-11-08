@@ -86,7 +86,7 @@ function firstLookEnd(){const d=state.first_look_done;if(!d||d.todos>0)return ''
 function firstLookNote(shown){const d=state.first_look_done;if(!d||!d.todos||d.acted||!shown||scopeFilter!=='all')return '';const kinds=flList(d.kinds,FL_KINDS);if(!kinds)return '';
  return html`<p class="first-look-note">${t(['Read {} from the past week and found {} to-do.','Read {} from the past week and found {} to-dos.'],kinds,d.todos)}</p>`}
 $('#suggestions').addEventListener('click',e=>{const b=e.target.closest('[data-fl-next]');if(!b)return;const k=b.dataset.flNext;
- if(k==='talk'){talkMain();return}if(k==='todo'){ncOpen();return}if(k==='ask'){palOpen();pal.hint=t('what changed this week?');palTry();return}showTab('health','add');connectAdd(true)});
+ if(k==='talk'){talkMain();return}if(k==='todo'){ncOpen();return}if(k==='ask'){palOpen();pal.hint={q:t('what changed this week?')};palTry();return}showTab('health','add');connectAdd(true)});
 function renderFirstLook(live){const i=firstLookInfo(live),el=$('#first-look'),empty=$('#suggestions .all-clear');
 if(empty){el.hidden=true;if(i){empty.classList.add('first-look-empty');empty.replaceChildren(...firstLookInner(i))}else if(empty.classList.contains('first-look-empty'))refresh();return}
 if(i){el.replaceChildren(make('strong',{},i.title),...firstLookBar(i),flNamesNode(i),i.wait?make('small',i.first?{class:'fl-first'}:{},i.wait):'');el.hidden=false}else el.hidden=true}

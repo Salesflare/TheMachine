@@ -16,6 +16,10 @@ Auf dem Handy tippst du auf das Suchsymbol in der oberen Leiste.
 
 Tippe eine Frage, etwa „Was hat Kim über das Pilotprojekt gesagt?“, und über den Ergebnissen erscheint eine kurze Antwort aus deinen eigenen Mails und Nachrichten, mit einem Link zu jeder verwendeten Nachricht. Sie antwortet in der Sprache deiner Frage, nur aus dem Bereich, den du gerade ansiehst (Alle, Arbeit oder Privat). Ein Name oder ein paar Stichwörter suchen einfach. Die Antwort sendet nie etwas und legt kein To-do an, und sie braucht ein Modell (Einstellungen, Modell).
 
+Fragst du nach einer Person und einer Zeit, etwa „Was hat Kim letzte Woche gesagt?“, liest sie nur die Nachrichten von oder mit dieser Person an diesen Tagen, in deiner Zeitzone. Hat sie damals nichts geschickt, sagt die Antwort das und nennt ihre letzte Nachricht mit Datum.
+
+Haben mehrere Personen diesen Namen, sagt sie, welche gemeint ist. Die anderen gelesenen Nachrichten stehen unter Nachrichten. Die Frage, die eine leere Suche vorschlägt, ist immer eine, zu der es Nachrichten gibt.
+
 ## Tastenkürzel
 
 Drück `?` für **Tastenkürzel**, die vollständige Liste für deinen Computer.

@@ -93,8 +93,9 @@ try{
   await page.locator('#pal-list .pal-group',{hasText:'Organizations'}).waitFor();
   const lateIn=page.waitForResponse(r=>r.url().includes('/api/graph?q=ac')&&!r.url().includes('acme'));late();await (await lateIn).finished();
   await page.evaluate(()=>new Promise(r=>setTimeout(r)));  // the page has had the late answer
-  // To-dos: Pat's reply goes to pat@acme.example (a to-do matches by who it goes to); Messages: the message search, last
-  assert.deepEqual(await groups(page),['To-dos','Organizations','Projects','Messages'],'no People from the stale answer');
+  // To-dos: Pat's reply goes to pat@acme.example (a to-do matches by who it goes to); no Messages heading over See all results alone
+  assert.deepEqual(await groups(page),['To-dos','Organizations','Projects'],'no People from the stale answer');
+  assert.match(await page.locator('#pal-list .pal-item').last().textContent(),/See all results/);
   assert.ok(graphQueries.includes('acme'));
   await page.locator('#pal-q').fill('contract');await page.locator('#pal-list .pal-group',{hasText:'To-dos'}).waitFor();
   assert.ok((await labels(page)).includes('Send Sam the signed contract'));
