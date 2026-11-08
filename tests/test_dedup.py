@@ -62,6 +62,25 @@ class SamePerson(unittest.TestCase):
         self.build()
         self.assertEqual(len(self.people()), 1)
 
+    def test_a_pair_merges_made_one_already_is_not_asked_before_the_rebuild(self):
+        # Merge on A and B, then on B and C: A and C are one person already, so the list stops asking at once (tapped,
+        # it came back on the next redraw until the worker's rebuild).
+        self.add(tg.mail(3, 'Sam Rivera <sam.rivera@one.example>', 'sam@acme.com'), tg.mail(2, 'Sam Rivera <rivera@two.example>', 'sam@acme.com'),
+                 tg.mail(1, 'Sam Rivera <sam@three.example>', 'sam@acme.com'))
+        self.build()
+        one, two, three = 'email:sam.rivera@one.example', 'email:rivera@two.example', 'email:sam@three.example'
+        listed = lambda: {frozenset((s['a']['id'], s['b']['id'])) for s in self.app.graph_action({})['same_person']}
+        self.assertEqual(listed(), {frozenset(p) for p in ((one, two), (one, three), (two, three))})
+        self.app.graph_worker_on, self.app.graph_dirty = True, tg.a.threading.Event()  # rebuilds go to the graph worker
+        self.app.graph_build = lambda **k: None
+        self.say(one, two, True)
+        self.say(two, three, True)
+        self.assertEqual(listed(), set())
+        self.say(one, three, True)  # the old list's Merge on it: quiet
+        del self.app.graph_build
+        self.build()
+        self.assertEqual(len(self.people()), 1)
+
     def test_a_telegram_contact_merges_and_an_already_same_pair_is_no_error(self):
         # Merge on a Telegram contact said "Merge two different person ids from graph results": tg: wasn't a person id.
         self.add(tg.chat(2, '00000000031', 'Noor Haddad'),

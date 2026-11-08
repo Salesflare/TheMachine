@@ -100,6 +100,9 @@ shared besides (the same company domain, people seen with both, a project, the s
 
 - The person page asks it quietly ("Same person as …?"), and People lists them under **Same person?** with **Merge** and
   **Not the same**. Not the same is remembered (`graph_merges` `same=0`).
+- An answered pair keeps its place in the list, its answer instead of the buttons, until the list is opened again, so
+  quick taps never move rows or bring a pair back. A pair that merges already made one (A and B, then B and C: A and C)
+  is not asked, and a second Merge on a merged pair, people or organizations, is a quiet success.
 - **Merge all** merges every listed pair in one go (`graph_same_all`); one Undo splits that batch and asks again.
 - A merged person keeps every identity, signal, role, note, project and photo. Their page lists why they are one
   (**Joined from N identities**), each join with **Undo**, which splits them for good. An old link to one of their
