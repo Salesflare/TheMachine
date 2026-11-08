@@ -9,6 +9,7 @@ import test_fleet as tf
 from test_fleet import NOW, a, mail
 
 fleet, family = a.fleet, a.fleet.family
+family_done = a.fleet.family_done
 FAM = tfam.FAM
 BILL = 'Please pay EUR 37.77 to BE71 0961 2345 6769 with reference +++090/9337/55493+++ by the 19th.'
 BILL_KEY = 'bill:BE71096123456769|090933755493'
@@ -70,12 +71,12 @@ class FamilyDone(unittest.TestCase):
         return json.loads(found) if found else None
 
     def test_a_bill_is_its_iban_and_payment_reference_both_checked(self):
-        self.assertEqual(family.bill_of(BILL), BILL_KEY[5:])
-        self.assertEqual(family.bill_of('IBAN BE71096123456769, ref. RF18 5390 0754 7034'), 'BE71096123456769|RF18539007547034')
-        self.assertIsNone(family.bill_of('Pay to BE71 0961 2345 6769.'))  # an account alone isn't one bill: rent, every month
-        self.assertIsNone(family.bill_of('BE71 0961 2345 6768 +++090/9337/55493+++'))  # not a real IBAN
-        self.assertIsNone(family.bill_of('BE71 0961 2345 6769 +++090/9337/55494+++'))  # nor a real reference
-        self.assertIsNone(family.bill_of(''))
+        self.assertEqual(family_done.bill_of(BILL), BILL_KEY[5:])
+        self.assertEqual(family_done.bill_of('IBAN BE71096123456769, ref. RF18 5390 0754 7034'), 'BE71096123456769|RF18539007547034')
+        self.assertIsNone(family_done.bill_of('Pay to BE71 0961 2345 6769.'))  # an account alone isn't one bill: rent, every month
+        self.assertIsNone(family_done.bill_of('BE71 0961 2345 6768 +++090/9337/55493+++'))  # not a real IBAN
+        self.assertIsNone(family_done.bill_of('BE71 0961 2345 6769 +++090/9337/55494+++'))  # nor a real reference
+        self.assertIsNone(family_done.bill_of(''))
 
     def test_only_done_goes_out_and_only_as_a_code(self):
         self.todo('paid', 'completed', '<letter-1@school.example>', BILL, decided='complete')

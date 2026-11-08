@@ -73,46 +73,6 @@ def _when(value):
     return None
 
 
-IBAN = re.compile(r'\b([A-Z]{2}\d{2}(?: ?[A-Z0-9]{4}){2,7}(?: ?[A-Z0-9]{1,3})?)\b')
-OGM = re.compile(r'(?:\+{3}|\*{3})\s*(\d{3})\s*/\s*(\d{4})\s*/\s*(\d{5})\s*(?:\+{3}|\*{3})')  # a Belgian structured reference
-RF = re.compile(r'\bRF\s?(\d{2})((?: ?[A-Z0-9]){1,21})\b')  # an ISO 11649 creditor reference
-
-
-def _mod97(text):
-    """ISO 7064 mod 97 of letters (A=10 ... Z=35) and digits."""
-    return int(''.join(str(int(c, 36)) for c in text)) % 97
-
-
-def _iban(raw):
-    """The IBAN at the start of raw, if one checks out: the pattern may run on into a next word ("... 6909 PAYEE")."""
-    value = raw.replace(' ', '')
-    return next((value[:n] for n in range(min(len(value), 34), 14, -1) if _mod97(value[4:n] + value[:4]) == 1), None)
-
-
-def bill_of(text):
-    """The bill a text is about, as 'IBAN|reference', when it gives both and both check out: an IBAN (mod 97) and a
-    payment reference (a Belgian +++123/4567/89012+++ or an RF creditor reference). Two members' to-dos for the same
-    bill match on it, whatever email each came from. None without both: an IBAN alone (a supplier's every invoice)
-    says too little."""
-    text = str(text or '').upper()
-    iban = next((found for found in (_iban(m.group(1)) for m in IBAN.finditer(text)) if found), None)
-    if not iban:
-        return None
-    reference = None
-    for m in OGM.finditer(text):
-        digits = ''.join(m.groups())
-        if (int(digits[:10]) % 97 or 97) == int(digits[10:]):
-            reference = digits
-            break
-    if not reference:
-        for m in RF.finditer(text):
-            body = m.group(2).replace(' ', '')
-            if _mod97(body + 'RF' + m.group(1)) == 1:
-                reference = 'RF' + m.group(1) + body
-                break
-    return f'{iban}|{reference}' if reference else None
-
-
 def parse(kind, question):
     """A member's to-do or plan in its fixed form, else None."""
     if not isinstance(question, dict):

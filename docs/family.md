@@ -85,7 +85,7 @@ it (see [Network](network.md)).
 `family.py` holds the shapes, the free-time arithmetic and the `Family` mixin of `fleet.Fleet`. To-dos and plans take
 the same path as Work requests (`fleet_requests.STAGED`). Dashboard operations: `family_free`, `family_todo`,
 `family_event`, `family_invite`, `family_invite_setting` and `family_still_needed`, from the owner's dashboard only. `family_invites.py` decides
-the invite suggestions (`test_family_invites.py`). Already did this is `Fleet.handled_round` with the Family's rule `done` (`family.DONE`, `family.bill_of`,
-`Fleet.family_sources`), shown from `suggestions.done_elsewhere`. Tests: `test_family.py`, `test_family_done.py`,
+the invite suggestions (`test_family_invites.py`). Already did this is `Fleet.handled_round` with the Family's rule `done` (`family.DONE`, and
+`family_done.py` for the match and the line), shown from `suggestions.done_elsewhere`. Tests: `test_family.py`, `test_family_done.py`,
 `test_family_dashboard.mjs`, `test_family_done_dashboard.mjs`. Try it on
 made-up data with `scripts/sandbox.sh family`.
