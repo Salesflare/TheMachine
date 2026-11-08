@@ -40,7 +40,9 @@ O link mostra só horários livres, pelas mesmas regras, e nada mais sobre você
 
 Para entrar na Network com uma Machine que você mesmo roda:
 
-1. Na sua página de conta em app.themachine.computer, toque em **Parear uma Machine auto-hospedada**. O código funciona uma vez, por 15 minutos.
-2. No seu computador, rode `assistant fleet-pair` com o código e reinicie.
+1. No painel da sua Machine, abra **Configurações** e toque em **Entrar na Network**.
+2. Na página que abrir, entre (ou crie sua conta) e confirme. Sua Machine recebe sozinha, sem reiniciar.
+
+O jeito com código continua funcionando: toque em **Parear uma Machine auto-hospedada** na sua página de conta em app.themachine.computer, depois rode `assistant fleet-pair` com o código no seu computador e reinicie. O código funciona uma vez, por 15 minutos.
 
 Até 5 Machines por conta. Cada uma pode ser desconectada ali.

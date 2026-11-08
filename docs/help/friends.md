@@ -40,7 +40,9 @@ The link shows only free times, by the same rules, and nothing else about you. I
 
 To join the Network from a Machine you run yourself:
 
-1. On your account page at app.themachine.computer, press **Pair a self-hosted Machine**. The code works once, for 15 minutes.
-2. On your computer, run `assistant fleet-pair` with the code, and restart.
+1. In your Machine's dashboard, open **Settings** and press **Join the Network**.
+2. On the page that opens, sign in (or make your account) and confirm. Your Machine picks it up by itself, no restart.
+
+The code way still works: press **Pair a self-hosted Machine** on your account page at app.themachine.computer, then run `assistant fleet-pair` with the code on your computer, and restart. The code works once, for 15 minutes.
 
 Up to 5 Machines per account. Each one can be disconnected there.

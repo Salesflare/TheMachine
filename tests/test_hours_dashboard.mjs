@@ -10,12 +10,16 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // set_work_hours; the device's theme and notifications sit there too. On a phone it fits the screen.
 const dashboard=await dashboardPage();
 let hours={days:[1,2,3,4,5],start:'08:00',end:'23:00',morning:'09:00',timezone:'Europe/Amsterdam',digest_at:'08:30',saveable:true};
-const saved=[];
+const saved=[],pairing=[];
 const server=createServer((req,res)=>{
  const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(url.pathname==='/api/status'){res.end(JSON.stringify({suggestions:[],promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],connectors:[],hours}));return}
- if(url.pathname==='/api/action'){let body='';req.on('data',c=>body+=c);req.on('end',()=>{const {action,args}=JSON.parse(body);if(action!=='set_work_hours'){res.end('{}');return}saved.push({action,args});
+ if(url.pathname==='/pair/fixture'){res.setHeader('Content-Type','text/html');res.end('<title>Pair</title>');return}
+ if(url.pathname==='/api/action'){let body='';req.on('data',c=>body+=c);req.on('end',()=>{const {action,args}=JSON.parse(body);
+   if(action==='ai_pair_start'){pairing.push(action);res.end(JSON.stringify({url:'http://127.0.0.1:'+server.address().port+'/pair/fixture',code:'ABCD-EFGH',state:'waiting'}));return}
+   if(action==='ai_pair_state'){pairing.push(action);res.end(JSON.stringify({state:'paired',reach:{paired:true}}));return}
+   if(action!=='set_work_hours'){res.end('{}');return}saved.push({action,args});
    if(!args.days.length){res.statusCode=400;res.end(JSON.stringify({error:'Pick at least one work day'}));return}
    hours={...args,saveable:true};res.end(JSON.stringify(hours))});return}
  if(url.pathname.startsWith('/brand/')||url.pathname.startsWith('/assets/')){res.statusCode=404;res.end();return}
@@ -45,6 +49,13 @@ try{
  assert.equal(await page.locator('#settings-cloud').textContent(),'Join the Network');
  assert.equal(await page.locator('#settings-cloud').getAttribute('href'),'https://app.themachine.computer/start');  // the Network or a Fleet, kept through sign-in
  assert.equal(await page.locator('#settings-cloud').getAttribute('target'),'_blank');
+ // ...which pairs in one click: the account's pair page in a new tab, then this Machine picks the pairing up by itself
+ // (no code to copy, no restart), and says so
+ assert.match(await page.locator('#settings-more').textContent(),/One click pairs this Machine with your account\./);
+ {const [tab]=await Promise.all([context.waitForEvent('page'),page.locator('#settings-cloud').click()]);
+  await tab.waitForURL(/\/pair\/fixture$/);await tab.close()}
+ await page.locator('#notice',{hasText:'Paired with your account'}).waitFor({timeout:8000});
+ assert.deepEqual([...new Set(pairing)],['ai_pair_start','ai_pair_state']);
  {const r=await page.evaluate(()=>{const t=document.querySelector('#settings-more').getBoundingClientRect(),b=document.querySelector('#settings-cloud').getBoundingClientRect();return b.top>=t.bottom-1});assert.equal(r,true)}  // below the text on a phone
  // section notes sit under their titles, not off to the right
  const head=await page.locator('#settings .section-head:visible').first().evaluate(e=>{const h=e.querySelector('h2').getBoundingClientRect(),p=e.querySelector('p').getBoundingClientRect();return {below:p.top>=h.bottom-1,left:Math.abs(p.left-h.left)<2}});

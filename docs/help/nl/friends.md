@@ -40,7 +40,9 @@ De link toont alleen vrije tijden, volgens dezelfde regels, en verder niets over
 
 Zo sluit je aan op het Network vanaf een Machine die je zelf draait:
 
-1. Druk op je accountpagina op app.themachine.computer op **Een zelf gehoste Machine koppelen**. De code werkt één keer, 15 minuten lang.
-2. Voer op je computer `assistant fleet-pair` uit met de code, en herstart.
+1. Open in het dashboard van je Machine **Instellingen** en druk op **Word lid van het Network**.
+2. Log op de pagina die opent in (of maak je account) en bevestig. Je Machine pikt het zelf op, zonder herstart.
+
+De manier met een code werkt nog steeds: druk op je accountpagina op app.themachine.computer op **Een zelf gehoste Machine koppelen**, voer dan op je computer `assistant fleet-pair` uit met de code, en herstart. De code werkt één keer, 15 minuten lang.
 
 Maximaal 5 Machines per account. Elke Machine kun je daar ontkoppelen.

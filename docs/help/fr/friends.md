@@ -40,7 +40,9 @@ Le lien ne montre que des horaires libres, selon les mêmes règles, et rien d�
 
 Pour rejoindre le Network depuis une Machine que vous faites tourner vous-même :
 
-1. Sur la page de votre compte sur app.themachine.computer, appuyez sur **Associer une Machine auto-hébergée**. Le code fonctionne une fois, pendant 15 minutes.
-2. Sur votre ordinateur, lancez `assistant fleet-pair` avec le code, puis redémarrez.
+1. Dans le tableau de bord de votre Machine, ouvrez **Paramètres** et appuyez sur **Rejoindre le Network**.
+2. Sur la page qui s’ouvre, connectez-vous (ou créez votre compte) et confirmez. Votre Machine le récupère d’elle-même, sans redémarrage.
+
+La méthode avec un code fonctionne toujours : appuyez sur **Associer une Machine auto-hébergée** sur la page de votre compte sur app.themachine.computer, puis lancez `assistant fleet-pair` avec le code sur votre ordinateur, et redémarrez. Le code fonctionne une fois, pendant 15 minutes.
 
 Jusqu’à 5 Machines par compte. Chacune peut y être déconnectée.

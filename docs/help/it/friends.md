@@ -40,7 +40,9 @@ Il link mostra solo orari liberi, con le stesse regole, e nient’altro su di te
 
 Per unirti al Network da una Machine che gestisci tu:
 
-1. Nella pagina del tuo account su app.themachine.computer, premi **Associa una Machine self-hosted**. Il codice funziona una volta sola, per 15 minuti.
-2. Sul tuo computer, esegui `assistant fleet-pair` con il codice e riavvia.
+1. Nella dashboard della tua Machine, apri **Impostazioni** e premi **Unisciti al Network**.
+2. Nella pagina che si apre, accedi (o crea il tuo account) e conferma. La tua Machine lo riceve da sola, senza riavvio.
+
+Il metodo con il codice funziona ancora: premi **Associa una Machine self-hosted** nella pagina del tuo account su app.themachine.computer, poi esegui `assistant fleet-pair` con il codice sul tuo computer e riavvia. Il codice funziona una volta sola, per 15 minuti.
 
 Fino a 5 Machine per account. Da lì puoi disconnettere ciascuna.

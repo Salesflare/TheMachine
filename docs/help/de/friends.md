@@ -40,7 +40,9 @@ Der Link zeigt nur freie Zeiten, nach denselben Regeln, und sonst nichts über d
 
 So trittst du dem Network mit einer Machine bei, die du selbst betreibst:
 
-1. Tippe auf deiner Kontoseite bei app.themachine.computer auf **Selbst gehostete Machine koppeln**. Der Code funktioniert einmal, 15 Minuten lang.
-2. Führe auf deinem Computer `assistant fleet-pair` mit dem Code aus und starte neu.
+1. Öffne im Dashboard deiner Machine die **Einstellungen** und tippe auf **Dem Network beitreten**.
+2. Melde dich auf der Seite, die sich öffnet, an (oder erstelle dein Konto) und bestätige. Deine Machine übernimmt das von selbst, ohne Neustart.
+
+Der Weg mit Code funktioniert weiter: Tippe auf deiner Kontoseite bei app.themachine.computer auf **Selbst gehostete Machine koppeln**, führe dann auf deinem Computer `assistant fleet-pair` mit dem Code aus und starte neu. Der Code funktioniert einmal, 15 Minuten lang.
 
 Bis zu 5 Machines pro Konto. Jede lässt sich dort trennen.

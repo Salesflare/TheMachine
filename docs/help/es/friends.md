@@ -40,7 +40,9 @@ El enlace solo muestra horas libres, con las mismas reglas, y nada más sobre ti
 
 Para unirte a la Network desde una Machine que gestionas tú:
 
-1. En la página de tu cuenta en app.themachine.computer, pulsa **Vincular una Machine autoalojada**. El código funciona una vez, durante 15 minutos.
-2. En tu ordenador, ejecuta `assistant fleet-pair` con el código y reinicia.
+1. En el panel de tu Machine, abre **Ajustes** y pulsa **Unirte a la Network**.
+2. En la página que se abre, inicia sesión (o crea tu cuenta) y confirma. Tu Machine lo recoge sola, sin reiniciar.
+
+La forma con código sigue funcionando: pulsa **Vincular una Machine autoalojada** en la página de tu cuenta en app.themachine.computer, luego ejecuta `assistant fleet-pair` con el código en tu ordenador y reinicia. El código funciona una vez, durante 15 minutos.
 
 Hasta 5 Machines por cuenta. Cada una se puede desconectar desde ahí.
