@@ -48,7 +48,7 @@ Wachten er twee of meer, dan loopt **Doorlopen** in de kop van Voor jou klaargez
 
 ## Nu checken
 
-Je Machine leest elke bron om de paar minuten, dag en nacht, en checkt wat er binnenkwam op to-do’s zodra er 40 berichten wachten of het oudste bericht 15 minuten wacht.
+Je Machine leest elke bron om de paar minuten, dag en nacht, en checkt wat er binnenkwam op to-do’s zodra er 40 berichten wachten of het oudste bericht van een persoon 15 minuten wacht. Nieuwsbrieven, meldingen en bonnetjes gaan mee met de volgende check, binnen het uur.
 
 **Nu checken** leest meteen elke bron. Staat er niets open, tik dan op de regel van je Machine om het te zien, met **Details**, dat Checks onder Koppelingen opent. Staan er to-do's open, dan staat het op een computer bovenaan. Een korte regel verschijnt daar alleen terwijl een check loopt, of als er een mislukt of laat is. Je kunt het ook in de chat vragen.
 

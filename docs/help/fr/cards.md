@@ -48,7 +48,7 @@ Sa réponse part quand même de l’adresse pro où elle est arrivée, et elle n
 
 ## Vérifier maintenant
 
-Votre Machine lit chaque source toutes les quelques minutes, jour et nuit, et vérifie ce qui est arrivé pour en tirer des tâches dès que 40 messages attendent ou que le plus ancien attend depuis 15 minutes.
+Votre Machine lit chaque source toutes les quelques minutes, jour et nuit, et vérifie ce qui est arrivé pour en tirer des tâches dès que 40 messages attendent ou que le plus ancien message d’une personne attend depuis 15 minutes. Les newsletters, notifications et reçus rejoignent la vérification suivante, dans l’heure.
 
 **Vérifier maintenant** lit tout de suite chaque source. Quand rien n’est ouvert, touchez la ligne de votre Machine pour le voir, avec **Détails**, qui ouvre Vérifications dans Connexions. Quand des tâches sont ouvertes, il est en haut sur un ordinateur. Une courte ligne n’y apparaît que pendant une vérification, ou quand une a échoué ou est en retard. Vous pouvez aussi le demander dans le chat.
 

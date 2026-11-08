@@ -34,7 +34,7 @@ from machine.config import LOG, RULE_FILES
 from machine.prompts.profile import VOICE_TEXT
 from machine.prompts.review import FACT_KIND_HINT, review_prompt, source_notes
 from machine.sources.connectors import companies_prompt
-from machine.store import review_backoff
+from machine.store import review_backoff, review_wait
 from machine.store.cards import active_preview
 from machine.store.events import RUN_SIGNAL_BUDGET, SET_ASIDE_AFTER
 from machine.store.facts import suggestion_scope
@@ -445,11 +445,12 @@ class ReviewApp:
                                (run['run_id'], 'starting', run['started_at'], run['started_at'], quick, QUICK_LOOK_HOURS, QUICK_LOOK_SIGNALS))
                     self.note_dig_start(db)
                 else:
-                    # Each run has a fixed cost (instructions, status, context), so wait for a batch:
-                    # enough signals, or the oldest one has waited long enough.
-                    waiting, oldest = db.execute('SELECT count(*),min(ingested_at) FROM events WHERE analyzed_version<version AND deferrals<?',
-                                                 (SET_ASIDE_AFTER,)).fetchone()
-                    young = waiting and oldest > (stamp - dt.timedelta(minutes=review_max_wait(settings))).isoformat()
+                    # Each run has a fixed cost (instructions, status, context), so wait for a batch: enough signals, or
+                    # the oldest one from a person has waited long enough; newsletters, notifications and receipts wait
+                    # longer (machine/store/review_wait.py) and join the next review
+                    waiting = db.execute('SELECT count(*) FROM events WHERE analyzed_version<version AND deferrals<?',
+                                         (SET_ASIDE_AFTER,)).fetchone()[0]
+                    young = bool(waiting) and review_wait.hold(db, settings, review_max_wait(settings), settings.get('min_signals', 40)) > stamp
                     # A new mailbox: its first review starts as soon as its first import is in, as one review, not one
                     # halfway through the import and another after it (never past the usual longest wait).
                     mail = self.mail_backfill(db) if not recovery else {'filling': [], 'fresh': []}
@@ -602,12 +603,11 @@ class ReviewApp:
         settings = self.config.get('review_worker') or {}
         if not settings.get('enabled') or db.execute("SELECT 1 FROM review_runs WHERE status IN ('starting','running','recovering')").fetchone():
             return None
-        waiting, oldest = db.execute('SELECT count(*),min(ingested_at) FROM events WHERE analyzed_version<version AND deferrals<?',
-                                     (SET_ASIDE_AFTER,)).fetchone()
+        waiting = db.execute('SELECT count(*) FROM events WHERE analyzed_version<version AND deferrals<?', (SET_ASIDE_AFTER,)).fetchone()[0]
         current = current or dt.datetime.fromisoformat(now())
         mail = self.mail_backfill(db)
         first = not db.execute("SELECT 1 FROM review_runs WHERE status='ok'").fetchone()
-        hold = dt.datetime.fromisoformat(oldest) + dt.timedelta(minutes=review_max_wait(settings)) if waiting else None
+        hold = review_wait.hold(db, settings, review_max_wait(settings), settings.get('min_signals', 40)) if waiting else None
         if mail['filling'] and (not hold or hold > current):
             # The first import of a mailbox is still coming in: the review starts when it is in (at the latest at hold)
             return {'waiting': waiting, 'planned': min(waiting, RUN_SIGNAL_BUDGET), 'starts_at': hold and hold.isoformat(),

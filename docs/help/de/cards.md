@@ -48,7 +48,7 @@ Ab zwei wartenden Aufgaben geht **Durchgehen** in der Überschrift von Bereit f�
 
 ## Jetzt prüfen
 
-Deine Machine liest jede Quelle alle paar Minuten, Tag und Nacht, und prüft das Neue auf Aufgaben, sobald 40 Nachrichten warten oder die älteste Nachricht 15 Minuten gewartet hat.
+Deine Machine liest jede Quelle alle paar Minuten, Tag und Nacht, und prüft das Neue auf Aufgaben, sobald 40 Nachrichten warten oder die älteste Nachricht von einer Person 15 Minuten gewartet hat. Newsletter, Benachrichtigungen und Belege kommen in die nächste Prüfung, innerhalb einer Stunde.
 
 **Jetzt prüfen** liest sofort jede Quelle. Ist nichts offen, tippe auf die Zeile deiner Machine, um es zu sehen, mit **Details**, das Prüfungen unter Verbindungen öffnet. Sind Aufgaben offen, steht es auf einem Computer oben. Eine kurze Zeile dort erscheint nur, während eine Prüfung läuft oder wenn eine fehlgeschlagen oder spät dran ist. Du kannst auch im Chat fragen.
 

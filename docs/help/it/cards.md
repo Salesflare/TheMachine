@@ -48,7 +48,7 @@ Con due o più in attesa, **Scorri** nell’intestazione di Pronta per te e di S
 
 ## Controlla ora
 
-La tua Machine legge ogni fonte ogni pochi minuti, giorno e notte, e controlla cosa è arrivato in cerca di attività appena 40 messaggi sono in attesa o il messaggio più vecchio aspetta da 15 minuti.
+La tua Machine legge ogni fonte ogni pochi minuti, giorno e notte, e controlla cosa è arrivato in cerca di attività appena 40 messaggi sono in attesa o il messaggio più vecchio di una persona aspetta da 15 minuti. Newsletter, notifiche e ricevute entrano nel controllo successivo, entro un’ora.
 
 **Controlla ora** legge subito ogni fonte. Se non c’è niente di aperto, tocca la riga della tua Machine per vederlo, con **Dettagli**, che apre Controlli in Connessioni. Con attività aperte, è in alto su un computer. Lì compare una breve riga solo mentre un controllo è in corso, o quando uno non è riuscito o è in ritardo. Puoi anche chiederlo in chat.
 
