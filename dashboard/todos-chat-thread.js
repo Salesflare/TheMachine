@@ -224,9 +224,8 @@ const isOpen=i=>!closed(s)&&(i.kind==='card'||!(i.drafts||[]).length||s.status==
    push(i,html`<div class="chat-msg you">${show?html`<div class="chat-to">to ${to}</div>`:''}${att}${i.text?html`<div class="bubble" translate="no">${chatMarkdown(i.text)}</div>`:''}${tm(i.at)}</div>`)}
   else if(i.kind==='reply'){const ds=i.drafts||[],h=headline(i.text);
    const tab=n===tabAt?html`<a class="agent-file via-browser" href="${safeHref(state.browser_link||'#')}" target="_blank" rel="noopener" data-browser-show="${s.id}">View in Machine browser</a>`:'';
-   // A reply cut off by Stop: a small Stopped right under what it said so far, before the card's choices. A reply whose
-   // run saved a learning says so right under its text, in the Machine's words and linked to What I've learned: at its
-   // foot, just above the owner's next message, a bare "Noted for next time" read as a label on that message.
+   // Stopped, and what the run learned, right under the reply's text: at its foot a bare note read as a label on
+   // the owner's next message
    const noted=html`${i.stopped?html`<small class="chat-noted chat-stopped">Stopped</small>`:''}${i.noted?html`<small class="chat-noted chat-noted-learned"><a class="link" href="#learning=learned">Saved to what I’ve learned</a></small>`:''}`;
    // Without a headline the reply is plain text and its drafts are the result; with one, the headline and summary lead the result
    const fileOf=f=>html`<button type="button" class="agent-file via-file" data-id="${s.id}" data-result="read" data-file="${f.path}" data-file-name="${f.label}">${f.label}<span aria-hidden="true"> ›</span></button>`;
