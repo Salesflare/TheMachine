@@ -9,7 +9,8 @@ on, since that takes it where its sources already are; otherwise the to-do shows
 tap.
 
 An area is 'personal' (every account with a personal boundary) or a company: a work boundary ('work:Acme', the accounts
-with it). An account whose own `scope` says the other side (a work boundary labeled personal) is in neither. A work
+with it). A work mailbox the owner labeled personal (`scope: personal`) is Personal, like the to-dos from it
+(assistant.suggestion_scope): a Personal to-do reads it without asking. A personal account labeled work is in neither. A work
 boundary named after its own source ('work:linkedin' on a LinkedIn account, 'work:x' on an X account: an owner's own
 profile, from before the setup asked for a company) is Work but no company: such a to-do can move to any company, and
 nothing moves to it. Mail in one company's mailbox for another company of the owner's goes to that company from the
@@ -33,6 +34,8 @@ def _side(account):
     if kind not in ('work', 'personal'):
         return None  # the Machine itself (owner:system), or never placed
     scope = account.get('scope')
+    if scope == 'personal':
+        return 'personal'  # the owner's label wins: a company mailbox they call personal is Personal, as its to-dos are
     return kind if scope in (None, kind) else None
 
 
@@ -160,7 +163,7 @@ def pointed(people, accounts, here=None, domain=lambda value: ''):
 
 def owner_companies(accounts):
     """Every company of the owner's, also one whose accounts they labeled Personal (a work boundary with scope:
-    personal, which is in neither area): [{'id', 'name', 'domains', 'personal'}]. A to-do about one of them lands in it
+    personal, which is in the Personal area): [{'id', 'name', 'domains', 'personal'}]. A to-do about one of them lands in it
     (company_accounts): its Work, or Personal when its accounts are labeled personal."""
     found = {}
     for a in accounts or ():
