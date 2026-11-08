@@ -3,9 +3,9 @@ title: Routines
 area: cards
 summary: Work your Machine does on its own, on a rhythm, like a Monday summary of your open deals. It only reads.
 covers: tab:routines
-code: routines.py, routines_app.py, routine_imports.py, dashboard/routines-page.js
+code: routines.py, routines_app.py, routine_imports.py, routine_patterns.py, dashboard/routines-page.js
 order: 10
-keywords: routine, automation, scheduled, every week, every morning, report
+keywords: routine, automation, scheduled, every week, every morning, report, suggested, digest, newsletter
 ---
 ## Make one
 
@@ -56,6 +56,19 @@ If you made scheduled jobs in OpenClaw before, your Machine reads them (it never
 It keeps your corrections to the job and leaves out what it sent or posted. A job that ran a script, or read what a script job collected, brings it along as Get data. **Add** makes it a routine, **No thanks** never asks about that job again. A job that reminded you to do something comes as a recurring to-do offer on To-dos instead.
 
 At most three suggestions wait at a time. After a week of good runs, the routine asks **Turn off the old OpenClaw job?** It only turns off when you tap **Turn it off**, and you can turn it back on in OpenClaw.
+
+## From what you do
+
+Your Machine also notices work you do on a rhythm and offers it as a routine under **Suggested**, also without OpenClaw. It looks for:
+
+- the same ask, three times or more in a row, like "sum up the open support tickets" every Monday;
+- a mail you send on a rhythm, like a weekly report to your team;
+- newsletters and update mails that keep coming every week;
+- a busy Slack channel that others write in every week.
+
+Each suggestion says what it saw, like "Asked 4 times in a row", and ran once so you see a real result. Think of a team recap, a brief before a weekly call, a support or dev summary, a pulse on your numbers, or a digest of the newsletters you get.
+
+It only suggests what is specific to you and clearly useful: a news digest only over your own newsletters, never a generic one. When nothing fits, there is no suggestion. It looks at most once a day, and all of it stays on your Machine. A to-do you close on a rhythm comes as a recurring to-do offer instead.
 
 ## Routines and recurring to-dos
 

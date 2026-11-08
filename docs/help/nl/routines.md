@@ -1,0 +1,65 @@
+---
+title: Routines
+area: cards
+summary: Werk dat je Machine zelf doet, op een ritme, zoals een maandagoverzicht van je open deals. Hij leest alleen.
+covers: tab:routines
+code: routines.py, routines_app.py, routine_imports.py, routine_patterns.py, dashboard/routines-page.js
+order: 10
+keywords: routine, automation, scheduled, every week, every morning, report, suggested, digest, newsletter
+---
+## Er een maken
+
+Open **Routines** in de zijbalk en zeg in één regel wat hij moet doen en wanneer: "elke maandag om 9, vat mijn open deals samen" of "elke werkdag 's ochtends, lijst de mails op die ik nog moet beantwoorden". Dan **Toevoegen**.
+
+Zonder tijd draait hij om 8:00. De tijd is die van de klok van je Machine.
+
+## Wat een routine doet
+
+Op het afgesproken moment leest je Machine wat hij nodig heeft, zoals je berichten, vergaderingen en de Graph, en zet het resultaat op de pagina Routines. Elk resultaat zegt **Klaargezet**, **Niets nieuws** (met waarom) of **Lukte niet** (met waarom). Een run die zonder resultaat eindigt, telt als een run die niet lukte, nooit als klaar.
+
+Routines lezen alleen. Ze versturen, beantwoorden, posten of wijzigen niets.
+
+Elke run kent het vorige resultaat, zodat hij kan zeggen wat er sindsdien veranderde.
+
+## Gemiste dagen
+
+Stond je Machine uit of had hij het druk, dan stapelen gemiste runs zich niet op: alleen de nieuwste draait, één keer. Elke datum draait één keer, ook na een herstart.
+
+Routines draaien één voor één en wachten als het gebruik van je AI-abonnement laag staat, zoals al het werk op de achtergrond. **Nu uitvoeren** draait hem meteen.
+
+## Wijzigen of stoppen
+
+Dit staat in het ⋯-menu van de routine. **Wanneer wijzigen** neemt een nieuw ritme in je eigen woorden, zoals "elke werkdag om 8". **Pauzeren** stopt de runs tot **Hervatten**; wat tijdens de pauze gemist werd, draait niet achteraf. **Stoppen** beëindigt een routine voorgoed.
+
+## Scriptstappen
+
+Een routine kan je eigen commando's op je Machine draaien. Open in **Bewerken** de **Scriptstappen**. **Gegevens ophalen** draait eerst een commando, zoals `python3 ~/scripts/deals.py`, in zijn map (leeg: je thuismap) en hoogstens zijn aantal seconden. Wat het afdrukt, krijgt de run om mee te werken. Zonder woorden is wat het afdrukt het resultaat.
+
+**Controle** krijgt na de run het resultaat als invoer. Eindigt die met een fout, dan toont de run **Lukte niet** met wat de controle zei. Een commando bij Gegevens ophalen dat faalt, toont zich net zo.
+
+Een commando is één regel en draait zonder shell: geen pipes of variabelen. Scriptstappen stel alleen jij in, op je dashboard. Een testrun en **Probeer het** draaien Gegevens ophalen ook en zeggen dat; ze versturen en bewaren nog steeds niets. Een routine verstuurt nooit, dus een scriptstap leest best alleen.
+
+## Uit je OpenClaw-taken
+
+Maakte je eerder geplande taken in OpenClaw, dan leest je Machine ze (hij wijzigt ze nooit) en stelt de passende voor als routine onder **Voorgesteld**. Elke liep één keer, zodat je een echt resultaat ziet.
+
+Je correcties op de taak blijven, wat hij verstuurde of postte valt weg. Een taak die een script draaide, of las wat een scripttaak verzamelde, neemt dat mee als Gegevens ophalen. **Toevoegen** maakt er een routine van, **Nee, bedankt** vraagt nooit meer naar die taak. Een taak die je aan iets herinnerde, komt in plaats daarvan als aanbod voor een terugkerende to-do bij To-do's.
+
+Er wachten hoogstens drie voorstellen tegelijk. Na een week goede runs vraagt de routine **De oude OpenClaw-taak uitzetten?** Hij gaat pas uit als je op **Uitzetten** tikt, en je kunt hem in OpenClaw weer aanzetten.
+
+## Uit wat je doet
+
+Je Machine merkt ook werk op dat je op een ritme doet en stelt het voor als routine onder **Voorgesteld**, ook zonder OpenClaw. Hij let op:
+
+- dezelfde vraag, drie keer of meer op rij, zoals "vat de open supporttickets samen" elke maandag;
+- een mail die je op een ritme verstuurt, zoals een weekrapport aan je team;
+- nieuwsbrieven en updatemails die elke week terugkomen;
+- een druk Slack-kanaal waar anderen elke week in schrijven.
+
+Elk voorstel zegt wat hij zag, zoals "4 keer op rij gevraagd", en liep één keer, zodat je een echt resultaat ziet. Denk aan een teamoverzicht, een briefing voor een wekelijkse call, een support- of dev-overzicht, een stand van je cijfers of een samenvatting van de nieuwsbrieven die je krijgt.
+
+Hij stelt alleen voor wat bij jou past en duidelijk helpt: een nieuwsoverzicht alleen over je eigen nieuwsbrieven, nooit een algemeen. Past er niets, dan is er geen voorstel. Hij kijkt hoogstens één keer per dag, en alles blijft op je Machine. Een to-do die je op een ritme afvinkt, komt in plaats daarvan als aanbod voor een terugkerende to-do.
+
+## Routines en terugkerende to-do's
+
+Een terugkerende to-do (recurring.md) herinnert je eraan iets te doen. Een routine is werk dat je Machine zelf doet en je laat zien. Neem een terugkerende to-do voor "de huur betalen op de eerste", en een routine voor "elke vrijdag zeggen welke deals stilvielen".

@@ -160,6 +160,7 @@
  "About GBrain ↗": "À propos de GBrain ↗",
  "About as busy as two weeks ago": "À peu près comme il y a deux semaines",
  "About you": "À propos de vous",
+ "About {} messages a week": "Environ {} messages par semaine",
  "Accept": "Accepter",
  "Accept all": "Tout accepter",
  "Accept my change": "Accepter ma modification",
@@ -487,6 +488,7 @@
  "Asked your Fleet. Answers show here as they come.": "Votre Fleet a été sollicitée. Les réponses s’affichent ici au fur et à mesure.",
  "Asked your Fleet. The answers show in the Fleet tab.": "Votre Fleet a été sollicitée. Les réponses s’affichent dans l’onglet Fleet.",
  "Asked your friends.": "Vos amis ont été sollicités.",
+ "Asked {} times in a row": "Demandé {} fois de suite",
  "Asked {} to review": "Relecture demandée à {}",
  "Asked {}:": "Demandé à {} :",
  "Asked {}: {}": "Demandé à {} : {}",
@@ -1202,6 +1204,7 @@
  "Each link works once, for {} days.": "Chaque lien fonctionne une fois, pendant {} jours.",
  "Each member's Machine shares Work contacts, projects and client email threads, with attachments, with the confirmed Machines in {}.": "La Machine de chaque membre partage les contacts Travail, les projets et les fils d’e-mails clients, avec pièces jointes, avec les Machines confirmées dans {}.",
  "Each next action must be one concrete choice": "Chaque action suivante doit être un choix concret",
+ "Each one ran once to show you.": "Chacune a tourné une fois pour vous montrer le résultat.",
  "Each run ended in an error, so what it does is not getting done.": "Chaque exécution s’est terminée par une erreur, donc ce qu’il fait n’est pas fait.",
  "Each says yes or no on their Machine. Nothing is added to a calendar by itself.": "Chacun dit oui ou non sur sa Machine. Rien n’est ajouté à un agenda tout seul.",
  "Each stage needs its own name.": "Chaque étape doit avoir son propre nom.",
@@ -3963,6 +3966,7 @@
  },
  "Sent {} messages": "{} messages envoyés",
  "Sent {} of {}": "{} sur {} envoyées",
+ "Sent {} times in a row": "Envoyé {} fois de suite",
  "Sent {} · {} held": "{} envoyées · {} retenues",
  "Sent {} · {} held (new message)": "{} envoyées · {} retenues (nouveau message)",
  "Sent {}. Thank you.": "{} envoyé. Merci.",
@@ -6758,6 +6762,7 @@
   "one": "{} script écarté",
   "other": "{} scripts écartés"
  },
+ "{} senders every week": "{} expéditeurs chaque semaine",
  "{} sends that were waiting are held. Nothing goes out until you send them again.": {
   "one": "{} envoi en attente est retenu. Rien ne part tant que vous ne l’envoyez pas à nouveau.",
   "other": "{} envois en attente sont retenus. Rien ne part tant que vous ne les envoyez pas à nouveau."

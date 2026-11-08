@@ -160,6 +160,7 @@
  "About GBrain ↗": "About GBrain ↗",
  "About as busy as two weeks ago": "About as busy as two weeks ago",
  "About you": "About you",
+ "About {} messages a week": "About {} messages a week",
  "Accept": "Accept",
  "Accept all": "Accept all",
  "Accept my change": "Accept my change",
@@ -487,6 +488,7 @@
  "Asked your Fleet. Answers show here as they come.": "Asked your Fleet. Answers show here as they come.",
  "Asked your Fleet. The answers show in the Fleet tab.": "Asked your Fleet. The answers show in the Fleet tab.",
  "Asked your friends.": "Asked your friends.",
+ "Asked {} times in a row": "Asked {} times in a row",
  "Asked {} to review": "Asked {} to review",
  "Asked {}:": "Asked {}:",
  "Asked {}: {}": "Asked {}: {}",
@@ -1202,6 +1204,7 @@
  "Each link works once, for {} days.": "Each link works once, for {} days.",
  "Each member's Machine shares Work contacts, projects and client email threads, with attachments, with the confirmed Machines in {}.": "Each member's Machine shares Work contacts, projects and client email threads, with attachments, with the confirmed Machines in {}.",
  "Each next action must be one concrete choice": "Each next action must be one concrete choice",
+ "Each one ran once to show you.": "Each one ran once to show you.",
  "Each run ended in an error, so what it does is not getting done.": "Each run ended in an error, so what it does is not getting done.",
  "Each says yes or no on their Machine. Nothing is added to a calendar by itself.": "Each says yes or no on their Machine. Nothing is added to a calendar by itself.",
  "Each stage needs its own name.": "Each stage needs its own name.",
@@ -3963,6 +3966,7 @@
  },
  "Sent {} messages": "Sent {} messages",
  "Sent {} of {}": "Sent {} of {}",
+ "Sent {} times in a row": "Sent {} times in a row",
  "Sent {} · {} held": "Sent {} · {} held",
  "Sent {} · {} held (new message)": "Sent {} · {} held (new message)",
  "Sent {}. Thank you.": "Sent {}. Thank you.",
@@ -6758,6 +6762,7 @@
   "one": "{} script left out",
   "other": "{} scripts left out"
  },
+ "{} senders every week": "{} senders every week",
  "{} sends that were waiting are held. Nothing goes out until you send them again.": {
   "one": "{} send that was waiting is held. Nothing goes out until you send it again.",
   "other": "{} sends that were waiting are held. Nothing goes out until you send them again."

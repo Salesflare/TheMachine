@@ -160,6 +160,7 @@
  "About GBrain ↗": "Over GBrain ↗",
  "About as busy as two weeks ago": "Ongeveer even druk als twee weken geleden",
  "About you": "Over jou",
+ "About {} messages a week": "Zo’n {} berichten per week",
  "Accept": "Aanvaarden",
  "Accept all": "Alles aanvaarden",
  "Accept my change": "Mijn wijziging aanvaarden",
@@ -487,6 +488,7 @@
  "Asked your Fleet. Answers show here as they come.": "Je Fleet gevraagd. Antwoorden verschijnen hier zodra ze binnenkomen.",
  "Asked your Fleet. The answers show in the Fleet tab.": "Je Fleet gevraagd. De antwoorden verschijnen in het Fleet-tabblad.",
  "Asked your friends.": "Je vrienden gevraagd.",
+ "Asked {} times in a row": "{} keer op rij gevraagd",
  "Asked {} to review": "{} gevraagd om review",
  "Asked {}:": "Gevraagd aan {}:",
  "Asked {}: {}": "Gevraagd aan {}: {}",
@@ -1202,6 +1204,7 @@
  "Each link works once, for {} days.": "Elke link werkt één keer, {} dagen lang.",
  "Each member's Machine shares Work contacts, projects and client email threads, with attachments, with the confirmed Machines in {}.": "De Machine van elk lid deelt werkcontacten, projecten en e-mailthreads met klanten, met bijlagen, met de bevestigde Machines in {}.",
  "Each next action must be one concrete choice": "Elke volgende actie moet één concrete keuze zijn",
+ "Each one ran once to show you.": "Elk voorstel liep één keer, zodat je het resultaat ziet.",
  "Each run ended in an error, so what it does is not getting done.": "Elke run eindigde met een fout, dus wat het doet, gebeurt niet.",
  "Each says yes or no on their Machine. Nothing is added to a calendar by itself.": "Iedereen zegt ja of nee op hun Machine. Er komt niets vanzelf in een agenda.",
  "Each stage needs its own name.": "Elke fase heeft een eigen naam nodig.",
@@ -3963,6 +3966,7 @@
  },
  "Sent {} messages": "{} berichten verstuurd",
  "Sent {} of {}": "{} van {} verstuurd",
+ "Sent {} times in a row": "{} keer op rij verstuurd",
  "Sent {} · {} held": "{} verstuurd · {} tegengehouden",
  "Sent {} · {} held (new message)": "{} verstuurd · {} tegengehouden (nieuw bericht)",
  "Sent {}. Thank you.": "{} verstuurd. Bedankt.",
@@ -6758,6 +6762,7 @@
   "one": "{} script weggelaten",
   "other": "{} scripts weggelaten"
  },
+ "{} senders every week": "{} afzenders elke week",
  "{} sends that were waiting are held. Nothing goes out until you send them again.": {
   "one": "{} verzending die wachtte, staat vast. Er gaat niets weg tot je het opnieuw verstuurt.",
   "other": "{} verzendingen die wachtten, staan vast. Er gaat niets weg tot je het opnieuw verstuurt."
