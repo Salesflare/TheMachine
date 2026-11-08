@@ -45,6 +45,7 @@ AREAS = {
     'settings': ['settings'],
     'graph': ['people', 'project-dialog', 'record-dialog', 'crm-dialog', 'board-dialog'],
     'calendar': ['calendar', 'cal-dialog', 'cal-view'],
+    'routines': ['routines'],
     'connections': ['health', 'signin-dialog'],
     'help': [],
     'events': ['events', 'email-dialog'],

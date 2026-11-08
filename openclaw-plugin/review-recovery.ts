@@ -61,6 +61,10 @@ const profileSession = (key: string) => /^agent:main:assistant-review-profile-/.
 // browser and reports them with assistant_signals skills_found. The browser and read-only tools; no shell, no writes.
 const skillsSession = (key: string) => /^agent:main:assistant-review-skills-/.test(key || '');
 export const SKILLS_TOOLS = new Set([...REVIEW_TOOLS, 'browser']);
+// A routine's run (routines_app.py): one read-only turn that reads with assistant_signals and memory lookups and reports
+// with routine_result. Only these assistant_signals actions: it never suggests, prepares, saves or sends anything.
+const routineSession = (key: string) => /^agent:main:assistant-review-routine-/.test(key || '');
+export const ROUTINE_ACTIONS = new Set(['status', 'events', 'related', 'graph', 'routine_result']);
 // GBrain (gbrain.py, optional): only when the owner turned it on and agreed to what goes in (config `gbrain`), a review
 // may also read the owner's GBrain through its OpenClaw MCP server `gbrain` (tools gbrain__<name>). Read tools only,
 // never a write; the same list as gbrain.py READ_TOOLS. Off: REVIEW_TOOLS exactly as before.
@@ -277,11 +281,11 @@ export function registerReviewRecovery(api: any, call: (action: string, args?: a
   const runs = new Map<string, {session: string; started: number; reviewTouched: boolean}>();
   const background = (ctx: any) => privateReviewContext(ctx) && !!ctx.runId &&
     ctx.inputProvenance?.kind !== 'external_user' &&
-    !/^agent:main:assistant-review-(?:preparation|profile|skills)-/.test(ctx.sessionKey || '') &&
+    !/^agent:main:assistant-review-(?:preparation|profile|skills|routine)-/.test(ctx.sessionKey || '') &&
     (/^agent:main:assistant-review[-:]/.test(ctx.sessionKey || '') ||
       (ctx.inputProvenance?.kind === 'internal_system' && ctx.inputProvenance?.sourceTool === 'notifications-event'));
   const eligible = (ctx: any) => privateReviewContext(ctx) && !!ctx.runId &&
-    !/^agent:main:assistant-review-(?:preparation|profile|skills)-/.test(ctx.sessionKey || '') &&
+    !/^agent:main:assistant-review-(?:preparation|profile|skills|routine)-/.test(ctx.sessionKey || '') &&
     /^agent:main:assistant-review[-:]/.test(ctx.sessionKey || '');
   const quietInstruction = 'Keep background processing silent. Save review counts, recovery, skipped/deferred signals, backlog and completion notes only through finish_analysis for the dashboard. A saved suggestion is delivered by the independent service, not by this reply. When there is no separate genuinely useful alert requiring the owner, end with exactly NO_REPLY, even after saving a new suggestion or completing a review. Do not announce starting, resuming, working, finishing or no new suggestions. Genuine actionable alerts and authorized preparation results/reminders remain enabled.';
   // An isolated review session's turn has delivery off, so nothing it writes reaches anyone. It ends with one fixed line
@@ -304,7 +308,7 @@ export function registerReviewRecovery(api: any, call: (action: string, args?: a
       const context = ((await ownerContext()) + (await preparationRules())).trim();
       return context ? {prependContext: context} : undefined;
     }
-    if (profileSession(ctx.sessionKey) && privateReviewContext(ctx)) {
+    if ((profileSession(ctx.sessionKey) || routineSession(ctx.sessionKey)) && privateReviewContext(ctx)) {
       const context = (await ownerContext()).trim();
       return context ? {prependContext: context} : undefined;
     }
@@ -341,6 +345,10 @@ export function registerReviewRecovery(api: any, call: (action: string, args?: a
     }
     if (skillsSession(ctx.sessionKey) && !toolRunner(event, ctx) && (!SKILLS_TOOLS.has(plainToolName(event.toolName)) || readsSecret(event))) {
       return {block: true, blockReason: 'Find my skills reads the owner\'s accounts in the browser and reports with assistant_signals skills_found; nothing else.'};
+    }
+    if (routineSession(ctx.sessionKey) && !toolRunner(event, ctx) && (!reviewTools().has(plainToolName(event.toolName)) || readsSecret(event) ||
+        (plainToolName(event.toolName) === 'assistant_signals' && !ROUTINE_ACTIONS.has(event.params?.action)))) {
+      return {block: true, blockReason: 'A routine only reads: assistant_signals status, events, related or graph, memory lookups or read-only file tools, then routine_result.'};
     }
     const policy = preparationSession(ctx.sessionKey) ? preparationToolPolicy(event, ctx) : undefined;
     if (policy && 'block' in policy) return {block: true, blockReason: policy.block};

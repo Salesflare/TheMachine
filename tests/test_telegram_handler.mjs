@@ -211,6 +211,13 @@ const handled=await beforeDispatch({content:'I fixed it already',timestamp:17916
  await toolFactory({agentId:'main',sessionKey:key}).execute('test',{action:'skills_found',args:{_skills_session:'forged',found:[]}});
  await assert.rejects(toolFactory({agentId:'main',sessionKey:'agent:main:assistant-review-profile-'+'d'.repeat(32)}).execute('test',{action:'skills_found',args:{found:[]}}),/Only the Find my skills turn/);
 }
+// A routine's result: bound to its own routine session; a forged one is replaced, any other session is refused.
+{
+ const key='agent:main:assistant-review-routine-'+'e'.repeat(32);
+ globalThis.fixtureCall=async(action,args)=>{assert.equal(action,'routine_result');assert.equal(args._routine_session,key);return {saved:true};};
+ await toolFactory({agentId:'main',sessionKey:key}).execute('test',{action:'routine_result',args:{_routine_session:'forged',text:'Two deals went quiet.'}});
+ await assert.rejects(toolFactory({agentId:'main',sessionKey:'agent:main:assistant-review-signals-'+'e'.repeat(32)}).execute('test',{action:'routine_result',args:{text:'x'}}),/Only a routine’s own run/);
+}
 // A Fleet question: the tap goes to the service with the tapped message id; the service's message replaces the old one.
 {const saved=globalThis.fixtureCall,calls=[];const q='q_'+'c'.repeat(16);
  globalThis.fixtureCall=async(action,args)=>{calls.push([action,args]);if(args.message_id!=='321'){throw Object.assign(new Error('That Telegram message is not the one sent for this question'),{status:400});}

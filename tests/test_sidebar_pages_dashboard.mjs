@@ -49,7 +49,7 @@ try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
  // The rows: To-dos first, no Messages row, Learning with its book icon; the sidebar's own list has no second "To-dos" heading
  {const {context,page}=await open(1440,900);
-  assert.deepEqual(await page.evaluate(()=>[...document.querySelectorAll('.app-side nav [data-tab]')].filter(b=>b.offsetHeight).map(b=>b.querySelector('.nl').textContent)),['To-dos','Calendar','Graph','Learning','Connections']);
+  assert.deepEqual(await page.evaluate(()=>[...document.querySelectorAll('.app-side nav [data-tab]')].filter(b=>b.offsetHeight).map(b=>b.querySelector('.nl').textContent)),['To-dos','Calendar','Routines','Graph','Learning','Connections']);
   assert.equal(await page.title(),'The Machine · To-dos');
   assert.equal(await page.locator('#side-cards .side-label').innerText(),'All\nWork\nPersonal');
   assert.equal(await page.locator('#side-cards .side-label').getAttribute('aria-label'),'To-dos');

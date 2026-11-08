@@ -1,14 +1,14 @@
-$('nav').addEventListener('click',e=>{const t=e.target.closest('button')?.dataset.tab;
+$('nav').addEventListener('click',e=>{const t=e.target.closest('button')?.dataset.tab;if(t==='routines')routinesView();
  if(t==='calendar'){if(!calRouting&&(e.isTrusted||!/^#calendar\?/.test(location.hash))){calSetAll(calDay(0));calFrom=calDay(0);calTo=calDay(7);calMoreFailed={};calUp=false;calPush(true);scrollTo({top:0})}calendarView(true)}
  else if(t&&/^#calendar\?/.test(location.hash))history.replaceState(null,'',location.pathname+location.search)});
 DESK.addEventListener?.('change',()=>{if(!$('#calendar').hidden){calPush(true);calShowNow()}});
 addEventListener('hashchange',()=>{if(calReturn&&!/^#chat=/.test(location.hash)&&!chatId){calReturn=false;showTab('calendar')}});
 // A title over the main area on a computer: the tagline on To-dos, else the tab's name
 // The footer's Help: the help article for what's on screen (themachine.computer/help, the articles in docs/help/)
-const HELP='https://themachine.computer/help/',HELP_FOR={account:'plans-and-billing',inbox:'cards',calendar:'calendar',events:'dashboard',people:'graph',fleet:'fleet',feedback:'dashboard',health:'connections',general:'settings',notify:'notifications',security:'security-levels',writing:'writing',skills:'skills',apps:'ai-connections',model:'model'};
+const HELP='https://themachine.computer/help/',HELP_FOR={account:'plans-and-billing',inbox:'cards',calendar:'calendar',routines:'routines',events:'dashboard',people:'graph',fleet:'fleet',feedback:'dashboard',health:'connections',general:'settings',notify:'notifications',security:'security-levels',writing:'writing',skills:'skills',apps:'ai-connections',model:'model'};
 const GRAPH_HELP={people:'people',orgs:'organizations',projects:'projects'};  // the Graph's Help link: the page of the list it shows
 function helpLink(tab){const a=$('#help-link'),slug=(tab==='people'&&GRAPH_HELP[graphShown])||HELP_FOR[tab==='settings'?settingsNow:tab]||'';if(a&&a.href!==HELP+slug)a.href=HELP+slug}
-const PAGE_TITLES={calendar:'Calendar',events:'Messages',people:'Graph',fleet:'Fleet',feedback:'Learning',health:'Connections',settings:'Settings'};
+const PAGE_TITLES={calendar:'Calendar',routines:'Routines',events:'Messages',people:'Graph',fleet:'Fleet',feedback:'Learning',health:'Connections',settings:'Settings'};
 // The Graph's title is the pane on screen, with Graph as a quiet crumb and the same count as its row in the sidebar
 // A page's section, as its breadcrumb says: an organization opened from a project is under Organizations
 const graphNodePane=id=>id==='me'?'people':/^org:/.test(id)?'orgs':/^project:/.test(id)?'projects':'people';

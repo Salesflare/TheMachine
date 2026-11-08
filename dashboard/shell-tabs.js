@@ -1,6 +1,6 @@
 // Links to a tab or a sub-tab: #todos, #messages (also #events), #graph, #graph=roles, #learning=changes (also
 // #feedback), #connections, #connections=chat (and the tabs' own ids).
-const TAB_LINKS={inbox:'inbox',todos:'inbox',suggestions:'inbox',calendar:'calendar',events:'events',messages:'events',graph:'people',people:'people',learning:'feedback',feedback:'feedback',connections:'health',health:'health'};
+const TAB_LINKS={inbox:'inbox',todos:'inbox',suggestions:'inbox',calendar:'calendar',routines:'routines',events:'events',messages:'events',graph:'people',people:'people',learning:'feedback',feedback:'feedback',connections:'health',health:'health'};
 // A Graph sub-page (People, Organizations, Projects, Who's who) shows at once: its pane is drawn already, or the page
 // says it's loading; the Graph's quiet refresh comes after. The switch never waits for the Machine's answer.
 function showTab(tab,pane){if(tab==='people'&&pane){graphPane=pane;localStorage.setItem('graph-pane',pane);const view=$('#people-view'),was=graphNode;graphNode='';$('#people-query').value='';

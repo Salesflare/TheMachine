@@ -1,19 +1,19 @@
 // One service-started turn in the existing main agent, through the installed Gateway:
-// a preparation for an accepted suggestion, a signal review, a profile draft (assistant profile) or Find my skills. Each runs in its own
+// a preparation for an accepted suggestion, a signal review, a profile draft (assistant profile), Find my skills or a routine's run. Each runs in its own
 // isolated session with message delivery off. No model/client credentials here.
 import {gatewayRuntime} from './openclaw-root.mjs';
 const {callGatewayFromCli}=await gatewayRuntime();
 let input=''; for await (const chunk of process.stdin) input+=chunk;
 const request=JSON.parse(input);
 const kind=request.kind || 'preparation';
-if (!/^[a-f0-9]{32}$/.test(request.job_id || '') || !['start','status','stop'].includes(request.action) || !['preparation','review','profile','skills'].includes(kind)) {
+if (!/^[a-f0-9]{32}$/.test(request.job_id || '') || !['start','status','stop'].includes(request.action) || !['preparation','review','profile','skills','routine'].includes(kind)) {
   throw new Error('Invalid request');
 }
-const session={preparation:'agent:main:assistant-review-preparation-', review:'agent:main:assistant-review-signals-', profile:'agent:main:assistant-review-profile-', skills:'agent:main:assistant-review-skills-'}[kind];
+const session={preparation:'agent:main:assistant-review-preparation-', review:'agent:main:assistant-review-signals-', profile:'agent:main:assistant-review-profile-', skills:'agent:main:assistant-review-skills-', routine:'agent:main:assistant-review-routine-'}[kind];
 const sessionId=request.session_job_id || request.job_id;
 if (!/^[a-f0-9]{32}$/.test(sessionId) || (kind!=='preparation' && sessionId!==request.job_id)) throw new Error('Invalid session');
 // Do it turns make and test real changes (2026-10-13), so they get as long as a review.
-const runSeconds={preparation:1200, review:1200, profile:900, skills:900}[kind];
+const runSeconds={preparation:1200, review:1200, profile:900, skills:900, routine:900}[kind];
 const scope={scopes:['operator.admin','operator.read','operator.write']};
 const USAGE_LIMIT=/usage limit|(?:reached|hit) (?:your|the) [a-z0-9 -]*limit|limit (?:reached|exceeded)|insufficient_quota|quota exceeded|in cooldown|out of (?:credits|usage)/i;
 // When a usage limit lifts, from the provider's own words: an epoch (Claude: "limit reached|1761500000"), "in 2h 5m" or
@@ -76,7 +76,7 @@ const REASONS=[
   [/no (?:api key|credentials|auth profile)|missing (?:api key|credentials)/i,'auth_missing'],
 ];
 // Every Gateway session keeps its own MCP connections until it is stopped or reset, and the Gateway holds at most 256
-// (2026-10-30: past that every new turn failed, reviews stalled for hours). A review, profile or skills session is
+// (2026-10-30: past that every new turn failed, reviews stalled for hours). A review, profile, skills or routine session is
 // used for exactly one run, so once that run is over its connections are released. A preparation's session is a
 // to-do's chat and is used again; it is left alone. Best effort: a failed release only means the Gateway keeps it.
 const TERMINAL=['ok','error','aborted','timed_out','lost'];
