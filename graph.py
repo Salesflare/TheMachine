@@ -51,6 +51,7 @@ import timeutil
 
 import enrichment
 import graph_publish
+from mail_senders import AUTOMATED_PRECEDENCE, BULK, RELAY, addresses, automated, bulk, list_unsubscribes, relay  # noqa: F401
 import person_summary
 from machine import stamps
 from machine.store import graph_history
@@ -131,11 +132,7 @@ HORIZON_DAYS = 400      # older signals have faded far below the floor anyway
 EVENTS_PER_NODE = 40
 NEW = "signals<=3 AND last_at>=? AND json_extract(info,'$.history') IS NULL"  # New this week: never someone history knows
 BULK_LABELS = {'CATEGORY_PROMOTIONS', 'CATEGORY_SOCIAL', 'CATEGORY_FORUMS', 'CATEGORY_UPDATES'}
-AUTOMATED_PRECEDENCE = frozenset({'bulk', 'junk', 'list'})  # automated: mail a program sent
-BULK = re.compile(r'(?:^|[._+-])(?:no[._-]?reply|do[._-]?not[._-]?reply|notifications?|notify|newsletters?|news|mailer-daemon|mailer|bounces?|postmaster|'
-                  r'marketing|digest|alerts?|automated|receipts?|invoices?|billing|notetaker)(?:[._+-]|@)|@(?:[\w-]+\.)*(?:mcsv\.net|mcdlv\.net|'
-                  r'sendgrid\.net|amazonses\.com|mailgun\.org|bounces?\.[\w.-]+|calendar\.google\.com|resource\.calendar\.google\.com)$'
-                  r'|^(?:gemini|meet|calendar|drive|docs|forms|workspace)[\w.+-]*@google\.com$', re.I)  # Gemini's notes, Meet, Drive shares
+
 FREEMAIL = {'gmail.com', 'googlemail.com', 'hotmail.com', 'hotmail.be', 'outlook.com', 'outlook.be', 'live.com', 'live.be', 'msn.com',
             'yahoo.com', 'yahoo.fr', 'icloud.com', 'me.com', 'mac.com', 'proton.me', 'protonmail.com', 'telenet.be', 'skynet.be',
             'gmx.com', 'gmx.de', 'web.de', 'aol.com', 'pandora.be', 'scarlet.be', 'proximus.be', 'yandex.com', 'zoho.com'}
@@ -329,64 +326,6 @@ class Owner:
         owner's domains."""
         return (address in self.emails or address in self.team
                 or (address.rsplit('@', 1)[-1] in self.domains and bool(ROLE.match(address))))
-
-
-def addresses(value):
-    if isinstance(value, list):
-        value = ', '.join(map(str, value))
-    return list(_addresses(str(value or '')))
-
-
-@functools.lru_cache(maxsize=32768)
-def _addresses(text):
-    """Parsed once per header: a build reads the same From and To lines thousands of times."""
-    return tuple((name.strip().strip('"'), addr.strip().lower()) for name, addr in email.utils.getaddresses([text]) if '@' in addr)
-
-
-def bulk(address):
-    return bool(BULK.search(address))
-
-
-def automated(m):
-    """Mail a program sent, not a person: Precedence bulk, junk or list (Gmail's out-of-office reply is "bulk"), or
-    Auto-Submitted. The owner's own auto-reply goes to the address the mail came back from, often a bounce address
-    (pm_bounces@pm-bounces.example.com): sent from the owner's mailbox, yet nobody they wrote to."""
-    return str(m.get('precedence') or '').lower() in AUTOMATED_PRECEDENCE or bool(m.get('auto_submitted'))
-
-
-# System and relay addresses: never a person, also not when the owner wrote to one (a reply through Intercom goes to a
-# relay). Intercom's Operator bot and its reply relays, GitHub's noreply and reply addresses, reply+token relays of
-# feedback and ticket tools, and the notification senders of Slack, Google Calendar and GitHub.
-RELAY = re.compile(r'^operator\+[^@]*@intercom\.io$|@(?:[\w-]+\.)*intercom-mail\.(?:com|eu|io)$'
-                   r'|@(?:[\w-]+\.)*(?:no-?reply|reply)\.github\.com$|@(?:[\w-]+\.)*no-?reply\.[\w-]+(?:\.[\w-]+)+$'
-                   r'|^(?:reply|replies)[+=][^@]+@'
-                   r'|(?:^|[._+-])(?:no[._-]?reply|do[._-]?not[._-]?reply|notifications?)(?:[._+-]|@)'
-                   r'|^(?:calendar-notification|calendar-server|notify|feedback|bot)@(?:[\w-]+\.)*(?:google|slack|github)\.com$'
-                   # A return path a mailing system makes per message: the recipient written into it (VERP:
-                   # bounces+sam=acme.com@), a signed bounce tag (BATV: prvs=, msprvs1=) or a message id (Amazon SES)
-                   r'|^[^@]*[+-][^@=]*=[a-z0-9-]+(?:\.[a-z0-9-]+)*\.[a-z]{2,}@|^(?:prvs|msprvs\d*|btv\d*)='
-                   r'|^0[0-9a-f]{15}-[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}-0{6}@', re.I)
-
-
-def list_unsubscribes(db, signals, owner):
-    """Event ids of the unsubscribes the owner's mail app sent for them: a new mail (no reply) from the owner to one
-    address, with "unsubscribe" as its whole subject, as a list's List-Unsubscribe link asks. It goes to an address
-    made for that one list and recipient (unsub-4cca9a1c.z83o@bnc3.mail.example): nobody they wrote to. Only those
-    few mails' subjects are read."""
-    ids = [e for e, _, kind, _, m in signals if kind == 'gmail.message' and not m.get('in-reply-to') and not m.get('cc')
-           and ('SENT' in (m.get('labels') or ()) or any(owner.mine(a) for _, a in addresses(m.get('from'))[:1]))
-           and len(addresses(m.get('to'))) == 1]
-    found = set()
-    for start in range(0, len(ids), 500):
-        chunk = ids[start:start + 500]
-        found |= {r[0] for r in db.execute(f"SELECT id,title FROM events WHERE id IN ({','.join('?' * len(chunk))})", chunk)
-                  if str(r[1] or '').strip().casefold() == 'unsubscribe'}
-    return found
-
-
-def relay(address):
-    """A system or relay address: never a person, whoever wrote to it."""
-    return bool(RELAY.search(str(address or '').lower()))
 
 
 DOMAIN_NAME = re.compile(r'[\w-]+(?:\.[\w-]+)*\.[A-Za-z]{2,}')  # "HelloTV.nl": a sender's domain, not a person's name
