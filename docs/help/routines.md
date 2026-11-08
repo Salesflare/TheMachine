@@ -13,6 +13,8 @@ Open **Routines** in the sidebar and say what it should do and when, in one line
 
 Without a time it runs at 8:00. The time is on your Machine's clock. Its first run gives it a short name.
 
+**Add** first does a test run, so you see what it gives before you keep it. Nothing is sent or saved. Then **Add** keeps it on its rhythm, **Change** tries other words and **Cancel** drops it.
+
 ## What a routine does
 
 At its time your Machine reads what it needs, like your messages, meetings and the Graph, and puts the result on the Routines page. Each result says **Ready**, **Nothing new** (with why) or **Didn’t work** (with why). A run that ends without a result counts as one that didn't work, never as done.
@@ -27,11 +29,13 @@ Each run knows the last result, so it can say what changed since then.
 
 When your Machine was off or busy, a missed run isn't stacked: only the newest one runs, once. Each date runs once, even after a restart.
 
-Routines run one at a time and wait when your AI plan's usage is low, like all background work. **Run now** runs it right away.
+Routines run one at a time and wait when your AI plan's usage is low, like all background work. **Run now** runs it right away; its result shows on the card when it is ready.
 
 ## Change or stop it
 
 These are in the ⋯ menu on the routine. **Edit** changes what it does; when it runs and its results so far stay. **Change when** takes a new rhythm in your own words, like "every weekday at 8". Both have **Save** and **Cancel**; on a computer, Esc or a click outside cancels too.
+
+In **Edit**, **Try it** runs the new words once and shows the result there. The routine stays as it was until **Save**.
 
 **Pause** stops the runs until **Resume**; paused routines wait under **Paused** at the bottom, and nothing missed while paused runs afterwards. **Stop** ends a routine for good.
 

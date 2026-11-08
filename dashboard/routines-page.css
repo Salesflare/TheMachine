@@ -2,7 +2,7 @@
 #routines-view{display:flex;flex-direction:column;gap:var(--sp-4);max-width:760px}
 .rt-new{display:flex;gap:8px}.rt-new input{flex:1;min-width:0}
 #rt-words{flex:1}
-.rt-grow{min-width:0;height:auto;min-height:0;margin:0;resize:none;transition:none;line-height:1.4;max-height:calc(8.4em + 18px);overflow-y:auto;overflow-wrap:anywhere}
+.rt-grow,.rt-grow:focus{min-width:0;height:auto;min-height:0;margin:0;resize:none;transition:none;line-height:1.4;max-height:calc(8.4em + 18px);overflow-y:auto;overflow-wrap:anywhere}
 #routines-view>.rt-new{align-items:flex-end}
 @media (max-width:600px){#routines-view>.rt-new{flex-direction:column}#rt-words{flex:none;width:100%}}
 /* Edit and Change when: the field, then Save and Cancel */
@@ -33,3 +33,7 @@
 .rt-sec{display:flex;flex-direction:column;gap:var(--sp-3)}.rt-sec h2{margin:var(--sp-2) 0 0;font:var(--fw-heading) var(--fs-lg)/1.3 var(--serif)}
 .rt-s{border-style:dashed}.rt-s .actions{margin-left:0;gap:8px}.rt-s .actions .quiet{margin-left:0}
 .rt-old{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;margin-top:12px;padding:8px 8px 8px 12px;border-radius:var(--r-md);background:var(--c-hover)}.rt-old p{flex:1 1 200px;margin:0;font-size:var(--fs-sm)}
+/* A new one's test run: Add, Change or Cancel; Change hides them while its words are open */
+.rt-try .rt-form~.actions{display:none}
+/* Edit: only the words and their test run; the card's own words and result wait until it closes */
+.rt:has(>.rt-form[data-rt-form="edit"])>:is(.rt-what,.rt-body,.more){display:none}

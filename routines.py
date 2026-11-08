@@ -16,6 +16,11 @@ routine, runs it once for real. That run is the preview of a 'suggested' routine
 ('on') or turns down ('stopped'). A sorted job never comes back: its row stays, 'skipped' when it didn't fit. A week
 after it was added, a routine from an OpenClaw job that ran well offers to turn the old job off (old_job).
 
+A test run (period 'test:<stamp>') shows what a routine would give before it is kept: a new one waits as 'trying'
+until Add (accept), and Edit's Try it runs new words (the run's `trial`) without changing the routine. A test run is
+dry: it reads like any run, but it is never a routine's result, its next run's "last time" or a reason to rename it,
+until Add or Save keeps it.
+
 Tables (this module owns them): routines, routine_runs."""
 import datetime as dt
 import json
@@ -25,7 +30,7 @@ import uuid
 import recurring
 
 STATES = ('on', 'paused', 'stopped')
-LIVE = ('on', 'paused')  # the owner's routines; 'sorting', 'suggested' and 'skipped' come from OpenClaw jobs
+LIVE = ('on', 'paused')  # the owner's routines; 'sorting', 'suggested' and 'skipped' come from OpenClaw jobs; 'trying': a new one on trial
 SHORT_MAX = 18  # a suggested routine's name: it fits a phone's row next to its status
 MAX_SUGGESTED = 3  # open suggestions at a time: the next job is sorted once one is answered
 OLD_JOB_AFTER = 7  # days a routine from an OpenClaw job runs before it offers to turn the old job off
@@ -55,6 +60,8 @@ def ensure(db):
     for column in ('origin', 'accepted_at', 'old_job', 'name_check'):  # added after the first release (#916; name_check: Edit)
         if column not in have:
             db.execute(f'ALTER TABLE routines ADD COLUMN {column} TEXT')
+    if 'trial' not in {r[1] for r in db.execute('PRAGMA table_info(routine_runs)')}:  # Edit's Try it: the words it tried
+        db.execute('ALTER TABLE routine_runs ADD COLUMN trial TEXT')
 
 
 # --- words -------------------------------------------------------------------------------------------------------------
@@ -166,13 +173,11 @@ def short_name(text):
 
 
 def create(db, instructions, rule, anchor, at, now_local, stamp, name=None, work=False, origin=None, state='on'):
-    if state == 'on':
+    if state in ('on', 'trying'):
         _full(db)
     rule, at = recurring.clean_rule(rule), clean_at(at)
     anchor = recurring.anchor_for(rule, anchor)  # a weekdays routine never starts on a weekend
-    instructions = ' '.join(str(instructions or '').split())[:INSTRUCTIONS_MAX]
-    if len(instructions) < 4:
-        raise ValueError('Say what it should do, like sum up my open deals')
+    instructions = _words(instructions)
     rid = uuid.uuid4().hex
     db.execute('INSERT INTO routines(id,name,instructions,rule,anchor,at,state,work,next_due,origin,accepted_at,created_at,updated_at) '
                'VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)',
@@ -180,6 +185,13 @@ def create(db, instructions, rule, anchor, at, now_local, stamp, name=None, work
                 int(bool(work)), first_due(rule, anchor, at, now_local).isoformat() if state == 'on' else None, origin,
                 stamp if state == 'on' else None, stamp, stamp))
     return rid
+
+
+def _words(instructions):
+    instructions = ' '.join(str(instructions or '').split())[:INSTRUCTIONS_MAX]
+    if len(instructions) < 4:
+        raise ValueError('Say what it should do, like sum up my open deals')
+    return instructions
 
 
 def get(db, routine_id, states=LIVE):
@@ -200,9 +212,7 @@ def change_when(db, routine_id, rule, anchor, at, now_local, stamp):
 def change_instructions(db, routine_id, instructions, stamp):
     """Edit: what the routine does, in new words. Its rhythm and its runs stay; a name made from the old words follows."""
     row = get(db, routine_id)
-    instructions = ' '.join(str(instructions or '').split())[:INSTRUCTIONS_MAX]
-    if len(instructions) < 4:
-        raise ValueError('Say what it should do, like sum up my open deals')
+    instructions = _words(instructions)
     placeholder = row['name'] == name_of(row['instructions'])
     name = name_of(instructions) if placeholder else row['name']
     db.execute('UPDATE routines SET name=?,instructions=?,version=version+1,name_check=?,updated_at=? WHERE id=?',
@@ -227,6 +237,9 @@ def set_state(db, routine_id, state, now_local, stamp):
     """Pause, resume ('on') or stop. Resuming starts from the next date, never with what was missed while paused."""
     if state not in STATES:
         raise ValueError('Unknown state')
+    trying = db.execute("SELECT id FROM routines WHERE id=? AND state='trying'", (str(routine_id or ''),)).fetchone()
+    if trying and state == 'stopped':  # Cancel on a new one's test run: it was never kept
+        return _drop(db, trying['id'])
     row = get(db, routine_id, LIVE + ('suggested',) if state == 'stopped' else LIVE)  # No thanks on a suggestion stops it
     due = row['next_due']
     if state == 'on' and row['state'] != 'on':
@@ -245,11 +258,11 @@ def running(db):
 def begin(db, routine_id, period, stamp, now_local=None):
     """A run for (routine, period), or None when that period has one already (it never runs twice). A scheduled period
     moves the routine's next date past it in the same transaction, never back."""
-    row = get(db, routine_id, LIVE + ('sorting',))
+    row = get(db, routine_id, LIVE + ('sorting', 'trying'))
     run_id = uuid.uuid4().hex
     made = db.execute('INSERT OR IGNORE INTO routine_runs(id,routine_id,period,version,state,started_at) VALUES(?,?,?,?,?,?)',
                       (run_id, row['id'], period, row['version'], 'running', stamp)).rowcount
-    if not period.startswith(('now:', 'sort:')):
+    if not period.startswith(('now:', 'sort:', 'test:')):
         after = dt.date.fromisoformat(period)
         nxt = recurring.next_after(json.loads(row['rule']), dt.date.fromisoformat(row['anchor']), after)
         db.execute('UPDATE routines SET next_due=? WHERE id=? AND (next_due IS NULL OR next_due<?)', (nxt.isoformat(), row['id'], nxt.isoformat()))
@@ -262,6 +275,52 @@ def run_now(db, routine_id, stamp):
     if db.execute("SELECT 1 FROM routine_runs WHERE routine_id=? AND state='running'", (row['id'],)).fetchone():
         raise ValueError('It’s running already')
     return begin(db, row['id'], 'now:' + stamp, stamp)
+
+
+# --- test runs (dry: shown, never kept until Add or Save) ----------------------------------------------------------------
+
+def is_test(run):
+    return str(run['period']).startswith('test:')
+
+
+def _drop(db, routine_id):
+    db.execute('DELETE FROM routine_runs WHERE routine_id=?', (routine_id,))
+    db.execute("DELETE FROM routines WHERE id=? AND state='trying'", (routine_id,))
+
+
+def try_new(db, instructions, rule, anchor, at, now_local, stamp):
+    """Add on the page: a new routine's test run first. It waits as 'trying' (one at a time) until Add or Cancel."""
+    for old in db.execute("SELECT id FROM routines WHERE state='trying'").fetchall():
+        _drop(db, old['id'])
+    rid = create(db, instructions, rule, anchor, at, now_local, stamp, state='trying')
+    return rid, begin(db, rid, 'test:' + stamp, stamp)
+
+
+def try_words(db, routine_id, instructions, stamp):
+    """Try it: a test run of new words, one per press. A new one's ('trying') words change with it; a kept routine's
+    stay as they are, the words go with the run (trial) until Save."""
+    row = get(db, routine_id, LIVE + ('trying',))
+    instructions = _words(instructions)
+    if db.execute("SELECT 1 FROM routine_runs WHERE routine_id=? AND state='running'", (row['id'],)).fetchone():
+        raise ValueError('It’s running already')
+    db.execute("DELETE FROM routine_runs WHERE routine_id=? AND period LIKE 'test:%'", (row['id'],))  # only the newest try shows
+    if row['state'] == 'trying':
+        db.execute('UPDATE routines SET name=?,instructions=?,updated_at=? WHERE id=?',
+                   (name_of(instructions)[:NAME_MAX], instructions, stamp, row['id']))
+        return begin(db, row['id'], 'test:' + stamp, stamp)
+    run_id = uuid.uuid4().hex
+    db.execute("INSERT INTO routine_runs(id,routine_id,period,version,state,started_at,trial) VALUES(?,?,?,?,'running',?,?)",
+               (run_id, row['id'], 'test:' + stamp, row['version'], stamp, instructions))
+    return run_id
+
+
+def keep_test(db, routine_id, instructions=None):
+    """Add or Save: a test run of what is kept becomes its newest result; any other test run goes."""
+    for run in db.execute("SELECT id,trial FROM routine_runs WHERE routine_id=? AND period LIKE 'test:%'", (routine_id,)).fetchall():
+        if instructions is None or run['trial'] == instructions:
+            db.execute("UPDATE routine_runs SET period='now:'||substr(period,6),trial=NULL WHERE id=?", (run['id'],))
+        else:
+            db.execute('DELETE FROM routine_runs WHERE id=?', (run['id'],))
 
 
 def admitted(db, run_id, stamp):
@@ -293,7 +352,8 @@ def report(db, run_id, text=None, nothing=False, why=None, stamp=None):
 
 def last_result(db, routine_id):
     """The newest result of a routine, for its next run to build on."""
-    row = db.execute("SELECT result,started_at FROM routine_runs WHERE routine_id=? AND state='ready' ORDER BY started_at DESC LIMIT 1",
+    row = db.execute("SELECT result,started_at FROM routine_runs WHERE routine_id=? AND state='ready' AND period NOT LIKE 'test:%' "
+                     'ORDER BY started_at DESC LIMIT 1',
                      (routine_id,)).fetchone()
     return dict(row) if row else None
 
@@ -303,11 +363,13 @@ def view(db, states=LIVE):
     out = []
     marks = ','.join('?' * len(states))
     for r in db.execute(f'SELECT * FROM routines WHERE state IN ({marks}) ORDER BY created_at', states).fetchall():
-        runs = [dict(x) for x in db.execute('SELECT id,period,state,result,why,error,started_at,finished_at FROM routine_runs '
-                                            'WHERE routine_id=? ORDER BY started_at DESC LIMIT ?', (r['id'], HISTORY))]
+        runs = [dict(x) for x in db.execute('SELECT id,period,state,result,why,error,started_at,finished_at,trial FROM routine_runs '
+                                            'WHERE routine_id=? ORDER BY started_at DESC LIMIT ?', (r['id'], HISTORY + 1))]
+        test = next((x for x in runs if is_test(x)), None)  # a test run is shown on its own, never as a result
+        runs = [x for x in runs if not is_test(x)][:HISTORY]
         out.append({'id': r['id'], 'name': r['name'], 'instructions': r['instructions'], 'rule': json.loads(r['rule']),
                     'anchor': r['anchor'], 'at': r['at'], 'state': r['state'], 'next_due': r['next_due'] if r['state'] == 'on' else None,
-                    'origin': r['origin'], 'accepted_at': r['accepted_at'], 'old_job': r['old_job'], 'runs': runs})
+                    'origin': r['origin'], 'accepted_at': r['accepted_at'], 'old_job': r['old_job'], 'runs': runs, 'test': test})
     return out
 
 
@@ -363,9 +425,11 @@ def sorted_as(db, run_id, kind, stamp, name=None, instructions=None, text=None, 
 
 
 def accept(db, routine_id, now_local, stamp):
-    """Add a suggested routine: it runs on its rhythm from its next date; its preview stays its first result."""
-    row = get(db, routine_id, ('suggested',))
+    """Add a suggested routine, or a new one after its test run: it runs on its rhythm from its next date; its preview
+    (or test run) stays its first result."""
+    row = get(db, routine_id, ('suggested', 'trying'))
     _full(db)
+    keep_test(db, row['id'])
     due = first_due(json.loads(row['rule']), dt.date.fromisoformat(row['anchor']), row['at'], now_local).isoformat()
     db.execute("UPDATE routines SET state='on',next_due=?,accepted_at=?,updated_at=? WHERE id=?", (due, stamp, stamp, row['id']))
 
