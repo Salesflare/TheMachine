@@ -41,11 +41,19 @@ In **Bearbeiten** lässt **Ausprobieren** die neuen Worte einmal laufen und zeig
 
 **Pausieren** hält die Läufe an bis **Fortsetzen**; pausierte Routinen warten unten unter **Pausiert**, und was während der Pause verpasst wurde, läuft danach nicht. **Stopp** beendet eine Routine endgültig.
 
+## Skriptschritte
+
+Eine Routine kann deine eigenen Befehle auf deiner Machine ausführen. Öffne in **Bearbeiten** die **Skriptschritte**. **Daten holen** führt zuerst einen Befehl aus, etwa `python3 ~/scripts/deals.py`, in seinem Ordner (leer: dein Home-Ordner) und höchstens für seine Sekunden. Was er ausgibt, bekommt der Lauf zum Arbeiten. Ohne Worte ist die Ausgabe das Ergebnis.
+
+**Prüfung** bekommt nach dem Lauf das Ergebnis als Eingabe. Endet sie mit einem Fehler, zeigt der Lauf **Hat nicht geklappt** mit dem, was die Prüfung gesagt hat. Ein fehlgeschlagener Befehl bei Daten holen zeigt sich genauso.
+
+Ein Befehl ist eine Zeile und läuft ohne Shell: keine Pipes oder Variablen. Skriptschritte legst nur du fest, auf deinem Dashboard. Ein Testlauf und **Ausprobieren** führen Daten holen auch aus und sagen das; sie senden und behalten trotzdem nichts. Eine Routine sendet nie, also sollte ein Skriptschritt nur lesen.
+
 ## Aus deinen OpenClaw-Jobs
 
 Hast du vorher geplante Jobs in OpenClaw angelegt, liest deine Machine sie (sie ändert sie nie) und schlägt die passenden unter **Vorgeschlagen** als Routinen vor. Jeder lief einmal, damit du ein echtes Ergebnis siehst.
 
-Deine Korrekturen am Job bleiben drin, was er gesendet oder gepostet hat, fällt weg. **Hinzufügen** macht daraus eine Routine, **Nein danke** fragt nie wieder nach diesem Job. Ein Job, der dich an etwas erinnert hat, kommt stattdessen als Angebot für eine wiederkehrende Aufgabe unter Aufgaben.
+Deine Korrekturen am Job bleiben drin, was er gesendet oder gepostet hat, fällt weg. Ein Job, der ein Skript ausgeführt oder gelesen hat, was ein Skript-Job gesammelt hat, bringt es als Daten holen mit. **Hinzufügen** macht daraus eine Routine, **Nein danke** fragt nie wieder nach diesem Job. Ein Job, der dich an etwas erinnert hat, kommt stattdessen als Angebot für eine wiederkehrende Aufgabe unter Aufgaben.
 
 Höchstens drei Vorschläge warten gleichzeitig. Nach einer Woche guter Läufe fragt die Routine **Den alten OpenClaw-Job ausschalten?** Er wird nur ausgeschaltet, wenn du auf **Ausschalten** tippst, und du kannst ihn in OpenClaw wieder einschalten.
 
