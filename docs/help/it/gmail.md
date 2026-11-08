@@ -34,7 +34,7 @@ Sul tuo computer, una volta [associato al tuo account](friends.md#a-machine-on-y
 1. Nella dashboard, apri **Connessioni**, poi **+ Aggiungi**, e scegli Gmail.
 2. Premi **Accedi con Google** e accedi nella scheda che si apre. Gmail e Google Calendar si collegano insieme.
 
-Se non è associato, o con il tuo client OAuth di Google: apri lì **Usa la tua app**, oppure esegui `assistant connect gmail`. Apri l'indirizzo che mostra e accedi.
+Se non è associato, o con il tuo client OAuth di Google: apri lì **Usa la tua app**, oppure esegui `assistant connect gmail`. Premi **Apri Google**, accedi, poi incolla l'indirizzo a cui ti manda Google. Google Calendar per lo stesso indirizzo si collega insieme.
 
 Un admin di Google Workspace potrebbe dover prima consentire l'app, nella Console di amministrazione.
 

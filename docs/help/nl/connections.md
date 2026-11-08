@@ -16,7 +16,7 @@ Onder de status zegt elke bron in één regel wat ze binnenbrengt en, als ze iet
 
 ## Een bron toevoegen
 
-Open **+ Toevoegen** en kies een bron. Hij vraagt wat hij nodig heeft, één vraag tegelijk. **Annuleren** stopt het toevoegen. Zodra hij gekoppeld is, herstart je Machine om hem te gaan lezen, en opent dan de nieuwe kaart, die toont hoe de eerste sync verloopt. Op een gehoste Machine log je hier in bij Google, Microsoft, Microsoft OneDrive, Zoom, Stripe en Intercom: kies **Werk** of **Privé**, log in en je komt terug in dit formulier, dat toont hoe het koppelen gaat. GitHub, WhatsApp, Codex, Telegram-chats en je Android-telefoon tonen hun code meteen in dit formulier.
+Open **+ Toevoegen** en kies een bron. Hij vraagt wat hij nodig heeft, één vraag tegelijk. **Annuleren** stopt het toevoegen. Weggegaan voor het klaar was? Open **Koppelingen** opnieuw, op eender welk toestel, en je gaat verder bij dezelfde stap. Zodra hij gekoppeld is, herstart je Machine om hem te gaan lezen, en opent dan de nieuwe kaart, die toont hoe de eerste sync verloopt. Op een gehoste Machine log je hier in bij Google, Microsoft, Microsoft OneDrive, Zoom, Stripe en Intercom: kies **Werk** of **Privé**, log in en je komt terug in dit formulier, dat toont hoe het koppelen gaat. GitHub, WhatsApp, Codex, Telegram-chats en je Android-telefoon tonen hun code meteen in dit formulier.
 
 De lijst is gegroepeerd (**Mail en agenda**, **Chat**, **Afspraken**, **Documenten en bestanden**, **Klanten**, **Projecten en code**, **Andere**), van A tot Z per groep.
 

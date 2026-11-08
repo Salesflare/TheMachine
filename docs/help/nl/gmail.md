@@ -34,7 +34,7 @@ Op je eigen computer, zodra hij [aan je account gekoppeld is](friends.md#a-machi
 1. Open in het dashboard **Koppelingen**, dan **+ Toevoegen**, en kies Gmail.
 2. Druk op **Inloggen met Google** en log in in het tabblad dat opent. Gmail en Google Calendar worden samen gekoppeld.
 
-Niet gekoppeld, of met je eigen Google OAuth-client: open daar **Je eigen app gebruiken**, of voer `assistant connect gmail` uit. Open het adres dat het toont en log in.
+Niet gekoppeld, of met je eigen Google OAuth-client: open daar **Je eigen app gebruiken**, of voer `assistant connect gmail` uit. Druk op **Open Google**, log in en plak dan het adres waar Google je naartoe stuurt. Google Calendar voor hetzelfde adres komt mee.
 
 Een beheerder van Google Workspace moet de app misschien eerst toestaan, in de Admin-console.
 

@@ -34,7 +34,7 @@ Sur votre propre ordinateur, une fois [associé à votre compte](friends.md#a-ma
 1. Dans le tableau de bord, ouvrez **Connexions**, puis **+ Ajouter**, et choisissez Gmail.
 2. Appuyez sur **Se connecter avec Google** et connectez-vous dans l’onglet qui s’ouvre. Gmail et Google Agenda se connectent ensemble.
 
-Sans association, ou avec votre propre client OAuth Google : ouvrez **Utiliser votre propre app** à cet endroit, ou lancez `assistant connect gmail`. Ouvrez l’adresse affichée et connectez-vous.
+Sans association, ou avec votre propre client OAuth Google : ouvrez **Utiliser votre propre app** à cet endroit, ou lancez `assistant connect gmail`. Appuyez sur **Ouvrir Google**, connectez-vous, puis collez l’adresse vers laquelle Google vous renvoie. Google Calendar pour la même adresse suit.
 
 Un admin Google Workspace devra peut-être d’abord autoriser l’app, dans la console d’administration.
 
