@@ -7,6 +7,8 @@ import threading
 import time
 
 from machine.actions import VOICE_ACTIONS
+from machine.config import ROOT
+from machine.model_usage import node_bin
 import voice_input
 
 LOG = logging.getLogger('personal-assistant')
@@ -146,3 +148,11 @@ class VoiceApp:
                     self.dictation.prepare(prefs['model'])
             except Exception as error:
                 LOG.error('voice warm error=%s', type(error).__name__)
+
+    @property
+    def dictation_openai(self):
+        """Voice input's openai engine with OpenClaw kept loaded (voice-openai-run.mjs), so a clip takes a second or two."""
+        if getattr(self, '_voice_oa', None) is None:
+            self._voice_oa = voice_input.OpenAIVoice(self.dictation.root / 'clips',
+                                                     lambda: ([node_bin(self.config), str(ROOT / 'voice-openai-run.mjs')], self.talk_env()))
+        return self._voice_oa

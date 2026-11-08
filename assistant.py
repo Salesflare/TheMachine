@@ -1829,14 +1829,6 @@ class App(*APP_MIXINS):
     BUG_SHOT_BYTES = 2 * 1024 * 1024
     BUG_TEXT = 4000
 
-    @property
-    def dictation_openai(self):
-        """Voice input's openai engine with OpenClaw kept loaded (voice-openai-run.mjs), so a clip takes a second or two."""
-        if getattr(self, '_voice_oa', None) is None:
-            self._voice_oa = voice_input.OpenAIVoice(self.dictation.root / 'clips',
-                                                     lambda: ([node_bin(self.config), str(Path(__file__).resolve().parent / 'voice-openai-run.mjs')], self.talk_env()))
-        return self._voice_oa
-
     HELP_TOPICS_SECONDS = 6 * 3600
 
 
