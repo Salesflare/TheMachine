@@ -12,6 +12,9 @@ import voice_input
 LOG = logging.getLogger('personal-assistant')
 
 
+VOICE_WARM_QUIET = 3   # 5-minute checks in a row that a live Machine is quiet before voice gets ready in the background
+
+
 class VoiceApp:
     # action name -> the method that handles it, called as method(name, args, owner_dashboard) (App.action)
     ACTIONS = {**dict.fromkeys(VOICE_ACTIONS, 'voice_actions_action')}
@@ -112,3 +115,34 @@ class VoiceApp:
         if not owner_dashboard:
             raise ValueError('Only the owner uses voice input, on the dashboard')
         return self.voice_action(name, args)
+
+    def voice_warm_worker(self):
+        """Gets this Machine's own voice engine ready in the background, so a tap on the mic never waits on a download.
+        Never during setup: only once this Machine is live (its first full review is done) and has been quiet for a while
+        (VOICE_WARM_QUIET checks in a row: no review or preparation running, load under half the cores). Only when it
+        will use it (no OpenAI here, or On this Machine picked) and there's room on disk. The same after an update that
+        changes its packages. The install runs at a lower priority (voice_input.lowered). Until then a tap uses OpenAI or
+        the browser's own speech recognition (voice_view's `use`)."""
+        tried, quiet = 0.0, 0
+        try:
+            self.voice_openai(True, wait=True)   # known before the first tap: whether Automatic means OpenAI here
+        except Exception as error:
+            LOG.error('voice openai check error=%s', type(error).__name__)
+        while not self.stop.wait(300):
+            try:
+                with self.store.connect() as db:
+                    prefs = voice_input.prefs(db)
+                    live = db.execute("SELECT 1 FROM review_runs WHERE status='ok' AND NOT COALESCE(window_hours,0) LIMIT 1").fetchone()
+                    busy = db.execute("SELECT (SELECT count(*) FROM preparations WHERE status IN ('starting','running'))"
+                                      "+(SELECT count(*) FROM review_runs WHERE status IN ('starting','running','recovering'))").fetchone()[0]
+                openai = self.voice_openai(True, wait=True)   # kept 10 minutes: OpenAI connected later switches Automatic to it
+                quiet = quiet + 1 if live and not busy and voice_input.idle() else 0
+                status = self.dictation.status(prefs['model'])
+                if quiet < VOICE_WARM_QUIET or (status['state'] == 'failed' and time.monotonic() - tried < 6 * 3600):
+                    continue
+                if voice_input.warm_due(prefs, openai, status, self.dictation.room()):
+                    tried = time.monotonic()
+                    LOG.info('voice warm start model=%s', prefs['model'])
+                    self.dictation.prepare(prefs['model'])
+            except Exception as error:
+                LOG.error('voice warm error=%s', type(error).__name__)
