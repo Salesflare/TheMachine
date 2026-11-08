@@ -805,6 +805,16 @@ class StoreCore:
     AHEAD_BLOCKERS = ("FROM preparations p JOIN suggestions s ON s.id=p.suggestion_id WHERE p.status='cancelled' "
                       "AND trim(coalesce(p.reason,''))<>'' AND (s.status='pending' OR s.status='snoozed' AND s.resume_status='pending')")
 
+    def copy_before(self, name):
+        """A copy of the database next to it before a one-time fix changes it (events.sqlite.before-<name>-<time>Z, only
+        the owner can read it; retention rotates it like other copies)."""
+        copy = self.path.with_name(f'{self.path.name}.before-{name}-{dt.datetime.now(dt.timezone.utc):%Y%m%dT%H%M%SZ}')
+        fd = os.open(copy, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        os.close(fd)
+        with contextlib.closing(sqlite3.connect(self.path, timeout=60)) as source, contextlib.closing(sqlite3.connect(copy)) as target:
+            source.backup(target)  # a consistent copy while the service keeps writing
+        return copy
+
     def restore_ahead_blockers(self):
         """Once: settle_ahead used to cancel the blocker of a prepared-ahead run it sent out as a new to-do, so the owner
         never saw its reason, questions, Answer or Try again. Those preparations (canceled, reason kept, on a waiting or
@@ -817,11 +827,7 @@ class StoreCore:
                 return 0
             found = db.execute('SELECT count(*) ' + self.AHEAD_BLOCKERS).fetchone()[0]
         if found:
-            copy = self.path.with_name(f'{self.path.name}.before-{name}-{dt.datetime.now(dt.timezone.utc):%Y%m%dT%H%M%SZ}')
-            fd = os.open(copy, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
-            os.close(fd)
-            with contextlib.closing(sqlite3.connect(self.path, timeout=60)) as source, contextlib.closing(sqlite3.connect(copy)) as target:
-                source.backup(target)  # a consistent copy while the service keeps writing
+            self.copy_before(name)
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             if db.execute('SELECT 1 FROM store_fixes WHERE name=?', (name,)).fetchone():
