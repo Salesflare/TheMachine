@@ -51,18 +51,18 @@ class SummariesApp:
                 owner = graph.Owner({'accounts': self.config.get('accounts', [])}, db)
                 owner.slack |= set(getattr(self.store, 'owner_user_ids', None) or ())
                 pages = [person_summary.evidence(db, owner, p, graph.person_evidence) for p in people]
-            text = person_summary.prompt(pages, locale_prefs.language_of(self.config))
+            lang = locale_prefs.language_of(self.config)
             if stand_in:
-                answer = stand_in(self.config, text)
+                ask = lambda text: stand_in(self.config, text)
             else:
                 swap = background_model(self.config)
-                answer = help_chat.openclaw_model_run(self.config, text, '/'.join(swap) if swap else None, timeout=self.SUMMARY_SECONDS)
-            found = person_summary.parse(answer, pages)
+                ask = lambda text: help_chat.openclaw_model_run(self.config, text, '/'.join(swap) if swap else None, timeout=self.SUMMARY_SECONDS)
+            found = self.summary_checked(ask, pages, lang)
             sides = {a.get('id'): graph.account_side(a) for a in self.config.get('accounts', []) if a.get('id')}
             with self.store.connect() as db:
                 db.execute('BEGIN IMMEDIATE')
                 for p in people:  # one the turn wrote nothing for waits for newer evidence too
-                    if person_summary.save(db, p['id'], found.get(p['id'], []), p['evidence_at'], sides) != 'nothing':
+                    if person_summary.save(db, p['id'], found.get(p['id'], []), p['evidence_at'], sides, cleared=p['id'] in found) != 'nothing':
                         written += 1
         except help_chat.Unavailable:
             status, error = 'failed', 'model'
@@ -73,6 +73,34 @@ class SummariesApp:
         if error:
             LOG.warning('person summaries not written error=%s', error)
         return written
+
+    @staticmethod
+    def summary_checked(ask, pages, lang):
+        """The pass's lines, each past the check (person_summary.check_prompt): a rejected line is written again once
+        with the reason and checked again; one that still fails is dropped. ask(text) runs one model turn. A first check
+        that can't be read fails the pass (ValueError), so nothing unchecked is saved and the people stay due."""
+        found = person_summary.parse(ask(person_summary.prompt(pages, lang)), pages)
+        if not any(found.values()):
+            return found
+        text, index = person_summary.check_prompt(found, pages)
+        kept, rejected = person_summary.judged(found, index, person_summary.verdicts(ask(text), index))
+        if not rejected:
+            return kept
+        again = person_summary.parse(ask(person_summary.rewrite_prompt(pages, kept, rejected, lang)), pages)
+        again = {node_id: lines for node_id, lines in again.items() if node_id in rejected and lines}
+        if again:
+            text, index = person_summary.check_prompt(again, pages)
+            try:
+                passed, _ = person_summary.judged(again, index, person_summary.verdicts(ask(text), index))
+            except ValueError:  # the second check unreadable: the rewrites go, what passed the first time stays
+                passed = {}
+            for node_id, lines in passed.items():
+                seen = {line['text'] for line in kept[node_id]}
+                kept[node_id] += [line for line in lines if line['text'] not in seen]
+        for node_id, lines in kept.items():
+            lines.sort(key=lambda x: person_summary.KINDS.index(x['kind']))
+            del lines[person_summary.MAX_LINES:]
+        return kept
 
     def summary_change(self, args):
         """The owner on a person's summary: op edit (lines), use (the suggested update), keep (theirs, without it), reset."""

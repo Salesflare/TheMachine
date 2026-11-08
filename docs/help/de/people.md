@@ -22,7 +22,9 @@ Wenn eine Seite **Die Seite konnte nicht geladen werden.** zeigt, tippe auf **Er
 
 ## Zusammenfassung
 
-Ein paar kurze Zeilen oben auf der Seite einer Person: wer sie für dich ist, wo ihr steht und was in beide Richtungen offen ist. The Machine schreibt sie neu, wenn es Neues gibt, nur für Menschen, mit denen du wirklich in Kontakt bist. Jede Zeile verlinkt ihre Quelle.
+Ein paar kurze Zeilen oben auf der Seite einer Person: was entschieden, gefragt, geplant oder versprochen wurde, mit allen beim Namen. The Machine schreibt sie neu, wenn es Neues gibt, nur für Menschen, mit denen du wirklich in Kontakt bist, und prüft vorher jede Zeile.
+
+Eine vage Zeile fällt weg; gibt es nichts Konkretes, gibt es keine Zusammenfassung. Jede Zeile verlinkt ihre Quelle: Nachrichten eines Tages teilen sich ein Datum mit ihrer Anzahl und öffnen sich zusammen.
 
 **Bearbeiten**, um es mit deinen Worten zu sagen. Gibt es Neues, zeigt The Machine eine **Vorgeschlagene Aktualisierung** mit **Übernehmen** und **Meine behalten**. **The Machine schreiben lassen** gibt sie ihr zurück.
 

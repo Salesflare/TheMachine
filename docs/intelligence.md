@@ -361,6 +361,11 @@ the organization's role.
   person at most once every 20 hours, only when the budget allows.
 - Each line must cite its sources (`E` a signal, `F` a fact, `P` a promise). A line without a known source, or one that
   only repeats what the page shows above it, is dropped. A line whose source is deleted disappears.
+- Quality or nothing: a second, short turn checks every line on a rubric (`person_summary.RUBRIC`): a concrete fact
+  (decided, asked, planned, promised), everyone in it named as the evidence names them, no guessed roles. It judges
+  meaning, not words. A rejected line is written again once with the reason and checked again; one that still fails is
+  dropped. With nothing specific left, a summary The Machine wrote goes, and the page shows none. A check that can't
+  be read saves nothing, and the people stay due.
 - Your edit wins: a rewrite then shows a **Suggested update** with Use it and Keep mine. **Let The Machine write it**
   gives it back.
 - Preparations add a "summary:" part with only the lines whose sources are in the to-do's area (a personal line never
