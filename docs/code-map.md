@@ -23,7 +23,7 @@ writes it; other modules call the owner's functions.
 | graph and CRM | `graph`, `crm`, `crm_fields`, `crm_import`, `crm_fixes`, `enrichment`, `own_addresses`, `bounces`, `places`, `signatures`, `person_summary`, `project_success` (a project's done-when, its proof and blocker), `knowledge` (what every surface asks about a record, no table) | `graph_*`, `projects`, `boards`, `board_*`, `person_*`, `org_*` (graph); `record_*`, `org_aliases` (crm); `crm_fields`, `crm_tags`, `crm_values`; `person_facts`, `enrich_prefs`, photo and logo tries (enrichment); `own_*`; `email_bounce*`; `person_summar*` (person_summary); `project_success` |
 | follow-ups | `follow_ups`, `task_invites`, `task_pages` | `follow_up_*`, `task_pages` |
 | recurring to-dos | `recurring`, `recurring_app` | `recurring_series`, `recurring_cards`, `recurring_offers` |
-| routines | `routines`, `routines_app` | `routines`, `routine_runs` |
+| routines | `routines`, `routines_app`, `routine_imports` (old OpenClaw jobs as suggestions, read-only, no table) | `routines`, `routine_runs` |
 | do it and preparation | `next_actions`, `preparation_state`, `gap_note` (what isn't known about a to-do's people, no table), `agent_jobs`, `agent_remote`, `agents_app`, `codex_signin` (Codex's device sign-in, no table), `calendar_writes`, `calendar_app`, `doc_writes`, `meeting_writer`, `meeting_notes`, `browser_login`, `browser_viewer` | `preparation_runs`, `preparation_calls`, `agent_*`, `meeting_writes`, `meeting_moves` |
 | reviews and learning | `learning_loop`, `missed_work`, `missed_work_app`, `corrections`, `corrections_app`, `learnings`, `team_learnings`, `fleet_learnings`, `embeddings`, `gbrain`, `gbrain_app` | `learning_changes`, `missed_audit*`, `team_learning*`, `fleet_learn*`, `event_vector*`, `gbrain_*` |
 | chat, talk, voice | `chat_model`, `chat_files`, `file_text`, `talk_live`, `voice_input`, `voice_worker`, `help_chat`, `search_ask` (Ask from search, no table) | `chat_models`, `chat_fast_sessions`, `chat_files`, `talk_lines`, `draft_seen` (talk_live), `voice_prefs` |
@@ -66,7 +66,9 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   - `whatsapp_images_app.py` (`WhatsAppImagesApp`): Read photos on a WhatsApp connection and the worker that downloads
     and reads each photo.
   - `routines_app.py` (`RoutinesApp`): routines, work The Machine does on its own on a rhythm: the Routines page's
-    actions (`ROUTINE_ACTIONS`), a run's own report (`routine_result`) and the worker that starts each run.
+    actions (`ROUTINE_ACTIONS`), a run's own report (`routine_result`) and the worker that starts each run. It also
+    sorts old OpenClaw jobs (`routine_imports.py`) into suggestions, and turns one off on the owner's tap
+    (`openclaw-cron-off.mjs`).
   - `machine/export/` (with `moving.py`): `inventory.py`, the one list of what an install keeps by part, and `walk()`,
     one iterator over it; `home.py`, OpenClaw's conversations and what else an export takes from outside the data
     folder; `hold.py`, what an import holds so nothing goes out by itself ([moving.md](moving.md)).

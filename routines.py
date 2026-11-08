@@ -10,6 +10,12 @@ makes a second result. A scheduled period is its date; Run now is 'now:<stamp>'.
 off don't stack: only the newest missed one runs. A run reads with the review's read-only tools and ends with one
 routine_result (routines_app.py): Ready (a result), Nothing new, or Didn't work. A run that ends without one didn't work.
 
+A routine can also come from an old OpenClaw job (routine_imports.py, origin 'openclaw:<job id>'). Such a row starts as
+'sorting': one run reads the job, says whether it fits (a routine, a recurring to-do or neither) and, when it is a
+routine, runs it once for real. That run is the preview of a 'suggested' routine, which the owner adds with one tap
+('on') or turns down ('stopped'). A sorted job never comes back: its row stays, 'skipped' when it didn't fit. A week
+after it was added, a routine from an OpenClaw job that ran well offers to turn the old job off (old_job).
+
 Tables (this module owns them): routines, routine_runs."""
 import datetime as dt
 import json
@@ -19,6 +25,10 @@ import uuid
 import recurring
 
 STATES = ('on', 'paused', 'stopped')
+LIVE = ('on', 'paused')  # the owner's routines; 'sorting', 'suggested' and 'skipped' come from OpenClaw jobs
+SHORT_MAX = 18  # a suggested routine's name: it fits a phone's row next to its status
+MAX_SUGGESTED = 3  # open suggestions at a time: the next job is sorted once one is answered
+OLD_JOB_AFTER = 7  # days a routine from an OpenClaw job runs before it offers to turn the old job off
 RUN_STATES = ('running', 'ready', 'nothing', 'failed')
 DEFAULT_AT = '08:00'
 NAME_MAX = 80
@@ -41,6 +51,10 @@ def ensure(db):
         result TEXT,why TEXT,error TEXT,started_at TEXT NOT NULL,admitted_at TEXT,finished_at TEXT,UNIQUE(routine_id,period));
       CREATE INDEX IF NOT EXISTS routine_runs_routine ON routine_runs(routine_id,started_at);
     ''')
+    have = {r[1] for r in db.execute('PRAGMA table_info(routines)')}
+    for column in ('origin', 'accepted_at', 'old_job'):  # added after the first release (#916)
+        if column not in have:
+            db.execute(f'ALTER TABLE routines ADD COLUMN {column} TEXT')
 
 
 # --- words -------------------------------------------------------------------------------------------------------------
@@ -137,25 +151,40 @@ def due_period(row, now_local):
 
 # --- routines ----------------------------------------------------------------------------------------------------------
 
-def create(db, instructions, rule, anchor, at, now_local, stamp, name=None, work=False):
-    if db.execute("SELECT count(*) FROM routines WHERE state!='stopped'").fetchone()[0] >= MAX_ROUTINES:
+def _full(db):
+    if db.execute("SELECT count(*) FROM routines WHERE state IN ('on','paused')").fetchone()[0] >= MAX_ROUTINES:
         raise ValueError('You have 20 routines. Stop one before you add another.')
+
+
+def short_name(text):
+    """A name that fits a phone's row: at most SHORT_MAX characters, cut at a word."""
+    words = ' '.join(str(text or '').split()).strip(' .,:;-')
+    if len(words) > SHORT_MAX:
+        words = words[:SHORT_MAX + 1].rsplit(' ', 1)[0] if ' ' in words[:SHORT_MAX + 1] else words[:SHORT_MAX]
+    words = words.strip(' .,:;-&')
+    return words[:1].upper() + words[1:]
+
+
+def create(db, instructions, rule, anchor, at, now_local, stamp, name=None, work=False, origin=None, state='on'):
+    if state == 'on':
+        _full(db)
     rule, at = recurring.clean_rule(rule), clean_at(at)
     anchor = recurring.anchor_for(rule, anchor)  # a weekdays routine never starts on a weekend
     instructions = ' '.join(str(instructions or '').split())[:INSTRUCTIONS_MAX]
     if len(instructions) < 4:
         raise ValueError('Say what it should do, like sum up my open deals')
     rid = uuid.uuid4().hex
-    db.execute('INSERT INTO routines(id,name,instructions,rule,anchor,at,state,work,next_due,created_at,updated_at) '
-               'VALUES(?,?,?,?,?,?,?,?,?,?,?)',
-               (rid, (name or name_of(instructions))[:NAME_MAX], instructions, json.dumps(rule), anchor.isoformat(), at, 'on',
-                int(bool(work)), first_due(rule, anchor, at, now_local).isoformat(), stamp, stamp))
+    db.execute('INSERT INTO routines(id,name,instructions,rule,anchor,at,state,work,next_due,origin,accepted_at,created_at,updated_at) '
+               'VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)',
+               (rid, (name or name_of(instructions))[:NAME_MAX], instructions, json.dumps(rule), anchor.isoformat(), at, state,
+                int(bool(work)), first_due(rule, anchor, at, now_local).isoformat() if state == 'on' else None, origin,
+                stamp if state == 'on' else None, stamp, stamp))
     return rid
 
 
-def get(db, routine_id):
+def get(db, routine_id, states=LIVE):
     row = db.execute('SELECT * FROM routines WHERE id=?', (str(routine_id or ''),)).fetchone()
-    if not row or row['state'] == 'stopped':
+    if not row or row['state'] not in states:
         raise ValueError('That routine is gone')
     return row
 
@@ -172,7 +201,7 @@ def set_state(db, routine_id, state, now_local, stamp):
     """Pause, resume ('on') or stop. Resuming starts from the next date, never with what was missed while paused."""
     if state not in STATES:
         raise ValueError('Unknown state')
-    row = get(db, routine_id)
+    row = get(db, routine_id, LIVE + ('suggested',) if state == 'stopped' else LIVE)  # No thanks on a suggestion stops it
     due = row['next_due']
     if state == 'on' and row['state'] != 'on':
         due = first_due(json.loads(row['rule']), dt.date.fromisoformat(row['anchor']), row['at'], now_local).isoformat()
@@ -190,11 +219,11 @@ def running(db):
 def begin(db, routine_id, period, stamp, now_local=None):
     """A run for (routine, period), or None when that period has one already (it never runs twice). A scheduled period
     moves the routine's next date past it in the same transaction, never back."""
-    row = get(db, routine_id)
+    row = get(db, routine_id, LIVE + ('sorting',))
     run_id = uuid.uuid4().hex
     made = db.execute('INSERT OR IGNORE INTO routine_runs(id,routine_id,period,version,state,started_at) VALUES(?,?,?,?,?,?)',
                       (run_id, row['id'], period, row['version'], 'running', stamp)).rowcount
-    if not period.startswith('now:'):
+    if not period.startswith(('now:', 'sort:')):
         after = dt.date.fromisoformat(period)
         nxt = recurring.next_after(json.loads(row['rule']), dt.date.fromisoformat(row['anchor']), after)
         db.execute('UPDATE routines SET next_due=? WHERE id=? AND (next_due IS NULL OR next_due<?)', (nxt.isoformat(), row['id'], nxt.isoformat()))
@@ -243,13 +272,93 @@ def last_result(db, routine_id):
     return dict(row) if row else None
 
 
-def view(db):
-    """The Routines page: each routine that isn't stopped, with its rhythm and its last runs, newest first."""
+def view(db, states=LIVE):
+    """The Routines page: the owner's routines (or the suggestions), with their rhythm and last runs, newest first."""
     out = []
-    for r in db.execute("SELECT * FROM routines WHERE state!='stopped' ORDER BY created_at").fetchall():
+    marks = ','.join('?' * len(states))
+    for r in db.execute(f'SELECT * FROM routines WHERE state IN ({marks}) ORDER BY created_at', states).fetchall():
         runs = [dict(x) for x in db.execute('SELECT id,period,state,result,why,error,started_at,finished_at FROM routine_runs '
                                             'WHERE routine_id=? ORDER BY started_at DESC LIMIT ?', (r['id'], HISTORY))]
         out.append({'id': r['id'], 'name': r['name'], 'instructions': r['instructions'], 'rule': json.loads(r['rule']),
                     'anchor': r['anchor'], 'at': r['at'], 'state': r['state'], 'next_due': r['next_due'] if r['state'] == 'on' else None,
-                    'runs': runs})
+                    'origin': r['origin'], 'accepted_at': r['accepted_at'], 'old_job': r['old_job'], 'runs': runs})
     return out
+
+
+# --- from OpenClaw jobs ------------------------------------------------------------------------------------------------
+
+def sorted_origins(db):
+    """Every origin a row was made for, in any state: a job is sorted once."""
+    return {r[0] for r in db.execute('SELECT origin FROM routines WHERE origin IS NOT NULL')}
+
+
+def sorting(db):
+    """The row being sorted now, or None (one at a time)."""
+    return db.execute("SELECT * FROM routines WHERE state='sorting' ORDER BY created_at LIMIT 1").fetchone()
+
+
+def open_suggestions(db):
+    return db.execute("SELECT count(*) FROM routines WHERE state='suggested'").fetchone()[0]
+
+
+def start_sorting(db, job, now_local, stamp):
+    """A 'sorting' row for an OpenClaw job and its one run: (routine id, run id)."""
+    rid = create(db, 'Sort the OpenClaw job ' + job['name'], job['rule'], job['anchor'], job['at'], now_local, stamp,
+                 name=short_name(job['name']) or 'OpenClaw job', origin='openclaw:' + job['id'], state='sorting')
+    return rid, begin(db, rid, 'sort:' + stamp, stamp)
+
+
+def sort_again(db, row, stamp):
+    """The sorting row's run didn't work: once more, then the job is skipped (its failed runs kept). The new run id or None."""
+    failed = db.execute("SELECT count(*) FROM routine_runs WHERE routine_id=? AND state='failed'", (row['id'],)).fetchone()[0]
+    if failed >= 2:
+        db.execute("UPDATE routines SET state='skipped',updated_at=? WHERE id=?", (stamp, row['id']))
+        return None
+    return begin(db, row['id'], 'sort:' + stamp, stamp)
+
+
+def sorted_as(db, run_id, kind, stamp, name=None, instructions=None, text=None, nothing=False, why=None):
+    """A sorting run's answer: 'routine' (a suggestion; its result is the preview), 'todo' or 'skip'. The routine's row."""
+    run = db.execute("SELECT r.routine_id FROM routine_runs r JOIN routines t ON t.id=r.routine_id WHERE r.id=? AND r.state='running' "
+                     "AND t.state='sorting'", (str(run_id),)).fetchone()
+    if not run:
+        raise ValueError('This routine run is over: end the turn')
+    rid = run['routine_id']
+    if kind == 'routine':
+        name, instructions = short_name(name), ' '.join(str(instructions or '').split())[:INSTRUCTIONS_MAX]
+        if len(name) < 2 or len(instructions) < 4:
+            raise ValueError('A routine needs name (at most 18 characters) and instructions')
+        report(db, run_id, text=text, nothing=nothing, why=why, stamp=stamp)
+        db.execute("UPDATE routines SET state='suggested',name=?,instructions=?,updated_at=? WHERE id=?", (name, instructions, stamp, rid))
+    else:
+        finish(db, run_id, 'nothing', stamp, why=' '.join(str(why or kind).split()))
+        db.execute("UPDATE routines SET state='skipped',updated_at=? WHERE id=?", (stamp, rid))
+    return db.execute('SELECT * FROM routines WHERE id=?', (rid,)).fetchone()
+
+
+def accept(db, routine_id, now_local, stamp):
+    """Add a suggested routine: it runs on its rhythm from its next date; its preview stays its first result."""
+    row = get(db, routine_id, ('suggested',))
+    _full(db)
+    due = first_due(json.loads(row['rule']), dt.date.fromisoformat(row['anchor']), row['at'], now_local).isoformat()
+    db.execute("UPDATE routines SET state='on',next_due=?,accepted_at=?,updated_at=? WHERE id=?", (due, stamp, stamp, row['id']))
+
+
+def old_job_due(db, row, now_utc):
+    """Whether a routine from an OpenClaw job offers to turn the old job off: added a week ago or more, not answered, and
+    its last three runs since then all worked (Ready or Nothing new)."""
+    if row['state'] != 'on' or not str(row['origin'] or '').startswith('openclaw:') or row['old_job'] or not row['accepted_at']:
+        return False
+    if now_utc - dt.datetime.fromisoformat(row['accepted_at']) < dt.timedelta(days=OLD_JOB_AFTER):
+        return False
+    last = [r[0] for r in db.execute("SELECT state FROM routine_runs WHERE routine_id=? AND started_at>=? AND state!='running' "
+                                     'ORDER BY started_at DESC LIMIT 3', (row['id'], row['accepted_at']))]
+    return len(last) == 3 and all(s in ('ready', 'nothing') for s in last)
+
+
+def answer_old_job(db, routine_id, choice, stamp):
+    """'off' (the caller turned the job off) or 'kept': asked once either way."""
+    if choice not in ('off', 'kept'):
+        raise ValueError('Unknown choice')
+    row = get(db, routine_id)
+    db.execute('UPDATE routines SET old_job=?,updated_at=? WHERE id=?', (choice, stamp, row['id']))

@@ -3,7 +3,7 @@ title: Routinen
 area: cards
 summary: Arbeit, die deine Machine von selbst in einem Rhythmus erledigt, wie eine Montagsübersicht deiner offenen Deals. Sie liest nur.
 covers: tab:routines
-code: routines.py, routines_app.py, dashboard/routines-page.js
+code: routines.py, routines_app.py, routine_imports.py, dashboard/routines-page.js
 order: 10
 keywords: routine, automation, scheduled, every week, every morning, report
 ---
@@ -30,6 +30,14 @@ Routinen laufen nacheinander und warten, wenn das Nutzungslimit deines KI-Abos k
 ## Ändern oder stoppen
 
 Das steht im ⋯-Menü der Routine. **Zeitpunkt ändern** nimmt einen neuen Rhythmus in deinen eigenen Worten, wie „jeden Werktag um 8“. **Pausieren** hält die Läufe an bis **Fortsetzen**; was während der Pause verpasst wurde, läuft danach nicht. **Stopp** beendet eine Routine endgültig.
+
+## Aus deinen OpenClaw-Jobs
+
+Hast du vorher geplante Jobs in OpenClaw angelegt, liest deine Machine sie (sie ändert sie nie) und schlägt die passenden unter **Vorgeschlagen** als Routinen vor. Jeder lief einmal, damit du ein echtes Ergebnis siehst.
+
+Deine Korrekturen am Job bleiben drin, was er gesendet oder gepostet hat, fällt weg. **Hinzufügen** macht daraus eine Routine, **Nein danke** fragt nie wieder nach diesem Job. Ein Job, der dich an etwas erinnert hat, kommt stattdessen als Angebot für eine wiederkehrende Aufgabe unter Aufgaben.
+
+Höchstens drei Vorschläge warten gleichzeitig. Nach einer Woche guter Läufe fragt die Routine **Den alten OpenClaw-Job ausschalten?** Er wird nur ausgeschaltet, wenn du auf **Ausschalten** tippst, und du kannst ihn in OpenClaw wieder einschalten.
 
 ## Routinen und wiederkehrende Aufgaben
 

@@ -3,7 +3,7 @@ title: Routines
 area: cards
 summary: Work your Machine does on its own, on a rhythm, like a Monday summary of your open deals. It only reads.
 covers: tab:routines
-code: routines.py, routines_app.py, dashboard/routines-page.js
+code: routines.py, routines_app.py, routine_imports.py, dashboard/routines-page.js
 order: 10
 keywords: routine, automation, scheduled, every week, every morning, report
 ---
@@ -30,6 +30,14 @@ Routines run one at a time and wait when your AI plan's usage is low, like all b
 ## Change or stop it
 
 These are in the ⋯ menu on the routine. **Change when** takes a new rhythm in your own words, like "every weekday at 8". **Pause** stops the runs until **Resume**; nothing missed while paused runs afterwards. **Stop** ends a routine for good.
+
+## From your OpenClaw jobs
+
+If you made scheduled jobs in OpenClaw before, your Machine reads them (it never changes them) and offers the ones that fit as routines under **Suggested**. Each one ran once, so you see a real result.
+
+It keeps your corrections to the job and leaves out what it sent or posted. **Add** makes it a routine, **No thanks** never asks about that job again. A job that reminded you to do something comes as a recurring to-do offer on To-dos instead.
+
+At most three suggestions wait at a time. After a week of good runs, the routine asks **Turn off the old OpenClaw job?** It only turns off when you tap **Turn it off**, and you can turn it back on in OpenClaw.
 
 ## Routines and recurring to-dos
 
