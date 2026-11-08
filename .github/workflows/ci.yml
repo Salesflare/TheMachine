@@ -57,7 +57,9 @@ jobs:
           key: playwright-1.63.0-chromium-${{ runner.os }}-${{ runner.arch }}
       - name: Install OpenClaw and browser
         run: |
-          npm install --global --prefer-offline --no-audit --no-fund openclaw@${{ matrix.openclaw }}
+          # the runner's npm cache can predate a new pin (ETARGET offline): then ask the registry
+          npm install --global --prefer-offline --no-audit --no-fund openclaw@${{ matrix.openclaw }} \
+            || npm install --global --prefer-online --no-audit --no-fund openclaw@${{ matrix.openclaw }}
           # our runner has Chromium's system libraries already, and a job there has no sudo
           npx --yes --package=playwright@1.63.0 playwright install ${{ runner.environment == 'github-hosted' && '--with-deps' || '' }} chromium
           printf 'OPENCLAW_PACKAGE_DIR=%s/openclaw\n' "$(npm root -g)" >> "$GITHUB_ENV"
