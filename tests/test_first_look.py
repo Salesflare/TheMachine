@@ -15,10 +15,11 @@ a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 
 
 def model_patch(name, value):
-    # a model helper as models.py's own functions and assistant.py's callers (which import its name) both see it
+    # a model helper as models.py's own functions, this test's assistant.py and every other module that imports its
+    # name (machine/app/status.py's needs_you) all see it
     stack = ExitStack()
-    for where in (a, models):
-        stack.enter_context(patch.object(where, name, return_value=value))
+    stack.enter_context(patch.object(a, name, return_value=value))
+    stack.enter_context(patch_everywhere(models, name, return_value=value))
     return stack
 
 

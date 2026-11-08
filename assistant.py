@@ -1049,6 +1049,16 @@ from machine.app.card_actions import (
     reply_to_newest,
     thread_recipients,
 )
+from machine.app.docs import (
+    DocsApp,
+)
+from machine.app.status import (
+    StatusApp,
+    agent_work_status,
+    compact_status,
+    needs_you,
+    sign_in_help,
+)
 
 
 def hours_settings(config, changes):
@@ -1852,39 +1862,6 @@ def prompt_text(title,plain=False,kind='change'):
 
 
 
-def agent_work_status(job):
-    """A card's latest Claude Code or Codex job in the compact status: what it did (or is doing) and when."""
-    if not isinstance(job, dict):
-        return {}
-    work = {'tool': job.get('name') or job.get('tool'), 'status': job.get('status'),
-            'at': job.get('finished_at') or job.get('started_at') or job.get('created_at')}
-    if str(job.get('summary') or '').strip():
-        work['result'] = agent_jobs.gist(job['summary'], 500)
-    if job.get('status') in ('running', 'waiting') and str(job.get('progress') or '').strip():
-        work['progress'] = agent_jobs.gist(job['progress'], 200)
-    if job.get('error'):
-        work['error'] = clamp(job['error'], 200)
-    return {'agent_work': work}
-
-
-def compact_status(result):
-    """The agent's view of status, well under OpenClaw's tool-result cut. The CLI and
-    dashboard read the full version."""
-    keep = ('id', 'service', 'boundary', 'display_name', 'error', 'last_success', 'retry_at', 'failures_24h',
-            'signals_24h', 'pending', 'total', 'deferred_threads', 'last_failure')
-    return {
-        'review_health': result['review_health'],
-        'suggestion_counts': result['suggestion_counts'],
-        'connectors': [{k: clamp(c[k], 200) for k in keep if c.get(k) not in (None, '', 0, [], {})} for c in result['connectors']],
-        'suggestions': [{**{k: s[k] for k in ('id', 'status', 'title', 'dedupe_key', 'created_at', 'deliver_after', 'snoozed_until', 'latest_feedback', 'preparation_status', 'handled_hint') if s.get(k)},
-                         'body': clamp(s.get('body') or '', 400), **agent_work_status(s.get('agent_job'))} for s in result['suggestions']],
-        'decisions': [{k: clamp(d[k], 300) for k in ('id', 'suggestion_id', 'choice', 'source', 'feedback', 'created_at') if d.get(k)} for d in result['decisions'][:30]],
-        'recent_reviews': [{'started_at': a['started_at'], 'status': a['status'], 'checked': a.get('checked_count'),
-                            'claimed': len(json.loads(a['items'] or '[]')), 'summary': clamp(a.get('summary') or a.get('last_error') or '', 300)}
-                           for a in result['analyses'][:8]],
-        'note': 'Compact view. Read signals with events; suggestions show their first 400 characters.'}
-
-
 def weekly_recap(store, config, current=None):
     """The recap as the owner reads it on Telegram, its messages one after the other (without storing its choices)."""
     recap = weekly_recap_message(store, config, current)
@@ -1914,73 +1891,6 @@ def same_signin(accounts, account, store=None):
     return ids + others
 
 
-def sign_in_help(service, error, manage):
-    """For a source read through the shared browser that is signed out: where to sign in again (the hosted page that
-    opens this server's browser on that site) or, without one, what to do in plain words."""
-    if not (error or '').endswith('_signed_out'):
-        return {}
-    import onboarding
-    try:
-        setup = onboarding.setup_of(service)
-    except Exception:
-        return {}
-    site = setup.get('browser')
-    hint = next((text for prefix, text in (setup.get('hints') or {}).items() if error.startswith(prefix)), '')
-    return {'signed_out': True, 'sign_in_hint': hint,
-            'sign_in_url': urllib.parse.urljoin(manage, '/open?' + urllib.parse.urlencode({'to': 'browser', 'site': site}))
-            if manage and site else None}
-
-
-def needs_you(config):
-    """What only the owner can fix, for the top of the dashboard: sources that are not fully set up, and notes that a
-    hosting layer leaves in `needs_you_file` (a JSON list of {id, text, url}). Connections whose sign-in fails are added
-    by the dashboard itself, from their sync errors."""
-    import onboarding
-    manage = str(config.get('manage_url') or '')
-    manage = manage if manage.startswith('https://') else ''
-    items = []
-    for account in config.get('accounts', []):
-        try:
-            why = onboarding.missing(config, account)
-            name = account.get('display_name') or account.get('email') or onboarding.label(account.get('service', 'gmail'))
-        except Exception:
-            continue
-        if why:
-            items.append({'id': 'setup-' + account['id'], 'text': f'{name} is not fully set up yet ({why}).',
-                          'url': '#connections=add' if manage else None, 'action': 'Finish it' if manage else 'Run: assistant connect'})
-    # The main model can't run (no sign-in or key for its provider): nothing gets reviewed, the first look neither
-    model = main_model()
-    if model and model_ready(config, wait=False) is False:  # the poll never waits on `openclaw models status`
-        items.append({'id': 'model-signed-out', 'text': f'Your main model, {model}, can\u2019t run: nothing is signed in for it. '
-                      'Nothing gets checked until it can.', 'url': manage + '#model' if manage else None,
-                      'action': 'Fix it' if manage else 'Run: openclaw models auth login'})
-    # The message key (message_seal.py): without it, the messages can't be read after a restart
-    try:
-        for key, text, fix in message_seal.problems(config['database']) if config.get('database') else []:
-            items.append({'id': key, 'text': text, 'url': None, 'action': 'Run: ' + (fix if fix.startswith('chmod') else 'assistant doctor')})
-    except OSError:
-        pass
-    # USER.md past what reviews and Do it runs read: one line, so the owner shortens it instead of losing its end unseen
-    import onboarding
-    size = onboarding.user_md_too_long(config.get('openclaw_workspace') or WORKSPACE)
-    if size:
-        items.append({'id': 'user-md-long', 'text': f'Your USER.md is {size:,} characters. Checks and Do it read the first '
-                      f'{onboarding.USER_MD_CONTEXT_LIMIT:,}, so the end is left out.', 'url': None, 'action': None})
-    # `needs_you_file`: optional JSON list of notes from a hosting layer (a hosted machine), shown as they are.
-    path = config.get('needs_you_file')
-    if path:
-        try:
-            notes = json.loads(Path(path).expanduser().read_text())
-        except (OSError, ValueError):
-            notes = []
-        for note in notes if isinstance(notes, list) else []:
-            if isinstance(note, dict) and isinstance(note.get('text'), str) and note['text'].strip():
-                url = str(note.get('url') or '')
-                items.append({'id': str(note.get('id') or len(items))[:80], 'text': note['text'][:500],
-                              'url': url if url.startswith('https://') else None, 'action': str(note.get('action') or 'Open')[:40]})
-    return items
-
-
 # App's domain mixins (<domain>_app.py): each holds a domain's App methods and the actions it handles (its ACTIONS).
 APP_MIXINS = (SupportApp, CalendarApp, SkillsApp, AgentsApp, GBrainApp, SharedGraphApp, RecurringApp, CorrectionsApp, AiApp, MeetApp, MissedWorkApp,
               WhatsAppImagesApp, CheckNowApp, SetupCardApp, HistoryApp)
@@ -1989,6 +1899,8 @@ APP_MIXINS = (SupportApp, CalendarApp, SkillsApp, AgentsApp, GBrainApp, SharedGr
 APP_MIXINS += (FollowUpsApp, GraphActionsApp, KnowledgeExportApp, MeetingWritesApp, ModelPacingApp, PromiseChecksApp, SignaturesApp, SummariesApp,
                VoiceApp)
 APP_MIXINS += (CardChatApp, ConversationApp, ExportApp, FirstLookApp, FleetApp, PreparationApp, RecapApp, ReviewApp, TalkApp)
+APP_MIXINS += (StatusApp,)
+APP_MIXINS += (DocsApp,)
 APP_MIXINS += (CardActionsApp,)
 APP_MIXINS += (FeedbackApp,)
 APP_MIXINS += (ProfileApp,)
@@ -2465,111 +2377,6 @@ class App(*APP_MIXINS):
                            'docs_text_unsupported': 'That file has no text to read here (open it in the browser instead)'}.get(
                                error.category, f'The doc could not be read ({error.category})'))
 
-    def doc_text(self, args):
-        """A doc's text for a run the owner started (Do it, or a card chat's run), read-only and never kept: the run reads
-        it once. Through a Docs connection that can do things (abilities.py), in the to-do's area: a doc of one of the
-        task's own doc events (event_id), or by file_id a doc linked in the task's messages or one doc_find gave this run."""
-        job, run, links, area = self.doc_run(args)
-        plugin = load_connector('docs')
-        event_id, file_id = args.get('event_id'), str(args.get('file_id') or '')
-        if event_id is not None:
-            if not str(event_id).isdigit():
-                raise ValueError('Give the event_id of the doc event and the job_id of this preparation')
-            with self.store.connect() as db:
-                row = db.execute("SELECT account_id,metadata FROM events WHERE id=? AND kind LIKE 'docs.%' AND id IN "
-                                 "(SELECT value FROM json_each(?))", (int(event_id), run['event_ids'])).fetchone()
-            if not row:
-                raise ValueError('That doc is not one of this task’s own doc events')
-            account = next((a for a in self.config['accounts'] if a['id'] == row['account_id'] and a.get('service') == 'docs'), None)
-            file_id = json.loads(row['metadata']).get('file_id')
-        elif re.fullmatch(r'[A-Za-z0-9_!.-]{10,300}', file_id):
-            found = self.__dict__.setdefault('_docs_found', {}).get(job, {})
-            if file_id in found:
-                account = next((a for a in self.config['accounts'] if a['id'] == found[file_id]), None)
-            elif file_id in links:
-                account = next(iter(self.doc_connections(area, 'google')), None)
-                if not account:
-                    raise ValueError(self.NO_DOC_CONNECTION)
-            else:
-                raise ValueError('Read a doc linked in this task’s messages, or one assistant doc-find gave this run')
-        else:
-            raise ValueError('Give the event_id of the doc event, or the file_id of the doc')
-        if not account or not file_id or not plugin:
-            raise ValueError('That Docs connection is no longer here')
-        off = abilities.refuse(self.config, account['id'])
-        if off:
-            raise ValueError(off)
-        try:
-            return plugin.read_text(self.config, account, str(file_id), CONNECTOR_HELPERS)
-        except SourceError as error:
-            raise self.doc_read_error(error) from None
-
-    def doc_find(self, args):
-        """Docs that match some words, for a run the owner started: through each Docs connection in the to-do's area that
-        can do things (abilities.py), read-only. What it finds this run may then read (doc_text with file_id)."""
-        job, _, _, area = self.doc_run(args)
-        words = args.get('words')
-        if not isinstance(words, str) or not words.strip() or len(words) > 200:
-            raise ValueError('Give the words to look for, at most 200 characters')
-        plugin = load_connector('docs')
-        accounts = self.doc_connections(area)
-        if not accounts:
-            raise ValueError(self.NO_DOC_CONNECTION)
-        found, errors = [], []
-        for account in accounts:
-            try:
-                found += [{**d, 'account_id': account['id'], 'provider': plugin.provider(self.config, account)}
-                          for d in plugin.find(self.config, account, words, CONNECTOR_HELPERS)]
-            except SourceError as error:
-                errors.append(str(self.doc_read_error(error)))
-        kept = self.__dict__.setdefault('_docs_found', {})
-        kept.setdefault(job, {}).update({d['file_id']: d['account_id'] for d in found})
-        while len(kept) > 50:
-            kept.pop(next(iter(kept)))
-        return {'docs': found, **({'errors': errors} if errors else {})}
-
-    def doc_write_draft(self, args):
-        """Check a doc write before it goes in the preparation's result, for a run the owner started: never a write.
-        Without `next_action`, an edit's doc (one of the task's own doc events) as it is now: its version and paragraphs.
-        With one, the validated draft and the preview the owner will see (before and after for an edit)."""
-        job = str(args.get('job_id') or '')
-        if not re.fullmatch(r'[A-Za-z0-9_-]{1,80}', job):
-            raise ValueError('Give the job_id of this preparation')
-        with self.store.connect() as db:
-            run = db.execute("SELECT s.event_ids,s.account_ids FROM preparations p JOIN suggestions s ON s.id=p.suggestion_id "
-                             "WHERE p.job_id=? AND p.status IN ('queued','starting','running','blocked')", (job,)).fetchone()
-            if not run:
-                raise ValueError('Doc drafts are checked only for a running preparation of the task the owner started')
-            files = doc_write_files(db, run['event_ids'], self.config, doc_writes.area(self.config, json.loads(run['account_ids'] or '[]')))
-            file_id = None
-            if args.get('event_id') is not None:
-                row = db.execute("SELECT metadata FROM events WHERE id=? AND kind LIKE 'docs.%' AND id IN (SELECT value FROM json_each(?))",
-                                 (int(args['event_id']) if str(args['event_id']).isdigit() else -1, run['event_ids'])).fetchone()
-                file_id = row and str(json.loads(row['metadata']).get('file_id') or '')
-                if not file_id:
-                    raise ValueError('That doc is not one of this task’s own doc events')
-        plugin = load_connector('docs')
-        if not plugin or not hasattr(plugin, 'Writer'):
-            raise ValueError('There is no Docs connection here')
-        value = args.get('next_action')
-        if not isinstance(value, dict):
-            if not file_id:
-                raise ValueError('Give the event_id of the doc to edit, or a doc_write next_action to check')
-            value = {'kind': doc_writes.KIND, 'op': 'edit', 'file_id': file_id, 'changes': []}
-            context = doc_writes.context(self.config, plugin, CONNECTOR_HELPERS, files, value)
-            found = (context or {}).get('snapshots', {}).get(file_id)
-            if found is None:
-                raise ValueError('Edits are not allowed for this Docs connection yet (Allow edits on its connection)')
-            if isinstance(found, str):
-                raise ValueError(found)
-            return {'file_id': file_id, 'title': found['title'], 'version': found['version'], 'url': found.get('url'),
-                    'paragraphs': [{'n': i + 1, 'text': p['text'], 'editable': p['editable']} for i, p in enumerate(found['paragraphs'])]}
-        if file_id and value.get('op') == 'edit':
-            value = {**value, 'file_id': value.get('file_id') or file_id}
-        value = {**value, 'kind': doc_writes.KIND}
-        action = doc_writes.validate(value, doc_writes.context(self.config, plugin, CONNECTOR_HELPERS, files, value))
-        return {'preview': doc_writes.preview(action), 'next_action': {k: v for k, v in value.items()}}
-
     def gmail_attachments(self, account, message_id, save=None):
         """A Gmail message's real attachments, read live with gmail.readonly: the list, or (`save`: its part id or
         name) that one and its bytes."""
@@ -2764,125 +2571,6 @@ class App(*APP_MIXINS):
             raise ValueError('Choose explicit configured account_ids (or ["all"] to search every account with events or related); cross-account reads must be intentional')
         if name == 'mail_attachment':
             return self.mail_attachment({k: v for k, v in args.items() if k != '_folder'})
-        if name == 'doc_text':
-            return self.doc_text(args)
-        if name == 'doc_find':
-            return self.doc_find(args)
-        if name == 'doc_write_draft':
-            return self.doc_write_draft(args)
-        if name == 'status':
-            result = self.store.snapshot(self.config['accounts'])
-            # `manage_url`: where this install is set up when that is a web page (a hosted machine); the dashboard links to it.
-            manage = str(self.config.get('manage_url') or '')
-            result['manage_url'] = manage if manage.startswith('https://') else None
-            result['account_url'] = fleet.account_url(self.config)  # the CP Account page, when linked to one (Settings, Account ↗)
-            result['browser_link'] = browser_link(self.config)  # the sign-in dialog's way out to the browser itself
-            result['needs_you'] = needs_you(self.config)
-            result['learning_changes'] = self.learning_changes_shown(result.get('learning_changes') or [])
-            by_id = {a['id']: a for a in self.config['accounts']}
-            result['connectors'] = [c for c in result['connectors'] if not docs_unset(c)]
-            for connector in result['connectors']:
-                connector.update(sign_in_help(connector.get('service', ''), connector.get('error'), result['manage_url']))
-                account = by_id.get(connector['id'])
-                connector.update(connector_says(account, connector.get('service', 'gmail')))
-                connector.update(abilities.view(account) if account else {})
-                kind = docs_provider(self.config, account)
-                connector.update(reconnect_help(account, result['manage_url'], docs_offered(self.config, kind)))
-                if kind == 'microsoft' and not result['manage_url'] and 'connect_name' in connector:
-                    connector['signin'] = fleet.SIGNIN_OF['docs']  # self-hosted: Connect Microsoft documents signs in through the control plane
-                if kind and 'edit' not in (connector.get('docs_writes') or ()) and not account.get('shared') and docs_write_offered(self.config, kind):
-                    connector['docs_write_signin'] = 'microsoft_docs_write'  # Allow edits: Files.ReadWrite.All, its own consent
-                if connector.get('service') in SIGNIN_ONLY and not result['manage_url'] and 'connect_name' in connector:
-                    connector['signin'] = connector['service']  # self-hosted: Reconnect is Sign in with it, through the control plane
-                if result['manage_url']:
-                    continue  # a hosted machine: no terminal there, its account page signs in again
-                if 'google_signin_expired' in (connector.get('error') or '') and connector['id'] in by_id:
-                    connector['sign_in_command'] = gog_signin_command(self.config, by_id[connector['id']])
-                elif 'microsoft_signin_expired' in (connector.get('error') or '') and by_id.get(connector['id'], {}).get('transport') == 'graph':
-                    import onboarding
-                    connector['sign_in_command'] = 'assistant connect ' + onboarding.connect_name(by_id[connector['id']], self.config)
-            result['model_usage'] = getattr(self, 'model_usage', None)
-            result['model_status'] = getattr(self, 'model_status', None)
-            result['chat_model'] = self.chat_model_view()
-            try:  # the limit banner: a usage limit reached, which one and when it resets
-                result['model_pause'] = self.model_pause()
-            except Exception as error:  # noqa: BLE001 - the dashboard shows without it
-                LOG.error('model pause error=%s', type(error).__name__); result['model_pause'] = None
-            result['review_pause'] = self.review_pause()
-            result['check'] = self.check_view()
-            result['skills'] = self.skills.view() if getattr(self, 'skills', None) else None
-            result['review_live'] = self.review_live()
-            result['reviews_on'] = bool((self.config.get('review_worker') or {}).get('enabled'))  # off until activated
-            result['reviews_auto'] = reviews_start_by_themselves(self.config)
-            result['started_at'] = self.started_at()
-            result['hours'] = self.hours()
-            result['locale'] = self.locale_view()
-            result['reminders'] = reminder_channels(self.store, self.config)  # how a snooze comes back (Telegram, notifications)
-            result['todo_channels'] = reminder_channels(self.store, self.config, 'todo')  # where a to-do held for later goes (its deliver_after chip)
-            result['notify'] = self.notify_view()
-            result['agents_settings'] = self.agents_view()
-            result['setup_hints'] = self.setup_hints_view()
-            result['phone_app_store'] = phone_app_nudge(self.store)
-            try:  # the setup to-do at the top of To-dos (setup_card)
-                result['setup_card'] = setup_card(self.store, self.config)
-            except sqlite3.Error as error:
-                LOG.warning('setup card error=%s', type(error).__name__); result['setup_card'] = None
-            try:  # the hello on a new owner's first views, with who has waited longest on them (Store.greeting)
-                result['greeting'] = self.store.greeting(self.config.get('owner_name'))
-            except sqlite3.Error as error:
-                LOG.warning('greeting error=%s', type(error).__name__); result['greeting'] = None
-            try:  # what the first look read and what came of it, for its ending on the list (first_look_done)
-                result['first_look_done'] = self.first_look_done()
-            except (sqlite3.Error, ValueError, TypeError) as error:
-                LOG.warning('first look done error=%s', type(error).__name__); result['first_look_done'] = None
-            try:  # the first-use tips on a new person's first to-dos (Store.first_tips)
-                result['first_tips'] = self.store.first_tips()
-            except sqlite3.Error as error:
-                LOG.warning('first tips error=%s', type(error).__name__); result['first_tips'] = []
-            result['signatures'] = self.signature_view()
-            result['lookups'] = self.lookups_view()
-            result['own_addresses'] = self.own_addresses_view()
-            result['team_learnings'] = self.learnings_view()
-            result['security'] = self.security_view()
-            # Read only the existing heartbeat's runtime facts, never conversation
-            # content or scheduler configuration. Missing evidence stays unknown.
-            try:
-                with sqlite3.connect('file:' + str(Path.home() / '.openclaw/state/openclaw.sqlite') + '?mode=ro', uri=True, timeout=1) as db:
-                    # `heartbeat_job_id`: the OpenClaw cron job id of the main heartbeat (optional).
-                    row = db.execute('SELECT state_json FROM cron_jobs WHERE job_id=?', (self.config.get('heartbeat_job_id', ''),)).fetchone()
-                    if row:
-                        scheduler = json.loads(row[0])
-                        reason = scheduler.get('lastError', '')
-                        result['review_health']['heartbeat'] = {k: scheduler.get(k) for k in ['lastRunAtMs', 'nextRunAtMs', 'lastRunStatus', 'consecutiveSkipped']}
-                        result['review_health']['heartbeat']['reason'] = 'busy' if reason in ['heartbeat skipped: cron-in-progress','heartbeat skipped: requests-in-flight','heartbeat skipped: active-run','heartbeat skipped: plugin-operation-in-progress','heartbeat skipped: runtime-draining'] else 'failed' if scheduler.get('lastRunStatus')=='error' else None
-            except (sqlite3.Error, OSError, ValueError):
-                pass
-            for suggestion in result.get('suggestions', []):
-                suggestion['snooze_choices'] = snooze_choices(self.is_work(suggestion.get('account_ids')))
-            if getattr(self, 'agents', None):
-                try:
-                    result['agent_tools'] = self.agents.tools()
-                    with self.store.connect() as db:
-                        self.agents.annotate(db, result.get('suggestions', []))
-                except (sqlite3.Error, ValueError) as error:
-                    LOG.error('agent jobs status error=%s', type(error).__name__)
-            if getattr(self, 'fleet', None):
-                try:
-                    result['fleet'] = {**self.fleet.summary(), 'family_invites': self.fleet.family_invite_on()}
-                    with self.store.connect() as db:
-                        self.fleet.annotate(db, result.get('suggestions', []))
-                        self.fleet.family_invite_annotate(db, result.get('suggestions', []))
-                except (sqlite3.Error, ValueError) as error:
-                    LOG.error('fleet status error=%s', type(error).__name__)
-            try:
-                with self.store.connect() as db:
-                    self.task_pages.annotate(db, result.get('suggestions', []))
-                    self.handoff_mail.annotate(db, result.get('suggestions', []))
-                if isinstance(result.get('fleet'), dict):
-                    result['fleet']['take_line'] = self.handoff_mail.take_line()
-            except (sqlite3.Error, ValueError) as error:
-                LOG.error('task pages status error=%s', type(error).__name__)
-            return result if args.get('full') else compact_status(result)
         if name in task_pages.ACTIONS:  # a task page for an email handoff: add, skip, stop sharing, mark done (task_pages.py)
             if not owner_dashboard:
                 raise ValueError('Task pages are shared from the dashboard')
