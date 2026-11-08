@@ -102,6 +102,31 @@ class Graph(unittest.TestCase):
         self.assertEqual(people, {'email:ann@client.com'})
         self.assertEqual(self.node('org:client.com')['name'], 'Client')  # a readable name from the domain until a lookup
 
+    def test_an_out_of_office_reply_to_a_bounce_address_makes_nobody_a_person(self):
+        # The owner's auto-reply answers the address a mail came back from: a bounce (VERP) sender, never a person.
+        self.add(mail(5, 'Shop <hello@shop.example>', 'sam@acme.com', ('CATEGORY_UPDATES',)),
+                 mail(5, 'Sam <sam@acme.com>', 'pm_bounces@pm-bounces.shop.example', ('SENT',), precedence='bulk', title='Out of the office Re: Your order'),
+                 mail(4, 'Sam <sam@acme.com>', 'pm_bounces@pm-bounces.tool.example', ('SENT',), precedence='bulk'),
+                 mail(4, 'Sam <sam@acme.com>', 'bounces+123-sam=acme.com@em1.mail.example', ('SENT',), auto_submitted=True),
+                 mail(3, 'Sam <sam@acme.com>', 'Sam <sam@acme.com>', ('SENT',), precedence='list'),
+                 # the mail app's unsubscribe, and a reply to a per-recipient return path (VERP): no person, no organization
+                 mail(3, 'Sam <sam@acme.com>', 'unsub-4cca9a1c.z83o.x0v222@bnc3.mailsys.example', ('SENT',), title='unsubscribe'),
+                 mail(3, 'Sam <sam@acme.com>', '1axc09p6nj2rq-sam=acme.com@bf08.eu1.mailsys.example', ('SENT',), title='Re: Your report'),
+                 # someone writing in, answered only by the auto-reply: the owner didn't write to them
+                 mail(300, 'Lou Park <lou@cold.example>', 'sam@acme.com'),
+                 mail(300, 'Sam <sam@acme.com>', 'Lou Park <lou@cold.example>', ('SENT',), precedence='bulk'),
+                 # real people at odd addresses, written to by hand, stay people
+                 mail(2, 'Sam <sam@acme.com>', 'Dee Torres <dee.torres@unbounce.example>', ('SENT',)),
+                 mail(2, 'Sam <sam@acme.com>', 'Kai Blain <marketing@kaiblain.example>', ('SENT',)))
+        self.build()
+        with self.store.connect() as db:
+            people = {r['id'] for r in db.execute("SELECT id FROM graph_nodes WHERE kind='person'")}
+            same = db.execute('SELECT COUNT(*) FROM graph_same').fetchone()[0]
+            orgs = {r['id'] for r in db.execute("SELECT id FROM graph_nodes WHERE kind='org'")}
+        self.assertEqual(people, {'email:dee.torres@unbounce.example', 'email:marketing@kaiblain.example'})
+        self.assertLessEqual(orgs, {'org:unbounce.example', 'org:kaiblain.example'})  # no mail system's domain
+        self.assertEqual(same, 0)
+
     def test_owner_messages_weigh_more_a_burst_is_one_day_and_it_fades(self):
         self.add(*[chat(1, '00000000001', 'Bea Burst', hour=h) for h in range(10)],
                  chat(1, '00000000002', 'Cas Owner', mine=True),

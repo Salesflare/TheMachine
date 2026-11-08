@@ -113,6 +113,20 @@ class SamePerson(unittest.TestCase):
         self.assertNotIn(('email:rivera@two.example', 'email:sam.rivera@one.example'), self.same_pairs())
         self.assertEqual(len(self.people()), 3)
 
+    def test_a_name_read_from_an_address_an_initial_or_a_company_name_is_no_same_name(self):
+        sent = ('SENT',)
+        self.add(tg.mail(3, 'Sam <sam@acme.com>', 'pm_bounces@pm-bounces.one.example', sent),  # the same local part, no name
+                 tg.mail(3, 'Sam <sam@acme.com>', 'pm_bounces@pm-bounces.two.example', sent),
+                 tg.mail(3, 'Sam <sam@acme.com>', 'jo.vale@one.example', sent),
+                 tg.mail(3, 'Sam <sam@acme.com>', 'jo.vale@two.example', sent),
+                 tg.mail(2, 'P Lee <p@three.example>', 'sam@acme.com'), tg.mail(2, 'Sam <sam@acme.com>', 'p@three.example', sent),  # an initial
+                 tg.mail(2, 'P Lee <lee@four.example>', 'sam@acme.com'), tg.mail(2, 'Sam <sam@acme.com>', 'lee@four.example', sent),
+                 tg.mail(2, 'Blue Harbor <info@blueharbor.example>', 'sam@acme.com'),  # the company's own name
+                 tg.mail(2, 'Blue Harbor <team@news.blueharbor.example>', 'sam@acme.com'),
+                 tg.mail(1, 'Sam Rivera <sam.rivera@one.example>', 'sam@acme.com'), tg.mail(1, 'Sam Rivera <rivera@two.example>', 'sam@acme.com'))
+        self.build()
+        self.assertEqual(self.same_pairs(), {('email:rivera@two.example', 'email:sam.rivera@one.example')})  # a full name someone gave
+
     def test_a_similar_name_needs_something_shared_and_is_only_asked(self):
         self.add(tg.mail(3, 'Kit Lane <kit@globex.example>', 'sam@acme.com'),
                  tg.mail(2, 'Kit <k.lane@globex.example>', 'sam@acme.com'),

@@ -131,6 +131,7 @@ HORIZON_DAYS = 400      # older signals have faded far below the floor anyway
 EVENTS_PER_NODE = 40
 NEW = "signals<=3 AND last_at>=? AND json_extract(info,'$.history') IS NULL"  # New this week: never someone history knows
 BULK_LABELS = {'CATEGORY_PROMOTIONS', 'CATEGORY_SOCIAL', 'CATEGORY_FORUMS', 'CATEGORY_UPDATES'}
+AUTOMATED_PRECEDENCE = frozenset({'bulk', 'junk', 'list'})  # automated: mail a program sent
 BULK = re.compile(r'(?:^|[._+-])(?:no[._-]?reply|do[._-]?not[._-]?reply|notifications?|notify|newsletters?|news|mailer-daemon|mailer|bounces?|postmaster|'
                   r'marketing|digest|alerts?|automated|receipts?|invoices?|billing|notetaker)(?:[._+-]|@)|@(?:[\w-]+\.)*(?:mcsv\.net|mcdlv\.net|'
                   r'sendgrid\.net|amazonses\.com|mailgun\.org|bounces?\.[\w.-]+|calendar\.google\.com|resource\.calendar\.google\.com)$'
@@ -346,6 +347,13 @@ def bulk(address):
     return bool(BULK.search(address))
 
 
+def automated(m):
+    """Mail a program sent, not a person: Precedence bulk, junk or list (Gmail's out-of-office reply is "bulk"), or
+    Auto-Submitted. The owner's own auto-reply goes to the address the mail came back from, often a bounce address
+    (pm_bounces@pm-bounces.example.com): sent from the owner's mailbox, yet nobody they wrote to."""
+    return str(m.get('precedence') or '').lower() in AUTOMATED_PRECEDENCE or bool(m.get('auto_submitted'))
+
+
 # System and relay addresses: never a person, also not when the owner wrote to one (a reply through Intercom goes to a
 # relay). Intercom's Operator bot and its reply relays, GitHub's noreply and reply addresses, reply+token relays of
 # feedback and ticket tools, and the notification senders of Slack, Google Calendar and GitHub.
@@ -353,7 +361,27 @@ RELAY = re.compile(r'^operator\+[^@]*@intercom\.io$|@(?:[\w-]+\.)*intercom-mail\
                    r'|@(?:[\w-]+\.)*(?:no-?reply|reply)\.github\.com$|@(?:[\w-]+\.)*no-?reply\.[\w-]+(?:\.[\w-]+)+$'
                    r'|^(?:reply|replies)[+=][^@]+@'
                    r'|(?:^|[._+-])(?:no[._-]?reply|do[._-]?not[._-]?reply|notifications?)(?:[._+-]|@)'
-                   r'|^(?:calendar-notification|calendar-server|notify|feedback|bot)@(?:[\w-]+\.)*(?:google|slack|github)\.com$', re.I)
+                   r'|^(?:calendar-notification|calendar-server|notify|feedback|bot)@(?:[\w-]+\.)*(?:google|slack|github)\.com$'
+                   # A return path a mailing system makes per message: the recipient written into it (VERP:
+                   # bounces+sam=acme.com@), a signed bounce tag (BATV: prvs=, msprvs1=) or a message id (Amazon SES)
+                   r'|^[^@]*[+-][^@=]*=[a-z0-9-]+(?:\.[a-z0-9-]+)*\.[a-z]{2,}@|^(?:prvs|msprvs\d*|btv\d*)='
+                   r'|^0[0-9a-f]{15}-[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}-0{6}@', re.I)
+
+
+def list_unsubscribes(db, signals, owner):
+    """Event ids of the unsubscribes the owner's mail app sent for them: a new mail (no reply) from the owner to one
+    address, with "unsubscribe" as its whole subject, as a list's List-Unsubscribe link asks. It goes to an address
+    made for that one list and recipient (unsub-4cca9a1c.z83o@bnc3.mail.example): nobody they wrote to. Only those
+    few mails' subjects are read."""
+    ids = [e for e, _, kind, _, m in signals if kind == 'gmail.message' and not m.get('in-reply-to') and not m.get('cc')
+           and ('SENT' in (m.get('labels') or ()) or any(owner.mine(a) for _, a in addresses(m.get('from'))[:1]))
+           and len(addresses(m.get('to'))) == 1]
+    found = set()
+    for start in range(0, len(ids), 500):
+        chunk = ids[start:start + 500]
+        found |= {r[0] for r in db.execute(f"SELECT id,title FROM events WHERE id IN ({','.join('?' * len(chunk))})", chunk)
+                  if str(r[1] or '').strip().casefold() == 'unsubscribe'}
+    return found
 
 
 def relay(address):
@@ -497,6 +525,8 @@ def _touches(kind, m, owner, wrote_to):
         sender = addresses(m.get('from'))[:1]
         to, cc = addresses(m.get('to')), addresses(m.get('cc'))
         if 'SENT' in labels or (sender and sender[0][1] in owner.emails):
+            if automated(m):
+                return []  # an out-of-office reply or a mailing: it goes to the bounce address it answers, nobody the owner wrote to
             to = [(n, a) for n, a in to if not owner.mine(a) and not relay(a)]
             cc = [(n, a) for n, a in cc if not owner.mine(a) and not relay(a)]
             count = len(to) + len(cc)
@@ -907,11 +937,12 @@ def name_words(name, identifier=None):
 
 def name_match(a, b):
     """'same' (the same full name), 'similar' (the same first name, or one a short form of the other, and no other
-    surname: "Ann" and "Ann Lee", "Alex Lee" and "Alexander Lee", "Ann Lee" and "Ann Marie Lee") or None."""
-    if not a or not b:
+    surname: "Ann" and "Ann Lee", "Alex Lee" and "Alexander Lee", "Ann Lee" and "Ann Marie Lee") or None. An initial is
+    no name: "P" matches nobody, and "Ann L" is at most similar to "Ann L"."""
+    if not a or not b or min(len(a[0]), len(b[0])) < 2:
         return None
     if a == b:
-        return 'same' if len(a) >= 2 else 'similar'
+        return 'same' if len(a) >= 2 and len(a[-1]) >= 2 else 'similar'
     first = a[0] == b[0] or (min(len(a[0]), len(b[0])) >= 3 and (a[0].startswith(b[0]) or b[0].startswith(a[0])))
     if not first:
         return None
@@ -966,7 +997,8 @@ def signature_pairs(db, senders, best, known):
 def likely_same(people, union, together, projects):
     """Pairs of people who may be one, for the owner to Merge or keep apart: [(a, b, why, score)]. The same full name
     is enough to ask (it was not joined because two people on one channel carry it); a similar name needs something
-    shared besides: the same company, people seen with both, a project, or the same role."""
+    shared besides: the same company, people seen with both, a project, or the same role. A name read from an address
+    (jane.doe@, pm_bounces@) is only ever similar: the same local part at two domains says nothing by itself."""
     buckets = collections.defaultdict(list)
     for node, p in people.items():
         if p['words']:
@@ -985,6 +1017,8 @@ def likely_same(people, union, together, projects):
                 seen.add(pair)
                 pa, pb = people[pair[0]], people[pair[1]]
                 match = name_match(pa['words'], pb['words'])
+                if match == 'same' and (pa.get('derived') or pb.get('derived')):
+                    match = 'similar'
                 if not match or union.kept_apart(union.find(pair[0]), union.find(pair[1])):
                     continue
                 shared = []
@@ -1275,9 +1309,11 @@ def _build_in(db, config, now, team, kin, locked, history=False):
         db.execute('BEGIN')  # deferred: its first read below is the snapshot all of this build is computed from
         seen = _edits(db)
         db.execute('PRAGMA query_only=ON')  # computing writes nothing: no lock is taken until the publish
+    unsubscribes = list_unsubscribes(db, signals + old, owner)
     wrote_to = set()
-    for _, _, kind, _, m in signals + old:
-        if kind == 'gmail.message' and ('SENT' in (m.get('labels') or ()) or any(a in owner.emails for _, a in addresses(m.get('from'))[:1])):
+    for event_id, _, kind, _, m in signals + old:
+        if (kind == 'gmail.message' and ('SENT' in (m.get('labels') or ()) or any(a in owner.emails for _, a in addresses(m.get('from'))[:1]))
+                and not automated(m) and event_id not in unsubscribes):
             wrote_to |= {a for _, a in addresses(m.get('to')) + addresses(m.get('cc'))}
 
     warmup = hidden(db)  # addresses there are a warm-up tool's traffic: nobody in the graph
@@ -1319,6 +1355,8 @@ def _build_in(db, config, now, team, kin, locked, history=False):
                 domain = addr.rsplit('@', 1)[1]
                 if kind == 'stripe.event' and m.get('customer_name') and domain not in FREEMAIL:
                     paying_names.setdefault(domain, str(m['customer_name']))
+        if event_id in unsubscribes:
+            continue
         found = [t for t in touches(kind, m, owner, wrote_to) if not (t[0].startswith('email:') and t[0].rsplit('@', 1)[1] in warmup) and t[0] not in rooms and not gone(t[0])
                  and not (t[0].startswith('email:') and t[0] not in people_kept and room_like(t[0][6:], t[1]))]
         if not found:
@@ -1693,7 +1731,11 @@ def _build_in(db, config, now, team, kin, locked, history=False):
         if len(group) > 1:
             info['joined'] = [{'a': x, 'b': y, 'a_shown': shown_id(x, x_names), 'b_shown': shown_id(y, x_names), 'why': JOINED_WHY.get(why, 'joined'),
                                'by': why} for x, y, why in joined.get(node, ()) if why]
-        alike[node] = {'words': name_words(name, node if name == shown_id(node, x_names) else None), 'strength': value,
+        # What "Same person?" compares. A name that is their company's ("Seeking Alpha" at seekingalpha.com) is no
+        # person's name; one read from their address (no name given) is only ever a similar one.
+        no_name = name == shown_id(node, x_names)
+        sender_org = any(org_from_name(name, i.rsplit('@', 1)[1]) for i in group if i.startswith('email:')) and not no_name
+        alike[node] = {'words': [] if sender_org else name_words(name, node if no_name else None), 'derived': no_name, 'strength': value,
                        'domains': set(domains), 'role': ' '.join(str(role).casefold().split()) if role else None}
         nodes.append((node, 'person', name[:200], round(value, 4), last_day[node].isoformat() if node in last_day else None,
                       len(node_events[node]), usual, int(quiet), None, info))
