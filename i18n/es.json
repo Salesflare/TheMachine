@@ -5887,6 +5887,7 @@
  "a to-do now": "ahora es una tarea",
  "a want from someone who is not a confirmed member": "una petición de alguien que no es un miembro confirmado",
  "a want without its time": "una petición sin su hora",
+ "about {} min": "unos {} min",
  "about: one sentence on which projects belong (up to 200 characters)": "about: una frase sobre qué proyectos encajan (hasta 200 caracteres)",
  "accepted": "aceptada",
  "accepted with a change": "aceptado con un cambio",
@@ -6822,7 +6823,6 @@
   "other": "{} veces"
  },
  "{} to decide": "{} por decidir",
- "{} to decide · about {} min": "{} por decidir · unos {} min",
  "{} to-dos": {
   "one": "{} tarea",
   "other": "{} tareas"

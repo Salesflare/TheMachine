@@ -44,7 +44,7 @@ Quando avvii un'attività, può sempre leggere i messaggi da cui è nata, anche 
 
 La risposta parte comunque dall'indirizzo di lavoro dove è arrivata, e non compare mai in una Work Fleet né nel Graph del team.
 
-Con due o più in attesa, **Smaltisci i pronti** nell’intestazione le passa una alla volta, ogni bozza per intero, con **Invia** o **Fallo**, **Chiedi modifiche**, **Posticipa** e **Salta**. Al computer, Invio invia ciò che è sullo schermo, `S` posticipa, `→` salta ed Esc si ferma. L’intestazione dice anche quanto ci vuole al tuo ritmo, come "4 pronti · circa 2 min".
+Con due o più in attesa, **Smaltisci i pronti** nell’intestazione le passa una alla volta, ogni bozza per intero, con **Invia** o **Fallo**, **Chiedi modifiche**, **Posticipa** e **Salta**. Al computer, Invio invia ciò che è sullo schermo, `S` posticipa, `→` salta ed Esc si ferma. Sotto il titolo, l’intestazione dice anche quanto ci vuole al tuo ritmo, come "circa 2 min".
 
 ## Controlla ora
 

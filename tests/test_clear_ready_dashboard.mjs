@@ -4,8 +4,8 @@ import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
-// Clear Ready (dashboard/todos-clear.js), on made-up data: the Ready header says "4 ready · about 3 min" (the owner's
-// pace from the status) and, from two on, offers Clear Ready; Needs your decision the same for its own ("2 to decide"). The run shows one to-do at a time with its title, who it
+// Clear Ready (dashboard/todos-clear.js), on made-up data: the Ready header says "about 3 min" (the owner's
+// pace from the status) and, from two on, offers Clear Ready; Needs your decision the same for its own. The run shows one to-do at a time with its title, who it
 // goes to and the whole draft; Enter sends exactly the revision on screen through the send dialog's own confirm, → skips
 // (nothing posted), S snoozes, Esc closes. A draft that needs a choice (who gets it) opens the send dialog instead. A
 // send that fails keeps that to-do on screen with the error. A draft that changed after it was shown never goes: the
@@ -54,10 +54,13 @@ try{
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   const page=await context.newPage();page.on('pageerror',e=>errors.push(width+': '+e.message));
   await page.goto('http://127.0.0.1:'+server.address().port);await page.locator('#task-'+id(1)).waitFor();
-  // The header: how many and how long, at the owner's pace (5 × 45 s), and the button; a tap on it doesn't fold the list
+  // The header: how long, at the owner's pace (5 × 45 s), without saying the count again, and the button; a tap on it doesn't fold the list.
+  // Title, count and Clear Ready on one row, the time and "Nothing goes out" on one line under it, at every width
   const head=page.locator('#section-ready');
-  assert.equal(await head.locator('.clear-time').textContent(),'4 ready · about 3 min');
-  assert.equal(await page.locator('#section-needs .clear-time').textContent(),'2 to decide · about 2 min');
+  assert.equal(await head.locator('.clear-time').textContent(),'about 3 min');
+  assert.equal(await page.locator('#section-needs .clear-time').textContent(),'about 2 min');
+  for(const key of ['ready','needs'])assert.deepEqual(await page.locator('#section-'+key).evaluate(h=>{const mid=e=>{const r=e.getBoundingClientRect();return Math.round(r.top+r.height/2)},t=mid(h.querySelector('h2')),go=mid(h.querySelector('.clear-go')),time=mid(h.querySelector('.clear-time')),note=h.querySelector('.section-note');
+   return [Math.abs(go-t)<=6,time>go,!note||mid(note)===time]}),[true,true,true],key+' at '+width);
   await head.locator('[data-clear-run]').click();
   await run(page).waitFor({state:'visible'});
   assert.equal(await head.getAttribute('aria-expanded'),'true');

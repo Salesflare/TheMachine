@@ -5887,6 +5887,7 @@
  "a to-do now": "a to-do now",
  "a want from someone who is not a confirmed member": "a want from someone who is not a confirmed member",
  "a want without its time": "a want without its time",
+ "about {} min": "about {} min",
  "about: one sentence on which projects belong (up to 200 characters)": "about: one sentence on which projects belong (up to 200 characters)",
  "accepted": "accepted",
  "accepted with a change": "accepted with a change",
@@ -6822,7 +6823,6 @@
   "other": "{} times"
  },
  "{} to decide": "{} to decide",
- "{} to decide · about {} min": "{} to decide · about {} min",
  "{} to-dos": {
   "one": "{} to-do",
   "other": "{} to-dos"

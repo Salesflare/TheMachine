@@ -3,7 +3,7 @@
 The pace is the median time between two of the owner's decisions on the dashboard (Send, Do it, Snooze, Ask for
 changes...: the decisions table, source 'dashboard') in the last PACE_DAYS. Only gaps of one sitting count (MIN_GAP to
 MAX_GAP seconds): a gap of an hour is a break, not a slow decision. With fewer than MIN_SAMPLES such gaps the pace is
-DEFAULT. The dashboard's Ready header and the morning digest both say it the same way: "4 ready · about 2 min".
+DEFAULT. The morning digest says "4 ready · about 2 min"; the dashboard's Ready header, under its count, "about 2 min".
 
 A leaf module: only the standard library and i18n."""
 from __future__ import annotations

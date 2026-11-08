@@ -417,8 +417,8 @@ def compose(meetings, due, overnight, root='', show_text=True, clock=lambda iso:
     due today; covers: the id of a to-do made from that promise) come first, in the text and the push: what can go out
     in a click and what was promised for today.
     A to-do is listed once, in the first part it belongs to (by id, else by title): Overnight and Waiting for you never
-    repeat what came before, and Waiting's "+N more" counts only the rest. pace: the time to clear what waits, as the
-    dashboard's Ready header says it ("4 ready · about 2 min", clear_pace.line), under the waiting part."""
+    repeat what came before, and Waiting's "+N more" counts only the rest. pace: the time to clear what waits, at the
+    dashboard's pace, with the count ("4 ready · about 2 min", clear_pace.line), under the waiting part."""
     seen = set()
 
     def once(items):

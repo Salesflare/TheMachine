@@ -5887,6 +5887,7 @@
  "a to-do now": "ora è un’attività",
  "a want from someone who is not a confirmed member": "una richiesta da qualcuno che non è un membro confermato",
  "a want without its time": "una richiesta senza orario",
+ "about {} min": "circa {} min",
  "about: one sentence on which projects belong (up to 200 characters)": "about: una frase su quali progetti ne fanno parte (fino a 200 caratteri)",
  "accepted": "accettato",
  "accepted with a change": "accettato con una modifica",
@@ -6822,7 +6823,6 @@
   "other": "{} volte"
  },
  "{} to decide": "{} da decidere",
- "{} to decide · about {} min": "{} da decidere · circa {} min",
  "{} to-dos": {
   "one": "{} attività",
   "other": "{} attività"

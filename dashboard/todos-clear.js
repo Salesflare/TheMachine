@@ -11,7 +11,7 @@ const crList=(v,key)=>(key==='needs'?v.needs:v.ready).filter(s=>s&&typeof s==='o
 const crPace=()=>+state?.clear_pace||30;
 let crFuv=null;
 function clearHead(key,v){if(!['ready','needs'].includes(key))return '';crFuv=v;const n=crList(v,key).length,min=Math.max(1,Math.ceil(n*crPace()/60));if(!n)return '';
- return html`<span class="clear-time">${key==='ready'?t('{} ready · about {} min',n,min):t('{} to decide · about {} min',n,min)}</span>${n>1?html`<button type="button" class="clear-go" data-clear-run="${key}">${t('Clear Ready')}</button>`:''}`}
+ return html`<span class="clear-time">${t('about {} min',min)}</span>${n>1?html`<button type="button" class="clear-go" data-clear-run="${key}">${t('Clear Ready')}</button>`:''}`}
 let cr=null;  // {ids, at, n, sent, done, started, busy, asking}
 function crDialog(){let d=$('#clear-run');if(d)return d;d=make('dialog',{id:'clear-run',class:'clear-run','aria-label':t('Clear Ready'),tabindex:'-1'});document.body.append(d);
  d.addEventListener('close',()=>{cr=null;d.replaceChildren();render()});
