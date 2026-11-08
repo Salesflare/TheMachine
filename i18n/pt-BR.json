@@ -5771,6 +5771,7 @@
  "Your Machine uses it to do tasks on websites for you. Sign in to a site here so it can act there. Nothing runs in it until you ask.": "Sua Machine o usa para fazer tarefas em sites por você. Entre em um site aqui para que ela possa agir lá. Nada roda nele até você pedir.",
  "Your Machine was confirmed": "Sua Machine foi confirmada",
  "Your Machine was not confirmed": "Sua Machine não foi confirmada",
+ "Your Machine wrote these reads itself. It runs them before each run; they only read.": "Sua Machine escreveu estas leituras sozinha. Ela as roda antes de cada execução; elas só leem.",
  "Your Machine's own browser": "O navegador da sua Machine",
  "Your Machine's own log, so it spots its own trouble.": "O próprio log da sua Machine, para ela perceber os próprios problemas.",
  "Your Machines can sort this out without you asking each other.": "Suas Machines podem resolver isso sem vocês precisarem perguntar um ao outro.",

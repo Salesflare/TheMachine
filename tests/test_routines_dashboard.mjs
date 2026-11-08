@@ -138,6 +138,14 @@ try{
   await card.locator('.more-actions>summary').click();await card.locator('[data-rt-do="edit"]').click();
   assert.equal(await card.locator('.rt-form [data-step="get"]').inputValue(),'python3 ~/scripts/deals.py --open');
   await card.locator('[data-rt-cancel]').click();
+  // The Machine's own recipe: under Advanced only, read-only
+  list=list.map(r=>({...r,steps:undefined,recipe:['gh pr list --repo acme/widgets --state merged --search merged:>={days_ago:7}']}));await page.evaluate(()=>routinesView(true));
+  await card.locator('.more-actions>summary').click();await card.locator('[data-rt-do="edit"]').click();
+  assert.equal(await card.locator('.rt-form .rt-recipe').count(),0,'Edit stays the routine\'s words');
+  await card.locator('[data-rt-cancel]').click();await card.locator('.more-actions>summary').click();await card.locator('[data-rt-do="steps"]').click();
+  assert.deepEqual(await card.locator('.rt-recipe code').evaluateAll(n=>n.map(x=>x.textContent)),['gh pr list --repo acme/widgets --state merged --search merged:>={days_ago:7}']);
+  assert.equal(await card.locator('.rt-recipe :is(input,textarea,button)').count(),0,'read-only');
+  await card.locator('[data-rt-cancel]').click();
   // Didn't work: what the script said, as text
   list=list.map(r=>({...r,runs:[{id:'r3',state:'failed',started_at:now,why:'Get data didn’t work.',detail:'<b>no such report</b>'}]}));await page.evaluate(()=>routinesView(true));
   assert.equal(await card.locator('.rt-detail').innerText(),'<b>no such report</b>');

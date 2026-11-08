@@ -5771,6 +5771,7 @@
  "Your Machine uses it to do tasks on websites for you. Sign in to a site here so it can act there. Nothing runs in it until you ask.": "Votre Machine s’en sert pour faire des tâches sur des sites web pour vous. Connectez-vous ici à un site pour qu’elle puisse y agir. Rien n’y tourne tant que vous ne le demandez pas.",
  "Your Machine was confirmed": "Votre Machine est confirmée",
  "Your Machine was not confirmed": "Votre Machine n’est pas confirmée",
+ "Your Machine wrote these reads itself. It runs them before each run; they only read.": "Votre Machine a écrit ces lectures elle-même. Elle les lance avant chaque exécution ; elles ne font que lire.",
  "Your Machine's own browser": "Le navigateur de votre Machine",
  "Your Machine's own log, so it spots its own trouble.": "Le journal de votre Machine, pour qu’elle repère ses propres soucis.",
  "Your Machines can sort this out without you asking each other.": "Vos Machines peuvent régler ça sans que vous ayez à vous demander.",
