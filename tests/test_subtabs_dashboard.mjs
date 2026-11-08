@@ -102,6 +102,9 @@ try{
  await page.locator('#health-tabs [data-health-pane="reviews"]').click();
  for(let i=0;i<100&&!(await page.locator('#health-tabs .sub-tabs.more-left').count());i++)await page.waitForTimeout(20);
  assert.equal(await page.locator('#health-tabs .sub-tabs.more-left').count(),1);  // the chosen one scrolled into view
+ // Out of sight, Connections' tabs are drawn but not measured: a redraw on another tab never lays the page out for them
+ const measured=await page.evaluate(()=>{showTab('inbox');let n=0;const f=tabsShow;tabsShow=(...a)=>{if(a[0]?.closest('#health-tabs'))n++;return f(...a)};try{render()}finally{tabsShow=f}return n});
+ assert.equal(measured,0,'no measuring for a hidden Connections');
  assert.deepEqual(errors,[]);
  console.log('sub-tabs dashboard ok');
 }finally{await browser?.close();server.close()}

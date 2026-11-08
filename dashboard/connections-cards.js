@@ -38,7 +38,9 @@ function renderHealthTabs(){const cs=state.connectors||[],bad=g=>cs.filter(c=>he
  const ids=panes.map(p=>p.id),current=healthPicked&&ids.includes(healthPane)?healthPane:panes.find(p=>p.badge&&p.warn)?.id||(ids.includes(healthPane)?healthPane:ids[0]);
  healthPane=current;const row=$('#health-tabs');setHTML(row,subTabs('Connections','data-health-pane',panes,current));
  for(const el of document.querySelectorAll('#health [data-health-for]'))el.hidden=!el.dataset.healthFor.split(' ').includes(current);
- for(const a of document.querySelectorAll('#connectors>article'))a.hidden=a.dataset.group!==current;tabsShow(row.firstChild);if(current==='add')connectAdd()}  // measured once the other panes are hidden, never with every source shown at once
+ for(const a of document.querySelectorAll('#connectors>article'))a.hidden=a.dataset.group!==current;if(!$('#health').hidden)tabsShow(row.firstChild);if(current==='add')connectAdd()}  // measured once the other panes are hidden, never with every source shown at once
+// and only while Connections shows: every redraw calls this, and a measure mid-redraw lays out the whole page (some 60 ms
+// of each click that redraws). Opening Connections (showTab) calls it again, and measures then.
 // Connections, Add: every source this install can add, set up right here with the same steps as `assistant connect`;
 // its questions show one at a time. On a hosted machine Google, Microsoft, Zoom, Stripe, Intercom and Trello sign in right
 // here too (hosted_signin): a POST to /_machine/connect starts the account's own sign-in for it, and the provider comes
