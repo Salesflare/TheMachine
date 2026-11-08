@@ -5337,6 +5337,7 @@
  "Username or email": "Username or email",
  "Uses OpenClaw’s notification feed, plus a catch-up check of your phone.": "Uses OpenClaw’s notification feed, plus a catch-up check of your phone.",
  "Uses your Claude plan": "Uses your Claude plan",
+ "Uses your Mistral API key": "Uses your Mistral API key",
  "Using direct checks while the notification bridge is unavailable.": "Using direct checks while the notification bridge is unavailable.",
  "Using the dashboard? Nothing buzzes. Away or idle: a push after a minute, and one email if it’s still unseen 15 minutes later.": "Using the dashboard? Nothing buzzes. Away or idle: a push after a minute, and one email if it’s still unseen 15 minutes later.",
  "Using the mailbox signature.": "Using the mailbox signature.",

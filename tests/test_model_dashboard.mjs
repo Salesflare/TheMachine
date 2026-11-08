@@ -90,6 +90,14 @@ try{
  await page.evaluate(()=>{for(const x of document.querySelectorAll('main>section'))x.hidden=x.id!=='settings'});
  await page.locator('#model-panel',{hasText:'Uses your Claude plan'}).waitFor();
  assert.doesNotMatch(await page.locator('#model-panel').textContent(),/ChatGPT/);
+ // A Mistral API key says so, and shows no limits or "no windows yet" (a key has none).
+ status={model:'mistral/mistral-large-latest',provider:'mistral',chatgpt:false,claude_plan:false,windows:[],resets:null,can_reset:false,usage_page:null,checked_at:new Date().toISOString()};
+ await page.evaluate(()=>refresh());
+ await page.evaluate(()=>{for(const x of document.querySelectorAll('main>section'))x.hidden=x.id!=='settings'});
+ await page.locator('#model-panel',{hasText:'Uses your Mistral API key'}).waitFor();
+ const mistral=await page.locator('#model-panel').textContent();
+ assert.match(mistral,/^Mistral Large/);
+ assert.doesNotMatch(mistral,/ChatGPT|No usage windows/);
  // Nothing known: no Model section at all.
  status=null;await page.evaluate(()=>refresh());
  await page.evaluate(()=>{for(const x of document.querySelectorAll('main>section'))x.hidden=x.id!=='settings'});
