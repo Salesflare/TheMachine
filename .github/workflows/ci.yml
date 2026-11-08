@@ -178,8 +178,8 @@ jobs:
         run: |
           archive="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
           base="https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}"
-          curl --fail --location --silent --show-error "$base/$archive" --output "$RUNNER_TEMP/$archive"
-          curl --fail --location --silent --show-error "$base/gitleaks_${GITLEAKS_VERSION}_checksums.txt" --output "$RUNNER_TEMP/checksums.txt"
+          curl --fail --location --silent --show-error --retry 8 --retry-all-errors --retry-delay 15 "$base/$archive" --output "$RUNNER_TEMP/$archive"
+          curl --fail --location --silent --show-error --retry 8 --retry-all-errors --retry-delay 15 "$base/gitleaks_${GITLEAKS_VERSION}_checksums.txt" --output "$RUNNER_TEMP/checksums.txt"
           (cd "$RUNNER_TEMP" && sha256sum --check --ignore-missing checksums.txt)
           tar -xzf "$RUNNER_TEMP/$archive" -C "$RUNNER_TEMP" gitleaks
           "$RUNNER_TEMP/gitleaks" git --redact --log-opts=--all --no-banner
