@@ -120,6 +120,9 @@ class CatalogTest(unittest.TestCase):
             '{} is not connected. Open the OpenClaw app on it.',
             '{} is paired but not connected. Open the OpenClaw app on it.',
             'No Android phone is paired with OpenClaw',
+            # Routines: only shown to an owner who made scheduled jobs in OpenClaw themselves (routine_imports.py)
+            'From your OpenClaw jobs. Each one ran once to show you.',
+            'Turn off the old OpenClaw job?',
             # Terminal: `assistant` setup errors and commands to type
             'No OpenClaw Gateway systemd unit found',
             'OpenClaw could not remove the Telegram bot: {}',

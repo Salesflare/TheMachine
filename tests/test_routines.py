@@ -70,7 +70,8 @@ class Runs(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
         self.store = a.Store(Path(self.temp.name) / 'e.sqlite')
         self.app = object.__new__(a.App); self.app.store = self.store
-        self.app.config = {'accounts': [dict(x) for x in ACCOUNTS], 'timezone': 'Europe/Brussels'}
+        self.app.config = {'accounts': [dict(x) for x in ACCOUNTS], 'timezone': 'Europe/Brussels',
+                           'openclaw_state': self.temp.name + '/none.sqlite'}  # no OpenClaw jobs (test_routine_imports.py)
         self.now = T(2026, 11, 9, 6, 0)  # a Monday, early
         for name, value in (('routines_now', lambda s: self.now), ('background_pause', lambda s, **k: self.paused),
                             ('background_spaced', lambda s: True), ('background_started', lambda s: None),
