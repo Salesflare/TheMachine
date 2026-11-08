@@ -424,14 +424,14 @@ NOT_DASHBOARD = {'cli.py', 'installer.py', 'network_crypto.py', 'message_seal.py
                  'dashboard_parts.py', 'ai_reach.py'}  # ai_reach.py: errors go to the log; Settings shows its state
 # Functions whose strings are lines the dashboard shows as the server wrote them (a reason, a sync line, a hint).
 SERVER_TEXT = {
-    'own_addresses.py': ['suggest_reason', 'classify', 'SENT_ONLY', 'NAMED_ONLY', 'LABELS'],
+    'own_addresses.py': ['classify', 'SENT_ONLY', 'NAMED_ONLY', 'LABELS'],
     'onboarding.py': ['WHAT', 'LABELS'],
     'shared_graph.py': ['why'],          # why a thread is shared or not, under Sharing
     'graph.py': ['likely_same'],         # why two people look like one
     'crm.py': ['org_doubles'],           # why two organizations look like one
     'fleet.py': ['KIND_LABEL'],          # what a Fleet asks about, in a sentence and (capitalized) as a row's name
     'family.py': ['LABELS'],
-    'assistant.py': ['TODO_SOURCE', 'TODO_SOURCE_OTHER'],  # Feedback's rows: where the to-dos came from
+    'machine/store/profile.py': ['TODO_SOURCE', 'TODO_SOURCE_OTHER'],  # Feedback's rows: where the to-dos came from
 }
 # Constants the dashboard also shows capitalized (cap()) as a label
 CAPITALIZED = {'fleet.py': ['KIND_LABEL'], 'family.py': ['LABELS']}

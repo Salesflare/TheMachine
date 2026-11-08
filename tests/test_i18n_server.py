@@ -18,7 +18,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 # The functions that build text the Machine sends to its owner or writes into a to-do or its Events.
 PATHS = {
-    'assistant.py': ['prompt_text'],
+    'machine/app/feedback.py': ['prompt_text'],
     'machine/app/fleet.py': ['fleet_notify_brief', 'fleet_tell'],
     'machine/app/recap.py': ['recap_graph_lines', 'recap_share_lines', 'weekly_recap_message', 'recap_buttons'],
     'machine/cards.py': ['card', 'checkin_line', 'controls'],
@@ -95,6 +95,12 @@ class NoNewEnglishTest(unittest.TestCase):
                  for fn, text in hard_coded((ROOT / path).read_text(encoding='utf-8'), names)
                  if text not in keys and text not in ALLOWED}
         self.assertEqual(sorted(found), [], 'wrap these in t() and add them to i18n/*.json')
+
+    def test_every_function_named_is_in_its_file(self):
+        # A function that moves to another file must move here too, or its text goes unchecked.
+        for path, names in PATHS.items():
+            defined = {n.name for n in ast.walk(ast.parse((ROOT / path).read_text(encoding='utf-8'))) if isinstance(n, ast.FunctionDef)}
+            self.assertEqual([n for n in names if n not in defined], [], f'not defined in {path}: update PATHS')
 
     def test_the_check_finds_hard_coded_english(self):
         source = "def telegram(row):\n    return {'title': 'Ready to send', 'ok': t('Done'), 'key': row.get('Some key')}\n"

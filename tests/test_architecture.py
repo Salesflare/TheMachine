@@ -610,6 +610,18 @@ class Architecture(unittest.TestCase):
         import inspect
         self.assertIn("glob('machine/**/*.py')", inspect.getsource(help_check.app_files))
 
+    def test_every_name_the_string_extractor_reads_is_in_its_file(self):
+        """SERVER_TEXT and CAPITALIZED name constants and functions by file: one that moves must move there too."""
+        sys.path.insert(0, str(ROOT / 'scripts'))
+        import i18n_extract
+        for table in (i18n_extract.SERVER_TEXT, i18n_extract.CAPITALIZED):
+            for path, names in table.items():
+                tree = ast.parse((ROOT / path).read_text(encoding='utf-8'))
+                defined = {n.name for n in ast.walk(tree) if isinstance(n, ast.FunctionDef)}
+                defined |= {t.id for n in tree.body if isinstance(n, ast.Assign) for t in n.targets if isinstance(t, ast.Name)}
+                with self.subTest(path=path):
+                    self.assertEqual([n for n in names if n not in defined], [], f'not defined in {path}: update i18n_extract')
+
     def test_every_i18n_area_resolves(self):
         sys.path.insert(0, str(ROOT / 'scripts'))
         import i18n_extract
