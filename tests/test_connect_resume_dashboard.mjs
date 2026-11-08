@@ -66,7 +66,7 @@ try{
   await shot(page,`pair-${tag}`);
 
   // The form: the Google address fills in an empty Company; one typed there stays
-  await pane.locator('.connect-other summary').click();
+  assert.equal(await pane.locator('details.connect-other').getAttribute('open'),'');  // not paired: your own app shows open (#936)
   await pane.locator('[data-connect="gmail"]').click();
   const form=pane.locator('form[data-connect-setup="gmail"]');await form.waitFor();
   await form.locator('input[data-key="email"]').fill(EMAIL);
