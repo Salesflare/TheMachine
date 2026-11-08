@@ -113,8 +113,7 @@ class FactKinds(unittest.TestCase):
         with self.at(NOW):
             for n in range(assistant.FACTS_GENERAL_MAX):
                 self.store.remember_fact(f'General fact number {n} about how the owner works.', 'owner-note')
-            with self.assertRaises(ValueError):
-                self.store.remember_fact('One general fact too many for the list.', 'owner-note')
+            self.assertIn('id', self.store.remember_fact('One general fact over the cap, never an error.', 'owner-note'))
             for n in range(5):  # about someone: still saved
                 self.assertIn('id', self.store.remember_fact(f'Lee prefers email over calls, note {n}.', 'owner-note', 'preference',
                                                              about=['email:lee@globex.example']))

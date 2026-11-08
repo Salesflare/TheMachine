@@ -56,7 +56,8 @@ Você também pode fazer uma pergunta, como a que uma pesquisa vazia sugere, par
 O Aprendizado tem uma fileira de abas. Uma aba ainda sem nada fica de fora.
 
 - **O que aprendi**: como você escreve, fatos e como você gosta que as coisas sejam feitas, a partir das suas notas. Use **Editar** para reescrever qualquer item com suas próprias palavras e **Remover** para tirar o que não for mais verdade. Quando uma nota em uma tarefa ensina um fato ou uma regra, o chat da tarefa avisa abaixo da resposta (**Salvo no que aprendi**, com **Editar** e **Desfazer**). Essa linha vem do que foi guardado, então uma resposta nunca só afirma isso.
-- Um fato pode dizer o que é (**Temporário**, **Compromisso**, **Preferência**) e **Até** quando vale. Um fato temporário perde peso em semanas, uma preferência ou um compromisso em meses, os outros fatos em um ano. Fatos sobre alguém não têm limite; os outros param em 80. Passada a data, um fato vai para **Encerrados**, onde **Trazer de volta** o restaura.
+- Um fato pode dizer o que é (**Temporário**, **Compromisso**, **Preferência**) e **Até** quando vale. Um fato temporário perde peso em semanas, uma preferência ou um compromisso em meses, os outros fatos em um ano. Passada a data, um fato vai para **Encerrados**, onde **Trazer de volta** o restaura.
+- A lista nunca enche. Quando cresce, fatos e regras sem uso há três semanas vão para **Deixados de lado**, onde **Trazer de volta** restaura um. O que você editou ou trouxe de volta fica.
 - **Alterações**: o que ela aprendeu com suas edições, dispensas e chats, cada uma com **Desfazer**. Veja [Escrita](writing.md#it-keeps-learning).
 - **Decisões**: uma linha do tempo das suas escolhas nas tarefas.
 - **Compartilhado**: aprendizados para compartilhar com a equipe da The Machine, e votos esperando por você. Só aparece quando algo está esperando. Veja [Compartilhar aprendizados](share-learnings.md).

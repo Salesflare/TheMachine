@@ -686,10 +686,14 @@ class ViewsStore(ConversationStore):
             result['facts'] = [{**dict(r), 'merged': merged.get('fact:' + str(r['id']), 0)} for r in
                                db.execute('SELECT id,text,suggestion_id,created_at,kind,fact_kind,valid_until FROM facts WHERE removed_at IS NULL '
                                           'ORDER BY created_at DESC,id DESC')]
-            # Facts that ended (past their end day) in the last 30 days, each the owner can bring back.
+            # Facts that ended (past their end day) in the last 30 days, each the owner can bring back; and those set aside
+            # as not used lately to make room (facts.py set_aside), the last 90 days, same Bring back.
+            month = (dt.datetime.fromisoformat(now()) - dt.timedelta(days=30)).isoformat()
             result['facts_ended'] = [dict(r) for r in db.execute(
-                "SELECT id,text,fact_kind,valid_until,removed_at FROM facts WHERE merged_into='expired:'||id AND removed_at>=? ORDER BY removed_at DESC LIMIT 20",
-                ((dt.datetime.fromisoformat(now()) - dt.timedelta(days=30)).isoformat(),))]
+                "SELECT id,text,fact_kind,valid_until,removed_at FROM facts WHERE merged_into='expired:'||id AND removed_at>=? ORDER BY removed_at DESC LIMIT 20", (month,))]
+            result['facts_aside'] = [dict(r) for r in db.execute(
+                "SELECT id,text,kind,fact_kind,removed_at FROM facts WHERE merged_into='aside:'||id AND removed_at>=? ORDER BY removed_at DESC LIMIT 100",
+                ((dt.datetime.fromisoformat(now()) - dt.timedelta(days=90)).isoformat(),))]
             result['voices'] = [{**v, 'merged': merged.get('voice:' + v['channel'], 0)} for v in self.voices(db)]
             result['learning_changes'] = learning_loop.recent(db)  # the learning loop's changes, each with Undo
             result['moved'] = [dict(r) for r in db.execute("SELECT substr(f.merged_into,7) skill_id,coalesce(k.name,'a skill') name,count(*) notes FROM facts f "

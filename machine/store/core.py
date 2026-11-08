@@ -288,9 +288,14 @@ class StoreCore:
             have_facts = {r[1] for r in db.execute('PRAGMA table_info(facts)')}
             # source: who told it when it wasn't the owner's own note ('ai:<name>': a connected AI, ai_app.py); NULL: the owner.
             # side: a connected AI's fact is in that AI's area (work or personal), so it stays out of the other one's preparations
-            for column in ('fact_kind', 'valid_until', 'confirmed_at', 'source', 'side'):
+            # used_at: when a preparation last picked it as close to its to-do; kept_at: the owner edited it or brought it
+            # back, so it is never set aside for room (facts.py FACTS_GENERAL_ROOM). Facts kept before use was tracked
+            # count as used when tracking starts, so none is set aside before there is a real record of use.
+            for column in ('fact_kind', 'valid_until', 'confirmed_at', 'source', 'side', 'used_at', 'kept_at'):
                 if column not in have_facts:
                     db.execute('ALTER TABLE facts ADD COLUMN ' + column + ' TEXT')
+                    if column == 'used_at':
+                        db.execute('UPDATE facts SET used_at=? WHERE removed_at IS NULL', (now(),))
             # Who a fact is about: a person, organization or project in the graph (its node id), never the owner, who is no node.
             # A fact without one is about the owner or the world and shows on nobody's page. removed_at: the owner said it isn't about them.
             db.execute('CREATE TABLE IF NOT EXISTS fact_about(fact_id INTEGER NOT NULL,node_id TEXT NOT NULL,by TEXT NOT NULL,created_at TEXT NOT NULL,removed_at TEXT,PRIMARY KEY(fact_id,node_id))')
