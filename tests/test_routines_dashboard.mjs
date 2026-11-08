@@ -11,7 +11,7 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 const dashboard=await dashboardPage();
 const now=new Date().toISOString(),posts=[],ID='c3'.repeat(16);
 const routine=()=>({id:ID,name:'Sum up my deals',instructions:'Sum up my deals',rule:{unit:'week',n:1},anchor:'2026-11-09',at:'09:00',state:'on',next_due:'2026-11-16',
- runs:[{id:'r1',state:'ready',started_at:now,result:'**Fernwave** asked <img src=x onerror="window.__xss=1">\n- week of 2026-11-02'}]});
+ runs:[{id:'r1',state:'ready',started_at:now,result:'**Fernwave** asked <img src=x onerror="window.__xss=1">\n- week of 2026-11-02',used:['Deal <b>notes</b>']}]});
 const SID='d4'.repeat(16),suggestion=()=>({...routine(),id:SID,name:'Failed payments',instructions:'List customers whose payment failed',state:'suggested',next_due:null,
  runs:[{id:'r2',state:'ready',started_at:now,result:'**Halyard**: card declined'}]});
 const TID='e5'.repeat(16),tryOne=words=>({...routine(),id:TID,name:words,instructions:words,state:'trying',next_due:null,runs:[],test:{id:'t1',state:'running',started_at:now}});
@@ -81,6 +81,8 @@ try{
   assert.equal(await page.evaluate(()=>window.__xss),undefined);
   // Markdown as in the chat (a real list), dates as the owner reads them
   assert.equal(await card.locator('.rt-result li').innerText(),'week of Nov 2');
+  // The owner's skills it followed, by name (text, never markup)
+  assert.equal(await card.locator('.rt-used').innerText(),'Used: Deal <b>notes</b>');
   // Run now in sight; Edit, Change when, Pause and Stop in the ⋯ menu
   assert.deepEqual(await card.locator('.actions>button').evaluateAll(n=>n.map(x=>x.textContent)),['Run now']);
   assert.equal(await card.locator('.more-menu').isVisible(),false);

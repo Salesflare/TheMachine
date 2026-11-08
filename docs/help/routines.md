@@ -21,6 +21,8 @@ At its time your Machine reads what it needs, like your messages, meetings and t
 
 Routines only read. They don’t send, reply, post or change anything.
 
+A run can follow your [skills](skills.md) that are on, picked by what the routine does: only the ones that fit are read in full. The result names them under **Used:**. A skill never makes a routine send or change anything.
+
 Your routines are under **Your routines**, below any suggestions. A long result folds to a short preview; **Show more** opens it.
 
 Each run knows the last result, so it can say what changed since then.

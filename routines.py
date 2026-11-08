@@ -9,6 +9,7 @@ Each routine runs once per period: a run's key is (routine, period), so a restar
 makes a second result. A scheduled period is its date; Run now is 'now:<stamp>'. Periods missed while the Machine was
 off don't stack: only the newest missed one runs. A run reads with the review's read-only tools and ends with one
 routine_result (routines_app.py): Ready (a result), Nothing new, or Didn't work. A run that ends without one didn't work.
+A run may follow the owner's skills that are on (instructions only, skills.py); its result names them (used).
 
 A routine can also come from an old OpenClaw job (routine_imports.py, origin 'openclaw:<job id>'). Such a row starts as
 'sorting': one run reads the job, says whether it fits (a routine, a recurring to-do or neither) and, when it is a
@@ -60,8 +61,10 @@ def ensure(db):
     for column in ('origin', 'accepted_at', 'old_job', 'name_check'):  # added after the first release (#916; name_check: Edit)
         if column not in have:
             db.execute(f'ALTER TABLE routines ADD COLUMN {column} TEXT')
-    if 'trial' not in {r[1] for r in db.execute('PRAGMA table_info(routine_runs)')}:  # Edit's Try it: the words it tried
-        db.execute('ALTER TABLE routine_runs ADD COLUMN trial TEXT')
+    have = {r[1] for r in db.execute('PRAGMA table_info(routine_runs)')}
+    for column in ('trial', 'used'):  # trial: Edit's Try it, the words it tried; used: the skills it followed (JSON names)
+        if column not in have:
+            db.execute(f'ALTER TABLE routine_runs ADD COLUMN {column} TEXT')
 
 
 # --- words -------------------------------------------------------------------------------------------------------------
@@ -327,12 +330,13 @@ def admitted(db, run_id, stamp):
     db.execute("UPDATE routine_runs SET admitted_at=? WHERE id=? AND state='running'", (stamp, str(run_id)))
 
 
-def finish(db, run_id, state, stamp, result=None, why=None, error=None):
+def finish(db, run_id, state, stamp, result=None, why=None, error=None, used=None):
     """A run's end. Only a running run finishes, once; False when it wasn't running."""
     if state not in RUN_STATES[1:]:
         raise ValueError('Unknown run state')
-    done = db.execute("UPDATE routine_runs SET state=?,result=?,why=?,error=?,finished_at=? WHERE id=? AND state='running'",
-                      (state, (result or '')[:RESULT_MAX] or None, (why or '')[:WHY_MAX] or None, error, stamp, str(run_id))).rowcount
+    done = db.execute("UPDATE routine_runs SET state=?,result=?,why=?,error=?,used=?,finished_at=? WHERE id=? AND state='running'",
+                      (state, (result or '')[:RESULT_MAX] or None, (why or '')[:WHY_MAX] or None, error,
+                       json.dumps(list(used)) if used else None, stamp, str(run_id))).rowcount
     if done:
         rid = db.execute('SELECT routine_id FROM routine_runs WHERE id=?', (str(run_id),)).fetchone()[0]
         db.execute('DELETE FROM routine_runs WHERE routine_id=? AND id NOT IN (SELECT id FROM routine_runs WHERE routine_id=? '
@@ -340,13 +344,14 @@ def finish(db, run_id, state, stamp, result=None, why=None, error=None):
     return bool(done)
 
 
-def report(db, run_id, text=None, nothing=False, why=None, stamp=None):
-    """The run's own result (routine_result): its text, or nothing new with why. ValueError when it isn't one."""
+def report(db, run_id, text=None, nothing=False, why=None, stamp=None, used=None):
+    """The run's own result (routine_result): its text, or nothing new with why, and the skills it followed (used,
+    names). ValueError when it isn't one."""
     text = str(text or '').strip()
     if not nothing and not text:
         raise ValueError('routine_result needs text (the result), or nothing: true with why')
     if not finish(db, run_id, 'nothing' if nothing else 'ready', stamp, result=None if nothing else text,
-                  why=' '.join(str(why or '').split()) if nothing else None):
+                  why=' '.join(str(why or '').split()) if nothing else None, used=used):
         raise ValueError('This routine run is over: end the turn')
 
 
@@ -363,8 +368,10 @@ def view(db, states=LIVE):
     out = []
     marks = ','.join('?' * len(states))
     for r in db.execute(f'SELECT * FROM routines WHERE state IN ({marks}) ORDER BY created_at', states).fetchall():
-        runs = [dict(x) for x in db.execute('SELECT id,period,state,result,why,error,started_at,finished_at,trial FROM routine_runs '
+        runs = [dict(x) for x in db.execute('SELECT id,period,state,result,why,error,started_at,finished_at,trial,used FROM routine_runs '
                                             'WHERE routine_id=? ORDER BY started_at DESC LIMIT ?', (r['id'], HISTORY + 1))]
+        for x in runs:
+            x['used'] = json.loads(x['used']) if x['used'] else []
         test = next((x for x in runs if is_test(x)), None)  # a test run is shown on its own, never as a result
         runs = [x for x in runs if not is_test(x)][:HISTORY]
         out.append({'id': r['id'], 'name': r['name'], 'instructions': r['instructions'], 'rule': json.loads(r['rule']),

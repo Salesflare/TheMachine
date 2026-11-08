@@ -8,10 +8,10 @@ const rtDay=v=>localeDate(v,DL,{weekday:'short',day:'numeric',month:'short'});
 function rtRhythm(r){const u=r.rule.unit,d=rpDate(r.anchor),wd=rpWeekday(d);if((r.rule.n||1)>1)return repeatText(r.rule,r.anchor);
  return u==='day'?t('Daily'):u==='weekday'?t('Weekdays'):u==='week'?t('Weekly on {}',wd):u==='year'?t('Yearly on {}',rpMonthDay(d)):r.rule.nth!=null?t(REPEAT_NTH_OPTION[r.rule.nth],wd):t('Monthly on day {}',d.getDate())}
 const rtWhen=r=>[rtRhythm(r),rtTime(r.at),r.state==='paused'?t('Paused'):r.next_due?t('Next {}',rtDay(rpDate(r.next_due))):''].filter(Boolean).join(' · ');
-// A test run wears its own chip and says nothing was sent or saved; a result is Markdown, as in the chat (lists, bold, headings), its ISO dates as the owner reads dates
+// A test run wears its own chip and says nothing was sent or saved; a result is Markdown, as in the chat (lists, bold, headings), its ISO dates as the owner reads dates; Used: the owner's skills it followed
 const rtDates=v=>String(v||'').replace(/\b(\d{4})-(\d{2})-(\d{2})\b/g,(m,y,mo,d)=>localeDate(new Date(+y,mo-1,+d),DL,{day:'numeric',month:'short'}));
 const rtRun=(x,test)=>html`<div class="rt-run"><p class="rt-run-head">${test?html`<span class="rt-state rt-test">${t('Test run')}</span><small>${x.state==='running'?t('Running…'):t('Nothing sent or saved')}</small>`:html`<span class="rt-state rt-${x.state}">${t(RT_STATE[x.state]||'')}</span><small>${rtDay(new Date(x.started_at))}</small>`}</p>${
- x.state==='ready'?html`<div class="rt-result">${chatMarkdown(rtDates(x.result))}</div>`:x.why?html`<p class="rt-why">${x.state==='failed'?t(x.why):x.why}</p>`:''}</div>`;
+ x.state==='ready'?html`<div class="rt-result">${chatMarkdown(rtDates(x.result))}</div>`:x.why?html`<p class="rt-why">${x.state==='failed'?t(x.why):x.why}</p>`:''}${x.used?.length?html`<p class="rt-used">${t('Used: {}',x.used.join(', '))}</p>`:''}</div>`;
 // Long ones fold like a to-do's text (todos-cards.js): a short preview, Show more for the rest
 const rtRows=s=>String(s||'').split('\n').reduce((n,l)=>n+(l.trim()?Math.ceil(l.length/56):1),0);
 function rtBody(r,inner,rows,always){const key='rt-'+r.id,fold=always||rows>3,open=expandedBodies.has(key);
