@@ -436,6 +436,9 @@ class OwnerBoundary(unittest.TestCase):
         self.assertIs(view['promises'], status['promises'])
         self.assertIn('dedupe_key', status['suggestions'][0]); self.assertIn('items', status['analyses'][0])  # the action's own rows stay whole
         self.assertNotIn('analyses', a.dashboard_status({'suggestions': []}))
+        many = {'analyses': [{'id': str(n), 'status': 'complete', 'checked_count': 1, 'summary': 'ok'} for n in range(100)]}
+        self.assertEqual([r['id'] for r in a.dashboard_status(many)['analyses']], [str(n) for n in range(20)])  # the newest 20
+        self.assertEqual(len(many['analyses']), 100)
 
     def test_dashboard_status_sends_a_card_s_actions_once_and_only_the_sync_state_connections_reads(self):
         menu = {'kind': 'menu', 'actions': [{'kind': 'email', 'revision': 'r1', 'body': 'Hi'}]}

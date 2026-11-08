@@ -186,12 +186,15 @@ def etag_matches(if_none_match, etag):
     return any(etag_base(t) == etag for t in str(if_none_match or '').split(',') if t.strip())
 
 
+REVIEWS_SHOWN = 20  # of the status' 100 (mostly their summaries: 88 KB on a busy Machine)
+
+
 def dashboard_status(status):
     """api/status as the dashboard needs it: without what it never reads. A finished review's signal list (only its
     count shows, and checked_count has it), its session names, a card's dedupe key and saved pre-close state, a
     delivery's message bookkeeping (its row shows status, to-do, time and error), a card's next_action when next_actions
     has it (the page reads next_actions first), and of a connector's sync state (a Slack one is tens of KB of cursors)
-    all but what Connections reads. The status action itself (CLI, plugin) keeps everything; copies, never its rows."""
+    all but what Connections reads, and the newest reviews only. The status action itself (CLI, plugin) keeps everything; copies, never its rows."""
     def without(rows, keys, when=lambda row: True):
         return [{k: v for k, v in row.items() if k not in keys} if isinstance(row, dict) and when(row) else row for row in rows or []]
     status, drop = dict(status), {'analyses': {'owner_session', 'owner_run'}, 'suggestions': {'dedupe_key', 'closed_state'},
@@ -200,8 +203,8 @@ def dashboard_status(status):
     for name, keys in drop.items():
         if isinstance(status.get(name), list):
             status[name] = without(status[name], keys)
-    if isinstance(status.get('analyses'), list):
-        status['analyses'] = without(status['analyses'], {'items'}, lambda r: r.get('status') == 'complete' and r.get('checked_count') is not None)
+    if isinstance(status.get('analyses'), list):  # the newest REVIEWS_SHOWN: Connections' review history shows 3, then 10 more
+        status['analyses'] = without(status['analyses'][:REVIEWS_SHOWN], {'items'}, lambda r: r.get('status') == 'complete' and r.get('checked_count') is not None)
     if isinstance(status.get('suggestions'), list):
         status['suggestions'] = without(status['suggestions'], {'next_action'}, lambda r: 'next_actions' in r)
     if isinstance(status.get('connectors'), list):
