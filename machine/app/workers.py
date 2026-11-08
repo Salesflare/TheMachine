@@ -11,10 +11,14 @@ import enrichment
 import error_feed
 import help_topics
 from machine.config import LOG
+from machine.sources.calendar import calendar_owned
 from machine.sources.telegram import telegram_photo_asker
 from machine.sources.whatsapp import whatsapp_photo_asker
+from machine.store.review import bulk_kind
+from models import background_model
+import next_actions
 import retention
-from sources import gog_read, SourceError
+from sources import credential, gog_read, SourceError
 import team_learnings
 from timeutil import local_tz, now
 
@@ -69,6 +73,12 @@ def google_photo_accounts(config):
                 and not account.get('shared'):
             seen.setdefault(account['email'].lower(), account)
     return list(seen.values())
+
+
+# Settings the app takes from config.json while it runs (App.follow_config), so turning reviews on needs no restart:
+# the hosting agent's reviews on restarted the app 44 s into a first look (2026-11-04). The hosting agent checks this
+# list before it restarts the app for them.
+LIVE_CONFIG = ('delivery_enabled', 'review_worker')
 
 
 class WorkersApp:
@@ -173,3 +183,95 @@ class WorkersApp:
         except Exception as error:  # the Network or the control plane is away: next time
             LOG.warning('error reports error=%s', type(error).__name__)
             return 0
+
+    def style_step(self):
+        """Every ten minutes: a finished profile's channel lines fill voices still empty, and a draft the owner
+        answered themselves instead of sending becomes a lesson for the next drafts, and that to-do looks done."""
+        seeded, learned = self.store.seed_voices(), self.store.learn_sent_elsewhere()
+        self.store.answered_elsewhere()
+        if (self.config.get('review_worker') or {}).get('enabled'):  # read how they write from their own messages, now and then
+            self.store.voice_study_due()
+            self.store.tune_due()  # keep learning from edits, dismissals, snoozes and chat corrections (learning_loop.py)
+            self.missed_work_step({'owned': calendar_owned, 'bulk': bulk_kind, 'model': background_model})  # once a week: how many reviewed signals without a to-do needed one (missed_work.py)
+            if self.fleet:  # learnings go to the team over the Network: without it there is nobody to offer them to
+                self.store.learnings_due()
+                self.team_votes_due()  # and other Machines' learnings come to be judged, when voting is on
+                self.fleet_learn_due()  # and team learnings from team conversations, in a Standard Work Fleet
+        if self.fleet:
+            self.learnings_auto_send()  # Send learnings automatically: a batch that couldn't get through yet
+            self.help_topics_send()  # what Help was asked, as topics (help_topics.py)
+            self.error_reports_step()
+            self.pacing_send()  # how often background work paced, counts only (pacing.py)
+        self.apply_skill_clusters()  # a Create skill tapped on Telegram
+        self.summary_step()  # people's summaries, when their evidence changed (person_summary.py)
+        if seeded or learned:
+            LOG.info('style learned voices=%s replies=%s', seeded, learned)
+
+    def expire_step(self, every=30):
+        """To-dos whose moment passed close by themselves (Store.expire_passed), about every half minute; Intercom to-dos a
+        teammate took (Store.close_taken_intercom), about every five minutes."""
+        if time.monotonic() - self.__dict__.get('expired_swept', -every) < every:
+            return
+        self.expired_swept = time.monotonic()
+        self.store.expire_passed()
+        if time.monotonic() - self.__dict__.get('intercom_swept', -300) >= 300:  # a teammate took it: within five minutes
+            self.intercom_swept = time.monotonic()
+            self.store.close_taken_intercom()
+
+    def thread_snooze_step(self,gmail=None):
+        """Archive a replied thread under a label, then return it to the inbox when due."""
+        with self.store.connect() as db:
+            row=db.execute("SELECT t.*,j.message_id sent_message_id FROM thread_snoozes t LEFT JOIN action_jobs j ON j.id=t.job_id WHERE (t.status='queued' OR (t.status='snoozed' AND t.until<=?)) AND (t.retry_at IS NULL OR t.retry_at<=?) ORDER BY t.created_at LIMIT 1",(now(),now())).fetchone()
+            if row and row['status']=='snoozed':
+                later=db.execute("SELECT max(until) FROM thread_snoozes WHERE account_id=? AND thread_id=? AND status IN ('queued','snoozed') AND until>?",(row['account_id'],row['thread_id'],now())).fetchone()[0]
+                if later:
+                    db.execute('UPDATE thread_snoozes SET until=? WHERE job_id=?',(later,row['job_id']))
+                    return
+        if not row:return
+        gmail=gmail or next_actions.ThreadSnooze(self.config,credential,gog_read)
+        try:
+            if row['status']=='queued':
+                if row['until']<=now():status='returned'  # Too late to snooze; leave the thread alone.
+                else:status=gmail.snooze(row['account_id'],row['thread_id'],row['sent_message_id'])
+            else:status=gmail.wake(row['account_id'],row['thread_id'])
+            outlook=next((a for a in self.config.get('accounts',[]) if a['id']==row['account_id'] and a.get('service')=='outlook'),None)
+            error={'no_permission':'Outlook can’t move this thread yet: connect the account again with sending on.' if outlook else 'Gmail can’t move this thread yet: the account needs the modify permission.'}.get(status)
+            with self.store.connect() as db:
+                db.execute('UPDATE thread_snoozes SET status=?,error=?,retry_at=NULL,updated_at=? WHERE job_id=?',
+                           ('failed' if error else status,error,now(),row['job_id']))
+                if status=='returned':
+                    db.execute("UPDATE thread_snoozes SET status='returned',error=NULL,retry_at=NULL,updated_at=? WHERE account_id=? AND thread_id=? AND status IN ('queued','snoozed')",(now(),row['account_id'],row['thread_id']))
+        except Exception as error:
+            # Retry with backoff; a thread that can't come back stays labeled in Gmail.
+            attempts=row['attempts']+1
+            with self.store.connect() as db:
+                db.execute('UPDATE thread_snoozes SET attempts=?,error=?,retry_at=?,status=?,updated_at=? WHERE job_id=?',
+                           (attempts,type(error).__name__,(dt.datetime.fromisoformat(now())+dt.timedelta(minutes=min(5*2**attempts,360))).isoformat(),
+                            row['status'] if attempts<12 or row['status']=='snoozed' else 'failed',now(),row['job_id']))
+            LOG.error('thread snooze status=%s error=%s',row['status'],type(error).__name__)
+
+    def follow_config(self):
+        """Settings in LIVE_CONFIG that changed in config.json since the last look (the hosting agent's reviews on, while
+        the first look runs) apply at once, without a restart. Best effort: an unreadable file changes nothing."""
+        path = getattr(self, 'config_path', None)
+        if not path:
+            return False
+        try:
+            stamp = path.stat().st_mtime_ns
+            if stamp == getattr(self, 'config_stamp', None):
+                return False
+            first = getattr(self, 'config_stamp', None) is None
+            self.config_stamp = stamp
+            if first:
+                return False  # what the app started with
+            saved = json.loads(path.read_text())
+        except (OSError, ValueError):
+            return False
+        changed = False
+        for key in LIVE_CONFIG:
+            if isinstance(saved, dict) and key in saved and saved[key] != self.config.get(key):
+                self.config[key] = saved[key]
+                changed = True
+        if changed:
+            LOG.info('settings applied without a restart: %s', ','.join(LIVE_CONFIG))
+        return changed
