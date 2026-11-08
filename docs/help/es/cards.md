@@ -44,7 +44,7 @@ Cuando inicias una tarea, siempre puede leer los mensajes de los que vino, tambi
 
 Su respuesta sale igual desde la dirección del trabajo donde llegó, y nunca aparece en una Work Fleet ni en el Graph del equipo.
 
-Con dos o más esperando, **Vaciar Para revisar** en el encabezado (**Resolver decisiones** en Necesita tu decisión) las recorre una a una, cada borrador completo, con **Enviar** o **Hazlo**, **Pedir cambios**, **Posponer** y **Omitir**. En una computadora, Intro envía lo que está en pantalla, `S` pospone, `→` omite y Esc termina. Bajo el título, el encabezado también dice cuánto tardan a tu ritmo, como "unos 2 min".
+Con dos o más esperando, **Repasar** en el encabezado de Lista para ti y de Necesita tu decisión las recorre una a una, cada borrador completo, con **Enviar** o **Hazlo**, **Pedir cambios**, **Posponer** y **Omitir**. En una computadora, Intro envía lo que está en pantalla, `S` pospone, `→` omite y Esc termina. Bajo el título, el encabezado también dice cuánto tardan a tu ritmo, como "unos 2 min".
 
 ## Revisar ahora
 

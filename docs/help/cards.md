@@ -44,7 +44,7 @@ A to-do can always read the messages it came from. When it needs other messages 
 
 Such a Personal to-do still replies from the work address its email came in on, and it never shows up in a Work Fleet or the Team Graph.
 
-With two or more waiting, **Clear Ready** in the header (**Clear decisions** under Needs your decision) goes through them one at a time, each draft in full, with **Send** or **Do it**, **Ask for changes**, **Snooze** and **Skip**. On a computer, Enter sends what's on screen, `S` snoozes, `→` skips and Esc stops. Under the title, the header also says how long they take at your own pace, like "about 2 min".
+With two or more waiting, **Go through** in the header of Ready for you and of Needs your decision steps through them one at a time, each draft in full, with **Send** or **Do it**, **Ask for changes**, **Snooze** and **Skip**. On a computer, Enter sends what's on screen, `S` snoozes, `→` skips and Esc stops. Under the title, the header also says how long they take at your own pace, like "about 2 min".
 
 ## Check now
 

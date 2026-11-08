@@ -42,4 +42,4 @@ Las teclas no funcionan mientras escribes en un campo.
 
 ## Ninguna tecla envía nada
 
-Enviar, aprobar o publicar nunca ocurre desde una tecla ni directamente desde la paleta. Entradas como Revisar el correo solo abren el borrador, donde se puede leer, cambiar y enviar con su propio botón. La única excepción es [Vaciar Para revisar](cards.md): ahí Intro envía el borrador que muestra completo.
+Enviar, aprobar o publicar nunca ocurre desde una tecla ni directamente desde la paleta. Entradas como Revisar el correo solo abren el borrador, donde se puede leer, cambiar y enviar con su propio botón. La única excepción es [Repasar](cards.md): ahí Intro envía el borrador que muestra completo.

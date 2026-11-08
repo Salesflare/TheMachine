@@ -42,4 +42,4 @@ As teclas não funcionam enquanto você digita em um campo.
 
 ## Nenhuma tecla envia nada
 
-Enviar, aprovar ou publicar nunca acontece por uma tecla ou direto da paleta. Itens como Revisar o e-mail só abrem o rascunho, onde ele pode ser lido, alterado e enviado com o próprio botão. A única exceção é [Esvaziar Para revisar](cards.md): ali Enter envia o rascunho que mostra inteiro.
+Enviar, aprovar ou publicar nunca acontece por uma tecla ou direto da paleta. Itens como Revisar o e-mail só abrem o rascunho, onde ele pode ser lido, alterado e enviado com o próprio botão. A única exceção é [Percorrer](cards.md): ali Enter envia o rascunho que mostra inteiro.

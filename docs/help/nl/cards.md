@@ -44,7 +44,7 @@ Start je een to-do, dan mag hij altijd de berichten lezen waar hij uit kwam, ook
 
 Zo'n privé-to-do antwoordt toch vanaf het werkadres waar de mail binnenkwam, en hij komt nooit in een Work Fleet of de Team-Graph.
 
-Wachten er twee of meer, dan loopt **Klaargezet afhandelen** in de kop (**Beslissingen afhandelen** bij Wacht op je beslissing) ze een voor een door, elk concept volledig, met **Versturen** of **Doe het**, **Wijzigingen vragen**, **Snoozen** en **Overslaan**. Op een computer verstuurt Enter wat in beeld is, `S` snoozet, `→` slaat over en Esc stopt. Onder de titel zegt de kop ook hoe lang ze op jouw tempo duren, zoals "ongeveer 2 min".
+Wachten er twee of meer, dan loopt **Doorlopen** in de kop van Voor jou klaargezet en van Wacht op je beslissing ze een voor een door, elk concept volledig, met **Versturen** of **Doe het**, **Wijzigingen vragen**, **Snoozen** en **Overslaan**. Op een computer verstuurt Enter wat in beeld is, `S` snoozet, `→` slaat over en Esc stopt. Onder de titel zegt de kop ook hoe lang ze op jouw tempo duren, zoals "ongeveer 2 min".
 
 ## Nu checken
 
