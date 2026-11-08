@@ -190,5 +190,25 @@ class PageQueries(unittest.TestCase):
                 self.assertEqual(views.slack_people_names(db, {'U07654321'}), {'U07654321': 'Lee Park'})
             self.assertEqual(made.call_count, 2)
 
+    def test_the_owners_colleagues_are_kept_until_a_person_changes(self):
+        """Each Graph load tells the projects' organizations from the owner's colleagues (graph.colleagues): one pass
+        over every person, kept until a person changes."""
+        from unittest.mock import patch
+        import graph
+        graph.KEPT.clear()
+        with self.store.connect() as db:
+            db.execute("INSERT INTO graph_nodes(id,kind,name,strength,signals,info) VALUES('email:lee@acme.example','person','Lee',1,0,?)",
+                       ('{"colleague": true, "org": "org:acme.example", "identifiers": ["email:lee@acme.example"]}',))
+        with patch.object(graph, '_colleagues', wraps=graph._colleagues) as made:
+            for _ in range(3):
+                with self.store.connect() as db:
+                    self.assertEqual(graph.colleagues(db), ({'org:acme.example'}, ('email:lee@acme.example',)))
+            self.assertEqual(made.call_count, 1)
+            with self.store.connect() as db:
+                db.execute("UPDATE graph_nodes SET info=json_set(info,'$.colleague',json('false'))")
+            with self.store.connect() as db:
+                self.assertEqual(graph.colleagues(db), (set(), ()))
+            self.assertEqual(made.call_count, 2)
+
 if __name__ == '__main__':
     unittest.main()
