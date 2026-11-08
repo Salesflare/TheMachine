@@ -71,3 +71,16 @@ Each open to-do has its own story in `STORIES`: its people, a thread with severa
 A demo Machine (the app directories' review account) is a real Machine with the same made-up day: `sandbox/load.py --machine <its config.json>`, run on it as its owner, loads the busy state into its own (sealed) database. It adds none of the fixture's accounts, so nothing syncs and nothing can be sent, and it refuses a database that already has signals.
 
 To add data, edit `sandbox/fixture.py`: new names come from its invented pools, and new addresses use `.example`. To add a state, extend `sandbox/load.py` (`STATES` and `load`) and, for the Network, `sandbox/stub_network.py`.
+
+## Click speed
+
+Every click answers in about 100 ms ([vision](vision.md)). `tests/click-speed.mjs` times the dashboard's most common clicks (open and close a to-do, Do it, Done, Snooze, the Work/Personal filter, search, the To-dos, Calendar, Graph and Routines tabs, a chat message) from the click to the end of the frame that shows its answer, at 1440x900 and at 390x844 with the CPU 4x slower. The page runs on the sandbox's busy day, recorded into `tests/click-speed-fixture.json` and served back with 40 ms per call, so no sandbox needs to run.
+
+```bash
+node tests/click-speed.mjs                                   # 15 runs per size, medians and p90 per click
+node tests/click-speed.mjs --compare ../other/dashboard.html # another checkout's page, its runs taking turns with these
+node tests/click-speed.mjs --record http://127.0.0.1:8870    # record the fixture again from a running sandbox
+node tests/click-speed.mjs --baseline                        # make these medians the baseline
+```
+
+`tests/test_click_speed_dashboard.mjs` fails when a click is clearly slower than `tests/click-speed-baseline.json`: more than twice its baseline and 60 ms over it, after scaling to how fast the computer is at that moment (a fixed piece of work timed alongside). On a busy computer, use `--compare`: both pages are slowed alike.
