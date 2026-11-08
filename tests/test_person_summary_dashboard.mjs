@@ -12,10 +12,10 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 const dashboard=await dashboardPage();
 const day=n=>new Date(Date.now()+n*864e5).toISOString();
 const LINES=[
- {kind:'who',text:'Mara Ellison asked you to co-teach the alloy course at the Northwind academy.',sources:[{type:'event',id:41,kind:'email',at:day(-20)},{type:'fact',id:7,text:'Leads the Northwind academy'}]},
- {kind:'now',text:'Spring course dates agreed; Mara Ellison still has to book the venue.',sources:[{type:'event',id:42,kind:'whatsapp.message',at:day(-3)},
+ {kind:'who',text:'Mara asked you to co-teach the alloy course at the Northwind academy.',sources:[{type:'event',id:41,kind:'email',at:day(-20)},{type:'fact',id:7,text:'Leads the Northwind academy'}]},
+ {kind:'now',text:'Spring course dates agreed; Mara still has to book the venue.',sources:[{type:'event',id:42,kind:'whatsapp.message',at:day(-3)},
   {type:'event',id:44,kind:'whatsapp.message',at:day(-3)},{type:'event',id:45,kind:'whatsapp.message',at:day(-3)},{type:'event',id:46,kind:'calendar.event',at:day(-6)}]},
- {kind:'open',text:'You owe Mara Ellison the draft program by Friday.',sources:[{type:'promise',id:9,open:true}]},
+ {kind:'open',text:'You owe Mara the draft program by Friday.',sources:[{type:'promise',id:9,open:true}]},
 ];
 const fresh=()=>({id:'email:mara.ellison@eu.northwind.example',kind:'person',name:'Mara Ellison',strength:4.2,closeness:'close',last_at:day(-1),signals:180,
  ids:['mara.ellison@eu.northwind.example'],usual_gap_days:2,quiet:false,role:'partner',role_by:'owner',org:'org:eu.northwind.example',org_name:'Northwind',

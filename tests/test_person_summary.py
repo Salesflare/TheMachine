@@ -298,7 +298,9 @@ class PersonSummary(unittest.TestCase):
     def test_the_prompt_asks_for_names_and_specifics_not_they(self):
         prompt = person_summary.prompt([{'node_id': ANN, 'name': 'Ann Example', 'signals': []}])
         self.assertNotIn('Say "they" for the person', prompt)
-        self.assertIn('call the person by their name as given', prompt)
+        self.assertIn('the person this page is about by their first name', prompt)
+        self.assertIn('An organization or project by its short name', prompt)
+        self.assertIn('A first name counts as named', person_summary.RUBRIC)
         self.assertIn('Fewer lines are better than vague ones', prompt)
         self.assertIn(person_summary.RUBRIC, prompt)
 
