@@ -335,8 +335,10 @@ def related(connect, settings, accounts, event_ids=(), query='', limit=8, floor=
             # A seed may have changed/deleted while its embedding request was running.
             versions = {r[0]: r[1] for r in db.execute('SELECT id,version FROM events WHERE deleted=0 AND id IN (' + ','.join('?' for _ in seeds) + ')', seeds)} if seeds else {}
             live_probes = [vector for event_id, version, vector in probes if versions.get(event_id) == version]
+            # CROSS JOIN: each vector, then its event by id. A plain join walked every event of the accounts (most have no
+            # vector) by events_account_time and looked each vector up: a search took twice as long.
             for event_id, blob in db.execute(
-                    'SELECT v.event_id,v.vector FROM event_vectors v JOIN events e ON e.id=v.event_id '
+                    'SELECT v.event_id,v.vector FROM event_vectors v CROSS JOIN events e ON e.id=v.event_id '
                     'WHERE e.account_id IN (' + marks + ') AND e.deleted=0 AND v.version=e.version AND v.model=? AND v.dims=?'
                     + (' AND e.history=0' if signals_only else ''), (*accounts, model, dims)):
                 if event_id in skip:
