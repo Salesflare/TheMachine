@@ -4,7 +4,7 @@ These logos show which service a source in Connections, **+ Add**, connects to. 
 used only to name that service. They are **not covered by the AGPL** that covers the rest of The Machine; each keeps the
 terms listed below. The dashboard loads each file only when its row is shown.
 
-A source without a file here keeps its line icon. Machine health shows The Machine's own robot (`brand/`, see
+A source without a file here keeps its line icon. Every file is listed below. Machine health shows The Machine's own robot (`brand/`, see
 [TRADEMARKS.md](../../TRADEMARKS.md)).
 
 ## Simple Icons (CC0 1.0)
@@ -49,3 +49,22 @@ trademarks of OpenAI.
 
 `crm.svg`: the Salesflare mark, from the logo on https://salesflare.com (https://salesflare.com/assets/imported/3afca39ea94f7c9797dc.svg),
 without the word mark. Salesflare is a trademark of Salesflare BV.
+
+## Used by the owner's decision
+
+The owner of The Machine decided to show these services' own app icons, although each owner's published terms ask for a
+written license or permission for most uses like this one, and none was asked for. On a request from the trademark owner,
+the file is removed and the source falls back to its line icon.
+
+| File | Service | Source | Terms |
+| --- | --- | --- | --- |
+| `slack.svg` | Slack | `SLA-Slack-icon-RGB.svg` from the Slack media kit, https://slack.com/media-kit | https://slack.com/terms-of-service/slack-brand: most uses need a specific written license; Slack may revoke permission, and use must then stop within 7 days |
+| `linkedin.svg` | LinkedIn | The blue In logo from https://brand.linkedin.com/in-logo (the page's own SVG; the download is https://content.linkedin.com/content/dam/me/business/en-us/amp/xbu/linkedin-revised-brand-guidelines/logos/in-logo.zip) | https://brand.linkedin.com: LinkedIn's brand guidelines limit use of the logo |
+| `outlook.svg`, `outlook_calendar.svg` | Outlook mail and Outlook Calendar (one icon, Outlook's) | `outlook_48x1.svg` from the Microsoft 365 product icons, https://res-1.cdn.office.net/files/fabric-cdn-prod_20251008.001/assets/brand-icons/product/svg/outlook_48x1.svg | https://www.microsoft.com/en-us/legal/intellectualproperty/trademarks: without a written license, use only as Microsoft's published guidelines allow |
+| `docs.svg` | Microsoft OneDrive (Word, OneDrive and SharePoint) | `onedrive_48x1.svg`, same set: https://res-1.cdn.office.net/files/fabric-cdn-prod_20251008.001/assets/brand-icons/product/svg/onedrive_48x1.svg | as Outlook |
+| `teams.svg` | Microsoft Teams | `teams_48x1.svg`, same set: https://res-1.cdn.office.net/files/fabric-cdn-prod_20251008.001/assets/brand-icons/product/svg/teams_48x1.svg | as Outlook |
+| `zoom.png` | Zoom | `Color-Bloom-Rounded-Square.png` (64 px), from the Zoom Brand Center logo library, https://brand.zoom.com/api/logo-library-page/8/main-logo-assets; Zoom publishes no SVG of it there | https://brand.zoom.com/document/21#/-/partner-branding/zoom-trademark-guidelines: use of Zoom's marks needs Zoom's written agreement |
+
+The SVGs keep the official artwork; only whitespace, comments and gradient ids were shortened and coordinates rounded to
+two decimals, and the Slack and LinkedIn class styles became plain fill attributes. Slack, LinkedIn, Microsoft, Outlook,
+OneDrive, Microsoft Teams and Zoom are trademarks of their owners.

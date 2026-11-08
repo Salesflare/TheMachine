@@ -59,7 +59,7 @@ BRAND_ASSETS = {
     # Talk live's voices, a short sample each for Settings (voice_input.TALK_VOICES)
     **{f'/brand/voices/{name}.mp3': ROOT / f'brand/voices/{name}.mp3' for name in voice_input.TALK_VOICES},
     # The services' logos for Connections, + Add, each loaded when shown (their sources and terms: dashboard/logos/NOTICE.md)
-    **{f'/brand/logos/{logo.name}': logo for logo in sorted((ROOT / 'dashboard/logos').glob('*.svg'))},
+    **{f'/brand/logos/{logo.name}': logo for logo in sorted((ROOT / 'dashboard/logos').iterdir()) if logo.suffix in ('.svg', '.png')},
 }
 
 

@@ -388,7 +388,9 @@ OVER_BUDGET = {}
 # 2,100,000 -> 2,110,000 (2026-11-08): the Routines page (about 7.7 KB) is a whole new page; the split loads it
 # only when opened, and brings this back down.
 # Also Connections › Add redesign (Jeroen picked A); split of the dashboard into on-demand parts follows.
-PAGE_CEILING = 2_110_000
+# 2,110,000 -> 2,120,000 (2026-11-08): Routines took the headroom meant for the + Add redesign (about 6.5 KB, logos
+# already moved out to files). Same reason: the split brings this back down.
+PAGE_CEILING = 2_120_000
 
 
 def budget(name):

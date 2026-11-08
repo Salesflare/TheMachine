@@ -368,7 +368,7 @@ def make_handler(app):
                 asset = BRAND_ASSETS[path.path]
                 self.output(200, asset.read_bytes(), {'.webp': 'image/webp', '.woff2': 'font/woff2', '.mp3': 'audio/mpeg',
                                                       '.svg': 'image/svg+xml'}.get(asset.suffix, 'image/png'),
-                            cache='private, max-age=86400' if asset.suffix == '.svg' else 'no-store')
+                            cache='private, max-age=86400' if '/logos/' in path.path else 'no-store')
             elif path.path == '/api/session':
                 # Asked once by a page: the CSRF token (a page started from the app's on-device copy has none, that
                 # copy never keeps it) and whose data the device may keep (dashboard_cache_scope)
