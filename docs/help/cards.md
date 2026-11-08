@@ -48,7 +48,7 @@ With two or more waiting, **Go through** in the header of Ready for you and of N
 
 ## Check now
 
-Your Machine reads each source every few minutes, day and night. It checks what came in once 40 messages wait or the oldest has waited 15 minutes.
+Your Machine reads each source every few minutes, day and night. It checks what came in once 40 messages wait or the oldest message from a person has waited 15 minutes. Newsletters, notifications and receipts join the next check, within the hour.
 
 **Check now** reads every source right away. With nothing open, tap your Machine's line to see it, with **Details**, which opens Checks under Connections. With to-dos open, it's at the top on a computer. A short line there shows only while a check runs, or when one failed or is late. You can also ask in chat.
 

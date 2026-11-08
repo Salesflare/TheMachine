@@ -114,8 +114,16 @@ The copy protects against someone reading the browser's files (a lost laptop's d
 ### How a review runs
 
 The service starts reviews itself (`review_worker.enabled`). When at least `min_signals` wait (40 by default), or the
-oldest has waited `max_wait_minutes` (15), it starts one isolated turn of your main agent,
+oldest signal from a person has waited `max_wait_minutes` (15), it starts one isolated turn of your main agent,
 `agent:main:assistant-review-signals-<run>`, with message delivery off.
+
+- **Automated signals wait for a batch.** Each review pays a large fixed start, so newsletters, notifications,
+  receipts, marketing, no-reply senders, other apps' phone notifications, Slack bots, payment events and failed CI
+  runs don't start one on their own: they join the next review, and start one only after `batch_wait_minutes` (45),
+  so their to-dos are there within the hour. No model decides this (`machine/store/review_wait.py`): List-Unsubscribe,
+  List-Id, Precedence and Auto-Submitted headers, Gmail's categories, the sender's address and the Graph's mailings.
+  The owner's own mail, every reply, someone in the Graph, chats, calendar changes, a time-sensitive title and
+  anything unsure go as before.
 
 - **A new mailbox first.** A newly connected mailbox (Gmail or Outlook, on a new install or added later) doesn't wait:
   its first review starts as soon as its first import of the last 7 days is in, as one review. None starts halfway

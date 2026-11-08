@@ -48,7 +48,7 @@ Con dos o más esperando, **Repasar** en el encabezado de Lista para ti y de Nec
 
 ## Revisar ahora
 
-Tu Machine lee cada fuente cada pocos minutos, de día y de noche, y revisa lo que llegó en busca de tareas en cuanto hay 40 mensajes esperando o el mensaje más antiguo lleva 15 minutos esperando.
+Tu Machine lee cada fuente cada pocos minutos, de día y de noche, y revisa lo que llegó en busca de tareas en cuanto hay 40 mensajes esperando o el mensaje más antiguo de una persona lleva 15 minutos esperando. Los boletines, las notificaciones y los recibos entran en la siguiente revisión, en menos de una hora.
 
 **Revisar ahora** lee al momento cada fuente. Si no hay nada abierto, toca la línea de tu Machine para verlo, con **Detalles**, que abre Revisiones en Conexiones. Con tareas abiertas, está arriba en un ordenador. Ahí solo aparece una línea corta mientras una revisión está en marcha, o cuando una falló o va con retraso. También puedes pedirlo en el chat.
 

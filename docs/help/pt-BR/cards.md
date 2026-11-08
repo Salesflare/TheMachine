@@ -48,7 +48,7 @@ Com duas ou mais esperando, **Percorrer** no cabeçalho de Pronta para você e d
 
 ## Verificar agora
 
-Sua Machine lê cada fonte a cada poucos minutos, de dia e de noite, e verifica o que chegou em busca de tarefas assim que 40 mensagens esperam ou a mensagem mais antiga espera há 15 minutos.
+Sua Machine lê cada fonte a cada poucos minutos, de dia e de noite, e verifica o que chegou em busca de tarefas assim que 40 mensagens esperam ou a mensagem mais antiga de uma pessoa espera há 15 minutos. Newsletters, notificações e recibos entram na próxima verificação, em até uma hora.
 
 **Verificar agora** lê na hora cada fonte. Sem nada aberto, toque na linha da sua Machine para ver, com **Detalhes**, que abre Verificações em Conexões. Com tarefas abertas, fica no topo no computador. Uma linha curta aparece ali só enquanto uma verificação roda, ou quando uma falhou ou está atrasada. Você também pode pedir no chat.
 
