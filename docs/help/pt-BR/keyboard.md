@@ -16,6 +16,10 @@ No celular, toque no ícone de busca na barra superior.
 
 Digite uma pergunta, como “o que a Kim disse sobre o piloto?”, e uma resposta curta tirada dos seus próprios e-mails e mensagens aparece acima dos resultados, com um link para cada mensagem usada. Ela responde no idioma da pergunta, só com a área que você está vendo (Todos, Trabalho ou Pessoal). Um nome ou algumas palavras-chave só fazem uma busca. A resposta nunca envia nada nem cria um to-do, e precisa de um modelo (Configurações, Modelo).
 
+Se você perguntar sobre uma pessoa e um período, como “o que a Kim disse na semana passada?”, ela lê só as mensagens dessa pessoa ou com ela nesses dias, no seu fuso horário. Se ela não enviou nada nesse período, a resposta diz isso e mostra a última mensagem dela com a data.
+
+Se várias pessoas têm esse nome, diz de qual se trata. As outras mensagens lidas aparecem em Mensagens. A pergunta que uma busca vazia sugere é sempre uma para a qual há mensagens.
+
 ## Atalhos
 
 Aperte `?` para ver **Atalhos de teclado**, a lista completa para o seu computador.

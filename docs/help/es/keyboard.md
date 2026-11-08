@@ -16,6 +16,10 @@ En un teléfono, toca el icono de búsqueda en la barra superior.
 
 Escribe una pregunta, como «¿qué dijo Kim sobre el piloto?», y sobre los resultados aparece una respuesta corta sacada de tu propio correo y mensajes, con un enlace a cada mensaje que usó. Responde en el idioma en que preguntas, solo con el área que estás viendo (Todo, Trabajo o Personal). Un nombre o unas palabras clave solo buscan. La respuesta nunca envía nada ni crea un to-do, y necesita un modelo (Ajustes, Modelo).
 
+Si preguntas por una persona y un momento, como «¿qué dijo Kim la semana pasada?», lee solo los mensajes de esa persona o con ella en esos días, en tu zona horaria. Si no envió nada entonces, lo dice y te da su último mensaje con su fecha.
+
+Si varias personas tienen ese nombre, dice a cuál se refiere. Los demás mensajes que leyó aparecen en Mensajes. La pregunta que sugiere una búsqueda vacía siempre es una para la que hay mensajes.
+
 ## Atajos
 
 Pulsa `?` para ver **Atajos de teclado**, la lista completa para tu ordenador.

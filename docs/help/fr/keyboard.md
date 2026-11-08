@@ -16,6 +16,10 @@ Sur un téléphone, appuyez sur l’icône de recherche dans la barre du haut.
 
 Tapez une question, comme « qu’a dit Kim sur le pilote ? », et une réponse courte tirée de vos propres e-mails et messages s’affiche au-dessus des résultats, avec un lien vers chaque message utilisé. Elle répond dans la langue de votre question, uniquement à partir de l’espace affiché (Tout, Travail ou Perso). Un nom ou quelques mots-clés lancent simplement une recherche. La réponse n’envoie jamais rien et n’ajoute pas de to-do, et elle a besoin d’un modèle (Paramètres, Modèle).
 
+Si vous demandez une personne et une période, comme « qu’a dit Kim la semaine dernière ? », elle lit seulement les messages de cette personne ou échangés avec elle ces jours-là, dans votre fuseau horaire. Si elle n’a rien envoyé alors, la réponse le dit et donne son dernier message avec sa date.
+
+Si plusieurs personnes portent ce nom, elle dit laquelle. Les autres messages lus apparaissent sous Messages. La question proposée par une recherche vide est toujours une question pour laquelle il y a des messages.
+
 ## Raccourcis
 
 Appuyez sur `?` pour **Raccourcis clavier**, la liste complète pour votre ordinateur.

@@ -133,6 +133,8 @@ def fake_ask(config, prompt):
     """Ask from search's stand-in model: a few keywords get NONE; a question gets one line on the best message found,
     cited as [1]. No model runs."""
     import re
+    if 'reply with one JSON object' in prompt:  # the first turn, what it means: no person or days, so the search answers it
+        return '{"question": true, "person": null, "said_by": "both", "from": null, "to": null, "about": ""}'
     question = prompt.rsplit('Question: <<<', 1)[-1].rstrip('>')
     best = re.search(r'^\[1\] \w+ from ([^,\n]*), [^:\n]*: ([^\n]*)$', prompt, re.M)
     if len(question.split()) < 4 or not best:

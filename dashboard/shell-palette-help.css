@@ -14,6 +14,13 @@
 .pal-keys{display:flex;gap:4px;flex:none;margin-left:auto}
 .pal-answer{margin:2px 10px 6px;color:var(--c-text);font:400 var(--fs-sm)/1.5 var(--sans);white-space:pre-wrap;overflow-wrap:anywhere}
 .pal-answer.muted{color:var(--c-text-3)}
+/* Looking: three dots that rise and fade in turn, calm; with reduced motion they stand still */
+.pal-dots{display:inline-flex;gap:5px;align-items:center;height:1.5em}
+.pal-dots i{width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.35;animation:pal-dot 1.2s ease-in-out infinite}
+.pal-dots i:nth-child(2){animation-delay:.16s}.pal-dots i:nth-child(3){animation-delay:.32s}
+@keyframes pal-dot{0%,80%,100%{opacity:.35;transform:none}40%{opacity:1;transform:translateY(-3px)}}
+@media(prefers-reduced-motion:reduce){.pal-dots i{animation:none;opacity:.6}}
+.pal-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 .pal-hint{display:block;flex:none;width:100%;min-height:0;margin:0;padding:10px 16px;border:0;border-bottom:1px solid var(--c-line);border-radius:0;background:none;box-shadow:none;color:var(--c-text-3);font:400 var(--fs-sm)/1.4 var(--sans);text-align:start;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pal-hint:hover,.pal-hint:focus-visible{color:var(--c-text-2);background:var(--c-hover,transparent)}
 .pal-empty{padding:18px 10px;color:var(--c-text-3);font:400 var(--fs-sm)/1.4 var(--sans)}

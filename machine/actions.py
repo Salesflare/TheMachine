@@ -223,6 +223,7 @@ OWNER_ACTIONS |= CHAT_ACTIONS
 # they look at, as a one-shot turn without tools. It reads and answers; it never sends, drafts or makes a to-do.
 SEARCH_ASK_ACTIONS = {
     'search_ask',
+    'search_ask_examples',
 }
 OWNER_ACTIONS |= SEARCH_ASK_ACTIONS
 # Voice input (voice_input.py): the owner's mic in the dashboard's message boxes, and its choices in Settings. The text

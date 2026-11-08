@@ -110,7 +110,7 @@ const PAL_RECENT='palette-recent';
 const palRecent=()=>{try{const v=JSON.parse(localStorage.getItem(PAL_RECENT)||'[]');return Array.isArray(v)?v.filter(x=>typeof x==='string').slice(0,5):[]}catch{return []}};
 function palRemember(id){try{localStorage.setItem(PAL_RECENT,JSON.stringify([id,...palRecent().filter(x=>x!==id)].slice(0,5)))}catch{}}
 
-const pal={from:null,ctx:null,items:[],sel:0,q:'',seq:0,timer:0,found:null,msgs:null,ask:null,askTimer:0,askOff:false,opens:0};
+const pal={from:null,ctx:null,items:[],sel:0,q:'',seq:0,timer:0,found:null,msgs:null,ask:null,askTimer:0,askOff:false,opens:0,examples:null,examplesKey:'',examplesAt:0,tried:null};
 function palDialog(){let d=$('#palette');if(d)return d;d=document.createElement('dialog');d.id='palette';d.setAttribute('aria-label','Search and commands');
  d.innerHTML=`<div class="pal-field"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/></svg><input id="pal-q" type="text" role="combobox" aria-expanded="true" aria-controls="pal-list" aria-autocomplete="list" placeholder="Search or ask anything" autocomplete="off" spellcheck="false" enterkeyhint="go"></div><button type="button" class="pal-hint" id="pal-hint" hidden></button><div class="pal-list" id="pal-list" role="listbox" aria-label="Results"></div><div class="pal-foot"><span><kbd>↑</kbd><kbd>↓</kbd> move</span><span><kbd>Enter</kbd> run</span><span><kbd>Esc</kbd> close</span><span><kbd>?</kbd> shortcuts</span></div>`;
  document.body.append(d);const q=d.querySelector('#pal-q');
@@ -125,19 +125,29 @@ function palDialog(){let d=$('#palette');if(d)return d;d=document.createElement(
  d.addEventListener('mousemove',e=>{const o=e.target.closest('[data-pal]');if(o&&+o.dataset.pal!==pal.sel){pal.sel=+o.dataset.pal;palPaint(false)}});
  return d}
 function palOpen(o){const d=palDialog();if(d.open)return;for(const x of document.querySelectorAll('dialog[open]'))if(x!==d)return;
- pal.todos=!!o?.todos;pal.from=document.activeElement;pal.ctx=kbCtx();pal.q='';pal.sel=0;pal.found=null;pal.msgs=null;pal.done=[];pal.ask=null;pal.seq++;pal.opens++;pal.hint=palExample();if(typeof drawerClose==='function')drawerClose();
+ pal.todos=!!o?.todos;pal.from=document.activeElement;pal.ctx=kbCtx();pal.q='';pal.sel=0;pal.found=null;pal.msgs=null;pal.done=[];pal.ask=null;pal.tried=null;pal.seq++;pal.opens++;pal.hint=palExample();palExamplesLoad();if(typeof drawerClose==='function')drawerClose();
  const q=d.querySelector('#pal-q');q.value='';d.showModal();q.focus();palRender()}
 // Ask from search, there to find: the placeholder says it, and an empty field shows one question to try, a
-// different one each time it opens: about someone from the open to-dos in the area in view, else a general one.
+// different one each time it opens: about someone from the open to-dos in the area in view.
+// Only questions it can answer well: the Machine says which of those people wrote last week (search_ask_examples);
+// without one, no question shows. The question comes with its person
+// and days, so picking it skips reading what it means and starts the answer at once.
 // Only with a model (the one Settings, Model shows); once the Machine says there is none, Search reads as before.
 const palAskable=()=>!pal.askOff&&!!(state.model_status||state.chat_model?.models?.length);
-function palExample(){const names=[...new Set((state.suggestions||[]).filter(s=>!closed(s)&&(scopeFilter==='all'||!scopeFilter||s.scope===scopeFilter))
-  .map(s=>String((s.people||[])[0]?.name||'').trim().split(/\s+/)[0]).filter(n=>/^\p{L}[\p{L}'’-]{1,19}$/u.test(n)))].slice(0,3);
-  const i=pal.opens%(names.length+1);return i<names.length?t('what did {} say last week?',names[i]):t('what changed this week?')}
-function palTry(){const q=$('#pal-q');if(!q||!pal.hint)return;q.value=pal.hint;q.focus();q.dispatchEvent(new Event('input'))}
+const palArea=()=>scopeFilter==='work'||scopeFilter==='personal'?scopeFilter:null;
+function palExamplesLoad(){if(!palAskable())return;const area=palArea();
+  const people=[...new Set((state.suggestions||[]).filter(s=>!closed(s)&&(scopeFilter==='all'||!scopeFilter||s.scope===scopeFilter)).map(s=>(s.people||[])[0]?.id).filter(Boolean))].slice(0,6);
+  const key=JSON.stringify([area,people]);if(pal.examplesKey===key&&Date.now()-pal.examplesAt<5*60e3)return;pal.examplesKey=key;pal.examplesAt=Date.now();
+  request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'search_ask_examples',args:{people,area}})})
+   .then(r=>{if(pal.examplesKey!==key)return;pal.examples=r&&typeof r==='object'?r:null;if(!pal.hint&&$('#palette')?.open){pal.hint=palExample();palAskShow()}}).catch(()=>{pal.examplesAt=0})}
+function palExample(){const ex=pal.examples;if(!ex)return null;
+  const people=(Array.isArray(ex.people)?ex.people:[]).map(p=>({p,n:String(p.name||'').trim().split(/\s+/)[0]})).filter(x=>/^\p{L}[\p{L}'’-]{1,19}$/u.test(x.n));
+  const all=people.map(({p,n})=>({q:t('what did {} say last week?',n),plan:{person:p.id,from:p.from,to:p.to,said_by:'person'}}));
+  return all.length?all[pal.opens%all.length]:null}
+function palTry(){const q=$('#pal-q');if(!q||!pal.hint)return;pal.tried=pal.hint;q.value=pal.hint.q;q.focus();q.dispatchEvent(new Event('input'))}
 function palAskShow(){const on=palAskable(),h=$('#pal-hint'),q=$('#pal-q'),side=$('#side-find');
   if(q)q.placeholder=t(on?'Search or ask anything':'Search or type a command');if(side)side.placeholder=t(on?'Search or ask':'Search');
-  if(h){h.hidden=!on||!!pal.q.trim()||!pal.hint;if(!h.hidden)h.textContent=t('Try: {}',pal.hint)}}
+  if(h){h.hidden=!on||!!pal.q.trim()||!pal.hint;if(!h.hidden)h.textContent=t('Try: {}',pal.hint.q)}}
 function palClose(){const d=$('#palette');clearTimeout(pal.timer);clearTimeout(pal.askTimer);pal.ask=null;pal.seq++;if(d?.open)d.close();if(d?.contains(document.activeElement))document.activeElement.blur();  /* never left in the closed field, or keys would think you type */
  const f=pal.from;pal.from=null;if(f?.isConnected&&f!==document.body)f.focus({preventScroll:true})}
 const palToggle=()=>$('#palette')?.open?palClose():palOpen();
@@ -156,17 +166,25 @@ function palRows(){const q=pal.q.trim(),ctx=pal.ctx,recent=palRecent(),groups=[]
   for(const [kind,name] of [['person','People'],['org','Organizations'],['project','Projects']]){const xs=(pal.found||[]).filter(n=>n.kind===kind).slice(0,5);
    if(xs.length)groups.push([name,xs.map(n=>({a:{id:'graph:'+n.id,run:()=>{location.hash=graphHash(n.id)},entity:true},label:n.name||n.id,sub:kind==='person'?(n.ids||[])[0]||'':kind==='org'&&n.domain!==n.name?n.domain||'':''}))])}
   // Messages: the top few of everything the Machine read (the results page's own search), then See all results
-  // (a message the answer links to shows once, under the answer)
-  const asked=new Set(pal.ask?.q===q&&pal.ask.state==='done'?pal.ask.sources.map(m=>m.id):[]);
-  if(q.length>=2)groups.push(['Messages',[...(pal.msgs||[]).filter(m=>!asked.has(m.id)).map(m=>({a:{id:'msg:'+m.id,run:()=>msgOpen(m),entity:true},label:m.title||t('Message'),sub:msgSub(m)})),
-   {a:{id:'msg-all',run:()=>msgSearch(q),entity:true},label:t('See all results for “{}”',q),sub:pal.msgs===null?t('Looking…'):''}]])}
+  // (a message the answer links to shows once, under the answer). A question about someone or some days lists the
+  // other messages the answer read (theirs, those days, newest first), never keyword hits from another time; while
+  // such a question is still being answered, only See all results.
+  const ak=pal.ask?.q===q?pal.ask:null,asked=new Set(ak?.state==='done'?ak.sources.map(m=>m.id):[]);
+  const read=ak?.state==='done'&&Array.isArray(ak.messages),holding=ak&&ak.state==='wait'&&(ak.mark||ak.plan);
+  const msgs=read?ak.messages.map(m=>({a:{id:'msg:'+m.id,run:()=>msgOpen(m),entity:true},label:m.title||m.from||t('Message'),sub:[m.title?m.from:'',m.at?humanTime(m.at):''].filter(Boolean).join(' · ')}))
+   :holding?[]:(pal.msgs||[]).filter(m=>!asked.has(m.id)).map(m=>({a:{id:'msg:'+m.id,run:()=>msgOpen(m),entity:true},label:m.title||t('Message'),sub:msgSub(m)}));
+  if(q.length>=2)groups.push(['Messages',[...msgs,
+   {a:{id:'msg-all',run:()=>msgSearch(q),entity:true},label:t('See all results for “{}”',q),sub:pal.msgs===null&&!holding&&!read?t('Looking…'):''}]])}
  // From the sidebar's Search box: the to-dos first (before typing, the first open ones)
  if(pal.todos){if(!q){const open=(state.suggestions||[]).filter(s=>!closed(s)).slice(0,5);if(open.length)groups.unshift(['To-dos',open.map(s=>({a:{id:'card:'+s.id,run:()=>chatGo(s.id),entity:true},label:s.title,sub:palCardSub(s)}))])}
   else groups.sort((x,y)=>['To-dos','Done'].includes(y[0])-['To-dos','Done'].includes(x[0]))}
  // A question's answer on top, its messages under it (palAsk)
- const a=pal.ask;if(q&&a&&a.q===q&&(a.state==='done'||a.mark&&a.state!=='none'))groups.unshift(['Answer',a.sources.map(m=>({a:{id:'ask:'+m.id,run:()=>msgOpen(m),entity:true},label:m.title||m.from||t('Message'),sub:[m.title?m.from:'',m.at?humanTime(m.at):''].filter(Boolean).join(' · ')})),a]);
+ const a=pal.ask;if(q&&a&&a.q===q&&(a.state==='done'||(a.mark||a.plan)&&a.state!=='none'))groups.unshift(['Answer',a.sources.map(m=>({a:{id:'ask:'+m.id,run:()=>msgOpen(m),entity:true},label:m.title||m.from||t('Message'),sub:[m.title?m.from:'',m.at?humanTime(m.at):''].filter(Boolean).join(' · ')})),a]);
  return groups}
-const palAnswer=a=>a.state==='done'?`<p class="pal-answer" id="pal-answer" translate="no" dir="auto">${esc(a.text.slice(0,a.shown))}</p>`:`<p class="pal-answer muted" id="pal-answer">${esc(a.state==='error'?t('Couldn’t answer that right now.'):t('Looking…'))}</p>`;
+// While it works: three gentle dots (still with reduced motion), and Looking… for a screen reader
+const palAnswer=a=>a.state==='done'?`<p class="pal-answer" id="pal-answer" translate="no" dir="auto">${esc(a.text.slice(0,a.shown))}</p>`
+ :a.state==='error'?`<p class="pal-answer muted" id="pal-answer">${esc(t('Couldn’t answer that right now.'))}</p>`
+ :`<p class="pal-answer muted" id="pal-answer" role="status"><span class="pal-dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="pal-sr">${esc(t('Looking…'))}</span></p>`;
 function palRender(){const d=$('#palette');if(!d?.open)return;palAskShow();const groups=palRows(),list=d.querySelector('#pal-list'),was=pal.items[pal.sel]?.a.id;pal.items=[];let html='';
  for(const [g,xs,ask] of groups){html+=`<div class="pal-group" role="presentation">${esc(g)}</div>${ask?palAnswer(ask):''}`;
   for(const x of xs){const i=pal.items.push(x)-1;const keys=x.a.review?'':x.a.keys;
@@ -195,17 +213,18 @@ function palFind(){clearTimeout(pal.timer);const q=pal.q.trim(),seq=++pal.seq;pa
 // dropped. Nothing shows when no model is connected. A question mark shows Looking… while it works.
 const ASK_REST=800;
 function palAsk(q,seq){clearTimeout(pal.askTimer);if(pal.ask&&pal.ask.q!==q)pal.ask=null;
- if(pal.askOff||pal.ask||q.split(/\s+/).length<3)return;
+ const plan=pal.tried?.q===q?pal.tried.plan:null;  // the suggested question, as offered: at once, with its person and days
+ if(pal.askOff||pal.ask||!plan&&q.split(/\s+/).length<3)return;
  pal.askTimer=setTimeout(async()=>{if(seq!==pal.seq||!$('#palette')?.open)return;
-  const area=scopeFilter==='work'||scopeFilter==='personal'?scopeFilter:null,a=pal.ask={q,state:'wait',text:'',sources:[],shown:0,mark:/[?？¿؟]\s*$/.test(q)};
-  if(a.mark){pal.keep=true;palRender()}
-  let r;try{r=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'search_ask',args:{query:q,area}})})}catch{r={error:true}}
+  const area=palArea(),a=pal.ask={q,state:'wait',text:'',sources:[],shown:0,mark:/[?？¿؟]\s*$/.test(q),plan:!!plan};
+  if(a.mark||a.plan){pal.keep=true;palRender()}
+  let r;try{r=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'search_ask',args:{query:q,area,...(plan?{plan}:{})}})})}catch{r={error:true}}
   if(pal.ask!==a)return;
   if(r?.off){pal.askOff=true;pal.ask=null}
-  else if(typeof r?.answer==='string'&&r.answer.trim())Object.assign(a,{state:'done',text:r.answer.trim(),sources:Array.isArray(r.sources)?r.sources:[]});
+  else if(typeof r?.answer==='string'&&r.answer.trim())Object.assign(a,{state:'done',text:r.answer.trim(),sources:Array.isArray(r.sources)?r.sources:[],...(Array.isArray(r.messages)?{messages:r.messages}:{})});
   else if(r?.error)a.state='error';
   else a.state='none';  // not a question, or nothing found: the results stay as they are
-  if(!$('#palette')?.open)return;pal.keep=true;palRender();if(a.state==='done')palReveal(a)},ASK_REST)}
+  if(!$('#palette')?.open)return;pal.keep=true;palRender();if(a.state==='done')palReveal(a)},plan?0:ASK_REST)}
 // The answer comes in a few words at a time, as it is read
 function palReveal(a){const step=()=>{if(pal.ask!==a)return;a.shown=Math.min(a.text.length,(a.text.indexOf(' ',a.shown+4)+1||a.text.length));
  const p=$('#pal-answer');if(p)p.textContent=a.text.slice(0,a.shown);if(a.shown<a.text.length)setTimeout(step,28)};step()}
