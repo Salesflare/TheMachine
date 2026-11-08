@@ -81,6 +81,11 @@ try{
  // The sidebar's own filter saves on the Machine as well.
  locale=view('en','all');saved=[];
  {const [context,page]=await open();assert.deepEqual((await callAfter(page,scopeSaved,()=>scopeClick(page,'Work'))).args,{todo_scope:'work'});await note(page).waitFor();
-  assert.equal(await page.evaluate(()=>localStorage.getItem('scope-filter')),null);await context.close()}
+  assert.equal(await page.evaluate(()=>localStorage.getItem('scope-filter')),null);
+  // The filter draws the to-dos and the sidebar in the frame after the click; the rest of the page only once that is painted
+  const drawn=await page.evaluate(async()=>{let n=0;const f=renderHealthTabs;renderHealthTabs=(...a)=>{n++;return f(...a)};
+   try{scopeSet('personal');const at=n;await new Promise(r=>requestAnimationFrame(()=>setTimeout(()=>setTimeout(r))));return [at,n,[...document.querySelectorAll('#suggestions .scope-note')].length]}finally{renderHealthTabs=f}});
+  assert.deepEqual(drawn,[0,1,1],'the list at once (with its note), the rest just after');
+  await context.close()}
  assert.deepEqual(errors,[]);
 }finally{await browser?.close();server.close()}
