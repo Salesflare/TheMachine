@@ -98,10 +98,21 @@ try{
   assert.equal(await page.getByRole('button',{name:'Sign in with Intercom'}).count(),0);
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no sideways scroll');
   assert.equal(await page.locator('#connect-add details.connect-other').count(),0);
+  // why pairing, and no own-app way out offered where there is none (Intercom)
+  assert.match(await page.locator('#connect-add').innerText(),/Sign in with Intercom goes through your account on themachine\.computer\. Pair this Machine with it once\./);
   await shot(page,`add-intercom-not-paired-${tag}`);
   const [pairTab]=await Promise.all([page.context().waitForEvent("page"),pair.click()]);
   await pairTab.waitForURL(/\/pair\/P+$/);await pairTab.close();
   await page.getByRole('button',{name:'Sign in with Intercom'}).waitFor({timeout:8000});
+  // Google not paired: why pairing, and its own app right below as the other way (agent users' newcomer, 2026-11-08)
+  paired=false;
+  await page.goto('about:blank');await page.goto(base+'/#connections=add');
+  await page.locator('#connect-add [data-connect-signin="gmail"]').click();
+  await page.getByRole('button',{name:'Pair this Machine'}).waitFor();
+  assert.match(await page.locator('#connect-add').innerText(),/Sign in with Google goes through your account on themachine\.computer\. Pair this Machine with it once, or use your own app below\./);
+  assert.equal(await page.locator('#connect-add details.connect-other summary').innerText(),'Use your own app');
+  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no sideways scroll');
+  await shot(page,`add-google-not-paired-${tag}`);
   // Google: Gmail and Calendar in one sign-in, with its own app folded away
   paired=true;state='started';
   await page.goto('about:blank');await page.goto(base+'/#connections=add');
