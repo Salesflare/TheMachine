@@ -173,6 +173,7 @@ def _ensure(db):
     if message_seal.is_protected(db):  # teammates' mail, records, files and the review's lines: sealed at rest like the owner's own
         message_seal.ensure_triggers(db)
     stamps.watch(db, shared_graph_kept.WATCHED)
+    stamps.watch_graph_who(db)
 
 
 def now():
@@ -2681,13 +2682,13 @@ class SharedGraph:
         if not keys:
             return {}
         # an HMAC per address and key (some 60k): kept until the graph's people or organizations change
-        return shared_graph_kept.KEPT.get(('hash_index', tuple(keys)), stamps.stamp(db, ('graph_nodes',)), lambda: shared_graph_kept.hash_index(db, keys, keyed))
+        return shared_graph_kept.KEPT.get(('hash_index', tuple(keys)), stamps.stamp(db, ('graph_who',)), lambda: shared_graph_kept.hash_index(db, keys, keyed))
 
     def team_graph(self, db, kinds=('person', 'org', 'project')):
         """The team's entities: [{key, kind, local (node id or None), sources: [(fleet, member, record)]}], matched by
         hashed address, hashed domain, or board and name. Kept until what it is made of changes (stamps.py); the same
         list is handed to each caller, which reads it only."""
-        at = stamps.stamp(db, ('graph_nodes', 'team_records', 'team_sources', 'projects', 'boards', 'board_suggestions'))
+        at = stamps.stamp(db, ('graph_who', 'team_records', 'team_sources', 'projects', 'boards', 'board_suggestions'))
         keys = tuple(k['key'] for ref in self.work_fleets() for k in self.graph_keys(ref).values())  # what hash_index hashes with
         return shared_graph_kept.KEPT.get(('team_graph', tuple(kinds), keys), at, lambda: self._team_graph(db, kinds, self.hash_index(db)))
 

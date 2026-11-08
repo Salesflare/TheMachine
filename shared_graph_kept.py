@@ -13,8 +13,9 @@ from machine import stamps
 WATCHED = ('share_private', 'share_rules', 'share_threads', 'graph_nodes', 'projects', 'boards', 'board_suggestions', 'event_projects',
            'graph_events', 'slack_members', 'identity_names', 'team_records', 'team_sources')
 
-# What a Scope is made from (besides the time and the Slack checkpoints, read again for each request: renewed)
-SCOPE_TABLES = ('share_private', 'share_rules', 'share_threads', 'graph_nodes', 'projects', 'boards', 'board_suggestions',
+# What a Scope is made from (besides the time and the Slack checkpoints, read again for each request: renewed). graph_who:
+# graph_nodes without what each graph build rewrites (strength, profile, live: stamps.GRAPH_WHO), which a Scope never reads
+SCOPE_TABLES = ('share_private', 'share_rules', 'share_threads', 'graph_who', 'projects', 'boards', 'board_suggestions',
                 'event_projects', 'graph_events', 'slack_members', 'identity_names')
 KEPT = stamps.Kept(16)  # what the dashboard's requests work out from the sharing tables (WATCHED), by stamp
 
@@ -24,7 +25,7 @@ def fleet_marks(db, fleets):
     person's addresses, asked on each person's page and graph list), the people found on the Network read each time (a
     setting and a table of their own; who in the graph has their addresses kept with the people). Its marks are shared
     by every caller: copy them before changing them."""
-    at = stamps.stamp(db, ('graph_nodes',))
+    at = stamps.stamp(db, ('graph_who',))
     members = KEPT.get(('marks', json.dumps(fleets, sort_keys=True, default=str)), at, lambda: graph.fleet_marks(db, fleets, network=False))
     # who in the graph has the addresses and numbers found on the Network: two passes over every person (some 90 ms on
     # a big graph, on each person's page, the Graph tab and its search), kept until the graph's people change
