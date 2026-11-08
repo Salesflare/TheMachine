@@ -144,7 +144,8 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   that stopped), the tool approval reads and the one-time ahead-blockers fix into `StoreCore`, the graph actions of
   `App.action` (graph, its people, organizations, roles, pictures, merges and facts) into `GraphActionsApp.ACTIONS`
   handlers, the follow-up and promise actions of `App.action` into `FollowUpsApp.ACTIONS` and
-  `PromiseChecksApp.ACTIONS` handlers.
+  `PromiseChecksApp.ACTIONS` handlers, the review, preparation, recap, signature, to-do chat, voice and Talk actions
+  of `App.action` into their mixins' `ACTIONS` handlers.
 - **Dashboard code:** in its area's part in `dashboard/` (`<area>-<what>.js`: shell, todos, settings, graph, calendar,
   connections, help, events, new, fleet), next to the functions it works with, never at the end of the script. The
   page's core is in the `shell-*` parts too: locale and error reports (`shell-core.js`), network and outbox, `render()`

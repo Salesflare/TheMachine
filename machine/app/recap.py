@@ -385,7 +385,8 @@ def recap_mail_text(text):
 
 
 class RecapApp:
-    ACTIONS = {}  # its actions are still App.action's own branches
+    # action name -> the method that handles it, called as method(name, args, owner_dashboard) (App.action)
+    ACTIONS = {'recap_decide': 'recap_decide_action'}
 
     def recap_push(self, message, week):
         """Without Telegram the recap's start goes to the dashboard app as a notification: what needs the owner first."""
@@ -598,3 +599,7 @@ class RecapApp:
         if not on_todo:  # a recap message shows what was done; a to-do just redraws
             threading.Thread(target=self.recap_retell, args=(item['id'],), daemon=True).start()
         return {'status': status}
+
+    def recap_decide_action(self, name, args, owner_dashboard=False):
+        # a tap on the weekly recap's Filter, Keep, Undo, Not needed or Do it
+        return self.recap_decide(args, owner_dashboard)

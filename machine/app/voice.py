@@ -6,13 +6,15 @@ from pathlib import Path
 import threading
 import time
 
+from machine.actions import VOICE_ACTIONS
 import voice_input
 
 LOG = logging.getLogger('personal-assistant')
 
 
 class VoiceApp:
-    ACTIONS = {}  # its actions are still App.action's own branches
+    # action name -> the method that handles it, called as method(name, args, owner_dashboard) (App.action)
+    ACTIONS = {**dict.fromkeys(VOICE_ACTIONS, 'voice_actions_action')}
 
     @property
     def dictation(self):
@@ -105,3 +107,8 @@ class VoiceApp:
                 return {'pending': True, 'voice': self.voice_view(prefs)}
         LOG.info('voice clip seconds=%.0f engine=%s part=%s took=%.1f', seconds, engine, bool(args.get('part')), time.monotonic() - began)
         return {'text': voice_input.clean(heard['text']), 'language': heard.get('language')}
+
+    def voice_actions_action(self, name, args, owner_dashboard=False):
+        if not owner_dashboard:
+            raise ValueError('Only the owner uses voice input, on the dashboard')
+        return self.voice_action(name, args)
