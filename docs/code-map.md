@@ -163,7 +163,9 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   photos into new WorkersApp (machine/app/workers.py), Approved-action workers, merge effects, Undo and stale-run
   stops into new ActionRunsApp (machine/app/action_runs.py); style, expire, thread snooze and config-follow steps into
   WorkersApp; doc runs into DocsApp; gbrain_save into GBrainApp; task import, handoff email and import checks into
-  CardActionsApp; bug_offer into SupportApp.
+  CardActionsApp; bug_offer into SupportApp, Each account's collector, its lock and waits, connector sync and
+  action-only ability checks into new SyncApp (machine/app/sync.py); sync_source, sync_slack and Slack title naming
+  stay in assistant.py (they write the sealed events table).
 - **Dashboard code:** in its area's part in `dashboard/` (`<area>-<what>.js`: shell, todos, settings, graph, calendar,
   connections, help, events, new, fleet), next to the functions it works with, never at the end of the script. The
   page's core is in the `shell-*` parts too: locale and error reports (`shell-core.js`), network and outbox, `render()`
