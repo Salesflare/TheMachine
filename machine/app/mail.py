@@ -95,7 +95,7 @@ class MailApp:
     def mailbox_lookup(self, account_ids, query, limit=5):
         """Search the owner's own mailboxes themselves (Gmail's search, Outlook's), read-only, for mail older than what
         is collected: a mail they sent weeks ago that a to-do follows up on. What it finds is kept as collected signals
-        (Store.keep_found: reviewed, so it is context, not news) for the run to read and link. Only the mail accounts
+        (Store.keep_found: reviewed, so it is context, not news, unless it came after the last sync) for the run to read and link. Only the mail accounts
         among account_ids, never one shared from a Fleet. Returns (event ids, {account id: error category})."""
         query = ' '.join(str(query or '').split())[:200]
         if not query:
