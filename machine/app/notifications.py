@@ -128,7 +128,7 @@ class NotificationsApp:
                 "AND (deliver_after IS NULL OR deliver_after<=?) LIMIT 2000", (utc(current),)) if r['id'] not in later], local)
             ready = [r for r in top if r['status'] == 'prepared']
             total = waiting_count(db)
-            pace = clear_pace.line(total, clear_pace.seconds(db, current))  # "4 ready · about 2 min", as To-dos says it
+            pace = clear_pace.line(total, clear_pace.seconds(db, current))  # "4 ready · about 2 min"
             show = security_levels.notify_text(db, False)
         promised = notify.promised_today(self.store.promises(), top, local.date().isoformat(), lambda p: promise_text(p)[0])
         root = 'https://' + self.config['dashboard_host'] + self.config.get('dashboard_path', '/') if self.config.get('dashboard_host') else ''

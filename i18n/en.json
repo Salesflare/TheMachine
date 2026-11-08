@@ -822,7 +822,6 @@
  "ClawHub sent a SKILL.md that doesn't match its release; not shown": "ClawHub sent a SKILL.md that doesn't match its release; not shown",
  "ClawHub’s scan: {}{}.{}": "ClawHub’s scan: {}{}.{}",
  "Clear": "Clear",
- "Clear Ready": "Clear Ready",
  "Clear all": "Clear all",
  "Clear formatting": "Clear formatting",
  "Clear the looked-up details? This domain won’t be looked up again until you ask.": "Clear the looked-up details? This domain won’t be looked up again until you ask.",
@@ -1597,6 +1596,7 @@
  "Gmail sender identity could not be verified. Nothing was sent.": "Gmail sender identity could not be verified. Nothing was sent.",
  "Gmail sends as it, but not as an alias": "Gmail sends as it, but not as an alias",
  "Gmail sends it through another account": "Gmail sends it through another account",
+ "Go through": "Go through",
  "Go to": "Go to",
  "Go!": "Go!",
  "Goes": "Goes",
@@ -5887,6 +5887,7 @@
  "a to-do now": "a to-do now",
  "a want from someone who is not a confirmed member": "a want from someone who is not a confirmed member",
  "a want without its time": "a want without its time",
+ "about {} min": "about {} min",
  "about: one sentence on which projects belong (up to 200 characters)": "about: one sentence on which projects belong (up to 200 characters)",
  "accepted": "accepted",
  "accepted with a change": "accepted with a change",
@@ -6822,7 +6823,6 @@
   "other": "{} times"
  },
  "{} to decide": "{} to decide",
- "{} to decide · about {} min": "{} to decide · about {} min",
  "{} to-dos": {
   "one": "{} to-do",
   "other": "{} to-dos"

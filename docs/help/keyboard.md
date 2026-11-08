@@ -42,4 +42,4 @@ Keys don't work while typing in a field.
 
 ## Nothing is sent from a key
 
-No key or palette entry sends, approves or posts anything. Entries like "Review the email" only open the draft, so you can read it, change it and send it with its own button. The one exception is [Clear Ready](cards.md): there Enter sends the draft it shows in full.
+No key or palette entry sends, approves or posts anything. Entries like "Review the email" only open the draft, so you can read it, change it and send it with its own button. The one exception is [Go through](cards.md): there Enter sends the draft it shows in full.

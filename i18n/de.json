@@ -822,7 +822,6 @@
  "ClawHub sent a SKILL.md that doesn't match its release; not shown": "ClawHub hat eine SKILL.md gesendet, die nicht zum Release passt; nicht angezeigt",
  "ClawHub’s scan: {}{}.{}": "Scan von ClawHub: {}{}.{}",
  "Clear": "Entfernen",
- "Clear Ready": "Bereit abarbeiten",
  "Clear all": "Alle löschen",
  "Clear formatting": "Formatierung entfernen",
  "Clear the looked-up details? This domain won’t be looked up again until you ask.": "Nachgeschlagene Details löschen? Diese Domain wird erst wieder nachgeschlagen, wenn du darum bittest.",
@@ -1597,6 +1596,7 @@
  "Gmail sender identity could not be verified. Nothing was sent.": "Die Absenderidentität bei Gmail ließ sich nicht prüfen. Nichts wurde gesendet.",
  "Gmail sends as it, but not as an alias": "Gmail sendet als diese Adresse, aber nicht als Alias",
  "Gmail sends it through another account": "Gmail sendet sie über ein anderes Konto",
+ "Go through": "Durchgehen",
  "Go to": "Gehe zu",
  "Go!": "Los!",
  "Goes": "Geht",
@@ -5887,6 +5887,7 @@
  "a to-do now": "jetzt eine Aufgabe",
  "a want from someone who is not a confirmed member": "ein Wunsch von jemandem, der kein bestätigtes Mitglied ist",
  "a want without its time": "ein Wunsch ohne Zeitangabe",
+ "about {} min": "etwa {} Min.",
  "about: one sentence on which projects belong (up to 200 characters)": "about: ein Satz dazu, welche Projekte dazugehören (bis zu 200 Zeichen)",
  "accepted": "angenommen",
  "accepted with a change": "mit einer Änderung angenommen",
@@ -6822,7 +6823,6 @@
   "other": "{} Mal"
  },
  "{} to decide": "{} zu entscheiden",
- "{} to decide · about {} min": "{} zu entscheiden · etwa {} Min.",
  "{} to-dos": {
   "one": "{} Aufgabe",
   "other": "{} Aufgaben"

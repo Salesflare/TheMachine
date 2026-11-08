@@ -822,7 +822,6 @@
  "ClawHub sent a SKILL.md that doesn't match its release; not shown": "ClawHub stuurde een SKILL.md die niet bij de release past; niet getoond",
  "ClawHub’s scan: {}{}.{}": "Scan van ClawHub: {}{}.{}",
  "Clear": "Wissen",
- "Clear Ready": "Klaargezet afhandelen",
  "Clear all": "Alles wissen",
  "Clear formatting": "Opmaak wissen",
  "Clear the looked-up details? This domain won’t be looked up again until you ask.": "De opgezochte details wissen? Dit domein wordt pas opnieuw opgezocht als je erom vraagt.",
@@ -1597,6 +1596,7 @@
  "Gmail sender identity could not be verified. Nothing was sent.": "De afzenderidentiteit in Gmail kon niet gecontroleerd worden. Er is niets verstuurd.",
  "Gmail sends as it, but not as an alias": "Gmail verstuurt als dit adres, maar niet als alias",
  "Gmail sends it through another account": "Gmail verstuurt het via een ander account",
+ "Go through": "Doorlopen",
  "Go to": "Ga naar",
  "Go!": "Go!",
  "Goes": "Gaat",
@@ -5887,6 +5887,7 @@
  "a to-do now": "nu een to-do",
  "a want from someone who is not a confirmed member": "een want van iemand die geen bevestigd lid is",
  "a want without its time": "een want zonder tijd",
+ "about {} min": "ongeveer {} min",
  "about: one sentence on which projects belong (up to 200 characters)": "about: één zin over welke projecten erbij horen (tot 200 tekens)",
  "accepted": "aanvaard",
  "accepted with a change": "aanvaard met een wijziging",
@@ -6822,7 +6823,6 @@
   "other": "{} keer"
  },
  "{} to decide": "{} te beslissen",
- "{} to decide · about {} min": "{} te beslissen · ongeveer {} min",
  "{} to-dos": {
   "one": "{} to-do",
   "other": "{} to-do's"

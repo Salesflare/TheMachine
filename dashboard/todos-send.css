@@ -312,6 +312,5 @@ strong.nb{white-space:nowrap}
 @media(max-width:560px){.skills-list>div{flex-wrap:wrap}.skills-list .skill-buttons{flex:1 1 100%;justify-content:flex-start;margin-top:6px}}
 /* Ready's header says once that nothing goes out before the owner's OK (sectionNote), not every ready to-do */
 #suggestions .section-head .section-note{font-size:var(--fs-xs)}
-@media(max-width:560px){#section-ready{flex-wrap:wrap;row-gap:2px}#section-ready .section-note{flex-basis:100%;margin:0}}
 /* Its one Show more sits at the start of the row of links under the draft (Details, Read result, ...), not on a line of its own */
 .card .card-foot>.more{margin:0;padding:0;font-size:inherit}
