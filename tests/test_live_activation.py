@@ -50,7 +50,17 @@ class LiveActivation(unittest.TestCase):
         self.assertEqual(self.app.config['review_worker'], {'enabled': False})
 
     def test_a_new_install_is_looked_at_often_while_its_first_mail_comes_in(self):
-        self.assertEqual(self.app.review_tick(), a.REVIEW_TICK_SECONDS)  # nothing in yet
+        self.app.config['accounts'] = []
+        self.assertEqual(self.app.review_tick(), a.REVIEW_TICK_SECONDS)  # nothing connected yet
+        self.app.config['accounts'] = [{'id': 'work', 'service': 'gmail'}]
+        # Just connected, its first page not in yet: already looked at often, so the first look starts as the page lands
+        # (a 15 s tick set before it held the first look up to 15 s, agent users 2026-11-08)
+        self.assertEqual(self.app.review_tick(), a.FIRST_LOOK_TICK_SECONDS)
+        with self.app.store.connect() as db:
+            db.execute("UPDATE milestones SET at='2026-01-01T00:00:00+00:00' WHERE name='tracking_since'")
+        self.assertEqual(self.app.review_tick(), a.REVIEW_TICK_SECONDS)  # an older install: the usual pace
+        with self.app.store.connect() as db:
+            db.execute("UPDATE milestones SET at=? WHERE name='tracking_since'", (a.now(),))
         self.app.store.commit_page('work', {}, [mail('m1')])
         self.assertEqual(self.app.review_tick(), a.FIRST_LOOK_TICK_SECONDS)  # mail is in: the first look starts at once
         self.app.config['review_worker'] = {'enabled': False, 'first_look': False}

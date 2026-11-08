@@ -625,7 +625,8 @@ class ReviewApp:
     def review_tick(self):
         """Seconds until the review worker looks again: FIRST_LOOK_TICK_SECONDS while a first look's batch runs or it
         digs on between batches (the owner watches it), and on a new install that has not reviewed yet while its first
-        mail comes in (the first look starts within seconds of the AI sign-in, not a tick later), else
+        mail comes in or a new source's first page is due (first_page_due; the first look starts within seconds of the AI
+        sign-in or the first page, not a tick later), else
         REVIEW_TICK_SECONDS. Never an error."""
         try:
             with self.store.connect() as db:
@@ -637,10 +638,22 @@ class ReviewApp:
                     and not db.execute("SELECT 1 FROM milestones WHERE name='first_dig_done'").fetchone()) or (
                     (self.config.get('review_worker') or {}).get('first_look') is not False
                     and not db.execute('SELECT 1 FROM review_runs LIMIT 1').fetchone()
-                    and db.execute('SELECT 1 FROM events WHERE ingested_at>? AND history=0 LIMIT 1', ((current - dt.timedelta(hours=1)).isoformat(),)).fetchone())
+                    and (db.execute('SELECT 1 FROM events WHERE ingested_at>? AND history=0 LIMIT 1', ((current - dt.timedelta(hours=1)).isoformat(),)).fetchone()
+                         or self.first_page_due(db, current)))
         except (sqlite3.Error, ValueError):
             return REVIEW_TICK_SECONDS
         return FIRST_LOOK_TICK_SECONDS if live else REVIEW_TICK_SECONDS
+
+    def first_page_due(self, db, current):
+        """On an install new today, a source whose first page is not in yet: it is about to land (the Machine restarts
+        right after a source is connected), so the review worker already looks every few seconds. A 15 s tick set
+        before the first page landed held a new owner's first look up to 15 s (agent users, 2026-11-08)."""
+        since = (db.execute("SELECT at FROM milestones WHERE name='tracking_since'").fetchone() or [''])[0]
+        if not since or since < (current - dt.timedelta(days=1)).isoformat():
+            return False
+        sources = [a['id'] for a in self.config.get('accounts', []) if a.get('id') and a.get('service') not in SYSTEM_SERVICES]
+        landed = {r[0][len('first_page:'):] for r in db.execute("SELECT name FROM milestones WHERE name LIKE 'first_page:%'")}
+        return any(s not in landed for s in sources)
 
     def review_live(self):
         """What the dashboard shows of reviews while they happen: runs in progress, the next one, the first look."""

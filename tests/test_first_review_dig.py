@@ -186,7 +186,7 @@ class FirstReviewDig(unittest.TestCase):
             self.assertEqual(self.app.first_dig_live(db)['pace'], 3)  # 120 s over the 40 of the batch that runs
 
     def test_the_worker_looks_often_while_the_first_look_runs_and_starts_its_next_batch_at_once(self):
-        self.assertEqual(self.app.review_tick(), a.REVIEW_TICK_SECONDS)  # nothing to watch
+        self.assertEqual(self.app.review_tick(), a.FIRST_LOOK_TICK_SECONDS)  # its first page is due (App.first_page_due)
         self.store.commit_page('work', {}, [mail(f'm{n}', hours_ago=n / 2 + 1) for n in range(150)])
         self.step(Runner('admitted'))
         self.assertEqual(self.app.review_tick(), a.FIRST_LOOK_TICK_SECONDS)  # its quick batch runs
