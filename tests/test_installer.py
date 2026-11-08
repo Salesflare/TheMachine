@@ -187,7 +187,52 @@ class InstallerTest(unittest.TestCase):
         source = inspect.getsource(installer.main)
         self.assertIn('fresh = not paths.config.exists()', source)
         self.assertLess(source.index('fresh = not paths.config.exists()'), source.index('setup_config('))
-        self.assertIn('if fresh:\n        start_thinking(facts)', source)
+        self.assertIn('fresh, not args.no_start', source)
+        self.assertIn('if fresh:\n        start_thinking(facts)', inspect.getsource(installer.prepare))
+
+    def test_a_first_install_does_the_steps_without_answers_while_it_asks(self):
+        """Bytecode, Node packages and the OpenClaw bridge go ahead while the questions are asked: their lines wait
+        until after the questions, their programs never read the terminal, and OpenClaw is not called during pairing."""
+        import threading
+        asking, calls = threading.Event(), []
+
+        def step(name):
+            def inner(*args, **kwargs):
+                asking.wait(5)  # only once the questions are under way
+                installer.say(f'{name} done')
+                calls.append((name, installer.run([sys.executable, '-c', 'import sys; print(sys.stdin.read())']).stdout))
+                return True
+            return inner
+        folder = tempfile.TemporaryDirectory()
+        self.addCleanup(folder.cleanup)
+        paths = mock.Mock(data=Path(folder.name) / 'data')
+        printed = []
+        with mock.patch.object(installer, 'precompile', step('bytecode')), mock.patch.object(installer, 'install_node_packages', step('node')), \
+                mock.patch.object(installer, 'install_plugin', step('bridge')), mock.patch.object(installer, 'quiet_openclaw'), \
+                mock.patch.object(installer, 'gateway_keep_retrying'), mock.patch.object(installer, 'memory_rules'), \
+                mock.patch.object(installer, 'start_thinking') as thinking, mock.patch('builtins.print', lambda *a, **k: printed.append(' '.join(map(str, a)))):
+            ahead = installer.Ahead(installer.prepare, {'node': 'node'}, paths, True, True, False, True)
+            with installer.OPENCLAW_TURN:  # the questions pair Telegram: the steps ahead wait for it
+                asking.set()
+                installer.say('a question')
+                self.assertEqual(calls, [])
+            self.assertTrue(ahead.result())
+        self.assertEqual([name for name, _ in calls], ['bytecode', 'node', 'bridge'])
+        self.assertEqual({out for _, out in calls}, {'\n'})  # stdin was empty, not the terminal
+        self.assertEqual(printed[0], 'a question')
+        self.assertIn('bridge done', printed)
+        thinking.assert_called_once()
+
+    def test_a_failed_bridge_ahead_still_stops_the_install(self):
+        folder = tempfile.TemporaryDirectory()
+        self.addCleanup(folder.cleanup)
+        paths = mock.Mock(data=Path(folder.name) / 'data')
+        with mock.patch.object(installer, 'precompile'), mock.patch.object(installer, 'install_node_packages'), \
+                mock.patch.object(installer, 'install_plugin', return_value=False), mock.patch.object(installer, 'quiet_openclaw') as quiet:
+            self.assertFalse(installer.Ahead(installer.prepare, {'node': 'node'}, paths, True, True, False, True).result())
+        quiet.assert_not_called()
+        with mock.patch.object(installer, 'install_node_packages', side_effect=RuntimeError('boom')), self.assertRaises(RuntimeError):
+            installer.Ahead(installer.prepare, {'node': 'node'}, paths, True, True, False).result()
 
     def gateway(self, reload_code=1, health=(), unit='openclaw-gateway.service', restart_code=0):
         """install_plugin against a fake OpenClaw whose reload fails and whose Gateway health answers `health` in turn."""
