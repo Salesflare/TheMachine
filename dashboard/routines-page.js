@@ -39,17 +39,17 @@ function routinesRender(){const box=$('#routines-view'),list=routinesData?.routi
  clearTimeout(rtTimer);if([...list,...routinesData.suggested||[],...routinesData.trying||[]].some(r=>r.runs[0]?.state==='running'||r.test?.state==='running'))rtTimer=setTimeout(()=>box.offsetParent?routinesView(true):routinesAt=0,4000)}
 function rtFull(box,list){rtStale=false;const typed=$('#rt-words')?.value||'',sugg=routinesData.suggested||[],trying=routinesData.trying||[],on=list.filter(r=>r.state!=='paused'),off=list.filter(r=>r.state==='paused'),
   fo=document.activeElement,typing=fo?.id==='rt-words'&&[fo.selectionStart,fo.selectionEnd];
- box.innerHTML=html`<form class="rt-new"><textarea id="rt-words" class="rt-grow" rows="1" spellcheck="true" autocapitalize="sentences" placeholder="${t('Every Monday, sum up my deals')}" aria-label="${t('New routine')}"></textarea><button class="primary">${t('Add')}</button></form>
+ setHTML(box,html`<form class="rt-new"><textarea id="rt-words" class="rt-grow" rows="1" spellcheck="true" autocapitalize="sentences" placeholder="${t('Every Monday, sum up my deals')}" aria-label="${t('New routine')}"></textarea><button class="primary">${t('Add')}</button></form>
   <p class="fine">${t('Routines only read. They don’t send or change anything.')}</p>${trying.map(rtTrying)}${sugg.length?rtSection('sugg',t('Suggested'),sugg.map(rtSuggested),t(sugg.every(r=>r.from_openclaw)?'From your OpenClaw jobs. Each one ran once to show you.':'Each one ran once to show you.')):''}${
-  on.length||!off.length?rtSection('mine',t('Your routines'),on.length?on.map(rtCard):html`<p class="rt-empty">${t('No routines yet')}</p>`):''}${off.length?rtSection('paused',t('Paused'),off.map(rtCard)):''}`.s;
+  on.length||!off.length?rtSection('mine',t('Your routines'),on.length?on.map(rtCard):html`<p class="rt-empty">${t('No routines yet')}</p>`):''}${off.length?rtSection('paused',t('Paused'),off.map(rtCard)):''}`);
  const w=Object.assign($('#rt-words'),{value:typed});rtGrow(w);if(typing){w.focus({preventScroll:true});w.setSelectionRange(...typing)}
  const card=rtForm&&box.querySelector(`[data-rt="${rtForm.id}"]`);if(card)rtOpen(card,rtForm.kind,rtForm.words,box.contains(fo)&&!!fo.closest('.rt-form')&&(fo.dataset.step||true));else rtForm=null}
 // The open form's card, in place: its test run and Try it; false when the cards themselves changed (a rebuild then)
 function rtPatch(box){const all=[...routinesData.routines,...routinesData.suggested||[],...routinesData.trying||[]],r=all.find(x=>x.id===rtForm.id),
   card=box.querySelector(`[data-rt="${rtForm.id}"]`),f=card?.querySelector('.rt-form');
  if(!r||!f||[...box.querySelectorAll('article[data-rt]')].map(a=>a.dataset.rt).sort().join()!==all.map(x=>x.id).sort().join())return false;
- if(r.state==='trying'){const b=card.querySelector('.rt-body');if(b&&r.test)b.innerHTML=rtRun(r.test,1).s}
- else if(rtForm.kind==='edit'&&rtForm.tried&&r.test){const old=f.querySelector('.rt-run'),h=rtRun(r.test,1).s;if(old)old.outerHTML=h;else f.querySelector('.rt-form-acts').insertAdjacentHTML('beforebegin',h)}
+ if(r.state==='trying'){const b=card.querySelector('.rt-body');if(b&&r.test)setHTML(b,rtRun(r.test,1))}
+ else if(rtForm.kind==='edit'&&rtForm.tried&&r.test){const old=f.querySelector('.rt-run'),h=document.createElement('template');setHTML(h,rtRun(r.test,1));if(old)old.replaceWith(h.content);else f.querySelector('.rt-form-acts').before(h.content)}
  for(const b of f.querySelectorAll('[data-rt-try]'+(rtForm.kind==='change'?',.primary':'')))b.disabled=r.test?.state==='running';
  rtStale=true;return true}
 // The card being edited (else the first one on screen) stays where it was on screen; the page never shrinks meanwhile
