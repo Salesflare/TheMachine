@@ -335,6 +335,32 @@ class OwnerBoundary(unittest.TestCase):
         self.assertEqual(r.status, 200); self.assertEqual(json.loads(body), {'csrf': csrf, 'cache_scope': scope})
         self.assertEqual(get('/api/session', {'Authorization': 'Bearer ' + TOKEN})[0].status, 403)
 
+    def test_the_pages_script_is_a_file_kept_for_a_year_under_its_name(self):
+        # The page's main script (1.6 MB) is a file named by its contents: the browser keeps it and its compiled code
+        # between starts instead of parsing it in the page each time. It holds nothing per owner; a name from another
+        # release gets this release's script, not kept; only the owner gets it.
+        import gzip, re
+        port = self.serve()
+        owner = {'Host': 'machine.example:8443', 'Tailscale-User-Login': 'owner@example.com'}
+        def get(path, headers):
+            conn = http.client.HTTPConnection('127.0.0.1', port)
+            conn.request('GET', path, headers=headers); r = conn.getresponse(); body = r.read(); conn.close(); return r, body
+        page = get('/', owner)[1].decode()
+        name = re.search(r'<script src="(app-[0-9a-f]{16}\.js)"></script></html>$', page)[1]
+        self.assertNotIn('function render(', page)
+        r, script = get('/' + name, owner)
+        self.assertEqual((r.status, r.getheader('Cache-Control')), (200, 'private, max-age=31536000, immutable'))
+        self.assertTrue(r.getheader('Content-Type').startswith('text/javascript'))
+        self.assertIn(b'function render(', script)
+        self.assertNotRegex(script, rb'__(CSRF|UI_VERSION|BASE|CACHE_SCOPE)__')  # nothing per page or request
+        for secret in (a.dashboard_csrf(self.app.token, 'owner@example.com'), a.dashboard_cache_scope(self.app.token, 'owner@example.com')):
+            self.assertNotIn(secret.encode(), script)
+        r, packed = get('/' + name, {**owner, 'Accept-Encoding': 'gzip'})
+        self.assertEqual((r.getheader('Content-Encoding'), gzip.decompress(packed)), ('gzip', script))
+        r, other = get('/app-' + '0' * 16 + '.js', owner)
+        self.assertEqual((r.status, r.getheader('Cache-Control'), other), (200, 'no-store', script))
+        self.assertEqual(get('/' + name, {'Host': 'machine.example:8443'})[0].status, 403)
+
     def test_compressed_answers(self):
         # The page and the other secret-free answers go compressed when the client takes it (best coding it accepts,
         # q=0 refused), with Vary and an ETag per coding that still gives a 304; api/session (the CSRF token) never.

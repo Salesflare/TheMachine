@@ -14,7 +14,7 @@ const fmtHM=(v,o)=>localeTime(v,H12?'en-US':'en-GB',{...(H12?{hour:'numeric',min
 const fmtDHM=(v,d,o)=>localeDate(v,DL,{...d,...o})+', '+fmtHM(v,o);  // Sat, Oct 24, 14:05
 let snoozeId=null,snoozeDay=null,snoozeMonth=null,lastOk=0,refreshFailed=false;
 const localDay=d=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
-const csrf='__CSRF__',UI_VERSION='__UI_VERSION__';let state={};
+let state={};  // csrf, UI_VERSION and CACHE_SCOPE: the page's own script before this one (dashboard.html)
 // Selectors an older browser rejects with a SyntaxError (:modal, :focus-visible): asked here, with a fallback.
 const modalOpen=()=>{try{return!!document.querySelector('dialog[open]:modal')}catch{return!!document.querySelector('dialog[open]')}};
 const focusVisible=el=>{try{return el.matches(':focus-visible')}catch{return el.matches(':focus')}};

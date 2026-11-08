@@ -63,7 +63,35 @@ async function keepShell(response) {
   if (!CSRF.test(text)) return;
   const headers = {'Content-Type': 'text/html; charset=utf-8', 'X-Shell-At': String(Date.now())};
   if (response.headers.get('ETag')) headers.ETag = response.headers.get('ETag');
-  await (await caches.open(SHELL)).put(scopeUrl().href, new Response(text.replace(CSRF, '$1$2'), {headers}));
+  const cache = await caches.open(SHELL);
+  await keepScript(cache, text);
+  await cache.put(scopeUrl().href, new Response(text.replace(CSRF, '$1$2'), {headers}));
+}
+
+// The page's main script is a file of its own (app-<hash>.js, machine/web/serving.py dashboard_script), named by its
+// contents: kept with the shell, so the kept page starts offline too, and only the one the kept page names.
+const SCRIPT = /^app-[0-9a-f]{16}\.js$/;
+const scriptOk = r => r.status === 200 && r.type === 'basic' && /javascript/i.test(r.headers.get('Content-Type') || '');
+async function keepScript(cache, text) {
+  const name = (text.match(/<script src="(app-[0-9a-f]{16}\.js)"><\/script><\/html>\s*$/) || [])[1];
+  if (!name) return;
+  const href = new URL(name, scopeUrl()).href;
+  if (!await cache.match(href)) {
+    const r = await fetch(href, {credentials: 'same-origin'});
+    if (!scriptOk(r)) throw new Error('script ' + r.status);  // the page isn't kept without it
+    await cache.put(href, r);
+  }
+  for (const req of await cache.keys()) if (req.url !== href && SCRIPT.test(new URL(req.url).pathname.split('/').pop())) await cache.delete(req);
+}
+
+// The script: the kept one, else from the Machine (and the browser's own cache, where it stays a year under its name).
+async function script(event, name) {
+  const href = new URL(name, scopeUrl()).href, cache = await caches.open(SHELL);
+  const kept = await cache.match(href);
+  if (kept) return kept;
+  const r = await fetch(href, {credentials: 'same-origin'});
+  if (scriptOk(r) && r.headers.get('Cache-Control')?.includes('immutable')) event.waitUntil(cache.put(href, r.clone()).catch(() => {}));
+  return r;
 }
 
 // The session is gone (the sign-in page, or refused): drop the shell and tell the open pages to drop their data.
@@ -153,6 +181,8 @@ self.addEventListener('fetch', event => {
   if (req.mode === 'navigate' && url.pathname === scope.pathname && !url.search) return event.respondWith(shell(event));
   const name = url.pathname.startsWith(scope.pathname + 'brand/') && !url.search && url.pathname.slice(scope.pathname.length + 6);
   if (name && /^(fonts\/)?[\w.-]+\.(png|svg|webp|jpg|woff2?)$/.test(name)) return event.respondWith(asset(event, name));
+  const file = url.pathname.startsWith(scope.pathname) && !url.search && url.pathname.slice(scope.pathname.length);
+  if (file && SCRIPT.test(file)) return event.respondWith(script(event, file));
 });
 
 // The page asks: drop the shell (a new release, or signing out), or keep the brand files (each start, after a sign-out dropped them).

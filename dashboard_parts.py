@@ -1,7 +1,9 @@
 """The dashboard's source, assembled: dashboard.html with its parts filled in.
 
-The dashboard is served as one page (one document, its scripts and stylesheet inline: the service worker keeps it whole
-for offline starts, and its CSP, ETag and compression are per page). Its source can still be split by area: a whole line
+The dashboard is served as one page and one script file: the page with its stylesheet and small scripts inline (its CSP,
+ETag and compression are per page), and its main script as a file named by its contents, which browsers keep with its
+compiled code (machine/web/serving.py dashboard_script); the service worker keeps both for offline starts. Its source is
+one page all the same, and can still be split by area: a whole line
 
     /*@include dashboard/<name>.js*/        in a script
     /*@include dashboard/<name>.css*/       in the stylesheet

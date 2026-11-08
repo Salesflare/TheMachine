@@ -51,7 +51,6 @@ let retryIn=0,retryTimer=null;
 // IndexedDB), only for the owner the page was served for (CACHE_SCOPE, from the server), at most 7 days old and a few MB,
 // never a token (scrubbed), and wiped on Sign out, on another owner and when the server says the session is gone.
 // Not in a frame (the site's demo). docs/architecture.md, "On the device".
-const CACHE_SCOPE='__CACHE_SCOPE__';
 const localCache=(()=>{const DB='tm-cache',MAX_AGE=7*864e5,MAX_BYTES=8e6,MAX_ITEM=3e6;let framed=true;try{framed=window.top!==window}catch{}
  const on=/^[a-f0-9]{32}$/.test(CACHE_SCOPE)&&!framed&&isSecureContext&&!!window.indexedDB&&!!window.crypto?.subtle;
  const req=r=>new Promise((ok,no)=>{r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)});

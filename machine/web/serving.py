@@ -77,6 +77,23 @@ def dashboard_page(token, owner, base):
             .replace('__CACHE_SCOPE__', dashboard_cache_scope(token, owner)))
 
 
+SCRIPT_NAME = re.compile(r'/app-[0-9a-f]{16}\.js')
+SCRIPT_CACHE = 'private, max-age=31536000, immutable'  # its name changes with every change to it
+
+
+def dashboard_script(page):
+    """(page, name, script): the dashboard page with its main script (the last one, 1.6 MB) as a file of its own, named
+    by its contents. A browser keeps that file and its compiled code between starts, where a script in the page is
+    parsed and compiled again on every start. The script holds nothing per owner or request (those are in the page's
+    first lines), so the file is the same for every page of a release. (page, None, None) when there is none."""
+    start, end = page.rfind('<script>\n'), page.rfind('</script></html>')
+    if start < 0 or end < start or page[end:].strip() != '</script></html>':
+        return page, None, None
+    script = page[start + len('<script>\n'):end]
+    name = 'app-' + hashlib.sha256(script.encode()).hexdigest()[:16] + '.js'
+    return page[:start] + f'<script src="{name}"></script></html>' + page[end + len('</script></html>'):], name, script
+
+
 # Compressed answers for the dashboard (the page is about 1 MB and api/status close to that; on a phone over 4G that
 # was most of the start). Only the answers in COMPRESSIBLE, and only because none of them holds a secret: compressing a
 # secret next to text an outsider can influence (an email's words in a card) would let them guess the secret from the

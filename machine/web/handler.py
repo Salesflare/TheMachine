@@ -48,9 +48,12 @@ from machine.web.serving import (
     dashboard_csrf,
     dashboard_hosts,
     dashboard_page,
+    dashboard_script,
     dashboard_status,
     dashboard_version,
     etag_matches,
+    SCRIPT_CACHE,
+    SCRIPT_NAME,
     tailnet_login,
 )
 import meeting_notes
@@ -199,7 +202,7 @@ def make_handler(app):
                 return None
             return next(iter(content_codings(self.headers.get('Accept-Encoding'))), None)
 
-        def output(self, status, value, content_type='application/json', packed=None, referrer='no-referrer'):
+        def output(self, status, value, content_type='application/json', packed=None, referrer='no-referrer', cache='no-store'):
             """`packed`: the answer already compressed, as (coding, bytes), for the page (kept per release). `referrer`:
             the consent page's is same-origin, since under no-referrer Chrome sends its form's POST with `Origin: null`."""
             data = value if isinstance(value, bytes) else encoded(value).encode() if content_type == 'application/json' else value.encode()
@@ -208,8 +211,8 @@ def make_handler(app):
                 data = packed[1] if packed else compress_body(data, coding)
             self.send_response(status)
             self.send_header('Content-Type', content_type if content_type.startswith('image/') or content_type=='application/pdf' else content_type + '; charset=utf-8')
-            self.send_header('Cache-Control', 'no-store')
-            if urllib.parse.urlsplit(self.path).path in COMPRESSIBLE:
+            self.send_header('Cache-Control', cache)
+            if coding or urllib.parse.urlsplit(self.path).path in COMPRESSIBLE:
                 self.send_header('Vary', 'Accept-Encoding')
             if coding:
                 self.send_header('Content-Encoding', coding)
@@ -300,6 +303,7 @@ def make_handler(app):
                 self.browser_view(path.path[len('/browser/'):], short=path.path in ('/browser', '/browser/'))
             elif path.path == '/':
                 page = dashboard_page(app.token, app.config['tailscale_owner'], dashboard_base(app.config, self.headers.get('Host', '')))
+                page = dashboard_script(page)[0]  # its main script is a file of its own (/app-<hash>.js, below)
                 # The installed app's service worker keeps a copy of this page and asks again with its ETag: an
                 # unchanged page is a short 304 instead of the whole page over a phone's connection.
                 etag = '"' + hashlib.sha256(page.encode()).hexdigest()[:24] + '"'
@@ -323,6 +327,18 @@ def make_handler(app):
                     self.end_headers()
                 else:
                     self.output(status, page, 'text/html', referrer='same-origin')
+            elif SCRIPT_NAME.fullmatch(path.path):
+                # The page's main script (dashboard_script): kept by the browser for a year under its name, which changes
+                # with it. A name from another release (a page kept by an older service worker) gets this release's
+                # script, not kept: the page then sees the new release and loads it.
+                _, name, script = dashboard_script(dashboard_page(app.token, app.config['tailscale_owner'], '/'))
+                if not name:
+                    self.output(404, {'error': 'Not found'})
+                    return
+                data = script.encode()
+                coding = len(data) >= COMPRESS_MIN and next(iter(content_codings(self.headers.get('Accept-Encoding'))), None)
+                self.output(200, data, 'text/javascript', packed=coding and app.packed_page('"' + name + '"', coding, script),
+                            cache=SCRIPT_CACHE if path.path == '/' + name else 'no-store')
             elif path.path == '/manifest.webmanifest':
                 self.output(200, (ROOT / 'manifest.webmanifest').read_text(), 'application/manifest+json')
             elif path.path == '/sw.js':
