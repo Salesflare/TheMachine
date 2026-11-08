@@ -14,6 +14,8 @@ Your mentions, replies and direct messages on X, in your Machine's own browser, 
 
 A reply or a direct message, and only after you approve it on the to-do.
 
+This doesn't go through X's official API. Reading and an occasional reply you approved is very unlikely to cause trouble; mass or automated sending can get an account blocked.
+
 ## Connect it
 
 On a hosted Machine:

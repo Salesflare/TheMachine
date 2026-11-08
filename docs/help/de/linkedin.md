@@ -12,7 +12,9 @@ Deine LinkedIn-Nachrichten. Es liest sie in einem Tab des eigenen Browsers deine
 
 ## Was es senden kann
 
-Eine Antwort auf eine Nachricht, und nur, nachdem du sie bei der Aufgabe freigegeben hast. Bis dahin entwirft es nur.
+Eine Antwort auf eine Nachricht oder eine neue Nachricht an ein Profil, das du nennst, und nur, nachdem du sie bei der Aufgabe freigegeben hast. Bis dahin entwirft es nur.
+
+LinkedIn bietet dafür keinen offiziellen Weg. Lesen und ab und zu eine Nachricht, die du freigegeben hast, machen so gut wie nie Probleme; massenhaftes oder automatisches Senden kann zur Sperrung eines Kontos führen.
 
 ## Verbinden
 

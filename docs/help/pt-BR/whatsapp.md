@@ -26,6 +26,8 @@ Um texto em uma conversa que já existe, só depois que você aprova na tarefa. 
 
 Se uma tarefa chegou por e-mail, mas você fala com essa pessoa pelo WhatsApp, diga isso no chat da tarefa. A The Machine encontra a conversa que você já tem com ela e passa o rascunho para o WhatsApp, para você revisar e enviar. Ela nunca começa uma conversa nova.
 
+O WhatsApp não oferece um jeito oficial de fazer isso. Ler e enviar de vez em quando uma resposta que você aprovou dificilmente causa problema; enviar em massa ou de forma automática pode fazer uma conta ser bloqueada.
+
 ## Conectar
 
 Em uma Machine hospedada:

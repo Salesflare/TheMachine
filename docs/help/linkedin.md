@@ -12,7 +12,9 @@ Your LinkedIn messages. It reads them in your Machine's own browser, signed in a
 
 ## What it can send
 
-A reply to a message, and only after you approve it on the to-do. Until then it only drafts.
+A reply to a message, or a new message to a profile you name, and only after you approve it on the to-do. Until then it only drafts.
+
+LinkedIn doesn't offer an official way to do this. Reading and an occasional message you approved is very unlikely to cause trouble; mass or automated sending can get an account blocked.
 
 ## Connect it
 

@@ -14,6 +14,8 @@ Deine Erwähnungen, Antworten und Direktnachrichten auf X. Es liest sie im eigen
 
 Eine Antwort oder eine Direktnachricht, und nur, nachdem du sie bei der Aufgabe freigegeben hast.
 
+Das läuft nicht über die offizielle API von X. Lesen und ab und zu eine Antwort, die du freigegeben hast, machen so gut wie nie Probleme; massenhaftes oder automatisches Senden kann zur Sperrung eines Kontos führen.
+
 ## Verbinden
 
 Auf einer gehosteten Machine:

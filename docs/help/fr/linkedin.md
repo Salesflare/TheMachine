@@ -12,7 +12,9 @@ Vos messages LinkedIn. Il les lit dans un onglet du navigateur de votre Machine,
 
 ## Ce qu’il peut envoyer
 
-Une réponse à un message, et seulement après votre accord sur la tâche. D’ici là, il se contente de rédiger.
+Une réponse à un message, ou un nouveau message à un profil que vous indiquez, et seulement après votre accord sur la tâche. D’ici là, il se contente de rédiger.
+
+LinkedIn ne propose pas de moyen officiel pour cela. Lire et envoyer de temps en temps un message que vous avez validé ne pose presque jamais de problème ; un envoi en masse ou automatisé peut faire bloquer un compte.
 
 ## Le connecter
 

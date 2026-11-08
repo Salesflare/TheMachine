@@ -12,7 +12,9 @@ Je LinkedIn-berichten. Het leest ze in een tabblad van de eigen browser van je M
 
 ## Wat het kan versturen
 
-Een antwoord op een bericht, en pas nadat je het goedkeurt op de to-do. Tot dan schrijft het alleen een concept.
+Een antwoord op een bericht, of een nieuw bericht aan een profiel dat je noemt, en pas nadat je het goedkeurt op de to-do. Tot dan schrijft het alleen een concept.
+
+LinkedIn biedt hier geen officiële manier voor. Lezen en af en toe een bericht dat je goedkeurde, geeft vrijwel nooit problemen; massaal of automatisch versturen kan tot een blokkering van het account leiden.
 
 ## Koppelen
 

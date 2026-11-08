@@ -26,6 +26,8 @@ A text into a chat that already exists, only after you approve it on the to-do. 
 
 If a to-do came in by email but you talk to that person on WhatsApp, say so in the to-do's chat. The Machine finds your existing chat with them and switches the draft to WhatsApp, for you to review and send. It never starts a new chat.
 
+WhatsApp doesn't offer an official way to do this. Reading and an occasional reply you approved is very unlikely to cause trouble; mass or automated sending can get an account blocked.
+
 ## Connect it
 
 On a hosted Machine:

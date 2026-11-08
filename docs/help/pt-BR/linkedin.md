@@ -12,7 +12,9 @@ Suas mensagens do LinkedIn. Ela lê em uma aba do navegador da sua Machine, com 
 
 ## O que ela pode enviar
 
-Uma resposta a uma mensagem, e só depois que você aprovar na tarefa. Até lá, ela só escreve o rascunho.
+Uma resposta a uma mensagem, ou uma mensagem nova para um perfil que você indicar, e só depois que você aprovar na tarefa. Até lá, ela só escreve o rascunho.
+
+O LinkedIn não oferece um jeito oficial de fazer isso. Ler e enviar de vez em quando uma mensagem que você aprovou dificilmente causa problema; enviar em massa ou de forma automática pode fazer uma conta ser bloqueada.
 
 ## Conecte
 

@@ -12,7 +12,9 @@ I tuoi messaggi LinkedIn. Li legge in una scheda del browser della tua Machine, 
 
 ## Cosa può inviare
 
-Una risposta a un messaggio, e solo dopo che l’hai approvata nell’attività. Fino ad allora prepara solo una bozza.
+Una risposta a un messaggio, o un nuovo messaggio a un profilo che indichi, e solo dopo che l’hai approvato nell’attività. Fino ad allora prepara solo una bozza.
+
+LinkedIn non offre un modo ufficiale per farlo. Leggere e inviare ogni tanto un messaggio che hai approvato difficilmente crea problemi; inviare in massa o in automatico può far bloccare un account.
 
 ## Collegalo
 

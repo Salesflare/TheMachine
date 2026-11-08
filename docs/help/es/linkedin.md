@@ -12,7 +12,9 @@ Tus mensajes de LinkedIn. Los lee en una pestaña del navegador propio de tu Mac
 
 ## Qué puede enviar
 
-Una respuesta a un mensaje, y solo después de que la apruebes en la tarea. Hasta entonces solo redacta.
+Una respuesta a un mensaje, o un mensaje nuevo a un perfil que indiques, y solo después de que lo apruebes en la tarea. Hasta entonces solo redacta.
+
+LinkedIn no ofrece una forma oficial de hacerlo. Leer y enviar de vez en cuando un mensaje que aprobaste casi nunca da problemas; enviar en masa o de forma automática puede hacer que bloqueen una cuenta.
 
 ## Conéctalo
 
