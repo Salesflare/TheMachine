@@ -19,6 +19,7 @@ import fleet
 import gap_note
 import gbrain
 import graph
+from machine.actions import CRM_ACTIONS
 from machine.config import LOG, WORKSPACE
 from machine.sources.calendar import calendar_room, calendar_rooms
 from machine.store.cards import source_line, source_text
@@ -78,7 +79,12 @@ class GraphActionsApp:
                'graph_warmup': 'graph_warmup_action', 'graph_same': 'graph_same_action',
                'graph_same_all': 'graph_same_all_action', 'graph_person_delete': 'graph_person_delete_action',
                'graph_person_org': 'graph_person_org_action', 'graph_relation': 'graph_relation_action',
-               'forget_fact': 'forget_fact_action', 'edit_fact': 'edit_fact_action'}
+               'forget_fact': 'forget_fact_action', 'edit_fact': 'edit_fact_action', 'board_save': 'board_action',
+               'board_delete': 'board_action', 'board_dismiss': 'board_action',
+               'project_visibility': 'project_visibility_action', 'project_save': 'project_action',
+               'project_outcome': 'project_action', 'project_archive': 'project_action',
+               'project_delete': 'project_action', 'board_default': 'project_action', 'board_fit': 'project_action',
+               **dict.fromkeys(CRM_ACTIONS, 'crm_actions_action')}
 
     def currency(self):
         """The currency project values are in (config "currency", an ISO code like EUR or USD; EUR when not set)."""
@@ -793,3 +799,57 @@ class GraphActionsApp:
         if not owner_dashboard:
             raise ValueError('Only the owner can edit what was learned, on the dashboard')
         return self.store.edit_fact(args.get('id'), args.get('text'))
+
+    def board_action(self, name, args, owner_dashboard=False):
+        if not owner_dashboard:
+            raise ValueError('Only the owner saves, deletes or dismisses a board, on the dashboard; reviews suggest one with graph suggest_board')
+        with self.store.connect() as db:
+            done = graph.save_board(db, args, now()) if name == 'board_save' else graph.delete_board(db, args.get('board_id'), now()) \
+                if name == 'board_delete' else graph.dismiss_board_suggestion(db, args.get('suggestion_id'), now())
+        if name != 'board_dismiss':
+            self.graph_build()
+        return done
+
+    def project_visibility_action(self, name, args, owner_dashboard=False):
+        # who sees one project: Only you, Team, or as its board (null)
+        if not owner_dashboard:
+            raise ValueError('Only the owner sets who sees a project, on the dashboard')
+        with self.store.connect() as db:
+            done = graph.set_project_visibility(db, args.get('node_id'), args.get('visibility'))
+        self.graph_build()
+        return done
+
+    def project_action(self, name, args, owner_dashboard=False):
+        # The owner's own CRM work on projects and boards: make or edit a project, won or lost, archive, delete,
+        # the default board, and a project a review thought could belong on a board
+        if not owner_dashboard:
+            raise ValueError('Only the owner makes, edits or ends a project by hand, on the dashboard; reviews use graph and finish_analysis')
+        with self.store.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            if name == 'project_save':
+                done = graph.save_project(db, args, now())
+            elif name == 'project_outcome':
+                done = graph.set_outcome(db, args.get('node_id'), args.get('outcome') or None, args.get('reason'), now())
+            elif name == 'project_archive':
+                done = graph.archive_project(db, args.get('node_id'), args.get('archived') is not False, now())
+            elif name == 'project_delete':
+                done = graph.delete_project(db, args.get('node_id'))
+            elif name == 'board_default':
+                done = graph.default_board(db, args.get('board_id'))
+            elif args.get('undo'):
+                done = graph.undo_fit(db, args['undo'])
+            else:
+                many = args.get('node_ids')
+                if many is not None and not (isinstance(many, list) and all(isinstance(n, str) for n in many)):
+                    raise ValueError('node_ids is a list of suggestion ids')
+                done = graph.decide_fit(db, args.get('board_id'), many if many is not None else args.get('node_id'), args.get('add') is not False, now())
+        if name == 'board_fit':  # the board reads its projects as they are now: the Graph follows in the background
+            self.graph_later()
+        else:
+            self.graph_build()
+        return done
+
+    def crm_actions_action(self, name, args, owner_dashboard=False):
+        if not owner_dashboard:
+            raise ValueError('Only the owner changes owners, merges organizations and imports, on the dashboard')
+        return self.crm_action(name, args)
