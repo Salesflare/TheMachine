@@ -109,7 +109,7 @@ class CardChatApp:
         if not isinstance(found, dict) or found.get('error') or not isinstance(found.get('messages', []), list):
             # Logged (once a minute at most: the dashboard asks every second during a run) with the helper's fixed word
             # for why, so a chat that shows "couldn't load" can be traced to a slow or signed-out Gateway.
-            reason = found.get('reason') if isinstance(found, dict) and found.get('reason') in ('timeout', 'auth', 'offline', 'other') else 'other'
+            reason = found.get('reason') if isinstance(found, dict) and found.get('reason') in ('timeout', 'auth', 'offline', 'setup', 'other') else 'other'
             if time.monotonic() - getattr(self, '_chat_unavailable_logged', -1e9) >= 60:
                 self._chat_unavailable_logged = time.monotonic()
                 LOG.warning('card chat history unavailable suggestion=%s active=%s reason=%s', suggestion_id, active, reason)
@@ -558,11 +558,29 @@ class CardChatApp:
         try:
             result = subprocess.run([node_bin(self.config), str(ROOT / 'chat-history-run.mjs')], env=env,
                                     input=encoded(request), capture_output=True, text=True, timeout=40)
-            return json.loads(result.stdout) if result.returncode == 0 else {'error': 'unavailable'}
+            if result.returncode == 0:
+                return json.loads(result.stdout)
+            if 'ERR_MODULE_NOT_FOUND' in (result.stderr or ''):  # its pinned Node packages aren't there: put them in
+                self.chat_packages_install()
+                return {'error': 'unavailable', 'reason': 'setup'}
+            return {'error': 'unavailable'}
         except subprocess.TimeoutExpired:
             return {'error': 'unavailable', 'reason': 'timeout'}
         except (ValueError, OSError):
             return {'error': 'unavailable'}
+
+    def chat_packages_install(self):
+        """The chat helper's pinned Node packages (package-lock.json) are missing, say because npm ci failed during the
+        install: put them in the way the installer does (npm ci, no install scripts), in the background and at most every
+        10 minutes, so the chat's next read ("Trying again…") gets the replies instead of failing for good."""
+        if time.monotonic() - getattr(self, '_chat_packages_tried', -1e9) < 600:
+            return
+        self._chat_packages_tried = time.monotonic()
+
+        def install():
+            import installer  # setup code, loaded only for this repair
+            LOG.warning('card chat node packages missing; installed=%s', installer.install_node_packages(node_bin(self.config), ROOT))
+        threading.Thread(target=install, name='chat-packages', daemon=True).start()
 
     def card_chat_action(self, name, args, owner_dashboard=False):
         if owner_dashboard and not args.get('cursor'):
