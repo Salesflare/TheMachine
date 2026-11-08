@@ -39,7 +39,7 @@ function renderHealthTabs(){const cs=state.connectors||[],bad=g=>cs.filter(c=>he
  healthPane=current;const row=$('#health-tabs');setHTML(row,subTabs('Connections','data-health-pane',panes,current));
  for(const el of document.querySelectorAll('#health [data-health-for]'))el.hidden=!el.dataset.healthFor.split(' ').includes(current);
  for(const a of document.querySelectorAll('#connectors>article'))a.hidden=a.dataset.group!==current;if(!$('#health').hidden)tabsShow(row.firstChild);if(current==='add')connectAdd();
- else if(!connectResumed&&!healthPicked){connectResumed=true;connectResume().then(found=>{if(found&&!healthPicked){healthPane='add';healthPicked=true;renderHealthTabs();renderConnectRun()}})}}  // measured once the other panes are hidden, never with every source shown at once
+ else if(!connectResumed&&!healthPicked&&$('#health')?.hidden===false){connectResumed=true;connectResume().then(found=>{if(found&&!healthPicked){healthPane='add';healthPicked=true;renderHealthTabs();renderConnectRun()}})}}  // measured once the other panes are hidden, never with every source shown at once
 // and only while Connections shows: every redraw calls this, and a measure mid-redraw lays out the whole page (some 60 ms
 // of each click that redraws). Opening Connections (showTab) calls it again, and measures then.
 // Connections, Add: every source this install can add, set up right here with the same steps as `assistant connect`;
@@ -58,8 +58,8 @@ const connectPost=(action,args={})=>request('api/action',{method:'POST',headers:
 let connectAddSeq=0,connectAddLast=Promise.resolve();
 // A setup under way (connect_running) is picked up where it is: after a reload, in another tab or on the phone, + Add
 // shows its step, with what it did already above it, never a fresh start. Connections opens on + Add for it.
-let connectResumed=false;
-async function connectResume(){try{const r=await connectPost('connect_running');if(!r?.session||connectRun)return false;
+let connectResumed=false,connectPicking=false;  // picking a source (connectOpen) opens that one, not a setup left halfway
+async function connectResume(){if(connectPicking)return false;try{const r=await connectPost('connect_running');if(!r?.session||connectRun)return false;
  connectRun=r;connectSignin=null;connectForm=null;connectGbrain=null;$('#connect-add').dataset.sig='';connectPoll();return true}catch{return false}}
 async function connectAdd(force){if(connectRun)return;if(!force&&connectList&&Date.now()-connectListAt<60000)return;connectListAt=Date.now();
  if(await connectResume()){renderConnectRun();return}
@@ -405,7 +405,7 @@ $('#connect-add').addEventListener('change',e=>{if(e.target.name!=='scope')retur
  co.hidden=personal;co.querySelector('input').required=!personal});
 // "Connect your own Intercom" on a to-do (also its "not synced" line and the first look's ending): Connections, + Add, at that source. A source that signs in here opens its
 // sign-in intro (nothing starts before Continue); one set up on the account page or by questions is shown and focused.
-async function connectOpen(name){showTab('health','add');await connectAdd(true);await connectAddSettled();const box=$('#connect-add');
+async function connectOpen(name){connectPicking=true;try{showTab('health','add');await connectAdd(true)}finally{connectPicking=false}await connectAddSettled();const box=$('#connect-add');
  const item=box.querySelector(`[data-connect-signin="${CSS.escape(name)}"]`);if(item){item.click();viewTop(box);return}
  const x=connectList?.sources.find(v=>v.name===name),el=x&&[...box.querySelectorAll('.connect-source')].find(n=>n.dataset.connect===name||n.querySelector('b')?.textContent.replace(' ↗','')===x.label);
  viewTop(box);if(el){el.classList.add('picked');el.focus()}}
