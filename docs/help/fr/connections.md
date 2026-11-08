@@ -18,6 +18,10 @@ Sous son état, chaque source dit en une ligne ce qu’elle apporte et, quand el
 
 Ouvrez **+ Ajouter** et choisissez une source. Elle demande ce dont elle a besoin, une question à la fois. **Annuler** arrête l’ajout. Une fois la source connectée, votre Machine redémarre pour commencer à la lire, puis ouvre la nouvelle carte, qui montre comment se passe sa première synchro. Sur une Machine hébergée, Google, Microsoft, Microsoft OneDrive, Zoom, Stripe et Intercom se connectent ici : choisissez **Travail** ou **Perso**, connectez-vous et vous revenez à ce formulaire, qui montre où en est la connexion. GitHub, WhatsApp, Codex, Discussions Telegram et votre téléphone Android affichent leur code directement dans ce formulaire.
 
+La liste est groupée (**Mail et agenda**, **Chat**, **Réunions**, **Documents et fichiers**, **Clients**, **Projets et code**, **Autres**), de A à Z dans chaque groupe.
+
+**Suggéré pour vous** s’affiche en haut quand votre Machine voit une raison pour une source, avec cette raison en une ligne : des e-mails de Stripe, des réunions Zoom dans votre agenda, des messages qui renvoient vers Google Docs, ou une configuration qui n’a pas abouti. Elle compte cela sur votre Machine ; rien n’en sort. Pas de raison, pas de section. Une source connectée n’est jamais suggérée.
+
 **Reconnecter** sur une source et dans **Vous attend** ouvre le même formulaire. Sur votre propre ordinateur, `assistant connect` fait la même chose dans un terminal.
 
 ## Travail ou perso

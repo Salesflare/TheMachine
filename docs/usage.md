@@ -127,7 +127,7 @@ The to-dos on screen read their email ahead, so it opens at once. The service ke
 - A Preparing to-do that is working in the browser shows that tab live (see [Sources](sources.md#the-machines-browser)).
 - When the Machine has a browser view, a quiet **Browser** pill beside Settings opens it.
 - On a computer it opens in the main area next to the sidebar, with **Open in new tab ↗**. The session keeps running while you look at something else. `#browser` opens it too.
-- On a phone it opens in a new tab.
+- In a phone's browser it opens in a new tab. The phone app and the dashboard installed on a phone have no tabs: there it fills the screen, under the top bar, and its X goes back.
 
 ### Settings
 

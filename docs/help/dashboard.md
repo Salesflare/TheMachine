@@ -19,7 +19,7 @@ order: 4
 
 The sidebar lists your to-dos the way the page does. Requests from your Fleet are under **To decide** too, so its count matches the one at the top. Tap one to bring it up.
 
-**Browser** shows your Machine's own browser, the one it uses for sites like LinkedIn. On a computer it opens beside the sidebar, as do **View in browser** on a to-do and **Open the browser** when a site needs a sign-in. On a phone it opens in a new tab.
+**Browser** shows your Machine's own browser, the one it uses for sites like LinkedIn. On a computer it opens beside the sidebar, as do **View in browser** on a to-do and **Open the browser** when a site needs a sign-in. In a phone's browser it opens in a new tab. In the phone app, or the dashboard added to your home screen, it fills the screen; its X goes back.
 
 **Full size** gives the browser the whole window. Press it again to go back.
 

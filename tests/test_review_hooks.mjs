@@ -68,6 +68,13 @@ assert.equal(await hooks.before_prompt_build({},skillsCtx),undefined);
 assert.notEqual((await hooks.before_tool_call({toolName:'browser',params:{action:'open'}},skillsCtx))?.block,true);
 assert.notEqual((await hooks.before_tool_call({toolName:'assistant_signals',params:{action:'skills_found',args:{}}},skillsCtx))?.block,true);
 for(const toolName of ['exec','write','message'])assert.equal((await hooks.before_tool_call({toolName,params:{command:'ls'}},skillsCtx)).block,true);
+// A routine's run (routines_app.py) only reads, then reports with routine_result: no browser, shell, writes, or any
+// assistant_signals action that suggests, prepares or saves.
+{const routineCtx={...ctx,sessionKey:'agent:main:assistant-review-routine-'+'e'.repeat(32),runId:'routine-run'};
+ for(const action of ['events','status','related','graph','routine_result'])assert.notEqual((await hooks.before_tool_call({toolName:'assistant_signals',params:{action}},routineCtx))?.block,true,action);
+ assert.notEqual((await hooks.before_tool_call({toolName:'memory_search',params:{query:'deals'}},routineCtx))?.block,true);
+ for(const action of ['suggest','prepare','promise','remember_fact','begin_analysis','meeting_notes'])assert.equal((await hooks.before_tool_call({toolName:'assistant_signals',params:{action}},routineCtx)).block,true,action);
+ for(const toolName of ['exec','write','message','browser','web_fetch'])assert.equal((await hooks.before_tool_call({toolName,params:{command:'ls'}},routineCtx)).block,true,toolName);}
 // An isolated review ends with one fixed line (its turn has delivery off): after NO_REPLY, OpenClaw asked twice more
 { const system=(await hooks.before_prompt_build({},ctx)).prependSystemContext;
   assert.ok(system.includes('End with exactly the line Done.'));assert.ok(!system.includes('end with exactly NO_REPLY'));

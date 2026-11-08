@@ -9,6 +9,7 @@ import time
 import activity
 from machine.config import LOG
 from machine.delivery.push import mailing_sources
+from machine.sources.suggest import suggestions
 from machine.store.events import RUN_SIGNAL_BUDGET, SET_ASIDE_AFTER
 from machine.store.first_look import FIRST_ACTIONS, TIP_SOURCES
 from machine.store.review import FIRST_LOOK_READ, PREVIEW_DAYS
@@ -323,6 +324,24 @@ class FirstLookApp:
         with self.store.connect() as db:
             found = [{'service': s, 'label': label} for s, label in mailing_sources(db, self.config)][:2]
         self._first_look_connect = (time.monotonic(), key, found)
+        return found
+
+    def connect_suggested(self, sources, unfinished=()):
+        """Connections, + Add: Suggested for you (machine/sources/suggest.py), [] when nothing has a signal. Worked out at
+        most every 10 minutes for the same tiles; connecting one, or a setup failing, works it out again at once."""
+        if getattr(self, 'store', None) is None:
+            return []
+        key = (tuple(sorted(str(s.get('name')) for s in sources if not s.get('connected'))), tuple(sorted(set(unfinished))))
+        cached = getattr(self, '_connect_suggested', None)
+        if cached and cached[1] == key and time.monotonic() - cached[0] < 600:
+            return cached[2]
+        try:
+            with self.store.connect() as db:
+                found = suggestions(db, sources, unfinished)
+        except Exception as error:  # noqa: BLE001 - + Add shows its list without them
+            LOG.warning('connect suggestions error=%s', type(error).__name__)
+            return []
+        self._connect_suggested = (time.monotonic(), key, found)
         return found
 
     def note_dig_start(self, db):

@@ -40,6 +40,7 @@ import person_summary
 import portable
 import preparation_state
 import recurring
+import routines
 import retention
 import talk_live
 import task_pages
@@ -444,6 +445,7 @@ class StoreCore:
             # graph.slack_names, the to-dos' quality: profile.QUALITY_TABLES, and the Projects board's organizations: graph_boards)
             stamps.watch(db, ('graph_nodes', 'person_roles', 'identity_names', 'slack_members', *QUALITY_TABLES, *graph_boards.ORG_TABLES))
             recurring.ensure(db)  # recurring to-dos (recurring.py): new tables only
+            routines.ensure(db)  # routines (routines.py): new tables only
             if 'project' not in {r[1] for r in db.execute('PRAGMA table_info(suggestions)')}:
                 db.execute('ALTER TABLE suggestions ADD COLUMN project TEXT')
             # Who set a to-do's project: 'review' (or NULL, from before 2026-10-27), 'auto' (graph.link_cards: its thread or

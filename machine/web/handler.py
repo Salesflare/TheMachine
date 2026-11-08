@@ -366,7 +366,9 @@ def make_handler(app):
                 self.output(200, {**current, 'here': here} if current else {})
             elif path.path in BRAND_ASSETS:
                 asset = BRAND_ASSETS[path.path]
-                self.output(200, asset.read_bytes(), {'.webp': 'image/webp', '.woff2': 'font/woff2', '.mp3': 'audio/mpeg'}.get(asset.suffix, 'image/png'))
+                self.output(200, asset.read_bytes(), {'.webp': 'image/webp', '.woff2': 'font/woff2', '.mp3': 'audio/mpeg',
+                                                      '.svg': 'image/svg+xml'}.get(asset.suffix, 'image/png'),
+                            cache='private, max-age=86400' if '/logos/' in path.path else 'no-store')
             elif path.path == '/api/session':
                 # Asked once by a page: the CSRF token (a page started from the app's on-device copy has none, that
                 # copy never keeps it) and whose data the device may keep (dashboard_cache_scope)
@@ -441,6 +443,8 @@ def make_handler(app):
                                       'calendars': writable, 'starts': app.calendar_starts()})  # where its meetings begin: the line at the edge
                 except (ValueError, sqlite3.OperationalError):
                     self.output(400, {'error': 'Ask for a window of at most 15 days'})
+            elif path.path == '/api/routines':  # the Routines page: each routine with its last runs (routines_app.py)
+                self.output(200, app.routines_view())
             elif path.path == '/api/meeting':  # one meeting as the Calendar shows it, opened from anywhere in the dashboard
                 args = urllib.parse.parse_qs(path.query)
                 try:

@@ -385,7 +385,12 @@ OVER_BUDGET = {}
 # 2,000,000 -> 2,100,000 (2026-11-07): main passed 2,000,000 with no single big piece to take out (no inline assets,
 # no string table). The real fix is the dashboard split of the code refactor (load parts when they're used); this is
 # headroom while that lands, so main stays green. Bring it back down with the split.
-PAGE_CEILING = 2_100_000
+# 2,100,000 -> 2,110,000 (2026-11-08): the Routines page (about 7.7 KB) is a whole new page; the split loads it
+# only when opened, and brings this back down.
+# Also Connections › Add redesign (Jeroen picked A); split of the dashboard into on-demand parts follows.
+# 2,110,000 -> 2,120,000 (2026-11-08): Routines took the headroom meant for the + Add redesign (about 6.5 KB, logos
+# already moved out to files). Same reason: the split brings this back down.
+PAGE_CEILING = 2_120_000
 
 
 def budget(name):

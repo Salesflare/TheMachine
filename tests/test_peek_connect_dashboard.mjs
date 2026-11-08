@@ -77,7 +77,7 @@ try{
   // Connections, Add.
   await page.goto(base+'/#connections=add');
   await page.locator('#connect-add [data-connect="crm"]').waitFor();
-  assert.deepEqual(await page.locator('#connect-add .connect-source b').allInnerTexts(),['Gmail','Salesflare CRM','GitHub']);
+  assert.deepEqual(await page.locator('#connect-add .connect-source b').allInnerTexts(),['GitHub','Gmail','Salesflare CRM']);  // A to Z in their group
   assert.equal(await page.locator('#connectors>article:not([hidden])').count(),0);
   if(shots)await page.screenshot({path:`${shots}/add-${width}.png`});
   await page.locator('#connect-add [data-connect="crm"]').click();

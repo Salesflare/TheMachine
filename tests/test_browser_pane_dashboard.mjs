@@ -92,6 +92,25 @@ try{
  const p2=await phone.newPage();p2.on('pageerror',e=>errors.push(e.message));await p2.goto(base);await p2.locator('#open-settings').waitFor({state:'attached'});  // in the drawer on a phone
  await p2.evaluate(()=>document.querySelector('#open-browser').click());await new Promise(r=>setTimeout(r,300));
  assert.equal(await p2.locator('#browser-pane').isHidden(),true);await phone.close();
+ // The dashboard installed on a phone has no tabs either: the pane, never the account's handoff (browser_link). On
+ // Android the installed app took that handoff's way back to the Machine's address into itself and started over at its
+ // splash screen, so the browser never showed. Android's installed app (display-mode) and iOS's home screen one.
+ for(const how of ['android','ios']){
+  const inst=await browser.newContext({viewport:{width:390,height:800},isMobile:true,hasTouch:true});await inst.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
+  await inst.addInitScript(ios=>{if(ios){Object.defineProperty(navigator,'standalone',{configurable:true,value:true});return}
+   const mm=window.matchMedia.bind(window);window.matchMedia=q=>/display-mode: *standalone/.test(q)?{matches:true,media:q,addEventListener(){},removeEventListener(){},addListener(){},removeListener(){}}:mm(q)},how==='ios');
+  const p3=await inst.newPage();p3.on('pageerror',e=>errors.push(e.message));const left=[];p3.on('framenavigated',f=>{if(f===p3.mainFrame())left.push(f.url())});
+  await p3.goto(base);await p3.locator('#open-settings').waitFor({state:'attached'});
+  await p3.evaluate(()=>document.querySelector('#open-browser').click());await p3.locator('#browser-pane').waitFor();
+  await p3.frameLocator('#bp-frame').locator('#viewer').waitFor();
+  assert.equal(inst.pages().length,1,how);assert.ok(left.every(u=>u.startsWith(base)),how+' '+left.join(' '));
+  {const f=await p3.locator('#bp-frame').boundingBox();assert.ok(f.width===390&&f.height>600,how+' '+JSON.stringify(f))}
+  assert.equal(await p3.locator('#bp-tab').isHidden(),true,how);
+  // A to-do's View in Machine browser too
+  await p3.locator('#bp-close').click();await p3.locator('#browser-pane').waitFor({state:'hidden'});
+  await p3.evaluate(()=>{const a=document.createElement('a');a.href='https://cp.example/open?to=browser';a.target='_blank';a.dataset.browserShow='aaaaaaaaaaaaaaa1';a.textContent='View';document.body.append(a);a.click()});
+  await p3.locator('#browser-pane').waitFor();assert.equal(inst.pages().length,1,how);
+  await inst.close()}
  // No viewer on the dashboard's own address: a new tab, also on a computer
  embed=null;await page.reload();await row.waitFor();
  const [tab]=await Promise.all([context.waitForEvent('page'),row.click()]);await tab.close();

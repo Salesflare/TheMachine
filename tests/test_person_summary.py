@@ -18,6 +18,7 @@ import person_summary
 
 ROOT = Path(__file__).resolve().parent.parent
 ANN = 'email:ann@acme.example'
+CHECK = '\nLines:\n'
 
 
 class PersonSummary(unittest.TestCase):
@@ -37,7 +38,9 @@ class PersonSummary(unittest.TestCase):
         self.app.background_pause = lambda **_: None
         self.prompts = []
         self.answer = None
-        self.app.summary_model = lambda config, prompt: (self.prompts.append(prompt), self.answer(prompt))[1]
+        self.checks = []
+        self.check = lambda line: None  # the check's verdict on one line: None passes, else why
+        self.app.summary_model = lambda config, prompt: (self.prompts.append(prompt), self.judge(prompt) if CHECK in prompt else self.answer(prompt))[1]
         self.now = dt.datetime.now(dt.timezone.utc)
         ago = lambda days: (self.now - dt.timedelta(days=days)).isoformat(timespec='seconds')
         with self.store.connect() as db:
@@ -64,6 +67,13 @@ class PersonSummary(unittest.TestCase):
             self.promise = db.execute("INSERT INTO promises(direction,who,what,due,check_at,event_id,account_id,status,created_at,updated_at) "
                                       "VALUES('mine','Ann','send the contract',?,?,?,'work','open',?,?)",
                                       (ago(-1)[:10], ago(-1), self.events[1], ago(5), ago(5))).lastrowid
+
+    def judge(self, prompt):
+        """The stand-in check turn: self.check's verdict on each line it is given."""
+        items = json.loads(prompt.split(CHECK, 1)[1])
+        self.checks.append(items)
+        return json.dumps({'lines': [{'id': x['id'], 'ok': True} if self.check(x) is None else {'id': x['id'], 'ok': False, 'why': self.check(x)}
+                                     for x in items]})
 
     def lines(self, *extra):
         e = self.events
@@ -146,7 +156,7 @@ class PersonSummary(unittest.TestCase):
             db.execute('UPDATE person_summaries SET written_at=?,evidence_at=?', ((self.now - dt.timedelta(days=2)).isoformat(),) * 2)
         self.answer = lambda prompt: json.dumps({'people': [{'node_id': ANN, 'lines': [{'kind': 'now', 'text': 'Contract signed.', 'sources': [f'E{self.events[2]}']}]}]})
         self.run_pass()
-        self.assertIn('owner_edited', self.prompts[-1])
+        self.assertIn('owner_edited', [x for x in self.prompts if CHECK not in x][-1])
         with self.store.connect() as db:
             view = person_summary.view(db, ANN)
         self.assertEqual([line['text'] for line in view['lines']], mine)  # never overwritten
@@ -245,6 +255,79 @@ class PersonSummary(unittest.TestCase):
             self.assertEqual(person_summary.prep_lines(db, ANN, ['work', 'personal']).count('You promised to send the contract by Friday.'), 0)
             db.execute('UPDATE person_summary_runs SET started_at=?', ((self.now - dt.timedelta(hours=2)).isoformat(),))
             db.execute('UPDATE person_summaries SET written_at=?,evidence_at=?', ((self.now - dt.timedelta(days=1)).isoformat(), '9999'))
+            self.assertEqual([p['id'] for p in person_summary.due(db)], [ANN])
+
+    def test_every_line_is_checked_a_rejected_one_is_written_again_once_then_dropped(self):
+        """Quality or nothing: a model check judges each line on the rubric (specific, everyone named, no guessed roles)
+        with the evidence it cites. A rejected line gets one rewrite with the reason; one still failing is dropped."""
+        e = self.events
+        first = {'people': [{'node_id': ANN, 'lines': [
+            {'kind': 'who', 'text': 'You share work updates and thoughts on projects together.', 'sources': [f'E{e[0]}']},
+            {'kind': 'now', 'text': 'He would need help, but liked the idea of doing it with his dad.', 'sources': [f'E{e[2]}']},
+            {'kind': 'open', 'text': 'You promised Ann the contract by Friday.', 'sources': [f'P{self.promise}']}]}]}
+        again = {'people': [{'node_id': ANN, 'lines': [
+            {'kind': 'now', 'text': 'You keep in touch about all sorts of things.', 'sources': [f'E{e[0]}']},
+            {'kind': 'now', 'text': "Ann's legal team reviews the contract next week.", 'sources': [f'E{e[2]}']}]}]}
+        self.answer = lambda prompt: json.dumps(again if 'rejected_lines' in prompt else first)
+        verdicts = {'You share work updates and thoughts on projects together.': 'generic, no concrete fact',
+                    'He would need help, but liked the idea of doing it with his dad.': 'unnamed "he", guessed role "his dad"',
+                    'You keep in touch about all sorts of things.': 'generic'}
+        self.check = lambda item: verdicts.get(item['line'])
+        self.assertEqual(self.run_pass(), 1)
+        self.assertEqual(len(self.prompts), 4)  # write, check, write the rejected ones again, check those
+        write, check, rewrite, recheck = self.prompts
+        self.assertIn('Specific:', check)
+        self.assertIn('Named:', check)
+        self.assertIn('Grounded:', check)
+        self.assertIn('not on the words it uses', check)
+        cited = {x['line']: x for x in self.checks[0]}
+        self.assertEqual(cited['You promised Ann the contract by Friday.']['about'], 'Ann Example')
+        self.assertEqual([i['id'] for i in cited['You promised Ann the contract by Friday.']['evidence']], [f'P{self.promise}'])
+        self.assertEqual(cited['He would need help, but liked the idea of doing it with his dad.']['evidence'][0]['text'],
+                         'Thanks, legal reviews it next week.')
+        asked = json.loads(rewrite.split('\nPeople:\n', 1)[1])[0]
+        self.assertEqual(asked['kept_lines'], ['You promised Ann the contract by Friday.'])
+        self.assertEqual({x['why'] for x in asked['rejected_lines']}, {'generic, no concrete fact', 'unnamed "he", guessed role "his dad"'})
+        self.assertEqual(len(self.checks[1]), 2)  # only the rewritten lines are checked again
+        with self.store.connect() as db:
+            texts = [line['text'] for line in person_summary.view(db, ANN)['lines']]
+            stored = json.loads(person_summary._row(db, ANN)['lines'])
+        self.assertEqual(texts, ["Ann's legal team reviews the contract next week.", 'You promised Ann the contract by Friday.'])
+        self.assertFalse([k for line in stored for k in line if k.startswith('_')])  # what the check read is not kept
+
+    def test_the_prompt_asks_for_names_and_specifics_not_they(self):
+        prompt = person_summary.prompt([{'node_id': ANN, 'name': 'Ann Example', 'signals': []}])
+        self.assertNotIn('Say "they" for the person', prompt)
+        self.assertIn('the person this page is about by their first name', prompt)
+        self.assertIn('An organization or project by its short name', prompt)
+        self.assertIn('A first name counts as named', person_summary.RUBRIC)
+        self.assertIn('Fewer lines are better than vague ones', prompt)
+        self.assertIn(person_summary.RUBRIC, prompt)
+
+    def test_nothing_specific_left_means_no_summary(self):
+        """A summary The Machine wrote before goes when a new pass finds nothing specific to say: no section at all."""
+        self.answer = lambda prompt: json.dumps(self.lines())
+        self.run_pass()
+        with self.store.connect() as db:
+            self.assertTrue(person_summary.view(db, ANN))
+            db.execute('UPDATE person_summary_runs SET started_at=?', ((self.now - dt.timedelta(hours=2)).isoformat(),))
+            db.execute('UPDATE person_summaries SET written_at=?,evidence_at=?', ((self.now - dt.timedelta(days=2)).isoformat(),) * 2)
+        self.check = lambda item: 'generic'
+        self.prompts.clear()
+        self.run_pass()
+        self.assertEqual(len(self.prompts), 4)
+        with self.store.connect() as db:
+            self.assertIsNone(person_summary.view(db, ANN))
+            self.assertIsNone(graph.detail(db, ANN)['summary'])
+
+    def test_an_unreadable_check_saves_nothing_and_the_person_stays_due(self):
+        self.answer = lambda prompt: json.dumps(self.lines())
+        self.judge = lambda prompt: 'Sorry, I can only answer in prose.'
+        self.run_pass()
+        with self.store.connect() as db:
+            self.assertIsNone(person_summary.view(db, ANN))
+            self.assertEqual(db.execute('SELECT status FROM person_summary_runs').fetchone()[0], 'failed')
+            db.execute('UPDATE person_summary_runs SET started_at=?', ((self.now - dt.timedelta(hours=2)).isoformat(),))
             self.assertEqual([p['id'] for p in person_summary.due(db)], [ANN])
 
     def test_it_stays_on_this_machine_sealed(self):

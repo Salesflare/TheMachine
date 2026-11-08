@@ -244,7 +244,9 @@ def fake_notes(config, prompt):
 def fake_summary(config, prompt):
     """Person summaries' stand-in model (person_summary.py): lines about substance, never what the page shows already
     (role, organization, how often you talk), each citing the evidence it was given. Organizations by their display name
-    from the fixture. No model runs."""
+    from the fixture. No model runs. Its lines pass the check (person_summary.check_prompt) as written."""
+    if '\nLines:\n' in prompt:
+        return json.dumps({'lines': [{'id': x['id'], 'ok': True} for x in json.loads(prompt.split('\nLines:\n', 1)[1])]})
     people = json.loads(prompt.split('\nPeople:\n', 1)[1])
     names = {c['domain']: c['name'] for c in json.loads((HERE / 'fixture.json').read_text())['companies']}
     out = []

@@ -177,6 +177,8 @@ def load(directory, states, port=8870, network_port=8871, fixture_path=HERE / 'f
                 load_owners(db, fixture, base)
         load_logins(directory, fixture)
         load_recurring(store, config, base)
+        if not fresh:  # a fresh Machine has no routines yet: the page's empty state
+            load_routines(store, base)
     return config, config_path
 
 
@@ -268,6 +270,29 @@ def load_recurring(store, config, base):
     with store.connect() as db:
         card = db.execute('SELECT * FROM suggestions WHERE id=?', (saved['id'],)).fetchone()
         recurring.start(db, card, {'unit': 'week', 'n': 1}, monday, card['owner_words'] or card['title'], base.isoformat(), work=True)
+
+
+def load_routines(store, base):
+    """Routines (routines.py): two that ran a few times, as the Routines page shows them after a couple of weeks."""
+    import routines
+    now = base.replace(tzinfo=None)
+    today = now.date()
+    monday = today - dt.timedelta(days=today.weekday())
+    with store.connect() as db:
+        deals = routines.create(db, 'Sum up my open deals: what moved last week, what went quiet and what needs me',
+                                {'unit': 'week', 'n': 1}, monday, '09:00', now, stamp(20 * 24 * 60, base))
+        replies = routines.create(db, 'List the emails I still owe a reply, oldest first', {'unit': 'weekday', 'n': 1}, today, '08:00',
+                                  now, stamp(10 * 24 * 60, base))
+        runs = [(deals, 14, 'ready', '**Fernwave** moved to proposal; the pilot starts in two weeks.\n**Halyard** went quiet after the '
+                 'sync delay: no reply in 9 days.\nNeeds you: **Gullwing Clinics** asks for the onboarding plan by Friday.', None),
+                (deals, 7, 'ready', '**Fernwave** asked for references.\nNothing new on **Halyard**.', None),
+                (replies, 1, 'nothing', None, 'No new emails waiting for a reply since yesterday'),
+                (replies, 2, 'failed', None, 'usage_limited')]
+        for routine_id, days, state, result, why in runs:
+            run_id = routines.begin(db, routine_id, (today - dt.timedelta(days=days)).isoformat(), stamp(days * 24 * 60, base))
+            routines.finish(db, run_id, state, stamp(days * 24 * 60 - 3, base), result=result,
+                            why=why if state == 'nothing' else None, error=why if state == 'failed' else None)
+        db.commit()
 
 
 def load_owners(db, fixture, base):

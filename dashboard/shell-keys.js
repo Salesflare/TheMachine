@@ -36,6 +36,7 @@ actionAdd(
  {id:'go-todos',group:'Go to',label:'To-dos',keywords:'todos suggestions cards home inbox',keys:'g t',run:kbNav('nav [data-tab="inbox"]')},
  {id:'go-suggestions',group:'Go to',alias:true,keys:'g s',run:kbNav('nav [data-tab="inbox"]')},  // the old key, still working, not listed
  {id:'go-calendar',group:'Go to',label:'Calendar',keywords:'meetings today agenda',keys:'g c',run:kbNav('nav [data-tab="calendar"]')},
+ {id:'go-routines',group:'Go to',label:'Routines',keywords:'automations recurring scheduled every week',keys:'g r',run:kbNav('nav [data-tab="routines"]')},
  {id:'go-events',group:'Go to',label:'Messages',keywords:'events signals search mail emails everything read',keys:'g e',run:()=>msgSearch('')},
  {id:'go-people',group:'Go to',label:'People',keywords:'graph contacts',keys:'g p',run:kbNav('.side-sub a[data-graph-sub="people"]')},
  {id:'go-orgs',group:'Go to',label:'Organizations',keywords:'graph companies organizations',keys:'g o',run:kbNav('.side-sub a[data-graph-sub="orgs"]')},
@@ -322,7 +323,7 @@ document.addEventListener('keydown',e=>{if(e.defaultPrevented||e.isComposing||e.
 {const lab=$('#side-search'),b=document.createElement('button');b.type='button';b.className='kb-open';b.id='pal-open';b.title='Search and commands ('+KB_PAL+')';b.setAttribute('aria-label','Search and commands');b.setAttribute('aria-keyshortcuts',kbAria('mod+k'));
  b.innerHTML=`<kbd>${KB_PAL}</kbd>`;b.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();palOpen()});lab.append(b);
 }
-const KB_TIPS=[['nav [data-tab="inbox"]','g t'],['nav [data-tab="calendar"]','g c'],['.side-sub a[data-graph-sub="people"]','g p'],['.side-sub a[data-graph-sub="orgs"]','g o'],['.side-sub a[data-graph-sub="projects"]','g j'],['.side-sub a[data-graph-sub="roles"]','g w'],['#tab-fleet','g f'],['nav [data-tab="feedback"]','g l'],['nav [data-tab="health"]','g n'],['#open-settings','g ,']];
+const KB_TIPS=[['nav [data-tab="inbox"]','g t'],['nav [data-tab="calendar"]','g c'],['nav [data-tab="routines"]','g r'],['.side-sub a[data-graph-sub="people"]','g p'],['.side-sub a[data-graph-sub="orgs"]','g o'],['.side-sub a[data-graph-sub="projects"]','g j'],['.side-sub a[data-graph-sub="roles"]','g w'],['#tab-fleet','g f'],['nav [data-tab="feedback"]','g l'],['nav [data-tab="health"]','g n'],['#open-settings','g ,']];
 for(const [sel,keys] of KB_TIPS){const el=$(sel);if(!el)continue;const name=i18nEnglish(el.querySelector('.nl,.lbl'))||I18N.attrs.get(el)?.['aria-label']?.en||el.getAttribute('aria-label')||'';el.title=name+' ('+kbText(keys)+')';el.dataset.keys=kbText(keys);el.setAttribute('aria-keyshortcuts',kbAria(keys))}
 const KB_CARD=[['[data-choice="snooze"]','s'],['[data-choice="complete"]','d'],['[data-rename]','e']];
 function kbHints(){for(const [sel,keys] of KB_CARD)for(const b of document.querySelectorAll('#suggestions '+sel)){if(b.dataset.kb)continue;b.dataset.kb=keys;b.setAttribute('aria-keyshortcuts',kbAria(keys));
