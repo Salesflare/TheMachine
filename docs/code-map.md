@@ -157,7 +157,10 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   prompts, profile steps, digest and notify, gbrain, skills and support: into FeedbackApp, ProfileApp,
   NotificationsApp, GBrainApp, SkillsApp and SupportApp, Browser and sign-in App methods into BrowserApp;
   first-profile, share-history and orgs backfill steps into ProfileApp; skills sign-in, notify views and prompt
-  receipts into SkillsApp, NotificationsApp and FeedbackApp.
+  receipts into SkillsApp, NotificationsApp and FeedbackApp, Settings views (hours, locale, setup hints, agents,
+  account, security, learnings, activity) into SettingsActionsApp; voice warm-up into VoiceApp; model usage workers
+  into ModelPacingApp; retention, embedding, enrichment, Help topics and error report workers and Google contact
+  photos into new WorkersApp (machine/app/workers.py).
 - **Dashboard code:** in its area's part in `dashboard/` (`<area>-<what>.js`: shell, todos, settings, graph, calendar,
   connections, help, events, new, fleet), next to the functions it works with, never at the end of the script. The
   page's core is in the `shell-*` parts too: locale and error reports (`shell-core.js`), network and outbox, `render()`

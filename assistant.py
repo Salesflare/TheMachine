@@ -1024,6 +1024,7 @@ from machine.store.faults import (
 )
 from machine.app.settings_actions import (
     SettingsActionsApp,
+    hours_settings,
 )
 from machine.app.notifications import (
     NotificationsApp,
@@ -1067,21 +1068,17 @@ from skills_app import (
     SKILL_NOTES_MIN,
     SKILL_REGROW,
 )
-
-
-def hours_settings(config, changes):
-    """`timezone`, `digest_at` and `work_hours` after `changes` (any of those, or the work_hours keys
-    days/start/end/morning at the top level), checked; a ValueError says what is wrong."""
-    current = {**WORK_HOURS_DEFAULT, **(config.get('work_hours') or {})}
-    nested = changes.get('work_hours') if isinstance(changes.get('work_hours'), dict) else {}
-    merged = {**current, **nested, **{k: changes[k] for k in WORK_HOURS_DEFAULT if changes.get(k) is not None}}
-    zone = str(changes.get('timezone') or config.get('timezone') or getattr(local_tz(), 'key', '') or 'UTC').strip()
-    try:
-        ZoneInfo(zone)
-    except (ValueError, KeyError, OSError):
-        raise ValueError(f'Unknown time zone {zone!r}; use a name like Europe/Brussels or America/New_York') from None
-    digest = '%02d:%02d' % clock(changes.get('digest_at') or config.get('digest_at') or '08:30', 'The digest time')
-    return {'timezone': zone, 'digest_at': digest, 'work_hours': work_hours(merged)}
+from machine.app.workers import (
+    BACKGROUND_GAP_SECONDS,
+    GOOGLE_PHOTO_LISTS,
+    GOOGLE_PHOTO_PAGES,
+    WorkersApp,
+    google_photo_accounts,
+    google_photo_offers,
+)
+from machine.app.voice import (
+    VOICE_WARM_QUIET,
+)
 
 
 def queue_thread_snooze(db, action, job):
@@ -1177,9 +1174,6 @@ def connect_form(source, args):
         answers.update({'part of your life': boundary, 'company': boundary})
     answers['You already have'] = f"add another {source['label']} account"  # a new one, when there is one; Reconnect signs one in again
     return answers, secrets_
-
-
-VOICE_WARM_QUIET = 3   # 5-minute checks in a row that a live Machine is quiet before voice gets ready in the background
 
 
 def fit_events(rows, offset=0, budget=REVIEW_PAGE_CHARS):
@@ -1324,54 +1318,6 @@ VERIFIED_DECISION_SOURCES = ('telegram', 'dashboard')
 # the hosting agent's reviews on restarted the app 44 s into a first look (2026-11-04). The hosting agent checks this
 # list before it restarts the app for them.
 LIVE_CONFIG = ('delivery_enabled', 'review_worker')
-# Background turns beyond the first look (profile, voices, roles, organizations) start at most one per this many
-# seconds, and only once the first card was shown, so the first cards come first and a new install's usage is spread
-# out instead of spent in its first minutes. A draft prepared ahead is on the owner's board as Preparing, so it doesn't
-# wait for this gap (2026-10-29: one waited 8 minutes behind a review's start); the usage budget still holds it.
-BACKGROUND_GAP_SECONDS = 600
-
-
-# Contact photos from the owner's Google contacts and Workspace directory, with the scopes the gog sign-in already has
-# (a hosted sign-in through the broker has no Contacts scope, so it is never asked). Read only, once a day per account.
-GOOGLE_PHOTO_LISTS = (
-    ('people.connections.list', {'resourceName': 'people/me', 'pageSize': 1000, 'personFields': 'emailAddresses,phoneNumbers,photos,organizations'},
-     'https://www.googleapis.com/auth/contacts', 'connections'),
-    ('people.listDirectoryPeople', {'pageSize': 1000, 'readMask': 'emailAddresses,phoneNumbers,photos,organizations', 'sources': 'DIRECTORY_SOURCE_TYPE_DOMAIN_PROFILE'},
-     'https://www.googleapis.com/auth/directory.readonly', 'people'),
-    ('otherContacts.list', {'pageSize': 1000, 'readMask': 'emailAddresses,phoneNumbers,photos'},
-     'https://www.googleapis.com/auth/contacts.other.readonly', 'otherContacts'))
-GOOGLE_PHOTO_PAGES = 20
-
-
-def google_photo_offers(config, account, read=None, facts=None):
-    """(identifiers, link, chosen) for each of the account's contacts with a real photo. A list the sign-in can't read
-    is skipped. With a list as `facts`, their job title, company and phone from the same pages go there too."""
-    read = read or gog_read
-    offers = []
-    for method, params, scope, key in GOOGLE_PHOTO_LISTS:
-        token = None
-        for _ in range(GOOGLE_PHOTO_PAGES):
-            try:
-                page = read(config, account, 'people', 'v1', method, {**params, **({'pageToken': token} if token else {})}, scope)
-            except SourceError:
-                break
-            offers += [o for o in (enrichment.google_photo(p) for p in page.get(key) or [] if isinstance(p, dict)) if o]
-            if facts is not None:
-                facts += [f for p in page.get(key) or [] if isinstance(p, dict) for f in enrichment.google_facts(p)]
-            token = page.get('nextPageToken')
-            if not token:
-                break
-    return offers
-
-
-def google_photo_accounts(config):
-    """The owner's own Google sign-ins through gog, once per address (never one shared from a Fleet)."""
-    seen = {}
-    for account in config.get('accounts', []):
-        if account.get('service', 'gmail') in ('gmail', 'calendar') and account.get('transport') == 'gog' and account.get('email') \
-                and not account.get('shared'):
-            seen.setdefault(account['email'].lower(), account)
-    return list(seen.values())
 
 
 class Store(CardsStore, DecisionsStore, EventsStore, FactsStore, FaultsStore, FirstLookStore, ProfileStore,
@@ -1892,6 +1838,7 @@ APP_MIXINS = (SupportApp, CalendarApp, SkillsApp, AgentsApp, GBrainApp, SharedGr
 APP_MIXINS += (FollowUpsApp, GraphActionsApp, KnowledgeExportApp, MeetingWritesApp, ModelPacingApp, PromiseChecksApp, SignaturesApp, SummariesApp,
                VoiceApp)
 APP_MIXINS += (CardChatApp, ConversationApp, ExportApp, FirstLookApp, FleetApp, PreparationApp, RecapApp, ReviewApp, TalkApp)
+APP_MIXINS += (WorkersApp,)
 APP_MIXINS += (StatusApp,)
 APP_MIXINS += (DocsApp,)
 APP_MIXINS += (CardActionsApp,)
@@ -2419,85 +2366,6 @@ class App(*APP_MIXINS):
             return chosen, ms_graph.attachment(self.config, credential, account, message_id, chosen['id'])
         except ms_graph.GraphError as error:
             raise ValueError(f'Outlook could not give the attachment ({error})') from None
-
-    def hours(self):
-        """Work hours as the dashboard shows and edits them."""
-        return {**WORK_HOURS, 'timezone': getattr(local_tz(), 'key', str(local_tz())), 'digest_at': self.config.get('digest_at', '08:30'),
-                'saveable': bool(getattr(self, 'config_path', None))}
-
-    def set_hours(self, args):
-        """The owner's Work hours from the dashboard: checked, saved in config.json and in use at once."""
-        if not getattr(self, 'config_path', None):
-            raise ValueError('This can’t be changed on this Machine.')
-        values = hours_settings(self.config, args)
-        save_hours(self.config_path, values)
-        self.config.update(values)
-        set_timezone(values['timezone'])
-        set_work_hours(values['work_hours'])
-        return self.hours()
-
-    def locale_view(self):
-        """Language and region as Settings shows them and the dashboard formats dates and times (locale_prefs)."""
-        return {**locale_prefs.view(), 'saveable': bool(getattr(self, 'config_path', None))}
-
-    def set_locale(self, args):
-        """The owner's language, region, time format and To-dos filter from the dashboard: checked, saved in config.json and in use at once."""
-        if not getattr(self, 'config_path', None):
-            raise ValueError('This can’t be changed on this Machine.')
-        if 'browser' in args:  # the dashboard's first load on a Machine without a region: the browser's, never over a choice
-            browser = args['browser'] if isinstance(args['browser'], dict) else {}
-            found = locale_prefs.guess(browser.get('zone'), browser.get('language'))
-            if self.config.get('locale') or not found:
-                return self.locale_view()
-            args = {'locale': found}
-        values = locale_prefs.settings(args)
-        save_hours(self.config_path, values)
-        self.config.update(values)
-        locale_prefs.configure(self.config)
-        return self.locale_view()
-
-    def setup_hints_view(self):
-        """setup_hints, worked out at most every 10 minutes: the dashboard asks for its state every few seconds."""
-        # a source, Telegram or Codex connected just now drops its hint at once
-        key = (tuple(sorted(str(a.get('service')) for a in self.config.get('accounts') or [] if isinstance(a, dict))),
-               telegram_on(self.config), json.dumps(self.config.get('agents'), sort_keys=True, default=str))
-        cached = getattr(self, '_setup_hints', None)
-        if cached and cached[1] == key and time.monotonic() - cached[0] < 600:
-            return cached[2]
-        try:
-            hints = setup_hints(self.store, self.config)
-        except (sqlite3.Error, OSError, ValueError):
-            hints = []
-        self._setup_hints = (time.monotonic(), key, hints)
-        return hints
-
-    def set_agents(self, args):
-        import agent_remote
-        if not getattr(self, 'config_path', None):
-            raise ValueError('This can’t be changed on this Machine.')
-        session = str(args.get('claude_session') or '').strip()
-        found = agent_remote.session_id(session) if session else ''
-        if session and not found:
-            raise ValueError('Paste the session link from claude.ai/code')
-        env, branch = str(args.get('codex_env') or '').strip(), str(args.get('codex_branch') or '').strip()
-        if env and not re.fullmatch(r'[A-Za-z0-9_-]{1,80}', env):
-            raise ValueError('That is not a Codex environment id')
-        if branch and not re.fullmatch(r'[A-Za-z0-9._/-]{1,120}', branch):
-            raise ValueError('That is not a branch name')
-        own = dict(agent_jobs.settings(self.config) or {})
-        claude = {k: v for k, v in (own.get('claude') if isinstance(own.get('claude'), dict) else {}).items() if k not in ('session', 'device')}
-        codex = {k: v for k, v in (own.get('codex') if isinstance(own.get('codex'), dict) else {}).items() if k not in ('env', 'branch')}
-        if found:
-            claude.update(place='remote', session=found, **({'device': str(args['device']).strip()[:60]} if str(args.get('device') or '').strip() else {}))
-        if env:
-            codex.update(place='cloud', env=env, **({'branch': branch} if branch else {}))
-        for part, key, place in ((claude, 'session', 'remote'), (codex, 'env', 'cloud')):
-            if not part.get(key) and part.get('place') == place:
-                part.pop('place')
-        own.update(claude=claude, codex=codex)
-        save_hours(self.config_path, {'agents': own})
-        self.config['agents'] = own
-        return self.agents_view()
 
     def gbrain_save(self, value):
         save_hours(self.config_path, {'gbrain': value})
@@ -3636,117 +3504,6 @@ class App(*APP_MIXINS):
             LOG.info('settings applied without a restart: %s', ','.join(LIVE_CONFIG))
         return changed
 
-    def retention_worker(self):
-        """Once a day at a quiet hour: old sync history and preparation logs go, the space goes back to the disk and
-        local copies of the database rotate (retention.py). Checks every ten minutes; never stops the service."""
-        while not self.stop.wait(600):
-            try:  # sign-ins older versions kept only to revoke at Google again: dropped, never revoked (mail_grants.retry)
-                import mail_grants
-                mail_grants.retry(self.config, due_only=True)
-            except Exception as error:  # noqa: BLE001 - tried again in ten minutes
-                LOG.warning('sign-out retry error=%s', type(error).__name__)
-            try:
-                if retention.due(self.store.connect, dt.datetime.now(dt.timezone.utc), local_tz()):
-                    report = retention.run(self.store.connect, str(self.store.path), local_tz=local_tz())
-                    LOG.info('retention %s', json.dumps(report, sort_keys=True))
-            except Exception as error:  # noqa: BLE001 - tried again in ten minutes
-                LOG.error('retention error=%s', type(error).__name__)
-            try:  # files added to a chat message and never sent, and those of cards that are gone (chat_files.py)
-                with self.store.connect() as db:
-                    db.execute('BEGIN IMMEDIATE')
-                    chat_files.sweep(db, self.config, now())
-            except Exception as error:  # noqa: BLE001 - tried again in ten minutes
-                LOG.error('chat files sweep error=%s', type(error).__name__)
-
-    def embedding_worker(self):
-        """Small background passes (embed_pass): signals first, then history. Never blocks
-        ingestion (no transaction spans the embedding call); failures wait and retry."""
-        wait=10
-        while not self.stop.wait(wait):
-            try:wait=self.embed_pass(embeddings.settings(self.config))
-            except Exception as error:
-                LOG.error('embeddings error=%s',error if isinstance(error,embeddings.EmbeddingError) else type(error).__name__);wait=300
-
-    def model_usage_worker(self):
-        """Reads the AI sign-in's usage limits every five minutes, and a minute after a run ends (OpenClaw makes the
-        model calls, so its usage reading is the one to ask; that reading never costs model usage). A failed read
-        keeps the last one. The resets come from the Codex CLI's own sign-in when it is the same account."""
-        self.model_usage_wake = getattr(self, 'model_usage_wake', None) or threading.Event()
-        while not self.stop.is_set():
-            self.refresh_model_usage()
-            try:  # a fallback billed apart: checked while the main model's limits would hold work back (model_fallback.py)
-                self.check_fallback()
-            except Exception as error:  # noqa: BLE001 - never stops the worker
-                LOG.error('fallback check error=%s', type(error).__name__)
-            try:  # the models a chat can pick (chat_model.py): read again every ten minutes
-                self.chat_models()
-            except Exception as error:  # noqa: BLE001 - never stops the worker
-                LOG.error('model list error=%s', type(error).__name__)
-            self.model_usage_wake.clear()
-            if self.stop.wait(60):
-                break
-            for _ in range(240):  # the rest of five minutes, or sooner when a run ended
-                if self.stop.is_set() or self.model_usage_wake.is_set():
-                    break
-                self.stop.wait(1)
-
-    def refresh_model_usage(self):
-        reply = usage_status(self.config)
-        if reply is None:
-            return
-        self.model_usage = model_usage(self.config, reply=reply) or getattr(self, 'model_usage', None)
-        self.model_usage_reply = reply
-        try:
-            resets = model_resets(self.config, reply) if self.config.get('codex') is not False else None
-        except (OSError, ValueError):
-            resets = None
-        self.model_status = model_status(self.config, reply, self.model_usage, resets)
-
-    def enrichment_worker(self):
-        """Organization and work contact data from the configured enrichment service: a few domains (and people) every ten minutes, each
-        looked up again after three months. A service error waits an hour (a day for that domain)."""
-        wait = 120
-        while not self.stop.wait(wait):
-            try:
-                if enrichment.step(self.store.connect, self.config, now(), paired=bool(getattr(self, 'fleet', None))):
-                    self.graph_dirty.set()  # show the new profiles
-                found = enrichment.people_step(self.store.connect, self.config, now(), paired=bool(getattr(self, 'fleet', None)), stop=self.stop.is_set)
-                photos = enrichment.photos_step(self.store.connect, now())  # straight after the lookups (hosted ones too, through the agent)
-                photos += enrichment.site_logos_step(self.store.connect, now())  # organizations that show no logo: their own site's
-                for account in google_photo_accounts(self.config):
-                    with self.store.connect() as db:
-                        due = enrichment.contact_run_due(db, 'google:' + account['email'].lower(), now())
-                    if due and not self.stop.is_set():
-                        facts = []
-                        offers = google_photo_offers(self.config, account, facts=facts)
-                        with self.store.connect() as db:
-                            enrichment.offer_photos(db, offers, 'google', now())
-                            known = enrichment.graph_people(db)  # contacts the Machine knows, like their photos
-                            found += enrichment.offer_facts(db, [(ids, f, r) for ids, f, r in facts if any(i in known for i in ids)], 'google', now())
-                            enrichment.contact_run_done(db, 'google:' + account['email'].lower(), now())
-                photos += enrichment.contact_photos_step(self.store.connect, now())
-                wa_accounts, ask = whatsapp_photo_asker(self.config)
-                if wa_accounts and not self.stop.is_set():
-                    photos += enrichment.whatsapp_photos_step(self.store.connect, now(), ask, wa_accounts)
-                tg_accounts, ask = telegram_photo_asker(self.config)
-                if tg_accounts and not self.stop.is_set():
-                    photos += enrichment.telegram_photos_step(self.store.connect, now(), ask, tg_accounts)
-                found += enrichment.facts_from_signals(self.store.connect, now())  # once: facts already in stored signals
-                if found or photos:
-                    LOG.info('enrichment people found=%s photos=%s', found, photos)
-                    self.graph_dirty.set()
-                wait = 600
-            except enrichment.EnrichmentError as error:
-                LOG.error('enrichment error=%s', error)
-                wait = 3600
-            except Exception as error:
-                LOG.error('enrichment error=%s', type(error).__name__)
-                wait = 3600
-
-    def background_spaced(self):
-        """At most one background turn beyond the first look per BACKGROUND_GAP_SECONDS."""
-        return time.time() - getattr(self, 'background_at', 0) >= BACKGROUND_GAP_SECONDS
-
     def import_check_start(self, kind, text):
         """The owner's model looks at a file being imported (crm_import.ai_evidence: headers, a few values, unclear
         cells), when it can run now: signed in, with room in its limits and no other agent pass going. Else the
@@ -3808,41 +3565,6 @@ class App(*APP_MIXINS):
                 'say': ('Offer it in one short message: you wrote it up as a bug report for The Machine team. ' + how +
                         ' Nothing is sent until they tap Send there. Never say it was sent, filed or that anyone is looking at it.')}
 
-    def account_view(self):
-        """Settings, Account on a self-hosted Machine paired with the Network: its owner's account in short, from the
-        control plane (fleet.Fleet.account). A hosted Machine's dashboard asks the control plane itself, with the owner's
-        sign-in on that host (/_machine/account), so this Machine never holds what opens the account's pages."""
-        if not getattr(self, 'fleet', None):
-            return {'on': False}
-        try:
-            return {'on': True, **self.fleet.account()}
-        except (fleet.Off, ValueError, OSError) as error:
-            LOG.info('account summary unavailable error=%s', type(error).__name__)
-            return {'on': True, 'error': 'Can’t reach your account right now.'}
-
-    def note_connections(self):
-        """Activity: remember the connections there are now, so one added or removed since shows (activity_log.py).
-        Never stops the service: a failed note only costs that line."""
-        try:
-            with self.store.connect() as db:
-                activity_log.note_accounts(db, self.config.get('accounts') or [], now())
-        except sqlite3.Error as error:
-            LOG.warning('activity connections not noted error=%s', type(error).__name__)
-
-    def activity_view(self, kind='', cursor=0, outcome='', actor=''):
-        """Settings, Activity: one page of everything The Machine did, newest first (activity_log.page). Read-only."""
-        self.note_connections()
-        with self.store.connect() as db:
-            return activity_log.page(db, self.config, kind, cursor, outcome=outcome, actor=actor)
-
-    def security_view(self):
-        """Settings, Security: the owner's level (Standard, Careful or Custom) and each Work Fleet's."""
-        try:
-            with self.store.connect() as db:
-                return security_levels.view(db)
-        except sqlite3.Error:
-            return None
-
     @property
     def dictation_openai(self):
         """Voice input's openai engine with OpenClaw kept loaded (voice-openai-run.mjs), so a clip takes a second or two."""
@@ -3851,79 +3573,7 @@ class App(*APP_MIXINS):
                                                      lambda: ([node_bin(self.config), str(Path(__file__).resolve().parent / 'voice-openai-run.mjs')], self.talk_env()))
         return self._voice_oa
 
-    def voice_warm_worker(self):
-        """Gets this Machine's own voice engine ready in the background, so a tap on the mic never waits on a download.
-        Never during setup: only once this Machine is live (its first full review is done) and has been quiet for a while
-        (VOICE_WARM_QUIET checks in a row: no review or preparation running, load under half the cores). Only when it
-        will use it (no OpenAI here, or On this Machine picked) and there's room on disk. The same after an update that
-        changes its packages. The install runs at a lower priority (voice_input.lowered). Until then a tap uses OpenAI or
-        the browser's own speech recognition (voice_view's `use`)."""
-        tried, quiet = 0.0, 0
-        try:
-            self.voice_openai(True, wait=True)   # known before the first tap: whether Automatic means OpenAI here
-        except Exception as error:
-            LOG.error('voice openai check error=%s', type(error).__name__)
-        while not self.stop.wait(300):
-            try:
-                with self.store.connect() as db:
-                    prefs = voice_input.prefs(db)
-                    live = db.execute("SELECT 1 FROM review_runs WHERE status='ok' AND NOT COALESCE(window_hours,0) LIMIT 1").fetchone()
-                    busy = db.execute("SELECT (SELECT count(*) FROM preparations WHERE status IN ('starting','running'))"
-                                      "+(SELECT count(*) FROM review_runs WHERE status IN ('starting','running','recovering'))").fetchone()[0]
-                openai = self.voice_openai(True, wait=True)   # kept 10 minutes: OpenAI connected later switches Automatic to it
-                quiet = quiet + 1 if live and not busy and voice_input.idle() else 0
-                status = self.dictation.status(prefs['model'])
-                if quiet < VOICE_WARM_QUIET or (status['state'] == 'failed' and time.monotonic() - tried < 6 * 3600):
-                    continue
-                if voice_input.warm_due(prefs, openai, status, self.dictation.room()):
-                    tried = time.monotonic()
-                    LOG.info('voice warm start model=%s', prefs['model'])
-                    self.dictation.prepare(prefs['model'])
-            except Exception as error:
-                LOG.error('voice warm error=%s', type(error).__name__)
-
-    def learnings_view(self):
-        """Feedback, Share learnings with The Machine team, and its Settings switch (team_learnings.py)."""
-        try:
-            with self.store.connect() as db:
-                # and Share what Help is asked (help_topics.py) and Send error reports (error_feed.py), on the same Settings card
-                return {**team_learnings.view(db, network=bool(getattr(self, 'fleet', None))), 'help_topics': help_topics.on(db), 'errors': error_feed.on(db)}
-        except sqlite3.Error:
-            return None
-
     HELP_TOPICS_SECONDS = 6 * 3600
-
-    def help_topics_send(self):
-        """Now and then: the finished days of Help topics to the control plane (help_topics.send), when sharing is on."""
-        due = getattr(self, '_help_topics_at', 0)
-        if time.monotonic() < due:
-            return 0
-        self._help_topics_at = time.monotonic() + self.HELP_TOPICS_SECONDS
-        try:
-            return help_topics.send(self.store.connect, self.fleet.relay.call)
-        except Exception as error:  # the Network or the control plane is away: next time
-            LOG.warning('help topics error=%s', type(error).__name__)
-            return 0
-
-    def error_reports_step(self):
-        """Every ten minutes, over the Network: the errors counted since the last batch, as signatures (error_feed.py).
-        The names this Machine knows are taken out once more first."""
-        def names():
-            with self.store.connect() as db:
-                return [name for name, _ in team_learnings.known_names(db, self.config)]
-        try:
-            return error_feed.send(self.store.connect, self.fleet.relay.call, names)
-        except Exception as error:  # the Network or the control plane is away: next time
-            LOG.warning('error reports error=%s', type(error).__name__)
-            return 0
-
-    def pacing_send(self):
-        """Once a day, with error reports on: the finished days' pacing counts and minutes to the control plane."""
-        try:
-            return pacing.send(self.store.connect, self.fleet.relay.call)
-        except Exception as error:  # the Network or the control plane is away: next time
-            LOG.warning('pacing report error=%s', type(error).__name__)
-            return 0
 
     def protection_now(self, config):
         """What the Store does with message protection at this start: on unless config.json says false. A change to an

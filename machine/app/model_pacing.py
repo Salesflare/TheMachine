@@ -10,6 +10,7 @@ import time
 
 import embeddings
 import graph
+from machine.model_usage import model_resets, model_status, model_usage, usage_status
 import model_budget
 import model_fallback
 from models import claude_plan_route, openclaw_model
@@ -202,3 +203,46 @@ class ModelPacingApp:
         except (sqlite3.Error, ValueError, KeyError, TypeError) as error:
             LOG.error('backfill brief error=%s', type(error).__name__)
             return ''
+
+    def model_usage_worker(self):
+        """Reads the AI sign-in's usage limits every five minutes, and a minute after a run ends (OpenClaw makes the
+        model calls, so its usage reading is the one to ask; that reading never costs model usage). A failed read
+        keeps the last one. The resets come from the Codex CLI's own sign-in when it is the same account."""
+        self.model_usage_wake = getattr(self, 'model_usage_wake', None) or threading.Event()
+        while not self.stop.is_set():
+            self.refresh_model_usage()
+            try:  # a fallback billed apart: checked while the main model's limits would hold work back (model_fallback.py)
+                self.check_fallback()
+            except Exception as error:  # noqa: BLE001 - never stops the worker
+                LOG.error('fallback check error=%s', type(error).__name__)
+            try:  # the models a chat can pick (chat_model.py): read again every ten minutes
+                self.chat_models()
+            except Exception as error:  # noqa: BLE001 - never stops the worker
+                LOG.error('model list error=%s', type(error).__name__)
+            self.model_usage_wake.clear()
+            if self.stop.wait(60):
+                break
+            for _ in range(240):  # the rest of five minutes, or sooner when a run ended
+                if self.stop.is_set() or self.model_usage_wake.is_set():
+                    break
+                self.stop.wait(1)
+
+    def refresh_model_usage(self):
+        reply = usage_status(self.config)
+        if reply is None:
+            return
+        self.model_usage = model_usage(self.config, reply=reply) or getattr(self, 'model_usage', None)
+        self.model_usage_reply = reply
+        try:
+            resets = model_resets(self.config, reply) if self.config.get('codex') is not False else None
+        except (OSError, ValueError):
+            resets = None
+        self.model_status = model_status(self.config, reply, self.model_usage, resets)
+
+    def pacing_send(self):
+        """Once a day, with error reports on: the finished days' pacing counts and minutes to the control plane."""
+        try:
+            return pacing.send(self.store.connect, self.fleet.relay.call)
+        except Exception as error:  # the Network or the control plane is away: next time
+            LOG.warning('pacing report error=%s', type(error).__name__)
+            return 0
