@@ -59,12 +59,9 @@ fleetSync();
 // A page's first drawing on To-dos (the device's copy, else the Machine's first answer): the to-dos, the sidebar and a chat now,
 // and the rest (Learning, Connections, Settings, the other tabs' parts) just after that first paint, not before it.
 // A link to another tab or part (#settings/notify) draws it all at once, since that part is the one it opens on
-if(!drawnWhole&&!view&&/^(#todos|#chat=[a-f0-9]{16})?$/.test(location.hash)){const later=()=>{if(drawnWhole)return;if(!lazySettled)return void lazyAll().then(later);try{render('whole')}catch(e){errCaught(e);console.error(e)}};  // caught as in refresh, where it ran before
+if(!drawnWhole&&!view&&/^(#todos|#chat=[a-f0-9]{16})?$/.test(location.hash)){const later=()=>{if(drawnWhole)return;try{render('whole')}catch(e){errCaught(e);console.error(e)}};  // caught as in refresh, where it ran before
 requestAnimationFrame(()=>setTimeout(later));setTimeout(later,300);return}
-// The rest needs the parts that load when first needed (lazyAll in shell-core.js): drawn once they're in (later waits for
-// them too, so a To-dos start draws the to-dos once)
-if(!lazySettled){lazyAll().then(()=>{if(drawnWhole)return;try{render('whole')}catch(e){errCaught(e);console.error(e)}});return}
-if(view==='view'&&drawnWhole===state)return;drawnWhole=state;
+if(view==='view'&&drawnWhole===state)return;drawnWhole=state;lazySoon();  // the parts that load when first needed come after (shell-core.js)
 const choiceTone={accept:'mint',complete:'mint',reject:'muted',snooze:'lavender',other:'amber',reopen:'lavender',undo:'lavender',retry:'lavender',update:'lavender'};
 // One decision on Learning: the to-do, what was chosen, through what and when, and the note that came with it
 const DECISION_LABEL={accept:'Accepted',reject:'Not needed',snooze:'Saved for later',other:'Instructions',complete:'Done',send:'Approved send',reopen:'Reopened',undo:'Reopened',retry:'Trying again',update:'Updated',prepare_ahead:'Prepared ahead',bounced:'Email bounced'};
@@ -72,9 +69,10 @@ const decisionRow=d=>{const a=make('article',{},make('h3',{},d.title||state.sugg
   make('div',{class:'row'},chipNode(d.source==='auto_follow_up'&&d.choice==='send'?'Sent automatically':DECISION_LABEL[d.choice]||d.choice,choiceTone[d.choice]||'muted'),make('small',{},decisionVia(d.source)),make('small',{},timeNode(d.created_at,true))),
   d.annotation?make('p',{class:'note'},'Earlier message was matched incorrectly. The correction is recorded.'):'',d.feedback?make('blockquote',{},d.feedback):'');
  a.style.setProperty('--c',`var(--${({mint:'mint',muted:'faint',lavender:'lavender',amber:'amber'})[choiceTone[d.choice]||'muted']})`);return a};
-renderQuality();
-if(learnEdit==null)setHTML($('#facts'),learnedList());setHTML($('#learn-changes'),learnChanges());renderShare();renderVotes();  // an open editor keeps what was typed until Save or Cancel
-$('#decisions').replaceChildren(...clipNodes('decisions',clipRows(state.decisions,decisionRow),()=>[make('p',{class:'muted'},'No decisions yet.')],5));learnTabs();
+// Learning's own parts are drawn when its file is in (learning-missed.js draws them then)
+const learnIn=lazyIn('learning');if(learnIn)renderQuality();
+if(learnIn&&learnEdit==null)setHTML($('#facts'),learnedList());if(learnIn)setHTML($('#learn-changes'),learnChanges());renderShare();renderVotes();  // an open editor keeps what was typed until Save or Cancel
+$('#decisions').replaceChildren(...clipNodes('decisions',clipRows(state.decisions,decisionRow),()=>[make('p',{class:'muted'},'No decisions yet.')],5));if(learnIn)learnTabs();
 const expandedSync=new Set([...document.querySelectorAll('#connectors details[open]')].map(d=>d.id));
 setHTML($('#connectors'),html`${[...state.connectors].sort((a,b)=>(a.service==='gateway')-(b.service==='gateway')).map(c=>connectorCard(c,expandedSync))}`);renderDisconnected();
 if(state.manage_url){$('#manage').href=state.manage_url;$('#manage').hidden=false;$('#sign-out').hidden=false;$('#report-problem').href=new URL('/support',state.manage_url).href;$('#report-problem').removeAttribute('target');$('#connect-more').replaceChildren(make('div',{class:'connect-pills'},make('a',{class:'manage',href:'#connect=google'},'Connect Google'),make('a',{class:'manage',href:'#connect=microsoft'},'Connect Microsoft'),

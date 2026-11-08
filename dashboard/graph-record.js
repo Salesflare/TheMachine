@@ -337,3 +337,7 @@ $('#people-view').addEventListener('toggle',async e=>{const d=e.target;if(!d.mat
 $('#people-view').addEventListener('submit',async e=>{const f=e.target.closest('.team-ask-form');if(!f)return;e.preventDefault();e.stopPropagation();const b=f.querySelector('button');b.disabled=true;
  try{await graphPost('graph_ask',{fleet:f.dataset.fleet,member_id:f.dataset.member,about:f.dataset.about,note:f.elements.note.value});toast('Asked.');f.closest('details').open=false}catch(err){errCaught(err);toast(err.message,true)}finally{b.disabled=false}},true);
 $('#page-head').addEventListener('click',e=>{const b=e.target.closest('[data-graph-team]');if(!b)return;graphTeam=b.dataset.graphTeam==='team';sideStore.set('graph-team',graphTeam?'team':'mine');pageHead();people('')});
+// A fact's sort and end day, quietly under it: "Temporary · Until Nov 14". A plain fact without an end shows nothing.
+const FACT_SORT={event:'Temporary',commitment:'Commitment',preference:'Preference'};
+const factUntil=d=>localeDate(new Date(d+'T12:00:00'),DL,{day:'numeric',month:'short',...(d.slice(0,4)!==String(new Date().getFullYear())?{year:'numeric'}:{})});
+function factMeta(f){const bits=[FACT_SORT[f.fact_kind]?t(FACT_SORT[f.fact_kind]):'',f.valid_until?t('Until {}',factUntil(f.valid_until)):'',String(f.source||'').startsWith('ai:')?t('AI: {}',f.source.slice(3)):''].filter(Boolean);return bits.length?html`<small class="fact-meta">${bits.join(' · ')}</small>`:''}

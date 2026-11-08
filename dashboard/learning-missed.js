@@ -33,10 +33,6 @@ const VOICE_ICON={linkedin:'linkedin',whatsapp:'whatsapp',telegram:'telegram',sl
 const LEARN_WHAT={voice:c=>`${c.channel==='All'?'Everywhere':c.channel}: how you write`,source:()=>'Fixed at the source',draft:c=>c.before?'Rule changed':'Rule added',fact:c=>c.before?'Fact changed':'Fact added'};
 function learnChange(c){const what=(LEARN_WHAT[c.kind]||(()=>'Changed'))(c),text=String((Array.isArray(c.line)?t(...c.line):c.text)||'').split('\n').map(l=>l.trim()).filter(Boolean).join(' · ');
  return html`<div class="change-row${c.undone?html` undone`:''}"><span class="grow"><strong>${what}</strong><span class="change-text">${text}</span>${c.why?html`<small>${c.why}</small>`:''}<small class="change-when">${learnDay(new Date(c.at))}${c.undone?' · Undone':''}</small></span>${c.undone?'':html`<span class="learn-acts"><button type="button" class="quiet" data-learn-undo="${c.id}" aria-label="Undo: ${what}">Undo</button></span>`}</div>`}
-// A fact's sort and end day, quietly under it: "Temporary · Until Nov 14". A plain fact without an end shows nothing.
-const FACT_SORT={event:'Temporary',commitment:'Commitment',preference:'Preference'};
-const factUntil=d=>localeDate(new Date(d+'T12:00:00'),DL,{day:'numeric',month:'short',...(d.slice(0,4)!==String(new Date().getFullYear())?{year:'numeric'}:{})});
-function factMeta(f){const bits=[FACT_SORT[f.fact_kind]?t(FACT_SORT[f.fact_kind]):'',f.valid_until?t('Until {}',factUntil(f.valid_until)):'',String(f.source||'').startsWith('ai:')?t('AI: {}',f.source.slice(3)):''].filter(Boolean);return bits.length?html`<small class="fact-meta">${bits.join(' · ')}</small>`:''}
 const learnTeamWaiting=()=>{const tl=state?.team_learnings;return (tl?.ask?1:0)+(tl?.vote_mode==='ask'?(tl.votes_waiting||[]).length:0)};
 function learnHas(id){const s=state||{};
  return id==='going'||id==='learned'&&!!((s.voices||[]).length||(s.facts||[]).length||(s.facts_ended||[]).length||(s.moved||[]).length)||id==='changes'&&!!(s.learning_changes||[]).length
@@ -81,3 +77,6 @@ $('#facts').addEventListener('input',e=>{if(e.target.closest('[data-fact-edit]')
 $('#facts').addEventListener('keydown',e=>{if(e.key==='Escape'&&e.target.closest('[data-fact-edit]'))e.target.closest('form').querySelector('[data-edit-cancel]').click()});
 $('#facts').addEventListener('submit',async e=>{const form=e.target.closest('[data-fact-edit]');if(!form)return;e.preventDefault();const id=Number(form.dataset.factEdit),text=form.text.value.trim(),save=form.querySelector('[type=submit]');save.disabled=true;
  try{await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'edit_fact',args:{id,text}})});const f=(state.facts||[]).find(x=>x.id===id);if(f)f.text=text;learnEdit=learnEditText=null;setHTML($('#facts'),learnedList());toast('Saved.');refresh()}catch(err){errCaught(err);save.disabled=false;toast(err.message,true)}});
+// Served as a part that loads when first needed (dashboard_parts.LAZY): a page drawn before it came draws Learning's
+// own parts now (render skipped them)
+if(drawnWhole)try{renderQuality();if(learnEdit==null)setHTML($('#facts'),learnedList());setHTML($('#learn-changes'),learnChanges());learnTabs()}catch(e){errCaught(e);console.error(e)}

@@ -41,3 +41,5 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-revi
 function limitNote(m){if(!m?.limit_reached)return '';return html`<p class="limit-note"><strong>${t(m.chatgpt?'ChatGPT limit reached':'Model limit reached')}</strong>${m.limit_resets_at?t(', resets at {}',clockAt(m.limit_resets_at)):''}${resetAction(m)?html` · ${resetAction(m)}`:''}</p>`}
 // A hosted Machine (it has an account): Report a bug (help-panel.js) and Support access (settings-activity.js) go through its account
 const bugHosted=()=>!!state.manage_url;
+// Help before its part is in (dashboard_parts.LAZY): it loads, then opens; help-panel.js sets its own click once there
+$('#open-help').onclick=()=>lazyRun('help',()=>helpOpen());

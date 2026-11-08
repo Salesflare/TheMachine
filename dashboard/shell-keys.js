@@ -26,12 +26,12 @@ function actRun(a,ctx){if(typeof drawerClose==='function')drawerClose();try{cons
 const kbNav=sel=>()=>{const el=$(sel);if(!el)return;if(chatId&&el.dataset.tab==='inbox'&&!$('#inbox').hidden){history.replaceState(null,'',location.pathname+location.search);chatPushed=false;openChatLink();scrollTo(0,0);return}el.click()};
 // The Calendar's own keys, while it is on show: t Today, k j the period before or after (← → too), a Agenda, w Week, m Month
 {const onCal=()=>!$('#calendar').hidden;actionAdd(
- {id:'cal-today',group:'Calendar',label:'Today',keywords:'calendar now this week',keys:'t',when:onCal,run:()=>calGo(0)},
- {id:'cal-prev',group:'Calendar',label:'Previous',keywords:'calendar earlier back',keys:'k',when:onCal,run:()=>calGo(-1)},
- {id:'cal-next',group:'Calendar',label:'Next',keywords:'calendar later on',keys:'j',when:onCal,run:()=>calGo(1)},
- {id:'cal-agenda',group:'Calendar',label:'Agenda',keywords:'calendar list',keys:'a',when:onCal,run:()=>calSetMode('agenda')},
- {id:'cal-week',group:'Calendar',label:'Week',keywords:'calendar grid',keys:'w',when:onCal,run:()=>calSetMode('week')},
- {id:'cal-month',group:'Calendar',label:'Month',keywords:'calendar grid',keys:'m',when:onCal,run:()=>calSetMode('month')})}
+ {id:'cal-today',group:'Calendar',label:'Today',keywords:'calendar now this week',keys:'t',when:onCal,run:()=>lazyRun('calendar',()=>calGo(0))},
+ {id:'cal-prev',group:'Calendar',label:'Previous',keywords:'calendar earlier back',keys:'k',when:onCal,run:()=>lazyRun('calendar',()=>calGo(-1))},
+ {id:'cal-next',group:'Calendar',label:'Next',keywords:'calendar later on',keys:'j',when:onCal,run:()=>lazyRun('calendar',()=>calGo(1))},
+ {id:'cal-agenda',group:'Calendar',label:'Agenda',keywords:'calendar list',keys:'a',when:onCal,run:()=>lazyRun('calendar',()=>calSetMode('agenda'))},
+ {id:'cal-week',group:'Calendar',label:'Week',keywords:'calendar grid',keys:'w',when:onCal,run:()=>lazyRun('calendar',()=>calSetMode('week'))},
+ {id:'cal-month',group:'Calendar',label:'Month',keywords:'calendar grid',keys:'m',when:onCal,run:()=>lazyRun('calendar',()=>calSetMode('month'))})}
 actionAdd(
  {id:'go-todos',group:'Go to',label:'To-dos',keywords:'todos suggestions cards home inbox',keys:'g t',run:kbNav('nav [data-tab="inbox"]')},
  {id:'go-suggestions',group:'Go to',alias:true,keys:'g s',run:kbNav('nav [data-tab="inbox"]')},  // the old key, still working, not listed
@@ -51,7 +51,7 @@ actionAdd(
  // Projects as a board or a list, once there is a board; a new board from its editor (the page shows it only to the owner)
  {id:'go-projects-view',group:'Go to',each:()=>graphBoards.length?[['board','Board'],['list','List']].map(([v,t])=>({id:'go-projects-'+v,label:window.t(v==='board'?'Projects: board view':'Projects: list view'),keywords:'projects board list kanban stages',run:()=>{const go=()=>projectsViewSet(v);if(!$('#people').hidden&&graphShown==='projects'&&!graphNode)go();else{sideStore.set('projects-view',v);kbNav('.side-sub a[data-graph-sub="projects"]')()}}})):[]},
  {id:'board-new',group:'Actions',label:'New board',keywords:'projects board stages kanban',when:()=>!$('#people').hidden&&graphShown==='projects'&&!!document.querySelector('#people-view [data-board-new]'),run:()=>edOpen()},
- {id:'event-new',group:'Actions',label:'New event',keywords:'event meeting calendar appointment add create invite',run:()=>calNew()},
+ {id:'event-new',group:'Actions',label:'New event',keywords:'event meeting calendar appointment add create invite',run:()=>lazyRun('calendar',()=>calNew())},
  {id:'project-new',group:'Actions',label:'New project',keywords:'project deal opportunity add create crm',run:()=>pjOpen()},
  {id:'person-new',group:'Actions',label:'New person',keywords:'person contact add create crm people',run:()=>recOpen('person')},
  {id:'org-new',group:'Actions',label:'New organization',keywords:'organisation organization company account add create crm',run:()=>recOpen('org')},
