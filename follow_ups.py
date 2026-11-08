@@ -1855,20 +1855,21 @@ def skill_note(fitting, room=None):
 SKILL_INDEX = 30  # other skills that are on, listed by name in a preparation's prompt, at most
 
 
-def prep_skill_note(fitting, others=(), room=None):
-    """The owner's skills for a preparation that isn't a follow-up: the ones that fit (fitting_skills) in full while
-    there is room, else their SKILL.md to read first; then the other skills that are on ({name, description, path}) as
-    a short index, so one for this kind of work is read and followed, judged by what it is for. '' for none."""
+def prep_skill_note(fitting, others=(), room=None, work='this to-do', doing='preparing'):
+    """The owner's skills for a preparation that isn't a follow-up (or a routine's run: work, doing): the ones that fit
+    (fitting_skills) in full while there is room, else their SKILL.md to read first; then the other skills that are on
+    ({name, description, path}) as a short index, so one for this kind of work is read and followed, judged by what it
+    is for. '' for none."""
     others = list(others)[:SKILL_INDEX]
     if not fitting and not others:
         return ''
-    head = ('\n\nThe owner\'s skills are their own way of doing a kind of work. Apply the one that fits this to-do without being asked: '
+    head = (f'\n\nThe owner\'s skills are their own way of doing a kind of work. Apply the one that fits {work} without being asked: '
             'its steps, sources, structure and rules outrank general defaults and the owner\'s recent messages. A "Guidance only" line in a '
             'skill is about permissions: it never allows sending, and this Machine\'s approvals still apply.')
     full = ''.join(f"\n\nSkill {k['name']} ({k['why']}; also in {k['path']}):\n<<<\n{str(k.get('body') or '').strip()}\n>>>" for k in fitting)
-    short = ''.join(f"\n- Skill {k['name']} ({k['why']}): read {k['path']} now, before preparing, and follow it." for k in fitting)
+    short = ''.join(f"\n- Skill {k['name']} ({k['why']}): read {k['path']} now, before {doing}, and follow it." for k in fitting)
     index = ('\n\nThe owner\'s other skills that are on. If one is for this kind of work (judged by what it is for, not shared words), '
-             'read its SKILL.md before preparing and follow it; if none is, ignore this list:\n'
+             f'read its SKILL.md before {doing} and follow it; if none is, ignore this list:\n'
              + '\n'.join(f"- {k['name']}: {' '.join(str(k.get('description') or '').split())[:160]} ({k['path']})" for k in others)) if others else ''
     for text in (head + full + index, head + short + index, head + short if fitting else ''):
         if text and (room is None or len(text) <= room):

@@ -22,15 +22,19 @@ import time
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
+import follow_ups
 import i18n
+from machine.config import WORKSPACE
 import recurring
 import routine_imports
 import routines
+import skills
 
 LOG = logging.getLogger('personal-assistant')
 RUN_SECONDS = 900  # the runner's own limit for a routine turn (preparation-run.mjs)
 JOBS_EVERY = 3600  # how often the OpenClaw jobs are read again when none is waiting to be sorted
 STOP_AFTER = RUN_SECONDS + 300  # past this, the run is stopped and didn't work
+SKILL_ROOM = 6000  # characters of the owner's skills in a routine's prompt: the ones that fit in full while they fit
 WAIT_AT_MOST = 12 * 3600  # a run that couldn't start in this long didn't work (the usage budget held it all day)
 SESSION = re.compile(r'^agent:main:assistant-review-routine-([a-f0-9]{32})$')
 # What a run's failure says on the page: a short reason from the runner's categories, never provider text.
@@ -227,7 +231,8 @@ class RoutinesApp:
             db.execute('BEGIN IMMEDIATE')
             mine = db.execute('SELECT t.*,r.trial FROM routine_runs r JOIN routines t ON t.id=r.routine_id WHERE r.id=?', (m.group(1),)).fetchone()
             if not mine or mine['state'] != 'sorting':
-                routines.report(db, m.group(1), text=args.get('text'), nothing=args.get('nothing') is True, why=args.get('why'), stamp=stamp)
+                routines.report(db, m.group(1), text=args.get('text'), nothing=args.get('nothing') is True, why=args.get('why'), stamp=stamp,
+                                used=self.routine_used(db, args.get('skills')))
                 if mine and args.get('name') and not mine['trial']:  # Try it never renames the routine it tries words for
                     routines.named(db, mine['id'], args.get('name'), stamp)
                 return {'saved': True, 'next': 'End your turn now with: Done.'}
@@ -274,6 +279,37 @@ class RoutinesApp:
             f'Write name, instructions and the result in {i18n.written_in()}.',
         ])
 
+    def routine_skills_on(self, db):
+        """The owner's skills that are on (name, slug, description, body), each with its SKILL.md: instructions only."""
+        if not db.execute("SELECT 1 FROM sqlite_master WHERE name='skills'").fetchone():
+            return []
+        root = Path(getattr(getattr(self, 'skills', None), 'workspace', None) or self.config.get('openclaw_workspace') or WORKSPACE) / 'skills' / skills.FOLDER
+        return [{**dict(r), 'path': str(root / r['slug'] / 'SKILL.md')}
+                for r in db.execute("SELECT name,slug,description,body FROM skills WHERE status='on' ORDER BY name")]
+
+    def routine_skill_lines(self, run):
+        """The owner's skills for a routine's run, picked as Do it picks them (machine/app/follow_ups.py
+        prep_skill_lines): one whose name its name or words match, in full while there is room; the others that are on as
+        a short index to judge by what they are for. Skills are instructions only (skills.py: no scripts), and a routine
+        still only reads: its session's tools never act (openclaw-plugin/review-recovery.ts). '' for none."""
+        with self.store.connect() as db:
+            on = self.routine_skills_on(db)
+        if not on:
+            return ''
+        words = run.get('trial') or run['instructions']
+        fitting = [{**k, 'why': 'it fits this routine'} for k in follow_ups.fitting_skills(on, [run['name']], words, words)]
+        picked = {k['slug'] for k in fitting}
+        note = follow_ups.prep_skill_note(fitting, [k for k in on if k['slug'] not in picked], SKILL_ROOM, 'this routine', 'reading')
+        return note and note.strip() + ('\nA skill only shapes what you read and how you write the result: it never makes a routine send, '
+                                        'post or change anything. When you followed one, pass skills: its name (a list) with routine_result.')
+
+    def routine_used(self, db, names):
+        """The skills a run says it followed, kept only when they are the owner's skills that are on (their names)."""
+        if not isinstance(names, list):
+            return []
+        on = {k['name'].casefold(): k['name'] for k in self.routine_skills_on(db)}
+        return list(dict.fromkeys(on[n.strip().casefold()] for n in names if isinstance(n, str) and n.strip().casefold() in on))[:5]
+
     def routine_prompt(self, run, last=None):
         accounts = [f"{a['id']} ({'work' if str(a.get('boundary') or '').startswith('work:') else 'personal'})"
                     for a in self.config.get('accounts', [])]
@@ -295,9 +331,10 @@ class RoutinesApp:
         if routines.needs_name(run) and not run.get('trial'):
             lines.append(f'Also pass name: a short name for this routine, at most {routines.SHORT_MAX} characters, like Weekly '
                          'standup' + (f'. Its name is "{run["name"]}": pass it again unless it no longer fits.' if run['name_check'] == '1' else '.'))
+        lines.append(self.routine_skill_lines(run))
         if last:
             lines.append(f'The last result ({last["started_at"][:10]}), so you can say what changed:\n{last["result"][:1500]}')
-        return '\n'.join(lines)
+        return '\n'.join(x for x in lines if x)
 
     def routine_job(self, origin):
         """The OpenClaw job a sorting row is for, read again (read-only), or None when it is gone or off."""

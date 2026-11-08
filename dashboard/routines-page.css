@@ -21,7 +21,7 @@
 .rt-ready{border-color:transparent;background:var(--c-accent);color:var(--c-accent-ink)}
 .rt-failed{border-color:transparent;background:color-mix(in srgb,var(--c-orange) 16%,transparent);color:var(--c-orange)}
 .rt-result{line-height:1.5;overflow-wrap:anywhere}.rt-result>:first-child{margin-top:0}.rt-result>:last-child{margin-bottom:0}.rt-result p{margin:0 0 .5em}.rt-result :is(ul,ol){margin:0 0 .5em;padding-left:1.25em}.rt-result li+li{margin-top:2px}.rt-why{margin:12px 0 0;color:var(--c-text-2);font-size:var(--fs-sm)}.rt-run .rt-why{margin:0}
-.rt-earlier{margin-top:8px}.rt-earlier summary{cursor:pointer;color:var(--c-text-3);font-size:var(--fs-sm)}
+.rt-used{margin:6px 0 0;color:var(--c-text-3);font-size:var(--fs-sm)}.rt-earlier{margin-top:8px}.rt-earlier summary{cursor:pointer;color:var(--c-text-3);font-size:var(--fs-sm)}
 .rt .actions{display:flex;align-items:center;gap:2px;margin:8px 0 -6px -10px}.rt .actions .ghost{padding-inline:10px}
 /* ⋯: the to-do menu (todos-send.css) */
 .rt .actions button{flex:0 0 auto}.rt .more-actions{position:relative;margin-left:auto}.rt .more-actions>summary{justify-content:center;min-width:40px;min-height:40px;border-radius:var(--r-sm);color:var(--c-text-3)}

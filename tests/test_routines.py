@@ -304,6 +304,36 @@ class Runs(unittest.TestCase):
         mine = self.app.routines_view()['routines'][0]
         self.assertEqual((mine['runs'][0]['result'], mine['test']), ('Call the first one.', None))
 
+    def test_a_run_follows_the_owners_skills_that_fit_and_says_which(self):
+        import skills
+        with self.store.connect() as db:
+            skills.ensure(db)
+            for slug, name, desc, body, status in (
+                    ('team-standup', 'Team standup', 'How I sum up the standup', 'One line per person: shipped, next, blocked.', 'on'),
+                    ('blog-voice', 'Blog voice', 'How posts for the team blog sound', 'Short, playful, no jargon.', 'on'),
+                    ('old-way', 'Old standup way', 'Not used now', 'Long paragraphs.', 'off')):
+                db.execute("INSERT INTO skills(id,slug,name,description,body,status,origin,sha,created_at,updated_at) "
+                           "VALUES(?,?,?,?,?,?,'mine','x','s','s')", (slug, slug, name, desc, body, status))
+        rid = self.make('every Monday at 9, sum up the team standup from the chat')
+        self.act('routine_run_now', id=rid); self.app.routines_step()
+        start = [s for s in self.sent if s['action'] == 'start'][-1]['message']
+        self.assertIn('Skill Team standup (it fits this routine', start)
+        self.assertIn('One line per person', start)  # the one that fits, in full
+        self.assertIn('- Blog voice: How posts for the team blog sound', start)  # another only by name and what it is for
+        self.assertNotIn('Short, playful', start)
+        self.assertNotIn('Old standup way', start)  # off: never offered
+        self.assertIn('never makes a routine send', start)
+        self.report('**Avery**: shipped the export.', skills=['team standup', 'Old standup way', 'Made up'])
+        run = self.app.routines_view()['routines'][0]['runs'][0]
+        self.assertEqual(run['used'], ['Team standup'])  # only skills that are on, by their own name
+
+    def test_without_skills_the_prompt_says_nothing_of_them(self):
+        rid = self.make()
+        self.act('routine_run_now', id=rid); self.app.routines_step()
+        self.assertNotIn('skill', [s for s in self.sent if s['action'] == 'start'][-1]['message'].lower())
+        self.report('ok')
+        self.assertEqual(self.app.routines_view()['routines'][0]['runs'][0]['used'], [])
+
     def test_a_weekdays_routine_never_starts_on_a_weekend(self):
         self.now = T(2026, 11, 7, 6)  # a Saturday
         with self.store.connect() as db:

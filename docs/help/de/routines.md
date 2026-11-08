@@ -21,6 +21,8 @@ Zu ihrer Zeit liest deine Machine, was sie braucht, etwa deine Nachrichten, Term
 
 Routinen lesen nur. Sie senden, antworten, posten oder ändern nichts.
 
+Ein Lauf kann deinen eingeschalteten [Skills](skills.md) folgen, ausgewählt nach dem, was die Routine tut: Nur die passenden werden ganz gelesen. Das Ergebnis nennt sie unter **Verwendet:**. Ein Skill bringt eine Routine nie dazu, etwas zu senden oder zu ändern.
+
 Deine Routinen stehen unter **Deine Routinen**, unter den Vorschlägen. Ein langes Ergebnis ist auf eine kurze Vorschau eingeklappt; **Mehr anzeigen** öffnet es.
 
 Jeder Lauf kennt das letzte Ergebnis und kann so sagen, was sich seitdem geändert hat.
