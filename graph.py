@@ -723,7 +723,7 @@ def slack_ids_in(text):
 def slack_title(channel_name, text, names):
     """A Slack message's title: "#channel: first line", a direct message as "#DM <their name>: first line", mentions
     ("<@U02AB3CD4>") as "@name". A member no name is known for yet is "someone on Slack", never an id or a blank: the
-    title is written again once their name is known (assistant.name_slack_titles)."""
+    title is written again once their name is known (Store.name_slack_titles)."""
     channel_name = str(channel_name or '')
     partner = slack_dm_user({'channel_name': channel_name})
     head = '#DM ' + (names.get(partner) or SOMEONE_ON_SLACK) if partner else '#' + channel_name

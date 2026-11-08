@@ -5,6 +5,7 @@ what is written here. Moved out of assistant.py as is."""
 import collections
 import datetime as dt
 import hashlib
+import html
 import json
 import os
 import re
@@ -551,3 +552,28 @@ class EventsStore:
                 row['orgs'] = [{'node_id': k, 'name': str(v)[:80]} for k, v in orgs.items()][:6]
             if projects:
                 row['projects'] = [{'node_id': k, 'name': str(v)[:80]} for k, v in projects.items()][:6]
+
+    def name_slack_titles(self, account_id, ids=None):
+        """Writes stored Slack titles again with people's names in place of member ids ("#DM U02AB3CD4: hi" becomes
+        "#DM Sam Lee: hi"): all of them, or those of the messages with these members (a name just learned). The content
+        hash stays (slack_raw_title): no message looks new or edited for it."""
+        changed = 0
+        with self.connect() as db:
+            rows = db.execute("SELECT id,title,body,metadata FROM events WHERE kind='slack.message' AND account_id=? AND deleted=0", (account_id,)).fetchall()
+            found = []
+            for r in rows:
+                m = json.loads(r['metadata'] or '{}')
+                on = set(graph.slack_members_on(m)) | {x[0] for x in graph.SLACK_MENTION.findall(str(r['body'] or ''))}
+                if ids is not None and not on & set(ids):
+                    continue
+                if not graph.slack_title_unnamed(r['title']):
+                    continue
+                found.append((r, m, on))
+            names = graph.slack_names(db, {u for _, _, on in found for u in on})
+            seal = self.sealer.seal if self.protected else (lambda value: value)
+            for r, m, _ in found:
+                title = graph.slack_title(m.get('channel_name'), html.unescape(str(r['body'] or '')), names)
+                if title != r['title']:
+                    db.execute('UPDATE events SET title=? WHERE id=?', (seal(title), r['id']))
+                    changed += 1
+        return changed

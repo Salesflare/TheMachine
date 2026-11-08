@@ -70,8 +70,34 @@ class SlackNames(unittest.TestCase):
         self.assertEqual(self.titles()['D0ROBIN001:1.000100'], ('#DM Robin Example-Smith: Can you send it?', 1))
         unnamed = a.slack_event(ACCOUNT, DM, raw('2.000100', 'And the other one'), {})
         self.store.commit_page('slack', {}, [unnamed])
-        self.assertEqual(a.name_slack_titles(self.store, 'slack'), 1)
+        self.assertEqual(self.store.name_slack_titles('slack'), 1)
         self.assertEqual(self.titles()['D0ROBIN001:2.000100'], ('#DM Robin Example-Smith: And the other one', 1))
+
+    def test_naming_titles_writes_the_same_rows_title_only(self):
+        # Store.name_slack_titles: only unnamed titles of this account change, and only their title
+        source = FakeSlack({'U0ROBIN001': {'id': 'U0ROBIN001', 'team_id': 'T0ACME0001', 'profile': {'real_name': 'Robin Example-Smith'}}})
+        first = a.slack_event(ACCOUNT, DM, raw('1.000100', 'Hello'), {})
+        self.store.commit_page('slack', {}, [first])
+        a.remember_slack_names(self.store, source, [first], [DM])
+        unnamed = a.slack_event(ACCOUNT, DM, raw('2.000100', 'Unnamed'), {})
+        self.store.commit_page('slack', {}, [unnamed])
+        elsewhere = dict(a.slack_event(ACCOUNT, DM, raw('3.000100', 'Elsewhere'), {}), account_id='slack-2')
+        self.store.commit_page('slack-2', {}, [elsewhere])
+
+        def rows():
+            with self.store.connect() as db:
+                return {(r['account_id'], r['source_id']): dict(r) for r in db.execute(
+                    'SELECT account_id,source_id,title,body,metadata,content_hash,version,deleted FROM events')}
+        before = rows()
+        self.assertEqual(self.store.name_slack_titles('slack', ids=['U0NOBODY01']), 0)  # nobody of these on them
+        self.assertEqual(rows(), before)
+        self.assertEqual(self.store.name_slack_titles('slack'), 1)
+        after = rows()
+        changed = {key for key in before if before[key] != after[key]}
+        self.assertEqual(changed, {('slack', 'D0ROBIN001:2.000100')})
+        key = ('slack', 'D0ROBIN001:2.000100')
+        self.assertEqual(after[key]['title'], '#DM Robin Example-Smith: Unnamed')
+        self.assertEqual({k: v for k, v in after[key].items() if k != 'title'}, {k: v for k, v in before[key].items() if k != 'title'})
 
     def test_who_is_outside_the_company_slack_comes_from_slack(self):
         source = FakeSlack({'U0ROBIN001': {'id': 'U0ROBIN001', 'team_id': 'T0ACME0001', 'profile': {'real_name': 'Robin'}},
