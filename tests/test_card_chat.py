@@ -81,9 +81,8 @@ class CardChat(unittest.TestCase):
         self.assertEqual(steps['count'], 27)
         self.assertEqual(steps['steps'], [{'line': ['Used the browser on {}', 'shop.example.com'], 'n': 11},
                                           {'line': ['Ran a command'], 'n': 11}, {'line': ['Checked open to-dos'], 'n': 1},
-                                          {'line': ['Checked the assistant'], 'n': 1}, {'line': ['Used the browser'], 'n': 1},
-                                          {'line': ['Read a web page'], 'n': 1},
-                                          {'line': ['Worked on it'], 'n': 1}])
+                                          {'line': ['Looked things up in The Machine'], 'n': 1}, {'line': ['Used the browser'], 'n': 1},
+                                          {'line': ['Read a web page'], 'n': 1}])  # the mystery tool counts, without a row
         text = json.dumps(items)
         for hidden in ('curl', 'Bearer', 'order=', 'token', '/letters', '127.0.0.1', '/home/', 'private words', 'search words'):
             self.assertNotIn(hidden, text)

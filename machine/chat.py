@@ -318,14 +318,17 @@ def chat_text_phase(part):
 
 # A run's steps in its chat, said as done, in plain words, one line per kind with how many times ("Used the browser on
 # example.com · 11"): the tool, the site a browser or web page step was on (its host name only, never the address,
-# its path or its query) and what the assistant's own lookups looked up. Never a command, its arguments, search words
-# or a file. Each line is a catalog sentence with its slot, so the dashboard says it in the owner's language.
+# its path or its query) and what its lookups in The Machine looked up. Never a command, its arguments, search words
+# or a file. Each line is a catalog sentence with its slot, so the dashboard says it in the owner's language. A step
+# with nothing specific to say (a tool not named here) counts, but has no row.
 CHAT_STEP_LINES = {'exec': 'Ran a command', 'browser': 'Used the browser', 'read': 'Read a file', 'write': 'Wrote notes',
                    'edit': 'Wrote notes', 'web_search': 'Searched the web', 'web_fetch': 'Read a web page',
-                   'assistant_signals': 'Checked the assistant', 'memory_search': 'Searched memory'}
+                   'assistant_signals': 'Looked things up in The Machine', 'memory_search': 'Searched memory'}
 CHAT_STEP_SITES = {'browser': 'Used the browser on {}', 'web_fetch': 'Read a page on {}'}
 CHAT_STEP_ACTIONS = {'events': 'Searched messages', 'graph': 'Looked up people', 'status': 'Checked open to-dos',
-                     'preparation_history': 'Read earlier work on this to-do'}
+                     'preparation_history': 'Read earlier work on this to-do', 'related': 'Looked for related to-dos',
+                     'promise': 'Noted a promise', 'remember_fact': 'Remembered something about you',
+                     'prepare': 'Saved its work on this to-do'}
 CHAT_STEP_GROUPS = 20  # lines a run's steps fold into at most (the most frequent); its count still says them all
 
 
@@ -348,7 +351,7 @@ def chat_step_site(arguments):
 
 def chat_step(name, arguments, sites):
     """One step as the chat says it: the agent's own title for it (redacted), else its line ({'line': [sentence,
-    slot]}). A browser step without an address is on the site its tab (or the last tab) was last opened on (`sites`)."""
+    slot]}), or None when there is nothing specific to say. A browser step without an address is on the site its tab (or the last tab) was last opened on (`sites`)."""
     title = arguments.get('title') if isinstance(arguments.get('title'), str) else ''
     title = chat_text(title, step=True, chars=120)
     if title:
@@ -366,7 +369,7 @@ def chat_step(name, arguments, sites):
     action = arguments.get('action') if name == 'assistant_signals' else None
     if isinstance(action, str) and action in CHAT_STEP_ACTIONS:
         return {'line': [CHAT_STEP_ACTIONS[action]]}
-    return {'line': [CHAT_STEP_LINES.get(name, 'Worked on it')]}
+    return {'line': [CHAT_STEP_LINES[name]]} if name in CHAT_STEP_LINES else None
 
 
 def chat_steps_item(run):
@@ -463,12 +466,13 @@ def chat_items(messages, owner, results=None):
             if part.get('type') == 'toolCall':
                 arguments = part.get('arguments') if isinstance(part.get('arguments'), dict) else {}
                 step = chat_step(part.get('name'), arguments, run['sites'])
-                found = run['step_keys'].get(json.dumps(step))
-                if found is None:
-                    found = run['step_keys'][json.dumps(step)] = {**step, 'n': 0}
-                    run['steps'].append(found)
-                found['n'] += 1
                 run['step_count'] += 1
+                if step is not None:
+                    found = run['step_keys'].get(json.dumps(step))
+                    if found is None:
+                        found = run['step_keys'][json.dumps(step)] = {**step, 'n': 0}
+                        run['steps'].append(found)
+                    found['n'] += 1
                 run['at'] = run['at'] or at
             elif part.get('type') == 'text' and str(part.get('text') or '').strip():
                 text, noted = chat_reply(chat_text(part['text']))

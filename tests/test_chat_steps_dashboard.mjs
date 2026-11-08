@@ -8,7 +8,8 @@ const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modul
 // A run's steps in a to-do's chat ("Checked 30 things", unfolded): each kind of step is one row with how many times,
 // never 30 rows of "Using the browser" / "Running a command", and nothing in the list is cut off at the left edge
 // on a phone (numbers from 10 on lost their first digit). A list from an older Machine (plain titles, one per step)
-// folds the same way; one from this Machine says its rows in the owner's language, with the site a browser step was on.
+// folds the same way, in the same words (its vague "Working" has no row). This Machine's says how many steps the run
+// took in all (more than the 30 an older Machine kept), its rows in the owner's language, with the site a browser step was on.
 // SHOTS=<folder> saves screenshots.
 const dashboard=await dashboardPage(process.env.DASHBOARD);
 const ID='e1e1e1e1e1e1e1e1',t0=Date.now()-3600000;
@@ -19,7 +20,7 @@ const items=()=>[{kind:'you',text:'Can you order the New Year letters?',at:t0},
  {kind:'steps',steps:older,at:t0+1000},
  {kind:'reply',text:'Found the order page. The letters are in the cart.',at:t0+2000},
  {kind:'you',text:'Go ahead',at:t0+3000},
- {kind:'steps',count:30,steps:[{line:['Used the browser on {}','shop.example.com'],n:15},{line:['Ran a command'],n:12},{line:['Checked open to-dos'],n:2},{text:'Checking the order total',n:1}],at:t0+4000},
+ {kind:'steps',count:58,steps:[{line:['Used the browser on {}','shop.example.com'],n:30},{line:['Ran a command'],n:20},{line:['Looked things up in The Machine'],n:5},{line:['Checked open to-dos'],n:2}],at:t0+4000},
  {kind:'reply',text:'Ordered.',at:t0+5000}];
 let language='en';
 const card={id:ID,title:'Order the New Year letters before Friday',body:'The shop closes orders Friday.',status:'prepared',scope:'personal',created_at:new Date(t0).toISOString(),event_ids:[1]};
@@ -54,13 +55,13 @@ try{
   const folds=page.locator('#chat-log .chat-steps');await folds.first().waitFor();
   assert.equal(await folds.count(),2);
   for(let n=0;n<2;n++){await folds.nth(n).locator('summary').click();await page.waitForFunction(n=>document.querySelectorAll('#chat-log .chat-steps')[n]?.open,n)}
-  assert.deepEqual(await folds.locator('summary').allInnerTexts(),['Checked 30 things','Checked 30 things']);
+  assert.deepEqual(await folds.locator('summary').allInnerTexts(),['Checked 30 things','Checked 58 things']);
   // The older list: one row per kind, with how many times
   const old=await rows(folds.nth(0));
-  assert.deepEqual(old.map(r=>r.text),['Using the browser · 11','Running a command · 14','Checking the assistant · 4','Working'],'runs fold into one row each');
+  assert.deepEqual(old.map(r=>r.text),['Used the browser · 11','Ran a command · 14','Looked things up in The Machine · 4'],'runs fold into one row each, said as now, no Working row');
   // This Machine's list: in plain words, with the site
   const now=await rows(folds.nth(1));
-  assert.deepEqual(now.map(r=>r.text),['Used the browser on shop.example.com · 15','Ran a command · 12','Checked open to-dos · 2','Checking the order total']);
+  assert.deepEqual(now.map(r=>r.text),['Used the browser on shop.example.com · 30','Ran a command · 20','Looked things up in The Machine · 5','Checked open to-dos · 2']);
   // Nothing cut off: every row and its marker (if it has one) inside the chat, and the marker fits its room
   for(const r of [...old,...now]){
    assert.ok(r.left>=r.logLeft-0.5,`"${r.text}" starts inside the chat at ${width}: ${r.left} < ${r.logLeft}`);
@@ -76,9 +77,9 @@ try{
  {language='nl';const context=await browser.newContext({viewport:{width:390,height:844},locale:'nl-BE'}),page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
   await page.goto(base+'/#chat='+ID);await page.waitForFunction(()=>document.documentElement.lang==='nl');const fold=page.locator('#chat-log .chat-steps').nth(1);await fold.waitFor();await fold.locator('summary').click();
   const got=(await rows(fold)).map(r=>r.text);
-  assert.equal(got[0],'Gebruikte de browser op shop.example.com · 15');
-  assert.equal(got[1],'Voerde een opdracht uit · 12');
-  assert.equal(await fold.locator('summary').innerText(),'30 dingen nagekeken');
+  assert.equal(got[0],'Gebruikte de browser op shop.example.com · 30');
+  assert.equal(got[1],'Voerde een opdracht uit · 20');
+  assert.equal(await fold.locator('summary').innerText(),'58 dingen nagekeken');
   await context.close()}
  assert.deepEqual(errors,[]);
  console.log('chat steps dashboard ok');
