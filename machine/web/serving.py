@@ -188,19 +188,37 @@ def etag_matches(if_none_match, etag):
 
 def dashboard_status(status):
     """api/status as the dashboard needs it: without what it never reads. A finished review's signal list (only its
-    count shows, and checked_count has it), its session names, a card's dedupe key and saved pre-close state, and a
-    delivery's message bookkeeping. The status action itself (CLI, plugin) keeps everything; copies, never its rows."""
+    count shows, and checked_count has it), its session names, a card's dedupe key and saved pre-close state, a
+    delivery's message bookkeeping (its row shows status, to-do, time and error), a card's next_action when next_actions
+    has it (the page reads next_actions first), and of a connector's sync state (a Slack one is tens of KB of cursors)
+    all but what Connections reads. The status action itself (CLI, plugin) keeps everything; copies, never its rows."""
     def without(rows, keys, when=lambda row: True):
         return [{k: v for k, v in row.items() if k not in keys} if isinstance(row, dict) and when(row) else row for row in rows or []]
     status, drop = dict(status), {'analyses': {'owner_session', 'owner_run'}, 'suggestions': {'dedupe_key', 'closed_state'},
                                   'deliveries': {'previous_message_ids', 'notification_message_id', 'last_notified_at',
-                                                 'edit_retry_at', 'edit_failures'}}
+                                                 'edit_retry_at', 'edit_failures', 'message_id', 'send_kind', 'reminder'}}
     for name, keys in drop.items():
         if isinstance(status.get(name), list):
             status[name] = without(status[name], keys)
     if isinstance(status.get('analyses'), list):
         status['analyses'] = without(status['analyses'], {'items'}, lambda r: r.get('status') == 'complete' and r.get('checked_count') is not None)
+    if isinstance(status.get('suggestions'), list):
+        status['suggestions'] = without(status['suggestions'], {'next_action'}, lambda r: 'next_actions' in r)
+    if isinstance(status.get('connectors'), list):
+        status['connectors'] = [{**c, 'state': sync_state_shown(c['state'])} if isinstance(c, dict) and c.get('state') else c for c in status['connectors']]
     return status
+
+
+SYNC_STATE_SHOWN = ('mode', 'resync_reason', 'watermark', 'transport', 'reconciliation_error')  # connections-cards.js syncPlain, phone
+
+
+def sync_state_shown(state):
+    """A connector's sync state (checkpoints.state, JSON text) with only the keys the Connections page reads."""
+    try:
+        state = json.loads(state) if isinstance(state, str) else state
+    except ValueError:
+        return '{}'
+    return json.dumps({k: state[k] for k in SYNC_STATE_SHOWN if k in state} if isinstance(state, dict) else {}, separators=(',', ':'))
 
 
 def dashboard_base(config, host):
