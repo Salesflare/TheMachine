@@ -231,6 +231,79 @@ class Runs(unittest.TestCase):
         self.act('routine_edit', id=rid, words='Sum up my open deals')
         self.assertEqual(self.app.routines_view()['routines'][0]['name'], 'Deals')
 
+    def tables(self):
+        """Every row outside the routines' own tables: a test run must leave them as they were."""
+        with self.store.connect() as db:
+            names = [r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'routine%' "
+                                               "AND name NOT LIKE 'sqlite_%'")]
+            return {n: [tuple(r) for r in db.execute(f'SELECT * FROM "{n}"')] for n in names}
+
+    def report(self, text, **more):
+        self.app.action('routine_result', {'_routine_session': SESSION + self.runs()[-1]['id'], 'text': text, **more}, owner_dashboard=False)
+        self.answer['status'] = {'status': 'ok'}; self.app.routines_step(); del self.answer['status']
+
+    def test_a_new_routine_is_tried_first_and_kept_only_on_add(self):
+        before = self.tables()
+        rid = self.act('routine_try', words='every Monday at 9, sum up last week\'s team standup from the chat')['made']
+        view = self.app.routines_view()
+        self.assertEqual(view['routines'], [])  # not kept, not scheduled
+        self.assertEqual((view['trying'][0]['id'], view['trying'][0]['test']['state'], view['trying'][0]['next_due']), (rid, 'running', None))
+        with self.assertRaisesRegex(ValueError, 'running already'):  # one run per press
+            self.act('routine_try', id=rid, words='Sum up the standup')
+        self.app.routines_step()
+        start = [s for s in self.sent if s['action'] == 'start']
+        self.assertEqual(len(start), 1)  # the owner pressed it: no wait for the next date
+        self.assertEqual(start[0]['kind'], 'routine')  # the plugin's read-only routine session (test_review_hooks.mjs)
+        self.assertIn('This is a test run', start[0]['message'])
+        self.report('**3 blockers** this week.', name='Team standup')
+        # dry: nothing outside the routine's own rows changed, and the Gateway only started it and asked how it went
+        self.assertEqual(self.tables(), before)
+        self.assertLessEqual({s['action'] for s in self.sent}, {'start', 'status'})
+        trying = self.app.routines_view()['trying'][0]
+        self.assertEqual((trying['name'], trying['test']['result'], trying['runs']), ('Team standup', '**3 blockers** this week.', []))
+        self.act('routine_accept', id=rid)
+        view = self.app.routines_view()
+        self.assertEqual(view['trying'], [])
+        mine = view['routines'][0]
+        self.assertEqual((mine['state'], mine['next_due'], mine['test']), ('on', '2026-11-09', None))
+        self.assertEqual(mine['runs'][0]['result'], '**3 blockers** this week.')  # Add keeps what it showed
+
+    def test_cancel_drops_a_new_one_and_another_try_replaces_it(self):
+        first = self.act('routine_try', words='every day at 7, tell me what changed in my deals')['made']
+        second = self.act('routine_try', words='every Friday, sum up my week')['made']
+        self.assertEqual([r['id'] for r in self.app.routines_view()['trying']], [second])  # one at a time
+        self.act('routine_state', id=second, to='stop')
+        self.assertEqual(self.app.routines_view()['trying'], [])
+        self.assertEqual(self.runs(), [])
+        with self.assertRaises(ValueError):
+            self.act('routine_accept', id=first)
+
+    def test_try_it_shows_new_words_without_changing_the_routine(self):
+        rid = self.make('every Monday at 9, sum up my open deals')
+        self.act('routine_run_now', id=rid); self.app.routines_step(); self.report('2 open deals.', name='Open deals')
+        before = self.tables()
+        self.act('routine_try', id=rid, words='Sum up my open deals and who to call first')
+        self.app.routines_step()
+        start = [s for s in self.sent if s['action'] == 'start'][-1]['message']
+        self.assertIn('who to call first', start)
+        self.assertNotIn('Also pass name', start)
+        self.assertIn('The last result', start)  # what changed since the kept result
+        self.report('Call the first one.', name='Something else')
+        self.assertEqual(self.tables(), before)
+        mine = self.app.routines_view()['routines'][0]
+        self.assertEqual((mine['name'], mine['version'] if 'version' in mine else 1, mine['runs'][0]['result']), ('Open deals', 1, '2 open deals.'))
+        self.assertNotIn('call first', mine['instructions'])
+        self.assertEqual((mine['test']['result'], mine['test']['trial']), ('Call the first one.', 'Sum up my open deals and who to call first'))
+        with self.store.connect() as db:
+            self.assertEqual(rt.last_result(db, rid)['result'], '2 open deals.')  # never the next run's "last time"
+        self.act('routine_edit', id=rid, words='Sum up my open deals and who to call first')
+        mine = self.app.routines_view()['routines'][0]
+        self.assertEqual((mine['instructions'], mine['runs'][0]['result'], mine['test']), ('Sum up my open deals and who to call first', 'Call the first one.', None))
+        self.act('routine_try', id=rid, words='Something else entirely'); self.app.routines_step(); self.report('x')
+        self.act('routine_edit', id=rid, words='Sum up my open deals, briefly')  # saved other words: that try goes
+        mine = self.app.routines_view()['routines'][0]
+        self.assertEqual((mine['runs'][0]['result'], mine['test']), ('Call the first one.', None))
+
     def test_a_weekdays_routine_never_starts_on_a_weekend(self):
         self.now = T(2026, 11, 7, 6)  # a Saturday
         with self.store.connect() as db:

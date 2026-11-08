@@ -7,20 +7,25 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // The Routines page (dashboard/routines-page.js): one short line when there are none, Run now in sight and the rest in the
 // ⋯ menu, Stop only on a second tap (the menu stays open for it), and a result that is text, never markup. A suggestion
 // from an old OpenClaw job shows its preview, folded, with Add and No thanks; Turn off the old job? asks before anything happens.
+// A new one is tried first (a test run, nothing sent or kept): its result shows when it is ready, then Add, Change or Cancel.
 const dashboard=await dashboardPage();
 const now=new Date().toISOString(),posts=[],ID='c3'.repeat(16);
 const routine=()=>({id:ID,name:'Sum up my deals',instructions:'Sum up my deals',rule:{unit:'week',n:1},anchor:'2026-11-09',at:'09:00',state:'on',next_due:'2026-11-16',
  runs:[{id:'r1',state:'ready',started_at:now,result:'**Fernwave** asked <img src=x onerror="window.__xss=1">\n- week of 2026-11-02'}]});
 const SID='d4'.repeat(16),suggestion=()=>({...routine(),id:SID,name:'Failed payments',instructions:'List customers whose payment failed',state:'suggested',next_due:null,
  runs:[{id:'r2',state:'ready',started_at:now,result:'**Halyard**: card declined'}]});
-let list=[],suggested=[];
+const TID='e5'.repeat(16),tryOne=words=>({...routine(),id:TID,name:words,instructions:words,state:'trying',next_due:null,runs:[],test:{id:'t1',state:'running',started_at:now}});
+let list=[],suggested=[],trying=[];
+const all=()=>JSON.stringify({routines:list,suggested,trying});
 const state=()=>({suggestions:[],promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},connectors:[],fleet:{on:true,fleets:[]},
  locale:{locale:'en-US',region:'US',language:'en',language_set:true,clock:'auto',hour12:true,auto_hour12:true,date_locale:'en-US',languages:{en:'English'},saveable:true}});
 const server=createServer(async(req,res)=>{let body='';for await(const c of req)body+=c;const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(url.pathname==='/api/status'){res.end(JSON.stringify(state()));return}
- if(url.pathname==='/api/routines'){res.end(JSON.stringify({routines:list,suggested}));return}
+ if(url.pathname==='/api/routines'){res.end(all());return}
  if(req.method==='POST'&&body){const b=JSON.parse(body);posts.push({action:b.action,...b.args});
+  if(b.action==='routine_try'){if(b.args.id===ID)list=list.map(r=>({...r,test:{id:'t2',state:'ready',started_at:now,trial:b.args.words,result:'**Tried** it'}}));else trying=[tryOne(b.args.words)];res.end(all());return}
+  if(b.action==='routine_state'&&b.args.id===TID){trying=[];res.end(all());return}
   if(b.action==='routine_accept'){list=[...list,{...suggestion(),state:'on'}];suggested=[];res.end(JSON.stringify({routines:list,suggested}));return}
   if(b.action==='routine_old_job'){list=list.map(r=>({...r,old_job:false}));res.end(JSON.stringify({routines:list,suggested}));return}
   if(b.action==='routine_state'&&b.args.id===SID){suggested=[];res.end(JSON.stringify({routines:list,suggested}));return}
@@ -32,7 +37,7 @@ const sent=name=>posts.filter(p=>p.action===name);
 try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
  for(const width of [1100,390]){
-  posts.length=0;list=[];suggested=[];
+  posts.length=0;list=[];suggested=[];trying=[];
   const context=await browser.newContext({viewport:{width,height:900},timezoneId:'Europe/Brussels'});
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
@@ -49,10 +54,26 @@ try{
   assert.ok(tall<one*7&&await words.evaluate(x=>x.scrollHeight>x.clientHeight),`it stops at about six lines and scrolls (${tall})`);
   const add=await page.locator('.rt-new>button').boundingBox(),box=await words.boundingBox();
   if(width<600)assert.ok(add.y>=box.y+box.height,'Add under the box on a phone');else assert.ok(add.x>=box.x+box.width,'Add beside it');
-  // Shift+Enter is a new line; Enter adds (the whole text, then the box empties)
-  await words.fill('Sum up my deals');await words.press('Shift+Enter');assert.equal(await words.inputValue(),'Sum up my deals\n');assert.equal(sent('routine_new').length,0);
+  // Shift+Enter is a new line; Enter tries it (the whole text, then the box empties)
+  await words.fill('Sum up my deals');await words.press('Shift+Enter');assert.equal(await words.inputValue(),'Sum up my deals\n');assert.equal(sent('routine_try').length,0);
   await words.press('Enter');await page.waitForFunction(()=>!document.querySelector('#rt-words').value);
-  assert.deepEqual(sent('routine_new'),[{action:'routine_new',words:'Sum up my deals'}]);assert.equal((await words.boundingBox()).height,one);
+  assert.deepEqual(sent('routine_try'),[{action:'routine_try',words:'Sum up my deals'}]);assert.equal((await words.boundingBox()).height,one);
+  // Its test run first: running, then its result without a reload; not one of your routines until Add
+  const tc=page.locator(`.rt-try[data-rt="${TID}"]`);await tc.waitFor();
+  assert.match(await tc.locator('.rt-run-head').innerText(),/^Test run\s+Running…$/);
+  assert.deepEqual(await tc.locator('.actions>button').evaluateAll(n=>n.map(x=>x.textContent)),['Add','Change','Cancel']);
+  assert.equal((await page.locator('#routines-view .rt-empty').innerText()).trim(),'No routines yet');
+  trying=[{...trying[0],test:{...trying[0].test,state:'ready',result:'**3 deals** went quiet.'}}];
+  await tc.locator('.rt-result strong').waitFor({timeout:8000});
+  // Change: its words with Try it and Cancel (the card's buttons wait); Try it runs the new words once
+  await tc.locator('[data-rt-do="change"]').click();const cw=tc.locator('.rt-form textarea');
+  assert.equal(await cw.inputValue(),'Sum up my deals');assert.equal(await tc.locator('.actions').isVisible(),false);
+  assert.deepEqual(await tc.locator('.rt-form-acts>button').evaluateAll(n=>n.map(x=>x.textContent)),['Try it','Cancel']);
+  await cw.fill('Sum up my open deals');await cw.press('Enter');await tc.locator('.rt-form').waitFor({state:'detached'});
+  assert.deepEqual(sent('routine_try').at(-1),{action:'routine_try',id:TID,words:'Sum up my open deals'});
+  // Cancel: never kept
+  await tc.locator('[data-rt-do="no"]').click();await tc.waitFor({state:'detached'});
+  assert.deepEqual(sent('routine_state'),[{action:'routine_state',id:TID,to:'stop'}]);posts.length=0;
   list=[routine()];await page.evaluate(()=>routinesView(true));
   const card=page.locator(`[data-rt="${ID}"]`);await card.waitFor();
   // The result is text with bold, never markup
@@ -76,10 +97,19 @@ try{
   assert.equal(await card.locator('.rt-form').count(),0,'a click outside leaves it');
   await card.locator('.more-actions>summary').click();await card.locator('[data-rt-do="when"]').click();await when.fill('Every weekday at 8');await when.press('Enter');
   for(let i=0;i<60&&!sent('routine_when').length;i++)await page.waitForTimeout(50);
-  assert.deepEqual(sent('routine_when'),[{action:'routine_when',id:ID,words:'Every weekday at 8'}]);assert.equal(sent('routine_new').length,1);
+  assert.deepEqual(sent('routine_when'),[{action:'routine_when',id:ID,words:'Every weekday at 8'}]);assert.equal(sent('routine_try').length,0);
   // Edit: the routine's words in a growing box; Save sends them
   await card.locator('.more-actions>summary').click();await card.locator('[data-rt-do="edit"]').click();const edit=card.locator('.rt-form[data-rt-form="edit"] textarea');
-  assert.equal(await edit.inputValue(),'Sum up my deals');await edit.fill('Sum up my won deals');await card.locator('.rt-form .primary').click();
+  assert.equal(await edit.inputValue(),'Sum up my deals');await edit.fill('Sum up my won deals');
+  assert.deepEqual(await card.locator('.rt-form-acts>button').evaluateAll(n=>n.map(x=>x.textContent)),['Save','Try it','Cancel']);
+  // Try it: the new words' test run in the form, the routine as it was; the form and its words stay
+  await card.locator('[data-rt-try]').click();await card.locator('.rt-form .rt-result strong').waitFor();
+  assert.deepEqual(sent('routine_try'),[{action:'routine_try',id:ID,words:'Sum up my won deals'}]);
+  assert.match(await card.locator('.rt-form .rt-run-head').innerText(),/^Test run\s+Nothing sent or saved$/);
+  assert.equal(await card.locator('.rt-body').isVisible(),false,'the card\'s own result waits while Edit is open');
+  assert.equal(await card.locator('.rt-what').isVisible(),false,'its words show once, in the box');
+  assert.equal(await edit.inputValue(),'Sum up my won deals');
+  await card.locator('.rt-form .primary').click();
   for(let i=0;i<60&&!sent('routine_edit').length;i++)await page.waitForTimeout(50);
   assert.deepEqual(sent('routine_edit'),[{action:'routine_edit',id:ID,words:'Sum up my won deals'}]);
   await card.locator('.more-actions>summary').click();

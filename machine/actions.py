@@ -399,6 +399,7 @@ ROUTINE_ACTIONS = {
     'routine_old_job',
     'routine_run_now',
     'routine_state',
+    'routine_try',
     'routine_when',
 }
 OWNER_ACTIONS |= ROUTINE_ACTIONS
