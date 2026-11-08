@@ -3,15 +3,17 @@ effects and its Undo, and stopping runs that live on after they were canceled, r
 assistant.App as is. A mixin of assistant.App (APP_MIXINS)."""
 import datetime as dt
 import json
+import sqlite3
 import threading
 import time
 import uuid
 
 import activity_log
+import agent_jobs
 import calendar_writes
 import doc_writes
 import follow_ups
-from machine.cards import thread_return_time
+from machine.cards import ACTION_WORKING, PREPARATION_WORKING, thread_return_time
 from machine.config import LOG
 from machine.delivery.deliver import deliver
 from machine.delivery.push import app_clear_step
@@ -84,6 +86,23 @@ def settle_doc_write(store, db, suggestion_id, job_id, action, url=None):
     db.execute("UPDATE suggestions SET status='accepted',body=?,outcome=NULL,early=0,undo_until=NULL WHERE id=?", (body, suggestion_id))
     store.queue_preparation(db, suggestion_id, 'after:' + job_id)
     return True
+
+
+def active_work(db):
+    """Work a restart or an update would cut off: agent jobs that run, sends under way, confirmed steps being worked on
+    and preparations that started. Paused steps, blocked or queued preparations and finished work are not in it."""
+    found = {}
+    for name, sql, args in (
+            ('agent_jobs', 'SELECT id,suggestion_id,status FROM agent_jobs WHERE status IN (%s)', agent_jobs.ACTIVE),
+            ('action_jobs', 'SELECT id,suggestion_id,status FROM action_jobs WHERE status IN (%s)', ACTION_WORKING),
+            ('preparations', 'SELECT job_id id,suggestion_id,status FROM preparations WHERE status IN (%s)', PREPARATION_WORKING)):
+        try:
+            rows = db.execute(sql % ','.join('?' for _ in args), args).fetchall()
+        except sqlite3.OperationalError:  # a table this install doesn't have yet
+            rows = []
+        found[name] = [dict(zip(('id', 'suggestion_id', 'status'), tuple(r))) for r in rows]
+    found['agent_jobs'] = agent_jobs.working(db, found['agent_jobs'])  # nor jobs whose worker is gone
+    return found
 
 
 class ActionRunsApp:

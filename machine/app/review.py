@@ -25,6 +25,7 @@ from machine.app.first_look import (
     QUICK_LOOK_HOURS,
     QUICK_LOOK_SIGNALS,
     review_max_wait,
+    SYSTEM_SERVICES,
 )
 from machine.app.graph_actions import account_services
 from machine.app.preparation import PROMPT_LIMIT
@@ -37,8 +38,10 @@ from machine.store import review_backoff
 from machine.store.cards import active_preview
 from machine.store.events import RUN_SIGNAL_BUDGET, SET_ASIDE_AFTER
 from machine.store.facts import suggestion_scope
-from machine.store.review import PREVIEW_DAYS, REVIEW_SESSION_PREFIX, REVIEW_TERMINAL, service_review_ended
-from machine.text import clamp
+from machine.store.first_look import FIRST_ACTIONS, first_value
+from machine.store.review import (PREVIEW_DAYS, REVIEW_PAGE_CHARS, REVIEW_SESSION_PREFIX, REVIEW_TERMINAL, review_view,
+                                  service_review_ended)
+from machine.text import clamp, encoded
 import next_actions
 from timeutil import now
 
@@ -188,6 +191,126 @@ def ai_connecting(config, current=None):
             continue
         return {'name': note['ai_connecting'], 'since': since.isoformat()}
     return None
+
+
+def fit_events(rows, offset=0, budget=REVIEW_PAGE_CHARS):
+    """Full text where it fits; otherwise shorten bodies evenly and say how to read the rest."""
+    preview = 40000
+    views = [review_view(r, preview, offset) for r in rows]
+    while len(encoded(views)) > budget and preview > 0:
+        preview = int(preview * 0.7)
+        views = [review_view(r, preview, offset) for r in rows]
+    if len(encoded(views)) > budget:
+        raise ValueError('Read fewer event_ids; metadata needs another page')
+    return views
+
+
+def event_page(rows, offset=0, row_offset=0, budget=REVIEW_PAGE_CHARS):
+    """An explicit continuation, never a silently incomplete list of evidence."""
+    if offset < 0 or row_offset < 0 or row_offset > len(rows):
+        raise ValueError('Use a valid body_offset and row_offset')
+    remaining = rows[row_offset:]
+    # Metadata needs space too. Select a row page first, then give its bodies all
+    # the remaining room. Continuation IDs freeze selection across new syncs.
+    count = 0
+    for count in range(1, len(remaining) + 1):
+        skeleton = [review_view(r, 0, offset) for r in remaining[:count]]
+        if len(encoded(skeleton)) > budget - 4000:
+            count -= 1
+            break
+    selected = remaining[:count]
+    result = {'events': fit_events(selected, offset, budget - 4000),
+              'total': len(rows), 'row_offset': row_offset,
+              'remaining_event_ids': [r['id'] for r in remaining[count:]],
+              'next_row_offset': row_offset + count if count < len(remaining) else None}
+    # All returned payloads, including JSON escaping and continuation, are bounded.
+    if len(encoded(result)) > budget:
+        raise ValueError('Request a smaller list of event_ids')
+    return result
+
+
+def metadata_page(row, offset):
+    """Original metadata is evidence too; expose a bounded, lossless text continuation."""
+    text = encoded(row['metadata'])
+    if offset < 0 or offset > len(text):
+        raise ValueError('Use a valid metadata_offset')
+    length = min(20000, len(text) - offset)
+    while True:
+        result = {'id': row['id'], 'version': row['version'], 'metadata_text': text[offset:offset + length],
+                  'metadata_chars': len(text), 'metadata_offset': offset,
+                  'metadata_next_offset': offset + length if offset + length < len(text) else None}
+        if len(encoded(result)) <= REVIEW_PAGE_CHARS:
+            return result
+        length = int(length * 0.7)
+
+
+def first_cards_report(db, accounts=(), current=None):
+    """How fast a new install got to its first useful card, for the hosted health report: per source when its first
+    import was in, each first-look pass (start, end, status, reason, cards), when the first card was shown on the
+    dashboard and when the owner first acted on one (and how). Timestamps, counts and codes only, never content. None
+    on an install from before this was recorded. `db`: a plain sqlite3 connection to the events database."""
+    rows = lambda sql, args=(): db.execute(sql, args).fetchall()
+    if not rows("SELECT 1 FROM sqlite_master WHERE type='table' AND name='milestones'"):
+        return None
+    marks = {name: (at, detail) for name, at, detail in rows('SELECT name,at,detail FROM milestones')}
+    since = (marks.get('tracking_since') or ('',))[0]
+    current = current or dt.datetime.fromisoformat(now())
+    out = {'since': since, 'sources': []}
+    for account in accounts:
+        if account.get('service') in SYSTEM_SERVICES:
+            continue
+        page, done = marks.get('first_page:' + account['id']), marks.get('first_import:' + account['id'])
+        out['sources'].append({'service': str(account.get('service', 'gmail'))[:40], 'first_page_at': page and page[0], 'first_import_at': done and done[0]})
+    # The first look: with reviews off, the auto previews; with reviews on, the quick first review and the regular
+    # reviews up to the first that finished well (all from when this was recorded on)
+    looks = rows("SELECT run_id,status,started_at,finished_at,error,window_hours,planned FROM review_runs WHERE preview=1 AND auto=1 "
+                 "OR (preview=0 AND window_hours IS NOT NULL) ORDER BY started_at")
+    regular = []
+    for run in rows('SELECT run_id,status,started_at,finished_at,error,window_hours,planned FROM review_runs WHERE preview=0 AND window_hours IS NULL '
+                    'AND started_at>=? ORDER BY started_at', (since,)):
+        regular.append(run)
+        if run[1] == 'ok':
+            break
+    runs = sorted(looks + regular, key=lambda r: r[2])
+    for name, part in (('quick', [r for r in runs if r[5]]), ('full', [r for r in runs if not r[5]])):
+        if not part:
+            continue
+        cards = sum(rows('SELECT count(*) FROM suggestions WHERE created_at>=? AND created_at<=?', (r[2], r[3] or current.isoformat()))[0][0] for r in part)
+        out[name] = {'started_at': part[0][2], 'finished_at': part[-1][3], 'status': part[-1][1], 'reason': part[-1][4],
+                     'tries': len(part), 'planned': part[-1][6], 'cards': cards}
+    if marks.get('first_dig_done'):
+        out['dig'] = marks['first_dig_done'][1]  # why the first review stopped digging: cards, covered or usage (App.first_dig)
+    first = rows('SELECT min(created_at),count(*) FROM suggestions')[0]
+    out['cards'] = first[1]
+    out['first_card_at'] = first[0] if first[0] and first[0] >= since else None
+    shown = marks.get('first_card_shown')
+    out['first_card_shown_at'] = shown and shown[0]
+    acted = rows("SELECT choice,created_at FROM decisions WHERE source IN ('dashboard','telegram') AND created_at>=? AND choice IN ("
+                 + ','.join('?' for _ in FIRST_ACTIONS) + ') ORDER BY created_at LIMIT 1', (since, *FIRST_ACTIONS))
+    out['first_action_at'], out['first_action'] = (acted[0][1], FIRST_ACTIONS[acted[0][0]]) if acted else (None, None)
+    # The first approved one (Do it, Send, Mark done): a Not needed before it doesn't count as getting something done
+    approved = [c for c, a in FIRST_ACTIONS.items() if a != 'dismiss']
+    acted = rows("SELECT choice,created_at FROM decisions WHERE source IN ('dashboard','telegram') AND created_at>=? AND choice IN ("
+                 + ','.join('?' for _ in approved) + ') ORDER BY created_at LIMIT 1', (since, *approved))
+    out['first_approved_at'], out['first_approved'] = (acted[0][1], FIRST_ACTIONS[acted[0][0]]) if acted else (None, None)
+    out.update(first_value(db, marks, since))
+    # Where the first look is now, and about when the first cards come
+    try:
+        state = json.loads((marks.get('first_look_state') or (None, 'null'))[1] or 'null')
+    except ValueError:
+        state = None
+    active = next((r for r in reversed(runs) if r[1] in ('starting', 'running', 'recovering')), None)
+    eta = None
+    if active:
+        done = sum(len(json.loads(items)) for (items,) in rows("SELECT items FROM analyses WHERE owner_run=? AND status='complete'", (active[0],)))
+        out['look'] = {'state': 'running', 'quick': bool(active[5]), 'done': done, 'planned': active[6] or 0}
+        eta = first_eta_minutes({'planned': active[6] or 0, 'done': done}, None, None, current)
+    elif state:
+        out['look'] = {k: state.get(k) for k in ('state', 'why', 'quick', 'waiting', 'retry_at')}
+        eta = first_eta_minutes(None, state, None, current)
+    if eta and not out['cards']:
+        out['eta_minutes'] = eta
+    return out
 
 
 class ReviewApp:
@@ -650,3 +773,11 @@ class ReviewApp:
         if not getattr(self, 'fleet', None):
             raise ValueError('This Machine is not on the Network')
         return self.fleet.fill_split(str(args.get('split_id') or ''), args.get('event_id'), args.get('parts') or {})
+
+    def split_notes_text(self):
+        """Proposed follow-up splits whose meeting has notes to read, for the review; nothing when off the Network."""
+        try:
+            return self.fleet.split_notes_text() if getattr(self, 'fleet', None) else ''
+        except Exception as error:  # the review goes on without them
+            LOG.warning('split notes error=%s', type(error).__name__)
+            return ''

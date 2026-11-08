@@ -246,3 +246,14 @@ class ModelPacingApp:
         except Exception as error:  # the Network or the control plane is away: next time
             LOG.warning('pacing report error=%s', type(error).__name__)
             return 0
+
+    def short_window(self):
+        """The main model's 5-hour usage window as last read (model_usage): {'used', 'reset'}, or None (an API key, a
+        sign-in that reports no windows, or nothing read yet)."""
+        usage = self.paced_usage()  # None while a working fallback carries work: the first review counts signals then
+        found = [w for p in usage or [] for w in p.get('windows') or []
+                 if model_budget.window_kind(w.get('label')) == 'short' and isinstance(w.get('used'), (int, float))]
+        if not found:
+            return None
+        window = max(found, key=lambda w: w['used'])
+        return {'used': window['used'], 'reset': window.get('reset')}

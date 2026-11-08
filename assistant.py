@@ -953,6 +953,7 @@ from machine.app.recap import (
     recap_presentation,
     recap_share_lines,
     recap_view,
+    weekly_recap,
     weekly_recap_message,
 )
 from machine.app.first_look import (
@@ -1015,7 +1016,11 @@ from machine.app.review import (
     REVIEW_TICK_SECONDS,
     ReviewApp,
     ai_connecting,
+    event_page,
+    first_cards_report,
     first_eta_minutes,
+    fit_events,
+    metadata_page,
     review_step_title,
     review_steps,
 )
@@ -1024,6 +1029,7 @@ from machine.store.faults import (
 )
 from machine.app.settings_actions import (
     SettingsActionsApp,
+    activity_report,
     hours_settings,
 )
 from machine.app.notifications import (
@@ -1083,6 +1089,7 @@ from machine.app.voice import (
 from machine.app.action_runs import (
     ActionRunsApp,
     PREPARATION_SETTLE_SECONDS,
+    active_work,
     queue_delegate_wait,
     queue_thread_snooze,
     settle_doc_write,
@@ -1101,6 +1108,13 @@ from machine.app.sync import (
 )
 from machine.app.mail import (
     MailApp,
+)
+from machine.app.new_cards import (
+    NewCardsApp,
+    agent_about,
+    agent_history,
+    agent_messages,
+    owner_card_area,
 )
 
 
@@ -1138,137 +1152,6 @@ def connect_form(source, args):
     return answers, secrets_
 
 
-def fit_events(rows, offset=0, budget=REVIEW_PAGE_CHARS):
-    """Full text where it fits; otherwise shorten bodies evenly and say how to read the rest."""
-    preview = 40000
-    views = [review_view(r, preview, offset) for r in rows]
-    while len(encoded(views)) > budget and preview > 0:
-        preview = int(preview * 0.7)
-        views = [review_view(r, preview, offset) for r in rows]
-    if len(encoded(views)) > budget:
-        raise ValueError('Read fewer event_ids; metadata needs another page')
-    return views
-
-
-def event_page(rows, offset=0, row_offset=0, budget=REVIEW_PAGE_CHARS):
-    """An explicit continuation, never a silently incomplete list of evidence."""
-    if offset < 0 or row_offset < 0 or row_offset > len(rows):
-        raise ValueError('Use a valid body_offset and row_offset')
-    remaining = rows[row_offset:]
-    # Metadata needs space too. Select a row page first, then give its bodies all
-    # the remaining room. Continuation IDs freeze selection across new syncs.
-    count = 0
-    for count in range(1, len(remaining) + 1):
-        skeleton = [review_view(r, 0, offset) for r in remaining[:count]]
-        if len(encoded(skeleton)) > budget - 4000:
-            count -= 1
-            break
-    selected = remaining[:count]
-    result = {'events': fit_events(selected, offset, budget - 4000),
-              'total': len(rows), 'row_offset': row_offset,
-              'remaining_event_ids': [r['id'] for r in remaining[count:]],
-              'next_row_offset': row_offset + count if count < len(remaining) else None}
-    # All returned payloads, including JSON escaping and continuation, are bounded.
-    if len(encoded(result)) > budget:
-        raise ValueError('Request a smaller list of event_ids')
-    return result
-
-
-def metadata_page(row, offset):
-    """Original metadata is evidence too; expose a bounded, lossless text continuation."""
-    text = encoded(row['metadata'])
-    if offset < 0 or offset > len(text):
-        raise ValueError('Use a valid metadata_offset')
-    length = min(20000, len(text) - offset)
-    while True:
-        result = {'id': row['id'], 'version': row['version'], 'metadata_text': text[offset:offset + length],
-                  'metadata_chars': len(text), 'metadata_offset': offset,
-                  'metadata_next_offset': offset + length if offset + length < len(text) else None}
-        if len(encoded(result)) <= REVIEW_PAGE_CHARS:
-            return result
-        length = int(length * 0.7)
-
-
-def first_cards_report(db, accounts=(), current=None):
-    """How fast a new install got to its first useful card, for the hosted health report: per source when its first
-    import was in, each first-look pass (start, end, status, reason, cards), when the first card was shown on the
-    dashboard and when the owner first acted on one (and how). Timestamps, counts and codes only, never content. None
-    on an install from before this was recorded. `db`: a plain sqlite3 connection to the events database."""
-    rows = lambda sql, args=(): db.execute(sql, args).fetchall()
-    if not rows("SELECT 1 FROM sqlite_master WHERE type='table' AND name='milestones'"):
-        return None
-    marks = {name: (at, detail) for name, at, detail in rows('SELECT name,at,detail FROM milestones')}
-    since = (marks.get('tracking_since') or ('',))[0]
-    current = current or dt.datetime.fromisoformat(now())
-    out = {'since': since, 'sources': []}
-    for account in accounts:
-        if account.get('service') in SYSTEM_SERVICES:
-            continue
-        page, done = marks.get('first_page:' + account['id']), marks.get('first_import:' + account['id'])
-        out['sources'].append({'service': str(account.get('service', 'gmail'))[:40], 'first_page_at': page and page[0], 'first_import_at': done and done[0]})
-    # The first look: with reviews off, the auto previews; with reviews on, the quick first review and the regular
-    # reviews up to the first that finished well (all from when this was recorded on)
-    looks = rows("SELECT run_id,status,started_at,finished_at,error,window_hours,planned FROM review_runs WHERE preview=1 AND auto=1 "
-                 "OR (preview=0 AND window_hours IS NOT NULL) ORDER BY started_at")
-    regular = []
-    for run in rows('SELECT run_id,status,started_at,finished_at,error,window_hours,planned FROM review_runs WHERE preview=0 AND window_hours IS NULL '
-                    'AND started_at>=? ORDER BY started_at', (since,)):
-        regular.append(run)
-        if run[1] == 'ok':
-            break
-    runs = sorted(looks + regular, key=lambda r: r[2])
-    for name, part in (('quick', [r for r in runs if r[5]]), ('full', [r for r in runs if not r[5]])):
-        if not part:
-            continue
-        cards = sum(rows('SELECT count(*) FROM suggestions WHERE created_at>=? AND created_at<=?', (r[2], r[3] or current.isoformat()))[0][0] for r in part)
-        out[name] = {'started_at': part[0][2], 'finished_at': part[-1][3], 'status': part[-1][1], 'reason': part[-1][4],
-                     'tries': len(part), 'planned': part[-1][6], 'cards': cards}
-    if marks.get('first_dig_done'):
-        out['dig'] = marks['first_dig_done'][1]  # why the first review stopped digging: cards, covered or usage (App.first_dig)
-    first = rows('SELECT min(created_at),count(*) FROM suggestions')[0]
-    out['cards'] = first[1]
-    out['first_card_at'] = first[0] if first[0] and first[0] >= since else None
-    shown = marks.get('first_card_shown')
-    out['first_card_shown_at'] = shown and shown[0]
-    acted = rows("SELECT choice,created_at FROM decisions WHERE source IN ('dashboard','telegram') AND created_at>=? AND choice IN ("
-                 + ','.join('?' for _ in FIRST_ACTIONS) + ') ORDER BY created_at LIMIT 1', (since, *FIRST_ACTIONS))
-    out['first_action_at'], out['first_action'] = (acted[0][1], FIRST_ACTIONS[acted[0][0]]) if acted else (None, None)
-    # The first approved one (Do it, Send, Mark done): a Not needed before it doesn't count as getting something done
-    approved = [c for c, a in FIRST_ACTIONS.items() if a != 'dismiss']
-    acted = rows("SELECT choice,created_at FROM decisions WHERE source IN ('dashboard','telegram') AND created_at>=? AND choice IN ("
-                 + ','.join('?' for _ in approved) + ') ORDER BY created_at LIMIT 1', (since, *approved))
-    out['first_approved_at'], out['first_approved'] = (acted[0][1], FIRST_ACTIONS[acted[0][0]]) if acted else (None, None)
-    out.update(first_value(db, marks, since))
-    # Where the first look is now, and about when the first cards come
-    try:
-        state = json.loads((marks.get('first_look_state') or (None, 'null'))[1] or 'null')
-    except ValueError:
-        state = None
-    active = next((r for r in reversed(runs) if r[1] in ('starting', 'running', 'recovering')), None)
-    eta = None
-    if active:
-        done = sum(len(json.loads(items)) for (items,) in rows("SELECT items FROM analyses WHERE owner_run=? AND status='complete'", (active[0],)))
-        out['look'] = {'state': 'running', 'quick': bool(active[5]), 'done': done, 'planned': active[6] or 0}
-        eta = first_eta_minutes({'planned': active[6] or 0, 'done': done}, None, None, current)
-    elif state:
-        out['look'] = {k: state.get(k) for k in ('state', 'why', 'quick', 'waiting', 'retry_at')}
-        eta = first_eta_minutes(None, state, None, current)
-    if eta and not out['cards']:
-        out['eta_minutes'] = eta
-    return out
-
-
-def activity_report(db, timezone=None, current=None):
-    """Per local day, the last 7 days: plain counts of what the owner did (to-dos shown and opened, Do it, Send,
-    sent, Mark done, Not needed, snoozed, chat messages, visits, active hours), for the hosted health report next to
-    first_cards_report. Counts only, never content (activity.py). `db`: a plain sqlite3 connection to the events database."""
-    try:
-        tz = ZoneInfo(timezone) if timezone else local_tz()
-    except (ValueError, KeyError):
-        tz = local_tz()
-    return activity.report(db, tz, current or now())
-
-
 VERIFIED_DECISION_SOURCES = ('telegram', 'dashboard')
 
 
@@ -1281,50 +1164,6 @@ class Store(CardsStore, DecisionsStore, EventsStore, FactsStore, FaultsStore, Fi
 
 
 
-def owner_card_area(db, accounts, node_ids=(), text=''):
-    """Where a to-do the owner adds without an area goes: (account id, open: the area ids to place it in later). Its
-    only area when they have one; else the area its people and organizations point to (todo_areas.pointed: their side,
-    the accounts they were heard on, their organization's domain), the people its words name by address among them;
-    else the area its words point to (todo_areas.mentioned: a company or one of its mailboxes). Else, open, the area most
-    of their recent to-dos are in (todo_areas.most_used, or their first connection's), until the review places it by
-    meaning. Never the Machine's own source (the Gateway log, in no area) while an area exists. A mail account of the
-    area first, the one its runs search and send from."""
-    found = todo_areas.areas(accounts)
-    if not found:
-        return accounts[0]['id'], []
-    pick = found[0]['id'] if len(found) == 1 else None
-    free = lambda value: (lambda d: '' if d in graph.FREEMAIL else d)(own_addresses.email_domain(value))
-    if pick is None:
-        mails = todo_areas.addresses(text)
-        try:
-            people, rows = [], []
-            select = "SELECT n.kind,n.info,o.info org_info FROM graph_nodes n LEFT JOIN graph_nodes o ON o.id=json_extract(n.info,'$.org') "
-            if node_ids:
-                rows += db.execute(select + f"WHERE n.id IN ({','.join('?' for _ in node_ids)}) AND n.kind IN ('person','org')", list(node_ids)).fetchall()
-            if mails:
-                rows += db.execute(select + f"WHERE n.kind='person' AND EXISTS (SELECT 1 FROM json_each(n.info,'$.emails') e WHERE lower(e.value) IN "
-                                   f"({','.join('?' for _ in mails)}))", mails).fetchall()
-            for r in rows:
-                info, org = json.loads(r['info'] or '{}'), json.loads(r['org_info'] or '{}')
-                people.append({'side': info.get('side'), 'accounts': info.get('accounts') or [],
-                               'org_domain': info.get('domain') if r['kind'] == 'org' else org.get('domain')})
-        except (sqlite3.Error, ValueError, TypeError):
-            people = []
-        pick = (todo_areas.pointed(people, accounts, None, free) if people else None) or todo_areas.mentioned(text, accounts, free)
-    open_ = [f['id'] for f in found] if pick is None else []
-    if open_:
-        try:
-            since = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=90)).isoformat()
-            recent = db.execute('SELECT account_ids,area FROM suggestions WHERE created_at>=? ORDER BY created_at DESC LIMIT 500', (since,)).fetchall()
-        except sqlite3.Error:
-            recent = []
-        pick = todo_areas.most_used([(r['account_ids'], r['area']) for r in recent], accounts) or next(
-            x for x in (todo_areas.area_of_account(a) for a in accounts) if x in {f['id'] for f in found})
-    ids = todo_areas.accounts_in(pick, accounts)
-    services = {a['id']: a.get('service', 'gmail') for a in accounts}
-    return next((i for i in ids if services[i] in MAIL_SERVICES), ids[0]), open_
-
-
 SOURCE_KIND['fleet.request'] = 'Fleet'
 SOURCE_KIND['fleet.email'] = 'email'  # a copy a teammate's handoff carried (fleet_requests.handoff_sources)
 SOURCE_KIND['owner.card'] = 'note'  # a card the owner made themselves (New card): their own words
@@ -1334,71 +1173,6 @@ SOURCE_KIND['fleet.intercom'] = 'Intercom'  # an Intercom conversation a handoff
 
 
 MAIL_SERVICES, CALENDAR_SERVICES = ('gmail', 'outlook'), ('calendar', 'outlook_calendar')
-
-
-
-
-def active_work(db):
-    """Work a restart or an update would cut off: agent jobs that run, sends under way, confirmed steps being worked on
-    and preparations that started. Paused steps, blocked or queued preparations and finished work are not in it."""
-    found = {}
-    for name, sql, args in (
-            ('agent_jobs', 'SELECT id,suggestion_id,status FROM agent_jobs WHERE status IN (%s)', agent_jobs.ACTIVE),
-            ('action_jobs', 'SELECT id,suggestion_id,status FROM action_jobs WHERE status IN (%s)', ACTION_WORKING),
-            ('preparations', 'SELECT job_id id,suggestion_id,status FROM preparations WHERE status IN (%s)', PREPARATION_WORKING)):
-        try:
-            rows = db.execute(sql % ','.join('?' for _ in args), args).fetchall()
-        except sqlite3.OperationalError:  # a table this install doesn't have yet
-            rows = []
-        found[name] = [dict(zip(('id', 'suggestion_id', 'status'), tuple(r))) for r in rows]
-    found['agent_jobs'] = agent_jobs.working(db, found['agent_jobs'])  # nor jobs whose worker is gone
-    return found
-
-
-def agent_messages(views):
-    """The card's source messages as card/messages.md for a coding agent: who, to whom, when, and the full text, so
-    it needs no mailbox of its own. The link goes last, as a reference."""
-    out = []
-    for v in views:
-        head = [f"## {v.get('title') or v.get('kind') or 'Message'}", f"From: {v.get('from') or 'unknown'}"]
-        head += [f'{k}: {v[k.lower()]}' for k in ('To', 'Cc') if v.get(k.lower())]
-        head.append(f"When: {v.get('occurred_at') or ''}")
-        body = str(v.get('body') or '').strip() or '(no text)'
-        out.append('\n'.join(head) + '\n\n' + body + ('\n\n(Cut short here: the rest is in the original.)' if v.get('clipped') else '')
-                   + (f"\n\nOriginal: {v['url']}" if v.get('url') else ''))
-    return '\n\n'.join(out)
-
-
-def agent_about(card, views):
-    """Who and what a card is about, in plain lines: the people who wrote, the source, the due date."""
-    people = list(dict.fromkeys(str(v.get('from') or '').strip() for v in views if v.get('from') and v.get('from') != 'You'))[:3]
-    lines = [f"With: {', '.join(people)}" + (f" ({views[0]['kind']})" if views and views[0].get('kind') else '')] if people else []
-    if card.get('source_line'):
-        lines.append(str(card['source_line']).strip())
-    if card.get('due'):
-        lines.append(f"Due: {card['due']}")
-    return lines
-
-
-def agent_history(owner, results, skip='', keep=6):
-    """The card's chat so far, as short background lines, newest last: what the owner asked and what came back. The
-    owner's latest note is skipped (it goes in the brief word for word)."""
-    turns = [(i['at'], 'I asked', i['text']) for i in owner if i.get('kind') == 'you' and i.get('via') != 'agent']
-    turns += [(i['at'], f"{i.get('name') or 'The agent'} answered", i['text']) for i in owner if i.get('kind') == 'agent']
-    turns += [(r['at'], 'The Machine answered', r['text']) for replies in results.values() for r in replies if r.get('kind') == 'reply']
-    skip = ' '.join(str(skip or '').split())
-    lines = [f'{who}: {agent_jobs.gist(text, 400)}' for at, who, text in sorted(turns, key=lambda t: t[0] or 0)
-             if str(text or '').strip() and ' '.join(str(text).split()) != skip]
-    return lines[-keep:]
-
-
-
-
-def weekly_recap(store, config, current=None):
-    """The recap as the owner reads it on Telegram, its messages one after the other (without storing its choices)."""
-    recap = weekly_recap_message(store, config, current)
-    note = ['_' + i18n.t(RECAP_CHOICES_NOTE) + '_'] if recap['items'] else []
-    return '\n\n'.join([recap['text'], *note, *(i['line'] for i in recap['items'])])
 
 
 
@@ -1431,6 +1205,7 @@ APP_MIXINS = (SupportApp, CalendarApp, SkillsApp, AgentsApp, GBrainApp, SharedGr
 APP_MIXINS += (FollowUpsApp, GraphActionsApp, KnowledgeExportApp, MeetingWritesApp, ModelPacingApp, PromiseChecksApp, SignaturesApp, SummariesApp,
                VoiceApp)
 APP_MIXINS += (CardChatApp, ConversationApp, ExportApp, FirstLookApp, FleetApp, PreparationApp, RecapApp, ReviewApp, TalkApp)
+APP_MIXINS += (NewCardsApp,)
 APP_MIXINS += (MailApp,)
 APP_MIXINS += (SyncApp,)
 APP_MIXINS += (ActionRunsApp,)
@@ -1508,38 +1283,6 @@ class App(*APP_MIXINS):
     MESSAGE_TTL = 600  # seconds
 
     MAILBOX_LOOKUP_MAX = 10  # messages per mailbox one search keeps
-
-    def agent_card(self, suggestion_id):
-        """What a Claude Code or Codex brief is made of: the card, its next step as the task, the owner's note, who it is
-        about, its chat so far (background), drafts, links, result files and source messages (agent_jobs.brief_for)."""
-        with self.store.connect() as db:
-            row = db.execute('SELECT s.*,p.status preparation_status,p.reason preparation_reason,p.error preparation_error,'
-                             'p.questions preparation_questions FROM suggestions s LEFT JOIN preparations p ON s.id=p.suggestion_id '
-                             'WHERE s.id=?', (str(suggestion_id),)).fetchone()
-            if not row:
-                return None
-            card = dict(row)
-            source_lines_shown(db, [card])  # a Slack DM by the person's name, never a raw chat handle
-            extra = self.store.suggestion_result(card, db)
-            note = db.execute("SELECT feedback FROM decisions WHERE suggestion_id=? AND trim(feedback)<>'' AND source IN ('telegram','dashboard') "
-                              'AND id NOT IN (SELECT decision_id FROM decision_annotations) ORDER BY created_at DESC,rowid DESC LIMIT 1',
-                              (card['id'],)).fetchone()
-            try:
-                chat = self.card_chat_service(db, card['id'])
-            except (sqlite3.Error, ValueError, TypeError, KeyError):
-                chat = ([], {})
-        actions = extra.get('next_actions') or []
-        drafts = [a for a in actions if a.get('body') or a.get('message')]
-        links = [*extra.get('original_urls', []), *[a['url'] for a in actions if a.get('kind') == 'open' and str(a.get('url') or '').startswith('https://')]]
-        files = [WORKSPACE / f['path'] for f in extra.get('result_files', [])]
-        try:
-            views = self.store.originals(card['id'])[:5]
-        except (ValueError, sqlite3.Error):
-            views = []
-        note = note['feedback'].strip() if note else ''
-        return {'card': card, 'drafts': drafts, 'links': links, 'files': files, 'messages': agent_messages(views), 'sources': views,
-                'task': card_task(card), 'note': note, 'about': agent_about(card, views), 'history': agent_history(*chat, skip=note),
-                'message_kinds': [v['kind'] for v in views]}
 
     def mail_attachment(self, args):
         """An email's attachments for a preparation, read-only (Gmail and Outlook): a list, or one saved in the job's
@@ -1764,14 +1507,6 @@ class App(*APP_MIXINS):
             return {'team_learnings': self.learnings_view()}
         raise ValueError('Unknown operation')
 
-    def split_notes_text(self):
-        """Proposed follow-up splits whose meeting has notes to read, for the review; nothing when off the Network."""
-        try:
-            return self.fleet.split_notes_text() if getattr(self, 'fleet', None) else ''
-        except Exception as error:  # the review goes on without them
-            LOG.warning('split notes error=%s', type(error).__name__)
-            return ''
-
     def fleet_card(self, kind, ask_id, name, title, body, evidence, action=None, due=None, into=None, family=False, via=None, carried=()):
         """A card for a Fleet request the owner accepted (fleet_requests.py), made from this Machine's own data. Its
         first evidence is a Fleet event on one of the owner's work accounts, marked reviewed so no model reads it by
@@ -1873,88 +1608,6 @@ class App(*APP_MIXINS):
                 db.execute("UPDATE suggestions SET status='accepted' WHERE id=? AND status='pending'", (card['id'],))
             self.store.prepare(card['id'], body[:1000], next_action=action, outcome={'state': 'needs_you', 'needs': 'read and send the email'})
         return card['id']
-
-    def new_card(self, args):
-        """New card: what the owner typed, with optional Work or Personal, a due date (YYYY-MM-DD; the dashboard reads
-        "Friday" or "in 2 weeks" into one) and, when the owner gave a time ("15:00", "in 2 hours"), due_at, people, organizations or a project from the Graph, and emails to attach.
-        It is a normal card (Store.owner_card); the next review fills it in."""
-        accounts = self.config.get('accounts', [])
-        if not accounts:
-            raise ValueError('Connect a source first')
-        scope = args.get('scope') or None
-        if scope not in (None, 'work', 'personal'):
-            raise ValueError('scope is work or personal')
-        try:
-            attach = list(dict.fromkeys(int(i) for i in args.get('attach') or []))
-        except (TypeError, ValueError):
-            raise ValueError('attach is a list of event ids') from None
-        wanted = list(dict.fromkeys(str(i) for i in args.get('about') or []))
-        if len(attach) > 5 or len(wanted) > 5:
-            raise ValueError('Up to five people and five emails')
-        known = {a['id'] for a in accounts}
-        with self.store.connect() as db:
-            found = {r['id']: r['account_id'] for r in db.execute(
-                f"SELECT id,account_id FROM events WHERE deleted=0 AND id IN ({','.join('?' * len(attach)) or 'NULL'})", attach)}
-            nodes = {r['id']: dict(r) for r in db.execute(
-                f"SELECT id,kind,name FROM graph_nodes WHERE id IN ({','.join('?' * len(wanted)) or 'NULL'})", wanted)}
-        if set(found) != set(attach) or not set(found.values()) <= known:
-            raise ValueError('That email is no longer there')
-        if set(nodes) != set(wanted):
-            raise ValueError('That person is no longer in the Graph')
-        about = [{'id': n['id'], 'name': n['name'][:120], 'kind': n['kind']} for n in (nodes[i] for i in wanted) if n['kind'] in ('person', 'org')]
-        project = next((nodes[i]['name'] for i in wanted if nodes[i]['kind'] == 'project'), None)
-        work_ids = [a['id'] for a in accounts if suggestion_scope([a['id']], accounts) == 'work']
-        personal_ids = [a['id'] for a in accounts if a['id'] not in work_ids]
-        if scope == 'work' and not work_ids:
-            raise ValueError('No work account is connected')
-        if scope == 'personal' and not personal_ids:
-            raise ValueError('No personal account is connected')
-        area_open = []
-        if scope == 'work':
-            account = work_ids[0]
-        elif scope == 'personal':
-            account = personal_ids[0]
-        elif attach:
-            account = found[attach[0]]
-        else:  # no area given: where it belongs, from its people, organizations and words (owner_card_area)
-            with self.store.connect() as db:
-                account, area_open = owner_card_area(db, accounts, wanted, args.get('text') or '')
-        work = any(a['id'] == account and str(a.get('boundary') or '').startswith('work:') for a in accounts)
-        due, due_at = args.get('due') or None, args.get('due_at') or None
-        try:  # a day (the owner's own calendar day), and a moment when they gave a time ("15:00", "in 2 hours")
-            due = due and dt.date.fromisoformat(str(due)).isoformat()
-            when = due_at and dt.datetime.fromisoformat(str(due_at))
-        except ValueError:
-            raise ValueError('due is YYYY-MM-DD and due_at a time with its offset') from None
-        if when and when.tzinfo is None:
-            raise ValueError('due_at needs its offset')
-        due_at = when and when.astimezone(dt.timezone.utc).isoformat(timespec='minutes')
-        if due_at and not due:
-            raise ValueError('due_at goes with due, its day')
-        files = args.get('files') or []
-        if files and not isinstance(files, list):
-            raise ValueError('files is a list of file ids')
-        draft = 'new:' + str(args.get('draft') or '')
-        texts = {}
-        if files:  # what the PDFs and text files say, read here for the review (chat_files.texts); nothing leaves the Machine
-            with self.store.connect() as db:
-                texts = chat_files.texts(db, self.config, draft, files)
-        saved = self.store.owner_card(args.get('text'), account, work=work, due=due, about=about, attach=attach, project=project,
-                                      files=(draft, files) if files else None, due_at=due_at,
-                                      area_open=area_open, file_texts=texts)
-        if about and getattr(self, 'graph_dirty', None):
-            self.graph_dirty.set()  # the card shows on their Graph page after the next build
-        return saved
-
-    def is_work(self, account_ids):
-        if isinstance(account_ids, str):
-            account_ids = json.loads(account_ids or '[]')
-        return any(a['id'] in (account_ids or []) and a.get('boundary', '').startswith('work:') for a in self.config.get('accounts', []))
-
-    def is_work_suggestion(self, suggestion_id):
-        with self.store.connect() as db:
-            row = db.execute('SELECT account_ids FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
-        return bool(row) and self.is_work(row['account_ids'])
 
     def connect_action(self, name, args):
         """Connections, Add: the sources this install can add, and adding one with the same steps as `assistant
@@ -2193,17 +1846,6 @@ class App(*APP_MIXINS):
             view['fix'] = 'check what you filled in and try again'  # Try again is right there: no command for a terminal
         view['reconnect'] = session.get('account_id')  # the account signing in again, if that is what this is
         return view
-
-    def short_window(self):
-        """The main model's 5-hour usage window as last read (model_usage): {'used', 'reset'}, or None (an API key, a
-        sign-in that reports no windows, or nothing read yet)."""
-        usage = self.paced_usage()  # None while a working fallback carries work: the first review counts signals then
-        found = [w for p in usage or [] for w in p.get('windows') or []
-                 if model_budget.window_kind(w.get('label')) == 'short' and isinstance(w.get('used'), (int, float))]
-        if not found:
-            return None
-        window = max(found, key=lambda w: w['used'])
-        return {'used': window['used'], 'reset': window.get('reset')}
 
     def still_needed_step(self, current=None):
         """Still needed? (still_needed.py): asks once on each open to-do nobody touched for a week, and ends the question
