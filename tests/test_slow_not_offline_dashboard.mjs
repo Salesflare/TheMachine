@@ -18,7 +18,7 @@ const status=()=>({suggestions:[card('1'.repeat(16),title)],promises:[],suggesti
  connectors:[],fleet:{on:false},ui_version:'v1'});
 const page=()=>raw.replace('__CSRF__','').replaceAll('__UI_VERSION__','v1').replace('__BASE__','/').replace('__CACHE_SCOPE__',SCOPE);
 // How the next api/status calls go ('cut': 9 s, then the link breaks; 'gw': 9 s, then a gateway's 504; 'wait': 9 s,
-// then the answer); fails counts how many. action: the same for api/action. gone: the Machine and its host away
+// then the answer; 'lag': 3 s, then the answer, a poll well under the slow mark); fails counts how many. action: the same for api/action. gone: the Machine and its host away
 // (every call breaks at once).
 let mode='ok',fails=0,action='ok',gone=false;
 const later=ms=>new Promise(r=>setTimeout(r,ms));
@@ -31,7 +31,7 @@ const server=createServer(async(req,res)=>{let body='';for await(const c of req)
  if(url.pathname==='/manifest.webmanifest'){res.setHeader('Content-Type','application/manifest+json');res.end('{}');return}
  res.setHeader('Content-Type','application/json');
  const how=url.pathname==='/api/status'&&fails>0?mode:url.pathname==='/api/action'&&body.includes('graph_org_merge')?action:'ok';
- if(how!=='ok'){if(url.pathname==='/api/status')fails--;else action='ok';await later(9000);
+ if(how!=='ok'){if(url.pathname==='/api/status')fails--;else action='ok';await later(how==='lag'?3000:9000);
   if(how==='cut'){req.socket.destroy();return}
   if(how==='gw'){res.statusCode=504;res.setHeader('Content-Type','text/html');res.end('<h1>504 Gateway Timeout</h1>');return}}
  if(url.pathname==='/api/session'){res.end(JSON.stringify({csrf:'c'.repeat(64),cache_scope:SCOPE}));return}
@@ -64,6 +64,12 @@ try{
  await tab.goto(base);await tab.locator('#suggestions article[id]').first().waitFor();
  for(let n=0;!(await tab.evaluate(async()=>!!(await localCache.read('status'))));n++){assert.ok(n<150,'the to-dos are kept on the device');await tab.waitForTimeout(100)}
  assert.deepEqual(await seen(tab),[],'online: nothing shows');
+
+ // 0. Normal polls (status answers well under a second) and a lagging one (3 s) never show the slow line, not even a glimpse
+ for(let n=0;n<5;n++)assert.equal(await tab.evaluate(()=>refresh(true)),true,'a normal poll answers');
+ mode='lag';fails=1;const t0=Date.now();assert.equal(await tab.evaluate(()=>refresh(true)),true,'a lagging poll answers');assert.ok(Date.now()-t0>=2900,'the poll lagged');
+ assert.deepEqual(await seen(tab),[],'normal and lagging polls: no slow line, nothing alarming');
+ assert.equal(await tab.evaluate(()=>netSlow||netWaits>0),false,'not slow after normal polls');
 
  // 1. Reopened while the Machine is busy: the first call waits 9 s and then breaks (or the gateway gives up, 504).
  // The to-dos stay, the quiet line shows, never Offline, and the retry brings the live view.
