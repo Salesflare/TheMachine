@@ -52,6 +52,29 @@ def list_headers(headers):
     return found
 
 
+ATTACHMENTS_LISTED = 10  # names kept per message
+
+
+def attachment_names(payload):
+    """The files a message carries, by name and type only (never their bytes): the review can't open them, so this
+    tells it a statement or invoice is in a file (AGENTS.md, "Invoices to pay by hand") and a to-do's own run reads
+    it. Pictures shown inline in the body (a logo, a signature) are left out."""
+    found = []
+
+    def walk(part):
+        name = ' '.join(str(part.get('filename') or '').split())
+        kind = str(part.get('mimeType') or '').lower()
+        headers = {h.get('name', '').lower(): str(h.get('value', '')).lower() for h in part.get('headers', []) if isinstance(h, dict)}
+        inline = headers.get('content-disposition', '').startswith('inline') or bool(headers.get('content-id'))
+        if name and not (inline and kind.startswith('image/')) and len(found) < ATTACHMENTS_LISTED:
+            found.append({'name': name[:120], 'type': kind[:80]})
+        for child in part.get('parts', []) or []:
+            walk(child)
+
+    walk(payload or {})
+    return found
+
+
 def message_event(account, raw, config=None):
     headers = {h['name'].lower(): h.get('value', '')
                for h in raw.get('payload', {}).get('headers', [])}
@@ -89,6 +112,9 @@ def message_event(account, raw, config=None):
     report = bounces.read_report(raw.get('payload'))  # a delivery report (bounce): its recipients, read from its structure
     if report:
         metadata['bounce'] = report
+    files = attachment_names(raw.get('payload'))
+    if files:  # sealed at rest with the rest of what a message says (not in message_seal.PLAIN_METADATA)
+        metadata['attachments'] = files
     metadata.update(thread_id=raw.get('threadId'), labels=sorted(raw.get('labelIds', [])),
                     source_url=raw.get('webLink') if account.get('service') == 'outlook' else
                     'https://mail.google.com/mail/u/?authuser=' + urllib.parse.quote(account['email']) + '#all/' + raw['id'],
