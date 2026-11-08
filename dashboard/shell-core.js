@@ -130,13 +130,19 @@ const htmlT=(key,...a)=>{const tok=i=>`\u0000${i}\u0000`;let s=esc(t(key,...a.ma
 // (javascript:, data:, a broken address) becomes '#'. safeURL in todos-cards.js is stricter: http(s) only, '' otherwise.
 const safeHref=(u,base=location.href)=>{const v=String(u??'').trim();if(!v)return '#';try{const x=new URL(v,base);return ['http:','https:','mailto:','tel:'].includes(x.protocol)?v:'#'}catch{return '#'}};
 const date=v=>v?fmtDHM(v,{month:'short',day:'numeric',year:'numeric'}):t('Not yet');
-// Parts that load when first needed (dashboard_parts.py LAZY: the game, Help). The served page names their files in
-// LAZY_FILES and loads them all once To-dos is drawn, before the rest of the page (render waits for lazyAll); a page
-// with every part inline (the tests, the demo) has none to load. lazyPart(group): that group's file, loaded once (a
-// failed load is tried again on the next call). lazyRun(group,fn): fn now when the group is there, else once it is.
-const lazyLoads={},lazyDone={};let lazyAllRun=null,lazySettled=!self.LAZY_FILES;
+// Parts that load when first needed (dashboard_parts.py LAZY: Calendar, the game, Help, Learning). The served page
+// names their files in LAZY_FILES. The page is drawn without them; once it's drawn whole and the browser is idle after
+// the load event, lazySoon() fetches them all, so they're there before they're asked for and never slow the start. A
+// page with every part inline (the tests, the demo) has none to load. lazyPart(group): that group's file, loaded once
+// (a failed load is tried again on the next call). lazyIn(group): that group is there (or has no file of its own).
+// lazyRun(group,fn): fn now when the group is there, else once it is (opening its tab loads it at once).
+const lazyLoads={},lazyDone={};let lazyAllRun=null,lazySoonRun=false;
 function lazyPart(group){const file=self.LAZY_FILES?.[group];if(!file||lazyDone[group])return Promise.resolve();
  return lazyLoads[group]??=new Promise((ok,fail)=>{const s=document.createElement('script');s.src=file;s.onload=()=>{lazyDone[group]=true;ok()};
   s.onerror=()=>{delete lazyLoads[group];s.remove();fail(new Error(t('Offline.')))};document.head.append(s)})}
-const lazyAll=()=>lazyAllRun??=Promise.allSettled(Object.keys(self.LAZY_FILES||{}).map(lazyPart)).then(()=>{lazySettled=true});
-function lazyRun(group,fn){if(!self.LAZY_FILES?.[group]||lazyDone[group])return fn();lazyPart(group).then(fn,e=>toast(e.message,true))}
+const lazyAll=()=>lazyAllRun??=Promise.allSettled(Object.keys(self.LAZY_FILES||{}).map(lazyPart));
+function lazySoon(){if(lazySoonRun||!self.LAZY_FILES)return;lazySoonRun=true;let gone=false;
+ const go=()=>{if(gone)return;gone=true;self.requestIdleCallback?requestIdleCallback(()=>lazyAll(),{timeout:2000}):setTimeout(lazyAll,200)};
+ if(document.readyState==='complete')go();else{addEventListener('load',go,{once:true});setTimeout(go,5000)}}
+const lazyIn=group=>!self.LAZY_FILES?.[group]||!!lazyDone[group];
+function lazyRun(group,fn){if(lazyIn(group))return fn();lazyPart(group).then(fn,e=>toast(e.message,true))}

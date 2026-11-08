@@ -6,9 +6,10 @@ import {OPENCLAW} from '../openclaw-root.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // The parts that load when first needed (dashboard_parts.py LAZY), served as the Machine serves them
-// (machine/web/serving.py dashboard_files): To-dos draws without them and nothing breaks while they're on their way; the
-// rest of the page is drawn once they're in, and then Help and the game work as before. When they can't load, the
-// rest is drawn all the same.
+// (machine/web/serving.py dashboard_files): the page loads and is drawn whole without them (the load event doesn't wait
+// for them), and they're fetched after that. Calendar, Learning and Help opened while they're on their way open once
+// they're in, and then Help, the game, Calendar and Learning work as before. A link straight to Calendar opens it once
+// its part is in. When they can't load, the rest is drawn all the same, and Calendar and the game say so.
 const [source,lazy]=JSON.parse(execFileSync('python3',['-c','import json,dashboard_parts;print(json.dumps(dashboard_parts.assemble_split()))'],{encoding:'utf8',maxBuffer:1<<26}));
 const named=s=>createHash('sha256').update(s).digest('hex').slice(0,16)+'.js';
 const files=Object.fromEntries(Object.entries(lazy).map(([group,script])=>['lazy-'+group+'-'+named(script),script]));
@@ -36,17 +37,21 @@ try{
   const context=await browser.newContext({viewport:{width,height:900}});
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   const p=await context.newPage();p.on('pageerror',e=>errors.push(width+': '+e.message+' '+e.stack));
-  // Held back: To-dos draws and the robot takes a poke; the rest waits
+  // Held back: the page loads (the load event doesn't wait for them) and is drawn whole, then asks for each of them
   let release;hold=new Promise(r=>release=r);asked.length=0;
-  await p.goto(base,{waitUntil:'domcontentloaded'});await p.locator('#suggestions .all-clear .poke').waitFor();
-  for(const until=Date.now()+20000;asked.length<Object.keys(files).length;){assert.ok(Date.now()<until,'the parts are asked for once To-dos is drawn');await new Promise(r=>setTimeout(r,50))}
+  await p.goto(base,{waitUntil:'load'});await wholeDrawn(p);
+  for(const until=Date.now()+20000;asked.length<Object.keys(files).length;){assert.ok(Date.now()<until,'the parts are asked for once the page is drawn');await new Promise(r=>setTimeout(r,50))}
   assert.equal(await p.evaluate(()=>typeof helpOpen+typeof openGame),'undefinedundefined');
-  assert.equal(await p.evaluate(()=>document.querySelector('#decisions').children.length),0,'the rest waits for the parts');
   await p.locator('#suggestions .all-clear .poke').click();
   assert.ok((await p.locator('#suggestions .poke-line').innerText()).length>0);
-  // In: the rest is drawn, Help opens, and the fourth poke's game plays
-  console.log(await p.evaluate(()=>[!!document.getElementById('settings-share'),!!document.querySelector('#settings'),String($)]));
-  release();hold=null;await wholeDrawn(p);
+  // Calendar, Learning and Help opened while their parts are on their way: they open once the parts are in
+  await p.evaluate(()=>showTab('calendar'));assert.equal(await p.locator('#calendar-view').innerHTML(),'');
+  await p.evaluate(()=>showTab('feedback'));assert.equal(await p.locator('#learn-tabs').innerHTML(),'');
+  await p.evaluate(()=>showTab('calendar'));await p.evaluate(()=>document.querySelector('#open-help').click());
+  release();hold=null;
+  await p.waitForFunction(()=>document.querySelector('#calendar-view').children.length>0&&document.querySelector('#learn-tabs').children.length>0&&document.querySelector('#help-panel').open);
+  await p.evaluate(()=>{document.querySelector('#help-panel').close();showTab('inbox')});
+  // In: Help opens, and the fourth poke's game plays
   assert.deepEqual(asked.sort(),Object.keys(files).sort(),'each part is asked for once');
   await p.evaluate(()=>document.querySelector('#open-help').click());await p.locator('#help-panel[open]').waitFor();
   await p.evaluate(()=>document.querySelector('#help-panel').close());
@@ -54,6 +59,14 @@ try{
   await p.locator('#suggestions .all-clear .play').click();await p.locator('#game-dialog[open]').waitFor();
   await context.close();
  }
+ // A link straight to Calendar, its part held back: Calendar opens once the part is in
+ {let release;hold=new Promise(r=>release=r);asked.length=0;const context=await browser.newContext({viewport:{width:390,height:900}});
+  await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
+  const p=await context.newPage();p.on('pageerror',e=>errors.push('link: '+e.message+' '+e.stack));
+  await p.goto(base+'#calendar',{waitUntil:'domcontentloaded'});
+  for(const until=Date.now()+20000;!asked.some(n=>n.startsWith('lazy-calendar-'));){assert.ok(Date.now()<until,'the calendar part is asked for');await new Promise(r=>setTimeout(r,50))}
+  release();hold=null;await p.waitForFunction(()=>!document.querySelector('#calendar').hidden&&document.querySelector('#calendar-view').children.length>0);
+  await context.close()}
  // Can't load (offline without a kept copy): the rest is drawn all the same, and the game says so
  {refuse=true;const context=await browser.newContext({viewport:{width:1440,height:900}});
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
@@ -63,6 +76,8 @@ try{
   await p.locator('#suggestions .all-clear .play').click();
   await p.locator('#toast.show.error',{hasText:'Offline.'}).waitFor();
   assert.equal(await p.locator('#game-dialog[open]').count(),0);
+  await p.evaluate(()=>{document.querySelector('#toast').className='';showTab('calendar')});
+  await p.locator('#toast.show.error',{hasText:'Offline.'}).waitFor();
   await context.close();refuse=false}
  assert.deepEqual(errors,[]);
  console.log('ok lazy parts');

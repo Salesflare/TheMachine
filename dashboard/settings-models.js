@@ -173,3 +173,5 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-skill-upda
  $('#skill-update-ok').onclick=async()=>{const u=skillUpdating;if(!u)return;const ok=$('#skill-update-ok');ok.disabled=true;
   try{await u.send(u.review);$('#skill-update').close();skillUpdating=null;toast('Updated '+u.skill+'.')}
   catch(err){errCaught(err);ok.disabled=false;$('#skill-update-error').textContent=err.message}}}
+// "09:45 to 10:30" in English; in another language a dash, as its calendars write it (09:45–10:30, ma 26 – wo 28)
+const rangeText=(a,b)=>I18N.lang==='en'?a+' to '+b:a+(/\s/.test(a+b)?' – ':'–')+b;

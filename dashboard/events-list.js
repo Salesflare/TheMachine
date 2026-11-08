@@ -20,7 +20,7 @@ o.raw=!!raw;setHTML($('#email-content'),html`<div class="email" data-msg="0">${m
 // A meeting, wherever it is opened (a timeline, Events, a to-do's source, a search): the Calendar's own details, with its
 // Notes, Transcript and Generate notes, and its invite one tap away. When the meeting can't be read that way, its invite.
 async function openMeeting(ev,title){let m=null;try{m=(await request('api/meeting?event='+encodeURIComponent(ev))).meeting}catch(e){errCaught(e)}
- if(!m){openOriginal(ev,title,true);return}if($('#email-dialog').open)$('#email-dialog').close();calView(m)}
+ if(!m){openOriginal(ev,title,true);return}if($('#email-dialog').open)$('#email-dialog').close();lazyRun('calendar',()=>calView(m))}
 $('#email-content').addEventListener('click',e=>{const b=e.target.closest('[data-open-meeting]');if(b)openMeeting(b.dataset.openMeeting,'')});
 // A conversation from the Graph: its messages in order, each who said it, when and the whole text.
 async function openConversation(row){const dialog=$('#email-dialog'),group='group' in row.dataset;$('#email-title').textContent=row.dataset.title||'Conversation';setHTML($('#email-content'),html`<p class="muted">Loading…</p>`);dialog.showModal();

@@ -70,8 +70,6 @@ function calWith(p,m){const who=calWords(p.who);if(!who.length)return false;cons
 const calSaid=p=>p.together?t('With {}',p.who):p.direction==='mine'?t('Promised to {}',p.who):t('{} promised',p.who);
 const CAL_CARD={prepared:['Prep ready','mint'],accepted:['Preparing','lavender'],instructions:['Preparing','lavender'],pending:['To-do','amber'],snoozed:['To-do','muted']};
 const calShort=k=>{const d=new Date(k+'T12:00');return localeDate(d,DL,{weekday:'short'})+' '+d.getDate()};  // Sat 24
-// "09:45 to 10:30" in English; in another language a dash, as its calendars write it (09:45–10:30, ma 26 – wo 28)
-const rangeText=(a,b)=>I18N.lang==='en'?a+' to '+b:a+(/\s/.test(a+b)?' – ':'–')+b;
 function calParts(it){const hm=v=>humanHM(new Date(v)),late=it.day==='overdue';
  if(it.kind==='meeting'){const m=it.m,c=it.s&&CAL_CARD[it.s.status],a=new Date(m.start),b=new Date(m.end),
    when=it.allDay?(it.span?rangeText(calShort(it.span[0]),calShort(it.span[1])):''):!(b>a)?'':rangeText(hm(a),(localDay(b)!==localDay(a)?calShort(localDay(b))+' ':'')+hm(b));
@@ -278,7 +276,6 @@ async function calNew(){if(!calCals.length){const a=new Date();try{const r=await
  if(!calCals.length){toast('No calendar you can change yet. See Connections.',true);return}calEditor()}
 // An event that can't be changed here (someone else's, with guests, or on a calendar only to read): its details in the
 // app, and its own calendar one link away. Looking changes nothing.
-const calOpenLabel=url=>{let h='';try{h=new URL(url).hostname}catch{}return /(^|\.)google\.com$/.test(h)?'Open in Google Calendar ↗':/(^|\.)(outlook\.(com|office\.com|office365\.com|live\.com)|office\.com|live\.com)$/.test(h)?'Open in Outlook ↗':'Open in its calendar ↗'};
 function calView(m){const [a,b0]=calTimes(m),b=isNaN(b0)||b0<=a?new Date(a.getTime()+1):b0,long=d=>localeDate(d,DL,{weekday:'long',day:'numeric',month:'long'});
  const allDay=m.all_day||b-a>=864e5,last=new Date(b-1),when=allDay?(localDay(last)!==localDay(a)?rangeText(long(a),long(last)):long(a))+' · '+t('All day')
   :long(a)+', '+rangeText(humanHM(a),(localDay(b)!==localDay(a)?long(b)+', ':'')+humanHM(b));
