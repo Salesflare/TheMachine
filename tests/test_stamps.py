@@ -123,6 +123,40 @@ class PageQueries(unittest.TestCase):
         self.assertIn('decisions_suggestion', self.plan(
             "SELECT max(d.created_at) FROM decisions d WHERE d.suggestion_id=? AND d.choice IN ('complete','reject')", ('x',)))
 
+    def test_the_hash_index_hashes_only_new_addresses_after_a_change(self):
+        import shared_graph as sg
+        import shared_graph_kept as kept
+        keys = ('a' * 43 + '=', 'b' * 43 + '=')
+        hashed = []
+
+        def keyed(key, value):
+            hashed.append(value)
+            return sg.keyed(key, value)
+
+        def plain(db, keys=keys):  # what it was: every address hashed with every key
+            out = {}
+            for row in db.execute("SELECT id,kind,info FROM graph_nodes WHERE kind IN ('person','org')"):
+                info = json.loads(row['info'] or '{}')
+                values = (['email:' + i[6:].lower() for i in [row['id'], *info.get('identifiers', [])] if str(i).startswith('email:')]
+                          if row['kind'] == 'person' else (['domain:' + info['domain']] if info.get('domain') else []))
+                for key in keys:
+                    for v in values:
+                        out.setdefault(sg.keyed(key, v), row['id'])
+            return out
+        with self.store.connect() as db:
+            for node, kind, info in [('email:ann@acme.example', 'person', {'identifiers': ['email:Ann.B@acme.example']}),
+                                     ('org:acme', 'org', {'domain': 'acme.example'}), ('wa:1', 'person', {'identifiers': ['wa:1']})]:
+                db.execute('INSERT INTO graph_nodes(id,kind,name,strength,signals,info) VALUES(?,?,?,1,1,?)', (node, kind, node, json.dumps(info)))
+            self.assertEqual(kept.hash_index(db, keys, keyed), plain(db))
+            self.assertEqual(len(hashed), 6)  # 3 addresses and domains, 2 keys
+            db.execute("INSERT INTO graph_nodes(id,kind,name,strength,signals,info) VALUES('email:bo@b.example','person','Bo',1,1,'{}')")
+            hashed.clear()
+            self.assertEqual(kept.hash_index(db, keys, keyed), plain(db))
+            self.assertEqual(hashed, ['email:bo@b.example'] * 2)  # only the new address
+            hashed.clear()
+            self.assertEqual(kept.hash_index(db, keys[:1], keyed), plain(db, keys[:1]))
+            self.assertEqual(len(hashed), 4)  # other keys: hashed again
+
     def test_slack_names_are_kept_until_a_name_changes(self):
         from machine.sources.slack import slack_name_table
         with self.store.connect() as db:

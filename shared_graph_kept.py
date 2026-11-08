@@ -32,16 +32,28 @@ def fleet_marks(db, fleets):
         ('network people', tuple(addresses), tuple(numbers)), at, lambda: graph.people_by_email(db, addresses) + graph.people_by_phone(db, numbers)))
 
 
+# The hashes of the last index made, {keys: {address or domain: its hash per key}}: an address hashes the same each time,
+# so the next index (after any change to the graph's people, every few minutes) hashes only the new ones, not every
+# address again (some 60k HMACs on a big graph: most of a person page's first open after a change)
+_HASHED = {}
+
+
 def hash_index(db, keys, keyed):
     """{hash: local node id} for these graph keys (SharedGraph.hash_index; keyed: shared_graph.keyed)."""
-    index = {}
+    keys = tuple(keys)
+    index, before, hashed = {}, _HASHED.get(keys) or {}, {}
     for row in db.execute("SELECT id,kind,info FROM graph_nodes WHERE kind IN ('person','org')"):
         info = json.loads(row['info'] or '{}')
         values = (['email:' + i[6:].lower() for i in [row['id'], *info.get('identifiers', [])] if str(i).startswith('email:')]
                   if row['kind'] == 'person' else (['domain:' + info['domain']] if info.get('domain') else []))
-        for key in keys:
+        for v in values:
+            if v not in hashed:
+                hashed[v] = before.get(v) or tuple(keyed(key, v) for key in keys)
+        for i in range(len(keys)):
             for v in values:
-                index.setdefault(keyed(key, v), row['id'])
+                index.setdefault(hashed[v][i], row['id'])
+    _HASHED.clear()  # only the latest keys: a key changed or dropped takes its hashes along
+    _HASHED[keys] = hashed
     return index
 
 
