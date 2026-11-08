@@ -24,7 +24,8 @@ const server=createServer(async(req,res)=>{let body='';for await(const c of req)
  if(url.pathname==='/api/status'){res.end(JSON.stringify(state()));return}
  if(url.pathname==='/api/routines'){res.end(all());return}
  if(req.method==='POST'&&body){const b=JSON.parse(body);posts.push({action:b.action,...b.args});
-  if(b.action==='routine_try'){if(b.args.id===ID)list=list.map(r=>({...r,test:{id:'t2',state:'ready',started_at:now,trial:b.args.words,result:'**Tried** it'}}));else trying=[tryOne(b.args.words)];res.end(all());return}
+  if(b.action==='routine_try'){if(b.args.id===ID)list=list.map(r=>({...r,test:{id:'t2',state:'ready',started_at:now,trial:b.args.words,result:'**Tried** it',got:!!b.args.steps?.get}}));else trying=[tryOne(b.args.words)];res.end(all());return}
+  if(b.action==='routine_edit'){list=list.map(r=>({...r,steps:b.args.steps}));res.end(all());return}
   if(b.action==='routine_state'&&b.args.id===TID){trying=[];res.end(all());return}
   if(b.action==='routine_accept'){list=[...list,{...suggestion(),state:'on'}];suggested=[];res.end(JSON.stringify({routines:list,suggested}));return}
   if(b.action==='routine_old_job'){list=list.map(r=>({...r,old_job:false}));res.end(JSON.stringify({routines:list,suggested}));return}
@@ -70,7 +71,7 @@ try{
   assert.equal(await cw.inputValue(),'Sum up my deals');assert.equal(await tc.locator('.actions').isVisible(),false);
   assert.deepEqual(await tc.locator('.rt-form-acts>button').evaluateAll(n=>n.map(x=>x.textContent)),['Try it','Cancel']);
   await cw.fill('Sum up my open deals');await cw.press('Enter');await tc.locator('.rt-form').waitFor({state:'detached'});
-  assert.deepEqual(sent('routine_try').at(-1),{action:'routine_try',id:TID,words:'Sum up my open deals'});
+  assert.deepEqual(sent('routine_try').at(-1),{action:'routine_try',id:TID,words:'Sum up my open deals',steps:{}});
   // Cancel: never kept
   await tc.locator('[data-rt-do="no"]').click();await tc.waitFor({state:'detached'});
   assert.deepEqual(sent('routine_state'),[{action:'routine_state',id:TID,to:'stop'}]);posts.length=0;
@@ -106,14 +107,32 @@ try{
   assert.deepEqual(await card.locator('.rt-form-acts>button').evaluateAll(n=>n.map(x=>x.textContent)),['Save','Try it','Cancel']);
   // Try it: the new words' test run in the form, the routine as it was; the form and its words stay
   await card.locator('[data-rt-try]').click();await card.locator('.rt-form .rt-result strong').waitFor();
-  assert.deepEqual(sent('routine_try'),[{action:'routine_try',id:ID,words:'Sum up my won deals'}]);
+  assert.deepEqual(sent('routine_try'),[{action:'routine_try',id:ID,words:'Sum up my won deals',steps:{}}]);
   assert.match(await card.locator('.rt-form .rt-run-head').innerText(),/^Test run\s+Nothing sent or saved$/);
   assert.equal(await card.locator('.rt-body').isVisible(),false,'the card\'s own result waits while Edit is open');
   assert.equal(await card.locator('.rt-what').isVisible(),false,'its words show once, in the box');
   assert.equal(await edit.inputValue(),'Sum up my won deals');
   await card.locator('.rt-form .primary').click();
   for(let i=0;i<60&&!sent('routine_edit').length;i++)await page.waitForTimeout(50);
-  assert.deepEqual(sent('routine_edit'),[{action:'routine_edit',id:ID,words:'Sum up my won deals'}]);
+  assert.deepEqual(sent('routine_edit'),[{action:'routine_edit',id:ID,words:'Sum up my won deals',steps:{}}]);
+  // Script steps: folded until opened; Get data with its folder and seconds, and Check, sent with Try it and Save
+  await card.locator('.more-actions>summary').click();await card.locator('[data-rt-do="edit"]').click();
+  assert.equal(await card.locator('.rt-steps').getAttribute('open'),null);await card.locator('.rt-steps>summary').click();
+  await card.locator('[data-step="get"]').fill('python3 ~/scripts/deals.py --open');await card.locator('[data-step="cwd"]').fill('~/scripts');
+  await card.locator('[data-step="timeout"]').fill('90');await card.locator('[data-step="check"]').fill('python3 ~/scripts/check.py');
+  const steps={get:{command:'python3 ~/scripts/deals.py --open',cwd:'~/scripts',timeout:'90'},check:{command:'python3 ~/scripts/check.py'}};
+  await card.locator('[data-rt-try]').click();await card.locator('.rt-form .rt-result strong').waitFor();
+  assert.deepEqual(sent('routine_try').at(-1),{action:'routine_try',id:ID,words:'Sum up my deals',steps});
+  assert.match(await card.locator('.rt-form .rt-run-head').innerText(),/^Test run\s+Nothing sent or saved · Got data$/);
+  assert.equal(await card.locator('[data-step="get"]').inputValue(),'python3 ~/scripts/deals.py --open','what is typed stays');
+  await card.locator('.rt-form .primary').click();
+  for(let i=0;i<60&&sent('routine_edit').length<2;i++)await page.waitForTimeout(50);
+  assert.deepEqual(sent('routine_edit').at(-1),{action:'routine_edit',id:ID,words:'Sum up my deals',steps});
+  await card.locator('.rt-step').first().waitFor();
+  assert.deepEqual(await card.locator('.rt-step').evaluateAll(n=>n.map(x=>x.textContent)),['Get data python3 ~/scripts/deals.py --open','Check python3 ~/scripts/check.py']);
+  // Didn't work: what the script said, as text
+  list=list.map(r=>({...r,runs:[{id:'r3',state:'failed',started_at:now,why:'Get data didn’t work.',detail:'<b>no such report</b>'}]}));await page.evaluate(()=>routinesView(true));
+  assert.equal(await card.locator('.rt-detail').innerText(),'<b>no such report</b>');
   await card.locator('.more-actions>summary').click();
   // Stop: the first tap asks, and the menu stays open for the second
   await card.locator('[data-rt-do="stop"]').click();

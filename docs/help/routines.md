@@ -41,11 +41,19 @@ In **Edit**, **Try it** runs the new words once and shows the result there. The 
 
 **Pause** stops the runs until **Resume**; paused routines wait under **Paused** at the bottom, and nothing missed while paused runs afterwards. **Stop** ends a routine for good.
 
+## Script steps
+
+A routine can run your own commands on your Machine. In **Edit**, open **Script steps**. **Get data** runs a command first, like `python3 ~/scripts/deals.py`, in its folder (your home folder if empty) for at most its seconds. What it prints goes to the run to work with. With no words, what it prints is the result.
+
+**Check** gets the result as input after the run. If it exits with an error, the run shows **Didn’t work** with what the check said. A Get data command that fails shows the same way.
+
+A command is one line, run without a shell: no pipes or variables. Script steps are yours, set on your dashboard only. A test run and **Try it** run Get data too and say so; they still send and keep nothing. A routine never sends, so a script step should only read.
+
 ## From your OpenClaw jobs
 
 If you made scheduled jobs in OpenClaw before, your Machine reads them (it never changes them) and offers the ones that fit as routines under **Suggested**. Each one ran once, so you see a real result.
 
-It keeps your corrections to the job and leaves out what it sent or posted. **Add** makes it a routine, **No thanks** never asks about that job again. A job that reminded you to do something comes as a recurring to-do offer on To-dos instead.
+It keeps your corrections to the job and leaves out what it sent or posted. A job that ran a script, or read what a script job collected, brings it along as Get data. **Add** makes it a routine, **No thanks** never asks about that job again. A job that reminded you to do something comes as a recurring to-do offer on To-dos instead.
 
 At most three suggestions wait at a time. After a week of good runs, the routine asks **Turn off the old OpenClaw job?** It only turns off when you tap **Turn it off**, and you can turn it back on in OpenClaw.
 

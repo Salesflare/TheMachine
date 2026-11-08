@@ -32,6 +32,11 @@ def job_row(job_id, name, prompt, schedule, enabled=1, kind='agentTurn', descrip
     return (job_id, name, description, enabled, kind, json.dumps({'schedule': schedule, 'payload': {'kind': kind, 'message': prompt}}), order)
 
 
+def command_row(job_id, name, argv, cwd='', timeout=None):
+    payload = {'kind': 'command', 'argv': argv, 'cwd': cwd, **({'timeoutSeconds': timeout} if timeout else {})}
+    return (job_id, name, None, 1, 'command', json.dumps({'schedule': cron('45 6 * * *'), 'payload': payload}), 0)
+
+
 def openclaw(path, rows):
     with closing(sqlite3.connect(path)) as db, db:
         db.execute('CREATE TABLE cron_jobs(job_id TEXT PRIMARY KEY,name TEXT,description TEXT,enabled INTEGER,payload_kind TEXT,'
@@ -84,6 +89,22 @@ class Reading(unittest.TestCase):
         self.assertTrue(ri.still_on({'openclaw_state': str(self.path)}, JOB))
         self.assertFalse(ri.still_on({'openclaw_state': str(self.path)}, 'c2c2c2c2'))
         self.assertEqual(ri.jobs({'openclaw_state': str(self.path) + '.none'}, D(2026, 11, 8)), [])
+
+    def test_a_job_that_runs_a_script_brings_it_as_get_data(self):
+        ask = 'Then sum up what it printed for me, short and clear.'
+        openclaw(self.path, [
+            job_row('a1a1a1a1', 'Pipeline', 'Run exactly: python3 /opt/deals/report.py --days 7\nWorking directory: /opt/deals\n' + ask, cron('0 8 * * 1')),
+            command_row('c0c0c0c0-collect', 'Collect deals', ['python3', '/opt/deals/collect.py'], cwd='/opt/deals', timeout=120),
+            job_row('b2b2b2b2', 'Deals digest', 'Read what job c0c0c0c0 collected this morning. ' + ask, cron('0 7 * * *')),
+            command_row('d0d0d0d0-secret', 'Collect mail', ['python3', '/opt/mail.py', 'sk-abcdefghijklmnop1234']),
+            job_row('d3d3d3d3', 'Mail digest', 'Read what job d0d0d0d0 collected this morning. ' + ask, cron('0 7 * * *')),
+            job_row('e4e4e4e4', 'Plain', 'Sum up my open deals every morning, short. ' + ask, cron('0 7 * * *'))])
+        got = {j['id']: j.get('steps') for j in ri.jobs({'openclaw_state': str(self.path)}, D(2026, 11, 8))}
+        self.assertEqual(got['a1a1a1a1'], {'get': {'command': 'python3 /opt/deals/report.py --days 7', 'cwd': '/opt/deals', 'timeout': 300}})
+        self.assertEqual(got['b2b2b2b2'], {'get': {'command': 'python3 /opt/deals/collect.py', 'cwd': '/opt/deals', 'timeout': 120}})
+        self.assertIsNone(got['d3d3d3d3'])  # a token-like argument never comes along
+        self.assertIsNone(got['e4e4e4e4'])
+        self.assertNotIn('c0c0c0c0-collect', got)  # a command job is never a suggestion itself
 
     def test_a_long_prompt_keeps_its_end_where_corrections_go(self):
         text = ri.prompt_of({'payload': {'message': 'start ' + 'x ' * 9000 + 'CORRECTION: only weekdays'}})
@@ -157,6 +178,22 @@ class Sorting(unittest.TestCase):
                          ('Thing one summary', 'Sum up thing one from my mail', '**Thing one** moved.', True))
         self.assertLessEqual(len(s['name']), rt.SHORT_MAX)
         self.assertNotIn('origin', s)
+
+    def test_sorting_a_script_job_never_runs_the_script_and_add_keeps_it(self):
+        marker = Path(self.temp.name) / 'ran'
+        script = Path(self.temp.name) / 'report.py'
+        script.write_text(f'open({str(marker)!r}, "w").write("x"); print("**2** renewals due")')
+        self.claw.unlink()
+        openclaw(self.claw, [job_row('0a0a0a0a-job', 'Renewals', f'Run exactly: python3 {script}\nThen pass it on.', cron('0 7 * * *'))])
+        self.app.routines_step()
+        start = [s for s in self.sent if s['action'] == 'start']
+        self.assertIn('becomes the routine\'s Get data', start[0]['message'])
+        self.assertFalse(marker.exists())  # sorting reads the job, it never runs its script
+        self.answer_run(kind='routine', name='Renewals', instructions='', nothing=True, why='It shows the script output')
+        self.assertFalse(marker.exists())
+        s = self.app.routines_view()['suggested'][0]
+        self.assertEqual(s['steps']['get']['command'], f'python3 {script}')
+        self.assertEqual(s['instructions'], '')
 
     def test_three_suggestions_wait_at_most_and_a_job_is_sorted_once(self):
         for i in range(3):

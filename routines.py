@@ -11,6 +11,11 @@ off don't stack: only the newest missed one runs. A run reads with the review's 
 routine_result (routines_app.py): Ready (a result), Nothing new, or Didn't work. A run that ends without one didn't work.
 A run may follow the owner's skills that are on (instructions only, skills.py); its result names them (used).
 
+Script steps (the owner's, `steps`): Get data runs a command on the owner's Machine first, and its output (capped,
+token-like strings removed) goes to the run as evidence; with no words, that output is the result and no model runs.
+Check gets the result on stdin: a nonzero exit means the run didn't work, with what it said. Each run keeps the steps
+it ran with. A routine still never sends: a step's output is read, never acted on.
+
 A routine can also come from an old OpenClaw job (routine_imports.py, origin 'openclaw:<job id>'). Such a row starts as
 'sorting': one run reads the job, says whether it fits (a routine, a recurring to-do or neither) and, when it is a
 routine, runs it once for real. That run is the preview of a 'suggested' routine, which the owner adds with one tap
@@ -26,6 +31,7 @@ Tables (this module owns them): routines, routine_runs."""
 import datetime as dt
 import json
 import re
+import shlex
 import uuid
 
 import recurring
@@ -44,6 +50,10 @@ WHY_MAX = 200
 HISTORY = 5  # runs a routine shows
 KEEP_RUNS = 60  # runs a routine keeps; older ones go
 MAX_ROUTINES = 20  # a short list on purpose: each one costs model time
+DATA_MAX = 8000  # characters of Get data's output a run sees
+STEP_TIMEOUT = {'get': 60, 'check': 30}  # seconds a step may take unless the owner says, at most STEP_TIMEOUT_MAX
+STEP_TIMEOUT_MAX = 600
+COMMAND_MAX = 1000
 
 
 def ensure(db):
@@ -58,11 +68,11 @@ def ensure(db):
       CREATE INDEX IF NOT EXISTS routine_runs_routine ON routine_runs(routine_id,started_at);
     ''')
     have = {r[1] for r in db.execute('PRAGMA table_info(routines)')}
-    for column in ('origin', 'accepted_at', 'old_job', 'name_check'):  # added after the first release (#916; name_check: Edit)
+    for column in ('origin', 'accepted_at', 'old_job', 'name_check', 'steps'):  # added after the first release (#916; name_check: Edit)
         if column not in have:
             db.execute(f'ALTER TABLE routines ADD COLUMN {column} TEXT')
     have = {r[1] for r in db.execute('PRAGMA table_info(routine_runs)')}
-    for column in ('trial', 'used'):  # trial: Edit's Try it, the words it tried; used: the skills it followed (JSON names)
+    for column in ('trial', 'used', 'steps', 'data'):  # trial: Try it's words; used: skills it followed; steps it ran with, data: Get data's output
         if column not in have:
             db.execute(f'ALTER TABLE routine_runs ADD COLUMN {column} TEXT')
 
@@ -175,24 +185,62 @@ def short_name(text):
     return words[:1].upper() + words[1:]
 
 
-def create(db, instructions, rule, anchor, at, now_local, stamp, name=None, work=False, origin=None, state='on'):
+def clean_steps(steps):
+    """The owner's script steps as kept: {'get': {command, cwd, timeout}, 'check': {command, timeout}}, each only when
+    it has a command; None for none. A command is one line, split like a shell would (no pipes or variables)."""
+    out = {}
+    for kind in ('get', 'check'):
+        step = (steps or {}).get(kind) if isinstance(steps, dict) else None
+        command = ' '.join(str((step or {}).get('command') or '').split())[:COMMAND_MAX] if isinstance(step, dict) else ''
+        if not command:
+            continue
+        try:
+            if not shlex.split(command):
+                continue
+        except ValueError:
+            raise ValueError('That command has an open quote') from None
+        timeout = step.get('timeout') or STEP_TIMEOUT[kind]
+        try:
+            timeout = int(timeout)
+        except (TypeError, ValueError):
+            raise ValueError('Say how long it may take in seconds, like 60') from None
+        if not 1 <= timeout <= STEP_TIMEOUT_MAX:
+            raise ValueError('A step may take 1 to 600 seconds')
+        out[kind] = {'command': command, 'timeout': timeout}
+        cwd = ' '.join(str(step.get('cwd') or '').split())[:500]
+        if kind == 'get' and cwd:
+            out[kind]['cwd'] = cwd
+    return out or None
+
+
+def steps_of(row):
+    """A routine's or a run's steps (clean_steps), or {}."""
+    try:
+        return json.loads(row['steps'] or 'null') or {}
+    except (KeyError, IndexError, ValueError):
+        return {}
+
+
+def create(db, instructions, rule, anchor, at, now_local, stamp, name=None, work=False, origin=None, state='on', steps=None):
     if state in ('on', 'trying'):
         _full(db)
     rule, at = recurring.clean_rule(rule), clean_at(at)
     anchor = recurring.anchor_for(rule, anchor)  # a weekdays routine never starts on a weekend
-    instructions = _words(instructions)
+    steps = clean_steps(steps)
+    instructions = _words(instructions, steps)
     rid = uuid.uuid4().hex
-    db.execute('INSERT INTO routines(id,name,instructions,rule,anchor,at,state,work,next_due,origin,accepted_at,created_at,updated_at) '
-               'VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)',
-               (rid, (name or name_of(instructions))[:NAME_MAX], instructions, json.dumps(rule), anchor.isoformat(), at, state,
+    db.execute('INSERT INTO routines(id,name,instructions,rule,anchor,at,state,work,next_due,origin,accepted_at,steps,created_at,updated_at) '
+               'VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+               (rid, (name or name_of(instructions) or 'Get data')[:NAME_MAX], instructions, json.dumps(rule), anchor.isoformat(), at, state,
                 int(bool(work)), first_due(rule, anchor, at, now_local).isoformat() if state == 'on' else None, origin,
-                stamp if state == 'on' else None, stamp, stamp))
+                stamp if state == 'on' else None, json.dumps(steps) if steps else None, stamp, stamp))
     return rid
 
 
-def _words(instructions):
+def _words(instructions, steps=None):
+    """What a routine does, in one line; none only when Get data's output is the result."""
     instructions = ' '.join(str(instructions or '').split())[:INSTRUCTIONS_MAX]
-    if len(instructions) < 4:
+    if len(instructions) < 4 and not (not instructions and (steps or {}).get('get')):
         raise ValueError('Say what it should do, like sum up my open deals')
     return instructions
 
@@ -212,14 +260,16 @@ def change_when(db, routine_id, rule, anchor, at, now_local, stamp):
                (json.dumps(rule), anchor.isoformat(), at, first_due(rule, anchor, at, now_local).isoformat(), stamp, row['id']))
 
 
-def change_instructions(db, routine_id, instructions, stamp):
-    """Edit: what the routine does, in new words. Its rhythm and its runs stay; a name made from the old words follows."""
+def change_instructions(db, routine_id, instructions, stamp, steps=False):
+    """Edit: what the routine does, in new words, and its script steps (False: as they are). Its rhythm and its runs
+    stay; a name made from the old words follows."""
     row = get(db, routine_id)
-    instructions = _words(instructions)
+    steps = steps_of(row) if steps is False else clean_steps(steps)
+    instructions = _words(instructions, steps)
     placeholder = row['name'] == name_of(row['instructions'])
-    name = name_of(instructions) if placeholder else row['name']
-    db.execute('UPDATE routines SET name=?,instructions=?,version=version+1,name_check=?,updated_at=? WHERE id=?',
-               (name[:NAME_MAX], instructions, None if placeholder else '1', stamp, row['id']))
+    name = (name_of(instructions) or row['name']) if placeholder else row['name']
+    db.execute('UPDATE routines SET name=?,instructions=?,steps=?,version=version+1,name_check=?,updated_at=? WHERE id=?',
+               (name[:NAME_MAX], instructions, json.dumps(steps) if steps else None, None if placeholder else '1', stamp, row['id']))
 
 
 def needs_name(row):
@@ -254,8 +304,8 @@ def set_state(db, routine_id, state, now_local, stamp):
 
 def running(db):
     """Runs not over yet, oldest first: admitted ones (admitted_at, the Gateway runs their turn) and waiting ones."""
-    return db.execute("SELECT r.*,t.name,t.instructions,t.name_check FROM routine_runs r JOIN routines t ON t.id=r.routine_id "
-                      "WHERE r.state='running' ORDER BY r.started_at").fetchall()
+    return db.execute("SELECT r.*,t.name,t.instructions,t.name_check,t.state AS routine_state FROM routine_runs r "
+                      "JOIN routines t ON t.id=r.routine_id WHERE r.state='running' ORDER BY r.started_at").fetchall()
 
 
 def begin(db, routine_id, period, stamp, now_local=None):
@@ -263,8 +313,8 @@ def begin(db, routine_id, period, stamp, now_local=None):
     moves the routine's next date past it in the same transaction, never back."""
     row = get(db, routine_id, LIVE + ('sorting', 'trying'))
     run_id = uuid.uuid4().hex
-    made = db.execute('INSERT OR IGNORE INTO routine_runs(id,routine_id,period,version,state,started_at) VALUES(?,?,?,?,?,?)',
-                      (run_id, row['id'], period, row['version'], 'running', stamp)).rowcount
+    made = db.execute('INSERT OR IGNORE INTO routine_runs(id,routine_id,period,version,state,started_at,steps) VALUES(?,?,?,?,?,?,?)',
+                      (run_id, row['id'], period, row['version'], 'running', stamp, row['steps'])).rowcount
     if not period.startswith(('now:', 'sort:', 'test:')):
         after = dt.date.fromisoformat(period)
         nxt = recurring.next_after(json.loads(row['rule']), dt.date.fromisoformat(row['anchor']), after)
@@ -291,36 +341,39 @@ def _drop(db, routine_id):
     db.execute("DELETE FROM routines WHERE id=? AND state='trying'", (routine_id,))
 
 
-def try_new(db, instructions, rule, anchor, at, now_local, stamp):
+def try_new(db, instructions, rule, anchor, at, now_local, stamp, steps=None):
     """Add on the page: a new routine's test run first. It waits as 'trying' (one at a time) until Add or Cancel."""
     for old in db.execute("SELECT id FROM routines WHERE state='trying'").fetchall():
         _drop(db, old['id'])
-    rid = create(db, instructions, rule, anchor, at, now_local, stamp, state='trying')
+    rid = create(db, instructions, rule, anchor, at, now_local, stamp, state='trying', steps=steps)
     return rid, begin(db, rid, 'test:' + stamp, stamp)
 
 
-def try_words(db, routine_id, instructions, stamp):
-    """Try it: a test run of new words, one per press. A new one's ('trying') words change with it; a kept routine's
-    stay as they are, the words go with the run (trial) until Save."""
+def try_words(db, routine_id, instructions, stamp, steps=False):
+    """Try it: a test run of new words (and script steps; False: as they are), one per press. A new one's ('trying')
+    change with it; a kept routine's stay as they are, the words and steps go with the run (trial) until Save."""
     row = get(db, routine_id, LIVE + ('trying',))
-    instructions = _words(instructions)
+    steps = steps_of(row) if steps is False else clean_steps(steps)
+    instructions = _words(instructions, steps)
+    kept = json.dumps(steps) if steps else None
     if db.execute("SELECT 1 FROM routine_runs WHERE routine_id=? AND state='running'", (row['id'],)).fetchone():
         raise ValueError('It’s running already')
     db.execute("DELETE FROM routine_runs WHERE routine_id=? AND period LIKE 'test:%'", (row['id'],))  # only the newest try shows
     if row['state'] == 'trying':
-        db.execute('UPDATE routines SET name=?,instructions=?,updated_at=? WHERE id=?',
-                   (name_of(instructions)[:NAME_MAX], instructions, stamp, row['id']))
+        db.execute('UPDATE routines SET name=?,instructions=?,steps=?,updated_at=? WHERE id=?',
+                   ((name_of(instructions) or row['name'])[:NAME_MAX], instructions, kept, stamp, row['id']))
         return begin(db, row['id'], 'test:' + stamp, stamp)
     run_id = uuid.uuid4().hex
-    db.execute("INSERT INTO routine_runs(id,routine_id,period,version,state,started_at,trial) VALUES(?,?,?,?,'running',?,?)",
-               (run_id, row['id'], 'test:' + stamp, row['version'], stamp, instructions))
+    db.execute("INSERT INTO routine_runs(id,routine_id,period,version,state,started_at,trial,steps) VALUES(?,?,?,?,'running',?,?,?)",
+               (run_id, row['id'], 'test:' + stamp, row['version'], stamp, instructions, kept))
     return run_id
 
 
-def keep_test(db, routine_id, instructions=None):
-    """Add or Save: a test run of what is kept becomes its newest result; any other test run goes."""
-    for run in db.execute("SELECT id,trial FROM routine_runs WHERE routine_id=? AND period LIKE 'test:%'", (routine_id,)).fetchall():
-        if instructions is None or run['trial'] == instructions:
+def keep_test(db, routine_id, saved=None):
+    """Add or Save: a test run of what is kept (saved: the routine's row after Save) becomes its newest result; any
+    other test run goes."""
+    for run in db.execute("SELECT id,trial,steps FROM routine_runs WHERE routine_id=? AND period LIKE 'test:%'", (routine_id,)).fetchall():
+        if saved is None or (run['trial'] == saved['instructions'] and steps_of(run) == steps_of(saved)):
             db.execute("UPDATE routine_runs SET period='now:'||substr(period,6),trial=NULL WHERE id=?", (run['id'],))
         else:
             db.execute('DELETE FROM routine_runs WHERE id=?', (run['id'],))
@@ -328,6 +381,23 @@ def keep_test(db, routine_id, instructions=None):
 
 def admitted(db, run_id, stamp):
     db.execute("UPDATE routine_runs SET admitted_at=? WHERE id=? AND state='running'", (stamp, str(run_id)))
+
+
+def got_data(db, run_id, data):
+    """Get data's output for a run that is still running: what its turn reads."""
+    db.execute("UPDATE routine_runs SET data=? WHERE id=? AND state='running'", (str(data)[:DATA_MAX], str(run_id)))
+
+
+def hold(db, run_id, text=None, nothing=False, why=None, used=None):
+    """A result waiting for its Check: kept on the run, which stays running until the check finishes it."""
+    text = str(text or '').strip()
+    if not nothing and not text:
+        raise ValueError('routine_result needs text (the result), or nothing: true with why')
+    done = db.execute("UPDATE routine_runs SET result=?,why=?,used=? WHERE id=? AND state='running' AND result IS NULL AND why IS NULL",
+                      (None if nothing else text[:RESULT_MAX], ' '.join(str(why or '').split())[:WHY_MAX] if nothing else None,
+                       json.dumps(list(used)) if used else None, str(run_id))).rowcount
+    if not done:
+        raise ValueError('This routine run is over: end the turn')
 
 
 def finish(db, run_id, state, stamp, result=None, why=None, error=None, used=None):
@@ -355,6 +425,12 @@ def report(db, run_id, text=None, nothing=False, why=None, stamp=None, used=None
         raise ValueError('This routine run is over: end the turn')
 
 
+def held(db, run_id):
+    """A run whose result waits for its Check (hold), or None."""
+    return db.execute("SELECT * FROM routine_runs WHERE id=? AND state='running' AND (result IS NOT NULL OR why IS NOT NULL)",
+                      (str(run_id),)).fetchone()
+
+
 def last_result(db, routine_id):
     """The newest result of a routine, for its next run to build on."""
     row = db.execute("SELECT result,started_at FROM routine_runs WHERE routine_id=? AND state='ready' AND period NOT LIKE 'test:%' "
@@ -368,15 +444,20 @@ def view(db, states=LIVE):
     out = []
     marks = ','.join('?' * len(states))
     for r in db.execute(f'SELECT * FROM routines WHERE state IN ({marks}) ORDER BY created_at', states).fetchall():
-        runs = [dict(x) for x in db.execute('SELECT id,period,state,result,why,error,started_at,finished_at,trial,used FROM routine_runs '
+        runs = [dict(x) for x in db.execute('SELECT id,period,state,result,why,error,started_at,finished_at,trial,used,steps FROM routine_runs '
                                             'WHERE routine_id=? ORDER BY started_at DESC LIMIT ?', (r['id'], HISTORY + 1))]
         for x in runs:
             x['used'] = json.loads(x['used']) if x['used'] else []
+            x['got'] = bool(steps_of(x).get('get'))  # Get data ran (or runs) for it
+            x['steps'] = steps_of(x) if x['trial'] is not None else None
+            if x['state'] == 'running':  # a result waiting for its Check shows when the check is done
+                x['result'] = x['why'] = None
         test = next((x for x in runs if is_test(x)), None)  # a test run is shown on its own, never as a result
         runs = [x for x in runs if not is_test(x)][:HISTORY]
         out.append({'id': r['id'], 'name': r['name'], 'instructions': r['instructions'], 'rule': json.loads(r['rule']),
                     'anchor': r['anchor'], 'at': r['at'], 'state': r['state'], 'next_due': r['next_due'] if r['state'] == 'on' else None,
-                    'origin': r['origin'], 'accepted_at': r['accepted_at'], 'old_job': r['old_job'], 'runs': runs, 'test': test})
+                    'origin': r['origin'], 'accepted_at': r['accepted_at'], 'old_job': r['old_job'], 'runs': runs, 'test': test,
+                    'steps': steps_of(r)})
     return out
 
 
@@ -397,9 +478,10 @@ def open_suggestions(db):
 
 
 def start_sorting(db, job, now_local, stamp):
-    """A 'sorting' row for an OpenClaw job and its one run: (routine id, run id)."""
+    """A 'sorting' row for an OpenClaw job (with its script as Get data, when it has one) and its one run: (routine
+    id, run id)."""
     rid = create(db, 'Sort the OpenClaw job ' + job['name'], job['rule'], job['anchor'], job['at'], now_local, stamp,
-                 name=short_name(job['name']) or 'OpenClaw job', origin='openclaw:' + job['id'], state='sorting')
+                 name=short_name(job['name']) or 'OpenClaw job', origin='openclaw:' + job['id'], state='sorting', steps=job.get('steps'))
     return rid, begin(db, rid, 'sort:' + stamp, stamp)
 
 
@@ -421,7 +503,8 @@ def sorted_as(db, run_id, kind, stamp, name=None, instructions=None, text=None, 
     rid = run['routine_id']
     if kind == 'routine':
         name, instructions = short_name(name), ' '.join(str(instructions or '').split())[:INSTRUCTIONS_MAX]
-        if len(name) < 2 or len(instructions) < 4:
+        scripted = not instructions and steps_of(db.execute('SELECT steps FROM routines WHERE id=?', (rid,)).fetchone()).get('get')
+        if len(name) < 2 or (len(instructions) < 4 and not scripted):
             raise ValueError('A routine needs name (at most 18 characters) and instructions')
         report(db, run_id, text=text, nothing=nothing, why=why, stamp=stamp)
         db.execute("UPDATE routines SET state='suggested',name=?,instructions=?,updated_at=? WHERE id=?", (name, instructions, stamp, rid))

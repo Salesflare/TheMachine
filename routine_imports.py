@@ -3,8 +3,13 @@
 Someone who used OpenClaw's own scheduled jobs before The Machine has work on a rhythm there already. This reads those
 jobs from OpenClaw's state database (opened read-only, never written) so each one that fits can come back as a routine
 suggestion with a real preview run (routines_app.py). Only jobs that are on, that run a model turn and that run at most
-once a day qualify; OpenClaw's own upkeep (jobs a plugin manages, the heartbeat), scripts and commands never do. What a
-job's prompt says, including corrections added to it later, is the run's to read and fold into one definition.
+once a day qualify; OpenClaw's own upkeep (jobs a plugin manages, the heartbeat) never does. What a job's prompt says,
+including corrections added to it later, is the run's to read and fold into one definition.
+
+A job that runs a script comes with it as the routine's Get data step (routines.py steps): one whose prompt says to run
+exactly a command ("Run exactly: python3 …"), or one that reads what a separate command job collected before it (a
+collector and model pair: its prompt names the command job by id or name). A command with a token-like argument never
+comes along.
 
 Nothing here changes OpenClaw. Turning an old job off happens only on the owner's tap (openclaw-cron-off.mjs)."""
 import contextlib
@@ -12,6 +17,7 @@ import datetime as dt
 import json
 import os
 import re
+import shlex
 import sqlite3
 from pathlib import Path
 
@@ -21,6 +27,9 @@ PROMPT_MAX = 12000  # what a run sees of a job's prompt: its start and its end, 
 # Token-like strings never reach a run: keys, bearer tokens, long opaque strings
 TOKEN = re.compile(r'\b(?:sk|pk|rk|ghp|gho|github_pat|xox[a-z])[-_][A-Za-z0-9_-]{8,}|Bearer\s+\S+|\b[A-Za-z0-9_\-+/=]{40,}', re.I)
 DAY_MS = 86_400_000
+# "Run exactly: python3 /path/x.py", "Run exactly once: …", "Run exactly this command from `/dir` using exec: …", "Run via exec: `…`"
+RUN_EXACTLY = re.compile(r'\bRun (?:exactly|via exec)\b[^:\n]{0,120}:\s*`?((?:python3?|node|bash|sh)\s+[^\s`]+(?:\s+-{1,2}[\w-]+(?:[= ](?!-)[^\s`]+)?)*)`?')
+WORKDIR = re.compile(r'(?:Working directory:\s*|\bfrom\s+)`?(/[^\s`]+|~[^\s`]*)`?')
 
 
 def state_path(config):
@@ -42,6 +51,41 @@ def prompt_of(job):
     if len(text) > PROMPT_MAX:
         text = text[:PROMPT_MAX // 3] + ' […] ' + text[-(PROMPT_MAX * 2 // 3):]
     return text
+
+
+def safe_command(argv):
+    """An OpenClaw command as one line for Get data, or None when an argument looks like a key or token (a path is fine)."""
+    argv = [str(a) for a in argv or []]
+    if not argv or any(not re.fullmatch(r'[\w./~:=@,+-]+', a) and TOKEN.search(a) or
+                       '/' not in a and TOKEN.search(a) for a in argv):
+        return None
+    return shlex.join(argv)[:1000]
+
+
+def script_of(message):
+    """Get data from a job's raw prompt that says to run exactly a command, else None."""
+    m = RUN_EXACTLY.search(str(message or ''))
+    if not m:
+        return None
+    try:
+        command = safe_command(shlex.split(m.group(1)))
+    except ValueError:
+        return None
+    if not command:
+        return None
+    where = WORKDIR.search(str(message))
+    return {'command': command, **({'cwd': where.group(1)} if where else {}), 'timeout': 300}
+
+
+def _collector(message, commands):
+    """The command job a model job reads the output of (named by its id's start or its name), as Get data."""
+    text = str(message or '')
+    for c in commands:
+        if c['id'][:8] in text or (len(c['name']) >= 6 and c['name'] in text):
+            command = safe_command(c['argv'])
+            if command:
+                return {'command': command, **({'cwd': c['cwd']} if c['cwd'] else {}), 'timeout': c['timeout']}
+    return None
 
 
 def _dow(field):
@@ -127,8 +171,19 @@ def jobs(config, today, tz=None):
         with contextlib.closing(sqlite3.connect(f'file:{path}?mode=ro', uri=True, timeout=2)) as db:
             rows = db.execute("SELECT job_id,name,description,job_json FROM cron_jobs WHERE enabled=1 AND payload_kind='agentTurn' "
                               'ORDER BY sort_order').fetchall()
+            commands = db.execute("SELECT job_id,name,job_json FROM cron_jobs WHERE enabled=1 AND payload_kind='command'").fetchall()
     except sqlite3.Error:
         return []
+    collectors = []
+    for job_id, name, job_json in commands:
+        try:
+            payload = json.loads(job_json or '{}').get('payload') or {}
+        except ValueError:
+            continue
+        if isinstance(payload.get('argv'), list) and len(str(job_id or '')) >= 8:
+            timeout = payload.get('timeoutSeconds')
+            collectors.append({'id': str(job_id), 'name': str(name or ''), 'argv': payload['argv'], 'cwd': str(payload.get('cwd') or ''),
+                               'timeout': min(int(timeout), 600) if isinstance(timeout, int) and timeout > 0 else 300})
     out = []
     for job_id, name, description, job_json in rows:
         about = str(description or '')
@@ -143,8 +198,10 @@ def jobs(config, today, tz=None):
         if not got or len(prompt) < 20 or not re.fullmatch(r'[A-Za-z0-9-]{8,64}', str(job_id or '')):
             continue
         rule, anchor, at = got
+        raw = (job.get('payload') or {}).get('message') or ''
+        get = script_of(raw) or _collector(raw, collectors)
         out.append({'id': job_id, 'name': scrub(' '.join(str(name or '').split()))[:120], 'prompt': prompt,
-                    'rule': rule, 'anchor': anchor, 'at': at})
+                    'rule': rule, 'anchor': anchor, 'at': at, **({'steps': {'get': get}} if get else {})})
     return out
 
 

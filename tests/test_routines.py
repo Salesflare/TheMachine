@@ -5,6 +5,8 @@ result didn't work), a result only from the run's own session, and the owner's P
 now from the dashboard only. Separate from recurring to-dos: only recurring.py's rhythm math is shared."""
 import datetime as dt
 import importlib.util
+import shlex
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -75,7 +77,8 @@ class Runs(unittest.TestCase):
         self.now = T(2026, 11, 9, 6, 0)  # a Monday, early
         for name, value in (('routines_now', lambda s: self.now), ('background_pause', lambda s, **k: self.paused),
                             ('background_spaced', lambda s: True), ('background_started', lambda s: None),
-                            ('preparation_gateway', lambda s, request: self.gateway(request))):
+                            ('preparation_gateway', lambda s, request: self.gateway(request)),
+                            ('routine_spawn', lambda s, target, run_id: target(run_id))):  # script steps inline
             p = patch.object(a.App, name, value); p.start(); self.addCleanup(p.stop)
         self.paused, self.sent, self.answer = None, [], {'start': {'status': 'admitted'}, 'status': {'status': 'pending'}}
 
@@ -333,6 +336,85 @@ class Runs(unittest.TestCase):
         self.assertNotIn('skill', [s for s in self.sent if s['action'] == 'start'][-1]['message'].lower())
         self.report('ok')
         self.assertEqual(self.app.routines_view()['routines'][0]['runs'][0]['used'], [])
+
+    @staticmethod
+    def py(code):
+        """A Get data or Check command: this Python running code."""
+        return shlex.join([sys.executable, '-c', code])
+
+    def starts(self):
+        return [s for s in self.sent if s['action'] == 'start']
+
+    def test_get_data_runs_first_and_its_output_goes_to_the_run(self):
+        rid = self.make('every Monday at 9, sum up my open deals')
+        for action in ('routine_edit', 'routine_try'):  # script steps are the owner's, on the dashboard only
+            with self.assertRaises(ValueError):
+                self.app.action(action, {'id': rid, 'words': 'x', 'steps': {'get': {'command': 'true'}}}, owner_dashboard=False)
+        self.assertEqual(self.app.routines_view()['routines'][0]['steps'], {})
+        self.act('routine_edit', id=rid, words='Sum up my open deals', steps={'get': {
+            'command': self.py("import os; print('3 open deals in', os.getcwd(), 'key sk-abcdefghijklmnop1234')"), 'cwd': self.temp.name}})
+        self.assertEqual(self.app.routines_view()['routines'][0]['steps']['get']['timeout'], 60)
+        self.act('routine_run_now', id=rid)
+        self.app.routines_step()  # Get data first: no turn yet
+        self.assertEqual(self.starts(), [])
+        self.assertEqual(self.app.routines_view()['routines'][0]['runs'][0]['state'], 'running')
+        self.app.routines_step()
+        message = self.starts()[0]['message']
+        self.assertIn('Get data ran on the owner\'s Machine', message)
+        self.assertIn('3 open deals in ' + self.temp.name, message)  # in its folder
+        self.assertNotIn('sk-abcdefghijklmnop1234', message)  # token-like strings never reach a run
+        self.report('**3** open deals.')
+        self.assertEqual(self.app.routines_view()['routines'][0]['runs'][0]['result'], '**3** open deals.')
+
+    def test_with_no_words_the_output_is_the_result_and_check_says_if_it_worked(self):
+        rid = self.make('every Monday at 9, sum up my open deals')
+        get = {'command': self.py("print('**Ready:** 2 renewals')")}
+        self.act('routine_edit', id=rid, words='', steps={'get': get})
+        self.act('routine_run_now', id=rid); self.app.routines_step()
+        self.assertEqual(self.starts(), [])  # no model turn at all
+        run = self.app.routines_view()['routines'][0]['runs'][0]
+        self.assertEqual((run['state'], run['result'], run['got']), ('ready', '**Ready:** 2 renewals', True))
+        check = self.py("import sys; t = sys.stdin.read(); sys.exit(0 if 'Ready' in t else 'no Ready line')")
+        self.act('routine_edit', id=rid, words='', steps={'get': get, 'check': {'command': check}})
+        self.act('routine_run_now', id=rid); self.app.routines_step()
+        self.assertEqual(self.app.routines_view()['routines'][0]['runs'][0]['state'], 'ready')  # the check passed
+        self.act('routine_edit', id=rid, words='', steps={'get': {'command': self.py("print('nothing to see')")}, 'check': {'command': check}})
+        self.act('routine_run_now', id=rid); self.app.routines_step()
+        run = self.app.routines_view()['routines'][0]['runs'][0]
+        self.assertEqual((run['state'], run['why'], run['detail']), ('failed', 'The check said it didn’t work.', 'no Ready line'))
+
+    def test_a_check_after_the_runs_own_result(self):
+        rid = self.make('every Monday at 9, sum up my open deals')
+        self.act('routine_edit', id=rid, words='Sum up my open deals', steps={'check': {'command': self.py('import sys; sys.exit(3)')}})
+        self.act('routine_run_now', id=rid); self.app.routines_step()
+        self.app.action('routine_result', {'_routine_session': SESSION + self.runs()[-1]['id'], 'text': 'Two deals.'}, owner_dashboard=False)
+        run = self.app.routines_view()['routines'][0]['runs'][0]
+        self.assertEqual((run['state'], run['why']), ('failed', 'The check said it didn’t work.'))
+
+    def test_get_data_that_fails_or_takes_too_long_didnt_work(self):
+        rid = self.make('every Monday at 9, sum up my open deals')
+        for step, said in (({'command': self.py("import sys; sys.exit('no such report')")}, 'no such report'),
+                           ({'command': self.py('import time; time.sleep(5)'), 'timeout': 1}, 'timeout after 1 s'),
+                           ({'command': 'no-such-command-here'}, 'No such file or directory')):
+            self.act('routine_edit', id=rid, words='Sum up my open deals', steps={'get': step})
+            self.act('routine_run_now', id=rid); self.app.routines_step()
+            run = self.app.routines_view()['routines'][0]['runs'][0]
+            self.assertEqual((run['state'], run['why']), ('failed', 'Get data didn’t work.'))
+            self.assertIn(said, run['detail'])
+        self.assertEqual(self.starts(), [])
+        with self.assertRaisesRegex(ValueError, '1 to 600'):
+            self.act('routine_edit', id=rid, words='x y z w', steps={'get': {'command': 'true', 'timeout': 9999}})
+        with self.assertRaisesRegex(ValueError, 'open quote'):
+            self.act('routine_edit', id=rid, words='x y z w', steps={'get': {'command': 'echo "open'}})
+
+    def test_a_test_run_runs_get_data_too_and_says_so(self):
+        rid = self.make('every Monday at 9, sum up my open deals')
+        self.act('routine_try', id=rid, words='', steps={'get': {'command': self.py("print('fresh numbers')")}})
+        self.app.routines_step()
+        mine = self.app.routines_view()['routines'][0]
+        self.assertEqual((mine['test']['result'], mine['test']['got']), ('fresh numbers', True))
+        self.assertEqual(mine['steps'], {})  # Try it never changes the routine
+        self.assertEqual(mine['runs'], [])
 
     def test_a_weekdays_routine_never_starts_on_a_weekend(self):
         self.now = T(2026, 11, 7, 6)  # a Saturday
