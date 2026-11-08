@@ -472,6 +472,12 @@ def load_cards(db, fixture, ids, base):
                     card.get('project')))
         if card.get('asks'):  # its chat's taps (Store.set_chat_asks)
             db.execute('UPDATE suggestions SET chat_asks=? WHERE id=?', (json.dumps(card['asks']), card_id))
+        if card.get('done_by'):  # Already did this: a Family member closed the same to-do as done (Fleet.mark_done_elsewhere)
+            family = fixture['network']['family']
+            member = next(m for m in family['team'] if m['name'] == card['done_by']['name'])
+            db.execute('UPDATE suggestions SET done_elsewhere=? WHERE id=?', (json.dumps(
+                {'name': member['name'].split()[0], 'member_id': member['member_id'], 'fleet': family['id'],
+                 'at': stamp(card['done_by']['minutes_ago'], base)}), card_id))
         if card.get('based_on') in ids:  # the teammate's input the draft follows: "Based on Priya in #sales"
             db.execute('UPDATE suggestions SET based_on=? WHERE id=?', (ids[card['based_on']], card_id))
         db.execute('INSERT INTO deliveries(suggestion_id,status,updated_at) VALUES(?,?,?)', (card_id, 'sent', created))
