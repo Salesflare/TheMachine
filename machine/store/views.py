@@ -628,8 +628,11 @@ class ViewsStore(ConversationStore):
                     card['scope'] = closed[card['id']]['scope']
         return {'cards': cards, 'next': str(offset + limit) if len(rows) > offset + limit else None, 'total': len(rows)}
 
-    def snapshot(self, accounts, done=100):
-        promises = self.promises()
+    def snapshot(self, accounts, done=100, lean=False):
+        """The status. lean: without the dashboard's heaviest parts (promises, recent review runs, the quality report,
+        the missed-work audit), for an agent's compact status (compact_status), which never reads them: a review asks
+        for it on a busy Machine, where the whole status took longer than the tool's 30 seconds."""
+        promises = [] if lean else self.promises()
         with self.connect() as db:
             result = {table: [dict(r) for r in db.execute('SELECT * FROM ' + table + ' ORDER BY ' + column + ' DESC LIMIT 100')]
                       for table, column in [('suggestions', 'created_at'), ('decisions', 'created_at'), ('analyses', 'started_at')]}
@@ -754,7 +757,7 @@ class ViewsStore(ConversationStore):
             counts = db.execute('SELECT count(*) total,sum(analyzed_version<version) pending,sum(analyzed_version=0) first_review,coalesce(sum(analyzed_version<version AND deferrals>=?),0) set_aside FROM events WHERE history=0', (SET_ASIDE_AFTER,)).fetchone()
             result['review_health'] = {**dict(counts), 'last_completed': db.execute("SELECT max(finished_at) FROM analyses WHERE status='complete'").fetchone()[0]}
             result['review_runs'] = []
-            for row in db.execute('SELECT * FROM review_runs ORDER BY started_at DESC LIMIT 20'):
+            for row in db.execute('SELECT * FROM review_runs ORDER BY started_at DESC LIMIT ?', (1 if lean else 20,)):
                 result['review_runs'].append(self.review_run_view(db, dict(row)))
             result['review_health']['worker'] = result['review_runs'][0] if result['review_runs'] else None
             listed = {review['id']: json.loads(review['items']) for review in result['analyses']}
@@ -767,6 +770,8 @@ class ViewsStore(ConversationStore):
                 outstanding = sum(1 for item in items if item['id'] in analyzed and analyzed[item['id']] < item['version'])
                 review['remaining_count'] = outstanding
                 review['recovered_count'] = sum(not i.get('excluded') for i in items) - outstanding if review['status']!='complete' else None
+        if lean:
+            return result
         result['quality'] = self.quality_report()
         result['missed_work'] = missed_work.status(self.connect)  # the weekly missed-work audit (missed_work.py)
         return result

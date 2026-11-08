@@ -244,6 +244,23 @@ class ReviewRecovery(unittest.TestCase):
         self.assertLessEqual(len(compact['recent_reviews']),8)
         self.assertNotIn('items',compact['recent_reviews'][0])
 
+    def test_agent_status_skips_the_dashboards_views(self):
+        # an agent's status took longer than the tool's 30 seconds on a busy Machine: it reads the same compact view,
+        # built without the dashboard-only parts (promises, the quality report, the missed-work audit, its settings)
+        accounts=[{'id':'work','email':'w','boundary':'work:x'}]
+        self.store.commit_page('work',{},[event('work',i) for i in range(5)])
+        batch=self.store.begin_analysis(['work'],limit=5,owner_session='s',owner_run='r')
+        self.store.finish_analysis(batch['analysis_id'],'Summary','s','r')
+        expected=assistant.compact_status(self.store.snapshot(accounts))
+        app=object.__new__(assistant.App)
+        app.store,app.config=self.store,{'accounts':accounts}
+        def dashboard_only(*args,**kwargs):raise AssertionError('a dashboard view')
+        for name in ('promises','quality_report'):setattr(self.store,name,dashboard_only)
+        for name in ('chat_model_view','check_view','notify_view','security_view'):setattr(app,name,dashboard_only)
+        compact=app.action('status',{})
+        compact['review_health'].pop('heartbeat',None);expected['review_health'].pop('heartbeat',None)
+        self.assertEqual(compact,expected)
+
     def test_chat_signals_carry_earlier_messages_from_the_same_conversation(self):
         def msg(n,text,user,channel='D1',minute=0):
             return {'account_id':'work','source_id':f'{channel}:{n}','kind':'slack.message','occurred_at':f'2026-10-06T12:{minute:02}:00+00:00',

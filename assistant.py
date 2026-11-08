@@ -1304,11 +1304,12 @@ class App(*APP_MIXINS):
         if name.startswith('fleet_') or name in FAMILY_ACTIONS:
             return self.fleet_action(name, args, owner_dashboard)
         if name == 'related':
-            if not embeddings.settings(self.config):
-                raise ValueError('Related signals by meaning are not set up; search with events and a query')
             if not args.get('event_ids') and not str(args.get('query') or '').strip():
                 raise ValueError('Give event_ids, a query or both')
-            found, semantic = self.related(selected, args.get('event_ids') or (), str(args.get('query') or ''),
+            query = str(args.get('query') or '')
+            if not embeddings.settings(self.config) and not query.strip():  # no meaning search here: the given signals' own words
+                query = ' '.join(r['title'] for r in self.store.events(selected, event_ids=[int(i) for i in args['event_ids']]))
+            found, semantic = self.related(selected, args.get('event_ids') or (), query,
                                            min(int(args.get('limit') or 8), embeddings.MAX_LIMIT), args.get('exclude_event_ids') or ())
             score = dict(found)
             rows = sorted(self.store.events(selected, event_ids=list(score)), key=lambda r: list(score).index(r['id']))
