@@ -83,9 +83,9 @@ Object.entries({outlook:ICONS.gmail,outlook_calendar:ICONS.calendar,teams:'<path
  codex:'<path d="m8 8-4 4 4 4M16 8l4 4-4 4M13.5 6l-3 12"/>',gbrain:'<circle cx="12" cy="12" r="8"/><path d="M12 4v16M8.5 8.5c2 1 2 2.5 0 3.5s-2 2.5 0 3.5M15.5 8.5c-2 1-2 2.5 0 3.5s2 2.5 0 3.5"/>'})
  .forEach(([k,v])=>{if(!ICONS[k])ICONS[k]=v});
 const CONNECT_ICON={google_meet:'zoom',google_docs:'docs',crm:'salesflare'};
-const connectLogo=x=>{const b=BRAND_LOGOS[x.name];
- const c=b&&b[0]?'color:#'+b[0]+';':'';if(!b)return icon(CONNECT_ICON[x.name]||x.service||x.name);
- return html`<span class="icon brand" aria-hidden="true" style="${c}">${b[1].startsWith('--')?html`<i style="--m:var(${b[1]})"></i>`:html`<svg viewBox="0 0 24 24"><path d="${b[1]}"/></svg>`}</span>`};
+// The service's own logo (dashboard/logos, its NOTICE.md), loaded when shown; Machine health is our robot. Else a line icon.
+const LOGOS=/^(android|calendar|codex|crm|github|gmail|google_docs|google_meet|intercom|rss|shortcut|stripe|telegram|trello|whatsapp|x)$/,
+ connectLogo=(x,n=x.name)=>n==='gateway'||LOGOS.test(n)?html`<span class="icon brand${/^(x|github|intercom|codex)$/.test(n)?' mono':''}" aria-hidden="true"><img src="brand/${n==='gateway'?'avatar.png':'logos/'+n+'.svg'}" alt="" loading="lazy" width="20" height="20"></span>`:icon(CONNECT_ICON[n]||x.service||n);
 function connectInner(x,why,ext,note){const on=x.connected?html`<span class="cs-on" title="${t('{} connected',x.connected)}" aria-label="${t('{} connected',x.connected)}">✓</span>`:'';
  const line=why?html`<small class="why">${why}</small>`:x.what?html`<small class="what">${x.what}</small>`:'';
  return html`<span class="cs-icon">${connectLogo(x)}${on}</span><span class="cs-text"><b>${x.label}</b>${line}${note?html`<small class="count">${note}</small>`:''}</span><span class="cs-go" aria-hidden="true">${ext?'↗':'›'}</span>`}
