@@ -100,6 +100,31 @@ class Embeddings(unittest.TestCase):
         with self.assertRaises(ValueError):  # unconfigured accounts are refused like events
             self.app.action('related', {'account_ids': ['elsewhere'], 'query': 'invoice'})
 
+    def test_a_search_reads_each_vector_then_its_event_by_id(self):
+        """Not every event of the accounts (most have no vector) by account and time: that took a search twice as long."""
+        import contextlib
+        self.embed_all()
+        seen = []
+
+        @contextlib.contextmanager
+        def connect():
+            with self.store.connect() as db:
+                db.set_trace_callback(lambda sql: seen.append(sql) if 'FROM event_vectors v' in sql else None)
+                yield db
+                db.set_trace_callback(None)
+        emb.related(connect, SETTINGS, ['work', 'home'], [self.ids('work', '1')])
+        sql, = seen
+        with self.store.connect() as db:
+            plan = ' | '.join(r[3] for r in db.execute('EXPLAIN QUERY PLAN ' + sql))
+        self.assertRegex(plan, r'^SCAN v \| SEARCH e USING INTEGER PRIMARY KEY')
+        import graph  # the graph build's vectors: the same order
+        seen.clear()
+        with connect() as db:
+            graph.load_vectors(db, set())
+        sql, = seen
+        with self.store.connect() as db:
+            self.assertRegex(' | '.join(r[3] for r in db.execute('EXPLAIN QUERY PLAN ' + sql)), r'^SCAN v \| SEARCH e USING INTEGER PRIMARY KEY')
+
     def test_related_action_returns_the_events_shape_with_similarity(self):
         self.embed_all()
         one = self.ids('work', '1')
