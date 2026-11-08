@@ -146,7 +146,8 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   handlers, the follow-up and promise actions of `App.action` into `FollowUpsApp.ACTIONS` and
   `PromiseChecksApp.ACTIONS` handlers, the review, preparation, recap, signature, to-do chat, voice and Talk actions
   of `App.action` into their mixins' `ACTIONS` handlers, `machine/app/settings_actions.py` (`SettingsActionsApp`) and
-  `machine/app/notifications.py` (`NotificationsApp`): the Settings and Notifications actions of `App.action`.
+  `machine/app/notifications.py` (`NotificationsApp`): the Settings and Notifications actions of `App.action`,
+  `machine/app/browser.py` (`BrowserApp`): the browser and site sign-in actions of `App.action`.
 - **Dashboard code:** in its area's part in `dashboard/` (`<area>-<what>.js`: shell, todos, settings, graph, calendar,
   connections, help, events, new, fleet), next to the functions it works with, never at the end of the script. The
   page's core is in the `shell-*` parts too: locale and error reports (`shell-core.js`), network and outbox, `render()`

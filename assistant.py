@@ -1028,6 +1028,9 @@ from machine.app.settings_actions import (
 from machine.app.notifications import (
     NotificationsApp,
 )
+from machine.app.browser import (
+    BrowserApp,
+)
 
 
 def hours_settings(config, changes):
@@ -2082,6 +2085,7 @@ APP_MIXINS = (SupportApp, CalendarApp, SkillsApp, AgentsApp, GBrainApp, SharedGr
 APP_MIXINS += (FollowUpsApp, GraphActionsApp, KnowledgeExportApp, MeetingWritesApp, ModelPacingApp, PromiseChecksApp, SignaturesApp, SummariesApp,
                VoiceApp)
 APP_MIXINS += (CardChatApp, ConversationApp, ExportApp, FirstLookApp, FleetApp, PreparationApp, RecapApp, ReviewApp, TalkApp)
+APP_MIXINS += (BrowserApp,)
 APP_MIXINS += (NotificationsApp, SettingsActionsApp)
 APP_MIXINS += (RecapSettingsApp,)
 APP_MIXINS += (SearchAskApp,)
@@ -3384,84 +3388,6 @@ class App(*APP_MIXINS):
             if not owner_dashboard:
                 raise ValueError('Only the owner adds a source, from the dashboard')
             return self.connect_action(name, args)
-        if name == 'browser_focus':
-            if not owner_dashboard:
-                raise ValueError('Only the owner brings the browser to the front, from the dashboard')
-            page = args.get('page') if isinstance(args.get('page'), str) else None
-            if isinstance(args.get('suggestion_id'), str):  # a task's own tab, never another task's
-                page = self.signin_page(args['suggestion_id']) or self.preparing_page(args['suggestion_id'])
-                if not page:
-                    return {'shown': False, 'unknown': True}
-                return self.task_front(page)
-            shown = browser_viewer.focus(page, self.config.get('browser_cdp_url') or browser_viewer.CDP_URL)
-            return {'shown': shown is not None}
-        if name == 'browser_show':
-            if not owner_dashboard:
-                raise ValueError('Only the owner opens a task’s page in the browser, from the dashboard')
-            if not isinstance(args.get('suggestion_id'), str):
-                raise ValueError('Which task?')
-            return self.browser_show(args['suggestion_id'])
-        if name in ('browser_login_open', 'browser_login_pages', 'browser_login_fill', 'browser_login_choose', 'browser_login_check', 'browser_logins', 'browser_login_forget'):
-            # A separate path: what the owner types goes into the page and, when asked, the encrypted store, never
-            # into a log, the model or an error message (see browser_login.py).
-            if not owner_dashboard:
-                raise ValueError('Only the owner signs in to sites, from the dashboard')
-            logins = browser_login.LoginStore(Path(self.config['database']).expanduser().parent)
-            if name == 'browser_login_open':
-                if not isinstance(args.get('suggestion_id'), str):
-                    raise ValueError('Which task?')
-                return self.signin_open(args['suggestion_id'])
-            if name == 'browser_login_check':
-                # The owner closed the browser (its pane, the dialog's view): look now rather than at the next round, so a
-                # task whose sign-in is done carries on at once. Read-only, the same look as watch_sign_ins.
-                return {'resumed': self.watch_sign_ins(now=True)}
-            if name == 'browser_login_pages' and isinstance(args.get('watch'), str):
-                # the dialog after a sign-in it sent waits on the owner elsewhere (approving it in the site's app)
-                seen = browser_login.watch(self.config, args['watch'])
-                if seen['state'] == 'done' and isinstance(args.get('host'), str):
-                    task = args.get('suggestion_id') if isinstance(args.get('suggestion_id'), str) else None
-                    seen['resumed'] = self.resume_signed_in(host=args['host'], suggestion_id=task)
-                return seen
-            if name == 'browser_login_pages':
-                found =browser_login.pages(self.config, logins, args.get('account') if isinstance(args.get('account'), str) else None)
-                if isinstance(args.get('suggestion_id'), str):
-                    # For a task, only the sign-in on the site its own run left off at; unknown: none, never a guess.
-                    page = self.signin_page(args['suggestion_id'])
-                    found = [p for p in found if page and same_site(p['host'], page)]
-                    return {'pages': found, 'task_site': browser_login.site(urllib.parse.urlsplit(page).hostname) if page else None}
-                return {'pages': found}
-            if name == 'browser_logins':
-                store = getattr(self, 'store', None)
-                if store is None:
-                    return {'logins': logins.list()}
-                with store.connect() as db:
-                    offer = security_levels.save_logins(db)
-                return {'logins': logins.list(), 'save': offer}
-            if name == 'browser_login_forget':
-                if args.get('all') is True:  # Settings, Security: Forget all saved sign-ins
-                    return {'forgotten': sum(1 for x in logins.list() if logins.forget(x['site']))}
-                return {'forgotten': logins.forget(args.get('site'))}
-            host = args.get('host') if isinstance(args.get('host'), str) else ''
-            if name == 'browser_login_choose':  # the page's own "use another method" or "resend": a click, nothing typed
-                return browser_login.choose(self.config, args.get('page'), host, args.get('option'))
-            username, password = (v if isinstance(v, str) else None for v in (args.get('username'), args.get('password')))
-            if args.get('use_saved') is True:
-                saved = logins.get(host)
-                if not saved:
-                    raise ValueError('Nothing is saved for ' + browser_login.site(host))
-                username, password = username or saved.get('username'), saved.get('password')
-            code = args.get('code') if isinstance(args.get('code'), str) else None
-            done = browser_login.fill(self.config, args.get('page'), host, username, password, code)
-            may_save = True
-            if getattr(self, 'store', None) is not None:
-                with self.store.connect() as db:
-                    may_save = security_levels.save_logins(db)  # Careful: Save for next time isn't offered
-            if may_save and args.get('save') is True and args.get('use_saved') is not True and done['result'] != 'still_here' and (username or password):
-                logins.save(host, username, password)
-            if done['result'] == 'done':  # no sign-in form left: the task that waited on it carries on
-                task = args.get('suggestion_id') if isinstance(args.get('suggestion_id'), str) else None
-                done['resumed'] = self.resume_signed_in(host=host, suggestion_id=task)
-            return done
         if name == 'client_error':  # the dashboard's own errors, as signatures for the error reports (error_feed.py)
             with self.store.connect() as db:
                 return {'ok': True, 'counted': error_feed.record_client(db, args.get('errors'), self.store.code_version, DASHBOARD_ACTIONS)}
