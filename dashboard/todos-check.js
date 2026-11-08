@@ -100,4 +100,4 @@ function pokeHint(){const b=$('#suggestions .all-clear .poke');if(!b||pokes||doc
 if(+localStorage.getItem('pokes-total')>=3&&Date.now()-(+localStorage.getItem('poke-hint-at')||0)<7*864e5)return;localStorage.setItem('poke-hint-at',Date.now());
 const h=document.createElement('span');h.className='poke-hint';h.setAttribute('aria-hidden','true');h.textContent=POKE_HINTS[Math.floor(Math.random()*POKE_HINTS.length)];b.append(h);setTimeout(()=>h.remove(),3400)}
 setTimeout(pokeHint,4000);setInterval(()=>{if(Math.random()<.4)pokeHint()},25000);
-$('#suggestions').addEventListener('click',e=>{if(e.target.closest('.all-clear .poke'))poke();else if(e.target.closest('.all-clear .play'))openGame()});
+$('#suggestions').addEventListener('click',e=>{if(e.target.closest('.all-clear .poke'))poke();else if(e.target.closest('.all-clear .play'))lazyRun('game',()=>openGame())});  // the game loads when first needed (todos-game.js)

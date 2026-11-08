@@ -99,3 +99,5 @@ document.addEventListener('toggle',e=>{const d=e.target;if(!(d instanceof HTMLDe
  let r=l.getBoundingClientRect();if(r.right>innerWidth-8){l.style.left='auto';l.style.right='0';r=l.getBoundingClientRect()}if(r.left<8){l.style.right='auto';l.style.left=(8-d.getBoundingClientRect().left)+'px'}
  const s=d.querySelector(':scope>summary')?.getBoundingClientRect();if(s&&r.bottom>innerHeight-8&&s.top-r.height-8>8){l.style.top='auto';l.style.bottom='calc(100% + 4px)'}},true);
 const graphSection=(title,note,items)=>items?.length?html`<div class="section-head"><h2>${title}</h2><span class="count">${items.length}</span>${note?html`<p>${note}</p>`:''}</div><div class="graph-list">${items.map(graphItem)}</div>`:'';
+// Why two people look like one (graph.py likely_same): its parts, each in the language
+const sameWhy=w=>String(w||'').split(', ').map(x=>{const m=/^both at (.+)$/.exec(x);return m?t('both at {}',m[1]):t(x)}).join(', ');

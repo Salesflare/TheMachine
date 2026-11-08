@@ -59,8 +59,11 @@ fleetSync();
 // A page's first drawing on To-dos (the device's copy, else the Machine's first answer): the to-dos, the sidebar and a chat now,
 // and the rest (Learning, Connections, Settings, the other tabs' parts) just after that first paint, not before it.
 // A link to another tab or part (#settings/notify) draws it all at once, since that part is the one it opens on
-if(!drawnWhole&&!view&&/^(#todos|#chat=[a-f0-9]{16})?$/.test(location.hash)){const later=()=>{if(drawnWhole)return;try{render('whole')}catch(e){errCaught(e);console.error(e)}};  // caught as in refresh, where it ran before
+if(!drawnWhole&&!view&&/^(#todos|#chat=[a-f0-9]{16})?$/.test(location.hash)){const later=()=>{if(drawnWhole)return;if(!lazySettled)return void lazyAll().then(later);try{render('whole')}catch(e){errCaught(e);console.error(e)}};  // caught as in refresh, where it ran before
 requestAnimationFrame(()=>setTimeout(later));setTimeout(later,300);return}
+// The rest needs the parts that load when first needed (lazyAll in shell-core.js): drawn once they're in (later waits for
+// them too, so a To-dos start draws the to-dos once)
+if(!lazySettled){lazyAll().then(()=>{if(drawnWhole)return;try{render('whole')}catch(e){errCaught(e);console.error(e)}});return}
 if(view==='view'&&drawnWhole===state)return;drawnWhole=state;
 const choiceTone={accept:'mint',complete:'mint',reject:'muted',snooze:'lavender',other:'amber',reopen:'lavender',undo:'lavender',retry:'lavender',update:'lavender'};
 // One decision on Learning: the to-do, what was chosen, through what and when, and the note that came with it

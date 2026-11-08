@@ -390,7 +390,10 @@ OVER_BUDGET = {}
 # Also Connections › Add redesign (Jeroen picked A); split of the dashboard into on-demand parts follows.
 # 2,110,000 -> 2,120,000 (2026-11-08): Routines took the headroom meant for the + Add redesign (about 6.5 KB, logos
 # already moved out to files). Same reason: the split brings this back down.
-PAGE_CEILING = 2_120_000
+# 2,120,000 -> 2,100,000 (2026-11-08): the ceiling is the first load now, the page and its main script without the
+# parts that load when first needed (dashboard_parts.LAZY); each of those groups has a ceiling of its own.
+FIRST_LOAD_CEILING = 2_100_000
+LAZY_CEILING = {'game': 12_000, 'help': 40_000}
 
 
 def budget(name):
@@ -558,11 +561,21 @@ class Architecture(unittest.TestCase):
         self.assertEqual(budget('dashboard/todos-x.js'), 160 * 1024)
         self.assertEqual(budget('sw.js'), SCAN_LIMIT)
 
-    def test_the_served_dashboard_stays_under_its_ceiling(self):
-        size = len(dashboard_parts.assemble(ROOT).encode('utf-8'))
-        self.assertLessEqual(size, PAGE_CEILING, f'The dashboard page as served is {size} bytes, over PAGE_CEILING '
-                                                 f'({PAGE_CEILING}): every phone downloads it. Make it smaller, or raise '
-                                                 'the ceiling on purpose in a pull request that says why.')
+    def test_the_served_dashboard_stays_under_its_ceilings(self):
+        first, lazy = dashboard_parts.assemble_split(ROOT)
+        size = len(first.encode('utf-8'))
+        self.assertLessEqual(size, FIRST_LOAD_CEILING, f'The dashboard\'s first load is {size} bytes, over '
+                                                       f'FIRST_LOAD_CEILING ({FIRST_LOAD_CEILING}): every phone downloads '
+                                                       'it before To-dos shows. Make it smaller, load a part when first '
+                                                       'needed (dashboard_parts.LAZY), or raise the ceiling on purpose in '
+                                                       'a pull request that says why.')
+        self.assertEqual(sorted(lazy), sorted(LAZY_CEILING))
+        for group, script in lazy.items():
+            with self.subTest(group=group):
+                size = len(script.encode('utf-8'))
+                self.assertLessEqual(size, LAZY_CEILING[group], f'The {group} part that loads when first needed is '
+                                     f'{size} bytes, over its LAZY_CEILING ({LAZY_CEILING[group]}): make it smaller, '
+                                     'or raise its ceiling on purpose in a pull request that says why.')
 
     def test_python_files_stay_within_the_budget(self):
         sizes = python_sizes()
