@@ -63,6 +63,23 @@ PREPARATION_INTERRUPTED_TRIES = 4  # starts of one card's preparation that a Gat
 PREPARATION_PROBE_SECONDS = 120
 
 
+def evidence_line(config, account_ids, sources=()):
+    """The run's line naming the to-do's accounts and sources as the tools take them, so its first events or related
+    call is a valid one: account_ids are configured ids ("work-gmail"), never a service name ("gmail") or left out."""
+    configured = [a['id'] for a in (config or {}).get('accounts') or []]
+    try:
+        own = json.loads(account_ids or '[]') if isinstance(account_ids, str) else list(account_ids or [])
+    except (TypeError, ValueError):
+        own = []
+    accounts = [a for a in configured if a in set(own) | {acc for _, acc in sources or ()}]
+    if not accounts:
+        return ''
+    ids = [i for i, _ in sources or ()]
+    return ('\n\nIts accounts: ' + json.dumps(accounts) + '. events and related always take account_ids: these ids exactly, or ["all"] to '
+            'search every account' + ('; its sources are events args {account_ids: ' + json.dumps(accounts) + ', event_ids: ' + json.dumps(ids) + '}' if ids else '')
+            + '. They take no suggestion_id: status gives a to-do\'s event_ids.')
+
+
 def area_prompt(config, account_ids, sources=(), owner_started=False, unplaced=False):
     """The run's line about the to-do's area (todo_areas.py) and asking the owner to move it, when they have another.
     sources: [(event_id, account_id)] of the messages the to-do came from. owner_started: the owner tapped Do it, Try
@@ -451,6 +468,7 @@ class PreparationApp:
                         sources=card_sources(db,job['suggestion_id'])
                         unplaced=bool(owner_area_open(db,job['suggestion_id']))
                     request['message']+=area_prompt(self.config,row['account_ids'] if row else '[]',sources,owner_started=True,unplaced=unplaced)  # their own message in its chat
+                    request['message']+=evidence_line(self.config,row['account_ids'] if row else '[]',sources)
                 except Exception as error:LOG.error('area line error=%s',type(error).__name__)
             else:
                 self.store.note_rule_files(RULE_FILES)
@@ -471,6 +489,8 @@ class PreparationApp:
                     with self.store.connect() as db:sources,unplaced=card_sources(db,job['suggestion_id']),bool(owner_area_open(db,job['suggestion_id']))
                     # its area, and asking to move it; a run the owner started (not prepared ahead) also reads its own sources
                     lines=area_prompt(self.config,row['account_ids'] if row else '[]',sources,owner_started=not job['ahead'],unplaced=unplaced)
+                    if lines and len(request['message'])+len(lines)<PROMPT_LIMIT-1000:request['message']+=lines
+                    lines=evidence_line(self.config,row['account_ids'] if row else '[]',sources)
                     if lines and len(request['message'])+len(lines)<PROMPT_LIMIT-1000:request['message']+=lines
                 except Exception as error:LOG.error('source notes error=%s',type(error).__name__)
                 try:

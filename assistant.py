@@ -1294,7 +1294,8 @@ class App(*APP_MIXINS):
         if name in ('events', 'related') and selected in ('all', ['all']):
             selected = accounts  # search everything, asked for explicitly
         if name in ['events', 'begin_analysis', 'related'] and (not selected or not set(selected) <= set(accounts)):
-            raise ValueError('Choose explicit configured account_ids (or ["all"] to search every account with events or related); cross-account reads must be intentional')
+            raise ValueError('Choose explicit configured account_ids (' + json.dumps(accounts) + ', or ["all"] to search every account with events '
+                             'or related); cross-account reads must be intentional. A to-do\'s own accounts are its account_ids in status.')
         if name == 'mail_attachment':
             return self.mail_attachment({k: v for k, v in args.items() if k != '_folder'})
         if name in task_pages.ACTIONS:  # a task page for an email handoff: add, skip, stop sharing, mark done (task_pages.py)
