@@ -51,7 +51,8 @@ import timeutil
 
 import enrichment
 import graph_publish
-from mail_senders import AUTOMATED_PRECEDENCE, BULK, RELAY, addresses, automated, bulk, list_unsubscribes, relay  # noqa: F401
+import mail_senders
+from mail_senders import AUTOMATED_PRECEDENCE, BULK, RELAY, addresses, automated, bulk, list_unsubscribes, mass_mail, owner_kept, relay  # noqa: F401
 import person_summary
 from machine import stamps
 from machine.store import graph_history, graph_identifiers
@@ -221,6 +222,7 @@ def ensure(db):
     """Create the graph tables, and add columns that came later."""
     db.executescript(SCHEMA)
     graph_history.ensure(db)
+    mail_senders.ensure(db)
     if 'answer' not in {r[1] for r in db.execute('PRAGMA table_info(board_offers)')}:
         db.execute('ALTER TABLE board_offers ADD COLUMN answer TEXT')
     if 'probable' not in {r[1] for r in db.execute('PRAGMA table_info(graph_events)')}:
@@ -1250,6 +1252,8 @@ def _build_in(db, config, now, team, kin, locked, history=False):
         seen = _edits(db)
         db.execute('PRAGMA query_only=ON')  # computing writes nothing: no lock is taken until the publish
     unsubscribes = list_unsubscribes(db, signals + old, owner)
+    kept = owner_kept(db)  # whoever the owner's word or work is on stays a person, whatever their mail looks like
+    mailings = mail_senders.Hidden(current, HALF_LIFE['person'], FLOOR)  # the senders it leaves out
     wrote_to = set()
     for event_id, _, kind, _, m in signals + old:
         if (kind == 'gmail.message' and ('SENT' in (m.get('labels') or ()) or any(a in owner.emails for _, a in addresses(m.get('from'))[:1]))
@@ -1299,6 +1303,9 @@ def _build_in(db, config, now, team, kin, locked, history=False):
             continue
         found = [t for t in touches(kind, m, owner, wrote_to) if not (t[0].startswith('email:') and t[0].rsplit('@', 1)[1] in warmup) and t[0] not in rooms and not gone(t[0])
                  and not (t[0].startswith('email:') and t[0] not in people_kept and room_like(t[0][6:], t[1]))]
+        if kind == 'gmail.message' and found and found[0][3] in ('them', 'seen') and not {event_id, found[0][0]} & kept and (why := mass_mail(
+                m, found[0][0][6:], found[0][1], org_from_name(found[0][1], found[0][0].rsplit('@', 1)[1]), wrote_to)):
+            found = mailings.add(found, why, at)  # a mailing: its sender is no person, until the owner writes to them or shows them
         if not found:
             continue
         if kind == 'linkedin.message' and isinstance(m.get('headline'), str) and m['headline'].strip() and not m.get('group'):
@@ -1839,6 +1846,7 @@ def _build_in(db, config, now, team, kin, locked, history=False):
         db.execute('INSERT OR REPLACE INTO side_rule(id,rule,at) VALUES(1,?,?)', (SIDE_RULE, now))
     graph_publish.publish(db, same_rows, nodes, links, event_rows, unnamed_rows)  # only what changed: a short write lock
     graph_history.publish(db, history_rows)
+    mailings.publish(db, nodes)  # Hidden senders, under People
     db.execute('INSERT OR REPLACE INTO graph_state(id,built_at,signals,took_ms) VALUES(1,?,?,?)', (now, len(signals), took))
     fill_orgs(db, now)  # projects with no organization yet get their people's, where that is clear
     db.execute('COMMIT')
@@ -2055,6 +2063,7 @@ def overview(db, limit=12):
             'waiting': waiting(db),
             'warmup': hidden_list(db),
             'same_person': same_people(db),
+            'hidden_senders': mail_senders.hidden_count(db),
             'counts': counts(db),
             'list_counts': list_counts(db),
             **({'read': read_counts(db)} if state and not db.execute("SELECT 1 FROM graph_nodes WHERE kind='person' LIMIT 1").fetchone() else {})}

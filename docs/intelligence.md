@@ -29,6 +29,13 @@ Left out:
 - shared role addresses at your domains (info@, support@);
 - newsletters (Gmail Promotions, Updates, Social and Forums, no-reply and mailing senders, unless you ever wrote to
   them), bots and mass mailings (over 20 recipients);
+- the sender of a mailing in your inbox: mail to a list (List-Unsubscribe, List-Id), whatever name sent it; mail whose
+  replies go to another address (Reply-To), unless a person's name ("Jane Doe", "Peeters Lieve") sent it as a plain
+  mail; or mail with the company's own name, the one the address's domain spells, as the whole sender name ("Paperbox" at
+  paperbox.example, never a person's name). Not when you wrote to them, it is a reply, or your word or work is on them (a role,
+  an edit, a name, a merge, an owner, a promise or a to-do on that mail) (`mail_senders.mass_mail`). Nothing is
+  deleted: they are under People, in Hidden senders, with the reason. Write to them, or tap Show as a person there, and
+  they are a person again, with all their mail;
 - system and relay addresses, even when you wrote to them: Intercom's Operator bot and its reply relays, no-reply and
   notification senders (Slack, Google Calendar, GitHub), GitHub's noreply addresses and reply+ relays (`graph.relay`).
   A support conversation the Operator bot opened counts for the customer who wrote in it. A mailing system's return

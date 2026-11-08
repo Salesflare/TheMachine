@@ -127,6 +127,69 @@ class Graph(unittest.TestCase):
         self.assertLessEqual(orgs, {'org:unbounce.example', 'org:kaiblain.example'})  # no mail system's domain
         self.assertEqual(same, 0)
 
+    def test_a_mailing_makes_nobody_a_person_until_the_owner_writes_back(self):
+        # Mail a mailing system sent: to a list, under a company's name, or with replies going elsewhere. Its sender is
+        # no person, unless the owner wrote to them, they replied, or the owner's word or work is on them.
+        self.add(*[mail(d, 'Kevin <kevin@news.example>', 'sam@acme.com', list_unsubscribe=True, title='Weekly tips') for d in (9, 6, 3)],
+                 mail(8, 'Airbnb <express@airbnb.example>', 'sam@acme.com', title='Your reservation'),
+                 mail(7, 'Daniel <daniel@mailer.example>', 'sam@acme.com', **{'reply-to': 'support@quuu.example'}),
+                 mail(7, 'Rae Lund <rae@digest.example>', 'sam@acme.com', list_id='<tips.digest.example>'),
+                 mail(6, 'Vic Ramos <vic@leads.example>', 'sam@acme.com', list_unsubscribe=True),  # the owner gave a role
+                 # a reply on a tool that adds List-Unsubscribe, an out-of-office without a list, a cold mail: people
+                 mail(5, 'Mia Lund <mia@north.example>', 'sam@acme.com', list_unsubscribe=True, **{'in-reply-to': '<1@x>'}),
+                 mail(5, 'Ada Quill <ada@away.example>', 'sam@acme.com', precedence='bulk', title='Out of the office'),
+                 mail(4, 'Lou Park <lou@cold.example>', 'sam@acme.com'))
+        with self.store.connect() as db:
+            db.execute("INSERT INTO person_roles(identifier,role,source,created_at) VALUES('email:vic@leads.example','potential partner','owner',?)", (NOW.isoformat(),))
+        self.build()
+        def people():
+            with self.store.connect() as db:
+                return {r['id'] for r in db.execute("SELECT id FROM graph_nodes WHERE kind='person'")}
+        self.assertEqual(people(), {'email:vic@leads.example', 'email:mia@north.example', 'email:ada@away.example', 'email:lou@cold.example'})
+        with self.store.connect() as db:
+            orgs = {r['id'] for r in db.execute("SELECT id FROM graph_nodes WHERE kind='org'")}
+        self.assertFalse(orgs & {'org:news.example', 'org:airbnb.example', 'org:mailer.example', 'org:digest.example'})
+        # A to-do on one of their mails keeps its sender
+        with self.store.connect() as db:
+            event = db.execute("SELECT id FROM events WHERE json_extract(metadata,'$.from') LIKE 'Rae Lund%'").fetchone()[0]
+            db.execute("INSERT INTO suggestions(id,dedupe_key,title,body,event_ids,account_ids,created_at) VALUES('s1','s1','Answer Rae','',?,'[\"work\"]',?)",
+                       (json.dumps([event]), NOW.isoformat()))
+        self.build()
+        self.assertIn('email:rae@digest.example', people())
+        # The owner writes back: Kevin is a person from then on, with all his mail
+        self.add(mail(2, 'Sam <sam@acme.com>', 'kevin@news.example', ('SENT',)))
+        self.build()
+        self.assertIn('email:kevin@news.example', people())
+        self.assertEqual(self.node('email:kevin@news.example')['signals'], 4)  # his three mails count again
+
+    def test_a_person_named_sender_stays_and_the_owner_can_show_a_hidden_one(self):
+        # A person's name keeps them: from a system address with replies to their own (cloud@ for Peeters Lieve), or
+        # at a domain that spells their name. A company's own name, bulk mail and list mail don't, whatever the name.
+        self.add(mail(9, 'Peeters Lieve <cloud@clinic.example>', 'sam@acme.com', **{'reply-to': 'lieve.peeters@clinic.example'}),
+                 mail(8, 'Jane Doe <jane@janedoe.example>', 'sam@acme.com'),
+                 mail(7, 'Paperbox <community@paperbox.example>', 'sam@acme.com', title='New document'),
+                 mail(6, 'Paperbox <community@paperbox.example>', 'sam@acme.com', title='New document'),
+                 mail(5, 'Lee Moss <lee@moss.example>', 'sam@acme.com', precedence='bulk', **{'reply-to': 'replies@moss-mail.example'}),
+                 mail(4, 'Pat Vos <pat@growth.example>', 'sam@acme.com', list_unsubscribe=True, title='Founder notes'))
+        self.build()
+        def people():
+            with self.store.connect() as db:
+                return {r['id'] for r in db.execute("SELECT id FROM graph_nodes WHERE kind='person'")}
+        self.assertEqual(people(), {'email:cloud@clinic.example', 'email:jane@janedoe.example'})
+        hidden = self.app.graph_list('hidden_senders')
+        self.assertEqual([(h['address'], h['why'], h['mails']) for h in hidden['items']],
+                         [('pat@growth.example', 'list', 1), ('lee@moss.example', 'reply_to', 1), ('community@paperbox.example', 'company', 2)])
+        self.assertEqual((hidden['total'], self.app.graph_action({})['hidden_senders']), (3, 3))
+        # Show as a person: only the owner, on the dashboard, and for good
+        with self.assertRaisesRegex(ValueError, 'Only the owner'):
+            self.app.action('graph_show_person', {'identifier': 'email:community@paperbox.example'})
+        self.app.action('graph_show_person', {'identifier': 'email:community@paperbox.example'}, owner_dashboard=True)
+        self.add(mail(1, 'Paperbox <community@paperbox.example>', 'sam@acme.com', title='New document'))
+        self.build()
+        self.assertIn('email:community@paperbox.example', people())
+        self.assertEqual(self.node('email:community@paperbox.example')['signals'], 3)
+        self.assertEqual([h['address'] for h in self.app.graph_list('hidden_senders')['items']], ['pat@growth.example', 'lee@moss.example'])
+
     def test_owner_messages_weigh_more_a_burst_is_one_day_and_it_fades(self):
         self.add(*[chat(1, '00000000001', 'Bea Burst', hour=h) for h in range(10)],
                  chat(1, '00000000002', 'Cas Owner', mine=True),

@@ -19,6 +19,7 @@ import fleet
 import gap_note
 import gbrain
 import graph
+import mail_senders
 from machine.actions import CRM_ACTIONS
 from machine.config import LOG, WORKSPACE
 from machine.sources.calendar import calendar_room, calendar_rooms
@@ -77,7 +78,7 @@ class GraphActionsApp:
                'graph_picture': 'graph_picture_action', 'graph_pictures_found': 'graph_picture_action',
                'graph_person_edit': 'graph_person_edit_action', 'graph_role': 'graph_role_action',
                'graph_warmup': 'graph_warmup_action', 'graph_same': 'graph_same_action',
-               'graph_same_all': 'graph_same_all_action', 'graph_person_delete': 'graph_person_delete_action',
+               'graph_same_all': 'graph_same_all_action', 'graph_show_person': 'graph_show_person_action', 'graph_person_delete': 'graph_person_delete_action',
                'graph_person_org': 'graph_person_org_action', 'graph_relation': 'graph_relation_action',
                'forget_fact': 'forget_fact_action', 'edit_fact': 'edit_fact_action', 'board_save': 'board_action',
                'board_delete': 'board_action', 'board_dismiss': 'board_action',
@@ -272,6 +273,8 @@ class GraphActionsApp:
 
     def graph_list(self, name, sort='', cursor=0, limit=30, filters=None):
         with self.store.connect() as db:
+            if name == 'hidden_senders':  # mailings the Graph left out (mail_senders.py)
+                return mail_senders.hidden_page(db, cursor, limit)
             return graph.with_fleet(db, graph.page(db, name, sort, cursor, limit, filters), self.graph_fleet_marks(db))
 
     def graph_list_ids(self, name, filters):
@@ -759,6 +762,15 @@ class GraphActionsApp:
         if not owner_dashboard:
             raise ValueError('Only the owner undoes a warm-up domain here, on the dashboard; reviews use graph with warmup')
         return self.graph_action({'node_id': args.get('domain') or args.get('node_id'), 'warmup': args.get('warmup') is True}, source='owner')
+
+    def graph_show_person_action(self, name, args, owner_dashboard=False):
+        # Hidden senders: Show as a person, for good; the rebuild that adds them runs in the graph worker
+        if not owner_dashboard:
+            raise ValueError('Only the owner shows a hidden sender as a person, on the dashboard')
+        with self.store.connect() as db:
+            said = mail_senders.show(db, args.get('identifier'), now())
+        self.graph_later()
+        return said
 
     def graph_same_action(self, name, args, owner_dashboard=False):
         # Same person? Merge, or Not the same (which also undoes a merge)

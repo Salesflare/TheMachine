@@ -123,7 +123,7 @@ async function people(node=graphNode,quiet=false){graphLoadedAt=Date.now();if(!q
   {id:'orgs',label:'Organizations',html:graphTabs('orgs')||graphEmpty('orgs',true)},
   {id:'roles',label:'Who’s who',badge:waiting,html:whosWho(whos,waiting)},
   ...(g.held?.length||graphPane==='held'?[{id:'held',label:'Held back',html:heldPane(g.held)}]:[])].filter(p=>p.html)
- :[{id:'people',label:'People',html:html`${sameList(g.same_person)}${graphTabs('people')||graphEmpty('people',false,g.read)}`},
+ :[{id:'people',label:'People',html:html`${sameList(g.same_person)}${graphTabs('people')||graphEmpty('people',false,g.read)}${hiddenSenders(g.hidden_senders)}`},
   {id:'projects',label:'Projects',html:projectsPane(g)},
   {id:'orgs',label:'Organizations',html:html`${orgDoubles(g.org_doubles)}${graphTabs('orgs')||graphEmpty('orgs')}`},
   {id:'roles',label:'Who’s who',badge:waiting,html:whosWho(whos,waiting)}].filter(p=>p.html);

@@ -35,7 +35,7 @@ READ = {
 # Folded into graph_nodes by the Graph build (graph.build): exported through entities and relationships
 FOLDED = {
     'contact_marks', 'graph_merges', 'graph_names', 'graph_resources', 'graph_same', 'hidden_domains', 'identity_names',
-    'manual_nodes', 'org_aliases', 'org_apart', 'org_edits', 'org_profiles', 'owner_numbers', 'person_edits', 'person_facts',
+    'mail_hidden', 'mail_shown', 'manual_nodes', 'org_aliases', 'org_apart', 'org_edits', 'org_profiles', 'owner_numbers', 'person_edits', 'person_facts',
     'person_orgs', 'person_profiles', 'person_roles', 'project_org_fills', 'project_people', 'project_moves', 'record_owners',
     'role_corrections', 'side_changes', 'side_rule', 'slack_members',
 }
