@@ -101,7 +101,7 @@ Een to-do "Wacht op" (iemand heeft je iets beloofd) linkt naar je eigen laatste 
 **Nieuwe to-do** (onder **Zoeken** op een computer) voegt een to-do toe voor wat dan ook. Aanmaken verstuurt niets. Zonder Werk of Privé komt hij waar hij hoort: volgens wie en waar hij over gaat, een bedrijf of mailbox die hij noemt, of de e-mail waarop hij opvolgt. Als niets het aangeeft, begint hij waar de meeste van je to-do's staan. The Machine zoekt die e-mail in je mailbox, ook oudere mail die nog niet binnengehaald is.
 
 - **Deadline**: typ een dag of een tijd, zoals "morgen", "volgende vr", "3 nov", "15:00", "over 2 uur" of "morgen 9u". Engels werkt ook ("in 2 hours", "tomorrow 9"). Het agenda-icoon heeft snelle keuzes, zoals bij snoozen, en **Kies een datum**.
-- **E-mail**: voeg de e-mail toe waarover het gaat. Hij zoekt alleen in je e-mail, op onderwerp of afzender.
+- **Bericht**: voeg het bericht toe waarover het gaat: een e-mail, Slack, Teams, WhatsApp, Telegram of elk ander bericht dat The Machine heeft. Zoek op tekst of afzender. Elk resultaat toont waar het vandaan komt, wie het stuurde en wanneer.
 - **Bestanden**: tik op de paperclip in het vak, plak een screenshot of sleep bestanden naar het formulier. Op een telefoon kun je ook een foto maken. Maximaal 5 bestanden, dezelfde soorten en groottes als in de chat (zie [Bestanden toevoegen](card-chat.md#add-files)). × haalt er een weg.
 
 De bestanden blijven bij de to-do: ze staan erop en in de chat ervan, en The Machine leest ze als hij eraan werkt. Alleen bestanden is genoeg: The Machine leest de tekst van een pdf of tekstbestand en vult de to-do daarmee in.

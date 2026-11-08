@@ -104,8 +104,32 @@ def agent_history(owner, results, skip='', keep=6):
     return lines[-keep:]
 
 
+# Every message the Machine has, whatever brought it in: what New to-do's Message chip searches (api/events?kind=message).
+# Mail, Slack, Teams, WhatsApp, Telegram, LinkedIn, X, Intercom, and copies a teammate's handoff carried.
+ATTACH_KINDS = tuple(sorted({*graph.MESSAGE_KINDS, 'outlook.message', 'fleet.email', 'fleet.message', 'x.mention'}))
+
+
 class NewCardsApp:
     ACTIONS = {}  # its actions are still App.action's own branches
+
+    def message_hits(self, account_ids, query, limit=8):
+        """New to-do's Message chip: messages of every kind (ATTACH_KINDS) whose words match, and those with a person
+        whose name matches, newest first. Keywords and names only, so it answers at once."""
+        find = {'account_ids': account_ids, 'kinds': list(ATTACH_KINDS), 'full': True, 'limit': limit * 2}
+        rows = self.action('events', {**find, 'query': query})
+        with self.store.connect() as db:
+            people = [r['id'] for r in graph.find(db, query, limit=3, kinds=('person',))]
+            ids = [r[0] for r in db.execute(f"SELECT g.event_id FROM graph_events g JOIN events e ON e.id=g.event_id WHERE g.direct=1 AND e.deleted=0 "
+                                            f"AND g.node_id IN ({','.join('?' * len(people))}) AND e.kind IN ({','.join('?' * len(ATTACH_KINDS))}) "
+                                            'ORDER BY e.occurred_at DESC LIMIT ?', (*people, *ATTACH_KINDS, limit * 2))] if people else []
+        if ids:
+            rows += self.action('events', {**find, 'event_ids': ids})
+        seen, out = set(), []
+        for r in sorted(rows, key=lambda r: (r['occurred_at'], r['id']), reverse=True):
+            if r['id'] not in seen:
+                seen.add(r['id'])
+                out.append(r)
+        return out[:limit]
 
     def agent_card(self, suggestion_id):
         """What a Claude Code or Codex brief is made of: the card, its next step as the task, the owner's note, who it is
@@ -141,7 +165,7 @@ class NewCardsApp:
 
     def new_card(self, args):
         """New card: what the owner typed, with optional Work or Personal, a due date (YYYY-MM-DD; the dashboard reads
-        "Friday" or "in 2 weeks" into one) and, when the owner gave a time ("15:00", "in 2 hours"), due_at, people, organizations or a project from the Graph, and emails to attach.
+        "Friday" or "in 2 weeks" into one) and, when the owner gave a time ("15:00", "in 2 hours"), due_at, people, organizations or a project from the Graph, and messages to attach (mail, Slack, WhatsApp, any kind: message_hits).
         It is a normal card (Store.owner_card); the next review fills it in."""
         accounts = self.config.get('accounts', [])
         if not accounts:
@@ -155,7 +179,7 @@ class NewCardsApp:
             raise ValueError('attach is a list of event ids') from None
         wanted = list(dict.fromkeys(str(i) for i in args.get('about') or []))
         if len(attach) > 5 or len(wanted) > 5:
-            raise ValueError('Up to five people and five emails')
+            raise ValueError('Up to five people and five messages')
         known = {a['id'] for a in accounts}
         with self.store.connect() as db:
             found = {r['id']: r['account_id'] for r in db.execute(
@@ -163,7 +187,7 @@ class NewCardsApp:
             nodes = {r['id']: dict(r) for r in db.execute(
                 f"SELECT id,kind,name FROM graph_nodes WHERE id IN ({','.join('?' * len(wanted)) or 'NULL'})", wanted)}
         if set(found) != set(attach) or not set(found.values()) <= known:
-            raise ValueError('That email is no longer there')
+            raise ValueError('That message is no longer there')
         if set(nodes) != set(wanted):
             raise ValueError('That person is no longer in the Graph')
         about = [{'id': n['id'], 'name': n['name'][:120], 'kind': n['kind']} for n in (nodes[i] for i in wanted) if n['kind'] in ('person', 'org')]

@@ -128,6 +128,8 @@ body:has(#browser-pane:not([hidden])) :is(#page-head,#needs-you,#notice,#limit-b
 .nc-hits button{display:block;width:100%;min-height:0;margin:0;padding:7px 10px;border:0;border-radius:8px;background:none;box-shadow:none;color:var(--text);font:400 .9rem/1.35 var(--sans);text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .nc-hits button:hover,.nc-hits button:focus-visible{background:var(--c-hover)}
 .nc-hits small{margin-left:8px;color:var(--muted)}
+/* A message hit: its subject or first words, then where it came from, who sent it and the day */
+.nc-hits .nc-msg{display:grid;gap:2px;padding:7px 10px}.nc-msg-title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.nc-hits .nc-msg small{display:flex;align-items:center;gap:6px;min-width:0;margin:0;font-size:.8rem;overflow:hidden;white-space:nowrap}.nc-src{flex:0 0 auto;padding:0 6px;border:1px solid var(--c-line-strong,var(--border));border-radius:999px;font-size:.72rem;line-height:1.5;color:var(--text)}.nc-msg-meta{overflow:hidden;text-overflow:ellipsis}.nc-msg-meta+.nc-msg-meta{flex:0 0 auto}.nc-msg-meta+.nc-msg-meta::before{content:'·';margin-right:6px;color:var(--muted)}
 .nc-foot{display:flex;justify-content:space-between;gap:12px;margin:12px 2px 0;color:var(--muted);font-size:.8rem}
 .nc-error{margin:10px 2px 0;color:var(--c-orange,var(--orange));font-size:.88rem}
 .nc-error:empty{display:none}
