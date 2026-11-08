@@ -82,7 +82,7 @@ class Family(unittest.TestCase):
     # -- rules
     def test_family_defaults_are_friendlier_but_still_private(self):
         group = next(f for f in self.fleet.view()['fleets'] if f['id'] == FAM)
-        self.assertEqual({k: r['rule'] for k, r in group['rules'].items()}, {'availability': 'always', 'todo': 'ask', 'event': 'ask'})
+        self.assertEqual({k: r['rule'] for k, r in group['rules'].items()}, {'availability': 'always', 'todo': 'ask', 'event': 'ask', 'done': 'always'})
         self.assertEqual(group['members'][0]['rules']['availability']['rule'], 'always')
         work = next(f for f in self.fleet.view()['fleets'] if f['id'] == WORK_ID)
         # Work stays Ask me first, except brief facts and shared emails: a Standard Work Fleet answers them by itself
@@ -122,7 +122,7 @@ class Family(unittest.TestCase):
         self.fleet.fold_rules()
         self.assertEqual(effective(), before)
         group = next(f for f in self.fleet.view()['fleets'] if f['id'] == FAM)
-        self.assertEqual({k: r['rule'] for k, r in group['rules'].items()}, {'availability': 'ask', 'todo': 'always', 'event': 'ask'})  # a tie: Ask me first
+        self.assertEqual({k: r['rule'] for k, r in group['rules'].items()}, {'availability': 'ask', 'todo': 'always', 'event': 'ask', 'done': 'always'})  # a tie: Ask me first
         self.assertEqual({(e['member_id'], e['rule']) for e in group['exceptions']['availability']}, {('fm_robin', 'always'), ('fm_alex', 'never')})
         self.assertNotIn('todo', group['exceptions'])
 

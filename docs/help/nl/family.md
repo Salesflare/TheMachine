@@ -23,6 +23,14 @@ Gaat een to-do over gezinsplannen met iemand die nog niet in je Familie zit, zoa
 - Alleen voor mensen die familie zijn volgens je Graph of je eigen woorden. Nooit voor werkcontacten, mensen die al in je Familie zitten of iemand met een open uitnodiging. Hooguit één keer per persoon.
 - Zet het uit in Instellingen, Algemeen, onder Fleet: **Uitnodigen voor je familie voorstellen**.
 
+## Al gedaan
+
+Krijgen jullie allebei dezelfde e-mail of rekening en vinkt een van jullie de to-do af, dan zegt die van de ander "Robin deed dit al · za 7 nov".
+
+- **Gedaan** sluit de jouwe. **Nog nodig** houdt hem en verbergt de regel.
+- Er sluit niets vanzelf.
+- Alleen een code wordt gedeeld, nooit de to-do. Zet het uit op het paneel Delen: To-do's die je al deed.
+
 ## Regels
 
 Standaard worden vrije en bezette tijden gedeeld; to-do's en plannen vragen het eerst. Wijzig het in het paneel Delen: zie [Deelregels](sharing-rules.md).

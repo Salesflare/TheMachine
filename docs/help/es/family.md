@@ -23,6 +23,14 @@ Cuando una tarea trata de planes familiares con alguien que aún no está en tu 
 - Solo para personas que son familia según tu Graph o tus propias palabras. Nunca para contactos de trabajo, personas que ya están en tu Familia ni alguien con una invitación abierta. Como mucho una vez por persona.
 - Desactívalo en Ajustes, General, en Fleet: **Sugerir invitar a la familia**.
 
+## Ya hecho
+
+Si a los dos os llega el mismo correo o la misma factura y uno marca su tarea como hecha, la del otro dice “Robin ya lo hizo · sáb, 7 nov”.
+
+- **Hecho** cierra la tuya. **Aún hace falta** la mantiene y oculta la línea.
+- Nada se cierra solo.
+- Solo se comparte un código, nunca la tarea. Desactívalo en el panel Compartir: Tareas que ya hiciste.
+
 ## Reglas
 
 Por defecto, las horas libres y ocupadas se comparten; las tareas y los planes preguntan antes. Cámbialo en el panel Compartir: consulta [Reglas para compartir](sharing-rules.md).

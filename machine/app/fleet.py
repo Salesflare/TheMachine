@@ -354,6 +354,8 @@ class FleetApp:
             return self.fleet.network_action(str(args.get('do') or ''), str(args.get('email') or ''), str(args.get('relation') or ''))
         if name == 'fleet_availability':  # ask one friend's Machine when they are busy (busy blocks only)
             return self.fleet.ask_availability(str(args.get('member_id') or ''), str(args.get('start') or ''), args.get('days'))
+        if name == 'family_still_needed':  # a member already did it, but the owner still needs it: the line goes
+            return self.fleet.keep_done_elsewhere(str(args.get('suggestion_id') or ''))
         if name == 'family_free':  # ask everyone in the Family when they are busy; the common free times show here
             return self.fleet.ask_family_free(str(args.get('start') or ''), args.get('days'))
         if name == 'family_todo':  # a to-do for one member, who accepts or declines it on their Machine

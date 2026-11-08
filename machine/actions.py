@@ -190,6 +190,7 @@ FAMILY_ACTIONS = {
     'family_free',
     'family_invite',
     'family_invite_setting',
+    'family_still_needed',
     'family_todo',
 }
 OWNER_ACTIONS |= FAMILY_ACTIONS

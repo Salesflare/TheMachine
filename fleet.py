@@ -60,6 +60,7 @@ from i18n import t
 import fleet_requests
 import fleet_reviews
 import family
+import family_done
 import contact_share
 import friends
 import discovery
@@ -164,9 +165,10 @@ NOTICE_KINDS += ('friend_request', 'friend_accepted')
 FLEET_ID = re.compile(r'(?:fl|fr)_[0-9a-f]{16}')  # a Fleet's id, or the owner's friends group
 # Family (family.py): free/busy, to-dos and plans; friendlier defaults, never the Work kinds
 ASKS['family'] += family.KINDS  # += : other kinds a Family shares (skills) stay
-RULE_KINDS['family'] += family.KINDS
+RULE_KINDS['family'] += family.KINDS + family.RULE_ONLY
 KIND_LABEL.update(family.LABELS)
-NO_DETAILS += family.REQUESTS
+NO_DETAILS += family.REQUESTS + family.RULE_ONLY
+KIND_RULES[family.DONE] = ('always', 'never')  # only who and when, for a to-do both have: no Ask me first
 # Skills (skills.py): a teammate or friend shares a skill; the owner reads it and installs or declines it. Never by rule.
 for _kind in ('work', 'family', 'friends'):
     ASKS[_kind] = ASKS[_kind] + ('skill',)
@@ -2972,25 +2974,48 @@ class Fleet(fleet_requests.Requests, fleet_reviews.Reviews, friends.Friends, con
                 found.append(message_id)
         return list(dict.fromkeys(found))[:5]
 
+    def keep_done_elsewhere(self, card_id):
+        """Still needed: the owner keeps the to-do; its "already did this" line goes and stays away for that member."""
+        with self.connect() as db:
+            row = db.execute('SELECT done_elsewhere FROM suggestions WHERE id=?', (str(card_id),)).fetchone()
+            if not row:
+                raise ValueError('Unknown to-do')
+            kept = family_done.kept(row['done_elsewhere'])
+            if kept:
+                db.execute('UPDATE suggestions SET done_elsewhere=? WHERE id=?', (kept, str(card_id)))
+        return {'kept': bool(kept)}
+
     def handled_round(self):
         """Tell the Fleet which shared emails the owner closed (only the hashes, in Fleets where a teammate's handling rule
         is Always), and mark the owner's open cards a teammate already closed: done by them, or settled by the very
-        teammate the card would hand it to. Only from teammates whose handling rule isn't Never. Plain code."""
+        teammate the card would hand it to. Only from teammates whose handling rule isn't Never. Plain code.
+
+        A Family Fleet the same way, by its own rule (family.DONE): only to-dos closed as done go out, matched by email or
+        bill (family_done.sources), and an open one here gets a quiet line (done_elsewhere: who and when) instead of looking
+        handled. It stays open: the owner taps Done or Still needed."""
         fleets = self.fleets()
+        families = [ref for ref, f in fleets.items() if f.get('kind') == family.KIND]
         with self.connect() as db:
             rules = {ref: {m['member_id']: self.rule(db, ref, m['member_id'], 'handling')[0] for m in self.teammates(ref)} for ref in self.work_fleets()}
+            rules.update({ref: {m['member_id']: self.rule(db, ref, m['member_id'], family.DONE)[0] for m in self.teammates(ref)} for ref in families})
             rules = {ref: found for ref, found in rules.items() if fleets.get(ref, {}).get('secret') and any(r != 'never' for r in found.values())}
             if not rules:
-                return
+                db.execute("UPDATE suggestions SET done_elsewhere=NULL WHERE done_elsewhere IS NOT NULL AND status IN "
+                           f"({','.join('?' * len(OPEN_CARD))})", OPEN_CARD)  # sharing turned off: no line from before stays
+                if not db.execute('SELECT 1 FROM fleet_handled LIMIT 1').fetchone():
+                    return
+            sources = lambda card, ref: family_done.sources(db, card) if ref in families else self.shared_messages(db, card, ref)
             since = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=HANDLED_DAYS)).isoformat()
-            closed = db.execute("SELECT s.id,s.status,s.event_ids FROM suggestions s WHERE s.status IN ('completed','rejected') AND "
+            closed = db.execute("SELECT s.id,s.status,s.event_ids,s.title,s.body FROM suggestions s WHERE s.status IN ('completed','rejected') AND "
                                 '(SELECT max(created_at) FROM decisions d WHERE d.suggestion_id=s.id)>=? ORDER BY s.created_at DESC LIMIT 300', (since,)).fetchall()
             out = {r['key']: dict(r) for r in db.execute('SELECT * FROM fleet_handled')}
             announce, keep = [], set()
             for card in closed:
                 for ref in [r for r in rules if 'always' in rules[r].values()]:
-                    for message_id in self.shared_messages(db, card, ref):
-                        for state in (('done', 'settled') if card['status'] == 'completed' else ('settled',)):
+                    states = (('done',) if card['status'] == 'completed' else ()) if ref in families else \
+                        (('done', 'settled') if card['status'] == 'completed' else ('settled',))
+                    for message_id in sources(card, ref) if states else ():
+                        for state in states:
                             key = self.handled_key(fleets[ref]['secret'], state, message_id)
                             keep.add(key)
                             if key not in out:
@@ -3001,8 +3026,8 @@ class Fleet(fleet_requests.Requests, fleet_reviews.Reviews, friends.Friends, con
             look = {ref: {} for ref in rules}
             for card in open_cards:
                 for ref in rules:
-                    for message_id in self.shared_messages(db, card, ref):
-                        for state in ('done', 'settled'):
+                    for message_id in sources(card, ref):
+                        for state in ('done',) if ref in families else ('done', 'settled'):
                             look[ref].setdefault(self.handled_key(fleets[ref]['secret'], state, message_id), []).append((card, state))
         budget = HANDLED_PER_ROUND
         for row in gone[:budget]:
@@ -3023,6 +3048,7 @@ class Fleet(fleet_requests.Requests, fleet_reviews.Reviews, friends.Friends, con
             with self.connect() as db:
                 db.execute('INSERT OR REPLACE INTO fleet_handled(key,suggestion_id,fleet,state,at) VALUES(?,?,?,?,?)', (key, card_id, ref, state, now()))
         found = {}  # card id -> (teammate's name, whether it's theirs to settle)
+        done_by = {}  # card id -> who in the Family did it, and when (done_elsewhere)
         for ref, keys in look.items():
             if not keys:
                 continue
@@ -3037,11 +3063,17 @@ class Fleet(fleet_requests.Requests, fleet_reviews.Reviews, friends.Friends, con
                 if not member or rules[ref].get(member['member_id']) == 'never':
                     continue
                 for card, state in cards:
+                    if ref in families:
+                        family_done.found(done_by, card['id'], clean(fleet_requests.first_name(member.get('name')), 80), member, ref, holder)
+                        continue
                     handoff = self.handoff_text(card)
                     if state == 'done' or (handoff and self.is_person(member, handoff)):
                         found.setdefault(card['id'], clean(fleet_requests.first_name(member.get('name')), 80) or 'A teammate')
         with self.connect() as db:
             for card in open_cards:
+                line = family_done.line(card['done_elsewhere'], done_by.get(card['id']))
+                if line is not family_done.SAME:
+                    db.execute('UPDATE suggestions SET done_elsewhere=? WHERE id=?', (line, card['id']))
                 hint = card['handled_hint']
                 try:
                     by_fleet = bool(hint and json.loads(hint).get('fleet'))

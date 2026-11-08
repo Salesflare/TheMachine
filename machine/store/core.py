@@ -260,6 +260,8 @@ class StoreCore:
                 db.execute('ALTER TABLE suggestions ADD COLUMN due TEXT')
             if 'handled_hint' not in columns:
                 db.execute('ALTER TABLE suggestions ADD COLUMN handled_hint TEXT')
+            if 'done_elsewhere' not in columns:  # a Family member already did it: who and when (Fleet.handled_round)
+                db.execute('ALTER TABLE suggestions ADD COLUMN done_elsewhere TEXT')
             if 'early' not in columns:
                 db.execute('ALTER TABLE suggestions ADD COLUMN early INTEGER NOT NULL DEFAULT 0')
             if 'awaiting' not in columns:

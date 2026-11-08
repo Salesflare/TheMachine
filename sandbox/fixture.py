@@ -143,7 +143,8 @@ STORIES = [
                       (450, 'Tomasz Varga', 'Seeing it too, only for teams with shared inboxes. Started around 08:00.'),
                       (440, 'Priya Okonedo', 'Alex, can you tell them what is going on? Their admin is asking.')],
      'draft': ('slack', 'Looking into it now. It started with the 08:00 deploy and only hits shared inboxes. I will post here and tell Tidewater once it is fixed, within the hour.')},
-    {'key': 'car', 'family': True, 'status': 'pending', 'minutes': 520,
+    # Already did this (Fleet.handled_round, family.DONE): Jules marked the same to-do done on their Machine
+    {'key': 'car', 'family': True, 'status': 'pending', 'minutes': 520, 'done_by': ('Jules Morgan', 90),
      'title': 'Book the car service before Friday', 'body': 'Robin asked on WhatsApp; the garage needs a day’s notice.',
      'chat': ('Robin Morgan', [(560, False, 'Can you book the car service before Friday? The garage needs a day’s notice.'),
                                (545, True, 'Sure. Same garage as last time?'),
@@ -509,7 +510,8 @@ def build(profile):
         card = {'key': 'open' + str(i), 'title': story['title'], 'body': story['body'], 'status': story['status'], 'events': out, 'accounts': [account],
                 'minutes_ago': story['minutes'], 'source': source, 'project': story.get('project'), 'urgent': bool(story.get('urgent')),
                 'snooze_hours': story.get('snooze_hours'), **({'based_on': based_on} if based_on else {}),
-                **({'asks': story['asks']} if story.get('asks') else {})}  # its chat's taps, as the review writes them (chat_asks)
+                **({'asks': story['asks']} if story.get('asks') else {}),  # its chat's taps, as the review writes them (chat_asks)
+                **({'done_by': {'name': story['done_by'][0], 'minutes_ago': story['done_by'][1]}} if story.get('done_by') else {})}
         kind, body = story.get('draft') or (None, None)
         if kind == 'email':
             last = story['thread'][-1][2]
