@@ -177,7 +177,8 @@ def load(directory, states, port=8870, network_port=8871, fixture_path=HERE / 'f
                 load_owners(db, fixture, base)
         load_logins(directory, fixture)
         load_recurring(store, config, base)
-        load_routines(store, base)
+        if not fresh:  # a fresh Machine has no routines yet: the page's empty state
+            load_routines(store, base)
     return config, config_path
 
 

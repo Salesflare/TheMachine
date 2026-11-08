@@ -17,7 +17,7 @@ Without a time it runs at 8:00. The time is on your Machine's clock.
 
 At its time your Machine reads what it needs, like your messages, meetings and the Graph, and puts the result on the Routines page. Each result says **Ready**, **Nothing new** (with why) or **Didn’t work** (with why). A run that ends without a result counts as one that didn't work, never as done.
 
-A routine only reads. It never sends, replies, posts or changes anything.
+Routines only read. They don’t send, reply, post or change anything.
 
 Each run knows the last result, so it can say what changed since then.
 
@@ -29,7 +29,7 @@ Routines run one at a time and wait when your AI plan's usage is low, like all b
 
 ## Change or stop it
 
-**Change when** takes a new rhythm in your own words, like "every weekday at 8". **Pause** stops the runs until **Resume**; nothing missed while paused runs afterwards. **Stop** ends a routine for good.
+These are in the ⋯ menu on the routine. **Change when** takes a new rhythm in your own words, like "every weekday at 8". **Pause** stops the runs until **Resume**; nothing missed while paused runs afterwards. **Stop** ends a routine for good.
 
 ## Routines and recurring to-dos
 

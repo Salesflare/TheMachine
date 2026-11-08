@@ -17,7 +17,7 @@ Ohne Uhrzeit läuft sie um 8:00. Die Uhrzeit gilt auf der Uhr deiner Machine.
 
 Zu ihrer Zeit liest deine Machine, was sie braucht, etwa deine Nachrichten, Termine und den Graph, und legt das Ergebnis auf der Seite Routinen ab. Jedes Ergebnis zeigt **Bereit**, **Nichts Neues** (mit Grund) oder **Hat nicht geklappt** (mit Grund). Ein Lauf, der ohne Ergebnis endet, zählt als nicht geklappt, nie als erledigt.
 
-Eine Routine liest nur. Sie sendet, antwortet, postet oder ändert nie etwas.
+Routinen lesen nur. Sie senden, antworten, posten oder ändern nichts.
 
 Jeder Lauf kennt das letzte Ergebnis und kann so sagen, was sich seitdem geändert hat.
 
@@ -29,7 +29,7 @@ Routinen laufen nacheinander und warten, wenn das Nutzungslimit deines KI-Abos k
 
 ## Ändern oder stoppen
 
-**Zeitpunkt ändern** nimmt einen neuen Rhythmus in deinen eigenen Worten, wie „jeden Werktag um 8“. **Pausieren** hält die Läufe an bis **Fortsetzen**; was während der Pause verpasst wurde, läuft danach nicht. **Stopp** beendet eine Routine endgültig.
+Das steht im ⋯-Menü der Routine. **Zeitpunkt ändern** nimmt einen neuen Rhythmus in deinen eigenen Worten, wie „jeden Werktag um 8“. **Pausieren** hält die Läufe an bis **Fortsetzen**; was während der Pause verpasst wurde, läuft danach nicht. **Stopp** beendet eine Routine endgültig.
 
 ## Routinen und wiederkehrende Aufgaben
 

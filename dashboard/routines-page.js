@@ -1,7 +1,4 @@
-// Routines (routines.py, docs/help/routines.md): work The Machine does on its own, on a rhythm. Not a recurring to-do
-// (todos-repeat.js), which reminds the owner; only the rhythm's words are shared. One page: a routine in the owner's
-// words, when it runs, its latest result and the ones before; Run now, Change when, Pause or Resume, Stop. A routine
-// only reads: it never sends or changes anything.
+// Routines (routines.py): work The Machine does on its own, on a rhythm; it only reads. Not a recurring to-do.
 let routinesData=null,routinesAt=0;
 const RT_STATE={ready:'Ready',nothing:'Nothing new',failed:'Didn’t work',running:'Running…'};
 const rtTime=at=>localeTime(new Date('2000-01-01T'+at),DL,{hour:'numeric',minute:'2-digit'});
@@ -14,10 +11,10 @@ const rtRun=x=>html`<div class="rt-run"><p class="rt-run-head"><span class="rt-s
 function rtCard(r){const [last,...older]=r.runs,paused=r.state==='paused';
  return html`<article class="rt${paused?html` paused`:''}" data-rt="${r.id}"><h3>${r.name}</h3><p class="rt-when">${rtWhen(r)}</p>${r.instructions!==r.name?html`<p class="rt-what">${r.instructions}</p>`:''}
   ${last?rtRun(last):html`<p class="rt-why">${t('No result yet.')}</p>`}${older.length?html`<details class="rt-earlier"><summary>${t('Earlier')}</summary>${older.map(rtRun)}</details>`:''}
-  <div class="actions"><button type="button" class="ghost" data-rt-do="now"${last?.state==='running'?html` disabled`:''}>${t('Run now')}</button><button type="button" class="ghost" data-rt-do="when">${t('Change when')}</button><button type="button" class="ghost" data-rt-do="${paused?'resume':'pause'}">${t(paused?'Resume':'Pause')}</button><button type="button" class="ghost" data-rt-do="stop">${t('Stop')}</button></div></article>`}
+  <div class="actions"><button type="button" class="ghost" data-rt-do="now"${last?.state==='running'?html` disabled`:''}>${t('Run now')}</button><details class="more-actions"><summary aria-label="${t('More actions')}" title="${t('More actions')}">${DOTS}</summary><div class="more-menu" role="group" aria-label="${t('More actions')}"><button type="button" data-rt-do="when">${t('Change when')}</button><button type="button" data-rt-do="${paused?'resume':'pause'}">${t(paused?'Resume':'Pause')}</button><button type="button" class="danger" data-rt-do="stop">${t('Stop')}</button></div></details></div></article>`}
 function routinesRender(){const box=$('#routines-view'),list=routinesData?.routines;if(!box||!list)return;const typed=$('#rt-words')?.value||'';
- box.innerHTML=html`<form class="rt-new"><input id="rt-words" autocomplete="off" placeholder="${t('Every Monday at 9, sum up my open deals')}" aria-label="${t('New routine')}"><button class="primary">${t('Add')}</button></form>
-  <p class="fine">${t('A routine only reads. It never sends or changes anything.')}</p>${list.length?list.map(rtCard):html`<div class="empty"><div><strong>${t('No routines yet')}</strong><small>${t('Tell me what to do and when. I do it on my own and put the result here.')}</small></div></div>`}`.s;
+ box.innerHTML=html`<form class="rt-new"><input id="rt-words" autocomplete="off" placeholder="${t('Every Monday, sum up my deals')}" aria-label="${t('New routine')}"><button class="primary">${t('Add')}</button></form>
+  <p class="fine">${t('Routines only read. They don’t send or change anything.')}</p>${list.length?list.map(rtCard):html`<p class="rt-empty">${t('No routines yet')}</p>`}`.s;
  $('#rt-words').value=typed}
 async function routinesView(force){if(!force&&Date.now()-routinesAt<20000&&routinesData){routinesRender();return}
  try{routinesData=await request('api/routines');routinesAt=Date.now();routinesRender()}catch(e){errCaught(e);toast(e.message,true)}}
@@ -29,5 +26,5 @@ $('#routines-view').addEventListener('submit',e=>{e.preventDefault();const f=e.t
 $('#routines-view').addEventListener('click',e=>{const b=e.target.closest('[data-rt-do]');if(!b)return;const card=b.closest('[data-rt]'),id=card.dataset.rt,what=b.dataset.rtDo;
  if(what==='now')rtDo('routine_run_now',{id},b,t('Running it now'));
  else if(what==='when'){card.querySelector('.rt-when-form')?.remove();card.querySelector('.actions').insertAdjacentHTML('beforebegin',html`<form class="rt-new rt-when-form"><input autocomplete="off" placeholder="${t('Every weekday at 8')}" aria-label="${t('Change when')}"><button class="primary">${t('Save')}</button></form>`.s);card.querySelector('.rt-when-form input').focus()}
- else if(what==='stop'&&!b.dataset.sure){b.dataset.sure='1';b.textContent=t('Stop for good?');setTimeout(()=>{if(b.isConnected){delete b.dataset.sure;b.textContent=t('Stop')}},4000)}
+ else if(what==='stop'&&!b.dataset.sure){e.stopPropagation();b.dataset.sure='1';b.textContent=t('Stop for good?');setTimeout(()=>{if(b.isConnected){delete b.dataset.sure;b.textContent=t('Stop')}},4000)}
  else rtDo('routine_state',{id,to:what},b,what==='stop'?t('Routine stopped'):'')});
