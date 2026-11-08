@@ -4,7 +4,7 @@ area: connections
 summary: Haz que tu Machine funcione con los modelos de Mistral, con una clave de API de Mistral. Le Chat Pro incluye créditos de API.
 covers: mistral
 code: docs/models.md, dashboard/settings-models.js
-site: Other AI services, Save key
+site: Other AI services, Save key, Keys, Remove
 ---
 ## Para qué sirve
 
@@ -28,4 +28,4 @@ En tu propio ordenador, mira la [guía de modelos](https://github.com/Salesflare
 
 ## Quítalo
 
-Elige otro modelo principal en tu página de configuración. Para detener la clave, bórrala en la consola de Mistral.
+En tu página de configuración, en Tu IA, pulsa **Quitar** junto a Mistral en **Claves**. La clave se borra de tu Machine y, si Mistral era tu modelo principal, otro modelo conectado toma el relevo. Para anular la clave en sí, bórrala en la consola de Mistral.

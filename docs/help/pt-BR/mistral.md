@@ -4,7 +4,7 @@ area: connections
 summary: Rode sua Machine nos modelos da Mistral, com uma chave de API da Mistral. O Le Chat Pro inclui créditos de API.
 covers: mistral
 code: docs/models.md, dashboard/settings-models.js
-site: Other AI services, Save key
+site: Other AI services, Save key, Keys, Remove
 ---
 ## Para que serve
 
@@ -28,4 +28,4 @@ No seu próprio computador, veja o [guia de modelos](https://github.com/Salesfla
 
 ## Remover
 
-Escolha outro modelo principal na sua página de configuração. Para parar a chave, apague-a no console da Mistral.
+Na sua página de configuração, em Sua IA, toque em **Remover** ao lado de Mistral em **Chaves**. A chave é apagada da sua Machine e, se a Mistral era seu modelo principal, outro modelo conectado assume. Para cancelar a chave em si, apague-a no console da Mistral.
