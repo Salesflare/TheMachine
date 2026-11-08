@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parent.parent
 STUB = '''#!/bin/sh
 echo "{name} $*" >> "{log}"
 if [ "$*" = "$ASSISTANT_TEST_FAIL" ]; then echo "Synthetic failure" >&2; exit 1; fi
-case "$*" in --version) echo "OpenClaw 2026.10.7 (test)";; *list-unit-files*) echo "openclaw-gateway.service enabled enabled";; esac
+case "$*" in --version) echo "OpenClaw 2026.11.2 (test)";; *list-unit-files*) echo "openclaw-gateway.service enabled enabled";; esac
 exit 0
 '''
 ANSWERS = {'ASSISTANT_OWNER_NAME': 'Alex Owner', 'ASSISTANT_TELEGRAM_OWNER': '1000001',
@@ -45,7 +45,7 @@ class InstallerTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp, mock.patch.object(installer, 'run', side_effect=run), \
                 mock.patch.object(installer, 'say'):
             stamp = Path(tmp) / 'plugin-installed'
-            facts = {'openclaw': 'openclaw', 'openclaw_version': '2026.10.7'}
+            facts = {'openclaw': 'openclaw', 'openclaw_version': '2026.11.2'}
             self.assertTrue(installer.install_plugin(facts, stamp=stamp))
             self.assertIn(['plugins', 'reload'], calls)
             calls.clear()
@@ -255,7 +255,7 @@ class InstallerTest(unittest.TestCase):
                 mock.patch.object(installer, 'say', side_effect=said.append), \
                 mock.patch.object(installer.onboarding, 'gateway_units', return_value=[unit] if unit else []), \
                 mock.patch.dict(os.environ, {'ASSISTANT_GATEWAY_WAIT': '60'}):
-            ok = installer.install_plugin({'openclaw': 'openclaw', 'openclaw_version': '2026.10.7'}, stamp=stamp)
+            ok = installer.install_plugin({'openclaw': 'openclaw', 'openclaw_version': '2026.11.2'}, stamp=stamp)
         return ok, calls, '\n'.join(said), stamp.exists()
 
     def test_a_reload_without_a_running_gateway_starts_it_and_checks_the_bridge_loaded(self):
@@ -307,7 +307,7 @@ class InstallerTest(unittest.TestCase):
             path.chmod(0o755)
         package = self.tmp / 'lib/node_modules/openclaw'
         package.mkdir(parents=True)
-        (package / 'package.json').write_text(json.dumps({'name':'openclaw','version':'2026.10.7'}))
+        (package / 'package.json').write_text(json.dumps({'name':'openclaw','version':'2026.11.2'}))
         (self.bin / 'node').symlink_to(shutil.which('node'))
         self.data = self.home / '.local/share/personal-assistant'
         self.config = self.data / 'config.json'
@@ -532,7 +532,7 @@ class InstallerTest(unittest.TestCase):
         result = self.install('--no-start')
         self.assertEqual(result.returncode, 1)
         self.assertIn('FAIL  openclaw CLI not found', result.stdout)
-        self.assertIn('npm install -g openclaw@2026.10.7', result.stdout)
+        self.assertIn('npm install -g openclaw@2026.11.2', result.stdout)
         self.assertFalse(self.config.exists())
 
     def test_without_openclaw_it_offers_to_install_it_and_walks_through_its_setup(self):
@@ -577,17 +577,17 @@ class InstallerTest(unittest.TestCase):
             self.assertIn('was not installed: the registry checksum does not match', '\n'.join(said))
             pinned.side_effect = None
             installer.offer_openclaw(UI([True, True]))
-            pinned.assert_called_with('2026.10.7')
+            pinned.assert_called_with('2026.11.2')
             self.assertIn(str(self.home / '.local/bin'), os.environ['PATH'])  # the rest of this run finds it
         local = self.home / '.local'
-        self.assertIn([str(self.bin / 'npm'), 'install', '-g', 'openclaw@2026.10.7', '--prefix', str(local)], ran)
+        self.assertIn([str(self.bin / 'npm'), 'install', '-g', 'openclaw@2026.11.2', '--prefix', str(local)], ran)
         # npm 11 held back the install scripts: exactly those run for this install.
         self.assertIn([str(self.bin / 'npm'), 'rebuild', '-g', '--prefix', str(local), '--allow-scripts=esbuild,koffi,openclaw'], ran)
         self.assertIn([str(local / 'bin/openclaw'), 'onboard', '--install-daemon'], ran)
         self.assertIn([str(local / 'bin/openclaw'), 'health'], ran)
         self.assertFalse(any('channels' in a for a in ran))  # the wizard already added the bot
         text = '\n'.join(said)
-        self.assertIn('Install OpenClaw 2026.10.7 now? (runs: npm install -g openclaw@2026.10.7 --prefix', text)
+        self.assertIn('Install OpenClaw 2026.11.2 now? (runs: npm install -g openclaw@2026.11.2 --prefix', text)
         self.assertIn('@BotFather', text)
         self.assertIn('Gateway: say yes to running it as a service', text)
 

@@ -58,7 +58,7 @@ The full walkthrough: [Getting started](docs/getting-started.md).
 - Your own user account, not root.
 - **Python 3.12 or newer.** The app uses the standard library only.
 - **Node.js** `>=24.22.1 <25` or `>=26.12.1` to install OpenClaw. An OpenClaw that is already set up keeps working on Node 24.16+ or 26.1+; update Node before you update OpenClaw. Node 22 and 25 are not supported.
-- **[OpenClaw](https://docs.openclaw.ai) 2026.10.7 or later**, The Machine's agent runtime. The installer offers to install and set it up. A Telegram bot on it is optional: without one, to-dos reach you in the dashboard app.
+- **[OpenClaw](https://docs.openclaw.ai) 2026.11.2 or later**, The Machine's agent runtime. The installer offers to install and set it up. A Telegram bot on it is optional: without one, to-dos reach you in the dashboard app.
 - **Tailscale** to reach the dashboard (it serves only your Tailscale identity). Caddy only if you want it on your own domain (`deploy/Caddyfile`).
 - Per source, only what you connect: `gog` for Gmail and Calendar, your own Microsoft Entra app for Outlook, `wacli` for WhatsApp, and so on. See [Sources](docs/sources.md) and [Getting started](docs/getting-started.md).
 

@@ -10,7 +10,7 @@ with a key listed in `deploy/release-signers`.
 - Update with `python3 scripts/release.py update`. It installs only a release whose signature checks out.
   On Linux, `./install.sh` sets up a daily timer that does this (signed releases only; off with `"auto_update": false`).
 - Hosted Machines check the same signature before every update.
-- CI checks OpenClaw 2026.10.7 and, weekly, the latest release. Future releases and older snapshots are not
+- CI checks OpenClaw 2026.11.2 and, weekly, the latest release. Future releases and older snapshots are not
   certified by those tests.
 
 This is an early release for one owner on a trusted computer, not a public multi-user service.

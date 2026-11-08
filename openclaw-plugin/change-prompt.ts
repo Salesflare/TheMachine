@@ -27,8 +27,15 @@ export async function telegramInternals() {
   const helpers:any={};
   for(const name of ['getOrCreateAccountThrottler','createTelegramClientFetch','asTelegramClientFetch']) {
     const alias=table?.split(',').map(x=>x.trim().split(/\s+as\s+/)).find(x=>x[0]===name)?.[1];
-    if(!alias||typeof send[alias]!=='function') throw Error('Telegram client helper unavailable: '+name);
-    helpers[name]=send[alias];
+    if(alias&&typeof send[alias]==='function') { helpers[name]=send[alias]; continue; }
+    // Newer builds import a helper into the send module without exporting it again: follow that import.
+    const from=[...sendSource.matchAll(/import \{([^}]*)\} from "([^"\n]+)"/g)]
+      .map(m=>[m[1].split(',').map(x=>x.trim().split(/\s+as\s+/)).find(x=>x[1]===name)?.[0],m[2]]).find(x=>x[0]);
+    const file=from&&resolve(dirname(sendFile),from[1]);
+    if(!file||!file.startsWith(resolve(DIST,'dist')+'/')) throw Error('Telegram client helper unavailable: '+name);
+    const fn=(await import(pathToFileURL(file).href))[from[0]];
+    if(typeof fn!=='function') throw Error('Telegram client helper unavailable: '+name);
+    helpers[name]=fn;
   }
   const result={resolveTelegramAccount:account.resolveTelegramAccount,sendMessageTelegram:runtime.sendMessageTelegram,
     resolveTelegramTransport:runtime.resolveTelegramTransport,makeProxyFetch:runtime.makeProxyFetch,Bot,...helpers};
