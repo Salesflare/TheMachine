@@ -33,11 +33,13 @@ matter.
    model (OpenAI, Claude, a local one) and use your own plan. It outlives any provider: your Machine and everything it
    learned stay yours, in open formats you can take with you, even if a model or a company disappears. Nothing goes
    out without you seeing it, and security is never relaxed.
-2. **It's right, and honest about it.** It catches everything that matters (to-dos, promises, follow-ups) and lets the
-   noise go. It shows where things come from, says when it's unsure, and never makes things up.
-3. **It does the work, you keep control.** You never have to work out what to ask; it spots what it can help with
-   and offers it. Every to-do arrives as close to done as it can be: one tap to approve, not homework. It starts by
-   asking and earns more freedom as it proves itself. You can always see what it did, and undo it.
+2. **It's right, and honest about it.** No to-do is missed: it catches every to-do, promise and follow-up that
+   matters, and lets the noise go. It shows where things come from, says when it's unsure, and never makes things
+   up.
+3. **It does the work, you keep control.** Its agents do as much as they can on their own, without you ever losing
+   control. You never have to work out what to ask; it spots what it can help with and offers it. Every to-do arrives
+   as close to done as it can be: one tap to approve, not homework. It starts by asking and earns more freedom as it
+   proves itself. You can always see what it did, and undo it.
 4. **It's for everyone.** Easy: set up in minutes, no technical skills needed, plain words in your own language.
    Affordable: a fair price for a hosted Machine, and free to run yourself.
 5. **It brings you closer to people.** It helps you show up for the people in your life: remember, follow up, keep
@@ -45,8 +47,9 @@ matter.
 6. **It's with you everywhere.** Desktop, phone, chat apps, browser: one Machine that carries the context from one to
    the next and works with the tools you already use. Work and personal stay apart where they should (your team
    never sees your personal life) and come together where it helps.
-7. **It feels instant and calm.** Every click answers in about 100 ms. Few words, few notifications, only ones that
-   matter. It asks for less of your attention, not more.
+7. **It feels instant and calm.** Every click answers in about 100 ms. It shows rather than tells: chat and plain
+   text are flexible, but rarely the quickest way to take something in. Few words, few notifications, only ones
+   that matter. It asks for less of your attention, not more.
 8. **It's smart, not wasteful.** As much intelligence as possible per token, so it runs well on a $20 OpenAI or Claude
    plan. Model calls go where they change the outcome; plain code, caching and cheap checks do the rest.
 9. **It gets better by itself, for you and for everyone.** It learns you fast, without being taught. The whole
