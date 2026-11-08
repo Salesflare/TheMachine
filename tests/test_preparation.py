@@ -498,6 +498,75 @@ class Preparation(unittest.TestCase):
         self.assertIn('click',history['history']);self.assertIsNone(history['next_offset'])
         self.assertTrue(self.app.action('preparation_tool_intent',args)['active'])
 
+    def continue_after_a_send(self,compacted=False):
+        """An earlier run sends a message, then fails; the retry continues the same OpenClaw session."""
+        import sqlite3
+        self.accept();old=self.job()['job_id']
+        self.app.preparation_step(lambda _: {'status':'admitted'})
+        send={'job_id':old,'call_id':'send','tool':'message','params':{'action':'send','to':'tom','text':'Hi Tom'}}
+        self.assertTrue(self.app.action('preparation_tool_intent',send)['active'])
+        self.app.action('preparation_tool_result',{'job_id':old,'call_id':'send','result':{'ok':True}})
+        agent=Path(self.temp.name)/'agent.sqlite';self.app.config['agent_db']=str(agent)
+        with sqlite3.connect(agent) as db:
+            db.execute('CREATE TABLE session_windows(session_id TEXT PRIMARY KEY,session_key TEXT,created_at INTEGER)')
+            db.execute('CREATE TABLE transcript_event_identities(session_id TEXT,event_id TEXT,seq INTEGER,event_type TEXT,created_at INTEGER)')
+            db.execute('INSERT INTO session_windows VALUES(?,?,1)',('s1','agent:main:assistant-review-preparation-'+old))
+            if compacted:db.execute("INSERT INTO transcript_event_identities VALUES('s1','e1',9,'compaction',2)")
+        self.app.preparation_step(lambda _: {'status':'error'})
+        with self.store.connect() as db:db.execute('UPDATE preparations SET retry_at=NULL')
+        starts=[]
+        self.app.preparation_step(lambda r:starts.append(r) or {'status':'admitted'})
+        new=self.job()['job_id'];self.assertNotEqual(new,old)
+        return old,new,send,starts[-1]['message']
+
+    def test_a_continuation_whose_session_holds_its_history_skips_the_reread(self):
+        old,new,send,message=self.continue_after_a_send()
+        self.assertIn('preparation_history is not needed',message);self.assertNotIn('read assistant_signals preparation_history',message)
+        intent=lambda cid,params,tool='message':self.app.action('preparation_tool_intent',{'job_id':new,'call_id':cid,'tool':tool,'params':params})
+        # The same send again is refused in code, without any history read; another step runs.
+        refused=intent('again',send['params'])
+        self.assertFalse(refused['active']);self.assertIn('already ran',refused['reason'])
+        self.assertTrue(intent('other',{'action':'send','to':'tom','text':'Hi Tom, one more thing'})['active'])
+        # Browser steps depend on the page, so the same click twice is not a repeat.
+        self.assertTrue(intent('c1',{'action':'click','ref':'e1'},'browser')['active'])
+        self.assertTrue(intent('c2',{'action':'click','ref':'e1'},'browser')['active'])
+        # A note the owner wrote after the send can ask for it again.
+        with self.store.connect() as db:
+            db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES('n1',?,'other','Send it again','dashboard','9999')",(self.sid,))
+        self.assertTrue(intent('again2',send['params'])['active'])
+
+    def test_an_uncertain_earlier_step_is_not_repeated_either(self):
+        import preparation_state as custody
+        old,new,send,_=self.continue_after_a_send()
+        with self.store.connect() as db:
+            db.execute("UPDATE preparation_calls SET finished_at=NULL,result=NULL WHERE job_id=?",(old,))
+            reason=custody.repeated_step(db,self.sid,{'job_id':new,'tool':'message','params':send['params']})
+            self.assertIn('may already have run',reason)
+            db.execute("UPDATE preparation_calls SET error='failed' WHERE job_id=?",(old,))
+            self.assertIsNone(custody.repeated_step(db,self.sid,{'job_id':new,'tool':'message','params':send['params']}))
+
+    def test_a_compacted_session_still_reads_the_history_first(self):
+        old,new,send,message=self.continue_after_a_send(compacted=True)
+        self.assertIn('read assistant_signals preparation_history',message)
+        self.assertFalse(self.app.action('preparation_tool_intent',{'job_id':new,'call_id':'x','tool':'message','params':{'action':'send','to':'ann'}})['active'])
+
+    def test_session_holds_since_is_read_only_and_doubtful_answers_false(self):
+        import sqlite3
+        agent=Path(self.temp.name)/'agent.sqlite'
+        from machine.browser import session_holds_since
+        holds=lambda since:session_holds_since('k',since,str(agent))
+        self.assertFalse(holds('2026-10-14T12:00:00+00:00'))  # no database
+        with sqlite3.connect(agent) as db:
+            db.execute('CREATE TABLE session_windows(session_id TEXT PRIMARY KEY,session_key TEXT,created_at INTEGER)')
+            db.execute('CREATE TABLE transcript_event_identities(session_id TEXT,event_id TEXT,seq INTEGER,event_type TEXT,created_at INTEGER)')
+            start=int(a.dt.datetime.fromisoformat('2026-10-14T12:00:00+00:00').timestamp()*1000)
+            db.execute("INSERT INTO session_windows VALUES('s1','k',?)",(start,))
+        self.assertTrue(holds('2026-10-14T12:00:00+00:00'))
+        self.assertFalse(holds('2026-10-14T11:59:59+00:00'))  # the session began after the earlier work
+        self.assertFalse(holds('not a time'))
+        with sqlite3.connect(agent) as db:db.execute("INSERT INTO transcript_event_identities VALUES('s1','e','1','reset',1)")
+        self.assertFalse(holds('2026-10-14T12:00:00+00:00'))
+
     def test_continuation_can_always_save_and_reads_a_compact_history(self):
         self.accept();self.app.config={'accounts':[]};old=self.job()['job_id']
         self.app.preparation_step(lambda _: {'status':'admitted'})

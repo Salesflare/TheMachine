@@ -142,7 +142,7 @@ When a prepared-ahead task ends in a click that commits something (submitting a 
 
 The owner reviews the preview and taps Confirm; that runs a Do it turn for only this step, which stops with a blocker if anything differs from the preview. Text the owner edited wins over the instructions and anything typed on the page earlier. `finish_state:completed` closes the card once no other step (a draft, Confirm) waits. Messages keep their own send actions (email, LinkedIn, Slack, X, WhatsApp) and fixes to The Machine `kind:merge`.
 
-Retries keep this exact confirmed step and preview. Read preparation_history and check earlier results before repeating any write. Save `finish_state:completed` only with a verified receipt or changed state; `finish_state:not_performed` only after positively confirming nothing was submitted; otherwise `finish_state:uncertain`. An uncertain attempt resumes with source reconciliation first, never a blind new submission. If sign-in is needed, retain the same finish action: after sign-in Confirm resumes it, without creating another action.
+Retries keep this exact confirmed step and preview. Check earlier results (above or in preparation_history) before repeating any write. Save `finish_state:completed` only with a verified receipt or changed state; `finish_state:not_performed` only after positively confirming nothing was submitted; otherwise `finish_state:uncertain`. An uncertain attempt resumes with source reconciliation first, never a blind new submission. If sign-in is needed, retain the same finish action: after sign-in Confirm resumes it, without creating another action.
 
 ### Other buttons
 

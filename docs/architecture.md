@@ -60,6 +60,9 @@ Python's standard library and SQLite are enough: no database server, queue, web 
 
 - Provider IDs deduplicate events per account. A changed event gets a new version and becomes reviewable again.
 - Each source page commits its events and next cursor in one transaction, so a crash replays the page instead of losing or duplicating it.
+- `preparation_calls` journals each Do it step. A run that continues a to-do whose earlier steps are still in its
+  OpenClaw session (not compacted or reset since) skips rereading them; the same app or message step with the same
+  parameters as an earlier one is refused in code, unless the owner wrote a note after it.
 
 **One brain.** The chat's tools, Talk, connected AIs (MCP) and the dashboard ask the same questions about people,
 organizations and projects. `knowledge.py` answers them once:

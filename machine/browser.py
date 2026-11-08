@@ -478,6 +478,24 @@ def transcript_tool_calls(session_key, agent_db=None, limit=4, scan=60):
     return calls[:limit]
 
 
+def session_holds_since(session_key, since, agent_db=None):
+    """True when the agent's current session for this key began before `since` (an ISO time) and was never compacted
+    or reset: everything that happened in it since then is still in its context. Read-only; any doubt gives False."""
+    path = agent_db or AGENT_DB
+    try:
+        start = int(dt.datetime.fromisoformat(since).timestamp() * 1000)
+        if not Path(path).exists():
+            return False
+        with contextlib.closing(sqlite3.connect(f"file:{path}?mode=ro", uri=True, timeout=1)) as db:
+            session = db.execute('SELECT session_id,created_at FROM session_windows WHERE session_key=? ORDER BY created_at DESC LIMIT 1',
+                                 (session_key,)).fetchone()
+            return bool(session) and session[1] <= start and not db.execute(
+                "SELECT 1 FROM transcript_event_identities WHERE session_id=? AND event_type IN ('compaction','reset') LIMIT 1",
+                (session[0],)).fetchone()
+    except (sqlite3.Error, ValueError, TypeError, OSError):
+        return False
+
+
 def preparation_steps(job_id, agent_db=None, limit=4):
     """The latest step titles of a running preparation, read from the agent's own transcript (read-only).
 

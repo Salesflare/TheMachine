@@ -38,9 +38,38 @@ def tool_intent(db, args, stamp):
                          (run['suggestion_id'], args['job_id'])).fetchone()
     if earlier and not run['history_read'] and not args.get('read_only') and not finishing(args):
         return {'active': False, 'reason': 'Read preparation_history first, then reconcile completed or uncertain steps before continuing. Do not repeat the whole task.'}
+    if earlier and not args.get('read_only') and not finishing(args):
+        repeat = repeated_step(db, run['suggestion_id'], args)
+        if repeat:
+            return {'active': False, 'reason': repeat}
     db.execute('INSERT OR IGNORE INTO preparation_calls(job_id,call_id,tool,params,started_at) VALUES(?,?,?,?,?)',
                (args['job_id'], args['call_id'], args['tool'], json.dumps(args.get('params',{}),ensure_ascii=False), stamp))
     return {'active': True}
+
+
+# Browser steps depend on the page they run on (the same click on another page is another step), so only app and
+# message tools are matched.
+POSITIONAL_TOOLS = ('browser',)
+
+
+def repeated_step(db, suggestion_id, args):
+    """Plain-code check, so a continuation needn't reread its history: the exact same write (same tool, same parameters)
+    that an earlier run on this to-do already made, or may have made, is refused. A note the owner wrote after it (a chat
+    message, Change) can ask for it again; a Do it tap or a retry can't. Clipped parameters are never compared."""
+    params = args.get('params', {})
+    if args.get('tool') in POSITIONAL_TOOLS or clipped(params):
+        return None
+    earlier = db.execute('''SELECT c.started_at,c.finished_at FROM preparation_calls c JOIN preparation_runs r USING(job_id)
+        WHERE r.suggestion_id=? AND c.job_id!=? AND c.tool=? AND c.params=? AND c.error IS NULL
+        ORDER BY c.started_at DESC LIMIT 1''', (suggestion_id, args['job_id'], args['tool'], json.dumps(params, ensure_ascii=False))).fetchone()
+    if not earlier:
+        return None
+    if db.execute("""SELECT 1 FROM decisions WHERE suggestion_id=? AND choice='other' AND source IN ('dashboard','telegram')
+                     AND created_at>? LIMIT 1""", (suggestion_id, earlier['started_at'])).fetchone():
+        return None
+    done = 'already ran' if earlier['finished_at'] else 'may already have run'
+    return (f'This exact step {done} in an earlier run on this to-do. Do not repeat it: check the app for its result, '
+            'or save a blocker asking the owner if it must run again.')
 
 
 # Saving the result or a blocker is always allowed: a continuation that can't finish would only

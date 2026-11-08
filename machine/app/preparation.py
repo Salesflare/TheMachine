@@ -28,6 +28,7 @@ from machine.browser import (
     PEEK_EVERY,
     PEEK_WIDTH,
     preparation_steps,
+    session_holds_since,
     signin_handoff,
     task_page,
 )
@@ -51,6 +52,11 @@ from timeutil import local_tz, now
 import todo_areas
 
 
+# A continuation whose earlier work is still in its session (history_in_session).
+SAME_SESSION_NOTE = ('This continues the SAME session: your earlier work on this to-do is above, so preparation_history is not '
+                     'needed. Do not repeat an external step that already happened; check uncertain ones against the app first. '
+                     'If the owner\'s latest note asks for something different (a rewrite, another approach), do that. Saving your '
+                     'result or a blocker is always allowed.')
 # The longest turn message the runner (preparation-run.mjs) starts; it refuses longer ones before the Gateway sees them.
 PROMPT_LIMIT = 60000
 
@@ -403,6 +409,18 @@ class PreparationApp:
             try:self.preparation_run_step(job,runner)
             except Exception as error:LOG.error('preparation error=%s',type(error).__name__)
 
+    def history_in_session(self, job, session_job_id):
+        """A continuation whose session still holds every earlier call on this to-do (not compacted or reset since)
+        doesn't read preparation_history again: it is already in its context. The run counts as having read it, and
+        repeating an earlier step is still refused in code (preparation_state.repeated_step)."""
+        with self.store.connect() as db:
+            first = db.execute('''SELECT min(c.started_at) FROM preparation_calls c JOIN preparation_runs r USING(job_id)
+                                  WHERE r.suggestion_id=? AND c.job_id!=?''', (job['suggestion_id'], job['job_id'])).fetchone()[0]
+            if not first or not session_holds_since('agent:main:assistant-review-preparation-' + session_job_id, first, self.config.get('agent_db')):
+                return False
+            db.execute('UPDATE preparation_runs SET history_read=1 WHERE job_id=?', (job['job_id'],))
+        return True
+
     def preparation_run_step(self, job, runner):
         """One start or status check for one admitted preparation."""
         action='status' if job['status']=='running' else 'start'
@@ -518,7 +536,9 @@ class PreparationApp:
                 lines=self.agent_work(job['suggestion_id'])
                 if len(request['message'])+len(lines)<PROMPT_LIMIT-1000:request['message']+=lines
             except Exception as error:LOG.error('agent work error=%s',type(error).__name__)
-            if request['session_job_id'] != job['job_id']:
+            if request['session_job_id'] != job['job_id'] and self.history_in_session(job, request['session_job_id']):
+                request['message']+='\n'+SAME_SESSION_NOTE
+            elif request['session_job_id'] != job['job_id']:
                 request['message']+='\nThis continues the SAME session, with earlier work in context. Before changing anything in an app, read assistant_signals preparation_history (offset 0, then any next_offset): a compact list of earlier calls. Summaries are shortened: when reconciling a call, request preparation_history with its call_ref, offset 0 and any next_offset for exact saved parameters and receipts. If detail_complete=false, check the retained transcript or original app for the missing suffix. Do not repeat an external step that already happened; check uncertain ones against the app first. If the owner\'s latest note asks for something different (a rewrite, another approach), do that. Saving your result or a blocker is always allowed.'
             try:  # files the owner added to the message that started this run: images as images, all of them as files
                 with self.store.connect() as db:
