@@ -64,6 +64,24 @@ class Sealer(unittest.TestCase):
         with self.assertRaises(message_seal.SealError):
             message_seal.Sealer(os.urandom(32)).open(self.sealer.seal('pay the invoice'))
 
+    def test_a_small_value_read_again_opens_once_a_damaged_one_fails_each_time(self):
+        """Each status poll reads the same rows again: a small value or JSON opened once is kept for this key; a long one
+        (a body) is opened each time, and a damaged one never opens."""
+        small, big = self.sealer.seal('pay the invoice'), self.sealer.seal('x' * (message_seal.KEEP_OPENED[0] + 1))
+        meta = self.sealer.seal_json(json.dumps({'thread_id': 't1', 'snippet': CANARY}))
+        damaged = bytearray(self.sealer.seal('pay the invoice'))
+        damaged[-20] ^= 1
+        with unittest.mock.patch.object(self.sealer, '_stream', wraps=self.sealer._stream) as stream:
+            for _ in range(3):
+                self.assertEqual(self.sealer.open_any(small), 'pay the invoice')
+                self.assertEqual(json.loads(self.sealer.open_any(meta)), {'thread_id': 't1', 'snippet': CANARY})
+                self.assertEqual(len(self.sealer.open_any(big)), message_seal.KEEP_OPENED[0] + 1)
+                with self.assertRaises(message_seal.SealError):
+                    self.sealer.open_any(bytes(damaged))
+            self.assertEqual(stream.call_count, 1 + 1 + 3)
+        with self.assertRaises(message_seal.SealError):  # kept per key: another key still can't open it
+            message_seal.Sealer(os.urandom(32)).open(small)
+
     def test_text_the_gateway_plugin_seals_opens_here_and_fails_loudly_otherwise(self):
         sealed = self.sealer.seal_inbox(CANARY + ' Grüße 👋')
         self.assertTrue(sealed.startswith(message_seal.INBOX))
