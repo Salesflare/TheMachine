@@ -6,7 +6,7 @@ This finds them in the agent's own transcripts (read-only): suggest calls whose 
 at most MAX_AGE_DAYS back, whose messages are in no to-do now. Each goes back to the review once (pending, no
 deferrals); the review dedupes against existing to-dos as for any message, so nothing is made twice. Messages a failed
 save since the fix keeps (review_save_failures) are that fix's to hold. A plain scan, no model calls. A copy of the
-database comes first (Store.copy_before), and store_fixes marks it done, so it runs once."""
+database comes first and store_fixes marks it done, so it runs once (Store.requeue_once)."""
 import base64
 import contextlib
 import datetime as dt
@@ -109,33 +109,18 @@ def failed_saves(agent_db, since, node='node'):
 
 def requeue(store, agent_db, node='node', now=None):
     """Once: the messages of failed saves that ended in no to-do go back to the review. Returns how many."""
+    if store.fix_done(NAME):
+        return 0
     now = now or dt.datetime.now(dt.timezone.utc)
-    with store.connect() as db:
-        db.execute('CREATE TABLE IF NOT EXISTS store_fixes(name TEXT PRIMARY KEY,at TEXT NOT NULL)')
-        if db.execute('SELECT 1 FROM store_fixes WHERE name=?', (NAME,)).fetchone():
-            return 0
     oldest = max(WINDOW_START, now - dt.timedelta(days=MAX_AGE_DAYS))
     ids = failed_saves(agent_db, oldest, node) if agent_db and agent_db.exists() else set()
-    lost = sorted(lost_ids(store, ids, oldest))
-    if lost:
-        store.copy_before(NAME)
-    with store.connect() as db:
-        db.execute('BEGIN IMMEDIATE')
-        if db.execute('SELECT 1 FROM store_fixes WHERE name=?', (NAME,)).fetchone():
-            return 0
-        lost = lost_ids(store, lost, oldest, db)  # as they are now, in the same transaction
-        db.executemany('UPDATE events SET analyzed_version=min(analyzed_version,version-1),deferrals=0 WHERE id=?', [(i,) for i in lost])
-        db.execute('INSERT INTO store_fixes(name,at) VALUES(?,?)', (NAME, now.isoformat()))
-    return len(lost)
+    return store.requeue_once(NAME, lambda db: lost_ids(db, ids, oldest))
 
 
-def lost_ids(store, ids, oldest, db=None):
+def lost_ids(db, ids, oldest):
     """Of these, the messages marked reviewed or set aside, from oldest on, in no to-do and not held by a later failure."""
     if not ids:
         return set()
-    if db is None:
-        with store.connect() as db:
-            return lost_ids(store, ids, oldest, db)
     review_saves.ensure(db)
     in_todo = set()
     for (event_ids,) in db.execute('SELECT event_ids FROM suggestions'):

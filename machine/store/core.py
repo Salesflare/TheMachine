@@ -805,6 +805,31 @@ class StoreCore:
     AHEAD_BLOCKERS = ("FROM preparations p JOIN suggestions s ON s.id=p.suggestion_id WHERE p.status='cancelled' "
                       "AND trim(coalesce(p.reason,''))<>'' AND (s.status='pending' OR s.status='snoozed' AND s.resume_status='pending')")
 
+    def fix_done(self, name):
+        """A one-time fix by this name already ran (store_fixes)."""
+        with self.connect() as db:
+            db.execute('CREATE TABLE IF NOT EXISTS store_fixes(name TEXT PRIMARY KEY,at TEXT NOT NULL)')
+            return bool(db.execute('SELECT 1 FROM store_fixes WHERE name=?', (name,)).fetchone())
+
+    def requeue_once(self, name, find):
+        """Once (store_fixes): the messages find(db) gives go back to the review, pending with no deferrals, after a copy
+        of the database (copy_before). find is asked again in the write transaction, so it acts on them as they are then.
+        Returns how many (review_requeue.py)."""
+        if self.fix_done(name):
+            return 0
+        with self.connect() as db:
+            found = find(db)
+        if found:
+            self.copy_before(name)
+        with self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            if db.execute('SELECT 1 FROM store_fixes WHERE name=?', (name,)).fetchone():
+                return 0
+            found = sorted(find(db))
+            db.executemany('UPDATE events SET analyzed_version=min(analyzed_version,version-1),deferrals=0 WHERE id=?', [(i,) for i in found])
+            db.execute('INSERT INTO store_fixes(name,at) VALUES(?,?)', (name, now()))
+        return len(found)
+
     def copy_before(self, name):
         """A copy of the database next to it before a one-time fix changes it (events.sqlite.before-<name>-<time>Z, only
         the owner can read it; retention rotates it like other copies)."""
