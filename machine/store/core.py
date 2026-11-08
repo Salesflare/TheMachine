@@ -23,6 +23,7 @@ import embeddings
 import error_feed
 import follow_ups
 import graph
+import graph_boards
 import handoff_mail
 import learning_loop
 from machine.config import LOG
@@ -440,8 +441,8 @@ class StoreCore:
             follow_ups.ensure(db)  # automated follow-ups on boards and projects (follow_ups.py): new tables only
             bounces.ensure(db)  # addresses that bounce (bounces.py): new tables only
             # Change counters for what a status poll keeps between requests, after the tables (machine/stamps.py: graph.waiting,
-            # graph.slack_names, and the to-dos' quality: profile.QUALITY_TABLES)
-            stamps.watch(db, ('graph_nodes', 'person_roles', 'identity_names', 'slack_members', *QUALITY_TABLES))
+            # graph.slack_names, the to-dos' quality: profile.QUALITY_TABLES, and the Projects board's organizations: graph_boards)
+            stamps.watch(db, ('graph_nodes', 'person_roles', 'identity_names', 'slack_members', *QUALITY_TABLES, *graph_boards.ORG_TABLES))
             recurring.ensure(db)  # recurring to-dos (recurring.py): new tables only
             if 'project' not in {r[1] for r in db.execute('PRAGMA table_info(suggestions)')}:
                 db.execute('ALTER TABLE suggestions ADD COLUMN project TEXT')

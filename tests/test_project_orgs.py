@@ -156,6 +156,29 @@ class ProjectOrgs(unittest.TestCase):
             row, = graph.page(db, 'projects')['items']
             self.assertEqual(row['org_node'], {'id': 'org:umicore.example', 'name': 'Umicore'})
 
+    def test_the_boards_organizations_are_kept_until_one_changes(self):
+        """Each Graph load looked every tile's organization up again: kept now until an organization changes."""
+        from unittest.mock import patch
+        import graph_boards
+        pid = self.project('Umicore rollout', mail(3, 'Ann <ann@umicore.example>', 'sam@acme.com', thread='u'))
+        with self.store.connect() as db:
+            graph.set_stage(db, f'project:{pid}', 'Contacted', 'review', T, board='Listings', reason='asked',
+                            event_id=db.execute('SELECT max(id) FROM events').fetchone()[0])
+        self.build()
+        graph_boards.ORGS.clear()
+        with patch.object(graph, 'project_org', wraps=graph.project_org) as looked_up:
+            for _ in range(3):
+                with self.store.connect() as db:
+                    tile, = graph.boards(db, T)[0]['projects']
+                    self.assertEqual(tile['org']['name'], 'Umicore')
+            self.assertEqual(looked_up.call_count, 1)
+            with self.store.connect() as db:
+                db.execute("UPDATE graph_nodes SET name='Umicore Group' WHERE id='org:umicore.example'")
+            with self.store.connect() as db:
+                tile, = graph.boards(db, T)[0]['projects']
+                self.assertEqual(tile['org']['name'], 'Umicore Group')
+            self.assertEqual(looked_up.call_count, 2)
+
     def test_a_shared_board_sends_the_organization_only_when_it_could_go_itself(self):
         pid = self.project('Paperkite', mail(3, 'Ann <ann@partner.example>', 'sam@acme.com', thread='p'))
         with self.store.connect() as db:
