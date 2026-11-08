@@ -56,7 +56,8 @@ PLUGIN_ID = 'personal-assistant-bridge'
 UNIT_NAME = service.UNIT_NAME
 MIN_PYTHON = (3, 12)
 # The Node.js an OpenClaw that is already set up runs The Machine with, and the one installing the pinned OpenClaw
-# needs (its package's engine range: from 2026.10.6 on only the Node releases with October 2026's TLS fixes).
+# needs (the Node releases with October 2026's TLS fixes, which OpenClaw required from 2026.10.6; 2026.11.2 accepts
+# 24.16+ and 26.1+ again, and installs keep the stricter floor).
 NODE_REQUIREMENT = '>=24.16.0 <25 or >=26.1.0'
 NODE_FLOORS = {24: (24, 16, 0), 26: (26, 1, 0)}
 OPENCLAW_NODE_REQUIREMENT = '>=24.22.1 <25 or >=26.12.1'
