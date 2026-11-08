@@ -179,6 +179,8 @@ class WebUI:
     reconnect = False  # signing an existing account in again: its address, access and calendar stay as they are
 
     explains = True  # how to get a key: said in these lines, unless the dashboard's form already says it (prefill)
+    guess = False  # Work or Personal from the address it signs in as (prefill)
+    team_domains = ()  # the domains of Work Fleet teammates' addresses: an address on one is Work (guess_boundary)
     wait_signin = 0  # seconds a LinkedIn or X connect waits for the owner to sign in there (onboarding.connect)
 
     def __init__(self, wait=900):
@@ -198,8 +200,10 @@ class WebUI:
         self.answers = {_prompt_key(k): v for k, v in (answers or {}).items()}
         self.secrets = {_prompt_key(k): v for k, v in (secrets or {}).items()}
         self.explains = False  # the form said how to get each key
-        # Work or personal is the owner's own marking only when the form gave one (new_account)
-        self.marks = bool(self.answers.get('part of your life'))
+        # Work or personal is the owner's own marking only when the form gave one (new_account); 'guess' takes it from
+        # the address once it is known (connect)
+        self.guess = self.answers.get('part of your life') == 'guess'
+        self.marks = bool(self.answers.get('part of your life')) and not self.guess
 
     def _match(self, table, prompt):
         prompt = _prompt_key(prompt)
@@ -355,7 +359,8 @@ def web_form(config, service):
     works = [b.split(':', 1)[1] for b in boundaries(config, service) if b.startswith('work:')]
     company = works[0] if works else next((company_of(a.get('email')) for a in config.get('accounts', []) if company_of(a.get('email'))), '')
     return {'ask': ask, 'secret': secret, 'learn': WEB_LEARN.get(service), 'note': None if TERMINAL_NOTE.search(note) else note or None,
-            'scope': scope, 'personal': service in ('whatsapp', 'telegram'), 'browser': setup.get('browser'), 'company': company if scope else ''}
+            'scope': scope, 'personal': service in ('whatsapp', 'telegram'), 'browser': setup.get('browser'), 'company': company if scope else '',
+            'auto': scope and service in ADDRESS_SCOPE}
 
 
 def run(args, **kwargs):
@@ -843,8 +848,14 @@ def slug(text):
     return re.sub(r'[^a-z0-9]+', '-', text.lower()).strip('-') or 'account'
 
 
-WEBMAIL = {'gmail', 'googlemail', 'outlook', 'hotmail', 'live', 'msn', 'yahoo', 'icloud', 'me', 'mac', 'aol', 'proton',
-           'protonmail', 'pm', 'gmx', 'web', 'mail', 'yandex', 'zoho', 'fastmail', 'hey', 'tutanota', 'skynet', 'telenet'}
+# Mail providers, not companies: the names in enrichment.FREEMAIL and a few more (tests check they stay in step)
+WEBMAIL = {'gmail', 'googlemail', 'outlook', 'hotmail', 'live', 'msn', 'yahoo', 'ymail', 'rocketmail', 'icloud', 'me', 'mac',
+           'aol', 'proton', 'protonmail', 'pm', 'gmx', 'web', 'mail', 'yandex', 'zoho', 'fastmail', 'hey', 'tutanota', 'tuta',
+           'qq', '163', '126', 'naver', 'libero', 'wanadoo', 'laposte', 't-online', 'seznam', 'skynet', 'telenet', 'proximus',
+           'scarlet', 'pandora', 'ziggo', 'kpnmail', 'xs4all', 'btinternet', 'comcast', 'sbcglobal', 'bigpond'}
+# Sources that sign in as an address: Work or Personal comes from that address once it is known (guess_boundary), so
+# + Add asks neither. A Google Workspace or Microsoft work address is on the company's own domain; a consumer one is not.
+ADDRESS_SCOPE = ('gmail', 'calendar', 'outlook', 'outlook_calendar')
 
 
 def company_of(email):
@@ -854,6 +865,35 @@ def company_of(email):
         parts = parts[:-1]
     name = parts[-1] if parts else ''
     return '' if not name or name in WEBMAIL or name == 'example' else name.capitalize()
+
+
+def guess_boundary(config, email, account=None, team_domains=()):
+    """(boundary, by) for a new sign-in from what is known about its address, or (None, None) when that is too weak to
+    guess: then the owner is asked. Sharing follows Work, so a wrong Work guess would share personal mail with a team;
+    a doubt is asked, never guessed Work. In order: another account on the same address (the owner's marking travels);
+    a mail provider's address is Personal; an address on the domain of a Work Fleet teammate is Work. A company's own
+    domain alone is not enough: people use their own domain for personal mail too."""
+    email = str(email or '').strip().lower()
+    same = [a for a in config.get('accounts', []) if a is not account and str(a.get('email') or '').strip().lower() == email
+            and ':' in str(a.get('boundary') or '') and not str(a['boundary']).startswith('owner:')]
+    owned = [a for a in same if a.get('boundary_by') == 'owner']
+    if owned or same:
+        return (owned or same)[0]['boundary'], (owned or same)[0].get('boundary_by') or 'guess'
+    company = company_of(email)
+    if not company:
+        return 'personal:me', 'guess'
+    if email.rpartition('@')[2] in {str(d).lower() for d in team_domains}:
+        return 'work:' + company, 'guess'
+    return None, None
+
+
+def ask_scope(config, account, ui):
+    """The one Work or Personal question for an address that doesn't say (guess_boundary): Work with the company its
+    domain names, or Personal. The owner's own marking."""
+    company = company_of(account.get('email')) or 'Main'
+    options = [('work:' + company, scope_label('work:' + company))] + [(b, scope_label(b)) for b in boundaries(config, account.get('service', 'gmail'))
+                                                                       if b != 'work:' + company] + [('personal:me', 'Personal')]
+    return ui.choose('Is this account work or personal?', list(dict(options).items()))
 
 
 def boundary_label(text, default='work:Main'):
@@ -2217,6 +2257,9 @@ def connect(config_path, name, ui, account_id=None, restart=True):
         own = next((text for prefix, text in (setup_of(service).get('hints') or {}).items() if error.startswith(prefix)), '')
         raise SetupError(f'{account["id"]} does not work yet: {error}', own or hint(error) or f'rerun: assistant connect {name}')
     offer_phone_skip(config, account, ui)
+    if not existing and getattr(ui, 'guess', False) and account.get('email'):
+        boundary, by = guess_boundary(config, account['email'], account, getattr(ui, 'team_domains', ()))
+        account['boundary'], account['boundary_by'] = (boundary, by) if boundary else (ask_scope(config, account, ui), 'owner')
     config['accounts'] = [account if a['id'] == account['id'] else a for a in config.get('accounts', [])] + ([] if existing else [account])
     save(config_path, config)
     ui.say(f'  ✓ {label(service)} connected')

@@ -26,7 +26,7 @@ L’elenco è diviso in gruppi (**Email e calendario**, **Chat**, **Riunioni**, 
 
 ## Lavoro o personale
 
-Ogni fonte conta come lavoro (per un’azienda che indichi tu) o personale. Cambialo sotto **Dettagli**. Dice **Ipotizzato** solo quando l'ha scelto la tua Machine in base all'indirizzo; quando scegli tu, la scelta è tua. Le attività di lavoro aspettano i tuoi giorni lavorativi.
+Ogni fonte conta come lavoro (per un’azienda che indichi tu) o personale. Cambialo sotto **Dettagli**. Dice **Ipotizzato** solo quando l'ha scelto la tua Machine in base all'indirizzo; quando scegli tu, la scelta è tua. Le attività di lavoro aspettano i tuoi giorni lavorativi. Email e calendari di Google e Microsoft seguono il loro indirizzo quando è chiaro: un provider come Gmail o Outlook.com è Personale, il dominio del tuo team è Lavoro. Altrimenti lo chiede una volta, subito dopo l’accesso. **Cambia** ti fa scegliere.
 
 ## Capacità
 

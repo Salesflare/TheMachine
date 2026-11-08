@@ -30,7 +30,7 @@ Auf einer gehosteten Machine meldest du dich hier bei Google, Microsoft, Microso
 
 ## Arbeit oder privat
 
-Jede Quelle zählt als Arbeit (für eine Firma, die du nennst) oder als privat. Das änderst du unter **Details**. Dort steht nur dann **Geraten**, wenn deine Machine es anhand der Adresse gewählt hat. Sobald du wählst, gilt deine Wahl. Arbeitsaufgaben warten auf deine Arbeitstage.
+Jede Quelle zählt als Arbeit (für eine Firma, die du nennst) oder als privat. Das änderst du unter **Details**. Dort steht nur dann **Geraten**, wenn deine Machine es anhand der Adresse gewählt hat. Sobald du wählst, gilt deine Wahl. Arbeitsaufgaben warten auf deine Arbeitstage. Mail und Kalender von Google und Microsoft richten sich nach ihrer Adresse, wenn sie eindeutig ist: ein Mailanbieter wie Gmail oder Outlook.com ist Privat, die Domain deines Teams ist Arbeit. Sonst fragt sie einmal, direkt nach der Anmeldung. Mit **Ändern** legst du es selbst fest.
 
 ## Fähigkeiten
 

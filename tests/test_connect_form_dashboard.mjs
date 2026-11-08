@@ -15,19 +15,28 @@ const RUNS={
  linkedin:{session:'s1',state:'running',label:'LinkedIn',lines:['Checking LinkedIn in the Machine’s browser'],signin:'linkedin'},
  trello:{session:'s2',state:'done',label:'Trello',lines:['Connected Trello, saving it as trello (Work · Acme)'],account:'trello',restarting:false},
  github:{session:'s3',state:'running',label:'GitHub',lines:[],code:{kind:'device',code:'ABCD-1234',url:'https://github.com/login/device'}},
- whatsapp:{session:'s4',state:'running',label:'WhatsApp',lines:[],code:{kind:'pair',code:'K7PQ-2M9X'}}};
+ whatsapp:{session:'s4',state:'running',label:'WhatsApp',lines:[],code:{kind:'pair',code:'K7PQ-2M9X'}},
+ gmail:{session:'s5',state:'running',label:'Gmail',lines:['Google account to read: sam@gmail.com']},
+ outlook:{session:'s6',state:'running',label:'Outlook',lines:[],question:{id:1,kind:'choose',prompt:'Is this account work or personal?',options:['Work · Moreaudesign','Personal']}}};
+// Gmail and Outlook: Work or Personal from the address once it is known, no question up front. A guess shows with
+// Change; an address that doesn't say (its own domain) asks the one question, and the answer is the owner's.
+const GMAIL_CARD={id:'work-gmail',service:'gmail',email:'sam@gmail.com',boundary:'personal:me',boundary_by:'guess'};
+let connectors=[];
 const server=createServer(async(req,res)=>{
  const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
- if(url.pathname==='/api/status'){res.end(JSON.stringify({suggestions:[],promises:[],connectors:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[]}));return}
+ if(url.pathname==='/api/status'){res.end(JSON.stringify({suggestions:[],promises:[],connectors,suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[]}));return}
  if(url.pathname==='/api/action'){let body='';for await(const b of req)body+=b;const {action,args}=JSON.parse(body);calls.push({action,args});
   if(action==='connect_sources'){res.end(JSON.stringify({saveable:true,manage_url:null,paired:true,sources:[
    {name:'linkedin',service:'linkedin',label:'LinkedIn',what:'Your LinkedIn messages.',connected:0,broker:false,form:{ask:[],secret:null,scope:true,company:'Acme',browser:'linkedin'}},
    {name:'trello',service:'trello',label:'Trello',what:'Your boards.',connected:0,broker:false,form:{ask:[['board','Trello board URL']],secret:'Trello API key',scope:true,company:'Acme',note:'Get a key at https://trello.com/app-key'}},
    {name:'github',service:'github',label:'GitHub',what:'Your repositories.',connected:0,broker:false,form:{ask:[],secret:null,scope:true,company:'Acme'}},
+   {name:'gmail',service:'gmail',label:'Gmail',what:'Your email.',connected:0,broker:false,form:{ask:[],secret:null,scope:true,auto:true,company:''}},
+   {name:'outlook',service:'outlook',label:'Outlook',what:'Your email.',connected:0,broker:false,form:{ask:[],secret:null,scope:true,auto:true,company:''}},
    {name:'whatsapp',service:'whatsapp',label:'WhatsApp',what:'Your chats.',connected:0,broker:false,form:{ask:[['phone','Your WhatsApp phone number, with its country code (+32 470 12 34 56)']],secret:null,scope:true,personal:true}}]}));return}
   if(action==='connect_start'){run=RUNS[args.name];res.end(JSON.stringify(run));return}
-  if(action==='connect_poll'){res.end(JSON.stringify(run));return}
+  if(action==='connect_poll'){if(run.session==='s5')run={...run,state:'done',account:'work-gmail',restarting:true,guessed:'personal:me'};res.end(JSON.stringify(run));return}
+  if(action==='connect_answer'){run={session:'s6',state:'done',label:'Outlook',lines:[],account:'work-outlook',restarting:true,guessed:null};res.end(JSON.stringify(run));return}
   if(action==='browser_login_pages'){res.end(JSON.stringify({pages:[{id:'0:li',host:'www.linkedin.com',site:'www.linkedin.com',brand:'LinkedIn',title:'Sign in',username:true,password:true,code:false,saved:null}]}));return}
   if(action==='connect_site_signin'){res.end(JSON.stringify({opened:true,view:null}));return}
   if(action==='connect_stop'){run={...run,state:'failed',error:'Stopped'};res.end(JSON.stringify(run));return}
@@ -108,6 +117,35 @@ try{
   assert.match(await pane.innerText(),/Link with phone number instead\. Enter this code:\s+K7PQ-2M9X/);
   assert.equal(await pane.getByRole('link',{name:'Open GitHub ↗'}).count(),0);
   await shot(page,`form-whatsapp-code-${tag}`);
+  await pane.getByRole('button',{name:'Cancel'}).click();
+  // Gmail: no Work or Personal before Google's consent; a gmail.com address is Personal, shown with Change once its card is there
+  connectors=[];
+  await open(page,'gmail');
+  assert.equal(await pane.locator('input[name="scope"]').count(),0);
+  assert.equal(await pane.locator('input[name="company"]').count(),0);
+  await shot(page,`form-gmail-${tag}`);
+  await pane.getByRole('button',{name:'Connect'}).click();
+  assert.deepEqual(started(),{name:'gmail',form:true,answers:{},secret:''});
+  await pane.locator('.connect-guess').waitFor();
+  assert.equal(await pane.locator('.connect-guess').innerText(),'Set to Personal from its address.');
+  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no sideways scroll');
+  await shot(page,`form-gmail-done-${tag}`);
+  // Once it runs again, its card: Work or Personal to change right there, marked as guessed
+  connectors=[GMAIL_CARD];
+  await page.locator('select[data-scope="work-gmail"]').waitFor({timeout:20000});
+  await page.waitForFunction(()=>document.activeElement?.dataset.scope==='work-gmail',null,{timeout:5000});  // the guess opens on its choice
+  if(shots)await page.screenshot({path:`${shots}/form-gmail-card-${tag}.png`});
+  assert.equal(calls.filter(c=>c.action==='connect_scope').length,0,'nothing changed by itself');
+  await page.goto('about:blank');
+  // Outlook on its own domain: the one question after the sign-in, the owner's answer, no guess line
+  connectors=[];
+  await open(page,'outlook');
+  await pane.getByRole('button',{name:'Connect'}).click();
+  await pane.getByText('Is this account work or personal?').waitFor();
+  await shot(page,`form-outlook-ask-${tag}`);
+  await pane.getByRole('button',{name:'Personal'}).click();
+  await pane.getByText('Connected.').waitFor();
+  assert.equal(await pane.locator('.connect-guess').count(),0);
   await context.close();
  }
  assert.deepEqual(errors,[]);

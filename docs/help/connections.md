@@ -20,7 +20,7 @@ Open **+ Add** and pick a source. The list is grouped (**Mail and calendar**, **
 
 **Suggested for you** sits on top when your Machine sees a reason for a source, with that reason in one line: mail from Stripe, Zoom meetings on your calendar, messages that link to Google Docs, or a setup that didn't finish. It counts these on your Machine; nothing leaves it. No reason, no section. A connected source is never suggested.
 
-Fill in what it needs (a key, an address), pick **Work** with its company or **Personal**, and press **Connect**. A site like LinkedIn or X opens its sign-in in your Machine's browser and goes on by itself once you're in. GitHub, WhatsApp and Codex show a code to enter, and Telegram chats a QR code to scan.
+Fill in what it needs (a key, an address), pick **Work** with its company or **Personal** (mail and calendars ask only when their address doesn't say), and press **Connect**. A site like LinkedIn or X opens its sign-in in your Machine's browser and goes on by itself once you're in. GitHub, WhatsApp and Codex show a code to enter, and Telegram chats a QR code to scan.
 
 **Cancel** stops adding it. Left before it finished? Open **Connections** again, on any device, and it picks up at the same step. Once connected, your Machine restarts to start reading it, then shows how its first sync goes.
 
@@ -30,7 +30,7 @@ On a hosted Machine, Google, Microsoft, Microsoft OneDrive, Zoom, Stripe and Int
 
 ## Work or personal
 
-Each source counts as work (for a company you name) or personal. Change it under **Details**. **Guessed** means your Machine picked it from the address. Work to-dos wait for your work days.
+Each source counts as work (for a company you name) or personal. Change it under **Details**. **Guessed** means your Machine picked it from the address. Work to-dos wait for your work days. Google and Microsoft mail and calendars take it from their address when it's clear: a mail provider like Gmail or Outlook.com is Personal, your team's domain is Work. Otherwise it asks once, right after you sign in. **Change** sets it yourself.
 
 ## Abilities
 

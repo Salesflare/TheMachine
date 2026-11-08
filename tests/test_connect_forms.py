@@ -89,6 +89,64 @@ class FormTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'Work with its company'):
                 self.act('connect_start', {'name': 'rss', 'form': True, 'answers': {'url': 'https://feed.example/rss'}, **bad})
 
+    def connect_as(self, service, email, args=None, answer=None, team=()):
+        """Connects a source that signs in as `email`, answering its one question (by option label) if it asks."""
+        steps = {**onboarding.STEPS, service: lambda config, account, ui: account.update(email=email)}
+        asked = []
+        with patch.object(onboarding, 'check', return_value=None), patch.object(onboarding, 'STEPS', steps), \
+                patch.object(assistant.App, 'team_domains', return_value=set(team), create=True):
+            view = self.act('connect_start', {'name': service, 'form': True, 'answers': {}, **(args or {})})
+            view = self.finish(view, lambda v: v['state'] != 'running' or v.get('question'))
+            if view.get('question'):
+                asked.append(view['question'])
+                pick = view['question']['options'].index(answer)
+                self.act('connect_answer', {'session': view['session'], 'question': view['question']['id'], 'value': pick})
+                view = self.finish(view)
+        self.assertEqual(view['state'], 'done', view)
+        saved = next(a for a in json.loads(self.path.read_text())['accounts'] if a.get('email') == email and a['service'] == service)
+        return saved, view, asked
+
+    def test_mail_and_calendar_take_work_or_personal_from_the_address_when_it_says(self):
+        # No question up front for a source that signs in as an address. A mail provider is Personal, an address on a
+        # Work Fleet teammate's domain is Work, an address already marked keeps the owner's marking. A guess, so the
+        # done form and its card offer Change.
+        forms = self.forms()
+        self.assertTrue(forms['gmail']['auto'] and forms['outlook']['auto'])
+        self.assertFalse(forms['rss']['auto'] or forms['trello']['auto'])
+        cases = [('gmail', 'sam.home@gmail.com', (), 'personal:me', 'guess'), ('outlook', 'kim@outlook.com', (), 'personal:me', 'guess'),
+                 ('gmail', 'lee@globex.dev', ('globex.dev',), 'work:Globex', 'guess'),
+                 ('calendar', 'owner@acme.example', (), 'work:Acme', 'owner')]
+        for service, email, team, boundary, by in cases:
+            with self.subTest(email=email):
+                saved, view, asked = self.connect_as(service, email, team=team)
+                self.assertEqual((saved['boundary'], saved['boundary_by'], asked), (boundary, by, []))
+                self.assertEqual(view['guessed'], boundary if by == 'guess' else None)
+        # An explicit pick still counts as the owner's
+        saved, view, _ = self.connect_as('gmail', 'alex@initech.dev', {'scope': 'personal'})
+        self.assertEqual((saved['boundary'], saved['boundary_by'], view['guessed']), ('personal:me', 'owner', None))
+
+    def test_an_own_domain_alone_is_asked_never_guessed_work(self):
+        # People use their own domain for personal mail too, and sharing follows Work: in doubt the one question is
+        # asked (after Google's consent, the company prefilled), and the answer is the owner's.
+        saved, view, asked = self.connect_as('gmail', 'jules@moreaudesign.io', answer='Personal')
+        self.assertEqual(asked[0]['prompt'], 'Is this account work or personal?')
+        self.assertEqual(asked[0]['options'][0], 'Work · Moreaudesign')
+        self.assertEqual((saved['boundary'], saved['boundary_by'], view['guessed']), ('personal:me', 'owner', None))
+        saved, _, asked = self.connect_as('outlook', 'jules@moreaudesign.io', answer='Work · Moreaudesign')
+        self.assertEqual((saved['boundary'], saved['boundary_by']), ('personal:me', 'owner'))  # the same address follows its marking
+        self.assertEqual(asked, [])
+        saved, _, _ = self.connect_as('gmail', 'max@hooli.dev', answer='Work · Hooli')
+        self.assertEqual((saved['boundary'], saved['boundary_by']), ('work:Hooli', 'owner'))
+        for email in ('jo@jo-family.net', 'me@my-name.org'):
+            self.assertEqual(onboarding.guess_boundary({'accounts': []}, email), (None, None))
+
+    def test_every_mail_provider_enrichment_knows_is_no_company(self):
+        import re
+        import enrichment
+        names = re.search(r'\(\?:(g\(\?:oogle\)\?mail\|.*?)\)\\\.', enrichment.FREEMAIL.pattern, re.S).group(1)
+        for name in re.sub(r"'\s*r'", '', names).replace('g(?:oogle)?mail', 'gmail|googlemail').replace('proton(?:mail)?', 'proton|protonmail').split('|'):
+            self.assertEqual(onboarding.company_of(f'a@{name}.com'), '', name)
+
     def test_linkedin_waits_for_the_sign_in_the_dashboard_offers_then_goes_on_by_itself(self):
         # also on a hosted Machine: its form signs in right there, and "not signed in" never shows before they could
         for manage in (None, 'https://cp.example.org/setup'):

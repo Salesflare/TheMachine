@@ -1146,7 +1146,9 @@ def connect_form(source, args):
         if len(secret) > 4096:
             raise ValueError('That key is too long')
         secrets_[form['secret']] = secret.strip()
-    if form.get('scope'):
+    if form.get('auto') and args.get('scope') in (None, '', 'auto'):
+        answers.update({'part of your life': 'guess'})  # from the address it signs in as (onboarding.guess_boundary)
+    elif form.get('scope'):
         scope, company = args.get('scope'), ' '.join(str(args.get('company') or '').split())[:60]
         if scope == 'personal':
             boundary = 'personal:me'
@@ -1682,6 +1684,8 @@ class App(*APP_MIXINS):
                 ui.reconnect = again
                 if answers is not None:
                     ui.prefill(answers, secrets_)
+                if ui.guess:
+                    ui.team_domains = self.team_domains()
                 if known[source]['form'].get('browser'):
                     # LinkedIn, X: connected before the owner signed in there, it waits, and the dashboard offers that sign-in
                     ui.wait_signin, ui.explains = CONNECT_SIGNIN_WAIT, False
@@ -1722,7 +1726,8 @@ class App(*APP_MIXINS):
                     self.store.signed_in_again(same_signin(self.config.get('accounts', []), account, self.store))
                 except Exception as error:  # noqa: BLE001 - the next sync clears it too
                     LOG.warning('sign-in error not cleared account=%s error=%s', account['id'], type(error).__name__)
-            session.update(account=account['id'], restarting=restart_self(3), state='done')
+            guessed = account.get('boundary') if account.get('boundary_by') == 'guess' and not session.get('account_id') else None
+            session.update(account=account['id'], restarting=restart_self(3), state='done', guessed=guessed)
         except onboarding.SetupError as error:
             session.update(state='cancelled' if session['ui'].cancelled else 'failed', error=error.message, fix=error.fix)
         except Exception as error:  # the step's own text could quote what was typed: only its kind
@@ -1731,8 +1736,19 @@ class App(*APP_MIXINS):
                            + session['source'] + ' in a terminal on this computer')
         session['at'] = time.monotonic()
 
+    def team_domains(self):
+        """The domains of Work Fleet teammates' addresses (mail providers left out): a new address on one is Work."""
+        import onboarding
+        try:
+            found = {str(e).rpartition('@')[2].lower() for ref in self.fleet.work_fleets() for m in self.fleet.teammates(ref)
+                     for e in m.get('emails') or () if '@' in str(e)} if getattr(self, 'fleet', None) else set()
+        except Exception as error:  # noqa: BLE001 - no Fleet signal: the owner is asked
+            LOG.warning('team domains unavailable error=%s', type(error).__name__)
+            return set()
+        return {d for d in found if onboarding.company_of('a@' + d)}
+
     def connect_view(self, session):
-        view = {**session['ui'].view(), **{k: session.get(k) for k in ('state', 'source', 'label', 'error', 'fix', 'account', 'restarting')}}
+        view = {**session['ui'].view(), **{k: session.get(k) for k in ('state', 'source', 'label', 'error', 'fix', 'account', 'restarting', 'guessed')}}
         if session.get('hosted') and re.search(r'\bterminal\b|\bassistant connect\b', view.get('fix') or ''):
             view['fix'] = 'try again, or get help from your account page'  # a hosted machine has no terminal to run it in
         elif re.fullmatch(r'rerun(?: this when you have it|: assistant connect [\w-]+)', view.get('fix') or ''):

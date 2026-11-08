@@ -26,7 +26,7 @@ La liste est groupée (**Mail et agenda**, **Chat**, **Réunions**, **Documents 
 
 ## Travail ou perso
 
-Chaque source compte comme travail (pour une entreprise que vous nommez) ou comme perso. Changez-le sous **Détails**. **Deviné** ne s’affiche que si votre Machine l’a déduit de l’adresse ; dès que vous choisissez, c’est votre choix. Les tâches de travail attendent vos jours de travail.
+Chaque source compte comme travail (pour une entreprise que vous nommez) ou comme perso. Changez-le sous **Détails**. **Deviné** ne s’affiche que si votre Machine l’a déduit de l’adresse ; dès que vous choisissez, c’est votre choix. Les tâches de travail attendent vos jours de travail. Les e-mails et agendas Google et Microsoft suivent leur adresse quand elle est claire : un fournisseur comme Gmail ou Outlook.com, c’est Perso, le domaine de votre équipe, c’est Travail. Sinon, elle demande une fois, juste après la connexion. **Modifier** vous laisse choisir.
 
 ## Capacités
 
