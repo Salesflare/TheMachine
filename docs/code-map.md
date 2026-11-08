@@ -167,7 +167,8 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   action-only ability checks into new SyncApp (machine/app/sync.py); sync_source, sync_slack and Slack title naming
   stay in assistant.py (they write the sealed events table), Slack title naming (name_slack_titles) into EventsStore
   as a Store method, so the code that calls it can leave assistant.py without another writer of the sealed events
-  table.
+  table, sync_source, sync_slack, remember_slack_names, sync_retrying and sync_soon into SyncApp (after
+  name_slack_titles became a Store method).
 - **Dashboard code:** in its area's part in `dashboard/` (`<area>-<what>.js`: shell, todos, settings, graph, calendar,
   connections, help, events, new, fleet), next to the functions it works with, never at the end of the script. The
   page's core is in the `shell-*` parts too: locale and error reports (`shell-core.js`), network and outbox, `render()`
