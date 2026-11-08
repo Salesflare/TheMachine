@@ -259,7 +259,7 @@ The to-do's own text stays its status (where it stands, what is ready). An answe
 - Back for a check-in with no answer, "No answer from Pat yet" sits under it, with Mark done, Snooze and Not needed instead of Do it. One that didn't go out says so, with **Try again**.
 - A step without a draft (a calendar change, a merge) says when it didn't work or was canceled.
 - Your own taps are small muted lines, verb first ("Chose Do it", "Snoozed it 5 times", "Sent to Sam"), lined up with the right edge of your messages. A tap you took back within a minute is left out.
-- Replies are redacted like Technical details and leave out the agent's bookkeeping. A learned skill shows only as "Noted for next time", saved files as chips, and "Codex sent nothing" as a quiet note (left out when something went out after).
+- Replies are redacted like Technical details and leave out the agent's bookkeeping. A learned skill shows only as "Saved to what I’ve learned" right under the reply’s text, linked to Learning, saved files as chips, and "Codex sent nothing" as a quiet note (left out when something went out after).
 - A reply that left a page open in the Machine's browser offers **View in Machine browser**.
 - A file a reply points to (a draft, sources) is a chip that opens it, never a bare title.
 
