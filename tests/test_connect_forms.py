@@ -189,7 +189,13 @@ class FormTest(unittest.TestCase):
         # A name the owner kept as made from the domain is not a real name for another address there
         self.assertEqual(known_company(config, {'email': 'sam@moreaudesign.io'}), '')
         self.app.store, self.app.config = assistant.Store(str(Path(self.temp.name) / 'status.sqlite')), config
-        self.assertEqual(self.act('status', {'full': True})['work_labels']['work:Moreaudesign'], 'Work')  # what the cards read
+        status = self.act('status', {'full': True})
+        self.assertEqual(status['work_labels']['work:Moreaudesign'], 'Work')  # what the cards read
+        self.assertEqual({a['id']: a.get('name') for a in status['areas']},  # the to-do area picker, the same way
+                         {'personal': None, 'work:Initech Corp': 'Initech Corp', 'work:Moreaudesign': 'moreaudesign.io'})
+        config['accounts'].append(acct('d', 'lee@globex.dev', 'work:Globex', 'guess'))  # the Graph knows Globex Corporation
+        self.assertEqual(next(a for a in self.act('status', {'full': True})['areas'] if a['id'] == 'work:Globex'),
+                         {'id': 'work:Globex', 'label': 'Work at Globex Corporation', 'name': 'Globex Corporation'})
 
     def test_organization_comes_from_the_tenant_or_googles_user_info_with_the_access_it_has(self):
         work = '0a0b0c0d-1111-2222-3333-444455556666'

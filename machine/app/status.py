@@ -185,6 +185,11 @@ class StatusApp:
         by_id = {a['id']: a for a in self.config['accounts']}
         from work_or_personal import work_labels
         result['work_labels'] = work_labels(self.config)  # how each company reads on its cards: never a capitalized domain
+        for area in result.get('areas') or []:  # the to-do area picker names a company the same way
+            named = result['work_labels'].get(area.get('id'), '').partition(' · ')[2]
+            if named and area.get('name'):
+                area['label'] = area['label'].replace(area['name'], named) if area['label'] != 'Work' else 'Work'
+                area['name'] = named
         result['connectors'] = [c for c in result['connectors'] if not docs_unset(c)]
         for connector in result['connectors']:
             connector.update(sign_in_help(connector.get('service', ''), connector.get('error'), result['manage_url']))

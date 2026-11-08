@@ -60,9 +60,17 @@ def companies(accounts):
     return [x for x in found if not all(name(x).casefold() in _sources(a) for a in found[x])]
 
 
-def name(area):
-    """A company's name as the owner gave it, the way Connections shows it (Work · Acme)."""
-    return str(area).partition(':')[2].strip()
+def name(area, accounts=None):
+    """A company's name, the way Connections shows it (Work · Acme). With the accounts: one only made from a domain
+    (work:Moreaudesign for moreaudesign.io, work_or_personal.made_from_domain) reads as that domain as it is, never
+    capitalized."""
+    raw = str(area).partition(':')[2].strip()
+    if accounts:
+        from work_or_personal import company_of, made_from_domain
+        if made_from_domain({'accounts': list(accounts)}, raw):
+            return next((str(a.get('email')).strip().lower().rpartition('@')[2] for a in accounts if isinstance(a, dict)
+                         and company_of(a.get('email')).casefold() == raw.casefold()), raw)
+    return raw
 
 
 def areas(accounts):
@@ -70,22 +78,22 @@ def areas(accounts):
     there are several ("Work at Acme"); with one it is just Work."""
     personal = any(area_of_account(a) == PERSONAL for a in accounts or ())
     work = sorted(companies(accounts), key=str.lower)
-    return ([{'id': PERSONAL, 'label': label(PERSONAL)}] if personal else []) + [{'id': x, 'label': label(x, len(work)), 'name': name(x)} for x in work]
+    return ([{'id': PERSONAL, 'label': label(PERSONAL)}] if personal else []) + [{'id': x, 'label': label(x, len(work), accounts), 'name': name(x, accounts)} for x in work]
 
 
-def label(area, companies=1):
+def label(area, companies=1, accounts=None):
     """Personal, Work, or Work at Acme when the owner has more than one company."""
     if area == PERSONAL:
         return 'Personal'
-    org = name(area)
+    org = name(area, accounts)
     return f'Work at {org}' if companies > 1 and org else 'Work'
 
 
-def moved_line(area, companies=1):
+def moved_line(area, companies=1, accounts=None):
     """The to-do's event line after a move: a whole sentence per case (i18n)."""
     if area == PERSONAL:
         return 'Moved to Personal'
-    org = name(area)
+    org = name(area, accounts)
     return ('Moved to Work at {}', org) if companies > 1 and org else 'Moved to Work'
 
 

@@ -373,7 +373,7 @@ class CardChatApp:
                 moved = db.execute('SELECT area FROM card_moves WHERE decision_id=?', (r['id'],)).fetchone()
                 if moved:
                     areas = todo_areas.areas(self.config.get('accounts', []))
-                    line = todo_areas.moved_line(moved['area'], sum(a['id'] != todo_areas.PERSONAL for a in areas))
+                    line = todo_areas.moved_line(moved['area'], sum(a['id'] != todo_areas.PERSONAL for a in areas), self.config.get('accounts', []))
                     owner.append({'kind': 'event', 'text': (i18n.t(*line) if isinstance(line, tuple) else i18n.t(line)) + via,
                                   'choice': 'move', 'mine': r['source'] != 'placed', 'at': at})  # placed: it moved itself
             elif r['choice'] in CHAT_OWNER_WORDS:  # a send shows as what went out, below
