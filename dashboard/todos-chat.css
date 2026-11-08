@@ -105,7 +105,7 @@
 /* Steps, taps and day lines are metadata: small, muted, no surface */
 .chat-work{align-self:flex-start}
 .chat-steps{font-size:.82rem;color:var(--chat-quiet)}.chat-steps summary{cursor:pointer;list-style:none;font-weight:400}.chat-steps summary::-webkit-details-marker{display:none}
-.chat-steps summary::before{content:none}.chat-steps summary::after{content:' ›'}.chat-steps[open] summary::after{content:' ‹'}.chat-steps ol{margin:6px 0 2px;padding-left:18px}
+.chat-steps summary::before{content:none}.chat-steps summary::after{content:' ›'}.chat-steps[open] summary::after{content:' ‹'}.chat-steps ul{margin:6px 0 2px;padding:0;list-style:none}.chat-steps li{padding:1px 0;overflow-wrap:anywhere}.chat-step-n{opacity:.75;font-variant-numeric:tabular-nums}
 .chat-event{align-self:center;max-width:88%;font-size:var(--chat-meta);line-height:1.4;color:var(--chat-quiet);text-align:center;font-variant-numeric:tabular-nums}
 /* The time on hover sits outside the line (left of a right-aligned one), so it never shifts or indents it */
 .chat-event{position:relative}.chat-event .chat-time{position:absolute;top:0;font-size:inherit;line-height:inherit;left:100%;margin-left:8px;white-space:nowrap;pointer-events:none}

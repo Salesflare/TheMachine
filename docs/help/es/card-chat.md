@@ -14,6 +14,10 @@ En un teléfono, toca el título de la tarea. En un ordenador, usa el enlace al 
 
 Cada correo muestra solo lo nuevo. Los mensajes anteriores que cita quedan plegados bajo **Mensajes anteriores**. **Leer el hilo** abre los correos completos.
 
+## Qué hizo
+
+Cada ejecución aparece como una línea discreta, como «12 cosas revisadas». Ábrela para ver cada tipo de paso una vez, con cuántas veces: «Usó el navegador en example.com · 7». Nombra el sitio, nunca la dirección, un comando ni un archivo.
+
 ## Qué preguntar
 
 Antes de escribir, el chat puede ofrecer hasta tres sugerencias hechas a partir de esta tarea, como «Ofrece el martes a las 10:00». Al tocar una, pasa al cuadro de mensaje para enviarla o cambiarla. Si nada concreto encaja, no hay ninguna.

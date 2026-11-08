@@ -9,6 +9,8 @@ import unittest
 from unittest.mock import patch
 from seams import patch_everywhere  # noqa: E402
 
+from machine.chat import CHAT_STEP_GROUPS  # noqa: E402
+
 spec = importlib.util.spec_from_file_location('card_chat_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(a)
@@ -53,11 +55,45 @@ class CardChat(unittest.TestCase):
         owner = [{'kind': 'you', 'text': 'Do it', 'button': True, 'at': 1000}, {'kind': 'you', 'text': 'Make it shorter', 'button': False, 'at': 5000}]
         items = a.chat_items(messages, owner)
         self.assertEqual([i['kind'] for i in items], ['you', 'steps', 'reply', 'you', 'reply'])
-        self.assertEqual(items[1]['steps'], ['Opening …', a.STEP_NAMES.get('exec', 'Working')])
+        self.assertEqual(items[1]['steps'], [{'text': 'Opening …', 'n': 1}, {'line': ['Ran a command'], 'n': 1}])
+        self.assertEqual(items[1]['count'], 2)
         self.assertEqual(items[2]['text'], 'Drafted it. Key api_key=[redacted] at …')
         text = json.dumps(items)
         for hidden in ('Prepare suggestion', 'SAME session', 'secret plan', 'tool output', '/home/', 'xxxxxxxxxx'):
             self.assertNotIn(hidden, text)
+
+    def test_steps_fold_by_kind_with_the_site_and_never_the_command(self):
+        # A long Do it run: the browser and a command in turn, then the assistant's own lookups. Each kind is one line
+        # with how many times; a browser step says its site (the host name only) and so do the steps on that tab after it.
+        calls = []
+        for n in range(11):
+            calls.append({'type': 'toolCall', 'name': 'browser', 'arguments': {'action': 'open', 'targetId': 't1',
+                          'url': 'https://www.shop.example.com/letters?order=12345&token=abcdefghijklmnop'} if n == 0 else {'action': 'snapshot'}})
+            calls.append({'type': 'toolCall', 'name': 'exec', 'arguments': {'command': 'curl -H "Authorization: Bearer abcdefghijklmnopqrstuvwxyz" https://x.example'}})
+        calls += [{'type': 'toolCall', 'name': 'assistant_signals', 'arguments': {'action': 'status'}},
+                  {'type': 'toolCall', 'name': 'assistant_signals', 'arguments': {'action': 'bug_offer', 'args': {'words': 'private words'}}},
+                  {'type': 'toolCall', 'name': 'browser', 'arguments': {'action': 'open', 'url': 'http://127.0.0.1:18789/secret'}},
+                  {'type': 'toolCall', 'name': 'web_fetch', 'arguments': {'url': 'file:///home/someone/notes.txt'}},
+                  {'type': 'toolCall', 'name': 'mystery_tool', 'arguments': {'q': 'search words'}}]
+        items = a.chat_items([row('assistant', calls, 'r1', 1000), row('assistant', [{'type': 'text', 'text': 'Ordered.'}], 'r1', 2000)], [])
+        steps = items[0]
+        self.assertEqual(steps['kind'], 'steps')
+        self.assertEqual(steps['count'], 27)
+        self.assertEqual(steps['steps'], [{'line': ['Used the browser on {}', 'shop.example.com'], 'n': 11},
+                                          {'line': ['Ran a command'], 'n': 11}, {'line': ['Checked open to-dos'], 'n': 1},
+                                          {'line': ['Looked things up in The Machine'], 'n': 1}, {'line': ['Used the browser'], 'n': 1},
+                                          {'line': ['Read a web page'], 'n': 1}])  # the mystery tool counts, without a row
+        text = json.dumps(items)
+        for hidden in ('curl', 'Bearer', 'order=', 'token', '/letters', '127.0.0.1', '/home/', 'private words', 'search words'):
+            self.assertNotIn(hidden, text)
+
+    def test_steps_keep_the_most_frequent_kinds(self):
+        calls = [{'type': 'toolCall', 'name': 'browser', 'arguments': {'url': f'https://site{n}.example.org/'}} for n in range(30)]
+        calls += [{'type': 'toolCall', 'name': 'exec', 'arguments': {}}] * 5
+        steps = a.chat_items([row('assistant', calls, 'r1', 1000)], [])[0]
+        self.assertEqual(steps['count'], 35)
+        self.assertEqual(len(steps['steps']), CHAT_STEP_GROUPS)
+        self.assertIn({'line': ['Ran a command'], 'n': 5}, steps['steps'])
 
     def test_learning_internals_stay_out_and_say_noted(self):
         msgs = [row('assistant', [{'type': 'text', 'text': 'Saved the reply.'}], 'r1', 1000),
