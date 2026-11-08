@@ -83,8 +83,9 @@ try{
   // A question: the results first, Looking… (it ends in ?), then the answer above them, a few words at a time
   let go;release=new Promise(r=>go=r);
   await page.locator('#pal-q').fill('what did kim say about the pilot?');
-  await page.locator('#pal-list .pal-group',{hasText:'Messages'}).waitFor();
+  await page.locator('#pal-list .pal-item',{hasText:'See all results'}).waitFor();
   await page.locator('#pal-answer .pal-dots').waitFor();
+  assert.ok(!(await groups(page)).includes('Messages'),'while it answers: no Messages heading over See all results alone');
   assert.equal(await page.locator('#pal-answer').getAttribute('role'),'status');assert.equal(await page.locator('#pal-answer .pal-sr').textContent(),'Looking…');
   assert.notEqual(await page.locator('#pal-answer .pal-dots i').first().evaluate(e=>getComputedStyle(e).animationName),'none','the dots move');
   assert.equal((await groups(page))[0],'Answer');
@@ -135,6 +136,11 @@ try{
   await page.waitForFunction(t=>document.querySelector('#pal-answer')?.textContent===t,ANSWER);
   // the answer reads in full and fits the palette, never wider than the screen
   const box=await page.locator('#pal-answer').boundingBox();assert.ok(box.x>=0&&box.x+box.width<=w,'fits '+w);
+  assert.ok(!(await groups(page)).includes('Messages'),'its messages are the answer\'s: no empty Messages heading');
+  // a solid panel with room under its last row, so nothing behind reads as part of it
+  const edge=await page.evaluate(()=>{const d=document.querySelector('#palette'),l=document.querySelector('#pal-list'),last=[...l.querySelectorAll('.pal-item')].at(-1);
+   return {bg:getComputedStyle(d).backgroundColor,gap:d.getBoundingClientRect().bottom-last.getBoundingClientRect().bottom}});
+  assert.ok(!/rgba\(.*, 0(\.\d+)?\)$/.test(edge.bg)&&edge.bg!=='transparent','opaque '+edge.bg);assert.ok(edge.gap>=8,'room under the last row at '+w+': '+edge.gap);
   if(shots)await page.screenshot({path:`${shots}/search-ask-${w}-${colorScheme}.png`});
   await context.close()}
  // Reduced motion: the dots stand still

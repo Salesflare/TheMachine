@@ -173,7 +173,7 @@ function palRows(){const q=pal.q.trim(),ctx=pal.ctx,recent=palRecent(),groups=[]
   const read=ak?.state==='done'&&Array.isArray(ak.messages),holding=ak&&ak.state==='wait'&&(ak.mark||ak.plan);
   const msgs=read?ak.messages.map(m=>({a:{id:'msg:'+m.id,run:()=>msgOpen(m),entity:true},label:m.title||m.from||t('Message'),sub:[m.title?m.from:'',m.at?humanTime(m.at):''].filter(Boolean).join(' · ')}))
    :holding?[]:(pal.msgs||[]).filter(m=>!asked.has(m.id)).map(m=>({a:{id:'msg:'+m.id,run:()=>msgOpen(m),entity:true},label:m.title||t('Message'),sub:msgSub(m)}));
-  if(q.length>=2)groups.push(['Messages',[...msgs,
+  if(q.length>=2)groups.push([msgs.length?'Messages':'',[...msgs,  /* no heading over See all results alone */
    {a:{id:'msg-all',run:()=>msgSearch(q),entity:true},label:t('See all results for “{}”',q),sub:pal.msgs===null&&!holding&&!read?t('Looking…'):''}]])}
  // From the sidebar's Search box: the to-dos first (before typing, the first open ones)
  if(pal.todos){if(!q){const open=(state.suggestions||[]).filter(s=>!closed(s)).slice(0,5);if(open.length)groups.unshift(['To-dos',open.map(s=>({a:{id:'card:'+s.id,run:()=>chatGo(s.id),entity:true},label:s.title,sub:palCardSub(s)}))])}
@@ -186,7 +186,7 @@ const palAnswer=a=>a.state==='done'?`<p class="pal-answer" id="pal-answer" trans
  :a.state==='error'?`<p class="pal-answer muted" id="pal-answer">${esc(t('Couldn’t answer that right now.'))}</p>`
  :`<p class="pal-answer muted" id="pal-answer" role="status"><span class="pal-dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="pal-sr">${esc(t('Looking…'))}</span></p>`;
 function palRender(){const d=$('#palette');if(!d?.open)return;palAskShow();const groups=palRows(),list=d.querySelector('#pal-list'),was=pal.items[pal.sel]?.a.id;pal.items=[];let html='';
- for(const [g,xs,ask] of groups){html+=`<div class="pal-group" role="presentation">${esc(g)}</div>${ask?palAnswer(ask):''}`;
+ for(const [g,xs,ask] of groups){html+=`${g?`<div class="pal-group" role="presentation">${esc(g)}</div>`:''}${ask?palAnswer(ask):''}`;
   for(const x of xs){const i=pal.items.push(x)-1;const keys=x.a.review?'':x.a.keys;
    html+=`<div class="pal-item" role="option" id="pal-o-${i}" data-pal="${i}" aria-selected="false"><span class="pal-label">${esc(x.label)}</span>${x.sub?`<small>${esc(x.sub)}</small>`:''}${keys?`<span class="pal-keys" aria-label="${esc(kbText(keys))}">${kbKeys(keys)}</span>`:''}</div>`}}
  if(!pal.items.length&&!groups.some(g=>g[2]))html=`<p class="pal-empty">${pal.q.trim().length>=2&&pal.found===null?'Looking…':'Nothing matches.'}</p>`;

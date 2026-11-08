@@ -46,7 +46,11 @@ article.kb-on,article.kb-on:focus{outline:2px solid color-mix(in srgb,var(--c-ac
   /* Under the top bar, which stays in sight, and no taller than what the keyboard leaves (--vv-top and --vv-h follow
      the visual viewport, so it holds also where the keyboard doesn't resize the page) */
   #palette,#palette[open]{width:100%;max-width:100%;max-height:calc(var(--vv-h,100dvh) - 52px - env(safe-area-inset-top) - 12px);margin:calc(var(--vv-top,0px) + 52px + env(safe-area-inset-top)) auto auto;border-radius:0 0 var(--r-xl,20px) var(--r-xl,20px)}
-  #palette::backdrop{background:linear-gradient(transparent calc(var(--vv-top,0px) + 52px + env(safe-area-inset-top)),color-mix(in srgb,var(--c-bg) 55%,transparent) 0);-webkit-backdrop-filter:none;backdrop-filter:none}
+  /* the panel is solid and ends in a clear edge: room under the last row, its shadow, and the page under it dimmed
+     enough that a card's buttons never read as part of it */
+  #palette[open]{background:var(--surface-2);box-shadow:var(--shadow-pop)}
+  .pal-list{padding-bottom:12px}
+  #palette::backdrop{background:linear-gradient(transparent calc(var(--vv-top,0px) + 52px + env(safe-area-inset-top)),color-mix(in srgb,var(--c-bg) 92%,transparent) 0);-webkit-backdrop-filter:none;backdrop-filter:none}
   .pal-field input,.pal-field input:focus{font-size:16px}  /* no zoom on focus on an iPhone */
   .pal-item{min-height:44px}.pal-keys,.pal-foot{display:none}
 }
