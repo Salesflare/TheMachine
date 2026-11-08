@@ -4097,6 +4097,7 @@
  "Sign in as the saved user": "Inloggen als de bewaarde gebruiker",
  "Sign in as {}": "Inloggen als {}",
  "Sign in at {} in the tab that opened. This updates by itself.": "Log in bij {} in het tabblad dat openging. Dit werkt zichzelf bij.",
+ "Sign in from your home connection": "Inloggen via je thuisverbinding",
  "Sign in here": "Log hier in",
  "Sign in to": "Inloggen bij",
  "Sign in to LinkedIn once in the OpenClaw browser first: openclaw browser --browser-profile openclaw open https://www.linkedin.com/login": "Log eerst één keer in op LinkedIn in de OpenClaw-browser: openclaw browser --browser-profile openclaw open https://www.linkedin.com/login",

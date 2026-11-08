@@ -4097,6 +4097,7 @@
  "Sign in as the saved user": "Als gespeicherter Benutzer anmelden",
  "Sign in as {}": "Als {} anmelden",
  "Sign in at {} in the tab that opened. This updates by itself.": "Melde dich im geöffneten Tab bei {} an. Das aktualisiert sich von selbst.",
+ "Sign in from your home connection": "Über deine Verbindung zu Hause anmelden",
  "Sign in here": "Hier anmelden",
  "Sign in to": "Anmelden bei",
  "Sign in to LinkedIn once in the OpenClaw browser first: openclaw browser --browser-profile openclaw open https://www.linkedin.com/login": "Melde dich zuerst einmal im OpenClaw-Browser bei LinkedIn an: openclaw browser --browser-profile openclaw open https://www.linkedin.com/login",

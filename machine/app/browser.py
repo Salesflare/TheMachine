@@ -71,13 +71,17 @@ class BrowserApp:
                 seen['resumed'] = self.resume_signed_in(host=args['host'], suggestion_id=task)
             return seen
         if name == 'browser_login_pages':
-            found =browser_login.pages(self.config, logins, args.get('account') if isinstance(args.get('account'), str) else None)
+            account = args.get('account') if isinstance(args.get('account'), str) else None
+            found = browser_login.pages(self.config, logins, account)
+            # No form, but a bot wall in front of the site: the dialog says so (and, hosted, how to get past it)
+            walls = [] if found else browser_login.walls(self.config, account)
             if isinstance(args.get('suggestion_id'), str):
                 # For a task, only the sign-in on the site its own run left off at; unknown: none, never a guess.
                 page = self.signin_page(args['suggestion_id'])
                 found = [p for p in found if page and same_site(p['host'], page)]
-                return {'pages': found, 'task_site': browser_login.site(urllib.parse.urlsplit(page).hostname) if page else None}
-            return {'pages': found}
+                walls = [w for w in walls if page and same_site(w['host'], page)]
+                return {'pages': found, 'walls': walls, 'task_site': browser_login.site(urllib.parse.urlsplit(page).hostname) if page else None}
+            return {'pages': found, 'walls': walls}
         if name == 'browser_logins':
             store = getattr(self, 'store', None)
             if store is None:

@@ -3,7 +3,7 @@ title: Sesión cerrada en un sitio
 area: troubleshooting
 summary: LinkedIn o X cerró la sesión de tu Machine. Vuelve a iniciarla, una vez o para siempre.
 covers: 
-code: browser_login.py, dashboard.html
+code: browser_login.py, dashboard.html, dashboard/connections-signin.js
 order: 2
 ---
 Sitios como LinkedIn y X se leen en el navegador propio de tu Machine. A veces un sitio cierra su sesión.
@@ -19,3 +19,9 @@ Marca **Guardar para la próxima vez** al iniciar sesión. La próxima vez que e
 Escribe las contraseñas tú. Los códigos de verificación en dos pasos también los introduces tú.
 
 Los inicios de sesión guardados están en **Conexiones**, **Inicios de sesión**. **Olvidar** quita uno.
+
+## Si el sitio lo rechaza o pide una verificación de robot
+
+LinkedIn, X y los sitios detrás de una verificación de Cloudflare suelen rechazar los inicios de sesión desde un navegador en la nube. En una Machine alojada, el inicio de sesión muestra entonces **Inicia sesión desde tu conexión de casa**. Abre tu página de configuración, donde el navegador de tu Machine puede salir por tu internet de casa con Tailscale, o por tu propio proxy. Después, inicia sesión de nuevo.
+
+En tu propio ordenador no lo necesitas: su navegador ya está en casa.
