@@ -132,13 +132,13 @@ class FormTest(unittest.TestCase):
         # asked (after Google's consent, the company prefilled), and the answer is the owner's.
         saved, view, asked = self.connect_as('gmail', 'jules@moreaudesign.io', answer='Personal')
         self.assertEqual(asked[0]['prompt'], 'Is this account work or personal?')
-        self.assertEqual(asked[0]['options'][:2], ['Personal', 'Work · Moreaudesign'])
+        self.assertEqual(asked[0]['options'][:2], ['Personal', 'Work'])  # no name made from the domain
         self.assertEqual((saved['boundary'], saved['boundary_by'], view['guessed']), ('personal:me', 'owner', None))
         self.assertTrue(saved['scope_check'])  # its mail is looked at once it is in (scope_check.py)
-        saved, _, asked = self.connect_as('outlook', 'jules@moreaudesign.io', answer='Work · Moreaudesign')
+        saved, _, asked = self.connect_as('outlook', 'jules@moreaudesign.io', answer='Work')
         self.assertEqual((saved['boundary'], saved['boundary_by']), ('personal:me', 'owner'))  # the same address follows its marking
         self.assertEqual(asked, [])
-        saved, _, _ = self.connect_as('gmail', 'max@hooli.dev', answer='Work · Hooli')
+        saved, _, _ = self.connect_as('gmail', 'max@hooli.dev', answer='Work')
         self.assertEqual((saved['boundary'], saved['boundary_by']), ('work:Hooli', 'owner'))
         for email in ('jo@jo-family.net', 'me@my-name.org'):
             self.assertEqual(onboarding.guess_boundary({'accounts': []}, email), (None, None))
@@ -147,13 +147,28 @@ class FormTest(unittest.TestCase):
         # Google's hd and a Microsoft work tenant say the domain is an organization's, not that this mail is work: still
         # asked, Work first. Microsoft's consumer tenant is Outlook.com: Personal, whatever the domain.
         saved, view, asked = self.connect_as('gmail', 'robin@robin-studio.dev', answer='Personal', org=True)
-        self.assertEqual((asked[0]['options'][0], asked[0]['options'][-1]), ('Work · Robin-studio', 'Personal'))
+        self.assertEqual((asked[0]['options'][0], asked[0]['options'][-1]), ('Work', 'Personal'))
         self.assertEqual((saved['boundary'], saved['boundary_by'], view['guessed']), ('personal:me', 'owner', None))
         saved, view, asked = self.connect_as('outlook', 'kai@kai-home.dev', tid=onboarding.CONSUMER_TENANT)
         self.assertEqual((saved['boundary'], saved['boundary_by'], view['guessed'], asked), ('personal:me', 'guess', 'personal:me', []))
         self.assertNotIn('scope_check', saved)
         self.assertEqual(onboarding.guess_boundary({'accounts': []}, 'kai@kai-home.dev', tid='0a0b0c0d-1111-2222-3333-444455556666'),
                          (None, None))  # a work tenant alone: asked
+
+    def test_work_is_named_only_by_a_real_company_name_never_one_made_from_the_domain(self):
+        import sqlite3
+
+        from work_or_personal import known_company
+        db = Path(self.temp.name) / 'graph.sqlite'
+        with sqlite3.connect(db) as c:
+            c.execute('CREATE TABLE graph_nodes(id TEXT PRIMARY KEY,name TEXT NOT NULL)')
+            c.executemany('INSERT INTO graph_nodes VALUES(?,?)', [('org:moreaudesign.io', 'Moreau Design'), ('org:hooli.dev', 'Hooli')])
+        config = {'database': str(db), 'accounts': [{'id': 'x', 'email': 'pat@initech.dev', 'boundary': 'work:Initech Corp', 'boundary_by': 'owner'}]}
+        self.assertEqual(known_company(config, {'email': 'jules@moreaudesign.io'}), 'Moreau Design')  # the Graph's name
+        self.assertEqual(known_company(config, {'email': 'max@hooli.dev'}), '')  # only the domain read out
+        self.assertEqual(known_company(config, {'email': 'sam@initech.dev'}), 'Initech Corp')  # the owner's own name for it
+        self.assertEqual(known_company(config, {'email': 'me@gmail.com'}), '')
+        self.assertEqual(known_company({'accounts': []}, {'email': 'jules@moreaudesign.io'}), '')  # no Graph yet
 
     def test_organization_comes_from_the_tenant_or_googles_user_info_with_the_access_it_has(self):
         work = '0a0b0c0d-1111-2222-3333-444455556666'

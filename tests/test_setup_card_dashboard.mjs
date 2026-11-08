@@ -275,12 +275,13 @@ try{
   await context.close()}
  // Work or Personal, when its mail says the other (scope_check.py), on a self-hosted Machine too: Change sets it on the
  // Machine (connect_scope) and closes the row for good; nothing switched before that.
- for(const [width,height,ua] of [[1440,900,'chrome'],[1440,700,'chrome'],[390,844,'android']]){reset();manage=null;setup={...FRESH,phones:1};
+ for(const [width,height,ua,scheme] of [[1440,900,'chrome','light'],[1440,900,'chrome','dark'],[1440,700,'chrome','dark'],[390,844,'android','light'],[390,844,'android','dark']]){reset();manage=null;setup={...FRESH,phones:1};
   const title='jules@moreaudesign.io looks like personal mail. Change it to Personal?';
   setupHints=[{id:'scope-0123456789',title,text:'',button:'Change',scope:{account:'moreau-gmail',boundary:'personal:me'}}];
-  const {context,page}=await open({width,height,ua,perm:'granted',sub:true});
+  const {context,page}=await open({width,height,ua,scheme,perm:'granted',sub:true});
   assert.deepEqual((await card(page)).rows.at(-1),['hint-scope-0123456789',title,'Change']);
-  await fits(page,width+' scope');await shot(page,`setup-scope-${width}x${height}`);
+  assert.ok(await page.locator('[data-step="hint-scope-0123456789"] .setup-ic rect').count(),'a still icon, not the hint\'s rays');
+  await fits(page,width+' scope');await shot(page,`setup-scope-${width}x${height}-${scheme}`);
   assert.deepEqual(actions.filter(a=>a.action==='connect_scope'),[],'never by itself');
   await page.locator('[data-setup-go="hint-scope-0123456789"]').click();
   await sent(()=>actions.filter(a=>a.action==='connect_scope'),[{action:'connect_scope',args:{account:'moreau-gmail',boundary:'personal:me'}}]);

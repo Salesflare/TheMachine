@@ -48,15 +48,42 @@ def guess_boundary(config, email, account=None, team_domains=(), tid=None):
 
 
 def ask_scope(config, account, ui, organization=False):
-    """The one Work or Personal question for an address that doesn't say (guess_boundary): Work with the company its
-    domain names, or Personal. The owner's own marking. organization: the sign-in is a Google Workspace or Microsoft
+    """The one Work or Personal question for an address that doesn't say (guess_boundary): Work, named only when the
+    company's real name is known (known_company; never a name made from the domain), or Personal. The owner's own marking. organization: the sign-in is a Google Workspace or Microsoft
     work account (organization_of), so Work comes first; else Personal does."""
-    company = company_of(account.get('email')) or 'Main'
-    work, personal = ('work:' + company, scope_label('work:' + company)), ('personal:me', 'Personal')
+    known = known_company(config, account)
+    work = ('work:' + known, scope_label('work:' + known)) if known else ('work:' + (company_of(account.get('email')) or 'Main'), 'Work')
+    personal = ('personal:me', 'Personal')
     from onboarding import boundaries  # noqa: PLC0415 - onboarding imports this module
     rest = [(b, scope_label(b)) for b in boundaries(config, account.get('service', 'gmail')) if b not in (work[0], personal[0])]
     options = [work, *rest, personal] if organization else [personal, work, *rest]
     return ui.choose('Is this account work or personal?', list(dict(options).items()))
+
+
+def known_company(config, account):
+    """The company's real name for this address's domain, or '': a Work company the owner gave another account on that
+    domain, else the name the Graph has for the organization when it is more than its domain read out (graph.py)."""
+    email = str(account.get('email') or '').strip().lower()
+    domain = email.rpartition('@')[2]
+    if not domain or not company_of(email):
+        return ''
+    for a in config.get('accounts') or []:
+        kind, _, name = str(a.get('boundary') or '').partition(':')
+        if a is not account and kind == 'work' and name and a.get('boundary_by') == 'owner' \
+                and str(a.get('email') or '').strip().lower().rpartition('@')[2] == domain:
+            return name
+    try:
+        import sqlite3
+        from pathlib import Path
+
+        import enrichment
+        with sqlite3.connect(Path(config['database']).expanduser().as_uri() + '?mode=ro', uri=True) as db:
+            row = db.execute('SELECT name FROM graph_nodes WHERE id=?', ('org:' + domain,)).fetchone()
+        name = str(row[0] if row else '').strip()
+    except Exception:  # noqa: BLE001 - no Graph yet (a new Machine): plain Work
+        return ''
+    made = {domain, enrichment.readable_name(domain).casefold(), company_of(email).casefold()}
+    return name[:60] if name and name.casefold() not in made and ':' not in name else ''
 
 
 def organization_of(config, account):
