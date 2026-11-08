@@ -64,11 +64,13 @@ async function saveDecision(id,choice,feedback='',answer=false){
 if(choice==='undo'&&atOnceSaving.has(id)&&!await atOnceSaving.get(id))return;  // the change it undoes never landed: nothing to undo
 if(['complete','reject'].includes(choice)&&atOnceOK(id)){await decideAtOnce(id,{choice,feedback},choice==='complete'?'Marked done':'Marked not needed');return}
 let saved;try{const args={choice,feedback,decision_id:crypto.randomUUID()};saved=OUTBOX_CHOICES.includes(choice)?await decideOrWait(id,[args],choice):await decidePost(id,args)}
-catch(err){await refresh().catch(()=>{});throw err}  // the card was drawn before something changed it: show it as it is now
-// Offline: it waits on the device and says so on the to-do; the typed note is on its way, so the editor closes
+catch(err){refresh().catch(()=>{});throw err}  // the card may be stale: redraw it
+// Offline: it waits on the device, so the editor closes
 if(saved?.waiting){changing.delete(id);dismissing.delete(id);focusKept(render);return}
-changing.delete(id);await refresh();
-// Try again or Continue on a card drawn before it carried on by itself (its sign-in was seen): nothing new, say so.
+// Its new status shows with the toast; the full status follows
+changing.delete(id);const s=/^(pe|ac|pr|in|sn)/.test(saved?.status)&&state.suggestions.find(x=>x.id===id);if(s)s.status=saved.status;
+localEdits++;focusKept(render);refresh().catch(()=>{});
+// Try again on a to-do that already carried on: say so.
 if(saved?.already){toast({done:'Already done. See the to-do.',closed:'Nothing is waiting to try again here.'}[saved.already]||'Already carrying on with it.');return}
 // A Change stays on the card (its "You asked" note has See in chat ›); the chat never opens by itself.
 if(['complete','reject'].includes(choice))toast(saved?.status==='completed'?'Marked done':'Marked not needed',false,id);else toast(answer?'Thanks. I’ll carry on.':({accept:'I’ll prepare it.',other:'Changes saved.',retry:'Trying again.',undo:'Reopened.',reopen:'Reopened.'})[choice]||'Saved.');
