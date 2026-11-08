@@ -235,6 +235,7 @@ OTHER_WRITERS = {
     'board_backfills': {'sandbox/load.py'},
     'board_offers': {'assistant.py'},
     'boards': {'shared_graph.py'},
+    'calendar_writes': {'machine/app/meeting_writes.py'},
     'chats': {'telegram_mirror.py'},
     'checkpoints': {'machine/app/sync.py', 'sandbox/load.py'},
     'crm_tags': {'crm_import.py'},
@@ -296,7 +297,7 @@ OTHER_WRITERS = {
                      'machine/app/profile.py', 'retention.py', 'skills_app.py', 'team_learnings.py'},
     'project_moves': {'crm_import.py', 'follow_ups.py'},
     'projects': {'crm.py', 'crm_import.py', 'follow_ups.py', 'machine/app/graph_actions.py', 'sandbox/load.py'},
-    'promises': {'graph.py', 'machine/app/promise_checks.py', 'sandbox/load.py'},
+    'promises': {'graph.py', 'machine/app/mail.py', 'machine/app/promise_checks.py', 'sandbox/load.py'},
     'push_subscriptions': {'machine/app/notifications.py', 'machine/delivery/push.py', 'machine/export/hold.py'},
     'recap_items': {'machine/app/recap.py'},
     'recaps': {'machine/app/recap.py'},
@@ -306,8 +307,8 @@ OTHER_WRITERS = {
     'skill_clusters': {'skills_app.py'},
     'skills': {'sandbox/load.py'},
     'suggestions': {'fleet.py', 'follow_ups.py', 'graph.py', 'machine/app/action_runs.py', 'machine/app/feedback.py',
-                    'machine/app/promise_checks.py', 'machine/delivery/deliver.py', 'machine/store/faults.py',
-                    'sandbox/load.py', 'skills_app.py', 'work_removal.py'},
+                    'machine/app/mail.py', 'machine/app/promise_checks.py', 'machine/delivery/deliver.py',
+                    'machine/store/faults.py', 'sandbox/load.py', 'skills_app.py', 'work_removal.py'},
     'sync_activity': {'retention.py', 'sandbox/load.py'},
     'team_learning_prefs': {'security_levels.py'},
     'thread_snoozes': {'machine/app/action_runs.py', 'machine/app/workers.py'},
@@ -403,7 +404,6 @@ PY_LINE_BUDGET = 2_500
 PY_BYTE_BUDGET = 450 * 1024
 PY_RATCHET_SLACK = (500, 50_000)
 PY_OVER_BUDGET = {
-    'assistant.py': (2_760, 139_000),
     'fleet.py': (3_800, PY_BYTE_BUDGET),
     'graph.py': (5_400, PY_BYTE_BUDGET),
     'next_actions.py': (2_650, PY_BYTE_BUDGET),

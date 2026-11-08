@@ -23,9 +23,10 @@ from machine.sources.salesflare import salesflare_progress, sync_salesflare
 from machine.sources.slack import (Slack, slack_error, slack_event, slack_first_import_next, slack_first_import_plan,
                                    slack_interval, slack_next_due, slack_order, slack_page_names)
 from machine.sources.telegram import sync_telegram
-from machine.sources.whatsapp import sync_whatsapp
+from machine.sources.whatsapp import sync_whatsapp, WhatsApp
 from sources import CALENDAR_SERVICES, gog_signed_in_since, MAIL_SERVICES, rate_limited, SourceError, upstream_busy
 from timeutil import now
+import whatsapp_images
 
 
 SALESFLARE_RESTART_SPREAD = 180  # seconds: team Machines restarted together start their Salesflare rounds apart
@@ -575,3 +576,21 @@ class SyncApp:
             except Exception as error:  # noqa: BLE001 - the next poll reads it anyway
                 LOG.warning('sync_soon account=%s error=%s', account_id, type(error).__name__)
         threading.Thread(target=read, name='sync-soon-' + account_id, daemon=True).start()
+
+    def whatsapp_source(self, account):
+        """The WhatsApp source of one of the owner's connections (whatsapp_images_app fetches photos through it)."""
+        return WhatsApp(self.config, account)
+
+    def whatsapp_photo_event(self, account_id, source_id):
+        """A message whose photo was kept or read, with the photo joined in (whatsapp_images.with_photo), the way its next
+        sync builds it: a new version, so the review reads what the photo says."""
+        with self.store.connect() as db:
+            row = db.execute('SELECT kind,occurred_at,title,body,metadata,deleted FROM events WHERE account_id=? AND source_id=?',
+                             (account_id, source_id)).fetchone()
+            photo = db.execute('SELECT * FROM whatsapp_photos WHERE account_id=? AND source_id=?', (account_id, source_id)).fetchone()
+        if not row or not photo or row['kind'] != 'whatsapp.message':
+            return False
+        event = {'account_id': account_id, 'source_id': source_id, 'kind': row['kind'], 'occurred_at': row['occurred_at'], 'title': row['title'],
+                 'body': whatsapp_images.base_body(row['body']), 'metadata': json.loads(row['metadata']), 'deleted': bool(row['deleted'])}
+        self.store.commit_page(account_id, None, [whatsapp_images.with_photo(event, dict(photo))], record_sync=False)
+        return True
