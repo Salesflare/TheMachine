@@ -297,7 +297,9 @@ class WebSignInTest(unittest.TestCase):
                 if ui.view()['question']:
                     break
                 time.sleep(0.02)
-            self.assertIn('https://accounts.google.com/o/oauth2/auth?client_id=x&scope=readonly', ui.view()['lines'])
+            # the dashboard gets the address as Google's step (its own words and button), not as a line
+            self.assertEqual(ui.view()['question']['google']['url'], 'https://accounts.google.com/o/oauth2/auth?client_id=x&scope=readonly')
+            self.assertEqual(ui.view()['lines'], [])
             ui.answer(ui.view()['question']['id'], 'http://127.0.0.1:1/oauth2/callback?code=fake-code')
             done.join(5)
             calls = log.read_text().splitlines()

@@ -16,7 +16,7 @@ Abaixo do status, cada fonte diz em uma linha o que traz e, quando pode agir, qu
 
 ## Adicionar uma
 
-Abra **+ Adicionar** e escolha uma fonte. Ela pede o que precisa, uma pergunta por vez. **Cancelar** para de adicionar a fonte. Depois de conectada, sua Machine reinicia para começar a ler a fonte e abre o novo cartão, que mostra como vai a primeira sincronização. Em uma Machine hospedada, Google, Microsoft, Microsoft OneDrive, Zoom, Stripe e Intercom entram por aqui: escolha **Trabalho** ou **Pessoal**, entre e você volta para este formulário, que mostra como a conexão está indo. O GitHub, o WhatsApp, o Codex, os Chats do Telegram e seu celular Android mostram o código direto neste formulário.
+Abra **+ Adicionar** e escolha uma fonte. Ela pede o que precisa, uma pergunta por vez. **Cancelar** para de adicionar a fonte. Saiu antes de terminar? Abra **Conexões** de novo, em qualquer dispositivo, e continua no mesmo passo. Depois de conectada, sua Machine reinicia para começar a ler a fonte e abre o novo cartão, que mostra como vai a primeira sincronização. Em uma Machine hospedada, Google, Microsoft, Microsoft OneDrive, Zoom, Stripe e Intercom entram por aqui: escolha **Trabalho** ou **Pessoal**, entre e você volta para este formulário, que mostra como a conexão está indo. O GitHub, o WhatsApp, o Codex, os Chats do Telegram e seu celular Android mostram o código direto neste formulário.
 
 A lista é agrupada (**E-mail e agenda**, **Chat**, **Reuniões**, **Documentos e arquivos**, **Clientes**, **Projetos e código**, **Outras**), de A a Z em cada grupo.
 
