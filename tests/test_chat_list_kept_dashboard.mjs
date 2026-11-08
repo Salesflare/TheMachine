@@ -31,8 +31,8 @@ try{
  await page.goto('http://127.0.0.1:'+server.address().port);await page.locator('#task-a1a1a1a1a1a1a1a1').waitFor();
  const mark=()=>page.evaluate(()=>{for(const c of document.querySelectorAll('#suggestions article.card'))c.marked=true});
  const kept=()=>page.evaluate(()=>Object.fromEntries([...document.querySelectorAll('#suggestions article.card')].map(c=>[c.id.slice(5,9),!!c.marked])));
- // A tap within 250 ms of a scroll doesn't open a chat (it stops a fling), and closing one scrolls its card into view
- const open=async id=>{await page.waitForTimeout(300);await page.locator(`#task-${id} .card-foot a.card-chat-link`).click();await page.locator(`.chat-layout[data-chat="${id}"]`).waitFor()};
+ // A tap within 250 ms of a scroll doesn't open a chat (it stops a fling): the link is scrolled to first, then tapped
+ const open=async id=>{const link=page.locator(`#task-${id} .card-foot a.card-chat-link`);await link.scrollIntoViewIfNeeded();await page.waitForTimeout(300);await link.click();await page.locator(`.chat-layout[data-chat="${id}"]`).waitFor()};
  const back=async()=>{await page.locator('nav [data-tab="inbox"]').click();await page.locator('#suggestions article.card').first().waitFor()};
  await mark();
  // 1. Open and close: the same cards are back

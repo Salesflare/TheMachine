@@ -104,7 +104,7 @@ document.addEventListener('click',e=>{if(e.target.closest?.('a.agent-app[data-la
 // A wider header tries the long label again; any other change (a late font, new text) only ever shortens it, so it can't flip back and forth.
 const agentHeadWraps=h=>{const a=h.querySelector('a.agent-app'),n=h.firstElementChild;return !!a&&a!==n&&a.getBoundingClientRect().top>=n.getBoundingClientRect().bottom-1};
 function agentHeadSize(h,width){if(width!==undefined&&h._fitW!==width){h._fitW=width;h.classList.remove('tight')}if(!h.classList.contains('tight')&&agentHeadWraps(h))h.classList.add('tight')}
-const agentHeadFit=new ResizeObserver(rows=>{for(const {target:h,contentRect:r} of rows)agentHeadSize(h,r.width)});
+const agentHeadFit=new ResizeObserver(rows=>{for(const {target:h,contentRect:r} of rows)if(r.width&&h._fitW!==r.width)agentHeadSize(h,r.width)});  // the width it has (or none): nothing to measure
 // A header drawn anew is fitted before it is painted, so a refresh never shows it wrapped first and then pulls the card up
 new MutationObserver(()=>{for(const h of document.querySelectorAll('.agent-result .agent-head:not([data-fit])')){h.dataset.fit='';agentHeadSize(h);agentHeadFit.observe(h)}}).observe(document.body,{childList:true,subtree:true});
 const agentHeadsFit=()=>{for(const h of document.querySelectorAll('.agent-result .agent-head[data-fit]'))agentHeadSize(h)};
