@@ -103,7 +103,11 @@ console.log('Review hooks: private scope, host-bound run, retry hint, redacted e
 
 const prepCtx={...ctx,sessionKey:'agent:main:assistant-review-preparation-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'};
 const previousCount=calls.length;const prep=await hooks.before_prompt_build({},prepCtx);
-assert.ok(prep.prependContext.startsWith('## About the owner (USER.md)'));assert.ok(prep.prependContext.includes('## Preparation rules')&&prep.prependContext.includes('then tap Continue'));assert.ok(!prep.prependContext.includes('analysis_page'));
+assert.ok(prep.prependSystemContext.startsWith('## About the owner (USER.md)'));assert.ok(prep.prependSystemContext.includes('## Preparation rules')&&prep.prependSystemContext.includes('then tap Continue'));assert.ok(!prep.prependSystemContext.includes('analysis_page'));
+// The rules go in the system prompt, never the turn's message: a message is saved into the session, so every later turn
+// (Do it after a prepare-ahead, a to-do chat) added one more copy. The same rules on each turn, so the cached prefix holds.
+assert.equal(prep.prependContext,undefined);
+assert.equal((await hooks.before_prompt_build({},prepCtx)).prependSystemContext,prep.prependSystemContext);
 assert.equal(calls.length,previousCount);  // a preparation is not a review
 // Preparations read untrusted email. Research, drafting and other changes run;
 // only credentials and self-edits stay blocked (loosened at his request October 12 and 14).

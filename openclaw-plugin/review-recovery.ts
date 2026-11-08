@@ -329,8 +329,11 @@ export function registerReviewRecovery(api: any, call: (action: string, args?: a
   api.on('before_prompt_build', async (_event: any, ctx: any) => {
     if (preparationSession(ctx.sessionKey) && privateReviewContext(ctx)) {
       if (ctx.runId) sessionRuns.set(ctx.sessionKey,ctx.runId);
+      // In the system prompt, like a review's: it is there once on every turn of the session. In the turn's message it
+      // was saved into the session each turn, so a Do it after a prepare-ahead, or a to-do chat after it, carried two,
+      // three or more copies (about 18,000 tokens each) on every step until compaction.
       const context = ((await ownerContext()) + (await preparationRules())).trim();
-      return context ? {prependContext: context} : undefined;
+      return context ? {prependSystemContext: context} : undefined;
     }
     if ((profileSession(ctx.sessionKey) || routineSession(ctx.sessionKey)) && privateReviewContext(ctx)) {
       const context = (await ownerContext()).trim();
