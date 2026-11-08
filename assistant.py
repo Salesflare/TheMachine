@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import argparse
 import base64
-import binascii
 import collections
 import concurrent.futures
 import contextlib
@@ -3067,8 +3066,6 @@ class App(*APP_MIXINS):
                     graph.backfill_answer(db, args['_review_run'], args.get('fits'))
             return self.store.finish_analysis(args['analysis_id'], args.get('summary', ''), args.get('_review_session'), args.get('_review_run'), args.get('reviewed_ids'), args.get('projects'),
                                              args.get('stages'), args.get('team'), args.get('replies'), args.get('read'))
-        if name == 'graph':
-            return self.graph_action(args)
         if name == 'enrich':  # the CLI: status, or one domain now
             if args.get('domain'):
                 try:
@@ -3394,33 +3391,6 @@ class App(*APP_MIXINS):
             if name == 'card_use_sources':  # "Use this email for this to-do": what its stuck run asked for (use_sources)
                 return self.store.use_sources(args.get('suggestion_id'), args.get('decision_id'))
             return self.store.merge_answer(args.get('suggestion_id'), args.get('merge') is True, args.get('decision_id'))
-        if name == 'undo_merge':
-            if owner_dashboard and re.fullmatch(r'[A-Za-z0-9_.:-]{1,200}',str(args.get('approval_id',''))):source='dashboard'
-            elif not owner_dashboard and re.fullmatch(r'telegram:[A-Za-z0-9_.:-]{1,200}',str(args.get('approval_id',''))):source='telegram'
-            else:raise ValueError('Undo must come from the owner’s controls')
-            return self.store.undo_merge(args['suggestion_id'],args['approval_id'],source)
-        if name == 'remember_fact':
-            if args.get('kind') == 'skill':  # notes about one kind of task: offered as a skill on a card, never made by itself
-                return self.propose_skill_from_notes(args.get('name'), args.get('description'), args.get('text'), args.get('replaces'), args.get('skill'),
-                                                     args.get('related'), args.get('relation'), args.get('new') is True, args.get('base'))
-            if args.get('kind') == 'voice':  # how the owner writes on one channel: the whole line, from their note or edit
-                return self.store.save_voice(args.get('channel'), args.get('text'), 'assistant', args.get('decision_id'), args.get('edit_id'), args.get('replaces'))
-            if args.get('id') is not None and not args.get('text'):  # who an existing fact is about
-                return self.store.fact_about(args['id'], args.get('about'))
-            return self.store.remember_fact(args.get('text'), args.get('decision_id'), args.get('kind') or None, args.get('replaces'), args.get('about'),
-                                            args.get('until') or args.get('valid_until'))
-        if name == 'graph_summary':  # a person's summary: the owner's edit, a suggested update used or kept out, or back to The Machine's
-            if not owner_dashboard:
-                raise ValueError('Only the owner changes a summary, on the dashboard')
-            return self.summary_change(args)
-        if name == 'graph_fact_unlink':
-            if not owner_dashboard:
-                raise ValueError('Only the owner says who a fact is not about, on the dashboard')
-            return self.store.fact_unlink(args.get('fact_id'), args.get('node_id'))
-        if name == 'unmerge_fact':
-            if not owner_dashboard:
-                raise ValueError('Only the owner undoes a condense, on the dashboard')
-            return self.store.unmerge_fact(args.get('id'), args.get('channel'), args.get('skill'), args.get('expired'))
         if name == 'learning_undo':
             if not owner_dashboard:
                 raise ValueError('Only the owner undoes a learned change, on the dashboard')
@@ -3506,13 +3476,6 @@ class App(*APP_MIXINS):
             return {'subscribed': True}
         if name == 'promise':
             return self.store.promise(args, self.config.get('digest_at', '08:30'))
-        if name == 'graph_rename':
-            if not owner_dashboard:
-                raise ValueError('Only the owner renames people and projects, on the dashboard')
-            with self.store.connect() as db:
-                renamed = graph.rename(db, args.get('node_id'), args.get('name'), now())
-            self.graph_build()
-            return renamed
         if name == 'follow_up_change':
             if not owner_dashboard:
                 raise ValueError('Only the owner changes follow-ups, on the dashboard')
@@ -3628,89 +3591,10 @@ class App(*APP_MIXINS):
             else:
                 self.graph_build()
             return done
-        if name == 'graph_stage':
-            if not owner_dashboard:
-                raise ValueError('Only the owner moves a project by hand, on the dashboard; reviews use finish_analysis stages')
-            with self.store.connect() as db:
-                moved = graph.set_stage(db, str(args.get('node_id') or ''), args.get('stage'), 'owner', now())
-            self.graph_build()
-            return moved
-        if name in ('graph_org_edit', 'graph_org_wrong'):
-            if not owner_dashboard:
-                raise ValueError("Only the owner edits an organization's details, on the dashboard")
-            with self.store.connect() as db:
-                if name == 'graph_org_wrong':
-                    done = graph.org_wrong(db, args.get('node_id'), args.get('wrong') is not False, now())
-                else:
-                    done = graph.org_edit(db, args.get('node_id'), args.get('fields'), now())
-                    if 'name' in args:
-                        graph.rename(db, args.get('node_id'), args.get('name'), now())
-            self.graph_build()
-            return done
-        if name in ('graph_new', 'graph_org_delete'):
-            # A person or organization added by hand (New person, New organization), and deleting one added that way
-            if not owner_dashboard:
-                raise ValueError('Only the owner adds people and organizations by hand, on the dashboard')
-            with self.store.connect() as db:
-                db.execute('BEGIN IMMEDIATE')
-                done = graph.create_record(db, args.get('kind'), args, now(), graph.Owner(self.config, db)) if name == 'graph_new' else graph.delete_org(db, args.get('node_id'))
-            if done.get('created') or done.get('deleted'):
-                self.graph_build()
-            return done
-        if name in ('graph_picture', 'graph_pictures_found'):
-            # A person's or organization's picture: the owner's upload (made small on the dashboard), one of the pictures
-            # found for them (fetched here, on this Machine), or none.
-            if not owner_dashboard:
-                raise ValueError("Only the owner changes a picture, on the dashboard")
-            if name == 'graph_pictures_found':
-                with self.store.connect() as db:
-                    links = graph.picture_links(db, args.get('node_id'))
-                found = []
-                for link in links:
-                    got = enrichment.download_photo(link, timeout=5)
-                    if got:
-                        found.append('data:' + got[1] + ';base64,' + base64.b64encode(got[0]).decode())
-                return {'node_id': str(args.get('node_id') or ''), 'found': found}
-            data = None
-            if args.get('data'):
-                raw = str(args['data'])
-                try:
-                    data = base64.b64decode(raw.split(',', 1)[1] if raw.startswith('data:') else raw, validate=True)
-                except (ValueError, binascii.Error):
-                    raise ValueError('A picture is a JPEG, PNG or WebP image, up to 200 kB') from None
-            elif not args.get('remove') and not args.get('reset'):
-                raise ValueError('Upload a picture, pick one, or remove it')
-            with self.store.connect() as db:
-                db.execute('BEGIN IMMEDIATE')
-                done = graph.set_picture(db, args.get('node_id'), data, now(), reset=bool(args.get('reset')))
-            self.graph_build()
-            return done
         if name in CRM_ACTIONS:
             if not owner_dashboard:
                 raise ValueError('Only the owner changes owners, merges organizations and imports, on the dashboard')
             return self.crm_action(name, args)
-        if name == 'graph_person_edit':
-            # One Save for a person's page: their name, what they are to the owner and where they work go where those
-            # live (graph_names, person_roles, person_orgs, as the owner's word); the rest is person_edits.
-            if not owner_dashboard:
-                raise ValueError("Only the owner edits a person's details, on the dashboard")
-            node_id, fields = str(args.get('node_id') or ''), args.get('fields') if isinstance(args.get('fields'), dict) else {}
-            with self.store.connect() as db:
-                db.execute('BEGIN IMMEDIATE')
-                done = graph.person_edit(db, node_id, {k: v for k, v in fields.items() if k not in ('name', 'role', 'org')}, now())
-                if 'role' in fields:
-                    graph.set_role(db, node_id, str(fields['role'] or ''), 'owner', now())
-                if 'org' in fields:
-                    graph.set_org(db, node_id, str(fields['org'] or ''), 'owner', now())
-                if 'name' in fields:
-                    graph.rename(db, node_id, fields['name'], now())
-            self.graph_build()
-            return done
-        if name == 'graph_role':
-            if not owner_dashboard:
-                raise ValueError('Only the owner sets a role here, on the dashboard; reviews use graph with node_id and role')
-            # The same role as a review's confirms it: it becomes the owner's word.
-            return self.graph_action({'node_id': args.get('node_id'), 'role': args.get('role') or ''}, source='owner')
         if name in CONNECT_ACTIONS:
             if not owner_dashboard:
                 raise ValueError('Only the owner adds a source, from the dashboard')
@@ -3793,33 +3677,6 @@ class App(*APP_MIXINS):
                 task = args.get('suggestion_id') if isinstance(args.get('suggestion_id'), str) else None
                 done['resumed'] = self.resume_signed_in(host=host, suggestion_id=task)
             return done
-        if name == 'graph_warmup':
-            if not owner_dashboard:
-                raise ValueError('Only the owner undoes a warm-up domain here, on the dashboard; reviews use graph with warmup')
-            return self.graph_action({'node_id': args.get('domain') or args.get('node_id'), 'warmup': args.get('warmup') is True}, source='owner')
-        if name == 'graph_same':  # Same person? Merge, or Not the same (which also undoes a merge)
-            if not owner_dashboard:
-                raise ValueError('Only the owner merges people here, on the dashboard; reviews use graph with merge or different')
-            pair = [str(args.get('a') or ''), str(args.get('b') or '')]
-            return self.graph_action({('merge' if args.get('same') is True else 'different'): pair}, source='owner')
-        if name == 'graph_same_all':  # Merge all the listed Same person? pairs, or undo that batch in one go
-            if not owner_dashboard:
-                raise ValueError('Only the owner merges people here, on the dashboard; reviews use graph with merge or different')
-            with self.store.connect() as db:
-                if args.get('undo'):
-                    said = {'split': graph.unmerge_all(db, args['undo'])}
-                else:
-                    pairs = args.get('pairs')
-                    if not isinstance(pairs, list):
-                        raise ValueError('pairs is the list of [a, b] person ids shown under Same person?')
-                    said = graph.merge_all(db, pairs[:200], now())
-            if said.get('merged') or said.get('split'):
-                self.graph_later()
-            return said
-        if name == 'graph_person_delete':
-            if not owner_dashboard:
-                raise ValueError('Only the owner deletes someone permanently, on their page in the dashboard')
-            return self.delete_person(str(args.get('node_id') or ''))
         if name == 'client_error':  # the dashboard's own errors, as signatures for the error reports (error_feed.py)
             with self.store.connect() as db:
                 return {'ok': True, 'counted': error_feed.record_client(db, args.get('errors'), self.store.code_version, DASHBOARD_ACTIONS)}
@@ -3886,14 +3743,6 @@ class App(*APP_MIXINS):
             with self.store.connect() as db:
                 enrichment.set_people(db, args.get('on') is not False)
             return self.lookups_view()
-        if name == 'graph_person_org':
-            if not owner_dashboard:
-                raise ValueError('Only the owner sets an organization here, on the dashboard; reviews use graph with org, event_id and quote')
-            return self.graph_action({'node_id': args.get('node_id'), 'org': args.get('org') or ''}, source='owner')
-        if name == 'graph_relation':
-            if not owner_dashboard:
-                raise ValueError('Only the owner removes a relation here, on the dashboard; reviews use graph with related_to')
-            return self.graph_action({'node_id': args.get('node_id'), 'related_to': args.get('related_to'), 'relation': args.get('relation') or ''}, source='owner')
         if name == 'promise_close':
             if not owner_dashboard or args.get('status') not in ('kept', 'dropped'):
                 raise ValueError('Only the owner closes a promise, on the dashboard')
@@ -3940,14 +3789,6 @@ class App(*APP_MIXINS):
             status = getattr(self, 'model_status', None)
             return {'model_status': status, 'model_usage': getattr(self, 'model_usage', None),
                     **({'outcome': outcome} if name == 'model_reset' else {})}
-        if name == 'forget_fact':
-            if not owner_dashboard:
-                raise ValueError('Only the owner can remove a fact, on the dashboard')
-            return self.store.forget_fact(args['id'])
-        if name == 'edit_fact':
-            if not owner_dashboard:
-                raise ValueError('Only the owner can edit what was learned, on the dashboard')
-            return self.store.edit_fact(args.get('id'), args.get('text'))
         if name == 'preparation_blocked':
             return self.store.preparation_blocked(args['suggestion_id'],args['job_id'],args['reason'],args.get('details'),args.get('note_kind'),args.get('questions'),
                                                   args.get('move_to'),args.get('use_event_ids'))
