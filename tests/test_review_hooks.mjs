@@ -112,6 +112,20 @@ const prepOutcome=async(toolName,params,extra={})=>{
  return r?.block?'block':r?.requireApproval?'ask':'run';
 };
 const expect=async(outcome,cases)=>{for(const [tool,params] of cases)assert.equal(await prepOutcome(tool,params),outcome,tool+' '+JSON.stringify(params));};
+{ // An OpenClaw-made workshop skill about assistant_signals repeats the Machine's rules: Machine runs skip it, by
+  // name or by its file; other skills still load, and the owner's own chats keep them all. The files are never touched.
+ const {mkdirSync,writeFileSync,readFileSync}=await import('node:fs');const {FIXTURE}=await import('./test-env.mjs');
+ process.env.OPENCLAW_STATE_DIR=FIXTURE+'/state';const shop=FIXTURE+'/state/agents/main/agent/workshop-skills';
+ for(const [name,text] of [['signal-prep','---\nname: signal-prep\n---\nUse assistant_signals status first.'],['gog','---\nname: gog\n---\nSearch mail with gog.']]){
+  mkdirSync(`${shop}/${name}`,{recursive:true});writeFileSync(`${shop}/${name}/SKILL.md`,text);
+ }
+ await expect('block',[['skills_read',{name:'signal-prep'}],['openclaw__skills_read',{name:'signal-prep'}],['read',{path:`${shop}/signal-prep/SKILL.md`}]]);
+ await expect('run',[['skills_read',{name:'gog'}],['skills_read',{name:'weather'}],['skills_read',{name:'../signal-prep'}]]);
+ assert.equal((await hooks.before_tool_call({toolName:'skills_read',params:{name:'signal-prep'}},ctx)).block,true);  // reviews too
+ assert.equal(await hooks.before_tool_call({toolName:'skills_read',params:{name:'signal-prep'}},main),undefined);  // the owner's chat
+ assert.ok(readFileSync(`${shop}/signal-prep/SKILL.md`,'utf8').includes('assistant_signals'));
+ delete process.env.OPENCLAW_STATE_DIR;
+}
 await expect('run',[['assistant_signals',{action:'prepare'}],['openclawweb_fetch',{url:'https://example.com'}],['memory_search',{}],
   ['browser',{action:'snapshot'}],['exec',{command:"gog gmail messages search 'from:a {b c}' --account x --readonly --json"}],
   ['bash',{command:"/usr/bin/bash -c 'assistant show 42476e61036c4665 --json'"}],['exec',{command:['rg','-n','Acme','memory']}],
