@@ -37,6 +37,33 @@ def _trigger_sql(table, op):
             f"UPDATE data_stamps SET n=n+1 WHERE name='{table}'; END")
 
 
+# graph_who: graph_nodes as the sharing rules read it, who each person and organization is (id, kind, name and info
+# without 'profile' and 'live'). A graph build rewrites those two and every person's strength each few minutes (some 30k
+# changes an hour on a big graph), so what is kept by graph_nodes' own stamp (a person page's sharing rules and team
+# graph: a second's work) was worked out again on nearly every request. Read by stamp(db, ('graph_who',)), like a table.
+GRAPH_WHO = (
+    "CREATE TRIGGER IF NOT EXISTS stamp_graph_who_insert AFTER INSERT ON graph_nodes BEGIN "
+    "UPDATE data_stamps SET n=n+1 WHERE name='graph_who'; END",
+    "CREATE TRIGGER IF NOT EXISTS stamp_graph_who_update AFTER UPDATE ON graph_nodes WHEN old.id IS NOT new.id "
+    "OR old.kind IS NOT new.kind OR old.name IS NOT new.name "
+    "OR (CASE WHEN json_valid(old.info) THEN json_remove(old.info,'$.profile','$.live') ELSE old.info END) IS NOT "
+    "(CASE WHEN json_valid(new.info) THEN json_remove(new.info,'$.profile','$.live') ELSE new.info END) BEGIN "
+    "UPDATE data_stamps SET n=n+1 WHERE name='graph_who'; END",
+    "CREATE TRIGGER IF NOT EXISTS stamp_graph_who_delete AFTER DELETE ON graph_nodes BEGIN "
+    "UPDATE data_stamps SET n=n+1 WHERE name='graph_who'; END",
+)
+
+
+def watch_graph_who(db):
+    """graph_who's counter and triggers (when graph_nodes exists), once."""
+    if not db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='graph_nodes'").fetchone():
+        return
+    db.execute('CREATE TABLE IF NOT EXISTS data_stamps(name TEXT PRIMARY KEY,n INTEGER NOT NULL)')
+    db.execute("INSERT OR IGNORE INTO data_stamps(name,n) VALUES('graph_who',0)")
+    for sql in GRAPH_WHO:
+        db.execute(sql)
+
+
 def stamp(db, tables):
     """A value that changes with every committed change to any of these tables, or None when one of them is not watched
     or the connection is in a transaction (then nothing is kept). The database file is part of it, so two databases
