@@ -1,4 +1,4 @@
-"""The agents' status stays lean (vision: as much intelligence as possible per token). Every review, preparation and
+"""The agents' status stays lean (vision: it's intelligent, not wasteful). Every review, preparation and
 Do it read the whole status, about 100k characters on a Machine with a long Done list: past OpenClaw's tool-result
 cut, so most open to-dos were never seen. Done to-dos now come in short after the open ones, and a to-do's own run
 reads only its card."""
