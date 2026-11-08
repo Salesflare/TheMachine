@@ -1,25 +1,5 @@
-// Inbox zero: poke the sleeping robot a few times, or play a 20-second round of Catch the Zzz.
+// Catch the Zzz: a 20-second round, offered on the fourth poke (todos-check.js).
 // The game lives in its own dialog so the dashboard's refresh can't wipe a round.
-const POKES=['Mmh… five more minutes.','I’m up! Nothing needs you right now.','Still nothing. That’s the dream.','Okay, okay. Fancy a round of Catch the Zzz?'],POKE_MORE=['Boop.','Hey, that tickles.','Zzz… oh, it’s you.','I was dreaming of an empty inbox. Oh wait.',
-'Inbox zero. I peaked.','Shh. I’m defragmenting.','Rebooting… just kidding.','I run on electricity and your approval.','Please hold. Your poke is important to us.',
-'404: tasks not found.','I’m not lazy, I’m in energy-saving mode.','Five more minutes. Robot minutes.','You poke, I wake. That’s the deal.',
-'My to-do list is a haiku. Empty.','Reply all? Never heard of her.','I dreamt in binary again.','Low battery. High spirits.',
-'Nobody needs you. In the nicest way.','I’m counting sheep. Electric ones.','Unsubscribe from poking?','Achievement unlocked: poked the robot.'];
-let pokes=0,pokeLine='',pokeAwake=false,pokeTimer;
-// The game is offered on the fourth poke, when the robot suggests it, not before.
-const PLAY_AFTER=POKES.length,PLAY_BUTTON=html`<button class="play" type="button">▶ Play a mini game <small>Catch the Zzz · 20s</small></button>`;
-function poke(){if(pokes<POKES.length)pokeLine=POKES[pokes];else{let next;do next=POKE_MORE[Math.floor(Math.random()*POKE_MORE.length)];while(next===pokeLine);pokeLine=next}pokes++;pokeAwake=true;localStorage.setItem('pokes-total',(+localStorage.getItem('pokes-total')||0)+1);$('#suggestions .poke-hint')?.remove();if(pokes>=PLAY_AFTER&&!$('#suggestions .all-clear .play'))$('#suggestions .all-clear')?.append(htmlNodes(PLAY_BUTTON));
-const img=$('#suggestions .all-clear img.sleepy'),line=$('#suggestions .poke-line');if(line)line.textContent=pokeLine;if(img){img.src='brand/wave.webp';img.classList.remove('wobble');void img.offsetWidth;img.classList.add('wobble')}
-clearTimeout(pokeTimer);pokeTimer=setTimeout(()=>{pokeAwake=false;pokeLine='';const i=$('#suggestions .all-clear img.sleepy'),l=$('#suggestions .poke-line');if(i)i.src=clearPose();if(l)l.textContent=clearLine()},6000)}
-// All clear's line and pose follow the check (clearLine, clearPose in todos-check.js).
-// Until the first poke, the robot sometimes mumbles a hint, so people find out they can;
-// not on a fresh install, where "all clear" only means nothing has come in yet. Once you've poked
-// three times (counted on this device), it hints at most once a week.
-const POKE_HINTS=['Don’t poke the robot.','Please don’t poke me.','Zzz… no poking.'];
-function pokeHint(){const b=$('#suggestions .all-clear .poke');if(!b||pokes||document.hidden||b.querySelector('.poke-hint')||!(state.suggestions||[]).some(closed))return;
-if(+localStorage.getItem('pokes-total')>=3&&Date.now()-(+localStorage.getItem('poke-hint-at')||0)<7*864e5)return;localStorage.setItem('poke-hint-at',Date.now());
-const h=document.createElement('span');h.className='poke-hint';h.setAttribute('aria-hidden','true');h.textContent=POKE_HINTS[Math.floor(Math.random()*POKE_HINTS.length)];b.append(h);setTimeout(()=>h.remove(),3400)}
-setTimeout(pokeHint,4000);setInterval(()=>{if(Math.random()<.4)pokeHint()},25000);
 let game=null;
 const zzzBest=()=>+localStorage.getItem('zzz-best')||0;
 function openGame(){stopGame();$('#game-field').querySelectorAll('.zz,.zz-plus').forEach(z=>z.remove());$('#game-best').textContent=zzzBest();$('#game-score').textContent=0;$('#game-time').textContent=20;$('#game-bot').src='brand/sleepy.webp';
@@ -45,4 +25,3 @@ if(e.pointerType!=='touch'){const f=e.currentTarget.getBoundingClientRect(),p=do
 const bot=$('#game-bot');bot.src='brand/laugh.webp';clearTimeout(game.bot);game.bot=setTimeout(()=>{bot.src='brand/sleepy.webp'},450)});
 $('#game-start').onclick=startGame;
 $('#game-dialog').addEventListener('close',()=>{keepBest();stopGame();$('#game-field').querySelectorAll('.zz,.zz-plus').forEach(z=>z.remove())});
-$('#suggestions').addEventListener('click',e=>{if(e.target.closest('.all-clear .poke'))poke();else if(e.target.closest('.all-clear .play'))openGame()});
