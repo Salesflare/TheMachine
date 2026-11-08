@@ -1,6 +1,7 @@
 """Promises tracker: reviews record promises both ways, someone else's close when they write again,
 and an open one becomes a card when it's due. No live calls."""
 import io
+import json
 import tempfile
 import unittest
 from contextlib import redirect_stdout
@@ -451,6 +452,26 @@ class Promises(unittest.TestCase):
         self.assertEqual([p['who'] for p in self.store.promises()], ['Robin Example'])
         self.assertEqual(self.store.promise_page(saved['id'])['who'], 'Robin Example')
         self.assertEqual(a.slack_ids_named(None, 'U0UNKNOWN1 said it', {}), 'U0UNKNOWN1 said it')  # an unknown id stays
+
+    def test_a_sender_noted_by_number_or_address_shows_by_name(self):
+        # The review noted a WhatsApp promise by the sender's graph id, so Promises said "From wa:32470000999"
+        chat = {'account_id': 'phone', 'source_id': 'MSG1', 'kind': 'whatsapp.message', 'occurred_at': '2026-10-19T08:40:00+00:00',
+                'title': 'Robin Example: can you pick up the kids at 5', 'body': 'Can you pick up the kids at 5?', 'deleted': False,
+                'metadata': {'chat_id': '32470000999@s.whatsapp.net', 'from': 'Robin Example', 'from_me': False}}
+        self.store.commit_page('phone', {}, [chat])
+        with self.store.connect() as db:
+            event = db.execute("SELECT id FROM events WHERE kind='whatsapp.message'").fetchone()[0]
+            for node, name in (('wa:32470000999', 'Robin Example'), ('email:sam@client.example', 'Sam Lee')):
+                db.execute("INSERT INTO graph_nodes(id,kind,name,strength,signals,info) VALUES(?,'person',?,1,1,?)",
+                           (node, name, json.dumps({'identifiers': [node]})))
+        saved = self.record(event_id=event, who='wa:32470000999', what='pick up the kids at 5')
+        self.assertEqual(self.row(saved['id'])['who'], 'Robin Example')
+        # noted before this fix, and the forms a review may read off a message
+        for who, shown in (('wa:32470000999', 'Robin Example'), ('32470000999@s.whatsapp.net', 'Robin Example'),
+                           ('sam@client.example', 'Sam Lee'), ('wa:32470000888', '+32470000888'), ('Robin', 'Robin')):
+            with self.store.connect() as db:
+                db.execute('UPDATE promises SET who=? WHERE id=?', (who, saved['id']))
+            self.assertEqual(([p['who'] for p in self.store.promises()], self.store.promise_page(saved['id'])['who']), ([shown], shown), who)
 
 
 if __name__ == '__main__':
