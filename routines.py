@@ -443,6 +443,14 @@ def last_result(db, routine_id):
     return dict(row) if row else None
 
 
+def last_run(db, routine_id):
+    """When the newest real run that ended well (a result, or nothing new) started, or None before the first one: what
+    the next run reads from."""
+    row = db.execute("SELECT started_at FROM routine_runs WHERE routine_id=? AND state IN ('ready','nothing') AND period NOT LIKE 'test:%' "
+                     'ORDER BY started_at DESC LIMIT 1', (routine_id,)).fetchone()
+    return row[0] if row else None
+
+
 def view(db, states=LIVE):
     """The Routines page: the owner's routines (or the suggestions), with their rhythm and last runs, newest first."""
     out = []

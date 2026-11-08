@@ -19,7 +19,9 @@ Ohne Uhrzeit läuft sie um 8:00. Die Uhrzeit gilt auf der Uhr deiner Machine. Ih
 
 Zu ihrer Zeit liest deine Machine, was sie braucht, etwa deine Nachrichten, Termine und den Graph, und legt das Ergebnis auf der Seite Routinen ab. Jedes Ergebnis zeigt **Bereit**, **Nichts Neues** (mit Grund) oder **Hat nicht geklappt** (mit Grund). Ein Lauf, der ohne Ergebnis endet, zählt als nicht geklappt, nie als erledigt.
 
-Routinen lesen nur. Sie senden, antworten, posten oder ändern nichts.
+Routinen lesen nur: deine Nachrichten, Webseiten, GitHub und Seiten wie X im Browser. Sie senden, antworten, posten oder ändern nichts.
+
+Endet die Aufgabe einer Routine mit einem Post oder einer Nachricht, erledigt sie alles bis zu diesem Schritt und zeigt den Entwurf, etwa **Würde auf X posten:**. Nach einem echten Lauf bekommst du ihn als To-do zum Freigeben; ein Testlauf zeigt ihn nur.
 
 Ein Lauf kann deinen eingeschalteten [Skills](skills.md) folgen, ausgewählt nach dem, was die Routine tut: Nur die passenden werden ganz gelesen. Das Ergebnis nennt sie unter **Verwendet:**. Ein Skill bringt eine Routine nie dazu, etwas zu senden oder zu ändern.
 

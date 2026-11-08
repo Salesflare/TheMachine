@@ -61,8 +61,9 @@ const profileSession = (key: string) => /^agent:main:assistant-review-profile-/.
 // browser and reports them with assistant_signals skills_found. The browser and read-only tools; no shell, no writes.
 const skillsSession = (key: string) => /^agent:main:assistant-review-skills-/.test(key || '');
 export const SKILLS_TOOLS = new Set([...REVIEW_TOOLS, 'browser']);
-// A routine's run (routines_app.py): one read-only turn that reads with assistant_signals and memory lookups and reports
-// with routine_result. Only these assistant_signals actions: it never suggests, prepares, saves or sends anything.
+// A routine's run (routines_app.py): one read-only turn that reads (assistant_signals, memory lookups, and routineRead's
+// web, browser and gh or git reads) and reports with routine_result. Only these assistant_signals actions: it never
+// suggests, prepares, saves or sends anything; a post or message its job ends in is a draft in its result.
 const routineSession = (key: string) => /^agent:main:assistant-review-routine-/.test(key || '');
 export const ROUTINE_ACTIONS = new Set(['status', 'events', 'related', 'graph', 'routine_result']);
 // GBrain (gbrain.py, optional): only when the owner turned it on and agreed to what goes in (config `gbrain`), a review
@@ -224,6 +225,52 @@ export function preparationToolPolicy(event: any, ctx: any): undefined | {block:
   return undefined;
 }
 
+// What a routine may read beyond REVIEW_TOOLS: web search and pages, the browser to look (open, read, scroll, never
+// click, type or submit), and read-only gh or git. A test run and a real run read alike; neither posts or sends.
+const ROUTINE_BROWSER_ACTIONS = new Set(['status', 'start', 'profiles', 'tabs', 'open', 'focus', 'close', 'snapshot', 'screenshot', 'navigate', 'console', 'requests', 'errors', 'text']);
+const ROUTINE_ACT_KINDS = new Set(['hover', 'scrollIntoView', 'wait', 'resize', 'press']);
+const ROUTINE_KEYS = /^(?:PageDown|PageUp|ArrowDown|ArrowUp|ArrowLeft|ArrowRight|Home|End|Escape|Esc)$/;
+const webUrl = (url: any) => url == null || /^(?:https?:\/\/|about:blank$)/i.test(String(url));
+function routineBrowserRead(params: any) {
+  if (!ROUTINE_BROWSER_ACTIONS.has(params.action) && params.action !== 'act') return false;
+  if (params.path || params.paths || params.into || !webUrl(params.targetUrl) || !webUrl(params.url)) return false;
+  if (params.action !== 'act') return true;
+  const request = {...params, ...(params.request || {})};
+  if (!ROUTINE_ACT_KINDS.has(request.kind) || request.fn || request.submit || request.text != null || request.fields || request.values) return false;
+  return request.kind !== 'press' || ROUTINE_KEYS.test(String(request.key || ''));
+}
+const GH_READS = /^(?:pr (?:list|view|diff|checks|status)|issue (?:list|view|status)|release (?:list|view)|run (?:list|view)|repo view|search \S+|api)$/;
+const GIT_READS = new Set(['log', 'show', 'diff', 'status', 'shortlog', 'rev-parse', 'describe', 'ls-remote']);
+// One gh or git command that only reads: no pipes, redirects, chaining or substitution, and for gh api only GET.
+export function routineShellRead(params: any) {
+  const text = commandText(params);
+  if (/[`\n]|\$\(/.test(text)) return false;
+  const stages = commandStages(text);
+  if (stages.length !== 1) return false;
+  const [tool, ...args] = stages[0];
+  if (args.some(arg => /^[<>]+$/.test(arg) || /^--output\b|^--web$|^-w$/.test(arg))) return false;
+  if (tool === 'git') {
+    const rest = args[0] === '-C' ? args.slice(2) : args;
+    return GIT_READS.has(rest[0]) && !rest.some(arg => /^--(?:ext-diff|textconv)$/.test(arg));
+  }
+  if (tool !== 'gh') return false;
+  const verb = args[0] === 'api' ? 'api' : args.slice(0, 2).join(' ');
+  if (!GH_READS.test(verb)) return false;
+  if (verb !== 'api') return true;
+  for (let i = 1; i < args.length; i++) {
+    if (/^(?:-f|-F|--field|--raw-field|--input)(?:=|$)/.test(args[i]) || /^-[fF]./.test(args[i])) return false;
+    const method = /^(?:-X|--method)(?:=(.*))?$/.exec(args[i]) || /^-X(.+)$/.exec(args[i]);
+    if (method && String(method[1] ?? args[i + 1] ?? '').toUpperCase() !== 'GET') return false;
+  }
+  return !args.slice(1).some(arg => /^graphql$/i.test(arg));
+}
+export function routineRead(event: any) {
+  const name = plainToolName(event.toolName), params = event.params || {};
+  if (name === 'web_search' || name === 'web_fetch') return true;
+  if (name === 'browser') return routineBrowserRead(params);
+  return SHELL_TOOLS.has(name) && routineShellRead(params);
+}
+
 // Reviews and preparations never need the service or account credentials.
 const readsSecret = (event: any) => pathParams(event.params || {}).some(secretPath);
 
@@ -376,9 +423,9 @@ export function registerReviewRecovery(api: any, call: (action: string, args?: a
     if (skillsSession(ctx.sessionKey) && !toolRunner(event, ctx) && (!SKILLS_TOOLS.has(plainToolName(event.toolName)) || readsSecret(event))) {
       return {block: true, blockReason: 'Find my skills reads the owner\'s accounts in the browser and reports with assistant_signals skills_found; nothing else.'};
     }
-    if (routineSession(ctx.sessionKey) && !toolRunner(event, ctx) && (!reviewTools().has(plainToolName(event.toolName)) || readsSecret(event) ||
+    if (routineSession(ctx.sessionKey) && !toolRunner(event, ctx) && ((!reviewTools().has(plainToolName(event.toolName)) && !routineRead(event)) || readsSecret(event) ||
         (plainToolName(event.toolName) === 'assistant_signals' && !ROUTINE_ACTIONS.has(event.params?.action)))) {
-      return {block: true, blockReason: 'A routine only reads: assistant_signals status, events, related or graph, memory lookups or read-only file tools, then routine_result.'};
+      return {block: true, blockReason: 'A routine reads but never posts, sends or changes anything: web search and pages, the browser to open, read and scroll (no clicking or typing), read-only gh or git, assistant_signals status, events, related or graph, memory lookups and read-only file tools, then routine_result. Put what it would post or send in the result as a draft.'};
     }
     const policy = preparationSession(ctx.sessionKey) ? preparationToolPolicy(event, ctx) : undefined;
     if (policy && 'block' in policy) return {block: true, blockReason: policy.block};

@@ -19,7 +19,9 @@ Without a time it runs at 8:00. The time is on your Machine's clock. Its first r
 
 At its time your Machine reads what it needs, like your messages, meetings and the Graph, and puts the result on the Routines page. Each result says **Ready**, **Nothing new** (with why) or **Didn’t work** (with why). A run that ends without a result counts as one that didn't work, never as done.
 
-Routines only read. They don’t send, reply, post or change anything.
+Routines only read: your messages, web pages, GitHub and sites like X in the browser. They don’t send, reply, post or change anything.
+
+When a routine’s job ends in a post or a message, it does everything up to that step and shows the draft, like **Would post on X:**. After a real run you get it as a to-do to approve; a test run only shows it.
 
 A run can follow your [skills](skills.md) that are on, picked by what the routine does: only the ones that fit are read in full. The result names them under **Used:**. A skill never makes a routine send or change anything.
 

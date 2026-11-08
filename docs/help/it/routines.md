@@ -17,7 +17,9 @@ Senza un orario, gira alle 8:00. L’orario è quello dell’orologio della tua 
 
 All’orario stabilito, la tua Machine legge ciò che le serve, come i tuoi messaggi, le riunioni e il Graph, e mette il risultato nella pagina Routine. Ogni risultato dice **Pronta**, **Niente di nuovo** (con il perché) o **Non è andato** (con il perché). Un’esecuzione che finisce senza risultato conta come non riuscita, mai come fatta.
 
-Le routine leggono soltanto. Non inviano, rispondono, pubblicano né cambiano nulla.
+Le routine leggono soltanto: i tuoi messaggi, pagine web, GitHub e siti come X nel browser. Non inviano, rispondono, pubblicano né cambiano nulla.
+
+Quando il compito di una routine finisce con un post o un messaggio, fa tutto fino a quel passo e mostra la bozza, come **Pubblicherebbe su X:**. Dopo un’esecuzione vera la ricevi come attività da approvare; un’esecuzione di prova la mostra soltanto.
 
 Ogni esecuzione conosce l’ultimo risultato, così può dire cosa è cambiato da allora.
 

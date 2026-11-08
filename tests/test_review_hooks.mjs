@@ -74,7 +74,30 @@ for(const toolName of ['exec','write','message'])assert.equal((await hooks.befor
  for(const action of ['events','status','related','graph','routine_result'])assert.notEqual((await hooks.before_tool_call({toolName:'assistant_signals',params:{action}},routineCtx))?.block,true,action);
  assert.notEqual((await hooks.before_tool_call({toolName:'memory_search',params:{query:'deals'}},routineCtx))?.block,true);
  for(const action of ['suggest','prepare','promise','remember_fact','begin_analysis','meeting_notes'])assert.equal((await hooks.before_tool_call({toolName:'assistant_signals',params:{action}},routineCtx)).block,true,action);
- for(const toolName of ['exec','write','message','browser','web_fetch'])assert.equal((await hooks.before_tool_call({toolName,params:{command:'ls'}},routineCtx)).block,true,toolName);}
+ for(const toolName of ['exec','write','message','browser'])assert.equal((await hooks.before_tool_call({toolName,params:{command:'ls'}},routineCtx)).block,true,toolName);
+ // It reads like the owner would: web search and pages, the browser to look, gh and git that only read. A test
+ // run said it could not check what merged or read the posts "in this read-only run".
+ const routineCall=async(toolName,params)=>(await hooks.before_tool_call({toolName,params},routineCtx))?.block===true;
+ for(const toolName of ['web_search','web_fetch'])assert.equal(await routineCall(toolName,{query:'x',url:'https://example.com'}),false,toolName);
+ for(const params of [{action:'open',targetUrl:'https://x.com/example'},{action:'navigate',targetUrl:'https://github.com/example/repo/pulls'},
+   {action:'snapshot'},{action:'text'},{action:'tabs'},{action:'screenshot'},{action:'act',request:{kind:'scrollIntoView',ref:'e4'}},
+   {action:'act',request:{kind:'press',key:'PageDown'}},{action:'act',kind:'wait',timeMs:500}])
+  assert.equal(await routineCall('browser',params),false,JSON.stringify(params));
+ for(const params of [{action:'act',request:{kind:'click',ref:'e9'}},{action:'act',request:{kind:'type',ref:'e2',text:'hi'}},
+   {action:'act',request:{kind:'fill',fields:[]}},{action:'act',request:{kind:'press',key:'Enter'}},{action:'act',request:{kind:'press',key:'Control+Enter'}},
+   {action:'act',request:{kind:'evaluate',fn:'1'}},{action:'act',request:{kind:'wait',fn:'document.forms[0].submit()'}},
+   {action:'act',request:{kind:'batch',actions:[{kind:'click'}]}},{action:'act',kind:'click',ref:'e9'},{action:'upload',paths:['/tmp/a']},
+   {action:'dialog',accept:true},{action:'download'},{action:'open',targetUrl:'javascript:alert(1)'},{action:'navigate',targetUrl:'file:///etc/passwd'},
+   {action:'screenshot',path:'/tmp/shot.png'},{action:'importprofile'}])
+  assert.equal(await routineCall('browser',params),true,JSON.stringify(params));
+ for(const command of ['gh pr list --repo example/repo --state merged --search "merged:>2026-11-07" --json number,title',
+   'gh pr view 12 --repo example/repo','gh api repos/example/repo/pulls?state=closed','gh api -X GET repos/example/repo/commits',
+   'gh search prs --repo example/repo --merged','gh release list','git log --since=2026-11-07 --oneline','git -C repo show HEAD'])
+  assert.equal(await routineCall('exec',{command}),false,command);
+ for(const command of ['gh pr merge 12','gh pr comment 12 --body hi','gh api -X POST repos/example/repo/issues','gh api repos/example/repo/issues -f title=x',
+   'gh api --method=PATCH repos/example/repo','gh api graphql','gh pr list | sh','gh pr list > out.txt','gh pr list && rm -rf x','gh pr list $(id)',
+   'git push','git log --output=/tmp/x','git -c core.pager=sh log','curl https://example.com','ls','rm -rf repo','GH_PAGER=sh gh pr list'])
+  assert.equal(await routineCall('exec',{command}),true,command);}
 // An isolated review ends with one fixed line (its turn has delivery off): after NO_REPLY, OpenClaw asked twice more
 { const system=(await hooks.before_prompt_build({},ctx)).prependSystemContext;
   assert.ok(system.includes('End with exactly the line Done.'));assert.ok(!system.includes('end with exactly NO_REPLY'));

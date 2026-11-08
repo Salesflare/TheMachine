@@ -17,7 +17,9 @@ Sin hora, se ejecuta a las 8:00. La hora es la del reloj de tu Machine.
 
 A su hora, tu Machine lee lo que necesita, como tus mensajes, reuniones y el Graph, y deja el resultado en la página Rutinas. Cada resultado dice **Para revisar**, **Nada nuevo** (con el porqué) o **No funcionó** (con el porqué). Una ejecución que termina sin resultado cuenta como fallida, nunca como hecha.
 
-Las rutinas solo leen. No envían, responden, publican ni cambian nada.
+Las rutinas solo leen: tus mensajes, páginas web, GitHub y sitios como X en el navegador. No envían, responden, publican ni cambian nada.
+
+Cuando la tarea de una rutina termina en una publicación o un mensaje, hace todo hasta ese paso y muestra el borrador, como **Publicaría en X:**. Tras una ejecución real lo recibes como tarea para aprobar; una ejecución de prueba solo lo muestra.
 
 Cada ejecución conoce el último resultado, así puede decir qué cambió desde entonces.
 
