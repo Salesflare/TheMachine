@@ -84,7 +84,11 @@ def activity_who(event, m, owner_slack_ids=(), teammates=(), domains=()):
 
 
 class FollowUpsApp:
-    ACTIONS = {}  # its actions are still App.action's own branches
+    # action name -> the method that handles it, called as method(name, args, owner_dashboard) (App.action)
+    ACTIONS = {'promise': 'promise_action', 'follow_up_change': 'follow_up_change_action',
+               'follow_up_bring_back': 'follow_up_bring_back_action', 'follow_up_end': 'follow_up_end_action',
+               'follow_up_stop': 'follow_up_stop_action', 'follow_up_pause': 'follow_up_pause_action',
+               'follow_up_settings': 'follow_up_settings_action', 'follow_up_save': 'follow_up_settings_action'}
 
     # Automated follow-ups (follow_ups.py): drafted in a low-priority background pass, sent only through the outbox.
     def follow_up_board_views(self, db):
@@ -483,3 +487,82 @@ class FollowUpsApp:
             return ''
         root = Path(getattr(getattr(self, 'skills', None), 'workspace', None) or self.config.get('openclaw_workspace') or WORKSPACE) / 'skills' / skills.FOLDER
         return '\n\n' + follow_ups.change_note([{**k, 'path': str(root / k['slug'] / 'SKILL.md')} for k in on])
+
+    def promise_action(self, name, args, owner_dashboard=False):
+        return self.store.promise(args, self.config.get('digest_at', '08:30'))
+
+    def follow_up_change_action(self, name, args, owner_dashboard=False):
+        if not owner_dashboard:
+            raise ValueError('Only the owner changes follow-ups, on the dashboard')
+        return self.follow_up_change(args)
+
+    def follow_up_bring_back_action(self, name, args, owner_dashboard=False):
+        # A follow-up skipped in the review, back to review (the project's follow-ups, or its to-do in Done)
+        if not owner_dashboard:
+            raise ValueError('Only the owner brings a follow-up back, on the dashboard')
+        sid = str(args.get('id') or '')
+        if not re.fullmatch(r'[a-f0-9]{16}', sid):
+            raise ValueError('Say which follow-up')
+        with self.store.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            follow_ups.ensure(db)
+            return follow_ups.bring_back(db, sid, 'fu-back-' + uuid.uuid4().hex, now())
+
+    def follow_up_end_action(self, name, args, owner_dashboard=False):
+        # Stop follow-ups here, in the review: this round ends like one with no reply, nothing sent (follow_ups.stop_here)
+        if not owner_dashboard:
+            raise ValueError('Only the owner stops follow-ups, on the dashboard')
+        sid = str(args.get('id') or '')
+        if not re.fullmatch(r'[a-f0-9]{16}', sid):
+            raise ValueError('Say which follow-up')
+        with self.store.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            follow_ups.ensure(db)
+            return follow_ups.stop_here(db, sid, 'fu-end-' + uuid.uuid4().hex, now())
+
+    def follow_up_stop_action(self, name, args, owner_dashboard=False):
+        # Stop sending on a batch's progress: the ones not gone yet go back to the review as drafts (follow_ups.stop)
+        if not owner_dashboard:
+            raise ValueError('Only the owner stops follow-ups, on the dashboard')
+        with self.store.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            follow_ups.ensure(db)
+            return follow_ups.stop(db, args.get('batch'), now())
+
+    def follow_up_pause_action(self, name, args, owner_dashboard=False):
+        # Pause or Resume a board's or a project's follow-ups (follow_ups.pause): nothing drafted, sent or ended while
+        # paused, open ones stay open. The owner's own decision, on the dashboard (the CLI refuses OWNER_ACTIONS).
+        if not owner_dashboard:
+            raise ValueError('Only the owner pauses follow-ups, on the dashboard')
+        scope, ref = args.get('scope'), args.get('id')
+        if scope == 'project' and str(ref or '').startswith('project:'):
+            ref = str(ref).split(':', 1)[1]
+        if not str(ref or '').isdigit():
+            raise ValueError('Say which board or project')
+        if not isinstance(args.get('paused'), bool):
+            raise ValueError('Say pause or resume')
+        with self.store.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            follow_ups.ensure(db)
+            if args['paused']:
+                follow_ups.pause(db, scope, ref, args.get('until'), now())
+            else:
+                follow_ups.resume(db, scope, ref, now())
+            return follow_ups.panel(db, scope, ref, self.follow_up_sendable(), now(), self.follow_up_work()['sides'])
+
+    def follow_up_settings_action(self, name, args, owner_dashboard=False):
+        # Automated follow-ups on a board or one project (follow_ups.py): the owner's own setting, on the dashboard
+        if not owner_dashboard:
+            raise ValueError('Only the owner sets follow-ups, on the dashboard')
+        scope, ref = args.get('scope'), args.get('id')
+        if scope == 'project' and str(ref or '').startswith('project:'):
+            ref = str(ref).split(':', 1)[1]
+        if not str(ref or '').isdigit():
+            raise ValueError('Say which board or project')
+        with self.store.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            follow_ups.ensure(db)
+            if name == 'follow_up_save':
+                follow_ups.save(db, scope, ref, args.get('settings'), now())
+                follow_ups.settle(db, now(), self.follow_up_mine())  # turned off, a stage off: open ones close now
+            return follow_ups.panel(db, scope, ref, self.follow_up_sendable(), now(), self.follow_up_work()['sides'])
