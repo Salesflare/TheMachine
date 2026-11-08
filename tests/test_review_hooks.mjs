@@ -48,6 +48,10 @@ assert.notEqual((await hooks.before_tool_call({toolName:'openclawassistant_signa
 assert.notEqual((await hooks.before_tool_call({toolName:'openclaw__memory_search',params:{}},ctx))?.block,true);
 assert.equal((await hooks.before_tool_call({toolName:'openclawbrowser',params:{}},ctx)).block,true);
 assert.notEqual((await hooks.before_tool_call({toolName:'exec',toolKind:'code_mode_exec',params:{}},ctx))?.block,true);
+// Code Mode's wait resumes that exec by its runId and passes; anything else named wait is checked like any tool.
+assert.notEqual((await hooks.before_tool_call({toolName:'wait',params:{runId:'run-1'}},ctx))?.block,true);
+assert.equal((await hooks.before_tool_call({toolName:'wait',params:{runId:'run-1',command:'ls'}},ctx)).block,true);
+assert.equal((await hooks.before_tool_call({toolName:'wait',params:{}},ctx)).block,true);
 assert.equal(await hooks.before_tool_call({toolName:'openclawassistant_signals',params:{action:'begin_analysis',args:{}}},ctx),undefined);  // no rewrite under Code Mode names
 assert.notEqual((await hooks.before_tool_call({toolName:'memory_search',params:{}},ctx))?.block,true);
 // Without Code Mode, tool search: looking tools up and tool_call pass; the tool it runs is checked by its own name
