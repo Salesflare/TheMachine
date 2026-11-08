@@ -287,7 +287,7 @@ function renderConnectSignin(){const s=connectSignin,box=$('#connect-add'),paire
  // the control plane has no app for it (or refused to start it): no Sign in button, the other way open at once
  else if(s.off&&paired)body=html`<p class="muted">${copy.about||''}</p><p class="note signin-off">${t(s.own&&copy.other&&copy.off||'Sign in with {} isn’t available yet.',s.label)}</p>`;
  else body=html`<p class="muted">${copy.about||''}</p>${paired?html`<div class="actions"><button type="button" class="primary" data-signin-go>Sign in with ${s.label}</button>${back}</div>${msAdmin(s)}`
-  :html`<p>${t('Sign in with {} goes through your account on themachine.computer. Pair this Machine with that account first.',s.label)}</p><div class="actions"><button type="button" class="primary" data-connect-pair>Pair this Machine</button>${back}</div>`}`;
+  :html`<p>${t(s.own&&copy.other?'Sign in with {} goes through your account on themachine.computer. Pair this Machine with it once, or use your own app below.':'Sign in with {} goes through your account on themachine.computer. Pair this Machine with it once.',s.label)}</p><div class="actions"><button type="button" class="primary" data-connect-pair>Pair this Machine</button>${back}</div>`}`;
  const off=!s.hosted&&s.off&&paired&&s.state==='intro';  // the other way is the way: open, its button first, Back after it
  // Not paired yet: pairing needs an account, so the other way shows open beside it, never folded away as the only way on
  const unpaired=!s.hosted&&!paired&&s.state==='intro';
