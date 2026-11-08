@@ -38,4 +38,4 @@ If your Machine has a fallback model on another plan or provider, it takes over 
 
 ## Change the main model
 
-The main model is what the rest of The Machine uses. On a hosted Machine, change it on your setup page, under Your AI. On your own computer, see [ChatGPT](chatgpt.md) and the [models guide](https://github.com/Salesflare/TheMachine/blob/main/docs/models.md).
+The main model is what the rest of The Machine uses. On a hosted Machine, change it on your setup page, under Your AI. On your own computer, see [ChatGPT](chatgpt.md), [Mistral](mistral.md) and the [models guide](https://github.com/Salesflare/TheMachine/blob/main/docs/models.md).

@@ -25,6 +25,15 @@ To use your own Claude plan (Pro, Max or Team), install Claude Code with Anthrop
 - Usage counts against your plan. With a Claude model as main model, Settings → Model says "Uses your Claude plan".
 - Sign out with `claude auth logout`.
 
+### Mistral
+
+Mistral offers no plan sign-in for other apps: it works with an API key from the [Mistral console](https://console.mistral.ai/) (API keys). Le Chat Pro includes monthly API credits that the key uses first; after that, Mistral bills per use.
+
+- **Hosted Machine:** on the setup page, under Your AI, open **Other AI services**, pick Mistral as the provider, paste the key and press **Save key**. The Machine sends one tiny request to `api.mistral.ai` first, so a wrong key shows right there; nothing is saved then. The key goes to a file only the Machine's user reads, and Mistral Large becomes the main model. To stop it, pick another main model and delete the key in the Mistral console.
+- **Your own computer:** install OpenClaw's Mistral plugin (`openclaw plugins install @openclaw/mistral-provider`), then `openclaw onboard --auth-choice mistral-api-key`. Without the plugin, a custom provider works too: base URL `https://api.mistral.ai/v1`, API `openai-completions`, Bearer key.
+- **Which model:** `mistral-large-latest` (Mistral Large) as main model, for reviews and Do it: it has the tool use and the long context they need. `mistral-small-latest` (Mistral Small) is the cheaper one, for a fallback or chats. Background work stays on the main model.
+- Settings → Model says "Uses your Mistral API key" and shows no limits: an API key has none to pause for.
+
 ### Thinking level
 
 The thinking level (`agents.defaults.thinkingDefault`) applies to fallbacks too: OpenClaw passes it on to whichever model answers, mapped to the nearest level that model supports. Claude Code gets it as its `--effort`. Set `params.thinking` on one model's entry in `agents.defaults.models` to give that model its own level.

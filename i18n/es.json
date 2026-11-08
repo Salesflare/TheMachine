@@ -5337,6 +5337,7 @@
  "Username or email": "Usuario o email",
  "Uses OpenClaw’s notification feed, plus a catch-up check of your phone.": "Usa el feed de notificaciones de OpenClaw, más una comprobación de tu teléfono para ponerse al día.",
  "Uses your Claude plan": "Usa tu plan de Claude",
+ "Uses your Mistral API key": "Usa tu clave de API de Mistral",
  "Using direct checks while the notification bridge is unavailable.": "Usando comprobaciones directas mientras el puente de notificaciones no está disponible.",
  "Using the dashboard? Nothing buzzes. Away or idle: a push after a minute, and one email if it’s still unseen 15 minutes later.": "¿Usas el panel? Nada vibra. Fuera o inactivo: un aviso push al minuto, y un correo si sigue sin verse 15 minutos después.",
  "Using the mailbox signature.": "Se usa la firma del buzón.",
