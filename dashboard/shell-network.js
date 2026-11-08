@@ -20,6 +20,9 @@ let restartUntil=0;const restartSoon=(ms=120000)=>{restartUntil=Date.now()+ms},r
 let csrfLive=csrf,csrfSet=null;const csrfReady=csrf?Promise.resolve():new Promise(r=>csrfSet=r);
 const sessionGone=()=>Object.assign(Error('Signed out. Sign in again to see your Machine.'),{sessionGone:true});
 const graphPeek=new Map();  // Graph records fetched ahead of a click (graphPeekStart)
+// The first api/status read takes the answer the page's head asked for (dashboard.html statusEarly); a later one, or one
+// that page could not start, asks anew
+const statusFirst=(path,options)=>{const p=path==='api/status'&&typeof statusEarly!=='undefined'&&statusEarly;if(!p)return null;statusEarly=null;return p.then(r=>r||fetch(path,options))};
 async function request(path,options){let r;if(options?.method&&options.method!=='GET')graphPeek.clear();  // a change: records fetched ahead may be older now
  if(options?.headers&&'X-CSRF-Token' in options.headers&&!options.headers['X-CSRF-Token']){if(!csrfLive&&navigator.onLine===false)throw offline();
   // The Machine away: wait a little for api/session, then say offline (a change that may wait then waits, decideOrWait)
@@ -29,7 +32,7 @@ async function request(path,options){let r;if(options?.method&&options.method!==
  const t0=Date.now(),reading=!options?.method||options.method==='GET';let waiting=false;
  const waitTimer=reading&&setTimeout(()=>{waiting=true;(heardLately()?Promise.resolve(true):hostAnswers()).then(ok=>{if(ok&&waiting){netWaits++;waiting='counted';slowPaint()}})},NET_SLOW);
  const waitDone=()=>{clearTimeout(waitTimer);if(waiting==='counted'){netWaits--;slowPaint()}waiting=false};
- try{r=await fetch(path,options)}catch(e){waitDone();if(e?.name==='TimeoutError'||e?.name!=='AbortError'&&navigator.onLine!==false&&Date.now()-t0>=30000)errApi(path,options,'timeout');
+ try{r=await(statusFirst(path,options)||fetch(path,options))}catch(e){waitDone();if(e?.name==='TimeoutError'||e?.name!=='AbortError'&&navigator.onLine!==false&&Date.now()-t0>=30000)errApi(path,options,'timeout');
   const slow=e?.name!=='AbortError'&&navigator.onLine!==false&&(e?.name==='TimeoutError'||Date.now()-t0>=NET_SLOW)&&(heardLately()||await hostAnswers());
   slowSet(slow);throw slow?slowErr(e):offline(e)}
  waitDone();
