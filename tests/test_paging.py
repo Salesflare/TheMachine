@@ -9,6 +9,7 @@ from unittest.mock import patch
 from test_assistant import assistant as a, event
 import graph
 from seams import patch_everywhere  # noqa: E402
+from machine.store.views import DONE_FIRST  # noqa: E402
 
 
 class DonePages(unittest.TestCase):
@@ -51,6 +52,17 @@ class DonePages(unittest.TestCase):
         self.assertEqual(snap['done_counts']['all'], 75)
         self.assertEqual(sum(s['status'] == 'completed' for s in snap['suggestions']), 75)
         self.assertTrue(any(s['title'] == 'Still open' for s in snap['suggestions']))
+
+    def test_the_dashboard_gets_its_first_page_and_every_one_done_in_the_last_day(self):
+        done = lambda snap: [s['title'] for s in snap['suggestions'] if s['status'] == 'completed']
+        with patch_everywhere(a, 'now', return_value='2026-10-09T10:00:00+00:00'):  # a week on: the first page only
+            week = self.store.snapshot([], done=DONE_FIRST)
+        self.assertEqual(sorted(done(week)), sorted(c['title'] for c in self.store.done_page(0, DONE_FIRST)['cards']))  # the first page, so it pages on from 30
+        self.assertEqual(week['done_counts']['all'], 75)  # the Done list still counts them all and pages the rest
+        with patch_everywhere(a, 'now', return_value='2026-10-02T20:00:00+00:00'):  # the same day: all of them (Undo, done reports)
+            self.assertEqual(len(done(self.store.snapshot([], done=30))), 75)
+        with patch_everywhere(a, 'now', return_value='2026-10-09T10:00:00+00:00'):  # the CLI and the rest: the last 100 as before
+            self.assertEqual(len(done(self.store.snapshot([]))), 75)
 
 
 class DoneByWhenClosed(unittest.TestCase):

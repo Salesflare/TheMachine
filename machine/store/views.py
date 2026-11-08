@@ -67,6 +67,7 @@ import todo_areas
 import whatsapp_images
 
 WAITING = stamps.Kept(4)  # the Who's who count (snapshot)
+DONE_FIRST = 30  # the done to-dos the dashboard's status gets: its Done list's first page (dashboard donePager)
 
 
 def skill_labels(cluster):
@@ -625,7 +626,7 @@ class ViewsStore(ConversationStore):
                     card['scope'] = closed[card['id']]['scope']
         return {'cards': cards, 'next': str(offset + limit) if len(rows) > offset + limit else None, 'total': len(rows)}
 
-    def snapshot(self, accounts):
+    def snapshot(self, accounts, done=100):
         promises = self.promises()
         with self.connect() as db:
             result = {table: [dict(r) for r in db.execute('SELECT * FROM ' + table + ' ORDER BY ' + column + ' DESC LIMIT 100')]
@@ -660,9 +661,18 @@ class ViewsStore(ConversationStore):
                 day = last['at'][:10]
                 result['condensed'] = {'at': last['at'], 'notes': db.execute("SELECT count(*) FROM facts WHERE merged_into IS NOT NULL AND substr(removed_at,1,10)=?", (day,)).fetchone()[0]}
             # Keep outstanding items visible even after a long completed history.
-            # The done ones: the 100 closed last (a to-do made weeks ago and sent just now is the newest done), each with
-            # when it was closed, so Done starts with the one just finished.
-            recent = {r['id']: r['closed_at'] for r in self.done_rows(db)[:100]}
+            # The done ones: the `done` closed last (a to-do made weeks ago and sent just now is the newest done), each with
+            # when it was closed, so Done starts with the one just finished; also every one closed in the last day (its
+            # done report, Undo), up to 100. The dashboard asks for its Done list's first page (DONE_FIRST) and loads the
+            # rest a page at a time (api/cards/done), an older one a link points to by itself: each done card is ~4 KB.
+            day = dt.datetime.fromisoformat(now()) - dt.timedelta(days=1)
+
+            def today(at):
+                try:
+                    return dt.datetime.fromisoformat(at) >= day
+                except (TypeError, ValueError):
+                    return True  # unreadable: kept, as before
+            recent = {r['id']: r['closed_at'] for n, r in enumerate(self.done_rows(db)[:100]) if n < done or today(r['closed_at'])}
             result['suggestions'] = [dict(r) for r in db.execute("SELECT * FROM suggestions WHERE status NOT IN ('completed','rejected') OR id IN (SELECT value FROM json_each(?)) ORDER BY created_at DESC", (json.dumps(list(recent)),))]
             for card in result['suggestions']:
                 if card['id'] in recent:

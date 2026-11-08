@@ -35,6 +35,7 @@ from machine.faults import source_url
 from machine import omarchy
 from machine.sources.calendar import calendar_account_owner, company_domains, invite_people, team_people
 from machine.sources.connectors import writable_calendars
+from machine.store.views import DONE_FIRST
 from machine.text import _address, ATTACHMENT_INLINE, encoded, shown_body
 from machine.timing import _REQUEST_TIMING, SLOW_REQUEST_SECONDS, close_kept
 from machine.web import status_delta
@@ -381,7 +382,7 @@ def make_handler(app):
                 self.output(200, app_notice(app.store, app.config, tag, kind if kind in notify.KINDS else None, version))
             elif path.path == '/api/status':
                 since = (urllib.parse.parse_qs(path.query).get('since') or [''])[0]
-                self.output(200, status_delta.changes({**dashboard_status(app.action('status', {'full': True})), 'talk_ready': app.talk_ready(), 'ui_version': dashboard_version(), 'source_url': source_url(), 'meaning': {'on': bool(embeddings.settings(app.config))}, 'fixed': list(getattr(getattr(app, 'fleet', None), 'fixed_now', None) or ()), 'browser_link': browser_link(app.config),
+                self.output(200, status_delta.changes({**dashboard_status(app.action('status', {'full': True, 'done': DONE_FIRST})), 'talk_ready': app.talk_ready(), 'ui_version': dashboard_version(), 'source_url': source_url(), 'meaning': {'on': bool(embeddings.settings(app.config))}, 'fixed': list(getattr(getattr(app, 'fleet', None), 'fixed_now', None) or ()), 'browser_link': browser_link(app.config),
                                   'browser_embed': browser_embed(app.config, self.headers.get('Host', ''))}, since))
                 try:
                     app.store.note_card_shown()

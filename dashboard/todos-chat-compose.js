@@ -88,6 +88,8 @@ const m=/^#chat=([a-f0-9]{16})$/.exec(location.hash),id=m&&state.suggestions.som
  // list says so too, one short line on the list instead of a blank page
  const gone=()=>{history.replaceState(null,'',location.pathname+location.search);openChatLink();toast(t('That to-do isn’t here anymore.'))};  // and a chat open on it closes
  // right after a refresh the list is the Machine's latest already: a chat open on it (from a list kept since before) closes with the line
+ // a done one past those the status sends: asked for first, and the chat opens when it comes (doneFetch)
+ if(m&&!id&&doneFetch(m[1],()=>{if(location.hash==='#chat='+m[1])openChatLink(refreshed)}))return;
  if(m&&!id&&refreshed){gone();return}
  if(m&&!id&&!chatGone){chatGone=m[1];refresh().then(()=>{if(location.hash==='#chat='+chatGone&&!state.suggestions.some(s=>s.id===chatGone))gone()}).finally(()=>{chatGone=null});return}
  if(m&&!id)return;
