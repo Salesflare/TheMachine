@@ -1032,6 +1032,7 @@
  "Custom": "Aangepast",
  "Custom: you changed a setting. Pick a level to reset them.": "Aangepast: je hebt een instelling gewijzigd. Kies een niveau om ze terug te zetten.",
  "Customer conversations in your Intercom workspace.": "Klantgesprekken in je Intercom-werkruimte.",
+ "Customers": "Klanten",
  "Customize": "Aanpassen",
  "Custom…": "Aangepast…",
  "DM with {}": "DM met {}",
@@ -1137,6 +1138,7 @@
  "Doc reply button labels say Post, Reply or Send, such as Post reply": "Labels van knoppen voor documentantwoorden zeggen Post, Reply of Send, zoals Post reply",
  "Doc writes aren’t set up. Nothing was changed.": "Documenten schrijven is niet ingesteld. Er is niets gewijzigd.",
  "Docs": "Documenten",
+ "Docs and files": "Documenten en bestanden",
  "Docs are read only for a running preparation of the task the owner started": "Documenten worden alleen gelezen voor een lopende voorbereiding van de taak die de eigenaar startte",
  "Docs for {} didn't check out ({})": "Docs voor {} klopte niet ({})",
  "Doesn’t repeat": "Herhaalt niet",
@@ -3355,6 +3357,7 @@
  "Project name": "Projectnaam",
  "Projects": "Projecten",
  "Projects (G then J)": "Projecten (G dan J)",
+ "Projects and code": "Projecten en code",
  "Projects of one kind show here in stages, as your messages move them.": "Projecten van één soort staan hier in fases, zoals je berichten ze vooruit helpen.",
  "Projects opens on this board now.": "Projecten opent nu op dit bord.",
  "Projects:": "Projecten:",
@@ -3961,6 +3964,7 @@
  "Settings:": "Instellingen:",
  "Settings: {}": "Instellingen: {}",
  "Setup checks": "Controles van de installatie",
+ "Setup didn’t finish": "Instellen is niet afgerond",
  "Setup to-do": "To-do om te starten",
  "Share": "Delen",
  "Share a person from their page": "Deel een persoon vanaf zijn pagina",
@@ -4330,6 +4334,7 @@
  "Suggested": "Voorgesteld",
  "Suggested by": "Voorgesteld door",
  "Suggested edit": "Voorgestelde wijziging",
+ "Suggested for you": "Voorgesteld voor jou",
  "Suggested for your to-dos": "Voorgesteld voor je to-do's",
  "Suggested inviting {} to the Family": "Voorgesteld om {} uit te nodigen voor de Familie",
  "Suggested update": "Voorgestelde update",
@@ -6332,6 +6337,10 @@
   "one": "{} e-mail",
   "other": "{} e-mails"
  },
+ "{} emails from {} in 30 days": {
+  "one": "{} mail van {} in 30 dagen",
+  "other": "{} mails van {} in 30 dagen"
+ },
  "{} failed attempts in a row": {
   "one": "{} mislukte poging op rij",
   "other": "{} mislukte pogingen op rij"
@@ -6498,6 +6507,10 @@
  },
  "{} messages being checked": "{} berichten worden gecheckt",
  "{} messages checked": "{} berichten nagekeken",
+ "{} messages link to {}": {
+  "one": "{} bericht linkt naar {}",
+  "other": "{} berichten linken naar {}"
+ },
  "{} messages read, from {}": {
   "one": "{} bericht gelezen, uit {}",
   "other": "{} berichten gelezen, uit {}"
@@ -6838,6 +6851,10 @@
   "other": "{} schrijfregels"
  },
  "{} wrote this email for you. Read it, change it if you like, and send it yourself.": "{} schreef deze e-mail voor je. Lees hem, pas hem aan als je wilt en verstuur hem zelf.",
+ "{} {} meetings on your calendar": {
+  "one": "{} {}-meeting in je agenda",
+  "other": "{} {}-meetings in je agenda"
+ },
  "{} {} this thread, also if it is sensitive. Personal never goes.": "{} {} deze thread, ook als die gevoelig is. Privé gaat nooit mee.",
  "{} {} {}, deals too. Personal and other companies never go.": "{} {} {}, ook de deals. Privé en andere bedrijven gaan nooit mee.",
  "{} {}, tap to show or hide": "{} {}, tik om te tonen of te verbergen",

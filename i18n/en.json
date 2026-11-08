@@ -1032,6 +1032,7 @@
  "Custom": "Custom",
  "Custom: you changed a setting. Pick a level to reset them.": "Custom: you changed a setting. Pick a level to reset them.",
  "Customer conversations in your Intercom workspace.": "Customer conversations in your Intercom workspace.",
+ "Customers": "Customers",
  "Customize": "Customize",
  "Custom…": "Custom…",
  "DM with {}": "DM with {}",
@@ -1137,6 +1138,7 @@
  "Doc reply button labels say Post, Reply or Send, such as Post reply": "Doc reply button labels say Post, Reply or Send, such as Post reply",
  "Doc writes aren’t set up. Nothing was changed.": "Doc writes aren’t set up. Nothing was changed.",
  "Docs": "Docs",
+ "Docs and files": "Docs & files",
  "Docs are read only for a running preparation of the task the owner started": "Docs are read only for a running preparation of the task the owner started",
  "Docs for {} didn't check out ({})": "Docs for {} didn't check out ({})",
  "Doesn’t repeat": "Doesn’t repeat",
@@ -3355,6 +3357,7 @@
  "Project name": "Project name",
  "Projects": "Projects",
  "Projects (G then J)": "Projects (G then J)",
+ "Projects and code": "Projects & code",
  "Projects of one kind show here in stages, as your messages move them.": "Projects of one kind show here in stages, as your messages move them.",
  "Projects opens on this board now.": "Projects opens on this board now.",
  "Projects:": "Projects:",
@@ -3961,6 +3964,7 @@
  "Settings:": "Settings:",
  "Settings: {}": "Settings: {}",
  "Setup checks": "Setup checks",
+ "Setup didn’t finish": "Setup didn’t finish",
  "Setup to-do": "Setup to-do",
  "Share": "Share",
  "Share a person from their page": "Share a person from their page",
@@ -4330,6 +4334,7 @@
  "Suggested": "Suggested",
  "Suggested by": "Suggested by",
  "Suggested edit": "Suggested edit",
+ "Suggested for you": "Suggested for you",
  "Suggested for your to-dos": "Suggested for your to-dos",
  "Suggested inviting {} to the Family": "Suggested inviting {} to the Family",
  "Suggested update": "Suggested update",
@@ -6332,6 +6337,10 @@
   "one": "{} email",
   "other": "{} emails"
  },
+ "{} emails from {} in 30 days": {
+  "one": "{} email from {} in 30 days",
+  "other": "{} emails from {} in 30 days"
+ },
  "{} failed attempts in a row": {
   "one": "{} failed attempt in a row",
   "other": "{} failed attempts in a row"
@@ -6498,6 +6507,10 @@
  },
  "{} messages being checked": "{} messages being checked",
  "{} messages checked": "{} messages checked",
+ "{} messages link to {}": {
+  "one": "{} message links to {}",
+  "other": "{} messages link to {}"
+ },
  "{} messages read, from {}": {
   "one": "{} message read, from {}",
   "other": "{} messages read, from {}"
@@ -6838,6 +6851,10 @@
   "other": "{} writing rules"
  },
  "{} wrote this email for you. Read it, change it if you like, and send it yourself.": "{} wrote this email for you. Read it, change it if you like, and send it yourself.",
+ "{} {} meetings on your calendar": {
+  "one": "{} {} meeting on your calendar",
+  "other": "{} {} meetings on your calendar"
+ },
  "{} {} this thread, also if it is sensitive. Personal never goes.": "{} {} this thread, also if it is sensitive. Personal never goes.",
  "{} {} {}, deals too. Personal and other companies never go.": "{} {} {}, deals too. Personal and other companies never go.",
  "{} {}, tap to show or hide": "{} {}, tap to show or hide",

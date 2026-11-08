@@ -1531,6 +1531,9 @@ class App(*APP_MIXINS):
             if agent_jobs.settings(self.config) is not None:
                 # Codex (codex_signin.py): its own tile, signed in with a code from OpenAI right here
                 found['codex'] = {'status': codex_signin.status(self.config)}
+            # Suggested for you: a few tiles this Machine has a signal for (connect_suggested), a setup that failed here first
+            failed = [v['source'] for v in sessions.values() if v['state'] == 'failed']
+            found['suggested'] = self.connect_suggested([x for x in found['sources'] if hosted or not x.get('broker')], failed)
             return found
         if name in ('codex_signin', 'codex_signin_state'):
             # Self-hosted: Codex's device sign-in on this computer. A hosted Machine's runs on its server, started by
