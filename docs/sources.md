@@ -73,6 +73,7 @@ Microsoft 365 and Outlook.com. `ms_graph.py` reads them through Microsoft Graph 
 - Graph has no signature API, so an Outlook signature is the one your recent sent mail ends with (found when at least three share it), or the one you set in Settings, Writing.
 - There each mailbox has one signature with a small editor (bold, italic, underline, link, image by address, text color, clear, and the HTML itself). With nothing set, it imports the mailbox's own first: Gmail's signature (read with `gmail.readonly`, the scope the send check already uses) or the one Outlook's sent mail ends with.
 - **Use mailbox signature** drops yours. What you save is cleaned to plain formatting, links and images.
+- Each email keeps the names and types of its attachments (up to 10, without pictures shown in the body), never their contents, encrypted with the rest of the message. The review sees them, so a bill or statement sent as a file still becomes a to-do whose run opens it.
 - Preparations read email attachments (Gmail and Outlook) through the mail connection, read-only: `assistant_signals` `mail_attachment` in the run, or `assistant attachment` in a shell. The browser is only for links to cloud files. With message protection on they are kept encrypted ([configuration](configuration.md#email-attachments)).
 
 ### Calendar
