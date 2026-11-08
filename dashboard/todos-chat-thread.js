@@ -118,7 +118,7 @@ const chatFold=(key,cls,summary,body)=>html`<details class="${cls}" data-fold-ke
 const CHAT_STEP_OLD={'Using the browser':'Used the browser','Running a command':'Ran a command','Reading a file':'Read a file','Writing notes':'Wrote notes',
  'Searching the web':'Searched the web','Reading a web page':'Read a web page','Checking the assistant':'Looked things up in The Machine','Searching memory':'Searched memory',Working:''};
 function chatSteps(steps){const rows=new Map();
- for(const s of steps||[]){const old=typeof s==='string'&&Object.hasOwn(CHAT_STEP_OLD,s)?CHAT_STEP_OLD[s]:undefined,
+ for(const s of steps||[]){const old=typeof s==='string'&&Object.prototype.hasOwnProperty.call(CHAT_STEP_OLD,s)?CHAT_STEP_OLD[s]:undefined,
   label=typeof s==='string'?(old!==undefined?old&&t(old):s):Array.isArray(s?.line)?t(...s.line):String(s?.text||'');if(!label)continue;
   const n=typeof s==='object'&&s.n>0?s.n:1,row=rows.get(label);row?row.n+=n:rows.set(label,{label,n})}
  return [...rows.values()]}
