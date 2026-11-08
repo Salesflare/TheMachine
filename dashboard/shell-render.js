@@ -56,6 +56,10 @@ sideCounts={ready:fuv.ready.length,needs:sideNeeds.length,preparing:fuv.preparin
 for(const[id,v]of Object.entries(drafts)){const t=document.getElementById(id);if(t&&t.value!==v){t.value=v;t.classList.add('filled')}}
 for(const id of moreOpen){const menu=document.getElementById(id)?.querySelector('.more-actions');if(menu)menu.open=true}foldsBack();
 fleetSync();
+// A page's first drawing on To-dos (the device's copy, else the Machine's first answer): the to-dos, the sidebar and a chat now,
+// and the rest (Learning, Connections, Settings, the other tabs' parts) just after that first paint, not before it.
+// A link to another tab or part (#settings/notify) draws it all at once, since that part is the one it opens on
+if(!drawnWhole&&!view&&/^(#todos|#chat=[a-f0-9]{16})?$/.test(location.hash)){const later=()=>{if(!drawnWhole)render('whole')};requestAnimationFrame(()=>setTimeout(later));setTimeout(later,300);return}
 if(view==='view'&&drawnWhole===state)return;drawnWhole=state;
 const choiceTone={accept:'mint',complete:'mint',reject:'muted',snooze:'lavender',other:'amber',reopen:'lavender',undo:'lavender',retry:'lavender',update:'lavender'};
 // One decision on Learning: the to-do, what was chosen, through what and when, and the note that came with it
