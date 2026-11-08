@@ -71,7 +71,7 @@ const decisionRow=d=>{const a=make('article',{},make('h3',{},d.title||state.sugg
   d.annotation?make('p',{class:'note'},'Earlier message was matched incorrectly. The correction is recorded.'):'',d.feedback?make('blockquote',{},d.feedback):'');
  a.style.setProperty('--c',`var(--${({mint:'mint',muted:'faint',lavender:'lavender',amber:'amber'})[choiceTone[d.choice]||'muted']})`);return a};
 // Learning's own parts are drawn when its file is in (learning-missed.js draws them then)
-const learnIn=lazyIn('learning');if(learnIn)renderQuality();
+const learnIn=lazyIn('learning'),settingsIn=lazyIn('settings');if(learnIn)renderQuality();
 if(learnIn&&learnEdit==null)setHTML($('#facts'),learnedList());if(learnIn)setHTML($('#learn-changes'),learnChanges());renderShare();renderVotes();  // an open editor keeps what was typed until Save or Cancel
 $('#decisions').replaceChildren(...clipNodes('decisions',clipRows(state.decisions,decisionRow),()=>[make('p',{class:'muted'},'No decisions yet.')],5));if(learnIn)learnTabs();
 const expandedSync=new Set([...document.querySelectorAll('#connectors details[open]')].map(d=>d.id));
@@ -111,7 +111,7 @@ const DELIVERY_LABEL={sent:'Sent',queued:'Waiting to send',uncertain:'Checking d
 const DELIVERY_ERROR={gateway_preflight_failed:'Couldn’t send yet. It retries.',delivery_not_admitted:'This send was held back. It retries.',delivery_outcome_unknown:'Not sure it arrived. Checking before it resends.',interrupted_delivery:'Send interrupted. Checking before it resends.'};
 const deliveryRow=d=>make('div',{},chipNode(DELIVERY_LABEL[d.status]||d.status,deliveryTone(d.status)),make('span',{class:'grow'},state.suggestions.find(s=>s.id===d.suggestion_id)?.title||d.suggestion_id),timeNode(d.updated_at),
  d.error?make('small',{class:'error'},DELIVERY_ERROR[d.error]||d.error):'',d.needs_edit?make('small',{},'Telegram update pending'):'');
-$('#deliveries').replaceChildren(...clipNodes('deliveries',clipRows(state.deliveries,deliveryRow),()=>[make('div',{class:'muted'},'No deliveries yet.')]));renderHours();renderLocale();renderAgents();renderSignatures();renderLookups();renderAddresses();renderSecurity();renderShareOffer();renderVoices();renderSkills();
+$('#deliveries').replaceChildren(...clipNodes('deliveries',clipRows(state.deliveries,deliveryRow),()=>[make('div',{class:'muted'},'No deliveries yet.')]));if(settingsIn){renderHours();renderLocale();renderAgents();renderSignatures();renderLookups();renderAddresses();renderSecurity()}renderShareOffer();if(settingsIn)renderVoices();renderSkills();
 if(!shownCached&&!netDown){lastOk=Date.now();$('#live').classList.remove('stale');$('#stale-note').hidden=true}if(!shownCached&&!kbLanded){kbLanded=true;requestAnimationFrame(()=>kbLand())}/* the page's first focus, once the to-dos are in */if(netOut)liveLine();else $('#updated').replaceChildren(make('span',{class:'lbl'},'Updated '),hhmm(shownAt||Date.now()));
 for(const c of state.connectors.filter(c=>![...$('#account').options].some(o=>o.value===c.id))){let o=new Option((c.display_name||c.email)+' · '+service(c.service),c.id);$('#account').add(o)}
 }

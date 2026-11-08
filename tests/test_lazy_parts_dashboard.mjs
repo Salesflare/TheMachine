@@ -9,8 +9,9 @@ const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modul
 // (machine/web/serving.py dashboard_files): the page loads and is drawn whole without them (the load event doesn't wait
 // for them), and they're fetched after that. Calendar, Learning and Help opened while they're on their way open once
 // they're in, and then Help, the game, Calendar and Learning work as before. The Graph's rules are in before its pages
-// draw. A link straight to Calendar opens it once its part is in. When they can't load, the rest is drawn all the
-// same, and Calendar, the Graph and the game say so.
+// draw. Settings opened while its panels are on their way opens once they're in, drawn. A link straight to Calendar
+// opens it once its part is in. When they can't load, the rest is drawn all the same, and Calendar, the Graph,
+// Settings and the game say so.
 const [source,lazy]=JSON.parse(execFileSync('python3',['-c','import json,dashboard_parts;print(json.dumps(dashboard_parts.assemble_split()))'],{encoding:'utf8',maxBuffer:1<<26}));
 const named=s=>createHash('sha256').update(s).digest('hex').slice(0,16)+'.js';
 const files=Object.fromEntries(Object.entries(lazy).map(([group,script])=>['lazy-'+group+'-'+named(script),script]));
@@ -51,9 +52,10 @@ try{
   await p.evaluate(()=>showTab('calendar'));assert.equal(await p.locator('#calendar-view').innerHTML(),'');
   await p.evaluate(()=>showTab('feedback'));assert.equal(await p.locator('#learn-tabs').innerHTML(),'');
   await p.evaluate(()=>showTab('people'));assert.equal(await p.locator('#people-view').innerHTML(),'');
+  await p.evaluate(()=>showSettings('writing'));assert.equal(await p.locator('#settings').isHidden(),true);assert.equal(await p.locator('#voices').innerHTML(),'');
   await p.evaluate(()=>showTab('calendar'));await p.evaluate(()=>document.querySelector('#open-help').click());
   release();hold=null;
-  await p.waitForFunction(()=>document.querySelector('#calendar-view').children.length>0&&document.querySelector('#learn-tabs').children.length>0&&document.querySelector('#help-panel').open&&document.querySelector('#people-view').innerHTML!=='');
+  await p.waitForFunction(()=>document.querySelector('#calendar-view').children.length>0&&document.querySelector('#learn-tabs').children.length>0&&document.querySelector('#help-panel').open&&document.querySelector('#people-view').innerHTML!==''&&!document.querySelector('#settings').hidden&&settingsNow==='writing'&&document.querySelector('#voices').innerHTML!=='');
   assert.deepEqual(await graphRules(),[true,'grid']);
   await p.evaluate(()=>{document.querySelector('#help-panel').close();showTab('inbox')});
   // In: Help opens, and the fourth poke's game plays
@@ -71,6 +73,15 @@ try{
   await p.goto(base+'#calendar',{waitUntil:'domcontentloaded'});
   for(const until=Date.now()+20000;!asked.some(n=>n.startsWith('lazy-calendar-'));){assert.ok(Date.now()<until,'the calendar part is asked for');await new Promise(r=>setTimeout(r,50))}
   release();hold=null;await p.waitForFunction(()=>!document.querySelector('#calendar').hidden&&document.querySelector('#calendar-view').children.length>0);
+  await context.close()}
+ // A link straight to Settings, Writing, its panels held back: Settings opens on Writing once they're in
+ {let release;hold=new Promise(r=>release=r);asked.length=0;const context=await browser.newContext({viewport:{width:1440,height:900}});
+  await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
+  const p=await context.newPage();p.on('pageerror',e=>errors.push('settings link: '+e.message+' '+e.stack));
+  await p.goto(base+'#settings/writing',{waitUntil:'domcontentloaded'});
+  for(const until=Date.now()+20000;!asked.some(n=>n.startsWith('lazy-settings-'));){assert.ok(Date.now()<until,'the settings part is asked for');await new Promise(r=>setTimeout(r,50))}
+  assert.equal(await p.locator('#settings').isHidden(),true);
+  release();hold=null;await p.waitForFunction(()=>!document.querySelector('#settings').hidden&&settingsNow==='writing'&&document.querySelector('#voices').innerHTML!=='');
   await context.close()}
  // A link straight to someone in the Graph, its part held back: the Graph opens on them, and draws them once the part is in
  {let release;hold=new Promise(r=>release=r);asked.length=0;const context=await browser.newContext({viewport:{width:1440,height:900}});
@@ -94,6 +105,8 @@ try{
   await p.locator('#toast.show.error',{hasText:'Offline.'}).waitFor();
   await p.evaluate(()=>{document.querySelector('#toast').className='';showTab('people')});
   await p.locator('#toast.show.error',{hasText:'Offline.'}).waitFor();
+  await p.evaluate(()=>{document.querySelector('#toast').className='';document.querySelector('#open-settings').click()});
+  await p.locator('#toast.show.error',{hasText:'Offline.'}).waitFor();assert.equal(await p.locator('#settings').isHidden(),true);
   await context.close();refuse=false}
  assert.deepEqual(errors,[]);
  console.log('ok lazy parts');

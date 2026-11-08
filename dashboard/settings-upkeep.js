@@ -38,3 +38,7 @@ async function upkeepPress(part,body){if(upkeep.busy)return;upkeep.busy=part;upk
  try{await upkeepCall(part,body)}catch(e){errCaught(e);notice(t(e.message))}finally{upkeep.busy='';upkeepRender()}}
 $('#settings-version').addEventListener('click',e=>{if(e.target.closest('#version-update'))upkeepPress('update',{})});
 $('#settings-meaning').addEventListener('click',e=>{const b=e.target.closest('#meaning-switch');if(b)upkeepPress('meaning',{on:b.getAttribute('aria-checked')!=='true'})});
+// Served as a part that loads when first needed (dashboard_parts.LAZY), with settings-general and -export: a page
+// drawn before they came draws Settings' panels now (render skipped them). Inline (the tests, the demo) these parts run
+// before shell-render.js, which draws them itself.
+if(self.LAZY_FILES?.settings&&drawnWhole)try{renderHours();renderLocale();renderAgents();renderSignatures();renderLookups();renderAddresses();renderSecurity();renderVoices()}catch(e){errCaught(e);console.error(e)}
