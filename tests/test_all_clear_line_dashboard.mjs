@@ -40,7 +40,9 @@ const open=async({width=1440,height=900,scheme='light',time=DAY}={})=>{
  if(language==='nl')await page.waitForFunction(()=>document.documentElement.lang==='nl');
  return [context,page]};
 const line=async page=>(await page.locator('#suggestions .all-clear .poke-line').innerText()).replace(/ /g,' ');
-const pose=page=>page.locator('#suggestions .all-clear img.sleepy').evaluate(i=>i.getAttribute('src'));
+// The pose, not a blink: the closed-eyes frame shows for about 150ms now and then
+const pose=async page=>{await page.waitForFunction(()=>!document.querySelector('#suggestions .all-clear img.sleepy')?.getAttribute('src').includes('-blink'));
+ return page.locator('#suggestions .all-clear img.sleepy').evaluate(i=>i.getAttribute('src'))};
 const quiet=async(page,why)=>{
  assert.equal(await page.locator('#page-head .page-sub').count(),0,why+': no count line over the robot');
  assert.equal(await page.locator('#page-head .check-now').count(),0,why+': nothing about the check in the head');
