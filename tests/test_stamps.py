@@ -190,6 +190,29 @@ class PageQueries(unittest.TestCase):
                 self.assertEqual(views.slack_people_names(db, {'U07654321'}), {'U07654321': 'Lee Park'})
             self.assertEqual(made.call_count, 2)
 
+    def test_the_to_dos_views_are_kept_between_polls_until_what_they_read_changes(self):
+        """Each status poll works out what the to-dos show beyond their rows (card_views): kept until one of the tables it
+        read changes (test_card_views_batched checks it reads only CARD_TABLES)."""
+        from unittest.mock import patch
+        from machine.store import views
+        views.CARDS.clear()
+        self.store.commit_page('w', {}, [{'account_id': 'w', 'source_id': 'w1', 'kind': 'gmail.message', 'occurred_at': a.now(),
+                                          'title': 'Ann', 'body': 'Can you answer?', 'metadata': {}, 'deleted': False}])
+        card = self.store.suggest('k1', 'Answer Ann', 'Ann asked.', [1])['id']
+        with patch.object(views.ViewsStore, '_card_views', autospec=True, side_effect=views.ViewsStore._card_views) as made:
+            first = self.store.snapshot([])
+            mine = next(c for c in first['suggestions'] if c['id'] == card)
+            mine['latest_feedback'] = 'changed by a caller'
+            again = self.store.snapshot([])
+            self.assertEqual(made.call_count, 2)  # the first poll's two passes; the second poll kept both
+            self.assertEqual(json.dumps(again['suggestions'], sort_keys=True, default=str),
+                             json.dumps(self.store.snapshot([])['suggestions'], sort_keys=True, default=str))
+            self.assertIsNone(next(c for c in again['suggestions'] if c['id'] == card)['latest_feedback'])  # each poll its own copy
+            self.store.decide(card, 'other', 'shorter please', 'd1', 'dashboard')  # a change: worked out again
+            after = self.store.snapshot([])
+            self.assertEqual(made.call_count, 4)
+            self.assertEqual(next(c for c in after['suggestions'] if c['id'] == card)['latest_feedback']['feedback'], 'shorter please')
+
     def test_the_owners_colleagues_are_kept_until_a_person_changes(self):
         """Each Graph load tells the projects' organizations from the owner's colleagues (graph.colleagues): one pass
         over every person, kept until a person changes."""

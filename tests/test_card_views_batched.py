@@ -111,5 +111,20 @@ class CardViewsBatched(unittest.TestCase):
         self.assertLessEqual(sum("kind='whatsapp.message'" in s for s in seen), 1, 'WhatsApp photos are looked up once')
 
 
+    def test_it_reads_only_the_tables_its_kept_copy_waits_on(self):
+        """card_views is kept between status polls until one of CARD_TABLES changes (views.CARDS): a table it reads beyond
+        those would leave the to-dos as they were after that table changed."""
+        from machine.store import views
+        read = set()
+        with self.store.connect() as db:
+            cards = [dict(db.execute('SELECT * FROM suggestions WHERE id=?', (i,)).fetchone()) for i in self.cards]
+            db.set_trace_callback(lambda sql: read.update(t.lower() for t in re.findall(r'\b(?:FROM|JOIN)\s+([A-Za-z_]\w*)', sql)))
+            self.store._card_views(db, cards, False)
+            self.store._card_views(db, cards, True)
+            db.set_trace_callback(None)
+        self.assertIn('decisions', read)
+        self.assertEqual(read - set(views.CARD_TABLES) - {'sqlite_master', 'data_stamps', 'json_each', 'json_tree', 'pragma_table_info'}, set())
+
+
 if __name__ == '__main__':
     unittest.main()

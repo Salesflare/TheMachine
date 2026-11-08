@@ -2,6 +2,8 @@
 its sources and what it's based on, a run's result and documents, task pages and the done page. A mixin of Store
 (assistant.py), like App's mixins. Moved out of assistant.py as is."""
 import datetime as dt
+import copy
+import hashlib
 import json
 import re
 import sqlite3
@@ -68,6 +70,17 @@ import todo_areas
 import whatsapp_images
 
 WAITING = stamps.Kept(4)  # the Who's who count (snapshot)
+# What card_views adds to the to-dos, kept between status polls (each 30 s) while none of the tables it reads changed (on
+# a quiet Machine, between polls only Connections' sync tables do), the to-dos' own rows are the same and within
+# CARD_KEEP_S (what it works out from the clock: "3 days ago", Still needed?). CARD_TABLES: all it reads (a test checks
+# that). Kept as deep copies: the status changes what it is handed, never the kept copy.
+CARD_TABLES = ('action_jobs', 'agent_jobs', 'calendar_clashes', 'chat_files', 'decision_annotations', 'decisions', 'email_bounces',
+               'events', 'facts', 'feedback_prompts', 'fleet_meta', 'fleet_out', 'graph_events', 'graph_identifiers', 'graph_nodes',
+               'identity_names', 'person_facts', 'preparation_calls', 'preparation_runs', 'preparations', 'projects',
+               'promises', 'recap_items', 'recurring_series', 'skill_clusters', 'skill_task_decided', 'skills',
+               'slack_members', 'suggestions', 'task_pages', 'thread_snoozes', 'whatsapp_photos')
+CARD_KEEP_S = 120
+CARDS = stamps.Kept(4)
 DONE_FIRST = 30  # the done to-dos the dashboard's status gets: its Done list's first page (dashboard donePager)
 
 
@@ -500,7 +513,28 @@ class ViewsStore(ConversationStore):
 
     def card_views(self, db, cards, jobs=True):
         """What the dashboard shows on cards beyond their row: the status payload and the Done pages alike. jobs=False
-        does the first half (labels, people, feedback); jobs=True the rest (preparations, results)."""
+        does the first half (labels, people, feedback); jobs=True the rest (preparations, results). Kept by CARDS."""
+        have = {r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+        tables = tuple(t for t in CARD_TABLES if t in have)
+        at = stamps.stamp(db, tables) if cards else None
+        if at is None:
+            return self._card_views(db, cards, jobs)
+        inputs = [jobs, cards, sorted(self.owner_user_ids or ()), [a.get('service', 'gmail') for a in getattr(self, 'accounts', None) or []],
+                  getattr(self, 'preparation_holds', None) if jobs else None, str(self.path), int(time.time() // CARD_KEEP_S)]
+        key = hashlib.blake2b(json.dumps(inputs, sort_keys=True, default=str).encode(), digest_size=16).digest()
+        built = []
+
+        def build():
+            before = copy.deepcopy(cards)  # a later pass may change what an earlier one added
+            self._card_views(db, cards, jobs)
+            built.append(1)
+            return copy.deepcopy([{k: v for k, v in c.items() if k not in b or b[k] != v} for c, b in zip(cards, before)])
+        kept = CARDS.get(key, (tables, at), build)
+        if not built:
+            for card, added in zip(cards, copy.deepcopy(kept)):
+                card.update(added)
+
+    def _card_views(self, db, cards, jobs):
         if not jobs:
             source_lines_shown(db, cards)  # a Slack DM by the person's name, never a raw chat handle
             based_on_views(db, cards)  # "Based on Sam in #ops": the teammate's input the draft follows, with its link
