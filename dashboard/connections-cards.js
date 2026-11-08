@@ -357,11 +357,13 @@ function cardShow(id,flash){const c=(state.connectors||[]).find(x=>x.id===id);if
  const el=[...document.querySelectorAll('#connectors>article')].find(a=>a.dataset.conn===id);if(!el)return;el.scrollIntoView({block:'center',behavior:'smooth'});
  if(flash){el.classList.add('conn-new');setTimeout(()=>el.classList.remove('conn-new'),4000)}}
 async function connectFollow(run){const start=Date.now();await new Promise(r=>setTimeout(r,6000));
- while(connectRun===run&&Date.now()-start<180000){connectList=null;if(await refresh().catch(()=>false)&&connectCard(run)){renderConnectRun();
+ while(connectRun===run&&Date.now()-start<180000){connectList=null;if(await refresh().catch(()=>false)!==false&&connectCard(run)){renderConnectRun();
    if(healthPane==='add'&&!$('#health').hidden)cardShow(run.account,true);return}
   if(Date.now()-start>60000&&run.follow!=='slow'){run.follow='slow';renderConnectRun()}await new Promise(r=>setTimeout(r,2500))}}
-function connectPoll(){clearTimeout(connectTimer);if(!connectRun||connectRun.state!=='running')return;connectTimer=setTimeout(async()=>{try{connectRun={...connectRun,...await connectPost('connect_poll',{session:connectRun.session})};renderConnectRun();
- if(connectRun.state==='done'&&connectRun.restarting){restartSoon();connectFollow(connectRun)}}catch(e){errCaught(e);connectRun={...connectRun,state:'failed',error:e.message};renderConnectRun()}connectPoll()},connectRun.question?3000:1000)}
+// Done, however it got there (a poll, or the last answer finishing it at once): follow the restart once
+function connectPoll(){clearTimeout(connectTimer);if(connectRun?.state==='done'&&connectRun.restarting&&!connectRun.followed){connectRun.followed=true;restartSoon();connectFollow(connectRun);return}
+ if(!connectRun||connectRun.state!=='running')return;connectTimer=setTimeout(async()=>{try{connectRun={...connectRun,...await connectPost('connect_poll',{session:connectRun.session})};renderConnectRun()}
+ catch(e){errCaught(e);connectRun={...connectRun,state:'failed',error:e.message};renderConnectRun()}connectPoll()},connectRun.question?3000:1000)}
 // A code the connect shows to sign in with: GitHub's device sign-in, or WhatsApp's pairing code for Linked devices.
 // A QR code the Machine sends as rows of 0 and 1 (Telegram's login), drawn here: no image from anywhere else.
 function qrSvg(rows){const n=rows.length,q=2,size=n+2*q;let d='';rows.forEach((r,y)=>{for(let x=0;x<r.length;x++)if(r[x]==='1')d+=`M${x+q} ${y+q}h1v1h-1z`});
