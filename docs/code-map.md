@@ -175,7 +175,9 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   paging and the first-cards report into machine/app/review.py; split_notes_text into ReviewApp; short_window into
   ModelPacingApp; activity_report, active_work and weekly_recap next to their features, ai_card's events insert into
   EventsStore as a Store method (add_ai_request), so ai_card can leave assistant.py without another writer of the
-  sealed events table, ai_card into NewCardsApp (after its events insert became EventsStore.add_ai_request).
+  sealed events table, ai_card into NewCardsApp (after its events insert became EventsStore.add_ai_request), stop_all
+  and message protection into `WorkersApp`; `serve` and `packed_page` into the new `ServeApp`
+  (`machine/app/serve.py`).
 - **Dashboard code:** in its area's part in `dashboard/` (`<area>-<what>.js`: shell, todos, settings, graph, calendar,
   connections, help, events, new, fleet), next to the functions it works with, never at the end of the script. The
   page's core is in the `shell-*` parts too: locale and error reports (`shell-core.js`), network and outbox, `render()`

@@ -1,6 +1,7 @@
 """The service's background workers and their steps that aren't one feature's own: retention, embeddings, enrichment,
-the spacing of background work, Help topics and error reports sent to the control plane. Moved out of assistant.App
-as is. A mixin of assistant.App (APP_MIXINS)."""
+the spacing of background work, Help topics and error reports sent to the control plane, message protection at a
+start and the restart that waits for it, and stopping them all. Moved out of assistant.App as is. A mixin of
+assistant.App (APP_MIXINS)."""
 import datetime as dt
 import json
 import time
@@ -11,10 +12,12 @@ import enrichment
 import error_feed
 import help_topics
 from machine.config import LOG
+from machine.faults import restart_self
 from machine.sources.calendar import calendar_owned
 from machine.sources.telegram import telegram_photo_asker
 from machine.sources.whatsapp import whatsapp_photo_asker
 from machine.store.review import bulk_kind
+import message_seal
 from models import background_model
 import next_actions
 import retention
@@ -275,3 +278,38 @@ class WorkersApp:
         if changed:
             LOG.info('settings applied without a restart: %s', ','.join(LIVE_CONFIG))
         return changed
+
+    def stop_all(self):
+        self.stop.set()
+        for wake in list(getattr(self, 'collector_wakes', {}).values()):
+            wake.set()  # a collector resting till its next read stops now too
+        if self.__dict__.get('fleet_stop') is not None:
+            self.fleet_stop.set()
+
+    def protection_now(self, config):
+        """What the Store does with message protection at this start: on unless config.json says false. A change to an
+        existing database (an upgrade that turns it on by default, say) waits while a review, preparation or profile
+        turn runs, so none is cut off: the app starts as it was and restarts itself once they are done
+        (`protection_waiter`). The change itself keeps a copy until it checks out (Store.message_protection)."""
+        self.protection_waits = False
+        want = message_seal.wanted(config)
+        sealed, _ = message_seal.state(config['database'])
+        if sealed is None or sealed == want:
+            return want
+        running = message_seal.work_running(config['database'])
+        if running == 0:
+            return want
+        self.protection_waits = True
+        LOG.info('message contents will be %s once The Machine is idle (%s running)', 'sealed' if want else 'opened',
+                 running if running is not None else 'unknown')
+        return None
+
+    def protection_waiter(self, every=30):
+        """Restart once nothing runs, so the next start seals (or opens) the database with nothing cut off."""
+        while not self.stop.wait(every):
+            if message_seal.work_running(self.config['database']) == 0:
+                if restart_self():
+                    LOG.info('idle: restarting to apply message protection')
+                else:
+                    LOG.info('idle: message protection applies at the next start')
+                return
