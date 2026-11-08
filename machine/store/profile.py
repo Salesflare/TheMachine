@@ -2,6 +2,7 @@
 organizations turn reads, saving what it found, and the quality and behavior numbers. A mixin of Store (assistant.py),
 like App's mixins. Moved out of assistant.py as is."""
 import collections
+import copy
 import datetime as dt
 import email.utils
 import json
@@ -16,6 +17,7 @@ import fleet_learnings
 import graph
 import learning_loop
 import locale_prefs
+from machine import stamps
 from machine.store.graph_history import live
 from machine.prompts.profile import VOICE_CHARS, VOICE_LINES
 from machine.sources.connectors import load_connector
@@ -111,6 +113,11 @@ def recap_day(value, with_time=False):
         return locale_prefs.day_text(dt.date.fromisoformat(str(value)[:10]))
     t = dt.datetime.fromisoformat(str(value).replace('Z', '+00:00')).astimezone(local_tz())
     return locale_prefs.day_text(t) + (' ' + locale_prefs.clock_text(t) if with_time else '')
+
+
+# What quality_report reads (a to-do's first signal's kind too, which doesn't change), kept by their change counters
+QUALITY_TABLES = ('suggestions', 'decisions', 'note_kinds', 'action_jobs', 'draft_edits', 'rule_changes')
+QUALITY = stamps.Kept(4)
 
 
 class ProfileStore:
@@ -614,7 +621,14 @@ class ProfileStore:
         return result
 
     def quality_report(self, days=30):
-        """This period and the one before, for the dashboard and recap."""
+        """This period and the one before, for the dashboard and recap. Every status poll sends it: kept for the minute
+        until a to-do, a decision, a send or a rule changes (QUALITY_TABLES), as working it out reads the to-dos and
+        decisions of the last two months three times."""
+        with self.connect() as db:
+            at = stamps.stamp(db, QUALITY_TABLES)
+        return copy.deepcopy(QUALITY.get((days, now()[:16], str(local_tz())), at, lambda: self._quality_report(days)))
+
+    def _quality_report(self, days):
         current = self.quality(days)
         before = self.quality(days, (dt.datetime.fromisoformat(now()) - dt.timedelta(days=days)).isoformat())
         b = self.behaviour(days)

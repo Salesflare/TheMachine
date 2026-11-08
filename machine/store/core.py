@@ -28,6 +28,7 @@ import learning_loop
 from machine.config import LOG
 from machine.sources.exclusions import calendar_title_excluded, email_subject_excluded, excluded_by_rules, routine_rules
 from machine.store import history as history_store
+from machine.store.profile import QUALITY_TABLES
 from machine import stamps
 from machine.text import QUOTED_HISTORY_KEPT, encoded, open_copy, seal_copy, trim_quoted_history
 from machine.timing import _REQUEST_TIMING
@@ -438,8 +439,9 @@ class StoreCore:
             graph.ensure(db)
             follow_ups.ensure(db)  # automated follow-ups on boards and projects (follow_ups.py): new tables only
             bounces.ensure(db)  # addresses that bounce (bounces.py): new tables only
-            # Change counters for what a status poll keeps between requests, after the tables (machine/stamps.py: graph.waiting, graph.slack_names)
-            stamps.watch(db, ('graph_nodes', 'person_roles', 'identity_names', 'slack_members'))
+            # Change counters for what a status poll keeps between requests, after the tables (machine/stamps.py: graph.waiting,
+            # graph.slack_names, and the to-dos' quality: profile.QUALITY_TABLES)
+            stamps.watch(db, ('graph_nodes', 'person_roles', 'identity_names', 'slack_members', *QUALITY_TABLES))
             recurring.ensure(db)  # recurring to-dos (recurring.py): new tables only
             if 'project' not in {r[1] for r in db.execute('PRAGMA table_info(suggestions)')}:
                 db.execute('ALTER TABLE suggestions ADD COLUMN project TEXT')

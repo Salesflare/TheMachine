@@ -36,6 +36,7 @@ EXCEPTIONS = {
     'ai_tokens': None, 'ai_codes': None, 'push_subscriptions': None,  # tokens for the old address, without keys
     'moved_in': None,                                                # the history line
     'outbox': ('status', 'error', 'done_at'),                        # Telegram sends wait for the owner
+    'data_stamps': None,                                             # change counters for kept answers: the hold's changes count too
 }
 OLD = '2026-10-01T09:00:00+00:00'
 

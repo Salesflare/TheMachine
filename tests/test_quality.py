@@ -152,6 +152,26 @@ class HitRate(Base):
             self.assertEqual(self.store.quality_trend()['first'], '2026-10-12')
         self.assertIn('trend', self.store.quality_report())
 
+    def test_the_report_is_kept_between_polls_until_a_to_do_or_decision_changes(self):
+        """Every status poll sends the quality report: worked out once, then kept until a to-do, a decision, a send or a
+        rule changes (or the minute turns), each caller with its own copy."""
+        sid = self.card('a', 'gmail.message', 'accept')
+        at = a.dt.datetime.fromisoformat(a.now())
+        with patch_everywhere(a, 'now', return_value=at.isoformat()), \
+                patch.object(self.store, '_quality_rows', wraps=self.store._quality_rows) as read:
+            first = self.store.quality_report()
+            first['trend']['daily'].clear()  # a caller's change stays its own
+            self.assertEqual(self.store.quality_report(), {**first, 'trend': self.store.quality_report()['trend']})
+            self.assertEqual(len(self.store.quality_report()['trend']['daily']), 14)
+            self.assertEqual(read.call_count, 3)  # this period, the one before, the trend: once
+            self.assertEqual(first['worth_it'], 1)
+            self.store.decide(sid, 'reject', '', 'r1', 'dashboard')
+            with self.store.connect() as db:
+                db.execute("UPDATE suggestions SET status='rejected' WHERE id=?", (sid,))
+            self.assertEqual((self.store.quality_report()['dismissed'], read.call_count), (1, 6))  # read again
+        with patch_everywhere(a, 'now', return_value=(at + a.dt.timedelta(minutes=1)).isoformat()):
+            self.assertEqual(self.store.quality_report()['dismissed'], 1)  # the next minute: read again, same counts
+
 
 class CheckBeforeSaving(Base):
     def setUp(self):

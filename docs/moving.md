@@ -75,7 +75,8 @@ you pick; an export code alone never carries them. The whole archive is encrypte
 and file. Apart from the hold above (`action_jobs`, `deliveries`, `agent_jobs`, `activity_blocks`, `follow_up_pauses`,
 `notify_queue`, `ai_tokens`, `ai_codes`, `push_subscriptions`, `moved_in`, the Telegram `outbox`) they are the same.
 Also different by design: message text is opened in the export and sealed again with the new install's own key, and
-OpenClaw's sign-in tables keep the new install's own sign-ins.
+OpenClaw's sign-in tables keep the new install's own sign-ins, and `data_stamps` (change counters for answers kept
+between requests) counts the hold's own changes.
 
 `tests/test_export_complete.py` fails when the code creates a table, or writes to a place under the home folder,
 that the inventory doesn't name, so the export stays complete as The Machine grows.
