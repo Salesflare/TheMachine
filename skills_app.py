@@ -2,12 +2,31 @@
 
 The skill actions (Settings, Skills: install, import, share, decide; and from the agent, skill_propose and
 skill_import_report), the skills kept here, and the end of a Find my skills turn. SKILL_ACTIONS in assistant.py stays
-the reviewed list of the owner's skill actions. What still uses helpers defined in assistant.py (the Find my skills
-browser turn, skills_read, the notes prompt) stays there for now."""
+the reviewed list of the owner's skill actions. The Find my skills browser turn, skills_read and the notes prompt
+are here too."""
+import concurrent.futures
 import json
 import re
+import secrets
+import subprocess
+import sys
+import time
 
+import browser_login
+from machine.browser import browser_lease_script
+from machine.config import LOG
+from machine.prompts.profile import SKILLS_LEASE, SKILLS_PAGES, SKILLS_READ, SKILLS_SITES
+from machine.store.decisions import skill_update_after
+from machine.store.voices import sentences
 import skills as skills_module
+import skills
+from timeutil import now
+
+
+SKILL_NOTES_MIN = 5   # notes about one kind of task before they're offered as a skill
+
+
+SKILL_REGROW = 3      # after Not now, offered again only once this many more notes joined them
 
 
 class SkillsApp:
@@ -146,3 +165,211 @@ class SkillsApp:
         except (ValueError, KeyError, TypeError):
             pass
         self.skills_lease_release()
+
+    def skills_read(self, sites):
+        """The owner's own skills on claude.ai and chatgpt.com, read in the Machine's browser: a tab straight on each
+        site's skills page (SKILLS_PAGES), SKILLS_READ run there, the tab closed again. {'chatgpt': {'state': 'ok' |
+        'signed_out' | 'unavailable', 'skills': [...], 'where': <page>, 'detail': …}}. Read-only; nothing is clicked."""
+        try:
+            base = browser_login.endpoints(self.config)[0]
+        except (IndexError, TypeError):
+            return {s: {'state': 'unavailable', 'where': SKILLS_PAGES[s], 'detail': 'the Machine’s browser isn’t running'} for s in sites}
+        cdp = browser_login.browser_cdp
+
+        def read(site):
+            seen = {'where': SKILLS_PAGES[site]}
+            try:
+                tab = cdp.open_tab(base, SKILLS_PAGES[site])
+            except (cdp.CdpError, OSError):
+                return {**seen, 'state': 'unavailable', 'detail': 'the Machine’s browser didn’t open it'}
+            try:
+                for _ in range(25):  # up to ~25 seconds for the page to load its own origin
+                    time.sleep(1)
+                    try:
+                        if cdp.evaluate(base, tab, "() => location.hostname + ' ' + document.readyState", timeout_ms=3000) == SKILLS_SITES[site] + ' complete':
+                            break
+                    except (cdp.CdpError, OSError):
+                        pass
+                got = cdp.evaluate(base, tab, SKILLS_READ[site], timeout_ms=120000)
+            except (cdp.CdpError, OSError):
+                return {**seen, 'state': 'unavailable', 'detail': 'the page didn’t answer'}
+            finally:
+                try:
+                    cdp.close_tab(base, tab)
+                except (cdp.CdpError, OSError):
+                    pass
+            if not isinstance(got, dict) or got.get('state') not in ('ok', 'signed_out', 'unavailable'):
+                return {**seen, 'state': 'unavailable', 'detail': 'the page didn’t answer'}
+            skills = [f for f in got.get('skills') or [] if isinstance(f, dict)][:60]
+            out = {**seen, 'state': got['state'], 'skills': skills}
+            if got['state'] == 'ok' and not skills:
+                out['detail'] = (f"{got.get('failed')} couldn’t be downloaded" if got.get('failed') else 'none you made or uploaded yourself')
+            elif got.get('detail'):
+                out['detail'] = str(got['detail'])[:120]
+            return out
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+            return dict(zip(sites, pool.map(read, sites)))
+
+    def skills_find_begin(self, run):
+        """Before the Find my skills turn: the service takes the browser lease, reads the owner's own skills from the
+        accounts asked for (skills_read) and adds them to the list. Returns {'accounts': states, 'items': the list to
+        judge}, None when the browser is busy, or False when there is nothing to judge (the run is then done)."""
+        evidence = json.loads(run['evidence'])
+        try:
+            claimed = subprocess.run([sys.executable, str(browser_lease_script(self.config)), 'claim', '--owner', SKILLS_LEASE,
+                                      '--minutes', '20'], capture_output=True, timeout=60).returncode
+        except (OSError, subprocess.TimeoutExpired):
+            claimed = 0  # no lease helper: the read goes ahead as before
+        if claimed == 3:
+            return None
+        for site in evidence.get('sites') or ():  # the sign-in tab the dashboard opened has done its job
+            tab = self.__dict__.get('skills_signin_tabs', {}).pop(site, None)
+            if tab:
+                try:
+                    browser_login.browser_cdp.close_tab(browser_login.endpoints(self.config)[0], tab)
+                except (browser_login.browser_cdp.CdpError, OSError, IndexError):
+                    pass
+        sites = [s for s in evidence.get('sites') or SKILLS_SITES if s in SKILLS_SITES]
+        try:
+            read = self.skills_read(sites) if sites else {}
+        finally:  # the turn after this reads no page: the browser is free again
+            self.skills_lease_release()
+        accounts = {s: r.get('state', 'unavailable') for s, r in read.items()}
+        found = [{**f, 'from': s} for s, r in read.items() for f in r.get('skills') or []]
+        importer, token, items = self.skills.importer, evidence['token'], []
+        try:
+            importer.accounts(token, accounts, read)
+            importer.report(token, found, [], accounts)  # every account read is done now
+            scan = importer.scan(token)
+            items = importer.brief(i for i in scan['items'].values() if not evidence.get('more') or i['public']['from'] in sites)
+            LOG.info('skills read from accounts %s', ' '.join(f"{s}={r.get('state')}:{len(r.get('skills') or [])}" for s, r in read.items()))
+        except (KeyError, AttributeError, ValueError):
+            pass
+        if not any(not i['blocked'] and not i['here'] for i in items):  # nothing to judge: no turn
+            with self.store.connect() as db:
+                db.execute("UPDATE profile_runs SET status='ok',draft=?,finished_at=?,updated_at=? WHERE run_id=?",
+                           (json.dumps({'reported': False}), now(), now(), run['run_id']))
+            self.skills_find_done(run, 'ok')
+            return False
+        return {'accounts': accounts, 'items': items[:150]}
+
+    def apply_skill_clusters(self):
+        """The owner tapped Create skill (or Update <skill>, after its before and after): write the skill with the instructions, and move the notes into it.
+        They stay in the database, shown with the skill, and leave the list every task gets."""
+        if not getattr(self, 'skills', None):
+            return 0
+        with self.store.connect() as db:
+            rows = [dict(r) for r in db.execute("SELECT * FROM skill_clusters WHERE status='accepting'")]
+        for offered in rows:
+            try:
+                with self.store.connect() as db:
+                    db.execute('BEGIN IMMEDIATE')
+                    # Dashboard and the worker can both pick the same offer; reconcile under the write lock.
+                    c = db.execute("SELECT * FROM skill_clusters WHERE id=? AND status='accepting'", (offered['id'],)).fetchone()
+                    if not c:
+                        continue
+                    if c['target_id']:
+                        row = db.execute("SELECT * FROM skills WHERE id=? AND status IN ('on','off') AND origin!='shared'", (c['target_id'],)).fetchone()
+                        if not row:
+                            raise ValueError('That skill is gone')
+                        if c['reviewed_sha'] and row['sha'] != c['reviewed_sha'] or c['base_sha'] and row['sha'] != c['base_sha']:
+                            raise ValueError('That skill changed after its before and after were shown')
+                        after = c['body'] if c['base_sha'] else skill_update_after(row['body'], c['body'])
+                        skill_id = self.skills.save(row['id'], row['name'], row['description'], after, _db=db)
+                    else:
+                        skill_id = self.skills.save(None, c['name'], c['description'], c['body'], _db=db)
+                    ids = json.loads(c['fact_ids'])
+                    moved = db.execute('UPDATE facts SET removed_at=?,merged_into=? WHERE removed_at IS NULL AND id IN (' + ','.join('?' for _ in ids) + ')',
+                                       (now(), 'skill:' + skill_id, *ids)).rowcount
+                    db.execute("INSERT INTO rule_changes(at,kind,text,ref) VALUES(?,'condense',?,?)",
+                               (now(), f'Moved {moved} notes into the skill {c["target_name"] or c["name"]}', 'skill:' + skill_id))
+                    db.execute("UPDATE skill_clusters SET status='done',skill_id=?,updated_at=? WHERE id=?", (skill_id, now(), c['id']))
+            except (ValueError, OSError) as error:
+                LOG.error('skill from notes error=%s', type(error).__name__)
+                with self.store.connect() as db:
+                    db.execute("UPDATE skill_clusters SET status='failed',updated_at=? WHERE id=? AND status='accepting'", (now(), offered['id']))
+                    db.execute("UPDATE suggestions SET status='pending' WHERE id=? AND EXISTS(SELECT 1 FROM skill_clusters WHERE id=? AND status='failed')", (offered['suggestion_id'], offered['id']))
+        # Files are derived from the committed skills, never a reason to replay the database operation.
+        self.skills.sync()
+        return len(rows)
+
+    def propose_skill_from_notes(self, name, description, body, replaces, into=None, related=None, relation=None, new=False, base=None):
+        """Notes that are all about one kind of task become a suggestion card. It is checked against the skills here
+        first (the review judges that by meaning, from their names and descriptions): when one of the owner's own already
+        does the same job (into), the card offers Update <skill>: the review gets its instructions first (rewrite_needed)
+        and sends the whole skill rewritten as one with the notes merged in (base names that version); when one is related but a
+        separate job (related, e.g. the other direction of an exchange), the card says how in one line (relation) and
+        still offers the new skill. Nothing changes until they tap Create skill (or Update, after its before and after);
+        Not now isn't asked again until the same notes have grown by SKILL_REGROW."""
+        if not getattr(self, 'skills', None):
+            raise ValueError('Skills are not set up here')
+        name, description, body = skills.validate(name, description, body)
+        target, linked, relation = skills.check_against(self.skills_on_hand(), into, related, relation, new)
+        if target:  # the whole skill rewritten as one, on the version the review was shown
+            asked = skills.rewrite_needed(target, base)
+            if asked:
+                return asked
+            skills.check_rewrite(target['body'], body)
+        with self.store.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            notes = self.store.replaced_facts(db, replaces)
+            if not SKILL_NOTES_MIN <= len(notes) <= 20:
+                raise ValueError(f'A skill takes {SKILL_NOTES_MIN} to 20 current notes (replaces=[their ids])')
+            ids = {n['id'] for n in notes}
+            title = sentences(f'Update {target["name"]} with {len(notes)} notes' if target else f'Turn {len(notes)} notes into a skill: {name}', 90)
+            if target:
+                text = (sentences(description, 250) + f"\n\nThese {len(notes)} notes fit {target['name']}. Update shows the before and after first; "
+                        'only that skill changes. Not now keeps the notes as they are.')
+            else:
+                text = (sentences(description, 250) + (f"\n\nRelated to {linked['name']}: {relation}" if linked else '')
+                        + f"\n\nI can keep these {len(notes)} notes together in a skill. Read the full instructions and notes before deciding. "
+                        'Create skill makes it, on, under Skills. Not now keeps them as they are.')
+            fields = {'name': name, 'description': description, 'body': body, 'target_id': target and target['id'], 'target_name': target and target['name'],
+                      'base_sha': target and target['sha'],
+                      'related_id': linked and linked['id'], 'related_name': linked and linked['name'], 'relation': relation if linked else None}
+            for old in db.execute("SELECT c.id,c.fact_ids,c.status,c.checked,c.suggestion_id,c.base_sha,k.sha target_sha FROM skill_clusters c "
+                                  "LEFT JOIN skills k ON k.id=c.target_id WHERE c.status IN ('pending','accepting','declined')").fetchall():
+                before = set(json.loads(old['fact_ids']))
+                if len(ids & before) * 2 >= len(before):
+                    if old['status'] == 'pending' and (not old['checked'] or not old['base_sha'] and old['target_sha'] or old['base_sha'] and old['base_sha'] != old['target_sha']):
+                        # Offered before skills were checked first, as an addition, or on a version of the skill changed since:
+                        # the same card, brought up to date.
+                        db.execute('UPDATE skill_clusters SET fact_ids=?,' + ','.join(k + '=?' for k in fields) + ',checked=1,updated_at=? WHERE id=?',
+                                   (json.dumps(sorted(ids)), *fields.values(), now(), old['id']))
+                        db.execute("UPDATE suggestions SET title=?,body=? WHERE id=? AND status='pending'", (title, text[:700], old['suggestion_id']))
+                        db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL', (old['suggestion_id'],))
+                        return {'id': old['id'], 'suggestion_id': old['suggestion_id'], 'updated': True}
+                    if old['status'] != 'declined':
+                        return {'id': old['id'], 'duplicate': True}
+                    if len(ids) < len(before) + SKILL_REGROW:
+                        raise ValueError(f'The owner said Not now to these notes; suggest it again once {SKILL_REGROW} more have joined them')
+            cards = [n['suggestion_id'] for n in notes if n['suggestion_id']]
+            events = list(dict.fromkeys(i for r in db.execute('SELECT event_ids FROM suggestions WHERE id IN (' + ','.join('?' for _ in cards) + ')', cards)
+                                        for i in json.loads(r['event_ids'] or '[]')))[:20] if cards else []
+            if not events:
+                raise ValueError('These notes have no cards behind them to show as evidence')
+            cluster = 'sc_' + secrets.token_hex(6)
+            card = self.store.suggest('skill-notes:' + cluster, title, text[:700], events, _db=db)
+            db.execute('INSERT INTO skill_clusters(id,fact_ids,' + ','.join(fields) + ",suggestion_id,status,checked,created_at,updated_at) "
+                       'VALUES(?,?,' + ','.join('?' for _ in fields) + ",?,'pending',1,?,?)",
+                       (cluster, json.dumps(sorted(ids)), *fields.values(), card['id'], now(), now()))
+        return {'id': cluster, 'suggestion_id': card['id']}
+
+    def skills_from_notes_prompt(self):
+        """The condense pass's line on turning notes into a skill: the skills here first, by name and what each is for,
+        so the review judges by meaning whether one already does that job (update it) or sits next to it (related)."""
+        try:
+            on_hand = self.skills_on_hand()
+        except Exception:
+            on_hand = []
+        listed = '\n'.join(f"- {s['name']}: {s['description']}" + (" (a teammate's: can be related, never updated)" if s['origin'] == 'shared' else '')
+                           for s in on_hand)[:4000]
+        return (f"\nWhen {SKILL_NOTES_MIN} or more notes are all about one specific kind of task or scenario (not how the owner writes in general), "
+                "suggest moving them into a skill: remember_fact kind=skill, name, description=<when to use it, one sentence>, "
+                "text=<SKILL.md instructions that keep everything those notes say>, replaces=[their ids]. The owner decides on a card. "
+                + ("First check the skills below by what each is for, judging the meaning, not shared words. When one of the owner's own "
+                   "already does the same job, add skill=<its name>: you get its instructions back, then send the whole skill rewritten as "
+                   "one in text, with what the notes add merged into its own sections (no heading twice, no step said twice), and base=<what "
+                   "you got>; the card offers to update that skill. When one is related but a separate job (say the other direction of the "
+                   "same exchange), add related=<its name> and relation=<how they relate, one short line>: still a new skill. When none "
+                   "is, add new=true.\nSkills here:\n" + listed if on_hand else "They have no skills yet."))

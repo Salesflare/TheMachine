@@ -1,12 +1,24 @@
 """Settings, Notifications (App.action): what reaches the owner and when, a page saying it is in use, a test
 notification, and the phone's and browser's push subscriptions. Moved out of assistant.App's action as is. A mixin of
 assistant.App (APP_MIXINS)."""
+import datetime as dt
 import re
+import subprocess
 
+import clear_pace
 import i18n
-from machine.delivery.push import app_wake, push_send
+import locale_prefs
+from machine.app.recap import recap_escape, recap_meetings
+from machine.cards import NOT_FOR_OWNER_SQL
+from machine.config import LOG
+from machine.delivery.push import app_wake, cloud_target, push_reach, push_send, quick_web, waiting_count
+from machine.delivery.telegram import DeliveryNotSent, telegram_request
+from machine.model_usage import telegram_account, telegram_on
+from machine.store.promises import promise_text
 import notify
-from timeutil import now
+import security_levels
+import still_needed
+from timeutil import clock, in_hours, is_work_day, local_tz, now, WORK_HOURS
 
 
 class NotificationsApp:
@@ -82,3 +94,161 @@ class NotificationsApp:
                     ON CONFLICT(endpoint) DO UPDATE SET p256dh=excluded.p256dh,auth=excluded.auth''',
                        (endpoint, keys['p256dh'].rstrip('='), keys['auth'].rstrip('='), now()))
         return {'subscribed': True}
+
+    def digest(self, current=None):
+        """The morning digest as of `current` (notify.compose), or None when there is nothing to say."""
+        current = current or dt.datetime.fromisoformat(now())
+        local = current.astimezone(local_tz())
+        start = local.replace(hour=0, minute=0, second=0, microsecond=0)
+        end = start + dt.timedelta(days=1)
+        # Overnight: since the end of the last work day's hours (or a day back)
+        hour, minute = clock(WORK_HOURS['end'])
+        since = (local - dt.timedelta(days=1)).replace(hour=hour, minute=minute, second=0, microsecond=0)
+        if since > local:
+            since -= dt.timedelta(days=1)
+        utc = lambda t: t.astimezone(dt.timezone.utc).isoformat()
+        with self.store.connect() as db:
+            meetings = recap_meetings(db, utc(start), utc(end), {})
+            meetings = [m for m in meetings if m['at'] >= utc(local)] or []
+            open_states = "('pending','accepted','prepared','instructions')"
+            due = [dict(r) for r in db.execute(
+                f"SELECT id,title FROM suggestions WHERE (status IN {open_states} AND due=? AND NOT {NOT_FOR_OWNER_SQL}) OR (status='snoozed' AND snoozed_until>=? AND snoozed_until<?) "
+                "ORDER BY created_at LIMIT 20", (local.date().isoformat(), utc(local), utc(end)))]
+            overnight = [dict(r) for r in db.execute(
+                "SELECT id,title FROM suggestions WHERE status='pending' AND handled_hint IS NULL AND created_at>=? AND (due IS NULL OR due!=?) "
+                "AND (deliver_after IS NULL OR deliver_after<=?) ORDER BY urgent DESC,created_at DESC LIMIT 20", (utc(since), local.date().isoformat(), utc(current)))]
+            # What waits for the owner (waiting_count, the app's badge), in the dashboard's order (notify.open_order): the
+            # ready ones (prepared, the dashboard's Ready) lead the digest; the rest is its "Waiting for you", without
+            # what an earlier part already listed (notify.compose), so a pile still gets one
+            later = still_needed.folded(db, utc(current), local_tz())  # a Still needed? left unanswered waits in Later
+            top = notify.open_order([dict(r) for r in db.execute(
+                "SELECT id,title,status,due,due_at,created_at,event_ids FROM suggestions WHERE status IN ('pending','prepared') AND NOT " + NOT_FOR_OWNER_SQL + " "
+                "AND (deliver_after IS NULL OR deliver_after<=?) LIMIT 2000", (utc(current),)) if r['id'] not in later], local)
+            ready = [r for r in top if r['status'] == 'prepared']
+            total = waiting_count(db)
+            pace = clear_pace.line(total, clear_pace.seconds(db, current))  # "4 ready · about 2 min", as To-dos says it
+            show = security_levels.notify_text(db, False)
+        promised = notify.promised_today(self.store.promises(), top, local.date().isoformat(), lambda p: promise_text(p)[0])
+        root = 'https://' + self.config['dashboard_host'] + self.config.get('dashboard_path', '/') if self.config.get('dashboard_host') else ''
+        when = lambda iso: locale_prefs.clock_text(dt.datetime.fromisoformat(iso).astimezone(local_tz()))
+        return notify.compose(meetings, due, overnight, root, show, when, None, total, top, ready, promised, pace)
+
+    def digest_step(self, current=None, push=None, telegram_send=None, mail=None):
+        """Send the morning digest once on a work day, at its time, on the channels the owner picked."""
+        current = current or dt.datetime.fromisoformat(now())
+        local = current.astimezone(local_tz())
+        day = local.date().isoformat()
+        with self.store.connect() as db:
+            notify.ensure(db)
+            prefs = notify.prefs(db)['digest']
+            if not any(prefs.values()):
+                return None
+            sent = notify.digest_sent(db, day)
+        if not notify.digest_due(local, self.config.get('digest_at', '08:30'), WORK_HOURS['start'], WORK_HOURS['end'], is_work_day, sent):
+            return None
+        with self.store.connect() as db:
+            if not notify.digest_claim(db, day, now()):
+                return None
+        digest = self.digest(current)
+        went = []
+        if digest:
+            if prefs.get('push'):
+                subscriptions, phones = push_reach(self.store, self.config)
+                if subscriptions or phones:
+                    payload = {**digest['push'], **({'silent': True} if notify.active() else {}),  # at the dashboard: no buzz
+                               '_line': digest['push']['title'], '_body': digest['push']['body'],  # the mobile app asks for these
+                               'actions': quick_web('view')}
+                    if push_send(self.store, self.config, subscriptions, payload, 'digest', push, wake='digest'):
+                        went.append('push')
+            if prefs.get('telegram') and telegram_on(self.config):
+                try:
+                    (telegram_send or (lambda text: telegram_request(self.config, {'action': 'send', 'channel': 'telegram', 'accountId': telegram_account(self.config),
+                                                                                  'target': self.config.get('telegram_owner'), 'message': recap_escape(text),
+                                                                                  'presentation': {'blocks': [{'type': 'buttons', 'buttons': []}]}})))(digest['text'])
+                    went.append('telegram')
+                except (DeliveryNotSent, subprocess.TimeoutExpired, ValueError) as error:
+                    LOG.warning('digest telegram error=%s', type(error).__name__)
+            target = prefs.get('email') and self.notify_mail_target()
+            if prefs.get('email') and not target:
+                LOG.info('digest email skipped reason=not_paired')
+            if target and (mail or notify.mail)(target[0], target[1], digest['subject'], digest['text']):
+                went.append('email')
+        with self.store.connect() as db:
+            notify.digest_done(db, day, 'sent' if went else 'empty' if not digest else 'not_sent', went)
+        LOG.info('digest day=%s channels=%s', day, ','.join(went) or '-')
+        return went
+
+    def notify_step(self, current=None, push=None, mail=None):
+        """Held notifications (notify.take_due): a push a minute after the owner left the dashboard, and one email for
+        what is still unseen and waiting a while later. Within work hours only; a held push outside them is dropped."""
+        local = (current or dt.datetime.now(dt.timezone.utc)).astimezone(local_tz())
+        with self.store.connect() as db:
+            notify.ensure(db)
+            if not in_hours(local):
+                notify.drop_pushes(db)
+                return None
+            pushes, lines = notify.take_due(db, self.notify_open)
+            handoffs = notify.take_handoffs(db)
+        subscriptions, phones = push_reach(self.store, self.config) if pushes else ([], 0)
+        went = []
+        if pushes and not subscriptions and not phones:
+            with self.store.connect() as db:
+                notify.delivered(db, pushes)  # nowhere to push to: dropped, not kept to go off later
+            pushes = []
+        for item in pushes:
+            if push_send(self.store, self.config, subscriptions, item['payload'], 'held', push, kind=item['kind'], held=True):
+                with self.store.connect() as db:
+                    notify.delivered(db, [item])
+                went.append('push')
+        target = (lines or handoffs) and self.notify_mail_target()
+        if target:
+            root = 'https://' + self.config['dashboard_host'] + self.config.get('dashboard_path', '/') if self.config.get('dashboard_host') else ''
+            for item in handoffs:  # each its own email, once
+                message = notify.handoff_mail(item, root)
+                if (mail(*target, message['subject'], message['text']) if mail else notify.mail(*target, message['subject'], message['text'], delivery=item['delivery'])):
+                    with self.store.connect() as db:
+                        notify.delivered(db, [item])
+                    went.append('email')
+            message = notify.waiting_mail(lines, root) if lines else None
+            if message and (mail(*target, message['subject'], message['text']) if mail else notify.mail(*target, message['subject'], message['text'], delivery=lines[0]['batch'])):
+                with self.store.connect() as db:
+                    notify.delivered(db, lines)
+                    notify.mailed(db)
+                went.append('email')
+        if went:
+            LOG.info('notify held channels=%s', ','.join(went))
+        return went
+
+    def app_push_action(self, name, args):
+        """The mobile app's phones (app_push_register, app_push_unregister): the control plane keeps the push token and
+        sends the wakeups (app_wake); this Machine keeps the phone's id, platform and name for Settings, never the token."""
+        if name == 'app_push_unregister':
+            device = str(args.get('id') or '')
+            if not notify.APP_ID.fullmatch(device):
+                raise ValueError('Invalid phone')
+            target = cloud_target(self.config)
+            answer = notify.app_push(*target, {'action': 'unregister', 'id': device}) if target else {'missing': True}
+            if not answer:
+                raise ValueError('Couldn’t remove this phone. Try again.')
+            with self.store.connect() as db:
+                notify.app_device_remove(db, [device])
+            return {'removed': True}
+        platform, token = args.get('platform'), args.get('token')
+        if platform not in ('fcm', 'apns') or not isinstance(token, str) or not re.fullmatch(r'[A-Za-z0-9_:.-]{16,4096}', token):
+            raise ValueError('Invalid phone')
+        label = ' '.join(re.sub(r'[\x00-\x1f\x7f<>]', ' ', str(args.get('label') or '')).split())[:60]
+        label = label or ('iPhone' if platform == 'apns' else 'Android')
+        target = cloud_target(self.config)
+        if not target:  # self-hosted off The Machine Network: the relay doesn't know it. The app works without them.
+            return {'registered': False, 'reason': 'network'}
+        # fetch: the app shows the notification itself, with what it asks this Machine for (GET /api/notice): the Android
+        # app, and the iPhone's Notification Service extension
+        answer = notify.app_push(*target, {'action': 'register', 'platform': platform, 'token': token, 'label': label,
+                                           'sandbox': args.get('sandbox') is True, 'fetch': args.get('fetch') is True})
+        device = str((answer or {}).get('id') or '')
+        if not notify.APP_ID.fullmatch(device):
+            raise ValueError('Couldn’t turn on notifications for this phone. Try again.')
+        with self.store.connect() as db:
+            notify.app_device_add(db, device, platform, label, now())
+        LOG.info('app push registered platform=%s', platform)
+        return {'registered': True, 'id': device, 'platform': platform, 'label': label}
