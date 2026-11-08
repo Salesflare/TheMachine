@@ -3756,7 +3756,12 @@ def own_domain(db, key, colleagues=None):
 
 def colleagues(db):
     """(organizations, identifiers) of the owner's colleagues in the graph: own_domain for many organizations at once,
-    one read where each own_domain reads all people (a graph with history has thousands)."""
+    one read where each own_domain reads all people (a graph with history has thousands). Kept until the graph's people
+    change: each Graph load read them all again to tell projects' organizations (24 ms of the Projects board)."""
+    return KEPT.get('colleagues', stamps.stamp(db, ('graph_nodes',)), lambda: _colleagues(db))
+
+
+def _colleagues(db):
     orgs, identifiers = set(), []
     for r in db.execute("SELECT json_extract(info,'$.org'),json_extract(info,'$.identifiers') FROM graph_nodes WHERE kind='person' "
                         "AND json_extract(info,'$.colleague') IS 1"):
@@ -3766,7 +3771,7 @@ def colleagues(db):
         except ValueError:
             found = []
         identifiers += [i for i in found if isinstance(i, str)] if isinstance(found, list) else []
-    return orgs, identifiers
+    return frozenset(orgs), tuple(identifiers)  # shared between requests: never changed in place
 
 
 def personal_mail(db, domain):
