@@ -18,7 +18,7 @@ function reviewEditor(s){const d=reviewing.get(s.id);if(!d||closed(s))return'';c
   :html`<div class="review-what"><p class="review-label">${t('This to-do')}</p><div class="review-text" translate="no">${d.body}</div></div>`;
  return html`<form class="review-form agent-sheet" data-card="${id}"><div class="agent-sheet-head"><span class="agent-sheet-title">${t('Ask to review')}</span>${pick}</div>${what}
  ${chips?html`<div class="agent-gets" aria-label="${t('Goes along')}">${chips}</div>`:''}
- <textarea name="note" class="agent-note" rows="1" maxlength="300" placeholder="${t('Add a note for {}',name||t('them'))}" aria-label="${t('Add a note for {}',name||t('them'))}">${d.note||''}</textarea>
+ <textarea name="note" class="agent-note" spellcheck="true" autocapitalize="sentences" rows="1" maxlength="300" placeholder="${t('Add a note for {}',name||t('them'))}" aria-label="${t('Add a note for {}',name||t('them'))}">${d.note||''}</textarea>
  <p class="agent-what">${t('Only this to-do goes. {} can suggest changes; nothing is sent until you send it.',name||t('They'))}</p>
  <div class="agent-sheet-foot"><button type="button" class="ghost" data-review-cancel="${id}">${t('Cancel')}</button><button class="primary">${t('Ask')}</button></div></form>`}
 const reviewWords=w=>html`${w.map(([k,x])=>k==='='?x:k==='-'?html`<del>${x}</del>`:html`<ins>${x}</ins>`)}`;
@@ -41,8 +41,8 @@ function reviewIn(s){const r=s.review_in;if(!r||!r.open||closed(s))return'';cons
  const d=reviewDrafts.get(s.id)||{},subject=d.subject??r.subject??'',body=d.body??r.body,changed=(r.what==='draft'&&subject!==(r.subject||''))||body!==r.body;
  return html`<form class="review-in agent-sheet" data-card="${s.id}"><div class="agent-sheet-head"><span class="agent-sheet-title">${r.what==='draft'?t('{}’s draft',who):t('{}’s to-do',who)}</span>${changed?html`<span class="chip review-edited">${t('Edited')}</span>`:''}</div>
  ${r.what==='draft'?html`<input name="subject" class="review-subject-in" maxlength="300" value="${subject}" aria-label="${t('Subject')}" translate="no">`:''}
- <textarea name="body" class="review-body-in" rows="6" maxlength="8000" aria-label="${t('Edit the text')}" translate="no">${body}</textarea>
- <textarea name="comment" class="agent-note" rows="1" maxlength="1000" placeholder="${t('Add a comment for {}',who)}" aria-label="${t('Add a comment for {}',who)}">${d.comment||''}</textarea>
+ <textarea name="body" class="review-body-in" spellcheck="true" autocapitalize="sentences" rows="6" maxlength="8000" aria-label="${t('Edit the text')}" translate="no">${body}</textarea>
+ <textarea name="comment" class="agent-note" spellcheck="true" autocapitalize="sentences" rows="1" maxlength="1000" placeholder="${t('Add a comment for {}',who)}" aria-label="${t('Add a comment for {}',who)}">${d.comment||''}</textarea>
  <p class="agent-what">${t('Edits go back to {} as suggestions. Nothing is sent from here.',who)}</p>
  <div class="agent-sheet-foot"><button type="button" class="quiet" data-review-reply="declined">${t('Decline')}</button>${changed?html`<button class="primary" data-review-reply="changes">${t('Send changes')}</button>`:html`<button type="button" class="ghost" data-review-reply="commented">${t('Send comment')}</button><button class="primary" data-review-reply="approved">${t('Approve')}</button>`}</div></form>`}
 const reviewBlock=s=>html`${reviewOwner(s)}${reviewIn(s)}`;
