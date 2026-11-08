@@ -54,6 +54,8 @@ from pathlib import Path
 MAGIC = b'\x00\xffMC1\x00'
 FILE_MAGIC = b'\x00\xffMF1\x00'  # a sealed file: an email attachment kept on disk (mail_attachments.py)
 NONCE, TAG = 16, 16
+# Opened values kept per key: up to 4 KB each (a body or a long draft is opened each time), 2048 of each kind
+KEEP_OPENED = (4096, 2048)
 KEY_NAME = 'message-content.key'
 KEYRING_NAME = 'message-content.keyring'  # the key is in the desktop's keyring (message_keyring.py)
 SEALED_KEY = 'mc1_sealed'
@@ -280,6 +282,9 @@ class Sealer:
         inbox = lambda name: hmac.new(key, name, hashlib.sha256).digest()  # what Node's crypto can do too (INBOX)
         self._inbox_enc, self._inbox_mac = inbox(b'mc1-inbox-seal'), inbox(b'mc1-inbox-mac')
         self._word = functools.lru_cache(maxsize=100_000)(self._word)  # a mailbox's words repeat a lot
+        # Each poll and page reads the same rows again: a small value opened once is kept (KEEP_OPENED)
+        self._open_kept = functools.lru_cache(maxsize=KEEP_OPENED[1])(self._open)
+        self._open_json_kept = functools.lru_cache(maxsize=KEEP_OPENED[1])(self._open_json)
 
     def _stream(self, nonce, size):
         return hashlib.shake_256(self._enc + nonce).digest(size)
@@ -299,6 +304,9 @@ class Sealer:
     def open(self, value):
         if not is_sealed(value):
             return value
+        return self._open_kept(value) if len(value) <= KEEP_OPENED[0] else self._open(value)
+
+    def _open(self, value):
         nonce, sealed, tag = value[len(MAGIC):len(MAGIC) + NONCE], value[len(MAGIC) + NONCE:-TAG], value[-TAG:]
         if len(nonce) != NONCE or not hmac.compare_digest(tag, self._tag(nonce, sealed)):
             raise SealError('A sealed message did not open: wrong key or a damaged database')
@@ -362,10 +370,17 @@ class Sealer:
         return json.dumps(kept, ensure_ascii=False, sort_keys=True, separators=(',', ':'))
 
     def open_json(self, text):
-        if not is_sealed_json(text):
+        if type(text) is str and len(text) <= 2 * KEEP_OPENED[0] and SEALED_KEY in text:
+            return self._open_json_kept(text)
+        return self._open_json(text)
+
+    def _open_json(self, text):
+        found = _envelope(text)
+        if not found:
             return text
-        value = json.loads(text)
-        hidden = json.loads(self.open(base64.b64decode(value.pop(SEALED_KEY))))
+        value, raw = found
+        del value[SEALED_KEY]
+        hidden = json.loads(self._open(raw))
         return json.dumps({**value, **hidden}, ensure_ascii=False, sort_keys=True, separators=(',', ':'))
 
     def open_any(self, value):
@@ -415,14 +430,21 @@ def open_inbox(sealer, value):
 
 
 def is_sealed_json(value):
-    if type(value) is not str or not value.lstrip().startswith('{') or SEALED_KEY not in value:
-        return False
+    return _envelope(value) is not None
+
+
+def _envelope(value):
+    """(the object, its sealed blob) for sealed JSON, else None. Parsed once for the check and the open alike: every
+    row read opens its JSON columns, and parsing and decoding each twice was a large part of a status poll."""
+    if type(value) is not str or SEALED_KEY not in value or not value.lstrip().startswith('{'):
+        return None
     try:
-        marker = json.loads(value).get(SEALED_KEY)
+        parsed = json.loads(value)
+        marker = parsed.get(SEALED_KEY)
         raw = base64.b64decode(marker, validate=True) if isinstance(marker, str) else b''
     except (ValueError, AttributeError):
-        return False
-    return is_sealed(raw)
+        return None
+    return (parsed, raw) if is_sealed(raw) else None
 
 
 def match(db, words, joiner):
