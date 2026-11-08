@@ -38,6 +38,7 @@
 @media(max-width:1023px){.setup-card.quiet{margin-top:var(--sp-2)}}
 /* No mail yet: the card is one first step, "Connect your mail…", with Gmail and Outlook (setupMailFirst) */
 .setup-card.mail-first{padding:12px 14px}
+#inbox.mail-first #suggestions .all-clear{display:none}  /* nothing to check without mail: the card alone says what to do */
 .setup-card.mail-first .setup-head strong{white-space:normal}
 .setup-card .setup-mail{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 2px}
 .setup-card .setup-mail button{min-width:104px;height:40px;min-height:0;padding-block:0}

@@ -60,6 +60,8 @@ try{
   assert.deepEqual(c,{shown:true,first:true,head:'Connect your mail to get your first to-dos.',buttons:[['Gmail','gmail'],['Outlook','outlook']],close:false,rows:[]});
   assert.ok(await page.evaluate(()=>{const n=document.querySelector('#setup-card').getBoundingClientRect(),e=document.querySelector('#suggestions').getBoundingClientRect();
    return n.bottom<=e.top+1&&document.documentElement.scrollWidth<=innerWidth&&n.left>=0&&n.right<=innerWidth}),'above the list, fits the screen');
+  // nothing to check without mail: no robot, no line, no Check now under the card
+  assert.equal(await page.evaluate(()=>[...document.querySelectorAll('#suggestions .all-clear,#suggestions [data-check-now]')].some(e=>e.getClientRects().length>0)),false,'the empty state hides');
   await shot(page,`mail-first-${width}-${scheme}`);
   if(width===1440&&scheme==='light'){
    // Gmail: straight to Google's sign-in; not paired, so pairing first with the other way open beside it
@@ -90,7 +92,8 @@ try{
 
  // A chat already brings messages in (WhatsApp here): it reads something, so no first step that can't be closed.
  {reset({connectors:[{id:'wa',service:'whatsapp',display_name:'WhatsApp',status:'ok'}]});const {context,page}=await open();
-  assert.equal((await card(page)).first,false);await context.close()}
+  assert.equal((await card(page)).first,false);
+  assert.equal(await page.evaluate(()=>document.querySelector('#inbox').classList.contains('mail-first')),false,'the empty state is back');await context.close()}
 
  // A hosted Machine still on its setup page: the Needs you line says it, not a second card.
  {reset({manage:'https://app.example.test/setup',reviewsOn:false,live:{runs:[],first_look:{why:'sources'}}});const {context,page}=await open();

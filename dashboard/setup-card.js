@@ -68,7 +68,8 @@ function setupQRHTML(){const p=state?.phone_app_store||{},rows=v=>Array.isArray(
 // (connectOpen: Sign in with Google or Microsoft, or pairing first on a self-hosted Machine that isn't paired). No ×: it
 // stays until a mailbox is connected, unless a chat already brings messages in (SETUP_CHATS: then it reads something).
 // Not in the site's demo or a frame, and not while a hosted Machine's Needs you line already says it (setupStep: its
-// setup page). Its calendar comes next, as the first row of the card above.
+// setup page). While it shows, the empty state under it (the robot, its line and Check now) hides: with no mail there is
+// nothing to check, and the card says what to do. Its calendar comes next, as the first row of the card above.
 const SETUP_MAIL=['gmail','outlook'],SETUP_CHATS=['slack','whatsapp','telegram','teams'];
 const setupMailFirst=()=>{const s=state?.setup_card;if(!s||s.demo||DEV.framed||!state.suggestions)return false;
  if((state.connectors||[]).some(c=>SETUP_MAIL.includes(c.service)||SETUP_CHATS.includes(c.service)))return false;
@@ -86,7 +87,7 @@ function setupBox(){let el=$('#setup-card');if(el)return el;
  const nudge=$('#device-nudge');if(nudge)nudge.after(el);else $('#inbox').prepend(el);
  el.addEventListener('click',setupClick);return el}
 function setupRender(){const s=state?.setup_card,el=setupBox(),first=setupMailFirst();
- el.classList.toggle('mail-first',first);el.setAttribute('aria-label',first?t('Connect mail'):'Get more out of The Machine');
+ el.classList.toggle('mail-first',first);$('#inbox')?.classList.toggle('mail-first',first);  // its empty state hides (setup-card.css)el.setAttribute('aria-label',first?t('Connect mail'):'Get more out of The Machine');
  if(first){const h=String(setupMailHTML());if(el.dataset.html!==h){setHTML(el,raw(h));el.dataset.html=h}el.hidden=false;el.classList.remove('quiet');setupSettings(false);return}
  const off=!s||settingUp()||(DEV.framed&&!s.demo);
  // Only what is left: a done step leaves the card (its label says what to do, so a ticked "Connect WhatsApp" read as not done)
