@@ -75,8 +75,10 @@ class DashboardParts(unittest.TestCase):
         included = dashboard_parts.includes((ROOT / dashboard_parts.PAGE).read_text(encoding='utf-8'))
         self.assertEqual(sorted(set(included)), sorted(included), 'a part is included twice')
         folder = ROOT / 'dashboard'
-        parts = sorted(p.name for p in folder.iterdir()) if folder.is_dir() else []
+        # a folder (dashboard/logos: files the page loads when shown) isn't a part
+        parts = sorted(p.name for p in folder.iterdir() if p.is_file()) if folder.is_dir() else []
         self.assertEqual(parts, sorted(included), 'every file in dashboard/ is a part dashboard.html includes, and back')
+        self.assertEqual(sorted(p.name for p in folder.iterdir() if p.is_dir()), ['logos'])
         self.assertEqual(dashboard_parts.files(ROOT)[1:], [folder / name for name in included])
 
     def test_the_service_serves_the_assembled_page(self):
