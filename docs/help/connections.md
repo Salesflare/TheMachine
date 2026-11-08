@@ -30,7 +30,9 @@ On a hosted Machine, Google, Microsoft, Microsoft OneDrive, Zoom, Stripe and Int
 
 ## Work or personal
 
-Each source counts as work (for a company you name) or personal. Change it under **Details**. **Guessed** means your Machine picked it from the address. Work to-dos wait for your work days. Google and Microsoft mail and calendars take it from their address when it's clear: a mail provider like Gmail or Outlook.com is Personal, your team's domain is Work. Otherwise it asks once, right after you sign in. **Change** sets it yourself. If its mail later says the other, the **Get more out of The Machine** to-do asks once whether to change it.
+Each source counts as work (for a company you name) or personal. Change it under **Details**. **Guessed** means your Machine picked it from the address. Work to-dos wait for your work days.
+
+Google and Microsoft mail and calendars take it from their address when it's clear: a mail provider like Gmail or Outlook.com is Personal, your team's domain is Work. Otherwise it asks once, right after you sign in. **Change** sets it yourself. If its mail later says the other, the **Get more out of The Machine** to-do asks once whether to change it.
 
 ## Abilities
 

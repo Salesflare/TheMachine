@@ -26,7 +26,9 @@ La lista está agrupada (**Correo y calendario**, **Chat**, **Reuniones**, **Doc
 
 ## Trabajo o personal
 
-Cada fuente cuenta como trabajo (para una empresa que indicas) o como personal. Cámbialo en **Detalles**. Solo dice **Adivinado** cuando tu Machine lo eligió a partir de la dirección; en cuanto eliges tú, la elección es tuya. Las tareas de trabajo esperan a tus días laborables. El correo y los calendarios de Google y Microsoft siguen su dirección cuando está clara: un proveedor como Gmail u Outlook.com es Personal, el dominio de tu equipo es Trabajo. Si no, pregunta una vez, justo después de iniciar sesión. **Cambiar** te deja elegirlo. Si luego el correo dice lo contrario, la tarea **Saca más partido a The Machine** pregunta una vez si quieres cambiarlo.
+Cada fuente cuenta como trabajo (para una empresa que indicas) o como personal. Cámbialo en **Detalles**. Solo dice **Adivinado** cuando tu Machine lo eligió a partir de la dirección; en cuanto eliges tú, la elección es tuya. Las tareas de trabajo esperan a tus días laborables.
+
+El correo y los calendarios de Google y Microsoft siguen su dirección cuando está clara: un proveedor como Gmail u Outlook.com es Personal, el dominio de tu equipo es Trabajo. Si no, pregunta una vez, justo después de iniciar sesión. **Cambiar** te deja elegirlo. Si luego el correo dice lo contrario, la tarea **Saca más partido a The Machine** pregunta una vez si quieres cambiarlo.
 
 ## Capacidades
 
