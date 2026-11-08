@@ -61,8 +61,9 @@ let connectResumed=false,connectPicking=false;
 async function connectResume(){if(connectPicking)return false;try{const r=await connectPost('connect_running');if(!r?.session||connectRun)return false;
  connectRun=r;connectSignin=null;connectForm=null;connectGbrain=null;$('#connect-add').dataset.sig='';connectPoll();return true}catch{return false}}
 async function connectAdd(force){if(connectRun)return;if(!force&&connectList&&Date.now()-connectListAt<60000)return;connectListAt=Date.now();
+ const n=++connectAddSeq;  // before the wait: a later call (a forced one from a sign-in's way back) wins over this one
  if(await connectResume()){renderConnectRun();return}
- const n=++connectAddSeq;
+ if(n!==connectAddSeq)return;
  const load=connectPost('connect_sources');connectAddLast=load.catch(()=>{});
  try{const list=await load;if(n!==connectAddSeq)return;connectList=list}catch(e){if(n!==connectAddSeq)return;errCaught(e);setHTML($('#connect-add'),html`<p class="error">${e.message}</p>`);return}renderConnectAdd()}
 // once the latest load has drawn (connectOpen)
