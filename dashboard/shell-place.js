@@ -42,9 +42,13 @@ function placeKeep(){const m=place.mark;if(!m||m.y<1||Date.now()<place.glide)ret
 // clamp for a list that shrank and hold the height again, the page jumping up and back every few seconds.
 function placeLetGo(){clearTimeout(place.hold);place.hold=setTimeout(()=>{document.body.style.minHeight='';placeNote()},Math.max(0,Math.min(1500,place.holdEnd-Date.now())))}
 let placeQueued=false;
-addEventListener('scroll',()=>{if(placeQueued)return;placeQueued=true;requestAnimationFrame(()=>{placeQueued=false;placeNote()})},{passive:true});
+addEventListener('scroll',()=>{if(placeQueued)return;placeQueued=true;requestAnimationFrame(()=>{placeQueued=false;if(!placeDue)placeNote()})},{passive:true});
 addEventListener('resize',()=>requestAnimationFrame(placeNote));
-new MutationObserver(rows=>{if(rows.some(r=>!(r.target===document.body&&r.attributeName==='style'))){placeKeep();if(document.body.style.minHeight)placeLetGo()}}).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['hidden','class','open','style','src']});
+// After a change the place is put back once, in the frame that paints it (before its paint): measuring after each
+// change instead laid the page out again and again within one click (a redraw changes the page in several steps).
+let placeDue=false;
+function placeSoon(){if(placeDue)return;placeDue=true;requestAnimationFrame(()=>{placeDue=false;placeKeep();if(document.body.style.minHeight)placeLetGo()})}
+new MutationObserver(rows=>{if(rows.some(r=>!(r.target===document.body&&r.attributeName==='style')))placeSoon()}).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['hidden','class','open','style','src']});
 document.addEventListener('load',e=>{if(e.target.tagName==='IMG')placeKeep()},true);
 document.fonts?.addEventListener?.('loadingdone',()=>placeKeep());
 // A finger on the glass or a page still gliding: a background refresh waits for it to settle

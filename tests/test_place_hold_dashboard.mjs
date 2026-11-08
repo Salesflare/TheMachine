@@ -55,6 +55,12 @@ try{
  assert.deepEqual(after.holds,[],'a blink or a refresh after the hold never holds the height again');
  assert.equal(Math.round(after.y),Math.round(settled.y),'the settled page stays where it is');
  assert.ok(after.shifts<0.001,`nothing on screen moves (CLS ${after.shifts})`);
+ // A change made in several steps is put back once, in the frame that paints it: measuring after each step laid the
+ // whole page out again each time, which slowed every click that redraws
+ const keeps=await page.evaluate(async()=>{let n=0;const f=placeKeep;placeKeep=(...a)=>{n++;return f(...a)};
+  const box=document.querySelector('#people-view');for(let i=0;i<5;i++){box.append(document.createElement('i'));await Promise.resolve()}
+  await new Promise(r=>requestAnimationFrame(()=>setTimeout(r)));placeKeep=f;return n});
+ assert.ok(keeps>=1&&keeps<=2,'put back once per frame, not after each of the 5 steps: '+keeps);
  await context.close();
  assert.deepEqual(errors,[]);
  console.log('place hold dashboard ok');
