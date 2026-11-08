@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
+import {createHash} from 'node:crypto';
 import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
@@ -17,13 +18,18 @@ const CSRF='c'.repeat(64),S1='a1'.repeat(16),S2='b2'.repeat(16),now=new Date().t
 let scope=S1,mode='ok',cards=null,holdStatus=null,ver='v1',holdPage=null,pageDown=false;
 const card=(n,title)=>({id:String(n).repeat(16),title,body:'Robin asked for the numbers.',status:'pending',scope:'work',created_at:now,event_ids:[n]});
 const full=[card(1,'Reply to Robin about the plan'),card(2,'Book the venue')];
-const page=()=>raw.replace('__CSRF__','').replaceAll('__UI_VERSION__',ver).replace('__BASE__','/').replace('__CACHE_SCOPE__',scope);
+// Served as the Machine serves it (machine/web/serving.py dashboard_script): its main script a file of its own, named by
+// its contents and kept a year, which the app's copy keeps too
+const cut=raw.lastIndexOf('<script>\n'),script=raw.slice(cut+9,raw.lastIndexOf('</script></html>'));
+const scriptName='app-'+createHash('sha256').update(script).digest('hex').slice(0,16)+'.js';
+const page=()=>(raw.slice(0,cut)+'<script src="'+scriptName+'"></script></html>\n').replace('__CSRF__','').replaceAll('__UI_VERSION__',ver).replace('__BASE__','/').replace('__CACHE_SCOPE__',scope);
 const status=()=>({suggestions:cards??full,promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},
  connectors:[],fleet:{on:false},ui_version:ver,csrf:CSRF,agents_settings:{session_token:'tok-never-kept',device:'Desk'}});
-const hits={page:0,notModified:0,status:0,session:0},posts=[];let graphDown=false;
+const hits={page:0,notModified:0,status:0,session:0,script:0},posts=[];let graphDown=false;
 const server=createServer(async(req,res)=>{let body='';for await(const c of req)body+=c;const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');res.setHeader('Cache-Control','no-store');
  if(url.pathname==='/'){if(holdPage)await holdPage;if(pageDown){req.socket.destroy();return}const html=page(),etag='"'+html.length+scope+ver+'"';if(req.headers['if-none-match']===etag){hits.notModified++;res.writeHead(304,{ETag:etag});res.end();return}
   hits.page++;res.setHeader('Content-Type','text/html');res.setHeader('ETag',etag);res.end(html);return}
+ if(url.pathname==='/'+scriptName){if(pageDown){req.socket.destroy();return}hits.script++;res.setHeader('Content-Type','text/javascript');res.setHeader('Cache-Control','private, max-age=31536000, immutable');res.end(script);return}
  if(url.pathname==='/sw.js'){res.setHeader('Content-Type','text/javascript');res.end(sw);return}
  if(url.pathname==='/bye'){res.setHeader('Content-Type','text/html');res.end('<p>Signed out</p>');return}
  if(url.pathname==='/_machine/logout'){posts.push('logout');res.writeHead(303,{Location:'/bye'});res.end();return}
@@ -96,6 +102,8 @@ try{
  await until(tab,()=>!!navigator.serviceWorker.controller,null,'the service worker controls the page');
  let shell;for(const end=Date.now()+30000;!(shell=await shellCopy(tab))&&Date.now()<end;)await new Promise(r=>setTimeout(r,100));
  assert.ok(shell,'the page is kept');assert.ok(!shell.includes(CSRF),'the kept page has no CSRF token');assert.ok(shell.includes("const csrf=''"));
+ assert.ok(shell.endsWith('<script src="'+scriptName+'"></script></html>\n'),'the page names its script');
+ assert.ok(await tab.evaluate(async n=>!!await (await caches.open('tm-shell-2')).match(location.origin+'/'+n),scriptName),'the script is kept with the page');
 
  // 3. The Machine can't be reached: the app still opens, from the device, with the cards and when they were read
  mode='down';const pages=hits.page;await tab.reload();
@@ -133,7 +141,9 @@ try{
  await until(tab,()=>typeof UI_VERSION!=='undefined'&&UI_VERSION==='v3',null,'the copy loads the new release by itself');
  await tab.locator('#suggestions article[id]').first().waitFor();
  // The Machine can't be reached at all (no page): the copy opens
- pageDown=true;await tab.reload();assert.equal(await tab.evaluate(()=>UI_VERSION),'v3','offline: the copy');pageDown=false;
+ pageDown=true;const scripts=hits.script;await tab.reload();assert.equal(await tab.evaluate(()=>UI_VERSION),'v3','offline: the copy');
+ await tab.locator('#suggestions article[id]').first().waitFor();assert.equal(await tab.evaluate(()=>typeof render),'function','its script came from the device');
+ assert.equal(hits.script,scripts);pageDown=false;
  ver='v1';await tab.reload();await tab.locator('#suggestions article[id]').first().waitFor();
 
  // 5. The open card's chat and the Graph's lists open from the device too
