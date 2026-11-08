@@ -16,6 +16,7 @@ CONNECT_ACTIONS = (
     'connect_cancel',
     'connect_poll',
     'connect_remove',
+    'connect_running',
     'connect_scope',
     'connect_signin',
     'connect_signin_state',

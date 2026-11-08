@@ -332,7 +332,9 @@ WEB_NOTES = {
 }
 WEB_LEARN = {'telegram': 'telegram-chats'}  # its help article, behind Learn more: how it reads, and that it isn't the to-dos bot
 WEB_SECRETS = {'slack': 'Maton API key', 'salesflare': 'Salesflare API key'}
-WEB_ASKS = {'whatsapp': [['phone', 'Your WhatsApp phone number, with its country code (+32 470 12 34 56)']]}
+# Gmail and Calendar with your own Google app: the address goes in the form, so the setup never stops to ask it
+WEB_ASKS = {'whatsapp': [['phone', 'Your WhatsApp phone number, with its country code (+32 470 12 34 56)']],
+            'gmail': [['email', 'Google account']], 'calendar': [['email', 'Google account']]}
 TERMINAL_NOTE = re.compile(r'\b(?:openclaw|gh auth|assistant connect|wacli)\b|config\.json')  # setup-file notes stay in the terminal
 NO_SCOPE = {'android', 'gateway', 'docs'}  # a device or the server itself; Docs follows the address it reads for
 
@@ -1186,12 +1188,16 @@ def step_google(config, account, ui):
             if not typed:
                 raise SetupError('No keyring password', 'run assistant connect again with the password your gog keyring uses '
                                  '(or export GOG_KEYRING_PASSWORD first)')
+        elif getattr(ui, 'web', False):
+            typed = ''  # the dashboard: nothing in the keyring yet, so one is made without a question about it
         else:
             typed = ui.secret('Password for the gog file keyring that keeps the Google token (Enter generates one)')
         write_private(password, (typed or secrets.token_urlsafe(24)) + '\n')
-        ui.say('  keyring password saved to ' + str(password) + (' (generated)' if not typed else ''))
+        if not getattr(ui, 'web', False):  # a file path is for the terminal, never the dashboard's lines
+            ui.say('  keyring password saved to ' + str(password) + (' (generated)' if not typed else ''))
     if check(config, account) is None:
-        ui.say(f'  {email} is already authorized')
+        if not getattr(ui, 'web', False):  # the dashboard says what got connected, not how
+            ui.say(f'  {email} is already authorized')
     else:
         sign_in(config, account, gog, ui)
     if account.get('service') == 'calendar':
@@ -1200,11 +1206,11 @@ def step_google(config, account, ui):
 
 def sign_in(config, account, gog, ui):
     email, client = account['email'], account['client']
-    ui.say('Signing in to Google with read-only access to Gmail and Calendar'
-           + (' (open the link it prints, then paste the address you land on)' if headless() else ' (a browser opens)') + '...')
     args = [gog, 'auth', 'add', email, '--client', client, '--services', 'gmail,calendar', '--readonly', '--gmail-scope', 'readonly']
     if getattr(ui, 'web', False):
         return sign_in_web(config, account, gog, ui, args)
+    ui.say('Signing in to Google with read-only access to Gmail and Calendar'
+           + (' (open the link it prints, then paste the address you land on)' if headless() else ' (a browser opens)') + '...')
     if headless():
         args.append('--manual')
     try:
@@ -1268,9 +1274,13 @@ def sign_in_web(config, account, gog, ui, args):
     url = next(iter(re.findall(r'https://accounts\.google\.com/\S+', first.stdout + '\n' + first.stderr)), None)
     if first.returncode or not url:
         raise SetupError('The Google sign-in could not start', f'run this in a terminal on this computer: assistant connect {service}')
-    ui.say('Open this address, sign in as ' + email + (' and allow access again.' if again else ' and allow read-only access.') + ' Google then sends you to an address '
-           'that may not load: copy that whole address from the address bar.')
-    ui.say(url)
+    if hasattr(ui, 'extra'):
+        # the dashboard shows these two steps in its own words (and language), with a button for the address
+        ui.extra = {'google': {'url': url, 'email': email, 'again': again}}
+    else:
+        ui.say('Open this address, sign in as ' + email + (' and allow access again.' if again else ' and allow read-only access.') + ' Google then sends you to an address '
+               'that may not load: copy that whole address from the address bar.')
+        ui.say(url)
     landed = ui.ask('The address Google sent you to').strip()
     if not landed.startswith(('http://', 'https://')):
         raise SetupError('That is not the address Google sent you to', 'start again')
@@ -2084,7 +2094,7 @@ def step_microsoft(config, account, ui):
     if signed_in != email:
         raise SetupError(f'You signed in as {signed_in}, not {email}', 'rerun and sign in with ' + email)
     ms_graph.save_signin(path, refresh, granted)
-    ui.say('  signed in; the sign-in is saved to ' + str(path))
+    ui.say('  signed in' if getattr(ui, 'web', False) else '  signed in; the sign-in is saved to ' + str(path))
 
 
 STEPS = {'gmail': step_google, 'calendar': step_google, 'outlook': step_microsoft, 'outlook_calendar': step_microsoft, 'slack': step_slack, 'salesflare': step_salesflare,

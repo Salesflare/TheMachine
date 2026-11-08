@@ -1689,6 +1689,11 @@ class App(*APP_MIXINS):
                                            'label': known[source]['label'], 'at': time.monotonic(), 'hosted': hosted}
             threading.Thread(target=self.connect_run, args=(session,), daemon=True).start()
             return {'session': key, **self.connect_view(session)}
+        if name == 'connect_running':
+            # The setup under way, if any: a reload, another tab or the phone picks it up at the step it is on
+            with lock:
+                running = next(((k, v) for k, v in sessions.items() if v['state'] == 'running'), None)
+            return {'session': running[0], **self.connect_view(running[1])} if running else {}
         session = sessions.get(args.get('session')) if isinstance(args.get('session'), str) else None
         if not session:
             raise ValueError('That setup has ended; start it again')
@@ -1702,12 +1707,15 @@ class App(*APP_MIXINS):
             time.sleep(0.3)  # most steps answer at once: show what comes next
         elif name == 'connect_cancel':
             session['ui'].cancel()
+            if session['state'] == 'running':  # ended now: never picked up again (connect_running) while it winds down
+                session['state'] = 'cancelled'
         return self.connect_view(session)
 
     def connect_run(self, session):
         import onboarding
         try:
             account = onboarding.connect(self.config_path, session['source'], session['ui'], account_id=session.get('account_id'), restart=False)
+            self.connect_calendar_too(session, account)
             if session.get('account_id'):  # signed in again and checked: its sign-in error, and its siblings', ends now
                 try:
                     self.store.signed_in_again(same_signin(self.config.get('accounts', []), account, self.store))
@@ -1721,6 +1729,27 @@ class App(*APP_MIXINS):
             session.update(state='failed', error='The setup stopped unexpectedly', fix='try again, or run assistant connect '
                            + session['source'] + ' in a terminal on this computer')
         session['at'] = time.monotonic()
+
+    def connect_calendar_too(self, session, account):
+        """Gmail through the owner's own Google app: Google's consent asked for the calendar too (read-only), so Google
+        Calendar for the same address and the same Work or Personal comes along in the same run, with no second
+        sign-in. One that does not work leaves Gmail connected and says so."""
+        import onboarding
+        if session['source'] != 'gmail' or session.get('account_id') or account.get('transport') != 'gog':
+            return
+        email = str(account.get('email') or '').lower()
+        if any(a.get('service') == 'calendar' and str(a.get('email') or '').lower() == email
+               for a in onboarding.load(self.config_path).get('accounts', [])):
+            return
+        ui = session['ui']
+        ui.answers.update({onboarding._prompt_key('Google account'): account['email'],
+                           'part of your life': account['boundary'], 'company': account['boundary']})
+        try:
+            onboarding.connect(self.config_path, 'calendar', ui, restart=False)
+        except onboarding.SetupError:
+            if not ui.cancelled:  # Cancel now still keeps Gmail, which is saved already
+                LOG.info('connect calendar with gmail not added')
+                ui.say('Google Calendar isn’t connected yet. Add it under + Add.')
 
     def connect_view(self, session):
         view = {**session['ui'].view(), **{k: session.get(k) for k in ('state', 'source', 'label', 'error', 'fix', 'account', 'restarting')}}

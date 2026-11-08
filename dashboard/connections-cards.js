@@ -38,7 +38,8 @@ function renderHealthTabs(){const cs=state.connectors||[],bad=g=>cs.filter(c=>he
  const ids=panes.map(p=>p.id),current=healthPicked&&ids.includes(healthPane)?healthPane:panes.find(p=>p.badge&&p.warn)?.id||(ids.includes(healthPane)?healthPane:ids[0]);
  healthPane=current;const row=$('#health-tabs');setHTML(row,subTabs('Connections','data-health-pane',panes,current));
  for(const el of document.querySelectorAll('#health [data-health-for]'))el.hidden=!el.dataset.healthFor.split(' ').includes(current);
- for(const a of document.querySelectorAll('#connectors>article'))a.hidden=a.dataset.group!==current;if(!$('#health').hidden)tabsShow(row.firstChild);if(current==='add')connectAdd()}  // measured once the other panes are hidden, never with every source shown at once
+ for(const a of document.querySelectorAll('#connectors>article'))a.hidden=a.dataset.group!==current;if(!$('#health').hidden)tabsShow(row.firstChild);if(current==='add')connectAdd();
+ else if(!connectResumed&&!healthPicked){connectResumed=true;connectResume().then(found=>{if(found&&!healthPicked){healthPane='add';healthPicked=true;renderHealthTabs();renderConnectRun()}})}}  // measured once the other panes are hidden, never with every source shown at once
 // and only while Connections shows: every redraw calls this, and a measure mid-redraw lays out the whole page (some 60 ms
 // of each click that redraws). Opening Connections (showTab) calls it again, and measures then.
 // Connections, Add: every source this install can add, set up right here with the same steps as `assistant connect`;
@@ -55,7 +56,14 @@ const connectPost=(action,args={})=>request('api/action',{method:'POST',headers:
 // Only the latest load draws: opening + Add starts one and connectOpen another, and the earlier answering last would
 // draw the grid again over the source connectOpen just picked
 let connectAddSeq=0,connectAddLast=Promise.resolve();
-async function connectAdd(force){if(connectRun)return;if(!force&&connectList&&Date.now()-connectListAt<60000)return;connectListAt=Date.now();const n=++connectAddSeq;
+// A setup under way (connect_running) is picked up where it is: after a reload, in another tab or on the phone, + Add
+// shows its step, with what it did already above it, never a fresh start. Connections opens on + Add for it.
+let connectResumed=false;
+async function connectResume(){try{const r=await connectPost('connect_running');if(!r?.session||connectRun)return false;
+ connectRun=r;connectSignin=null;connectForm=null;connectGbrain=null;$('#connect-add').dataset.sig='';connectPoll();return true}catch{return false}}
+async function connectAdd(force){if(connectRun)return;if(!force&&connectList&&Date.now()-connectListAt<60000)return;connectListAt=Date.now();
+ if(await connectResume()){renderConnectRun();return}
+ const n=++connectAddSeq;
  const load=connectPost('connect_sources');connectAddLast=load.catch(()=>{});
  try{const list=await load;if(n!==connectAddSeq)return;connectList=list}catch(e){if(n!==connectAddSeq)return;errCaught(e);setHTML($('#connect-add'),html`<p class="error">${e.message}</p>`);return}renderConnectAdd()}
 // once the latest load has drawn (connectOpen)
@@ -162,7 +170,7 @@ function renderConnectForm(){const x=connectList?.sources.find(v=>v.name===conne
  const f=x.form||{},sig=JSON.stringify(['form',x.name]);if(box.dataset.sig===sig)return;box.dataset.sig=sig;
  const asks=(f.ask||[]).map(([k,q])=>html`<label>${q}<input name="ask" data-key="${k}" type="text" required spellcheck="false" autocomplete="off"></label>`);
  const secret=f.secret?html`<label>${f.secret}<input name="secret" type="password" required autocomplete="off" spellcheck="false"></label>`:'';
- const scope=f.scope?html`<fieldset class="connect-scope"><legend>Work or personal?</legend><label><input type="radio" name="scope" value="work"${f.personal?'':html` checked`}> Work</label><label><input type="radio" name="scope" value="personal"${f.personal?html` checked`:''}> Personal</label></fieldset><label class="connect-company"${f.personal?html` hidden`:''}>Company<input name="company" maxlength="60" value="${f.company||''}" placeholder="Acme" autocomplete="organization"${f.personal?'':html` required`}></label>`:'';
+ const scope=f.scope?html`<fieldset class="connect-scope"><legend>Work or personal?</legend><label><input type="radio" name="scope" value="work"${f.personal?'':html` checked`}> Work</label><label><input type="radio" name="scope" value="personal"${f.personal?html` checked`:''}> Personal</label></fieldset><label class="connect-company"${f.personal?html` hidden`:''}>Company<input name="company" maxlength="60" value="${f.company||''}"${f.company?html` data-typed="1"`:''} placeholder="Acme" autocomplete="organization"${f.personal?'':html` required`}><small class="fine muted">Working for yourself? Use your business name.</small></label>`:'';
  connectDraw(box,'form',html`<div class="connect-run"><h3>${x.label}</h3>${x.what||f.learn?html`<p class="muted">${x.what||''}${f.learn?html` <a class="learn" href="${safeHref('https://themachine.computer/help/'+encodeURIComponent(f.learn))}" target="_blank" rel="noopener">${t('Learn more')}</a>`:''}</p>`:''}${f.note?html`<p class="fine connect-note">${linkify(f.note)}</p>`:''}<form class="connect-form connect-setup" data-connect-setup="${x.name}" novalidate>${asks}${secret}${scope}<p class="error" role="status"></p><div class="actions"><button class="primary">Connect</button><button type="button" data-connect-back>Back</button></div></form></div>`,'input:not([type="radio"]):not([hidden])')}
 async function connectSetup(form){const name=form.dataset.connectSetup,err=form.querySelector('.error'),go=form.querySelector('button.primary');
  const missing=[...form.querySelectorAll('input[required]')].find(i=>!i.closest('[hidden]')&&!i.value.trim());if(missing){{const what=(missing.closest('label')?.firstChild?.textContent||'').trim();err.textContent=what?t('Fill in {}.',what):t('Fill this in.')}missing.focus();return}
@@ -279,7 +287,7 @@ function renderConnectSignin(){const s=connectSignin,box=$('#connect-add'),paire
  // the control plane has no app for it (or refused to start it): no Sign in button, the other way open at once
  else if(s.off&&paired)body=html`<p class="muted">${copy.about||''}</p><p class="note signin-off">${t(s.own&&copy.other&&copy.off||'Sign in with {} isn’t available yet.',s.label)}</p>`;
  else body=html`<p class="muted">${copy.about||''}</p>${paired?html`<div class="actions"><button type="button" class="primary" data-signin-go>Sign in with ${s.label}</button>${back}</div>${msAdmin(s)}`
-  :html`<p>To sign in here, pair this Machine with your account first.</p><div class="actions"><button type="button" class="primary" data-connect-pair>Pair this Machine</button>${back}</div>`}`;
+  :html`<p>${t('Sign in with {} goes through your account on themachine.computer. Pair this Machine with that account first.',s.label)}</p><div class="actions"><button type="button" class="primary" data-connect-pair>Pair this Machine</button>${back}</div>`}`;
  const off=!s.hosted&&s.off&&paired&&s.state==='intro';  // the other way is the way: open, its button first, Back after it
  // Not paired yet: pairing needs an account, so the other way shows open beside it, never folded away as the only way on
  const unpaired=!s.hosted&&!paired&&s.state==='intro';
@@ -331,7 +339,10 @@ function renderConnectRun(){const r=connectRun,box=$('#connect-add'),q=r.questio
   if(connectSiteShown!==r.session){connectSiteShown=r.session;setTimeout(()=>connectSiteSignin(r.signin),0)}}
  else if(code)body=code;
  else if(r.state==='running'&&q){const lead=q.kind==='choose'&&Number.isInteger(q.phone_first)&&(matchMedia('(max-width:560px)').matches||matchMedia('(pointer:coarse)').matches)?q.phone_first:-1,order=q.kind==='choose'?q.options.map((o,i)=>i).sort((a,b)=>(b===lead)-(a===lead)):[];
-  const field=q.kind==='choose'?html`<div class="connect-choices">${order.map(i=>html`<button type="button"${i===lead?html` class="primary"`:''} data-connect-pick="${i}">${q.options[i]}</button>`)}</div>`:q.kind==='yes'?html`<div class="actions"><button type="button" class="primary" data-connect-pick="yes">Yes</button><button type="button" data-connect-pick="no">No</button></div>`:html`<form class="connect-form" data-connect-form><label for="connect-answer">${q.prompt}</label><input id="connect-answer" ${q.kind==='secret'?html`type="password" autocomplete="off"`:html`type="text"`} value="${q.kind==='secret'?'':q.default||''}" spellcheck="false"${q.resend?html` inputmode="numeric" autocomplete="one-time-code"`:''}><div class="actions"><button class="primary">Continue</button>${q.resend?html`<button type="button" data-connect-resend>${t('Send the code again')}</button>`:''}</div></form>`;
+  // Your own Google app (onboarding.sign_in_web): two steps in plain words, the long address behind a button
+  const g=q.google&&/^https:\/\/accounts\.google\.com\//.test(q.google.url||'')?q.google:null;
+  const field=g?html`<form class="connect-form connect-google" data-connect-form><ol class="connect-steps"><li><span>${t(g.again?'Sign in as {} and allow access again.':'Sign in as {} and allow read-only access.',g.email)}</span><a class="btn-link primary" href="${safeHref(g.url)}" target="_blank" rel="noopener">${t('Open Google')} ↗</a></li><li><label for="connect-answer">${t('Google then shows a page that may not load. Copy its whole address and paste it here.')}</label><input id="connect-answer" type="text" inputmode="url" autocomplete="off" spellcheck="false"></li></ol><div class="actions"><button class="primary">Continue</button></div></form>`
+   :q.kind==='choose'?html`<div class="connect-choices">${order.map(i=>html`<button type="button"${i===lead?html` class="primary"`:''} data-connect-pick="${i}">${q.options[i]}</button>`)}</div>`:q.kind==='yes'?html`<div class="actions"><button type="button" class="primary" data-connect-pick="yes">Yes</button><button type="button" data-connect-pick="no">No</button></div>`:html`<form class="connect-form" data-connect-form><label for="connect-answer">${q.prompt}</label><input id="connect-answer" ${q.kind==='secret'?html`type="password" autocomplete="off"`:html`type="text"`} value="${q.kind==='secret'?'':q.default||''}" spellcheck="false"${q.resend?html` inputmode="numeric" autocomplete="one-time-code"`:''}><div class="actions"><button class="primary">Continue</button>${q.resend?html`<button type="button" data-connect-resend>${t('Send the code again')}</button>`:''}</div></form>`;
   body=html`${q.kind==='choose'||q.kind==='yes'?html`<p class="connect-q">${q.prompt}</p>`:''}${field}`}
  else if(r.state==='running')body=html`<p class="muted">Working…</p>`;
  else if(r.state==='done'){const c=connectCard(r),line=!r.restarting?'Restart the service to start reading it.':c?'Running again. Its card shows how far it is.':r.follow==='slow'?'Taking longer than usual. Its card shows up here once it runs again.':'Restarting to start reading it…';
@@ -376,11 +387,20 @@ $('#connect-add').addEventListener('click',async e=>{const t=e.target;
  const site=t.closest('[data-connect-site]');if(site){connectSiteSignin(site.dataset.connectSite);return}
  if(t.closest('[data-connect-resend]')){connectAnswer('again');return}
  const pick=t.closest('[data-connect-pick]');if(pick){const v=pick.dataset.connectPick;connectAnswer(v==='yes'?true:v==='no'?false:+v);return}
- if(t.closest('[data-connect-stop]')&&connectRun){try{connectRun={...connectRun,...await connectPost('connect_cancel',{session:connectRun.session})}}catch{}renderConnectRun();connectPoll();return}
+ // Cancel: back to the list at once; the setup ends on the Machine meanwhile
+ if(t.closest('[data-connect-stop]')&&connectRun){const s=connectRun.session;connectRun=null;clearTimeout(connectTimer);$('#connect-add').dataset.sig='';if(connectList)renderConnectAdd();else connectDraw($('#connect-add'),'grid',html``);
+  try{await connectPost('connect_cancel',{session:s})}catch{}connectAdd(true);return}
  const card=t.closest('[data-connect-card]');if(card){cardShow(card.dataset.connectCard,true);return}
  if(t.closest('[data-connect-back]')){connectRun=null;connectSignin=null;connectForm=null;connectGbrain=null;clearTimeout(signinTimer);$('#connect-add').dataset.sig='';connectAdd(true)}});
 $('#connect-add').addEventListener('submit',e=>{const setup=e.target.closest('[data-connect-setup]');if(setup){e.preventDefault();connectSetup(setup);return}
  if(!e.target.closest('[data-connect-form]'))return;e.preventDefault();connectAnswer($('#connect-answer').value)});
+// The Google address typed in the form fills in an empty Company from its domain (jo@acme.io: Acme), as
+// onboarding.company_of guesses; a webmail address leaves it empty. What the owner typed there stays.
+const WEBMAIL=/^(gmail|googlemail|outlook|hotmail|live|msn|yahoo|icloud|me|mac|aol|proton|protonmail|gmx|yandex|zoho|example)$/;
+function companyOf(email){const p=String(email||'').split('@')[1]?.toLowerCase().split('.').slice(0,-1)||[];if(p.length>1&&/^(co|com|org|net|ac|gov)$/.test(p[p.length-1]))p.pop();
+ const n=p[p.length-1]||'';return !n||WEBMAIL.test(n)?'':n[0].toUpperCase()+n.slice(1)}
+$('#connect-add').addEventListener('input',e=>{const i=e.target;if(i.name==='company'){i.dataset.typed=i.value?'1':'';return}
+ if(i.dataset.key!=='email')return;const co=i.closest('form')?.querySelector('input[name="company"]');if(co&&!co.dataset.typed)co.value=companyOf(i.value)});
 $('#connect-add').addEventListener('change',e=>{if(e.target.name!=='scope')return;const form=e.target.closest('form'),co=form.querySelector('.connect-company'),personal=e.target.value==='personal';
  co.hidden=personal;co.querySelector('input').required=!personal});
 // "Connect your own Intercom" on a to-do (also its "not synced" line and the first look's ending): Connections, + Add, at that source. A source that signs in here opens its
