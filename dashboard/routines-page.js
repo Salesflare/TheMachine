@@ -3,7 +3,7 @@
 // why: what was seen, on the rhythm line), each with the result of one real run; Add or No thanks.
 // A new one shows a test run first (routine_try, dry: nothing sent or kept): Add, Change or Cancel. Edit's Try it, too.
 // Script steps (Edit): Get data runs a command first and its output goes to the run; Check gets the result.
-let routinesData=null,routinesAt=0,rtForm=null,rtTimer=0;
+let routinesData=null,routinesAt=0,rtForm=null,rtTimer=0,rtStale=false;
 const RT_STATE={ready:'Ready',nothing:'Nothing new',failed:'Didn’t work',running:'Running…'};
 const rtTime=at=>localeTime(new Date('2000-01-01T'+at),DL,{hour:'numeric',minute:'2-digit'});
 const rtDay=v=>localeDate(v,DL,{weekday:'short',day:'numeric',month:'short'});
@@ -31,17 +31,35 @@ const rtSuggested=r=>html`<article class="rt rt-s" data-rt="${r.id}"><h3>${r.nam
 const rtTrying=r=>html`<article class="rt rt-s rt-try" data-rt="${r.id}"><h3>${r.name}</h3><p class="rt-when">${rtWhen(r)}</p>${r.instructions?html`<p class="rt-what">${r.instructions}</p>`:''}${rtStepLine(r)}${r.test?rtBody(r,rtRun(r.test,1),1+rtRows(r.test.result||r.test.why)):''}
  <div class="actions"><button type="button" class="primary" data-rt-do="accept">${t('Add')}</button><button type="button" class="quiet" data-rt-do="change">${t('Change')}</button><button type="button" class="quiet" data-rt-do="no">${t('Cancel')}</button></div></article>`;
 const rtSection=(name,label,cards,fine)=>html`<section class="rt-sec rt-${name}" aria-label="${label}"><h2>${label}</h2>${fine?html`<p class="fine">${fine}</p>`:''}${cards}</section>`;
-function routinesRender(){const box=$('#routines-view'),list=routinesData?.routines;if(!box||!list)return;const typed=$('#rt-words')?.value||'',sugg=routinesData.suggested||[],trying=routinesData.trying||[],on=list.filter(r=>r.state!=='paused'),off=list.filter(r=>r.state==='paused'),
+// A refresh while Edit, Change or Change when is open only patches that card's test run (rtPatch): the page is rebuilt
+// when the form closes. A rebuild keeps what is on screen in place (rtKeep).
+function routinesRender(){const box=$('#routines-view'),list=routinesData?.routines;if(!box||!list)return;
+ if(!(rtForm&&rtPatch(box)))rtKeep(box,()=>rtFull(box,list));
+ // A run in progress: look again in a few seconds, so its result shows in the card when it is ready
+ clearTimeout(rtTimer);if([...list,...routinesData.suggested||[],...routinesData.trying||[]].some(r=>r.runs[0]?.state==='running'||r.test?.state==='running'))rtTimer=setTimeout(()=>box.offsetParent?routinesView(true):routinesAt=0,4000)}
+function rtFull(box,list){rtStale=false;const typed=$('#rt-words')?.value||'',sugg=routinesData.suggested||[],trying=routinesData.trying||[],on=list.filter(r=>r.state!=='paused'),off=list.filter(r=>r.state==='paused'),
   fo=document.activeElement,typing=fo?.id==='rt-words'&&[fo.selectionStart,fo.selectionEnd];
  box.innerHTML=html`<form class="rt-new"><textarea id="rt-words" class="rt-grow" rows="1" spellcheck="true" autocapitalize="sentences" placeholder="${t('Every Monday, sum up my deals')}" aria-label="${t('New routine')}"></textarea><button class="primary">${t('Add')}</button></form>
   <p class="fine">${t('Routines only read. They don’t send or change anything.')}</p>${trying.map(rtTrying)}${sugg.length?rtSection('sugg',t('Suggested'),sugg.map(rtSuggested),t(sugg.every(r=>r.from_openclaw)?'From your OpenClaw jobs. Each one ran once to show you.':'Each one ran once to show you.')):''}${
   on.length||!off.length?rtSection('mine',t('Your routines'),on.length?on.map(rtCard):html`<p class="rt-empty">${t('No routines yet')}</p>`):''}${off.length?rtSection('paused',t('Paused'),off.map(rtCard)):''}`.s;
  const w=Object.assign($('#rt-words'),{value:typed});rtGrow(w);if(typing){w.focus({preventScroll:true});w.setSelectionRange(...typing)}
- const card=rtForm&&box.querySelector(`[data-rt="${rtForm.id}"]`);if(card)rtOpen(card,rtForm.kind,rtForm.words,box.contains(fo)&&!!fo.closest('.rt-form')&&(fo.dataset.step||true));else rtForm=null;
- // A run in progress: look again in a few seconds, so its result shows in the card when it is ready
- clearTimeout(rtTimer);if([...list,...sugg,...trying].some(r=>r.runs[0]?.state==='running'||r.test?.state==='running'))rtTimer=setTimeout(()=>box.offsetParent?routinesView(true):routinesAt=0,4000)}
+ const card=rtForm&&box.querySelector(`[data-rt="${rtForm.id}"]`);if(card)rtOpen(card,rtForm.kind,rtForm.words,box.contains(fo)&&!!fo.closest('.rt-form')&&(fo.dataset.step||true));else rtForm=null}
+// The open form's card, in place: its test run and Try it; false when the cards themselves changed (a rebuild then)
+function rtPatch(box){const all=[...routinesData.routines,...routinesData.suggested||[],...routinesData.trying||[]],r=all.find(x=>x.id===rtForm.id),
+  card=box.querySelector(`[data-rt="${rtForm.id}"]`),f=card?.querySelector('.rt-form');
+ if(!r||!f||[...box.querySelectorAll('article[data-rt]')].map(a=>a.dataset.rt).sort().join()!==all.map(x=>x.id).sort().join())return false;
+ if(r.state==='trying'){const b=card.querySelector('.rt-body');if(b&&r.test)b.innerHTML=rtRun(r.test,1).s}
+ else if(rtForm.kind==='edit'&&rtForm.tried&&r.test){const old=f.querySelector('.rt-run'),h=rtRun(r.test,1).s;if(old)old.outerHTML=h;else f.querySelector('.rt-form-acts').insertAdjacentHTML('beforebegin',h)}
+ for(const b of f.querySelectorAll('[data-rt-try]'+(rtForm.kind==='change'?',.primary':'')))b.disabled=r.test?.state==='running';
+ rtStale=true;return true}
+// The card being edited (else the first one on screen) stays where it was on screen; the page never shrinks meanwhile
+function rtKeep(box,rebuild){const cards=[...box.querySelectorAll('article[data-rt]')],at=(rtForm&&cards.find(a=>a.dataset.rt===rtForm.id&&a.getBoundingClientRect().bottom>0))||cards.find(a=>a.getBoundingClientRect().bottom>0),
+  id=at?.dataset.rt,top=at?.getBoundingClientRect().top;
+ box.style.minHeight=box.offsetHeight+'px';try{rebuild()}finally{box.style.minHeight=''}
+ const now=id&&box.querySelector(`[data-rt="${id}"]`),d=now?now.getBoundingClientRect().top-top:0;if(d)(rtScroller(box)||window).scrollBy(0,d)}
+function rtScroller(box){for(let e=box.parentElement;e&&e!==document.body;e=e.parentElement){const o=getComputedStyle(e).overflowY;if((o==='auto'||o==='scroll')&&e.scrollHeight>e.clientHeight)return e}return null}
 // Grows with its words, up to six lines (routines-page.css)
-function rtGrow(x){x.style.height='';x.style.height=x.scrollHeight+x.offsetHeight-x.clientHeight+'px'}
+function rtGrow(x){const p=x.parentElement;p.style.minHeight=p.offsetHeight+'px';x.style.height='';x.style.height=x.scrollHeight+x.offsetHeight-x.clientHeight+'px';p.style.minHeight=''}
 async function routinesView(force){if(!force&&Date.now()-routinesAt<20000&&routinesData){routinesRender();return}
  try{routinesData=await request('api/routines');routinesAt=Date.now();routinesRender()}catch(e){errCaught(e);toast(e.message,true)}}
 const rtPost=(action,args)=>request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action,args})});
@@ -60,7 +78,8 @@ function rtOpen(card,kind,words,focus=true){const id=card.dataset.rt,r=[...routi
  $('#routines-view .rt-form')?.remove();card.querySelector('.more-actions')?.removeAttribute('open');rtForm={id,kind,words:words??(kind==='when'?'':r?.instructions||''),tried,steps,open};
  card.querySelector('.actions').insertAdjacentHTML('beforebegin',html`<form class="rt-form" data-rt-form="${kind}">${kind==='when'?html`<input autocomplete="off" placeholder="${t('Every weekday at 8')}" aria-label="${t('Change when')}">`:html`<textarea class="rt-grow" rows="1" spellcheck="true" autocapitalize="sentences" aria-label="${t('Edit')}"></textarea>${rtStepsForm(steps,open)}`}${kind==='edit'&&tried&&r.test?rtRun(r.test,1):''}<p class="rt-form-acts">${kind==='change'?html`<button class="primary"${busy?html` disabled`:''}>${t('Try it')}</button>`:html`<button class="primary">${t('Save')}</button>${kind==='edit'?html`<button type="button" class="ghost" data-rt-try${busy?html` disabled`:''}>${t('Try it')}</button>`:''}`}<button type="button" class="quiet" data-rt-cancel>${t('Cancel')}</button></p></form>`.s);
  const x=card.querySelector('.rt-form').elements[0];x.value=rtForm.words;if(kind!=='when')rtGrow(x);if(focus){const y=card.querySelector(`.rt-form [data-step="${focus}"]`)||x;y.focus({preventScroll:true});y.setSelectionRange?.(y.value.length,y.value.length)}}
-function rtShut(back){const f=$('#routines-view .rt-form');rtForm=null;if(!f)return;const s=f.closest('[data-rt]')?.querySelector('.more-actions>summary');f.remove();if(back)s?.focus({preventScroll:true})}
+function rtShut(back){const f=$('#routines-view .rt-form');rtForm=null;if(!f)return;const id=f.closest('[data-rt]')?.dataset.rt;f.remove();if(rtStale)routinesRender();
+ if(back)$(`#routines-view [data-rt="${id}"] .more-actions>summary`)?.focus({preventScroll:true})}
 document.addEventListener('pointerdown',e=>{const f=$('#routines-view .rt-form');if(f&&!f.contains(e.target)&&matchMedia('(pointer:fine)').matches&&!e.target.closest?.('[data-rt-do="edit"],[data-rt-do="when"],[data-rt-do="change"]'))rtShut()});
 $('#routines-view').addEventListener('submit',e=>{e.preventDefault();const f=e.target,input=f.elements[0],words=input.value.trim(),b=f.querySelector('.primary'),steps=rtStepsOf(f);if(!words&&!steps?.get)return;
  if(input.id==='rt-words'){rtDo('routine_try',{words},b).then(ok=>{if(ok)rtGrow(Object.assign($('#rt-words'),{value:''}))});return}

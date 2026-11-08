@@ -135,6 +135,23 @@ class Runs(unittest.TestCase):
         self.assertEqual(mine['id'], rid)
         self.assertEqual((mine['runs'][0]['state'], mine['runs'][0]['result'], mine['next_due']), ('ready', '**2 deals** went quiet.', '2026-11-16'))
 
+    def test_before_its_first_run_a_routine_has_a_short_name_from_its_words(self):
+        words = 'check what shipped functionally for the project in the open source repository and summarize it for the blog'
+        rid = self.make('every Friday at 4, ' + words)
+        mine = self.app.routines_view()['routines'][0]
+        self.assertEqual(mine['name'], 'Check what shipped')  # a phone's title line, never the whole prompt cut short
+        self.assertLessEqual(len(mine['name']), rt.PLACEHOLDER_MAX)
+        with self.store.connect() as db:  # one made before names were short: it gets short, and its first run still names it
+            db.execute('UPDATE routines SET name=? WHERE id=?', (rt._long_name_of(mine['instructions']), rid))
+            self.assertGreater(len(db.execute('SELECT name FROM routines').fetchone()[0]), 60)
+            rt.ensure(db)
+            row = db.execute('SELECT * FROM routines WHERE id=?', (rid,)).fetchone()
+        self.assertEqual(row['name'], 'Check what shipped')
+        self.assertTrue(rt.needs_name(row))
+        self.act('routine_run_now', id=rid); self.app.routines_step()
+        self.app.action('routine_result', {'_routine_session': SESSION + self.runs()[-1]['id'], 'text': 'ok', 'name': 'Shipped this week'}, owner_dashboard=False)
+        self.assertEqual(self.app.routines_view()['routines'][0]['name'], 'Shipped this week')
+
     def test_the_first_run_names_a_routine_and_edit_keeps_its_name_unless_it_no_longer_fits(self):
         rid = self.make('every Monday at 9, sum up last week\'s team standup from the chat and the calendar')
         start = lambda: [s for s in self.sent if s['action'] == 'start'][-1]['message']
