@@ -189,7 +189,7 @@ together (their "let's do it Sunday" and your yes) reads as a promise both ways:
 same action is open, the second is not recorded again, and the open one becomes yours, marked as made together. The
 same open promise stored twice from before is kept once. Nothing shows up on Telegram yet.
 
-- **When it's checked:** yours on the morning it's due (at `digest_at`, never sooner than three hours after it was
+- **When it's checked:** yours the morning before it's due (at `digest_at`, never sooner than three hours after it was
   recorded), theirs the morning after their date. Without a date: yours after 3 days, theirs after a week.
 - **Closing by itself:** someone else's promise made by email closes when that sender replies in the original thread
   (sender-only fallback if no thread was recorded). Chats run on, so a later chat message is no sign it was kept: those

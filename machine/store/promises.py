@@ -25,12 +25,13 @@ PROMISE_CHECK_DAYS = {'mine': 3, 'theirs': 7}
 
 
 def promise_check_at(direction, due, made_at, digest_at='08:30', current=None):
-    """When an open promise is checked: the owner's own on the morning it's due (never sooner than
-    three hours from now), someone else's the morning after; undated ones after PROMISE_CHECK_DAYS."""
+    """When an open promise is checked: the owner's own the morning before it's due, so its to-do comes with a day to
+    get it done (never sooner than three hours from now), someone else's the morning after; undated ones after
+    PROMISE_CHECK_DAYS."""
     current = current or dt.datetime.fromisoformat(now())
     hour, minute = (int(x) for x in digest_at.split(':'))
     if due:
-        day = dt.date.fromisoformat(due) + dt.timedelta(days=1 if direction == 'theirs' else 0)
+        day = dt.date.fromisoformat(due) + dt.timedelta(days=1 if direction == 'theirs' else -1)
     else:
         day = dt.datetime.fromisoformat(made_at).astimezone(local_tz()).date() + dt.timedelta(days=PROMISE_CHECK_DAYS[direction])
     target = dt.datetime.combine(day, dt.time(hour, minute), local_tz())

@@ -139,8 +139,9 @@ class Promises(unittest.TestCase):
     def test_when_each_kind_is_checked(self):
         check = lambda **args: self.row(self.app().action('promise', {'event_id': self.mine, 'direction': 'mine', 'who': args.pop('who'),
                                                                        'what': 'send the deck', **args})['id'])['check_at']
-        # Mine: the morning it's due (08:30 Brussels); due today, three hours from now at the earliest.
-        self.assertEqual(check(who='Ann', due='2026-10-23'), '2026-10-23T06:30:00+00:00')
+        # Mine: the morning before it's due (08:30 Brussels); due today or tomorrow, three hours from now at the earliest.
+        self.assertEqual(check(who='Ann', due='2026-10-23'), '2026-10-22T06:30:00+00:00')
+        self.assertEqual(check(who='Al', due='2026-10-20'), '2026-10-19T12:00:00+00:00')
         self.assertEqual(check(who='Bo', due='2026-10-19'), '2026-10-19T12:00:00+00:00')
         self.assertEqual(check(who='Cy'), '2026-10-22T06:30:00+00:00')
         # Theirs: the morning after their date; without one, a week after they said it.
@@ -174,17 +175,18 @@ class Promises(unittest.TestCase):
         self.assertEqual((self.row(mine)['status'], self.row(theirs)['status']), ('open', 'open'))
 
     def test_an_open_promise_becomes_a_prepared_card_when_due(self):
+        # The owner's the morning before its day (Wednesday for Thursday), theirs the morning after theirs
         theirs = self.record(due='2026-10-23')['id']
-        mine = self.app().action('promise', {'direction': 'mine', 'event_id': self.mine, 'who': 'Alex', 'what': 'send the Q3 deck', 'due': '2026-10-21'})['id']
+        mine = self.app().action('promise', {'direction': 'mine', 'event_id': self.mine, 'who': 'Alex', 'what': 'send the Q3 deck', 'due': '2026-10-22'})['id']
         self.at('2026-10-20T07:00:00+00:00')
         self.app().promise_step()
         self.assertEqual(self.row(mine)['status'], 'open')
         self.at('2026-10-21T07:00:00+00:00')
         self.app().promise_step()
         card = self.store.snapshot([])['suggestions'][0]
-        self.assertEqual((card['title'], card['due'], card['dedupe_key']), ('Send the Q3 deck for Alex', '2026-10-21', f'promise:{mine}'))
+        self.assertEqual((card['title'], card['due'], card['dedupe_key']), ('Send the Q3 deck for Alex', '2026-10-22', f'promise:{mine}'))
         # The title says what; the one line adds only who and when, never the title again
-        self.assertEqual(card['body'], 'Promised Alex on Mon, Oct 19 for Wed, Oct 21. Nothing shows it done yet.')
+        self.assertEqual(card['body'], 'Promised Alex on Mon, Oct 19 for Thu, Oct 22. Nothing shows it done yet.')
         self.assertEqual(card['owner_step'], 0)
         self.assertEqual((card['status'], card['early']), ('accepted', 1))  # prepared ahead
         self.assertEqual(self.row(mine)['suggestion_id'], card['id'])
