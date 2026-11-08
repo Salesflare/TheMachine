@@ -17,7 +17,9 @@ Sans heure, elle tourne à 8:00. L’heure est celle de l’horloge de votre Mac
 
 À son heure, votre Machine lit ce dont elle a besoin, comme vos messages, vos réunions et le Graph, et place le résultat sur la page Routines. Chaque résultat indique **Prête**, **Rien de nouveau** (avec pourquoi) ou **N’a pas marché** (avec pourquoi). Une exécution qui se termine sans résultat compte comme ratée, jamais comme faite.
 
-Les routines ne font que lire. Elles n’envoient, ne répondent, ne publient et ne modifient rien.
+Les routines ne font que lire : vos messages, des pages web, GitHub et des sites comme X dans le navigateur. Elles n’envoient, ne répondent, ne publient et ne modifient rien.
+
+Quand la tâche d’une routine finit par une publication ou un message, elle fait tout jusqu’à cette étape et montre le brouillon, comme **Publierait sur X :**. Après une vraie exécution, vous le recevez comme tâche à approuver ; une exécution de test le montre seulement.
 
 Chaque exécution connaît le dernier résultat, elle peut donc dire ce qui a changé depuis.
 

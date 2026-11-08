@@ -17,7 +17,9 @@ Zonder tijd draait hij om 8:00. De tijd is die van de klok van je Machine.
 
 Op het afgesproken moment leest je Machine wat hij nodig heeft, zoals je berichten, vergaderingen en de Graph, en zet het resultaat op de pagina Routines. Elk resultaat zegt **Klaargezet**, **Niets nieuws** (met waarom) of **Lukte niet** (met waarom). Een run die zonder resultaat eindigt, telt als een run die niet lukte, nooit als klaar.
 
-Routines lezen alleen. Ze versturen, beantwoorden, posten of wijzigen niets.
+Routines lezen alleen: je berichten, webpagina’s, GitHub en sites zoals X in de browser. Ze versturen, beantwoorden, posten of wijzigen niets.
+
+Eindigt de taak van een routine in een post of bericht, dan doet ze alles tot die stap en toont ze het concept, zoals **Zou op X posten:**. Na een echte run krijg je het als to-do om goed te keuren; een testrun toont het alleen.
 
 Elke run kent het vorige resultaat, zodat hij kan zeggen wat er sindsdien veranderde.
 

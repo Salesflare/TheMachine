@@ -281,6 +281,34 @@ class Runs(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.act('routine_accept', id=first)
 
+    def test_a_job_that_ends_in_a_post_reads_up_to_it_and_drafts_it(self):
+        words = 'every day at 9, check what shipped in the open source repo and draft a short post on X'
+        rid = self.make(words)
+        post = {'title': 'Post on X', 'text': 'Two new things shipped today.'}
+        self.act('routine_try', id=rid, words='Check what shipped in the open source repo and draft a short post on X'); self.app.routines_step()
+        start = [s for s in self.sent if s['action'] == 'start'][-1]['message']
+        for said in ('the browser to look', 'gh or git commands that only read', 'Would post on X', 'nothing goes out.',
+                     'This is its first run: what is new means the last 24 hours, since Sunday 2026-11-08 06:00'):
+            self.assertIn(said, start)
+        self.assertNotIn('You can only read', start)
+        self.report('Would post on X: Two new things shipped today.', draft=post)
+        with self.store.connect() as db:
+            self.assertEqual(db.execute('SELECT COUNT(*) FROM suggestions').fetchone()[0], 0)  # a test run only shows it
+        self.act('routine_run_now', id=rid); self.app.routines_step()
+        start = [s for s in self.sent if s['action'] == 'start'][-1]['message']
+        self.assertIn('a to-do to approve; nothing goes out without them', start)
+        self.assertIn('This is its first run', start)  # a test run is not the last run
+        with self.assertRaisesRegex(ValueError, 'draft needs title'):
+            self.report('Would post on X: hi', draft='hi')
+        self.report('Would post on X: Two new things shipped today.', draft=post)
+        with self.store.connect() as db:
+            self.assertEqual([tuple(r) for r in db.execute('SELECT title,body FROM suggestions')], [('Post on X', 'Two new things shipped today.')])
+        self.now = T(2026, 11, 10, 9, 30)
+        self.act('routine_run_now', id=rid); self.app.routines_step()
+        start = [s for s in self.sent if s['action'] == 'start'][-1]['message']
+        self.assertIn('The last run started', start)
+        self.assertNotIn('This is its first run', start)
+
     def test_try_it_shows_new_words_without_changing_the_routine(self):
         rid = self.make('every Monday at 9, sum up my open deals')
         self.act('routine_run_now', id=rid); self.app.routines_step(); self.report('2 open deals.', name='Open deals')
