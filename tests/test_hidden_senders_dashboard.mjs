@@ -38,10 +38,12 @@ try{
   await page.evaluate(()=>document.querySelector('nav [data-tab="people"]').click());
   const entry=page.locator('#people-view [data-graph-panel="people"] details.hidden-senders');
   await entry.locator('summary').waitFor();
-  assert.equal((await entry.locator('summary').textContent()).replace(/\s+/g,' ').trim(),'Hidden senders 3',`${tag}: the entry and its count`);
+  assert.equal((await entry.locator('summary').textContent()).replace(/\s+/g,' ').trim(),'Hidden senders (3)',`${tag}: the entry and its count`);
   await page.locator('#people-view article[data-node="email:ann@client.example"]').waitFor();
   await pause(300);
   assert.ok(!lists.includes('hidden_senders'),`${tag}: the list loads only when it opens`);
+  assert.equal(await entry.evaluate(d=>d.open),false,`${tag}: closed at first`);
+  assert.equal(await entry.locator('.graph-note').isVisible(),false,`${tag}: the explainer shows when it opens`);
   await press(entry.locator('summary'));
   await entry.locator('.hidden-sender').nth(2).waitFor();
   assert.deepEqual((await entry.locator('.hidden-sender .graph-sub:not(.role-row)').allTextContents()).map(s=>s.split(' · ').slice(0,2).join(' · ')),
@@ -49,11 +51,18 @@ try{
   const box=await entry.boundingBox(),view=page.viewportSize();
   assert.ok(box.x>=0&&box.x+box.width<=view.width+1,`${tag}: the list fits the page`);
   await press(entry.locator('[data-show-person="email:lee@moss.example"]'));
-  await entry.locator('.hidden-sender').nth(1).locator('.pair-said').waitFor();
+  await entry.locator('.hidden-sender').nth(1).locator('.hs-said').waitFor();
+  const indent=sel=>entry.locator(sel).evaluate(el=>Math.round(el.getBoundingClientRect().left));
+  assert.equal(await indent('.hidden-sender:nth-child(2) .hs-said'),await indent('.hidden-sender:nth-child(3) .hs-show'),`${tag}: done and to-do line up`);
+  if(mobile)assert.equal(await indent('.hidden-sender:nth-child(3) .hs-show'),await indent('.hidden-sender:nth-child(3) strong'),`${tag}: under the line, with the name`);
   assert.deepEqual(calls.map(c=>[c.action,c.args.identifier]),[['graph_show_person','email:lee@moss.example']]);
   assert.equal(await entry.locator('.hidden-sender').count(),3,`${tag}: the row stays, with what was done`);
   assert.equal(await entry.locator('[data-show-person]').count(),2);
-  if(shotDir){await entry.scrollIntoViewIfNeeded();await page.screenshot({path:`${shotDir}/hidden-senders-${tag}-${scheme}.png`,fullPage:true})}
+  // The top bar stays at the top of the screen, wherever the page is scrolled
+  await entry.evaluate(d=>d.scrollIntoView({block:'start'}));await pause(200);
+  const bar=await page.evaluate(()=>[...document.querySelectorAll('header,.topbar,.mobile-bar')].filter(e=>e.checkVisibility()&&getComputedStyle(e).position.match(/fixed|sticky/)).map(e=>Math.round(e.getBoundingClientRect().top)));
+  assert.ok(bar.every(top=>top<=0),`${tag}: the top bar stays on top: ${bar}`);
+  if(shotDir)await page.screenshot({path:`${shotDir}/hidden-senders-${tag}-${scheme}.png`});
   await context.close()}
  assert.deepEqual(errors,[]);
  console.log('hidden senders dashboard ok');
