@@ -14,6 +14,10 @@ Su un telefono, tocca il titolo dell'attività. Su un computer, usa il link alla
 
 Ogni email mostra solo ciò che contiene di nuovo. I messaggi precedenti che cita sono chiusi sotto **Messaggi precedenti**. **Leggi il thread** apre le email per intero.
 
+## Cosa ha fatto
+
+Ogni esecuzione è una riga discreta, come «12 cose controllate». Aprila per vedere ogni tipo di passaggio una volta, con quante volte: «Ha usato il browser su example.com · 7». Indica il sito, mai l’indirizzo, un comando o un file.
+
 ## Cosa chiedere
 
 Prima che tu scriva, la chat può offrire fino a tre suggerimenti presi da questa attività, come «Proponi martedì alle 10:00». Toccandone uno finisce nella casella del messaggio, da inviare o cambiare. Se non c'è niente di specifico, non ne mostra.

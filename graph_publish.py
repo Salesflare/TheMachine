@@ -25,6 +25,13 @@ TABLES = {
 }
 
 
+# A row already there is changed in place: an UPDATE, which leaves its triggers the old row to compare with (an INSERT OR
+# REPLACE is a new row to them). stamps.GRAPH_WHO counts a node only when who it is changed, not its strength or profile.
+UPDATES = {
+    'graph_nodes': 'UPDATE graph_nodes SET kind=?,name=?,strength=?,last_at=?,signals=?,gap_days=?,quiet=?,trend=?,info=? WHERE id=?',
+}
+
+
 def _events(rows):
     """graph_events rows as the old INSERT ... ON CONFLICT left them: the first row's time, a confirmed label over a
     probable one (min probable), direct when any row is (max direct)."""
@@ -57,7 +64,12 @@ def replace(db, table, rows):
     gone = [key for key in have if key not in new]
     db.executemany(delete, gone)
     changed = [row for key, row in new.items() if have.get(key) != row]
-    db.executemany(insert, changed)
+    update = UPDATES.get(table)
+    if update:
+        db.executemany(update, [(*row[keyed:], *row[:keyed]) for row in changed if row[:keyed] in have])
+        db.executemany(insert, [row for row in changed if row[:keyed] not in have])
+    else:
+        db.executemany(insert, changed)
     return len(gone) + len(changed)
 
 

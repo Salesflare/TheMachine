@@ -9,6 +9,8 @@ import unittest
 from unittest.mock import patch
 from seams import patch_everywhere  # noqa: E402
 
+from machine.chat import CHAT_STEP_GROUPS  # noqa: E402
+
 spec = importlib.util.spec_from_file_location('card_chat_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(a)
@@ -53,11 +55,45 @@ class CardChat(unittest.TestCase):
         owner = [{'kind': 'you', 'text': 'Do it', 'button': True, 'at': 1000}, {'kind': 'you', 'text': 'Make it shorter', 'button': False, 'at': 5000}]
         items = a.chat_items(messages, owner)
         self.assertEqual([i['kind'] for i in items], ['you', 'steps', 'reply', 'you', 'reply'])
-        self.assertEqual(items[1]['steps'], ['Opening …', a.STEP_NAMES.get('exec', 'Working')])
+        self.assertEqual(items[1]['steps'], [{'text': 'Opening …', 'n': 1}, {'line': ['Ran a command'], 'n': 1}])
+        self.assertEqual(items[1]['count'], 2)
         self.assertEqual(items[2]['text'], 'Drafted it. Key api_key=[redacted] at …')
         text = json.dumps(items)
         for hidden in ('Prepare suggestion', 'SAME session', 'secret plan', 'tool output', '/home/', 'xxxxxxxxxx'):
             self.assertNotIn(hidden, text)
+
+    def test_steps_fold_by_kind_with_the_site_and_never_the_command(self):
+        # A long Do it run: the browser and a command in turn, then the assistant's own lookups. Each kind is one line
+        # with how many times; a browser step says its site (the host name only) and so do the steps on that tab after it.
+        calls = []
+        for n in range(11):
+            calls.append({'type': 'toolCall', 'name': 'browser', 'arguments': {'action': 'open', 'targetId': 't1',
+                          'url': 'https://www.shop.example.com/letters?order=12345&token=abcdefghijklmnop'} if n == 0 else {'action': 'snapshot'}})
+            calls.append({'type': 'toolCall', 'name': 'exec', 'arguments': {'command': 'curl -H "Authorization: Bearer abcdefghijklmnopqrstuvwxyz" https://x.example'}})
+        calls += [{'type': 'toolCall', 'name': 'assistant_signals', 'arguments': {'action': 'status'}},
+                  {'type': 'toolCall', 'name': 'assistant_signals', 'arguments': {'action': 'bug_offer', 'args': {'words': 'private words'}}},
+                  {'type': 'toolCall', 'name': 'browser', 'arguments': {'action': 'open', 'url': 'http://127.0.0.1:18789/secret'}},
+                  {'type': 'toolCall', 'name': 'web_fetch', 'arguments': {'url': 'file:///home/someone/notes.txt'}},
+                  {'type': 'toolCall', 'name': 'mystery_tool', 'arguments': {'q': 'search words'}}]
+        items = a.chat_items([row('assistant', calls, 'r1', 1000), row('assistant', [{'type': 'text', 'text': 'Ordered.'}], 'r1', 2000)], [])
+        steps = items[0]
+        self.assertEqual(steps['kind'], 'steps')
+        self.assertEqual(steps['count'], 27)
+        self.assertEqual(steps['steps'], [{'line': ['Used the browser on {}', 'shop.example.com'], 'n': 11},
+                                          {'line': ['Ran a command'], 'n': 11}, {'line': ['Checked open to-dos'], 'n': 1},
+                                          {'line': ['Looked things up in The Machine'], 'n': 1}, {'line': ['Used the browser'], 'n': 1},
+                                          {'line': ['Read a web page'], 'n': 1}])  # the mystery tool counts, without a row
+        text = json.dumps(items)
+        for hidden in ('curl', 'Bearer', 'order=', 'token', '/letters', '127.0.0.1', '/home/', 'private words', 'search words'):
+            self.assertNotIn(hidden, text)
+
+    def test_steps_keep_the_most_frequent_kinds(self):
+        calls = [{'type': 'toolCall', 'name': 'browser', 'arguments': {'url': f'https://site{n}.example.org/'}} for n in range(30)]
+        calls += [{'type': 'toolCall', 'name': 'exec', 'arguments': {}}] * 5
+        steps = a.chat_items([row('assistant', calls, 'r1', 1000)], [])[0]
+        self.assertEqual(steps['count'], 35)
+        self.assertEqual(len(steps['steps']), CHAT_STEP_GROUPS)
+        self.assertIn({'line': ['Ran a command'], 'n': 5}, steps['steps'])
 
     def test_learning_internals_stay_out_and_say_noted(self):
         msgs = [row('assistant', [{'type': 'text', 'text': 'Saved the reply.'}], 'r1', 1000),
@@ -451,6 +487,33 @@ class CardChat(unittest.TestCase):
             raise a.subprocess.TimeoutExpired('node', kwargs['timeout'])
         with patch.object(a.subprocess, 'run', side_effect=slow), patch_everywhere(a, 'node_bin', return_value='node'), patch_everywhere(a, 'node_env', return_value={}):
             self.assertEqual(self.app.card_chat_gateway({'session_key': 'x'}), {'error': 'unavailable', 'reason': 'timeout'})
+
+    def test_missing_node_packages_are_put_in_so_the_next_read_works(self):
+        # npm ci failed during the install (or never ran): the helper can't start. Instead of "Trying again…" for good,
+        # the service puts the pinned packages in once, in the background, and says why in the log.
+        import installer
+        missing = a.subprocess.CompletedProcess(['node'], 1, '', "Error [ERR_MODULE_NOT_FOUND]: Cannot find package '@openclaw/gateway-client'")
+
+        class Now:  # the repair's thread, run at once
+            def __init__(self, target, **kwargs):
+                self.target = target
+
+            def start(self):
+                self.target()
+        with patch.object(a.subprocess, 'run', return_value=missing), patch_everywhere(a, 'node_bin', return_value='/opt/node/bin/node'), \
+                patch_everywhere(a, 'node_env', return_value={}), patch.object(a.threading, 'Thread', Now), \
+                patch.object(installer, 'install_node_packages', return_value=True) as install, self.assertLogs('personal-assistant', 'WARNING') as logged:
+            self.assertEqual(self.app.card_chat_gateway({'session_key': 'x'}), {'error': 'unavailable', 'reason': 'setup'})
+            self.app.card_chat_gateway({'session_key': 'x'})  # the dashboard asks again 4 s later: one install at a time
+        install.assert_called_once_with('/opt/node/bin/node', a.ROOT)
+        self.assertEqual(logged.output, ['WARNING:personal-assistant:card chat node packages missing; installed=True'])
+        # Any other failure stays a plain "unavailable", with no install
+        with patch.object(a.subprocess, 'run', return_value=a.subprocess.CompletedProcess(['node'], 1, '', 'boom')), \
+                patch_everywhere(a, 'node_bin', return_value='node'), patch_everywhere(a, 'node_env', return_value={}), \
+                patch.object(installer, 'install_node_packages') as install:
+            self.app._chat_packages_tried = -1e9
+            self.assertEqual(self.app.card_chat_gateway({'session_key': 'x'}), {'error': 'unavailable'})
+        install.assert_not_called()
 
     def test_card_chat_refuses_what_is_not_a_card(self):
         for bad in ('', '../x', 'ABCDEF0123456789', '0' * 16):

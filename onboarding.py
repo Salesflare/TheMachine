@@ -34,7 +34,7 @@ import message_seal
 import portable
 import service
 import wacli_release
-from machine.sources import teams_setup
+from machine.sources import groups, teams_setup
 
 ROOT = Path(__file__).resolve().parent
 UNIT_NAME = service.UNIT_NAME
@@ -308,7 +308,7 @@ def catalog(config):
         if service == 'teams' and not teams_setup.offered(config):
             continue
         setup = setup_of(service) or {}
-        found.append({'name': name, 'service': service, 'label': label(service), 'note': setup.get('note'), 'what': setup.get('what'),
+        found.append({'name': name, 'service': service, 'label': label(service), 'group': groups.group_of(service, setup.get('group')), 'note': setup.get('note'), 'what': setup.get('what'),
                       'connected': have.get(service, 0), 'broker': service in brokered or bool(setup.get('broker')),
                       'form': web_form(config, service),
                       **({'account_page': setup['account_page']} if isinstance(setup.get('account_page'), str) else {})})

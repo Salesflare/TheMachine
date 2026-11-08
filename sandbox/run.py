@@ -445,6 +445,8 @@ def main():
                 raise SystemExit(f'port {port} is in use (another sandbox?); pick another with --port')
     directory = Path(args.dir or f'/tmp/machine-sandbox-{args.port}')
     config, config_path = load.load(directory, states, port=args.port + 2, network_port=args.port + 1)
+    if 'fresh' not in states:
+        load.load_openclaw_jobs(config)  # served only: an export would take OpenClaw's file as data
     os.environ['OPENCLAW_WORKSPACE'] = str(directory / 'workspace')
     guard.install()  # from here on: nothing but 127.0.0.1, no programs
     import assistant

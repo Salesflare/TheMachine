@@ -253,8 +253,15 @@ class Embeddings(unittest.TestCase):
     def test_feature_off_without_config(self):
         for config in ({'accounts': [{'id': 'work'}]}, {'accounts': [{'id': 'work'}], 'embeddings': {**SETTINGS, 'enabled': False}}):
             self.app.config = config
+            # related without meaning search: keyword matches, never "not set up" (a review's related call failed)
+            found = self.app.action('related', {'account_ids': ['work'], 'query': 'invoice'})
+            self.assertFalse(found['semantic'])
+            self.assertEqual({e['title'] for e in found['events']}, {'Invoice overdue', 'Invoice reminder'})
+            one = self.ids('work', '1')  # only a signal: its own words find the others, never itself
+            found = self.app.action('related', {'account_ids': ['work'], 'event_ids': [one]})
+            self.assertEqual(([e['title'] for e in found['events']], found['semantic']), (['Invoice reminder'], False))
             with self.assertRaises(ValueError):
-                self.app.action('related', {'account_ids': ['work'], 'query': 'invoice'})
+                self.app.action('related', {'account_ids': ['work']})
             semantic = self.app.action('events', {'account_ids': ['work'], 'query': 'invoice unpaid', 'semantic': True})
             plain = self.app.action('events', {'account_ids': ['work'], 'query': 'invoice unpaid'})
             self.assertEqual(semantic, plain)

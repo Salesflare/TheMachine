@@ -42,6 +42,7 @@ FOLDED = {
 
 # Left out, by why
 LEFT_OUT = {
+    'OpenClaw\'s own scheduled jobs (only the sandbox makes a stand-in; an install\'s are in OpenClaw)': {'cron_jobs'},
     'credentials and sign-ins (never exported)': {
         'agent_key_pins', 'ai_clients', 'ai_codes', 'ai_connections', 'ai_folded', 'ai_tokens', 'network_pins', 'network_sealed',
         'push_subscriptions', 'notify_app_devices',

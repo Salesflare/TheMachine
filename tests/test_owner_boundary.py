@@ -338,7 +338,7 @@ class OwnerBoundary(unittest.TestCase):
     def test_the_pages_script_is_a_file_kept_for_a_year_under_its_name(self):
         # The page's main script (1.6 MB) is a file named by its contents: the browser keeps it and its compiled code
         # between starts instead of parsing it in the page each time. It holds nothing per owner; a name from another
-        # release gets this release's script, not kept; only the owner gets it.
+        # release gets this release's script, not kept; only the owner gets it. The same for the parts that load later.
         import gzip, re
         port = self.serve()
         owner = {'Host': 'machine.example:8443', 'Tailscale-User-Login': 'owner@example.com'}
@@ -360,6 +360,19 @@ class OwnerBoundary(unittest.TestCase):
         r, other = get('/app-' + '0' * 16 + '.js', owner)
         self.assertEqual((r.status, r.getheader('Cache-Control'), other), (200, 'no-store', script))
         self.assertEqual(get('/' + name, {'Host': 'machine.example:8443'})[0].status, 403)
+        # Each group of parts that loads when first needed (dashboard_parts.LAZY) is a file like it, named in the page
+        lazy = json.loads(re.search(r'<script>self\.LAZY_FILES=(\{[^<]*\})</script><script src="app-', page)[1])
+        self.assertEqual(sorted(lazy), sorted(dashboard_parts.LAZY))
+        for group, file in lazy.items():
+            r, part = get('/' + file, owner)
+            self.assertEqual((r.status, r.getheader('Cache-Control')), (200, 'private, max-age=31536000, immutable'))
+            self.assertTrue(r.getheader('Content-Type').startswith('text/javascript'))
+            self.assertNotIn(part, script)
+            self.assertNotRegex(part, rb'__(CSRF|UI_VERSION|BASE|CACHE_SCOPE)__')
+            r, other = get(f'/lazy-{group}-' + '0' * 16 + '.js', owner)
+            self.assertEqual((r.status, r.getheader('Cache-Control'), other), (200, 'no-store', part))
+            self.assertEqual(get('/' + file, {'Host': 'machine.example:8443'})[0].status, 403)
+        self.assertEqual(get('/lazy-nothing-' + '0' * 16 + '.js', owner)[0].status, 404)
 
     def test_compressed_answers(self):
         # The page and the other secret-free answers go compressed when the client takes it (best coding it accepts,

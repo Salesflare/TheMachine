@@ -48,13 +48,13 @@ from machine.web.serving import (
     dashboard_cache_scope,
     dashboard_csrf,
     dashboard_hosts,
-    dashboard_page,
-    dashboard_script,
+    dashboard_files,
     dashboard_status,
     dashboard_version,
     etag_matches,
     SCRIPT_CACHE,
     SCRIPT_NAME,
+    served_file,
     tailnet_login,
 )
 import meeting_notes
@@ -303,8 +303,9 @@ def make_handler(app):
             if (path.path == '/browser' or path.path.startswith('/browser/')) and app.config.get('browser_vnc'):
                 self.browser_view(path.path[len('/browser/'):], short=path.path in ('/browser', '/browser/'))
             elif path.path == '/':
-                page = dashboard_page(app.token, app.config['tailscale_owner'], dashboard_base(app.config, self.headers.get('Host', '')))
-                page = dashboard_script(page)[0]  # its main script is a file of its own (/app-<hash>.js, below)
+                # its main script and the parts that load when first needed are files of their own (/app-<hash>.js and
+                # /lazy-<group>-<hash>.js, below)
+                page = dashboard_files(app.token, app.config['tailscale_owner'], dashboard_base(app.config, self.headers.get('Host', '')))[0]
                 # The installed app's service worker keeps a copy of this page and asks again with its ETag: an
                 # unchanged page is a short 304 instead of the whole page over a phone's connection.
                 etag = '"' + hashlib.sha256(page.encode()).hexdigest()[:24] + '"'
@@ -329,10 +330,11 @@ def make_handler(app):
                 else:
                     self.output(status, page, 'text/html', referrer='same-origin')
             elif SCRIPT_NAME.fullmatch(path.path):
-                # The page's main script (dashboard_script): kept by the browser for a year under its name, which changes
-                # with it. A name from another release (a page kept by an older service worker) gets this release's
-                # script, not kept: the page then sees the new release and loads it.
-                _, name, script = dashboard_script(dashboard_page(app.token, app.config['tailscale_owner'], '/'))
+                # The page's main script, or a group of parts that loads when first needed (dashboard_files): kept by
+                # the browser for a year under its name, which changes with it. A name from another release (a page kept
+                # by an older service worker) gets this release's file of that kind, not kept: the page then sees the
+                # new release and loads it.
+                name, script = served_file(dashboard_files(app.token, app.config['tailscale_owner'], '/')[1], path.path[1:])
                 if not name:
                     self.output(404, {'error': 'Not found'})
                     return
@@ -366,7 +368,9 @@ def make_handler(app):
                 self.output(200, {**current, 'here': here} if current else {})
             elif path.path in BRAND_ASSETS:
                 asset = BRAND_ASSETS[path.path]
-                self.output(200, asset.read_bytes(), {'.webp': 'image/webp', '.woff2': 'font/woff2', '.mp3': 'audio/mpeg'}.get(asset.suffix, 'image/png'))
+                self.output(200, asset.read_bytes(), {'.webp': 'image/webp', '.woff2': 'font/woff2', '.mp3': 'audio/mpeg',
+                                                      '.svg': 'image/svg+xml'}.get(asset.suffix, 'image/png'),
+                            cache='private, max-age=86400' if '/logos/' in path.path else 'no-store')
             elif path.path == '/api/session':
                 # Asked once by a page: the CSRF token (a page started from the app's on-device copy has none, that
                 # copy never keeps it) and whose data the device may keep (dashboard_cache_scope)

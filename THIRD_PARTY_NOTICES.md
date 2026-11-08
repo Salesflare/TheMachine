@@ -70,3 +70,7 @@ The dashboard's interface text uses Inter by The Inter Project Authors, bundled 
 ## Simple Icons
 
 The one-color service logos on to-dos (Gmail, Slack, WhatsApp, Telegram, LinkedIn, X, Intercom, Google Docs, Google Calendar) are SVG paths from [Simple Icons](https://simpleicons.org), inlined in `dashboard.html`. Simple Icons is released under CC0 1.0. The logos and names are trademarks of their owners; they only show which service a message came from or goes out on.
+
+The service logos in Connections, + Add, are separate files in `dashboard/logos/`. Their sources and terms (Simple Icons
+under CC0 1.0, the Android robot under CC BY 3.0, and others under their owners' brand terms) are in
+[dashboard/logos/NOTICE.md](dashboard/logos/NOTICE.md). They are not covered by the AGPL.

@@ -54,9 +54,11 @@ def sending_account(config, account_ids):
     areas = {todo_areas.area_of_account(a) for a in config.get('accounts', []) if a['id'] in own} - {None}
     work = any(x != todo_areas.PERSONAL for x in areas)
     side = lambda a: todo_areas.area_of_account(a) or ''
-    for pick in (lambda a: a['id'] in own, lambda a: side(a) in areas,
-                 (lambda a: side(a).startswith('work:')) if work else (lambda a: side(a) == todo_areas.PERSONAL),
-                 lambda a: True):
+    # In Personal, a mailbox set up as personal comes before a company one only labeled so (todo_areas.py)
+    native = lambda a: side(a) != todo_areas.PERSONAL or str(a.get('boundary') or '').startswith('personal:')
+    for pick in (lambda a: a['id'] in own, lambda a: side(a) in areas and native(a), lambda a: side(a) in areas,
+                 (lambda a: side(a).startswith('work:')) if work else (lambda a: side(a) == todo_areas.PERSONAL and native(a)),
+                 lambda a: not work and side(a) == todo_areas.PERSONAL, lambda a: True):
         found = next((a for a in mail if pick(a)), None)
         if found:
             return found

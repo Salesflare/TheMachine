@@ -210,5 +210,63 @@ class PageQueries(unittest.TestCase):
                 self.assertEqual(graph.colleagues(db), (set(), ()))
             self.assertEqual(made.call_count, 2)
 
+class GraphWho(unittest.TestCase):
+    """graph_who: what the sharing rules read from graph_nodes. A graph build rewrites every person's strength, profile
+    and live each few minutes; that keeps what is kept by it (a person page's sharing rules and team graph), and a change
+    to who someone is (id, kind, name, the rest of info) or a row added or gone does not."""
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
+        self.db = sqlite3.connect(Path(self.temp.name) / 'g.sqlite')
+        self.addCleanup(self.db.close)
+        self.db.execute('CREATE TABLE graph_nodes(id TEXT PRIMARY KEY,kind TEXT NOT NULL,name TEXT NOT NULL,strength REAL NOT NULL,'
+                        'last_at TEXT,signals INTEGER NOT NULL,gap_days REAL,quiet INTEGER NOT NULL DEFAULT 0,trend REAL,info TEXT NOT NULL)')
+        self.db.execute("INSERT INTO graph_nodes(id,kind,name,strength,signals,info) VALUES('email:lee@acme.example','person','Lee',1,0,?)",
+                        ('{"identifiers":["email:lee@acme.example"],"profile":{"title":"CFO"},"live":{"at":"1"}}',))
+        stamps.watch(self.db, ('graph_nodes',))
+        stamps.watch_graph_who(self.db)
+        stamps.watch_graph_who(self.db)  # once: again changes nothing
+        self.db.commit()
+
+    def changed(self, sql, *args):
+        before = stamps.stamp(self.db, ('graph_who',))
+        self.db.execute(sql, args)
+        self.db.commit()
+        return stamps.stamp(self.db, ('graph_who',)) != before
+
+    def test_a_builds_rewrite_keeps_it_who_someone_is_does_not(self):
+        self.assertIsNotNone(stamps.stamp(self.db, ('graph_who',)))
+        self.assertFalse(self.changed('UPDATE graph_nodes SET strength=strength*0.9,last_at=?,signals=signals+1', '2026-11-08'))
+        self.assertFalse(self.changed("UPDATE graph_nodes SET info=json_set(info,'$.profile.title','CEO','$.live.at','2')"))
+        self.assertFalse(self.changed('UPDATE graph_nodes SET info=info'))
+        self.assertTrue(self.changed("UPDATE graph_nodes SET name='Lee Park'"))
+        self.assertTrue(self.changed("UPDATE graph_nodes SET info=json_set(info,'$.side','personal')"))
+        self.assertTrue(self.changed("UPDATE graph_nodes SET info=json_insert(info,'$.identifiers[#]','email:lee@home.example')"))
+        self.assertTrue(self.changed("UPDATE graph_nodes SET info='not json'"))
+        self.assertTrue(self.changed("INSERT INTO graph_nodes(id,kind,name,strength,signals,info) VALUES('org:acme.example','org','Acme',1,0,'{}')"))
+        self.assertTrue(self.changed("DELETE FROM graph_nodes WHERE id='org:acme.example'"))
+
+    def test_a_graph_publish_changes_rows_in_place(self):
+        """graph_publish updates a node that is there (an INSERT OR REPLACE would count as a new row): the same table
+        after, and a new strength or profile does not count."""
+        import graph_publish
+        node = lambda name, strength, info: ('email:lee@acme.example', 'person', name, strength, None, 0, None, 0, None, json.dumps(info))
+        info = {'identifiers': ['email:lee@acme.example'], 'profile': {'title': 'CFO'}}
+        self.db.execute('DELETE FROM graph_nodes')
+        graph_publish.replace(self.db, 'graph_nodes', [node('Lee', 1.0, info)])
+        self.db.commit()
+        before = stamps.stamp(self.db, ('graph_who',))
+        graph_publish.replace(self.db, 'graph_nodes', [node('Lee', 0.5, {**info, 'profile': {'title': 'CEO'}})])
+        self.db.commit()
+        self.assertEqual(stamps.stamp(self.db, ('graph_who',)), before)
+        self.assertEqual(self.db.execute('SELECT name,strength,json_extract(info,"$.profile.title") FROM graph_nodes').fetchall(), [('Lee', 0.5, 'CEO')])
+        ann = ('email:ann@acme.example', 'person', 'Ann', 2.0, None, 0, None, 0, None, '{}')
+        graph_publish.replace(self.db, 'graph_nodes', [node('Lee Park', 0.5, info), ann])
+        self.db.commit()
+        self.assertNotEqual(stamps.stamp(self.db, ('graph_who',)), before)
+        self.assertEqual(self.db.execute('SELECT id,name FROM graph_nodes ORDER BY id').fetchall(),
+                         [('email:ann@acme.example', 'Ann'), ('email:lee@acme.example', 'Lee Park')])
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -4,8 +4,8 @@ import datetime as dt
 import json
 from pathlib import Path
 import re
+import urllib.parse
 
-from machine.browser import STEP_NAMES
 from machine.cards import CHAT_HANDLE, chat_plain_name
 from machine.text import _address, clamp, split_quoted_history
 import next_actions
@@ -316,6 +316,72 @@ def chat_text_phase(part):
     return phase if phase in ('commentary', 'final_answer') else ''
 
 
+# A run's steps in its chat, said as done, in plain words, one line per kind with how many times ("Used the browser on
+# example.com · 11"): the tool, the site a browser or web page step was on (its host name only, never the address,
+# its path or its query) and what its lookups in The Machine looked up. Never a command, its arguments, search words
+# or a file. Each line is a catalog sentence with its slot, so the dashboard says it in the owner's language. A step
+# with nothing specific to say (a tool not named here) counts, but has no row.
+CHAT_STEP_LINES = {'exec': 'Ran a command', 'browser': 'Used the browser', 'read': 'Read a file', 'write': 'Wrote notes',
+                   'edit': 'Wrote notes', 'web_search': 'Searched the web', 'web_fetch': 'Read a web page',
+                   'assistant_signals': 'Looked things up in The Machine', 'memory_search': 'Searched memory'}
+CHAT_STEP_SITES = {'browser': 'Used the browser on {}', 'web_fetch': 'Read a page on {}'}
+CHAT_STEP_ACTIONS = {'events': 'Searched messages', 'graph': 'Looked up people', 'status': 'Checked open to-dos',
+                     'preparation_history': 'Read earlier work on this to-do', 'related': 'Looked for related to-dos',
+                     'promise': 'Noted a promise', 'remember_fact': 'Remembered something about you',
+                     'prepare': 'Saved its work on this to-do'}
+CHAT_STEP_GROUPS = 20  # lines a run's steps fold into at most (the most frequent); its count still says them all
+
+
+def chat_step_site(arguments):
+    """The site a step opened, as its bare host name (www. left off), or '' when it has none worth showing: not a web
+    address, a local or numeric host, or a host that is an ID."""
+    found = arguments.get('url') or arguments.get('targetUrl')
+    if not isinstance(found, str):
+        return ''
+    try:
+        parts = urllib.parse.urlsplit(found.strip())
+        host = (parts.hostname or '').lower()
+    except ValueError:
+        return ''
+    if (parts.scheme not in ('http', 'https') or '.' not in host or not re.fullmatch(r'[a-z0-9.-]{1,60}', host)
+            or re.fullmatch(r'[\d.]+', host) or host.endswith(('.local', '.internal', '.localhost')) or CHAT_IDS.search(host)):
+        return ''
+    return host.removeprefix('www.')
+
+
+def chat_step(name, arguments, sites):
+    """One step as the chat says it: the agent's own title for it (redacted), else its line ({'line': [sentence,
+    slot]}), or None when there is nothing specific to say. A browser step without an address is on the site its tab (or the last tab) was last opened on (`sites`)."""
+    title = arguments.get('title') if isinstance(arguments.get('title'), str) else ''
+    title = chat_text(title, step=True, chars=120)
+    if title:
+        return {'text': title}
+    site = chat_step_site(arguments) if name in CHAT_STEP_SITES else ''
+    if name == 'browser':
+        tab = arguments.get('targetId') or arguments.get('label')
+        tab = tab if isinstance(tab, str) else ''
+        if arguments.get('url') or arguments.get('targetUrl'):  # opened somewhere, shown or not: later steps are there
+            sites[tab] = sites[''] = site
+        else:
+            site = sites.get(tab, '') if tab else sites.get('', '')
+    if site:
+        return {'line': [CHAT_STEP_SITES[name], site]}
+    action = arguments.get('action') if name == 'assistant_signals' else None
+    if isinstance(action, str) and action in CHAT_STEP_ACTIONS:
+        return {'line': [CHAT_STEP_ACTIONS[action]]}
+    return {'line': [CHAT_STEP_LINES[name]]} if name in CHAT_STEP_LINES else None
+
+
+def chat_steps_item(run):
+    """A run's steps item: each kind of step once, in the order it first came, with how many times (n), the most
+    frequent CHAT_STEP_GROUPS of them, and how many steps it took in all (count)."""
+    groups = run['steps']
+    if len(groups) > CHAT_STEP_GROUPS:
+        kept = set(map(id, sorted(groups, key=lambda g: -g['n'])[:CHAT_STEP_GROUPS]))
+        groups = [g for g in groups if id(g) in kept]
+    return {'kind': 'steps', 'count': run['step_count'], 'steps': [dict(g) for g in groups]}
+
+
 def chat_run_keys(messages):
     """The run each message belongs to. A CLI agent's own turns (Claude Code), which OpenClaw imports into the session
     without a run ID, belong to the run whose record follows them, up to the prompt that started it."""
@@ -381,7 +447,8 @@ def chat_items(messages, owner, results=None):
         meta = message.get('__openclaw') if isinstance(message.get('__openclaw'), dict) else {}
         at = next((v for v in (message.get('timestamp'), meta.get('recordTimestampMs')) if number(v)), 0)
         if key not in runs:
-            runs[key] = {'steps': [], 'at': at, 'texts': [], 'noted': False, 'notes': [], 'finals': []}
+            runs[key] = {'steps': [], 'step_keys': {}, 'step_count': 0, 'sites': {}, 'at': at, 'texts': [], 'noted': False,
+                         'notes': [], 'finals': []}
             order.append(key)
         run = runs[key]
         imported = bool(meta.get('importedFrom'))
@@ -398,10 +465,14 @@ def chat_items(messages, owner, results=None):
                 continue
             if part.get('type') == 'toolCall':
                 arguments = part.get('arguments') if isinstance(part.get('arguments'), dict) else {}
-                title = arguments.get('title') if isinstance(arguments.get('title'), str) else ''
-                title = chat_text(title, step=True, chars=120) or STEP_NAMES.get(part.get('name'), 'Working')
-                if run['steps'][-1:] != [title]:
-                    run['steps'].append(title)
+                step = chat_step(part.get('name'), arguments, run['sites'])
+                run['step_count'] += 1
+                if step is not None:
+                    found = run['step_keys'].get(json.dumps(step))
+                    if found is None:
+                        found = run['step_keys'][json.dumps(step)] = {**step, 'n': 0}
+                        run['steps'].append(found)
+                    found['n'] += 1
                 run['at'] = run['at'] or at
             elif part.get('type') == 'text' and str(part.get('text') or '').strip():
                 text, noted = chat_reply(chat_text(part['text']))
@@ -419,7 +490,7 @@ def chat_items(messages, owner, results=None):
         replies = saved or run['texts']
         if run['steps']:
             first = min([run['at']] + [r['at'] for r in replies if r['at']]) if run['at'] or replies else 0
-            items.append({'kind': 'steps', 'steps': run['steps'][-30:], 'at': max(0, (first or 0) - 1)})
+            items.append({**chat_steps_item(run), 'at': max(0, (first or 0) - 1)})
         if run['noted']:  # a learning turn of its own belongs to the reply before it
             target = replies[-1] if replies else next((i for i in reversed(items) if i['kind'] == 'reply'), None)
             if target is not None:

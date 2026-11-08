@@ -407,6 +407,12 @@ def find_offers(db, today, stamp, tz):
     return added
 
 
+def add_offer(db, key, source, title, rule, anchor, stamp):
+    """An offer from elsewhere (an old OpenClaw job, routines_app.py), asked once like the rest. rule as JSON text."""
+    db.execute('INSERT OR IGNORE INTO recurring_offers(key,source,title,text,rule,anchor,created_at) VALUES(?,?,?,?,?,?,?)',
+               (key, source, title[:120], title, rule, anchor, stamp))
+
+
 def answer_offer(db, key, yes, stamp):
     """The owner's Yes or No thanks on an open offer (never asked again either way): the offer's row."""
     offer = db.execute("SELECT * FROM recurring_offers WHERE key=? AND status='open'", (key,)).fetchone()

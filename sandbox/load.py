@@ -28,7 +28,9 @@ import json
 import os
 import re
 import secrets
+import sqlite3
 import sys
+from contextlib import closing
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -272,8 +274,20 @@ def load_recurring(store, config, base):
         recurring.start(db, card, {'unit': 'week', 'n': 1}, monday, card['owner_words'] or card['title'], base.isoformat(), work=True)
 
 
+def sandbox_jobs(monday, today):
+    """Old OpenClaw jobs: (job id, name, words, rule, anchor, at, 'on' or 'suggested', the preview's result)."""
+    return [('sandbox-job-0001', 'Weekly Intercom', 'Sum up this week’s support issues and improvement requests', {'unit': 'week', 'n': 1}, monday, '12:00',
+             'on', '**Duplicate reminders** came up in 4 conversations, all on the mobile app.\n**Export to Excel** asked for 3 times.'),
+            ('sandbox-job-0002', 'Failed payments', 'List customers whose payment failed, with the amount and since when', {'unit': 'week', 'n': 1}, monday, '09:15',
+             'suggested', '**Halyard**: card declined twice, **€480** open since Tuesday.\n**Brightpath Logistics**: card expired, renews Friday.'),
+            ('sandbox-job-0003', 'Call prep', 'Prep me for today’s customer calls: who, what they last asked and what is open', {'unit': 'weekday', 'n': 1}, today, '07:00',
+             'suggested', '**Northwind Analytics** at 10:00 with Mila: they compare annual pricing for 25 seats.\n**Gullwing Clinics** at 15:00: '
+             'the onboarding plan they asked for is still open.')]
+
+
 def load_routines(store, base):
-    """Routines (routines.py): two that ran a few times, as the Routines page shows them after a couple of weeks."""
+    """Routines (routines.py): two that ran a few times, as the Routines page shows them after a couple of weeks; one
+    from an old OpenClaw job that ran well for a week (Turn off the old job?), and two suggestions from OpenClaw jobs."""
     import routines
     now = base.replace(tzinfo=None)
     today = now.date()
@@ -292,7 +306,30 @@ def load_routines(store, base):
             run_id = routines.begin(db, routine_id, (today - dt.timedelta(days=days)).isoformat(), stamp(days * 24 * 60, base))
             routines.finish(db, run_id, state, stamp(days * 24 * 60 - 3, base), result=result,
                             why=why if state == 'nothing' else None, error=why if state == 'failed' else None)
+        for job_id, name, words, rule, anchor, at, state, result in sandbox_jobs(monday, today):
+            rid = routines.create(db, words, rule, anchor, at, now, stamp(12 * 24 * 60, base), name=name, origin='openclaw:' + job_id,
+                                  state='sorting')
+            run_id = routines.begin(db, rid, 'sort:' + stamp(11 * 24 * 60, base), stamp(11 * 24 * 60, base))
+            routines.sorted_as(db, run_id, 'routine', stamp(11 * 24 * 60 - 5, base), name=name, instructions=words, text=result)
+            if state == 'on':  # added 10 days ago; three good runs since
+                routines.accept(db, rid, now, stamp(10 * 24 * 60, base))
+                for days in (9, 5, 2):
+                    run_id = routines.begin(db, rid, (today - dt.timedelta(days=days)).isoformat(), stamp(days * 24 * 60, base))
+                    routines.finish(db, run_id, 'ready' if days == 2 else 'nothing', stamp(days * 24 * 60 - 3, base),
+                                    result=result if days == 2 else None, why=None if days == 2 else 'Nothing new this week')
         db.commit()
+
+
+def load_openclaw_jobs(config):
+    """The old OpenClaw jobs the routines above came from, still on (routine_imports.py reads them read-only), so the
+    page asks to turn the old job off. Only for a served sandbox (run.py): an export would take this file as data."""
+    today = dt.date.today()
+    with closing(sqlite3.connect(config['openclaw_state'])) as claw, claw:
+        claw.execute('CREATE TABLE IF NOT EXISTS cron_jobs(job_id TEXT PRIMARY KEY,name TEXT,description TEXT,enabled INTEGER,'
+                     'payload_kind TEXT,job_json TEXT,sort_order INTEGER)')
+        claw.executemany('INSERT OR IGNORE INTO cron_jobs(job_id,name,enabled,payload_kind,job_json,sort_order) VALUES(?,?,1,?,?,?)',
+                         [(j[0], j[1], 'agentTurn', json.dumps({'schedule': {'kind': 'cron', 'expr': '0 9 * * 1'}, 'payload': {'message': j[2]}}), i)
+                          for i, j in enumerate(sandbox_jobs(today, today))])
 
 
 def load_owners(db, fixture, base):
@@ -435,6 +472,12 @@ def load_cards(db, fixture, ids, base):
                     card.get('project')))
         if card.get('asks'):  # its chat's taps (Store.set_chat_asks)
             db.execute('UPDATE suggestions SET chat_asks=? WHERE id=?', (json.dumps(card['asks']), card_id))
+        if card.get('done_by'):  # Already did this: a Family member closed the same to-do as done (Fleet.mark_done_elsewhere)
+            family = fixture['network']['family']
+            member = next(m for m in family['team'] if m['name'] == card['done_by']['name'])
+            db.execute('UPDATE suggestions SET done_elsewhere=? WHERE id=?', (json.dumps(
+                {'name': member['name'].split()[0], 'member_id': member['member_id'], 'fleet': family['id'],
+                 'at': stamp(card['done_by']['minutes_ago'], base)}), card_id))
         if card.get('based_on') in ids:  # the teammate's input the draft follows: "Based on Priya in #sales"
             db.execute('UPDATE suggestions SET based_on=? WHERE id=?', (ids[card['based_on']], card_id))
         db.execute('INSERT INTO deliveries(suggestion_id,status,updated_at) VALUES(?,?,?)', (card_id, 'sent', created))

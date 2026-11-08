@@ -23,6 +23,14 @@ Geht es in einer Aufgabe um Familienpläne mit jemandem, der noch nicht in deine
 - Nur für Menschen, die laut deinem Graph oder deinen eigenen Worten Familie sind. Nie für Arbeitskontakte, Leute, die schon in deiner Familie sind, oder jemanden mit offener Einladung. Höchstens einmal pro Person.
 - Ausschalten in Einstellungen, Allgemein, unter Fleet: **Familie einladen vorschlagen**.
 
+## Schon erledigt
+
+Bekommt ihr beide dieselbe E-Mail oder Rechnung und jemand von euch hakt die Aufgabe ab, steht bei der anderen Person „Robin hat das erledigt · Sa., 7. Nov.“.
+
+- **Erledigt** schließt deine. **Noch nötig** behält sie und blendet die Zeile aus.
+- Nichts schließt sich von selbst.
+- Geteilt wird nur ein Code, nie die Aufgabe. Ausschalten im Bereich Teilen: Aufgaben, die du schon erledigt hast.
+
 ## Regeln
 
 Standardmäßig werden freie und belegte Zeiten geteilt. Bei Aufgaben und Plänen wird zuerst gefragt. Das änderst du im Bereich Teilen: siehe [Freigaberegeln](sharing-rules.md).

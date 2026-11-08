@@ -34,8 +34,15 @@ KIND = 'family'
 KINDS = ('availability', 'todo', 'event')
 REQUESTS = ('todo', 'event')
 DEFAULT_RULES = {'availability': 'always', 'todo': 'ask', 'event': 'ask'}
+# done: "already did this". When a member closed a to-do as done that came from the same email (its Message-ID) or the
+# same bill (IBAN and payment reference) as an open one here, the open one says who and when, never more: it goes as a
+# keyed hash only a Machine holding the same email or bill can match (Fleet.handled_round). Not an ask: no question
+# travels, so it is a rule only (Always or Never), on by default. Nothing closes by itself.
+DONE = 'done'
+RULE_ONLY = (DONE,)
+DEFAULT_RULES[DONE] = 'always'
 WORK_ONLY = ('relationships', 'meeting', 'handling', 'intro', 'handoff', 'followup', 'brief', 'anything')
-LABELS = {'todo': 'to-dos', 'event': 'family plans'}
+LABELS = {'todo': 'to-dos', 'event': 'family plans', DONE: 'to-dos you already did'}
 TITLE, NOTE, PLACE = 120, 300, 120
 STAGES = {'accepted': 'accepted', 'declined': 'declined', 'done': 'done'}
 FREE_FROM, FREE_UNTIL, FREE_MINUTES = 8, 21, 60  # common free times: within these local hours, at least this long

@@ -6,11 +6,12 @@ const FLEET_RULE={ask:'Ask me first',always:'Always answer',never:'Never'};
 // (how: the two "how much" choices; sees(company, withNames): what an answer says; ask(name): what Ask me first does).
 const FLEET_SEG={ask:'Ask me first',always:'Always',never:'Never'};
 const FLEET_SEG_HINT={ask:'You see each question and choose',always:'Answered by itself, without asking you',never:'They get “no”'};
-const FLEET_KIND_Q={todo:'“Can you pick up the kids Friday?”',event:'“Dinner at grandma’s Sunday?”',relationships:'“Who knows someone at Acme?”',meeting:'“Who’s this guest in our meeting?”',handling:'“Who’s on this email we both got?”',
+const FLEET_KIND_Q={todo:'“Can you pick up the kids Friday?”',event:'“Dinner at grandma’s Sunday?”',relationships:'“Who knows someone at Acme?”',meeting:'“Who’s this guest in our meeting?”',handling:'“Who’s on this email we both got?”',done:'“Did you already do this?”',
  intro:'“Can you introduce me?”',handoff:'“Can you take this over?”',availability:'“When are you busy?”',followup:'“Will you take your part of the follow-ups?”',brief:'“What did you see this week?”'};
 const FLEET_KIND_UI={
  relationships:{how:['Without names','With names'],sees:(c,d)=>d?t('3 people at {} know them, one well: Ann Lee (well), Bob Ray',c):t('3 people at {} know them, one well',c)},
  meeting:{how:['Without names','Names and promises'],sees:(c,d)=>d?t('their guest from {}: a close contact, 1 open promise each way, with name and promises',c):t('their guest from {}: a close contact, 1 open promise each way',c)},
+ done:{sees:()=>'“done” and the day, for a to-do you both have (a code, never the to-do)'},
  handling:{sees:()=>'that you’re on an email you both got (a code, never the email)',ask:()=>'Nothing goes out; the to-do offers “Tell them you’re on it”.'},
  intro:{sees:()=>'“accepted”, then “sent” once you send the intro your Machine drafts',ask:()=>'You see each intro asked of you; nothing is drafted or sent without you.'},
  handoff:{sees:()=>'“accepted”, then “done” when you finish the to-do',ask:()=>'You see each handoff with its summary, to accept or decline.'},

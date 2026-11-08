@@ -1,8 +1,10 @@
 import datetime as dt
 import importlib.util
 import json
+import re
 import tempfile
 import threading
+import unicodedata
 import unittest
 from unittest.mock import patch
 from pathlib import Path
@@ -712,6 +714,15 @@ class Graph(unittest.TestCase):
         lines = self.app.graph_lines(task['id'])
         self.assertIn('open: you promised to send the deck by Tue, Oct 20; they promised to sign the contract; card "Book the call with Ann"', lines)
         self.assertNotIn('card "Answer Ann"', lines)  # the task itself
+        # A to-do's gap note (on every status) asks only for the promises: the same ones, without the card or fact queries
+        with self.store.connect() as db:
+            ran = []
+            db.set_trace_callback(ran.append)
+            only = a.graph.open_between(db, 'email:ann@client.com', 2, task['id'], promises_only=True)
+            db.set_trace_callback(None)
+            full = a.graph.open_between(db, 'email:ann@client.com', 2, task['id'])
+        self.assertEqual(only, {k: full[k] for k in ('you_promised', 'they_promised')})
+        self.assertFalse([q for q in ran if 'FROM suggestions s WHERE' in q or 'FROM facts' in q or "kind='owner.card'" in q])
 
     def test_a_fact_shows_on_who_it_is_about_never_on_who_sent_the_message(self):
         ask = mail(3, 'Ann Example <ann@client.com>', 'sam@acme.com', thread='deal')
@@ -1715,6 +1726,44 @@ class Boards(unittest.TestCase):
             self.assertEqual(stage(a), (None, None, None))
             self.assertTrue(db.execute('SELECT 1 FROM projects WHERE id=? AND closed_at IS NULL', (a.split(':')[1],)).fetchone())  # the project stays
             self.assertEqual(graph.boards(db, NOW.isoformat()), [])
+
+
+class Find(unittest.TestCase):
+    """graph.find folds each node's text once and reads only its matches whole: the same nodes, in the same order, as
+    folding every node's whole row for each word did."""
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
+        self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
+        nodes = [('email:lieven@acme.example', 'person', 'Lieven Janssens', 5, {'identifiers': ['email:lieven@acme.example'], 'profile': {'title': 'CFO'}}),
+                 ('email:jose@acme.example', 'person', 'José Müller', 4, {'note': 'Ação'}),
+                 ('email:jo@beta.example', 'person', 'Jo Beta', 4, {}),
+                 ('org:acme.example', 'org', 'ACME Corp', 3, {'domain': 'acme.example'}),
+                 ('project:1', 'project', 'Invoice run', 2, {}),
+                 ('email:lee@gamma.example', 'person', 'Lee', 1, {'tags': ['tab\there']}),
+                 ('email:kim@gamma.example', 'person', 'Kim', 1, {})]
+        with self.store.connect() as db:
+            for node_id, kind, name, strength, info in nodes:
+                db.execute('INSERT INTO graph_nodes(id,kind,name,strength,signals,info) VALUES(?,?,?,?,0,?)', (node_id, kind, name, strength, json.dumps(info)))
+
+    def every_node(self, db, text, limit=10, kinds=('person', 'project', 'org'), also=None):
+        words = [w for w in re.findall(r'[\w@.+-]+', str(text or '').casefold()) if len(w) > 1]
+        folded = lambda s: unicodedata.normalize('NFKD', s).encode('ascii', 'ignore').decode().casefold()
+        rows = db.execute('SELECT * FROM graph_nodes WHERE kind IN (SELECT value FROM json_each(?)) ORDER BY strength DESC,rowid', (json.dumps(list(kinds)),)).fetchall()
+        also = also or {}
+        return [r['id'] for r in rows if words and all(w in folded(r['name'] + ' ' + r['id'] + ' ' + r['info'] + ' ' + also.get(r['id'], '')) for w in map(folded, words))][:limit]
+
+    def test_the_same_nodes_in_the_same_order(self):
+        also = {'email:kim@gamma.example': 'Kimberley Teammate'}
+        with self.store.connect() as db:
+            for text in ('lieven', 'LIEVEN janssens', 'jose', 'josé müller', 'muller', 'acao', 'jo', 'acme', 'cfo', 'invoice',
+                         'teammate', 'kimberley', 'there', 'zzz', 'a', '', '@gamma.example', 'jo acme'):
+                for kinds in (('person', 'project', 'org'), ('person',)):
+                    for limit in (1, 10):
+                        self.assertEqual([r['id'] for r in graph.find(db, text, limit, kinds, also=also)],
+                                         self.every_node(db, text, limit, kinds, also), (text, kinds, limit))
+            row = graph.find(db, 'lieven')[0]
+            self.assertEqual(sorted(row.keys()), sorted(db.execute('SELECT * FROM graph_nodes LIMIT 1').fetchone().keys()))
 
 
 if __name__ == '__main__':
