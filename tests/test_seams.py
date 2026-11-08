@@ -93,7 +93,11 @@ def assistant_aliases(tree):
         if isinstance(node, ast.Assign) and isinstance(node.value, ast.Call) and says_assistant(node.value):
             specs |= {t.id for t in node.targets if isinstance(t, ast.Name)}
     for node in ast.walk(tree):
-        if isinstance(node, ast.Assign):
+        if (isinstance(node, ast.Assign) and len(node.targets) == 1 and isinstance(node.targets[0], ast.Tuple)
+                and isinstance(node.value, ast.Tuple) and len(node.targets[0].elts) == len(node.value.elts)):
+            found |= {t.id for t, v in zip(node.targets[0].elts, node.value.elts)  # a, graph = tg.a, tg.graph
+                      if isinstance(t, ast.Name) and isinstance(v, ast.Attribute) and v.attr in ('a', 'assistant')}
+        elif isinstance(node, ast.Assign):
             names = {t.id for t in node.targets if isinstance(t, ast.Name)}
             if isinstance(node.value, ast.Call) and (says_assistant(node.value) or 'module_from_spec' in ast.unparse(node.value.func)
                                                      and any(isinstance(x, ast.Name) and x.id in specs for x in node.value.args)):
@@ -111,17 +115,20 @@ def plain_patches(source, name='<test>'):
     """[(line, attribute)] of patch.object(<assistant alias>, ...) and <assistant alias>.X = ... in a test file."""
     tree = ast.parse(source, name)
     aliases = assistant_aliases(tree)
+
+    def is_assistant(node):  # a, or another test module's copy reached through it: tg.a.X = ...
+        return (isinstance(node, ast.Name) and node.id in aliases
+                or isinstance(node, ast.Attribute) and node.attr in ('a', 'assistant') and isinstance(node.value, ast.Name)
+                and node.value.id != 'self')
     out = []
     for node in ast.walk(tree):
-        if (isinstance(node, ast.Call) and ast.unparse(node.func) in PATCH_OBJECT and node.args
-                and isinstance(node.args[0], ast.Name) and node.args[0].id in aliases):
+        if isinstance(node, ast.Call) and ast.unparse(node.func) in PATCH_OBJECT and node.args and is_assistant(node.args[0]):
             out.append((node.lineno, ast.unparse(node.args[1]) if len(node.args) > 1 else '?'))
         elif isinstance(node, (ast.Assign, ast.AugAssign)):
             for target in node.targets if isinstance(node, ast.Assign) else [node.target]:
-                if isinstance(target, ast.Attribute) and isinstance(target.value, ast.Name) and target.value.id in aliases:
+                if isinstance(target, ast.Attribute) and is_assistant(target.value):
                     out.append((node.lineno, target.attr))
-        elif (isinstance(node, ast.Call) and ast.unparse(node.func) == 'setattr' and node.args
-              and isinstance(node.args[0], ast.Name) and node.args[0].id in aliases):
+        elif isinstance(node, ast.Call) and ast.unparse(node.func) == 'setattr' and node.args and is_assistant(node.args[0]):
             out.append((node.lineno, ast.unparse(node.args[1]) if len(node.args) > 1 else '?'))
     return sorted(out)
 
@@ -142,8 +149,10 @@ class EveryPatchGoesThroughSeams(unittest.TestCase):
                   "spec = importlib.util.spec_from_file_location('x_assistant', 'assistant.py')\n"
                   "a = importlib.util.module_from_spec(spec)\nfrom test_fleet import a as b\n"
                   "with patch.object(a, 'now'): pass\nwith mock.patch.object(b, 'telegram'): pass\na.WORKSPACE = 1\n"
-                  "setattr(b, 'now', 2)\nwith patch.object(a.App, 'run'): pass\nwith patch.object(graph, 'now'): pass\n")
-        self.assertEqual(plain_patches(source), [(8, "'now'"), (9, "'telegram'"), (10, 'WORKSPACE'), (11, "'now'")])
+                  "setattr(b, 'now', 2)\nwith patch.object(a.App, 'run'): pass\nwith patch.object(graph, 'now'): pass\n"
+                  "import test_graph as tg\nc, g = tg.a, tg.graph\nc.now = 3\ntg.a.now = 4\nself.a.now = 5\n")
+        self.assertEqual(plain_patches(source), [(8, "'now'"), (9, "'telegram'"), (10, 'WORKSPACE'), (11, "'now'"),
+                                                 (16, 'now'), (17, 'now')])
 
 
 if __name__ == '__main__':
