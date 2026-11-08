@@ -387,6 +387,7 @@ OVER_BUDGET = {}
 # headroom while that lands, so main stays green. Bring it back down with the split.
 # 2,100,000 -> 2,110,000 (2026-11-08): the Routines page (about 7.7 KB) is a whole new page; the split loads it
 # only when opened, and brings this back down.
+# Also Connections › Add redesign (Jeroen picked A); split of the dashboard into on-demand parts follows.
 PAGE_CEILING = 2_110_000
 
 
