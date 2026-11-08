@@ -508,13 +508,18 @@ def reply_origin(result, account, config, replied):
         result['reply_to_id'] = original['id']
 
 
+# How a follow-up's label (kind:prepare) starts: another Do it turn drafts, checks, researches or applies a change.
+FOLLOW_UP_VERBS = ('Draft', 'Prepare', 'Investigate', 'Check', 'Compare', 'Research', 'Apply', 'Fix', 'Update', 'Implement', 'Test',
+                   'Set up', 'Configure')
+
+
 def validate(value, config, allowed_accounts, recipient_options=None, linkedin_threads=None, x_threads=None, whatsapp_chats=None,
              intercom_conversations=None, calendar_events=None, doc_comments=None, senders=None, replied=None, telegram_chats=None,
              doc_write_context=None, reply_spots=None):
-    if value is None:
+    if value is None or value == []:  # none: a briefing or a finished task may have no buttons (PREPARATION.md)
         return None
     if isinstance(value,list):
-        if not 1<=len(value)<=3:raise ValueError('Offer one to three useful next actions, not a menu of everything')
+        if len(value)>3:raise ValueError('Offer one to three useful next actions, not a menu of everything')
         if any(not isinstance(item,dict) for item in value):raise ValueError('Each next action must be one concrete choice')
         choices=[validate(item,config,allowed_accounts,recipient_options,linkedin_threads,x_threads,whatsapp_chats,intercom_conversations,calendar_events,doc_comments,senders,replied,telegram_chats,doc_write_context,reply_spots) for item in value]
         if len({item['revision'] for item in choices})!=len(choices) or len({label(item).lower() for item in choices})!=len(choices):
@@ -550,9 +555,8 @@ def validate(value, config, allowed_accounts, recipient_options=None, linkedin_t
             raise ValueError('A follow-up preparation needs a specific label and instructions')
         # A follow-up is another Do it turn under the same limits so it may
         # apply a change; it can never pay, send or create calendar events.
-        if not value['label'].startswith(('Draft ','Prepare ','Investigate ','Check ','Compare ','Research ',
-                                          'Apply ','Fix ','Update ','Implement ','Test ','Set up ','Configure ')):
-            raise ValueError('Follow-up labels describe drafting, checking, research or applying the task’s change')
+        if not value['label'].startswith(tuple(v + ' ' for v in FOLLOW_UP_VERBS)):
+            raise ValueError('Follow-up labels describe drafting, checking, research or applying the task’s change')  # its words: PREPARATION.md
         if not isinstance(value.get('instructions'),str) or not value['instructions'].strip() or len(value['instructions'])>2000:
             raise ValueError('Provide the concrete next preparation, at most 2000 characters')
         result=dict(value)
