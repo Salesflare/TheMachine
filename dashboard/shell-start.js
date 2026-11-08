@@ -25,10 +25,11 @@ navigator.serviceWorker?.controller?.postMessage({errors:'flush'});  // what the
 // dashboard's own address) there instead of a new tab, which in the installed app would be a second app window. The
 // frame stays loaded while another view is open, so the session keeps running. Back and close return to the view
 // before. Full size covers the whole window with it (Esc or the same button goes back). A phone's browser keeps the
-// tab; the mobile app shows the pane, as it has no tabs (a new tab there would replace the dashboard).
-// browserPane() shows it from anywhere (true), or says to use a tab (false: a phone, or no viewer on this address).
+// tab; the mobile app and the dashboard installed on a phone show the pane, as they have no tabs (a new tab there would
+// replace the dashboard, and the installed one takes the account's handoff back into itself and starts over).
+// browserPane() shows it from anywhere (true), or says to use a tab (false: a phone's browser, or no viewer on this address).
 let browserPane=()=>false;
-const bpPhone=()=>!matchMedia('(min-width:1024px)').matches&&(DEV.mobile||matchMedia('(hover:none) and (pointer:coarse)').matches)&&!DEV.phoneApp;  // the mobile app has no tabs: the pane, full size
+const bpPhone=()=>!matchMedia('(min-width:1024px)').matches&&(DEV.mobile||matchMedia('(hover:none) and (pointer:coarse)').matches)&&!DEV.phoneApp&&!inApp();  // no tabs in an app: the pane, full size
 {let bpBack='inbox',pushed=false,from='',quiet=false;const pane=$('#browser-pane'),row=$('#open-browser'),wide=()=>!bpPhone();
  const full=on=>{const root=document.documentElement;if(on)root.dataset.bpFull='';else delete root.dataset.bpFull;const b=$('#bp-full');b.setAttribute('aria-pressed',String(!!on));b.textContent=on?'Exit full size':'Full size'};
  $('#bp-full').onclick=()=>full(!('bpFull' in document.documentElement.dataset));
