@@ -12,6 +12,7 @@ import graph
 import i18n
 import locale_prefs
 from machine.sources.slack import slack_ids_named, slack_name_table
+from machine.store import graph_identifiers
 from machine.store.cards import awaiting_key, awaiting_match
 from machine.store.review import AUTOMATED_LABELS, CARD_OPEN, own_message, ROBOT_SENDER
 from machine.store.voices import OWN_KINDS
@@ -130,9 +131,39 @@ def promise_title(p, title):
     return fit_title(title, PROMISE_TITLE_MAX, keep)
 
 
+# who as an identifier the review read off a message instead of a name: a WhatsApp number, a WhatsApp chat id, an address
+WHO_WHATSAPP = re.compile(r'(?:wa:\+?|\+)?(\d{6,15})(?:@s\.whatsapp\.net)?')
+WHO_ADDRESS = re.compile(r'(?:email:)?([^@\s:<>]+@[^@\s<>]+\.[^@\s<>]+)')
+
+
+def identifier_named(db, who):
+    """who by the person's name when it is only an identifier ("wa:32470000301", "ann@client.example"): the graph's
+    person with it. A WhatsApp number no one is known for reads as a phone number, never the internal "wa:" form."""
+    phone, address = WHO_WHATSAPP.fullmatch(who), WHO_ADDRESS.fullmatch(who)
+    key = 'wa:' + phone[1] if phone else 'email:' + address[1].lower() if address else None
+    if not key:
+        return who
+    try:
+        row = db.execute("SELECT name FROM graph_nodes WHERE id=? AND kind='person'", (key,)).fetchone() or next(iter(
+            graph_identifiers.rows(db, 'n.name,n.info', [key], "SELECT name,info FROM graph_nodes WHERE kind='person' AND info LIKE ?",
+                                   ['%"' + key + '"%'])), None)
+    except sqlite3.OperationalError:
+        row = None  # no graph yet
+    name = ' '.join(str(row[0] or '').split()) if row else ''
+    if name and not WHO_WHATSAPP.fullmatch(name) and not WHO_ADDRESS.fullmatch(name):
+        return name
+    return '+' + phone[1] if phone else who
+
+
+def who_named(db, who):
+    """who as the dashboard and to-dos say it: by name, whatever the review knew them by (a Slack member id, a number)."""
+    return identifier_named(db, slack_ids_named(db, who))
+
+
 def promise_who_named(db, p):
     """The promise with who by the person's name ("Slack teammate U02AB3CD4" as "Sam Lee"), for its to-do's title and
     body. One whose name isn't known yet keeps the id, which is named when shown."""
+    p = {**p, 'who': identifier_named(db, p['who'])}
     ids = graph.slack_ids_in(p['who'])
     names = slack_name_table(db, ids) if ids else {}
     return {**p, 'who': slack_ids_named(db, p['who'], names)} if ids and ids <= names.keys() else p
@@ -195,7 +226,7 @@ class PromisesStore:
             # them is no sign it was kept; the review closes those, or the check when it's due.
             watch = awaiting_key(dict(event), self.owner_user_ids) if direction == 'theirs' and event['kind'] == 'gmail.message' else None
             check_at = promise_check_at(direction, due, event['occurred_at'], digest_at)
-            who = slack_ids_named(db, who)  # a Slack sender the review only knew by id: their name
+            who = who_named(db, who)  # a sender the review only knew by an id or a number: their name
             stamp = now()
             # `what` is sealed under message protection (a fresh nonce each time), so the same promise is found by
             # opening this message's promises here, not by the UNIQUE constraint, which then never matches
@@ -349,7 +380,7 @@ class PromisesStore:
                 'e.occurred_at made_at,s.status card_status FROM promises p JOIN events e ON e.id=p.event_id LEFT JOIN suggestions s ON s.id=p.suggestion_id '
                 "WHERE p.status IN ('open','carded') OR p.updated_at>=? ORDER BY coalesce(p.due,substr(p.check_at,1,10)),p.id", (since,))]
             for row in rows:
-                row['who'] = slack_ids_named(db, row['who'])  # one noted before its sender's name was known
+                row['who'] = who_named(db, row['who'])  # one noted before its sender's name was known
                 if row['status'] == 'carded':  # the to-do it is now: the one it was merged into, or none when it's gone
                     card = promise_card(db, row['suggestion_id'])
                     row['suggestion_id'], row['card_status'] = (card['id'], card['status']) if card else (None, None)
@@ -366,7 +397,7 @@ class PromisesStore:
             if not row:
                 raise ValueError('Unknown promise')
             p = dict(row)
-            p['who'] = slack_ids_named(db, p['who'])
+            p['who'] = who_named(db, p['who'])
             if p['status'] == 'carded':
                 card = promise_card(db, p['suggestion_id'])
                 p['suggestion_id'], p['card_status'], p['card_title'] = (card['id'], card['status'], card['title']) if card else (None, None, None)
