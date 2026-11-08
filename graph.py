@@ -35,6 +35,7 @@ import email.utils
 import functools
 import hashlib
 import hmac
+import itertools
 import json
 import math
 import operator
@@ -1952,13 +1953,17 @@ def find(db, text, limit=10, kinds=('person', 'project', 'org'), also=None):
     words = [w for w in re.findall(r'[\w@.+-]+', str(text or '').casefold()) if len(w) > 1]
     if not words:
         return []
-    marks = ','.join('?' for _ in kinds)
-    rows = db.execute(f'SELECT * FROM graph_nodes WHERE kind IN ({marks}) ORDER BY strength DESC', tuple(kinds)).fetchall()
-    folded = lambda s: unicodedata.normalize('NFKD', s).encode('ascii', 'ignore').decode().casefold()
-    also = also or {}
-    hits = [r for r in rows if all(w in folded(r['name'] + ' ' + r['id'] + ' ' + r['info'] + ' ' + also.get(r['id'], '')) for w in map(folded, words))]
-    return hits[:limit]
+    folded = lambda s: s.lower() if s.isascii() else unicodedata.normalize('NFKD', s).encode('ascii', 'ignore').decode().casefold()
+    also, words, cursor = also or {}, [folded(w) for w in words], db.cursor()
+    cursor.row_factory = None  # each node's text as plain values and folded once, only the matches read whole: all were read and folded per word
+    texts = ((i, folded(f"{name} {i} {_opened_info(db, i) if 'mc1_sealed' in info else info} {also.get(i, '')}")) for i, name, info in cursor.execute(
+        'SELECT id,name,info FROM graph_nodes WHERE kind IN (SELECT value FROM json_each(?)) ORDER BY strength DESC,rowid', (json.dumps(list(kinds)),)))
+    found = list(itertools.islice((i for i, text in texts if all(w in text for w in words)), limit))
+    rows = {r['id']: r for r in db.execute('SELECT * FROM graph_nodes WHERE id IN (SELECT value FROM json_each(?))', (json.dumps(found),))}
+    return [rows[i] for i in found if i in rows]
 
+
+_opened_info = lambda db, node_id: db.execute('SELECT info FROM graph_nodes WHERE id=?', (node_id,)).fetchone()['info']  # sealed: as the row reader opens it
 
 def spread(db, seeds, limit=12, hops=2):
     """Spreading activation from seed nodes: what is alive around them, by link strength."""
