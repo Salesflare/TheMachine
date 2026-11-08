@@ -389,11 +389,12 @@ EXPORT_ACTIONS = {
     'import_stage',
 }
 OWNER_ACTIONS |= EXPORT_ACTIONS
-# Routines (routines_app.py): make one, add a suggested one, change when, pause, resume, stop, Run now and turn an old
+# Routines (routines_app.py): make one, add a suggested one, edit it, change when, pause, resume, stop, Run now and turn an old
 # OpenClaw job off. The owner's own, from the dashboard
 # only. A run's own report (routine_result) is the Gateway's, bound to its session by the plugin: never in these sets.
 ROUTINE_ACTIONS = {
     'routine_accept',
+    'routine_edit',
     'routine_new',
     'routine_old_job',
     'routine_run_now',

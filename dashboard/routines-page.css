@@ -1,28 +1,35 @@
 /* Routines (routines-page.js) */
 #routines-view{display:flex;flex-direction:column;gap:var(--sp-4);max-width:760px}
 .rt-new{display:flex;gap:8px}.rt-new input{flex:1;min-width:0}
-#rt-words{flex:1;min-width:0;height:auto;min-height:0;margin:0;resize:none;transition:none;line-height:1.4;max-height:calc(8.4em + 18px);overflow-y:auto;overflow-wrap:anywhere}
+#rt-words{flex:1}
+.rt-grow{min-width:0;height:auto;min-height:0;margin:0;resize:none;transition:none;line-height:1.4;max-height:calc(8.4em + 18px);overflow-y:auto;overflow-wrap:anywhere}
 #routines-view>.rt-new{align-items:flex-end}
 @media (max-width:600px){#routines-view>.rt-new{flex-direction:column}#rt-words{flex:none;width:100%}}
+/* Edit and Change when: the field, then Save and Cancel */
+.rt-form{margin-top:12px}.rt-form>:first-child{display:block;width:100%;margin:0}.rt-form-acts{display:flex;gap:8px;margin:8px 0 0}
+/* Folded: a short preview, as a to-do's text (todos-cards.css .body.clamp) */
+.rt-body{margin-top:14px}.rt-body>.rt-run:first-child{margin-top:0}.rt-body.clamp{max-height:7.5em;overflow:hidden;-webkit-mask-image:linear-gradient(#000 calc(100% - 2em),transparent);mask-image:linear-gradient(#000 calc(100% - 2em),transparent)}.rt .more{margin-top:4px}.rt .more+.actions{margin-top:0}
 #routines-view .fine{margin:-8px 0 0;color:var(--c-text-3);font-size:var(--fs-sm)}
 .rt{padding:var(--sp-4) var(--sp-5);border:1px solid var(--c-line);border-radius:var(--r-lg);background:var(--c-surface)}
 .rt h3{margin:0;font:var(--fw-heading) var(--fs-lg)/1.3 var(--serif)}
 .rt-when{margin:2px 0 0;color:var(--c-text-3);font-size:var(--fs-sm)}
 .rt-what{margin:8px 0 0;color:var(--c-text-2);font-size:var(--fs-sm)}
-.rt-run{margin-top:12px}.rt-run-head{display:flex;align-items:baseline;gap:8px;margin:0 0 4px}.rt-run-head small{color:var(--c-text-3)}
+.rt-short{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden}.rt-s:has(.rt-body:not(.clamp)) .rt-short{display:block}
+/* A run: its state and day, then its result, as one block */
+.rt-run{margin-top:14px;padding:10px 12px;border-radius:var(--r-md);background:var(--c-hover)}.rt-run-head{display:flex;align-items:baseline;gap:8px;margin:0 0 4px}.rt-run-head small{color:var(--c-text-3)}
 .rt-state{font:var(--fw-medium) var(--fs-xs)/1 var(--sans);padding:3px 8px;border:1px solid var(--c-line);border-radius:999px;color:var(--c-text-3)}
 .rt-ready{border-color:transparent;background:var(--c-accent);color:var(--c-accent-ink)}
 .rt-failed{border-color:transparent;background:color-mix(in srgb,var(--c-orange) 16%,transparent);color:var(--c-orange)}
-.rt-result{line-height:1.5;overflow-wrap:anywhere}.rt-why{margin:12px 0 0;color:var(--c-text-2);font-size:var(--fs-sm)}.rt-run .rt-why{margin:0}
+.rt-result{line-height:1.5;overflow-wrap:anywhere}.rt-result>:first-child{margin-top:0}.rt-result>:last-child{margin-bottom:0}.rt-result p{margin:0 0 .5em}.rt-result :is(ul,ol){margin:0 0 .5em;padding-left:1.25em}.rt-result li+li{margin-top:2px}.rt-why{margin:12px 0 0;color:var(--c-text-2);font-size:var(--fs-sm)}.rt-run .rt-why{margin:0}
 .rt-earlier{margin-top:8px}.rt-earlier summary{cursor:pointer;color:var(--c-text-3);font-size:var(--fs-sm)}
-.rt .actions{display:flex;align-items:center;gap:2px;margin:8px 0 -6px -10px}.rt .actions .ghost{padding-inline:10px}.rt .rt-new{margin-top:12px}
+.rt .actions{display:flex;align-items:center;gap:2px;margin:8px 0 -6px -10px}.rt .actions .ghost{padding-inline:10px}
 /* ⋯: the to-do menu (todos-send.css) */
 .rt .actions button{flex:0 0 auto}.rt .more-actions{position:relative;margin-left:auto}.rt .more-actions>summary{justify-content:center;min-width:40px;min-height:40px;border-radius:var(--r-sm);color:var(--c-text-3)}
 .rt .more-actions>summary::before{content:none}.rt .more-actions>summary:hover,.rt .more-actions[open]>summary{background:var(--c-hover);color:var(--c-text)}.rt .more-menu .danger{color:var(--c-orange)}
 .rt-empty{margin:0;color:var(--c-text-2)}
 @media (max-width:600px){.rt{padding:var(--sp-4)}}
 .rt.paused h3,.rt.paused .rt-run{opacity:.6}
-/* Suggested; Turn off the old job? */
-.rt-sugg{display:flex;flex-direction:column;gap:var(--sp-3)}.rt-sugg h2{margin:var(--sp-2) 0 0;font:var(--fw-heading) var(--fs-lg)/1.3 var(--serif)}
+/* Suggested, Your routines, Paused; Turn off the old job? */
+.rt-sec{display:flex;flex-direction:column;gap:var(--sp-3)}.rt-sec h2{margin:var(--sp-2) 0 0;font:var(--fw-heading) var(--fs-lg)/1.3 var(--serif)}
 .rt-s{border-style:dashed}.rt-s .actions{margin-left:0;gap:8px}.rt-s .actions .quiet{margin-left:0}
 .rt-old{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;margin-top:12px;padding:8px 8px 8px 12px;border-radius:var(--r-md);background:var(--c-hover)}.rt-old p{flex:1 1 200px;margin:0;font-size:var(--fs-sm)}
