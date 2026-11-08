@@ -394,7 +394,7 @@ PY_LINE_BUDGET = 2_500
 PY_BYTE_BUDGET = 450 * 1024
 PY_RATCHET_SLACK = (500, 50_000)
 PY_OVER_BUDGET = {
-    'assistant.py': (6_800, 435_000),
+    'assistant.py': (6_600, 422_000),
     'fleet.py': (3_800, PY_BYTE_BUDGET),
     'graph.py': (5_400, PY_BYTE_BUDGET),
     'next_actions.py': (2_650, PY_BYTE_BUDGET),

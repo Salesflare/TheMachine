@@ -1,6 +1,8 @@
 """The Graph's and the CRM's actions in the service (graph.py and crm.py do the work): the agent's and the dashboard's
 graph calls (graph_action), finding and listing people, organizations and projects, About you and the CRM actions
 (crm_action). Moved out of assistant.App as is. A mixin of assistant.App (APP_MIXINS)."""
+import base64
+import binascii
 import contextlib
 import json
 import re
@@ -12,6 +14,7 @@ import crm_fields
 import crm_fixes
 import crm_import
 import embeddings
+import enrichment
 import fleet
 import gap_note
 import gbrain
@@ -63,7 +66,19 @@ def forget_in_notes(root, needles):
 
 
 class GraphActionsApp:
-    ACTIONS = {}  # its actions are still App.action's own branches
+    # action name -> the method that handles it, called as method(name, args, owner_dashboard) (App.action)
+    ACTIONS = {'graph': 'graph_query_action', 'undo_merge': 'undo_merge_action',
+               'remember_fact': 'remember_fact_action', 'graph_summary': 'graph_summary_action',
+               'graph_fact_unlink': 'graph_fact_unlink_action', 'unmerge_fact': 'unmerge_fact_action',
+               'graph_rename': 'graph_rename_action', 'graph_stage': 'graph_stage_action',
+               'graph_org_edit': 'graph_org_edit_action', 'graph_org_wrong': 'graph_org_edit_action',
+               'graph_new': 'graph_new_action', 'graph_org_delete': 'graph_new_action',
+               'graph_picture': 'graph_picture_action', 'graph_pictures_found': 'graph_picture_action',
+               'graph_person_edit': 'graph_person_edit_action', 'graph_role': 'graph_role_action',
+               'graph_warmup': 'graph_warmup_action', 'graph_same': 'graph_same_action',
+               'graph_same_all': 'graph_same_all_action', 'graph_person_delete': 'graph_person_delete_action',
+               'graph_person_org': 'graph_person_org_action', 'graph_relation': 'graph_relation_action',
+               'forget_fact': 'forget_fact_action', 'edit_fact': 'edit_fact_action'}
 
     def currency(self):
         """The currency project values are in (config "currency", an ISO code like EUR or USD; EUR when not set)."""
@@ -596,3 +611,185 @@ class GraphActionsApp:
         notes = forget_in_notes((workspace or WORKSPACE) / 'memory', done.pop('needles'))
         self.graph_build()
         return {**done, 'notes': notes}
+
+    def graph_query_action(self, name, args, owner_dashboard=False):
+        return self.graph_action(args)
+
+    def undo_merge_action(self, name, args, owner_dashboard=False):
+        if owner_dashboard and re.fullmatch(r'[A-Za-z0-9_.:-]{1,200}',str(args.get('approval_id',''))):source='dashboard'
+        elif not owner_dashboard and re.fullmatch(r'telegram:[A-Za-z0-9_.:-]{1,200}',str(args.get('approval_id',''))):source='telegram'
+        else:raise ValueError('Undo must come from the owner’s controls')
+        return self.store.undo_merge(args['suggestion_id'],args['approval_id'],source)
+
+    def remember_fact_action(self, name, args, owner_dashboard=False):
+        if args.get('kind') == 'skill':  # notes about one kind of task: offered as a skill on a card, never made by itself
+            return self.propose_skill_from_notes(args.get('name'), args.get('description'), args.get('text'), args.get('replaces'), args.get('skill'),
+                                                 args.get('related'), args.get('relation'), args.get('new') is True, args.get('base'))
+        if args.get('kind') == 'voice':  # how the owner writes on one channel: the whole line, from their note or edit
+            return self.store.save_voice(args.get('channel'), args.get('text'), 'assistant', args.get('decision_id'), args.get('edit_id'), args.get('replaces'))
+        if args.get('id') is not None and not args.get('text'):  # who an existing fact is about
+            return self.store.fact_about(args['id'], args.get('about'))
+        return self.store.remember_fact(args.get('text'), args.get('decision_id'), args.get('kind') or None, args.get('replaces'), args.get('about'),
+                                        args.get('until') or args.get('valid_until'))
+
+    def graph_summary_action(self, name, args, owner_dashboard=False):
+        # a person's summary: the owner's edit, a suggested update used or kept out, or back to The Machine's
+        if not owner_dashboard:
+            raise ValueError('Only the owner changes a summary, on the dashboard')
+        return self.summary_change(args)
+
+    def graph_fact_unlink_action(self, name, args, owner_dashboard=False):
+        if not owner_dashboard:
+            raise ValueError('Only the owner says who a fact is not about, on the dashboard')
+        return self.store.fact_unlink(args.get('fact_id'), args.get('node_id'))
+
+    def unmerge_fact_action(self, name, args, owner_dashboard=False):
+        if not owner_dashboard:
+            raise ValueError('Only the owner undoes a condense, on the dashboard')
+        return self.store.unmerge_fact(args.get('id'), args.get('channel'), args.get('skill'), args.get('expired'))
+
+    def graph_rename_action(self, name, args, owner_dashboard=False):
+        if not owner_dashboard:
+            raise ValueError('Only the owner renames people and projects, on the dashboard')
+        with self.store.connect() as db:
+            renamed = graph.rename(db, args.get('node_id'), args.get('name'), now())
+        self.graph_build()
+        return renamed
+
+    def graph_stage_action(self, name, args, owner_dashboard=False):
+        if not owner_dashboard:
+            raise ValueError('Only the owner moves a project by hand, on the dashboard; reviews use finish_analysis stages')
+        with self.store.connect() as db:
+            moved = graph.set_stage(db, str(args.get('node_id') or ''), args.get('stage'), 'owner', now())
+        self.graph_build()
+        return moved
+
+    def graph_org_edit_action(self, name, args, owner_dashboard=False):
+        if not owner_dashboard:
+            raise ValueError("Only the owner edits an organization's details, on the dashboard")
+        with self.store.connect() as db:
+            if name == 'graph_org_wrong':
+                done = graph.org_wrong(db, args.get('node_id'), args.get('wrong') is not False, now())
+            else:
+                done = graph.org_edit(db, args.get('node_id'), args.get('fields'), now())
+                if 'name' in args:
+                    graph.rename(db, args.get('node_id'), args.get('name'), now())
+        self.graph_build()
+        return done
+
+    def graph_new_action(self, name, args, owner_dashboard=False):
+        # A person or organization added by hand (New person, New organization), and deleting one added that way
+        if not owner_dashboard:
+            raise ValueError('Only the owner adds people and organizations by hand, on the dashboard')
+        with self.store.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            done = graph.create_record(db, args.get('kind'), args, now(), graph.Owner(self.config, db)) if name == 'graph_new' else graph.delete_org(db, args.get('node_id'))
+        if done.get('created') or done.get('deleted'):
+            self.graph_build()
+        return done
+
+    def graph_picture_action(self, name, args, owner_dashboard=False):
+        # A person's or organization's picture: the owner's upload (made small on the dashboard), one of the pictures
+        # found for them (fetched here, on this Machine), or none.
+        if not owner_dashboard:
+            raise ValueError("Only the owner changes a picture, on the dashboard")
+        if name == 'graph_pictures_found':
+            with self.store.connect() as db:
+                links = graph.picture_links(db, args.get('node_id'))
+            found = []
+            for link in links:
+                got = enrichment.download_photo(link, timeout=5)
+                if got:
+                    found.append('data:' + got[1] + ';base64,' + base64.b64encode(got[0]).decode())
+            return {'node_id': str(args.get('node_id') or ''), 'found': found}
+        data = None
+        if args.get('data'):
+            raw = str(args['data'])
+            try:
+                data = base64.b64decode(raw.split(',', 1)[1] if raw.startswith('data:') else raw, validate=True)
+            except (ValueError, binascii.Error):
+                raise ValueError('A picture is a JPEG, PNG or WebP image, up to 200 kB') from None
+        elif not args.get('remove') and not args.get('reset'):
+            raise ValueError('Upload a picture, pick one, or remove it')
+        with self.store.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            done = graph.set_picture(db, args.get('node_id'), data, now(), reset=bool(args.get('reset')))
+        self.graph_build()
+        return done
+
+    def graph_person_edit_action(self, name, args, owner_dashboard=False):
+        # One Save for a person's page: their name, what they are to the owner and where they work go where those
+        # live (graph_names, person_roles, person_orgs, as the owner's word); the rest is person_edits.
+        if not owner_dashboard:
+            raise ValueError("Only the owner edits a person's details, on the dashboard")
+        node_id, fields = str(args.get('node_id') or ''), args.get('fields') if isinstance(args.get('fields'), dict) else {}
+        with self.store.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            done = graph.person_edit(db, node_id, {k: v for k, v in fields.items() if k not in ('name', 'role', 'org')}, now())
+            if 'role' in fields:
+                graph.set_role(db, node_id, str(fields['role'] or ''), 'owner', now())
+            if 'org' in fields:
+                graph.set_org(db, node_id, str(fields['org'] or ''), 'owner', now())
+            if 'name' in fields:
+                graph.rename(db, node_id, fields['name'], now())
+        self.graph_build()
+        return done
+
+    def graph_role_action(self, name, args, owner_dashboard=False):
+        if not owner_dashboard:
+            raise ValueError('Only the owner sets a role here, on the dashboard; reviews use graph with node_id and role')
+        # The same role as a review's confirms it: it becomes the owner's word.
+        return self.graph_action({'node_id': args.get('node_id'), 'role': args.get('role') or ''}, source='owner')
+
+    def graph_warmup_action(self, name, args, owner_dashboard=False):
+        if not owner_dashboard:
+            raise ValueError('Only the owner undoes a warm-up domain here, on the dashboard; reviews use graph with warmup')
+        return self.graph_action({'node_id': args.get('domain') or args.get('node_id'), 'warmup': args.get('warmup') is True}, source='owner')
+
+    def graph_same_action(self, name, args, owner_dashboard=False):
+        # Same person? Merge, or Not the same (which also undoes a merge)
+        if not owner_dashboard:
+            raise ValueError('Only the owner merges people here, on the dashboard; reviews use graph with merge or different')
+        pair = [str(args.get('a') or ''), str(args.get('b') or '')]
+        return self.graph_action({('merge' if args.get('same') is True else 'different'): pair}, source='owner')
+
+    def graph_same_all_action(self, name, args, owner_dashboard=False):
+        # Merge all the listed Same person? pairs, or undo that batch in one go
+        if not owner_dashboard:
+            raise ValueError('Only the owner merges people here, on the dashboard; reviews use graph with merge or different')
+        with self.store.connect() as db:
+            if args.get('undo'):
+                said = {'split': graph.unmerge_all(db, args['undo'])}
+            else:
+                pairs = args.get('pairs')
+                if not isinstance(pairs, list):
+                    raise ValueError('pairs is the list of [a, b] person ids shown under Same person?')
+                said = graph.merge_all(db, pairs[:200], now())
+        if said.get('merged') or said.get('split'):
+            self.graph_later()
+        return said
+
+    def graph_person_delete_action(self, name, args, owner_dashboard=False):
+        if not owner_dashboard:
+            raise ValueError('Only the owner deletes someone permanently, on their page in the dashboard')
+        return self.delete_person(str(args.get('node_id') or ''))
+
+    def graph_person_org_action(self, name, args, owner_dashboard=False):
+        if not owner_dashboard:
+            raise ValueError('Only the owner sets an organization here, on the dashboard; reviews use graph with org, event_id and quote')
+        return self.graph_action({'node_id': args.get('node_id'), 'org': args.get('org') or ''}, source='owner')
+
+    def graph_relation_action(self, name, args, owner_dashboard=False):
+        if not owner_dashboard:
+            raise ValueError('Only the owner removes a relation here, on the dashboard; reviews use graph with related_to')
+        return self.graph_action({'node_id': args.get('node_id'), 'related_to': args.get('related_to'), 'relation': args.get('relation') or ''}, source='owner')
+
+    def forget_fact_action(self, name, args, owner_dashboard=False):
+        if not owner_dashboard:
+            raise ValueError('Only the owner can remove a fact, on the dashboard')
+        return self.store.forget_fact(args['id'])
+
+    def edit_fact_action(self, name, args, owner_dashboard=False):
+        if not owner_dashboard:
+            raise ValueError('Only the owner can edit what was learned, on the dashboard')
+        return self.store.edit_fact(args.get('id'), args.get('text'))
