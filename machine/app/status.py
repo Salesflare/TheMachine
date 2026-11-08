@@ -183,6 +183,8 @@ class StatusApp:
         result['needs_you'] = needs_you(self.config)
         result['learning_changes'] = self.learning_changes_shown(result.get('learning_changes') or [])
         by_id = {a['id']: a for a in self.config['accounts']}
+        from work_or_personal import work_labels
+        result['work_labels'] = work_labels(self.config)  # how each company reads on its cards: never a capitalized domain
         result['connectors'] = [c for c in result['connectors'] if not docs_unset(c)]
         for connector in result['connectors']:
             connector.update(sign_in_help(connector.get('service', ''), connector.get('error'), result['manage_url']))

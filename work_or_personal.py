@@ -70,20 +70,51 @@ def known_company(config, account):
     for a in config.get('accounts') or []:
         kind, _, name = str(a.get('boundary') or '').partition(':')
         if a is not account and kind == 'work' and name and a.get('boundary_by') == 'owner' \
-                and str(a.get('email') or '').strip().lower().rpartition('@')[2] == domain:
+                and str(a.get('email') or '').strip().lower().rpartition('@')[2] == domain and not made_from_domain(config, name):
             return name
     try:
         import sqlite3
+        from contextlib import closing
         from pathlib import Path
 
         import enrichment
-        with sqlite3.connect(Path(config['database']).expanduser().as_uri() + '?mode=ro', uri=True) as db:
+        with closing(sqlite3.connect(Path(config['database']).expanduser().as_uri() + '?mode=ro', uri=True)) as db:
             row = db.execute('SELECT name FROM graph_nodes WHERE id=?', ('org:' + domain,)).fetchone()
         name = str(row[0] if row else '').strip()
     except Exception:  # noqa: BLE001 - no Graph yet (a new Machine): plain Work
         return ''
     made = {domain, enrichment.readable_name(domain).casefold(), company_of(email).casefold()}
     return name[:60] if name and name.casefold() not in made and ':' not in name else ''
+
+
+def made_from_domain(config, name):
+    """Whether a Work company's name is only an address's domain capitalized (company_of: Moreaudesign for
+    moreaudesign.io), or the generic Main: not a name anyone gave it."""
+    name = str(name or '').strip().casefold()
+    return name in ('', 'main') or any(company_of(a.get('email')).casefold() == name for a in config.get('accounts') or []
+                                       if isinstance(a, dict) and company_of(a.get('email')))
+
+
+def work_labels(config):
+    """{work boundary: how it reads} for the companies the accounts are in. A real name reads Work · <name>; one made
+    from a domain reads plain Work, or Work · <the Graph's name> when the Graph knows it (known_company). Never a
+    capitalized domain: when two such companies would both read Work, they read Work · <their domain> as it is."""
+    labels, plain = {}, {}
+    for a in config.get('accounts') or []:
+        kind, _, name = str(a.get('boundary') or '').partition(':') if isinstance(a, dict) else ('', '', '')
+        if kind != 'work' or not name or 'work:' + name in labels:
+            continue
+        if not made_from_domain(config, name):
+            labels['work:' + name] = scope_label('work:' + name)
+            continue
+        known = known_company(config, a) if company_of(a.get('email')).casefold() == name.casefold() else ''
+        labels['work:' + name] = scope_label('work:' + known) if known else 'Work'
+        if not known:
+            plain['work:' + name] = next((str(b.get('email')).strip().lower().rpartition('@')[2] for b in config.get('accounts') or []
+                                          if isinstance(b, dict) and company_of(b.get('email')).casefold() == name.casefold()), '')
+    if len(plain) > 1:
+        labels.update({b: 'Work · ' + domain for b, domain in plain.items() if domain})
+    return labels
 
 
 def organization_of(config, account):

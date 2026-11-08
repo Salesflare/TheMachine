@@ -170,6 +170,27 @@ class FormTest(unittest.TestCase):
         self.assertEqual(known_company(config, {'email': 'me@gmail.com'}), '')
         self.assertEqual(known_company({'accounts': []}, {'email': 'jules@moreaudesign.io'}), '')  # no Graph yet
 
+    def test_cards_read_plain_work_for_a_name_made_from_a_domain(self):
+        import sqlite3
+
+        from work_or_personal import known_company, work_labels
+        db = Path(self.temp.name) / 'labels.sqlite'
+        with sqlite3.connect(db) as c:
+            c.execute('CREATE TABLE graph_nodes(id TEXT PRIMARY KEY,name TEXT NOT NULL)')
+            c.execute('INSERT INTO graph_nodes VALUES(?,?)', ('org:globex.dev', 'Globex Corporation'))
+        acct = lambda i, email, b, by='owner': {'id': i, 'email': email, 'boundary': b, 'boundary_by': by}  # noqa: E731
+        config = {'database': str(db), 'accounts': [acct('a', 'jules@moreaudesign.io', 'work:Moreaudesign'),
+                                                    acct('b', 'pat@initech.dev', 'work:Initech Corp'), acct('c', 'me@gmail.com', 'personal:me'),
+                                                    acct('d', 'lee@globex.dev', 'work:Globex', 'guess'), acct('e', '', 'work:Main')]}
+        self.assertEqual(work_labels(config), {'work:Moreaudesign': 'Work · moreaudesign.io', 'work:Initech Corp': 'Work · Initech Corp',
+                                               'work:Globex': 'Work · Globex Corporation', 'work:Main': 'Work'})
+        config['accounts'] = config['accounts'][:3]
+        self.assertEqual(work_labels(config), {'work:Moreaudesign': 'Work', 'work:Initech Corp': 'Work · Initech Corp'})
+        # A name the owner kept as made from the domain is not a real name for another address there
+        self.assertEqual(known_company(config, {'email': 'sam@moreaudesign.io'}), '')
+        self.app.store, self.app.config = assistant.Store(str(Path(self.temp.name) / 'status.sqlite')), config
+        self.assertEqual(self.act('status', {'full': True})['work_labels']['work:Moreaudesign'], 'Work')  # what the cards read
+
     def test_organization_comes_from_the_tenant_or_googles_user_info_with_the_access_it_has(self):
         work = '0a0b0c0d-1111-2222-3333-444455556666'
         self.assertTrue(onboarding.organization_of({}, {'service': 'outlook', 'tenant_id': work}))
