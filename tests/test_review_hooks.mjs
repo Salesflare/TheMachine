@@ -101,6 +101,17 @@ for(const toolName of ['exec','write','message'])assert.equal((await hooks.befor
  for(const command of ['gh pr merge 12','gh pr comment 12 --body hi','gh api -X POST repos/example/repo/issues','gh api repos/example/repo/issues -f title=x',
    'gh api --method=PATCH repos/example/repo','gh api graphql','gh pr list | sh','gh pr list > out.txt','gh pr list && rm -rf x','gh pr list $(id)',
    'git push','git log --output=/tmp/x','git -c core.pager=sh log','curl https://example.com','ls','rm -rf repo','GH_PAGER=sh gh pr list'])
+  assert.equal(await routineCall('exec',{command}),true,command);
+ // Git that only reads, never an option that runs a program: --upload-pack (or any start of it git accepts, like
+ // --upl=), --exec, -u on ls-remote, ext:: and other remote helpers, a config or pager setting.
+ for(const command of ['git ls-remote --heads origin','git ls-remote --tags https://github.com/example/repo','git log --no-ext-diff -1',
+   'git show --stat HEAD','git diff --name-only HEAD~1'])
+  assert.equal(await routineCall('exec',{command}),false,command);
+ for(const command of ['git ls-remote --upload-pack="touch /tmp/x" .','git ls-remote --upload-pack "touch /tmp/x" .','git ls-remote --upl=sh .',
+   'git ls-remote --u=sh .','git ls-remote --exec=sh .','git ls-remote -u sh .','git ls-remote -qu sh .','git ls-remote --receive-pack=sh .',
+   'git ls-remote "ext::sh -c touch% /tmp/x"','git ls-remote fd::3','git -C repo -c core.sshCommand=sh ls-remote origin',
+   'git log --config-env=core.pager=X','git log --git-dir=/tmp/x','git log --work-tree=/tmp','git diff --ext-diff','git diff --text"conv"',
+   'git log --exec-path=/tmp','git log --outp=/tmp/x','git show --open-files-in-pager=sh','git -c core.pager=sh log'])
   assert.equal(await routineCall('exec',{command}),true,command);}
 // An isolated review ends with one fixed line (its turn has delivery off): after NO_REPLY, OpenClaw asked twice more
 { const system=(await hooks.before_prompt_build({},ctx)).prependSystemContext;
