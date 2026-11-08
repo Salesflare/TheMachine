@@ -12,6 +12,7 @@ import abilities
 import assistant
 from connectors import docs
 import doc_writes
+from machine.app import serve
 import mail_grants
 import onboarding
 from test_connectors import a
@@ -103,7 +104,7 @@ class Off(unittest.TestCase):
         self.assertEqual(list(doc_writes.targets(config, plugin, None)), ['other-docs'])
 
     def test_with_signals_off_no_sync_runs_only_the_check_of_what_it_may_do(self):
-        source = Path(assistant.__file__).read_text(encoding='utf-8')
+        source = Path(serve.__file__).read_text(encoding='utf-8')
         self.assertIn('target=self.collector if abilities.signals_on(account) else self.ability_checker', source)
         app, checked = object.__new__(assistant.App), []
         app.stop, app.store, app.config = assistant.threading.Event(), None, {'accounts': [ACCOUNT]}
