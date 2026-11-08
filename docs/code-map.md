@@ -170,7 +170,10 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   table, sync_source, sync_slack, remember_slack_names, sync_retrying and sync_soon into SyncApp (after
   name_slack_titles became a Store method), The owner's email (Gmail message and source email, attachments, mailbox
   lookups, own addresses, handoffs by email and task pages) into new MailApp (machine/app/mail.py); WhatsApp source
-  and photo event into SyncApp; calendar_write into MeetingWritesApp.
+  and photo event into SyncApp; calendar_write into MeetingWritesApp, New to-dos (new_card, agent_card with its
+  message, background and chat helpers, is_work) into new NewCardsApp (machine/app/new_cards.py); review evidence
+  paging and the first-cards report into machine/app/review.py; split_notes_text into ReviewApp; short_window into
+  ModelPacingApp; activity_report, active_work and weekly_recap next to their features.
 - **Dashboard code:** in its area's part in `dashboard/` (`<area>-<what>.js`: shell, todos, settings, graph, calendar,
   connections, help, events, new, fleet), next to the functions it works with, never at the end of the script. The
   page's core is in the `shell-*` parts too: locale and error reports (`shell-core.js`), network and outbox, `render()`

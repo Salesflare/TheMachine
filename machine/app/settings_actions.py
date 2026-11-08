@@ -7,6 +7,7 @@ import sqlite3
 import time
 from zoneinfo import ZoneInfo
 
+import activity
 import activity_log
 import agent_jobs
 import enrichment
@@ -37,6 +38,17 @@ def hours_settings(config, changes):
         raise ValueError(f'Unknown time zone {zone!r}; use a name like Europe/Brussels or America/New_York') from None
     digest = '%02d:%02d' % clock(changes.get('digest_at') or config.get('digest_at') or '08:30', 'The digest time')
     return {'timezone': zone, 'digest_at': digest, 'work_hours': work_hours(merged)}
+
+
+def activity_report(db, timezone=None, current=None):
+    """Per local day, the last 7 days: plain counts of what the owner did (to-dos shown and opened, Do it, Send,
+    sent, Mark done, Not needed, snoozed, chat messages, visits, active hours), for the hosted health report next to
+    first_cards_report. Counts only, never content (activity.py). `db`: a plain sqlite3 connection to the events database."""
+    try:
+        tz = ZoneInfo(timezone) if timezone else local_tz()
+    except (ValueError, KeyError):
+        tz = local_tz()
+    return activity.report(db, tz, current or now())
 
 
 class SettingsActionsApp:

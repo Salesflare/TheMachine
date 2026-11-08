@@ -384,6 +384,13 @@ def recap_mail_text(text):
     return '\n'.join(out).strip()
 
 
+def weekly_recap(store, config, current=None):
+    """The recap as the owner reads it on Telegram, its messages one after the other (without storing its choices)."""
+    recap = weekly_recap_message(store, config, current)
+    note = ['_' + i18n.t(RECAP_CHOICES_NOTE) + '_'] if recap['items'] else []
+    return '\n\n'.join([recap['text'], *note, *(i['line'] for i in recap['items'])])
+
+
 class RecapApp:
     # action name -> the method that handles it, called as method(name, args, owner_dashboard) (App.action)
     ACTIONS = {'recap_decide': 'recap_decide_action'}
