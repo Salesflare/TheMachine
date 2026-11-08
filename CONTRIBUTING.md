@@ -4,7 +4,7 @@ The Machine is an early release: one owner per installation, on Linux, with macO
 Small fixes, clearer setup instructions and new general-purpose sources are welcome.
 
 Read the [product vision](docs/vision.md) first, people and coding agents alike: every change is judged against what
-it believes, in that order, starting with "It's yours, and only yours" (only you control your AI and your data, and nothing goes out unseen).
+it believes, in that order, starting with "It's yours, and only yours" (your AI works for you, not its creator, and its data stays under your control).
 Ideas that would reshuffle the product go to the owner as a proposal, not a pull request.
 
 ## Development
