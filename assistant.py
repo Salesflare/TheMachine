@@ -1722,12 +1722,6 @@ class App(*APP_MIXINS):
         view['reconnect'] = session.get('account_id')  # the account signing in again, if that is what this is
         return view
 
-    def still_needed_step(self, current=None):
-        """Still needed? (still_needed.py): asks once on each open to-do nobody touched for a week, and ends the question
-        of one that closed. current: an ISO time (tests)."""
-        with self.store.connect() as db:
-            return Store.still_needed_ask(db, current or now(), lambda row: looks_done(row) or waits_on_others(row), local_tz())
-
     BUG_SHOT_BYTES = 2 * 1024 * 1024
     BUG_TEXT = 4000
 
