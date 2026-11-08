@@ -131,10 +131,10 @@ try{
  // The learning is the Machine's: said in its words right under the reply's text (before its files and choices) and
  // linked to What I've learned. At the reply's foot, a bare "Noted for next time" sat just above the owner's next
  // message and read as a label on it (an agent user took their instruction for a saved note).
- const learnt=page.locator('#chat-log .chat-noted',{hasText:'Saved to what I’ve learned'});
- assert.equal(await learnt.count(),1);
- assert.equal(await learnt.locator('a').getAttribute('href'),'#learning=learned');
- assert.equal(await learnt.evaluate(n=>n.previousElementSibling?.classList.contains('bubble')),true,'right under the reply\'s text');
+ const learnedLine=page.locator('#chat-log .chat-noted',{hasText:'Saved to what I’ve learned'});
+ assert.equal(await learnedLine.count(),1);
+ assert.equal(await learnedLine.locator('a').getAttribute('href'),'#learning=learned');
+ assert.equal(await learnedLine.evaluate(n=>n.previousElementSibling?.classList.contains('bubble')),true,'right under the reply\'s text');
  assert.equal(await page.locator('#chat-log',{hasText:'Noted for next time'}).count(),0);
  assert.match(await page.locator('#chat-log .chat-msg.you .bubble').first().textContent(),/^Make it shorter/);
  // Drafts inline after the reply that made them: the earlier one marked, the newest with what changed
