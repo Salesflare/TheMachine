@@ -56,6 +56,7 @@ No avião ou no trem, o painel continua funcionando. Uma barra no topo diz **Off
 - Mensagens para outras pessoas nunca esperam. **Enviar** diz que você está offline: envie de novo quando voltar.
 - O que você digita em um chat fica no dispositivo até você enviar, mesmo depois de recarregar.
 - O app tenta de novo sozinho, um pouco mais tarde a cada vez. **Tentar agora** tenta na hora.
+- Uma Machine ocupada pode demorar para responder. O app diz então **Sua Machine está demorando para responder** e mantém o que você vê. Isso não é estar offline.
 
 ## Mais dispositivos
 

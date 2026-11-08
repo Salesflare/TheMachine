@@ -5657,6 +5657,7 @@
  "Your Machine did not answer just now, so nothing was done. Tap the button again in a minute.": "Je Machine antwoordde net niet, dus er is niets gedaan. Tik over een minuut opnieuw op de knop.",
  "Your Machine is restarting.": "Je Machine start opnieuw op.",
  "Your Machine is signed out of {}, so your skills there aren’t listed yet.": "Je Machine is uitgelogd bij {}, dus je skills daar staan er nog niet bij.",
+ "Your Machine is slow to answer.": "Je Machine reageert traag.",
  "Your Machine renews their access every hour. While it is off, their Stripe pauses.": "Je Machine vernieuwt hun toegang elk uur. Staat die uit, dan pauzeert hun Stripe.",
  "Your Machine rewrote it with what it learned. Nothing else changes.": "Je Machine herschreef het met wat hij geleerd heeft. Verder verandert er niets.",
  "Your Machine uses it to do tasks on websites for you. Sign in to a site here so it can act there. Nothing runs in it until you ask.": "Je Machine gebruikt hem om taken op websites voor je te doen. Log hier in bij een site, zodat hij daar kan handelen. Er draait niets in tot je erom vraagt.",

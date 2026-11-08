@@ -60,6 +60,7 @@ Im Flugzeug oder im Zug arbeitet das Dashboard weiter. Eine Leiste oben zeigt **
 - Nachrichten an andere warten nie. **Senden** sagt, dass du offline bist: sende erneut, wenn du zurück bist.
 - Was du in einem Chat tippst, bleibt bis zum Senden auf dem Gerät, auch nach einem Neuladen.
 - Die App versucht es von selbst erneut, jedes Mal etwas später. **Jetzt versuchen** versucht es sofort.
+- Eine beschäftigte Machine braucht manchmal etwas länger. Die App zeigt dann **Deine Machine antwortet gerade langsam** und behält, was du siehst. Das ist nicht offline.
 
 ## Weitere Geräte
 

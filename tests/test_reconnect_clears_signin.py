@@ -115,7 +115,7 @@ class RestartAnnounced(unittest.TestCase):
     def run_js(self, body):
         source = (ROOT / 'dashboard' / 'shell-network.js').read_text(encoding='utf-8')
         head = source[:source.index('let retryIn=0')]
-        script = ('let csrf="x",netDown=false,netSetup=false;const errApi=()=>{},setupUnderway=()=>false;' + head +
+        script = ('let csrf="x",netDown=false,netSetup=false;const errApi=()=>{},setupUnderway=()=>false,slowSet=()=>{};' + head +
                   ';(async()=>{const out=[];' + body + ';console.log(JSON.stringify(out))})()')
         return json.loads(subprocess.run(['node', '-e', script], capture_output=True, text=True, check=True).stdout)
 

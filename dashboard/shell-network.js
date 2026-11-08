@@ -1,6 +1,17 @@
 // A lost connection, a cut-off or garbled answer or a server hiccup (5xx) is "offline": quiet, retried. Only a clear refusal
 // (a 4xx with its reason) is said out loud.
 const offline=e=>Object.assign(Error('Can’t reach your Machine right now. Try again in a moment.'),{offline:true,cause:e,restarting:restartDue()});
+// Slow is not offline. A call that waited long and then broke (a timeout, a link cut mid-wait) or a gateway's 504,
+// while the Machine answered something in the last 2 minutes or its host answers now, is the Machine busy, not away:
+// it still waits and retries like offline (offline:true), but the screen only says so quietly (netSlow, slowPaint),
+// with no "Offline", no "Can’t reach" and no Report a bug. A quick failure is not slow: offline (netOut) decides.
+const NET_SLOW_TEXT='Your Machine is slow to answer.',NET_SLOW=8000,NET_HEARD=120000;
+let netHeardAt=0,netSlow=false,netWaits=0;
+const slowErr=e=>Object.assign(offline(e),{message:NET_SLOW_TEXT,slow:true});
+// The host in front of the Machine answers (any answer, also a sign-in gate's redirect): the link is fine
+const hostAnswers=()=>{const stop=new AbortController(),timer=setTimeout(()=>stop.abort(),4000);
+ return fetch('manifest.webmanifest',{cache:'no-store',credentials:'same-origin',redirect:'manual',signal:stop.signal}).then(r=>r.type==='opaqueredirect'||r.status<500,()=>false).finally(()=>clearTimeout(timer))};
+const heardLately=()=>Date.now()-netHeardAt<NET_HEARD;
 // A restart this page asked for or was told of (a connect, a disconnect, a scope change answered restarting): while it
 // lasts, the Machine away is the Machine restarting, also where nothing in front of it says so (a self-hosted one)
 let restartUntil=0;const restartSoon=(ms=120000)=>{restartUntil=Date.now()+ms},restartDue=()=>Date.now()<restartUntil;
@@ -14,15 +25,25 @@ async function request(path,options){let r;if(options?.method&&options.method!==
   // The Machine away: wait a little for api/session, then say offline (a change that may wait then waits, decideOrWait)
   await(netDown?Promise.race([csrfReady,new Promise((ok,no)=>setTimeout(()=>no(offline()),8000))]):csrfReady);options={...options,headers:{...options.headers,'X-CSRF-Token':csrfLive}}}
  // A timeout (a signal's, or a fetch that hung 30 s and more while the device is online) goes to the error reports (errApi)
- const t0=Date.now();try{r=await fetch(path,options)}catch(e){if(e?.name==='TimeoutError'||e?.name!=='AbortError'&&navigator.onLine!==false&&Date.now()-t0>=30000)errApi(path,options,'timeout');throw offline(e)}
+ // A read still waiting after 8 s, with the Machine heard lately or its host answering, shows the quiet slow line
+ const t0=Date.now(),reading=!options?.method||options.method==='GET';let waiting=false;
+ const waitTimer=reading&&setTimeout(()=>{waiting=true;(heardLately()?Promise.resolve(true):hostAnswers()).then(ok=>{if(ok&&waiting){netWaits++;waiting='counted';slowPaint()}})},NET_SLOW);
+ const waitDone=()=>{clearTimeout(waitTimer);if(waiting==='counted'){netWaits--;slowPaint()}waiting=false};
+ try{r=await fetch(path,options)}catch(e){waitDone();if(e?.name==='TimeoutError'||e?.name!=='AbortError'&&navigator.onLine!==false&&Date.now()-t0>=30000)errApi(path,options,'timeout');
+  const slow=e?.name!=='AbortError'&&navigator.onLine!==false&&(e?.name==='TimeoutError'||Date.now()-t0>=NET_SLOW)&&(heardLately()||await hostAnswers());
+  slowSet(slow);throw slow?slowErr(e):offline(e)}
+ waitDone();
  // The sign-in gate in front of a hosted Machine answers with a redirect to its sign-in page (seen with redirect:'manual')
  if(r.type==='opaqueredirect')throw sessionGone();
  // Only a JSON answer is read; an empty or HTML 502 while the service restarts, a cut-off body or any 5xx is "offline"
- const json=/json/i.test(r.headers.get('content-type')||'');let d=null;if(json)try{d=await r.json()}catch(e){if(r.ok||r.status>=500)throw offline(e)}
+ const json=/json/i.test(r.headers.get('content-type')||'');let d=null;if(json||r.status<500)netHeardAt=Date.now();if(json)try{d=await r.json()}catch(e){if(r.ok||r.status>=500){slowSet(false);throw offline(e)}}
  // A 5xx the Machine answered itself (JSON) is a failed call for the error reports, and a gateway timeout (504) a timeout;
  // an HTML 502 or 503 is the Machine away or restarting, as is an answer that says so
  if(r.status>=500&&!d?.restarting&&(json||r.status===504))errApi(path,options,json?r.status:'timeout')
- if(r.status>=500||r.ok&&!json){const wait=+r.headers.get('retry-after');if(d?.restarting)netSetup=!!d.setting_up||setupUnderway();throw Object.assign(offline(d?.error),{restarting:!!d?.restarting||restartDue(),retryAfter:wait>0?Math.min(wait,60)*1000:0})}
+ // A gateway timeout (504) is the host answering for a Machine still busy: slow
+ if(r.status===504&&!d?.restarting){slowSet(true);throw slowErr(d?.error)}
+ if(r.status>=500||r.ok&&!json){slowSet(false);const wait=+r.headers.get('retry-after');if(d?.restarting)netSetup=!!d.setting_up||setupUnderway();throw Object.assign(offline(d?.error),{restarting:!!d?.restarting||restartDue(),retryAfter:wait>0?Math.min(wait,60)*1000:0})}
+ slowSet(false);
  if(!r.ok)throw Object.assign(Error(d?.error||'Request failed'),{status:r.status,retry:!!d?.retry});return d}
 let retryIn=0,retryTimer=null;
 // On the device: the last cards, the open card's chat and the Graph's lists, so the app opens with them at once and
@@ -75,9 +96,11 @@ async function cachedGet(path,fresh){if(!localCache.on)return request(path);
  catch(e){if(e.offline){const hit=await localCache.read('get:'+path);if(hit){staleMark(hit.at);return hit.value}}throw e}}
 const hhmm=t=>fmtHM(t);
 // What the screen shows is older than now: "Offline · updated 10:42", quietly at the foot of the sidebar
-let staleAt=0;function staleMark(at){staleAt=at;staleLine(t('Offline · updated {}',hhmm(at)))}
+// (said only once it is really offline, netOut: one failed read on opening the app is not)
+let staleAt=0;function staleMark(at){staleAt=at;if(netOut)staleLine(t('Offline · updated {}',hhmm(at)))}
 // On a phone the sidebar's line is in the drawer, so the same words show quietly over the cards there too
-function staleLine(text){$('#live').classList.add('stale');$('#updated').textContent=text;const n=$('#stale-note');n.textContent=text;n.hidden=false;if(typeof netPaint==='function')netPaint()}
+// (not while a failed call is still in its grace, netOut below: the screen stays as it was)
+function staleLine(text){if(netDown&&!netOut)return;$('#live').classList.add('stale');$('#updated').textContent=text;const n=$('#stale-note');n.textContent=text;n.hidden=false;if(typeof netPaint==='function')netPaint()}
 let shownAt=0,shownCached=false;  // when the cards on screen were read, and whether they came from the device
 // Offline or on a spotty link (a train, a plane): the owner keeps working. The banner says what is going on, the owner's
 // own decisions on a to-do wait on the device and go by themselves, in order, once the Machine answers again, and a
@@ -89,6 +112,26 @@ let shownAt=0,shownCached=false;  // when the cards on screen were read, and whe
 const OUTBOX_CHOICES=['snooze','reject','complete','reopen','undo','other'];
 const outbox={items:[],busy:null,timer:null,wait:0};
 let netDown=false,netRestarting=false,netSetup=false;
+// netDown is the last call's answer (it steers what waits); netOut is what the screen says. Opening or reopening the app,
+// the first call often fails (a phone's link or VPN still waking, a slow Machine's gateway timing out) while the
+// Machine is fine: the device's copy then shows quietly, a retry follows in a moment, and "Offline" only shows once
+// it is really offline: the device without a network for over a second, or two failed calls or more over 4 seconds.
+// A restart the Machine says is under way shows at once (it is not alarming, and it waits by itself).
+const NET_GRACE=4000,NET_GRACE_DEVICE=1500,NET_PROBE=2500;let netOut=false,netFailAt=0,netFails=0,netGraceTimer=null;
+function netOutCheck(){clearTimeout(netGraceTimer);if(!netDown){netOut=false;return}if(netOut)return;const since=Date.now()-netFailAt;
+ netOut=netRestarting||navigator.onLine===false&&since>=NET_GRACE_DEVICE||!netSlow&&netFails>=2&&since>=NET_GRACE;
+ if(netOut)return;const left=(navigator.onLine===false?NET_GRACE_DEVICE:netFails>=2?NET_GRACE:NET_PROBE)-since;
+ // One failed call and no other planned (the owner typing holds the refresh back): a quiet look decides
+ netGraceTimer=setTimeout(()=>{if(netDown&&netFails<2&&navigator.onLine!==false)request('api/status',{redirect:'manual'}).then(()=>{if(netDown){netSet(false);refreshWhenReady()}},e=>{if(e.offline&&netDown)netSet(true,e.restarting)});
+  else{netOutCheck();if(netOut){liveLine();netPaint()}}},Math.max(0,left)+20)}
+// The quiet line while the Machine is slow (a read waiting long, or the last call slow): "Your Machine is slow to
+// answer" with the working dot, where "Updated" and the phone's line go. What is on screen stays as it is.
+let slowShown=false;
+function slowSet(on){if(netSlow===!!on)return;netSlow=!!on;slowPaint()}
+function slowPaint(){const on=(netSlow||netWaits>0)&&!netOut&&!(netDown&&netRestarting)&&navigator.onLine!==false;if(!on&&!slowShown)return;slowShown=on;
+ const live=$('#live'),note=$('#stale-note'),up=$('#updated');if(!live||!note||!up)return;
+ if(on){live.classList.add('stale','working');up.textContent=t(NET_SLOW_TEXT);note.textContent=t(NET_SLOW_TEXT);note.hidden=false;note.classList.add('working');return}
+ if(netOut)return;live.classList.remove('working','stale');note.classList.remove('working');note.hidden=true;up.replaceChildren(make('span',{class:'lbl'},'Updated '),hhmm(shownAt||Date.now()))}
 // A restart during a new owner's setup (the Machine says so, setting_up, or the page sees it: an AI connecting, the
 // first look waiting or running) says "Setting up…", not that the Machine is restarting or offline
 const setupUnderway=()=>{const live=state?.review_live||{};return !!(live.ai_connecting||live.first_look||(live.runs||[]).some(r=>r.auto&&r.preview))};
@@ -131,21 +174,22 @@ const outboxChat=s=>outboxWaits(s.id).filter(x=>x.kind==='other').map(x=>html`<d
 document.addEventListener('click',e=>{const b=e.target.closest?.('[data-outbox-cancel]');if(!b)return;e.preventDefault();e.stopPropagation();
  if(outboxCancel(b.dataset.outboxCancel))toast(t('Canceled.'));if(chatId)paintChat()},true);
 // The banner over every view: offline (or the Machine restarting), since when the screen is from, and what waits.
-function netSet(down,restarting=false){const was=netDown;netDown=!!down;netRestarting=!!down&&!!restarting;if(down)liveLine();if(!down&&was&&outbox.items.length){outbox.wait=0;outboxFlush()}if(!down&&was)micResume();netPaint()}
+function netSet(down,restarting=false){const was=netDown;netDown=!!down;netRestarting=!!down&&!!restarting;
+ if(down){if(!was)netFailAt=Date.now(),netFails=0;netFails++}else netFails=0;netOutCheck();if(netOut)liveLine();if(!down&&was&&outbox.items.length){outbox.wait=0;outboxFlush()}if(!down&&was)micResume();netPaint()}
 // The sidebar's line (and the phone's) says the same while offline: "Offline · updated 10:42", with the bar's dot
 function liveLine(){if(netRestarting){staleLine(netSetup?t('Setting up…'):t('Restarting · retrying'));return}const at=shownAt||staleAt;staleLine(at?t('Offline · updated {}',hhmm(at)):t('Offline.'))}
-const netShown=()=>netDown||outbox.items.length>0;
+const netShown=()=>netOut||outbox.items.length>0;
 function netText(){const n=outbox.items.length;
- const head=!netDown?'':netRestarting?(netSetup?t('Setting up…'):t('Your Machine is restarting.')):shownAt||staleAt?t('Offline. Showing what was here at {}.',hhmm(shownAt||staleAt)):t('Offline.');
+ const head=!netOut?'':netRestarting?(netSetup?t('Setting up…'):t('Your Machine is restarting.')):shownAt||staleAt?t('Offline. Showing what was here at {}.',hhmm(shownAt||staleAt)):t('Offline.');
  const waits=n?t(['{} change waits to send.','{} changes wait to send.'],n):'';
  return [head,waits].filter(Boolean).join(' ')}
 // A restart is a wait of seconds (it tries again by itself): no Try now, and a calm working dot, not the warning one
-const netRetry=()=>!netRestarting||!netDown;
+const netRetry=()=>!netRestarting||!netOut;
 const netHtml=()=>html`<span class="offline-text">${netText()}</span>${netRetry()?html`<button type="button" class="link" data-net-retry>${t('Try now')}</button>`:''}`;  // the chat's first draw
 const netNodes=()=>[make('span',{class:'offline-text'},netText()),...(netRetry()?[make('button',{type:'button',class:'link','data-net-retry':''},t('Try now'))]:[])];
 // The same bar sits in an open chat too (#chat-offline, above the message box): the chat covers the page's own
-function netPaint(){const show=netShown(),html=show?netText()+'|'+(netRetry()?t('Try now'):''):'';for(const n of [$('#live'),$('#stale-note')])n?.classList.toggle('working',netDown&&netRestarting);$('#stale-note')?.classList.toggle('covered',show);
- for(const bar of [$('#offline-bar'),$('#chat-offline')]){if(!bar)continue;bar.hidden=!show;bar.classList.toggle('working',show&&netDown&&netRestarting);if(show)putOnce(bar,html,netNodes)}}
+function netPaint(){slowPaint();const show=netShown(),html=show?netText()+'|'+(netRetry()?t('Try now'):''):'';for(const n of [$('#live'),$('#stale-note')])n?.classList.toggle('working',netOut&&netRestarting||slowShown);$('#stale-note')?.classList.toggle('covered',show);
+ for(const bar of [$('#offline-bar'),$('#chat-offline')]){if(!bar)continue;bar.hidden=!show;bar.classList.toggle('working',show&&netOut&&netRestarting);if(show)putOnce(bar,html,netNodes)}}
 document.addEventListener('click',e=>{if(!e.target.closest?.('#offline-bar [data-net-retry],#chat-offline [data-net-retry]'))return;outbox.wait=0;if(outbox.items.length)outboxFlush();micResume();retryIn=0;refreshWhenReady()});
-addEventListener('offline',()=>netSet(true));
+addEventListener('offline',()=>{netSlow=false;netSet(true)});
 addEventListener('online',()=>{outbox.wait=0;outboxFlush()});

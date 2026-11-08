@@ -56,6 +56,7 @@ In aereo o in treno la dashboard continua a funzionare. Una barra in alto dice *
 - I messaggi ad altre persone non aspettano mai. **Invia** dice che sei offline: invia di nuovo quando torni online.
 - Quello che scrivi in una chat resta sul dispositivo finché non lo invii, anche dopo un ricaricamento.
 - L’app riprova da sola, ogni volta un po’ più tardi. **Prova ora** riprova subito.
+- Una Machine occupata può metterci un po’ a rispondere. L’app dice allora **La tua Machine è lenta a rispondere** e tiene quello che vedi. Non è offline.
 
 ## Altri dispositivi
 

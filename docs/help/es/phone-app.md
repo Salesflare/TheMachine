@@ -56,6 +56,7 @@ En un avión o un tren el panel sigue funcionando. Una barra arriba dice **Sin c
 - Los mensajes a otras personas nunca esperan. **Enviar** dice que no tienes conexión: vuelve a enviarlo cuando estés en línea.
 - Lo que escribes en un chat se queda en el dispositivo hasta que lo envías, también al recargar.
 - La app vuelve a intentarlo sola, cada vez un poco más tarde. **Probar ahora** lo intenta al momento.
+- Una Machine ocupada puede tardar en responder. La app dice entonces **Tu Machine está tardando en responder** y mantiene lo que ves. Eso no es estar sin conexión.
 
 ## Más dispositivos
 
