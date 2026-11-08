@@ -38,22 +38,49 @@ def agent_work_status(job):
     return {'agent_work': work}
 
 
+CLOSED = ('completed', 'rejected')
+
+
+def compact_card(s):
+    """One to-do in the agent's status. An open one with its first 400 characters; a done or dismissed one only as
+    much as tells it is the same matter (title, dedupe_key, when it closed): its body was most of a review's status
+    (about 20k tokens a read, 2026-11-08) and pushed the open to-dos past OpenClaw's tool-result cut."""
+    if s.get('status') in CLOSED:
+        return {**{k: s[k] for k in ('id', 'status', 'title', 'dedupe_key', 'closed_at') if s.get(k)}, **agent_work_status(s.get('agent_job'))}
+    return {**{k: s[k] for k in ('id', 'status', 'title', 'dedupe_key', 'created_at', 'deliver_after', 'snoozed_until', 'latest_feedback', 'preparation_status', 'handled_hint') if s.get(k)},
+            'body': clamp(s.get('body') or '', 400), **agent_work_status(s.get('agent_job'))}
+
+
 def compact_status(result):
-    """The agent's view of status, well under OpenClaw's tool-result cut. The CLI and
-    dashboard read the full version."""
+    """The agent's view of status, well under OpenClaw's tool-result cut: the open to-dos first, then the done ones in
+    short. The CLI and dashboard read the full version."""
     keep = ('id', 'service', 'boundary', 'display_name', 'error', 'last_success', 'retry_at', 'failures_24h',
             'signals_24h', 'pending', 'total', 'deferred_threads', 'last_failure')
+    cards = [s for s in result['suggestions'] if s.get('status') not in CLOSED] + [s for s in result['suggestions'] if s.get('status') in CLOSED]
     return {
         'review_health': result['review_health'],
         'suggestion_counts': result['suggestion_counts'],
         'connectors': [{k: clamp(c[k], 200) for k in keep if c.get(k) not in (None, '', 0, [], {})} for c in result['connectors']],
-        'suggestions': [{**{k: s[k] for k in ('id', 'status', 'title', 'dedupe_key', 'created_at', 'deliver_after', 'snoozed_until', 'latest_feedback', 'preparation_status', 'handled_hint') if s.get(k)},
-                         'body': clamp(s.get('body') or '', 400), **agent_work_status(s.get('agent_job'))} for s in result['suggestions']],
+        'suggestions': [compact_card(s) for s in cards],
         'decisions': [{k: clamp(d[k], 300) for k in ('id', 'suggestion_id', 'choice', 'source', 'feedback', 'created_at') if d.get(k)} for d in result['decisions'][:30]],
         'recent_reviews': [{'started_at': a['started_at'], 'status': a['status'], 'checked': a.get('checked_count'),
                             'claimed': len(json.loads(a['items'] or '[]')), 'summary': clamp(a.get('summary') or a.get('last_error') or '', 300)}
                            for a in result['analyses'][:8]],
-        'note': 'Compact view. Read signals with events; suggestions show their first 400 characters.'}
+        'note': 'Compact view. Read signals with events; open suggestions show their first 400 characters, done ones their title. '
+                'status with suggestion_id gives one suggestion in full.'}
+
+
+def card_status(result, suggestion_id):
+    """status with suggestion_id: that one to-do (its body in full) and the owner's decisions on it, for a to-do's own
+    run (a preparation, Do it, its chat), which read the whole status (about 20k tokens) to find one card."""
+    card = next((s for s in result['suggestions'] if s.get('id') == suggestion_id), None)
+    if card is None:
+        return {'suggestion': None, 'note': 'No such suggestion.'}
+    keep = ('id', 'status', 'title', 'dedupe_key', 'created_at', 'closed_at', 'deliver_after', 'snoozed_until', 'latest_feedback',
+            'preparation_status', 'handled_hint')
+    return {'suggestion': {**{k: card[k] for k in keep if card.get(k)}, 'body': card.get('body') or '', **agent_work_status(card.get('agent_job'))},
+            'decisions': [{k: clamp(d[k], 300) for k in ('id', 'suggestion_id', 'choice', 'source', 'feedback', 'created_at') if d.get(k)}
+                          for d in result['decisions'] if d.get('suggestion_id') == suggestion_id][:30]}
 
 
 def sign_in_help(service, error, manage):
@@ -144,7 +171,7 @@ class StatusApp:
 
     def status_action(self, name, args, owner_dashboard=False):
         if not args.get('full'):  # an agent: only what compact_status reads, so it stays fast on a busy Machine
-            return self.agent_status()
+            return self.agent_status(str(args.get('suggestion_id') or '').strip() or None)
         # done: how many done to-dos (the dashboard: its Done list's first page, it loads the rest itself); else the last 100
         done = args.get('done')
         result = self.store.snapshot(self.config['accounts'], **({'done': max(0, min(int(done), 100))} if isinstance(done, int) else {}))
@@ -248,10 +275,20 @@ class StatusApp:
             LOG.error('task pages status error=%s', type(error).__name__)
         return result
 
-    def agent_status(self):
+    def agent_status(self, suggestion_id=None):
         """The agent's compact status, built from a lean snapshot without the dashboard's views: the whole status took
-        longer than the tool's 30 seconds on a busy Machine, while an agent reads only this."""
+        longer than the tool's 30 seconds on a busy Machine, while an agent reads only this. suggestion_id: only that
+        to-do and the decisions on it (card_status)."""
         result = self.store.snapshot(self.config['accounts'], lean=True)
+        if suggestion_id and not any(s.get('id') == suggestion_id for s in result['suggestions']):
+            try:  # an older done to-do, past the last 100 the snapshot keeps
+                with self.store.connect() as db:
+                    row = db.execute('SELECT * FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
+                    if row:
+                        result['suggestions'].append(dict(row))
+                        self.store.card_views(db, result['suggestions'][-1:], jobs=False)
+            except (sqlite3.Error, ValueError) as error:
+                LOG.error('card status error=%s', type(error).__name__)
         result['connectors'] = [c for c in result['connectors'] if not docs_unset(c)]
         self.heartbeat_health(result['review_health'])
         if getattr(self, 'agents', None):
@@ -260,4 +297,4 @@ class StatusApp:
                     self.agents.annotate(db, result.get('suggestions', []))
             except (sqlite3.Error, ValueError) as error:
                 LOG.error('agent jobs status error=%s', type(error).__name__)
-        return compact_status(result)
+        return card_status(result, suggestion_id) if suggestion_id else compact_status(result)
