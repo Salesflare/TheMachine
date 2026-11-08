@@ -425,7 +425,8 @@ class OwnerBoundary(unittest.TestCase):
                                {'status': 'complete', 'checked_count': None, 'items': '[1,2]'}],
                   'suggestions': [{'id': 'x', 'title': 'T', 'dedupe_key': 'k', 'closed_state': '{}', 'next_actions': []}],
                   'deliveries': [{'status': 'sent', 'suggestion_id': 'x', 'needs_edit': False, 'previous_message_ids': ['1'],
-                                  'notification_message_id': '2', 'last_notified_at': 't', 'edit_retry_at': None, 'edit_failures': 0}],
+                                  'notification_message_id': '2', 'last_notified_at': 't', 'edit_retry_at': None, 'edit_failures': 0,
+                                  'message_id': 'm', 'send_kind': 'email', 'reminder': 0}],
                   'promises': [{'id': 1}]}
         view = a.dashboard_status(status)
         self.assertEqual(view['analyses'], [{'status': 'complete', 'checked_count': 3, 'summary': 'ok'}, {'status': 'running', 'items': '[1]'},
@@ -435,6 +436,19 @@ class OwnerBoundary(unittest.TestCase):
         self.assertIs(view['promises'], status['promises'])
         self.assertIn('dedupe_key', status['suggestions'][0]); self.assertIn('items', status['analyses'][0])  # the action's own rows stay whole
         self.assertNotIn('analyses', a.dashboard_status({'suggestions': []}))
+
+    def test_dashboard_status_sends_a_card_s_actions_once_and_only_the_sync_state_connections_reads(self):
+        menu = {'kind': 'menu', 'actions': [{'kind': 'email', 'revision': 'r1', 'body': 'Hi'}]}
+        slack = {'mode': 'incremental', 'watermark': '2026-11-08T08:00:00+00:00', 'after': '1.2',
+                 'channels': [{'id': 'C1', 'name': 'general', 'threads': ['1.1', '1.2']}]}
+        status = {'suggestions': [{'id': 'x', 'next_action': menu, 'next_actions': menu['actions']}, {'id': 'y', 'next_action': menu}],
+                  'connectors': [{'id': 's', 'state': json.dumps(slack)}, {'id': 'p', 'state': '{"transport":"feed","reconciliation_error":"x","cursor":9}'},
+                                 {'id': 'n', 'state': None}, {'id': 'b', 'state': 'not json'}]}
+        view = a.dashboard_status(status)
+        self.assertEqual(view['suggestions'], [{'id': 'x', 'next_actions': menu['actions']}, {'id': 'y', 'next_action': menu}])  # no next_actions: kept
+        self.assertEqual([json.loads(c['state']) if c['state'] else c['state'] for c in view['connectors']],
+                         [{'mode': 'incremental', 'watermark': '2026-11-08T08:00:00+00:00'}, {'transport': 'feed', 'reconciliation_error': 'x'}, None, {}])
+        self.assertIn('next_action', status['suggestions'][0]); self.assertIn('channels', status['connectors'][0]['state'])  # the action's own rows stay whole
 
     def test_owner_key_is_created_private(self):
         config = {'credentials': {}, 'database': str(Path(self.temp.name) / 'events.sqlite')}
