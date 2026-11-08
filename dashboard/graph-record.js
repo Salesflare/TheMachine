@@ -124,9 +124,18 @@ document.addEventListener('click',e=>{if(!e.target.closest('[data-about-addresse
 // The summary on top of a person's page (person_summary.py): who they are to you, where things stand, what is open
 // both ways. Each line links its sources: a message or meeting by its date, a promise or your note; a line you wrote
 // needs none. Your edit wins: a later rewrite waits under it as a suggested update, Use it or Keep mine.
-const sumSrc=s=>s.type==='event'?html`<button type="button" class="link" data-quote-event="${s.id}" title="${t('Read the message')}">${shortDay(s.at)}</button>`
- :s.type==='promise'?html`<a href="${promiseHref(s)}">${t('Promise')}</a>`:html`<span title="${s.text}">${t('Your note')}</span>`;
-const sumLines=lines=>html`<ul class="summary-lines">${lines.map(l=>html`<li><span class="sl-text" translate="no">${l.text}</span> <span class="sl-src">${l.by?t('AI: {}',l.by):l.sources.filter(x=>x.type!=='owner').map((x,i)=>html`${i?' · ':''}${sumSrc(x)}`)}</span></li>`)}</ul>`;
+// One chip per source, never the same label twice: messages and meetings of one day share a chip with their count
+// ("Thu, Nov 5 · 3 messages") that opens them together; several notes or promises are one chip with their count.
+const sumChips=sources=>{const out=[],days=new Map(),notes=[],promises=[];
+ for(const s of sources){if(s.type==='event'){const k=localDay(new Date(s.at));if(!days.has(k)){days.set(k,[]);out.push(days.get(k))}days.get(k).push(s)}
+  else if(s.type==='fact'){if(!notes.length)out.push(notes);notes.push(s)}else if(s.type==='promise'){if(!promises.length)out.push(promises);promises.push(s)}}
+ return out.map(g=>{const s=g[0],n=g.length;
+  if(s.type==='event'){if(n===1)return html`<button type="button" class="link" data-quote-event="${s.id}" title="${t('Read the message')}">${shortDay(s.at)}</button>`;
+   const count=g.every(x=>/calendar|meeting/.test(x.kind||''))?t(['{} meeting','{} meetings'],n):t(['{} message','{} messages'],n);
+   return html`<button type="button" class="link" data-quote-events="${g.map(x=>x.id).join(',')}" title="${t('Read the messages')}">${shortDay(s.at)} · ${count}</button>`}
+  if(s.type==='promise')return html`<a href="${promiseHref(s)}">${n===1?t('Promise'):t(['{} promise','{} promises'],n)}</a>`;
+  return html`<span title="${g.map(x=>x.text).join('\n')}">${n===1?t('Your note'):t(['{} note','{} notes'],n)}</span>`})};
+const sumLines=lines=>html`<ul class="summary-lines">${lines.map(l=>html`<li><span class="sl-text" translate="no">${l.text}</span> <span class="sl-src">${l.by?t('AI: {}',l.by):sumChips(l.sources).map((x,i)=>html`${i?' · ':''}${x}`)}</span></li>`)}</ul>`;
 const personSummary=n=>{const s=n.summary;if(!s?.lines?.length)return '';
  return html`<section class="detail-section person-summary" data-summary-node="${n.id}"><div class="summary-head"><h4>Summary</h4><button type="button" class="link" data-summary-edit>Edit</button></div>${sumLines(s.lines)}<p class="graph-sub summary-meta">${s.by==='owner'?t('Edited by you'):t('Updated {}',shortDay(s.at))}</p>${s.proposal?html`<div class="summary-proposal"><p class="graph-sub"><b>Suggested update</b></p>${sumLines(s.proposal)}<p class="role-row"><button type="button" data-summary-op="use">Use it</button><button type="button" class="ghost" data-summary-op="keep">Keep mine</button></p></div>`:''}<form class="summary-form" hidden><textarea name="lines" rows="5" maxlength="1500" aria-label="${t('Summary, one line each')}">${s.lines.map(l=>l.text).join('\n')}</textarea><p class="role-row"><button>Save</button><button type="button" class="ghost" data-summary-cancel>Cancel</button>${s.by==='owner'?html`<button type="button" class="link" data-summary-op="reset">Let The Machine write it</button>`:''}</p><p class="graph-sub field-error" role="alert" hidden></p></form></section>`};
 const summaryPost=async(box,args)=>{const err=box.querySelector('.field-error');try{await graphPost('graph_summary',{node_id:box.dataset.summaryNode,...args});const f=box.querySelector('.summary-form');if(f)f.hidden=true;box.classList.remove('editing');await people(graphNode,true)}  /* the form closes first: a quiet refresh never redraws over an open one */

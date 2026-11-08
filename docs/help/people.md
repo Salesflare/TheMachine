@@ -22,7 +22,9 @@ If a page says **Couldn’t load this page.**, tap **Try again**. If it keeps sa
 
 ## Summary
 
-A few short lines at the top of a person's page: who they are to you, where things stand and what's open both ways. The Machine rewrites it when there's something new, only for people you're really in touch with. Each line links to where it came from.
+A few short lines at the top of a person's page: what was decided, asked, planned or promised, with everyone named. The Machine rewrites it when there's something new, only for people you're really in touch with, and checks each line first.
+
+A vague line is left out; with nothing specific to say, there's no summary. Each line links to where it came from: messages from one day share one date with their count, and open together.
 
 **Edit** it to say it your way. When there's news, The Machine shows a **Suggested update** with **Use it** and **Keep mine**. **Let The Machine write it** gives it back.
 
