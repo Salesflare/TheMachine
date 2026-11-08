@@ -48,8 +48,8 @@ matter.
    the next and works with the tools you already use. Work and personal stay apart where they should (your team
    never sees your personal life) and come together where it helps.
 7. **It feels instant and calm.** Every click answers in about 100 ms. It shows rather than tells: chat and plain
-   text are flexible but slow to take in, so a card, a preview or a one-tap choice comes first and chat is there for
-   the rest. Few words, few notifications, only ones that matter. It asks for less of your attention, not more.
+   text are flexible, but rarely the quickest way to take something in. Few words, few notifications, only ones
+   that matter. It asks for less of your attention, not more.
 8. **It's smart, not wasteful.** As much intelligence as possible per token, so it runs well on a $20 OpenAI or Claude
    plan. Model calls go where they change the outcome; plain code, caching and cheap checks do the rest.
 9. **It gets better by itself, for you and for everyone.** It learns you fast, without being taught. The whole
