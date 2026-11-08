@@ -1,6 +1,8 @@
 // What someone (or an organization) is to you: said by you, or read by a review in a message, shown with the line it came from.
 // ✓ makes a review's role yours; Edit sets it in your words.
 const quoteLine=(id,quote,event)=>quote?html`<span class="role-why">“${quote}”${event?html` <button class="link" data-quote-event="${event}">Read</button>`:''}</span>`:'';
+// The review's quote is markup (html``), never a plain string, so its Read button shows as a button.
+const roleKv=n=>kv('To you',n.role?html`<b>${cap(n.role)}</b>${n.role_by==='review'?html`<span class="sub">A review read it in your messages${n.role_quote?html`: ${quoteLine(n.id,n.role_quote,n.role_event_id)}`:''}</span>`:''}`:html`<span class="muted">Not known yet</span>`,n.role_by==='review'?confirmButton(n.id,n.role):'','kv-role');
 // A role marked right here is gone from Who's who at the tap and stays gone while it saves, also when a refresh that
 // started before the save draws the old list; a failed save brings it back (rolesConfirm).
 const rolesDone=new Map();let whosLast=null;  // node id -> {role, saved}; the Who's who list last loaded, with its count
@@ -79,7 +81,7 @@ function personContact(n){const c=personContacts(n),p=n.profile||{};
  const also=[...new Set((n.ids||[]).filter(i=>!i.includes('@')&&!/^\+\d/.test(i)&&!(p.x&&i==='@'+p.x)))];const slack=n.slack_links||[];if(also.length)rows.push(kv('Also on',html`${also.map((a,i)=>html`${i?' · ':''}${a==='Slack'&&slack.length?slack.map((l,j)=>html`${j?' · ':''}<a href="${safeHref(l.url)}" target="_blank" rel="noreferrer" title="Open in Slack">${l.label} ↗</a>`):a}`)}`));
  return rows.length?html`<section class="detail-section person-contact"><h4>Contact</h4>${rows}</section>`:''}
 function personAbout(n){const rows=[],f=n.fleet,work=f?.in?.find(x=>x.kind==='work');
- rows.push(kv('To you',n.role?html`<b>${cap(n.role)}</b>${n.role_by==='review'?html`<span class="sub">A review read it in your messages${n.role_quote?`: ${quoteLine(n.id,n.role_quote,n.role_event_id)}`:''}</span>`:''}`:html`<span class="muted">Not known yet</span>`,n.role_by==='review'?confirmButton(n.id,n.role):'','kv-role'));
+ rows.push(roleKv(n));
  if(n.side)rows.push(kv('Type',n.side==='work'?'Work contact':'Personal contact'));
  if(f?.in?.length)rows.push(kv('Network',html`<span class="fleet-mark">${[...new Set(f.in.map(x=>x.kind==='work'&&x.fleet_name?`${x.label} (${x.fleet_name})`:x.label)),f.machine?'Has a Machine':''].filter(Boolean).join(' · ')}</span>`,html`<button type="button" class="ghost" data-fleet-member="${f.in[0].member_id}">See in Fleet</button>${work?html`<button type="button" class="ghost" data-fleet-free="${work.fleet}">Ask your Fleet</button>`:''}`));
  else if(f?.machine)rows.push(kv('Network',html`<span class="fleet-mark">${[t('Has a Machine'),f.network?.requested?t('Friend request sent'):''].filter(Boolean).join(' · ')}</span>`));  // found on the Network, in no Fleet together
@@ -152,7 +154,7 @@ function orgContact(n){const p=n.profile||{},site=orgSite(n),rows=[];
  if(site)rows.push(kv('Website',html`<a href="${safeHref(site)}" target="_blank" rel="noreferrer" title="${site}">${hostOf(site)} ↗</a>`));
  if(/^https:\/\/([a-z]{2,3}\.)?linkedin\.com\//.test(p.linkedin_url||''))rows.push(kv('LinkedIn',html`<a href="${safeHref(p.linkedin_url)}" target="_blank" rel="noreferrer">${breakable(liShort(p.linkedin_url))} ↗</a>`));
  return rows.length?html`<section class="detail-section person-contact"><h4>Contact</h4>${rows}</section>`:''}
-const orgAbout=n=>html`<section class="detail-section person-about"><h4>With you</h4>${kv('To you',n.role?html`<b>${cap(n.role)}</b>${n.role_by==='review'?html`<span class="sub">A review read it in your messages${n.role_quote?`: ${quoteLine(n.id,n.role_quote,n.role_event_id)}`:''}</span>`:''}`:html`<span class="muted">Not known yet</span>`,n.role_by==='review'?confirmButton(n.id,n.role):'','kv-role')}${graphOwners.length?ownerRow(n):''}</section>`;
+const orgAbout=n=>html`<section class="detail-section person-about"><h4>With you</h4>${roleKv(n)}${graphOwners.length?ownerRow(n):''}</section>`;
 const orgRel=n=>[n.signals?t(['{} person','{} people'],n.signals):'',n.last_at?t('last contact {}',day(n.last_at)):''].filter(Boolean).join(' · ');
 function orgPage(n,group){const p=n.profile||{};return html`<article class="graph-detail person-page org-page"><div class="name-row">${picEdit(n,orgPic(n,true))}<div class="person-head"><h3 title="${n.name}">${n.name}</h3>${n.about?html`<p class="person-job">${n.about}</p>`:''}</div>${orgActions(n)}</div>${orgForm(n)}<div class="person-view">${p.about?html`<p class="graph-sub person-bio org-about">${p.about}</p>`:''}${orgRel(n)?html`<p class="person-rel detail-sub">${cap(orgRel(n))}</p>`:''}${orgWrongRow(n)}${orgDoubleAsk(n)}${notesSection(n.profile?.notes)}${orgContact(n)}${orgSites(n)}${orgAbout(n)}${orgProjects(n)}${crmFieldsSection(n)}${detailGroups(n,group)}${fleetAskRow(n)}</div></article>`}
 // An organization's projects, open ones first, each with where it stands
