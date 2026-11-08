@@ -13,7 +13,7 @@ import threading
 import graph
 import i18n
 import locale_prefs
-from machine.cards import plain
+from machine.cards import looks_done, plain, waits_on_others
 from machine.config import LOG
 from machine.delivery.push import app_wake, push_node, quick_web
 from machine.delivery.telegram import DeliveryNotSent, telegram_request
@@ -23,6 +23,7 @@ from machine.sources.calendar import calendar_keys, calendar_owned
 from machine.sources.connectors import UNNAMED
 from machine.sources.exclusions import default_exclusions
 from machine.app.recap_settings import recap_settings
+from machine.store.first_look import FirstLookStore
 from machine.store.profile import recap_day
 from machine.text import encoded
 import notify
@@ -610,3 +611,9 @@ class RecapApp:
     def recap_decide_action(self, name, args, owner_dashboard=False):
         # a tap on the weekly recap's Filter, Keep, Undo, Not needed or Do it
         return self.recap_decide(args, owner_dashboard)
+
+    def still_needed_step(self, current=None):
+        """Still needed? (still_needed.py): asks once on each open to-do nobody touched for a week, and ends the question
+        of one that closed. current: an ISO time (tests)."""
+        with self.store.connect() as db:
+            return FirstLookStore.still_needed_ask(db, current or now(), lambda row: looks_done(row) or waits_on_others(row), local_tz())
