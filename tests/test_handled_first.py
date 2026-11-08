@@ -177,6 +177,44 @@ class HandledFirst(unittest.TestCase):
         with self.store.connect() as db:
             return [dict(r) for r in db.execute("SELECT p.*,e.occurred_at made_at FROM promises p JOIN events e ON e.id=p.event_id WHERE p.status='open'")]
 
+    def test_a_due_promise_joins_the_owners_own_to_do_for_it(self):
+        # The owner promised in a reply, then added their own to-do for it: the promise came as a second to-do
+        pid = self.promise(direction='mine')
+        own = self.store.owner_card('Send Sam the signed contract tonight', 'work', project='Contract')
+        other = self.store.owner_card('Book the team offsite', 'work', project='Contract')
+        with self.store.connect() as db:
+            a.graph.label(db, [self.event('yes')], 'Contract', 'card', a.now())
+        self.commit()  # the graph again: the reply is on the project
+        prompts = []
+        app = self.app()
+        app.promise_check_model = lambda config, text: (prompts.append(text), json.dumps([{'promise': pid, 'state': 'open', 'todo': own['id']}]))[1]
+        self.at('2026-10-22T07:00:00+00:00')
+        self.run_step(app)
+        self.assertIn(f"- to-do {own['id']}: <<<Send Sam the signed contract tonight>>>", prompts[0])
+        self.assertIn(f"- to-do {other['id']}: <<<Book the team offsite>>>", prompts[0])  # same project: only meaning tells
+        row = self.promise_row(pid)
+        self.assertEqual((row['status'], row['suggestion_id']), ('carded', own['id']))
+        self.assertEqual([c['id'] for c in self.cards()], [own['id'], other['id']])  # no second to-do
+        self.assertEqual(self.store.promises()[0]['suggestion_id'], own['id'])
+
+    def test_a_due_promise_not_the_same_as_a_listed_to_do_becomes_its_own(self):
+        pid = self.promise(direction='mine')
+        other = self.store.owner_card('Book the team offsite', 'work', project='Contract')
+        with self.store.connect() as db:
+            a.graph.label(db, [self.event('yes')], 'Contract', 'card', a.now())
+        self.commit()  # the graph again: the reply is on the project
+        app = self.app()
+        calls = []
+        # an id that wasn't listed never joins either
+        app.promise_check_model = lambda config, text: (calls.append(1), json.dumps([{'promise': pid, 'state': 'open', 'todo': 'f' * 16}]))[1]
+        self.at('2026-10-22T07:00:00+00:00')
+        self.run_step(app)
+        self.run_step(app)
+        row = self.promise_row(pid)
+        self.assertEqual(row['status'], 'carded')
+        self.assertNotEqual(row['suggestion_id'], other['id'])
+        self.assertEqual(len(calls), 1)  # checked once
+
     def test_kept_needs_a_listed_message_and_a_reason(self):
         pid = self.promise()
         self.commit(email('reply', '2026-10-20T10:00:00+00:00', sent=True, title='Re: Contract', body='Thanks!'))
