@@ -128,7 +128,10 @@ function scopeSave(v){scopeSaving++;
 function scopeSync(l){if(!l||!('todo_scope' in l)||scopeSaving)return;const v=l.todo_scope;
  if(v==null){if(scopeLegacy&&l.saveable&&!scopeMigrated){scopeMigrated=true;scopeSave(scopeLegacy)}return}
  if(v!==scopeSynced){scopeSynced=v;scopeFilter=v}}
-function scopeSet(v){if(!['all','work','personal'].includes(v))return;linkedCardId=null;scopeFilter=v;scopeSynced=v;scopeSave(v);render()}
+// The filter changes the to-dos and the sidebar (render's view part): those show in the frame after the click, and the
+// rest of the page is drawn just after that frame is painted.
+function scopeSet(v){if(!['all','work','personal'].includes(v))return;linkedCardId=null;scopeFilter=v;scopeSynced=v;scopeSave(v);
+ const was=state,kept=drawnWhole===was;render('view');if(kept)requestAnimationFrame(()=>setTimeout(()=>{if(state===was)render()}))}  // a refresh meanwhile drew it all
 // When a filter is on, the list says so at its top, with the way back to All.
 const scopeNote=empty=>scopeFilter==='all'?'':html`<p class="scope-note" role="status"><span>${scopeFilter==='work'?(empty?'No work to-dos':'Work only'):(empty?'No personal to-dos':'Personal only')}</span> · <button type="button" class="link" data-scope="all">Show all</button></p>`;
 $('#suggestions').addEventListener('click',e=>{const b=e.target.closest('.scope-note [data-scope]');if(b){e.stopPropagation();scopeSet(b.dataset.scope)}});
