@@ -1591,11 +1591,7 @@ class App(*APP_MIXINS):
         body = text if not draft else i18n.t('{} wrote this email for you. Read it, change it if you like, and send it yourself.', name) + (
             '\n\n' + text if text != draft['subject'] else '')
         meta = {'sender_display': i18n.t('{} (connected AI)', name), 'ai_connection': name}
-        with self.store.connect() as db:
-            db.execute('INSERT INTO events(account_id,source_id,kind,occurred_at,title,body,metadata,deleted,content_hash,version,analyzed_version,ingested_at) '
-                       "VALUES(?,?,'ai.request',?,?,?,?,0,?,1,1,?)",
-                       (account, key, stamp, title, text, json.dumps(meta), hashlib.sha256(text.encode()).hexdigest(), stamp))
-            event_id = db.execute('SELECT id FROM events WHERE account_id=? AND source_id=?', (account, key)).fetchone()[0]
+        event_id = self.store.add_ai_request(account, key, stamp, title, text, meta)
         card = self.store.suggest(key, (i18n.t('Email to {}: {}', ', '.join(draft['to'])[:60], draft['subject']) if draft else title)[:90],
                                   body[:700], [event_id], when='now', work=(graph.account_side(accounts[0]) or area) == 'work', due=due)
         if not card.get('duplicate'):  # the owner asked for it, as with New card (owner_card): on their list now, not held for a work day

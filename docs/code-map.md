@@ -173,7 +173,9 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   and photo event into SyncApp; calendar_write into MeetingWritesApp, New to-dos (new_card, agent_card with its
   message, background and chat helpers, is_work) into new NewCardsApp (machine/app/new_cards.py); review evidence
   paging and the first-cards report into machine/app/review.py; split_notes_text into ReviewApp; short_window into
-  ModelPacingApp; activity_report, active_work and weekly_recap next to their features.
+  ModelPacingApp; activity_report, active_work and weekly_recap next to their features, ai_card's events insert into
+  EventsStore as a Store method (add_ai_request), so ai_card can leave assistant.py without another writer of the
+  sealed events table.
 - **Dashboard code:** in its area's part in `dashboard/` (`<area>-<what>.js`: shell, todos, settings, graph, calendar,
   connections, help, events, new, fleet), next to the functions it works with, never at the end of the script. The
   page's core is in the `shell-*` parts too: locale and error reports (`shell-core.js`), network and outbox, `render()`

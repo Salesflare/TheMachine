@@ -577,3 +577,13 @@ class EventsStore:
                     db.execute('UPDATE events SET title=? WHERE id=?', (seal(title), r['id']))
                     changed += 1
         return changed
+
+    def add_ai_request(self, account, key, stamp, title, text, meta):
+        """A connected AI's to-do as its first evidence (App.ai_card): an ai.request event on one of the owner's
+        accounts, already marked reviewed (analyzed_version 1) so no review or preparation reads it by itself. The
+        event's id."""
+        with self.connect() as db:
+            db.execute('INSERT INTO events(account_id,source_id,kind,occurred_at,title,body,metadata,deleted,content_hash,version,analyzed_version,ingested_at) '
+                       "VALUES(?,?,'ai.request',?,?,?,?,0,?,1,1,?)",
+                       (account, key, stamp, title, text, json.dumps(meta), hashlib.sha256(text.encode()).hexdigest(), stamp))
+            return db.execute('SELECT id FROM events WHERE account_id=? AND source_id=?', (account, key)).fetchone()[0]

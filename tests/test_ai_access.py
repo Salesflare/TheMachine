@@ -401,6 +401,31 @@ class Calls(Base):
         self.assertEqual((event['kind'], event['analyzed_version']), ('ai.request', 1))
         self.assertIn('Claude (connected AI)', event['metadata'])
 
+    def test_a_new_todos_event_row_is_written_as_before(self):
+        # Store.add_ai_request (ai_card's insert, now a Store method): every column of the row as ai_card wrote it
+        text = 'Follow up with Sam on the contract'
+        _, tokens = self.signed_in('draft', area='work')
+        error, made = self.tool(tokens['access_token'], 'create_todo', text=text)
+        self.assertFalse(error, made)
+        with self.db() as db:
+            card = db.execute('SELECT * FROM suggestions WHERE id=?', (made['id'],)).fetchone()
+            event = dict(db.execute('SELECT * FROM events WHERE id=?', (json.loads(card['event_ids'])[0],)).fetchone())
+        self.assertTrue(event['source_id'].startswith('ai:'))
+        self.assertEqual(event['occurred_at'], event['ingested_at'])
+        self.assertEqual(json.loads(event['metadata']), {'sender_display': 'Claude (connected AI)', 'ai_connection': 'Claude'})
+        self.assertEqual({k: event[k] for k in ('account_id', 'kind', 'title', 'body', 'deleted', 'content_hash', 'version', 'analyzed_version')},
+                         {'account_id': 'w', 'kind': 'ai.request', 'title': a.owner_title(text), 'body': text, 'deleted': 0,
+                          'content_hash': hashlib.sha256(text.encode()).hexdigest(), 'version': 1, 'analyzed_version': 1})
+        stamp = a.now()
+        event_id = self.store.add_ai_request('p', 'ai:direct', stamp, 'Title', 'Body text', {'ai_connection': 'X'})
+        with self.db() as db:
+            row = dict(db.execute('SELECT account_id,source_id,kind,occurred_at,title,body,metadata,deleted,content_hash,version,'
+                                  'analyzed_version,ingested_at FROM events WHERE id=?', (event_id,)).fetchone())
+        self.assertEqual(row, {'account_id': 'p', 'source_id': 'ai:direct', 'kind': 'ai.request', 'occurred_at': stamp, 'title': 'Title',
+                               'body': 'Body text', 'metadata': json.dumps({'ai_connection': 'X'}), 'deleted': 0,
+                               'content_hash': hashlib.sha256(b'Body text').hexdigest(), 'version': 1, 'analyzed_version': 1,
+                               'ingested_at': stamp})
+
     def test_a_todo_in_an_area_with_no_account_placed_yet_still_lands(self):
         self.app.config['accounts'] = [{'id': 'server', 'service': 'gateway', 'boundary': 'owner:system'}]
         _, tokens = self.signed_in('draft')
