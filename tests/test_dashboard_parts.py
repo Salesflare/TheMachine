@@ -5,6 +5,7 @@ standing for the lines a /*@include dashboard/<name>.js*/, /*@include dashboard/
 <!--@include dashboard/<name>.html--> line in dashboard.html takes), so everything reads it assembled: the service,
 the scripts and the tests, in Python through dashboard_parts and in Node through tests/dashboard-page.mjs."""
 from pathlib import Path
+import json
 import re
 import shutil
 import subprocess
@@ -89,24 +90,73 @@ class DashboardParts(unittest.TestCase):
                          .replace('__CACHE_SCOPE__', assistant.dashboard_cache_scope('token', 'owner')))
         self.assertNotIn('/*@include dashboard/', page)
 
-    def test_the_parts_that_load_later_are_whole_main_script_parts_and_lose_nothing(self):
-        # dashboard_parts.LAZY: each group's parts are .js parts of the main script (the page's last script), in one
-        # group only; the page without them and the groups are the whole page again, and nothing in them is per page
+    def test_the_parts_that_load_later_are_whole_parts_and_lose_nothing(self):
+        # dashboard_parts.LAZY: each group's .js parts are parts of the main script (the page's last script) and its
+        # .css parts are in the stylesheet, each in one group only; the page without them and the groups are the whole
+        # page again, and nothing in them is per page
         source = (ROOT / dashboard_parts.PAGE).read_text(encoding='utf-8')
         main = source[source.rindex('<script>\n'):].split('\n')
+        style = [name for _, name, where in places(source) if where == 'style']
         names = [name for group in dashboard_parts.LAZY.values() for name in group]
         self.assertEqual(sorted(set(names)), sorted(names), 'a part is in two groups')
         for name in names:
-            self.assertTrue(name.endswith('.js'), name)
-            self.assertIn(dashboard_parts.marker(name), main, f'{name} is a part of the main script')
+            if name.endswith('.css'):
+                self.assertIn(name, style, f'{name} is a part of the stylesheet')
+            else:
+                self.assertTrue(name.endswith('.js'), name)
+                self.assertIn(dashboard_parts.marker(name), main, f'{name} is a part of the main script')
         first, lazy = dashboard_parts.assemble_split(ROOT)
         self.assertEqual(sorted(lazy), sorted(dashboard_parts.LAZY))
+        whole, css_whole, css_first = dashboard_parts.assemble(ROOT), [], []
         for group, script in lazy.items():
-            self.assertEqual(script, ''.join((ROOT / 'dashboard' / name).read_text(encoding='utf-8') for name in dashboard_parts.LAZY[group]))
+            js = [name for name in dashboard_parts.LAZY[group] if name.endswith('.js')]
+            css = [name for name in dashboard_parts.LAZY[group] if name.endswith('.css')]
+            self.assertTrue(script.endswith(''.join((ROOT / 'dashboard' / name).read_text(encoding='utf-8') for name in js)))
             self.assertNotRegex(script, '__(CSRF|UI_VERSION|BASE|CACHE_SCOPE)__')
-            self.assertNotIn(script, first)
-        whole = dashboard_parts.assemble(ROOT)
-        self.assertEqual(sorted(first.split('\n') + ''.join(lazy.values()).split('\n')[:-1]), sorted(whole.split('\n')))
+            for name in css:
+                text = (ROOT / 'dashboard' / name).read_text(encoding='utf-8')
+                self.assertIn(json.dumps(dashboard_parts.FENCE.sub('', text), ensure_ascii=False), script)
+                kept = dashboard_parts.LAZY_RUN.sub('', text)
+                self.assertIn(f'<style data-lazy-css="{name}">\n{kept}</style><style>\n', first)
+                self.assertLess(len(kept), len(text), f'{name}: no rules load later')
+                css_whole += text.split('\n')[:-1]
+                css_first += kept.split('\n')[:-1] + [f'</style><style data-lazy-css="{name}">', '</style><style>']
+            for name in js:
+                self.assertNotIn((ROOT / 'dashboard' / name).read_text(encoding='utf-8'), first)
+        js_lazy = ''.join(script.split('\n', 1)[1] if script.startswith('for(const [n,c] of ') else script for script in lazy.values())
+        self.assertEqual(sorted(first.split('\n') + js_lazy.split('\n')[:-1] + css_whole),
+                         sorted(whole.split('\n') + css_first))
+
+    def test_the_rules_that_load_later_style_only_what_their_group_draws(self):
+        # A rule in a lazy run of a group's .css part waits for the group's scripts: each of its selectors names a
+        # class, id or data- attribute that the group's .js parts write and no other part does, so it styles nothing
+        # the page draws before the group is there.
+        parts = {p.name: p.read_text(encoding='utf-8') for p in (ROOT / 'dashboard').iterdir() if p.suffix in ('.js', '.html')}
+        parts['dashboard.html'] = (ROOT / dashboard_parts.PAGE).read_text(encoding='utf-8')
+        named = lambda token, text: re.search(r'(?<![\w-])' + re.escape(token) + r'(?![\w-])', text)
+        for group, names in dashboard_parts.LAZY.items():
+            own = ''.join(parts[name] for name in names if name.endswith('.js'))
+            others = '\n'.join(text for name, text in parts.items() if name not in names)
+            def group_only(token):
+                spelled = [token] + (['dataset.' + re.sub(r'-([a-z])', lambda m: m[1].upper(), token[5:])] if token.startswith('data-') else [])
+                return any(named(t, own) for t in spelled) and not any(named(t, others) for t in spelled)
+            for name in names:
+                if not name.endswith('.css'):
+                    continue
+                text = (ROOT / 'dashboard' / name).read_text(encoding='utf-8')
+                runs = [m[0] for m in dashboard_parts.LAZY_RUN.finditer(text)]
+                self.assertTrue(runs, name)
+                for run in runs:
+                    run = re.sub(r'/\*.*?\*/', '', re.sub(r'"[^"\n]*"|\'[^\'\n]*\'', '""', run), flags=re.S)
+                    for prelude in re.findall(r'([^{}]+)\{', run):
+                        if prelude.strip().startswith('@'):
+                            continue
+                        for selector in re.split(r',(?![^()]*\))', prelude):  # not the commas in :is(a,b)
+                            tokens = re.findall(r'[.#]([a-zA-Z_][\w-]*)|\[(data-[\w-]+)', selector)
+                            with self.subTest(part=name, selector=selector.strip()):
+                                self.assertTrue(any(group_only(a or b) for a, b in tokens),
+                                                'it may style something drawn before the group loads: move it out of '
+                                                'the /*@lazy*/ run (above /*@eager*/)')
 
     def test_parts_fill_in_their_lines_and_python_and_node_agree(self):
         with tempfile.TemporaryDirectory() as tmp:

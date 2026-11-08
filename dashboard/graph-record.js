@@ -3,11 +3,7 @@
 const quoteLine=(id,quote,event)=>quote?html`<span class="role-why">“${quote}”${event?html` <button class="link" data-quote-event="${event}">Read</button>`:''}</span>`:'';
 // The review's quote is markup (html``), never a plain string, so its Read button shows as a button.
 const roleKv=n=>kv('To you',n.role?html`<b>${cap(n.role)}</b>${n.role_by==='review'?html`<span class="sub">A review read it in your messages${n.role_quote?html`: ${quoteLine(n.id,n.role_quote,n.role_event_id)}`:''}</span>`:''}`:html`<span class="muted">Not known yet</span>`,n.role_by==='review'?confirmButton(n.id,n.role):'','kv-role');
-// A role marked right here is gone from Who's who at the tap and stays gone while it saves, also when a refresh that
-// started before the save draws the old list; a failed save brings it back (rolesConfirm).
-const rolesDone=new Map();let whosLast=null;  // node id -> {role, saved}; the Who's who list last loaded, with its count
 const roleDone=(id,role)=>rolesDone.get(id)?.role===role;
-const rolesSaving=()=>[...rolesDone.values()].filter(r=>!r.saved).length;
 const rolesLeft=items=>(items||[]).filter(w=>!roleDone(w.id,w.role));
 const confirmButton=(id,role)=>roleDone(id,role)?'':html`<button class="ghost" data-role-confirm="${id}" data-role="${role}" aria-label="Right: ${role}">✓ Right</button>`;
 // Where someone works: from their work email, or as a source stated it (their LinkedIn headline, a signature, their own words), with that line.
@@ -57,18 +53,7 @@ const talkEvery=g=>{const d=Math.round(g);return d<=1?'Talk daily':d<=4?'Talk ev
 const relLine=n=>cap([n.quiet?'Gone quiet':n.usual_gap_days?talkEvery(n.usual_gap_days):'',n.last_at?(n.seen_only?'seen ':'last ')+day(n.last_at):'',n.next_meeting?'next meeting '+day(n.next_meeting):''].filter(Boolean).join(' · '));
 // Phones and emails as the server lists them (the messages', less what the owner took off, plus what they added).
 const personContacts=n=>({phones:n.phones||(n.ids||[]).filter(i=>/^\+\d/.test(i)).map(value=>({value,by:'messages'})),emails:n.emails||(n.ids||[]).filter(i=>i.includes('@')).map(value=>({value,by:'messages'}))});
-// A phone number grouped for reading: the country code (ITU zones), then the national number in short groups. One that
-// already has spaces is shown as written. Tap and Copy use the number as stored.
-const PHONE_CC2=/^(2[07]|3[0-469]|4[013-9]|5[1-8]|6[0-6]|8[1246]|9[0-58])/;
-function phoneShown(v){const t=String(v||'').trim();if(!/^\+\d{8,15}$/.test(t))return t;const d=t.slice(1),cc=/^[17]/.test(d)?d[0]:PHONE_CC2.test(d)?d.slice(0,2):d.slice(0,3),n=d.slice(cc.length);
- const g=cc==='1'&&n.length===10?[n.slice(0,3),n.slice(3,6),n.slice(6)]:cc==='32'&&n.length===9?[n.slice(0,3),n.slice(3,5),n.slice(5,7),n.slice(7)]:cc==='32'&&n.length===8?[n.slice(0,1),n.slice(1,4),n.slice(4,6),n.slice(6)]
-  :cc==='31'&&n.length===9?[n.slice(0,1),n.slice(1,5),n.slice(5)]:cc==='44'&&n.length===10?[n.slice(0,4),n.slice(4)]:cc==='33'&&n.length===9?[n.slice(0,1),...n.slice(1).match(/\d{2}/g)]
-  :n.replace(/\B(?=(\d{3})+(?!\d))/g,' ').split(' ');
- return '+'+cc+' '+g.join(' ')}
 const breakable=t=>html`${String(t).split('@').map((x,i)=>i?html`@<wbr>${x}`:x)}`;
-// An address that bounced (bounces.py): "Bounced Oct 28", muted, beside it; never struck through, so it stays readable.
-const bounceDay=v=>localeDate(new Date(v),DL,{day:'numeric',month:'short'});
-const bounceNote=at=>at?html`<span class="bounce-note">${t('Bounced {}',bounceDay(at))}</span>`:'';
 const kv=(k,v,acts='',cls='')=>html`<div class="kv${cls?' '+cls:''}"><span class="k">${k}</span><span class="v">${v}</span>${acts?html`<span class="acts">${acts}</span>`:''}</div>`;
 const copyBtn=(t,what)=>html`<button type="button" class="ghost" data-copy-command="${t}" aria-label="Copy ${what}">Copy</button>`;
 const liShort=u=>u.replace(/^https?:\/\/(www\.)?/,'').replace(/\/$/,'');
@@ -269,8 +254,6 @@ const tlLink=e=>/^docs\./.test(e.kind||'')&&e.source_url?html`<a class="ge-link"
 // A meeting opens in its details (openMeeting); one with notes or a transcript says so on its row
 const meetingAttr=e=>e.kind==='calendar.event'?' data-meeting':e.meeting_id?html` data-meeting="${e.meeting_id}"`:'';
 const meetingMarks=e=>e.kind==='calendar.event'?orEmpty(html`${[e.notes&&'Notes',e.transcript&&'Transcript'].filter(Boolean).map(x=>html`<span class="chip ge-mark">${t(x)}</span>`)}`):'';
-// A meeting still to come, compact: its day and time (All day for an all-day one), who else is on it.
-const GE_SOON=3;
 const soonRow=(n,e,later)=>{if(e.type&&e.type!=='event')return tlRow(n,e,later);const d=new Date(e.occurred_at),src=SOURCE_NAME[graphSource(e.kind)]||'';
  return html`<article class="graph-event" data-event="${e.id}"${meetingAttr(e)} tabindex="0" aria-label="${src?t(src)+': ':''}${e.title}"${later}>${sourceIcon(e.kind)}<div class="ge-main"><div class="ge-head"><h4 title="${e.title}" translate="no">${e.title}</h4><time datetime="${e.occurred_at}">${dayLabel(d)+' · '+(e.all_day?'All day':graphTime(d))}</time></div>${e.preview||meetingMarks(e)?html`<p class="ge-preview">${meetingMarks(e)}${e.preview||''}</p>`:''}</div></article>`};
 const graphEvents=(n,title='Timeline')=>{if(n.head_only)return html`<section class="graph-timeline"><div class="section-head"><h2>${title}</h2></div><p class="pager-loading" role="status">Loading…</p></section>`;  /* the head came first; the timeline is on its way */
@@ -308,10 +291,6 @@ async function graphTlLoad(source,more){const n=graphTl.page;if(!n||graphTl.load
  catch(err){errCaught(err);toast(err.message,true)}finally{graphTl.loading=false}}
 function graphTlDraw(){const box=$('#people-view .graph-timeline'),n=graphTl.page;if(!box||!n)return;const tmp=document.createElement('div');setHTML(tmp,graphEvents(n));box.replaceWith(tmp.firstElementChild);
  for(const p of $('#people-view').querySelectorAll('.graph-timeline .ge-preview'))p.classList.toggle('fade',p.scrollHeight>p.clientHeight+1)}
-// The Shared Graph (shared_graph.py): Mine or Team, "via <name>", a thread's Team or Only you, Keep private and Ask <name>.
-// Teammates' records and threads are theirs, shown as text, never acted on. Nothing here goes outside the Fleet.
-let graphTeam=sideStore.get('graph-team')==='team',graphSharing=[],graphTeammates=[];
-const teamOn=()=>graphSharing.some(s=>s.confirmed);
 const teamMode=()=>teamOn()&&graphTeam;
 const shareChip=e=>{const s=e.share;if(!s)return '';const t=s.share==='team'?'Team':s.people?.length?s.people[0]+(s.people.length>1?' +'+(s.people.length-1):''):'Only you';
  return html`<button type="button" class="share-chip${s.share==='team'||s.people?.length?html` on`:''}" data-share-event="${e.id}" data-share="${JSON.stringify({share:s.share,fixed:!!s.fixed,why:s.why||'',people:s.people||[]})}" title="${s.why}" aria-haspopup="dialog" aria-label="${t}: ${s.why}">${t}</button>`};
@@ -337,7 +316,3 @@ $('#people-view').addEventListener('toggle',async e=>{const d=e.target;if(!d.mat
 $('#people-view').addEventListener('submit',async e=>{const f=e.target.closest('.team-ask-form');if(!f)return;e.preventDefault();e.stopPropagation();const b=f.querySelector('button');b.disabled=true;
  try{await graphPost('graph_ask',{fleet:f.dataset.fleet,member_id:f.dataset.member,about:f.dataset.about,note:f.elements.note.value});toast('Asked.');f.closest('details').open=false}catch(err){errCaught(err);toast(err.message,true)}finally{b.disabled=false}},true);
 $('#page-head').addEventListener('click',e=>{const b=e.target.closest('[data-graph-team]');if(!b)return;graphTeam=b.dataset.graphTeam==='team';sideStore.set('graph-team',graphTeam?'team':'mine');pageHead();people('')});
-// A fact's sort and end day, quietly under it: "Temporary · Until Nov 14". A plain fact without an end shows nothing.
-const FACT_SORT={event:'Temporary',commitment:'Commitment',preference:'Preference'};
-const factUntil=d=>localeDate(new Date(d+'T12:00:00'),DL,{day:'numeric',month:'short',...(d.slice(0,4)!==String(new Date().getFullYear())?{year:'numeric'}:{})});
-function factMeta(f){const bits=[FACT_SORT[f.fact_kind]?t(FACT_SORT[f.fact_kind]):'',f.valid_until?t('Until {}',factUntil(f.valid_until)):'',String(f.source||'').startsWith('ai:')?t('AI: {}',f.source.slice(3)):''].filter(Boolean);return bits.length?html`<small class="fact-meta">${bits.join(' · ')}</small>`:''}
