@@ -3,7 +3,7 @@ title: Kalender
 area: calendar
 summary: Die kommende Woche an einem Ort: Meetings, fällige Aufgaben, zurückgestellte Aufgaben und Versprechen.
 covers: tab:calendar
-code: dashboard.html, meeting_notes.py, meeting_writer.py
+code: dashboard.html, meeting_notes.py, meeting_writer.py, calendar_clashes.py
 order: 1
 ---
 ## Was er zeigt
@@ -68,3 +68,9 @@ Wenn sich ein Kalender von hier aus ändern lässt, fügt **Neuer Termin** einen
 Auch eine Aufgabe kann eine Änderung vorschlagen, etwa eine Abholung, die eingetragen werden soll. Sie zeigt genau, was sich ändert, und erst dein **Hinzufügen**, **Speichern** oder **Löschen** führt es aus.
 
 Noch keine Meetings? Ohne Kalender öffnet **Kalender verbinden** die Verbindungen: Verbinde [Google Calendar](google-calendar.md) oder [Outlook-Kalender](microsoft.md).
+
+## Überschneidungen mit deinem anderen Kalender
+
+Wenn ein Arbeitstermin sich mit etwas in deinem privaten Kalender überschneidet, oder umgekehrt, macht The Machine eine Aufgabe zum neueren der beiden. Sie kann einen kurzen Entwurf schreiben, um ihn zu verschieben, oder eine Absage anbieten. Nichts geht raus, bevor du es freigibst.
+
+Ganztägige, freie und vorläufige Termine zählen nie, und jede Überschneidung kommt nur einmal. Eine Arbeitsaufgabe sagt nur, dass es einen Konflikt gibt, damit dein Team den privaten Termin nie sieht. Nur du siehst, womit er sich überschneidet.

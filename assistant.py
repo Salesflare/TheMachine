@@ -190,6 +190,7 @@ from machine.app.meeting_writes import MeetingWritesApp
 from machine.app.model_pacing import ModelPacingApp
 from machine.app.recap_settings import RecapSettingsApp
 from machine.app.review_saves import ReviewSavesApp
+from machine.app.calendar_clashes import CalendarClashesApp
 from machine.app.search_ask import SearchAskApp
 from machine.app.signatures import SignaturesApp
 from machine.app.summaries import SummariesApp
@@ -2185,6 +2186,7 @@ APP_MIXINS += (CardChatApp, ConversationApp, ExportApp, FirstLookApp, FleetApp, 
 APP_MIXINS += (RecapSettingsApp,)
 APP_MIXINS += (SearchAskApp,)
 APP_MIXINS += (ReviewSavesApp,)
+APP_MIXINS += (CalendarClashesApp,)
 
 
 class App(*APP_MIXINS):

@@ -79,6 +79,8 @@ def calendar_event(account, raw, timezone):
                 'recurring_event_id': raw.get('recurringEventId'),
                 'original_start': raw.get('originalStartTime'), 'source_url': source_url,
                 'ical_uid': raw.get('iCalUID'), 'truncated': len(body) > 40000}
+    if raw.get('transparency') == 'transparent':  # shown as free: never a clash (calendar_clashes.py)
+        metadata['transparency'] = 'transparent'
     if account.get('calendar_id', 'primary') != 'primary':
         metadata.update(calendar_id=account['calendar_id'], credential_account=account['email'],
                         access='shared_read_only')

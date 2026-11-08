@@ -3,7 +3,7 @@ title: Calendario
 area: calendar
 summary: La settimana che arriva in un solo posto: riunioni, attività in scadenza, attività posticipate e promesse.
 covers: tab:calendar
-code: dashboard.html, meeting_notes.py, meeting_writer.py
+code: dashboard.html, meeting_notes.py, meeting_writer.py, calendar_clashes.py
 order: 1
 ---
 ## Cosa mostra
@@ -68,3 +68,9 @@ Quando un calendario si può modificare da qui, **Nuovo evento** ne aggiunge uno
 Anche un’attività può proporre una modifica, come un ritiro da aggiungere. Mostra esattamente cosa cambia, e lo fa solo il tuo **Aggiungi**, **Salva** o **Elimina**.
 
 Ancora nessuna riunione? Senza calendario, **Collega il tuo calendario** apre Connessioni: collega [Google Calendar](google-calendar.md) o [Outlook Calendar](microsoft.md).
+
+## Sovrapposizioni con l’altro calendario
+
+Quando una riunione di lavoro si sovrappone a qualcosa nel tuo calendario personale, o viceversa, The Machine crea un’attività sul più recente dei due. Può preparare una bozza breve per spostarlo, o proporre di rifiutare. Non parte nulla finché non approvi.
+
+Gli eventi di tutto il giorno, liberi o provvisori non contano mai, e ogni sovrapposizione compare una volta sola. Un’attività di Lavoro dice solo che c’è un conflitto, così il tuo team non vede mai l’evento personale. Solo tu vedi con cosa si sovrappone.

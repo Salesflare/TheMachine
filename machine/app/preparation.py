@@ -659,6 +659,8 @@ class PreparationApp:
             except Exception as error:LOG.error('attachment seal error=%s',type(error).__name__)
             try:self.expire_step()
             except Exception as error:LOG.error('expiry error=%s',type(error).__name__)
+            try:self.clash_step()
+            except Exception as error:LOG.error('calendar clash error=%s',type(error).__name__)
 
     def preparing_page(self, suggestion_id):
         """The address a task's running (or stuck, not on a sign-in) preparation left off at in the browser (task_page), or None."""

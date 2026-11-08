@@ -10,6 +10,7 @@ import urllib.request
 
 import bounces
 import browser_login
+import calendar_clashes
 import chat_files
 import clear_pace
 import doc_writes
@@ -538,6 +539,7 @@ class ViewsStore(ConversationStore):
             for sid, photos in whatsapp_images.of_cards(db, {'database': str(self.path)}, cards).items():
                 next(c for c in cards if c['id'] == sid)['photos'] = photos  # a WhatsApp photo it came from (whatsapp_images.py)
             recurring.annotate(db, cards, dt.datetime.now(local_tz()).date())  # "Repeats monthly" (recurring.py)
+            calendar_clashes.annotate(db, cards)  # the other side of a calendar clash, for the owner only (calendar_clashes.py)
             still_needed.annotate(db, cards, now(), local_tz())  # "Still needed?" on a to-do untouched for a week (still_needed.py)
             return
         few = len(cards) <= 200  # a Done page: only its own; the status payload: all at once

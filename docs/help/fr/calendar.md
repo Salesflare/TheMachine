@@ -3,7 +3,7 @@ title: Agenda
 area: calendar
 summary: La semaine à venir en un seul endroit : réunions, tâches à échéance, tâches en attente et promesses.
 covers: tab:calendar
-code: dashboard.html, meeting_notes.py, meeting_writer.py
+code: dashboard.html, meeting_notes.py, meeting_writer.py, calendar_clashes.py
 order: 1
 ---
 ## Ce qu’il affiche
@@ -68,3 +68,9 @@ Quand un agenda peut être modifié d’ici, **Nouvel événement** en ajoute un
 Une tâche peut aussi proposer un changement, comme un trajet à ajouter. Elle montre exactement ce qui change, et seul votre **Ajouter**, **Enregistrer** ou **Supprimer** le fait.
 
 Pas encore de réunions ? Sans agenda, **Connecter votre agenda** ouvre Connexions : connectez [Google Agenda](google-calendar.md) ou [Outlook Calendar](microsoft.md).
+
+## Conflits avec votre autre agenda
+
+Quand une réunion de travail chevauche un événement de votre agenda personnel, ou l’inverse, The Machine crée une tâche sur le plus récent des deux. Elle peut préparer un court brouillon pour le déplacer, ou proposer de refuser. Rien ne part avant votre accord.
+
+Les événements sur toute la journée, libres ou provisoires ne comptent jamais, et chaque conflit n’apparaît qu’une fois. Une tâche Travail dit seulement qu’il y a un conflit, donc votre équipe ne voit jamais l’événement personnel. Il n’y a que vous pour voir avec quoi il entre en conflit.
