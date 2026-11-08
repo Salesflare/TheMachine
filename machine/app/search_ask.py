@@ -54,6 +54,9 @@ class SearchAskApp:
     def search_ask_examples_action(self, name, args, owner_dashboard):
         if not owner_dashboard:
             raise ValueError('Ask from search is only in your own dashboard.')
+        if not getattr(self, 'ask_model', None) and has_model(self.config, wait=False):
+            import model_service
+            model_service.warm(self.config)  # the search is open: a question may follow, so load the model helper now
         return self.search_ask_examples(args.get('people'), self.search_ask_area(args))
 
     @staticmethod
@@ -277,6 +280,7 @@ class SearchAskApp:
         model; {'error': True} when the turn failed. plan: the person and days of a suggested question it offered
         (search_ask.given_plan), which skips the first turn. Never sends, drafts or makes a to-do."""
         import help_chat
+        import model_service
         stand_in = getattr(self, 'ask_model', None)  # a stand-in in the sandbox and tests: (config, prompt)
         if not stand_in and not has_model(self.config, wait=False):  # never 10 s or more of `models status` first
             return {'off': True}
@@ -287,8 +291,9 @@ class SearchAskApp:
             run = plan_run = lambda text: stand_in(self.config, text)
         else:
             model, thinking = self.search_ask_model()
-            run = lambda text: help_chat.openclaw_model_run(self.config, text, model, thinking, timeout=search_ask.TIMEOUT)
-            plan_run = lambda text: help_chat.openclaw_model_run(self.config, text, model, thinking, timeout=search_ask.PLAN_TIMEOUT)
+            # one long-running helper, not a new OpenClaw process per turn (model_service.py)
+            run = lambda text: model_service.run(self.config, text, model, thinking, timeout=search_ask.TIMEOUT)
+            plan_run = lambda text: model_service.run(self.config, text, model, thinking, timeout=search_ask.PLAN_TIMEOUT)
         lang = locale_prefs.language_of(self.config)
         today = self.search_ask_today()
         read = search_ask.given_plan(plan, today)

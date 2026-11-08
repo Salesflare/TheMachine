@@ -14,6 +14,7 @@ import chat_model
 import fleet
 import help_topics
 import i18n
+import model_service
 from models import background_model, has_model
 
 LOG = logging.getLogger('personal-assistant')
@@ -91,7 +92,7 @@ class SupportApp:
                 picked = chat_model.resolve(self.config, models, chat_model.check(own, models, self.config) if own else {})
                 model, thinking = picked['model'] or model, picked['thinking']
             try:
-                found = help_chat.ask(args.get('question'), args.get('history') or [], run=run, config=self.config,
+                found = help_chat.ask(args.get('question'), args.get('history') or [], run=run or model_service.run, config=self.config,
                                       model=model, thinking=thinking, role=self.owner_role())
             except help_chat.Unavailable as error:
                 raise ValueError(str(error)) from None
