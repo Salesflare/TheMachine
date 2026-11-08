@@ -59,7 +59,8 @@ def own_or_joined(event, owner_slack_ids=()):
 
 
 class FleetApp:
-    ACTIONS = {}  # its actions are still App.action's own branches
+    # action name -> the method that handles it, called as method(name, args, owner_dashboard) (App.action)
+    ACTIONS = {'learning_undo': 'learning_undo_action'}
 
     def fleet_attach(self):
         """Builds self.fleet with the App's hooks: at start, and again when the Machine pairs from its dashboard
@@ -634,3 +635,11 @@ class FleetApp:
             return copy.deepcopy(shared_graph_kept.fleet_marks(db, self.fleet.fleets()))  # kept between requests (stamps.py)
         except (sqlite3.Error, ValueError, TypeError, KeyError, AttributeError):
             return {}
+
+    def learning_undo_action(self, name, args, owner_dashboard=False):
+        if not owner_dashboard:
+            raise ValueError('Only the owner undoes a learned change, on the dashboard')
+        done = self.store.undo_learning(args.get('id'))
+        if done.pop('graph', False):  # a fix in the Graph put back (corrections.py)
+            self.correction_refresh()
+        return done

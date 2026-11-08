@@ -11,6 +11,7 @@ import time
 import uuid
 from pathlib import Path
 
+import enrichment
 import error_feed
 import fleet
 import fleet_reviews
@@ -192,7 +193,10 @@ def ai_connecting(config, current=None):
 class ReviewApp:
     # action name -> the method that handles it, called as method(name, args, owner_dashboard) (App.action)
     ACTIONS = {'preview_review': 'preview_review_action', 'review_now': 'review_now_action',
-               'review_context': 'review_context_action', 'review_failed': 'review_failed_action'}
+               'review_context': 'review_context_action', 'review_failed': 'review_failed_action',
+               'analysis_page': 'analysis_page_action', 'finish_analysis': 'finish_analysis_action',
+               'enrich': 'enrich_action', 'looks_handled': 'looks_handled_action',
+               'handoff_on_it': 'handoff_on_it_action', 'split_from_notes': 'split_from_notes_action'}
 
     def review_subject(self, card_id):
         """What Ask to review shows of an open to-do (fleet_reviews.py): its ready draft (to, subject, text, revision) when
@@ -606,3 +610,43 @@ class ReviewApp:
 
     def review_failed_action(self, name, args, owner_dashboard=False):
         return self.store.review_failed(args['owner_session'], args['owner_run'], args['reason'], args.get('terminal', False))
+
+    def analysis_page_action(self, name, args, owner_dashboard=False):
+        return self.store.analysis_page(args['analysis_id'], args.get('page', 1), args.get('row_offset', 0))
+
+    def finish_analysis_action(self, name, args, owner_dashboard=False):
+        if args.get('_review_run'):  # a review that got "Boards to suggest" or "Boards to sort" answers them before it finishes
+            with self.store.connect() as db:
+                graph.board_check_answer(db, args['_review_run'], args.get('boards'))
+                graph.sort_answer(db, args['_review_run'], args.get('sorted'))
+                graph.fit_answer(db, args['_review_run'], args.get('fits'))
+                graph.backfill_answer(db, args['_review_run'], args.get('fits'))
+        return self.store.finish_analysis(args['analysis_id'], args.get('summary', ''), args.get('_review_session'), args.get('_review_run'), args.get('reviewed_ids'), args.get('projects'),
+                                         args.get('stages'), args.get('team'), args.get('replies'), args.get('read'))
+
+    def enrich_action(self, name, args, owner_dashboard=False):
+        # the CLI: status, or one domain now
+        if args.get('domain'):
+            try:
+                found = enrichment.lookup(self.store.connect, self.config, args['domain'], now())
+            except enrichment.EnrichmentError as error:
+                raise ValueError(str(error)) from None
+            self.graph_dirty.set()
+            return found
+        with self.store.connect() as db:
+            return {**enrichment.status(db, self.config), 'people': enrichment.people_status(db)}
+
+    def looks_handled_action(self, name, args, owner_dashboard=False):
+        return self.store.looks_handled(args['suggestion_id'], args.get('reason'), args.get('event_ids') or [])
+
+    def handoff_on_it_action(self, name, args, owner_dashboard=False):
+        # the review: a message the owner sent or a call they joined shows they took a waiting handoff on
+        if not getattr(self, 'fleet', None):
+            raise ValueError('This Machine is not on the Network')
+        return self.fleet.handoff_on_it(str(args.get('ask_id') or ''), args.get('event_id'))
+
+    def split_from_notes_action(self, name, args, owner_dashboard=False):
+        # the review: a meeting's notes give its next steps to the people in a proposed split
+        if not getattr(self, 'fleet', None):
+            raise ValueError('This Machine is not on the Network')
+        return self.fleet.fill_split(str(args.get('split_id') or ''), args.get('event_id'), args.get('parts') or {})

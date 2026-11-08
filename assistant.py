@@ -1031,6 +1031,13 @@ from machine.app.notifications import (
 from machine.app.browser import (
     BrowserApp,
 )
+from machine.app.profile import (
+    ProfileApp,
+    SKILLS_SESSION_PREFIX,
+)
+from machine.app.feedback import (
+    FeedbackApp,
+)
 
 
 def hours_settings(config, changes):
@@ -1296,7 +1303,6 @@ LIVE_CONFIG = ('delivery_enabled', 'review_worker')
 # wait for this gap (2026-10-29: one waited 8 minutes behind a review's start); the usage budget still holds it.
 BACKGROUND_GAP_SECONDS = 600
 
-SKILLS_SESSION_PREFIX = 'agent:main:assistant-review-skills-'  # the Find my skills turn: the browser, read-only, and its report
 PROFILE_SECONDS = 900
 SKILL_NOTES_MIN = 5   # notes about one kind of task before they're offered as a skill
 SKILL_REGROW = 3      # after Not now, offered again only once this many more notes joined them
@@ -2085,6 +2091,8 @@ APP_MIXINS = (SupportApp, CalendarApp, SkillsApp, AgentsApp, GBrainApp, SharedGr
 APP_MIXINS += (FollowUpsApp, GraphActionsApp, KnowledgeExportApp, MeetingWritesApp, ModelPacingApp, PromiseChecksApp, SignaturesApp, SummariesApp,
                VoiceApp)
 APP_MIXINS += (CardChatApp, ConversationApp, ExportApp, FirstLookApp, FleetApp, PreparationApp, RecapApp, ReviewApp, TalkApp)
+APP_MIXINS += (FeedbackApp,)
+APP_MIXINS += (ProfileApp,)
 APP_MIXINS += (BrowserApp,)
 APP_MIXINS += (NotificationsApp, SettingsActionsApp)
 APP_MIXINS += (RecapSettingsApp,)
@@ -3035,8 +3043,6 @@ class App(*APP_MIXINS):
             if len(encoded(result)) > REVIEW_PAGE_CHARS:
                 raise ValueError('Request a smaller list of event_ids')
             return result
-        if name == 'analysis_page':
-            return self.store.analysis_page(args['analysis_id'], args.get('page', 1), args.get('row_offset', 0))
         if name == 'begin_analysis':
             result = self.store.begin_analysis(selected, args.get('limit', 40), args.get('_review_session'), args.get('_review_run'))
             if isinstance(result, dict) and result.get('analysis_id'):
@@ -3054,41 +3060,6 @@ class App(*APP_MIXINS):
                             shared_graph.ensure(db)
                             result['share_groups'] = shared_graph.groups(db)
             return result
-        if name == 'finish_analysis':
-            if args.get('_review_run'):  # a review that got "Boards to suggest" or "Boards to sort" answers them before it finishes
-                with self.store.connect() as db:
-                    graph.board_check_answer(db, args['_review_run'], args.get('boards'))
-                    graph.sort_answer(db, args['_review_run'], args.get('sorted'))
-                    graph.fit_answer(db, args['_review_run'], args.get('fits'))
-                    graph.backfill_answer(db, args['_review_run'], args.get('fits'))
-            return self.store.finish_analysis(args['analysis_id'], args.get('summary', ''), args.get('_review_session'), args.get('_review_run'), args.get('reviewed_ids'), args.get('projects'),
-                                             args.get('stages'), args.get('team'), args.get('replies'), args.get('read'))
-        if name == 'enrich':  # the CLI: status, or one domain now
-            if args.get('domain'):
-                try:
-                    found = enrichment.lookup(self.store.connect, self.config, args['domain'], now())
-                except enrichment.EnrichmentError as error:
-                    raise ValueError(str(error)) from None
-                self.graph_dirty.set()
-                return found
-            with self.store.connect() as db:
-                return {**enrichment.status(db, self.config), 'people': enrichment.people_status(db)}
-        if name == 'roles_start':
-            return self.store.roles_start(bool(args.get('again')))
-        if name == 'profile_start':
-            room = args.get('room')
-            return self.store.profile_start(args.get('again') is True, room if isinstance(room, int) and not isinstance(room, bool) else None)
-        if name == 'profile_status':
-            return self.store.profile_status(args['run_id'])
-        if name == 'profile_evidence':
-            return self.store.profile_evidence(args.get('page', 1), args.get('_profile_session'))
-        if name == 'save_profile':
-            return self.store.save_profile(args.get('profile'), args.get('_profile_session'))
-        if name == 'skills_found':  # the Find my skills turn's report; its run is the one bound to its own session
-            session = str(args.get('_skills_session') or '')
-            if not session.startswith(SKILLS_SESSION_PREFIX):
-                raise ValueError('Only the Find my skills turn reports skills')
-            return self.skills_found({**args, 'run': session[len(SKILLS_SESSION_PREFIX):]})
         if name == 'prepare':
             with self.store.connect() as db:
                 row=db.execute('SELECT account_ids,event_ids,body FROM suggestions WHERE id=?',(args['suggestion_id'],)).fetchone()
@@ -3318,72 +3289,6 @@ class App(*APP_MIXINS):
             if name == 'card_use_sources':  # "Use this email for this to-do": what its stuck run asked for (use_sources)
                 return self.store.use_sources(args.get('suggestion_id'), args.get('decision_id'))
             return self.store.merge_answer(args.get('suggestion_id'), args.get('merge') is True, args.get('decision_id'))
-        if name == 'learning_undo':
-            if not owner_dashboard:
-                raise ValueError('Only the owner undoes a learned change, on the dashboard')
-            done = self.store.undo_learning(args.get('id'))
-            if done.pop('graph', False):  # a fix in the Graph put back (corrections.py)
-                self.correction_refresh()
-            return done
-        if name == 'looks_handled':
-            return self.store.looks_handled(args['suggestion_id'], args.get('reason'), args.get('event_ids') or [])
-        if name == 'handoff_on_it':  # the review: a message the owner sent or a call they joined shows they took a waiting handoff on
-            if not getattr(self, 'fleet', None):
-                raise ValueError('This Machine is not on the Network')
-            return self.fleet.handoff_on_it(str(args.get('ask_id') or ''), args.get('event_id'))
-        if name == 'split_from_notes':  # the review: a meeting's notes give its next steps to the people in a proposed split
-            if not getattr(self, 'fleet', None):
-                raise ValueError('This Machine is not on the Network')
-            return self.fleet.fill_split(str(args.get('split_id') or ''), args.get('event_id'), args.get('parts') or {})
-        if name in ('board_save', 'board_delete', 'board_dismiss'):
-            if not owner_dashboard:
-                raise ValueError('Only the owner saves, deletes or dismisses a board, on the dashboard; reviews suggest one with graph suggest_board')
-            with self.store.connect() as db:
-                done = graph.save_board(db, args, now()) if name == 'board_save' else graph.delete_board(db, args.get('board_id'), now()) \
-                    if name == 'board_delete' else graph.dismiss_board_suggestion(db, args.get('suggestion_id'), now())
-            if name != 'board_dismiss':
-                self.graph_build()
-            return done
-        if name == 'project_visibility':  # who sees one project: Only you, Team, or as its board (null)
-            if not owner_dashboard:
-                raise ValueError('Only the owner sets who sees a project, on the dashboard')
-            with self.store.connect() as db:
-                done = graph.set_project_visibility(db, args.get('node_id'), args.get('visibility'))
-            self.graph_build()
-            return done
-        if name in ('project_save', 'project_outcome', 'project_archive', 'project_delete', 'board_default', 'board_fit'):
-            # The owner's own CRM work on projects and boards: make or edit a project, won or lost, archive, delete,
-            # the default board, and a project a review thought could belong on a board
-            if not owner_dashboard:
-                raise ValueError('Only the owner makes, edits or ends a project by hand, on the dashboard; reviews use graph and finish_analysis')
-            with self.store.connect() as db:
-                db.execute('BEGIN IMMEDIATE')
-                if name == 'project_save':
-                    done = graph.save_project(db, args, now())
-                elif name == 'project_outcome':
-                    done = graph.set_outcome(db, args.get('node_id'), args.get('outcome') or None, args.get('reason'), now())
-                elif name == 'project_archive':
-                    done = graph.archive_project(db, args.get('node_id'), args.get('archived') is not False, now())
-                elif name == 'project_delete':
-                    done = graph.delete_project(db, args.get('node_id'))
-                elif name == 'board_default':
-                    done = graph.default_board(db, args.get('board_id'))
-                elif args.get('undo'):
-                    done = graph.undo_fit(db, args['undo'])
-                else:
-                    many = args.get('node_ids')
-                    if many is not None and not (isinstance(many, list) and all(isinstance(n, str) for n in many)):
-                        raise ValueError('node_ids is a list of suggestion ids')
-                    done = graph.decide_fit(db, args.get('board_id'), many if many is not None else args.get('node_id'), args.get('add') is not False, now())
-            if name == 'board_fit':  # the board reads its projects as they are now: the Graph follows in the background
-                self.graph_later()
-            else:
-                self.graph_build()
-            return done
-        if name in CRM_ACTIONS:
-            if not owner_dashboard:
-                raise ValueError('Only the owner changes owners, merges organizations and imports, on the dashboard')
-            return self.crm_action(name, args)
         if name in CONNECT_ACTIONS:
             if not owner_dashboard:
                 raise ValueError('Only the owner adds a source, from the dashboard')
@@ -3420,65 +3325,6 @@ class App(*APP_MIXINS):
             with self.store.connect() as db:
                 db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=?',(args['suggestion_id'],))
             return {'queued':True}
-        if name == 'request_feedback':
-            # Read only native cached message identities in this exact owner
-            # chat. The bot receipt fences delayed/queued dispatch safely.
-            boundary=None
-            try:
-                with sqlite3.connect('file:'+str(Path.home()/'.openclaw/state/openclaw.sqlite')+'?mode=ro',uri=True,timeout=2) as native:
-                    rows=native.execute("SELECT value_json FROM plugin_state_entries WHERE plugin_id='telegram' AND namespace='telegram.message-cache'").fetchall()
-                    ids=[]
-                    for value, in rows:
-                        message=json.loads(value).get('sourceMessage',{})
-                        if str(message.get('chat',{}).get('id'))==self.config.get('telegram_owner') and message.get('message_id'):
-                            ids.append(int(message['message_id']))
-                    boundary=str(max(ids)) if ids else None
-            except (sqlite3.Error,ValueError,TypeError):
-                pass
-            requested=self.store.request_feedback(args['suggestion_id'],args['request_id'],boundary,args.get('card_message_id'),managed=args.get('managed_prompt') is True,kind=args.get('kind') or 'change')
-            if args.get('defer_prompt'):
-                return requested
-            dispatch=False
-            with self.store.connect() as db:
-                row=db.execute('SELECT * FROM suggestions WHERE id=?',(args['suggestion_id'],)).fetchone()
-                if row and row['feedback_request_id']==args['request_id'] and not row['feedback_prompt_message_id'] and row['feedback_until'] and row['feedback_until']>now():
-                    # Older bridge generations can ask for a fallback after an unknown
-                    # native send. Never equate that with permission to send again.
-                    status='queued' if args.get('managed_prompt') and not requested.get('duplicate') else 'uncertain'
-                    db.execute('INSERT OR IGNORE INTO feedback_prompts(request_id,suggestion_id,card_id,title,status,created_at,updated_at,error) VALUES(?,?,?,?,?,?,?,?)',
-                        (args['request_id'],row['id'],str(args.get('card_message_id') or ''),row['title'],status,now(),now(),None if status=='queued' else 'legacy_prompt_unconfirmed'))
-                    if status=='queued' and self.config.get('delivery_enabled') and hasattr(self,'stop'):
-                        # Send now rather than on the next 10-second delivery tick. The step's
-                        # own admission makes a concurrent delivery-worker pass a no-op.
-                        dispatch=True
-                # A second tap while an earlier prompt is unconfirmed reuses it silently;
-                # tell the plugin so Telegram can say so instead of doing nothing.
-                earlier=db.execute('SELECT p.status FROM suggestions s JOIN feedback_prompts p ON p.request_id=s.feedback_request_id WHERE s.id=? AND s.feedback_request_id!=?',
-                                   (args['suggestion_id'],args['request_id'])).fetchone() if row else None
-            if dispatch:
-                threading.Thread(target=self.feedback_prompt_safe,kwargs={'request_id':args['request_id']},daemon=True).start()
-            return {'awaiting_feedback':True,'duplicate':True,'prompt_managed':True,**({'earlier_prompt':earlier['status']} if earlier else {})}
-        if name == 'bind_feedback_prompt':
-            self.store.bind_feedback_prompt(args['suggestion_id'],args['request_id'],args['message_id'])
-            return {'bound':True}
-        if name == 'feedback_reply':
-            timestamp=args.get('timestamp');reply_to=args.get('reply_to_id')
-            # Older running bridge generations lack these fields. Recover
-            # only this exact native owner message, not transcript heuristics.
-            if timestamp is None or reply_to is None:
-                try:
-                    with sqlite3.connect('file:'+str(Path.home()/'.openclaw/state/openclaw.sqlite')+'?mode=ro',uri=True,timeout=2) as native:
-                        for value, in native.execute("SELECT value_json FROM plugin_state_entries WHERE plugin_id='telegram' AND namespace='telegram.message-cache' AND entry_key LIKE ?",('%:'+self.config.get('telegram_owner')+':'+str(args['message_id']),)):
-                            message=json.loads(value).get('sourceMessage',{})
-                            if str(message.get('chat',{}).get('id'))==self.config.get('telegram_owner') and str(message.get('from',{}).get('id'))==self.config.get('telegram_owner') and str(message.get('message_id'))==str(args['message_id']):
-                                timestamp=timestamp if timestamp is not None else message.get('date')
-                                reply_to=reply_to or message.get('reply_to_message',{}).get('message_id')
-                except (sqlite3.Error,ValueError,TypeError):
-                    pass
-            result=self.store.feedback_reply(args['text'],args['message_id'],timestamp,reply_to)
-            if result.get('handled') and not result.get('cancelled'):
-                result.update(duplicate=True,card_confirmation_only=True)
-            return result
         if name in ('chat_upload', 'chat_file_remove'):
             # A New to-do form's files upload before the to-do exists, under the form's own draft key
             sid = 'new:' + str(args['draft']) if args.get('draft') is not None else str(args.get('suggestion_id') or '')

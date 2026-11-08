@@ -250,6 +250,7 @@ OTHER_WRITERS = {
     'facts': {'learning_loop.py'},
     'fault_versions': {'machine/store/faults.py'},
     'faults': {'machine/store/faults.py'},
+    'feedback_prompts': {'machine/app/feedback.py'},
     'fleet_briefs': {'sandbox/run.py'},
     'fleet_in': {'fleet_requests.py'},
     'fleet_learn_read': {'shared_graph.py'},
@@ -394,7 +395,7 @@ PY_LINE_BUDGET = 2_500
 PY_BYTE_BUDGET = 450 * 1024
 PY_RATCHET_SLACK = (500, 50_000)
 PY_OVER_BUDGET = {
-    'assistant.py': (6_200, 392_000),
+    'assistant.py': (6_050, 382_000),
     'fleet.py': (3_800, PY_BYTE_BUDGET),
     'graph.py': (5_400, PY_BYTE_BUDGET),
     'next_actions.py': (2_650, PY_BYTE_BUDGET),
