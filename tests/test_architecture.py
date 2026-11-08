@@ -394,8 +394,7 @@ OVER_BUDGET = {}
 # parts that load when first needed (dashboard_parts.LAZY); each of those groups has a ceiling of its own.
 # 2,100,000 -> 2,040,000 (2026-11-08): Calendar and Learning load when first needed too (about 78 KB off the first load).
 # 1,770,000 -> 1,774,000 (2026-11-08): "Connect your mail" first (#936, 0.7 KB over on main) and setup picks up where
-# it left off (#963, about 2.9 KB after trimming its comments). The Work/Personal autodetect that follows drops the
-# + Add company field and its autofill and brings this back down.
+# it left off (#963, about 2.9 KB after trimming its comments).
 # 1,774,000 -> 1,775,000 (2026-11-09): main was already 0.1 KB over (#997), and a routine's recipe shows read-only
 # under Advanced (about 0.5 KB after trimming).
 # 1,775,000 -> 1,698,000 (2026-11-09): Settings' general, export and upkeep panels load when first needed (first load

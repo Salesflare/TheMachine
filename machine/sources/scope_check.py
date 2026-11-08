@@ -51,12 +51,12 @@ def people_written_to(db, account):
 def mailbox_says(account, people, team_domains=()):
     """'work', 'personal' or None (not clear) from the people written to: the address's own domain left out (colleagues
     there, or family on a family domain, say nothing either way)."""
-    import onboarding
+    from work_or_personal import company_of
     home = _domain(str(account.get('email') or ''))
     outside = {p for p in people if _domain(p) != home}
     if len(outside) < ENOUGH:
         return None
-    providers = [p for p in outside if not onboarding.company_of(p)]
+    providers = [p for p in outside if not company_of(p)]
     share = len(providers) / len(outside)
     teams = {str(d).lower() for d in team_domains}
     if share >= PERSONAL_SHARE:
@@ -70,7 +70,7 @@ def mailbox_says(account, people, team_domains=()):
 def scope_hints(store, config, team_domains=()):
     """[{id, title, text, button, scope: {account, boundary}}]: a setup to-do row for each mailbox marked scope_check whose
     mail clearly says the other of what it is set to, and whose row wasn't closed."""
-    import onboarding
+    from work_or_personal import company_of
     hints = []
     accounts = [a for a in config.get('accounts') or [] if isinstance(a, dict) and a.get('scope_check') and not a.get('shared')
                 and a.get('service') in MAIL_SERVICES and str(a.get('boundary') or '').startswith(('work:', 'personal:'))]
@@ -84,7 +84,7 @@ def scope_hints(store, config, team_domains=()):
             says = mailbox_says(account, people_written_to(db, account), team_domains)
             work = str(account['boundary']).startswith('work:')
             if says == 'work' and not work:
-                target = 'work:' + (onboarding.company_of(account['email']) or 'Main')
+                target = 'work:' + (company_of(account['email']) or 'Main')
                 title = i18n.t('{} looks like work mail. Change it to Work?', account['email'])
             elif says == 'personal' and work:
                 target, title = 'personal:me', i18n.t('{} looks like personal mail. Change it to Personal?', account['email'])
