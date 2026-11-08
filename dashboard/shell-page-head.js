@@ -60,9 +60,19 @@ async function decideAtOnce(id,step,said){const s=state.suggestions.find(x=>x.id
  finally{atOnceSaving.delete(id);end(landed)}
  if(typeof said==='function')said(saved);
  await refresh();return saved}
+// Do it on a to-do that waits for it (no note being typed for it): it shows as being prepared, with its toast, in the
+// frame after the click (the to-dos only; the rest of the page follows once the Machine has it). Should the Machine not
+// take it, it goes back as it was and the error shows.
+async function acceptAtOnce(id,feedback){const s=state.suggestions.find(x=>x.id===id),before=s.status;
+ s.status='accepted';localEdits++;focusKept(()=>render('view'));toast('I’ll prepare it.');
+ let saved;try{saved=await decidePost(id,{choice:'accept',feedback,decision_id:crypto.randomUUID()})}
+ catch(err){s.status=before;localEdits++;focusKept(render);refresh().catch(()=>{});throw err}
+ if(/^(pe|ac|pr|in|sn)/.test(saved?.status))s.status=saved.status;localEdits++;focusKept(render);refresh().catch(()=>{});
+ if(saved?.already)toast({done:'Already done. See the to-do.',closed:'Nothing is waiting to try again here.'}[saved.already]||'Already carrying on with it.')}
 async function saveDecision(id,choice,feedback='',answer=false){
 if(choice==='undo'&&atOnceSaving.has(id)&&!await atOnceSaving.get(id))return;  // the change it undoes never landed: nothing to undo
 if(['complete','reject'].includes(choice)&&atOnceOK(id)){await decideAtOnce(id,{choice,feedback},choice==='complete'?'Marked done':'Marked not needed');return}
+if(choice==='accept'&&!changing.has(id)&&atOnceOK(id)&&state.suggestions.find(s=>s.id===id).status==='pending'){await acceptAtOnce(id,feedback);return}
 let saved;try{const args={choice,feedback,decision_id:crypto.randomUUID()};saved=OUTBOX_CHOICES.includes(choice)?await decideOrWait(id,[args],choice):await decidePost(id,args)}
 catch(err){refresh().catch(()=>{});throw err}  // the card may be stale: redraw it
 // Offline: it waits on the device, so the editor closes

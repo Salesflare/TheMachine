@@ -6,11 +6,12 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 
 // Do it, Ask for changes and the other choices on a to-do (saveDecision): the toast shows as
 // soon as the Machine answers the choice, not after the whole status that follows it (a slow /api/status here). A choice
-// the Machine refuses changes nothing on the card, keeps the typed note's editor open and says why at once.
+// the Machine refuses changes nothing on the card, keeps the typed note's editor open and says why at once. Do it on a
+// to-do without a note being typed answers before the Machine does, and a refusal puts the to-do back as it was.
 const raw=await dashboardPage(process.env.DASHBOARD_PAGE||undefined);
 const CSRF='c'.repeat(64),SCOPE='a1'.repeat(16),iso=new Date().toISOString(),A='1'.repeat(16),B='2'.repeat(16);
 const card=(id,title)=>({id,title,body:'Robin asked for the numbers.',status:'pending',scope:'work',created_at:iso,event_ids:[1]});
-let cards=[card(A,'Reply to Robin about the plan'),card(B,'Book the venue')],statusDelay=0,refuse=false;
+let cards=[card(A,'Reply to Robin about the plan'),card(B,'Book the venue')],statusDelay=0,refuse=false,decideDelay=0;
 const STATUS_MS=+(process.env.STATUS_MS||1500);
 const page=()=>raw.replace('__CSRF__','').replaceAll('__UI_VERSION__','v1').replace('__BASE__','/').replace('__CACHE_SCOPE__',SCOPE);
 const server=createServer(async(req,res)=>{let body='';for await(const c of req)body+=c;const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
@@ -19,7 +20,7 @@ const server=createServer(async(req,res)=>{let body='';for await(const c of req)
  if(url.pathname==='/api/status'){const out=JSON.stringify({suggestions:cards,promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_runs:[],connectors:[],fleet:{on:false},ui_version:'v1'});
   if(statusDelay)await new Promise(r=>setTimeout(r,statusDelay));res.end(out);return}
  if(url.pathname==='/api/action'){const r=JSON.parse(body||'{}');
-  if(r.action==='decide'){if(refuse){res.statusCode=400;res.end(JSON.stringify({error:'That to-do changed. Use its current buttons.'}));return}
+  if(r.action==='decide'){if(decideDelay)await new Promise(r=>setTimeout(r,decideDelay));if(refuse){res.statusCode=400;res.end(JSON.stringify({error:'That to-do changed. Use its current buttons.'}));return}
    const status={accept:'accepted',other:'pending'}[r.args.choice]||'pending';
    cards=cards.map(c=>c.id===r.args.suggestion_id?{...c,status}:c);res.end(JSON.stringify({status,snoozed_until:null}));return}
   res.end('{"ok":true}');return}
@@ -64,6 +65,15 @@ try{
  assert.equal(no.status,'pending','a refused choice changes nothing on the card');
  assert.equal(no.changing,true,'the editor stays open');
  assert.ok(no.ms<STATUS_MS/2,`the reason came after ${no.ms} ms`);
+
+ // 4. Do it with the Machine slow to answer: the toast and the to-do's new state come at once; refused, it goes back
+ await tab.evaluate(id=>{changing.delete(id);render()},B);decideDelay=STATUS_MS;
+ const quick=await choose(tab,B,'accept');
+ assert.equal(quick.text,'I’ll prepare it.');assert.equal(quick.status,'accepted');
+ assert.ok(quick.ms<STATUS_MS/2,`Do it answered after ${quick.ms} ms, not before the Machine (${STATUS_MS} ms)`);
+ assert.equal(quick.failed,'That to-do changed. Use its current buttons.');
+ assert.equal(await tab.evaluate(id=>state.suggestions.find(x=>x.id===id).status,B),'pending','a refused Do it puts the to-do back');
+ await tab.locator(`#task-${B} button[data-choice=accept]`).first().waitFor();
 
  assert.deepEqual(errors,[]);
  console.log('decide toast dashboard ok');
