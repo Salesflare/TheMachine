@@ -15,7 +15,7 @@ Onder **Beloftes** op de pagina To-do's:
 - Wat je zei dat je zou doen, en voor wie: **Jouw beloftes**.
 - Wat anderen zeiden dat ze zouden doen: **Aan jou beloofd**.
 
-Elke open belofte heeft **Markeer als gedaan** en **Laten vallen**. Een open belofte wordt een to-do als ze moet gebeuren, en staat op haar dag in de [Agenda](calendar.md). Is ze al een to-do, dan linkt ze ernaartoe, en **Markeer als gedaan** of **Laten vallen** sluit die to-do mee. Ziet je Machine dat ze gedaan is, dan sluiten ze allebei, met een regel die dat zegt.
+Elke open belofte heeft **Markeer als gedaan** en **Laten vallen**. Een open belofte wordt een to-do als ze moet gebeuren (die van jou de ochtend ervoor, zodat je een dag hebt), en staat op haar dag in de [Agenda](calendar.md). Is ze al een to-do, dan linkt ze ernaartoe, en **Markeer als gedaan** of **Laten vallen** sluit die to-do mee. Ziet je Machine dat ze gedaan is, dan sluiten ze allebei, met een regel die dat zegt.
 
 Daarvoor leest je Machine wat erna kwam. Al nagekomen, zoals met een antwoord van jou of een meeting erover? Dan sluit ze als nagekomen, zonder to-do.
 
