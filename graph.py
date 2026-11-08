@@ -2820,6 +2820,9 @@ def set_role(db, node_id, role, source, now, event_id=None, quote=None):
     if source == 'owner' and current and current['source'] != 'owner' and current['role'].casefold() != role.casefold():
         db.execute('INSERT INTO role_corrections(identifier,name,old_role,new_role,created_at) VALUES(?,?,?,?,?)',
                    (row['id'], row['name'], current['role'], role, now))
+    # Their page says it at once (what a build writes there from person_roles), so the owner's ✓ needs no whole build first
+    db.execute("UPDATE graph_nodes SET info=json_set(coalesce(info,'{}'),'$.role',?,'$.role_by',?) WHERE coalesce(json_extract(info,'$.role_id'),id)=?",
+               (role or None, 'owner' if source == 'owner' else 'review', row['id']))
     return {'role': role or None}
 
 

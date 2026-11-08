@@ -538,10 +538,24 @@ class Graph(unittest.TestCase):
         self.assertEqual(found['role_quote'], '"the CFO at Client Ltd…"')
         # Who's who: a review's roles wait for the owner's ✓, with the line they came from.
         self.assertEqual([(w['name'], w['role'], w['event_id']) for w in self.app.graph_action({})['whos_who']], [('Pat Doe', 'CFO at Client Ltd', pat_id)])
-        self.app.action('graph_role', {'node_id': 'email:pat@client.com', 'role': 'CFO at Client Ltd'}, owner_dashboard=True)
+        # ✓ Right answers without a whole build (some 13 s on a big Graph): saved and on their page at once, the rest of
+        # the Graph follows in the graph worker
+        self.app.graph_worker_on, self.app.graph_dirty = True, threading.Event()
+        self.app.graph_build = lambda *_, **__: self.fail('✓ Right waited for a whole Graph build')
+        said = self.app.action('graph_role', {'node_id': 'email:pat@client.com', 'role': 'CFO at Client Ltd'}, owner_dashboard=True)
+        self.assertEqual(said, {'node_id': 'email:pat@client.com', 'role': 'CFO at Client Ltd'})
+        self.assertTrue(self.app.graph_dirty.is_set())
         found = self.app.graph_action({'node_id': 'email:pat@client.com'})
         self.assertEqual((found['role_by'], found['role_event_id']), ('owner', pat_id))  # confirmed: the owner's word, evidence kept
         self.assertEqual(self.app.graph_action({})['whos_who'], [])
+        # Edit with only a new role saves the same way
+        self.app.graph_dirty.clear()
+        self.app.action('graph_person_edit', {'node_id': 'email:pat@client.com', 'fields': {'role': 'finance lead'}}, owner_dashboard=True)
+        self.assertEqual((self.node('email:pat@client.com')['role'], self.app.graph_dirty.is_set()), ('finance lead', True))
+        self.app.action('graph_role', {'node_id': 'email:pat@client.com', 'role': 'CFO at Client Ltd'}, owner_dashboard=True)
+        self.app.graph_worker_on, self.app.graph_build = False, self.build
+        self.build()
+        self.assertEqual((self.node('email:pat@client.com')['role'], self.node('email:pat@client.com')['role_by']), ('CFO at Client Ltd', 'owner'))  # as a build says it
         # A correction is kept, and later reviews learn from it.
         self.app.graph_action({'node_id': 'email:lee@other.example', 'role': 'intern'})
         self.app.action('graph_role', {'node_id': 'email:lee@other.example', 'role': 'head of finance'}, owner_dashboard=True)
