@@ -1517,7 +1517,7 @@ def sync_slack(store, config, account, source=None):
                 if time.time() >= state.get('next_discovery', 0):
                     state['phase'] = 'discover'
     if not state.get('titles_named'):  # once: titles stored before members were named in them
-        name_slack_titles(store, account['id'])
+        store.name_slack_titles(account['id'])
         state['titles_named'] = True
     skipped.check().note(state)
     store.commit_page(account['id'], state, events)
@@ -1525,32 +1525,6 @@ def sync_slack(store, config, account, source=None):
         remember_slack_names(store, source, events, state.get('channels') or ())
     more = state['mode'] != 'incremental' or state['index'] != 0 or bool(state.get('scan'))
     return {'mode': state['mode'], 'events': len(events), 'more': more, 'skipped': sum(skipped.values())}
-
-
-def name_slack_titles(store, account_id, ids=None):
-    """Writes stored Slack titles again with people's names in place of member ids ("#DM U02AB3CD4: hi" becomes
-    "#DM Sam Lee: hi"): all of them, or those of the messages with these members (a name just learned). The content
-    hash stays (slack_raw_title): no message looks new or edited for it."""
-    changed = 0
-    with store.connect() as db:
-        rows = db.execute("SELECT id,title,body,metadata FROM events WHERE kind='slack.message' AND account_id=? AND deleted=0", (account_id,)).fetchall()
-        found = []
-        for r in rows:
-            m = json.loads(r['metadata'] or '{}')
-            on = set(graph.slack_members_on(m)) | {x[0] for x in graph.SLACK_MENTION.findall(str(r['body'] or ''))}
-            if ids is not None and not on & set(ids):
-                continue
-            if not graph.slack_title_unnamed(r['title']):
-                continue
-            found.append((r, m, on))
-        names = graph.slack_names(db, {u for _, _, on in found for u in on})
-        seal = store.sealer.seal if store.protected else (lambda value: value)
-        for r, m, _ in found:
-            title = graph.slack_title(m.get('channel_name'), html.unescape(str(r['body'] or '')), names)
-            if title != r['title']:
-                db.execute('UPDATE events SET title=? WHERE id=?', (seal(title), r['id']))
-                changed += 1
-    return changed
 
 
 def remember_slack_names(store, source, events, channels=(), per_page=3):
@@ -1604,7 +1578,7 @@ def remember_slack_names(store, source, events, channels=(), per_page=3):
                 enrichment.offer_photos(db, [offer], 'slack', now(), known_only=False) if offer else None
                 enrichment.offer_facts(db, [facts], 'slack', now()) if facts else None
     if named and source.account.get('id'):
-        name_slack_titles(store, source.account['id'], named)
+        store.name_slack_titles(source.account['id'], named)
 
 
 
