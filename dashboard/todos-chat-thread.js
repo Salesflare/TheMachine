@@ -112,6 +112,12 @@ const chatOpenSet=new Set();  // what is unfolded (steps, long messages, drafts,
 function chatFoldsNow(id){const log=$('#chat-log');if(!log||log.closest('.chat-layout')?.dataset.chat!==id)return;
  for(const d of log.querySelectorAll('details[data-fold-key]'))d.open?chatOpenSet.add(d.dataset.foldKey):chatOpenSet.delete(d.dataset.foldKey)}
 const chatFold=(key,cls,summary,body)=>html`<details class="${cls}" data-fold-key="${key}"${chatOpenSet.has(key)?html` open`:''}><summary>${summary}</summary>${body}</details>`;
+// A run's steps, one row per kind with how many times, in the order each first came (the service already folds them;
+// a step list from an older Machine is plain titles, one per step)
+function chatSteps(steps){const rows=new Map();
+ for(const s of steps||[]){const label=typeof s==='string'?s:Array.isArray(s?.line)?t(...s.line):String(s?.text||'');if(!label)continue;
+  const n=typeof s==='object'&&s.n>0?s.n:1,row=rows.get(label);row?row.n+=n:rows.set(label,{label,n})}
+ return [...rows.values()]}
 const chatLong=(t,lines=4)=>String(t||'').split('\n').length>lines||String(t||'').length>lines*70;
 const chatViaIcon=(v,note)=>note?'note':/^(email|gmail|outlook|mail)/i.test(v||'')?'mail':/calendar/i.test(v||'')?'cal':'chat';
 const CHAT_VIA={email:'Email',gmail:'Email',slack:'Slack',linkedin:'LinkedIn',whatsapp:'WhatsApp',telegram:'Telegram',x:'X',calendar:'Calendar',intercom:'Intercom',github:'GitHub',android:'Phone'};
@@ -199,7 +205,8 @@ const isOpen=i=>!closed(s)&&(i.kind==='card'||!(i.drafts||[]).length||s.status==
    // (left out once the owner sent the card's message after it)
    const nothing=i.nothing_sent&&!rows.slice(n+1).some(j=>j.kind==='event'&&j.sent)?html`<small class="chat-noted">${i.name} sent nothing</small>`:'';
    push(i,html`<div class="chat-msg machine chat-agent-msg"><div class="chat-agent-name">${i.name}</div><div class="bubble" translate="no">${text}</div>${files||nothing?html`<div class="chat-files">${files}${nothing}</div>`:''}${allFiles}${tm(i.at)}</div>`)}
-  else if(i.kind==='steps')push(i,html`<div class="chat-work">${chatFold(k,'chat-steps',`Checked ${i.steps.length} thing${i.steps.length===1?'':'s'}`,html`<ol>${i.steps.map(t=>html`<li>${t}</li>`)}</ol>`)}</div>`);
+  else if(i.kind==='steps'){const steps=chatSteps(i.steps),n=i.count||steps.reduce((a,s)=>a+s.n,0);
+   push(i,html`<div class="chat-work">${chatFold(k,'chat-steps',t(['Checked {} thing','Checked {} things'],n),html`<ul>${steps.map(s=>html`<li><span>${s.label}</span>${s.n>1?html`<span class="chat-step-n"> · ${s.n}</span>`:''}</li>`)}</ul>`)}</div>`)}
   else if(i.kind==='event'){const c=i.times.length,t=chatEventText(i),line=html`${c>1?html`${t} ${c} times<span class="chev" aria-hidden="true">›</span>`:t}${i.voice&&c===1?html` · <a class="learn-link" href="#settings/writing" data-voice-edit="${i.voice}">Edit</a>`:''}${i.undo_voice&&s&&i.undo_until>Date.now()?chatUndoVoice(s,i):''}`;
    // A handoff that didn't go out: Try again opens the handoff form again, as it was sent
    const retry=i.retry_handoff&&s&&!closed(s)&&!s.fleet_handoff?html` · <button type="button" class="link" data-fleet-handoff="${s.id}">Try again</button>`:'';

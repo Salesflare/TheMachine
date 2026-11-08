@@ -14,6 +14,10 @@ Tippe auf dem Handy auf den Titel der Aufgabe. Auf einem Computer nutzt du den C
 
 Jede E-Mail zeigt nur, was neu darin ist. Die früheren Nachrichten, die sie zitiert, sind unter **Frühere Nachrichten** eingeklappt. **Thread lesen** öffnet die E-Mails vollständig.
 
+## Was sie getan hat
+
+Jeder Lauf steht als eine ruhige Zeile da, etwa „12 Sachen geprüft“. Öffne sie, um jede Art von Schritt einmal zu sehen, mit der Anzahl: „Hat den Browser auf example.com benutzt · 7“. Sie nennt die Website, nie die Adresse, einen Befehl oder eine Datei.
+
 ## Was du fragen kannst
 
 Bevor du schreibst, bietet der Chat vielleicht bis zu drei Vorschläge aus dieser Aufgabe an, etwa „Stattdessen Dienstag 10:00 anbieten“. Ein Tipp setzt ihn ins Nachrichtenfeld, zum Senden oder Ändern. Passt nichts Bestimmtes, gibt es keine.

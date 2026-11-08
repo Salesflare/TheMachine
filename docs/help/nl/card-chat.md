@@ -14,6 +14,10 @@ Tik op een telefoon op de titel van de to-do. Gebruik op een computer de chatlin
 
 Elke e-mail toont alleen wat er nieuw in staat. De eerdere berichten die erin geciteerd worden, zitten ingeklapt onder **Eerdere berichten**. **Lees de thread** opent de e-mails volledig.
 
+## Wat hij deed
+
+Elke run staat er als één rustige regel, zoals "12 dingen nagekeken". Open die en je ziet elk soort stap één keer, met hoe vaak: "Gebruikte de browser op example.com · 7". Hij noemt de site, nooit het adres, een opdracht of een bestand.
+
 ## Wat je kunt vragen
 
 Voor je typt, biedt de chat soms tot drie suggesties uit deze to-do aan, zoals "Stel dinsdag 10:00 voor". Tik erop en hij staat in het berichtvak, om te versturen of aan te passen. Past er niets specifieks, dan zijn er geen.

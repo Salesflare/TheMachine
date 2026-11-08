@@ -14,6 +14,10 @@ Sur un téléphone, appuyez sur le titre de la tâche. Sur ordinateur, utilisez 
 
 Chaque e-mail ne montre que ce qui est nouveau. Les messages précédents qu’il cite sont repliés sous **Messages précédents**. **Lire le fil** ouvre les e-mails en entier.
 
+## Ce qu’elle a fait
+
+Chaque exécution tient en une ligne discrète, comme « 12 points vérifiés ». Ouvrez-la pour voir chaque type d’étape une fois, avec le nombre de fois : « A utilisé le navigateur sur example.com · 7 ». Elle nomme le site, jamais l’adresse, une commande ou un fichier.
+
 ## Quoi demander
 
 Avant que vous écriviez, le chat peut proposer jusqu’à trois suggestions tirées de cette tâche, comme « Proposer mardi 10:00 à la place ». En toucher une la place dans la zone de message, à envoyer ou modifier. Si rien de précis ne convient, il n’y en a aucune.

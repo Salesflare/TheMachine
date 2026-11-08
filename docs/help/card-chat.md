@@ -14,6 +14,10 @@ On a phone, tap the to-do's title. On a computer, press **See in chat ›** or t
 
 Each email shows only what is new in it. The earlier messages it quotes are folded under **Earlier messages**. **Read the thread** opens the emails in full.
 
+## What it did
+
+Each run shows as one quiet line, like "Checked 12 things". Open it to see each kind of step once, with how many times: "Used the browser on example.com · 7". It names the site, never the address, a command or a file.
+
 ## What to ask
 
 Before you write, the chat may offer up to three taps made from this to-do, like "Offer Tuesday 10:00 instead". Tapping one puts it in the message box, to send or change. When nothing specific fits, there are none.
