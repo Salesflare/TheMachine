@@ -227,6 +227,25 @@ export function preparationToolPolicy(event: any, ctx: any): undefined | {block:
 // Reviews and preparations never need the service or account credentials.
 const readsSecret = (event: any) => pathParams(event.params || {}).some(secretPath);
 
+// OpenClaw's skill workshop writes skills from what it watched the agent do, and on a Machine that includes its own
+// reviews and Do it runs: a workshop skill about assistant_signals is a second, older copy of the rules these runs
+// already get (AGENTS.md, PREPARATION.md). Loaded, it rode along on every later step of the run (about 8,600 tokens
+// on each step of a Do it). Machine runs skip those; the owner's chats still have them, and the files stay untouched.
+const machineSession = (key: string) => /^agent:main:assistant-review-/.test(key || '');
+let agentDirOf: () => string = () => resolve(String(process.env.OPENCLAW_STATE_DIR || `${HOME}/.openclaw`).replace(/^~(?=\/|$)/, HOME), 'agents/main/agent');
+export function repeatsMachineRules(event: any): boolean {
+  const name = plainToolName(event.toolName), params = event.params || {};
+  const workshop = resolve(agentDirOf(), 'workshop-skills');
+  let skill = '';
+  if (name === 'skills_read') skill = String(params.name || '').trim();
+  else {
+    const file = pathParams(params).map(p => resolve(WORKSPACE, p.replace(/^~(?=\/|$)/, HOME))).find(p => p.startsWith(workshop + '/') && p.endsWith('/SKILL.md'));
+    if (file) skill = file.slice(workshop.length + 1, -'/SKILL.md'.length);
+  }
+  if (!/^[a-z0-9][a-z0-9_-]{0,100}$/i.test(skill)) return false;
+  try { return readFileSync(resolve(workshop, skill, 'SKILL.md'), 'utf8').includes('assistant_signals'); } catch { return false; }
+}
+
 // USER.md is not loaded into isolated sessions by default; reviews and preparations need it.
 // The only files a review or preparation context reads, by name; nothing else can become a path here.
 const USER_MD = resolve(WORKSPACE, 'USER.md');
@@ -278,7 +297,12 @@ export const currentReviewRun = (sessionKey: string) => sessionRuns.get(sessionK
 export const REVIEW_CONTEXT_MS = 3000;
 
 export function registerReviewRecovery(api: any, call: (action: string, args?: any) => Promise<any>) {
-  const runs = new Map<string, {session: string; started: number; reviewTouched: boolean}>();
+  // The agent folder as OpenClaw resolves it (a configured agentDir included); the default when the runtime can't say.
+  const fallbackAgentDir = agentDirOf;
+  if (typeof api.runtime?.agent?.resolveAgentDir === 'function') agentDirOf = () => {
+    try { return String(api.runtime.agent.resolveAgentDir(api.runtime.config?.current?.() ?? api.config ?? {}, 'main')); } catch { return fallbackAgentDir(); }
+  };
+  const runs =new Map<string, {session: string; started: number; reviewTouched: boolean}>();
   const background = (ctx: any) => privateReviewContext(ctx) && !!ctx.runId &&
     ctx.inputProvenance?.kind !== 'external_user' &&
     !/^agent:main:assistant-review-(?:preparation|profile|skills|routine)-/.test(ctx.sessionKey || '') &&
@@ -338,6 +362,9 @@ export function registerReviewRecovery(api: any, call: (action: string, args?: a
   // Gate review tools and note which run touched a review. Ownership itself is bound in the
   // tool's execute() from host-owned context; this hook only ever blocks, never rewrites.
   api.on('before_tool_call', async (event: any, ctx: any) => {
+    if (machineSession(ctx.sessionKey) && repeatsMachineRules(event)) {
+      return {block: true, blockReason: 'This run already has the Machine\'s own rules; that skill repeats them. Carry on without it.'};
+    }
     // Code Mode's script runner is allowed: every tool the script calls passes this hook on its own.
     if ((reviewSession(ctx.sessionKey) || profileSession(ctx.sessionKey)) && !toolRunner(event, ctx) &&
         (!(reviewSession(ctx.sessionKey) ? reviewTools() : REVIEW_TOOLS).has(plainToolName(event.toolName)) || readsSecret(event))) {
