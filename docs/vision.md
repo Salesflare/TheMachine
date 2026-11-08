@@ -64,6 +64,4 @@ data or your choice of model hostage.
 
 - Bugs and misses are fixed the same day. People feel it getting better, not moving around.
 - Names, layout and flows stay stable. Changes are small and one at a time; anything big goes to the owner first.
-- The nightly agent-users test is a scoreboard, not a redesign engine. It tracks missed to-dos, wrong to-dos, time to
-  the first to-do, friction per step, click speed, time spent in the app and tokens per day. Progress shows as those
-  numbers improving week over week. Its product ideas are parked for the owner; only its bugs are fixed right away.
+- Progress is measured: fewer missed and wrong to-dos, a faster first to-do, less friction, faster clicks and fewer tokens, week over week.
