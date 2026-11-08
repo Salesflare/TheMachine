@@ -738,14 +738,22 @@ class GraphActionsApp:
                 graph.set_org(db, node_id, str(fields['org'] or ''), 'owner', now())
             if 'name' in fields:
                 graph.rename(db, node_id, fields['name'], now())
-        self.graph_build()
+        # A new role alone is on their page already (graph.set_role): the rest of the Graph follows in the worker
+        (self.graph_later if set(fields) == {'role'} else self.graph_build)()
         return done
 
     def graph_role_action(self, name, args, owner_dashboard=False):
         if not owner_dashboard:
             raise ValueError('Only the owner sets a role here, on the dashboard; reviews use graph with node_id and role')
-        # The same role as a review's confirms it: it becomes the owner's word.
-        return self.graph_action({'node_id': args.get('node_id'), 'role': args.get('role') or ''}, source='owner')
+        # The same role as a review's confirms it: it becomes the owner's word. Saved and on their page at once
+        # (graph.set_role); the rest of the Graph follows in the worker, and the answer is only what was saved (the
+        # dashboard draws from what it shows already): ✓ Right answers in milliseconds, not after a build.
+        if not args.get('node_id'):
+            raise ValueError('role goes with the person or organization node_id')
+        with self.store.connect() as db:
+            said = graph.set_role(db, args['node_id'], args.get('role') or '', 'owner', now())
+        self.graph_later()
+        return {'node_id': str(args['node_id']), **said}
 
     def graph_warmup_action(self, name, args, owner_dashboard=False):
         if not owner_dashboard:

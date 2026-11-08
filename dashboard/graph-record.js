@@ -1,7 +1,13 @@
 // What someone (or an organization) is to you: said by you, or read by a review in a message, shown with the line it came from.
 // ✓ makes a review's role yours; Edit sets it in your words.
 const quoteLine=(id,quote,event)=>quote?html`<span class="role-why">“${quote}”${event?html` <button class="link" data-quote-event="${event}">Read</button>`:''}</span>`:'';
-const confirmButton=(id,role)=>html`<button class="ghost" data-role-confirm="${id}" data-role="${role}" aria-label="Right: ${role}">✓ Right</button>`;
+// A role marked right here is gone from Who's who at the tap and stays gone while it saves, also when a refresh that
+// started before the save draws the old list; a failed save brings it back (rolesConfirm).
+const rolesDone=new Map();let whosLast=null;  // node id -> {role, saved}; the Who's who list last loaded, with its count
+const roleDone=(id,role)=>rolesDone.get(id)?.role===role;
+const rolesSaving=()=>[...rolesDone.values()].filter(r=>!r.saved).length;
+const rolesLeft=items=>(items||[]).filter(w=>!roleDone(w.id,w.role));
+const confirmButton=(id,role)=>roleDone(id,role)?'':html`<button class="ghost" data-role-confirm="${id}" data-role="${role}" aria-label="Right: ${role}">✓ Right</button>`;
 // Where someone works: from their work email, or as a source stated it (their LinkedIn headline, a signature, their own words), with that line.
 const orgSaid=n=>n.org_by==='email'?'from their work email':n.org_by==='owner'?'you set it':n.org_by==='review'?`from ${n.org_via==='LinkedIn headline'?'their LinkedIn headline':'their '+(n.org_via||'message')}${n.org_at?', '+day(n.org_at):''}`:'';
 // The owner's own details for an organization: they win over the service's, and "Wrong company" drops a bad match for good.
