@@ -1,0 +1,36 @@
+{
+ "desk": {
+  "calibration": 120,
+  "clicks": {
+   "Open a to-do": 94,
+   "Close it": 180,
+   "Do it": 169,
+   "Done": 75,
+   "Snooze": 88,
+   "Work/Personal filter": 152,
+   "Search open": 78,
+   "Tab Calendar": 73,
+   "Tab Graph": 180,
+   "Tab Routines": 113,
+   "Tab To-dos": 94,
+   "Send a chat message": 226
+  }
+ },
+ "phone": {
+  "calibration": 822,
+  "clicks": {
+   "Open a to-do": 831,
+   "Close it": 806,
+   "Do it": 1143,
+   "Done": 554,
+   "Snooze": 469,
+   "Work/Personal filter": 1069,
+   "Search open": 500,
+   "Tab Calendar": 495,
+   "Tab Graph": 690,
+   "Tab Routines": 503,
+   "Tab To-dos": 480,
+   "Send a chat message": 732
+  }
+ }
+}

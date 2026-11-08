@@ -20,7 +20,8 @@ UK = re.compile(r'(?<![\w.$#/-])((?:re)?organis(?:e|ed|es|ing|er|ers|ation|ation
                 r'|prioritis(?:e|ed|es|ing)|personalis(?:e|ed|ation)|authoris(?:e|ed|es|ing|ation)|customis(?:e|ed|ation)'
                 r'|optimis(?:e|ed|ation)|normalis(?:e|ed|es|ing)|realis(?:e|ed|es|ing)|minimis(?:e|ed|ation)|travell(?:ed|ing)'
                 r'|modell(?:ed|ing)|fulfilment|programmes?|grey|defence|whilst|learnt|acknowledgements?)(?![\w(-])', re.I)
-SKIP = {'LICENSE', 'THIRD_PARTY_NOTICES.md', 'TRADEMARKS.md', 'package-lock.json', 'package.json', 'wacli-pin.json', 'tests/test_us_english.py'}
+SKIP = {'LICENSE', 'THIRD_PARTY_NOTICES.md', 'TRADEMARKS.md', 'package-lock.json', 'package.json', 'wacli-pin.json', 'tests/test_us_english.py',
+        'tests/click-speed-fixture.json'}  # the Machine's recorded answers (stored values, like sandbox/fixtures/)
 SUFFIXES = {'.py', '.md', '.html', '.mjs', '.js', '.ts', '.json', '.sh', '.ps1', '.webmanifest', '.yml', '.yaml', '.txt'}
 # (file, words on the line): kept on purpose
 ALLOWED = [
