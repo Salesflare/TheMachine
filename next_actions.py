@@ -556,8 +556,7 @@ def validate(value, config, allowed_accounts, recipient_options=None, linkedin_t
         # A follow-up is another Do it turn under the same limits so it may
         # apply a change; it can never pay, send or create calendar events.
         if not value['label'].startswith(tuple(v + ' ' for v in FOLLOW_UP_VERBS)):
-            raise ValueError('Follow-up labels describe drafting, checking, research or applying the task’s change: start with '
-                             + ', '.join(FOLLOW_UP_VERBS) + ' (Update notes, not Incorporate notes)')
+            raise ValueError('Follow-up labels describe drafting, checking, research or applying the task’s change')  # its words: PREPARATION.md
         if not isinstance(value.get('instructions'),str) or not value['instructions'].strip() or len(value['instructions'])>2000:
             raise ValueError('Provide the concrete next preparation, at most 2000 characters')
         result=dict(value)
