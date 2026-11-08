@@ -124,8 +124,7 @@ document.addEventListener('click',e=>{if(!e.target.closest('[data-about-addresse
 // The summary on top of a person's page (person_summary.py): who they are to you, where things stand, what is open
 // both ways. Each line links its sources: a message or meeting by its date, a promise or your note; a line you wrote
 // needs none. Your edit wins: a later rewrite waits under it as a suggested update, Use it or Keep mine.
-// One chip per source, never the same label twice: messages and meetings of one day share a chip with their count
-// ("Thu, Nov 5 · 3 messages") that opens them together; several notes or promises are one chip with their count.
+// One chip per source: one day's messages share a chip with their count; notes and promises one each.
 const sumChips=sources=>{const out=[],days=new Map(),notes=[],promises=[];
  for(const s of sources){if(s.type==='event'){const k=localDay(new Date(s.at));if(!days.has(k)){days.set(k,[]);out.push(days.get(k))}days.get(k).push(s)}
   else if(s.type==='fact'){if(!notes.length)out.push(notes);notes.push(s)}else if(s.type==='promise'){if(!promises.length)out.push(promises);promises.push(s)}}

@@ -27,15 +27,13 @@ async function openConversation(row){const dialog=$('#email-dialog'),group='grou
 let list;try{list=(await request('api/originals?events='+encodeURIComponent(row.dataset.events))).originals}catch(e){errCaught(e);setHTML($('#email-content'),html`<p class="muted">${e.message}</p>`);return}
 if(!list.length){setHTML($('#email-content'),html`<p class="muted">The messages are no longer available.</p>`);return}
 setHTML($('#email-content'),chatThreadHTML(list,{names:group,head:false,src:row.dataset.src}))}
-// Several sources at once (a summary line's chip for one day): chat messages as their conversations, each email or
-// meeting folded under its sender and date, opened in place.
+// A summary chip's sources: chats as conversations, the rest folded.
 async function openSources(ids,title){const dialog=$('#email-dialog'),box=$('#email-content');$('#email-title').textContent=title||t('Original');setHTML(box,html`<p class="muted">Loading…</p>`);if(!dialog.open)dialog.showModal();
 let list;try{list=(await request('api/originals?events='+encodeURIComponent(ids))).originals}catch(e){errCaught(e);setHTML(box,html`<p class="muted">${e.message}</p>`);return}
 if(!list.length){setHTML(box,html`<p class="muted">The messages are no longer available.</p>`);return}
 const rest=list.filter(o=>!isChat(o));
 setHTML(box,html`${chatThreads(list).map(c=>chatThreadHTML(c))}${rest.map(o=>emailRow(o,list.indexOf(o)))}`);
-box.querySelectorAll('details.email').forEach(d=>d.addEventListener('toggle',()=>{if(d.open)fillMessage(d,list[+d.dataset.msg],'')}));
-const only=box.querySelector('details.email');if(only&&rest.length===1&&list.length===1)only.open=true}
+box.querySelectorAll('details.email').forEach(d=>d.addEventListener('toggle',()=>{if(d.open)fillMessage(d,list[+d.dataset.msg],'')}));}
 $('#query').onkeydown=e=>{if(e.key==='Enter')search()};
 // Messages, the results page: everything the Machine read, by meaning and by words, every account or one. It isn't in
 // the sidebar: the palette's See all results (and a message there), G then E and #messages (#events) open it; an empty
