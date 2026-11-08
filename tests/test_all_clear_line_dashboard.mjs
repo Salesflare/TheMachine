@@ -16,6 +16,7 @@ const dashboard=await dashboardPage();
 const cats={};for(const l of ['en','nl'])cats[l]=await readFile(new URL(`../i18n/${l}.json`,import.meta.url),'utf8');
 const DAY=Date.UTC(2026,9,28,12,0,0);
 let reviewHealth,check,language,promises=[],reviewLive=null;const actions=[];
+const MAIL=[{id:'work-gmail',service:'gmail',display_name:'Work mail',status:'ok',last_success:new Date(DAY).toISOString()}];let connectors=MAIL;
 const server=createServer(async(req,res)=>{let body='';for await(const c of req)body+=c;
  const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname.startsWith('/brand/')){const f=url.pathname.startsWith('/brand/fonts/')||url.pathname.endsWith('.webp')?url.pathname.slice(1):'brand/app-icon-192.png';
@@ -23,7 +24,7 @@ const server=createServer(async(req,res)=>{let body='';for await(const c of req)
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  const cat=/^\/i18n\/(\w\w)\.json$/.exec(url.pathname);if(cat){res.end(cats[cat[1]]||'{}');return}
  if(url.pathname==='/api/action'){const a=JSON.parse(body||'{}');actions.push(a.action);if(a.action==='check_now'){check={...check,phase:'reading'};res.end(JSON.stringify({started:true,check}));return}res.end('{}');return}
- if(url.pathname==='/api/status'){res.end(JSON.stringify({suggestions:[],promises,connectors:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],
+ if(url.pathname==='/api/status'){res.end(JSON.stringify({suggestions:[],promises,connectors,suggestion_counts:{},decisions:[],analyses:[],deliveries:[],
   review_health:reviewHealth,review_runs:[],...(check?{check}:{}),...(reviewLive?{review_live:reviewLive}:{}),locale:{locale:'en-BE',region:'BE',language,language_set:true,clock:'auto',hour12:false,auto_hour12:false,
   date_locale:language==='en'?'en-US':'nl-BE',languages:{en:'English',nl:'Nederlands'},saveable:true}}));return}
  res.end('{}');
@@ -118,6 +119,17 @@ try{
  [context,page]=await open();
  assert.ok(['Rondgesnuffeld. Er is niets voor jou.','Overal even gekeken. Er is niets voor jou.','Alles rustig. Terug naar mijn dutje.'].includes(await line(page)),await line(page));
  await context.close();
+ // Nothing connected yet (a new Machine): the line says so, never that a check found nothing, and Check now has
+ // nothing to read; while a check runs it still says that. In every size and theme.
+ language='en';connectors=[];
+ for(const [width,height,scheme] of [[1440,900,'light'],[1440,900,'dark'],[390,844,'light'],[390,844,'dark']])for(const [name,c] of [['first',null],['checked',done()]]){
+  check=c;[context,page]=await open({width,height,scheme});
+  assert.equal(await line(page),'Nothing connected yet, so there’s nothing to read.');
+  assert.equal(await page.locator('#suggestions [data-check-now], #page-head [data-check-now]').count(),0,'no Check now with nothing to read');
+  if(shots&&name==='checked')await page.screenshot({path:`${shots}/nothing-connected-${width}-${scheme}.png`});
+  await context.close()}
+ check={...done(0),phase:'reading'};[context,page]=await open();assert.ok(BUSY.includes(await line(page)),await line(page));await context.close();
+ connectors=MAIL;
  if(shots){language='en';
   for(const scheme of ['light','dark'])for(const [width,height] of [[1440,900],[390,844]])for(const [name,c] of [['asleep',done()],['checking',{...done(0),phase:'reviewing',waiting:7}]]){
    check=c;[context,page]=await open({width,height,scheme});await page.screenshot({path:`${shots}/all-clear-${name}-${width}-${scheme}.png`});await context.close()}}
