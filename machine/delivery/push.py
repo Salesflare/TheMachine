@@ -2,7 +2,6 @@
 lines and buttons (app_notice, app_wake), reminders and setup hints, and what the to-do counts say. Moved out of
 assistant.py as is."""
 import datetime as dt
-import email.utils
 import functools
 import json
 import re
@@ -17,6 +16,7 @@ from machine.cards import NOT_FOR_OWNER_SQL, plain
 from machine.config import LOG, ROOT, WORKSPACE
 from machine.model_usage import node_bin, node_env, telegram_on
 from machine.sources.connectors import HOSTED_SIGNINS
+from machine.sources.mail_senders import HINT_MAILS, HINT_SOURCES, mails_from, sender_domain_in  # noqa: F401  (setup hints; assistant.py, tests)
 from machine.text import encoded, first_sentence
 import next_actions
 import notify
@@ -585,23 +585,7 @@ def hold_handoff(store, config, row):
 
 # Setup hints: what a hosted owner skipped at setup, suggested in the dashboard's setup to-do (setup_card) once it is
 # relevant: a source when its mail keeps coming in, Telegram once a snooze would only come back on the dashboard, Codex
-# once GitHub is connected. Each links to that step on the setup page.
-HINT_SOURCES = (('github', 'GitHub', ('github.com',)), ('slack', 'Slack', ('slack.com',)),
-                ('stripe', 'Stripe', ('stripe.com',)), ('intercom', 'Intercom', ('intercom.io', 'intercom-mail.com', 'intercom.com')),
-                ('zoom', 'Zoom', ('zoom.us',)))
-
-
-HINT_MAILS = 3  # this many mails in 30 days from a service before it is worth suggesting
-
-
-def sender_domain_in(sender, domains):
-    """Whether a From ("Name <a@mail.slack.com>" or the bare address) is at one of these domains or a subdomain of one:
-    the address's own domain, so notslack.com, slack.com.example and a name that mentions slack.com never count."""
-    address = email.utils.parseaddr(str(sender or ''))[1].lower()
-    host = address.rpartition('@')[2].rstrip('.') if '@' in address else ''
-    return bool(host) and any(host == d or host.endswith('.' + d) for d in domains)
-
-
+# once GitHub is connected. Each links to that step on the setup page. Who mails the owner: machine/sources/mail_senders.py.
 def mailing_sources(db, config, now=None):
     """[(service, label)] of HINT_SOURCES that mailed the owner HINT_MAILS times or more in 30 days and aren't connected:
     worth connecting. From the senders' addresses only (setup_hints, and the first look's ending: first_look_done)."""
@@ -609,19 +593,6 @@ def mailing_sources(db, config, now=None):
     since = ((now or dt.datetime.now(dt.timezone.utc)) - dt.timedelta(days=30)).isoformat()
     return [(service, label) for service, label, domains in HINT_SOURCES
             if service not in services and mails_from(db, domains, since, HINT_MAILS) >= HINT_MAILS]
-
-
-def mails_from(db, domains, since, enough):
-    """How many mails since `since` came from one of these domains (sender_domain_in), counting up to `enough`."""
-    like = ' OR '.join("lower(json_extract(metadata,'$.from')) LIKE ?" for _ in domains)
-    rows = db.execute(f"SELECT json_extract(metadata,'$.from') FROM events WHERE kind IN ('gmail.message','ms_graph.message') AND history=0 "
-                      f"AND occurred_at>=? AND ({like})", (since, *[f'%@%{d}%' for d in domains]))
-    found = 0
-    for (sender,) in rows:  # the LIKE only narrows: the sender's own domain must be the service's (not x.com in fedex.com)
-        found += sender_domain_in(sender, domains)
-        if found >= enough:
-            break
-    return found
 
 
 def setup_hints(store, config, now=None):

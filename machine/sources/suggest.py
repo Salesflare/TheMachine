@@ -1,5 +1,5 @@
 """Connections, + Add: "Suggested for you", the few sources this Machine would gain most from, each with the signal it
-rests on. Only from what the Machine already has: mail from the service (push.mailing_sources' senders, sender_domain_in),
+rests on. Only from what the Machine already has: mail from the service (mail_senders.mails_from, as the setup hints count it),
 meetings on the calendar with its video link (meet.VIDEO_LINKS), links to it in mail and chat, and a setup started on
 the dashboard that didn't finish. No signal, no suggestion: nothing is offered for its own sake, and never a source that
 is connected already. Counts only, read on this Machine; nothing leaves it."""
@@ -8,7 +8,7 @@ from __future__ import annotations
 import datetime as dt
 import re
 
-from machine.delivery.push import HINT_MAILS, HINT_SOURCES, mails_from
+from machine.sources.mail_senders import HINT_MAILS, HINT_SOURCES, mails_from
 from meet import VIDEO_LINKS
 
 SHOWN = 4      # at most this many suggestions

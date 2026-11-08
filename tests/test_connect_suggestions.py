@@ -1,4 +1,4 @@
-"""Connections, + Add: Suggested for you (machine/sources/suggest.py) and the groups below it (onboarding.GROUPS). A
+"""Connections, + Add: Suggested for you (machine/sources/suggest.py) and the groups below it (machine/sources/groups.py). A
 suggestion needs a concrete signal the Machine already has, and none at all means no section; never a connected source."""
 import datetime as dt
 import json
@@ -8,6 +8,7 @@ from pathlib import Path
 
 import assistant as a
 import onboarding
+from machine.sources import groups
 from machine.sources.suggest import SHOWN, suggestions
 
 
@@ -94,20 +95,22 @@ class Groups(unittest.TestCase):
 
     def test_every_source_has_a_group_in_order(self):
         found = onboarding.catalog({})
-        self.assertTrue(all(s['group'] in onboarding.GROUPS for s in found))
-        groups = {s['name']: s['group'] for s in found}
-        self.assertEqual({n: groups[n] for n in ('gmail', 'calendar', 'slack', 'zoom', 'docs', 'stripe', 'crm', 'github', 'rss', 'gateway')},
+        self.assertTrue(all(s['group'] in groups.GROUPS for s in found))
+        of = {s['name']: s['group'] for s in found}
+        self.assertEqual({n: of[n] for n in ('gmail', 'calendar', 'slack', 'zoom', 'docs', 'stripe', 'crm', 'github', 'rss', 'gateway')},
                          {'gmail': 'mail', 'calendar': 'mail', 'slack': 'chat', 'zoom': 'meetings', 'docs': 'docs', 'stripe': 'customers',
                           'crm': 'customers', 'github': 'work', 'rss': 'other', 'gateway': 'other'})
-        self.assertEqual(onboarding.GROUPS[-1], 'other')
+        self.assertEqual(groups.GROUPS[-1], 'other')
 
     def test_an_unknown_source_is_other(self):
-        self.assertEqual(onboarding.group_of('something_new'), 'other')
+        self.assertEqual(groups.group_of('something_new'), 'other')
+        self.assertEqual(groups.group_of('something_new', 'chat'), 'chat')  # a connector's own group
+        self.assertEqual(groups.group_of('something_new', 'nonsense'), 'other')
 
     def test_the_dashboard_names_every_group(self):
         js = (Path(a.__file__).resolve().parent / 'dashboard' / 'connections-cards.js').read_text()
         line = next(x for x in js.splitlines() if x.startswith('const CONNECT_GROUPS='))
-        self.assertEqual([k for k in onboarding.GROUPS], [p.split("'")[1] for p in line.split('[')[2:]])
+        self.assertEqual([k for k in groups.GROUPS], [p.split("'")[1] for p in line.split('[')[2:]])
 
 
 if __name__ == '__main__':
