@@ -41,7 +41,12 @@ async function chatPreviews(){for(const n of document.querySelectorAll('#chat-lo
  const [id,path]=key.split('|');try{const d=await request('api/result?id='+id+'&file='+encodeURIComponent(path));chatFiles.set(key,d.pdf?'':String(d.text||''))}catch{chatFiles.set(key,'')}paintChat()}}
 // A refresh while the chat is open updates the thread, list and header in place and keeps the message box itself,
 // so a field you are typing in never loses its focus, text or caret.
+// The to-do list a chat takes the place of is kept aside, and put back when the chat closes: drawn over again (drawKept),
+// only what changed meanwhile is new, so going back costs no list built and laid out anew.
+var listKept=null;  // var and function: a render before this part has run finds nothing kept
+function listBack(){if(!listKept)return;$('#suggestions').replaceChildren(listKept);listKept=null}
 function chatMount(id,body){const box=$('#suggestions'),cur=box.querySelector(':scope>.chat-layout');
+ if(!cur&&box.firstChild){listKept=document.createDocumentFragment();listKept.append(...box.childNodes)}
  if(!cur||cur.dataset.chat!==id||!cur.querySelector('#chat-input')){setHTML(box,body);requestAnimationFrame(chatFades);return}
  const t=document.createElement('template');setHTML(t,body);const nu=t.content.querySelector('.chat-layout');cur.className=nu.className;
  const swap=sel=>{const a=cur.querySelector(sel),b=nu.querySelector(sel);if(!a||!b||a.isEqualNode(b))return;a.replaceWith(b)};
