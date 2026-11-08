@@ -66,10 +66,11 @@ class SignedInAgain(unittest.TestCase):
         self.store.failed(CALENDAR['id'], assistant.SourceError('calendar:HTTP_401', retry_after=300))
         app = object.__new__(assistant.App)
         app.config, app.store, app.config_path = {'accounts': self.accounts}, self.store, Path(self.temp.name) / 'config.json'
+        import google_pair
         import onboarding
         session = {'source': 'gmail', 'account_id': GMAIL['id'], 'ui': onboarding.WebUI()}
         cleared = []
-        with patch.object(onboarding, 'connect', return_value=GMAIL), \
+        with patch.object(google_pair, 'connect', return_value=GMAIL), \
                 patch_everywhere(assistant, 'restart_self', side_effect=lambda _: cleared.append(self.error('work-calendar')) or True):
             app.connect_run(session)
         self.assertEqual(session['state'], 'done')

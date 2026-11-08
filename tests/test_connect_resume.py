@@ -30,7 +30,7 @@ class FakeGog:
             return out(127, '', 'not here')
         rest = args[1:]
         if rest[:2] == ['auth', 'list']:
-            return out(0, json.dumps({'accounts': [{'email': e, 'client': 'default'} for e in sorted(self.signed_in)]}))
+            return out(0, json.dumps({'accounts': [{'email': e, 'client': 'default', 'services': ['gmail', 'calendar']} for e in sorted(self.signed_in)]}))
         if rest[:3] == ['auth', 'credentials', 'list']:
             return out(0, json.dumps({'clients': [{'client': 'default', 'default': True}]}))
         if rest[:2] == ['auth', 'add'] and '--remote' in rest:

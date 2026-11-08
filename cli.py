@@ -29,6 +29,7 @@ _spec = importlib.util.spec_from_file_location('onboarding', Path(__file__).reso
 onboarding = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(onboarding)
 onboarding._assistant = assistant
+import google_pair  # noqa: E402
 import service  # noqa: E402
 import support  # noqa: E402
 
@@ -632,7 +633,7 @@ def cmd_connect(config, args):
     if not sys.stdin.isatty():
         raise CliError('assistant connect asks a few questions; run it in a terminal.')
     try:
-        onboarding.connect(args.config, args.source, onboarding.UI(), args.account)
+        google_pair.connect(onboarding, args.config, args.source, onboarding.UI(), args.account)
     except onboarding.SetupError as error:
         raise CliError(error.message + (f'\n  fix: {error.fix}' if error.fix else '')) from None
     except (KeyboardInterrupt, EOFError):
