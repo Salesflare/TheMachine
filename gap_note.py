@@ -94,7 +94,7 @@ def person(db, node_id, name, services, mine, now, skip_card=None):
         if not own:
             out['theirs'] = {'at': r['occurred_at'], 'channel': CHANNELS[r['kind']], 'days': _days(r['occurred_at'], now)}
             break
-    opened = graph.open_between(db, node_id, 2, skip_card)
+    opened = graph.open_between(db, node_id, 2, skip_card, promises_only=True)
     out['you_promised'], out['they_promised'] = opened.get('you_promised', []), opened.get('they_promised', [])
     out['unsynced'] = unsynced(db, node_id, services, identifiers, info)
     return out

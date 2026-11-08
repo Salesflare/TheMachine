@@ -714,6 +714,15 @@ class Graph(unittest.TestCase):
         lines = self.app.graph_lines(task['id'])
         self.assertIn('open: you promised to send the deck by Tue, Oct 20; they promised to sign the contract; card "Book the call with Ann"', lines)
         self.assertNotIn('card "Answer Ann"', lines)  # the task itself
+        # A to-do's gap note (on every status) asks only for the promises: the same ones, without the card or fact queries
+        with self.store.connect() as db:
+            ran = []
+            db.set_trace_callback(ran.append)
+            only = a.graph.open_between(db, 'email:ann@client.com', 2, task['id'], promises_only=True)
+            db.set_trace_callback(None)
+            full = a.graph.open_between(db, 'email:ann@client.com', 2, task['id'])
+        self.assertEqual(only, {k: full[k] for k in ('you_promised', 'they_promised')})
+        self.assertFalse([q for q in ran if 'FROM suggestions s WHERE' in q or 'FROM facts' in q or "kind='owner.card'" in q])
 
     def test_a_fact_shows_on_who_it_is_about_never_on_who_sent_the_message(self):
         ask = mail(3, 'Ann Example <ann@client.com>', 'sam@acme.com', thread='deal')

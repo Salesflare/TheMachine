@@ -2706,9 +2706,9 @@ def with_fleet(db, result, marks):
     return result
 
 
-def open_between(db, node_id, limit=6, skip_card=None):
-    """What is open between the owner and this person or project: promises both ways and open cards, read from the
-    signals each sits on. Apart from that, under known: the facts the owner told that are about them (fact_about).
+def open_between(db, node_id, limit=6, skip_card=None, promises_only=False):
+    """What is open between the owner and this person or project: promises both ways and (unless promises_only) open cards, read
+    from the signals each sits on. Apart from that, under known: the facts the owner told that are about them (fact_about).
     A fact is about its subject, never about whoever sent the message it came up in: one about the owner is on no page."""
     out = {'you_promised': [], 'they_promised': [], 'cards': [], 'known': []}
     row = db.execute("SELECT kind,name,info FROM graph_nodes WHERE id=?", (node_id,)).fetchone()
@@ -2720,6 +2720,8 @@ def open_between(db, node_id, limit=6, skip_card=None):
                             "WHERE (p.status='open' OR (p.status='carded' AND s.status IN ('pending','accepted','prepared','instructions','snoozed'))) "
                             "AND p.event_id IN (SELECT event_id FROM graph_events WHERE node_id=?) ORDER BY coalesce(p.due,p.check_at) LIMIT ?", (node_id, limit * 2)):
             out['you_promised' if r['direction'] == 'mine' else 'they_promised'].append({'id': r['id'], 'who': r['who'], 'what': r['what'], 'due': r['due']})
+        if promises_only:  # a to-do's gap note (gap_note.person) reads only these, on every status
+            return {k: v[:limit] for k, v in out.items() if v}
         marks = ','.join('?' for _ in OPEN_CARD)
         out['cards'] = [dict(r) for r in db.execute(
             f"SELECT s.id,s.title,s.status,s.due FROM suggestions s WHERE s.status IN ({marks}) AND s.id IS NOT ? AND (EXISTS ({on_node.format('s.event_ids')}) "
@@ -2733,7 +2735,6 @@ def open_between(db, node_id, limit=6, skip_card=None):
                 f"SELECT id,title,status,due FROM suggestions WHERE status IN ({marks}) AND id IS NOT ? AND id IN ({','.join('?' * len(mine)) or 'NULL'}) "
                 "ORDER BY coalesce(due,created_at)", (*OPEN_CARD, skip_card, *mine)) if r['id'] not in have][:max(0, limit - len(out['cards']))]
         marks = ','.join('?' for _ in ids)
-        today = dt.datetime.now(dt.timezone.utc).date().isoformat()
         out['known'] = [{'id': r['id'], 'text': r['text'], **({'fact_kind': r['fact_kind']} if r['fact_kind'] else {}),
                          **({'valid_until': r['valid_until']} if r['valid_until'] else {}), **({'source': r['source']} if r['source'] else {})}
                         for r in db.execute(
@@ -2741,11 +2742,10 @@ def open_between(db, node_id, limit=6, skip_card=None):
             "AND (f.valid_until IS NULL OR f.valid_until>=?) "
             f"AND EXISTS (SELECT 1 FROM fact_about a WHERE a.fact_id=f.id AND a.removed_at IS NULL AND a.node_id IN ({marks})) "
             f"AND NOT EXISTS (SELECT 1 FROM fact_about a WHERE a.fact_id=f.id AND a.removed_at IS NOT NULL AND a.node_id IN ({marks})) "
-            "ORDER BY f.created_at DESC LIMIT ?", (today, *ids, *ids, limit))]
+            "ORDER BY f.created_at DESC LIMIT ?", (dt.datetime.now(dt.timezone.utc).date().isoformat(), *ids, *ids, limit))]
     except sqlite3.OperationalError:
         pass  # a bare graph without the assistant's tables
-    out['you_promised'], out['they_promised'] = out['you_promised'][:limit], out['they_promised'][:limit]
-    return {k: v for k, v in out.items() if v}
+    return {k: v[:limit] for k, v in out.items() if v}  # cards and known already stop at limit
 
 
 def open_line(items):
