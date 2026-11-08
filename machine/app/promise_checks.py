@@ -107,7 +107,8 @@ def activity_since(db, event_ids, owner_slack_ids=(), teammates=(), domains=(), 
 
 
 class PromiseChecksApp:
-    ACTIONS = {}  # its actions are still App.action's own branches
+    # action name -> the method that handles it, called as method(name, args, owner_dashboard) (App.action)
+    ACTIONS = {'promise_close': 'promise_close_action', 'promise_due': 'promise_due_action'}
 
     PROMISE_CHECK_SECONDS = 180
 
@@ -270,3 +271,13 @@ class PromiseChecksApp:
                 # Their reply closes the card too while it is still on its way.
                 db.execute('UPDATE suggestions SET awaiting=? WHERE id=?', (encoded({**json.loads(p['watch']), 'promise': True}), saved['id']))
         return saved
+
+    def promise_close_action(self, name, args, owner_dashboard=False):
+        if not owner_dashboard or args.get('status') not in ('kept', 'dropped'):
+            raise ValueError('Only the owner closes a promise, on the dashboard')
+        return self.store.update_promise({'id': args.get('id'), 'status': args['status']}, source='dashboard')
+
+    def promise_due_action(self, name, args, owner_dashboard=False):
+        if not owner_dashboard or not args.get('due'):
+            raise ValueError('Only the owner moves a promise’s date here, on the dashboard')
+        return self.store.update_promise({'id': args.get('id'), 'due': args['due']}, self.config.get('digest_at', '08:30'), source='dashboard')

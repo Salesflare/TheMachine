@@ -3474,78 +3474,6 @@ class App(*APP_MIXINS):
                     ON CONFLICT(endpoint) DO UPDATE SET p256dh=excluded.p256dh,auth=excluded.auth''',
                            (endpoint, keys['p256dh'].rstrip('='), keys['auth'].rstrip('='), now()))
             return {'subscribed': True}
-        if name == 'promise':
-            return self.store.promise(args, self.config.get('digest_at', '08:30'))
-        if name == 'follow_up_change':
-            if not owner_dashboard:
-                raise ValueError('Only the owner changes follow-ups, on the dashboard')
-            return self.follow_up_change(args)
-        if name == 'follow_up_bring_back':
-            # A follow-up skipped in the review, back to review (the project's follow-ups, or its to-do in Done)
-            if not owner_dashboard:
-                raise ValueError('Only the owner brings a follow-up back, on the dashboard')
-            sid = str(args.get('id') or '')
-            if not re.fullmatch(r'[a-f0-9]{16}', sid):
-                raise ValueError('Say which follow-up')
-            with self.store.connect() as db:
-                db.execute('BEGIN IMMEDIATE')
-                follow_ups.ensure(db)
-                return follow_ups.bring_back(db, sid, 'fu-back-' + uuid.uuid4().hex, now())
-        if name == 'follow_up_end':
-            # Stop follow-ups here, in the review: this round ends like one with no reply, nothing sent (follow_ups.stop_here)
-            if not owner_dashboard:
-                raise ValueError('Only the owner stops follow-ups, on the dashboard')
-            sid = str(args.get('id') or '')
-            if not re.fullmatch(r'[a-f0-9]{16}', sid):
-                raise ValueError('Say which follow-up')
-            with self.store.connect() as db:
-                db.execute('BEGIN IMMEDIATE')
-                follow_ups.ensure(db)
-                return follow_ups.stop_here(db, sid, 'fu-end-' + uuid.uuid4().hex, now())
-        if name == 'follow_up_stop':
-            # Stop sending on a batch's progress: the ones not gone yet go back to the review as drafts (follow_ups.stop)
-            if not owner_dashboard:
-                raise ValueError('Only the owner stops follow-ups, on the dashboard')
-            with self.store.connect() as db:
-                db.execute('BEGIN IMMEDIATE')
-                follow_ups.ensure(db)
-                return follow_ups.stop(db, args.get('batch'), now())
-        if name == 'follow_up_pause':
-            # Pause or Resume a board's or a project's follow-ups (follow_ups.pause): nothing drafted, sent or ended while
-            # paused, open ones stay open. The owner's own decision, on the dashboard (the CLI refuses OWNER_ACTIONS).
-            if not owner_dashboard:
-                raise ValueError('Only the owner pauses follow-ups, on the dashboard')
-            scope, ref = args.get('scope'), args.get('id')
-            if scope == 'project' and str(ref or '').startswith('project:'):
-                ref = str(ref).split(':', 1)[1]
-            if not str(ref or '').isdigit():
-                raise ValueError('Say which board or project')
-            if not isinstance(args.get('paused'), bool):
-                raise ValueError('Say pause or resume')
-            with self.store.connect() as db:
-                db.execute('BEGIN IMMEDIATE')
-                follow_ups.ensure(db)
-                if args['paused']:
-                    follow_ups.pause(db, scope, ref, args.get('until'), now())
-                else:
-                    follow_ups.resume(db, scope, ref, now())
-                return follow_ups.panel(db, scope, ref, self.follow_up_sendable(), now(), self.follow_up_work()['sides'])
-        if name in ('follow_up_settings', 'follow_up_save'):
-            # Automated follow-ups on a board or one project (follow_ups.py): the owner's own setting, on the dashboard
-            if not owner_dashboard:
-                raise ValueError('Only the owner sets follow-ups, on the dashboard')
-            scope, ref = args.get('scope'), args.get('id')
-            if scope == 'project' and str(ref or '').startswith('project:'):
-                ref = str(ref).split(':', 1)[1]
-            if not str(ref or '').isdigit():
-                raise ValueError('Say which board or project')
-            with self.store.connect() as db:
-                db.execute('BEGIN IMMEDIATE')
-                follow_ups.ensure(db)
-                if name == 'follow_up_save':
-                    follow_ups.save(db, scope, ref, args.get('settings'), now())
-                    follow_ups.settle(db, now(), self.follow_up_mine())  # turned off, a stage off: open ones close now
-                return follow_ups.panel(db, scope, ref, self.follow_up_sendable(), now(), self.follow_up_work()['sides'])
         if name in ('board_save', 'board_delete', 'board_dismiss'):
             if not owner_dashboard:
                 raise ValueError('Only the owner saves, deletes or dismisses a board, on the dashboard; reviews suggest one with graph suggest_board')
@@ -3743,14 +3671,6 @@ class App(*APP_MIXINS):
             with self.store.connect() as db:
                 enrichment.set_people(db, args.get('on') is not False)
             return self.lookups_view()
-        if name == 'promise_close':
-            if not owner_dashboard or args.get('status') not in ('kept', 'dropped'):
-                raise ValueError('Only the owner closes a promise, on the dashboard')
-            return self.store.update_promise({'id': args.get('id'), 'status': args['status']}, source='dashboard')
-        if name == 'promise_due':
-            if not owner_dashboard or not args.get('due'):
-                raise ValueError('Only the owner moves a promise’s date here, on the dashboard')
-            return self.store.update_promise({'id': args.get('id'), 'due': args['due']}, self.config.get('digest_at', '08:30'), source='dashboard')
         if name in ('set_signature', 'detect_signature'):
             if not owner_dashboard:
                 raise ValueError('Only the owner sets a signature, on the dashboard (Settings, Signatures)')
