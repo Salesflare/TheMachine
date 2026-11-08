@@ -52,6 +52,7 @@ import timeutil
 import enrichment
 import graph_publish
 import person_summary
+from machine import stamps
 from machine.store import graph_history
 
 SCHEMA = '''
@@ -2091,9 +2092,8 @@ def read_counts(db):
 
 def counts(db):
     """How many people and organizations the graph knows, and how many projects are open: the sidebar's Graph rows."""
-    found = dict(db.execute("SELECT kind,COUNT(*) FROM graph_nodes WHERE kind IN ('person','org') GROUP BY kind").fetchall())
-    found['project'] = db.execute("SELECT COUNT(*) FROM graph_nodes WHERE kind='project' AND json_extract(info,'$.closed_at') IS NULL").fetchone()[0]
-    return {kind: found.get(kind, 0) for kind in ('person', 'org', 'project')}
+    found = _node_counts(db)
+    return {'person': found['people'], 'org': found['orgs'], 'project': found['projects']}
 
 
 def _week_ago(db):
@@ -2182,10 +2182,22 @@ def page_ids(db, name, filters):
 
 def list_counts(db):
     """How long each Graph tab's list is, for its count; an empty tab is not shown."""
-    found = {name: db.execute(f'SELECT COUNT(*) FROM graph_nodes WHERE {where}', args).fetchone()[0]
-             for name, (where, args) in ((n, _paged_where(db, n)) for n in PAGED)}
+    found = _node_counts(db)
     found['warmup'] = db.execute('SELECT COUNT(*) FROM hidden_domains WHERE hidden=1').fetchone()[0]
     return found
+
+
+# What the Graph tab counts and its Who's who, kept until the graph's people or their roles change (machine/stamps.py):
+# the tab asks on every open and every poll while it is open, and each was a pass over every node
+KEPT = stamps.Kept(8)
+
+
+def _node_counts(db):
+    """{PAGED list: how many nodes it has}, all in one pass over the graph (one pass per list was some 130 ms), kept."""
+    wheres = [_paged_where(db, n) for n in PAGED]
+    args = tuple(a for _, found in wheres for a in found)
+    sql = 'SELECT ' + ','.join(f'coalesce(sum(({where})),0)' for where, _ in wheres) + ' FROM graph_nodes'
+    return dict(KEPT.get(('counts', args), stamps.stamp(db, ('graph_nodes',)), lambda: dict(zip(PAGED, db.execute(sql, args).fetchone()))))
 
 
 def headline(db, node_id):
@@ -3026,7 +3038,11 @@ def corrections_lines(db, limit=8):
 
 
 def unconfirmed(db, limit=30):
-    """Roles a review set and the owner hasn't confirmed yet, closest first, each with the line it came from."""
+    """Roles a review set and the owner hasn't confirmed yet, closest first, each with the line it came from (kept)."""
+    return [dict(r) for r in KEPT.get(('unconfirmed', limit), stamps.stamp(db, ('person_roles', 'graph_nodes')), lambda: _unconfirmed(db, limit))]
+
+
+def _unconfirmed(db, limit):
     rows = db.execute("SELECT n.id identifier,r.role,r.quote,r.event_id,r.created_at,n.kind,n.name,n.strength FROM person_roles r "
                       "JOIN graph_nodes n ON r.identifier=coalesce(json_extract(n.info,'$.role_id'),n.id) WHERE r.source!='owner' ORDER BY n.kind='org',n.strength DESC LIMIT ?", (limit,)).fetchall()
     return [{'id': r['identifier'], 'kind': r['kind'], 'name': r['name'], 'role': r['role'], 'quote': r['quote'], 'event_id': r['event_id'],
@@ -3034,7 +3050,11 @@ def unconfirmed(db, limit=30):
 
 
 def waiting(db):
-    """How many of the review's roles wait for the owner: the Who's who count, for the Graph tab's badge."""
+    """How many of the review's roles wait for the owner: the Who's who count, for the Graph tab's badge (kept)."""
+    return KEPT.get('waiting', stamps.stamp(db, ('person_roles', 'graph_nodes')), lambda: _waiting(db))
+
+
+def _waiting(db):
     return db.execute("SELECT count(*) FROM person_roles r JOIN graph_nodes n ON r.identifier=coalesce(json_extract(n.info,'$.role_id'),n.id) "
                       "WHERE r.source!='owner'").fetchone()[0]
 
