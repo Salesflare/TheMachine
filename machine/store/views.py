@@ -47,6 +47,7 @@ from machine.sources.connectors import docs_health, read_window, silent_failure,
 from machine.sources.salesflare import salesflare_progress
 from machine.sources.slack import slack_first_import_progress, SLACK_ID, slack_name_table, slack_named
 from machine.store import history as history_store
+from machine.store import graph_identifiers
 from machine import stamps
 from machine.store.cards import source_kind, SOURCE_KIND, use_view
 from machine.store.conversation import ConversationStore
@@ -176,8 +177,9 @@ def _slack_people_names(db, ids):
     if not ids:
         return names
     try:
-        rows = db.execute("SELECT name,info FROM graph_nodes WHERE kind='person' AND (" + ' OR '.join(['info LIKE ?'] * len(ids)) + ')',
-                          ['%"slack:' + i + '"%' for i in ids]).fetchall()
+        rows = graph_identifiers.rows(db, 'n.name,n.info', ['slack:' + i for i in ids],
+                                      "SELECT name,info FROM graph_nodes WHERE kind='person' AND (" + ' OR '.join(['info LIKE ?'] * len(ids)) + ')',
+                                      ['%"slack:' + i + '"%' for i in ids])
     except sqlite3.OperationalError:
         return names  # no graph yet
     for name, info in rows:

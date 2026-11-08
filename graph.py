@@ -54,7 +54,7 @@ import graph_publish
 from mail_senders import AUTOMATED_PRECEDENCE, BULK, RELAY, addresses, automated, bulk, list_unsubscribes, relay  # noqa: F401
 import person_summary
 from machine import stamps
-from machine.store import graph_history
+from machine.store import graph_history, graph_identifiers
 
 SCHEMA = '''
 CREATE TABLE IF NOT EXISTS projects(id INTEGER PRIMARY KEY,name TEXT NOT NULL UNIQUE COLLATE NOCASE,created_at TEXT NOT NULL,closed_at TEXT);
@@ -267,6 +267,7 @@ def ensure(db):
     own_addresses.ensure(db)
     import project_success  # a project's success condition, its proof and what stands in its way (2026-11-02)
     project_success.ensure(db)
+    graph_identifiers.ensure(db)  # who has an identifier, kept from graph_nodes (2026-11-08)
 
 
 class Owner:
@@ -651,8 +652,8 @@ def slack_names(db, ids):
         names = {r[0].split(':', 1)[1]: r[1] for r in found_rows if r[1]}
         emails = {r[0].split(':', 1)[1]: str(r[2]).lower() for r in found_rows if r[2]}
         likes = ['%"slack:' + i + '"%' for i in ids] + ['%"email:' + e + '"%' for e in sorted(set(emails.values()))]
-        rows = db.execute("SELECT name,info FROM graph_nodes WHERE kind='person' AND (" + ' OR '.join(['info LIKE ?'] * len(likes)) + ')',
-                          likes).fetchall()
+        rows = graph_identifiers.rows(db, 'n.name,n.info', ['slack:' + i for i in ids] + ['email:' + e for e in sorted(set(emails.values()))],
+                                      "SELECT name,info FROM graph_nodes WHERE kind='person' AND (" + ' OR '.join(['info LIKE ?'] * len(likes)) + ')', likes)
         labels = {r[0]: r[1] for r in db.execute(f"SELECT user_id,label FROM slack_members WHERE label>'' AND user_id IN ({marks})", ids)}
     except sqlite3.OperationalError:
         return {}  # no graph tables yet
@@ -2200,8 +2201,9 @@ def resolve(db, node_id):
     row = db.execute('SELECT * FROM graph_nodes WHERE id=?', (node_id,)).fetchone()
     if row or not PERSON_ID.fullmatch(str(node_id or '')):
         return row
-    return db.execute("SELECT n.* FROM graph_nodes n, json_each(n.info,'$.identifiers') j WHERE n.kind='person' AND j.value=? LIMIT 1",
-                      (node_id,)).fetchone()
+    found = graph_identifiers.rows(db, 'n.*', [node_id], "SELECT n.* FROM graph_nodes n, json_each(n.info,'$.identifiers') j WHERE n.kind='person' AND j.value=? LIMIT 1",
+                                   (node_id,))
+    return found[0] if found else None
 
 
 def same_people(db, limit=30):
