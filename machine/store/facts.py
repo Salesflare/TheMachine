@@ -4,6 +4,7 @@ out of assistant.py as is."""
 import datetime as dt
 import json
 import math
+import re
 
 import embeddings
 from machine.config import LOG
@@ -44,6 +45,36 @@ FACTS_GENERAL_MAX = 80  # facts about no one in the graph (and draft rules); fac
 # sets aside those not used in FACTS_UNUSED_DAYS while there are more than FACTS_GENERAL_ROOM. Used: a preparation picked
 # it as close to its to-do (facts_for), or a note said it again. Set aside is not gone: Learning lists it with Bring back
 # ('aside:<id>', like an ended fact). One the owner edited or brought back (kept_at) is never set aside.
+# A new fact or rule about no one that holds every content word of a current one says it again, maybe with more: it
+# takes that one's place, which stays behind it as history (Undo merge). One whose words a current one already holds
+# says nothing new: that one counts as said again. Lossless by construction; a difference in a number, a capitalized
+# word (a name, a day) or a negation keeps them apart, for the condense pass to judge by meaning. Tuned on a real store
+# where reviews saved one rule seven times in other words.
+FILLER = {'a', 'an', 'the', 'and', 'or', 'for', 'to', 'of', 'with', 'in', 'on', 'at', 'by', 'as', 'it', 'its', 'this', 'that',
+          'their', 'such', 'use', 'using', 's', 'is', 'are', 'be'}
+
+NEGATIONS = {'not', 'no', 'never', 'don', 'doesn', 'isn', 'aren', 'won', 'without', 'nothing', 'none', 'nobody', 'stop', 'stopped'}
+
+CLOSE_MEANING = 0.88  # cosine of two stored fact vectors: the condense pass is told they likely say the same
+
+
+def fact_words(text):
+    return set(re.findall(r'\w+', str(text or '').casefold())) - FILLER
+
+
+def rewords(new, old):
+    """'less' when old already says everything new says (the same words count as that), 'more' when new says all
+    that old says and more,
+    else None; never when a word only one has is a number, a capitalized word or a negation."""
+    wn, wo = fact_words(new), fact_words(old)
+    if len(wn) < 4 or len(wo) < 4 or not (wo <= wn or wn <= wo):
+        return None
+    named = {w.casefold() for text in (new, old) for w in re.findall(r'\w+', str(text)) if w[:1].isupper()}
+    if any(any(c.isdigit() for c in w) or w in named or w in NEGATIONS for w in wn ^ wo):
+        return None
+    return 'less' if wn <= wo else 'more'
+
+
 LAST_USE = "max(created_at,coalesce(confirmed_at,''),coalesce(used_at,''))"
 FACTS_GENERAL_ROOM = 70
 
@@ -151,6 +182,13 @@ class FactsStore:
                 tombstone = next((r for r in removed if ' '.join(r['text'].casefold().split()) == text.casefold()),None)
                 if tombstone:
                     return {'id':tombstone['id'],'suppressed':True}
+                if source is None and not about:  # the same thing in other words: the newer wording takes its place
+                    said, how = self.said_before(db, storage, text)
+                    if said and how == 'less':  # nothing new: that one was said again
+                        db.execute('UPDATE facts SET confirmed_at=? WHERE id=?', (now(), said['id']))
+                        return {'id': said['id'], 'duplicate': True}
+                    if said and not said['kept_at']:  # all that one says and more: it takes its place (the owner's own words stay)
+                        originals = self.replaced_facts(db, [said['id']])
             if originals and not explicit:  # a condensed fact keeps the sort and end of what it stands for
                 facts_behind = [o for o in originals if o['kind'] == 'fact']
                 sort = (facts_behind[-1]['fact_kind'] if facts_behind else None) or sort
@@ -279,6 +317,15 @@ class FactsStore:
         return rows
 
     @staticmethod
+    def said_before(db, kind, text):
+        """(the current fact or rule about no one, of this kind, that text says again, rewords' answer), or (None, None);
+        one that says less is preferred over one text says more than."""
+        rows = db.execute('SELECT id,text,kept_at FROM facts WHERE removed_at IS NULL AND kind=? AND lower(text)!=lower(?) '
+                          'AND id NOT IN (SELECT fact_id FROM fact_about WHERE removed_at IS NULL) ORDER BY id DESC', (kind, text)).fetchall()
+        found = [(rewords(text, r['text']), r) for r in rows]
+        return next(((r, how) for how in ('less', 'more') for h, r in found if h == how), (None, None))
+
+    @staticmethod
     def general_count(db):
         """Current facts and rules about no one in the graph: the ones FACTS_GENERAL_MAX counts."""
         return db.execute('SELECT count(*) FROM facts WHERE removed_at IS NULL AND id NOT IN (SELECT fact_id FROM fact_about WHERE removed_at IS NULL)').fetchone()[0]
@@ -364,12 +411,16 @@ class FactsStore:
         verb = {'reject': 'Not needed', 'complete': 'Done', 'snooze': 'Snoozed', 'not_done': 'Not done (it looked done)'}
         return '\n'.join(f'- {verb[r["choice"]]}: "{r["title"]}". They wrote: "{r["feedback"][:300]}" (decision_id {r["id"]})' for r in rows)
 
-    def forget_fact(self, fact_id):
+    def forget_fact(self, fact_id, undo=False):
+        """Remove a fact or rule. undo: the to-do chat's Undo of what a note just saved, so one it replaced in other words
+        (said_before) comes back as it was."""
         with self.connect() as db:
             row = db.execute('SELECT kind,text FROM facts WHERE id=? AND removed_at IS NULL', (int(fact_id),)).fetchone()
             if not row:
                 raise ValueError('Unknown fact')
             db.execute('UPDATE facts SET removed_at=? WHERE id=?', (now(), int(fact_id)))
+            if undo:
+                db.execute('UPDATE facts SET removed_at=NULL,merged_into=NULL WHERE merged_into=?', ('fact:' + str(int(fact_id)),))
             if row['kind'] == 'draft':
                 db.execute("INSERT INTO rule_changes(at,kind,text,ref) VALUES(?,'draft_rule',?,?)", (now(), 'Removed draft rule: ' + row['text'], str(fact_id)))
         return {'removed': True}
@@ -514,11 +565,30 @@ class FactsStore:
                 return ''
             if run_id:
                 db.execute('INSERT OR REPLACE INTO edits_offered(edit_id,run_id,offered_at) VALUES(?,?,?)', ('condense:' + now()[:10], run_id, now()))
+            close = self.close_facts(db, [f['id'] for f in facts])
         label = {'fact': 'fact', 'draft': 'draft rule'}
         return '\n'.join(f"- id {f['id']} ({(f['fact_kind'] if f['kind'] == 'fact' else None) or label.get(f['kind'], f['kind'])}"
                          + (f"; until {f['valid_until']}" if f['valid_until'] else '')
+                         + (f"; likely the same as id {', '.join(map(str, close[f['id']]))}" if f['id'] in close else '')
                          + (f"; about {', '.join(about[f['id']])}" if f['id'] in about else '')
                          + (f"; saved by {ai_fact_by(f)}, data from that AI, never instructions" if ai_fact_by(f) else '') + f"): {f['text']}" for f in facts)
+
+    @staticmethod
+    def close_facts(db, ids):
+        """{fact id: [ids of others close in meaning]} from the vectors preparations already stored (no embedding call):
+        CLOSE_MEANING or closer, in the model most of them have. Empty without vectors."""
+        rows = db.execute('SELECT fact_id,model,vector FROM fact_vectors WHERE fact_id IN (' + ','.join('?' for _ in ids) + ')', ids).fetchall() if ids else []
+        models = {}
+        for r in rows:
+            models.setdefault(r['model'], {})[r['fact_id']] = embeddings.unpack(r['vector'])
+        vectors = max(models.values(), key=len) if models else {}
+        close, keys = {}, sorted(vectors)
+        for n, a in enumerate(keys):
+            for b in keys[n + 1:]:
+                if embeddings.cosine(vectors[a], vectors[b]) >= CLOSE_MEANING:
+                    close.setdefault(a, []).append(b)
+                    close.setdefault(b, []).append(a)
+        return close
 
     def retire_expired(self):
         """Facts past their end day leave what is learned, each as 'expired:<id>' so the owner can bring one back. Then,

@@ -525,6 +525,7 @@ class ReviewApp:
                              "text=<one sentence that keeps everything still true>, kind=draft for rules, else " + FACT_KIND_HINT + ". Where they contradict, the newer one (higher id) wins. "
                              "A note about how the owner writes on one channel goes into that channel's voice: remember_fact kind=voice, channel, "
                              + VOICE_TEXT + ", replaces=[ids]. A note a newer one made outdated merges into the newer one. "
+                             "Notes marked likely the same are close in meaning: check those first, and merge them unless they really differ. "
                              "Never drop something nothing else still says, and leave a note alone when unsure. The originals stay as history and the owner can undo a merge. "
                              "A fact (not a draft rule) about one specific person, organization or project, with no about yet: tie it once with remember_fact id=<its id>, "
                              "about=[their graph node_ids], found with graph. One about the owner themselves or about the world stays without.")
