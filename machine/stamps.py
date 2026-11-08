@@ -19,7 +19,7 @@ def watch(db, tables):
     db.execute('CREATE TABLE IF NOT EXISTS data_stamps(name TEXT PRIMARY KEY,n INTEGER NOT NULL)')
     have = {r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
     made = {r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='trigger' AND name LIKE 'stamp\\_%' ESCAPE '\\'")}
-    for table in tables:
+    for table in dict.fromkeys(tables):  # each once, also when two modules' lists share one
         if table not in have:
             continue
         db.execute('INSERT OR IGNORE INTO data_stamps(name,n) VALUES(?,0)', (table,))

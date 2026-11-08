@@ -6,6 +6,10 @@ all projects at once; what a tile says is the same."""
 import json
 
 import graph
+from machine import stamps
+
+ORG_TABLES = ('graph_nodes', 'org_profiles', 'org_edits', 'org_aliases')  # what graph.project_org reads
+ORGS = stamps.Kept(2)  # {organization key: its tile view}, until one of ORG_TABLES changes
 
 _ASCII_LOWER = str.maketrans('ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')
 
@@ -55,9 +59,15 @@ def _owners(db, nodes):
         "WHERE id IN (SELECT value FROM json_each(?))", (json.dumps(nodes),)) if r['owner']}
 
 
+def _orgs(db, keys):
+    """{key: graph.project_org} for these organization keys: each Graph load looked up all of them again (some 550
+    organizations, 28 ms), kept now until an organization, its profile, the owner's edits or its websites change."""
+    return ORGS.get(keys, stamps.stamp(db, ORG_TABLES), lambda: {k: graph.project_org(db, k) for k in keys})
+
+
 def boards(db, now):
     """graph.boards: every board with its stages and projects, for the Projects board view."""
-    out, org_cache, orgs = [], {}, {}
+    out, org_cache = [], {}
     today = graph.parse_time(now)
     boards_rows = db.execute('SELECT * FROM boards ORDER BY is_default DESC,id').fetchall()
     projects = {b['id']: db.execute('SELECT * FROM projects WHERE board_id=? AND closed_at IS NULL ORDER BY coalesce(stage_at,created_at) DESC',
@@ -67,16 +77,14 @@ def boards(db, now):
     todos, waiting, owners = _todos(db, {n: p['name'] for n, p in every.items()}), _waiting_since(db, nodes), _owners(db, nodes)
     moved = {r[0] for r in db.execute('SELECT project_id FROM project_moves WHERE project_id IN (SELECT value FROM json_each(?)) '
                                       'GROUP BY project_id HAVING count(*)>1', (json.dumps([p['id'] for p in every.values()]),))}
-
-    def org_of(key):
-        if key not in orgs:
-            orgs[key] = graph.project_org(db, key)
-        return orgs[key]
+    # each project's organization: the one set, or what fill_orgs will set
+    org_keys = {node: p['org'] or (graph.infer_org(db, p['id'], org_cache) if not p['org_by'] else None) for node, p in every.items()}
+    orgs = _orgs(db, frozenset(k for k in org_keys.values() if k))
     for b in boards_rows:
         names, items = graph.stage_names(b), []
         for p in projects[b['id']]:
             node = 'project:' + str(p['id'])
-            org = org_of(p['org'] or (graph.infer_org(db, p['id'], org_cache) if not p['org_by'] else None))  # set, or what fill_orgs will set
+            org = orgs.get(org_keys[node])
             mine_since = waiting.get(node)
             since = graph.parse_time(p['stage_at'] or p['created_at'])
             last = None if p['stage_by'] else next(iter(graph.project_events(db, p['id'], 1, now)), None)  # an unplaced tile: its latest message
