@@ -4,6 +4,7 @@ import json
 import types
 import unittest
 
+from seams import patch_everywhere
 import test_graph as tg
 
 a, graph = tg.a, tg.graph
@@ -77,7 +78,7 @@ class PersonFacts(unittest.TestCase):
                 'dms': [], 'state': {}, **data}
         helpers = types.SimpleNamespace(**{k: getattr(a.CONNECTOR_HELPERS, k) for k in vars(a.CONNECTOR_HELPERS)})
         helpers.local_tz = lambda: a.dt.timezone.utc
-        a.now = lambda: '2026-10-16T12:00:00+00:00'
+        self.enterContext(patch_everywhere(a, 'now', lambda: '2026-10-16T12:00:00+00:00'))
         x.sync(self.store, {}, {'id': 'me-x', 'handle': 'sam', 'active_hours': [0, 24]}, helpers, source=types.SimpleNamespace(page=lambda since, state: page))
         self.assertEqual(self.facts('x:101')['bio'], ('Sales at Globex. https://lee.example', 2, 'x'))
         self.assertEqual(self.facts('x:303'), {})

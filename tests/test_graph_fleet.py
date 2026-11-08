@@ -4,6 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from seams import patch_everywhere
 import test_graph as tg
 
 a, graph = tg.a, tg.graph
@@ -46,8 +47,7 @@ class GraphFleet(unittest.TestCase):
         self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
         self.app = object.__new__(a.App); self.app.store = self.store; self.app.config = tg.CONFIG
         self.app.graph_build = lambda: None
-        self.now = a.now
-        a.now = lambda: tg.NOW.isoformat(); self.addCleanup(setattr, a, 'now', self.now)
+        self.enterContext(patch_everywhere(a, 'now', lambda: tg.NOW.isoformat()))
         for days in (1, 3, 6):
             self.add(tg.mail(days, 'kim <kim@acme.com>', 'sam@acme.com'), tg.mail(days, 'sam@acme.com', 'kim@acme.com', labels=('SENT',)),
                      tg.mail(days, 'Lee Park <lee@acme.com>', 'sam@acme.com'), tg.mail(days, 'sam@acme.com', 'lee@acme.com', labels=('SENT',)),
