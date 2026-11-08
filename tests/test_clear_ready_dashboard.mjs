@@ -61,6 +61,7 @@ try{
   assert.equal(await page.locator('#section-needs .clear-time').textContent(),'about 2 min');
   for(const key of ['ready','needs'])assert.deepEqual(await page.locator('#section-'+key).evaluate(h=>{const mid=e=>{const r=e.getBoundingClientRect();return Math.round(r.top+r.height/2)},t=mid(h.querySelector('h2')),go=mid(h.querySelector('.clear-go')),time=mid(h.querySelector('.clear-time')),note=h.querySelector('.section-note');
    return [Math.abs(go-t)<=6,time>go,!note||mid(note)===time]}),[true,true,true],key+' at '+width);
+  assert.deepEqual([await head.locator('[data-clear-run]').textContent(),await page.locator('#section-needs [data-clear-run]').textContent()],['Clear Ready','Clear decisions']);
   await head.locator('[data-clear-run]').click();
   await run(page).waitFor({state:'visible'});
   assert.equal(await head.getAttribute('aria-expanded'),'true');

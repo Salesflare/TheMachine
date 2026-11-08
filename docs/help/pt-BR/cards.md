@@ -44,7 +44,7 @@ Quando você inicia uma tarefa, ela sempre pode ler as mensagens de onde veio, t
 
 A resposta sai mesmo assim do endereço de trabalho onde chegou, e nunca aparece em uma Work Fleet nem no Graph da equipe.
 
-Com duas ou mais esperando, **Esvaziar Para revisar** no cabeçalho passa por elas uma a uma, cada rascunho inteiro, com **Enviar** ou **Fazer**, **Pedir mudanças**, **Adiar** e **Pular**. No computador, Enter envia o que está na tela, `S` adia, `→` pula e Esc para. Abaixo do título, o cabeçalho também diz quanto tempo levam no seu ritmo, como "cerca de 2 min".
+Com duas ou mais esperando, **Esvaziar Para revisar** no cabeçalho (**Resolver decisões** em Precisa da sua decisão) passa por elas uma a uma, cada rascunho inteiro, com **Enviar** ou **Fazer**, **Pedir mudanças**, **Adiar** e **Pular**. No computador, Enter envia o que está na tela, `S` adia, `→` pula e Esc para. Abaixo do título, o cabeçalho também diz quanto tempo levam no seu ritmo, como "cerca de 2 min".
 
 ## Verificar agora
 

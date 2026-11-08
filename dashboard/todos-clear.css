@@ -1,7 +1,7 @@
 .section-head .clear-time,.section-head .clear-time~p{order:2;flex:0 1 auto;font-size:var(--fs-xs);color:var(--faint)}
-.section-head .clear-time~p::before{content:"· ";margin-left:-6px}
-.section-head:has(.clear-time)::after{content:"";order:1;flex-basis:100%}/* a line under */
-.section-head .clear-go{margin-left:auto;min-height:28px;padding:2px 10px;font-size:var(--fs-xs)}
+.clear-time~p::before{content:"· ";margin-left:-6px}
+.section-head:has(.clear-time)::after{content:"";order:1;flex-basis:100%}
+.clear-go{margin-left:auto;min-height:28px;padding:2px 10px;font-size:var(--fs-xs)}
 #clear-run{width:min(680px,calc(100vw - 48px));max-width:none;min-height:min(440px,calc(100dvh - 64px));max-height:min(860px,calc(100dvh - 64px));padding:0;overflow:hidden;flex-direction:column}
 #clear-run[open]{display:flex}
 #clear-run:focus{outline:none}
