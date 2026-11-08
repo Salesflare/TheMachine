@@ -299,17 +299,20 @@ def shown(db, config, meta):
 
 def of_cards(db, config, cards):
     """{card id: [photo]} for the to-dos whose messages have photos, their main message's first, at most 4."""
-    out = {}
+    out, of = {}, {}
     for card in cards:
         try:
-            ids = [int(i) for i in json.loads(card.get('event_ids') or '[]')][:20]
+            of[card['id']] = [int(i) for i in json.loads(card.get('event_ids') or '[]')][:20]
         except (ValueError, TypeError):
             continue
+    # The WhatsApp messages among all the cards' messages, in one read (was one per card)
+    messages = {r['id']: r for r in db.execute("SELECT id,metadata FROM events WHERE kind='whatsapp.message' AND deleted=0 AND id IN (SELECT value FROM json_each(?))",
+                                               (json.dumps(sorted({i for ids in of.values() for i in ids})),))} if of else {}
+    for card in cards:
+        ids = of.get(card['id'])
         if not ids:
             continue
-        rows = db.execute("SELECT id,metadata FROM events WHERE kind='whatsapp.message' AND deleted=0 AND id IN (SELECT value FROM json_each(?))",
-                          (json.dumps(ids),)).fetchall()
-        rows.sort(key=lambda r: ids.index(r['id']))
+        rows = [messages[i] for i in dict.fromkeys(ids) if i in messages]
         found = []
         for r in rows:
             try:
