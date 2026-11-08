@@ -1,5 +1,5 @@
 // The setup to-do at the top of To-dos, "Get more out of The Machine": one small card with a row per step, in this order:
-// the phone app, notifications, WhatsApp, the app on this computer, another mail account, more connections, then what
+// the calendar (once mail is connected), the phone app, notifications, WhatsApp, the app on this computer, another mail account, more connections, then what
 // setup left out once it is relevant (state.setup_hints). At most SETUP_MAX rows; each has one button that does the step
 // itself, leaves the card once done (only what is left shows, under "3 steps left"), and closes for good with its × (setup_dismiss, kept on the Machine so every device
 // agrees, with Undo in the toast); the card's own × closes all of it. Closed rows come back with "Show 1 hidden" at the
@@ -16,6 +16,7 @@ let setupOpen=false;  // the folded line opened with a tap, until the next load
 // Past the first day with to-dos: one line (the Machine always says since when; without it, the full card)
 const setupQuiet=s=>{const at=Date.parse(s?.since||'');return at>0&&at<=Date.now()-SETUP_DAY};
 const SETUP_ICON={
+ calendar:'<rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',
  phone:'<rect x="7" y="2.5" width="10" height="19" rx="2.2"/><path d="M11 18.5h2"/>',
  push:'<path d="M6.5 16.5V11a5.5 5.5 0 0 1 11 0v5.5l1.5 2h-14z"/><path d="M10.2 20.5a2 2 0 0 0 3.6 0"/>',
  whatsapp:'<path d="M4.5 19.5l1.2-3.6a7.8 7.8 0 1 1 2.6 2.5z"/><path d="M9.5 9.2c.2 2.4 2.6 4.9 5.2 5.3l1-1.2-1.6-.9-.8.7c-1-.4-1.9-1.3-2.3-2.3l.7-.8-.9-1.6z"/>',
@@ -35,6 +36,7 @@ function setupRows(all=false){const s=state?.setup_card;if(!s)return [];const cl
  if(s.demo){const rows=(s.rows||[]).filter(r=>SETUP_ICON[r?.id]&&!closed.has(r.id)).map(r=>({id:r.id,done:!!r.done}));return all?rows:rows.slice(0,SETUP_MAX)}
  const hosted=!!state.manage_url,p=state.phone_app_store,rows=[];
  const add=(id,applies,done,hint)=>{if(applies&&!closed.has(id))rows.push({id,done:!!done,...(hint?{hint}:{})})};
+ add('calendar',s.mail_accounts>0,s.calendar);
  add('phone',!!p&&!DEV.phoneApp&&(DEV.mobile?!!setupStore():!!(p.ios||p.android)),s.phones>0);
  add('push',!DEV.phoneApp&&(pushOn()||pushOK&&devicePush.checked&&devicePush.perm!=='denied'&&devStore.get('push-off')!=='1'),pushOn());
  add('whatsapp',hosted,s.whatsapp);
@@ -49,8 +51,8 @@ function setupRows(all=false){const s=state?.setup_card;if(!s)return [];const cl
 // The closed rows that would still apply here and aren't done: what Show hidden brings back
 function setupHidden(){const closed=new Set(state?.setup_card?.dismissed||[]);return setupRows(true).filter(r=>closed.has(r.id)&&!r.done).length}
 const setupLabel=r=>r.hint?r.hint.title:
- {phone:'Get the phone app',push:'Turn on notifications',whatsapp:'Connect WhatsApp',install:'Install on this computer',account:'Add another email account',connect:'Add more connections'}[r.id];
-const setupButton=r=>r.hint?r.hint.button||'Open':{phone:'Get it',push:'Turn on',whatsapp:'Connect',install:'Install',account:'Add',connect:'Browse'}[r.id];
+ {calendar:t('Connect your calendar'),phone:'Get the phone app',push:'Turn on notifications',whatsapp:'Connect WhatsApp',install:'Install on this computer',account:'Add another email account',connect:'Add more connections'}[r.id];
+const setupButton=r=>r.hint?r.hint.button||'Open':{calendar:t('Connect'),phone:'Get it',push:'Turn on',whatsapp:'Connect',install:'Install',account:'Add',connect:'Browse'}[r.id];
 // On a computer: a QR code that opens the right store on the phone (one, or one per store before the redirect is live).
 // On a phone whose store isn't known (onPhone, not DEV.mobile): the two store links, no code to scan.
 function setupQRHTML(){const p=state?.phone_app_store||{},rows=v=>Array.isArray(v)?v.filter(r=>/^[01]+$/.test(r)):[];
@@ -61,6 +63,17 @@ function setupQRHTML(){const p=state?.phone_app_store||{},rows=v=>Array.isArray(
   each.length?html`<div class="setup-codes">${each.map(([q,b])=>html`<div class="setup-code">${qrSvg(rows(q))}${b}</div>`)}</div>`:'';
  // no code at all (a Machine from before): the two store links alone
  return html`<div class="setup-qr">${codes||html`<div class="setup-codes">${ios}${android}</div>`}${codes?html`<small>Scan with your phone’s camera.</small>`:''}</div>`}
+// A Machine without mail reads nothing and makes no to-dos, so before anything else the card is one first step: "Connect
+// your mail to get your first to-dos.", with Gmail and Outlook, each straight to its own sign-in in Connections, + Add
+// (connectOpen: Sign in with Google or Microsoft, or pairing first on a self-hosted Machine that isn't paired). No ×: it
+// stays until a mailbox is connected, unless a chat already brings messages in (SETUP_CHATS: then it reads something).
+// Not in the site's demo or a frame, and not while a hosted Machine's Needs you line already says it (setupStep: its
+// setup page). Its calendar comes next, as the first row of the card above.
+const SETUP_MAIL=['gmail','outlook'],SETUP_CHATS=['slack','whatsapp','telegram','teams'];
+const setupMailFirst=()=>{const s=state?.setup_card;if(!s||s.demo||DEV.framed||!state.suggestions)return false;
+ if((state.connectors||[]).some(c=>SETUP_MAIL.includes(c.service)||SETUP_CHATS.includes(c.service)))return false;
+ return setupStep()?.action!=='Connect mail'};
+const setupMailHTML=()=>html`<div class="setup-head"><strong>${t('Connect your mail to get your first to-dos.')}</strong></div><div class="setup-mail actions"><button type="button" class="primary" data-connect-open="gmail">${t('Gmail')}</button><button type="button" data-connect-open="outlook">${t('Outlook')}</button></div>`;
 const SETUP_CHEVRON='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 14 5-5 5 5"/></svg>';
 // On a phone with a known store (setupStore), Get it is a plain link to that store: straight there, no code, no popup.
 function setupHTML(rows,quiet){const desk=!DEV.mobile,hidden=setupHidden(),store=DEV.mobile&&!state.setup_card?.demo?setupStore():null;
@@ -72,7 +85,10 @@ function setupBox(){let el=$('#setup-card');if(el)return el;
  el=document.createElement('div');el.id='setup-card';el.className='setup-card';el.setAttribute('role','region');el.setAttribute('aria-label','Get more out of The Machine');el.hidden=true;
  const nudge=$('#device-nudge');if(nudge)nudge.after(el);else $('#inbox').prepend(el);
  el.addEventListener('click',setupClick);return el}
-function setupRender(){const s=state?.setup_card,el=setupBox(),off=!s||settingUp()||(DEV.framed&&!s.demo);
+function setupRender(){const s=state?.setup_card,el=setupBox(),first=setupMailFirst();
+ el.classList.toggle('mail-first',first);el.setAttribute('aria-label',first?t('Connect mail'):'Get more out of The Machine');
+ if(first){const h=String(setupMailHTML());if(el.dataset.html!==h){setHTML(el,raw(h));el.dataset.html=h}el.hidden=false;el.classList.remove('quiet');setupSettings(false);return}
+ const off=!s||settingUp()||(DEV.framed&&!s.demo);
  // Only what is left: a done step leaves the card (its label says what to do, so a ticked "Connect WhatsApp" read as not done)
  const closed=new Set(off?[]:s.dismissed||[]),rows=off||s.closed?[]:setupRows(true).filter(r=>!r.done&&!closed.has(r.id)).slice(0,SETUP_MAX),quiet=!off&&setupQuiet(s);
  const show=rows.length>0,h=show?String(setupHTML(rows,quiet)):'';
@@ -112,6 +128,7 @@ async function setupClick(e){const b=e.target.closest('button');if(!b)return;con
  if(step==='whatsapp'){location.hash='#connect=whatsapp';return}
  if(step==='account'){location.hash='#connections=add';return}  // the picker, with Google and Microsoft
  if(step==='connect'){location.hash='#connections=add';return}
+ if(step==='calendar'){connectOpen(s.add==='microsoft'?'outlook_calendar':'calendar');return}  // the calendar of the mail they have
  b.disabled=true;
  try{if(step==='push')await pushEnable();else if(step==='install'){if(installEvt)await appInstall();else toast(DEV.macSafari?'In Safari’s menu bar: File, then Add to Dock.':'Find Install in the browser’s menu.')}}
  finally{b.disabled=false;setupRender()}}

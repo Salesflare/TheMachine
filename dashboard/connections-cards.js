@@ -279,7 +279,9 @@ function renderConnectSignin(){const s=connectSignin,box=$('#connect-add'),paire
  else body=html`<p class="muted">${copy.about||''}</p>${paired?html`<div class="actions"><button type="button" class="primary" data-signin-go>Sign in with ${s.label}</button>${back}</div>${msAdmin(s)}`
   :html`<p>To sign in here, pair this Machine with your account first.</p><div class="actions"><button type="button" class="primary" data-connect-pair>Pair this Machine</button>${back}</div>`}`;
  const off=!s.hosted&&s.off&&paired&&s.state==='intro';  // the other way is the way: open, its button first, Back after it
- const paste=s.hosted||s.state==='done'||s.state==='connecting'||!s.own||!copy.other?'':html`<details class="connect-other"${off?html` open`:''}><summary>${copy.other||''}</summary><p>${copy.how||''}</p><div class="actions"><button type="button"${off?html` class="primary"`:''} data-connect="${s.source}">${copy.go||''}</button>${off?back:''}</div></details>`;
+ // Not paired yet: pairing needs an account, so the other way shows open beside it, never folded away as the only way on
+ const unpaired=!s.hosted&&!paired&&s.state==='intro';
+ const paste=s.hosted||s.state==='done'||s.state==='connecting'||!s.own||!copy.other?'':html`<details class="connect-other"${off||unpaired?html` open`:''}><summary>${copy.other||''}</summary><p>${copy.how||''}</p><div class="actions"><button type="button"${off?html` class="primary"`:''} data-connect="${s.source}">${copy.go||''}</button>${off?back:''}</div></details>`;
  const panel=html`<div class="connect-run connect-signin"><h3>${copy.title||s.label}</h3>${body}${paste}${off&&!paste?html`<div class="actions">${back}</div>`:''}</div>`;
  const sig=JSON.stringify(['signin',s.state,s.source,s.name,s.error,s.replies,paired,s.hosted,s.code,s.until,s.pending,s.phone,s.off,s.phase,!!connectCard({account:s.made}),s.provider==='codex'&&connectList?.codex?.status]);if(box.dataset.sig===sig)return;box.dataset.sig=sig;connectDraw(box,'signin',panel)}
 function signinPoll(){clearTimeout(signinTimer);if(!connectSignin||!['started','connecting'].includes(connectSignin.state))return;

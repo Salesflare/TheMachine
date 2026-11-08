@@ -28,7 +28,7 @@ Het installatieprogramma vindt je accounts, koppelt ze een voor een en toont een
 
 ## Na de installatie
 
-- Koppel hem aan je account: in het dashboard, **Koppelingen**, **+ Toevoegen**, kies Gmail en druk op **Koppel deze Machine**.
+- Koppel je mail: bovenaan **To-do's** druk je op **Gmail** (of **Outlook**), dan op **Koppel deze Machine** om hem aan je account te koppelen. Zonder account staat **Je eigen app gebruiken** er meteen onder.
 - Druk dan op **Inloggen met Google** (of **Inloggen met Microsoft** voor Outlook). Mail en agenda koppelen samen.
 - Andere bronnen: **Koppelingen**, dan **+ Toevoegen**. Je eigen Google-client of Entra-app: `assistant connect` in een terminal.
 - Controleer alles met `assistant doctor`. Het toont een oplossing voor elk probleem.

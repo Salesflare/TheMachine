@@ -58,7 +58,7 @@ def phone_app_nudge(store):
 # order, each ticked once done and closed for good with its ×, the whole to-do with its own ×. What the Machine knows
 # about each step is here; what only a device knows (its notifications, the app installed there) the dashboard works
 # out itself. Closed rows are kept on the Machine (milestones 'setup:<step>'), so every device agrees.
-SETUP_STEPS = ('phone', 'push', 'whatsapp', 'install', 'account', 'connect')
+SETUP_STEPS = ('calendar', 'phone', 'push', 'whatsapp', 'install', 'account', 'connect')
 
 
 SETUP_STEP_RE = re.compile(r'(?:' + '|'.join(SETUP_STEPS) + r'|card|hint-[a-z0-9-]{1,40})')
@@ -68,11 +68,11 @@ SETUP_BASIC = {'gmail', 'outlook', 'calendar', 'outlook_calendar', 'whatsapp'}  
 
 
 def setup_card(store, config):
-    """{closed, dismissed, phones, whatsapp, mail_accounts, add, more, since} for the setup to-do: closed with its × (for
-    good), the rows closed, phones with the app, a WhatsApp connected, how many mail accounts (another one: add, the
-    provider the owner has), a connection beyond mail, calendar and WhatsApp (more), and since when the owner has had
-    to-dos (the first one shown, else when this Machine started counting): after that first day the dashboard folds the
-    to-do into one line. The owner's own accounts only."""
+    """{closed, dismissed, phones, whatsapp, calendar, mail_accounts, add, more, since} for the setup to-do: closed with
+    its × (for good), the rows closed, phones with the app, a WhatsApp connected, a calendar connected (Google's or
+    Outlook's), how many mail accounts (another one: add, the provider the owner has), a connection beyond mail, calendar
+    and WhatsApp (more), and since when the owner has had to-dos (the first one shown, else when this Machine started
+    counting): after that first day the dashboard folds the to-do into one line. The owner's own accounts only."""
     services = [str(a.get('service') or '') for a in config.get('accounts') or [] if isinstance(a, dict) and not a.get('shared')]
     with store.connect() as db:
         closed = {r['name'][6:] for r in db.execute("SELECT name FROM milestones WHERE name LIKE 'setup:%'")}
@@ -83,6 +83,7 @@ def setup_card(store, config):
             phones = 0
     mail = [s for s in services if s in ('gmail', 'outlook')]
     return {'closed': 'card' in closed, 'dismissed': sorted(closed - {'card'}), 'phones': phones, 'whatsapp': 'whatsapp' in services,
+            'calendar': any(s in ('calendar', 'outlook_calendar') for s in services),
             'mail_accounts': len(mail), 'add': 'microsoft' if 'outlook' in mail and 'gmail' not in mail else 'google',
             'more': any(s and s not in SETUP_BASIC for s in services),
             'since': at.get('first_card_shown') or at.get('tracking_since') or None}

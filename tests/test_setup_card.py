@@ -21,8 +21,17 @@ class SetupCard(unittest.TestCase):
     def test_a_new_machine_has_every_step_open(self):
         card = self.card()
         self.assertTrue(card.pop('since'))  # when this Machine started counting, until a first to-do shows
-        self.assertEqual(card, {'closed': False, 'dismissed': [], 'phones': 0, 'whatsapp': False, 'mail_accounts': 1,
-                                'add': 'google', 'more': False})
+        self.assertEqual(card, {'closed': False, 'dismissed': [], 'phones': 0, 'whatsapp': False, 'calendar': True,
+                                'mail_accounts': 1, 'add': 'google', 'more': False})
+
+    def test_the_calendar_step_follows_mail(self):
+        # mail without a calendar: the card's first row offers the calendar next; Outlook's counts as one too
+        self.assertFalse(self.card(dict(self.config, accounts=[{'id': 'me-gmail', 'service': 'gmail'}]))['calendar'])
+        outlook = dict(self.config, accounts=[{'id': 'o', 'service': 'outlook'}, {'id': 'oc', 'service': 'outlook_calendar'}])
+        self.assertTrue(self.card(outlook)['calendar'])
+        shared = dict(self.config, accounts=[{'id': 'me-gmail', 'service': 'gmail'}, {'id': 'team-cal', 'service': 'calendar', 'shared': True}])
+        self.assertFalse(self.card(shared)['calendar'])  # a team's calendar is not the owner's
+        self.assertEqual(a.setup_dismiss(self.store, self.config, 'calendar')['setup_card']['dismissed'], ['calendar'])
 
     def test_since_is_the_first_to_do_shown(self):
         with self.store.connect() as db:
