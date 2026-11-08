@@ -105,7 +105,7 @@ try{
  // Storage refused for the sidebar's keys: the page still works and the sidebar still folds (just not remembered)
  // In a Fleet the Fleet tab is a sidebar row like the others, and its page scrolls
  fleetOn=true;{const {context,page}=await open(1440,900);await page.locator('nav [data-tab="fleet"]').waitFor();
-  assert.deepEqual(await page.evaluate(()=>[...document.querySelectorAll('.app-side nav [data-tab]')].filter(b=>!b.hidden&&b.offsetHeight).map(b=>b.dataset.tab)),['inbox','calendar','people','fleet','feedback','health']);  // Messages: from search, not a row
+  assert.deepEqual(await page.evaluate(()=>[...document.querySelectorAll('.app-side nav [data-tab]')].filter(b=>!b.hidden&&b.offsetHeight).map(b=>b.dataset.tab)),['inbox','calendar','routines','people','fleet','feedback','health']);  // Messages: from search, not a row
   await tab(page,'fleet');await scrolls(page,'fleet tab at 1440');assert.equal(await page.locator('#page-head').innerText(),'Fleet');await context.close()}
  fleetOn=false;
  // Wide: the column sits in the middle of the space next to the sidebar, with cards and all clear; the sidebar keeps its padding
@@ -120,7 +120,7 @@ try{
  {const {context,page}=await open(1440,900);await page.keyboard.press('Control+b');await page.waitForFunction(()=>document.documentElement.dataset.side==='collapsed');
   assert.equal(await page.locator('#side-toggle').getAttribute('aria-label'),'Expand sidebar');
   const names=await page.evaluate(()=>[...document.querySelectorAll('.app-side nav [data-tab]')].filter(b=>b.offsetParent).map(b=>b.getAttribute('aria-label')));
-  assert.equal(names[0],'To-dos · 4 ready · 8 to decide');assert.deepEqual(names.slice(1),['Calendar','Graph','Learning','Connections']);
+  assert.equal(names[0],'To-dos · 4 ready · 8 to decide');assert.deepEqual(names.slice(1),['Calendar','Routines','Graph','Learning','Connections']);
   for(const q of ['#open-settings','#side-toggle','#live'])assert.ok(await page.locator(q).getAttribute('aria-label'),q+' has a name');
   // The delay is timed in the page, from the pointer arriving to the tip showing: a busy computer can only make it longer
   await page.evaluate(()=>{window.tipTimes={};document.querySelector('#app-side').addEventListener('pointerover',()=>{tipTimes.over??=performance.now()},true);

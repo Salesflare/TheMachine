@@ -18,12 +18,12 @@ const out = args.out || '/tmp/machine-shots';
 const widths = (args.widths || '390,1280').split(',').map(Number);
 const themes = (args.themes || 'light,dark').split(',');
 const PAGES = {
-  todos: {tab: 'inbox'}, calendar: {tab: 'calendar'}, messages: {hash: '#messages'}, graph: {tab: 'people'}, projects: {tab: 'people', sub: 'projects'}, fleet: {tab: 'fleet'},
+  todos: {tab: 'inbox'}, calendar: {tab: 'calendar'}, routines: {hash: '#routines'}, messages: {hash: '#messages'}, graph: {tab: 'people'}, projects: {tab: 'people', sub: 'projects'}, fleet: {tab: 'fleet'},
   learning: {hash: '#learning=going'}, 'learning-learned': {hash: '#learning=learned'}, 'learning-changes': {hash: '#learning=changes'},
   'learning-decisions': {hash: '#learning=decisions'}, 'learning-shared': {hash: '#learning=shared'},
   connections: {tab: 'health'}, settings: {click: '#open-settings'}, palette: {palette: 'invoice'},
 };
-const DEFAULT_PAGES = ['todos', 'calendar', 'messages', 'graph', 'projects', 'fleet', 'learning', 'connections', 'settings'];
+const DEFAULT_PAGES = ['todos', 'calendar', 'routines', 'messages', 'graph', 'projects', 'fleet', 'learning', 'connections', 'settings'];
 const pages = (args.pages || DEFAULT_PAGES.join(',')).split(',');
 
 async function playwright() {

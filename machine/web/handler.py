@@ -441,6 +441,8 @@ def make_handler(app):
                                       'calendars': writable, 'starts': app.calendar_starts()})  # where its meetings begin: the line at the edge
                 except (ValueError, sqlite3.OperationalError):
                     self.output(400, {'error': 'Ask for a window of at most 15 days'})
+            elif path.path == '/api/routines':  # the Routines page: each routine with its last runs (routines_app.py)
+                self.output(200, app.routines_view())
             elif path.path == '/api/meeting':  # one meeting as the Calendar shows it, opened from anywhere in the dashboard
                 args = urllib.parse.parse_qs(path.query)
                 try:

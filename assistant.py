@@ -137,6 +137,7 @@ from missed_work_app import MissedWorkApp
 from gbrain_app import GBrainApp
 from meet_app import MeetApp
 from recurring_app import RecurringApp
+from routines_app import RoutinesApp
 from shared_graph_app import SharedGraphApp
 from skills_app import SkillsApp
 from whatsapp_images_app import WhatsAppImagesApp
@@ -1202,7 +1203,7 @@ def same_signin(accounts, account, store=None):
 
 # App's domain mixins (<domain>_app.py): each holds a domain's App methods and the actions it handles (its ACTIONS).
 APP_MIXINS = (SupportApp, CalendarApp, SkillsApp, AgentsApp, GBrainApp, SharedGraphApp, RecurringApp, CorrectionsApp, AiApp, MeetApp, MissedWorkApp,
-              WhatsAppImagesApp, CheckNowApp, SetupCardApp, HistoryApp)
+              WhatsAppImagesApp, CheckNowApp, SetupCardApp, HistoryApp, RoutinesApp)
 
 # App's mixins in machine/app/: methods moved out of App as is (docs/code-map.md)
 APP_MIXINS += (FollowUpsApp, GraphActionsApp, KnowledgeExportApp, MeetingWritesApp, ModelPacingApp, PromiseChecksApp, SignaturesApp, SummariesApp,

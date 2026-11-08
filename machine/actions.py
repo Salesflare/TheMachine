@@ -387,6 +387,15 @@ EXPORT_ACTIONS = {
     'import_stage',
 }
 OWNER_ACTIONS |= EXPORT_ACTIONS
+# Routines (routines_app.py): make one, change when, pause, resume, stop and Run now. The owner's own, from the dashboard
+# only. A run's own report (routine_result) is the Gateway's, bound to its session by the plugin: never in these sets.
+ROUTINE_ACTIONS = {
+    'routine_new',
+    'routine_run_now',
+    'routine_state',
+    'routine_when',
+}
+OWNER_ACTIONS |= ROUTINE_ACTIONS
 # What the dashboard (and any client that isn't the Gateway) may call through /api/action; everything else is 403.
 # test_dashboard_actions checks that every action dashboard.html posts is here.
 DASHBOARD_ACTIONS = frozenset({
@@ -405,6 +414,7 @@ DASHBOARD_ACTIONS = frozenset({
     *GRAPH_SHARE_ACTIONS,
     *LEARNING_ACTIONS,
     *MEET_ACTIONS,
+    *ROUTINE_ACTIONS,
     *SEARCH_ASK_ACTIONS,
     *SHARE_ACTIONS,
     *SKILL_ACTIONS,

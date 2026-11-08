@@ -33,7 +33,7 @@ async function showResult(ctx:any,message:any,reason?:string){
 async function notReached(ctx:any){
   await ctx.respond.reply({text:t('Your Machine did not answer just now, so nothing was done. Tap the button again in a minute.')}).catch(()=>{});
 }
-const TOOL_ACTIONS = ['status', 'events', 'begin_analysis', 'analysis_page', 'finish_analysis', 'suggest', 'prepare', 'preparation_blocked', 'preparation_history', 'remember_fact', 'looks_handled', 'handoff_on_it', 'split_from_notes', 'meeting_notes', 'promise', 'related', 'graph', 'profile_evidence', 'save_profile', 'skills_found', 'correction_sources', 'fix_source', 'bug_offer', 'mail_attachment'];
+const TOOL_ACTIONS = ['status', 'events', 'begin_analysis', 'analysis_page', 'finish_analysis', 'suggest', 'prepare', 'preparation_blocked', 'preparation_history', 'remember_fact', 'looks_handled', 'handoff_on_it', 'split_from_notes', 'meeting_notes', 'promise', 'related', 'graph', 'profile_evidence', 'save_profile', 'skills_found', 'correction_sources', 'fix_source', 'bug_offer', 'mail_attachment', 'routine_result'];
 // dismiss_handled stays for older cards; the service records that reason as done.
 const DISMISS_REASONS: Record<string,string> = {dismiss_irrelevant:'Not relevant', dismiss_handled:'Already handled', dismiss_wrong:'Wrong facts'};
 
@@ -201,7 +201,7 @@ export default definePluginEntry({
         const args = {...(params.args || {})};
         delete args.full;  // whole rows and full status are for the local CLI and dashboard, not size-limited tool results
         // Session and run identity are host-owned; never trust model-supplied labels.
-        delete args._review_session; delete args._review_run; delete args._profile_session; delete args._skills_session; delete args._notes_session;
+        delete args._review_session; delete args._review_run; delete args._profile_session; delete args._skills_session; delete args._notes_session; delete args._routine_session;
         if (params.action==='preparation_history') {
           const run=currentReviewRun(key);
           if (!/^agent:main:assistant-review-preparation-/.test(key) || !run) throw new Error('History belongs to the current preparation');
@@ -220,6 +220,10 @@ export default definePluginEntry({
         if (params.action === 'skills_found') {
           if (!/^agent:main:assistant-review-skills-[a-f0-9]{32}$/.test(key)) throw new Error('Only the Find my skills turn reports skills');
           args._skills_session = key;
+        }
+        if (params.action === 'routine_result') {
+          if (!/^agent:main:assistant-review-routine-[a-f0-9]{32}$/.test(key)) throw new Error('Only a routine’s own run reports its result');
+          args._routine_session = key;
         }
         // A review's graph calls carry its session, so a thread's Team or Only you by hand stays the owner's (shared_graph.py).
         if (params.action === 'graph' && isolatedReview) args._review_session = key;
