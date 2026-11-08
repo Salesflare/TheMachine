@@ -1,9 +1,9 @@
 # Product vision
 
-Everyone should have an AI of their own.
+Everyone should have a Machine of their own.
 
-AI should work for you. Not wait for you to ask. Not require you to figure out what it can do. And not belong to a
-company whose interests may be different from yours.
+Not another AI you have to tell what to do. A Machine that knows your world, gets things done, works with other
+people's Machines, and belongs to you. For life.
 
 We believe everyone deserves an AI that knows their world, looks out for their interests, gets things done, and
 becomes more useful every day.
