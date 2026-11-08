@@ -43,6 +43,7 @@ LAZY = {
     'graph': ('graph-pages.css', 'graph-crm.css', 'graph-lists.js', 'graph-boards.js', 'graph-record.js', 'graph-tabs.js',
               'graph-crm.js'),
     'help': ('help-panel.js',),
+    'settings': ('settings-export.css', 'settings-general.js', 'settings-export.js', 'settings-upkeep.js'),
     'learning': ('learning-missed.js',),
 }
 LAZY_RUN = re.compile(r'/\*@lazy\*/\n.*?(?:/\*@eager\*/\n|\Z)', re.S)
