@@ -74,7 +74,7 @@ UPLOAD_REQUEST_BYTES = 9 * 1024 * 1024
 ACTION_FAILED = 'That didn’t go through. Reload the page and try again.'
 
 
-# Email, whatever brought it in: what New to-do's Email pill searches (api/events?kind=email)
+# Email, whatever brought it in: api/events?kind=email (New to-do's Message chip searches every kind: new_cards.ATTACH_KINDS)
 EMAIL_KINDS = frozenset({'gmail.message', 'ms_graph.message', 'outlook.message', 'salesflare.email', 'fleet.email'})
 
 
@@ -409,11 +409,14 @@ def make_handler(app):
                 args = urllib.parse.parse_qs(path.query)
                 try:
                     query = args.get('q', [''])[0]
-                    # With words, search by meaning and keywords together; "all" searches every account. kind=email:
-                    # emails only, by keywords (New to-do's Email pill: subjects and senders, at once).
-                    email = args.get('kind', [''])[0] == 'email'
-                    rows = app.action('events', {'account_ids': args.get('account', []), 'query': query, 'semantic': bool(query.strip()) and not email,
-                                                 'full': True, **({'kinds': sorted(EMAIL_KINDS)} if email else {})})
+                    # With words, search by meaning and keywords together; "all" searches every account. kind=message:
+                    # messages of every kind, by keywords and senders, at once (New to-do's Message chip: message_hits).
+                    # kind=email: emails only, by keywords (a dashboard from before the Message chip).
+                    kind = args.get('kind', [''])[0]
+                    email = kind == 'email'
+                    rows = app.message_hits(args.get('account', []), query) if kind == 'message' else app.action(
+                        'events', {'account_ids': args.get('account', []), 'query': query, 'semantic': bool(query.strip()) and not email,
+                                   'full': True, **({'kinds': sorted(EMAIL_KINDS)} if email else {})})
                     self.output(200, [{**r, 'body': whatsapp_images.listed(shown_body(r.get('body'))[0])} for r in rows])  # read by people: no model marker
                 except (ValueError, sqlite3.OperationalError):
                     self.output(400, {'error': 'Select accounts and use a valid search'})

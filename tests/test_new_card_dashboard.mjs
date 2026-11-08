@@ -6,7 +6,7 @@ import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // New card and Rename on the dashboard. New card: a row under Find a to-do on a computer, "+" in the top bar on a
-// phone, C, "new" in Find a to-do, and the palette (Ctrl/⌘K) then "new"; one field, optional Work/Personal, due date, person and email; Enter adds it
+// phone, C, "new" in Find a to-do, and the palette (Ctrl/⌘K) then "new"; one field, optional Work/Personal, due date, person and message (any kind); Enter adds it
 // with card_new and nothing else (no send). Rename: the sidebar row (⋯, double click, right click, long press on a
 // phone), the chat's title and header menu, and the card (More, and a click on its title on a computer only).
 // Optimistic, Esc cancels, empty keeps the old title, markup stays text, a failure puts the old title back.
@@ -20,7 +20,7 @@ const base0=()=>[
  {id:id(3),title:'Book the dentist',body:'',status:'pending',scope:'personal',created_at:now,event_ids:[3],origin:'owner',owner_words:'Book the dentist'},
  {id:id(4),title:'Reply to Sam about the contract',body:'Sam asked again.',status:'pending',scope:'work',created_at:now,event_ids:[4],origin:'owner',owner_words:'sam contract thing',merge_offer:JSON.stringify({card_id:id(1)})},
  {id:id(5),title:'Plan the offsite',body:'',status:'completed',scope:'work',created_at:now,event_ids:[5]}];
-let cards,actions,failRename=false;
+let cards,actions,failRename=false;const eventKinds=[];
 const reset=()=>{cards=base0();actions=[];failRename=false};reset();
 const state=()=>({suggestions:cards,promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},connectors:[],fleet:{on:false,fleets:[]}});
 const chat=sid=>({session:true,status:'ok',active:false,cursor:'k1',items:[{kind:'event',text:'Renamed',at:Date.now()}]});
@@ -28,8 +28,10 @@ const server=createServer(async(req,res)=>{let body='';for await(const c of req)
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(url.pathname==='/api/status'){res.end(JSON.stringify(state()));return}
  if(url.pathname==='/api/graph'){res.end(JSON.stringify({found:[{id:'email:pat@acme.example',kind:'person',name:'Pat Doe',ids:['pat@acme.example']},{id:'org:acme.example',kind:'org',name:'Acme',domain:'acme.example'}]}));return}
- if(url.pathname==='/api/events'){const all=[{id:7,kind:'gmail.message',title:'Contract draft',metadata:{from:'Sam Lee <sam@client.example>'},body:''},{id:8,kind:'calendar.event',title:'Contract call',metadata:{},body:''},{id:9,kind:'slack.message',title:'contract?',metadata:{},body:''}];
-  res.end(JSON.stringify(url.searchParams.get('kind')==='email'?all.filter(e=>e.kind==='gmail.message'):all));return}  // the server filters: kind=email
+ if(url.pathname==='/api/events'){const all=[{id:7,kind:'gmail.message',title:'Contract draft',metadata:{from:'Sam Lee <sam@client.example>'},body:'',occurred_at:'2026-10-21T09:00:00Z'},{id:8,kind:'calendar.event',title:'Contract call',metadata:{},body:''},
+   {id:9,kind:'slack.message',title:'#deals: can you check the contract before <https://acme.example/c|the call>? Legal wants it today',metadata:{sender_display:'Mira Hart',channel_name:'deals'},body:'can you check the contract before <https://acme.example/c|the call>? Legal wants it today',occurred_at:'2026-10-20T15:00:00Z'},
+   {id:10,kind:'whatsapp.message',title:'Robin',metadata:{sender_display:'Robin',chat_name:'Robin'},body:'Contract signed!',occurred_at:'2026-10-19T08:00:00Z'}];
+  eventKinds.push(url.searchParams.get('kind'));res.end(JSON.stringify(url.searchParams.get('kind')==='message'?all.filter(e=>e.kind!=='calendar.event'):all));return}  // the server filters: kind=message, every kind of message
  if(url.pathname==='/api/action'){const r=JSON.parse(body);if(r.action!=='card_chat')actions.push(r);
   if(r.action==='card_new'){const c={id:'ab'.repeat(8),title:r.args.text.slice(0,90),body:'',status:'pending',scope:r.args.scope||'work',created_at:now,event_ids:[9],origin:'owner',owner_words:r.args.text,due:r.args.due};cards.unshift(c);res.end(JSON.stringify({id:c.id,status:'pending',title:c.title}));return}
   if(r.action==='card_rename'){if(failRename){res.statusCode=400;res.end(JSON.stringify({error:'Keep the title under 200 characters'}));return}
@@ -93,12 +95,24 @@ try{
   await page.locator('[data-nc="due"]').click();await page.locator('#nc-find').fill('friday');await page.locator('#nc-find').press('Enter');
   await page.locator('[data-nc="about"]').click();await page.locator('#nc-find').fill('Pat');await page.locator('[data-nc-hit="0"]').waitFor();await page.locator('[data-nc-hit="0"]').click();
   await page.locator('[data-nc="attach"]').click();await page.locator('#nc-find').fill('contract');await page.locator('[data-nc-hit="0"]').waitFor();
-  assert.equal(await page.locator('[data-nc-hit]').count(),1,'only emails can be attached (it asks for kind=email)');await page.locator('#nc-find').press('Enter');
+  // Any message, not only email: each hit says where it is from, who sent it and when; a chat message reads by its first words
+  assert.equal(await page.locator('[data-nc-hit]').count(),3,'mail, Slack and WhatsApp, never a meeting (it asks for kind=message)');assert.deepEqual([...new Set(eventKinds)],['message']);
+  assert.equal(await page.locator('[data-nc="attach"]').count(),1);assert.match(await page.locator('[data-nc="attach"]').textContent(),/^Message$/);
+  assert.equal(await page.locator('#nc-find').getAttribute('placeholder'),'Search by text or sender');assert.equal(await page.locator('#nc-find').getAttribute('aria-label'),'Attach a message');
+  const hit=async i=>[await page.locator(`[data-nc-hit="${i}"] .nc-msg-title`).textContent(),await page.locator(`[data-nc-hit="${i}"] small`).innerText()];
+  {const [t,m]=await hit(0);assert.equal(t,'Contract draft');assert.match(m,/^Email\s+Sam Lee\s+Oct 21$/)}
+  {const [t,m]=await hit(1);assert.equal(t,'can you check the contract before the call? Legal wants it…','the first words of a Slack message, its link as its text');assert.match(m,/^Slack\s+Mira Hart\s+Oct 20$/)}
+  {const [t,m]=await hit(2);assert.equal(t,'Contract signed!');assert.match(m,/^WhatsApp\s+Robin\s+Oct 19$/)}
+  await shot(page,'message-picker');
+  await page.locator('#nc-find').press('Enter');
   assert.match(await page.locator('#nc-chips').textContent(),/Pat Doe.*Contract draft/);
+  await page.locator('[data-nc="attach"]').last().click();await page.locator('#nc-find').fill('contract');await page.locator('[data-nc-hit="0"]').waitFor();
+  assert.equal(await page.locator('[data-nc-hit]').count(),2,'one already attached is not offered again');await page.locator('[data-nc-hit="0"]').click();
+  assert.match(await page.locator('#nc-chips').textContent(),/Contract draft.*can you check the contract/);
   assert.equal(actions.length,0,'nothing is saved before Enter');
   await page.locator('#nc-text').press('Enter');await dialog.waitFor({state:'hidden'});
   assert.equal(actions.length,1,'one action: card_new, and no send');const made=sent('card_new')[0].args;
-  assert.equal(made.text,'Send Pat the signed contract\nand the deck');assert.equal(made.scope,'work');assert.deepEqual([made.about,made.attach],[['email:pat@acme.example'],[7]]);
+  assert.equal(made.text,'Send Pat the signed contract\nand the deck');assert.equal(made.scope,'work');assert.deepEqual([made.about,made.attach],[['email:pat@acme.example'],[7,9]]);
   assert.equal(new Date(made.due+'T12:00:00').getDay(),5,'due on a Friday');assert.equal(made.due_at,null,'a day, no time');
   // The fresh card shows like any other, with Added by you in quiet text
   const fresh=page.locator('#task-'+'ab'.repeat(8));await fresh.waitFor();assert.match(await fresh.locator('.meta-side').textContent(),/^Added by you/);
