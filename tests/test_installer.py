@@ -814,6 +814,7 @@ class WizardTest(unittest.TestCase):
                 connected.append((name, account_id, restart))
                 config = json.loads(Path(path).read_text())
                 installer.write_private(Path(config['credentials']['gog-password']), 'x')
+                return next(a for a in config['accounts'] if a['id'] == account_id)  # as onboarding.connect does
             with mock.patch.object(installer.onboarding, 'connect', side_effect=connect), \
                  mock.patch.object(installer.onboarding, 'restart_and_sync') as sync, \
                  mock.patch.object(installer.onboarding, 'serve_dashboard') as serve, \

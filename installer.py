@@ -43,6 +43,7 @@ import urllib.request
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
+import google_pair
 import locale_prefs
 import message_seal
 import onboarding
@@ -1271,7 +1272,7 @@ def guided(paths, since, ui=None):
         if not ui.yes(f'Connect {onboarding.label(account.get("service", "gmail"))} ({account["id"]}) now?', True):
             continue
         try:
-            onboarding.connect(paths.config, account.get('service', 'gmail'), ui, account['id'], restart=False)
+            google_pair.connect(onboarding, paths.config, account.get('service', 'gmail'), ui, account['id'], restart=False)
             connected.append(account['id'])
         except onboarding.SetupError as error:
             say(f'  ✗ {error.message}' + (f'\n    fix: {error.fix}' if error.fix else '') + f'\n    later: assistant connect {name}')

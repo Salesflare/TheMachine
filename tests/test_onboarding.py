@@ -15,6 +15,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
+import google_pair
 import onboarding
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -449,6 +450,41 @@ else:
         self.assertEqual([a['id'] for a in config['accounts']], ['work-gmail', 'work-calendar'])
         self.assertEqual((config['accounts'][1]['email'], config['accounts'][1]['client']), ('alex@acme.test', 'work'))
         self.assertEqual(self.calls().count('auth add'), 1)
+
+    def test_one_google_sign_in_connects_gmail_and_calendar(self):
+        # A newcomer allowed Gmail and Calendar on Google's screen but got only Gmail, and a to-do later said Calendar
+        # was not connected (agent users, 2026-11-08)
+        flag, services = self.tmp / 'authorized', self.tmp / 'services'
+        services.write_text('["gmail", "calendar"]')
+        gog = self.stub('gog', f'''
+if args[:3] == ["auth", "credentials", "list"]:
+    print(json.dumps({{"clients": [{{"client": "work", "default": True, "path": "x"}}]}}))
+elif args[:2] == ["auth", "list"]:
+    signed = os.path.exists({str(flag)!r})
+    print(json.dumps({{"accounts": [{{"email": "alex@acme.test", "client": "work", "services": json.load(open({str(services)!r}))}}] if signed else []}}))
+elif args[:2] == ["auth", "add"]:
+    open({str(flag)!r}, "w").write("")
+elif args[:2] == ["api", "call"] and os.path.exists({str(flag)!r}):
+    print(json.dumps({{"emailAddress": "alex@acme.test", "historyId": "9", "id": "alex@acme.test"}}))
+else:
+    sys.stderr.write("HTTP 401"); sys.exit(1)''')
+        self.config(dict(EXAMPLE['work-gmail'], client='default'), gog=gog)
+        ui = FakeUI(answers=['alex@acme.test'], secrets=[''])
+        with mock.patch.object(onboarding, 'headless', return_value=False):
+            google_pair.connect(onboarding, self.path, 'gmail', ui, restart=False)
+        gmail, calendar = self.saved()['accounts']
+        self.assertEqual((calendar['service'], calendar['email'], calendar['client'], calendar['boundary'], calendar['transport']),
+                         ('calendar', 'alex@acme.test', 'work', gmail['boundary'], 'gog'))
+        self.assertEqual(calendar['calendar_id'], 'primary')
+        self.assertIn('✓ Google Calendar connected', ui.text())
+        self.assertEqual(self.calls().count('auth add'), 1)  # nothing more asked of Google
+        # Connecting it again adds nothing; a sign-in without Calendar adds no calendar
+        google_pair.connect(onboarding, self.path, 'gmail', FakeUI(answers=['']), restart=False)
+        self.assertEqual(len(self.saved()['accounts']), 2)
+        self.config(dict(EXAMPLE['work-gmail'], client='default'), gog=gog)
+        services.write_text('["gmail"]')
+        google_pair.connect(onboarding, self.path, 'gmail', FakeUI(answers=['alex@acme.test'], secrets=['']), restart=False)
+        self.assertEqual([a['service'] for a in self.saved()['accounts']], ['gmail'])
 
     def test_an_existing_gog_keyring_keeps_its_password(self):
         gog = self.stub('gog', '''
