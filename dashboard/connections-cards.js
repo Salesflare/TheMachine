@@ -73,11 +73,24 @@ $('#connect-add').addEventListener('click',e=>{const tile=e.target.closest('.con
 const CONNECT_GROUPS=[['mail','Mail and calendar'],['chat','Chat'],['meetings','Meetings'],['docs','Docs and files'],['customers','Customers'],['work','Projects and code'],['other','Other']];
 const connectWhy=(s,x)=>s.why==='unfinished'?t('Setup didn’t finish'):s.why==='mail'?t(['{} email from {} in 30 days','{} emails from {} in 30 days'],s.count,x.label)
  :s.why==='meetings'?t(['{} {} meeting on your calendar','{} {} meetings on your calendar'],s.count,x.label):s.why==='links'?t(['{} message links to {}','{} messages link to {}'],s.count,x.label):'';
-function connectTile(x,why){const more=x.connected?html`<small class="count">${x.connected} connected</small>`:'',what=why?html`<small class="why">${why}</small>`:x.what?html`<small>${x.what}</small>`:'';
- if(x.hosted_signin&&connectList.manage_url)return html`<button type="button" class="connect-source" data-connect-signin="${x.name}"><b>${x.label}</b>${what}${more}</button>`;
- if(x.account_page&&connectList.manage_url)return html`<a class="connect-source" href="${safeHref(connectList.manage_url+'#'+x.account_page)}" target="_blank" rel="noopener"><b>${x.label} ↗</b>${what}${more}</a>`;
- if(x.signin&&!connectList.manage_url)return html`<button type="button" class="connect-source" data-connect-signin="${x.name}"><b>${x.label}</b>${what}${more}</button>`;
- return x.broker?(connectList.manage_url?html`<a class="connect-source" href="${safeHref(connectList.manage_url+(BROKER_LINK[x.service]||'#sources'))}" target="_blank" rel="noopener"><b>${x.label} ↗</b>${what}${more}</a>`:''):html`<button type="button" class="connect-source" data-connect="${x.name}"><b>${x.label}</b>${what}${more}</button>`}
+// A tile: the source's icon (todos-cards ICONS, with the ones below), its name, and one line under it: why it is suggested,
+// else what it brings in (clamped; hidden on a phone, where its sheet says it). Connected: a check on the icon, still
+// tappable for a second account. `note`: a status line of its own (Codex, GBrain).
+Object.entries({outlook:ICONS.gmail,outlook_calendar:ICONS.calendar,teams:'<path d="M4 5h11v8H8l-4 3z"/><path d="M15 9h5v8l-3-2h-5v-2"/>',
+ zoom:'<rect x="3" y="6" width="12" height="12" rx="2"/><path d="m15 10 6-3v10l-6-3"/>',docs:'<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 12h6M9 16h6"/>',
+ intercom:'<path d="M4 5h16v11H9l-5 4z"/><path d="M8.5 9v3M12 8v5M15.5 9v3"/>',rss:'<path d="M5 19h.01M5 12a7 7 0 0 1 7 7M5 5a14 14 0 0 1 14 14"/>',
+ shortcut:'<path d="M6 21V4h12l-3 4 3 4H6"/>',trello:'<rect x="3" y="3" width="18" height="18" rx="2"/><rect x="6.5" y="6.5" width="4" height="10" rx="1"/><rect x="13.5" y="6.5" width="4" height="6" rx="1"/>',
+ codex:'<path d="m8 8-4 4 4 4M16 8l4 4-4 4M13.5 6l-3 12"/>',gbrain:'<circle cx="12" cy="12" r="8"/><path d="M12 4v16M8.5 8.5c2 1 2 2.5 0 3.5s-2 2.5 0 3.5M15.5 8.5c-2 1-2 2.5 0 3.5s2 2.5 0 3.5"/>'})
+ .forEach(([k,v])=>{if(!ICONS[k])ICONS[k]=v});
+const CONNECT_ICON={google_meet:'zoom',google_docs:'docs',crm:'salesflare'};
+function connectInner(x,why,ext,note){const on=x.connected?html`<span class="cs-on" title="${t('{} connected',x.connected)}" aria-label="${t('{} connected',x.connected)}">✓</span>`:'';
+ const line=why?html`<small class="why">${why}</small>`:x.what?html`<small class="what">${x.what}</small>`:'';
+ return html`<span class="cs-icon">${icon(CONNECT_ICON[x.name]||x.service||x.name)}${on}</span><span class="cs-text"><b>${x.label}${ext?' ↗':''}</b>${line}${note?html`<small class="count">${note}</small>`:''}</span>`}
+function connectTile(x,why){
+ if(x.hosted_signin&&connectList.manage_url)return html`<button type="button" class="connect-source" data-connect-signin="${x.name}">${connectInner(x,why)}</button>`;
+ if(x.account_page&&connectList.manage_url)return html`<a class="connect-source" href="${safeHref(connectList.manage_url+'#'+x.account_page)}" target="_blank" rel="noopener">${connectInner(x,why,true)}</a>`;
+ if(x.signin&&!connectList.manage_url)return html`<button type="button" class="connect-source" data-connect-signin="${x.name}">${connectInner(x,why)}</button>`;
+ return x.broker?(connectList.manage_url?html`<a class="connect-source" href="${safeHref(connectList.manage_url+(BROKER_LINK[x.service]||'#sources'))}" target="_blank" rel="noopener">${connectInner(x,why,true)}</a>`:''):html`<button type="button" class="connect-source" data-connect="${x.name}">${connectInner(x,why)}</button>`}
 function renderConnectAdd(){const box=$('#connect-add');if(connectRun)return renderConnectRun();if(connectSignin)return renderConnectSignin();if(connectForm)return renderConnectForm();if(connectGbrain)return renderGbrain();if(!connectList)return;
  const by=new Map(connectList.sources.map(x=>[x.name,x])),picks=[];
  for(const s of connectList.suggested||[]){const x=by.get(s.name),why=x&&!x.connected&&connectWhy(s,x),tile=why&&connectTile(x,why);if(tile)picks.push([s.name,tile])}
@@ -92,8 +105,7 @@ function renderConnectAdd(){const box=$('#connect-add');if(connectRun)return ren
 const CODEX_DEVICE=/^https:\/\/auth\.openai\.com\/codex\/device[\w/.-]*$/;
 const codexSource=()=>({name:'codex',service:'codex',label:'Codex',broker:true,connected:connectList?.codex?.status==='connected'?1:0,...(connectList?.manage_url?{hosted_signin:'codex'}:{signin:'codex'})});
 const codexTile=()=>{const c=connectList?.codex;if(!c)return '';
- const now=c.status==='connected'?html`<small class="count">Connected</small>`:c.status==='signed_out'?html`<small class="count">Signed out</small>`:'';
- return html`<button type="button" class="connect-source" data-codex-signin><b>Codex</b><small>Coding to-dos on your ChatGPT plan</small>${now}</button>`};
+ return html`<button type="button" class="connect-source" data-codex-signin>${connectInner({name:'codex',service:'codex',label:'Codex',what:'Coding to-dos on your ChatGPT plan',connected:c.status==='connected'?1:0},'',false,c.status==='connected'?'Connected':c.status==='signed_out'?'Signed out':'')}</button>`};
 const CODEX_TIP=html`<details class="connect-alt"><summary>OpenAI turns the code down?</summary><p>Turn on device code sign-in for Codex in ChatGPT security settings, at the bottom. Then try again.</p><p><a class="browser-link" href="https://chatgpt.com/settings/security" target="_blank" rel="noopener">Open ChatGPT security settings ↗</a></p></details>`;
 function codexBody(s,back){const c=connectList?.codex||{},again=html`<div class="actions"><button type="button" class="primary" data-signin-go>Try again</button>${back}</div>`;
  if(s.state==='checking'||s.state==='starting')return html`<p class="muted">Getting a sign-in code from OpenAI…</p>`;
@@ -113,7 +125,7 @@ function codexPoll(){clearTimeout(signinTimer);const s=connectSignin;if(s?.provi
   if(r.state==='done'){connectList=null;connectAdd(true)}}catch{}codexPoll()},2000)}
 // GBrain: an optional add-on, only on a Machine that runs on its owner's computer. Off until the owner agrees to what
 // goes in; the panel shows how to install it, that consent step, or how the sync goes (and turns it off again).
-const gbrainTile=()=>connectList?.gbrain?html`<button type="button" class="connect-source" data-gbrain><b>GBrain</b><small>A memory app for AI tools, on this computer</small>${connectList.gbrain.on?html`<small class="count">On</small>`:''}</button>`:'';
+const gbrainTile=()=>connectList?.gbrain?html`<button type="button" class="connect-source" data-gbrain>${connectInner({name:'gbrain',service:'gbrain',label:'GBrain',what:'A memory app for AI tools, on this computer',connected:connectList.gbrain.on?1:0},'',false,connectList.gbrain.on?'On':'')}</button>`:'';
 async function gbrainOpen(){connectGbrain={loading:true};$('#connect-add').dataset.sig='';renderGbrain();
  try{connectGbrain=await connectPost('gbrain_status')}catch(e){errCaught(e);connectGbrain={error:e.message}}renderGbrain()}
 function renderGbrain(){const g=connectGbrain,box=$('#connect-add'),back=html`<button type="button" data-connect-back>Back</button>`;let body;

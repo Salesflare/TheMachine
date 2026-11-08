@@ -56,7 +56,8 @@ try{
   hosted=true;lang='en';codex='signed_out';posted=[];
   await page.goto(base+'/#connections=add');
   const tile=box(page).locator('[data-codex-signin]');await tile.waitFor({timeout:10000});
-  assert.match(await tile.innerText(),/Codex[\s\S]*Coding to-dos on your ChatGPT plan[\s\S]*Signed out/);
+  // a phone's tiles leave what a source brings in to its sheet
+  assert.match(await tile.innerText(),width>560?/Codex[\s\S]*Coding to-dos on your ChatGPT plan[\s\S]*Signed out/:/Codex[\s\S]*Signed out/);
   if(width===1440&&height===900)await shot(page,`codex-add-list-${tag}`);
   await tile.click();
   assert.equal(await box(page).locator('h3').innerText(),'Codex');
@@ -118,7 +119,7 @@ try{
   await page.waitForFunction(()=>document.documentElement.lang==='nl');
   const nlTile=box(page).locator('[data-codex-signin]');await nlTile.waitFor({timeout:10000});
   await page.waitForFunction(()=>/Uitgelogd/.test(document.querySelector('[data-codex-signin]')?.innerText||''));
-  assert.match(await nlTile.innerText(),/Codeer-to-do's op je ChatGPT-abonnement/);
+  if(width>560)assert.match(await nlTile.innerText(),/Codeer-to-do's op je ChatGPT-abonnement/);
   await nlTile.click();
   await box(page).getByRole('button',{name:'Code ophalen'}).waitFor();
   await box(page).getByText('Draag codeer-to-do\'s over aan Codex, op je ChatGPT-abonnement.',{exact:false}).waitFor();
