@@ -47,6 +47,7 @@ OLD_JOB_AFTER = 7  # days a routine from an OpenClaw job runs before it offers t
 RUN_STATES = ('running', 'ready', 'nothing', 'failed')
 DEFAULT_AT = '08:00'
 NAME_MAX = 80
+PLACEHOLDER_MAX = 28  # a name made from the words until the first run names it: a card's title line on a phone
 INSTRUCTIONS_MAX = 2000
 RESULT_MAX = 4000
 WHY_MAX = 200
@@ -78,6 +79,10 @@ def ensure(db):
     for column in ('trial', 'used', 'steps', 'data'):  # trial: Try it's words; used: skills it followed; steps it ran with, data: Get data's output
         if column not in have:
             db.execute(f'ALTER TABLE routine_runs ADD COLUMN {column} TEXT')
+    for r in db.execute("SELECT id,name,instructions FROM routines WHERE state!='stopped'").fetchall():  # a long placeholder made before gets short
+        short = name_of(r[2])
+        if short and r[1] != short and r[1] == _long_name_of(r[2]):
+            db.execute('UPDATE routines SET name=? WHERE id=?', (short, r[0]))
 
 
 # --- words -------------------------------------------------------------------------------------------------------------
@@ -132,12 +137,27 @@ def read(text, today):
     return {'rule': got['rule'], 'anchor': got['anchor'], 'at': at or DEFAULT_AT, 'instructions': instructions[:INSTRUCTIONS_MAX]}
 
 
+def _first(instructions):
+    return re.split(r'(?<=[.!?])\s', ' '.join(str(instructions or '').split()), maxsplit=1)[0].rstrip('.!?')
+
+
 def name_of(instructions):
-    """A short name from the instructions: their first sentence, at most NAME_MAX characters."""
-    first = re.split(r'(?<=[.!?])\s', ' '.join(str(instructions or '').split()), maxsplit=1)[0].rstrip('.!?')
+    """A routine's name until its first run gives it one: the start of its first sentence, short enough for a phone's
+    row (short_name). The run that names it recognizes it as this placeholder (needs_name)."""
+    return short_name(_first(instructions), PLACEHOLDER_MAX)
+
+
+def _long_name_of(instructions):
+    """The placeholder before it was short: the first sentence, at most NAME_MAX characters (names made before)."""
+    first = _first(instructions)
     if len(first) > NAME_MAX:
         first = first[:NAME_MAX - 1].rsplit(' ', 1)[0] + '…'
     return first[:1].upper() + first[1:]
+
+
+def placeholder(row):
+    """Its name is still the one made from its words, never one a run or the owner gave it."""
+    return row['name'] in (name_of(row['instructions']), _long_name_of(row['instructions']))
 
 
 # --- dates -------------------------------------------------------------------------------------------------------------
@@ -179,11 +199,11 @@ def _full(db):
         raise ValueError('You have 20 routines. Stop one before you add another.')
 
 
-def short_name(text):
-    """A name that fits a phone's row: at most SHORT_MAX characters, cut at a word."""
+def short_name(text, most=SHORT_MAX):
+    """A name that fits a phone's row: at most SHORT_MAX characters (most), cut at a word."""
     words = ' '.join(str(text or '').split()).strip(' .,:;-')
-    if len(words) > SHORT_MAX:
-        words = words[:SHORT_MAX + 1].rsplit(' ', 1)[0] if ' ' in words[:SHORT_MAX + 1] else words[:SHORT_MAX]
+    if len(words) > most:
+        words = words[:most + 1].rsplit(' ', 1)[0] if ' ' in words[:most + 1] else words[:most]
     words = words.strip(' .,:;-&')
     return words[:1].upper() + words[1:]
 
@@ -270,16 +290,16 @@ def change_instructions(db, routine_id, instructions, stamp, steps=False):
     row = get(db, routine_id)
     steps = steps_of(row) if steps is False else clean_steps(steps)
     instructions = _words(instructions, steps)
-    placeholder = row['name'] == name_of(row['instructions'])
-    name = (name_of(instructions) or row['name']) if placeholder else row['name']
+    made = placeholder(row)
+    name = (name_of(instructions) or row['name']) if made else row['name']
     db.execute('UPDATE routines SET name=?,instructions=?,steps=?,version=version+1,name_check=?,updated_at=? WHERE id=?',
-               (name[:NAME_MAX], instructions, json.dumps(steps) if steps else None, None if placeholder else '1', stamp, row['id']))
+               (name[:NAME_MAX], instructions, json.dumps(steps) if steps else None, None if made else '1', stamp, row['id']))
 
 
 def needs_name(row):
     """A routine the owner made has the start of its words as a placeholder name until its first run gives it a short
     one (no model call of its own); after Edit, the next run keeps its name unless it no longer fits."""
-    return row['name_check'] == '1' or row['name'] == name_of(row['instructions'])
+    return row['name_check'] == '1' or placeholder(row)
 
 
 def named(db, routine_id, name, stamp):
