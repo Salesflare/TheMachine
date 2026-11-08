@@ -3,21 +3,27 @@ and the Find my skills turn's report. Moved out of assistant.App's action as is.
 (APP_MIXINS)."""
 import datetime as dt
 import json
+import re
+import uuid
 
 import fleet_learnings
 import learning_loop
-from machine.config import LOG
+from machine.config import LOG, WORKSPACE
 from machine.prompts.profile import (import_prompt, orgs_prompt, profile_prompt, PROFILE_ROOM, roles_prompt,
                                      share_history_prompt, skills_find_prompt, voices_prompt)
-from machine.store.profile import PROFILE_SESSION_PREFIX
+from machine.store.profile import PROFILE_SESSION_PREFIX, SHARE_HISTORY_BATCH, SHARE_HISTORY_PAGE
 from machine.store.review import REVIEW_TERMINAL
 import team_learnings
-from timeutil import now
+from timeutil import local_tz, now
 
 SKILLS_SESSION_PREFIX = 'agent:main:assistant-review-skills-'  # the Find my skills turn: the browser, read-only, and its report
 
 
 PROFILE_SECONDS = 900
+
+
+# The first profile on an install without the interactive installer (hosted): tries, and the wait between them.
+FIRST_PROFILE_TRIES, FIRST_PROFILE_RETRY_SECONDS = 3, 6 * 3600
 
 
 class ProfileApp:
@@ -136,3 +142,126 @@ class ProfileApp:
         if run.get('auto') and run.get('kind') == 'profile':  # saves only once the run is ok
             self.first_profile_save(run['run_id'])
         return result
+
+    def owner_first_names(self):
+        """The owner's first name, as the config and USER.md give it ("- Name: …", "# USER.md - About …"): for
+        Learning's older why lines that name them (learning_loop.to_you)."""
+        names = [str(self.config.get('owner_name') or '')]
+        try:
+            text = self.user_md().read_text(encoding='utf-8')[:4000]
+            names += re.findall(r'(?m)^- Name: *(.+)$', text) + re.findall(r'(?m)^# USER\.md - About (.+)$', text)
+        except (OSError, ValueError):
+            pass
+        return sorted({n.split()[0] for n in names if n.split() and re.fullmatch(r"[^\W\d_][\w'’-]*", n.split()[0]) and n.split()[0].lower() not in ('me', 'the', 'you')})
+
+    def learning_changes_shown(self, changes):
+        """Learning, Changes: an older why line that names the owner reads "You corrected …" (the stored one stays)."""
+        names = self.owner_first_names()
+        return [{**c, 'why': learning_loop.to_you(c.get('why'), names)} for c in changes]
+
+    def owner_role(self):
+        """The Role line of USER.md ('' when there is none): only for Help's guess at how technical the owner is."""
+        try:
+            found = re.search(r'(?m)^- Role: *(.+)$', self.user_md().read_text(encoding='utf-8'))
+        except (OSError, ValueError):
+            return ''
+        return found[1].strip()[:200] if found else ''
+
+    def user_md(self):
+        import onboarding
+        return onboarding.user_md_path(self.config.get('openclaw_workspace') or WORKSPACE)
+
+    @staticmethod
+    def user_md_says_how(path):
+        """OpenClaw's own USER.md template has no Tone line either, yet says nothing about the owner."""
+        import onboarding
+        return not onboarding.user_md_is_template(path) and onboarding.says_how_you_write(path)
+
+    def first_profile_step(self, current=None):
+        """Installs set up without the interactive installer (hosted Machines) never ran `assistant profile`, so reviews
+        and drafts knew neither who the owner is nor how they write. Once reviews are on and USER.md still says nothing
+        about how they write, one profile turn starts by itself (and names the closest people after it). Tried a few
+        times at most; `first_profile: false` in the config turns it off."""
+        import onboarding
+        if not (self.config.get('review_worker') or {}).get('enabled') or self.config.get('first_profile') is False:
+            return None
+        current = current or dt.datetime.fromisoformat(now())
+        if getattr(self, '_first_profile_wait', None) and self._first_profile_wait > current:
+            return None
+        path = self.user_md()
+        if self.user_md_says_how(path):
+            return None
+        with self.store.connect() as db:
+            runs = db.execute("SELECT status,auto,finished_at FROM profile_runs WHERE kind='profile' ORDER BY started_at").fetchall()
+        if (any(not r['auto'] or r['status'] in ('starting', 'running', 'ok') for r in runs) or len(runs) >= FIRST_PROFILE_TRIES
+                or (runs and (runs[-1]['finished_at'] or '') > (current - dt.timedelta(seconds=FIRST_PROFILE_RETRY_SECONDS)).isoformat())):
+            return None  # the owner ran their own, one is running or done, or tried enough
+        try:
+            text = path.read_text() if path.exists() else onboarding.starter_user_md(self.config)
+        except OSError:
+            return None
+        if onboarding.user_md_is_template(path):
+            text = text.rstrip() + '\n\n' + onboarding.starter_user_md(self.config)
+        try:
+            return self.store.profile_start(room=max(onboarding.profile_room(text), 0), auto=True)
+        except ValueError:  # too few of the owner's own messages yet: look again later
+            self._first_profile_wait = current + dt.timedelta(seconds=FIRST_PROFILE_RETRY_SECONDS)
+            return None
+
+    def share_history_step(self):
+        """The Shared Graph's history pass, when reviews are on: Work client threads from before (as far back as the
+        Machine has mail) go through the same review labels, a batch per turn, one turn at a time, until none is left.
+        Stops after three turns in a row that judged nothing."""
+        if not (self.config.get('review_worker') or {}).get('enabled') or not getattr(self, 'fleet', None):
+            return None
+        with self.store.connect() as db:
+            if db.execute("SELECT 1 FROM profile_runs WHERE status IN ('starting','running') LIMIT 1").fetchone():
+                return None  # one turn at a time
+            runs = db.execute("SELECT status,error,finished_at FROM profile_runs WHERE kind='share' ORDER BY started_at DESC LIMIT 3").fetchall()
+        if len(runs) == 3 and all(r['status'] == 'error' for r in runs):
+            return None
+        if runs and runs[0]['finished_at'] and runs[0]['finished_at'] > (dt.datetime.fromisoformat(now()) - dt.timedelta(minutes=10)).isoformat():
+            return None
+        threads = self.fleet.graph_unjudged(SHARE_HISTORY_BATCH)
+        if not threads:
+            return None
+        run_id, started = uuid.uuid4().hex, now()
+        with self.store.connect() as db:
+            db.execute("INSERT INTO profile_runs(run_id,status,started_at,updated_at,evidence,kind,auto) VALUES(?,'starting',?,?,?,'share',1)",
+                       (run_id, started, started, json.dumps({'threads': threads, 'page_size': SHARE_HISTORY_PAGE})))
+        return {'run_id': run_id, 'threads': len(threads)}
+
+    def orgs_backfill_step(self):
+        """Once per install, when reviews are on: one organizations turn over the people already in the graph, from
+        the signals already stored. Later people get theirs from reviews. Retried when OpenClaw couldn't start it."""
+        if not (self.config.get('review_worker') or {}).get('enabled'):
+            return None
+        with self.store.connect() as db:
+            if db.execute("SELECT 1 FROM profile_runs WHERE status IN ('starting','running') LIMIT 1").fetchone():
+                return None  # one turn at a time: the owner's own profile or roles first
+            runs = db.execute("SELECT status,error FROM profile_runs WHERE kind='orgs'").fetchall()
+            if not db.execute("SELECT 1 FROM graph_state").fetchone():
+                return None  # no graph yet
+        if any(r['status'] == 'ok' or r['error'] != 'openclaw_unavailable' for r in runs) or len(runs) >= 3:
+            return None
+        return self.store.orgs_start(auto=True)
+
+    def first_profile_save(self, run_id):
+        """The first profile's draft goes into USER.md as its own section (marked, so the owner can edit or delete
+        it), never over anything that already says how the owner writes."""
+        import onboarding
+        with self.store.connect() as db:
+            row = db.execute("SELECT draft FROM profile_runs WHERE run_id=? AND status='ok'", (run_id,)).fetchone()
+        path = self.user_md()
+        if not row or not row['draft'] or self.user_md_says_how(path):
+            return False
+        text = path.read_text() if path.exists() else onboarding.starter_user_md(self.config)
+        if onboarding.user_md_is_template(path):
+            text = text.rstrip() + '\n\n' + onboarding.starter_user_md(self.config)
+        merged, _ = onboarding.fit_profile(text, json.loads(row['draft']), dt.datetime.now(local_tz()).date().isoformat())
+        if not merged:
+            return False
+        path.parent.mkdir(parents=True, exist_ok=True)
+        onboarding.write_private(path, merged)
+        LOG.info('first profile saved to USER.md chars=%s', len(merged))
+        return True

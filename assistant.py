@@ -1032,6 +1032,8 @@ from machine.app.browser import (
     BrowserApp,
 )
 from machine.app.profile import (
+    FIRST_PROFILE_RETRY_SECONDS,
+    FIRST_PROFILE_TRIES,
     PROFILE_SECONDS,
     ProfileApp,
     SKILLS_SESSION_PREFIX,
@@ -1230,8 +1232,6 @@ def metadata_page(row, offset):
             return result
         length = int(length * 0.7)
 
-# The first profile on an install without the interactive installer (hosted): tries, and the wait between them.
-FIRST_PROFILE_TRIES, FIRST_PROFILE_RETRY_SECONDS = 3, 6 * 3600
 # A run that saved its result or blocker usually still writes its last reply: it gets this long to end by itself
 # before it is stopped, so its record says how it ended (ok) instead of a stop's lost/aborted.
 PREPARATION_SETTLE_SECONDS = 120
@@ -2790,50 +2790,6 @@ class App(*APP_MIXINS):
             self.__dict__.setdefault('collector_reads', {})[account['id']] = time.time()  # a read ended (Check now waits for it)
             self.collector_rest(account['id'], delay)
 
-    # -- notifications (notify.py): Settings, Notifications and the morning digest
-    def notify_on(self, kind, channel):
-        with self.store.connect() as db:
-            return notify.allowed(db, kind, channel)
-
-    def notify_mail_target(self):
-        """(url, token) for the digest email through the control plane, or None (not hosted or paired)."""
-        return cloud_target(self.config)
-
-    def notify_open(self, ref):
-        """Whether a held notification's to-do or Fleet question still waits for the owner."""
-        what, _, key = ref.partition(':')
-        with self.store.connect() as db:
-            if what == 'suggestion':
-                row = db.execute('SELECT s.status,s.handled_hint,s.outcome,p.status prep FROM suggestions s LEFT JOIN preparations p ON p.suggestion_id=s.id '
-                                 'WHERE s.id=?', (key,)).fetchone()
-                return bool(row) and not looks_done(dict(row)) and not waits_on_others(dict(row)) and (row['status'] in ('pending', 'prepared', 'instructions')
-                                                                  or (row['status'] == 'accepted' and row['prep'] == 'blocked'))
-            if what == 'fleet':
-                try:
-                    return bool(db.execute("SELECT 1 FROM fleet_in WHERE id=? AND status='waiting'", (key,)).fetchone())
-                except sqlite3.OperationalError:
-                    return False
-        return True
-
-    def notify_view(self):
-        with self.store.connect() as db:
-            prefs = notify.prefs(db)
-            devices = db.execute('SELECT count(*) FROM push_subscriptions').fetchone()[0]
-            phones = notify.app_devices(db)  # the mobile app's phones count as devices too, and are listed to remove
-        return {'prefs': prefs, 'telegram': telegram_on(self.config), 'email': mail_ready(self.config),
-                'push_devices': devices + len(phones), 'app_devices': phones,
-                'app_push_ready': bool(cloud_target(self.config)), 'phone_app': phone_app(self.config),
-                'push_ready': bool(self.config.get('dashboard_host')), 'digest_at': self.config.get('digest_at', '08:30'),
-                'weekly_recap': self.recap_switch_view()}
-
-    def waiting_handoffs_text(self):
-        """Teammates' handoffs waiting for the owner, for the review (silent acceptance); nothing when off the Network."""
-        try:
-            return self.fleet.waiting_handoffs_text() if getattr(self, 'fleet', None) else ''
-        except Exception as error:  # the review goes on without them
-            LOG.warning('waiting handoffs error=%s', type(error).__name__)
-            return ''
-
     def split_notes_text(self):
         """Proposed follow-up splits whose meeting has notes to read, for the review; nothing when off the Network."""
         try:
@@ -3053,50 +3009,6 @@ class App(*APP_MIXINS):
             connected = username in friends or network.in_my_fleet(network.fleet_mates(), username)
         return {'card_id': card_id, 'from': {'name': name, 'username': username}, 'can_connect': bool(network and username and not connected)}
 
-    def skills_find_start(self, token, items, sites=None, more=False):
-        """Find my skills on the service: reads the owner's own skills from claude.ai and chatgpt.com (`sites`: only
-        those) in the Machine's own browser, then a turn judges which listed skills would help with this Machine's
-        actual work. One at a time. `more`: looking again after the owner signed in to one."""
-        with self.store.connect() as db:
-            if db.execute("SELECT 1 FROM profile_runs WHERE status IN ('starting','running')").fetchone():
-                return None  # another turn of this kind is on; the list still shows what is on this computer
-            since = (dt.datetime.fromisoformat(now()) - dt.timedelta(days=30)).isoformat()
-            cards = [r[0] for r in db.execute('SELECT title FROM suggestions WHERE created_at>? ORDER BY created_at DESC LIMIT 40', (since,))]
-            run_id, started = uuid.uuid4().hex, now()
-            evidence = {'token': token, 'cards': cards, 'sites': [s for s in (sites or SKILLS_SITES) if s in SKILLS_SITES], 'more': bool(more),
-                        'sources': sorted({str(a.get('service') or '') for a in self.config.get('accounts', []) if a.get('service')}),
-                        'skills': sorted(self.skills.mine())[:60]}
-            db.execute("INSERT INTO profile_runs(run_id,status,started_at,updated_at,evidence,kind) VALUES(?,'starting',?,?,?,'skills')",
-                       (run_id, started, started, json.dumps(evidence)))
-        return run_id
-
-    def skills_signin(self, site):
-        """Sign in to ChatGPT or claude.ai for Find my skills: its sign-in page in front in the Machine's browser, for
-        the dashboard's sign-in dialog. Nothing is typed here."""
-        if site not in SKILLS_SIGNIN:
-            raise ValueError('Which account?')
-        try:
-            base = browser_login.endpoints(self.config)[0]
-            tab = browser_login.browser_cdp.open_tab(base, SKILLS_SIGNIN[site])
-        except (browser_login.browser_cdp.CdpError, OSError, IndexError):
-            raise ValueError('I couldn’t open the sign-in page in the browser') from None
-        self.__dict__.setdefault('skills_signin_tabs', {})[site] = tab
-        try:
-            browser_viewer.focus(SKILLS_SIGNIN[site], base)
-        except (ValueError, OSError):
-            pass
-        return {'opened': True, 'site': SKILLS_SITES[site], 'view': browser_link(self.config)}
-
-    def skills_found(self, args):
-        run_id = str(args.get('run') or '')
-        with self.store.connect() as db:
-            run = db.execute("SELECT evidence FROM profile_runs WHERE run_id=? AND kind='skills' AND status IN ('starting','running')", (run_id,)).fetchone()
-            if not run:
-                raise ValueError('This Find my skills run is no longer active')
-            db.execute('UPDATE profile_runs SET draft=?,updated_at=? WHERE run_id=?', (json.dumps({'reported': True}), now(), run_id))
-        token = json.loads(run['evidence'])['token']
-        return self.skills.importer.report(token, args.get('found'), args.get('recommended'), args.get('browser'))
-
     def is_work(self, account_ids):
         if isinstance(account_ids, str):
             account_ids = json.loads(account_ids or '[]')
@@ -3106,31 +3018,6 @@ class App(*APP_MIXINS):
         with self.store.connect() as db:
             row = db.execute('SELECT account_ids FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
         return bool(row) and self.is_work(row['account_ids'])
-
-    def feedback_prompt_safe(self,request_id=None):
-        try:self.feedback_prompt_step(request_id=request_id)
-        except Exception as error:LOG.error('Change prompt delivery error=%s',type(error).__name__)
-
-    def prompt_receipt_dir(self):
-        return Path(self.config.get('prompt_receipts',str(Path.home()/'.local/share/personal-assistant/prompt-receipts')))
-
-    def save_prompt_receipt(self,row,message_id):
-        folder=self.prompt_receipt_dir()
-        folder.mkdir(parents=True,exist_ok=True,mode=0o700)
-        dest=folder/(hashlib.sha256(row['request_id'].encode()).hexdigest()+'.json')
-        temp=dest.with_suffix('.tmp')
-        with temp.open('w') as stream:
-            os.chmod(temp,0o600);json.dump({'messageId':message_id},stream);stream.flush();os.fsync(stream.fileno())
-        temp.replace(dest)
-
-    def prompt_receipt_file(self,row):
-        folder=self.prompt_receipt_dir()
-        path=folder/(hashlib.sha256(row['request_id'].encode()).hexdigest()+'.json')
-        try:
-            receipt=json.loads(path.read_text())
-            if re.fullmatch(r'\d+',str(receipt.get('messageId',''))):return str(receipt['messageId'])
-        except (OSError,ValueError):pass
-        return None
 
     def delivery_worker(self):
         while not self.stop.wait(10):
@@ -3682,58 +3569,6 @@ class App(*APP_MIXINS):
         view['reconnect'] = session.get('account_id')  # the account signing in again, if that is what this is
         return view
 
-    def peek_target(self, job_id):
-        """(DevTools address, target ID) of the tab a running preparation is on now (peek_tab), in the browser this
-        install's DevTools address points at (loopback only); None when it uses another browser or none."""
-        with self.store.connect() as db:
-            tab = peek_tab(db, job_id)
-        base = (browser_login.endpoints(self.config) or [None])[0]
-        if not tab or not base or urllib.parse.urlsplit(base).port != tab[1]:
-            return None
-        return base, tab[0]
-
-    def browser_now(self):
-        """What this Machine's own browser is doing, for the note in its viewer and its Stop (in the viewer and the
-        dashboard's Browser pane): the running tasks that use it (to-do ID, title and latest step), the one on the tab
-        in front first, and the ones waiting there for the owner to sign in (title and site). Nothing else."""
-        with self.store.connect() as db:
-            rows = db.execute("SELECT p.job_id,p.session_job_id,p.suggestion_id,p.status,p.reason,s.title FROM preparations p JOIN suggestions s ON s.id=p.suggestion_id "
-                              "WHERE p.status IN ('starting','running','blocked') ORDER BY p.updated_at DESC LIMIT 20").fetchall()
-            waits = {r['job_id']: browser_wait(db, r['job_id'], r['status'], reason=r['reason']) for r in rows if r['status'] == 'blocked'}
-            try:
-                used = {r['job_id'] for r in rows if r['status'] != 'blocked' and db.execute(
-                    "SELECT 1 FROM preparation_calls WHERE job_id=? AND tool='browser' LIMIT 1", (r['job_id'],)).fetchone()}
-            except sqlite3.OperationalError:
-                used = set()
-            tabs = {j: run_tab(db, j) for j in used} if len(used) > 1 else {}
-        front = self.front_tab(tabs) if tabs else None
-        working, waiting = [], []
-        for r in rows:
-            title = ' '.join(str(r['title'] or '').split())[:120]
-            if r['status'] == 'blocked':
-                wait = waits.get(r['job_id'])
-                if wait and wait['sign_in']:
-                    waiting.append({'title': title, 'site': signin_name(r['reason'], wait['page'])})
-            elif r['job_id'] in used:  # a run that has used the browser counts until it ends, so the note doesn't flicker
-                steps = preparation_steps(r['session_job_id'] or r['job_id'], self.config.get('agent_db'), 1)
-                item = {'id': r['suggestion_id'], 'title': title, 'step': steps[-1]['title'] if steps else None}
-                working.insert(0, item) if front and front == tabs.get(r['job_id']) else working.append(item)
-        return {'working': working[:3], 'waiting': waiting[:3]}
-
-    def front_tab(self, tabs):
-        """Which of these runs' tabs (job ID: (target ID, port)) the browser shows now: the one whose page is visible,
-        read over DevTools without bringing anything to the front. None when none is, or the browser can't say."""
-        base = (browser_login.endpoints(self.config) or [None])[0]
-        port = urllib.parse.urlsplit(base).port if base else None
-        for tab in dict.fromkeys(t for t in tabs.values() if t and t[1] == port):
-            try:
-                with browser_login.browser_cdp.Session(base, tab[0], timeout=2) as session:
-                    if session.call('Runtime.evaluate', {'expression': 'document.visibilityState', 'returnByValue': True})['result'].get('value') == 'visible':
-                        return tab
-            except (browser_login.browser_cdp.CdpError, OSError, KeyError, TypeError, AttributeError, ValueError):
-                continue
-        return None
-
     def expire_step(self, every=30):
         """To-dos whose moment passed close by themselves (Store.expire_passed), about every half minute; Intercom to-dos a
         teammate took (Store.close_taken_intercom), about every five minutes."""
@@ -3744,205 +3579,6 @@ class App(*APP_MIXINS):
         if time.monotonic() - self.__dict__.get('intercom_swept', -300) >= 300:  # a teammate took it: within five minutes
             self.intercom_swept = time.monotonic()
             self.store.close_taken_intercom()
-
-    def seal_attachments(self, every=60):
-        """Email attachments that ended runs took are sealed in place and the runs' readable copies removed
-        (mail_attachments.py). The first time after a start covers every earlier run; with protection off, sealed
-        attachments are opened again instead."""
-        last = self.__dict__.get('attachments_swept')
-        if last and time.monotonic() - last[0] < every:
-            return
-        started, store = now(), next_actions.attachment_store(self.config)
-        if not last and not self.store.protected and (opened := mail_attachments.open_all(self.config, store)):
-            LOG.info('email attachments opened: %s', opened)
-        if (sealed := mail_attachments.sweep(self.store.connect, self.config, since=last[1] if last else None, store=store)):
-            LOG.info('email attachments sealed: %s', sealed)
-        self.attachments_swept = (time.monotonic(), started)
-
-    def flag_browser_waits(self):
-        """A sent card is redrawn once when its running preparation starts waiting on the browser, so it says so and,
-        with a viewer link, gets its Open the browser button. A blocked one is redrawn anyway."""
-        flagged = self.__dict__.setdefault('browser_flagged', set())
-        with self.store.connect() as db:
-            # A blocked sign-in is redrawn once too (once per start), so a card from before gets its Sign in button.
-            for job in db.execute("SELECT job_id,suggestion_id,status,reason FROM preparations WHERE status IN ('starting','running','blocked')").fetchall():
-                if job['job_id'] in flagged or (job['status'] == 'blocked' and not signin_handoff(job['reason'])) or not browser_wait(db, job['job_id'], job['status'], reason=job['reason']):
-                    continue
-                flagged.add(job['job_id'])
-                db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL', (job['suggestion_id'],))
-
-    def signin_waits(self):
-        """Blocked preparations of open tasks that wait on the owner to sign in: [(suggestion_id, job_id, page)]."""
-        found = []
-        with self.store.connect() as db:
-            for job in db.execute("SELECT p.suggestion_id,p.job_id,p.reason FROM preparations p JOIN suggestions s ON s.id=p.suggestion_id "
-                                  "WHERE p.status='blocked' AND s.status IN ('accepted','instructions')").fetchall():
-                waiting = signin_handoff(job['reason']) and browser_wait(db, job['job_id'], 'blocked', reason=job['reason'])
-                if waiting:
-                    found.append((job['suggestion_id'], job['job_id'], waiting.get('page')))
-        return found
-
-    def signin_reason(self, suggestion_id):
-        with self.store.connect() as db:
-            row = db.execute("SELECT reason FROM preparations WHERE suggestion_id=? AND status='blocked'", (suggestion_id,)).fetchone()
-        return row[0] if row else None
-
-    def signin_tabs(self):
-        """The shared browser's open pages, [{id, url}] (DevTools on loopback only)."""
-        base = browser_login.endpoints(self.config)[0]
-        return [{'id': t.get('id'), 'url': t.get('url') or ''} for t in browser_login.browser_cdp._http(base, '/json/list', timeout=3) if t.get('type') == 'page']
-
-    def signin_open(self, suggestion_id):
-        """The sign-in dialog for a task: its sign-in page in front in the shared browser, reopened from the address
-        its own run left off at when that tab is gone. Returns what the dialog shows: {state, site, kind, view}."""
-        page = self.signin_page(suggestion_id)
-        view = browser_link(self.config)
-        if not page:
-            return {'state': 'unknown', 'site': None, 'kind': None, 'view': view}
-        reason = self.signin_reason(suggestion_id)
-        opened = self.__dict__.setdefault('signin_opened', {})
-        try:
-            tabs = self.signin_tabs()
-        except (browser_login.browser_cdp.CdpError, OSError, TypeError, AttributeError):
-            raise ValueError('I couldn’t reach the browser on this computer') from None
-        mine = [t for t in tabs if t['id'] == opened.get(suggestion_id)] + [t for t in tabs if same_site(t['url'], page)]
-        if mine:  # followed from here on, also through an identity provider on another host
-            state, url, opened[suggestion_id] = 'open', mine[0]['url'], mine[0]['id']
-        else:
-            try:
-                opened[suggestion_id] = browser_login.browser_cdp.open_tab(browser_login.endpoints(self.config)[0], page)
-            except (browser_login.browser_cdp.CdpError, OSError):
-                raise ValueError('I couldn’t open the sign-in page in the browser') from None
-            state, url = 'opened', page
-        try:
-            browser_viewer.focus(url, browser_login.endpoints(self.config)[0])
-        except (ValueError, OSError):
-            pass
-        return {'state': state, 'site': signin_name(reason, page), 'kind': signin_kind(reason, [url]), 'view': view}
-
-    def browser_show(self, suggestion_id):
-        """View in browser: the page a task's own run worked on, in front in the Machine's browser (its own tab, still as
-        the run left it), else reopened there from the address the run recorded. Never the owner's own browser and
-        never another task's tab. Returns {shown, opened, site, view}: `view` is the browser's viewer, when there is one."""
-        with self.store.connect() as db:
-            page = task_page(db, suggestion_id)
-        view = browser_link(self.config)
-        if not page:
-            return {'shown': False, 'unknown': True, 'view': view}
-        base = browser_login.endpoints(self.config)[0]
-        site = browser_login.site(urllib.parse.urlsplit(page['url']).hostname)
-        try:
-            tabs = self.signin_tabs()
-        except (browser_login.browser_cdp.CdpError, OSError, TypeError, AttributeError):
-            return {'shown': False, 'site': site, 'view': view, 'error': 'I couldn’t reach the browser on this computer'}
-        same_port = page['target'] and urllib.parse.urlsplit(base).port == page['port']
-        tab = (next((t for t in tabs if same_port and t['id'] == page['target']), None)
-               or next((t for t in tabs if t['url'] == page['url']), None))
-        opened = False
-        if not tab:  # the tab is gone: the same address again, in the Machine's browser
-            try:
-                tab = {'id': browser_login.browser_cdp.open_tab(base, page['url']), 'url': page['url']}
-            except (browser_login.browser_cdp.CdpError, OSError):
-                return {'shown': False, 'site': site, 'view': view, 'error': 'I couldn’t open that page in the browser'}
-            opened = True
-        try:
-            shown = browser_viewer.focus(tab['url'], base, target=tab['id']) is not None
-        except (ValueError, OSError):
-            shown = False
-        return {'shown': shown, 'opened': opened, 'site': site, 'view': view}
-
-    def task_front(self, page):
-        """Open the browser for a preparing card: the tab on the task's page (same site) in front in the Machine's
-        browser, and when the run's tab is gone, that page opened again there, so the owner never lands on a closed or
-        unrelated tab. Returns {shown, opened}."""
-        base = browser_login.endpoints(self.config)[0]
-        opened = None
-        try:
-            if not any(same_site(t['url'], page) for t in self.signin_tabs()):
-                opened = browser_login.browser_cdp.open_tab(base, page)
-        except (browser_login.browser_cdp.CdpError, OSError, TypeError, AttributeError, ValueError):
-            pass  # can't read the tabs: bring what there is to the front, as before
-        try:
-            shown = browser_viewer.focus(page, base, target=opened)
-        except (ValueError, OSError):
-            shown = None
-        return {'shown': shown is not None, 'opened': bool(opened)}
-
-    def signin_page(self, suggestion_id):
-        """The address a task's blocked sign-in waits on, from its own run steps (run_page), or None."""
-        return next((page for task, job, page in self.signin_waits() if task == suggestion_id), None)
-
-    def resume_signed_in(self, host=None, suggestion_id=None, source='signed_in'):
-        """Carries on the tasks blocked on a sign-in that is now done: the one named, and those waiting on `host`'s site.
-        The same as tapping Continue; nothing here signs in or touches the site. Returns the resumed task ids."""
-        resumed = []
-        for task, job, page in self.signin_waits():
-            # Keyed on each task's own site: a sign-in elsewhere never carries a task on, named or not.
-            if not (bool(page) and same_site(host, page) if host else task == suggestion_id):
-                continue
-            try:
-                self.store.decide(task, 'retry', '', 'signed-in:' + job, source)
-            except ValueError as error:
-                LOG.info('sign-in resume skipped suggestion=%s error=%s', task, error)
-                continue
-            LOG.info('sign-in resume suggestion=%s source=%s', task, source)
-            resumed.append(task)
-        return resumed
-
-    def watch_sign_ins(self, every=SIGNIN_WATCH, now=False):
-        """Signing in in the browser itself carries on too. While a task waits on a sign-in, look every `every` seconds
-        at the shared browser (read-only: which sign-in fields show, never what is in them, and the tabs' addresses).
-        The task's site was seen at its sign-in (a form, a sign-in address, its identity provider) and now a tab of it
-        is past that with no form: the owner got in, so carry on, once per blocked run. Also for sign-ins with
-        nothing to type (itsme or eID, a passkey, a captcha, choosing an account). `now`: look at once (the owner just
-        closed the browser). Returns the tasks it carried on."""
-        state = self.__dict__.setdefault('signin_watch', {'next': 0.0, 'seen': set(), 'done': set()})
-        if time.monotonic() < state['next'] and not now:
-            return []
-        state['next'] = time.monotonic() + every
-        waits = [(task, job, page) for task, job, page in self.signin_waits() if page and job not in state['done']]
-        if not waits:
-            state['seen'].clear()
-            return []
-        try:
-            shown = [p['host'] for p in browser_login.pages(self.config)]
-            tabs = self.signin_tabs()
-        except Exception:  # no browser right now: look again later
-            return []
-        resumed = []
-        opened = self.__dict__.get('signin_opened', {})
-        for task, job, page in waits:
-            mine = [t['url'] for t in tabs if t['id'] == opened.get(task) or same_site(t['url'], page)]
-            if any(same_site(host, page) for host in shown) or any(signin_address(url, page) for url in mine):
-                state['seen'].add(job)
-            elif job in state['seen'] and any(same_site(url, page) for url in mine):
-                state['seen'].discard(job)
-                state['done'].add(job)
-                resumed += self.resume_signed_in(suggestion_id=task)
-        return resumed
-
-    def release_finished_browser_lease(self, lease_file=BROWSER_LEASE):
-        """A Do it run holds the browser as `assistant-<first 8 of its job ID>`. Runs can end without
-        releasing it (October 13: one blocked itself on its own lease), so free each such holder whose
-        run is no longer starting or running. Other owners' leases are never touched. The lease is
-        shared since 2026-10-13 (`holders`); the older single `owner` format is still read."""
-        try:
-            state=json.loads(Path(lease_file).read_text())
-            owners=list(state.get('holders') or {})+([state['owner']] if state.get('owner') else [])
-        except (OSError,ValueError,AttributeError,TypeError):return False
-        released=False
-        for owner in owners:
-            match=re.fullmatch(r'assistant-([a-f0-9]{8})',str(owner))
-            if not match:continue
-            with self.store.connect() as db:
-                known=db.execute("SELECT finished_at FROM preparation_runs WHERE substr(job_id,1,8)=?",(match[1],)).fetchall()
-                if not known or any(not r['finished_at'] for r in known):
-                    continue
-            subprocess.run([sys.executable,str(browser_lease_script(self.config)),'release','--owner',owner],
-                           capture_output=True,timeout=30)
-            LOG.info('browser lease released owner=%s (run ended)',owner)
-            released=True
-        return released
 
     def short_window(self):
         """The main model's 5-hour usage window as last read (model_usage): {'used', 'reset'}, or None (an API key, a
@@ -3961,71 +3597,6 @@ class App(*APP_MIXINS):
         with self.store.connect() as db:
             return Store.still_needed_ask(db, current or now(), lambda row: looks_done(row) or waits_on_others(row), local_tz())
 
-    def owner_first_names(self):
-        """The owner's first name, as the config and USER.md give it ("- Name: …", "# USER.md - About …"): for
-        Learning's older why lines that name them (learning_loop.to_you)."""
-        names = [str(self.config.get('owner_name') or '')]
-        try:
-            text = self.user_md().read_text(encoding='utf-8')[:4000]
-            names += re.findall(r'(?m)^- Name: *(.+)$', text) + re.findall(r'(?m)^# USER\.md - About (.+)$', text)
-        except (OSError, ValueError):
-            pass
-        return sorted({n.split()[0] for n in names if n.split() and re.fullmatch(r"[^\W\d_][\w'’-]*", n.split()[0]) and n.split()[0].lower() not in ('me', 'the', 'you')})
-
-    def learning_changes_shown(self, changes):
-        """Learning, Changes: an older why line that names the owner reads "You corrected …" (the stored one stays)."""
-        names = self.owner_first_names()
-        return [{**c, 'why': learning_loop.to_you(c.get('why'), names)} for c in changes]
-
-    def owner_role(self):
-        """The Role line of USER.md ('' when there is none): only for Help's guess at how technical the owner is."""
-        try:
-            found = re.search(r'(?m)^- Role: *(.+)$', self.user_md().read_text(encoding='utf-8'))
-        except (OSError, ValueError):
-            return ''
-        return found[1].strip()[:200] if found else ''
-
-    def user_md(self):
-        import onboarding
-        return onboarding.user_md_path(self.config.get('openclaw_workspace') or WORKSPACE)
-
-    @staticmethod
-    def user_md_says_how(path):
-        """OpenClaw's own USER.md template has no Tone line either, yet says nothing about the owner."""
-        import onboarding
-        return not onboarding.user_md_is_template(path) and onboarding.says_how_you_write(path)
-
-    def first_profile_step(self, current=None):
-        """Installs set up without the interactive installer (hosted Machines) never ran `assistant profile`, so reviews
-        and drafts knew neither who the owner is nor how they write. Once reviews are on and USER.md still says nothing
-        about how they write, one profile turn starts by itself (and names the closest people after it). Tried a few
-        times at most; `first_profile: false` in the config turns it off."""
-        import onboarding
-        if not (self.config.get('review_worker') or {}).get('enabled') or self.config.get('first_profile') is False:
-            return None
-        current = current or dt.datetime.fromisoformat(now())
-        if getattr(self, '_first_profile_wait', None) and self._first_profile_wait > current:
-            return None
-        path = self.user_md()
-        if self.user_md_says_how(path):
-            return None
-        with self.store.connect() as db:
-            runs = db.execute("SELECT status,auto,finished_at FROM profile_runs WHERE kind='profile' ORDER BY started_at").fetchall()
-        if (any(not r['auto'] or r['status'] in ('starting', 'running', 'ok') for r in runs) or len(runs) >= FIRST_PROFILE_TRIES
-                or (runs and (runs[-1]['finished_at'] or '') > (current - dt.timedelta(seconds=FIRST_PROFILE_RETRY_SECONDS)).isoformat())):
-            return None  # the owner ran their own, one is running or done, or tried enough
-        try:
-            text = path.read_text() if path.exists() else onboarding.starter_user_md(self.config)
-        except OSError:
-            return None
-        if onboarding.user_md_is_template(path):
-            text = text.rstrip() + '\n\n' + onboarding.starter_user_md(self.config)
-        try:
-            return self.store.profile_start(room=max(onboarding.profile_room(text), 0), auto=True)
-        except ValueError:  # too few of the owner's own messages yet: look again later
-            self._first_profile_wait = current + dt.timedelta(seconds=FIRST_PROFILE_RETRY_SECONDS)
-            return None
-
     def share_files(self, event_id, part=None):
         """A Work email's attachments for the Shared Graph, read-only (Gmail and Outlook): the list, or (part) one file's
         bytes. Only files: cloud links and attached emails stay where they are."""
@@ -4038,70 +3609,6 @@ class App(*APP_MIXINS):
         if part is None:
             return [a for a in fetch(self, account, row['source_id'])[0] if a.get('kind', 'file') == 'file' and not a.get('inline')]
         return fetch(self, account, row['source_id'], part)[1]
-
-    def share_history_step(self):
-        """The Shared Graph's history pass, when reviews are on: Work client threads from before (as far back as the
-        Machine has mail) go through the same review labels, a batch per turn, one turn at a time, until none is left.
-        Stops after three turns in a row that judged nothing."""
-        if not (self.config.get('review_worker') or {}).get('enabled') or not getattr(self, 'fleet', None):
-            return None
-        with self.store.connect() as db:
-            if db.execute("SELECT 1 FROM profile_runs WHERE status IN ('starting','running') LIMIT 1").fetchone():
-                return None  # one turn at a time
-            runs = db.execute("SELECT status,error,finished_at FROM profile_runs WHERE kind='share' ORDER BY started_at DESC LIMIT 3").fetchall()
-        if len(runs) == 3 and all(r['status'] == 'error' for r in runs):
-            return None
-        if runs and runs[0]['finished_at'] and runs[0]['finished_at'] > (dt.datetime.fromisoformat(now()) - dt.timedelta(minutes=10)).isoformat():
-            return None
-        threads = self.fleet.graph_unjudged(SHARE_HISTORY_BATCH)
-        if not threads:
-            return None
-        run_id, started = uuid.uuid4().hex, now()
-        with self.store.connect() as db:
-            db.execute("INSERT INTO profile_runs(run_id,status,started_at,updated_at,evidence,kind,auto) VALUES(?,'starting',?,?,?,'share',1)",
-                       (run_id, started, started, json.dumps({'threads': threads, 'page_size': SHARE_HISTORY_PAGE})))
-        return {'run_id': run_id, 'threads': len(threads)}
-
-    def orgs_backfill_step(self):
-        """Once per install, when reviews are on: one organizations turn over the people already in the graph, from
-        the signals already stored. Later people get theirs from reviews. Retried when OpenClaw couldn't start it."""
-        if not (self.config.get('review_worker') or {}).get('enabled'):
-            return None
-        with self.store.connect() as db:
-            if db.execute("SELECT 1 FROM profile_runs WHERE status IN ('starting','running') LIMIT 1").fetchone():
-                return None  # one turn at a time: the owner's own profile or roles first
-            runs = db.execute("SELECT status,error FROM profile_runs WHERE kind='orgs'").fetchall()
-            if not db.execute("SELECT 1 FROM graph_state").fetchone():
-                return None  # no graph yet
-        if any(r['status'] == 'ok' or r['error'] != 'openclaw_unavailable' for r in runs) or len(runs) >= 3:
-            return None
-        return self.store.orgs_start(auto=True)
-
-    def first_profile_save(self, run_id):
-        """The first profile's draft goes into USER.md as its own section (marked, so the owner can edit or delete
-        it), never over anything that already says how the owner writes."""
-        import onboarding
-        with self.store.connect() as db:
-            row = db.execute("SELECT draft FROM profile_runs WHERE run_id=? AND status='ok'", (run_id,)).fetchone()
-        path = self.user_md()
-        if not row or not row['draft'] or self.user_md_says_how(path):
-            return False
-        text = path.read_text() if path.exists() else onboarding.starter_user_md(self.config)
-        if onboarding.user_md_is_template(path):
-            text = text.rstrip() + '\n\n' + onboarding.starter_user_md(self.config)
-        merged, _ = onboarding.fit_profile(text, json.loads(row['draft']), dt.datetime.now(local_tz()).date().isoformat())
-        if not merged:
-            return False
-        path.parent.mkdir(parents=True, exist_ok=True)
-        onboarding.write_private(path, merged)
-        LOG.info('first profile saved to USER.md chars=%s', len(merged))
-        return True
-
-    def skills_lease_release(self):
-        try:
-            subprocess.run([sys.executable, str(browser_lease_script(self.config)), 'release', '--owner', SKILLS_LEASE], capture_output=True, timeout=30)
-        except (OSError, subprocess.TimeoutExpired):
-            pass
 
     def follow_config(self):
         """Settings in LIVE_CONFIG that changed in config.json since the last look (the hosting agent's reviews on, while

@@ -3,15 +3,17 @@ notification, and the phone's and browser's push subscriptions. Moved out of ass
 assistant.App (APP_MIXINS)."""
 import datetime as dt
 import re
+import sqlite3
 import subprocess
 
 import clear_pace
 import i18n
 import locale_prefs
 from machine.app.recap import recap_escape, recap_meetings
-from machine.cards import NOT_FOR_OWNER_SQL
+from machine.cards import looks_done, NOT_FOR_OWNER_SQL, waits_on_others
 from machine.config import LOG
-from machine.delivery.push import app_wake, cloud_target, push_reach, push_send, quick_web, waiting_count
+from machine.delivery.push import (app_wake, cloud_target, mail_ready, phone_app, push_reach, push_send, quick_web,
+                                   waiting_count)
 from machine.delivery.telegram import DeliveryNotSent, telegram_request
 from machine.model_usage import telegram_account, telegram_on
 from machine.store.promises import promise_text
@@ -252,3 +254,47 @@ class NotificationsApp:
             notify.app_device_add(db, device, platform, label, now())
         LOG.info('app push registered platform=%s', platform)
         return {'registered': True, 'id': device, 'platform': platform, 'label': label}
+
+    # -- notifications (notify.py): Settings, Notifications and the morning digest
+    def notify_on(self, kind, channel):
+        with self.store.connect() as db:
+            return notify.allowed(db, kind, channel)
+
+    def notify_mail_target(self):
+        """(url, token) for the digest email through the control plane, or None (not hosted or paired)."""
+        return cloud_target(self.config)
+
+    def notify_open(self, ref):
+        """Whether a held notification's to-do or Fleet question still waits for the owner."""
+        what, _, key = ref.partition(':')
+        with self.store.connect() as db:
+            if what == 'suggestion':
+                row = db.execute('SELECT s.status,s.handled_hint,s.outcome,p.status prep FROM suggestions s LEFT JOIN preparations p ON p.suggestion_id=s.id '
+                                 'WHERE s.id=?', (key,)).fetchone()
+                return bool(row) and not looks_done(dict(row)) and not waits_on_others(dict(row)) and (row['status'] in ('pending', 'prepared', 'instructions')
+                                                                  or (row['status'] == 'accepted' and row['prep'] == 'blocked'))
+            if what == 'fleet':
+                try:
+                    return bool(db.execute("SELECT 1 FROM fleet_in WHERE id=? AND status='waiting'", (key,)).fetchone())
+                except sqlite3.OperationalError:
+                    return False
+        return True
+
+    def notify_view(self):
+        with self.store.connect() as db:
+            prefs = notify.prefs(db)
+            devices = db.execute('SELECT count(*) FROM push_subscriptions').fetchone()[0]
+            phones = notify.app_devices(db)  # the mobile app's phones count as devices too, and are listed to remove
+        return {'prefs': prefs, 'telegram': telegram_on(self.config), 'email': mail_ready(self.config),
+                'push_devices': devices + len(phones), 'app_devices': phones,
+                'app_push_ready': bool(cloud_target(self.config)), 'phone_app': phone_app(self.config),
+                'push_ready': bool(self.config.get('dashboard_host')), 'digest_at': self.config.get('digest_at', '08:30'),
+                'weekly_recap': self.recap_switch_view()}
+
+    def waiting_handoffs_text(self):
+        """Teammates' handoffs waiting for the owner, for the review (silent acceptance); nothing when off the Network."""
+        try:
+            return self.fleet.waiting_handoffs_text() if getattr(self, 'fleet', None) else ''
+        except Exception as error:  # the review goes on without them
+            LOG.warning('waiting handoffs error=%s', type(error).__name__)
+            return ''
