@@ -359,6 +359,14 @@ the organization's role.
   closeness 0.3 and up) whose facts, promises or signals are newer than their summary.
 - At most once an hour, up to six of them go to one turn on the background model: at most eight passes a day, each
   person at most once every 20 hours, only when the budget allows.
+- Sooner when a matter with them changed after their summary was written: the review made a to-do on their messages,
+  brought one up to date with a newer message (an escalation, a new deadline) or flagged one as looking handled; a
+  to-do on their messages was closed or reopened; a promise on their messages was made, kept, dropped, answered or
+  got a new date. Those are the review's own calls on meaning, already saved, so no extra model turn decides it and no
+  word list does. Then the person is due again after 2 hours (`EARLY_HOURS`) and goes first in the next pass. A new
+  message the review didn't tie to a matter waits for the 20 hours. Once the eight passes are used, up to four more a
+  day may run with only those people, at most one every 3 hours.
+- Only people a message came from or went to directly; someone in CC waits.
 - Each line must cite its sources (`E` a signal, `F` a fact, `P` a promise). A line without a known source, or one that
   only repeats what the page shows above it, is dropped. A line whose source is deleted disappears.
 - Quality or nothing: a second, short turn checks every line on a rubric (`person_summary.RUBRIC`): a concrete fact

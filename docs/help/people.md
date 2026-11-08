@@ -22,7 +22,7 @@ If a page says **Couldn’t load this page.**, tap **Try again**. If it keeps sa
 
 ## Summary
 
-A few short lines at the top of a person's page: what was decided, asked, planned or promised, with everyone named. The Machine rewrites it when there's something new, only for people you're really in touch with, and checks each line first.
+A few short lines at the top of a person's page: what was decided, asked, planned or promised, with everyone named. The Machine rewrites it when there's something new, only for people you're really in touch with, and checks each line first. Usually once a day; within a few hours when a matter with them changes, like a new deadline or a request taken back.
 
 A vague line is left out; with nothing specific to say, there's no summary. Each line links to where it came from: messages from one day share one date with their count, and open together.
 

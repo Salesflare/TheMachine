@@ -9,6 +9,17 @@ turn on the owner's own model (the cheaper background model when there is one), 
 PASSES_PER_DAY a day, each person at most once a PERSON_HOURS, and only within the usage budget like every
 background turn.
 
+A matter that moved can't wait that long: when someone escalates, takes a request back, settles it or sets a new
+deadline later the same day, the page would still show the older state. So a person is due early, at most once an
+EARLY_HOURS, when a matter with them changed after their summary was written (changes): the review brought a to-do on
+their messages up to date with a newer one, made a new one, or flagged one as looking handled; a to-do on their messages
+was closed or reopened; a promise on their messages was made, kept, dropped, answered or given a new date. Those are
+the review's own judgments on meaning, already saved, so deciding costs no extra model turn and no word list; a new
+message the review didn't tie to a matter waits for the PERSON_HOURS as before. Early ones go first in a pass. A pass
+keeps its limits (PER_PASS, PASS_MINUTES); once the PASSES_PER_DAY are used (often by noon), a pass of only early ones
+may still run, at most EARLY_PASSES a day more and one every EARLY_PASS_HOURS, so a change late in the day isn't left
+for tomorrow.
+
 The turn gets, per person, what the Machine already keeps: their role and organization, the facts the owner told about
 them, the open promises both ways, and their first and latest messages and meetings, each with an id (E12 a signal,
 F3 a fact, P7 a promise). Every line it writes names the ids it comes from; a line without one, or with only ids it
@@ -50,6 +61,11 @@ PER_PASS = 6           # people in one turn
 PASS_MINUTES = 60      # a turn at most this often
 PASSES_PER_DAY = 8
 PERSON_HOURS = 20      # one person rewritten at most this often
+EARLY_HOURS = 2        # ... unless a matter with them changed since (changes): then at most this often
+TODO_CHANGES = ('update', 'complete', 'reject', 'reopen')  # decisions on a to-do: brought up to date, closed, reopened
+PROMISE_CHANGES = ('kept', 'dropped', 'answered', 'due')   # what happened to a promise, as promise_log keeps it
+EARLY_PASSES = 4       # passes of only early ones a day, past PASSES_PER_DAY
+EARLY_PASS_HOURS = 3   # ... spread out: one at most this often
 MAX_LINES, LINE_CHARS = 5, 180
 SIGNALS, CLIP = 8, 260
 KINDS = ('who', 'now', 'open')
@@ -61,6 +77,8 @@ def ensure(db):
     for statement in SCHEMA.split(';'):
         if statement.strip():
             db.execute(statement)
+    if 'extra' not in {c[1] for c in db.execute('PRAGMA table_info(person_summary_runs)')}:
+        db.execute('ALTER TABLE person_summary_runs ADD COLUMN extra INTEGER NOT NULL DEFAULT 0')  # a pass past PASSES_PER_DAY (EARLY_PASSES)
 
 
 def now():
@@ -129,33 +147,83 @@ def newest(db, node_id, info, last):
     return max(stamps) or None
 
 
+def changes(db, since):
+    """{node_id: when} for the people a matter changed with after `since` (an ISO time): a to-do on their messages made,
+    brought up to date by the review (update_card), flagged as looking handled, closed or reopened; a promise on their
+    messages made, kept, dropped, answered or given a new date. Only people a message came from or went to directly, not
+    everyone in CC. The review's own judgments, already saved: no model turn."""
+    stamps = {}  # event id -> newest change on a matter it is evidence for
+
+    def mark(event_id, at):
+        if str(event_id).isdigit() and at and at > stamps.get(int(event_id), ''):
+            stamps[int(event_id)] = at
+    if _table(db, 'suggestions') and _table(db, 'decisions'):
+        hinted = ("UNION ALL SELECT id,json_extract(handled_hint,'$.at') FROM suggestions WHERE handled_hint IS NOT NULL "
+                  "AND json_valid(handled_hint) AND json_extract(handled_hint,'$.at')>? "
+                  if any(c[1] == 'handled_hint' for c in db.execute('PRAGMA table_info(suggestions)')) else '')
+        marks = ','.join('?' for _ in TODO_CHANGES)
+        for r in db.execute('SELECT s.event_ids,max(x.at) at FROM (SELECT id,created_at at FROM suggestions WHERE created_at>? '
+                            f'UNION ALL SELECT suggestion_id,created_at FROM decisions WHERE created_at>? AND choice IN ({marks}) {hinted}) x '
+                            'JOIN suggestions s ON s.id=x.id GROUP BY s.id', (since, since, *TODO_CHANGES, *((since,) if hinted else ()))):
+            try:
+                ids = json.loads(r['event_ids'] or '[]')
+            except ValueError:
+                continue
+            for event_id in ids if isinstance(ids, list) else ():
+                mark(event_id, r['at'])
+    if _table(db, 'promises'):
+        logged = ('UNION ALL SELECT p.event_id,l.at FROM promise_log l JOIN promises p ON p.id=l.promise_id '
+                  f"WHERE l.at>? AND l.kind IN ({','.join('?' for _ in PROMISE_CHANGES)})" if _table(db, 'promise_log') else '')
+        for r in db.execute(f'SELECT event_id,created_at at FROM promises WHERE created_at>? {logged}',
+                            (since, *((since, *PROMISE_CHANGES) if logged else ()))):
+            mark(r['event_id'], r['at'])
+    out, ids = {}, list(stamps)
+    for at in range(0, len(ids), 500):
+        chunk = ids[at:at + 500]
+        for r in db.execute(f"SELECT node_id,event_id FROM graph_events WHERE direct=1 AND event_id IN ({','.join('?' for _ in chunk)})", chunk):
+            if stamps[r['event_id']] > out.get(r['node_id'], ''):
+                out[r['node_id']] = stamps[r['event_id']]
+    return out
+
+
 def due(db, current=None, limit=PER_PASS):
-    """The people whose summary a pass rewrites now ([] when none, or a pass ran too recently or too often today)."""
+    """The people whose summary a pass rewrites now ([] when none, or a pass ran too recently or too often today).
+    Someone a matter changed with since their summary (changes) comes first, also within PERSON_HOURS (EARLY_HOURS).
+    Past PASSES_PER_DAY, only those, each marked 'extra' (start_run counts it against EARLY_PASSES)."""
     current = current or dt.datetime.now(dt.timezone.utc)
     ensure(db)
     last = db.execute('SELECT max(started_at) FROM person_summary_runs').fetchone()[0]
     if last and last > (current - dt.timedelta(minutes=PASS_MINUTES)).isoformat():
         return []
-    if db.execute('SELECT count(*) FROM person_summary_runs WHERE started_at>?', ((current - dt.timedelta(days=1)).isoformat(),)).fetchone()[0] >= PASSES_PER_DAY:
+    extra, regular, last_extra = db.execute('SELECT coalesce(sum(extra=1),0),coalesce(sum(extra=0),0),max(CASE WHEN extra=1 THEN started_at END) '
+                                            'FROM person_summary_runs WHERE started_at>?', ((current - dt.timedelta(days=1)).isoformat(),)).fetchone()
+    full = regular >= PASSES_PER_DAY
+    if full and (extra >= EARLY_PASSES or (last_extra or '') > (current - dt.timedelta(hours=EARLY_PASS_HOURS)).isoformat()):
         return []
     fresh = (current - dt.timedelta(hours=PERSON_HOURS)).isoformat()
-    picked = []
+    soon = (current - dt.timedelta(hours=EARLY_HOURS)).isoformat()
+    moved = changes(db, fresh)
+    early, picked = [], []
     for person in active(db, current):
         row = _row(db, person['id'])
         if row:
             touched = max(row['written_at'] or '', row['proposed_at'] or '')
             if touched > fresh:
+                if touched <= soon and moved.get(person['id'], '') > touched:
+                    early.append({**person, 'extra': True} if full else person)
                 continue
             if row['evidence_at'] and (person['evidence_at'] or '') <= row['evidence_at'] and not gone_sources(db, row):
                 continue
-        picked.append(person)
-        if len(picked) >= limit:
-            break
-    return picked
+        if len(picked) < limit and not full:
+            picked.append(person)
+    return (early + picked)[:limit]
 
 
-def start_run(db, people, current=None):
-    return db.execute("INSERT INTO person_summary_runs(started_at,people,status) VALUES(?,?,'running')", (current or now(), people)).lastrowid
+def start_run(db, people, current=None, extra=False):
+    """A pass begins; extra: one of only early ones past PASSES_PER_DAY (due marks them)."""
+    ensure(db)
+    return db.execute("INSERT INTO person_summary_runs(started_at,people,status,extra) VALUES(?,?,'running',?)",
+                      (current or now(), people, int(bool(extra)))).lastrowid
 
 
 def finish_run(db, run_id, status, error, written):
