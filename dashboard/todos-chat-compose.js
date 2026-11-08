@@ -138,11 +138,15 @@ async function chatSubmit(){const b=$('[data-chat-send]'),input=$('#chat-input')
  const decide=args=>decidePost(s.id,args);
  // Without files a message can wait on the device while offline (decideOrWait); with files it needs the Machine now
  const steps=[...(s.status==='completed'?[{choice:'reopen',feedback:'',decision_id:crypto.randomUUID()}]:[]),{choice:'other',feedback:text,decision_id:'chat-'+crypto.randomUUID()}];
- try{if(!sending.length){const r=await decideOrWait(s.id,steps,'other');if(r?.waiting){input.value='';chatGrow(input);chatDraftKeep(s.id,'');b.disabled=false;chatSendState();paintChat();chatToEnd();return}}
+ // A message without files shows in the chat at once, while the Machine saves it; should it not take it, the message
+ // goes back in the box
+ const mine={kind:'you',text,at:Date.now()},drop=()=>{if(chat?.items?.includes(mine))chat={...chat,items:chat.items.filter(i=>i!==mine)}};
+ if(!sending.length){input.value='';chatGrow(input);chat={...(chat||{}),items:[...(chat?.items||[]),mine]};paintChat();chatToEnd()}
+ try{if(!sending.length){const r=await decideOrWait(s.id,steps,'other');if(r?.waiting){drop();input.value='';chatGrow(input);chatDraftKeep(s.id,'');b.disabled=false;chatSendState();paintChat();chatToEnd();return}}
   else{for(const a of steps.slice(0,-1))await decide(a);await decide({...steps.at(-1),files:sending.map(f=>f.id)})}
   const files=sending.map(f=>({id:f.id,name:f.name,type:f.type,size:f.size}));chatDropFiles();chatTray();chatFileError('');
-  input.value='';chatGrow(input);chatDraftKeep(s.id,'');chat={...(chat||{}),items:[...(chat?.items||[]),{kind:'you',text,at:Date.now(),...(files.length?{files}:{})}],active:true,cursor:null};changing.delete(s.id);await refresh();paintChat();chatToEnd();chatPoll()}
- catch(err){errCaught(err);toast(err.message,true);b.disabled=false}}
+  input.value='';chatGrow(input);chatDraftKeep(s.id,'');drop();chat={...(chat||{}),items:[...(chat?.items||[]),{...mine,...(files.length?{files}:{})}],active:true,cursor:null};changing.delete(s.id);await refresh();paintChat();chatToEnd();chatPoll()}
+ catch(err){errCaught(err);if(!sending.length){drop();const box=$('#chat-input');if(box&&!box.value){box.value=text;chatGrow(box)}paintChat()}toast(err.message,true);b.disabled=false}}
 $('#suggestions').addEventListener('click',async e=>{if(!chatId)return;
  const layout=e.target.closest('.chat-layout');if(e.target===layout&&chatDrawer){chatDrawer=false;layout.classList.remove('drawer');return}
  if(e.target.closest('[data-chat-drawer]')){e.target.closest('details')?.removeAttribute('open');drawerOpen();return}
