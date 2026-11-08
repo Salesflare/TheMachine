@@ -11,13 +11,15 @@ keywords: routine, automation, scheduled, every week, every morning, report
 
 Open **Routines** in the sidebar and say what it should do and when, in one line: "every Monday at 9, sum up my open deals" or "every weekday morning, list the emails I still owe a reply". Then **Add**.
 
-Without a time it runs at 8:00. The time is on your Machine's clock.
+Without a time it runs at 8:00. The time is on your Machine's clock. Its first run gives it a short name.
 
 ## What a routine does
 
 At its time your Machine reads what it needs, like your messages, meetings and the Graph, and puts the result on the Routines page. Each result says **Ready**, **Nothing new** (with why) or **Didn’t work** (with why). A run that ends without a result counts as one that didn't work, never as done.
 
 Routines only read. They don’t send, reply, post or change anything.
+
+Your routines are under **Your routines**, below any suggestions. A long result folds to a short preview; **Show more** opens it.
 
 Each run knows the last result, so it can say what changed since then.
 
@@ -29,7 +31,9 @@ Routines run one at a time and wait when your AI plan's usage is low, like all b
 
 ## Change or stop it
 
-These are in the ⋯ menu on the routine. **Change when** takes a new rhythm in your own words, like "every weekday at 8". **Pause** stops the runs until **Resume**; nothing missed while paused runs afterwards. **Stop** ends a routine for good.
+These are in the ⋯ menu on the routine. **Edit** changes what it does; when it runs and its results so far stay. **Change when** takes a new rhythm in your own words, like "every weekday at 8". Both have **Save** and **Cancel**; on a computer, Esc or a click outside cancels too.
+
+**Pause** stops the runs until **Resume**; paused routines wait under **Paused** at the bottom, and nothing missed while paused runs afterwards. **Stop** ends a routine for good.
 
 ## From your OpenClaw jobs
 

@@ -132,6 +132,27 @@ class Runs(unittest.TestCase):
         self.assertEqual(mine['id'], rid)
         self.assertEqual((mine['runs'][0]['state'], mine['runs'][0]['result'], mine['next_due']), ('ready', '**2 deals** went quiet.', '2026-11-16'))
 
+    def test_the_first_run_names_a_routine_and_edit_keeps_its_name_unless_it_no_longer_fits(self):
+        rid = self.make('every Monday at 9, sum up last week\'s team standup from the chat and the calendar')
+        start = lambda: [s for s in self.sent if s['action'] == 'start'][-1]['message']
+        result = lambda name: self.app.action('routine_result', {'_routine_session': SESSION + self.runs()[-1]['id'], 'text': 'ok', 'name': name}, owner_dashboard=False)
+        self.act('routine_run_now', id=rid); self.app.routines_step()
+        self.assertIn('Also pass name: a short name', start())  # no model call of its own: the run it does anyway
+        result('Weekly team standup')
+        self.assertEqual(self.app.routines_view()['routines'][0]['name'], 'Weekly team')  # at most 18, cut at a word
+        self.answer['status'] = {'status': 'ok'}; self.app.routines_step(); del self.answer['status']
+        self.act('routine_run_now', id=rid); self.app.routines_step()
+        self.assertNotIn('Also pass name', start())
+        result('Something else')  # named already: a run never renames it by itself
+        self.assertEqual(self.app.routines_view()['routines'][0]['name'], 'Weekly team')
+        self.answer['status'] = {'status': 'ok'}; self.app.routines_step(); del self.answer['status']
+        self.act('routine_edit', id=rid, words='Sum up last week\'s team standup and the blockers')
+        self.assertEqual(self.app.routines_view()['routines'][0]['name'], 'Weekly team')  # Edit keeps it
+        self.act('routine_run_now', id=rid); self.app.routines_step()
+        self.assertIn('Its name is "Weekly team": pass it again unless it no longer fits.', start())
+        result('Standup blockers')
+        self.assertEqual(self.app.routines_view()['routines'][0]['name'], 'Standup blockers')
+
     def test_a_run_that_ends_without_a_result_didnt_work(self):
         self.make('every day at 7 tell me what changed in my deals')
         self.now = T(2026, 11, 9, 7, 1)
@@ -192,6 +213,23 @@ class Runs(unittest.TestCase):
         self.assertEqual(self.app.routines_view()['routines'], [])
         with self.assertRaisesRegex(ValueError, 'gone'):
             self.act('routine_run_now', id=rid)
+
+    def test_edit_changes_what_it_does_and_keeps_when_and_its_runs(self):
+        rid = self.make()
+        self.act('routine_run_now', id=rid)
+        before = self.app.routines_view()['routines'][0]
+        with self.assertRaises(ValueError):
+            self.act('routine_edit', owner=False, id=rid, words='Sum up my won deals')
+        with self.assertRaisesRegex(ValueError, 'Say what it should do'):
+            self.act('routine_edit', id=rid, words=' ')
+        self.act('routine_edit', id=rid, words='Sum up my won deals.  And the lost ones')
+        r = self.app.routines_view()['routines'][0]
+        self.assertEqual((r['instructions'], r['name']), ('Sum up my won deals. And the lost ones', 'Sum up my won deals'))
+        self.assertEqual((r['rule'], r['at'], r['next_due'], len(r['runs'])), (before['rule'], before['at'], before['next_due'], 1))
+        with self.store.connect() as db:  # a name of its own stays
+            db.execute("UPDATE routines SET name='Deals'")
+        self.act('routine_edit', id=rid, words='Sum up my open deals')
+        self.assertEqual(self.app.routines_view()['routines'][0]['name'], 'Deals')
 
     def test_a_weekdays_routine_never_starts_on_a_weekend(self):
         self.now = T(2026, 11, 7, 6)  # a Saturday

@@ -1,7 +1,7 @@
 """Routines, the App's part: a domain mixin of App (only assistant.py composes it; docs/code-map.md).
 
-The owner's actions on the Routines page (routine_new, routine_when, routine_state, routine_run_now), its view
-(GET /api/routines), the run's own report (routine_result, from the run's turn only) and the worker that starts each
+The owner's actions on the Routines page (routine_new, routine_edit, routine_when, routine_state, routine_run_now), its
+view (GET /api/routines), the run's own report (routine_result, from the run's turn only) and the worker that starts each
 due run and settles it (routines.py). A run is one background turn in its own session (preparation-run.mjs, kind
 routine) with the review's read-only tools: it reads, it never sends, changes or posts anything. One runs at a time,
 when the usage budget allows, like every background turn.
@@ -46,6 +46,7 @@ class RoutinesApp:
     # action name -> the method that handles it, called as method(name, args, owner_dashboard) (App.action)
     ACTIONS = {
         'routine_accept': 'routine_accept_action',
+        'routine_edit': 'routine_edit_action',
         'routine_new': 'routine_new_action',
         'routine_old_job': 'routine_old_job_action',
         'routine_result': 'routine_result_action',
@@ -99,6 +100,16 @@ class RoutinesApp:
             db.execute('BEGIN IMMEDIATE')
             row = routines.get(db, args.get('id'))
             routines.change_when(db, row['id'], got['rule'], got['anchor'], at or row['at'], now, self.routines_stamp())
+        return self.routines_view(row['id'])
+
+    def routine_edit_action(self, name, args, owner_dashboard):
+        """Edit: what it does, in new words. When it runs and what it found so far stay."""
+        if not owner_dashboard:
+            raise ValueError('Routines are changed by the owner, on the dashboard')
+        with self.routines_lock(), self.store.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            row = routines.get(db, args.get('id'))
+            routines.change_instructions(db, row['id'], args.get('words'), self.routines_stamp())
         return self.routines_view(row['id'])
 
     def routine_state_action(self, name, args, owner_dashboard):
@@ -196,6 +207,8 @@ class RoutinesApp:
             mine = db.execute('SELECT t.* FROM routine_runs r JOIN routines t ON t.id=r.routine_id WHERE r.id=?', (m.group(1),)).fetchone()
             if not mine or mine['state'] != 'sorting':
                 routines.report(db, m.group(1), text=args.get('text'), nothing=args.get('nothing') is True, why=args.get('why'), stamp=stamp)
+                if mine and args.get('name'):
+                    routines.named(db, mine['id'], args.get('name'), stamp)
                 return {'saved': True, 'next': 'End your turn now with: Done.'}
             kind = args.get('kind')
             if kind not in ('routine', 'todo', 'skip'):
@@ -253,8 +266,12 @@ class RoutinesApp:
             'Then call assistant_signals routine_result once, with text: the result itself, short and plain, at most 12 lines, '
             'Markdown bold for what matters, each claim from what you read. Nothing worth showing since last time: '
             'routine_result with nothing: true and why (a few words). Never make anything up; say what you could not read.',
-            f'Write it in {i18n.written_in()}. After routine_result, end the turn with: Done.',
+            f'Write it in {i18n.written_in()}, dates as people write them in that language (like Nov 2), never as '
+            '2026-11-02. After routine_result, end the turn with: Done.',
         ]
+        if routines.needs_name(run):
+            lines.append(f'Also pass name: a short name for this routine, at most {routines.SHORT_MAX} characters, like Weekly '
+                         'standup' + (f'. Its name is "{run["name"]}": pass it again unless it no longer fits.' if run['name_check'] == '1' else '.'))
         if last:
             lines.append(f'The last result ({last["started_at"][:10]}), so you can say what changed:\n{last["result"][:1500]}')
         return '\n'.join(lines)

@@ -52,7 +52,7 @@ def ensure(db):
       CREATE INDEX IF NOT EXISTS routine_runs_routine ON routine_runs(routine_id,started_at);
     ''')
     have = {r[1] for r in db.execute('PRAGMA table_info(routines)')}
-    for column in ('origin', 'accepted_at', 'old_job'):  # added after the first release (#916)
+    for column in ('origin', 'accepted_at', 'old_job', 'name_check'):  # added after the first release (#916; name_check: Edit)
         if column not in have:
             db.execute(f'ALTER TABLE routines ADD COLUMN {column} TEXT')
 
@@ -197,6 +197,32 @@ def change_when(db, routine_id, rule, anchor, at, now_local, stamp):
                (json.dumps(rule), anchor.isoformat(), at, first_due(rule, anchor, at, now_local).isoformat(), stamp, row['id']))
 
 
+def change_instructions(db, routine_id, instructions, stamp):
+    """Edit: what the routine does, in new words. Its rhythm and its runs stay; a name made from the old words follows."""
+    row = get(db, routine_id)
+    instructions = ' '.join(str(instructions or '').split())[:INSTRUCTIONS_MAX]
+    if len(instructions) < 4:
+        raise ValueError('Say what it should do, like sum up my open deals')
+    placeholder = row['name'] == name_of(row['instructions'])
+    name = name_of(instructions) if placeholder else row['name']
+    db.execute('UPDATE routines SET name=?,instructions=?,version=version+1,name_check=?,updated_at=? WHERE id=?',
+               (name[:NAME_MAX], instructions, None if placeholder else '1', stamp, row['id']))
+
+
+def needs_name(row):
+    """A routine the owner made has the start of its words as a placeholder name until its first run gives it a short
+    one (no model call of its own); after Edit, the next run keeps its name unless it no longer fits."""
+    return row['name_check'] == '1' or row['name'] == name_of(row['instructions'])
+
+
+def named(db, routine_id, name, stamp):
+    """A run's short name for its routine (routine_result name), taken only when the routine asked for one."""
+    row = db.execute('SELECT * FROM routines WHERE id=?', (routine_id,)).fetchone()
+    name = short_name(name)
+    if row and needs_name(row) and len(name) >= 2:
+        db.execute('UPDATE routines SET name=?,name_check=NULL,updated_at=? WHERE id=?', (name, stamp, routine_id))
+
+
 def set_state(db, routine_id, state, now_local, stamp):
     """Pause, resume ('on') or stop. Resuming starts from the next date, never with what was missed while paused."""
     if state not in STATES:
@@ -212,7 +238,7 @@ def set_state(db, routine_id, state, now_local, stamp):
 
 def running(db):
     """Runs not over yet, oldest first: admitted ones (admitted_at, the Gateway runs their turn) and waiting ones."""
-    return db.execute("SELECT r.*,t.name,t.instructions FROM routine_runs r JOIN routines t ON t.id=r.routine_id "
+    return db.execute("SELECT r.*,t.name,t.instructions,t.name_check FROM routine_runs r JOIN routines t ON t.id=r.routine_id "
                       "WHERE r.state='running' ORDER BY r.started_at").fetchall()
 
 

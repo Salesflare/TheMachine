@@ -11,13 +11,15 @@ keywords: routine, automation, scheduled, every week, every morning, report
 
 Öffne **Routinen** in der Seitenleiste und sag in einer Zeile, was sie wann tun soll: „jeden Tag um 9, fasse meine offenen Deals zusammen“ oder „jeden Werktag um 8, liste die Mails, auf die ich noch antworten muss“. Dann **Hinzufügen**.
 
-Ohne Uhrzeit läuft sie um 8:00. Die Uhrzeit gilt auf der Uhr deiner Machine.
+Ohne Uhrzeit läuft sie um 8:00. Die Uhrzeit gilt auf der Uhr deiner Machine. Ihr erster Lauf gibt ihr einen kurzen Namen.
 
 ## Was eine Routine tut
 
 Zu ihrer Zeit liest deine Machine, was sie braucht, etwa deine Nachrichten, Termine und den Graph, und legt das Ergebnis auf der Seite Routinen ab. Jedes Ergebnis zeigt **Bereit**, **Nichts Neues** (mit Grund) oder **Hat nicht geklappt** (mit Grund). Ein Lauf, der ohne Ergebnis endet, zählt als nicht geklappt, nie als erledigt.
 
 Routinen lesen nur. Sie senden, antworten, posten oder ändern nichts.
+
+Deine Routinen stehen unter **Deine Routinen**, unter den Vorschlägen. Ein langes Ergebnis ist auf eine kurze Vorschau eingeklappt; **Mehr anzeigen** öffnet es.
 
 Jeder Lauf kennt das letzte Ergebnis und kann so sagen, was sich seitdem geändert hat.
 
@@ -29,7 +31,9 @@ Routinen laufen nacheinander und warten, wenn das Nutzungslimit deines KI-Abos k
 
 ## Ändern oder stoppen
 
-Das steht im ⋯-Menü der Routine. **Zeitpunkt ändern** nimmt einen neuen Rhythmus in deinen eigenen Worten, wie „jeden Werktag um 8“. **Pausieren** hält die Läufe an bis **Fortsetzen**; was während der Pause verpasst wurde, läuft danach nicht. **Stopp** beendet eine Routine endgültig.
+Das steht im ⋯-Menü der Routine. **Bearbeiten** ändert, was sie tut; wann sie läuft und ihre bisherigen Ergebnisse bleiben. **Zeitpunkt ändern** nimmt einen neuen Rhythmus in deinen eigenen Worten, wie „jeden Werktag um 8“. Beide haben **Speichern** und **Abbrechen**; am Computer brechen auch Esc oder ein Klick daneben ab.
+
+**Pausieren** hält die Läufe an bis **Fortsetzen**; pausierte Routinen warten unten unter **Pausiert**, und was während der Pause verpasst wurde, läuft danach nicht. **Stopp** beendet eine Routine endgültig.
 
 ## Aus deinen OpenClaw-Jobs
 

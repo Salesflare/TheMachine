@@ -6,11 +6,11 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 
 // The Routines page (dashboard/routines-page.js): one short line when there are none, Run now in sight and the rest in the
 // ⋯ menu, Stop only on a second tap (the menu stays open for it), and a result that is text, never markup. A suggestion
-// from an old OpenClaw job shows its preview with Add and No thanks; Turn off the old job? asks before anything happens.
+// from an old OpenClaw job shows its preview, folded, with Add and No thanks; Turn off the old job? asks before anything happens.
 const dashboard=await dashboardPage();
 const now=new Date().toISOString(),posts=[],ID='c3'.repeat(16);
 const routine=()=>({id:ID,name:'Sum up my deals',instructions:'Sum up my deals',rule:{unit:'week',n:1},anchor:'2026-11-09',at:'09:00',state:'on',next_due:'2026-11-16',
- runs:[{id:'r1',state:'ready',started_at:now,result:'**Fernwave** asked <img src=x onerror="window.__xss=1">'}]});
+ runs:[{id:'r1',state:'ready',started_at:now,result:'**Fernwave** asked <img src=x onerror="window.__xss=1">\n- week of 2026-11-02'}]});
 const SID='d4'.repeat(16),suggestion=()=>({...routine(),id:SID,name:'Failed payments',instructions:'List customers whose payment failed',state:'suggested',next_due:null,
  runs:[{id:'r2',state:'ready',started_at:now,result:'**Halyard**: card declined'}]});
 let list=[],suggested=[];
@@ -58,35 +58,57 @@ try{
   // The result is text with bold, never markup
   assert.equal(await card.locator('.rt-result strong').innerText(),'Fernwave');
   assert.equal(await page.evaluate(()=>window.__xss),undefined);
-  // Run now in sight; Change when, Pause and Stop in the ⋯ menu
+  // Markdown as in the chat (a real list), dates as the owner reads them
+  assert.equal(await card.locator('.rt-result li').innerText(),'week of Nov 2');
+  // Run now in sight; Edit, Change when, Pause and Stop in the ⋯ menu
   assert.deepEqual(await card.locator('.actions>button').evaluateAll(n=>n.map(x=>x.textContent)),['Run now']);
   assert.equal(await card.locator('.more-menu').isVisible(),false);
   await card.locator('.more-actions>summary').click();
-  assert.deepEqual(await card.locator('.more-menu>button').evaluateAll(n=>n.map(x=>x.textContent)),['Change when','Pause','Stop']);
+  assert.deepEqual(await card.locator('.more-menu>button').evaluateAll(n=>n.map(x=>x.textContent)),['Edit','Change when','Pause','Stop']);
   const menu=await card.locator('.more-menu').boundingBox();assert.ok(menu.x>=0&&menu.x+menu.width<=width,'the menu fits the screen');
-  // Change when changes this routine, never adds a new one
-  await card.locator('[data-rt-do="when"]').click();await card.locator('.rt-when-form input').fill('Every weekday at 8');await card.locator('.rt-when-form input').press('Enter');
+  // Change when: the menu closes so it never covers the field; Cancel and Esc leave it, Save changes this routine (never adds one)
+  await card.locator('[data-rt-do="when"]').click();const when=card.locator('.rt-form[data-rt-form="when"] input');
+  assert.equal(await card.locator('.more-menu').isVisible(),false);assert.equal(await when.evaluate(x=>x===document.activeElement),true);
+  assert.deepEqual(await card.locator('.rt-form-acts>button').evaluateAll(n=>n.map(x=>x.textContent)),['Save','Cancel']);
+  await card.locator('[data-rt-cancel]').click();assert.equal(await card.locator('.rt-form').count(),0);
+  await card.locator('.more-actions>summary').click();await card.locator('[data-rt-do="when"]').click();await when.press('Escape');assert.equal(await card.locator('.rt-form').count(),0);
+  await card.locator('.more-actions>summary').click();await card.locator('[data-rt-do="when"]').click();await page.locator('#routines-view>.fine').click();
+  assert.equal(await card.locator('.rt-form').count(),0,'a click outside leaves it');
+  await card.locator('.more-actions>summary').click();await card.locator('[data-rt-do="when"]').click();await when.fill('Every weekday at 8');await when.press('Enter');
   for(let i=0;i<60&&!sent('routine_when').length;i++)await page.waitForTimeout(50);
   assert.deepEqual(sent('routine_when'),[{action:'routine_when',id:ID,words:'Every weekday at 8'}]);assert.equal(sent('routine_new').length,1);
-  if(!await card.locator('.more-menu').isVisible())await card.locator('.more-actions>summary').click();
+  // Edit: the routine's words in a growing box; Save sends them
+  await card.locator('.more-actions>summary').click();await card.locator('[data-rt-do="edit"]').click();const edit=card.locator('.rt-form[data-rt-form="edit"] textarea');
+  assert.equal(await edit.inputValue(),'Sum up my deals');await edit.fill('Sum up my won deals');await card.locator('.rt-form .primary').click();
+  for(let i=0;i<60&&!sent('routine_edit').length;i++)await page.waitForTimeout(50);
+  assert.deepEqual(sent('routine_edit'),[{action:'routine_edit',id:ID,words:'Sum up my won deals'}]);
+  await card.locator('.more-actions>summary').click();
   // Stop: the first tap asks, and the menu stays open for the second
   await card.locator('[data-rt-do="stop"]').click();
   assert.equal(await card.locator('[data-rt-do="stop"]').innerText(),'Stop for good?');
   assert.equal(await card.locator('.more-menu').isVisible(),true);assert.equal(sent('routine_state').length,0);
   await card.locator('[data-rt-do="stop"]').click();await card.waitFor({state:'detached'});
   assert.deepEqual(sent('routine_state'),[{action:'routine_state',id:ID,to:'stop'}]);
-  // A suggestion: its preview, Add and No thanks; nothing happens before a tap
+  // A suggestion: folded to its preview with Show more, Add and No thanks in sight; nothing happens before a tap
   suggested=[suggestion()];await page.evaluate(()=>routinesView(true));
   const s=page.locator(`.rt-sugg [data-rt="${SID}"]`);await s.waitFor();
+  assert.equal(await s.locator('.rt-body').getAttribute('class'),'rt-body clamp');
+  await s.locator('[data-more]').click();assert.equal(await s.locator('.rt-body').getAttribute('class'),'rt-body');assert.equal(await s.locator('[data-more]').innerText(),'Show less');
   assert.equal(await s.locator('.rt-result strong').innerText(),'Halyard');
   assert.deepEqual(await s.locator('.actions>button').evaluateAll(n=>n.map(x=>x.textContent)),['Add','No thanks']);
   await s.locator('[data-rt-do="no"]').click();await s.waitFor({state:'detached'});
   assert.deepEqual(sent('routine_state').at(-1),{action:'routine_state',id:SID,to:'stop'});
-  suggested=[suggestion()];await page.evaluate(()=>routinesView(true));
+  // Suggested first, then Your routines, then Paused (only when there are paused ones, with Resume in sight)
+  suggested=[suggestion()];list=[{...routine(),state:'paused'}];await page.evaluate(()=>routinesView(true));
+  await page.locator('.rt-paused').waitFor();
+  assert.deepEqual(await page.locator('#routines-view h2').evaluateAll(n=>n.map(x=>x.textContent)),['Suggested','Paused']);
+  assert.deepEqual(await page.locator(`.rt-paused [data-rt="${ID}"] .actions>button`).evaluateAll(n=>n.map(x=>x.textContent)),['Resume']);
+  list=[];await page.evaluate(()=>routinesView(true));
   await page.locator(`.rt-sugg [data-rt="${SID}"] [data-rt-do="accept"]`).click();
-  await page.locator(`#routines-view>[data-rt="${SID}"]`).waitFor();
+  await page.locator(`.rt-mine [data-rt="${SID}"]`).waitFor();
   assert.deepEqual(sent('routine_accept'),[{action:'routine_accept',id:SID}]);
   assert.equal(await page.locator('.rt-sugg').count(),0);
+  assert.deepEqual(await page.locator('#routines-view h2').evaluateAll(n=>n.map(x=>x.textContent)),['Your routines']);
   // A week of good runs: Turn off the old job? Only a tap turns it off
   list=list.map(r=>({...r,old_job:true}));await page.evaluate(()=>routinesView(true));
   const old=page.locator(`[data-rt="${SID}"] .rt-old`);await old.waitFor();
