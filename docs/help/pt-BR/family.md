@@ -23,6 +23,14 @@ Quando uma tarefa é sobre planos de família com alguém que ainda não está n
 - Só para pessoas que são da família segundo seu Graph ou suas próprias palavras. Nunca para contatos de trabalho, quem já está na sua Família ou alguém com um convite aberto. No máximo uma vez por pessoa.
 - Desative em Configurações, Geral, em Fleet: **Sugerir convidar a família**.
 
+## Já feito
+
+Quando vocês dois recebem o mesmo e-mail ou conta e um marca a tarefa como feita, a do outro mostra “Robin já fez isso · sáb, 7 de nov”.
+
+- **Feito** fecha a sua. **Ainda precisa** mantém a tarefa e esconde a linha.
+- Nada fecha sozinho.
+- Só um código é compartilhado, nunca a tarefa. Desligue no painel Compartilhar: Tarefas que você já fez.
+
 ## Regras
 
 Por padrão, os horários livres e ocupados são compartilhados. Tarefas e planos perguntam antes. Mude isso no painel de compartilhamento: veja [Regras de compartilhamento](sharing-rules.md).

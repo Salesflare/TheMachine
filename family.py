@@ -34,8 +34,15 @@ KIND = 'family'
 KINDS = ('availability', 'todo', 'event')
 REQUESTS = ('todo', 'event')
 DEFAULT_RULES = {'availability': 'always', 'todo': 'ask', 'event': 'ask'}
+# done: "already did this". When a member closed a to-do as done that came from the same email (its Message-ID) or the
+# same bill (IBAN and payment reference) as an open one here, the open one says who and when, never more: it goes as a
+# keyed hash only a Machine holding the same email or bill can match (Fleet.handled_round). Not an ask: no question
+# travels, so it is a rule only (Always or Never), on by default. Nothing closes by itself.
+DONE = 'done'
+RULE_ONLY = (DONE,)
+DEFAULT_RULES[DONE] = 'always'
 WORK_ONLY = ('relationships', 'meeting', 'handling', 'intro', 'handoff', 'followup', 'brief', 'anything')
-LABELS = {'todo': 'to-dos', 'event': 'family plans'}
+LABELS = {'todo': 'to-dos', 'event': 'family plans', DONE: 'to-dos you already did'}
 TITLE, NOTE, PLACE = 120, 300, 120
 STAGES = {'accepted': 'accepted', 'declined': 'declined', 'done': 'done'}
 FREE_FROM, FREE_UNTIL, FREE_MINUTES = 8, 21, 60  # common free times: within these local hours, at least this long
@@ -64,6 +71,46 @@ def _when(value):
     except ValueError:
         return None
     return None
+
+
+IBAN = re.compile(r'\b([A-Z]{2}\d{2}(?: ?[A-Z0-9]{4}){2,7}(?: ?[A-Z0-9]{1,3})?)\b')
+OGM = re.compile(r'(?:\+{3}|\*{3})\s*(\d{3})\s*/\s*(\d{4})\s*/\s*(\d{5})\s*(?:\+{3}|\*{3})')  # a Belgian structured reference
+RF = re.compile(r'\bRF\s?(\d{2})((?: ?[A-Z0-9]){1,21})\b')  # an ISO 11649 creditor reference
+
+
+def _mod97(text):
+    """ISO 7064 mod 97 of letters (A=10 ... Z=35) and digits."""
+    return int(''.join(str(int(c, 36)) for c in text)) % 97
+
+
+def _iban(raw):
+    """The IBAN at the start of raw, if one checks out: the pattern may run on into a next word ("... 6909 PAYEE")."""
+    value = raw.replace(' ', '')
+    return next((value[:n] for n in range(min(len(value), 34), 14, -1) if _mod97(value[4:n] + value[:4]) == 1), None)
+
+
+def bill_of(text):
+    """The bill a text is about, as 'IBAN|reference', when it gives both and both check out: an IBAN (mod 97) and a
+    payment reference (a Belgian +++123/4567/89012+++ or an RF creditor reference). Two members' to-dos for the same
+    bill match on it, whatever email each came from. None without both: an IBAN alone (a supplier's every invoice)
+    says too little."""
+    text = str(text or '').upper()
+    iban = next((found for found in (_iban(m.group(1)) for m in IBAN.finditer(text)) if found), None)
+    if not iban:
+        return None
+    reference = None
+    for m in OGM.finditer(text):
+        digits = ''.join(m.groups())
+        if (int(digits[:10]) % 97 or 97) == int(digits[10:]):
+            reference = digits
+            break
+    if not reference:
+        for m in RF.finditer(text):
+            body = m.group(2).replace(' ', '')
+            if _mod97(body + 'RF' + m.group(1)) == 1:
+                reference = 'RF' + m.group(1) + body
+                break
+    return f'{iban}|{reference}' if reference else None
 
 
 def parse(kind, question):

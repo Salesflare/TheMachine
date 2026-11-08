@@ -23,6 +23,14 @@ When a to-do is about family plans with someone not in your Family yet, like "Wh
 - Only for people who are family, by your Graph or your own words. Never for Work contacts, people already in your Family, or someone with an open invite. At most once per person.
 - Turn it off in Settings, General, under Fleet: **Suggest inviting family**.
 
+## Already did this
+
+When you both get the same email or bill and one of you marks their to-do done, the other's to-do says "Robin did this · Sat, Nov 7".
+
+- **Done** closes yours. **Still needed** keeps it and hides the line.
+- Nothing closes by itself.
+- Only a code is shared, never the to-do. Turn it off on the Sharing pane: To-dos you already did.
+
 ## Rules
 
 By default, free and busy times are shared, and to-dos and plans ask you first. Change it on the Sharing pane: see [Sharing rules](sharing-rules.md).

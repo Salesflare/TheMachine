@@ -11,6 +11,15 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-stil
  try{if(b.dataset.still==='drop'){await saveDecision(id,'reject','No longer needed');return}
   await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'recap_decide',args:{id:b.dataset.ask,choice:'keep',decision_id:crypto.randomUUID()}})});
   toast(t('Kept'));await refresh()}catch(err){errCaught(err);b.disabled=false;toast(err.message,true)}});
+// Already did this (Fleet.handled_round, family.DONE): someone in the Family closed as done a to-do from the same email or
+// bill. One quiet line, who and when, never more; nothing closes by itself. Done is this to-do's own Mark done; Still needed
+// keeps it and the line goes (family_still_needed).
+const doneBy=s=>{if(closed(s)||!s.done_elsewhere)return null;try{const d=JSON.parse(s.done_elsewhere);return d&&!d.kept&&d.at?d:null}catch{return null}};
+function doneElsewhere(s){const d=doneBy(s);if(!d)return '';const day=localeDate(new Date(d.at),DL,{weekday:'short',day:'numeric',month:'short'});
+ return html`<div class="done-elsewhere"><span>${d.name?t('{} did this · {}',d.name,day):t('Someone in your Family did this · {}',day)}</span><span class="still-acts"><button type="button" class="ghost" data-id="${s.id}" data-choice="complete">${t('Done')}</button><button type="button" class="quiet" data-done-keep="${s.id}">${t('Still needed')}</button></span></div>`}
+document.addEventListener('click',async e=>{const b=e.target.closest('[data-done-keep]');if(!b)return;e.preventDefault();b.disabled=true;
+ try{await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'family_still_needed',args:{suggestion_id:b.dataset.doneKeep}})});
+  toast(t('Kept'));await refresh()}catch(err){errCaught(err);b.disabled=false;toast(err.message,true)}});
 // Coming back later (render): a heading per day they come back, then the ones Still needed? set aside
 const backDay=s=>{if(setAside(s))return t('Still needed?');const d=new Date(s.snoozed_until),next=new Date();next.setDate(next.getDate()+1);return localDay(d)===localDay(new Date())?'Today':localDay(d)===localDay(next)?'Tomorrow':localeDate(d,DL,{weekday:'long',day:'numeric',month:'short'})};
 const laterCards=items=>html`${items.map((s,i)=>html`${i===0||backDay(s)!==backDay(items[i-1])?html`<h3 class="day-head">${backDay(s)}</h3>`:''}${suggestionCard(s,'Later')}`)}`;

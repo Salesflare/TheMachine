@@ -23,6 +23,14 @@ Quand une tâche porte sur des projets de famille avec quelqu’un qui n’est p
 - Seulement pour les personnes de votre famille selon votre Graph ou vos propres mots. Jamais pour les contacts pro, les membres de votre Famille ni quelqu’un qui a une invitation en cours. Une fois par personne au plus.
 - Désactivez-la dans Paramètres, Général, sous Fleet : **Suggérer d’inviter la famille**.
 
+## Déjà fait
+
+Si vous recevez tous les deux le même e-mail ou la même facture et que l’un de vous marque sa tâche comme faite, celle de l’autre indique « Robin l’a fait · sam. 7 nov. ».
+
+- **Fait** ferme la vôtre. **Toujours utile** la garde et masque la ligne.
+- Rien ne se ferme tout seul.
+- Seul un code est partagé, jamais la tâche. Désactivez-le dans le volet Partage : Tâches que vous avez déjà faites.
+
 ## Règles
 
 Par défaut, les créneaux libres et occupés sont partagés ; les tâches et les projets demandent d’abord. Changez-le dans le volet Partage : voir [Règles de partage](sharing-rules.md).

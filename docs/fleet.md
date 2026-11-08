@@ -76,6 +76,8 @@ When an email reaches you and a teammate (or a shared address like info@), the f
 - Once one of you closes theirs, the other's open to-do says "Done: <teammate> already handled this", with **Mark done**
   first. It then offers no handoff. If they reopen theirs, so does yours.
 - Claims travel as a hash keyed with the Fleet's secret, never the email ([What the Network sees](network.md#what-the-network-sees)).
+- A Family Fleet does the same for a to-do you both have, by email or bill, as a quiet line that never closes it: see
+  [Family](family.md#already-did-this).
 
 What your Machine tells the others depends on your rule for shared emails ([Your rules](#your-rules)).
 
