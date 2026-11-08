@@ -38,7 +38,7 @@ function checkButton(){return html`<button type="button" class="check-btn quiet"
 // The head, with to-dos open: one small line only while it runs (no button then: a press adds nothing), just after a
 // press, or when a check failed or is late, with Check now. Otherwise only a quiet Check now on a computer (none on a phone). During the first look its panel says
 // what runs. With nothing open the robot says it instead (clearLine), so the head has none of it.
-function checkHead(){const n=checkNow();if(!n||$('#suggestions .all-clear .clear-check'))return '';
+function checkHead(){const n=checkNow();if(!n||readsNothing()||$('#suggestions .all-clear .clear-check'))return '';
  const line=['busy','said','failed','late'].includes(n.kind)&&!(n.kind==='busy'&&!state.check.phase&&firstLookInfo(state.review_live||{}))?n.line:'';
  return html`<div class="check-now${line?'':' bare calm'}"><small class="check-line" role="status">${line}</small>${n.kind==='busy'?'':checkButton()}</div>`}
 // All clear: the robot and its one line are the check's status, in its own voice. Asleep when all is well; awake and
@@ -49,7 +49,11 @@ function checkHead(){const n=checkNow();if(!n||$('#suggestions .all-clear .clear
 // the setup page uses too), so someone new sees it is on its way, not a button to press. 0 when it isn't known.
 const firstEta=()=>{const l=state?.review_live,m=+l?.first_eta|0;return m>0&&m<600&&!l?.cards?.count?m:0};
 const firstEtaLine=()=>firstEta()&&+state.check?.waiting>0?t(['Nosing through {} new message. First to-dos in about {} min.','Nosing through {} new messages. First to-dos in about {} min.'],+state.check.waiting|0,firstEta()):'';
+// Nothing that brings messages in is connected yet (a new Machine): an empty list means that, never a check that
+// found nothing, and Check now has nothing to read. The Machine's own health row (gateway) brings in nothing.
+const readsNothing=()=>!!state?.connectors&&!state.connectors.some(c=>c.service!=='gateway'&&c.signals!==false);
 function clearLine(){const n=checkNow(),c=state?.check,say=k=>sayToday(k,checkClock(c?.reviewed));
+ if(readsNothing()&&n?.kind!=='busy')return t('Nothing connected yet, so there’s nothing to read.');
  if(n&&['first','busy'].includes(n.kind)&&firstEtaLine())return firstEtaLine();
  if(!n)return state?.review_health?.last_completed?say('ok'):t('I’ll add something when it’s useful.');
  if(n.kind==='busy')return n.line;
@@ -58,7 +62,7 @@ function clearLine(){const n=checkNow(),c=state?.check,say=k=>sayToday(k,checkCl
 function clearPose(){const k=checkNow()?.kind;return k==='busy'||k==='first'&&firstEtaLine()?'brand/wave-look.webp':k==='failed'?'brand/sad.webp':'brand/sleepy.webp'}
 // Under the line: Check now when the line asks for it; on 'ok' a tap on the line shows Check now and Details (clearOpen).
 let clearOpen=false;
-function clearCheck(){const n=checkNow();if(!n||n.kind==='busy'||n.kind==='said'||n.kind==='ok'&&!clearOpen||n.kind==='first'&&firstEtaLine())return '';
+function clearCheck(){const n=checkNow();if(!n||readsNothing()||n.kind==='busy'||n.kind==='said'||n.kind==='ok'&&!clearOpen||n.kind==='first'&&firstEtaLine())return '';
  return html`<div class="check-row">${checkButton()}${n.kind==='ok'?html`<button type="button" class="quiet check-more" data-check-details>${t('Details')}</button>`:''}</div>`}
 document.addEventListener('click',e=>{const m=e.target.closest('#suggestions .all-clear [data-clear-more]');
  if(m){clearOpen=!clearOpen;m.setAttribute('aria-expanded',clearOpen);checkDraw();return}
