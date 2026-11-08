@@ -1,6 +1,6 @@
-"""New to-dos in the service: one the owner adds (new_card) and where it goes, one for a coding agent with its source
-messages, background and chat (agent_card), and whether a card counts as Work. Moved out of assistant.App as is. A
-mixin of assistant.App (APP_MIXINS)."""
+"""New to-dos in the service: one the owner adds (new_card) and where it goes, one a connected AI adds (ai_card),
+one for a coding agent with its source messages, background and chat (agent_card), and whether a card counts as
+Work. Moved out of assistant.App as is. A mixin of assistant.App (APP_MIXINS)."""
 import datetime as dt
 import hashlib
 import json
@@ -220,3 +220,36 @@ class NewCardsApp:
         with self.store.connect() as db:
             row = db.execute('SELECT account_ids FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
         return bool(row) and self.is_work(row['account_ids'])
+
+    def ai_card(self, who, text, area, due=None, draft=None):
+        """A to-do a connected AI added (ai_app.py, docs/ai-connections.md), made like a Fleet request's (fleet_card): its
+        first evidence is an event on one of the owner's accounts in that area, marked reviewed so no review or
+        preparation reads it by itself, and it says which AI it is from. With a draft, an email draft from one of the
+        owner's mail accounts in that area, which goes out only with the owner's own Send."""
+        accounts = [a for a in self.config.get('accounts', []) if area is None or graph.account_side(a) == area]
+        if draft:
+            accounts = [a for a in accounts if mail_account(a)]
+        elif not accounts:  # nothing placed in that area yet: a to-do sends nothing, so it goes on the Machine's own account
+            accounts = self.config.get('accounts', [])[:1]
+        if not accounts:
+            raise ValueError('No Gmail or Outlook account here to write it from' if draft else 'No account here for this')
+        account = accounts[0]['id']
+        stamp, key = now(), 'ai:' + uuid.uuid4().hex[:16]
+        name = ' '.join(str(who or 'AI').split())[:60]
+        title = owner_title(text)
+        body = text if not draft else i18n.t('{} wrote this email for you. Read it, change it if you like, and send it yourself.', name) + (
+            '\n\n' + text if text != draft['subject'] else '')
+        meta = {'sender_display': i18n.t('{} (connected AI)', name), 'ai_connection': name}
+        event_id = self.store.add_ai_request(account, key, stamp, title, text, meta)
+        card = self.store.suggest(key, (i18n.t('Email to {}: {}', ', '.join(draft['to'])[:60], draft['subject']) if draft else title)[:90],
+                                  body[:700], [event_id], when='now', work=(graph.account_side(accounts[0]) or area) == 'work', due=due)
+        if not card.get('duplicate'):  # the owner asked for it, as with New card (owner_card): on their list now, not held for a work day
+            with self.store.connect() as db:
+                db.execute('UPDATE suggestions SET deliver_after=NULL WHERE id=?', (card['id'],))
+        if draft and not card.get('duplicate'):
+            action = next_actions.validate({'kind': 'email', 'label': 'Send', 'account_id': account, 'to': draft['to'],
+                                            'subject': draft['subject'], 'body': draft['body']}, self.config, [account])
+            with self.store.connect() as db:
+                db.execute("UPDATE suggestions SET status='accepted' WHERE id=? AND status='pending'", (card['id'],))
+            self.store.prepare(card['id'], body[:1000], next_action=action, outcome={'state': 'needs_you', 'needs': 'read and send the email'})
+        return card['id']
