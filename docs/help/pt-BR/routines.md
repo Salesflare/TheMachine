@@ -3,7 +3,7 @@ title: Rotinas
 area: cards
 summary: Trabalho que sua Machine faz sozinha, num ritmo, como um resumo de segunda-feira dos seus deals abertos. Ela só lê.
 covers: tab:routines
-code: routines.py, routines_app.py, routine_imports.py, routine_patterns.py, dashboard/routines-page.js
+code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, dashboard/routines-page.js
 order: 10
 keywords: routine, automation, scheduled, every week, every morning, report, suggested, digest, newsletter
 ---
@@ -22,6 +22,8 @@ Rotinas só leem: suas mensagens, páginas da web, o GitHub e sites como o X no 
 Quando a tarefa de uma rotina termina num post ou numa mensagem, ela faz tudo até essa etapa e mostra o rascunho, como **Postaria no X:**. Depois de uma execução real, você recebe como tarefa para aprovar; uma execução de teste só mostra.
 
 Cada execução conhece o último resultado, então pode dizer o que mudou desde então.
+
+Depois de uma boa execução, sua Machine pode escrever para si uma receita para a leitura que é igual toda vez, como quais e-mails ou mudanças no GitHub olhar. As próximas execuções leem isso primeiro, em código simples, e a IA só escolhe o que importa e escreve, com menos tokens. Uma receita só lê; se parar de funcionar, a execução lê por conta própria e a conserta. Ela aparece em **Avançado: etapas de script** no menu ⋯.
 
 ## Dias perdidos
 

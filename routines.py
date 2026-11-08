@@ -16,6 +16,10 @@ token-like strings removed) goes to the run as evidence; with no words, that out
 Check gets the result on stdin: a nonzero exit means the run didn't work, with what it said. Each run keeps the steps
 it ran with. A routine still never sends: a step's output is read, never acted on.
 
+A recipe (routine_recipe.py, `recipe`) is the Machine's own: the reading part a run's turn found to be the same every
+run, read in plain code before the next turn ({'steps', 'fails'}). A run keeps what its recipe did (`recipe`: ok, or
+what failed). New words drop it; an owner's Get data comes first, and then no recipe runs.
+
 A routine can also come from an old OpenClaw job (routine_imports.py, origin 'openclaw:<job id>'). Such a row starts as
 'sorting': one run reads the job, says whether it fits (a routine, a recurring to-do or neither) and, when it is a
 routine, runs it once for real. That run is the preview of a 'suggested' routine, which the owner adds with one tap
@@ -38,6 +42,7 @@ import shlex
 import uuid
 
 import recurring
+import routine_recipe
 
 STATES = ('on', 'paused', 'stopped')
 LIVE = ('on', 'paused')  # the owner's routines; 'sorting', 'suggested' and 'skipped' are suggestions (OpenClaw jobs, patterns); 'trying': a new one on trial
@@ -72,11 +77,11 @@ def ensure(db):
       CREATE INDEX IF NOT EXISTS routine_runs_routine ON routine_runs(routine_id,started_at);
     ''')
     have = {r[1] for r in db.execute('PRAGMA table_info(routines)')}
-    for column in ('origin', 'accepted_at', 'old_job', 'name_check', 'steps', 'why'):  # added after the first release (#916; name_check: Edit; why: patterns)
+    for column in ('origin', 'accepted_at', 'old_job', 'name_check', 'steps', 'why', 'recipe'):  # added after the first release (#916; name_check: Edit; why: patterns; recipe: the Machine's)
         if column not in have:
             db.execute(f'ALTER TABLE routines ADD COLUMN {column} TEXT')
     have = {r[1] for r in db.execute('PRAGMA table_info(routine_runs)')}
-    for column in ('trial', 'used', 'steps', 'data'):  # trial: Try it's words; used: skills it followed; steps it ran with, data: Get data's output
+    for column in ('trial', 'used', 'steps', 'data', 'recipe'):  # trial: Try it's words; used: skills it followed; steps it ran with, data: Get data's output; recipe: what the recipe did
         if column not in have:
             db.execute(f'ALTER TABLE routine_runs ADD COLUMN {column} TEXT')
     for r in db.execute("SELECT id,name,instructions FROM routines WHERE state!='stopped'").fetchall():  # a long placeholder made before gets short
@@ -292,8 +297,9 @@ def change_instructions(db, routine_id, instructions, stamp, steps=False):
     instructions = _words(instructions, steps)
     made = placeholder(row)
     name = (name_of(instructions) or row['name']) if made else row['name']
-    db.execute('UPDATE routines SET name=?,instructions=?,steps=?,version=version+1,name_check=?,updated_at=? WHERE id=?',
-               (name[:NAME_MAX], instructions, json.dumps(steps) if steps else None, None if made else '1', stamp, row['id']))
+    db.execute('UPDATE routines SET name=?,instructions=?,steps=?,version=version+1,name_check=?,updated_at=?,recipe=? WHERE id=?',
+               (name[:NAME_MAX], instructions, json.dumps(steps) if steps else None, None if made else '1', stamp,
+                row['recipe'] if instructions == row['instructions'] else None, row['id']))  # new words: a new recipe
 
 
 def needs_name(row):
@@ -328,7 +334,7 @@ def set_state(db, routine_id, state, now_local, stamp):
 
 def running(db):
     """Runs not over yet, oldest first: admitted ones (admitted_at, the Gateway runs their turn) and waiting ones."""
-    return db.execute("SELECT r.*,t.name,t.instructions,t.name_check,t.state AS routine_state FROM routine_runs r "
+    return db.execute("SELECT r.*,t.name,t.instructions,t.name_check,t.state AS routine_state,t.recipe AS routine_recipe FROM routine_runs r "
                       "JOIN routines t ON t.id=r.routine_id WHERE r.state='running' ORDER BY r.started_at").fetchall()
 
 
@@ -384,8 +390,9 @@ def try_words(db, routine_id, instructions, stamp, steps=False):
         raise ValueError('It’s running already')
     db.execute("DELETE FROM routine_runs WHERE routine_id=? AND period LIKE 'test:%'", (row['id'],))  # only the newest try shows
     if row['state'] == 'trying':
-        db.execute('UPDATE routines SET name=?,instructions=?,steps=?,updated_at=? WHERE id=?',
-                   ((name_of(instructions) or row['name'])[:NAME_MAX], instructions, kept, stamp, row['id']))
+        db.execute('UPDATE routines SET name=?,instructions=?,steps=?,updated_at=?,recipe=? WHERE id=?',
+                   ((name_of(instructions) or row['name'])[:NAME_MAX], instructions, kept, stamp,
+                    row['recipe'] if instructions == row['instructions'] else None, row['id']))
         return begin(db, row['id'], 'test:' + stamp, stamp)
     run_id = uuid.uuid4().hex
     db.execute("INSERT INTO routine_runs(id,routine_id,period,version,state,started_at,trial,steps) VALUES(?,?,?,?,'running',?,?,?)",
@@ -405,6 +412,27 @@ def keep_test(db, routine_id, saved=None):
 
 def admitted(db, run_id, stamp):
     db.execute("UPDATE routine_runs SET admitted_at=? WHERE id=? AND state='running'", (stamp, str(run_id)))
+
+
+def recipe_ran(db, run_id, data, said=None):
+    """What a run's recipe read (its turn reads it as data), or what failed (said): the turn then reads for itself."""
+    db.execute("UPDATE routine_runs SET data=?,recipe=? WHERE id=? AND state='running'",
+               (None if said else str(data)[:routine_recipe.DATA_MAX], json.dumps({'ok': not said, **({'said': said} if said else {})}), str(run_id)))
+
+
+def recipe_kept(db, routine_id, recipe, stamp):
+    """A recipe a run's turn wrote (clean already): kept for the next runs, its failures counted from 0."""
+    db.execute('UPDATE routines SET recipe=? WHERE id=?', (json.dumps({**recipe, 'fails': 0, 'made_at': stamp}), str(routine_id)))
+
+
+def recipe_failed(db, routine_id):
+    """A recipe that didn't work this run: after routine_recipe.REPAIR_TRIES runs in a row without a repair, it goes."""
+    row = db.execute('SELECT recipe FROM routines WHERE id=?', (str(routine_id),)).fetchone()
+    if not row or not row['recipe']:
+        return
+    kept = json.loads(row['recipe'])
+    kept['fails'] = int(kept.get('fails') or 0) + 1
+    db.execute('UPDATE routines SET recipe=? WHERE id=?', (None if kept['fails'] >= routine_recipe.REPAIR_TRIES else json.dumps(kept), str(routine_id)))
 
 
 def got_data(db, run_id, data):
@@ -490,8 +518,14 @@ def view(db, states=LIVE):
                     'anchor': r['anchor'], 'at': r['at'], 'state': r['state'], 'next_due': r['next_due'] if r['state'] == 'on' else None,
                     'origin': r['origin'], 'accepted_at': r['accepted_at'], 'old_job': r['old_job'], 'runs': runs, 'test': test,
                     'why': json.loads(r['why']) if r['why'] else None,
-                    'steps': steps_of(r)})
+                    'steps': steps_of(r), 'recipe': _recipe_lines(r)})
     return out
+
+
+def _recipe_lines(row):
+    """The Machine's recipe as the Advanced view shows it, read-only: one line per step, or None."""
+    recipe = routine_recipe.of(row)
+    return [routine_recipe.describe(s) for s in recipe['steps']] if recipe else None
 
 
 # --- suggestions: from OpenClaw jobs and from patterns -----------------------------------------------------------------

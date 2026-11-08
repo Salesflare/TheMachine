@@ -5771,6 +5771,7 @@
  "Your Machine uses it to do tasks on websites for you. Sign in to a site here so it can act there. Nothing runs in it until you ask.": "Je Machine gebruikt hem om taken op websites voor je te doen. Log hier in bij een site, zodat hij daar kan handelen. Er draait niets in tot je erom vraagt.",
  "Your Machine was confirmed": "Je Machine is bevestigd",
  "Your Machine was not confirmed": "Je Machine is niet bevestigd",
+ "Your Machine wrote these reads itself. It runs them before each run; they only read.": "Je Machine schreef deze leesstappen zelf. Hij voert ze voor elke run uit; ze lezen alleen.",
  "Your Machine's own browser": "De eigen browser van je Machine",
  "Your Machine's own log, so it spots its own trouble.": "De eigen log van je Machine, zodat hij zijn eigen problemen opmerkt.",
  "Your Machines can sort this out without you asking each other.": "Jullie Machines regelen dit zonder dat jullie het elkaar moeten vragen.",

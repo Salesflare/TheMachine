@@ -3,7 +3,7 @@ title: Routines
 area: cards
 summary: Work your Machine does on its own, on a rhythm, like a Monday summary of your open deals. It only reads.
 covers: tab:routines
-code: routines.py, routines_app.py, routine_imports.py, routine_patterns.py, dashboard/routines-page.js
+code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, dashboard/routines-page.js
 order: 10
 keywords: routine, automation, scheduled, every week, every morning, report, suggested, digest, newsletter
 ---
@@ -28,6 +28,8 @@ A run can follow your [skills](skills.md) that are on, picked by what the routin
 Your routines are under **Your routines**, below any suggestions. A long result folds to a short preview; **Show more** opens it.
 
 Each run knows the last result, so it can say what changed since then.
+
+After a good run, your Machine may write itself a recipe for the reading that is the same each time, like which mails or GitHub changes to look at. The next runs read those first, in plain code, and the AI only picks what matters and writes it, with fewer tokens. A recipe only reads; when it stops working, the run reads by itself and fixes it. It shows under **Advanced: script steps** in the ⋯ menu.
 
 ## Missed days
 

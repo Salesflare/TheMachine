@@ -3,7 +3,7 @@ title: Routinen
 area: cards
 summary: Arbeit, die deine Machine von selbst in einem Rhythmus erledigt, wie eine Montagsübersicht deiner offenen Deals. Sie liest nur.
 covers: tab:routines
-code: routines.py, routines_app.py, routine_imports.py, routine_patterns.py, dashboard/routines-page.js
+code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, dashboard/routines-page.js
 order: 10
 keywords: routine, automation, scheduled, every week, every morning, report, suggested, digest, newsletter
 ---
@@ -28,6 +28,8 @@ Ein Lauf kann deinen eingeschalteten [Skills](skills.md) folgen, ausgewählt nac
 Deine Routinen stehen unter **Deine Routinen**, unter den Vorschlägen. Ein langes Ergebnis ist auf eine kurze Vorschau eingeklappt; **Mehr anzeigen** öffnet es.
 
 Jeder Lauf kennt das letzte Ergebnis und kann so sagen, was sich seitdem geändert hat.
+
+Nach einem guten Lauf kann deine Machine sich selbst ein Rezept schreiben für das Lesen, das jedes Mal gleich ist, etwa welche Mails oder GitHub-Änderungen sie ansieht. Die nächsten Läufe lesen das zuerst, in einfachem Code, und die KI wählt nur aus, was zählt, und schreibt es auf, mit weniger Tokens. Ein Rezept liest nur; funktioniert es nicht mehr, liest der Lauf selbst und repariert es. Du siehst es unter **Erweitert: Skriptschritte** im ⋯-Menü.
 
 ## Verpasste Tage
 

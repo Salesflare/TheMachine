@@ -396,7 +396,9 @@ OVER_BUDGET = {}
 # 1,770,000 -> 1,774,000 (2026-11-08): "Connect your mail" first (#936, 0.7 KB over on main) and setup picks up where
 # it left off (#963, about 2.9 KB after trimming its comments). The Work/Personal autodetect that follows drops the
 # + Add company field and its autofill and brings this back down.
-FIRST_LOAD_CEILING = 1_774_000
+# 1,774,000 -> 1,775,000 (2026-11-09): main was already 0.1 KB over (#997), and a routine's recipe shows read-only
+# under Advanced (about 0.5 KB after trimming).
+FIRST_LOAD_CEILING = 1_775_000
 LAZY_CEILING = {'calendar': 96_000, 'game': 12_000, 'graph': 336_000, 'help': 40_000, 'learning': 24_000}
 
 

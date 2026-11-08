@@ -38,6 +38,7 @@
 .rt-try .rt-form~.actions{display:none}
 /* Advanced: script steps (Edit): Get data, folder, seconds, Check */
 .rt-steps{min-width:0;margin:12px 0 0;padding:10px 12px 12px;border:1px solid var(--c-line);border-radius:var(--r-md)}.rt-steps legend{padding:0 4px;color:var(--c-text-2);font-size:var(--fs-sm)}.rt-note{margin:6px 0 0;color:var(--c-text-3);font-size:var(--fs-sm)}
+.rt-recipe{margin:6px 0 0;padding-left:18px;color:var(--c-text-2);font-size:var(--fs-sm)}.rt-recipe code{font:.95em/1.5 var(--mono);font-variant-ligatures:none;overflow-wrap:anywhere}
 .rt-field{display:flex;flex-direction:column;gap:4px;margin-top:8px;color:var(--c-text-2);font-size:var(--fs-sm)}.rt-field input{min-width:0;margin:0;font:var(--fs-sm)/1.4 var(--mono)}
 .rt-step-row{display:flex;gap:8px}.rt-step-row .rt-field{flex:1;min-width:0}.rt-step-row .rt-secs{flex:0 0 96px}
 .rt-step{display:flex;gap:6px;margin:6px 0 0;color:var(--c-text-3);font-size:var(--fs-sm)}.rt-step>span{flex:none;white-space:nowrap}.rt-nowrap{white-space:nowrap}.rt-step code{min-width:0;font:.95em/1.5 var(--mono);overflow-wrap:anywhere}
