@@ -9,14 +9,14 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 const raw=await dashboardPage();
 const SCOPE='a1'.repeat(16),iso=new Date().toISOString(),A='1'.repeat(16),SLOW=1500;
 const cards=[{id:A,title:'Reply to Robin about the plan',body:'Robin asked for the numbers.',status:'pending',scope:'work',created_at:iso,event_ids:[1]}];
-let refuse=false;
+let refuse=false;const said=[];
 const page=()=>raw.replace('__CSRF__','').replaceAll('__UI_VERSION__','v1').replace('__BASE__','/').replace('__CACHE_SCOPE__',SCOPE);
 const server=createServer(async(req,res)=>{let body='';for await(const c of req)body+=c;const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(page());return}
  if(url.pathname==='/api/session'){res.end(JSON.stringify({csrf:'c'.repeat(64),cache_scope:SCOPE}));return}
  if(url.pathname==='/api/status'){res.end(JSON.stringify({suggestions:cards,promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_runs:[],connectors:[],fleet:{on:false},ui_version:'v1'}));return}
  if(url.pathname==='/api/action'){const r=JSON.parse(body||'{}');
-  if(r.action==='decide'){await new Promise(r=>setTimeout(r,SLOW));
+  if(r.action==='decide'){said.push(r.args?.feedback);await new Promise(r=>setTimeout(r,SLOW));
    if(refuse){res.statusCode=400;res.end(JSON.stringify({error:'That to-do changed. Use its current buttons.'}));return}
    res.end(JSON.stringify({status:'instructions'}));return}
   res.end('{}');return}
@@ -40,6 +40,19 @@ try{
  assert.ok(ms!=null&&ms<SLOW/2,`the message showed after ${ms} ms, not before the Machine saved it (${SLOW} ms)`);
  assert.equal(await tab.locator('#chat-input').inputValue(),'','the box empties at once');
  await tab.waitForFunction(()=>!document.querySelector('[data-chat-send]').disabled||chat?.active);
+
+ // A second message while the first is still being saved: typed into the freed box and sent with the keys, it goes
+ // right after the first (nothing typed meanwhile is lost)
+ await tab.waitForTimeout(SLOW+500);await send(tab,'First');
+ await tab.locator('#chat-input').fill('Second');await tab.locator('#chat-input').press('Control+Enter');
+ await tab.waitForFunction(()=>[...document.querySelectorAll('#chat-log *')].some(e=>!e.childElementCount&&e.textContent.includes('Second')),null,{timeout:SLOW*3});
+ await tab.waitForTimeout(SLOW*2+300);
+ assert.deepEqual(said.slice(-2),['First','Second'],'both messages reach the Machine, in order');
+ assert.equal(await tab.locator('#chat-input').inputValue(),'','the box stays empty');
+ // What's typed while a message is being saved stays in the box once the Machine has it
+ await send(tab,'Third');await tab.locator('#chat-input').fill('Not sent yet');await tab.waitForTimeout(SLOW+500);
+ assert.equal(await tab.locator('#chat-input').inputValue(),'Not sent yet','a draft typed meanwhile is kept');
+ await tab.locator('#chat-input').fill('');
 
  // Refused: the message leaves the chat, is back in the box, and the reason shows
  refuse=true;await tab.waitForTimeout(300);

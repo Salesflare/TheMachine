@@ -130,8 +130,11 @@ $('#suggestions').addEventListener('paste',e=>{if(e.target.id!=='chat-input')ret
 // Ctrl+Enter (it clicks the nearest primary button) never reaches the card's Do it under the box.
 $('#suggestions').addEventListener('keydown',e=>{if(e.target.id!=='chat-input'||e.key!=='Enter'||e.isComposing||e.keyCode===229||e.altKey)return;const mod=e.ctrlKey||e.metaKey;
  if(!mod&&(e.shiftKey||matchMedia('(pointer: coarse)').matches))return;e.preventDefault();chatSubmit()});
-// Sends what's in the message box (and its files): the bubble shows and the box empties once the Machine has it
-async function chatSubmit(){const b=$('[data-chat-send]'),input=$('#chat-input');if(!b||b.disabled)return;const s=chatOpen(),text=input?.value.trim(),sending=chatPending.filter(f=>f.state==='ok'&&f.sid===s?.id);
+// Sends what's in the message box (and its files). A message sent while the one before it is still being saved goes
+// right after it (the box is free again at once, so a quick second message is never lost or sent twice).
+let chatSaving=null;
+async function chatSubmit(){while(chatSaving)await chatSaving.catch(()=>{});const run=chatSubmitNow();chatSaving=run;try{await run}finally{if(chatSaving===run)chatSaving=null}}
+async function chatSubmitNow(){const b=$('[data-chat-send]'),input=$('#chat-input');if(!b||b.disabled)return;const s=chatOpen(),text=input?.value.trim(),sending=chatPending.filter(f=>f.state==='ok'&&f.sid===s?.id);
  if(!s||!text&&!sending.length||chatPending.some(f=>f.state==='up')){input?.focus();return}b.disabled=true;
  // "repeat this every month", "stop repeating": set at once (todos-repeat.js), not a turn of the chat
  if(!sending.length){const rp=await repeatFromChat(s,text);if(rp){b.disabled=false;if(rp===true){input.value='';chatGrow(input);chatDraftKeep(s.id,'')}chatSendState();return}}
@@ -141,12 +144,12 @@ async function chatSubmit(){const b=$('[data-chat-send]'),input=$('#chat-input')
  // A message without files shows in the chat at once, while the Machine saves it; should it not take it, the message
  // goes back in the box
  const mine={kind:'you',text,at:Date.now()},drop=()=>{if(chat?.items?.includes(mine))chat={...chat,items:chat.items.filter(i=>i!==mine)}};
- if(!sending.length){input.value='';chatGrow(input);chat={...(chat||{}),items:[...(chat?.items||[]),mine]};paintChat();chatToEnd()}
- try{if(!sending.length){const r=await decideOrWait(s.id,steps,'other');if(r?.waiting){drop();input.value='';chatGrow(input);chatDraftKeep(s.id,'');b.disabled=false;chatSendState();paintChat();chatToEnd();return}}
+ if(!sending.length){input.value='';chatGrow(input);chatDraftKeep(s.id,'');chat={...(chat||{}),items:[...(chat?.items||[]),mine]};paintChat();chatToEnd()}
+ try{if(!sending.length){const r=await decideOrWait(s.id,steps,'other');if(r?.waiting){drop();b.disabled=false;chatSendState();paintChat();chatToEnd();return}}
   else{for(const a of steps.slice(0,-1))await decide(a);await decide({...steps.at(-1),files:sending.map(f=>f.id)})}
   const files=sending.map(f=>({id:f.id,name:f.name,type:f.type,size:f.size}));chatDropFiles();chatTray();chatFileError('');
-  input.value='';chatGrow(input);chatDraftKeep(s.id,'');drop();chat={...(chat||{}),items:[...(chat?.items||[]),{...mine,...(files.length?{files}:{})}],active:true,cursor:null};changing.delete(s.id);await refresh();paintChat();chatToEnd();chatPoll()}
- catch(err){errCaught(err);if(!sending.length){drop();const box=$('#chat-input');if(box&&!box.value){box.value=text;chatGrow(box)}paintChat()}toast(err.message,true);b.disabled=false}}
+  if(sending.length){input.value='';chatGrow(input);chatDraftKeep(s.id,'')}drop();chat={...(chat||{}),items:[...(chat?.items||[]),{...mine,...(files.length?{files}:{})}],active:true,cursor:null};changing.delete(s.id);await refresh();paintChat();chatToEnd();chatPoll()}
+ catch(err){errCaught(err);if(!sending.length){drop();const box=$('#chat-input');if(box&&!box.value){box.value=text;chatGrow(box);chatDraftKeep(s.id,text)}paintChat()}toast(err.message,true);b.disabled=false}}
 $('#suggestions').addEventListener('click',async e=>{if(!chatId)return;
  const layout=e.target.closest('.chat-layout');if(e.target===layout&&chatDrawer){chatDrawer=false;layout.classList.remove('drawer');return}
  if(e.target.closest('[data-chat-drawer]')){e.target.closest('details')?.removeAttribute('open');drawerOpen();return}
