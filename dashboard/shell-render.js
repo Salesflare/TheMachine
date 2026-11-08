@@ -7,7 +7,11 @@ const decisionVia=source=>DECISION_VIA[source]?t(DECISION_VIA[source]):t('via {}
 const listOpenKept={};const listOpen=id=>{const d=document.getElementById(id);if(d)listOpenKept[id]=d.open;return !!listOpenKept[id]};
 // Feedback's rows name where the to-dos came from (assistant.py TODO_SOURCE); the ones that need it say a little more
 const SOURCE_TIPS={'Added by you':'Made with New to-do','The Machine itself':'Problems in The Machine, like an error','Phone notifications':'Texts and alerts on your phone','Other':'The source is gone or unknown'};
-function render(){scopeSync(state.locale);try{talkFromStatus();talkViewPaint()}catch{}applyLocale(state.locale);renderNeedsYou();renderNotify();fixedLoad();try{palAskShow()}catch{}
+// render('view'): only what opening or closing a chat changes (the to-do list, the sidebar, the chat), when the data is
+// the same as at the last whole render; Learning, Connections and the rest stay as they are drawn (a chat's open or
+// close redrew them all, some 40 ms of each).
+let drawnWhole=null;
+function render(view){scopeSync(state.locale);try{talkFromStatus();talkViewPaint()}catch{}applyLocale(state.locale);renderNeedsYou();renderNotify();fixedLoad();try{palAskShow()}catch{}
 const finishedOpen=listOpen('finished-list'),laterOpen=listOpen('later-list'),promisesOpen=listOpen('promises-list'),waitOpen=listOpen('waiting-list');
 const drafts=Object.fromEntries([...document.querySelectorAll('#suggestions textarea,#suggestions .fleet-card input[id]')].filter(t=>t.value).map(t=>[t.id,t.value]));
 const moreOpen=[...document.querySelectorAll('#suggestions article[id] .more-actions[open]')].map(d=>d.closest('article[id]').id);  // a refresh keeps an opened More menu open
@@ -52,6 +56,7 @@ sideCounts={ready:fuv.ready.length,needs:sideNeeds.length,preparing:fuv.preparin
 for(const[id,v]of Object.entries(drafts)){const t=document.getElementById(id);if(t&&t.value!==v){t.value=v;t.classList.add('filled')}}
 for(const id of moreOpen){const menu=document.getElementById(id)?.querySelector('.more-actions');if(menu)menu.open=true}foldsBack();
 fleetSync();
+if(view==='view'&&drawnWhole===state)return;drawnWhole=state;
 const choiceTone={accept:'mint',complete:'mint',reject:'muted',snooze:'lavender',other:'amber',reopen:'lavender',undo:'lavender',retry:'lavender',update:'lavender'};
 // One decision on Learning: the to-do, what was chosen, through what and when, and the note that came with it
 const DECISION_LABEL={accept:'Accepted',reject:'Not needed',snooze:'Saved for later',other:'Instructions',complete:'Done',send:'Approved send',reopen:'Reopened',undo:'Reopened',retry:'Trying again',update:'Updated',prepare_ahead:'Prepared ahead',bounced:'Email bounced'};
