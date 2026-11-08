@@ -2205,12 +2205,16 @@ def resolve(db, node_id):
 
 
 def same_people(db, limit=30):
-    """Same person? The likely pairs the graph found, strongest first, for the review list in People."""
+    """Same person? The likely pairs, strongest first, for People; never one merges made one before the rebuild."""
+    union = Union()
+    for r in db.execute('SELECT a,b FROM graph_merges WHERE same=1'):
+        union.join(r['a'], r['b'])
     out = []
     for r in db.execute('SELECT s.a,s.b,s.why FROM graph_same s JOIN graph_nodes x ON x.id=s.a JOIN graph_nodes y ON y.id=s.b '
-                        'ORDER BY s.score DESC LIMIT ?', (limit,)):
-        a, b = (node_view(db.execute('SELECT * FROM graph_nodes WHERE id=?', (i,)).fetchone()) for i in (r['a'], r['b']))
-        out.append({'a': a, 'b': b, 'why': r['why']})
+                        'ORDER BY s.score DESC LIMIT ?', (limit + 30,)):
+        if len(out) < limit and union.find(r['a']) != union.find(r['b']):  # A and B, then B and C: A and C are one
+            a, b = (node_view(db.execute('SELECT * FROM graph_nodes WHERE id=?', (i,)).fetchone()) for i in (r['a'], r['b']))
+            out.append({'a': a, 'b': b, 'why': r['why']})
     return out
 
 

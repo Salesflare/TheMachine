@@ -56,7 +56,7 @@ Um das Bild zu ändern, klick darauf: **Bild hochladen**, eins der gefundenen au
 
 ## Zwei Personen zusammenführen
 
-Wenn zwei Personen eine sein könnten, fragt ihre Seite, ob es dieselbe Person ist, und Personen listet sie unter **Gleiche Person?**. **Zusammenführen** verbindet sie, mit allen Nachrichten, Notizen, Rollen und Projekten. **Nicht dieselbe** hält sie dauerhaft getrennt.
+Wenn zwei Personen eine sein könnten, fragt ihre Seite, ob es dieselbe Person ist, und Personen listet sie unter **Gleiche Person?**. **Zusammenführen** verbindet sie, mit allen Nachrichten, Notizen, Rollen und Projekten. **Nicht dieselbe** hält sie dauerhaft getrennt. Deine Antwort bleibt beim Paar stehen, bis du Personen wieder öffnest, so kannst du schnell durch die Liste tippen.
 
 **Alle zusammenführen** führt jedes Paar in der Liste auf einmal zusammen, außer denen, die du mit **Nicht dieselbe** markiert hast. **Rückgängig** direkt danach trennt sie alle wieder.
 

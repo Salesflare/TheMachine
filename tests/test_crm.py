@@ -180,6 +180,25 @@ class Crm(unittest.TestCase):
         with self.store.connect() as db:
             self.assertEqual(crm.org_doubles(db), [])
 
+    def test_a_merged_pair_leaves_same_organization_at_once_and_a_second_merge_is_quiet(self):
+        # Tapped, the pair came back on the next redraw (the list was kept until the rebuild), and its second Merge said
+        # "That is the same organization already".
+        self.mails()
+        self.app.graph_worker_on, self.app.graph_dirty = True, tg.a.threading.Event()  # rebuilds go to the graph worker
+        self.app.graph_build = lambda **k: None
+        with self.store.connect() as db:
+            self.assertEqual(len(crm.org_doubles(db)), 1)  # worked out and kept
+        self.act('graph_org_merge', node_id='org:globex.io', into='org:globex.example')
+        with self.store.connect() as db:
+            self.assertEqual(crm.org_doubles(db), [])
+        again = self.act('graph_org_merge', node_id='org:globex.io', into='org:globex.example')
+        self.assertEqual(again['node_id'], 'org:globex.example')
+        del self.app.graph_build
+        self.build()
+        self.assertEqual(self.act('graph_org_merge', node_id='org:globex.io', into='org:globex.example')['node_id'], 'org:globex.example')
+        with self.store.connect() as db:
+            self.assertEqual(crm.org_doubles(db), [])
+
     # ---------------------------------------------------------------- filters and sorts
 
     def test_projects_people_and_organisations_filter_and_sort_by_their_projects(self):

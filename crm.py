@@ -320,8 +320,8 @@ def merge_orgs(db, node_id, into=None, website=None, now=None):
         if not other:
             raise ValueError('Pick the organization it is the same as')
         alias, target = here['id'], other['id']
-        if alias == target:
-            raise ValueError('That is the same organization already')
+        if alias == target:  # merged already: a second tap, or a list from before the merge
+            return {'node_id': target, 'kept': True}
     name_kept = None
     if alias.startswith('org:') and not alias.startswith('org:named:') and target.startswith('org:named:'):
         # Only the first one has a website: it stays, with the name of the one picked
@@ -424,14 +424,18 @@ def org_doubles(db, limit=30, node_id=None):
     """Same organization? Likely doubles among the organizations: the same name, the same company name on another
     domain (acme.com and acme.io), or the same LinkedIn page. Kept-apart pairs never come back. node_id: only the
     ones for this organization."""
-    candidates = DOUBLES.get('doubles', stamps.stamp(db, ('graph_nodes',)), lambda: _org_candidates(db))
+    # worked out again after a merge too (org_aliases), not only after the rebuild that folds the two
+    candidates = DOUBLES.get('doubles', stamps.stamp(db, ('graph_nodes', 'org_aliases')), lambda: _org_candidates(db))
     if not candidates:
         return []
     apart = {(r['a'], r['b']) for r in db.execute('SELECT a,b FROM org_apart')}
+    now_part = aliases(db)  # read each time: a merge counts at once, before the rebuild that folds the two
     out = []
     for pair, (score, why, x, y) in candidates:
         if pair in apart or (node_id and node_id not in pair):
             continue
+        if now_part.get(pair[0], pair[0]) == now_part.get(pair[1], pair[1]):
+            continue  # one organization already
         x, y = sorted((x, y), key=lambda r: (-r['strength'], r['id']))  # the closer one first: the other joins it
         out.append({'a': _brief(x), 'b': _brief(y), 'why': why})
         if len(out) >= limit:
