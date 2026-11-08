@@ -117,6 +117,13 @@ class Embeddings(unittest.TestCase):
         with self.store.connect() as db:
             plan = ' | '.join(r[3] for r in db.execute('EXPLAIN QUERY PLAN ' + sql))
         self.assertRegex(plan, r'^SCAN v \| SEARCH e USING INTEGER PRIMARY KEY')
+        import graph  # the graph build's vectors: the same order
+        seen.clear()
+        with connect() as db:
+            graph.load_vectors(db, set())
+        sql, = seen
+        with self.store.connect() as db:
+            self.assertRegex(' | '.join(r[3] for r in db.execute('EXPLAIN QUERY PLAN ' + sql)), r'^SCAN v \| SEARCH e USING INTEGER PRIMARY KEY')
 
     def test_related_action_returns_the_events_shape_with_similarity(self):
         self.embed_all()
