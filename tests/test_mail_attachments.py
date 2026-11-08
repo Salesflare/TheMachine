@@ -215,7 +215,7 @@ class AtRest(unittest.TestCase):
                                "VALUES('acme-outlook','AAMk1','ms_graph.message','2026-11-04T09:00:00Z','Settlement','','{}',0,'h','2026-11-04T09:00:00Z')").lastrowid
         seen = []
         app = types.SimpleNamespace(config=self.config | {'accounts': [account]}, store=self.store)
-        with mock.patch.object(assistant.App, 'outlook_attachments', lambda self, acc, message_id, save=None: seen.append((acc['id'], message_id)) or ([{'id': 'x1', 'name': 'settlement.pdf'}], None)):
+        with mock.patch.object(assistant.MailApp, 'outlook_attachments', lambda self, acc, message_id, save=None: seen.append((acc['id'], message_id)) or ([{'id': 'x1', 'name': 'settlement.pdf'}], None)):
             listed = assistant.App.mail_attachment(app, {'event_id': event})['attachments']
         self.assertEqual((seen, listed[0]['name']), ([('acme-outlook', 'AAMk1')], 'settlement.pdf'))
 

@@ -177,7 +177,8 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   EventsStore as a Store method (add_ai_request), so ai_card can leave assistant.py without another writer of the
   sealed events table, ai_card into NewCardsApp (after its events insert became EventsStore.add_ai_request), stop_all
   and message protection into `WorkersApp`; `serve` and `packed_page` into the new `ServeApp`
-  (`machine/app/serve.py`), `dictation_openai` into `VoiceApp`, its script path from `machine.config.ROOT`.
+  (`machine/app/serve.py`), `dictation_openai` into `VoiceApp`, its script path from `machine.config.ROOT`, the mail
+  attachment methods (`mail_attachment`, `gmail_attachments`, `outlook_attachments`, `share_files`) into `MailApp`.
 - **Dashboard code:** in its area's part in `dashboard/` (`<area>-<what>.js`: shell, todos, settings, graph, calendar,
   connections, help, events, new, fleet), next to the functions it works with, never at the end of the script. The
   page's core is in the `shell-*` parts too: locale and error reports (`shell-core.js`), network and outbox, `render()`

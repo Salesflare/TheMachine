@@ -1281,92 +1281,7 @@ class App(*APP_MIXINS):
 
     MAILBOX_LOOKUP_MAX = 10  # messages per mailbox one search keeps
 
-    def mail_attachment(self, args):
-        """An email's attachments for a preparation, read-only (Gmail and Outlook): a list, or one saved in the job's
-        attachments folder, at most 18 MB. With message protection on it is kept there sealed with the message key and
-        the run reads a copy in a private folder that goes after the run (mail_attachments.py); `open` gives such a copy
-        of an attachment saved earlier."""
-        folder = Path(args.get('_folder') or mail_attachments.root(self.config))
-        if args.get('open'):
-            return mail_attachments.open_copy(self.config | {'attachment_root': str(folder)}, args['open'], args.get('job_id'))
-        account = next((a for a in self.config['accounts'] if a['id'] == args.get('account_id')), None)
-        message_id = str(args.get('message_id') or '')
-        if args.get('event_id') is not None:
-            with self.store.connect() as db:
-                row = db.execute("SELECT account_id,source_id FROM events WHERE id=? AND kind IN ('gmail.message','ms_graph.message','outlook.message')",
-                                 (int(args['event_id']),)).fetchone()
-            if not row:
-                raise ValueError('No collected email with that event_id')
-            account = next((a for a in self.config['accounts'] if a['id'] == row['account_id']), None)
-            message_id = row['source_id']
-        if not account or not next_actions.mail_account(account):
-            raise ValueError('Give the account_id of a Gmail or Outlook mailbox')
-        if not message_id:
-            raise ValueError('Give the message_id or event_id of the email')
-        fetch = App.outlook_attachments if next_actions.outlook(account) else App.gmail_attachments
-        found, data = fetch(self, account, message_id, args.get('save'))
-        if not args.get('save'):
-            return {'attachments': found}
-        if len(data) > next_actions.MAX_ATTACHMENT_BYTES:
-            raise ValueError('That attachment is larger than 18 MB')
-        job = str(args.get('job_id') or '')
-        if not re.fullmatch(r'[A-Za-z0-9_-]{1,80}', job):
-            raise ValueError('Give the job_id of this preparation')
-        name = re.sub(r'[^\w. -]+', '_', found['name']).strip(' .') or 'attachment'
-        saved = mail_attachments.save(self.config, folder / job, name, data)
-        return saved | {'name': name, 'mime': found['mime'], 'size': len(data)}
-
     NO_DOC_CONNECTION = 'No Docs connection in this to-do’s area can do things. Give what you need in the to-do instead.'
-
-    def gmail_attachments(self, account, message_id, save=None):
-        """A Gmail message's real attachments, read live with gmail.readonly: the list, or (`save`: its part id or
-        name) that one and its bytes."""
-        try:
-            message = self.gmail_message(account['id'], message_id)[1]
-        except Exception as error:
-            raise ValueError(f'Gmail could not give the message ({type(error).__name__})') from None
-        payload = message.get('payload') or {}
-        found = [{'id': a['part'], 'name': a['name'], 'mime': a['mime'], 'size': a['size'], 'inline': False, 'kind': 'file'}
-                 for a in message_attachments(payload)]
-        if not save:
-            return found, None
-        chosen = next((a for a in found if save in (a['id'], a['name'])), None)
-        if not chosen:
-            raise ValueError('No attachment with that id or name')
-        if chosen['size'] > next_actions.MAX_ATTACHMENT_BYTES:
-            raise ValueError('That attachment is larger than 18 MB')
-        nodes = []
-        def walk(node):
-            if str(node.get('partId', '')) == chosen['id']:
-                nodes.append(node)
-            for child in node.get('parts', []):
-                walk(child)
-        walk(payload)
-        body = nodes[0].get('body') or {}
-        data = body.get('data') or gog_read(self.config, account, 'gmail', 'v1', 'gmail.users.messages.attachments.get',
-                                            {'userId': 'me', 'messageId': message_id, 'id': body['attachmentId']},
-                                            'https://www.googleapis.com/auth/gmail.readonly').get('data', '')
-        return chosen, base64.urlsafe_b64decode(data + '=' * (-len(data) % 4))
-
-    def outlook_attachments(self, account, message_id, save=None):
-        """An Outlook message's attachments through Microsoft Graph, read-only: the list, or that one and its bytes."""
-        try:
-            found = ms_graph.attachments(self.config, credential, account, message_id)
-            if not save:
-                return [{k: a[k] for k in ('id', 'name', 'mime', 'size', 'inline', 'kind')}
-                        | ({'note': 'a link to a cloud file: open it in the browser'} if a['kind'] == 'link' else
-                           {'note': 'an attached email or event: not saved; read the message itself'} if a['kind'] == 'item' else {})
-                        for a in found], None
-            chosen = next((a for a in found if save in (a['id'], a['name'])), None)
-            if not chosen:
-                raise ValueError('No attachment with that id or name')
-            if chosen['kind'] != 'file':
-                raise ValueError('Only file attachments can be saved; ' + ('open this cloud link in the browser' if chosen['kind'] == 'link' else 'this is an attached email or event'))
-            if chosen['size'] > next_actions.MAX_ATTACHMENT_BYTES:
-                raise ValueError('That attachment is larger than 18 MB')
-            return chosen, ms_graph.attachment(self.config, credential, account, message_id, chosen['id'])
-        except ms_graph.GraphError as error:
-            raise ValueError(f'Outlook could not give the attachment ({error})') from None
 
     def action(self, name, args, owner_dashboard=False):
         accounts = [a['id'] for a in self.config['accounts']]
@@ -1812,19 +1727,6 @@ class App(*APP_MIXINS):
         of one that closed. current: an ISO time (tests)."""
         with self.store.connect() as db:
             return Store.still_needed_ask(db, current or now(), lambda row: looks_done(row) or waits_on_others(row), local_tz())
-
-    def share_files(self, event_id, part=None):
-        """A Work email's attachments for the Shared Graph, read-only (Gmail and Outlook): the list, or (part) one file's
-        bytes. Only files: cloud links and attached emails stay where they are."""
-        with self.store.connect() as db:
-            row = db.execute('SELECT account_id,source_id,kind FROM events WHERE id=?', (int(event_id),)).fetchone()
-        account = row and next((a for a in self.config['accounts'] if a['id'] == row['account_id']), None)
-        if not account or not next_actions.mail_account(account) or row['kind'] not in ('gmail.message', 'ms_graph.message') or not row['source_id']:
-            return [] if part is None else None
-        fetch = App.outlook_attachments if next_actions.outlook(account) else App.gmail_attachments
-        if part is None:
-            return [a for a in fetch(self, account, row['source_id'])[0] if a.get('kind', 'file') == 'file' and not a.get('inline')]
-        return fetch(self, account, row['source_id'], part)[1]
 
     BUG_SHOT_BYTES = 2 * 1024 * 1024
     BUG_TEXT = 4000
