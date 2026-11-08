@@ -2,14 +2,14 @@
 // The model in Settings: which one, the plan's windows with when each starts over, a reached limit, and the
 // usage limit resets (ChatGPT). Readings are cached on the server, never a model call by themselves.
 const untilText=t=>{let s=Math.max(60,t-Date.now()/1000|0),d=s/86400|0,h=s%86400/3600|0,m=s%3600/60|0;return d?`${d}d${h?` ${h}h`:''}`:h?`${h}h${m?` ${m}m`:''}`:`${m}m`};
-const clockAt=t=>{const r=new Date(t*1000),c=fmtHM(r);return t-Date.now()/1000>86400?`${r.toLocaleDateString(DL,{weekday:'short'})} ${c}`:c};
+const clockAt=t=>{const r=new Date(t*1000),c=fmtHM(r);return t-Date.now()/1000>86400?`${localeDate(r,DL,{weekday:'short'})} ${c}`:c};
 const windowLabel=l=>['Week','168h','7d'].includes(l)?t('Weekly limit'):['Day','24h'].includes(l)?t('Daily limit'):/^\d+h$/.test(l)?t('{}-hour limit',parseInt(l)):l;
 function resetAction(m){if(!m)return '';if(m.can_reset)return html`<button type="button" class="ghost" data-model-reset>Use a reset</button>`;
  const href=safeURL(m.usage_page);  // only a web address, never javascript:
  return href?html`<a class="head-link" href="${href}" target="_blank" rel="noopener">${m.resets?'Open ChatGPT':'See resets in ChatGPT'}</a>`:''}
 // The banner for a usage limit reached (state.model_pause: window '5h', 'week' or 'limit', until, name); gone when it is null.
 // `fallback`: a working fallback model answers meanwhile (assistant.py fallback_covers), so nothing waits: one short line.
-const pauseWhen=until=>{const r=+until>Date.now()/1000?new Date(until*1000):null;return r?(r.toDateString()===new Date().toDateString()?fmtHM(r):r.toLocaleDateString(DL,{weekday:'short'})+' '+fmtHM(r)):''};
+const pauseWhen=until=>{const r=+until>Date.now()/1000?new Date(until*1000):null;return r?(r.toDateString()===new Date().toDateString()?fmtHM(r):localeDate(r,DL,{weekday:'short'})+' '+fmtHM(r)):''};
 function limitBanner(p){if(!p)return [];if(p.fallback)return [make('span',{},t('{} limit reached, using your fallback.',p.name||'AI'))];const when=pauseWhen(p.until),
  what={'5h':'{} 5-hour limit reached.',week:'{} weekly limit reached.'}[p.window]||'{} usage limit reached.';
  return [make('span',{},make('strong',{},t(what,p.name||'AI')),(when?' '+t('Resets {}.',/^\d/.test(when)?t('at {}',when):when):'')+' '+t('Nothing is lost: The Machine picks up where it left off.'))]}

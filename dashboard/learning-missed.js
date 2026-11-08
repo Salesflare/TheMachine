@@ -5,7 +5,7 @@ const MW_CHANNEL={email:'Email',message:'Message',meeting:'Meeting'};
 const mwPct=v=>v==null?null:Math.round(100*v);
 const mwUrl=u=>typeof u==='string'&&/^https:\/\//.test(u)?u:null;  // only https links open, like the server keeps them
 function missedNodes(m){if(!m)return [];const est=m.adjusted||m.raw;if(!est||est.rate==null)return [];
- const day=new Date(m.at).toLocaleDateString(DL,{day:'numeric',month:'short'});
+ const day=localeDate(new Date(m.at),DL,{day:'numeric',month:'short'});
  const row=x=>{const url=mwUrl(x.url),id=Number(x.event_id);return make('div',{class:'mw-row'},make('span',{class:'grow'},make('small',{},t(MW_CHANNEL[x.channel]||'Message')+' · '+(x.area==='Personal'?t('Personal'):x.area??'')),x.reason||''),
   make('span',{class:'mw-acts'},url?make('a',{href:url,target:'_blank',rel:'noopener noreferrer'},t('Open')):'',
    make('button',{type:'button','data-mw-label':'real','data-mw-id':id,'aria-pressed':x.label==='real'},t('Real miss')),

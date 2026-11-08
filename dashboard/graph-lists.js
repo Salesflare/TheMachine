@@ -10,7 +10,7 @@ $('#fleet-view').addEventListener('click',e=>{const b=e.target.closest('[data-gr
 // A name or address cut off with an ellipsis shows in full on hover or long-press.
 document.addEventListener('pointerover',e=>{const el=e.target.closest?.('.ct,.ell,.fleet-people strong,.fleet-people small');if(el&&!el.title&&el.scrollWidth>el.clientWidth)el.title=el.textContent.trim()});
 // Graph tab: projects heating up or cooling, who's closest, who has gone quiet; tap one for its links and events.
-const day=v=>v?new Date(String(v).length<=10?v+'T12:00':v).toLocaleDateString(DL,{weekday:'short',day:'numeric',month:'short'}):t('never');
+const day=v=>v?localeDate(new Date(String(v).length<=10?v+'T12:00':v),DL,{weekday:'short',day:'numeric',month:'short'}):t('never');
 // An organization's logo from enrichment (https only, no referrer, lazy, fixed size); its initial shows until it loads and when it can't.
 const LOGO_URL=/^https:\/\/[^\s"'<>\\]+$/;
 const orgPic=(n,big)=>{const l=n.profile?.logo||'',u=LOGO_URL.test(l)||/^api\/person-photo\?p=[0-9a-f]{32}$/.test(l)?l:'',px=big?36:22;return html`<span class="org-pic${big?html` big`:''}" aria-hidden="true">${(String(n.name||'').trim()[0]||'?').toUpperCase()}${u?html`<img src="${u}" alt="" width="${px}" height="${px}" loading="lazy" decoding="async" referrerpolicy="no-referrer">`:''}</span>`};

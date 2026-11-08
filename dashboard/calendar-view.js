@@ -69,7 +69,7 @@ function calWith(p,m){const who=calWords(p.who);if(!who.length)return false;cons
  return [m.title,...(m.people||[])].some(t=>{const w=calWords(t);return w.join(' ').includes(full)||w.includes(who[0])&&who[0].length>2})}
 const calSaid=p=>p.together?t('With {}',p.who):p.direction==='mine'?t('Promised to {}',p.who):t('{} promised',p.who);
 const CAL_CARD={prepared:['Prep ready','mint'],accepted:['Preparing','lavender'],instructions:['Preparing','lavender'],pending:['To-do','amber'],snoozed:['To-do','muted']};
-const calShort=k=>{const d=new Date(k+'T12:00');return d.toLocaleDateString(DL,{weekday:'short'})+' '+d.getDate()};  // Sat 24
+const calShort=k=>{const d=new Date(k+'T12:00');return localeDate(d,DL,{weekday:'short'})+' '+d.getDate()};  // Sat 24
 // "09:45 to 10:30" in English; in another language a dash, as its calendars write it (09:45–10:30, ma 26 – wo 28)
 const rangeText=(a,b)=>I18N.lang==='en'?a+' to '+b:a+(/\s/.test(a+b)?' – ':'–')+b;
 function calParts(it){const hm=v=>humanHM(new Date(v)),late=it.day==='overdue';
@@ -89,14 +89,14 @@ function calRow(it){const x=calParts(it),tag=x.href||x.edit||x.view?'a':'div',at
  return `<${tag} class="cal-item k-${x.tone}${it.past?' past':''}"${attrs}><span class="cal-time">${esc(x.time)}</span><span class="cal-dot" aria-hidden="true"></span><span class="cal-main"><span class="cal-title">${x.owner?`<span class="cal-owner">${esc(x.owner)}</span> `:''}<span translate="no">${esc(x.title)}</span></span>${x.sub||x.prep?`<span class="cal-sub">${x.prep?`<span class="cal-prep">${esc(x.prep)}${x.sub?' · ':''}</span>`:''}${esc(x.sub)}</span>`:''}${(x.said||[]).map(t=>`<span class="cal-sub cal-said">${esc(t)}</span>`).join('')}</span><span class="cal-end">${x.badge||''}${x.href||x.edit||x.view?'<span class="cal-go" aria-hidden="true">›</span>':''}</span></${tag}>`}
 function calChip(it){const x=calParts(it),tag=x.href||x.edit||x.view?'a':'div',attrs=x.href?` href="${esc(x.href)}"`:x.edit?` role="button" tabindex="0" data-cal-edit="${esc(x.edit)}"`:x.view?` role="button" tabindex="0" data-cal-view="${esc(x.view)}"`:'';
  return `<${tag} class="cal-chip k-${x.tone}${it.past?' past':''}"${attrs} title="${esc([x.owner,x.title].filter(Boolean).join(' ')+(x.sub?' · '+x.sub:'')+(x.said||[]).map(t=>' · '+t).join(''))}"><span class="t">${esc(x.owner||x.time)}</span><span class="n" translate="no">${esc(x.title)}</span></${tag}>`}
-const calDate=(k,o={weekday:'short',day:'numeric',month:'short'})=>calOf(k).toLocaleDateString(DL,o);  // Sat, Oct 24 (in the owner's date format, DL)
-const calMon=d=>d.toLocaleDateString(DL,{month:'short'}).replace(/\.$/,'');
+const calDate=(k,o={weekday:'short',day:'numeric',month:'short'})=>localeDate(calOf(k),DL,o);  // Sat, Oct 24 (in the owner's date format, DL)
+const calMon=d=>localeDate(d,DL,{month:'short'}).replace(/\.$/,'');
 // A run of days as "Oct 26 – Nov 1, 2026" (the year once, or on both sides when it changes)
 function calSpan(a,n=7){const b=calAdd(a,n-1),y=', '+b.getFullYear();
  if(I18N.lang!=='en')try{return new Intl.DateTimeFormat(DL,{day:'numeric',month:'short',year:'numeric'}).formatRange(a,b)}catch{}
  return a.getFullYear()!==b.getFullYear()?`${calMon(a)} ${a.getDate()}, ${a.getFullYear()} – ${calMon(b)} ${b.getDate()}, ${b.getFullYear()}`:
   a.getMonth()!==b.getMonth()?`${calMon(a)} ${a.getDate()} – ${calMon(b)} ${b.getDate()}${y}`:`${calMon(b)} ${a.getDate()} – ${b.getDate()}${y}`}
-const calMonthName=m=>m.toLocaleDateString(DL,{month:'long',year:'numeric'});
+const calMonthName=m=>localeDate(m,DL,{month:'long',year:'numeric'});
 const calLabel=()=>calMode==='month'?calMonthName(calMonth):calThree()?calSpan(calStart,3):calSpan(calAt);
 const calStepName=()=>calMode==='month'?'month':calThree()?'days':'week';
 // On the current period: this week, this month, or three days that hold today
@@ -106,7 +106,7 @@ function calHead(){const step=calStepName(),[prev,next]=step==='month'?[t('Previ
  return html`<div class="cal-head"><h2 class="page-title">Calendar</h2><div class="cal-nav"><button type="button" class="cal-today${calOnNow()?' now':''}" data-cal-go="0" title="Today (t)">Today</button><button type="button" class="cal-step" data-cal-go="-1" aria-label="${prev}" title="${prev} (←)">‹</button><button type="button" class="cal-step" data-cal-go="1" aria-label="${next}" title="${next} (→)">›</button><span class="cal-range">${calLabel()}</span></div><div class="cal-mode" role="group" aria-label="View">${CAL_VIEWS.map(([v,t,k])=>html`<button type="button" data-cal-mode="${v}" aria-pressed="${calMode===v}" title="${t} (${k})">${t}</button>`)}</div>${calCals.length?html`<button type="button" class="ghost head-new cal-new" data-cal-new title="New event">+ New event</button>`:''}</div>`}
 const calHash=()=>'#calendar?view='+calMode+'&date='+localDay(calMode==='month'?calMonth:calThree()?calStart:calAt);
 function calPush(replace){const h=calHash();if(location.hash===h)return;history[replace?'replaceState':'pushState'](null,'',location.pathname+location.search+h)}
-const calName=k=>{const t=localDay(new Date());return k===t?'Today':k===localDay(calDay(1))?'Tomorrow':k===localDay(calDay(-1))?'Yesterday':calOf(k).toLocaleDateString(DL,{weekday:'long'})};
+const calName=k=>{const t=localDay(new Date());return k===t?'Today':k===localDay(calDay(1))?'Tomorrow':k===localDay(calDay(-1))?'Yesterday':localeDate(calOf(k),DL,{weekday:'long'})};
 // A manual one (under "A clear week") loads only on a tap: loading by itself there found nothing again and again, and
 // the button flashed between Loading and Later days
 const calMoreRow=(dir,manual)=>{const end=dir==='up'?calFrom<=calAdd(calMonday(new Date()),-7*CAL_BACK)||calBefore(calFrom):calTo>=calAdd(calMonday(new Date()),7*CAL_AHEAD);if(end)return '';
@@ -119,7 +119,7 @@ const calStartLine=()=>{const d=calDate(calStarts.day),y=calDate(calStarts.day,{
 // The sticky header's bottom edge: rows under it are out of sight
 const calEdge=()=>{const h=$('#page-head');return h&&!h.hidden?Math.max(0,h.getBoundingClientRect().bottom):0};
 function calAnchor(box){const edge=calEdge();for(const el of box.querySelectorAll('.cal-block[data-day]')){const r=el.getBoundingClientRect();if(r.bottom>edge)return {day:el.dataset.day,top:r.top}}return null}
-const calWeekday=k=>calOf(k).toLocaleDateString(DL,{weekday:'short'}).replace(/[,.]/g,'');
+const calWeekday=k=>localeDate(calOf(k),DL,{weekday:'short'}).replace(/[,.]/g,'');
 function calDayBlock(k,list,late,today){const name=calName(k),date=calDate(k);
  return (k===today?late:'')+`<section class="cal-block${list.length?'':' cal-empty'}" data-day="${k}" aria-label="${esc(name+' '+date)}"><h3 class="cal-day"><span>${esc(name)}</span><small>${esc(/^(Today|Tomorrow|Yesterday)$/.test(name)?date:date.replace(/^\S+\s/,''))}</small>${list.length?`<span class="count">${list.length}</span>`:'<span class="cal-none">Nothing planned</span>'}</h3>${list.map(calRow).join('')}</section>`}
 // Week as a time grid: hours down the side, a column per day, each meeting a block as long as it lasts; ones that
@@ -279,7 +279,7 @@ async function calNew(){if(!calCals.length){const a=new Date();try{const r=await
 // An event that can't be changed here (someone else's, with guests, or on a calendar only to read): its details in the
 // app, and its own calendar one link away. Looking changes nothing.
 const calOpenLabel=url=>{let h='';try{h=new URL(url).hostname}catch{}return /(^|\.)google\.com$/.test(h)?'Open in Google Calendar ↗':/(^|\.)(outlook\.(com|office\.com|office365\.com|live\.com)|office\.com|live\.com)$/.test(h)?'Open in Outlook ↗':'Open in its calendar ↗'};
-function calView(m){const [a,b0]=calTimes(m),b=isNaN(b0)||b0<=a?new Date(a.getTime()+1):b0,long=d=>d.toLocaleDateString(DL,{weekday:'long',day:'numeric',month:'long'});
+function calView(m){const [a,b0]=calTimes(m),b=isNaN(b0)||b0<=a?new Date(a.getTime()+1):b0,long=d=>localeDate(d,DL,{weekday:'long',day:'numeric',month:'long'});
  const allDay=m.all_day||b-a>=864e5,last=new Date(b-1),when=allDay?(localDay(last)!==localDay(a)?rangeText(long(a),long(last)):long(a))+' · '+t('All day')
   :long(a)+', '+rangeText(humanHM(a),(localDay(b)!==localDay(a)?long(b)+', ':'')+humanHM(b));
  const where=[m.location,...(m.rooms||[])].filter(Boolean).join(' · ');  // a booked meeting room is where, not who

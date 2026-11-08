@@ -8,7 +8,7 @@ var aiView=null;let aiOpen='',aiEdit='',aiLines={},aiMade=null,aiBusy=false,aiPa
 const aiPost=(action,args={})=>request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action,args})});
 const AI_LEVELS=[['off','Off'],['read','Read'],['draft','Read & edit']],AI_AREAS=[['both','Work and Personal'],['work','Work only'],['personal','Personal only']],AI_EXPIRY=[['1d','1 day'],['7d','7 days'],['30d','30 days'],['1y','1 year']];
 const aiOptions=(list,now)=>list.map(([v,l])=>`<option value="${v}"${v===now?' selected':''}>${esc(t(l))}</option>`).join('');
-const aiDay=v=>new Date(v).toLocaleDateString(DL,{day:'numeric',month:'short',year:'numeric'});
+const aiDay=v=>localeDate(new Date(v),DL,{day:'numeric',month:'short',year:'numeric'});
 async function aiLoad(){if(aiBusy)return;aiBusy=true;try{aiView=await aiPost('ai_connections');renderAi()}catch(e){errCaught(e);notice(e.message,true)}finally{aiBusy=false}}
 const aiWord=(list,v)=>t((list.find(([k])=>k===v)||[v,v])[1]);
 function aiConnection(c){const both=(aiView.areas||[]).length>1,lines=aiLines[c.id],edit=aiEdit===c.id,open=edit&&aiOpen===c.id;

@@ -6,8 +6,8 @@ const REPEAT_ICON=html`<svg class="ci" viewBox="0 0 24 24" aria-hidden="true"><p
 const REPEAT_NTH={1:'Repeats monthly on the first {}',2:'Repeats monthly on the second {}',3:'Repeats monthly on the third {}',4:'Repeats monthly on the fourth {}','-1':'Repeats monthly on the last {}'};
 const REPEAT_NTH_OPTION={1:'Monthly on the first {}',2:'Monthly on the second {}',3:'Monthly on the third {}',4:'Monthly on the fourth {}','-1':'Monthly on the last {}'};
 const rpDate=iso=>new Date(String(iso).slice(0,10)+'T12:00');
-const rpWeekday=d=>d.toLocaleDateString(DL,{weekday:'long'});
-const rpMonthDay=d=>d.toLocaleDateString(DL,{day:'numeric',month:'long'});
+const rpWeekday=d=>localeDate(d,DL,{weekday:'long'});
+const rpMonthDay=d=>localeDate(d,DL,{day:'numeric',month:'long'});
 // Which weekday of its month a day is: 1 to 4, or -1 for a fifth one (always the last)
 const rpNth=d=>d.getDate()>28?-1:Math.floor((d.getDate()-1)/7)+1;
 function repeatText(rule,anchor){if(!rule)return '';const d=rpDate(anchor),n=rule.n||1,wd=rpWeekday(d);
@@ -53,7 +53,7 @@ function repeatPick(id,anchor){const s=(state.suggestions||[]).find(x=>x.id===id
   if(b.dataset.rpAct==='cancel'){box.remove();return}if(b.dataset.rpAct==='stop'){set(null,'none');return}
   if(b.dataset.rp==='custom'){repeatCustom(box,rule=>set(rule));return}set(repeatOptions(base)[+b.dataset.rp][0])}}
 async function repeatSkip(id,b){if(b)b.disabled=true;b?.closest('details')?.removeAttribute('open');b?.closest('.repeat-picker')?.remove();
- try{const got=await repeatPost('card_repeat_skip',{suggestion_id:id});toast(got.next?t('Skipped. The next one comes {}.',rpDate(got.next).toLocaleDateString(DL,{weekday:'short',day:'numeric',month:'short'})):t('Skipped.'));await refresh()}
+ try{const got=await repeatPost('card_repeat_skip',{suggestion_id:id});toast(got.next?t('Skipped. The next one comes {}.',localeDate(rpDate(got.next),DL,{weekday:'short',day:'numeric',month:'short'})):t('Skipped.'));await refresh()}
  catch(err){errCaught(err);if(b)b.disabled=false;toast(err.message,true)}}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-repeat]');if(b){e.preventDefault();repeatPick(b.dataset.repeat,b);return}
  const k=e.target.closest('[data-repeat-skip]');if(k){e.preventDefault();repeatSkip(k.dataset.repeatSkip,k)}});

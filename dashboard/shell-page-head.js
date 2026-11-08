@@ -28,7 +28,7 @@ function docTitle(tab=[...document.querySelectorAll('main>section')].find(x=>!x.
 function helloLine(g){const d=g?.line&&new Date(g.line.since);if(!d||isNaN(d))return '';const n=new Date(),p=g.line.person,
  days=Math.round((new Date(n.getFullYear(),n.getMonth(),n.getDate())-new Date(d.getFullYear(),d.getMonth(),d.getDate()))/864e5);
  return days<=0?t('{} has been waiting on your reply since earlier today.',p):days===1?t('{} has been waiting on your reply since yesterday.',p)
- :days<7?t('{} has been waiting on your reply since {}.',p,d.toLocaleDateString(DL,{weekday:'long'})):t('{} has been waiting on your reply for over a week.',p)}
+ :days<7?t('{} has been waiting on your reply since {}.',p,localeDate(d,DL,{weekday:'long'})):t('{} has been waiting on your reply for over a week.',p)}
 function pageHead(){const h=$('#page-head'),tab=[...document.querySelectorAll('main>section')].find(x=>!x.hidden)?.id||'inbox';helpLink(tab);docTitle(tab);needsYouPlace();
  if(tab==='inbox'&&chatId){h.hidden=true;return}
  // A Graph page (person, org, project, promise) keeps the section's head; its breadcrumb under it leads back to the list

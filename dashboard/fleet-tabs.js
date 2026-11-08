@@ -95,7 +95,7 @@ async function fleetView(refresh=false,cached=false){const view=$('#fleet-view')
 // Family (family.py): when everyone is free, to-dos for one another and plans to say yes or no to. Self-contained:
 // its forms post family_free, family_todo and family_event; what waits for you is a card under Suggestions.
 const FAMILY_REQ=['todo','event'];
-const familyWhen=v=>{const d=new Date(String(v).length<=10?v+'T12:00':v);if(isNaN(d))return v;return (String(v).length<=10?d.toLocaleDateString(DL,{weekday:'short',day:'numeric',month:'short'}):fmtDHM(d,{weekday:'short',day:'numeric',month:'short'}))};
+const familyWhen=v=>{const d=new Date(String(v).length<=10?v+'T12:00':v);if(isNaN(d))return v;return (String(v).length<=10?localeDate(d,DL,{weekday:'short',day:'numeric',month:'short'}):fmtDHM(d,{weekday:'short',day:'numeric',month:'short'}))};
 // A datetime-local value with this browser's offset, so every Machine reads the same moment.
 const familyMoment=v=>{if(!v)return '';const off=-new Date(v).getTimezoneOffset(),a=Math.abs(off);return `${v.slice(0,16)}${off<0?'-':'+'}${String(Math.floor(a/60)).padStart(2,'0')}:${String(a%60).padStart(2,'0')}`};
 function familySection(f,family){const fam=f.family||{free:[],todos:[],plans:[],mine:[]},people=(family.people||[]).filter(p=>!p.me),today=new Date().toISOString().slice(0,10);

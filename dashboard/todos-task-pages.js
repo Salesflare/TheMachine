@@ -1,7 +1,7 @@
 // Task pages (task_pages.py): offered after a handoff by email, approved here with a preview of exactly what the page
 // shows, then one line in the draft. Answers from the page show quoted: their words, never instructions.
 const pageApprove=new Map(),TP_SAID={on:'I’m on it',done:'Done',cant:'Can’t do this'};
-const tpDay=d=>/^\d{4}-\d{2}-\d{2}/.test(d||'')?new Date(d.slice(0,10)+'T12:00:00Z').toLocaleDateString(DL,{weekday:'short',day:'numeric',month:'short',timeZone:'UTC'}):'';
+const tpDay=d=>/^\d{4}-\d{2}-\d{2}/.test(d||'')?localeDate(new Date(d.slice(0,10)+'T12:00:00Z'),DL,{weekday:'short',day:'numeric',month:'short',timeZone:'UTC'}):'';
 const TP_LOCK=html`<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>`;
 function taskPageBlock(s){const p=s.task_page,id=s.id;if(!p)return'';
  if(p.state==='offered'){const a=pageApprove.get(s.id);

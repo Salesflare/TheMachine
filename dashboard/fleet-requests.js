@@ -14,7 +14,7 @@ function handoffLine(h,s){const names=[String(h.name||t('your teammate')).split(
 // Fleet items that need you are cards under Suggestions (tagged Fleet, Work), built from api/fleet: a teammate's
 // question or request (their words, shown quoted, never acted on), a meeting's follow-ups to split, and confirmations
 // the relay asks for. The Fleet tab keeps people, rules, briefs, your own asks and the log.
-const splitDay=v=>{const d=new Date(String(v).length<=10?v+'T12:00':v);return isNaN(d)?String(v):d.toLocaleDateString(DL,{weekday:'short',day:'numeric',month:'short'})};
+const splitDay=v=>{const d=new Date(String(v).length<=10?v+'T12:00':v);return isNaN(d)?String(v):localeDate(d,DL,{weekday:'short',day:'numeric',month:'short'})};
 const splitWho=p=>{if(p.mine)return 'You';const m=/^(.*?) \(([^()]+@[^()]+)\)$/.exec(p.name||'');return m?html`${m[1]} <small class="muted">${m[2]}</small>`:(p.name||'')};
 // A Fleet item among the to-dos is one too in the sidebar's To decide, so the counts there, in the header and in the
 // section are the same items: it carries its row (the card's id and its title as text). The row brings the card up.
@@ -61,7 +61,7 @@ function fleetCardsOf(f){if(!f?.on)return[];const works=(f.fleets||[]).filter(x=
  return out}
 // Finding people you know on the Network (discovery.py): a permission card once, then a card per person only with a concrete reason
 const netBtn=(label,d,email='',rel='',cls='ghost',confirmText='')=>html`<button type="button" class="${cls}" data-net-do="${d}"${email?html` data-net-email="${email}"`:''}${rel?html` data-net-rel="${rel}"`:''}${confirmText?html` data-confirm-text="${confirmText}"`:''}>${label}</button>`;
-const netDay=at=>{const d=new Date(at);return isNaN(d)?'':d.toLocaleDateString(DL,{weekday:'short',day:'numeric',month:'short'})};
+const netDay=at=>{const d=new Date(at);return isNaN(d)?'':localeDate(d,DL,{weekday:'short',day:'numeric',month:'short'})};
 const netReason=r=>r.kind==='card'?t('Open: {}',r.title):r.kind==='meeting'?`${t('You meet {}',netDay(r.at))}${r.title?` · ${r.title}`:''}`:r.kind==='contact'?t('In your contacts'):r.kind==='joined'?t('Joined {}, in your contacts',netDay(r.at)):'';
 function networkCards(f){const net=f.network;if(!net||!f.friends?.id)return[];const out=[];
  const card=(id,title,body,actions)=>fleetSide(html`<article id="net-${id}" class="card t-amber fleet-card net-card"><div class="meta"><div class="card-badges">${chip('Network','lavender')}</div></div><h3>${title}</h3>${body}${actions}</article>`,'net-'+id,title);

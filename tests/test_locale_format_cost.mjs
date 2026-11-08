@@ -23,6 +23,9 @@ made=0;
 for(let i=0;i<2000;i++){fmtHM(Date.UTC(2026,10,7,i%24,i%60));fmtDHM(Date.UTC(2026,10,1+i%28),{month:'short',day:'numeric',year:'numeric'})}
 assert.ok(made<=3,`2000 stamps made ${made} formatters, not one per stamp`);
 assert.ok(!/\.toLocale(Date|Time)?String\(/.test(fmt),'the shared helpers never make a formatter per call');
+// nor does the rest of the page: a date or time is stamped with localeDate or localeTime (one render() stamped 143)
+const perCall=[...html.matchAll(/\.toLocale(Date|Time)String\(/g)].map(m=>html.slice(Math.max(0,m.index-60),m.index+30));
+assert.deepEqual(perCall,[],'use localeDate(d,DL,{...}) or localeTime(d,DL,{...}) instead');
 // and it shows: the kept formatter is many times quicker than one made per call (a ratio, so a busy computer doesn't matter)
 const at=i=>Date.UTC(2026,10,1+i%28,i%24),run=f=>{const t=performance.now();for(let i=0;i<3000;i++)f(i);return performance.now()-t};
 const native=run(i=>new Date(at(i)).toLocaleDateString('en-GB',{month:'short',day:'numeric',year:'numeric'})+new Date(at(i)).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',hourCycle:'h23'}));
