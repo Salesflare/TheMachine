@@ -37,6 +37,29 @@ from sources import transient
 from timeutil import local_tz, now
 
 
+# Mail a run's search finds (Store.keep_found) that is this close to, or newer than, the account's last sync is left for
+# the review: a mail's own date can be a little older than when it arrived.
+FOUND_NEWS_SLACK = dt.timedelta(hours=1)
+
+
+def found_news_line(last_success):
+    """From when found mail counts as news: the last sync less FOUND_NEWS_SLACK, None when the account never synced."""
+    try:
+        return dt.datetime.fromisoformat(str(last_success).replace('Z', '+00:00')) - FOUND_NEWS_SLACK if last_success else None
+    except ValueError:
+        return None
+
+
+def came_after(occurred_at, line):
+    if line is None or not occurred_at:
+        return False
+    try:
+        when = dt.datetime.fromisoformat(str(occurred_at).replace('Z', '+00:00'))
+        return (when if when.tzinfo else when.replace(tzinfo=dt.timezone.utc)) >= (line if line.tzinfo else line.replace(tzinfo=dt.timezone.utc))
+    except ValueError:
+        return False
+
+
 # Failures in a row before a transient sync failure (a rate limit, the service's own 5xx, the network) goes into the
 # error reports: each waits its Retry-After or the poll interval, so this is an hour or more of not reading.
 TRANSIENT_REPORT_AFTER = 20
@@ -223,8 +246,10 @@ class EventsStore:
     def keep_found(self, account, events):
         """Messages a mailbox search found (App.mailbox_lookup), kept as collected signals so a to-do can hold them: the
         same exclusions, forgetting and sealing as a sync page (commit_page), but no cursor or sync receipt, and marked
-        reviewed (old mail a run looked up is context, never news for the review). One already collected stays as it
-        is. Returns their event ids, in the order found."""
+        reviewed (old mail a run looked up is context, never news for the review). Mail that came in after the
+        account's last sync (less FOUND_NEWS_SLACK) is news the sync hasn't reached yet: it stays for the review, or
+        a search during a run would take a new request's to-do away (the sync skips what is already collected). One
+        already collected stays as it is. Returns their event ids, in the order found."""
         with self.connect() as db:
             have = {r['source_id']: r['id'] for r in db.execute(
                 'SELECT id,source_id FROM events WHERE account_id=? AND source_id IN (' + ','.join('?' * len(events)) + ')',
@@ -236,7 +261,10 @@ class EventsStore:
             rows = {r['source_id']: r['id'] for r in db.execute(
                 'SELECT id,source_id FROM events WHERE account_id=? AND deleted=0 AND source_id IN (' + ','.join('?' * len(events)) + ')',
                 (account, *[e['source_id'] for e in events]))} if events else {}
-            db.executemany('UPDATE events SET analyzed_version=version WHERE id=?', [(rows[e['source_id']],) for e in fresh if e['source_id'] in rows])
+            synced = db.execute('SELECT last_success FROM checkpoints WHERE account_id=?', (account,)).fetchone()
+            line = found_news_line(synced[0] if synced else None)
+            db.executemany('UPDATE events SET analyzed_version=version WHERE id=?',
+                           [(rows[e['source_id']],) for e in fresh if e['source_id'] in rows and not came_after(e.get('occurred_at'), line)])
         return [rows[e['source_id']] for e in events if e['source_id'] in rows]
 
     def record_sync_activity(self, db, account, status, signals=None, error=None, retry_at=None):
