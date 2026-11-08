@@ -246,10 +246,13 @@ The table checks read the SQL in each module's strings. A statement whose table 
   attributes to the end of a mixin's class. Each item goes with the comment lines above it; the script checks the text
   is the same. Then add the imports `tests/test_architecture.py` says the moved code lacks. Code that uses a helper
   defined in `assistant.py` stays until that helper has a module of its own.
-- Lower `assistant.py`'s ceiling in `PY_OVER_BUDGET` to its new size in the same pull request.
+- `assistant.py` is within the general Python budget and out of `PY_OVER_BUDGET`; keep it there.
+- When the moved code is named by file elsewhere (`scripts/help_check.py` `FEATURES`, `scripts/i18n_extract.py`
+  `SERVER_TEXT`, a test that reads source text), point that at the new file in the same pull request.
 - Tests patch names on `assistant` with `seams.patch_everywhere` (tests/seams.py), never plain `patch.object`: it
   also patches every module of the app that binds the same object, so code moved out of `assistant.py` sees the
-  patch too. tests/test_seams.py fails on a plain patch; methods go through the class (`patch.object(a.App, ...)`).
+  patch too. tests/test_seams.py fails on a plain patch or assignment; methods go through the class
+  (`patch.object(a.App, ...)`).
 - **Prefer plain modules to mixins.** A mixin still reaches into `App` (`self.store`, `self.config`, other mixins), so
   it moves code without separating it. New domain code goes to a flat module of plain functions that take `db`,
   `config` and the values they need as arguments (`notify.py`, `follow_ups.py`); `App` keeps a thin method that
