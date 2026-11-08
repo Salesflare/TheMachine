@@ -1312,7 +1312,7 @@ def guided(paths, since, ui=None):
 def next_steps(config, healthy, started, paths=None):
     paths = paths or Paths()
     host, path = config.get('dashboard_host', ''), config.get('dashboard_path', '/assistant/')
-    lines = ['', 'Next steps:']
+    lines = ['', 'Your Machine is up. Next steps:' if started and healthy else 'Next steps:']
     if started:
         lines.append(f'  - Health: {"OK" if healthy else "not answering yet; check " + service.hint("logs")}')
     for account in config.get('accounts', []):
@@ -1496,6 +1496,8 @@ def main(argv=None):
             return 1
         if moved:  # the release's own installer from here on
             os.execv(sys.executable, [sys.executable, str(ROOT / 'installer.py'), *(sys.argv[1:] if argv is None else argv)])
+    if not paths.config.exists():
+        say('Setting up a Machine of your own on this computer.\n')
     if interactive:
         try:
             offer_openclaw(onboarding.UI())
