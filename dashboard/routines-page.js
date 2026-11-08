@@ -17,16 +17,22 @@ function rtCard(r){const [last,...older]=r.runs,paused=r.state==='paused';
 const rtSuggested=r=>html`<article class="rt rt-s" data-rt="${r.id}"><h3>${r.name}</h3><p class="rt-when">${rtWhen(r)}</p><p class="rt-what">${r.instructions}</p>${r.runs[0]?rtRun(r.runs[0]):''}
  <div class="actions"><button type="button" class="primary" data-rt-do="accept">${t('Add')}</button><button type="button" class="quiet" data-rt-do="no">${t('No thanks')}</button></div></article>`;
 function routinesRender(){const box=$('#routines-view'),list=routinesData?.routines;if(!box||!list)return;const typed=$('#rt-words')?.value||'';
- box.innerHTML=html`<form class="rt-new"><input id="rt-words" autocomplete="off" placeholder="${t('Every Monday, sum up my deals')}" aria-label="${t('New routine')}"><button class="primary">${t('Add')}</button></form>
+ box.innerHTML=html`<form class="rt-new"><textarea id="rt-words" rows="1" spellcheck="true" autocapitalize="sentences" placeholder="${t('Every Monday, sum up my deals')}" aria-label="${t('New routine')}"></textarea><button class="primary">${t('Add')}</button></form>
   <p class="fine">${t('Routines only read. They don’t send or change anything.')}</p>${routinesData.suggested?.length?html`<section class="rt-sugg" aria-label="${t('Suggested')}"><h2>${t('Suggested')}</h2><p class="fine">${t('From your OpenClaw jobs. Each one ran once to show you.')}</p>${routinesData.suggested.map(rtSuggested)}</section>`:''}${list.length?list.map(rtCard):html`<p class="rt-empty">${t('No routines yet')}</p>`}`.s;
- $('#rt-words').value=typed}
+ rtGrow(Object.assign($('#rt-words'),{value:typed}))}
+// Grows with its words, up to six lines (routines-page.css)
+function rtGrow(x){x.style.height='';x.style.height=x.scrollHeight+x.offsetHeight-x.clientHeight+'px'}
 async function routinesView(force){if(!force&&Date.now()-routinesAt<20000&&routinesData){routinesRender();return}
  try{routinesData=await request('api/routines');routinesAt=Date.now();routinesRender()}catch(e){errCaught(e);toast(e.message,true)}}
 const rtPost=(action,args)=>request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action,args})});
 async function rtDo(action,args,b,done){if(b)b.disabled=true;try{routinesData={...routinesData,...await rtPost(action,args)};routinesAt=Date.now();routinesRender();if(done)toast(done);return true}catch(e){errCaught(e);toast(e.message,true);if(b)b.disabled=false;return false}}
-$('#routines-view').addEventListener('submit',e=>{e.preventDefault();const f=e.target,input=f.querySelector('input'),words=input.value.trim();if(!words)return;
- if(f.classList.contains('rt-new'))rtDo('routine_new',{words},f.querySelector('button'),t('Routine added')).then(ok=>{if(ok)$('#rt-words').value=''});
+$('#routines-view').addEventListener('submit',e=>{e.preventDefault();const f=e.target,input=f.querySelector('textarea,input'),words=input.value.trim();if(!words)return;
+ if(input.id==='rt-words')rtDo('routine_new',{words},f.querySelector('button'),t('Routine added')).then(ok=>{if(ok)rtGrow(Object.assign($('#rt-words'),{value:''}))});
  else rtDo('routine_when',{id:f.closest('[data-rt]').dataset.rt,words},f.querySelector('button'))});
+// As the chat box: Enter adds, Shift+Enter or a phone's Enter is a new line
+$('#routines-view').addEventListener('input',e=>{if(e.target.id==='rt-words')rtGrow(e.target)});
+$('#routines-view').addEventListener('keydown',e=>{if(e.target.id!=='rt-words'||e.key!=='Enter'||e.isComposing||e.keyCode===229||e.altKey)return;
+ if(!(e.ctrlKey||e.metaKey)&&(e.shiftKey||matchMedia('(pointer: coarse)').matches))return;e.preventDefault();e.stopPropagation();e.target.form.requestSubmit()});
 $('#routines-view').addEventListener('click',e=>{const old=e.target.closest('[data-rt-old]');if(old){const choice=old.dataset.rtOld;rtDo('routine_old_job',{id:old.closest('[data-rt]').dataset.rt,choice},old,choice==='off'?t('Old job turned off'):'');return}
  const b=e.target.closest('[data-rt-do]');if(!b)return;const card=b.closest('[data-rt]'),id=card.dataset.rt,what=b.dataset.rtDo;
  if(what==='accept')rtDo('routine_accept',{id},b,t('Routine added'));

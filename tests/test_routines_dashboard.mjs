@@ -41,6 +41,18 @@ try{
   await page.locator('#routines-view .rt-empty').waitFor();
   assert.equal((await page.locator('#routines-view .rt-empty').innerText()).trim(),'No routines yet');
   assert.equal(await page.locator('#rt-words').getAttribute('placeholder'),'Every Monday, sum up my deals');
+  // A long routine wraps and the box grows with it, up to about six lines, then scrolls; on a phone Add sits under it
+  const words=page.locator('#rt-words'),one=(await words.boundingBox()).height;
+  await words.fill('Every Friday at 4, look at what shipped this week in the project repository and sum it up in three short lines in the style of the earlier posts.');
+  const grown=(await words.boundingBox()).height;assert.ok(grown>one*1.5,`the box grows (${one} -> ${grown})`);
+  await words.fill('line\n'.repeat(20));const tall=(await words.boundingBox()).height;
+  assert.ok(tall<one*7&&await words.evaluate(x=>x.scrollHeight>x.clientHeight),`it stops at about six lines and scrolls (${tall})`);
+  const add=await page.locator('.rt-new>button').boundingBox(),box=await words.boundingBox();
+  if(width<600)assert.ok(add.y>=box.y+box.height,'Add under the box on a phone');else assert.ok(add.x>=box.x+box.width,'Add beside it');
+  // Shift+Enter is a new line; Enter adds (the whole text, then the box empties)
+  await words.fill('Sum up my deals');await words.press('Shift+Enter');assert.equal(await words.inputValue(),'Sum up my deals\n');assert.equal(sent('routine_new').length,0);
+  await words.press('Enter');await page.waitForFunction(()=>!document.querySelector('#rt-words').value);
+  assert.deepEqual(sent('routine_new'),[{action:'routine_new',words:'Sum up my deals'}]);assert.equal((await words.boundingBox()).height,one);
   list=[routine()];await page.evaluate(()=>routinesView(true));
   const card=page.locator(`[data-rt="${ID}"]`);await card.waitFor();
   // The result is text with bold, never markup
@@ -52,6 +64,11 @@ try{
   await card.locator('.more-actions>summary').click();
   assert.deepEqual(await card.locator('.more-menu>button').evaluateAll(n=>n.map(x=>x.textContent)),['Change when','Pause','Stop']);
   const menu=await card.locator('.more-menu').boundingBox();assert.ok(menu.x>=0&&menu.x+menu.width<=width,'the menu fits the screen');
+  // Change when changes this routine, never adds a new one
+  await card.locator('[data-rt-do="when"]').click();await card.locator('.rt-when-form input').fill('Every weekday at 8');await card.locator('.rt-when-form input').press('Enter');
+  for(let i=0;i<60&&!sent('routine_when').length;i++)await page.waitForTimeout(50);
+  assert.deepEqual(sent('routine_when'),[{action:'routine_when',id:ID,words:'Every weekday at 8'}]);assert.equal(sent('routine_new').length,1);
+  if(!await card.locator('.more-menu').isVisible())await card.locator('.more-actions>summary').click();
   // Stop: the first tap asks, and the menu stays open for the second
   await card.locator('[data-rt-do="stop"]').click();
   assert.equal(await card.locator('[data-rt-do="stop"]').innerText(),'Stop for good?');
