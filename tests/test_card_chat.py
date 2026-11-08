@@ -488,6 +488,33 @@ class CardChat(unittest.TestCase):
         with patch.object(a.subprocess, 'run', side_effect=slow), patch_everywhere(a, 'node_bin', return_value='node'), patch_everywhere(a, 'node_env', return_value={}):
             self.assertEqual(self.app.card_chat_gateway({'session_key': 'x'}), {'error': 'unavailable', 'reason': 'timeout'})
 
+    def test_missing_node_packages_are_put_in_so_the_next_read_works(self):
+        # npm ci failed during the install (or never ran): the helper can't start. Instead of "Trying again…" for good,
+        # the service puts the pinned packages in once, in the background, and says why in the log.
+        import installer
+        missing = a.subprocess.CompletedProcess(['node'], 1, '', "Error [ERR_MODULE_NOT_FOUND]: Cannot find package '@openclaw/gateway-client'")
+
+        class Now:  # the repair's thread, run at once
+            def __init__(self, target, **kwargs):
+                self.target = target
+
+            def start(self):
+                self.target()
+        with patch.object(a.subprocess, 'run', return_value=missing), patch_everywhere(a, 'node_bin', return_value='/opt/node/bin/node'), \
+                patch_everywhere(a, 'node_env', return_value={}), patch.object(a.threading, 'Thread', Now), \
+                patch.object(installer, 'install_node_packages', return_value=True) as install, self.assertLogs('personal-assistant', 'WARNING') as logged:
+            self.assertEqual(self.app.card_chat_gateway({'session_key': 'x'}), {'error': 'unavailable', 'reason': 'setup'})
+            self.app.card_chat_gateway({'session_key': 'x'})  # the dashboard asks again 4 s later: one install at a time
+        install.assert_called_once_with('/opt/node/bin/node', a.ROOT)
+        self.assertEqual(logged.output, ['WARNING:personal-assistant:card chat node packages missing; installed=True'])
+        # Any other failure stays a plain "unavailable", with no install
+        with patch.object(a.subprocess, 'run', return_value=a.subprocess.CompletedProcess(['node'], 1, '', 'boom')), \
+                patch_everywhere(a, 'node_bin', return_value='node'), patch_everywhere(a, 'node_env', return_value={}), \
+                patch.object(installer, 'install_node_packages') as install:
+            self.app._chat_packages_tried = -1e9
+            self.assertEqual(self.app.card_chat_gateway({'session_key': 'x'}), {'error': 'unavailable'})
+        install.assert_not_called()
+
     def test_card_chat_refuses_what_is_not_a_card(self):
         for bad in ('', '../x', 'ABCDEF0123456789', '0' * 16):
             with self.assertRaises(ValueError):
