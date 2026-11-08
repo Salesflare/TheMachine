@@ -239,9 +239,9 @@ OTHER_WRITERS = {
     'crm_tags': {'crm_import.py'},
     'decisions': {'follow_ups.py', 'graph.py', 'machine/app/follow_ups.py', 'machine/store/faults.py',
                   'sandbox/load.py', 'work_removal.py'},
-    'deliveries': {'fleet.py', 'follow_ups.py', 'machine/app/follow_ups.py', 'machine/app/preparation.py',
-                   'machine/delivery/deliver.py', 'machine/export/hold.py', 'machine/store/faults.py',
-                   'sandbox/load.py'},
+    'deliveries': {'fleet.py', 'follow_ups.py', 'machine/app/card_actions.py', 'machine/app/follow_ups.py',
+                   'machine/app/preparation.py', 'machine/delivery/deliver.py', 'machine/export/hold.py',
+                   'machine/store/faults.py', 'sandbox/load.py'},
     'draft_edits': {'graph.py'},
     'edits_offered': {'machine/app/review.py'},
     'enrich_prefs': {'security_levels.py'},
@@ -395,7 +395,7 @@ PY_LINE_BUDGET = 2_500
 PY_BYTE_BUDGET = 450 * 1024
 PY_RATCHET_SLACK = (500, 50_000)
 PY_OVER_BUDGET = {
-    'assistant.py': (6_050, 382_000),
+    'assistant.py': (5_700, 346_000),
     'fleet.py': (3_800, PY_BYTE_BUDGET),
     'graph.py': (5_400, PY_BYTE_BUDGET),
     'next_actions.py': (2_650, PY_BYTE_BUDGET),

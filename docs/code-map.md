@@ -150,7 +150,8 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   `machine/app/browser.py` (`BrowserApp`): the browser and site sign-in actions of `App.action`,
   `machine/app/profile.py` (`ProfileApp`) and `machine/app/feedback.py` (`FeedbackApp`), with the projects, boards and
   CRM actions into `GraphActionsApp`, `learning_undo` into `FleetApp` and the review run's own actions into
-  `ReviewApp`.
+  `ReviewApp`, `machine/app/card_actions.py` (`CardActionsApp`: a to-do's own actions of `App.action`: prepare,
+  decide, revise_draft, confirm_action, refresh_card, chat files and task_import, with the helpers only they use).
 - **Dashboard code:** in its area's part in `dashboard/` (`<area>-<what>.js`: shell, todos, settings, graph, calendar,
   connections, help, events, new, fleet), next to the functions it works with, never at the end of the script. The
   page's core is in the `shell-*` parts too: locale and error reports (`shell-core.js`), network and outbox, `render()`
