@@ -607,20 +607,21 @@ def mailing_sources(db, config, now=None):
     worth connecting. From the senders' addresses only (setup_hints, and the first look's ending: first_look_done)."""
     services = {a.get('service') for a in config.get('accounts') or [] if isinstance(a, dict)}
     since = ((now or dt.datetime.now(dt.timezone.utc)) - dt.timedelta(days=30)).isoformat()
-    out = []
-    for service, label, domains in HINT_SOURCES:
-        if service in services:
-            continue
-        like = ' OR '.join("lower(json_extract(metadata,'$.from')) LIKE ?" for _ in domains)
-        rows = db.execute(f"SELECT json_extract(metadata,'$.from') FROM events WHERE kind IN ('gmail.message','ms_graph.message') AND history=0 "
-                          f"AND occurred_at>=? AND ({like})", (since, *[f'%@%{d}%' for d in domains]))
-        found = 0
-        for (sender,) in rows:  # the LIKE only narrows: the sender's own domain must be the service's (not x.com in fedex.com)
-            found += sender_domain_in(sender, domains)
-            if found >= HINT_MAILS:
-                out.append((service, label))
-                break
-    return out
+    return [(service, label) for service, label, domains in HINT_SOURCES
+            if service not in services and mails_from(db, domains, since, HINT_MAILS) >= HINT_MAILS]
+
+
+def mails_from(db, domains, since, enough):
+    """How many mails since `since` came from one of these domains (sender_domain_in), counting up to `enough`."""
+    like = ' OR '.join("lower(json_extract(metadata,'$.from')) LIKE ?" for _ in domains)
+    rows = db.execute(f"SELECT json_extract(metadata,'$.from') FROM events WHERE kind IN ('gmail.message','ms_graph.message') AND history=0 "
+                      f"AND occurred_at>=? AND ({like})", (since, *[f'%@%{d}%' for d in domains]))
+    found = 0
+    for (sender,) in rows:  # the LIKE only narrows: the sender's own domain must be the service's (not x.com in fedex.com)
+        found += sender_domain_in(sender, domains)
+        if found >= enough:
+            break
+    return found
 
 
 def setup_hints(store, config, now=None):

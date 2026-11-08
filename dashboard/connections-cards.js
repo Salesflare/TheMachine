@@ -68,13 +68,25 @@ function connectDraw(box,kind,h,focus){const was=box.dataset.view;setHTML(box,h)
   scrollTo(scrollX,g.y);tile?.focus({preventScroll:true});placeNote();return}
  viewTop(box,focus&&box.querySelector(focus))}
 $('#connect-add').addEventListener('click',e=>{const tile=e.target.closest('.connect-sources>button.connect-source');if(tile)connectGrid={y:scrollY,sig:placeSig(tile)}},true);
+// The grid: Suggested for you first (connect_suggested: only tiles with a signal, each with its why; none without one),
+// then every other source under its group (onboarding.GROUPS), A to Z within it. A group with nothing to show is left out.
+const CONNECT_GROUPS=[['mail','Mail and calendar'],['chat','Chat'],['meetings','Meetings'],['docs','Docs and files'],['customers','Customers'],['work','Projects and code'],['other','Other']];
+const connectWhy=(s,x)=>s.why==='unfinished'?t('Setup didn’t finish'):s.why==='mail'?t(['{} email from {} in 30 days','{} emails from {} in 30 days'],s.count,x.label)
+ :s.why==='meetings'?t(['{} {} meeting on your calendar','{} {} meetings on your calendar'],s.count,x.label):s.why==='links'?t(['{} message links to {}','{} messages link to {}'],s.count,x.label):'';
+function connectTile(x,why){const more=x.connected?html`<small class="count">${x.connected} connected</small>`:'',what=why?html`<small class="why">${why}</small>`:x.what?html`<small>${x.what}</small>`:'';
+ if(x.hosted_signin&&connectList.manage_url)return html`<button type="button" class="connect-source" data-connect-signin="${x.name}"><b>${x.label}</b>${what}${more}</button>`;
+ if(x.account_page&&connectList.manage_url)return html`<a class="connect-source" href="${safeHref(connectList.manage_url+'#'+x.account_page)}" target="_blank" rel="noopener"><b>${x.label} ↗</b>${what}${more}</a>`;
+ if(x.signin&&!connectList.manage_url)return html`<button type="button" class="connect-source" data-connect-signin="${x.name}"><b>${x.label}</b>${what}${more}</button>`;
+ return x.broker?(connectList.manage_url?html`<a class="connect-source" href="${safeHref(connectList.manage_url+(BROKER_LINK[x.service]||'#sources'))}" target="_blank" rel="noopener"><b>${x.label} ↗</b>${what}${more}</a>`:''):html`<button type="button" class="connect-source" data-connect="${x.name}"><b>${x.label}</b>${what}${more}</button>`}
 function renderConnectAdd(){const box=$('#connect-add');if(connectRun)return renderConnectRun();if(connectSignin)return renderConnectSignin();if(connectForm)return renderConnectForm();if(connectGbrain)return renderGbrain();if(!connectList)return;
- const items=connectList.sources.map(x=>{const more=x.connected?html`<small class="count">${x.connected} connected</small>`:'',what=x.what?html`<small>${x.what}</small>`:'';
-  if(x.hosted_signin&&connectList.manage_url)return html`<button type="button" class="connect-source" data-connect-signin="${x.name}"><b>${x.label}</b>${what}${more}</button>`;
-  if(x.account_page&&connectList.manage_url)return html`<a class="connect-source" href="${safeHref(connectList.manage_url+'#'+x.account_page)}" target="_blank" rel="noopener"><b>${x.label} ↗</b>${what}${more}</a>`;
-  if(x.signin&&!connectList.manage_url)return html`<button type="button" class="connect-source" data-connect-signin="${x.name}"><b>${x.label}</b>${what}${more}</button>`;
-  return x.broker?(connectList.manage_url?html`<a class="connect-source" href="${safeHref(connectList.manage_url+(BROKER_LINK[x.service]||'#sources'))}" target="_blank" rel="noopener"><b>${x.label} ↗</b>${what}${more}</a>`:''):html`<button type="button" class="connect-source" data-connect="${x.name}"><b>${x.label}</b>${what}${more}</button>`});
- connectDraw(box,'grid',html`<p class="sub-note">Pick a source to connect.${connectList.saveable||connectList.manage_url?'':html` This service can’t save its settings: use <code>assistant connect</code> in a terminal.`}</p><div class="connect-sources">${items}${codexTile()}${gbrainTile()}</div>`)}
+ const by=new Map(connectList.sources.map(x=>[x.name,x])),picks=[];
+ for(const s of connectList.suggested||[]){const x=by.get(s.name),why=x&&!x.connected&&connectWhy(s,x),tile=why&&connectTile(x,why);if(tile)picks.push([s.name,tile])}
+ const picked=new Set(picks.map(([n])=>n)),groups=new Map(CONNECT_GROUPS.map(([k])=>[k,[]])),add=(g,label,tile)=>{if(tile)(groups.get(g)||groups.get('other')).push([label,tile])};
+ for(const x of connectList.sources)if(!picked.has(x.name))add(x.group,x.label,connectTile(x));
+ add('work','Codex',codexTile());add('other','GBrain',gbrainTile());
+ const order=new Intl.Collator(I18N.lang||'en',{sensitivity:'base'}),list=(h,tiles,cls='')=>html`<section class="connect-group${cls}"><h4>${h}</h4><div class="connect-sources">${tiles}</div></section>`;
+ const rest=CONNECT_GROUPS.map(([k,h])=>{const g=groups.get(k).sort((a,b)=>order.compare(a[0],b[0]));return g.length?list(t(h),g.map(([,tile])=>tile)):''});
+ connectDraw(box,'grid',html`${connectList.saveable||connectList.manage_url?'':html`<p class="sub-note">Pick a source to connect.${html` This service can’t save its settings: use <code>assistant connect</code> in a terminal.`}</p>`}${picks.length?list(t('Suggested for you'),picks.map(([,tile])=>tile),' suggested'):''}${rest}`)}
 // Codex (codex_signin.py): its own tile. It signs in with Codex's own device code, shown here: a hosted Machine's control
 // plane runs that sign-in on its server (POST /_machine/connect, like GitHub), a self-hosted Machine runs it itself.
 const CODEX_DEVICE=/^https:\/\/auth\.openai\.com\/codex\/device[\w/.-]*$/;

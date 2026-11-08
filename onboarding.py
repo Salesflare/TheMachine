@@ -289,6 +289,21 @@ def _prompt_key(text):
     return ' '.join(text.lower().split())
 
 
+# The + Add list's groups, in the order it shows them (the dashboard's CONNECT_GROUPS names them). A connector may say
+# its own (SETUP['group']); any other source is under Other.
+GROUPS = ('mail', 'chat', 'meetings', 'docs', 'customers', 'work', 'other')
+GROUP_OF = {'gmail': 'mail', 'calendar': 'mail', 'outlook': 'mail', 'outlook_calendar': 'mail',
+            'slack': 'chat', 'teams': 'chat', 'whatsapp': 'chat', 'telegram': 'chat', 'linkedin': 'chat', 'x': 'chat',
+            'zoom': 'meetings', 'google_meet': 'meetings', 'docs': 'docs',
+            'salesflare': 'customers', 'intercom': 'customers', 'stripe': 'customers',
+            'github': 'work', 'shortcut': 'work', 'trello': 'work'}
+
+
+def group_of(service):
+    own = (setup_of(service) or {}).get('group') if service not in GROUP_OF else None
+    return GROUP_OF.get(service) or (own if own in GROUPS else 'other')
+
+
 def catalog(config):
     """The sources this install can add, with what each asks for and how many are connected already. `broker`:
     a hosted machine's control plane signs it in (its account page), not this install. `account_page`: the part of
@@ -308,7 +323,7 @@ def catalog(config):
         if service == 'teams' and not teams_setup.offered(config):
             continue
         setup = setup_of(service) or {}
-        found.append({'name': name, 'service': service, 'label': label(service), 'note': setup.get('note'), 'what': setup.get('what'),
+        found.append({'name': name, 'service': service, 'label': label(service), 'group': group_of(service), 'note': setup.get('note'), 'what': setup.get('what'),
                       'connected': have.get(service, 0), 'broker': service in brokered or bool(setup.get('broker')),
                       'form': web_form(config, service),
                       **({'account_page': setup['account_page']} if isinstance(setup.get('account_page'), str) else {})})

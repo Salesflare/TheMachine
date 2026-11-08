@@ -10,7 +10,8 @@ const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modul
 // the grid was (only the footer showing). Back returns to the grid where it was, on the tile it left from.
 // SHOTS=<folder> saves screenshots of the grid scrolled down and of each view right after the tap.
 const dashboard=await dashboardPage();
-const filler=Array.from({length:18},(_,n)=>({name:'src'+n,service:'src'+n,label:'Source '+(n+1),what:'Messages and activity from source '+(n+1)+'.',connected:0,broker:false,signin:'trello'}));
+// The grid reads A to Z within its group: the filler sorts first, so the three below are its last row
+const filler=Array.from({length:18},(_,n)=>({name:'src'+n,service:'src'+n,label:'A source '+String(n+1).padStart(2,'0'),what:'Messages and activity from source '+(n+1)+'.',connected:0,broker:false,signin:'trello'}));
 const sources=[...filler,
  {name:'trello',service:'trello',label:'Trello',what:'Card changes, comments and activity on one Trello board.',connected:0,broker:false,signin:'trello'},
  {name:'shortcut',service:'shortcut',label:'Shortcut',what:'Stories and comments in your Shortcut workspace.',connected:0,broker:false,form:{ask:[],secret:'Shortcut API token',scope:true,company:'Acme'}},

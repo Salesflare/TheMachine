@@ -1032,6 +1032,7 @@
  "Custom": "Personnalisé",
  "Custom: you changed a setting. Pick a level to reset them.": "Personnalisé : vous avez modifié un réglage. Choisissez un niveau pour les réinitialiser.",
  "Customer conversations in your Intercom workspace.": "Les conversations clients de votre espace Intercom.",
+ "Customers": "Clients",
  "Customize": "Personnaliser",
  "Custom…": "Personnalisé…",
  "DM with {}": "Message direct avec {}",
@@ -1137,6 +1138,7 @@
  "Doc reply button labels say Post, Reply or Send, such as Post reply": "Les libellés des boutons de réponse de document disent Publier, Répondre ou Envoyer, comme Publier la réponse",
  "Doc writes aren’t set up. Nothing was changed.": "L’écriture de documents n’est pas configurée. Rien n’a été modifié.",
  "Docs": "Documents",
+ "Docs and files": "Documents et fichiers",
  "Docs are read only for a running preparation of the task the owner started": "Les documents ne sont lus que pour une préparation en cours de la tâche lancée par le propriétaire",
  "Docs for {} didn't check out ({})": "Docs pour {} n’a pas passé la vérification ({})",
  "Doesn’t repeat": "Ne se répète pas",
@@ -3355,6 +3357,7 @@
  "Project name": "Nom du projet",
  "Projects": "Projets",
  "Projects (G then J)": "Projets (G puis J)",
+ "Projects and code": "Projets et code",
  "Projects of one kind show here in stages, as your messages move them.": "Les projets d’un même type s’affichent ici par étapes, au fil de vos messages.",
  "Projects opens on this board now.": "Projets s’ouvre maintenant sur ce tableau.",
  "Projects:": "Projets :",
@@ -3961,6 +3964,7 @@
  "Settings:": "Paramètres :",
  "Settings: {}": "Paramètres : {}",
  "Setup checks": "Vérifications de configuration",
+ "Setup didn’t finish": "La configuration n’a pas abouti",
  "Setup to-do": "Tâche de démarrage",
  "Share": "Partager",
  "Share a person from their page": "Partagez une personne depuis sa page",
@@ -4330,6 +4334,7 @@
  "Suggested": "Suggérée",
  "Suggested by": "Suggéré par",
  "Suggested edit": "Modification suggérée",
+ "Suggested for you": "Suggéré pour vous",
  "Suggested for your to-dos": "Suggérées pour vos tâches",
  "Suggested inviting {} to the Family": "Invitation de {} dans la Famille suggérée",
  "Suggested update": "Mise à jour suggérée",
@@ -6332,6 +6337,10 @@
   "one": "{} e-mail",
   "other": "{} e-mails"
  },
+ "{} emails from {} in 30 days": {
+  "one": "{} e-mail de {} en 30 jours",
+  "other": "{} e-mails de {} en 30 jours"
+ },
  "{} failed attempts in a row": {
   "one": "{} échec d’affilée",
   "other": "{} échecs d’affilée"
@@ -6498,6 +6507,10 @@
  },
  "{} messages being checked": "{} messages en cours de vérification",
  "{} messages checked": "{} messages vérifiés",
+ "{} messages link to {}": {
+  "one": "{} message renvoie vers {}",
+  "other": "{} messages renvoient vers {}"
+ },
  "{} messages read, from {}": {
   "one": "{} message lu, de {}",
   "other": "{} messages lus, de {}"
@@ -6838,6 +6851,10 @@
   "other": "{} règles d’écriture"
  },
  "{} wrote this email for you. Read it, change it if you like, and send it yourself.": "{} a écrit cet e-mail pour vous. Lisez-le, modifiez-le si vous voulez et envoyez-le vous-même.",
+ "{} {} meetings on your calendar": {
+  "one": "{0} réunion {1} dans votre agenda",
+  "other": "{0} réunions {1} dans votre agenda"
+ },
  "{} {} this thread, also if it is sensitive. Personal never goes.": "{} {} ce fil, même s’il est sensible. Le perso n’est jamais partagé.",
  "{} {} {}, deals too. Personal and other companies never go.": "{} {} {}, deals compris. Le perso et les autres entreprises ne sont jamais partagés.",
  "{} {}, tap to show or hide": "{} {}, touchez pour afficher ou masquer",
