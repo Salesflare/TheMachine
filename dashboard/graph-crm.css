@@ -1,3 +1,4 @@
+/*@lazy*/
 /* The Graph as a CRM: Mine and Filter by the lists, the filter sheet, an owner, an organization's websites, a CSV import */
 .pipeline{margin:0 0 12px;border:1px solid var(--c-line);border-radius:12px;background:var(--c-surface)}.pipeline>summary{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;padding:10px 14px;cursor:pointer;list-style:none}.pipeline>summary::-webkit-details-marker{display:none}.pipeline>summary span{color:var(--c-text-2);font-size:var(--fs-sm)}
 .pipe-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 28px;padding:0 14px 12px}.pipe-block h5{margin:4px 0 6px;color:var(--c-text-2);font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
@@ -31,45 +32,65 @@
 .owner-pick select{max-width:100%;margin:0}.tile-owner.mine-hide{display:none}
 .org-sites li{display:flex;align-items:center;gap:8px;min-height:34px}.org-sites ul{margin:4px 0 0;padding:0;list-style:none}.org-sites li span{flex:1;min-width:0;overflow-wrap:anywhere}
 .ge-change .ge-dot{flex:none;width:28px;display:grid;place-items:center;color:var(--c-text-3)}
+/*@eager*/
 #crm-form fieldset{margin:0;padding:0;border:0;min-width:0}#crm-form legend{padding:0;margin-bottom:6px;color:var(--c-text-2);font-size:var(--fs-sm)}
+/*@lazy*/
 .board-tools{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:0 0 0 auto}.board-tools>:is(.board-mine,.board-new,.board-seg){margin:0}.board-stages-icon{display:inline-block;width:14px;height:14px;margin-right:4px;vertical-align:-2px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}.board-filter[aria-pressed=true] .badge{background:rgba(255,255,255,.22);color:inherit}.board-filter .crm-funnel{display:inline-block;width:14px;height:14px;margin-right:4px;vertical-align:-2px}.board-active{flex-basis:100%;margin:8px 0 0}.board-stage-pick{display:grid;gap:8px;margin:12px 0 4px;padding:0;border:0}
 .board-mine{flex:none;height:32px;min-height:32px;margin:0 0 0 auto;padding:0 12px;border:1px solid var(--c-line);border-radius:999px;background:none;box-shadow:none;color:var(--c-text-2);font:600 .85rem/1 var(--sans)}.board-mine[aria-pressed=true]{border-color:var(--text);background:var(--text);color:var(--surface)}.board-mine+.board-new{margin-left:6px}
 @media(max-width:560px){.graph-tabbar{flex-wrap:wrap}.graph-tools{margin-left:0;order:3}.graph-tools .crm-funnel{display:block}.graph-tools .crm-word{display:none}.graph-tools [data-crm-filter]{padding:0 9px}.crm-col{grid-template-columns:1fr}}
 /* Already in your Graph: ones like what is being typed, each a link to open it instead of adding it twice */
 .ed-dupes{margin:-4px 0 0;padding:10px 12px;border-radius:var(--r-sm);background:var(--tile);font-size:var(--fs-sm)}.ed-dupes[hidden]{display:none}.ed-dupes p{margin:0 0 4px;color:var(--c-text-2)}.ed-dupes button.link{display:block;margin:2px 0;padding:4px 0;min-height:0;border:0;background:none;box-shadow:none;color:var(--text);font:inherit;text-align:left;text-decoration:underline;text-decoration-color:var(--border-strong);text-underline-offset:3px;overflow-wrap:anywhere;white-space:normal;cursor:pointer}.ed-dupes small{margin-left:6px;color:var(--c-text-3)}
 .record-notes p{margin:4px 0 0;white-space:pre-line;overflow-wrap:anywhere;line-height:1.5}
+/*@eager*/
 .head-new{white-space:nowrap}
 .new-menu{position:fixed;left:auto;z-index:60;min-width:200px}.new-menu[hidden]{display:none}
 #project-form fieldset{margin:0;padding:0;border:0;min-width:0}#project-form legend{padding:0;margin-bottom:6px;color:var(--c-text-2);font-size:var(--fs-sm)}
-#project-form textarea{min-height:4.8em;field-sizing:content;resize:vertical}.ed-field select{display:block;width:100%;margin-top:6px}
+#project-form textarea{min-height:4.8em;field-sizing:content;resize:vertical}
+/*@lazy*/
+.ed-field select{display:block;width:100%;margin-top:6px}
 .ed-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+/*@eager*/
 #project-form button.icon{flex:none;width:34px;min-height:34px;margin:0;padding:0;border:0;background:none;box-shadow:none;color:var(--c-text-3);font-size:1rem;border-radius:var(--r-sm)}
+/*@lazy*/
 .pj-end{display:flex;flex-wrap:wrap;gap:6px}.pj-end button{margin:0}
+/*@eager*/
 #board-form,#share-people-form,#contact-share-form{display:flex;flex-direction:column;gap:14px}
 #board-form .snooze-heading,#share-people-form .snooze-heading,#contact-share-form .snooze-heading{margin:0}
 #contact-share-form .fleet-fine{margin:0;font-size:var(--fs-xs);color:var(--c-text-3)}#contact-share-form select{display:block;width:100%;margin-top:6px}
+/*@lazy*/
 .cs-row{display:flex;gap:8px;min-width:0;flex:1}.cs-row .muted{flex:0 0 6.5em}.cs-v{min-width:0;overflow-wrap:anywhere}.cs-card{border:1px solid var(--c-line);border-radius:var(--r-sm);padding:4px 12px}
 .cs-confirm{display:flex;align-items:flex-start;gap:10px;color:var(--text)}.cs-confirm input{margin:3px 0 0;width:auto}.person-shared{margin:0 0 10px;color:var(--c-text-2)}.contact-in .graph-sub{white-space:normal;overflow-wrap:anywhere}
 .sp-people{margin:0;padding:0;border:0;min-width:0;display:flex;flex-direction:column;gap:2px}.sp-people legend{padding:0;margin-bottom:6px;color:var(--c-text-2);font-size:var(--fs-sm)}
 .sp-people label{display:flex;align-items:center;gap:10px;min-height:40px;padding:0 10px;border:1px solid var(--c-line);border-radius:var(--r-sm)}.sp-people input{margin:0;width:auto}
-.sp-line{margin:0;line-height:1.45;color:var(--text)}#share-people-form .fleet-fine{margin:0;font-size:var(--fs-xs);color:var(--c-text-3)}
-.ed-field{display:block;color:var(--c-text-2);font-size:var(--fs-sm)}#board-form textarea{min-height:4.8em;field-sizing:content;resize:vertical}
+.sp-line{margin:0;line-height:1.45;color:var(--text)}
+/*@eager*/
+#share-people-form .fleet-fine{margin:0;font-size:var(--fs-xs);color:var(--c-text-3)}
+/*@lazy*/
+.ed-field{display:block;color:var(--c-text-2);font-size:var(--fs-sm)}
+/*@eager*/
+#board-form textarea{min-height:4.8em;field-sizing:content;resize:vertical}
+/*@lazy*/
 .ed-field input,.ed-field textarea{display:block;width:100%;margin-top:6px}
+/*@eager*/
 #board-form fieldset{margin:0;padding:0;border:0;min-width:0}
 #board-form legend{padding:0;margin-bottom:6px;color:var(--c-text-2);font-size:var(--fs-sm)}
 #board-form legend .count{margin-left:4px;color:var(--c-text-3)}
+/*@lazy*/
 .ed-stages ol,.ed-projects ul{margin:0 0 8px;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px}
 .ed-stages li{display:flex;align-items:center;gap:4px}
 .ed-stages li input{flex:1;min-width:0;margin:0}
+/*@eager*/
 #board-form button.icon{flex:none;width:34px;min-height:34px;margin:0;padding:0;border:0;background:none;box-shadow:none;color:var(--c-text-3);font-size:1rem;border-radius:var(--r-sm)}
 #board-form button.icon:hover:not(:disabled){background:var(--c-hover);color:var(--text)}
 #board-form button.icon:disabled{opacity:.3}
+/*@lazy*/
 .ed-check{display:flex;align-items:center;gap:8px;margin-top:4px;color:var(--c-text-2);font-size:var(--fs-sm)}.ed-check input{margin:0;width:auto}
 .ed-projects ul{max-height:200px;overflow:auto}
 .ed-projects li{display:flex;align-items:center;gap:6px;min-height:34px;padding:0 0 0 10px;border:1px solid var(--c-line);border-radius:var(--r-sm);font-size:var(--fs-sm)}
 .ed-projects li span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ed-projects li.muted{padding:6px 10px;border-style:dashed;color:var(--c-text-3)}
 .ed-projects input{display:block;width:100%;margin:0}
+/*@eager*/
 .ed-note{margin:0;color:var(--c-text-3);font-size:var(--fs-xs)}.ed-note.warn{color:var(--c-orange)}
 .ed-actions{position:sticky;bottom:-16px;z-index:1;display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 -18px -16px;padding:12px 18px 16px;border-top:1px solid var(--c-line);background:var(--surface)}.ed-actions .grow{flex:1}.ed-actions button{margin:0}
 .ed-actions button.danger{color:var(--orange)}
@@ -84,7 +105,9 @@
 .fu-chk,.fu-radio{display:inline-flex;align-items:center;gap:8px;min-height:34px;margin-right:16px;color:var(--text)}.fu-chk input,.fu-radio input{flex:none;width:18px;height:18px;min-height:0;margin:0}
 .fu-main{font-weight:600}
 .fu-line{display:flex;align-items:center;gap:8px;flex-wrap:wrap;color:var(--text)}.fu-line .muted{color:var(--c-text-3)}
+/*@lazy*/
 .board-sub button.fu-state{min-height:0;padding:0 2px;border:0;background:none;box-shadow:none;color:var(--c-text-2);font:inherit;text-decoration:underline;text-underline-offset:2px;cursor:pointer}
+/*@eager*/
 .fu-stages{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}.fu-stages li{display:flex;align-items:center;gap:8px}.fu-stages .fu-chk{flex:0 1 12rem;min-width:0;margin:0}.fu-stages .fu-chk span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .fu-note{margin:0;color:var(--c-text-3);font-size:var(--fs-xs)}.fu-note.warn{color:var(--c-orange)}
 .fu-chip{display:inline-block;padding:0 7px;border:1px solid var(--c-line);border-radius:999px;color:var(--c-text-2);font:var(--fw-medium) var(--fs-xs)/1.6 var(--sans);white-space:nowrap;vertical-align:1px}
@@ -147,8 +170,13 @@
 .graph-stage button.link{padding:0;min-height:0;border:0;background:none;box-shadow:none;color:var(--c-text-2);font:inherit;text-decoration:underline;cursor:pointer}
 /* Events: by day, rows on hairlines, no boxes; each its source, who wrote it, when, and the start of the text. */
 .ge-day{font:var(--fw-medium) var(--fs-xs)/1.2 var(--sans);color:var(--faint);letter-spacing:.02em;margin:var(--sp-5) 0 var(--sp-1)}
+/*@lazy*/
 .graph-events>.ge-day:first-child{margin-top:0}
-.ge-soon{margin-bottom:var(--sp-4)}.ev-soon{margin-bottom:var(--sp-5)}#results>.ge-day,.ev-soon>.ge-day{margin:0 0 var(--sp-2)}.ge-soon>.ge-day{margin-top:0}
+.ge-soon{margin-bottom:var(--sp-4)}
+/*@eager*/
+.ev-soon{margin-bottom:var(--sp-5)}#results>.ge-day,.ev-soon>.ge-day{margin:0 0 var(--sp-2)}
+/*@lazy*/
+.ge-soon>.ge-day{margin-top:0}
 #people-view .graph-event{display:flex;gap:var(--sp-3);align-items:flex-start;margin:0;padding:var(--sp-3) var(--sp-2);border:0;border-top:1px solid var(--border);border-radius:0;background:none;box-shadow:none;cursor:pointer;overflow:visible}
 #people-view .ge-group>.graph-event:first-child{border-top:0}
 #people-view .graph-event:hover{background:var(--tile)}#people-view .graph-event:focus-visible{outline:2px solid var(--mint);outline-offset:-2px}
@@ -163,10 +191,13 @@
 .ge-head .ge-meta{flex:none;font-size:var(--fs-xs);color:var(--faint);font-variant-numeric:tabular-nums}.ge-head .ge-meta:only-child{flex:1;line-height:1.4}
 .ge-lines{margin:2px 0 0;padding:0;list-style:none;font-size:var(--fs-sm);line-height:1.45;color:var(--muted)}
 .ge-lines li{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ge-lines b{font-weight:var(--fw-medium)}
+/*@eager*/
 .ge-more{display:block;margin:var(--sp-3) auto 0}
+/*@lazy*/
 .ge-head .ge-state{flex:none;padding:0 7px;font-size:var(--fs-xs);line-height:1.5}.ge-mark{margin:0 6px 0 0;padding:0 7px;font-size:var(--fs-xs);line-height:1.5;vertical-align:1px}.ge-mark::before{display:none}.ge-head h4 a{color:inherit;text-decoration:none}.ge-head h4 a:hover{text-decoration:underline}
 .ge-link{color:var(--muted);text-decoration:underline;text-underline-offset:2px}.ge-empty{margin-top:0}
 .graph-timeline>.sub-tabs{margin:0 0 var(--sp-3)}
+/*@eager*/
 .convo{display:flex;flex-direction:column;padding:2px 0 var(--sp-2)}
 .convo-day{align-self:center;margin:0;font-size:var(--fs-xs);font-weight:var(--fw-medium);color:var(--faint)}
 .convo-turn{display:flex;flex-direction:column;align-items:flex-start;gap:4px;margin-top:var(--sp-4)}.convo-turn.me{align-items:flex-end}
@@ -181,11 +212,21 @@
 .convo-main{margin-left:-12px;padding-left:10px;border-left:2px solid var(--mint)}.convo-turn.me .convo-main{margin-left:0;border-left:0;box-shadow:inset 0 0 0 1px var(--mint)}
 button.convo-earlier{align-self:center;margin:0 0 var(--sp-1);padding:6px 8px;min-height:0;border:0;background:none;box-shadow:none;font:inherit;font-size:var(--fs-sm);color:var(--muted);text-decoration:underline;text-decoration-color:var(--border-strong);text-underline-offset:3px;cursor:pointer}button.convo-earlier:hover{color:var(--text)}button.convo-earlier:disabled{opacity:.6;cursor:default}#email-content>button.convo-earlier{display:block;margin:0 auto var(--sp-3)}
 .convo-note{color:var(--muted)}.convo-tag{margin-right:6px;font-size:var(--fs-xs);font-weight:var(--fw-medium);text-transform:uppercase;letter-spacing:.05em;color:var(--faint)}
+/*@lazy*/
 .graph-bar{flex:none;width:52px;height:6px;border-radius:999px;background:var(--sunken);overflow:hidden}
 .graph-bar i{display:block;height:100%;background:var(--mint)}
-/* The group pill is never cut: beside the name when there is room, at the start of the line under it on a phone, so the name keeps its width */.graph-row .fleet-chip{flex:none}.fleet-chip .ct{white-space:nowrap}.fleet-chip-sub{display:none;margin-right:6px;padding:1px 8px 1px 6px;vertical-align:1px}@media(max-width:600px){.fleet-chip-row{display:none}.fleet-chip-sub{display:inline-flex}}.fleet-mark{color:var(--text)}.graph-sub:is(.fleet-mark,.fleet-named,.detail-sub,.person-facts){white-space:normal}.share-fp{font-size:var(--fs-xs);color:var(--faint);letter-spacing:.02em;margin-top:2px}
+/* The group pill is never cut: beside the name when there is room, at the start of the line under it on a phone, so the name keeps its width */.graph-row .fleet-chip{flex:none}
+/*@eager*/
+.fleet-chip .ct{white-space:nowrap}.fleet-chip-sub{display:none;margin-right:6px;padding:1px 8px 1px 6px;vertical-align:1px}@media(max-width:600px){.fleet-chip-row{display:none}.fleet-chip-sub{display:inline-flex}}
+/*@lazy*/
+.fleet-mark{color:var(--text)}.graph-sub:is(.fleet-mark,.fleet-named,.detail-sub,.person-facts){white-space:normal}
+/*@eager*/
+.share-fp{font-size:var(--fs-xs);color:var(--faint);letter-spacing:.02em;margin-top:2px}
+/*@lazy*/
 /* On a person or organization page every row wraps (a long To you, address or relation), never cut off; Edit stays in reach. */
-.graph-detail .graph-sub{white-space:normal;overflow-wrap:anywhere}.graph-detail .graph-sub :is(button,summary){flex:0 0 auto}.fp-graph{font-size:.8rem;margin-left:6px;color:var(--muted);text-decoration:none;white-space:nowrap}.fp-graph::before{content:"· "}.fp-graph:hover,.fp-graph:focus-visible{color:var(--text);text-decoration:underline}
+.graph-detail .graph-sub{white-space:normal;overflow-wrap:anywhere}.graph-detail .graph-sub :is(button,summary){flex:0 0 auto}
+/*@eager*/
+.fp-graph{font-size:.8rem;margin-left:6px;color:var(--muted);text-decoration:none;white-space:nowrap}.fp-graph::before{content:"· "}.fp-graph:hover,.fp-graph:focus-visible{color:var(--text);text-decoration:underline}
 /* Calmer layout: compact header, one slim count row, quiet empty state, matching folded rows. */
 header{padding-bottom:18px}.avatar{width:52px;height:52px}h1{font-size:1.4rem}
 .brand p{font-size:.86rem;text-wrap:balance}.brand>div{min-width:0}
@@ -249,13 +290,24 @@ button.stat[aria-expanded="true"]::after{content:"";position:absolute;left:28%;r
 #later-list>.day-head:first-of-type{margin-top:12px}#later-list>article:last-child,#waiting-list>article:last-child,#finished-list>:last-child{margin-bottom:12px}#waiting-list>article:first-of-type{margin-top:12px}
 #finished-list>article:first-of-type,#finished-list>summary+.pager>.pager-rows>:first-child{margin-top:12px}
 .graph-open{padding:4px 16px}#people-view .graph-open .promise:first-child{border-top:0}
-.role-row,.org-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.org-row{white-space:normal}:is(.role-row,.name-row,.org-row) button{padding:3px 10px;font-size:.82rem}
-.org-form{display:grid;gap:10px;margin:8px 0 0}.org-buttons{display:flex;gap:8px;flex-wrap:wrap}.org-buttons button{padding:3px 0;font-size:.82rem;border:0;color:var(--muted);text-decoration:underline;text-underline-offset:3px}.org-form label,.org-form>p.graph-sub{white-space:normal;overflow:visible}.org-form label{display:grid;gap:4px}.org-form :is(input,textarea){width:100%;box-sizing:border-box;font:inherit;font-size:1rem;color:var(--text)}.org-form textarea{display:block;min-height:7.5em;resize:vertical}.org-form [aria-invalid=true]{border-color:var(--c-red,#b3261e)}.org-form .field-error{color:var(--c-red,#b3261e);font-size:.84rem}.org-form .field-error:empty{display:none}/* Editing an organization: Cancel and Save sit where Edit was, and that header stays in view while the form scrolls */.org-actions{display:flex;gap:6px;flex:0 0 auto}.org-actions [data-org-save],.org-actions [data-org-cancel]{display:none}.org-editing .org-actions [data-org-edit]{display:none}.org-editing .org-actions :is([data-org-save],[data-org-cancel]){display:inline-flex}.graph-detail.org-editing>.name-row{position:sticky;top:0;z-index:3;margin:calc(-1*var(--org-pt,16px)) calc(-1*var(--org-px,16px)) 0;padding:var(--org-pt,16px) var(--org-px,16px) 10px;background:var(--surface);border-radius:var(--radius) var(--radius) 0 0}.graph-detail.org-editing>.name-row.stuck{border-radius:0;box-shadow:0 1px 0 var(--border)}.graph-detail.org-editing>.name-row.stuck::before{content:'';position:absolute;left:0;right:0;bottom:100%;height:calc(64px + env(safe-area-inset-top));background:var(--bg)}@media(max-width:1023px){.graph-detail.org-editing>.name-row{top:calc(52px + env(safe-area-inset-top))}}.role-form,.name-form,.person-org-form{display:flex;gap:8px;margin:8px 0 0}:is(.role-form,.name-form) input{flex:1;min-width:0}/* One compact style for every inline edit field (To you, Add organization, Rename): a single-line field as tall as its Save, one thin focus ring, a Save that never wraps. */
+.role-row,.org-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.org-row{white-space:normal}
+/*@lazy*/
+:is(.role-row,.name-row,.org-row) button{padding:3px 10px;font-size:.82rem}
+.org-form{display:grid;gap:10px;margin:8px 0 0}.org-buttons{display:flex;gap:8px;flex-wrap:wrap}.org-buttons button{padding:3px 0;font-size:.82rem;border:0;color:var(--muted);text-decoration:underline;text-underline-offset:3px}.org-form label,.org-form>p.graph-sub{white-space:normal;overflow:visible}.org-form label{display:grid;gap:4px}.org-form :is(input,textarea){width:100%;box-sizing:border-box;font:inherit;font-size:1rem;color:var(--text)}.org-form textarea{display:block;min-height:7.5em;resize:vertical}.org-form [aria-invalid=true]{border-color:var(--c-red,#b3261e)}.org-form .field-error{color:var(--c-red,#b3261e);font-size:.84rem}.org-form .field-error:empty{display:none}/* Editing an organization: Cancel and Save sit where Edit was, and that header stays in view while the form scrolls */.org-actions{display:flex;gap:6px;flex:0 0 auto}.org-actions [data-org-save],.org-actions [data-org-cancel]{display:none}.org-editing .org-actions [data-org-edit]{display:none}.org-editing .org-actions :is([data-org-save],[data-org-cancel]){display:inline-flex}.graph-detail.org-editing>.name-row{position:sticky;top:0;z-index:3;margin:calc(-1*var(--org-pt,16px)) calc(-1*var(--org-px,16px)) 0;padding:var(--org-pt,16px) var(--org-px,16px) 10px;background:var(--surface);border-radius:var(--radius) var(--radius) 0 0}.graph-detail.org-editing>.name-row.stuck{border-radius:0;box-shadow:0 1px 0 var(--border)}.graph-detail.org-editing>.name-row.stuck::before{content:'';position:absolute;left:0;right:0;bottom:100%;height:calc(64px + env(safe-area-inset-top));background:var(--bg)}@media(max-width:1023px){.graph-detail.org-editing>.name-row{top:calc(52px + env(safe-area-inset-top))}}
+/*@eager*/
+.role-form,.name-form,.person-org-form{display:flex;gap:8px;margin:8px 0 0}
+/*@lazy*/
+:is(.role-form,.name-form) input{flex:1;min-width:0}/* One compact style for every inline edit field (To you, Add organization, Rename): a single-line field as tall as its Save, one thin focus ring, a Save that never wraps. */
 .inline-edit{display:flex;align-items:center;gap:8px;margin:8px 0 14px}.inline-edit[hidden]{display:none}.inline-edit input{flex:1 1 auto;min-width:0;width:auto;height:42px;min-height:0;margin:0;padding:0 12px;box-sizing:border-box;font:inherit;line-height:1.2}.inline-edit input:is(:focus,:focus-visible){outline:0;border-color:var(--mint);box-shadow:0 0 0 2px color-mix(in srgb,var(--mint) 24%,transparent)}.inline-edit button{flex:0 0 auto;width:auto;height:42px;min-height:0;margin:0;padding:0 16px;box-sizing:border-box;white-space:nowrap;line-height:1}
+/*@eager*/
 .browser-link{padding:0;border:0;background:none;color:inherit;text-decoration:underline;cursor:pointer;font:inherit;white-space:nowrap}
+/*@lazy*/
 .role-why{font-style:italic}.role-why button.link{font-style:normal;padding:0;border:0;background:none;color:inherit;text-decoration:underline;cursor:pointer;font-size:inherit}
 .warmup{margin:14px 0 0}.warmup summary{cursor:pointer}.hidden-senders{margin:18px 0 0}.hidden-senders>summary{cursor:pointer;width:max-content;max-width:100%}.hidden-senders>summary .count{margin-left:2px}.graph-list article.hidden-sender{display:flex;align-items:center;gap:12px;padding:10px 16px}.hs-text{flex:1;min-width:0}.hs-text>strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.hs-act{margin:0;flex:0 0 auto;min-width:10.5em}.hs-act>button.hs-show{min-height:0;padding:2px 0;border:0;background:transparent;font-size:var(--fs-xs)}.hs-act>.hs-said{display:inline-block;padding:2px 0;font-size:var(--fs-xs)}@media (max-width:600px){.graph-list article.hidden-sender{display:block}.hs-act{margin-top:4px;min-width:0}}.section-head>.same-all{margin-left:auto;flex:0 0 auto;white-space:nowrap}.same-all.spent{visibility:hidden}.role-row>.pair-said{padding:3px 0;border:1px solid transparent;font-size:.82rem;line-height:1.55}/* an answered pair: as tall as its buttons were, so rows never move */
-.same-ask{margin:10px 0 0;padding:10px 12px;border:1px solid var(--border);border-radius:10px}.same-ask p{white-space:normal;margin:0}.same-ask .role-row{margin-top:8px}.same-pair .graph-row{flex-wrap:wrap;row-gap:4px}.same-pair .graph-sub{white-space:normal}.joined{margin:8px 0 0}.joined summary{cursor:pointer}.joined .relation span{min-width:0;overflow-wrap:anywhere}.relation{display:flex;align-items:center;justify-content:space-between;gap:8px}.relation button,.whos .role-row button{padding:3px 10px;font-size:.82rem}
+.same-ask{margin:10px 0 0;padding:10px 12px;border:1px solid var(--border);border-radius:10px}.same-ask p{white-space:normal;margin:0}.same-ask .role-row{margin-top:8px}.same-pair .graph-row{flex-wrap:wrap;row-gap:4px}.same-pair .graph-sub{white-space:normal}
+/*@eager*/
+.joined{margin:8px 0 0}.joined summary{cursor:pointer}.joined .relation span{min-width:0;overflow-wrap:anywhere}.relation{display:flex;align-items:center;justify-content:space-between;gap:8px}.relation button,.whos .role-row button{padding:3px 10px;font-size:.82rem}
+/*@lazy*/
 .name-row{display:flex;align-items:center;justify-content:space-between;gap:8px}.name-row h3{flex:1 1 auto;min-width:0;overflow-wrap:anywhere}
 /* A name in a Graph header (person, organization, project, board) stays on one line, never broken mid-word: a long one ends in an ellipsis, the full name on hover. When the name would get less than 9rem (a phone), the actions take their own row. While editing, only Cancel and Save. */
 .graph-detail>.name-row{flex-wrap:wrap}.graph-detail>.name-row>:is(.person-head,h3){flex:1 1 9rem;min-width:0}.graph-detail>.name-row>.org-actions{margin-left:auto}
@@ -263,6 +315,7 @@ button.stat[aria-expanded="true"]::after{content:"";position:absolute;left:28%;r
 .org-editing .org-actions [data-proj-new-here]{display:none}
 @media(max-width:600px){.graph-detail>.name-row>:is(.person-head,h3){flex-basis:auto}}  /* a short name keeps its actions beside it; a long one gets the row and they go under it */
 :is(.name-row,.relation,.graph-row,.row,.section-head)>button{flex:0 0 auto;white-space:nowrap}
+/*@eager*/
 :is(#promises-list,.graph-open) .promise{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;padding:10px 0;border-top:1px solid var(--border)}
 #promises-list .day-head+.promise{border-top:0}#promises-list>.promise:last-child{margin-bottom:6px}
 .graph-open .promise .grow{flex:1 1 0}

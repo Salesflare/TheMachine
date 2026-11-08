@@ -176,7 +176,7 @@ function newMenu(open){const b=$('#new-card-top');let m=$('#new-menu');if(!open)
  if(!m){m=document.createElement('div');m.id='new-menu';m.className='fact-menu-list new-menu';m.setAttribute('role','menu');m.setAttribute('aria-label','New');document.body.append(m)}
  setHTML(m,html`${newWhatList().map(([k,t])=>html`<button type="button" role="menuitem" data-new-what="${k}">${t}</button>`)}`);
  const r=b.getBoundingClientRect();m.style.top=Math.round(r.bottom+6)+'px';m.style.right=Math.max(8,Math.round(innerWidth-r.right))+'px';m.hidden=false;b.setAttribute('aria-expanded','true');m.querySelector('button').focus({preventScroll:true})}
-const newWhat=(k,byPointer)=>{if(k==='card'){ncOpen();nc.byPointer=byPointer}else if(k==='event')lazyRun('calendar',()=>calNew());else if(k==='project')pjOpen({});else recOpen(k)};
+const newWhat=(k,byPointer)=>{if(k==='card'){ncOpen();nc.byPointer=byPointer}else if(k==='event')lazyRun('calendar',()=>calNew());else if(k==='project')lazyRun('graph',()=>pjOpen({}));else lazyRun('graph',()=>recOpen(k))};
 document.addEventListener('click',e=>{const plus=e.target.closest('[data-new-menu]');if(plus){e.preventDefault();newMenu($('#new-menu')?.hidden!==false);return}
  const w=e.target.closest('[data-new-what]');if(w){newMenu(false);if(typeof drawerClose==='function')drawerClose();newWhat(w.dataset.newWhat,e.detail>0);return}
  if(!e.target.closest('#new-menu'))newMenu(false)});

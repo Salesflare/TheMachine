@@ -393,8 +393,8 @@ OVER_BUDGET = {}
 # 2,120,000 -> 2,100,000 (2026-11-08): the ceiling is the first load now, the page and its main script without the
 # parts that load when first needed (dashboard_parts.LAZY); each of those groups has a ceiling of its own.
 # 2,100,000 -> 2,040,000 (2026-11-08): Calendar and Learning load when first needed too (about 78 KB off the first load).
-FIRST_LOAD_CEILING = 2_040_000
-LAZY_CEILING = {'calendar': 96_000, 'game': 12_000, 'help': 40_000, 'learning': 24_000}
+FIRST_LOAD_CEILING = 1_770_000
+LAZY_CEILING = {'calendar': 96_000, 'game': 12_000, 'graph': 336_000, 'help': 40_000, 'learning': 24_000}
 
 
 def budget(name):

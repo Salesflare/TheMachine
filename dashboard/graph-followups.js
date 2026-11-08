@@ -14,7 +14,7 @@ const stageBox=n=>{const b=n.board;if(!b)return '';const moves=orEmpty(html`${(b
  const seen=n.team_only?'':html`<label class="seen-pick">Who sees it<select data-project-seen="${n.id}"><option value=""${b.visibility?'':html` selected`}>Like its board (${b.board_visibility==='only_you'?'only you':b.board_visibility==='people'?'chosen teammates':'team'})</option><option value="only_you"${b.visibility==='only_you'?html` selected`:''}>Only you</option><option value="team"${b.visibility==='team'?html` selected`:''}>Your team</option></select></label>`;
  return html`<div class="graph-stage"><p><b>${b.stage||''}</b> <span class="muted">on ${b.board}</span>${['only_you','people'].includes(b.visibility||b.board_visibility)?html`${' '}${seenBy(b.visibility||b.board_visibility)}`:''}</p>${b.next?html`<p>Next: ${b.next}</p>`:''}${successBox(b.success)}${moves?html`<ol aria-label="Moves">${moves}</ol>`:''}${n.team_only?'':fuBox(n)}${seen}</div>`};
 document.addEventListener('change',async e=>{const t=e.target.closest?.('[data-project-seen]');if(!t)return;t.disabled=true;
- try{await graphPost('project_visibility',{node_id:t.dataset.projectSeen,visibility:t.value||null});toast(t.value==='only_you'?'Only you see this project now.':t.value==='team'?'Your team sees this project now.':'It follows its board now.');await people('',true)}catch(err){errCaught(err);toast(err.message,true)}finally{t.disabled=false}});
+ try{await graphPost('project_visibility',{node_id:t.dataset.projectSeen,visibility:t.value||null});toast(t.value==='only_you'?'Only you see this project now.':t.value==='team'?'Your team sees this project now.':'It follows its board now.');await graphPeople('',true)}catch(err){errCaught(err);toast(err.message,true)}finally{t.disabled=false}});
 // Automated follow-ups (follow_ups.py): their settings for a board or one project (a project's own wins over its board's),
 // the board's "Follow-ups on" line, a project's "Next follow-up", and a board's grouped to-do with its fast review:
 // one follow-up at a time or the whole list, Send, Edit or Skip each, keys to move, Send all checked.
@@ -35,7 +35,7 @@ const fuFresh=()=>fuKept&&Date.now()-fuKept.at<6e4?fuKept.f:null;
 const fuOn=f=>{for(const b of graphBoards){b.follow_ups=f.boards?.[b.id]||{on:false,next_at:null};for(const p of b.projects||[]){if(f.projects?.[p.id])p.follow_up=f.projects[p.id];else delete p.follow_up}}};
 const fuKeptOn=()=>{const f=fuFresh();if(f)fuOn(f)};
 async function fuLoad(version){let f=fuFresh();if(!f){try{f=await request('api/graph/follow-ups')}catch{return}if(!f?.boards)return;fuKept={at:Date.now(),f}}if(version!==graphRequest)return;
- fuOn(f);boardRedraw()}
+ fuOn(f);if(lazyIn('graph'))boardRedraw()}
 const fuBoardLine=b=>b.follow_ups?html` · <button type="button" class="link fu-state${b.follow_ups.on?'':html` off`}" data-fu-open="board:${b.id}">${!b.follow_ups.on?t('Follow-ups off'):b.follow_ups.pause?t('Follow-ups on'):b.follow_ups.next_at?t('Follow-ups on, next {}',fuDay(b.follow_ups.next_at)):t('Follow-ups on')}</button>${b.follow_ups.on&&b.follow_ups.pause?html`${' '}${fuChip()}`:''}`:'';
 const fuNudge=(b,s)=>b.team||!b.follow_ups||b.follow_ups.on?'':html` · <button type="button" class="fu-nudge" data-fu-open="board:${b.id}" data-fu-for="${s.name}">${t('Follow them up')}</button>`;
 const fuAct=a=>{const ch=FU_CHANNELS[a.channel]||a.channel;return a.why==='bounced'?t('Follow-up {} bounced',a.n):a.state==='sent'?(a.auto?t('Follow-up {} sent automatically ({})',a.n,ch):t('Follow-up {} sent ({})',a.n,ch)):a.state==='open'?t('Follow-up {} ready to review',a.n):a.state==='skipped'?t('Follow-up {} skipped',a.n):a.why==='owner'?t('Follow-ups stopped at follow-up {}',a.n):a.why==='replied'?t('They replied before follow-up {}',a.n):t('Follow-up {} not needed',a.n)};
@@ -72,7 +72,7 @@ function fuPauseRow(){const p=fu.pause,on=!!fu.settings?.on;if(!on&&!p)return ''
 async function fuPauseSet(paused){if(!fu)return;fuRead();const f=$('#fu-form'),err=f.querySelector('[data-fu-error]'),day=f.elements['fu-until']?.value;
  const b=f.querySelector('[data-fu-pause],[data-fu-resume]');if(b)b.disabled=true;
  try{const r=await graphPost('follow_up_pause',{scope:fu.scope,id:fu.id,paused,...(paused&&day?{until:new Date(day+'T00:00').toISOString()}:{})});if(!fu)return;fu.pause=r.pause;fuDraw();
-  toast(paused?t('Follow-ups paused.'):t('Follow-ups resumed.'));if(!$('#people').hidden)people(graphNode,true).catch(()=>{});refresh().catch(()=>{})}
+  toast(paused?t('Follow-ups paused.'):t('Follow-ups resumed.'));if(!$('#people').hidden)graphPeople(graphNode,true).catch(()=>{});refresh().catch(()=>{})}
  catch(x){errCaught(x);if(b)b.disabled=false;if(err){err.textContent=x.message;err.hidden=false}}}
 function fuRead(){const f=$('#fu-form'),s=fu.s,n=name=>{const v=f.elements[name]?.value;return v===''||v==null?undefined:+v};
  if(fu.scope==='project'){const m=f.querySelector('[name=mode]:checked');if(m)fu.mode=m.value}else s.on=!!f.elements.on?.checked;
@@ -88,7 +88,7 @@ function fuHours(){$('#fu-dialog').close();if(location.hash==='#settings/hours')
 $('#fu-form').addEventListener('click',e=>{if(!fu)return;if(e.target.closest('[data-fu-hours]')){e.preventDefault();fuHours();return}if(e.target.closest('[data-fu-close]')){$('#fu-dialog').close();return}if(e.target.closest('[data-fu-pause]')){fuPauseSet(true);return}if(e.target.closest('[data-fu-resume]')){fuPauseSet(false);return}if(e.target.closest('[data-fu-custom]')){fuRead();fu.custom=true;fuDraw();$('#fu-form [data-fu-stage]')?.focus()}});
 $('#fu-form').addEventListener('submit',async e=>{e.preventDefault();if(!fu)return;fuRead();const s=fu.s,err=$('#fu-form [data-fu-error]'),btn=$('#fu-form button.primary');
  const settings=fu.scope==='project'&&fu.mode==='board'?{inherit:true}:{...s,on:fu.scope==='project'?fu.mode==='on':s.on,stages:fu.custom?s.stages:{}};
- btn.disabled=true;try{await graphPost('follow_up_save',{scope:fu.scope,id:fu.id,settings});$('#fu-dialog').close();toast(t('Follow-ups saved.'));if(!$('#people').hidden)await people(graphNode,true);refresh().catch(()=>{})}
+ btn.disabled=true;try{await graphPost('follow_up_save',{scope:fu.scope,id:fu.id,settings});$('#fu-dialog').close();toast(t('Follow-ups saved.'));if(!$('#people').hidden)await graphPeople(graphNode,true);refresh().catch(()=>{})}
  catch(x){errCaught(x);err.textContent=x.message;err.hidden=false}finally{btn.disabled=false}});
 $('#fu-dialog').addEventListener('close',()=>{fu=null});
 document.addEventListener('click',e=>{const b=e.target.closest?.('[data-fu-open]');if(!b)return;e.preventDefault();e.stopPropagation();b.closest('details')?.removeAttribute('open');fuOpen(b.dataset.fuOpen,b.dataset.fuFor)},true);
@@ -128,7 +128,7 @@ const fuShownProgress=()=>{const gone=new Set(fuGone());return (state.follow_up_
 // Bring back: a skipped follow-up is ready to review again, with its draft (follow_ups.bring_back)
 document.addEventListener('click',async e=>{const b=e.target.closest?.('[data-fu-back]');if(!b)return;e.preventDefault();e.stopPropagation();b.disabled=true;
  try{await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'follow_up_bring_back',args:{id:b.dataset.fuBack}})});
-  toast(t('Back to review.'));await refresh();if(graphNode&&!$('#people').hidden)await people(graphNode,true)}
+  toast(t('Back to review.'));await refresh();if(graphNode&&!$('#people').hidden)await graphPeople(graphNode,true)}
  catch(x){errCaught(x);toast(x.message,true);b.disabled=false}},true);
 // Stop sending: the ones not gone yet are canceled on the Machine and their drafts are back in the review (follow_ups.stop)
 document.addEventListener('click',async e=>{const b=e.target.closest?.('[data-fu-stop]');if(!b)return;e.preventDefault();b.disabled=true;

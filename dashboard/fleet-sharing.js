@@ -70,9 +70,9 @@ function sharedAskHTML(d){const who=(d.teammates||[]).length,groups=d.groups?.le
   return html`<section class="shared-group" data-shared-group="${g.name}"><div class="shared-group-head"><strong class="ell">${g.name||t('Other threads')}</strong><span class="count">${Number(g.count).toLocaleString(DL)}</span></div>${g.suggest?html`<small class="muted shared-suggest">${t('Suggested: {}',t(SHARE_PICK[g.suggest]))}</small>`:''}<div class="actions">${order.map(k=>html`<button type="button" class="${k===g.suggest?'primary':'ghost'}" data-shared-many="${k}">${t(SHARE_PICK[k])}</button>`)}</div><details class="shared-group-list"${sharedGroupOpen.has(g.name)?html` open`:''}><summary>${t(['Show {} thread','Show {} threads'],rows.length)}</summary><ul class="list shared-list">${rows.map(x=>html`<li class="shared-row shared-pick"><input type="checkbox" checked value="${x.event_id}" data-shared-pick aria-label="${x.title||'(no subject)'}"><span class="grow">${sharedTitle(x)}<small class="muted">${[x.company||x.with,shortDay(x.at)].filter(Boolean).join(' · ')}</small></span></li>`)}</ul></details></section>`})}</div>`}
 // Share with… for the picked threads of one group: the teammates chosen get them, nobody else on the team.
 function sharedPeopleOpen(fleet,ids){const people=sharedData[fleet]?.teammates||[];
- spOpen({title:t(['Share {} thread with…','Share {} threads with…'],ids.length),action:'graph_share_many',args:{event_ids:ids,share:'people'},chosen:[],people,
+ lazyRun('graph',()=>spOpen({title:t(['Share {} thread with…','Share {} threads with…'],ids.length),action:'graph_share_many',args:{event_ids:ids,share:'people'},chosen:[],people,
   line:who=>t('Goes to {} only, also if sensitive. Not to the rest of the team.',who),
-  done:who=>t(['Shared {} thread with {} only.','Shared {} threads with {} only.'],ids.length,who),after:()=>sharedLoad(fleet,true)})}
+  done:who=>t(['Shared {} thread with {} only.','Shared {} threads with {} only.'],ids.length,who),after:()=>sharedLoad(fleet,true)}))}
 async function sharedLoad(fleet,quiet){const el=$('#fleet-view').querySelector(`[data-shared-fleet="${CSS.escape(fleet)}"]`);if(!el)return;
  const work=(fleetData?.fleets||[]).find(x=>x.id===fleet),g=(fleetData?.shared?.graph||[]).find(s=>s.fleet===fleet);
  const paint=()=>{setHTML(el,sharedHTML(work,g,sharedData[fleet]))};
@@ -145,10 +145,10 @@ function sharePopSuggest(anchor,sug){const priv=sug.choice==='private';
 document.addEventListener('click',async e=>{const p=$('#share-pop');if(!p)return;
  if(!p.contains(e.target)){if(!e.target.closest('[data-share-event]'))sharePopClose();return}
  if(e.target.closest('[data-pop-close]')||e.target.closest('a'))return sharePopClose();
- const pp=e.target.closest('[data-pop-people]');if(pp){const c=document.querySelector(`[data-share-event="${pp.dataset.popPeople}"]`);sharePopClose();threadShareOpen(pp.dataset.popPeople,JSON.parse(c?.dataset.share||'{}').people);return}
+ const pp=e.target.closest('[data-pop-people]');if(pp){const c=document.querySelector(`[data-share-event="${pp.dataset.popPeople}"]`);sharePopClose();const had=JSON.parse(c?.dataset.share||'{}').people;lazyRun('graph',()=>threadShareOpen(pp.dataset.popPeople,had));return}
  const b=e.target.closest('[data-pop-set],[data-pop-rule]');if(!b)return;b.disabled=true;
  try{if(b.dataset.popSet){const to=b.dataset.share,r=await graphPost('graph_share',{event_id:Number(b.dataset.popSet),share:to});toast(to==='team'?'Shared with your team.':b.dataset.before?'Kept private. It won\'t go.':'Unshared. Teammates\' Machines delete their copy. Someone may have read it already.');
-   const s=r?.suggest||r?.result?.suggest;if(s)sharePopSuggest(document.querySelector(`[data-share-event="${b.dataset.popSet}"]`),s);else sharePopClose();await people(graphNode,true)}
-  else{const c=b.dataset.choice;await graphPost('graph_rule',{key:b.dataset.popRule,choice:c,name:b.dataset.name});sharePopClose();toast(c==='private'?`Threads with ${b.dataset.name} stay with you.`:`Client threads with ${b.dataset.name} go to the team.`);await people(graphNode,true)}}
+   const s=r?.suggest||r?.result?.suggest;if(s)sharePopSuggest(document.querySelector(`[data-share-event="${b.dataset.popSet}"]`),s);else sharePopClose();await graphPeople(graphNode,true)}
+  else{const c=b.dataset.choice;await graphPost('graph_rule',{key:b.dataset.popRule,choice:c,name:b.dataset.name});sharePopClose();toast(c==='private'?`Threads with ${b.dataset.name} stay with you.`:`Client threads with ${b.dataset.name} go to the team.`);await graphPeople(graphNode,true)}}
  catch(err){errCaught(err);b.disabled=false;toast(err.message,true)}});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#share-pop'))sharePopClose()});

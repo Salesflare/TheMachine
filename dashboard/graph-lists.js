@@ -7,10 +7,6 @@ $('#people-view').addEventListener('click',async e=>{const keep=e.target.closest
  const el=b.dataset.fleetMember?document.getElementById('fleet-m-'+b.dataset.fleetMember):document.querySelector(`.fleet-free-form[data-fleet="${CSS.escape(b.dataset.fleetFree)}"]`);if(!el)return;
  fleetReveal(el);el.scrollIntoView({block:'center',behavior:'smooth'});if(b.dataset.fleetFree)el.querySelector('input')?.focus({preventScroll:true});else{el.classList.remove('flash');void el.offsetWidth;el.classList.add('flash')}});
 $('#fleet-view').addEventListener('click',e=>{const b=e.target.closest('[data-graph-open]');if(!b)return;e.preventDefault();graphNode=b.dataset.graphOpen;document.querySelector('nav [data-tab="people"]')?.click()});
-// A name or address cut off with an ellipsis shows in full on hover or long-press.
-document.addEventListener('pointerover',e=>{const el=e.target.closest?.('.ct,.ell,.fleet-people strong,.fleet-people small');if(el&&!el.title&&el.scrollWidth>el.clientWidth)el.title=el.textContent.trim()});
-// Graph tab: projects heating up or cooling, who's closest, who has gone quiet; tap one for its links and events.
-const day=v=>v?localeDate(new Date(String(v).length<=10?v+'T12:00':v),DL,{weekday:'short',day:'numeric',month:'short'}):t('never');
 // An organization's logo from enrichment (https only, no referrer, lazy, fixed size); its initial shows until it loads and when it can't.
 const LOGO_URL=/^https:\/\/[^\s"'<>\\]+$/;
 const orgPic=(n,big)=>{const l=n.profile?.logo||'',u=LOGO_URL.test(l)||/^api\/person-photo\?p=[0-9a-f]{32}$/.test(l)?l:'',px=big?36:22;return html`<span class="org-pic${big?html` big`:''}" aria-hidden="true">${(String(n.name||'').trim()[0]||'?').toUpperCase()}${u?html`<img src="${u}" alt="" width="${px}" height="${px}" loading="lazy" decoding="async" referrerpolicy="no-referrer">`:''}</span>`};
@@ -29,7 +25,6 @@ const PROJECT_HEAT={'heating up':['Busier lately','More messages and meetings th
 const heatLabel=s=>t(PROJECT_HEAT[s]?.[0]||s);
 const heatChip=s=>s?html`<span class="chip" style="--c:${PROJECT_COLOR[s]||'var(--muted)'}" title="${t(PROJECT_HEAT[s]?.[1]||'')}">${heatLabel(s)}</span>`:'';
 const bar=n=>html`<span class="graph-bar" title="${n.closeness?t(n.closeness[0].toUpperCase()+n.closeness.slice(1)+' (a closeness)'):''}"><i style="width:${Math.min(100,Math.round(100*Math.log1p(n.strength)/Math.log1p(12)))}%"></i></span>`;
-const cap=t=>t?t[0].toUpperCase()+t.slice(1):t;
 const CLOSENESS_UI={close:'Close (a closeness)',regular:'Regular (a closeness)',occasional:'Occasional (a closeness)',faint:'Faint (a closeness)'};
 const personSub=p=>[p.profile?.title,p.role?t(cap(p.role)):CLOSENESS_UI[p.closeness]?t(CLOSENESS_UI[p.closeness]):cap(p.closeness),t(p.seen_only?'last seen {}':'last contact {}',day(p.last_at)),p.usual_gap_days?(Math.round(p.usual_gap_days)<=1?t('usually daily'):t('usually every {} days',Math.round(p.usual_gap_days))):'',p.next_meeting?t('meeting {}',day(p.next_meeting)):''].filter(Boolean).join(' · ');
 const graphItem=n=>n.kind==='me'?html`<article class="tap person-item about-you-row" data-node="me"><div class="graph-row one">${personPic({name:'You'})}${nodeButton({id:'me',name:'About you'})}</div><p class="graph-sub">Your own addresses and numbers</p></article>`
@@ -54,8 +49,6 @@ const graphEmpty=(pane,team,read)=>{const [title,how]={people:['Nothing mapped y
 const TEAM_NOTES={people:'Everyone your team shares, the closest first.',orgs:'The ones your team is most in touch with.',projects:'Your team’s open projects.'};
 const graphPick=(pane,what,fallback)=>{try{return localStorage.getItem(`graph-${what}-${pane}`)||fallback}catch{return fallback}};
 const graphKeep=(pane,what,v)=>{try{localStorage.setItem(`graph-${what}-${pane}`,v)}catch{}};
-// While a search shows, the list it covers is kept as it was (tab, sort, pages loaded, scroll): emptying the box brings it back at once.
-let graphKept=null;
 function graphStash(view){if(view.dataset.mode!=='list'||!view.firstChild)return;const scroll=scrollY,f=document.createDocumentFragment();f.append(...view.childNodes);graphKept={f,scroll}}
 function graphUnstash(view){if(!graphKept)return false;const k=graphKept;graphKept=null;view.replaceChildren(k.f);view.dataset.mode='list';
  for(const el of view.querySelectorAll('[data-pager]')){const p=pagers.get(el.dataset.pager);if(p&&el.querySelectorAll('.pager-rows>*').length!==p.items.length)el.replaceChildren()}pagerMount(view);  /* rows a page brought in meanwhile */
@@ -93,11 +86,6 @@ async function graphCsv(list,sort){const rows=[];let cursor='0';toast('Getting t
 $('#people-view').addEventListener('click',e=>{const t=e.target.closest('[data-graph-list]'),o=e.target.closest('[data-graph-sort]'),pane=e.target.closest('[data-graph-tabs]')?.dataset.graphTabs;if(!pane||!t&&!o)return;
  if(t)graphKeep(pane,'tab',t.dataset.graphList);if(o)graphKeep(pane,'sort',o.dataset.graphSort);graphTabsPaint(pane);if(o)document.querySelector(`[data-graph-panel="${pane}"] .graph-sort summary`)?.focus()});
 document.addEventListener('click',e=>{for(const d of document.querySelectorAll('.graph-sort[open]'))if(!d.contains(e.target))d.open=false});
-document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;const d=document.querySelector('.graph-sort[open],details.fact-menu[open],details.board-menu[open],details.tile-menu[open]');if(d){d.open=false;d.querySelector('summary').focus()}});
-document.addEventListener('toggle',e=>{const d=e.target;if(!(d instanceof HTMLDetailsElement)||!d.open)return;const l=d.querySelector(':scope>.fact-menu-list,:scope>.graph-sort-list');if(!l)return;l.style.left=l.style.right=l.style.top=l.style.bottom='';
- // A menu stays on screen: it moves in from an edge, and opens upward when there's no room under its button but there is above it
- let r=l.getBoundingClientRect();if(r.right>innerWidth-8){l.style.left='auto';l.style.right='0';r=l.getBoundingClientRect()}if(r.left<8){l.style.right='auto';l.style.left=(8-d.getBoundingClientRect().left)+'px'}
- const s=d.querySelector(':scope>summary')?.getBoundingClientRect();if(s&&r.bottom>innerHeight-8&&s.top-r.height-8>8){l.style.top='auto';l.style.bottom='calc(100% + 4px)'}},true);
 const graphSection=(title,note,items)=>items?.length?html`<div class="section-head"><h2>${title}</h2><span class="count">${items.length}</span>${note?html`<p>${note}</p>`:''}</div><div class="graph-list">${items.map(graphItem)}</div>`:'';
 // Why two people look like one (graph.py likely_same): its parts, each in the language
 const sameWhy=w=>String(w||'').split(', ').map(x=>{const m=/^both at (.+)$/.exec(x);return m?t('both at {}',m[1]):t(x)}).join(', ');

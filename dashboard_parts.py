@@ -17,6 +17,7 @@ split. Everything that reads the dashboard's source (the service, tests, scripts
 
 A leaf module: no imports from the app."""
 from pathlib import Path
+import json
 import re
 
 ROOT = Path(__file__).resolve().parent
@@ -30,13 +31,22 @@ KINDS = ('js', 'css', 'html')
 # The source keeps every part in its place, so assemble(), the tests and the demo have them all inline and
 # lazyPart() is done at once there. A group's parts run after the main script, so the main script reads none of their
 # names while it loads, and calls into them only through lazyRun() or behind lazyIn() (shell-core.js).
+# A group's .css parts: the page keeps each one's rules outside its /*@lazy*/ ... /*@eager*/ runs (the rules for
+# what only the group's own scripts draw), in a <style data-lazy-css="<name>"> of its own at the part's place, and the
+# group's file starts by putting the whole part there: the rules keep their order, so the cascade is as before, and
+# they're in before anything of the group draws. tests/test_dashboard_parts.py checks that every rule in a lazy run
+# names a class, id or data- attribute only the group's scripts write.
 # tests/test_lazy_parts_dashboard.mjs checks the page with them held back and with them refused.
 LAZY = {
     'calendar': ('calendar-view.js',),
     'game': ('todos-game.js',),
+    'graph': ('graph-pages.css', 'graph-crm.css', 'graph-lists.js', 'graph-boards.js', 'graph-record.js', 'graph-tabs.js',
+              'graph-crm.js'),
     'help': ('help-panel.js',),
     'learning': ('learning-missed.js',),
 }
+LAZY_RUN = re.compile(r'/\*@lazy\*/\n.*?(?:/\*@eager\*/\n|\Z)', re.S)
+FENCE = re.compile(r'/\*@(?:lazy|eager)\*/\n')
 MARKER = re.compile(r'/\*@include dashboard/([a-z0-9-]+\.(?:js|css))\*/|<!--@include dashboard/([a-z0-9-]+\.html)-->')
 
 
@@ -92,14 +102,23 @@ def files(root=None):
 
 def assemble_split(root=None):
     """(page, {group: script}): the page's source as assemble() gives it, without the LAZY parts, and each LAZY
-    group's parts joined in the source's order."""
+    group's parts joined in the source's order. A .css part stays in the page without its lazy runs, in a style
+    element of its own; the group's script starts by putting the whole part in there (see LAZY)."""
     path = Path(root or ROOT) / PAGE
     group_of = {name: group for group, names in LAZY.items() for name in names}
-    lazy, out = {group: [] for group in LAZY}, []
+    lazy, styles, out = {group: [] for group in LAZY}, {group: [] for group in LAZY}, []
     for line in re.split(r'(?<=\n)', path.read_text(encoding='utf-8')):
         name = included(line.rstrip('\n'))
-        if name in group_of:
+        if name in group_of and name.endswith('.css'):
+            css = (path.parent / FOLDER / name).read_text(encoding='utf-8')
+            out.append(f'</style><style data-lazy-css="{name}">\n' + LAZY_RUN.sub('', css) + '</style><style>\n')
+            styles[group_of[name]].append([name, FENCE.sub('', css)])
+        elif name in group_of:
             lazy[group_of[name]].append(expand(line if line.endswith('\n') else line + '\n', path.parent / FOLDER))
         else:
             out.append(line)
+    for group, css in styles.items():
+        if css:
+            lazy[group].insert(0, 'for(const [n,c] of ' + json.dumps(css, ensure_ascii=False) + ')'
+                               '{const s=document.querySelector(`style[data-lazy-css="${n}"]`);if(s)s.textContent=c}\n')
     return expand(''.join(out), path.parent / FOLDER), {group: ''.join(parts) for group, parts in lazy.items()}

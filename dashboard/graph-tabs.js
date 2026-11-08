@@ -1,6 +1,3 @@
-// A promise's own page (#promise/<id>), laid out like a person's: who promised what to whom and by when, where it
-// stands, the message it came from, who and what it is about, its card as a link, and what happened since.
-const promiseHref=p=>'#promise/'+encodeURIComponent(p.id);
 const promiseFirst=who=>String(who||'').split(/\s+/)[0]||who;
 const PROMISE_SAID={'gmail.message':'an email','slack.message':'Slack','teams.message':'Teams','whatsapp.message':'WhatsApp','telegram.message':'Telegram','linkedin.message':'LinkedIn','x.message':'X','intercom.message':'Intercom','calendar.event':'a meeting'};
 function promiseState(p){const late=p.due&&p.due<localDay(new Date());
@@ -20,43 +17,13 @@ async function promisePage(id){const p=await request('api/promise?id='+encodeURI
  const card=p.card?html`<div class="section-head"><h2>To-do</h2></div><p class="graph-sub promise-card"><a href="#card=${p.card.id}">${p.card.title}</a></p>`:'';
  const hist=p.history.map(h=>[promiseLine(p,h),h.at]).filter(([t])=>t);
  return html`<div class="graph-crumbs" role="navigation" aria-label="Breadcrumb">${person?html`<a href="${graphHash(person.id)}" data-node="${person.id}">${person.name}</a>`:html`<a href="#graph" data-crumb="">Graph</a>`}<span aria-hidden="true">›</span><span aria-current="page">Promise</span></div><article class="graph-detail person-page promise-page"><div class="name-row"><div class="person-head"><h3>${cap(p.what)}</h3><p class="person-job">${who} · ${when}</p></div></div><p class="graph-sub promise-state"><span class="chip" style="--c:${color}">${state}</span></p>${note}${actions}${from}${open}${about}${card}${hist.length?html`<div class="section-head"><h2>History</h2></div><ul class="promise-history">${hist.map(([t,at])=>html`<li><span>${t}</span><time datetime="${at}">${day(at)}</time></li>`)}</ul>`:''}</article>`}
-// Promise links, and card links on Graph pages, stay in the page, also when the page's base is another path.
-document.addEventListener('click',e=>{const a=e.target.closest('a[href^="#promise/"],#people-view a[href^="#card="]');if(!a||e.ctrlKey||e.metaKey||e.shiftKey||e.defaultPrevented)return;e.preventDefault();const href=a.getAttribute('href');if(location.hash===href)graphRoute();else location.hash=href});
 document.addEventListener('click',e=>{const b=e.target.closest('[data-promise-due]');if(!b)return;const f=$('#people-view .promise-due-form');if(f){f.hidden=!f.hidden;if(!f.hidden)f.elements.due.focus()}});
 document.addEventListener('submit',async e=>{const f=e.target.closest('.promise-due-form');if(!f)return;e.preventDefault();const b=f.querySelector('button');b.disabled=true;
  try{await graphPost('promise_due',{id:Number(f.dataset.promiseId),due:f.elements.due.value});f.hidden=true;toast('Date moved.');await people(graphNode,true)}catch(err){errCaught(err);b.disabled=false;toast(err.message,true)}});
-// Graph links: #graph/<node id> opens a person, project or organization; the browser's back goes to where you were.
-const GRAPH_KIND_PANE={person:['people','People'],project:['projects','Projects'],org:['orgs','Organizations']};
-const graphHash=id=>'#graph/'+encodeURIComponent(id);
 function graphOpen(id){if(!graphNode&&!$('#people').hidden)graphScroll=scrollY;if(location.hash!==graphHash(id))history.pushState(null,'',graphHash(id));people(id)}
 function graphBack(pane){if(pane){graphPane=pane;localStorage.setItem('graph-pane',pane)}if(/^#graph\//.test(location.hash))history.pushState(null,'',location.pathname+location.search+'#graph='+(graphPane||'people'));people('')}
-function graphRoute(){const pm=/^#promise\/(\d+)$/.exec(location.hash),m=/^#graph\/(.+)$/.exec(location.hash);let id=pm?'promise:'+pm[1]:'';try{id=id||(m?decodeURIComponent(m[1]):'')}catch{}
- if(id){if($('#people').hidden){graphNode=id;document.querySelector('nav [data-tab="people"]')?.click()}else if(graphNode!==id)people(id);return}
- if(!$('#people').hidden&&graphNode)people('')}
-// Back or Forward onto an entry the app pushed (Settings, a card's chat) fires popstate but no hashchange, so a tab link
-// like #graph=people is opened here too, not only at the next refresh.
-// A hash link fires popstate and then hashchange, which opens it; so wait a tick and open it only when none came.
-let hashSeen=0;addEventListener('hashchange',()=>{hashSeen++},true);
-addEventListener('popstate',()=>{if(drawerStep)return;graphRoute();const seen=hashSeen;setTimeout(()=>{if(hashSeen===seen)openTabLink()})});addEventListener('hashchange',graphRoute);setTimeout(graphRoute);
-document.addEventListener('click',e=>{for(const m of document.querySelectorAll('.fact-menu[open]'))if(!m.contains(e.target))m.open=false});
 document.addEventListener('click',e=>{if(e.target.closest('[data-graph-retry]'))people(graphNode)});
 document.addEventListener('click',e=>{const item=e.target.closest('.person-menu [role=menuitem]');if(item)item.closest('details').open=false});
-$('nav').addEventListener('click',e=>{const t=e.target.closest('button');if(t?.dataset.tab&&t.dataset.tab!=='people'&&/^#graph[/=]/.test(location.hash))history.replaceState(null,'',location.pathname+location.search);graphSubSync()});
-// The status poll (refresh(true)) redraws the Graph tab at most once a minute (GRAPH_POLL_MS): each redraw reads the whole
-// Graph again on the Machine, and doing that on every poll kept it busy, so a Merge or a save waited behind it. The
-// owner's own changes redraw it at once (people() or refresh() after each), and opening a record or list always loads it.
-const GRAPH_POLL_MS=60000;let graphLoadedAt=0;
-let graphSkip=false,graphAt=0,graphScroll=null,graphShown='',graphNode='',graphDrawn='',graphRequest=0,editRole=false,graphPane=localStorage.getItem('graph-pane')||'';
-// Sub-tabs, as in Fleet: a pill row over panes that are all drawn at once and shown one at a time. A badge only
-// counts what needs the owner (a source with a problem, roles to confirm, friend requests), never a total.
-const subTabs=(label,attr,panes,current)=>html`<div class="sub-tabs" role="tablist" aria-label="${label}">${panes.map(p=>html`<button type="button" role="tab" ${attr}="${p.id}" aria-selected="${p.id===current}"><span class="ell">${p.label}</span>${p.badge?html` <span class="badge${p.warn?html` warn`:''}">${p.badge}</span>`:''}</button>`)}</div>`;
-function tabsFade(row){const max=row.scrollWidth-row.clientWidth;row.classList.toggle('more-left',row.scrollLeft>2);row.classList.toggle('more-right',row.scrollLeft<max-2)}
-function tabsShow(row){if(!row)return;const t=row.querySelector('[aria-selected="true"]');if(t&&row.scrollWidth>row.clientWidth)row.scrollLeft=Math.max(0,t.offsetLeft-row.offsetLeft-(row.clientWidth-t.offsetWidth)/2);tabsFade(row)}
-const allTabsFade=()=>document.querySelectorAll('.fleet-tabs,.sub-tabs').forEach(tabsFade);
-document.addEventListener('scroll',e=>{if(e.target.matches?.('.fleet-tabs,.sub-tabs'))tabsFade(e.target)},{capture:true,passive:true});addEventListener('resize',allTabsFade);
-new MutationObserver(()=>document.querySelectorAll('.fleet-tabs:not([data-faded]),.sub-tabs:not([data-faded])').forEach(r=>{r.dataset.faded='';tabsShow(r)})).observe(document.querySelector('main'),{childList:true,subtree:true});
-// Graph: People (closest, gone quiet, new), Who's who (roles to confirm), Projects and Organizations.
-const GRAPH_PANES=['people','roles','projects','orgs'];
 function showGraphPane(id){graphPane=id;localStorage.setItem('graph-pane',id);graphShown=id;graphHashSync();graphSubSync();const view=$('#people-view');if(!view.querySelector(`[data-graph-panel="${CSS.escape(id)}"]`)){if(!graphNode&&!$('#people-query').value.trim())return;$('#people-query').value='';people('');return}
  for(const b of view.querySelectorAll('[data-graph-pane]'))b.setAttribute('aria-selected',b.dataset.graphPane===id);for(const p of view.querySelectorAll('[data-graph-panel]'))p.hidden=p.dataset.graphPanel!==id;tabsShow(view.querySelector('.sub-tabs'));tabsShow(view.querySelector(`[data-graph-panel="${CSS.escape(id)}"] .sub-tabs`))}
 // A record opens from what was fetched when the pointer rested on its link (80 ms) or the link got focus: kept 30 s, the
@@ -135,4 +102,3 @@ async function people(node=graphNode,quiet=false){graphLoadedAt=Date.now();if(!q
   ||html`<div class="empty all-clear"><img class="sticker" src="brand/thinking.webp" alt=""><div><strong>Nothing mapped yet.</strong>People appear as messages and meetings come in.</div></div>`);
  if(version===graphRequest&&!team&&graphBoards.length&&!graphBoards.some(b=>'follow_ups'in b))fuLoad(version);
  if(version===graphRequest){graphAt=Date.now();pagerMount(view);if(back!=null&&version===graphRequest){graphScroll=null;scrollTo(0,back)}}if(!quiet)notice('')}catch(e){errCaught(e);if(version===graphRequest&&(!quiet||!oldHtml))notice(e.message,true)}}
-const graphPost=(action,args)=>(fuKept=null,request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action,args})}));  // an edit: the board's follow-ups are asked again

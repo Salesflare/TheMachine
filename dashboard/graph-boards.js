@@ -1,9 +1,3 @@
-// Projects as a board: projects of one kind in stages (graph.boards), a view of Graph › Projects next to the list. Board by
-// default when there is a board; the choice is remembered on this device. Moves come from what the messages mean; the owner
-// drags a tile (or picks a stage from its menu) and that stands until a newer message moves it. Nothing here sends anything.
-let graphBoards=[],boardShown=sideStore.get('board-shown')||'',boardStage={},boardOpen=new Set(),fitsOpen=new Set(),fitsPicked=new Map(),fitsGoing=new Set();
-const projView=()=>graphBoards.length?(sideStore.get('projects-view')==='list'?'list':'board'):'list';
-const shortDay=v=>v?localeDate(new Date(String(v).length<=10?v+'T12:00':v),DL,{weekday:'short',day:'numeric',month:'short'}):'';  /* Fri, Oct 23 */
 const boardNow=()=>{const fb=graphBoards[0]&&!graphBoards[0].team&&crmF('projects').board;return (fb&&graphBoards.find(b=>String(b.id)===String(fb)))||graphBoards.find(b=>b.name===boardShown)||graphBoards[0]};
 const tileWhy=(p,side)=>{const last=p.last_at?html` · ${p.last_event_id?html`<button type="button" class="link" data-quote-event="${p.last_event_id}" title="Read its latest message">${shortDay(p.last_at)}</button>`:shortDay(p.last_at)}`:'';
  if(p.sort_failed)return html`<p class="tile-why failed">${p.sort_failed}${last}</p>`;
@@ -157,8 +151,6 @@ $('#people-view').addEventListener('keydown',e=>{const t=e.target.closest?.('.ti
 // menu: the name, the stages (rename, reorder, add, remove), the Stalled row, which projects belong and the projects
 // on it. After a save, reviews place its projects by their messages. Deleting a board keeps its projects.
 let graphSuggest=[],graphProjNames=[],ed=null;
-const seenBy=(v,names)=>v==='only_you'?html`<span class="seen-by">${LOCK}Only you</span>`:v==='people'?html`<span class="seen-by">${LOCK}${names?.length?'Shared with '+namesLine(names):'Chosen teammates'}</span>`:html`<span class="seen-by">Team</span>`;
-const namesLine=n=>n.length<3?n.join(' and '):n.slice(0,-1).join(', ')+' and '+n[n.length-1];
 const suggestBox=()=>html`${graphSuggest.slice(0,3).map(s=>
  html`<article class="board-suggest" data-suggest="${s.id}"><div class="board-suggest-text"><p class="board-suggest-title">Start a board for ${s.name}?</p><p class="board-suggest-sub">${seenBy(s.visibility)} · ${s.projects.length} projects${s.reason?' · '+s.reason:''}</p><ol class="stage-flow" aria-label="Stages">${s.stages.map((x,i)=>html`${i?' ':''}<li>${x.name}</li>`)}</ol></div><div class="board-suggest-actions"><button type="button" class="primary" data-suggest-save>Save</button><button type="button" class="ghost" data-suggest-edit>Edit</button><button type="button" class="ghost" data-suggest-dismiss>Not now</button></div></article>`)}`;
 const boardSavedToast=(r,name)=>{const moved=(r.moved||[]).map(m=>m.to?`${m.count} from ${m.from} moved to ${m.to}.`:`${m.count} stalled left the board.`).join(' ');
@@ -221,11 +213,6 @@ document.addEventListener('click',e=>{for(const m of document.querySelectorAll('
  view.addEventListener('dragover',e=>{const l=laneOf(e);if(!l||!dragged)return;e.preventDefault();e.dataTransfer.dropEffect='move';view.querySelectorAll('.lane.drop').forEach(x=>x!==l&&x.classList.remove('drop'));l.classList.add('drop')});
  view.addEventListener('dragleave',e=>{const l=laneOf(e);if(l&&!l.contains(e.relatedTarget))l.classList.remove('drop')});
  view.addEventListener('drop',e=>{const l=laneOf(e);if(!l||!dragged)return;e.preventDefault();const node=dragged;dragged='';l.classList.remove('drop');boardMove(node,l.dataset.lane)})}
-// Projects by hand, like a deal in any CRM: make one (from the board, a stage, a person or an organization), edit its
-// name, board and stage, organization, value, people and notes, mark it Won or Lost with why, archive or delete it.
-// A move by hand stands until a newer message moves it. Reviews also add projects that fit a board; the ones they're
-// unsure about wait under the board header ("2 projects could belong here") for Add or Leave out.
-let graphMineBoards=null,graphPeopleNames=[],pj=null;
 const projActions=c=>html`<span class="org-actions"><button class="ghost" data-proj-edit="${c.node_id}">Edit</button><details class="fact-menu"><summary aria-label="More for this project" title="More">⋯</summary><div class="fact-menu-list" role="menu"><button type="button" role="menuitem" data-card-here>New to-do</button>${c.outcome?html`<button type="button" role="menuitem" data-proj-reopen="${c.node_id}">Reopen</button>`:html`<button type="button" role="menuitem" data-proj-outcome="won" data-proj-node="${c.node_id}">Won</button><button type="button" role="menuitem" data-proj-outcome="lost" data-proj-node="${c.node_id}">Lost</button>`}<button type="button" role="menuitem" data-proj-archive="${c.node_id}"${c.archived?html` data-restore`:''}>${c.archived?'Restore':'Archive'}</button><button type="button" role="menuitem" class="danger" data-proj-delete="${c.node_id}">Delete…</button></div></details></span>`;
 const orgLink=o=>o?.id?html`<button type="button" class="inline-node" data-node="${o.id}" title="${o.name}">${o.name}</button>`:(o?.name||'');
 const projFacts=n=>{const c=n.project;if(!c)return '';const o=c.org_node||(c.org?{name:c.org}:null),bits=[c.value!=null?t('Value {}',moneyFull(c.value)):'',c.close_date?t('Expected close {}',closeDay(c.close_date)):''].filter(Boolean);
