@@ -345,6 +345,16 @@ class Preparation(unittest.TestCase):
         self.accept();job=self.job()
         self.assertIn('--owner assistant-'+job['job_id'][:8],a.preparation_prompt(job))
 
+    def test_prepared_ahead_drafts_the_step_that_can_go_before_it_blocks(self):
+        # A run prepared ahead that lacks something only the owner has (the original proposal, a price) used to stop at a
+        # bare blocker, while Do it drafted the reply the other side waited for and asked for the rest (2026-11-08)
+        self.accept();job={**self.job(),'ahead':True};prompt=a.preparation_prompt(job)
+        self.assertIn("still draft the step that can go now",prompt)
+        self.assertIn("outcome:'needs_you' with needs:<what you need from them, as a question>",prompt)
+        self.assertIn("who is on a thread or meeting doesn't show that",prompt)  # no guessed recipient for the ask
+        self.assertIn("Record a blocker only when nothing useful can be drafted",prompt)
+        self.assertNotIn("still draft the step that can go now",a.preparation_prompt(self.job()))  # Do it: the rules already say it
+
     def test_owner_requested_service_setting_is_not_a_blanket_security_refusal(self):
         self.accept();job=self.job();prompt=a.preparation_prompt(job)
         self.assertIn("source telegram or dashboard",prompt)

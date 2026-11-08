@@ -38,6 +38,7 @@ Was sie senden kann, hängt von der Quelle ab: eine E-Mail, eine Slack-Direktnac
 
 - „Das kann nicht von hier gesendet werden.“ heißt, dass du den Entwurf mit **Entwurf kopieren** kopierst und selbst sendest.
 - **Braucht deine Hilfe** heißt, dass sie dich etwas fragt: **Antworten**. **Hängt fest** heißt, dass sie ohne Frage angehalten hat oder zu lange lief und gestoppt wurde. Die Aufgabe sagt, warum.
+- Fehlt ihr etwas, das nur du hast? Dann entwirft sie trotzdem, was jetzt schon gehen kann, etwa eine Antwort, die einen Termin bestätigt, und fragt dich nach dem Rest.
 - **Erneut versuchen** führt sie noch einmal aus. **Änderungen anfragen** bittet um etwas anderes. Bei einer festgefahrenen Aufgabe steht **Erneut versuchen** vorn, und **Details** zeigt, was sie versucht hat.
 - Eine Aufgabe in Vorbereitung startet innerhalb von Sekunden. Muss sie warten, sagt sie, warum und ungefähr wann: „Startet nach der aktuellen“, ein Nutzungslimit, das sich zurücksetzt, oder Nutzung, die für später aufgespart wird.
 - Eine Website will, dass du dich anmeldest: Tippe auf **Anmelden** oder auf **Browser öffnen** und melde dich dort an. Sobald du drin bist, macht sie von selbst weiter, und die Aufgabe sagt „Angemeldet. Ich fange gleich an.“ Schließt du den Browser, wird sofort geprüft. Macht sie nicht weiter, tippe auf **Weiter**.
