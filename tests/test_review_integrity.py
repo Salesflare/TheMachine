@@ -18,6 +18,8 @@ class GraphFixes(unittest.TestCase):
         self.add(tg.chat(1,'32470000001','Ann Bell'));self.build()
         with self.store.connect() as db:tg.graph.set_role(db,'wa:32470000001','friend','owner',tg.NOW.isoformat())
         self.add(tg.mail(1,'Ann Bell <ann@client.com>','sam@acme.com'));self.build()
+        with self.store.connect() as db:tg.graph.merge(db,'wa:32470000001','email:ann@client.com',True,tg.NOW.isoformat(),'owner')  # a name alone is a question (graph_joins.py): the owner says yes
+        self.build()
         with self.store.connect() as db:result=tg.graph.set_role(db,'email:ann@client.com','customer','review',tg.NOW.isoformat())
         self.build();self.assertEqual(self.node('email:ann@client.com')['role'],'friend');self.assertIn('kept',result)
     def test_failed_review_does_not_consume_role_context(self):
@@ -94,6 +96,8 @@ class GraphFixes(unittest.TestCase):
         e=tg.chat(1,'32470000001','Ann Bell');self.add(e);self.build();eid=self.ids([e['source_id']])[0]
         with self.store.connect() as db:tg.graph.set_role(db,'wa:32470000001','friend','review',tg.NOW.isoformat(),eid,'Hi')
         self.add(tg.mail(1,'Ann Bell <ann@client.com>','sam@acme.com'));self.build()
+        with self.store.connect() as db:tg.graph.merge(db,'wa:32470000001','email:ann@client.com',True,tg.NOW.isoformat(),'owner')  # a name alone is a question (graph_joins.py): the owner says yes
+        self.build()
         with self.store.connect() as db:
             detail=tg.graph.detail(db,'email:ann@client.com');who=tg.graph.unconfirmed(db)
         self.assertEqual(detail['role_event_id'],eid);self.assertEqual(detail['role_quote'],'Hi');self.assertEqual(who[0]['id'],'email:ann@client.com')
