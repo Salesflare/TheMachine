@@ -29,3 +29,5 @@ It uses the access each connection already has. Nothing new to approve.
 ## How far back
 
 About a year. On your own computer, `history_days` in the settings file changes it (0 turns it off, up to 730). Telegram and other sources don't bring in older history.
+
+LinkedIn and X messages go back 90 days, read very slowly: a few small reads an hour, only in the daytime, and none for a day if the site pushes back, so your account stays safe (`social_history_days`, 0 turns it off).

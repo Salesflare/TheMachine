@@ -10,6 +10,7 @@ conversation is marked as read. Reading never writes anything to LinkedIn.
   linkedin-inbox show N|NAME [--limit N] [--json]   (N = number from `list`)
   linkedin-inbox send (--to N|NAME | --profile SLUG) --text TEXT [--send-id ID] [--yes] [--json]
   linkedin-inbox sync --since MS                    (JSON for the personal assistant)
+  linkedin-inbox history --since MS --until MS      (JSON: one small page of older messages, for history)
   linkedin-inbox verify --send-id ID                 (JSON: did that send land?)
   linkedin-inbox discover                           (refresh LinkedIn's query ids)
 
@@ -82,6 +83,43 @@ async () => {
       if (!body && (m.renderContent || []).length) body = '[attachment]';
       return {urn: m.entityUrn, originToken: m.originToken || null, from: s.name, fromMe: s.me, at: m.deliveredAt, subject: txt(m.subject) || null, text: body}; };
     const root = j => j.data?.data || j.data || {};
+    if (P.mode === 'history') {
+      // Older messages, one small request per run (besides /me): a page of conversations active since P.since, or one
+      // page of the first queued conversation's messages, newest first. Only messages from P.since to P.until return.
+      // Anything unexpected throws, so the caller stops for a day instead of trying again.
+      const S = {queue: [], cursor: null, listed: false, ...(P.state || {})}, out = [];
+      const odd = (what) => Object.assign(Error(what), {code: 'odd-answer'});
+      if (!S.queue.length) {
+        if (S.listed && !S.cursor) return {messages: [], done: true, state: S};
+        const cp = await gql(P.ids.conversation_pages, '(mailboxUrn:' + enc(meUrn) + ',category:INBOX,count:' + P.count + (S.cursor ? ',nextCursor:' + enc(S.cursor) : '') + ')');
+        const meta = root(cp).messengerConversationsByCategory?.metadata;
+        if (!meta) throw odd('missing conversation paging metadata');
+        absorb(cp);
+        const convs = Object.values(byUrn).filter(x => /messenger\.Conversation$/.test(x.$type));
+        S.queue = convs.filter(c => (c.lastActivityAt || 0) >= P.since && !(c.categories || []).includes('SPAM'))
+          .sort((a, b) => (b.lastActivityAt || 0) - (a.lastActivityAt || 0))
+          .map(c => { const others = (c['*conversationParticipants'] || []).map(person).filter(p => !p.me);
+            return {urn: c.entityUrn, with: c.title || others.map(p => p.name).join(', ') || '(only you)',
+              headline: others.length === 1 ? (others[0].headline || null) : null, group: !!c.groupChat, categories: c.categories || []}; });
+        const floor = !convs.length || convs.some(c => (c.lastActivityAt || 0) < P.since);
+        if (meta.nextCursor && meta.nextCursor === S.cursor && !floor) throw odd('conversation cursor did not advance');
+        S.cursor = floor ? null : (meta.nextCursor || null);
+        S.listed = true;
+        return {messages: [], done: !S.queue.length && !S.cursor, state: S};
+      }
+      const c = S.queue[0];
+      const mj = await gql(P.ids.message_pages, '(conversationUrn:' + enc(c.urn) + ',count:' + P.count + (c.cursor ? ',prevCursor:' + enc(c.cursor) : '') + ')'); absorb(mj);
+      const page = root(mj).messengerMessagesByConversation;
+      if (!page?.metadata) throw odd('missing message paging metadata');
+      const messages = (mj.included || []).filter(x => /messenger\.Message$/.test(x.$type)).map(msg);
+      messages.filter(m => (m.at || 0) >= P.since && (m.at || 0) < P.until)
+        .forEach(m => out.push({...m, conversation: c.urn, with: c.with, headline: c.headline, group: c.group, categories: c.categories}));
+      const next = page.metadata.prevCursor;
+      if (!next || !messages.length || messages.some(m => (m.at || 0) < P.since)) S.queue.shift();
+      else if (next === c.cursor) throw odd('message cursor did not advance');
+      else c.cursor = next;
+      return {messages: out, done: !S.queue.length && !S.cursor, state: S};
+    }
     let conversationPage;
     if (P.mode === 'sync') {
       conversationPage=await gql(P.ids.conversation_pages,'(mailboxUrn:'+enc(meUrn)+',category:INBOX,count:20'+(P.state?.cursor?',nextCursor:'+enc(P.state.cursor):'')+')');
@@ -597,6 +635,11 @@ def cmd_sync(a):
     print(json.dumps(res, ensure_ascii=False))
 
 
+def cmd_history(a):
+    res = run('history', since=a.since, until=a.until, count=max(1, min(a.count, 20)), state=json.loads(a.state or '{}'))
+    print(json.dumps(res, ensure_ascii=False))
+
+
 def cmd_verify(a):
     # Was an earlier send (by token) delivered? The send log first, then the conversation itself.
     entries, damaged=send_entries()
@@ -669,6 +712,12 @@ def main():
     p.add_argument('--since', type=int, required=True)
     p.add_argument('--state', help='committed page cursors from the assistant database')
     p.set_defaults(fn=cmd_sync)
+    p = sub.add_parser('history', help='JSON: one small page of older messages, from --since to --until (ms)')
+    p.add_argument('--since', type=int, required=True)
+    p.add_argument('--until', type=int, required=True)
+    p.add_argument('--count', type=int, default=10)
+    p.add_argument('--state', help='the cursors the last step returned')
+    p.set_defaults(fn=cmd_history)
     p = sub.add_parser('verify', help='JSON: did the send with this token land?')
     p.add_argument('--send-id', '--token', dest='token', required=True)
     p.set_defaults(fn=cmd_verify)

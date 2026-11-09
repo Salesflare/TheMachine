@@ -29,3 +29,5 @@ Il utilise l’accès que chaque connexion a déjà. Rien de nouveau n’est dem
 ## Jusqu’où
 
 Environ un an par défaut. Les Machines auto-hébergées peuvent régler `history_days` dans la configuration (0 le coupe, jusqu’à 730). Telegram et les autres sources gardent ce qu’elles lisent aujourd’hui.
+
+Les messages LinkedIn et X remontent à 90 jours et sont lus très lentement : quelques petites lectures par heure, seulement en journée, et aucune pendant un jour si le site résiste, pour que ton compte reste sûr (`social_history_days`, 0 le coupe).

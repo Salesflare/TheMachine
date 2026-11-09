@@ -29,3 +29,5 @@ Usa l'accesso che ogni connessione ha già. Non viene chiesto niente di nuovo.
 ## Fin dove
 
 Circa un anno di default. Le Machine self-hosted possono impostare `history_days` nella configurazione (0 la spegne, fino a 730). Telegram e le altre fonti tengono quello che leggono oggi.
+
+I messaggi di LinkedIn e X risalgono a 90 giorni e vengono letti molto lentamente: poche piccole letture all’ora, solo di giorno, e nessuna per un giorno se il sito fa resistenza, così il tuo account resta al sicuro (`social_history_days`, 0 la spegne).

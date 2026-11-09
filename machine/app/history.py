@@ -14,6 +14,7 @@ import logging
 import os
 from pathlib import Path
 import platform
+import random
 import re
 import shutil
 import sqlite3
@@ -27,7 +28,7 @@ import graph
 from machine.store import graph_history
 from machine.store import history
 from sources import SourceError, rate_limited, upstream_busy
-from timeutil import now
+from timeutil import local_tz, now
 
 LOG = logging.getLogger('personal-assistant')
 
@@ -60,7 +61,53 @@ SLACK_GAP_SECONDS = 180
 SLACK_WAIT_MAX = 60  # seconds a step may wait for the connection's minute of the round; longer: another step tries
 SLACK_THREADS_KEEP = 5000  # threads with replies queued for the walk's second pass
 MAIL, CALENDAR, WHATSAPP = ('gmail', 'outlook'), ('calendar', 'outlook_calendar'), ('whatsapp',)
-CONNECTOR_HISTORY = ('teams',)  # a connector with its own history_page (connectors/teams.py)
+CONNECTOR_HISTORY = ('teams', 'linkedin', 'x')  # a connector with its own history_page (connectors/teams.py, ...)
+PACED_STOP_DAYS = 1  # a paced connector (HISTORY_PACE) stops its history this long after any failed or odd read
+
+
+def connector_pace(account):
+    """A connector's HISTORY_PACE (LinkedIn and X: read through the owner's own browser, where bulk reads could get the
+    account restricted), else None: {'steps_per_day', 'pause_minutes': (least, most), 'hours': (start, end)}."""
+    if account.get('service') not in CONNECTOR_HISTORY:
+        return None
+    from machine.sources.connectors import load_connector
+    pace = getattr(load_connector(account.get('service')), 'HISTORY_PACE', None)
+    return pace if isinstance(pace, dict) else None
+
+
+def pace_wait(pace, account, state, current, default_hours=None):
+    """Why a paced connector's history step waits now (a short code), or None: stopped for a day after a failed or odd
+    read, its jittered pause since the last step not over, outside waking hours, or its steps for today used up.
+    `current` is an aware datetime; waking hours are local (the account's active_hours narrowed to the pace's)."""
+    stamp = current.isoformat()
+    if state.get('stopped_until', '') > stamp:
+        return 'stopped'
+    if state.get('next_at', '') > stamp:
+        return 'pause'
+    local = current.astimezone(local_tz())
+    start, end = pace['hours']
+    own = account.get('active_hours') or default_hours
+    if own:
+        start, end = max(start, own[0]), min(end, own[1])
+    if not start <= local.hour < end:
+        return 'hours'
+    if state.get('day') == local.date().isoformat() and int(state.get('steps') or 0) >= pace['steps_per_day']:
+        return 'cap'
+    return None
+
+
+def pace_after(pace, state, current, failed=None):
+    """After a paced step at `current`: count it for today and pause a random few minutes (pace_minutes), so the reads
+    never come at a fixed beat. A failed read (`failed`, its error code) stops for PACED_STOP_DAYS, unless only the
+    browser was busy with another job (local, not the site): then just the pause."""
+    day = current.astimezone(local_tz()).date().isoformat()
+    if state.get('day') != day:
+        state.update(day=day, steps=0)
+    state['steps'] = int(state.get('steps') or 0) + 1
+    least, most = pace['pause_minutes']
+    state['next_at'] = (current + dt.timedelta(minutes=random.uniform(least, most))).isoformat()
+    if failed and not str(failed).endswith('_browser_busy'):
+        state['stopped_until'] = (current + dt.timedelta(days=PACED_STOP_DAYS)).isoformat()
 
 
 def kind(account):
@@ -136,7 +183,7 @@ class HistoryApp:
         a review or a first import runs, a source asked to slow down, or the disk or memory is short. A connection's
         own sync read, or its own first import not being in yet, only holds back that connection (history_step), so on
         a Machine with many sources there's always a gap to step in."""
-        if not history.depth(self.config) or not self.history_accounts():
+        if not any(history.depth(self.config, a) for a in self.history_accounts()):
             return 'off'
         return self.history_hold(current)
 
@@ -186,13 +233,18 @@ class HistoryApp:
         why = self.history_wait(current)
         if why:
             return self.history_waits(why)
-        days, stamp = history.depth(self.config), now()
+        stamp = now()
         resting, reading = self.__dict__.get('collector_resting'), False
         for account in self.history_accounts():
+            days = history.depth(self.config, account)
+            if not days:
+                continue  # its kind of history is off (history_days, or social_history_days for LinkedIn and X)
             with self.store.connect() as db:
                 found = history.get(db, account['id'])
                 imported = history.first_import_done(db, account['id'])
-            reopen = bool(found and found['done_at'] and kind(account) == 'connector' and 'channels' not in found['state'])
+                live = db.execute('SELECT error FROM checkpoints WHERE account_id=?', (account['id'],)).fetchone()
+            # Teams from before channel history (only Teams: LinkedIn's and X's walks have no channels)
+            reopen = bool(found and found['done_at'] and account.get('service') == 'teams' and 'channels' not in found['state'])
             if found and found['done_at'] and (found['depth_days'] or 0) >= days and not reopen:
                 continue
             if not imported:
@@ -204,12 +256,23 @@ class HistoryApp:
             if resting is not None and account['id'] not in resting:
                 reading = 'sync'
                 continue  # its own sync reads it now: another one, or this one once that read is done
+            pace = connector_pace(account)
+            if pace:  # LinkedIn and X: never while its own sync fails, and only at its own slow, waking-hours pace
+                if live and live[0]:
+                    reading = reading or 'live_error'
+                    continue
+                from machine.sources.connectors import load_connector
+                held = pace_wait(pace, account, state, dt.datetime.fromisoformat(stamp),
+                                 getattr(load_connector(account.get('service')), 'READ_HOURS', None))
+                if held:
+                    reading = reading or 'pace'
+                    continue
             if reopen:  # Teams from before channel history: its chats are in, its channels' walk follows
                 state['chats'] = []
             elif found and found['done_at']:  # a deeper setting since: walk on from where it stopped
                 state.update(upper=state.get('target'), target=None, cursor=None, token=None)
-                for key in ('chats', 'channels', 'threads', 'link'):
-                    state.pop(key, None)  # a connector's or Slack's walk lists its conversations again
+                for key in ('chats', 'channels', 'threads', 'link', 'page'):
+                    state.pop(key, None)  # a connector's, Slack's, LinkedIn's or X's walk lists its conversations again
             state['upper'] = state.get('upper') or self.history_upper(account, stamp)
             state['target'] = state.get('target') or history.before(stamp, days)  # fixed for the walk: a page token holds its query
             state.pop('error_at', None)
@@ -221,9 +284,15 @@ class HistoryApp:
                 kept, oldest, done = stepped
             except SourceError as error:  # tried again later; the connection's own sync reports its errors
                 LOG.info('history account=%s waits error=%s', account['id'], error)
+                if pace:  # any failed or odd answer: a day off for this one, the others go on
+                    pace_after(pace, state, dt.datetime.fromisoformat(stamp), failed=error.category)
                 with self.store.connect() as db:
                     history.save(db, account['id'], {**state, 'error_at': stamp}, stamp)
+                if pace:
+                    return self.history_waits('error')
                 return self.history_waits('rate_limit' if self.history_rest(error) else 'error')
+            if pace:
+                pace_after(pace, state, dt.datetime.fromisoformat(stamp))
             with self.store.connect() as db:
                 history.save(db, account['id'], state, now(), kept, oldest, done, days)
             self.history_waits(None)
@@ -319,13 +388,14 @@ class HistoryApp:
         return kept, oldest, start <= target
 
     def history_connector(self, account, state):
-        """One step of a connector's older messages (its history_page: Teams chats), newest first, back to the target."""
+        """One step of a connector's older messages (its history_page: Teams chats, LinkedIn and X messages), newest
+        first, back to the target. Only what happened before `upper` is kept: the live sync owns the rest."""
         from machine.sources.connectors import CONNECTOR_HELPERS, load_connector
         module = load_connector(account.get('service'))
         if not module or not hasattr(module, 'history_page'):
             return 0, None, True
         events, done = module.history_page(self.config, account, CONNECTOR_HELPERS, state, state['upper'], state['target'])
-        kept, oldest = self.history_keep(account, [e for e in events if not e.get('deleted')])
+        kept, oldest = self.history_keep(account, [e for e in events if not e.get('deleted') and e['occurred_at'] < state['upper']])
         return kept, oldest, done
 
     def history_slack(self, account, state):
