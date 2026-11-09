@@ -5,7 +5,7 @@ GROUPS = ('mail', 'chat', 'meetings', 'docs', 'customers', 'work', 'other')
 GROUP_OF = {'gmail': 'mail', 'calendar': 'mail', 'outlook': 'mail', 'outlook_calendar': 'mail',
             'slack': 'chat', 'teams': 'chat', 'whatsapp': 'chat', 'telegram': 'chat', 'linkedin': 'chat', 'x': 'chat',
             'zoom': 'meetings', 'google_meet': 'meetings', 'docs': 'docs',
-            'salesflare': 'customers', 'intercom': 'customers', 'stripe': 'customers',
+            'salesflare': 'customers', 'salesforce': 'customers', 'intercom': 'customers', 'stripe': 'customers',
             'github': 'work', 'shortcut': 'work', 'trello': 'work'}
 
 

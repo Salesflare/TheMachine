@@ -110,6 +110,12 @@ def docs_health(config, account, state):
             'docs_linked_only': linked_only}
 
 
+def crm_sync_health(account, state):
+    """A Salesforce card's Update contact details: on or off, and the last contacts it updated (connectors/salesforce.py card)."""
+    plugin = load_connector('salesforce')
+    return plugin.card(account, state) if plugin and hasattr(plugin, 'card') else {}
+
+
 # A connection's card, under Connected: what it brings in (the line + Add shows for it: onboarding.WHAT, a connector's
 # SETUP['what']) and what it can do, each only after the owner's OK: 'send' (email), 'reply' (a chat, LinkedIn, X or
 # Intercom message), 'calendar' (add or change an event). A connection a Fleet shares only reads. Docs says its own.
@@ -279,7 +285,7 @@ def load_connector(service):
 # The Machine's Slack app is in the Slack Marketplace, Slack allows it 1 history read a minute: the reader paces itself
 # (sources/slack.py SLACK_LIMITS), new messages and DMs first, older ones gradually.
 HOSTED_SIGNINS = {'google', 'microsoft', 'zoom', 'stripe', 'intercom', 'trello', 'github', 'whatsapp', 'android', 'microsoft_docs',
-                  'microsoft_docs_write', 'codex', 'google_meet', 'google_docs', 'microsoft_teams', 'slack'}
+                  'microsoft_docs_write', 'codex', 'google_meet', 'google_docs', 'microsoft_teams', 'slack', 'salesforce'}
 
 
 ON_DASHBOARD = ('github', 'whatsapp', 'android', 'codex')
@@ -305,7 +311,7 @@ def reconnect_help(account, manage, docs_consent=False):
     if manage and service == 'teams':  # its Connect Microsoft Teams consent; the admin's step is on the account page
         return {'account_page': urllib.parse.urljoin(manage, '#teams'), 'hosted_signin': 'microsoft_teams'}
     if manage and account.get('transport') == 'broker':
-        provider = 'microsoft' if service in MICROSOFT_SERVICES else service if service in ('zoom', 'stripe', 'slack', 'google_meet') else 'google'
+        provider = 'microsoft' if service in MICROSOFT_SERVICES else service if service in ('zoom', 'stripe', 'slack', 'google_meet', 'salesforce') else 'google'
         return {'account_page': urllib.parse.urljoin(manage, '#' + provider if provider in ('google', 'microsoft') else '#source-' + service),
                 'hosted_signin': provider}
     if service == 'slack' and account.get('transport') != 'maton':

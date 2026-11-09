@@ -801,8 +801,8 @@ def missing(config, account):
         if not (config.get('microsoft_broker') or {}).get('url'):
             return 'microsoft_broker url is not set'
         names.append('microsoft-broker')
-    elif account.get('transport') == 'broker' and account.get('service') in ('zoom', 'google_meet'):
-        key = account['service'] + '_broker'  # Zoom and Google Meet: each with its own sign-in and broker
+    elif account.get('transport') == 'broker' and account.get('service') in ('zoom', 'google_meet', 'salesforce'):
+        key = account['service'] + '_broker'  # Zoom, Google Meet and Salesforce: each with its own sign-in and broker
         if not (config.get(key) or {}).get('url'):
             return f'{key} url is not set'
         names.append(account['service'] + '-broker')
@@ -2248,8 +2248,9 @@ def enable_replies(config_path, account_id, token):
 
 # Google, Microsoft, Zoom, Stripe, Slack and Google Meet signed in from the dashboard of a paired self-hosted Machine (connect_grant): the accounts each adds
 GRANT_SERVICES = {'google': ('gmail', 'calendar'), 'microsoft': ('outlook', 'outlook_calendar'), 'zoom': ('zoom',), 'stripe': ('stripe',), 'slack': ('slack',),
-                  'google_meet': ('google_meet',)}  # Google Meet: its own Google sign-in, apart from Gmail's
-GRANT_LABELS = {'google': 'Google', 'microsoft': 'Microsoft', 'zoom': 'Zoom', 'stripe': 'Stripe', 'slack': 'Slack', 'google_meet': 'Google Meet'}
+                  'google_meet': ('google_meet',), 'salesforce': ('salesforce',)}  # Google Meet: its own Google sign-in, apart from Gmail's
+GRANT_LABELS = {'google': 'Google', 'microsoft': 'Microsoft', 'zoom': 'Zoom', 'stripe': 'Stripe', 'slack': 'Slack', 'google_meet': 'Google Meet',
+               'salesforce': 'Salesforce'}
 SLACK_KEY = r'[te][a-z0-9]{6,20}:[uw][a-z0-9]{6,20}'  # a Slack sign-in's name: '<team id>:<user id>' (slack_api.key)
 DELIVERED = {'intercom', 'trello', 'microsoft_docs', 'microsoft_docs_write', *GRANT_SERVICES}  # sources a sign-in started on the dashboard connects on a paired self-hosted Machine (fleet.SIGNIN_SOURCES)
 
@@ -2359,7 +2360,7 @@ def connect_grant(config_path, provider, args, team_domains=()):
     tid = tid if TENANT_ID.fullmatch(tid) else ''
     same = [a for a in config.get('accounts', []) if str(a.get('email', '')).lower() == email and a.get('boundary')]
     if same or provider not in ('google', 'microsoft'):
-        boundary = same[0]['boundary'] if same else boundary_label(company_of(email) or ('work' if provider in ('zoom', 'google_meet') else 'personal'))
+        boundary = same[0]['boundary'] if same else boundary_label(company_of(email) or ('work' if provider in ('zoom', 'google_meet', 'salesforce') else 'personal'))
         doubt = False
     else:
         boundary = guess_boundary(config, email, None, team_domains, tid)[0]

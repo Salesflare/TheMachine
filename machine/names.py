@@ -11,7 +11,7 @@ from __future__ import annotations
 import re
 
 SERVICES = {'gmail': 'Gmail', 'calendar': 'Google Calendar', 'outlook': 'Outlook', 'outlook_calendar': 'Outlook Calendar',
-            'slack': 'Slack', 'teams': 'Microsoft Teams', 'salesflare': 'Salesflare', 'android': 'Android', 'whatsapp': 'WhatsApp', 'telegram': 'Telegram',
+            'slack': 'Slack', 'teams': 'Microsoft Teams', 'salesflare': 'Salesflare', 'salesforce': 'Salesforce', 'android': 'Android', 'whatsapp': 'WhatsApp', 'telegram': 'Telegram',
             'linkedin': 'LinkedIn', 'x': 'X', 'intercom': 'Intercom', 'zoom': 'Zoom', 'stripe': 'Stripe', 'github': 'GitHub',
             'trello': 'Trello', 'shortcut': 'Shortcut', 'docs': 'Docs', 'google_meet': 'Google Meet', 'rss': 'RSS',
             'gateway': 'Machine health'}

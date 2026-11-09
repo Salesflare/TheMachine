@@ -2,7 +2,7 @@
 
 A source (connector) reads one account of one service and stores what it finds as **events**. Reviews then decide what deserves a to-do.
 
-A connector only reads. It adds no AI interpretation and no writes nobody asked for: no replies, no marking as read. (The opt-in Salesflare account join is the one exception, and not a reason to add writes to another source.)
+A connector only reads. It adds no AI interpretation and no writes nobody asked for: no replies, no marking as read. (The opt-in Salesflare account join and Salesforce's opt-in Update contact details, which shows what would change first, are the exceptions, and not a reason to add writes to another source.)
 
 There are two ways to add one:
 

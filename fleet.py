@@ -245,10 +245,11 @@ START_PREFIX = b'tm-device-connect-start/1\n'  # what a start request is signed 
 # sign-ins through the control plane's own apps, from the dashboard. microsoft_docs: Docs (Word, OneDrive, SharePoint) for
 # a Microsoft account, Outlook here or not, Files.ReadWrite.All in one consent (onboarding.connect_docs_grant);
 # microsoft_docs_write: Allow edits on a Docs connection from before that reads only, the same way
-SIGNIN_SOURCES = {'intercom', 'google', 'microsoft', 'zoom', 'microsoft_docs', 'microsoft_docs_write', 'stripe', 'slack', 'trello', 'google_meet'}
+SIGNIN_SOURCES = {'intercom', 'google', 'microsoft', 'zoom', 'microsoft_docs', 'microsoft_docs_write', 'stripe', 'slack', 'trello', 'google_meet', 'salesforce'}
 # a dashboard source -> the sign-in that connects it (Google: Gmail and Calendar together; Microsoft: Outlook mail and calendar)
 SIGNIN_OF = {'intercom': 'intercom', 'gmail': 'google', 'calendar': 'google', 'outlook': 'microsoft', 'outlook_calendar': 'microsoft', 'zoom': 'zoom',
-             'docs': 'microsoft_docs', 'stripe': 'stripe', 'slack': 'slack', 'trello': 'trello', 'google_meet': 'google_meet'}
+             'docs': 'microsoft_docs', 'stripe': 'stripe', 'slack': 'slack', 'trello': 'trello', 'google_meet': 'google_meet',
+             'salesforce': 'salesforce'}
 SIGNIN_EXPIRES = 30 * 60  # a sign-in started on the dashboard and not finished by then is shown as stopped
 # While a sign-in started on the dashboard waits, this Machine asks the control plane for it this often itself
 # (Fleet.connects_watch), so it lands a moment after consent even while the Fleet's own loop is busy (a Shared Graph
