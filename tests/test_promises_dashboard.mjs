@@ -5,8 +5,8 @@ import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
-// The Promises list on the Suggestions tab: both directions, due chips, Done/Drop on every one still open (a to-do one
-// too, its to-do closes with it), and "a to-do now" opens that to-do.
+// The Promises list on the To-dos page: both directions, due chips, one ⋯ on every one still open with Do it (theirs:
+// Nudge), Mark done and Not happening (a to-do one too, its to-do closes with it), and "a to-do now" opens that to-do.
 const dashboard=await dashboardPage();
 const day=n=>{const d=new Date();d.setDate(d.getDate()+n);return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')};
 const made=new Date(Date.now()-2*864e5).toISOString(),check=new Date(Date.now()+864e5).toISOString();
@@ -21,7 +21,8 @@ const server=createServer(async(req,res)=>{
  const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(url.pathname==='/api/status'){res.end(JSON.stringify(state()));return}
- if(url.pathname==='/api/action'){let body='';for await(const b of req)body+=b;calls.push(JSON.parse(body));res.end('{"status":"kept"}');return}
+ if(url.pathname==='/api/action'){let body='';for await(const b of req)body+=b;const call=JSON.parse(body);calls.push(call);
+  res.end(call.action==='promise_todo'?JSON.stringify({id:call.args.id,card:'c'+call.args.id,existing:call.args.id===2}):'{"status":"kept"}');return}
  if(url.pathname.startsWith('/brand/')||url.pathname.startsWith('/assets/')){res.statusCode=404;res.end();return}
  res.end('{}');
 });
@@ -36,13 +37,25 @@ try{
  const list=page.locator('#promises-list');
  await list.waitFor();
  assert.equal(await list.locator('summary .count').textContent(),'3');  // closed ones stay out
- await list.locator('summary').click();
+ await list.locator('#promises-head').click();
  assert.deepEqual(await list.locator('.promise-head').allTextContents(),['You promised1','Promised to you2']);
  const text=await list.textContent();
  assert.ok(text.includes('To Alex Morgan: send the Q3 deck')&&text.includes('Due today'));
  assert.ok(text.includes('From Sam Lee: send the signed contract')&&text.includes('a to-do now')&&text.includes('Overdue'));
  assert.ok(text.includes('no date, follow-up')&&!text.includes('no date, checked'));  // check_at is tomorrow: the planned follow-up, not a check that happened
- assert.equal(await list.locator('[data-promise="2"]').count(),2);  // Done and Drop, its to-do closes with it
+ assert.equal(await list.locator('[data-promise="2"]').count(),2);  // Mark done and Not happening, its to-do closes with it
+ // No buttons on the rows: one ⋯ each, its items hidden until it opens
+ assert.equal(await list.locator('.promise > button').count(),0);
+ assert.equal(await list.locator('details.promise-menu').count(),3);
+ assert.equal(await list.locator('[data-promise="1"]').first().isVisible(),false);
+ const menu=async id=>{const d=list.locator('.promise').filter({has:page.locator(`[data-promise-todo="${id}"]`)}).locator('details.promise-menu');await d.locator('summary').click();
+  return (await d.locator('[role="menuitem"]').allInnerTexts()).map(x=>x.replace(/\s+/g,' ').trim())};
+ assert.deepEqual(await menu(1),['Do it Make it a to-do and prepare it','Mark done It was kept','Not happening It won’t happen. Stop tracking it']);
+ assert.deepEqual(await menu(3),['Nudge Draft a short follow-up for you to send','Mark done It was kept','Not happening It won’t happen. Stop tracking it']);
+ assert.equal(await list.locator('details.promise-menu[open]').count(),1);  // opening one closes the other
+ assert.deepEqual((await menu(2))[0],'Nudge Open its to-do');  // a to-do already: Nudge opens it
+ await page.keyboard.press('Escape');
+ assert.equal(await list.locator('details.promise-menu[open]').count(),0);
  assert.equal(await list.locator('a.promise-todo[href="#chat=c2"]').textContent(),'a to-do now');  // the to-do it is now
  const widths=[];
  for(const width of [320,390,768]){
@@ -51,9 +64,17 @@ try{
   assert.ok(sizes.page<=sizes.viewport&&sizes.list<=sizes.viewport,'overflow at '+width);widths.push({width,...sizes});
   if(process.env.PROMISES_SHOT)await list.screenshot({path:process.env.PROMISES_SHOT+'-'+width+'.png'});
  }
- await list.locator('[data-promise="1"][data-close="kept"]').click();
+ // Nudge: its to-do is made and prepared on the Machine, then its chat opens
+ await menu(3);await list.locator('[data-promise-todo="3"]').click();
  for(let i=0;i<100&&!calls.length;i++)await page.waitForTimeout(20);
- assert.deepEqual(calls[0],{action:'promise_close',args:{id:1,status:'kept'}});
+ assert.deepEqual(calls[0],{action:'promise_todo',args:{id:3}});
+ await page.waitForFunction(()=>location.hash==='#chat=c3');
+ assert.equal(await list.locator('details.promise-menu[open]').count(),0);
+ await page.evaluate(()=>history.back());await page.waitForFunction(()=>location.hash!=='#chat=c3');
+ if(!await page.locator('#promises-list').evaluate(d=>d.open))await page.locator('#promises-head').click();
+ await menu(1);await list.locator('[data-promise="1"][data-close="kept"]').click();
+ for(let i=0;i<100&&calls.length<2;i++)await page.waitForTimeout(20);
+ assert.deepEqual(calls[1],{action:'promise_close',args:{id:1,status:'kept'}});
  promises=promises.map(p=>p.id===1?{...p,state:'kept'}:p);await page.evaluate(()=>refresh());
  assert.equal(await page.locator('#promises-list summary .count').textContent(),'2');
  assert.ok(await page.locator('#promises-list').evaluate(d=>d.open));  // stays open across refresh

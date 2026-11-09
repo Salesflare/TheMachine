@@ -6,6 +6,7 @@ import datetime as dt
 import json
 import sqlite3
 import threading
+import uuid
 
 import bounces
 import graph
@@ -14,7 +15,7 @@ from machine.app.follow_ups import activity_who, newer_activity, NEWER_KINDS
 from machine.config import LOG
 from machine.sources.calendar import company_domains
 from machine.store.cards import promise_closed_at, same_matter_cards, same_thread_card
-from machine.store.promises import promise_logged, promise_text, promise_title, promise_who_named
+from machine.store.promises import promise_card as promise_todo, promise_logged, promise_text, promise_title, promise_who_named
 from machine.store.review import CARD_OPEN, own_message
 from machine.text import encoded
 from models import background_model, openclaw_model
@@ -128,7 +129,7 @@ def activity_since(db, event_ids, owner_slack_ids=(), teammates=(), domains=(), 
 
 class PromiseChecksApp:
     # action name -> the method that handles it, called as method(name, args, owner_dashboard) (App.action)
-    ACTIONS = {'promise_close': 'promise_close_action', 'promise_due': 'promise_due_action'}
+    ACTIONS = {'promise_close': 'promise_close_action', 'promise_due': 'promise_due_action', 'promise_todo': 'promise_todo_action'}
 
     PROMISE_CHECK_SECONDS = 180
 
@@ -272,7 +273,9 @@ class PromiseChecksApp:
         LOG.info('promise check promises=%s kept=%s', len(pages), kept)
         return kept
 
-    def promise_card(self, p, _db=None):
+    def promise_card(self, p, _db=None, ahead=None):
+        """A due promise's to-do (promise_step), or one the owner asked for now (promise_todo_action, ahead=False:
+        their own Do it prepares it instead)."""
         if _db is None:
             with self.store.connect() as db:
                 db.execute('BEGIN IMMEDIATE')
@@ -281,7 +284,7 @@ class PromiseChecksApp:
                                      "WHERE p.id=? AND p.status='open' AND p.check_at<=? AND e.deleted=0", (p['id'], now())).fetchone()
                 if not current:
                     return None  # closed or rescheduled since the worker selected it
-                return self.promise_card(dict(current), _db=db)
+                return self.promise_card(dict(current), _db=db, ahead=ahead)
         title, body = promise_text(promise_who_named(_db, p))
         home = promise_home(_db, p)
         if home is not None and home['status'] in CARD_OPEN:
@@ -295,7 +298,8 @@ class PromiseChecksApp:
             _db.execute("UPDATE promises SET status='carded',suggestion_id=?,updated_at=? WHERE id=?", (home['id'], now(), p['id']))
             promise_logged(_db, p['id'], 'carded', 'closed with its to-do')
             return {'id': home['id'], 'status': home['status'], 'duplicate': True}
-        ahead = self.config.get('prepare_ahead', True) is not False and self.store.ahead_room(int(self.config.get('prepare_ahead_per_day', 10)))
+        if ahead is None:
+            ahead = self.config.get('prepare_ahead', True) is not False and self.store.ahead_room(int(self.config.get('prepare_ahead_per_day', 10)))
         # Waiting on them: when the owner wrote there since (a reply, a nudge), that message leads, so the to-do's source
         # is what it waits on; their promise comes second.
         last = owner_last_word(_db, json.loads(p["watch"]), self.store.owner_user_ids) if p['direction'] == 'theirs' and p.get('watch') else None
@@ -317,6 +321,41 @@ class PromiseChecksApp:
         if not owner_dashboard or args.get('status') not in ('kept', 'dropped'):
             raise ValueError('Only the owner closes a promise, on the dashboard')
         return self.store.update_promise({'id': args.get('id'), 'status': args['status']}, source='dashboard')
+
+    def promise_todo_action(self, name, args, owner_dashboard=False):
+        """The ⋯ on a promise in the Promises list: Do it (the owner's own promise) or Nudge (someone else's). It
+        becomes a to-do now instead of on its day, the same one its day would bring (promise_card, joined to its
+        matter's open to-do when there is one), and that to-do gets the owner's Do it, so its run prepares it: the
+        work, or for a nudge a short follow-up where they promised it. A draft waits on the to-do; nothing sends
+        before the owner sends it. A promise that is a to-do already opens that one. Returns {'card': id}."""
+        if not owner_dashboard:
+            raise ValueError('Only the owner asks for a promise’s to-do, on the dashboard')
+        with self.store.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            self.store.settle_promises(db)
+            row = db.execute('SELECT p.*,e.occurred_at made_at FROM promises p JOIN events e ON e.id=p.event_id WHERE p.id=? AND e.deleted=0',
+                             (args.get('id'),)).fetchone()
+            if not row:
+                raise ValueError('Unknown promise id')
+            p = dict(row)
+            if p['status'] == 'carded':
+                card = promise_todo(db, p['suggestion_id'])
+                if card and card['status'] not in ('completed', 'rejected'):
+                    return {'id': p['id'], 'card': card['id'], 'existing': True}
+                if card:
+                    raise ValueError('This promise is no longer open')
+                # Its to-do is gone: it reads open (promise_state), so it gets a new one
+                db.execute("UPDATE promises SET status='open',suggestion_id=NULL WHERE id=?", (p['id'],))
+                p['status'] = 'open'
+            elif p['status'] != 'open':
+                raise ValueError('This promise is no longer open')
+            saved = self.promise_card(p, _db=db, ahead=False)
+        if saved.get('duplicate') or saved.get('status') != 'pending':
+            return {'id': p['id'], 'card': saved['id'], 'existing': bool(saved.get('duplicate'))}
+        nudge = p['direction'] == 'theirs' and not p.get('together')
+        self.decide_action('decide', {'suggestion_id': saved['id'], 'choice': 'accept', 'decision_id': 'promise-ask:' + uuid.uuid4().hex,
+                                      'feedback': i18n.t('Nudge them: a short follow-up where they promised it.') if nudge else ''}, owner_dashboard=True)
+        return {'id': p['id'], 'card': saved['id'], 'existing': False}
 
     def promise_due_action(self, name, args, owner_dashboard=False):
         if not owner_dashboard or not args.get('due'):
