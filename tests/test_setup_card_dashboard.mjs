@@ -220,6 +220,23 @@ try{
  // Firefox can't install: no install row.
  {reset();const {context,page}=await open({ua:'firefox',noInstall:true});
   assert.deepEqual(await steps(page),['phone','push','whatsapp','account','connect']);await context.close()}
+ // Installed already, in a Chromium tab: Chrome makes no install offer then, and on Linux getInstalledRelatedApps
+ // answers nothing, so no Install row. Once seen running as the app here, the tab counts it done; an install offer
+ // later (uninstalled since) brings the row back.
+ {reset();const {context,page}=await open({related:false});
+  assert.deepEqual(await steps(page),['phone','push','whatsapp','account','connect'],'no install offer: no Install row');
+  assert.equal(await stored(page,'app-installed'),null,'never counted installed without a sign');
+  await page.evaluate(()=>__installPrompt());await page.locator('[data-step="install"]').waitFor();await context.close()}
+ {reset();const {context,page}=await open({mode:'standalone'});
+  assert.equal(await stored(page,'app-installed'),1,'running as the app: kept for this device');await context.close()}
+ {reset();const {context,page}=await open({related:false});
+  await page.evaluate(()=>{localStorage.setItem('app-installed','1')});await page.reload();await page.locator('#task-'+'ab'.repeat(8)).waitFor();await ready(page);
+  assert.ok(!(await steps(page)).includes('install'),'seen as the app before: done in a tab');
+  assert.equal(await page.evaluate(()=>setupRows(true).find(r=>r.id==='install')?.done),true);
+  await page.evaluate(()=>__installPrompt());await page.locator('[data-step="install"]').waitFor();
+  assert.equal(await stored(page,'app-installed'),null,'the install offer: not installed any more');await context.close()}
+ {reset();const {context,page}=await open({related:true});
+  assert.equal(await page.evaluate(()=>setupRows(true).find(r=>r.id==='install')?.done),true,'getInstalledRelatedApps says installed');await context.close()}
  // Notifications blocked or turned off in Settings: no row for them.
  for(const o of [{perm:'denied'},{off:true}]){reset();const {context,page}=await open({mode:'standalone',...o});
   if(o.off){await page.evaluate(()=>{localStorage.setItem('push-off','1');deviceRender()})}

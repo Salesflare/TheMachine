@@ -17,10 +17,14 @@ const nudgeable=!DEV.framed&&'serviceWorker' in navigator;
 const onPhone=()=>{if(DEV.mobile)return true;try{return matchMedia('(pointer: coarse)').matches&&Math.min(screen.width,screen.height)<600}catch{return false}};
 const inApp=()=>['standalone','fullscreen','window-controls-overlay'].some(m=>matchMedia(`(display-mode: ${m})`).matches)||navigator.standalone===true;
 let installEvt=null,relatedInstalled=false;
-const appInstalled=()=>inApp()||relatedInstalled||devStore.get('app-installed')==='1';
+// Installed on this device: running as the app now, or seen running as it here before (kept, since a browser tab often
+// can't tell: desktop Chrome on Linux answers getInstalledRelatedApps with nothing), the browser's appinstalled,
+// or getInstalledRelatedApps where it works. The browser's own install offer means it isn't installed (any more).
+if(inApp())devStore.set('app-installed','1');
+const appInstalled=()=>inApp()||!installEvt&&(relatedInstalled||devStore.get('app-installed')==='1');
 // What installing looks like here: the browser's own prompt (Chromium), steps (iPhone, Safari on a Mac), or nothing (Firefox).
 function installKind(){if(!nudgeable)return null;if(installEvt)return DEV.mobile?'android':'desktop';if(appInstalled())return null;return DEV.ios?'ios':DEV.macSafari?'mac':null}
-addEventListener('beforeinstallprompt',e=>{e.preventDefault();installEvt=e;deviceRender()});
+addEventListener('beforeinstallprompt',e=>{e.preventDefault();installEvt=e;devStore.set('app-installed',null);deviceRender()});
 // Installed (from the setup to-do, Settings or the browser's own menu): a toast, once.
 let installedNoted=false;
 function noteInstalled(){installEvt=null;devStore.set('app-installed','1');if(!installedNoted){installedNoted=true;toast('Installed. The Machine is in your apps now.')}deviceRender()}
