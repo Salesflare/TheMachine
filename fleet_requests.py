@@ -571,13 +571,15 @@ class Requests:
     def handoff_sources(self, card_id, accounts=None):
         """The card's own emails and messages, as a handoff carries them: who wrote, when, the subject and the text
         (cut to SOURCE_CHARS, SOURCES_CHARS in all). Only this card's evidence, never anything else of the mailbox.
-        Each has a label for the form ("Email from Stripe Alerts · Fri, Oct 23")."""
+        Each has a label for the form ("Email from Stripe Alerts · Fri, Oct 23"). A Slack message keeps only its sender's
+        member id: it goes by their name (slack_named), else "someone on Slack", never as an unknown sender."""
+        from machine.sources.slack import slack_named
         with self.connect() as db:
             card = db.execute('SELECT event_ids FROM suggestions WHERE id=?', (str(card_id),)).fetchone()
             ids = json.loads(card['event_ids'] or '[]') if card else []
-            rows = {r['id']: r for r in db.execute('SELECT id,kind,account_id,occurred_at,title,body,metadata FROM events WHERE deleted=0 AND id IN '
-                                                   '(SELECT value FROM json_each(?))', (json.dumps(ids),))
-                    if accounts is None or r['account_id'] in accounts}  # never a Personal or another company's item
+            rows = {r['id']: r for r in slack_named(db, [dict(r) for r in db.execute(
+                'SELECT id,kind,account_id,occurred_at,title,body,metadata FROM events WHERE deleted=0 AND id IN (SELECT value FROM json_each(?))',
+                (json.dumps(ids),))]) if accounts is None or r['account_id'] in accounts}  # never a Personal or another company's item
         out, budget = [], SOURCES_CHARS
         for event_id in ids:
             r = rows.get(event_id)
@@ -591,6 +593,8 @@ class Requests:
                 name = fleet.clean(meta.get('contact_name') or meta.get('from_name'), 120) or address
             who = fleet.clean(meta.get('sender_display'), 120) if r['kind'].startswith('fleet.') or not meta.get('from') else \
                 (f'{name} <{address}>' if address and name and name != address else name or address)
+            if r['kind'] == 'slack.message' and not who:
+                who = graph.SOMEONE_ON_SLACK
             text = carried_text(r['body'], SOURCE_CHARS + 1)
             body = text[:min(SOURCE_CHARS, budget)]
             budget -= len(body)
