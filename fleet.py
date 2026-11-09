@@ -3538,6 +3538,14 @@ class Fleet(fleet_requests.Requests, fleet_reviews.Reviews, friends.Friends, con
                           for i in (found.get('fixed') or [])[:5] if isinstance(i, dict) and isinstance(i.get('id'), str)]
         return self.fixed_now
 
+    def fixed_answer(self, report, said, text='', screenshot=None):
+        """The notice's question: 'works' or 'not_right' (with what is still off and an optional screenshot, filed as a new
+        report linked to the fixed one). Closes it on every Machine of theirs; the control plane's reason as ValueError."""
+        body = {'answer': said, 'report': str(report)[:40], 'text': str(text or '')[:4000], 'screenshot': screenshot or None}
+        found = self.relay.call('POST', '/fixed', body, timeout=40) or {}
+        self.fixed_now = [f for f in self.fixed_now if f['id'] != report]
+        return {'fixed': self.fixed_now, **({'follow_up': found['follow_up']} if isinstance(found.get('follow_up'), str) else {})}
+
     def fixed_round(self):
         """Says what this Machine runs once an hour, so the owner hears of a fix (by email too) without opening the dashboard."""
         import time

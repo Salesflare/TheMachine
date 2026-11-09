@@ -109,8 +109,7 @@ async function bugOfferOpen(id){const o=await bugOfferGet({id});
 const bugOfferRoute=()=>{const m=/^#bug-offer=(bo_[a-f0-9]{16})$/.exec(location.hash);if(!m)return;history.replaceState(null,'',location.pathname+location.search);bugOfferOpen(m[1])};
 addEventListener('hashchange',bugOfferRoute);bugOfferRoute();
 function bugShotShow(){const img=$('#bug-shot-img');img.hidden=!bugShot;if(bugShot)img.src=bugShot;else img.removeAttribute('src');$('#bug-shot-remove').hidden=!bugShot}
-async function bugShrink(src){const img=new Image();img.src=src;await img.decode();const k=Math.min(1,1600/img.naturalWidth),c=document.createElement('canvas');  // a JPEG at most 1600 px wide
- c.width=Math.round(img.naturalWidth*k);c.height=Math.round(img.naturalHeight*k);c.getContext('2d').drawImage(img,0,0,c.width,c.height);return c.toDataURL('image/jpeg',.82)}
+// bugShrink (shell-banners.js): a JPEG at most 1600 px wide
 $('#bug-shot-pick').onclick=()=>$('#bug-shot-file').click();
 $('#bug-shot-file').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;$('#bug-error').textContent='';if(f.size>20e6){$('#bug-error').textContent='That image is too big.';return}
  try{const url=await new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>ok(r.result);r.onerror=no;r.readAsDataURL(f)});bugShot=await bugShrink(url)}catch{$('#bug-error').textContent='That image can’t be read.'}bugShotShow()};  // a data: URL: the page's CSP allows no blob: images

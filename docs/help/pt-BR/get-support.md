@@ -26,7 +26,9 @@ A partir daí é com a gente. Uma Machine auto-hospedada pode enviar um relatór
 
 Você também pode dizer à sua Machine no chat que algo nela está errado. Ela oferece enviar um relato e te dá um link que abre **Relatar um bug** com as suas palavras e um resumo curto já preenchidos. Nada sai até você tocar em **Enviar**. Sem uma conta para onde enviar, ela diz onde escrever.
 
-Quando corrigimos um bug que você relatou e sua Machine já tem a correção, avisamos uma vez: uma linha curta no seu painel (**Entendi** fecha) e um e-mail curto. Uma Machine auto-hospedada fica sabendo quando está na Network.
+Quando corrigimos um bug que você relatou e sua Machine já tem a correção, avisamos uma vez: uma linha curta no seu painel e um e-mail curto. Uma Machine auto-hospedada fica sabendo quando está na Network.
+
+A linha pergunta se agora funciona mesmo. Toque em **Funciona agora**, ou em **Ainda não está certo** para dizer o que ainda não está certo, com uma imagem se ajudar. Isso chega para nós como um novo relato, ligado ao primeiro. **×** fecha a linha sem responder.
 
 Se um relatório não puder sair na hora (você está offline ou enviou muitos em pouco tempo), ele não se perde. A sua Machine guarda o relatório, avisa quando ele vai sair e envia sozinha. Relatórios que ainda estão esperando aparecem em **Aguardando envio**.
 

@@ -26,7 +26,9 @@ Da lì ci pensiamo noi. Una Machine self-hosted può inviarne una quando è nel 
 
 Puoi anche dire alla tua Machine in chat che qualcosa in lei non va. Si offre di inviare una segnalazione e ti dà un link che apre **Segnala un bug** con le tue parole e un breve riassunto già scritti. Non parte nulla finché non tocchi **Invia**. Senza un account a cui inviarla, ti dice dove scrivere.
 
-Quando correggiamo un bug che hai segnalato e la tua Machine ha la correzione, te lo diciamo una volta: una breve riga nella tua dashboard (**Ho capito** la chiude) e una breve email. Una Machine self-hosted lo sa quando è nel Network.
+Quando correggiamo un bug che hai segnalato e la tua Machine ha la correzione, te lo diciamo una volta: una breve riga nella tua dashboard e una breve email. Una Machine self-hosted lo sa quando è nel Network.
+
+La riga chiede se ora funziona davvero. Tocca **Ora funziona**, oppure **Non ancora a posto** per dire cosa non va ancora, con un’immagine se aiuta. Ci arriva come una nuova segnalazione, collegata alla prima. **×** chiude la riga senza rispondere.
 
 Se una segnalazione non può partire subito (sei offline, o ne hai inviate molte in poco tempo), non va persa. La tua Machine la conserva, ti dice quando parte e la invia da sola. Le segnalazioni ancora in attesa compaiono sotto **In attesa di invio**.
 

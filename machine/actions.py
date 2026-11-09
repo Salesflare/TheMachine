@@ -531,6 +531,7 @@ DASHBOARD_ACTIONS = frozenset({
     'whatsapp_photos',
 })
 UPLOAD_ACTIONS = {
+    'bug_fixed',  # Still not right on a fix notice: its optional screenshot
     'bug_later',
     'bug_send',
     'graph_import_ai',

@@ -173,6 +173,15 @@ body:has(#browser-pane:not([hidden])) :is(#page-head,#needs-you,#notice,#limit-b
 .device-nudge[hidden],body.chat-open .device-nudge{display:none}
 /* A usage limit reached (state.model_pause), or reviews waiting for the budget (state.review_pause): the same quiet notice card, with an amber dot, at the top of every view. */
 #fixed-notice{display:grid;gap:var(--sp-2);margin-bottom:var(--sp-4)}#fixed-notice .notice-card{margin:0}.fixed-notice::before{content:"";flex:none;width:6px;height:6px;border-radius:50%;background:var(--mint)}
+/* Fixed: its question (Works now, Still not right), a quiet × that closes it without an answer, and Still not right's small box under the line. */
+.fixed-notice{flex-wrap:wrap}.fixed-notice>.fixed-ask{display:flex;flex-wrap:wrap;gap:var(--sp-2);margin-left:auto}.fixed-notice .fixed-ask .head-link{margin:0}.fixed-notice .fixed-ask [aria-expanded=true]{color:var(--text);border-color:var(--c-line-strong,var(--border));background:var(--tile)}
+.fixed-close{flex:none;width:30px;height:30px;min-height:0;margin:0 -6px 0 0;padding:0;border:0;border-radius:50%;background:none;box-shadow:none;color:var(--muted);font:400 1.15rem/1 var(--sans);cursor:pointer}.fixed-close:hover{background:var(--tile);color:var(--text)}
+.fixed-off{flex:0 0 calc(100% - 14px);box-sizing:border-box;display:grid;gap:var(--sp-2);margin:var(--sp-1) 0 var(--sp-1) 14px}.fixed-off label{display:grid;gap:6px;color:var(--muted);font-size:var(--fs-sm)}
+.fixed-off textarea{width:100%;box-sizing:border-box;min-height:64px;margin:0;resize:vertical;font:inherit;color:var(--text)}
+.fixed-off-tools{display:flex;flex-wrap:wrap;align-items:center;gap:var(--sp-2)}.fixed-off-tools img{flex:0 0 100%;order:-1;height:120px;object-fit:contain;object-position:left}
+.fixed-off-tools .chat-say{min-height:30px;padding:4px 12px;border:1px solid var(--border);border-radius:999px;background:none;color:var(--muted);font:400 .84rem/1.3 var(--sans);cursor:pointer}
+.fixed-off-go{display:flex;gap:var(--sp-2);margin-left:auto}.fixed-off-go button{min-height:32px;padding:0 14px}.fixed-off-error:empty{display:none}.fixed-off-error{margin:0;color:var(--red,#c0392b);font-size:var(--fs-sm)}
+@media(max-width:560px){.fixed-notice>.fixed-ask{margin-left:14px;flex:1 1 auto}.fixed-off{flex-basis:100%;margin-left:0}}
 /* The banners above every view (#banners: a usage limit, Fixed, Needs you) stack into one box with a hairline between, never a pile of cards over the to-dos. */
 .banner-stack:has(>:not([hidden])){margin-bottom:var(--sp-4);border:1px solid var(--border);border-radius:var(--r-lg);background:var(--surface);box-shadow:var(--shadow-sm);overflow:hidden}
 #banners :is(#needs-you,.notice-card){margin:0;padding:8px var(--sp-4);border:0;border-radius:0;background:none;box-shadow:none}
