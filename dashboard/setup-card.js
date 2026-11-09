@@ -41,8 +41,6 @@ function setupRows(all=false){const s=state?.setup_card;if(!s)return [];const cl
  add('phone',!!p&&!DEV.phoneApp&&(DEV.mobile?!!setupStore():!!(p.ios||p.android)),s.phones>0);
  add('push',!DEV.phoneApp&&(pushOn()||pushOK&&devicePush.checked&&devicePush.perm!=='denied'&&devStore.get('push-off')!=='1'),pushOn());
  add('whatsapp',hosted,s.whatsapp);
- // Chromium offers its install (beforeinstallprompt) only while the app isn't installed here: without that offer the row
- // has nothing to do in a Chromium tab, so it waits for it instead of asking to install an app that already is
  add('install',!onPhone()&&!DEV.phoneApp&&nudgeable&&(appInstalled()||!!installEvt||DEV.macSafari),appInstalled());
  add('account',hosted,s.mail_accounts>=2);
  add('connect',true,s.more);
