@@ -12,7 +12,7 @@ Quase tudo acontece sozinho. Sua Machine aprende com o que você faz, então há
 
 - **Como você escreve**: pelas mensagens que você mesmo envia, por canal, para que um e-mail soe como os seus e-mails e um chat como os seus chats. Os rascunhos seguem isso.
 - O que você quer: pelas tarefas que você conclui, dispensa ou adia, e por quê.
-- Fatos e hábitos: pelo que você diz no chat de uma tarefa, como "nunca atendo ligações às sextas".
+- Fatos e hábitos: pelo que você diz no chat de uma tarefa ou ao seu próprio bot do Telegram, como "nunca atendo ligações às sextas".
 
 Cerca de duas vezes por dia, ela faz algumas pequenas mudanças a partir disso. **Aprendizado**, **Alterações** mostra cada uma, com **Desfazer**. Veja [Escrita](writing.md#it-keeps-learning).
 

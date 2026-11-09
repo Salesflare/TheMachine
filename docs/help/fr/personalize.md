@@ -12,7 +12,7 @@ L’essentiel se fait tout seul. Votre Machine apprend de ce que vous faites, do
 
 - **Votre façon d’écrire** : à partir des messages que vous envoyez vous-même, par canal, pour qu’un e-mail ressemble à vos e-mails et un chat à vos chats. Les brouillons la suivent.
 - Ce que vous voulez : à partir des tâches que vous terminez, écartez ou mettez en attente, et pourquoi.
-- Les faits et habitudes : à partir de ce que vous dites dans le chat d’une tâche, comme « Je ne prends jamais d’appels le vendredi ».
+- Les faits et habitudes : à partir de ce que vous dites dans le chat d’une tâche ou à votre propre bot Telegram, comme « Je ne prends jamais d’appels le vendredi ».
 
 Environ deux fois par jour, elle en tire quelques petits changements. **Apprentissage**, **Modifications** les montre un par un, avec **Annuler**. Voir [Rédaction](writing.md#it-keeps-learning).
 

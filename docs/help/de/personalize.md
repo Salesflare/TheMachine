@@ -12,7 +12,7 @@ Das meiste passiert von selbst. Deine Machine lernt aus dem, was du tust, also g
 
 - **Wie du schreibst**: aus den Nachrichten, die du selbst sendest, pro Kanal, damit eine E-Mail wie deine E-Mails klingt und ein Chat wie deine Chats. Entwürfe folgen dem.
 - Was du willst: aus den Aufgaben, die du erledigst, verwirfst oder zurückstellst, und warum.
-- Fakten und Gewohnheiten: aus dem, was du im Chat einer Aufgabe sagst, etwa „Freitags telefoniere ich nie“.
+- Fakten und Gewohnheiten: aus dem, was du im Chat einer Aufgabe oder deinem eigenen Telegram-Bot sagst, etwa „Freitags telefoniere ich nie“.
 
 Etwa zweimal am Tag macht sie daraus ein paar kleine Änderungen. **Lernen**, **Änderungen** zeigt jede davon, mit **Rückgängig**. Siehe [Schreiben](writing.md#it-keeps-learning).
 

@@ -281,7 +281,7 @@ def close_facts(db, ids):
 class FactsStore:
     """Store methods for the facts the Machine learned."""
 
-    def remember_fact(self, text, decision_id, kind=None, replaces=None, about=None, until=None, source=None, side=None):
+    def remember_fact(self, text, decision_id, kind=None, replaces=None, about=None, until=None, source=None, side=None, said=False):
         """Keep a lasting fact from one of the owner's own written notes, so later reviews and preparations use it.
         kind: event, commitment, preference or fact (FACT_SORTS, kept as a fact), or draft (a rule); until: the day it
         stops holding (an event without one holds EVENT_DAYS). With replaces (ids of facts and rules) it condenses: the new
@@ -289,7 +289,9 @@ class FactsStore:
         restore (unmerge_fact). about: the graph node ids of who the fact is about (fact_about); a condensed fact keeps who
         its originals were about. Saying a current one again starts its decay over (confirmed_at). source: a connected AI
         ('ai:<name>', ai_app.py) instead of a note: decision_id is then 'ai:<connection id>', it is about someone, and it
-        neither condenses nor makes a rule. side: its area, work or personal (an AI's fact only)."""
+        neither condenses nor makes a rule. side: its area, work or personal (an AI's fact only). said: the note is a
+        message the owner wrote in their own private chat (decision_id 'telegram-said:<message id>', which the service
+        vouches for: remember_fact_action), not one on a to-do."""
         text = ' '.join(str(text or '').split())
         if source is not None and (not str(source).startswith('ai:') or not str(decision_id).startswith('ai:') or replaces
                                    or kind == 'draft' or not about or side not in ('work', 'personal')):
@@ -311,7 +313,7 @@ class FactsStore:
             if originals:  # condensing: the merged fact comes from the newest note behind them
                 decision_id = originals[-1]['decision_id']
                 note = {'suggestion_id': originals[-1]['suggestion_id']}
-            elif source is not None:
+            elif source is not None or (said is True and str(decision_id).startswith('telegram-said:')):
                 note = {'suggestion_id': None}
             else:
                 note = db.execute("SELECT suggestion_id,feedback FROM decisions WHERE id=? AND source IN ('telegram','dashboard') AND feedback!='' AND id NOT IN (SELECT decision_id FROM decision_annotations)", (decision_id,)).fetchone()

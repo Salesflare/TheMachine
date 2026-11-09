@@ -12,7 +12,7 @@ Quasi tutto succede da sé. La tua Machine impara da quello che fai, quindi c'è
 
 - **Come scrivi**: dai messaggi che invii tu, per canale, così un'email suona come le tue email e una chat come le tue chat. Le bozze lo seguono.
 - Cosa vuoi: dalle attività che concludi, ignori o posticipi, e dal perché.
-- Fatti e abitudini: da quello che dici nella chat di un'attività, come "il venerdì non prendo mai chiamate".
+- Fatti e abitudini: da quello che dici nella chat di un'attività o al tuo bot Telegram, come "il venerdì non prendo mai chiamate".
 
 Circa due volte al giorno fa qualche piccola modifica in base a questo. **Apprendimento**, **Modifiche** le mostra una per una, con **Annulla**. Vedi [Scrittura](writing.md#it-keeps-learning).
 

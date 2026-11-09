@@ -11,6 +11,7 @@ import re
 import sqlite3
 import subprocess
 import threading
+import time
 
 import i18n
 from machine.config import LOG, ROOT
@@ -27,6 +28,11 @@ def prompt_text(title,plain=False,kind='change'):
         return t('Not needed: {}', title[:90])+'\n\n'+t('Why isn’t this needed? Reply here, or send “cancel” to keep it.')
     if plain:return t('What would you like instead? Reply to this message. Send “cancel” to stop.')
     return t('Change: {}', title[:90])+'\n\n'+t('What would you like instead? Reply here, or send “cancel”.')
+
+
+# How long after the owner's message in their own chat a fact can be saved from it: the turn that answers it, not a
+# later one that started by itself.
+OWNER_SAID_MINUTES = 30
 
 
 class FeedbackApp:
@@ -94,7 +100,17 @@ class FeedbackApp:
         result=self.store.feedback_reply(args['text'],args['message_id'],timestamp,reply_to)
         if result.get('handled') and not result.get('cancelled'):
             result.update(duplicate=True,card_confirmation_only=True)
+        if not result.get('handled') and str(args.get('text') or '').strip() and not str(args['text']).startswith('/'):
+            # Not about a to-do: something the owner wrote in their own chat. Its id and when, in memory only (the words
+            # are kept nowhere), so a fact they state there can be saved from it (owner_said, remember_fact_action).
+            self.owner_said_last = (str(args['message_id']), time.time())
         return result
+
+    def owner_said(self):
+        """The note id of the owner's last message in their own private chat ('telegram-said:<message id>'), while it is
+        at most OWNER_SAID_MINUTES old; None otherwise. Only feedback_reply sets it, which takes the owner key."""
+        message_id, at = getattr(self, 'owner_said_last', None) or (None, 0)
+        return 'telegram-said:' + message_id if message_id and 0 <= time.time() - at <= OWNER_SAID_MINUTES * 60 else None
 
     def feedback_prompt_step(self, request_id=None, sender=None):
         """Durable prompt admission, receipt recovery and conservative ambiguous-send hold."""

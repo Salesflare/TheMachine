@@ -12,7 +12,7 @@ Casi todo pasa solo. Tu Machine aprende de lo que haces, así que hay poco que c
 
 - **Cómo escribes**: de los mensajes que envías tú, por canal, para que un correo suene como tus correos y un chat como tus chats. Los borradores lo siguen.
 - Lo que quieres: de las tareas que terminas, descartas o pospones, y por qué.
-- Datos y costumbres: de lo que dices en el chat de una tarea, como "nunca atiendo llamadas los viernes".
+- Datos y costumbres: de lo que dices en el chat de una tarea o a tu propio bot de Telegram, como "nunca atiendo llamadas los viernes".
 
 Unas dos veces al día hace a partir de esto algunos cambios pequeños. **Aprendizaje**, **Cambios** muestra cada uno, con **Deshacer**. Consulta [Redacción](writing.md#it-keeps-learning).
 

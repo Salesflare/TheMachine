@@ -12,7 +12,7 @@ Het meeste gebeurt vanzelf. Je Machine leert van wat je doet, dus er is weinig i
 
 - **Hoe je schrijft**: uit de berichten die je zelf verstuurt, per kanaal, zodat een e-mail klinkt als je e-mails en een chat als je chats. Concepten volgen dat.
 - Wat je wilt: uit de to-do's die je afrondt, wegklikt of snoozet, en waarom.
-- Feiten en gewoontes: uit wat je zegt in de chat van een to-do, zoals "Ik bel nooit op vrijdag".
+- Feiten en gewoontes: uit wat je zegt in de chat van een to-do of tegen je eigen Telegram-bot, zoals "Ik bel nooit op vrijdag".
 
 Ongeveer twee keer per dag maakt hij hieruit een paar kleine aanpassingen. **Leren**, **Wijzigingen** toont ze allemaal, met **Ongedaan maken**. Zie [Schrijven](writing.md#it-keeps-learning).
 

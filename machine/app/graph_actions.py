@@ -644,6 +644,14 @@ class GraphActionsApp:
             return self.store.fact_overturned(args['id'], args.get('reason'), args.get('event_ids') or [])
         if args.get('id') is not None and not args.get('text'):  # who an existing fact is about
             return self.store.fact_about(args['id'], args.get('about'))
+        if args.get('_owner_chat') is True and not args.get('decision_id') and not args.get('replaces'):
+            # The owner's own private chat (the bridge says so, never the model): from their last message there
+            note = self.owner_said()
+            if not note:
+                raise ValueError('Facts come from the owner’s own words: they wrote nothing in this chat in the last half hour. '
+                                 'Save it when they say it.')
+            return self.store.remember_fact(args.get('text'), note, args.get('kind') or None, None, args.get('about'),
+                                            args.get('until') or args.get('valid_until'), said=True)
         return self.store.remember_fact(args.get('text'), args.get('decision_id'), args.get('kind') or None, args.get('replaces'), args.get('about'),
                                         args.get('until') or args.get('valid_until'))
 
