@@ -10,7 +10,7 @@ const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modul
 // for them), and they're fetched after that. Calendar, Learning and Help opened while they're on their way open once
 // they're in, and then Help, the game, Calendar and Learning work as before. The Graph's rules are in before its pages
 // draw, and the Fleet tab draws once its views are in. Settings opened while its panels are on their way opens once
-// they're in, drawn. A link straight to Calendar opens it once its part is in. When they can't load, the rest is drawn
+// they're in, drawn (Skills too). A link straight to Calendar opens it once its part is in. When they can't load, the rest is drawn
 // all the same, and Calendar, the Graph, Settings, the Fleet, Connections and the game say so. Connections draws once
 // its views are in, its cards too.
 const [source,lazy]=JSON.parse(execFileSync('python3',['-c','import json,dashboard_parts;print(json.dumps(dashboard_parts.assemble_split()))'],{encoding:'utf8',maxBuffer:1<<26}));
@@ -20,7 +20,7 @@ const cut=source.lastIndexOf('<script>\n'),script=source.slice(cut+9,source.last
 const lazyNames=Object.fromEntries(Object.keys(files).map(f=>[f.split('-')[1],f]));
 const page=(source.slice(0,cut)+`<script>self.LAZY_FILES=${JSON.stringify(lazyNames)}</script><script src="${main}"></script></html>\n`)
  .replace('__CSRF__','').replaceAll('__UI_VERSION__','v1').replace('__BASE__','/').replace('__CACHE_SCOPE__','s'.repeat(32));
-const state={suggestions:[],promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},connectors:[{id:'mail',service:'gmail',email:'owner@example.org',display_name:'Mail',status:'ok'}],fleet:{on:false,fleets:[]}};
+const state={suggestions:[],promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},connectors:[{id:'mail',service:'gmail',email:'owner@example.org',display_name:'Mail',status:'ok'}],fleet:{on:false,fleets:[]},skills:{skills:[],hints:[]}};
 // holdOnly: only the part a block is about waits (a browser asks for at most 6 at a time from one host, so with the
 // others held too, that part might never be asked for)
 let hold=null,holdOnly=null,refuse=false;const asked=[];
@@ -90,6 +90,7 @@ try{
   for(const until=Date.now()+20000;!asked.some(n=>n.startsWith('lazy-settings-'));){assert.ok(Date.now()<until,'the settings part is asked for');await new Promise(r=>setTimeout(r,50))}
   await p.evaluate(()=>showSettings('writing'));assert.equal(await p.locator('#settings').isHidden(),true);assert.equal(await p.locator('#voices').innerHTML(),'');
   release();hold=null;holdOnly=null;await p.waitForFunction(()=>!document.querySelector('#settings').hidden&&settingsNow==='writing'&&document.querySelector('#voices').innerHTML!=='');
+  assert.equal(await p.evaluate(()=>!document.querySelector('#settings-skills').hidden&&document.querySelector('#skills-list').textContent.includes('No skills yet.')),true);
   await context.close()}
  // A link straight to Settings, Writing, its panels held back: Settings opens on Writing once they're in
  {let release;hold=new Promise(r=>release=r);holdOnly='lazy-settings-';asked.length=0;const context=await browser.newContext({viewport:{width:1440,height:900}});

@@ -1,5 +1,5 @@
 // Settings' tabs, links and what the rest of the page uses from Settings (Learning's Share and Votes boxes, the voice
-// editor's links). Settings' own panels (settings-general, -export and -upkeep) load when first needed
+// editor's links). Settings' own panels (settings-general, -skills, -export and -upkeep) load when first needed
 // (dashboard_parts.LAZY); showSettings() opens Settings once they're in.
 // Settings in tabs, a pill row like Graph and Connections. A Machine linked to a control plane account (hosted, or
 // paired with the Network: status account_url) gets Account first, the account in short with buttons to its pages.
@@ -129,3 +129,12 @@ function voiceEditShow(){const ch=voiceEditing;if(ch==null||$('#settings').hidde
 document.addEventListener('click',e=>{const a=e.target.closest('[data-voice-edit]');if(!a)return;e.preventDefault();voiceEditing=a.dataset.voiceEdit;
  if(location.hash==='#settings/writing'&&!$('#settings').hidden){voiceEditShow();return}if(location.hash==='#settings/writing'){showSettings('writing');voiceEditShow();return}location.hash='#settings/writing'});
 addEventListener('hashchange',()=>requestAnimationFrame(voiceEditShow));
+// Skills' own panel loads when first needed (settings-skills.js); a to-do card's skill hint and Create skill use these.
+let skillsKey='',skillEditing=null,skillSharing=null;
+const skillAct=async(action,args)=>{const v=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action,args})});if(v&&v.skills)state.skills=v;skillsKey='';if(lazyIn('settings'))renderSkills();renderNeedsYou();return v};
+// "There's a skill for this": the agent judged that a skill would clearly help with a card. Quiet, dismissable.
+const hintFor=id=>(state.skills?.hints||[]).find(h=>String(h.suggestion_id)===String(id));
+const skillHintNote=s=>{const h=!closed(s)&&hintFor(s.id);return h?html`<p class="note skill-hint">There’s a skill for this: <button type="button" class="link" data-hint-look="${h.id}">${h.name}</button>${h.kind==='clawhub'?' on ClawHub':''}. <button type="button" class="link" data-hint-dismiss="${h.id}">Not now</button></p>`:''};
+// A skill hint's buttons on a card work before Skills is in: the click waits for it, then goes on.
+document.addEventListener('click',e=>{if(lazyIn('settings'))return;const b=e.target.closest('[data-hint-look],[data-hint-dismiss]');if(!b)return;
+ e.preventDefault();e.stopImmediatePropagation();lazyRun('settings',()=>b.click())},true);

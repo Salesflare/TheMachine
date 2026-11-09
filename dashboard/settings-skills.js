@@ -1,6 +1,5 @@
-// Skills (skills.py): the owner's how-tos, written to OpenClaw's workspace; shared ones are read here and installed by the owner.
-let skillsKey='',skillEditing=null,skillSharing=null;
-const skillAct=async(action,args)=>{const v=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action,args})});if(v&&v.skills)state.skills=v;skillsKey='';renderSkills();renderNeedsYou();return v};
+// Skills (skills.py), which loads when first needed (dashboard_parts.LAZY; what the rest of the page uses is in
+// settings-shared.js): the owner's how-tos, written to OpenClaw's workspace; shared ones are read here and installed by the owner.
 function skillMeta(s){if(s.status==='incoming')return `${esc(t(s.update?'Update by {} · version {}':'Shared by {} · version {}',s.author||t('a teammate'),s.version))}${s.note?` · <span translate="no">“${esc(s.note)}”</span>`:''}`;
  if(s.status==='proposed')return (s.update?'Update proposed by your Machine':'Proposed by your Machine')+(s.note?`: ${esc(s.note)}`:'');
  const bits=[];if(s.status==='off')bits.push('Off');if(s.imported)bits.push(`Imported from ${{claude:'Claude',chatgpt:'ChatGPT'}[s.imported.from]||'elsewhere'}`);if(s.origin==='shared')bits.push(`From ${esc(s.author||'a teammate')}, version ${s.version}`);
@@ -38,9 +37,6 @@ function filterSkills(){const q=($('#skills-filter')?.value||'').trim().toLowerC
  for(const row of document.querySelectorAll('#skills-list>[data-skill],#skills-installed [data-installed]')){const text=[...row.querySelectorAll('strong,small:not(.skill-meta)')].map(e=>e.textContent).join(' ').toLowerCase();row.hidden=!!q&&!text.includes(q)}
  for(const d of document.querySelectorAll('#skills-installed details')){const any=[...d.querySelectorAll('[data-installed]')].some(r=>!r.hidden);d.hidden=!!q&&!any;if(q&&any)d.open=true}}
 $('#skills-filter').addEventListener('input',filterSkills);
-// "There's a skill for this": the agent judged that a skill would clearly help with a card. Quiet, dismissable.
-const hintFor=id=>(state.skills?.hints||[]).find(h=>String(h.suggestion_id)===String(id));
-const skillHintNote=s=>{const h=!closed(s)&&hintFor(s.id);return h?html`<p class="note skill-hint">There’s a skill for this: <button type="button" class="link" data-hint-look="${h.id}">${h.name}</button>${h.kind==='clawhub'?' on ClawHub':''}. <button type="button" class="link" data-hint-dismiss="${h.id}">Not now</button></p>`:''};
 function renderSkillHints(){const hints=state.skills?.hints||[],box=$('#skills-hints');box.hidden=!hints.length;
  box.innerHTML=hints.length?`<h3 class="skills-head">Suggested for your to-dos</h3><div class="list settings-list skills-list">${hints.map(h=>`<div data-hint="${esc(h.id)}"><span class="grow"><strong title="${esc(h.name)}">${esc(h.name)}</strong><small>${esc(h.why)}</small><small class="skill-meta">${h.kind==='clawhub'?'Third-party, on ClawHub':'Installed, not ready yet'}</small></span><span class="skill-buttons"><button type="button" class="ghost" data-hint-look="${esc(h.id)}">Look</button><button type="button" class="ghost" data-hint-dismiss="${esc(h.id)}">Not now</button></span></div>`).join('')}</div>`:''}
 function lookOpen(title,from,notes,body,actions){$('#skill-look-title').textContent=title;$('#skill-look-from').textContent=from;$('#skill-look-error').textContent='';
