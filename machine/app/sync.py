@@ -21,7 +21,8 @@ from machine.sources.gmail import sync_gmail
 from machine.sources.rows import Skips
 from machine.sources.salesflare import salesflare_progress, sync_salesflare
 from machine.sources.slack import (Slack, slack_error, slack_event, slack_first_import_next, slack_first_import_plan,
-                                   slack_interval, slack_next_due, slack_order, slack_page_names)
+                                   slack_interval, slack_next_due, slack_order, slack_page_names, slack_read_asked,
+                                   slack_read_drop, slack_read_now)
 from machine.sources.telegram import sync_telegram
 from machine.sources.whatsapp import sync_whatsapp, WhatsApp
 from sources import CALENDAR_SERVICES, gog_signed_in_since, MAIL_SERVICES, rate_limited, SourceError, upstream_busy
@@ -203,6 +204,7 @@ def sync_slack(store, config, account, source=None):
         elif slack_error(error) in ('slack_thread_not_found', 'slack_channel_not_found', 'slack_not_in_channel'):
             # Keep a visible failure; don't silently mark a partial inaccessible channel complete.
             channel['error'] = slack_error(error)
+            slack_read_drop(account['id'], channel['id'])  # a run's ask for it ends here: slack_read says it can't be read
             state.pop('scan', None)
             if state.get('step'):
                 state['index'] += 1
@@ -377,7 +379,63 @@ def sync_source(store, config, account):
 
 
 class SyncApp:
-    ACTIONS = {}  # its actions are still App.action's own branches
+    ACTIONS = {'slack_read': 'slack_read_action'}  # its other actions are still App.action's own branches
+
+    def slack_read_action(self, name, args, owner_dashboard=False):
+        """A to-do's run asks for a Slack conversation's newest messages (assistant_signals slack_read {channel}): through
+        the Slack connection, never the browser. Slack allows about one read a minute, so the read happens in the
+        collector's next turn, ahead of every other conversation, and the run asks again until it is in. status: 'read'
+        with the conversation's newest collected messages (event_ids, read with events), 'reading' (ask again in about
+        a minute), 'cannot_read' (the owner isn't in it, or Slack refused), 'not_found' with the conversations there
+        are, or 'not_connected': the run then records its blocker with connect:'slack', so the to-do offers Connect Slack.
+        Read-only: nothing is joined, opened or marked read."""
+        wanted = str(args.get('channel') or '').strip()
+        wanted = re.sub(r'^(?:slack:)?#?', '', wanted)
+        if not wanted:
+            raise ValueError('Give channel: the conversation\'s id (C0…, D0…) or its name (#name)')
+        accounts = [a for a in self.config.get('accounts') or [] if a.get('service') == 'slack'
+                    and (not args.get('account_id') or a.get('id') == args['account_id'])]
+        if not accounts:
+            return {'status': 'not_connected', 'connect': 'slack',
+                    'note': 'Slack is not connected. Record the blocker with connect:\'slack\': the to-do offers Connect Slack, '
+                            'and carries on by itself once it is connected. Never the browser for it.'}
+        names = []
+        for account in accounts:
+            state = self.store.checkpoint(account['id']) or {}
+            channels = state.get('channels') or []
+            names += ['#' + c['name'] if c.get('type') == 'channel' else c['name'] for c in channels]
+            channel = next((c for c in channels if c['id'] == wanted), None) or next(
+                (c for c in channels if str(c.get('name') or '').lower() == wanted.lower()), None)
+            if not channel:
+                continue
+            if channel.get('error') and not slack_read_asked(account['id'], channel):
+                slack_read_drop(account['id'], channel['id'])
+                return {'status': 'cannot_read', 'account_id': account['id'], 'error': channel['error'],
+                        'note': 'Slack refused this conversation to their sign-in (they may have left it). Say so plainly '
+                                'and ask for what you need from it.'}
+            last = float(channel.get('last_scan') or 0)
+            asked = slack_read_now(account['id'], channel['id'])
+            if last >= asked:  # its read started after the ask: a message from a minute before it is in
+                slack_read_drop(account['id'], channel['id'])
+                with self.store.connect() as db:
+                    found = [r['id'] for r in db.execute(
+                        "SELECT id FROM events WHERE account_id=? AND deleted=0 AND substr(source_id,1,?)=? "
+                        'ORDER BY occurred_at DESC LIMIT 20', (account['id'], len(channel['id']) + 1, channel['id'] + ':'))]
+                return {'status': 'read', 'account_id': account['id'], 'channel': channel['name'], 'event_ids': found,
+                        'note': 'Read them with events {account_ids:[' + json.dumps(account['id']) + '], event_ids}; newest first.'
+                        + ('' if found else ' Nothing in it in the last week.')}
+            wakes = self.__dict__.get('collector_wakes') or {}
+            if account['id'] in (self.__dict__.get('collector_resting') or ()) and account['id'] in wakes:
+                wakes[account['id']].set()
+            return {'status': 'reading', 'account_id': account['id'], 'channel': channel['name'], 'wait_seconds': 90,
+                    'note': 'Slack allows about one read a minute: the Slack connection reads it next. Call slack_read '
+                            'again in about a minute (sleep 60 with exec), up to a few times.'}
+        if not names:
+            return {'status': 'reading', 'wait_seconds': 120,
+                    'note': 'Slack is still bringing in its first conversations. Call slack_read again in a few minutes.'}
+        return {'status': 'not_found', 'conversations': sorted(set(names))[:50],
+                'note': 'No conversation by that name or id in their Slack. Pick one of these, or say plainly what you '
+                        'could not find.'}
 
     def started_at(self):
         """When this Machine started: `started_at` in the config (a hosted machine's signup), else its first own activity."""

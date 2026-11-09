@@ -42,4 +42,4 @@ It can send an email, a Slack direct message, or a WhatsApp, Telegram, LinkedIn 
 - **Try again** runs it once more. **Ask for changes** asks for something else. On a stuck to-do, **Try again** leads, and **Details** shows what it tried.
 - A to-do in Preparing starts within seconds. When it has to wait, it says why and roughly when, like "Starts after the current one".
 - A site wants you to sign in: press **Sign in**, or **Open the browser** and sign in there. It then carries on by itself. If it doesn't, press **Continue**.
-- A code sent to your phone, or a missing permission, stops it. The to-do says what it needs, then **Continue** or **Try again**.
+- A code sent to your phone, or a missing permission, stops it. The to-do says what it needs, then **Continue** or **Try again**. A source that isn't connected, like Slack: **Connect Slack** leads on the to-do, and it carries on by itself once Slack is connected.

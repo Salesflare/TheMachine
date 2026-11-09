@@ -13,6 +13,7 @@ import random
 import re
 import socket
 import sqlite3
+import threading
 import time
 import urllib.error
 import urllib.parse
@@ -376,6 +377,37 @@ def slack_rest(config, channel):
     return max(60, slack_interval(config, {**channel, 'type': 'channel'}))
 
 
+# Conversations a to-do's run asked to have read now (SyncApp.slack_read_action): {(account id, channel id): when it
+# asked}. A quiet channel rests up to a day between reads, so a message posted there after its last read was nowhere to
+# be found, and a run went looking in the browser instead (2026-11-09). In memory only: after a restart the run asks
+# again. An ask counts until the conversation's next read starts after it, or for READ_NOW_MAX at most.
+READ_NOW, READ_NOW_LOCK, READ_NOW_MAX = {}, threading.Lock(), 1800
+
+
+def slack_read_now(account_id, channel_id):
+    """Ask for this conversation's next read to come first; returns when it was asked (an earlier ask stands)."""
+    with READ_NOW_LOCK:
+        key = (account_id, channel_id)
+        if key in READ_NOW and time.time() - READ_NOW[key] > READ_NOW_MAX:
+            READ_NOW.pop(key)
+        return READ_NOW.setdefault(key, time.time())
+
+
+def slack_read_asked(account_id, channel):
+    """When a run asked to have this conversation read, while that read is still to come; else None."""
+    with READ_NOW_LOCK:
+        at = READ_NOW.get((account_id, channel.get('id')))
+        if at is not None and time.time() - at > READ_NOW_MAX:
+            READ_NOW.pop((account_id, channel.get('id')))
+            at = None
+    return at if at is not None and float(channel.get('last_scan') or 0) < at else None
+
+
+def slack_read_drop(account_id, channel_id):
+    with READ_NOW_LOCK:
+        READ_NOW.pop((account_id, channel_id), None)
+
+
 def slack_next_due(store, config, account, source, state):
     """Moves state['index'] to the conversation that most needs a read and returns True, or returns False when
     nothing is due. Slack allows about one history read a minute (one every few minutes on a shared workspace),
@@ -384,7 +416,8 @@ def slack_next_due(store, config, account, source, state):
     first. A plain walk through the list in order let a daily batch of quiet conversations hold busy channels
     up for half a day (2026-11-05). Ties keep the list order from the current index. Skipping costs no Slack
     call, except for a direct message, where conversations.info shows its newest message: only a new one there
-    makes it worth a history read, also for the daily full read when nothing in it is in the window anyway."""
+    makes it worth a history read, also for the daily full read when nothing in it is in the window anyway. A
+    conversation a to-do's run asked for (slack_read_now) goes first, rested or not: the run waits on it."""
     now, channels = time.time(), state['channels']
     if now >= state.get('next_discovery', 0):
         state.update(phase='discover', index=0)
@@ -395,6 +428,9 @@ def slack_next_due(store, config, account, source, state):
     for offset in range(len(channels)):
         i = (start + offset) % len(channels)
         channel = channels[i]
+        if slack_read_asked(account['id'], channel) is not None:
+            best = (float('inf'), i)
+            break
         if now < channel.get('due', 0):
             continue
         news = False

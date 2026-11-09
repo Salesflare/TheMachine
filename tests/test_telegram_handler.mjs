@@ -181,6 +181,16 @@ const handled=await beforeDispatch({content:'I fixed it already',timestamp:17916
   await assert.rejects(toolFactory(c).execute('t',{action:'mail_attachment',args:{event_id:54}}),/to-do’s own run/);
  assert.equal(calls.length,1);globalThis.fixtureCall=saved;delete globalThis.fixtureRuns;
 }
+// A to-do's run reads a Slack conversation through the Slack connection (slack_read), never the browser; only its own run.
+{
+ const saved=globalThis.fixtureCall,calls=[];const run='d'.repeat(32),key='agent:main:assistant-review-preparation-'+run;
+ globalThis.fixtureRuns={[key]:run};globalThis.fixtureCall=async(action,args)=>{calls.push([action,args]);return {status:'reading'};};
+ await toolFactory({agentId:'main',sessionKey:key}).execute('t',{action:'slack_read',args:{channel:'#proj-halvorsen'}});
+ assert.deepEqual(calls,[['slack_read',{channel:'#proj-halvorsen'}]]);
+ for(const c of [{agentId:'main',sessionKey:'agent:main:main',messageChannel:'telegram',nativeChannelId:'1000001'},{agentId:'main',sessionKey:'agent:main:assistant-review-preparation-'+'c'.repeat(32)}])
+  await assert.rejects(toolFactory(c).execute('t',{action:'slack_read',args:{channel:'general'}}),/to-do’s own run/);
+ assert.equal(calls.length,1);globalThis.fixtureCall=saved;delete globalThis.fixtureRuns;
+}
 // Every main chat can offer a bug report: the owner's Telegram chat through assistant_signals, the others (WhatsApp,
 // Slack, Teams, the web chat, any channel on agent:main:main) through assistant_bug_report, which only writes one up.
 {

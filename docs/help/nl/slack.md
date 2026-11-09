@@ -8,7 +8,7 @@ site: Connect, More sources, Remove
 ---
 ## Wat het leest
 
-De gesprekken waarvan je lid bent: kanalen, privékanalen, directe berichten en groepsberichten, de laatste 7 dagen als je koppelt, daarna alles wat nieuw is. Het sluit nooit zelf aan bij een kanaal en begint nooit zelf een gesprek.
+De gesprekken waarvan je lid bent: kanalen, privékanalen, directe berichten en groepsberichten, de laatste 7 dagen als je koppelt, daarna alles wat nieuw is. Het sluit nooit zelf aan bij een kanaal en begint nooit zelf een gesprek. Een rustig kanaal wordt ongeveer één keer per dag gelezen; heeft een to-do de nieuwste berichten nodig, dan leest The Machine het meteen.
 
 Mensen staan er met hun naam en apps met die van hen, nooit met een Slack-ID. Iemand van wie het Slack-account weg is, staat er als voormalige Slack-gebruiker.
 

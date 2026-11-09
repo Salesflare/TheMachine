@@ -8,7 +8,7 @@ site: Connect, More sources, Remove
 ---
 ## What it reads
 
-The conversations you're a member of: channels, private channels, direct messages and group messages, the last 7 days when you connect, then everything new. It never joins a channel or opens a conversation by itself.
+The conversations you're a member of: channels, private channels, direct messages and group messages, the last 7 days when you connect, then everything new. It never joins a channel or opens a conversation by itself. A quiet channel is read about once a day; when a to-do needs its newest messages, The Machine reads it right away.
 
 People show by their name and apps by theirs, never by a Slack ID. Someone whose Slack account is gone shows as a former Slack user.
 

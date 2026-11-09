@@ -601,6 +601,7 @@ class ViewsStore(ConversationStore):
                                       preparation_cause=job.get('cause'),preparation_signed_in=str(job['decision_id']).startswith('signed-in:'),
                                       preparation_move_to=job.get('move_to') if job['status']=='blocked' else None,
                                       preparation_use=use_view(db,job.get('use_events')) if job['status']=='blocked' else None,
+                                      preparation_connect=job.get('connect') if job['status']=='blocked' and not job['error'] else None,
                                       preparation_hold=getattr(self,'preparation_holds',{}).get(suggestion['id']) if job['status']=='queued' else None)
             suggestion.update(self.suggestion_result(suggestion, db, pre))
 
