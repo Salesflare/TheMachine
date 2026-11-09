@@ -19,7 +19,7 @@ En **Plantillas**, al final de Rutinas, **Añadir** activa una rutina ya hecha. 
 
 **Limpieza de newsletters** crea una tarea con las newsletters del último día, cada una con **Mantener** o **Darse de baja**. La baja usa el enlace de un clic de la lista, o su correo de baja desde tu dirección si el envío está activado. Si no, muestra **Abrir página de baja**.
 
-**Limpieza de spam** crea una tarea con correo de remitentes desconocidos que parece spam, cada uno con **Spam** o **No es spam**. Outlook mueve el spam a Correo no deseado. Gmail conectado solo para leer muestra **Abrir en Gmail** en su lugar.
+**Limpieza de spam** crea una tarea con correo de remitentes desconocidos que parece spam, cada uno con **Spam** o **No es spam**. Outlook mueve el spam a Correo no deseado y Gmail lo marca como spam. Solo está para el correo que The Machine puede mover: Gmail conectado solo para leer no lo tiene.
 
 Nada cambia hasta que confirmas en la tarea. Los remitentes ya decididos no vuelven a salir. Un día sin newsletters ni spam no crea tarea, y estas tareas nunca envían una notificación.
 

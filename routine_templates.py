@@ -27,11 +27,12 @@ def key_of(origin):
     return key if key in TEMPLATES else None
 
 
-def view(db):
-    """The Templates section: [{key, name, what, added}], added when a live routine (on or paused) has its origin."""
+def view(db, can_mark=True):
+    """The Templates section: [{key, name, what, added}], added when a live routine (on or paused) has its origin. Spam
+    cleanup only when a mail account may move mail to spam (can_mark): read-only Gmail can't, so it isn't offered there."""
     live = {r[0] for r in db.execute("SELECT origin FROM routines WHERE origin LIKE 'template:%' AND state IN ('on','paused')")}
     return [{'key': key, 'name': i18n.t(t['name']), 'what': i18n.t(t['what']), 'added': 'template:' + key in live}
-            for key, t in TEMPLATES.items()]
+            for key, t in TEMPLATES.items() if key != 'spam' or can_mark]
 
 
 def what(key):

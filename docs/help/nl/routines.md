@@ -19,7 +19,7 @@ Onder **Sjablonen** onderaan Routines zet **Toevoegen** een kant-en-klare routin
 
 **Nieuwsbrieven opruimen** maakt één to-do met de nieuwsbrieven van de voorbije dag, elk met **Houden** of **Afmelden**. Afmelden gebruikt de afmeldlink met één klik van de lijst, of de afmeldmail vanaf je adres als versturen aanstaat. Anders toont het **Afmeldpagina openen**.
 
-**Spam opruimen** maakt één to-do met mail van onbekende afzenders die op spam lijkt, elk met **Spam** of **Geen spam**. Outlook verplaatst spam naar Ongewenste e-mail. Gmail met alleen leesrechten toont in de plaats **Openen in Gmail**.
+**Spam opruimen** maakt één to-do met mail van onbekende afzenders die op spam lijkt, elk met **Spam** of **Geen spam**. Outlook verplaatst spam naar Ongewenste e-mail en Gmail markeert het als spam. Het is er alleen voor mail die The Machine mag verplaatsen: Gmail met alleen leesrechten krijgt het niet.
 
 Er verandert niets tot je bevestigt op de to-do. Afzenders waarover je besliste, komen niet terug. Een dag zonder nieuwsbrieven of spam geeft geen to-do, en deze to-do’s sturen nooit een melding.
 

@@ -19,7 +19,7 @@ Em **Modelos**, no fim de Rotinas, **Adicionar** liga uma rotina pronta. Ela rod
 
 **Limpeza de newsletters** cria uma tarefa com as newsletters do último dia, cada uma com **Manter** ou **Cancelar inscrição**. O cancelamento usa o link de um clique da lista, ou o e-mail de cancelamento a partir do seu endereço se o envio estiver ligado. Se não, mostra **Abrir página de cancelamento**.
 
-**Limpeza de spam** cria uma tarefa com e-mails de remetentes desconhecidos que parecem spam, cada um com **Spam** ou **Não é spam**. O Outlook move o spam para Lixo eletrônico. O Gmail conectado só para leitura mostra **Abrir no Gmail** no lugar.
+**Limpeza de spam** cria uma tarefa com e-mails de remetentes desconhecidos que parecem spam, cada um com **Spam** ou **Não é spam**. O Outlook move o spam para Lixo eletrônico e o Gmail marca como spam. Só existe para e-mails que a The Machine pode mover: o Gmail conectado só para leitura não tem.
 
 Nada muda até você confirmar na tarefa. Remetentes já decididos não voltam. Um dia sem newsletters nem spam não cria tarefa, e essas tarefas nunca enviam notificação.
 

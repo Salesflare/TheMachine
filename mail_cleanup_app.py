@@ -11,8 +11,9 @@ of its own, each item with what this Machine may already do and never with more 
 - unsubscribe: the list's one-click link (RFC 8058: an HTTPS POST to a public address, pinned, no redirects), else its
   unsubscribe address from the owner's mailbox when sending is on for it (a send whose outcome is unknown is never sent
   again), else the list's page for the owner to open;
-- spam: Outlook moves it to Junk (Mail.ReadWrite); Gmail labels it spam only with gmail.modify, which hosted Gmail
-  doesn't have: there the to-do opens the mail in Gmail instead.
+- spam: Outlook moves it to Junk (Mail.ReadWrite); Gmail labels it spam only with gmail.modify. Spam cleanup is only
+  offered, and only reads mail, in accounts it may do that in (cleanup_mark_accounts): hosted Gmail reads only, so it
+  gets none, never a row the owner would have to mark elsewhere.
 Once every item is settled, the to-do is done by itself."""
 import datetime as dt
 import http.client
@@ -22,6 +23,7 @@ import logging
 import socket
 import ssl
 import threading
+import time
 import urllib.parse
 import uuid
 from email.utils import make_msgid
@@ -40,6 +42,7 @@ from sources import credential, gog_read
 LOG = logging.getLogger('personal-assistant')
 HEADERS = ['List-Unsubscribe', 'List-Unsubscribe-Post']
 POST_TIMEOUT = 15
+MARK_KEEP_S = 600  # how long the Routines page keeps which accounts may move mail to spam
 
 
 def one_click(url, timeout=POST_TIMEOUT):
@@ -94,6 +97,8 @@ class MailCleanupApp:
         template = routine_templates.TEMPLATES.get(key)
         if not template:
             raise ValueError('That template is gone')
+        if key == 'spam' and not self.cleanup_mark_accounts(fresh=True):
+            raise ValueError('Spam cleanup needs a mail account The Machine can move spam in.')
         now, stamp = self.routines_now(), self.routines_stamp()
         with self.routines_lock(), self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
@@ -113,6 +118,16 @@ class MailCleanupApp:
         return [a for a in self.config.get('accounts', []) if a.get('id') and todo_areas.area_of_account(a)
                 and (a.get('service') or 'gmail') in ('gmail', 'outlook', 'microsoft', 'microsoft365', 'outlook.com')]
 
+    def cleanup_mark_accounts(self, fresh=False):
+        """The mail accounts this Machine may move mail to spam or Junk in (cleanup_can_mark): only those get Spam cleanup;
+        read-only Gmail has none. The Routines page asks it on each poll, so its answer is kept MARK_KEEP_S there."""
+        kept = getattr(self, '_cleanup_marks', None)
+        if not fresh and kept and time.monotonic() - kept[0] < MARK_KEEP_S:
+            return kept[1]
+        ids = [a['id'] for a in self.cleanup_accounts() if self.cleanup_can_mark(a)]
+        self._cleanup_marks = (time.monotonic(), ids)
+        return ids
+
     def cleanup_since(self, db, routine_id):
         """What a run reads: mail since the last run that ended well, else the past day."""
         return routines.last_run(db, routine_id) or (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=1)).isoformat()
@@ -123,11 +138,11 @@ class MailCleanupApp:
         if key == 'newsletters':  # its headers are read from the mailbox: in a thread of its own, never under the lock
             self.routine_spawn(lambda _: self.cleanup_finish_run(run, key), run['id'])
             return True
-        ids = [a['id'] for a in self.cleanup_accounts()]
+        ids = self.cleanup_mark_accounts(fresh=True)  # mail it can't move to spam isn't asked about
         with self.store.connect() as db:
             mail_cleanup.ensure(db)
             since = self.cleanup_since(db, run['routine_id'])
-            found = mail_cleanup.spam_candidates(db, ids, since)
+            found = mail_cleanup.spam_candidates(db, ids, since) if ids else []
         if found:
             return self.cleanup_spam_prompt(found, since)
         self.cleanup_finish_run(run, key)
@@ -174,7 +189,7 @@ class MailCleanupApp:
     def routine_spam_result(self, mine, run_id, args, stamp, db):
         """The Spam cleanup turn's report (routine_result, inside its transaction): its picks, only from the mail it read,
         become one to-do per area after the run is settled. Returns what routine_result answers."""
-        ids = [a['id'] for a in self.cleanup_accounts()]
+        ids = self.cleanup_mark_accounts()
         mail_cleanup.ensure(db)
         picked = mail_cleanup.picked_spam(mail_cleanup.spam_candidates(db, ids, self.cleanup_since(db, mine['id'])), args.get('spam'))
         if picked:
@@ -227,19 +242,23 @@ class MailCleanupApp:
             if next_actions.outlook(account):
                 return next_actions.OutlookSnooze(self.config, credential).allowed(account)
             return next_actions.ThreadSnooze(self.config, credential, gog_read).allowed(account)
-        except (RuntimeError, ValueError):
+        except Exception as error:  # no credentials, no answer: it can't, and the Routines page still shows
+            LOG.info('spam scope unread error=%s', type(error).__name__)
             return False
 
     def cleanup_spam_ways(self, items):
-        """Spam, each with how Spam will go: junk (Outlook), spam (Gmail with gmail.modify) or open (the owner marks it
-        in their mail: hosted Gmail reads only)."""
-        marks = {}
+        """Spam, each with how Spam will go: junk (Outlook) or spam (Gmail with gmail.modify). Mail in an account it may
+        not move to spam is left out: a row the owner would have to mark elsewhere isn't worth a to-do."""
+        marks, out = {}, []
         for item in items:
             account = self.cleanup_account(item['account'])
-            if account and account['id'] not in marks:
+            if not account:
+                continue
+            if account['id'] not in marks:
                 marks[account['id']] = self.cleanup_can_mark(account)
-            item['how'] = ('junk' if next_actions.outlook(account) else 'spam') if account and marks[account['id']] else 'open'
-        return items
+            if marks[account['id']]:
+                out.append({**item, 'how': 'junk' if next_actions.outlook(account) else 'spam'})
+        return out
 
     def cleanup_todos(self, routine, key, items, run_id=None):
         """One to-do per area with its items (a Work to-do never lists personal mail). Quiet: delivery sees its items
@@ -367,10 +386,10 @@ class MailCleanupApp:
         return None if result.get('rejected') or result.get('not_sent') else 'unknown'
 
     def cleanup_mark(self, account, item):
-        """(state, how, link): moved to Junk (Outlook) or labeled spam and out of the inbox (Gmail with gmail.modify), else
-        the mail for the owner to mark."""
+        """(state, how, link): moved to Junk (Outlook) or labeled spam and out of the inbox (Gmail with gmail.modify); the
+        right taken away since the to-do was made: didn't work."""
         if not self.cleanup_can_mark(account):
-            return 'yours', 'open', None
+            return 'failed', item.get('how') or 'spam', None
         if next_actions.outlook(account):
             ms_graph.call(self.config, credential, account, 'messages.move', {'id': item['message']}, body={'destinationId': 'junkemail'}, write=True)
             return 'done', 'junk', None

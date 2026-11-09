@@ -28,8 +28,8 @@ MAIL_KINDS = ('gmail.message', 'ms_graph.message', 'outlook.message')
 MAX_ITEMS = 25  # items on one to-do: a phone's screen or two
 SPAM_LOOK = 40  # mails by unknown senders a spam run's turn reads, newest first
 SNIPPET = 160
-# An item's state: open (no pick yet), working (being done now), done, kept, yours (the owner finishes it: open the page
-# or the mail), failed (with why), unknown (a send that may have gone out: never sent again)
+# An item's state: open (no pick yet), working (being done now), done, kept, yours (the owner finishes it: open the
+# list's unsubscribe page), failed (with why), unknown (a send that may have gone out: never sent again)
 STATES = ('open', 'working', 'done', 'kept', 'yours', 'failed', 'unknown')
 SETTLED = ('done', 'kept', 'yours', 'failed', 'unknown')
 
@@ -79,10 +79,9 @@ def asked(db, kind):
 
 
 def _item(r, m, name, address, count=1):
-    url = m.get('source_url')
     return {'account': r['account_id'], 'event': r['id'], 'message': r['source_id'], 'thread': m.get('thread_id') or '',
             'mail': r['kind'], 'from': name or address, 'address': address, 'title': ' '.join(str(r['title'] or '').split())[:120],
-            'count': count, 'url': url if isinstance(url, str) and urllib.parse.urlsplit(url).scheme == 'https' else ''}
+            'count': count}
 
 
 def newsletters(db, accounts, since):
@@ -180,7 +179,7 @@ def pick(db, suggestion_id, picks, stamp):
 
 
 def settle(db, suggestion_id, n, state, stamp, how=None, link=None):
-    """How one item went: done (how: one_click, mailto, junk, spam), yours (link: the page to open, or the mail), failed,
+    """How one item went: done (how: one_click, mailto, junk, spam), yours (link: the unsubscribe page to open), failed,
     unknown. A done or yours item's sender is not asked about again."""
     state = state if state in SETTLED else 'failed'
     db.execute("UPDATE mail_cleanup_items SET state=?,how=?,link=?,updated_at=? WHERE suggestion_id=? AND item=? AND state='working'",
@@ -202,7 +201,7 @@ def all_settled(db, suggestion_id):
 
 def view(db, suggestion_id, metas):
     """What a to-do shows of its items, or None: {'kind', 'items': [{n, from, address, title, count, why, state, how,
-    link, url}]}. metas: the to-do's evidence metadata, as stored (the items' details are sealed with it)."""
+    link}]}. metas: the to-do's evidence metadata, as stored (the items' details are sealed with it)."""
     have = items_of(db, suggestion_id)
     if not have:
         return None
@@ -221,7 +220,7 @@ def view(db, suggestion_id, metas):
             items.append({'n': n, 'from': item.get('from') or '', 'address': item.get('address') or '', 'title': item.get('title') or '',
                           'count': item.get('count') or 1, 'why': item.get('why') or '', 'state': row['state'], 'how': row['how'],
                           'plan': item.get('how'),  # what the pick will do, read when the run made it (mail_cleanup_app.py)
-                          'link': row['link'] if row['state'] == 'yours' else None, 'url': item.get('url') or None})
+                          'link': row['link'] if row['state'] == 'yours' else None})
         return {'kind': m['cleanup'], 'items': items}
     return None
 

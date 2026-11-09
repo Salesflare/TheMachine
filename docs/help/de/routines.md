@@ -21,7 +21,7 @@ Unter **Vorlagen** unten auf Routinen schaltet **Hinzufügen** eine fertige Rout
 
 **Newsletter aufräumen** macht ein To-do mit den Newslettern des letzten Tages, jeweils mit **Behalten** oder **Abmelden**. Abmelden nutzt den Ein-Klick-Link der Liste oder ihre Abmelde-Mail von deiner Adresse, wenn Senden an ist. Sonst zeigt es **Abmeldeseite öffnen**.
 
-**Spam aufräumen** macht ein To-do mit Mail von unbekannten Absendern, die nach Spam aussieht, jeweils mit **Spam** oder **Kein Spam**. Outlook verschiebt Spam in Junk-E-Mail. Gmail mit nur Leserechten zeigt stattdessen **In Gmail öffnen**.
+**Spam aufräumen** macht ein To-do mit Mail von unbekannten Absendern, die nach Spam aussieht, jeweils mit **Spam** oder **Kein Spam**. Outlook verschiebt Spam in Junk-E-Mail, Gmail markiert ihn als Spam. Es gibt ihn nur für Mail, die The Machine verschieben darf: Gmail mit nur Leserechten bekommt ihn nicht.
 
 Nichts ändert sich, bevor du auf dem To-do bestätigst. Über entschiedene Absender wirst du nicht erneut gefragt. Ein Tag ohne Newsletter oder Spam ergibt kein To-do, und diese To-dos senden nie eine Benachrichtigung.
 

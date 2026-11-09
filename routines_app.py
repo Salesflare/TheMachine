@@ -248,7 +248,7 @@ class RoutinesApp:
         now = dt.datetime.now(dt.timezone.utc)
         with self.store.connect() as db:
             out = {'routines': routines.view(db), 'suggested': routines.view(db, ('suggested',)), 'trying': routines.view(db, ('trying',)),
-                   'templates': routine_templates.view(db)}
+                   'templates': routine_templates.view(db, bool(self.cleanup_mark_accounts()))}
             for routine in out['routines']:  # a week of good runs: turn the old OpenClaw job off? (only while it is on)
                 row = routines.get(db, routine['id'])
                 routine['old_job'] = routines.old_job_due(db, row, now) and routine_imports.still_on(self.config, row['origin'][9:])

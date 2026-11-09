@@ -8,7 +8,7 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 
 // Routine templates (routine_templates.py, mail_cleanup.py): under Templates on the Routines page, Add turns one on and it
 // leaves the list. Its to-do has a row per newsletter with Keep or Unsubscribe; nothing is sent until the one confirm, which
-// names how many go, and then each row says how it went. A cleanup to-do has no Do it. Spam read-only on Gmail opens Gmail.
+// names how many go, and then each row says how it went. A cleanup to-do has no Do it, and no row that only opens Gmail.
 //   SHOTS=<folder> also saves each step at 390 and 1440, light and dark.
 const SHOTS=process.env.SHOTS;if(SHOTS)await mkdir(SHOTS,{recursive:true});
 const dashboard=await dashboardPage();
@@ -24,8 +24,8 @@ const news=()=>({id:'cl1',title:'3 newsletters: keep or unsubscribe?',status:'pe
 const spam=()=>({id:'cl2',title:'2 emails look like spam',status:'pending',scope:'work',created_at:now,event_ids:[2],
  body:'Pick Spam or Not spam for each one, then confirm. Nothing changes before that.',
  cleanup:{kind:'spam',items:[
-  {n:1,from:'Prize Desk',address:'win@prize.example',title:'You have been selected',why:'Prize claim from a sender never seen',count:1,state:'open',plan:'open',url:'https://mail.google.com/mail/#all/abc'},
-  {n:2,from:'Crypto Gains',address:'x@gains.example',title:'Double your money',why:'Investment pitch from an unknown sender',count:1,state:'open',plan:'open',url:'https://mail.google.com/mail/#all/def'}]}});
+  {n:1,from:'Prize Desk',address:'win@prize.example',title:'You have been selected',why:'Prize claim from a sender never seen',count:1,state:'open',plan:'junk'},
+  {n:2,from:'Crypto Gains',address:'x@gains.example',title:'Double your money',why:'Investment pitch from an unknown sender',count:1,state:'open',plan:'junk'}]}});
 let templates,cards;
 const reset=()=>{templates=TEMPLATES();cards=[news(),spam()];posts.length=0};reset();
 const state=()=>({suggestions:cards,promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},connectors:[],fleet:{on:true,fleets:[]},
@@ -81,9 +81,9 @@ try{
   assert.deepEqual(await card.locator('.cl-end').allInnerTexts(),['Unsubscribed','Kept','Open unsubscribe page ↗']);
   assert.equal(await card.locator('a.cl-end').getAttribute('href'),'https://parcelly.example/unsubscribe');
   await shot('newsletters-done');
-  // Spam on Gmail read-only: says so; Mark all as spam picks every row
+  // Spam (only where mail can move to spam): Mark all as spam picks every row
   const sp=page.locator('#task-cl2');await sp.scrollIntoViewIfNeeded();
-  assert.match(await text(sp.locator('.cl-fine')),/read-only/);
+  assert.equal(await text(sp.locator('.cl-fine')),'Spam moves it to your spam folder.');
   await sp.locator('[data-cl-all]').click();
   assert.equal(await text(sp.locator('[data-cl-go]')),'Mark 2 as spam');
   await shot('spam-todo');
