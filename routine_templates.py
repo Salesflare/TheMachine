@@ -5,6 +5,8 @@ moved to another time, but its words are the template's own, so it has no Edit.
 Its run is the template's own, not a turn on its words (routines_app.routine_template_run): Newsletter cleanup is plain
 code, no model; Spam cleanup reads the day's mail by unknown senders in one short turn, only when there is any. Each
 ends in at most one to-do with a choice per item (mail_cleanup.py), and nothing changes until the owner confirms there.
+Birthdays is plain code too (birthdays.py, birthdays_app.py): a to-do per close contact with a birthday today, its
+greeting drafted on their usual channel and sent only when the owner says so.
 
 No table: the catalog is here, and a template is added when a live routine has its origin."""
 import i18n
@@ -17,6 +19,7 @@ DAILY = 'daily'  # recurring.PRESETS
 TEMPLATES = {
     'newsletters': {'name': 'Newsletter cleanup', 'what': 'Every morning, one to-do with the past day’s newsletters. Keep or unsubscribe each one.'},
     'spam': {'name': 'Spam cleanup', 'what': 'Every morning, one to-do with spam that got through. Mark each one as spam or not.'},
+    'birthdays': {'name': 'Birthdays', 'what': 'Every morning, a to-do with a short greeting for each close contact who has a birthday.'},
 }
 
 

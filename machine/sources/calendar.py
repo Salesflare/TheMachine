@@ -81,6 +81,9 @@ def calendar_event(account, raw, timezone):
                 'ical_uid': raw.get('iCalUID'), 'truncated': len(body) > 40000}
     if raw.get('transparency') == 'transparent':  # shown as free: never a clash (calendar_clashes.py)
         metadata['transparency'] = 'transparent'
+    if raw.get('eventType') == 'birthday':  # a contact's birthday Google puts on the calendar (birthdays.py), or the owner's own
+        props = raw.get('birthdayProperties') or {}
+        metadata.update(event_type='birthday', birthday={'type': str(props.get('type') or 'birthday')[:20]})
     if account.get('calendar_id', 'primary') != 'primary':
         metadata.update(calendar_id=account['calendar_id'], credential_account=account['email'],
                         access='shared_read_only')

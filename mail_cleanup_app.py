@@ -138,6 +138,9 @@ class MailCleanupApp:
         if key == 'newsletters':  # its headers are read from the mailbox: in a thread of its own, never under the lock
             self.routine_spawn(lambda _: self.cleanup_finish_run(run, key), run['id'])
             return True
+        if key == 'birthdays':  # plain code too (birthdays_app.py); Outlook's Birthdays calendar is read in it
+            self.routine_spawn(lambda _: self.birthdays_run(run), run['id'])
+            return True
         ids = self.cleanup_mark_accounts(fresh=True)  # mail it can't move to spam isn't asked about
         with self.store.connect() as db:
             mail_cleanup.ensure(db)

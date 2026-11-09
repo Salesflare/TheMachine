@@ -3,9 +3,9 @@ title: Routinen
 area: cards
 summary: Arbeit, die deine Machine von selbst in einem Rhythmus erledigt, wie eine Montagsübersicht deiner offenen Deals. Sie liest nur.
 covers: tab:routines
-code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, routine_templates.py, mail_cleanup.py, mail_cleanup_app.py, dashboard/routines-page.js, dashboard/todos-cleanup.js
+code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, routine_templates.py, mail_cleanup.py, mail_cleanup_app.py, birthdays.py, birthdays_app.py, dashboard/routines-page.js, dashboard/todos-cleanup.js
 order: 10
-keywords: routine, automation, scheduled, every week, every morning, report, suggested, digest, newsletter
+keywords: routine, automation, scheduled, every week, every morning, report, suggested, digest, newsletter, birthday
 ---
 ## Eine anlegen
 
@@ -24,6 +24,10 @@ Unter **Vorlagen** unten auf Routinen schaltet **Hinzufügen** eine fertige Rout
 **Spam aufräumen** macht ein To-do mit Mail von unbekannten Absendern, die nach Spam aussieht, jeweils mit **Spam** oder **Kein Spam**. Outlook verschiebt Spam in Junk-E-Mail, Gmail markiert ihn als Spam. Es gibt ihn nur für Mail, die The Machine verschieben darf: Gmail mit nur Leserechten bekommt ihn nicht.
 
 Nichts ändert sich, bevor du auf dem To-do bestätigst. Über entschiedene Absender wirst du nicht erneut gefragt. Ein Tag ohne Newsletter oder Spam ergibt kein To-do, und diese To-dos senden nie eine Benachrichtigung.
+
+**Geburtstage** macht eine Aufgabe für jeden engen Kontakt, der heute Geburtstag hat: Menschen, denen du selbst schreibst, wie Freunde, Familie und regelmäßige Kontakte. Jede hat einen kurzen Glückwunsch, entworfen dort, wo ihr meist schreibt, etwa im WhatsApp-Chat oder in deinem Mail-Verlauf, in ihrer Sprache. Er geht erst raus, wenn du ihn sendest. Ein Tag ohne Geburtstage macht keine Aufgabe.
+
+Geburtstage kommen aus deinen Kalendern (Googles Geburtstagstermine und der Outlook-Kalender Geburtstage), deinen Google-Kontakten auf einer selbst gehosteten Machine und einem Datumsfeld namens Geburtstag bei einer Person im Graph.
 
 ## Was eine Routine tut
 

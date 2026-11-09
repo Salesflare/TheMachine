@@ -3,9 +3,9 @@ title: Routines
 area: cards
 summary: Werk dat je Machine zelf doet, op een ritme, zoals een maandagoverzicht van je open deals. Hij leest alleen.
 covers: tab:routines
-code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, routine_templates.py, mail_cleanup.py, mail_cleanup_app.py, dashboard/routines-page.js, dashboard/todos-cleanup.js
+code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, routine_templates.py, mail_cleanup.py, mail_cleanup_app.py, birthdays.py, birthdays_app.py, dashboard/routines-page.js, dashboard/todos-cleanup.js
 order: 10
-keywords: routine, automation, scheduled, every week, every morning, report, suggested, digest, newsletter
+keywords: routine, automation, scheduled, every week, every morning, report, suggested, digest, newsletter, birthday
 ---
 ## Er een maken
 
@@ -22,6 +22,10 @@ Onder **Sjablonen** onderaan Routines zet **Toevoegen** een kant-en-klare routin
 **Spam opruimen** maakt één to-do met mail van onbekende afzenders die op spam lijkt, elk met **Spam** of **Geen spam**. Outlook verplaatst spam naar Ongewenste e-mail en Gmail markeert het als spam. Het is er alleen voor mail die The Machine mag verplaatsen: Gmail met alleen leesrechten krijgt het niet.
 
 Er verandert niets tot je bevestigt op de to-do. Afzenders waarover je besliste, komen niet terug. Een dag zonder nieuwsbrieven of spam geeft geen to-do, en deze to-do’s sturen nooit een melding.
+
+**Verjaardagen** maakt een to-do voor elk naast contact dat vandaag jarig is: mensen naar wie je zelf schrijft, zoals vrienden, familie en vaste contacten. Elke to-do heeft een korte felicitatie, opgesteld waar je meestal met hen praat, zoals hun WhatsApp-chat of je mailthread, in hun taal. Die gaat pas weg als jij hem verstuurt. Een dag zonder verjaardagen geeft geen to-do.
+
+Verjaardagen komen uit je agenda’s (de verjaardagen van Google en de agenda Verjaardagen van Outlook), je Google-contacten op een zelf gehoste Machine en een datumveld Verjaardag bij een persoon in de Graph.
 
 ## Wat een routine doet
 

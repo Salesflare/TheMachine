@@ -1,0 +1,200 @@
+"""The Birthdays template (birthdays.py, birthdays_app.py, docs/help/routines.md "Templates"): each morning a to-do per
+close contact whose birthday it is, from the calendars (Google's birthday events, Outlook's Birthdays calendar), Google
+contacts and Birthday fields in the Graph, once per person however many sources say so. Strangers and lists get none,
+a day without birthdays makes nothing, the greeting is drafted on the channel the owner usually uses with them and
+nothing is sent. Made-up people only."""
+import datetime as dt
+import importlib.util
+import json
+import tempfile
+import unittest
+from pathlib import Path
+from unittest.mock import patch
+
+spec = importlib.util.spec_from_file_location('birthdays_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
+a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
+import birthdays  # noqa: E402
+import enrichment  # noqa: E402
+import graph  # noqa: E402
+import ms_graph  # noqa: E402
+import routine_templates  # noqa: E402
+from machine.app.workers import GOOGLE_PHOTO_LISTS  # noqa: E402
+from machine.sources.calendar import calendar_event  # noqa: E402
+from timeutil import local_tz  # noqa: E402
+
+ACCOUNTS = [{'id': 'home', 'email': 'owner@mail.example', 'service': 'gmail', 'boundary': 'personal'},
+            {'id': 'cal', 'email': 'owner@mail.example', 'service': 'calendar', 'boundary': 'personal'},
+            {'id': 'wa', 'service': 'whatsapp', 'boundary': 'personal'},
+            {'id': 'o365', 'email': 'owner@work.example', 'service': 'outlook_calendar', 'transport': 'broker', 'boundary': 'work:work.example'}]
+
+
+def ago(days):
+    return (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=days)).isoformat()
+
+
+class Words(unittest.TestCase):
+    def test_a_birthday_title_names_its_person(self):
+        for title, birthday_event, name in (("Sam Rivera's birthday", False, 'Sam Rivera'), ('Sam Rivera’s Birthday 🎂', False, 'Sam Rivera'),
+                                            ('Verjaardag van Sam Rivera', False, 'Sam Rivera'), ('Geburtstag von Sam Rivera', False, 'Sam Rivera'),
+                                            ('Anniversaire de Sam Rivera', False, 'Sam Rivera'), ('Cumpleaños de Sam Rivera', False, 'Sam Rivera'),
+                                            ('Sam Rivera', True, 'Sam Rivera'), ('Sam Rivera', False, None),
+                                            ('Birthday party', False, None), ('Birthday party', True, None),
+                                            ('Happy birthday!', True, None)):  # the owner's own
+            self.assertEqual(birthdays.name_in_title(title, birthday_event), name, title)
+
+    def test_a_kept_birthday_and_its_day(self):
+        self.assertEqual(birthdays.birthday_value('1990-05-03'), (5, 3))
+        self.assertEqual(birthdays.birthday_value('--05-03'), (5, 3))
+        self.assertIsNone(birthdays.birthday_value('1990-13-03'))
+        self.assertTrue(birthdays.on(dt.date(2027, 2, 28), (2, 29)))  # not a leap year: the 28th
+        self.assertFalse(birthdays.on(dt.date(2028, 2, 28), (2, 29)))
+        self.assertEqual(enrichment.clean_fact('birthday', '1990-05-03'), '1990-05-03')
+        self.assertIsNone(enrichment.clean_fact('birthday', 'May 3rd'))
+
+
+class Sources(unittest.TestCase):
+    def test_google_birthday_events_say_so(self):
+        raw = {'id': 'b1', 'summary': 'Sam Rivera', 'eventType': 'birthday', 'birthdayProperties': {'type': 'birthday', 'contact': 'people/c1'},
+               'start': {'date': '2026-11-09'}, 'end': {'date': '2026-11-10'}}
+        meta = calendar_event({'id': 'cal'}, raw, 'Europe/Brussels')['metadata']
+        self.assertEqual((meta['event_type'], meta['birthday']), ('birthday', {'type': 'birthday'}))
+        self.assertNotIn('event_type', calendar_event({'id': 'cal'}, {**raw, 'eventType': 'default'}, 'Europe/Brussels')['metadata'])
+
+    def test_google_contacts_bring_their_birthdays_with_the_same_scope(self):
+        connections = GOOGLE_PHOTO_LISTS[0]
+        self.assertIn('birthdays', connections[1]['personFields'].split(','))
+        self.assertEqual(connections[2], 'https://www.googleapis.com/auth/contacts')  # the scope it already had
+        person = {'emailAddresses': [{'value': 'sam@mail.example'}], 'phoneNumbers': [{'canonicalForm': '+15550100'}],
+                  'birthdays': [{'date': {'month': 11, 'day': 9}}]}
+        self.assertIn((['email:sam@mail.example', 'wa:15550100'], {'birthday': '--11-09'}, enrichment.RECORD), enrichment.google_facts(person))
+        only_phone = {'phoneNumbers': [{'canonicalForm': '+15550101'}], 'birthdays': [{'date': {'year': 1990, 'month': 3, 'day': 1}}]}
+        self.assertEqual(enrichment.google_facts(only_phone), [(['wa:15550101'], {'birthday': '1990-03-01'}, enrichment.RECORD)])
+        self.assertNotIn('birthday', enrichment.with_facts({}, [{'birthday': ('--11-09', 1, 'google', '2026-11-09')}]))  # kept, not on the profile
+
+    def test_outlook_birthdays_calendar_is_read_with_calendars_read(self):
+        self.assertEqual(ms_graph.READ['calendars.list'], ('GET', '/me/calendars', 'Calendars.Read'))
+        self.assertNotIn('Contacts.Read', ms_graph.ANSWERS)  # no new scope
+
+
+class Birthdays(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
+        self.store = a.Store(Path(self.temp.name) / 'e.sqlite')
+        self.app = object.__new__(a.App); self.app.store = self.store
+        self.app.config = {'accounts': [dict(x) for x in ACCOUNTS], 'timezone': 'Europe/Brussels', 'openclaw_state': self.temp.name + '/none.sqlite'}
+        self.store.accounts = self.app.config['accounts']
+        self.sent, self.outlook, self.n = [], [], 0
+        for name, value in (('background_pause', lambda s, **k: None), ('background_spaced', lambda s: True),
+                            ('background_started', lambda s: None), ('preparation_gateway', lambda s, request: self.sent.append(request) or {}),
+                            ('routine_spawn', lambda s, target, run_id: target(run_id)), ('cleanup_can_mark', lambda s, account: False)):
+            p = patch.object(a.App, name, value); p.start(); self.addCleanup(p.stop)
+        p = patch.object(ms_graph, 'call', self.graph_call); p.start(); self.addCleanup(p.stop)
+        self.today = dt.datetime.now(local_tz()).date()
+        with self.store.connect() as db:
+            graph.ensure(db)
+
+    def graph_call(self, config, credential, account, method, params=None, **kw):
+        self.assertEqual(account['id'], 'o365')
+        if method == 'calendars.list':
+            return {'value': [{'id': 'c-main', 'name': 'Calendar'}, {'id': 'c-bday', 'name': 'Birthdays'}]}
+        self.assertEqual((method, params['id']), ('calendars.view', 'c-bday'))
+        return {'value': [{'subject': s} for s in self.outlook]}
+
+    def event(self, account, kind, title, meta, at=None):
+        self.n += 1
+        with self.store.connect() as db:
+            return db.execute('INSERT INTO events(account_id,source_id,kind,occurred_at,title,body,metadata,content_hash,ingested_at) '
+                              'VALUES(?,?,?,?,?,?,?,?,?)', (account, f's{self.n}', kind, at or ago(3), title, '', json.dumps(meta), 'h', ago(0))).lastrowid
+
+    def person(self, node_id, name, strength, wrote=3, events=(), **info):
+        with self.store.connect() as db:
+            db.execute('INSERT INTO graph_nodes(id,kind,name,strength,last_at,signals,info) VALUES(?,?,?,?,?,?,?)',
+                       (node_id, 'person', name, strength, ago(1), 5, json.dumps({'identifiers': [node_id], 'wrote': wrote, **info})))
+            for event_id in events:
+                db.execute('INSERT INTO graph_events(node_id,event_id,at,direct) VALUES(?,?,?,1)', (node_id, event_id, ago(1)))
+
+    def birthday_event(self, title, **meta):
+        return self.event('cal', 'calendar.event', title, {'all_day': True, 'start': {'date': self.today.isoformat()}, **meta},
+                          at=birthdays.window(self.today, local_tz())[0])
+
+    def chat(self, jid, mine, days, group=False):
+        return self.event('wa', 'whatsapp.message', 'Chat', {'chat_id': jid + ('@g.us' if group else '@s.whatsapp.net'), 'from_me': mine}, at=ago(days))
+
+    def mail(self, to, mine, days, cc=''):
+        return self.event('home', 'gmail.message', 'Hello', {'from': 'owner@mail.example' if mine else to, 'to': to if mine else 'owner@mail.example',
+                                                              'cc': cc, 'labels': ['SENT'] if mine else ['INBOX']}, at=ago(days))
+
+    def morning(self):
+        self.app.action('routine_template', {'key': 'birthdays'}, owner_dashboard=True)
+        self.app.routines_step()
+        with self.store.connect() as db:
+            todos = [dict(r) for r in db.execute("SELECT * FROM suggestions WHERE dedupe_key LIKE 'birthday:%' ORDER BY title")]
+            run = dict(db.execute('SELECT * FROM routine_runs ORDER BY started_at DESC').fetchone())
+        return todos, run
+
+    def test_one_todo_per_close_contact_on_their_usual_channel_and_nothing_sent(self):
+        # Sam: a close friend the owner mostly chats with one to one; a group chat and one mail don't make it the channel
+        sam_chat = [self.chat('15550100', True, 30), self.chat('15550100', True, 10), self.chat('15550100', False, 5)]
+        group = self.chat('15550199', True, 1, group=True)
+        sam_mail = self.mail('sam@mail.example', True, 20)
+        self.person('wa:15550100', 'Sam Rivera', 3.4, events=sam_chat + [group, sam_mail])
+        # Ann: a regular work contact the owner mails; her birthday is on Outlook's Birthdays calendar
+        ann_mail = [self.mail('ann@client.example', True, 40), self.mail('ann@client.example', False, 8),
+                    self.mail('ann@client.example', True, 60, cc='kim@client.example')]
+        self.person('email:ann@client.example', 'Ann Lee', 1.2, events=ann_mail)
+        # Kim: a cousin (family is enough at a lower closeness), with a Birthday field the owner keeps in the Graph
+        kim_chat = [self.chat('15550102', True, 90)]
+        self.person('wa:15550102', 'Kim Park', 0.5, events=kim_chat, side='personal', side_why='relation')
+        # Pat: a stranger whose birthday is on the calendar; Lou: close, but the owner never wrote to them one to one
+        self.person('email:pat@far.example', 'Pat Doe', 0.1, events=[self.mail('pat@far.example', False, 3)])
+        self.person('email:lou@mail.example', 'Lou Grant', 2.0, events=[self.mail('lou@mail.example', True, 3, cc='x@mail.example')])
+        self.birthday_event('Sam Rivera', event_type='birthday', birthday={'type': 'birthday'})
+        self.birthday_event("Pat Doe's birthday")
+        self.birthday_event("Lou Grant's birthday")
+        self.birthday_event('Happy birthday!', event_type='birthday', birthday={'type': 'self'})
+        self.outlook = ["Ann Lee's birthday"]
+        with self.store.connect() as db:  # Sam's contact says it too: still one to-do
+            enrichment.offer_facts(db, [(['wa:15550100'], {'birthday': f'--{self.today:%m-%d}'}, enrichment.RECORD)], 'google', ago(0))
+            field = db.execute("INSERT INTO crm_fields(kind,name,type,created_at) VALUES('person','Birthday','date',?)", (ago(0),)).lastrowid
+            db.execute('INSERT INTO crm_values(node_id,field_id,value,set_at) VALUES(?,?,?,?)', ('wa:15550102', field, f'1990-{self.today:%m-%d}', ago(0)))
+        todos, run = self.morning()
+        self.assertEqual([t['title'] for t in todos], ['Wish Ann Lee a happy birthday', 'Wish Kim Park a happy birthday', 'Wish Sam Rivera a happy birthday'])
+        evidence = {t['title'].split()[1]: json.loads(t['event_ids']) for t in todos}
+        self.assertEqual(evidence, {'Ann': [ann_mail[1]], 'Kim': kim_chat, 'Sam': [sam_chat[-1]]})  # the latest one-to-one message there
+        self.assertTrue(all(t['status'] == 'accepted' for t in todos))  # prepared ahead: the draft is written, not sent
+        self.assertTrue(all(t['expires_at'] for t in todos))  # gone after the day
+        self.assertEqual(run['state'], 'ready')
+        self.assertIn('Sam Rivera', run['result'])
+        self.assertEqual([s for s in self.sent if s.get('action') == 'start'], [])  # the run is plain code: no model turn
+        with self.store.connect() as db:
+            self.assertEqual(db.execute("SELECT count(*) FROM action_jobs").fetchone()[0], 0)  # nothing sent
+        # Run again the same day: the same to-dos, none twice
+        self.app.action('routine_run_now', {'id': run['routine_id']}, owner_dashboard=True)
+        self.app.routines_step()
+        with self.store.connect() as db:
+            self.assertEqual(db.execute("SELECT count(*) FROM suggestions WHERE dedupe_key LIKE 'birthday:%'").fetchone()[0], 3)
+
+    def test_a_day_without_birthdays_makes_nothing(self):
+        self.person('wa:15550100', 'Sam Rivera', 3.4, events=[self.chat('15550100', True, 3)])
+        self.birthday_event('Team offsite')
+        todos, run = self.morning()
+        self.assertEqual(todos, [])
+        self.assertEqual(run['state'], 'nothing')
+
+    def test_a_first_name_alone_or_two_people_with_the_name_is_nobody(self):
+        self.person('wa:15550100', 'Sam Rivera', 3.4, events=[self.chat('15550100', True, 3)])
+        self.person('wa:15550103', 'Sam Rivera', 2.4, events=[self.chat('15550103', True, 3)])
+        self.person('wa:15550104', 'Jo Lane', 2.4, events=[self.chat('15550104', True, 3)])
+        self.birthday_event("Sam Rivera's birthday")
+        self.birthday_event("Jo's birthday")
+        todos, run = self.morning()
+        self.assertEqual(todos, [])
+
+    def test_offered_as_a_template(self):
+        self.assertIn('birthdays', routine_templates.TEMPLATES)
+        with self.store.connect() as db:
+            self.assertIn('birthdays', [t['key'] for t in routine_templates.view(db, can_mark=False)])
+
+
+if __name__ == '__main__':
+    unittest.main()
