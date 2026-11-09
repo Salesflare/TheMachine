@@ -58,7 +58,7 @@ LinkedIn, X y Salesflare siguen su propio ritmo.
 
 Una tarea muestra su siguiente paso, como **Hazlo** o **Revisar y enviar**, con **Posponer** al lado. Consulta [Hazlo](do-it.md) y [Posponer](snooze.md).
 
-**Pedir cambios** dice qué cambiar: cómo hacerla, o, con un borrador listo, qué cambiar en él. Si la fila no cabe en el móvil, **Posponer** pasa a **…**. **Marcar como hecha** (ya está resuelta) también está: a la vista sin borrador, si no, arriba en **…**. Sale de la lista al instante, con **Deshacer** en el mensaje. Desliza el mensaje o arrástralo con el ratón para cerrarlo antes. El cambio se queda.
+**Pedir cambios** dice qué cambiar: cómo hacerla, o, con un borrador listo, qué cambiar en él. Si la fila no cabe en el móvil, **Posponer** pasa a **…**. **Marcar como hecha** (ya está resuelta) también está: a la vista en una preparada sin borrador, si no, arriba en **…**, también en una que necesita tu decisión. Sale de la lista al instante, con **Deshacer** en el mensaje. Desliza el mensaje o arrástralo con el ratón para cerrarlo antes. El cambio se queda.
 
 Para que se haga de otra forma, dilo en su **Chat**.
 

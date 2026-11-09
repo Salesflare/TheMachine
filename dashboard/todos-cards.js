@@ -288,8 +288,8 @@ const COPY_WHY='This can’t be sent from here. Copy it to send it yourself.';
 // changes when there is a draft or result to review, Snooze, and Mark done on a ready one without a draft (with one,
 // it tops the …); then a quiet … with Hand off… (a teammate, a connected coding agent and Ask to review on one small sheet), Repeat… and Not
 // needed last. A decision has Ask for changes in sight beside its lead (Do it, Prepare). The title, project and area change in place
-// (a tap on the title; the project and area under Details). On a phone the … opens as a bottom sheet. A choice not in
-// sight (Mark done on a decision) stays on the card, hidden, so the keyboard shortcuts and the chat's menu still find it.
+// (a tap on the title; the project and area under Details). On a phone the … opens as a bottom sheet. Mark done not in
+// sight tops the …; Ask for changes not in sight stays hidden for the keys and the chat.
 // A lead is k=>html``, k mapping its class (and tag): ID keeps it, mmClass makes it a plain … item (no primary; a button goes ghost).
 const ID=c=>c,mmClass=(c,tag)=>[...c.split(' ').filter(x=>x&&x!=='primary'),...(tag==='button'&&!/\bghost\b/.test(c)?['ghost']:[])].join(' '),mmPlain=f=>f(mmClass);
 // A doc The Machine made while preparing (Store.make_new_docs): Open the doc leads (a new tab), Mark done and Ask for
@@ -328,9 +328,9 @@ function cardActions(s,choices,smartButtons,unmerge,hint,smart){const skill=skil
  const doneShown=ready&&(!draft||made),doneTop=ready&&draft&&!made;  // with a draft, Mark done tops the … so the row stays one line
  const review=s.status==='prepared'||(s.status==='pending'&&!mine)||!!agentAsk(s);
  const shown=x=>(x[0]==='snooze'&&!made)||(x[0]==='change'&&review)||(x[0]==='complete'&&(doneShown||!!s.machine_fix));
- const quiet=x=>(x[0]==='complete'&&!doneTop)||x[0]==='change';  // on the card, out of sight: the D key, the palette and the chat use them
+ const quiet=x=>x[0]==='change';
  const plain=others.filter(x=>!handing(x)&&x[0]!=='reject'&&x[0]!=='takeback');
- const items=html`${[...plain.filter(x=>doneTop&&x[0]==='complete').map(x=>btn(x)),...leads.slice(1).map(mmPlain),...plain.filter(x=>!shown(x)&&!quiet(x)&&!(doneTop&&x[0]==='complete')).map(x=>btn(x)),sheet,repeat,unmerge,...others.filter(x=>x[0]==='reject').map(b=>html`<hr class="mm-sep">${btn(b)}`)].filter(Boolean)}`;
+ const items=html`${[...plain.filter(x=>x[0]==='complete'&&(doneTop||!shown(x))).map(x=>btn(x)),...leads.slice(1).map(mmPlain),...plain.filter(x=>!shown(x)&&!quiet(x)&&x[0]!=='complete').map(x=>btn(x)),sheet,repeat,unmerge,...others.filter(x=>x[0]==='reject').map(b=>html`<hr class="mm-sep">${btn(b)}`)].filter(Boolean)}`;
  // Snooze folds into the … when its line runs out of room (a long label, a narrow phone), so the … never sits alone on a line: actionsSize below
  const two=(leads[0]?1:0)+plain.filter(shown).length>2||useAsk(s);  // on a phone: the lead on its own row, the rest on one (a long Use … lead too)
  const fold=String(items)&&plain.find(x=>x[0]==='snooze'&&shown(x));

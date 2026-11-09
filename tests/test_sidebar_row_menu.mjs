@@ -49,7 +49,7 @@ try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
  {const {context,page}=await open(1440,900);
   const row=n=>page.locator(`#side-cards a[href="#chat=${id(n)}"]`);
-  // A decision: Mark done (hidden on its card, like the chat's menu finds it), Snooze, Not needed
+  // A decision: Mark done (under its card's …), Snooze, Not needed
   await row(1).hover();await page.locator('.row-more').waitFor();await page.locator('.row-more').click();
   assert.deepEqual(await items(page),['Rename','Open','Mark done','Snooze','Not needed']);
   assert.deepEqual((await items(page)).slice(2),await cardLabels(page,1),'the same labels as the to-do');await fits(page);await shot(page,'menu');

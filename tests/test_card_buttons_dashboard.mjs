@@ -42,9 +42,14 @@ try{
   await page.goto('http://127.0.0.1:'+server.address().port);await page.locator('#task-p1').waitFor();
   const shown=id=>page.locator(`#task-${id} .actions>:is(button,a.open,.more-actions):not([hidden])`).evaluateAll(n=>n.map(x=>x.tagName==='DETAILS'?'More':x.textContent.trim()));
   const menu=id=>page.locator(`#task-${id} .more-menu>button`).evaluateAll(n=>n.filter(x=>getComputedStyle(x).display!=='none').map(x=>x.textContent.trim()));  // Snooze waits there while it fits in the row
-  // A decision: Do it, Ask for changes and Snooze; Hand off, Repeat and Not needed under …, never above the buttons
+  // A decision: Do it, Ask for changes and Snooze; Mark done tops the … (done already, by hand), then Hand off, Repeat and
+  // Not needed, never above the buttons
   assert.deepEqual(await shown('p1'),['Do it','Ask for changes','Snooze','More']);
-  assert.deepEqual(await menu('p1'),['Hand off','Repeat…','Not needed']);
+  assert.deepEqual(await menu('p1'),['Mark done','Hand off','Repeat…','Not needed']);
+  {await page.locator('#task-p1 .more-actions>summary').click();await page.locator('#task-p1 .more-menu [data-choice="complete"]').click();
+   for(let i=0;i<80&&!posts.some(p=>p.action==='decide'&&p.suggestion_id==='p1'&&p.choice==='complete');i++)await page.waitForTimeout(50);
+   assert.ok(posts.some(p=>p.action==='decide'&&p.suggestion_id==='p1'&&p.choice==='complete'),'Mark done from the … closes the decision');posts.length=0;
+   await page.goto('http://127.0.0.1:'+server.address().port);await page.locator('#task-p1').waitFor()}
   assert.equal(await page.getByText('Hand off to a teammate').count(),0);
   // A ready draft: the button says it opens the preview first
   assert.deepEqual(await shown('r1'),['Review and send to Noor','Ask for changes','Snooze','More']);
