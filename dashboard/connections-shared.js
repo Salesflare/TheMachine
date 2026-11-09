@@ -13,7 +13,7 @@ if(c.error&&/_signed_out$/.test(c.error))return {tone:'orange',text:'Signed out 
 if(TELEGRAM_STOP[c.error])return {tone:'orange',text:TELEGRAM_STOP[c.error]};
 if(c.error==='android_offline')return {tone:'orange',text:'Phone disconnected'};
 if(c.error){const help=/(auth|unauthor|forbidden|permission|invalid_grant|signin_expired|HTTP_40[13])/.test(c.error);return help?{tone:'orange',text:'Needs your help'}:c.last_success&&again?resting:{tone:'amber',text:'Reconnecting automatically'}}
-if(c.salesflare?.no_access_all)return {tone:'orange',text:'Needs your help'};  // its key opens no account
+if(c.salesflare?.no_access_all||c.salesflare?.feed_off)return {tone:'orange',text:'Needs your help'};  // its key opens no account, or the team's feed is off
 if(c.signals===false)return {tone:'mint',text:'Connected'};  // action-only: nothing to sync, so never "waiting"
 if(!c.last_success)return {tone:'muted',text:'Waiting for first sync'};
 if(again)return resting;

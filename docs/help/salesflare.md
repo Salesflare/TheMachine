@@ -26,6 +26,8 @@ Under **Connections**, **Other sources**, Salesflare shows how far it is: accoun
 
 Its tiles count the accounts it could open and the emails and meetings it brought in. If Salesflare lets your API key open none of the accounts, the card says **Needs your help**: use the key of a user who can see them. If Salesflare keeps timing out but each retry gets through, it says Salesflare is **slow at times**.
 
+If Salesflare hasn't switched on feed access for API keys for your team, the card says so: no emails or meetings come in until Salesflare support switches it on. It checks again about every hour and goes on by itself once it works.
+
 - **Stop**: nothing new comes in until you press **Start**. It goes on where it was.
 - **Restart sync**: starts over and reads the last week again. Nothing it brought in is lost.
 - **API keys**: opens Salesflare's API keys page, to make a new key.

@@ -26,6 +26,8 @@ O cartão dele em **Conexões**, **Outras fontes** mostra o andamento: quantas c
 
 Os blocos contam as contas que ela conseguiu abrir e os e-mails e reuniões que trouxe. Se o Salesflare não deixa sua chave de API abrir nenhuma conta, o cartão diz **Precisa da sua ajuda**: use a chave de um usuário que consiga vê-las. Se o Salesflare demora demais com frequência, mas cada nova tentativa funciona, ele diz que o Salesflare **às vezes fica lento**.
 
+Se o Salesflare não ativou o acesso ao feed com chaves de API para a sua equipe, o cartão diz isso: não chegam e-mails nem reuniões até o suporte do Salesflare ativar. Ela verifica de novo mais ou menos a cada hora e continua sozinha assim que funcionar.
+
 - **Parar**: nada novo chega até você clicar em **Início**. Ela continua de onde estava.
 - **Reiniciar sincronização**: descarta a rodada atual, com os erros dela, e lê a última semana de novo agora. Nada do que ela já trouxe se perde.
 - **Chaves de API**: abre a página de chaves de API do Salesflare, para criar uma chave nova.

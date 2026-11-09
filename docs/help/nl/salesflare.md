@@ -26,6 +26,8 @@ De kaart onder **Koppelingen**, **Andere bronnen** toont hoe ver hij is: hoeveel
 
 De tegels tellen de accounts die hij kon openen en de e-mails en meetings die hij binnenhaalde. Laat Salesflare je API-sleutel geen enkel account openen, dan zegt de kaart **Heeft je hulp nodig**: gebruik de sleutel van een gebruiker die ze kan zien. Loopt Salesflare telkens vast maar lukt elke nieuwe poging, dan zegt hij dat Salesflare **soms traag** is.
 
+Heeft Salesflare feed-toegang voor API-sleutels niet aangezet voor je team, dan zegt de kaart dat: er komen geen e-mails of meetings binnen tot de support van Salesflare het aanzet. Hij kijkt ongeveer elk uur opnieuw en gaat vanzelf verder zodra het werkt.
+
 - **Stoppen**: er komt niets nieuws binnen tot je op **Begin** drukt. Hij gaat verder waar hij was.
 - **Sync herstarten**: laat de huidige ronde vallen, met de fouten, en leest nu de afgelopen week opnieuw. Er gaat niets verloren van wat hij binnengehaald heeft.
 - **API-sleutels**: opent de pagina met API-sleutels van Salesflare, om een nieuwe sleutel te maken.

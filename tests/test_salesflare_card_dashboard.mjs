@@ -13,6 +13,7 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // - What's shared, Your connections: another person's calendar read through the owner's sign-in is named for it.
 // - A CRM's tiles count accounts read and emails and meetings, not messages; a key that opens no account needs help;
 //   a sync that keeps failing says so calmly (amber, no Caught up); a row of empty bars isn't drawn (report s_f0d5d0200384ed92).
+// - Salesflare refusing the feed for the whole team: the card says so once, with who can switch it on, not "use another key".
 const dashboard=await dashboardPage();
 const ago=h=>new Date(Date.now()-h*3600e3).toISOString();
 const sf={id:'work-crm',service:'salesflare',what:'Accounts, contacts and deals, so it knows who matters.',email:'owner@acme.example',display_name:'CRM',boundary:'work:Acme',last_success:ago(0.05),total:12,signals_24h:2,pending:0,
@@ -20,10 +21,12 @@ const sf={id:'work-crm',service:'salesflare',what:'Accounts, contacts and deals,
 const syncs=(n,fail)=>Array.from({length:n},(_,i)=>({at:ago(i*0.1),status:fail&&i===fail?'failed':'success',signals:0,error:fail&&i===fail?'salesflare:HTTP_504':null}));
 const locked={...sf,id:'crm-locked',display_name:'CRM locked',total:0,signals_24h:0,last_sync_signals:0,sync_activity:syncs(12),failures_24h:0,
  salesflare:{stopped:null,synced_until:ago(1),round:null,last_round:{accounts:128,read:0,no_access:128,refused:128,set_aside:0},no_access_all:true,slow_accounts:0,no_access:128,keys_url:sf.salesflare.keys_url}};
+const teamOff={...locked,id:'crm-team-off',display_name:'CRM team off',
+ salesflare:{...locked.salesflare,last_round:{accounts:14,read:0,no_access:14,refused:14,set_aside:0},no_access_all:false,feed_off:true,no_access:14}};
 const flaky={...sf,id:'crm-flaky',display_name:'CRM flaky',total:340,signals_24h:9,sync_activity:syncs(12,3),failures_24h:35,last_failure:{at:ago(0.3),error:'salesflare:HTTP_504'},
  salesflare:{stopped:null,synced_until:ago(1),round:null,last_round:{accounts:128,read:126,no_access:2,refused:2,set_aside:0},no_access_all:false,slow_accounts:0,no_access:2,keys_url:sf.salesflare.keys_url}};
 const decisions=[1,2,3].map(i=>({suggestion_id:'c'+i,choice:'complete',source:'dashboard',created_at:ago(i)}));
-const state={suggestions:[1,2,3].map(i=>({id:'c'+i,title:'To-do '+i,body:'Made-up.',status:'completed',scope:'work',created_at:ago(i)})),promises:[],connectors:[sf,locked,flaky],suggestion_counts:{},decisions,analyses:[],deliveries:[],
+const state={suggestions:[1,2,3].map(i=>({id:'c'+i,title:'To-do '+i,body:'Made-up.',status:'completed',scope:'work',created_at:ago(i)})),promises:[],connectors:[sf,locked,teamOff,flaky],suggestion_counts:{},decisions,analyses:[],deliveries:[],
  review_health:{},review_runs:[],locale:{locale:'en-BE',region:'BE',language:'en',clock:'auto',hour12:false,auto_hour12:false,date_locale:'en-GB',languages:{en:'English'},saveable:true}};
 const calls=[];
 const server=createServer(async(req,res)=>{const url=new URL(req.url,'http://x.invalid');res.setHeader('Content-Type','application/json');
@@ -64,6 +67,15 @@ try{
   assert.match(await lk.locator('.sf-locked').innerText(),/^Salesflare doesn’t let this API key open these accounts\. Use the key of a user who can see them\.$/);
   assert.equal(await lk.locator('.sf-aside').count(),0);
   assert.doesNotMatch(await lk.locator('.conn-plain').allInnerTexts().then(x=>x.join(' ')),/Caught up/);
+  // The team's feed is off at Salesflare: Needs your help, who can switch it on, no count of accounts, no other key
+  const off=page.locator('#connectors article[data-conn="crm-team-off"]');
+  assert.equal(await off.locator('.connection-status').innerText(),'Needs your help');
+  assert.equal(await off.locator('.sf-feed-off').innerText(),'Salesflare hasn’t switched on feed access for API keys for your team, so no emails or meetings come in. Salesflare support can switch it on.');
+  assert.equal(await off.locator('.alert').count(),1);
+  assert.equal(await off.locator('.sf-locked').count()+await off.locator('.sf-aside').count(),0);
+  assert.doesNotMatch(await off.locator('.conn-plain').allInnerTexts().then(x=>x.join(' ')),/Caught up/);
+  const offBox=await off.boundingBox(),offNote=await off.locator('.sf-feed-off').boundingBox();
+  assert.ok(offNote.x>=offBox.x&&offNote.x+offNote.width<=offBox.x+offBox.width+1,`${width}: the note stays inside the card`);
   // A CRM that keeps failing but gets through: amber and calm, plain words under Details
   const fl=page.locator('#connectors article[data-conn="crm-flaky"]');
   assert.equal(await fl.locator('.connection-status').innerText(),'Connected · Salesflare CRM is slow at times');

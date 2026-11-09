@@ -394,6 +394,162 @@ class SalesflareConnector(unittest.TestCase):
         self.assertIn('salesflare round opened no account', logged.output[-1])
         self.assertNotIn('refused_detail', str(self.store.checkpoint('work-crm')))  # gone with the round
 
+    def team_off(self, **more):
+        """A CRM whose team has the feed off: every feed read answers 403, though the key's user is part of each account."""
+        class TeamOff(FakeCRM):
+            off, outsider = True, ()
+
+            def get(self, path, params=None):
+                self.calls.append((path, dict(params or {})))
+                if path.endswith('/feed') and (self.off or int(path.split('/')[2]) in self.outsider):
+                    error = a.SourceError('salesflare', 403, route='/accounts/{id}/feed')
+                    error.reason = 'API key access to account feed is not enabled for this team'
+                    raise error
+                self.calls.pop()
+                answer = super().get(path, params)
+                if isinstance(answer, dict):
+                    answer['part_of'] = answer['id'] not in self.outsider
+                return answer
+        crm = TeamOff()
+        for key, value in more.items():
+            setattr(crm, key, value)
+        return crm
+
+    def feeds_asked(self, crm):
+        return [path for path, _ in crm.calls if path.endswith('/feed')]
+
+    def an_hour_later(self):
+        state = self.store.checkpoint('work-crm')
+        state['feed_off']['checked'] = (NOW - a.dt.timedelta(minutes=61)).isoformat()
+        self.store.commit_page('work-crm', state, [], record_sync=False)
+
+    def test_a_feed_refused_for_the_whole_team_goes_slow_and_says_so(self):
+        crm = self.team_off()
+        with self.assertLogs(a.LOG, 'WARNING') as logged:
+            self.run_to_completion(crm)
+        self.assertIn('salesflare feed off for team account=work-crm accounts=2: one account is re-checked every 60 min', logged.output[-1])
+        view = a.salesflare_progress(ACCOUNT, self.store.checkpoint('work-crm'))
+        self.assertEqual((view['feed_off'], view['no_access_all']), (True, False))  # not the key's fault: another key changes nothing
+        # The next rounds ask no account at all, log nothing, and still count as a sync that worked
+        crm.calls.clear()
+        with self.assertNoLogs(a.LOG, 'WARNING'):
+            for _ in range(5):
+                self.assertEqual(a.sync_salesflare(self.store, {}, ACCOUNT, crm), {'mode': 'incremental', 'events': 0, 'feed_off': True, 'more': False})
+        self.assertEqual(crm.calls, [])
+        with self.store.connect() as db:
+            row = db.execute('SELECT last_success,error FROM checkpoints WHERE account_id=?', ('work-crm',)).fetchone()
+        self.assertTrue(row['last_success'] and not row['error'])
+        # About an hour later: one account is asked, one line is logged, and it waits again
+        self.an_hour_later()
+        with self.assertLogs(a.LOG, 'WARNING') as logged:
+            result = a.sync_salesflare(self.store, {}, ACCOUNT, crm)
+        self.assertEqual((result['feed_off'], result['more']), (True, False))
+        self.assertEqual(len(self.feeds_asked(crm)), 1)
+        self.assertEqual(len(logged.output), 1)
+        self.assertRegex(logged.output[0], r'salesflare feed off for team account=work-crm since=\S+ recheck=1 route=/accounts/\{id\}/feed '
+                                           r'message=API key access to account feed is not enabled for this team$')
+        self.assertNotIn('window', self.store.checkpoint('work-crm'))
+        crm.calls.clear()
+        a.sync_salesflare(self.store, {}, ACCOUNT, crm)
+        self.assertEqual(crm.calls, [])
+
+    def test_it_goes_by_route_status_and_part_of_not_by_the_message(self):
+        class Reworded(FakeCRM):
+            def get(self, path, params=None):
+                if path.endswith('/feed'):
+                    error = a.SourceError('salesflare', 403, route='/accounts/{id}/feed')
+                    error.reason = 'other'
+                    raise error
+                answer = super().get(path, params)
+                return {**answer, 'part_of': True} if isinstance(answer, dict) else answer
+        self.run_to_completion(Reworded())
+        self.assertTrue(a.salesflare_progress(ACCOUNT, self.store.checkpoint('work-crm'))['feed_off'])
+
+    def test_a_round_with_some_refused_and_some_read_goes_on_as_before(self):
+        crm = self.team_off(off=False)  # 20 says the key's user is part of it, and its feed is refused all the same
+        refusing = crm.get
+
+        def get(path, params=None):
+            if path == '/accounts/20/feed':
+                crm.calls.append((path, dict(params or {})))
+                raise a.SourceError('salesflare', 403, route='/accounts/{id}/feed')
+            return refusing(path, params)
+        crm.get = get
+        self.run_to_completion(crm)
+        state = self.store.checkpoint('work-crm')
+        self.assertNotIn('feed_off', state)
+        self.assertEqual((state['last_round']['read'], state['last_round']['no_access']), (1, 1))
+        self.assertEqual({r['source_id'] for r in self.store.events(['work-crm'])}, {'email:e1'})
+        view = a.salesflare_progress(ACCOUNT, state)
+        self.assertEqual((view['feed_off'], view['no_access_all'], view['no_access']), (False, False, 1))
+        asked = len(self.feeds_asked(crm))
+        self.run_to_completion(crm)  # the next round asks every account again
+        self.assertGreater(len(self.feeds_asked(crm)), asked + 1)
+
+    def test_accounts_the_key_is_not_part_of_stay_a_per_account_refusal(self):
+        crm = self.team_off(off=False, outsider={10, 20})
+        with self.assertLogs(a.LOG, 'WARNING') as logged:
+            self.run_to_completion(crm)
+        self.assertIn('salesflare round opened no account', logged.output[-1])
+        self.assertNotIn('feed off for team', ' '.join(logged.output))
+        state = self.store.checkpoint('work-crm')
+        self.assertNotIn('feed_off', state)
+        view = a.salesflare_progress(ACCOUNT, state)
+        self.assertEqual((view['feed_off'], view['no_access_all']), (False, True))  # the card asks for another key, as before
+        crm.calls.clear()
+        self.run_to_completion(crm)
+        self.assertEqual({path for path in self.feeds_asked(crm)}, {'/accounts/10/feed', '/accounts/20/feed'})
+        # One the key is part of and one it isn't, both refused: not every account says "team", so nothing changes
+        mixed = self.team_off(off=True, outsider={20})
+        self.run_to_completion(mixed)
+        self.assertNotIn('feed_off', self.store.checkpoint('work-crm'))
+
+    def test_one_read_after_a_team_refusal_clears_it_and_the_round_goes_on(self):
+        crm = self.team_off()
+        self.run_to_completion(crm)
+        self.assertTrue(self.store.checkpoint('work-crm')['feed_off'])
+        crm.off = False  # Salesflare support switched it on
+        a.sync_salesflare(self.store, {}, ACCOUNT, crm)
+        self.assertEqual(self.store.events(['work-crm']), [])  # not asked before the hour is over
+        self.an_hour_later()
+        with self.assertLogs(a.LOG, 'INFO') as logged:
+            self.run_to_completion(crm)
+        self.assertIn('salesflare feed on again account=work-crm', ' '.join(logged.output))
+        self.assertNotIn('feed off for team', ' '.join(logged.output))
+        state = self.store.checkpoint('work-crm')
+        self.assertNotIn('feed_off', state)
+        self.assertEqual({r['source_id'] for r in self.store.events(['work-crm'])}, {'email:e1', 'meeting:7'})
+        view = a.salesflare_progress(ACCOUNT, state)
+        self.assertEqual((view['feed_off'], view['no_access_all'], view['no_access'], view['last_round']['read']), (False, False, 0, 2))
+        asked = len(self.feeds_asked(crm))
+        self.run_to_completion(crm)  # and the next round reads as usual, without waiting an hour
+        self.assertGreater(len(self.feeds_asked(crm)), asked)
+
+    def test_a_recheck_reads_the_whole_week_so_nothing_from_the_gap_is_missed(self):
+        crm = self.team_off()
+        self.run_to_completion(crm)
+        state = self.store.checkpoint('work-crm')
+        self.assertTrue(state['watermark'])  # an incremental round would start six hours before this
+        crm.off = False
+        self.an_hour_later()
+        a.sync_salesflare(self.store, {}, ACCOUNT, crm)
+        window = self.store.checkpoint('work-crm')['window']
+        self.assertTrue(window['full'])
+        self.assertLess(a.dt.datetime.fromisoformat(window['since']), NOW - a.dt.timedelta(days=6))
+
+    def test_restart_sync_rechecks_a_team_refusal_right_away_once(self):
+        crm = self.team_off()
+        self.run_to_completion(crm)
+        state = self.store.checkpoint('work-crm')
+        state['next_full'] = 0  # what Restart sync on the card leaves (connector_sync)
+        self.store.commit_page('work-crm', state, [], record_sync=False)
+        crm.calls.clear()
+        a.sync_salesflare(self.store, {}, ACCOUNT, crm)
+        self.assertEqual(len(self.feeds_asked(crm)), 1)
+        crm.calls.clear()
+        a.sync_salesflare(self.store, {}, ACCOUNT, crm)
+        self.assertEqual(crm.calls, [])  # still off: back to the slow pace
+
     def test_a_403_body_message_is_kept_only_as_plain_words(self):
         from machine.sources import salesflare as sf
         import io

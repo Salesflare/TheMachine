@@ -261,6 +261,27 @@ SALESFLARE_STUCK = dt.timedelta(hours=2)  # a round of accounts still going afte
 SALESFLARE_HICCUP = {500, 502, 503, 504}  # its gateway giving up on a slow query: retried, then set aside like a timeout
 
 
+SALESFLARE_FEED_ROUTE = '/accounts/{id}/feed'
+
+
+# Salesflare refuses the feed for the whole team (a setting on its side, report s_f0d5d0200384ed92): every account of a
+# round answers 403 on the feed while the key's user is part of it. Asking each account again every round changes
+# nothing, so one account is asked about this often until one read succeeds.
+SALESFLARE_FEED_RECHECK = dt.timedelta(hours=1)
+
+
+def feed_off_wait(state, stamp):
+    """True while the feed is off for the team (state['feed_off']) and its next re-check isn't due. Restart sync on the
+    card (next_full 0) re-checks right away."""
+    off = state.get('feed_off')
+    if not off or state.get('window') or ('next_full' in state and not state['next_full']):
+        return False
+    try:
+        return stamp - dt.datetime.fromisoformat(off['checked']) < SALESFLARE_FEED_RECHECK
+    except (KeyError, TypeError, ValueError):
+        return False
+
+
 def salesflare_progress(account, state):
     """The Salesflare card's sync details: the round of accounts being read (how far, since when), what it set aside,
     whether the owner stopped it (connector_sync), and where its API keys are."""
@@ -284,14 +305,19 @@ def salesflare_progress(account, state):
         no_access = last['no_access'] if last else len(state.get('inaccessible_accounts') or [])
     # It opens none of them: every account of the last round (or the first 10 of this one) refused. Nothing comes in
     # until the key changes, so the card asks for help instead of saying Connected.
-    if last:
+    # Unless Salesflare refuses the feed for the whole team (feed_off): another key changes nothing then, and the card
+    # says what does.
+    feed_off = bool(state.get('feed_off'))
+    if feed_off:
+        locked = False
+    elif last:
         locked = bool(last.get('accounts')) and not last.get('read') and last.get('no_access') == last.get('accounts')
     else:
         locked = done >= min(total, 10) > 0 and not window.get('read') and len(current) == done
     return {'stopped': state.get('stopped') or None, 'synced_until': state.get('watermark'),
             'round': {'since': window.get('since'), 'started': started, 'accounts': total, 'done': done, 'stuck': stuck,
                       'read': window.get('read'), 'failing': len(window.get('failures') or {})} if window else None,
-            'last_round': last, 'no_access_all': locked,
+            'last_round': last, 'no_access_all': locked, 'feed_off': feed_off,
             'slow_accounts': len(window['set_aside']) if 'set_aside' in window else last['set_aside'] if last else len(state.get('skipped_accounts') or []),
             'no_access': no_access,
             'keys_url': (account.get('app_base') or SALESFLARE_APP) + '/#/settings/apikeys'}
@@ -304,10 +330,15 @@ def sync_salesflare(store, config, account, source=None):
     source = source or Salesflare(config, account)
     source.profile()
     stamp = dt.datetime.now(dt.timezone.utc)
+    if feed_off_wait(state, stamp):
+        # Nothing to ask until the next re-check. The sync itself worked (the key reads its profile), so it counts.
+        store.commit_page(account['id'], state, [])
+        return {'mode': state.get('mode') or 'incremental', 'events': 0, 'feed_off': True, 'more': False}
     if not state.get('window'):
         days = config.get('bootstrap_days', 7)
         retained = stamp - dt.timedelta(days=days)
-        full = not state.get('watermark') or stamp.timestamp() >= state.get('next_full', 0)
+        # A re-check while the feed is off reads the whole week: once it opens, what came in meanwhile is picked up.
+        full = not state.get('watermark') or stamp.timestamp() >= state.get('next_full', 0) or bool(state.get('feed_off'))
         since = retained if full else max(retained, dt.datetime.fromisoformat(state['watermark']) - dt.timedelta(hours=6))
         # Notes are often written days after a meeting, without changing its date, so
         # meetings are always reread over a full week; emails follow the incremental window.
@@ -315,6 +346,8 @@ def sync_salesflare(store, config, account, source=None):
         email_ids = salesflare_recent_accounts(source, 'last_email_date', since)
         # Freeze the window and its account list, then work through it in committed batches.
         pending = list(dict.fromkeys(email_ids + salesflare_recent_accounts(source, 'last_meeting_date', meeting_since)))
+        if state.get('feed_off'):
+            state['feed_off']['checked'] = stamp.isoformat()  # this round is the re-check, whatever it finds
         state.update(mode='bootstrap' if not state.get('watermark') else 'incremental',
                      window={'since': since.isoformat(), 'meeting_since': meeting_since.isoformat(), 'until': stamp.isoformat(),
                              'full': full, 'pending': pending, 'email_ids': sorted(set(email_ids)), 'accounts': len(pending)})
@@ -378,6 +411,19 @@ def sync_salesflare(store, config, account, source=None):
             if crm_id not in refused:
                 refused.append(crm_id)
             if error.status == 403:
+                # Refused on the feed though the key's user is part of the account: not about this account.
+                if error.route == SALESFLARE_FEED_ROUTE and part_of == 'true':
+                    window['feed_refused'] = window.get('feed_refused', 0) + 1
+                    if state.get('feed_off'):
+                        # The re-check: still off, and this one account answered for the team. The round is dropped,
+                        # nobody else is asked, and the next re-check is an hour away. One line per re-check.
+                        state['feed_off']['checked'] = stamp.isoformat()
+                        state['next_full'] = stamp.timestamp()  # a Restart's re-check is done
+                        state.pop('window')
+                        LOG.warning('salesflare feed off for team account=%s since=%s recheck=1 route=%s message=%s', account['id'],
+                                    state['feed_off'].get('since'), error.route, getattr(error, 'reason', None) or '-')
+                        store.commit_page(account['id'], state, events, excluded_source_ids=excluded)
+                        return {'mode': state.get('mode') or 'incremental', 'events': len(events), 'feed_off': True, 'more': False}
                 window['refused'] = window.get('refused', 0) + 1
                 # Counts only, for support (report s_f0d5d0200384ed92): did the account say the key's user is part of
                 # it, which route refused, and what Salesflare's 403 said.
@@ -388,6 +434,8 @@ def sync_salesflare(store, config, account, source=None):
             continue
         window['pending'].remove(crm_id)
         window['read'], window['hiccups'] = window.get('read', 0) + 1, 0
+        if state.pop('feed_off', None):  # one read succeeded: the feed is on again, and the round goes on as usual
+            LOG.info('salesflare feed on again account=%s', account['id'])
         for item in emails:
             try:
                 event = salesflare_email_event(account, info, contacts, item, config)
@@ -427,6 +475,12 @@ def sync_salesflare(store, config, account, source=None):
                         window['accounts'], window.get('refused', 0), len(no_access) - window.get('refused', 0))
         if window['full']:
             state['next_full'] = stamp.timestamp() + 86400
+        if window.get('accounts') and window.get('feed_refused', 0) == window['accounts']:
+            # Every account asked was refused on the feed while the key's user is part of it: Salesflare has the feed
+            # off for the whole team. From here one account is asked, about hourly (feed_off_wait).
+            state['feed_off'] = {'since': stamp.isoformat(), 'checked': stamp.isoformat()}
+            LOG.warning('salesflare feed off for team account=%s accounts=%d: one account is re-checked every %d min',
+                        account['id'], window['accounts'], SALESFLARE_FEED_RECHECK.total_seconds() // 60)
         state.pop('window')
     store.commit_page(account['id'], state, events, excluded_source_ids=excluded)
     involved = {'email:' + str(c.get('email')).lower() for e in events for c in e['metadata'].get('contacts') or ()}
