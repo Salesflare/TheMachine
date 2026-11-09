@@ -158,7 +158,9 @@
   #fu-review[open]{height:100dvh;max-height:100dvh;margin:0;border:0;border-radius:0;padding:14px 16px 16px}#fu-review .ed-actions{padding-bottom:calc(16px + env(safe-area-inset-bottom))}
   .fr-list{margin:0 -16px;padding:12px 16px 16px}#fu-review .snooze-heading{margin-bottom:10px}.fr-item{padding:12px}.fr-sub,.fr-body,.fr-none,.fr-held,.fr-state,.fr-advice{margin-left:0}.fr-change{margin:0 -16px;padding:12px 16px}.fr-edit{width:100%;margin-left:0}
   .ed-row{grid-template-columns:1fr}.proj-new{display:block}
+/*@lazy*/
   .board-suggest{padding:12px 14px}.board-suggest-actions{width:100%}.board-suggest-actions button{flex:1}
+/*@eager*/
   .ed-actions{margin:0 -16px -16px;padding:12px 16px 16px}.ed-actions .grow{display:none}.ed-actions button.primary{flex:1 1 100%;order:-1}.ed-actions{justify-content:center}
 }
 .graph-stage{margin:var(--sp-3) 0 0;padding:12px 14px;border:1px solid var(--c-line);border-radius:var(--r-md);background:var(--c-sunken)}

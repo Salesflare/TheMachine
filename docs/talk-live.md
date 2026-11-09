@@ -8,7 +8,8 @@ A spoken conversation with The Machine, with OpenAI's Realtime voice. There are 
 - **Talk** in the sidebar: one conversation that goes through the to-dos and reaches the rest of the Machine.
 
 The help article is [docs/help/talk-live.md](help/talk-live.md). The code is `talk_live.py` (the service side),
-`talk-live-run.mjs` (the Gateway helper) and the `talk*` functions in `dashboard/todos-chat-talk.js`.
+`talk-live-run.mjs` (the Gateway helper) and the `talk*` functions in `dashboard/todos-chat-talk.js` and
+`dashboard/todos-chat-talk-live.js` (the session, which loads when a conversation starts).
 
 ## Who can use it
 

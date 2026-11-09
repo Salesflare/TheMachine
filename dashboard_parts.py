@@ -38,7 +38,7 @@ KINDS = ('js', 'css', 'html')
 # names a class, id or data- attribute only the group's scripts write.
 # tests/test_lazy_parts_dashboard.mjs checks the page with them held back and with them refused.
 LAZY = {
-    'calendar': ('calendar-view.js',),
+    'calendar': ('calendar-view.css', 'calendar-view.js'),
     'connections': ('base-layout.css', 'connections-cards.js'),
     'fleet': ('fleet-manage.css', 'fleet-rules.js', 'fleet-sharing.js', 'fleet-tabs.js', 'fleet-manage.js'),
     'game': ('todos-game.js',),
@@ -48,6 +48,8 @@ LAZY = {
     'learned': ('todos-first-learned.css', 'todos-first-learned.js'),
     'settings': ('settings-export.css', 'settings-general.js', 'settings-skills.js', 'settings-export.js', 'settings-upkeep.js'),
     'learning': ('learning-missed.js',),
+    'routines': ('routines-page.css', 'routines-page.js'),
+    'talk': ('todos-chat-talk-live.js',),
 }
 LAZY_RUN = re.compile(r'/\*@lazy\*/\n.*?(?:/\*@eager\*/\n|\Z)', re.S)
 FENCE = re.compile(r'/\*@(?:lazy|eager)\*/\n')
