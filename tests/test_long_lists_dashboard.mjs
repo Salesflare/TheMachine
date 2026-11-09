@@ -68,8 +68,8 @@ async function sidebar(page,label){
  for(const n of [130,150,160]){await d.locator('[data-side-more]').click();await until(async()=>await d.locator('a').count()===n,n+' done '+label)}
  assert.equal(await d.locator('[data-side-more]').count(),0,'no Show more once all are shown '+label);
  await fold.click();await fold.click();assert.equal(await d.locator('a').count(),10,'folding starts over at 10 '+label);
- const r=group(page,'ready');assert.equal(await r.locator('a').count(),8,'other groups show 8 first '+label);
- await r.locator('[data-side-more]').click();await until(async()=>await r.locator('a').count()===12,'ready all '+label);assert.equal(await r.locator('[data-side-more]').count(),0);
+ const r=group(page,'foryou');assert.equal(await r.locator('a').count(),8,'other groups show 8 first '+label);
+ await r.locator('[data-side-more]').click();await until(async()=>await r.locator('a').count()===12,'For you all '+label);assert.equal(await r.locator('[data-side-more]').count(),0);
  const w=await page.evaluate(()=>({page:document.documentElement.scrollWidth,viewport:innerWidth}));assert.ok(w.page<=w.viewport,'nothing wider than the screen '+label);
  if(await page.locator('#drawer-open').isVisible())await page.keyboard.press('Escape')}
 // The main pane's Done: 30 at a time as you scroll, Show more as a fallback, a quiet loading row, no Feedback hand-off

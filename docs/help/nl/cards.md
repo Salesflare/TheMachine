@@ -12,9 +12,8 @@ Je Machine leest alles wat nieuw is en maakt alleen een to-do als iets jou nodig
 
 De pagina **To-do's** groepeert ze:
 
-- **Voor jou klaargezet**: voorbereid en wacht op je goedkeuring.
-- **Wacht op je beslissing**: iets wat alleen jij kunt beslissen.
-- **Wordt voorbereid**: je Machine werkt eraan. Een to-do waarop je net **Doe het** zei, blijft staan waar hij stond terwijl hij voorbereid wordt, en gaat dan naar **Voor jou klaargezet**.
+- **Voor jou**: alles wat op jou wacht, het dringendste eerst. Elke to-do zegt **Klaargezet** (het werk is gedaan, en **Doe het** of **Versturen** voert het uit) of **Wacht op jou** (eerst je beslissing of een antwoord nodig).
+- **Wordt voorbereid**: je Machine werkt eraan. Een to-do waarop je net **Doe het** zei, blijft staan waar hij stond terwijl hij voorbereid wordt, en staat dan als **Klaargezet**.
 - **Net gedaan**: een laatste stap die je bevestigde, zoals een formulier indienen of een issue aanmaken, is gelukt terwijl je weg was. Hij toont wat er gebeurde tot je op **Begrepen** tikt, hoogstens een dag, en je telefoon hoort het ook. Daarna staat hij alleen in Gedaan.
 - **Komt later terug**: gesnoozed, en to-do's zonder antwoord op **Nog nodig?** (hieronder).
 - **Beloftes**: wat jij beloofde en wat anderen jou beloofden. Zie [Beloftes](promises.md).
@@ -22,7 +21,7 @@ De pagina **To-do's** groepeert ze:
 
 Na het versturen zegt een korte melding waar de to-do nu staat, zoals "Verstuurd. Verplaatst naar Gedaan." of, als hij op een antwoord wacht, "Verstuurd. Verplaatst naar Later tot ma." **Openen** brengt je erheen. Dat de mailthread een paar dagen uit je inbox gaat, gaat alleen over je mailbox. Zoeken vindt een to-do op titel of op wie hij naartoe ging, ook in Later en Gedaan.
 
-In Voor jou klaargezet, Wacht op je beslissing, Wordt voorbereid en Wacht op anderen staat een to-do die te laat is of uiterlijk morgen moet, bovenaan. De rest staat nieuwste eerst, volgens de tijd die elke to-do toont. De zijbalk houdt dezelfde volgorde.
+**Voor jou** zet bovenaan wat te laat is of uiterlijk morgen moet, dan vragen uit je Fleet, dan to-do's die **Klaargezet** zijn, dan die op jou wachten. Binnen elk deel nieuwste eerst. De andere open groepen zetten wat te laat is of uiterlijk morgen moet bovenaan, de rest nieuwste eerst. De zijbalk houdt dezelfde volgorde.
 
 Een to-do met **Lijkt gedaan** ziet eruit als een gedane, met wat laat zien dat hij gedaan is, zoals "PR #3451 gemerged". Hij is nog niet gesloten: **Heropenen** zet hem terug op je lijst, en je Machine leert ervan. Ze staan nooit als te laat en tellen niet mee als wachtend op jou. Een to-do met een conceptantwoord lijkt ook gedaan als je zelf in dat gesprek hebt geantwoord, zoals in Gmail of Slack.
 
@@ -44,7 +43,7 @@ Start je een to-do, dan mag hij altijd de berichten lezen waar hij uit kwam, ook
 
 Zo'n privé-to-do antwoordt toch vanaf het werkadres waar de mail binnenkwam, en hij komt nooit in een Work Fleet of de Team-Graph.
 
-Wachten er twee of meer, dan loopt **Doorlopen** in de kop van Voor jou klaargezet en van Wacht op je beslissing ze een voor een door, elk concept volledig, met **Versturen** of **Doe het**, **Wijzigingen vragen**, **Snoozen** en **Overslaan**. Op een computer verstuurt Enter wat in beeld is, `S` snoozet, `→` slaat over en Esc stopt. Onder de titel zegt de kop ook hoe lang ze op jouw tempo duren, zoals "ongeveer 2 min".
+Wachten er twee of meer, dan loopt **Doorlopen** in de kop van Voor jou ze een voor een door, in de volgorde van de lijst, elk concept volledig, met **Versturen** of **Doe het**, **Wijzigingen vragen**, **Snoozen** en **Overslaan**. Op een computer verstuurt Enter wat in beeld is, `S` snoozet, `→` slaat over en Esc stopt. Onder de titel zegt de kop ook hoe lang ze op jouw tempo duren, zoals "ongeveer 2 min".
 
 ## Nu checken
 

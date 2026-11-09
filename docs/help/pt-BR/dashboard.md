@@ -17,7 +17,7 @@ order: 4
 
 **Pesquisar**, no topo da barra lateral, encontra primeiro tarefas, depois pessoas, mensagens e mais. **Navegador**, **Ajuda** e **Configurações** ficam na parte de baixo da barra lateral. No celular, o botão de menu na barra superior abre a barra lateral.
 
-A barra lateral lista suas tarefas como a página. Os pedidos do seu Fleet também ficam em **A decidir**, então o número bate com o de cima. Toque em um para vê-lo.
+A barra lateral lista suas tarefas como a página. Os pedidos do seu Fleet também ficam em **Para você**, então o número bate com o de cima. Toque em um para vê-lo.
 
 Para o menu de uma tarefa, passe o mouse sobre ela e clique em **⋯**, clique nela com o botão direito ou toque e segure no celular. Pelo teclado, aperte `Shift F10` nela. Além de **Renomear** e **Abrir**, o menu tem os botões da própria tarefa: **Marcar como feita**, **Adiar** e **Não precisa**, cada um com **Desfazer**.
 
@@ -37,7 +37,7 @@ Desde a sua primeira visita, assim que a primeira olhada termina, uma pequena ta
 
 As linhas só aparecem onde fazem sentido: nada de app do celular dentro do app, nada de instalar no celular. O × de uma linha a fecha em todos os aparelhos, e o × no topo fecha a tarefa inteira.
 
-Depois do seu primeiro dia, ela vira uma linha discreta acima de **Pronta para você**, como "Faltam 2 etapas · Continuar". Toque nela para abrir a tarefa, e toque na seta para recolhê-la de novo.
+Depois do seu primeiro dia, ela vira uma linha discreta acima de **Para você**, como "Faltam 2 etapas · Continuar". Toque nela para abrir a tarefa, e toque na seta para recolhê-la de novo.
 
 **Desfazer** na mensagem que aparece depois a traz de volta, assim como **Mostrar 1 etapa oculta** no fim da tarefa. Se você fechou a tarefa inteira, **Configurações**, **Geral**, **Tarefa de configuração** a traz de volta. **Configurações**, **Geral**, **Este aparelho** tem os mesmos controles, e lá o app do celular sempre tem o link para baixar.
 

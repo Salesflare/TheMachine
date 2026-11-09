@@ -17,7 +17,7 @@ order: 4
 
 **Rechercher**, en haut de la barre latérale, trouve d’abord les tâches, puis les personnes, les messages et plus encore. **Navigateur**, **Aide** et **Paramètres** sont en bas de la barre latérale. Sur un téléphone, le bouton de menu de la barre du haut ouvre la barre latérale.
 
-La barre latérale liste vos tâches comme la page. Les demandes de votre Fleet sont aussi sous **À décider**, donc son nombre correspond à celui du haut. Touchez-en une pour l’afficher.
+La barre latérale liste vos tâches comme la page. Les demandes de votre Fleet sont aussi sous **Pour vous**, donc son nombre correspond à celui du haut. Touchez-en une pour l’afficher.
 
 Pour le menu d’une tâche, survolez-la et cliquez sur **⋯**, faites un clic droit dessus, ou maintenez-la appuyée sur un téléphone. Au clavier, appuyez sur `Shift F10` dessus. En plus de **Renommer** et **Ouvrir**, le menu a les boutons de la tâche elle-même : **Marquer comme fait**, **Mettre en attente** et **Pas nécessaire**, chacun avec **Annuler**.
 
@@ -37,7 +37,7 @@ Dès votre première visite, une fois le premier coup d’œil terminé, une pet
 
 Les lignes n’apparaissent que là où elles ont du sens : pas d’app de téléphone dans l’app, pas d’installation sur un téléphone. Le × d’une ligne la ferme sur tous les appareils, et le × en haut ferme toute la tâche.
 
-Après votre premier jour, elle se replie en une ligne discrète au-dessus de **Prêt pour vous**, comme « Encore 2 étapes · Continuer ». Touchez-la pour ouvrir la tâche, et touchez la flèche pour la replier.
+Après votre premier jour, elle se replie en une ligne discrète au-dessus de **Pour vous**, comme « Encore 2 étapes · Continuer ». Touchez-la pour ouvrir la tâche, et touchez la flèche pour la replier.
 
 **Annuler** dans le message qui suit la fait revenir, tout comme **Afficher 1 étape masquée** en bas de la tâche. Une fois toute la tâche fermée, **Paramètres**, **Général**, **Tâche de démarrage** la fait revenir. **Paramètres**, **Général**, **Cet appareil** garde les mêmes réglages, et **App mobile** y propose toujours de télécharger l’app.
 

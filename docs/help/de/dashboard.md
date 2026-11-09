@@ -17,7 +17,7 @@ order: 4
 
 **Suchen**, oben in der Seitenleiste, findet zuerst Aufgaben, dann Personen, Nachrichten und mehr. **Browser**, **Hilfe** und **Einstellungen** sind unten in der Seitenleiste. Auf dem Handy öffnet die Menütaste in der oberen Leiste die Seitenleiste.
 
-Die Seitenleiste listet deine Aufgaben wie die Seite. Anfragen aus deiner Fleet stehen auch unter **Zu entscheiden**, so stimmt die Zahl mit der oben überein. Tippe auf eine, um sie zu zeigen.
+Die Seitenleiste listet deine Aufgaben wie die Seite. Anfragen aus deiner Fleet stehen auch unter **Für dich**, so stimmt die Zahl mit der oben überein. Tippe auf eine, um sie zu zeigen.
 
 Für das Menü einer Aufgabe fahre mit der Maus darüber und klicke auf **⋯**, klicke sie mit der rechten Maustaste an oder halte sie auf dem Handy gedrückt. Mit der Tastatur drücke `Shift F10` darauf. Neben **Umbenennen** und **Öffnen** hat das Menü die eigenen Knöpfe der Aufgabe: **Als erledigt markieren**, **Zurückstellen** und **Nicht nötig**, jeweils mit **Rückgängig**.
 
@@ -39,7 +39,7 @@ Ab deinem ersten Besuch, sobald der erste Blick fertig ist, zeigt eine kleine Au
 
 Zeilen erscheinen nur, wo sie passen: keine Handy-App in der App selbst, kein Installieren auf dem Handy. Das × einer Zeile schließt sie auf jedem Gerät, und das × oben schließt die ganze Aufgabe.
 
-Nach deinem ersten Tag wird sie zu einer ruhigen Zeile über **Bereit für dich**, etwa „Noch 2 Schritte · Weiter“. Tippe darauf, um die Aufgabe zu öffnen, und auf den Pfeil, um sie wieder einzuklappen.
+Nach deinem ersten Tag wird sie zu einer ruhigen Zeile über **Für dich**, etwa „Noch 2 Schritte · Weiter“. Tippe darauf, um die Aufgabe zu öffnen, und auf den Pfeil, um sie wieder einzuklappen.
 
 **Rückgängig** in der Meldung danach holt sie zurück, ebenso **1 ausgeblendeten Schritt zeigen** unten in der Aufgabe. Ist die ganze Aufgabe geschlossen, holt **Einstellungen**, **Allgemein**, **Einrichtungs-Aufgabe** sie zurück. **Einstellungen**, **Allgemein**, **Dieses Gerät** hat dieselben Schalter, und dort führt die Handy-App immer zum Download.
 

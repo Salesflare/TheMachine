@@ -17,7 +17,7 @@ order: 4
 
 **Cerca**, in cima alla barra laterale, trova prima le attività, poi persone, messaggi e altro. **Browser**, **Aiuto** e **Impostazioni** sono in fondo alla barra laterale. Su un telefono, il pulsante del menu nella barra in alto apre la barra laterale.
 
-La barra laterale elenca le tue attività come la pagina. Anche le richieste della tua Fleet sono in **Da decidere**, così il numero corrisponde a quello in alto. Toccane una per vederla.
+La barra laterale elenca le tue attività come la pagina. Anche le richieste della tua Fleet sono in **Per te**, così il numero corrisponde a quello in alto. Toccane una per vederla.
 
 Per il menu di un’attività, passaci sopra con il mouse e fai clic su **⋯**, fai clic destro su di essa o tienila premuta sul telefono. Con la tastiera, premi `Shift F10` su di essa. Oltre a **Rinomina** e **Apri**, il menu ha i pulsanti dell’attività stessa: **Segna come fatto**, **Posticipa** e **Non serve**, ognuno con **Annulla**.
 
@@ -37,7 +37,7 @@ Dalla prima visita, appena finita la prima occhiata, una piccola attività in ci
 
 Le righe compaiono solo dove servono: niente app per il telefono dentro l’app, niente installazione su un telefono. La × di una riga la chiude su ogni dispositivo, e la × in alto chiude l’intera attività.
 
-Dopo il tuo primo giorno, si riduce a una riga discreta sopra **Pronta per te**, come «Mancano 2 passaggi · Continua». Toccala per aprire l’attività, e tocca la freccia per richiuderla.
+Dopo il tuo primo giorno, si riduce a una riga discreta sopra **Per te**, come «Mancano 2 passaggi · Continua». Toccala per aprire l’attività, e tocca la freccia per richiuderla.
 
 **Annulla** nel messaggio che segue la riporta, come **Mostra 1 passaggio nascosto** in fondo all’attività. Se hai chiuso l’intera attività, **Impostazioni**, **Generali**, **Attività di configurazione** la riporta. **Impostazioni**, **Generali**, **Questo dispositivo** ha gli stessi controlli, e lì l’app per il telefono ha sempre il suo link per scaricarla.
 

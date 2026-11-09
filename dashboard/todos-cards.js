@@ -9,8 +9,8 @@ const proposal=html`${skillProposal(s)}${proposedSkillBox(s)}`;
 const lines=2,per=innerWidth<600?38:72,rows=named.plain(text).split('\n').reduce((n,l)=>n+(l.trim()?Math.ceil(l.length/per):.6),0);
 if(closed(s)||rows<=lines+.5)return html`<div class="body" translate="no">${body}</div>${proposal}`;const open=expandedBodies.has(s.id),shared=section!=='Chat'&&cardDrafted(s);
 return html`<div class="body${open?'':html` clamp`}" style="--lines:${lines}" data-clamp="${s.id}" translate="no">${body}</div>${shared?'':html`<button type="button" class="more" data-more="${s.id}" aria-expanded="${open}">${open?'Show less':'Show more'}</button>`}${proposal}`}
-// Said once, in the Ready header, for every ready to-do under it: nothing goes out before the owner's OK.
-const sectionNote=(key,items)=>key==='ready'&&items.some(s=>s?.status==='prepared')?html`<p class="section-note">${t('Nothing goes out until you approve it.')}</p>`:'';
+// Said once, in the For you header, when a prepared to-do is under it: nothing goes out before the owner's OK.
+const sectionNote=(key,items)=>key==='foryou'&&items.some(s=>s?.status==='prepared')?html`<p class="section-note">${t('Nothing goes out until you approve it.')}</p>`:'';
 // A ready to-do with a draft to read: its summary and the first 3 lines of the draft, then one Show more for the rest
 const DRAFT_LINES=3,draftRows=text=>{const per=innerWidth<600?34:64;return String(text).split('\n').reduce((n,l)=>n+(l.trim()?Math.ceil(l.length/per):0),0)};
 const draftFolds=(s,a)=>a.kind!=='finish'&&(a.state||s.action_status)?.status!=='sent'&&draftRows(draftText(a))>DRAFT_LINES+1;  // 4 lines still show whole
@@ -68,7 +68,7 @@ const SERVICE_NAMES={gmail:'Email',calendar:'Calendar',outlook:'Outlook',outlook
 // data reads as nothing, and the line says the source instead (the same list as machine/names.py INTERNAL)
 const INTERNAL_NAME=/^(?:gog(?:cli)?|wacli|himalaya|msgraph(?:[-_]cli)?|openclaw|codex[-_]cli|gh|journald|maton|broker|api|rest|existing_\w+|[a-z]+[-_](?:feed|local|inbox|rest|store|mirror))(?:[-_][\w-]*)?$/i;
 const service=v=>SERVICE_NAMES[v]||(INTERNAL_NAME.test(String(v||'').trim())?'':v);
-const label=v=>({pending:'Needs your decision',accepted:'Accepted',prepared:'Ready for you',rejected:'Not needed',snoozed:'Later',instructions:'Changes requested',completed:'Done'}[v]||v);
+const label=v=>({pending:'Needs you',accepted:'Accepted',prepared:'Prepared',rejected:'Not needed',snoozed:'Later',instructions:'Changes requested',completed:'Done'}[v]||v);
 const tone=v=>({pending:'amber',accepted:'lavender',instructions:'lavender',prepared:'mint',snoozed:'lavender',completed:'mint',rejected:'muted'}[v]||'muted');
 // A blocker waiting on the owner (a sign-in in the kept tab) resumes with Continue; same rule as the service.
 const retryLabel=r=>/\b(?:sign(?:ed)?[ -]?in|log(?:ged)?[ -]?in|signed out|2fa|two-factor|authenticator|passkey|tap continue)\b/i.test(r||'')&&!/try again/i.test(r||'')?'Continue':'Try again';
@@ -86,12 +86,16 @@ function dueChip(s){if(!s.due||closed(s)||looksDone(s))return '';const today=new
   :days===0?'Due today':days===1?'Due tomorrow':'Due '+localeDate(due,DL,days<7?{weekday:'long'}:{day:'numeric',month:'short'});
  return html`<span class="chip t-${late||days<=0?'orange':days===1?'amber':'muted'}" title="Due ${localeDate(due,DL,{weekday:'long',day:'numeric',month:'long'})+(timed?' '+fmtHM(at):'')}">${text}</span>`}
 const closed=s=>['completed','rejected'].includes(s.status);
-// The open lists' order (Ready, To decide, Preparing, Waiting on others; the sidebar the same): what is overdue or due
-// by tomorrow first, then the rest; each newest first by when it was added, the time its to-do shows. A tie (one review
+// The open lists' order (For you, Preparing, Waiting on others; the sidebar the same): what is overdue or due by
+// tomorrow first, then the rest; each newest first by when it was added, the time its to-do shows. A tie (one review
 // made them together) goes to the one about the people closest to you (weight), then the id.
 const dueSoon=s=>{if(!s.due)return false;const at=s.due_at?Date.parse(s.due_at):NaN;if(!isNaN(at)&&at<Date.now())return true;const t=new Date();t.setDate(t.getDate()+1);return s.due<=localDay(t)};
 const addedAt=s=>Date.parse(s.created_at)||0;
 const openOrder=(a,b)=>dueSoon(b)-dueSoon(a)||addedAt(b)-addedAt(a)||(b.weight||0)-(a.weight||0)||String(a.id).localeCompare(String(b.id));
+// For you: due by tomorrow (openOrder), a Fleet ask, prepared, the rest
+const plainTodo=x=>!!x&&typeof x==='object'&&!(x instanceof SafeHTML);
+function forYouList(ready,needs){const rank=(x,need)=>plainTodo(x)&&dueSoon(x)?0:need?(plainTodo(x)?3:1):2,all=[...ready.map(x=>[x,rank(x,false)]),...needs.map(x=>[x,rank(x,true)])];
+ return [0,1,2,3].flatMap(r=>{const l=all.filter(([,k])=>k===r).map(([x])=>x);return r===0?l.sort(openOrder):l})}
 // A done to-do keeps its title (what needed doing); how it ended goes under it: what went out has its own line
 // (outboxLine), the sign that it was handled is this one.
 const doneLine=s=>{if(s.status!=='completed')return '';let why='';try{why=JSON.parse(s.handled_hint||'{}').reason||''}catch{}
@@ -170,7 +174,7 @@ const resultLinks=s=>{const found=[],r={text:resultBody(s,(words,path)=>{found.p
  r.fill=x=>html`${String(x).split(/(\d+)/).map((y,i)=>i%2?r.piece(y):y)}`;
  r.mark=(x,mark)=>x.replace(/(\d+)/g,(m,i)=>{const p=r.piece(i);return p instanceof SafeHTML?mark(p):p.replace(/[\u0000\u0001]/g,'')});return r};
 const needsDecision=s=>s.status==='pending'||(!closed(s)&&s.status!=='snoozed'&&s.preparation_status==='blocked');
-// Where an open to-do sits: Ready, Needs your decision or Preparing. One that starts preparing (Do it, Ask for changes)
+// Where an open to-do sits: ready or needs (For you) or Preparing. One that starts preparing (Do it, Ask for changes)
 // stays where it was until the run is done, so it doesn't jump to another section and back while it works.
 const placeHeld=new Map();
 const placeOf=s=>{const now=needsDecision(s)?'needs':s.status==='prepared'?'ready':'preparing',was=placeHeld.get(s.id);
@@ -471,7 +475,7 @@ function tipDone(tip){if(!firstTips().includes(tip))return;tipsGone.add(tip);
  request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'tip_done',args:{tip}})})
   .then(r=>{if(Array.isArray(r?.first_tips))state.first_tips=r.first_tips}).catch(()=>{})}
 const tipLine=(tip,text)=>html`<p class="first-tip" data-tip="${tip}"><span class="tip-text">${text}</span><button type="button" class="tip-x" data-tip-done="${tip}" aria-label="Hide this tip" title="Hide this tip">×</button></p>`;
-function firstTip(s,section,choices){if(closed(s)||!['Ready for you','Needs your decision'].includes(section))return '';
+function firstTip(s,section,choices){if(closed(s)||section!=='For you')return '';
  if(tipSend)return tipSend===s.id?tipLine('send',t('You can edit it before it goes. It only goes out when you press Send.')):'';
  const change=choices.find(([c])=>c==='change'),reject=choices.find(([c])=>c==='reject');
  if(tipChange==='next'&&change&&reject&&!agentAsk(s)&&!withTeammate(s))tipChange=s.id;
@@ -512,9 +516,9 @@ const statusLine=(()=>{const line=(text,cls='')=>html`<p class="note status-line
  if(o?.state==='needs_you'&&!skillDecided(s))return line('Needs you: '+sentence(o.needs),' outcome');
  // Waiting on a step still open elsewhere (a review, a merge, their reply): an open to-do, never "Looks done"
  if(o?.state==='waiting')return line(t('Waiting on: {}',sentence(o.waiting_on||'')),' outcome');
- if(s.early&&s.status==='prepared'&&smart.some(a=>a.kind!=='open'))return '';  // Ready's header says it once (sectionNote)
+ if(s.early&&s.status==='prepared'&&smart.some(a=>a.kind!=='open'))return '';  // For you's header says it once (sectionNote)
  // Prepared is not done: while a draft, change or final click still waits for them, never "Finished" (next_actions.WAITING_KINDS).
- if(s.status==='prepared'&&(!o||o.state==='done')&&smart.some(a=>[...DRAFT_KINDS,'merge'].includes(a.kind)))return '';  // said once, in Ready's header
+ if(s.status==='prepared'&&(!o||o.state==='done')&&smart.some(a=>[...DRAFT_KINDS,'merge'].includes(a.kind)))return '';  // said once, in For you's header
  if(o?.state==='answered')return line('Answered. Nothing done yet.');
  if(o?.state==='snoozed')return line('Back, as you asked.');
  if(o?.state==='your_step')return line('Ready for you to check and '+o.step+'.',' outcome');

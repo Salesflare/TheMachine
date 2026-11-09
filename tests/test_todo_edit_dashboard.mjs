@@ -105,8 +105,8 @@ try{
   // Preparing: it stays in its section, and its one step line keeps one height from the start (the latest step only)
   Object.assign(cards[2],{status:'accepted',preparation_status:'running',preparation_started_at:now});
   await page.evaluate(()=>refresh());await page.locator('#task-p1 .prep .steps').waitFor({state:'attached'});
-  assert.ok(await page.evaluate(()=>!document.getElementById('section-preparing')&&!!(document.getElementById('section-needs').compareDocumentPosition(document.getElementById('task-p1'))&Node.DOCUMENT_POSITION_FOLLOWING)),
-   'it stays under Needs your decision while it prepares');
+  assert.ok(await page.evaluate(()=>!document.getElementById('section-preparing')&&!!(document.getElementById('section-foryou').compareDocumentPosition(document.getElementById('task-p1'))&Node.DOCUMENT_POSITION_FOLLOWING)),
+   'it stays in For you while it prepares');
   const tall=()=>page.locator('#task-p1').evaluate(n=>Math.round(n.getBoundingClientRect().height));
   const before=await tall();
   steps=[{title:'Checking the venue’s calendar'},{title:'Reading the contract, a long step title that would wrap onto a second line on a phone'},{title:'Drafting the reply'}];
@@ -114,7 +114,7 @@ try{
   await page.waitForTimeout(200);await page.locator('#task-p1').scrollIntoViewIfNeeded();await shot(page,'preparing',width);assert.equal(await tall(),before,'the to-do keeps its height while steps come in');
   Object.assign(cards[2],{status:'prepared',preparation_status:'done'});
   await page.evaluate(()=>refresh());
-  assert.ok(await page.evaluate(()=>{const r=document.getElementById('section-ready'),t=document.getElementById('task-p1');return !!(r&&t&&r.compareDocumentPosition(t)&Node.DOCUMENT_POSITION_FOLLOWING)}),'ready: then it moves to Ready');
+  assert.ok(await page.evaluate(()=>{const r=document.getElementById('section-foryou'),t=document.getElementById('task-p1');return !!(r&&t&&r.compareDocumentPosition(t)&Node.DOCUMENT_POSITION_FOLLOWING)&&!!t.querySelector('.chip.t-mint')}),'ready: then it says Prepared, still in For you');
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   await context.close();
  }

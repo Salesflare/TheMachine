@@ -17,7 +17,7 @@ order: 4
 
 **Zoeken**, bovenaan de zijbalk, vindt eerst to-do's, dan mensen, berichten en meer. **Browser**, **Help** en **Instellingen** staan onderaan de zijbalk. Op een telefoon opent de menuknop in de bovenbalk de zijbalk.
 
-De zijbalk toont je to-do's zoals de pagina. Verzoeken uit je Fleet staan ook onder **Te beslissen**, zodat het aantal klopt met dat bovenaan. Tik op een verzoek om het te tonen.
+De zijbalk toont je to-do's zoals de pagina. Verzoeken uit je Fleet staan ook onder **Voor jou**, zodat het aantal klopt met dat bovenaan. Tik op een verzoek om het te tonen.
 
 Voor het menu van een to-do: ga er met de muis over en klik op **⋯**, klik er met de rechtermuisknop op, of houd hem ingedrukt op een telefoon. Met het toetsenbord druk je er `Shift F10` op. Naast **Hernoemen** en **Openen** heeft het menu de eigen knoppen van de to-do: **Markeer als gedaan**, **Snoozen** en **Niet nodig**, elk met **Ongedaan maken**.
 
@@ -37,7 +37,7 @@ Vanaf je eerste bezoek, zodra de eerste blik klaar is, staat bovenaan To-dos een
 
 Rijen staan er alleen waar ze passen: geen telefoon-app in de app zelf, geen installeren op een telefoon. Het × op een rij sluit hem op elk apparaat, en het × bovenaan sluit de hele to-do.
 
-Na je eerste dag klapt hij in tot één rustige regel boven **Voor jou klaargezet**, zoals "Nog 2 stappen · Doorgaan". Tik erop om de to-do te openen, en tik op het pijltje om hem weer in te klappen.
+Na je eerste dag klapt hij in tot één rustige regel boven **Voor jou**, zoals "Nog 2 stappen · Doorgaan". Tik erop om de to-do te openen, en tik op het pijltje om hem weer in te klappen.
 
 **Ongedaan maken** in het bericht erna haalt hem terug, net als **1 verborgen stap tonen** onderaan de to-do. Is de hele to-do gesloten, dan haalt **Instellingen**, **Algemeen**, **To-do om te starten** hem terug. **Instellingen**, **Algemeen**, **Dit apparaat** heeft dezelfde knoppen, en **Telefoonapp** daar heeft altijd **App downloaden**.
 

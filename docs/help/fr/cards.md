@@ -12,9 +12,8 @@ Votre Machine lit tout ce qui est nouveau et ne crée une tâche que si quelque 
 
 La page **Tâches** les regroupe :
 
-- **Prêt pour vous** : préparée et en attente de votre accord.
-- **Attend votre décision** : quelque chose que vous seul pouvez décider.
-- **En préparation** : votre Machine y travaille. Une tâche à laquelle vous venez de dire **Faire** reste à sa place pendant la préparation, puis passe dans **Prêt pour vous**.
+- **Pour vous** : tout ce qui vous attend, le plus urgent d’abord. Chaque tâche indique **Préparée** (le travail est fait, et **Faire** ou **Envoyer** s’en charge) ou **Vous attend** (il faut d’abord votre décision ou une réponse).
+- **En préparation** : votre Machine y travaille. Une tâche à laquelle vous venez de dire **Faire** reste à sa place pendant la préparation, puis indique **Préparée**.
 - **Tout juste fait** : une dernière étape que tu as confirmée, comme envoyer un formulaire ou créer un ticket, a réussi pendant ton absence. Elle montre ce qui s'est passé jusqu'à ce que tu touches **Compris**, un jour au plus, et ton téléphone l'apprend aussi. Ensuite, elle n'est plus que dans Fait.
 - **Revient plus tard** : mise en attente, et les tâches sans réponse à **Toujours utile ?** (plus bas).
 - **Promesses** : ce que vous avez promis et ce que d’autres vous ont promis. Voir [Promesses](promises.md).
@@ -22,7 +21,7 @@ La page **Tâches** les regroupe :
 
 Après un envoi, une courte note dit où se trouve la tâche, comme « Envoyé. Déplacé dans Fait. » ou, si elle attend une réponse, « Envoyé. Déplacé dans Plus tard jusqu’à lun. » **Ouvrir** vous y mène. Le fil qui quitte votre boîte de réception quelques jours ne concerne que votre messagerie. La recherche trouve une tâche par son titre ou son destinataire, aussi dans Plus tard et Fait.
 
-Dans Prêt pour vous, Attend votre décision, En préparation et En attente des autres, une tâche en retard ou due d’ici demain vient en premier. Les autres suivent, les plus récentes d’abord, selon l’heure affichée sur chaque tâche. La barre latérale garde le même ordre.
+**Pour vous** met d’abord ce qui est en retard ou dû d’ici demain, puis les questions de votre Fleet, puis les tâches **Préparée**, puis celles qui vous attendent. Dans chaque partie, les plus récentes d’abord. Les autres groupes ouverts mettent d’abord ce qui est en retard ou dû d’ici demain, le reste du plus récent au plus ancien. La barre latérale garde le même ordre.
 
 Une tâche marquée **Semble fait** s’affiche comme une tâche faite, avec ce qui montre qu’elle est faite, comme « PR #3451 fusionnée ». Elle n’est pas encore fermée : **Rouvrir** la remet dans votre liste, et votre Machine en tient compte. Elles ne sont jamais en retard et ne comptent pas comme en attente de vous. Une tâche avec un brouillon de réponse semble aussi faite quand vous avez répondu vous-même dans cette conversation, comme dans Gmail ou Slack.
 
@@ -44,7 +43,7 @@ Quand vous lancez une tâche, elle peut toujours lire les messages d’où elle 
 
 Sa réponse part quand même de l’adresse pro où elle est arrivée, et elle n’apparaît jamais dans une Work Fleet ni dans le Graph d’équipe.
 
-À partir de deux en attente, **Passer en revue** dans l’en-tête de Prêt pour vous et d’Attend votre décision les passe une par une, chaque brouillon en entier, avec **Envoyer** ou **Faire**, **Demander des modifications**, **Mettre en attente** et **Ignorer**. Sur un ordinateur, Entrée envoie ce qui est à l’écran, `S` met en attente, `→` ignore et Échap arrête. Sous le titre, l’en-tête dit aussi combien de temps elles prennent à votre rythme, comme "environ 2 min".
+À partir de deux en attente, **Passer en revue** dans l’en-tête de Pour vous les passe une par une, dans l’ordre de la liste, chaque brouillon en entier, avec **Envoyer** ou **Faire**, **Demander des modifications**, **Mettre en attente** et **Ignorer**. Sur un ordinateur, Entrée envoie ce qui est à l’écran, `S` met en attente, `→` ignore et Échap arrête. Sous le titre, l’en-tête dit aussi combien de temps elles prennent à votre rythme, comme "environ 2 min".
 
 ## Vérifier maintenant
 

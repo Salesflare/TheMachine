@@ -43,8 +43,8 @@ GROUPS = {
     'later': ('snoozed',),
     'done': ('completed', 'rejected'),
 }
-LABELS = {'pending': 'Needs your decision', 'accepted': 'Accepted', 'instructions': 'Changes requested',
-          'prepared': 'Ready for you', 'snoozed': 'Later', 'completed': 'Done', 'rejected': 'Not needed'}
+LABELS = {'pending': 'Needs you', 'accepted': 'Accepted', 'instructions': 'Changes requested',
+          'prepared': 'Prepared', 'snoozed': 'Later', 'completed': 'Done', 'rejected': 'Not needed'}
 
 
 class CliError(Exception):
@@ -358,7 +358,7 @@ def cmd_prepare(config, args):
                                    **({'next_action':json.loads(Path(args.next_action).read_text())} if args.next_action else {})})
     if args.json:
         return out_json(result)
-    print(f"Saved as Ready for you: {task['title']}. The to-do in Telegram is updated and you'll get one notification.")
+    print(f"Saved as Prepared: {task['title']}. The to-do in Telegram is updated and you'll get one notification.")
 
 
 PREVIEW_POLL = 10

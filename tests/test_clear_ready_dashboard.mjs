@@ -4,8 +4,8 @@ import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
-// Go through (dashboard/todos-clear.js), on made-up data: the Ready header says "about 3 min" (the owner's
-// pace from the status) and, from two on, offers Go through; Needs your decision the same for its own. The run shows one to-do at a time with its title, who it
+// Go through (dashboard/todos-clear.js), on made-up data: the For you header says "about 5 min" (the owner's
+// pace from the status) and, from two on, offers Go through, prepared and needs-you to-dos in one run. The run shows one to-do at a time with its title, who it
 // goes to and the whole draft; Enter sends exactly the revision on screen through the send dialog's own confirm, → skips
 // (nothing posted), S snoozes, Esc closes. A draft that needs a choice (who gets it) opens the send dialog instead. A
 // send that fails keeps that to-do on screen with the error. A draft that changed after it was shown never goes: the
@@ -54,14 +54,13 @@ try{
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   const page=await context.newPage();page.on('pageerror',e=>errors.push(width+': '+e.message));
   await page.goto('http://127.0.0.1:'+server.address().port);await page.locator('#task-'+id(1)).waitFor();
-  // The header: how long, at the owner's pace (5 × 45 s), without saying the count again, and the button; a tap on it doesn't fold the list.
+  // The header: how long, at the owner's pace (6 × 45 s), without saying the count again, and the button; a tap on it doesn't fold the list.
   // Title, count and Go through on one row, the time and "Nothing goes out" on one line under it, at every width
-  const head=page.locator('#section-ready');
-  assert.equal(await head.locator('.clear-time').textContent(),'about 3 min');
-  assert.equal(await page.locator('#section-needs .clear-time').textContent(),'about 2 min');
-  for(const key of ['ready','needs'])assert.deepEqual(await page.locator('#section-'+key).evaluate(h=>{const mid=e=>{const r=e.getBoundingClientRect();return Math.round(r.top+r.height/2)},t=mid(h.querySelector('h2')),go=mid(h.querySelector('.clear-go')),time=mid(h.querySelector('.clear-time')),note=h.querySelector('.section-note');
+  const head=page.locator('#section-foryou');
+  assert.equal(await head.locator('.clear-time').textContent(),'about 5 min');
+  for(const key of ['foryou'])assert.deepEqual(await page.locator('#section-'+key).evaluate(h=>{const mid=e=>{const r=e.getBoundingClientRect();return Math.round(r.top+r.height/2)},t=mid(h.querySelector('h2')),go=mid(h.querySelector('.clear-go')),time=mid(h.querySelector('.clear-time')),note=h.querySelector('.section-note');
    return [Math.abs(go-t)<=6,time>go,!note||mid(note)===time]}),[true,true,true],key+' at '+width);
-  assert.deepEqual([await head.locator('[data-clear-run]').textContent(),await page.locator('#section-needs [data-clear-run]').textContent()],['Go through','Go through']);
+  assert.deepEqual(await page.locator('[data-clear-run]').allTextContents(),['Go through'],'one Go through, for For you');
   await head.locator('[data-clear-run]').click();
   await run(page).waitFor({state:'visible'});
   assert.equal(await head.getAttribute('aria-expanded'),'true');
@@ -70,7 +69,7 @@ try{
   else assert.ok(Math.abs(box.x+box.width/2-720)<=16&&box.width<=680,'centered: '+JSON.stringify(box));  // as the other dialogs (a scrollbar's gutter aside)
   assert.equal(await run(page).locator('.cr-key').first().isVisible(),!mobile);  // the keys only where there's a keyboard
   // One at a time: its title, who it goes to, the whole draft (no Show more), Send with the card's actions
-  assert.equal(await pos(page),'1 of 4');
+  assert.equal(await pos(page),'1 of 6');
   assert.equal(await run(page).locator('.cr-title').textContent(),'Send Northfield the editable agreements');
   assert.match(await run(page).locator('.draft .dm').textContent(),/To: Dana Reyes · Agreements/);
   assert.match(await run(page).locator('.draft .db').innerText(),/Line 30 of the agreement notes\.\s+Last line: thanks, Sam/);
@@ -78,24 +77,24 @@ try{
   assert.deepEqual(await run(page).locator('.cr-acts:not([hidden]) button').evaluateAll(b=>b.map(x=>x.firstChild.textContent)),['Send','Ask for changes','Snooze','Skip']);
   // Send (Enter on a computer, the button on a phone): the revision on screen, once, and on to the next
   if(mobile)await run(page).locator('[data-cr="go"]').click();else await page.keyboard.press('Enter');
-  await page.waitForFunction(()=>document.querySelector('#clear-run .cr-pos')?.textContent==='2 of 4');
+  await page.waitForFunction(()=>document.querySelector('#clear-run .cr-pos')?.textContent==='2 of 6');
   assert.deepEqual(posts,[['send',id(1),'aa11bb22cc33']]);
   // A send that fails: the to-do stays, with the error
   await run(page).locator('[data-cr="go"]').click();await posted(2);
   await page.waitForFunction(()=>/Slack is not answering/.test(document.querySelector('#clear-run .cr-error')?.textContent||''));
-  assert.equal(await pos(page),'2 of 4');
+  assert.equal(await pos(page),'2 of 6');
   // Skip: nothing posted
   if(mobile)await run(page).locator('[data-cr="skip"]').click();else await page.keyboard.press('ArrowRight');
-  await page.waitForFunction(()=>document.querySelector('#clear-run .cr-pos')?.textContent==='3 of 4');
+  await page.waitForFunction(()=>document.querySelector('#clear-run .cr-pos')?.textContent==='3 of 6');
   assert.equal(posts.length,2);
   // A draft that needs a choice (who gets it) opens the send dialog; canceling it keeps the to-do in the run
   await run(page).locator('[data-cr="go"]').click();
   await page.locator('#send-dialog').waitFor({state:'visible'});
   assert.equal(posts.length,2);
   await page.keyboard.press('Escape');await page.locator('#send-dialog').waitFor({state:'hidden'});assert.ok(await run(page).isVisible());
-  await page.waitForTimeout(300);assert.equal(await pos(page),'3 of 4');
+  await page.waitForTimeout(300);assert.equal(await pos(page),'3 of 6');
   await run(page).locator('[data-cr="skip"]').click();
-  await page.waitForFunction(()=>document.querySelector('#clear-run .cr-pos')?.textContent==='4 of 4');
+  await page.waitForFunction(()=>document.querySelector('#clear-run .cr-pos')?.textContent==='4 of 6');
   // Not displayed, never sent: the draft changes after the run showed it; Send posts nothing and shows the new one
   cards[3].next_actions[0]={...cards[3].next_actions[0],revision:'ee55ff66aa77',body:'Hi Lee, it is paid. The receipt is attached.'};
   await page.evaluate(()=>refresh());
@@ -109,21 +108,22 @@ try{
   // Now it was on screen: it goes, that revision
   await run(page).locator('[data-cr="go"]').click();await posted(3);
   assert.deepEqual(posts[2],['send',id(4),'ee55ff66aa77']);
+  // Then the ones that need a decision, in the same run: Do it on a decision
+  await page.waitForFunction(()=>document.querySelector('#clear-run .cr-pos')?.textContent==='5 of 6');
+  assert.equal(await run(page).locator('.cr-title').textContent(),'Book the dentist');
+  assert.equal(await run(page).locator('[data-cr="go"]').evaluate(b=>b.firstChild.textContent),'Do it');
+  if(mobile)await run(page).locator('[data-cr="go"]').click();else await page.keyboard.press('Enter');
+  await posted(4);assert.deepEqual(posts[3],['decide',id(5),'accept']);
+  await page.waitForFunction(()=>document.querySelector('#clear-run .cr-pos')?.textContent==='6 of 6');
   // The end: how many went out and how long it took, then back to the list
+  await run(page).locator('[data-cr="skip"]').click();
   await run(page).locator('.cr-done').waitFor();
   assert.match(await run(page).locator('.cr-done').textContent(),/^2 replies out in \d+:\d\d$/);
   await run(page).locator('[data-cr="close"]').click();
   await run(page).waitFor({state:'hidden'});
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
-  // Needs your decision: its own run, Do it on a decision
-  await page.locator('#section-needs [data-clear-run]').click();await run(page).waitFor({state:'visible'});
-  assert.equal(await pos(page),'1 of 2');
-  assert.equal(await run(page).locator('.cr-title').textContent(),'Book the dentist');
-  assert.equal(await run(page).locator('[data-cr="go"]').evaluate(b=>b.firstChild.textContent),'Do it');
-  if(mobile)await run(page).locator('[data-cr="go"]').click();else await page.keyboard.press('Enter');
-  await posted(4);assert.deepEqual(posts[3],['decide',id(5),'accept']);
-  await page.waitForFunction(()=>document.querySelector('#clear-run .cr-pos')?.textContent==='2 of 2');
   // Esc closes a run mid-way; what it didn't reach stays as it was
+  await head.locator('[data-clear-run]').click();await run(page).waitFor({state:'visible'});
   await page.keyboard.press('Escape');await run(page).waitFor({state:'hidden'});
   assert.equal(posts.length,4);assert.equal(cards[5].status,'pending');
   await context.close()}

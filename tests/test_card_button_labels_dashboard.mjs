@@ -31,7 +31,7 @@ try{
  // opens only http(s): anything else is the plain Open the browser button.
  const odd='x" onmouseover="window.pwned=2';
  const parsed=await page.evaluate(odd=>{const read=html=>{const t=document.createElement('template');t.innerHTML=html;return t.content};
-  const card=read(suggestionCard({...state.suggestions[0],id:odd,labels:{},skill_proposal:null},'To decide'));
+  const card=read(suggestionCard({...state.suggestions[0],id:odd,labels:{},skill_proposal:null},'For you'));
   const btn=card.querySelector('button[data-choice="reject"]');
   const side=read(sideRow({id:odd,title:'Side'},''));
   const bad=read(browserLink('s1',{link:'javascript:window.pwned=3'})),good=read(browserLink('s1',{link:'https://example.com/tab'}));

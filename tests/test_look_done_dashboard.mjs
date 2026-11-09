@@ -45,12 +45,12 @@ try{
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
   await page.goto('http://127.0.0.1:'+server.address().port);await page.locator('#task-r1').waitFor();
-  // Not between real work, and not counted: Ready has the real one, To decide the real one
+  // Not between real work, and not counted: For you has the real ones
   for(const id of ['d1','d2','h1','h2'])assert.equal(await page.locator('#task-'+id+':not(#finished-list .looks-done)').count(),0,id);
   assert.equal(await page.locator('#badge-inbox').textContent(),'2');
   assert.equal(await page.locator('#task-r1 .chip').filter({hasText:'Overdue'}).count(),1);  // real work can still be late
   // A step still open on someone else's side: nothing is ready for them, so its own folded group, not counted
-  assert.equal(await page.locator('#section-ready #task-w1, #suggestions>.section-head~#task-w1').count(),0);
+  assert.equal(await page.locator('#section-foryou #task-w1, #suggestions>.section-head~#task-w1').count(),0);
   assert.equal(await page.locator('#waiting-list').evaluate(d=>d.open),false);
   assert.equal(await page.locator('#waiting-head .count').textContent(),'1');
   await page.locator('#waiting-head').click();

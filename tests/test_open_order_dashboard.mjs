@@ -7,7 +7,8 @@ const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modul
 
 // The open lists' order (openOrder): a to-do overdue or due by tomorrow first, then the rest newest first by the time
 // each one shows (created_at), whatever its people weight or a deadline weeks away. Same-moment to-dos (one review)
-// go by weight. The sidebar lists them in the same order. Made-up data.
+// go by weight. For you mixes prepared and needs-you to-dos: what is due soon first whichever it is, then the prepared
+// ones, then the ones that need a decision. The sidebar lists them in the same order. Made-up data.
 // SHOTS=<folder> saves screenshots at 1440x900 and 390x844 (before the checks, so a page without the fix can be shot
 // too: PAGE=<another dashboard.html>).
 const dashboard=await dashboardPage(process.env.PAGE);
@@ -22,7 +23,8 @@ const cards=[
  card('f','Share the slides with Robin','prepared',h(5),{weight:1}),                           // same review as g
  card('g','Thank Alex for the intro','prepared',h(5),{weight:9}),
  card('h','Pick a date for the board call','pending',h(24*6),{weight:20}),
- card('i','Approve the new logo','pending',h(1),{weight:0})];
+ card('i','Approve the new logo','pending',h(1),{weight:0}),
+ card('j','Sign the lease renewal','pending',h(48),{due:day(-1),weight:0})];                // overdue, needs a decision: with e and a
 const state=()=>({suggestions:cards,promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},connectors:[],fleet:{on:false,fleets:[]}});
 const server=createServer((req,res)=>{const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname.startsWith('/brand/')){readFile(new URL('../'+(url.pathname.startsWith('/brand/fonts/')?url.pathname.slice(1):'brand/app-icon-192.png'),import.meta.url)).then(b=>{res.setHeader('Content-Type',url.pathname.endsWith('.woff2')?'font/woff2':'image/png');res.end(b)},()=>{res.statusCode=404;res.end()});return}
@@ -32,7 +34,7 @@ const server=createServer((req,res)=>{const url=new URL(req.url,'http://fixture.
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const base='http://127.0.0.1:'+server.address().port,errors=[],shots=process.env.SHOTS;if(shots)await mkdir(shots,{recursive:true});
 const id=c=>'task-'+c.repeat(16).slice(0,16);
-const READY=['e','a','c','g','f','d','b'].map(id),NEEDS=['i','h'].map(id);
+const FOR_YOU=['e','j','a','c','g','f','d','b','i','h'].map(id);
 let browser;
 try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
@@ -40,13 +42,13 @@ try{
   const context=await browser.newContext({viewport:{width,height},timezoneId:'Europe/Brussels',locale:'en-US'}),page=await context.newPage();
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   page.on('pageerror',e=>errors.push(e.message));await page.clock.setFixedTime(NOW);await page.goto(base+'/');
-  await page.locator('#section-ready').waitFor();
+  await page.locator('#section-foryou').waitFor();
   if(shots){await page.screenshot({path:`${shots}/order-${width}x${height}.png`});if(width===390)await page.screenshot({path:`${shots}/order-${width}x${height}-full.png`,fullPage:true})}
   const list=await page.locator('#suggestions article[id^="task-"]').evaluateAll(a=>a.map(x=>x.id));
-  assert.deepEqual(list,[...READY,...NEEDS],'due soon first, then newest first; a tie by weight');
+  assert.deepEqual(list,FOR_YOU,'due soon first, then prepared, then the rest; each newest first, a tie by weight');
   if(width===1440){
    const side=await page.locator('#side-cards a[href^="#chat="]').evaluateAll(a=>a.map(x=>'task-'+x.getAttribute('href').slice(6)));
-   assert.deepEqual(side,[...READY,...NEEDS],'the sidebar in the same order');
+   assert.deepEqual(side,FOR_YOU.slice(0,8),'the sidebar in the same order (its first 8)');
   }
   await context.close();
  }

@@ -44,11 +44,11 @@ try{
  greeting.line.since=new Date(NOW-26*3600e3).toISOString();assert.equal((await head()).line,'Ria has been waiting on your reply since yesterday.');
  greeting.line.since=new Date(NOW-9*864e5).toISOString();assert.equal((await head()).line,'Ria has been waiting on your reply for over a week.');
  greeting={name:'Alex'};h=await head();assert.equal(h.title,'Hi Alex');assert.equal(h.line,'');  // nothing ready yet
- // The list leads with the hello's to-do, also when it waits for a decision under ready ones, and Needs you stays away
+ // The list leads with the hello's to-do, also when it needs a decision and prepared ones would come first, and Needs you stays away
  cards=LIST;skills={waiting:1};
  for(const lead of LIST){greeting={name:'Alex',line:{person:'Ria',since:new Date(NOW-30*3600e3).toISOString(),card:lead.id}};h=await head();
   assert.equal(h.first,h.href.slice(6),'the first to-do is the one the hello names');assert.equal(h.first,lead.id);
-  assert.equal(h.firstSection,lead.status==='prepared'?'Ready for you':'Needs your decision');assert.equal(h.needsYou,false);assert.equal(h.fixed,false)}
+  assert.equal(h.firstSection,'For you');assert.equal(h.needsYou,false);assert.equal(h.fixed,false)}
  // A signed-out connection still shows: on day one it means the Machine can't work. The waiting skill stays away.
  connectors=[{id:'work',service:'gmail',display_name:'alex@example.com',signed_out:true}];h=await head();
  assert.deepEqual(h.needs,['Signed out of Email (alex@example.com).']);
@@ -65,7 +65,7 @@ try{
  assert.equal(h.needs.filter(x=>x.startsWith('Sign in to')).length,1,'also after the hello');
  greeting={name:'Alex',line:{person:'Ria',since:new Date(NOW-30*3600e3).toISOString(),card:LIST[0].id}};
  connectors=[];
- greeting=null;h=await head();assert.equal(h.first,LIST[0].id);assert.equal(h.firstSection,'Ready for you');assert.equal(h.needsYou,true,'Needs you is back once the hello is over');assert.equal(h.fixed,true);
+ greeting=null;h=await head();assert.equal(h.first,LIST[0].id);assert.equal(h.firstSection,'For you');assert.equal(h.needsYou,true,'Needs you is back once the hello is over');assert.equal(h.fixed,true);
  cards=[];skills=undefined;
  greeting=null;h=await head();assert.notEqual(h.title,'Hi Alex');assert.ok(h.title.length>3);  // over: the tagline
  assert.deepEqual(errors,[]);

@@ -84,7 +84,7 @@ Nothing changes until you tap. A tap only changes your own filters or to-dos and
 
 ## The dashboard
 
-The dashboard shows the same to-dos grouped as **Needs your decision**, **Ready for you**, **Preparing** and **Coming back later**. It also has:
+The dashboard shows the same to-dos grouped as **For you** (most urgent first, each marked **Prepared** or **Needs you**), **Preparing** and **Coming back later**. It also has:
 
 - the open [promises](architecture.md#promises), each with its own page: who promised what to whom and by when, where it stands, the message it came from, who and what it's about, its to-do and a short history, with **Done**, **Change date** and **Not needed**;
 - Work/Personal filters, deadlines, sources and their health;
@@ -385,7 +385,7 @@ For developers: a feature adds its own entries with `actionAdd({id, group, label
 
 - Sends go through the account's Gmail. The to-do then says who it went to and when, and moves to done (Undo or Reopen bring it back).
 - A handoff instead waits for the reply.
-- A to-do with another send still waiting stays in Ready for you.
+- A to-do with another send still waiting stays in For you.
 
 **When a run stops**
 

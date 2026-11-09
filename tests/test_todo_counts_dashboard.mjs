@@ -4,9 +4,10 @@ import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
-// One count for To decide: the header ("2 to decide"), the stat tile, the Needs your decision section and the sidebar's
-// To decide all count the same items, Fleet asks among them. The sidebar once left the Fleet asks out (header 4, sidebar
-// 2). A Fleet ask's sidebar row brings its card up, also from an open chat. Made-up data.
+// One count for For you: the header ("5 for you"), the stat tile, the For you section and the sidebar's For you all
+// count the same items, Fleet asks among them. The sidebar once left the Fleet asks out (header 4, sidebar 2). The
+// Fleet asks (a teammate waits) come before the prepared to-do, the ones that need a decision after it. A Fleet ask's
+// sidebar row brings its card up, also from an open chat. Made-up data.
 const dashboard=await dashboardPage(process.env.PAGE);
 const FL='fl_'+'c'.repeat(16);
 const card=(id,title,status)=>({id:id.repeat(16).slice(0,16),title,body:'Made-up to-do.',status,scope:'work',event_ids:[],created_at:new Date(Date.now()-36e5).toISOString()});
@@ -29,13 +30,16 @@ try{
   const context=await browser.newContext({viewport:{width,height},serviceWorkers:'block',locale:'en-US'}),page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto('http://127.0.0.1:'+server.address().port+'/');
   await page.locator('#suggestions #fleet-share-p0').waitFor();await page.locator('#suggestions #fleet-w1').waitFor();
-  await page.waitForFunction(()=>/4 to decide/.test(document.querySelector('.page-sub')?.textContent||''));
-  const counts=await page.evaluate(()=>({header:+/(\d+) to decide/.exec(document.querySelector('.page-sub').textContent)[1],
-   tile:+document.querySelector('#suggestion-stats [data-fold-tile="needs"] b').textContent,section:+document.querySelector('#section-needs .count').textContent,
-   side:+document.querySelector('#side-cards [data-side-fold="needs"] .count').textContent,
-   rows:[...document.querySelectorAll('#side-cards [data-side-fold="needs"]~a')].map(a=>a.textContent.trim())}));
-  assert.deepEqual({header:counts.header,tile:counts.tile,section:counts.section,side:counts.side},{header:4,tile:4,section:4,side:4},width+': '+JSON.stringify(counts));
-  assert.equal(counts.rows.length,4,JSON.stringify(counts.rows));
+  await page.waitForFunction(()=>/5 for you/.test(document.querySelector('.page-sub')?.textContent||''));
+  const counts=await page.evaluate(()=>({header:+/(\d+) for you/.exec(document.querySelector('.page-sub').textContent)[1],
+   tile:+document.querySelector('#suggestion-stats [data-fold-tile="foryou"] b').textContent,section:+document.querySelector('#section-foryou .count').textContent,
+   side:+document.querySelector('#side-cards [data-side-fold="foryou"] .count').textContent,
+   rows:[...document.querySelectorAll('#side-cards [data-side-fold="foryou"]~a')].map(a=>a.textContent.trim())}));
+  assert.deepEqual({header:counts.header,tile:counts.tile,section:counts.section,side:counts.side},{header:5,tile:5,section:5,side:5},width+': '+JSON.stringify(counts));
+  assert.equal(counts.rows.length,5,JSON.stringify(counts.rows));
+  const at=t=>counts.rows.findIndex(r=>r.includes(t));
+  assert.ok(Math.max(at('Rae Moss'),at('Robin Vale'))<at('Reply to Sam')&&at('Reply to Sam')<Math.min(at('Pick a date'),at('Approve the new logo')),
+   'Fleet asks, then prepared, then the rest: '+JSON.stringify(counts.rows));
   assert.ok(counts.rows.includes('Rae Moss joined Acme. Share the team\'s Graph with them?'),JSON.stringify(counts.rows));
   assert.ok(counts.rows.includes('Robin Vale asks: Who knows someone at Initech?'),JSON.stringify(counts.rows));
   // From an open chat: the Fleet ask's row closes the chat and brings its card up, focused
@@ -44,6 +48,8 @@ try{
   await page.locator('#side-cards [data-side-fleet="fleet-w1"]').click();
   await page.waitForFunction(()=>document.activeElement?.id==='fleet-w1');
   assert.equal(await page.locator('body.chat-open').count(),0,'the chat closed');
+  // it glides there (a smooth scroll), from where the chat's to-do was
+  await page.waitForFunction(()=>{const r=document.querySelector('#fleet-w1').getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight},null,{timeout:5000}).catch(()=>{});
   const box=await page.locator('#fleet-w1').boundingBox();assert.ok(box&&box.y<height&&box.y+box.height>0,'the card is on screen');
   assert.deepEqual(errors,[]);
   await context.close();

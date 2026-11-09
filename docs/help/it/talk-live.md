@@ -19,7 +19,7 @@ La barra ha **Silenzia** e **Fine**. Saluta, o di' che hai finito, e si chiude d
 
 ## Ripassa tutte le attività a voce
 
-Tocca **Parla** nella barra laterale (nel menu sul telefono) per ripassare a voce tutto ciò che ti aspetta. The Machine dice quante sono e le prende una alla volta: prima **Pronta**, poi **Da decidere**. Vede anche le altre attività, come quelle ancora **In preparazione**, e ti avvisa quando una è pronta.
+Tocca **Parla** nella barra laterale (nel menu sul telefono) per ripassare a voce tutto ciò che ti aspetta. The Machine dice quante sono e prende quelle in **Per te** una alla volta, prima la più urgente. Vede anche le altre attività, come quelle ancora **In preparazione**, e ti avvisa quando una è pronta.
 
 Parla ha una pagina sua: una conversazione dall'inizio alla fine, con in alto l'attività di cui si parla, la sua bozza e **Apri la chat**. Non ti sposta da una chat all'altra.
 

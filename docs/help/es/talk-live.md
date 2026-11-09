@@ -19,7 +19,7 @@ La barra tiene **Silenciar** y **Fin**. Despídete, o di que ya terminaste, y te
 
 ## Repasa todas tus tareas hablando
 
-Toca **Hablar** en la barra lateral (en el menú en un teléfono) para repasar con la voz todo lo que te espera. The Machine dice cuántas hay y las toma una por una: primero **Para revisar**, luego **Por decidir**. También ve tus otras tareas, como las que siguen **Preparando**, y te avisa cuando una está lista.
+Toca **Hablar** en la barra lateral (en el menú en un teléfono) para repasar con la voz todo lo que te espera. The Machine dice cuántas hay y toma las de **Para ti** una por una, la más urgente primero. También ve tus otras tareas, como las que siguen **Preparando**, y te avisa cuando una está lista.
 
 Hablar tiene su propia página: una conversación de principio a fin, con la tarea de la que habla arriba, su borrador y **Abrir el chat**. No te lleva de chat en chat.
 

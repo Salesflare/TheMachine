@@ -19,7 +19,7 @@ The bar has **Mute** and **End**. Say goodbye and it ends by itself. A conversat
 
 ## Talk through all your to-dos
 
-Tap **Talk** in the sidebar (in the menu on a phone). The Machine says how many to-dos wait and takes them one by one: **Ready** first, then **To decide**. It tells you when one still **Preparing** is ready.
+Tap **Talk** in the sidebar (in the menu on a phone). The Machine says how many to-dos wait and takes the ones in **For you** one by one, most urgent first. It tells you when one still **Preparing** is ready.
 
 Talk has its own page: the to-do it's on sits on top, with its draft and **Open the chat**.
 
