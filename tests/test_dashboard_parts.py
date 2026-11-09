@@ -306,6 +306,20 @@ class DashboardParts(unittest.TestCase):
             self.skipTest('no node')
         self.assertEqual(node_page(), dashboard_parts.assemble(ROOT))
 
+    def test_a_checkout_with_crlf_line_ends_assembles_the_same_page(self):
+        # Git on Windows checks out with CRLF: an include line still stands for its part, in Node as in Python
+        if not node():
+            self.skipTest('no node')
+        want = dashboard_parts.assemble(ROOT)
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            for source in dashboard_parts.files(ROOT):
+                target = tmp / source.relative_to(ROOT)
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes(source.read_bytes().replace(b'\n', b'\r\n'))
+            self.assertEqual(node_page(tmp / 'dashboard.html'), want)
+            self.assertEqual(dashboard_parts.assemble(tmp), want)
+
 
 if __name__ == '__main__':
     unittest.main()

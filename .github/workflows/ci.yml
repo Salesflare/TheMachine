@@ -115,8 +115,8 @@ jobs:
 
   portable:
     # macOS runs natively under launchd; Windows runs The Machine inside WSL2 (Linux), so this checks the portable core.
-    # Weekly and on demand only: these runners cost 2x (Windows) and 10x (macOS) a Linux minute.
-    if: github.event_name != 'pull_request'
+    # Weekly and on demand only: these runners cost 2x (Windows) and 10x (macOS) a Linux minute, so not on each push to main.
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
     strategy:
@@ -153,7 +153,8 @@ jobs:
         run: python -m pip install --quiet cryptography==46.0.3
       - name: Test Python, Node, OpenClaw SDK and dashboard
         env:
-          THE_MACHINE_TEST_TIMEOUT: ${{ runner.os == 'Windows' && '240' || '' }}
+          # Windows opens SQLite files slowly: the Fleet suites open a connection for each read (some 250 a test), so
+          # test_discovery.py takes ~10x its Linux time there. The default limit (600 s), not a tighter one.
           # Native Windows fixtures derive message keys repeatedly; avoid four competing crypto-heavy suites.
           THE_MACHINE_TEST_JOBS: ${{ runner.os == 'Windows' && '2' || '' }}
         run: python scripts/test.py
