@@ -19,7 +19,7 @@ Op het afgesproken moment leest je Machine wat hij nodig heeft, zoals je bericht
 
 Routines lezen alleen: je berichten, webpagina’s, GitHub en sites zoals X in de browser. Ze versturen, beantwoorden, posten of wijzigen niets.
 
-Eindigt de taak van een routine in een post of bericht, dan doet ze alles tot die stap en toont ze het concept, zoals **Zou op X posten:**. Na een echte run krijg je het als to-do om goed te keuren; een testrun toont het alleen.
+Eindigt de taak van een routine in een post of bericht, dan doet ze alles tot die stap en toont ze het concept, zoals **Zou op X posten:**. Na een echte run krijg je het als to-do om goed te keuren; een testrun toont het alleen. De naam zegt waarover het gaat en waar het naartoe gaat, de knop noemt de stap, zoals **Plaatsen**, en **Van je routine** eronder opent de routine.
 
 Elke run kent het vorige resultaat, zodat hij kan zeggen wat er sindsdien veranderde.
 

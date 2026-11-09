@@ -15,6 +15,8 @@ article h3{font-size:1.08rem;font-weight:650;letter-spacing:-.01em}
 .more{display:inline-block;margin:6px 0 0;padding:2px 0;min-height:0;border:0;background:none;box-shadow:none;color:var(--muted);font:inherit;font-size:.84rem;font-weight:600;cursor:pointer}.more:hover{color:var(--cream)}
 .card-foot{display:flex;flex-wrap:wrap;align-items:center;gap:4px 14px;margin-top:12px;font-size:.84rem;color:var(--muted)}
 .card-foot .source{margin:0;font-size:inherit}.card-foot .back-on{margin:0;padding:0;background:none;font-size:inherit}
+/* "From your routine X": X opens it on the Routines page (todos-cards.js routineSource) */
+.card-source .rt-link{color:var(--muted);font-weight:var(--fw-medium);text-decoration:underline;text-decoration-color:var(--border-strong);text-underline-offset:3px}.card-source .rt-link:hover{color:var(--text)}
 :is(.card-foot,.card-source) .read-original{margin:0;padding:0;border:0;color:var(--mint);font-size:inherit;font-weight:600}:is(.card-foot,.card-source) .read-original:hover{color:var(--cream)}
 .back-on{display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:4px 10px;border-radius:8px;background:#c7b5e214;color:var(--lavender);font-size:.85rem}
 .chip{--c:var(--muted);display:inline-flex;align-items:center;gap:7px;font-size:.76rem;font-weight:600;letter-spacing:.02em;color:var(--c);padding:3px 10px 3px 8px;border-radius:999px;background:color-mix(in srgb,var(--c) 12%,transparent);border:1px solid color-mix(in srgb,var(--c) 28%,transparent);white-space:nowrap}

@@ -21,7 +21,7 @@ Zu ihrer Zeit liest deine Machine, was sie braucht, etwa deine Nachrichten, Term
 
 Routinen lesen nur: deine Nachrichten, Webseiten, GitHub und Seiten wie X im Browser. Sie senden, antworten, posten oder ändern nichts.
 
-Endet die Aufgabe einer Routine mit einem Post oder einer Nachricht, erledigt sie alles bis zu diesem Schritt und zeigt den Entwurf, etwa **Würde auf X posten:**. Nach einem echten Lauf bekommst du ihn als To-do zum Freigeben; ein Testlauf zeigt ihn nur.
+Endet die Aufgabe einer Routine mit einem Post oder einer Nachricht, erledigt sie alles bis zu diesem Schritt und zeigt den Entwurf, etwa **Würde auf X posten:**. Nach einem echten Lauf bekommst du ihn als To-do zum Freigeben; ein Testlauf zeigt ihn nur. Sein Name sagt, worum es geht und wohin es geht, sein Button nennt den Schritt, etwa **Posten**, und **Von deiner Routine** darunter öffnet die Routine.
 
 Ein Lauf kann deinen eingeschalteten [Skills](skills.md) folgen, ausgewählt nach dem, was die Routine tut: Nur die passenden werden ganz gelesen. Das Ergebnis nennt sie unter **Verwendet:**. Ein Skill bringt eine Routine nie dazu, etwas zu senden oder zu ändern.
 

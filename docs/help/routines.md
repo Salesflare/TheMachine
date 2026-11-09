@@ -21,7 +21,7 @@ At its time your Machine reads what it needs, like your messages, meetings and t
 
 Routines only read: your messages, web pages, GitHub and sites like X in the browser. They don’t send, reply, post or change anything.
 
-When a routine’s job ends in a post or a message, it does everything up to that step and shows the draft, like **Would post on X:**. After a real run you get it as a to-do to approve; a test run only shows it.
+When a routine’s job ends in a post or a message, it does everything up to that step and shows the draft, like **Would post on X:**. After a real run you get it as a to-do to approve; a test run only shows it. Its name says what it is about and where it goes, its button names the step, like **Post it**, and **From your routine** under it opens the routine.
 
 A run can follow your [skills](skills.md) that are on, picked by what the routine does: only the ones that fit are read in full. The result names them under **Used:**. A skill never makes a routine send or change anything.
 

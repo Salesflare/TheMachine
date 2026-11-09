@@ -259,6 +259,9 @@ def source_text(row):
     if row['kind'] == 'owner.card':
         return f'to-do the owner added · {when}'
     m = row['metadata'] if isinstance(row['metadata'], dict) else json.loads(row['metadata'] or '{}')
+    if row['kind'] == 'routine.draft':  # a routine's draft (routines_app.py): the routine by its name, never "signal from"
+        name = ' '.join(str(m.get('sender_display') or '').split())
+        return ('your routine ' + name if name else 'your routine') + f' · {when}'
     if row['kind'] == 'intercom.conversation':  # the customer by name, as an email shows its sender
         m = {**m, 'sender_display': m.get('sender_display') or m.get('contact_name') or m.get('from_name')}
     who = (m.get('sender_display') or m.get('from') or m.get('chat_name') or m.get('app_name')

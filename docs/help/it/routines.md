@@ -19,7 +19,7 @@ All’orario stabilito, la tua Machine legge ciò che le serve, come i tuoi mess
 
 Le routine leggono soltanto: i tuoi messaggi, pagine web, GitHub e siti come X nel browser. Non inviano, rispondono, pubblicano né cambiano nulla.
 
-Quando il compito di una routine finisce con un post o un messaggio, fa tutto fino a quel passo e mostra la bozza, come **Pubblicherebbe su X:**. Dopo un’esecuzione vera la ricevi come attività da approvare; un’esecuzione di prova la mostra soltanto.
+Quando il compito di una routine finisce con un post o un messaggio, fa tutto fino a quel passo e mostra la bozza, come **Pubblicherebbe su X:**. Dopo un’esecuzione vera la ricevi come attività da approvare; un’esecuzione di prova la mostra soltanto. Il nome dice di cosa si tratta e dove va, il pulsante nomina il passo, come **Pubblicalo**, e **Dalla tua routine** sotto apre la routine.
 
 Ogni esecuzione conosce l’ultimo risultato, così può dire cosa è cambiato da allora.
 
