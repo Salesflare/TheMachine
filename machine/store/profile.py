@@ -120,6 +120,42 @@ QUALITY_TABLES = ('suggestions', 'decisions', 'note_kinds', 'action_jobs', 'draf
 QUALITY = stamps.Kept(4)
 
 
+def _quality_of(rows, days, since, end):
+    """quality() from _quality_rows read for this period or a longer one around it."""
+    cards = [c for c in rows[0] if since <= c['created_at'] < end and c['kind'] != 'assistant.test']
+    choices = collections.defaultdict(list)
+    for d in rows[1]:
+        if d['created_at'] >= since:
+            # A Change counts as what it was: other:style, other:continue, … (other: when not sorted).
+            choices[d['suggestion_id']].append(d['choice'] + (':' + (d['kind'] or '') if d['choice'] == 'other' else ''))
+    def outcome(c):
+        made = choices.get(c['id'], [])
+        if c['status'] == 'rejected':
+            return 'dismissed'
+        if {'accept', 'send'} & set(made) or c['status'] == 'completed':
+            return 'worth_it'
+        return 'open'
+    result = {'days': days, 'cards': len(cards), 'worth_it': 0, 'dismissed': 0, 'open': 0, 'do_it': 0, 'first_time': 0, 'finished': 0, 'by_source': {}}
+    for c in cards:
+        o = outcome(c)
+        result[o] += 1
+        source = result['by_source'].setdefault(todo_source(c['kind']), {'worth_it': 0, 'dismissed': 0, 'open': 0})
+        source[o] += 1
+        made = choices.get(c['id'], [])
+        if 'accept' in made:
+            result['do_it'] += 1
+            after = set(made[made.index('accept') + 1:])
+            # First try: no correction (style, a missing fact, or a Change not sorted yet).
+            result['first_time'] += not ({'other:', 'other:style', 'other:fact'} & after)
+            # Finished: no keep-going nudge and no Try again.
+            result['finished'] += not ({'other:continue', 'retry'} & after)
+    decided = result['worth_it'] + result['dismissed']
+    result['hit_rate'] = round(100 * result['worth_it'] / decided) if decided else None
+    result['first_time_rate'] = round(100 * result['first_time'] / result['do_it']) if result['do_it'] else None
+    result['finished_rate'] = round(100 * result['finished'] / result['do_it']) if result['do_it'] else None
+    return result
+
+
 class ProfileStore:
     """Store methods for the owner's profile, roles and organizations."""
 
@@ -586,39 +622,7 @@ class ProfileStore:
         return cards, decisions
 
     def _quality_of(self, rows, days, since, end):
-        """quality() from _quality_rows read for this period or a longer one around it."""
-        cards = [c for c in rows[0] if since <= c['created_at'] < end and c['kind'] != 'assistant.test']
-        choices = collections.defaultdict(list)
-        for d in rows[1]:
-            if d['created_at'] >= since:
-                # A Change counts as what it was: other:style, other:continue, … (other: when not sorted).
-                choices[d['suggestion_id']].append(d['choice'] + (':' + (d['kind'] or '') if d['choice'] == 'other' else ''))
-        def outcome(c):
-            made = choices.get(c['id'], [])
-            if c['status'] == 'rejected':
-                return 'dismissed'
-            if {'accept', 'send'} & set(made) or c['status'] == 'completed':
-                return 'worth_it'
-            return 'open'
-        result = {'days': days, 'cards': len(cards), 'worth_it': 0, 'dismissed': 0, 'open': 0, 'do_it': 0, 'first_time': 0, 'finished': 0, 'by_source': {}}
-        for c in cards:
-            o = outcome(c)
-            result[o] += 1
-            source = result['by_source'].setdefault(todo_source(c['kind']), {'worth_it': 0, 'dismissed': 0, 'open': 0})
-            source[o] += 1
-            made = choices.get(c['id'], [])
-            if 'accept' in made:
-                result['do_it'] += 1
-                after = set(made[made.index('accept') + 1:])
-                # First try: no correction (style, a missing fact, or a Change not sorted yet).
-                result['first_time'] += not ({'other:', 'other:style', 'other:fact'} & after)
-                # Finished: no keep-going nudge and no Try again.
-                result['finished'] += not ({'other:continue', 'retry'} & after)
-        decided = result['worth_it'] + result['dismissed']
-        result['hit_rate'] = round(100 * result['worth_it'] / decided) if decided else None
-        result['first_time_rate'] = round(100 * result['first_time'] / result['do_it']) if result['do_it'] else None
-        result['finished_rate'] = round(100 * result['finished'] / result['do_it']) if result['do_it'] else None
-        return result
+        return _quality_of(rows, days, since, end)
 
     def quality_report(self, days=30):
         """This period and the one before, for the dashboard and recap. Every status poll sends it: kept for the minute

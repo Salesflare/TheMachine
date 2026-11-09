@@ -9,6 +9,11 @@ from machine.faults import FAULT_STEPS
 from timeutil import now
 
 
+def faults_reported(db, rows):
+    for row in rows:
+        db.execute('UPDATE faults SET reported=? WHERE fingerprint=? AND day=?', (row['count'], row['fingerprint'], row['day']))
+
+
 class FaultsStore:
     """Store methods for The Machine's own errors."""
 
@@ -42,8 +47,7 @@ class FaultsStore:
 
     def faults_reported(self, rows):
         with self.connect() as db:
-            for row in rows:
-                db.execute('UPDATE faults SET reported=? WHERE fingerprint=? AND day=?', (row['count'], row['fingerprint'], row['day']))
+            faults_reported(db, rows)
 
     def settle_faults(self, version, quiet=dt.timedelta(days=1)):
         """A card about The Machine's own error that nobody acted on closes itself once the error stopped: not
