@@ -306,7 +306,7 @@ function cardActions(s,choices,smartButtons,unmerge,hint,smart){const skill=skil
  const answered=s.status==='prepared'&&(()=>{try{return JSON.parse(s.outcome||'{}').state==='answered'}catch{return false}})();
  const ask=askQuestion(s,smart,hint);
  const mine=ownerStep(s)&&!ask;
- const isPrimary=c=>c==='send'||(c==='complete'&&made&&!madeLink)||(c==='checkin'&&withTeammate(s))||(c==='retry'&&!ask&&!asked)||c==='answer'||(c==='complete'&&mine&&!s.machine_fix)||(c==='complete'&&!copy&&!withTeammate(s)&&(hint||(s.status==='prepared'&&!answered&&!ask&&!finalStep(s)&&!smart.some(a=>a.kind!=='open'))))||(c==='accept'&&(s.status==='pending'||answered)&&!hint&&(!mine||!!s.machine_fix));  // machine_fix: Do it runs its one fix
+ const isPrimary=c=>c==='send'||(c==='complete'&&made&&!madeLink)||(c==='checkin'&&withTeammate(s))||(c==='retry'&&!ask&&!asked)||c==='answer'||(c==='complete'&&mine&&!ownFix(s))||(c==='complete'&&!copy&&!withTeammate(s)&&(hint||(s.status==='prepared'&&!answered&&!ask&&!finalStep(s)&&!smart.some(a=>a.kind!=='open'))))||(c==='accept'&&(s.status==='pending'||answered)&&!hint&&(!mine||!!ownFix(s)));  // machine_fix: Do it runs its one fix
  const btn=([c,t],pre='',k=ID)=>c==='accept'&&s.status==='pending'&&s.skill_proposal?.update?html`<button${pre} class="${k(isPrimary(c)?'primary':'ghost','button')}" data-skill-update="${s.id}">${t}</button>`:c==='change'&&agentAsk(s)?html`<button${pre} class="${k('ghost','button')}" data-agent-ask="${s.id}">Ask for changes</button>`:c==='handoff'?html`<button${pre} class="${k('ghost','button')}" data-fleet-handoff="${s.id}">${t}</button>`:c==='takeback'?html`<button${pre} class="${k('ghost','button')}" data-handoff-take-back="${s.id}">${t}</button>`:c==='checkin'?html`<button${pre} class="${k('primary','button')}" data-handoff-checkin="${s.id}" title="Open the chat to check in">${t}</button>`:c.startsWith('agent:')?html`<button${pre} class="${k('ghost','button')}" data-agent-hand="${c.slice(6)}" data-card="${s.id}">${t}</button>`:html`<button${pre} class="${k(isPrimary(c)?'primary':c==='reject'?'quiet':'ghost','button')}" data-id="${s.id}" data-choice="${c}"${c==='change'?html` title="${s.status==='pending'?'Tell me how to do it instead':s.status==='prepared'&&smart.some(a=>DRAFT_KINDS.includes(a.kind))?'Tell me what to change in the draft, and I redo it':'Tell me what to change, and I redo it'}"`:''}>${t}</button>`;
  const all=[...choices,...(canHandoff(s)&&s.status!=='snoozed'&&!smart.some(a=>a.kind==='handoff')?[['handoff',s.fleet_handoff?.back?'Hand off to someone else':'Hand off']]:canReassign(s)?[['takeback','Take it back'],['handoff','Hand off to someone else']]:[]),...(canAgent(s)?agentTools().map(t=>['agent:'+t.id,window.t('Hand to {}',t.name)]):[]),...(agentAsk(s)&&!choices.some(([c])=>c==='change')?[['change','']]:[])];
  const head=all.filter(([c])=>isPrimary(c)),order=(mine&&s.status==='pending'?['accept','snooze','reject','change','handoff']:ask?['handoff','complete','retry','snooze','reject']:answered?['snooze','change','complete','reject','handoff']:SECONDARY[s.status])||['complete','snooze','change','reject','handoff'];
@@ -327,7 +327,7 @@ function cardActions(s,choices,smartButtons,unmerge,hint,smart){const skill=skil
  const draft=smart.some(a=>DRAFT_KINDS.includes(a.kind)),ready=s.status==='prepared'&&!answered&&!ask&&!mine&&!withTeammate(s);
  const doneShown=ready&&(!draft||made),doneTop=ready&&draft&&!made;  // with a draft, Mark done tops the … so the row stays one line
  const review=s.status==='prepared'||(s.status==='pending'&&!mine)||!!agentAsk(s);
- const shown=x=>(x[0]==='snooze'&&!made)||(x[0]==='change'&&review)||(x[0]==='complete'&&(doneShown||!!s.machine_fix));
+ const shown=x=>(x[0]==='snooze'&&!made)||(x[0]==='change'&&review)||(x[0]==='complete'&&(doneShown||!!ownFix(s)));
  const quiet=x=>x[0]==='change';
  const plain=others.filter(x=>!handing(x)&&x[0]!=='reject'&&x[0]!=='takeback');
  const items=html`${[...plain.filter(x=>x[0]==='complete'&&(doneTop||!shown(x))).map(x=>btn(x)),...leads.slice(1).map(mmPlain),...plain.filter(x=>!shown(x)&&!quiet(x)&&x[0]!=='complete').map(x=>btn(x)),sheet,repeat,unmerge,...others.filter(x=>x[0]==='reject').map(b=>html`<hr class="mm-sep">${btn(b)}`)].filter(Boolean)}`;
@@ -389,9 +389,10 @@ function reviewSend(label){const whole=label.replace(/^Send\b/,'Review and send'
 // A step only the owner can do (a visit, a pickup; the review's owner_step): Mark done leads, and Plan it is what The Machine
 // can do around it (a calendar slot, directions, a message if plans change). Never Do it. Same rule as controls() in assistant.py.
 const ownerStep=s=>!!s.owner_step&&!closed(s)&&s.status!=='snoozed';
-// One The Machine made about itself (origin machine: what an update set aside or kept) has nothing to plan: Done and Snooze.
-// One from the computer's logs (machine_log) keeps Not needed, and with a safe fix (machine_fix) also offers Do it, which runs only that fix.
-const ownerStepChoices=(choices,s)=>[...(s?.origin==='machine'&&s.machine_fix?[['accept','Do it']]:[]),['complete','Mark done'],...choices.filter(([c])=>c!=='complete'&&(s?.origin!=='machine'||c==='snooze'||(c==='reject'&&s.machine_log))).map(([c,t])=>c==='accept'?[c,'Plan it']:[c,t])];
+// The Machine's own (origin machine): Done, Snooze. From its logs (machine_log): also Not needed, and Do it for a safe fix
+// (machine_fix). A set-aside fix (parked_redo): Redo it.
+const redoLead=s=>s?.parked_redo=='redo'&&s.preparation_status!='blocked',ownFix=s=>s?.machine_fix||redoLead(s);
+const ownerStepChoices=(choices,s)=>[...(s?.origin==='machine'&&s.machine_fix?[['accept','Do it']]:redoLead(s)?[['accept','Redo it']]:[]),['complete','Mark done'],...choices.filter(([c])=>c!=='complete'&&(s?.origin!=='machine'||c==='snooze'||(c==='reject'&&s.machine_log)||(c==='retry'&&s.parked_redo))).map(([c,t])=>c==='accept'?[c,'Plan it']:[c,t])];
 // A to-do's project (graph.set_card_project): a chip to its page, and a small picker to change it or take it off.
 // Set by hand it stays; otherwise the review or the project its thread or people are on chose it.
 // The chip opens the project's page; Project under Details opens the picker.

@@ -12,7 +12,9 @@ Le journal de votre Machine : exécutions échouées, transferts refusés, messa
 
 ## Correctifs mis de côté par une mise à jour
 
-Quand The Machine se met à jour et qu’un de ses propres correctifs ne convient plus à la nouvelle version, la mise à jour met ce correctif de côté et continue, pour que votre Machine ne reste jamais sur une ancienne version. Une tâche, **Refaire un correctif mis de côté par la mise à jour**, nomme le correctif. Demandez à le refaire sur la nouvelle version, ou fermez la tâche.
+Quand The Machine se met à jour et qu’un de ses propres correctifs ne convient plus à la nouvelle version, la mise à jour met ce correctif de côté et continue, pour que votre Machine ne reste jamais sur une ancienne version. Une tâche, **Refaire un correctif mis de côté par la mise à jour**, nomme le correctif.
+
+Avec **Refaire**, votre Machine le refait sur la nouvelle version, comme tout correctif à elle : vous voyez la modification et appuyez sur **Merge fix**. Une fois fusionné, l’ancienne copie disparaît. Ou fermez la tâche.
 
 ## Vos propres fichiers gardés par une mise à jour
 

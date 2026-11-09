@@ -21,8 +21,10 @@ from machine.faults import restart_self
 from machine.sources.connectors import docs_transport, docs_write_transport, intercom_transport
 from machine.store.decisions import note_first, NOTHING_SENT, settle_sent
 from machine.store.first_look import VERIFIED_KINDS
+from machine.store.machine_cards import parked_redo
 from machine.text import encoded
 import next_actions
+import parked_fixes
 import preparation_state
 from sources import credential, gog_read, mailbox_name
 from timeutil import now
@@ -252,6 +254,8 @@ class ActionRunsApp:
         result=merge.complete(action,receipt,operation)
         with self.store.connect() as db:
             db.execute("UPDATE merge_effects SET status='done',receipt=?,updated_at=? WHERE action_id=? AND operation=?",(encoded({**receipt,**result}),now(),job['id'],operation))
+            redone=parked_redo(db,job['suggestion_id']) if operation=='merge' else None
+        if redone:parked_fixes.drop(next_actions.app_dir(self.config),redone['commit'])  # its redo is in: the set-aside fix goes
         # Both the Git outcome and push bookkeeping are durable BEFORE restart is requested.
         result['restarted']=bool(result.get('activation_ready') and merge.restart and merge.restart())
         notes=[]

@@ -38,10 +38,12 @@ from machine.prompts.profile import VOICE_CHARS, VOICE_LINES, VOICE_PRECISE
 from machine.prompts.review import FACT_KIND_HINT, FACTS_YOU, source_notes
 from machine.sources.connectors import calendar_prompt, doc_write_prompt, meeting_notes_prompt, slack_prompt
 from machine.store.decisions import owner_area_open, pause_idle_steps
+from machine.store.machine_cards import parked_redo
 from machine.text import encoded
 import model_budget
 from models import background_model
 import next_actions
+import parked_fixes
 import preparation_state
 import recurring
 import routine_changes
@@ -258,6 +260,7 @@ If what you are about to submit differs from what they reviewed (another amount,
     opening += '\n' + i18n.prompt_rule()
     if job.get('owner_step') and not job.get('finish'):
         opening+=OWNER_STEP_PREPARATION
+    opening+=job.get('redo') or ''
     if job.get('finish'):
         opening+=github_route.finish_rule(job['finish'])
         prior=job['finish'].get('finish_result')
@@ -460,6 +463,10 @@ class PreparationApp:
             with self.store.connect() as db:
                 card=db.execute('SELECT early,owner_step FROM suggestions WHERE id=?',(job['suggestion_id'],)).fetchone()
                 job['ahead'],job['owner_step']=bool(card['early']),bool(card['owner_step'])
+                redo=None if job.get('finish') else parked_redo(db,job['suggestion_id'])
+            if redo:  # Redo it on a fix an update set aside: the usual self-fix run from that commit, not an owner-only step
+                job['owner_step']=False
+                job['redo']=parked_fixes.redo_prompt(redo,next_actions.app_dir(self.config),next_actions.fix_dir(self.config),job['job_id'])
             if job['ahead']:request['background']=True  # nobody asked yet: background work (background_model)
             else:request.update(self.chat_turn_args(job['suggestion_id']))  # the model and thinking picked for this chat (chat_model.py)
             # A chat message (dashboard chat, decision chat-…) in a session that already has the card's context: a short

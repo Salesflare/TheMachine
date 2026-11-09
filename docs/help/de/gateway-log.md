@@ -12,7 +12,9 @@ Das eigene Log deiner Machine: fehlgeschlagene Durchläufe, abgelehnte Übergabe
 
 ## Korrekturen, die eine Aktualisierung beiseitegelegt hat
 
-Wenn The Machine sich aktualisiert und eine ihrer eigenen Korrekturen nicht mehr zur neuen Version passt, legt die Aktualisierung diese Korrektur beiseite und macht weiter, damit deine Machine nie auf einer alten Version bleibt. Eine Aufgabe, **Eine beiseitegelegte Korrektur neu machen**, nennt die Korrektur. Bitte darum, sie auf der neuen Version neu zu machen, oder schließ die Aufgabe.
+Wenn The Machine sich aktualisiert und eine ihrer eigenen Korrekturen nicht mehr zur neuen Version passt, legt die Aktualisierung diese Korrektur beiseite und macht weiter, damit deine Machine nie auf einer alten Version bleibt. Eine Aufgabe, **Eine beiseitegelegte Korrektur neu machen**, nennt die Korrektur.
+
+Mit **Neu machen** macht deine Machine sie auf der neuen Version neu, wie jede eigene Korrektur: Du siehst die Änderung und tippst auf **Merge fix**. Sobald sie gemergt ist, fällt die alte Kopie weg. Oder schließ die Aufgabe.
 
 ## Deine eigenen Dateien, die eine Aktualisierung behalten hat
 

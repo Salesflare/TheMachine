@@ -12,7 +12,9 @@ El propio registro de tu Machine: ejecuciones fallidas, traspasos rechazados, me
 
 ## Correcciones que una actualización dejó a un lado
 
-Cuando The Machine se actualiza y una de sus propias correcciones ya no encaja con la nueva versión, la actualización deja esa corrección a un lado y sigue, para que tu Machine nunca se quede en una versión antigua. Una tarea, **Rehacer una corrección que la actualización dejó a un lado**, nombra la corrección. Pide que la rehaga en la nueva versión, o cierra la tarea.
+Cuando The Machine se actualiza y una de sus propias correcciones ya no encaja con la nueva versión, la actualización deja esa corrección a un lado y sigue, para que tu Machine nunca se quede en una versión antigua. Una tarea, **Rehacer una corrección que la actualización dejó a un lado**, nombra la corrección.
+
+Con **Rehacer**, tu Machine la rehace en la nueva versión, como cualquier corrección suya: ves el cambio y tocas **Merge fix**. Una vez fusionada, la copia antigua se descarta. O cierra la tarea.
 
 ## Tus propios archivos que una actualización conservó
 

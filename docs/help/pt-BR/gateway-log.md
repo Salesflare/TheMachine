@@ -12,7 +12,9 @@ O próprio log da sua Machine: execuções que falharam, repasses recusados, men
 
 ## Correções que uma atualização deixou de lado
 
-Quando a The Machine se atualiza e uma das suas próprias correções não serve mais na nova versão, a atualização deixa essa correção de lado e segue, para que sua Machine nunca fique numa versão antiga. Uma tarefa, **Refazer uma correção que a atualização deixou de lado**, nomeia a correção. Peça para refazê-la na nova versão, ou feche a tarefa.
+Quando a The Machine se atualiza e uma das suas próprias correções não serve mais na nova versão, a atualização deixa essa correção de lado e segue, para que sua Machine nunca fique numa versão antiga. Uma tarefa, **Refazer uma correção que a atualização deixou de lado**, nomeia a correção.
+
+Com **Refazer**, sua Machine a refaz na nova versão, como qualquer correção dela: você vê a mudança e toca em **Merge fix**. Depois de mesclada, a cópia antiga é descartada. Ou feche a tarefa.
 
 ## Seus próprios arquivos que uma atualização manteve
 
