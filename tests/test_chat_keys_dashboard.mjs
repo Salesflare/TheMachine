@@ -40,8 +40,10 @@ try{
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
   const doIt=()=>page.locator('.chat-main button.primary',{hasText:'Do it'});
   const shot=async n=>{if(process.env.SHOT_DIR)await page.screenshot({path:`${process.env.SHOT_DIR}/${n}-${tag}.png`})};
-  // Ready once the chat has loaded: the card's Do it under the box, or Stop while a reply runs
-  const open=async id=>{await page.goto('http://127.0.0.1:'+server.address().port+'/#chat='+id);await page.locator('#chat-input').waitFor();
+  // Ready once the chat has loaded: the card's Do it under the box, or Stop while a reply runs. The live chat, not the
+  // one this device kept from the combo before (shown while the live one loads, with that combo's message still running)
+  const live=()=>page.waitForResponse(r=>r.url().endsWith('/api/action')&&/"card_chat"/.test(r.request().postData()||''));
+  const open=async id=>{const loaded=live();await page.goto('http://127.0.0.1:'+server.address().port+'/#chat='+id);await loaded;await page.locator('#chat-input').waitFor();
    await (id===BUSY?page.locator('[data-chat-stop]'):doIt()).waitFor({state:'visible'})};
   const bubbles=()=>page.locator('#chat-log .chat-msg.you .bubble').allTextContents();
   // One key combo in the card chat: the text goes out as a message, shows as a bubble, and the box is empty
