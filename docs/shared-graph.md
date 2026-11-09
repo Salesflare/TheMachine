@@ -65,6 +65,10 @@ best effort: the owner reviews the preview and corrects mistakes with Keep priva
 - Every thread on the dashboard has a small label, **Team** or **Only you**. One tap changes it. In chat the owner can say
   "keep the Globex thread private" and the assistant sets the same thing. A review never sets a hand choice.
 - A thread no review has judged yet is **Only you** until one does. **Only you** by hand shares nothing about that thread.
+- **Only you** by hand covers the whole conversation, also what arrives in it later: a mail thread, a Slack thread, a
+  WhatsApp or Telegram chat, a LinkedIn or X conversation. A Slack direct message and a Teams one-on-one chat or channel
+  thread are one conversation (`conversation_of`), though each message there is a thread of its own. **Team** by hand
+  on one of them ends it for all of it.
 - A new client thread waits an hour (`HOLD`) before it goes, so the owner can still change their mind.
 - **Unshare** on a shared thread takes it back ([Unsharing](#unsharing)). The copy says honestly that someone may have
   read it already.
@@ -96,7 +100,8 @@ Work records are shared by default:
   team is closest. It travels only with a record that is shared anyway, and so do its own fields and tags
   (`crm_fields.py`). For a record several members share, the closest one's field values win and the tags add up.
 - **Keep private** on a person, organization or project shares nothing about it: no record, no timeline, none of their
-  threads. It needs nobody's OK.
+  threads. It needs nobody's OK. Someone kept private on any message of a conversation keeps all of it with the owner,
+  also the replies they are no longer on. A reply that went before this rule is taken back at the next share.
 - **Held back:** colleagues (people at the Fleet's own domains) are never shared as records, and neither is a person
   whose reviewed threads are all sensitive.
 
@@ -221,7 +226,9 @@ rows deletes all of it. Taking back works three ways:
 - **Unshare a thread** (by hand, a rule, Keep private on a record, or a later review that makes it sensitive): the
   owner's Machine sends an empty `mail` blob for its tag and one per file, sealed and signed per recipient, plus a delta
   whose thread list no longer has it. Each receiver deletes the thread, its files and the copies it keeps to pass on. The
-  records' timelines are rebuilt without its lines.
+  records' timelines are rebuilt without its lines. This also goes while sharing is paused or this Machine's sharing
+  is off (`graph_take_back`): the empty blobs, and a delta that only takes away from the records as they were sent.
+  Nothing new goes in those states.
 - **A Machine that was away**: the mailbox keeps blobs 30 days, and each Machine sends a snapshot of what it shares daily.
   A Machine back after longer gets the newest list and drops every thread not on it. A copy passed on late by a teammate
   is dropped when it is older than the publisher's newest list and not on it.

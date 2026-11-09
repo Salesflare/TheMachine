@@ -58,14 +58,15 @@ def hash_index(db, keys, keyed):
     return index
 
 
-def renewed(scope, db, memo, hold):
+def renewed(scope, db, memo, hold, private=None):
     """A copy of this shared_graph.Scope for another request on its connection: what depends on the time (the hold on threads the
     review just called) and the Slack conversations (from the sync checkpoints, which change all the time) read again,
     and the parts worked out on demand left to work out again. memo: {thread: automated} shared by the scopes of
-    one read-only request (automated_only)."""
+    one read-only request (automated_only); private: {unit: its answers}, the same for private_among."""
     out = copy.copy(scope)
     out._db, out._automated, out._team_items, out._private_events = db, None, None, None
     out._automated_memo = memo
+    out._private_found, out._private_memo = {}, private  # read from the messages, which change all the time
     out.hold = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(seconds=hold)).isoformat(timespec='seconds')
     out.fresh = {r[0] for r in db.execute('SELECT thread FROM share_threads WHERE hand IS NULL AND sorted_at>?', (out.hold,))}
     out._slack_load(db)

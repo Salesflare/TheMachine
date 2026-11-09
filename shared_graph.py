@@ -312,6 +312,37 @@ def thread_of(kind, metadata, event_id):
     return key or f'ev:{event_id}'
 
 
+def conversation_of(kind, metadata):
+    """The ongoing conversation a message is part of, where that is more than its thread: a Slack direct message (each
+    of its messages is its own thread) and a Teams one-on-one chat or channel thread (a Teams message has no thread
+    key). None for the rest: a mail thread or a WhatsApp chat is one thread already. Only ever read to keep more with
+    the owner (Only you on it, or someone kept private in it), never to share more."""
+    metadata = metadata or {}
+    if kind == 'slack.message' and metadata.get('conversation_type') == 'dm' and metadata.get('channel_id'):
+        return 'sl:' + str(metadata['channel_id'])
+    if kind == 'teams.message' and metadata.get('chat_id') and metadata.get('chat_kind') in ('oneOnOne', 'channel'):
+        return 'teams:' + str(metadata['chat_id'])
+    return None
+
+
+def unit_of(kind, metadata, event_id):
+    """What Only you and Keep private hold for as a whole: the conversation, else the thread."""
+    return conversation_of(kind, metadata) or thread_of(kind, metadata, event_id)
+
+
+def _kept_conversations(db):
+    """The conversations (conversation_of) the owner chose Only you in: what arrives in them afterwards stays too."""
+    found = set()
+    for kind, key in db.execute(
+            "SELECT DISTINCT e.kind, CASE e.kind WHEN 'slack.message' THEN json_extract(e.metadata,'$.channel_id') "
+            "ELSE json_extract(e.metadata,'$.chat_id') END FROM share_threads s JOIN events e ON e.id=s.event_id "
+            "WHERE s.hand='private' AND e.deleted=0 AND ((e.kind='slack.message' AND json_extract(e.metadata,'$.conversation_type')='dm') "
+            "OR (e.kind='teams.message' AND json_extract(e.metadata,'$.chat_kind') IN ('oneOnOne','channel')))"):
+        if key:
+            found.add(('sl:' if kind == 'slack.message' else 'teams:') + str(key))
+    return found
+
+
 def judge(db, team, at=None):
     """The review's per-thread call (finish_analysis team): [{event_id, share, line, group, suggest}]. share: client,
     sensitive, internal, personal, other or unsure, judged by meaning; line: one short line of what happened, for the
@@ -517,6 +548,8 @@ class Scope:
         self.board_items = set()  # meetings, Intercom and chats of a board shared by name: shared by being on it
         self._team_items, self._private_events = None, None
         self.calls = {r[0]: (r[1], r[2]) for r in db.execute('SELECT thread,verdict,hand FROM share_threads')}  # the review's and the owner's
+        self.kept_conversations = _kept_conversations(db)  # Only you by hand on a direct message or chat: for all of it
+        self._private_found, self._private_memo = {}, None  # private_units: shared by this scope's copies (granted)
         self.hold = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(seconds=HOLD)).isoformat(timespec='seconds')
         self.fresh = {r[0] for r in db.execute('SELECT thread FROM share_threads WHERE hand IS NULL AND sorted_at>?', (self.hold,))}
         self.private_ids = set()
@@ -612,6 +645,108 @@ class Scope:
             self._private_events = {r[0] for r in self._db.execute('SELECT event_id FROM graph_events WHERE probable=0 AND node_id IN (SELECT value FROM json_each(?))',
                                                                     (json.dumps(people),))} if people else set()
         return self._private_events
+
+    def hand(self, thread, kind, metadata):
+        """The owner's choice for a thread: its own, else Only you when they chose that for the conversation it is in
+        (kept_conversations), so a message that arrives there later stays with them too."""
+        hand = (self.calls.get(thread) or (None, None))[1]
+        if hand is None and self.kept_conversations and conversation_of(kind, metadata) in self.kept_conversations:
+            return 'private'
+        return hand
+
+    def _private_marks(self, rows, found):
+        """Adds to found (by address, by an item's people, by link) the units (unit_of) of these messages that have
+        someone kept private on them, read the way visibility reads one message."""
+        plain, items, linked = found
+        tied = self.private_events
+        for e in rows:
+            metadata = json.loads(e['metadata'] or '{}')
+            unit = unit_of(e['kind'], metadata, e['id'])
+            if e['id'] in tied:
+                linked.add(unit)
+            if unit in plain:
+                continue
+            people = [*addresses(metadata), *(self.slack_people(metadata) if e['kind'] == 'slack.message' else ())]
+            if any(self.private_address(a) for a in people):
+                plain.add(unit)
+                items.add(unit)
+            elif unit not in items and e['kind'] in ITEM_KINDS and any(self.private_address(a) for a in item_people(metadata)):
+                items.add(unit)
+
+    @property
+    def private_units(self):
+        """(by address, by an item's people, by link): the threads and conversations (unit_of) with someone kept private
+        on any of their messages. Keep private is for the whole thread: a later reply without them stays with the
+        owner too. One pass over the accounts' messages per scope, not one per message; none when nobody is private."""
+        found = self._private_found.get('units')
+        if found is None:
+            found = (set(), set(), set())
+            if self.accounts and (self.private_ids or self.private_events):
+                self._private_marks(self._db.execute('SELECT id,kind,metadata FROM events WHERE deleted=0 AND account_id IN (SELECT value FROM json_each(?))',
+                                                     (json.dumps(sorted(self.accounts)),)), found)
+            self._private_found['units'] = found
+        return found
+
+    def private_among(self, units, accounts=()):
+        """private_units for just these units, from their own messages (a unit's answer depends only on those), so a
+        page reads its own threads and not every message. accounts: where the chats and channels among them are. The
+        scope then answers for these units only, so it is for a scope made for one call (thread_labels, held_back)."""
+        memo = self._private_memo
+        asked = {u for u in units if u}
+        wanted = asked - set(memo) if memo is not None else asked
+        found = (set(), set(), set())
+        if wanted and self.accounts and (self.private_ids or self.private_events):
+            self._private_marks(self._unit_rows(wanted, accounts), found)
+        if memo is not None:
+            memo.update((u, tuple(u in part for part in found)) for u in wanted)
+            found = tuple({u for u in asked if (memo.get(u) or (0, 0, 0))[i]} for i in range(3))
+        self._private_found['units'] = found
+        return found
+
+    def _unit_rows(self, wanted, accounts=()):
+        """Every message whose unit can be one of these, by the plain keys graph.thread_key and conversation_of read (a
+        superset: _private_marks keeps the exact ones). Mail and Intercom by their own index; a recurring meeting by the
+        calendar's; a chat or channel by a pass over the accounts it is in only. A message that is its own thread
+        (ev:) is read by visibility itself."""
+        rest = collections.defaultdict(set)
+        for unit in wanted:
+            prefix, _, value = unit.partition(':')
+            if unit.startswith(('linkedin.message:', 'x.dm:')):
+                prefix, value = 'conversation', unit.split(':', 1)[1]
+            rest[{'gm': 'thread', 'sf': 'thread', 'ic': 'conversation', 'xc': 'conversation', 'sl': 'channel', 'wa': 'chat', 'tg': 'chat',
+                  'teams': 'chat', 'cal': 'meeting'}.get(prefix, prefix)].add(value.split(':')[0] if prefix == 'sl' else value)
+        # a key is asked as text and as a number, as json_extract gives either
+        both = lambda name: json.dumps(sorted({v for x in rest.get(name, ()) for v in ((x, int(x)) if x.isdigit() else (x,))}, key=str))
+        mine = json.dumps(sorted(self.accounts))
+        ids = set()
+        if rest.get('thread'):
+            ids |= {r[0] for r in self._db.execute("SELECT id FROM events WHERE json_extract(metadata,'$.thread_id') IN (SELECT value FROM json_each(?)) "
+                                                   "AND +kind IN ('gmail.message','salesflare.email')", (both('thread'),))}
+        if rest.get('conversation'):
+            ids |= {r[0] for r in self._db.execute("SELECT id FROM events WHERE json_extract(metadata,'$.conversation_id') IN (SELECT value FROM json_each(?))",
+                                                   (both('conversation'),))}
+        if rest.get('meeting'):
+            ids |= {r[0] for r in self._db.execute("SELECT id FROM events WHERE kind='calendar.event' AND json_extract(metadata,'$.recurring_event_id') "
+                                                   'IN (SELECT value FROM json_each(?))', (both('meeting'),))}
+        if rest.get('channel') or rest.get('chat'):
+            where = json.dumps(sorted(set(accounts) & self.accounts or self.accounts))
+            ids |= {r[0] for r in self._db.execute(
+                "SELECT id FROM events WHERE account_id IN (SELECT value FROM json_each(?)) AND ((kind='slack.message' AND "
+                "json_extract(metadata,'$.channel_id') IN (SELECT value FROM json_each(?))) OR (kind IN ('whatsapp.message','telegram.message','teams.message') "
+                "AND json_extract(metadata,'$.chat_id') IN (SELECT value FROM json_each(?))))", (where, both('channel'), both('chat')))}
+        if not ids:
+            return []
+        return self._db.execute('SELECT id,kind,metadata FROM events WHERE deleted=0 AND account_id IN (SELECT value FROM json_each(?)) '
+                                'AND id IN (SELECT value FROM json_each(?))', (mine, json.dumps(sorted(ids)))).fetchall()
+
+    def private_on(self, unit, item=False):
+        """Whether someone kept private is on any message of this thread or conversation (item: read as a board's
+        meeting or chat, with its organizer, invitees, host and contact)."""
+        return unit in self.private_units[1 if item else 0]
+
+    def private_linked(self, unit):
+        """Whether a message of this thread or conversation is linked to someone of the owner's own life."""
+        return unit in self.private_units[2]
 
     @property
     def automated(self):
@@ -731,23 +866,26 @@ def visibility(db, scope, event):
     if slack:
         people = sorted(set(people) | set(scope.slack_people(metadata)))  # a Slack message carries member ids, not addresses
     thread = thread_of(event['kind'], metadata, event['id'])
-    verdict, hand = scope.calls.get(thread, (None, None))
+    unit = conversation_of(event['kind'], metadata) or thread
+    verdict, hand = scope.calls.get(thread, (None, None))[0], scope.hand(thread, event['kind'], metadata)
+    # Keep private is for the whole thread or conversation: with them on any of its messages, a later one without them stays too
+    kept_out = lambda: any(scope.private_address(a) for a in people) or scope.private_on(unit, item)
     internal = bool(people) and not any(outside(a, scope.internal) and a not in scope.mine for a in people)
     if item:
         internal = internal and any(a not in scope.mine for a in people)  # notes with only their host on them are not colleagues only
     if slack and not scope.slack_shared(metadata):
         internal = True  # the company's own Slack: only colleagues are on it, whatever the review said
-    if thread in scope.hand_threads and verdict != 'personal' and not internal and not any(scope.private_address(a) for a in people):
+    if thread in scope.hand_threads and verdict != 'personal' and not internal and not kept_out():
         return 'team'  # shared by hand with chosen teammates (only in their scope, Scope.granted)
     if event['id'] in scope.hidden_events:
         return 'private'  # a message of an Only-you project or board, or one shared with others by name
-    if any(scope.private_address(a) for a in people):
+    if kept_out():
         return 'private'
     if thread in scope.hidden_threads:
         return 'private'  # part of an Only you board or project
     if verdict == 'personal':
         return 'personal'  # the owner's own life: never, not even by hand, not even that it exists
-    if item and event['id'] in scope.private_events:
+    if item and (event['id'] in scope.private_events or scope.private_linked(unit)):
         return 'private'  # with someone of the owner's own life (Family, Friends, marked Personal)
     if internal:
         return 'internal'
@@ -1012,6 +1150,40 @@ def collect(db, scope, key, secret, today=None, held=None, kept=()):
     return records, out_threads, stats, files
 
 
+SHRINKS = ('timeline', 'threads', 'people')  # what a record lists of the threads it came from
+SOURCED = ('why', 'next', 'org')            # what a record says from one source, or about someone else
+
+
+def shrunk(sent, had, current):
+    """What is left of the records the team has, for a take-back (graph_take_back): (hashes {rid: hash} of what the
+    team has after it, the records that changed, the ids of those that are gone). sent: {rid: record} as they went;
+    current: as they would go now; had: {rid: hash} of what went. A record that would no longer go is gone. One that
+    would is what went, less the lines, threads and people that are no longer on it, and without a reason, next step or
+    organization that is no longer the same: never what it would be now, so nothing new is on it. sent None (this
+    Machine's copies don't add up): only the records that are gone are taken back, the rest stays as it is."""
+    digest_of = lambda r: hashlib.sha256(canon(r)).hexdigest()
+    if sent is None:
+        removed = sorted(rid for rid in had if rid not in current)
+        return {rid: h for rid, h in had.items() if rid in current}, [], removed
+    left, changed, removed = {}, [], []
+    for rid, was in sent.items():
+        would = current.get(rid)
+        if would is None or would.get('t') != was.get('t'):
+            removed.append(rid)
+            continue
+        after = dict(was)
+        for field in SHRINKS:
+            if isinstance(was.get(field), list):
+                after[field] = [x for x in was[field] if x in (would.get(field) or [])]
+        for field in SOURCED:
+            if was.get(field) is not None and was.get(field) != would.get(field):
+                after[field] = None
+        if after != was:
+            changed.append(after)
+        left[rid] = digest_of(after)
+    return left, changed, sorted(removed)
+
+
 def unique_lines(found):
     """Timeline lines with each fact once, the newest kept (found: newest first)."""
     seen, out = set(), []
@@ -1198,7 +1370,7 @@ def threads_by_view(db, scope):
         if view is None:
             continue
         thread = thread_of(e['kind'], e['metadata'], e['id'])
-        out[thread] = (view, e, hands.get(thread))
+        out[thread] = (view, e, hands.get(thread) or scope.hand(thread, e['kind'], e['metadata']))
     return out
 
 
@@ -1504,11 +1676,16 @@ class SharedGraph:
                 self.set_meta('graph_want:' + group['id'], None)
             return
         if self.graph_paused(group, trusted, say=True):
-            return  # an admin paused sharing for the whole Fleet: nothing new goes, from any Machine
+            # an admin paused sharing for the whole Fleet: nothing new goes, from any Machine; what its owner took
+            # back since still leaves the team's Machines
+            self.graph_take_back(group, me, found)
+            return
         self._graph_ask_round(group, me, found)
         if self.graph_off(group, trusted) == 'off':
             self.set_meta('graph_off_ok:' + group['id'], (self.meta('graph_off:' + group['id']) or {}).get('at'))
-            # an admin agreed: nothing new goes; what was shared before stays with the Fleet
+            # an admin agreed: nothing new goes; what was shared before stays with the Fleet, but for what its owner
+            # took back since
+            self.graph_take_back(group, me, found)
         else:
             if set(found) - {me['member_id']} and not self._started(group['id']):
                 self._start_notice(group)
@@ -2219,6 +2396,109 @@ class SharedGraph:
         stats['waiting'] = sum(1 for t in threads if t not in sent)
         self.set_meta('graph_week:' + fleet, {**stats, 'at': now()})
 
+    def graph_take_back(self, group, me, found):
+        """The take-back half of graph_publish, for while this Machine's sharing is off (an admin agreed) or the Fleet's
+        is paused: what went before and is no longer shared (Only you by hand, someone kept private, a board back to
+        Only you) still leaves the team's Machines. A thread as an empty blob (_unshare), on the take-back budget; the
+        records as a delta that can only shrink (shrunk): records that are gone, and timeline lines, threads and
+        people that are, taken out of what the team already has. Nothing new ever goes this way: no thread, file or
+        record, no new line on a record, to nobody who didn't have it. Nothing at all when nothing went before."""
+        fleet = group['id']
+        to = sorted(set(found) - {me['member_id']})
+        with self.connect() as db:
+            ensure(db)
+            before = {(r['kind'], r['key']): r['hash'] for r in db.execute('SELECT kind,key,hash FROM share_out WHERE fleet=?', (fleet,))}
+        keys = self.graph_keys(fleet)
+        if not before or not to or not keys:
+            return
+        state = self.meta('graph_out:' + fleet, {}) or {}
+        kept = self.meta('graph_chains:' + fleet, {}) or {}
+        kv = state.get('kv') if state.get('kv') in keys else self.graph_key(fleet)[0]
+        # hashed as when it went (that key first), so what is compared is the same record
+        order = [keys[kv]['key'], *[k['key'] for kv_, k in sorted(keys.items(), key=lambda x: x[1]['at'], reverse=True) if kv_ != kv][:3]]
+        secret = self.graph_secret()
+        with self.connect() as db:
+            scope = Scope(db, self.graph_accounts(fleet), self.internal(fleet), self.my_emails(), self._personal_people(db))
+            went = {k for (kind, k) in before if kind == 'thread'}
+            held = set()
+            records, threads, _, _ = collect(db, scope, order, secret, held=held, kept=went)
+            records.update(fleet_learnings.records(db, fleet, lambda local: keyed(secret, 'record|' + local)))
+            by_grant = collections.defaultdict(list)
+            granted = grants(db, fleet)
+            for m in to:
+                by_grant[granted.get(m)].append(m)
+            by_grant.pop(None, None)
+            chains = {}
+            for grant, members in by_grant.items():
+                c_records, c_threads, _, _ = collect(db, scope.granted(*grant), order, secret, kept=went)
+                chains[keyed(secret, 'chain|' + fleet + '|' + ','.join(members))] = (c_records, c_threads)
+            sent = {None: self._sent_records(db, fleet, me['member_id'], None, state.get('last')),
+                    **{chain: self._sent_records(db, fleet, me['member_id'], chain, st.get('last')) for chain, st in kept.items()}}
+        held = {tag for tag in held if ('thread', tag) in before and tag not in threads}
+        shared = set(threads) | {tag for _, c_threads in chains.values() for tag in c_threads}
+        gone = self._budget(gone=True)
+        try:
+            for tag in [k for (kind, k) in before if kind == 'thread' and k not in shared and k not in held]:
+                if gone <= 0:
+                    break
+                gone -= self._unshare(group, me, to, tag, before)
+        except Exception as error:  # noqa: BLE001 - the Network's own limit, or away: the rest next round
+            LOG.info('shared graph take-backs paused fleet=%s error=%s', fleet, type(error).__name__)
+            return
+        if self._budget() <= 0:
+            return
+        hashed = lambda rows: {rid: hashlib.sha256(canon(r)).hexdigest() for rid, r in rows.items()}
+        if state.get('to') and state.get('last'):
+            had = {k: h for (kind, k), h in before.items() if kind == 'record'}
+            left, changed, removed = shrunk(sent[None], had, records)
+            listed = sorted(set(state.get('threads') or []) & (set(threads) | held))
+            if changed or removed or listed != sorted(state.get('threads') or []):
+                header = self._put(group, me, 'delta', {'kv': kv, 'prev': state['last'], 'records': changed, 'removed': removed, 'threads': listed},
+                                   [m for m in state['to'] if m in to], kv=kv)
+                if not header:
+                    return
+                state.update(last=header['seq'], threads=listed)
+                with self.connect() as db:
+                    db.execute("DELETE FROM share_out WHERE fleet=? AND kind='record'", (fleet,))
+                    db.executemany('INSERT INTO share_out(fleet,kind,key,hash,at) VALUES(?,?,?,?,?)', [(fleet, 'record', k, h, now()) for k, h in left.items()])
+                self.set_meta('graph_out:' + fleet, state)
+                LOG.info('shared graph taken back while off fleet=%s records=%s removed=%s', fleet, len(changed), len(removed))
+        for chain, st in kept.items():  # what was shared by name: the same, for those it went to
+            if not st.get('to') or not st.get('last'):
+                continue
+            c_records, c_threads = chains.get(chain) or ({}, {})  # no longer shared with them by name: all of it
+            left, changed, removed = shrunk(sent[chain], st.get('hashes') or {}, c_records)
+            listed = sorted(set(st.get('threads') or []) & (set(c_threads) | held))
+            if changed or removed or listed != sorted(st.get('threads') or []):
+                header = self._put(group, me, 'delta', {'kv': kv, 'prev': st['last'], 'records': changed, 'removed': removed, 'threads': listed},
+                                   [m for m in st['to'] if m in to], kv=kv, only=True, tag=chain)
+                if not header:
+                    continue
+                kept[chain] = {**st, 'last': header['seq'], 'threads': listed, 'hashes': left}
+                self.set_meta('graph_chains:' + fleet, kept)
+
+    @staticmethod
+    def _sent_records(db, fleet, member, chain, last):
+        """{rid: record} as this Machine's last snapshot and the deltas since gave them to the team (chain: those of one
+        chain shared by name, None for the whole team's), from its own copies of them (keep_blob). None when they
+        don't add up to the last one sent."""
+        out, seq = None, None
+        try:
+            for row in db.execute("SELECT kind,seq,dk,header,ct FROM team_blobs WHERE fleet=? AND member=? AND kind IN ('snapshot','delta') "
+                                  'AND tag IS ? ORDER BY seq', (fleet, member, chain)).fetchall():
+                body = decrypt(nc.unb64(row['dk'], 32), json.loads(row['header']), nc.unb64(row['ct']))
+                if row['kind'] == 'snapshot':
+                    out = {}
+                elif out is None or body.get('prev') != seq:
+                    return None
+                out.update((r['r'], r) for r in body.get('records') or [])
+                for rid in body.get('removed') or []:
+                    out.pop(rid, None)
+                seq = row['seq']
+        except (nc.SealError, ValueError, KeyError, TypeError):
+            return None
+        return out if out is not None and seq == last else None
+
     def _unshare(self, group, me, to, tag, before):
         """A thread no longer shared: an empty blob for it and each of its files. Returns how many blobs went."""
         fleet, used = group['id'], 0
@@ -2736,7 +3016,8 @@ class SharedGraph:
                 base = shared_graph_kept.KEPT.get(key, at, lambda: Scope(db, accounts, internal, mine, personal))
                 timing = getattr(_REQUEST_TIMING, 'value', None)  # a GET reads only: its answers hold for the request
                 memo = timing.setdefault('automated', {}).setdefault(key, {}) if timing is not None and timing.get('read') else None
-                found[group['id']] = shared_graph_kept.renewed(base, db, memo, HOLD)
+                private = timing.setdefault('private_units', {}).setdefault(key, {}) if timing is not None and timing.get('read') else None
+                found[group['id']] = shared_graph_kept.renewed(base, db, memo, HOLD, private)
         return found
 
     def _personal_people(self, db):
@@ -2753,11 +3034,14 @@ class SharedGraph:
         nothing for the rest (Personal). fixed: colleagues only or personal, never shared, so no switch."""
         scopes = self.scopes(db)
         names = self.member_names()
-        if scopes and rows:  # only these rows' threads are asked whether they are automated mail
-            threads = {thread_of(r['kind'], r['metadata'] if isinstance(r['metadata'], dict) else json.loads(r['metadata'] or '{}'), r['id'])
-                       for r in rows}
+        if scopes and rows:  # only these rows' threads are asked whether they are automated mail, or have someone kept private on them
+            read = [(r, r['metadata'] if isinstance(r['metadata'], dict) else json.loads(r['metadata'] or '{}')) for r in rows]
+            threads = {thread_of(r['kind'], m, r['id']) for r, m in read}
+            units = {unit_of(r['kind'], m, r['id']) for r, m in read}
+            chats = {r['account_id'] for r, _ in read if r['kind'] in CHAT_KINDS}
             for scope in scopes.values():
                 scope.automated_only(threads)
+                scope.private_among(units, chats)
         out = {}
         for r in rows:
             for scope in scopes.values():
@@ -2766,8 +3050,9 @@ class SharedGraph:
                     continue
                 metadata = r['metadata'] if isinstance(r['metadata'], dict) else json.loads(r['metadata'] or '{}')
                 hand = db.execute('SELECT hand FROM share_threads WHERE thread=?', (thread_of(r['kind'], metadata, r['id']),)).fetchone()
-                hand = hand and hand['hand']
-                kept = view == 'private' and any(scope.private_address(a) for a in addresses(metadata))
+                hand = (hand and hand['hand']) or scope.hand(thread_of(r['kind'], metadata, r['id']), r['kind'], metadata)
+                kept = view == 'private' and (any(scope.private_address(a) for a in addresses(metadata))
+                                              or scope.private_on(unit_of(r['kind'], metadata, r['id']), True))
                 out[r['id']] = {'share': label(view) or 'only_you', 'fixed': view in ('internal', 'personal'), 'view': view,
                                 'why': why(view, hand, scope.company(metadata), kept)}
                 if view not in ('internal', 'personal'):
@@ -3061,14 +3346,14 @@ class SharedGraph:
         since = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=days)).isoformat()
         found = {}
         for fleet, scope in scopes.items():
-            for e in _events(db, sorted(scope.accounts), since):
-                e = dict(e)
-                e['metadata'] = json.loads(e['metadata'] or '{}')
+            week = [{**dict(e), 'metadata': json.loads(e['metadata'] or '{}')} for e in _events(db, sorted(scope.accounts), since)]
+            scope.private_among({unit_of(e['kind'], e['metadata'], e['id']) for e in week},  # this week's threads only, not all mail
+                                {e['account_id'] for e in week if e['kind'] in CHAT_KINDS})
+            for e in week:
                 view = visibility(db, scope, e)
                 if view not in ('sensitive', 'private'):
                     continue
-                hand = db.execute('SELECT hand FROM share_threads WHERE thread=?', (thread_of(e['kind'], e['metadata'], e['id']),)).fetchone()
-                if view == 'private' and not (hand and hand['hand'] == 'private'):
+                if view == 'private' and scope.hand(thread_of(e['kind'], e['metadata'], e['id']), e['kind'], e['metadata']) != 'private':
                     continue
                 found[thread_of(e['kind'], e['metadata'], e['id'])] = {'event_id': e['id'], 'title': str(e['title'] or '')[:200], 'at': e['occurred_at'],
                                                                         'with': _who(e['metadata'], scope), 'share': 'only_you',
