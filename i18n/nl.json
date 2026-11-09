@@ -755,6 +755,7 @@
  "Checked by your model. Change anything below.": "Gecontroleerd door je model. Wijzig hieronder wat je wilt.",
  "Checked open to-dos": "Bekeek open to-do's",
  "Checked {}": "Gecheckt {}",
+ "Checked {} of {} accounts so far.": "{} van {} accounts bekeken tot nu toe.",
  "Checked {} things": {
   "one": "{} ding nagekeken",
   "other": "{} dingen nagekeken"
@@ -965,6 +966,8 @@
  "Connected account": "Gekoppeld account",
  "Connected accounts": "Gekoppelde accounts",
  "Connected · some conversations waiting": "Gekoppeld · sommige gesprekken wachten",
+ "Connected · some syncs fail": "Gekoppeld · sommige syncs mislukken",
+ "Connected · {} is slow at times": "Gekoppeld · {} is soms traag",
  "Connected.": "Gekoppeld.",
  "Connected: {}": "Gekoppeld: {}",
  "Connected: {} and {} more": {
@@ -3833,6 +3836,7 @@
  "Salesflare": "Salesflare",
  "Salesflare CRM": "Salesflare CRM",
  "Salesflare did not answer: {}": "Salesflare antwoordde niet: {}",
+ "Salesflare doesn’t let this API key open these accounts. Use the key of a user who can see them.": "Salesflare laat deze API-sleutel deze accounts niet openen. Gebruik de sleutel van een gebruiker die ze kan zien.",
  "Same": "Dezelfde",
  "Same LinkedIn page": "Zelfde LinkedIn-pagina",
  "Same as the 30 days before": "Gelijk aan de 30 dagen ervoor",
@@ -4895,6 +4899,7 @@
  "The images are too big together. A to-do can carry up to {} of images.": "De afbeeldingen zijn samen te groot. Een to-do kan tot {} aan afbeeldingen bevatten.",
  "The import didn’t go through. The export is still here to try again.": "De import is niet gelukt. De export staat er nog om het opnieuw te proberen.",
  "The last check failed.": "De laatste check is mislukt.",
+ "The last sync worked.": "De laatste sync is gelukt.",
  "The last tries did not finish. Still trying.": "De laatste pogingen zijn niet afgerond. Ik blijf het proberen.",
  "The last try did not finish; it tries again shortly.": "De laatste poging is niet afgerond; het probeert zo opnieuw.",
  "The last update didn’t finish. Your Machine kept the version before it.": "De laatste update is niet afgerond. Je Machine draait nog de vorige versie.",
@@ -6016,6 +6021,7 @@
  "about: one sentence on which projects belong (up to 200 characters)": "about: één zin over welke projecten erbij horen (tot 200 tekens)",
  "accepted": "aanvaard",
  "accepted with a change": "aanvaard met een wijziging",
+ "accounts read": "accounts gelezen",
  "after a sign-in": "na het inloggen",
  "after your changes": "na je wijzigingen",
  "alerts": "waarschuwingen",
@@ -6084,6 +6090,7 @@
  "email failed": "e-mail mislukt",
  "email waiting to go out": "e-mail wacht om te vertrekken",
  "emailed {}": "{} mailde",
+ "emails and meetings": "e-mails en meetings",
  "event is the id of a meeting on a calendar you can change (from events or the Calendar)": "event is het id van een meeting in een agenda die je kunt wijzigen (uit events of de Agenda)",
  "events": "gebeurtenissen",
  "everyone": "iedereen",
@@ -6504,11 +6511,10 @@
   "one": "{} mislukte poging op rij",
   "other": "{} mislukte pogingen op rij"
  },
- "{} failed syncs in the last 24 hours. Old failures don’t affect a connection that recovered.": {
-  "one": "{} mislukte sync in de laatste 24 uur. Oude fouten tellen niet voor een koppeling die weer werkt.",
-  "other": "{} mislukte syncs in de laatste 24 uur. Oude fouten tellen niet voor een koppeling die weer werkt."
+ "{} failed syncs in the last 24 hours.": {
+  "one": "{} mislukte sync in de laatste 24 uur.",
+  "other": "{} mislukte syncs in de laatste 24 uur."
  },
- "{} failed syncs in the last 24h. Old failures don’t affect a recovered connection.": "{} mislukte syncs in de laatste 24 u. Oude fouten hebben geen invloed op een herstelde verbinding.",
  "{} failed {} times in a day": "{} mislukte {} keer op een dag",
  "{} files": {
   "one": "{} bestand",

@@ -24,6 +24,8 @@ Nichts, außer du setzt `join_pipelines` in der Einstellungsdatei deiner Machine
 
 Seine Karte unter **Verbindungen**, **Andere Quellen** zeigt, wie weit es ist: wie viele Accounts es in dieser Runde gelesen hat und wie viele es übersprungen hat, weil Salesflare zu langsam geantwortet hat. Eine Runde, die stundenlang läuft, meldet, dass sie vielleicht festhängt.
 
+Die Kacheln zählen die Accounts, die es öffnen konnte, und die E-Mails und Meetings, die es hereingeholt hat. Lässt Salesflare deinen API-Schlüssel keinen Account öffnen, steht auf der Karte **Braucht deine Hilfe**: Nimm den Schlüssel eines Nutzers, der sie sehen kann. Bricht Salesflare immer wieder ab, klappt aber jeder neue Versuch, heißt es, Salesflare ist **manchmal langsam**.
+
 - **Stopp**: Nichts Neues kommt rein, bis du auf **Starten** tippst. Es macht dort weiter, wo es war.
 - **Sync neu starten**: verwirft die aktuelle Runde samt Fehlern und liest jetzt die letzte Woche neu. Nichts, was es reingebracht hat, geht verloren.
 - **API-Schlüssel**: öffnet die Seite für API-Schlüssel in Salesflare, um einen neuen Schlüssel zu erstellen.

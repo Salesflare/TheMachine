@@ -24,6 +24,8 @@ Rien, sauf si vous définissez `join_pipelines` dans le fichier de paramètres d
 
 Sa carte sous **Connexions**, **Autres sources** montre où il en est : combien de comptes il a lus dans ce tour, et combien il en a sautés parce que Salesflare répondait trop lentement. Un tour qui dure des heures indique qu’il est peut-être bloqué.
 
+Ses tuiles comptent les comptes qu’il a pu ouvrir et les e-mails et réunions qu’il a récupérés. Si Salesflare ne laisse votre clé API ouvrir aucun compte, la carte indique **Attend votre aide** : utilisez la clé d’un utilisateur qui peut les voir. Si Salesflare expire souvent mais que chaque nouvel essai passe, elle indique que Salesflare est **parfois lent**.
+
 - **Arrêter** : plus rien de nouveau n’arrive jusqu’à ce que vous appuyiez sur **Démarrer**. Il reprend là où il en était.
 - **Relancer la synchro** : abandonne le tour en cours, avec ses erreurs, et relit tout de suite la dernière semaine. Rien de ce qu’il a récupéré n’est perdu.
 - **Clés API** : ouvre la page des clés API de Salesflare, pour créer une nouvelle clé.

@@ -263,6 +263,71 @@ class SalesflareConnector(unittest.TestCase):
         self.assertEqual({r['source_id'] for r in self.store.events(['work-crm'])}, {'meeting:7'})
 
 
+    def test_a_gateway_timeout_keeps_the_accounts_read_before_it_and_sets_a_repeat_offender_aside(self):
+        # Salesflare's gateway answers 504 after about two minutes on a slow account read (report s_f0d5d0200384ed92):
+        # the accounts already read in the batch stay read, and an account that keeps timing out is set aside.
+        crm = FakeCRM()
+        original = crm.get
+        def gateway(path, params=None):
+            if path == '/accounts/20':
+                raise a.SourceError('salesflare', 504)
+            return original(path, params)
+        crm.get = gateway
+        batch = {**ACCOUNT, 'accounts_per_batch': 5}
+        for _ in range(2):
+            with self.assertRaises(a.SourceError):
+                a.sync_salesflare(self.store, {}, batch, crm)
+            self.assertEqual(self.store.checkpoint('work-crm')['window']['pending'], [20])  # Acme (10) is kept
+        self.assertEqual({r['source_id'] for r in self.store.events(['work-crm'])}, {'email:e1'})
+        self.run_to_completion(crm)  # third time: set aside, the round ends
+        state = self.store.checkpoint('work-crm')
+        self.assertEqual((state['skipped_accounts'], state['last_round']['read'], state['last_round']['set_aside']), ([20], 1, 1))
+        view = a.salesflare_progress(ACCOUNT, state)
+        self.assertEqual((view['slow_accounts'], view['no_access'], view['no_access_all']), (1, 0, False))
+
+    def test_without_access_counts_one_round_never_more_than_its_accounts(self):
+        state = {'watermark': iso(1), 'inaccessible_accounts': list(range(136)),
+                 'window': {'accounts': 128, 'pending': list(range(123)), 'until': iso(0)}}
+        self.assertEqual(a.salesflare_progress(ACCOUNT, state)['no_access'], 136)  # an older Machine's list, until its round ends
+        crm = FakeCRM(forbidden={10})
+        self.store.commit_page('work-crm', {'inaccessible_accounts': list(range(500, 636))}, [], record_sync=False)
+        self.run_to_completion(crm)
+        state = self.store.checkpoint('work-crm')
+        self.assertEqual(state['inaccessible_accounts'], [10])
+        self.assertEqual(state['last_round'] | {'at': None}, {'at': None, 'accounts': 2, 'read': 1, 'no_access': 1, 'refused': 1, 'set_aside': 0})
+        view = a.salesflare_progress(ACCOUNT, state)
+        self.assertEqual((view['no_access'], view['no_access_all'], view['last_round']['read']), (1, False, 1))
+
+    def test_a_key_that_opens_no_account_says_so(self):
+        crm = FakeCRM(forbidden={10, 20})
+        with self.assertLogs(a.LOG, 'WARNING') as logged:
+            self.run_to_completion(crm)
+        self.assertIn('salesflare round opened no account account=work-crm accounts=2 refused=2 missing=0', logged.output[-1])
+        view = a.salesflare_progress(ACCOUNT, self.store.checkpoint('work-crm'))
+        self.assertTrue(view['no_access_all'])
+        self.assertEqual((view['no_access'], view['last_round']['read']), (2, 0))
+        # During a first round: after 10 accounts, all refused
+        window = {'accounts': 128, 'pending': list(range(118)), 'until': iso(0), 'no_access': list(range(10)), 'refused': 10}
+        self.assertTrue(a.salesflare_progress(ACCOUNT, {'window': window})['no_access_all'])
+        self.assertFalse(a.salesflare_progress(ACCOUNT, {'window': {**window, 'read': 1}})['no_access_all'])
+        self.assertFalse(a.salesflare_progress(ACCOUNT, {'window': {**window, 'pending': list(range(123)), 'no_access': list(range(5))}})['no_access_all'])
+
+    def test_a_5xx_logs_its_route_with_ids_masked(self):
+        from machine.sources import salesflare as sf
+        self.assertEqual(sf.route_of('/accounts/123/feed'), '/accounts/{id}/feed')
+        self.assertEqual(sf.route_of('/accounts/123'), '/accounts/{id}')
+        self.assertEqual(sf.route_of('/accounts'), '/accounts')
+        source = sf.Salesflare({}, {**ACCOUNT, 'credential': 'salesflare', 'credential_variable': 'K'})
+        error = sf.urllib.error.HTTPError('https://crm.example/accounts/7/feed', 504, 'Gateway Timeout', {}, None)
+        with patch('machine.sources.salesflare.credential', return_value='K=secret'), \
+                patch('machine.sources.salesflare.urllib.request.urlopen', side_effect=error), \
+                self.assertLogs(sf.LOG, 'WARNING') as logged, self.assertRaises(sf.SourceError) as raised:
+            source.get('/accounts/7/feed', {'types': 'email'})
+        self.assertEqual(raised.exception.status, 504)
+        self.assertRegex(logged.output[0], r'salesflare answered route=/accounts/\{id\}/feed status=504 after=\d+s$')
+        self.assertNotIn('7', logged.output[0].split('route=')[1].split()[0])
+
+
 class SalesflareStopAndRestart(unittest.TestCase):
     """The Salesflare card: Stop, Start and Restart (App.connector_sync), and what the card shows of a round."""
 

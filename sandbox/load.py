@@ -155,8 +155,12 @@ def load(directory, states, port=8870, network_port=8871, fixture_path=HERE / 'f
                 db.execute('INSERT INTO checkpoints(account_id,state) VALUES(?,?)',
                            (account['id'], json.dumps({'provider': account.get('provider'), 'replies': False, 'writes': ['create']})))
             else:
+                # The CRM's last round of accounts, as sync_salesflare leaves it: its card counts the accounts it read
+                crm = {'mode': 'incremental', 'watermark': stamp(3, base), 'inaccessible_accounts': [9001],
+                       'last_round': {'at': stamp(3, base), 'accounts': 18, 'read': 17, 'no_access': 1, 'refused': 1, 'set_aside': 0}}
                 db.execute('INSERT INTO checkpoints(account_id,state,last_success,last_sync_signals) VALUES(?,?,?,?)',
-                           (account['id'], '{}', stamp(3, base), sum(1 for e in events if e['account_id'] == account['id'])))
+                           (account['id'], json.dumps(crm) if account.get('service') == 'salesflare' else '{}', stamp(3, base),
+                            sum(1 for e in events if e['account_id'] == account['id'])))
                 db.execute('INSERT INTO sync_activity VALUES(?,?,?,?,?,?,?)', (secrets.token_hex(16), account['id'], stamp(3, base), 'success', 2, None, None))
         if not fresh:
             load_cards(db, fixture, ids, base)

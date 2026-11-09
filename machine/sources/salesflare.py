@@ -5,6 +5,7 @@ import datetime as dt
 import http.client
 import json
 import re
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -51,12 +52,18 @@ class Salesflare:
                                          method='POST' if payload is not None else 'GET',
                                          headers={'Authorization': 'Bearer ' + token, 'Accept': 'application/json',
                                                   'Content-Type': 'application/json'})
+        started = time.monotonic()
         try:
             # Account list queries ordered by activity are slow on a large team.
             with urllib.request.urlopen(request, timeout=self.account.get('timeout_seconds', 180)) as response:
                 raw = response.read()
             return json.loads(raw) if raw.strip() else None  # a write may answer with an empty body
         except urllib.error.HTTPError as error:
+            if error.code >= 500:
+                # Which route failed and how long it took (ids masked), so support can tell Salesflare exactly what
+                # failed: a 504 after two minutes is its gateway giving up on a slow query.
+                LOG.warning('salesflare answered route=%s status=%s after=%ds', route_of(path), error.code,
+                            round(time.monotonic() - started))
             retry = error.headers.get('Retry-After', '')
             raise SourceError('salesflare', error.code,
                               min(max(int(retry), 1), 86400) if retry.isdigit() else None) from None
@@ -71,6 +78,11 @@ class Salesflare:
                 or me.get('id') != self.account['user_id'] or (me.get('team') or {}).get('id') != self.account['team_id']):
             raise SourceError('account_identity_mismatch')
         return me
+
+
+def route_of(path):
+    """A Salesflare path with its ids masked, safe to log: /accounts/123/feed reads /accounts/{id}/feed."""
+    return re.sub(r'/[0-9]+(?=/|$)', '/{id}', path)
 
 
 def salesflare_time(value):
@@ -226,6 +238,9 @@ SALESFLARE_APP = 'https://app.salesflare.com'
 SALESFLARE_STUCK = dt.timedelta(hours=2)  # a round of accounts still going after this long: the card offers Restart
 
 
+SALESFLARE_HICCUP = {500, 502, 503, 504}  # its gateway giving up on a slow query: retried, then set aside like a timeout
+
+
 def salesflare_progress(account, state):
     """The Salesflare card's sync details: the round of accounts being read (how far, since when), what it set aside,
     whether the owner stopped it (connector_sync), and where its API keys are."""
@@ -236,10 +251,24 @@ def salesflare_progress(account, state):
         stuck = bool(started) and dt.datetime.fromisoformat(now()) - dt.datetime.fromisoformat(started) > SALESFLARE_STUCK
     except (TypeError, ValueError):
         stuck = False
+    last = state.get('last_round') or None
+    done = max(0, total - left)
+    # Without access counts the accounts of one round (this one, else the last one), so it never exceeds the round's
+    # accounts; a Machine from before last_round shows its old list until its round ends.
+    no_access = len(window.get('no_access') or []) if 'no_access' in window else \
+        last['no_access'] if last else len(state.get('inaccessible_accounts') or [])
+    # It opens none of them: every account of the last round (or the first 10 of this one) refused. Nothing comes in
+    # until the key changes, so the card asks for help instead of saying Connected.
+    if last:
+        locked = bool(last.get('accounts')) and not last.get('read') and last.get('no_access') == last.get('accounts')
+    else:
+        locked = done >= min(total, 10) > 0 and not window.get('read') and no_access == done
     return {'stopped': state.get('stopped') or None, 'synced_until': state.get('watermark'),
-            'round': {'since': window.get('since'), 'started': started, 'accounts': total, 'done': max(0, total - left), 'stuck': stuck,
-                      'failing': len(window.get('failures') or {})} if window else None,
-            'slow_accounts': len(state.get('skipped_accounts') or []), 'no_access': len(state.get('inaccessible_accounts') or []),
+            'round': {'since': window.get('since'), 'started': started, 'accounts': total, 'done': done, 'stuck': stuck,
+                      'read': window.get('read'), 'failing': len(window.get('failures') or {})} if window else None,
+            'last_round': last, 'no_access_all': locked,
+            'slow_accounts': len(window['set_aside']) if 'set_aside' in window else last['set_aside'] if last else len(state.get('skipped_accounts') or []),
+            'no_access': no_access,
             'keys_url': (account.get('app_base') or SALESFLARE_APP) + '/#/settings/apikeys'}
 
 
@@ -288,9 +317,10 @@ def sync_salesflare(store, config, account, source=None):
             emails = salesflare_feed(source, crm_id, 'email', since, until) if email_ids is None or crm_id in email_ids else []
             meetings = [(k, item) for k in ('meeting-live', 'meeting-phone') for item in salesflare_feed(source, crm_id, k, meeting_since, until)]
         except SourceError as error:
-            if error.category.startswith('network:'):
+            if error.category.startswith('network:') or error.status in SALESFLARE_HICCUP:
                 # One slow account must not block the window forever: retry it on later
-                # polls, and after three failures set it aside (visible) and move on.
+                # polls, and after three failures set it aside (visible) and move on. Salesflare's
+                # gateway answering 5xx is the same: the accounts read before it are kept.
                 failures = window.setdefault('failures', {})
                 failures[str(crm_id)] = failures.get(str(crm_id), 0) + 1
                 if failures[str(crm_id)] < 3:
@@ -298,14 +328,20 @@ def sync_salesflare(store, config, account, source=None):
                     window['pending'] = window['pending'][batch.index(crm_id):]
                     store.commit_page(account['id'], state, events, record_sync=False, excluded_source_ids=excluded)
                     raise
+                window['set_aside'] = window.get('set_aside', []) + [crm_id]
                 state['skipped_accounts'] = sorted(set(state.get('skipped_accounts', [])) | {crm_id})[-500:]
                 continue
             if error.status not in (403, 404):
                 raise
             # No access to this account's timeline (or it was deleted). Visible, never
-            # "fixed" by adding the owner to the account: ingestion stays read-only.
-            state['inaccessible_accounts'] = sorted(set(state.get('inaccessible_accounts', [])) | {crm_id})[-500:]
+            # "fixed" by adding the owner to the account: ingestion stays read-only. Counted per round.
+            refused = window.setdefault('no_access', [])
+            if crm_id not in refused:
+                refused.append(crm_id)
+            if error.status == 403:
+                window['refused'] = window.get('refused', 0) + 1
             continue
+        window['read'] = window.get('read', 0) + 1
         for item in emails:
             try:
                 event = salesflare_email_event(account, info, contacts, item, config)
@@ -328,7 +364,17 @@ def sync_salesflare(store, config, account, source=None):
             events.append(event) if event else None
     window['pending'] = window['pending'][len(batch):]
     if not window['pending']:
-        state.update(mode='incremental', watermark=window['until'])
+        # What this round could open: the card counts it (accounts read, without access) until the next one ends.
+        no_access = window.get('no_access') or []
+        state.update(mode='incremental', watermark=window['until'], inaccessible_accounts=sorted(no_access)[-500:],
+                     skipped_accounts=sorted(window.get('set_aside') or [])[-500:],
+                     last_round={'at': window['until'], 'accounts': window.get('accounts', 0), 'read': window.get('read', 0),
+                                 'no_access': len(no_access), 'refused': window.get('refused', 0),
+                                 'set_aside': len(window.get('set_aside') or [])})
+        if window.get('accounts') and not window.get('read') and len(no_access) == window['accounts']:
+            # A warning, so it shows in the support report: the key reads its profile but no account's timeline.
+            LOG.warning('salesflare round opened no account account=%s accounts=%d refused=%d missing=%d', account['id'],
+                        window['accounts'], window.get('refused', 0), len(no_access) - window.get('refused', 0))
         if window['full']:
             state['next_full'] = stamp.timestamp() + 86400
         state.pop('window')

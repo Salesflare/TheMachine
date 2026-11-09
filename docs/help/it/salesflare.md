@@ -24,6 +24,8 @@ Niente, a meno che tu non imposti `join_pipelines` nel file di impostazioni dell
 
 La sua scheda sotto **Connessioni**, **Altre fonti** mostra a che punto è: quanti account ha letto in questo giro e quanti ne ha saltati perché Salesflare rispondeva troppo lentamente. Un giro che dura da ore segnala che potrebbe essere bloccato.
 
+I riquadri contano gli account che ha potuto aprire e le email e riunioni che ha portato dentro. Se Salesflare non permette alla tua chiave API di aprire nessun account, la scheda dice **Serve il tuo aiuto**: usa la chiave di un utente che può vederli. Se Salesflare va spesso in timeout ma ogni nuovo tentativo riesce, dice che Salesflare **a volte è lento**.
+
 - **Ferma**: non arriva nulla di nuovo finché non premi **Avvia**. Riprende da dove era.
 - **Riavvia sincronizzazione**: abbandona il giro in corso, con i suoi errori, e rilegge subito l'ultima settimana. Non si perde nulla di quello che ha portato.
 - **Chiavi API**: apre la pagina delle chiavi API di Salesflare, per creare una nuova chiave.

@@ -24,6 +24,8 @@ Niets, tenzij je `join_pipelines` instelt in het instellingenbestand van je Mach
 
 De kaart onder **Koppelingen**, **Andere bronnen** toont hoe ver hij is: hoeveel accounts hij in deze ronde gelezen heeft, en hoeveel hij overgeslagen heeft omdat Salesflare te traag antwoordde. Een ronde die uren duurt, meldt dat ze misschien vastzit.
 
+De tegels tellen de accounts die hij kon openen en de e-mails en meetings die hij binnenhaalde. Laat Salesflare je API-sleutel geen enkel account openen, dan zegt de kaart **Heeft je hulp nodig**: gebruik de sleutel van een gebruiker die ze kan zien. Loopt Salesflare telkens vast maar lukt elke nieuwe poging, dan zegt hij dat Salesflare **soms traag** is.
+
 - **Stoppen**: er komt niets nieuws binnen tot je op **Begin** drukt. Hij gaat verder waar hij was.
 - **Sync herstarten**: laat de huidige ronde vallen, met de fouten, en leest nu de afgelopen week opnieuw. Er gaat niets verloren van wat hij binnengehaald heeft.
 - **API-sleutels**: opent de pagina met API-sleutels van Salesflare, om een nieuwe sleutel te maken.
