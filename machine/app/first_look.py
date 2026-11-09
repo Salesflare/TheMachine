@@ -274,7 +274,7 @@ class FirstLookApp:
                            (start, now())).fetchone() if dig['cards'] else None
         services = {a.get('service') for a in self.config.get('accounts', []) if a.get('service') not in SYSTEM_SERVICES}
         return {'read': read, 'total': total, 'todos': dig['cards'], 'goal': FIRST_DIG_CARDS, 'days': PREVIEW_DAYS, 'pace': pace,
-                'unit': 'email' if services and services <= set(MAIL_SERVICES) else 'message', 'names': self.store.first_look_names(db, runs),
+                'unit': 'email' if services and services <= set(MAIL_SERVICES) else 'message', 'names': self.store.first_look_names(db, runs, self.config.get('owner_name')),
                 'first': {'id': first['id'], 'title': first['title']} if first else None, 'failing': self.store.reviews_failing(db)}
 
     def first_look_done(self, current=None):

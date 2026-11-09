@@ -12,6 +12,9 @@ A second LinkedIn account needs a browser profile of its own (a browser holds on
 give that account "browser_profile": "<OpenClaw profile>" (and "browser_cdp": "<its DevTools address>" when
 read directly); without them the reader uses LINKEDIN_INBOX_BROWSER_PROFILE / _CDP, else "openclaw".
 
+Also, very slowly, the Connections list: titles and companies onto the Graph's people (linkedin_connections.py;
+"connections": false turns it off).
+
 LinkedIn has no API for this, so reads stay rare and in waking hours. Optional: "active_hours":
 [7, 22] (local time, the default) and config "linkedin_inbox" for the path to the reader. Replies
 go out only as an owner-approved `linkedin` next action (next_actions.LinkedInTransport).
@@ -51,7 +54,7 @@ class Source:
 
     def run(self, command, timeout=480):
         SourceError = self.helpers.SourceError
-        if command[:1] not in (['sync'], ['verify'], ['history']):
+        if command[:1] not in (['sync'], ['verify'], ['history'], ['connections']):
             raise SourceError('unsupported_linkedin_method')
         try:
             result = subprocess.run([self.config.get('linkedin_inbox', str(READER)), *command], capture_output=True, text=True, timeout=timeout,
@@ -68,6 +71,8 @@ class Source:
                 raise SourceError('linkedin_signed_out', retry_after=3600)
             if 'in time' in err:
                 raise SourceError('linkedin_read_timeout', retry_after=900)
+            if 'security check' in err:
+                raise SourceError('linkedin_security_check', retry_after=86400)
             code = self.helpers.browser_read_failure('linkedin', result.stderr)
             if code.endswith('_browser_unreachable'):  # the browser crashed or hung: start it again, retry soon
                 env = browser_env(self.account) or os.environ
@@ -90,6 +95,14 @@ class Source:
         data = self.run(['history', '--since', str(int(since_ms)), '--until', str(int(until_ms)),
                          '--count', str(HISTORY_PACE['page']), '--state', json.dumps(state)])
         if not isinstance(data.get('messages'), list) or not isinstance(data.get('state'), dict) or type(data.get('done')) is not bool:
+            raise self.helpers.SourceError('linkedin_invalid_page')
+        return data
+
+    def connections(self, start, count=40):
+        """One page of the owner's connections, newest first (linkedin_connections.py paces these): {'connections':
+        [{'name', 'headline', 'slug', 'member', 'connected_at'}], 'more'}."""
+        data = self.run(['connections', '--start', str(int(start)), '--count', str(int(count))], timeout=180)
+        if not isinstance(data.get('connections'), list) or type(data.get('more')) is not bool:
             raise self.helpers.SourceError('linkedin_invalid_page')
         return data
 

@@ -11,6 +11,7 @@ conversation is marked as read. Reading never writes anything to LinkedIn.
   linkedin-inbox send (--to N|NAME | --profile SLUG) --text TEXT [--send-id ID] [--yes] [--json]
   linkedin-inbox sync --since MS                    (JSON for the personal assistant)
   linkedin-inbox history --since MS --until MS      (JSON: one small page of older messages, for history)
+  linkedin-inbox connections [--start N]             (JSON: one page of connections, for the Graph)
   linkedin-inbox verify --send-id ID                 (JSON: did that send land?)
   linkedin-inbox discover                           (refresh LinkedIn's query ids)
 
@@ -44,6 +45,8 @@ DEFAULT_IDS = {
     'message_pages': 'messengerMessages.1561582483b8a511147478d8c099b03d',
 }
 IDS_FILE = Path.home() / '.config/linkedin-inbox/query-ids.json'
+# What My Network > Connections asks for (`connections`); a newer one LinkedIn rolls out answers 400 and stops the day.
+CONNECTIONS_DECORATION = 'com.linkedin.voyager.dash.deco.web.mynetwork.ConnectionListWithProfile-16'
 SENDS_LOG = Path.home() / '.local/share/linkedin-inbox/sends.jsonl'
 
 JS = r"""
@@ -119,6 +122,27 @@ async () => {
       else if (next === c.cursor) throw odd('message cursor did not advance');
       else c.cursor = next;
       return {messages: out, done: !S.queue.length && !S.cursor, state: S};
+    }
+    if (P.mode === 'connections') {
+      // One page of My Network > Connections, newest first, as that page loads it: name, headline and profile link.
+      // No profile is opened. A security check (a redirect to a checkpoint, or no JSON) or anything unexpected throws,
+      // so the caller stops for the day instead of trying again.
+      const r = await fetch('/voyager/api/relationships/dash/connections?decorationId=' + P.decoration + '&count=' + P.count +
+        '&q=search&sortType=RECENTLY_ADDED&start=' + P.start, {headers: h, credentials: 'include', signal: AbortSignal.timeout(12000)});
+      if ((r.redirected && /\/(checkpoint|authwall|challenge)/.test(r.url)) || (r.ok && !/json/.test(r.headers.get('content-type') || '')))
+        throw Object.assign(Error('security check'), {code: 'security-check'});
+      if (r.status === 401) throw Object.assign(Error('signed-out'), {code: 'signed-out'});
+      if (!r.ok) throw Object.assign(Error('http ' + r.status), {code: 'query-failed', status: r.status});
+      const j = await r.json(), urns = j.data && j.data['*elements'];
+      if (!Array.isArray(urns)) throw Object.assign(Error('missing connection elements'), {code: 'odd-answer'});
+      absorb(j);
+      const out = urns.map(u => byUrn[u]).filter(Boolean).map(c => {
+        const p = byUrn[c.connectedMember] || byUrn[c['*connectedMemberResolutionResult']] || {};
+        return {name: [txt(p.firstName), txt(p.lastName)].filter(Boolean).join(' '), headline: txt(p.headline),
+                slug: p.publicIdentifier || '', member: String(p.entityUrn || c.connectedMember || '').replace('urn:li:fsd_profile:', ''),
+                connected_at: c.createdAt || null}; }).filter(c => c.name && (c.slug || c.member));
+      if (urns.length && !out.length) throw Object.assign(Error('connections without profiles'), {code: 'odd-answer'});
+      return {connections: out, more: urns.length >= P.count};
     }
     let conversationPage;
     if (P.mode === 'sync') {
@@ -456,6 +480,10 @@ def run(mode, which='', since=0, text='', **extra):
         raise Fail('LinkedIn is signed out in the OpenClaw browser; sign in there once and retry')
     if err == 'no-match':
         raise Fail('no conversation matches "' + which + '" (run `linkedin-inbox list`)')
+    if err == 'security-check':
+        raise Fail('LinkedIn asked for a security check; finish it in the OpenClaw browser')
+    if err == 'odd-answer':
+        raise Fail('LinkedIn answered in an unexpected shape: ' + str(res.get('detail') or '')[:120])
     if err == 'query-failed':
         raise Fail('LinkedIn rejected the query (HTTP ' + str(res.get('status')) + '); its internal ids may have '
                    'changed: run `linkedin-inbox discover` and retry')
@@ -640,6 +668,11 @@ def cmd_history(a):
     print(json.dumps(res, ensure_ascii=False))
 
 
+def cmd_connections(a):
+    res = run('connections', start=max(0, a.start), count=max(1, min(a.count, 40)), decoration=CONNECTIONS_DECORATION)
+    print(json.dumps(res, ensure_ascii=False))
+
+
 def cmd_verify(a):
     # Was an earlier send (by token) delivered? The send log first, then the conversation itself.
     entries, damaged=send_entries()
@@ -718,6 +751,10 @@ def main():
     p.add_argument('--count', type=int, default=10)
     p.add_argument('--state', help='the cursors the last step returned')
     p.set_defaults(fn=cmd_history)
+    p = sub.add_parser('connections', help='JSON: one page of your connections (name, headline, profile link), newest first')
+    p.add_argument('--start', type=int, default=0)
+    p.add_argument('--count', type=int, default=40)
+    p.set_defaults(fn=cmd_connections)
     p = sub.add_parser('verify', help='JSON: did the send with this token land?')
     p.add_argument('--send-id', '--token', dest='token', required=True)
     p.set_defaults(fn=cmd_verify)

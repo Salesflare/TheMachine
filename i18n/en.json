@@ -2898,6 +2898,8 @@
  "Now and then I share a few general learnings. Nothing personal.": "Now and then I share a few general learnings. Nothing personal.",
  "Now findable by people who have your email.": "Now findable by people who have your email.",
  "Now the rest of the week: {} of {} active conversations": "Now the rest of the week: {} of {} active conversations",
+ "Now {}": "Now {}",
+ "Now {}, was {}": "Now {}, was {}",
  "Nudge {}: no reply in {} days": "Nudge {}: no reply in {} days",
  "Number": "Number",
  "Numbered list": "Numbered list",
@@ -6422,6 +6424,7 @@
  "{} asks you to take this on: “{}”": "{} asks you to take this on: “{}”",
  "{} asks your Fleet": "{} asks your Fleet",
  "{} asks:": "{} asks:",
+ "{} at {}": "{} at {}",
  "{} board suggestions are open already: wait until the owner decides": "{} board suggestions are open already: wait until the owner decides",
  "{} calls": {
   "one": "{} call",

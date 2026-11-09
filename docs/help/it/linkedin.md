@@ -3,12 +3,18 @@ title: LinkedIn
 area: connections
 summary: I tuoi messaggi LinkedIn, letti nel browser della tua Machine, con il tuo accesso. Risponde solo dopo la tua approvazione.
 covers: connector:linkedin
-code: connectors/linkedin.py, integrations/linkedin_inbox.py
+code: connectors/linkedin.py, integrations/linkedin_inbox.py, linkedin_connections.py
 site: Connect, More sources, Remove
 ---
 ## Cosa legge
 
 I tuoi messaggi LinkedIn. Li legge in una scheda del browser della tua Machine, con il tuo accesso, di tanto in tanto durante le ore di veglia. Non usa chiavi API e non segna nulla come letto.
+
+## Ruoli e aziende
+
+Tiene anche aggiornati i ruoli e le aziende dei tuoi collegamenti LinkedIn sulle persone già nel tuo Graph, dalla tua lista di collegamenti. Non apre i loro profili e non aggiunge persone nuove. Quando il ruolo o l’azienda di qualcuno cambia, la sua cronologia lo dice, come "Ora Head of Sales presso Acme, prima Sales Lead presso Acme".
+
+Legge molto lentamente: una pagina alla volta, a minuti di distanza, qualche decina di pagine al giorno, solo di giorno. Circa 3.000 collegamenti richiedono quattro giorni. Se LinkedIn frena, si ferma fino al giorno dopo.
 
 ## Cosa può inviare
 

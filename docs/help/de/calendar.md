@@ -47,6 +47,8 @@ Jeder Teil hat sein eigenes **Notizen hinzufügen** oder **Transkript hinzufüge
 
 Ist [Zoom](zoom.md) oder [Google Meet](google-meet.md) verbunden, stehen seine Notizen in Notizen und sein Transkript in Transkript, markiert mit **Von Zoom** oder **Von Google Meet**. Sie ersetzen nie, was du hinzugefügt hast: Gibt es beides, siehst du beides.
 
+Notizen können auch im Kalendertermin selbst stehen, nach seinem Beginn hinzugefügt, oder per Mail von Zoom oder Gemini kommen. Nach dem Meeting macht The Machine daraus nur To-dos für klare nächste Schritte. Kommen dieselben Notizen auf zwei Wegen, wird es ein To-do, mit dem Meeting als Quelle: **Notizen von** und sein Name.
+
 Ein Termin mit Transkript und ohne Notizen hat **Notizen erstellen**. The Machine schreibt sie dann aus dem Transkript: eine kurze Zusammenfassung, Entscheidungen und nächste Schritte mit dem, der sie übernimmt, in der Sprache des Termins.
 
 The Machine zeigt **Notizen werden geschrieben…** und macht weiter, wenn du den Termin schließt; ein langer dauert ein paar Minuten. Sie nutzt dein eigenes Modell und wartet, wenn du dein Nutzungslimit erreichst. Bei den Notizen steht **Von The Machine geschrieben**. Sie ersetzen nie Notizen, die du hinzugefügt hast, und die Nachfassungen kommen daraus wie aus denen von Zoom.
