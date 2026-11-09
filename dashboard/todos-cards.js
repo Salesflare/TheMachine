@@ -290,10 +290,11 @@ const ID=c=>c,mmClass=(c,tag)=>[...c.split(' ').filter(x=>x&&x!=='primary'),...(
 // changes beside it, Snooze and the rest in the …. A made doc without a link (Word) has Mark done lead.
 const docMade=(s,a)=>a.kind==='doc_write'&&(a.state||s.action_status)?.status==='sent';
 const docMadeLink=(s,a)=>docMade(s,a)&&safeURL(a.url||(a.state||s.action_status)?.url)||'';
-function cardActions(s,choices,smartButtons,unmerge,hint,smart){const skill=skillLead(s),copy=copyLead(s,smart)||skill,asked=moveAsk(s)||useAsk(s);
+function cardActions(s,choices,smartButtons,unmerge,hint,smart){const skill=skillLead(s),copy=copyLead(s,smart)||skill,asked=moveAsk(s)||useAsk(s)||connectAsk(s);
  const made=smart.some(a=>docMade(s,a)),madeLink=smart.some(a=>docMadeLink(s,a));
  if(moveAsk(s))smartButtons=[k=>html`<button class="${k('primary','button')}" data-card-move="${s.id}" data-area="${s.preparation_move_to}">${moveText(s.preparation_move_to)}</button>`,...smartButtons];
  else if(useAsk(s))smartButtons=[k=>html`<button class="${k('primary','button')}" data-card-use="${s.id}">${useText(s.preparation_use)}</button>`,...smartButtons];
+ else if(connectAsk(s))smartButtons=[k=>html`<button class="${k('primary','button')}" data-connect-open="${s.preparation_connect}">${t('Connect {}',SERVICE_NAMES[s.preparation_connect]||s.preparation_connect)}</button>`,...smartButtons];
  if(skill)smartButtons=[k=>skillButton(s,k),...smartButtons];
  else if(copy)smartButtons=[k=>html`<button class="${k('primary','button')}" data-id="${s.id}" data-result="copy">Copy draft</button>`,...smartButtons];
  const answered=s.status==='prepared'&&(()=>{try{return JSON.parse(s.outcome||'{}').state==='answered'}catch{return false}})();
@@ -370,7 +371,7 @@ const askBlocked=s=>s.preparation_status==='blocked'&&!s.preparation_error&&!!St
 // disagree. A stopped run comes first: a card whose run stopped is not Preparing any more, whatever its status says.
 // Closed by itself once its moment passed (expired_at): Not needed, like a dismissed one, so it never reads as done by them
 const lapsed=s=>s.status==='completed'&&!!s.expired_at;
-const cardState=s=>lapsed(s)?'Not needed':s.preparation_status==='blocked'&&!closed(s)&&s.status!=='snoozed'?(s.preparation_error==='stopped'?'Stopped':askBlocked(s)||moveAsk(s)||useAsk(s)||s.preparation_browser&&!s.preparation_error?'Needs your help':'Stuck'):['accepted','instructions'].includes(s.status)?'Preparing':label(s.status);
+const cardState=s=>lapsed(s)?'Not needed':s.preparation_status==='blocked'&&!closed(s)&&s.status!=='snoozed'?(s.preparation_error==='stopped'?'Stopped':askBlocked(s)||moveAsk(s)||useAsk(s)||connectAsk(s)||s.preparation_browser&&!s.preparation_error?'Needs your help':'Stuck'):['accepted','instructions'].includes(s.status)?'Preparing':label(s.status);
 const askQuestion=(s,smart,hint)=>{if(closed(s)||s.status==='snoozed'||hint)return '';if(askBlocked(s))return s.preparation_questions?.length?s.preparation_questions.map(q=>q.question).join(' '):String(s.preparation_reason).trim();
  if(s.status!=='prepared'||s.preparation_status==='blocked'||smart.some(a=>a.kind!=='open'))return '';
  try{const o=JSON.parse(s.outcome||'{}'),q=String(o.needs||'').trim();return o.state==='needs_you'&&/\?$/.test(q)?q:''}catch{return ''}};
@@ -415,6 +416,9 @@ const moveAsk=s=>!closed(s)&&s.preparation_status==='blocked'&&!s.preparation_er
 // A run stuck on messages from another area (preparation_blocked use_event_ids): "Use this email for this to-do" leads;
 // the tap makes them its sources (Store.use_sources) and it carries on by itself. Its accounts and area stay.
 const useAsk=s=>!closed(s)&&s.preparation_status==='blocked'&&!s.preparation_error&&!!s.preparation_use?.n&&['pending','accepted','instructions'].includes(s.status);
+// A run that needs a source that isn't connected (preparation_blocked connect): Connect Slack leads and opens it in
+// Connections; Try again carries on after. Never a setting to change: the to-do asks for nothing else.
+const connectAsk=s=>!closed(s)&&s.preparation_status==='blocked'&&!s.preparation_error&&!!s.preparation_connect&&['pending','accepted','instructions'].includes(s.status);
 const useText=u=>u.mail?(u.n===1?t('Use this email for this to-do'):t('Use these emails for this to-do')):(u.n===1?t('Use this message for this to-do'):t('Use these messages for this to-do'));
 async function cardUse(id,b){if(b)b.disabled=true;
  try{const r=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'card_use_sources',args:{suggestion_id:id,decision_id:crypto.randomUUID()}})});

@@ -33,7 +33,7 @@ async function showResult(ctx:any,message:any,reason?:string){
 async function notReached(ctx:any){
   await ctx.respond.reply({text:t('Your Machine did not answer just now, so nothing was done. Tap the button again in a minute.')}).catch(()=>{});
 }
-const TOOL_ACTIONS = ['status', 'events', 'begin_analysis', 'analysis_page', 'finish_analysis', 'suggest', 'prepare', 'preparation_blocked', 'preparation_history', 'remember_fact', 'looks_handled', 'handoff_on_it', 'split_from_notes', 'meeting_notes', 'promise', 'related', 'graph', 'profile_evidence', 'save_profile', 'skills_found', 'correction_sources', 'fix_source', 'bug_offer', 'mail_attachment', 'routine_result'];
+const TOOL_ACTIONS = ['status', 'events', 'begin_analysis', 'analysis_page', 'finish_analysis', 'suggest', 'prepare', 'preparation_blocked', 'preparation_history', 'remember_fact', 'looks_handled', 'handoff_on_it', 'split_from_notes', 'meeting_notes', 'promise', 'related', 'graph', 'profile_evidence', 'save_profile', 'skills_found', 'correction_sources', 'fix_source', 'bug_offer', 'mail_attachment', 'slack_read', 'routine_result'];
 // dismiss_handled stays for older cards; the service records that reason as done.
 const DISMISS_REASONS: Record<string,string> = {dismiss_irrelevant:'Not relevant', dismiss_handled:'Already handled', dismiss_wrong:'Wrong facts'};
 
@@ -215,6 +215,10 @@ export default definePluginEntry({
           if (!/^agent:main:assistant-review-preparation-/.test(key) || !run) throw new Error('Attachments are read for a to-do’s own run');
           delete args._folder;
           args.job_id=run;
+        }
+        if (params.action==='slack_read') {
+          // A to-do's own run reads a Slack conversation through the Slack connection (read-only, SyncApp.slack_read_action).
+          if (!/^agent:main:assistant-review-preparation-/.test(key) || !currentReviewRun(key)) throw new Error('Slack conversations are read for a to-do’s own run');
         }
         if (['save_profile', 'profile_evidence'].includes(params.action) && /^agent:main:assistant-review-profile-/.test(key)) args._profile_session = key;
         if (params.action === 'skills_found') {

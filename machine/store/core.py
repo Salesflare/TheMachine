@@ -388,8 +388,9 @@ class StoreCore:
             if 'action_id' not in preparation_columns:
                 db.execute('ALTER TABLE preparations ADD COLUMN action_id TEXT')
                 db.execute("UPDATE preparations SET action_id=(SELECT id FROM action_jobs WHERE approval_id=preparations.decision_id AND suggestion_id=preparations.suggestion_id AND status='local_preparation')")
-            # move_to: the area a stuck run asks to be moved to; use_events: messages from another area it asks to use (JSON ids)
-            for column in ['details', 'started_at', 'questions', 'move_to', 'use_events']:
+            # move_to: the area a stuck run asks to be moved to; use_events: messages from another area it asks to use (JSON ids);
+            # connect: a source it needs that isn't connected (the to-do offers Connect <it>)
+            for column in ['details', 'started_at', 'questions', 'move_to', 'use_events', 'connect']:
                 if column not in preparation_columns:
                     db.execute('ALTER TABLE preparations ADD COLUMN ' + column + ' TEXT')
             if 'auto_retries' not in preparation_columns:

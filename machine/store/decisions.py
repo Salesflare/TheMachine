@@ -296,7 +296,7 @@ class DecisionsStore:
             if payload['kind']!='finish':continue
             payload['finish_result']={'state':'uncertain','body':'Replaced by new work before its result was saved.','at':now(),'was':left['status']}
             db.execute("UPDATE action_jobs SET status='finish_uncertain',payload=?,updated_at=? WHERE id=?",(encoded(payload),now(),left['id']))
-        db.execute("INSERT INTO preparations(suggestion_id,decision_id,job_id,status,created_at,updated_at) VALUES(?,?,?,'queued',?,?) ON CONFLICT(suggestion_id) DO UPDATE SET decision_id=excluded.decision_id,job_id=excluded.job_id,status='queued',created_at=excluded.created_at,updated_at=excluded.updated_at,error=NULL,reason=NULL,details=NULL,questions=NULL,move_to=NULL,use_events=NULL,started_at=NULL,retry_at=NULL,attempts=0,auto_retries=0",
+        db.execute("INSERT INTO preparations(suggestion_id,decision_id,job_id,status,created_at,updated_at) VALUES(?,?,?,'queued',?,?) ON CONFLICT(suggestion_id) DO UPDATE SET decision_id=excluded.decision_id,job_id=excluded.job_id,status='queued',created_at=excluded.created_at,updated_at=excluded.updated_at,error=NULL,reason=NULL,details=NULL,questions=NULL,move_to=NULL,use_events=NULL,connect=NULL,started_at=NULL,retry_at=NULL,attempts=0,auto_retries=0",
                    (suggestion_id,decision_id,uuid.uuid4().hex,now(),now()))
         db.execute('UPDATE preparations SET session_job_id=coalesce(?,job_id) WHERE suggestion_id=?',(session_job_id,suggestion_id))
         db.execute('UPDATE preparations SET action_id=? WHERE suggestion_id=?',(action_id,suggestion_id))
@@ -1069,16 +1069,46 @@ class DecisionsStore:
                 elif new:found.append((job['suggestion_id'],f"A new error ({new['kind']}) showed up right after the merge, so I undid it."))
         return found
 
-    def preparation_blocked(self, suggestion_id, job_id, reason, details=None, note_kind=None, questions=None, move_to=None, use_event_ids=None):
+    def resume_connected(self):
+        """To-dos whose run stopped for a source that wasn't connected (preparation_blocked connect) carry on by themselves
+        once it is: no Try again to find. Returns the to-dos it started again."""
+        have = {a.get('service', 'gmail') for a in getattr(self, 'accounts', None) or []}
+        with self.connect() as db:
+            waiting = [dict(r) for r in db.execute("SELECT suggestion_id,job_id,connect FROM preparations "
+                                                   "WHERE status='blocked' AND error IS NULL AND connect IS NOT NULL").fetchall()]
+        resumed = []
+        for job in waiting:
+            if job['connect'] not in have:
+                continue
+            try:
+                self.decide(job['suggestion_id'], 'retry', '', 'connected:' + job['job_id'], 'connected')
+                resumed.append(job['suggestion_id'])
+            except ValueError as error:  # closed, snoozed or already started again in the meantime
+                LOG.info('connect resume skipped suggestion=%s error=%s', job['suggestion_id'], error)
+        return resumed
+
+    def preparation_blocked(self, suggestion_id, job_id, reason, details=None, note_kind=None, questions=None, move_to=None, use_event_ids=None,
+                            connect=None):
         """A run that can't go on. move_to: it needs the to-do in another of the owner's areas (todo_areas.py), such as Work
         to send from the company's mailbox. The to-do offers the move for the owner's tap (move_card), and carries on after
         it; it moves by itself when the owner added it without an area (owner_area_open) or the messages it came from are
         all in that area (follows_sources). use_event_ids: collected messages from another area it needs (up to 5, not
-        its own sources already): the to-do offers "Use this email for this to-do" (use_sources), and carries on after it."""
+        its own sources already): the to-do offers "Use this email for this to-do" (use_sources), and carries on after it.
+        connect: a source it needs that isn't connected (slack, gmail…): the to-do offers Connect Slack, which opens it in
+        Connections, and carries on by itself once it is connected (resume_connected); Try again stays in its menu.
+        Refused for one that is connected: the run reads it through that connection."""
         if not reason.strip() or len(reason)>400:
             raise ValueError('Give a short, specific blocker')
         if details is not None and (not isinstance(details,str) or len(details)>2000):
             raise ValueError('Keep blocker details under 2000 characters')
+        if connect is not None:
+            if move_to is not None or use_event_ids is not None:
+                raise ValueError('Give connect, move_to or use_event_ids, one of them')
+            if not isinstance(connect,str) or not re.fullmatch(r'[a-z][a-z0-9_]{1,30}',connect) or connect=='gateway':
+                raise ValueError("connect: the source to connect, as Connections names it (slack, gmail, outlook, whatsapp…)")
+            if any(a.get('service','gmail')==connect for a in getattr(self,'accounts',None) or []):
+                raise ValueError(f'connect: {connect} is connected already. Read it through that connection'
+                                 +(' (assistant_signals slack_read {channel})' if connect=='slack' else '')+', never the browser.')
         questions = blocker_questions(questions, strict=True)
         with self.connect() as db:
             job=db.execute('SELECT * FROM preparations WHERE suggestion_id=?',(suggestion_id,)).fetchone()
@@ -1105,8 +1135,8 @@ class DecisionsStore:
             if note_kind:
                 self.tag_note(suggestion_id, note_kind, db)
             # An empty list says the run asks nothing (ask_blocked); NULL is a blocker from before runs named questions.
-            db.execute("UPDATE preparations SET status='blocked',reason=?,details=?,questions=?,move_to=?,use_events=?,updated_at=? WHERE suggestion_id=?",
-                       (reason,(details or '').strip() or None,encoded(questions),move_to,use_event_ids,now(),suggestion_id))
+            db.execute("UPDATE preparations SET status='blocked',reason=?,details=?,questions=?,move_to=?,use_events=?,connect=?,updated_at=? WHERE suggestion_id=?",
+                       (reason,(details or '').strip() or None,encoded(questions),move_to,use_event_ids,connect,now(),suggestion_id))
             pause_idle_steps(db,suggestion_id)  # nothing runs now: its confirmed step waits for Try again or an answer
             # It moves itself (no tap) when the owner added it without an area and nothing placed it yet (the run found where
             # it belongs), or when the messages it came from are all in that area (follows_sources)

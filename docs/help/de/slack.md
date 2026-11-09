@@ -8,7 +8,7 @@ site: Connect, More sources, Remove
 ---
 ## Was es liest
 
-Die Unterhaltungen, in denen du Mitglied bist: Channels, private Channels, Direktnachrichten und Gruppennachrichten, die letzten 7 Tage beim Verbinden, danach alles Neue. Es tritt nie von selbst einem Channel bei und startet keine Unterhaltung.
+Die Unterhaltungen, in denen du Mitglied bist: Channels, private Channels, Direktnachrichten und Gruppennachrichten, die letzten 7 Tage beim Verbinden, danach alles Neue. Es tritt nie von selbst einem Channel bei und startet keine Unterhaltung. Ein ruhiger Channel wird etwa einmal am Tag gelesen; braucht eine Aufgabe seine neuesten Nachrichten, liest The Machine ihn sofort.
 
 Personen erscheinen mit ihrem Namen und Apps mit ihrem, nie mit einer Slack-ID. Jemand, dessen Slack-Konto nicht mehr besteht, erscheint als ehemaliger Slack-Nutzer.
 

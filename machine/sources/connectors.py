@@ -453,6 +453,18 @@ def calendar_prompt(config):
             "event:<the meeting's events id>, and for update only what changes}. The owner sees it on the card and taps it. No guests.")
 
 
+def slack_prompt(config):
+    """The preparation's line about reading Slack, when the owner has Slack connected: through the connection, never
+    the browser. A quiet channel is read about once a day, so a message there may not be collected yet (2026-11-09)."""
+    found = [a['id'] for a in (config or {}).get('accounts') or () if a.get('service') == 'slack']
+    if not found:
+        return ''
+    return (f"\n- Slack is connected ({', '.join(found)}): its messages are in events. A conversation's newest messages that "
+            "aren't there yet (a quiet channel is read about once a day): assistant_signals slack_read args channel=<its id or "
+            "#name>, and again about a minute later until status is read; then read its event_ids with events. Never open "
+            "Slack in the browser for it.")
+
+
 def meeting_notes_prompt(config):
     """The preparation's line about notes on a meeting, when the owner has a calendar connected."""
     if not any(a.get('service') in CALENDAR_SERVICES for a in (config or {}).get('accounts') or ()):

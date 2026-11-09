@@ -8,7 +8,7 @@ site: Connect, More sources, Remove
 ---
 ## Cosa legge
 
-Le conversazioni di cui fai parte: canali, canali privati, messaggi diretti e messaggi di gruppo, gli ultimi 7 giorni quando ti colleghi, poi tutto quello che arriva di nuovo. Non entra mai in un canale e non apre conversazioni da solo.
+Le conversazioni di cui fai parte: canali, canali privati, messaggi diretti e messaggi di gruppo, gli ultimi 7 giorni quando ti colleghi, poi tutto quello che arriva di nuovo. Non entra mai in un canale e non apre conversazioni da solo. Un canale tranquillo viene letto circa una volta al giorno; quando un'attività ha bisogno dei suoi messaggi più recenti, The Machine lo legge subito.
 
 Le persone compaiono con il loro nome e le app con il proprio, mai con un ID Slack. Chi non ha più un account Slack compare come ex utente di Slack.
 
