@@ -20,6 +20,8 @@ Open **+ Add** and pick a source. The list is grouped (**Mail and calendar**, **
 
 **Suggested for you** sits on top when your Machine sees a reason for a source, with that reason in one line: mail from Stripe, Zoom meetings on your calendar, messages that link to Google Docs, or a setup that didn't finish. It counts these on your Machine; nothing leaves it. No reason, no section. A connected source is never suggested.
 
+A source you already connected says so in the list, with its account. Pick it to add another one next to it: its form says so and links to the one you have.
+
 Fill in what it needs (a key, an address), pick **Work** with its company or **Personal** (mail and calendars ask only when their address doesn't say), and press **Connect**. A site like LinkedIn or X opens its sign-in in your Machine's browser and goes on by itself once you're in. GitHub, WhatsApp and Codex show a code to enter, and Telegram chats a QR code to scan.
 
 **Cancel** stops adding it. Left before it finished? Open **Connections** again, on any device, and it picks up at the same step. Once connected, your Machine restarts to start reading it, then shows how its first sync goes.

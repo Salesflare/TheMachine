@@ -959,6 +959,11 @@
  "Connected accounts": "Connected accounts",
  "Connected · some conversations waiting": "Connected · some conversations waiting",
  "Connected.": "Connected.",
+ "Connected: {}": "Connected: {}",
+ "Connected: {} and {} more": {
+  "one": "Connected: {} and {} more",
+  "other": "Connected: {} and {} more"
+ },
  "Connecting": "Connecting",
  "Connecting WhatsApp is taking too long. Try again to pick up where it stopped.": "Connecting WhatsApp is taking too long. Try again to pick up where it stopped.",
  "Connecting {}…": "Connecting {}…",
@@ -5001,6 +5006,7 @@
  "This account is shared with you; only an admin of that Fleet can share it": "This account is shared with you; only an admin of that Fleet can share it",
  "This address bounced on {}": "This address bounced on {}",
  "This address isn’t ready yet. The Machine tries again within the hour.": "This address isn’t ready yet. The Machine tries again within the hour.",
+ "This adds a new connection. Existing ones stay.": "This adds a new connection. Existing ones stay.",
  "This agent job stopped or the draft changed. Its result stays on the card without replacing the draft.": "This agent job stopped or the draft changed. Its result stays on the card without replacing the draft.",
  "This archive has entries outside its own folder; not importing it": "This archive has entries outside its own folder; not importing it",
  "This archive has no manifest; it is not an export of The Machine": "This archive has no manifest; it is not an export of The Machine",

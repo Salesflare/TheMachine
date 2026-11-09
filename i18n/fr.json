@@ -959,6 +959,11 @@
  "Connected accounts": "Comptes connectés",
  "Connected · some conversations waiting": "Connecté · des conversations en attente",
  "Connected.": "Connecté.",
+ "Connected: {}": "Connecté : {}",
+ "Connected: {} and {} more": {
+  "one": "Connecté : {} et {} autre",
+  "other": "Connecté : {} et {} autres"
+ },
  "Connecting": "Connexion",
  "Connecting WhatsApp is taking too long. Try again to pick up where it stopped.": "La connexion de WhatsApp prend trop de temps. Réessayez pour reprendre là où elle s’est arrêtée.",
  "Connecting {}…": "Connexion à {}…",
@@ -5001,6 +5006,7 @@
  "This account is shared with you; only an admin of that Fleet can share it": "Ce compte est partagé avec vous ; seul un admin de cette Fleet peut le partager",
  "This address bounced on {}": "Cette adresse a été rejetée le {}",
  "This address isn’t ready yet. The Machine tries again within the hour.": "Cette adresse n’est pas encore prête. The Machine réessaie dans l’heure.",
+ "This adds a new connection. Existing ones stay.": "Cela ajoute une nouvelle connexion. Les existantes restent.",
  "This agent job stopped or the draft changed. Its result stays on the card without replacing the draft.": "Ce travail d’agent s’est arrêté ou le brouillon a changé. Son résultat reste sur la carte sans remplacer le brouillon.",
  "This archive has entries outside its own folder; not importing it": "Cette archive a des entrées hors de son propre dossier ; import refusé",
  "This archive has no manifest; it is not an export of The Machine": "Cette archive n’a pas de manifeste ; ce n’est pas un export de The Machine",

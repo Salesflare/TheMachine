@@ -959,6 +959,11 @@
  "Connected accounts": "Gekoppelde accounts",
  "Connected · some conversations waiting": "Gekoppeld · sommige gesprekken wachten",
  "Connected.": "Gekoppeld.",
+ "Connected: {}": "Gekoppeld: {}",
+ "Connected: {} and {} more": {
+  "one": "Gekoppeld: {} en {} andere",
+  "other": "Gekoppeld: {} en {} andere"
+ },
  "Connecting": "Verbinden",
  "Connecting WhatsApp is taking too long. Try again to pick up where it stopped.": "WhatsApp koppelen duurt te lang. Probeer opnieuw om verder te gaan waar het stopte.",
  "Connecting {}…": "{} verbinden…",
@@ -5001,6 +5006,7 @@
  "This account is shared with you; only an admin of that Fleet can share it": "Dit account is met je gedeeld; alleen een beheerder van die Fleet kan het delen",
  "This address bounced on {}": "Dit adres kwam terug op {}",
  "This address isn’t ready yet. The Machine tries again within the hour.": "Dit adres is nog niet klaar. The Machine probeert het binnen het uur opnieuw.",
+ "This adds a new connection. Existing ones stay.": "Dit voegt een nieuwe koppeling toe. Bestaande blijven.",
  "This agent job stopped or the draft changed. Its result stays on the card without replacing the draft.": "Deze agentopdracht is gestopt of het concept is gewijzigd. Het resultaat blijft op de kaart zonder het concept te vervangen.",
  "This archive has entries outside its own folder; not importing it": "Dit archief bevat items buiten zijn eigen map; het wordt niet geïmporteerd",
  "This archive has no manifest; it is not an export of The Machine": "Dit archief heeft geen manifest; het is geen export van The Machine",
