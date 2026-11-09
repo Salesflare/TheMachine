@@ -1,3 +1,4 @@
+import datetime as dt
 import json
 import subprocess
 import threading
@@ -428,6 +429,22 @@ class ThreadSnoozes(unittest.TestCase):
         with self.store.connect() as db:db.execute("UPDATE thread_snoozes SET until='2000-01-01T00:00:00+00:00'")
         app.thread_snooze_step(Gmail());self.assertEqual(calls[-1],('wake','work','abc123'))
         self.assertEqual(self.snoozes()[0]['status'],'returned');self.assertNotIn('Thread out',a.card(self.row()))
+
+    def test_a_reply_outlook_is_still_sending_is_asked_again_soon_without_an_error(self):
+        self.ready(**self.reply);self.confirm();self.app().action_step(self.transport())
+        answers=['sending','snoozed']
+        class Outlook:
+            def snooze(self,*_):return answers.pop(0)
+        with self.assertNoLogs(a.LOG,'ERROR'):self.app().thread_snooze_step(Outlook())
+        row=self.snoozes()[0]
+        self.assertEqual((row['status'],row['attempts'],row['error']),('queued',0,None))
+        self.assertLessEqual(row['retry_at'],(dt.datetime.fromisoformat(a.now())+dt.timedelta(minutes=2)).isoformat())
+        with self.store.connect() as db:db.execute('UPDATE thread_snoozes SET retry_at=NULL')
+        self.app().thread_snooze_step(Outlook());self.assertEqual(self.snoozes()[0]['status'],'snoozed')
+        # Still not in Sent Items long after the send: an error, with the usual backoff.
+        with self.store.connect() as db:db.execute("UPDATE thread_snoozes SET status='queued',created_at='2000-01-01T00:00:00+00:00'")
+        answers.append('sending');self.app().thread_snooze_step(Outlook())
+        row=self.snoozes()[0];self.assertEqual((row['status'],row['attempts'],row['error']),('queued',1,'RuntimeError'))
 
     def test_missing_permission_and_errors_are_reported_not_hidden(self):
         self.ready(**self.reply);self.confirm();self.app().action_step(self.transport())
