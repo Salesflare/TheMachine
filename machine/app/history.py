@@ -1,6 +1,7 @@
-"""History backfill in the service: older WhatsApp messages, email and meetings brought in slowly in the background,
-as history only (machine/store/history.py has the line between history and signal). A mixin of assistant.App
-(APP_MIXINS); the source readers come from App.HISTORY_SOURCES (Gmail, Calendar and WhatsApp stay in assistant.py).
+"""History backfill in the service: older WhatsApp, Slack and Teams messages, email and meetings brought in slowly in
+the background, as history only (machine/store/history.py has the line between history and signal). A mixin of
+assistant.App (APP_MIXINS); the source readers come from App.HISTORY_SOURCES (Gmail, Calendar and WhatsApp stay in
+assistant.py; Slack reads through its collector's own client, Teams through connectors/teams.py history_page).
 
 When it runs: only after the first look ended, never while a review, a first import or a sync read runs, with room on
 the disk and in memory, at the lowest CPU and disk priority, one small step at a time (STEP_GAP_SECONDS apart), so
@@ -51,6 +52,13 @@ RATE_LIMIT_REST = 1800  # seconds all history work rests after a 429 or quota an
 LIVE_LIMIT_WINDOW = dt.timedelta(minutes=30)  # a live sync's 429 this recent holds history back too
 EMBED_BATCH = 8  # history events per embedding request: small, so a live one never waits long behind it
 EMBED_GAP_SECONDS = 30  # between two history embedding batches
+# Slack's slow lane (history_slack). Slack allows a non-Marketplace app about one history or replies read a minute per
+# workspace, and the collector spends one every few minutes (machine/sources/slack.py). History shares the collector's
+# client and reads only while the collector rests with room for its own next read after it: at most one page (Slack's
+# own page size for the connection, slack_limits) every SLACK_GAP_SECONDS, never in a minute the collector wants.
+SLACK_GAP_SECONDS = 180
+SLACK_WAIT_MAX = 60  # seconds a step may wait for the connection's minute of the round; longer: another step tries
+SLACK_THREADS_KEEP = 5000  # threads with replies queued for the walk's second pass
 MAIL, CALENDAR, WHATSAPP = ('gmail', 'outlook'), ('calendar', 'outlook_calendar'), ('whatsapp',)
 CONNECTOR_HISTORY = ('teams',)  # a connector with its own history_page (connectors/teams.py)
 
@@ -58,7 +66,7 @@ CONNECTOR_HISTORY = ('teams',)  # a connector with its own history_page (connect
 def kind(account):
     service = account.get('service', 'gmail')
     return ('mail' if service in MAIL else 'calendar' if service in CALENDAR else 'whatsapp' if service in WHATSAPP
-            else 'connector' if service in CONNECTOR_HISTORY else None)
+            else 'slack' if service == 'slack' else 'connector' if service in CONNECTOR_HISTORY else None)
 
 
 def free_disk(database):
@@ -184,7 +192,8 @@ class HistoryApp:
             with self.store.connect() as db:
                 found = history.get(db, account['id'])
                 imported = history.first_import_done(db, account['id'])
-            if found and found['done_at'] and (found['depth_days'] or 0) >= days:
+            reopen = bool(found and found['done_at'] and kind(account) == 'connector' and 'channels' not in found['state'])
+            if found and found['done_at'] and (found['depth_days'] or 0) >= days and not reopen:
                 continue
             if not imported:
                 reading = reading or 'first_import'
@@ -195,14 +204,21 @@ class HistoryApp:
             if resting is not None and account['id'] not in resting:
                 reading = 'sync'
                 continue  # its own sync reads it now: another one, or this one once that read is done
-            if found and found['done_at']:  # a deeper setting since: walk on from where it stopped
+            if reopen:  # Teams from before channel history: its chats are in, its channels' walk follows
+                state['chats'] = []
+            elif found and found['done_at']:  # a deeper setting since: walk on from where it stopped
                 state.update(upper=state.get('target'), target=None, cursor=None, token=None)
-                state.pop('chats', None)  # a connector's walk (history_connector) lists its chats again
+                for key in ('chats', 'channels', 'threads', 'link'):
+                    state.pop(key, None)  # a connector's or Slack's walk lists its conversations again
             state['upper'] = state.get('upper') or self.history_upper(account, stamp)
             state['target'] = state.get('target') or history.before(stamp, days)  # fixed for the walk: a page token holds its query
             state.pop('error_at', None)
             try:
-                kept, oldest, done = getattr(self, 'history_' + kind(account))(account, state)
+                stepped = getattr(self, 'history_' + kind(account))(account, state)
+                if stepped is None:  # not its turn yet (Slack's slow lane): the others go
+                    reading = reading or 'sync'
+                    continue
+                kept, oldest, done = stepped
             except SourceError as error:  # tried again later; the connection's own sync reports its errors
                 LOG.info('history account=%s waits error=%s', account['id'], error)
                 with self.store.connect() as db:
@@ -260,6 +276,8 @@ class HistoryApp:
         state = self.store.checkpoint(account['id']) or {}
         if kind(account) == 'mail' and str(state.get('after') or '').isdigit():
             return dt.datetime.fromtimestamp(int(state['after']), dt.timezone.utc).isoformat()
+        if kind(account) == 'slack' and re.fullmatch(r'\d+(\.\d+)?', str(state.get('after') or '')):
+            return dt.datetime.fromtimestamp(float(state['after']), dt.timezone.utc).isoformat()  # its first import's window
         return history.before(stamp, int(self.config.get('bootstrap_days', 7)) + 1)
 
     def history_keep(self, account, events):
@@ -309,6 +327,69 @@ class HistoryApp:
         events, done = module.history_page(self.config, account, CONNECTOR_HELPERS, state, state['upper'], state['target'])
         kept, oldest = self.history_keep(account, [e for e in events if not e.get('deleted')])
         return kept, oldest, done
+
+    def history_slack(self, account, state):
+        """One page of a Slack connection's older messages, newest first. The conversations are the collector's own
+        list (users.conversations: the channels, private channels, direct and group messages the owner is in, never one
+        more), most recently active first, each back to the target; then the replies of the threads found on the way.
+        Reads only in Slack's slow lane (SLACK_GAP_SECONDS): None when it isn't its turn, so the others go."""
+        from machine.sources.slack import slack_activity, slack_error, slack_limits, slack_page_names
+        event = self.HISTORY_SOURCES['slack'][1]
+        live = self.store.checkpoint(account['id']) or {}
+        known = {c['id']: c for c in live.get('channels') or [] if isinstance(c, dict) and c.get('id') and not c.get('error')}
+        if 'chats' not in state:  # no Slack call: the collector's list as it is now
+            state.update(chats=[c['id'] for c in sorted(known.values(), key=slack_activity, reverse=True)], threads=[], cursor=None)
+            return 0, None, not state['chats']
+        while state['chats'] and state['chats'][0] not in known:
+            state.update(chats=state['chats'][1:], cursor=None)  # left it since, or Slack refused it: never read here
+        state['threads'] = [t for t in state.get('threads') or [] if t[0] in known]
+        if not state['chats'] and not state['threads']:
+            return 0, None, True
+        if time.time() < float(state.get('next_at') or 0):
+            return None
+        source = self.slack_source(account)
+        left = (self.__dict__.get('collector_rest_until') or {}).get(account['id'], 0) - time.monotonic()
+        wait = source.limited_wait()
+        if wait > SLACK_WAIT_MAX or left < wait + source.limited_gap():
+            return None  # the collector reads now or soon: its read comes first, history takes a later minute
+        state['next_at'] = time.time() + SLACK_GAP_SECONDS
+        oldest = f"{dt.datetime.fromisoformat(state['target']).timestamp():.6f}"
+        latest = f"{dt.datetime.fromisoformat(state['upper']).timestamp():.6f}"
+        thread = None if state['chats'] else state['threads'][0]
+        channel = known[thread[0] if thread else state['chats'][0]]
+        params = {'channel': channel['id'], 'oldest': oldest, 'latest': latest, 'limit': slack_limits(account)['page']}
+        if thread:
+            params['ts'] = thread[1]
+        if state.get('cursor'):
+            params['cursor'] = state['cursor']
+        try:
+            page = source.get('conversations.replies' if thread else 'conversations.history', params)
+        except SourceError as error:
+            if slack_error(error) == 'slack_invalid_cursor':
+                state['cursor'] = None
+            elif slack_error(error) not in ('slack_thread_not_found', 'slack_channel_not_found', 'slack_not_in_channel'):
+                raise
+            else:  # gone, or no longer the owner's: on to the next one
+                state.update(cursor=None, **({'threads': state['threads'][1:]} if thread else {'chats': state['chats'][1:]}))
+            return 0, None, False
+        messages = [m for m in page.get('messages') or [] if isinstance(m, dict)]
+        names = slack_page_names(self.store, channel, messages)
+        events = []
+        for raw in messages:
+            if raw.get('subtype') == 'message_deleted' or (thread and raw.get('ts') == thread[1]):
+                continue  # a deletion, or the thread's own first message (its conversation's walk has it)
+            try:
+                found = event(account, channel, raw, names)
+            except SourceError:
+                continue  # a message it can't take, as the sync skips it
+            events.append(found)
+            if not thread and raw.get('reply_count') and len(state['threads']) < SLACK_THREADS_KEEP:
+                state['threads'].append([channel['id'], found['metadata']['message_ts']])
+        kept, found_oldest = self.history_keep(account, events)
+        state['cursor'] = (page.get('response_metadata') or {}).get('next_cursor') or None
+        if not state['cursor']:
+            state.update(**({'threads': state['threads'][1:]} if thread else {'chats': state['chats'][1:]}))
+        return kept, found_oldest, not state['chats'] and not state['threads']
 
     def history_mail(self, account, state):
         """One page of the mailbox's older mail (Gmail or Outlook, the read-only sign-in it has), newest first."""

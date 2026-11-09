@@ -620,9 +620,11 @@ def check(config, account, helpers):
 # ------------------------------------------------------------------------------------------------ history
 
 def history_page(config, account, helpers, state, upper, target):
-    """One small step of older chat messages, kept as history (machine/app/history.py): first the list of chats, then one
-    page of 50 per step, newest first, from `upper` back to `target`. Returns (events, done). state holds only chat ids
-    and Graph's next link."""
+    """One small step of older messages, kept as history (machine/app/history.py), newest first, from `upper` back to
+    `target`: first the list of chats, then one page of 50 per step; after the chats, with the admin's OK the live sync
+    has too, the channels of the teams the owner is in (the same list it reads), one page of threads per step. Returns
+    (events, done). state holds only chat and channel ids and Graph's next link. A 429 or 503 raises with its
+    Retry-After, and all history rests (machine/app/history.py history_rest)."""
     source = Source(config, account, helpers)
     upper, target = stamp(upper), stamp(target)
     if 'chats' not in state:
@@ -630,9 +632,18 @@ def history_page(config, account, helpers, state, upper, target):
         for items in source.pages('teams.chats', {'$top': 50}, CHAT_PAGES * 2):
             chats += [str(c['id']) for c in items if c.get('id')]
         state.update(chats=chats, link=None)
-        return [], not chats
-    if not state['chats']:
+        return [], False
+    if state['chats']:
+        return history_chat(source, account, state, upper, target), False
+    if 'channels' not in state:
+        state.update(channels=history_channels(source), link=None)
+        return [], not state['channels']
+    if not state['channels']:
         return [], True
+    return history_channel(source, account, state, upper, target), not state['channels']
+
+
+def history_chat(source, account, state, upper, target):
     chat_id = state['chats'][0]
     chat = source.call('teams.chat', {'chat': chat_id})
     info = chat_info(source, chat)
@@ -657,4 +668,56 @@ def history_page(config, account, helpers, state, upper, target):
         state['link'] = None
     else:
         state['link'] = link
-    return events, not state['chats']
+    return events
+
+
+def history_channels(source):
+    """[[team id, channel id, 'Team / channel']] of the teams the owner is in, only when the live sync reads channels too
+    (the admin's OK): never more than it reads. Without it, or refused, none."""
+    if not set(CHANNEL_SCOPES) <= source.granted():
+        return []
+    try:
+        return channel_list(source, {}, dt.datetime.now(dt.timezone.utc))
+    except source.helpers.SourceError as error:
+        if error.status != 403:
+            raise
+        return []
+
+
+def history_channel(source, account, state, upper, target):
+    """One page of a channel's threads (sorted by their last activity, replies with them): the messages from `target`
+    up to `upper` (newer ones are the live sync's). A thread last active before `target` ends the channel."""
+    team, channel, name = state['channels'][0]
+    params = {'team': team, 'channel': channel, '$top': 50, '$expand': 'replies'}
+    if state.get('link'):
+        params = {'team': team, 'channel': channel, '$link': state['link']}
+    try:
+        page = source.call('teams.channel.messages', params)
+    except source.helpers.SourceError as error:
+        if error.status not in (403, 404):
+            raise
+        page = {}  # gone, or no longer the owner's: on to the next one
+    events, old, me = [], False, source.whoami()
+    for root in (page or {}).get('value') or []:
+        if not isinstance(root, dict):
+            continue
+        active = thread_activity(root)
+        if not active or active < target:
+            old = True
+            break
+        info = {'id': channel + ':' + str(root.get('id')), 'kind': 'channel', 'name': name, 'url': root.get('webUrl')}
+        for raw in [root] + [r for r in root.get('replies') or [] if isinstance(r, dict)]:
+            at = stamp(raw.get('createdDateTime'))
+            if not at or not target <= at < upper or not person_message(raw) or raw.get('deletedDateTime'):
+                continue
+            try:
+                events.append(message_event(account, info, raw, {}, me))
+            except (ValueError, KeyError, TypeError):
+                continue
+    link = (page or {}).get('@odata.nextLink')
+    if old or not link:
+        state['channels'] = state['channels'][1:]
+        state['link'] = None
+    else:
+        state['link'] = link
+    return events

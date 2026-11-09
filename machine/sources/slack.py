@@ -60,6 +60,9 @@ class Slack:
         # the channel first. So this collector spends at most one of those reads every
         # slack_read_seconds (default 3 minutes) and leaves the rest of the minute to others.
         self.limited_reads = {'conversations.history', 'conversations.replies'}
+        # The collector and the history backfill (machine/app/history.py history_slack) share this client, so one
+        # limited read waits for the other's: never two in Slack's minute.
+        self.limited_lock = threading.Lock()
         self.read_seconds = max(limits['floor'], int(config.get('slack_read_seconds', limits['read_seconds'])))
         self.last_limited = time.monotonic()
         # Machines on one workspace (a team's hosted servers, an own install) share that one read a minute. Each reads
@@ -145,15 +148,20 @@ class Slack:
                 self.slot %= self.slots
                 self.keep_round()
 
+    def limited_gap(self):
+        """Seconds after a limited read before the next one may go (its own minute of the round comes on top)."""
+        return self.round if self.slots < 2 else 65
+
+    def limited_wait(self, stamp=None):
+        """Seconds a history or replies read would wait now (pace) for this connection's turn."""
+        stamp = time.monotonic() if stamp is None else stamp
+        delay = max(0, 2 - (stamp - self.last_call), self.limited_gap() - (stamp - self.last_limited))
+        # with minutes in a round: never two reads within Slack's minute, then this Machine's own minute (after a restart too)
+        return delay + self.slot_wait(time.time() + delay) if self.slots > 1 else delay
+
     def pace(self, method):
         stamp = time.monotonic()
-        delay = max(0, self.CALL_GAP.get(method, 2) - (stamp - self.last_call))
-        if method in self.limited_reads:
-            if self.slots < 2:
-                delay = max(delay, self.round - (stamp - self.last_limited))
-            else:  # never two reads within Slack's minute, then this Machine's own minute (after a restart too)
-                delay = max(delay, 65 - (stamp - self.last_limited))
-                delay += self.slot_wait(time.time() + delay)
+        delay = self.limited_wait(stamp) if method in self.limited_reads else max(0, self.CALL_GAP.get(method, 2) - (stamp - self.last_call))
         if self.stop is not None:
             if self.stop.wait(delay):
                 raise SourceError('collector_stopped')
@@ -188,6 +196,12 @@ class Slack:
     def get(self, method, params=None):
         if method not in self.METHODS:
             raise SourceError('slack_method_not_allowed')
+        if method in self.limited_reads:
+            with self.limited_lock:
+                return self.read(method, params)
+        return self.read(method, params)
+
+    def read(self, method, params):
         self.pace(method)
         values = urllib.parse.urlencode(params or {})
         broker = self.account.get('transport') == 'broker'

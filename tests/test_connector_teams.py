@@ -57,6 +57,7 @@ class FakeGraph:
         self.fail = {}  # method -> status
         self.vtt = b'WEBVTT\n\n00:00:01.000 --> 00:00:04.000\n<v Robin Reviewer>We ship Friday.</v>\n\n00:00:05.000 --> 00:00:07.000\n<v Robin Reviewer>Sam sends the quote.</v>\n'
         self.insights = []
+        self.joined, self.channels, self.channel_pages = [], {}, {}
 
     def scopes(self, config, credential, signin):
         return sorted(self.granted)
@@ -104,7 +105,16 @@ class FakeGraph:
             assert raw and p['$format'] == 'text/vtt'
             return self.vtt
         if method == 'teams.joined':
-            return {'value': []}
+            return {'value': copy.deepcopy(self.joined)}
+        if method == 'teams.channels':
+            return {'value': copy.deepcopy(self.channels.get(p['team'], []))}
+        if method == 'teams.channel.messages':
+            pages = self.channel_pages.get(p['channel'], [])
+            n = int(p['$link'].rsplit('=', 1)[1]) if p.get('$link') else 0
+            out = {'value': copy.deepcopy(pages[n]) if n < len(pages) else []}
+            if n + 1 < len(pages):
+                out['@odata.nextLink'] = f"https://graph.microsoft.com/v1.0/teams/{p['team']}/channels/{p['channel']}/messages?$skiptoken={n + 1}"
+            return out
         raise AssertionError('unexpected ' + method)
 
 
@@ -237,7 +247,38 @@ class TeamsTests(unittest.TestCase):
         self.assertEqual([e['body'] for e in events], ['Morning Sam'])  # older than upper, no bot
         events, done = teams.history_page(self.config, ACCOUNT, self.helpers, state, '2026-11-05T09:30:00+00:00', '2026-10-01T00:00:00+00:00')
         self.assertEqual([e['body'] for e in events], ['Notes in the deck'])
-        self.assertTrue(done)
+        self.assertFalse(done)
+        events, done = teams.history_page(self.config, ACCOUNT, self.helpers, state, '2026-11-05T09:30:00+00:00', '2026-10-01T00:00:00+00:00')
+        self.assertEqual((events, done, state['channels']), ([], True, []))  # no admin OK: no channels, as the live sync
+        self.assertNotIn('teams.joined', [m for m, _ in self.fake.calls])
+
+    def test_history_reads_channel_threads_with_the_admins_ok_and_rests_on_throttling(self):
+        self.fake.granted = set(ALL_SCOPES)
+        self.fake.joined = [{'id': 'team-1', 'displayName': 'Acme'}]
+        self.fake.channels = {'team-1': [{'id': 'chan-1', 'displayName': 'Sales', 'membershipType': 'standard'}]}
+        reply = message('r1', '2026-09-02T10:00:00Z', user(ME, 'Owner'), 'On it')
+        self.fake.channel_pages = {'chan-1': [
+            [message('t1', '2026-11-05T08:00:00Z', user(SAM, 'Sam Sender'), 'Live week, not history'),
+             {**message('t2', '2026-09-01T10:00:00Z', user(ROBIN, 'Robin Reviewer'), 'Q3 plan'), 'replies': [reply]}],
+            [message('t3', '2026-08-01T10:00:00Z', user(SAM, 'Sam Sender'), 'Summer numbers')],
+            [message('t4', '2025-01-01T10:00:00Z', user(SAM, 'Sam Sender'), 'Too old')]]}
+        upper, target = '2026-10-29T09:00:00+00:00', '2025-11-05T09:00:00+00:00'
+        state = {'chats': []}  # the chats are in (a Machine from before channel history goes on from here)
+        events, done = teams.history_page(self.config, ACCOUNT, self.helpers, state, upper, target)
+        self.assertEqual((events, done, state['channels']), ([], False, [['team-1', 'chan-1', 'Acme / Sales']]))
+        events, done = teams.history_page(self.config, ACCOUNT, self.helpers, state, upper, target)
+        self.assertEqual(([e['body'] for e in events], done), (['Q3 plan', 'On it'], False))
+        self.assertEqual(events[0]['metadata']['chat_kind'], 'channel')
+        self.fake.fail['teams.channel.messages'] = 429  # Graph throttles: the step raises, history rests, the link stays
+        with self.assertRaises(CONNECTOR_HELPERS.SourceError) as caught:
+            teams.history_page(self.config, ACCOUNT, self.helpers, state, upper, target)
+        self.assertEqual(caught.exception.status, 429)
+        self.assertTrue(state['link'].endswith('skiptoken=1'))
+        del self.fake.fail['teams.channel.messages']
+        events, done = teams.history_page(self.config, ACCOUNT, self.helpers, state, upper, target)
+        self.assertEqual(([e['body'] for e in events], done), (['Summer numbers'], False))
+        events, done = teams.history_page(self.config, ACCOUNT, self.helpers, state, upper, target)
+        self.assertEqual((events, done), ([], True))  # a thread older than the target ends the channel
 
     def test_text(self):
         self.assertEqual(teams.html_text({'contentType': 'html', 'content': '<p>One&nbsp;two</p><p>three</p>'}), 'One two\n\nthree')

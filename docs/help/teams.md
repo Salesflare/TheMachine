@@ -8,7 +8,7 @@ site: Connect Microsoft Teams
 ---
 ## What it reads
 
-Your 1:1, group and meeting chats in Teams: the last 7 days when you connect, then new messages every few minutes. Older chats come in later, a little at a time, without holding anything up.
+Your 1:1, group and meeting chats in Teams: the last 7 days when you connect, then new messages every few minutes. About a year of older chats, and of channel threads with your admin's OK, comes in later as [history](history.md), a little at a time, without holding anything up.
 
 With your admin's OK, it also reads:
 

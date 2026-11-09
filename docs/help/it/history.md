@@ -1,14 +1,14 @@
 ---
 title: Cronologia
 area: connections
-summary: Circa un anno di vecchie email, riunioni e chat WhatsApp, per cercare, leggere e conoscere le tue persone. Mai un'attività.
+summary: Circa un anno di vecchie email, riunioni e messaggi WhatsApp, Slack e Teams, per cercare, leggere e conoscere le tue persone. Mai un'attività.
 covers: history
 code: machine/app/history.py, machine/store/history.py, machine/store/graph_history.py
 keywords: older messages, backfill, archive, past emails
 ---
 ## Cosa tiene
 
-Ogni account email, calendario e WhatsApp tiene circa un anno di vecchi messaggi e riunioni. La ricerca li trova, anche per significato, una conversazione li mostra e il [Calendario](calendar.md) mostra le riunioni passate.
+Ogni account email, calendario, WhatsApp, Slack e Teams tiene circa un anno di vecchi messaggi e riunioni. La ricerca li trova, anche per significato, una conversazione li mostra e il [Calendario](calendar.md) mostra le riunioni passate.
 
 La sua scheda dice fin dove arriva: **Cronologia: fino a** un mese, quando è arrivata.
 
@@ -28,4 +28,4 @@ Usa l'accesso che ogni connessione ha già. Non viene chiesto niente di nuovo.
 
 ## Fin dove
 
-Circa un anno di default. Le Machine self-hosted possono impostare `history_days` nella configurazione (0 la spegne, fino a 730). Telegram, Slack e le altre fonti tengono quello che leggono oggi.
+Circa un anno di default. Le Machine self-hosted possono impostare `history_days` nella configurazione (0 la spegne, fino a 730). Telegram e le altre fonti tengono quello che leggono oggi.
