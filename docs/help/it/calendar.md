@@ -47,6 +47,8 @@ Ognuna ha il suo **Aggiungi note** o **Aggiungi trascrizione**, **Carica file** 
 
 Con [Zoom](zoom.md) o [Google Meet](google-meet.md) collegato, le sue note compaiono in Note e la sua trascrizione in Trascrizione, segnate **Da Zoom** o **Da Google Meet**. Non sostituiscono mai ciò che hai aggiunto: quando ci sono entrambi, si vedono entrambi.
 
+Le note possono anche essere nell’evento del calendario stesso, aggiunte dopo l’inizio, o arrivare via email da Zoom o Gemini. Dopo la riunione, The Machine ne ricava to-do solo per prossimi passi chiari. Le stesse note arrivate in due modi fanno un solo to-do, con la riunione come fonte: **Note da** e il suo nome.
+
 Una riunione con trascrizione e senza note ha **Genera note**. The Machine le scrive dalla trascrizione: un breve riepilogo, le decisioni e le azioni con chi le fa, nella lingua della riunione.
 
 The Machine mostra **Sto scrivendo le note…** e continua anche se chiudi la riunione; una lunga richiede qualche minuto. Usa il tuo modello e aspetta se raggiungi il limite di utilizzo. Le note riportano **Scritte da The Machine**, non sostituiscono mai quelle che hai aggiunto, e i follow-up nascono da loro come da quelle di Zoom.
