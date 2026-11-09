@@ -68,6 +68,27 @@ class HandoffSources(unittest.TestCase):
                                                     (self.card_row(card)['event_ids'],))]
         self.assertIn('Can I get the 40-seat price?', bodies)
 
+    def test_a_waiting_on_to_do_handed_to_that_teammate_is_their_own_task(self):
+        """"Waiting on Pat: check the query" handed to Pat reads as Pat's task there ("Check the query for Owner"), never
+        as waiting on themselves; a title the owner wrote goes as written, and so does one waiting on someone else."""
+        source = mail('work', 1, TEAM, 'owner@acme.example')
+        card = self.card(source, title='Waiting on Pat: check the query for the prep emails')
+        with self.store.connect() as db:
+            event = db.execute('SELECT id FROM events WHERE source_id=?', (source['source_id'],)).fetchone()[0]
+            db.execute("INSERT INTO promises(direction,who,what,check_at,event_id,account_id,status,suggestion_id,created_at,updated_at) "
+                       "VALUES('theirs','Pat','check the query for the prep emails','2026-10-30',?,'work','carded',?,'2026-10-29','2026-10-29')", (event, card))
+        drafted = self.fleet.handoff_draft(card)['title']
+        self.fleet.hand_off(card, self.ref, 'pat1', drafted, 'Check the query.')
+        self.assertEqual(self.sent()['title'], 'Check the query for the prep emails for Owner')
+        self.fleet.take_back(card)
+        self.fleet.hand_off(card, self.ref, 'pat1', 'Pat: the prep email count', 'Check the query.')
+        self.assertEqual(self.sent()['title'], 'Pat: the prep email count')
+        with self.store.connect() as db:
+            db.execute("UPDATE promises SET who='Sam Lee' WHERE suggestion_id=?", (card,))
+        self.fleet.take_back(card)
+        self.fleet.hand_off(card, self.ref, 'pat1', drafted, 'Check the query.')
+        self.assertEqual(self.sent()['title'], drafted)
+
     def test_leaving_the_sources_out_sends_none_of_their_text(self):
         card = self.card(mail('work', 1, 'Sam Lee <sam@client.example>', 'owner@acme.example'))
         self.fleet.hand_off(card, self.ref, 'pat1', 'Send Sam the pricing', 'Send Sam the pricing.', sources=False)
