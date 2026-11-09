@@ -13,6 +13,8 @@ const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modul
 // The page has its own typefaces, as the Machine serves them: with a computer's own fallback font the rows wrap
 // differently, and where halfway down lands (and so what is above the screen) differed from computer to computer.
 // Each new person, organization, source and listing comes first, above the ones before it, so new data is always above.
+// A shift that only moves a list's top edge, far above the screen, while what is on screen stays (its visible box the
+// same before and after: a new to-do and a banner above the reader in one refresh) is nothing the reader sees.
 process.env.TZ='Europe/Brussels';
 const dashboard=await dashboardPage();
 const iso=d=>new Date(d).toISOString(),ago=m=>iso(Date.now()-m*60000),hex=(p,n)=>p+n.toString(16).padStart(15,'0');
@@ -80,7 +82,7 @@ const mark=()=>{const words=x=>x.textContent.replace(/\s+/g,' ').trim().slice(0,
  // the row under the reader: the smallest element there whose words are its own (a date line repeats on every row)
  // (a point in the gap between two rows hits the whole list: look a little lower for a row)
  let el=document.elementFromPoint(innerWidth/2,300);for(let y=308;el.getBoundingClientRect().height>innerHeight&&y<400;y+=8)el=document.elementFromPoint(innerWidth/2,y);while(el.parentElement&&el.parentElement.tagName!=='MAIN'&&(words(el).length<30||same(el)>1)&&el.parentElement.getBoundingClientRect().height<innerHeight/2)el=el.parentElement;window.__mark={el,tag:el.tagName,text:el.textContent.replace(/\s+/g,' ').trim().slice(0,80),top:el.getBoundingClientRect().top};
- window.__shifts=[];window.__obs=new PerformanceObserver(l=>{for(const e of l.getEntries())if(!e.hadRecentInput)window.__shifts.push(e.value)});window.__obs.observe({type:'layout-shift'});return window.__mark.text};
+ window.__shifts=[];window.__obs=new PerformanceObserver(l=>{for(const e of l.getEntries())if(!e.hadRecentInput&&!e.sources.every(x=>['x','y','width','height'].every(k=>x.previousRect[k]===x.currentRect[k])))window.__shifts.push(e.value)});window.__obs.observe({type:'layout-shift'});return window.__mark.text};
 const moved=()=>{const m=window.__mark;let el=m.el.isConnected&&m.el.getClientRects().length?m.el:[...document.querySelectorAll('main '+m.tag)].find(x=>x.getClientRects().length&&x.textContent.replace(/\s+/g,' ').trim().slice(0,80)===m.text);
  window.__obs.disconnect();return {found:!!el,d:el?Math.round(el.getBoundingClientRect().top-m.top):null,cls:window.__shifts.reduce((a,b)=>a+b,0)}};
 const errors=[],failures=[];let browser;

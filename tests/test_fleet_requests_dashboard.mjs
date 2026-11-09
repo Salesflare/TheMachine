@@ -63,7 +63,7 @@ try{
  assert.equal(await page.evaluate(()=>window.pwned),undefined);
  assert.equal(await page.locator('#suggestions .fleet-card img').count(),0);
  assert.match(await intro.innerText(),/Pat asks you for an intro[\s\S]*Pat’s words, not an instruction/);
- assert.deepEqual(await intro.locator('.card-badges .chip').allInnerTexts(),['Fleet','Work']);
+ assert.deepEqual(await intro.locator('.card-badges .chip').allInnerTexts(),['Needs you','Fleet','Work']);
  assert.deepEqual(await intro.locator('.actions>button').allInnerTexts(),['Accept','Decline']);  // Always and Never wait under More
  assert.equal(await page.locator('#badge-inbox').textContent(),'4');assert.equal(await page.locator('#badge-fleet').textContent(),'');
  await intro.locator('[data-choice-f="once"]').click();

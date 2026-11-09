@@ -48,6 +48,8 @@ try{
   await page.locator('#side-cards [data-side-fleet="fleet-w1"]').click();
   await page.waitForFunction(()=>document.activeElement?.id==='fleet-w1');
   assert.equal(await page.locator('body.chat-open').count(),0,'the chat closed');
+  // it glides there (a smooth scroll), from where the chat's to-do was
+  await page.waitForFunction(()=>{const r=document.querySelector('#fleet-w1').getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight},null,{timeout:5000}).catch(()=>{});
   const box=await page.locator('#fleet-w1').boundingBox();assert.ok(box&&box.y<height&&box.y+box.height>0,'the card is on screen');
   assert.deepEqual(errors,[]);
   await context.close();
