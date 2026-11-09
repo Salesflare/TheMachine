@@ -3,7 +3,7 @@ title: Routine
 area: cards
 summary: Lavoro che la tua Machine fa da sola, con un ritmo, come un riepilogo del lunedì dei tuoi deal aperti. Legge soltanto.
 covers: tab:routines
-code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, dashboard/routines-page.js
+code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, dashboard/routines-page.js
 order: 10
 keywords: routine, automation, scheduled, every week, every morning, report, suggested, digest, newsletter
 ---
@@ -36,6 +36,8 @@ Le routine girano una alla volta e aspettano quando l’uso del tuo piano IA è 
 ## Cambiarla o fermarla
 
 È nel menu ⋯ della routine. **Cambia quando** prende un nuovo ritmo con parole tue, come "ogni giorno feriale alle 8". **Metti in pausa** ferma le esecuzioni fino a **Riprendi**; ciò che è stato perso durante la pausa non gira dopo. **Ferma** chiude una routine per sempre.
+
+Quando usi **Chiedi modifiche** su un’attività di una routine e la tua nota vale per ogni esecuzione, come "mai emoji", l’attività offre **Cambia anche la routine**. Mostra cosa cambia nelle parole della routine, e la routine cambia solo quando tocchi **Cambiala**. **Lasciala così** la lascia com’è. Una correzione solo di quella bozza non offre nulla.
 
 ## Avanzate: passaggi di script
 

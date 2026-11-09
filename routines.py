@@ -42,6 +42,7 @@ import shlex
 import uuid
 
 import recurring
+import routine_changes
 import routine_recipe
 
 STATES = ('on', 'paused', 'stopped')
@@ -84,6 +85,7 @@ def ensure(db):
     for column in ('trial', 'used', 'steps', 'data', 'recipe'):  # trial: Try it's words; used: skills it followed; steps it ran with, data: Get data's output; recipe: what the recipe did
         if column not in have:
             db.execute(f'ALTER TABLE routine_runs ADD COLUMN {column} TEXT')
+    routine_changes.ensure(db)  # a lasting change learned from a note on one of its to-dos
     for r in db.execute("SELECT id,name,instructions FROM routines WHERE state!='stopped'").fetchall():  # a long placeholder made before gets short
         short = name_of(r[2])
         if short and r[1] != short and r[1] == _long_name_of(r[2]):

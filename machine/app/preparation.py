@@ -46,6 +46,7 @@ from models import background_model
 import next_actions
 import preparation_state
 import recurring
+import routine_changes
 import talk_live
 from timeutil import local_tz, now
 import todo_areas
@@ -304,6 +305,17 @@ class PreparationApp:
                'tool_approval_proposal': 'tool_approval_proposal_action',
                'preparation_blocked': 'preparation_blocked_action'}
 
+    def routine_change_lines(self, job, message):
+        """A run on the owner's note on a routine's to-do: the routine's words and when to offer a lasting change of them
+        (routine_changes.py). Empty for any other run, or when it doesn't fit."""
+        try:
+            with self.store.connect() as db:
+                lines = routine_changes.prompt_lines(db, job)
+        except Exception as error:
+            LOG.error('routine change line error=%s', type(error).__name__)
+            return ''
+        return lines if len(message) + len(lines) < PROMPT_LIMIT - 1000 else ''
+
     def preparation_step(self, runner=None):
         runner=runner or self.preparation_gateway
         self.stop_stale_runs(runner)
@@ -474,6 +486,7 @@ class PreparationApp:
                     request['message']+=area_prompt(self.config,row['account_ids'] if row else '[]',sources,owner_started=True,unplaced=unplaced)  # their own message in its chat
                     request['message']+=evidence_line(self.config,row['account_ids'] if row else '[]',sources)
                 except Exception as error:LOG.error('area line error=%s',type(error).__name__)
+                request['message']+=self.routine_change_lines(job,request['message'])
             else:
                 self.store.note_rule_files(RULE_FILES)
                 try:style=self.store.style_text(job['suggestion_id'])
@@ -497,6 +510,7 @@ class PreparationApp:
                     lines=evidence_line(self.config,row['account_ids'] if row else '[]',sources)
                     if lines and len(request['message'])+len(lines)<PROMPT_LIMIT-1000:request['message']+=lines
                 except Exception as error:LOG.error('source notes error=%s',type(error).__name__)
+                request['message']+=self.routine_change_lines(job,request['message'])
                 try:
                     lines=self.graph_lines(job['suggestion_id'])
                     if len(request['message'])+len(lines)<PROMPT_LIMIT-1000:request['message']+=lines

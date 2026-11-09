@@ -413,6 +413,12 @@ class DecisionsStore:
     def queue_preparation(self, db, suggestion_id, decision_id, action_id=None, resume_action=False):
         return queue_preparation(db, suggestion_id, decision_id, action_id, resume_action)
 
+    def routine_change_line(self, db, suggestion_id, name):
+        """The to-do's chat line once its routine took the change its note taught (routine_changes.save): "Changed the
+        routine X" (card_chat)."""
+        db.execute('INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
+                   ('routine-change:' + uuid.uuid4().hex, suggestion_id, 'routine_change', name, 'dashboard', now()))
+
     def decide(self, suggestion_id, choice, feedback, decision_id, source, snooze_hours=24, snoozed_until=None, snooze_option=None, verified_terminal_job=None, work=False,
                reviewed=None, files=None):
         with self.connect() as db:

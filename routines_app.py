@@ -35,6 +35,7 @@ from machine.app.review import fit_events
 from machine.config import WORKSPACE
 from machine.text import encoded
 import recurring
+import routine_changes
 import routine_imports
 import routine_recipe
 import routine_patterns
@@ -68,6 +69,8 @@ class RoutinesApp:
     # action name -> the method that handles it, called as method(name, args, owner_dashboard) (App.action)
     ACTIONS = {
         'routine_accept': 'routine_accept_action',
+        'routine_change_keep': 'routine_change_action',
+        'routine_change_save': 'routine_change_action',
         'routine_edit': 'routine_edit_action',
         'routine_new': 'routine_new_action',
         'routine_old_job': 'routine_old_job_action',
@@ -136,6 +139,20 @@ class RoutinesApp:
             routines.change_instructions(db, row['id'], args.get('words'), self.routines_stamp(), args.get('steps') if 'steps' in args else False)
             routines.keep_test(db, row['id'], routines.get(db, row['id']))  # Try it of what was saved: its result
         return self.routines_view(row['id'])
+
+    def routine_change_action(self, name, args, owner_dashboard):
+        """A to-do's offer to change its routine (routine_changes.py): routine_change_save takes the new words, only on the
+        owner's confirm; routine_change_keep leaves the routine as it is."""
+        if not owner_dashboard:
+            raise ValueError('Routines are changed by the owner, on the dashboard')
+        with self.routines_lock(), self.store.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            if name == 'routine_change_keep':
+                routine_changes.keep(db, args.get('suggestion_id'))
+                return {'kept': True}
+            routine = routine_changes.save(db, args.get('suggestion_id'), self.routines_stamp())
+            self.store.routine_change_line(db, str(args.get('suggestion_id')), routine)
+        return {'saved': True, 'line': i18n.t('Changed the routine {}', routine)}
 
     def routine_try_action(self, name, args, owner_dashboard):
         """A test run, one per press: a new routine's words ("every Monday at 9, sum up my open deals"), kept only on Add

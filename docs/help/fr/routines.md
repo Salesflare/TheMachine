@@ -3,7 +3,7 @@ title: Routines
 area: cards
 summary: Du travail que votre Machine fait seule, à un rythme, comme un résumé du lundi de vos deals ouverts. Elle ne fait que lire.
 covers: tab:routines
-code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, dashboard/routines-page.js
+code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, dashboard/routines-page.js
 order: 10
 keywords: routine, automation, scheduled, every week, every morning, report, suggested, digest, newsletter
 ---
@@ -36,6 +36,8 @@ Les routines tournent une à la fois et attendent quand l’usage de votre forfa
 ## La modifier ou l’arrêter
 
 C’est dans le menu ⋯ de la routine. **Changer quand** prend un nouveau rythme dans vos propres mots, comme « chaque jour ouvré à 8 h ». **Mettre en pause** arrête les exécutions jusqu’à **Reprendre** ; ce qui a été manqué pendant la pause ne tourne pas ensuite. **Arrêter** met fin à une routine pour de bon.
+
+Quand vous utilisez **Demander des modifications** sur une tâche d’une routine et que votre note vaut pour chaque exécution, comme « jamais d’emoji », la tâche propose **Modifier aussi la routine**. Elle montre ce qui change dans les mots de la routine, et la routine ne change que quand vous touchez **Modifier**. **Laisser ainsi** la laisse telle quelle. Une correction de ce seul brouillon ne propose rien.
 
 ## Avancé : étapes de script
 

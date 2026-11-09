@@ -3,7 +3,7 @@ title: Rutinas
 area: cards
 summary: Trabajo que tu Machine hace sola, con un ritmo, como un resumen del lunes de tus deals abiertos. Solo lee.
 covers: tab:routines
-code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, dashboard/routines-page.js
+code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, dashboard/routines-page.js
 order: 10
 keywords: routine, automation, scheduled, every week, every morning, report, suggested, digest, newsletter
 ---
@@ -36,6 +36,8 @@ Las rutinas corren de una en una y esperan cuando el uso de tu plan de IA está 
 ## Cambiarla o detenerla
 
 Está en el menú ⋯ de la rutina. **Cambiar cuándo** toma un nuevo ritmo en tus propias palabras, como "cada día laborable a las 8". **Pausar** detiene las ejecuciones hasta **Reanudar**; lo perdido durante la pausa no corre después. **Detener** termina una rutina para siempre.
+
+Cuando usas **Pedir cambios** en una tarea de una rutina y tu nota vale para cada ejecución, como "nunca uses emojis", la tarea ofrece **Cambiar también la rutina**. Muestra qué cambia en las palabras de la rutina, y la rutina solo cambia cuando tocas **Cambiarla**. **Dejarla así** la deja como está. Una corrección solo de ese borrador no ofrece nada.
 
 ## Avanzado: pasos de script
 

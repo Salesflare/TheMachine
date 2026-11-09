@@ -365,6 +365,8 @@ class CardChatApp:
                 if used:
                     owner.append({'kind': 'event', 'text': i18n.t(use_line(len(json.loads(used['event_ids'])), bool(used['mail']))) + via,
                                   'choice': 'use_sources', 'mine': True, 'at': at})
+            elif r['choice'] == 'routine_change':  # Also change the routine, confirmed (routine_changes.save): its name
+                owner.append({'kind': 'event', 'text': i18n.t('Changed the routine {}', r['feedback']), 'choice': 'routine_change', 'mine': True, 'at': at})
             elif r['choice'] in ('move', 'move_undo'):  # More, Move to (move_card): "Moved to Work"; its Undo takes the line back
                 last = next((i for i in reversed(owner) if i.get('choice') == 'move'), None) if r['choice'] == 'move_undo' else None
                 if last:
