@@ -76,6 +76,8 @@ Une tâche qui ne comptait que jusqu’à un moment précis, comme une confirmat
 
 Avant qu’un message ou une passation pour quelqu’un apparaisse comme prêt, ta Machine vérifie tes discussions récentes avec les personnes concernées, en groupe aussi, et attend que Slack les ait lues. Si un message plus récent montre que c’est déjà fait, par exemple la personne a été sollicitée et a dit oui, la tâche se ferme d’elle-même. **Annuler** la fait revenir pendant un jour.
 
+Quand un message plus récent change le plan, comme une fête déplacée ailleurs ou une réservation annulée, The Machine met ses tâches à jour elle-même. Une tâche qui compte encore suit le nouveau plan. Une tâche où il ne reste rien à faire passe dans les tâches terminées comme « Pas nécessaire », son chat dit « Mis à jour : » et pourquoi, et **Annuler** la ramène pendant un jour.
+
 Sur vos premières tâches, une courte ligne sous les boutons montre l’essentiel : **Demander des modifications** et **Pas nécessaire** quand une tâche ne convient pas tout à fait, et sur votre premier brouillon prêt, que rien ne part avant que vous appuyiez sur **Envoyer**. Une astuce disparaît pour de bon dès que vous utilisez son bouton ou appuyez sur ×, sur tous vos appareils.
 
 Le premier jour, le haut des Tâches vous salue par votre prénom et indique qui attend votre réponse depuis le plus longtemps. The Machine rédige cette réponse en premier, pour qu’elle soit prête à votre arrivée. Rien ne part avant que vous l’envoyiez. La ligne disparaît après votre premier jour ou votre première tâche décidée.

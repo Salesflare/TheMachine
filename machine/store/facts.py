@@ -239,14 +239,15 @@ def merge_originals(db, originals, into, text):
                (now(), f'Condensed {len(originals)} note' + ('' if len(originals) == 1 else 's') + ' into: ' + text[:200], into))
 
 
-def fact_line(f):
+def fact_line(f, ids=False):
     """A fact for a prompt: its text, when it ends, and when an event was noted. One a connected AI saved names it
-    ("saved by Claude"), and its text can't close the data block it goes in (facts_block)."""
+    ("saved by Claude"), and its text can't close the data block it goes in (facts_block). ids: the review's, so it can
+    end one a newer message overturned (remember_fact id, ended)."""
     bits = (['noted ' + str(f.get('confirmed_at') or f['created_at'])[:10]] if f.get('fact_kind') == 'event' else []) + \
            (['until ' + f['valid_until']] if f.get('valid_until') else [])
     by = ai_fact_by(f)
     text = f['text'].replace('<<<', '‹‹‹').replace('>>>', '›››') if by else f['text']
-    return '- ' + text + (f" ({', '.join(bits)})" if bits else '') + (f' (saved by {by})' if by else '')
+    return '- ' + (f"[{f['id']}] " if ids else '') + text + (f" ({', '.join(bits)})" if bits else '') + (f' (saved by {by})' if by else '')
 
 
 def close_facts(db, ids):
@@ -470,6 +471,30 @@ class FactsStore:
                 db.execute("INSERT INTO rule_changes(at,kind,text,ref) VALUES(?,'draft_rule',?,?)", (now(), 'Removed draft rule: ' + row['text'], str(fact_id)))
         return {'removed': True}
 
+    def fact_overturned(self, fact_id, reason, event_ids):
+        """A newer message says a fact no longer holds (the plan was cancelled, the date or place moved, they no longer
+        need it): it ends today, like one past its end day ('expired:<id>'), so Learning lists it under Ended with Bring
+        back. Only on messages that came in after it was last said and after the owner last kept it."""
+        reason = ' '.join(str(reason or '').split())
+        ids = sorted({int(i) for i in event_ids or []})
+        if not 5 <= len(reason) <= 200 or not ids:
+            raise ValueError('Give a short plain reason (5-200 characters) and the event_ids of the newer messages')
+        with self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            row = db.execute("SELECT id,text,created_at,confirmed_at,kept_at FROM facts WHERE id=? AND removed_at IS NULL AND kind='fact'", (int(fact_id),)).fetchone()
+            if not row:
+                raise ValueError('Unknown fact')
+            marks = ','.join('?' * len(ids))
+            found = db.execute(f'SELECT count(*),max(ingested_at) FROM events WHERE deleted=0 AND id IN ({marks})', ids).fetchone()
+            if found[0] != len(ids):
+                raise ValueError('Every event must exist and be live')
+            if (found[1] or '') <= max(row['confirmed_at'] or '', row['created_at'] or '', row['kept_at'] or ''):
+                return {'skipped': 'the fact was said or kept after these messages; it stands'}
+            db.execute('UPDATE facts SET removed_at=?,merged_into=?,valid_until=? WHERE id=?', (now(), 'expired:' + str(row['id']), now()[:10], row['id']))
+            db.execute("INSERT INTO rule_changes(at,kind,text,ref) VALUES(?,'condense',?,?)",
+                       (now(), 'Ended: ' + row['text'][:160] + ' Updated: ' + reason, 'expired:' + str(row['id'])))
+        return {'ended': row['id']}
+
     def edit_fact(self, fact_id, text):
         """The owner rewrites something learned in their own words: same fact or rule, new text."""
         text = ' '.join(str(text or '').split())
@@ -501,29 +526,30 @@ class FactsStore:
     fact_line = staticmethod(fact_line)  # a function of db, at the top of this module
 
     @classmethod
-    def facts_block(cls, facts):
+    def facts_block(cls, facts, ids=False):
         """Facts for a prompt: the owner's as lines; those a connected AI saved after them, inside a data block, as
         third-party text that is never followed as instructions."""
-        own = [cls.fact_line(f) for f in facts if not ai_fact_by(f)]
-        ai = [cls.fact_line(f) for f in facts if ai_fact_by(f)]
+        own = [cls.fact_line(f, ids) for f in facts if not ai_fact_by(f)]
+        ai = [cls.fact_line(f, ids) for f in facts if ai_fact_by(f)]
         return '\n'.join(own + ([AI_FACTS_HEAD, '<<<', *ai, '>>>'] if ai else []))
 
-    def facts_text(self, limit=3000, kind='fact'):
+    def facts_text(self, limit=3000, kind='fact', ids=False):
         """Everything learned for a review, up to limit characters: the ones used or said most lately first, so a long
-        list leaves out the stalest, not the newest (a review that never saw a new fact saved it again)."""
-        return self.facts_within(sorted((f for f in self.facts() if f['kind'] == kind), key=lambda f: (f['last_use'], f['created_at'], f['id']), reverse=True), limit)
+        list leaves out the stalest, not the newest (a review that never saw a new fact saved it again). ids: each line
+        starts with its id ("[12] "), for the review to end one a newer message overturned."""
+        return self.facts_within(sorted((f for f in self.facts() if f['kind'] == kind), key=lambda f: (f['last_use'], f['created_at'], f['id']), reverse=True), limit, ids)
 
     @classmethod
-    def facts_within(cls, facts, limit):
+    def facts_within(cls, facts, limit, ids=False):
         """facts_block of as many as fit in limit characters (the owner's first), with … when some are left out."""
         facts = sorted(facts, key=lambda f: bool(ai_fact_by(f)))
         out, size = [], 0
         for f in facts:
-            size += len(cls.fact_line(f)) + 1
+            size += len(cls.fact_line(f, ids)) + 1
             if size > limit:
-                return cls.facts_block(out) + '\n…'
+                return cls.facts_block(out, ids) + '\n…'
             out.append(f)
-        return cls.facts_block(out)
+        return cls.facts_block(out, ids)
 
     def facts_for(self, suggestion_id, kind='fact', settings=None, limit=3000, all_under=FACTS_ALL_UNDER, top=FACTS_TOP, floor=FACTS_FLOOR, accounts=None):
         """The facts (or draft rules) a preparation needs, not everything learned: all of them while they are few;

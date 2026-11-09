@@ -640,6 +640,8 @@ class GraphActionsApp:
                                                  args.get('related'), args.get('relation'), args.get('new') is True, args.get('base'))
         if args.get('kind') == 'voice':  # how the owner writes on one channel: the whole line, from their note or edit
             return self.store.save_voice(args.get('channel'), args.get('text'), 'assistant', args.get('decision_id'), args.get('edit_id'), args.get('replaces'))
+        if args.get('id') is not None and args.get('ended') is True:  # a newer message says it no longer holds
+            return self.store.fact_overturned(args['id'], args.get('reason'), args.get('event_ids') or [])
         if args.get('id') is not None and not args.get('text'):  # who an existing fact is about
             return self.store.fact_about(args['id'], args.get('about'))
         return self.store.remember_fact(args.get('text'), args.get('decision_id'), args.get('kind') or None, args.get('replaces'), args.get('about'),

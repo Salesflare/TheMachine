@@ -76,6 +76,8 @@ Una tarea que solo importaba hasta un momento concreto, como una confirmación a
 
 Antes de que un mensaje o un traspaso para alguien aparezca como listo, tu Machine revisa tus chats recientes con esas personas, también los de grupo, y espera a que Slack los lea. Si un mensaje posterior muestra que ya está hecho, por ejemplo porque ya se lo pidieron y dijo que sí, la tarea se cierra sola. **Deshacer** la recupera durante un día.
 
+Cuando un mensaje más nuevo cambia el plan, como una fiesta que pasa a otro lugar o una reserva cancelada, The Machine actualiza sus tareas sola. Una que todavía importa sigue el nuevo plan. Una que ya no tiene nada que hacer pasa a las hechas como "No hace falta", su chat dice "Actualizado:" y por qué, y **Deshacer** la trae de vuelta durante un día.
+
 En tus primeras tareas, una línea corta bajo los botones muestra lo esencial: **Pedir cambios** y **No hace falta** cuando una tarea no es del todo así, y en tu primer borrador listo, que no sale nada hasta que pulsas **Enviar**. Un consejo desaparece para siempre en cuanto usas su botón o pulsas ×, en todos tus dispositivos.
 
 En tu primer día, la parte de arriba de Tareas te saluda por tu nombre y muestra quién lleva más tiempo esperando tu respuesta. The Machine redacta esa respuesta primero, para que esté lista cuando llegues. No sale nada hasta que la envías. La línea desaparece después de tu primer día o de tu primera tarea decidida.

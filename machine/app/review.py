@@ -484,7 +484,7 @@ class ReviewApp:
         offered_edits = []
         if request['action'] == 'start':
             self.store.note_rule_files(RULE_FILES)
-            request['message'] = review_prompt(run['run_id'], [a['id'] for a in self.config['accounts']], self.store.preference_summary(), self.store.facts_text(),
+            request['message'] = review_prompt(run['run_id'], [a['id'] for a in self.config['accounts']], self.store.preference_summary(), self.store.facts_text(ids=True),
                                                self.store.slipped(run['run_id']), self.store.promises_text(),
                                                self.store.unnamed_text(run['run_id']), self.store.role_text(run['run_id']), self.store.notes_to_learn(),
                                                self.waiting_handoffs_text(), self.split_notes_text(), self.store.boards_text(run['run_id']),
@@ -779,6 +779,8 @@ class ReviewApp:
             return {**enrichment.status(db, self.config), 'people': enrichment.people_status(db)}
 
     def looks_handled_action(self, name, args, owner_dashboard=False):
+        if args.get('plan_changed') is True:  # a newer message overturned its plan: it closes by itself (Store.plan_changed)
+            return self.store.plan_changed(args['suggestion_id'], args.get('reason'), args.get('event_ids') or [])
         return self.store.looks_handled(args['suggestion_id'], args.get('reason'), args.get('event_ids') or [])
 
     def handoff_on_it_action(self, name, args, owner_dashboard=False):

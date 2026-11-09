@@ -76,6 +76,8 @@ Uma tarefa que só importava até um certo momento, como uma confirmação antes
 
 Antes que uma mensagem ou um repasse para alguém apareça como pronto, sua Machine confere suas conversas recentes com as pessoas envolvidas, em grupo também, e espera o Slack lê-las. Se uma mensagem posterior mostra que já está feito, por exemplo a pessoa já foi chamada e disse sim, a tarefa fecha sozinha. **Desfazer** traz a tarefa de volta por um dia.
 
+Quando uma mensagem mais nova muda o plano, como uma festa que muda de lugar ou uma reserva cancelada, The Machine atualiza as tarefas sozinha. Uma que ainda importa segue o novo plano. Uma sem mais nada a fazer vai para as feitas como "Não precisa", o chat dela diz "Atualizado:" e por quê, e **Desfazer** traz a tarefa de volta por um dia.
+
 Nas suas primeiras tarefas, uma linha curta abaixo dos botões mostra o essencial: **Pedir mudanças** e **Não precisa** quando uma tarefa não está bem certa, e no seu primeiro rascunho pronto, que nada sai até você tocar em **Enviar**. Uma dica some de vez assim que você usa o botão dela ou toca no ×, em todos os seus aparelhos.
 
 No seu primeiro dia, o topo de Tarefas diz oi pelo seu nome e mostra quem espera sua resposta há mais tempo. A Machine rascunha essa resposta primeiro, para que esteja pronta quando você chegar. Nada sai até você enviar. A linha some depois do seu primeiro dia ou da sua primeira tarefa decidida.
