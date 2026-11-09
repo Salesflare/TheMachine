@@ -165,7 +165,7 @@ function pairsSteady(k,items){const fresh=new Map((items||[]).map(s=>[pairKey(k,
  return rows.map(([key,s])=>pairSaid.has(key)?{...s,said:pairSaid.get(key)}:s)}
 // Answered pairs leave the lists: their rows, and a list's heading when no row is left
 function pairsSettle(){clearTimeout(pairTimer);for(const k of ['p','o'])pairRows[k]=pairRows[k].filter(([key])=>!pairSaid.has(key));
- for(const list of [$('#people-view'),graphKept?.f].flatMap(v=>v?[...v.querySelectorAll('.graph-list[data-pairs]')]:[])){  /* the lists shown, and the ones a search put aside */for(const row of list.querySelectorAll('.same-pair:has(.pair-said)'))row.remove();
+ for(const list of [$('#people-view'),graphKept?.f].flatMap(v=>v?[...v.querySelectorAll('.graph-list[data-pairs]')]:[])){  /* the lists shown, and the ones a search put aside */for(const row of list.querySelectorAll('.same-pair'))if(row.querySelector('.pair-said'))row.remove();
   const left=list.querySelectorAll('.same-pair').length,head=list.previousElementSibling?.matches('.section-head')?list.previousElementSibling:null;
   if(!left){head?.remove();list.remove()}else if(left<2)head?.querySelector('.same-all')?.remove()}}
 // The answer on the row at once, its buttons back if saving it failed
