@@ -25,10 +25,11 @@ Quando uma tarefa é sobre planos de família com alguém que ainda não está n
 
 ## Já feito
 
-Quando vocês dois recebem o mesmo e-mail ou conta e um marca a tarefa como feita, a do outro mostra “Robin já fez isso · sáb, 7 de nov”.
+Quando vocês dois recebem o mesmo e-mail, conta ou formulário e um marca a tarefa como feita, a do outro mostra “Robin já fez isso · sáb, 7 de nov”.
 
 - **Feito** fecha a sua. **Ainda precisa** mantém a tarefa e esconde a linha.
 - Nada fecha sozinho.
+- Um lembrete com o mesmo link de formulário conta como a mesma tarefa.
 - Só um código é compartilhado, nunca a tarefa. Desligue no painel Compartilhar: Tarefas que você já fez.
 
 ## Regras

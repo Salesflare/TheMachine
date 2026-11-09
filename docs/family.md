@@ -48,15 +48,18 @@ Under **Sharing**, the Family has the same rules as a Work Fleet, one per kind f
 
 ## Already did this
 
-When you both get the same email or bill and each get a to-do for it, and one of you marks theirs done, the other's
+When you both get the same email, bill or form and each get a to-do for it, and one of you marks theirs done, the other's
 open to-do gets a quiet line: "Robin did this · Sat, Nov 7", with **Done** and **Still needed**. Nothing closes by
 itself. Still needed hides the line until they reopen theirs and do it again.
 
-- Same to-do means the same email (its Message-ID, whoever it went to) or the same bill: an IBAN with a structured
-  payment reference (Belgian +++…+++ or RF), both checked. An account number alone, like rent, never matches.
+- Same to-do means the same email (its Message-ID, whoever it went to), the same bill (an IBAN with a structured
+  payment reference, Belgian +++…+++ or RF, both checked; an account number alone, like rent, never matches) or the
+  same online form (its link: Google, Microsoft, Typeform, Tally or Jotform). So a reminder that comes as a new email
+  still matches the to-do done from the first one. A form link that is in more than 5 of your emails, like a newsletter
+  footer, never matches.
 - Only to-dos closed with Mark done count; Not needed doesn't.
 - What goes out is a code made with the Family's own secret: no title, sender, amount or account. The other Machine
-  can only match it if it has the same email or bill.
+  can only match it if it has the same email, bill or form.
 - It follows the **To-dos you already did** rule: Never for someone means you don't hear about theirs, and theirs
   don't hear about yours. Never for everyone clears the lines you have.
 

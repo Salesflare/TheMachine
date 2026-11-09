@@ -25,10 +25,11 @@ Gaat een to-do over gezinsplannen met iemand die nog niet in je Familie zit, zoa
 
 ## Al gedaan
 
-Krijgen jullie allebei dezelfde e-mail of rekening en vinkt een van jullie de to-do af, dan zegt die van de ander "Robin deed dit al · za 7 nov".
+Krijgen jullie allebei dezelfde e-mail, rekening of hetzelfde formulier en vinkt een van jullie de to-do af, dan zegt die van de ander "Robin deed dit al · za 7 nov".
 
 - **Gedaan** sluit de jouwe. **Nog nodig** houdt hem en verbergt de regel.
 - Er sluit niets vanzelf.
+- Een herinnering met dezelfde formulierlink telt als dezelfde to-do.
 - Alleen een code wordt gedeeld, nooit de to-do. Zet het uit op het paneel Delen: To-do's die je al deed.
 
 ## Regels

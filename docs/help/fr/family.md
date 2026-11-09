@@ -25,10 +25,11 @@ Quand une tâche porte sur des projets de famille avec quelqu’un qui n’est p
 
 ## Déjà fait
 
-Si vous recevez tous les deux le même e-mail ou la même facture et que l’un de vous marque sa tâche comme faite, celle de l’autre indique « Robin l’a fait · sam. 7 nov. ».
+Si vous recevez tous les deux le même e-mail, la même facture ou le même formulaire et que l’un de vous marque sa tâche comme faite, celle de l’autre indique « Robin l’a fait · sam. 7 nov. ».
 
 - **Fait** ferme la vôtre. **Toujours utile** la garde et masque la ligne.
 - Rien ne se ferme tout seul.
+- Un rappel avec le même lien de formulaire compte comme la même tâche.
 - Seul un code est partagé, jamais la tâche. Désactivez-le dans le volet Partage : Tâches que vous avez déjà faites.
 
 ## Règles

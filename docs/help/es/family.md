@@ -25,10 +25,11 @@ Cuando una tarea trata de planes familiares con alguien que aún no está en tu 
 
 ## Ya hecho
 
-Si a los dos os llega el mismo correo o la misma factura y uno marca su tarea como hecha, la del otro dice “Robin ya lo hizo · sáb, 7 nov”.
+Si a los dos os llega el mismo correo, la misma factura o el mismo formulario y uno marca su tarea como hecha, la del otro dice “Robin ya lo hizo · sáb, 7 nov”.
 
 - **Hecho** cierra la tuya. **Aún hace falta** la mantiene y oculta la línea.
 - Nada se cierra solo.
+- Un recordatorio con el mismo enlace de formulario cuenta como la misma tarea.
 - Solo se comparte un código, nunca la tarea. Desactívalo en el panel Compartir: Tareas que ya hiciste.
 
 ## Reglas

@@ -25,10 +25,11 @@ When a to-do is about family plans with someone not in your Family yet, like "Wh
 
 ## Already did this
 
-When you both get the same email or bill and one of you marks their to-do done, the other's to-do says "Robin did this · Sat, Nov 7".
+When you both get the same email, bill or form and one of you marks their to-do done, the other's to-do says "Robin did this · Sat, Nov 7".
 
 - **Done** closes yours. **Still needed** keeps it and hides the line.
 - Nothing closes by itself.
+- A reminder with the same form link counts as the same to-do.
 - Only a code is shared, never the to-do. Turn it off on the Sharing pane: To-dos you already did.
 
 ## Rules
