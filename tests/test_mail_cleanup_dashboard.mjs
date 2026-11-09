@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {mkdir} from 'node:fs/promises';
-import {join} from 'node:path';
+import {mkdir,readFile} from 'node:fs/promises';
+import {join,basename} from 'node:path';
+import {fileURLToPath} from 'node:url';
 import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
@@ -35,7 +36,7 @@ const server=createServer(async(req,res)=>{let body='';for await(const c of req)
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(url.pathname==='/api/status'){res.end(JSON.stringify(state()));return}
  if(url.pathname==='/api/routines'){res.end(routines());return}
- if(url.pathname.startsWith('/brand/')){res.statusCode=404;res.end();return}
+ if(url.pathname.startsWith('/brand/')){try{const f=basename(url.pathname)==='avatar.png'?'app-icon-192.png':basename(url.pathname);res.setHeader('Content-Type',f.endsWith('.png')?'image/png':f.endsWith('.webp')?'image/webp':'application/octet-stream');res.end(await readFile(fileURLToPath(new URL('../brand/'+f,import.meta.url))))}catch{res.statusCode=404;res.end()}return}  // the app's own images, as machine/config.py serves them
  if(req.method==='POST'&&body){const b=JSON.parse(body);posts.push({action:b.action,...b.args});
   if(b.action==='routine_template'){templates=templates.map(x=>x.key===b.args.key?{...x,added:true}:x);res.end(routines());return}
   if(b.action==='routine_cleanup'){const c=cards.find(x=>x.id===b.args.suggestion_id);
@@ -72,6 +73,7 @@ try{
   await card.locator('[data-cl-n="2"][data-cl-to="keep"]').click();
   await card.locator('[data-cl-n="3"][data-cl-to="go"]').click();
   assert.equal(await text(card.locator('[data-cl-go]')),'Unsubscribe from 2');
+  assert.equal(await card.locator('[data-cl-all]').count(),0,'every row picked: no Unsubscribe from all');
   assert.equal(await card.locator('[data-cl-n="1"][data-cl-to="go"]').getAttribute('aria-pressed'),'true');
   assert.equal(posts.filter(p=>p.action==='routine_cleanup').length,0,'nothing goes before the confirm');
   await card.scrollIntoViewIfNeeded();await shot('newsletters-todo');
@@ -85,6 +87,12 @@ try{
   const sp=page.locator('#task-cl2');await sp.scrollIntoViewIfNeeded();
   assert.equal(await text(sp.locator('.cl-fine')),'Spam moves it to your spam folder.');
   await sp.locator('[data-cl-all]').click();
+  assert.equal(await text(sp.locator('[data-cl-go]')),'Mark 2 as spam');
+  assert.equal(await sp.locator('[data-cl-all]').count(),0,'every row picked: one button');
+  // none picked as spam: the confirm saves Not spam
+  await sp.locator('[data-cl-n="1"][data-cl-to="keep"]').click();await sp.locator('[data-cl-n="2"][data-cl-to="keep"]').click();
+  assert.equal(await text(sp.locator('[data-cl-go]')),'Save picks');
+  await sp.locator('[data-cl-n="1"][data-cl-to="go"]').click();await sp.locator('[data-cl-n="2"][data-cl-to="go"]').click();
   assert.equal(await text(sp.locator('[data-cl-go]')),'Mark 2 as spam');
   await shot('spam-todo');
   await context.close()}
