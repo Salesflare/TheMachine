@@ -52,10 +52,11 @@ try{
   await p.evaluate(()=>showTab('calendar'));assert.equal(await p.locator('#calendar-view').innerHTML(),'');
   await p.evaluate(()=>showTab('feedback'));assert.equal(await p.locator('#learn-tabs').innerHTML(),'');
   await p.evaluate(()=>showTab('people'));assert.equal(await p.locator('#people-view').innerHTML(),'');
-  await p.evaluate(()=>showSettings('writing'));assert.equal(await p.locator('#settings').isHidden(),true);assert.equal(await p.locator('#voices').innerHTML(),'');
   await p.evaluate(()=>showTab('calendar'));await p.evaluate(()=>document.querySelector('#open-help').click());
   release();hold=null;
-  await p.waitForFunction(()=>document.querySelector('#calendar-view').children.length>0&&document.querySelector('#learn-tabs').children.length>0&&document.querySelector('#help-panel').open&&document.querySelector('#people-view').innerHTML!==''&&!document.querySelector('#settings').hidden&&settingsNow==='writing'&&document.querySelector('#voices').innerHTML!=='');
+  // #help-panel is made by Help's part: until it's in, there's none (the check waits, it doesn't throw). Settings has a
+  // block of its own below: opened here too, whichever part came last would decide what shows.
+  await p.waitForFunction(()=>document.querySelector('#calendar-view').children.length>0&&document.querySelector('#learn-tabs').children.length>0&&document.querySelector('#help-panel')?.open&&document.querySelector('#people-view').innerHTML!=='');
   assert.deepEqual(await graphRules(),[true,'grid']);
   await p.evaluate(()=>{document.querySelector('#help-panel').close();showTab('inbox')});
   // In: Help opens, and the fourth poke's game plays
@@ -73,6 +74,15 @@ try{
   await p.goto(base+'#calendar',{waitUntil:'domcontentloaded'});
   for(const until=Date.now()+20000;!asked.some(n=>n.startsWith('lazy-calendar-'));){assert.ok(Date.now()<until,'the calendar part is asked for');await new Promise(r=>setTimeout(r,50))}
   release();hold=null;await p.waitForFunction(()=>!document.querySelector('#calendar').hidden&&document.querySelector('#calendar-view').children.length>0);
+  await context.close()}
+ // Settings opened while its panels are on their way: it opens on Writing once they're in
+ {let release;hold=new Promise(r=>release=r);asked.length=0;const context=await browser.newContext({viewport:{width:390,height:900}});
+  await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
+  const p=await context.newPage();p.on('pageerror',e=>errors.push('settings: '+e.message+' '+e.stack));
+  await p.goto(base,{waitUntil:'load'});await wholeDrawn(p);
+  for(const until=Date.now()+20000;!asked.some(n=>n.startsWith('lazy-settings-'));){assert.ok(Date.now()<until,'the settings part is asked for');await new Promise(r=>setTimeout(r,50))}
+  await p.evaluate(()=>showSettings('writing'));assert.equal(await p.locator('#settings').isHidden(),true);assert.equal(await p.locator('#voices').innerHTML(),'');
+  release();hold=null;await p.waitForFunction(()=>!document.querySelector('#settings').hidden&&settingsNow==='writing'&&document.querySelector('#voices').innerHTML!=='');
   await context.close()}
  // A link straight to Settings, Writing, its panels held back: Settings opens on Writing once they're in
  {let release;hold=new Promise(r=>release=r);asked.length=0;const context=await browser.newContext({viewport:{width:1440,height:900}});
