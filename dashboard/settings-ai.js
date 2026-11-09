@@ -4,8 +4,9 @@
 // rest: access, area, Extend, Activity (Settings, Activity filtered to it: every call, refused ones too), Turn off now
 // (a pause: its sign-ins end, its history stays) and Remove (it and its history go). Add a key for an AI
 // that can't sign in by itself (the key shows once). Loads when the tab opens; the owner's dashboard only (AI_ACTIONS).
-var aiView=null;let aiOpen='',aiEdit='',aiLines={},aiMade=null,aiBusy=false,aiPairTimer=0,aiPairUntil=0;
-const aiPost=(action,args={})=>request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action,args})});
+// This code loads when first needed, with Settings' other panels (dashboard_parts.LAZY); aiView, aiPost and the pairing
+// (aiPairGo, used by Connections and General too) are in settings-shared.js.
+let aiOpen='',aiEdit='',aiLines={},aiMade=null,aiBusy=false;
 const AI_LEVELS=[['off','Off'],['read','Read'],['draft','Read & edit']],AI_AREAS=[['both','Work and Personal'],['work','Work only'],['personal','Personal only']],AI_EXPIRY=[['1d','1 day'],['7d','7 days'],['30d','30 days'],['1y','1 year']];
 const aiOptions=(list,now)=>list.map(([v,l])=>`<option value="${v}"${v===now?' selected':''}>${esc(t(l))}</option>`).join('');
 const aiDay=v=>localeDate(new Date(v),DL,{day:'numeric',month:'short',year:'numeric'});
@@ -57,19 +58,6 @@ function aiAddress(r,fold){const p=r.pairing;
  if(r.paired)return `<div><span class="grow"><strong>Pick a name for your address</strong><small>Your account has no name yet. Pick one there.</small>${gone}</span><button type="button" class="primary" data-ai-get>Set up</button></div>`+aiPaired();
  return `<div><span class="grow"><strong>Get your address</strong><small>Pair this Machine with your account and pick a name. It takes a minute.</small>${gone}</span><button type="button" class="primary" data-ai-get>Set up</button></div>`}
 const aiPaired=()=>'<div><span class="grow"><strong>Paired with your account</strong><small>Unpair to stop your account and AIs from reaching this Machine.</small></span><button type="button" class="ghost" data-ai-unpair>Unpair</button></div>';
-// Get your address (and Pair this Machine in Connections): the tab opens within the click, then goes to the account's
-// page once it is known; a browser that blocks it goes there in this tab. Then ai_pair_state every 2.5 s, up to 10 minutes.
-async function aiPairGo(done){const tab=window.open('','_blank');
- try{const r=await aiPost('ai_pair_start',{});if(tab&&!tab.closed){tab.opener=null;tab.location.href=r.url}else location.href=r.url;
-  if(aiView){aiView.reach={...(aiView.reach||{}),pairing:r.code?{url:r.url,code:r.code,state:'waiting'}:null};renderAi()}
-  aiPairUntil=Date.now()+600000;aiPairPoll(done)}
- catch(e){if(tab)tab.close();errCaught(e);notice(e.message,true)}}
-function aiPairPoll(done){clearTimeout(aiPairTimer);if(Date.now()>aiPairUntil)return;
- aiPairTimer=setTimeout(async()=>{let r;try{r=await aiPost('ai_pair_state',{fresh:true})}catch{return aiPairPoll(done)}
-  if(aiView){aiView.reach=r.reach;renderAi()}
-  if(done&&(r.state==='paired'||r.reach?.paired)){done(r);done=null}
-  if(r.reach?.address)return notice(t('Your address is ready'));
-  if(r.state!=='gone')aiPairPoll(done)},2500)}
 for(const box of ['#ai-official','#ai-address'])$(box).addEventListener('click',async e=>{
  if(e.target.closest('[data-ai-get]'))aiPairGo();
  else if(e.target.closest('[data-ai-retry]'))try{const r=await aiPost('ai_pair_state',{fresh:true});aiView.reach=r.reach;renderAi()}catch(err){errCaught(err);notice(err.message,true)}

@@ -1,5 +1,5 @@
 // Settings' tabs, links and what the rest of the page uses from Settings (Learning's Share and Votes boxes, the voice
-// editor's links). Settings' own panels (settings-general, -skills, -export and -upkeep) load when first needed
+// editor's links). Settings' own panels (settings-general, -skills, -ai, -export and -upkeep) load when first needed
 // (dashboard_parts.LAZY); showSettings() opens Settings once they're in.
 // Settings in tabs, a pill row like Graph and Connections. A Machine linked to a control plane account (hosted, or
 // paired with the Network: status account_url) gets Account first, the account in short with buttons to its pages.
@@ -15,7 +15,7 @@ let settingsTab=SETTINGS_OLD[localStorage.getItem('settings-tab')]||localStorage
  $('#settings').prepend(bar)}
 function settingsSync(){const s=$('#settings'),bar=$('#settings-tabs'),shown=new Set(),set=(el,k,v)=>{if(el[k]!==v)el[k]=v};if(s.firstElementChild!==bar)s.prepend(bar);
  let tab='general';for(const el of s.children){if(el===bar)continue;tab=SETTINGS_OF[el.id]||(el.classList.contains('section-head')?SETTINGS_OF[el.nextElementSibling?.id]||'general':tab);el.dataset.stab=tab;if(!el.hidden&&!el.classList.contains('section-head'))shown.add(tab)}
- settingsNow=shown.has(settingsTab)?settingsTab:SETTINGS_TABS.map(t=>t[0]).find(t=>shown.has(t))||'general';const live=!s.hidden&&lazyIn('settings');if(settingsNow==='account'&&live)loadAccount();if(settingsNow==='general'&&live){loadDictation();loadExport()}if((settingsNow==='general'||settingsNow==='model')&&live)upkeepShown();if(settingsNow==='activity'&&!s.hidden&&typeof actShown==='function')actShown();if(settingsNow==='apps'&&!s.hidden&&!aiView)aiLoad();if(!s.hidden)helpLink('settings');
+ settingsNow=shown.has(settingsTab)?settingsTab:SETTINGS_TABS.map(t=>t[0]).find(t=>shown.has(t))||'general';const live=!s.hidden&&lazyIn('settings');if(settingsNow==='account'&&live)loadAccount();if(settingsNow==='general'&&live){loadDictation();loadExport()}if((settingsNow==='general'||settingsNow==='model')&&live)upkeepShown();if(settingsNow==='activity'&&!s.hidden&&typeof actShown==='function')actShown();if(settingsNow==='apps'&&live&&!aiView)aiLoad();if(!s.hidden)helpLink('settings');
  for(const el of s.children)if(el!==bar)el.classList.toggle('stab-off',el.dataset.stab!==settingsNow);
  for(const b of bar.querySelectorAll('[data-settings-tab]')){set(b,'hidden',!shown.has(b.dataset.settingsTab));const on=String(b.dataset.settingsTab===settingsNow);if(b.getAttribute('aria-selected')!==on)b.setAttribute('aria-selected',on)}needsYouPlace()}
 new MutationObserver(settingsSync).observe($('#settings'),{childList:true,subtree:true,attributes:true,attributeFilter:['hidden']});
@@ -138,3 +138,20 @@ const skillHintNote=s=>{const h=!closed(s)&&hintFor(s.id);return h?html`<p class
 // A skill hint's buttons on a card work before Skills is in: the click waits for it, then goes on.
 document.addEventListener('click',e=>{if(lazyIn('settings'))return;const b=e.target.closest('[data-hint-look],[data-hint-dismiss]');if(!b)return;
  e.preventDefault();e.stopImmediatePropagation();lazyRun('settings',()=>b.click())},true);
+// Connected AIs' panel loads when first needed (settings-ai.js); its view, its requests and the pairing that
+// Connections and General start too are here. aiView is set only once that panel is in.
+var aiView=null;let aiPairTimer=0,aiPairUntil=0;
+const aiPost=(action,args={})=>request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action,args})});
+// Get your address (and Pair this Machine in Connections): the tab opens within the click, then goes to the account's
+// page once it is known; a browser that blocks it goes there in this tab. Then ai_pair_state every 2.5 s, up to 10 minutes.
+async function aiPairGo(done){const tab=window.open('','_blank');
+ try{const r=await aiPost('ai_pair_start',{});if(tab&&!tab.closed){tab.opener=null;tab.location.href=r.url}else location.href=r.url;
+  if(aiView){aiView.reach={...(aiView.reach||{}),pairing:r.code?{url:r.url,code:r.code,state:'waiting'}:null};renderAi()}
+  aiPairUntil=Date.now()+600000;aiPairPoll(done)}
+ catch(e){if(tab)tab.close();errCaught(e);notice(e.message,true)}}
+function aiPairPoll(done){clearTimeout(aiPairTimer);if(Date.now()>aiPairUntil)return;
+ aiPairTimer=setTimeout(async()=>{let r;try{r=await aiPost('ai_pair_state',{fresh:true})}catch{return aiPairPoll(done)}
+  if(aiView){aiView.reach=r.reach;renderAi()}
+  if(done&&(r.state==='paired'||r.reach?.paired)){done(r);done=null}
+  if(r.reach?.address)return notice(t('Your address is ready'));
+  if(r.state!=='gone')aiPairPoll(done)},2500)}

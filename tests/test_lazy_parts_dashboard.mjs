@@ -10,7 +10,7 @@ const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modul
 // for them), and they're fetched after that. Calendar, Learning and Help opened while they're on their way open once
 // they're in, and then Help, the game, Calendar and Learning work as before. The Graph's rules are in before its pages
 // draw, and the Fleet tab draws once its views are in. Settings opened while its panels are on their way opens once
-// they're in, drawn (Skills too). A link straight to Calendar opens it once its part is in. When they can't load, the rest is drawn
+// they're in, drawn (Skills and Connected AIs too). A link straight to Calendar opens it once its part is in. When they can't load, the rest is drawn
 // all the same, and Calendar, the Graph, Settings, the Fleet, Connections, Routines, Talk and the game say so. Connections
 // draws once its views are in, its cards too. Routines opened while its part is on its way draws once it's in, and a
 // conversation by Talk starts with its session's part.
@@ -96,6 +96,9 @@ try{
   await p.evaluate(()=>showSettings('writing'));assert.equal(await p.locator('#settings').isHidden(),true);assert.equal(await p.locator('#voices').innerHTML(),'');
   release();hold=null;holdOnly=null;await p.waitForFunction(()=>!document.querySelector('#settings').hidden&&settingsNow==='writing'&&document.querySelector('#voices').innerHTML!=='');
   assert.equal(await p.evaluate(()=>!document.querySelector('#settings-skills').hidden&&document.querySelector('#skills-list').textContent.includes('No skills yet.')),true);
+  // Connected AIs is in too, with its rules (this fixture has no session, so its list is filled in here)
+  await p.evaluate(()=>showSettings('apps'));await p.waitForFunction(()=>settingsNow==='apps');
+  assert.equal(await p.evaluate(()=>{aiView={reach:{},connections:[{id:'c1',name:'Claude',level:'read',area:'both',expires_at:'2030-01-01T00:00:00Z'}]};renderAi();return getComputedStyle(document.querySelector('#ai-list .ai-end')).display}),'flex');
   await context.close()}
  // A link straight to Settings, Writing, its panels held back: Settings opens on Writing once they're in
  {let release;hold=new Promise(r=>release=r);holdOnly='lazy-settings-';asked.length=0;const context=await browser.newContext({viewport:{width:1440,height:900}});

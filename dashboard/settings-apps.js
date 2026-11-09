@@ -3,6 +3,7 @@
 // only; the phone app shows none (it is the app, and an iPhone app never points at Google Play). A computer's browser
 // also gets Computer: the dashboard installed from the browser, with This device's own prompt and steps
 // (settings-device.js: installEvt, appInstall, installSteps). Not on a phone, nor once it runs as the installed app.
+// Loads when first needed, with Settings' other panels (dashboard_parts.LAZY); deviceRender draws it once it's in.
 function appsRender(){const box=$('#settings-apps');if(!box)return;const p=state?.phone_app_store||{},ok=u=>/^https:\/\//.test(u||'');
  const rows=DEV.phoneApp?[]:[['ios','iPhone and iPad',STORE_APPLE,'App Store'],['android','Android',STORE_PLAY,'Google Play']]
   .filter(([k])=>ok(p[k])&&(DEV.ios?k==='ios':DEV.android?k==='android':true));
