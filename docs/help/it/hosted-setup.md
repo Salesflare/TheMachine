@@ -11,8 +11,8 @@ Una Machine ospitata gira nel cloud, nell'UE, solo per te. Pensiamo noi a tenerl
 ## Registrati
 
 1. Su app.themachine.computer, premi **Continua con Google** o **Continua con Microsoft**. Così crei il tuo account.
-2. Scansiona il codice con un'app di autenticazione, scrivi le sei cifre e premi **Attiva**. Una passkey può arrivare dopo.
-3. Scegli la dimensione e il nome della tua Machine, poi aggiungi la tua carta di pagamento. I primi {trial_days} giorni sono gratuiti e non paghi nulla prima che finiscano.
+2. Scegli la dimensione e il nome della tua Machine, poi aggiungi la tua carta di pagamento. I primi {trial_days} giorni sono gratuiti e non paghi nulla prima che finiscano.
+3. Scansiona il codice con un'app di autenticazione, scrivi le sei cifre e premi **Attiva**. Una passkey può arrivare dopo.
 
 ## La tua pagina di configurazione
 

@@ -11,8 +11,8 @@ Una Machine alojada funciona en la nube, en la UE, solo para ti. Nosotros la man
 ## Regístrate
 
 1. En app.themachine.computer, pulsa **Continuar con Google** o **Continuar con Microsoft**. Así se crea tu cuenta.
-2. Escanea el código con una app de autenticación, escribe los seis dígitos y pulsa **Activar**. Una llave de acceso puede venir después.
-3. Elige el tamaño y el nombre de tu Machine, y luego añade tu tarjeta. Los primeros {trial_days} días son gratis y no se cobra nada antes de que terminen.
+2. Elige el tamaño y el nombre de tu Machine, y luego añade tu tarjeta. Los primeros {trial_days} días son gratis y no se cobra nada antes de que terminen.
+3. Escanea el código con una app de autenticación, escribe los seis dígitos y pulsa **Activar**. Una llave de acceso puede venir después.
 
 ## Tu página de configuración
 
