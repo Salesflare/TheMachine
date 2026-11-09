@@ -261,7 +261,8 @@ project (scope `project`, which wins). Off by default. What the owner sets ([hel
 ### What reviews learn from you
 
 Your decisions and written reasons are summarized into every review prompt. Lasting facts you state are saved
-(`remember_fact`) and listed, removable, under Learning. More on the Graph and facts: [Intelligence](intelligence.md).
+(`remember_fact`) and listed, removable, under Learning: from a note on a to-do, in a to-do's chat, or said to your
+assistant in your own private Telegram chat (tied to the message you wrote, whose words are not kept). More on the Graph and facts: [Intelligence](intelligence.md).
 
 **How you write** is kept per channel: a short block (up to five lines) each for Email, Slack, WhatsApp, Telegram, LinkedIn,
 X DMs and any other channel, plus Everywhere. They're under Settings → Writing → **How you write**, where you can edit or

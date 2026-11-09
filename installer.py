@@ -26,7 +26,8 @@ are only created when absent. OpenClaw's own configuration is only read (your ap
 Telegram ID, paired phones); the installer changes nothing there beyond `openclaw plugins
 install/enable/uninstall`, approving your own Telegram pairing request if you say yes, and
 OpenClaw's own setup commands when it offers them and you say yes.
-In your OpenClaw workspace it adds daily memory rules to AGENTS.md once (see memory_rules).
+In your OpenClaw workspace it adds memory rules to AGENTS.md once, and later replaces only a block that is still
+exactly as it wrote it (see memory_rules).
 """
 import argparse
 import hashlib
@@ -1026,8 +1027,24 @@ TELEGRAM_NO_PREVIEWS = {
 # session-memory hook leaves a dated file of its own on every reset, so notes for one day end up spread over many.
 # These rules go at the end of it once (memory_rules); the path is the one OpenClaw loads at the start of a session.
 # The Machine's own results stay in memory/assistant/ (PREPARATION.md), which these rules leave alone.
+# What the owner states that stays true is saved as a fact in The Machine (under Learning, where they edit, undo or
+# forget it, and where reviews and drafts read it), not in MEMORY.md or USER.md, which nothing of The Machine's reads
+# back as facts. Those two files stay as they are and stay readable. The chats without the tool keep using them.
 MEMORY_RULES_BEGIN, MEMORY_RULES_END = '<!-- the-machine:memory-rules -->', '<!-- /the-machine:memory-rules -->'
 MEMORY_RULES = f"""{MEMORY_RULES_BEGIN}
+## Daily memory
+
+- Keep one daily note per day at `memory/YYYY-MM-DD.md`, dated in the owner's time zone. Append to it; never rewrite or reorder what is already there.
+- The session-memory hook leaves `memory/YYYY-MM-DD-HHMM.md` files on a reset. Merge each into that day's note, keeping unique content and where it came from and skipping exact duplicates.
+- A durable fact, decision or lasting preference the owner states is saved as a fact in The Machine (`assistant_signals` `remember_fact`, with `about` for the person, organization or project it is about), never only in a daily note. It shows under Learning, where the owner can edit, undo or forget it. Add no new ones to `MEMORY.md` or `USER.md`, except in a chat without that tool; keep reading both.
+- Results of to-dos stay in `memory/assistant/`; they are not daily notes.
+{MEMORY_RULES_END}
+"""
+# The blocks earlier versions wrote, whole. A workspace that still has one of these byte for byte gets MEMORY_RULES in
+# its place, once (memory_rules); one the owner changed in any way is theirs and is never touched. When MEMORY_RULES
+# changes again, its old text goes in this list.
+MEMORY_RULES_BEFORE = (
+    f"""{MEMORY_RULES_BEGIN}
 ## Daily memory
 
 - Keep one daily note per day at `memory/YYYY-MM-DD.md`, dated in the owner's time zone. Append to it; never rewrite or reorder what is already there.
@@ -1035,7 +1052,9 @@ MEMORY_RULES = f"""{MEMORY_RULES_BEGIN}
 - Durable decisions and facts go in `MEMORY.md` and lasting preferences in `USER.md`, never only in a daily note.
 - Results of to-dos stay in `memory/assistant/`; they are not daily notes.
 {MEMORY_RULES_END}
-"""
+""",
+)
+MEMORY_RULES_VERSION = len(MEMORY_RULES_BEFORE) + 1  # kept in the stamp: which text this workspace was last offered
 
 
 def quiet_openclaw(facts, stamp):
@@ -1124,32 +1143,54 @@ def memory_rules(workspace, stamp):
     """MEMORY_RULES at the end of the workspace's AGENTS.md, once. Not when the file isn't there yet (OpenClaw writes
     its own first; the next install or update adds them), and not when it already has rules for the session-memory
     hook's files (the owner's own). Once done it is kept in `stamp`, so rules the owner edits or removes stay that way.
-    True when added now."""
+    A workspace that got an earlier text is looked at once more per new text: only when the whole file still holds that
+    earlier block byte for byte (MEMORY_RULES_BEFORE), and only once, does the new block take its place. Anything
+    else (a word changed, a line gone, the block removed) is the owner's and the file is left as it is, for good.
+    True when added or replaced now."""
     try:
-        if stamp.exists():
-            return False
+        seen = json.loads(stamp.read_text()) if stamp.exists() else None
     except OSError:
+        return False
+    except (ValueError, UnicodeDecodeError):
+        seen = {}
+    seen = seen if isinstance(seen, dict) or seen is None else {}
+    if seen is not None and seen.get('version', 1) >= MEMORY_RULES_VERSION:
         return False
     agents = Path(workspace) / 'AGENTS.md'
     try:
-        text = agents.read_text()
+        text = agents.read_bytes().decode('utf-8')  # the bytes as they are: no newline translation on any system
     except (OSError, UnicodeDecodeError):
         return False
-    added = MEMORY_RULES_BEGIN not in text and 'session-memory' not in text.lower()
+    fresh = seen is None and MEMORY_RULES_BEGIN not in text
+    if fresh:
+        added = 'session-memory' not in text.lower()
+        after = text.rstrip('\n') + '\n\n' + MEMORY_RULES if added else None
+    else:  # a block is there, or was offered before: only an untouched earlier one is replaced
+        old = [b for b in MEMORY_RULES_BEFORE if text.count(b) == 1]
+        added = len(old) == 1 and text.count(MEMORY_RULES_BEGIN) == 1 and text.count(MEMORY_RULES_END) == 1
+        after = text.replace(old[0], MEMORY_RULES) if added else None
     if added:
         temp = agents.with_name('.AGENTS.md.the-machine.tmp')
         try:
-            temp.write_text(text.rstrip('\n') + '\n\n' + MEMORY_RULES)
+            temp.write_bytes(after.encode('utf-8'))
             shutil.copymode(agents, temp)
+            owner = agents.stat()
+            if hasattr(os, 'chown') and (owner.st_uid, owner.st_gid) != (temp.stat().st_uid, temp.stat().st_gid):
+                os.chown(temp, owner.st_uid, owner.st_gid)  # the file stays whose it was
             os.replace(temp, agents)
         except OSError as error:
             temp.unlink(missing_ok=True)
-            say(f'  could not add the daily memory rules to {agents}: {error}')
+            say(f'  could not {"add the memory rules to" if fresh else "update the memory rules in"} {agents}: {error}')
             return False
-        say(f'Daily memory rules added to {agents} (edit or remove them there; they are not added again)')
+        if fresh:
+            say(f'Memory rules added to {agents} (edit or remove them there; they are not added again)')
+        else:
+            say(f'Memory rules in {agents} updated: what you tell your assistant to remember is now saved under Learning '
+                '(the block was still as installed; one you changed is never touched)')
     try:
         stamp.parent.mkdir(parents=True, exist_ok=True)
-        stamp.write_text(json.dumps({'added': added, 'at': time.strftime('%Y-%m-%d')}) + '\n')
+        stamp.write_text(json.dumps({'added': added if fresh else bool((seen or {}).get('added')), 'version': MEMORY_RULES_VERSION,
+                                     **({} if fresh else {'replaced': added}), 'at': time.strftime('%Y-%m-%d')}) + '\n')
     except OSError:
         pass
     return added

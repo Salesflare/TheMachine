@@ -154,6 +154,15 @@ class InstallerTest(unittest.TestCase):
             for words in ('`memory/YYYY-MM-DD.md`', 'Append', 'session-memory', '`MEMORY.md`', '`memory/assistant/`'):
                 self.assertIn(words, installer.MEMORY_RULES)
             self.assertNotIn('—', installer.MEMORY_RULES)
+            # What the owner states that stays true is saved as a fact in The Machine, under Learning, with who it is
+            # about; MEMORY.md and USER.md get no new ones and stay readable
+            rule = next(line for line in installer.MEMORY_RULES.splitlines() if 'durable' in line.lower())
+            for words in ('fact, decision or lasting preference', 'the owner states', '`assistant_signals` `remember_fact`', '`about`',
+                          'person, organization or project', 'Learning', 'edit, undo or forget', 'Add no new ones to `MEMORY.md` or `USER.md`',
+                          'keep reading both'):
+                self.assertIn(words, rule)
+            self.assertNotIn('go in `MEMORY.md`', installer.MEMORY_RULES)
+            self.assertEqual(json.loads(stamp.read_text())['version'], installer.MEMORY_RULES_VERSION)
             # Rerun (every update on a hosted Machine): not again
             self.assertFalse(installer.memory_rules(space, stamp))
             self.assertEqual(agents.read_text(), text)
@@ -177,6 +186,88 @@ class InstallerTest(unittest.TestCase):
             self.assertEqual(agents.read_text(), own)
             self.assertTrue(stamp.exists())
             self.assertEqual(sorted(p.name for p in space.iterdir()), ['AGENTS.md'])  # no temp file left
+
+    def test_an_earlier_memory_block_is_replaced_only_when_it_is_still_byte_for_byte_as_installed(self):
+        before, now = installer.MEMORY_RULES_BEFORE[-1], installer.MEMORY_RULES
+        self.assertEqual(len(set(installer.MEMORY_RULES_BEFORE)), len(installer.MEMORY_RULES_BEFORE))
+        self.assertNotIn(now, installer.MEMORY_RULES_BEFORE)
+        for block in (*installer.MEMORY_RULES_BEFORE, now):
+            self.assertTrue(block.startswith(installer.MEMORY_RULES_BEGIN + '\n') and block.endswith(installer.MEMORY_RULES_END + '\n'))
+        self.assertIn('Durable decisions and facts go in `MEMORY.md` and lasting preferences in `USER.md`', before)  # what #499 wrote
+        stock = '# AGENTS.md - Your Workspace\n\n## Memory\n\n- **Daily notes:** `memory/YYYY-MM-DD.md` holds raw logs.\n'
+        mine = '\n## My own rules\n\n- Answer in short lines.\n'
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(installer, 'say') as said:
+            space, stamp = Path(tmp) / 'workspace', Path(tmp) / 'data' / 'memory-rules.json'
+            space.mkdir()
+            stamp.parent.mkdir()
+            agents = space / 'AGENTS.md'
+
+            def installed(text, mode=0o644, added=True):
+                """A workspace an earlier version left: its AGENTS.md and the stamp that version wrote."""
+                agents.write_bytes(text.encode())
+                agents.chmod(mode)
+                stamp.write_text(json.dumps({'added': added, 'at': '2026-11-03'}) + '\n')
+
+            # 1. Untouched since the install (the owner wrote their own rules after it): the new block takes its place,
+            # everything else stays byte for byte, and so do the file's mode and owner
+            installed(stock + '\n' + before + mine, 0o600)
+            owner = agents.stat()
+            self.assertTrue(installer.memory_rules(space, stamp))
+            self.assertEqual(agents.read_bytes(), (stock + '\n' + now + mine).encode())
+            self.assertEqual(stat.S_IMODE(agents.stat().st_mode), 0o600)
+            self.assertEqual((agents.stat().st_uid, agents.stat().st_gid), (owner.st_uid, owner.st_gid))
+            self.assertEqual(sorted(p.name for p in space.iterdir()), ['AGENTS.md'])  # written whole, no temp file left
+            self.assertEqual(json.loads(stamp.read_text()), {'added': True, 'version': installer.MEMORY_RULES_VERSION, 'replaced': True,
+                                                             'at': json.loads(stamp.read_text())['at']})
+            self.assertIn('Learning', said.call_args.args[0])
+            # ...once: the owner editing the new block, or putting the old one back by hand, is theirs
+            for theirs in (stock + '\n' + now.replace('edit, undo or forget', 'change') + mine, stock + '\n' + before + mine):
+                agents.write_bytes(theirs.encode())
+                self.assertFalse(installer.memory_rules(space, stamp))
+                self.assertEqual(agents.read_bytes(), theirs.encode())
+
+            # 2. Changed in any way: left completely alone, now and on every later run, also when put back later
+            edits = {'a word changed': before.replace('dated in the owner', 'dated in my'),
+                     'a line shortened': before.replace(', never only in a daily note', ''),
+                     'a line removed': before.replace('- Results of to-dos stay in `memory/assistant/`; they are not daily notes.\n', ''),
+                     'a space added': before.replace('## Daily memory', '## Daily memory '),
+                     'the end marker gone': before.replace(installer.MEMORY_RULES_END + '\n', ''),
+                     'other line ends': before.replace('\n', '\r\n'),
+                     'there twice': before + '\n' + before}
+            for what, block in edits.items():
+                with self.subTest(what):
+                    theirs = stock + '\n' + block + mine
+                    installed(theirs)
+                    self.assertFalse(installer.memory_rules(space, stamp))
+                    self.assertEqual(agents.read_bytes(), theirs.encode())
+                    self.assertEqual(json.loads(stamp.read_text())['replaced'], False)
+                    agents.write_bytes((stock + '\n' + before + mine).encode())  # back as installed, by hand, after the check
+                    self.assertFalse(installer.memory_rules(space, stamp))
+                    self.assertEqual(agents.read_bytes(), (stock + '\n' + before + mine).encode())
+
+            # 3. Removed by the owner: not added again, in either text
+            installed(stock + mine)
+            self.assertFalse(installer.memory_rules(space, stamp))
+            self.assertEqual(agents.read_bytes(), (stock + mine).encode())
+            # An owner who had their own rules for the hook's files and never got the block: nothing
+            own = '# AGENTS.md\n\n- Merge the session-memory hook files into `memory/daily/`. Durable facts go in `MEMORY.md`.\n'
+            installed(own, added=False)
+            self.assertFalse(installer.memory_rules(space, stamp))
+            self.assertEqual(agents.read_bytes(), own.encode())
+            self.assertEqual(json.loads(stamp.read_text())['added'], False)
+            # A file that can't be read is tried again next time, not marked as done
+            installed(stock + '\n' + before)
+            agents.write_bytes(b'\xff\xfe' + before.encode())
+            self.assertFalse(installer.memory_rules(space, stamp))
+            self.assertNotIn('version', json.loads(stamp.read_text()))
+            # A write that fails leaves the file as it was, whole, and is tried again
+            installed(stock + '\n' + before)
+            with mock.patch.object(installer.os, 'replace', side_effect=OSError('disk full')):
+                self.assertFalse(installer.memory_rules(space, stamp))
+            self.assertEqual(agents.read_bytes(), (stock + '\n' + before).encode())
+            self.assertEqual(sorted(p.name for p in space.iterdir()), ['AGENTS.md'])
+            self.assertTrue(installer.memory_rules(space, stamp))
+            self.assertEqual(agents.read_bytes(), (stock + '\n' + now).encode())
 
     def test_a_new_install_starts_at_thinking_low_only_where_unset_and_the_model_offers_it(self):
         listed = {'models': [{'provider': 'acme', 'id': 'lm-2', 'available': True, 'thinkingLevels': [{'id': 'low'}, {'id': 'medium'}]},

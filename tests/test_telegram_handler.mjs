@@ -191,6 +191,24 @@ const handled=await beforeDispatch({content:'I fixed it already',timestamp:17916
   await assert.rejects(toolFactory(c).execute('t',{action:'slack_read',args:{channel:'general'}}),/to-do’s own run/);
  assert.equal(calls.length,1);globalThis.fixtureCall=saved;delete globalThis.fixtureRuns;
 }
+// What the owner states in their own private chat is saved as a fact: only that chat is told so and only its
+// remember_fact carries the bridge's mark (never a model-supplied one), which the service ties to their last message.
+{
+ const saved=globalThis.fixtureCall,calls=[];globalThis.fixtureCall=async(action,args)=>{calls.push([action,args]);return {id:1};};
+ const own={agentId:'main',sessionKey:'agent:main:main',messageChannel:'telegram',nativeChannelId:'1000001'};
+ const review={agentId:'main',sessionKey:'agent:main:assistant-review-signals-'+'e'.repeat(32)},todo={agentId:'main',sessionKey:'agent:main:assistant-review-preparation-'+'e'.repeat(32)};
+ assert.match(toolFactory(own).description,/tells you here something that stays true.*remember_fact.*no decision_id.*Learning/);
+ for(const c of [review,todo])assert.doesNotMatch(toolFactory(c).description,/tells you here something that stays true/);
+ await toolFactory(own).execute('t',{action:'remember_fact',args:{text:'The office moved to Ghent.'}});
+ assert.deepEqual(calls.pop(),['remember_fact',{text:'The office moved to Ghent.',_owner_chat:true}]);
+ for(const c of [review,todo]){
+  await toolFactory(c).execute('t',{action:'remember_fact',args:{text:'The office moved to Ghent.',_owner_chat:true,decision_id:'n1'}});
+  assert.deepEqual(calls.pop(),['remember_fact',{text:'The office moved to Ghent.',decision_id:'n1'}]);  // a spoofed mark is dropped
+ }
+ await toolFactory(own).execute('t',{action:'status',args:{_owner_chat:true}});assert.deepEqual(calls.pop(),['status',{}]);
+ assert.equal(toolFactory({...own,nativeChannelId:'1000002'}),null);  // someone else's Telegram chat has no such tool
+ globalThis.fixtureCall=saved;
+}
 // Every main chat can offer a bug report: the owner's Telegram chat through assistant_signals, the others (WhatsApp,
 // Slack, Teams, the web chat, any channel on agent:main:main) through assistant_bug_report, which only writes one up.
 {
