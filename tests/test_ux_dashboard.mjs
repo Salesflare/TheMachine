@@ -253,7 +253,7 @@ await smartCard.getByRole('button',{name:'Review and send',exact:true}).click();
 const demoPosts=posts.length;await page.locator('#send-cancel').click();assert.equal(posts.length,demoPosts);
 assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth));
 await tap(page.locator('#task-'+ids[2]),'Mark done');await page.locator('#toast [data-undo]').click();await page.locator('#task-'+ids[2]).getByRole('button',{name:'Read result',exact:true}).waitFor();assert.equal(posts.at(-1).choice,'undo');
-await navClick(page.locator('nav [data-tab="health"]'));assert.equal(await page.locator('#connectors .state-dot.t-mint').count(),1);assert.equal(await page.locator('#connectors .state-dot.t-amber').count(),1);assert.equal(await page.getByText('32 failed syncs',{exact:false}).isVisible(),false);
+await navClick(page.locator('nav [data-tab="health"]'));assert.equal(await page.locator('#connectors .state-dot.t-amber').count(),2);assert.equal(await page.locator('#connectors article[data-conn="work"] .connection-status').innerText(),'Connected · Email is slow at times');assert.equal(await page.getByText('32 failed syncs',{exact:false}).isVisible(),false);  // 32 failures, the last just now: no blip
 assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth));assert.deepEqual(errors,[]);
 
 // Runtime errors and committed review outcomes are distinct and fit a phone.
