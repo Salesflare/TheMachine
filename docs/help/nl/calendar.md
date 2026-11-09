@@ -47,6 +47,8 @@ Elk heeft zijn eigen **Notities toevoegen** of **Transcript toevoegen**, **Besta
 
 Met [Zoom](zoom.md) of [Google Meet](google-meet.md) gekoppeld staan de notities in Notities en het transcript in Transcript, met **Van Zoom** of **Van Google Meet** erbij. Ze vervangen nooit wat jij toevoegde: staan ze er allebei, dan zie je ze allebei.
 
+Notities kunnen ook in de agenda-afspraak zelf staan, toegevoegd nadat ze begon, of per mail komen van Zoom of Gemini. Na de vergadering maakt The Machine er alleen to-do's van voor duidelijke volgende stappen. Komen dezelfde notities op twee manieren binnen, dan wordt het één to-do, met de vergadering als bron: **Notities van** de vergadering.
+
 Een vergadering met een transcript en zonder notities heeft **Notities maken**. The Machine schrijft ze dan uit het transcript: een korte samenvatting, beslissingen en actiepunten met wie ze doet, in de taal van de vergadering.
 
 Je ziet **Notities schrijven…** en The Machine werkt door als je de vergadering sluit; een lange duurt een paar minuten. Hij gebruikt je eigen model en wacht als je je gebruikslimiet bereikt. Bij de notities staat **Door The Machine geschreven**. Ze vervangen nooit notities die jij toevoegde, en de opvolging komt eruit zoals uit die van Zoom.

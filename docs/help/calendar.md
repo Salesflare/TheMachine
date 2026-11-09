@@ -47,6 +47,8 @@ Each has its own **Add notes** or **Add transcript**, **Upload file** for a Mark
 
 With [Zoom](zoom.md) or [Google Meet](google-meet.md) connected, its notes show in Notes and its transcript in Transcript, marked **From Zoom** or **From Google Meet**. They never replace what you added: when both are there, both show.
 
+Notes can also come in the meeting's own calendar event, added after it started, or by mail from Zoom or Gemini. After the meeting ends, The Machine makes to-dos from them only for clear next steps. The same notes coming two ways make one to-do, with the meeting as its source: **Notes from** the meeting.
+
 A meeting with a transcript and no notes has **Generate notes**. The Machine writes them from the transcript: a short summary, decisions, and action items with who does them, in the meeting's language.
 
 It shows **Writing notes…** and keeps going when you close the meeting. A long one takes a few minutes, using your own model. The notes say **Written by The Machine** and never replace notes you added.
