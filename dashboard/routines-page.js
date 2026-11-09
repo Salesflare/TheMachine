@@ -37,13 +37,8 @@ const rtSection=(name,label,cards,fine)=>html`<section class="rt-sec rt-${name}"
 function routinesRender(){const box=$('#routines-view'),list=routinesData?.routines;if(!box||!list)return;
  if(!(rtForm&&rtPatch(box)))rtKeep(box,()=>rtFull(box,list));
  rtReveal(box);rtLook(4000)}
-// A to-do a routine made says "From your routine X" (todos-cards.js routineSource), X a link to #routines/<id>: the Routines
-// page with that routine in view, marked for a moment. One gone since says so.
-let rtWant='';
-function openRoutineLink(){const m=/^#routines\/([a-f0-9]{32})$/.exec(location.hash);if(!m)return false;
- history.replaceState(null,'',location.pathname+location.search+'#routines');rtWant=m[1];if($('#routines').hidden)showTab('routines');else routinesView();return true}
-document.addEventListener('click',e=>{const a=e.target.closest('a[href^="#routines/"]');if(!a||e.ctrlKey||e.metaKey||e.shiftKey||e.defaultPrevented)return;
- e.preventDefault();history.replaceState(null,'',location.pathname+location.search+a.getAttribute('href'));openRoutineLink()});
+// A routine's link opened (rtWant, openRoutineLink in shell-page-head.js): that routine in view, marked for a moment. One
+// gone since says so.
 function rtReveal(box){if(!rtWant)return;const a=box.querySelector(`article[data-rt="${CSS.escape(rtWant)}"]`);rtWant='';if(!a){toast(t('That routine is gone'),true);return}
  a.tabIndex=-1;a.scrollIntoView({block:'center'});a.focus({preventScroll:true});a.classList.add('rt-found');setTimeout(()=>a.classList.remove('rt-found'),2400)}
 // A run in progress: look again in a few seconds (slower after a failed look), so its result shows in the card when ready
@@ -71,7 +66,7 @@ function rtKeep(box,rebuild){const cards=[...box.querySelectorAll('article[data-
 function rtScroller(box){for(let e=box.parentElement;e&&e!==document.body;e=e.parentElement){const o=getComputedStyle(e).overflowY;if((o==='auto'||o==='scroll')&&e.scrollHeight>e.clientHeight)return e}return null}
 // Grows with its words, up to six lines (routines-page.css)
 function rtGrow(x){const p=x.parentElement;p.style.minHeight=p.offsetHeight+'px';x.style.height='';x.style.height=x.scrollHeight+x.offsetHeight-x.clientHeight+'px';p.style.minHeight=''}
-async function routinesView(force){if(!force&&Date.now()-routinesAt<20000&&routinesData){routinesRender();return}
+async function routinesLoad(force){if(!force&&Date.now()-routinesAt<20000&&routinesData){routinesRender();return}
  try{routinesData=await request('api/routines');routinesAt=Date.now();rtMissed=0;routinesRender()}
  catch(e){errCaught(e);if(force&&routinesData)rtLook(Math.min(3e4,4e3*2**++rtMissed));else toast(e.message,true)}}
 const rtPost=(action,args)=>request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action,args})});

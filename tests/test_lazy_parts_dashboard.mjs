@@ -11,8 +11,9 @@ const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modul
 // they're in, and then Help, the game, Calendar and Learning work as before. The Graph's rules are in before its pages
 // draw, and the Fleet tab draws once its views are in. Settings opened while its panels are on their way opens once
 // they're in, drawn (Skills too). A link straight to Calendar opens it once its part is in. When they can't load, the rest is drawn
-// all the same, and Calendar, the Graph, Settings, the Fleet, Connections and the game say so. Connections draws once
-// its views are in, its cards too.
+// all the same, and Calendar, the Graph, Settings, the Fleet, Connections, Routines, Talk and the game say so. Connections
+// draws once its views are in, its cards too. Routines opened while its part is on its way draws once it's in, and a
+// conversation by Talk starts with its session's part.
 const [source,lazy]=JSON.parse(execFileSync('python3',['-c','import json,dashboard_parts;print(json.dumps(dashboard_parts.assemble_split()))'],{encoding:'utf8',maxBuffer:1<<26}));
 const named=s=>createHash('sha256').update(s).digest('hex').slice(0,16)+'.js';
 const files=Object.fromEntries(Object.entries(lazy).map(([group,script])=>['lazy-'+group+'-'+named(script),script]));
@@ -29,6 +30,7 @@ const server=createServer(async(req,res)=>{const url=new URL(req.url,'http://fix
  if(name===main){res.setHeader('Content-Type','text/javascript');res.end(script);return}
  if(files[name]){asked.push(name);if(hold&&(!holdOnly||name.startsWith(holdOnly)))await hold;if(refuse){res.statusCode=404;res.end('{}');return}res.setHeader('Content-Type','text/javascript');res.end(files[name]);return}
  res.setHeader('Content-Type','application/json');if(url.pathname==='/api/status'){res.end(JSON.stringify(state));return}
+ if(url.pathname==='/api/routines'){res.end(JSON.stringify({routines:[],suggested:[]}));return}
  res.statusCode=url.pathname.startsWith('/brand/')||url.pathname==='/sw.js'?404:200;res.end('{}')});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const base='http://127.0.0.1:'+server.address().port+'/';
@@ -47,7 +49,7 @@ try{
   await p.goto(base,{waitUntil:'load'});await wholeDrawn(p);
   // (held, a browser asks for at most 6 at a time from one host: the rest are asked for as those come in)
   for(const until=Date.now()+20000;asked.length<Math.min(6,Object.keys(files).length);){assert.ok(Date.now()<until,'the parts are asked for once the page is drawn');await new Promise(r=>setTimeout(r,50))}
-  assert.equal(await p.evaluate(()=>typeof helpOpen+typeof openGame+typeof pjOpen),'undefinedundefinedundefined');
+  assert.equal(await p.evaluate(()=>typeof helpOpen+typeof openGame+typeof pjOpen+typeof routinesLoad+typeof talkStart),'undefined'.repeat(5));
   const graphRules=()=>p.evaluate(()=>[document.querySelector('style[data-lazy-css="graph-pages.css"]').textContent.includes('.graph-list{'),getComputedStyle(document.body.appendChild(Object.assign(document.createElement('div'),{className:'graph-list'}))).display]);
   assert.deepEqual(await graphRules(),[false,'block']);
   await p.locator('#suggestions .all-clear .poke').click();
@@ -59,12 +61,15 @@ try{
   await p.evaluate(()=>showTab('health'));assert.equal(await p.locator('#health-tabs').innerHTML(),'');assert.equal(await p.locator('#connectors').innerHTML(),'');
   // The Fleet's data in, its tab's views wait for their part
   await p.evaluate(()=>{fleetData={on:false,fleets:[]};fleetShown=fleetView(false,true)});assert.equal(await p.locator('#fleet-view').innerHTML(),'');
+  await p.evaluate(()=>showTab('routines'));assert.equal(await p.locator('#routines-view').innerHTML(),'');
   await p.evaluate(()=>showTab('calendar'));await p.evaluate(()=>document.querySelector('#open-help').click());
   release();hold=null;holdOnly=null;
   // #help-panel is made by Help's part: until it's in, there's none (the check waits, it doesn't throw). Settings has a
   // block of its own below: opened here too, whichever part came last would decide what shows.
   await p.waitForFunction(()=>document.querySelector('#calendar-view').children.length>0&&document.querySelector('#learn-tabs').children.length>0&&document.querySelector('#help-panel')?.open&&document.querySelector('#people-view').innerHTML!==''&&document.querySelector('#fleet-view').textContent.includes('not in a Fleet')&&document.querySelector('#health-tabs').children.length>0&&document.querySelector('#connectors').children.length>0);
   assert.deepEqual(await graphRules(),[true,'grid']);
+  await p.evaluate(()=>showTab('routines'));await p.locator('#routines-view .rt-empty').waitFor();
+  assert.equal(await p.evaluate(()=>typeof talkStart),'function');
   await p.evaluate(()=>{document.querySelector('#help-panel').close();showTab('inbox')});
   // In: Help opens, and the fourth poke's game plays
   assert.deepEqual(asked.sort(),Object.keys(files).sort(),'each part is asked for once');
@@ -128,6 +133,10 @@ try{
   await p.evaluate(()=>{document.querySelector('#toast').className='';showTab('health')});
   await p.locator('#toast.show.error',{hasText:'Offline.'}).waitFor();assert.equal(await p.locator('#health-tabs').innerHTML(),'');
   await p.evaluate(()=>{fleetData={on:false,fleets:[]};return fleetView(false,true)});assert.equal(await p.locator('#fleet-view .error').innerText(),'Offline.');
+  await p.evaluate(()=>{document.querySelector('#toast').className='';showTab('routines')});
+  await p.locator('#toast.show.error',{hasText:'Offline.'}).waitFor();assert.equal(await p.locator('#routines-view').innerHTML(),'');
+  await p.evaluate(()=>{document.querySelector('#toast').className='';document.body.insertAdjacentHTML('beforeend','<button type="button" data-talk id="talk-try">Talk</button>');document.querySelector('#talk-try').click()});
+  await p.locator('#toast.show.error',{hasText:'Offline.'}).waitFor();assert.equal(await p.evaluate(()=>talk),null);
   await context.close();refuse=false}
  assert.deepEqual(errors,[]);
  console.log('ok lazy parts');

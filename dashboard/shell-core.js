@@ -131,7 +131,7 @@ const htmlT=(key,...a)=>{const tok=i=>`\u0000${i}\u0000`;let s=esc(t(key,...a.ma
 const safeHref=(u,base=location.href)=>{const v=String(u??'').trim();if(!v)return '#';try{const x=new URL(v,base);return ['http:','https:','mailto:','tel:'].includes(x.protocol)?v:'#'}catch{return '#'}};
 const date=v=>v?fmtDHM(v,{month:'short',day:'numeric',year:'numeric'}):t('Not yet');
 // Parts that load when first needed (dashboard_parts.py LAZY: Calendar, the game, the Graph's pages, Help, Learning,
-// each with its rules). The served page names their files in LAZY_FILES. The page is drawn without them; once it's
+// Routines, Talk's session and the rest, each with its rules). The served page names their files in LAZY_FILES. The page is drawn without them; once it's
 // drawn whole and the browser is idle after
 // the load event, lazySoon() fetches them all, so they're there before they're asked for and never slow the start. A
 // page with every part inline (the tests, the demo) has none to load. lazyPart(group): that group's file, loaded once

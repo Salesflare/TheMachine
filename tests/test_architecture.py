@@ -417,11 +417,15 @@ OVER_BUDGET = {}
 # 1,500,000 -> 1,502,000 (2026-11-09): a routine's to-do offers Also change the routine, on To-dos itself (about 1.8 KB;
 # first load 1,501,675).
 # 1,502,000 -> 1,504,000 (2026-11-09): Edit names a routine too, in its title's place (about 1.3 KB; first load 1,502,991).
-FIRST_LOAD_CEILING = 1_504_000
-LAZY_CEILING = {'calendar': 96_000, 'connections': 108_000, 'fleet': 96_000, 'game': 12_000, 'graph': 336_000, 'help': 40_000, 'learned': 12_000, 'learning': 24_000, 'settings': 124_000}
-# +300 (2026-11-09): a suggested routine also says what it saw for forwards and replies ("Forwarded 6 mails to Sam in 3
-# weeks"), about 0.2 KB on Routines (first load 1,502,113). On its own line, so it adds to a raise above.
-FIRST_LOAD_CEILING += 300
+# +300 (2026-11-09): a suggested routine also says what it saw for forwards and replies, on Routines (1,504,300).
+# 1,504,300 -> 1,423,000 (2026-11-09): Routines, Talk's session and Calendar's rules load when first needed, and more of
+# the Graph's rules wait for its part (first load about 1,503,000 -> 1,417,982).
+# Don't raise this for a feature: a new page, panel, dialog or anything that only runs once the owner opens or clicks
+# something goes in a part that loads when first needed (dashboard_parts.LAZY, lazyRun in shell-core.js), and what
+# To-dos draws first stays small. Only a change to that first draw itself may raise it, saying why.
+FIRST_LOAD_CEILING = 1_423_000
+# graph 336,000 -> 344,000 (2026-11-09): the Graph's rules that moved out of the first load now count in its part.
+LAZY_CEILING = {'calendar': 96_000, 'connections': 108_000, 'fleet': 96_000, 'game': 12_000, 'graph': 344_000, 'help': 40_000, 'learned': 12_000, 'learning': 24_000, 'routines': 32_000, 'settings': 124_000, 'talk': 52_000}
 
 
 def budget(name):

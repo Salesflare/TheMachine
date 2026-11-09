@@ -291,22 +291,29 @@ button.inline-node{display:inline;min-height:0;box-shadow:none;border-radius:0;p
 .board-fits .fit-acts button{margin:0;min-height:30px;padding:0 8px;font-size:var(--fs-sm);white-space:nowrap}
 /*@eager*/
 @media (max-width:600px){.board-fits li{display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:10px;row-gap:2px;align-items:start}  /* on a phone the name and why get the row's width, Add and Leave out sit together under them */
+/*@lazy*/
  .board-fits li .fit-pick{padding-top:1px}.board-fits li :is(.fit-text,.fit-acts){grid-column:-2/-1}.board-fits li .fit-acts{margin-left:-8px}.board-fits li .fit-acts button{min-height:28px}
+/*@eager*/
  .board-fits li:not(:has(.fit-pick)){grid-template-columns:minmax(0,1fr)}}  /* one project to review has no tick box: the text and buttons get the whole row */
 .proj-new{display:none;margin:0 0 10px}
+/*@lazy*/
 .proj-facts{margin:8px 0 0}.proj-facts p{margin:2px 0}.proj-notes{white-space:pre-wrap;color:var(--c-text-2)}
 .lane-more{display:block;width:100%;min-height:32px;margin:8px 0 0;padding:0;border:0;border-radius:var(--r-sm);background:none;box-shadow:none;color:var(--c-text-2);font:var(--fw-medium) var(--fs-sm)/1 var(--sans);cursor:pointer}
 .lane-more:hover{background:var(--c-hover);color:var(--text)}
 .lane-empty{margin:0;padding:14px 8px;border:1px dashed var(--c-line);border-radius:var(--r-md);color:var(--c-text-3);font-size:var(--fs-sm);text-align:center}
 .sub-tabs.stage-tabs,.board-pick{display:none}
+/*@eager*/
 /* Narrower than five columns: the stages side by side, scrolling sideways and snapping to a column */
 @container (max-width:900px){
+/*@lazy*/
   .board-chips{margin-left:0}
   .pboard{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:minmax(250px,42%);overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding:0 2px;padding-bottom:6px;overscroll-behavior-x:contain}
   .lane{scroll-snap-align:start}.lane.side{grid-column:auto;margin-top:0}.lane.side .tiles{display:flex;flex-direction:column}
+/*@eager*/
 }
 /* A phone: one stage at a time, picked from tabs with their counts */
 @media(max-width:560px){
+/*@lazy*/
   .board-chips{margin-left:0}
   .board-head{margin-bottom:10px}
   .sub-tabs.stage-tabs{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px;overflow:visible;-webkit-mask-image:none;mask-image:none}.stage-tabs button{flex:none;margin:0}  /* every stage readable at once: they wrap rather than scroll */
@@ -315,15 +322,21 @@ button.inline-node{display:inline;min-height:0;box-shadow:none;border-radius:0;p
   .pboard{display:block;overflow:visible}
   .lane{display:none;padding:0;background:none}.lane.on{display:block}
   .lane-h{display:none}.lane-hint,.lane-sum{padding-left:0}
+/*@eager*/
 }
+/*@lazy*/
 /* Boards the owner makes: a review's suggestion ("Start a board for Hiring?"), the board's ⋯ menu and the editor */
 .board-suggest{display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px;margin:0 0 18px;padding:14px 16px;border:1px solid var(--c-line);border-radius:var(--r-lg);background:var(--c-surface);box-shadow:var(--shadow-sm)}
 .board-suggest-text{flex:1 1 320px;min-width:0}
 .board-suggest-title{margin:0;font:var(--fw-heading) var(--fs-md)/1.3 var(--serif);color:var(--text)}
 .board-suggest-sub{margin:2px 0 0;color:var(--c-text-3);font-size:var(--fs-sm)}
+/*@eager*/
 .seen-by{display:inline-flex;align-items:center;gap:4px;color:var(--c-text-2);font-weight:600;white-space:nowrap}.seen-by svg{width:13px;height:13px;flex:none}
+/*@lazy*/
 .board-sub .seen-by{margin-right:2px}.ed-seen{display:flex;flex-wrap:wrap;gap:6px 16px;border:0;margin:0;padding:0}.ed-seen legend{padding:0;margin-bottom:6px}.ed-seen label{display:inline-flex;align-items:center;gap:8px;white-space:nowrap}.ed-seen input[type=radio]{flex:none;width:18px;height:18px;min-height:0;margin:0}.ed-people+.sp-line{margin-top:calc(-1*var(--sp-2));color:var(--c-text-2);font-size:var(--fs-sm)}
+/*@eager*/
 .graph-stage .seen-pick{display:flex;align-items:center;gap:8px;margin-top:8px;color:var(--c-text-3);font-size:var(--fs-xs)}.graph-stage .seen-pick select{min-height:30px;width:auto;margin:0;font-size:var(--fs-xs)}
+/*@lazy*/
 /* Inline, each stage with its arrow kept whole, lines balanced: a narrow card never leaves one stage alone on a line */
 .stage-flow{margin:8px 0 0;padding:0;list-style:none;color:var(--c-text-2);font-size:var(--fs-sm);line-height:1.6;text-wrap:balance}
 .stage-flow li{display:inline;white-space:nowrap}
@@ -331,14 +344,17 @@ button.inline-node{display:inline;min-height:0;box-shadow:none;border-radius:0;p
 .board-suggest-actions{display:flex;gap:8px;flex-wrap:wrap}.board-suggest-actions button{margin:0;min-height:34px}
 .board-start{margin:0 0 14px}
 .board-name-row{display:flex;align-items:center;gap:4px;min-width:0}
+/*@eager*/
 .board-menu{position:relative;flex:none;margin:0}  /* not the 10px a details gets elsewhere: that put ⋯ 5px under the name's middle */
 .board-menu>summary{list-style:none;display:grid;place-items:center;width:30px;height:28px;border-radius:var(--r-sm);color:var(--c-text-3);font-size:1rem;line-height:1;cursor:pointer;user-select:none}
 .board-menu>summary::-webkit-details-marker{display:none}.board-menu>summary svg{width:18px;height:18px}  /* dots drawn on the middle line: the ⋯ glyph sits on the text baseline, below the name's middle */
 .tile-menu>summary::before,.board-menu>summary::before{content:none}
 .board-menu>summary:hover,.board-menu[open]>summary{background:var(--c-hover);color:var(--text)}
 .board-menu .fact-menu-list{left:0;right:auto;min-width:170px;max-width:calc(100vw - 16px)}
+/*@lazy*/
 .tile-why.sorting{font-style:italic}
 .tile-why.failed{color:var(--c-orange)}
+/*@eager*/
 #board-dialog,#project-dialog,#record-dialog,#crm-dialog,#share-people{width:min(520px,calc(100vw - 24px));padding:18px 18px 16px}#crm-dialog.wide{width:min(760px,calc(100vw - 24px))}
 /* An import with a file keeps its size while the preview and the model's check come in: no growing under the pointer */
 #crm-dialog.tall{height:min(86vh,820px)}#crm-dialog.tall #crm-form{min-height:100%}#crm-dialog.tall .ed-actions{margin-top:auto}
