@@ -1,24 +1,3 @@
-// A source with read hours (X, LinkedIn: read_window from the server) rests outside them: it says when it reads again,
-// not that it's stale (a busy browser left from its last read waits quietly too), and once its hours open its staleness
-// counts from the opening, not from last night's read.
-function connectorHealth(c){
-const w=c.read_window,again=w?.reads_again_at&&Date.parse(w.reads_again_at)>Date.now()?w.reads_again_at:null,
- resting={tone:'mint',text:again&&t('Reads again at {}',fmtHM(again)),resting:true};
-if(c.salesflare?.stopped)return {tone:'muted',text:'Stopped'};
-if(c.error==='docs_not_connected')return {tone:'orange',text:'Waiting for your OK to read docs'};
-if(c.error&&/_signed_out$/.test(c.error))return {tone:'orange',text:'Signed out of '+service(c.service)};
-if(TELEGRAM_STOP[c.error])return {tone:'orange',text:TELEGRAM_STOP[c.error]};
-if(c.error==='android_offline')return {tone:'orange',text:'Phone disconnected'};
-if(c.error){const help=/(auth|unauthor|forbidden|permission|invalid_grant|signin_expired|HTTP_40[13])/.test(c.error);return help?{tone:'orange',text:'Needs your help'}:c.last_success&&again?resting:{tone:'amber',text:'Reconnecting automatically'}}
-if(c.signals===false)return {tone:'mint',text:'Connected'};  // action-only: nothing to sync, so never "waiting"
-if(!c.last_success)return {tone:'muted',text:'Waiting for first sync'};
-if(again)return resting;
-const since=Math.max(Date.parse(c.last_success),Date.parse(w?.reads_again_at||w?.opened_at||'')||0);
-if(Date.now()-since>Math.max(900000,(c.poll_seconds||300)*3000))return {tone:'amber',text:'Waiting for a fresh sync'};
-if(c.service==='slack'&&(c.conversation_errors||c.deferred_threads))return {tone:'amber',text:'Connected · some conversations waiting'};
-return {tone:'mint',text:'Connected'}
-}
-function connectorTone(c){return connectorHealth(c).tone}
 // Disconnected lately (mail_grants.py receipts): a sign-in counts as removed only once Google confirmed the revoke
 // (Microsoft and Zoom: once no copy is left here); until then it says why, and The Machine keeps trying.
 const SIGNIN_NAME={google:'Google',microsoft:'Microsoft',zoom:'Zoom'};
@@ -29,7 +8,6 @@ function spark(c){const a=[...(c.sync_activity||[])].reverse();if(!a.length)retu
 // unless one was picked. Like every tab row, a number means something needs you: Sign-ins has none (a saved sign-in never needs anything), Who's who and Friends only when waiting.
 const HEALTH_GROUPS={gmail:'mail',calendar:'mail',outlook:'mail',outlook_calendar:'mail',slack:'chat',whatsapp:'chat',telegram:'chat',signal:'chat',discord:'chat',teams:'chat'};  // Android sits in Other sources: most phones (iPhones) have no notification feed to give
 const healthGroup=s=>HEALTH_GROUPS[s]||'other';
-let healthPane=(localStorage.getItem('health-pane')||'').replace(/^phone$/,'other'),healthPicked=false,savedLoginCount=0;
 function renderHealthTabs(){const cs=state.connectors||[],bad=g=>cs.filter(c=>healthGroup(c.service)===g&&connectorTone(c)==='orange').length;
  const panes=[['mail','Mail and calendar'],['chat','Chat'],['other','Other sources']].filter(([g])=>cs.some(c=>healthGroup(c.service)===g)).map(([id,label])=>({id,label,badge:bad(id),warn:true}));
  if(!panes.length)panes.push({id:'mail',label:'Sources'});
@@ -42,17 +20,7 @@ function renderHealthTabs(){const cs=state.connectors||[],bad=g=>cs.filter(c=>he
  else if(!connectResumed&&!healthPicked&&!$('#health').hidden){connectResumed=true;connectResume().then(found=>{if(found&&!healthPicked){healthPane='add';healthPicked=true;renderHealthTabs();renderConnectRun()}})}}  // measured once the other panes are hidden, never with every source shown at once
 // and only while Connections shows: every redraw calls this, and a measure mid-redraw lays out the whole page (some 60 ms
 // of each click that redraws). Opening Connections (showTab) calls it again, and measures then.
-// Connections, Add: every source this install can add, set up right here with the same steps as `assistant connect`;
-// its questions show one at a time. On a hosted machine Google, Microsoft, Zoom, Stripe, Intercom and Trello sign in right
-// here too (hosted_signin): a POST to /_machine/connect starts the account's own sign-in for it, and the provider comes
-// back to this page (#connect=<provider>/<command>), where the form follows the connecting. Others with a tile on the
-// account page (GitHub, WhatsApp) link to it. On a self-hosted
-// one such a source signs in through The Machine's own app (fleet.py connect_start), once this Machine is paired with
-// an account, and its row follows how that goes; pasting a key stays, folded away, where the service has one (Intercom and
-// Trello sign in only).
-let connectList=null,connectListAt=0,connectRun=null,connectTimer=0,connectSignin=null,signinTimer=0,connectForm=null,connectSiteShown=null,connectGbrain=null;
 const BROKER_LINK={gmail:'#google',calendar:'#google',outlook:'#microsoft',outlook_calendar:'#microsoft',zoom:'#source-zoom',stripe:'#source-stripe',slack:'#source-slack'};
-const connectPost=(action,args={})=>request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action,args})});
 // Only the latest load draws: opening + Add starts one and connectOpen another, and the earlier answering last would
 // draw the grid again over the source connectOpen just picked
 let connectAddSeq=0,connectAddLast=Promise.resolve();
@@ -60,7 +28,7 @@ let connectAddSeq=0,connectAddLast=Promise.resolve();
 let connectResumed=false,connectPicking=false;
 async function connectResume(){if(connectPicking)return false;try{const r=await connectPost('connect_running');if(!r?.session||connectRun)return false;
  connectRun=r;connectSignin=null;connectForm=null;connectGbrain=null;$('#connect-add').dataset.sig='';connectPoll();return true}catch{return false}}
-async function connectAdd(force){if(connectRun)return;if(!force&&connectList&&Date.now()-connectListAt<60000)return;connectListAt=Date.now();
+async function connectAddNow(force){if(connectRun)return;if(!force&&connectList&&Date.now()-connectListAt<60000)return;connectListAt=Date.now();
  const n=++connectAddSeq;  // before the wait: a later call (a forced one from a sign-in's way back) wins over this one
  if(await connectResume()){renderConnectRun();return}
  if(n!==connectAddSeq)return;
@@ -270,7 +238,7 @@ function hostedPoll(){clearTimeout(signinTimer);const s=connectSignin;if(!s?.hos
 // Back from the provider (cloud: open_dashboard to=connect): + Add, that sign-in's form, following how it goes
 // c_: the command its callback queued; f_: why the provider's answer was refused, which the account keeps for this form
 const ON_DASHBOARD=['github','whatsapp','android','codex'];
-async function openConnectLink(){const m=/^#connect=(google|microsoft|microsoft_docs|microsoft_docs_write|microsoft_teams|google_meet|google_docs|zoom|stripe|intercom|trello|github|whatsapp|android|codex)(?:\/([cf]_[0-9a-f]{16}|stopped))?$/.exec(location.hash);if(!m||!state.manage_url)return;
+async function openConnectLinkNow(){const m=/^#connect=(google|microsoft|microsoft_docs|microsoft_docs_write|microsoft_teams|google_meet|google_docs|zoom|stripe|intercom|trello|github|whatsapp|android|codex)(?:\/([cf]_[0-9a-f]{16}|stopped))?$/.exec(location.hash);if(!m||!state.manage_url)return;
  history.replaceState(null,'',location.pathname+location.search);connectRun=null;connectForm=null;showTab('health','add');await connectAdd(true);
  const docs=m[1]==='microsoft_docs_write'&&connectList?.sources.find(v=>v.hosted_signin==='microsoft_docs');  // Allow edits: the Docs source, its own consent
  const x=m[1]==='codex'?connectList?.codex&&codexSource():docs?{...docs,hosted_signin:m[1]}:connectList?.sources.find(v=>v.hosted_signin===m[1]);if(!x||!connectList.manage_url)return;const command=m[2]&&m[2]!=='stopped'?m[2]:'';
@@ -317,7 +285,6 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-host
  connectSignin={...(x?signinOf(x,'intro'):{source:p,provider:p,label:SIGNIN_COPY[p]?.label||p,own:false,hosted:true,state:'intro'}),...(b.dataset.email?{email:b.dataset.email}:{}),...(p==='whatsapp'&&b.dataset.account?{account:b.dataset.account}:{})};
  $('#connect-add').dataset.sig='';renderConnectSignin();viewTop($('#connect-add'))});
 const hostedReconnect=(c,label,cls)=>html`<button type="button" class="${cls}" data-hosted-reconnect="${c.hosted_signin}"${c.email?html` data-email="${c.email}"`:''}${c.service==='whatsapp'?html` data-account="${c.id}"`:''}>${label}</button>`;
-const hostedReconnectNode=(c,label,cls)=>make('button',{type:'button',class:cls,'data-hosted-reconnect':c.hosted_signin??'',...c.email?{'data-email':c.email}:{},...c.service==='whatsapp'?{'data-account':c.id??''}:{}},label);
 // Reconnect on a card or in Needs you: the same steps as + Add, for that account, shown in the + Add pane.
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-reconnect]');if(!b)return;
  // a sign-in through the control plane (Docs from Microsoft on a self-hosted Machine): its Sign in step, in the + Add pane.
@@ -367,10 +334,6 @@ async function connectFollow(run){const start=Date.now();await new Promise(r=>se
 function connectPoll(){clearTimeout(connectTimer);if(connectRun?.state==='done'&&connectRun.restarting&&!connectRun.followed){connectRun.followed=true;restartSoon();connectFollow(connectRun);return}
  if(!connectRun||connectRun.state!=='running')return;connectTimer=setTimeout(async()=>{try{connectRun={...connectRun,...await connectPost('connect_poll',{session:connectRun.session})};renderConnectRun()}
  catch(e){errCaught(e);connectRun={...connectRun,state:'failed',error:e.message};renderConnectRun()}connectPoll()},connectRun.question?3000:1000)}
-// A code the connect shows to sign in with: GitHub's device sign-in, or WhatsApp's pairing code for Linked devices.
-// A QR code the Machine sends as rows of 0 and 1 (Telegram's login), drawn here: no image from anywhere else.
-function qrSvg(rows){const n=rows.length,q=2,size=n+2*q;let d='';rows.forEach((r,y)=>{for(let x=0;x<r.length;x++)if(r[x]==='1')d+=`M${x+q} ${y+q}h1v1h-1z`});
- return html`<svg class="connect-qr" viewBox="0 0 ${size} ${size}" role="img" aria-label="${t('QR code')}" shape-rendering="crispEdges"><rect width="${size}" height="${size}" fill="#fff"/><path d="${d}" fill="#000"/></svg>`}
 function connectCodeHTML(c){if(c.kind==='qr'&&Array.isArray(c.matrix))return html`<p class="connect-q">${t('In Telegram on your phone: Settings, Devices, Link Desktop Device. Then scan this code:')}</p>${qrSvg(c.matrix.filter(r=>/^[01]+$/.test(r)))}<p class="muted">${t('The code refreshes by itself.')}</p>`;
  const how=c.kind==='pair'?'In WhatsApp on your phone: Settings, Linked devices, Link a device, then Link with phone number instead. Enter this code:':c.kind==='openai'?'Enter this code at OpenAI to sign in:':'Enter this code at GitHub to sign in:';
  return html`<p class="connect-q">${how}</p><p class="connect-code" translate="no">${c.code}</p><div class="actions code-actions"><button type="button" data-copy-command="${c.code}">Copy code</button>${c.url?html`<a class="btn-link primary" href="${safeHref(c.url)}" target="_blank" rel="noopener">${c.kind==='openai'?'Open OpenAI ↗':'Open GitHub ↗'}</a>`:''}</div><p class="muted">This goes on by itself once you’re in.</p>`}
@@ -408,12 +371,10 @@ $('#connect-add').addEventListener('change',e=>{if(e.target.name!=='scope')retur
  co.hidden=personal;co.querySelector('input').required=!personal});
 // "Connect your own Intercom" on a to-do (also its "not synced" line and the first look's ending): Connections, + Add, at that source. A source that signs in here opens its
 // sign-in intro (nothing starts before Continue); one set up on the account page or by questions is shown and focused.
-async function connectOpen(name){connectPicking=true;try{showTab('health','add');await connectAdd(true)}finally{connectPicking=false}await connectAddSettled();const box=$('#connect-add');
+async function connectOpenNow(name){connectPicking=true;try{showTab('health','add');await connectAdd(true)}finally{connectPicking=false}await connectAddSettled();const box=$('#connect-add');
  const item=box.querySelector(`[data-connect-signin="${CSS.escape(name)}"]`);if(item){item.click();viewTop(box);return}
  const x=connectList?.sources.find(v=>v.name===name),el=x&&[...box.querySelectorAll('.connect-source')].find(n=>n.dataset.connect===name||n.querySelector('b')?.textContent.replace(' ↗','')===x.label);
  viewTop(box);if(el){el.classList.add('picked');el.focus()}}
-document.addEventListener('click',e=>{const a=e.target.closest('[data-connect-open]');if(!a)return;e.preventDefault();connectOpen(a.dataset.connectOpen)});
-function showHealthPane(id){healthPane=id;healthPicked=true;localStorage.setItem('health-pane',id);renderHealthTabs()}
 $('#health-tabs').onclick=e=>{const b=e.target.closest('[data-health-pane]');if(b)showHealthPane(b.dataset.healthPane)};
 // The first Slack import reads the most active conversations first: the last day, then the week, quiet ones last.
 function slackProgress(c){const f=c.first_import,later=f&&f.quiet;
@@ -532,3 +493,10 @@ ${connBackfill(c)}
 ${c.service==='telegram'?telegramNote(c):''}
 <div class="conn-more">${synced?html`<details id="sync-recent-${c.id}" ${open.has('sync-recent-'+c.id)?html`open`:''}><summary>Recent syncs</summary>${(c.sync_activity||[]).map(a=>html`<p><span class="mono muted">${date(a.at)}</span> · ${a.status==='success'?html`<span>${a.signals==null?t('Synced'):t('Synced, {} new or changed',a.signals)}</span>`:html`<span class="error">${syncError(a.error)}</span>${a.retry_at?html` · <span>${t('Retry {}',date(a.retry_at))}</span>`:''}`}</p>`)}${(c.sync_activity||[]).length?'':html`<p>No recent syncs recorded yet.</p>`}</details>`:''}<details id="sync-details-${c.id}" ${open.has('sync-details-'+c.id)?html`open`:''}><summary>Details</summary>${!synced?'':c.failures_24h?html`<p>${t(['{} failed sync in the last 24 hours. Old failures don’t affect a connection that recovered.','{} failed syncs in the last 24 hours. Old failures don’t affect a connection that recovered.'],c.failures_24h)}</p>`:html`<p>No failed syncs in the last 24 hours.</p>`}${synced&&c.last_failure?html`<p>${t('Last failure: {}, {}',syncError(c.last_failure.error),date(c.last_failure.at))}</p>`:''}${synced&&c.error&&c.failures?html`<p>${t(['{} failed attempt in a row','{} failed attempts in a row'],c.failures)}</p>`:''}${synced?syncPlain(c).map(l=>html`<p class="conn-plain">${l}</p>`):''}${c.service==='intercom'&&c.replies_as&&c.replies_as!=='you'?html`<p class="conn-plain conn-replies-as">${t('Replies as {}, only after you press Send.',c.replies_as)}</p>`:''}${connAbilities(c)}${photosRow(c)}${scopeRow(c)}${connActions(c)}</details></div></article>`;
 }
+// The connection cards (a refresh keeps the opened ones open) and the disconnected ones
+function drawConnectors(){const expandedSync=new Set([...document.querySelectorAll('#connectors details[open]')].map(d=>d.id));
+ setHTML($('#connectors'),html`${[...state.connectors].sort((a,b)=>(a.service==='gateway')-(b.service==='gateway')).map(c=>connectorCard(c,expandedSync))}`);renderDisconnected()}
+// Served as a part that loads when first needed (dashboard_parts.LAZY): a page drawn before it came draws Connections
+// now (render skipped it; it can't call render, which counts the part in only once this file has run). Inline (the
+// tests, the demo) this part runs before shell-render.js, which draws it itself.
+if(self.LAZY_FILES?.connections&&drawnWhole)try{drawConnectors();renderHealthTabs()}catch(e){errCaught(e);console.error(e)}
