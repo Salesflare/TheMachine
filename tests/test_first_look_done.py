@@ -89,6 +89,28 @@ class FirstLookDone(unittest.TestCase):
             db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES('d1','s0','complete','','dashboard',?)", (a.now(),))
         self.assertTrue(self.app.first_look_done()['acted'])
 
+    def test_a_batch_still_reading_as_it_stopped_counts_its_to_dos_too(self):
+        # 2026-11-09: it stopped digging at its third to-do while its last batch still read; that batch saved a fourth,
+        # and the line said "found 3 to-dos" over a list of 4 (its reads counted, its to-dos not)
+        self.look([signal('m0'), signal('m1')])
+        stopped = dt.datetime.fromisoformat(a.now())
+        with self.store.connect() as db:
+            for n in range(3):
+                db.execute("INSERT INTO suggestions(id,dedupe_key,title,body,event_ids,account_ids,created_at) VALUES(?,?,?,?,?,?,?)",
+                           (f's{n}', f'k{n}', 'Reply', '', '[1]', '["work"]', a.now()))
+            db.execute("UPDATE review_runs SET status='running',finished_at=NULL WHERE run_id='r1'")
+        self.done('cards', stopped.isoformat())
+        later = stopped + dt.timedelta(seconds=40)
+        with self.store.connect() as db:
+            db.execute("INSERT INTO suggestions(id,dedupe_key,title,body,event_ids,account_ids,created_at) VALUES('s3','k3','Reply','','[1]','[\"work\"]',?)",
+                       (later.isoformat(),))
+        self.assertEqual(self.app.first_look_done(later + dt.timedelta(seconds=5))['todos'], 4)
+        with self.store.connect() as db:  # it ended: what came after it is not the first look's
+            db.execute("UPDATE review_runs SET status='ok',finished_at=? WHERE run_id='r1'", ((later + dt.timedelta(seconds=10)).isoformat(),))
+            db.execute("INSERT INTO suggestions(id,dedupe_key,title,body,event_ids,account_ids,created_at) VALUES('s4','k4','Reply','','[1]','[\"work\"]',?)",
+                       ((later + dt.timedelta(minutes=5)).isoformat(),))
+        self.assertEqual(self.app.first_look_done(later + dt.timedelta(minutes=6))['todos'], 4)
+
     def test_not_after_a_day_not_after_one_that_expired_and_not_without_a_first_look(self):
         self.done()
         self.assertIsNone(self.app.first_look_done())  # no first-look run: an install that reviewed before

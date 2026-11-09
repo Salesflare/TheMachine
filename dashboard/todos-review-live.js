@@ -48,6 +48,9 @@ if(dig&&dig.total){const total=flTotal=Math.max(flTotal,0,+dig.total|0),todos=+d
  const first=todos===1&&typeof dig.first?.title==='string'&&dig.first.title.trim();
  return{title:t('Taking a first look at your last {} days',dig.days||7),done,total,unit:dig.unit,first:!!first&&!(!run&&dig.failing),names:Array.isArray(dig.names)?dig.names.filter(n=>typeof n==='string'&&n.trim()):[],
   wait:!run&&dig.failing?(flFailing(dig)?t('The last tries did not finish. Still trying.'):t(FIRST_LOOK_WAIT.retry)):first?t('First one’s in: {}. Still reading…',first):!dig.read&&!run?.done_count?'':todos?t(['Found {} to-do. Reading on.','Found {} to-dos. Reading on.'],todos):t('Nothing for you yet. Reading on.')}}
+// A batch still ending after the first look stopped digging (first_look_done) is not a new count: its own "9 of 40" after
+// "30 of 132" looked like it went back (2026-11-09); the ending's line says what it read
+if(run&&state.first_look_done&&!(run.started_at>state.first_look_done.at))return null;
 if(run){const total=run.planned||run.claimed_count||0;flMark();return{title:t('Taking a first look at your last {} days',firstLookDays(fl,run)),done:flRunDone(run,6),total}}
 if(startsByItself()&&fl?.state!=='due')return setupStep()?{title:t('Your first to-dos show up here'),wait:false}:flBack()?{title:t('Taking a first look at your last {} days',firstLookDays(fl))}:{title:setupLine(),working:!!aiConnecting()};  // not "All clear" before the first read ends
 if((fl?.state==='waiting'&&fl.why!=='model')||fl?.state==='due')return{title:t('A first look at your last {} days starts soon',firstLookDays(fl)),wait:fl.state==='due'?t(FIRST_LOOK_WAIT.due):flWait(fl)};return null}
