@@ -78,7 +78,10 @@ try{
   await page.keyboard.press('Escape');assert.equal(await page.locator('.row-menu').count(),0);
   assert.equal(await page.evaluate(()=>document.activeElement.getAttribute('href')),'#chat='+id(4),'focus back on the row');
   // Enter on Mark done: done, and the keyboard stays in the list (on the row after it, or before)
-  await page.keyboard.press('Shift+F10');await page.keyboard.press('ArrowDown');await page.keyboard.press('ArrowDown');
+  // Opened again straight after Esc: the row's late refocus (after the list redraws) doesn't take focus from the menu
+  await page.keyboard.press('Shift+F10');await page.waitForTimeout(300);
+  assert.equal(await page.evaluate(()=>document.activeElement.dataset.rowRename!=null),true,'the menu keeps focus');
+  await page.keyboard.press('ArrowDown');await page.keyboard.press('ArrowDown');
   assert.equal(await page.evaluate(()=>document.activeElement.textContent),'Mark done');await page.keyboard.press('Enter');
   await until(()=>decided().length===5,'keyboard done');assert.deepEqual(decided()[4],[id(4),'complete']);
   await until(()=>page.evaluate(()=>!!document.activeElement.closest('#side-cards')),'focus in the list');
