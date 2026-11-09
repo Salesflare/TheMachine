@@ -635,10 +635,10 @@ class PreparationApp:
         with self.store.connect() as db:
             job = db.execute('SELECT job_id,session_job_id,status,started_at FROM preparations WHERE suggestion_id=?', (suggestion_id,)).fetchone()
             waiting = browser_wait(db, job['job_id'], job['status']) if job else None
+            steps = preparation_steps(db, job['job_id']) if job and job['status'] in ('starting', 'running') else []
         if not job:
             raise ValueError('No preparation')
         running = job['status'] in ('starting', 'running')
-        steps = preparation_steps(job['session_job_id'] or job['job_id'], self.config.get('agent_db')) if running else []
         return {'status': job['status'], 'started_at': job['started_at'], 'steps': steps,
                 'browser': {**waiting, 'link': browser_link(self.config)} if waiting else None,
                 'peek': running and self.peek_target(job['job_id']) is not None}

@@ -86,10 +86,22 @@ def finishing(args):
         if not clipped(params):
             return params.get('action') in FINISH_ACTIONS
         params = params.get('preview', '')
-    # Compatibility with an old hook's clipped record. Only a leading action counts,
-    # never an action mentioned inside the draft/text being saved.
-    match = re.match(r'^\s*\{\s*"action"\s*:\s*"([^"\\]*)"\s*[,}]', str(params or ''))
-    return bool(match and match[1] in FINISH_ACTIONS)
+    return leading_action(params) in FINISH_ACTIONS
+
+
+def leading_action(text):
+    """The action a clipped record's text starts with. Only a leading action counts, never an action mentioned inside
+    the draft/text being saved. Also reads an old hook's clipped record."""
+    match = re.match(r'^\s*\{\s*"action"\s*:\s*"([^"\\]*)"\s*[,}]', str(text or ''))
+    return match[1] if match else None
+
+
+def call_action(params):
+    """The action of a recorded assistant_signals call, also when its record was clipped; None when it has none."""
+    if not isinstance(params, dict):
+        return None
+    action = leading_action(params.get('preview', '')) if clipped(params) else params.get('action')
+    return action if isinstance(action, str) else None
 
 
 def tool_result(db, args, stamp):
