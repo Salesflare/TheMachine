@@ -253,16 +253,21 @@ def salesflare_progress(account, state):
         stuck = False
     last = state.get('last_round') or None
     done = max(0, total - left)
-    # Without access counts the accounts of one round (this one, else the last one), so it never exceeds the round's
-    # accounts; a Machine from before last_round shows its old list until its round ends.
-    no_access = len(window.get('no_access') or []) if 'no_access' in window else \
-        last['no_access'] if last else len(state.get('inaccessible_accounts') or [])
+    # Without access: the last finished round's accounts (inaccessible_accounts, replaced when a round ends). During a
+    # round it adds this round's new ones, never more than the round has. An older Machine's list (no last_round) only
+    # ever grew, so a running round counts its own until it ends and replaces the list.
+    current = window.get('no_access') or []
+    if window:
+        counted = set(state.get('inaccessible_accounts') or []) if last else set()
+        no_access = min(total, len(counted | set(current)))
+    else:
+        no_access = last['no_access'] if last else len(state.get('inaccessible_accounts') or [])
     # It opens none of them: every account of the last round (or the first 10 of this one) refused. Nothing comes in
     # until the key changes, so the card asks for help instead of saying Connected.
     if last:
         locked = bool(last.get('accounts')) and not last.get('read') and last.get('no_access') == last.get('accounts')
     else:
-        locked = done >= min(total, 10) > 0 and not window.get('read') and no_access == done
+        locked = done >= min(total, 10) > 0 and not window.get('read') and len(current) == done
     return {'stopped': state.get('stopped') or None, 'synced_until': state.get('watermark'),
             'round': {'since': window.get('since'), 'started': started, 'accounts': total, 'done': done, 'stuck': stuck,
                       'read': window.get('read'), 'failing': len(window.get('failures') or {})} if window else None,
@@ -300,6 +305,7 @@ def sync_salesflare(store, config, account, source=None):
     email_ids = set(window['email_ids']) if 'email_ids' in window else None  # older frozen windows: read both
     events, skipped, excluded, titles = [], 0, set(), []  # titles: each contact's job title in the CRM, a record about them
     batch = window['pending'][:account.get('accounts_per_batch', 5)]
+    read_before, refused_before = window.get('read', 0), len(window.get('no_access') or [])
     for crm_id in batch:
         try:
             crm = source.get(f'/accounts/{crm_id}')
@@ -362,6 +368,9 @@ def sync_salesflare(store, config, account, source=None):
                             account['id'], crm_id, item.get('id'), error.category)
                 continue
             events.append(event) if event else None
+    # Counts only (no names or ids): the journal shows whether the key opens the accounts.
+    LOG.info('salesflare batch read=%d no_access=%d left=%d', window.get('read', 0) - read_before,
+             len(window.get('no_access') or []) - refused_before, len(window['pending']) - len(batch))
     window['pending'] = window['pending'][len(batch):]
     if not window['pending']:
         # What this round could open: the card counts it (accounts read, without access) until the next one ends.
