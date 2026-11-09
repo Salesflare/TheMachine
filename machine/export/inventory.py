@@ -91,7 +91,7 @@ _BY_PART = {
         ai_folded ai_writes ai_activity'''),
     'activity': _names('''activity_accounts activity_blocks activity_seen faults fault_versions error_feed retention_runs
         store_fixes data_stamps profile_runs notify_queue notify_digests notify_app_lines notify_app_devices push_subscriptions'''),
-    'index': _names('event_search event_vectors event_vector_skips fact_vectors'),
+    'index': _names('event_search event_vectors event_passages event_vector_skips fact_vectors'),
 }
 TABLES = {table: part for part, names in _BY_PART.items() for table in names}
 

@@ -53,6 +53,11 @@ RATE_LIMIT_REST = 1800  # seconds all history work rests after a 429 or quota an
 LIVE_LIMIT_WINDOW = dt.timedelta(minutes=30)  # a live sync's 429 this recent holds history back too
 EMBED_BATCH = 8  # history events per embedding request: small, so a live one never waits long behind it
 EMBED_GAP_SECONDS = 30  # between two history embedding batches
+# Passages of long meetings and conversations (embeddings.passage_pass, a few per pass): the next pass waits at least
+# PASSAGE_GAP_SECONDS and PASSAGE_REST times as long as this one took, so the local model works a tenth of the time
+# at most, on a small or busy server too (a passage took 0.3 s on an idle desktop, 1 to 2 s on a loaded one,
+# November 2026). A pass that only looked (nothing long) is followed sooner.
+PASSAGE_GAP_SECONDS, PASSAGE_REST, PASSAGE_LOOK_GAP_SECONDS = 20, 10, 5
 # Slack's slow lane (history_slack). Slack allows a non-Marketplace app about one history or replies read a minute per
 # workspace, and the collector spends one every few minutes (machine/sources/slack.py). History shares the collector's
 # client and reads only while the collector rests with room for its own next read after it: at most one page (Slack's
@@ -323,7 +328,19 @@ class HistoryApp:
         """One pass of embedding_worker: vectors for new and changed signals, newest first, then history's at a slower
         pace once none waits. Seconds until the next pass."""
         done = embeddings.embed_pending(self.store.connect, settings, 16)
-        return 5 if done == 16 else 60 if done else min(60, self.history_embed_step(settings))
+        return 5 if done == 16 else 60 if done else min(60, self.passage_step(settings), self.history_embed_step(settings))
+
+    def passage_step(self, settings):
+        """A few more passages for long signals (embedding_worker calls it only when no signal waits for its first
+        vector), held back by all that holds history back: never during the first look, a review or a first import.
+        Seconds until the next one."""
+        if not settings or self.history_hold():
+            return WAIT_SECONDS
+        started = time.monotonic()
+        done, more = embeddings.passage_pass(self.store.connect, settings)
+        if not more:
+            return WAIT_SECONDS
+        return max(PASSAGE_GAP_SECONDS, PASSAGE_REST * (time.monotonic() - started)) if done else PASSAGE_LOOK_GAP_SECONDS
 
     def history_embed_step(self, settings):
         """One small batch of history vectors for Search by meaning (embedding_worker calls it only when no signal waits

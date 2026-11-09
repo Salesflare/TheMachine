@@ -6,6 +6,8 @@ Text goes only to that server: meant to be a local one on 127.0.0.1, such as lla
 endpoint. `model` is the name the server reports (llama-server's --alias) and is recorded per
 vector, so switching models re-embeds. Vectors are Matryoshka-truncated to `dims`, renormalized
 and stored as float32 little-endian per event version; deleting an event deletes its vector.
+A long meeting or conversation gets more vectors, one per passage after the part the first one covers
+(`event_passages`, with where each starts in the body), so a hit can hand back the part that matched.
 Search is brute-force cosine over the caller's explicit accounts only, fused with FTS5
 (reciprocal rank) when there is a query.
 
@@ -33,7 +35,24 @@ SCHEMA = '''CREATE TABLE IF NOT EXISTS event_vectors(event_id INTEGER PRIMARY KE
 # An event version the server refused on its own (error class only); a new version or model tries again.
 SKIP_SCHEMA = '''CREATE TABLE IF NOT EXISTS event_vector_skips(event_id INTEGER PRIMARY KEY REFERENCES events(id) ON DELETE CASCADE,
   version INTEGER NOT NULL,model TEXT NOT NULL,reason TEXT NOT NULL,at REAL NOT NULL)'''
-SCHEMAS = (SCHEMA, SKIP_SCHEMA)
+# The rest of a long signal, a passage per row: `start` and `chars` are in the body as it is read (whitespace runs
+# as one space, review_view's body_offset). No text here: a passage is read from the event's own (sealed) body.
+PASSAGE_SCHEMA = '''CREATE TABLE IF NOT EXISTS event_passages(event_id INTEGER NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+  seq INTEGER NOT NULL,version INTEGER NOT NULL,model TEXT NOT NULL,dims INTEGER NOT NULL,start INTEGER NOT NULL,chars INTEGER NOT NULL,
+  vector BLOB NOT NULL,PRIMARY KEY(event_id,seq))'''
+SCHEMAS = (SCHEMA, SKIP_SCHEMA, PASSAGE_SCHEMA)
+# Kinds whose late parts are worth finding by meaning: meetings and support conversations. Mail is left out: quoted
+# history is cut before embedding, and what is long in its own words is mostly newsletters (keywords still find those).
+PASSAGE_KINDS = frozenset({'meeting.notes', 'meeting.transcript', 'zoom.summary', 'zoom.transcript', 'google_meet.notes',
+                           'google_meet.transcript', 'teams.notes', 'teams.transcript', 'salesflare.meeting', 'intercom.conversation'})
+# A passage: whole lines up to PASSAGE_BYTES, ended early at a new paragraph or speaker's turn once it has
+# PASSAGE_SOFT. About 250 to 400 tokens: what a retrieval model matches a short question against best, far inside
+# EmbeddingGemma's 2,048-token input with its title, and a quarter of the CPU time of a full input each.
+PASSAGE_SOFT, PASSAGE_BYTES, PASSAGE_TITLE = 1000, 1600, 100
+PASSAGES_MOST = 200  # per signal (about 250 KB of text); beyond that keywords still find it
+# One background pass (passage_pass) embeds at most PASSAGE_BATCH passages and looks at PASSAGE_LOOK signals.
+PASSAGE_BATCH, PASSAGE_LOOK = 4, 200
+TURN = re.compile(r'(?:\[?\d{1,2}:\d{2}(?::\d{2})?\]?\s+)?[^\s:][^:]{0,40}:(?:\s|$)|#{1,6}\s')  # "Ann Example: ...", "[00:12] Ann: ...", a heading
 SKIP_SECONDS = 86400  # a set-aside input is tried once more a day later (a server bug may be fixed by then)
 BODY_CHARS = 2000
 # Cosine at 256 dims. Signal-to-signal matches that were really related scored 0.6-0.87, a query's
@@ -69,6 +88,69 @@ def document(title, body):
     body = re.sub(r'\s+', ' ', body).strip()[:BODY_CHARS]
     title = re.sub(r'\s+', ' ', invisible(title or '')).strip()[:300] or 'none'
     return f'title: {title} | text: {body}'
+
+
+def ensure(db):
+    """The tables, and what earlier versions lack: event_vectors.passages (NULL: not split yet; else how many
+    passages this version has, 0 for a short one). Existing vectors stay as they are."""
+    for schema in SCHEMAS:
+        db.execute(schema)
+    if 'passages' not in {r[1] for r in db.execute('PRAGMA table_info(event_vectors)')}:
+        db.execute('ALTER TABLE event_vectors ADD COLUMN passages INTEGER')
+    db.execute('CREATE INDEX IF NOT EXISTS event_vectors_unsplit ON event_vectors(event_id) WHERE passages IS NULL')
+
+
+def lines(body):
+    """The message's own lines (no quoted history): (offset in the body as read, text, starts a paragraph or a turn)."""
+    quoted = QUOTED.search(body)
+    at, out, fresh = 0, [], True
+    for line in (body[:quoted.start()] if quoted else body).split('\n'):
+        text = ' '.join(line.split())
+        if not text:
+            fresh = True
+            continue
+        if text.startswith('>'):
+            fresh = True
+        else:
+            turn, piece = fresh or bool(TURN.match(text)), 0
+            most = PASSAGE_SOFT if text.isascii() else PASSAGE_SOFT // 4  # in bytes at worst
+            while piece < len(text):  # a line longer than a passage: runs of whole words
+                end = len(text) if len(text) - piece <= most else text.rfind(' ', piece + 1, piece + most + 1)
+                end = end if end > piece else min(piece + most, len(text))
+                out.append((at + piece, text[piece:end], turn and not piece))
+                piece = end + (text[end:end + 1] == ' ')
+            fresh = False
+        at += len(text) + 1
+    return out
+
+
+def passages(title, body, settings=None):
+    """[(start, chars, document)] for what the first vector (document) leaves out of a long body, in order; [] when
+    that one covers it all. Deterministic for a body, so a pass can stop anywhere and go on later."""
+    per_input, _, _, per_token = limits(settings or {})
+    covered = len(fit(document(title, body), per_input, per_token)) - len(document(title, ''))
+    rest, own = [], 0
+    for line in lines(body or ''):
+        own += len(line[1]) + 1
+        if own - 1 > covered:
+            rest.append(line)
+    groups, size = [], 0
+    for line in rest:
+        cost = len(line[1].encode()) + 1
+        if not groups or size + cost > PASSAGE_BYTES or (line[2] and size >= PASSAGE_SOFT):
+            groups.append([])
+            size = 0
+        groups[-1].append(line); size += cost
+    if len(groups) > 1 and sum(len(t.encode()) + 1 for _, t, _ in groups[-1]) < PASSAGE_SOFT // 4:
+        groups[-2:] = [groups[-2] + groups[-1]]  # a few closing words go with what came before
+    name = re.sub(r'\s+', ' ', invisible(title or '')).strip()[:PASSAGE_TITLE] or 'none'
+    return [(group[0][0], group[-1][0] + len(group[-1][1]) - group[0][0], f'title: {name} | text: ' + invisible(' '.join(t for _, t, _ in group)))
+            for group in groups[:PASSAGES_MOST]]
+
+
+def passage_text(body, start, chars=None):
+    """The body as read from `start` (a hit's passage), `chars` long or to its end."""
+    return ' '.join((body or '').split())[start:None if chars is None else start + chars]
 
 
 def invisible(text):
@@ -197,7 +279,10 @@ def pending(db, settings, limit, newest=True, history=False):
 
 
 def save(db, settings, rows, vectors):
-    # A slow older request must not overwrite a newer version's vector.
+    # A slow older request must not overwrite a newer version's vector. Passages of what the signal said before go
+    # with it; the new version's follow in the background (passage_pass).
+    db.executemany('DELETE FROM event_passages WHERE event_id=? AND EXISTS(SELECT 1 FROM events WHERE id=? AND version=? AND deleted=0)',
+                   [(r['id'], r['id'], r['version']) for r in rows])
     db.executemany('INSERT OR REPLACE INTO event_vectors(event_id,version,model,dims,vector) '
                    'SELECT ?,?,?,?,? WHERE EXISTS(SELECT 1 FROM events WHERE id=? AND version=? AND deleted=0)',
                    [(r['id'], r['version'], settings.get('model', ''), len(v), pack(v), r['id'], r['version']) for r, v in zip(rows, vectors)])
@@ -240,15 +325,56 @@ def embed_pending(connect, settings, limit=16, newest=True, history=False):
     if not rows:
         return 0
     done, failed = embed_isolating(settings, rows, [document(r['title'], r['body']) for r in rows])
-    if failed and not done:  # nothing went through: an input, or the server? A tiny probe tells.
-        try:
-            embed(settings, [document('none', 'ok')])
-        except EmbeddingError:
-            raise EmbeddingError(failed[0][1]) from None
+    blame(settings, done, failed)
     with connect() as db:
         save(db, settings, [r for r, _ in done], [v for _, v in done])
         skip(db, settings, failed)
     return len(rows)
+
+
+def blame(settings, done, failed):
+    """Nothing went through: an input, or the server? A tiny probe tells; the server's failure is raised."""
+    if failed and not done:
+        try:
+            embed(settings, [document('none', 'ok')])
+        except EmbeddingError:
+            raise EmbeddingError(failed[0][1]) from None
+
+
+def passage_pass(connect, settings, budget=PASSAGE_BATCH, look=PASSAGE_LOOK):
+    """One small pass over signals whose current vector has no passages yet, live ones before history, newest
+    first: short ones and other kinds are marked done, a long one gets its next passages, at most `budget` of them
+    in all (one request, outside any transaction). A long transcript takes several passes and is found by what it
+    has so far. (passages embedded, whether more wait)."""
+    model, dims = settings.get('model', ''), int(settings.get('dims', 256))
+    marked, work, left = [], [], budget  # (passages, event_id, version); (event, version, seq, start, chars, text)
+    with connect() as db:
+        rows = db.execute('SELECT v.event_id id,v.version,v.model,v.dims,e.version now,e.deleted,e.kind,length(e.body) size FROM event_vectors v '
+                          'CROSS JOIN events e ON e.id=v.event_id WHERE v.passages IS NULL ORDER BY e.history,e.id DESC LIMIT ?', (look,)).fetchall()
+        for r in rows:
+            if (r['version'], r['model'], r['dims'], r['deleted']) != (r['now'], model, dims, 0) or r['kind'] not in PASSAGE_KINDS or r['size'] <= BODY_CHARS:
+                marked.append((0, r['id'], r['version']))  # not current (its new vector starts over), or nothing to split
+                continue
+            if left <= 0:
+                break
+            event = db.execute('SELECT title,body FROM events WHERE id=?', (r['id'],)).fetchone()
+            parts = passages(event['title'], event['body'], settings)
+            have = db.execute('SELECT count(*) FROM event_passages WHERE event_id=? AND version=? AND model=? AND dims=?', (r['id'], r['version'], model, dims)).fetchone()[0]
+            take = parts[have:have + left]
+            left -= len(take)
+            work += [(r['id'], r['version'], have + n, *part) for n, part in enumerate(take)]
+            if have + len(take) >= len(parts):
+                marked.append((len(parts), r['id'], r['version']))
+    done, failed = embed_isolating(settings, work, [w[5] for w in work]) if work else ([], [])
+    blame(settings, done, failed)
+    with connect() as db:
+        db.executemany('INSERT OR REPLACE INTO event_passages(event_id,seq,version,model,dims,start,chars,vector) SELECT ?,?,?,?,?,?,?,? '
+                       'WHERE EXISTS(SELECT 1 FROM events e JOIN event_vectors v ON v.event_id=e.id WHERE e.id=? AND e.version=? AND e.deleted=0 AND v.version=e.version)',
+                       [(w[0], w[2], w[1], model, len(v), w[3], w[4], pack(v), w[0], w[1]) for w, v in done])
+        # A passage the server refused on its own ends that signal's split where it is: the others go on.
+        marked = [(w[2], w[0], w[1]) for w, _ in failed] + marked
+        db.executemany('UPDATE event_vectors SET passages=? WHERE event_id=? AND version=? AND passages IS NULL', marked)
+        return len(done), bool(db.execute('SELECT 1 FROM event_vectors WHERE passages IS NULL LIMIT 1').fetchone())
 
 
 def backfill(connect, settings, batch=16, out=print):
@@ -277,6 +403,21 @@ def backfill(connect, settings, batch=16, out=print):
     return done
 
 
+class Hit(tuple):
+    """(event_id, similarity), as `related` always answered, with where the match is: `start` is the offset of the
+    passage that matched best in the body as read (review_view's body_offset) and `chars` its length; None and 0
+    when it was the signal's start (or its words only)."""
+    def __new__(cls, event_id, similarity, start=None, chars=0):
+        self = super().__new__(cls, (event_id, similarity))
+        self.start, self.chars = start, chars
+        return self
+
+
+def starts(found):
+    """{event_id: offset} of the hits whose best match is a later passage of their body."""
+    return {hit[0]: hit.start for hit in found if getattr(hit, 'start', None)}
+
+
 def cosine(a, b):
     """Dot product of two normalized vectors. math.sumprod runs in C: a search scores every stored vector against the
     query (20k and more), some 4x quicker than a Python sum. Unequal lengths compare their shared part, as zip did."""
@@ -300,7 +441,8 @@ def fts_ids(db, accounts, query, limit, signals_only=False):
 
 def related(connect, settings, accounts, event_ids=(), query='', limit=8, floor=None, exclude=(), timeout=30, query_floor=None,
             signals_only=False):
-    """[(event_id, similarity or None)] best first, only from `accounts`, never the given/excluded ids. signals_only:
+    """[Hit: (event_id, similarity or None)] best first, only from `accounts`, never the given/excluded ids. A long
+    signal scores by its best part (its start or a later passage, Hit.start) and shows once. signals_only:
     never history (what a preparation reads: no model reads history).
     Probes are the given events' own vectors (each candidate scores its best match, against `floor`)
     and the query (against the lower `query_floor`). With a query the meaning and keyword rankings
@@ -329,7 +471,7 @@ def related(connect, settings, accounts, event_ids=(), query='', limit=8, floor=
                 save(db, settings, missing, vectors[:len(missing)])
         probes += [(r['id'], r['version'], v) for r, v in zip(missing, vectors)]
     asked = vectors[len(missing)] if query.strip() else None
-    scored = []  # (margin over its floor, similarity, event_id)
+    scored, part = [], {}  # (margin over its floor, similarity, event_id); event_id -> (margin, similarity, start, chars) of its best later passage
     if probes or asked:
         with connect() as db:
             # A seed may have changed/deleted while its embedding request was running.
@@ -350,11 +492,27 @@ def related(connect, settings, accounts, event_ids=(), query='', limit=8, floor=
                 best = max(comparisons)
                 if best[0] >= 0:
                     scored.append((*best, event_id))
+            for event_id, start, chars, blob in db.execute(
+                    'SELECT p.event_id,p.start,p.chars,p.vector FROM event_passages p CROSS JOIN events e ON e.id=p.event_id '
+                    'WHERE e.account_id IN (' + marks + ') AND e.deleted=0 AND p.version=e.version AND p.model=? AND p.dims=?'
+                    + (' AND e.history=0' if signals_only else ''), (*accounts, model, dims)):
+                if event_id in skip:
+                    continue
+                vector = unpack(blob)
+                comparisons = [(c - floor, c) for c in (cosine(p, vector) for p in live_probes)] + [(c - query_floor, c) for c in ([cosine(asked, vector)] if asked else [])]
+                best = max(comparisons, default=(-1, 0))
+                if best[0] >= 0 and best > part.get(event_id, (-1, 0))[:2]:
+                    part[event_id] = (*best, start, chars)
+    if part:  # one line per signal: its best part
+        whole = {i: (m, s) for m, s, i in scored}
+        part = {i: p for i, p in part.items() if p[:2] > whole.get(i, (-1, 0))}
+        scored = [(m, s, i) for m, s, i in scored if i not in part] + [(p[0], p[1], i) for i, p in part.items()]
     scored.sort(reverse=True)
     similarity = {i: s for _, s, i in scored}
+    hit = lambda i: Hit(i, round(similarity[i], 3) if i in similarity else None, *part.get(i, (0, 0, None, 0))[2:])
     semantic = [i for _, _, i in scored[:max(limit * 3, 30)]]
     if not query.strip():
-        return [(i, round(similarity[i], 3)) for i in semantic[:limit]]
+        return [hit(i) for i in semantic[:limit]]
     with connect() as db:
         keyword = [i for i in fts_ids(db, accounts, query, max(limit * 3, 30), signals_only) if i not in skip]
     fused = {}
@@ -362,4 +520,4 @@ def related(connect, settings, accounts, event_ids=(), query='', limit=8, floor=
         for rank, event_id in enumerate(ranking):
             fused[event_id] = fused.get(event_id, 0) + 1 / (RRF_K + rank + 1)
     best = sorted(fused, key=lambda i: (-fused[i], -similarity.get(i, 0)))[:limit]
-    return [(i, round(similarity[i], 3) if i in similarity else None) for i in best]
+    return [hit(i) for i in best]

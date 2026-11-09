@@ -202,19 +202,20 @@ def ai_connecting(config, current=None):
     return None
 
 
-def fit_events(rows, offset=0, budget=REVIEW_PAGE_CHARS):
-    """Full text where it fits; otherwise shorten bodies evenly and say how to read the rest."""
-    preview = 40000
-    views = [review_view(r, preview, offset) for r in rows]
+def fit_events(rows, offset=0, budget=REVIEW_PAGE_CHARS, starts=None):
+    """Full text where it fits; otherwise shorten bodies evenly and say how to read the rest. starts: {event_id: where
+    a search matched in its body} (embeddings.starts): a body that is shortened shows that part."""
+    preview, starts = 40000, starts or {}
+    views = [review_view(r, preview, offset, passage=starts.get(r['id'])) for r in rows]
     while len(encoded(views)) > budget and preview > 0:
         preview = int(preview * 0.7)
-        views = [review_view(r, preview, offset) for r in rows]
+        views = [review_view(r, preview, offset, passage=starts.get(r['id'])) for r in rows]
     if len(encoded(views)) > budget:
         raise ValueError('Read fewer event_ids; metadata needs another page')
     return views
 
 
-def event_page(rows, offset=0, row_offset=0, budget=REVIEW_PAGE_CHARS):
+def event_page(rows, offset=0, row_offset=0, budget=REVIEW_PAGE_CHARS, starts=None):
     """An explicit continuation, never a silently incomplete list of evidence."""
     if offset < 0 or row_offset < 0 or row_offset > len(rows):
         raise ValueError('Use a valid body_offset and row_offset')
@@ -228,7 +229,7 @@ def event_page(rows, offset=0, row_offset=0, budget=REVIEW_PAGE_CHARS):
             count -= 1
             break
     selected = remaining[:count]
-    result = {'events': fit_events(selected, offset, budget - 4000),
+    result = {'events': fit_events(selected, offset, budget - 4000, starts),
               'total': len(rows), 'row_offset': row_offset,
               'remaining_event_ids': [r['id'] for r in remaining[count:]],
               'next_row_offset': row_offset + count if count < len(remaining) else None}
@@ -830,7 +831,7 @@ class ReviewApp:
                                            min(int(args.get('limit') or 8), embeddings.MAX_LIMIT), args.get('exclude_event_ids') or ())
             score = dict(found)
             rows = sorted(self.store.events(selected, event_ids=list(score)), key=lambda r: list(score).index(r['id']))
-            result = event_page(rows, int(args.get('body_offset') or 0), int(args.get('row_offset') or 0))
+            result = event_page(rows, int(args.get('body_offset') or 0), int(args.get('row_offset') or 0), starts=embeddings.starts(found))
             for view in result['events']:
                 view['similarity'] = score.get(view['id'])
             return {**result, 'semantic': semantic}
@@ -844,11 +845,12 @@ class ReviewApp:
             if not ids:
                 result['note'] = 'Nothing in those mailboxes matches. Try other words (the person\'s address, part of the subject).'
             return result
+        starts = {}  # where a search by meaning matched in a long body
         if name == 'events' and args.get('semantic') and str(args.get('query') or '').strip() and args.get('event_ids') is None and embeddings.settings(self.config):
             # Meaning and keywords fused, best first; the plain keyword search stays the default.
             # The dashboard waits for it: a slow embedding server falls back to keywords in seconds, not minutes.
             found, _ = self.related(selected, (), str(args['query']), min(int(args.get('limit') or 40), 40), timeout=8 if args.get('full') else 30)
-            order = [i for i, _ in found]
+            order, starts = [i for i, _ in found], embeddings.starts(found)
             args = {**args, 'event_ids': order, 'query': ''}
         if name == 'events':
             kinds = args.get('kinds')
@@ -864,7 +866,7 @@ class ReviewApp:
                 if len(args.get('event_ids') or []) != 1 or len(rows) != 1:
                     raise ValueError('Read metadata with one explicit, available event_id')
                 return metadata_page(rows[0], int(args['metadata_offset']))
-            result = event_page(rows, int(args.get('body_offset') or 0), int(args.get('row_offset') or 0))
+            result = event_page(rows, int(args.get('body_offset') or 0), int(args.get('row_offset') or 0), starts=starts)
             if args.get('event_ids') is not None:
                 result['unavailable_event_ids'] = sorted(set(args['event_ids']) - {r['id'] for r in rows})
             if len(encoded(result)) > REVIEW_PAGE_CHARS:
