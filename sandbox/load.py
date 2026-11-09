@@ -171,6 +171,7 @@ def load(directory, states, port=8870, network_port=8871, fixture_path=HERE / 'f
             graph.build(db, config, base.isoformat())
             load_roles(db, base)
             load_fields(db, base)
+            load_first_look(db, base)
             load_skills(db, states, fixture, base)
             # The owner's first view after setup (Store.greeting): the hello by name, leading with who waits longest
             assistant.Store.greeting_on(db, base.isoformat())
@@ -248,6 +249,15 @@ def fill_machine(config, fixture_path=HERE / 'fixture.json', base=None):
         load_skills(db, {'busy'}, fixture, base)
         counts = [db.execute(f'SELECT count(*) FROM {t}').fetchone()[0] for t in ('events', 'suggestions', 'promises')]
     return dict(zip(('signals', 'todos', 'promises'), counts))
+
+
+def load_first_look(db, base):
+    """The first look ended an hour ago, with the voice study done (first_learned.py): so the list shows Here's what
+    I've learned under the to-dos, from the made-up mail and Graph above, the way a new owner sees it the first day."""
+    db.execute("INSERT OR IGNORE INTO milestones(name,at,detail) VALUES('first_dig_done',?,'cards')", (stamp(60, base),))
+    for channel, text in (('Email', 'Short and warm, gets to the point in the first line\nSigns off with "Best, Alex"\nWrites English, switches to Dutch with Dutch speakers'),
+                          ('All', 'Short sentences, no filler\nFriendly, never formal')):
+        db.execute('INSERT OR IGNORE INTO voices(channel,text,source,ref,updated_at) VALUES(?,?,?,?,?)', (channel, text, 'study', 'study:sandbox', stamp(50, base)))
 
 
 def load_history(db, base):

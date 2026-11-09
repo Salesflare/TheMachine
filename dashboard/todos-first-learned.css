@@ -1,0 +1,27 @@
+/* Here's what I've learned (todos-first-learned.js): one small card under the first to-dos, its parts side by side on a wide screen, tight rows with Not right. */
+.learned-card{margin:var(--sp-4) 0;padding:10px 14px 8px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow);font-size:var(--fs-sm);line-height:1.35;text-align:left}
+body.chat-open .learned-card{display:none}
+.first-look-end+.learned-card,.all-clear+.learned-card{margin-top:var(--sp-3)}
+.lf-head{display:flex;align-items:center;gap:10px;min-height:32px}
+.lf-head h2{flex:1;min-width:0;margin:0;color:var(--text);font-size:var(--fs-md);font-weight:var(--fw-strong)}
+.learned-card .lf-x{display:grid;place-items:center;flex:none;width:28px;height:28px;min-height:0;margin:0 -6px 0 -2px;padding:0;border:0;border-radius:50%;background:none;box-shadow:none;color:var(--faint);cursor:pointer;position:relative}
+.learned-card .lf-x::after{content:'';position:absolute;inset:-6px}
+.learned-card .lf-x:hover{background:var(--c-hover);color:var(--text)}
+.lf-x svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
+.lf-sub{margin:0 0 6px;color:var(--muted);font-size:var(--fs-xs)}
+.lf-grid{display:grid;gap:4px 24px}
+@media (min-width:900px){.lf-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.lf-part:nth-child(2){grid-row:span 2}}
+.lf-part h3{margin:8px 0 2px;color:var(--muted);font-size:var(--fs-xs);font-weight:var(--fw-strong);letter-spacing:.02em}
+.lf-part ul{margin:0;padding:0;list-style:none}
+.lf-row{display:flex;align-items:center;gap:10px;min-height:34px;padding:4px 0;border-top:1px solid var(--border)}
+.lf-text{flex:1;min-width:0;color:var(--text);overflow-wrap:anywhere}
+.lf-text strong{font-weight:var(--fw-medium,500)}
+.lf-text strong+span{color:var(--muted)}
+.lf-text strong+span::before{content:' · '}
+.learned-card .lf-wrong{flex:none;min-height:28px;margin:0;padding:0 8px;font-size:var(--fs-xs);color:var(--muted);white-space:nowrap}
+.learned-card .lf-wrong:hover{color:var(--text)}
+.lf-editing{display:block;padding:8px 0}
+.lf-edit label{display:grid;gap:4px;color:var(--muted);font-size:var(--fs-xs)}
+.lf-edit input{width:100%;min-height:34px;font-size:var(--fs-sm)}
+.lf-acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.lf-acts button{min-height:30px;padding:0 12px;font-size:var(--fs-xs)}

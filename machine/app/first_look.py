@@ -7,6 +7,8 @@ import json
 import time
 
 import activity
+import first_learned
+import graph
 from machine.config import LOG
 from machine.delivery.push import mailing_sources
 from machine.sources.suggest import suggestions
@@ -16,7 +18,7 @@ from machine.store.review import FIRST_LOOK_READ, PREVIEW_DAYS
 from machine.text import encoded
 from models import has_model
 from sources import CALENDAR_SERVICES, MAIL_SERVICES
-from timeutil import now
+from timeutil import local_tz, now
 
 
 # The first look (App.first_look): starts once no new signal came in for this long, tried at most this often, this far apart
@@ -106,7 +108,8 @@ def signal_family(kind):
 
 
 class FirstLookApp:
-    ACTIONS = {}  # its actions are still App.action's own branches
+    # Here's what I've learned (first_learned.py): its corrections and its ×; the rest are still App.action's own branches
+    ACTIONS = {'learned_fix': 'learned_fix_action', 'learned_close': 'learned_close_action'}
 
     def mail_backfill(self, db):
         """The first import of a newly connected mailbox, for when the first review of its mail starts.
@@ -312,6 +315,66 @@ class FirstLookApp:
         connect = self.first_look_connect(services) if not todos else []
         return {'at': done['at'], 'days': PREVIEW_DAYS, 'kinds': dict(kinds), 'read': dict(read), 'todos': todos, 'acted': acted, 'next': nxt,
                 'connect': connect}
+
+    def first_look_learned(self, current=None):
+        """Here's what I've learned, next to the first look's ending (first_learned.summary): how the owner writes, the
+        people who matter most right now and their usual hours, from what the first look, the Graph and the voice study
+        already wrote (no model call). Shown for FIRST_LOOK_DONE_HOURS after it stopped digging, filling in as the rest of
+        onboarding finishes (the voice study comes after the first to-do), until the owner closes it. None before, after,
+        once closed, with nothing to show, or on an install that had no first look. Worked out at most once a minute
+        (the list asks often); a correction works it out again at once. For the owner's own dashboard only."""
+        current = current or dt.datetime.fromisoformat(now())
+        with self.store.connect() as db:
+            done = db.execute("SELECT at,detail FROM milestones WHERE name='first_dig_done'").fetchone()
+            if (not done or done['detail'] == 'expired' or done['at'] < (current - dt.timedelta(hours=FIRST_LOOK_DONE_HOURS)).isoformat()
+                    or db.execute("SELECT 1 FROM milestones WHERE name='learned_closed'").fetchone()):
+                return None
+            cached = getattr(self, '_first_look_learned', None)
+            if cached and time.monotonic() - cached[0] < 60:
+                return cached[1]
+            found = first_learned.summary(db, self.account_sides(), local_tz(), current, self.own_companies())
+        self._first_look_learned = (time.monotonic(), found)
+        return found
+
+    def account_sides(self):
+        """{account id: 'work', 'personal' or None} for the owner's sources (graph.account_side)."""
+        return {a['id']: graph.account_side(a) for a in self.config.get('accounts', []) if a.get('service') not in SYSTEM_SERVICES and a.get('id')}
+
+    def own_companies(self):
+        """The owner's company names, from their Work accounts' boundary (work:<name>)."""
+        return sorted({str(a.get('boundary') or '').partition(':')[2] for a in self.config.get('accounts', [])
+                       if str(a.get('boundary') or '').startswith('work:')} - {''})
+
+    def learned_fix_action(self, name, args, owner_dashboard=False):
+        """Not right on Here's what I've learned: a line of how they write reworded or removed, what they work on with
+        someone said in their words or that person left off, their hours in their words or left off. Kept with Undo
+        under Learning, Changes (first_learned.py)."""
+        if not owner_dashboard:
+            raise ValueError('Only the owner corrects what their Machine learned, on the dashboard')
+        item, text = args.get('item'), str(args.get('text') or '')
+        with self.store.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            first_learned.ensure(db)
+            if item == 'voice':
+                change = first_learned.fix_voice(db, args.get('channel'), args.get('line'), text)
+            elif item == 'person' and isinstance(args.get('id'), str):
+                change = first_learned.fix_person(db, args['id'], text) if text.strip() else \
+                    first_learned.leave_off(db, 'person:' + args['id'], str(args.get('shown') or ''))
+            elif item == 'hours':
+                change = first_learned.fix_hours(db, text) if text.strip() else first_learned.leave_off(db, 'hours', str(args.get('shown') or ''))
+            else:
+                raise ValueError('item is voice, person or hours')
+        self._first_look_learned = None
+        return {'change': change, 'first_look_learned': self.first_look_learned()}
+
+    def learned_close_action(self, name, args, owner_dashboard=False):
+        """The × on Here's what I've learned: gone for good, on every device."""
+        if not owner_dashboard:
+            raise ValueError('Only the owner closes this, on the dashboard')
+        with self.store.connect() as db:
+            db.execute("INSERT OR IGNORE INTO milestones(name,at) VALUES('learned_closed',?)", (now(),))
+        self._first_look_learned = None
+        return {'first_look_learned': None}
 
     def first_look_connect(self, services):
         """For an ending with no to-dos: the services that mail the owner often and aren't connected (mailing_sources), at

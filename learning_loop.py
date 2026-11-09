@@ -320,9 +320,14 @@ def undo(db, change_id):
     if row['kind'] == 'source':  # a fix where the wrong thing came from (corrections.py)
         import corrections
         done.update(corrections.undo(db, row))
+    elif row['kind'] == 'learned':  # an item left off Here's what I've learned (first_learned.py)
+        import first_learned
+        done.update(first_learned.undo(db, row))
     elif row['kind'] == 'voice':
+        # a correction on Here's what I've learned keeps its own run as the voice's ref (first_learned.fix_voice)
+        ref = row['run_id'] if row['run_id'].startswith('learned:') else 'tune:' + row['run_id']
         current = db.execute('SELECT text,ref FROM voices WHERE channel=?', (row['target'],)).fetchone()
-        if current and (current['text'] != row['after'] or current['ref'] != 'tune:' + row['run_id']):
+        if current and (current['text'] != row['after'] or current['ref'] != ref):
             raise ValueError(f"The {row['target']} voice changed since. Edit it in Settings instead")
         if before:
             db.execute('INSERT INTO voices(channel,text,source,ref,updated_at) VALUES(?,?,?,?,?) ON CONFLICT(channel) DO UPDATE SET '
