@@ -1,7 +1,7 @@
 ---
 title: Notificaciones
 area: settings
-summary: Qué te llega, por dónde y cuándo: push, Telegram o correo según el tipo, tu horario laboral y el resumen matutino.
+summary: Qué te llega, por dónde y cuándo: solo avisa lo que no puede esperar, lo demás va en un único resumen matutino.
 covers: settings:notify
 code: notify.py, dashboard.html, assistant.py, sw.js
 order: 2
@@ -9,14 +9,25 @@ keywords: alerts, notify, ping, buzz, quiet, too many, push, sound, interrupt
 ---
 En **Ajustes**, **Notificaciones**, elige por tipo por dónde te llega:
 
-- **Tareas nuevas**: una respuesta que alguien espera, una petición, cualquier cosa urgente.
-- **Resultados y preguntas**: un borrador listo para aprobar o enviar, una tarea atascada o que necesita iniciar sesión, una pregunta del Fleet.
+- **Tareas nuevas**: solo lo que no puede esperar, como algo que vence hoy o algo urgente.
+- **Resultados y preguntas**: una respuesta lista para enviar, un inicio de sesión que necesita una tarea, una pregunta del Fleet.
 - **Recordatorios**: lo pospuesto y las esperas que vuelven.
-- **Resumen matutino**: primero los borradores listos y las promesas que vencen hoy, luego las reuniones de hoy, lo que vence, lo que llegó durante la noche y las demás tareas que esperan. Cada tarea aparece una sola vez.
+- **Resumen matutino**: un resumen corto de tu día. Más abajo.
 
 Cada uno tiene un interruptor para **Push** (la app en tu teléfono u ordenador), **Telegram** cuando está configurado y **Correo** en una Machine alojada o en una que está en The Machine Network. Todos están activados, salvo el resumen en Telegram.
 
 El **Horario laboral** está en la misma pestaña: tus días laborables, las horas en que pueden salir notificaciones, cuándo vuelve lo pospuesto, la hora del resumen y tu zona horaria. Consulta [Horario laboral](work-hours.md).
+
+## Solo lo que no puede esperar
+
+Un push, un aviso en Telegram o un correo solo sale para:
+
+- una tarea que vence hoy, o marcada como urgente;
+- una respuesta que alguien espera, redactada y lista para enviar;
+- una tarea que necesita que inicies sesión;
+- algo pospuesto que vuelve a la hora que elegiste.
+
+Todo lo demás llega en silencio al panel (y sin sonido en Telegram) y espera al resumen matutino. En un día libre solo avisa lo urgente o lo que vence hoy. Como mucho 8 push al día. Tras 3 días sin abrir el panel, solo llega el resumen matutino, hasta que vuelvas.
 
 ## Cuándo avisa
 
@@ -24,7 +35,7 @@ Como Slack, mira si estás usando el panel, no solo si está abierto:
 
 - En uso: el panel está delante de ti, en primer plano, y has hecho clic, escrito, desplazado o tocado en los últimos 10 minutos. No vibra nada. Telegram llega sin sonido.
 - Fuera: el panel está en segundo plano, minimizado, cerrado o inactivo durante 10 minutos. Un push sale un minuto después de que lo dejes, salvo que vuelvas y lo veas antes.
-- Sin ver 15 minutos después: un solo correo con todo lo que aún te espera. Como mucho uno por hora. Lo que hayas resuelto mientras tanto, en Telegram o en otro sitio, queda fuera, igual que lo que el resumen de la mañana acaba de listar. Usar el panel después de que algo llegó cuenta como haberlo visto, así que un día en el panel puede no traer ningún correo.
+- Sin ver 15 minutos después, y no puede esperar: un correo para eso, como mucho uno por hora. Lo que ya resolviste queda fuera. La mayoría de los días, el resumen matutino es el único correo.
 - Fuera de tu horario laboral: nada. El resumen matutino trae lo que llegó.
 - Una tarea nueva de trabajo que llega en un día libre espera a la hora del resumen de tu próximo día laborable. La tarea muestra dónde y cuándo te llegará, como Notificación lun, 2 nov · 08:30, según la fila **Tareas nuevas**. Con Push y Telegram apagados ahí, no dice nada.
 
@@ -51,10 +62,17 @@ Los correos con lo que te espera tienen enlaces Abrir y Posponer. Solo abren el 
 
 ## El resumen matutino
 
-Llega los días laborables a tu hora de **Resumen matutino**, y solo se omite cuando no hay nada que contar: ni reuniones, ni nada que venza o nuevo, ni tareas esperando. **Vista previa**, en su fila, lo muestra en la página sin enviarlo. Por defecto es un push y un correo. El push dice cuántas tareas esperan, las dos primeras y la hora de tu primera reunión. Al tocar el push se abre hoy en el **Calendario**.
+Llega los días laborables a tu hora de **Resumen matutino**, salvo que no haya nada que contar. **Vista previa**, en su fila, lo muestra sin enviarlo. Por defecto es un push y un correo, cortos para leer de un vistazo:
+
+- un saludo con lo que importa hoy, como "Buenos días, Sam: 2 respuestas listas para enviar";
+- tus reuniones en una línea;
+- como mucho tres cosas que hacer, cada una con un enlace Abrir: primero los borradores para revisar y las promesas de hoy;
+- cuántas más pueden esperar y cuánto te llevan a tu ritmo, como "12 más pueden esperar, unos 5 min para terminar."
+
+El push dice lo mismo sin enlaces. Tócalo para abrir hoy en el **Calendario**.
 
 ## Privacidad
 
-El push va de tu Machine directamente a tu dispositivo, cifrado para ese dispositivo. El plano de control nunca lo ve. El correo lo envía el servidor de correo de The Machine a la dirección de tu cuenta, así que el texto pasa por él y por el proveedor de correo. Cuando [Prudente](security-levels.md) oculta el texto de las tareas en las notificaciones, los correos solo llevan recuentos. Desactiva **Correo** para un tipo si no quieres que llegue nunca por correo. También dice cuánto te llevan las tareas pendientes, como "4 para revisar · unos 2 min".
+El push va de tu Machine directamente a tu dispositivo, cifrado para ese dispositivo. El plano de control nunca lo ve. El correo lo envía el servidor de correo de The Machine a la dirección de tu cuenta, así que el texto pasa por él y por el proveedor de correo. Cuando [Prudente](security-levels.md) oculta el texto de las tareas en las notificaciones, los correos solo llevan recuentos. Desactiva **Correo** para un tipo si no quieres que llegue nunca por correo.
 
 Activa el push para un dispositivo en **Este dispositivo**, o consulta [Instala la app](phone-app.md).

@@ -135,7 +135,7 @@ if(pushOK)navigator.serviceWorker.addEventListener('message',e=>{if(!e.data?.ope
 // Settings, Notifications (notify.py): each kind by channel, this device, the digest time and quiet hours. The app
 // icon's badge counts the to-dos that need the owner. While this page is in front of them, it tells the Machine so no
 // push goes out (a heartbeat a minute; the Machine forgets it after two).
-const NOTIFY_KINDS=[['todo','New to-dos','A reply, a request, anything urgent'],['result','Results and questions','Ready to approve, stuck, a Fleet question'],
+const NOTIFY_KINDS=[['todo','New to-dos','Only what can’t wait: due today, a reply, urgent'],['result','Results and questions','A reply ready to send, a sign-in, a Fleet question'],
  ['reminder','Reminders','Snoozes and waits coming back'],['digest','Morning digest','Meetings, what’s due, what came in overnight']];
 const NOTIFY_COLS={push:'Push',telegram:'Telegram',email:'Email'};
 const notifyPost=(action,args={})=>request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action,args})});

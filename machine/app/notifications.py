@@ -13,7 +13,7 @@ from machine.app.recap import recap_escape, recap_meetings
 from machine.cards import looks_done, NOT_FOR_OWNER_SQL, waits_on_others
 from machine.config import LOG
 from machine.delivery.push import (app_wake, cloud_target, mail_ready, phone_app, push_reach, push_send, quick_web,
-                                   waiting_count)
+                                   reply_waits, waiting_count)
 from machine.delivery.telegram import DeliveryNotSent, telegram_request
 from machine.model_usage import telegram_account, telegram_on
 from machine.store.promises import promise_text
@@ -44,6 +44,9 @@ class NotificationsApp:
             except (TypeError, ValueError):
                 idle = 0
             notify.mark_active(client=client, on=on, idle=idle)
+            if on:
+                with self.store.connect() as db:
+                    notify.visited(db)  # kept: a few days without a visit and only the morning summary goes (notify.away)
             return {'active': notify.active()}
         if name == 'notify_preview':  # shown on the page only: nothing is sent
             digest = self.digest()
@@ -124,16 +127,17 @@ class NotificationsApp:
             # what an earlier part already listed (notify.compose), so a pile still gets one
             later = still_needed.folded(db, utc(current), local_tz())  # a Still needed? left unanswered waits in Later
             top = notify.open_order([dict(r) for r in db.execute(
-                "SELECT id,title,status,due,due_at,created_at,event_ids FROM suggestions WHERE status IN ('pending','prepared') AND NOT " + NOT_FOR_OWNER_SQL + " "
+                "SELECT id,title,status,due,due_at,created_at,event_ids,next_action FROM suggestions WHERE status IN ('pending','prepared') AND NOT " + NOT_FOR_OWNER_SQL + " "
                 "AND (deliver_after IS NULL OR deliver_after<=?) LIMIT 2000", (utc(current),)) if r['id'] not in later], local)
             ready = [r for r in top if r['status'] == 'prepared']
             total = waiting_count(db)
-            pace = clear_pace.line(total, clear_pace.seconds(db, current))  # "4 ready · about 2 min"
+            per = clear_pace.seconds(db, current)  # the owner's pace: "12 more can wait, about 5 min to clear."
             show = security_levels.notify_text(db, False)
         promised = notify.promised_today(self.store.promises(), top, local.date().isoformat(), lambda p: promise_text(p)[0])
         root = 'https://' + self.config['dashboard_host'] + self.config.get('dashboard_path', '/') if self.config.get('dashboard_host') else ''
         when = lambda iso: locale_prefs.clock_text(dt.datetime.fromisoformat(iso).astimezone(local_tz()))
-        digest = notify.compose(meetings, due, overnight, root, show, when, None, total, top, ready, promised, pace)
+        digest = notify.compose(meetings, due, overnight, root, show, when, total=total, top=top, ready=ready, promised=promised,
+                                per=per, name=notify.first_name(self.config.get('owner_name')), replies=[r['id'] for r in ready if reply_waits(r)])
         if digest:  # the to-dos it speaks of, listed or counted: their held email lines go with it (digest_step)
             digest['covers'] = sorted({r['id'] for r in due + overnight + top if r.get('id')} |
                                       {p['covers'] for p in promised if p.get('covers')})
@@ -162,7 +166,7 @@ class NotificationsApp:
                 subscriptions, phones = push_reach(self.store, self.config)
                 if subscriptions or phones:
                     payload = {**digest['push'], **({'silent': True} if notify.active() else {}),  # at the dashboard: no buzz
-                               '_line': digest['push']['title'], '_body': digest['push']['body'],  # the mobile app asks for these
+                               '_line': digest['push']['title'], '_body': digest['push']['body'].replace('\n', ' · '),  # the mobile app asks for these
                                'actions': quick_web('view')}
                     if push_send(self.store, self.config, subscriptions, payload, 'digest', push, wake='digest'):
                         went.append('push')
@@ -170,7 +174,7 @@ class NotificationsApp:
                 try:
                     (telegram_send or (lambda text: telegram_request(self.config, {'action': 'send', 'channel': 'telegram', 'accountId': telegram_account(self.config),
                                                                                   'target': self.config.get('telegram_owner'), 'message': recap_escape(text),
-                                                                                  'presentation': {'blocks': [{'type': 'buttons', 'buttons': []}]}})))(digest['text'])
+                                                                                  'presentation': {'blocks': [{'type': 'buttons', 'buttons': []}]}})))(notify.LINKS.sub('', digest['text']))
                     went.append('telegram')
                 except (DeliveryNotSent, subprocess.TimeoutExpired, ValueError) as error:
                     LOG.warning('digest telegram error=%s', type(error).__name__)

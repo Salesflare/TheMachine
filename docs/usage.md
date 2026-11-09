@@ -20,6 +20,8 @@ Turn Telegram off or back on any time:
 - Without Telegram, **Change** is typed on the dashboard to-do.
 
 Which kinds of message go where (push, Telegram, email) is set per kind in **Settings** → **Notifications** ([help](help/notifications.md)).
+Only what can't wait buzzes (due today, urgent, a reply someone waits for, a sign-in, a snooze coming back); the rest
+waits quietly for the one morning summary.
 
 ### Telegram
 
