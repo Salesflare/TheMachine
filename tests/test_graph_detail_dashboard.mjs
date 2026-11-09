@@ -17,6 +17,11 @@ const long='Can you pick up the kids at five today? I am stuck in a meeting that
 let known=[{id:5,text:'Ann prefers calls before 10.'},{id:6,text:'Ann is allergic to nuts.'}];
 const person=()=>({id:'wa:3247000001',kind:'person',name:'Ann Example',strength:2,closeness:'close',last_at:hour(1),signals:9,ids:['+3247000001'],links:[],
  open:{cards:[{id:'0123456789abcdef',title:'Answer Ann',status:'pending',due:null}],...(known.length?{known}:{})},
+ log:[{kind:'relation',at:hour(30),a_name:'Ann Example',relation:'sister of',b_name:'Bo Example',act:{unrelate:['wa:3247000001','email:bo@family.example']},
+       source:{type:'event',id:39,via:'email',at:daysAgo(3),from:'Ann'}},
+      {kind:'fact',at:hour(40),text:'Ann prefers calls before 10.',was:'Ann prefers calls before 9.',fact:7,source:{type:'note'}},
+      {kind:'role',at:daysAgo(4),role:'neighbor',act:{edit:true},source:{type:'quote',text:'my neighbor Ann'}},
+      {kind:'org',at:daysAgo(9),org:'Example School',act:{edit:true},source:{type:'event',id:60,via:'email',at:daysAgo(20),mine:true}}],
  recent:[{id:41,account_id:'chat',kind:'whatsapp.message',occurred_at:hour(1),title:'Ann Example',from:'Ann Example',from_me:false,preview:long},
          {id:40,account_id:'chat',kind:'whatsapp.message',occurred_at:hour(2),title:'Ann Example',from:'You',from_me:true,preview:'ok'},
          {id:39,account_id:'work',kind:'gmail.message',occurred_at:daysAgo(3),title:'School trip',from:'Ann Example',from_me:false,preview:'Here is the form.'},
@@ -76,6 +81,21 @@ try{
  assert.ok(!(await page.locator('.graph-open').textContent()).includes('Ann prefers'));
  assert.equal(await page.locator('.graph-known-head h2').textContent(),'Known about Ann');
  assert.equal(await page.locator('.graph-known li').count(),2);
+ // Recent changes: folded under the record, three lines open, the rest under Show more; each with its date, its source
+ // (a message opens it) and the page's own correction in its menu.
+ assert.equal(await page.locator('.record-log .rc-fold').evaluate(d=>d.open),false);
+ assert.equal((await page.locator('.rc-fold>summary').textContent()).replace(/\s+/g,' ').trim(),'Recent changes 4');
+ await page.locator('.rc-fold>summary').click();
+ assert.deepEqual(await page.locator('.rc-list li:not([hidden]) .rc-text').allTextContents(),['Ann Example is sister of Bo Example','Ann prefers calls before 10.','Role: Neighbor']);
+ assert.equal(await page.locator('.rc-list li').nth(1).locator('.rc-was').textContent(),'Was: Ann prefers calls before 9.');
+ assert.equal(await page.locator('.rc-list li').first().locator('.rc-src button').textContent(),'Email from Ann');
+ assert.equal(await page.locator('.rc-list li').first().locator('[data-unrelate]').getAttribute('data-related-to'),'email:bo@family.example');
+ assert.equal(await page.locator('.rc-list li').nth(1).locator('[data-fact-forget="7"]').count(),1);
+ await page.locator('[data-rc-more]').click();
+ assert.equal(await page.locator('.rc-list li:not([hidden])').count(),4);
+ assert.equal(await page.locator('.rc-list li').nth(3).locator('.rc-src button').textContent(),'Your email');
+ assert.equal(await page.locator('[data-rc-more]').count(),0);
+ await page.locator('.rc-fold>summary').click();
  // Events: by day, who wrote it, a preview cut with a fade, the source's icon; tapping opens the event.
  const days=await page.locator('.ge-day').allTextContents();
  // Coming up apart, the next three soonest first, the rest behind Show all upcoming; then strictly back in time from now.

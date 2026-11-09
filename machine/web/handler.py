@@ -61,6 +61,7 @@ import meeting_notes
 import next_actions
 import notify
 import places
+import record_log
 import shared_graph
 from sources import SourceError
 from timeutil import now
@@ -660,6 +661,11 @@ def make_handler(app):
                     found['timeline'] = app.graph_timeline(found['id'])
                     found['recent'] = found['timeline'].pop('items')
                     found['slack_links'] = app.slack_links(found)
+                    try:  # Recent changes: what The Machine changed or learned about it, each with its source (record_log.py)
+                        with app.store.connect() as db:
+                            found['log'] = record_log.recent(db, graph.resolve(db, found['id']))
+                    except (sqlite3.Error, ValueError, KeyError, TypeError) as error:
+                        LOG.info('recent changes error=%s', type(error).__name__)
                     if found.get('kind') == 'project':  # its follow-ups: on or not, the next one, what went out (follow_ups.py)
                         try:
                             with app.store.connect() as db:

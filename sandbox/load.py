@@ -170,6 +170,7 @@ def load(directory, states, port=8870, network_port=8871, fixture_path=HERE / 'f
             db.commit()  # graph.build opens its own transaction
             graph.build(db, config, base.isoformat())
             load_roles(db, base)
+            load_learned(db, base)
             load_fields(db, base)
             load_skills(db, states, fixture, base)
             # The owner's first view after setup (Store.greeting): the hello by name, leading with who waits longest
@@ -178,6 +179,8 @@ def load(directory, states, port=8870, network_port=8871, fixture_path=HERE / 'f
                 load_share(db)
                 load_owners(db, fixture, base)
         load_logins(directory, fixture)
+        if not fresh:
+            load_learned_facts(store)
         load_recurring(store, config, base)
         if not fresh:  # a fresh Machine has no routines yet: the page's empty state
             load_routines(store, base)
@@ -437,6 +440,47 @@ def load_roles(db, base):
     people = db.execute("SELECT id FROM graph_nodes WHERE kind='person' ORDER BY strength DESC LIMIT 4").fetchall()
     for (node_id,), (role, quote) in zip(people, roles):
         graph.set_role(db, node_id, role, 'review', base.isoformat(), quote=quote)
+
+
+def load_learned(db, base):
+    """A person's Recent changes (record_log.py): where they work, read in a signature; how they relate to a colleague;
+    and a fact from the owner's note on a to-do that a newer note updated (the older one condensed into it)."""
+    import graph
+
+    def person(address):
+        row = db.execute("SELECT n.id FROM graph_nodes n, json_each(n.info,'$.identifiers') j WHERE n.kind='person' AND j.value=?",
+                         ('email:' + address,)).fetchone()
+        return row[0] if row else None
+
+    def event(title, address):
+        row = db.execute("SELECT id FROM events WHERE title=? AND json_extract(metadata,'$.from') LIKE ? ORDER BY occurred_at DESC LIMIT 1",
+                         (title, '%<' + address + '>')).fetchone()
+        return row[0] if row else None
+    who, colleague = person('thibault@meridianrobotics.example'), person('oskar@meridianrobotics.example')
+    receipt = event('Receipt for INV-8061', 'thibault@meridianrobotics.example')
+    if not who or not receipt:
+        return
+    graph.set_org(db, who, 'Meridian Robotics', 'review', stamp(60 * 50, base), event_id=receipt, quote='Accounts, Meridian Robotics')
+    renewal = event('Renewal quote for Meridian Robotics', 'oskar@meridianrobotics.example')
+    if colleague and renewal:
+        graph.relate(db, who, colleague, 'colleague of', 'review', stamp(60 * 30, base), event_id=renewal)
+    card = hashlib.sha256(b'closed10').hexdigest()[:16]  # the owner's two notes on that to-do; load_learned_facts keeps them
+    db.executemany("INSERT OR IGNORE INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,'other',?,'dashboard',?)",
+                   [('sandbox-note-1', card, 'The renewal is for 40 seats.', stamp(60 * 70, base)),
+                    ('sandbox-note-2', card, 'They cut it to 8 seats.', stamp(60 * 6, base))])
+
+
+def load_learned_facts(store):
+    """A fact from the owner's note on a to-do that a newer note updated: kept the way a review keeps them
+    (Store.remember_fact), the older one condensed into the newer, so the person's Recent changes says what it was."""
+    with store.connect() as db:
+        row = db.execute("SELECT n.id FROM graph_nodes n, json_each(n.info,'$.identifiers') j WHERE n.kind='person' AND j.value=?",
+                         ('email:thibault@meridianrobotics.example',)).fetchone()
+        notes = db.execute("SELECT count(*) FROM decisions WHERE id IN ('sandbox-note-1','sandbox-note-2')").fetchone()[0]
+    if not row or notes != 2:
+        return
+    old = store.remember_fact('The Meridian Robotics renewal is for 40 seats.', 'sandbox-note-1', about=[row[0]])
+    store.remember_fact('The Meridian Robotics renewal is now for 8 seats.', 'sandbox-note-2', replaces=[old['id']], about=[row[0]])
 
 
 def load_skills(db, states, fixture, base):
