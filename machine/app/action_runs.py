@@ -273,12 +273,16 @@ class ActionRunsApp:
             job=dict(row);self.merge_effect(job,json.loads(job['payload']),json.loads(job['receipt']),job['operation'],next_actions.MergeTransport(self.config,restart_self))
 
     def action_worker(self):
-        promised = styled = followed = 0
+        promised = styled = followed = handled = 0
         while not self.stop.wait(3):
             if time.monotonic() - promised >= 60:
                 promised = time.monotonic()
                 try:self.promise_step()
                 except Exception as error:LOG.error('promise check error=%s',type(error).__name__)
+            if time.monotonic() - handled >= 300:
+                handled = time.monotonic()
+                try:self.handled_step()  # open to-dos newer messages show done already (handled_check.py)
+                except Exception as error:LOG.error('handled check error=%s',type(error).__name__)
             if time.monotonic() - styled >= 600:
                 styled = time.monotonic()
                 try:self.style_step()

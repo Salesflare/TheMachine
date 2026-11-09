@@ -74,6 +74,8 @@ Una tarea cerrada puede volver con **Reabrir**. También vuelve sola cuando pasa
 
 Una tarea que solo importaba hasta un momento concreto, como una confirmación antes de una reunión, se cierra sola cuando ese momento pasa. Pasa a las hechas con "Ya no hace falta" y cuándo fue. **Deshacer** la recupera durante un día.
 
+Antes de que un mensaje o un traspaso para alguien aparezca como listo, tu Machine revisa tus chats recientes con esas personas, también los de grupo, y espera a que Slack los lea. Si un mensaje posterior muestra que ya está hecho, por ejemplo porque ya se lo pidieron y dijo que sí, la tarea se cierra sola. **Deshacer** la recupera durante un día.
+
 En tus primeras tareas, una línea corta bajo los botones muestra lo esencial: **Pedir cambios** y **No hace falta** cuando una tarea no es del todo así, y en tu primer borrador listo, que no sale nada hasta que pulsas **Enviar**. Un consejo desaparece para siempre en cuanto usas su botón o pulsas ×, en todos tus dispositivos.
 
 En tu primer día, la parte de arriba de Tareas te saluda por tu nombre y muestra quién lleva más tiempo esperando tu respuesta. The Machine redacta esa respuesta primero, para que esté lista cuando llegues. No sale nada hasta que la envías. La línea desaparece después de tu primer día o de tu primera tarea decidida.

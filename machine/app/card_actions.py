@@ -328,9 +328,16 @@ class CardActionsApp:
             with self.store.connect() as db:self.store.based_on_check(db,args['based_on'])
         if args.get('routine_change') is not None:  # a lasting change to the to-do's routine, from the owner's note: offered, not saved
             with self.store.connect() as db:routine_change=routine_changes.check(db,args['suggestion_id'],args.get('job_id'),args['routine_change'])
+        if not turn and args.get('send_now') is not True and args.get('do_now') is not True and (outcome or {}).get('state')!='already_done':
+            # A message or handoff for someone, not asked for in the owner's own message now: their conversations are read
+            # first, and what came after is named once (handled_check.py)
+            why=self.handled_gate(args['suggestion_id'],args.get('job_id'),next_actions.actions(action))
+            if why:raise ValueError(why)
         saved=self.store.prepare(args['suggestion_id'], args['body'],args.get('job_id'),action,outcome,args.get('note_kind'),require_note=True,finish_state=args.get('finish_state'),title=args.get('title'),send_now=args.get('send_now') is True)
         if args.get('routine_change') is not None and not saved.get('replayed'):
             with self.store.connect() as db:routine_changes.offer(db,args['suggestion_id'],routine_change)
+        if (outcome or {}).get('state')=='already_done' and not saved.get('replayed') and self.handled_close(args['suggestion_id'],args.get('job_id'),args['body']):
+            saved={**saved,'status':'completed','note':'Done already, as those messages show: the to-do closed by itself (Undo for a day).'}
         if saved.get('reported'):  # its confirmed step went through while nobody watched: say so on the phone
             try:report_done(self.store,self.config,args['suggestion_id'])
             except Exception as error:LOG.warning('done report error=%s',type(error).__name__)

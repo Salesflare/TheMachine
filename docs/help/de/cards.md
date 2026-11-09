@@ -74,6 +74,8 @@ Eine geschlossene Aufgabe kommt mit **Wieder öffnen** zurück. Sie kommt auch v
 
 Eine Aufgabe, die nur bis zu einem bestimmten Zeitpunkt zählte, etwa eine Bestätigung vor einem Meeting, schließt sich von selbst, sobald dieser Zeitpunkt vorbei ist. Sie wandert zu **Erledigt / verworfen** mit „Nicht mehr nötig“ und wann es war. **Rückgängig** holt sie einen Tag lang zurück.
 
+Bevor eine Nachricht oder Übergabe an jemanden als bereit erscheint, prüft deine Machine deine letzten Chats mit den Beteiligten, auch Gruppenchats, und wartet, bis Slack sie gelesen hat. Zeigt eine spätere Nachricht, dass es schon erledigt ist, etwa weil die Person gefragt wurde und zugesagt hat, schließt sich die Aufgabe von selbst. **Rückgängig** holt sie einen Tag lang zurück.
+
 Bei deinen ersten Aufgaben zeigt eine kurze Zeile unter den Buttons das Wichtigste: **Änderungen anfragen** und **Nicht nötig**, wenn eine Aufgabe nicht ganz passt, und bei deinem ersten fertigen Entwurf, dass nichts rausgeht, bevor du auf **Senden** tippst. Ein Tipp verschwindet für immer, sobald du seinen Button nutzt oder auf × tippst, auf all deinen Geräten.
 
 An deinem ersten Tag begrüßt dich der Kopf von Aufgaben mit Namen und zeigt, wer am längsten auf deine Antwort wartet. Die Machine entwirft diese Antwort zuerst, damit sie bereitliegt, wenn du ankommst. Nichts geht raus, bevor du sie sendest. Die Zeile verschwindet nach deinem ersten Tag oder deiner ersten entschiedenen Aufgabe.

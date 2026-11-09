@@ -20,7 +20,6 @@ import follow_ups
 import github_route
 import i18n
 from machine.app.graph_actions import account_services
-from machine.app.promise_checks import activity_since
 from machine.browser import (
     browser_lease_script,
     browser_link,
@@ -37,7 +36,6 @@ from machine.faults import fault_where
 from machine.model_usage import node_bin, node_env
 from machine.prompts.profile import VOICE_CHARS, VOICE_LINES, VOICE_PRECISE
 from machine.prompts.review import FACT_KIND_HINT, FACTS_YOU, source_notes
-from machine.sources.calendar import company_domains
 from machine.sources.connectors import calendar_prompt, doc_write_prompt, meeting_notes_prompt, slack_prompt
 from machine.store.decisions import owner_area_open, pause_idle_steps
 from machine.text import encoded
@@ -517,9 +515,10 @@ class PreparationApp:
                 except Exception as error:LOG.error('graph lines error=%s',type(error).__name__)
                 try:  # someone may have answered since: what is already synced, no model call
                     with self.store.connect() as db:
-                        row=db.execute('SELECT event_ids FROM suggestions WHERE id=?',(job['suggestion_id'],)).fetchone()
-                        found=activity_since(db,json.loads(row['event_ids'] or '[]') if row else [],self.store.owner_user_ids,
-                                             {x['email']:x['name'] for x in self.teammate_addresses()},company_domains(self.config))
+                        row=db.execute('SELECT title,event_ids FROM suggestions WHERE id=?',(job['suggestion_id'],)).fetchone()
+                        ids=json.loads(row['event_ids'] or '[]') if row else []
+                        # with the people its title names too, and the group DMs with them (handled_check.py)
+                        found=self.handled_since(db,ids,self.handled_people(db,ids,row['title'] if row else ''))
                     lines=newer_activity_lines(found)
                     if len(request['message'])+len(lines)<PROMPT_LIMIT-1000:request['message']+=lines
                 except Exception as error:LOG.error('newer activity error=%s',type(error).__name__)

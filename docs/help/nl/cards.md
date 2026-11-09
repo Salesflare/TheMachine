@@ -74,6 +74,8 @@ Een gesloten to-do kan terugkomen met **Heropenen**. Hij komt ook vanzelf terug 
 
 Een to-do die maar tot een bepaald moment telde, zoals een bevestiging voor een vergadering, sluit vanzelf zodra dat moment voorbij is. Hij gaat naar **Gedaan / afgewezen** met "Niet meer nodig" en wanneer het was. **Ongedaan maken** brengt hem een dag lang terug.
 
+Voordat een bericht of overdracht voor iemand klaarstaat, kijkt je Machine je recente chats met de betrokkenen na, ook groepschats, en wacht tot Slack ze gelezen heeft. Toont een later bericht dat het al gedaan is, bijvoorbeeld omdat het al gevraagd is en ze ja zeiden, dan sluit de to-do vanzelf. **Ongedaan maken** brengt hem een dag lang terug.
+
 Bij je eerste to-do's staat onder de knoppen één korte regel met wat je moet weten: **Wijzigingen vragen** en **Niet nodig** als een to-do niet helemaal klopt, en bij je eerste klaarstaande concept dat er niets weggaat tot je op **Versturen** drukt. Een tip verdwijnt voorgoed zodra je die knop gebruikt of op × drukt, op al je apparaten.
 
 Op je eerste dag zegt de bovenkant van To-do's hallo met je naam en wie het langst op je antwoord wacht. The Machine schrijft dat antwoord eerst, zodat het klaarstaat als je binnenkomt. Er gaat niets weg tot je het verstuurt. De regel verdwijnt na je eerste dag of je eerste besliste to-do.

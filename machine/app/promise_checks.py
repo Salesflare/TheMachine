@@ -85,21 +85,22 @@ ELSEWHERE_KINDS = NEWER_KINDS + ('calendar.event', 'meeting.notes', 'meeting.tra
                                  'zoom.summary', 'zoom.transcript', 'teams.notes', 'teams.transcript')
 
 
-def activity_since(db, event_ids, owner_slack_ids=(), teammates=(), domains=(), limit=8):
+def activity_since(db, event_ids, owner_slack_ids=(), teammates=(), domains=(), limit=8, people=()):
     """What happened after a to-do's or a promise's newest evidence, already synced: newer messages in its own
     conversations (newer_activity), and elsewhere the messages with the same people (the owner answering an email on
     WhatsApp, a teammate replying in Slack) and meetings with them that have started since, with their notes. Who,
     when and where only, no model call and no message text: the reader judges by meaning whether it is handled. Newest
-    last, at most `limit`, each {'id', 'at', 'channel', 'who', 'where'}; where is 'same conversation' or 'elsewhere'."""
+    last, at most `limit`, each {'id', 'at', 'channel', 'who', 'where'}; where is 'same conversation' or 'elsewhere'.
+    people: more graph people it is about besides its evidence's, like the one a handoff goes to (handled_check.py)."""
     ids = [i for i in event_ids or [] if isinstance(i, int)]
     found = [{**x, 'where': 'same conversation'} for x in newer_activity(db, ids, owner_slack_ids, teammates, domains, limit=limit)]
     if not ids:
         return found
     latest = db.execute('SELECT max(occurred_at) FROM events WHERE id IN (' + ','.join('?' * len(ids)) + ')', ids).fetchone()[0]
     try:
-        people = [p['id'] for p in graph.card_people(db, ids, limit=3)[0]]
+        people = list(dict.fromkeys([p['id'] for p in graph.card_people(db, ids, limit=3)[0]] + list(people or ())))
     except (sqlite3.Error, ValueError, TypeError):
-        people = []  # no graph yet
+        people = list(people or ())  # no graph yet
     if not latest or not people:
         return found
     teammates = {str(e).lower(): name for e, name in dict(teammates).items()} if teammates else {}
@@ -136,10 +137,15 @@ class PromiseChecksApp:
         reads that (promise_check_run) and closes the ones it shows kept, so no to-do comes that is done already; it also
         reads the open to-dos that may be the same matter (promise_alike), so a promise joins the one it is. Those
         are held back for that turn; the rest, and all of them when the turn can't go now (the usage budget), become
-        to-dos as before. A promise checked against the same messages goes on to its to-do. Returns the ids held back."""
-        pages = []
+        to-dos as before. A promise checked against the same messages goes on to its to-do. Before all that, the Slack
+        conversations with its people (the one it was promised to and the one it names, group DMs too) are read first
+        when they rest (handled_check.py): one done there must not come as a to-do. Returns the ids held back."""
+        pages, waiting = [], set()
         with self.store.connect() as db:
             for p in due:
+                if self.handled_wait(db, 'promise:%d' % p['id'], [p['event_id']], p['what']):
+                    waiting.add(p['id'])  # back next minute, once Slack read them (or after a while, as it is)
+                    continue
                 found = self.promise_since(db, p)
                 p['alike'] = promise_alike(db, p)
                 if not found and not p['alike']:
@@ -149,19 +155,19 @@ class PromiseChecksApp:
                 if checked is None or checked < newest:
                     pages.append((p, found))
         if not pages:
-            return set()
+            return waiting
         if getattr(self, 'promise_check_model', None):  # tests and the sandbox: the turn in line, the open ones carded this pass
             self.promise_check_run(pages)
-            return set()
+            return waiting
         if not openclaw_model(self.config):
-            return set()  # no model to ask: the to-dos come as before
+            return waiting  # no model to ask: the to-dos come as before
         thread = getattr(self, '_promise_check_thread', None)
         if not (thread and thread.is_alive()):
             if self.background_pause(job='promise-check'):
-                return set()  # no room for a turn now: the to-dos come as before, and their run still checks
+                return waiting  # no room for a turn now: the to-dos come as before, and their run still checks
             self._promise_check_thread = threading.Thread(target=self.promise_check_run, args=(pages,), name='promise-check', daemon=True)
             self._promise_check_thread.start()
-        return {p['id'] for p, _ in pages}  # back next minute, checked or still being checked
+        return {p['id'] for p, _ in pages} | waiting  # back next minute, checked or still being checked
 
     def promise_check_text(self, db, pages):
         """The turn's page: each promise and what came after it, message text as data."""
@@ -219,9 +225,9 @@ class PromiseChecksApp:
 
     def promise_since(self, db, p):
         """What happened after a promise was made (activity_since its message): in its conversation, and with its
-        people elsewhere."""
-        return activity_since(db, [p['event_id']], self.store.owner_user_ids, {x['email']: x['name'] for x in self.teammate_addresses()},
-                              company_domains(self.config), limit=10)
+        people elsewhere, the one it names too ("let Sam know": Sam may have heard already), group DMs with them included
+        (handled_check.py)."""
+        return self.handled_since(db, [p['event_id']], self.handled_people(db, [p['event_id']], p['what']))
 
     def promise_check_run(self, pages):
         """One turn for the held promises: kept ones close with the message that shows it (the owner sees it on the

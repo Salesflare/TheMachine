@@ -330,11 +330,14 @@ class CardChatApp:
         about = max(((i['at'], i['from']) for i in owner if i['kind'] == 'source' and not i['mine'] and i['from']), default=(0, ''))[1]  # the latest who wrote
         waiting = False  # with a teammate: Later means back to check in, not a snooze of the owner's
         sent_files = chat_files.listed(db, [r['id'] for r in db.execute("SELECT id FROM decisions WHERE suggestion_id=? AND choice='other' AND source='dashboard'", (suggestion_id,))])
-        for r in db.execute("SELECT id,choice,feedback,source,created_at FROM decisions WHERE suggestion_id=? AND source IN ('dashboard','telegram','fleet','expiry','placed','intercom') "
+        for r in db.execute("SELECT id,choice,feedback,source,created_at FROM decisions WHERE suggestion_id=? AND source IN ('dashboard','telegram','fleet','expiry','placed','intercom','handled') "
                             'ORDER BY rowid', (suggestion_id,)):
             at, via = chat_ms(r['created_at']), (' in Telegram' if r['source'] == 'telegram' else '')
             if r['source'] == 'expiry':  # its moment passed (Store.expire_passed); Undo takes this back like a tap
                 owner.append({'kind': 'event', 'text': 'Closed by itself: no longer needed', 'choice': 'complete', 'at': at})
+                continue
+            if r['source'] == 'handled':  # newer messages show it done already (Store.close_handled); Undo takes it back
+                owner.append({'kind': 'event', 'text': i18n.t('Closed by itself: {}', clamp(r['feedback'], 200)), 'choice': 'complete', 'at': at})
                 continue
             if r['source'] == 'intercom':  # a teammate was assigned the conversation (Store.close_taken_intercom)
                 owner.append({'kind': 'event', 'text': i18n.t('Closed by itself: {} took it in Intercom', r['feedback']) if r['feedback']
