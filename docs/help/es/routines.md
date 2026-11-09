@@ -19,7 +19,7 @@ A su hora, tu Machine lee lo que necesita, como tus mensajes, reuniones y el Gra
 
 Las rutinas solo leen: tus mensajes, páginas web, GitHub y sitios como X en el navegador. No envían, responden, publican ni cambian nada.
 
-Cuando la tarea de una rutina termina en una publicación o un mensaje, hace todo hasta ese paso y muestra el borrador, como **Publicaría en X:**. Tras una ejecución real lo recibes como tarea para aprobar; una ejecución de prueba solo lo muestra.
+Cuando la tarea de una rutina termina en una publicación o un mensaje, hace todo hasta ese paso y muestra el borrador, como **Publicaría en X:**. Tras una ejecución real lo recibes como tarea para aprobar; una ejecución de prueba solo lo muestra. Su nombre dice de qué trata y adónde va, su botón nombra el paso, como **Publícalo**, y **De tu rutina** debajo abre la rutina.
 
 Cada ejecución conoce el último resultado, así puede decir qué cambió desde entonces.
 

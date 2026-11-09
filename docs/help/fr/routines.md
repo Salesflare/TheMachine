@@ -19,7 +19,7 @@ Sans heure, elle tourne à 8:00. L’heure est celle de l’horloge de votre Mac
 
 Les routines ne font que lire : vos messages, des pages web, GitHub et des sites comme X dans le navigateur. Elles n’envoient, ne répondent, ne publient et ne modifient rien.
 
-Quand la tâche d’une routine finit par une publication ou un message, elle fait tout jusqu’à cette étape et montre le brouillon, comme **Publierait sur X :**. Après une vraie exécution, vous le recevez comme tâche à approuver ; une exécution de test le montre seulement.
+Quand la tâche d’une routine finit par une publication ou un message, elle fait tout jusqu’à cette étape et montre le brouillon, comme **Publierait sur X :**. Après une vraie exécution, vous le recevez comme tâche à approuver ; une exécution de test le montre seulement. Son nom dit de quoi il s’agit et où cela part, son bouton nomme l’étape, comme **Publier**, et **De votre routine** en dessous ouvre la routine.
 
 Chaque exécution connaît le dernier résultat, elle peut donc dire ce qui a changé depuis.
 

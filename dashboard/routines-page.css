@@ -11,6 +11,8 @@
 .rt-body{margin-top:14px}.rt-body>.rt-run:first-child{margin-top:0}.rt-body.clamp{max-height:7.5em;overflow:hidden;-webkit-mask-image:linear-gradient(#000 calc(100% - 2em),transparent);mask-image:linear-gradient(#000 calc(100% - 2em),transparent)}.rt .more{margin-top:4px}.rt .more+.actions{margin-top:0}
 #routines-view .fine{margin:-8px 0 0;color:var(--c-text-3);font-size:var(--fs-sm)}
 .rt{padding:var(--sp-4) var(--sp-5);border:1px solid var(--c-line);border-radius:var(--r-lg);background:var(--c-surface)}
+/* Opened from a to-do's "From your routine" link (routines-page.js rtReveal): marked for a moment */
+.rt{transition:box-shadow .4s}.rt[tabindex="-1"]:focus{outline:none}.rt.rt-found{box-shadow:var(--ring)}
 .rt h3{margin:0;font:var(--fw-heading) var(--fs-lg)/1.3 var(--serif)}
 .rt-when{margin:2px 0 0;color:var(--c-text-3);font-size:var(--fs-sm)}
 .rt-seen{white-space:nowrap}

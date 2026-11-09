@@ -19,7 +19,7 @@ Na hora marcada, sua Machine lê o que precisa, como suas mensagens, reuniões e
 
 Rotinas só leem: suas mensagens, páginas da web, o GitHub e sites como o X no navegador. Elas não enviam, respondem, publicam nem mudam nada.
 
-Quando a tarefa de uma rotina termina num post ou numa mensagem, ela faz tudo até essa etapa e mostra o rascunho, como **Postaria no X:**. Depois de uma execução real, você recebe como tarefa para aprovar; uma execução de teste só mostra.
+Quando a tarefa de uma rotina termina num post ou numa mensagem, ela faz tudo até essa etapa e mostra o rascunho, como **Postaria no X:**. Depois de uma execução real, você recebe como tarefa para aprovar; uma execução de teste só mostra. O nome diz do que se trata e para onde vai, o botão diz a etapa, como **Publicar**, e **Da sua rotina** embaixo abre a rotina.
 
 Cada execução conhece o último resultado, então pode dizer o que mudou desde então.
 

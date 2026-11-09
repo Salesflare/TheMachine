@@ -35,7 +35,16 @@ const rtSection=(name,label,cards,fine)=>html`<section class="rt-sec rt-${name}"
 // when the form closes. A rebuild keeps what is on screen in place (rtKeep).
 function routinesRender(){const box=$('#routines-view'),list=routinesData?.routines;if(!box||!list)return;
  if(!(rtForm&&rtPatch(box)))rtKeep(box,()=>rtFull(box,list));
- rtLook(4000)}
+ rtReveal(box);rtLook(4000)}
+// A to-do a routine made says "From your routine X" (todos-cards.js routineSource), X a link to #routines/<id>: the Routines
+// page with that routine in view, marked for a moment. One gone since says so.
+let rtWant='';
+function openRoutineLink(){const m=/^#routines\/([a-f0-9]{32})$/.exec(location.hash);if(!m)return false;
+ history.replaceState(null,'',location.pathname+location.search+'#routines');rtWant=m[1];if($('#routines').hidden)showTab('routines');else routinesView();return true}
+document.addEventListener('click',e=>{const a=e.target.closest('a[href^="#routines/"]');if(!a||e.ctrlKey||e.metaKey||e.shiftKey||e.defaultPrevented)return;
+ e.preventDefault();history.replaceState(null,'',location.pathname+location.search+a.getAttribute('href'));openRoutineLink()});
+function rtReveal(box){if(!rtWant)return;const a=box.querySelector(`article[data-rt="${CSS.escape(rtWant)}"]`);rtWant='';if(!a){toast(t('That routine is gone'),true);return}
+ a.tabIndex=-1;a.scrollIntoView({block:'center'});a.focus({preventScroll:true});a.classList.add('rt-found');setTimeout(()=>a.classList.remove('rt-found'),2400)}
 // A run in progress: look again in a few seconds (slower after a failed look), so its result shows in the card when ready
 function rtLook(ms){const d=routinesData;clearTimeout(rtTimer);if([...d.routines,...d.suggested||[],...d.trying||[]].some(r=>r.runs[0]?.state==='running'||r.test?.state==='running'))rtTimer=setTimeout(()=>$('#routines-view')?.offsetParent?routinesView(true):routinesAt=0,ms)}
 function rtFull(box,list){rtStale=false;const typed=$('#rt-words')?.value||'',sugg=routinesData.suggested||[],trying=routinesData.trying||[],on=list.filter(r=>r.state!=='paused'),off=list.filter(r=>r.state==='paused'),

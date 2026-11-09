@@ -88,6 +88,34 @@ def skill_labels(cluster):
     return {'accept': 'Update ' + cluster['target_name'] if cluster['target_id'] else 'Create skill', 'reject': 'Not now'}
 
 
+# A routine draft's step (routines_app.DRAFT_ACTS), named on its to-do's lead button instead of Do it
+ROUTINE_ACT = {'post': 'Post it', 'send': 'Send it'}
+ROUTINE_ID = re.compile(r'[a-f0-9]{32}')
+
+
+def routine_view(db, metas):
+    """The routine a to-do came from, when its evidence is a routine's draft (routines_app.routine_draft_todo): {'id',
+    'name', 'live', 'act'}. live: the routine is still on the Routines page (on or paused), so its source line links to
+    it there; its name is its name now (a rename shows), else the one it had. act: post or send, or None. None for any
+    other to-do. metas: the to-do's evidence metadata, as stored."""
+    for meta in metas:
+        try:
+            m = meta if isinstance(meta, dict) else json.loads(meta or '{}')
+        except (ValueError, TypeError):
+            continue
+        rid = m.get('routine') if isinstance(m, dict) else None
+        if not isinstance(rid, str) or not ROUTINE_ID.fullmatch(rid):
+            continue
+        try:
+            row = db.execute('SELECT name,state FROM routines WHERE id=?', (rid,)).fetchone()
+        except sqlite3.Error:
+            row = None
+        live = bool(row) and row['state'] in ('on', 'paused')
+        name = ' '.join(str((row['name'] if live else None) or m.get('sender_display') or '').split())
+        return {'id': rid, 'name': name, 'live': live, 'act': m.get('act') if m.get('act') in ROUTINE_ACT else None}
+    return None
+
+
 def area_hint(db, suggestion, accounts, here):
     """The area a to-do's people point to (todo_areas.pointed), from the Graph: their side, the accounts they were heard
     on and their organization's domain. None when there are not several areas to pick from or nothing points anywhere."""
@@ -406,6 +434,11 @@ class ViewsStore(ConversationStore):
             if isinstance(url,str) and urllib.parse.urlsplit(url).scheme in ('https','http') and url not in originals:
                 originals.append(url)
         extra={'result_files':files,'original_urls':originals[:5]}
+        routine=routine_view(db,[row['metadata'] for row in rows])
+        if routine:  # "From your routine X", X a link to it; its step names the lead button (Post it) while it waits on the owner
+            act=routine.pop('act')
+            extra['routine']=routine
+            if act and suggestion.get('status')=='pending':extra['labels']={'accept':ROUTINE_ACT[act]}
         proposal = (not pre or suggestion['id'] in pre['clusters']) and db.execute("SELECT * FROM skill_clusters WHERE suggestion_id=?", (suggestion['id'],)).fetchone()
         if proposal:
             extra['skill_proposal'] = {'name': proposal['name'], 'body': proposal['body'],

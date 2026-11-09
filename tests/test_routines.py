@@ -301,10 +301,11 @@ class Runs(unittest.TestCase):
     def test_a_job_that_ends_in_a_post_reads_up_to_it_and_drafts_it(self):
         words = 'every day at 9, check what shipped in the open source repo and draft a short post on X'
         rid = self.make(words)
-        post = {'title': 'Post on X', 'text': 'Two new things shipped today.'}
+        post = {'title': 'Post on X about the faster search', 'text': 'Two new things shipped today.', 'act': 'post'}
         self.act('routine_try', id=rid, words='Check what shipped in the open source repo and draft a short post on X'); self.app.routines_step()
         start = [s for s in self.sent if s['action'] == 'start'][-1]['message']
         for said in ('the browser to look', 'gh or git commands that only read', 'Would post on X', 'nothing goes out.',
+                     'what it is about and where it goes, specific and short', 'act: post or send',
                      'This is its first run: what is new means the last 24 hours, since Sunday 2026-11-08 06:00'):
             self.assertIn(said, start)
         self.assertNotIn('You can only read', start)
@@ -317,14 +318,28 @@ class Runs(unittest.TestCase):
         self.assertIn('This is its first run', start)  # a test run is not the last run
         with self.assertRaisesRegex(ValueError, 'draft needs title'):
             self.report('Would post on X: hi', draft='hi')
-        self.report('Would post on X: Two new things shipped today.', draft=post)
+        with self.assertRaisesRegex(ValueError, 'draft act is post or send'):
+            self.report('Would post on X: hi', draft={**post, 'act': 'publish'})
+        self.report('Would post on X: Two new things shipped today.', draft=post, name='Check what shipped')
         with self.store.connect() as db:
-            self.assertEqual([tuple(r) for r in db.execute('SELECT title,body FROM suggestions')], [('Post on X', 'Two new things shipped today.')])
+            self.assertEqual([tuple(r) for r in db.execute('SELECT title,body FROM suggestions')], [('Post on X about the faster search', 'Two new things shipped today.')])
+            card = dict(db.execute('SELECT * FROM suggestions').fetchone())
+            view = self.store.suggestion_result(card, db)
+        # The to-do says it is the routine's, by the routine's name (its name now: this run named it), with a link to it
+        # while the routine is on the Routines page, and its button names the step
+        self.assertEqual(card['source_line'], 'Source: your routine Check what shipped in the · Mon, Nov 9')
+        self.assertEqual(view['routine'], {'id': rid, 'name': 'Check what shipped', 'live': True})
+        self.assertEqual(view['labels'], {'accept': 'Post it'})
         self.now = T(2026, 11, 10, 9, 30)
         self.act('routine_run_now', id=rid); self.app.routines_step()
         start = [s for s in self.sent if s['action'] == 'start'][-1]['message']
         self.assertIn('The last run started', start)
         self.assertNotIn('This is its first run', start)
+        # Stopped: no longer on the Routines page, so no link, and the name it had
+        self.act('routine_state', id=rid, to='stop')
+        with self.store.connect() as db:
+            view = self.store.suggestion_result(card, db)
+        self.assertEqual(view['routine'], {'id': rid, 'name': 'Check what shipped in the', 'live': False})
 
     def test_try_it_shows_new_words_without_changing_the_routine(self):
         rid = self.make('every Monday at 9, sum up my open deals')

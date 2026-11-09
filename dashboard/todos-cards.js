@@ -29,8 +29,14 @@ const sourceDay=d=>{const m=/^[\p{L}.]+,?\s+(?:([\p{L}]+)\.?\s+(\d{1,2})|(\d{1,2
  const now=new Date(),at=new Date(now.getFullYear(),mon,+(m[2]||m[3]),12);if(at-now>864e5*31)at.setFullYear(at.getFullYear()-1);return localeDate(at,DL,{weekday:'short',day:'numeric',month:'short'})};
 const sourceText=v=>{let s=String(v||'').replace(/^Source:\s*/i,''),more='';
  s=s.replace(/ \(\+(\d+) more\)$/,(_,n)=>{more=' '+t('(+{} more) (a source)',n);return ''});
- const i=s.lastIndexOf(' · '),head=i<0?s:s.slice(0,i),day=i<0?'':' · '+sourceDay(s.slice(i+3)),m=/^(.+?) from (.+)$/.exec(head),dm=/^Slack DM with (.+)$/.exec(head);
- const up=x=>x?x[0].toUpperCase()+x.slice(1):x,what=dm?t('Slack DM with {} (a source)',dm[1]):m?t('{} from {} (a source)',t(up(m[1])),m[2]):t(up(head));return up(what)+day+more};
+ const i=s.lastIndexOf(' · '),head=i<0?s:s.slice(0,i),day=i<0?'':' · '+sourceDay(s.slice(i+3)),rt=/^your routine (.+)$/.exec(head),m=!rt&&/^(.+?) from (.+)$/.exec(head),dm=/^Slack DM with (.+)$/.exec(head);
+ const up=x=>x?x[0].toUpperCase()+x.slice(1):x,what=rt?t('From your routine {}',rt[1]):dm?t('Slack DM with {} (a source)',dm[1]):m?t('{} from {} (a source)',t(up(m[1])),m[2]):t(up(head));return up(what)+day+more};
+// A routine's to-do (its draft, routines_app.py): "From your routine Check what shipped", the name a link to that routine on
+// the Routines page (#routines/<id>, routines-page.js openRoutineLink) while it is there. Its draft is the to-do's own text,
+// so there is no original to read.
+const routineSource=s=>{const r=s.routine,v=String(s.source_line||''),i=v.lastIndexOf(' · '),day=i<0?'':sourceDay(v.slice(i+3).replace(/ \(\+\d+ more\)$/,''));
+ const name=r.live?html`<a class="rt-link" href="#routines/${r.id}" translate="no">${r.name}</a>`:html`<span translate="no">${r.name}</span>`;
+ return html`<p class="source"><span class="src">${htmlT('From your routine {}',name)}${day?html` · <span class="src-date">${day}</span>`:''}</span></p>`};
 const sourceHtml=v=>{const t=sourceText(v),i=t.lastIndexOf(' · ');return html`<span class="src">${i<0?t:html`${t.slice(0,i+3)}<span class="src-date">${t.slice(i+3)}</span>`}</span>`};  // the date never splits over two lines
 const syncError=v=>v==='android_feed_unavailable'?'Notification bridge unavailable':v==='android_offline'?'Phone disconnected':v==='android_notifications_unavailable'?'Phone notifications unavailable':v==='android_gateway_unavailable'?'Connection to The Machine unavailable':v?.startsWith('network')?'Connection problem':v==='timeout'?'Connection timed out':['slack:HTTP_429','slack_ratelimited'].includes(v)?'Slack rate limit':readableError(v);
 // Error codes like linkedin_read_failed, in words: the source's name and what went wrong.
@@ -512,7 +518,7 @@ const drafts=s.status==='prepared'&&!tpSent?smart.filter(a=>DRAFT_KINDS.includes
     const results=(s.status==='prepared'&&!calOnly)||s.result_files?.length?html`<span class="foot-links"><button type="button" class="link" data-id="${s.id}" data-result="read">Read result</button>${(messageDrafts(s).length||s.result_files?.length)&&!copyLead(s,smart)&&!s.proposed_skill?html`<button type="button" class="link" data-id="${s.id}" data-result="copy">Copy draft</button>`:''}</span>`:'';
     const readLabel=isEmail(s)?'Read email':'Read message',src=s.source_line?sourceHtml(s.source_line):'';
     const srcOut=!closed(s)&&section!=='Chat';  // an open to-do shows where it came from on the to-do itself, a closed one under Details
-    const original=hasOriginal(s)?html`<button type="button" class="link read-original via-${cardViaIcon(s)}" data-id="${s.id}" data-original="read" aria-label="${readLabel}" title="${readLabel}">${src||readLabel}</button>`:src?html`<p class="source">${src}</p>`:'';
+    const original=s.routine?.name?routineSource(s):hasOriginal(s)?html`<button type="button" class="link read-original via-${cardViaIcon(s)}" data-id="${s.id}" data-original="read" aria-label="${readLabel}" title="${readLabel}">${src||readLabel}</button>`:src?html`<p class="source">${src}</p>`:'';
 // What only matters on a second look folds behind one Details: a closed to-do's coding agent result and the files it was
 // made with, your note and the source line. The row under it keeps
 // Details, when it comes back and the result links; a closed to-do's Reopen sits on the same row.
