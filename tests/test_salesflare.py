@@ -374,6 +374,47 @@ class SalesflareConnector(unittest.TestCase):
         self.assertFalse(a.salesflare_progress(ACCOUNT, {'window': {**window, 'read': 1}})['no_access_all'])
         self.assertFalse(a.salesflare_progress(ACCOUNT, {'window': {**window, 'pending': list(range(123)), 'no_access': list(range(5))}})['no_access_all'])
 
+    def test_a_refused_round_logs_part_of_route_and_message_as_counts(self):
+        class Refusing(FakeCRM):
+            def get(self, path, params=None):
+                try:
+                    answer = super().get(path, params)
+                except a.SourceError as error:
+                    error.route, error.reason = '/accounts/{id}/feed', 'Forbidden'
+                    raise
+                if path == '/accounts/20':
+                    answer['part_of'] = True  # a member, refused all the same
+                return answer
+        with self.assertLogs(a.LOG, 'WARNING') as logged:
+            self.run_to_completion(Refusing(forbidden={10, 20}))
+        refused = sorted(line.split('salesflare ')[1] for line in logged.output if 'salesflare refused ' in line)
+        self.assertEqual(refused, ['refused account=work-crm count=1 part_of=false route=/accounts/{id}/feed message=Forbidden',
+                                   'refused account=work-crm count=1 part_of=true route=/accounts/{id}/feed message=Forbidden'])
+        self.assertNotRegex(' '.join(refused), r'\b(10|20)\b')
+        self.assertIn('salesflare round opened no account', logged.output[-1])
+        self.assertNotIn('refused_detail', str(self.store.checkpoint('work-crm')))  # gone with the round
+
+    def test_a_403_body_message_is_kept_only_as_plain_words(self):
+        from machine.sources import salesflare as sf
+        import io
+
+        def refused(body):
+            return sf.refusal_message(sf.urllib.error.HTTPError('https://crm.example/x', 403, 'Forbidden', {}, io.BytesIO(body)))
+        self.assertEqual(refused(b'{"statusCode":403,"error":"Forbidden","message":"Forbidden"}'), 'Forbidden')
+        self.assertEqual(refused(b'{"message":"User 42 is not part of account"}'), 'other')
+        self.assertEqual(refused(b'{"message":"kris@example.com"}'), 'other')
+        self.assertEqual(refused(b'{}'), 'none')
+        self.assertEqual(refused(b'<html>'), 'unreadable')
+        source = sf.Salesflare({}, {**ACCOUNT, 'credential': 'salesflare', 'credential_variable': 'K'})
+        error = sf.urllib.error.HTTPError('https://crm.example/accounts/7/feed', 403, 'Forbidden', {},
+                                          io.BytesIO(b'{"message":"Forbidden"}'))
+        with patch('machine.sources.salesflare.credential', return_value='K=secret'), \
+                patch('machine.sources.salesflare.urllib.request.urlopen', side_effect=error), \
+                self.assertRaises(sf.SourceError) as raised:
+            source.get('/accounts/7/feed', {'types': 'email'})
+        self.assertEqual((raised.exception.status, raised.exception.route, raised.exception.reason),
+                         (403, '/accounts/{id}/feed', 'Forbidden'))
+
     def test_a_5xx_logs_its_route_with_ids_masked(self):
         from machine.sources import salesflare as sf
         self.assertEqual(sf.route_of('/accounts/123/feed'), '/accounts/{id}/feed')

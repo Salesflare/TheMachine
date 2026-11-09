@@ -69,8 +69,10 @@ class Salesflare:
                 LOG.warning('salesflare answered route=%s status=%s after=%ds', route, error.code,
                             round(time.monotonic() - started))
             retry = error.headers.get('Retry-After', '')
-            raise SourceError('salesflare', error.code,
-                              min(max(int(retry), 1), 86400) if retry.isdigit() else None, route=route) from None
+            failed = SourceError('salesflare', error.code, min(max(int(retry), 1), 86400) if retry.isdigit() else None, route=route)
+            if error.code == 403:
+                failed.reason = refusal_message(error)
+            raise failed from None
         except (urllib.error.URLError, TimeoutError, OSError, http.client.HTTPException) as error:
             raise SourceError('network:' + type(error).__name__ + ':salesflare_read', route=route) from None
         except ValueError:
@@ -85,6 +87,17 @@ class Salesflare:
 
 
 SALESFLARE_FEED_TIMEOUT = 60  # seconds: a feed read that has not answered by then is one of Salesflare's hangs
+
+
+def refusal_message(error):
+    """The `message` of Salesflare's 403 body ("Forbidden"), safe to log: plain words only (no digits, @ or quotes), so no
+    id or address gets through; anything else reads 'other'."""
+    try:
+        message = json.loads(error.read(2000) or b'{}').get('message')
+    except (ValueError, AttributeError, OSError, http.client.HTTPException):
+        return 'unreadable'
+    message = message.strip() if isinstance(message, str) else ''
+    return message if re.fullmatch(r"[A-Za-z][A-Za-z ,.()-]{0,79}", message) else 'other' if message else 'none'
 
 
 def route_of(path):
@@ -314,9 +327,11 @@ def sync_salesflare(store, config, account, source=None):
     batch = window['pending'][:account.get('accounts_per_batch', 5)]
     read_before, refused_before = window.get('read', 0), len(window.get('no_access') or [])
     for crm_id in batch:
+        part_of = 'unread'  # what /accounts/{id} said of the key's user, counted when the feed is refused
         try:
             crm = source.get(f'/accounts/{crm_id}')
             crm = crm[0] if isinstance(crm, list) and crm else crm
+            part_of = {True: 'true', False: 'false'}.get(crm.get('part_of'), 'missing') if isinstance(crm, dict) else 'missing'
             info, contacts = salesflare_context(account, crm)
             titles += [(['email:' + c['email']], {'title': c['role']}, enrichment.RECORD) for c in contacts.values() if c['email'] and c['role']]
             if crm.get('part_of') is False and account.get('join_pipelines'):
@@ -364,6 +379,12 @@ def sync_salesflare(store, config, account, source=None):
                 refused.append(crm_id)
             if error.status == 403:
                 window['refused'] = window.get('refused', 0) + 1
+                # Counts only, for support (report s_f0d5d0200384ed92): did the account say the key's user is part of
+                # it, which route refused, and what Salesflare's 403 said.
+                detail = window.setdefault('refused_detail', {})
+                key = f"part_of={part_of} route={error.route or '-'} message={getattr(error, 'reason', None) or '-'}"
+                if key in detail or len(detail) < 10:
+                    detail[key] = detail.get(key, 0) + 1
             continue
         window['pending'].remove(crm_id)
         window['read'], window['hiccups'] = window.get('read', 0) + 1, 0
@@ -398,6 +419,8 @@ def sync_salesflare(store, config, account, source=None):
                      last_round={'at': window['until'], 'accounts': window.get('accounts', 0), 'read': window.get('read', 0),
                                  'no_access': len(no_access), 'refused': window.get('refused', 0),
                                  'set_aside': len(window.get('set_aside') or [])})
+        for key, count in sorted((window.get('refused_detail') or {}).items()):
+            LOG.warning('salesflare refused account=%s count=%d %s', account['id'], count, key)
         if window.get('accounts') and not window.get('read') and len(no_access) == window['accounts']:
             # A warning, so it shows in the support report: the key reads its profile but no account's timeline.
             LOG.warning('salesflare round opened no account account=%s accounts=%d refused=%d missing=%d', account['id'],
