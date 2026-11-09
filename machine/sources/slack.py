@@ -470,7 +470,18 @@ def slack_next_due(store, config, account, source, state):
                 and isinstance(source, Slack):
             fresh = now < channel.get('next_full', 0)
             if fresh or not channel.get('threads'):
-                latest = (source.get('conversations.info', {'channel': channel['id']}).get('channel') or {}).get('latest') or {}
+                try:
+                    info = source.get('conversations.info', {'channel': channel['id']}).get('channel') or {}
+                except SourceError as error:
+                    # A direct message this token can't open (closed, or with a removed member) failed every sync
+                    # and held up every other conversation behind it (2026-11-09): it rests like a quiet one, and
+                    # says it can't be read, until a later read or discovery clears it.
+                    if slack_error(error) not in ('slack_channel_not_found', 'slack_not_in_channel', 'slack_missing_scope'):
+                        raise
+                    channel.update(error=slack_error(error), due=now + slack_interval(config, channel))
+                    moved = True
+                    continue
+                latest = info.get('latest') or {}
                 newest = float(latest.get('ts') or 0)
                 seen = max(float(channel.get('last_activity') or 0), float(channel['last_scan']))
                 if newest <= seen and (fresh or newest < retained):
