@@ -685,6 +685,33 @@ class Requests:
                 out.append(dict(r))
         return out
 
+    def asked_title(self, card_id, fleet_ref, member_id, title, drafted):
+        """The title a handoff goes with. A "Waiting on Sam: send the quote" to-do (someone else's promise) handed to
+        Sam themselves is Sam's own task on their Machine: "Send the quote for Pat", never waiting on themselves. Only
+        while the owner kept the drafted title; one they wrote goes as they wrote it."""
+        import sqlite3
+        from machine.store.promises import fit_title, PROMISE_TITLE_MAX
+        if ' '.join(str(title or '').split()) != ' '.join(str(drafted or '').split()):
+            return title
+        with self.connect() as db:
+            try:
+                promise = db.execute("SELECT who,what FROM promises WHERE suggestion_id=? AND direction='theirs' ORDER BY id DESC LIMIT 1",
+                                     (str(card_id),)).fetchone()
+            except sqlite3.OperationalError:  # no promises yet
+                promise = None
+        member = self.member(fleet_ref, member_id) or {}
+        names = {' '.join(str(member.get(k) or '').split()).casefold() for k in ('name', 'label')} - {''}
+        who = ' '.join(str(promise['who'] if promise else '').split()).casefold()
+        # That teammate by name: in full, or by a first name when one side only has that ("Pat", "Pat Lee")
+        single = len(who.split()) == 1 or any(len(n.split()) == 1 for n in names)
+        if not who or not (who in names or (single and who.split()[0] in {n.split()[0] for n in names})):
+            return title
+        me = first_name(self.config.get('owner_name') or next((m.get('name') for m in (self.fleets().get(fleet_ref) or {}).get('members', []) if m.get('me')), ''))
+        what = ' '.join(str(promise['what']).split())
+        task = what[:1].upper() + what[1:]
+        whole = task + t(' for {}', me) if me else task
+        return fit_title(whole if len(whole) <= PROMISE_TITLE_MAX else task, PROMISE_TITLE_MAX)
+
     def hand_off(self, card_id, fleet_ref, member_id, title, summary, contact=None, sources=True, replace=False):
         """Hand a card to a teammate, with the summary exactly as the owner read and edited it and the card's sources
         (handoff_sources): all of them (True), none (False) or those the owner kept, by their place in the draft's list.
@@ -703,6 +730,7 @@ class Requests:
         draft = self.handoff_draft(card_id)
         if not self.member(fleet_ref, member_id):
             raise ValueError('Not someone in that Fleet')
+        title = self.asked_title(card_id, fleet_ref, member_id, title, draft['title'])
         question = parse('handoff', {'title': title, 'summary': summary, 'contact': contact or '',
                                      **({'when': draft['due']} if draft.get('due') else {})})
         if not question:
