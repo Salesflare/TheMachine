@@ -96,6 +96,25 @@ class HandoffSources(unittest.TestCase):
         self.assertEqual(len(self.sent()['sources']), 1)
         self.assertEqual(set(self.sent()['sources'][0]), {'kind', 'from', 'when', 'subject', 'body'})  # no labels, ids, threads or headers
 
+    def test_a_slack_message_goes_by_its_senders_name_never_as_an_unknown_sender(self):
+        """A Slack message keeps only its sender's member id: the handoff names them (the teammate's card said "Message
+        from Unknown sender, via Pat"), mentions too; one no name is known for is someone on Slack."""
+        import graph
+        with self.store.connect() as db:
+            graph.ensure(db)
+            graph.remember_slack_member(db, 'U0OWNER001', False, '2026-10-31', 'Sam Owner')
+        when = mail('work', 1, 'x@y.example', 'owner@acme.example')['occurred_at']
+        slack = lambda n, user, body: {'account_id': 'work', 'source_id': f'slack-{n}', 'kind': 'slack.message', 'occurred_at': when,
+                                       'title': '#DM Pat: ' + body, 'body': body, 'deleted': False,
+                                       'metadata': {'channel_id': 'D0PAT00001', 'channel_name': 'DM Pat', 'conversation_type': 'im', 'user_id': user}}
+        card = self.card(slack(1, 'U0OWNER001', 'Did you check the query, <@U0OWNER001>?'), slack(2, 'U0NOBODY01', 'Any news?'))
+        labels = [s['label'] for s in self.fleet.handoff_draft(card)['sources']]
+        self.assertTrue(labels[0].startswith('Message from Sam Owner · '), labels)
+        self.assertTrue(labels[1].startswith('Message from someone on Slack · '), labels)
+        self.fleet.hand_off(card, self.ref, 'pat1', 'Check the query', 'Check the query.')
+        self.assertEqual([(s['from'], s['body']) for s in self.sent()['sources']],
+                         [('Sam Owner', 'Did you check the query, @Sam Owner?'), ('someone on Slack', 'Any news?')])
+
     def test_a_lists_rewritten_from_is_never_the_contact_the_original_sender_is(self):
         alert = mail('work', 1, "'Stripe Alerts' via Team Inbox <inbox@acme.example>", 'inbox@acme.example')
         card = self.card(alert)
