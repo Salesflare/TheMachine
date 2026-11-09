@@ -439,6 +439,17 @@ def people_on(db):
     return security_levels.people_lookup(db)
 
 
+def pref(db, key):
+    """A kept setting or progress note of another module (linkedin_connections.py keeps its pass here), or None."""
+    db.execute('CREATE TABLE IF NOT EXISTS enrich_prefs(key TEXT PRIMARY KEY,value TEXT NOT NULL)')
+    row = db.execute('SELECT value FROM enrich_prefs WHERE key=?', (key,)).fetchone()
+    return row[0] if row else None
+
+
+def set_pref(db, key, value):
+    db.execute('INSERT INTO enrich_prefs(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value', (key, value))
+
+
 def set_people(db, on):
     db.execute('INSERT INTO enrich_prefs(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value',
                ('people', 'on' if on else 'off'))

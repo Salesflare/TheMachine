@@ -3,12 +3,18 @@ title: LinkedIn
 area: connections
 summary: Deine LinkedIn-Nachrichten, gelesen im eigenen angemeldeten Browser deiner Machine. Antworten erst nach deiner Freigabe.
 covers: connector:linkedin
-code: connectors/linkedin.py, integrations/linkedin_inbox.py
+code: connectors/linkedin.py, integrations/linkedin_inbox.py, linkedin_connections.py
 site: Connect, More sources, Remove
 ---
 ## Was es liest
 
 Deine LinkedIn-Nachrichten. Es liest sie in einem Tab des eigenen Browsers deiner Machine, mit dir angemeldet, ab und zu während deiner wachen Stunden. Es nutzt keinen API-Schlüssel und markiert nichts als gelesen.
+
+## Positionen und Firmen
+
+Es hält auch die Positionen und Firmen deiner LinkedIn-Kontakte bei den Personen aktuell, die schon in deinem Graph sind, aus deiner Kontaktliste. Es öffnet keine Profile und legt keine neuen Personen an. Ändert sich die Position oder Firma von jemandem, steht das in der Zeitleiste, etwa "Jetzt Head of Sales bei Acme, vorher Sales Lead bei Acme".
+
+Es liest sehr langsam: eine Seite auf einmal, Minuten auseinander, ein paar Dutzend Seiten am Tag, nur tagsüber. Rund 3.000 Kontakte dauern etwa vier Tage. Bremst LinkedIn, hört es bis zum nächsten Tag auf.
 
 ## Was es senden kann
 

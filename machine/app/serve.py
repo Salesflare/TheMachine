@@ -107,6 +107,7 @@ class ServeApp:
             threading.Thread(target=self.embedding_worker, daemon=True).start()
         # Always: photos and facts from the owner's own connections need no look-up service (its steps skip themselves).
         threading.Thread(target=self.enrichment_worker, daemon=True).start()
+        threading.Thread(target=self.linkedin_connections_worker, name='linkedin-connections', daemon=True).start()  # linkedin_connections.py
         threading.Thread(target=self.recurring_worker, name='recurring', daemon=True).start()  # recurring to-dos (recurring_app.py)
         threading.Thread(target=self.routines_worker, name='routines', daemon=True).start()  # routines (routines_app.py)
         if getattr(self, 'protection_waits', False):
