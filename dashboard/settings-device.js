@@ -12,16 +12,17 @@ const DEV=(()=>{const ua=navigator.userAgent;let framed=true;try{framed=window.t
  return {phoneApp:/ TheMachineApp\//.test(ua),ios:iosTab,android:/Android/.test(ua),mobile:iosTab||/Android|Mobi/.test(ua),framed,chromium:'onbeforeinstallprompt' in window,
   macSafari:!iosTab&&/Macintosh/.test(ua)&&/Version\/(1[7-9]|[2-9]\d)\b.*Safari/.test(ua)&&!/Chrome|Chromium|CriOS|Edg|Firefox|FxiOS|OPR/.test(ua)}})();
 const nudgeable=!DEV.framed&&'serviceWorker' in navigator;
-// A phone: by its user agent, or a small touch screen whose browser asks for desktop sites (no "Mobile" in it). On a
-// phone the phone app is a store link, never a QR code to scan with the phone it is on.
+// A phone: by its user agent, or a small touch screen asking for desktop sites. There the phone app is a store link.
 const onPhone=()=>{if(DEV.mobile)return true;try{return matchMedia('(pointer: coarse)').matches&&Math.min(screen.width,screen.height)<600}catch{return false}};
 const inApp=()=>['standalone','fullscreen','window-controls-overlay'].some(m=>matchMedia(`(display-mode: ${m})`).matches)||navigator.standalone===true;
 let installEvt=null,relatedInstalled=false;
-const appInstalled=()=>inApp()||relatedInstalled||devStore.get('app-installed')==='1';
-// What installing looks like here: the browser's own prompt (Chromium), steps (iPhone, Safari on a Mac), or nothing (Firefox).
+// Seen as the app: kept, as a tab can't tell. An install offer: not installed.
+if(inApp())devStore.set('app-installed','1');
+const appInstalled=()=>inApp()||!installEvt&&(relatedInstalled||devStore.get('app-installed')==='1');
+// Installing here: the browser's prompt (Chromium), steps (iPhone, Mac Safari) or nothing (Firefox).
 function installKind(){if(!nudgeable)return null;if(installEvt)return DEV.mobile?'android':'desktop';if(appInstalled())return null;return DEV.ios?'ios':DEV.macSafari?'mac':null}
-addEventListener('beforeinstallprompt',e=>{e.preventDefault();installEvt=e;deviceRender()});
-// Installed (from the setup to-do, Settings or the browser's own menu): a toast, once.
+addEventListener('beforeinstallprompt',e=>{e.preventDefault();installEvt=e;devStore.set('app-installed',null);deviceRender()});
+// Installed (setup to-do, Settings or the browser's menu): a toast, once.
 let installedNoted=false;
 function noteInstalled(){installEvt=null;devStore.set('app-installed','1');if(!installedNoted){installedNoted=true;toast('Installed. The Machine is in your apps now.')}deviceRender()}
 addEventListener('appinstalled',noteInstalled);

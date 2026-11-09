@@ -41,7 +41,7 @@ function setupRows(all=false){const s=state?.setup_card;if(!s)return [];const cl
  add('phone',!!p&&!DEV.phoneApp&&(DEV.mobile?!!setupStore():!!(p.ios||p.android)),s.phones>0);
  add('push',!DEV.phoneApp&&(pushOn()||pushOK&&devicePush.checked&&devicePush.perm!=='denied'&&devStore.get('push-off')!=='1'),pushOn());
  add('whatsapp',hosted,s.whatsapp);
- add('install',!onPhone()&&!DEV.phoneApp&&nudgeable&&(appInstalled()||!!installEvt||DEV.chromium||DEV.macSafari),appInstalled());
+ add('install',!onPhone()&&!DEV.phoneApp&&nudgeable&&(appInstalled()||!!installEvt||DEV.macSafari),appInstalled());
  add('account',hosted,s.mail_accounts>=2);
  add('connect',true,s.more);
  for(const h of state.setup_hints||[])if(h?.id&&/^[a-z0-9-]{1,40}$/.test(h.id))add('hint-'+h.id,true,false,h);
