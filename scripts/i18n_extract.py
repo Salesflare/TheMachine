@@ -433,6 +433,7 @@ SERVER_TEXT = {
     'fleet.py': ['KIND_LABEL'],          # what a Fleet asks about, in a sentence and (capitalized) as a row's name
     'family.py': ['LABELS'],
     'machine/store/profile.py': ['TODO_SOURCE', 'TODO_SOURCE_OTHER'],  # Feedback's rows: where the to-dos came from
+    'routine_templates.py': ['TEMPLATES'],  # the Routines page's Templates: each one's name and what it does
 }
 # Constants the dashboard also shows capitalized (cap()) as a label
 CAPITALIZED = {'fleet.py': ['KIND_LABEL'], 'family.py': ['LABELS']}

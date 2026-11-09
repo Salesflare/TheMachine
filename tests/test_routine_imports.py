@@ -226,7 +226,8 @@ class Sorting(unittest.TestCase):
         self.assertEqual((offer['key'], offer['source'], offer['title'], json.loads(offer['rule'])),
                          ('openclaw:00000001-job', 'openclaw', 'Renew the access key', {'unit': 'day', 'n': 1}))
         self.assertEqual([r['state'] for r in self.rows()], ['skipped', 'skipped'])
-        self.assertEqual(self.app.routines_view(), {'routines': [], 'suggested': [], 'trying': []})
+        view = self.app.routines_view()
+        self.assertEqual({k: view[k] for k in ('routines', 'suggested', 'trying')}, {'routines': [], 'suggested': [], 'trying': []})
 
     def test_a_sorting_run_that_didnt_work_runs_once_more_then_the_job_is_skipped(self):
         self.answer['status'] = {'status': 'ok'}  # each turn ends without a report

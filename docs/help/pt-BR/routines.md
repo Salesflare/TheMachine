@@ -3,7 +3,7 @@ title: Rotinas
 area: cards
 summary: Trabalho que sua Machine faz sozinha, num ritmo, como um resumo de segunda-feira dos seus deals abertos. Ela só lê.
 covers: tab:routines
-code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, dashboard/routines-page.js
+code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, routine_templates.py, mail_cleanup.py, mail_cleanup_app.py, dashboard/routines-page.js
 order: 10
 keywords: routine, automation, scheduled, every week, every morning, report, suggested, digest, newsletter
 ---
@@ -13,11 +13,21 @@ Abra **Rotinas** na barra lateral e diga numa linha o que ela deve fazer e quand
 
 Sem horário, ela roda às 8:00. O horário é o do relógio da sua Machine.
 
+## Modelos
+
+Em **Modelos**, no fim de Rotinas, **Adicionar** liga uma rotina pronta. Ela roda uma vez na hora e depois toda manhã às 7:30. As palavras dela ficam como estão.
+
+**Limpeza de newsletters** cria uma tarefa com as newsletters do último dia, cada uma com **Manter** ou **Cancelar inscrição**. O cancelamento usa o link de um clique da lista, ou o e-mail de cancelamento a partir do seu endereço se o envio estiver ligado. Se não, mostra **Abrir página de cancelamento**.
+
+**Limpeza de spam** cria uma tarefa com e-mails de remetentes desconhecidos que parecem spam, cada um com **Spam** ou **Não é spam**. O Outlook move o spam para Lixo eletrônico. O Gmail conectado só para leitura mostra **Abrir no Gmail** no lugar.
+
+Nada muda até você confirmar na tarefa. Remetentes já decididos não voltam. Um dia sem newsletters nem spam não cria tarefa, e essas tarefas nunca enviam notificação.
+
 ## O que uma rotina faz
 
 Na hora marcada, sua Machine lê o que precisa, como suas mensagens, reuniões e o Graph, e coloca o resultado na página Rotinas. Cada resultado diz **Para revisar**, **Nada de novo** (com o porquê) ou **Não funcionou** (com o porquê). Uma execução que termina sem resultado conta como uma que não funcionou, nunca como feita.
 
-Rotinas só leem: suas mensagens, páginas da web, o GitHub e sites como o X no navegador. Elas não enviam, respondem, publicam nem mudam nada.
+Rotinas só leem: suas mensagens, páginas da web, o GitHub e sites como o X no navegador. Elas não enviam, respondem, publicam nem mudam nada. Só um modelo muda e-mails, e só o que você confirma na tarefa dele.
 
 Quando a tarefa de uma rotina termina num post ou numa mensagem, ela faz tudo até essa etapa e mostra o rascunho, como **Postaria no X:**. Depois de uma execução real, você recebe como tarefa para aprovar; uma execução de teste só mostra. O nome diz do que se trata e para onde vai, o botão diz a etapa, como **Publicar**, e **Da sua rotina** embaixo abre a rotina.
 

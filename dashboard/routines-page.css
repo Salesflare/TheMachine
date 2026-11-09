@@ -60,3 +60,5 @@
 /* Edit's name, in the title's place: the card a column for the moment, the form's fields its own items */
 .rt:has(>.rt-form[data-rt-form="edit"]){display:flex;flex-direction:column}.rt:has(>.rt-form[data-rt-form="edit"])>h3{display:none}
 .rt-form[data-rt-form="edit"]{display:contents}.rt-form>.rt-name{order:-1;margin-bottom:4px;font:var(--fw-heading) var(--fs-lg)/1.3 var(--serif)}.rt-form>.rt-name+*{margin-top:12px}
+/* Templates (routine_templates.py): a name, one line, Add */
+.rt-tpl{display:flex;align-items:center;gap:var(--sp-4);padding:var(--sp-3) var(--sp-5)}.rt-tpl>div{flex:1;min-width:0}.rt-tpl h3{margin:0}.rt-tpl .rt-what{margin:2px 0 0;color:var(--c-text-2)}.rt-tpl>button{flex:none}

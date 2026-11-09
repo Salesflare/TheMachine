@@ -3,7 +3,7 @@ title: Routine
 area: cards
 summary: Lavoro che la tua Machine fa da sola, con un ritmo, come un riepilogo del lunedì dei tuoi deal aperti. Legge soltanto.
 covers: tab:routines
-code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, dashboard/routines-page.js
+code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, routine_templates.py, mail_cleanup.py, mail_cleanup_app.py, dashboard/routines-page.js
 order: 10
 keywords: routine, automation, scheduled, every week, every morning, report, suggested, digest, newsletter
 ---
@@ -13,11 +13,21 @@ Apri **Routine** nella barra laterale e di’ in una riga cosa deve fare e quand
 
 Senza un orario, gira alle 8:00. L’orario è quello dell’orologio della tua Machine.
 
+## Modelli
+
+In **Modelli**, in fondo a Routine, **Aggiungi** attiva una routine già pronta. Parte subito una volta e poi ogni mattina alle 7:30. Le sue parole restano come sono.
+
+**Pulizia newsletter** crea un’attività con le newsletter dell’ultimo giorno, ognuna con **Tieni** o **Disiscriviti**. La disiscrizione usa il link a un clic della lista, o la sua email di disiscrizione dal tuo indirizzo se l’invio è attivo. Altrimenti mostra **Apri la pagina di disiscrizione**.
+
+**Pulizia spam** crea un’attività con la posta di mittenti sconosciuti che sembra spam, ognuna con **Spam** o **Non è spam**. Outlook sposta lo spam in Posta indesiderata. Gmail collegato in sola lettura mostra invece **Apri in Gmail**.
+
+Nulla cambia finché non confermi sull’attività. I mittenti già decisi non tornano. Un giorno senza newsletter né spam non crea attività, e queste attività non mandano mai una notifica.
+
 ## Cosa fa una routine
 
 All’orario stabilito, la tua Machine legge ciò che le serve, come i tuoi messaggi, le riunioni e il Graph, e mette il risultato nella pagina Routine. Ogni risultato dice **Pronta**, **Niente di nuovo** (con il perché) o **Non è andato** (con il perché). Un’esecuzione che finisce senza risultato conta come non riuscita, mai come fatta.
 
-Le routine leggono soltanto: i tuoi messaggi, pagine web, GitHub e siti come X nel browser. Non inviano, rispondono, pubblicano né cambiano nulla.
+Le routine leggono soltanto: i tuoi messaggi, pagine web, GitHub e siti come X nel browser. Non inviano, rispondono, pubblicano né cambiano nulla. Solo un modello cambia la posta, e solo ciò che confermi sulla sua attività.
 
 Quando il compito di una routine finisce con un post o un messaggio, fa tutto fino a quel passo e mostra la bozza, come **Pubblicherebbe su X:**. Dopo un’esecuzione vera la ricevi come attività da approvare; un’esecuzione di prova la mostra soltanto. Il nome dice di cosa si tratta e dove va, il pulsante nomina il passo, come **Pubblicalo**, e **Dalla tua routine** sotto apre la routine.
 

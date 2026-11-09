@@ -3,7 +3,7 @@ title: Rutinas
 area: cards
 summary: Trabajo que tu Machine hace sola, con un ritmo, como un resumen del lunes de tus deals abiertos. Solo lee.
 covers: tab:routines
-code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, dashboard/routines-page.js
+code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, routine_templates.py, mail_cleanup.py, mail_cleanup_app.py, dashboard/routines-page.js
 order: 10
 keywords: routine, automation, scheduled, every week, every morning, report, suggested, digest, newsletter
 ---
@@ -13,11 +13,21 @@ Abre **Rutinas** en la barra lateral y di en una línea qué debe hacer y cuánd
 
 Sin hora, se ejecuta a las 8:00. La hora es la del reloj de tu Machine.
 
+## Plantillas
+
+En **Plantillas**, al final de Rutinas, **Añadir** activa una rutina ya hecha. Se ejecuta una vez enseguida y luego cada mañana a las 7:30. Sus palabras quedan como están.
+
+**Limpieza de newsletters** crea una tarea con las newsletters del último día, cada una con **Mantener** o **Darse de baja**. La baja usa el enlace de un clic de la lista, o su correo de baja desde tu dirección si el envío está activado. Si no, muestra **Abrir página de baja**.
+
+**Limpieza de spam** crea una tarea con correo de remitentes desconocidos que parece spam, cada uno con **Spam** o **No es spam**. Outlook mueve el spam a Correo no deseado. Gmail conectado solo para leer muestra **Abrir en Gmail** en su lugar.
+
+Nada cambia hasta que confirmas en la tarea. Los remitentes ya decididos no vuelven a salir. Un día sin newsletters ni spam no crea tarea, y estas tareas nunca envían una notificación.
+
 ## Qué hace una rutina
 
 A su hora, tu Machine lee lo que necesita, como tus mensajes, reuniones y el Graph, y deja el resultado en la página Rutinas. Cada resultado dice **Para revisar**, **Nada nuevo** (con el porqué) o **No funcionó** (con el porqué). Una ejecución que termina sin resultado cuenta como fallida, nunca como hecha.
 
-Las rutinas solo leen: tus mensajes, páginas web, GitHub y sitios como X en el navegador. No envían, responden, publican ni cambian nada.
+Las rutinas solo leen: tus mensajes, páginas web, GitHub y sitios como X en el navegador. No envían, responden, publican ni cambian nada. Solo una plantilla cambia correo, y solo lo que confirmas en su tarea.
 
 Cuando la tarea de una rutina termina en una publicación o un mensaje, hace todo hasta ese paso y muestra el borrador, como **Publicaría en X:**. Tras una ejecución real lo recibes como tarea para aprobar; una ejecución de prueba solo lo muestra. Su nombre dice de qué trata y adónde va, su botón nombra el paso, como **Publícalo**, y **De tu rutina** debajo abre la rutina.
 

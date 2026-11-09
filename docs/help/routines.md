@@ -3,7 +3,7 @@ title: Routines
 area: cards
 summary: Work your Machine does on its own, on a rhythm, like a Monday summary of your open deals. It only reads.
 covers: tab:routines
-code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, dashboard/routines-page.js
+code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, routine_templates.py, mail_cleanup.py, mail_cleanup_app.py, dashboard/routines-page.js
 order: 10
 keywords: routine, automation, scheduled, every week, every morning, report, suggested, digest, newsletter
 ---
@@ -15,11 +15,21 @@ Without a time it runs at 8:00. The time is on your Machine's clock. Its first r
 
 **Add** first does a test run, so you see what it gives before you keep it. Nothing is sent or saved. Then **Add** keeps it on its rhythm, **Change** tries other words and **Cancel** drops it.
 
+## Templates
+
+Under **Templates** at the bottom of Routines, **Add** turns on a ready-made routine. It runs once right away, then every morning at 7:30. Its words stay as they are.
+
+**Newsletter cleanup** makes one to-do with the past day’s newsletters, each with **Keep** or **Unsubscribe**. Unsubscribe uses the list’s one-click link, or its unsubscribe email from your address when sending is on. Otherwise it shows **Open unsubscribe page**.
+
+**Spam cleanup** makes one to-do with mail from unknown senders that looks like spam, each with **Spam** or **Not spam**. Outlook moves spam to Junk. Gmail connected read-only shows **Open in Gmail** instead.
+
+Nothing changes until you confirm on the to-do. Senders you decided on aren’t asked again. A day without newsletters or spam makes no to-do, and these to-dos never send a notification.
+
 ## What a routine does
 
 At its time your Machine reads what it needs, like your messages, meetings and the Graph, and puts the result on the Routines page. Each result says **Ready**, **Nothing new** (with why) or **Didn’t work** (with why). A run that ends without a result counts as one that didn't work, never as done.
 
-Routines only read: your messages, web pages, GitHub and sites like X in the browser. They don’t send, reply, post or change anything.
+Routines only read: your messages, web pages, GitHub and sites like X in the browser. They don’t send, reply, post or change anything. Only a template changes mail, and only what you confirm on its to-do.
 
 When a routine’s job ends in a post or a message, it does everything up to that step and shows the draft, like **Would post on X:**. After a real run you get it as a to-do to approve; a test run only shows it. Its name says what it is about and where it goes, its button names the step, like **Post it**, and **From your routine** under it opens the routine.
 

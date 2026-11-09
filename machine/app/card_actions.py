@@ -25,6 +25,7 @@ from machine.sources.calendar import calendar_write_events, calendar_write_ids
 from machine.sources.connectors import CONNECTOR_HELPERS, doc_comments, doc_write_files, load_connector
 from machine.sources.telegram import owner_telegram_chats
 from machine.sources.whatsapp import owner_whatsapp_chats, reply_spots
+import mail_cleanup
 from models import model_ready
 import next_actions
 import own_addresses
@@ -421,6 +422,10 @@ class CardActionsApp:
                 refused = notice_decision_refused(db, args.get('suggestion_id'), args.get('choice'))
             if refused:
                 raise ValueError(i18n.t(refused))
+        if args.get('choice') in ('accept','other','retry'):
+            with self.store.connect() as db:
+                if mail_cleanup.is_cleanup(db, args.get('suggestion_id')):
+                    raise ValueError(i18n.t('Pick for each one on the to-do, then confirm.'))
         terminal_job=None
         files=args.get('files') if owner_dashboard and args.get('choice')=='other' else None  # added in the chat's composer
         feedback=args.get('feedback', '')

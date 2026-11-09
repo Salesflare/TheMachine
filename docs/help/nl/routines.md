@@ -3,7 +3,7 @@ title: Routines
 area: cards
 summary: Werk dat je Machine zelf doet, op een ritme, zoals een maandagoverzicht van je open deals. Hij leest alleen.
 covers: tab:routines
-code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, dashboard/routines-page.js
+code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, routine_templates.py, mail_cleanup.py, mail_cleanup_app.py, dashboard/routines-page.js
 order: 10
 keywords: routine, automation, scheduled, every week, every morning, report, suggested, digest, newsletter
 ---
@@ -13,11 +13,21 @@ Open **Routines** in de zijbalk en zeg in één regel wat hij moet doen en wanne
 
 Zonder tijd draait hij om 8:00. De tijd is die van de klok van je Machine.
 
+## Sjablonen
+
+Onder **Sjablonen** onderaan Routines zet **Toevoegen** een kant-en-klare routine aan. Die draait meteen één keer en daarna elke ochtend om 7:30. De woorden blijven zoals ze zijn.
+
+**Nieuwsbrieven opruimen** maakt één to-do met de nieuwsbrieven van de voorbije dag, elk met **Houden** of **Afmelden**. Afmelden gebruikt de afmeldlink met één klik van de lijst, of de afmeldmail vanaf je adres als versturen aanstaat. Anders toont het **Afmeldpagina openen**.
+
+**Spam opruimen** maakt één to-do met mail van onbekende afzenders die op spam lijkt, elk met **Spam** of **Geen spam**. Outlook verplaatst spam naar Ongewenste e-mail. Gmail met alleen leesrechten toont in de plaats **Openen in Gmail**.
+
+Er verandert niets tot je bevestigt op de to-do. Afzenders waarover je besliste, komen niet terug. Een dag zonder nieuwsbrieven of spam geeft geen to-do, en deze to-do’s sturen nooit een melding.
+
 ## Wat een routine doet
 
 Op het afgesproken moment leest je Machine wat hij nodig heeft, zoals je berichten, vergaderingen en de Graph, en zet het resultaat op de pagina Routines. Elk resultaat zegt **Klaargezet**, **Niets nieuws** (met waarom) of **Lukte niet** (met waarom). Een run die zonder resultaat eindigt, telt als een run die niet lukte, nooit als klaar.
 
-Routines lezen alleen: je berichten, webpagina’s, GitHub en sites zoals X in de browser. Ze versturen, beantwoorden, posten of wijzigen niets.
+Routines lezen alleen: je berichten, webpagina’s, GitHub en sites zoals X in de browser. Ze versturen, beantwoorden, posten of wijzigen niets. Alleen een sjabloon wijzigt mail, en alleen wat je op zijn to-do bevestigt.
 
 Eindigt de taak van een routine in een post of bericht, dan doet ze alles tot die stap en toont ze het concept, zoals **Zou op X posten:**. Na een echte run krijg je het als to-do om goed te keuren; een testrun toont het alleen. De naam zegt waarover het gaat en waar het naartoe gaat, de knop noemt de stap, zoals **Plaatsen**, en **Van je routine** eronder opent de routine.
 
