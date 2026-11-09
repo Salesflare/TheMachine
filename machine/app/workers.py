@@ -29,8 +29,9 @@ from timeutil import local_tz, now
 
 # Contact photos from the owner's Google contacts and Workspace directory, with the scopes the gog sign-in already has
 # (a hosted sign-in through the broker has no Contacts scope, so it is never asked). Read only, once a day per account.
+# The owner's contacts bring their birthdays along (the same scope), for the Birthdays template (birthdays.py).
 GOOGLE_PHOTO_LISTS = (
-    ('people.connections.list', {'resourceName': 'people/me', 'pageSize': 1000, 'personFields': 'emailAddresses,phoneNumbers,photos,organizations'},
+    ('people.connections.list', {'resourceName': 'people/me', 'pageSize': 1000, 'personFields': 'emailAddresses,phoneNumbers,photos,organizations,birthdays'},
      'https://www.googleapis.com/auth/contacts', 'connections'),
     ('people.listDirectoryPeople', {'pageSize': 1000, 'readMask': 'emailAddresses,phoneNumbers,photos,organizations', 'sources': 'DIRECTORY_SOURCE_TYPE_DOMAIN_PROFILE'},
      'https://www.googleapis.com/auth/directory.readonly', 'people'),

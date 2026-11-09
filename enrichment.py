@@ -1242,9 +1242,10 @@ def telegram_photos_step(connect, now, ask, accounts, limit=WHATSAPP_PHOTOS_PER_
 # directory, the CRM), which beats a look-up's guess (person_profiles). Kept on this Machine, sealed like message
 # contents, never sent anywhere; Delete permanently removes them.
 FACT_FIELDS = {'title': 120, 'company': 120, 'headline': 220, 'bio': 400, 'location': 120, 'website': 200,
-               'timezone': 64, 'phone': 32, 'x': 15, 'linkedin_url': 200}
+               'timezone': 64, 'phone': 32, 'x': 15, 'linkedin_url': 200, 'birthday': 10}
 STATED, RECORD = 2, 1  # their own words; a record about them. A look-up counts 0.
 VIEW_FACTS = ('headline', 'bio')  # their own longer words: read at view time, never copied into the graph
+KEPT_FACTS = ('birthday',)  # kept for what reads them (birthdays.py), not shown on the person's profile
 FACT_SOURCES = {'slack': 'Slack', 'x': 'X', 'linkedin': 'LinkedIn', 'google': 'Google', 'salesflare': 'Salesflare'}
 FACT_SCHEMA = ('CREATE TABLE IF NOT EXISTS person_facts(identifier TEXT NOT NULL,field TEXT NOT NULL,value TEXT NOT NULL,rank INTEGER NOT NULL,'
                'source TEXT NOT NULL,seen_at TEXT NOT NULL,PRIMARY KEY(identifier,field))')
@@ -1271,6 +1272,9 @@ def clean_fact(field, value):
         text = text.lstrip('@') if re.fullmatch(r'@?[A-Za-z0-9_]{1,15}', text) else ''
     elif field == 'phone':
         text = text if re.fullmatch(r'\+?[0-9][0-9 ().-]{5,30}', text) and 6 <= len(re.sub(r'\D', '', text)) <= 15 else ''
+    elif field == 'birthday':  # YYYY-MM-DD, or --MM-DD without the year
+        import birthdays
+        text = text if birthdays.birthday_value(text) else ''
     elif field == 'timezone':
         try:
             import zoneinfo
@@ -1344,7 +1348,7 @@ def best_facts(found, fields=None):
 def with_facts(profile, found):
     """A person's profile with their facts: one they or a record state beats the look-up's guess; each says where it
     came from and when (sources). Their headline and bio aren't copied here (VIEW_FACTS)."""
-    best = best_facts(found, [f for f in FACT_FIELDS if f not in VIEW_FACTS])
+    best = best_facts(found, [f for f in FACT_FIELDS if f not in VIEW_FACTS + KEPT_FACTS])
     if not best:
         return profile
     profile = dict(profile or {})
@@ -1376,13 +1380,16 @@ def slack_facts(user):
 
 
 def google_facts(person):
-    """Job title, company and phone from a Google contact or directory person: their own profile says it (STATED), or
-    the owner's contact or the directory does (RECORD)."""
+    """Job title, company, phone and birthday from a Google contact or directory person: their own profile says it
+    (STATED), or the owner's contact or the directory does (RECORD). A birthday is kept under their phone numbers too, so
+    someone the owner only chats with gets it."""
     kind = lambda item: ((item.get('metadata') or {}).get('source') or {}).get('type')
     ids = ['email:' + str(e.get('value')).strip().lower() for e in (person.get('emailAddresses') or [])
            if isinstance(e, dict) and '@' in str(e.get('value') or '')]
+    born = google_birthday(person)
+    phone_ids = [i for i in (phone_identifier(n.get('canonicalForm')) for n in (person.get('phoneNumbers') or []) if isinstance(n, dict)) if i]
     if not ids:
-        return []
+        return [(phone_ids, {'birthday': born}, STATED if kind(born_of(person)) == 'PROFILE' else RECORD)] if born and phone_ids else []
     orgs = [o for o in person.get('organizations') or [] if isinstance(o, dict) and (o.get('title') or o.get('name')) and not o.get('endDate')]
     org = min(orgs, key=lambda o: (not (o.get('metadata') or {}).get('primary'), kind(o) != 'PROFILE')) if orgs else {}
     phones = [n for n in person.get('phoneNumbers') or [] if isinstance(n, dict) and n.get('canonicalForm')]
@@ -1391,7 +1398,28 @@ def google_facts(person):
         out.append((ids, {'title': org.get('title') or '', 'company': org.get('name') or ''}, STATED if kind(org) == 'PROFILE' else RECORD))
     if phones:
         out.append((ids, {'phone': str(phones[0]['canonicalForm'])}, RECORD))
+    if born:
+        out.append((list(dict.fromkeys(ids + phone_ids)), {'birthday': born}, STATED if kind(born_of(person)) == 'PROFILE' else RECORD))
     return out
+
+
+def born_of(person):
+    """A Google person's birthday entry with a month and day, their own profile's first."""
+    days = [b for b in person.get('birthdays') or [] if isinstance(b, dict) and isinstance(b.get('date'), dict)
+            and b['date'].get('month') and b['date'].get('day')]
+    return min(days, key=lambda b: (not (b.get('metadata') or {}).get('primary'),)) if days else {}
+
+
+def google_birthday(person):
+    """A Google contact's birthday as YYYY-MM-DD, or --MM-DD when the year isn't known; '' without one."""
+    date = born_of(person).get('date') or {}
+    try:
+        month, day, year = int(date.get('month') or 0), int(date.get('day') or 0), int(date.get('year') or 0)
+    except (TypeError, ValueError):
+        return ''
+    if not (1 <= month <= 12 and 1 <= day <= 31):
+        return ''
+    return f'{year:04d}-{month:02d}-{day:02d}' if 1000 <= year <= 9999 else f'--{month:02d}-{day:02d}'
 
 
 def facts_from_signals(connect, now):

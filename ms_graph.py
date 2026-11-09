@@ -75,6 +75,7 @@ READ = {
     'folders.messages': ('GET', '/me/mailFolders/{id}/messages', 'Mail.Read'),
     'calendar.get': ('GET', '/me/calendar', 'Calendars.Read'),
     'calendars.get': ('GET', '/me/calendars/{id}', 'Calendars.Read'),
+    'calendars.list': ('GET', '/me/calendars', 'Calendars.Read'),  # to find Outlook's Birthdays calendar (birthdays_app.py)
     'calendar.delta': ('GET', '/me/calendarView/delta', 'Calendars.Read'),
     'calendars.view': ('GET', '/me/calendars/{id}/calendarView', 'Calendars.Read'),
     'calendars.delta': ('GET', '/me/calendars/{id}/calendarView/delta', 'Calendars.Read'),
