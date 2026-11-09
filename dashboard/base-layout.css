@@ -91,3 +91,4 @@ a.btn-link[hidden]{display:none}
 .stat span{font-size:.8rem;color:var(--muted)}
 .stat.t-amber b{color:var(--amber)}.stat.t-lavender b{color:var(--lavender)}.stat.t-mint b{color:var(--mint)}
 
+.connect-guess{margin:6px 0 0;color:var(--muted);font-size:.88rem}.connect-guess button.link{min-height:0;margin:0;padding:0 2px;border:0;background:none;box-shadow:none;color:var(--text);font:inherit;text-decoration:underline;text-underline-offset:3px;cursor:pointer}

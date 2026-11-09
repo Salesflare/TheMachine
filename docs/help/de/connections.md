@@ -32,6 +32,8 @@ Auf einer gehosteten Machine meldest du dich hier bei Google, Microsoft, Microso
 
 Jede Quelle zählt als Arbeit (für eine Firma, die du nennst) oder als privat. Das änderst du unter **Details**. Dort steht nur dann **Geraten**, wenn deine Machine es anhand der Adresse gewählt hat. Sobald du wählst, gilt deine Wahl. Arbeitsaufgaben warten auf deine Arbeitstage.
 
+Mail und Kalender von Google und Microsoft richten sich nach ihrer Adresse, wenn sie eindeutig ist: ein Mailanbieter wie Gmail oder Outlook.com ist Privat, die Domain deines Teams ist Arbeit. Sonst fragt sie einmal, direkt nach der Anmeldung. Mit **Ändern** legst du es selbst fest. Sagt die Mail danach das Gegenteil, fragt die Aufgabe **Hol mehr aus The Machine heraus** einmal, ob du es ändern willst.
+
 ## Fähigkeiten
 
 Eine Quelle kann Signale bringen (was hereinkommt, wird zu Aufgaben), Dinge für deine Aufgaben tun (ein Dokument lesen, wenn eine es braucht, oder nach deinem OK etwas senden, beantworten oder ändern) oder beides. Mit beidem hat **Details** für jede einen Schalter: **Bringt Signale** und **Kann Dinge tun**. Einer bleibt an. Um beides zu stoppen, trenne die Quelle. Die Antworten eines Chats beziehen sich auf das, was er bringt, deshalb hat ein Chat nur **Kann Dinge tun**.

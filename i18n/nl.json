@@ -3992,6 +3992,7 @@
  "Set in config.json ({}) on this computer.": "Ingesteld in config.json ({}) op deze computer.",
  "Set it up": "Instellen",
  "Set it up on your hosted Machine.": "Stel het in op je gehoste Machine.",
+ "Set to {} from its address.": "Ingesteld op {} op basis van het adres.",
  "Set up": "Instellen",
  "Set up by hand on this computer. Learn more shows how.": "Wordt met de hand ingesteld op deze computer. Meer weten toont hoe.",
  "Setting up your Machine…": "Je Machine wordt ingesteld…",
@@ -6552,6 +6553,8 @@
   "one": "{} regel",
   "other": "{} regels"
  },
+ "{} looks like personal mail. Change it to Personal?": "{} lijkt op privémail. Naar Privé zetten?",
+ "{} looks like work mail. Change it to Work?": "{} lijkt op werkmail. Naar Werk zetten?",
  "{} marked {} done.": "{} markeerde {} als gedaan.",
  "{} matches": {
   "one": "{} treffer",

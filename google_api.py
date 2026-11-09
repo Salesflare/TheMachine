@@ -38,6 +38,8 @@ READ = {
     'calendar.calendars.get': ('GET', 'https://www.googleapis.com/calendar/v3/calendars/{calendarId}'),
     'calendar.events.list': ('GET', 'https://www.googleapis.com/calendar/v3/calendars/{calendarId}/events'),
     'calendar.events.get': ('GET', 'https://www.googleapis.com/calendar/v3/calendars/{calendarId}/events/{eventId}'),
+    # the sign-in's own OpenID user info (its Workspace domain, hd): with the email scope it has (onboarding.organization_of)
+    'oauth2.userinfo.get': ('GET', 'https://www.googleapis.com/oauth2/v2/userinfo'),
     'calendar.calendarList.get': ('GET', 'https://www.googleapis.com/calendar/v3/users/me/calendarList/{calendarId}'),
     # Google Docs and Drive (connectors/docs.py), with drive.readonly from its own Connect Google Docs consent
     'drive.about.get': ('GET', 'https://www.googleapis.com/drive/v3/about'),

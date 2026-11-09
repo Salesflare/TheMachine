@@ -3992,6 +3992,7 @@
  "Set in config.json ({}) on this computer.": "Réglé dans config.json ({}) sur cet ordinateur.",
  "Set it up": "Configurer",
  "Set it up on your hosted Machine.": "Configurez-la sur votre Machine hébergée.",
+ "Set to {} from its address.": "Défini sur {} d’après l’adresse.",
  "Set up": "Configurer",
  "Set up by hand on this computer. Learn more shows how.": "Se configure à la main sur cet ordinateur. En savoir plus explique comment.",
  "Setting up your Machine…": "Configuration de votre Machine…",
@@ -6552,6 +6553,8 @@
   "one": "{} ligne",
   "other": "{} lignes"
  },
+ "{} looks like personal mail. Change it to Personal?": "{} ressemble à une boîte perso. Passer en Perso ?",
+ "{} looks like work mail. Change it to Work?": "{} ressemble à une boîte pro. Passer en Travail ?",
  "{} marked {} done.": "{} a marqué {} comme fait.",
  "{} matches": {
   "one": "{} résultat",

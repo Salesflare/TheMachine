@@ -28,6 +28,8 @@ La liste est groupée (**Mail et agenda**, **Chat**, **Réunions**, **Documents 
 
 Chaque source compte comme travail (pour une entreprise que vous nommez) ou comme perso. Changez-le sous **Détails**. **Deviné** ne s’affiche que si votre Machine l’a déduit de l’adresse ; dès que vous choisissez, c’est votre choix. Les tâches de travail attendent vos jours de travail.
 
+Les e-mails et agendas Google et Microsoft suivent leur adresse quand elle est claire : un fournisseur comme Gmail ou Outlook.com, c’est Perso, le domaine de votre équipe, c’est Travail. Sinon, elle demande une fois, juste après la connexion. **Modifier** vous laisse choisir. Si les e-mails disent ensuite le contraire, la tâche **Tirez le meilleur de The Machine** demande une fois s’il faut le changer.
+
 ## Capacités
 
 Une source peut apporter des signaux (ce qui arrive devient des to-dos), agir pour vos to-dos (lire un document quand l'un d'eux en a besoin, ou envoyer, répondre ou modifier quelque chose après votre OK), ou les deux. Avec les deux, **Détails** a un interrupteur pour chacune : **Apporte des signaux** et **Peut agir**. L'une reste activée. Pour arrêter les deux, déconnectez la source. Les réponses d'un chat répondent à ce qu'il apporte, donc un chat n'a que **Peut agir**.

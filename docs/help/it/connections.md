@@ -28,6 +28,8 @@ L’elenco è diviso in gruppi (**Email e calendario**, **Chat**, **Riunioni**, 
 
 Ogni fonte conta come lavoro (per un’azienda che indichi tu) o personale. Cambialo sotto **Dettagli**. Dice **Ipotizzato** solo quando l'ha scelto la tua Machine in base all'indirizzo; quando scegli tu, la scelta è tua. Le attività di lavoro aspettano i tuoi giorni lavorativi.
 
+Email e calendari di Google e Microsoft seguono il loro indirizzo quando è chiaro: un provider come Gmail o Outlook.com è Personale, il dominio del tuo team è Lavoro. Altrimenti lo chiede una volta, subito dopo l’accesso. **Cambia** ti fa scegliere. Se poi la posta dice il contrario, l’attività **Ottieni di più da The Machine** chiede una volta se cambiarlo.
+
 ## Capacità
 
 Una fonte può portare segnali (ciò che arriva diventa to-do), fare cose per i tuoi to-do (leggere un documento quando ne serve uno, o inviare, rispondere o cambiare qualcosa dopo il tuo OK), o entrambe. Con entrambe, **Dettagli** ha un interruttore per ciascuna: **Porta segnali** e **Può fare cose**. Una resta attiva. Per fermarle entrambe, disconnettila. Le risposte di una chat rispondono a ciò che porta, quindi una chat ha solo **Può fare cose**.

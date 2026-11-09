@@ -89,6 +89,116 @@ class FormTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'Work with its company'):
                 self.act('connect_start', {'name': 'rss', 'form': True, 'answers': {'url': 'https://feed.example/rss'}, **bad})
 
+    def connect_as(self, service, email, args=None, answer=None, team=(), org=None, tid=None):
+        """Connects a source that signs in as `email`, answering its one question (by option label) if it asks. org: what
+        the provider says (a Workspace domain or a work tenant: True); tid: the Microsoft tenant its sign-in names."""
+        steps = {**onboarding.STEPS, service: lambda config, account, ui: account.update(email=email, **({'tenant_id': tid} if tid else {}))}
+        asked = []
+        with patch.object(onboarding, 'check', return_value=None), patch.object(onboarding, 'STEPS', steps), \
+                patch.object(onboarding, 'organization_of', return_value=org), \
+                patch.object(assistant.App, 'team_domains', return_value=set(team), create=True):
+            view = self.act('connect_start', {'name': service, 'form': True, 'answers': {}, **(args or {})})
+            view = self.finish(view, lambda v: v['state'] != 'running' or v.get('question'))
+            if view.get('question'):
+                asked.append(view['question'])
+                pick = view['question']['options'].index(answer)
+                self.act('connect_answer', {'session': view['session'], 'question': view['question']['id'], 'value': pick})
+                view = self.finish(view)
+        self.assertEqual(view['state'], 'done', view)
+        saved = next(a for a in json.loads(self.path.read_text())['accounts'] if a.get('email') == email and a['service'] == service)
+        return saved, view, asked
+
+    def test_mail_and_calendar_take_work_or_personal_from_the_address_when_it_says(self):
+        # No question up front for a source that signs in as an address. A mail provider is Personal, an address on a
+        # Work Fleet teammate's domain is Work, an address already marked keeps the owner's marking. A guess, so the
+        # done form and its card offer Change.
+        forms = self.forms()
+        self.assertTrue(forms['gmail']['auto'] and forms['outlook']['auto'])
+        self.assertFalse(forms['rss']['auto'] or forms['trello']['auto'])
+        cases = [('gmail', 'sam.home@gmail.com', (), 'personal:me', 'guess'), ('outlook', 'kim@outlook.com', (), 'personal:me', 'guess'),
+                 ('gmail', 'lee@globex.dev', ('globex.dev',), 'work:Globex', 'guess'),
+                 ('calendar', 'owner@acme.example', (), 'work:Acme', 'owner')]
+        for service, email, team, boundary, by in cases:
+            with self.subTest(email=email):
+                saved, view, asked = self.connect_as(service, email, team=team)
+                self.assertEqual((saved['boundary'], saved['boundary_by'], asked), (boundary, by, []))
+                self.assertEqual(view['guessed'], boundary if by == 'guess' else None)
+        # An explicit pick still counts as the owner's
+        saved, view, _ = self.connect_as('gmail', 'alex@initech.dev', {'scope': 'personal'})
+        self.assertEqual((saved['boundary'], saved['boundary_by'], view['guessed']), ('personal:me', 'owner', None))
+
+    def test_an_own_domain_alone_is_asked_never_guessed_work(self):
+        # People use their own domain for personal mail too, and sharing follows Work: in doubt the one question is
+        # asked (after Google's consent, the company prefilled), and the answer is the owner's.
+        saved, view, asked = self.connect_as('gmail', 'jules@moreaudesign.io', answer='Personal')
+        self.assertEqual(asked[0]['prompt'], 'Is this account work or personal?')
+        self.assertEqual(asked[0]['options'][:2], ['Personal', 'Work'])  # no name made from the domain
+        self.assertEqual((saved['boundary'], saved['boundary_by'], view['guessed']), ('personal:me', 'owner', None))
+        self.assertTrue(saved['scope_check'])  # its mail is looked at once it is in (scope_check.py)
+        saved, _, asked = self.connect_as('outlook', 'jules@moreaudesign.io', answer='Work')
+        self.assertEqual((saved['boundary'], saved['boundary_by']), ('personal:me', 'owner'))  # the same address follows its marking
+        self.assertEqual(asked, [])
+        saved, _, _ = self.connect_as('gmail', 'max@hooli.dev', answer='Work')
+        self.assertEqual((saved['boundary'], saved['boundary_by']), ('work:Hooli', 'owner'))
+        for email in ('jo@jo-family.net', 'me@my-name.org'):
+            self.assertEqual(onboarding.guess_boundary({'accounts': []}, email), (None, None))
+
+    def test_a_workspace_or_work_tenant_on_an_own_domain_is_still_asked_a_consumer_tenant_is_personal(self):
+        # Google's hd and a Microsoft work tenant say the domain is an organization's, not that this mail is work: still
+        # asked, Work first. Microsoft's consumer tenant is Outlook.com: Personal, whatever the domain.
+        saved, view, asked = self.connect_as('gmail', 'robin@robin-studio.dev', answer='Personal', org=True)
+        self.assertEqual((asked[0]['options'][0], asked[0]['options'][-1]), ('Work', 'Personal'))
+        self.assertEqual((saved['boundary'], saved['boundary_by'], view['guessed']), ('personal:me', 'owner', None))
+        saved, view, asked = self.connect_as('outlook', 'kai@kai-home.dev', tid=onboarding.CONSUMER_TENANT)
+        self.assertEqual((saved['boundary'], saved['boundary_by'], view['guessed'], asked), ('personal:me', 'guess', 'personal:me', []))
+        self.assertNotIn('scope_check', saved)
+        self.assertEqual(onboarding.guess_boundary({'accounts': []}, 'kai@kai-home.dev', tid='0a0b0c0d-1111-2222-3333-444455556666'),
+                         (None, None))  # a work tenant alone: asked
+
+    def test_work_is_named_only_by_a_real_company_name_never_one_made_from_the_domain(self):
+        import sqlite3
+
+        from work_or_personal import known_company
+        db = Path(self.temp.name) / 'graph.sqlite'
+        with sqlite3.connect(db) as c:
+            c.execute('CREATE TABLE graph_nodes(id TEXT PRIMARY KEY,name TEXT NOT NULL)')
+            c.executemany('INSERT INTO graph_nodes VALUES(?,?)', [('org:moreaudesign.io', 'Moreau Design'), ('org:hooli.dev', 'Hooli')])
+        config = {'database': str(db), 'accounts': [{'id': 'x', 'email': 'pat@initech.dev', 'boundary': 'work:Initech Corp', 'boundary_by': 'owner'}]}
+        self.assertEqual(known_company(config, {'email': 'jules@moreaudesign.io'}), 'Moreau Design')  # the Graph's name
+        self.assertEqual(known_company(config, {'email': 'max@hooli.dev'}), '')  # only the domain read out
+        self.assertEqual(known_company(config, {'email': 'sam@initech.dev'}), 'Initech Corp')  # the owner's own name for it
+        self.assertEqual(known_company(config, {'email': 'me@gmail.com'}), '')
+        self.assertEqual(known_company({'accounts': []}, {'email': 'jules@moreaudesign.io'}), '')  # no Graph yet
+
+    def test_organization_comes_from_the_tenant_or_googles_user_info_with_the_access_it_has(self):
+        work = '0a0b0c0d-1111-2222-3333-444455556666'
+        self.assertTrue(onboarding.organization_of({}, {'service': 'outlook', 'tenant_id': work}))
+        self.assertFalse(onboarding.organization_of({}, {'service': 'outlook', 'tenant_id': onboarding.CONSUMER_TENANT}))
+        self.assertIsNone(onboarding.organization_of({}, {'service': 'outlook_calendar'}))
+        import sources
+        calls = []
+        for answer, want in (({'email': 'a@b.dev', 'hd': 'b.dev'}, True), ({'email': 'a@b.dev'}, False)):
+            with patch.object(sources, 'gog_read', side_effect=lambda *a: calls.append(a[2:]) or answer):
+                self.assertIs(onboarding.organization_of({}, {'service': 'gmail', 'email': 'a@b.dev'}), want)
+        self.assertEqual(calls[0], ('oauth2', 'v2', 'oauth2.userinfo.get', {}, 'https://www.googleapis.com/auth/userinfo.email'))
+        with patch.object(sources, 'gog_read', side_effect=sources.SourceError('oauth2', 403)):
+            self.assertIsNone(onboarding.organization_of({}, {'service': 'calendar', 'email': 'a@b.dev'}))
+        import google_api
+        self.assertEqual(google_api.url_for('oauth2.userinfo.get', {}), ('GET', 'https://www.googleapis.com/oauth2/v2/userinfo'))
+        import ms_graph, base64
+        def jwt(claims):
+            return 'x.' + base64.urlsafe_b64encode(json.dumps(claims).encode()).decode().rstrip('=') + '.y'
+        self.assertEqual(ms_graph.tenant_of(jwt({'tid': work.upper()})), work)
+        for token in (jwt({'tid': 'nope'}), 'EwB0opaque', jwt([1])):
+            self.assertIsNone(ms_graph.tenant_of(token))
+
+    def test_every_mail_provider_enrichment_knows_is_no_company(self):
+        import re
+        import enrichment
+        names = re.search(r'\(\?:(g\(\?:oogle\)\?mail\|.*?)\)\\\.', enrichment.FREEMAIL.pattern, re.S).group(1)
+        for name in re.sub(r"'\s*r'", '', names).replace('g(?:oogle)?mail', 'gmail|googlemail').replace('proton(?:mail)?', 'proton|protonmail').split('|'):
+            self.assertEqual(onboarding.company_of(f'a@{name}.com'), '', name)
+
     def test_linkedin_waits_for_the_sign_in_the_dashboard_offers_then_goes_on_by_itself(self):
         # also on a hosted Machine: its form signs in right there, and "not signed in" never shows before they could
         for manage in (None, 'https://cp.example.org/setup'):

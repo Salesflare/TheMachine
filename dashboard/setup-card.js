@@ -23,6 +23,7 @@ const SETUP_ICON={
  install:'<rect x="3" y="4" width="18" height="12.5" rx="2"/><path d="M8.5 20h7M12 16.5V20"/>',
  account:'<rect x="3" y="5.5" width="18" height="13" rx="2"/><path d="m3.5 7.5 8.5 6 8.5-6"/>',
  connect:'<path d="M9 3v4.5M15 3v4.5M7 7.5h10V11a5 5 0 0 1-10 0z"/><path d="M12 16v5"/>',
+ scope:'<rect x="3.5" y="7.5" width="17" height="12" rx="2"/><path d="M9 7.5v-2a1.5 1.5 0 0 1 1.5-1.5h3A1.5 1.5 0 0 1 15 5.5v2M3.5 12.5h17"/>',
  hint:'<path d="M12 3.5v3M12 17.5v3M3.5 12h3M17.5 12h3M6 6l2 2M16 16l2 2M6 18l2-2M16 8l2-2"/>'};
 const setupSvg=k=>raw(`<svg class="setup-ic" viewBox="0 0 24 24" aria-hidden="true">${SETUP_ICON[k]||SETUP_ICON.hint}</svg>`);
 // Store marks (simple-icons, CC0)
@@ -80,7 +81,7 @@ const SETUP_CHEVRON='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 14 
 function setupHTML(rows,quiet){const desk=!DEV.mobile,hidden=setupHidden(),store=DEV.mobile&&!state.setup_card?.demo?setupStore():null;
  if(quiet&&!setupOpen)return html`<button type="button" class="setup-line" data-setup-open aria-expanded="false">${setupSvg('hint')}<span>${t(['{} step left','{} steps left'],rows.length)}</span><span class="setup-sep" aria-hidden="true">·</span><span class="setup-continue">${t('Continue')}</span></button>`;
  return html`<div class="setup-head"><strong>Get more out of The Machine</strong><span class="setup-count">${t(['{} step left','{} steps left'],rows.length)}</span>${quiet?html`<button type="button" class="setup-x setup-fold" data-setup-fold aria-expanded="true" aria-label="Show less" title="Show less">${raw(SETUP_CHEVRON)}</button>`:''}<button type="button" class="setup-x" data-setup-close aria-label="Close" title="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17"/></svg></button></div><ul class="setup-rows">${
-  rows.map(r=>html`<li class="setup-row" data-step="${r.id}">${setupSvg(r.hint?'hint':r.id)}<span class="setup-label">${setupLabel(r)}</span>${html`${r.id==='phone'&&store?html`<a class="setup-go btn-link" href="${safeHref(store)}" target="_blank" rel="noopener" data-setup-go="phone">${setupButton(r)}</a>`:html`<button type="button" class="setup-go" data-setup-go="${r.id}"${r.id==='phone'&&desk?html` aria-expanded="${setupQR}"`:''}>${setupButton(r)}</button>`}<button type="button" class="setup-x" data-setup-dismiss="${r.id}" aria-label="Dismiss" title="Dismiss"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17"/></svg></button>`}${
+  rows.map(r=>html`<li class="setup-row" data-step="${r.id}">${setupSvg(r.hint?(r.hint.scope?'scope':'hint'):r.id)}<span class="setup-label">${setupLabel(r)}</span>${html`${r.id==='phone'&&store?html`<a class="setup-go btn-link" href="${safeHref(store)}" target="_blank" rel="noopener" data-setup-go="phone">${setupButton(r)}</a>`:html`<button type="button" class="setup-go" data-setup-go="${r.id}"${r.id==='phone'&&desk?html` aria-expanded="${setupQR}"`:''}>${setupButton(r)}</button>`}<button type="button" class="setup-x" data-setup-dismiss="${r.id}" aria-label="Dismiss" title="Dismiss"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17"/></svg></button>`}${
    r.id==='phone'&&desk&&setupQR?setupQRHTML():''}</li>`)}</ul>${hidden?html`<button type="button" class="setup-more" data-setup-restore="all">${t(['Show {} hidden','Show {} hidden'],hidden)}</button>`:''}`}
 function setupBox(){let el=$('#setup-card');if(el)return el;
  el=document.createElement('div');el.id='setup-card';el.className='setup-card';el.setAttribute('role','region');el.setAttribute('aria-label','Get more out of The Machine');el.hidden=true;
@@ -124,6 +125,11 @@ async function setupClick(e){const b=e.target.closest('button');if(!b)return;con
  if(step==='phone'&&!DEV.mobile){setupQR=!setupQR;setupRender();return}  // the QR code opens right in the row
  if(s.demo)return;  // the site's demo: nothing happens
  const row=setupRows().find(r=>r.id===step),hint=row?.hint;
+ // Work or Personal, when its mail says the other (scope_check.py): Change sets it, and the row closes for good
+ if(hint?.scope){b.disabled=true;try{const r=await connectPost('connect_scope',{account:String(hint.scope.account),boundary:String(hint.scope.boundary)});
+  s.dismissed=[...new Set([...(s.dismissed||[]),step])];setupRender();await setupPost('setup_dismiss',step).catch(errCaught);
+  if(r.restarting)restartSoon();toast(r.restarting?'Saved. Restarting…':'Saved. Restart the service to use it.');setTimeout(refresh,r.restarting?8000:500)}
+  catch(err){errCaught(err);toast(err.message,true);b.disabled=false}return}
  if(hint){const u=String(hint.href||'');if(/^https:\/\//.test(u))window.open(u,'_blank','noopener');else if(/^#connect(?:=[a-z_]+|ions=add)$/.test(u))location.hash=u;return}
  if(step==='phone'){const u=setupStore();if(u)window.open(u,'_blank','noopener');return}
  if(step==='whatsapp'){location.hash='#connect=whatsapp';return}
