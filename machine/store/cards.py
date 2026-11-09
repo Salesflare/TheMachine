@@ -742,7 +742,7 @@ class CardsStore:
                 raise ValueError('Unknown to-do')
             done = db.execute('SELECT area FROM card_moves WHERE decision_id=?', (decision_id,)).fetchone()
             if done:  # the same tap again
-                return {'id': suggestion_id, 'area': done['area'], 'label': todo_areas.label(done['area'], companies), 'duplicate': True}
+                return {'id': suggestion_id, 'area': done['area'], 'label': todo_areas.label(done['area'], companies, accounts), 'duplicate': True}
             if row['status'] in ('completed', 'rejected'):
                 raise ValueError('Reopen it first')
             if undo is not None:
@@ -769,8 +769,8 @@ class CardsStore:
                        (decision_id, suggestion_id, 'move_undo' if undo is not None else 'move', '', source, now()))
             # Its Telegram card shows the other area's text rules (Careful hides card text on a lock screen for Work)
             db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL', (suggestion_id,))
-        line = todo_areas.moved_line(area, companies)
-        out = {'id': suggestion_id, 'area': area, 'label': todo_areas.label(area, companies), 'decision_id': decision_id,
+        line = todo_areas.moved_line(area, companies, accounts)
+        out = {'id': suggestion_id, 'area': area, 'label': todo_areas.label(area, companies, accounts), 'decision_id': decision_id,
                'line': i18n.t(*line) if isinstance(line, tuple) else i18n.t(line), 'resumed': False}
         if resume:
             try:

@@ -36,9 +36,15 @@ def email(account='acme-mail'):
 
 class Areas(unittest.TestCase):
     def test_the_owners_areas_and_where_a_to_do_is(self):
-        self.assertEqual(todo_areas.areas(ACCOUNTS), [{'id': 'personal', 'label': 'Personal'}, {'id': 'work:Acme', 'label': 'Work', 'name': 'Acme'}])
+        self.assertEqual(todo_areas.areas(ACCOUNTS), [{'id': 'personal', 'label': 'Personal'}, {'id': 'work:Acme', 'label': 'Work', 'name': 'acme.example'}])
         self.assertEqual(todo_areas.areas(ACCOUNTS + [{'id': 'b', 'boundary': 'work:Beta'}])[1:],
-                         [{'id': 'work:Acme', 'label': 'Work at Acme', 'name': 'Acme'}, {'id': 'work:Beta', 'label': 'Work at Beta', 'name': 'Beta'}])
+                         [{'id': 'work:Acme', 'label': 'Work at acme.example', 'name': 'acme.example'}, {'id': 'work:Beta', 'label': 'Work at Beta', 'name': 'Beta'}])
+        # A company only made from a domain (work:Acme for robin@acme.example) reads as that domain, never capitalized;
+        # one with a name of its own keeps it
+        self.assertEqual(todo_areas.areas([{'id': 'm', 'email': 'jo@moreaudesign.io', 'boundary': 'work:Moreaudesign'},
+                                           {'id': 'n', 'email': 'pat@initech.dev', 'boundary': 'work:Initech Corp'}])[0:2],
+                         [{'id': 'work:Initech Corp', 'label': 'Work at Initech Corp', 'name': 'Initech Corp'},
+                          {'id': 'work:Moreaudesign', 'label': 'Work at moreaudesign.io', 'name': 'moreaudesign.io'}])
         self.assertEqual(todo_areas.current('["home-chat"]', ACCOUNTS), 'personal')
         self.assertEqual(todo_areas.current(['home-chat', 'acme-chat'], ACCOUNTS), 'work:Acme')  # any Work account makes it Work
         self.assertIsNone(todo_areas.current(['acme-chat', 'b'], ACCOUNTS + [{'id': 'b', 'boundary': 'work:Beta'}]))  # two companies
@@ -57,7 +63,7 @@ class Areas(unittest.TestCase):
                            {'id': 'me-x', 'service': 'x', 'transport': 'x-inbox', 'boundary': 'work:x'},
                            {'id': 'beta-x', 'service': 'x', 'transport': 'x-inbox', 'boundary': 'work:Beta Labs'}]
         self.assertEqual(todo_areas.areas(mine), [{'id': 'personal', 'label': 'Personal'},
-                                                  {'id': 'work:Acme', 'label': 'Work at Acme', 'name': 'Acme'},
+                                                  {'id': 'work:Acme', 'label': 'Work at acme.example', 'name': 'acme.example'},
                                                   {'id': 'work:Beta Labs', 'label': 'Work at Beta Labs', 'name': 'Beta Labs'}])
         self.assertEqual(todo_areas.current(['me-li'], mine), 'work')  # still Work, in no company
         self.assertEqual(todo_areas.current(['me-x', 'acme-chat'], mine), 'work:Acme')
@@ -251,7 +257,7 @@ class MovesByItself(unittest.TestCase):
         self.assertEqual((out['status'], out['area'], out['resumed']), ('moved', 'work:Acme', True))
         card, lines = self.view(sid)
         self.assertEqual((json.loads(card['account_ids']), card['preparation_status']), (['acme-mail', 'acme-chat'], 'queued'))
-        self.assertEqual(lines, ['Do it', 'Moved to Work at Acme'])  # a quiet line, no "You"; the area chip can move it back
+        self.assertEqual(lines, ['Do it', 'Moved to Work at acme.example'])  # work:Acme is only its domain; a quiet line, no "You"; the area chip can move it back
         undo = self.app.action('card_move', {'suggestion_id': sid, 'area': 'work:Beta', 'decision_id': 'back-1'}, owner_dashboard=True)
         self.assertEqual(undo['area'], 'work:Beta')
 
