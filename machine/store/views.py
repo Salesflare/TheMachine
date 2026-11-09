@@ -285,6 +285,68 @@ def stopped_step(db, suggestion):
     return line
 
 
+def chat_linked_files(db, suggestion_id):
+    """The result files each of this card's saved results linked (what its chat shows as chips)."""
+    files = []
+    for r in db.execute("SELECT c.params FROM preparation_calls c JOIN preparation_runs p ON p.job_id=c.job_id "
+                        "WHERE p.suggestion_id=? AND c.tool='assistant_signals' AND (c.error IS NULL OR c.error='')", (suggestion_id,)):
+        try:
+            params = json.loads(r['params'])
+        except (ValueError, TypeError):
+            continue
+        args = params.get('args') if isinstance(params, dict) and isinstance(params.get('args'), dict) else {}
+        if params.get('action') == 'prepare' and args.get('suggestion_id') == suggestion_id:
+            files += chat_result_files(args.get('body'))[1]
+    return files
+
+
+def review_run_view(db, run):
+    """A review run with how far it got: what it claimed, saved (done_count of planned) and from which accounts."""
+    claims = db.execute('SELECT status,items FROM analyses WHERE owner_run=? AND owner_session=?',
+                        (run['run_id'],REVIEW_SESSION_PREFIX+run['run_id'])).fetchall()
+    run['review_saved'] = bool(claims) and all(c['status']=='complete' for c in claims)
+    run['checked_count'] = sum(sum(not i.get('excluded') and not i.get('deferred') for i in json.loads(c['items']))
+                               for c in claims if c['status']=='complete')
+    run['done_count'] = sum(len(json.loads(c['items'])) for c in claims if c['status']=='complete')
+    items = [i for c in claims for i in json.loads(c['items'])]
+    ids = list({i['id'] for i in items})
+    versions, accounts = {}, set()
+    for n in range(0, len(ids), 500):
+        chunk = ids[n:n+500]
+        for r in db.execute(f"SELECT id,analyzed_version,account_id FROM events WHERE id IN ({','.join('?'*len(chunk))})", chunk):
+            versions[r['id']] = r['analyzed_version']
+            accounts.add(r['account_id'])
+    run['account_ids'] = sorted(accounts)
+    run['pending_count'] = sum(i['id'] in versions and versions[i['id']] < i['version'] for i in items)
+    run['claimed_count'] = sum(len(json.loads(c['items'])) for c in claims)
+    run['duration_seconds'] = max(0,int((dt.datetime.fromisoformat(run['finished_at'] or now())-
+                                         dt.datetime.fromisoformat(run['started_at'])).total_seconds()))
+    return run
+
+
+def card_reads(db, cards):
+    """What suggestion_result reads for each card, read once for all of them (the status payload read it per card,
+    some 750 reads for 127 cards): their messages' links, their preparations, and which cards have a skill proposal,
+    a proposed or decided skill, or action jobs at all (only those are looked up one by one, as before)."""
+    ids = json.dumps([c['id'] for c in cards])
+    events = set()
+    for card in cards:
+        try:
+            events.update(json.loads(card['event_ids'] or '[]'))
+        except (ValueError, TypeError):
+            pass
+    pre = {'events': {r['id']: r['metadata'] for r in db.execute('SELECT id,metadata FROM events WHERE id IN (SELECT value FROM json_each(?))', (json.dumps(sorted(events, key=str)),))},
+           'clusters': {r[0] for r in db.execute('SELECT DISTINCT suggestion_id FROM skill_clusters WHERE suggestion_id IN (SELECT value FROM json_each(?))', (ids,))},
+           'jobs': {r[0] for r in db.execute('SELECT DISTINCT suggestion_id FROM action_jobs WHERE suggestion_id IN (SELECT value FROM json_each(?))', (ids,))},
+           'preparations': {r['suggestion_id']: r for r in db.execute('SELECT suggestion_id,job_id,status,reason FROM preparations WHERE suggestion_id IN (SELECT value FROM json_each(?))', (ids,))}}
+    try:  # skills.for_task reads these two; before their columns exist it looks per card as before
+        pre['skills'] = {r[0] for r in db.execute("SELECT task FROM skills WHERE task IN (SELECT value FROM json_each(?)) AND status='proposed' AND origin='proposed' "
+                                                  "UNION SELECT task FROM skill_task_decided WHERE task IN (SELECT value FROM json_each(?))", (ids, ids))}
+    except sqlite3.OperationalError:
+        pass
+    return pre
+
+
 class ViewsStore(ConversationStore):
     """Store methods for what the dashboard shows, with a source message's conversation (ConversationStore)."""
 
@@ -460,18 +522,7 @@ class ViewsStore(ConversationStore):
         return cache[key]
 
     def chat_linked_files(self, db, suggestion_id):
-        """The result files each of this card's saved results linked (what its chat shows as chips)."""
-        files = []
-        for r in db.execute("SELECT c.params FROM preparation_calls c JOIN preparation_runs p ON p.job_id=c.job_id "
-                            "WHERE p.suggestion_id=? AND c.tool='assistant_signals' AND (c.error IS NULL OR c.error='')", (suggestion_id,)):
-            try:
-                params = json.loads(r['params'])
-            except (ValueError, TypeError):
-                continue
-            args = params.get('args') if isinstance(params, dict) and isinstance(params.get('args'), dict) else {}
-            if params.get('action') == 'prepare' and args.get('suggestion_id') == suggestion_id:
-                files += chat_result_files(args.get('body'))[1]
-        return files
+        return chat_linked_files(db, suggestion_id)
 
     def result_document(self, suggestion_id, relative):
         with self.connect() as db:
@@ -489,27 +540,7 @@ class ViewsStore(ConversationStore):
         return candidate
 
     def review_run_view(self, db, run):
-        """A review run with how far it got: what it claimed, saved (done_count of planned) and from which accounts."""
-        claims = db.execute('SELECT status,items FROM analyses WHERE owner_run=? AND owner_session=?',
-                            (run['run_id'],REVIEW_SESSION_PREFIX+run['run_id'])).fetchall()
-        run['review_saved'] = bool(claims) and all(c['status']=='complete' for c in claims)
-        run['checked_count'] = sum(sum(not i.get('excluded') and not i.get('deferred') for i in json.loads(c['items']))
-                                   for c in claims if c['status']=='complete')
-        run['done_count'] = sum(len(json.loads(c['items'])) for c in claims if c['status']=='complete')
-        items = [i for c in claims for i in json.loads(c['items'])]
-        ids = list({i['id'] for i in items})
-        versions, accounts = {}, set()
-        for n in range(0, len(ids), 500):
-            chunk = ids[n:n+500]
-            for r in db.execute(f"SELECT id,analyzed_version,account_id FROM events WHERE id IN ({','.join('?'*len(chunk))})", chunk):
-                versions[r['id']] = r['analyzed_version']
-                accounts.add(r['account_id'])
-        run['account_ids'] = sorted(accounts)
-        run['pending_count'] = sum(i['id'] in versions and versions[i['id']] < i['version'] for i in items)
-        run['claimed_count'] = sum(len(json.loads(c['items'])) for c in claims)
-        run['duration_seconds'] = max(0,int((dt.datetime.fromisoformat(run['finished_at'] or now())-
-                                             dt.datetime.fromisoformat(run['started_at'])).total_seconds()))
-        return run
+        return review_run_view(db, run)
 
     def card_views(self, db, cards, jobs=True):
         """What the dashboard shows on cards beyond their row: the status payload and the Done pages alike. jobs=False
@@ -606,26 +637,7 @@ class ViewsStore(ConversationStore):
             suggestion.update(self.suggestion_result(suggestion, db, pre))
 
     def card_reads(self, db, cards):
-        """What suggestion_result reads for each card, read once for all of them (the status payload read it per card,
-        some 750 reads for 127 cards): their messages' links, their preparations, and which cards have a skill proposal,
-        a proposed or decided skill, or action jobs at all (only those are looked up one by one, as before)."""
-        ids = json.dumps([c['id'] for c in cards])
-        events = set()
-        for card in cards:
-            try:
-                events.update(json.loads(card['event_ids'] or '[]'))
-            except (ValueError, TypeError):
-                pass
-        pre = {'events': {r['id']: r['metadata'] for r in db.execute('SELECT id,metadata FROM events WHERE id IN (SELECT value FROM json_each(?))', (json.dumps(sorted(events, key=str)),))},
-               'clusters': {r[0] for r in db.execute('SELECT DISTINCT suggestion_id FROM skill_clusters WHERE suggestion_id IN (SELECT value FROM json_each(?))', (ids,))},
-               'jobs': {r[0] for r in db.execute('SELECT DISTINCT suggestion_id FROM action_jobs WHERE suggestion_id IN (SELECT value FROM json_each(?))', (ids,))},
-               'preparations': {r['suggestion_id']: r for r in db.execute('SELECT suggestion_id,job_id,status,reason FROM preparations WHERE suggestion_id IN (SELECT value FROM json_each(?))', (ids,))}}
-        try:  # skills.for_task reads these two; before their columns exist it looks per card as before
-            pre['skills'] = {r[0] for r in db.execute("SELECT task FROM skills WHERE task IN (SELECT value FROM json_each(?)) AND status='proposed' AND origin='proposed' "
-                                                      "UNION SELECT task FROM skill_task_decided WHERE task IN (SELECT value FROM json_each(?))", (ids, ids))}
-        except sqlite3.OperationalError:
-            pass
-        return pre
+        return card_reads(db, cards)
 
     def done_rows(self, db, titles=False):
         """Every done or dismissed card, the latest closed first, with its scope: light rows to count, filter and page.

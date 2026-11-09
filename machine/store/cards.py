@@ -267,17 +267,49 @@ def source_text(row):
     return source_kind(row['kind']) + (f' from {who}' if who else '') + f' · {when}'
 
 
+def set_chat_asks(db, suggestion_id, asks):
+    """The review's asks for a to-do: up to two short things the owner may want to say in its chat, specific to it
+    ("Offer Tuesday 10:00 instead"), shown as taps over the message box (todos-chat-thread.js chatSuggestions).
+    Written with the to-do in the same review turn, so no model call of their own. Anything else is dropped: none
+    rather than a canned line. Each update replaces them, so they never outlive what the to-do says."""
+    lines = [' '.join(a.split()) for a in asks if isinstance(a, str)] if isinstance(asks, list) else []
+    lines = list(dict.fromkeys(a for a in lines if 0 < len(a) <= CHAT_ASK_CHARS))[:2]
+    db.execute('UPDATE suggestions SET chat_asks=? WHERE id=?', (encoded(lines) if lines else None, suggestion_id))
+
+
+def offer_merge(db, own, other_id):
+    """The review thinks the owner's card is the same as another one. Nothing merges: the card asks them."""
+    other = db.execute('SELECT id,status FROM suggestions WHERE id=?', (other_id,)).fetchone()
+    if not other:
+        raise ValueError('card_id must be an existing card')
+    offer = json.loads(own['merge_offer'] or '{}')
+    if offer.get('card_id') == other_id and offer.get('kept'):
+        return {'id': own['id'], 'status': own['status'], 'merge_offered': False,
+                'note': 'The owner keeps these two cards apart. Fill in their card on its own (card_id ' + own['id'] + ').'}
+    if other['status'] in ('completed', 'rejected'):
+        return {'id': own['id'], 'status': own['status'], 'merge_offered': False,
+                'note': 'That card is closed. Fill in the owner\'s card on its own (card_id ' + own['id'] + ').'}
+    db.execute('UPDATE suggestions SET merge_offer=? WHERE id=?', (encoded({'card_id': other_id, 'at': now()}), own['id']))
+    return {'id': own['id'], 'status': own['status'], 'merge_offered': True,
+            'note': 'Not merged: the owner made this card, so they are asked whether it is the same as that one. '
+                    'Other signals in this call were not saved; suggest them again without the owner\'s signal.'}
+
+
+def settle_ahead(db):
+    """A prepared-ahead card whose run got stuck goes to the owner as a new to-do instead. Its blocker stays
+    (preparation blocked): the to-do shows "Needs your help" with the reason and questions, and Answer or Try
+    again accepts it first and carries on (_decide)."""
+    for row in db.execute("SELECT s.id FROM suggestions s JOIN preparations p ON p.suggestion_id=s.id WHERE s.early=1 AND s.status='accepted' AND p.status='blocked'").fetchall():
+        db.execute("UPDATE suggestions SET status='pending',early=0 WHERE id=?", (row['id'],))
+        # It goes out as the card itself, not as a reminder: also when an earlier notification exists (a card reopened by a new signal).
+        db.execute("UPDATE deliveries SET reminder=0 WHERE suggestion_id=?", (row['id'],))
+
+
 class CardsStore:
     """Store methods that make and change to-dos."""
 
     def set_chat_asks(self, db, suggestion_id, asks):
-        """The review's asks for a to-do: up to two short things the owner may want to say in its chat, specific to it
-        ("Offer Tuesday 10:00 instead"), shown as taps over the message box (todos-chat-thread.js chatSuggestions).
-        Written with the to-do in the same review turn, so no model call of their own. Anything else is dropped: none
-        rather than a canned line. Each update replaces them, so they never outlive what the to-do says."""
-        lines = [' '.join(a.split()) for a in asks if isinstance(a, str)] if isinstance(asks, list) else []
-        lines = list(dict.fromkeys(a for a in lines if 0 < len(a) <= CHAT_ASK_CHARS))[:2]
-        db.execute('UPDATE suggestions SET chat_asks=? WHERE id=?', (encoded(lines) if lines else None, suggestion_id))
+        return set_chat_asks(db, suggestion_id, asks)
 
     def suggest(self, dedupe_key, title, body, event_ids, when='now', digest_at='08:30', work=False, urgent=False, due=None, ahead=False, awaiting=None, project=None,
                 card_id=None, separate=False, reopen=False, match=False, _db=None, suggestion_id=None, owner_step=None, expires_at=None, expires_what=None,
@@ -610,21 +642,7 @@ class CardsStore:
                 'note': 'The owner made this card; it is filled in. Their own words stay on it.'}
 
     def offer_merge(self, db, own, other_id):
-        """The review thinks the owner's card is the same as another one. Nothing merges: the card asks them."""
-        other = db.execute('SELECT id,status FROM suggestions WHERE id=?', (other_id,)).fetchone()
-        if not other:
-            raise ValueError('card_id must be an existing card')
-        offer = json.loads(own['merge_offer'] or '{}')
-        if offer.get('card_id') == other_id and offer.get('kept'):
-            return {'id': own['id'], 'status': own['status'], 'merge_offered': False,
-                    'note': 'The owner keeps these two cards apart. Fill in their card on its own (card_id ' + own['id'] + ').'}
-        if other['status'] in ('completed', 'rejected'):
-            return {'id': own['id'], 'status': own['status'], 'merge_offered': False,
-                    'note': 'That card is closed. Fill in the owner\'s card on its own (card_id ' + own['id'] + ').'}
-        db.execute('UPDATE suggestions SET merge_offer=? WHERE id=?', (encoded({'card_id': other_id, 'at': now()}), own['id']))
-        return {'id': own['id'], 'status': own['status'], 'merge_offered': True,
-                'note': 'Not merged: the owner made this card, so they are asked whether it is the same as that one. '
-                        'Other signals in this call were not saved; suggest them again without the owner\'s signal.'}
+        return offer_merge(db, own, other_id)
 
     def reviewed_event(self, account_id, source_id, kind, title, body, meta):
         """An event this Machine made itself (a time another Machine proposed, meet_app.py), marked reviewed so no
@@ -872,13 +890,7 @@ class CardsStore:
                               'AND suggestion_id NOT IN (SELECT suggestion_id FROM follow_up_cards)', (since,)).fetchone()[0] < per_day
 
     def settle_ahead(self, db):
-        """A prepared-ahead card whose run got stuck goes to the owner as a new to-do instead. Its blocker stays
-        (preparation blocked): the to-do shows "Needs your help" with the reason and questions, and Answer or Try
-        again accepts it first and carries on (_decide)."""
-        for row in db.execute("SELECT s.id FROM suggestions s JOIN preparations p ON p.suggestion_id=s.id WHERE s.early=1 AND s.status='accepted' AND p.status='blocked'").fetchall():
-            db.execute("UPDATE suggestions SET status='pending',early=0 WHERE id=?", (row['id'],))
-            # It goes out as the card itself, not as a reminder: also when an earlier notification exists (a card reopened by a new signal).
-            db.execute("UPDATE deliveries SET reminder=0 WHERE suggestion_id=?", (row['id'],))
+        return settle_ahead(db)
 
     def settle_awaiting(self, db):
         """A follow-up on someone else's promise closes itself when they wrote again before it was due.
