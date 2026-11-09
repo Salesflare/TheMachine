@@ -120,8 +120,7 @@ details.tech{margin:6px 0 0;font-size:.82rem}details.tech>summary{cursor:pointer
 .conn-scope select{margin-left:6px;font:inherit}
 .conn-abilities{display:grid;gap:6px;margin:8px 0}.conn-ability{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:.85rem;color:var(--muted);cursor:pointer}.conn-ability .lookup-switch{min-height:0;box-shadow:inset 0 0 0 1px var(--border)}.conn-ability .lookup-switch[aria-checked=true]{background:var(--mint)}
 /* Fleet cards (under Suggestions): the follow-up split as a 2-column grid, stacked on a phone. */
-/* Fleet and Network buttons never break inside a word; on a phone they share a row by width (a Network card's four fit
-   at 390px). A Fleet ask with three choices takes two rows (two-rows), as a to-do does. */
+/* Fleet and Network buttons: whole words; on a phone one row by width (an ask with three: two-rows) */
 .fleet-card .actions :is(button,summary){white-space:nowrap;overflow-wrap:normal}
 @media(max-width:560px){
   .card.fleet-card .actions:not(.result-actions,.two-rows)>:is(button,a.open){flex:1 1 auto}

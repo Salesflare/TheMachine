@@ -68,7 +68,7 @@ const SERVICE_NAMES={gmail:'Email',calendar:'Calendar',outlook:'Outlook',outlook
 // data reads as nothing, and the line says the source instead (the same list as machine/names.py INTERNAL)
 const INTERNAL_NAME=/^(?:gog(?:cli)?|wacli|himalaya|msgraph(?:[-_]cli)?|openclaw|codex[-_]cli|gh|journald|maton|broker|api|rest|existing_\w+|[a-z]+[-_](?:feed|local|inbox|rest|store|mirror))(?:[-_][\w-]*)?$/i;
 const service=v=>SERVICE_NAMES[v]||(INTERNAL_NAME.test(String(v||'').trim())?'':v);
-// A to-do's chip in For you: Prepared (Do it sends) or Needs you (a decision or an answer first)
+// The chip in For you: Prepared (Do it sends) or Needs you
 const label=v=>({pending:'Needs you',accepted:'Accepted',prepared:'Prepared',rejected:'Not needed',snoozed:'Later',instructions:'Changes requested',completed:'Done'}[v]||v);
 const tone=v=>({pending:'amber',accepted:'lavender',instructions:'lavender',prepared:'mint',snoozed:'lavender',completed:'mint',rejected:'muted'}[v]||'muted');
 // A blocker waiting on the owner (a sign-in in the kept tab) resumes with Continue; same rule as the service.
@@ -93,7 +93,7 @@ const closed=s=>['completed','rejected'].includes(s.status);
 const dueSoon=s=>{if(!s.due)return false;const at=s.due_at?Date.parse(s.due_at):NaN;if(!isNaN(at)&&at<Date.now())return true;const t=new Date();t.setDate(t.getDate()+1);return s.due<=localDay(t)};
 const addedAt=s=>Date.parse(s.created_at)||0;
 const openOrder=(a,b)=>dueSoon(b)-dueSoon(a)||addedAt(b)-addedAt(a)||(b.weight||0)-(a.weight||0)||String(a.id).localeCompare(String(b.id));
-// For you, most urgent first: 1. due by tomorrow, 2. a Fleet ask, 3. prepared, 4. the rest; each in openOrder
+// For you: 1. due by tomorrow, 2. a Fleet ask, 3. prepared, 4. the rest; each in openOrder
 const plainTodo=x=>!!x&&typeof x==='object'&&!(x instanceof SafeHTML);
 function forYouList(ready,needs){const rank=(x,need)=>plainTodo(x)&&dueSoon(x)?0:need?(plainTodo(x)?3:1):2,all=[...ready.map(x=>[x,rank(x,false)]),...needs.map(x=>[x,rank(x,true)])];
  return [0,1,2,3].flatMap(r=>{const l=all.filter(([,k])=>k===r).map(([x])=>x);return r===0?l.sort(openOrder):l})}

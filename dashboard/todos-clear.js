@@ -1,4 +1,4 @@
-// Go through (For you): one to-do at a time, in the list's order, with its whole draft and the card's own actions.
+// Go through (For you): one to-do at a time with its whole draft and the card's own actions.
 // Send posts the send dialog's confirm (sendConfirmed) for the revision on screen only. Header pace: clear_pace.py.
 const CR_MSG=['email','linkedin','slack','x','whatsapp','telegram','intercom','doc_reply'];
 const crDraft=s=>taskActions(s).find(a=>DRAFT_KINDS.includes(a.kind)&&!['handoff','email_demo'].includes(a.kind)&&!sendBusy(a.state||s.action_status)&&!(a.kind==='finish'&&(a.state||s.action_status)?.status==='done')&&!docMade(s,a));
@@ -7,7 +7,7 @@ function crKind(s){if(!s||!state.suggestions.includes(s)||closed(s)||s.status===
  if(s.status==='pending')return s.skill_proposal?.update?'':'do';
  const a=s.status==='prepared'&&crDraft(s);if(!a)return '';
  return CR_MSG.includes(a.kind)&&!a.to_options?.length&&(a.from_options||[]).length<2&&!movedLine(a)&&!(a.to||[]).some(x=>a.bounced?.[String(x).toLowerCase()])?'send':'dialog'}
-const crList=(v,key)=>(v[key]||[]).filter(s=>s&&typeof s==='object'&&!(s instanceof SafeHTML)&&crKind(s));
+const crList=(v,key)=>(v[key]||[]).filter(s=>plainTodo(s)&&crKind(s));
 const crPace=()=>+state?.clear_pace||30;
 let crFuv=null;
 function clearHead(key,v){if(key!=='foryou')return '';crFuv=v;const n=crList(v,key).length,min=Math.max(1,Math.ceil(n*crPace()/60));if(!n)return '';
