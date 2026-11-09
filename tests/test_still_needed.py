@@ -175,9 +175,9 @@ class StillNeeded(unittest.TestCase):
         self.assertEqual(badge(ago(-7.5)), (1, {brochure}))
         with patch_everywhere(a, 'now', return_value=ago(-7.5)), patch_everywhere(a, 'recap_meetings', return_value=[]):
             digest = self.app.digest(dt.datetime.fromisoformat(ago(-7.5)))
-        self.assertIn('Waiting for you\n• Book the venue', digest['text'])
+        self.assertIn('\n• Book the venue', digest['text'])
         self.assertNotIn('brochure', digest['text'])
-        self.assertEqual(digest['subject'], 'Your morning: 1 waiting')
+        self.assertEqual(digest['subject'], 'Good morning')
         with self.store.connect() as db:
             db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES('r1',?,'rename','','dashboard',?)", (brochure, ago(-7)))
         self.assertEqual(badge(ago(-7.5)), (2, set()))  # touched: waiting again

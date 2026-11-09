@@ -12,12 +12,12 @@ import fleet
 import i18n
 from machine.cards import card, controls, delivery_time
 from machine.config import LOG
-from machine.delivery.push import first_result, hold_mail, push_notify, push_reach, push_send, result_lead, shown_as_reminder
+from machine.delivery.push import first_result, hold_mail, push_notify, push_reach, push_send, reply_waits, result_lead, shown_as_reminder
 from machine.delivery.telegram import DeliveryNotSent, telegram
 from machine.text import encoded
 import notify
 import still_needed
-from timeutil import in_hours, local_tz, now
+from timeutil import in_hours, is_work_day, local_tz, now
 
 
 def fleet_push(store, config, rows, sender=None):
@@ -126,7 +126,23 @@ def deliver(store, config):
             break
 
 
-FEEDBACK_COLUMN = "(SELECT feedback FROM decisions f WHERE f.suggestion_id=s.id AND f.feedback!='' AND NOT EXISTS (SELECT 1 FROM decision_annotations a WHERE a.decision_id=f.id) ORDER BY f.rowid DESC LIMIT 1) requested_feedback"
+def why_now(row, today):
+    """What makes a to-do's notification unable to wait (notify.calm_reason), or '' when it can wait for the dashboard
+    and the morning summary: 'urgent', 'due' (due by `today`, the owner's local ISO date), 'signin' (its run needs the
+    owner to sign in), 'reply' (a reply someone waits for is drafted and ready to send) or 'reminder' (a snooze or a
+    wait coming back at the time it was set for)."""
+    if row.get('urgent'):
+        return 'urgent'
+    if row.get('due') and str(row['due'])[:10] <= today:
+        return 'due'
+    if (row.get('preparation_browser') or {}).get('signin_url'):
+        return 'signin'
+    if notify.kind_of(row) == 'reminder':
+        return 'reminder'
+    return 'reply' if reply_waits(row) else ''
+
+
+FEEDBACK_COLUMN ="(SELECT feedback FROM decisions f WHERE f.suggestion_id=s.id AND f.feedback!='' AND NOT EXISTS (SELECT 1 FROM decision_annotations a WHERE a.decision_id=f.id) ORDER BY f.rowid DESC LIMIT 1) requested_feedback"
 
 
 EDIT_ROWS = ('SELECT s.*,d.message_id,d.edit_failures,p.status preparation_status,p.reason preparation_reason,p.error preparation_error,p.questions preparation_questions,(SELECT choice FROM decisions WHERE id=p.decision_id) preparation_cause,'+FEEDBACK_COLUMN+' FROM suggestions s '
@@ -184,10 +200,12 @@ def deliver_one(store, config, edit_cards=True):
             LOG.info('delivery suggestion=%s quiet=unseen', row['id'])
             return True
         # Enforce at delivery too: the last work day's queued work may catch up on a day off.
-        # Owner-selected snoozes/preparations are reminders and keep their timing.
+        # Owner-selected snoozes/preparations are reminders and keep their timing. A to-do The Machine prepared by
+        # itself (early) before its first delivery is no reminder: like any new to-do it waits for a work day, unless
+        # urgent (its send time already holds, the query above).
         work=row.get('area')!='personal' and any(a['id'] in json.loads(row['account_ids']) and a.get('boundary','').startswith('work:') for a in config.get('accounts',[]))
         held=delivery_time('now',work=work,urgent=bool(row.get('urgent')))
-        if not row['reminder'] and held:
+        if (not row['reminder'] or (row['_first'] and row.get('early'))) and held:
             db.execute('UPDATE suggestions SET deliver_after=? WHERE id=?',(held,row['id']))
             return
         row.update(store.suggestion_result(row,db))
@@ -208,6 +226,13 @@ def deliver_one(store, config, edit_cards=True):
         row['_silent']=row['_quiet'] or bool(db.execute("SELECT 1 FROM deliveries WHERE suggestion_id!=? AND last_notified_at>? "
             "AND suggestion_id NOT IN (SELECT suggestion_id FROM follow_up_cards WHERE state='open')",
             (row['id'],(dt.datetime.fromisoformat(now())-dt.timedelta(minutes=3)).isoformat())).fetchone())
+        # Calm (notify.calm_reason): only what can't wait buzzes. The rest arrives quietly (the dashboard, a silent
+        # Telegram card) and waits for the morning summary: no push, no waiting email. A quiet one is no ping: it
+        # doesn't stamp last_notified_at, so it never silences a real one nor counts as an unseen ping.
+        local=dt.datetime.now(local_tz())
+        row['_calm']=notify.calm_reason(db,why_now(row,local.date().isoformat()),is_work_day(local),local.date().isoformat())
+        if row['_calm']:
+            row['_silent']=True
         db.execute("UPDATE deliveries SET status='sending',send_kind=?,updated_at=? WHERE suggestion_id=?", ('notice' if row['_result_notice'] else 'card',now(), row['id']))
     status, message_id, error = 'uncertain', None, None
     try:
@@ -241,13 +266,13 @@ def deliver_one(store, config, edit_cards=True):
             db.execute('''UPDATE deliveries SET status=?,notification_message_id=coalesce(?,notification_message_id),error=?,
                 updated_at=?,last_notified_at=CASE WHEN ? THEN ? ELSE last_notified_at END,reminder=? WHERE suggestion_id=?''',
                 ('queued' if status=='sent' and newer_result else status,str(message_id) if message_id else None,error,
-                 now(),status=='sent',now(),1 if newer_result else 0 if status=='sent' else row['reminder'],row['id']))
+                 now(),status=='sent' and not row['_calm'],now(),1 if newer_result else 0 if status=='sent' else row['reminder'],row['id']))
         else:
             previous = json.loads(row['previous_message_ids'])
             if message_id and row['message_id'] and row['message_id'] not in previous:
                 previous.append(row['message_id'])
             db.execute('UPDATE deliveries SET status=?,message_id=?,previous_message_ids=?,error=?,updated_at=?,last_notified_at=CASE WHEN ? THEN ? ELSE last_notified_at END,reminder=? WHERE suggestion_id=?',
-                       (status,str(message_id) if message_id else row['message_id'],encoded(previous),error,now(),status != 'queued',now(),row['reminder'] if status == 'queued' else 0,row['id']))
+                       (status,str(message_id) if message_id else row['message_id'],encoded(previous),error,now(),status != 'queued' and not row['_calm'],now(),row['reminder'] if status == 'queued' else 0,row['id']))
             if message_id:
                 # A decision made while this send was in flight could not mark the (not yet
                 # known) message for editing; the fresh card would keep stale buttons.
@@ -263,7 +288,7 @@ def deliver_one(store, config, edit_cards=True):
                     db.execute("UPDATE deliveries SET status='queued',reminder=1,error=NULL WHERE suggestion_id=?",(row['id'],))
     # Optional phone delivery must never delay committing a known Telegram receipt. A batch buzzes once (_silent),
     # but every card of it reaches the phone, as it reaches Telegram.
-    if status == 'sent' and not row['_quiet']:
+    if status == 'sent' and not row['_quiet'] and not row['_calm']:
         try:push_notify(store, config, row)
         except Exception as failure:LOG.warning('push error=%s', type(failure).__name__)
         try:
@@ -273,8 +298,9 @@ def deliver_one(store, config, edit_cards=True):
             title = (i18n.t(lead + ': {}', row['title']) if lead else row['title']) if ready else i18n.t('Reminder: {}', row['title']) if shown_as_reminder(row) and not row['_result_notice'] else row['title']
             hold_mail(store, config, notify.kind_of(row), title, 'suggestion:' + row['id'], work)
         except Exception as failure:LOG.warning('mail hold error=%s', type(failure).__name__)
+    quiet = ' quiet=' + row['_calm'] if row['_calm'] else ''  # why no push or email went (notify.calm_reason)
     if row['_result_notice']:
-        LOG.info('delivery suggestion=%s notice=1 status=%s error=%s',row['id'],status,error)
+        LOG.info('delivery suggestion=%s notice=1 status=%s error=%s%s',row['id'],status,error,quiet)
     else:
-        LOG.info('delivery suggestion=%s reminder=%d status=%s error=%s', row['id'], row['reminder'] or 0, status, error)
+        LOG.info('delivery suggestion=%s reminder=%d status=%s error=%s%s', row['id'], row['reminder'] or 0, status, error, quiet)
     return status == 'sent'

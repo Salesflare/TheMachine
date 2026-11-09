@@ -98,6 +98,19 @@ def result_lead(db, row):
     return 'Ready'
 
 
+def reply_waits(row):
+    """A prepared to-do whose next step is a message in an existing conversation (an email in its thread, a chat, a
+    reply to a post), drafted and ready to send: someone waits on the owner's reply."""
+    if row.get('status') != 'prepared':
+        return False
+    try:
+        steps = next_actions.visible_actions(row.get('next_action'))
+    except (TypeError, ValueError, AttributeError):
+        return False
+    return any(s.get('kind') in next_actions.SEND_KINDS and s.get('kind') != 'email_demo'
+               and (s.get('kind') != 'email' or s.get('in_reply_to') or s.get('thread_id')) for s in steps)
+
+
 NUDGE_KINDS = ('email', 'linkedin', 'slack', 'x', 'whatsapp', 'telegram', 'intercom', 'handoff')
 
 
@@ -716,6 +729,9 @@ def push_send(store, config, subscriptions, payload, label, sender=None, kind=No
                     else:
                         db.execute('UPDATE push_subscriptions SET last_status=?,last_sent_at=? WHERE endpoint=?', (result['status'], now(), result['endpoint']))
             LOG.info('push %s statuses=%s', label, ','.join(str(r['status']) for r in results))
+    if kind and not payload.get('silent'):
+        with store.connect() as db:  # the day's count for notify.PUSH_CAP
+            notify.count_push(db, dt.datetime.now(local_tz()).date().isoformat())
     if wake and not payload.get('silent'):
         try:
             sent = app_wake(store, config, wake, payload.get('tag'), state=state,

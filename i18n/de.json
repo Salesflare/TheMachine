@@ -119,6 +119,7 @@
  "A project by that name is on another board already": "Ein Projekt mit diesem Namen ist schon auf einem anderen Board",
  "A project name is a short label (up to 60 characters), like \"Acme VAT\" or \"Q4 board deck\"": "Ein Projektname ist ein kurzes Label (bis zu 60 Zeichen), wie \"Acme VAT\" oder \"Q4 board deck\"",
  "A removed AI": "Eine entfernte KI",
+ "A reply ready to send, a sign-in, a Fleet question": "Eine Antwort bereit zum Senden, eine Anmeldung, eine Fleet-Frage",
  "A reply, a request, anything urgent": "Eine Antwort, eine Anfrage, alles Dringende",
  "A reset starts your ChatGPT usage limits over.": "Ein Reset setzt deine ChatGPT-Limits zurück.",
  "A restricted key with Read on Events, Customers and Account.": "Ein eingeschränkter Schlüssel mit Read für Events, Customers und Account.",
@@ -1397,6 +1398,7 @@
  "First check the skills here by what each is for: {}. Update one of the owner's own when it does the same job, name a related one with a one-line relation when it is a separate job next to it, or say it is new when none is": "Prüf zuerst die Skills hier danach, wofür jeder da ist: {}. Aktualisiere einen der eigenen Skills des Besitzers, wenn er dieselbe Aufgabe erfüllt, nenne einen verwandten mit einer einzeiligen Beziehung, wenn es eine eigene Aufgabe daneben ist, oder sag, dass er neu ist, wenn keiner passt",
  "First look": "Erster Blick",
  "First look: your last {} days": "Erster Blick: deine letzten {} Tage",
+ "First meeting at {}": "Erster Termin um {}",
  "First one’s in: {}. Still reading…": "Die erste ist da: {}. Ich lese weiter…",
  "First read: catching up on the last days.": "Erstes Lesen: holt die letzten Tage nach.",
  "First seen this week.": "Diese Woche zum ersten Mal gesehen.",
@@ -1634,6 +1636,25 @@
  "Goes within the hour": "Geht innerhalb einer Stunde",
  "Gone quiet": "Still geworden",
  "Gone quiet: {}": "Still geworden: {}",
+ "Good morning": "Guten Morgen",
+ "Good morning, first meeting at {}": "Guten Morgen, erster Termin um {}",
+ "Good morning, {} due today": "Guten Morgen, {} heute fällig",
+ "Good morning, {} new to-dos": {
+  "one": "Guten Morgen, {} neue Aufgabe",
+  "other": "Guten Morgen, {} neue Aufgaben"
+ },
+ "Good morning, {} ready for your OK": {
+  "one": "Guten Morgen, {} wartet auf dein OK",
+  "other": "Guten Morgen, {} warten auf dein OK"
+ },
+ "Good morning, {} replies are ready to send": {
+  "one": "Guten Morgen, {} Antwort ist bereit zum Senden",
+  "other": "Guten Morgen, {} Antworten sind bereit zum Senden"
+ },
+ "Good morning, {} waiting, about {} min to clear": {
+  "one": "Guten Morgen, {} wartet, etwa {} Min. zum Erledigen",
+  "other": "Guten Morgen, {} warten, etwa {} Min. zum Erledigen"
+ },
  "Google": "Google",
  "Google Calendar": "Google Calendar",
  "Google Calendar isn’t connected yet. Add it under + Add.": "Google Calendar ist noch nicht verbunden. Füge ihn unter + Hinzufügen hinzu.",
@@ -2371,6 +2392,25 @@
  "More thinking is slower and uses more of your plan.": "Mehr Nachdenken ist langsamer und verbraucht mehr von deinem Plan.",
  "Morning digest": "Morgendliche Zusammenfassung",
  "Morning digest: {}": "Morgendliche Zusammenfassung: {}",
+ "Morning {}": "Guten Morgen {}",
+ "Morning {}, first meeting at {}": "Guten Morgen {}, erster Termin um {}",
+ "Morning {}, {} due today": "Guten Morgen {}, {} heute fällig",
+ "Morning {}, {} new to-dos": {
+  "one": "Guten Morgen {}, {} neue Aufgabe",
+  "other": "Guten Morgen {}, {} neue Aufgaben"
+ },
+ "Morning {}, {} ready for your OK": {
+  "one": "Guten Morgen {}, {} wartet auf dein OK",
+  "other": "Guten Morgen {}, {} warten auf dein OK"
+ },
+ "Morning {}, {} replies are ready to send": {
+  "one": "Guten Morgen {}, {} Antwort ist bereit zum Senden",
+  "other": "Guten Morgen {}, {} Antworten sind bereit zum Senden"
+ },
+ "Morning {}, {} waiting, about {} min to clear": {
+  "one": "Guten Morgen {}, {} wartet, etwa {} Min. zum Erledigen",
+  "other": "Guten Morgen {}, {} warten, etwa {} Min. zum Erledigen"
+ },
  "Mornings": "Vormittags",
  "Move": "Verschieben",
  "Move to": "Verschieben nach",
@@ -3055,6 +3095,7 @@
  "Only this event goes. Nobody gets an update.": "Nur dieser Termin fällt weg. Niemand bekommt ein Update.",
  "Only this one: {}": "Nur dieses: {}",
  "Only this to-do goes. {} can suggest changes; nothing is sent until you send it.": "Nur diese Aufgabe geht mit. {} kann Änderungen vorschlagen; nichts wird gesendet, bis du sendest.",
+ "Only what can’t wait: due today, a reply, urgent": "Nur was nicht warten kann: heute fällig, eine Antwort, dringend",
  "Only what needs you, where you want it.": "Nur was dich braucht, wo du es willst.",
  "Only you": "Nur du",
  "Only you and {}": "Nur du und {}",
@@ -6591,6 +6632,10 @@
   "one": "{} Termin",
   "other": "{} Termine"
  },
+ "{} meetings today, the first at {}.": {
+  "one": "{} Termin heute, um {}.",
+  "other": "{} Termine heute, der erste um {}."
+ },
  "{} message": "{}-Nachricht",
  "{} message to {}": "{}-Nachricht an {}",
  "{} messages": {
@@ -6624,6 +6669,10 @@
   "other": "{} Nachrichten warten auf die erste Prüfung"
  },
  "{} min": "{} Min.",
+ "{} more can wait, about {} min to clear.": {
+  "one": "{} weitere kann warten, etwa {} Min. zum Erledigen.",
+  "other": "{} weitere können warten, etwa {} Min. zum Erledigen."
+ },
  "{} more in Promises": "{} weitere unter Versprechen",
  "{} more like this wait. Always shares them too.": {
   "one": "{} weitere wie diese wartet. Immer teilt sie auch.",
@@ -6921,6 +6970,10 @@
   "other": "{} Stimmen warten auf dich"
  },
  "{} waiting": "{} wartend",
+ "{} waiting, about {} min to clear.": {
+  "one": "{} wartet, etwa {} Min. zum Erledigen.",
+  "other": "{} warten, etwa {} Min. zum Erledigen."
+ },
  "{} wants a one-time code.": "{} möchte einen Einmalcode.",
  "{} wants a passkey.": "{} möchte einen Passkey.",
  "{} wants a quick check that you’re not a robot.": "{} möchte kurz prüfen, dass du kein Roboter bist.",
